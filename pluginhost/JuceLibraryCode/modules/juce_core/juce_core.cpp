@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -45,9 +45,9 @@
 
 #include <locale>
 #include <cctype>
-#include <sys/timeb.h>
 
 #if ! JUCE_ANDROID
+ #include <sys/timeb.h>
  #include <cwctype>
 #endif
 
@@ -59,7 +59,10 @@
  #include <ws2tcpip.h>
 
  #if ! JUCE_MINGW
+  #pragma warning (push)
+  #pragma warning (disable: 4091)
   #include <Dbghelp.h>
+  #pragma warning (pop)
 
   #if ! JUCE_DONT_AUTOLINK_TO_WIN32_LIBRARIES
    #pragma comment (lib, "DbgHelp.lib")
@@ -82,6 +85,10 @@
  #if JUCE_LINUX
   #include <langinfo.h>
   #include <ifaddrs.h>
+
+  #if JUCE_USE_CURL
+   #include <curl/curl.h>
+  #endif
  #endif
 
  #include <pwd.h>
@@ -107,6 +114,13 @@
  #include <android/log.h>
 #endif
 
+#undef check
+
+//==============================================================================
+#ifndef    JUCE_STANDALONE_APPLICATION
+ JUCE_COMPILER_WARNING ("Please re-save your Introjucer project with the latest Introjucer version to avoid this warning")
+ #define   JUCE_STANDALONE_APPLICATION 0
+#endif
 
 //==============================================================================
 namespace juce
@@ -153,6 +167,7 @@ namespace juce
 #include "text/juce_StringPairArray.cpp"
 #include "text/juce_StringPool.cpp"
 #include "text/juce_TextDiff.cpp"
+#include "text/juce_Base64.cpp"
 #include "threads/juce_ReadWriteLock.cpp"
 #include "threads/juce_Thread.cpp"
 #include "threads/juce_ThreadPool.cpp"
@@ -205,6 +220,9 @@ namespace juce
 #include "native/juce_linux_CommonFile.cpp"
 #include "native/juce_linux_Files.cpp"
 #include "native/juce_linux_Network.cpp"
+#if JUCE_USE_CURL
+ #include "native/juce_curl_Network.cpp"
+#endif
 #include "native/juce_linux_SystemStats.cpp"
 #include "native/juce_linux_Threads.cpp"
 
@@ -222,5 +240,22 @@ namespace juce
 #include "threads/juce_ChildProcess.cpp"
 #include "threads/juce_HighResolutionTimer.cpp"
 #include "network/juce_URL.cpp"
+
+//==============================================================================
+/*
+    As the very long class names here try to explain, the purpose of this code is to cause
+    a linker error if not all of your compile units are consistent in the options that they
+    enable before including JUCE headers. The reason this is important is that if you have
+    two cpp files, and one includes the juce headers with debug enabled, and the other doesn't,
+    then each will be generating code with different memory layouts for the classes, and
+    you'll get subtle and hard-to-track-down memory corruption bugs!
+*/
+#if JUCE_DEBUG
+ this_will_fail_to_link_if_some_of_your_compile_units_are_built_in_debug_mode
+    ::this_will_fail_to_link_if_some_of_your_compile_units_are_built_in_debug_mode() noexcept {}
+#else
+ this_will_fail_to_link_if_some_of_your_compile_units_are_built_in_release_mode
+    ::this_will_fail_to_link_if_some_of_your_compile_units_are_built_in_release_mode() noexcept {}
+#endif
 
 }

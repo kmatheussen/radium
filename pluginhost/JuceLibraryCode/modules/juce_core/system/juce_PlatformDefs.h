@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -63,8 +63,8 @@
 //==============================================================================
 #if JUCE_IOS || JUCE_LINUX || JUCE_ANDROID || JUCE_PPC
   /** This will try to break into the debugger if the app is currently being debugged.
-      If called by an app that's not being debugged, the behaiour isn't defined - it may crash or not, depending
-      on the platform.
+      If called by an app that's not being debugged, the behaviour isn't defined - it may
+      crash or not, depending on the platform.
       @see jassert()
   */
   #define juce_breakDebugger        { ::kill (0, SIGTRAP); }
@@ -149,20 +149,44 @@
 #endif
 
 //==============================================================================
-#ifndef DOXYGEN
-namespace juce
-{
-    template <bool b> struct JuceStaticAssert;
-    template <>       struct JuceStaticAssert<true> { static void dummy() {} };
-}
+#if ! DOXYGEN
+ #define JUCE_JOIN_MACRO_HELPER(a, b) a ## b
+ #define JUCE_STRINGIFY_MACRO_HELPER(a) #a
 #endif
 
-/** A compile-time assertion macro.
-    If the expression parameter is false, the macro will cause a compile error. (The actual error
-    message that the compiler generates may be completely bizarre and seem to have no relation to
-    the place where you put the static_assert though!)
+/** A good old-fashioned C macro concatenation helper.
+    This combines two items (which may themselves be macros) into a single string,
+    avoiding the pitfalls of the ## macro operator.
 */
-#define static_jassert(expression)      juce::JuceStaticAssert<expression>::dummy();
+#define JUCE_JOIN_MACRO(item1, item2)  JUCE_JOIN_MACRO_HELPER (item1, item2)
+
+/** A handy C macro for stringifying any symbol, rather than just a macro parameter. */
+#define JUCE_STRINGIFY(item)  JUCE_STRINGIFY_MACRO_HELPER (item)
+
+//==============================================================================
+#if JUCE_COMPILER_SUPPORTS_STATIC_ASSERT
+  /** A compile-time assertion macro.
+     If the expression parameter is false, the macro will cause a compile error. (The actual error
+     message that the compiler generates may be completely bizarre and seem to have no relation to
+     the place where you put the static_assert though!)
+  */
+  #define static_jassert(expression) static_assert(expression, #expression);
+#else
+ #ifndef DOXYGEN
+  namespace juce
+  {
+     template <bool b> struct JuceStaticAssert;
+     template <>       struct JuceStaticAssert<true> { static void dummy() {} };
+  }
+ #endif
+
+  /** A compile-time assertion macro.
+      If the expression parameter is false, the macro will cause a compile error. (The actual error
+      message that the compiler generates may be completely bizarre and seem to have no relation to
+      the place where you put the static_assert though!)
+  */
+  #define static_jassert(expression)      juce::JuceStaticAssert<expression>::dummy();
+#endif
 
 /** This is a shorthand macro for declaring stubs for a class's copy constructor and operator=.
 
@@ -207,28 +231,10 @@ namespace juce
     static void* operator new (size_t) JUCE_DELETED_FUNCTION; \
     static void operator delete (void*) JUCE_DELETED_FUNCTION;
 
-
-//==============================================================================
-#if ! DOXYGEN
- #define JUCE_JOIN_MACRO_HELPER(a, b) a ## b
- #define JUCE_STRINGIFY_MACRO_HELPER(a) #a
-#endif
-
-/** A good old-fashioned C macro concatenation helper.
-    This combines two items (which may themselves be macros) into a single string,
-    avoiding the pitfalls of the ## macro operator.
-*/
-#define JUCE_JOIN_MACRO(item1, item2)  JUCE_JOIN_MACRO_HELPER (item1, item2)
-
-/** A handy C macro for stringifying any symbol, rather than just a macro parameter.
-*/
-#define JUCE_STRINGIFY(item)  JUCE_STRINGIFY_MACRO_HELPER (item)
-
-
 //==============================================================================
 #if JUCE_MSVC && ! defined (DOXYGEN)
  #define JUCE_WARNING_HELPER(file, line, mess) message(file "(" JUCE_STRINGIFY (line) ") : Warning: " #mess)
- #define JUCE_COMPILER_WARNING(message)  __pragma(JUCE_WARNING_HELPER (__FILE__, __LINE__, message));
+ #define JUCE_COMPILER_WARNING(message)  __pragma(JUCE_WARNING_HELPER (__FILE__, __LINE__, message))
 #else
  #ifndef DOXYGEN
   #define JUCE_WARNING_HELPER(mess) message(#mess)
@@ -241,7 +247,7 @@ namespace juce
      GCC and Clang provide the \#warning directive, but MSVC doesn't, so this macro
      is a cross-compiler way to get the same functionality as \#warning.
  */
- #define JUCE_COMPILER_WARNING(message)  _Pragma(JUCE_STRINGIFY (JUCE_WARNING_HELPER (message)));
+ #define JUCE_COMPILER_WARNING(message)  _Pragma(JUCE_STRINGIFY (JUCE_WARNING_HELPER (message)))
 #endif
 
 

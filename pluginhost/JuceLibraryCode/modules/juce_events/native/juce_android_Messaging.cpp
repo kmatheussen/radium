@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -44,6 +44,8 @@ bool MessageManager::postMessageToSystemQueue (MessageManager::MessageBase* cons
 
 JUCE_JNI_CALLBACK (JUCE_ANDROID_ACTIVITY_CLASSNAME, deliverMessage, void, (JNIEnv* env, jobject activity, jlong value))
 {
+    setEnv (env);
+
     JUCE_TRY
     {
         MessageManager::MessageBase* const message = (MessageManager::MessageBase*) (pointer_sized_uint) value;

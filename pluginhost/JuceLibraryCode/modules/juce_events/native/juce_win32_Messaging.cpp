@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -38,15 +38,16 @@ namespace WindowsMessageHelpers
 
     void dispatchMessageFromLParam (LPARAM lParam)
     {
-        MessageManager::MessageBase* const message = reinterpret_cast <MessageManager::MessageBase*> (lParam);
-
-        JUCE_TRY
+        if (MessageManager::MessageBase* const message = reinterpret_cast<MessageManager::MessageBase*> (lParam))
         {
-            message->messageCallback();
-        }
-        JUCE_CATCH_EXCEPTION
+            JUCE_TRY
+            {
+                message->messageCallback();
+            }
+            JUCE_CATCH_EXCEPTION
 
-        message->decReferenceCount();
+            message->decReferenceCount();
+        }
     }
 
     //==============================================================================
@@ -61,23 +62,30 @@ namespace WindowsMessageHelpers
                 dispatchMessageFromLParam (lParam);
                 return 0;
             }
-            else if (message == broadcastId)
+
+            if (message == broadcastId)
             {
-                const ScopedPointer<String> messageString ((String*) lParam);
-                MessageManager::getInstance()->deliverBroadcastMessage (*messageString);
+                if (String* const m = reinterpret_cast<String*> (lParam))
+                {
+                    const ScopedPointer<String> messageString (m);
+                    MessageManager::getInstance()->deliverBroadcastMessage (*m);
+                }
+
                 return 0;
             }
-            else if (message == WM_COPYDATA)
+
+            if (message == WM_COPYDATA)
             {
-                const COPYDATASTRUCT* const data = reinterpret_cast <const COPYDATASTRUCT*> (lParam);
-
-                if (data->dwData == broadcastId)
+                if (const COPYDATASTRUCT* const data = reinterpret_cast<const COPYDATASTRUCT*> (lParam))
                 {
-                    const String messageString (CharPointer_UTF32 ((const CharPointer_UTF32::CharType*) data->lpData),
-                                                data->cbData / sizeof (CharPointer_UTF32::CharType));
+                    if (data->dwData == broadcastId)
+                    {
+                        const String messageString (CharPointer_UTF32 ((const CharPointer_UTF32::CharType*) data->lpData),
+                                                    data->cbData / sizeof (CharPointer_UTF32::CharType));
 
-                    PostMessage (juce_messageWindowHandle, broadcastId, 0, (LPARAM) new String (messageString));
-                    return 0;
+                        PostMessage (juce_messageWindowHandle, broadcastId, 0, (LPARAM) new String (messageString));
+                        return 0;
+                    }
                 }
             }
         }
@@ -88,7 +96,7 @@ namespace WindowsMessageHelpers
     BOOL CALLBACK broadcastEnumWindowProc (HWND hwnd, LPARAM lParam)
     {
         if (hwnd != juce_messageWindowHandle)
-            reinterpret_cast <Array<HWND>*> (lParam)->add (hwnd);
+            reinterpret_cast<Array<HWND>*> (lParam)->add (hwnd);
 
         return TRUE;
     }
@@ -157,9 +165,8 @@ void MessageManager::broadcastMessage (const String& value)
     {
         HWND hwnd = windows.getUnchecked(i);
 
-        TCHAR windowName [64]; // no need to read longer strings than this
-        GetWindowText (hwnd, windowName, 64);
-        windowName [63] = 0;
+        TCHAR windowName[64] = { 0 }; // no need to read longer strings than this
+        GetWindowText (hwnd, windowName, 63);
 
         if (String (windowName) == WindowsMessageHelpers::messageWindowName)
         {

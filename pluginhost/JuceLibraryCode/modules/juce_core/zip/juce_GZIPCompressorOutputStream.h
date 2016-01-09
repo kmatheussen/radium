@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -48,9 +48,9 @@ public:
 
         @param destStream                       the stream into which the compressed data should
                                                 be written
-        @param compressionLevel                 how much to compress the data, between 1 and 9, where
-                                                1 is the fastest/lowest compression, and 9 is the
-                                                slowest/highest compression. Any value outside this range
+        @param compressionLevel                 how much to compress the data, between 0 and 9, where
+                                                0 is non-compressed storage, 1 is the fastest/lowest compression,
+                                                and 9 is the slowest/highest compression. Any value outside this range
                                                 indicates that a default compression level should be used.
         @param deleteDestStreamWhenDestroyed    whether or not to delete the destStream object when
                                                 this stream is destroyed
@@ -59,7 +59,7 @@ public:
                                                 its value for some reason
     */
     GZIPCompressorOutputStream (OutputStream* destStream,
-                                int compressionLevel = 0,
+                                int compressionLevel = -1,
                                 bool deleteDestStreamWhenDestroyed = false,
                                 int windowBits = 0);
 
@@ -72,7 +72,7 @@ public:
         the stream is closed - this means that no more data can be written to it, and any
         subsequent attempts to call write() will cause an assertion.
     */
-    void flush();
+    void flush() override;
 
     int64 getPosition() override;
     bool setPosition (int64) override;

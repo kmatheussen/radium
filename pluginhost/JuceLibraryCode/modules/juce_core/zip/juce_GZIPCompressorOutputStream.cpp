@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -30,7 +30,7 @@ class GZIPCompressorOutputStream::GZIPCompressorHelper
 {
 public:
     GZIPCompressorHelper (const int compressionLevel, const int windowBits)
-        : compLevel ((compressionLevel < 1 || compressionLevel > 9) ? -1 : compressionLevel),
+        : compLevel ((compressionLevel < 0 || compressionLevel > 9) ? -1 : compressionLevel),
           isFirstDeflate (true),
           streamIsValid (false),
           finished (false)
@@ -85,7 +85,7 @@ private:
 
         if (streamIsValid)
         {
-            stream.next_in   = const_cast <uint8*> (data);
+            stream.next_in   = const_cast<uint8*> (data);
             stream.next_out  = buffer;
             stream.avail_in  = (z_uInt) dataSize;
             stream.avail_out = (z_uInt) sizeof (buffer);
@@ -144,7 +144,7 @@ bool GZIPCompressorOutputStream::write (const void* destBuffer, size_t howMany)
 {
     jassert (destBuffer != nullptr && (ssize_t) howMany >= 0);
 
-    return helper->write (static_cast <const uint8*> (destBuffer), howMany, *destStream);
+    return helper->write (static_cast<const uint8*> (destBuffer), howMany, *destStream);
 }
 
 int64 GZIPCompressorOutputStream::getPosition()
@@ -166,7 +166,7 @@ class GZIPTests  : public UnitTest
 public:
     GZIPTests()   : UnitTest ("GZIP") {}
 
-    void runTest()
+    void runTest() override
     {
         beginTest ("GZIP");
         Random rng = getRandom();

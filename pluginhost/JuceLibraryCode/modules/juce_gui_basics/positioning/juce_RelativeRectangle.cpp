@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -84,14 +84,15 @@ RelativeRectangle::RelativeRectangle (const Rectangle<float>& rect)
 
 RelativeRectangle::RelativeRectangle (const String& s)
 {
+    String error;
     String::CharPointerType text (s.getCharPointer());
-    left = RelativeCoordinate (Expression::parse (text));
+    left = RelativeCoordinate (Expression::parse (text, error));
     RelativeRectangleHelpers::skipComma (text);
-    top = RelativeCoordinate (Expression::parse (text));
+    top = RelativeCoordinate (Expression::parse (text, error));
     RelativeRectangleHelpers::skipComma (text);
-    right = RelativeCoordinate (Expression::parse (text));
+    right = RelativeCoordinate (Expression::parse (text, error));
     RelativeRectangleHelpers::skipComma (text);
-    bottom = RelativeCoordinate (Expression::parse (text));
+    bottom = RelativeCoordinate (Expression::parse (text, error));
 }
 
 bool RelativeRectangle::operator== (const RelativeRectangle& other) const noexcept
@@ -192,7 +193,7 @@ public:
     {
     }
 
-    bool registerCoordinates()
+    bool registerCoordinates() override
     {
         bool ok = addCoordinate (rectangle.left);
         ok = addCoordinate (rectangle.right) && ok;
@@ -206,7 +207,7 @@ public:
         return rectangle == other;
     }
 
-    void applyToComponentBounds()
+    void applyToComponentBounds() override
     {
         for (int i = 32; --i >= 0;)
         {
@@ -222,7 +223,7 @@ public:
         jassertfalse; // Seems to be a recursive reference!
     }
 
-    void applyNewBounds (const Rectangle<int>& newBounds)
+    void applyNewBounds (const Rectangle<int>& newBounds) override
     {
         if (newBounds != getComponent().getBounds())
         {
@@ -243,7 +244,7 @@ void RelativeRectangle::applyToComponent (Component& component) const
 {
     if (isDynamic())
     {
-        RelativeRectangleComponentPositioner* current = dynamic_cast <RelativeRectangleComponentPositioner*> (component.getPositioner());
+        RelativeRectangleComponentPositioner* current = dynamic_cast<RelativeRectangleComponentPositioner*> (component.getPositioner());
 
         if (current == nullptr || ! current->isUsingRectangle (*this))
         {

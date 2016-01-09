@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -40,7 +40,6 @@ namespace juce
 #include "messages/juce_ApplicationBase.h"
 #include "messages/juce_Initialisation.h"
 #include "messages/juce_MountedVolumeListChangeDetector.h"
-#include "broadcasters/juce_ListenerList.h"
 #include "broadcasters/juce_ActionBroadcaster.h"
 #include "broadcasters/juce_ActionListener.h"
 #include "broadcasters/juce_AsyncUpdater.h"

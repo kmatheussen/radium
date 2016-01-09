@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -80,6 +80,11 @@ public:
         This is handy when scanning for new or changed plug-ins.
     */
     Time lastFileModTime;
+
+    /** The last time that this information was updated. This would typically have
+        been during a scan when this plugin was first tested or found to have changed.
+    */
+    Time lastInfoUpdateTime;
 
     /** A unique ID for the plug-in.
 

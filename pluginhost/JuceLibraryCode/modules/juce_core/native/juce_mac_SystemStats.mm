@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -80,13 +80,11 @@ void CPUInformation::initialise() noexcept
     hasSSE2  = (d & (1u << 26)) != 0;
     has3DNow = (b & (1u << 31)) != 0;
     hasSSE3  = (c & (1u <<  0)) != 0;
+    hasSSSE3 = (c & (1u <<  9)) != 0;
+    hasAVX   = (c & (1u << 28)) != 0;
    #endif
 
-   #if JUCE_IOS || (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_5)
     numCpus = (int) [[NSProcessInfo processInfo] activeProcessorCount];
-   #else
-    numCpus = (int) MPProcessors();
-   #endif
 }
 
 #if JUCE_MAC
@@ -180,7 +178,7 @@ String SystemStats::getCpuVendor()
 
     SystemStatsHelpers::doCPUID (dummy, vendor[0], vendor[2], vendor[1], 0);
 
-    return String (reinterpret_cast <const char*> (vendor), 12);
+    return String (reinterpret_cast<const char*> (vendor), 12);
    #else
     return String();
    #endif

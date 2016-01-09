@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -282,7 +282,7 @@ bool DragAndDropContainer::performExternalDragDropOfText (const String& text)
     const size_t numBytes = CharPointer_UTF16::getBytesRequiredFor (text.getCharPointer());
 
     medium.hGlobal = GlobalAlloc (GMEM_MOVEABLE | GMEM_ZEROINIT, numBytes + 2);
-    WCHAR* const data = static_cast <WCHAR*> (GlobalLock (medium.hGlobal));
+    WCHAR* const data = static_cast<WCHAR*> (GlobalLock (medium.hGlobal));
 
     text.copyToUTF16 (data, numBytes);
     format.cfFormat = CF_UNICODETEXT;

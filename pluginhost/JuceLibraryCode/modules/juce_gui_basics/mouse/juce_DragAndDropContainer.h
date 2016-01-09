@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -41,7 +41,7 @@
 
     Note: If all that you need to do is to respond to files being drag-and-dropped from
     the operating system onto your component, you don't need any of these classes: you can do this
-    simply by overriding Component::filesDropped().
+    simply by overriding FileDragAndDropTarget::filesDropped().
 
     @see DragAndDropTarget
 */
@@ -101,6 +101,9 @@ public:
         @see startDragging
     */
     var getCurrentDragDescription() const;
+
+    /** If a drag is in progress, this allows the image being shown to be dynamically updated. */
+    void setCurrentDragImage (const Image& newImage);
 
     /** Utility to find the DragAndDropContainer for a given Component.
 
@@ -178,7 +181,7 @@ private:
     friend struct ContainerDeletePolicy<DragImageComponent>;
     ScopedPointer<DragImageComponent> dragImageComponent;
 
-    JUCE_DEPRECATED (virtual bool shouldDropFilesWhenDraggedExternally (const String&, Component*, StringArray&, bool&)) { return false; }
+    JUCE_DEPRECATED_WITH_BODY (virtual bool shouldDropFilesWhenDraggedExternally (const String&, Component*, StringArray&, bool&), { return false; })
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DragAndDropContainer)
 };

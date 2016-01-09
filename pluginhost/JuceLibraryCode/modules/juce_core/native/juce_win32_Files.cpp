@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -65,7 +65,7 @@ namespace WindowsFileHelpers
         path.copyToUTF16 (pathCopy, numBytes);
 
         if (PathStripToRoot (pathCopy))
-            path = static_cast <const WCHAR*> (pathCopy);
+            path = static_cast<const WCHAR*> (pathCopy);
 
         return path;
     }
@@ -120,6 +120,7 @@ namespace WindowsFileHelpers
 const juce_wchar File::separator = '\\';
 const String File::separatorString ("\\");
 
+void* getUser32Function (const char*);
 
 //==============================================================================
 bool File::exists() const
@@ -137,17 +138,22 @@ bool File::existsAsFile() const
 bool File::isDirectory() const
 {
     const DWORD attr = WindowsFileHelpers::getAtts (fullPath);
-    return ((attr & FILE_ATTRIBUTE_DIRECTORY) != 0) && (attr != INVALID_FILE_ATTRIBUTES);
+    return (attr & FILE_ATTRIBUTE_DIRECTORY) != 0 && attr != INVALID_FILE_ATTRIBUTES;
 }
 
 bool File::hasWriteAccess() const
 {
-    if (exists())
-        return (WindowsFileHelpers::getAtts (fullPath) & FILE_ATTRIBUTE_READONLY) == 0;
+    if (fullPath.isEmpty())
+        return true;
 
-    // on windows, it seems that even read-only directories can still be written into,
-    // so checking the parent directory's permissions would return the wrong result..
-    return true;
+    const DWORD attr = WindowsFileHelpers::getAtts (fullPath);
+
+    // NB: According to MS, the FILE_ATTRIBUTE_READONLY attribute doesn't work for
+    // folders, and can be incorrectly set for some special folders, so we'll just say
+    // that folders are always writable.
+    return attr == INVALID_FILE_ATTRIBUTES
+            || (attr & FILE_ATTRIBUTE_DIRECTORY) != 0
+            || (attr & FILE_ATTRIBUTE_READONLY) == 0;
 }
 
 bool File::setFileReadOnlyInternal (const bool shouldBeReadOnly) const
@@ -287,12 +293,12 @@ void FileOutputStream::closeHandle()
     CloseHandle ((HANDLE) fileHandle);
 }
 
-ssize_t FileOutputStream::writeInternal (const void* buffer, size_t numBytes)
+ssize_t FileOutputStream::writeInternal (const void* bufferToWrite, size_t numBytes)
 {
     if (fileHandle != nullptr)
     {
         DWORD actualNum = 0;
-        if (! WriteFile ((HANDLE) fileHandle, buffer, (DWORD) numBytes, &actualNum, 0))
+        if (! WriteFile ((HANDLE) fileHandle, bufferToWrite, (DWORD) numBytes, &actualNum, 0))
             status = WindowsFileHelpers::getResultForLastError();
 
         return (ssize_t) actualNum;
@@ -626,13 +632,55 @@ String File::getVersion() const
 }
 
 //==============================================================================
-bool File::isLink() const
+bool File::isSymbolicLink() const
+{
+    return (GetFileAttributes (fullPath.toWideCharPointer()) & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+}
+
+bool File::isShortcut() const
 {
     return hasFileExtension (".lnk");
 }
 
 File File::getLinkedTarget() const
 {
+   #if JUCE_WINDOWS
+    typedef DWORD (WINAPI* GetFinalPathNameByHandleFunc) (HANDLE, LPTSTR, DWORD, DWORD);
+
+    static GetFinalPathNameByHandleFunc getFinalPathNameByHandle
+             = (GetFinalPathNameByHandleFunc) getUser32Function ("GetFinalPathNameByHandle");
+
+    if (getFinalPathNameByHandle != nullptr)
+    {
+        HANDLE h = CreateFile (getFullPathName().toWideCharPointer(),
+                               GENERIC_READ, FILE_SHARE_READ, nullptr,
+                               OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+
+        if (h != INVALID_HANDLE_VALUE)
+        {
+            if (DWORD requiredSize = getFinalPathNameByHandle (h, nullptr, 0, 0 /* FILE_NAME_NORMALIZED */))
+            {
+                HeapBlock<WCHAR> buffer (requiredSize + 2, true);
+
+                if (getFinalPathNameByHandle (h, buffer, requiredSize, 0 /* FILE_NAME_NORMALIZED */) > 0)
+                {
+                    CloseHandle (h);
+
+                    const StringRef prefix ("\\\\?\\");
+                    const String path (buffer);
+
+                    // It turns out that GetFinalPathNameByHandleW prepends \\?\ to the path.
+                    // This is not a bug, it's feature. See MSDN for more information.
+                    return File (path.startsWith (prefix) ? path.substring (prefix.length())
+                                                          : path);
+                }
+            }
+
+            CloseHandle (h);
+        }
+    }
+   #endif
+
     File result (*this);
     String p (getFullPathName());
 
@@ -659,7 +707,7 @@ File File::getLinkedTarget() const
     return result;
 }
 
-bool File::createLink (const String& description, const File& linkFileToCreate) const
+bool File::createShortcut (const String& description, const File& linkFileToCreate) const
 {
     linkFileToCreate.deleteFile();
 
@@ -783,25 +831,26 @@ void File::revealToUser() const
 class NamedPipe::Pimpl
 {
 public:
-    Pimpl (const String& pipeName, const bool createPipe)
+    Pimpl (const String& pipeName, const bool createPipe, bool mustNotExist)
         : filename ("\\\\.\\pipe\\" + File::createLegalFileName (pipeName)),
           pipeH (INVALID_HANDLE_VALUE),
           cancelEvent (CreateEvent (0, FALSE, FALSE, 0)),
           connected (false), ownsPipe (createPipe), shouldStop (false)
     {
         if (createPipe)
+        {
             pipeH = CreateNamedPipe (filename.toWideCharPointer(),
                                      PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, 0,
                                      PIPE_UNLIMITED_INSTANCES, 4096, 4096, 0, 0);
+
+            if (mustNotExist && GetLastError() == ERROR_ALREADY_EXISTS)
+                closePipeHandle();
+        }
     }
 
     ~Pimpl()
     {
-        disconnectPipe();
-
-        if (pipeH != INVALID_HANDLE_VALUE)
-            CloseHandle (pipeH);
-
+        closePipeHandle();
         CloseHandle (cancelEvent);
     }
 
@@ -860,6 +909,16 @@ public:
         {
             DisconnectNamedPipe (pipeH);
             connected = false;
+        }
+    }
+
+    void closePipeHandle()
+    {
+        if (pipeH != INVALID_HANDLE_VALUE)
+        {
+            disconnectPipe();
+            CloseHandle (pipeH);
+            pipeH = INVALID_HANDLE_VALUE;
         }
     }
 
@@ -979,9 +1038,9 @@ void NamedPipe::close()
     }
 }
 
-bool NamedPipe::openInternal (const String& pipeName, const bool createPipe)
+bool NamedPipe::openInternal (const String& pipeName, const bool createPipe, bool mustNotExist)
 {
-    pimpl = new Pimpl (pipeName, createPipe);
+    pimpl = new Pimpl (pipeName, createPipe, mustNotExist);
 
     if (createPipe && pimpl->pipeH == INVALID_HANDLE_VALUE)
     {

@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -85,6 +85,10 @@ public:
         @param numberOfStrings  how many items there are in the array
     */
     StringArray (const wchar_t* const* strings, int numberOfStrings);
+
+   #if JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS
+    StringArray (const std::initializer_list<const char*>& strings);
+   #endif
 
     /** Destructor. */
     ~StringArray();
@@ -204,6 +208,15 @@ public:
     void addArray (const StringArray& other,
                    int startIndex = 0,
                    int numElementsToAdd = -1);
+
+    /** Merges the strings from another array into this one.
+        This will not add a string that already exists.
+
+        @param other                the array to add
+        @param ignoreCase           ignore case when merging
+    */
+    void mergeArray (const StringArray& other,
+                     bool ignoreCase = false);
 
     /** Breaks up a string into tokens and adds them to this array.
 
@@ -351,10 +364,10 @@ public:
         @param appendNumberToFirstInstance  whether the first of a group of similar strings
                                             also has a number appended to it.
         @param preNumberString              when adding a number, this string is added before the number.
-                                            If you pass 0, a default string will be used, which adds
+                                            If you pass nullptr, a default string will be used, which adds
                                             brackets around the number.
         @param postNumberString             this string is appended after any numbers that are added.
-                                            If you pass 0, a default string will be used, which adds
+                                            If you pass nullptr, a default string will be used, which adds
                                             brackets around the number.
     */
     void appendNumbersToDuplicates (bool ignoreCaseWhenComparing,

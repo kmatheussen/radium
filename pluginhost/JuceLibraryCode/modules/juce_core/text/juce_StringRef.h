@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -131,8 +131,10 @@ JUCE_API bool JUCE_CALLTYPE operator== (const String& string1, StringRef string2
 /** Case-sensitive comparison of two strings. */
 JUCE_API bool JUCE_CALLTYPE operator!= (const String& string1, StringRef string2) noexcept;
 
-#if JUCE_STRING_UTF_TYPE != 8 && ! defined (DOXYGEN)
- inline String operator+ (String s1, StringRef s2)      { return s1 += String (s2.text); }
-#endif
+inline String operator+ (String s1, StringRef s2)           { return s1 += String (s2.text); }
+inline String operator+ (StringRef s1, const String& s2)    { return String (s1.text) + s2; }
+inline String operator+ (const char* s1, StringRef s2)      { return String (s1) + String (s2.text); }
+inline String operator+ (StringRef s1, const char* s2)      { return String (s1.text) + String (s2); }
+
 
 #endif   // JUCE_STRINGREF_H_INCLUDED

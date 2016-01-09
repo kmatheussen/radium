@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -98,8 +98,8 @@ public:
     WeakReference& operator= (ObjectType* const newObject)      { holder = getRef (newObject); return *this; }
 
    #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    WeakReference (WeakReference&& other) noexcept              : holder (static_cast <SharedRef&&> (other.holder)) {}
-    WeakReference& operator= (WeakReference&& other) noexcept   { holder = static_cast <SharedRef&&> (other.holder); return *this; }
+    WeakReference (WeakReference&& other) noexcept              : holder (static_cast<SharedRef&&> (other.holder)) {}
+    WeakReference& operator= (WeakReference&& other) noexcept   { holder = static_cast<SharedRef&&> (other.holder); return *this; }
    #endif
 
     /** Returns the object that this pointer refers to, or null if the object no longer exists. */

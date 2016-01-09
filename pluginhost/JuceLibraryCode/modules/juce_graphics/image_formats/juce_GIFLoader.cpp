@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -432,7 +432,7 @@ Image GIFImageFormat::decodeImage (InputStream& in)
    #if (JUCE_MAC || JUCE_IOS) && USE_COREGRAPHICS_RENDERING && JUCE_USE_COREIMAGE_LOADER
     return juce_loadWithCoreImage (in);
    #else
-    const ScopedPointer <GIFLoader> loader (new GIFLoader (in));
+    const ScopedPointer<GIFLoader> loader (new GIFLoader (in));
     return loader->image;
    #endif
 }

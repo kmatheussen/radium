@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -109,6 +109,16 @@ public:
     static bool isLetterOrDigit (char character) noexcept;
     /** Checks whether a character is alphabetic or numeric. */
     static bool isLetterOrDigit (juce_wchar character) noexcept;
+
+    /** Checks whether a character is a printable character, i.e. alphabetic, numeric,
+        a punctuation character or a space.
+    */
+    static bool isPrintable (char character) noexcept;
+
+    /** Checks whether a character is a printable character, i.e. alphabetic, numeric,
+        a punctuation character or a space.
+    */
+    static bool isPrintable (juce_wchar character) noexcept;
 
     /** Returns 0 to 16 for '0' to 'F", or -1 for characters that aren't a legal hex digit. */
     static int getHexDigitValue (juce_wchar digit) noexcept;
@@ -331,15 +341,8 @@ public:
     template <typename DestCharPointerType, typename SrcCharPointerType>
     static void copyAll (DestCharPointerType& dest, SrcCharPointerType src) noexcept
     {
-        for (;;)
-        {
-            const juce_wchar c = src.getAndAdvance();
-
-            if (c == 0)
-                break;
-
+        while (juce_wchar c = src.getAndAdvance())
             dest.write (c);
-        }
 
         dest.writeNull();
     }

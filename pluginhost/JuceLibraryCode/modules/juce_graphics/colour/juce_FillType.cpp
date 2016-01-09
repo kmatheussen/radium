@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -67,7 +67,7 @@ FillType& FillType::operator= (const FillType& other)
 FillType::FillType (FillType&& other) noexcept
     : colour (other.colour),
       gradient (other.gradient.release()),
-      image (static_cast <Image&&> (other.image)),
+      image (static_cast<Image&&> (other.image)),
       transform (other.transform)
 {
 }
@@ -78,7 +78,7 @@ FillType& FillType::operator= (FillType&& other) noexcept
 
     colour = other.colour;
     gradient = other.gradient.release();
-    image = static_cast <Image&&> (other.image);
+    image = static_cast<Image&&> (other.image);
     transform = other.transform;
     return *this;
 }

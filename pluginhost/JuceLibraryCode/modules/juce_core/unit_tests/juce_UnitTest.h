@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -44,7 +44,7 @@ class UnitTestRunner;
     public:
         MyTest()  : UnitTest ("Foobar testing") {}
 
-        void runTest()
+        void runTest() override
         {
             beginTest ("Part 1");
 
@@ -156,6 +156,47 @@ public:
 
         expect (result, failureMessage);
     }
+
+    //==============================================================================
+    /** Checks that the result of an expression does not throw an exception. */
+    #define expectDoesNotThrow(expr)         \
+        try                                  \
+        {                                    \
+            (expr);                          \
+            expect (true);                   \
+        }                                    \
+        catch (...)                          \
+        {                                    \
+            expect (false, "Expected: does not throw an exception, Actual: throws."); \
+        }
+
+    /** Checks that the result of an expression throws an exception. */
+    #define expectThrows(expr)               \
+        try                                  \
+        {                                    \
+            (expr);                          \
+            expect (false, "Expected: throws an exception, Actual: does not throw."); \
+        }                                    \
+        catch (...)                          \
+        {                                    \
+            expect (true);                   \
+        }
+
+    /** Checks that the result of an expression throws an exception of a certain type. */
+    #define expectThrowsType(expr, type)     \
+        try                                  \
+        {                                    \
+            (expr);                          \
+            expect (false, "Expected: throws an exception of type " #type ", Actual: does not throw."); \
+        }                                    \
+        catch (type&)                        \
+        {                                    \
+            expect (true);                   \
+        }                                    \
+        catch (...)                          \
+        {                                    \
+            expect (false, "Expected: throws an exception of type " #type ", Actual: throws another type."); \
+        }
 
     //==============================================================================
     /** Writes a message to the test log.

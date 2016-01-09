@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -89,12 +89,12 @@ public:
     */
     String (const char* text, size_t maxChars);
 
-    /** Creates a string from a whcar_t character string.
+    /** Creates a string from a wchar_t character string.
         Depending on the platform, this may be treated as either UTF-32 or UTF-16.
     */
     String (const wchar_t* text);
 
-    /** Creates a string from a whcar_t character string.
+    /** Creates a string from a wchar_t character string.
         Depending on the platform, this may be treated as either UTF-32 or UTF-16.
     */
     String (const wchar_t* text, size_t maxChars);
@@ -135,6 +135,9 @@ public:
 
     /** Creates a string from a UTF-8 encoded std::string. */
     String (const std::string&);
+
+    /** Creates a string from a StringRef */
+    String (StringRef);
 
     //==============================================================================
     /** Creates a string from a single character. */
@@ -181,7 +184,7 @@ public:
     int64 hashCode64() const noexcept;
 
     /** Generates a probably-unique hashcode from this string. */
-    std::size_t hash() const noexcept;
+    size_t hash() const noexcept;
 
     /** Returns the number of characters in the string. */
     int length() const noexcept;
@@ -202,10 +205,16 @@ public:
     String& operator+= (const char* textToAppend);
     /** Appends another string at the end of this one. */
     String& operator+= (const wchar_t* textToAppend);
+    /** Appends another string at the end of this one. */
+    String& operator+= (StringRef textToAppend);
     /** Appends a decimal number at the end of this string. */
     String& operator+= (int numberToAppend);
     /** Appends a decimal number at the end of this string. */
+    String& operator+= (long numberToAppend);
+    /** Appends a decimal number at the end of this string. */
     String& operator+= (int64 numberToAppend);
+    /** Appends a decimal number at the end of this string. */
+    String& operator+= (uint64 numberToAppend);
     /** Appends a character at the end of this string. */
     String& operator+= (char characterToAppend);
     /** Appends a character at the end of this string. */
@@ -299,13 +308,13 @@ public:
         Note that there's also an isNotEmpty() method to help write readable code.
         @see containsNonWhitespaceChars()
     */
-    inline bool isEmpty() const noexcept                    { return text[0] == 0; }
+    inline bool isEmpty() const noexcept                    { return text.isEmpty(); }
 
     /** Returns true if the string contains at least one character.
         Note that there's also an isEmpty() method to help write readable code.
         @see containsNonWhitespaceChars()
     */
-    inline bool isNotEmpty() const noexcept                 { return text[0] != 0; }
+    inline bool isNotEmpty() const noexcept                 { return ! text.isEmpty(); }
 
     /** Resets this string to be empty. */
     void clear() noexcept;
@@ -932,6 +941,16 @@ public:
     */
     explicit String (uint64 largeIntegerValue);
 
+    /** Creates a string containing this signed long integer as a decimal number.
+        @see getIntValue, getFloatValue, getDoubleValue, toHexString
+    */
+    explicit String (long decimalInteger);
+
+    /** Creates a string containing this unsigned long integer as a decimal number.
+        @see getIntValue, getFloatValue, getDoubleValue, toHexString
+    */
+    explicit String (unsigned long decimalInteger);
+
     /** Creates a string representing this floating-point number.
         @param floatValue               the value to convert to a string
         @see getDoubleValue, getIntValue
@@ -1289,6 +1308,8 @@ JUCE_API String& JUCE_CALLTYPE operator<< (String& string1, const char* string2)
 JUCE_API String& JUCE_CALLTYPE operator<< (String& string1, const wchar_t* string2);
 /** Appends a string to the end of the first one. */
 JUCE_API String& JUCE_CALLTYPE operator<< (String& string1, const String& string2);
+/** Appends a string to the end of the first one. */
+JUCE_API String& JUCE_CALLTYPE operator<< (String& string1, StringRef string2);
 
 /** Appends a decimal number at the end of a string. */
 JUCE_API String& JUCE_CALLTYPE operator<< (String& string1, short number);

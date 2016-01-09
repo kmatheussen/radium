@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -432,7 +432,7 @@ public:
 
     /** Changes the size of the component.
 
-        A synchronous call to resized() will be occur if the size actually changes.
+        A synchronous call to resized() will occur if the size actually changes.
 
         Note that if you've used setTransform() to apply a transform, then the component's
         bounds will no longer be a direct reflection of the position at which it appears within
@@ -443,7 +443,7 @@ public:
     /** Changes the component's position and size.
 
         The coordinates are relative to the top-left of the component's parent, or relative
-        to the origin of the screen is the component is on the desktop.
+        to the origin of the screen if the component is on the desktop.
 
         If this method changes the component's top-left position, it will make a synchronous
         call to moved(). If it changes the size, it will also make a call to resized().
@@ -459,7 +459,7 @@ public:
     /** Changes the component's position and size.
 
         The coordinates are relative to the top-left of the component's parent, or relative
-        to the origin of the screen is the component is on the desktop.
+        to the origin of the screen if the component is on the desktop.
 
         If this method changes the component's top-left position, it will make a synchronous
         call to moved(). If it changes the size, it will also make a call to resized().
@@ -480,42 +480,10 @@ public:
         component's bounds when the source values change. See RelativeRectangle::applyToComponent()
         for more details.
 
-        When using relative expressions, the following symbols are available:
-         - "left", "right", "top", "bottom" refer to the position of those edges in this component, so
-           e.g. for a component whose width is always 100, you might set the right edge to the "left + 100".
-         - "[id].left", "[id].right", "[id].top", "[id].bottom", "[id].width", "[id].height", where [id] is
-           the identifier of one of this component's siblings. A component's identifier is set with
-           Component::setComponentID(). So for example if you want your component to always be 50 pixels to the
-           right of the one called "xyz", you could set your left edge to be "xyz.right + 50".
-         - Instead of an [id], you can use the name "parent" to refer to this component's parent. Like
-           any other component, these values are relative to their component's parent, so "parent.right" won't be
-           very useful for positioning a component because it refers to a position with the parent's parent.. but
-           "parent.width" can be used for setting positions relative to the parent's size. E.g. to make a 10x10
-           component which remains 1 pixel away from its parent's bottom-right, you could use
-           "right - 10, bottom - 10, parent.width - 1, parent.height - 1".
-         - The name of one of the parent component's markers can also be used as a symbol. For markers to be
-           used, the parent component must implement its Component::getMarkers() method, and return at least one
-           valid MarkerList. So if you want your component's top edge to be 10 pixels below the
-           marker called "foobar", you'd set it to "foobar + 10".
+        For the syntax of the expressions that are allowed in the string, see the notes
+        for the RelativeCoordinate class.
 
-        See the Expression class for details about the operators that are supported, but for example
-        if you wanted to make your component remain centred within its parent with a size of 100, 100,
-        you could express it as:
-        @code myComp.setBounds (RelativeBounds ("parent.width / 2 - 50, parent.height / 2 - 50, left + 100, top + 100"));
-        @endcode
-        ..or an alternative way to achieve the same thing:
-        @code myComp.setBounds (RelativeBounds ("right - 100, bottom - 100, parent.width / 2 + 50, parent.height / 2 + 50"));
-        @endcode
-
-        Or if you wanted a 100x100 component whose top edge is lined up to a marker called "topMarker" and
-        which is positioned 50 pixels to the right of another component called "otherComp", you could write:
-        @code myComp.setBounds (RelativeBounds ("otherComp.right + 50, topMarker, left + 100, top + 100"));
-        @endcode
-
-        Be careful not to make your coordinate expressions recursive, though, or exceptions and assertions will
-        be thrown!
-
-        @see setBounds, RelativeRectangle::applyToComponent(), Expression
+        @see RelativeCoordinate, setBounds, RelativeRectangle::applyToComponent(), Expression
     */
     void setBounds (const RelativeRectangle& newBounds);
 
@@ -775,7 +743,13 @@ public:
     */
     void removeAllChildren();
 
-    /** Removes all this component's children, and deletes them.
+    /** Removes and deletes all of this component's children.
+        My advice is to avoid this method! It's an old function that is only kept here for
+        backwards-compatibility with legacy code, and should be viewed with extreme
+        suspicion by anyone attempting to write modern C++. In almost all cases, it's much
+        smarter to manage the lifetimes of your child components via modern RAII techniques
+        such as simply making them member variables, or using ScopedPointer, OwnedArray, etc
+        to manage their lifetimes appropriately.
         @see removeAllChildren
     */
     void deleteAllChildren();
@@ -790,7 +764,7 @@ public:
     /** Searches the parent components for a component of a specified class.
 
         For example findParentComponentOfClass \<MyComp\>() would return the first parent
-        component that can be dynamically cast to a MyComp, or will return 0 if none
+        component that can be dynamically cast to a MyComp, or will return nullptr if none
         of the parents are suitable.
     */
     template <class TargetClass>
@@ -838,7 +812,7 @@ public:
     virtual void childrenChanged();
 
     //==============================================================================
-    /** Tests whether a given point inside the component.
+    /** Tests whether a given point is inside the component.
 
         Overriding this method allows you to create components which only intercept
         mouse-clicks within a user-defined area.
@@ -1007,17 +981,12 @@ public:
     /** Makes the component use an internal buffer to optimise its redrawing.
 
         Setting this flag to true will cause the component to allocate an
-        internal buffer into which it paints itself, so that when asked to
-        redraw itself, it can use this buffer rather than actually calling the
-        paint() method.
+        internal buffer into which it paints itself and all its child components, so that
+        when asked to redraw itself, it can use this buffer rather than actually calling
+        the paint() method.
 
-        The buffer is kept until the repaint() method is called directly on
-        this component (or until it is resized), when the image is invalidated
-        and then redrawn the next time the component is painted.
-
-        Note that only the drawing that happens within the component's paint()
-        method is drawn into the buffer, it's child components are not buffered, and
-        nor is the paintOverChildren() method.
+        Parts of the buffer are invalidated when repaint() is called on this component
+        or its children. The buffer is then repainted at the next paint() callback.
 
         @see repaint, paint, createComponentSnapshot
     */
@@ -1384,19 +1353,26 @@ public:
     */
     virtual void enablementChanged();
 
+    //==============================================================================
+    /** Returns the component's current transparancy level.
+        See setAlpha() for more details.
+    */
+    float getAlpha() const noexcept;
+
     /** Changes the transparency of this component.
         When painted, the entire component and all its children will be rendered
         with this as the overall opacity level, where 0 is completely invisible, and
         1.0 is fully opaque (i.e. normal).
 
-        @see getAlpha
+        @see getAlpha, alphaChanged
     */
     void setAlpha (float newAlpha);
 
-    /** Returns the component's current transparancy level.
-        See setAlpha() for more details.
+    /** Called when setAlpha() is used to change the alpha value of this component.
+        If you override this, you should also invoke the base class's implementation
+        during your overridden function, as it performs some repainting behaviour.
     */
-    float getAlpha() const;
+    virtual void alphaChanged();
 
     //==============================================================================
     /** Changes the mouse cursor shape to use when the mouse is over this component.
@@ -1911,6 +1887,7 @@ public:
     virtual void handleCommandMessage (int commandId);
 
     //==============================================================================
+   #if JUCE_MODAL_LOOPS_PERMITTED
     /** Runs a component modally, waiting until the loop terminates.
 
         This method first makes the component visible, brings it to the front and
@@ -1924,10 +1901,18 @@ public:
         the component is deleted), and then this method returns, returning the value
         passed into exitModalState().
 
+        Note that you SHOULD NEVER USE THIS METHOD! Modal loops are a dangerous construct
+        because things that happen during the events that they dispatch could affect the
+        state of objects which are currently in use somewhere on the stack, so when the
+        loop finishes and the stack unwinds, horrible problems can occur. This is especially
+        bad in plugins, where the host may choose to delete the plugin during runModalLoop(),
+        so that when it returns, the entire DLL could have been unloaded from memory!
+        Also, some OSes deliberately make it impossible to run modal loops (e.g. Android),
+        so this method won't even exist on some platforms.
+
         @see enterModalState, exitModalState, isCurrentlyModal, getCurrentlyModalComponent,
              isCurrentlyBlockedByAnotherModalComponent, ModalComponentManager
     */
-   #if JUCE_MODAL_LOOPS_PERMITTED
     int runModalLoop();
    #endif
 
@@ -2315,9 +2300,9 @@ private:
     //==============================================================================
     void internalMouseEnter (MouseInputSource, Point<float>, Time);
     void internalMouseExit  (MouseInputSource, Point<float>, Time);
-    void internalMouseDown  (MouseInputSource, Point<float>, Time);
+    void internalMouseDown  (MouseInputSource, Point<float>, Time, float);
     void internalMouseUp    (MouseInputSource, Point<float>, Time, const ModifierKeys oldModifiers);
-    void internalMouseDrag  (MouseInputSource, Point<float>, Time);
+    void internalMouseDrag  (MouseInputSource, Point<float>, Time, float);
     void internalMouseMove  (MouseInputSource, Point<float>, Time);
     void internalMouseWheel (MouseInputSource, Point<float>, Time, const MouseWheelDetails&);
     void internalMagnifyGesture (MouseInputSource, Point<float>, Time, float);
@@ -2330,8 +2315,8 @@ private:
     void internalModifierKeysChanged();
     void internalChildrenChanged();
     void internalHierarchyChanged();
-    void internalRepaint (const Rectangle<int>&);
-    void internalRepaintUnchecked (const Rectangle<int>&, bool);
+    void internalRepaint (Rectangle<int>);
+    void internalRepaintUnchecked (Rectangle<int>, bool);
     Component* removeChildComponent (int index, bool sendParentEvents, bool sendChildEvents);
     void reorderChildInternal (int sourceIndex, int destIndex);
     void paintComponentAndChildren (Graphics&);

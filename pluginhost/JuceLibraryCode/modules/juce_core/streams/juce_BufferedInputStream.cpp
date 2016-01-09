@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -158,7 +158,7 @@ int BufferedInputStream::read (void* destBuffer, int maxBytesToRead)
                 maxBytesToRead -= bytesAvailable;
                 bytesRead += bytesAvailable;
                 position += bytesAvailable;
-                destBuffer = static_cast <char*> (destBuffer) + bytesAvailable;
+                destBuffer = static_cast<char*> (destBuffer) + bytesAvailable;
             }
 
             const int64 oldLastReadPos = lastReadPos;

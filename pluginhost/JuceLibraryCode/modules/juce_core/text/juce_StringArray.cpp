@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -37,7 +37,7 @@ StringArray::StringArray (const StringArray& other)
 
 #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
 StringArray::StringArray (StringArray&& other) noexcept
-    : strings (static_cast <Array <String>&&> (other.strings))
+    : strings (static_cast<Array <String>&&> (other.strings))
 {
 }
 #endif
@@ -81,8 +81,15 @@ StringArray& StringArray::operator= (const StringArray& other)
 #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
 StringArray& StringArray::operator= (StringArray&& other) noexcept
 {
-    strings = static_cast <Array<String>&&> (other.strings);
+    strings = static_cast<Array<String>&&> (other.strings);
     return *this;
+}
+#endif
+
+#if JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS
+StringArray::StringArray (const std::initializer_list<const char*>& stringList)
+{
+    strings.addArray (stringList);
 }
 #endif
 
@@ -164,6 +171,12 @@ void StringArray::addArray (const StringArray& otherArray, int startIndex, int n
 
     while (--numElementsToAdd >= 0)
         strings.add (otherArray.strings.getReference (startIndex++));
+}
+
+void StringArray::mergeArray (const StringArray& otherArray, const bool ignoreCase)
+{
+    for (int i = 0; i < otherArray.size(); ++i)
+        addIfNotAlreadyThere (otherArray[i], ignoreCase);
 }
 
 void StringArray::set (const int index, const String& newString)

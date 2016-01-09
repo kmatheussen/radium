@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -94,23 +94,23 @@ AttributedString& AttributedString::operator= (const AttributedString& other)
 
 #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
 AttributedString::AttributedString (AttributedString&& other) noexcept
-    : text (static_cast <String&&> (other.text)),
+    : text (static_cast<String&&> (other.text)),
       lineSpacing (other.lineSpacing),
       justification (other.justification),
       wordWrap (other.wordWrap),
       readingDirection (other.readingDirection),
-      attributes (static_cast <OwnedArray<Attribute>&&> (other.attributes))
+      attributes (static_cast<OwnedArray<Attribute>&&> (other.attributes))
 {
 }
 
 AttributedString& AttributedString::operator= (AttributedString&& other) noexcept
 {
-    text = static_cast <String&&> (other.text);
+    text = static_cast<String&&> (other.text);
     lineSpacing = other.lineSpacing;
     justification = other.justification;
     wordWrap = other.wordWrap;
     readingDirection = other.readingDirection;
-    attributes = static_cast <OwnedArray<Attribute>&&> (other.attributes);
+    attributes = static_cast<OwnedArray<Attribute>&&> (other.attributes);
     return *this;
 }
 #endif

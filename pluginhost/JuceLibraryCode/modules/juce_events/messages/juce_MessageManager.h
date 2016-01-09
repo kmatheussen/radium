@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -202,7 +202,7 @@ private:
     friend class QuitMessage;
     friend class MessageManagerLock;
 
-    ScopedPointer <ActionBroadcaster> broadcaster;
+    ScopedPointer<ActionBroadcaster> broadcaster;
     bool quitMessagePosted, quitMessageReceived;
     Thread::ThreadID messageThreadId;
     Thread::ThreadID volatile threadWithLock;
@@ -242,6 +242,9 @@ private:
 
     Obviously be careful not to create one of these and leave it lying around, or
     your app will grind to a halt!
+
+    MessageManagerLocks are re-entrant, so can be safely nested if the current thread
+    already has the lock.
 
     Another caveat is that using this in conjunction with other CriticalSections
     can create lots of interesting ways of producing a deadlock! In particular, if

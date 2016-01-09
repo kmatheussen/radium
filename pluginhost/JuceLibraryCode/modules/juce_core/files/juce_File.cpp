@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -57,13 +57,13 @@ File& File::operator= (const File& other)
 
 #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
 File::File (File&& other) noexcept
-    : fullPath (static_cast <String&&> (other.fullPath))
+    : fullPath (static_cast<String&&> (other.fullPath))
 {
 }
 
 File& File::operator= (File&& other) noexcept
 {
-    fullPath = static_cast <String&&> (other.fullPath);
+    fullPath = static_cast<String&&> (other.fullPath);
     return *this;
 }
 #endif
@@ -886,6 +886,41 @@ File File::createTempFile (StringRef fileNameEnding)
     return tempFile;
 }
 
+bool File::createSymbolicLink (const File& linkFileToCreate, bool overwriteExisting) const
+{
+    if (linkFileToCreate.exists())
+    {
+        if (! linkFileToCreate.isSymbolicLink())
+        {
+            // user has specified an existing file / directory as the link
+            // this is bad! the user could end up unintentionally destroying data
+            jassertfalse;
+            return false;
+        }
+
+        if (overwriteExisting)
+            linkFileToCreate.deleteFile();
+    }
+
+   #if JUCE_MAC || JUCE_LINUX
+    // one common reason for getting an error here is that the file already exists
+    if (symlink (fullPath.toRawUTF8(), linkFileToCreate.getFullPathName().toRawUTF8()) == -1)
+    {
+        jassertfalse;
+        return false;
+    }
+
+    return true;
+   #elif JUCE_MSVC
+    return CreateSymbolicLink (linkFileToCreate.getFullPathName().toWideCharPointer(),
+                               fullPath.toWideCharPointer(),
+                               isDirectory() ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0) != FALSE;
+   #else
+    jassertfalse; // symbolic links not supported on this platform!
+    return false;
+   #endif
+}
+
 //==============================================================================
 MemoryMappedFile::MemoryMappedFile (const File& file, MemoryMappedFile::AccessMode mode)
     : address (nullptr), range (0, file.getSize()), fileHandle (0)
@@ -908,7 +943,7 @@ class FileTests  : public UnitTest
 public:
     FileTests() : UnitTest ("Files") {}
 
-    void runTest()
+    void runTest() override
     {
         beginTest ("Reading");
 
@@ -916,6 +951,11 @@ public:
         const File temp (File::getSpecialLocation (File::tempDirectory));
 
         expect (! File::nonexistent.exists());
+        expect (! File::nonexistent.existsAsFile());
+        expect (! File::nonexistent.isDirectory());
+       #if ! JUCE_WINDOWS
+        expect (File("/").isDirectory());
+       #endif
         expect (home.isDirectory());
         expect (home.exists());
         expect (! home.existsAsFile());

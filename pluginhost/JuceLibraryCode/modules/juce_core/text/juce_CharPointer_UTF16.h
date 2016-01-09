@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -46,7 +46,7 @@ public:
    #endif
 
     inline explicit CharPointer_UTF16 (const CharType* const rawPointer) noexcept
-        : data (const_cast <CharType*> (rawPointer))
+        : data (const_cast<CharType*> (rawPointer))
     {
     }
 
@@ -63,7 +63,7 @@ public:
 
     inline CharPointer_UTF16 operator= (const CharType* text) noexcept
     {
-        data = const_cast <CharType*> (text);
+        data = const_cast<CharType*> (text);
         return *this;
     }
 
@@ -349,7 +349,7 @@ public:
         return CharacterFunctions::compareIgnoreCaseUpTo (*this, other, maxChars);
     }
 
-   #if JUCE_WINDOWS && ! DOXYGEN
+   #if JUCE_MSVC && ! DOXYGEN
     int compareIgnoreCase (const CharPointer_UTF16 other) const noexcept
     {
         return _wcsicmp (data, other.data);
@@ -408,7 +408,7 @@ public:
     /** Parses this string as a 32-bit integer. */
     int getIntValue32() const noexcept
     {
-       #if JUCE_WINDOWS
+       #if JUCE_MSVC
         return _wtoi (data);
        #else
         return CharacterFunctions::getIntValue <int, CharPointer_UTF16> (*this);
@@ -418,7 +418,7 @@ public:
     /** Parses this string as a 64-bit integer. */
     int64 getIntValue64() const noexcept
     {
-       #if JUCE_WINDOWS
+       #if JUCE_MSVC
         return _wtoi64 (data);
        #else
         return CharacterFunctions::getIntValue <int64, CharPointer_UTF16> (*this);
@@ -471,7 +471,7 @@ public:
     /** Atomically swaps this pointer for a new value, returning the previous value. */
     CharPointer_UTF16 atomicSwap (const CharPointer_UTF16 newValue)
     {
-        return CharPointer_UTF16 (reinterpret_cast <Atomic<CharType*>&> (data).exchange (newValue.data));
+        return CharPointer_UTF16 (reinterpret_cast<Atomic<CharType*>&> (data).exchange (newValue.data));
     }
 
     /** These values are the byte-order-mark (BOM) values for a UTF-16 stream. */

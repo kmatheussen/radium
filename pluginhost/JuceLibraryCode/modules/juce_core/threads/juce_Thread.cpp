@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -57,7 +57,7 @@ struct CurrentThreadHolder   : public ReferenceCountedObject
 {
     CurrentThreadHolder() noexcept {}
 
-    typedef ReferenceCountedObjectPtr <CurrentThreadHolder> Ptr;
+    typedef ReferenceCountedObjectPtr<CurrentThreadHolder> Ptr;
     ThreadLocalValue<Thread*> value;
 
     JUCE_DECLARE_NON_COPYABLE (CurrentThreadHolder)
@@ -110,7 +110,7 @@ void Thread::threadEntryPoint()
 // used to wrap the incoming call from the platform-specific code
 void JUCE_API juce_threadEntryPoint (void* userData)
 {
-    static_cast <Thread*> (userData)->threadEntryPoint();
+    static_cast<Thread*> (userData)->threadEntryPoint();
 }
 
 //==============================================================================
@@ -273,7 +273,7 @@ class AtomicTests  : public UnitTest
 public:
     AtomicTests() : UnitTest ("Atomics") {}
 
-    void runTest()
+    void runTest() override
     {
         beginTest ("Misc");
 

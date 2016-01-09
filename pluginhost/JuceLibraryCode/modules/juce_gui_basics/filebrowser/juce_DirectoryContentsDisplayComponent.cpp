@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -48,7 +48,7 @@ void DirectoryContentsDisplayComponent::removeListener (FileBrowserListener* con
 
 void DirectoryContentsDisplayComponent::sendSelectionChangeMessage()
 {
-    Component::BailOutChecker checker (dynamic_cast <Component*> (this));
+    Component::BailOutChecker checker (dynamic_cast<Component*> (this));
     listeners.callChecked (checker, &FileBrowserListener::selectionChanged);
 }
 
@@ -56,7 +56,7 @@ void DirectoryContentsDisplayComponent::sendMouseClickMessage (const File& file,
 {
     if (fileList.getDirectory().exists())
     {
-        Component::BailOutChecker checker (dynamic_cast <Component*> (this));
+        Component::BailOutChecker checker (dynamic_cast<Component*> (this));
         listeners.callChecked (checker, &FileBrowserListener::fileClicked, file, e);
     }
 }
@@ -65,7 +65,7 @@ void DirectoryContentsDisplayComponent::sendDoubleClickMessage (const File& file
 {
     if (fileList.getDirectory().exists())
     {
-        Component::BailOutChecker checker (dynamic_cast <Component*> (this));
+        Component::BailOutChecker checker (dynamic_cast<Component*> (this));
         listeners.callChecked (checker, &FileBrowserListener::fileDoubleClicked, file);
     }
 }

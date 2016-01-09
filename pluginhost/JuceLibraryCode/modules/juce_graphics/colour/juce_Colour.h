@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -114,6 +114,19 @@ public:
             float saturation,
             float brightness,
             float alpha) noexcept;
+
+    /** Creates a colour using a PixelARGB object. This function assumes that the argb pixel is
+        not premultiplied.
+     */
+    Colour (PixelARGB argb) noexcept;
+
+    /** Creates a colour using a PixelRGB object.
+     */
+    Colour (PixelRGB rgb) noexcept;
+
+    /** Creates a colour using a PixelAlpha object.
+     */
+    Colour (PixelAlpha alpha) noexcept;
 
     /** Creates a colour using floating point hue, saturation and brightness values, and an 8-bit alpha.
 
@@ -269,30 +282,25 @@ public:
     Colour withBrightness (float newBrightness) const noexcept;
 
     /** Returns a copy of this colour with it hue rotated.
-
         The new colour's hue is ((this->getHue() + amountToRotate) % 1.0)
-
         @see brighter, darker, withMultipliedBrightness
     */
     Colour withRotatedHue (float amountToRotate) const noexcept;
 
     /** Returns a copy of this colour with its saturation multiplied by the given value.
-
         The new colour's saturation is (this->getSaturation() * multiplier)
         (the result is clipped to legal limits).
     */
     Colour withMultipliedSaturation (float multiplier) const noexcept;
 
     /** Returns a copy of this colour with its brightness multiplied by the given value.
-
-        The new colour's saturation is (this->getBrightness() * multiplier)
+        The new colour's brightness is (this->getBrightness() * multiplier)
         (the result is clipped to legal limits).
     */
     Colour withMultipliedBrightness (float amount) const noexcept;
 
     //==============================================================================
     /** Returns a brighter version of this colour.
-
         @param amountBrighter   how much brighter to make it - a value from 0 to 1.0 where 0 is
                                 unchanged, and higher values make it brighter
         @see withMultipliedBrightness
@@ -300,7 +308,6 @@ public:
     Colour brighter (float amountBrighter = 0.4f) const noexcept;
 
     /** Returns a darker version of this colour.
-
         @param amountDarker     how much darker to make it - a value from 0 to 1.0 where 0 is
                                 unchanged, and higher values make it darker
         @see withMultipliedBrightness

@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -41,7 +41,8 @@ class JUCE_API  FileBrowserComponent  : public Component,
                                         private TextEditorListener,
                                         private ButtonListener,
                                         private ComboBoxListener,  // (can't use ComboBox::Listener due to idiotic VC2005 bug)
-                                        private FileFilter
+                                        private FileFilter,
+                                        private Timer
 {
 public:
     //==============================================================================
@@ -51,18 +52,19 @@ public:
     */
     enum FileChooserFlags
     {
-        openMode                = 1,    /**< specifies that the component should allow the user to
-                                             choose an existing file with the intention of opening it. */
-        saveMode                = 2,    /**< specifies that the component should allow the user to specify
-                                             the name of a file that will be used to save something. */
-        canSelectFiles          = 4,    /**< specifies that the user can select files (can be used in
-                                             conjunction with canSelectDirectories). */
-        canSelectDirectories    = 8,    /**< specifies that the user can select directories (can be used in
-                                             conjuction with canSelectFiles). */
-        canSelectMultipleItems  = 16,   /**< specifies that the user can select multiple items. */
-        useTreeView             = 32,   /**< specifies that a tree-view should be shown instead of a file list. */
-        filenameBoxIsReadOnly   = 64,   /**< specifies that the user can't type directly into the filename box. */
-        warnAboutOverwriting    = 128   /**< specifies that the dialog should warn about overwriting existing files (if possible). */
+        openMode                        = 1,    /**< specifies that the component should allow the user to
+                                                     choose an existing file with the intention of opening it. */
+        saveMode                        = 2,    /**< specifies that the component should allow the user to specify
+                                                     the name of a file that will be used to save something. */
+        canSelectFiles                  = 4,    /**< specifies that the user can select files (can be used in
+                                                     conjunction with canSelectDirectories). */
+        canSelectDirectories            = 8,    /**< specifies that the user can select directories (can be used in
+                                                     conjuction with canSelectFiles). */
+        canSelectMultipleItems          = 16,   /**< specifies that the user can select multiple items. */
+        useTreeView                     = 32,   /**< specifies that a tree-view should be shown instead of a file list. */
+        filenameBoxIsReadOnly           = 64,   /**< specifies that the user can't type directly into the filename box. */
+        warnAboutOverwriting            = 128,  /**< specifies that the dialog should warn about overwriting existing files (if possible). */
+        doNotClearFileNameOnRootChange  = 256   /**< specifies that the file name should not be cleared upon root change. */
     };
 
     //==============================================================================
@@ -102,8 +104,7 @@ public:
     */
     File getSelectedFile (int index) const noexcept;
 
-    /** Deselects any files that are currently selected.
-    */
+    /** Deselects any files that are currently selected. */
     void deselectAllFiles();
 
     /** Returns true if the currently selected file(s) are usable.
@@ -149,8 +150,7 @@ public:
     */
     virtual String getActionVerb() const;
 
-    /** Returns true if the saveMode flag was set when this component was created.
-    */
+    /** Returns true if the saveMode flag was set when this component was created. */
     bool isSaveMode() const noexcept;
 
     /** Sets the label that will be displayed next to the filename entry box.
@@ -242,10 +242,8 @@ public:
     bool isFileSuitable (const File&) const override;
     /** @internal */
     bool isDirectorySuitable (const File&) const override;
-
     /** @internal */
     FilePreviewComponent* getPreviewComponent() const noexcept;
-
     /** @internal */
     DirectoryContentsDisplayComponent* getDisplayComponent() const noexcept;
 
@@ -262,13 +260,13 @@ protected:
 
 private:
     //==============================================================================
-    ScopedPointer <DirectoryContentsList> fileList;
+    ScopedPointer<DirectoryContentsList> fileList;
     const FileFilter* fileFilter;
 
     int flags;
     File currentRoot;
     Array<File> chosenFiles;
-    ListenerList <FileBrowserListener> listeners;
+    ListenerList<FileBrowserListener> listeners;
 
     ScopedPointer<DirectoryContentsDisplayComponent> fileListComponent;
     FilePreviewComponent* previewComp;
@@ -276,11 +274,12 @@ private:
     TextEditor filenameBox;
     Label fileLabel;
     ScopedPointer<Button> goUpButton;
-
     TimeSliceThread thread;
+    bool wasProcessActive;
 
+    void timerCallback() override;
     void sendListenerChangeMessage();
-    bool isFileOrDirSuitable (const File& f) const;
+    bool isFileOrDirSuitable (const File&) const;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FileBrowserComponent)
 };

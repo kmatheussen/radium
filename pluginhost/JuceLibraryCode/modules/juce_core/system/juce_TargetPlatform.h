@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -55,6 +55,7 @@
   #define Point CarbonDummyPointName // (workaround to avoid definition of "Point" by old Carbon headers)
   #define Component CarbonDummyCompName
   #include <CoreFoundation/CoreFoundation.h> // (needed to find out what platform we're using)
+  #include "../native/juce_mac_ClangBugWorkaround.h"
   #undef Point
   #undef Component
 
@@ -130,12 +131,12 @@
     #define JUCE_INTEL 1
   #endif
 
-  #if JUCE_MAC && MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_4
-    #error "Building for OSX 10.3 is no longer supported!"
+  #if JUCE_MAC && MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5
+    #error "Building for OSX 10.4 is no longer supported!"
   #endif
 
-  #if JUCE_MAC && ! defined (MAC_OS_X_VERSION_10_5)
-    #error "To build with 10.4 compatibility, use a 10.5 or 10.6 SDK and set the deployment target to 10.4"
+  #if JUCE_MAC && ! defined (MAC_OS_X_VERSION_10_6)
+    #error "To build with 10.5 compatibility, use a later SDK and set the deployment target to 10.5"
   #endif
 #endif
 
