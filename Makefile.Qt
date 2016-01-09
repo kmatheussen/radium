@@ -1706,7 +1706,12 @@ do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 # embedded scheme
 
 bin/packages/s7/s7_$(TARGET_OS).o: bin/packages/s7/s7.c
-	$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS).o `cat buildtype.opt` -Iembedded_scheme -O2 $(S7OPTS) -Wno-absolute-value -DWITH_HISTORY=1
+	if [ $(BUILDTYPE) = DEBUG ] ; then \
+		$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_HISTORY=1  -DDEBUGGING=1 ; \
+	else \
+		$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_HISTORY=1 ; \
+	fi
+# -Wno-absolute-value
 
 s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp
 	$(CCC) -c bin/s7webserver/s7webserver.cpp $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function
