@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QSpinBox>
 #include <QLineEdit>
+#include <QTextEdit>
 #include <QListWidget>
 #include <QTableWidgetItem>
 #include <QKeyEvent>
@@ -71,6 +72,7 @@ extern void set_editor_focus(void);
 //MakeFocusSnifferClass(QSpinBox);
 //MakeFocusSnifferClass(QDoubleSpinBox);
 MakeFocusSnifferClass(QLineEdit);
+MakeFocusSnifferClass(QTextEdit);
 MakeFocusSnifferClass(QListWidget);
 
 class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{

@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/instruments_proc.h"
 #include "../common/vector_proc.h"
+#include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/Pd_plugin_proc.h"
 
@@ -115,6 +116,7 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
     }
 }
 
+
 struct MyQCheckBox : public QCheckBox{
   bool _has_mouse;
   struct Patch *_patch;
@@ -175,7 +177,7 @@ struct MyQCheckBox : public QCheckBox{
       //printf("command: %d, _patch: %p, is_audio: %d\n",command, _patch, _patch!=NULL && _patch->instrument==get_audio_instrument());
 
       if(command==0 && _patch!=NULL && _patch->instrument==get_audio_instrument()){
-        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+        struct SoundPlugin *plugin = (struct SoundPlugin*)_patch->patchdata;
         if(_is_a_pd_slider) {
           //printf("Calling delete controller for %p / %d\n",plugin,_effect_num);
           PD_delete_controller(plugin, _effect_num);

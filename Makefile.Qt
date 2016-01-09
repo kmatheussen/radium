@@ -229,7 +229,7 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o Qt_Bs_edit.o Qt_instruments.o Qt_PluginWidget.o Qt_MyQSlider.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_disk.o Qt_MainWindow.o Qt_Time.o GTK_ReqType.o GTK_PopupMenu.o Qt_soundfilesaver_widget_callbacks.o Qt_comment_dialog_callbacks.o Qt_preferences_callbacks.o Qt_tools_callbacks.o Qt_pianorollheader_callbacks.o Qt_Error.o Rational.o Qt_check_for_updates.o Qt_AutoBackups.o
+OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o Qt_Bs_edit.o Qt_instruments.o Qt_PluginWidget.o Qt_MyQSlider.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_disk.o Qt_MainWindow.o Qt_Time.o GTK_ReqType.o GTK_PopupMenu.o Qt_soundfilesaver_widget_callbacks.o Qt_comment_dialog.o Qt_preferences_callbacks.o Qt_tools_callbacks.o Qt_pianorollheader_callbacks.o Qt_Error.o Rational.o Qt_check_for_updates.o Qt_AutoBackups.o
 
 
 #X11_MidiProperties.o  X11_ClientMessages.o 
@@ -1104,13 +1104,21 @@ $(P)Qt_bottom_bar_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_bottom_bar_widget.ui $
 $(P)Qt_upperleft_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_upperleft_widget.ui $(P)create_source_from_ui.sh $(P)Qt_upperleft_widget_callbacks.h $(P)Qt_MyQButton.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) upperleft_widget
 
+
+
+
 $(P)Qt_vst_paths_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_vst_paths_widget.ui $(P)create_source_from_ui.sh $(P)Qt_vst_paths_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) vst_paths_widget
 #	cd $(P) && $(UIC) qt4_vst_paths_widget.ui > Qt_vst_paths_widget.h
 #	cd $(P) && $(MOC) Qt_vst_paths_widget_callbacks.h >mQt_vst_paths_widget_callbacks.h
 
+
+
+
 $(P)Qt_mixer_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_widget.ui $(P)create_source_from_ui.sh $(P)Qt_mixer_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) mixer_widget
+
+
 
 Qt_soundfilesaver_widget_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(P)Qt_soundfilesaver_widget.h
 	$(CCC) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(QTOPT)
@@ -1119,12 +1127,19 @@ $(P)Qt_soundfilesaver_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_soundfilesaver_wid
 	cd $(P) && $(UIC) qt4_soundfilesaver_widget.ui | sed s/protected/public/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: > Qt_soundfilesaver_widget.h
 	cd $(P) && $(MOC) Qt_soundfilesaver_widget_callbacks.cpp >mQt_soundfilesaver_widget_callbacks.cpp
 
-Qt_comment_dialog_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_comment_dialog_callbacks.cpp $(P)Qt_comment_dialog.h
-	$(CCC) $(P)Qt_comment_dialog_callbacks.cpp $(QTOPT)
 
-$(P)Qt_comment_dialog.h: $(BUILD_DEPENDENCIES) $(P)qt4_comment_dialog.ui $(P)Qt_comment_dialog_callbacks.cpp
-	cd $(P) && $(UIC) qt4_comment_dialog.ui | sed s/protected/public/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: > Qt_comment_dialog.h
-	cd $(P) && $(MOC) Qt_comment_dialog_callbacks.cpp >mQt_comment_dialog_callbacks.cpp
+
+
+# Look at this one for creating Qt dialogs (the other Qt dialogs are hacks since the "create_source_from_uio.sh" script is not called
+######################################################################################################################################
+Qt_comment_dialog.o: $(BUILD_DEPENDENCIES) $(P)Qt_comment_dialog_callbacks.h $(P)Qt_comment_dialog.cpp $(P)qt4_comment_dialog.ui
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) comment_dialog
+	ln -sf mQt_comment_dialog_callbacks.h $(P)mQt_comment_dialog_callbacks.cpp
+	$(CCC) $(P)Qt_comment_dialog.cpp $(QTOPT) -o Qt_comment_dialog.o
+
+
+
+
 
 Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h $(API)radium_proc.h common/visual_proc.h Qt/Qt_vst_paths_widget_callbacks.h
 	$(CCC) $(P)Qt_preferences_callbacks.cpp $(QTOPT)
