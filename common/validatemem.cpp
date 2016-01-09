@@ -230,7 +230,7 @@ static Memlink *validate_a_little(double max_time, Memlink *link){
   }
   
   while(link!=NULL){
-    if ( (get_ms() - start_time) > max_time) // max 10ms.
+    if ( (get_ms() - start_time) > max_time)
       break;
 
     Memlink *next = link->next;
@@ -261,8 +261,8 @@ public:
   void run(){
     Memlink *link = NULL;
     while(true){
-      link = validate_a_little(10, link);  // work 10ms
-      QThread::msleep(20);                 // sleep 20ms
+      link = validate_a_little(5, link);  // work 10ms
+      QThread::msleep(10);                 // sleep 20ms
     }
   }
 };
