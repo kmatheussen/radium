@@ -40,10 +40,12 @@ extern void set_editor_focus(void);
     {                                                                   \
     }                                                                   \
   void focusInEvent ( QFocusEvent *e ){                                 \
-    printf("got in\n");\
+    printf("got in\n");                                                 \
     if(dontsniff==false)                                                \
       num_users_of_keyboard++;                                          \
+    GL_lock();                                                          \
     Class::focusInEvent(e);                                             \
+    GL_unlock();                                                        \
   }                                                                     \
   void focusOutEvent ( QFocusEvent *e ){                                \
     if(dontsniff==false) {                                              \
@@ -51,11 +53,15 @@ extern void set_editor_focus(void);
       if(num_users_of_keyboard<0)                                       \
         num_users_of_keyboard = 0;                                      \
     }                                                                   \
+    GL_lock();                                                          \
     Class::focusOutEvent(e);                                            \
+    GL_unlock();                                                        \
   }                                                                     \
   void keyPressEvent ( QKeyEvent * event ){                             \
     if(event->key()==Qt::Key_Escape){                                   \
+      GL_lock();                                                        \
       clearFocus();                                                     \
+      GL_unlock();                                                      \
     }                                                                   \
     Class::keyPressEvent(event);                                        \
   }                                                                     \
