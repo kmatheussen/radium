@@ -14,11 +14,11 @@
 
 
 #ifndef BUF_BEFORE
-# define BUF_BEFORE 32
+# define BUF_BEFORE 128
 #endif
 
 #ifndef BUF_AFTER
-# define BUF_AFTER 32
+# define BUF_AFTER 128
 #endif
 
 #define CLEAR_BYTE 0x4f
@@ -220,37 +220,48 @@ static double get_ms(void){
 
 
 static Memlink *validate_a_little(double max_time, Memlink *link){
-  QMutexLocker locker(mutex);
     
   double start_time = get_ms();
 
-  if (link==NULL) {
-    link = g_root;
-    printf("   STARTING new VALIDATE CYCLE. %d\n",g_num_elements);
-  }
-  
-  while(link!=NULL){
-    if ( (get_ms() - start_time) > max_time)
-      break;
+  static int num_removed = 0;
+  static int num_scanned = 0;
 
+  if (link==NULL)
+    link = g_root;
+
+  while(link!=NULL){
+    QMutexLocker locker(mutex); // <- Release/obtain in the inner loop to give alloc a chance to allocate
     Memlink *next = link->next;
 
-    if (link->can_be_freed)
+    if (link->can_be_freed) {
+
       remove_memlink(link);
-    else {
+      num_removed++;
+    } else {
       validate_link(link);
+      num_scanned++;
     }
     
     link = next;
+    
+    if ( (num_scanned%512) == 0 && (get_ms() - start_time) > max_time)
+      break;
   }
+
+  if (link==NULL) {
+    //printf("   MEMORY VALIDATION CYCLE Finished. Scanned %d links, removed %d links. Total right now: %d\n",num_scanned,num_removed,g_num_elements);
+    num_removed = 0;
+    num_scanned = 0;
+  }
+
 
   return link;
 }
 
+
 namespace{
   
 struct ValidationThread : public QThread {
-  //  Q_OBJECT
 
 public:
   ValidationThread()
@@ -261,8 +272,8 @@ public:
   void run(){
     Memlink *link = NULL;
     while(true){
-      link = validate_a_little(5, link);  // work 10ms
-      QThread::msleep(10);                 // sleep 20ms
+      link = validate_a_little(3, link);  // work 3ms
+      QThread::msleep(2);                 // sleep 2ms
     }
   }
 };
@@ -271,12 +282,17 @@ public:
 
 
 void V_run_validation_thread(void){
+  static int num=0;
+
+  num++;
+
+  if (num != 5000) // Must wait a little to start the thread. This function is called VERY early in the program.
+    return;
+  
   static bool is_running=false;
   
-  if (is_running==true) {
-    fprintf(stderr,"already running\n");
-    abort();
-  }
+  if (is_running==true)
+    return;
   
   is_running=true;
   new ValidationThread();
@@ -313,10 +329,11 @@ void *V_alloc(MemoryAllocator allocator, int size, const char *filename, int lin
     timer->start();
     
     mutex = new QMutex;
-#if !defined(DONT_RUN_VALIDATION_THREAD)
-    V_run_validation_thread();
-#endif
   }
+
+#if !defined(DONT_RUN_VALIDATION_THREAD)
+  V_run_validation_thread();
+#endif
 
   int aligned_size = ALIGN_UP(size);
   int aligned_diff = aligned_size - size;

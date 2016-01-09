@@ -408,6 +408,8 @@ struct Notes *InsertNote(
 
 	struct Notes *note=NewNote();
 
+        //((char*)note)[-5] = 'b'; // test memory validator
+        
 	PlaceCopy(&note->l.p,placement);
 
 	note->note=notenum;
