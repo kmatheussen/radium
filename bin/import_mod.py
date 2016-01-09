@@ -22,12 +22,23 @@
 # * bound volume values between 0 and max.
 # * re-add continue playing next block for ending notes, and organize tracks so that continuing plaing notes hits the correct track in the next block.
 # * Remove reltempo track
+# * That e command to play several notes on same line
 
 from __future__ import division # we always want floating point division
 
+'''
+1. "Play" through the song.
+2. When doing that, assign new instrument numbers for notes with instrument 0, and if there are mismatches, create new block.
+3. Same goes for tempo, and effects.
+4. Same goes for note stops
+5. And do something for position jumps, loops, etc. too
+
+Loesning: Om det henger igjen en note, bare smell to patterns i hop.
+'''
 
 
 import sys, os, filecmp, traceback
+import platform
 import struct, copy
 import wave
 
@@ -40,12 +51,11 @@ class NullWriter(object):
 if __name__ == "__main__":
     sys.g_program_path = '__main__' # hack to be able to import import_midi
 else:
-    if os.isatty(1):
+    if platform.system() != "Linux" and os.isatty(sys.stdout.fileno()):
         sys.stdout = sys.stderr = NullWriter()
 
-print "hello"
 
-import import_midi # some helper methods there
+import import_midi # for radum mock
 
 
 
@@ -141,6 +151,11 @@ class Velocity:
         
 radium_smallest_tick = 1 / 65534
 
+class Stop:
+    def __init__(self, tracknum, linenum):
+        self.mod_tracknum = tracknum
+        self.linenum = linenum
+
 class Note:
     def __init__(self, tracknum, linenum, samplenum, notenum):
         self.mod_tracknum = tracknum
@@ -185,6 +200,8 @@ class Note:
             end_counter = self.end_counter
             end_dividor = self.end_dividor
 
+        assert(self.end_counter >= 0)
+
         # 1. create note
         radium_notenum = radium.addNote2(
             self.notenum, self.velocities[0].value * (65536 // 64),
@@ -194,7 +211,7 @@ class Note:
         )
 
         # comment out. tracks often don't match from block to block, so it creates hanging notes.
-        #radium.setNoteContinueNextBlock(True, radium_notenum, self.radium_tracknum)
+        # radium.setNoteContinueNextBlock(True, radium_notenum, self.radium_tracknum)
 
         # 2. set end note velocity (if necessary)
         #        if len(self.velocities) > 0:
@@ -240,6 +257,7 @@ class Note:
                 if last_end_line == -1:
                     last_end_line = velocity.linenum
                     last_counter = velocity.counter
+                    assert(last_counter >= 0)
                     last_dividor = velocity.dividor
             else:
                 last_end_line = -1
@@ -248,7 +266,8 @@ class Note:
             self.end_linenum = last_end_line
             self.end_counter = last_counter
             self.end_dividor = last_dividor
-            
+            assert(self.end_counter >= 0)
+
     # todo:
     # * End note at last velocity with value 0
     # * Convert values to 0-1
@@ -278,8 +297,11 @@ class Note:
                 else:
                     value = effect.value2
                     
+                print value,effect.value2,tpd
+
                 velocity = Velocity(effect.linenum, self.last_volume, False)
                 velocity.counter = value
+                assert(value >= 0)
                 velocity.dividor = tpd
                 self.velocities.append(velocity)
                 
@@ -328,7 +350,7 @@ class Note:
         
     def printit(self):
         pass
-        #print "  add note. "+str(self.samplenum) + ": " + str(self.notenum)
+        print "  add note. "+str(self.samplenum) + ": " + str(self.notenum)
 
 
 class Effect:
@@ -360,6 +382,7 @@ class Tempo:
 class ModSpeed:
     def __init__(self, linenum, value):
         self.linenum = linenum
+        assert(value >= 0)
         if value==0:
             self.value = 1
         else:
@@ -453,6 +476,7 @@ class Pattern:
         self.name = name
         self.notes = []
         self.effects = []
+        self.stops = []
         self.mod_speeds = []
         self.tempos = [] # generated after parsing from the mod_speeds values.
         self.lastNotes = {} # Used during parsing. tracknum is key
@@ -460,10 +484,71 @@ class Pattern:
         self.bpm_from_previous_pattern = -1
         self.tpd_from_previous_pattern = -1
 
+    def append_patterndata(self, pattern):
+        appended_notes = copy.deepcopy(pattern.notes)
+        appended_stops = copy.deepcopy(pattern.stops)
+        appended_effects = copy.deepcopy(pattern.effects)
+        appended_tempos = copy.deepcopy(pattern.tempos)
+        appended_mod_speeds = copy.deepcopy(pattern.mod_speeds)
+
+        num_lines = self.num_lines
+
+        for note in appended_notes:
+            note.linenum += num_lines
+            if note.end_linenum != -1:
+                note.end_linenum += num_lines
+            for effect in note.effects:
+                effect.linenum += num_lines
+
+        for stop in appended_stops:
+            stop.linenum += num_lines
+
+        for effect in appended_effects:
+            effect.linenum += num_lines
+
+        for tempo in appended_tempos:
+            tempo.linenum += num_lines
+
+        for mod_speed in appended_mod_speeds:
+            mod_speed.linenum += num_lines
+
+        self.num_lines += pattern.num_lines
+        self.notes     += appended_notes
+        self.stops     += appended_stops
+        self.effects   += appended_effects
+        self.tempos    += appended_tempos
+        self.mod_speeds += appended_mod_speeds
+
     def set_note_endlines(self):
         for note in self.notes:
             if note.end_linenum==-1:
                 note.end_linenum = self.num_lines
+
+    def get_first_note(self, channel):
+        for note in self.notes:
+            if note.mod_tracknum==channel:
+                return note
+        return None
+
+    def get_first_stop(self, channel):
+        for stop in self.stops:
+            if stop.mod_tracknum==channel:
+                return stop
+        return None
+
+    def has_note_continuing_to_next_pattern(self, channel):
+        for note in self.notes:
+            print "   note, end_linenum: ",note.end_linenum
+            if note.mod_tracknum==channel and note.end_linenum == self.num_lines:
+                is_stopped = False
+                for stop in self.stops:
+                    if stop.mod_tracknum==channel and stop.linenum > note.linenum:
+                        is_stopped = True
+                        break
+                
+                if is_stopped == False:
+                    return True
+        return False
 
     def prepare_mod(self, samples):
         for note in self.notes:
@@ -475,13 +560,17 @@ class Pattern:
     def last_note(self, tracknum):
         return self.lastNotes[tracknum]
 
+    def add_stop(self, stop):
+        self.stops.append(stop)
+
     def add_note(self, note):
         tracknum = note.mod_tracknum
 
         # first set end line for previous note
         if self.has_last_note(tracknum):
             last_note = self.last_note(tracknum)
-            last_note.end_linenum = note.linenum
+            if last_note.end_linenum == -1:
+                last_note.end_linenum = note.linenum
 
         self.lastNotes[tracknum] = note
         self.notes.append(note)
@@ -636,6 +725,7 @@ class Pattern:
             
 
     def generate(self, song):
+        print "                    *************** Generating Track ",self.patternnum
         radium.setNumLines(self.num_lines)
 
         self.num_radium_tracks = self.assign_radium_tracknum_to_notes(song)
@@ -770,9 +860,9 @@ class Sample:
         print "name:", self.name, ", num_bytes: ",self.num_bytes(), "loop start/length:",self.loop_start,self.loop_length
 
         data = file.read(self.num_bytes())
-        if c=="":
-            print "Premature end of file. pos:",pos
-            raise
+        #if data=="":
+        #    print "Premature end of file. pos:",pos
+        #    raise
 
         print "pos after",file.tell()
         num_bytes_read = file.tell() - pos
@@ -927,6 +1017,19 @@ class Playlist:
                 highest = patternnum
         return highest+1
 
+    def handle_merged_patterns(self, n1, n2, replacenum):
+        patternnums = []
+        i = 0
+        while i < len(self.patternnums):
+            if i <= len(self.patternnums)-2 and self.patternnums[i]==n1 and self.patternnums[i+1]==n2:
+                patternnums.append(replacenum)
+                i += 2
+            else:
+                patternnums.append(self.patternnums[i])
+                i += 1
+
+        self.patternnums = patternnums
+
     def generate(self):
         radium.setPlaylistLength(len(self.patternnums))
         pos = 0
@@ -941,11 +1044,14 @@ class Song:
         self.samples = samples
         self.playlist = playlist
 
-    def prepare_mod(self):
-        for pattern in self.patterns:
-            pattern.prepare_mod(self.samples)
-
-    def add_tempos_from_mod_speeds(self):
+    def __add_undefined_patterns(self):
+        for patternnum in self.playlist.patternnums:
+            if patternnum >= len(self.patterns): # This is a little bit strange, but can happen, at least in xm songs
+                num_channels = self.patterns[0].num_channels
+                pattern = Pattern(patternnum, num_channels, "Pattern "+str(patternnum))
+                self.patterns.append(pattern)
+        
+    def __add_tempos_from_mod_speeds(self):
         mod_bpm, mod_tpd = (125, 6)
 
         for pattern in self.patterns:
@@ -956,11 +1062,7 @@ class Song:
         # first generate those patterns that belongs to a playlist. We know more about tempo here.
         for patternnum in self.playlist.patternnums:
             print "patternnum",patternnum
-            if patternnum >= len(self.patterns):
-                pattern = Pattern(patternnum, 8, "Pattern "+str(patternnum)) # The xm format is a little bit strange this way
-                self.patterns.append(pattern)
-            else:
-                pattern = self.patterns[patternnum]
+            pattern = self.patterns[patternnum]
             new_patternnum, mod_bpm, mod_tpd = pattern.add_tempos_from_mod_speeds(self, mod_bpm, mod_tpd)
             new_playlist_patternnums.append(new_patternnum)
 
@@ -971,14 +1073,64 @@ class Song:
 
         self.playlist = Playlist(new_playlist_patternnums)
 
+    def __must_patterns_be_merged_questionmark(self, pattern1, pattern2):
+        for channel in range(pattern1.num_channels):
+            first_note2 = pattern2.get_first_note(channel)
+            first_stop2 = pattern2.get_first_stop(channel)
+
+            if first_note2 and first_note2.linenum==0:
+                return False
+            elif first_stop2 and first_stop2.linenum==0:
+                return False
+            else:
+                return pattern1.has_note_continuing_to_next_pattern(channel)
+
+    def __merge_patterns(self, pattern1, pattern2):
+        new_pattern = Pattern(len(self.patterns), pattern1.num_channels, "(" + pattern1.name + " + " + pattern2.name +")")
+        new_pattern.num_lines = pattern1.num_lines
+        new_pattern.notes = copy.deepcopy(pattern1.notes)
+        new_pattern.stops = copy.deepcopy(pattern1.stops)
+        new_pattern.effects = copy.deepcopy(pattern1.effects)
+        new_pattern.tempos = copy.deepcopy(pattern1.tempos)
+        new_pattern.mod_speeds = copy.deepcopy(pattern1.mod_speeds)
+        new_pattern.bpm_from_previous_pattern = pattern1.bpm_from_previous_pattern # not sure if this is correct
+        new_pattern.tpd_from_previous_pattern = pattern1.tpd_from_previous_pattern # not sure if this is correct
+
+        new_pattern.append_patterndata(pattern2)
+
+        self.patterns.append(new_pattern)
+
+        self.playlist.handle_merged_patterns(pattern1.patternnum, pattern2.patternnum, new_pattern.patternnum)
+
+
+    # if notes continue to play into the next pattern in the playlist, we merge those patterns into one. It is possible in Radium for notes to continue playing into the next block (this is even the default behavior), but because track numbers doesn't always correspond between patterns, merging seems like the simplest way.
+    def __merge_necessary_patterns(self):
+        last_pattern = None
+        for patternnum in self.playlist.patternnums:
+            pattern = self.patterns[patternnum]
+            if last_pattern and self.__must_patterns_be_merged_questionmark(last_pattern, pattern):
+                self.__merge_patterns(last_pattern, pattern)
+                self.__merge_necessary_patterns() # start from the beginning again since self.__merge_patterns changes the playlist.
+                return
+            else:
+                last_pattern = pattern
+                    
+            
+    def prepare_mod(self):
+        self.__add_undefined_patterns()
+        self.__add_tempos_from_mod_speeds()
+        self.__merge_necessary_patterns()
+        for pattern in self.patterns:
+            pattern.prepare_mod(self.samples)
+
     def generate(self):
         import_midi.clear_radium_editor()
 
         for sample in self.samples:
             sample.generate()
 
-        radium.setLPB(4)   # Deafult mod value
-        radium.setBPM(125) # Default mod value
+        radium.setLPB(4)   # Deafult mod value (not really used I think)
+        radium.setBPM(125) # Default mod value (not really used though)
 
         for pattern in self.patterns:
             pattern.generate(self)
@@ -1265,13 +1417,24 @@ def read_xm_trackline(file, pattern, tracknum, linenum, pos):
                 else:
                     notenum = 0
 
-            if notenum > 0:
+            if notenum == 97:
+                if parentnote.end_linenum == -1:
+                    parentnote.end_linenum = linenum
+            elif notenum > 0:
+                if notenum==1:
+                    notenum=0.001 # notenum 0 is not legal in radium
+                else:
+                    notenum -= 1
                 note = Note(tracknum, linenum, samplenum, notenum)
                 note.parentnote = parentnote
                 pattern.add_note(note)
         
-                note.printit()
- 
+                #note.printit()
+        else:
+            if notenum == 97:
+                stop = Stop(tracknum, linenum)
+                pattern.add_stop(stop)
+            
     #print "period: "+str(period)
     #print "samplenum: "+str(samplenum)
 
@@ -1314,6 +1477,8 @@ def read_xm_pattern(file, num_channels, patternnum, pos):
             pos = read_xm_trackline(file, pattern, ch, linenum, pos)
 
     print "pos,return_pos",pos,return_pos
+
+    pattern.set_note_endlines()
 
     return (pattern, return_pos)
 
@@ -1463,7 +1628,6 @@ def read_xm_song(file):
 
 
 def generate_from_mod(song):
-    song.add_tempos_from_mod_speeds()
 
     song.prepare_mod()
 
@@ -1532,9 +1696,13 @@ def import_mod(filename=""):
     except:
         e = sys.exc_info()[0]
         message = traceback.format_exc()
+        print message
         radium.showMessage("Loading "+filename+" failed. If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
-        for m in message.split("\n"):
-            radium.showMessage(m)
+        if platform.system() == "Linux":
+            radium.showMessage(message)
+        else:
+            for m in message.split("\n"):
+                radium.showMessage(m)
 
 
 if __name__ == "__main__":
@@ -1546,8 +1714,9 @@ if __name__ == "__main__":
     #file = open("/home/kjetil/Downloads/knulla-kuk.mod", "rb")
     #file = open("/home/kjetil/Downloads/DOPE.MOD", "rb")
     #import_mod("/home/kjetil/Downloads/velcoitytest.mod")
+    import_mod("/home/kjetil/Downloads/GODZILLA.MOD")
     #import_xm("/home/kjetil/Downloads/DEADLOCK.XM")
-    #import_xm("/home/kjetil/Downloads/xmtest2.xm")
-    import_xm("/home/kjetil/radium/bin/xmtest.xm")
+    #import_xm("/home/kjetil/Downloads/xmtest.xm")
+    #import_xm("/home/kjetil/radium/bin/xmtest.xm")
 
 
