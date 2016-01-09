@@ -679,10 +679,6 @@ protected:
       PlayCallVeryOften();
     }
 
-#if !defined(RELEASE)
-    V_validate();
-#endif
-    
     PATCH_call_very_often();
     BACKUP_call_very_often();
 

@@ -23,29 +23,55 @@ extern void init_memory(void);
 
 extern void tfree(void *element);
 
-extern LANGSPEC void *tracker_alloc_clean(size_t size,void *(*AllocFunction)(size_t size2));
+//extern LANGSPEC void *tracker_alloc_clean(size_t size,void *(*AllocFunction)(size_t size2));
 
-extern LANGSPEC void *tracker_alloc(size_t size,void *(*AllocFunction)(size_t size2));
+extern LANGSPEC void *tracker_alloc__(size_t size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber);
 
-extern LANGSPEC void *tralloc(size_t size);
+extern LANGSPEC void *tralloc__(size_t size, const char *filename, int linenumber);
 
-extern LANGSPEC void *tralloc_atomic(size_t size);
+extern LANGSPEC void *tralloc_atomic__(size_t size, const char *filename, int linenumber);
 
-extern LANGSPEC void *talloc(size_t size);
+extern LANGSPEC void *talloc__(size_t size, const char *filename, int linenumber);
 
-extern LANGSPEC void *talloc_atomic(size_t size);
+extern LANGSPEC void *talloc_atomic__(size_t size, const char *filename, int linenumber);
 
-extern LANGSPEC void *talloc_atomic_uncollectable(size_t size);
+extern LANGSPEC void *talloc_atomic_uncollectable__(size_t size, const char *filename, int linenumber);
 
-extern LANGSPEC void *talloc_realloc(void *v, size_t new_size);
+extern LANGSPEC void *talloc_realloc__(void *v, size_t new_size, const char *filename, int linenumber);
 
-extern LANGSPEC void *talloc_atomic_clean(size_t size);
+extern LANGSPEC void *talloc_atomic_clean__(size_t size, const char *filename, int linenumber);
 
-extern LANGSPEC char *talloc_strdup(const char *input);
+extern LANGSPEC char *talloc_strdup__(const char *input, const char *filename, int linenumber);
 
-extern LANGSPEC char *talloc_numberstring(int number);
+extern LANGSPEC char *talloc_numberstring__(int number, const char *filename, int linenumber);
 
-extern LANGSPEC char *talloc_floatstring(float number);
+extern LANGSPEC char *talloc_floatstring__(float number, const char *filename, int linenumber);
+
+
+
+#define tracker_alloc(a,b) tracker_alloc__(a,b,__FILE__,__LINE__) 
+
+#define tralloc(a) tralloc__(a,__FILE__,__LINE__) 
+
+#define tralloc_atomic(a) tralloc_atomic__(a,__FILE__,__LINE__)
+
+#define talloc(a) talloc__(a,__FILE__,__LINE__)
+
+#define talloc_atomic(a) talloc_atomic__(a,__FILE__,__LINE__)
+
+#define talloc_atomic_uncollectable(a) talloc_atomic_uncollectable__(a,__FILE__,__LINE__)
+
+#define talloc_realloc(a,b) talloc_realloc__(a,b,__FILE__,__LINE__)
+
+#define talloc_atomic_clean(a) talloc_atomic_clean__(a,__FILE__,__LINE__)
+
+#define talloc_strdup(a) talloc_strdup__(a,__FILE__,__LINE__)
+
+#define talloc_numberstring(a) talloc_numberstring__(a,__FILE__,__LINE__)
+
+#define talloc_floatstring(a) talloc_floatstring__(a,__FILE__,__LINE__)
+
+
 
 extern LANGSPEC char *talloc_format(const char *fmt,...);
 

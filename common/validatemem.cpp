@@ -3,18 +3,21 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <assert.h>
+#include <unistd.h>
 
 #include <QMutex>
+#include <QThread>
 
 #include "nsmtracker.h"
 
 
 #ifndef BUF_BEFORE
-# define BUF_BEFORE 512
+# define BUF_BEFORE 128
 #endif
 
 #ifndef BUF_AFTER
-# define BUF_AFTER 512
+# define BUF_AFTER 128
 #endif
 
 #define CLEAR_BYTE 0x4f
@@ -26,23 +29,30 @@
 
 static QMutex mutex;
 
-
-typedef void *(*MemoryAllocator)(int size);
-typedef void (*MemoryFreeer)(void* mem);
-
 namespace{
-struct Memlink{
-  Memlink *next;
-  Memlink *prev;
-  int size;
-  const char *filename;
-  int linenumber;
-};
+  
+  struct Memlink{
+    Memlink *next;
+    Memlink *prev;
+    char *mem;
+    int size;
+    const char *filename;
+    int linenumber;
+    MemoryAllocator allocator;
+    bool is_being_validated;
+  };
+
+  struct LinkToMemlink{
+    Memlink *link;
+  };
+ 
 }
 
-// TODO: Keep these out of GC.
+// TODO: Keep these two out of GC. (not really a big problem)
 static Memlink *g_root;
 static Memlink *g_root_end;
+
+static int g_num_elements = 0;
 
 /*
 function remove(List list, Node node)
@@ -57,8 +67,7 @@ function remove(List list, Node node)
 */
 
 static void remove_memlink(Memlink *link){
-  QMutexLocker locker(&mutex);
-
+    
   if (link->prev == NULL)
     g_root = link->next;
   else
@@ -67,7 +76,11 @@ static void remove_memlink(Memlink *link){
   if (link->next == NULL)
     g_root_end = link->prev;
   else
-    link->next->prev = link->prev;      
+    link->next->prev = link->prev;
+
+  free(link);
+  
+  g_num_elements--;
 }
 
 
@@ -91,8 +104,14 @@ function insertBefore(List list, Node node, Node newNode)
      node.prev  := newNode
 */
 
-static void add_memlink(Memlink *link, int size, const char *filename, int linenumber){
+static void add_memlink(void *mem, int size, MemoryAllocator allocator, const char *filename, int linenumber){   
   QMutexLocker locker(&mutex);
+
+  Memlink *link = (Memlink*)calloc(1, sizeof(Memlink));
+  LinkToMemlink *linktomemlink = (LinkToMemlink*)mem;
+  linktomemlink->link = link;
+
+  link->mem = (char*)mem;
 
   if (g_root == NULL) {
     
@@ -111,16 +130,20 @@ static void add_memlink(Memlink *link, int size, const char *filename, int linen
   }
 
   link->size = size;
+  link->allocator = allocator;
   link->filename = filename;
   link->linenumber = linenumber;
+
+  g_num_elements++;
 }
 
 static void print_error(Memlink *link, bool is_after, bool is32, int pos, int32_t value){
   fprintf(stderr,
-          "MEMORY CORRUPTION. Memory %s allocated memory overwritten. Pos %d (%s bit aligned). Value: %d (0x%x). %s:%d\n",
+          "MEMORY CORRUPTION. Memory %s allocated memory overwritten. Pos %d (%s). Value: %d (0x%x '%c'). %s:%d\n",
           is_after?"after":"before",
           pos,
-          is32 ? "32" : "8",
+          is32 ? "int32" : "char",
+          value,
           value,
           value,
           link->filename,
@@ -129,8 +152,9 @@ static void print_error(Memlink *link, bool is_after, bool is32, int pos, int32_
   abort();  
 }
 
+
 static void validate_link(Memlink *link){
-  int32_t *mem_start1 = (int32_t*) (((char*)link) + sizeof(Memlink));
+  int32_t *mem_start1 = (int32_t*) (((char*)link->mem) + sizeof(LinkToMemlink));
   int32_t *mem_end1 = mem_start1 + BUF_BEFORE/4;
   
   for(int32_t *mem = mem_start1; mem<mem_end1 ; mem++)
@@ -151,20 +175,94 @@ static void validate_link(Memlink *link){
       print_error(link, true, true, (int)(mem-mem_start2),(int)mem[0]);
 }
 
-void V_validate(void){
+void V_validate(void *mem){
+  LinkToMemlink *linktomemlink = (LinkToMemlink *) V_allocated_mem_real_start(mem);
+  Memlink *link = linktomemlink->link;
+  validate_link(link);
+}
+/*
+static Memlink *get_next_link(Memlink *link){  
+  //QMutexLocker locker(&mutex);
+  
+  Memlink *next = NULL;
+  
+  if (link==NULL)
+    next = g_root;
+  else {
+    link->is_being_validated = false;
+    next = link->next;
+  }
+  
+  if (next!=NULL)
+    next->is_being_validated = true;
+  
+  return next;
+}
+*/
+void V_validate_all(void){
   QMutexLocker locker(&mutex);
+  
+  Memlink *link = g_root;//get_next_link(NULL);
 
-  Memlink *link = g_root;
+  //fprintf(stderr, " STARTING TO VALIDATE %d \n",g_num_elements);
 
+  int num = 0;
+  
   while(link!=NULL){
 
     validate_link(link);
-    
-    link = link->next;
+
+    num++;
+
+    //if ((num % 3000) == 0)
+    //  printf("   At %d (out of %d) (%d left)\n", num, g_num_elements, g_num_elements-num);
+
+    if (num > g_num_elements+10){
+      fprintf(stderr, "Validation failed. More links than elements.\n");
+      abort();
+    }
+
+    link=link->next;//get_next_link(link);
   }
+
+  //  fprintf(stderr, " FINISHED VALIDATING \n");
 }
 
-static void mymemset(char *char_pos, int num_chars){
+namespace{
+  
+struct ValidationThread : public QThread {
+  //  Q_OBJECT
+
+public:
+  ValidationThread()
+  {
+    start(QThread::LowestPriority);
+  }
+
+  void run(){
+    while(true){
+      V_validate_all();
+      usleep(20*1000);
+    }
+  }
+};
+
+}
+
+
+void V_run_validation_thread(void){
+  static bool is_running=false;
+  
+  if (is_running==true) {
+    fprintf(stderr,"already running\n");
+    abort();
+  }
+  
+  is_running=true;
+  new ValidationThread();
+}
+
+static void memset32(char *char_pos, int num_chars){
   int size = num_chars / 4;
   int32_t *pos = (int32_t*)char_pos;
   for(int a=0 ; a<size ; a++)
@@ -172,6 +270,9 @@ static void mymemset(char *char_pos, int num_chars){
 }
 
 void *V_alloc(MemoryAllocator allocator, int size, const char *filename, int linenumber){
+
+  if (ALIGN_UP(sizeof(LinkToMemlink)) != sizeof(LinkToMemlink))
+    abort();
 
   if (BUF_BEFORE % 4 != 0) {
     fprintf(stderr, "BUF_BEFORE must be dividable by 4\n");
@@ -183,74 +284,127 @@ void *V_alloc(MemoryAllocator allocator, int size, const char *filename, int lin
     abort();
   }
 
-  int aligned_size = ALIGN_UP(size);
   
-  int32_t *mem = (int32_t*)allocator(aligned_size+BUF_BEFORE+BUF_AFTER+sizeof(Memlink));
-  if(mem==NULL)
-    abort();
-  
-  //memset(mem + sizeof(Memlink), CLEAR_32BYTE, BUF_BEFORE);
-  //memset(mem + sizeof(Memlink) + BUF_BEFORE + size, CLEAR_32BYTE, BUF_AFTER);
-  
-  mymemset(((char*)mem) + sizeof(Memlink), BUF_BEFORE);
-  char *end_pos = ((char*)mem) + sizeof(Memlink) + BUF_BEFORE + size;
-  memset(end_pos, CLEAR_BYTE, aligned_size - size);
-  mymemset((char*)ALIGN_UP(end_pos), BUF_AFTER);
-  
-  Memlink *link = (Memlink *)mem;
+  static bool has_inited = false;
+  if (has_inited==false){
+    has_inited=true;
+#if !defined(DONT_RUN_VALIDATION_THREAD)
+    V_run_validation_thread();
+#endif
+  }
 
-  add_memlink(link, size, filename, linenumber);
+  int aligned_size = ALIGN_UP(size);
+  int aligned_diff = aligned_size - size;
+  assert(aligned_diff>=0);
+
+  int alloc_size = sizeof(LinkToMemlink) + BUF_BEFORE + aligned_size + BUF_AFTER;
   
-  return (void*)( ((char*)mem) + sizeof(Memlink) + BUF_BEFORE);
+  char *mem = (char*)allocator(alloc_size);
+  if(mem==NULL)
+    return NULL;
+  
+  memset32(mem + sizeof(LinkToMemlink), BUF_BEFORE);
+
+  char *end_pos = mem + sizeof(LinkToMemlink) + BUF_BEFORE + size;
+
+  memset(end_pos, CLEAR_BYTE, aligned_diff);
+  //fprintf(stderr,"endpos: %p, up: %p\n",end_pos, (char*)ALIGN_UP(end_pos));
+
+  memset32(end_pos + aligned_diff, BUF_AFTER);
+
+  add_memlink(mem, size, allocator, filename, linenumber);  
+
+  return (void*)(mem + sizeof(LinkToMemlink) + BUF_BEFORE);
+}
+
+void *V_allocated_mem_real_start(void *allocated_mem){
+  return (void*) ( ((char*)allocated_mem) - sizeof(LinkToMemlink) - BUF_BEFORE );
+}
+
+static void V_free_it2(MemoryFreeer freeer, void *actual_mem_real_start){
+
+  QMutexLocker locker(&mutex); // May be moved to remove_memlink
+
+  LinkToMemlink *linktomemlink = (LinkToMemlink *) actual_mem_real_start;
+  Memlink *link = linktomemlink->link;
+  
+  /*
+  if(link->is_being_validated){
+    // Wait a little and try again.
+    usleep(50);
+    return V_free_it2(freeer, actual_mem_real_start);
+  }
+  */
+  
+  assert(link->mem == actual_mem_real_start);
+  
+  validate_link(link);
+
+  freeer(actual_mem_real_start);
+
+  remove_memlink(link);
+}
+
+void V_free_actual_mem_real_start(MemoryFreeer freeer, void *actual_mem_real_start){
+  V_free_it2(freeer,
+             actual_mem_real_start);
 }
 
 void V_free_it(MemoryFreeer freeer, void *allocated_mem){
-  int32_t *start = (int32_t*) ( ((char*)allocated_mem) - sizeof(Memlink) - BUF_BEFORE );
+  V_free_it2(freeer,
+             V_allocated_mem_real_start(allocated_mem)
+             );
+}
 
-  Memlink *link = (Memlink *)start;
+MemoryAllocator V_get_MemoryAllocator(void *mem){
+  LinkToMemlink *linktomemlink = (LinkToMemlink *) V_allocated_mem_real_start(mem);
+  Memlink *link = linktomemlink->link;
 
-  validate_link(link);
+  return link->allocator;
+}
+
+int V_get_size(void *mem){
+  LinkToMemlink *linktomemlink = (LinkToMemlink *) V_allocated_mem_real_start(mem);
+  Memlink *link = linktomemlink->link;
+
+  return link->size;
+}
+
+static void *V_realloc_it(MemoryFreeer freeer, void *ptr, size_t size, const char *filename, int linenumber){
+  assert(ptr!=NULL);
+
+  LinkToMemlink *linktomemlink = (LinkToMemlink *) V_allocated_mem_real_start(ptr);
+  Memlink *link = linktomemlink->link;
   
-  remove_memlink(link);
-                 
-  freeer((void*)start);
+  void *new_mem = V_alloc(link->allocator, size, filename, linenumber);
+  memcpy(new_mem, ptr, R_MIN((int)size, link->size));
+  
+  V_free_it(freeer, ptr);
+
+  return new_mem;
+}
+                   
+void *V_malloc__(size_t size, const char *filename, int linenumber){
+  return V_alloc(malloc ,size, filename, linenumber);
 }
 
-
-
-static void *dasmalloc(int size){
-  return malloc(size);
-}
-
-static void *dascalloc(int size){
+static void *calloc_one_arg(size_t size){
   return calloc(1, size);
 }
 
-static void dasfree(void *mem){
-  free(mem);
-}
-
-void *V_malloc__(size_t size, const char *filename, int linenumber){
-  return V_alloc(dasmalloc ,size, filename, linenumber);
-}
-
 void *V_calloc__(size_t n, size_t size, const char *filename, int linenumber){
-  return V_alloc(dascalloc, n*size, filename, linenumber);
+  return V_alloc(calloc_one_arg, n*size, filename, linenumber);
 }
 
 void V_free__(void *ptr){
-  V_free_it(dasfree, ptr);
+  V_free_it(free, ptr);
 }
 
 void *V_realloc__(void *ptr, size_t size, const char *filename, int linenumber){
-  Memlink *link = (Memlink *) ( ((char*)ptr) - sizeof(Memlink) - BUF_BEFORE );
+  if (ptr==NULL)
+    return V_malloc__(size, filename, linenumber);
 
-  void *new_mem = V_alloc(dasmalloc, size, filename, linenumber);
-  memcpy(new_mem, ptr, R_MIN((int)size, link->size));
-  
-  V_free__(ptr);
-
-  return new_mem;
+  return V_realloc_it(free, ptr, size, filename, linenumber);
 }
 
 #ifdef TEST_MAIN
