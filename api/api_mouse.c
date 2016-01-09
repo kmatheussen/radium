@@ -1208,18 +1208,22 @@ int movePianonote(int pianonotenum, float value, float floatplace, int notenum, 
 
   const float mindiff = 0.001;
     
-  if (new_end >= lastplacefloat)
+  if (new_end >= lastplacefloat) {
     new_end = lastplacefloat - mindiff;
-
+    diff    = new_end - old_end;
+  }
+  
   if (new_start >= new_end)
     return notenum;
 
   PLAYER_lock();{
     ListRemoveElement3(&track->notes, &note->l);
     
-    Float2Placement(new_start, &note->l.p);
-    Float2Placement(new_end, &note->end);
-
+    //Float2Placement(new_start, &note->l.p);
+    //Float2Placement(new_end, &note->end);
+    MOVE_PLACE(&note->l.p, diff);
+    MOVE_PLACE(&note->end, diff);
+    
     struct Velocities *velocity = note->velocities;
     while(velocity != NULL){
       MOVE_PLACE(&velocity->l.p, diff);
