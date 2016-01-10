@@ -29,7 +29,13 @@
 #ifndef JUCE_WIN32_COMSMARTPTR_H_INCLUDED
 #define JUCE_WIN32_COMSMARTPTR_H_INCLUDED
 
-#if ! (defined (_MSC_VER) || defined (__uuidof))
+#ifdef __uuidof
+#undef __uuidof
+#endif
+
+#if 1 //! (defined (_MSC_VER) || defined (__uuidof))
+
+//#if ! (defined (_MSC_VER) || defined (__uuidof))
 template<typename Type> struct UUIDGetter { static CLSID get() { jassertfalse; return CLSID(); } };
 #define __uuidof(x)  UUIDGetter<x>::get()
 #endif
