@@ -909,7 +909,7 @@ static void set_plugin_type_data(AEffect *aeffect, SoundPluginType *plugin_type)
   int category = aeffect->dispatcher(aeffect, effGetPlugCategory, 0, 0, NULL, 0.0f);
   plugin_type->is_instrument = category==kPlugCategSynth;
 
-  TypeDataParam *params = (TypeDataParam*)calloc(sizeof(TypeDataParam),plugin_type->num_effects);    
+  TypeDataParam *params = (TypeDataParam*)V_calloc(sizeof(TypeDataParam),plugin_type->num_effects);    
   type_data->params = params;
 
   for(int i=0;i<aeffect->numParams;i++){
@@ -973,13 +973,13 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   EditorWidget *editor_widget = new EditorWidget(NULL);
   //editor_widget->open(aeffect);
 
-  Data *data=(Data*)calloc(1,sizeof(Data));
+  Data *data=(Data*)V_calloc(1,sizeof(Data));
  
   data->aeffect = aeffect;
   data->editor_widget = editor_widget;
   data->sample_rate = sample_rate;
 
-  data->events = (VstEvents*)calloc(1,sizeof(VstEvents) + (MAX_EVENTS*sizeof(VstMidiEvent*)));
+  data->events = (VstEvents*)V_calloc(1,sizeof(VstEvents) + (MAX_EVENTS*sizeof(VstMidiEvent*)));
   for(int i=0;i<MAX_EVENTS;i++)
     data->events->events[i] = (VstEvent*)&data->midi_events[i];
 
@@ -999,9 +999,9 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   delete data->editor_widget;
   aeffect->dispatcher(aeffect, effClose, 0, 0, NULL, 0.0f);
 
-  free(data->events);
+  V_free(data->events);
   
-  free(data);
+  V_free(data);
 }
 
 } // extern "C"
@@ -1220,9 +1220,9 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
   //fprintf(stderr,"Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());
 
   {
-    SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
+    SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
 
-    TypeData *type_data = (TypeData*)calloc(1,sizeof(TypeData));
+    TypeData *type_data = (TypeData*)V_calloc(1,sizeof(TypeData));
     plugin_type->data = type_data;
     //#if DO_RESOLVE_IT
     //    type_data->get_plugin_instance = get_plugin_instance;

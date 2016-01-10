@@ -75,7 +75,7 @@ struct PEventQueue *GetPEQelement(void){
 	if(temp==NULL){ // This should REALLY not happen.
 
           //temp=GC_malloc(sizeof(struct PEventQueue));
-          temp=malloc(sizeof(struct PEventQueue));
+          temp=V_malloc(sizeof(struct PEventQueue));
           if(temp==NULL){
             RT_message("Error. Out of memory on a very bad place. Now probably crashing.\n");
           }

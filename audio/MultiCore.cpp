@@ -277,7 +277,7 @@ void MULTICORE_set_num_threads(int num_new_runners){
   int num_old_runners = g_num_runners;
   Runner **old_runners = g_runners;
   
-  Runner **new_runners = (Runner**)calloc(num_new_runners,sizeof(Runner*));
+  Runner **new_runners = (Runner**)V_calloc(num_new_runners,sizeof(Runner*));
 
   // start them
   for(int i=0 ; i < num_new_runners ; i++)
@@ -302,7 +302,7 @@ void MULTICORE_set_num_threads(int num_new_runners){
   } PLAYER_unlock();
 
 
-  free(old_runners);
+  V_free(old_runners);
 }
 
 void MULTICORE_shut_down(void){

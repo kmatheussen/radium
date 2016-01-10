@@ -144,7 +144,7 @@ void GFX_AddMenuSeparator(struct Tracker_Windows *tvisual){
 }
 
 void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const char *command){
-  struct Menues *menu = (struct Menues*)calloc(1, sizeof(struct Menues));
+  struct Menues *menu = (struct Menues*)V_calloc(1, sizeof(struct Menues));
   menu->up = current_menu;
   menu->menu = new QMenu();
   //QFont sansFont("Liberation Mono", 8);
@@ -205,7 +205,7 @@ void GFX_HideMenu(struct Tracker_Windows *tvisual){
 }
 
 void initMenues(QMenuBar *base_menu){
-  current_menu = (struct Menues*)calloc(1, sizeof(struct Menues));
+  current_menu = (struct Menues*)V_calloc(1, sizeof(struct Menues));
   //g_base_menues = current_menu;
   current_menu->base = base_menu;
   

@@ -34,10 +34,10 @@ typedef struct{
 } Data;
 
 static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *client, int num_inputs, int num_outputs, const char **input_portnames, const char **output_portnames){
-  Data *data = calloc(1,sizeof(Data));
+  Data *data = V_calloc(1,sizeof(Data));
   data->client = client;
-  data->input_ports=calloc(num_outputs,sizeof(jack_port_t*));
-  data->output_ports=calloc(num_inputs,sizeof(jack_port_t*));
+  data->input_ports=V_calloc(num_outputs,sizeof(jack_port_t*));
+  data->output_ports=V_calloc(num_inputs,sizeof(jack_port_t*));
 
   int i;
 
@@ -211,10 +211,10 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
     if(data->output_ports[i]!=NULL)
       jack_port_unregister(data->client,data->output_ports[i]);
 
-  free(data->input_ports);
-  free(data->output_ports);
+  V_free(data->input_ports);
+  V_free(data->output_ports);
 
-  free(data);
+  V_free(data);
 }
 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){

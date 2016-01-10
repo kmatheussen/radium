@@ -87,7 +87,7 @@ static void host_log(struct clap_host       *host,
 }
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
-  Data *data = (Data*)calloc(1,sizeof(Data));
+  Data *data = (Data*)V_calloc(1,sizeof(Data));
   
   data->host.clap_version  = CLAP_VERSION;
   data->host.events        = host_events;
@@ -101,7 +101,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
   printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
-  free(plugin->data);
+  V_free(plugin->data);
 }
 
 static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
@@ -110,7 +110,7 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
 
 
 void create_sine_plugin(void){
-  SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
+  SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
 
   plugin_type->type_name                = "CLAP";
   plugin_type->name                     = "Sine Synth";

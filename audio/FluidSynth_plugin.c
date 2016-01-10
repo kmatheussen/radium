@@ -357,11 +357,11 @@ static void delete_data(Data *data){
   if(data->signal_from_RT!=NULL)
     RSEMAPHORE_delete(data->signal_from_RT);
 
-  free(data);
+  V_free(data);
 }
 
 static void *create_data(const wchar_t *filename, float samplerate){
-  Data *data = calloc(1,sizeof(Data));
+  Data *data = V_calloc(1,sizeof(Data));
   //CRASHREPORTER_send_assert_message("AIAI2!");
   //data = NULL;
   

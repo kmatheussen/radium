@@ -612,7 +612,7 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
 
   plugin_type->num_effects = audio_instance->getNumParameters();
 
-  type_data->effect_names = (const char**)calloc(sizeof(char*),plugin_type->num_effects);
+  type_data->effect_names = (const char**)V_calloc(sizeof(char*),plugin_type->num_effects);
   for(int i = 0 ; i < plugin_type->num_effects ; i++)
     type_data->effect_names[i] = strdup(audio_instance->getParameterName(i).toRawUTF8());
 }
@@ -820,9 +820,9 @@ static SoundPluginType *create_plugin_type(const char *name, int uid, const wcha
   fflush(stdout);
   //  return;
 
-  SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
+  SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
 
-  TypeData *typeData = (TypeData*)calloc(1, sizeof(TypeData));
+  TypeData *typeData = (TypeData*)V_calloc(1, sizeof(TypeData));
 
   typeData->file_or_identifier = wcsdup(file_or_identifier);
   typeData->uid = uid;
@@ -893,7 +893,7 @@ static void populate(SoundPluginTypeContainer *container){
     return;
 
   container->num_types = size;
-  container->plugin_types = (SoundPluginType**)calloc(size, sizeof(SoundPluginType));
+  container->plugin_types = (SoundPluginType**)V_calloc(size, sizeof(SoundPluginType));
 
   for(int i = 0 ; i < size ; i++){
     radium_vst_uids_t *element = (radium_vst_uids_t*)uids->elements[i];
@@ -907,13 +907,13 @@ static void populate(SoundPluginTypeContainer *container){
 
 
 void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, const wchar_t *library_file_full_path){
-  SoundPluginTypeContainer *container = (SoundPluginTypeContainer*)calloc(1,sizeof(SoundPluginTypeContainer));
+  SoundPluginTypeContainer *container = (SoundPluginTypeContainer*)V_calloc(1,sizeof(SoundPluginTypeContainer));
 
   container->type_name = "VST";
   container->name = strdup(name);
   container->populate = populate;
 
-  ContainerData *data = (ContainerData*)calloc(1, sizeof(ContainerData));
+  ContainerData *data = (ContainerData*)V_calloc(1, sizeof(ContainerData));
   data->file_or_identifier = wcsdup(file_or_identifier);
   data->library_file_full_path = wcsdup(library_file_full_path);  
   data->wrapper_type = AudioProcessor::wrapperType_VST;

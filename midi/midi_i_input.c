@@ -67,7 +67,7 @@ static midi_event_t *get_midi_event(void){
   
   if (g_midi_events==NULL) {
     
-    midi_event_t *midi_events = calloc(1024, sizeof(midi_event_t));
+    midi_event_t *midi_events = V_calloc(1024, sizeof(midi_event_t));
     int i;
     for(i=1;i<1023;i++)
       midi_events[i].next = &midi_events[i+1];

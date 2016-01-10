@@ -122,13 +122,13 @@ const char *ER_keyAdd(int key,char *funcname,PyObject *pykeys,PyObject *pyargs){
 		}
 	}
 
-	kc=calloc(1,sizeof(struct KeyConfigs));
+	kc=V_calloc(1,sizeof(struct KeyConfigs));
 	if(kc==NULL) return "Out of memory";
 
 	kc->func=func;
         kc->funcname=strdup(talloc_format("%s [ev]",funcname));
 	kc->num_args=argslen;
-	kc->args=malloc(sizeof(int)*argslen);
+	kc->args=V_malloc(sizeof(int)*argslen);
 	if(kc==NULL) return "Out of memory";
 
 	for(lokke=0;lokke<argslen;lokke++){

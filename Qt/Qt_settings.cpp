@@ -145,7 +145,7 @@ const wchar_t *OS_get_program_path2(void){
   static wchar_t *array=NULL;
   if (array==NULL){
     QString s = QDir::toNativeSeparators(QCoreApplication::applicationDirPath());
-    array = (wchar_t*)calloc(1, sizeof(wchar_t)*(s.length()+1));
+    array = (wchar_t*)V_calloc(1, sizeof(wchar_t)*(s.length()+1));
     s.toWCharArray(array);
   }
 
@@ -187,7 +187,7 @@ bool OS_has_conf_filename(QString filename){
   int error;
   QDir dir = get_dot_radium_dir(&error);
   if(error!=0)
-    return NULL;
+    return false;
 
   QFileInfo info(dir, filename);
 
@@ -203,7 +203,7 @@ QString OS_get_conf_filename(QString filename){
   int error;
   QDir dir = get_dot_radium_dir(&error);
   if(error!=0)
-    return NULL;
+    return "";
 
   QFileInfo info(dir, filename);
 

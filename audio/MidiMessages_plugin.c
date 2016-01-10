@@ -370,7 +370,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
-  Data *data = (Data*)calloc(1,sizeof(Data));
+  Data *data = (Data*)V_calloc(1,sizeof(Data));
   int i;
   for(i=1;i<NUM_EFFECTS;i++){
     data->values[i] = -1;
@@ -380,12 +380,12 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
-  free(plugin->data);
+  V_free(plugin->data);
 }
 
 
 void create_midimessages_plugin(void){
-  SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
+  SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
 
   plugin_type->type_name                = "MIDI Messages";
   plugin_type->name                     = "MIDI Messages";
