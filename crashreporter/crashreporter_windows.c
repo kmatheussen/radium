@@ -542,7 +542,7 @@ static int stacktrace(LPCONTEXT context, DWORD *trace_, int num_traces){
     trace_[count_++] = stack_frame.AddrPC.Offset;
   }
 
-  size_t i;
+  int i;
   for (i = count_; i < num_traces; ++i)
     trace_[i] = 0;
 

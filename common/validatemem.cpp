@@ -377,7 +377,7 @@ static void V_free_it2(MemoryFreeer freeer, void *actual_mem_real_start){
     return V_free_it2(freeer, actual_mem_real_start);
   }
   */
-  
+
   assert(link->mem == actual_mem_real_start);
   
   validate_link(link);
@@ -452,7 +452,10 @@ void *V_realloc__(void *ptr, size_t size, const char *filename, int linenumber){
   return V_realloc_it(free, ptr, size, filename, linenumber);
 }
 
-
+// Note, buggy system libraries may cause the memory validator to crash.
+// In that case, just change "#if defined(RELEASE)" to "#if 0" below.
+//
+//#if 0
 #if !defined(RELEASE)
 
 void* operator new(size_t size){
