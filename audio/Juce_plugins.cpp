@@ -19,6 +19,7 @@
 #include "../common/visual_proc.h"
 #include "../common/player_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
+#include "../OpenGL/Widget_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -506,20 +507,24 @@ static void show_gui(struct SoundPlugin *plugin){
 
   if (data->window==NULL) {
 
-    const char *title = strdup(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name);
-    data->window = new PluginWindow(title, data);
+    GL_lock();{
 
-    if (data->x < 0 || data->y < 0)
-      data->window->centreWithSize (data->window->getWidth(), data->window->getHeight());
-    else {
-      data->window->setTopLeftPosition(data->x, data->y);
-    }
-    
-    AudioProcessorEditor *editor = data->audio_instance->createEditor(); //IfNeeded();
-    editor->setName (data->audio_instance->getName());
+      const char *title = strdup(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name);
+      data->window = new PluginWindow(title, data);
+      
+      if (data->x < 0 || data->y < 0)
+        data->window->centreWithSize (data->window->getWidth(), data->window->getHeight());
+      else {
+        data->window->setTopLeftPosition(data->x, data->y);
+      }
+      
+      AudioProcessorEditor *editor = data->audio_instance->createEditor(); //IfNeeded();
+      editor->setName (data->audio_instance->getName());
+      
+      data->window->setContentOwned(editor, true);
+      data->window->setUsingNativeTitleBar(true);
 
-    data->window->setContentOwned(editor, true);
-    data->window->setUsingNativeTitleBar(true);
+    }GL_unlock();
   }
 
   data->window->setVisible(true);
@@ -533,8 +538,12 @@ static void hide_gui(struct SoundPlugin *plugin){
   
   Data *data = (Data*)plugin->data;
 
-  //data->window->setVisible(false);
-  delete data->window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
+  GL_lock();{
+
+    //data->window->setVisible(false);
+    delete data->window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
+
+  }GL_unlock();
 }
 
 
