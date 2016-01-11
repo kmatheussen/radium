@@ -42,7 +42,7 @@ extern "C" {
 #define V_free(ptr) free((void*)ptr)
 #define V_realloc(ptr, size) realloc(ptr, size);
 
-#else // RELEASE else !RELEASE
+#else // RELEASE -> !RELEASE
 
 #define V_malloc(size) V_malloc__(size, __FILE__, __LINE__)
 #define V_calloc(n, size) V_calloc__(n, size, __FILE__, __LINE__)
