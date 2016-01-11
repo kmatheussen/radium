@@ -1142,6 +1142,9 @@ static int getPitchNumFromPianonoteNum(int pianonotenum, int notenum, int trackn
 
     ret += ListFindNumElements3(&note->pitches->l);
 
+    if (note->pitch_end > 0)
+      ret++;
+
     notenum_so_far++;
     
     note = NextNote(note);
