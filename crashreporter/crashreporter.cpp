@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/disk_save_proc.h"
 #include "../common/undo.h"
 #include "../OpenGL/Widget_proc.h"
+#include "../Qt/helpers.h"
 
 #include "../audio/SoundProducer_proc.h"
 //extern void SP_write_mixer_tree_to_disk(QFile *file);
@@ -218,9 +219,9 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       box.setWindowTitle("Report warning");
 
     box.show();
-
     box.activateWindow();
     box.raise();
+    
     //box.stackUnder(box.parentWidget());
     box.setWindowFlags(Qt::WindowStaysOnTopHint);
     box.setWindowModality(Qt::ApplicationModal);
@@ -367,7 +368,7 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
     full_command += "&";
 
   fprintf(stderr, "Executing -%s-\n",full_command.toUtf8().constData());
-  
+
   if(system(strdup(full_command.toUtf8().constData()))==-1) {
     SYSTEM_show_message(strdup(talloc_format("Couldn't start crashreporter. command: -%s-\n",full_command.toUtf8().constData())));
   }

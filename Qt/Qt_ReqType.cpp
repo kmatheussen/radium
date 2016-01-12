@@ -76,26 +76,31 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
   num_users_of_keyboard++; // disable X11 keyboard sniffer
 
   MyReqType *reqtype = new MyReqType();
-
-  if(tvisual==NULL){
-    
-    reqtype->frame = new QFrame();
-    reqtype->frame->show();
-    
-  }else {
-    
-    EditorWidget *editor = g_editor;
-    QSplitter *ysplitter = editor->ysplitter;
   
-    reqtype->frame = new QFrame(ysplitter);
+  GL_lock(); {
+    GL_pause_gl_thread_a_short_while();
 
-    ysplitter->insertWidget(0,reqtype->frame);
-  }
+    if(tvisual==NULL){
 
-  reqtype->frame->resize(5,10);
-  reqtype->frame->show();
-  reqtype->y = y_margin;
-  reqtype->widgets_disabled = false;
+      reqtype->frame = new QFrame();
+      reqtype->frame->show();
+    
+    }else {
+      
+      EditorWidget *editor = g_editor;
+      QSplitter *ysplitter = editor->ysplitter;
+      
+      reqtype->frame = new QFrame(ysplitter);
+      
+      ysplitter->insertWidget(0,reqtype->frame);
+    }
+
+    reqtype->frame->resize(5,10);
+    reqtype->frame->show();
+    reqtype->y = y_margin;
+    reqtype->widgets_disabled = false;
+  
+  }GL_unlock();
 
   return reqtype;
 }
@@ -182,23 +187,28 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   QStringList lines = reqtype->label_text.split('\n');
   Q_FOREACH (QString line, lines) {
     reqtype->y += last_height;
-    QLabel *label = new QLabel(line,reqtype->frame);
-    label->move(x_margin,reqtype->y + 3);
-    label->show();
-    x = x_margin + label->width();
-    last_height = label->height();
+    GL_lock(); {
+      QLabel *label = new QLabel(line,reqtype->frame);
+      label->move(x_margin,reqtype->y + 3);    
+      label->show();
+      x = x_margin + label->width();
+      last_height = label->height();
+    }GL_unlock();
   }
 
-  MyQLineEdit *edit = new MyQLineEdit(reqtype->frame);
-  edit->insert(reqtype->default_value);
-  edit->move(x + 5, reqtype->y);
-  edit->show();
+  MyQLineEdit *edit;
   
-  reqtype->frame->adjustSize();
-  reqtype->frame->setMinimumHeight(reqtype->y+R_MAX(20,edit->height()+10));
+  GL_lock(); {
+    
+    edit = new MyQLineEdit(reqtype->frame);
+    edit->insert(reqtype->default_value);
+    edit->move(x + 5, reqtype->y);
+    edit->show();
+  
+    reqtype->frame->adjustSize();
+    reqtype->frame->setMinimumHeight(reqtype->y+R_MAX(20,edit->height()+10));
 
-  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-  GL_lock();{
+    // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
     edit->setFocus();
   }GL_unlock();
 

@@ -512,7 +512,9 @@ void GFX_SetMinimalInstrumentWindow(void){
 
 void GFX_InstrumentWindowToFront(void){
   //set_widget_height(30);
-  instruments_widget->show();
+  GL_lock(); {
+    instruments_widget->show();
+  }GL_unlock();
 }
 
 void GFX_InstrumentWindowToBack(void){

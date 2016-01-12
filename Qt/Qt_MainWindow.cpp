@@ -313,7 +313,9 @@ bool GFX_EditorIsVisible(void){
 }
 
 void GFX_ShowEditor(void){
-  g_editor->show();
+  GL_lock();{
+    g_editor->show();
+  }GL_unlock();
 }
 
 void GFX_HideEditor(void){
@@ -321,10 +323,12 @@ void GFX_HideEditor(void){
 }
 
 void GFX_showHideEditor(void){
-  if(g_editor->isHidden())
-    g_editor->show();
-  else
-    g_editor->hide();
+  GL_lock();{
+    if(g_editor->isHidden())
+      g_editor->show();
+    else
+      g_editor->hide();
+  }GL_unlock();
 }
 
 

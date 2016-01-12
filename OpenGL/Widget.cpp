@@ -872,11 +872,13 @@ static void show_message_box(QMessageBox *box){
     QAbstractButton *msgBox_useStoredValue = (QAbstractButton*)box->addButton(message,QMessageBox::ApplyRole);
     printf((char*)msgBox_useStoredValue);
 #endif
-    box->show();
+
+    safeShow(box);
+    //box->show();
 
   } else {
 
-    box->show();
+    safeShow(box);//->show();
     box->button(QMessageBox::Ok)->hide();
 
   }

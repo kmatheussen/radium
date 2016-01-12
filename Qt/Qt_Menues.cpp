@@ -196,7 +196,10 @@ bool GFX_MenuVisible(struct Tracker_Windows *tvisual){
 
 void GFX_ShowMenu(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  editor->main_window->menuBar()->show();  
+  GL_lock();{
+    GL_pause_gl_thread_a_short_while();
+    editor->main_window->menuBar()->show();
+  }GL_unlock();
 }
 
 void GFX_HideMenu(struct Tracker_Windows *tvisual){

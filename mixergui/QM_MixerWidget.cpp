@@ -1103,17 +1103,21 @@ bool GFX_MixerIsVisible(void){
   return !g_mixer_widget->isHidden();
 }
 void GFX_ShowMixer(void){
-  g_mixer_widget->show();
+  GL_lock();{
+    g_mixer_widget->show();
+  }GL_unlock();
 }
 void GFX_HideMixer(void){
   g_mixer_widget->hide();
 }
 
 void GFX_showHideMixerWidget(void){
-  if(g_mixer_widget->isHidden())
-    g_mixer_widget->show();
-  else
-    g_mixer_widget->hide();
+  GL_lock();{
+    if(g_mixer_widget->isHidden())
+      g_mixer_widget->show();
+    else
+      g_mixer_widget->hide();
+  }GL_unlock();
 }
 
 static int g_main_pipe_patch_id = 0;

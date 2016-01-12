@@ -216,7 +216,9 @@ class Preferences : public QDialog, public Ui::Preferences {
       
         layout->addWidget(l);
         //l->move(0, i*20);
-        l->show();
+        GL_lock();{
+          l->show();
+        } GL_unlock();
         //contents->resize(contents->width(), 200*20);
       }
       
@@ -527,7 +529,9 @@ void OS_VST_config(struct Tracker_Windows *window){
 #else
   //EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
   Vst_paths_widget *vst_paths_widget=new Vst_paths_widget(NULL); // I'm not quite sure i it's safe to make this one static. It seems to work, but shouldn't the dialog be deleted when destroying the window? Not having it static is at least safe, although it might leak some memory.
-  vst_paths_widget->show();
+  GL_lock();{
+    vst_paths_widget->show();
+  } GL_unlock();
 #endif  
   printf("Ohjea\n");
 }
