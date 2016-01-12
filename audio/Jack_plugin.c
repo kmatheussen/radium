@@ -51,7 +51,7 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
       sprintf(temp, "in_%d",++n);
     
     if((data->input_ports[i] = jack_port_register(client,
-                                                  strdup(temp),
+                                                  V_strdup(temp),
                                                   JACK_DEFAULT_AUDIO_TYPE,
                                                   JackPortIsInput,
                                                   0
@@ -88,7 +88,7 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
 
     if((data->output_ports[i] = jack_port_register(
                                                    client,
-                                                   strdup(temp),
+                                                   V_strdup(temp),
                                                    JACK_DEFAULT_AUDIO_TYPE,
                                                    JackPortIsOutput,
                                                    0

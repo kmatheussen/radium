@@ -48,7 +48,7 @@ class MenuItem : public QObject
     Q_OBJECT
 public:
   MenuItem(const char *name, const char *python_command, QMenu *menu = NULL, bool checkable = false, int checkval = 0){
-    this->python_command = strdup(python_command);
+    this->python_command = V_strdup(python_command);
     this->checkable = checkable;
     this->checkval = checkval;
 

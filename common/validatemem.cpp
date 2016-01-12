@@ -430,9 +430,21 @@ static void *V_realloc_it(MemoryFreeer freeer, void *ptr, size_t size, const cha
 
   return new_mem;
 }
-                   
+
 void *V_malloc__(size_t size, const char *filename, int linenumber){
   return V_alloc(malloc ,size, filename, linenumber);
+}
+
+char *V_strdup__(const char *s, const char *filename, int linenumber){
+  int len = strlen(s) + 1;
+  char *ret = (char*)V_malloc__(len,filename,linenumber);
+
+  if (ret==NULL)
+    return NULL;
+
+  memcpy(ret, s, len);
+  
+  return ret;
 }
 
 static void *calloc_one_arg(size_t size){

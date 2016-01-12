@@ -193,7 +193,7 @@ namespace{
 
     ~PluginWindow(){      
       data->window = NULL;
-      free((void*)title);
+      V_free((void*)title);
     }
     
     void closeButtonPressed() override
@@ -512,7 +512,7 @@ static void show_gui(struct SoundPlugin *plugin){
 
     GL_lock();{
 
-      const char *title = strdup(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name);
+      const char *title = V_strdup(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name);
       data->window = new PluginWindow(title, data);
       
       if (data->x < 0 || data->y < 0)
@@ -618,7 +618,7 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
     }
   }
 
-  plugin_type->info = strdup(talloc_format("%sAccepts MIDI: %s\nProduces MIDI: %s\n",wrapper_info, audio_instance->acceptsMidi()?"Yes":"No", audio_instance->producesMidi()?"Yes":"No"));
+  plugin_type->info = V_strdup(talloc_format("%sAccepts MIDI: %s\nProduces MIDI: %s\n",wrapper_info, audio_instance->acceptsMidi()?"Yes":"No", audio_instance->producesMidi()?"Yes":"No"));
         
   plugin_type->is_instrument = audio_instance->acceptsMidi(); // doesn't seem like this field ("is_instrument") is ever read...
 
@@ -626,7 +626,7 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
 
   type_data->effect_names = (const char**)V_calloc(sizeof(char*),plugin_type->num_effects);
   for(int i = 0 ; i < plugin_type->num_effects ; i++)
-    type_data->effect_names[i] = strdup(audio_instance->getParameterName(i).toRawUTF8());
+    type_data->effect_names[i] = V_strdup(audio_instance->getParameterName(i).toRawUTF8());
 }
 
 
@@ -846,7 +846,7 @@ static SoundPluginType *create_plugin_type(const char *name, int uid, const wcha
   plugin_type->data = typeData;
 
   plugin_type->type_name = "VST";
-  plugin_type->name      = strdup(name);
+  plugin_type->name      = V_strdup(name);
 
   plugin_type->container = container;
 
@@ -922,7 +922,7 @@ void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, c
   SoundPluginTypeContainer *container = (SoundPluginTypeContainer*)V_calloc(1,sizeof(SoundPluginTypeContainer));
 
   container->type_name = "VST";
-  container->name = strdup(name);
+  container->name = V_strdup(name);
   container->populate = populate;
 
   ContainerData *data = (ContainerData*)V_calloc(1, sizeof(ContainerData));

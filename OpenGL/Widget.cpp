@@ -601,9 +601,9 @@ public:
     g_is_currently_pausing = false;
     
     if (GE_version_string==NULL) {
-      GE_vendor_string = strdup((const char*)glGetString(GL_VENDOR));
-      GE_renderer_string = strdup((const char*)glGetString(GL_RENDERER));
-      GE_version_string = strdup((const char*)glGetString(GL_VERSION));
+      GE_vendor_string = V_strdup((const char*)glGetString(GL_VENDOR));
+      GE_renderer_string = V_strdup((const char*)glGetString(GL_RENDERER));
+      GE_version_string = V_strdup((const char*)glGetString(GL_VERSION));
       printf("vendor: %s, renderer: %s, version: %s \n",(const char*)GE_vendor_string,(const char*)GE_renderer_string,(const char*)GE_version_string);
 
       GE_opengl_version_flags = QGLFormat::openGLVersionFlags();

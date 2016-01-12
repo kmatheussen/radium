@@ -474,7 +474,7 @@ static char *create_info_string(const LADSPA_Descriptor *descriptor){
           "\"%s\" is a LADSPA Plugin made by %s.\n"
           "Copyright: %s.",
           descriptor->Name,descriptor->Maker,descriptor->Copyright);
-  return strdup(temp);
+  return V_strdup(temp);
 }
 
 static void add_ladspa_plugin_type(QFileInfo file_info){
@@ -533,7 +533,7 @@ static void add_ladspa_plugin_type(QFileInfo file_info){
 
   Library *library = (Library*)V_calloc(1, sizeof(Library));
   library->library = qlibrary;
-  library->filename = strdup(filename.toUtf8().constData());
+  library->filename = V_strdup(filename.toUtf8().constData());
   
   //printf("Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());
 
@@ -548,17 +548,17 @@ static void add_ladspa_plugin_type(QFileInfo file_info){
     type_data->library = library;
     //type_data->descriptor = descriptor;
     type_data->UniqueID = descriptor->UniqueID;
-    type_data->Name = strdup(descriptor->Name);
+    type_data->Name = V_strdup(descriptor->Name);
     type_data->index = i;
     
 #if 0
     QString basename = file_info.fileName();
     basename.resize(basename.size()-strlen(LIB_SUFFIX)-1);
-    type_data->filename = strdup(basename.toUtf8().constData());
+    type_data->filename = V_strdup(basename.toUtf8().constData());
 #endif
 
     plugin_type->type_name = "Ladspa";
-    plugin_type->name      = strdup(descriptor->Name);
+    plugin_type->name      = V_strdup(descriptor->Name);
     plugin_type->info      = create_info_string(descriptor);
 
     plugin_type->is_instrument = false;

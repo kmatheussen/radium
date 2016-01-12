@@ -1235,7 +1235,7 @@ static void add_plugin(const wchar_t *name, QString filename) {
   SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
 
   plugin_type->type_name                = "Pd";
-  plugin_type->name                     = strdup(STRING_get_chars(name));
+  plugin_type->name                     = V_strdup(STRING_get_chars(name));
   plugin_type->info                     = "Pd is made by Miller Puckette. Radium uses a modified version of libpd to access it.\nlibpd is made by Peter Brinkmann.";
   plugin_type->num_inputs               = 2;
   plugin_type->num_outputs              = 2;

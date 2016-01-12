@@ -1276,7 +1276,7 @@ int main(int argc, char **argv){
 #endif
 
   // for mingw
-  putenv(strdup("LC_NUMERIC=C"));
+  putenv(V_strdup("LC_NUMERIC=C"));
   
   //QLocale::setDefault(QLocale::C);
   QLocale::setDefault(QLocale::c());
@@ -1351,7 +1351,7 @@ int main(int argc, char **argv){
   //putenv(strdup(QString("PYTHONHOME="+pythonlibpath).toUtf8().constData()));
   //putenv(strdup(QString("PYTHONPATH="+pythonlibpath).toUtf8().constData()));
   printf("pythonlibpath: -%s-\n",pythonlibpath.toUtf8().constData());
-  Py_SetPythonHome(strdup(pythonlibpath.toUtf8().constData()));
+  Py_SetPythonHome(V_strdup(pythonlibpath.toUtf8().constData()));
 #endif
 #endif
   //Py_SetProgramName(QString(python

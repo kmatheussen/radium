@@ -28,6 +28,7 @@ extern "C" {
   void *V_allocated_mem_real_start(void *allocated_mem);
   
   void *V_malloc__(size_t size, const char *filename, int linenumber);
+  char *V_strdup__(const char *s, const char *filename, int linenumber);
   void *V_calloc__(size_t n, size_t size, const char *filename, int linenumber);
   void V_free__(void *ptr);
   void *V_realloc__(void *ptr, size_t size, const char *filename, int linenumber);
@@ -38,6 +39,7 @@ extern "C" {
 #if defined(RELEASE)
 
 #define V_malloc(size) malloc(size)
+#define V_strdup(s) strdup(s)
 #define V_calloc(n, size) calloc(n, size)
 #define V_free(ptr) free((void*)ptr)
 #define V_realloc(ptr, size) realloc(ptr, size);
@@ -45,6 +47,7 @@ extern "C" {
 #else // RELEASE -> !RELEASE
 
 #define V_malloc(size) V_malloc__(size, __FILE__, __LINE__)
+#define V_strdup(s) V_strdup__(s, __FILE__, __LINE__)
 #define V_calloc(n, size) V_calloc__(n, size, __FILE__, __LINE__)
 #define V_free(ptr) V_free__((void*)(ptr))
 #define V_realloc(ptr, size) V_realloc__((void*)ptr, size, __FILE__, __LINE__)

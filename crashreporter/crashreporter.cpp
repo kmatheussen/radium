@@ -346,15 +346,15 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
 
 #if defined(FOR_WINDOWS)
 
-  char *p = strdup(program.toAscii());
-  char *a1 = strdup(arg1.toAscii());
-  char *a2 = strdup(arg2.toAscii());
-  char *a3 = strdup(arg3.toAscii());
-  char *a4 = strdup(arg4.toAscii());
+  char *p = V_strdup(program.toAscii());
+  char *a1 = V_strdup(arg1.toAscii());
+  char *a2 = V_strdup(arg2.toAscii());
+  char *a3 = V_strdup(arg3.toAscii());
+  char *a4 = V_strdup(arg4.toAscii());
 
   if(_spawnl(wait_until_finished ? _P_WAIT :  _P_DETACH, p, p, a1, a2, a3, a4, NULL)==-1){
     fprintf(stderr,"Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1);
-    SYSTEM_show_message(strdup(talloc_format("Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1)));
+    SYSTEM_show_message(V_strdup(talloc_format("Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1)));
     Sleep(3000);
   }
 
@@ -369,8 +369,8 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
 
   fprintf(stderr, "Executing -%s-\n",full_command.toUtf8().constData());
 
-  if(system(strdup(full_command.toUtf8().constData()))==-1) {
-    SYSTEM_show_message(strdup(talloc_format("Couldn't start crashreporter. command: -%s-\n",full_command.toUtf8().constData())));
+  if(system(V_strdup(full_command.toUtf8().constData()))==-1) {
+    SYSTEM_show_message(V_strdup(talloc_format("Couldn't start crashreporter. command: -%s-\n",full_command.toUtf8().constData())));
   }
 
 #else

@@ -896,7 +896,7 @@ static void set_plugin_type_data(AEffect *aeffect, SoundPluginType *plugin_type)
     aeffect->dispatcher(aeffect, effGetProductString, 0, 0, product, 0.0f);
     
     if(strlen(vendor)>0 || strlen(product)>0)
-      plugin_type->info = strdup(QString("Vendor: "+QString(vendor)+".\nProduct: "+QString(product)).toUtf8().constData());
+      plugin_type->info = V_strdup(QString("Vendor: "+QString(vendor)+".\nProduct: "+QString(product)).toUtf8().constData());
   }
 
   plugin_type->num_effects = aeffect->numParams;
