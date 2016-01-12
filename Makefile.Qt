@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 3.5.2
+VERSION = 3.5.3
 
 #----------------USER SETTINGS-------------------------------
 
@@ -114,7 +114,8 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 
 FULL_VERSION ?= 1
 
-DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g -Og
+DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g
+#-Og
 #-DNDEBUG
 
 RELEASE_BUILD_OPTS_WITHOUT_NDEBUG = -DRELEASE -DDEBUG -Wall -g $(OPTIMIZE)
