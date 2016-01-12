@@ -624,7 +624,7 @@ protected:
 
       if (dontshow.contains(message)==false){
         msgBox.setText(message);
-        msgBox.show();
+        safeShow(&msgBox);
       }
 
       rt_message_status = RT_MESSAGE_SHOWING;

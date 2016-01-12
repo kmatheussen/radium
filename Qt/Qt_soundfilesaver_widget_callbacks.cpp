@@ -182,9 +182,7 @@ extern "C"{
 #if 0
     widget->show();
 #else
-    num_users_of_keyboard++;
     safeExec(widget);
-    num_users_of_keyboard--;
 #endif
   }
 

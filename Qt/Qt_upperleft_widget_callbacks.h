@@ -118,42 +118,44 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
   // called from the outside
   void position(struct Tracker_Windows *window, struct WBlocks *wblock){
 
+    GL_lock();{
 
-    // upperleft lpb/bpm/reltempo show/hide
-    if (window->show_lpb_track)
-      LPBWidget->show();
-    else
-      LPBWidget->hide();
-    
-    if (window->show_bpm_track)
-      BPMWidget->show();
-    else
-      BPMWidget->hide();
+      // upperleft lpb/bpm/reltempo show/hide
+      if (window->show_lpb_track)
+        LPBWidget->show();
+      else
+        LPBWidget->hide();
+      
+      if (window->show_bpm_track)
+        BPMWidget->show();
+      else
+        BPMWidget->hide();
+      
+      if (window->show_reltempo_track)
+        ReltempoWidget->show();
+      else
+        ReltempoWidget->hide();
+      
+      // bottombar signature/lpb/bpm show/hide
+      if (window->show_signature_track)
+        g_bottom_bar->SignatureWidget->hide();
+      else
+        g_bottom_bar->SignatureWidget->show();
+      
+      if (window->show_lpb_track)
+        g_bottom_bar->LPBWidget->hide();
+      else
+        g_bottom_bar->LPBWidget->show();
+      
+      if (window->show_bpm_track)
+        g_bottom_bar->BPMWidget->hide();
+      else
+        g_bottom_bar->BPMWidget->show();
+      
+      if (window->show_lpb_track && window->show_bpm_track)
+        g_bottom_bar->tempo_line->hide();
 
-    if (window->show_reltempo_track)
-      ReltempoWidget->show();
-    else
-      ReltempoWidget->hide();
-
-    // bottombar signature/lpb/bpm show/hide
-    if (window->show_signature_track)
-      g_bottom_bar->SignatureWidget->hide();
-    else
-      g_bottom_bar->SignatureWidget->show();
-    
-    if (window->show_lpb_track)
-      g_bottom_bar->LPBWidget->hide();
-    else
-      g_bottom_bar->LPBWidget->show();
-    
-    if (window->show_bpm_track)
-      g_bottom_bar->BPMWidget->hide();
-    else
-      g_bottom_bar->BPMWidget->show();
-
-    if (window->show_lpb_track && window->show_bpm_track)
-      g_bottom_bar->tempo_line->hide();
-
+    } GL_unlock();
     
     int width = wblock->t.x1;
     int height = wblock->t.y1;

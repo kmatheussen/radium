@@ -249,8 +249,10 @@ public:
       _comp_widget->radium_url->hide();
       _comp_widget->bypass->hide();
 
-      _comp_widget->show();
-      _comp_widget->setVisible(plugin->show_compressor_gui);
+      GL_lock(); {
+        _comp_widget->show();
+        _comp_widget->setVisible(plugin->show_compressor_gui);
+      }GL_unlock();
     }
 
     filters_widget->setVisible(plugin->show_equalizer_gui);

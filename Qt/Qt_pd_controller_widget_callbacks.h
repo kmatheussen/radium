@@ -141,27 +141,31 @@ public:
   }
 
   void update_gui(void){
-    if(_controller->type==EFFECT_FORMAT_FLOAT || _controller->type==EFFECT_FORMAT_INT) {
-      value_slider->show();
-      onoff_widget->hide();
-      //min_value_widget->show();
-      //max_value_widget->show();
+    GL_lock();{
 
-      float value = PLUGIN_get_effect_value(_plugin, _controller->num, VALUE_FROM_PLUGIN);
-      //SLIDERPAINTER_setValue(value_slider->_painter, 5000);//value*10000);
-      value_slider->setValue(value*10000);
-      //value_slider->update();
+      if(_controller->type==EFFECT_FORMAT_FLOAT || _controller->type==EFFECT_FORMAT_INT) {
+        value_slider->show();
+        onoff_widget->hide();
+        //min_value_widget->show();
+        //max_value_widget->show();
+        
+        float value = PLUGIN_get_effect_value(_plugin, _controller->num, VALUE_FROM_PLUGIN);
+        //SLIDERPAINTER_setValue(value_slider->_painter, 5000);//value*10000);
+        value_slider->setValue(value*10000);
+        //value_slider->update();
+        
+        paint_slider_text();
+        
+      } else {
+        value_slider->hide();
+        //min_value_widget->hide();
+        //max_value_widget->hide();
+        onoff_widget->show();
+        
+        paint_onoff_text();
+      }
 
-      paint_slider_text();
-
-    } else {
-      value_slider->hide();
-      //min_value_widget->hide();
-      //max_value_widget->hide();
-      onoff_widget->show();
-
-      paint_onoff_text();
-    }
+    } GL_unlock();
   }
 
   void paint_slider_text(void){
