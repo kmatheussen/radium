@@ -189,8 +189,9 @@ namespace{
       // Centre the window on the screen
     }
 
-    ~PluginWindow(){
+    ~PluginWindow(){      
       data->window = NULL;
+      free(title);
     }
     
     void closeButtonPressed() override
