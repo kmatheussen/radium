@@ -178,6 +178,7 @@ namespace{
 
   struct PluginWindow  : public DocumentWindow {
     Data *data;
+    const char *title;
     
     PluginWindow(const char *title, Data *data)
       : DocumentWindow (title,
@@ -185,13 +186,14 @@ namespace{
                         DocumentWindow::allButtons,
                         true)
       , data(data)
+      , title(title)
     {
       // Centre the window on the screen
     }
 
     ~PluginWindow(){      
       data->window = NULL;
-      free(title);
+      free((void*)title);
     }
     
     void closeButtonPressed() override
