@@ -270,7 +270,7 @@ const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, c
   first_pitch->l.p = note->l.p;
   first_pitch->l.next = &note->pitches->l;
   first_pitch->note = note->note;
-  first_pitch->logtype = LOGTYPE_HOLD;
+  first_pitch->logtype = LOGTYPE_HOLD; // irrelevant. Can be any value
   
   struct Pitches *last_pitch = talloc(sizeof(struct Pitches));
   last_pitch->l.p = note->end;
@@ -332,7 +332,7 @@ const struct NodeLine *GetPianorollNodeLines(const struct Tracker_Windows *windo
   first_pitch->l.p = note->l.p;
   first_pitch->l.next = &note->pitches->l;
   first_pitch->note = note->note;
-  first_pitch->logtype = LOGTYPE_HOLD;
+  first_pitch->logtype = LOGTYPE_HOLD; // irrelevant. Can be any value
     
   struct Pitches *last_pitch = talloc(sizeof(struct Pitches));
   last_pitch->l.p = note->end;
@@ -375,7 +375,7 @@ const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window
   first_velocity->l.p = note->l.p;
   first_velocity->l.next = &note->velocities->l;
   first_velocity->velocity = note->velocity;
-  first_velocity->logtype = LOGTYPE_HOLD;
+  first_velocity->logtype = LOGTYPE_HOLD; // irrelevant. Can be any value
   
   struct Velocities *last_velocity = (struct Velocities*)&note->last_velocity;
   last_velocity->l.p = note->end;

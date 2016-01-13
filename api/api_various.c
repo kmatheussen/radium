@@ -979,7 +979,12 @@ bool useNativeFileRequesters(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_native_file_requesters = SETTINGS_read_bool("native_file_requesters", false);
+#if FOR_WINDOWS
+    float default_value = true;
+#else
+    float default_value = false;
+#endif
+    g_native_file_requesters = SETTINGS_read_bool("native_file_requesters", default_value);
     has_inited = true;
   }
 
