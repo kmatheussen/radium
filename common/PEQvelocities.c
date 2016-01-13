@@ -40,7 +40,8 @@ static STime PEQ_CalcNextVelocityEvent(
                                 STime time2,
                                 int x1,
                                 int *x,
-                                int x2
+                                int x2,
+                                int logtype
                                 )
 {
 #if 0
@@ -57,7 +58,8 @@ static STime PEQ_CalcNextVelocityEvent(
                            time1,time,time2,
                            x1,
                            x,
-                           x2
+                           x2,
+                           logtype
                            );
 #endif
 }
@@ -103,7 +105,8 @@ void InitPEQvelocities(
                                                   peq->time2,
                                                   note->velocity,
                                                   &x,
-                                                  note->velocity_end
+                                                  note->velocity_end,
+                                                  note->velocity_end_logtype
 			)
 		);
 		return;
@@ -122,7 +125,8 @@ void InitPEQvelocities(
                                                    peq->time2,
                                                    note->velocity,
                                                    &x,
-                                                   velocity->velocity
+                                                   velocity->velocity,
+                                                   velocity->logtype
                                                    )
                          );
 
@@ -194,7 +198,8 @@ static void PE_ChangeVelocityFromStart(struct PEventQueue *peq,int doit){
                                         peq->time2,
                                         peq->note->velocity,
                                         &x,
-                                        peq->velocity->velocity
+                                        peq->velocity->velocity,
+                                        peq->velocity->logtype
                                         );
 
 	if(btime==ntime){
@@ -247,7 +252,8 @@ static void PE_ChangeVelocity(struct PEventQueue *peq,int doit){
 		peq->time2,
 		peq->velocity->velocity,
 		&x,
-		peq->nextvelocity->velocity
+		peq->nextvelocity->velocity,
+                peq->nextvelocity->logtype
 	);
 
 	if(btime==ntime){
@@ -282,14 +288,15 @@ static void PE_ChangeVelocityToEnd(struct PEventQueue *peq,int doit){
 	}
 
 	ntime=PEQ_CalcNextVelocityEvent(
-                                peq,
-		peq->time1,
-		btime,
-		peq->time2,
-		peq->velocity->velocity,
-		&x,
-		peq->note->velocity_end+1		// Don't really know why I have to add 1, but it works...
-	);
+                                        peq,
+                                        peq->time1,
+                                        btime,
+                                        peq->time2,
+                                        peq->velocity->velocity,
+                                        &x,
+                                        peq->note->velocity_end+1,		// Don't really know why I have to add 1, but it works...
+                                        peq->note->velocity_end_logtype
+                                        );
 
 	if(ntime>=peq->time2){
 		ReturnPEQelement(peq);
@@ -325,8 +332,9 @@ static void PE_ChangeVelocityFromStartToEnd(struct PEventQueue *peq,int doit){
                                         peq->time2,
                                         peq->note->velocity,
                                         &x,
-                                        peq->note->velocity_end+1		// Don't really know why I have to add 1, but it works...
-	);
+                                        peq->note->velocity_end+1,		// Don't really know why I have to add 1, but it works...
+                                        peq->note->velocity_end_logtype
+                                        );
 
 	if(ntime>=peq->time2){
 		ReturnPEQelement(peq);

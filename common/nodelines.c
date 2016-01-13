@@ -114,11 +114,11 @@ static void insert_nonnode_nodeline(struct NodeLine *nodelines, const struct Lis
 }
 
 
-const struct NodeLine *create_nodelines(
+static const struct NodeLine *create_nodelines(
                                         const struct Tracker_Windows *window,
                                         const struct WBlocks *wblock,
                                         const struct ListHeader3 *list,                                  
-                                        float (*get_x)(const struct WBlocks *wblock, const struct ListHeader3 *element), // should return a value between 0 and 1.
+                                        float (*get_x)(const struct WBlocks *wblock, const struct ListHeader3 *element, int *logtype), // should return a value between 0 and 1.
                                         const struct ListHeader3 *last_element // may be null. may also contain more than one element.
                                         )
 {
@@ -141,7 +141,7 @@ const struct NodeLine *create_nodelines(
     while(list != NULL){
       struct NodeLine *nodeline = (struct NodeLine *)talloc(sizeof(struct NodeLine));
 
-      nodeline->x1 = get_x(wblock, list);
+      nodeline->x1 = get_x(wblock, list, &nodeline->logtype);
       reallineF = FindReallineForF(wblock, reallineF, &list->p);
       nodeline->y1 = get_realline_y(window, reallineF);
       nodeline->element1 = list;
@@ -172,7 +172,7 @@ const struct NodeLine *create_nodelines(
     struct NodeLine *next = ns->next;
     
     for(;;){
-      ns->x2 = next->x1;
+      ns->x2 = next->logtype==LOGTYPE_HOLD ? ns->x1 : next->x1;
       ns->y2 = next->y1;
 
       if (ns->y2 < ns->y1) {
@@ -217,8 +217,9 @@ const struct NodeLine *create_nodelines(
 // temponodes
 ///////////////////////////////////////////////////////////
 
-static float get_temponode_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
+static float get_temponode_x(const struct WBlocks *wblock, const struct ListHeader3 *element, int *logtype){
   struct TempoNodes *temponode = (struct TempoNodes*)element;
+  *logtype = LOGTYPE_LINEAR;
   return scale(temponode->reltempo,
                (float)(-wblock->reltempomax+1.0f),(float)(wblock->reltempomax-1.0f),
                wblock->temponodearea.x, wblock->temponodearea.x2
@@ -248,8 +249,9 @@ static float track_notearea_x1, track_notearea_x2;
 static float track_pitch_min;
 static float track_pitch_max;
 
-static float get_pitch_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
+static float get_pitch_x(const struct WBlocks *wblock, const struct ListHeader3 *element, int *logtype){
   struct Pitches *pitch = (struct Pitches*)element;
+  *logtype = pitch->logtype;
   return scale(pitch->note,
                track_pitch_min, track_pitch_max,
                track_notearea_x1, track_notearea_x2
@@ -268,6 +270,7 @@ const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, c
   first_pitch->l.p = note->l.p;
   first_pitch->l.next = &note->pitches->l;
   first_pitch->note = note->note;
+  first_pitch->logtype = LOGTYPE_HOLD;
   
   struct Pitches *last_pitch = talloc(sizeof(struct Pitches));
   last_pitch->l.p = note->end;
@@ -278,6 +281,8 @@ const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, c
   else
     last_pitch->note = note->note;
 
+  last_pitch->logtype = note->pitch_end_logtype;
+  
   return create_nodelines(window,
                           wblock,
                           &first_pitch->l,
@@ -298,9 +303,11 @@ const vector_t *GetPitchNodes(const struct Tracker_Windows *window, const struct
 
 static const struct WTracks *pianoroll_wtrack;
 
-static float get_pianoroll_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
+static float get_pianoroll_x(const struct WBlocks *wblock, const struct ListHeader3 *element, int *logtype){
   struct Pitches *pitch = (struct Pitches*)element;
 
+  *logtype = pitch->logtype;
+  
   //int octave = pitch->note / 12;
   //float chroma = pitch->note - (float)(octave*12);
 
@@ -325,16 +332,19 @@ const struct NodeLine *GetPianorollNodeLines(const struct Tracker_Windows *windo
   first_pitch->l.p = note->l.p;
   first_pitch->l.next = &note->pitches->l;
   first_pitch->note = note->note;
-  
+  first_pitch->logtype = LOGTYPE_HOLD;
+    
   struct Pitches *last_pitch = talloc(sizeof(struct Pitches));
   last_pitch->l.p = note->end;
   last_pitch->l.next = NULL;
-  
+    
   if (note->pitch_end>0)
     last_pitch->note = note->pitch_end;
   else
     last_pitch->note = note->note;
-  
+
+  last_pitch->logtype = note->pitch_end_logtype;
+
   return create_nodelines(window,
                           wblock,
                           &first_pitch->l,
@@ -348,13 +358,15 @@ const vector_t *GetPianorollNodes(const struct Tracker_Windows *window, const st
                             wblock->t.y1);
 }
 
+
 // velocities
 ///////////////////////////////////////////////////////////
 
 static float subtrack_x1, subtrack_x2;
 
-static float get_velocity_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
+static float get_velocity_x(const struct WBlocks *wblock, const struct ListHeader3 *element, int *logtype){
   struct Velocities *velocity = (struct Velocities*)element;
+  *logtype = velocity->logtype;
   return scale_double(velocity->velocity, 0, MAX_VELOCITY, subtrack_x1, subtrack_x2);
 }
 
@@ -363,11 +375,13 @@ const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window
   first_velocity->l.p = note->l.p;
   first_velocity->l.next = &note->velocities->l;
   first_velocity->velocity = note->velocity;
+  first_velocity->logtype = LOGTYPE_HOLD;
   
   struct Velocities *last_velocity = (struct Velocities*)&note->last_velocity;
   last_velocity->l.p = note->end;
   last_velocity->l.next = NULL;
   last_velocity->velocity = note->velocity_end;
+  last_velocity->logtype = note->velocity_end_logtype;
   
   //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
   subtrack_x1 = GetXSubTrack1(wtrack,note->subtrack);
@@ -392,8 +406,9 @@ const vector_t *GetVelocityNodes(const struct Tracker_Windows *window, const str
 
 static float fx_min, fx_max, wtrackfx_x1, wtrackfx_x2;
 
-static float get_fxs_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
+static float get_fxs_x(const struct WBlocks *wblock, const struct ListHeader3 *element, int *logtype){
   struct FXNodeLines *fxnode = (struct FXNodeLines *)element;
+  *logtype = fxnode->logtype;
   return scale(fxnode->val, fx_min, fx_max, wtrackfx_x1, wtrackfx_x2);
 }
 

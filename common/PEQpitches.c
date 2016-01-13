@@ -17,8 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-
 #include "nsmtracker.h"
 #include "playerclass.h"
 #include "PEQcommon_proc.h"
@@ -41,7 +39,8 @@ static STime PEQ_CalcNextPitchEvent(
                                 STime time2,
                                 float x1,
                                 float *x,
-                                float x2
+                                float x2,
+                                int logtype
                                 )
 {
   int int_x;
@@ -49,7 +48,8 @@ static STime PEQ_CalcNextPitchEvent(
                                 time1,time,time2,
                                 scale(x1, 0,128,0,INT_MAX/2),
                                 &int_x,
-                                scale(x2, 0,128,0,INT_MAX/2)
+                                scale(x2, 0,128,0,INT_MAX/2),
+                                logtype
                                 );
   *x = scale(int_x, 0,INT_MAX/2, 0.0,128.0); // convert back.
   return ntime;
@@ -87,13 +87,13 @@ void InitPEQpitches(
           peq->nextpitch = NULL;
           peq->time2=Place2STime(block,&note->end);
           peq->TreatMe=PE_ChangePitchToEnd;
-
+          
         } else {
         
           peq->nextpitch = pitch;
           peq->time2=Place2STime(block,&pitch->l.p);
           peq->TreatMe=PE_ChangePitch;
-
+          
         }
         
         int x;
@@ -105,7 +105,8 @@ void InitPEQpitches(
                                            peq->time2,
                                            1,
                                            &x,
-                                           20000000
+                                           20000000,
+                                           LOGTYPE_LINEAR
                                            )
                          );
 }
@@ -170,13 +171,15 @@ static void PE_ChangePitch(struct PEventQueue *peq,int doit){
 		return;
 	}
 
-        float pitch1,pitch2;
+        float pitch1,pitch2,logtype;
         if(peq->pitch==peq->nextpitch){
           pitch1=peq->note->note;
           pitch2=peq->pitch->note;
+          logtype=peq->pitch->logtype;
         }else{
           pitch1=peq->pitch->note;
           pitch2=peq->nextpitch->note;
+          logtype=peq->nextpitch->logtype;
         }
 
 	ntime=PEQ_CalcNextPitchEvent(
@@ -186,7 +189,8 @@ static void PE_ChangePitch(struct PEventQueue *peq,int doit){
 		peq->time2,
                 pitch1,
 		&x,
-                pitch2
+                pitch2,
+                logtype
 	);
 
 	if(btime==ntime){
@@ -209,8 +213,6 @@ static void PE_ChangePitch(struct PEventQueue *peq,int doit){
 }
 
 static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit){
-	float x;
-
 	STime btime=PC_TimeToRelBlockStart(pc->end_time);
 
 	if(btime>=peq->time2){
@@ -226,6 +228,8 @@ static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit){
         if(next_pitch<=1) // not supposed to happen though.
           next_pitch = 1;
 
+        float x;
+
 	STime ntime=PEQ_CalcNextPitchEvent(
                                            peq,
                                            peq->time1,
@@ -233,8 +237,9 @@ static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit){
                                            peq->time2,
                                            prev_pitch,
                                            &x,
-                                           next_pitch
-	);
+                                           next_pitch,
+                                           note->pitch_end_logtype
+                                           );
 
 	if(ntime>peq->time2){
 		ReturnPEQelement(peq);

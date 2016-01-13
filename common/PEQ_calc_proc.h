@@ -7,7 +7,8 @@ extern STime PEQ_CalcNextEvent(
 	STime time2,
 	int x1,
 	int *x,
-	int x2
+	int x2,
+        int logtype
 );
 
 #endif

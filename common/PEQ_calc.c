@@ -43,13 +43,20 @@ STime PEQ_CalcNextEvent(
 	STime time2,
 	int x1,
 	int *x,
-	int x2
+	int x2,
+        int logtype
 ){
+
   if (time==time2){
     *x=x2;
     return time2+1;
   }
   
+  if (logtype == LOGTYPE_HOLD){
+    *x = x2;
+    return time2;
+  }
+
   if(x1==x2){
     *x=x2;
     return time2;
@@ -73,6 +80,8 @@ STime PEQ_CalcNextEvent(
   return ret_time;
 }
 
+
+#if 0
 
 STime PEQ_CalcNextEvent_old(
 	STime time1,
@@ -146,6 +155,7 @@ STime PEQ_CalcNextEvent_old(
 	return ret;
 }
 
+#endif
 
 
 

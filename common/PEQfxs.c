@@ -149,7 +149,8 @@ void PE_HandleFirstFX(struct PEventQueue *peq,int doit){
 		peq->time2,
 		peq->fxnodeline->val,
 		&x,
-		peq->nextfxnodeline->val
+		peq->nextfxnodeline->val,
+                peq->nextfxnodeline->logtype
 	);
 
 	if(ntime>peq->time2) ntime=peq->time2;
@@ -192,7 +193,8 @@ void PE_HandleFX(struct PEventQueue *peq,int doit){
 		peq->time2,
 		peq->fxnodeline->val,
 		&x,
-		peq->nextfxnodeline->val
+		peq->nextfxnodeline->val,
+                peq->nextfxnodeline->logtype
 	);
 
 	if(ntime>peq->time2) ntime=peq->time2;
