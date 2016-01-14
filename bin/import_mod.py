@@ -51,7 +51,7 @@ class NullWriter(object):
 if __name__ == "__main__":
     sys.g_program_path = '__main__' # hack to be able to import import_midi
 else:
-    if platform.system() != "Linux" and os.isatty(sys.stdout.fileno()):
+    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
         sys.stdout = sys.stderr = NullWriter()
 
 
