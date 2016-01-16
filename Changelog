@@ -1,3 +1,10 @@
+Changes 3.5.4 -> 3.5.5:
+* Fix import MOD files.
+* Don't crash when showing a VST GUI which starts by showing a pop up,
+  for instance informing about running a demo version.
+
+
+
 Changes 3.5.3 -> 3.5.4:
 * Undo changing track width
 * Windows: Use native file requester by default. The one in Qt can be extremely slow
