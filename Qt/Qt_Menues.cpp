@@ -52,7 +52,7 @@ public:
     this->checkable = checkable;
     this->checkval = checkval;
 
-    printf("Adding menu item %s\n",name);
+    //printf("Adding menu item %s\n",name);
     //getchar();
     
     if(menu!=NULL) {
@@ -65,7 +65,7 @@ public:
       }
     }else{
       QAction *action = current_menu->menu->addAction(name, this, SLOT(clicked()));
-      printf("action: %p\n",action);
+      //printf("action: %p\n",action);
       if(current_menu->base==NULL){
         if(checkable==true){
           action->setCheckable(true);

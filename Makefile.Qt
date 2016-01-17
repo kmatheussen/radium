@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 3.5.3
+VERSION = 3.5.5
 
 #----------------USER SETTINGS-------------------------------
 
@@ -66,7 +66,7 @@ PKG ?= pkg-config
 
 CCC ?= g++
 CC ?= gcc
-GCC ?= gcc
+GCC ?= $(CC)
 GPLUSPLUS ?= $(CCC)
 LINKER ?= g++
 
@@ -114,7 +114,7 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 
 FULL_VERSION ?= 1
 
-DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g
+DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g # -ggdb3
 #-Og
 #-DNDEBUG
 
@@ -136,7 +136,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DUSE_GFX_OP_QUEUE -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) $(FLAGOPTS) $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_58_0 -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
+COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) $(FLAGOPTS) $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_58_0 -I${HOME}/SDKs -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
 #$(CFLAGS)
 # -Wunused-parameter
 
@@ -1371,11 +1371,13 @@ buildtype.opt: #Makefile
 	echo $(TARGET_OS)
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
 		echo "$(DEBUG_BUILD_OPTS)" >buildtype.opt ; \
-	elif [ $(TARGET_OS) = mingw32 ] ; then \
-		echo "$(RELEASE_BUILD_OPTS_WITHOUT_NDEBUG)" >buildtype.opt ; \
 	else \
 		echo "$(RELEASE_BUILD_OPTS)" >buildtype.opt ; \
 	fi
+
+#	elif [ $(TARGET_OS) = mingw32 ] ; then \
+#		echo "$(RELEASE_BUILD_OPTS_WITHOUT_NDEBUG)" >buildtype.opt ; \
+
 
 bin/X11_XSendEvent: X11/X11_XSendEvent.c
 	$(CC) X11/X11_XSendEvent.c -Wall -o bin/X11_XSendEvent -L/usr/X11R6/lib -lX11
@@ -1703,7 +1705,8 @@ crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/backtra
 	$(CC) crashreporter/crashreporter_posix.c $(OPT) $(CRASHREPORTER_POSIX_OPTS)
 
 crashreporter_windows.o: crashreporter/crashreporter_windows.c
-	$(CC) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
+	$(CC) crashreporter/crashreporter_windows.c $(OPT) -O0 -DPACKAGE
+#	$(CC) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
 GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp
 	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS)
@@ -1723,9 +1726,9 @@ do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 
 bin/packages/s7/s7_$(TARGET_OS).o: bin/packages/s7/s7.c
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_HISTORY=1  -DDEBUGGING=1 ; \
+		$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_C_LOADER=0 -DWITH_HISTORY=1  -DDEBUGGING=1 ; \
 	else \
-		$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_HISTORY=1 ; \
+		$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_C_LOADER=0 -DWITH_HISTORY=1 ; \
 	fi
 # -Wno-absolute-value
 

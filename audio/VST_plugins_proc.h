@@ -29,6 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  define VST_SUFFIX "dll"
 #endif
 
+#define VST3_SUFFIX "vst3"
+
+
 void create_vst_plugins(bool is_juce_plugin);
 
 struct radium_vst_uids_t{

@@ -83,9 +83,8 @@ public:
 private:
     static LONG_PTR getImprobableWindowNumber() noexcept
     {
-      return ::rand();
-      //        static LONG_PTR number = (LONG_PTR) Random::getSystemRandom().nextInt64();
-      //  return number;
+        static LONG_PTR number = (LONG_PTR) Random::getSystemRandom().nextInt64();
+        return number;
     }
 };
 

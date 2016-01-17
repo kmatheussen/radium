@@ -426,6 +426,14 @@ static bool string_to_file(QString s, QTemporaryFile *file, bool save_mixer_tree
   return ret;
 }
 
+/*
+void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, enum Crash_Type crash_type){
+  printf("CR_send_message_called with %d lines of info about -%s-\n",num_messages,additional_information);
+  int i;
+  for(i=0;i<num_messages;i++)
+    printf("%d: %s\n",i,messages[i]);
+}
+*/
 
 void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, Crash_Type crash_type){
   QString plugin_names = get_plugin_names();

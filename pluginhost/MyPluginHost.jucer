@@ -49,7 +49,7 @@
         <MODULEPATH id="juce_audio_basics" path="../../juce"/>
       </MODULEPATHS>
     </XCODE_MAC>
-    <CODEBLOCKS targetFolder="Builds/CodeBlocks">
+    <CODEBLOCKS targetFolder="Builds/CodeBlocks" vstFolder="">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="MyPluginHost"/>
         <CONFIGURATION name="Release" isDebug="0" optimisation="2" targetName="MyPluginHost"/>

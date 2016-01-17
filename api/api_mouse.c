@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/patch_proc.h"
 #include "../common/nodelines_proc.h"
 #include "../common/wtracks_proc.h"
+#include "../common/undo_blocks_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 
@@ -2823,6 +2824,14 @@ float getTrackWidth(int tracknum, int blocknum, int windownum){
   }
 }
 
+void undoTrackWidth(void){
+  struct Tracker_Windows *window=getWindowFromNum(-1);
+  if(window==NULL)
+    return;
+  
+  Undo_Block_CurrPos(window); // can be optimized a lot
+}
+
 void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){
   if (new_width < 2) {
 #if 0
@@ -2835,7 +2844,7 @@ void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){
 
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
-    
+          
   if (tracknum==-1){
     wblock = getWBlockFromNumA(windownum, &window, blocknum);
     if (wblock==NULL)
@@ -2845,7 +2854,7 @@ void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){
     struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
     if (wtrack==NULL)
       return;
-    printf("new width: %d, old: %d\n",(int)new_width,wtrack->fxwidth);
+    ///printf("new width: %d, old: %d\n",(int)new_width,wtrack->fxwidth);
     wtrack->fxwidth = new_width;
   }
 

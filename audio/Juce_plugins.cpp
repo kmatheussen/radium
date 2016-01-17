@@ -180,7 +180,7 @@ namespace{
     Data *data;
     const char *title;
     
-    PluginWindow(const char *title, Data *data)
+    PluginWindow(const char *title, Data *data, AudioProcessorEditor* const editor)
       : DocumentWindow (title,
                         Colours::lightgrey,
                         DocumentWindow::allButtons,
@@ -188,7 +188,18 @@ namespace{
       , data(data)
       , title(title)
     {
-      // Centre the window on the screen
+      this->setSize (400, 300);
+      this->setUsingNativeTitleBar(true);
+
+      this->setContentOwned(editor, true);
+      
+      if (data->x <= 0 || data->y <= 0) {
+        this->centreWithSize (getWidth(), getHeight());
+      } else {
+        this->setTopLeftPosition(data->x, data->y);
+      }
+
+      this->setVisible(true);
     }
 
     ~PluginWindow(){      
@@ -508,29 +519,22 @@ static void show_gui(struct SoundPlugin *plugin){
 
   Data *data = (Data*)plugin->data;
 
-  if (data->window==NULL) {
+  GL_lock();{
 
-    GL_lock();{
+    if (data->window==NULL) {
 
-      const char *title = V_strdup(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name);
-      data->window = new PluginWindow(title, data);
-      
-      if (data->x < 0 || data->y < 0)
-        data->window->centreWithSize (data->window->getWidth(), data->window->getHeight());
-      else {
-        data->window->setTopLeftPosition(data->x, data->y);
-      }
-      
       AudioProcessorEditor *editor = data->audio_instance->createEditor(); //IfNeeded();
-      editor->setName (data->audio_instance->getName());
       
-      data->window->setContentOwned(editor, true);
-      data->window->setUsingNativeTitleBar(true);
+      if (editor != NULL) {
 
-    }GL_unlock();
-  }
+        const char *title = V_strdup(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name);
+        data->window = new PluginWindow(title, data, editor);
+      }
 
-  data->window->setVisible(true);
+    }
+    
+  }GL_unlock();
+
 }
 
 

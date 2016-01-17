@@ -1,8 +1,21 @@
+Changes 3.5.4 -> 3.5.5:
+* Fix import MOD files.
+* Don't crash when showing a VST GUI which starts by showing a pop up,
+  for instance informing about running a demo version.
+
+
+
+Changes 3.5.3 -> 3.5.4:
+* Undo changing track width
+* Windows: Use native file requester by default. The one in Qt can be extremely slow
+
+
+
 Changes 3.5.1 -> 3.5.3:
 * Draw current track background in lighter color
 * Fix pianonote editing
 * Fix some crashes when opening VST gui and other windows
-	
+
 
 
 Changes 3.4.5 -> 3.5.1:
