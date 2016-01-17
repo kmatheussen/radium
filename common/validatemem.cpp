@@ -1,4 +1,7 @@
 
+#if !defined(RELEASE)
+
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -26,6 +29,7 @@
 
 
 #define ALIGN_UP(value) (((uintptr_t)value + sizeof(int32_t) - 1) & -sizeof(int32_t))
+
 
 
 static QMutex *mutex = NULL; // must be allocated manually since it can be used before all static variables have been initialized.
@@ -268,7 +272,8 @@ static Memlink *validate_a_little(double max_time, Memlink *link){
 
 
 namespace{
-  
+
+
 struct ValidationThread : public QThread {
 
 public:
@@ -478,10 +483,10 @@ void *V_realloc__(void *ptr, size_t size, const char *filename, int linenumber){
 }
 
 // Note, buggy system libraries may cause the memory validator to crash.
-// In that case, just change "#if defined(RELEASE)" to "#if 0" below.
+// In that case, just change "#if 1" to "#if 0" below.
 //
-//#if 0
-#if !defined(RELEASE)
+#if 1
+
 
 void* operator new(size_t size){
   static int num=1;
@@ -505,8 +510,7 @@ void operator delete[](void* mem){
   V_free(mem);
 }
 
-#endif // !RELEASE
-
+#endif // 1
 
 
 #ifdef TEST_MAIN
@@ -535,4 +539,7 @@ int main(int argc, char **argv){
 #endif
 
 
-                
+               
+#endif // !RELEASE
+
+
