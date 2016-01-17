@@ -398,7 +398,7 @@ float *SF2_load_sample(const wchar_t *filename, int sample_num){
 
   int num_frames = buffer.Size / sizeof(int16_t);
 
-  float *ret=(float*)calloc(sizeof(float),num_frames);
+  float *ret=(float*)V_calloc(sizeof(float),num_frames);
   if(ret==NULL){
     GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames*4);
     return NULL;

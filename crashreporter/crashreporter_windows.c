@@ -542,7 +542,7 @@ static int stacktrace(LPCONTEXT context, DWORD *trace_, int num_traces){
     trace_[count_++] = stack_frame.AddrPC.Offset;
   }
 
-  size_t i;
+  int i;
   for (i = count_; i < num_traces; ++i)
     trace_[i] = 0;
 
@@ -831,6 +831,7 @@ DllMain(HANDLE hinstDLL, DWORD dwReason, LPVOID lpvReserved)
 }
 #endif
 
+
 void CRASHREPORTER_windows_init(void){
   backtrace_register();
 }
@@ -838,5 +839,27 @@ void CRASHREPORTER_windows_init(void){
 void CRASHREPORTER_windows_close(void){
   backtrace_unregister();
 }
+
+#if 0
+static void foo(void)
+{
+  int *f=NULL;
+        *f = 0;
+}
+
+static void
+bar(void)
+{
+  foo();
+}
+
+int main(int argc, char **argv){
+  printf("STASRTUP PU\n");
+  CRASHREPORTER_init();
+  bar();
+  return 0;
+}
+#endif
+
 
 #endif //FOR_WINDOWS

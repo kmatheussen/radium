@@ -53,7 +53,7 @@ struct PluginMenuEntry{
   static PluginMenuEntry level_up(const char *name){
     PluginMenuEntry entry;
     entry.type=IS_LEVEL_UP;
-    entry.level_up_name=::strdup(name);
+    entry.level_up_name=V_strdup(name);
     return entry;
   }
   static PluginMenuEntry level_down(){

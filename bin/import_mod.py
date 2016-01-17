@@ -50,9 +50,7 @@ class NullWriter(object):
 
 if __name__ == "__main__":
     sys.g_program_path = '__main__' # hack to be able to import import_midi
-else:
-    if platform.system() != "Linux" and os.isatty(sys.stdout.fileno()):
-        sys.stdout = sys.stderr = NullWriter()
+
 
 
 import import_midi # for radum mock
@@ -1689,10 +1687,20 @@ def import_mod(filename=""):
     #file = open("/home/kjetil/Downloads/DOPE.MOD", "rb")
     #file = open("/home/kjetil/Downloads/velcoitytest.mod", "rb")
 
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+            sys.stdout = NullWriter()
+            sys.stderr = NullWriter()
+
         song = read_song(file)
 
         generate_from_mod(song)
-        
+
+        if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
+
     except:
         e = sys.exc_info()[0]
         message = traceback.format_exc()

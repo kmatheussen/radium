@@ -87,14 +87,14 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 }
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
-  Data *data = calloc(1,sizeof(Data));
+  Data *data = V_calloc(1,sizeof(Data));
   data->routes[0]=1;
   data->routes[NUM_CHANNELS+1]=1;
   return data;
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
-  free(plugin->data);
+  V_free(plugin->data);
 }
 
 static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){

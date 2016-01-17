@@ -60,7 +60,7 @@ int PEQ_GetType(struct PEventQueue *peq){
 
 void PEQ_GetType_Init(void){
 #if 0
-	PE_functions=malloc(sizeof(void *)*10);
+	PE_functions=V_malloc(sizeof(void *)*10);
 	PE_functions[0]=(void *)PlayerNewBlock;
 	PE_functions[1]=(void *)PE_HandleFirstFX;
 	PE_functions[2]=(void *)PE_HandleFX;

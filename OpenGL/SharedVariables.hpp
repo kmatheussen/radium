@@ -57,7 +57,7 @@ static vector_t g_times_storage; // We just copy the 'times' pointer from 'root'
 
 // Called from OpenGL thread
 SharedVariables::~SharedVariables(){
-  free(realline_places);
+  V_free(realline_places);
   {
     QMutexLocker locker(&vector_mutex);
     VECTOR_remove(&g_times_storage, times);
@@ -91,7 +91,7 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
     VECTOR_push_back(&g_times_storage, sv->times);
   }
   
-  sv->realline_places = (Place*)malloc(sv->num_reallines * sizeof(Place));
+  sv->realline_places = (Place*)V_malloc(sv->num_reallines * sizeof(Place));
   for(int i=0;i<sv->num_reallines;i++){
     sv->realline_places[i] = wblock->reallines[i]->l.p;
   }

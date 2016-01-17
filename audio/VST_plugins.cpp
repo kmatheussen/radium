@@ -896,7 +896,7 @@ static void set_plugin_type_data(AEffect *aeffect, SoundPluginType *plugin_type)
     aeffect->dispatcher(aeffect, effGetProductString, 0, 0, product, 0.0f);
     
     if(strlen(vendor)>0 || strlen(product)>0)
-      plugin_type->info = strdup(QString("Vendor: "+QString(vendor)+".\nProduct: "+QString(product)).toUtf8().constData());
+      plugin_type->info = V_strdup(QString("Vendor: "+QString(vendor)+".\nProduct: "+QString(product)).toUtf8().constData());
   }
 
   plugin_type->num_effects = aeffect->numParams;
@@ -909,7 +909,7 @@ static void set_plugin_type_data(AEffect *aeffect, SoundPluginType *plugin_type)
   int category = aeffect->dispatcher(aeffect, effGetPlugCategory, 0, 0, NULL, 0.0f);
   plugin_type->is_instrument = category==kPlugCategSynth;
 
-  TypeDataParam *params = (TypeDataParam*)calloc(sizeof(TypeDataParam),plugin_type->num_effects);    
+  TypeDataParam *params = (TypeDataParam*)V_calloc(sizeof(TypeDataParam),plugin_type->num_effects);    
   type_data->params = params;
 
   for(int i=0;i<aeffect->numParams;i++){
@@ -973,13 +973,13 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   EditorWidget *editor_widget = new EditorWidget(NULL);
   //editor_widget->open(aeffect);
 
-  Data *data=(Data*)calloc(1,sizeof(Data));
+  Data *data=(Data*)V_calloc(1,sizeof(Data));
  
   data->aeffect = aeffect;
   data->editor_widget = editor_widget;
   data->sample_rate = sample_rate;
 
-  data->events = (VstEvents*)calloc(1,sizeof(VstEvents) + (MAX_EVENTS*sizeof(VstMidiEvent*)));
+  data->events = (VstEvents*)V_calloc(1,sizeof(VstEvents) + (MAX_EVENTS*sizeof(VstMidiEvent*)));
   for(int i=0;i<MAX_EVENTS;i++)
     data->events->events[i] = (VstEvent*)&data->midi_events[i];
 
@@ -999,9 +999,9 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   delete data->editor_widget;
   aeffect->dispatcher(aeffect, effClose, 0, 0, NULL, 0.0f);
 
-  free(data->events);
+  V_free(data->events);
   
-  free(data);
+  V_free(data);
 }
 
 } // extern "C"
@@ -1050,6 +1050,17 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
 
   QString filename = STRING_get_qstring(w_filename);
   const char *plugin_name = STRING_get_chars(w_filename);
+
+#if 0
+  if (QFileInfo(filename).suffix()===VST3_SUFFIX) {
+    radium_vst_uids_t *ruid = (radium_vst_uids_t *)talloc(sizeof(radium_vst_uids_t));
+    ruid->name = NULL; //talloc_strdup(plugin_name);
+    ruid->uid = 0;
+    
+    VECTOR_push_back(uids, ruid);
+    return uids;
+  }
+#endif
   
   MyQLibrary myLib(filename);
   
@@ -1206,7 +1217,10 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
 #if defined(FOR_MACOSX)
   const char *plugin_name = talloc_strdup(QFileInfo(QDir(file_or_identifier).dirName()).baseName().toUtf8().constData());
 #else
-  basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
+  if(file_info.suffix()==VST_SUFFIX)
+    basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
+  else
+    basename.resize(basename.size()-strlen(VST3_SUFFIX)-1);
   const char *plugin_name = talloc_strdup(basename.toUtf8().constData());
 #endif
 
@@ -1220,9 +1234,9 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
   //fprintf(stderr,"Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());
 
   {
-    SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
+    SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
 
-    TypeData *type_data = (TypeData*)calloc(1,sizeof(TypeData));
+    TypeData *type_data = (TypeData*)V_calloc(1,sizeof(TypeData));
     plugin_type->data = type_data;
     //#if DO_RESOLVE_IT
     //    type_data->get_plugin_instance = get_plugin_instance;
@@ -1292,7 +1306,7 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
       if (!continuing)
         return false;
         
-    }else if(file_info.suffix()==VST_SUFFIX){
+    }else if(file_info.suffix()==VST_SUFFIX || file_info.suffix()==VST3_SUFFIX){
       add_vst_plugin_type(file_info, file_path, is_juce_plugin);
     }
   }

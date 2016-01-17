@@ -1,3 +1,60 @@
+Changes 3.5.4 -> 3.5.5:
+* Fix import MOD files.
+* Don't crash when showing a VST GUI which starts by showing a pop up,
+  for instance informing about running a demo version.
+
+
+
+Changes 3.5.3 -> 3.5.4:
+* Undo changing track width
+* Windows: Use native file requester by default. The one in Qt can be extremely slow
+
+
+
+Changes 3.5.1 -> 3.5.3:
+* Draw current track background in lighter color
+* Fix pianonote editing
+* Fix some crashes when opening VST gui and other windows
+
+
+
+Changes 3.4.5 -> 3.5.1:
+* Updated to latest version of JUCE
+  (might fix some VST plugins)
+* Some MOD import fixes
+* Fix comment window keyboard focus
+* Don't crash if trying to move a pianonote with velocity nodes below last line
+* Workaround for more possible crashes caused by Qt focus.
+* Updated s7 to latest version. (Fixes a few random crashes)
+* Build: Dont create empty files if faust executable doesn"t exist
+  (no need to do "git checkout audio" anymore if forgetting to touch files after checking out)
+* Compile with "-Og" in non-release mode, plus running lots of memory validation code.
+* Fix keyboard focus in vst path file dialog + possible crash on linux with older gfx drivers
+* Compile with -Wextra
+* Upgraded to faust 0.9.67
+* Must always update editor as well after drawing other things
+* Simplify end pitch. I.e. set it explicitly, dont automatically glide to the next note.
+  Old songs are converted automatically when loading, but songs that glide to a note in a different
+  block must be converted manually. This is not warned about though.
+* Try to set default mixer zoom level based on system font size, plus always use font size 12
+* Fix mouse state after right clicking a piano note
+* Fix selecting and moving more than one sound object at once
+* Multicore: Ensure sane number of CPUs.
+* Replaced various must_redraw=true with must_redraw_editor=true. I.e. only update editor, not
+  everything, if only the editor needs to be redrawn.
+* Fix slider painting (the x1 value of the indicator block was painted two pixels too far to the left)
+* Only redraw editor when changing sample player effects
+* Option to use native file requesters (may be necessary because of slow qt file requester on windows)
+* Do not disable garbage collection during playback. Might run out of memory if playing for a while,
+  especially if automating things that update waveforms.
+* mouse: Don"t limit mouse pointer into the upper left corner if something goes wrong
+* Remove some unrelated tooltips
+* Render: Option to set the track background colors to the track color (this is now the default)
+* api: evalPython (for running python code in scheme)
+* OpenGL: safe mode option
+
+
+
 Changes 3.4.4 -> 3.4.5:
 * Tremolo effect for the sampler instrument
 * Update s7 scheme interpreter to latest version

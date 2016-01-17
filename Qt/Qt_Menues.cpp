@@ -48,11 +48,11 @@ class MenuItem : public QObject
     Q_OBJECT
 public:
   MenuItem(const char *name, const char *python_command, QMenu *menu = NULL, bool checkable = false, int checkval = 0){
-    this->python_command = strdup(python_command);
+    this->python_command = V_strdup(python_command);
     this->checkable = checkable;
     this->checkval = checkval;
 
-    printf("Adding menu item %s\n",name);
+    //printf("Adding menu item %s\n",name);
     //getchar();
     
     if(menu!=NULL) {
@@ -65,7 +65,7 @@ public:
       }
     }else{
       QAction *action = current_menu->menu->addAction(name, this, SLOT(clicked()));
-      printf("action: %p\n",action);
+      //printf("action: %p\n",action);
       if(current_menu->base==NULL){
         if(checkable==true){
           action->setCheckable(true);
@@ -144,7 +144,7 @@ void GFX_AddMenuSeparator(struct Tracker_Windows *tvisual){
 }
 
 void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const char *command){
-  struct Menues *menu = (struct Menues*)calloc(1, sizeof(struct Menues));
+  struct Menues *menu = (struct Menues*)V_calloc(1, sizeof(struct Menues));
   menu->up = current_menu;
   menu->menu = new QMenu();
   //QFont sansFont("Liberation Mono", 8);
@@ -196,7 +196,10 @@ bool GFX_MenuVisible(struct Tracker_Windows *tvisual){
 
 void GFX_ShowMenu(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  editor->main_window->menuBar()->show();  
+  GL_lock();{
+    GL_pause_gl_thread_a_short_while();
+    editor->main_window->menuBar()->show();
+  }GL_unlock();
 }
 
 void GFX_HideMenu(struct Tracker_Windows *tvisual){
@@ -205,7 +208,7 @@ void GFX_HideMenu(struct Tracker_Windows *tvisual){
 }
 
 void initMenues(QMenuBar *base_menu){
-  current_menu = (struct Menues*)calloc(1, sizeof(struct Menues));
+  current_menu = (struct Menues*)V_calloc(1, sizeof(struct Menues));
   //g_base_menues = current_menu;
   current_menu->base = base_menu;
   

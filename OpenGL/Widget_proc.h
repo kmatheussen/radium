@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
-  #include <QWidget>
+class QWidget;
 
   extern QWidget *GL_create_widget(QWidget *parent);
   extern void GL_stop_widget(QWidget *widget);

@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/patch_proc.h"
 #include "../common/nodelines_proc.h"
 #include "../common/wtracks_proc.h"
+#include "../common/undo_blocks_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 
@@ -1142,6 +1143,9 @@ static int getPitchNumFromPianonoteNum(int pianonotenum, int notenum, int trackn
 
     ret += ListFindNumElements3(&note->pitches->l);
 
+    if (note->pitch_end > 0)
+      ret++;
+
     notenum_so_far++;
     
     note = NextNote(note);
@@ -1151,70 +1155,24 @@ static int getPitchNumFromPianonoteNum(int pianonotenum, int notenum, int trackn
   return 0;
 }
 
-int movePianonote(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
-  if (note==NULL)
-    return notenum;
+static void moveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, float diff){
+  float old_start = GetfloatFromPlace(&note->l.p);
 
-  struct Blocks *block = wblock->block;
-  
-  setPianoNoteValues(value, pianonotenum, note);
+  if (old_start + diff < 0)
+    diff = -old_start;
 
-  window->must_redraw_editor = true;
-    
-  if (floatplace < 0)
-    return notenum;
+  //printf("new_start 1: %f\n",old_start+diff);
 
-  struct Tracks *track = wtrack->track;
+  float old_end   = GetfloatFromPlace(&note->end);
 
   Place lastplace;
   PlaceSetLastPos(block, &lastplace);
-  
-#if 0
-  // something is wrong somewhere. This should have worked.
-  // For instance: p_Add(62 + 65533/65534, -1 + 0/1) returns a complex value! (must be investigated more)
-  
-  Place old_place = getPianoNotePlace(pianonotenum, note);
-  Place new_place; Float2Placement(floatplace, &new_place);
-  Place diff = p_Sub(new_place, old_place);
-  
-  if (PlaceGreaterOrEqual(&new_place, &lastplace))
-    return notenum;
-
-  note->l.p = new_place;
-  note->end = p_Add(note->end, diff);
-
-#else
-
-  // Work-around here. Work on floats instead of rationals.
-  
   float lastplacefloat = GetfloatFromPlace(&lastplace);
 
-  Place old_place = getPianoNotePlace(pianonotenum, note);
-  float old_floatplace = GetfloatFromPlace(&old_place);
-  float diff      = floatplace - old_floatplace;
+  if (old_end + diff > lastplacefloat)
+    diff = lastplacefloat - old_end;
 
-  float old_start = GetfloatFromPlace(&note->l.p);
-  float new_start = old_start + diff;
-
-  float old_end   = GetfloatFromPlace(&note->end);
-  float new_end   = old_end + diff;
-
-  if (new_start < 0)
-    new_start = 0;
-
-  const float mindiff = 0.001;
-    
-  if (new_end >= lastplacefloat) {
-    new_end = lastplacefloat - mindiff;
-    diff    = new_end - old_end;
-  }
-  
-  if (new_start >= new_end)
-    return notenum;
+  //printf("new_start 2: %f\n",old_start+diff);
 
   PLAYER_lock();{
     ListRemoveElement3(&track->notes, &note->l);
@@ -1240,8 +1198,33 @@ int movePianonote(int pianonotenum, float value, float floatplace, int notenum, 
 
     NOTE_validate(block, track, note);
   }PLAYER_unlock();
+}
 
-#endif
+int movePianonote(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return notenum;
+
+  struct Blocks *block = wblock->block;
+  
+  setPianoNoteValues(value, pianonotenum, note);
+
+  window->must_redraw_editor = true;
+
+  //printf("floatplace: %f\n",floatplace);
+  if (floatplace < 0)
+    return notenum;
+
+  struct Tracks *track = wtrack->track;
+
+  Place old_place = getPianoNotePlace(pianonotenum, note);
+  float old_floatplace = GetfloatFromPlace(&old_place);
+  float diff      = floatplace - old_floatplace;
+
+  moveNote(block, track, note, diff);
 
   return ListPosition3(&track->notes->l, &note->l);
 }
@@ -1258,7 +1241,6 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
 
   struct Blocks *block = wblock->block;
   struct Tracks *track = wtrack->track;
-
 
   if (note->pitches!=NULL) {
     setPitch2(getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum),
@@ -2842,6 +2824,14 @@ float getTrackWidth(int tracknum, int blocknum, int windownum){
   }
 }
 
+void undoTrackWidth(void){
+  struct Tracker_Windows *window=getWindowFromNum(-1);
+  if(window==NULL)
+    return;
+  
+  Undo_Block_CurrPos(window); // can be optimized a lot
+}
+
 void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){
   if (new_width < 2) {
 #if 0
@@ -2854,7 +2844,7 @@ void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){
 
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
-    
+          
   if (tracknum==-1){
     wblock = getWBlockFromNumA(windownum, &window, blocknum);
     if (wblock==NULL)
@@ -2864,7 +2854,7 @@ void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){
     struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
     if (wtrack==NULL)
       return;
-    printf("new width: %d, old: %d\n",(int)new_width,wtrack->fxwidth);
+    ///printf("new width: %d, old: %d\n",(int)new_width,wtrack->fxwidth);
     wtrack->fxwidth = new_width;
   }
 

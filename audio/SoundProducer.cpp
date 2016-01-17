@@ -943,7 +943,7 @@ public:
         memcpy(_output_sound[ch], _dry_sound[ch], num_frames*sizeof(float));
       }
 
-    }else{ // do_bypass
+    }else{ // do_bypass -> !do_bypass
 
       if(is_a_generator){
 
@@ -976,7 +976,7 @@ public:
       // dry/wet
       RT_apply_dry_wet(_dry_sound, _num_dry_sounds, _output_sound, _num_outputs, num_frames, &_plugin->drywet);
 
-    } // else do_bypass
+    } // else !do_bypass
 
     
     // Output pan

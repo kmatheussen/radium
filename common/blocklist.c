@@ -51,7 +51,7 @@ void BL_init(void){
 }
 
 int *BL_copy(void){
-  int *playlist = talloc_atomic(sizeof(int)*(root->song->length+1));
+  int *playlist = talloc_atomic(sizeof(int)*(root->song->length+1)); // Note, this playlist is a list of block numbers, not a list of blocks. (that's why we use talloc_atomic)
   int pos;
   playlist[0] = root->song->length;
   for(pos=0;pos<root->song->length;pos++)

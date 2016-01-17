@@ -78,6 +78,7 @@ int main(int argc, char **argv){
 
 #else // COMPILE_EXECUTABLE
 
+#include "../OpenGL/Widget_proc.h"
 
 
 extern "C" {
@@ -99,6 +100,8 @@ int SYSTEM_show_message(const char *message){
   env.insert("LD_LIBRARY_PATH", getenv("LD_LIBRARY_PATH"));
   myProcess.setProcessEnvironment(env);
 #endif
+
+  GL_lock();
   
   myProcess.start(program, arguments);
 
@@ -106,9 +109,13 @@ int SYSTEM_show_message(const char *message){
     fprintf(stderr,"Something went wrong when trying to start radium_error_message executable \"%s\"\n",(program+" "+message).toUtf8().constData());
     //system((program+" "+message).toUtf8().constData());
     //abort();
+
+    GL_unlock();
     return 0;
   }
 
+  GL_unlock();
+  
   return myProcess.exitCode();
 }
 }

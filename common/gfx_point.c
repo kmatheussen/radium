@@ -61,14 +61,14 @@ void GFX_Point(
 
   struct Points *point=points[color][brightness];
   if(point==NULL)
-    points[color][brightness] = point = calloc(1,sizeof(struct Points));
+    points[color][brightness] = point = V_calloc(1,sizeof(struct Points));
 
   int pos = point->pos;
 
   if(point->pos==point->size){
     point->size = R_MAX(128,point->size*2);
-    point->x=realloc(point->x,point->size*sizeof(uint16_t));
-    point->y=realloc(point->y,point->size*sizeof(uint16_t));
+    point->x=V_realloc(point->x,point->size*sizeof(uint16_t));
+    point->y=V_realloc(point->y,point->size*sizeof(uint16_t));
   }
 
   point->x[pos] = x;

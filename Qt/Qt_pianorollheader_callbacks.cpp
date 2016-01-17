@@ -47,21 +47,23 @@ void PIANOROLLHEADER_show(void *pianorollheader, int x, int y, int x2, int y2){
   //if (widget->parent()==NULL)
   //  widget->setParent(g_editor);
 
+  GL_lock();{
+    widget->move(x,y);
+    widget->resize(x2-x, y2-y);
+    
+    //widget->move(0,widget->tracknum*20);
+    //widget->resize(100,100);
+    
+    //printf("A: x: %d, y: %d, width: %d, height: %d. Visible: %d\n", widget->pos().x(), widget->pos().y(), widget->size().width(), widget->size().height(),widget->isVisible());
+    if (is_starting_up==false)
+      widget->updateWidgets();
+    
+    widget->show();
+    //widget->raise();
+    //widget->update();
 
-  widget->move(x,y);
-  widget->resize(x2-x, y2-y);
-
-  //widget->move(0,widget->tracknum*20);
-  //widget->resize(100,100);
-
-  //printf("A: x: %d, y: %d, width: %d, height: %d. Visible: %d\n", widget->pos().x(), widget->pos().y(), widget->size().width(), widget->size().height(),widget->isVisible());
-  if (is_starting_up==false)
-    widget->updateWidgets();
+  } GL_unlock();
   
-  widget->show();
-  //widget->raise();
-  //widget->update();
-
   //printf("B: x: %d, y: %d, width: %d, height: %d. Visible: %d\n", widget->pos().x(), widget->pos().y(), widget->size().width(), widget->size().height(),widget->isVisible());
 }
 

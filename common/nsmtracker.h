@@ -393,6 +393,21 @@ typedef struct{
 
 
 
+/*********************************************************************
+	logtype.h
+*********************************************************************/
+
+enum{
+  LOGTYPE_IMMEDIATELY = -1,   // Like this: f(x) = f(1),  [ 0 <= x <= 1 ]
+  LOGTYPE_LINEAR = 0,         // Like this: f(x) = x
+  LOGTYPE_MIN = 1,            // Probably something like this: f(x)=x^0.1
+  LOGTYPE_ALSO_LINEAR = 100,  // Something like this: f(x) = x
+  LOGTYPE_MAX = 200,          // Probably something like this: f(x)=x^10
+  LOGTYPE_HOLD = 201          // Like this: f(x) = f(0), [ 0 <= x <= 1 ]. Currently the only understood value, together with LOGTYPE_LINEAR.
+};
+
+
+
 
 /*********************************************************************
 	velocities.h
@@ -404,6 +419,7 @@ struct Velocities{
 	struct ListHeader3 l;
 
 	int velocity;
+	int logtype;
 };
 #define NextVelocity(a) ((struct Velocities *)((a)->l.next))
 
@@ -417,8 +433,9 @@ static inline float VELOCITY_get(int velocity){
 
 struct Pitches{
 	struct ListHeader3 l;
-
+  
 	float note;
+	int logtype;
 };
 #define NextPitch(a) ((struct Pitches *)((a)->l.next))
 
@@ -451,8 +468,10 @@ struct Notes{
 	
 	struct Velocities *velocities;
 	int velocity_end;
-
+	int velocity_end_logtype;
+  
 	float pitch_end;
+  	int pitch_end_logtype;
   
 	struct Velocities first_velocity; // used by nodelines
 	struct Velocities last_velocity; // used by nodelines
@@ -732,6 +751,7 @@ struct Stops{
 struct FXNodeLines{
 	struct ListHeader3 l;
 	int val;
+    	int logtype;
 };
 #define NextFXNodeLine(a) ((struct FXNodeLines *)((a)->l.next))
 
@@ -859,6 +879,8 @@ struct NodeLine{
   const struct ListHeader3 *element1;
   const struct ListHeader3 *element2;
 
+  int logtype;
+  
   bool is_node;
 };
 

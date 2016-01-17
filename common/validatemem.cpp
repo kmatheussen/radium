@@ -49,7 +49,6 @@ namespace{
  
 }
 
-// TODO: Keep these two out of GC. (not really a big problem)
 static Memlink *g_root;
 static Memlink *g_root_end;
 
@@ -230,22 +229,27 @@ static Memlink *validate_a_little(double max_time, Memlink *link){
     link = g_root;
 
   while(link!=NULL){
-    QMutexLocker locker(mutex); // <- Release/obtain in the inner loop to give alloc a chance to allocate
-    Memlink *next = link->next;
+    {
+      QMutexLocker locker(mutex);
 
-    if (link->can_be_freed) {
-
-      remove_memlink(link);
-      num_removed++;
-    } else {
-      validate_link(link);
-      num_scanned++;
+      Memlink *next = link->next;
+      
+      if (link->can_be_freed) {
+        
+        remove_memlink(link);
+        num_removed++;
+      } else {
+        validate_link(link);
+        num_scanned++;
+      }
+      
+      link = next;
     }
-    
-    link = next;
     
     if ( (num_scanned%2048) == 0 && (get_ms() - start_time) > max_time)
       break;
+
+    QThread::yieldCurrentThread();  // <- Try to give other threads a chance to run. (the 'mutex' mutex blocks all other threads from allocating, so it would usually block the rest of the program)
   }
 
   if (link==NULL) {
@@ -377,7 +381,7 @@ static void V_free_it2(MemoryFreeer freeer, void *actual_mem_real_start){
     return V_free_it2(freeer, actual_mem_real_start);
   }
   */
-  
+
   assert(link->mem == actual_mem_real_start);
   
   validate_link(link);
@@ -426,9 +430,21 @@ static void *V_realloc_it(MemoryFreeer freeer, void *ptr, size_t size, const cha
 
   return new_mem;
 }
-                   
+
 void *V_malloc__(size_t size, const char *filename, int linenumber){
   return V_alloc(malloc ,size, filename, linenumber);
+}
+
+char *V_strdup__(const char *s, const char *filename, int linenumber){
+  int len = strlen(s) + 1;
+  char *ret = (char*)V_malloc__(len,filename,linenumber);
+
+  if (ret==NULL)
+    return NULL;
+
+  memcpy(ret, s, len);
+  
+  return ret;
 }
 
 static void *calloc_one_arg(size_t size){
@@ -452,7 +468,10 @@ void *V_realloc__(void *ptr, size_t size, const char *filename, int linenumber){
   return V_realloc_it(free, ptr, size, filename, linenumber);
 }
 
-
+// Note, buggy system libraries may cause the memory validator to crash.
+// In that case, just change "#if defined(RELEASE)" to "#if 0" below.
+//
+//#if 0
 #if !defined(RELEASE)
 
 void* operator new(size_t size){

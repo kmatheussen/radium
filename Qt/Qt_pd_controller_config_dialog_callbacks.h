@@ -91,7 +91,8 @@ public:
     if (isVisible() && controller->config_dialog_visible==false) {
       hide_and_remember_position();
     } if (!isVisible() && controller->config_dialog_visible==true) {
-      show();
+      //show();
+      safeShow(this);
       restoreGeometry((const QByteArray &)_my_geometry);
     }
 
@@ -139,9 +140,12 @@ public:
     if(controller->type==EFFECT_FORMAT_FLOAT || controller->type==EFFECT_FORMAT_INT) {
       //value_slider->show();
       //onoff_widget->hide();
-      min_value_widget->show();
-      max_value_widget->show();
 
+      GL_lock();{
+        min_value_widget->show();
+        max_value_widget->show();
+      } GL_unlock();
+        
       min_value_widget->setValue(controller->min_value);
       max_value_widget->setValue(controller->max_value);
 

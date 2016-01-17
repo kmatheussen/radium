@@ -65,7 +65,7 @@ class Soundfilesaver_widget : public QDialog, public Ui::Soundfilesaver_widget {
 
         safeExec(msgBox);
 
-        free((void*)message);
+        V_free((void*)message);
 
         stop();
       }
@@ -182,14 +182,12 @@ extern "C"{
 #if 0
     widget->show();
 #else
-    num_users_of_keyboard++;
     safeExec(widget);
-    num_users_of_keyboard--;
 #endif
   }
 
   void SOUNDFILESAVERGUI_stop(const char *message){
-    widget->_timer.async_message = strdup(message);
+    widget->_timer.async_message = V_strdup(message);
   }
 }
 

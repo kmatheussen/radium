@@ -125,7 +125,7 @@ static float xi_read_next_sample(xi_sample_reader_t *sample_reader){
 
 static float *xi_get_sample(disk_t *file, int sample_num){
   int    num_frames     = xi_get_num_frames(file,sample_num);
-  float *sample         = calloc(sizeof(float),num_frames);
+  float *sample         = V_calloc(sizeof(float),num_frames);
   int    bits_per_frame = xi_get_bits_per_frame(file,sample_num);
 
   if(sample==NULL){
@@ -136,7 +136,7 @@ static float *xi_get_sample(disk_t *file, int sample_num){
   xi_seek_to_sample(file, sample_num);
 
   if(bits_per_frame==16){
-    int16_t *s16=calloc(sizeof(int16_t),num_frames);
+    int16_t *s16=V_calloc(sizeof(int16_t),num_frames);
     if(s16==NULL){
       GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames*2);
       return sample;
@@ -151,9 +151,9 @@ static float *xi_get_sample(disk_t *file, int sample_num){
       value     += s16[i];
       sample[i]  = value / 32768.0f;
     }
-    free(s16);
+    V_free(s16);
   }else{
-    int8_t *s8=calloc(sizeof(int8_t),num_frames);
+    int8_t *s8=V_calloc(sizeof(int8_t),num_frames);
     if(s8==NULL){
       GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames);
       return sample;
@@ -167,7 +167,7 @@ static float *xi_get_sample(disk_t *file, int sample_num){
       value     += s8[i];
       sample[i]  = value / 128.0f;
     }
-    free(s8);
+    V_free(s8);
   }
 
 #if 0

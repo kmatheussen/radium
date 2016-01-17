@@ -19,6 +19,7 @@
 #include "../common/visual_proc.h"
 #include "../common/player_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
+#include "../OpenGL/Widget_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -177,19 +178,33 @@ namespace{
 
   struct PluginWindow  : public DocumentWindow {
     Data *data;
+    const char *title;
     
-    PluginWindow(const char *title, Data *data)
+    PluginWindow(const char *title, Data *data, AudioProcessorEditor* const editor)
       : DocumentWindow (title,
                         Colours::lightgrey,
                         DocumentWindow::allButtons,
                         true)
       , data(data)
+      , title(title)
     {
-      // Centre the window on the screen
+      this->setSize (400, 300);
+      this->setUsingNativeTitleBar(true);
+
+      this->setContentOwned(editor, true);
+      
+      if (data->x <= 0 || data->y <= 0) {
+        this->centreWithSize (getWidth(), getHeight());
+      } else {
+        this->setTopLeftPosition(data->x, data->y);
+      }
+
+      this->setVisible(true);
     }
 
-    ~PluginWindow(){
+    ~PluginWindow(){      
       data->window = NULL;
+      V_free((void*)title);
     }
     
     void closeButtonPressed() override
@@ -504,25 +519,22 @@ static void show_gui(struct SoundPlugin *plugin){
 
   Data *data = (Data*)plugin->data;
 
-  if (data->window==NULL) {
+  GL_lock();{
 
-    const char *title = strdup(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name);
-    data->window = new PluginWindow(title, data);
+    if (data->window==NULL) {
 
-    if (data->x < 0 || data->y < 0)
-      data->window->centreWithSize (data->window->getWidth(), data->window->getHeight());
-    else {
-      data->window->setTopLeftPosition(data->x, data->y);
+      AudioProcessorEditor *editor = data->audio_instance->createEditor(); //IfNeeded();
+      
+      if (editor != NULL) {
+
+        const char *title = V_strdup(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name);
+        data->window = new PluginWindow(title, data, editor);
+      }
+
     }
     
-    AudioProcessorEditor *editor = data->audio_instance->createEditor(); //IfNeeded();
-    editor->setName (data->audio_instance->getName());
+  }GL_unlock();
 
-    data->window->setContentOwned(editor, true);
-    data->window->setUsingNativeTitleBar(true);
-  }
-
-  data->window->setVisible(true);
 }
 
 
@@ -533,8 +545,12 @@ static void hide_gui(struct SoundPlugin *plugin){
   
   Data *data = (Data*)plugin->data;
 
-  //data->window->setVisible(false);
-  delete data->window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
+  GL_lock();{
+
+    //data->window->setVisible(false);
+    delete data->window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
+
+  }GL_unlock();
 }
 
 
@@ -606,15 +622,15 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
     }
   }
 
-  plugin_type->info = strdup(talloc_format("%sAccepts MIDI: %s\nProduces MIDI: %s\n",wrapper_info, audio_instance->acceptsMidi()?"Yes":"No", audio_instance->producesMidi()?"Yes":"No"));
+  plugin_type->info = V_strdup(talloc_format("%sAccepts MIDI: %s\nProduces MIDI: %s\n",wrapper_info, audio_instance->acceptsMidi()?"Yes":"No", audio_instance->producesMidi()?"Yes":"No"));
         
   plugin_type->is_instrument = audio_instance->acceptsMidi(); // doesn't seem like this field ("is_instrument") is ever read...
 
   plugin_type->num_effects = audio_instance->getNumParameters();
 
-  type_data->effect_names = (const char**)calloc(sizeof(char*),plugin_type->num_effects);
+  type_data->effect_names = (const char**)V_calloc(sizeof(char*),plugin_type->num_effects);
   for(int i = 0 ; i < plugin_type->num_effects ; i++)
-    type_data->effect_names[i] = strdup(audio_instance->getParameterName(i).toRawUTF8());
+    type_data->effect_names[i] = V_strdup(audio_instance->getParameterName(i).toRawUTF8());
 }
 
 
@@ -820,9 +836,9 @@ static SoundPluginType *create_plugin_type(const char *name, int uid, const wcha
   fflush(stdout);
   //  return;
 
-  SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
+  SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
 
-  TypeData *typeData = (TypeData*)calloc(1, sizeof(TypeData));
+  TypeData *typeData = (TypeData*)V_calloc(1, sizeof(TypeData));
 
   typeData->file_or_identifier = wcsdup(file_or_identifier);
   typeData->uid = uid;
@@ -834,7 +850,7 @@ static SoundPluginType *create_plugin_type(const char *name, int uid, const wcha
   plugin_type->data = typeData;
 
   plugin_type->type_name = "VST";
-  plugin_type->name      = strdup(name);
+  plugin_type->name      = V_strdup(name);
 
   plugin_type->container = container;
 
@@ -893,7 +909,7 @@ static void populate(SoundPluginTypeContainer *container){
     return;
 
   container->num_types = size;
-  container->plugin_types = (SoundPluginType**)calloc(size, sizeof(SoundPluginType));
+  container->plugin_types = (SoundPluginType**)V_calloc(size, sizeof(SoundPluginType));
 
   for(int i = 0 ; i < size ; i++){
     radium_vst_uids_t *element = (radium_vst_uids_t*)uids->elements[i];
@@ -907,13 +923,13 @@ static void populate(SoundPluginTypeContainer *container){
 
 
 void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, const wchar_t *library_file_full_path){
-  SoundPluginTypeContainer *container = (SoundPluginTypeContainer*)calloc(1,sizeof(SoundPluginTypeContainer));
+  SoundPluginTypeContainer *container = (SoundPluginTypeContainer*)V_calloc(1,sizeof(SoundPluginTypeContainer));
 
   container->type_name = "VST";
-  container->name = strdup(name);
+  container->name = V_strdup(name);
   container->populate = populate;
 
-  ContainerData *data = (ContainerData*)calloc(1, sizeof(ContainerData));
+  ContainerData *data = (ContainerData*)V_calloc(1, sizeof(ContainerData));
   data->file_or_identifier = wcsdup(file_or_identifier);
   data->library_file_full_path = wcsdup(library_file_full_path);  
   data->wrapper_type = AudioProcessor::wrapperType_VST;

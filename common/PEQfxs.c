@@ -79,7 +79,9 @@ static void scheduled_fx_change(int64_t time, const union SuperType *args){
   int           x     = args[1].int_num;
   int64_t       skip  = args[2].int_num;
   FX_when       when  = args[3].int_num;
-  
+
+  //printf("Sending fx change %d\n",x);
+
   RT_FX_treat_fx(fx, x, time, skip, when);
   
   if(fx->slider_automation_value!=NULL)
@@ -149,7 +151,8 @@ void PE_HandleFirstFX(struct PEventQueue *peq,int doit){
 		peq->time2,
 		peq->fxnodeline->val,
 		&x,
-		peq->nextfxnodeline->val
+		peq->nextfxnodeline->val,
+                peq->nextfxnodeline->logtype
 	);
 
 	if(ntime>peq->time2) ntime=peq->time2;
@@ -172,9 +175,9 @@ void PE_HandleFX(struct PEventQueue *peq,int doit){
 
 		if(next==NULL){
 //			Pdebug("fx, slutt: %d\n",peq->nextfxnodeline->val);
-			if(doit){
+			if(doit && peq->nextfxnodeline->logtype != LOGTYPE_HOLD )
                           fxhandle(peq->nextfxnodeline->val,peq,0,FX_end);
-			}
+
 			ReturnPEQelement(peq);
 		}else{
 			peq->fxnodeline=peq->nextfxnodeline;
@@ -192,7 +195,8 @@ void PE_HandleFX(struct PEventQueue *peq,int doit){
 		peq->time2,
 		peq->fxnodeline->val,
 		&x,
-		peq->nextfxnodeline->val
+		peq->nextfxnodeline->val,
+                peq->nextfxnodeline->logtype
 	);
 
 	if(ntime>peq->time2) ntime=peq->time2;

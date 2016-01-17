@@ -69,7 +69,7 @@ void SetNoteSubtrackAttributes(struct Tracks *track){
   last_free_subtrack = 0; // reset
   
   if (end_places==NULL)
-    end_places = calloc(end_places_size,sizeof(Place*)); // Using calloc since this memory is only used temporarily in here, so it's not necessary for the GC to know about it in any way.
+    end_places = V_calloc(end_places_size,sizeof(Place*)); // Using calloc since this memory is only used temporarily in here, so it's not necessary for the GC to know about it in any way.
 
   track->num_subtracks = 1;
   
