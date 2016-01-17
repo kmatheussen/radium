@@ -244,7 +244,7 @@ static Memlink *validate_a_little(double max_time, Memlink *link){
     
     link = next;
     
-    if ( (num_scanned%512) == 0 && (get_ms() - start_time) > max_time)
+    if ( (num_scanned%2048) == 0 && (get_ms() - start_time) > max_time)
       break;
   }
 
@@ -266,7 +266,7 @@ struct ValidationThread : public QThread {
 public:
   ValidationThread()
   {
-    start(QThread::LowestPriority);
+    start(QThread::IdlePriority);
   }
 
   void run(){
