@@ -172,7 +172,7 @@ static const struct NodeLine *create_nodelines(
     struct NodeLine *next = ns->next;
     
     for(;;){
-      ns->x2 = next->logtype==LOGTYPE_HOLD ? ns->x1 : next->x1;
+      ns->x2 = ns->logtype==LOGTYPE_HOLD ? ns->x1 : next->x1;
       ns->y2 = next->y1;
 
       if (ns->y2 < ns->y1) {
@@ -219,7 +219,7 @@ static const struct NodeLine *create_nodelines(
 
 static float get_temponode_x(const struct WBlocks *wblock, const struct ListHeader3 *element, int *logtype){
   struct TempoNodes *temponode = (struct TempoNodes*)element;
-  *logtype = LOGTYPE_LINEAR;
+  *logtype = LOGTYPE_LINEAR; // Anything else is very complicated.
   return scale(temponode->reltempo,
                (float)(-wblock->reltempomax+1.0f),(float)(wblock->reltempomax-1.0f),
                wblock->temponodearea.x, wblock->temponodearea.x2
@@ -270,7 +270,7 @@ const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, c
   first_pitch->l.p = note->l.p;
   first_pitch->l.next = &note->pitches->l;
   first_pitch->note = note->note;
-  first_pitch->logtype = LOGTYPE_HOLD; // irrelevant. Can be any value
+  first_pitch->logtype = note->pitch_first_logtype;
   
   struct Pitches *last_pitch = talloc(sizeof(struct Pitches));
   last_pitch->l.p = note->end;
@@ -281,7 +281,7 @@ const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, c
   else
     last_pitch->note = note->note;
 
-  last_pitch->logtype = note->pitch_end_logtype;
+  last_pitch->logtype = LOGTYPE_IRRELEVANT;
   
   return create_nodelines(window,
                           wblock,
@@ -332,7 +332,7 @@ const struct NodeLine *GetPianorollNodeLines(const struct Tracker_Windows *windo
   first_pitch->l.p = note->l.p;
   first_pitch->l.next = &note->pitches->l;
   first_pitch->note = note->note;
-  first_pitch->logtype = LOGTYPE_HOLD; // irrelevant. Can be any value
+  first_pitch->logtype = note->pitch_first_logtype;
     
   struct Pitches *last_pitch = talloc(sizeof(struct Pitches));
   last_pitch->l.p = note->end;
@@ -343,7 +343,7 @@ const struct NodeLine *GetPianorollNodeLines(const struct Tracker_Windows *windo
   else
     last_pitch->note = note->note;
 
-  last_pitch->logtype = note->pitch_end_logtype;
+  last_pitch->logtype = LOGTYPE_IRRELEVANT;
 
   return create_nodelines(window,
                           wblock,
@@ -375,13 +375,13 @@ const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window
   first_velocity->l.p = note->l.p;
   first_velocity->l.next = &note->velocities->l;
   first_velocity->velocity = note->velocity;
-  first_velocity->logtype = LOGTYPE_HOLD; // irrelevant. Can be any value
+  first_velocity->logtype = note->velocity_first_logtype;
   
   struct Velocities *last_velocity = (struct Velocities*)&note->last_velocity;
   last_velocity->l.p = note->end;
   last_velocity->l.next = NULL;
   last_velocity->velocity = note->velocity_end;
-  last_velocity->logtype = note->velocity_end_logtype;
+  last_velocity->logtype = LOGTYPE_IRRELEVANT;
   
   //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
   subtrack_x1 = GetXSubTrack1(wtrack,note->subtrack);

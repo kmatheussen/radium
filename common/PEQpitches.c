@@ -106,7 +106,7 @@ void InitPEQpitches(
                                            1,
                                            &x,
                                            20000000,
-                                           LOGTYPE_LINEAR
+                                           note->pitch_first_logtype
                                            )
                          );
 }
@@ -177,11 +177,11 @@ static void PE_ChangePitch(struct PEventQueue *peq,int doit){
         if(peq->pitch==peq->nextpitch){
           pitch1=peq->note->note;
           pitch2=peq->pitch->note;
-          logtype=peq->pitch->logtype;
+          logtype=peq->note->pitch_first_logtype;
         }else{
           pitch1=peq->pitch->note;
           pitch2=peq->nextpitch->note;
-          logtype=peq->nextpitch->logtype;
+          logtype=peq->pitch->logtype;
         }
 
 	ntime=PEQ_CalcNextPitchEvent(
@@ -225,6 +225,7 @@ static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit){
         const struct Notes *note = peq->note;
 
         float prev_pitch = peq->pitch!=NULL ? peq->pitch->note : note->note;
+        int logtype      = peq->pitch!=NULL ? peq->pitch->logtype : note->pitch_first_logtype;
         
         float next_pitch = note->pitch_end;
         if(next_pitch<=1) // not supposed to happen though.
@@ -240,7 +241,7 @@ static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit){
                                            prev_pitch,
                                            &x,
                                            next_pitch,
-                                           note->pitch_end_logtype
+                                           logtype
                                            );
 
 	if(ntime>peq->time2){

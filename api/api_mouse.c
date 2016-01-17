@@ -1131,11 +1131,15 @@ static int getPitchNumFromPianonoteNum(int pianonotenum, int notenum, int trackn
   while(note!=NULL){
 
     if (notenum_so_far==notenum) {
-      struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
-      if (pitch==NULL){
-        RWarning("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
-        return 0;
+      
+      if (pianonotenum > 0) {
+        struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
+        if (pitch==NULL){
+          RWarning("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+          return 0;
+        }
       }
+      
       return ret + pianonotenum;
     }
       
@@ -1287,7 +1291,39 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
 }
 
 static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool last_legal_may_be_next_note);
+static int getPitchLogtype(int pitchnum, struct Tracks *track);
+static void setPitchLogtype(bool is_holding, int pitchnum, struct Tracks *track);
+  
+bool isPianonoteLogtypeHolding(int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return notenum;
 
+  struct Tracks *track = wtrack->track;
+
+  int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum);
+  return getPitchLogtype(pitchnum, track) == LOGTYPE_HOLD;
+}
+
+void setPianonoteLogtypeHolding(bool is_holding, int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+
+  struct Tracks *track = wtrack->track;
+
+  window->must_redraw_editor=true;
+  
+  int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum);
+  setPitchLogtype(is_holding, pitchnum, track);
+}
+  
 int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -1298,44 +1334,59 @@ int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenu
 
   struct Blocks *block = wblock->block;
   struct Tracks *track = wtrack->track;
-  
-  window->must_redraw_editor=true;
+
+  if (note->pitches != NULL) {
     
-  if(note->pitch_end > 0 || note->pitches!=NULL)
-    note->pitch_end = R_BOUNDARIES(1, value, 127);
-  else
-    note->note = R_BOUNDARIES(1, value, 127);
+    int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum);
+    int logtype  = getPitchLogtype(pitchnum, track);    
+             
+    // 1. Change pitch value
+    setPitch2(logtype==LOGTYPE_HOLD ? pitchnum : pitchnum + 1,
+              value, -1,
+              tracknum, blocknum, windownum,
+              false
+              );
+
+    // 2. Change place of the next pianonote
+    setPitch2(pitchnum+1,
+              -1, floatplace,
+              tracknum, blocknum, windownum,
+              false
+              );
+    
+  } else {
   
-  if (note->pitches!=NULL) {
-    if (floatplace>=0) {
-      MoveEndNote(block, track, note, PlaceCreate2(floatplace), false);
-      window->must_redraw_editor=true;
+  
+    window->must_redraw_editor=true;
+    
+    if(note->pitch_end > 0 || note->pitches!=NULL)
+      note->pitch_end = R_BOUNDARIES(1, value, 127);
+    else
+      note->note = R_BOUNDARIES(1, value, 127);
+  
+    if (floatplace < 0)
+      return notenum;
+
+    const float mindiff = 0.001;
+  
+    float firstplacefloat = GetfloatFromPlace(&note->l.p);
+    if (floatplace-mindiff <= firstplacefloat)
+      floatplace = firstplacefloat + mindiff;
+
+    if (note->velocities != NULL) {
+      float lastvelplace = GetfloatFromPlace(ListLastPlace3(&note->velocities->l));
+      if (floatplace-mindiff <= lastvelplace)
+        floatplace = lastvelplace + mindiff;
     }
-    return notenum;
-  }
 
-  if (floatplace < 0)
-    return notenum;
-
-  const float mindiff = 0.001;
-  
-  float firstplacefloat = GetfloatFromPlace(&note->l.p);
-  if (floatplace-mindiff <= firstplacefloat)
-    floatplace = firstplacefloat + mindiff;
-
-  if (note->velocities != NULL) {
-    float lastvelplace = GetfloatFromPlace(ListLastPlace3(&note->velocities->l));
-    if (floatplace-mindiff <= lastvelplace)
-      floatplace = lastvelplace + mindiff;
-  }
-
-  // (there are no pitches here)
+    // (there are no pitches here)
     
-  PLAYER_lock();{
-    Float2Placement(floatplace, &note->end);
-    NOTE_validate(block, track, note);
-  }PLAYER_unlock();
+    PLAYER_lock();{
+      Float2Placement(floatplace, &note->end);
+      NOTE_validate(block, track, note);
+    }PLAYER_unlock();
 
+  }
 
   return notenum;
 }
@@ -1607,7 +1658,40 @@ static bool getPitch(int pitchnum, struct Pitches **pitch, struct Notes **note, 
   RWarning("Pitch #%d in track #%d does not exist",pitchnum,track->l.num);
   return false;
 }
+
+static int getPitchLogtype(int pitchnum, struct Tracks *track){
+  bool is_end_pitch;
+  struct Notes *note;
+  struct Pitches *pitch;
+  getPitch(pitchnum, &pitch, &note, &is_end_pitch, track);
+
+  if (is_end_pitch)
+    return LOGTYPE_IRRELEVANT;
+  if (pitch==NULL)
+    return note->pitch_first_logtype;
+  else
+    return pitch->logtype;
+}
+
+static void setPitchLogtype(bool is_holding, int pitchnum, struct Tracks *track){
+  bool is_end_pitch;
+  struct Notes *note;
+  struct Pitches *pitch;
+
+  getPitch(pitchnum, &pitch, &note, &is_end_pitch, track);
+
+  int logtype = is_holding ? LOGTYPE_HOLD : LOGTYPE_LINEAR;
   
+  if (is_end_pitch) {
+    RError("Can not set hold type of end pitch. pitchnum: %d, tracknum: %d",pitchnum,track->l.num);
+    return;
+  }
+      
+  if (pitch==NULL)
+    note->pitch_first_logtype = logtype;
+  else
+    pitch->logtype = logtype;
+}
 
 static int getReallineForPitch(const struct WBlocks *wblock, struct Pitches *pitch, struct Notes *note, bool is_end_pitch){
   if( pitch!=NULL)
@@ -1888,7 +1972,7 @@ static int setPitch2(int num, float value, float floatplace, int tracknum, int b
   struct Blocks *block = wblock->block;  
   struct Tracks *track = wtrack->track;
 
-  value = R_BOUNDARIES(1,value,127);
+  float clamped_value = R_BOUNDARIES(1,value,127);
 
   struct Notes *note;
   struct Pitches *pitch;
@@ -1900,8 +1984,9 @@ static int setPitch2(int num, float value, float floatplace, int tracknum, int b
   window->must_redraw_editor = true;
 
   if (pitch != NULL) {
-    
-    pitch->note = value;
+
+    if (value > 0)
+      pitch->note = clamped_value;
 
     if (floatplace >= 0.0f) {
       Place firstLegalPlace,lastLegalPlace;
@@ -1919,15 +2004,18 @@ static int setPitch2(int num, float value, float floatplace, int tracknum, int b
                         
   } else if (is_end_pitch){
 
-    note->pitch_end = value;
+    if (value > 0)
+      note->pitch_end = clamped_value;
+    
     if (floatplace >= 0) {
       MoveEndNote(block, track, note, PlaceCreate2(floatplace), true);
       return getPitchNum(track, note, NULL, true);
     }
     
   } else {
-    
-    note->note = value;
+
+    if (value > 0)
+      note->note = clamped_value;
 
     if (floatplace >= 0) {
       MoveNote(block, track, note, PlaceCreate2(floatplace), replace_note_ends);

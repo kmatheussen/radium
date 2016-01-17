@@ -106,7 +106,7 @@ void InitPEQvelocities(
                                                   note->velocity,
                                                   &x,
                                                   note->velocity_end,
-                                                  note->velocity_end_logtype
+                                                  note->velocity_first_logtype
 			)
 		);
 		return;
@@ -126,7 +126,7 @@ void InitPEQvelocities(
                                                    note->velocity,
                                                    &x,
                                                    velocity->velocity,
-                                                   velocity->logtype
+                                                   note->velocity_first_logtype
                                                    )
                          );
 
@@ -201,7 +201,7 @@ static void PE_ChangeVelocityFromStart(struct PEventQueue *peq,int doit){
                                         peq->note->velocity,
                                         &x,
                                         peq->velocity->velocity,
-                                        peq->velocity->logtype
+                                        peq->note->velocity_first_logtype
                                         );
 
 	if(btime==ntime){
@@ -255,7 +255,7 @@ static void PE_ChangeVelocity(struct PEventQueue *peq,int doit){
 		peq->velocity->velocity,
 		&x,
 		peq->nextvelocity->velocity,
-                peq->nextvelocity->logtype
+                peq->velocity->logtype
 	);
 
 	if(btime==ntime){
@@ -297,7 +297,7 @@ static void PE_ChangeVelocityToEnd(struct PEventQueue *peq,int doit){
                                         peq->velocity->velocity,
                                         &x,
                                         peq->note->velocity_end+1,		// Don't really know why I have to add 1, but it works...
-                                        peq->note->velocity_end_logtype
+                                        peq->velocity->logtype
                                         );
 
 	if(ntime>=peq->time2){
@@ -334,8 +334,8 @@ static void PE_ChangeVelocityFromStartToEnd(struct PEventQueue *peq,int doit){
                                         peq->time2,
                                         peq->note->velocity,
                                         &x,
-                                        peq->note->velocity_end+1,		// Don't really know why I have to add 1, but it works...
-                                        peq->note->velocity_end_logtype
+                                        peq->note->velocity_end+1,		// Don't really know why I have to add 1, but it works...                                        
+                                        peq->note->velocity_first_logtype
                                         );
 
 	if(ntime>=peq->time2){

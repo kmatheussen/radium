@@ -130,8 +130,9 @@ void PE_HandleFirstFX(struct PEventQueue *peq,int doit){
 		next=NextFXNodeLine(peq->nextfxnodeline);
 
 		if(next==NULL){
+                  // Can this happen?
 //			Pdebug("fx, slutt: %d\n",peq->nextfxnodeline->val);
-			if(doit){
+                        if(doit){
                           fxhandle(peq->nextfxnodeline->val,peq,0,FX_end);
 			}
 			ReturnPEQelement(peq);
@@ -152,7 +153,7 @@ void PE_HandleFirstFX(struct PEventQueue *peq,int doit){
 		peq->fxnodeline->val,
 		&x,
 		peq->nextfxnodeline->val,
-                peq->nextfxnodeline->logtype
+                peq->fxnodeline->logtype
 	);
 
 	if(ntime>peq->time2) ntime=peq->time2;
@@ -175,8 +176,8 @@ void PE_HandleFX(struct PEventQueue *peq,int doit){
 
 		if(next==NULL){
 //			Pdebug("fx, slutt: %d\n",peq->nextfxnodeline->val);
-			if(doit && peq->nextfxnodeline->logtype != LOGTYPE_HOLD )
-                          fxhandle(peq->nextfxnodeline->val,peq,0,FX_end);
+                       if(doit && peq->fxnodeline->logtype != LOGTYPE_HOLD)
+                           fxhandle(peq->nextfxnodeline->val,peq,0,FX_end);
 
 			ReturnPEQelement(peq);
 		}else{
@@ -196,7 +197,7 @@ void PE_HandleFX(struct PEventQueue *peq,int doit){
 		peq->fxnodeline->val,
 		&x,
 		peq->nextfxnodeline->val,
-                peq->nextfxnodeline->logtype
+                peq->fxnodeline->logtype
 	);
 
 	if(ntime>peq->time2) ntime=peq->time2;

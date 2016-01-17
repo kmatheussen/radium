@@ -398,6 +398,7 @@ typedef struct{
 *********************************************************************/
 
 enum{
+  LOGTYPE_IRRELEVANT = -2,    // Logtype value of a last node.
   LOGTYPE_IMMEDIATELY = -1,   // Like this: f(x) = f(1),  [ 0 <= x <= 1 ]
   LOGTYPE_LINEAR = 0,         // Like this: f(x) = x
   LOGTYPE_MIN = 1,            // Probably something like this: f(x)=x^0.1
@@ -462,21 +463,21 @@ struct Notes{
 	struct ListHeader3 l;
 
 	float note;
+	int pitch_first_logtype;
+  
 	int velocity;
-
+	int velocity_first_logtype;
+  
 	Place end;
 	
 	struct Velocities *velocities;
 	int velocity_end;
-	int velocity_end_logtype;
   
+	struct Pitches *pitches;
 	float pitch_end;
-  	int pitch_end_logtype;
   
 	struct Velocities first_velocity; // used by nodelines
 	struct Velocities last_velocity; // used by nodelines
-
-	struct Pitches *pitches;
 
 	int subtrack;
 

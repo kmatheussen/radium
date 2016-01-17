@@ -1320,28 +1320,28 @@
 
   (define num-pianonotes (ra:get-num-pianonotes (info :notenum) (info :tracknum)))
   (define pianonotenum (info :pianonotenum))
-    
-  (if (eq? (info :move-type)
-           *pianonote-move-end*)
-      (begin
-        (define num-pianonotes (ra:get-num-pianonotes (info :notenum) (info :tracknum)))
-        (define pianonotenum (info :pianonotenum))
-        (if (and (> num-pianonotes 1)
-                 (< pianonotenum (1- num-pianonotes)))
-            (begin
-              (set! pianonotenum (1+ pianonotenum))
-              (set! info (make-pianonote-info :tracknum (info :tracknum)
-                                              :notenum (info :notenum)
-                                              :pianonotenum pianonotenum
-                                              :move-type *pianonote-move-start*))))))
 
+  (define logtype-holding (ra:is-pianonote-logtype-holding (info :pianonotenum)
+                                                           (info :notenum)
+                                                           (info :tracknum)))
+
+  (define value-pianonote-num (if (and (not logtype-holding)
+                                       (eq? (info :move-type) *pianonote-move-end*))
+                                  (1+ (info :pianonotenum))
+                                  (info :pianonotenum)))
+                                  
+    
+  (define is-end-pitch (and (ra:portamento-enabled (info :notenum)
+                                                   (info :tracknum))
+                            (not logtype-holding)
+                            (eq? (info :move-type) *pianonote-move-end*)
+                            (= (1- num-pianonotes) pianonotenum)))
+  
   (callback info
-            (or (and (eq? *pianonote-move-end* (info :move-type))
-                     (let ((end-pitch (ra:get-note-end-pitch (info :notenum)
-                                                             (info :tracknum))))
-                       (and (> end-pitch 0)
-                            end-pitch)))
-                (ra:get-pianonote-value (info :pianonotenum)
+            (if is-end-pitch
+                (ra:get-note-end-pitch (info :notenum)
+                                       (info :tracknum))
+                (ra:get-pianonote-value value-pianonote-num ;;(info :pianonotenum)
                                         (info :notenum)
                                         (info :tracknum)))
             (if (eq? *pianonote-move-end* (info :move-type))
@@ -1351,7 +1351,6 @@
                 (ra:get-pianonote-y1 (info :pianonotenum)
                                      (info :notenum)
                                      (info :tracknum)))))
-;            (get-pianonote-y info)))
   
    
 (add-node-mouse-handler :Get-area-box (lambda ()
@@ -1361,8 +1360,8 @@
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (and *current-track-num*
                                                        (let ((info (get-pianonote-info X Y *current-track-num*)))
-                                                         ;;(and info
-                                                         ;;     (c-display "        NUM " (info :pianonotenum) " type: " (info :move-type)))
+                                                         (and info
+                                                              (c-display "        NUM " (info :pianonotenum) " type: " (info :move-type)))
                                                          (and info
                                                               (call-get-existing-node-info-callbacks callback info)))))
                         :Get-min-value (lambda (_) 1)
@@ -1397,7 +1396,7 @@
                                                             (pianonote-info :notenum)
                                                             (pianonote-info :tracknum)))
                         :Move-node (lambda (pianonote-info Value Place)
-                                     ;;(c-display "moving to. Value: " Value ", Place: " Place)
+                                     (c-display "moving to. Value: " Value ", Place: " Place " type: " (pianonote-info :move-type))
                                      (define func
                                        (cond ((eq? (pianonote-info :move-type)
                                                    *pianonote-move-start*)
@@ -1494,6 +1493,20 @@
                                (ra:disable-portamento (pianonote-info :notenum)
                                                       (pianonote-info :tracknum))
                                #f)
+                             (define (set-linear!)
+                               (ra:set-pianonote-logtype-holding #f
+                                                                 (pianonote-info :pianonotenum)
+                                                                 (pianonote-info :notenum)
+                                                                 (pianonote-info :tracknum))
+                               #f
+                               )
+                             (define (set-hold!)
+                               (ra:set-pianonote-logtype-holding #t
+                                                                 (pianonote-info :pianonotenum)
+                                                                 (pianonote-info :notenum)
+                                                                 (pianonote-info :tracknum))
+                               #f
+                               )
                              (define (add-pitch)
                                (ra:undo-notes (pianonote-info :tracknum))
                                (define Place (get-place-from-y $button $y))
@@ -1508,12 +1521,17 @@
                              
                              (if (ra:portamento-enabled (pianonote-info :notenum)
                                                         (pianonote-info :tracknum))
-                                 (apply popup-menu (append (list "Add Portamento break point" add-pitch)
-                                                           (cond ((> num-pianonotes 1)
-                                                                  (list "Delete Portamento break point" delete-pitch))
-                                                                 (else ; (pianonote-info :pianonotenum) 0)
-                                                                  (list "Disable Portamento" disable-portamento)))
-                                                           (list "Delete Note" delete-note)))
+                                 (let ((is-holding (ra:is-pianonote-logtype-holding (pianonote-info :pianonotenum)
+                                                                                    (pianonote-info :notenum)
+                                                                                    (pianonote-info :tracknum))))
+                                   (apply popup-menu (append (list "Add Portamento break point" add-pitch)
+                                                             (if (> num-pianonotes 1)
+                                                                 (list "Delete break point" delete-pitch)
+                                                                 (list "Disable Portamento" disable-portamento))
+                                                             (if is-holding
+                                                                 (list "Enable portamento" set-linear!)
+                                                                 (list "Disable portamento" set-hold!))
+                                                             (list "Delete Note" delete-note))))
                                  (popup-menu "Enable Portamento" enable-portamento
                                              "Delete Note" delete-note))))
                        #f)))))
