@@ -571,7 +571,7 @@ private:
   // OpenGL thread
   void swap(){
     if (!g_safe_mode)
-      GL_lock();
+      GL_lock(); // not necessary, gl_lock is recursive...
     {
       // show rendering
       if ( openglContext()->hasDoubleBuffer() )
