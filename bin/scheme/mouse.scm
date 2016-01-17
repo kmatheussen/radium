@@ -1528,12 +1528,12 @@
                                                              (if (> num-pianonotes 1)
                                                                  (list "Delete break point" delete-pitch)
                                                                  (list "Disable Portamento" disable-portamento))
-                                                             (cond (is-holding
-                                                                    (list "Enable portamento" set-linear!))
-                                                                   ((> num-pianonotes 1)
-                                                                    (list "Disable portamento" set-hold!))
-                                                                   (else
-                                                                    '()))
+                                                             ;(cond (is-holding
+                                                             ;       (list "Enable portamento" set-linear!))
+                                                             ;      ((> num-pianonotes 1)
+                                                             ;       (list "Disable portamento" set-hold!))
+                                                             ;      (else
+                                                             ;       '()))
                                                              (list "Delete Note" delete-note))))
                                  (popup-menu "Enable Portamento" enable-portamento
                                              "Delete Note" delete-note))))
