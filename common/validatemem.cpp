@@ -312,7 +312,7 @@ void V_run_validation_thread(void){
     return;
   
   is_running=true;
-  //new ValidationThread();
+  new ValidationThread();
   atexit(dasatexit);
 }
 
