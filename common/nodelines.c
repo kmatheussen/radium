@@ -172,7 +172,7 @@ static const struct NodeLine *create_nodelines(
     struct NodeLine *next = ns->next;
     
     for(;;){
-      ns->x2 = next->logtype==LOGTYPE_HOLD ? ns->x1 : next->x1;
+      ns->x2 = next->logtype==LOGTYPE_HOLD || true ? ns->x1 : next->x1;
       ns->y2 = next->y1;
 
       if (ns->y2 < ns->y1) {

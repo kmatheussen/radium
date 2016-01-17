@@ -117,6 +117,8 @@ static void scheduled_change_pitch(int64_t time, const union SuperType *args){
   const struct Notes  *note  = args[1].const_pointer;
   float          x     = args[2].float_num;
 
+  //printf("Sending pitch change %f\n",x);
+
   RT_PATCH_change_pitch(track->patch,
                         note->note,
                         note->id,

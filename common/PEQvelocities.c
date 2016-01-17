@@ -138,6 +138,8 @@ static void scheduled_change_velocity(int64_t time, const union SuperType *args)
   const struct Notes  *note  = args[1].const_pointer;
   int            x     = args[2].int_num;
 
+  //printf("Change velocity to %d\n",x);
+
   RT_PATCH_change_velocity(track->patch,
                            note->note,
                            note->id,

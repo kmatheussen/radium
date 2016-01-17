@@ -51,10 +51,10 @@ STime PEQ_CalcNextEvent(
     *x=x2;
     return time2+1;
   }
-  
+
   if (logtype == LOGTYPE_HOLD){
-    *x = x2;
-    return time2;
+    *x = x1;
+    return time2-1;
   }
 
   if(x1==x2){
