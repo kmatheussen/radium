@@ -217,6 +217,7 @@ static double get_ms(void){
   return timer->elapsed();
 }
 
+static bool g_stop_thread = false;
 
 static Memlink *validate_a_little(double max_time, Memlink *link){
     
@@ -242,6 +243,9 @@ static Memlink *validate_a_little(double max_time, Memlink *link){
         validate_link(link);
         num_scanned++;
       }
+
+      if (g_stop_thread==true)
+        return NULL;
       
       link = next;
     }
@@ -275,15 +279,19 @@ public:
 
   void run(){
     Memlink *link = NULL;
-    while(true){
-      link = validate_a_little(3, link);  // work 3ms
+    while(g_stop_thread==false){
       QThread::msleep(2);                 // sleep 2ms
+      link = validate_a_little(3, link);  // work 3ms
     }
   }
 };
 
 }
 
+
+static void dasatexit(void){
+  g_stop_thread = true;
+}
 
 void V_run_validation_thread(void){
   static int num=0;
@@ -300,6 +308,7 @@ void V_run_validation_thread(void){
   
   is_running=true;
   new ValidationThread();
+  atexit(dasatexit);
 }
 
 static void memset32(char *char_pos, int num_chars){
