@@ -135,7 +135,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DUSE_GFX_OP_QUEUE -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) $(FLAGOPTS) $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_58_0 -I${HOME}/SDKs -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
+COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_58_0 -I${HOME}/SDKs -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
 #$(CFLAGS)
 # -Wunused-parameter
 
@@ -275,7 +275,7 @@ OBJ = $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) 
 
 #-------------------KARSJK-------------------------------
 
-BUILD_DEPENDENCIES =  buildtype.opt $(CD)keyboard_sub_ids.h dependencies_ok
+BUILD_DEPENDENCIES =  buildtype.opt flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
 
 PROGRAM_MODULES = bin/radium bin/crashreporter bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py bin/radium_error_message
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
@@ -298,7 +298,7 @@ very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean:
-	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt bin/crashreporter bin/crashreporter.exe bin/radium_error_message bin/radium_error_message.exe bin/radium.bin.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp
+	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt flagopts.opt bin/crashreporter bin/crashreporter.exe bin/radium_error_message bin/radium_error_message.exe bin/radium.bin.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
 
 dependencies_ok: check_dependencies.sh #Makefile
@@ -413,13 +413,9 @@ bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluids
 PLUGINHOSTOPTS = CXX=g++ TARGET_ARCH=-g
 
 pluginhost/Builds/Linux/build/libMyPluginHost.a: audio/Juce_plugins.cpp flagopts.opt pluginhost/MyPluginHost.jucer $(API)/radium_proc.h
-	if [ $(BUILDTYPE) = DEBUG ] ; then cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS) $(MAKE) -n ; else cd pluginhost/Builds/Linux && CONFIG=Release $(PLUGINHOSTOPTS) $(MAKE) -n ; fi
-	if [ $(BUILDTYPE) = DEBUG ] ; then cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS) $(MAKE) ; else cd pluginhost/Builds/Linux && CONFIG=Release $(PLUGINHOSTOPTS) $(MAKE) ; fi
+	if [ $(BUILDTYPE) = DEBUG ] ; then cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS)  $(MAKE)  -n ; else cd pluginhost/Builds/Linux && CONFIG=Release  $(PLUGINHOSTOPTS) $(MAKE)  -n ; fi
+	if [ $(BUILDTYPE) = DEBUG ] ; then cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS)  $(MAKE)  ; else cd pluginhost/Builds/Linux && CONFIG=Release $(PLUGINHOSTOPTS)  $(MAKE)  ; fi
 #	if [ $(BUILDTYPE) = DEBUG ] ; then cd pluginhost/Builds/Linux && CXX="clang++ -v" CONFIG=Debug $(MAKE) ; else cd pluginhost/Builds/Linux && CXX=clang++ CONFIG=Release $(MAKE) ; fi
-
-
-flagopts.opt: Makefile
-	echo "$(FLAGOPTS)" >flagopts.opt
 
 
 $(CD)keyboard_sub_ids.h: bin/generate_keyboard_sub_ids.py bin/keysubids.py
@@ -1376,6 +1372,14 @@ buildtype.opt: #Makefile
 
 #	elif [ $(TARGET_OS) = mingw32 ] ; then \
 #		echo "$(RELEASE_BUILD_OPTS_WITHOUT_NDEBUG)" >buildtype.opt ; \
+
+
+flagopts.opt: Makefile
+	if [ $(BUILDTYPE) = DEBUG ] ; then \
+		echo "$(FLAGOPTS)" >flagopts.opt ; \
+	else \
+		echo "$(FLAGOPTS) -DRELEASE" >flagopts.opt ; \
+	fi
 
 
 bin/X11_XSendEvent: X11/X11_XSendEvent.c

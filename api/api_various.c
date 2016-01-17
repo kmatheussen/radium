@@ -477,11 +477,11 @@ void importMidi(void){
 
 static void import_importmod_file(void){
   static bool imported=false;
-  if(imported==false){
-    PyRun_SimpleString("import import_mod");
-    imported=true;
-  }else
-    PyRun_SimpleString("import_mod=reload(import_mod)"); // Avoid having to restart radium if code is changed. Practical during development. No practical impact on performance either.
+    if(imported==false){
+      PyRun_SimpleString("import import_mod");
+      imported=true;
+    }else
+      PyRun_SimpleString("import_mod=reload(import_mod)"); // Avoid having to restart radium if code is changed. Practical during development. No practical impact on performance either.
 }
 
 void importMod(void){
