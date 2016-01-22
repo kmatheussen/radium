@@ -1693,6 +1693,20 @@ static void setPitchLogtype(bool is_holding, int pitchnum, struct Tracks *track)
     pitch->logtype = logtype;
 }
 
+
+void setPitchLogtypeHolding(bool is_holding, int pitchnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+
+  if (wtrack==NULL)
+    return;
+
+  setPitchLogtype(is_holding, pitchnum, wtrack->track);
+}
+
+
+
 static int getReallineForPitch(const struct WBlocks *wblock, struct Pitches *pitch, struct Notes *note, bool is_end_pitch){
   if( pitch!=NULL)
     return FindRealLineFor(wblock,pitch->Tline,&pitch->l.p);
@@ -2054,7 +2068,7 @@ static int addNote3(struct Tracker_Windows *window, struct WBlocks *wblock, stru
 
 static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value){
 
-  struct Pitches *pitch = AddPitch(window, wblock, wtrack, note, place, note->note);
+  struct Pitches *pitch = AddPitch(window, wblock, wtrack, note, place, value);
 
   if(pitch==NULL)
     return -1;
@@ -2497,6 +2511,43 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
   window->must_redraw_editor = true;
 }
 
+void setVelocityLogtypeHolding(bool is_holding, int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+
+  //struct Blocks *block=wblock->block;
+  //struct Tracks *track=wtrack->track;
+
+  const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
+  if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
+    RWarning("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    return;
+  }
+    
+  bool is_first                      = velocitynum==0;
+  bool is_last                       = velocitynum==nodes->num_elements-1;
+
+  if (is_last) {
+    GFX_Message(NULL, "Can not set logtype for last velocity (doesn't make any sense)");
+    return;
+  }
+
+  int logtype = is_holding ? LOGTYPE_HOLD : LOGTYPE_LINEAR;
+
+  if (is_first)
+    note->velocity_first_logtype = logtype;
+  else {
+    struct Node *node = nodes->elements[velocitynum];
+    struct Velocities *velocity = (struct Velocities*)node->element;
+
+    velocity->logtype = logtype;
+  }
+}
+  
 
 void setCurrentVelocityNode(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
  struct Tracker_Windows *window;
@@ -2535,6 +2586,7 @@ void setIndicatorVelocityNode(int velocitynum, int notenum, int tracknum, int bl
   setIndicatorNode(&note->l);
   indicator_velocity_num = velocitynum;
 }
+
 
 
 // fxes

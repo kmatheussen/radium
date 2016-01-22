@@ -101,11 +101,11 @@
              "something"
              (catch #t
                     (lambda ()
-                      (non-existing-event-to-string2 a))
+                      (event-to-string a))
                     (lambda args
                       (catch #t
                              (lambda ()
-                               (cloned-instrument-to-string4 a))
+                               (cloned-instrument-to-string a))
                              (lambda args
                                (with-output-to-string
                                  (lambda ()
