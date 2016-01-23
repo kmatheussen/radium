@@ -333,7 +333,15 @@
   (set! mouse-pointer-has-been-set #f)
 
   (ra:set-statusbar-text "")
-  (define ret (thunk))
+  
+  (define ret
+    (catch #t
+           thunk
+           (lambda args
+             (c-display "Resetting mouse cycle since I caught something: " args)
+             (set! *current-mouse-cycle* #f)
+             #f)))
+  
   (if (not mouse-fx-has-been-set)
       (ra:set-no-mouse-fx))
 
