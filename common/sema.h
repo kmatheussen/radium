@@ -110,6 +110,8 @@ public:
 #include <semaphore.h>
 #include <errno.h>
 
+extern QAtomicInt g_num_waits;
+
 namespace cpp11onmulticore{
 class Semaphore
 {
@@ -133,6 +135,7 @@ public:
 
     void wait()
     {
+      g_num_waits.ref();
         // http://stackoverflow.com/questions/2013181/gdb-causes-sem-wait-to-fail-with-eintr-error
         int rc;
         do
@@ -163,8 +166,8 @@ public:
 
 #endif
 
-// atomic not found when compiling with clang. Don't bother to find out what happens since LightweightSemaphore is not used anyway.
-#if 0
+// atomic not found when compiling with clang.
+#if 0 //FOR_LINUX
 
 
 #include <atomic>
@@ -191,7 +194,11 @@ private:
             oldCount = m_count.load(std::memory_order_relaxed);
             if ((oldCount > 0) && m_count.compare_exchange_strong(oldCount, oldCount - 1, std::memory_order_acquire))
                 return;
+#if 1
             std::atomic_signal_fence(std::memory_order_acquire);     // Prevent the compiler from collapsing the loop.
+#else
+            pthread_yield(); // remarkably effective... (note that the "spin" integer must be lowered somewhat. Probably need a timer here instead.)
+#endif
         }
         oldCount = m_count.fetch_sub(1, std::memory_order_acquire);
         if (oldCount <= 0)

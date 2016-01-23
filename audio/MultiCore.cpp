@@ -4,6 +4,8 @@
 #include <QThread>
 #include <QAtomicInt>
 
+QAtomicInt g_num_waits(0);
+
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 #include "../common/threading.h"
@@ -37,13 +39,19 @@ static QAtomicInt num_sp_left(0);
 
 static radium::Queue< SoundProducer* , MAX_NUM_SP > soundproducer_queue;
 
-static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp){
-  if (!sp->num_dependencies_left.deref())
-    soundproducer_queue.put(sp);
+static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp, SoundProducer **next){
+  if (!sp->num_dependencies_left.deref()) {
+    if (*next == NULL)
+      *next = sp;
+    else
+      soundproducer_queue.put(sp);
+  }
 }
 
 static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frames, bool process_plugins){
 
+ again:
+  
   R_ASSERT(sp!=NULL);
 
   //  fprintf(stderr,"   Processing %p: %s %d\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,int(sp->is_processed));
@@ -69,9 +77,17 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
   //int num_left = num_sp_left;
   //printf("num_left2: %d\n",num_left);
 
+  SoundProducer *next = NULL;
+  
   for(SoundProducerLink *link : sp->_output_links)
     if (link->is_active)
-      dec_sp_dependency(link->source, link->target);
+      dec_sp_dependency(link->source, link->target, &next);
+
+  if (next != NULL){
+    sp = next;
+    next = NULL;
+    goto again;
+  }
 }
 
 
@@ -99,14 +115,16 @@ public:
     : must_exit(false)
   {
     QObject::connect(this, SIGNAL(finished()), this, SLOT(onFinished()));
-    start(QThread::LowestPriority); //QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
+    start(QThread::NormalPriority); //QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
   }
 
   void run(){
     AVOIDDENORMALS;
 
     touch_stack();
-        
+
+    setPriority(QThread::TimeCriticalPriority); // shouldn't matter, but just in case the call below is not working, for some reason.
+  
     THREADING_acquire_player_thread_priority();
 
     can_start_main_loop.wait();
@@ -197,26 +215,50 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
   SP_print_tree();
 #endif
 
+  //int num_waits_start = int(g_num_waits);
+  
 
-
+  SoundProducer *sp_in_main_thread = NULL;
+      
   // 3. start threads;
 
   for (SoundProducer *sp : sp_all)
     if (sp->num_dependencies==0){
-      num_ready_sp++;
-      //fprintf(stderr,"Scheduling %p: %s\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name);
-      //fflush(stderr);
-      soundproducer_queue.put(sp);
+      if (sp_in_main_thread == NULL){
+        sp_in_main_thread = sp;
+      } else {
+        num_ready_sp++;
+        //fprintf(stderr,"Scheduling %p: %s\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name);
+        //fflush(stderr);
+        soundproducer_queue.putWithoutSignal(sp);
+      }
     }
+  if(num_ready_sp > 0)
+    soundproducer_queue.signal(num_ready_sp);
 
-
-  R_ASSERT(num_ready_sp > 0);
+  R_ASSERT(sp_in_main_thread!=NULL);
 
   if (g_num_runners==0)
     process_single_core(time, num_frames, process_plugins);
-  else  
-    // 4. wait.
+  else {
+    
+    // 4. process as much as we can in the main thread
+    while(sp_in_main_thread != NULL){
+      process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
+
+      bool gotit;
+      sp_in_main_thread = soundproducer_queue.tryGet(gotit); // This is not perfect. It's likely that we fail to get a soundproducer before everything is done.
+      if (!gotit)
+        sp_in_main_thread = NULL;
+    }
+
+    // 5. wait.
     all_sp_finished.wait();
+  }
+  
+  //int num_waits_end = int(g_num_waits);
+
+  //printf("num_waits: %d, %d\n",int(g_num_waits),num_waits_end-num_waits_start);
   
   if(something_is_wrong){
     fflush(stderr);

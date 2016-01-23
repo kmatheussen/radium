@@ -73,6 +73,14 @@ public:
     wait();
     return get_withoutWaiting();
   }
+
+  void putWithoutSignal(T t) {
+    while (!queue.bounded_push(t));
+  }
+
+  void signal(int num){
+    ready.signal(num);
+  }
   
   // returns false if queue was full
   bool tryPut(T t){

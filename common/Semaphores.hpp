@@ -27,8 +27,11 @@ class Semaphore{
   private:
     
     QAtomicInt m_count;
-    cpp11onmulticore::Semaphore m_sema;
-
+#if 0
+  cpp11onmulticore::LightweightSemaphore m_sema; // Calling pthread_yield inside the spin lock gives extremly promising results though. Must be investigated more.
+#else
+  cpp11onmulticore::Semaphore m_sema;
+#endif
 
   Semaphore(const Semaphore&) = delete;
   Semaphore& operator=(const Semaphore&) = delete;
