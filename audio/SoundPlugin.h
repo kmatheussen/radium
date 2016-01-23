@@ -259,7 +259,7 @@ typedef struct SoundPlugin{
   SoundPlugin& operator=(const SoundPlugin&) = delete;
 #endif
   
-  const SoundPluginType *type;
+  SoundPluginType *type;
 
   // Data used by the plugin (the value returned by 'create_plugin_data')
   void *data;

@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/hashmap_proc.h"
 #include "../common/undo.h"
+#include "../common/player_proc.h"
 #include "../mixergui/undo_chip_addremove_proc.h"
 #include "../mixergui/undo_mixer_connections_proc.h"
 #include "undo_instruments_widget_proc.h"
@@ -844,6 +845,7 @@ struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, 
   return patch;
 }
 
+#if 0
 void InstrumentWidget_replace_old(struct Patch *old_patch){
   SoundPluginType *plugin_type = MW_popup_plugin_selector(NULL, 200, 200, false);
   if (plugin_type==NULL)
@@ -876,6 +878,7 @@ void InstrumentWidget_replace_old(struct Patch *old_patch){
   else 
     GFX_update_instrument_widget(new_patch);
 }
+#endif
 
 static void replace(struct Patch *old_patch, hash_t *state){
   SoundPlugin *old_plugin = (SoundPlugin*)old_patch->patchdata;
@@ -903,7 +906,7 @@ void InstrumentWidget_replace(struct Patch *old_patch){
   SoundPlugin *plugin = PLUGIN_create_plugin(plugin_type, NULL);
   hash_t *state = PLUGIN_get_state(plugin);
 
-  PLUGIN_delete_plugin(plugin); // not ideally to temporarily create a plugin, but alternative seems quite horrific, unfortunately.
+  PLUGIN_delete_plugin(plugin); // not ideally to temporarily create a plugin, but alternative seems quite horrific, unfortunately. (Note that this is not dangerous, we only briefly create a plugin in order to harvest a "state" from it)
     
   replace(old_patch, state);
 }
@@ -1009,6 +1012,9 @@ void GFX_update_instrument_patch_gui(struct Patch *patch){
 }
 
 static void tab_name_has_changed(QWidget *tab, QString new_name) {
+
+  if (g_currpatch->name_is_edited)
+    return;
 
   if(new_name==""){
     //name_widget->setText("pip");

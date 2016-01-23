@@ -249,7 +249,7 @@ static void release_system_filter(SystemFilter *filter, int num_channels){
   V_free(filter->plugins);
 }
 
-SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *plugin_state){
+SoundPlugin *PLUGIN_create_plugin(SoundPluginType *plugin_type, hash_t *plugin_state){
   SoundPlugin *plugin = V_calloc(1,sizeof(SoundPlugin));
   plugin->type = plugin_type;
 
@@ -1105,7 +1105,7 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state){
   const char *type_name = HASH_get_chars(state, "type_name");
   const char *name = HASH_get_chars(state, "name");
 
-  const SoundPluginType *type = PR_get_plugin_type_by_name(container_name, type_name, name);
+  SoundPluginType *type = PR_get_plugin_type_by_name(container_name, type_name, name);
                           
   if(type==NULL){
     GFX_Message(NULL, "The \"%s\" plugin called \"%s\" was not found",type_name,name);
@@ -1195,10 +1195,23 @@ SoundPlugin *PLUGIN_set_from_state(SoundPlugin *old_plugin, hash_t *state){
   struct Patch *new_patch = InstrumentWidget_new_from_preset(state, old_patch->name, CHIP_get_pos_x(old_patch), CHIP_get_pos_y(old_patch), false);
 
   if (new_patch!=NULL) {
-    PLUGIN_set_from_patch(old_plugin, new_patch);        
-    return (SoundPlugin*)new_patch->patchdata;
-  } else
+    
+    PLUGIN_set_from_patch(old_plugin, new_patch);
+    
+    SoundPlugin *new_plugin = (SoundPlugin*)new_patch->patchdata;
+    
+    if (!old_patch->name_is_edited)
+      new_patch->name = PLUGIN_generate_new_patchname(new_plugin->type);
+
+    new_patch->name_is_edited = old_patch->name_is_edited;
+    
+    return new_plugin;
+    
+  } else {
+    
     return NULL;
+    
+  }
 }
 
 

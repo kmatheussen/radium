@@ -35,6 +35,7 @@ extern struct Root *root;
 struct Undo_PatchName{
   struct Patch *patch;
   const char *name;
+  bool name_is_edited;
   bool forward_events;
 };
 
@@ -56,8 +57,10 @@ static void Undo_PatchName(
   
   undo_ae->patch = patch;
   undo_ae->name = talloc_strdup(patch->name);
+  undo_ae->name_is_edited = patch->name_is_edited;
   undo_ae->forward_events = patch->forward_events;
-
+  
+  
   //printf("********* Storing patchvoice undo. Value: %d\n",undo_ae->voice.is_on);
 
   Undo_Add_dont_stop_playing(
@@ -88,6 +91,7 @@ static void *Undo_Do_PatchName(
   struct Patch *patch = undo_ae->patch;
 
   const char *new_name = talloc_strdup(patch->name);
+  bool new_name_is_edited = patch->name_is_edited;
   bool new_forward_events = patch->forward_events;
 
   //printf("Calling Undo_do for %d. Old value: %d. Setting it to %d\n", voicenum,new_patch_voice.is_on,undo_ae->voice.is_on);
@@ -95,12 +99,14 @@ static void *Undo_Do_PatchName(
   //  abort();
 
   patch->name = undo_ae->name;
+  patch->name_is_edited = undo_ae->name_is_edited;
   patch->forward_events = undo_ae->forward_events;
 
   GFX_update_instrument_widget(patch);
   CHIP_update(patch->patchdata);
 
   undo_ae->name = new_name;
+  undo_ae->name_is_edited = new_name_is_edited;
   undo_ae->forward_events = new_forward_events;
 
   return undo_ae;

@@ -1357,7 +1357,7 @@ struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *na
   R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, NULL);
 
   if (name==NULL)
-    name = PLUGIN_generate_new_patchname((SoundPluginType*)plugin->type);
+    name = PLUGIN_generate_new_patchname(plugin->type);
 
   struct Patch *patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, plugin, name);
   patch->patchdata = plugin;

@@ -39,7 +39,7 @@ enum PlayerLockRequired{
   PLAYERLOCK_MAYBE_REQUIRED
 };
 
-extern LANGSPEC SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *plugin_state);
+extern LANGSPEC SoundPlugin *PLUGIN_create_plugin(SoundPluginType *plugin_type, hash_t *plugin_state);
 extern LANGSPEC void PLUGIN_delete_plugin(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_update_smooth_values(SoundPlugin *plugin);
 

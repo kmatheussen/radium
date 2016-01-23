@@ -545,7 +545,8 @@ static inline PatchPlayingNote NewPatchPlayingNote(float note_num, int64_t note_
 struct Patch{
   int id;
   bool is_usable; // If pasting a track with this patch, this flag tells whether the patch can be used on the new track.
-  
+
+  bool name_is_edited;
   const char *name;
 
   int colornum;

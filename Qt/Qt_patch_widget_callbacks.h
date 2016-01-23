@@ -279,6 +279,7 @@ public slots:
       struct WBlocks *wblock = window->wblock;
       DO_GFX(
              _patch->name = talloc_strdup((char*)new_name.toUtf8().constData());
+             g_currpatch->name_is_edited = true;
              DrawAllWTrackHeaders(window,wblock);
              );
       EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
