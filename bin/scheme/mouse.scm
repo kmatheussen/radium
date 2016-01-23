@@ -1359,9 +1359,12 @@
                                              (ra:get-box track-pianoroll *current-track-num*)))
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (and *current-track-num*
+                                                       (ra:pianoroll-visible *current-track-num*)
+                                                       (ra:get-box track-pianoroll *current-track-num*)
+                                                       (inside-box (ra:get-box track-pianoroll *current-track-num*) X Y)
                                                        (let ((info (get-pianonote-info X Y *current-track-num*)))
-                                                         (and info
-                                                              (c-display "        NUM " (info :pianonotenum) " type: " (info :move-type)))
+                                                         ;;(and info
+                                                         ;;     (c-display "        NUM " (info :pianonotenum) " type: " (info :move-type)))
                                                          (and info
                                                               (call-get-existing-node-info-callbacks callback info)))))
                         :Get-min-value (lambda (_) 1)
@@ -1396,7 +1399,7 @@
                                                             (pianonote-info :notenum)
                                                             (pianonote-info :tracknum)))
                         :Move-node (lambda (pianonote-info Value Place)
-                                     (c-display "moving to. Value: " Value ", Place: " Place " type: " (pianonote-info :move-type))
+                                     ;;(c-display "moving to. Value: " Value ", Place: " Place " type: " (pianonote-info :move-type))
                                      (define func
                                        (cond ((eq? (pianonote-info :move-type)
                                                    *pianonote-move-start*)
