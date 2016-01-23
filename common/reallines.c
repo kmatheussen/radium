@@ -53,6 +53,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "sliders_proc.h"
 #include "OS_Player_proc.h"
 #include "realline_calc_proc.h"
+#include "../OpenGL/Widget_proc.h"
 
 #include "reallines_proc.h"
 
@@ -263,6 +264,7 @@ static struct LocalZooms **get_shrinked_reallines(const struct Tracker_Windows *
 static void set_curr_realline(struct WBlocks *wblock, int new_curr_realline){
   //printf("new_curr_realline: %d, num_reallines: %d\n",new_curr_realline,wblock->num_reallines);
   wblock->curr_realline = R_BOUNDARIES(0, new_curr_realline, wblock->num_reallines - 1);
+  GE_set_curr_realline(wblock->curr_realline);
 }
 
 static void set_curr_realline_from_place(const struct Tracker_Windows *window, struct WBlocks *wblock, Place *curr_place){
@@ -647,8 +649,9 @@ void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int n
 
   if (wblock->curr_realline <= wblock->num_reallines-2)
     if (wblock->reallines[wblock->curr_realline]->l.p.counter < curr_place.counter)
-      if (wblock->reallines[wblock->curr_realline]->l.p.line == wblock->reallines[wblock->curr_realline+1]->l.p.line)
+      if (wblock->reallines[wblock->curr_realline]->l.p.line == wblock->reallines[wblock->curr_realline+1]->l.p.line) {
         set_curr_realline(wblock, wblock->curr_realline+1);
+      }
 
   window->must_redraw = true;
 }
