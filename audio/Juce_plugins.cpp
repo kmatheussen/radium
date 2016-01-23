@@ -18,6 +18,7 @@
 #include "../common/PEQ_Beats_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/player_proc.h"
+#include "../common/OS_Player_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
@@ -115,6 +116,7 @@ namespace{
       , y(-1)
     {
       audio_instance->addListener(&listener);
+      midi_buffer.ensureSize(1024*16);
     }
   };
 
@@ -263,16 +265,18 @@ int MIDI_msg_len(uint32_t msg){
 
 
 static void RT_MIDI_send_msg_to_patch_receivers(struct Patch *patch, MidiMessage message, int64_t seq_time){       
-  if (message.isNoteOn())
+  if (message.isNoteOn()) {
+    //printf("Out. Sending note ON %d\n",  message.getNoteNumber());
     RT_PATCH_send_play_note_to_receivers(patch, message.getNoteNumber(), -1, message.getVelocity() / 127.0f, 0.0f, seq_time);
-  
-  else if (message.isNoteOff())
+    
+  } else if (message.isNoteOff()) {
+    //printf("Out. Sending note OFF %d\n",  message.getNoteNumber());
     RT_PATCH_send_stop_note_to_receivers(patch, message.getNoteNumber(), -1, seq_time);
   
-  else if (message.isAftertouch())
+  } else if (message.isAftertouch()) {
     RT_PATCH_send_change_velocity_to_receivers(patch, message.getNoteNumber(), -1, message.getChannelPressureValue() / 127.0f, seq_time);
 
-  else {
+  } else {
     
     const uint8_t *raw_data = message.getRawData();
     int len = message.getRawDataSize();
@@ -384,46 +388,55 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   for(int ch=0; ch<data->num_input_channels ; ch++)
     memcpy(buffer.getWritePointer(ch), inputs[ch], sizeof(float)*num_frames);
-
+    
   int pos = CRASHREPORTER_set_plugin_name(plugin->type->name);{
     instance->processBlock(buffer, data->midi_buffer);
   }CRASHREPORTER_unset_plugin_name(pos);
-
+  
   for(int ch=0; ch<data->num_output_channels ; ch++)
     memcpy(outputs[ch], buffer.getReadPointer(ch), sizeof(float)*num_frames);
 
 
-  // 2. Send out midi (untested, need plugin to test with)
+  // 2. Send out midi
+  if (!data->midi_buffer.isEmpty()){
 
-  volatile struct Patch *patch = plugin->patch;
-  if (patch!=NULL) {
+    RT_PLAYER_runner_lock();{
+
+      volatile struct Patch *patch = plugin->patch;
       
-    MidiBuffer::Iterator iterator(data->midi_buffer);
+      MidiBuffer::Iterator iterator(data->midi_buffer);
       
-    MidiMessage message;
-    int samplePosition;
-    
-    while(iterator.getNextEvent(message, samplePosition)){
+      MidiMessage message;
+      int samplePosition;
+      
+      while(iterator.getNextEvent(message, samplePosition)){
 #ifndef RELEASE
-      if (samplePosition >= num_frames || samplePosition < 0)
-        RT_message("The instrument named \"%s\" of type %s/%s\n"
-                   "returned illegal sample position: %d",
-                   patch==NULL?"<no name>":patch->name,
-                   plugin->type->type_name, plugin->type->name,
-                   samplePosition
-                   );
+        if (samplePosition >= num_frames || samplePosition < 0)
+          RT_message("The instrument named \"%s\" of type %s/%s\n"
+                     "returned illegal sample position: %d",
+                     patch==NULL?"<no name>":patch->name,
+                     plugin->type->type_name, plugin->type->name,
+                     samplePosition
+                     );
 #endif
-      // Make sure samplePosition has a legal value
-      if (samplePosition >= num_frames)
-        samplePosition = num_frames-1;
-      if (samplePosition < 0)
-        samplePosition = 0;
+        // Make sure samplePosition has a legal value
+        if (samplePosition >= num_frames)
+          samplePosition = num_frames-1;
+        if (samplePosition < 0)
+          samplePosition = 0;
+        
+        int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+samplePosition);
+        int64_t radium_time = pc->start_time + delta_time;
+        
+        if (patch != NULL) {
+          RT_MIDI_send_msg_to_patch_receivers((struct Patch*)patch, message, radium_time);
+        }
       
-      int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+samplePosition);
-      int64_t radium_time = pc->start_time + delta_time;
-      
-      RT_MIDI_send_msg_to_patch_receivers((struct Patch*)patch, message, radium_time);
-    }
+        data->midi_buffer.clear();
+      }
+
+    }RT_PLAYER_runner_unlock();
+
   }
 
 }
@@ -432,6 +445,7 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
   Data *data = (Data*)plugin->data;
   MidiBuffer &buffer = data->midi_buffer;
 
+  //printf("In. Play note %d %d\n",(int)note_num,(int)time);
   MidiMessage message(0x90, (int)note_num, (int)(volume*127), 0.0);
   buffer.addEvent(message, time);
 }
@@ -448,6 +462,7 @@ static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
   Data *data = (Data*)plugin->data;
   MidiBuffer &buffer = data->midi_buffer;
 
+  //printf("In. Stop note %d %d\n",(int)note_num,(int)time);
   MidiMessage message(0x90, (int)note_num, 0, 0.0);
   buffer.addEvent(message, time);
 }

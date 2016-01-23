@@ -6,6 +6,7 @@
 #include "../Qt/Qt_instruments_proc.h"
 #include "../midi/midi_proc.h"
 #include "../common/player_proc.h"
+#include "../common/OS_Player_proc.h"
 #include "../common/patch_proc.h"
 
 #include "SoundPluginRegistry_proc.h"
@@ -111,11 +112,13 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     
     data->has_sent_initial_values=true;
 
-    for(int effect_num = PROGRAM_CHANGE ; effect_num < NUM_EFFECTS ; effect_num++) {
-      int value = data->values[effect_num];
-      if (value != -1)
-        RT_set_effect_value(plugin, 0, effect_num, value, PLUGIN_FORMAT_NATIVE, FX_single);
-    }
+    RT_PLAYER_runner_lock();{
+      for(int effect_num = PROGRAM_CHANGE ; effect_num < NUM_EFFECTS ; effect_num++) {
+        int value = data->values[effect_num];
+        if (value != -1)
+          RT_set_effect_value(plugin, 0, effect_num, value, PLUGIN_FORMAT_NATIVE, FX_single);
+      }
+    }RT_PLAYER_runner_lock();
     
   }
 }

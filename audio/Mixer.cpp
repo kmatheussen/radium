@@ -190,8 +190,10 @@ static void check_jackd_arguments(void){
 static pthread_mutexattr_t player_lock_mutexattr;
 #endif
 static LockType player_lock;
+static LockType player_runner_lock;
 
 static __thread bool g_current_thread_has_player_lock = false;
+static __thread bool g_current_thread_has_player_runner_lock = false;
 
 
 #if 0
@@ -246,6 +248,7 @@ void PLAYER_lock(void){
   
   R_ASSERT(!THREADING_is_player_thread());
 
+  
 #ifdef FOR_LINUX // we use mutex with the PTHREAD_PRIO_INHERIT on linux
   
   lock_player();
@@ -282,12 +285,24 @@ void PLAYER_unlock(void){
 #endif
 }
 
+void RT_PLAYER_runner_lock(void){
+  LOCK_LOCK(player_runner_lock);
+  g_current_thread_has_player_runner_lock = true;
+}
+
+void RT_PLAYER_runner_unlock(void){
+  g_current_thread_has_player_runner_lock = false;
+  LOCK_UNLOCK(player_runner_lock);
+}
+
 bool PLAYER_current_thread_has_lock(void){
-  return g_current_thread_has_player_lock;
+  return g_current_thread_has_player_lock || g_current_thread_has_player_runner_lock;
 }
 
 
 static void init_player_lock(void){
+
+  LOCK_INITIALIZE(player_runner_lock); // Don't have to do anything special. It's always called from a realtime thread, and never recursively.
 
 #if defined(FOR_LINUX) || defined(FOR_MACOSX)
   int s1 = pthread_mutexattr_init(&player_lock_mutexattr);

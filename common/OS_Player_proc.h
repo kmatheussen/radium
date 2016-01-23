@@ -22,6 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern LANGSPEC void PLAYER_lock(void);
 extern LANGSPEC void PLAYER_unlock(void);
 
+// Must be called in SoundProducer::RT_process if doing things there which requires the PLAYER_lock. (separate lock because of multicore processing)
+extern LANGSPEC void RT_PLAYER_runner_lock(void);
+extern LANGSPEC void RT_PLAYER_runner_unlock(void);
+
 extern LANGSPEC bool PLAYER_current_thread_has_lock(void);
 extern LANGSPEC bool PLAYER_someone_has_player_lock(void);
 extern LANGSPEC bool PLAYER_player_has_player_lock(void);
