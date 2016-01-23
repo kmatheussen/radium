@@ -56,17 +56,24 @@ static void Scroll_play_down3(
   struct Tracks *track = wblock->block->tracks;
 
   while(track != NULL){
-    struct Patch *patch=track->patch;
-    if (patch != NULL){
-      struct Notes *note = track->notes;
-      while(note != NULL){
-        if (PlaceIsBetween2(&note->l.p, p1, p2))
-          PATCH_play_note(patch, note->note, note->id, VELOCITY_get(note->velocity), TRACK_get_pan(track));
+    
+    if (track->onoff==1){
+      
+      struct Patch *patch=track->patch;
+      
+      if (patch != NULL){
         
-        if (PlaceIsBetween2(&note->end, p1, p2))
-          PATCH_stop_note(patch, note->note, note->id);
+        struct Notes *note = track->notes;
         
-        note = NextNote(note);
+        while(note != NULL){
+          if (PlaceIsBetween2(&note->l.p, p1, p2))
+            PATCH_play_note(patch, note->note, note->id, VELOCITY_get(note->velocity), TRACK_get_pan(track));
+          
+          if (PlaceIsBetween2(&note->end, p1, p2))
+            PATCH_stop_note(patch, note->note, note->id);
+          
+          note = NextNote(note);
+        }
       }
     }
     
@@ -102,30 +109,36 @@ static void Scroll_play_up3(
 
   while(track != NULL && track->l.num < MAX_SCROLLPLAYTRACKS) {
 
-    struct Patch *patch = track->patch;
-    if (patch != NULL){
-      struct Notes *note = track->notes;
-
-      // First stop previously playing notes on this track, if any.
-      while(note != NULL){
-        if (PlaceIsBetween2(&note->l.p, p1, p2)){
-          stop_all_notes_in_track(track);
-          break;
-        }
-        note = NextNote(note);
-      }
-
-      // Then play new notes.
-      while(note != NULL){
-        if (PlaceIsBetween2(&note->l.p, p1, p2)) {
-          PATCH_play_note(patch, note->note, note->id, VELOCITY_get(note->velocity), TRACK_get_pan(track));
-          VECTOR_push_back(&scrollplaying_notes[track->l.num], note);
+    if (track->onoff==1){
+      
+      struct Patch *patch = track->patch;
+      
+      if (patch != NULL){
+        
+        struct Notes *note = track->notes;
+        
+        // First stop previously playing notes on this track, if any.
+        while(note != NULL){
+          if (PlaceIsBetween2(&note->l.p, p1, p2)){
+            stop_all_notes_in_track(track);
+            break;
+          }
+          note = NextNote(note);
         }
         
-        note = NextNote(note);
-      }      
-    }
+        // Then play new notes.
+        while(note != NULL){
+          if (PlaceIsBetween2(&note->l.p, p1, p2)) {
+            PATCH_play_note(patch, note->note, note->id, VELOCITY_get(note->velocity), TRACK_get_pan(track));
+            VECTOR_push_back(&scrollplaying_notes[track->l.num], note);
+          }
+          
+          note = NextNote(note);
+        }      
+      }
 
+    }
+    
     track = NextTrack(track);
   }
 }
