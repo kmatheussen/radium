@@ -209,6 +209,8 @@ void PR_add_plugin_type(SoundPluginType *type){
       return;
     if(!strcmp(type->name,"System Delay"))
       return;
+    if(!strcmp(type->name,"System Tremolo"))
+      return;
   }
 
   if(!strcmp(type->type_name,"Bus"))
