@@ -1,3 +1,30 @@
+Changes 3.5.6 -> 3.5.7:
+* Fix VST plugins producing MIDI
+* Fixed some race issues with multi core and the Pd and 
+  MIDI Messages plugin.
+* Fix keyboard focus when clicking in the editor
+* Mouse: Reset mouse cycle if catching exception. (Avoid the mouse
+  pointer getting stuck in the upper left corner)
+* Mouse: Not possible to move pianoroll notes outside the pianoroll area
+* When replacing an instrument, autocreate new name if the name of the old
+  instrument was not edited manually
+* Don't add System Tremolo effect to the plugin menu
+* Hold player lock when changing the multband compressor
+  limiter on/off parameter.
+* Update graphics when changing the line zoom (LZ) value, so that
+  it doesn't look like the cursor changed to a different line number.
+* Don't play muted tracks when scrolling up and down
+* Improved multicore scheduling
+
+
+
+Changes 3.5.5 -> 3.5.6:
+* Don't run memory validation thread in binary releases.
+  (might have a notable impact on CPU usage)
+* Compile JUCE code with optimization options in windows
+
+
+
 Changes 3.5.4 -> 3.5.5:
 * Fix import MOD files.
 * Don't crash when showing a VST GUI which starts by showing a pop up,
