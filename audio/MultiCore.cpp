@@ -224,7 +224,7 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
 
   for (SoundProducer *sp : sp_all)
     if (sp->num_dependencies==0){
-      if (sp_in_main_thread == NULL){
+      if (sp_in_main_thread == NULL && g_num_runners>0){
         sp_in_main_thread = sp;
       } else {
         num_ready_sp++;
@@ -234,14 +234,19 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
       }
     }
   if(num_ready_sp > 0)
-    soundproducer_queue.signal(num_ready_sp);
+    soundproducer_queue.signal(num_ready_sp); // signal everyone at once to try to lower number of semaphore waits. Doesn't seem to make a difference on my machine though.
 
-  R_ASSERT(sp_in_main_thread!=NULL);
 
-  if (g_num_runners==0)
+  if (g_num_runners==0) {
+
+    R_ASSERT(num_ready_sp > 0);
+
     process_single_core(time, num_frames, process_plugins);
-  else {
     
+  } else {
+
+    R_ASSERT(sp_in_main_thread!=NULL);
+
     // 4. process as much as we can in the main thread
     while(sp_in_main_thread != NULL){
       process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
