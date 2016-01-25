@@ -118,7 +118,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
         if (value != -1)
           RT_set_effect_value(plugin, 0, effect_num, value, PLUGIN_FORMAT_NATIVE, FX_single);
       }
-    }RT_PLAYER_runner_lock();
+    }RT_PLAYER_runner_unlock();
     
   }
 }
