@@ -274,7 +274,7 @@ static void RT_MIDI_send_msg_to_patch_receivers(struct Patch *patch, MidiMessage
     RT_PATCH_send_stop_note_to_receivers(patch, message.getNoteNumber(), -1, seq_time);
   
   } else if (message.isAftertouch()) {
-    RT_PATCH_send_change_velocity_to_receivers(patch, message.getNoteNumber(), -1, message.getChannelPressureValue() / 127.0f, seq_time);
+    RT_PATCH_send_change_velocity_to_receivers(patch, message.getNoteNumber(), -1, message.getAfterTouchValue() / 127.0f, seq_time);
 
   } else {
     
@@ -372,7 +372,6 @@ int RT_MIDI_send_msg_to_patch(struct Patch *patch, void *data, int data_size, in
 
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  
   Data *data = (Data*)plugin->data;
 
 #if 0
@@ -431,12 +430,14 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
         if (patch != NULL) {
           RT_MIDI_send_msg_to_patch_receivers((struct Patch*)patch, message, radium_time);
         }
+
         
       }
 
     }RT_PLAYER_runner_unlock();
 
     data->midi_buffer.clear();
+
   }
 
 }
