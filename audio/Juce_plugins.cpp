@@ -400,15 +400,15 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   // 2. Send out midi
   if (!data->midi_buffer.isEmpty()){
 
+    volatile struct Patch *patch = plugin->patch;
+      
+    MidiBuffer::Iterator iterator(data->midi_buffer);
+    
     RT_PLAYER_runner_lock();{
 
-      volatile struct Patch *patch = plugin->patch;
-      
-      MidiBuffer::Iterator iterator(data->midi_buffer);
-      
       MidiMessage message;
       int samplePosition;
-      
+
       while(iterator.getNextEvent(message, samplePosition)){
 #ifndef RELEASE
         if (samplePosition >= num_frames || samplePosition < 0)
@@ -431,12 +431,12 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
         if (patch != NULL) {
           RT_MIDI_send_msg_to_patch_receivers((struct Patch*)patch, message, radium_time);
         }
-      
-        data->midi_buffer.clear();
+        
       }
 
     }RT_PLAYER_runner_unlock();
 
+    data->midi_buffer.clear();
   }
 
 }

@@ -54,5 +54,31 @@ extern "C" {
 
 #endif // !RELEASE
 
+
+
+#if 0
+
+  // This can be added to various files
+
+  void *V_malloc__(size_t size, const char *filename, int linenumber);
+  char *V_strdup__(const char *s, const char *filename, int linenumber);
+  void *V_calloc__(size_t n, size_t size, const char *filename, int linenumber);
+  void V_free__(void *ptr);
+  void *V_realloc__(void *ptr, size_t size, const char *filename, int linenumber);
+
+  #define V_malloc(size) V_malloc__(size, __FILE__, __LINE__)
+  #define V_strdup(s) V_strdup__(s, __FILE__, __LINE__)
+  #define V_calloc(n, size) V_calloc__(n, size, __FILE__, __LINE__)
+  #define V_free(ptr) V_free__((void*)(ptr))
+  #define V_realloc(ptr, size) V_realloc__((void*)ptr, size, __FILE__, __LINE__)
+
+  #define malloc(a) V_malloc(a)
+  #define strdup(s) V_strdup(s)
+  #define calloc(a,b) V_calloc(a,b)
+  #define realloc(a,b) V_realloc(a,b)
+  #define free(a) V_free(a)
+
+#endif
+
   
 #endif
