@@ -3,6 +3,13 @@
 #ifndef RADIUM_COMMON_VALIDATE_MEM_PROC_H
 #define RADIUM_COMMON_VALIDATE_MEM_PROC_H
 
+#if !defined(RELEASE)
+  // Probably want to comment out the line below if compiling with -fsanitize=thread
+  #if !defined DISABLE_BDWGC
+    #define VALIDATE_MEM 1 // VALIDATE_MEM validates mem allocated by bdwgc that fsanitize=address doesn't. However, for best memory validation, DISABLE_BDWGC should be defined instead.
+  #endif
+#endif
+
 typedef void *(*MemoryAllocator)(size_t size);
 typedef void (*MemoryFreeer)(void* mem);
 
@@ -36,7 +43,7 @@ extern "C" {
 }
 #endif
 
-#if defined(RELEASE)
+#if !defined(VALIDATE_MEM)
 
 #define V_malloc(size) malloc(size)
 #define V_strdup(s) strdup(s)

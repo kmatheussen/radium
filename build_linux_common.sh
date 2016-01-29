@@ -23,7 +23,8 @@ fi
 export OPTIMIZE="-O3 -mfpmath=sse -msse2 $RADIUM_RELEASE_CFLAGS"
 #fi
 
-export CPUOPT="$OPTIMIZE" # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind.
+export CPUOPT=
+#"$OPTIMIZE" # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind.
 #export CPUOPT=
 
 #export CCC="clang++ -mfpmath=sse -msse2"

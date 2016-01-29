@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "../common/nsmtracker.h"
+
 #include "../common/OS_memory_proc.h"
 
 
@@ -58,11 +60,11 @@ void operator delete[](void* mem)
 
 
 void  OS_tfree(void *mem){
-  free(mem);
+  V_free(mem);
 }
 
 void *OS_getmem(size_t size){
-  void *ret = calloc(1,size);
+  void *ret = V_calloc(1,size);
   if(ret==NULL)
     abort();
   return ret;

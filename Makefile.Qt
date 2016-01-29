@@ -114,7 +114,7 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 
 FULL_VERSION ?= 1
 
-DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g -Og
+DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g -Og -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address
 #-DNDEBUG
 
 RELEASE_BUILD_OPTS_WITHOUT_NDEBUG = -DRELEASE -DDEBUG -Wall -g $(OPTIMIZE)
@@ -397,7 +397,7 @@ start_bin.sh:
 	chmod a+rx start_bin.sh
 
 bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a bin/packages/libpd-master/libs/libpds.a $(OS_DEPS)
-	$(LINKER) $(OBJ) $(OS_OBJS) -o bin/radium -g -lm $(VL_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS) $(RTMIDI_LDFLAGS)
+	$(LINKER) `cat buildtype.opt` $(OBJ) $(OS_OBJS) -o bin/radium -g -lm $(VL_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS) $(RTMIDI_LDFLAGS)
 #libqhttpserver.a
 # -lX11 -ldl -lpthread -lfreetype -lXext
 #$(LDFLAGS)
@@ -1185,7 +1185,7 @@ Qt_Error.o: $(BUILD_DEPENDENCIES) $(P)Qt_Error.cpp
 
 bin/radium_error_message: $(P)Qt_Error.cpp $(P)EditorWidget.h
 	$(CCC) -Wall -Werror $(P)Qt_Error.cpp $(CPPOPT) -DCOMPILE_EXECUTABLE `$(PKG) --cflags QtGui` -o errormessagebin.o
-	$(LINKER) errormessagebin.o -o bin/radium_error_message `$(PKG) --libs QtGui`
+	$(LINKER) `cat buildtype.opt` errormessagebin.o -o bin/radium_error_message `$(PKG) --libs QtGui`
 	rm errormessagebin.o
 
 Rational.o: $(BUILD_DEPENDENCIES) $(P)Rational.cpp
@@ -1698,7 +1698,7 @@ audio/system_compressor.cpp: audio/system_compressor.dsp
 
 bin/crashreporter: crashreporter/crashreporter.cpp $(API)radium_proc.h
 	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" `$(PKG) --cflags QtGui` `$(PKG) --cflags QtNetwork` -o crashbin.o
-	$(LINKER) crashbin.o -o bin/crashreporter `$(PKG) --libs QtGui` `$(PKG) --libs QtNetwork`
+	$(LINKER) `cat buildtype.opt` crashbin.o -o bin/crashreporter `$(PKG) --libs QtGui` `$(PKG) --libs QtNetwork`
 	rm crashbin.o
 
 crashreporter.o: crashreporter/crashreporter.cpp

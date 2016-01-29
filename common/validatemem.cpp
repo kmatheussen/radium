@@ -1,6 +1,4 @@
 
-#if !defined(RELEASE)
-
 
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +12,9 @@
 #include <QTime>
 
 #include "nsmtracker.h"
+
+
+#if defined(VALIDATE_MEM)
 
 
 #ifndef BUF_BEFORE
@@ -540,6 +541,6 @@ int main(int argc, char **argv){
 
 
                
-#endif // !RELEASE
+#endif // VALIDATE_MEM
 
 

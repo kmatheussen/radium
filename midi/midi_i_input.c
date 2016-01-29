@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static volatile uint32_t g_msg = 0;
 
-static struct Patch *g_through_patch = NULL;
+static volatile struct Patch *g_through_patch = NULL;
 
 // TODO: This isn't always working properly. Going to change rtmidi API.
 
@@ -231,7 +231,7 @@ static void add_event_to_play_buffer(int cc,int data1,int data2){
 }
 
 void RT_MIDI_handle_play_buffer(void){
-  struct Patch *patch = g_through_patch;
+  volatile struct Patch *patch = g_through_patch;
   
   while (jack_ringbuffer_read_space(g_play_buffer) >= sizeof(play_buffer_event_t)) {
     play_buffer_event_t event;
@@ -243,7 +243,7 @@ void RT_MIDI_handle_play_buffer(void){
         
         uint8_t data[3] = {MIDI_msg_byte1(msg), MIDI_msg_byte2(msg), MIDI_msg_byte3(msg)};
           
-        RT_MIDI_send_msg_to_patch(patch, data, 3, -1);
+        RT_MIDI_send_msg_to_patch((struct Patch*)patch, data, 3, -1);
       }
   }
 }

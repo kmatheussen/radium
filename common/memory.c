@@ -62,7 +62,7 @@ void tfree(void *element){
 
 #else
 
-#  if defined(RELEASE)
+#  if !defined(VALIDATE_MEM)
 	GC_free(element);
 #  else
         V_free_it(GC_free, element);
@@ -84,7 +84,9 @@ void ShutDownYepp(void){
 size_t allocated=0;
 
 
-#if !defined(RELEASE)
+#if defined(VALIDATE_MEM)
+
+#  ifndef DISABLE_BDWGC
 static void dummyfree(void *data){
 }
 
@@ -92,6 +94,7 @@ static void gcfinalizer(void *actual_mem_start, void *user_data){
   //printf("gcfinalizer called for %p\n",actual_mem_start);
   V_free_actual_mem_real_start(dummyfree, actual_mem_start);
 }
+#  endif
 
 #endif
 
@@ -105,7 +108,7 @@ void *tracker_alloc__(size_t size,void *(*AllocFunction)(size_t size2), const ch
 #	ifdef _AMIGA
 		return (*GC_amiga_allocwrapper_do)(size,AllocFunction);
 #	else
-#          if defined(RELEASE)               
+#          if !defined(VALIDATE_MEM)
                 void *ret = AllocFunction(size);
 #          else                
 		void *ret = V_alloc(AllocFunction,size,filename,linenumber);
@@ -235,21 +238,25 @@ void *talloc_atomic_clean__(size_t size, const char *filename, int linenumber){
 
 void *talloc_realloc__(void *v, size_t new_size, const char *filename, int linenumber){
 #ifdef DISABLE_BDWGC
-  return realloc(v,new_size);
+  # if defined(VALIDATE_MEM)
+    return V_realloc(v,new_size);
+  # else
+    return realloc(v,new_size);
+  # endif
 #else
-# if defined(RELEASE)
-  return GC_realloc(v,new_size);
-# else
-  {
-    MemoryAllocator allocator = V_get_MemoryAllocator(v);
-    int old_size = V_get_size(v);
-    
-    void *new_mem = tracker_alloc__(new_size, allocator, filename, linenumber);
-    memcpy(new_mem, v, R_MIN((int)new_size, old_size));
-
-    return new_mem;
-  }
-# endif
+  #if !defined(VALIDATE_MEM)
+    return GC_realloc(v,new_size);
+  #else
+    {
+      MemoryAllocator allocator = V_get_MemoryAllocator(v);
+      int old_size = V_get_size(v);
+      
+      void *new_mem = tracker_alloc__(new_size, allocator, filename, linenumber);
+      memcpy(new_mem, v, R_MIN((int)new_size, old_size));
+      
+      return new_mem;
+    }
+  #endif
 #endif
 }
 
@@ -295,7 +302,7 @@ char *talloc_format(const char *fmt,...){
       break;
   }
 
-#if !defined(RELEASE)
+#if defined(VALIDATE_MEM)
   V_validate(ret);
 #endif
   
