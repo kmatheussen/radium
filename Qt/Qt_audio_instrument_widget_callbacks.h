@@ -551,6 +551,7 @@ public:
         RError("weird");
     }
 
+
     bus1_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
     bus2_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
 

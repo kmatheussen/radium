@@ -31,6 +31,8 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   struct Patch *_patch;
   struct PatchVoice *_voices;
 
+  QCleanlooksStyle _cleanlooksStyle;
+  
   Patch_widget(QWidget *parent, struct Patch *patch)
     : QWidget(parent)
     , _patch(patch)
@@ -43,6 +45,26 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     }GL_unlock();
     */
     setupUi(this);
+
+    for(int i=0;i<6;i++){
+
+      get_t(i)->setStyle(&_cleanlooksStyle);
+      get_v(i)->setStyle(&_cleanlooksStyle);
+      get_s(i)->setStyle(&_cleanlooksStyle);
+      get_l(i)->setStyle(&_cleanlooksStyle);
+
+      get_o(i)->setToolTip("Whether to play this voice. At least one voice must be selected in order for any notes to be played.");
+      get_t(i)->setToolTip("How much to transpose this voice");
+      get_v(i)->setToolTip("Volume (in dB) for this voice. MIDI and FluidSynth does not support higher values than 0 dB.");
+      get_s(i)->setToolTip("How long time until this voice starts playing\n"
+                           "The unit is milliseconds.");//Beats. To use milliseconds instead, press the \"ms.\" button.");
+      get_l(i)->setToolTip("A value higher than 0.0 will override the duration of this voice.\n"
+                           "The unit is milliseconds.");//by default Beats, unless \"ms.\" is selected");
+
+      get_f(i)->hide();
+      timeformat_label->hide();
+    }
+    
     updateWidgets();
     initing = false;
   }
@@ -78,13 +100,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
 
   void updateWidgets(){
+
     for(int i=0;i<6;i++){
       PatchVoice *voice=&_voices[i];
-
-      get_t(i)->setStyle(new QCleanlooksStyle);
-      get_v(i)->setStyle(new QCleanlooksStyle);
-      get_s(i)->setStyle(new QCleanlooksStyle);
-      get_l(i)->setStyle(new QCleanlooksStyle);
 
       get_o(i)->setChecked(voice->is_on);
       get_o(i)->_patch = _patch;
@@ -95,18 +113,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       get_v(i)->setValue(voice->volume);
       get_s(i)->setValue(voice->start);
       get_l(i)->setValue(voice->length);
-
-      get_o(i)->setToolTip("Whether to play this voice. At least one voice must be selected in order for any notes to be played.");
-      get_t(i)->setToolTip("How much to transpose this voice");
-      get_v(i)->setToolTip("Volume (in dB) for this voice. MIDI and FluidSynth does not support higher values than 0 dB.");
-      get_s(i)->setToolTip("How long time until this voice starts playing\n"
-                           "The unit is milliseconds.");//Beats. To use milliseconds instead, press the \"ms.\" button.");
-      get_l(i)->setToolTip("A value higher than 0.0 will override the duration of this voice.\n"
-                           "The unit is milliseconds.");//by default Beats, unless \"ms.\" is selected");
-
-      get_f(i)->hide();
-      timeformat_label->hide();
     }
+
+    // bad 1
 
     name_widget->setText(_patch->name);
     through_onoff->setChecked(_patch->forward_events);

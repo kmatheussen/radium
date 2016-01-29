@@ -60,7 +60,7 @@ namespace{
     
     // Receives a callback when a parameter is changed.
     virtual void 	audioProcessorParameterChanged (AudioProcessor *processor, int parameterIndex, float newValue) {
-      printf("parm %d changed to %f\n",parameterIndex,newValue);
+      //printf("parm %d changed to %f\n",parameterIndex,newValue);
       //PLUGIN_set_effect_value2(plugin, -1, parameterIndex, newValue, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLAYERLOCK_NOT_REQUIRED);
       volatile struct Patch *patch = plugin->patch;
       if (patch != NULL)
