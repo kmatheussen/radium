@@ -308,6 +308,7 @@
 
 (define mouse-pointer-has-been-set #f)
 (define (set-mouse-pointer func)
+  ;;(c-display "setting to" func)
   (set! mouse-pointer-has-been-set #t)
   (func)
   )
@@ -774,7 +775,8 @@
                 (ra:set-statusbar-text (<-> "Select instrument for track " *current-track-num*)))
 
                (else
-                (ra:set-normal-mouse-pointer)))))
+                ;;(ra:set-normal-mouse-pointer)
+                ))))
 
 
 
