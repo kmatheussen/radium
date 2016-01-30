@@ -1,3 +1,18 @@
+Changes 3.5.7 -> 3.5.9:
+* mouse: Fix moving piano bar note end position for non-portamento notes
+* Make writing config file safer (less chance of corrupting the file)
+* mouse: Don't flicker mouse pointer
+* mouse: Don't make it possible to change track width when pointer is positioned in the track header
+* Don't update plugin parameters unnecessary while updating radium sliders.
+  This is a general speedup + fixes some occurences of slighly wrong plugin values.
+* Fix memory leak when updating instrument widget. This also fixes crash on some VST plugins.
+* Fix transpose
+* Fix aftertouch sent out of vst plugins
+* Fix deadlock in MidiMessages plugin
+* vst: Clear midi buffer at the correct time
+
+
+
 Changes 3.5.6 -> 3.5.7:
 * Fix VST plugins producing MIDI
 * Fixed some race issues with multi core and the Pd and 
