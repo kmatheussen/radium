@@ -114,12 +114,10 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 
 FULL_VERSION ?= 1
 
-DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g -Og -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address
+DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address -Og 
 #-DNDEBUG
 
 RELEASE_BUILD_OPTS_WITHOUT_NDEBUG = -DRELEASE -DDEBUG -Wall -g $(OPTIMIZE)
-# NDEBUG chashes on windows 32 bit (!).
-# The crashreporter says the crash happens in QTextEngine::itemize, but there is no further backtrace, which is a sign of memory corruption, so this information might not be accurate.
 
 RELEASE_BUILD_OPTS = $(RELEASE_BUILD_OPTS_WITHOUT_NDEBUG) -DNDEBUG
 

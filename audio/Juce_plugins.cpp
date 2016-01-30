@@ -61,7 +61,6 @@ namespace{
     // Receives a callback when a parameter is changed.
     virtual void 	audioProcessorParameterChanged (AudioProcessor *processor, int parameterIndex, float newValue) {
       //printf("parm %d changed to %f\n",parameterIndex,newValue);
-      //PLUGIN_set_effect_value2(plugin, -1, parameterIndex, newValue, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLAYERLOCK_NOT_REQUIRED);
       volatile struct Patch *patch = plugin->patch;
       if (patch != NULL)
         patch->widget_needs_to_be_updated = true;
@@ -490,6 +489,9 @@ static void send_raw_midi_message(struct SoundPlugin *plugin, int64_t block_delt
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
+  //if (effect_num==99)
+  //  printf("   Juce_plugins.cpp:set_effect_value.   parm %d: %f\n",effect_num,value);
+  
 #if 1
   // juce::VSTPluginInstance::setParameter obtains the vst lock. That should not be necessary (Radium ensures that we are alone here), plus that it causes glitches in sound.
   // So instead, we call the vst setParameter function directly:
