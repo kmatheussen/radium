@@ -1335,23 +1335,28 @@
                                                            (info :notenum)
                                                            (info :tracknum)))
 
+
+  (define portamento-enabled (ra:portamento-enabled (info :notenum)
+                                                    (info :tracknum)))
+  
+  (define is-end-pitch (and portamento-enabled
+                            (not logtype-holding)
+                            (eq? (info :move-type) *pianonote-move-end*)
+                            (= (1- num-pianonotes) pianonotenum)))
+  
+
   (define value-pianonote-num (if (and (not logtype-holding)
                                        (eq? (info :move-type) *pianonote-move-end*))
                                   (1+ (info :pianonotenum))
                                   (info :pianonotenum)))
                                   
-    
-  (define is-end-pitch (and (ra:portamento-enabled (info :notenum)
-                                                   (info :tracknum))
-                            (not logtype-holding)
-                            (eq? (info :move-type) *pianonote-move-end*)
-                            (= (1- num-pianonotes) pianonotenum)))
-  
   (callback info
-            (if is-end-pitch
+            (if is-end-pitch 
                 (ra:get-note-end-pitch (info :notenum)
                                        (info :tracknum))
-                (ra:get-pianonote-value value-pianonote-num ;;(info :pianonotenum)
+                (ra:get-pianonote-value (if portamento-enabled
+                                            value-pianonote-num
+                                            0)
                                         (info :notenum)
                                         (info :tracknum)))
             (if (eq? *pianonote-move-end* (info :move-type))
@@ -1409,7 +1414,7 @@
                                                             (pianonote-info :notenum)
                                                             (pianonote-info :tracknum)))
                         :Move-node (lambda (pianonote-info Value Place)
-                                     ;;(c-display "moving to. Value: " Value ", Place: " Place " type: " (pianonote-info :move-type))
+                                     ;;(c-display "moving to. Value: " Value ", Place: " Place " type: " (pianonote-info :move-type) " pianonotenum:" (pianonote-info :pianonotenum))
                                      (define func
                                        (cond ((eq? (pianonote-info :move-type)
                                                    *pianonote-move-start*)

@@ -981,6 +981,10 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
   if (what_to_get==PIANONOTE_INFO_VALUE){
     if (pianonotenum==0)
       return note->note;
+    
+    //if (pianonotenum==getNumPianonotes(notenum,tracknum,blocknum,windownum))
+    //  return note->end_pitch;
+    
     struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
     if (pitch==NULL){
       RWarning("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
