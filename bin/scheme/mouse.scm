@@ -1822,7 +1822,9 @@
   (and (>= X (- (ra:get-track-x1 Tracknum)
                 2))
        (<= X (+ (ra:get-track-x1 Tracknum)
-                (ra:get-half-of-node-width)))))
+                (ra:get-half-of-node-width)))
+       (>= Y (+ 4 (ra:get-track-volume-on-off-y2)))))
+                
 
 (define-match get-resize-point-track
   X _ Tracknum :> (and (>= X (- (ra:get-track-fx-x2 (1- Tracknum))
