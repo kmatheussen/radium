@@ -1452,24 +1452,25 @@
               (let ((pianonote-info (get-pianonote-info $x $y *current-track-num*)))
                 '(c-display $x $y pianonote-info
                             (box-to-string (get-pianonote-box 0 1 0)))
-                (and pianonote-info
-                     (begin
-                       ;;(c-display "type: " (pianonote-info :move-type))
-                       (set-current-pianonote (pianonote-info :pianonotenum)
-                                              (pianonote-info :notenum)
-                                              (pianonote-info :tracknum))
-                       ;;(c-display "hello:" (pianonote-info :dir))
-                       (cond ((eq? (pianonote-info :move-type)
-                                   *pianonote-move-start*)                            
-                              (set-mouse-pointer ra:set-vertical-resize-mouse-pointer))
-                             ((eq? (pianonote-info :move-type)
-                                   *pianonote-move-end*)
-                              (set-mouse-pointer ra:set-vertical-resize-mouse-pointer))
-                             ((eq? (pianonote-info :move-type)
-                                   *pianonote-move-all*)
-                              (set-mouse-pointer ra:set-pointing-mouse-pointer))))
-                     )))))
-
+                (if (and pianonote-info
+                         (begin
+                           ;;(c-display "type: " (pianonote-info :move-type))
+                           (set-current-pianonote (pianonote-info :pianonotenum)
+                                                  (pianonote-info :notenum)
+                                                  (pianonote-info :tracknum))
+                           ;;(c-display "hello:" (pianonote-info :dir))
+                           (cond ((eq? (pianonote-info :move-type)
+                                       *pianonote-move-start*)
+                                  #t)
+                                 ((eq? (pianonote-info :move-type)
+                                       *pianonote-move-end*)
+                                  #t)
+                                 ((eq? (pianonote-info :move-type)
+                                       *pianonote-move-all*)
+                                  #f)))
+                         )
+                    (set-mouse-pointer ra:set-vertical-resize-mouse-pointer)
+                    (set-mouse-pointer ra:set-pointing-mouse-pointer))))))
 
 ;; delete note / add pitch / delete pitch
 (add-mouse-cycle
