@@ -12,7 +12,6 @@ Changes 3.5.7 -> 3.5.9:
 * vst: Clear midi buffer at the correct time
 
 
-
 Changes 3.5.6 -> 3.5.7:
 * Fix VST plugins producing MIDI
 * Fixed some race issues with multi core and the Pd and 
