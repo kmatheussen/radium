@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDir>
 #include <QTextStream>
 #include <QCoreApplication>
+#include <QTemporaryFile>
 
 #include "nsmtracker.h"
 #include "visual_proc.h"
@@ -157,30 +158,49 @@ static QVector<QString> get_lines(const char* key){
   return ret;
 }
 
+static void transfer_temporary_file_to_file(QString from, QString to){
+  
+  // Maybe take backup of the existing file here.
+  if (QFile::exists(to))
+    QFile::remove(to);
+  
+  if (QFile::copy(from, to)==false)
+    GFX_Message(NULL, "Unable to write config file (\%s\")",to.toUtf8().constData());
+}
+
 static void write_lines(const char* key, QVector<QString> lines){
   R_ASSERT(THREADING_is_main_thread());
   
   QString filename = OS_get_config_filename(key);
 
   printf("config filename: -%s-\n",filename.toUtf8().constData());
-  
+
+  QTemporaryFile temporary_write_file;
+  if (temporary_write_file.open()==false) {
+    GFX_Message(NULL, "Unable to write config data to temporary file. Disk full? (\%s\")",temporary_write_file.fileName().toUtf8().constData());
+    return;
+  }
+    
+/*
   QFile file(filename);
 
   if (file.open(QIODevice::WriteOnly | QIODevice::Text)==false) {
     GFX_Message(NULL, "Unable to write config data to \"%s\"",filename.toUtf8().constData());
     return;
   }
-
-  QTextStream out(&file);
+*/
+  
+  QTextStream out(&temporary_write_file);
   out.setCodec("UTF-8"); 
 
   for (int i=0 ; i<lines.size(); i++){
-    printf("writing -%s-\n",lines[i].toUtf8().constData());
+    //printf("writing -%s-\n",lines[i].toUtf8().constData());
     out << lines[i] << "\n";
   }
 
-  file.close();
+  temporary_write_file.close();
 
+  transfer_temporary_file_to_file(temporary_write_file.fileName(), filename);
   //getchar();  
 }
 
