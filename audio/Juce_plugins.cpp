@@ -122,13 +122,15 @@ namespace{
   struct MyAudioPlayHead : public AudioPlayHead{
     virtual bool getCurrentPosition (CurrentPositionInfo &result) {
       memset(&result, 0, sizeof(CurrentPositionInfo));
-      
-      if (pc->isplaying==false && (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->block==NULL))
+
+      if (ATOMIC_GET(is_starting_up))
         return false;
+      
+      bool isplaying = ATOMIC_GET(pc->isplaying);
+      
+      struct Blocks *block = isplaying ? pc->block : root->song->tracker_windows->wblock->block;
 
-      struct Blocks *block = pc->isplaying ? pc->block : root->song->tracker_windows->wblock->block;
-
-      if (block->times==NULL)
+      if (block==NULL)
         return false;
       
       result.bpm = RT_LPB_get_current_BPM();
@@ -148,7 +150,7 @@ namespace{
       result.ppqPosition = RT_LPB_get_beat_position();
       result.ppqPositionOfLastBarStart = g_beat_position_of_last_bar_start;
 
-      result.isPlaying = pc->isplaying;
+      result.isPlaying = isplaying;
 #if 0
       result.isRecording = false;
       

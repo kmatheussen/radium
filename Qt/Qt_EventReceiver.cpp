@@ -73,17 +73,15 @@ extern LANGSPEC void P2MUpdateSongPosCallBack(void);
 
 extern PlayerClass *pc;
 
-extern bool is_starting_up;
-
 #if 0
 // Dont need customEvent anymore. This code should be moved to CalledPeriodically.
 void EditorWidget::customEvent(QEvent *e){
-  if(is_starting_up==true)
+  if(ATOMIC_GET(is_starting_up)==true)
     return;
 
   //printf("Got customEvent\n");
   DO_GFX({
-      if(pc->isplaying)
+      if(ATOMIC_GET(pc->isplaying))
         P2MUpdateSongPosCallBack();
       UpdateClock(this->window);
       //MIDI_HandleInputMessage();
@@ -117,7 +115,7 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 
 #if USE_QT_VISUAL
 void EditorWidget::paintEvent( QPaintEvent *e ){
-  if(is_starting_up==true)
+  if(ATOMIC_GET(is_starting_up)==true)
     return;
 
   window->redraw_has_been_scheduled=false;
@@ -163,7 +161,7 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 #endif
 
 void EditorWidget::updateEditor(){
-  if(is_starting_up==true)
+  if(ATOMIC_GET(is_starting_up)==true)
     return;
 
   if (this->window->must_redraw_editor==true){
@@ -228,7 +226,7 @@ void GFX_ScheduleRedrawEditor(void){
   */
   
 void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
-    if(is_starting_up==true)
+  if(ATOMIC_GET(is_starting_up)==true)
       return;
 
     struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
@@ -253,7 +251,7 @@ struct TEvent tevent={}; // c++ way of zero-initialization without getting missi
 #if 0
 
 void EditorWidget::keyPressEvent(QKeyEvent *qkeyevent){
-  if(is_starting_up==true)
+  if(ATOMIC_GET(is_starting_up)==true)
     return;
 
   //printf("ascii    : %d\n",qkeyevent->toUtf8().constData());
@@ -312,7 +310,7 @@ const unsigned int Qt2SubId[0x2000]={
 void EditorWidget::keyPressEvent(QKeyEvent *qkeyevent){
   RWarning("keyPressEvent should not be called.\n");
 
-  if(is_starting_up==true)
+  if(ATOMIC_GET(is_starting_up)==true)
     return;
 
   printf("ascii    : %d\n",qkeyevent->toUtf8().constData());
@@ -410,7 +408,7 @@ static int getMouseButtonEventID( QMouseEvent *qmouseevent){
 }
 
 void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
-  if(is_starting_up==true)
+  if(ATOMIC_GET(is_starting_up)==true)
     return;
 
   tevent.ID = getMouseButtonEventID(qmouseevent);
@@ -437,7 +435,7 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
 
 
 void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
-  if(is_starting_up==true)
+  if(ATOMIC_GET(is_starting_up)==true)
     return;
 
   tevent.ID=TR_MOUSEMOVE;
@@ -458,7 +456,7 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
 
 
 void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
-  if(is_starting_up==true)
+  if(ATOMIC_GET(is_starting_up)==true)
     return;
 
   if(qmouseevent->button()==Qt::LeftButton){
@@ -487,7 +485,7 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
 
 #if USE_GTK_VISUAL
 void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
-  if(is_starting_up==true)
+  if(ATOMIC_GET(is_starting_up)==true)
     return;
 
   printf("got resize event\n");
@@ -510,7 +508,7 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
   this->window->width=qresizeevent->size().width(); //this->get_editor_width();
   this->window->height=qresizeevent->size().height(); //this->get_editor_height();
 
-  if(is_starting_up==true)
+  if(ATOMIC_GET(is_starting_up)==true)
     return;
 
   UpdateWBlockCoordinates(window, window->wblock);

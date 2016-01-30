@@ -43,10 +43,10 @@ void PlayerTask(STime reltime){
         //RError("hepp");
         pc->reltime     = reltime;
 
-        const struct Blocks *block = pc->isplaying ? pc->block : NULL;
+        const struct Blocks *block = ATOMIC_GET(pc->isplaying) ? pc->block : NULL;
 
         if(block==NULL){
-          if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->block==NULL) // fix.
+          if (ATOMIC_GET(is_starting_up))
             return;
           else
             block=root->song->tracker_windows->wblock->block;
@@ -63,8 +63,8 @@ void PlayerTask(STime reltime){
         } else
           addreltime=0;
 
-	if( ! pc->isplaying){
-          if( ! pc->initplaying)
+	if( ! ATOMIC_GET(pc->isplaying)){
+          if( ! ATOMIC_GET(pc->initplaying))
             PC_ReturnElements();
           SCHEDULER_called_per_block(tempoadjusted_reltime);
           return;
@@ -111,7 +111,7 @@ void PlayerTask(STime reltime){
                 peq!=NULL
                 && peq->l.time < pc->end_time
                 //&& peq->l.time<time+(pc->pfreq*2)  // Dont want to run for more than two seconds.
-                && pc->isplaying
+                && ATOMIC_GET(pc->isplaying)
                 )
             {
               
@@ -138,7 +138,7 @@ STime PLAYER_get_block_delta_time(STime time){
   if(time<pc->start_time || time>pc->end_time) // time may be screwed up if not coming from the player.
     return 0;
 
-  if(pc->isplaying){
+  if(ATOMIC_GET(pc->isplaying)){
     STime ret = ((time - pc->start_time) * pc->reltime / (pc->end_time - pc->start_time)); // i.e. "scale(time, pc->start_time, pc->end_time, 0, pc->reltime)"
     if(ret<0){
       RWarning("ret<0: %d",ret);

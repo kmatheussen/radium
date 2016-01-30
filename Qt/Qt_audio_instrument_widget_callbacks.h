@@ -33,8 +33,6 @@ static Pd_Plugin_widget *AUDIOWIDGET_get_pd_plugin_widget(Audio_instrument_widge
 #include "../audio/Bus_plugins_proc.h"
 
 
-extern bool is_starting_up;
-
 extern void BottomBar_set_system_audio_instrument_widget_and_patch(Ui::Audio_instrument_widget *system_audio_instrument_widget, struct Patch *patch);
 
 class Audio_instrument_widget : public QWidget, public Ui::Audio_instrument_widget{
@@ -49,7 +47,7 @@ public:
     // horror
     void timerEvent(QTimerEvent * e){
 
-      if (is_starting_up)
+      if (ATOMIC_GET(is_starting_up))
         return;
       
       static bool shrinking = false;
@@ -511,25 +509,25 @@ public:
     int num_outputs = type->num_outputs;
 
     if(num_outputs>0){
-      if(plugin->volume_peak_values==NULL)
-        plugin->volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(volume_slider->_painter, num_outputs);
+      if(ATOMIC_GET(plugin->volume_peak_values)==NULL)
+        ATOMIC_SET(plugin->volume_peak_values, SLIDERPAINTER_obtain_peak_value_pointers(volume_slider->_painter, num_outputs));
 
-      if(plugin->output_volume_peak_values==NULL)
-        plugin->output_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(output_volume_slider->_painter, num_outputs);
+      if(ATOMIC_GET(plugin->output_volume_peak_values)==NULL)
+        ATOMIC_SET(plugin->output_volume_peak_values, SLIDERPAINTER_obtain_peak_value_pointers(output_volume_slider->_painter, num_outputs));
 
-      if(plugin->bus_volume_peak_values[0]==NULL)
-        plugin->bus_volume_peak_values[0] = SLIDERPAINTER_obtain_peak_value_pointers(bus1_slider->_painter,2);
+      if(ATOMIC_GET(plugin->bus_volume_peak_values0)==NULL)
+        ATOMIC_SET(plugin->bus_volume_peak_values0, SLIDERPAINTER_obtain_peak_value_pointers(bus1_slider->_painter,2));
 
-      if(plugin->bus_volume_peak_values[1]==NULL)
-        plugin->bus_volume_peak_values[1] = SLIDERPAINTER_obtain_peak_value_pointers(bus2_slider->_painter,2);
+      if(ATOMIC_GET(plugin->bus_volume_peak_values1)==NULL)
+        ATOMIC_SET(plugin->bus_volume_peak_values1, SLIDERPAINTER_obtain_peak_value_pointers(bus2_slider->_painter,2));
     }
 
-    if(plugin->input_volume_peak_values==NULL)
+    if(ATOMIC_GET(plugin->input_volume_peak_values)==NULL)
       if(num_inputs>0 || num_outputs>0){//plugin->input_volume_peak_values==NULL){
         if(num_inputs>0)
-          plugin->input_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, num_inputs);
+          ATOMIC_SET(plugin->input_volume_peak_values, SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, num_inputs));
         else
-          plugin->input_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, num_outputs);
+          ATOMIC_SET(plugin->input_volume_peak_values, SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, num_outputs));
       }
 
     for(int system_effect=EFFNUM_INPUT_VOLUME;system_effect<NUM_SYSTEM_EFFECTS;system_effect++){

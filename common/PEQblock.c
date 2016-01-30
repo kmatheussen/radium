@@ -104,7 +104,7 @@ void PlayerNewBlock(struct PEventQueue *peq,int doit){
 	// Is this the last block to be played?
 
 	if(PC_GetPlayBlock(1)==NULL){
-		pc->isplaying=false;
+                ATOMIC_SET(pc->isplaying, false);
 		ReturnPEQelement(peq);
 #ifdef _AMIGA
 		Signal(mytask,1L<<clocksig);

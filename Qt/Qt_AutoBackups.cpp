@@ -43,7 +43,7 @@ void BACKUP_call_very_often(void){
     has_inited=true;
   }
 
-  if (pc->isplaying)
+  if (ATOMIC_GET(pc->isplaying))
     return;
   
   if (g_backuptime.elapsed() > get_backup_interval_ms()){

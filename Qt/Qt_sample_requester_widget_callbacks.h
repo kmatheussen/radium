@@ -334,7 +334,7 @@ class Sample_requester_widget : public QWidget
       update_sample_name_label(get_display_name(STRING_create(_sf2_file),bank_num,preset_num));
     }
 
-    if(successfully_selected==true && pc->isplaying==false) {
+    if(successfully_selected==true && ATOMIC_GET(pc->isplaying)==false) {
       printf("playing note 1\n");
       PATCH_play_note(g_currpatch, 12*_preview_octave, -1, 0.5f, 0.0f);
     }
@@ -398,7 +398,7 @@ class Sample_requester_widget : public QWidget
     Undo_Sample_CurrPos(_patch);
 
     if(SAMPLER_set_new_sample(plugin,STRING_create(filename),file_list->currentRow()-1)==true){
-      if(pc->isplaying==false){
+      if(ATOMIC_GET(pc->isplaying)==false){
         //printf("playing note 2\n");
         PATCH_play_note(g_currpatch, 12*_preview_octave, -1, 0.5f, 0.0f);
       }

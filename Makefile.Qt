@@ -114,8 +114,10 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 
 FULL_VERSION ?= 1
 
-DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address -Og 
-#-DNDEBUG
+# Note that "make clean" must be run for DEBUG_BUILD_OPTS to take effect
+DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -Og -fsanitize=address
+#-fsanitize=thread 
+#
 
 RELEASE_BUILD_OPTS_WITHOUT_NDEBUG = -DRELEASE -DDEBUG -Wall -g $(OPTIMIZE)
 
@@ -532,7 +534,7 @@ debug.o:  $(BUILD_DEPENDENCIES) $(CD)debug.c
 memory.o:  $(BUILD_DEPENDENCIES) $(CD)memory.c
 	$(GCC) $(CD)memory.c $(OPT)
 
-validatemem.o:  $(BUILD_DEPENDENCIES) $(CD)validatemem.cpp
+validatemem.o:  $(BUILD_DEPENDENCIES) $(CD)validatemem.cpp $(CD)atomic.h
 	$(CCC) $(CD)validatemem.cpp $(QTOPT)
 
 placement.o:  $(BUILD_DEPENDENCIES) $(CD)placement.c

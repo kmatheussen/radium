@@ -33,7 +33,7 @@ static Ratio g_signature_value = {4,4};
 static struct Signatures *g_signature = NULL;
 
 Ratio RT_Signature_get_current_Signature(void){
-  if (pc->isplaying)
+  if (ATOMIC_GET(pc->isplaying))
     return g_signature_value;
   else {
     if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->block==NULL)

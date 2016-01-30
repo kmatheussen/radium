@@ -549,7 +549,7 @@ update:
 
 	window->must_redraw = true;
 
-	if( ! pc->isplaying){
+	if( ! ATOMIC_GET(pc->isplaying)){
           GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
 	}
 }

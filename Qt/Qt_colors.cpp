@@ -693,11 +693,10 @@ static void setColor(enum ColorNums num, const QRgb &rgb){
   }GL_unlock();
 }
 
-extern bool is_starting_up;
 
 void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much){
   EditorWidget *editorwidget=(EditorWidget *)tvisual->os_visual.widget;
-  if(is_starting_up)
+  if(ATOMIC_GET(is_starting_up))
     return;
   return;
 #if 0

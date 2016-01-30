@@ -226,7 +226,7 @@ void OS_GFX_C_DrawCursor(
 #endif
 
 #if USE_QIMAGE_BUFFER
-  if(pc->isplaying)
+  if(ATOMIC_GET(pc->isplaying))
     editor->cursorbuffer_painter->setOpacity(0.55);
   else
     editor->cursorbuffer_painter->setOpacity(1.0);

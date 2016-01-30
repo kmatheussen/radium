@@ -630,7 +630,7 @@ struct Mixer{
         if (pause_time.elapsed() > 5000)
           g_process_plugins = true;
       } else if (_is_freewheeling==false && excessive_time.elapsed() > 2000) { // 2 seconds
-        if (pc->isplaying) {
+        if (ATOMIC_GET(pc->isplaying)) {
           RT_request_to_stop_playing();
           RT_message("Error!\n"
                      "\n"

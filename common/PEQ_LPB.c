@@ -93,7 +93,7 @@ void RT_LPB_set_beat_position(int audioblocksize){
 
   LPB_iterator *iterator = &g_lpb_iterator;
   
-  if (pc->isplaying==false)    
+  if (ATOMIC_GET(pc->isplaying)==false) // this is a bit shaky. Perhaps use an isplaying lock where pc->isplaying can not be changed while holding this lock.
     return;
 
   //R_ASSERT( (pc->end_time-pc->seqtime) >= iterator->time1);
@@ -116,7 +116,7 @@ double RT_LPB_get_beat_position(void){
 }
 
 double RT_LPB_get_current_BPM(void){
-  if (pc->isplaying)
+  if (ATOMIC_GET(pc->isplaying))
     return g_curr_beats_per_minute;
   else {
     if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->block==NULL)

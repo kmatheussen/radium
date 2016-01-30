@@ -280,7 +280,7 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   if(cc>=0xf0) // Too much drama
     return;
 
-  bool is_playing = pc->isplaying;
+  bool is_playing = ATOMIC_GET(pc->isplaying);
 
   uint32_t msg = MIDI_msg_pack3(cc, data1, data2);
   int len = MIDI_msg_len(msg);

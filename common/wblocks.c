@@ -442,7 +442,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 	BS_SelectBlock(wblock->block);
 
-	if( ! pc->isplaying){
+	if( ! ATOMIC_GET(pc->isplaying)){
           GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
 	}
 

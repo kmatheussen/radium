@@ -50,7 +50,7 @@ void PC_Pause(void){
 
 void PC_Pause(void){
 
-	if( ! pc->isplaying ){
+	if( ! ATOMIC_GET(pc->isplaying) ){
 		return;					// There is only two threads, so its impossible to start playing
 									// before PC_StopPause is called.
 	}
@@ -83,7 +83,7 @@ void PC_StopPause(void){
 	STime pausetime;
 	struct PEventQueue *peq;
 
-	if( ! pc->isplaying) return;
+	if( ! ATOMIC_GET(pc->isplaying)) return;
 
 	pausetime=pc->pausetime;
 

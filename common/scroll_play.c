@@ -175,7 +175,7 @@ void Scroll_play_down(
                       int start_realline,
                       int end_realline
 ){
-        if(pc->isplaying || doScrollPlay()==false) return;
+        if(ATOMIC_GET(pc->isplaying) || doScrollPlay()==false) return;
 
 	start_realline=R_BOUNDARIES(0,start_realline,wblock->num_reallines-1);
 	end_realline=R_BOUNDARIES(0,end_realline,wblock->num_reallines-1);
@@ -189,7 +189,7 @@ void Scroll_play_up(
                     int start_realline,
                     int end_realline
 ){
-       if(pc->isplaying || doScrollPlay()==false) return;
+       if(ATOMIC_GET(pc->isplaying) || doScrollPlay()==false) return;
 
 	start_realline=R_BOUNDARIES(0,start_realline,wblock->num_reallines-1);
 	end_realline=R_BOUNDARIES(0,end_realline,wblock->num_reallines-1);

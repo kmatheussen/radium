@@ -130,7 +130,7 @@ void UpdateClock(
 	int64_t time=clock_time;
         static int64_t last_time = -1;
 
-	if( ! pc->isplaying){
+	if( ! ATOMIC_GET(pc->isplaying)){
           if(last_time==-2)
             return;
           GFX_UpdateQuantitize(window,window->wblock);

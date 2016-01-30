@@ -66,8 +66,8 @@ extern struct Root *root;
 extern void (*Ptask2MtaskCallBack)(void);
 
 static void PlayStopReally(bool doit){ 
-	pc->isplaying=false;
-	pc->initplaying=false;
+        ATOMIC_SET(pc->isplaying, false);
+	ATOMIC_SET(pc->initplaying, false);
         pc->playertask_has_been_called = false;
         pc->is_playing_range = false;
         
@@ -116,7 +116,7 @@ static void PlayStopReally(bool doit){
 }
 
 void PlayStop(void){
-	if(! pc->isplaying)
+	if(! ATOMIC_GET(pc->isplaying))
           StopAllInstruments();
         else
           PlayStopReally(true);
@@ -137,7 +137,7 @@ static void PlayBlock(
   }
 #endif
 
-	pc->initplaying=true;
+     ATOMIC_SET(pc->initplaying, true);
 
 		pc->playpos=0;
                 pc->play_id++;
@@ -155,10 +155,10 @@ static void PlayBlock(
                 fflush(stdout);
 
 #if !USE_OPENGL
-		pc->isplaying=true;
+		ATOMIC_SET(pc->isplaying, true);
 		(*Ptask2MtaskCallBack)();
 #endif
-		pc->isplaying=false;
+		ATOMIC_SET(pc->isplaying, false);
 
                 PATCH_reset_time();
 		InitPEQclock();
@@ -171,10 +171,10 @@ static void PlayBlock(
 		InitAllPEQnotes(block,place);
 
 		StartPlayer();							// An OS spesific function.
-		pc->isplaying=true;
+		ATOMIC_SET(pc->isplaying, true);
 
 
-	pc->initplaying=false;
+     ATOMIC_SET(pc->initplaying, false);
 }
 
 void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
@@ -310,7 +310,7 @@ static void PlaySong(
 	int playpos
 ){
 	debug("haaasfdfsafsa, root->song->length: %d\n\n\n",root->song->length);
-	pc->initplaying=true;
+	ATOMIC_SET(pc->initplaying, true);
 
 		struct Blocks *block=BL_GetBlockFromPos(playpos);
 
@@ -327,10 +327,10 @@ static void PlaySong(
 
 		root->curr_block=block->l.num;
 #if !USE_OPENGL
-		pc->isplaying=true;
+		ATOMIC_SET(pc->isplaying, true);
 		(*Ptask2MtaskCallBack)();
 #endif
-		pc->isplaying=false;
+		ATOMIC_SET(pc->isplaying, false);
 
                 PATCH_reset_time();
 		InitPEQclock();
@@ -343,10 +343,10 @@ static void PlaySong(
 		InitAllPEQnotes(block,place);
 
 		StartPlayer();							// An OS spesific function.
-		pc->isplaying=true;
+		ATOMIC_SET(pc->isplaying, true);
 
 
-	pc->initplaying=false;
+      ATOMIC_SET(pc->initplaying, false);
 
         // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
 #if STOP_GC_WHILE_PLAYING

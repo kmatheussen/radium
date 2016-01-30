@@ -121,7 +121,7 @@ extern struct Root *root;
 
 int num_users_of_keyboard = 0;
 
-bool is_starting_up = true;
+DEFINE_ATOMIC(bool, is_starting_up) = true;
 bool g_qt_is_running = false;
 //void gakk();
 
@@ -290,7 +290,7 @@ protected:
   
   bool SystemEventFilter(void *event){
 
-    if(is_starting_up==true)// || return_false_now)
+    if(ATOMIC_GET(is_starting_up)==true)// || return_false_now)
       return false;
 
     OS_SYSTEM_EventPreHandler(event);
@@ -674,7 +674,7 @@ protected:
       request_to_stop_playing=false;
     }
     
-    if(pc->isplaying) {
+    if(ATOMIC_GET(pc->isplaying)) {
       P2MUpdateSongPosCallBack();
       PlayCallVeryOften();
     }
@@ -1120,7 +1120,7 @@ int radium_main(char *arg){
   }
 
 
-  is_starting_up=false;
+  ATOMIC_SET(is_starting_up, false);
 
   window->must_redraw = true;
   editor->update();

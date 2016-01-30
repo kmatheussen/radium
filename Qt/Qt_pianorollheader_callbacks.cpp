@@ -19,7 +19,6 @@ extern struct Root *root;
 
 #include "mQt_pianorollheader_callbacks.h"
 
-extern bool is_starting_up;
 
 extern int num_users_of_keyboard;
 
@@ -55,7 +54,7 @@ void PIANOROLLHEADER_show(void *pianorollheader, int x, int y, int x2, int y2){
     //widget->resize(100,100);
     
     //printf("A: x: %d, y: %d, width: %d, height: %d. Visible: %d\n", widget->pos().x(), widget->pos().y(), widget->size().width(), widget->size().height(),widget->isVisible());
-    if (is_starting_up==false)
+    if (ATOMIC_GET(is_starting_up)==false)
       widget->updateWidgets();
     
     widget->show();

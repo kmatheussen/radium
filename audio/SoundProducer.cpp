@@ -924,11 +924,13 @@ public:
       for(int ch=0;ch<_num_dry_sounds;ch++){
         float peak = do_bypass ? 0.0f : RT_get_max_val(_dry_sound[ch],num_frames) *  _plugin->input_volume.target_value;
 
-        if(_plugin->input_volume_peak_values_for_chip!=NULL)
-          _plugin->input_volume_peak_values_for_chip[ch] = peak;
+        float *input_volume_peak_values_for_chip = ATOMIC_GET(_plugin->input_volume_peak_values_for_chip);
+        if(input_volume_peak_values_for_chip!=NULL)
+          input_volume_peak_values_for_chip[ch] = peak;
 
-        if(_plugin->input_volume_peak_values!=NULL)
-          _plugin->input_volume_peak_values[ch] = peak;
+        float *input_volume_peak_values = ATOMIC_GET(_plugin->input_volume_peak_values);
+        if(input_volume_peak_values!=NULL)
+          input_volume_peak_values[ch] = peak;
 
         if (ch<2)
           _plugin->system_volume_peak_values[ch] = peak; // Value only used by the slider at the bottom bar.
@@ -993,27 +995,35 @@ public:
         float volume_peak = RT_get_max_val(_output_sound[ch],num_frames) * _plugin->volume;
 
         // "Volume"
-        if(_plugin->volume_peak_values!=NULL)
-          _plugin->volume_peak_values[ch] = volume_peak;
-
-        // "Reverb Bus" and "Chorus Bus"
-        if (ch < 2) // buses only have two channels
-          for(int bus=0;bus<2;bus++)
-            if(_plugin->bus_volume_peak_values[bus]!=NULL)
-              _plugin->bus_volume_peak_values[bus][ch] = volume_peak * _plugin->bus_volume[bus];
+        float *volume_peak_values = ATOMIC_GET(_plugin->volume_peak_values);
+        if(volume_peak_values!=NULL)
+          volume_peak_values[ch] = volume_peak;
         
+        // "Reverb Bus" and "Chorus Bus"
+        if (ch < 2) { // buses only have two channels
+          float *bus_volume_peak_values0 = ATOMIC_GET(_plugin->bus_volume_peak_values0);
+          if(bus_volume_peak_values0!=NULL)
+            bus_volume_peak_values0[ch] = volume_peak * _plugin->bus_volume[0];
+
+          float *bus_volume_peak_values1 = ATOMIC_GET(_plugin->bus_volume_peak_values1);
+          if(bus_volume_peak_values1!=NULL)
+            bus_volume_peak_values1[ch] = volume_peak * _plugin->bus_volume[1];
+        }
+          
         // "Out" and Chip volume  (same value)
         {
           float output_volume_peak = volume_peak * _plugin->output_volume;
-          
-          if(_plugin->output_volume_peak_values!=NULL)
-            _plugin->output_volume_peak_values[ch] = output_volume_peak;
-          
-          if(_plugin->volume_peak_values_for_chip!=NULL) {
+
+          float *output_volume_peak_values = ATOMIC_GET(_plugin->output_volume_peak_values);
+          if(output_volume_peak_values!=NULL)
+            output_volume_peak_values[ch] = output_volume_peak;
+
+          float *volume_peak_values_for_chip = ATOMIC_GET(_plugin->volume_peak_values_for_chip);
+          if(volume_peak_values_for_chip!=NULL) {
             if (_plugin->output_volume_is_on)
-              _plugin->volume_peak_values_for_chip[ch] = output_volume_peak;
+              volume_peak_values_for_chip[ch] = output_volume_peak;
             else
-              _plugin->volume_peak_values_for_chip[ch] = 0.0f; // The chip volume slider is not grayed out, like the out "out" slider.
+              volume_peak_values_for_chip[ch] = 0.0f; // The chip volume slider is not grayed out, like the out "out" slider.
           }
         }
       }

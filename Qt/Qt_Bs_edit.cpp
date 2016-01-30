@@ -324,7 +324,7 @@ private slots:
     if(num_visitors>0) // event created internally
       return;
 
-    bool wasplaying = pc->isplaying;
+    bool wasplaying = ATOMIC_GET(pc->isplaying);
 
     PlayStop();
 

@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QFileDialog>
 
-extern bool is_starting_up;
 extern bool g_qt_is_running;
 
 #if USE_GTK_VISUAL
@@ -354,7 +353,7 @@ public:
 #if 0
   // Want the wheel to work from everywhere. (actually we don't want that)
   void wheelEvent(QWheelEvent *qwheelevent) {
-    if(is_starting_up==true)
+    if(ATOMIC_GET(is_starting_up)==true)
       return;
     printf("Got wheel event\n");
     g_editor->wheelEvent(qwheelevent);

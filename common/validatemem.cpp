@@ -33,7 +33,19 @@
 
 
 
-static QMutex *mutex = NULL; // must be allocated manually since it can be used before all static variables have been initialized.
+//static QMutex *mutex = NULL; // must be allocated manually since it can be used before all static variables have been initialized.
+
+static DEFINE_SPINLOCK(spinlock);
+
+// Use spinlock instead of mutex since it's somewhat complicated to initialize the mutex portably and extremly early in the lifetime of the program. (the lock is held for such short time anyway, so it probably doesn't matter much, could even be faster this way)
+static void mylock(void){
+  SPINLOCK_OBTAIN(spinlock);
+}
+
+static void myunlock(void){
+  SPINLOCK_RELEASE(spinlock);
+}
+
 
 namespace{
   
@@ -109,9 +121,11 @@ function insertBefore(List list, Node node, Node newNode)
      node.prev  := newNode
 */
 
-static void add_memlink(void *mem, int size, MemoryAllocator allocator, const char *filename, int linenumber){   
-  QMutexLocker locker(mutex);
+static void add_memlink(void *mem, int size, MemoryAllocator allocator, const char *filename, int linenumber){
+  mylock();
 
+  assert(SPINLOCK_IS_OBTAINED(spinlock));
+  
   Memlink *link = (Memlink*)calloc(1, sizeof(Memlink));
   LinkToMemlink *linktomemlink = (LinkToMemlink*)mem;
   linktomemlink->link = link;
@@ -140,6 +154,8 @@ static void add_memlink(void *mem, int size, MemoryAllocator allocator, const ch
   link->linenumber = linenumber;
 
   g_num_elements++;
+
+  myunlock();
 }
 
 static void print_error(Memlink *link, bool is_after, bool is32, int pos, int32_t value){
@@ -186,6 +202,7 @@ void V_validate(void *mem){
   validate_link(link);
 }
 
+#if 0
 void V_validate_all(void){
   QMutexLocker locker(mutex);
   
@@ -214,6 +231,7 @@ void V_validate_all(void){
 
   //  fprintf(stderr, " FINISHED VALIDATING \n");
 }
+#endif
 
 
 static QTime *timer; // Same here. Can be accessed before it's initialized.
@@ -231,12 +249,14 @@ static Memlink *validate_a_little(double max_time, Memlink *link){
   static int num_removed = 0;
   static int num_scanned = 0;
 
+  mylock();
+
   if (link==NULL)
     link = g_root;
 
   while(link!=NULL){
     {
-      QMutexLocker locker(mutex);
+      //QMutexLocker locker(mutex);
 
       Memlink *next = link->next;
       
@@ -249,18 +269,23 @@ static Memlink *validate_a_little(double max_time, Memlink *link){
         num_scanned++;
       }
 
-      if (g_stop_thread==true)
+      if (g_stop_thread==true) {
+        myunlock();
         return NULL;
+      }
       
       link = next;
+      
     }
     
     if ( (num_scanned%2048) == 0 && (get_ms() - start_time) > max_time)
       break;
 
-    QThread::yieldCurrentThread();  // <- Try to give other threads a chance to run. (the 'mutex' mutex blocks all other threads from allocating, so it would usually block the rest of the program)
+    //QThread::yieldCurrentThread();  // <- Try to give other threads a chance to run. (the 'mutex' mutex blocks all other threads from allocating, so it would usually block the rest of the program)
   }
 
+  myunlock();
+  
   if (link==NULL) {
     //printf("   MEMORY VALIDATION CYCLE Finished. Scanned %d links, removed %d links. Total right now: %d\n",num_scanned,num_removed,g_num_elements);
     num_removed = 0;
@@ -284,6 +309,8 @@ public:
   }
 
   void run(){
+    timer = new QTime;
+    
     Memlink *link = NULL;
     while(g_stop_thread==false){
       QThread::msleep(2);                 // sleep 2ms
@@ -300,22 +327,17 @@ static void dasatexit(void){
 }
 
 void V_run_validation_thread(void){
-  static int num=0;
+  static DEFINE_ATOMIC(int, num) =0;
 
-  num++;
+  if (ATOMIC_ADD_RETURN_OLD(num, 1) == 5000) { // Must wait a little to start the thread. This function is called VERY early in the program.
+  
+    new ValidationThread();
+    atexit(dasatexit);
 
-  if (num != 5000) // Must wait a little to start the thread. This function is called VERY early in the program.
-    return;
-  
-  static bool is_running=false;
-  
-  if (is_running==true)
-    return;
-  
-  is_running=true;
-  new ValidationThread();
-  atexit(dasatexit);
+  }
 }
+
+
 
 static void memset32(char *char_pos, int num_chars){
   int size = num_chars / 4;
@@ -338,18 +360,8 @@ void *V_alloc(MemoryAllocator allocator, int size, const char *filename, int lin
     fprintf(stderr, "BUF_AFTER must be dividable by 4\n");
     abort();
   }
-
   
-  static bool has_inited = false;
-  if (has_inited==false){
-    has_inited=true;
-    
-    timer = new QTime;
-    timer->start();
-    
-    mutex = new QMutex;
-  }
-
+  
 #if !defined(DONT_RUN_VALIDATION_THREAD)
   V_run_validation_thread();
 #endif
@@ -384,7 +396,8 @@ void *V_allocated_mem_real_start(void *allocated_mem){
 
 static void V_free_it2(MemoryFreeer freeer, void *actual_mem_real_start){
 
-  QMutexLocker locker(mutex); // May be moved to remove_memlink
+  mylock();
+  //QMutexLocker locker(mutex); // May be moved to remove_memlink
 
   LinkToMemlink *linktomemlink = (LinkToMemlink *) actual_mem_real_start;
   Memlink *link = linktomemlink->link;
@@ -405,6 +418,8 @@ static void V_free_it2(MemoryFreeer freeer, void *actual_mem_real_start){
 
   link->can_be_freed = true;
   //remove_memlink(link);
+
+  myunlock();
 }
 
 void V_free_actual_mem_real_start(MemoryFreeer freeer, void *actual_mem_real_start){

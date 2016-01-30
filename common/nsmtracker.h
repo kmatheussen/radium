@@ -92,6 +92,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "debug_proc.h"
+#include "atomic.h"
 #include "validatemem_proc.h"
 #include "memory_proc.h"
 #include "nsmtracker_events.h"
@@ -611,7 +612,7 @@ static inline void Patch_removePlayingVoice(struct Patch *patch, int64_t note_id
       return;
     }
   }
-  if (pc->isplaying){
+  if (ATOMIC_GET(pc->isplaying)){
     printf("Warning. Unable to find voice with note_id %d when removing playing note. Num playing: %d\n",(int)note_id,patch->num_currently_playing_voices);
     //abort();
   }
@@ -639,7 +640,7 @@ static inline void Patch_removePlayingNote(struct Patch *patch, int64_t note_id)
       return;
     }
   }
-  if (pc->isplaying)
+  if (ATOMIC_GET(pc->isplaying))
     printf("Warning. Unable to find note with note_id %d when removing playing note\n",(int)note_id);
 }
 
@@ -1470,6 +1471,7 @@ struct Root{
 };
 
 extern struct Root *root;
+extern DEFINE_ATOMIC(bool, is_starting_up);
 
 
 

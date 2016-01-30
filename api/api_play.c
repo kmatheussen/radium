@@ -78,5 +78,5 @@ void mute(void){
 
 
 int isPlaying(void){
-  return pc->isplaying;
+  return ATOMIC_GET(pc->isplaying);
 }
