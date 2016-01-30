@@ -353,6 +353,13 @@ void RT_pause_plugins(void){
 static void start_workaround_thread(void);
 #endif
 
+#if FOR_WINDOWS
+extern "C" {
+  static void my_silent_jack_error_callback(const char *desc){
+  }
+}
+#endif
+
 
 struct Mixer{
   SoundProducer *_bus1;
@@ -544,6 +551,12 @@ struct Mixer{
       return false;
     }
 
+    //jack_set_error_function(my_silent_jack_error_callback);
+
+#if FOR_WINDOWS // Noise from jack on windows when changing thread priority
+    jack_set_info_function(my_silent_jack_error_callback);
+#endif
+    
     g_jack_client = _rjack_client;
     //create_jack_plugins(_rjack_client);
 
