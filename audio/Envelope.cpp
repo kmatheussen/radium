@@ -26,6 +26,7 @@ static int ms_to_frames(float ms, float samplerate){
   return ms * samplerate / 1000;
 }
 
+namespace{
 struct Envelope{
   int   *_x;
   float *_y;
@@ -47,8 +48,8 @@ struct Envelope{
   }
 
   ~Envelope(){
-    delete _x;
-    delete _y;
+    delete[] _x;
+    delete[] _y;
   }
 
   void reset(){
@@ -136,6 +137,7 @@ struct Envelope{
     return len;
   }
 };
+}
 
 void *ENVELOPE_create(int num_breaks, float samplerate){
   return new Envelope(num_breaks,samplerate);
@@ -164,7 +166,7 @@ int ENVELOPE_apply(void *env, float **buf, int num_channels, int num_frames){
 }
 
 //void ENVELOPE_num_samples_left(void *env, int pos);
-
+namespace{
 struct ADSR{
   Envelope *env;
 
@@ -174,6 +176,10 @@ struct ADSR{
     env->set_freeze_breakpoint(3);
   }
 
+  ~ADSR(){
+    delete env;
+  }
+  
   void set_adsr(float a, float h, float d, float s, float r){
     //printf("Setting adsr to %f %f %f %f\n",a,d,s,r);
     env->set_break(0, 0,   0.0);
@@ -183,9 +189,15 @@ struct ADSR{
     env->set_break(4, a+h+d+r, 0.0);
   }
 };
+}
 
 void *ADSR_create(float samplerate){
   return new ADSR(samplerate);
+}
+
+void ADSR_delete(void *adsr){
+  ADSR *das_adsr=(ADSR*)adsr;
+  delete das_adsr;
 }
 
 int ADSR_apply(void *adsr, float **buf, int num_channels, int num_frames){

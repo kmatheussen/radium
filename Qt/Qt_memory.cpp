@@ -63,9 +63,11 @@ void  OS_tfree(void *mem){
   V_free(mem);
 }
 
+// Used instead of GC_alloc when debugging memory, or GC_alloc returns NULL.
 void *OS_getmem(size_t size){
   void *ret = V_calloc(1,size);
   if(ret==NULL)
     abort();
   return ret;
 }
+

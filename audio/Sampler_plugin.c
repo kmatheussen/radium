@@ -1640,15 +1640,17 @@ static void delete_data(Data *data){
     }
   }
 
-  for(i=0;i<POLYPHONY;i++)
+  for(i=0;i<POLYPHONY;i++) {
     RESAMPLER_delete(data->voices[i].resampler);
-
+    ADSR_delete(data->voices[i].adsr);
+  }
+  
   free((char*)data->filename);
 
   RSEMAPHORE_delete(data->signal_from_RT);
 
   free_tremolo(data->tremolo);
-    
+
   V_free(data);
 }
 

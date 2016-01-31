@@ -27,7 +27,8 @@ extern LANGSPEC void ENVELOPE_set_freezed_samples_left(void *env,int num_freezed
 extern LANGSPEC int ENVELOPE_apply(void *env, float **buf, int num_channels, int num_frames);
 
 extern LANGSPEC void *ADSR_create(float samplerate);
-
+extern LANGSPEC void ADSR_delete(void *adsr);
+  
 extern LANGSPEC int ADSR_apply(void *adsr, float **buf, int num_channels, int num_frames);
 
 extern LANGSPEC void ADSR_release(void *adsr);
