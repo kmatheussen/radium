@@ -435,7 +435,13 @@ static void *create_data(const wchar_t *filename, float samplerate){
     return NULL;
   }
 
-  data->filename = wcsdup(OS_loading_get_resolved_file_path(filename));
+  const wchar_t *something = OS_loading_get_resolved_file_path(filename);
+  if (something==NULL){
+    delete_data(data);
+    return NULL;
+  }
+  
+  data->filename = wcsdup(something);
 
   data->soundfont_id = fluid_synth_sfload(data->synth,STRING_get_chars(data->filename),true);
 

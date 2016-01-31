@@ -1,4 +1,6 @@
 
+#ifndef RADIUM_COMMON_ATOMIC_H
+#define RADIUM_COMMON_ATOMIC_H
 
 #define DEFINE_ATOMIC(type, name) \
   type name##_atomic
@@ -6,15 +8,15 @@
 #define ATOMIC_SET(name, val) \
   __atomic_store_n (&(name##_atomic), (val), __ATOMIC_SEQ_CST)
                    
+#define ATOMIC_SET_RELAXED(name, val) \
+  __atomic_store_n (&(name##_atomic), (val), __ATOMIC_RELAXED)
+                   
 #define ATOMIC_GET(name) \
   __atomic_load_n (&(name##_atomic), __ATOMIC_SEQ_CST)
 
-#define ATOMIC_COMPARE_EXCHANGE(name, expected_p, new_value) \
-  __atomic_compare_exchange_n (&(name##_atomic), expected_p, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
+#define ATOMIC_GET_RELAXED(name) \
+  __atomic_load_n (&(name##_atomic), __ATOMIC_RELAXED)
 
-// Writes 'new' to 'name' if 'name' has the value 'old'. Returns true if successful.
-#define ATOMIC_COMPARE_AND_SWAP(name, old, new)                             \
-  __atomic_compare_exchange_n (&(name##_atomic), expected_p, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
 
 
 /*
@@ -37,10 +39,10 @@
 */
 
 /*
-   atomic_compare_and_swap_bool(bool *variable,
-                                bool old_value,
-                                bool new_value
-                                );
+   atomic_compare_and_set_bool(bool *variable,
+                               bool old_value,
+                               bool new_value
+                               );
 
    works like this:
 
@@ -52,10 +54,24 @@
    }
  */
 
-static inline bool atomic_compare_and_swap_bool(bool *variable, bool old_value, bool new_value){
+static inline bool atomic_compare_and_set_bool(bool *variable, bool old_value, bool new_value){
   return __atomic_compare_exchange_n (variable, &old_value, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
                             
+static inline bool atomic_compare_and_set_int(int *variable, int old_value, int new_value){
+  return __atomic_compare_exchange_n (variable, &old_value, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+}
+
+static inline bool atomic_compare_and_set_uint32(uint32_t *variable, uint32_t old_value, uint32_t new_value){
+  return __atomic_compare_exchange_n (variable, &old_value, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+}
+
+#define ATOMIC_COMPARE_AND_SET_INT(name, old_value, new_value) \
+  atomic_compare_and_set_int(&(name##_atomic), old_value, new_value)
+
+#define ATOMIC_COMPARE_AND_SET_UINT32(name, old_value, new_value) \
+  atomic_compare_and_set_uint32(&(name##_atomic), old_value, new_value)
+
 #define ATOMIC_SET_RETURN_OLD(name, val) \
   __atomic_exchange_n (&(name##_atomic), val, __ATOMIC_SEQ_CST)
 
@@ -67,17 +83,8 @@ static inline bool atomic_compare_and_swap_bool(bool *variable, bool old_value, 
   DEFINE_ATOMIC(bool, name) = false;
 
 #define SPINLOCK_OBTAIN(name)                                           \
-  while(atomic_compare_and_swap_bool(&(name##_atomic), false, true)==false)
+  while(atomic_compare_and_set_bool(&(name##_atomic), false, true)==false)
 
-#if 0
-for(;;){                                                                \
-    bool expected = true;                                               \
-    __atomic_compare_exchange_n (&(name##_atomic), &expected, true, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST); \
-    if(expected==true)                                                  \
-      break;                                                            \
-  };
-#endif
-  
 #define SPINLOCK_RELEASE(name) \
   ATOMIC_SET(name, false)
 
@@ -85,4 +92,29 @@ for(;;){                                                                \
 #define SPINLOCK_IS_OBTAINED(name) \
   ATOMIC_GET(spinlock)==true
 
-  
+// This function is suppressed from tsan
+static inline void safe_float_write(float *pos, float value){
+  *pos = value;
+}
+
+static inline void safe_volatile_float_write(volatile float *pos, float value){
+  *pos = value;
+}
+
+// This function is suppressed from tsan
+static inline float safe_float_read(float *pos){
+  return *pos;
+}
+
+static inline void safe_double_write(volatile double *pos, double value){
+  *pos = value;
+}
+
+// This function is suppressed from tsan
+static inline double safe_double_read(volatile double *pos){
+  return *pos;
+}
+
+
+#endif
+

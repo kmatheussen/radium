@@ -344,10 +344,10 @@ protected:
       }else
         last_key_was_lalt = false;
 
-      static int64_t last_pressed_key_time = 0;
+      static double last_pressed_key_time = 0;
       static int last_pressed_key = EVENT_NO;
 
-      int64_t time_now = MIXER_get_time();
+      double time_now = TIME_get_ms();
 
       if (is_key_press) {
         
@@ -358,7 +358,7 @@ protected:
 
         // key release:
         
-        if( (time_now - last_pressed_key_time) < pc->pfreq/4){ // i.e. only play if holding the key less than 0.25 seconds.
+        if( (time_now - last_pressed_key_time) < 1000/4){ // i.e. only play if holding the key less than 0.25 seconds.
           if(modifier==last_pressed_key && modifier==EVENT_ALT_R) {
             PlayBlockFromStart(window,true); // true == do_loop
           }
@@ -577,7 +577,7 @@ enum RT_MESSAGE_STATUS {
   RT_MESSAGE_SHOWING
 };
 
-volatile RT_MESSAGE_STATUS rt_message_status = RT_MESSAGE_READY;
+static DEFINE_ATOMIC(RT_MESSAGE_STATUS, rt_message_status) = RT_MESSAGE_READY;
 static const int rt_message_length = 1024;
 static char rt_message[rt_message_length];
 volatile bool request_to_stop_playing = false;
@@ -618,7 +618,7 @@ protected:
     
     //static int hepp=0; printf("hepp %d\n",hepp++);
     
-    if (rt_message_status == RT_MESSAGE_READY_FOR_SHOWING) {
+    if (ATOMIC_GET(rt_message_status) == RT_MESSAGE_READY_FOR_SHOWING) {
 
       QString message(rt_message);
 
@@ -627,9 +627,9 @@ protected:
         safeShow(&msgBox);
       }
 
-      rt_message_status = RT_MESSAGE_SHOWING;
+      ATOMIC_SET(rt_message_status, RT_MESSAGE_SHOWING);
       
-    } else if (rt_message_status == RT_MESSAGE_SHOWING && msgBox.isHidden()) {
+    } else if (ATOMIC_GET(rt_message_status) == RT_MESSAGE_SHOWING && msgBox.isHidden()) {
 
       if (msgBox.clickedButton() == msgBox_dontshowagain){
         //printf("Dontshowagain\n");
@@ -637,8 +637,8 @@ protected:
       } else if (msgBox.clickedButton() == msgBox_stop_playing){
         PlayStop();
       }
-          
-      rt_message_status = RT_MESSAGE_READY;
+      
+      ATOMIC_SET(rt_message_status, RT_MESSAGE_READY);
     }
 
     num_calls++;
@@ -701,7 +701,7 @@ protected:
 void RT_message(const char *fmt,...){
   va_list argp;
 
-  if(rt_message_status != RT_MESSAGE_READY)
+  if(ATOMIC_GET(rt_message_status) != RT_MESSAGE_READY)
     return;
   
   va_start(argp,fmt);
@@ -709,7 +709,7 @@ void RT_message(const char *fmt,...){
   vsnprintf(rt_message,rt_message_length-1,fmt,argp);
   va_end(argp);
 
-  rt_message_status = RT_MESSAGE_READY_FOR_SHOWING;
+  ATOMIC_SET(rt_message_status, RT_MESSAGE_READY_FOR_SHOWING);
 }
 
 void RT_request_to_stop_playing(void){

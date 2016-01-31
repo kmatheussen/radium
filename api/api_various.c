@@ -411,10 +411,10 @@ void openAboutWindow(void){
               "Qt version: \"%s\""
               "<p>"
               "<A href=\"http://users.notam02.no/~kjetism/radium/development.php\">Credits</A>",
-              GE_vendor_string==NULL ? "(null)" : GE_vendor_string,
-              GE_renderer_string==NULL ? "(null)" : GE_renderer_string,
-              GE_version_string==NULL ? "(null)" : GE_version_string,
-              GE_opengl_version_flags,
+              ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : ATOMIC_GET(GE_vendor_string),
+              ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : ATOMIC_GET(GE_renderer_string),
+              ATOMIC_GET(GE_version_string)==NULL ? "(null)" : ATOMIC_GET(GE_version_string),
+              ATOMIC_GET(GE_opengl_version_flags),
               GFX_qVersion()
               );
 }

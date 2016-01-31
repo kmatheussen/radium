@@ -86,10 +86,11 @@ void PLAYER_memory_debug_wake_up(void){
 
 jack_client_t *g_jack_client;
 static int g_jack_client_priority;
-float g_max_cpu_usage = 0.0f;
-float g_min_cpu_usage = 0.0f;
-int g_num_cpu_usage = 0;
-float g_total_cpu_usage = 0;
+DEFINE_ATOMIC(int, g_max_cpu_usage) = 0.0f;
+DEFINE_ATOMIC(int, g_min_cpu_usage) = 0.0f;
+DEFINE_ATOMIC(int, g_num_cpu_usage) = 0;
+DEFINE_ATOMIC(int, g_avg_cpu_usage) = 0.0f;
+static float g_total_cpu_usage = 0;
 
 static bool g_jack_is_running = true;
 
@@ -700,15 +701,31 @@ struct Mixer{
       // Calculate CPU usage
 
       float new_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
+      int i_new_cpu_usage = 1000.0 * new_cpu_usage;
 
-      g_total_cpu_usage += new_cpu_usage;
-      g_num_cpu_usage++;
+      int num_cpu_usage = ATOMIC_GET(g_num_cpu_usage);
+
+      if (num_cpu_usage==0) {
+        
+        g_total_cpu_usage = i_new_cpu_usage;
+        ATOMIC_SET(g_max_cpu_usage, i_new_cpu_usage);
+        ATOMIC_SET(g_min_cpu_usage, i_new_cpu_usage);
+        
+      } else {
+        g_total_cpu_usage += i_new_cpu_usage;
+        
+        if (i_new_cpu_usage > ATOMIC_GET(g_max_cpu_usage))
+          ATOMIC_SET(g_max_cpu_usage, i_new_cpu_usage);
       
-      if (new_cpu_usage > g_max_cpu_usage)
-        g_max_cpu_usage = new_cpu_usage;
+        if (i_new_cpu_usage < ATOMIC_GET(g_min_cpu_usage))
+          ATOMIC_SET(g_min_cpu_usage, i_new_cpu_usage);
+      }
+
+      num_cpu_usage++;
       
-      if (new_cpu_usage < g_min_cpu_usage)
-        g_min_cpu_usage = new_cpu_usage;
+      ATOMIC_SET(g_num_cpu_usage, num_cpu_usage);
+
+      ATOMIC_SET(g_avg_cpu_usage, g_total_cpu_usage / num_cpu_usage);
       
       if (new_cpu_usage < 98)
         excessive_time.restart();
@@ -905,9 +922,11 @@ STime MIXER_get_block_delta_time(STime time){
   return (time+g_startup_time) - g_mixer->_time;
 }
 
+/*
 int64_t MIXER_get_time(void){
   return g_mixer->_time;
 }
+*/
 
 // Like pc->start_time, but sub-block accurately
 STime MIXER_get_accurate_radium_time(void){

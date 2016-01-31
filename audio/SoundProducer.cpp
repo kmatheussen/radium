@@ -15,12 +15,12 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
 
 static inline int myisnormal(float val){
   return isnormal(val);
@@ -43,10 +43,12 @@ static inline int myisinf(float val){
 
 #include "pa_memorybarrier.h"
 
+
 #include "monotonic_timer.c"
 
 
 #include "../common/nsmtracker.h"
+
 #include "../common/OS_Player_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../common/threading.h"
@@ -123,6 +125,7 @@ static float iec_scale(float db) {
 #endif
 
 
+
 namespace{
   
 struct SoundProducerLink {
@@ -136,7 +139,7 @@ struct SoundProducerLink {
   SoundProducer *source;
   SoundProducer *target;
 
-  bool is_event_link;
+  const bool is_event_link;
   bool is_bus_link;
   
   // fields below only used by audio links
@@ -146,20 +149,20 @@ struct SoundProducerLink {
   float link_volume; 
   Smooth volume; // volume.target_value = link_volume * source->output_volume * source->volume
 
-  volatile bool is_active;
+  DEFINE_ATOMIC(bool, is_active);
 
-  volatile bool should_be_turned_off;
+  DEFINE_ATOMIC(bool, should_be_turned_off);
 
   void turn_off(void){
-    R_ASSERT(should_be_turned_off==false);
-    should_be_turned_off=true;
+    R_ASSERT(ATOMIC_GET(should_be_turned_off)==false);
+    ATOMIC_SET(should_be_turned_off, true);
   }
 
   float get_total_link_volume(void){
     SoundPlugin *source_plugin = SP_get_plugin(source);
     float plugin_volume = source_plugin->volume;  // (Note that plugin->volume==0 when plugin->volume_onoff==false, so we don't need to test for that)
 
-    if (should_be_turned_off)
+    if (ATOMIC_GET_RELAXED(should_be_turned_off))
       return 0.0f;
 
     else if (is_bus_link){
@@ -181,30 +184,37 @@ struct SoundProducerLink {
     }
   }
 
-  void RT_called_for_each_soundcard_block(void){
+  // Called by main mixer thread before starting multicore.
+  bool RT_called_for_each_soundcard_block(void){
     R_ASSERT(THREADING_is_player_thread());
     
     if (is_event_link) {
 
-      R_ASSERT(is_active==true);
-    
+      R_ASSERT(ATOMIC_GET_RELAXED(is_active)==true);
+
+      return true;
+      
     } else {
 
       if (is_bus_link)
         if (SP_get_bus_descendant_type(source)==IS_BUS_DESCENDANT) { // need comment here what this is about
-          is_active=false;
-          return;
+          ATOMIC_SET(is_active, false);
+          return false;
         }
 
       SMOOTH_set_target_value(&volume, get_total_link_volume());        
       SMOOTH_update_target_audio_will_be_modified_value(&volume);
 
-      is_active = volume.target_audio_will_be_modified;
+      bool new_is_active = volume.target_audio_will_be_modified;
+      
+      ATOMIC_SET(is_active, new_is_active);
+      
+      return new_is_active;
     }
   }
 
   bool can_be_removed(void){
-    return is_event_link==true || is_active==false;
+    return is_event_link==true || ATOMIC_GET(is_active)==false;
   }
   
   SoundProducerLink(SoundProducer *source, SoundProducer *target, bool is_event_link)
@@ -215,9 +225,10 @@ struct SoundProducerLink {
     , source_ch(0)
     , target_ch(0)
     , link_volume(1.0)
-    , is_active(is_event_link)
-    , should_be_turned_off(false)
   {
+    ATOMIC_SET(is_active, is_event_link);
+    ATOMIC_SET(should_be_turned_off, false);
+    
     //SMOOTH_init(&volume, get_total_link_volume(), MIXER_get_buffer_size());
     SMOOTH_init(&volume, 0.0f, MIXER_get_buffer_size()); // To fade in, we start with 0.0f as initial volume.
   }
@@ -318,6 +329,7 @@ static void RT_copy_sound_and_apply_volume(float *to_sound, float *from_sound, i
 }
 #endif
 
+
 static void RT_apply_dry_wet(float **dry, int num_dry_channels, float **wet, int num_wet_channels, int num_frames, Smooth *wet_values){
   int num_channels = std::min(num_dry_channels,num_wet_channels);
   for(int ch=0;ch<num_channels;ch++){
@@ -396,6 +408,7 @@ static int get_bus_num(SoundPlugin *plugin){
 }
 
 static int id_counter = 0;
+
 
 struct SoundProducer {
   int64_t _id;
@@ -858,15 +871,14 @@ public:
     }
   }
 
-  
+
+  // Called by main mixer thread before starting multicore.
   void RT_called_for_each_soundcard_block(void){
     num_dependencies = 0;
 
     for (SoundProducerLink *link : _input_links) {
 
-      link->RT_called_for_each_soundcard_block();
-      
-      if (link->is_active)
+      if (link->RT_called_for_each_soundcard_block())
         num_dependencies++;
     }
   }
@@ -891,7 +903,7 @@ public:
     // Fill inn target channels    
     for (SoundProducerLink *link : _input_links) {
 
-      if (!link->is_active)
+      if (!ATOMIC_GET_RELAXED(link->is_active))
         continue;
       
       R_ASSERT(link->source->has_run(time));
@@ -910,14 +922,14 @@ public:
       
     } // end for (SoundProducerLink *link : _input_links)
 
-
+  
     bool is_a_generator = _num_inputs==0;
     bool do_bypass      = _plugin->drywet.smoothing_is_necessary==false && _plugin->drywet.value==0.0f;
 
 
     if(is_a_generator)
       PLUGIN_RT_process(_plugin, time, num_frames, _input_sound, _dry_sound, process_plugins);
-
+  
 
     // Input peaks
     {
@@ -926,14 +938,14 @@ public:
 
         float *input_volume_peak_values_for_chip = ATOMIC_GET(_plugin->input_volume_peak_values_for_chip);
         if(input_volume_peak_values_for_chip!=NULL)
-          input_volume_peak_values_for_chip[ch] = peak;
+          safe_float_write(&input_volume_peak_values_for_chip[ch], peak);
 
         float *input_volume_peak_values = ATOMIC_GET(_plugin->input_volume_peak_values);
         if(input_volume_peak_values!=NULL)
-          input_volume_peak_values[ch] = peak;
+          safe_float_write(&input_volume_peak_values[ch], peak);
 
         if (ch<2)
-          _plugin->system_volume_peak_values[ch] = peak; // Value only used by the slider at the bottom bar.
+          safe_volatile_float_write(&_plugin->system_volume_peak_values[ch], peak); // Value only used by the slider at the bottom bar.
       }
     }
 
@@ -988,7 +1000,7 @@ public:
     if(_num_outputs>1)
       RT_apply_system_filter(&_plugin->delay, &_output_sound[1], _num_outputs-1, num_frames, process_plugins);
 
-
+    
     // Output peaks
     {
       for(int ch=0;ch<_num_outputs;ch++){
@@ -997,33 +1009,33 @@ public:
         // "Volume"
         float *volume_peak_values = ATOMIC_GET(_plugin->volume_peak_values);
         if(volume_peak_values!=NULL)
-          volume_peak_values[ch] = volume_peak;
+          safe_float_write(&volume_peak_values[ch], volume_peak);
         
         // "Reverb Bus" and "Chorus Bus"
         if (ch < 2) { // buses only have two channels
           float *bus_volume_peak_values0 = ATOMIC_GET(_plugin->bus_volume_peak_values0);
           if(bus_volume_peak_values0!=NULL)
-            bus_volume_peak_values0[ch] = volume_peak * _plugin->bus_volume[0];
-
+            safe_float_write(&bus_volume_peak_values0[ch], volume_peak * _plugin->bus_volume[0]);
+          
           float *bus_volume_peak_values1 = ATOMIC_GET(_plugin->bus_volume_peak_values1);
           if(bus_volume_peak_values1!=NULL)
-            bus_volume_peak_values1[ch] = volume_peak * _plugin->bus_volume[1];
+            safe_float_write(&bus_volume_peak_values1[ch], volume_peak * _plugin->bus_volume[1]);
         }
-          
+        
         // "Out" and Chip volume  (same value)
         {
           float output_volume_peak = volume_peak * _plugin->output_volume;
-
+          
           float *output_volume_peak_values = ATOMIC_GET(_plugin->output_volume_peak_values);
           if(output_volume_peak_values!=NULL)
-            output_volume_peak_values[ch] = output_volume_peak;
-
+            safe_float_write(&output_volume_peak_values[ch], output_volume_peak);
+          
           float *volume_peak_values_for_chip = ATOMIC_GET(_plugin->volume_peak_values_for_chip);
           if(volume_peak_values_for_chip!=NULL) {
             if (_plugin->output_volume_is_on)
-              volume_peak_values_for_chip[ch] = output_volume_peak;
+              safe_float_write(&volume_peak_values_for_chip[ch], output_volume_peak);
             else
-              volume_peak_values_for_chip[ch] = 0.0f; // The chip volume slider is not grayed out, like the out "out" slider.
+              safe_float_write(&volume_peak_values_for_chip[ch], 0.0f); // The chip volume slider is not grayed out, like the out "out" slider.
           }
         }
       }
@@ -1083,6 +1095,7 @@ void SP_remove_all_links(radium::Vector<SoundProducer*> &soundproducers){
 }
 
 
+// Called by main mixer thread before starting multicore.
 void SP_RT_called_for_each_soundcard_block(SoundProducer *producer){
   producer->RT_called_for_each_soundcard_block();
 }
@@ -1110,7 +1123,7 @@ void SP_write_mixer_tree_to_disk(QFile *file){
       SoundPlugin *plugin = link->target->_plugin;
       volatile Patch *patch = plugin==NULL ? NULL : plugin->patch;
       const char *name = patch==NULL ? "<null>" : patch->name;
-      file->write(QString().sprintf("  %s%s\n",name, link->is_active?"":" (inactive)").toUtf8());
+      file->write(QString().sprintf("  %s%s\n",name, ATOMIC_GET(link->is_active)?"":" (inactive)").toUtf8());
     }    
   }
 }
@@ -1130,7 +1143,7 @@ void SP_print_tree(void){
     fprintf(stderr, "  outputs:\n");
     */
     for (SoundProducerLink *link : sp->_output_links){
-      fprintf(stderr, "  %s%s\n",link->target->_plugin->patch->name,link->is_active?"":" (inactive)");
+      fprintf(stderr, "  %s%s\n",link->target->_plugin->patch->name,ATOMIC_GET(link->is_active)?"":" (inactive)");
     }    
   }
 }

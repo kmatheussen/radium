@@ -110,7 +110,7 @@ public:
 #include <semaphore.h>
 #include <errno.h>
 
-extern QAtomicInt g_num_waits;
+//extern QAtomicInt g_num_waits;
 
 namespace cpp11onmulticore{
 class Semaphore
@@ -135,7 +135,7 @@ public:
 
     void wait()
     {
-      g_num_waits.ref();
+      //g_num_waits.ref();
         // http://stackoverflow.com/questions/2013181/gdb-causes-sem-wait-to-fail-with-eintr-error
         int rc;
         do

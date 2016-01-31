@@ -135,7 +135,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DUSE_GFX_OP_QUEUE -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_58_0 -I${HOME}/SDKs -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
+COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_60_0 -I${HOME}/SDKs -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
 #$(CFLAGS)
 # -Wunused-parameter
 
@@ -1711,8 +1711,8 @@ crashreporter_windows.o: crashreporter/crashreporter_windows.c
 	$(CC) crashreporter/crashreporter_windows.c $(OPT) -O0 -DPACKAGE
 #	$(CC) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
-GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp
-	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS)
+GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp
+	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS) -Wno-error=unused-variable
 
 Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp
 	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT)

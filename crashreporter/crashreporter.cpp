@@ -442,10 +442,10 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
   tosend += VERSION "\n\n";
 
-  tosend += "OpenGL vendor: " + QString((GE_vendor_string==NULL ? "(null)" : (const char*)GE_vendor_string )) + "\n";
-  tosend += "OpenGL renderer: " + QString((GE_renderer_string==NULL ? "(null)" : (const char*)GE_renderer_string)) + "\n";
-  tosend += "OpenGL version: " + QString((GE_version_string==NULL ? "(null)" : (const char*)GE_version_string)) + "\n";
-  tosend += QString("OpenGL flags: %1").arg(GE_opengl_version_flags, 0, 16) + "\n\n";
+  tosend += "OpenGL vendor: " + QString((ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_vendor_string) )) + "\n";
+  tosend += "OpenGL renderer: " + QString((ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_renderer_string))) + "\n";
+  tosend += "OpenGL version: " + QString((ATOMIC_GET(GE_version_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_version_string))) + "\n";
+  tosend += QString("OpenGL flags: %1").arg(ATOMIC_GET(GE_opengl_version_flags), 0, 16) + "\n\n";
 
   tosend += "Running plugins: " + plugin_names + "\n\n";
 

@@ -520,7 +520,7 @@ static void RT_play_voice(struct Patch *patch, float notenum, int64_t note_id, f
   Patch_addPlayingVoice(patch, notenum, note_id, pan);
   patch->playnote(patch,notenum,note_id,velocity,time,pan);
 
-  patch->visual_note_intencity = MAX_NOTE_INTENCITY;
+  ATOMIC_SET_RELAXED(patch->visual_note_intencity, MAX_NOTE_INTENCITY);
 
   if(patch->forward_events)
     RT_PATCH_send_play_note_to_receivers(patch, notenum, note_id, velocity, pan, time);

@@ -1,3 +1,0 @@
-leak:OS_getmem
-leak:talloc_realloc__
-leak:PR_init_plugin_types

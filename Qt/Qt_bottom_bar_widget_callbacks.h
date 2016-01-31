@@ -43,10 +43,10 @@ Ui::Audio_instrument_widget *g_system_audio_instrument_widget = NULL;
 struct Patch *g_system_out_patch = NULL;
 
 extern bool drunk_velocity;
-extern float g_max_cpu_usage;
-extern float g_min_cpu_usage;
-extern int g_num_cpu_usage;
-extern float g_total_cpu_usage;
+extern DEFINE_ATOMIC(int, g_max_cpu_usage);
+extern DEFINE_ATOMIC(int, g_min_cpu_usage);
+extern DEFINE_ATOMIC(int, g_num_cpu_usage);
+extern DEFINE_ATOMIC(int, g_avg_cpu_usage);
 
 extern int scrolls_per_second;
 extern int default_scrolls_per_second;
@@ -58,22 +58,22 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     Bottom_bar_widget *bottom_bar_widget;
     void timerEvent(QTimerEvent * e){
       QString usage;
-      int num_cpu_usage = g_num_cpu_usage;
-      if (num_cpu_usage==0)
-        usage.sprintf("0.0 /  0.0 /  0.0");
-      else {
-        float total = g_total_cpu_usage / (float)num_cpu_usage;
-        usage.sprintf("%s%.1f / %s%.1f / %s%.1f",
-                      g_min_cpu_usage < 10 ? " " : "", g_min_cpu_usage,
-                      total<10?" ":"", total,
-                      g_max_cpu_usage < 10?" ":"", g_max_cpu_usage
-                      );
-        //printf("Usage: %f\n",g_cpu_usage);
-        g_max_cpu_usage = 0.0;
-        g_min_cpu_usage = 10000.0;
-        g_total_cpu_usage = 0;
-        g_num_cpu_usage = 0;
-      }
+      
+      float mincpu = ATOMIC_GET(g_min_cpu_usage) / 1000.0;
+      float avgcpu = ATOMIC_GET(g_avg_cpu_usage) / 1000.0;
+      float maxcpu = ATOMIC_GET(g_max_cpu_usage) / 1000.0;
+      
+      usage.sprintf("%s%.1f / %s%.1f / %s%.1f",
+                    mincpu < 10 ? " " : "", mincpu,
+                    avgcpu<10?" ":"", avgcpu,
+                    maxcpu < 10?" ":"", maxcpu
+                    );
+      //printf("Usage: %f\n",g_cpu_usage);
+      ATOMIC_SET(g_max_cpu_usage, 0);
+      ATOMIC_SET(g_min_cpu_usage, 10000000);
+      ATOMIC_SET(g_avg_cpu_usage, 0);
+      ATOMIC_SET(g_num_cpu_usage, 0);
+
       bottom_bar_widget->cpu_label->setText(usage);
     }
   };

@@ -43,22 +43,24 @@ void PlayerTask(STime reltime){
         //RError("hepp");
         pc->reltime     = reltime;
 
-        const struct Blocks *block = ATOMIC_GET(pc->isplaying) ? pc->block : NULL;
+        if (ATOMIC_GET(is_starting_up))
+          return;
 
-        if(block==NULL){
-          if (ATOMIC_GET(is_starting_up))
-            return;
-          else
-            block=root->song->tracker_windows->wblock->block;
+        double reltempo = 1.0;
+
+        if (ATOMIC_GET(pc->isplaying)){
+          const struct Blocks *block = pc->block;          
+          if(block!=NULL)
+            reltempo = block->reltempo;
         }
 
 	addreltime+=reltime;
 
-        double tempoadjusted_reltime_f = (double)addreltime * block->reltempo;
+        double tempoadjusted_reltime_f = (double)addreltime * reltempo;
         STime tempoadjusted_reltime    = tempoadjusted_reltime_f;
         
         if(tempoadjusted_reltime<1) {
-          pc->start_time_f += (double)reltime * block->reltempo;
+          pc->start_time_f += (double)reltime * reltempo;
           return;
         } else
           addreltime=0;

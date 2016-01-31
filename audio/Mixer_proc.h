@@ -15,7 +15,7 @@ extern LANGSPEC void MIXER_request_stop_saving_soundfile(void);
 
 extern LANGSPEC void OS_InitAudioTiming(void);
 extern LANGSPEC STime MIXER_get_block_delta_time(STime time);
-extern LANGSPEC int64_t MIXER_get_time(void);
+//extern LANGSPEC int64_t MIXER_get_time(void);
 extern LANGSPEC STime MIXER_get_accurate_radium_time(void);
 
 #ifdef __cplusplus

@@ -96,7 +96,18 @@ static float iec_scale(float db) {
 
 namespace{
 struct AutomationOrPeakData{
+private:
   float *value;
+
+public:
+  AutomationOrPeakData(float *value)
+    : value(value)
+  {}
+
+  float get_automation_or_peak_value(void){
+    return safe_float_read(value);
+  }
+  
   int requested_pos;
   int last_drawn_pos;
 
@@ -106,6 +117,8 @@ struct AutomationOrPeakData{
   int num_ch;
 
   bool is_automation;
+
+  
 };
 }
 
@@ -135,9 +148,9 @@ struct SliderPainter{
         float gain;
 
         if(data->is_automation)
-          gain = *data->value;
+          gain = data->get_automation_or_peak_value();
         else{
-          float db = gain2db(*data->value);
+          float db = gain2db(data->get_automation_or_peak_value());
           if(db>4.0f)
             _painter->_peak_color = PEAKS_4DB_COLOR_NUM;
           else if(db>0.0f)
@@ -319,12 +332,14 @@ struct SliderPainter{
     }
   }
 
-  AutomationOrPeakData *create_automation_data(){
+  AutomationOrPeakData *create_automation_data(float *value = NULL){
     R_ASSERT(THREADING_is_main_thread());
-    
-    AutomationOrPeakData *data = new AutomationOrPeakData;
 
-    data->value          = &_automation_value;
+    if (value==NULL)
+      value = &_automation_value;
+    
+    AutomationOrPeakData *data = new AutomationOrPeakData(value);
+    
     data->requested_pos  = 0;
     data->last_drawn_pos = 0;
 
@@ -368,11 +383,10 @@ struct SliderPainter{
     _data.clear();
 
     for(int ch=0;ch<num_channels;ch++){
-      AutomationOrPeakData *data = create_automation_data();
+      AutomationOrPeakData *data = create_automation_data(&_peak_values[ch]);
       data->ch            = ch;
       data->num_ch        = num_channels;
       data->is_automation = false;
-      data->value         = &_peak_values[ch];
       data->color         = &_peak_color;
     }
 

@@ -32,12 +32,15 @@ extern bool GL_get_safe_mode(void);
 extern void GL_lock(void);
 extern void GL_unlock(void);
 extern bool GL_maybeLock(void);
+
+#include "../common/atomic.h"
     
-extern volatile char *GE_vendor_string;
-extern volatile char *GE_renderer_string;
-extern volatile char *GE_version_string;
-extern volatile uint32_t GE_opengl_version_flags;
-  
+extern DEFINE_ATOMIC(char *, GE_vendor_string);
+extern DEFINE_ATOMIC(char *, GE_renderer_string);
+extern DEFINE_ATOMIC(char *, GE_version_string);
+extern DEFINE_ATOMIC(uint32_t, GE_opengl_version_flags);
+
+
 extern void GE_set_curr_realline(int curr_realline);
 
 #ifdef __cplusplus

@@ -40,9 +40,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "midi_i_input_proc.h"
 
-static volatile uint32_t g_msg = 0;
+static DEFINE_ATOMIC(uint32_t, g_msg) = 0;
 
-static volatile struct Patch *g_through_patch = NULL;
+static DEFINE_ATOMIC(struct Patch *, g_through_patch) = NULL;
 
 // TODO: This isn't always working properly. Going to change rtmidi API.
 
@@ -231,7 +231,7 @@ static void add_event_to_play_buffer(int cc,int data1,int data2){
 }
 
 void RT_MIDI_handle_play_buffer(void){
-  volatile struct Patch *patch = g_through_patch;
+  struct Patch *patch = ATOMIC_GET(g_through_patch);
   
   while (jack_ringbuffer_read_space(g_play_buffer) >= sizeof(play_buffer_event_t)) {
     play_buffer_event_t event;
@@ -287,7 +287,7 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   if (len<1 || len>3)
     return;
   
-  if(g_through_patch!=NULL)
+  if(ATOMIC_GET(g_through_patch)!=NULL)
     add_event_to_play_buffer(cc, data1, data2);
   
   if (g_record_accurately_while_playing && is_playing) {
@@ -298,13 +298,10 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
 
   } else {
 
-    if (g_msg == 0) { // if g_msg!=0, we are playing too quickly;
-
-      // should probably be a memory barrier here somewhere.
-      
-      if((cc&0xf0)==0x90 && data2!=0)
-        g_msg = msg;
-    }
+    if((cc&0xf0)==0x90 && data2!=0)
+      if (ATOMIC_COMPARE_AND_SET_UINT32(g_msg, 0, msg)==false) {
+        // printf("Playing to fast. Skipping note %u from MIDI input.\n",msg); // don't want to print in realtime thread
+      }
   }
 }
 
@@ -312,18 +309,19 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
 void MIDI_SetThroughPatch(struct Patch *patch){
   //printf("Sat new patch %p\n",patch);
   if(patch!=NULL)
-    g_through_patch=patch;
+    ATOMIC_SET(g_through_patch, patch);
 }
 
 
+// called very often
 void MIDI_HandleInputMessage(void){
   // should be a memory barrier here somewhere.
 
-  uint32_t msg = g_msg;
+  uint32_t msg = ATOMIC_GET(g_msg); // Hmm, should have an ATOMIC_COMPAREFALSE_AND_SET function.
   
   if (msg!=0) {
 
-    g_msg = 0;
+    ATOMIC_SET(g_msg, 0);
 
     if(root->editonoff) {
       float velocity = -1.0f;

@@ -5,8 +5,6 @@
 #include <vector>
 
 #include <QMap>
-#include <QMutex>
-#include <QMutexLocker>
 
 #include <vlVG/VectorGraphics.hpp>
 #include <vlGraphics/Rendering.hpp>
@@ -21,6 +19,7 @@
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
+#include "../common/Mutex.hpp"
 
 #include "../Qt/Qt_colors_proc.h"
 
@@ -37,7 +36,7 @@
 static volatile float g_height = 512;
 
 void GE_set_height(int height){
-  g_height = height;
+  safe_volatile_float_write(&g_height, height);
 }
 
 int GE_get_height(void){
@@ -214,21 +213,23 @@ struct GradientTrianglesCollection {
     R_ASSERT(free_gradient_triangles == NULL);
     
     GradientTriangles *gradient = used_gradient_triangles;
-    
-    while(gradient!=NULL){
-      GradientTriangles *next = gradient->next;
-      
-      if(gradient->referenceCount()==0) {
-        gradient->clean();
-        gradient->next = new_free;
-        new_free = gradient;
-      } else {
-        gradient->next = new_used;
-        new_used = gradient;
+
+    GL_lock();{
+      while(gradient!=NULL){
+        GradientTriangles *next = gradient->next;
+        
+        if(gradient->referenceCount()==0) {
+          gradient->clean();
+          gradient->next = new_free;
+          new_free = gradient;
+        } else {
+          gradient->next = new_used;
+          new_used = gradient;
+        }
+        
+        gradient = next;
       }
-      
-      gradient = next;
-    }
+    }GL_unlock();
     
     used_gradient_triangles = new_used;
     free_gradient_triangles = new_free;
@@ -405,7 +406,8 @@ static float get_pen_width_from_key(int key){
 }
 
 
-static QMutex mutex;
+static radium::Mutex mutex;
+
 
 static GE_Rgb background_color;
 
@@ -445,7 +447,7 @@ PaintingData *GE_get_painting_data(PaintingData *current_painting_data, bool *ne
   PaintingData *ret;
 
   {
-    QMutexLocker locker(&mutex);
+    radium::ScopedMutex locker(&mutex);
   
     if(g_last_written_painting_data==NULL) {
       *needs_repaint = false;
@@ -472,8 +474,8 @@ void GE_start_writing(void){
 
 // Called from the main thread
 void GE_end_writing(GE_Rgb new_background_color){
-  QMutexLocker locker(&mutex);
-
+  radium::ScopedMutex locker(&mutex);
+  
   if (g_last_written_painting_data != NULL) // Unnecessary, but the code is clearer this way. It shows that the variable might be NULL.
     delete g_last_written_painting_data;
 
@@ -530,7 +532,7 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
   GE_Rgb new_background_color;
 
   {
-    QMutexLocker locker(&mutex);
+    radium::ScopedMutex locker(&mutex);
     new_background_color = background_color;
   }
 

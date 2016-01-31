@@ -1015,8 +1015,8 @@ namespace{
           if(plugin != NULL){
             volatile struct Patch *patch = plugin->patch;
             if(patch!=NULL){
-              if(patch->visual_note_intencity > 0) {
-                patch->visual_note_intencity--; // We're writing to the same variable from two threads simultaneously here, but it shouldn't be a problem.
+              if(ATOMIC_GET(patch->visual_note_intencity) > 0) {
+                ATOMIC_ADD_RETURN_OLD(patch->visual_note_intencity, -1);
                 //printf("intencity: %d\n",intencity);
                 int x1,y1,x2,y2;
                 CHIP_get_name_coordinates(x1,y1,x2,y2);

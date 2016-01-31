@@ -18,8 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 
-#include "../common/OS_Player_proc.h"
-
 static QTime time234;
 
 double TIME_get_ms(void){

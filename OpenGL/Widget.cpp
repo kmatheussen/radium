@@ -60,6 +60,12 @@ static void set_realtime(int type, int priority){
 #endif
 
 
+DEFINE_ATOMIC(char *, GE_vendor_string) = NULL;
+DEFINE_ATOMIC(char *, GE_renderer_string) = NULL;
+DEFINE_ATOMIC(char *, GE_version_string) =NULL;
+DEFINE_ATOMIC(uint32_t, GE_opengl_version_flags) = 0;
+
+
 static bool g_safe_mode = false;
 
   
@@ -107,16 +113,11 @@ static QWaitCondition g_ack_pause_gl_thread;
 static radium::Semaphore g_order_make_current;
 static QWaitCondition g_ack_make_current;
 
-volatile char *GE_vendor_string=NULL;
-volatile char *GE_renderer_string=NULL;
-volatile char *GE_version_string=NULL;
-volatile uint32_t GE_opengl_version_flags = 0;
-
-static volatile int g_curr_realline;
+static DEFINE_ATOMIC(int, g_curr_realline);
 
 // TS (called from both main thread and opengl thread)
 void GE_set_curr_realline(int curr_realline){
-  g_curr_realline = curr_realline;
+  ATOMIC_SET(g_curr_realline, curr_realline);
 }
 
 // OpenGL thread
@@ -294,7 +295,7 @@ public:
 
   PaintingData *painting_data;
 
-  volatile bool is_training_vblank_estimator;
+  DEFINE_ATOMIC(bool, is_training_vblank_estimator);
   volatile double override_vblank_value;
   bool has_overridden_vblank_value;
 
@@ -312,7 +313,6 @@ public:
     , new_width(500)
     , new_height(500)
     , painting_data(NULL)
-    , is_training_vblank_estimator(true)
     , override_vblank_value(-1.0)
     , has_overridden_vblank_value(false)
     , last_scroll_pos(-1.0f)
@@ -320,6 +320,7 @@ public:
     , last_curr_realline(-1)
     , sleep_when_not_painting(true) //SETTINGS_read_bool("opengl_sleep_when_not_painting", false))
   {
+    ATOMIC_SET(is_training_vblank_estimator, true);
     setMouseTracking(true);
     //setAttribute(Qt::WA_PaintOnScreen);
   }
@@ -447,7 +448,7 @@ private:
     if(!root->play_cursor_onoff && ATOMIC_GET(pc->isplaying) && pc->playertask_has_been_called) { // When pc->playertask_has_been_called is true, we can be sure that the timing values are valid.
       return find_current_realline_while_playing(sv);
     } else
-      return g_curr_realline;
+      return ATOMIC_GET(g_curr_realline);
   }
 
   // OpenGL thread
@@ -502,11 +503,11 @@ private:
     
     double till_realline;
     if (root->play_cursor_onoff)
-      till_realline = g_curr_realline;
+      till_realline = ATOMIC_GET(g_curr_realline);
     else if (current_realline_while_playing_is_valid)
       till_realline = current_realline_while_playing;
     else
-      till_realline = g_curr_realline;
+      till_realline = ATOMIC_GET(g_curr_realline);
 
     float scroll_pos = GE_scroll_pos(sv, till_realline);
       
@@ -515,7 +516,7 @@ private:
     if(ATOMIC_GET(pc->isplaying) && sv->block!=pc->block) // Do the sanity check once more. pc->block might have changed value during computation of pos.
       return false;
 
-    if (needs_repaint==false && scroll_pos==last_scroll_pos && current_realline_while_playing==last_current_realline_while_playing && g_curr_realline==last_curr_realline)
+    if (needs_repaint==false && scroll_pos==last_scroll_pos && current_realline_while_playing==last_current_realline_while_playing && ATOMIC_GET(g_curr_realline)==last_curr_realline)
       return false;
     
     //printf("scrolling\n");
@@ -563,7 +564,7 @@ private:
     
     last_scroll_pos = scroll_pos;
     last_current_realline_while_playing = current_realline_while_playing;
-    last_curr_realline = g_curr_realline;
+    last_curr_realline = ATOMIC_GET(g_curr_realline);
   
     return true;
   }
@@ -600,26 +601,26 @@ public:
 
     g_is_currently_pausing = false;
     
-    if (GE_version_string==NULL) {
-      GE_vendor_string = V_strdup((const char*)glGetString(GL_VENDOR));
-      GE_renderer_string = V_strdup((const char*)glGetString(GL_RENDERER));
-      GE_version_string = V_strdup((const char*)glGetString(GL_VERSION));
-      printf("vendor: %s, renderer: %s, version: %s \n",(const char*)GE_vendor_string,(const char*)GE_renderer_string,(const char*)GE_version_string);
+    if (ATOMIC_GET(GE_version_string)==NULL) {
+      ATOMIC_SET(GE_vendor_string, V_strdup((const char*)glGetString(GL_VENDOR)));
+      ATOMIC_SET(GE_renderer_string, V_strdup((const char*)glGetString(GL_RENDERER)));
+      ATOMIC_SET(GE_version_string, V_strdup((const char*)glGetString(GL_VERSION)));
+      printf("vendor: %s, renderer: %s, version: %s \n",(const char*)ATOMIC_GET(GE_vendor_string),(const char*)ATOMIC_GET(GE_renderer_string),(const char*)ATOMIC_GET(GE_version_string));
 
-      GE_opengl_version_flags = QGLFormat::openGLVersionFlags();
+      ATOMIC_SET(GE_opengl_version_flags, QGLFormat::openGLVersionFlags());
       //abort();
     }
     
     if (has_overridden_vblank_value==false && override_vblank_value > 0.0) {
 
       time_estimator.set_vblank(override_vblank_value);
-      is_training_vblank_estimator = false;
+      ATOMIC_SET(is_training_vblank_estimator, false);
       has_overridden_vblank_value = true;
 
     } else {
 
-      if(is_training_vblank_estimator)
-        is_training_vblank_estimator = time_estimator.train();
+      if(ATOMIC_GET(is_training_vblank_estimator))
+        ATOMIC_SET(is_training_vblank_estimator, time_estimator.train());
 
     }
 
@@ -632,7 +633,7 @@ public:
     if (g_safe_mode)
       GL_lock();
         
-    if (is_training_vblank_estimator==true)
+    if (ATOMIC_GET(is_training_vblank_estimator)==true)
       swap();
 
     else if (!canDraw())
@@ -653,7 +654,7 @@ public:
 
   // Main thread
   void set_vblank(double value){
-    override_vblank_value = value;
+    safe_double_write(&override_vblank_value, value); // silence tsan. TODO: It's probably not that safe.
   }
 
   // Necessary to avoid error with clang++.
@@ -958,7 +959,7 @@ QWidget *GL_create_widget(QWidget *parent){
   if (do_estimate_questionmark() == true) {
 
     setup_widget(parent);
-    widget->set_vblank(GL_get_estimated_vblank());
+    widget->set_vblank(GL_get_estimated_vblank()); // hmm.
 
   } else {
 
@@ -969,7 +970,7 @@ QWidget *GL_create_widget(QWidget *parent){
     setup_widget(parent);    
     show_message_box(&box);
     
-    while(widget->is_training_vblank_estimator==true) {
+    while(ATOMIC_GET(widget->is_training_vblank_estimator)==true) {
       if(box.clickedButton()!=NULL){
         widget->set_vblank(GL_get_estimated_vblank());
         store_use_estimated_vblank(true);
@@ -991,15 +992,15 @@ QWidget *GL_create_widget(QWidget *parent){
     box.close();
   }
 
-  while(GE_vendor_string==NULL || GE_renderer_string==NULL || GE_version_string==NULL)
+  while(ATOMIC_GET(GE_vendor_string)==NULL || ATOMIC_GET(GE_renderer_string)==NULL || ATOMIC_GET(GE_version_string)==NULL)
     usleep(5*1000);
   
   {
-    QString s_vendor((const char*)GE_vendor_string);
-    QString s_renderer((const char*)GE_renderer_string);
-    QString s_version((const char*)GE_version_string);
+    QString s_vendor((const char*)ATOMIC_GET(GE_vendor_string));
+    QString s_renderer((const char*)ATOMIC_GET(GE_renderer_string));
+    QString s_version((const char*)ATOMIC_GET(GE_version_string));
     qDebug() << "___ GE_version_string: " << s_version;
-    printf("vendor: %s, renderer: %s, version: %s \n",(const char*)GE_vendor_string,(const char*)GE_renderer_string,(const char*)GE_version_string);
+    printf("vendor: %s, renderer: %s, version: %s \n",(const char*)ATOMIC_GET(GE_vendor_string),(const char*)ATOMIC_GET(GE_renderer_string),(const char*)ATOMIC_GET(GE_version_string));
     //getchar();
 
     bool show_mesa_warning = true;

@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "windows_proc.h"
 #include "OS_settings_proc.h"
 #include "../mmd2loader/mmd2load_proc.h"
+#include "../OpenGL/Widget_proc.h"
+#include "OS_Player_proc.h"
 
 #ifdef _AMIGA
 #include "Amiga_bs.h"
@@ -157,9 +159,13 @@ static bool Load(const wchar_t *filename){
 #endif
 	CloseAllTrackerWindows();
 
-	root=newroot;		//BANG!
-
-	DLoadRoot(newroot);
+        GL_lock();{
+          PLAYER_lock();{
+            root=newroot;		//BANG!
+          }PLAYER_unlock();
+        }GL_unlock();
+        
+        DLoadRoot(newroot);
 
         if(COMMENT_show_after_loading())
           COMMENTDIALOG_open();

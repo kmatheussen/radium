@@ -13,7 +13,7 @@
  */
 
 
-#include <QAtomicInt>
+//#include <QAtomicInt>
 
 
 #include "sema.h"
@@ -25,8 +25,10 @@ namespace radium{
 class Semaphore{
 
   private:
-    
-    QAtomicInt m_count;
+
+  DEFINE_ATOMIC(int, m_count);
+  //QAtomicInt m_count;
+  
 #if 0
   cpp11onmulticore::LightweightSemaphore m_sema; // Calling pthread_yield inside the spin lock gives extremly promising results though. Must be investigated more.
 #else
@@ -41,11 +43,13 @@ class Semaphore{
     Semaphore(int n = 0)
     {
       R_ASSERT(n >= 0);
-      m_count = n;
+      ATOMIC_SET(m_count, n);
+      //m_count = n;
     }
 
     int numSignallers(void) {
-      return int(m_count);
+      return ATOMIC_GET(m_count);
+      //return int(m_count);
     }
 
     int numWaiters(void){
@@ -56,13 +60,16 @@ class Semaphore{
     bool tryWait(void){
 
       for(;;){
-        int old_count = int(m_count);
+        int old_count = ATOMIC_GET(m_count);
+        //int old_count = int(m_count);
 
         if (old_count <= 0)
           return false;
 
-        if (m_count.testAndSetOrdered(old_count, old_count-1)==true)
+        if (ATOMIC_COMPARE_AND_SET_INT(m_count, old_count, old_count-1)==true)
           return true;
+        //        if (m_count.testAndSetOrdered(old_count, old_count-1)==true)
+        //          return true;
       }
 
       return false;
@@ -71,9 +78,13 @@ class Semaphore{
   
     void wait(void)
     {
+      if (ATOMIC_ADD_RETURN_OLD(m_count, -1) <= 0)
+        m_sema.wait();
+      /*
       if (m_count.fetchAndAddOrdered(-1) <= 0) {
         m_sema.wait();
       }
+      */
     }
 
     void wait(int n){
@@ -84,9 +95,14 @@ class Semaphore{
   
     void signal(void)
     {
+      if (ATOMIC_ADD_RETURN_OLD(m_count, 1) < 0)
+        m_sema.signal();
+      
+      /*
       if (m_count.fetchAndAddOrdered(1) < 0) {
         m_sema.signal();
       }
+      */
     }
 
     void signal(int n){

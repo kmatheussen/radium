@@ -15,6 +15,23 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+
+#ifndef RADIUM_COMMON_NSMTRACKER_H
+#define RADIUM_COMMON_NSMTRACKER_H 1
+
+
+#ifdef LANGSPEC
+#error "LANGSPEC already defined"
+#endif
+
+#  ifdef __cplusplus
+#    define LANGSPEC "C"
+#  else
+#    define LANGSPEC
+#  endif
+
+
+
 #ifndef __SSE2__
 #error "SSE2 is missing (i.e. -msse2 is lacking)"
 #endif
@@ -59,7 +76,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 
-
 /******************************************************************
   Main header file for the tracker. Each struct often has a source-
   file with the same, or nearly the same, name.
@@ -69,14 +85,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   OS_*_proc.h files are not.
 ******************************************************************/
 
-#ifndef TRACKER_DEFINE
-#define TRACKER_DEFINE 1
-
-#  ifdef __cplusplus
-#    define LANGSPEC "C"
-#  else
-#    define LANGSPEC
-#  endif
 
 #if !USE_GTK_VISUAL && !USE_GTK_REQTYPE && !USE_GTK_MENU
 #  define GTK_IS_USED 0
@@ -203,6 +211,11 @@ static inline float scale(float x, float x1, float x2, float y1, float y2){
                 );
 }
 
+/*********************************************************************
+	time.h
+*********************************************************************/
+
+extern LANGSPEC double TIME_get_ms(void);
 
 
 /*********************************************************************
@@ -581,7 +594,7 @@ struct Patch{
   int num_event_receivers;
   struct Patch *event_receivers[MAX_NUM_EVENT_RECEIVERS];
 
-  volatile int visual_note_intencity; // Used by the mixer to keep track of how bright the note indicator should light up.
+  DEFINE_ATOMIC(int, visual_note_intencity); // Used by the mixer to keep track of how bright the note indicator should light up.
 
   volatile bool widget_needs_to_be_updated;
 };
@@ -1504,14 +1517,4 @@ struct NoteAdds_block{
 
 
 #endif
-
-
-
-
-
-
-
-
-
-
 

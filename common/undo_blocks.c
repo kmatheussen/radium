@@ -48,12 +48,12 @@ void Undo_Block(
   static struct WTracks *last_wtrack;
   static int last_realline;
 
-  static int64_t last_undo_block_time = -1000;
-  int64_t time_now = MIXER_get_time();
-
+  static double last_undo_block_time = -1000;
+  double time_now = TIME_get_ms();
+  
   //printf("last: %d, now: %d, diff: %d\n",(int)last_undo_block_time,(int)time_now,(int)(time_now-last_undo_block_time));
 
-  if( (time_now-last_undo_block_time) > pc->pfreq*3 // more than 3 seconds.
+  if( (time_now-last_undo_block_time) > 1000*3 // more than 3 seconds.
       || wblock!=last_wblock
       || wtrack!=last_wtrack
       || realline!=last_realline

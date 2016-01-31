@@ -4,7 +4,7 @@
 #include <QThread>
 #include <QAtomicInt>
 
-QAtomicInt g_num_waits(0);
+//QAtomicInt g_num_waits(0);
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
@@ -80,7 +80,7 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
   SoundProducer *next = NULL;
   
   for(SoundProducerLink *link : sp->_output_links)
-    if (link->is_active)
+    if (ATOMIC_GET_RELAXED(link->is_active)) // We can relax since is_active can only be set in the main mixer thread before running the multicore threads
       dec_sp_dependency(link->source, link->target, &next);
 
   if (next != NULL){
