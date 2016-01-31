@@ -281,3 +281,30 @@
          (find-first (cdr das-list) func))))
 
 
+(define (split-list das-list func)
+  (let loop ((before '())
+             (after das-list))
+    (cond ((null? after)
+           (list (reverse before) '()))
+          ((func (car after))
+           (list (reverse before) after))
+          (else
+           (loop (cons (car after) before)
+                 (cdr after))))))
+  
+(define (take-while das-list func)
+  (cond ((null? das-list)
+         '())
+        ((func (car das-list))
+         (cons (car das-list)
+               (take-while (cdr das-list) func)))
+        (else
+         '())))
+
+(define (remove-while das-list func)
+  (cond ((null? das-list)
+         '())
+        ((func (car das-list))
+         (remove-while (cdr das-list) func))
+        (else
+         das-list)))

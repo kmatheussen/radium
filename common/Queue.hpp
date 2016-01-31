@@ -4,7 +4,7 @@
 
 #include <boost/version.hpp>
 #if (BOOST_VERSION < 100000) || ((BOOST_VERSION / 100 % 1000) < 60)
-  #error "Boost too old. Need at least 1.60.\n Quick fix: cd $HOME ; wget http://downloads.sourceforge.net/project/boost/boost/1.60.0/boost_1_60_0.tar.bz2 ; tar xvjf boost_1_60_0.tar.gz (that's it!)"
+  #error "Boost too old. Need at least 1.60.\n Quick fix: cd $HOME ; wget http://downloads.sourceforge.net/project/boost/boost/1.60.0/boost_1_60_0.tar.bz2 ; tar xvjf boost_1_60_0.tar.bz2 (that's it!)"
 #endif
 #include <boost/lockfree/queue.hpp>
 
