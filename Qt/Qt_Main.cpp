@@ -1190,11 +1190,14 @@ int radium_main(char *arg){
 
   MW_cleanup(); // Stop all sound properly. Don't want clicks when exiting.
 
-  EndProgram();
+  ATOMIC_SET(is_starting_up, true); // Tell the mixer that program is not running
+  usleep(3000); // wait a little bit so the player gets back to the main loop
+  
+  EndProgram(); // shut down most of the program, except audio
   posix_EndPlayer();
   //EndGuiThread();
 
-  MIXER_stop();
+  MIXER_stop(); // shut down mixer
   
   CRASHREPORTER_close();
 
