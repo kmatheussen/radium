@@ -989,7 +989,7 @@ X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.c
 $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
 Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h
-	$(GPLUSPLUS) $(P)Qt_Main.cpp $(QTOPT) -Wno-error $(IS_LINUX_BINARY)
+	$(GPLUSPLUS) $(P)Qt_Main.cpp $(QTOPT) $(IS_LINUX_BINARY)
 
 Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h
 	$(CCC) $(P)Qt_visual.cpp $(QTOPT)
@@ -1374,7 +1374,7 @@ buildtype.opt: #Makefile
 #		echo "$(RELEASE_BUILD_OPTS_WITHOUT_NDEBUG)" >buildtype.opt ; \
 
 
-flagopts.opt: Makefile
+flagopts.opt: #Makefile
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
 		echo "$(FLAGOPTS)" >flagopts.opt ; \
 	else \
@@ -1712,13 +1712,13 @@ crashreporter_windows.o: crashreporter/crashreporter_windows.c
 #	$(CC) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
 GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp
-	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS) -Wno-error=unused-variable
+	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS) #-Wno-error=unused-variable
 
 Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp
 	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT)
 
-Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp
-	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)
+Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp
+	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT) #-Wno-error=unused-variable
 
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 	$(CC) OpenGL/do.m $(OPT)
@@ -1746,21 +1746,21 @@ scheme.o: embedded_scheme/scheme.cpp
 
 QHTTPSERVERFLAGS = $(CPPOPT) $(QT_CFLAGS) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT
 
-qhttpconnection.o:
+qhttpconnection.o: bin/packages/qhttpserver-master/src/qhttpconnection.cpp
 	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpconnection.cpp $(QHTTPSERVERFLAGS)
-qhttprequest.o:
+qhttprequest.o: bin/packages/qhttpserver-master/src/qhttprequest.cpp
 	$(CCC) -c bin/packages/qhttpserver-master/src/qhttprequest.cpp $(QHTTPSERVERFLAGS)
-qhttpresponse.o:
+qhttpresponse.o: bin/packages/qhttpserver-master/src/qhttpresponse.cpp
 	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpresponse.cpp $(QHTTPSERVERFLAGS)
-qhttpserver.o:
+qhttpserver.o: bin/packages/qhttpserver-master/src/qhttpserver.cpp
 	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpserver.cpp $(QHTTPSERVERFLAGS)
-moc_qhttpconnection.o:
+moc_qhttpconnection.o: bin/packages/qhttpserver-master/build/moc_qhttpconnection.cpp
 	$(CCC) -c bin/packages/qhttpserver-master/build/moc_qhttpconnection.cpp $(QHTTPSERVERFLAGS)
-moc_qhttprequest.o:
+moc_qhttprequest.o: bin/packages/qhttpserver-master/build/moc_qhttprequest.cpp
 	$(CCC) -c bin/packages/qhttpserver-master/build/moc_qhttprequest.cpp $(QHTTPSERVERFLAGS)
-moc_qhttpresponse.o:
+moc_qhttpresponse.o: bin/packages/qhttpserver-master/build/moc_qhttpresponse.cpp
 	$(CCC) -c bin/packages/qhttpserver-master/build/moc_qhttpresponse.cpp $(QHTTPSERVERFLAGS)
-moc_qhttpserver.o:
+moc_qhttpserver.o: bin/packages/qhttpserver-master/build/moc_qhttpserver.cpp
 	$(CCC) -c bin/packages/qhttpserver-master/build/moc_qhttpserver.cpp $(QHTTPSERVERFLAGS)
 #ar cqs libqhttpserver.a qhttpconnection.o moc_qhttpconnection.o qhttprequest.o moc_qhttprequest.o qhttpresponse.o moc_qhttpresponse.o qhttpserver.o moc_qhttpserver.o
 

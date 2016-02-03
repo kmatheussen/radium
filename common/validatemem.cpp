@@ -7,7 +7,6 @@
 #include <assert.h>
 #include <unistd.h>
 
-#include <QMutex>
 #include <QThread>
 #include <QTime>
 
@@ -32,8 +31,6 @@
 #define ALIGN_UP(value) (((uintptr_t)value + sizeof(int32_t) - 1) & -sizeof(int32_t))
 
 
-
-//static QMutex *mutex = NULL; // must be allocated manually since it can be used before all static variables have been initialized.
 
 static DEFINE_SPINLOCK(spinlock);
 
@@ -256,8 +253,6 @@ static Memlink *validate_a_little(double max_time, Memlink *link){
 
   while(link!=NULL){
     {
-      //QMutexLocker locker(mutex);
-
       Memlink *next = link->next;
       
       if (link->can_be_freed) {
@@ -397,7 +392,6 @@ void *V_allocated_mem_real_start(void *allocated_mem){
 static void V_free_it2(MemoryFreeer freeer, void *actual_mem_real_start){
 
   mylock();
-  //QMutexLocker locker(mutex); // May be moved to remove_memlink
 
   LinkToMemlink *linktomemlink = (LinkToMemlink *) actual_mem_real_start;
   Memlink *link = linktomemlink->link;

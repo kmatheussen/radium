@@ -8,7 +8,6 @@
 
 #include <QWidget>
 #include <QGLWidget>
-#include <QMutex>
 #include <QTextEdit>
 #include <QMessageBox>
 #include <QApplication>
@@ -16,7 +15,6 @@
 #include <QMainWindow>
 #include <QGLFormat>
 #include <QDebug>
-#include <QWaitCondition>
 
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
@@ -27,6 +25,7 @@
 #include "../common/OS_Semaphores.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/Semaphores.hpp"
+#include "../common/Mutex.hpp"
 
 #define GE_DRAW_VL
 #include "GfxElements.h"
@@ -68,9 +67,11 @@ DEFINE_ATOMIC(uint32_t, GE_opengl_version_flags) = 0;
 
 static bool g_safe_mode = false;
 
-  
-static QMutex mutex;
+static radium::Mutex mutex;
+
 static __thread int g_gl_lock_visits = 0; // simulate a recursive mutex this way instead of using the QThread::Recursive option since QWaitCondition doesn't work with recursive mutexes. We need recursive mutexes since calls to qsometing->exec() (which are often executed inside the gl lock) can process qt events, which again can call some function which calls gl_lock. I don't know why qt processes qt events inside exec() though. That definitely seems like the wrong desing, or maybe it's even a bug in qt. If there is some way of turning this peculiar behavior off, I would like to know about it. I don't feel that this behaviro is safe.
+
+
 
 void GL_lock(void){
   g_gl_lock_visits++;  
@@ -108,10 +109,10 @@ bool GL_should_do_modal_windows(void){
 
 static volatile bool g_is_currently_pausing = false;
 static radium::Semaphore g_order_pause_gl_thread;
-static QWaitCondition g_ack_pause_gl_thread;
+static radium::CondWait g_ack_pause_gl_thread;
 
 static radium::Semaphore g_order_make_current;
-static QWaitCondition g_ack_make_current;
+static radium::CondWait g_ack_make_current;
 
 static DEFINE_ATOMIC(int, g_curr_realline);
 
@@ -590,13 +591,13 @@ public:
   virtual void updateEvent() {
 
     if (g_order_pause_gl_thread.tryWait()) {
-      g_ack_pause_gl_thread.wakeOne();
+      g_ack_pause_gl_thread.notify_one();
       OS_WaitAtLeast(1000);
     }
     
     if (g_order_make_current.tryWait()) {
       QGLWidget::makeCurrent();
-      g_ack_make_current.wakeOne();
+      g_ack_make_current.notify_one();
     }
 
     g_is_currently_pausing = false;
@@ -799,7 +800,7 @@ void GL_pause_gl_thread_a_short_while(void){
 #ifdef RELEASE
     printf("warning: g_ack_pause_gl_thread timed out\n");
 #else
-    GFX_Message(NULL, "warning: g_ack_pause_gl_thread timed out\n");
+    GFX_Message(NULL, "Debug mode warning: g_ack_pause_gl_thread timed out\n");
 #endif
   }
 }

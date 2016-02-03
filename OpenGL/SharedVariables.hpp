@@ -52,14 +52,14 @@ static inline float get_scrollbar_scroller_height(const struct Tracker_Windows *
 
 #ifdef OPENGL_GFXELEMENTS_CPP
 
-static QMutex vector_mutex;
+static radium::Mutex vector_mutex;
 static vector_t g_times_storage; // We just copy the 'times' pointer from 'root' (not the content), so we need to store the pointer somewhere where the GC can get hold of it.
 
 // Called from OpenGL thread
 SharedVariables::~SharedVariables(){
   V_free(realline_places);
   {
-    QMutexLocker locker(&vector_mutex);
+    radium::ScopedMutex locker(&vector_mutex);
     VECTOR_remove(&g_times_storage, times);
   }
 }
@@ -87,7 +87,7 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
   sv->times          = block->times;
 
   {
-    QMutexLocker locker(&vector_mutex);
+    radium::ScopedMutex locker(&vector_mutex);
     VECTOR_push_back(&g_times_storage, sv->times);
   }
   

@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include "pa_memorybarrier.h"
 
 #include "../common/nsmtracker.h"
+#include "../common/Mutex.hpp"
 #include "../common/visual_proc.h"
 #include "../common/player_proc.h"
 #include "../common/playerclass.h"
@@ -71,14 +72,12 @@ static Patch **g_click_patches = NULL; // only written to in RT_MIXER_get_all_cl
 
 
 #ifdef MEMORY_DEBUG
-#include <QMutex>
-#include <QWaitCondition>
 
-static QMutex debug_mutex;
-static QWaitCondition debug_wait;
+static radium::Mutex debug_mutex;
+static radium::CondWait debug_wait;
 
 void PLAYER_memory_debug_wake_up(void){
-  debug_wait.wakeOne();
+  debug_wait.notify_one();
 }
 #endif
 

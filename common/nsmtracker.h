@@ -45,9 +45,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
  
 #ifdef RELEASE
-#ifndef __OPTIMIZE__
-#error "Missing -O2 or -O3 compiler option"
-#endif
+  #ifndef __OPTIMIZE__
+    #error "Missing -O2 or -O3 compiler option"
+  #endif
+  #ifdef DISABLE_BDWGC
+    #error "DISABLE_BDWGC can not be defined in release mode. (runs out of memory pretty quickly then)"
+  #endif
+  #ifdef MEMORY_DEBUG
+    #error "MEMORY_DEBUG can not be defined in release mode. (plus that it makes more sense to use DISABLE_BDWGC together with fsanitizer=address instead of MEMORY_DEBUG)"
+  #endif
 #endif
 
 #ifndef DEBUG

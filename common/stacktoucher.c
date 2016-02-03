@@ -4,6 +4,10 @@
 
 // Should/must be compiled with -O0
 
+#ifdef __OPTIMIZE__
+#error "This file should/must not be compiled with optimization"
+#endif
+
 #define LANGSPEC
 
 #include "stacktoucher_proc.h"

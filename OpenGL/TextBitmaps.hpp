@@ -8,12 +8,12 @@
 #include <QHash>
 #include <QPainter>
 #include <QGLWidget>
-#include <QMutex>
 #include <QSet>
 #include <QCoreApplication>
 #include <QDir>
 
 #include "../common/nsmtracker.h"
+#include "../common/Mutex.hpp"
 #include "../common/OS_error_proc.h"
 #include "../Qt/Qt_colors_proc.h"
 
@@ -26,11 +26,11 @@
 namespace{
 
 struct MyMutex : public vl::IMutex{
-  QMutex mutex;
+  radium::Mutex mutex;
   int num_visitors;
   
   MyMutex() 
-    : mutex(QMutex::Recursive)
+    : mutex(true)
     , num_visitors(0) 
   {}
   
