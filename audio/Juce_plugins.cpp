@@ -127,11 +127,13 @@ namespace{
         return false;
       
       bool isplaying = ATOMIC_GET(pc->isplaying);
-      
+
+#if 0
       struct Blocks *block = isplaying ? pc->block : root->song->tracker_windows->wblock->block;
 
       if (block==NULL)
         return false;
+#endif
       
       result.bpm = RT_LPB_get_current_BPM();
       //printf("result.bpm: %f\n",result.bpm);
