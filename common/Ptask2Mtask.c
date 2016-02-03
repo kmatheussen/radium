@@ -89,7 +89,7 @@ void P2MUpdateSongPosCallBack(void){
     BS_SelectPlaylistPos(root->curr_playlist);
 
   if(window->curr_block!=root->curr_block){
-    printf("Bef. w: %d, r: %d\n",window->curr_block,root->curr_block);
+    //printf("Bef. w: %d, r: %d\n",window->curr_block,root->curr_block);
     if(setfirstpos){
       wblock->curr_realline=0;
       SetWBlock_Top_And_Bot_Realline(window,wblock);
@@ -99,7 +99,7 @@ void P2MUpdateSongPosCallBack(void){
                  window,
                  wblock
                  );
-    printf("Aft. w: %d, r: %d\n",window->curr_block,root->curr_block);
+    //printf("Aft. w: %d, r: %d\n",window->curr_block,root->curr_block);
   }      
 
 
