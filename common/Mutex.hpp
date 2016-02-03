@@ -4,7 +4,13 @@
 #define _RADIUM_COMMON_MUTEX_HPP
 
 #include <pthread.h>
-#include <time.h>
+#include <sys/time.h>
+
+#ifdef FOR_MACOSX
+# include <errno.h>
+# include <sys/types.h>
+# include <sys/socket.h>
+#endif
 
 
 // QMutex/QMutexLocker/QWaitCondition, which were used everywhere, and worked great othervice, didn't work with tsan, so that's the reason for this file.
@@ -15,6 +21,17 @@
 
 
 namespace radium {
+
+//clock_gettime is not implemented on OSX, but for the type of usage in this file, it's absolutely no problem at all using gettimeofday instead, so we just as well do that on all platforms. Code copied from http://stackoverflow.com/questions/5167269/clock-gettime-alternative-in-mac-os-x
+static inline int my_clock_gettime(struct timespec* t) {
+    struct timeval now;
+    int rv = gettimeofday(&now, NULL);
+    if (rv) return rv;
+    t->tv_sec  = now.tv_sec;
+    t->tv_nsec = now.tv_usec * 1000;
+    return 0;
+}
+  
 
 struct Mutex {
 
@@ -77,7 +94,7 @@ struct CondWait {
 
     R_ASSERT( (timeout_in_milliseconds % 1000) == 0); // Only whole seconds are supported for now (don't bother to support milliseconds until it's actually needed)
 
-    clock_gettime(CLOCK_REALTIME, &ts);
+    my_clock_gettime(&ts);
     ts.tv_sec += timeout_in_milliseconds/1000;
 
     int ret = pthread_cond_timedwait(&cond,&mutex->mutex,&ts);

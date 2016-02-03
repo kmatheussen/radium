@@ -15,7 +15,6 @@
 
 namespace radium {
 
-
 template <typename T, int SIZE> struct Queue{
 
 private:
@@ -27,7 +26,7 @@ public:
   
   // sets success to false if failed, true if succeeded. Return value is undefined if "success" is false.
   T tryGet(bool &success){
-    T ret;
+    T ret = 0;
     
     if (ready.tryWait()) {
     

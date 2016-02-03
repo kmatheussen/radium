@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/includepython.h"
 
 #include <signal.h>
+#include <unistd.h>
 
 #include <qapplication.h>
 #include <qsplashscreen.h>
