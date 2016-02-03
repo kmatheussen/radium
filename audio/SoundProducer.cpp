@@ -415,7 +415,7 @@ struct SoundProducer {
   
   SoundPlugin *_plugin;
 
-  QAtomicInt is_processed;
+  DEFINE_ATOMIC(bool, is_processed);
 
   int _num_inputs;
   int _num_outputs;
@@ -436,7 +436,7 @@ struct SoundProducer {
   float *_input_peaks;
   float *_volume_peaks;
 
-  QAtomicInt num_dependencies_left;  // = num_dependencies + (is_bus ? num_not_bus_descendants : 0). Decreased during processing. When the number is zero, it is scheduled for processing.
+  DEFINE_ATOMIC(int, num_dependencies_left);  // = num_dependencies + (is_bus ? num_not_bus_descendants : 0). Decreased during processing. When the number is zero, it is scheduled for processing.
 
   int num_dependencies;              // number of active input links
 
@@ -461,6 +461,9 @@ public:
   {    
     printf("New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
 
+    ATOMIC_SET(is_processed, false);
+    ATOMIC_SET(num_dependencies_left, 0);
+    
     R_ASSERT(THREADING_is_main_thread());
     
     _bus_num = get_bus_num(plugin);
@@ -1117,7 +1120,7 @@ void SP_write_mixer_tree_to_disk(QFile *file){
     volatile Patch *patch = plugin==NULL ? NULL : plugin->patch;
     const char *name = patch==NULL ? "<null>" : patch->name;
     
-    file->write(QString().sprintf("%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,name,sp->num_dependencies,int(sp->num_dependencies_left), sp->_output_links.size(), sp->_bus_descendant_type==IS_BUS_PROVIDER).toUtf8());
+    file->write(QString().sprintf("%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,name,sp->num_dependencies,ATOMIC_GET(sp->num_dependencies_left), sp->_output_links.size(), sp->_bus_descendant_type==IS_BUS_PROVIDER).toUtf8());
     
     for (SoundProducerLink *link : sp->_output_links){
       SoundPlugin *plugin = link->target->_plugin;
@@ -1134,7 +1137,7 @@ void SP_print_tree(void){
   radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
   
   for (SoundProducer *sp : *sp_all){
-    fprintf(stderr,"%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,sp->num_dependencies,int(sp->num_dependencies_left), sp->_output_links.size(), sp->_bus_descendant_type==IS_BUS_PROVIDER);
+    fprintf(stderr,"%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,sp->num_dependencies,ATOMIC_GET(sp->num_dependencies_left), sp->_output_links.size(), sp->_bus_descendant_type==IS_BUS_PROVIDER);
     /*
     fprintf(stderr,"  inputs:\n");
     for (SoundProducerLink *link : sp->_input_links){

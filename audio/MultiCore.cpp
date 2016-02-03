@@ -2,7 +2,6 @@
 
 
 #include <QThread>
-#include <QAtomicInt>
 
 //QAtomicInt g_num_waits(0);
 
@@ -33,14 +32,14 @@ static const char *settings_key = "num_cpus";
 
 static radium::Semaphore all_sp_finished;
 
-static QAtomicInt num_sp_left(0);
+static DEFINE_ATOMIC(int, num_sp_left) = 0;
 
 #define MAX_NUM_SP 8192
 
 static radium::Queue< SoundProducer* , MAX_NUM_SP > soundproducer_queue;
 
 static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp, SoundProducer **next){
-  if (!sp->num_dependencies_left.deref()) {
+  if (ATOMIC_ADD_RETURN_NEW(sp->num_dependencies_left, -1) == 0) {
     if (*next == NULL)
       *next = sp;
     else
@@ -57,9 +56,9 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
   //  fprintf(stderr,"   Processing %p: %s %d\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,int(sp->is_processed));
   //fflush(stderr);
   
-  R_ASSERT(int(sp->is_processed)==0);
-  sp->is_processed.ref();
-
+  bool old = ATOMIC_SET_RETURN_OLD(sp->is_processed, true);
+  R_ASSERT(old==false);
+  
   double start_time = monotonic_seconds();
   {
     sp->RT_process(time, num_frames, process_plugins);
@@ -68,7 +67,7 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
   if (duration > sp->running_time)
     sp->running_time = duration;
 
-  if (!num_sp_left.deref()){
+  if (ATOMIC_ADD_RETURN_NEW(num_sp_left, -1) == 0) {
     //printf("num_left1: %d\n",0);
     all_sp_finished.signal();
     return;
@@ -156,7 +155,7 @@ private slots:
 
 
 static void process_single_core(int64_t time, int num_frames, bool process_plugins){
-  while( num_sp_left>0 ) {
+  while( ATOMIC_GET_RELAXED(num_sp_left) > 0 ) {
     // R_ASSERT(sp_ready.numSignallers()>0); // This assert can sometimes fail if there are still running runners with must_exit==true.
     SoundProducer *sp = soundproducer_queue.get();    
     process_soundproducer(sp, time, num_frames, process_plugins);
@@ -201,13 +200,14 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
   
   // 2. initialize soundproducers
   
-  num_sp_left = sp_all.size();
+  ATOMIC_SET(num_sp_left, sp_all.size());
+  
   //  fprintf(stderr,"**************** STARTING %d\n",sp_all.size());
   //fflush(stderr);
 
   for (SoundProducer *sp : sp_all) {
-    sp->num_dependencies_left = sp->num_dependencies;
-    sp->is_processed=0;
+    ATOMIC_SET(sp->num_dependencies_left, sp->num_dependencies);
+    ATOMIC_SET(sp->is_processed, false); // is this really necessary? When could it be true?
   }
 
   

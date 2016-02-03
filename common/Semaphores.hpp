@@ -13,8 +13,6 @@
  */
 
 
-//#include <QAtomicInt>
-
 
 #include "sema.h"
 
@@ -27,7 +25,6 @@ class Semaphore{
   private:
 
   DEFINE_ATOMIC(int, m_count);
-  //QAtomicInt m_count;
   
 #if 0
   cpp11onmulticore::LightweightSemaphore m_sema; // Calling pthread_yield inside the spin lock gives extremly promising results though. Must be investigated more.

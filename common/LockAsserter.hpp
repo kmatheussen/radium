@@ -2,22 +2,23 @@
 #ifndef RADIUM_COMMON_LOCKASSERTER_HPP
 #define RADIUM_COMMON_LOCKASSERTER_HPP
 
-#include <QAtomicInt>
-
 
 namespace radium{
 
 class LockAsserter{
 
-  QAtomicInt number_of_readers;
-  QAtomicInt number_of_writers;
+  DEFINE_ATOMIC(int, number_of_readers);
+  DEFINE_ATOMIC(int, number_of_writers);
 
   LockAsserter(const LockAsserter&) = delete;
   LockAsserter& operator=(const LockAsserter&) = delete;
 
 public:
   
-  LockAsserter(){}
+  LockAsserter(){
+    ATOMIC_SET(number_of_readers, 0); // stupid c/c++
+    ATOMIC_SET(number_of_writers, 0); // stupid c/c++
+  }
   
   struct Exclusive {
     LockAsserter *lockAsserter;
@@ -25,14 +26,14 @@ public:
     Exclusive(LockAsserter *lockAsserter)
       : lockAsserter(lockAsserter)
     {
-      R_ASSERT(int(lockAsserter->number_of_readers)==0);
-      R_ASSERT(int(lockAsserter->number_of_writers)==0);
+      R_ASSERT(ATOMIC_GET(lockAsserter->number_of_readers)==0);
+      R_ASSERT(ATOMIC_GET(lockAsserter->number_of_writers)==0);
       
-      lockAsserter->number_of_writers.ref();
+      ATOMIC_ADD(lockAsserter->number_of_writers, 1);
     }
     
     ~Exclusive(){
-      lockAsserter->number_of_writers.deref();
+      ATOMIC_ADD(lockAsserter->number_of_writers, -1);
     }
   };
 
@@ -42,13 +43,13 @@ public:
     Shared(LockAsserter *lockAsserter)
       : lockAsserter(lockAsserter)
     {
-      R_ASSERT(int(lockAsserter->number_of_writers)==0);
+      R_ASSERT(ATOMIC_GET(lockAsserter->number_of_writers)==0);
       
-      lockAsserter->number_of_readers.ref();
+      ATOMIC_ADD(lockAsserter->number_of_readers, 1);
     }
     
     ~Shared(){
-      lockAsserter->number_of_readers.deref();
+      ATOMIC_ADD(lockAsserter->number_of_readers, -1);
     }
   };
 };

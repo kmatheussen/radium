@@ -301,7 +301,7 @@ int main(int argc, char **argv){
 #if !defined(CRASHREPORTER_BIN)
 
 #define MAX_NUM_PLUGIN_NAMES 100
-static QAtomicInt g_plugin_name_pos;
+static DEFINE_ATOMIC(int, g_plugin_name_pos) = 0;
 
 static const char *g_plugin_names[MAX_NUM_PLUGIN_NAMES]={g_no_plugin_name};
 //static QString g_plugin_name=g_no_plugin_name;
@@ -312,7 +312,7 @@ static QTime running_time;
 int CRASHREPORTER_set_plugin_name(const char *plugin_name){
   //fprintf(stderr,"plugin_name: -%s-\n",plugin_name);
 
-  int pos = g_plugin_name_pos.fetchAndAddOrdered(1) % MAX_NUM_PLUGIN_NAMES;
+  int pos = ATOMIC_ADD_RETURN_OLD(g_plugin_name_pos, 1) % MAX_NUM_PLUGIN_NAMES;
 
   if (plugin_name[0]!=0)
     g_plugin_names[pos] = plugin_name;

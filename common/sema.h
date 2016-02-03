@@ -112,6 +112,7 @@ public:
 
 //extern QAtomicInt g_num_waits;
 
+
 namespace cpp11onmulticore{
 class Semaphore
 {
