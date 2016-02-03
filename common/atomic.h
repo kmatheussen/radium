@@ -14,9 +14,15 @@
 #define ATOMIC_GET(name) \
   __atomic_load_n (&(name##_atomic), __ATOMIC_SEQ_CST)
 
+#define ATOMIC_GET_ARRAY(name,pos)                         \
+  __atomic_load_n (&(name##_atomic[pos]), __ATOMIC_SEQ_CST)
+
 #define ATOMIC_GET_RELAXED(name) \
   __atomic_load_n (&(name##_atomic), __ATOMIC_RELAXED)
 
+
+#define ATOMIC_SET_ARRAY(name, pos, val)                            \
+  __atomic_store_n (&(name##_atomic[pos]), (val), __ATOMIC_SEQ_CST)
 
 
 /*
@@ -105,6 +111,10 @@ static inline void safe_float_write(float *pos, float value){
 
 static inline void safe_volatile_float_write(volatile float *pos, float value){
   *pos = value;
+}
+
+static inline float safe_volatile_float_read(volatile float *pos){
+  return *pos;
 }
 
 // This function is suppressed from tsan

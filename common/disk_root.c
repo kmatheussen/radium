@@ -81,14 +81,14 @@ struct Root *LoadRoot(void){
 	ret->keyoct = root->keyoct;
         ret->quantitize_options = root->quantitize_options;
         ret->min_standardvel=MAX_VELOCITY*40/100;
-        ret->editonoff=true;
+        ATOMIC_SET(ret->editonoff, true);
         ret->grid_numerator=1;
         ret->grid_denominator=1;
         ret->signature.numerator=4;
         ret->signature.denominator=4;
         
-        ret->play_cursor_onoff = root->play_cursor_onoff;
-        ret->editor_follows_play_cursor_onoff = root->editor_follows_play_cursor_onoff;
+        ATOMIC_SET(ret->play_cursor_onoff, ATOMIC_GET(root->play_cursor_onoff));
+        ATOMIC_SET(ret->editor_follows_play_cursor_onoff, ATOMIC_GET(root->editor_follows_play_cursor_onoff));
         
 	GENERAL_LOAD(1,14);
 

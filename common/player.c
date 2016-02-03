@@ -133,7 +133,7 @@ void PlayerTask(STime reltime){
         } pc->is_treating_editor_events = false;
 
         
-        pc->playertask_has_been_called = true;
+        ATOMIC_SET(pc->playertask_has_been_called, true);
 }
 
 STime PLAYER_get_block_delta_time(STime time){

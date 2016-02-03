@@ -33,6 +33,9 @@ extern void GL_lock(void);
 extern void GL_unlock(void);
 extern bool GL_maybeLock(void);
 
+extern void GL_draw_lock(void);
+extern void GL_draw_unlock(void);
+    
 #include "../common/atomic.h"
     
 extern DEFINE_ATOMIC(char *, GE_vendor_string);

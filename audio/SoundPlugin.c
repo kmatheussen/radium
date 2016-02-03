@@ -269,8 +269,8 @@ SoundPlugin *PLUGIN_create_plugin(SoundPluginType *plugin_type, hash_t *plugin_s
 
   plugin->input_volume_is_on = true;
   plugin->output_volume_is_on = true;
-  plugin->bus_volume_is_on[0] = true;
-  plugin->bus_volume_is_on[1] = true;
+  ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 0, true);
+  ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 1, true);
   plugin->effects_are_on = true;
 
   plugin->volume = 1.0f;
@@ -305,7 +305,7 @@ SoundPlugin *PLUGIN_create_plugin(SoundPluginType *plugin_type, hash_t *plugin_s
 
   {
     plugin->compressor = COMPRESSOR_create(MIXER_get_sample_rate());
-    plugin->comp.is_on = false;
+    ATOMIC_SET(plugin->comp.is_on, false);
     plugin->comp.was_off = true;
     plugin->comp.was_on = false;
   }
@@ -666,24 +666,24 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
 
     case EFFNUM_BUS1:
       store_value = get_gain_store_value(value,value_type);
-      plugin->bus_volume[0] = store_value;
+      safe_float_write(&plugin->bus_volume[0], store_value);
       break;
     case EFFNUM_BUS1_ONOFF:
       if (value > 0.5f)
-        plugin->bus_volume_is_on[0] = true;
+        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 0, true);
       else
-        plugin->bus_volume_is_on[0] = false;
+        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 0, false);
       break;
 
     case EFFNUM_BUS2:
       store_value = get_gain_store_value(value,value_type);
-      plugin->bus_volume[1] = store_value;
+      safe_float_write(&plugin->bus_volume[1], store_value);
       break;
     case EFFNUM_BUS2_ONOFF:
       if (value > 0.5f)
-        plugin->bus_volume_is_on[1] = true;
+        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 1, true);
       else
-        plugin->bus_volume_is_on[1] = false;
+        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 1, false);
       break;
 
     case EFFNUM_PAN:
@@ -734,7 +734,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
         plugin->lowpass.plugins[ch]->type->set_effect_value(plugin->lowpass.plugins[ch], time, 0, store_value, PLUGIN_FORMAT_NATIVE, when);
       break;
     case EFFNUM_LOWPASS_ONOFF:
-      plugin->lowpass.is_on = value > 0.5f;
+      ATOMIC_SET(plugin->lowpass.is_on, value > 0.5f);
       break;
 
     case EFFNUM_EQ1_FREQ:
@@ -750,7 +750,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
         plugin->eq1.plugins[ch]->type->set_effect_value(plugin->eq1.plugins[ch], time, 1, store_value, PLUGIN_FORMAT_NATIVE, when);
       break;
     case EFFNUM_EQ1_ONOFF:
-      plugin->eq1.is_on = store_value > 0.5f;
+      ATOMIC_SET(plugin->eq1.is_on, store_value > 0.5f);
       break;
       
     case EFFNUM_EQ2_FREQ:
@@ -766,7 +766,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
         plugin->eq2.plugins[ch]->type->set_effect_value(plugin->eq2.plugins[ch], time, 1, store_value, PLUGIN_FORMAT_NATIVE, when);
       break;
     case EFFNUM_EQ2_ONOFF:
-      plugin->eq2.is_on = store_value > 0.5f;
+      ATOMIC_SET(plugin->eq2.is_on, store_value > 0.5f);
       break;
       
     case EFFNUM_LOWSHELF_FREQ:
@@ -782,7 +782,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
         plugin->lowshelf.plugins[ch]->type->set_effect_value(plugin->lowshelf.plugins[ch], time, 1, store_value, PLUGIN_FORMAT_NATIVE, when);
       break;
     case EFFNUM_LOWSHELF_ONOFF:
-      plugin->lowshelf.is_on = store_value > 0.5f;
+      ATOMIC_SET(plugin->lowshelf.is_on, store_value > 0.5f);
       break;
       
     case EFFNUM_HIGHSHELF_FREQ:
@@ -798,7 +798,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
         plugin->highshelf.plugins[ch]->type->set_effect_value(plugin->highshelf.plugins[ch], time, 1, store_value, PLUGIN_FORMAT_NATIVE, when);
       break;
     case EFFNUM_HIGHSHELF_ONOFF:
-      plugin->highshelf.is_on = store_value > 0.5f;
+      ATOMIC_SET(plugin->highshelf.is_on, store_value > 0.5f);
       break;
 
     case EFFNUM_EQ_SHOW_GUI:
@@ -831,7 +831,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
       COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_OUTPUT_VOLUME, store_value);
       break;
     case EFFNUM_COMP_ONOFF:
-      plugin->comp.is_on=store_value > 0.5f;
+      ATOMIC_SET(plugin->comp.is_on, store_value > 0.5f);
       //printf("storing comp. %d %f %f\n",plugin->comp.is_on,store_value,value);
       break;
 
@@ -846,7 +846,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
         plugin->delay.plugins[ch]->type->set_effect_value(plugin->delay.plugins[ch], time, 0, store_value, PLUGIN_FORMAT_NATIVE, when);
       break;
     case EFFNUM_DELAY_ONOFF:
-      plugin->delay.is_on = store_value > 0.5f;
+      ATOMIC_SET(plugin->delay.is_on, store_value > 0.5f);
       break;
       
     default:
@@ -931,12 +931,12 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
   case EFFNUM_BUS1:
     return gain_2_slider(plugin->bus_volume[0], MIN_DB, MAX_DB);
   case EFFNUM_BUS1_ONOFF:
-    return plugin->bus_volume_is_on[0]==true ? 1.0 : 0.0f;
+    return ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, 0)==true ? 1.0 : 0.0f;
 
   case EFFNUM_BUS2:
     return gain_2_slider(plugin->bus_volume[1], MIN_DB, MAX_DB);
   case EFFNUM_BUS2_ONOFF:
-    return plugin->bus_volume_is_on[1]==true ? 1.0 : 0.0f;
+    return ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, 1)==true ? 1.0 : 0.0f;
 
   case EFFNUM_PAN:
     return SMOOTH_get_target_value(&plugin->pan);
@@ -951,35 +951,35 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
   case EFFNUM_LOWPASS_FREQ:
     return frequency_2_slider(plugin->lowpass_freq,MIN_FREQ,MAX_FREQ);
   case EFFNUM_LOWPASS_ONOFF:
-    return plugin->lowpass.is_on==true ? 1.0 : 0.0f;
+    return ATOMIC_GET(plugin->lowpass.is_on)==true ? 1.0 : 0.0f;
 
   case EFFNUM_EQ1_FREQ:
     return frequency_2_slider(plugin->eq1_freq,MIN_FREQ,MAX_FREQ);
   case EFFNUM_EQ1_GAIN:
     return scale(plugin->eq1_db,FILTER_MIN_DB,FILTER_MAX_DB,0,1);
   case EFFNUM_EQ1_ONOFF:
-    return plugin->eq1.is_on==true ? 1.0 : 0.0f;
+    return ATOMIC_GET(plugin->eq1.is_on)==true ? 1.0 : 0.0f;
 
   case EFFNUM_EQ2_FREQ:
     return frequency_2_slider(plugin->eq2_freq,MIN_FREQ,MAX_FREQ);
   case EFFNUM_EQ2_GAIN:
     return scale(plugin->eq2_db,FILTER_MIN_DB,FILTER_MAX_DB,0,1);
   case EFFNUM_EQ2_ONOFF:
-    return plugin->eq2.is_on==true ? 1.0 : 0.0f;
+    return ATOMIC_GET(plugin->eq2.is_on)==true ? 1.0 : 0.0f;
     
   case EFFNUM_LOWSHELF_FREQ:
     return frequency_2_slider(plugin->lowshelf_freq,MIN_FREQ,MAX_FREQ);
   case EFFNUM_LOWSHELF_GAIN:
     return scale(plugin->lowshelf_db,FILTER_MIN_DB,FILTER_MAX_DB,0,1);
   case EFFNUM_LOWSHELF_ONOFF:
-    return plugin->lowshelf.is_on==true ? 1.0 : 0.0f;
+    return ATOMIC_GET(plugin->lowshelf.is_on)==true ? 1.0 : 0.0f;
     
   case EFFNUM_HIGHSHELF_FREQ:
     return frequency_2_slider(plugin->highshelf_freq,MIN_FREQ,MAX_FREQ);
   case EFFNUM_HIGHSHELF_GAIN:
     return scale(plugin->highshelf_db,FILTER_MIN_DB,FILTER_MAX_DB,0,1);
   case EFFNUM_HIGHSHELF_ONOFF:
-    return plugin->highshelf.is_on==true ? 1.0 : 0.0f;
+    return ATOMIC_GET(plugin->highshelf.is_on)==true ? 1.0 : 0.0f;
 
   case EFFNUM_EQ_SHOW_GUI:
     return plugin->show_equalizer_gui==true ? 1.0 : 0.0f;
@@ -999,7 +999,7 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
   case EFFNUM_COMP_OUTPUT_VOLUME:
     return COMPRESSOR_get_parameter(plugin->compressor, COMP_EFF_OUTPUT_VOLUME);
   case EFFNUM_COMP_ONOFF:
-    return plugin->comp.is_on==true ? 1.0 : 0.0f;
+    return ATOMIC_GET(plugin->comp.is_on)==true ? 1.0 : 0.0f;
 
   case EFFNUM_COMP_SHOW_GUI:
     return plugin->show_compressor_gui==true ? 1.0 : 0.0f;
@@ -1007,10 +1007,10 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
   case EFFNUM_DELAY_TIME:
     return scale(plugin->highshelf_db,DELAY_MIN,DELAY_MAX,0,1);
   case EFFNUM_DELAY_ONOFF:
-    return plugin->delay.is_on==true ? 1.0 : 0.0f;
+    return ATOMIC_GET(plugin->delay.is_on)==true ? 1.0 : 0.0f;
 #if 0    
   case EFFNUM_EDITOR_ONOFF:
-    return plugin->editor_is_on==true ? 1.0 : 0.0f;
+    return ATOMIC_GET(plugin->editor_is_on)==true ? 1.0 : 0.0f;
 #endif
 
   default:

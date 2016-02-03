@@ -110,7 +110,7 @@ typedef struct{
 	DEFINE_ATOMIC (bool, initplaying);
 
         bool is_treating_editor_events; // Used by "SCHEDULER_add_event" to determine whether to run events (which belongs to the current block) NOW, or schedule it.
-        volatile bool playertask_has_been_called; // if true, we can be sure that the timing values are valid.
+        DEFINE_ATOMIC(bool, playertask_has_been_called); // if true, we can be sure that the timing values are valid.
         
 	int playtype;
 

@@ -1755,7 +1755,7 @@ static void create_tracks(const struct Tracker_Windows *window, const struct WBl
 
 static void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *wblock){
 
-  GE_Context *c = GE_z(GE_alpha(GE_get_rgb(root->editonoff?CURSOR_EDIT_ON_COLOR_NUM:CURSOR_EDIT_OFF_COLOR_NUM), 0.2), Z_STATIC);
+  GE_Context *c = GE_z(GE_alpha(GE_get_rgb(ATOMIC_GET(root->editonoff)?CURSOR_EDIT_ON_COLOR_NUM:CURSOR_EDIT_OFF_COLOR_NUM), 0.2), Z_STATIC);
   
   NInt track    = window->curr_track;
   int  subtrack = window->curr_track_sub;
@@ -1808,7 +1808,7 @@ static void create_cursor(const struct Tracker_Windows *window, const struct WBl
 }
 
 static void create_playcursor(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  if (root->play_cursor_onoff) {
+  if (ATOMIC_GET(root->play_cursor_onoff)) {
     
     GE_Context *c = GE_z(GE_alpha(GE_get_rgb(PLAY_CURSOR_COLOR_NUM), 0.3), Z_PLAYCURSOR);
     

@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "disk_temponodes_proc.h"
 #include "time_proc.h"
 #include "Beats_proc.h"
+#include "../OpenGL/Widget_proc.h"
 
 #include "disk_block_proc.h"
 
@@ -149,11 +150,13 @@ if(block==NULL) return;
 
 	DLoadTracks(newroot,block->tracks);
 
-	temp=root;
-	root=newroot;
-	UpdateSTimes(block);
-        UpdateBeats(block);
-	root=temp;
+        GL_draw_lock();{
+          temp=root;
+          root=newroot;
+          UpdateSTimes(block);
+          UpdateBeats(block);
+          root=temp;
+        }GL_draw_unlock();
 
 DLoadBlocks(newroot,NextBlock(block));
 }

@@ -157,7 +157,7 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
     release_slider->setValue(get_exp_inverted_value(get_compressor_parameter(_patch, COMP_EFF_RELEASE),1000,0,max_attack_release));
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    enable_checkbox->setChecked(plugin->comp.is_on);
+    enable_checkbox->setChecked(ATOMIC_GET(plugin->comp.is_on));
 
     //paint_all=true;
     //updateBackgroundImage();

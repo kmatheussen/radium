@@ -180,13 +180,15 @@ static bool add_library_reference(TypeData *type_data){
     }
 
     library->get_descriptor_func = get_descriptor_func;
+
+    type_data->descriptor = library->get_descriptor_func(type_data->index);
+  
+    if (type_data->descriptor==NULL) {
+      GFX_Message(NULL, "Unable to load plugin #%d in file \"%s\". That is not supposed to happen since it was possible to load the plugin when the program was initializing.", type_data->index, library->filename);
+      return false;
+    }
   }
 
-  type_data->descriptor = library->get_descriptor_func(type_data->index);
-  if (type_data->descriptor==NULL) {
-    GFX_Message(NULL, "Unable to load plugin #%d in file \"%s\". That is not supposed to happen since it was possible to load the plugin when the program was initializing.", type_data->index, library->filename);
-    return false;
-  }
 
   library->num_references++;
   
@@ -201,7 +203,7 @@ static void remove_library_reference(TypeData *type_data){
   if (library->num_references==0) {
     printf("**** Unloading %s\n",library->filename);
     library->library->unload();
-    type_data->descriptor = NULL; // Make it easier to discover if plugin is used after beeing freed.
+    type_data->descriptor = NULL; // although library->num_references==0, setting descriptor to NULL makes it easier to discover if plugin is used after beeing freed.
   }
 }
 
@@ -548,7 +550,7 @@ static void add_ladspa_plugin_type(QFileInfo file_info){
     plugin_type->data = type_data;
 
     type_data->library = library;
-    //type_data->descriptor = descriptor;
+    //type_data->descriptor = descriptor; // We unload the library later in this function, and then 'descriptor' won't be valid anymore.
     type_data->UniqueID = descriptor->UniqueID;
     type_data->Name = V_strdup(descriptor->Name);
     type_data->index = i;

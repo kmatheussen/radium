@@ -159,11 +159,11 @@ static bool Load(const wchar_t *filename){
 #endif
 	CloseAllTrackerWindows();
 
-        GL_lock();{
-          PLAYER_lock();{
+        GL_draw_lock();{
+          //PLAYER_lock();{ <-- Locks within locks are dangerous. But it doesn't matter since the player isn't playing now anyway.
             root=newroot;		//BANG!
-          }PLAYER_unlock();
-        }GL_unlock();
+          //}PLAYER_unlock();
+        }GL_draw_unlock();
         
         DLoadRoot(newroot);
 

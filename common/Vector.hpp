@@ -151,7 +151,7 @@ public:
 
       R_ASSERT(num_elements <= next_num_elements_max);
       
-      V_free(elements);
+      V_free(elements); // Fix. This is not RT safe.
       
       elements = next_elements;
       num_elements_max = next_num_elements_max;

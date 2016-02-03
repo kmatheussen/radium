@@ -68,17 +68,22 @@ DEFINE_ATOMIC(uint32_t, GE_opengl_version_flags) = 0;
 static bool g_safe_mode = false;
 
 static radium::Mutex mutex;
+static radium::Mutex draw_mutex(true); // recursive mutex
 
 static __thread int g_gl_lock_visits = 0; // simulate a recursive mutex this way instead of using the QThread::Recursive option since QWaitCondition doesn't work with recursive mutexes. We need recursive mutexes since calls to qsometing->exec() (which are often executed inside the gl lock) can process qt events, which again can call some function which calls gl_lock. I don't know why qt processes qt events inside exec() though. That definitely seems like the wrong desing, or maybe it's even a bug in qt. If there is some way of turning this peculiar behavior off, I would like to know about it. I don't feel that this behaviro is safe.
-
 
 
 void GL_lock(void){
   g_gl_lock_visits++;  
   if (g_gl_lock_visits>1)
     return;
-  
+
   mutex.lock();
+
+#if 0
+  if (g_safe_mode)
+    GL_draw_lock(); //something may deadlock
+#endif
 }
 
 void GL_unlock(void){
@@ -87,6 +92,11 @@ void GL_unlock(void){
   g_gl_lock_visits--;
   if (g_gl_lock_visits>0)
     return;
+
+#if 0
+  if (g_safe_mode)
+    GL_draw_unlock();
+#endif
   
   mutex.unlock();
 }
@@ -99,6 +109,15 @@ bool GL_maybeLock(void){
   return true;
 }
 
+void GL_draw_lock(void){
+  draw_mutex.lock();
+}
+
+void GL_draw_unlock(void){
+  draw_mutex.unlock();
+}
+
+
 static bool g_gl_widget_started = false;
 
 static bool g_should_do_modal_windows = false;
@@ -107,7 +126,7 @@ bool GL_should_do_modal_windows(void){
   return g_should_do_modal_windows;
 }
 
-static volatile bool g_is_currently_pausing = false;
+static DEFINE_ATOMIC(bool, g_is_currently_pausing) = false;
 static radium::Semaphore g_order_pause_gl_thread;
 static radium::CondWait g_ack_pause_gl_thread;
 
@@ -446,7 +465,7 @@ private:
 
   // OpenGL thread
   double find_till_realline(SharedVariables *sv){
-    if(!root->play_cursor_onoff && ATOMIC_GET(pc->isplaying) && pc->playertask_has_been_called) { // When pc->playertask_has_been_called is true, we can be sure that the timing values are valid.
+    if(!ATOMIC_GET(root->play_cursor_onoff) && ATOMIC_GET(pc->isplaying) && ATOMIC_GET(pc->playertask_has_been_called)) { // When pc->playertask_has_been_called is true, we can be sure that the timing values are valid.
       return find_current_realline_while_playing(sv);
     } else
       return ATOMIC_GET(g_curr_realline);
@@ -494,7 +513,7 @@ private:
     if(ATOMIC_GET(pc->isplaying) && sv->block!=pc->block) // sanity check
       return false;
 
-    bool current_realline_while_playing_is_valid = ATOMIC_GET(pc->isplaying) && pc->playertask_has_been_called;
+    bool current_realline_while_playing_is_valid = ATOMIC_GET(pc->isplaying) && ATOMIC_GET(pc->playertask_has_been_called);
 
     double current_realline_while_playing;
     if (current_realline_while_playing_is_valid)
@@ -503,7 +522,7 @@ private:
       current_realline_while_playing = 0.0;
     
     double till_realline;
-    if (root->play_cursor_onoff)
+    if (ATOMIC_GET_RELAXED(root->play_cursor_onoff))
       till_realline = ATOMIC_GET(g_curr_realline);
     else if (current_realline_while_playing_is_valid)
       till_realline = current_realline_while_playing;
@@ -561,7 +580,7 @@ private:
     GE_update_triangle_gradient_shaders(painting_data, scroll_pos);
     
     _rendering->render();
-    g_scroll_pos = scroll_pos;
+    safe_volatile_float_write(&g_scroll_pos, scroll_pos);
     
     last_scroll_pos = scroll_pos;
     last_current_realline_while_playing = current_realline_while_playing;
@@ -571,16 +590,12 @@ private:
   }
 
   // OpenGL thread
-  void swap(){
-    if (!g_safe_mode)
-      GL_lock();
-    {
-      // show rendering
-      if ( openglContext()->hasDoubleBuffer() )
-        openglContext()->swapBuffers();
-    }
-    if (!g_safe_mode)
-      GL_unlock();
+  void swap(void){
+    radium::ScopedMutex lock(&mutex);
+    
+    // show rendering
+    if ( openglContext()->hasDoubleBuffer() )
+      openglContext()->swapBuffers();
   }
 
 public:
@@ -600,7 +615,7 @@ public:
       g_ack_make_current.notify_one();
     }
 
-    g_is_currently_pausing = false;
+    ATOMIC_SET(g_is_currently_pausing, false);
     
     if (ATOMIC_GET(GE_version_string)==NULL) {
       ATOMIC_SET(GE_vendor_string, V_strdup((const char*)glGetString(GL_VENDOR)));
@@ -631,26 +646,37 @@ public:
 
     // This is the only place the opengl thread waits. When swap()/usleep() returns, updateEvent is called again immediately.
 
-    if (g_safe_mode)
-      GL_lock();
+    {
+      if (ATOMIC_GET(is_training_vblank_estimator)==true) {
+
+        swap();
+
+      } else {
+
+        bool must_swap;
+
+        {
+          radium::ScopedMutex lock(&draw_mutex);
+
+          if (canDraw())
+            must_swap = draw();
+          else
+            must_swap = true;
+        }
+
+        if (must_swap)
+          swap();
         
-    if (ATOMIC_GET(is_training_vblank_estimator)==true)
-      swap();
-
-    else if (!canDraw())
-      swap(); // initializing.
-
-    else if (draw()==true)
-      swap();
-
-    else if (g_safe_mode || !sleep_when_not_painting) // probably doesn't make any sense setting sleep_when_not_painting to false. Besides, setting it to false may cause 100% CPU usage (intel gfx) or very long calls to GL_lock() (nvidia gfx).
-      swap();
-    
-    else
-      usleep(1000 * time_estimator.get_vblank());
-
-    if (g_safe_mode)
-      GL_unlock();
+        else if (g_safe_mode || !sleep_when_not_painting) // probably doesn't make any sense setting sleep_when_not_painting to false. Besides, setting it to false may cause 100% CPU usage (intel gfx) or very long calls to GL_lock() (nvidia gfx).
+          swap();
+      
+        else
+          usleep(1000 * time_estimator.get_vblank());
+      
+        if (g_safe_mode)
+          GL_unlock();
+      }
+    }
   }
 
   // Main thread
@@ -785,14 +811,14 @@ void GL_pause_gl_thread_a_short_while(void){
   if (g_gl_widget_started == false) // deadlock without this check.
     return;
 
-  if (g_is_currently_pausing)
+  if (ATOMIC_GET(g_is_currently_pausing))
     return;
     
   R_ASSERT_RETURN_IF_FALSE(g_gl_lock_visits>=1);
   if (g_gl_lock_visits>=2) // If this happens we are probably called from inside a widget/dialog->exec() call. Better not wake up the gl thread.
     return;
 
-  g_is_currently_pausing = true;
+  ATOMIC_SET(g_is_currently_pausing, true);
   
   g_order_pause_gl_thread.signal();
 

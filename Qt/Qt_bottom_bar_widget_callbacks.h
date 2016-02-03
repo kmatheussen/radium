@@ -81,14 +81,17 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   struct Timer2 : public QTimer{
     Bottom_bar_widget *bottom_bar_widget;
     void timerEvent(QTimerEvent * e){
-      if (bottom_bar_widget->edit_onoff->isChecked() != root->editonoff)
-        bottom_bar_widget->edit_onoff->setChecked(root->editonoff);
-      if (bottom_bar_widget->click_onoff->isChecked() != root->clickonoff)
-        bottom_bar_widget->click_onoff->setChecked(root->clickonoff);
-      if (bottom_bar_widget->play_cursor_onoff->isChecked() != root->play_cursor_onoff)
-        bottom_bar_widget->play_cursor_onoff->setChecked(root->play_cursor_onoff);
-      if (bottom_bar_widget->editor_follows_play_cursor_onoff->isChecked() != root->editor_follows_play_cursor_onoff)
-        bottom_bar_widget->editor_follows_play_cursor_onoff->setChecked(root->editor_follows_play_cursor_onoff);
+      if (bottom_bar_widget->edit_onoff->isChecked() != ATOMIC_GET(root->editonoff))
+        bottom_bar_widget->edit_onoff->setChecked(ATOMIC_GET(root->editonoff));
+      
+      if (bottom_bar_widget->click_onoff->isChecked() != ATOMIC_GET(root->clickonoff))
+        bottom_bar_widget->click_onoff->setChecked(ATOMIC_GET(root->clickonoff));
+      
+      if (bottom_bar_widget->play_cursor_onoff->isChecked() != ATOMIC_GET(root->play_cursor_onoff))
+        bottom_bar_widget->play_cursor_onoff->setChecked(ATOMIC_GET(root->play_cursor_onoff));
+      
+      if (bottom_bar_widget->editor_follows_play_cursor_onoff->isChecked() != ATOMIC_GET(root->editor_follows_play_cursor_onoff))
+        bottom_bar_widget->editor_follows_play_cursor_onoff->setChecked(ATOMIC_GET(root->editor_follows_play_cursor_onoff));
     }
   };
 
@@ -198,7 +201,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     signature->setText(Rational(root->signature).toString());
     lpb->setValue(root->lpb);
     bpm->setValue(root->tempo);
-    editor_follows_play_cursor_onoff->setVisible(root->play_cursor_onoff);
+    editor_follows_play_cursor_onoff->setVisible(ATOMIC_GET(root->play_cursor_onoff));
   }
 
   void update_velocity_sliders(){
@@ -341,7 +344,7 @@ public slots:
   }
 
   void on_edit_onoff_toggled(bool val){
-    if(val!=root->editonoff)
+    if(val!=ATOMIC_GET(root->editonoff))
       switchEditOnOff();
   }
 

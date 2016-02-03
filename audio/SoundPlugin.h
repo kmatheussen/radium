@@ -240,7 +240,7 @@ typedef struct SoundPluginTypeContainer{
 
 typedef struct SystemFilter{
   struct SoundPlugin **plugins;
-  bool is_on;
+  DEFINE_ATOMIC(bool, is_on);
   bool was_on;
   bool was_off;
   int fade_pos;
@@ -287,7 +287,7 @@ typedef struct SoundPlugin{
   bool output_volume_is_on;
 
   float bus_volume[2];
-  bool bus_volume_is_on[2];
+  DEFINE_ATOMIC(bool, bus_volume_is_on)[2];
 
   Smooth pan; // between 0 and 1
   bool pan_is_on;

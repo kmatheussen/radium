@@ -67,21 +67,22 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
   if (duration > sp->running_time)
     sp->running_time = duration;
 
-  if (ATOMIC_ADD_RETURN_NEW(num_sp_left, -1) == 0) {
-    //printf("num_left1: %d\n",0);
-    all_sp_finished.signal();
-    return;
-  }
-
   //int num_left = num_sp_left;
   //printf("num_left2: %d\n",num_left);
 
   SoundProducer *next = NULL;
   
   for(SoundProducerLink *link : sp->_output_links)
-    if (ATOMIC_GET_RELAXED(link->is_active)) // We can relax since is_active can only be set in the main mixer thread before running the multicore threads
+    if (ATOMIC_GET_RELAXED(link->is_active)) // We can relax since is_active can only be set in the main mixer thread before running the multicore threads (But why is it atomic then?)
       dec_sp_dependency(link->source, link->target, &next);
 
+  // Important that we decrease 'num_sp_left' AFTER scheduling other soundproducers for processing. (i.e. calling when 'dec_sp_dependency')
+  if (ATOMIC_ADD_RETURN_NEW(num_sp_left, -1) == 0) {
+    R_ASSERT(next==NULL);
+    all_sp_finished.signal();
+    return;
+  }
+  
   if (next != NULL){
     sp = next;
     next = NULL;

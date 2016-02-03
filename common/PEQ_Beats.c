@@ -76,14 +76,14 @@ static void play_note(int64_t time, int note_num){
 static void scheduled_play_bar_note(int64_t time, const union SuperType *args){
   stop_last_played_note(time);
   //printf("** BAR\n");
-  if (root->clickonoff)
+  if (ATOMIC_GET(root->clickonoff))
     play_note(time, bar_note_num);
 }
 
 static void scheduled_play_beat_note(int64_t time, const union SuperType *args){
   stop_last_played_note(time);
   //printf("     BEAT **\n");
-  if (root->clickonoff)
+  if (ATOMIC_GET(root->clickonoff))
     play_note(time, beat_note_num);
 }
 

@@ -169,7 +169,7 @@ struct SoundProducerLink {
       
       int bus_num = SP_get_bus_num(target);
       
-      if (source_plugin->bus_volume_is_on[bus_num])
+      if (ATOMIC_GET_ARRAY(source_plugin->bus_volume_is_on, bus_num))
         return source_plugin->bus_volume[bus_num] * plugin_volume; // The links are invisible here, so it doesn't make sense multiplying with link_volume
       else
         return 0.0f;
@@ -824,7 +824,7 @@ public:
 
   // Quite chaotic with all the on/off is/was booleans.
   void RT_apply_system_filter(SystemFilter *filter, float **sound, int num_channels, int num_frames, bool process_plugins){
-    if(filter->is_on==false && filter->was_on==false)
+    if(ATOMIC_GET(filter->is_on)==false && filter->was_on==false)
       return;
 
     {
@@ -834,7 +834,7 @@ public:
       for(int ch=0;ch<num_channels;ch++)
         s[ch] = &filter_sound[ch*num_frames];
       
-      if(filter->is_on==true){
+      if(ATOMIC_GET(filter->is_on)==true){
         
         if(filter->was_off==true){ // fade in
           RT_apply_system_filter_apply(filter,sound,s,num_channels,num_frames, process_plugins);

@@ -293,7 +293,7 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   if (g_record_accurately_while_playing && is_playing) {
     
     if(cc>=0x80 && cc<0xa0)
-      if (root->editonoff)
+      if (ATOMIC_GET(root->editonoff))
         record_midi_event(msg);
 
   } else {
@@ -323,7 +323,7 @@ void MIDI_HandleInputMessage(void){
 
     ATOMIC_SET(g_msg, 0);
 
-    if(root->editonoff) {
+    if(ATOMIC_GET(root->editonoff)){
       float velocity = -1.0f;
       if (g_record_velocity)
         velocity = (float)MIDI_msg_byte3(msg) / 127.0;

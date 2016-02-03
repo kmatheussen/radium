@@ -68,7 +68,7 @@ extern void (*Ptask2MtaskCallBack)(void);
 static void PlayStopReally(bool doit){ 
         ATOMIC_SET(pc->isplaying, false);
 	ATOMIC_SET(pc->initplaying, false);
-        pc->playertask_has_been_called = false;
+        ATOMIC_SET(pc->playertask_has_been_called, false);
         pc->is_playing_range = false;
         
         printf("PlayStopReally called: %s\n",doit==true?"true":"false");
@@ -86,7 +86,7 @@ static void PlayStopReally(bool doit){
 #if !USE_OPENGL
 	if(doit) (*Ptask2MtaskCallBack)();
 #endif
-
+       
 	pc->end_time=0;
         pc->end_time_f=0;
 
@@ -247,10 +247,10 @@ void Play_set_curr_playing_realline(int realline, int blocknum){
 
 // called very often
 static void EditorFollowsPlayCursorLoop(void){
-  if (root->play_cursor_onoff==false)
+  if (ATOMIC_GET(root->play_cursor_onoff)==false)
     return;
   
-  if (root->editor_follows_play_cursor_onoff==false)
+  if (ATOMIC_GET(root->editor_follows_play_cursor_onoff)==false)
     return;
 
   struct Tracker_Windows *window = root->song->tracker_windows;

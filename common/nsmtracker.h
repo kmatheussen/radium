@@ -1483,10 +1483,10 @@ struct Root{
         int min_standardvel;
         int standardvel;
 
-	volatile bool editonoff;
-        volatile bool play_cursor_onoff;
-        volatile bool editor_follows_play_cursor_onoff;
-        volatile bool clickonoff;
+        DEFINE_ATOMIC(bool, editonoff);
+        DEFINE_ATOMIC(bool, play_cursor_onoff);
+        DEFINE_ATOMIC(bool, editor_follows_play_cursor_onoff);
+        DEFINE_ATOMIC(bool, clickonoff);
 };
 
 extern struct Root *root;

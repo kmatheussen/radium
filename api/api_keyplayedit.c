@@ -45,7 +45,7 @@ void keyDownPlay(int notenum,int windownum){
 	if(window==NULL || window->curr_track<0) return;
 
 	PATCH_playNoteCurrPos(window,notenum,-1);
-        if(root->editonoff)
+        if(ATOMIC_GET(root->editonoff))
           InsertNoteCurrPos(window,notenum,false,-1);
 }
 
@@ -58,7 +58,7 @@ void polyKeyDownPlay(int notenum,int windownum){
 	if(window==NULL || window->curr_track<0) return;
 
 	PATCH_playNoteCurrPos(window,notenum,-1);
-        if(root->editonoff)
+        if(ATOMIC_GET(root->editonoff))
           InsertNoteCurrPos(window,notenum,true,-1);
 }
 
@@ -104,9 +104,9 @@ void decKeyAdd(int decaddnum){
 
 void switchEditOnOff(void){
 	struct Tracker_Windows *window=getWindowFromNum(-1);
-	root->editonoff=root->editonoff?false:true;
+	ATOMIC_SET(root->editonoff, ATOMIC_GET(root->editonoff)?false:true);
         char temp[1000];
-        sprintf(temp,"Edit %s",root->editonoff?"On":"Off");
+        sprintf(temp,"Edit %s",ATOMIC_GET(root->editonoff)?"On":"Off");
         GFX_SetStatusBar(window,temp);
         window->must_redraw=true;
 }

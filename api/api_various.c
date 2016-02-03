@@ -176,18 +176,18 @@ void switchWindowConfiguration(void){
 }
 
 void enableMetronome(bool onoff){
-  root->clickonoff = onoff;
+  ATOMIC_SET(root->clickonoff, onoff);
 }
 
 void enablePlayCursor(bool onoff){
-  root->play_cursor_onoff = onoff;
+  ATOMIC_SET(root->play_cursor_onoff, onoff);
   
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   window->must_redraw = true;
 }
 
 void enableEditorFollowsPlayCursor(bool onoff){
-  root->editor_follows_play_cursor_onoff = onoff;
+  ATOMIC_SET(root->editor_follows_play_cursor_onoff, onoff);
   
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   window->must_redraw = true;
