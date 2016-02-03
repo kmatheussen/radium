@@ -1,3 +1,7 @@
+Changes 3.5.9 -> 3.6.0:
+* Fixed many bugs found by running ThreadSanitizer.
+
+
 Changes 3.5.7 -> 3.5.9:
 * mouse: Fix moving piano bar note end position for non-portamento notes
 * Make writing config file safer (less chance of corrupting the file)
