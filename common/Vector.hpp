@@ -17,6 +17,9 @@ private:
   int num_elements;
   
   T *next_elements;
+  
+  T *elements_ready_for_freeing;
+  
   int next_num_elements_max;
   
   LockAsserter lockAsserter;
@@ -34,6 +37,7 @@ public:
     : num_elements_max(4)
     , num_elements(0)
     , next_elements(NULL)
+    , elements_ready_for_freeing(NULL)
     , next_num_elements_max(0)
   {
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
@@ -95,9 +99,12 @@ public:
   // This function CAN be called in parallell with the const functions (i.e. the non-mutating ones),
   // but it can not be called in parallel with itself or any other non-const/mutating function.
   // (it is not asserted that this function is not called in parallell with itself)
+  //
+  // post_add MUST be called after calling add after calling ensure_there_is_room_for_one_more_without_having_to_allocate_memory.
   void ensure_there_is_room_for_one_more_without_having_to_allocate_memory(void){
     LOCKASSERTER_SHARED(&lockAsserter);
-    
+
+    R_ASSERT(elements_ready_for_freeing == NULL);
     R_ASSERT(next_elements == NULL);
     
     int new_num_elements = num_elements+1;
@@ -116,6 +123,16 @@ public:
     }
   }
 
+  // Must be called after calling 'add' if 'ensure_there_is_room_for_one_more_without_having_to_allocate_memory' was called before 'add'.
+  void post_add(void){
+    LOCKASSERTER_SHARED(&lockAsserter);
+    
+    if (elements_ready_for_freeing != NULL){
+      V_free(elements_ready_for_freeing);
+      elements_ready_for_freeing = NULL;
+    }
+  }
+  
 private:
     
     void basic_add(T t){
@@ -135,12 +152,14 @@ private:
 
 public:
   
-  // Only RT safe if ensure_there_is_room_for_one_more_without_having_to_allocate_memory is called first.
+  // Only RT safe if ensure_there_is_room_for_one_more_without_having_to_allocate_memory is called first AND post_add is called afterwards.
   //
   // This function can NOT be called in parallell with other functions
   void add(T t){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
-    
+
+    R_ASSERT(elements_ready_for_freeing == NULL);
+
     if (next_elements == NULL) {
 
       basic_add(t);
@@ -150,8 +169,8 @@ public:
       num_elements++;
 
       R_ASSERT(num_elements <= next_num_elements_max);
-      
-      V_free(elements); // Fix. This is not RT safe.
+
+      elements_ready_for_freeing = elements;
       
       elements = next_elements;
       num_elements_max = next_num_elements_max;
@@ -194,6 +213,7 @@ public:
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
     
     R_ASSERT(next_elements == NULL);
+    R_ASSERT(elements_ready_for_freeing == NULL);
     
     int pos;
     

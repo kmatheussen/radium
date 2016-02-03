@@ -649,6 +649,9 @@ public:
       SoundProducer::RT_set_bus_descendant_types();
     }PLAYER_unlock();
 
+    link->source->_output_links.post_add();
+    link->target->_input_links.post_add();
+
     return true;
   }
   
