@@ -70,7 +70,7 @@ void MIDIGetEvents(
 	patch=ListFindElement1(&instrument->patches->l,arg1);
       }
       
-      if( ! ATOMIC_GET(pc->isplaying)){
+      if( ! is_playing()){
 	window->wblock->wtrack->track->patch=patch;
 	DrawWTrackHeader(window,window->wblock,window->wblock->wtrack);
       }

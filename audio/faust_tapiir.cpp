@@ -5,7 +5,7 @@
 // license: "BSD"
 // copyright: "(c)GRAME 2006"
 //
-// Code generated with Faust 0.9.67 (http://faust.grame.fr)
+// Code generated with Faust 0.9.73 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
@@ -149,7 +149,6 @@ inline double 	min (double a, float b) 	{ return (a<b) ? a : b; }
 #define FAUSTFLOAT float
 #endif  
 
-typedef long double quad;
 
 #ifndef FAUSTCLASS 
 #define FAUSTCLASS Tapiir_dsp
@@ -261,9 +260,9 @@ class Tapiir_dsp : public dsp {
 		m->declare("music.lib/copyright", "GRAME");
 		m->declare("music.lib/version", "1.0");
 		m->declare("music.lib/license", "LGPL with exception");
-		m->declare("math.lib/name", "Math Library");
-		m->declare("math.lib/author", "GRAME");
 		m->declare("math.lib/copyright", "GRAME");
+		m->declare("math.lib/author", "GRAME");
+		m->declare("math.lib/name", "Math Library");
 		m->declare("math.lib/version", "1.0");
 		m->declare("math.lib/license", "LGPL with exception");
 	}
@@ -373,7 +372,7 @@ class Tapiir_dsp : public dsp {
 	}
 	virtual void buildUserInterface(UI* interface) {
 		interface->openVerticalBox("Tapiir");
-		interface->openTabBox("");
+		interface->openTabBox("0x00");
 		interface->openHorizontalBox("Tap 0");
 		interface->addVerticalSlider("delay (sec)", &fslider11, 0.0f, 0.0f, 5.0f, 0.01f);
 		interface->addVerticalSlider("gain", &fslider10, 1.0f, 0.0f, 1.0f, 0.1f);
@@ -427,9 +426,9 @@ class Tapiir_dsp : public dsp {
 		interface->addVerticalSlider("gain", &fslider50, 1.0f, 0.0f, 1.0f, 0.1f);
 		interface->addVerticalSlider("input 0", &fslider43, 1.0f, 0.0f, 1.0f, 0.1f);
 		interface->addVerticalSlider("input 1", &fslider42, 1.0f, 0.0f, 1.0f, 0.1f);
-		interface->addVerticalSlider("tap 0", &fslider48, 0.0f, 0.0f, 1.0f, 0.1f);
-		interface->addVerticalSlider("tap 1", &fslider47, 0.0f, 0.0f, 1.0f, 0.1f);
-		interface->addVerticalSlider("tap 2", &fslider49, 0.0f, 0.0f, 1.0f, 0.1f);
+		interface->addVerticalSlider("tap 0", &fslider49, 0.0f, 0.0f, 1.0f, 0.1f);
+		interface->addVerticalSlider("tap 1", &fslider48, 0.0f, 0.0f, 1.0f, 0.1f);
+		interface->addVerticalSlider("tap 2", &fslider47, 0.0f, 0.0f, 1.0f, 0.1f);
 		interface->addVerticalSlider("tap 3", &fslider46, 0.0f, 0.0f, 1.0f, 0.1f);
 		interface->addVerticalSlider("tap 4", &fslider45, 0.0f, 0.0f, 1.0f, 0.1f);
 		interface->addVerticalSlider("tap 5", &fslider44, 0.0f, 0.0f, 1.0f, 0.1f);
@@ -567,7 +566,7 @@ class Tapiir_dsp : public dsp {
 			fRec2[0] = fVec2[(IOTA-iSlow31)&524287];
 			fVec3[IOTA&524287] = (fSlow40 * ((((((((fSlow39 * fRec0[1]) + (fSlow38 * fRec1[1])) + (fSlow37 * fRec2[1])) + (fSlow36 * fRec3[1])) + (fSlow35 * fRec4[1])) + (fSlow34 * fRec5[1])) + (fSlow33 * fTemp1)) + (fSlow32 * fTemp0)));
 			fRec3[0] = fVec3[(IOTA-iSlow41)&524287];
-			fVec4[IOTA&524287] = (fSlow50 * (((((((fSlow49 * fRec2[1]) + ((fSlow48 * fRec0[1]) + (fSlow47 * fRec1[1]))) + (fSlow46 * fRec3[1])) + (fSlow45 * fRec4[1])) + (fSlow44 * fRec5[1])) + (fSlow43 * fTemp1)) + (fSlow42 * fTemp0)));
+			fVec4[IOTA&524287] = (fSlow50 * ((((((((fSlow49 * fRec0[1]) + (fSlow48 * fRec1[1])) + (fSlow47 * fRec2[1])) + (fSlow46 * fRec3[1])) + (fSlow45 * fRec4[1])) + (fSlow44 * fRec5[1])) + (fSlow43 * fTemp1)) + (fSlow42 * fTemp0)));
 			fRec4[0] = fVec4[(IOTA-iSlow51)&524287];
 			fVec5[IOTA&524287] = (fSlow60 * ((((((((fSlow59 * fRec0[1]) + (fSlow58 * fRec1[1])) + (fSlow57 * fRec2[1])) + (fSlow56 * fRec3[1])) + (fSlow55 * fRec4[1])) + (fSlow54 * fRec5[1])) + (fSlow53 * fTemp1)) + (fSlow52 * fTemp0)));
 			fRec5[0] = fVec5[(IOTA-iSlow61)&524287];
@@ -1126,7 +1125,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
     if(voice->dsp_instance==NULL) // an effect
       break;
     MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-    *(controller->control_port) = scaled_value;
+    safe_float_write(controller->control_port, scaled_value);
   }
 }
 
@@ -1137,14 +1136,14 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 
   if(value_format==PLUGIN_FORMAT_SCALED){
 #ifdef DONT_NORMALIZE_EFFECT_VALUES
-    return *(controller->control_port);
+    return safe_float_read(controller->control_port);
 #else
     float min = controller->min_value;
     float max = controller->max_value;
-    return scale(*(controller->control_port),min,max,0.0f,1.0f);
+    return scale(safe_float_read(controller->control_port),min,max,0.0f,1.0f);
 #endif
   }else{
-    return *(controller->control_port);
+    return safe_float_read(controller->control_port);
   }
 }
 
@@ -1154,9 +1153,9 @@ static void get_display_value_string(struct SoundPlugin *plugin, int effect_num,
   MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
 
   if(controller->type==EFFECT_FORMAT_INT)
-    snprintf(buffer,buffersize-1,"%d %s",(int)*(controller->control_port), controller->unit);
+    snprintf(buffer,buffersize-1,"%d %s",(int)safe_float_read(controller->control_port), controller->unit);
   else
-    snprintf(buffer,buffersize-1,"%.2f %s",*(controller->control_port), controller->unit);
+    snprintf(buffer,buffersize-1,"%.2f %s",safe_float_read(controller->control_port), controller->unit);
 }
 
 static const char *get_effect_description(const struct SoundPluginType *plugin_type, int effect_num){

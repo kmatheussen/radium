@@ -425,7 +425,7 @@ struct SliderPainter{
       
       p->fillRect(data->requested_pos+1 ,y1+1,
                   2,                    height-1,
-                  get_qcolor(*data->color)
+                  get_qcolor(__atomic_load_n(data->color, __ATOMIC_SEQ_CST))
                   );
       
       p->setPen(QPen(get_qcolor(HIGH_BACKGROUND_COLOR_NUM).light(120),1));

@@ -357,8 +357,11 @@ public:
 #endif
 
   static float y(float y){
-    return scale(y,0,g_height,
-                 g_height,0);
+    float height = safe_volatile_float_read(&g_height);
+    return scale(y,
+                 0,height,
+                 height,0
+                 );
   }
 
   vl::Transform *get_transform(vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform){

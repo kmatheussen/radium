@@ -90,7 +90,6 @@ static inline bool atomic_compare_and_set_uint32(uint32_t *variable, uint32_t ol
 #define ATOMIC_ADD_RETURN_NEW(name, how_much)                           \
   (__atomic_fetch_add (&(name##_atomic), how_much, __ATOMIC_SEQ_CST) + how_much)
 
-
 #define DEFINE_SPINLOCK(name) \
   DEFINE_ATOMIC(bool, name) = false;
 
@@ -129,6 +128,10 @@ static inline void safe_double_write(volatile double *pos, double value){
 // This function is suppressed from tsan
 static inline double safe_double_read(volatile double *pos){
   return *pos;
+}
+
+static inline void *safe_pointer_read(void **p){
+  return *p;
 }
 
 

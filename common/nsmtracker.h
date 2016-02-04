@@ -356,7 +356,6 @@ struct ListHeaderP{
 *********************************************************************/
 
 #include "playerclass.h"
-extern PlayerClass *pc;
 
 
 
@@ -631,7 +630,7 @@ static inline void Patch_removePlayingVoice(struct Patch *patch, int64_t note_id
       return;
     }
   }
-  if (ATOMIC_GET(pc->isplaying)){
+  if (is_playing()){
     printf("Warning. Unable to find voice with note_id %d when removing playing note. Num playing: %d\n",(int)note_id,patch->num_currently_playing_voices);
     //abort();
   }
@@ -659,7 +658,7 @@ static inline void Patch_removePlayingNote(struct Patch *patch, int64_t note_id)
       return;
     }
   }
-  if (ATOMIC_GET(pc->isplaying))
+  if (is_playing())
     printf("Warning. Unable to find note with note_id %d when removing playing note\n",(int)note_id);
 }
 
@@ -693,8 +692,8 @@ struct FX{
 	// This, on the other hand, is safe, since sliders are always alive as long as the Patch is alive, and the patch always outlives an FX object.
 	// (The refactor to let Patch own FX hasn't been done yet. It didn't make sense when there were only MIDI instrument, but now it's too complicated to let FX live independently.
         //  However, when an instrument is deleted, all tracks are scanned, and FX are deleted when a patch is deleted. Same when changing patch for a track.)
-	float *slider_automation_value; // Pointer to the float value showing automation in slider. Value is scaled between 0-1. May be NULL.
-	enum ColorNums   *slider_automation_color; // Pointer to the integer holding color number for showing automation in slider. May be NULL.
+        DEFINE_ATOMIC(float *, slider_automation_value); // Pointer to the float value showing automation in slider. Value is scaled between 0-1. May be NULL.
+        DEFINE_ATOMIC(enum ColorNums   *, slider_automation_color); // Pointer to the integer holding color number for showing automation in slider. May be NULL.
 
         void (*treatFX)(struct FX *fx,int val,STime time,int skip, FX_when when);
 
@@ -1260,7 +1259,7 @@ struct WBlocks{
 
 	int num_visiblelines;
 
-        volatile int till_curr_realline;       // Set by the player thread. Read by the main thread.
+        DEFINE_ATOMIC(int, till_curr_realline);       // Set by the player thread. Read by the main thread.
   
         int top_realline; // only access from main thread.
         int curr_realline; // only access from main thread.
@@ -1373,7 +1372,7 @@ struct Tracker_Windows{
   
 	NInt curr_track;
 	int curr_track_sub;				/* -1=note, 0,1,2,...,n=vel */
-	NInt curr_block;
+        NInt curr_block;
 
 	int maxwtracksize;					/* The size of the widest wtrack for all wblocks. */
 
@@ -1466,9 +1465,9 @@ struct Root{
 	struct Song *song;
 	
 	int curr_playlist;
-	volatile NInt curr_block;
+        DEFINE_ATOMIC(NInt, curr_block);
 
-	volatile bool setfirstpos;
+        DEFINE_ATOMIC(bool, setfirstpos);
 
 	int tempo;			/* Standard tempo. */
 	int lpb;			/* Standard lpb. */

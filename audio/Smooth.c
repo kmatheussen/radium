@@ -9,7 +9,7 @@ void SMOOTH_init(Smooth *smooth, float value, int blocksize){
 
   memset(smooth, 0, sizeof(Smooth));
   
-  smooth->next_target_value = value;
+  safe_volatile_float_write(&smooth->next_target_value, value);
   smooth->target_value = value;
   smooth->value = value;
 
@@ -37,17 +37,17 @@ static bool is_smoothing_necessary(Smooth *smooth){
 
 // Can be called at any time
 void SMOOTH_set_target_value(Smooth *smooth, float value){
-  smooth->next_target_value = value;
+  safe_volatile_float_write(&smooth->next_target_value, value);
 }
 
 float SMOOTH_get_target_value(Smooth *smooth){
-  return smooth->next_target_value;
+  return safe_volatile_float_read(&smooth->next_target_value);
 }
 
 void SMOOTH_update_target_audio_will_be_modified_value(Smooth *smooth){
   smooth->target_audio_will_be_modified = is_smoothing_necessary(smooth) ||
                                           smooth->value > 0.0f ||
-                                          smooth->target_value != smooth->next_target_value;
+                                          smooth->target_value != safe_volatile_float_read(&smooth->next_target_value);
 }
 
 // Must be called before processing a new block. (a Radium block, NOT a soundcard block)
@@ -56,7 +56,7 @@ void SMOOTH_called_per_block(Smooth *smooth){
     
   int num_values = smooth->num_values;
 
-  float next_target_value = smooth->next_target_value; // Only one read. smooth->next_target_value can be written at any time from any thread.
+  float next_target_value = safe_volatile_float_read(&smooth->next_target_value); // Only one read. smooth->next_target_value can be written at any time from any thread.
 
   if(smooth->value == next_target_value && smooth->pos==0){
 

@@ -580,7 +580,12 @@ void CRASHREPORTER_send_message_with_backtrace(const char *additional_informatio
 #endif
 
 void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,...){
-  static bool is_currently_sending = false;
+  static DEFINE_ATOMIC(bool, is_currently_sending);
+
+  if (ATOMIC_SET_RETURN_OLD(is_currently_sending, true)==true) {
+    // already sending
+    return;
+  }
   
 #if 0
   static int last_time = -10000;
@@ -591,8 +596,6 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
   last_time = running_time.elapsed();
 #endif
 
-  if (is_currently_sending)
-    return;
 
   char message[1000];
   va_list argp;
@@ -618,7 +621,6 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
     g_crashreporter_file->close();
   }
 
-  is_currently_sending = true;
   RT_request_to_stop_playing();
   RT_pause_plugins();
 
@@ -635,7 +637,7 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
 #endif
   
  exit:
-  is_currently_sending = false;
+  ATOMIC_SET(is_currently_sending, false);
 }
 
 void CRASHREPORTER_close(void){

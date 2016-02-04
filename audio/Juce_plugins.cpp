@@ -126,7 +126,7 @@ namespace{
       if (ATOMIC_GET(is_starting_up))
         return false;
       
-      bool isplaying = ATOMIC_GET(pc->isplaying);
+      bool isplaying = is_playing();
 
 #if 0
       struct Blocks *block = isplaying ? pc->block : root->song->tracker_windows->wblock->block;

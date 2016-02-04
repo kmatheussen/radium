@@ -73,51 +73,33 @@ extern LANGSPEC void P2MUpdateSongPosCallBack(void);
 
 extern PlayerClass *pc;
 
-#if 0
-// Dont need customEvent anymore. This code should be moved to CalledPeriodically.
-void EditorWidget::customEvent(QEvent *e){
-  if(ATOMIC_GET(is_starting_up)==true)
-    return;
 
-  //printf("Got customEvent\n");
-  DO_GFX({
-      if(ATOMIC_GET(pc->isplaying))
-        P2MUpdateSongPosCallBack();
-      UpdateClock(this->window);
-      //MIDI_HandleInputMessage();
-    });
+DEFINE_ATOMIC(bool, atomic_must_redraw) = false;
+DEFINE_ATOMIC(bool, atomic_must_redraw_editor) = false;
 
-#if USE_GTK_VISUAL
-  GFX_play_op_queue(this->window);
-#endif
-
-#if USE_QT_VISUAL
-  updateEditor(); // dont think this is necessary. updateEdiutor is already called in the main timer event (which triggers this event)
-#endif
+static void transfer_atomic_must_redraws(struct Tracker_Windows *window)
+{
+  bool a_must_redraw = ATOMIC_GET(atomic_must_redraw);
+  if (a_must_redraw){
+    ATOMIC_SET(atomic_must_redraw, false);
+    window->must_redraw = true;
+  }
+  
+  bool a_must_redraw_editor = ATOMIC_GET(atomic_must_redraw_editor);
+  if (a_must_redraw_editor){
+    ATOMIC_SET(atomic_must_redraw_editor, false);
+    window->must_redraw_editor = true;
+  }
 }
-#endif
 
-
-#if USE_QT_VISUAL && USE_QT4
-#if 0
-const QPaintEngine* EditorWidget::paintEngine(){     
-  //qDebug()<<"Paint Engine";
-  return NULL;
-}
-#endif
-#endif
-
-#if USE_GTK_VISUAL
-void EditorWidget::paintEvent( QPaintEvent *e ){
-  GFX_play_op_queue(window);
-}
-#endif
 
 #if USE_QT_VISUAL
 void EditorWidget::paintEvent( QPaintEvent *e ){
   if(ATOMIC_GET(is_starting_up)==true)
     return;
 
+  transfer_atomic_must_redraws(window);
+  
   window->redraw_has_been_scheduled=false;
 
   if(window->must_redraw==true){
@@ -164,6 +146,8 @@ void EditorWidget::updateEditor(){
   if(ATOMIC_GET(is_starting_up)==true)
     return;
 
+  transfer_atomic_must_redraws(window);
+  
   if (this->window->must_redraw_editor==true){
     this->window->must_redraw_editor=false;
     GL_create(this->window, this->window->wblock);

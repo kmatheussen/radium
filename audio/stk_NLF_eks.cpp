@@ -5,7 +5,7 @@
 // license: "STK-4.3"
 // copyright: "Julius Smith"
 //
-// Code generated with Faust 0.9.67 (http://faust.grame.fr)
+// Code generated with Faust 0.9.73 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
@@ -17,6 +17,7 @@ template <int N> inline double faustpower(double x)        { return pow(x,N); }
 template <int N> inline int faustpower(int x)              { return faustpower<N/2>(x) * faustpower<N-N/2>(x); } 
 template <> 	 inline int faustpower<0>(int x)            { return 1; }
 template <> 	 inline int faustpower<1>(int x)            { return x; }
+template <> 	 inline int faustpower<2>(int x)            { return x*x; }
 #endif
 #include <math.h>
 #include <string>
@@ -158,7 +159,6 @@ inline double 	min (double a, float b) 	{ return (a<b) ? a : b; }
 #define FAUSTFLOAT float
 #endif  
 
-typedef long double quad;
 
 #ifndef FAUSTCLASS 
 #define FAUSTCLASS NLF_Eks_dsp
@@ -329,7 +329,7 @@ class NLF_Eks_dsp : public dsp {
 		instanceInit(samplingFreq);
 	}
 	virtual void buildUserInterface(UI* interface) {
-		interface->openVerticalBox("NLFeks");
+		interface->openVerticalBox("0x00");
 		interface->openVerticalBox("Nonlinear Filter");
 		interface->addNumEntry("typeMod", &fentry2, 0.0f, 0.0f, 4.0f, 1.0f);
 		interface->closeBox();
@@ -379,27 +379,26 @@ class NLF_Eks_dsp : public dsp {
 		float 	fSlow24 = (1.0f / (1.0f + fSlow22));
 		float 	fSlow25 = (1.0f - fSlow6);
 		float 	fSlow26 = (float(iConst0) / fSlow0);
-		int 	iSlow27 = int((fSlow26 - 3.49999f));
+		int 	iSlow27 = int((fSlow26 - 3.499995f));
 		int 	iSlow28 = int((int((4 + iSlow27)) & 4095));
 		float 	fSlow29 = (fSlow26 - (5.0f + iSlow27));
 		float 	fSlow30 = (fSlow26 - (4.0f + iSlow27));
 		float 	fSlow31 = (fSlow26 - (iSlow27 + 3.0f));
-		float 	fSlow32 = (fSlow26 - (2.0f + iSlow27));
-		float 	fSlow33 = ((fSlow32 * fSlow31) * fSlow30);
-		float 	fSlow34 = (0.041666666666666664f * (fSlow33 * fSlow29));
-		int 	iSlow35 = int((iSlow27 & 4095));
-		float 	fSlow36 = (0.041666666666666664f * fSlow30);
+		float 	fSlow32 = (fSlow31 * fSlow30);
+		float 	fSlow33 = (0.041666666666666664f * (fSlow32 * fSlow29));
+		int 	iSlow34 = int((int((3 + iSlow27)) & 4095));
+		float 	fSlow35 = (fSlow26 - (iSlow27 + 6.0f));
+		float 	fSlow36 = (0.16666666666666666f * (fSlow32 * (0 - fSlow35)));
 		int 	iSlow37 = int((int((2 + iSlow27)) & 4095));
-		float 	fSlow38 = (0.25f * fSlow32);
-		float 	fSlow39 = (fSlow26 - (iSlow27 + 6.0f));
-		float 	fSlow40 = (6.0f * ((fSlow31 * fSlow29) * fSlow39));
-		int 	iSlow41 = int((int((1 + iSlow27)) & 4095));
-		float 	fSlow42 = (0 - (((fSlow32 * fSlow30) * fSlow29) * fSlow39));
-		int 	iSlow43 = int((int((3 + iSlow27)) & 4095));
-		float 	fSlow44 = (0 - (fSlow33 * fSlow39));
-		float 	fSlow45 = float(fslider7);
-		float 	fSlow46 = (1.0f - fSlow45);
-		int 	iSlow47 = int((int((fConst4 * (float(fslider8) / fSlow0))) & 4095));
+		float 	fSlow38 = (0.5f * ((fSlow31 * (0 - fSlow29)) * (0 - (0.5f * fSlow35))));
+		int 	iSlow39 = int((int((1 + iSlow27)) & 4095));
+		float 	fSlow40 = (((0 - fSlow30) * (0 - (0.5f * fSlow29))) * (0 - (0.3333333333333333f * fSlow35)));
+		float 	fSlow41 = (fSlow26 - (2.0f + iSlow27));
+		int 	iSlow42 = int((iSlow27 & 4095));
+		float 	fSlow43 = ((((0 - fSlow31) * (0 - (0.5f * fSlow30))) * (0 - (0.3333333333333333f * fSlow29))) * (0 - (0.25f * fSlow35)));
+		float 	fSlow44 = float(fslider7);
+		float 	fSlow45 = (1.0f - fSlow44);
+		int 	iSlow46 = int((int((fConst4 * (float(fslider8) / fSlow0))) & 4095));
 		FAUSTFLOAT* output0 = output[0];
 		FAUSTFLOAT* output1 = output[1];
 		for (int i=0; i<count; i++) {
@@ -448,9 +447,9 @@ class NLF_Eks_dsp : public dsp {
 			fRec20[0] = (fSlow24 * ((fSlow23 * fRec20[1]) + (fSlow22 * fTemp0)));
 			float fTemp22 = ((fSlow25 * fRec20[0]) + (((iSlow21 * ((fSlow12 * (fTemp1 * fTemp15)) + (fRec14[1] * fTemp14))) + (iSlow17 * ((fRec4[0] * ((fSlow12 * (fTemp1 * fTemp5)) + (fRec5[1] * fTemp4))) + (fSlow12 * ((1 - fRec4[0]) * fTemp1))))) + (fSlow7 * fTemp0)));
 			fVec2[IOTA&4095] = fTemp22;
-			fRec0[IOTA&4095] = ((0.16666666666666666f * ((fSlow44 * fVec2[(IOTA-iSlow43)&4095]) + ((fSlow42 * fVec2[(IOTA-iSlow41)&4095]) + (fSlow40 * ((fSlow38 * fVec2[(IOTA-iSlow37)&4095]) + (fSlow36 * fVec2[(IOTA-iSlow35)&4095])))))) + (fSlow34 * fVec2[(IOTA-iSlow28)&4095]));
-			output0[i] = (FAUSTFLOAT)(fSlow46 * fRec0[(IOTA-0)&4095]);
-			output1[i] = (FAUSTFLOAT)(fSlow45 * fRec0[(IOTA-iSlow47)&4095]);
+			fRec0[IOTA&4095] = ((fSlow43 * fVec2[(IOTA-iSlow42)&4095]) + (fSlow41 * ((((fSlow40 * fVec2[(IOTA-iSlow39)&4095]) + (fSlow38 * fVec2[(IOTA-iSlow37)&4095])) + (fSlow36 * fVec2[(IOTA-iSlow34)&4095])) + (fSlow33 * fVec2[(IOTA-iSlow28)&4095]))));
+			output0[i] = (FAUSTFLOAT)(fSlow45 * fRec0[(IOTA-0)&4095]);
+			output1[i] = (FAUSTFLOAT)(fSlow44 * fRec0[(IOTA-iSlow46)&4095]);
 			// post processing
 			fRec20[1] = fRec20[0];
 			fRec14[1] = fRec14[0];
@@ -1019,7 +1018,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
     if(voice->dsp_instance==NULL) // an effect
       break;
     MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-    *(controller->control_port) = scaled_value;
+    safe_float_write(controller->control_port, scaled_value);
   }
 }
 
@@ -1030,14 +1029,14 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 
   if(value_format==PLUGIN_FORMAT_SCALED){
 #ifdef DONT_NORMALIZE_EFFECT_VALUES
-    return *(controller->control_port);
+    return safe_float_read(controller->control_port);
 #else
     float min = controller->min_value;
     float max = controller->max_value;
-    return scale(*(controller->control_port),min,max,0.0f,1.0f);
+    return scale(safe_float_read(controller->control_port),min,max,0.0f,1.0f);
 #endif
   }else{
-    return *(controller->control_port);
+    return safe_float_read(controller->control_port);
   }
 }
 
@@ -1047,9 +1046,9 @@ static void get_display_value_string(struct SoundPlugin *plugin, int effect_num,
   MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
 
   if(controller->type==EFFECT_FORMAT_INT)
-    snprintf(buffer,buffersize-1,"%d %s",(int)*(controller->control_port), controller->unit);
+    snprintf(buffer,buffersize-1,"%d %s",(int)safe_float_read(controller->control_port), controller->unit);
   else
-    snprintf(buffer,buffersize-1,"%.2f %s",*(controller->control_port), controller->unit);
+    snprintf(buffer,buffersize-1,"%.2f %s",safe_float_read(controller->control_port), controller->unit);
 }
 
 static const char *get_effect_description(const struct SoundPluginType *plugin_type, int effect_num){

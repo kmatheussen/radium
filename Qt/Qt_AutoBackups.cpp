@@ -43,7 +43,7 @@ void BACKUP_call_very_often(void){
     has_inited=true;
   }
 
-  if (ATOMIC_GET(pc->isplaying))
+  if (ATOMIC_GET(pc->player_state)!=PLAYER_STATE_STOPPED)
     return;
   
   if (g_backuptime.elapsed() > get_backup_interval_ms()){

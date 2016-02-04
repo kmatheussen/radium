@@ -235,8 +235,8 @@ void FX_update_all_slider_automation_visuals(void){
     while(track!=NULL){
       struct FXs *fxs=track->fxs;
       while(fxs!=NULL){
-        fxs->fx->slider_automation_value = OS_SLIDER_obtain_automation_value_pointer(track->patch,fxs->fx->effect_num);
-        fxs->fx->slider_automation_color = OS_SLIDER_obtain_automation_color_pointer(track->patch,fxs->fx->effect_num);
+        ATOMIC_SET(fxs->fx->slider_automation_value, OS_SLIDER_obtain_automation_value_pointer(track->patch,fxs->fx->effect_num));
+        ATOMIC_SET(fxs->fx->slider_automation_color, OS_SLIDER_obtain_automation_color_pointer(track->patch,fxs->fx->effect_num));
         
         fxs = NextFX(fxs);
       }
@@ -371,8 +371,8 @@ static struct FX *selectFX(
 		return NULL;
 	}
 
-        fx->slider_automation_value = OS_SLIDER_obtain_automation_value_pointer(patch,fx->effect_num);
-        fx->slider_automation_color = OS_SLIDER_obtain_automation_color_pointer(patch,fx->effect_num);
+        ATOMIC_SET(fx->slider_automation_value, OS_SLIDER_obtain_automation_value_pointer(patch,fx->effect_num));
+        ATOMIC_SET(fx->slider_automation_color, OS_SLIDER_obtain_automation_color_pointer(patch,fx->effect_num));
 
 	return fx;
 }

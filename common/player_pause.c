@@ -50,10 +50,10 @@ void PC_Pause(void){
 
 void PC_Pause(void){
 
-	if( ! ATOMIC_GET(pc->isplaying) ){
-		return;					// There is only two threads, so its impossible to start playing
+  if( ! is_playing()){
+    return;					// There is only two threads, so its impossible to start playing
 									// before PC_StopPause is called.
-	}
+  }
 
 #ifdef NOPAUSEPLAY
 	PlayStop();
@@ -83,7 +83,7 @@ void PC_StopPause(void){
 	STime pausetime;
 	struct PEventQueue *peq;
 
-	if( ! ATOMIC_GET(pc->isplaying)) return;
+	if( ! is_playing()) return;
 
 	pausetime=pc->pausetime;
 
@@ -107,7 +107,7 @@ void PC_StopPause(void){
 		peq=pc->peq;
 	}
 
-	root->setfirstpos=false;
+	ATOMIC_SET(root->setfirstpos, false);
 
 	StopPausePlayer();
 #endif

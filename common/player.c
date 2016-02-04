@@ -39,20 +39,46 @@ extern struct Root *root;
 extern LANGSPEC void OS_InitMidiTiming(void);
 
 void PlayerTask(STime reltime){
-	static STime addreltime=0;
-        //RError("hepp");
-        pc->reltime     = reltime;
-
         if (ATOMIC_GET(is_starting_up))
           return;
 
+
+        Player_State player_state = ATOMIC_GET(pc->player_state);
+
+        if (player_state==PLAYER_STATE_PROGRAM_NOT_READY){
+          printf("player: program not ready\n");
+          return;
+
+        } else if (player_state==PLAYER_STATE_ENDING) {
+          return;
+
+        } else if (player_state==PLAYER_STATE_STOPPING) {
+          PC_ReturnElements();
+          SCHEDULER_clear();
+
+          pc->end_time=0;
+          pc->end_time_f=0;
+
+          ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);
+          return;
+          
+          //} else if (player_state==PLAYER_STATE_STOPPED) {
+          //  return;
+        }
+
+        
+        R_ASSERT(player_state==PLAYER_STATE_STARTING_TO_PLAY || player_state==PLAYER_STATE_PLAYING || player_state==PLAYER_STATE_STOPPED);
+        
+        
+	static STime addreltime=0;
+        //RError("hepp");
+        pc->reltime     = reltime;
+                   
         double reltempo = 1.0;
 
-        if (ATOMIC_GET(pc->isplaying)){
-          const struct Blocks *block = pc->block;          
-          if(block!=NULL)
-            reltempo = block->reltempo;
-        }
+        struct Blocks *block = pc->block;          
+        if(block!=NULL)
+          reltempo = safe_volatile_float_read(&block->reltempo);
 
 	addreltime+=reltime;
 
@@ -65,12 +91,10 @@ void PlayerTask(STime reltime){
         } else
           addreltime=0;
 
-	if( ! ATOMIC_GET(pc->isplaying)){
-          if( ! ATOMIC_GET(pc->initplaying))
-            PC_ReturnElements();
+        if (player_state==PLAYER_STATE_STOPPED){
           SCHEDULER_called_per_block(tempoadjusted_reltime);
           return;
-	}
+        }
         
         if(pc->end_time==0){
           pc->therealtime=reltime;
@@ -79,7 +103,6 @@ void PlayerTask(STime reltime){
         }else{
           pc->therealtime+=reltime;
         }
-
 
 #if 0
         // This debug print is helpful to understand the timing.
@@ -95,7 +118,7 @@ void PlayerTask(STime reltime){
         pc->end_time   += tempoadjusted_reltime;
 
         //printf("Setting new starttime to %f (%d)\n",pc->end_time_f,(int)pc->end_time);
-        pc->start_time_f = pc->end_time_f;
+        safe_double_write(&pc->start_time_f, pc->end_time_f);
         pc->end_time_f  += tempoadjusted_reltime_f;
         
 #ifdef WITH_PD
@@ -112,8 +135,6 @@ void PlayerTask(STime reltime){
           while(
                 peq!=NULL
                 && peq->l.time < pc->end_time
-                //&& peq->l.time<time+(pc->pfreq*2)  // Dont want to run for more than two seconds.
-                && ATOMIC_GET(pc->isplaying)
                 )
             {
               
@@ -132,15 +153,16 @@ void PlayerTask(STime reltime){
 
         } pc->is_treating_editor_events = false;
 
-        
-        ATOMIC_SET(pc->playertask_has_been_called, true);
+
+        if (player_state == PLAYER_STATE_STARTING_TO_PLAY)
+          ATOMIC_SET(pc->player_state, PLAYER_STATE_PLAYING);
 }
 
 STime PLAYER_get_block_delta_time(STime time){
   if(time<pc->start_time || time>pc->end_time) // time may be screwed up if not coming from the player.
     return 0;
 
-  if(ATOMIC_GET(pc->isplaying)){
+  if(is_playing()){
     STime ret = ((time - pc->start_time) * pc->reltime / (pc->end_time - pc->start_time)); // i.e. "scale(time, pc->start_time, pc->end_time, 0, pc->reltime)"
     if(ret<0){
       RWarning("ret<0: %d",ret);

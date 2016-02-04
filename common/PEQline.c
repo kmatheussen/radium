@@ -81,7 +81,7 @@ void InitPEQline(struct Blocks *block,Place *place){
 static void PlayerFirstLine(struct PEventQueue *peq,int doit){
 
 #ifdef WITH_PD
-  int64_t next_time = pc->seqtime + peq->block->times[1].time;
+  int64_t next_time = ATOMIC_GET(pc->seqtime) + peq->block->times[1].time;
 
   RT_PD_set_line(peq->l.time, next_time, 0);
 

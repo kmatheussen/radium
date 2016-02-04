@@ -40,8 +40,8 @@ bool NewSong(void){
 	root->tempo=128;
 	root->lpb=4;
         root->signature = ratio(4,4);
-	ATOMIC_SET(pc->initplaying, false);
-	ATOMIC_SET(pc->isplaying, false);
+
+        init_player_state();
 
 	AppendBlock();
 

@@ -581,7 +581,7 @@ enum RT_MESSAGE_STATUS {
 static DEFINE_ATOMIC(RT_MESSAGE_STATUS, rt_message_status) = RT_MESSAGE_READY;
 static const int rt_message_length = 1024;
 static char rt_message[rt_message_length];
-volatile bool request_to_stop_playing = false;
+static DEFINE_ATOMIC(bool, request_to_stop_playing) = false;
 
 class CalledPeriodically : public QTimer {
 
@@ -670,12 +670,12 @@ protected:
     if (PLAYER_is_running()==false)
       PlayStop();
 
-    if(request_to_stop_playing == true) {
+    if(ATOMIC_GET(request_to_stop_playing) == true) {
       PlayStop();
-      request_to_stop_playing=false;
+      ATOMIC_SET(request_to_stop_playing, false);
     }
     
-    if(ATOMIC_GET(pc->isplaying)) {
+    if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING){
       P2MUpdateSongPosCallBack();
       PlayCallVeryOften();
     }
@@ -714,7 +714,7 @@ void RT_message(const char *fmt,...){
 }
 
 void RT_request_to_stop_playing(void){
-  request_to_stop_playing = true;
+  ATOMIC_SET(request_to_stop_playing, true);
 }
 
 #endif

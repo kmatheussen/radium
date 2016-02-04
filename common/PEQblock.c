@@ -77,8 +77,8 @@ void PlayerNewBlockGFX(struct PEventQueue *peq,int doit){
 	// Update graphics.
   //printf("playerNewBlock. curr_before: %d. curr_now: %d\n",root->curr_block,pc->block->l.num);
 
-	root->curr_block=pc->block->l.num;
-	root->setfirstpos=true;
+        ATOMIC_SET(root->curr_block, pc->block->l.num);
+	ATOMIC_SET(root->setfirstpos, true);
 	if(doit){
 		Ptask2Mtask(); // TODO: Add latency compensation. (not done since the code in this file is not quite clear)
 	}
@@ -104,12 +104,12 @@ void PlayerNewBlock(struct PEventQueue *peq,int doit){
 	// Is this the last block to be played?
 
 	if(PC_GetPlayBlock(1)==NULL){
-                ATOMIC_SET(pc->isplaying, false);
-		ReturnPEQelement(peq);
+          ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);
+          ReturnPEQelement(peq);
 #ifdef _AMIGA
-		Signal(mytask,1L<<clocksig);
+          Signal(mytask,1L<<clocksig);
 #endif
-		return;
+          return;
 	}
 
 	// Update playerclass and root information about current playpos and such.

@@ -175,12 +175,12 @@ void Scroll_play_down(
                       int start_realline,
                       int end_realline
 ){
-        if(ATOMIC_GET(pc->isplaying) || doScrollPlay()==false) return;
+  if(is_playing() || doScrollPlay()==false) return;
 
-	start_realline=R_BOUNDARIES(0,start_realline,wblock->num_reallines-1);
-	end_realline=R_BOUNDARIES(0,end_realline,wblock->num_reallines-1);
-	
-        Scroll_play_down2(wblock,start_realline,end_realline);
+  start_realline=R_BOUNDARIES(0,start_realline,wblock->num_reallines-1);
+  end_realline=R_BOUNDARIES(0,end_realline,wblock->num_reallines-1);
+  
+  Scroll_play_down2(wblock,start_realline,end_realline);
 }
 
 
@@ -189,12 +189,12 @@ void Scroll_play_up(
                     int start_realline,
                     int end_realline
 ){
-       if(ATOMIC_GET(pc->isplaying) || doScrollPlay()==false) return;
+  if(is_playing() || doScrollPlay()==false) return;
 
-	start_realline=R_BOUNDARIES(0,start_realline,wblock->num_reallines-1);
-	end_realline=R_BOUNDARIES(0,end_realline,wblock->num_reallines-1);
+  start_realline=R_BOUNDARIES(0,start_realline,wblock->num_reallines-1);
+  end_realline=R_BOUNDARIES(0,end_realline,wblock->num_reallines-1);
 
-        Scroll_play_up2(wblock,start_realline,end_realline);
+  Scroll_play_up2(wblock,start_realline,end_realline);
 }
 
 

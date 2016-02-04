@@ -610,7 +610,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
 
   if(effect_num < plugin->type->num_effects){
 
-    if (PLAYER_current_thread_has_lock()==false && ATOMIC_GET(pc->isplaying)==true){
+    if (PLAYER_current_thread_has_lock()==false && is_playing()==true){
       if (player_lock_required==PLAYERLOCK_REQUIRED)
         RWarning("PLUGIN_set_effect_value_internal called without holding the player lock");
       else if (player_lock_required==PLAYERLOCK_MAYBE_REQUIRED)

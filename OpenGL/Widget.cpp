@@ -170,7 +170,7 @@ static double get_realline_stime(SharedVariables *sv, int realline){
 // OpenGL thread
 static double find_current_realline_while_playing(SharedVariables *sv){
 
-  double time_in_ms = (double)(pc->start_time - pc->seqtime) * 1000.0 / (double)pc->pfreq;
+  double time_in_ms = (double)(safe_double_read(&pc->start_time_f) - ATOMIC_GET(pc->seqtime)) * 1000.0 / (double)pc->pfreq; // I'm not entirely sure reading pc->start_time_f instead of pc->start_time is unproblematic.
   double stime      = time_estimator.get(time_in_ms, sv->reltempo) * (double)pc->pfreq / 1000.0;
 
   double prev_line_stime = 0.0;
@@ -465,16 +465,23 @@ private:
 
   // OpenGL thread
   double find_till_realline(SharedVariables *sv){
-    if(!ATOMIC_GET(root->play_cursor_onoff) && ATOMIC_GET(pc->isplaying) && ATOMIC_GET(pc->playertask_has_been_called)) { // When pc->playertask_has_been_called is true, we can be sure that the timing values are valid.
-      return find_current_realline_while_playing(sv);
-    } else
-      return ATOMIC_GET(g_curr_realline);
+    if(!ATOMIC_GET(root->play_cursor_onoff) && ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING) {
+      int player_id = ATOMIC_GET(pc->play_id);
+
+      double ret = find_current_realline_while_playing(sv);
+      if (ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING && ATOMIC_GET(pc->play_id)==player_id) // check that the player didn't stop and start in the mean time. (not a 100% valid check perhaps, but no big deal)
+        return ret;
+    }
+    
+    return ATOMIC_GET(g_curr_realline);
   }
 
   // OpenGL thread
   bool draw(){
     bool needs_repaint;
-    
+
+    int player_id = ATOMIC_GET(pc->play_id);
+
     painting_data = GE_get_painting_data(painting_data, &needs_repaint);
     //printf("needs_repaint: %d, painting_data: %p\n",(int)needs_repaint,painting_data);
 
@@ -510,10 +517,10 @@ private:
       GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform, _playcursor_transform);
     }
     
-    if(ATOMIC_GET(pc->isplaying) && sv->block!=pc->block) // sanity check
+    if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING && sv->block!=safe_pointer_read((void**)&pc->block)) // sanity check
       return false;
 
-    bool current_realline_while_playing_is_valid = ATOMIC_GET(pc->isplaying) && ATOMIC_GET(pc->playertask_has_been_called);
+    bool current_realline_while_playing_is_valid = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
 
     double current_realline_while_playing;
     if (current_realline_while_playing_is_valid)
@@ -533,12 +540,16 @@ private:
       
     //printf("pos: %f\n",pos);
     
-    if(ATOMIC_GET(pc->isplaying) && sv->block!=pc->block) // Do the sanity check once more. pc->block might have changed value during computation of pos.
+    if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING && sv->block!=safe_pointer_read((void**)&pc->block)) // Do the sanity check once more. pc->block might have changed value during computation of pos.
       return false;
 
     if (needs_repaint==false && scroll_pos==last_scroll_pos && current_realline_while_playing==last_current_realline_while_playing && ATOMIC_GET(g_curr_realline)==last_curr_realline)
       return false;
-    
+
+    if (player_id != ATOMIC_GET(pc->play_id)) // In the very weird and unlikely case that the player has stopped and started since the top of this function (the computer is really struggling), we return false.
+      return false;
+        
+
     //printf("scrolling\n");
 
     // scroll
@@ -559,7 +570,7 @@ private:
     {
       vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
       float scrollbarpos = scale(till_realline,
-                                 0, sv->num_reallines - (ATOMIC_GET(pc->isplaying)?0:1),
+                                 0, sv->num_reallines - (ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING?0:1),
                                  -2, -(sv->scrollbar_height - sv->scrollbar_scroller_height - 1)
                                  );
       //printf("bar_length: %f, till_realline: %f. scrollpos: %f, pos: %f, max: %d\n",bar_length,till_realline, scrollpos, pos, window->leftslider.x2);

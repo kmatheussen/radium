@@ -623,14 +623,11 @@ struct Mixer{
       if((int)num_frames!=_buffer_size)
         printf("What???\n");
 
-      jackblock_size = num_frames;
-      jackblock_cycle_start_stime = pc->end_time;
-
       if (g_process_plugins==false) {
         if (pause_time.elapsed() > 5000)
           g_process_plugins = true;
       } else if (_is_freewheeling==false && excessive_time.elapsed() > 2000) { // 2 seconds
-        if (ATOMIC_GET(pc->isplaying)) {
+        if (ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING) {
           RT_request_to_stop_playing();
           RT_message("Error!\n"
                      "\n"
@@ -653,6 +650,9 @@ struct Mixer{
             
 
       RT_lock_player();
+
+      jackblock_size = num_frames;
+      jackblock_cycle_start_stime = pc->end_time;
 
       if(g_test_crashreporter_in_audio_thread){
         int *ai2=NULL;
@@ -939,7 +939,7 @@ STime MIXER_get_accurate_radium_time(void){
     jackblock_cycle_start_stime +
     scale(deltatime,
           0, jackblock_size,
-          0, jackblock_size * block->reltempo
+          0, jackblock_size * safe_volatile_float_read(&block->reltempo)
           );
 }
 

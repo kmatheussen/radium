@@ -80,7 +80,7 @@ static bool stop_writing(void){
 bool SOUNDFILESAVER_write(float **outputs, int num_frames){
  PaUtil_FullMemoryBarrier();
 
-  if(g_save_state==BEFORE_WRITING && ATOMIC_GET(pc->isplaying)==false)
+  if(g_save_state==BEFORE_WRITING && is_playing()==false)
     return true;
 
   if(g_save_state==AFTER_WRITING)
@@ -104,7 +104,7 @@ bool SOUNDFILESAVER_write(float **outputs, int num_frames){
   }
 
   if(g_save_state==IS_WRITING){
-    if(ATOMIC_GET(pc->isplaying)==false){
+    if(is_playing()==false){
       g_save_state=POST_WRITING;
     }
   }

@@ -70,13 +70,15 @@ int default_scrolls_per_second = 20;
 // Simpler version when using opengl
 void P2MUpdateSongPosCallBack(void){
 
-  bool setfirstpos=root->setfirstpos;
+  bool setfirstpos=ATOMIC_GET(root->setfirstpos);
+
+  NInt curr_block_num = ATOMIC_GET(root->curr_block);
   
   struct Tracker_Windows *window=root->song->tracker_windows;
-  struct WBlocks *wblock = ListFindElement1(&window->wblocks->l,root->curr_block);
+  struct WBlocks *wblock = ListFindElement1(&window->wblocks->l,curr_block_num);
 
   int old_curr_realline = wblock->curr_realline;
-  int till_curr_realline = R_BOUNDARIES(0, wblock->till_curr_realline, wblock->num_reallines-1); // till_curr_realline can be set from any thread, at any time, to any value.
+  int till_curr_realline = R_BOUNDARIES(0, ATOMIC_GET(wblock->till_curr_realline), wblock->num_reallines-1); // till_curr_realline can be set from any thread, at any time, to any value.
 
   if (!ATOMIC_GET(root->play_cursor_onoff)){
     //printf("P2MUpdateSongPosCallBack: Setting to %d\n",till_curr_realline);
@@ -88,7 +90,7 @@ void P2MUpdateSongPosCallBack(void){
   if(pc->playtype==PLAYSONG)
     BS_SelectPlaylistPos(root->curr_playlist);
 
-  if(window->curr_block!=root->curr_block){
+  if(window->curr_block!=curr_block_num){
     //printf("Bef. w: %d, r: %d\n",window->curr_block,root->curr_block);
     if(setfirstpos){
       wblock->curr_realline=0;
@@ -127,8 +129,8 @@ static STime last_time = 0;
 
 void P2MUpdateSongPosCallBack(void){
 	struct Tracker_Windows *window=root->song->tracker_windows;
-	bool setfirstpos=root->setfirstpos;
-	NInt curr_block=root->curr_block;
+	bool setfirstpos=ATOMIC_GET(root->setfirstpos);
+	NInt curr_block=ATOMIC_GET(root->curr_block);
 	struct WBlocks *wblock;
 	int till_curr_realline;
 
@@ -143,7 +145,7 @@ void P2MUpdateSongPosCallBack(void){
 
                   DO_GFX({
                         wblock=ListFindElement1(&window->wblocks->l,curr_block);
-			till_curr_realline=wblock->till_curr_realline;
+			till_curr_realline=ATOMIC_GET(wblock->till_curr_realline);
                         
 			if(window->curr_block!=curr_block){
 				if(setfirstpos){
@@ -157,7 +159,8 @@ void P2MUpdateSongPosCallBack(void){
 			}
 
 			if(setfirstpos){			// The player routine (PEQblock.c) sets this one.
-				till_curr_realline=wblock->till_curr_realline=0;
+                          ATOMIC_SET(wblock->till_curr_realline, 0);
+                          till_curr_realline=0;
 			}
 
 			//fprintf(stderr,"tilline: %d\n",till_curr_realline);
@@ -202,7 +205,7 @@ void P2MUpdateSongPosCallBack(void){
 		window=NextWindow(window);
 }
 
-	root->setfirstpos=false;
+	ATOMIC_SET(root->setfirstpos, false);
 
 }
 

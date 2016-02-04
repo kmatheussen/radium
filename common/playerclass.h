@@ -85,6 +85,14 @@ struct PEventQueue{
 #define PEQT_VELTOEND 8
 #define PEQT_VELFROMSTARTTOEND 9
 
+typedef enum {
+  PLAYER_STATE_PROGRAM_NOT_READY = 0,
+  PLAYER_STATE_STARTING_TO_PLAY,
+  PLAYER_STATE_PLAYING,
+  PLAYER_STATE_STOPPING,
+  PLAYER_STATE_STOPPED,
+  PLAYER_STATE_ENDING
+} Player_State;
 
 typedef struct{
 
@@ -104,13 +112,18 @@ typedef struct{
 
         STime reltime; // The argument for PlayerTask. Will usually contain the audio blocksize. Necessary for calculating delta time.
 
-	volatile STime seqtime;		/* Time being played at the top of the block that now is playing. */
+	DEFINE_ATOMIC(STime, seqtime);		/* Time being played at the top of the block that now is playing. */
 
+        DEFINE_ATOMIC(Player_State, player_state);
+
+        /*
 	DEFINE_ATOMIC (bool, isplaying);
 	DEFINE_ATOMIC (bool, initplaying);
-
+        DEFINE_ATOMIC (bool, has_stopped);
+        */
+        
         bool is_treating_editor_events; // Used by "SCHEDULER_add_event" to determine whether to run events (which belongs to the current block) NOW, or schedule it.
-        DEFINE_ATOMIC(bool, playertask_has_been_called); // if true, we can be sure that the timing values are valid.
+        //DEFINE_ATOMIC(bool, playertask_has_been_called); // if true, we can be sure that the timing values are valid.
         
 	int playtype;
 
@@ -118,15 +131,30 @@ typedef struct{
         bool is_playing_range;
         STime range_duration;
         
-	struct Blocks *block;		// The block now playing.
+	struct Blocks *block;		                // The block now playing.
 
 	volatile int playpos;				// Number of blocks currently being played. Not the same as root->curr_playlist.
 	STime pausetime;
 	bool nowpausing;
 
-        int play_id; // A counter. Increased each time the program starts playing, and stops playing.
+        DEFINE_ATOMIC(int, play_id); // A counter. Increased each time the program starts playing, and stops playing.
 
 }PlayerClass;
+
+extern PlayerClass *pc;
+
+
+// Should only be used if it's not important if the variables that are initialized when starting to play, have actually been initialized.
+// If that is important, then ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING must be used instead.
+static inline bool is_playing(void){
+  Player_State state = ATOMIC_GET(pc->player_state);
+  return state==PLAYER_STATE_STARTING_TO_PLAY || state==PLAYER_STATE_PLAYING;
+}
+
+static inline void init_player_state(void){
+  ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);
+}
+
 
 //playtypes:
 #define PLAYSONG 0

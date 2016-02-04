@@ -76,7 +76,7 @@ bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct 
 }
 
 static void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, STime addtime,bool before,bool add_latency){
-	STime time=pc->seqtime;
+        STime time=ATOMIC_GET(pc->seqtime);
 	int playpos;
 
 	if(addplaypos>0){
@@ -217,9 +217,9 @@ void PC_ReturnElements_fromPlayPos(int playpos){
 
 void PC_GoNextBlock(void){
 	struct Tracks *track;
-	pc->seqtime+=getBlockSTimeLength(pc->block);
+	ATOMIC_ADD(pc->seqtime, getBlockSTimeLength(pc->block));
 
-	pc->block=PC_GetPlayBlock(1);
+	pc->block = PC_GetPlayBlock(1);
 
 	Pdebug("PC_GoNextBlock\n");
 
@@ -251,5 +251,5 @@ bool PC_isPlayingSong(void){
 
 
 STime PC_TimeToRelBlockStart(STime time){
-	return time - pc->seqtime;
+  return time - ATOMIC_GET(pc->seqtime);
 }

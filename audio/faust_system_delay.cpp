@@ -5,7 +5,7 @@
 // version: "1.0"
 // license: "STK-4.3"
 //
-// Code generated with Faust 0.9.67 (http://faust.grame.fr)
+// Code generated with Faust 0.9.73 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
@@ -149,7 +149,6 @@ inline double 	min (double a, float b) 	{ return (a<b) ? a : b; }
 #define FAUSTFLOAT float
 #endif  
 
-typedef long double quad;
 
 #ifndef FAUSTCLASS 
 #define FAUSTCLASS System_Delay_dsp
@@ -204,7 +203,7 @@ class System_Delay_dsp : public dsp {
 		instanceInit(samplingFreq);
 	}
 	virtual void buildUserInterface(UI* interface) {
-		interface->openVerticalBox("system_delay");
+		interface->openVerticalBox("0x00");
 		interface->declare(&fslider0, "style", "knob");
 		interface->declare(&fslider0, "unit", "ms");
 		interface->addHorizontalSlider("delay", &fslider0, 0.0f, 0.0f, 5e+01f, 0.1f);
@@ -774,7 +773,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
     if(voice->dsp_instance==NULL) // an effect
       break;
     MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-    *(controller->control_port) = scaled_value;
+    safe_float_write(controller->control_port, scaled_value);
   }
 }
 
@@ -785,14 +784,14 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 
   if(value_format==PLUGIN_FORMAT_SCALED){
 #ifdef DONT_NORMALIZE_EFFECT_VALUES
-    return *(controller->control_port);
+    return safe_float_read(controller->control_port);
 #else
     float min = controller->min_value;
     float max = controller->max_value;
-    return scale(*(controller->control_port),min,max,0.0f,1.0f);
+    return scale(safe_float_read(controller->control_port),min,max,0.0f,1.0f);
 #endif
   }else{
-    return *(controller->control_port);
+    return safe_float_read(controller->control_port);
   }
 }
 
@@ -802,9 +801,9 @@ static void get_display_value_string(struct SoundPlugin *plugin, int effect_num,
   MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
 
   if(controller->type==EFFECT_FORMAT_INT)
-    snprintf(buffer,buffersize-1,"%d %s",(int)*(controller->control_port), controller->unit);
+    snprintf(buffer,buffersize-1,"%d %s",(int)safe_float_read(controller->control_port), controller->unit);
   else
-    snprintf(buffer,buffersize-1,"%.2f %s",*(controller->control_port), controller->unit);
+    snprintf(buffer,buffersize-1,"%.2f %s",safe_float_read(controller->control_port), controller->unit);
 }
 
 static const char *get_effect_description(const struct SoundPluginType *plugin_type, int effect_num){

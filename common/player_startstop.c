@@ -66,9 +66,17 @@ extern struct Root *root;
 extern void (*Ptask2MtaskCallBack)(void);
 
 static void PlayStopReally(bool doit){ 
-        ATOMIC_SET(pc->isplaying, false);
-	ATOMIC_SET(pc->initplaying, false);
-        ATOMIC_SET(pc->playertask_has_been_called, false);
+        //ATOMIC_SET(pc->isplaying, false);
+	//ATOMIC_SET(pc->initplaying, false);
+        //ATOMIC_SET(pc->playertask_has_been_called, false);
+
+        if (ATOMIC_GET(is_starting_up))
+          return;
+
+        if(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED)
+          return;
+        
+        ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
         pc->is_playing_range = false;
         
         printf("PlayStopReally called: %s\n",doit==true?"true":"false");
@@ -79,18 +87,16 @@ static void PlayStopReally(bool doit){
         }
 
         if (PLAYER_is_running())
-          while(pc->peq!=NULL) OS_WaitForAShortTime(20);
+          while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED)
+            OS_WaitForAShortTime(5);
 
 	StopAllInstruments();
 
 #if !USE_OPENGL
 	if(doit) (*Ptask2MtaskCallBack)();
 #endif
-       
-	pc->end_time=0;
-        pc->end_time_f=0;
 
-        pc->play_id++;
+        ATOMIC_ADD(pc->play_id, 1);
 
         struct Tracker_Windows *window = root->song->tracker_windows;
         struct WBlocks *wblock = window->wblock;
@@ -116,10 +122,55 @@ static void PlayStopReally(bool doit){
 }
 
 void PlayStop(void){
-	if(! ATOMIC_GET(pc->isplaying))
-          StopAllInstruments();
-        else
-          PlayStopReally(true);
+  if(!is_playing())
+    StopAllInstruments();
+  else
+    PlayStopReally(true);
+}
+
+static void start_player(int playtype, int playpos, Place *place, struct Blocks *block){
+  R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
+  
+  // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
+  //while(GC_is_disabled()==false){
+  //printf("Calling gc_disable: %d\n",GC_dont_gc);
+#if STOP_GC_WHILE_PLAYING
+  while(GC_dont_gc<=0){
+    GC_disable();
+  }
+#endif
+
+  PLAYER_lock();{
+    
+    pc->playpos=playpos;
+    ATOMIC_ADD(pc->play_id, 1);
+    
+    pc->playtype = playtype;
+    
+    pc->block=block;
+    
+    ATOMIC_SET(root->curr_block, pc->block->l.num);
+    
+  }PLAYER_unlock();
+
+  
+  printf("Play. root->curr_block: %d. Block: %p\n",ATOMIC_GET(root->curr_block),pc->block);
+  //abort();
+  fflush(stdout);
+  
+  PATCH_reset_time();
+  InitPEQclock();
+  InitPEQ_LPB(pc->block,place);
+  InitPEQ_Signature(pc->block,place);
+  InitPEQ_Beat(pc->block,place);
+  InitPEQrealline(block,place);
+  InitPEQline(block,place);
+  InitPEQblock(block,place);
+  InitAllPEQnotes(block,place);
+  
+  ATOMIC_SET(pc->player_state, PLAYER_STATE_STARTING_TO_PLAY);
+  while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_PLAYING)
+    OS_WaitForAShortTime(5);
 }
 
 static void PlayBlock(
@@ -127,61 +178,20 @@ static void PlayBlock(
 	Place *place,
         bool do_loop
 ){
-
-        // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
-        //while(GC_is_disabled()==false){
-          //printf("Calling gc_disable: %d\n",GC_dont_gc);
-#if STOP_GC_WHILE_PLAYING
-  while(GC_dont_gc<=0){
-    GC_disable();
-  }
-#endif
-
-     ATOMIC_SET(pc->initplaying, true);
-
-		pc->playpos=0;
-                pc->play_id++;
-                
-                if(do_loop==true)
-                  pc->playtype=PLAYBLOCK;
-                else
-                  pc->playtype=PLAYBLOCK_NONLOOP;
-
-		pc->block=block;
-
-		root->curr_block=pc->block->l.num;
-		printf("Play block. root->curr_block: %d. Block: %p\n",root->curr_block,pc->block);
-                //abort();
-                fflush(stdout);
-
-#if !USE_OPENGL
-		ATOMIC_SET(pc->isplaying, true);
-		(*Ptask2MtaskCallBack)();
-#endif
-		ATOMIC_SET(pc->isplaying, false);
-
-                PATCH_reset_time();
-		InitPEQclock();
-                InitPEQ_LPB(pc->block,place);
-                InitPEQ_Signature(pc->block,place);
-                InitPEQ_Beat(pc->block,place);
-		InitPEQrealline(block,place);
-		InitPEQline(block,place);
-		InitPEQblock(block,place);
-		InitAllPEQnotes(block,place);
-
-		StartPlayer();							// An OS spesific function.
-		ATOMIC_SET(pc->isplaying, true);
-
-
-     ATOMIC_SET(pc->initplaying, false);
+  int playtype;
+  if(do_loop==true)
+    playtype=PLAYBLOCK;
+  else
+    playtype=PLAYBLOCK_NONLOOP;
+  
+  start_player(playtype, 0, place, block);
 }
 
 void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
 	PlayStopReally(false);
 
-	root->setfirstpos=true;
-	pc->seqtime=0;
+	ATOMIC_SET(root->setfirstpos, true);
+	ATOMIC_SET(pc->seqtime, 0);
 
         {
           struct WBlocks *wblock=window->wblock;
@@ -196,14 +206,15 @@ void PlayBlockCurrPos(struct Tracker_Windows *window){
 	Place *place;
 	PlayStopReally(false);
 
-	root->setfirstpos=false;
+	ATOMIC_SET(root->setfirstpos, false);
 
 	wblock=window->wblock;
 
-	if(wblock->curr_realline==0) root->setfirstpos=true;
+	if(wblock->curr_realline==0)
+          ATOMIC_SET(root->setfirstpos, true);
 
 	place       = &wblock->reallines[wblock->curr_realline]->l.p;
-	pc->seqtime = -Place2STime(wblock->block,place);
+	ATOMIC_ADD(pc->seqtime, -Place2STime(wblock->block,place));
 
 //	printf("contblock, time: %d\n",pc->seqtime);
 
@@ -221,12 +232,13 @@ void PlayRangeCurrPos(struct Tracker_Windows *window){
 
 	if( ! wblock->isranged) return;
 
-	root->setfirstpos=false;
+	ATOMIC_SET(root->setfirstpos, false);
 
-	if(wblock->rangey1==0) root->setfirstpos=true;
+	if(wblock->rangey1==0)
+          ATOMIC_SET(root->setfirstpos, true);
 
 	place=getRangeStartPlace(wblock);
-	pc->seqtime=-Place2STime(wblock->block,place);
+	ATOMIC_ADD(pc->seqtime, -Place2STime(wblock->block,place));
 
 //	printf("playrange, time: %d\n",pc->seqtime);
 
@@ -309,49 +321,16 @@ static void PlaySong(
 	Place *place,
 	int playpos
 ){
-	debug("haaasfdfsafsa, root->song->length: %d\n\n\n",root->song->length);
-	ATOMIC_SET(pc->initplaying, true);
+  struct Blocks *block=BL_GetBlockFromPos(playpos);
 
-		struct Blocks *block=BL_GetBlockFromPos(playpos);
+  printf("Play song. blocknum:%d. Block: %p\n",block->l.num, block);
 
-		printf("Play song. blocknum:%d. Block: %p\n",block->l.num, block);
+  start_player(PLAYSONG, playpos, place, block);
 
-		pc->playpos=playpos;
-                pc->play_id++;
-                
-		root->curr_playlist=playpos;
-
-		pc->playtype=PLAYSONG;
-
-		pc->block=block;
-
-		root->curr_block=block->l.num;
-#if !USE_OPENGL
-		ATOMIC_SET(pc->isplaying, true);
-		(*Ptask2MtaskCallBack)();
-#endif
-		ATOMIC_SET(pc->isplaying, false);
-
-                PATCH_reset_time();
-		InitPEQclock();
-                InitPEQ_LPB(pc->block,place);
-                InitPEQ_Signature(pc->block,place);
-                InitPEQ_Beat(pc->block,place);
-		InitPEQrealline(block,place);
-		InitPEQline(block,place);
-		InitPEQblock(block,place);
-		InitAllPEQnotes(block,place);
-
-		StartPlayer();							// An OS spesific function.
-		ATOMIC_SET(pc->isplaying, true);
-
-
-      ATOMIC_SET(pc->initplaying, false);
-
-        // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
+  // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
 #if STOP_GC_WHILE_PLAYING
-        while(GC_is_disabled()==false)
-          GC_disable();
+  while(GC_is_disabled()==false)
+    GC_disable();
 #endif
 }
 
@@ -360,9 +339,9 @@ void PlaySongFromStart(struct Tracker_Windows *window){
 	PlayStopReally(false);
 
 	BS_SelectPlaylistPos(0);
-	debug("root->curr_block: %d\n",root->curr_block);
-	root->setfirstpos=true;
-	pc->seqtime=0;
+	//debug("root->curr_block: %d\n",root->curr_block);
+	ATOMIC_SET(root->setfirstpos, true);
+	ATOMIC_SET(pc->seqtime, 0);
 
 	InitAllInstrumentsForPlaySongFromStart();
 
@@ -384,7 +363,7 @@ void PlaySongCurrPos(struct Tracker_Windows *window){
 
 	PlayStopReally(false);
 
-	root->setfirstpos=false;
+	ATOMIC_SET(root->setfirstpos, false);
 
 	playpos=root->curr_playlist;
                 
@@ -394,7 +373,7 @@ void PlaySongCurrPos(struct Tracker_Windows *window){
 	if(wblock->l.num!=block->l.num){
 		wblock=ListFindElement1(&window->wblocks->l,block->l.num);
 		changeblock=true;
-		root->setfirstpos=true;
+		ATOMIC_SET(root->setfirstpos, true);
 	}
 
 	if(
@@ -405,19 +384,20 @@ void PlaySongCurrPos(struct Tracker_Windows *window){
 		return;
 	}
 
-	if(wblock->curr_realline==0) root->setfirstpos=true;
+	if(wblock->curr_realline==0)
+          ATOMIC_SET(root->setfirstpos, true);
 
 
-	debug("contsong, playpos: %d , root->curr_block: %d\n",playpos,root->curr_block);
+	//debug("contsong, playpos: %d , root->curr_block: %d\n",playpos,root->curr_block);
 
 	if(changeblock){
 		place=PlaceGetFirstPos();
-		pc->seqtime=0;
+		ATOMIC_SET(pc->seqtime, 0);
 	}else{
 		place=&wblock->reallines[wblock->curr_realline]->l.p;
-		pc->seqtime=-Place2STime(wblock->block,place);
+		ATOMIC_ADD(pc->seqtime, -Place2STime(wblock->block,place));
 	}
-	debug("contsong, time: %d, playpos: %d , root->curr_block: %d\n",pc->seqtime,playpos,root->curr_block);
+	//debug("contsong, time: %d, playpos: %d , root->curr_block: %d\n",pc->seqtime,playpos,root->curr_block);
 
 	place->line++;
 	debug("nextline: %d\n",Place2STime(wblock->block,place));
@@ -425,13 +405,4 @@ void PlaySongCurrPos(struct Tracker_Windows *window){
 
 	PlaySong(place,playpos);
 }
-
-
-
-
-
-
-
-
-
 

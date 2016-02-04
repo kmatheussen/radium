@@ -463,7 +463,7 @@ int NOTE_get_velocity(struct Tracks *track){
 int g_downscroll = 1;
 
 static void MaybeScrollEditorDown(struct Tracker_Windows *window){
-  if(window->curr_track_sub==-1 && !ATOMIC_GET(pc->isplaying)){
+  if(window->curr_track_sub==-1 && !is_playing()){
     ScrollEditorDown(window,g_downscroll);
   }
 }

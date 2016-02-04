@@ -56,9 +56,9 @@ static double g_curr_beats_per_minute = 0.0;
 static double get_num_beats(LPB_iterator *iterator, int audioframes_to_add){
   struct Blocks *block = pc->block;
 
-  double time = pc->start_time_f - (double)pc->seqtime;
+  double time = pc->start_time_f - (double)ATOMIC_GET(pc->seqtime);
   
-  double time_to_add = (double)audioframes_to_add * block->reltempo;
+  double time_to_add = (double)audioframes_to_add * safe_volatile_float_read(&block->reltempo);
 
   return
     iterator->num_beats_played_so_far +
@@ -71,12 +71,12 @@ static double get_num_beats(LPB_iterator *iterator, int audioframes_to_add){
 static void set_new_g_num_beats_values(LPB_iterator *iterator, int audioblocksize){
   static int prev_play_id = -1;
 
-  if (prev_play_id != pc->play_id) {
+  if (prev_play_id != ATOMIC_GET(pc->play_id)) {
 
     g_curr_num_beats = get_num_beats(iterator, 0);
     g_next_num_beats = get_num_beats(iterator, audioblocksize);
 
-    prev_play_id = pc->play_id;
+    prev_play_id = ATOMIC_GET(pc->play_id);
 
   } else {
 
@@ -93,7 +93,7 @@ void RT_LPB_set_beat_position(int audioblocksize){
 
   LPB_iterator *iterator = &g_lpb_iterator;
   
-  if (ATOMIC_GET(pc->isplaying)==false) // this is a bit shaky. Perhaps use an isplaying lock where pc->isplaying can not be changed while holding this lock.
+  if (is_playing()==false)
     return;
 
   //R_ASSERT( (pc->end_time-pc->seqtime) >= iterator->time1);
@@ -116,14 +116,17 @@ double RT_LPB_get_beat_position(void){
 }
 
 double RT_LPB_get_current_BPM(void){
-  if (ATOMIC_GET(pc->isplaying))
+  if (ATOMIC_GET(is_starting_up))
+    return 0.0;
+  
+  else if (is_playing())
     return g_curr_beats_per_minute;
-  else {
-    if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->block==NULL)
+  
+  else 
+    if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->block==NULL) // TODO/FIX, somehow
       return 0.0;
     else
-      return (double)root->tempo * root->song->tracker_windows->wblock->block->reltempo;
-  }
+      return (double)root->tempo * safe_volatile_float_read(&root->song->tracker_windows->wblock->block->reltempo);
 }
 
 static void print_lpb_iterator_status(const struct Blocks *block){

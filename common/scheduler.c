@@ -201,6 +201,7 @@ void SCHEDULER_called_per_block(int64_t reltime){
 
 // Must be called when deleting a patch or track.
 void SCHEDULER_clear(void){
+  printf("TODO: Implermnet SCHEDULER_clear\n");
 }
 
 void SCHEDULER_init(void){

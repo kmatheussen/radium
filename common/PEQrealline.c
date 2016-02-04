@@ -94,10 +94,10 @@ static void PlayerFirstRealline(struct PEventQueue *peq,int doit){
 	Place firstplace;
 	PlaceSetFirstPos(&firstplace);
 
-        int64_t next_time = pc->seqtime + Place2STime(
-                                                      pc->block,
-                                                      &peq->wblock->reallines[1]->l.p
-                                                      );
+        int64_t next_time = ATOMIC_GET(pc->seqtime) + Place2STime(
+                                                                  pc->block,
+                                                                  &peq->wblock->reallines[1]->l.p
+                                                                  );
 
         RT_PD_set_realline(peq->l.time, next_time, &firstplace);
 #endif
@@ -141,7 +141,7 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
         if (!ATOMIC_GET(root->play_cursor_onoff)){
           
           // Set current realline in main thread (main thread picks up till_curr_realline and sets curr_realline afterwards)          
-          peq->wblock->till_curr_realline = realline;
+          ATOMIC_SET(peq->wblock->till_curr_realline, realline);
           
           // Set current realline in opengl thread
           //printf("PEQ: set realline %d\n",realline);

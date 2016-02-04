@@ -842,7 +842,7 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         if(tempo>100 || tempo <0.0001)
           printf("Illegal tempo: %f\n",tempo);
         else
-          pc->block->reltempo = tempo;
+          safe_volatile_float_write(&pc->block->reltempo, tempo);
       }
     else
       printf("Wrong args for radium_send_blockreltempo\n");

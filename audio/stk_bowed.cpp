@@ -4,7 +4,7 @@
 // copyright: "Romain Michon (rmichon@ccrma.stanford.edu)"
 // version: "1.0"
 //
-// Code generated with Faust 0.9.67 (http://faust.grame.fr)
+// Code generated with Faust 0.9.73 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
@@ -16,6 +16,7 @@ template <int N> inline double faustpower(double x)        { return pow(x,N); }
 template <int N> inline int faustpower(int x)              { return faustpower<N/2>(x) * faustpower<N-N/2>(x); } 
 template <> 	 inline int faustpower<0>(int x)            { return 1; }
 template <> 	 inline int faustpower<1>(int x)            { return x; }
+template <> 	 inline int faustpower<2>(int x)            { return x*x; }
 #endif
 #include <math.h>
 #include <string>
@@ -157,7 +158,6 @@ inline double 	min (double a, float b) 	{ return (a<b) ? a : b; }
 #define FAUSTFLOAT float
 #endif  
 
-typedef long double quad;
 
 #ifndef FAUSTCLASS 
 #define FAUSTCLASS Bowed_dsp
@@ -324,7 +324,7 @@ class Bowed_dsp : public dsp {
 		for (int i=0; i<2; i++) fRec19[i] = 0;
 		for (int i=0; i<2; i++) fRec18[i] = 0;
 		for (int i=0; i<2; i++) fRec17[i] = 0;
-		fConst5 = (0.95f * (fConst2 + 0.4f));
+		fConst5 = (0.95f * (0.4f + fConst2));
 		for (int i=0; i<2; i++) fRec4[i] = 0;
 		for (int i=0; i<2; i++) iRec23[i] = 0;
 		fentry2 = 1.0f;
@@ -355,7 +355,7 @@ class Bowed_dsp : public dsp {
 		instanceInit(samplingFreq);
 	}
 	virtual void buildUserInterface(UI* interface) {
-		interface->openVerticalBox("bowed");
+		interface->openVerticalBox("0x00");
 		interface->openHorizontalBox("Basic_Parameters");
 		interface->declare(&fentry0, "1", "");
 		interface->declare(&fentry0, "tooltip", "Tone frequency");
@@ -1124,7 +1124,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
     if(voice->dsp_instance==NULL) // an effect
       break;
     MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-    *(controller->control_port) = scaled_value;
+    safe_float_write(controller->control_port, scaled_value);
   }
 }
 
@@ -1135,14 +1135,14 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 
   if(value_format==PLUGIN_FORMAT_SCALED){
 #ifdef DONT_NORMALIZE_EFFECT_VALUES
-    return *(controller->control_port);
+    return safe_float_read(controller->control_port);
 #else
     float min = controller->min_value;
     float max = controller->max_value;
-    return scale(*(controller->control_port),min,max,0.0f,1.0f);
+    return scale(safe_float_read(controller->control_port),min,max,0.0f,1.0f);
 #endif
   }else{
-    return *(controller->control_port);
+    return safe_float_read(controller->control_port);
   }
 }
 
@@ -1152,9 +1152,9 @@ static void get_display_value_string(struct SoundPlugin *plugin, int effect_num,
   MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
 
   if(controller->type==EFFECT_FORMAT_INT)
-    snprintf(buffer,buffersize-1,"%d %s",(int)*(controller->control_port), controller->unit);
+    snprintf(buffer,buffersize-1,"%d %s",(int)safe_float_read(controller->control_port), controller->unit);
   else
-    snprintf(buffer,buffersize-1,"%.2f %s",*(controller->control_port), controller->unit);
+    snprintf(buffer,buffersize-1,"%.2f %s",safe_float_read(controller->control_port), controller->unit);
 }
 
 static const char *get_effect_description(const struct SoundPluginType *plugin_type, int effect_num){

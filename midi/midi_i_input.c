@@ -96,7 +96,7 @@ static void record_midi_event(uint32_t msg){
   
   midi_event->wblock    = root->song->tracker_windows->wblock;
   midi_event->wtrack    = midi_event->wblock->wtrack;
-  midi_event->blocktime = MIXER_get_accurate_radium_time() - pc->seqtime;
+  midi_event->blocktime = MIXER_get_accurate_radium_time() - ATOMIC_GET(pc->seqtime);
   midi_event->msg       = msg;
 
   midi_event->wtrack->track->is_recording = true;
@@ -280,7 +280,7 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   if(cc>=0xf0) // Too much drama
     return;
 
-  bool is_playing = ATOMIC_GET(pc->isplaying);
+  bool isplaying = is_playing();
 
   uint32_t msg = MIDI_msg_pack3(cc, data1, data2);
   int len = MIDI_msg_len(msg);
@@ -290,7 +290,7 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   if(ATOMIC_GET(g_through_patch)!=NULL)
     add_event_to_play_buffer(cc, data1, data2);
   
-  if (g_record_accurately_while_playing && is_playing) {
+  if (g_record_accurately_while_playing && isplaying) {
     
     if(cc>=0x80 && cc<0xa0)
       if (ATOMIC_GET(root->editonoff))

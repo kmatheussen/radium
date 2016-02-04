@@ -83,11 +83,15 @@ static void scheduled_fx_change(int64_t time, const union SuperType *args){
   //printf("Sending fx change %d\n",x);
 
   RT_FX_treat_fx(fx, x, time, skip, when);
+
+  float *slider_automation_value = ATOMIC_GET(fx->slider_automation_value);
+  enum ColorNums *slider_automation_color = ATOMIC_GET(fx->slider_automation_color);
+    
+  if(slider_automation_value!=NULL)
+    safe_float_write(slider_automation_value, scale(x,fx->min,fx->max,0.0f,1.0f));
   
-  if(fx->slider_automation_value!=NULL)
-    *fx->slider_automation_value = scale(x,fx->min,fx->max,0.0f,1.0f);
-  if(fx->slider_automation_color!=NULL)
-    *fx->slider_automation_color = fx->color; // There's a race condition here. But it's unlikely to happen and has no bad consequence if it should.
+  if(slider_automation_color!=NULL)
+    __atomic_store_n(slider_automation_color, fx->color, __ATOMIC_SEQ_CST);
 }
 
 static void fxhandle(int x, struct PEventQueue *peq, int skip, FX_when when){

@@ -9,5 +9,6 @@ race:safe_volatile_float_read
 race:safe_float_read
 race:safe_double_write
 race:safe_double_read
+race:safe_pointer_read
 race:Compressor_wrapper::get_graph_value
 race:Compressor_wrapper::set_parameter
