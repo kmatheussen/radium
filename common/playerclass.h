@@ -108,7 +108,7 @@ typedef struct{
         double start_time_f;       // double version of start_time.
         double end_time_f;         // double version of end_time.
 
-	volatile STime therealtime;	// Shows the real time, not taking the block->reltempo variable into consideration. Only used by PEQ_clock and PTask2MTask.c.
+	DEFINE_ATOMIC(STime, therealtime);	// Shows the real time, not taking the block->reltempo variable into consideration. Only used by PEQ_clock and PTask2MTask.c.
 
         STime reltime; // The argument for PlayerTask. Will usually contain the audio blocksize. Necessary for calculating delta time.
 

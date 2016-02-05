@@ -278,22 +278,22 @@ typedef struct SoundPlugin{
 
   // Data used by SoundProducer
   Smooth input_volume;
-  bool input_volume_is_on;
+  DEFINE_ATOMIC(bool, input_volume_is_on);
 
   float volume;
-  bool volume_is_on;
+  DEFINE_ATOMIC(bool, volume_is_on);
 
   float output_volume;
-  bool output_volume_is_on;
+  DEFINE_ATOMIC(bool, output_volume_is_on);
 
   float bus_volume[2];
   DEFINE_ATOMIC(bool, bus_volume_is_on)[2];
 
   Smooth pan; // between 0 and 1
-  bool pan_is_on;
+  DEFINE_ATOMIC(bool, pan_is_on);
 
   Smooth drywet;
-  bool effects_are_on;
+  DEFINE_ATOMIC(bool, effects_are_on);
 
   SystemFilter lowpass;
   float lowpass_freq;

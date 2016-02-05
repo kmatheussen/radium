@@ -99,11 +99,11 @@ void PlayerTask(STime reltime){
         }
         
         if(pc->end_time==0){
-          pc->therealtime=reltime;
+          ATOMIC_SET(pc->therealtime, reltime);
           OS_InitMidiTiming();
           OS_InitAudioTiming();
         }else{
-          pc->therealtime+=reltime;
+          ATOMIC_ADD(pc->therealtime, reltime);
         }
 
 #if 0

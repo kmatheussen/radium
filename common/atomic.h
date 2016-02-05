@@ -122,16 +122,16 @@ static inline float safe_float_read(float *pos){
 }
 
 static inline void safe_double_write(volatile double *pos, double value){
-  *pos = value;
+  *pos = value; // is this really atomic?
 }
 
 // This function is suppressed from tsan
 static inline double safe_double_read(volatile double *pos){
-  return *pos;
+  return *pos; // is this really atomic?
 }
 
 static inline void *safe_pointer_read(void **p){
-  return *p;
+  return __atomic_load_n(p, __ATOMIC_RELAXED);
 }
 
 

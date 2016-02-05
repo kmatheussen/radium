@@ -176,7 +176,7 @@ struct SoundProducerLink {
       
     } else {
     
-      if (source_plugin->output_volume_is_on)
+      if (ATOMIC_GET(source_plugin->output_volume_is_on))
         return source_plugin->output_volume * plugin_volume; // * link_volume (Not included since there currently isn't an interface to set the link volume.)
       else
         return 0.0f;
@@ -1038,7 +1038,7 @@ public:
           
           float *volume_peak_values_for_chip = ATOMIC_GET(_plugin->volume_peak_values_for_chip);
           if(volume_peak_values_for_chip!=NULL) {
-            if (_plugin->output_volume_is_on)
+            if (ATOMIC_GET(_plugin->output_volume_is_on))
               safe_float_write(&volume_peak_values_for_chip[ch], output_volume_peak);
             else
               safe_float_write(&volume_peak_values_for_chip[ch], 0.0f); // The chip volume slider is not grayed out, like the out "out" slider.

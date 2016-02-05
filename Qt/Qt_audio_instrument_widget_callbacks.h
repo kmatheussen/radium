@@ -554,10 +554,10 @@ public:
     bus2_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
 
     if(num_outputs>0){
-      input_volume_layout->setEnabled(plugin->effects_are_on);
+      input_volume_layout->setEnabled(ATOMIC_GET(plugin->effects_are_on));
       if(plugin->type->num_inputs>0)
-        _plugin_widget->setEnabled(plugin->effects_are_on);
-      filters_widget->setEnabled(plugin->effects_are_on);
+        _plugin_widget->setEnabled(ATOMIC_GET(plugin->effects_are_on));
+      filters_widget->setEnabled(ATOMIC_GET(plugin->effects_are_on));
     }
 
     _comp_widget->update_gui();

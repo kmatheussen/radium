@@ -95,7 +95,7 @@ void PC_NewSecond(struct PEventQueue *peq,int doit){
 //	ObtainRSemaphore(ClockSemaphore);
 
 //	clock_time=time;
-	clock_time=pc->therealtime;
+        clock_time=ATOMIC_GET(pc->therealtime);
 
 #ifdef _AMIGA
 	Signal(mytask,1L<<clocksig);

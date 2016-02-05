@@ -1033,10 +1033,10 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     {
       int x1,y1,x2,y2;
       get_volume_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, x1,y1,x2,y2, plugin->volume_is_on);
+      paint_checkbutton(painter, x1,y1,x2,y2, ATOMIC_GET(plugin->volume_is_on));
 
       get_effects_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, x1,y1,x2,y2, plugin->effects_are_on);
+      paint_checkbutton(painter, x1,y1,x2,y2, ATOMIC_GET(plugin->effects_are_on));
     }
 
 #if 0
@@ -1152,8 +1152,8 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
         Undo_AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_VOLUME_ONOFF);
 
-        printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
-        float new_value = plugin->volume_is_on?0.0f:1.0f;
+        //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
+        float new_value = ATOMIC_GET(plugin->volume_is_on)?0.0f:1.0f;
 
         PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
         CHIP_update(plugin);
@@ -1171,7 +1171,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
         Undo_AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF);
 
-        float new_value = plugin->effects_are_on?0.0f:1.0f;
+        float new_value = ATOMIC_GET(plugin->effects_are_on)?0.0f:1.0f;
 
         PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
         CHIP_update(plugin);

@@ -291,7 +291,7 @@ static void EditorFollowsPlayCursorLoop(void){
 // called very often
 static void PlayHandleRangeLoop(void){
 
-  struct Blocks *block = pc->block;
+  struct Blocks *block = safe_pointer_read((void**)&pc->block);
   
   if (pc->is_playing_range == false || block==NULL)
     return;
@@ -299,12 +299,12 @@ static void PlayHandleRangeLoop(void){
   //printf("duration: %d\nrealtime: %d\n\n", (int)duration, (int)pc->therealtime);
 
   
-  STime start_therealtime = pc->therealtime;
+  STime start_therealtime = ATOMIC_GET(pc->therealtime);
 
   if (start_therealtime >= pc->range_duration/block->reltempo) {
     PlayRangeCurrPos(root->song->tracker_windows);
     int counter = 0;
-    while (pc->therealtime == start_therealtime && counter < 50){ // Wait for the player to start up.
+    while (ATOMIC_GET(pc->therealtime) == start_therealtime && counter < 50){ // Wait for the player to start up.
       OS_WaitForAShortTime(20);
       counter++;
     }
