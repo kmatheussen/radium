@@ -199,9 +199,26 @@ void SCHEDULER_called_per_block(int64_t reltime){
   g_current_time = end_time;
 }
 
-// Must be called when deleting a patch or track.
-void SCHEDULER_clear(void){
-  printf("TODO: Implermnet SCHEDULER_clear\n");
+// * Must be called when deleting a patch or track. (why?)
+// * Can't there be hanging notes, or other undefined behaviors, when the event callback is not called?
+// Returns true if everything was cleared.
+bool SCHEDULER_clear(void){
+  //printf("TODO: Implermnet SCHEDULER_clear\n");
+
+  const int max_to_remove = 20; // 2048/20 = 102.4. 102.4 * 64 frames / (48000 frames / seconds) = 0.1365 seconds. I.e. we should never wait more than approx. 0.14 seconds for all events to be cleared.
+  int num_removed = 0;
+  
+  while(g_queue_size>0 && num_removed < max_to_remove){
+    event_t *event = get_first_event();
+    remove_first_event();
+    release_event(event);
+    num_removed++;
+  }
+
+  if (g_queue_size > 0)
+    return false;
+  else
+    return true;
 }
 
 void SCHEDULER_init(void){

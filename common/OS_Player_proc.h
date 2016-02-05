@@ -14,6 +14,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef RADIUM_COMMON_OS_PLAYER_PROC_H
+#define RADIUM_COMMON_OS_PLAYER_PROC_H
+
+
 //extern LANGSPEC void PLAYER_acquire_same_priority(void);
 //extern LANGSPEC void PLAYER_drop_same_priority(void);
 
@@ -22,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern LANGSPEC void PLAYER_lock(void);
 extern LANGSPEC void PLAYER_unlock(void);
 
-// Must be called in SoundProducer::RT_process if doing things there which requires the PLAYER_lock. (separate lock because of multicore processing)
+// Must be called in SoundPlugin::RT_process if doing things there which requires the PLAYER_lock. (separate lock because of multicore processing, PLAYER_lock is always held inside SoundPlugin::RT_process)
 extern LANGSPEC void RT_PLAYER_runner_lock(void);
 extern LANGSPEC void RT_PLAYER_runner_unlock(void);
 
@@ -46,3 +50,7 @@ extern LANGSPEC void PLAYER_mute(void);
 
 extern LANGSPEC void RT_request_to_stop_playing(void);
 extern LANGSPEC void RT_pause_plugins(void);
+
+
+#endif
+

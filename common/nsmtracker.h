@@ -112,6 +112,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker_events.h"
 #include "OS_error_proc.h"
 #include "OS_Semaphores.h"
+#include "OS_Player_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
 
 
@@ -587,7 +588,7 @@ struct Patch{
 
   struct PatchVoice voices[NUM_PATCH_VOICES];
 
-  int num_currently_playing_voices;
+  int num_currently_playing_voices; // Access protected by PLAYER_lock
   PatchPlayingNote playing_voices[MAX_PLAYING_PATCH_NOTES];      /* To keep track of how many times a voice has to be turned off. */
 
   int num_currently_playing_notes;
@@ -614,6 +615,8 @@ static inline void Patch_addPlayingVoice(struct Patch *patch, float note_num, in
     abort();
 #endif
 
+  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
+  
   if(patch->num_currently_playing_voices==MAX_PLAYING_PATCH_NOTES)
     printf("Error. Reached max number of voices there's room for in a patch. Hanging notes are likely to happen.\n");
   else    
@@ -622,6 +625,8 @@ static inline void Patch_addPlayingVoice(struct Patch *patch, float note_num, in
 
 
 static inline void Patch_removePlayingVoice(struct Patch *patch, int64_t note_id){
+  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
+  
   int i;
   for(i=0;i<patch->num_currently_playing_voices;i++){
     if(patch->playing_voices[i].note_id==note_id){

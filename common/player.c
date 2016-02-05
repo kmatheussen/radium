@@ -54,13 +54,15 @@ void PlayerTask(STime reltime){
 
         } else if (player_state==PLAYER_STATE_STOPPING) {
           PC_ReturnElements();
-          SCHEDULER_clear();
-
+          
           pc->end_time=0;
           pc->end_time_f=0;
 
-          ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);
-          return;
+          if (SCHEDULER_clear()) {
+            ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);  // Finished. SCHEDULER_clear() cleared everything.
+            player_state = PLAYER_STATE_STOPPED;
+          } else            
+            return; // Must run SCHEDULER_clear() at least one more time. We don't want clear too much at once since it could cause CPU spikes.
           
           //} else if (player_state==PLAYER_STATE_STOPPED) {
           //  return;

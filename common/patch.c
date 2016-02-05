@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_wtrackheaders_proc.h"
 #include "fxlines_proc.h"
 #include "player_proc.h"
-#include "OS_Player_proc.h"
 #include "scheduler_proc.h"
 
 #include "undo.h"
@@ -1036,7 +1035,7 @@ void PATCH_stop_all_notes(struct Patch *patch){
                     );
     }
 
-    patch->num_currently_playing_notes = 0;
+    patch->num_currently_playing_notes = 0; // why? It's already 0.
 
   }PLAYER_unlock();
 }
