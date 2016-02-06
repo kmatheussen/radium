@@ -105,15 +105,15 @@ struct Runner : public QThread {
 
 public:
   radium::Semaphore can_start_main_loop;
-  volatile bool must_exit;
+  DEFINE_ATOMIC(bool, must_exit);
 
   int64_t time;
   int num_frames;
   bool process_plugins;
 
   Runner()
-    : must_exit(false)
   {
+    ATOMIC_SET(must_exit, false);
     QObject::connect(this, SIGNAL(finished()), this, SLOT(onFinished()));
     start(QThread::NormalPriority); //QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
   }
@@ -132,7 +132,7 @@ public:
     while(true){
       
       SoundProducer *sp = soundproducer_queue.get();
-      if (must_exit) {
+      if (ATOMIC_GET(must_exit)) {
         soundproducer_queue.put(sp);
         break;
       }
@@ -345,7 +345,7 @@ void MULTICORE_set_num_threads(int num_new_runners){
     g_runners = new_runners;
 
     for(int i=0 ; i < num_old_runners ; i++)
-      old_runners[i]->must_exit = true;
+      ATOMIC_SET(old_runners[i]->must_exit, true);
 
   } PLAYER_unlock();
 
@@ -354,7 +354,8 @@ void MULTICORE_set_num_threads(int num_new_runners){
 }
 
 void MULTICORE_shut_down(void){
-  
+  for(int i=0 ; i < g_num_runners ; i++)
+    ATOMIC_SET(g_runners[i]->must_exit, true);
 }
 
 void MULTICORE_init(void){

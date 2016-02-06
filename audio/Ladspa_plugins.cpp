@@ -479,7 +479,7 @@ static char *create_info_string(const LADSPA_Descriptor *descriptor){
   return V_strdup(temp);
 }
 
-static void add_ladspa_plugin_type(QFileInfo file_info){
+static void add_ladspa_plugin_type(const QFileInfo &file_info){
   //return; // <- TODO: ThreadSanitizer complains on somethine when loading each ladspa plugins, but there is no proper backtrace so I haven't taken the time to find the cause of it yet.
   
   QString filename = file_info.absoluteFilePath();

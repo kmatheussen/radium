@@ -78,6 +78,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/Juce_plugins_proc.h"
 #include "../audio/Mixer_proc.h"
+#include "../audio/MultiCore_proc.h"
 
 
 #ifdef __linux__
@@ -1198,9 +1199,16 @@ int radium_main(char *arg){
   posix_EndPlayer();
   //EndGuiThread();
 
-  MIXER_stop(); // shut down mixer
+  MIXER_stop();
+
+  MULTICORE_shut_down();
+
+  //V_shutdown();
   
-  CRASHREPORTER_close();
+  //CRASHREPORTER_close();
+
+  // Give various stuff some time to exit
+  OS_WaitForAShortTime(100);
 
   return 0;
 
