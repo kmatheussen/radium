@@ -21,6 +21,8 @@ color15 = #5c6159
 system_color = #63696a
 button_color = #454d4f
 
+range_color = #3e4e47
+
 soundfont_color = #009000
 soundfile_color = #0000f0
 current_soundfile_color = #010101
