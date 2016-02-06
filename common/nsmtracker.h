@@ -56,8 +56,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   #endif
 #endif
 
-#ifndef DEBUG
-#  error "Missing DEBUG option. Edit the Makefile."
+#ifndef DEBUG_ALLOWED
+#ifdef DEBUG
+#  error "DEBUG option can not be specified"
+#endif
 #endif
 
 #ifdef FOR_WINDOWS
