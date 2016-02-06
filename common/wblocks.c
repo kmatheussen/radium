@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "visual_proc.h"
 #include "Signature_proc.h"
+#include "../OpenGL/Widget_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -450,6 +451,8 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
         //MinimizeBlock_CurrPos(window);
         //wblock->block->is_dirty = true;
 
+        GE_set_curr_realline(wblock->curr_realline);
+          
 	window->must_redraw = true;
 }
 

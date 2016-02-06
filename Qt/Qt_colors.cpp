@@ -351,7 +351,7 @@ static QColor *g_config_colors[END_CONFIG_COLOR_NUM] = {0};
 
 
 static void clear_config_color(enum ColorNums num){
-  free(g_config_colors[num]);
+  delete g_config_colors[num];
   g_config_colors[num] = NULL;
 }
 
