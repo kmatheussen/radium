@@ -170,7 +170,7 @@ static double get_realline_stime(SharedVariables *sv, int realline){
 // OpenGL thread
 static double find_current_realline_while_playing(SharedVariables *sv){
 
-  double time_in_ms = (double)(safe_double_read(&pc->start_time_f) - ATOMIC_GET(pc->seqtime)) * 1000.0 / (double)pc->pfreq; // I'm not entirely sure reading pc->start_time_f instead of pc->start_time is unproblematic.
+  double time_in_ms = (double)(atomic_double_read(&pc->start_time_f) - ATOMIC_GET(pc->seqtime)) * 1000.0 / (double)pc->pfreq; // I'm not entirely sure reading pc->start_time_f instead of pc->start_time is unproblematic.
   double stime      = time_estimator.get(time_in_ms, sv->reltempo) * (double)pc->pfreq / 1000.0;
 
   double prev_line_stime = 0.0;
@@ -316,7 +316,7 @@ public:
   PaintingData *painting_data;
 
   DEFINE_ATOMIC(bool, is_training_vblank_estimator);
-  volatile double override_vblank_value;
+  atomic_double_t override_vblank_value;
   bool has_overridden_vblank_value;
 
   float last_scroll_pos;
@@ -333,13 +333,13 @@ public:
     , new_width(500)
     , new_height(500)
     , painting_data(NULL)
-    , override_vblank_value(-1.0)
     , has_overridden_vblank_value(false)
     , last_scroll_pos(-1.0f)
     , last_current_realline_while_playing(-1.0f)
     , last_curr_realline(-1)
     , sleep_when_not_painting(true) //SETTINGS_read_bool("opengl_sleep_when_not_painting", false))
   {
+    init_atomic_double(&override_vblank_value, -1.0);
     ATOMIC_SET(is_training_vblank_estimator, true);
     setMouseTracking(true);
     //setAttribute(Qt::WA_PaintOnScreen);
@@ -637,10 +637,12 @@ public:
       ATOMIC_SET(GE_opengl_version_flags, QGLFormat::openGLVersionFlags());
       //abort();
     }
-    
-    if (has_overridden_vblank_value==false && override_vblank_value > 0.0) {
 
-      time_estimator.set_vblank(override_vblank_value);
+    double overridden_vblank_value = atomic_double_read(&override_vblank_value);
+    
+    if (has_overridden_vblank_value==false && overridden_vblank_value > 0.0) {
+
+      time_estimator.set_vblank(overridden_vblank_value);
       ATOMIC_SET(is_training_vblank_estimator, false);
       has_overridden_vblank_value = true;
 
@@ -692,7 +694,7 @@ public:
 
   // Main thread
   void set_vblank(double value){
-    safe_double_write(&override_vblank_value, value); // silence tsan. TODO: It's probably not that safe.
+    atomic_double_write(&override_vblank_value, value);
   }
 
   // Necessary to avoid error with clang++.

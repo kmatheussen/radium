@@ -105,7 +105,7 @@ typedef struct{
         volatile STime start_time; // During current call to peq->treatMe
         volatile STime end_time;   // During current call to peq->treatMe
 
-        double start_time_f;       // double version of start_time.
+        atomic_double_t start_time_f;       // double version of start_time.
         double end_time_f;         // double version of end_time.
 
 	DEFINE_ATOMIC(STime, therealtime);	// Shows the real time, not taking the block->reltempo variable into consideration. Only used by PEQ_clock and PTask2MTask.c.

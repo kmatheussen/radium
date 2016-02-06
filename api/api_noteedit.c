@@ -502,6 +502,27 @@ int addNote(int notenum,int velocity,
                   windownum, blocknum, tracknum
                   );
 }
+
+void cutNote(float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+
+  Place place;
+  Float2Placement(floatplace, &place);
+
+  if (PlaceGreaterOrEqual(&place, &note->end))
+    return;
+  
+  if (PlaceLessOrEqual(&place, &note->l.p))
+    return;
+
+  CutNoteAt(wblock->block, wtrack->track, note, &place);
+}
+
 void addNoteAdds(
 	PyObject *noteadds,
 	int windownum,

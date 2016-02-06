@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 3.6.0
+VERSION = 3.6.1
 
 #----------------USER SETTINGS-------------------------------
 
@@ -115,13 +115,13 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 FULL_VERSION ?= 1
 
 # Note that "make clean" must be run for DEBUG_BUILD_OPTS to take effect
-DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -Og -fsanitize=address
-#-fsanitize=thread 
+DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -Og -fsanitize=address 
+#
 #-Og 
-#-fsanitize=thread 
+# -fsanitize=thread 
 #
 
-RELEASE_BUILD_OPTS_WITHOUT_NDEBUG = -DRELEASE -DDEBUG -Wall -g $(OPTIMIZE)
+RELEASE_BUILD_OPTS_WITHOUT_NDEBUG = -DRELEASE -Wall -g $(OPTIMIZE)
 
 RELEASE_BUILD_OPTS = $(RELEASE_BUILD_OPTS_WITHOUT_NDEBUG) -DNDEBUG
 
@@ -368,17 +368,17 @@ dotesting: test_vector test_placement test_notes test_path_resolver
 	@echo " == All tests succeeded, apparently =="
 
 test_vector:
-	$(CC) -g -Wall -Werror -DTEST_VECTOR -DDEBUG -DUSE_QT_REQTYPE=1 common/vector.c common/memory.c -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
+	$(CC) -g -Wall -Werror -DTEST_VECTOR  -DUSE_QT_REQTYPE=1 common/vector.c common/memory.c -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_placement:
-	$(CC) -g -Wall -Werror -DTEST_PLACEMENT -DDEBUG -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
+	$(CC) -g -Wall -Werror -DTEST_PLACEMENT  -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_notes:
-	$(CC) -g -Wall -Werror -DTEST_NOTES -DDEBUG -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.c common/memory.c -lm -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
+	$(CC) -g -Wall -Werror -DTEST_NOTES  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.c common/memory.c -lm -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_path_resolver:
-	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER -DDEBUG -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) bin/packages/gc-7.2/.libs/libgc.a -lpthread && ./a.out
-	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER -DDEBUG -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) bin/packages/gc-7.2/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
+	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) bin/packages/gc-7.2/.libs/libgc.a -lpthread && ./a.out
+	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) bin/packages/gc-7.2/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 packages: bin/packages/deletemetorebuild
 
@@ -412,12 +412,21 @@ bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluids
 #  -lasound
 
 # Adding "TARGET_ARCH=-g" to prevent juce from compiling with -march=native
-PLUGINHOSTOPTS = CXX=g++ TARGET_ARCH=-g
+PLUGINHOSTOPTS = CXX="$(CCC) -DDEBUG_ALLOWED" TARGET_ARCH=-g
 
 pluginhost/Builds/Linux/build/libMyPluginHost.a: audio/Juce_plugins.cpp flagopts.opt pluginhost/MyPluginHost.jucer $(API)/radium_proc.h
-	if [ $(BUILDTYPE) = DEBUG ] ; then cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS)  $(MAKE)  -n ; else cd pluginhost/Builds/Linux && CONFIG=Release  $(PLUGINHOSTOPTS) $(MAKE)  -n ; fi
-	if [ $(BUILDTYPE) = DEBUG ] ; then cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS)  $(MAKE)  ; else cd pluginhost/Builds/Linux && CONFIG=Release $(PLUGINHOSTOPTS)  $(MAKE)  ; fi
-#	if [ $(BUILDTYPE) = DEBUG ] ; then cd pluginhost/Builds/Linux && CXX="clang++ -v" CONFIG=Debug $(MAKE) ; else cd pluginhost/Builds/Linux && CXX=clang++ CONFIG=Release $(MAKE) ; fi
+# dryrun
+	if [ $(BUILDTYPE) = DEBUG ] ; then \
+		cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS)  $(MAKE)  -n ; \
+	else \
+		cd pluginhost/Builds/Linux && CONFIG=Release  $(PLUGINHOSTOPTS) $(MAKE)  -n ; \
+	fi
+# real thing
+	if [ $(BUILDTYPE) = DEBUG ] ; then \
+		cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS)  $(MAKE)   -j 4; \
+	else \
+		cd pluginhost/Builds/Linux && CONFIG=Release  $(PLUGINHOSTOPTS) $(MAKE)  -j 4 ; \
+	fi
 
 
 $(CD)keyboard_sub_ids.h: bin/generate_keyboard_sub_ids.py bin/keysubids.py

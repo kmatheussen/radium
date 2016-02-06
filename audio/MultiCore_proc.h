@@ -9,4 +9,5 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
 int MULTICORE_get_num_threads(void);
 void MULTICORE_set_num_threads(int num_threads);
 void MULTICORE_init(void);
+void MULTICORE_shut_down(void);
 

@@ -91,10 +91,10 @@ DEFINE_ATOMIC(int, g_num_cpu_usage) = 0;
 DEFINE_ATOMIC(int, g_avg_cpu_usage) = 0.0f;
 static float g_total_cpu_usage = 0;
 
-static bool g_jack_is_running = true;
+static DEFINE_ATOMIC(bool, g_jack_is_running) = true;
 
 bool PLAYER_is_running(void){
-  return g_jack_is_running;
+  return ATOMIC_GET(g_jack_is_running);
 }
 
 void THREADING_acquire_player_thread_priority(void){
@@ -782,7 +782,7 @@ struct Mixer{
   }
 
   static void RT_rjack_shutdown(jack_status_t code, const char *reason, void *arg){
-    g_jack_is_running = false; // must be set before rt_message to avoid deadlock
+    ATOMIC_SET(g_jack_is_running, false); // must be set before rt_message to avoid deadlock
     RT_message("The jack server shut down\n"
                "(Reason from the server: \"%s\").\n"
                "\n"

@@ -13,6 +13,14 @@
 #include "nsmtracker.h"
 
 
+#if defined(RELEASE)
+  #if defined(VALIDATE_MEM)
+    #error "oops"
+  #endif
+#endif
+
+
+
 #if defined(VALIDATE_MEM)
 
 
@@ -237,7 +245,9 @@ static double get_ms(void){
   return timer->elapsed();
 }
 
-static bool g_stop_thread = false;
+static DEFINE_ATOMIC(bool, g_stop_thread) = false;
+static DEFINE_ATOMIC(bool, g_thread_stopped) = true;
+static DEFINE_ATOMIC(bool, g_has_shut_down) = false;
 
 static Memlink *validate_a_little(double max_time, Memlink *link){
     
@@ -264,7 +274,7 @@ static Memlink *validate_a_little(double max_time, Memlink *link){
         num_scanned++;
       }
 
-      if (g_stop_thread==true) {
+      if (ATOMIC_GET(g_stop_thread)==true) {
         myunlock();
         return NULL;
       }
@@ -306,27 +316,34 @@ public:
     timer = new QTime;
     
     Memlink *link = NULL;
-    while(g_stop_thread==false){
-      QThread::msleep(2);                 // sleep 2ms
-      link = validate_a_little(3, link);  // work 3ms
+
+    ATOMIC_SET(g_thread_stopped, false);
+    {
+      while(ATOMIC_GET(g_stop_thread)==false){
+        QThread::msleep(2);                 // sleep 2ms
+        link = validate_a_little(3, link);  // work 3ms
+      }
     }
+    ATOMIC_SET(g_thread_stopped, true);
   }
 };
 
 }
 
 
-static void dasatexit(void){
-  g_stop_thread = true;
+void V_shutdown(void){
+  ATOMIC_SET(g_stop_thread, true);
+  while(ATOMIC_GET(g_thread_stopped)==false)
+    OS_WaitForAShortTime(5);
+  ATOMIC_SET(g_has_shut_down, true);
 }
 
 void V_run_validation_thread(void){
   static DEFINE_ATOMIC(int, num) =0;
 
   if (ATOMIC_ADD_RETURN_OLD(num, 1) == 5000) { // Must wait a little to start the thread. This function is called VERY early in the program.
-  
+
     new ValidationThread();
-    atexit(dasatexit);
 
   }
 }
@@ -494,29 +511,33 @@ void *V_realloc__(void *ptr, size_t size, const char *filename, int linenumber){
 // Note, buggy system libraries may cause the memory validator to crash.
 // In that case, just change "#if 1" to "#if 0" below.
 //
-#if 1
+#if 0 // <- Too much trouble
 
 
 void* operator new(size_t size){
-  static int num=1;
   //printf("new: %d. size: %d\n",num++,(int)size);
   //return malloc(size);
-  if(true || num>100)
+  if(ATOMIC_GET(g_has_shut_down)==false)
     return V_malloc(size);
   else
     return malloc(size);
 }
 
 void operator delete (void* mem){
-  V_free(mem);
+  if(ATOMIC_GET(g_has_shut_down)==false)
+    V_free(mem);
 }
 
 void* operator new[](size_t size){
-  return V_malloc(size);
+  if(ATOMIC_GET(g_has_shut_down)==false)
+    return V_malloc(size);
+  else
+    return malloc(size);
 }
 
 void operator delete[](void* mem){
-  V_free(mem);
+  if(ATOMIC_GET(g_has_shut_down)==false)
+    V_free(mem);
 }
 
 #endif // 1

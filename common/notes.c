@@ -1116,6 +1116,28 @@ void EditNoteCurrPos(struct Tracker_Windows *window){
  /* Not General RETURN anymore */
 /******************************/
 
+void CutNoteAt(struct Blocks *block, struct Tracks *track,struct Notes *note, Place *place){
+
+  if (PlaceGreaterOrEqual(place, &note->end)){
+    RError("Illegal argument for CutNoteAt 1. %f >= %f\n",GetfloatFromPlacement(place),GetfloatFromPlacement(&note->end));
+    return;
+  }
+  
+  if (PlaceLessOrEqual(place, &note->l.p)){
+    RError("Illegal argument for CutNoteAt 2. %f <= %f\n",GetfloatFromPlacement(place),GetfloatFromPlacement(&note->l.p));
+    return;
+  }
+  
+  PLAYER_lock();{
+
+        CutListAt(&note->velocities,place);
+        CutListAt(&note->pitches,place);
+        PlaceCopy(&note->end,place);
+
+  }PLAYER_unlock();
+
+}
+
 void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	struct WBlocks *wblock;
 	struct WTracks *wtrack;
@@ -1124,38 +1146,32 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	struct Notes *note;
 	int subtrack;
 
-	PC_Pause();
-
 	wblock=window->wblock;
 	wtrack=wblock->wtrack;
 	reallinerealline=wblock->curr_realline;
 	realline=wblock->reallines[reallinerealline];
 	subtrack=window->curr_track_sub;
-
+        
 	note=FindNoteOnSubTrack(wtrack->track,subtrack,&realline->l.p);
-	if(note==NULL){
-		PC_StopPause();
-		return;
-	}
+	if(note==NULL)
+          return;
 
         Undo_Notes_CurrPos(window);
-
-	if(PlaceGreaterOrEqual(&note->l.p,&realline->l.p)){
-		RemoveNote(wblock->block,wtrack->track,note);
-                SetNoteSubtrackAttributes(wtrack->track);
-                ValidateCursorPos(window);                        
+        
+        if(PlaceGreaterOrEqual(&note->l.p,&realline->l.p)){
+          PLAYER_lock();{
+            RemoveNote(wblock->block,wtrack->track,note);
+            SetNoteSubtrackAttributes(wtrack->track);
+            ValidateCursorPos(window);
+          }PLAYER_unlock();
 	}else{
-		CutListAt(&note->velocities,&realline->l.p);
-		PlaceCopy(&note->end,&realline->l.p);
-		note->noend=noend;
-	}
+          CutNoteAt(wblock->block, wtrack->track, note, &realline->l.p);
+        }
 
-#if !USE_OPENGL
-	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-#endif
-	PC_StopPause();
-
+        PLAYER_lock();{
+          note->noend=noend;
+        }PLAYER_unlock();
+        
         window->must_redraw=true;
 }
 #endif // TEST_NOTES

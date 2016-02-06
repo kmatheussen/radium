@@ -93,6 +93,7 @@ fi
 make buildtype.opt
 make flagopts.opt
 make radium $@
+#make pluginhost/Builds/Linux/build/libMyPluginHost.a
 
 cp -p *.o linux_objs/ 2>/dev/null | true
 

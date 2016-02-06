@@ -10,6 +10,13 @@
   #endif
 #endif
 
+#if defined(RELEASE)
+  #if defined(VALIDATE_MEM)
+    #error "oops"
+  #endif
+#endif
+
+
 typedef void *(*MemoryAllocator)(size_t size);
 typedef void (*MemoryFreeer)(void* mem);
 
@@ -51,6 +58,9 @@ extern "C" {
 #define V_free(ptr) free((void*)ptr)
 #define V_realloc(ptr, size) realloc(ptr, size);
 
+static inline void V_shutdown(void){
+}
+  
 #else // RELEASE -> !RELEASE
 
 #define V_malloc(size) V_malloc__(size, __FILE__, __LINE__)
@@ -58,6 +68,14 @@ extern "C" {
 #define V_calloc(n, size) V_calloc__(n, size, __FILE__, __LINE__)
 #define V_free(ptr) V_free__((void*)(ptr))
 #define V_realloc(ptr, size) V_realloc__((void*)ptr, size, __FILE__, __LINE__)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+  void V_shutdown(void);
+#ifdef __cplusplus
+}
+#endif
 
 #endif // !RELEASE
 

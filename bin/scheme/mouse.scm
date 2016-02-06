@@ -586,9 +586,9 @@
                                   :Get-existing-node-info
                                   :Get-min-value
                                   :Get-max-value
-                                  :Get-x
-                                  :Get-y
-                                  :Make-undo
+                                  :Get-x ;; Only used when releasing mouse button
+                                  :Get-y ;; Only used when releasing mouse button
+                                  :Make-undo 
                                   :Create-new-node
                                   :Move-node
                                   :Release-node #f
@@ -774,6 +774,9 @@
                 (set-mouse-pointer ra:set-pointing-mouse-pointer)
                 (ra:set-statusbar-text (<-> "Select instrument for track " *current-track-num*)))
 
+               ((not *current-track-num*)
+                (set-mouse-pointer ra:set-pointing-mouse-pointer))
+               
                (else
                 ;;(ra:set-normal-mouse-pointer)
                 ))))
@@ -1247,9 +1250,28 @@
   :notenum
   :pianonotenum
   :move-type     ;; A "*pianonote-move-<...>*" value
+  :mouse-delta
   )
 
 
+(define (get-pianonote-y pianonotenum notenum tracknum move-type)
+  (define y1 (ra:get-pianonote-y1 pianonotenum
+                                  notenum
+                                  tracknum))
+  (define y2 (ra:get-pianonote-y2 pianonotenum
+                                  notenum
+                                  tracknum))
+
+  (cond ((eq? move-type
+              *pianonote-move-start*)
+         y1)
+        ((eq? move-type
+              *pianonote-move-end*)
+         y2)
+        (else
+         (/ (+ y1 y2) 2))))
+
+         
 (define (get-pianonote-box $tracknum $notenum $num)
   ;;(c-display "get-pitch-box" $num)
   (make-box2 (ra:get-pianonote-x1 $num $notenum $tracknum)
@@ -1278,7 +1300,9 @@
          (make-pianonote-info :tracknum $tracknum
                               :notenum $notenum
                               :pianonotenum $pianonotenum
-                              :move-type move-type))))
+                              :move-type move-type
+                              :mouse-delta (- $y (get-pianonote-y $pianonotenum $notenum $tracknum move-type))
+                              ))))
   
 (define-match get-pianonote-info3
   _ _ ________ _______ Num-pianonotes Num-pianonotes :> #f
@@ -1308,24 +1332,6 @@
   (get-pianonote-info2 $x $y $tracknum 0 (ra:get-num-notes $tracknum)))
 
 
-(define (get-pianonote-y info)
-  (define y1 (ra:get-pianonote-y1 (info :pianonotenum)
-                                  (info :notenum)
-                                  (info :tracknum)))
-  (define y2 (ra:get-pianonote-y2 (info :pianonotenum)
-                                  (info :notenum)
-                                  (info :tracknum)))
-
-  (cond ((eq? (info :move-type)
-              *pianonote-move-start*)
-         y1)
-        ((eq? (info :move-type)
-              *pianonote-move-end*)
-         y2)
-        (else
-         (/ (+ y1 y2) 2))))
-
-         
 (define (call-get-existing-node-info-callbacks callback info)
 
   (define num-pianonotes (ra:get-num-pianonotes (info :notenum) (info :tracknum)))
@@ -1391,7 +1397,12 @@
                                                                          (info :notenum)
                                                                          (info :tracknum)))
                                                  2))
-                        :Get-y get-pianonote-y
+                        :Get-y (lambda (info)
+                                 (+ (info :mouse-delta)
+                                    (get-pianonote-y (info :pianonotenum)
+                                                     (info :notenum)
+                                                     (info :tracknum)
+                                                     (info :move-type))))
                         :Make-undo (lambda (_) (ra:undo-notes *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
                                            ;;(c-display "Create" X Place)
@@ -1407,7 +1418,9 @@
                                                (callback (make-pianonote-info :tracknum *current-track-num*
                                                                               :notenum Num
                                                                               :pianonotenum 0
-                                                                              :move-type *pianonote-move-end*)
+                                                                              :move-type *pianonote-move-end*
+                                                                              :mouse-delta 0
+                                                                              )
                                                          Value)))
                         :Publicize (lambda (pianonote-info)
                                      (set-current-pianonote (pianonote-info :pianonotenum)
@@ -1439,7 +1452,9 @@
                                      (make-pianonote-info :tracknum (pianonote-info :tracknum)
                                                           :notenum new-notenum
                                                           :pianonotenum (pianonote-info :pianonotenum)
-                                                          :move-type (pianonote-info :move-type)))
+                                                          :move-type (pianonote-info :move-type)
+                                                          :mouse-delta (pianonote-info :mouse-delta)
+                                                          ))
                         :Get-pixels-per-value-unit (lambda (_)
                                                      (ra:get-pianoroll-low-key *current-track-num*)
                                                      (ra:get-pianoroll-high-key *current-track-num*)
@@ -1494,6 +1509,13 @@
                                                     (pianonote-info :notenum)
                                                     (pianonote-info :tracknum))
                                #f)
+                             (define (cut-note)
+                               (ra:undo-notes (pianonote-info :tracknum))
+                               (define Place (get-place-from-y $button $y))
+                               (ra:cut-note Place
+                                            (pianonote-info :notenum)
+                                            (pianonote-info :tracknum))
+                               #f)
                              (define (delete-pitch)
                                (ra:undo-notes (pianonote-info :tracknum))
                                (ra:delete-pianonote (if (= 0 (pianonote-info :pianonotenum))
@@ -1530,10 +1552,8 @@
                                (ra:undo-notes (pianonote-info :tracknum))
                                (define Place (get-place-from-y $button $y))
                                (define Value (ra:get-note-value (pianonote-info :notenum) (pianonote-info :tracknum)))
-                               (define Num (ra:create-pitch Value Place (pianonote-info :tracknum)))
-                               (if (= -1 Num)
-                                   #f
-                                   #f))
+                               (ra:add-pianonote-pitch Value Place (pianonote-info :notenum) (pianonote-info :tracknum))
+                               #f)
                              
                              (define num-pianonotes (ra:get-num-pianonotes (pianonote-info :notenum)
                                                                            (pianonote-info :tracknum)))
@@ -1553,9 +1573,13 @@
                                                              ;       (list "Disable portamento" set-hold!))
                                                              ;      (else
                                                              ;       '()))
-                                                             (list "Delete Note" delete-note))))
+                                                             (list "Cut Note" cut-note)
+                                                             ;(list "Stop note here" stop-note)
+                                                             )))
                                  (popup-menu "Enable Portamento" enable-portamento
-                                             "Delete Note" delete-note))))
+                                             "Delete Note" delete-note
+                                             "Cut Note" cut-note
+                                             ))))
                        #f)))))
 
 

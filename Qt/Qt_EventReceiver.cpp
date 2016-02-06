@@ -147,6 +147,8 @@ void EditorWidget::updateEditor(){
     return;
 
   transfer_atomic_must_redraws(window);
+
+  //if (this->window->must_redraw) printf(" MUST REDRAW == TRUE (has_beenscheduled: %d)\n",this->window->redraw_has_been_scheduled);
   
   if (this->window->must_redraw_editor==true){
     this->window->must_redraw_editor=false;
