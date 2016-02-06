@@ -1,3 +1,18 @@
+Changes 3.6.0 -> 3.6.1:
+* Fixed many more bugs found by running ThreadSanitizer.
+* mouse: After moving a piano roll note, let mouse pointer position be the same compared to the position of the note, as before
+* Fix mouse pointer type when mouse pointer is inside the tempo multiplier track
+* Fix mouse pointer type stuck in horizontal mode after changing block tempo
+* mouse: Option in the piano roll to cut note.
+* mouse: Always let the selected note get a portamento point, when selecting "add portamento point" in the piano roll.
+  (If the track is polyphonic, it was quite random which note would get the point)
+* Scroll to the right line after changing block.
+* Swapped default color 1 and 2
+* default colors: Make range visible in a track without an instrument assigned
+* player: Clear scheduler when stopping to play. I.e. no notes or other types of messages
+  can play after pressing the space key.
+
+
 Changes 3.5.9 -> 3.6.0:
 * Fixed many bugs found by running ThreadSanitizer.
 
