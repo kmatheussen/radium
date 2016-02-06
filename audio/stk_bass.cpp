@@ -755,7 +755,7 @@ class MyUI : public UI
 struct Voice{
   struct Voice *prev;
   struct Voice *next;
-  dsp *dsp_instance;
+  CLASSNAME *dsp_instance;
   MyUI myUI;
   float note_num;
   int64_t note_id;
@@ -1000,7 +1000,7 @@ static void *create_effect_plugin_data(const SoundPluginType *plugin_type, struc
   Voice *voice = &data->voices[0];
   voice->dsp_instance = new CLASSNAME;
   //printf("Creating %s / %s. samplerate: %d\n",plugin_type->type_name,plugin_type->name,(int)samplerate);
-  voice->dsp_instance->init(samplerate);
+  voice->dsp_instance->instanceInit(samplerate);
   voice->dsp_instance->buildUserInterface(&voice->myUI);
   return data;
 }
@@ -1171,6 +1171,8 @@ static SoundPluginType faust_type = {};  // c++ way of zero-initialization witho
 void CREATE_NAME (void){
   fill_type(&faust_type);
 
+  CLASSNAME::classInit(MIXER_get_sample_rate());
+  
   Data *data = (Data*)create_effect_plugin_data(&faust_type, NULL, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
   faust_type.data = data;
 

@@ -56,7 +56,7 @@ static double g_curr_beats_per_minute = 0.0;
 static double get_num_beats(LPB_iterator *iterator, int audioframes_to_add){
   struct Blocks *block = pc->block;
 
-  double time = pc->start_time_f - (double)ATOMIC_GET(pc->seqtime);
+  double time = atomic_double_read(&pc->start_time_f) - (double)ATOMIC_GET(pc->seqtime);
   
   double time_to_add = (double)audioframes_to_add * safe_volatile_float_read(&block->reltempo);
 

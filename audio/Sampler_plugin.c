@@ -173,7 +173,7 @@ struct _Data{
 
   float a,h,d,s,r;
 
-  bool loop_onoff;
+  DEFINE_ATOMIC(bool, loop_onoff);
   int crossfade_length;
 
   double vibrato_depth;
@@ -410,7 +410,7 @@ static long RT_src_callback(void *cb_data, float **out_data){
   int start_pos        = voice->pos;
   Data  *data          = sample->data;
 
-  if(sample->data->loop_onoff==false || sample->loop_end <= sample->loop_start)
+  if(ATOMIC_GET(sample->data->loop_onoff)==false || sample->loop_end <= sample->loop_start)
     return RT_src_callback_nolooping(voice, sample, data, start_pos, out_data);
 
   else if(data->crossfade_length > 0)
@@ -671,7 +671,7 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
 
     voice->sample = note->samples[i];
     
-    if(data->loop_onoff==true && voice->sample->loop_end > voice->sample->loop_start)
+    if(ATOMIC_GET(data->loop_onoff)==true && voice->sample->loop_end > voice->sample->loop_start)
       voice->pos=scale(data->startpos, // set startpos between 0 and loop_end
                        0,1,
                        0,voice->sample->loop_end);
@@ -816,7 +816,7 @@ static void apply_adsr_to_peak(Data *data, int64_t time, float *min_value, float
 
 static bool get_peak_sample(const Sample *sample, int64_t framenum, float *min_value, float *max_value){
 
-  if(sample->data->loop_onoff==true && framenum>=sample->loop_end && sample->loop_end>sample->loop_start){
+  if(ATOMIC_GET(sample->data->loop_onoff)==true && framenum>=sample->loop_end && sample->loop_end>sample->loop_start){
 
     framenum -= sample->loop_end; // i.e. how far after loop end are we?
 
@@ -957,11 +957,11 @@ static void update_peaks(SoundPlugin *plugin){
 }
 
 static void set_loop_onoff(Data *data, bool loop_onoff){
-  data->loop_onoff = loop_onoff;
+  ATOMIC_SET(data->loop_onoff, loop_onoff);
 }
 
 static bool get_loop_onoff(Data *data){
-  return data->loop_onoff;
+  return ATOMIC_GET(data->loop_onoff);
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
@@ -1352,7 +1352,7 @@ static void set_legal_loop_points(Sample *sample, int start, int end){
   }else{
     sample->loop_start=start;
     sample->loop_end=end;
-    sample->data->loop_onoff = true;
+    ATOMIC_SET(sample->data->loop_onoff, true);
   }
 }
 
@@ -1567,14 +1567,14 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
     data->d = old_data->d;
     data->s = old_data->s;
     data->r = old_data->r;
-    data->loop_onoff = old_data->loop_onoff;
+    ATOMIC_SET(data->loop_onoff, ATOMIC_GET(old_data->loop_onoff));
     data->crossfade_length = old_data->crossfade_length;
-
+    
     data->vibrato_value = 0.0;
     data->vibrato_depth = old_data->vibrato_depth;
     data->vibrato_speed = old_data->vibrato_speed;
     data->vibrato_phase_add = old_data->vibrato_phase_add;
-
+    
     data->tremolo_depth = old_data->tremolo_depth;
     data->tremolo_speed = old_data->tremolo_speed;
     
@@ -1667,16 +1667,18 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
   if (filename==NULL)
     goto exit;
 
-  data = create_data(old_data->samplerate, plugin->data, filename, instrument_number, resampler_type);
+  data = create_data(old_data->samplerate, old_data, filename, instrument_number, resampler_type);
 
   if(load_sample(data,filename,instrument_number)==false)
     goto exit;
 
   // Put loop_onoff into storage.
-  PLUGIN_set_effect_value2(plugin, -1, EFF_LOOP_ONOFF, data->loop_onoff==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLAYERLOCK_NOT_REQUIRED, PLUGIN_FORMAT_SCALED);
+  PLUGIN_set_effect_value2(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->loop_onoff)==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLAYERLOCK_NOT_REQUIRED, PLUGIN_FORMAT_SCALED);
 
   if(SP_is_plugin_running(plugin)){
 
+    //fprintf(stderr, "    *************** 11111. plugin IS running **********\n");
+    
     PLAYER_lock();{  
       old_data->new_data = data;
     }PLAYER_unlock();
@@ -1686,6 +1688,8 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
 
   } else {
 
+    //fprintf(stderr, "    *************** 0000. plugin is NOT running **********\n");
+    
     plugin->data = data;
 
   }
@@ -1713,11 +1717,11 @@ void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start, int length){
 
   PLAYER_lock();{  
     if (length==0)
-      data->loop_onoff = false;
+      ATOMIC_SET(data->loop_onoff, false);
     else
-      data->loop_onoff = true;
+      ATOMIC_SET(data->loop_onoff, true);
 
-    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, data->loop_onoff==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->loop_onoff)==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
     
     int i;
     for(i=0;i<MAX_NUM_SAMPLES;i++){

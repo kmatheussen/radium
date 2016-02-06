@@ -121,19 +121,43 @@ static inline float safe_float_read(float *pos){
   return *pos;
 }
 
-static inline void safe_double_write(volatile double *pos, double value){
-  *pos = value; // is this really atomic?
-}
-
-// This function is suppressed from tsan
-static inline double safe_double_read(volatile double *pos){
-  return *pos; // is this really atomic?
-}
 
 static inline void *safe_pointer_read(void **p){
   return __atomic_load_n(p, __ATOMIC_RELAXED);
 }
 
+
+typedef struct{
+  DEFINE_ATOMIC(bool, spinlock);
+  double value;
+} atomic_double_t;
+
+#define DEFINE_ATOMIC_DOUBLE(name, value)       \
+  atomic_double_t name = {false, value}
+
+static inline void init_atomic_double(atomic_double_t *atomic_double, double value){
+  ATOMIC_SET(atomic_double->spinlock, false);
+  atomic_double->value = value;
+}
+
+static inline double atomic_double_read(atomic_double_t *atomic_double){
+  SPINLOCK_OBTAIN(atomic_double->spinlock);
+  double ret = atomic_double->value;    
+  SPINLOCK_RELEASE(atomic_double->spinlock);
+  return ret;
+}
+
+static inline void atomic_double_write(atomic_double_t *atomic_double, double new_value){
+  SPINLOCK_OBTAIN(atomic_double->spinlock);
+  atomic_double->value = new_value;
+  SPINLOCK_RELEASE(atomic_double->spinlock);
+}
+
+static inline void atomic_double_inc(atomic_double_t *atomic_double, double how_much){
+  SPINLOCK_OBTAIN(atomic_double->spinlock);
+  atomic_double->value += how_much;
+  SPINLOCK_RELEASE(atomic_double->spinlock);
+}
 
 #endif
 
