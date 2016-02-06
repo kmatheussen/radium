@@ -1494,6 +1494,13 @@
                                                     (pianonote-info :notenum)
                                                     (pianonote-info :tracknum))
                                #f)
+                             (define (stop-note)
+                               (ra:undo-notes (pianonote-info :tracknum))
+                               (define Place (get-place-from-y $button $y))
+                               (define Value (ra:get-note-value (pianonote-info :notenum) (pianonote-info :tracknum)))
+                               (define Num (ra:create-pitch Value Place (pianonote-info :tracknum)))
+                               '(ra:)
+                               #f)
                              (define (delete-pitch)
                                (ra:undo-notes (pianonote-info :tracknum))
                                (ra:delete-pianonote (if (= 0 (pianonote-info :pianonotenum))
@@ -1530,10 +1537,8 @@
                                (ra:undo-notes (pianonote-info :tracknum))
                                (define Place (get-place-from-y $button $y))
                                (define Value (ra:get-note-value (pianonote-info :notenum) (pianonote-info :tracknum)))
-                               (define Num (ra:create-pitch Value Place (pianonote-info :tracknum)))
-                               (if (= -1 Num)
-                                   #f
-                                   #f))
+                               (ra:add-pianonote-pitch Value Place (pianonote-info :notenum) (pianonote-info :tracknum))
+                               #f)
                              
                              (define num-pianonotes (ra:get-num-pianonotes (pianonote-info :notenum)
                                                                            (pianonote-info :tracknum)))
@@ -1553,9 +1558,13 @@
                                                              ;       (list "Disable portamento" set-hold!))
                                                              ;      (else
                                                              ;       '()))
-                                                             (list "Delete Note" delete-note))))
+                                                             (list "Delete Note" delete-note)
+                                                             ;(list "Stop note here" stop-note)
+                                                             )))
                                  (popup-menu "Enable Portamento" enable-portamento
-                                             "Delete Note" delete-note))))
+                                             "Delete Note" delete-note
+                                             ;"Stop note here" stop-note
+                                             ))))
                        #f)))))
 
 

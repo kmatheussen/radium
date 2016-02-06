@@ -1485,6 +1485,27 @@ void cancelCurrentPianonote(void){
   setCurrentPianonote(-1, -1, -1);
 }
 
+static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value);
+  
+void addPianonotePitch(float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+
+
+  if (note->pitch_end == 0) {
+    window->must_redraw_editor = true;
+    note->pitch_end = note->note;
+  }
+
+  Place place;
+  Float2Placement(floatplace, &place);
+
+  addPitch(window, wblock, wtrack, note, &place, value);
+}
 
 
 // pitches
