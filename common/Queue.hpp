@@ -53,7 +53,7 @@ private:  // Rather not expose this messy (and unsafe) API unless it's needed.
 
   // Must NOT be called without first calling wait()
   T get_withoutWaiting(){
-    T ret;
+    T ret = 0;
     
     R_ASSERT(queue.pop(ret));
 

@@ -34,6 +34,7 @@ enum{
   IS_WARNING
 };
 
+#ifndef RELEASE
 static void show_message(int type, char *message){
   static double last_ignore = -3000.0; // don't want to ignore errors the first two seconds.
   static bool ignore_rest_of_the_program = false;
@@ -74,6 +75,7 @@ static void show_message(int type, char *message){
   case 3: ignore_rest_of_the_program=true; break;
   }
 }
+#endif
 
 void RError(const char *fmt,...){
   char message[1000];

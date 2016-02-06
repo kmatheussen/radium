@@ -1689,9 +1689,9 @@ static bool getPitch(int pitchnum, struct Pitches **pitch, struct Notes **note, 
 }
 
 static int getPitchLogtype(int pitchnum, struct Tracks *track){
-  bool is_end_pitch;
-  struct Notes *note;
-  struct Pitches *pitch;
+  bool is_end_pitch = false;
+  struct Notes *note = NULL;
+  struct Pitches *pitch = NULL;
   getPitch(pitchnum, &pitch, &note, &is_end_pitch, track);
 
   if (is_end_pitch)
@@ -1703,9 +1703,9 @@ static int getPitchLogtype(int pitchnum, struct Tracks *track){
 }
 
 static void setPitchLogtype(bool is_holding, int pitchnum, struct Tracks *track){
-  bool is_end_pitch;
-  struct Notes *note;
-  struct Pitches *pitch;
+  bool is_end_pitch = false;
+  struct Notes *note = NULL;
+  struct Pitches *pitch = NULL;
 
   getPitch(pitchnum, &pitch, &note, &is_end_pitch, track);
 

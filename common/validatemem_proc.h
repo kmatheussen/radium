@@ -26,7 +26,6 @@ extern "C" {
   void V_validate(void *mem);
   void V_validate_all(void);
   void V_run_validation_thread(void); // Is run automatically unless DONT_RUN_VALIDATION_THREAD is defined
-  void V_shutdown(void);
   
   void *V_alloc(MemoryAllocator allocator, int size, const char *filename, int linenumber);
 
@@ -69,7 +68,15 @@ static inline void V_shutdown(void){
 #define V_calloc(n, size) V_calloc__(n, size, __FILE__, __LINE__)
 #define V_free(ptr) V_free__((void*)(ptr))
 #define V_realloc(ptr, size) V_realloc__((void*)ptr, size, __FILE__, __LINE__)
- 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+  void V_shutdown(void);
+#ifdef __cplusplus
+}
+#endif
+
 #endif // !RELEASE
 
 
