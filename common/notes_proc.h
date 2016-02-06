@@ -61,6 +61,8 @@ void ReplaceNoteEnds(
                     int subtrack
                     );
 
+void CutNoteAt(struct Blocks *block, struct Tracks *track,struct Notes *note, Place *place);
+  
 void RemoveNote(struct Blocks *block,
                 struct Tracks *track,
                 struct Notes *note

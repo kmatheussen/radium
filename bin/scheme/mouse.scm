@@ -1494,12 +1494,12 @@
                                                     (pianonote-info :notenum)
                                                     (pianonote-info :tracknum))
                                #f)
-                             (define (stop-note)
+                             (define (cut-note)
                                (ra:undo-notes (pianonote-info :tracknum))
                                (define Place (get-place-from-y $button $y))
-                               (define Value (ra:get-note-value (pianonote-info :notenum) (pianonote-info :tracknum)))
-                               (define Num (ra:create-pitch Value Place (pianonote-info :tracknum)))
-                               '(ra:)
+                               (ra:cut-note Place
+                                            (pianonote-info :notenum)
+                                            (pianonote-info :tracknum))
                                #f)
                              (define (delete-pitch)
                                (ra:undo-notes (pianonote-info :tracknum))
@@ -1558,12 +1558,12 @@
                                                              ;       (list "Disable portamento" set-hold!))
                                                              ;      (else
                                                              ;       '()))
-                                                             (list "Delete Note" delete-note)
+                                                             (list "Cut Note" cut-note)
                                                              ;(list "Stop note here" stop-note)
                                                              )))
                                  (popup-menu "Enable Portamento" enable-portamento
                                              "Delete Note" delete-note
-                                             ;"Stop note here" stop-note
+                                             "Cut Note" cut-note
                                              ))))
                        #f)))))
 
