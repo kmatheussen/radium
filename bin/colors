@@ -1,27 +1,32 @@
 settings_version = 0.72 # dont change this one
 
-color0 = #7f7b74
-color1 = #00001d
-color2 = #f1ece6
+color0 = #505b59
+color1 = #ffffff
+color2 = #000000
 color3 = #98006d
 color4 = #6437a7
-color5 = #4e6160
-color6 = #91734e
-color7 = #23405d
-color8 = #310062
-color9 = #827e76
+color5 = #434a43
+color6 = #93794f
+color7 = #0b186c
+color8 = #fdfec8
+color9 = #63696a
 color10 = #7a7a7a
-color11 = #65645c
-color12 = #3f5b56
+color11 = #454d4f
+color12 = #96a3a7
 color13 = #545550
-#color13 = #13511f
-color14 = #550000
-color15 = #767369
+#color13 = #bbcba9
+color14 = #c28963
+color15 = #5c6159
 
-system_color = #827e76
-button_color = #65645c
+system_color = #63696a
+button_color = #454d4f
 
 range_color = #3e4e47
 
+soundfont_color = #009000
+soundfile_color = #0000f0
+current_soundfile_color = #010101
+
 override_default_qt_colors = true
 last_color_version = 3.3.5
+
