@@ -756,7 +756,7 @@
                 (show-track-volume-in-statusbar *current-track-num*))
                
                ((inside-box (ra:get-box reltempo-slider) X Y)
-                ;;(set-mouse-pointer ra:set-horizontal-resize-mouse-pointer) ;; It's a little bit complicated to set back to normal pointer again afterwards.
+                (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer)
                 (show-reltempo-in-statusbar))
                
                ((and *current-track-num*
@@ -774,6 +774,9 @@
                 (set-mouse-pointer ra:set-pointing-mouse-pointer)
                 (ra:set-statusbar-text (<-> "Select instrument for track " *current-track-num*)))
 
+               ((not *current-track-num*)
+                (set-mouse-pointer ra:set-pointing-mouse-pointer))
+               
                (else
                 ;;(ra:set-normal-mouse-pointer)
                 ))))
