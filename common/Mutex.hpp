@@ -106,7 +106,7 @@ struct CondWait {
     if (ret==EINVAL)
       RError("pthread_cond_wait returned EINVAL");
     else if (ret==EPERM)
-      RError("pthread_cond_wait returned EINVAL");
+      RError("pthread_cond_wait returned EPERM");
 #ifndef RELEASE
     else
       RError("Unknown return message from pthread_cond_wait: %d",ret);
@@ -118,8 +118,12 @@ struct CondWait {
     int ret =  pthread_cond_wait(&cond,&mutex->mutex);
     if (ret==EINVAL)
       RError("pthread_cond_wait returned EINVAL");
-    if (ret==EPERM)
+    else if (ret==EPERM)
       RError("pthread_cond_wait returned EINVAL");
+#ifndef RELEASE
+    else if (ret!=0)
+      RError("Unknown return message from pthread_cond_wait: %d",ret);
+#endif
   }
 
   void notify_one(void){

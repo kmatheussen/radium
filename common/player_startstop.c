@@ -157,7 +157,8 @@ static void start_player(int playtype, int playpos, Place *place, struct Blocks 
   printf("Play. root->curr_block: %d. Block: %p\n",ATOMIC_GET(root->curr_block),pc->block);
   //abort();
   fflush(stdout);
-  
+
+  // player is stopped, so we can do these things here.
   PATCH_reset_time();
   InitPEQclock();
   InitPEQ_LPB(pc->block,place);

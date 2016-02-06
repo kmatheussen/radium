@@ -294,7 +294,6 @@ static Memlink *validate_a_little(double max_time, Memlink *link){
 
 namespace{
 
-
 struct ValidationThread : public QThread {
 
 public:
