@@ -88,7 +88,9 @@ void PlayerTask(STime reltime){
         STime tempoadjusted_reltime    = tempoadjusted_reltime_f;
         
         if(tempoadjusted_reltime<1) {
-          atomic_double_inc(&pc->start_time_f, (double)reltime * reltempo);
+          double old_start_time_f = ATOMIC_DOUBLE_GET(pc->start_time_f);          //
+          double new_start_time_f = old_start_time_f + (double)reltime * reltempo;  // <- Don't need atomic increment operation here since we only write to pc->start_time_f in this thread.
+          ATOMIC_DOUBLE_SET(pc->start_time_f, new_start_time_f);                 //
           return;
         } else
           addreltime=0;
@@ -120,7 +122,7 @@ void PlayerTask(STime reltime){
         pc->end_time   += tempoadjusted_reltime;
 
         //printf("Setting new starttime to %f (%d)\n",pc->end_time_f,(int)pc->end_time);
-        atomic_double_write(&pc->start_time_f, pc->end_time_f);
+        ATOMIC_DOUBLE_SET(pc->start_time_f, pc->end_time_f);
         pc->end_time_f  += tempoadjusted_reltime_f;
         
 #ifdef WITH_PD

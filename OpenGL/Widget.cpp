@@ -170,7 +170,7 @@ static double get_realline_stime(SharedVariables *sv, int realline){
 // OpenGL thread
 static double find_current_realline_while_playing(SharedVariables *sv){
 
-  double time_in_ms = (double)(atomic_double_read(&pc->start_time_f) - ATOMIC_GET(pc->seqtime)) * 1000.0 / (double)pc->pfreq; // I'm not entirely sure reading pc->start_time_f instead of pc->start_time is unproblematic.
+  double time_in_ms = (ATOMIC_DOUBLE_GET(pc->start_time_f) - ATOMIC_GET(pc->seqtime)) * 1000.0 / (double)pc->pfreq; // I'm not entirely sure reading pc->start_time_f instead of pc->start_time is unproblematic.
   double stime      = time_estimator.get(time_in_ms, sv->reltempo) * (double)pc->pfreq / 1000.0;
 
   double prev_line_stime = 0.0;
@@ -316,7 +316,7 @@ public:
   PaintingData *painting_data;
 
   DEFINE_ATOMIC(bool, is_training_vblank_estimator);
-  atomic_double_t override_vblank_value;
+  DEFINE_ATOMIC(double, override_vblank_value);
   bool has_overridden_vblank_value;
 
   float last_scroll_pos;
@@ -339,7 +339,7 @@ public:
     , last_curr_realline(-1)
     , sleep_when_not_painting(true) //SETTINGS_read_bool("opengl_sleep_when_not_painting", false))
   {
-    init_atomic_double(&override_vblank_value, -1.0);
+    ATOMIC_DOUBLE_SET(override_vblank_value, -1.0);
     ATOMIC_SET(is_training_vblank_estimator, true);
     setMouseTracking(true);
     //setAttribute(Qt::WA_PaintOnScreen);
@@ -638,7 +638,7 @@ public:
       //abort();
     }
 
-    double overridden_vblank_value = atomic_double_read(&override_vblank_value);
+    double overridden_vblank_value = ATOMIC_DOUBLE_GET(override_vblank_value);
     
     if (has_overridden_vblank_value==false && overridden_vblank_value > 0.0) {
 
@@ -694,7 +694,7 @@ public:
 
   // Main thread
   void set_vblank(double value){
-    atomic_double_write(&override_vblank_value, value);
+    ATOMIC_DOUBLE_SET(override_vblank_value, value);
   }
 
   // Necessary to avoid error with clang++.

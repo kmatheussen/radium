@@ -81,6 +81,7 @@ void PLAYER_memory_debug_wake_up(void){
 }
 #endif
 
+DEFINE_ATOMIC(bool, g_currently_processing_dsp) = false;
 
 
 jack_client_t *g_jack_client;
@@ -194,6 +195,7 @@ static LockType player_runner_lock;
 
 static __thread bool g_current_thread_has_player_lock = false;
 static __thread bool g_current_thread_has_player_runner_lock = false;
+
 
 
 #if 0
@@ -673,6 +675,8 @@ struct Mixer{
         SP_RT_called_for_each_soundcard_block(sp);
       }
 
+      ATOMIC_SET(g_currently_processing_dsp, true);
+        
       jackblock_delta_time = 0;
       while(jackblock_delta_time < num_frames){
 
@@ -688,7 +692,8 @@ struct Mixer{
         jackblock_delta_time += RADIUM_BLOCKSIZE;
       }
 
-
+      ATOMIC_SET(g_currently_processing_dsp, false);
+      
       jack_time_t end_time = jack_get_time();
 
 

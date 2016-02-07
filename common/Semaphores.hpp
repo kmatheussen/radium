@@ -110,6 +110,33 @@ class Semaphore{
 
 };
 
+
+#if 0
+struct RequestAcknowledge {
+  DEFINE_ATOMIC(bool, request);  // t1 -> t2
+  Semaphore acknowledge;         // t2 -> t1
+
+  // Called by thread 1.
+  void t1_request_and_wait(void){
+    ATOMIC_SET(request, true);
+    acknowledge.wait();
+  }
+
+  // Called by thread 2.
+  bool t2_is_requested(void){
+    return ATOMIC_GET(request);
+  }
+
+  // Called by thread 2. Must be called after t2_is_requested has returned true. (t2_is_requested can be called several times though)
+  void t2_acknowledge(void){
+    ATOMIC_SET(request, false);
+    acknowledge.signal();
+  }
+  
+};
+#endif
+  
+
 }
 
 #endif

@@ -4,6 +4,8 @@ extern LANGSPEC void PLAYER_memory_debug_wake_up(void);
 #define PLAYER_memory_debug_wake_up()
 #endif
 
+extern DEFINE_ATOMIC(bool, g_currently_processing_dsp);
+
 extern LANGSPEC bool PLAYER_is_running(void);
   
 extern LANGSPEC bool MIXER_start(void);

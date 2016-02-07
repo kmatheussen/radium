@@ -310,7 +310,7 @@ typedef struct _Data{
 
   QTemporaryFile *pdfile;
 
-  void *qtgui;
+  DEFINE_ATOMIC(void *, qtgui);
 
   struct _Data *next;
 
@@ -530,7 +530,7 @@ static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t block_delta_
   else
     real_value = value;
 
-  controller->value = real_value;
+  safe_float_write(&controller->value, real_value);
 
   if(strcmp(controller->name, "")) {
     //printf("####################################################### Setting pd volume to %f / real_value: %f, for -%s-. Coming-from-pd: %d\n",value, real_value,name,controller->calling_from_pd);
@@ -581,9 +581,9 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
   const char *name = controller->name;
 
   if(controller->type==EFFECT_FORMAT_FLOAT)
-    snprintf(buffer,buffersize-1,"%s: %f",!strcmp(name,"")?"<not set>":name, controller->value);
+    snprintf(buffer,buffersize-1,"%s: %f",!strcmp(name,"")?"<not set>":name, safe_float_read(&controller->value));
   else
-    snprintf(buffer,buffersize-1,"%s: %d",!strcmp(name,"")?"<not set>":name, (int)controller->value);
+    snprintf(buffer,buffersize-1,"%s: %d",!strcmp(name,"")?"<not set>":name, (int)safe_float_read(&controller->value));
 }
 
 // called from radium
@@ -683,7 +683,7 @@ static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *contr
   if (creating_new==true)
     RT_bind_receiver(controller);
 
-  PDGUI_schedule_clearing(data->qtgui);
+  PDGUI_schedule_clearing(ATOMIC_GET(data->qtgui));
 }
 
 
@@ -697,9 +697,9 @@ static void RT_pdmessagehook(void *d, const char *source, const char *controller
   if( !strcmp(source, "libpd")) {
     //printf("controller_name: -%s-\n",controller_name);
     if(!strcmp(controller_name, "gui_is_visible"))
-      PDGUI_is_visible(data->qtgui);
+      PDGUI_is_visible(ATOMIC_GET(data->qtgui));
     else if(!strcmp(controller_name, "gui_is_hidden"))
-      PDGUI_is_hidden(data->qtgui);
+      PDGUI_is_hidden(ATOMIC_GET(data->qtgui));
     return;
   }
 }
@@ -1078,7 +1078,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   libpds_closefile(data->pd, data->file);  
   libpds_delete(data->pd);
 
-  PDGUI_clear(data->qtgui);
+  PDGUI_clear(ATOMIC_GET(data->qtgui));
 
   delete data->pdfile;
 
@@ -1118,7 +1118,7 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
 
 void PD_set_qtgui(SoundPlugin *plugin, void *qtgui){
   Data *data = (Data*)plugin->data;
-  data->qtgui = qtgui;
+  ATOMIC_SET(data->qtgui, qtgui);
 }
 
 Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n){
@@ -1152,7 +1152,7 @@ void PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *wname){
 void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state){
   Data *data=(Data*)plugin->data;
 
-  PDGUI_clear(data->qtgui);
+  PDGUI_clear(ATOMIC_GET(data->qtgui));
 
   int i;
   for(i=0;i<NUM_PD_CONTROLLERS;i++) {

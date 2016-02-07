@@ -40,7 +40,7 @@ class Pd_Plugin_widget : public QWidget, public Ui::Pd_Plugin_widget{
 
 public:
   struct Patch *_patch;
-  volatile bool _gui_is_visible;
+  DEFINE_ATOMIC(bool, _gui_is_visible);
 
   int _num_controllers;
   std::vector<Pd_Controller_widget*> _controllers;
@@ -67,7 +67,7 @@ public:
         if(_pd_plugin_widget->isVisible()==false)
           return;
 
-        bool gui_is_visible = _pd_plugin_widget->_gui_is_visible;
+        bool gui_is_visible = ATOMIC_GET(_pd_plugin_widget->_gui_is_visible);
         if (_last_sent_gui_is_visible != gui_is_visible) {
           QWidget *parent = _pd_plugin_widget->parentWidget();
           if(gui_is_visible)
@@ -88,9 +88,9 @@ public:
   Pd_Plugin_widget(QWidget *parent, struct Patch *patch)
     : QWidget(parent)
     , _patch(patch)
-    , _gui_is_visible(false)
     , _num_controllers(0)
   {
+    ATOMIC_SET(_gui_is_visible, false);
     setupUi(this);
 
     for(int i=0;i<NUM_PD_CONTROLLERS;i++)
@@ -188,14 +188,14 @@ public slots:
 void PDGUI_is_hidden(void *gui){
   if(gui!=NULL){
     Pd_Plugin_widget *pd_widget = (Pd_Plugin_widget *)gui;
-    pd_widget->_gui_is_visible = false;
+    ATOMIC_SET(pd_widget->_gui_is_visible, false);
   }
 }
 
 void PDGUI_is_visible(void *gui){
   if(gui!=NULL){
     Pd_Plugin_widget *pd_widget = (Pd_Plugin_widget *)gui;
-    pd_widget->_gui_is_visible = true;
+    ATOMIC_SET(pd_widget->_gui_is_visible, true);
   }
 }
 

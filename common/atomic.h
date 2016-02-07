@@ -103,7 +103,10 @@ static inline bool atomic_compare_and_set_uint32(uint32_t *variable, uint32_t ol
 #define SPINLOCK_IS_OBTAINED(name) \
   ATOMIC_GET(spinlock)==true
 
-// This function is suppressed from tsan
+
+/************** float ******************/
+  
+// These functions are suppressed from tsan
 static inline void safe_float_write(float *pos, float value){
   *pos = value;
 }
@@ -116,48 +119,49 @@ static inline float safe_volatile_float_read(volatile float *pos){
   return *pos;
 }
 
-// This function is suppressed from tsan
 static inline float safe_float_read(float *pos){
   return *pos;
 }
 
+
+
+/************** pointers ******************/
 
 static inline void *safe_pointer_read(void **p){
   return __atomic_load_n(p, __ATOMIC_RELAXED);
 }
 
 
-typedef struct{
-  DEFINE_ATOMIC(bool, spinlock);
-  double value;
-} atomic_double_t;
 
-#define DEFINE_ATOMIC_DOUBLE(name, value)       \
-  atomic_double_t name = {false, value}
+/************** doubles ******************/
 
-static inline void init_atomic_double(atomic_double_t *atomic_double, double value){
-  ATOMIC_SET(atomic_double->spinlock, false);
-  atomic_double->value = value;
+typedef double atomic_double_t;
+
+#define ATOMIC_DOUBLE_GET(name) ({                                      \
+      double result;                                                    \
+      __atomic_load (&(name##_atomic), &result, __ATOMIC_SEQ_CST);      \
+      result;                                                           \
+    })
+
+#define ATOMIC_DOUBLE_SET(name,new_value) ({                            \
+      double new_value_variable = new_value;                            \
+      __atomic_store (&(name##_atomic), &new_value_variable, __ATOMIC_SEQ_CST); \
+    })
+
+
+/*
+// redhat gcc 5.3.1: "warning: parameter ‘atomic_double’ set but not used [-Wunused-but-set-parameter]"
+static inline double atomic_double_read(const atomic_double_t *atomic_double){
+  double result;
+  __atomic_load(atomic_double, &result, __ATOMIC_SEQ_CST);
+  return result;
 }
 
-static inline double atomic_double_read(atomic_double_t *atomic_double){
-  SPINLOCK_OBTAIN(atomic_double->spinlock);
-  double ret = atomic_double->value;    
-  SPINLOCK_RELEASE(atomic_double->spinlock);
-  return ret;
-}
-
+// redhat gcc 5.3.1: "warning: parameter ‘atomic_double’ set but not used [-Wunused-but-set-parameter]"
 static inline void atomic_double_write(atomic_double_t *atomic_double, double new_value){
-  SPINLOCK_OBTAIN(atomic_double->spinlock);
-  atomic_double->value = new_value;
-  SPINLOCK_RELEASE(atomic_double->spinlock);
+  __atomic_store(atomic_double, &new_value, __ATOMIC_SEQ_CST);
 }
+*/
 
-static inline void atomic_double_inc(atomic_double_t *atomic_double, double how_much){
-  SPINLOCK_OBTAIN(atomic_double->spinlock);
-  atomic_double->value += how_much;
-  SPINLOCK_RELEASE(atomic_double->spinlock);
-}
 
 #endif
-
