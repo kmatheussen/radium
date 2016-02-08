@@ -797,7 +797,8 @@ struct Mixer{
                "3. Start Jack again.\n"
                "4. Start Radium again.\n"
                "\n"
-               "Radium can be unstable if you do other operations."
+               "Radium can be unstable if you do other operations.",
+               reason
                );
   }
   
