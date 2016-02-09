@@ -931,12 +931,12 @@ static void init_uncategorized_menues(){
 
   //unsigned int num_remaining_elements = g_plugin_types.size() - g_added_plugin_types.size();
 
-  std::vector<SoundPluginType*> diff(g_plugin_types.size());//(num_remaining_elements);
-  std::vector<SoundPluginType*>::iterator end=std::set_difference(g_plugin_types.begin(), g_plugin_types.end(),
-                                                                 g_added_plugin_types.begin(), g_added_plugin_types.end(),
-                                                                 diff.begin(),
-                                                                 plugin_type_pred());
-  
+  std::vector<SoundPluginType*> diff(g_plugin_types.size()*sizeof(SoundPluginType*));//(num_remaining_elements);
+  std::vector<SoundPluginType*>::iterator end=std::set_difference(g_plugin_types.begin(),      g_plugin_types.end(),
+                                                                  g_added_plugin_types.begin(), g_added_plugin_types.end(),
+                                                                  diff.begin(),                 plugin_type_pred());
+
+    
   fprintf(stderr,"g_plugin_size: %d, added_size: %d, diff size: %d\n",(int)g_plugin_types.size(),(int)g_added_plugin_types.size(),(int)diff.size());
 
   //if(g_added_plugin_types.size()==0)

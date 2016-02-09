@@ -112,10 +112,15 @@ public:
 
     
   failed:
-    if (temporary_write_file!=NULL)
+    if (temporary_write_file!=NULL) {
       delete temporary_write_file;
-    if (read_file!=NULL)
+      temporary_write_file = NULL;
+    }
+    if (read_file!=NULL) {
       delete read_file;
+      read_file = NULL;
+    }
+    
     return false;    
   }
 
