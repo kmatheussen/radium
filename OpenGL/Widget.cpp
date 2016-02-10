@@ -702,7 +702,7 @@ public:
           swap();
       
         else
-          usleep(1000 * time_estimator.get_vblank());
+          usleep(1000 * 1000 / time_estimator.get_vblank());
       
         if (g_safe_mode)
           GL_unlock();
