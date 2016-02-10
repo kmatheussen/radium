@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdio.h>
 
 #include <vlVG/VectorGraphics.hpp>
@@ -170,16 +171,22 @@ static double get_realline_stime(SharedVariables *sv, int realline){
 // OpenGL thread
 static double find_current_realline_while_playing(SharedVariables *sv){
 
-  double time_in_ms = (ATOMIC_DOUBLE_GET(pc->start_time_f) - ATOMIC_GET(pc->seqtime)) * 1000.0 / (double)pc->pfreq; // I'm not entirely sure reading pc->start_time_f instead of pc->start_time is unproblematic.
+  double time_in_ms = (ATOMIC_DOUBLE_GET(pc->blocktime)) * 1000.0 / (double)pc->pfreq; // I'm not entirely sure reading pc->start_time_f instead of pc->start_time is unproblematic.
   double stime      = time_estimator.get(time_in_ms, sv->reltempo) * (double)pc->pfreq / 1000.0;
-
-  double prev_line_stime = 0.0;
 
   static int i_realline = 0; // Note that this one is static. The reason is that we are usually placed on the same realline as last time, so we remember last position and start searching from there/
   static const struct Blocks *block = NULL;
   
   bool reset_timing = false;
 
+  if (stime < 0){
+    fprintf(stderr,"stime: %f, pc->blocktime: %f",stime,ATOMIC_DOUBLE_GET(pc->blocktime));
+#if !defined(RELEASE)
+    abort();
+#endif
+    stime = 0.0;
+  }
+  
   if (block != sv->block) {
     
     reset_timing = true;
@@ -207,13 +214,24 @@ static double find_current_realline_while_playing(SharedVariables *sv){
     stime = time_in_ms * (double)pc->pfreq / 1000.0;
   }
   
+  double prev_line_stime = 0.0;
+
   for(; i_realline<=sv->num_reallines; i_realline++){
     double curr_line_stime = get_realline_stime(sv, i_realline);
-    if (stime <= curr_line_stime)
-      return scale_double(stime,
-                          prev_line_stime, curr_line_stime,
-                          i_realline-1, i_realline
-                          );
+    if (stime <= curr_line_stime) {
+      double ret = scale_double(stime,
+                                prev_line_stime, curr_line_stime,
+                                i_realline-1, i_realline
+                                );
+      if (!std::isfinite(ret)){
+        fprintf(stderr,"prev_line_stime: %f, curr_line_stime: %f, stime: %f, ret: %f, i_realline: %i, reset_timing: %d\n",prev_line_stime, curr_line_stime, stime, ret, i_realline, (int)reset_timing);
+#if !defined(RELEASE)
+        abort();
+#endif
+        ret = 0.0;
+      }
+      return ret;
+    }
     prev_line_stime = curr_line_stime;
   }
 
@@ -537,7 +555,7 @@ private:
       till_realline = ATOMIC_GET(g_curr_realline);
 
     float scroll_pos = GE_scroll_pos(sv, till_realline);
-      
+
     //printf("pos: %f\n",pos);
     
     if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING && sv->block!=safe_pointer_read((void**)&pc->block)) // Do the sanity check once more. pc->block might have changed value during computation of pos.

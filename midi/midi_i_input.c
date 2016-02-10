@@ -96,7 +96,7 @@ static void record_midi_event(uint32_t msg){
   
   midi_event->wblock    = root->song->tracker_windows->wblock;
   midi_event->wtrack    = midi_event->wblock->wtrack;
-  midi_event->blocktime = MIXER_get_accurate_radium_time() - ATOMIC_GET(pc->seqtime);
+  midi_event->blocktime = R_MAX(0, MIXER_get_accurate_radium_time() - ATOMIC_GET(pc->seqtime)); // TODO/FIX: This can fail if pc->seqtime is not updated at the same time as 'jackblock_cycle_start_stime' in Mixer.cpp.
   midi_event->msg       = msg;
 
   midi_event->wtrack->track->is_recording = true;

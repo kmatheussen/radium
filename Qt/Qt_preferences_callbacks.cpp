@@ -335,6 +335,7 @@ public slots:
   }
 
   void on_vsyncOnoff_toggled(bool val){
+    GL_erase_estimated_vblank(); // makes sense
     GL_set_vsync(val);
   }
 
