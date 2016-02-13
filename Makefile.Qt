@@ -99,7 +99,7 @@ CRASHREPORTER_OPTS ?=
 CRASHREPORTER_POSIX_OPTS ?= 
 
 DEFINES=-DNOPAUSEPLAY -DCOMPILING_RADIUM
-#-DDISABLE_BDWGC
+#-DDISABLE_BDWGC <---- It makes a lot of sense to enable this option in DEBUG mode if using -fsanitize=address
 #-DMEMORY_DEBUG
 # define SYSBASEDEBUG
 # define TRACKER_DEBUG

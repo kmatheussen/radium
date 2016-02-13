@@ -112,16 +112,14 @@ static void clear_file(QString filename){
 #define NUM_EVENTS 100
 
 static const char *g_event_log[NUM_EVENTS] = {""};
-static volatile int g_event_pos = 0;
+static DEFINE_ATOMIC(int, g_event_pos) = 0;
 
 void EVENTLOG_add_event(const char *log_entry){
  R_ASSERT(THREADING_is_main_thread());
 
- g_event_log[g_event_pos] = log_entry;
+ int pos = ATOMIC_ADD_RETURN_OLD(g_event_pos, 1) % NUM_EVENTS;
  
- g_event_pos++;
- if (g_event_pos==NUM_EVENTS)
-   g_event_pos = 0;
+ g_event_log[pos] = log_entry;
 }
 
 #endif
@@ -303,7 +301,7 @@ int main(int argc, char **argv){
 #define MAX_NUM_PLUGIN_NAMES 100
 static DEFINE_ATOMIC(int, g_plugin_name_pos) = 0;
 
-static const char *g_plugin_names[MAX_NUM_PLUGIN_NAMES]={g_no_plugin_name};
+static DEFINE_ATOMIC(const char *, g_plugin_names)[MAX_NUM_PLUGIN_NAMES]={g_no_plugin_name};
 //static QString g_plugin_name=g_no_plugin_name;
 
 static QTime running_time;
@@ -314,25 +312,25 @@ int CRASHREPORTER_set_plugin_name(const char *plugin_name){
 
   int pos = ATOMIC_ADD_RETURN_OLD(g_plugin_name_pos, 1) % MAX_NUM_PLUGIN_NAMES;
 
-  if (plugin_name[0]!=0)
-    g_plugin_names[pos] = plugin_name;
+  ATOMIC_SET_ARRAY(g_plugin_names, pos, plugin_name);
 
   return pos;
 }
 
 void CRASHREPORTER_unset_plugin_name(int pos){
-  g_plugin_names[pos] = g_no_plugin_name;
+  ATOMIC_SET_ARRAY(g_plugin_names, pos, g_no_plugin_name);
 }
 
 static QString get_plugin_names(void){
   QString ret;
   
   for(int i=0;i<MAX_NUM_PLUGIN_NAMES;i++){
-    if (g_plugin_names[i] != g_no_plugin_name){
+    const char *plugin_name = ATOMIC_GET_ARRAY(g_plugin_names, i);
+    if (plugin_name != g_no_plugin_name){
       if (ret!="")
-        ret += ", "+QString(g_plugin_names[i]);
+        ret += ", "+QString(plugin_name);
       else
-        ret = g_plugin_names[i];
+        ret = plugin_name;
     }
   }
 
@@ -459,7 +457,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
   tosend += "\n\n";
 
-  int event_pos = g_event_pos;
+  int event_pos = ATOMIC_GET(g_event_pos)  % NUM_EVENTS;
 
   tosend += "start event_pos: " + QString::number(event_pos) + "\n";
 
@@ -469,7 +467,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   for(int i=NUM_EVENTS-1; i>=event_pos ; i--)
     tosend += QString(g_event_log[i]) + "\n";
 
-  tosend += "end event_pos: " + QString::number(g_event_pos) + "\n";
+  tosend += "end event_pos: " + QString::number(ATOMIC_GET(g_event_pos) % NUM_EVENTS) + "\n";
   
   tosend += "\n\n";
 

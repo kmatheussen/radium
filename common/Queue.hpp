@@ -106,6 +106,10 @@ public:
   void put(T t){
     while(!tryPut(t));
   }
+
+  int size(void){
+    return ready.numSignallers();
+  }
 };
 
 }

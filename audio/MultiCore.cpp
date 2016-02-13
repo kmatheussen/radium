@@ -73,7 +73,7 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
   SoundProducer *next = NULL;
   
   for(SoundProducerLink *link : sp->_output_links)
-    if (ATOMIC_GET_RELAXED(link->is_active)) // We can relax since is_active can only be set in the main mixer thread before running the multicore threads (But why is it atomic then?)
+    if (link->is_active)
       dec_sp_dependency(link->source, link->target, &next);
 
   // Important that we decrease 'num_sp_left' AFTER scheduling other soundproducers for processing. (i.e. calling when 'dec_sp_dependency')
@@ -130,8 +130,11 @@ public:
     can_start_main_loop.wait();
 
     while(true){
-      
+
+      //printf("  > mc: getting %d (%d)\n",ATOMIC_GET(num_sp_left),soundproducer_queue.size());
       SoundProducer *sp = soundproducer_queue.get();
+      //printf("  < mc: got %d (%d)\n",ATOMIC_GET(num_sp_left),soundproducer_queue.size());
+      
       if (ATOMIC_GET(must_exit)) {
         soundproducer_queue.put(sp);
         break;
@@ -200,7 +203,8 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
 
   
   // 2. initialize soundproducers
-  
+
+  //printf(" mc: SET: %d\n",sp_all.size());
   ATOMIC_SET(num_sp_left, sp_all.size());
   
   //  fprintf(stderr,"**************** STARTING %d\n",sp_all.size());
@@ -217,7 +221,8 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
 #endif
 
   //int num_waits_start = int(g_num_waits);
-  
+
+#define START_ALL_RUNNERS_SIMULTANEOUSLY 1
 
   SoundProducer *sp_in_main_thread = NULL;
       
@@ -231,12 +236,18 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
         num_ready_sp++;
         //fprintf(stderr,"Scheduling %p: %s\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name);
         //fflush(stderr);
+#if START_ALL_RUNNERS_SIMULTANEOUSLY
         soundproducer_queue.putWithoutSignal(sp);
+#else
+        soundproducer_queue.put(sp);
+#endif
       }
     }
+
+#if START_ALL_RUNNERS_SIMULTANEOUSLY
   if(num_ready_sp > 0)
     soundproducer_queue.signal(num_ready_sp); // signal everyone at once to try to lower number of semaphore waits. Doesn't seem to make a difference on my machine though.
-
+#endif
 
   if (g_num_runners==0) {
 
@@ -245,6 +256,7 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
     process_single_core(time, num_frames, process_plugins);
     
   } else {
+
 
     R_ASSERT(sp_in_main_thread!=NULL);
 
@@ -257,9 +269,10 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
       if (!gotit)
         sp_in_main_thread = NULL;
     }
-
+    
     // 5. wait.
     all_sp_finished.wait();
+
   }
   
   //int num_waits_end = int(g_num_waits);

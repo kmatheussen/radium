@@ -149,7 +149,7 @@ struct SoundProducerLink {
   float link_volume; 
   Smooth volume; // volume.target_value = link_volume * source->output_volume * source->volume
 
-  DEFINE_ATOMIC(bool, is_active);
+  bool is_active;
 
   DEFINE_ATOMIC(bool, should_be_turned_off);
 
@@ -190,7 +190,7 @@ struct SoundProducerLink {
     
     if (is_event_link) {
 
-      R_ASSERT(ATOMIC_GET_RELAXED(is_active)==true);
+      R_ASSERT(is_active==true);
 
       return true;
       
@@ -198,7 +198,7 @@ struct SoundProducerLink {
 
       if (is_bus_link)
         if (SP_get_bus_descendant_type(source)==IS_BUS_DESCENDANT) { // need comment here what this is about
-          ATOMIC_SET(is_active, false);
+          is_active = false;
           return false;
         }
 
@@ -207,14 +207,24 @@ struct SoundProducerLink {
 
       bool new_is_active = volume.target_audio_will_be_modified;
       
-      ATOMIC_SET(is_active, new_is_active);
+      is_active = new_is_active;
       
       return new_is_active;
     }
   }
 
   bool can_be_removed(void){
-    return is_event_link==true || ATOMIC_GET(is_active)==false;
+    if (is_event_link)
+      return true;
+
+    bool ret = false;
+    
+    PLAYER_lock();{
+      if(is_active==false)
+        ret = true;
+    }PLAYER_unlock();
+    
+    return ret;
   }
   
   SoundProducerLink(SoundProducer *source, SoundProducer *target, bool is_event_link)
@@ -225,8 +235,8 @@ struct SoundProducerLink {
     , source_ch(0)
     , target_ch(0)
     , link_volume(1.0)
+    , is_active(is_event_link)
   {
-    ATOMIC_SET(is_active, is_event_link);
     ATOMIC_SET(should_be_turned_off, false);
     
     //SMOOTH_init(&volume, get_total_link_volume(), MIXER_get_buffer_size());
@@ -493,6 +503,8 @@ public:
     _input_peaks = (float*)V_calloc(sizeof(float),_num_dry_sounds);
     _volume_peaks = (float*)V_calloc(sizeof(float),_num_outputs);
 
+    MIXER_add_SoundProducer(this);
+
     if (!_is_bus && _num_outputs>0){
       SoundProducerLink *linkbus1a = new SoundProducerLink(this, buses.bus1, false);
       SoundProducerLink *linkbus1b = new SoundProducerLink(this, buses.bus1, false);
@@ -532,8 +544,6 @@ public:
       _linkbuses.add(linkbus2a);
       _linkbuses.add(linkbus2b);
     }    
-
-    MIXER_add_SoundProducer(this);
 
     printf("*** Finished... New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
     //getchar();
@@ -666,8 +676,6 @@ public:
 
     SoundProducerLink *elink = new SoundProducerLink(source, this, true);
     
-    fprintf(stderr, "____add einput\n");
-
     return SoundProducer::add_link(elink);
   }
   
@@ -686,20 +694,18 @@ public:
     link->source_ch = source_ch;
     link->target_ch = target_ch;
     
-    fprintf(stderr, "____add input\n");
-
     return SoundProducer::add_link(link);
   }
 
   static void remove_links(radium::Vector<SoundProducerLink*> &links){
-    
+
       // tell them to turn off
     for(auto link : links)
       link->turn_off();
   
     if (PLAYER_is_running()) {
       PLAYER_memory_debug_wake_up();
-      
+
       // Wait until all sound links can be removed
       for(auto link : links)
         while(link->can_be_removed()==false){
@@ -716,7 +722,7 @@ public:
       }PLAYER_unlock();
       
     }
-    
+
     // Delete
     for(auto link : links)
       delete link;
@@ -726,11 +732,11 @@ public:
     R_ASSERT(THREADING_is_main_thread());
 
     link->turn_off();
-    
-    while(link->can_be_removed()==false){
+
+    do{
       PLAYER_memory_debug_wake_up();
       usleep(1000);
-    }
+    }while(link->can_be_removed()==false);
 
     PLAYER_lock();{
 
@@ -740,18 +746,17 @@ public:
 
       SoundProducer::RT_set_bus_descendant_types();
     }PLAYER_unlock();
-    
+
     delete link;    
   }
   
   void remove_eventSoundProducerInput(SoundProducer *source){
     if (PLAYER_is_running()==false)
       return;
-    
+     
     for (SoundProducerLink *link : _input_links) {
 
       if(link->source==source && link->is_event_link==true){
-        fprintf(stderr, "____remove einput\n");
         SoundProducer::remove_link(link);
         return;
       }
@@ -773,8 +778,6 @@ public:
     for (SoundProducerLink *link : _input_links) {
 
       if(link->is_bus_link==false && link->is_event_link==false && link->source==source && link->source_ch==source_ch && link->target_ch==target_ch){
-
-        fprintf(stderr, "____remove input\n");
 
         SoundProducer::remove_link(link);
 
@@ -909,7 +912,7 @@ public:
     // Fill inn target channels    
     for (SoundProducerLink *link : _input_links) {
 
-      if (!ATOMIC_GET_RELAXED(link->is_active))
+      if (false==link->is_active)
         continue;
       
       R_ASSERT(link->source->has_run(time));
@@ -1129,7 +1132,7 @@ void SP_write_mixer_tree_to_disk(QFile *file){
       SoundPlugin *plugin = link->target->_plugin;
       volatile Patch *patch = plugin==NULL ? NULL : plugin->patch;
       const char *name = patch==NULL ? "<null>" : patch->name;
-      file->write(QString().sprintf("  %s%s\n",name, ATOMIC_GET(link->is_active)?"":" (inactive)").toUtf8());
+      file->write(QString().sprintf("  %s%s\n",name, link->is_active?"":" (inactive)").toUtf8());
     }    
   }
 }
@@ -1149,7 +1152,7 @@ void SP_print_tree(void){
     fprintf(stderr, "  outputs:\n");
     */
     for (SoundProducerLink *link : sp->_output_links){
-      fprintf(stderr, "  %s%s\n",link->target->_plugin->patch->name,ATOMIC_GET(link->is_active)?"":" (inactive)");
+      fprintf(stderr, "  %s%s\n",link->target->_plugin->patch->name,link->is_active?"":" (inactive)");
     }    
   }
 }
