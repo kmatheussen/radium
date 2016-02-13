@@ -128,7 +128,7 @@ void PlayStop(void){
     PlayStopReally(true);
 }
 
-static void start_player(int playtype, int playpos, Place *place, struct Blocks *block){
+static void start_player(int playtype, int playpos, bool set_curr_playlist, Place *place, struct Blocks *block){
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
   
   // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
@@ -144,6 +144,9 @@ static void start_player(int playtype, int playpos, Place *place, struct Blocks 
     
     pc->playpos=playpos;
     ATOMIC_ADD(pc->play_id, 1);
+
+    if (set_curr_playlist)
+      root->curr_playlist=playpos;
     
     pc->playtype = playtype;
     
@@ -185,7 +188,7 @@ static void PlayBlock(
   else
     playtype=PLAYBLOCK_NONLOOP;
   
-  start_player(playtype, 0, place, block);
+  start_player(playtype, 0, false, place, block);
 }
 
 void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
@@ -320,13 +323,14 @@ void PlayCallVeryOften(void){
 
 static void PlaySong(
 	Place *place,
-	int playpos
+	int playpos,
+        bool set_curr_playlist
 ){
   struct Blocks *block=BL_GetBlockFromPos(playpos);
 
   printf("Play song. blocknum:%d. Block: %p\n",block->l.num, block);
 
-  start_player(PLAYSONG, playpos, place, block);
+  start_player(PLAYSONG, playpos, set_curr_playlist, place, block);
 
   // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
 #if STOP_GC_WHILE_PLAYING
@@ -339,18 +343,17 @@ static void PlaySong(
 void PlaySongFromStart(struct Tracker_Windows *window){
 	PlayStopReally(false);
 
-	BS_SelectPlaylistPos(0);
+        BS_SelectPlaylistPos(0);
+        
 	//debug("root->curr_block: %d\n",root->curr_block);
 	ATOMIC_SET(root->setfirstpos, true);
 	ATOMIC_SET(pc->seqtime, 0);
 
 	InitAllInstrumentsForPlaySongFromStart();
 
-        {
-          Place place;
-          PlaceSetFirstPos(&place);
-          PlaySong(&place,0);
-        }
+        Place place;
+        PlaceSetFirstPos(&place);
+        PlaySong(&place,0,true);
 }
 
 void PlaySongCurrPos(struct Tracker_Windows *window){
@@ -404,6 +407,6 @@ void PlaySongCurrPos(struct Tracker_Windows *window){
 	debug("nextline: %d\n",Place2STime(wblock->block,place));
 	place->line--;
 
-	PlaySong(place,playpos);
+	PlaySong(place,playpos,false);
 }
 

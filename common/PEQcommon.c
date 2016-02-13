@@ -234,8 +234,8 @@ void PC_GoNextBlock(void){
 	}
 
 	pc->playpos++;
-	if(pc->playtype==PLAYSONG) root->curr_playlist++;
-
+	if(pc->playtype==PLAYSONG)
+          root->curr_playlist++;
 }
 
 

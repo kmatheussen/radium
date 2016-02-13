@@ -91,7 +91,6 @@ void PlayerTask(STime reltime){
           double old_start_time_f = ATOMIC_DOUBLE_GET(pc->start_time_f);          //
           double new_start_time_f = old_start_time_f + (double)reltime * reltempo;  // <- Don't need atomic increment operation here since we only write to pc->start_time_f in this thread.
           ATOMIC_DOUBLE_SET(pc->start_time_f, new_start_time_f);                 //
-          return;
         } else
           addreltime=0;
 

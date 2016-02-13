@@ -180,7 +180,7 @@ static double find_current_realline_while_playing(SharedVariables *sv){
   bool reset_timing = false;
 
   if (stime < 0){
-    fprintf(stderr,"stime: %f, pc->blocktime: %f",stime,ATOMIC_DOUBLE_GET(pc->blocktime));
+    fprintf(stderr,"Error: stime: %f, pc->blocktime: %f",stime,ATOMIC_DOUBLE_GET(pc->blocktime));
 #if !defined(RELEASE)
     abort();
 #endif
@@ -224,7 +224,7 @@ static double find_current_realline_while_playing(SharedVariables *sv){
                                 i_realline-1, i_realline
                                 );
       if (!std::isfinite(ret)){
-        fprintf(stderr,"prev_line_stime: %f, curr_line_stime: %f, stime: %f, ret: %f, i_realline: %i, reset_timing: %d\n",prev_line_stime, curr_line_stime, stime, ret, i_realline, (int)reset_timing);
+        fprintf(stderr,"Error: prev_line_stime: %f, curr_line_stime: %f, stime: %f, ret: %f, i_realline: %i, reset_timing: %d\n",prev_line_stime, curr_line_stime, stime, ret, i_realline, (int)reset_timing);
 #if !defined(RELEASE)
         abort();
 #endif
@@ -557,6 +557,9 @@ private:
     float scroll_pos = GE_scroll_pos(sv, till_realline);
 
     //printf("pos: %f\n",pos);
+
+    //if (sv->block!=NULL && pc->block!=NULL)
+    //  printf("sv->block: %d, pc->block: %d. pc->playpos: %d, root->curr_playlist: %d\n",sv->block->l.num,pc->block->l.num,pc->playpos,root->curr_playlist);
     
     if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING && sv->block!=safe_pointer_read((void**)&pc->block)) // Do the sanity check once more. pc->block might have changed value during computation of pos.
       return false;
