@@ -961,6 +961,13 @@ static void show_message_box(QMessageBox *box){
 extern "C" void cocoa_set_best_resolution(void *view);
 #endif
 
+static bool is_opengl_certainly_too_old_questionmark(void){
+  if (! ((QGLFormat::openGLVersionFlags()&QGLFormat::OpenGL_Version_2_0) == QGLFormat::OpenGL_Version_2_0))
+    return true;
+  else
+    return false;
+}
+
 static bool is_opengl_version_recent_enough_questionmark(void){
   if ((QGLFormat::openGLVersionFlags()&QGLFormat::OpenGL_Version_3_0) == QGLFormat::OpenGL_Version_3_0)
     return true;
@@ -1003,9 +1010,22 @@ QWidget *GL_create_widget(QWidget *parent){
     
   if (QGLFormat::hasOpenGL()==false) {
     GFX_Message(NULL,"OpenGL not found");
+    exit(-1);
     return NULL;
   }
 
+  if (is_opengl_certainly_too_old_questionmark()){
+    GFX_Message(NULL,
+                "Your version of OpenGL is too old. Radium can not run.\n"
+                "\n"
+                "This is usually caused by lacking a specific graphics card driver, so that the fallback software OpenGL driver is used instead.\n"
+                "\n"
+                "To solve this problem, you might want to try updating your graphics card driver."
+                );
+    exit(-1);
+    return NULL;
+  }
+  
   if (!is_opengl_version_recent_enough_questionmark()){
     vector_t v = {};
     VECTOR_push_back(&v,"Try to run anywyay"); // (but please don't send a bug report if Radium crashes)");
