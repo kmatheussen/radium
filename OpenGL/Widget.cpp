@@ -218,7 +218,15 @@ static double find_current_realline_while_playing(SharedVariables *sv){
 
   for(; i_realline<=sv->num_reallines; i_realline++){
     double curr_line_stime = get_realline_stime(sv, i_realline);
-    if (stime <= curr_line_stime) {
+    if (stime < curr_line_stime) {
+
+      if (prev_line_stime==curr_line_stime) {
+#if !defined(RELEASE)
+        abort();
+#endif
+        return i_realline;
+      }
+      
       double ret = scale_double(stime,
                                 prev_line_stime, curr_line_stime,
                                 i_realline-1, i_realline
@@ -228,7 +236,7 @@ static double find_current_realline_while_playing(SharedVariables *sv){
 #if !defined(RELEASE)
         abort();
 #endif
-        ret = 0.0;
+        return i_realline;
       }
       return ret;
     }
