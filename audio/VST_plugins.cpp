@@ -1052,7 +1052,7 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
   const char *plugin_name = STRING_get_chars(w_filename);
 
 #if 0
-  if (QFileInfo(filename).suffix()===VST3_SUFFIX) {
+  if (QFileInfo(filename).suffix().toLower()===VST3_SUFFIX) {
     radium_vst_uids_t *ruid = (radium_vst_uids_t *)talloc(sizeof(radium_vst_uids_t));
     ruid->name = NULL; //talloc_strdup(plugin_name);
     ruid->uid = 0;
@@ -1217,7 +1217,7 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
 #if defined(FOR_MACOSX)
   const char *plugin_name = talloc_strdup(QFileInfo(QDir(file_or_identifier).dirName()).baseName().toUtf8().constData());
 #else
-  if(file_info.suffix()==VST_SUFFIX)
+  if(file_info.suffix().toLower()==VST_SUFFIX)
     basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
   else
     basename.resize(basename.size()-strlen(VST3_SUFFIX)-1);
@@ -1306,7 +1306,7 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
       if (!continuing)
         return false;
         
-    }else if(file_info.suffix()==VST_SUFFIX || file_info.suffix()==VST3_SUFFIX){
+    }else if(file_info.suffix().toLower()==VST_SUFFIX || file_info.suffix().toLower()==VST3_SUFFIX){
       add_vst_plugin_type(file_info, file_path, is_juce_plugin);
     }
   }
