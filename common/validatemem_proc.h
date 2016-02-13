@@ -6,7 +6,9 @@
 #if !defined(RELEASE)
   // Probably want to comment out the line below if compiling with -fsanitize=thread
   #if !defined DISABLE_BDWGC
-    #define VALIDATE_MEM 1 // VALIDATE_MEM validates mem allocated by bdwgc that fsanitize=address doesn't. However, for best memory validation, DISABLE_BDWGC should be defined instead.
+    #if FOR_LINUX
+      #define VALIDATE_MEM 1 // VALIDATE_MEM validates mem allocated by bdwgc that fsanitize=address doesn't. However, for best memory validation, DISABLE_BDWGC should be defined instead.
+    #endif
   #endif
 #endif
 

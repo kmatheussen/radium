@@ -660,7 +660,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
 #if JUCE_LINUX
   const MessageManagerLock mmLock;
 #endif
-  
+
   Data *data = (Data*)plugin->data;
   
   AudioPluginInstance *audio_instance = data->audio_instance;
