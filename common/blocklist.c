@@ -108,7 +108,7 @@ void BL_delete(int pos){
 
 	struct Blocks **playlist=root->song->playlist;
 
-	for(lokke=pos;lokke<root->song->length;lokke++){
+	for(lokke=pos ; lokke<root->song->length-1 ; lokke++){
 		playlist[lokke]=playlist[lokke+1];
 	}
 
