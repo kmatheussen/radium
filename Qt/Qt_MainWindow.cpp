@@ -567,7 +567,7 @@ const wchar_t *GFX_GetLoadFileName(
 ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
-  num_users_of_keyboard++;
+  obtain_keyboard_focus();
 
   QString filename;
   
@@ -584,7 +584,7 @@ const wchar_t *GFX_GetLoadFileName(
     
   }GL_unlock();
 
-  num_users_of_keyboard--;
+  release_keyboard_focus();
     
   if(filename == "")
     return NULL;
@@ -601,7 +601,7 @@ const wchar_t *GFX_GetSaveFileName(
                                    ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
-  num_users_of_keyboard++;
+  obtain_keyboard_focus();
 
   QString filename;
   
@@ -617,7 +617,7 @@ const wchar_t *GFX_GetSaveFileName(
                                             );
   }GL_unlock();
 
-  num_users_of_keyboard--;
+  release_keyboard_focus();
 
   if (filename == "")
     return NULL;

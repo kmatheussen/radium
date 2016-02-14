@@ -26,8 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Widget_proc.h"
 
 
-extern int num_users_of_keyboard;
-
 extern void set_editor_focus(void);
 
 struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
@@ -47,19 +45,22 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
 
   void focusInEvent ( QFocusEvent *e ){                                 
     printf("Got focusInEvent\n");
-    num_users_of_keyboard++;                                          
+    obtain_keyboard_focus();
     GL_lock();
     QSpinBox::focusInEvent(e);                                             
     GL_unlock();
   }                                                                     
   void focusOutEvent ( QFocusEvent *e ){                                
     printf("Got focusOutEvent\n");
-    num_users_of_keyboard--;                                          
-    if(num_users_of_keyboard<0)                                       
-      num_users_of_keyboard = 0;                                      
+    release_keyboard_focus();
     GL_lock();
     QSpinBox::focusOutEvent(e);                                            
     GL_unlock();
+  }                                                                     
+  void hideEvent ( QHideEvent *e ){                                
+    //printf("Got hideEvent\n");
+    release_keyboard_focus();
+    QSpinBox::hideEvent(e);                                            
   }                                                                     
   void 	wheelEvent ( QWheelEvent * event ){
     printf("Got wheel event\n");

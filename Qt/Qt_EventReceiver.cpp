@@ -411,6 +411,8 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
 
   }
 
+  release_keyboard_focus();
+  
   // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
   GL_lock();{
     setFocus();

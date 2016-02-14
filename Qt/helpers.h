@@ -4,11 +4,10 @@
 #include <QMessageBox>
 
 #include "../OpenGL/Widget_proc.h"
+#include "../common/keyboard_focus_proc.h"
 
 #include "../api/api_proc.h"
 
-
-extern int num_users_of_keyboard;
 
 
 struct GL_PauseCaller{
@@ -24,24 +23,28 @@ struct GL_PauseCaller{
 
 static inline int safeExec(QMessageBox *widget){
   int ret;
+
+  obtain_keyboard_focus();
   
-  num_users_of_keyboard++;
   GL_lock();{
     ret = widget->exec();
   }GL_unlock();
-  num_users_of_keyboard--;
+
+  release_keyboard_focus();
   
   return ret;
 }
 
 static inline int safeExec(QMessageBox &widget){
   int ret;
-  
-  num_users_of_keyboard++;
+
+  obtain_keyboard_focus();
+
   GL_lock();{
     ret = widget.exec();
   }GL_unlock();
-  num_users_of_keyboard--;
+
+  release_keyboard_focus();
   
   return ret;
 }
@@ -49,11 +52,13 @@ static inline int safeExec(QMessageBox &widget){
 static inline int safeExec(QDialog *widget){
   int ret;
 
-  num_users_of_keyboard++;
+  obtain_keyboard_focus();
+
   GL_lock();{
     ret = widget->exec();
   }GL_unlock();
-  num_users_of_keyboard--;
+
+  release_keyboard_focus();
   
   return ret;
 }

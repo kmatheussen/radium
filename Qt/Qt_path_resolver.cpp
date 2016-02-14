@@ -30,8 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "EditorWidget.h"
 
-extern int num_users_of_keyboard;
-
 extern struct Root *root;
 
 static QHash<QString, QDir> resolved_paths;
@@ -163,7 +161,7 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
       struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
       EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
 
-      num_users_of_keyboard++;
+      obtain_keyboard_focus();
 
       QMessageBox msgBox;
 
@@ -194,7 +192,7 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
                                                 );
       }GL_unlock();
 
-      num_users_of_keyboard--;
+      release_keyboard_focus();
 
       if(filename == "")
         return NULL;

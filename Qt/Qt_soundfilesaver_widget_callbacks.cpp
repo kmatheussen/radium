@@ -169,8 +169,6 @@ public slots:
 };
 
 
-extern int num_users_of_keyboard;
-
 static Soundfilesaver_widget *widget=NULL;
 
 extern "C"{

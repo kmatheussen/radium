@@ -498,8 +498,6 @@ public slots:
 }
 
 
-extern int num_users_of_keyboard;
-
 
 static void ensure_widget_is_created(void){
 }

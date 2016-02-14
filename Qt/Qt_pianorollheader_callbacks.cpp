@@ -20,8 +20,6 @@ extern struct Root *root;
 #include "mQt_pianorollheader_callbacks.h"
 
 
-extern int num_users_of_keyboard;
-
 extern EditorWidget *g_editor;
 
 void *PIANOROLLHEADER_create(void){

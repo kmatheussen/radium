@@ -115,6 +115,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_error_proc.h"
 #include "OS_Semaphores.h"
 #include "OS_Player_proc.h"
+#include "keyboard_focus_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
 
 
@@ -1442,6 +1443,7 @@ struct Tracker_Windows{
 #define TEMPOCOLORTRACK -6
 #define LEFTMOSTTRACK TEMPOCOLORTRACK
 #define NOTRACK -10000
+
 
 /*********************************************************************
 	song.h

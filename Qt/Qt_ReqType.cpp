@@ -44,7 +44,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifdef TEST_MAIN
 
-int num_users_of_keyboard = 0;
 void X11_ResetKeysUpDowns(void){}
 void *talloc_atomic(size_t size){return malloc(size);}
 void *talloc(size_t size){return calloc(1,size);}
@@ -53,7 +52,6 @@ QApplication *qapplication;
 #else //  TEST_MAIN
 
 extern struct Root *root;
-extern int num_users_of_keyboard;
 //extern MyApplication *qapplication;
 
 #endif //  TEST_MAIN
@@ -73,7 +71,7 @@ extern EditorWidget *g_editor;
 
 // tvisual might be NULL
 ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const char *title){
-  num_users_of_keyboard++; // disable X11 keyboard sniffer
+  obtain_keyboard_focus(); // disable X11 keyboard sniffer
 
   MyReqType *reqtype = new MyReqType();
   
@@ -112,7 +110,7 @@ void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
 
   delete reqtype->frame;
 
-  num_users_of_keyboard--;
+  release_keyboard_focus();
 
   OS_SYSTEM_ResetKeysUpDowns(); // Since we disabled X11 events, the X11 event sniffer didn't notice that we changed focus.
 

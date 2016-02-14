@@ -792,8 +792,6 @@ public slots:
 
 #include "mQt_colors.cpp"
 
-extern int num_users_of_keyboard;
-
 void GFX_ResetColors(void){
   struct Tracker_Windows *window = root->song->tracker_windows;
   EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);

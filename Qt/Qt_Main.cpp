@@ -121,7 +121,17 @@ extern bool doquit;
 extern struct Root *root;
 
 
-int num_users_of_keyboard = 0;
+static bool editor_has_keyboard = true;
+
+void obtain_keyboard_focus(void){
+  editor_has_keyboard = false;
+}
+
+void release_keyboard_focus(void){
+  editor_has_keyboard = true;
+}
+
+
 
 DEFINE_ATOMIC(bool, is_starting_up) = true;
 bool g_qt_is_running = false;
@@ -390,7 +400,7 @@ protected:
       return true; // swallow the general qt menu popup menu. Sometimes it pops up when configuring block. If you need it, just press right mouse button.
 #endif
     
-    if (num_users_of_keyboard > 0)
+    if (editor_has_keyboard==false)
       return false;
 
     int keynum = OS_SYSTEM_get_keynum(event);
@@ -645,7 +655,7 @@ protected:
 
     num_calls++;
     
-    if(num_users_of_keyboard==0){
+    if(editor_has_keyboard==true){
       
       if(num_calls<1000/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
         root->song->tracker_windows->must_redraw = true;
@@ -665,7 +675,7 @@ protected:
           QApplication::quit();
         }
       }
-    } // num_users_of_keyboard==0
+    } // editor_has_keyboard==true
 
     // Check if player has shut down
     if (PLAYER_is_running()==false)

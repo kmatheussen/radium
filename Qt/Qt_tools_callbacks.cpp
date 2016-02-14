@@ -24,7 +24,6 @@ struct Root;
 extern struct Root *root;
 
 
-extern int num_users_of_keyboard;
 
 
 void TOOLS_open(void){

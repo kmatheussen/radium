@@ -245,8 +245,9 @@ private:
   
   void SaveFXBP(bool is_fxb){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    
-    num_users_of_keyboard++;
+
+    obtain_keyboard_focus();
+
     QString filename;
     
     GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
@@ -259,8 +260,8 @@ private:
                                               useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
                                               );
     }GL_unlock();
-    
-    num_users_of_keyboard--;
+
+    release_keyboard_focus();
     
     if(filename=="")
       return;
@@ -275,8 +276,9 @@ private:
 
   void LoadFXBP(void){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    
-    num_users_of_keyboard++;
+
+    obtain_keyboard_focus();
+
     QString filename;
     
     GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
@@ -289,8 +291,8 @@ private:
                                               useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
                                               );
     }GL_unlock();
-    
-    num_users_of_keyboard--;
+
+    release_keyboard_focus();
     
     if(filename=="")
       return;

@@ -57,7 +57,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 volatile bool g_test_crashreporter_in_audio_thread = false;
 
 extern PlayerClass *pc;
-extern int num_users_of_keyboard;
 
 static int g_last_set_producer_buffersize;
 static RSemaphore *g_freewheeling_has_started = NULL;
@@ -159,8 +158,9 @@ static void check_jackd_arguments(void){
   }
 
   if(found_jack==false){
-    
-    num_users_of_keyboard++;
+
+    obtain_keyboard_focus();
+
     QMessageBox msgBox;
     msgBox.setIcon(QMessageBox::Warning);
     msgBox.setText("Unable to find jack process command line arguments.");
@@ -168,11 +168,13 @@ static void check_jackd_arguments(void){
     msgBox.setInformativeText(mandatory);
     msgBox.setStandardButtons(QMessageBox::Ok);
     msgBox.exec();
-    num_users_of_keyboard--;
+
+    release_keyboard_focus();
     
   } else if(found_sync_flag==false){
 
-    num_users_of_keyboard++;
+    obtain_keyboard_focus();
+
     QMessageBox msgBox;
     msgBox.setIcon(QMessageBox::Critical);
     msgBox.setText("The -S parameter was not set for Jack.");
@@ -180,7 +182,8 @@ static void check_jackd_arguments(void){
     
     msgBox.setStandardButtons(QMessageBox::Ok);
     msgBox.exec();
-    num_users_of_keyboard--;
+
+    release_keyboard_focus();
   }
 
 
@@ -492,7 +495,8 @@ struct Mixer{
 	fprintf (stderr, "Unable to connect to JACK server\n");
       }
 
-      num_users_of_keyboard++;
+      obtain_keyboard_focus();
+
       QMessageBox msgBox;
       msgBox.setIcon(QMessageBox::Critical);
       msgBox.setText("Unable to connect to Jack.");
@@ -513,7 +517,9 @@ struct Mixer{
       
       msgBox.setStandardButtons(QMessageBox::Ok);
       msgBox.exec();
-      num_users_of_keyboard--;
+
+      release_keyboard_focus();
+
       return false;
     }
 
@@ -540,7 +546,8 @@ struct Mixer{
     if (jack_activate (_rjack_client)){
       fprintf (stderr, "Error. Cannot activate jack client.\n");
 
-      num_users_of_keyboard++;
+      obtain_keyboard_focus();
+
       QMessageBox msgBox;
       msgBox.setIcon(QMessageBox::Critical);
       msgBox.setText("Unable to activate Jack client.");
@@ -548,7 +555,8 @@ struct Mixer{
 
       msgBox.setStandardButtons(QMessageBox::Ok);
       msgBox.exec();
-      num_users_of_keyboard--;
+
+      release_keyboard_focus();
 
       return false;
     }

@@ -767,7 +767,8 @@ static QString last_preset_path = "";
 
 
 static hash_t *load_preset_state(void){
-  num_users_of_keyboard++;
+  obtain_keyboard_focus();
+  
   QString filename;
   
   GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
@@ -780,8 +781,8 @@ static hash_t *load_preset_state(void){
                                             useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
                                             );
   }GL_unlock();
-  
-  num_users_of_keyboard--;
+
+  release_keyboard_focus();
 
   if(filename=="")
     return NULL;
@@ -922,8 +923,9 @@ void InstrumentWidget_load_preset(struct Patch *old_patch){
 void InstrumentWidget_save_preset(struct Patch *patch){
 
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-  
-  num_users_of_keyboard++;
+
+  obtain_keyboard_focus();
+
   QString filename;
   
   GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
@@ -936,8 +938,8 @@ void InstrumentWidget_save_preset(struct Patch *patch){
                                             useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
                                             );
   }GL_unlock();
-  
-  num_users_of_keyboard--;
+
+  release_keyboard_focus();
   
   if(filename=="")
     return;

@@ -321,7 +321,5 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
     return -1;
 }
 
-extern int num_users_of_keyboard;
-
 
 #endif // __linux__

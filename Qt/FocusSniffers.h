@@ -28,8 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Widget_proc.h"
 
 
-extern int num_users_of_keyboard;
-
 extern void set_editor_focus(void);
 
 #define MakeFocusSnifferClass(Class)                                    \
@@ -43,20 +41,24 @@ extern void set_editor_focus(void);
   void focusInEvent ( QFocusEvent *e ){                                 \
     printf("got in\n");                                                 \
     if(dontsniff==false)                                                \
-      num_users_of_keyboard++;                                          \
+      obtain_keyboard_focus();                                          \
     GL_lock();                                                          \
     Class::focusInEvent(e);                                             \
     GL_unlock();                                                        \
   }                                                                     \
   void focusOutEvent ( QFocusEvent *e ){                                \
     if(dontsniff==false) {                                              \
-      num_users_of_keyboard--;                                          \
-      if(num_users_of_keyboard<0)                                       \
-        num_users_of_keyboard = 0;                                      \
+      release_keyboard_focus();                                         \
     }                                                                   \
     GL_lock();                                                          \
     Class::focusOutEvent(e);                                            \
     GL_unlock();                                                        \
+  }                                                                     \
+  void hideEvent (QHideEvent * event){                                  \
+    if(dontsniff==false) {                                              \
+      release_keyboard_focus();                                         \
+    }                                                                   \
+    Class::hideEvent(event);                                            \
   }                                                                     \
   void keyPressEvent ( QKeyEvent * event ){                             \
     if(event->key()==Qt::Key_Escape){                                   \
@@ -84,23 +86,27 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
     }                                                                   
   void focusInEvent ( QFocusEvent *e ){                                 
     printf("Got focusInEvent\n");
-    if(dontsniff==false)                                                
-      num_users_of_keyboard++;                                          
+    if(dontsniff==false)
+      obtain_keyboard_focus();
     GL_lock();
     QSpinBox::focusInEvent(e);                                             
     GL_unlock();
   }                                                                     
   void focusOutEvent ( QFocusEvent *e ){                                
     printf("Got focusOutEvent\n");
-    if(dontsniff==false) {                                              
-      num_users_of_keyboard--;                                          
-      if(num_users_of_keyboard<0)                                       
-        num_users_of_keyboard = 0;                                      
+    if(dontsniff==false) {
+      release_keyboard_focus();
     }                                                                   
     GL_lock();
     QSpinBox::focusOutEvent(e);                                            
     GL_unlock();
   }                                                                     
+  void hideEvent (QHideEvent * event){
+    if(dontsniff==false) {
+      release_keyboard_focus();
+    }                                 
+    QSpinBox::hideEvent(event);          
+  }                                   
   void 	wheelEvent ( QWheelEvent * event ){
     printf("Got wheel event\n");
     QSpinBox::wheelEvent(event);
@@ -117,22 +123,27 @@ class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
     }                                                                   
   void focusInEvent ( QFocusEvent *e ){                                 
     printf("Got focusInEvent\n");
-    if(dontsniff==false)                                                
-      num_users_of_keyboard++;                                          
+    if(dontsniff==false)
+      obtain_keyboard_focus();
     GL_lock();
     QDoubleSpinBox::focusInEvent(e);                                             
     GL_unlock();
   }                                                                     
   void focusOutEvent ( QFocusEvent *e ){                                
     printf("Got focusOutEvent\n");
-    if(dontsniff==false) {                                              
-      num_users_of_keyboard--;                                          
-      if(num_users_of_keyboard<0)                                       
-        num_users_of_keyboard = 0;                                      
+    if(dontsniff==false) {
+      release_keyboard_focus();
     }                                                                   
     GL_lock();
     QDoubleSpinBox::focusOutEvent(e);                                            
     GL_unlock();
+  }                                                                     
+  void hideEvent ( QHideEvent *e ){                                
+    //printf("Got hideEvent\n");
+    if(dontsniff==false) {
+      release_keyboard_focus();
+    }                                                                   
+    QDoubleSpinBox::hideEvent(e);                                            
   }                                                                     
   void 	wheelEvent ( QWheelEvent * event ){
     printf("Got wheel event\n");
@@ -152,18 +163,16 @@ class FocusSnifferQTableWidget : public QTableWidget{
     }                                                                   
   void focusInEvent ( QFocusEvent *e ){                                 
     printf("Got focusInEvent\n");
-    if(dontsniff==false)                                                
-      num_users_of_keyboard++;                                          
+    if(dontsniff==false)
+      obtain_keyboard_focus();
     GL_lock();
     QTableWidget::focusInEvent(e);                                             
     GL_unlock();
   }                                                                     
   void focusOutEvent ( QFocusEvent *e ){                                
     printf("Got focusOutEvent\n");
-    if(dontsniff==false) {                                              
-      num_users_of_keyboard--;                                          
-      if(num_users_of_keyboard<0)                                       
-        num_users_of_keyboard = 0;                                      
+    if(dontsniff==false) {
+      release_keyboard_focus();
     }    
     GL_lock();                                                               
     QTableWidget::focusOutEvent(e);                                            

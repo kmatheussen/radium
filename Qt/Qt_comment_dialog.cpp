@@ -7,8 +7,6 @@
 
 extern struct Root *root;
 
-extern int num_users_of_keyboard;
-
 static comment_dialog *widget=NULL;
 
 static void ensure_widget_is_created(void){
