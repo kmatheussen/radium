@@ -1919,9 +1919,15 @@ static SoundPluginType click_type;
 void create_sample_plugin(void){
   PR_add_plugin_type(&plugin_type);
 
-  memcpy((void*)&click_type, (void*)&plugin_type, sizeof(SoundPluginType));
+  static bool has_inited = false;
 
-  click_type.name = g_click_name;
+  if (has_inited==false) {
+    memcpy((void*)&click_type, (void*)&plugin_type, sizeof(SoundPluginType));
 
+    click_type.name = g_click_name;
+
+    has_inited = true;
+  }
+  
   PR_add_plugin_type(&click_type);
 }

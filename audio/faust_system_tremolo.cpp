@@ -874,41 +874,50 @@ static void fill_type(SoundPluginType *type){
 static SoundPluginType faust_type = {};  // c++ way of zero-initialization without getting missing-field-initializers warning.
 
 void CREATE_NAME (void){
-  fill_type(&faust_type);
+  static bool has_inited = false;
 
-  CLASSNAME::classInit(MIXER_get_sample_rate());
+  if (has_inited==false) {
+    
+    fill_type(&faust_type);
   
-  Data *data = (Data*)create_effect_plugin_data(&faust_type, NULL, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
-  faust_type.data = data;
+    CLASSNAME::classInit(MIXER_get_sample_rate());
+  
+    Data *data = (Data*)create_effect_plugin_data(&faust_type, NULL, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
+    faust_type.data = data;
 
-  faust_type.name = DSP_NAME;
+  
+    faust_type.name = DSP_NAME;
 
-  faust_type.num_inputs = data->voices[0].dsp_instance->getNumInputs();
-  faust_type.num_outputs = data->voices[0].dsp_instance->getNumOutputs();
+    faust_type.num_inputs = data->voices[0].dsp_instance->getNumInputs();
+    faust_type.num_outputs = data->voices[0].dsp_instance->getNumOutputs();
 
-  if(data->voices[0].myUI.is_instrument()){
+    if(data->voices[0].myUI.is_instrument()){
 
-    faust_type.is_instrument      = true;
+      faust_type.is_instrument      = true;
+      
+      faust_type.RT_process         = RT_process_instrument;
+      faust_type.create_plugin_data = create_instrument_plugin_data;
 
-    faust_type.RT_process         = RT_process_instrument;
-    faust_type.create_plugin_data = create_instrument_plugin_data;
+      data->voices[0].myUI.remove_instrument_notecontrol_effects();
+      
+    }else{
 
-    data->voices[0].myUI.remove_instrument_notecontrol_effects();
+      faust_type.is_instrument      = false;
+      
+      faust_type.RT_process         = RT_process_effect;
+      faust_type.create_plugin_data = create_effect_plugin_data;
+      
+      faust_type.play_note          = NULL;
+      faust_type.set_note_volume    = NULL;
+      faust_type.stop_note          = NULL;
+      
+    }
+    
+    faust_type.num_effects = data->voices[0].myUI._num_effects;
 
-  }else{
-
-    faust_type.is_instrument      = false;
-
-    faust_type.RT_process         = RT_process_effect;
-    faust_type.create_plugin_data = create_effect_plugin_data;
-
-    faust_type.play_note          = NULL;
-    faust_type.set_note_volume    = NULL;
-    faust_type.stop_note          = NULL;
+    has_inited = true;
 
   }
-
-  faust_type.num_effects = data->voices[0].myUI._num_effects;
-
+  
   PR_add_plugin_type(&faust_type);
 }

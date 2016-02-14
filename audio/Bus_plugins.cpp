@@ -143,6 +143,9 @@ static SoundPluginType pipe_type = {
 #endif
 
 void create_bus_plugins(void){
+  static bool has_inited = false;
+
+  if (has_inited==false)
   {
     bus_type1.type_name                = "Bus";
     bus_type1.name                     = "Bus 1";
@@ -159,6 +162,7 @@ void create_bus_plugins(void){
     bus_type1.data                     = NULL;
   }
 
+  if (has_inited==false)
   {
     bus_type2.type_name                = "Bus";
     bus_type2.name                     = "Bus 2";
@@ -175,6 +179,7 @@ void create_bus_plugins(void){
     bus_type2.data                     = NULL;
   }
 
+  if (has_inited==false)
   {
     pipe_type.type_name                = "Pipe";
     pipe_type.name                     = "Pipe";
@@ -191,6 +196,7 @@ void create_bus_plugins(void){
     pipe_type.data                     = NULL;
   }
 
+  if (has_inited==false)
   {
     left_in_type.type_name                = "2ch -> 1ch";
     left_in_type.name                     = "Keep Left channel only";
@@ -205,6 +211,7 @@ void create_bus_plugins(void){
     left_in_type.RT_process               = RT_left_in_process;
   }
 
+  if (has_inited==false)
   {
     right_in_type.type_name                = "2ch -> 1ch";
     right_in_type.name                     = "Keep Right channel only";
@@ -219,6 +226,7 @@ void create_bus_plugins(void){
     right_in_type.RT_process               = RT_right_in_process;
   }
 
+  if (has_inited==false)
   {
     left_out_type.type_name                = "1ch -> 2ch";
     left_out_type.name                     = "Send Left channel only";
@@ -233,6 +241,7 @@ void create_bus_plugins(void){
     left_out_type.RT_process               = RT_left_out_process;
   }
 
+  if (has_inited==false)
   {
     right_out_type.type_name                = "1ch -> 2ch";
     right_out_type.name                     = "Send Right channel only";
@@ -247,6 +256,8 @@ void create_bus_plugins(void){
     right_out_type.RT_process               = RT_right_out_process;
   }
 
+  has_inited = true;
+  
   PR_add_plugin_type(&bus_type1);
   PR_add_plugin_type(&bus_type2);
   PR_add_plugin_type(&pipe_type);
