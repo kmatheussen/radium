@@ -635,7 +635,8 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
   plugin_type->num_outputs = audio_instance->getNumOutputChannels();
     
   plugin_type->plugin_takes_care_of_savable_values = true;
-
+  plugin_type->dont_send_effect_values_from_state_into_plugin = true; // Don't need to. Juce takes care of saving and loading all effect parameters (General optimization plus crash fix for buggy CM 505 plugin)
+ 
   const char *wrapper_info = "";
   
   if (type_data->wrapper_type == AudioProcessor::wrapperType_VST) {

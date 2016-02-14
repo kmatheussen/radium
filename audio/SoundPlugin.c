@@ -1124,15 +1124,17 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   }
 
   // 3. Store custom effects (need lock here)
-  PLAYER_lock();{
-    for(i=0;i<type->num_effects;i++){
-      if(HASH_has_key(effects, effect_names[i])){
-        float val = HASH_get_float(effects, effect_names[i]);
-        type->set_effect_value(plugin, -1, i, val, PLUGIN_FORMAT_NATIVE, FX_single);
-        plugin->savable_effect_values[i] = type->get_effect_value(plugin, i, PLUGIN_FORMAT_SCALED);
+  if (type->dont_send_effect_values_from_state_into_plugin ==false) {
+    PLAYER_lock();{
+      for(i=0;i<type->num_effects;i++){
+        if(HASH_has_key(effects, effect_names[i])){
+          float val = HASH_get_float(effects, effect_names[i]);
+          type->set_effect_value(plugin, -1, i, val, PLUGIN_FORMAT_NATIVE, FX_single);
+          plugin->savable_effect_values[i] = type->get_effect_value(plugin, i, PLUGIN_FORMAT_SCALED);
+        }
       }
-    }
-  }PLAYER_unlock();
+    }PLAYER_unlock();
+  }
 }
 
 SoundPlugin *PLUGIN_create_from_state(hash_t *state){

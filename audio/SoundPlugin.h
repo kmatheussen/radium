@@ -156,6 +156,8 @@ typedef struct SoundPluginType{
   int num_effects;
 
   bool plugin_takes_care_of_savable_values; // For instance, if a VST plugin has it's own editor, we ask the plugin for values instead of using savable_effect_values (which contains the last set value). Then this value is true.
+  
+  bool dont_send_effect_values_from_state_into_plugin; // Can be set to true if all effects are stored in type->create_state. type->effect_value will not be called for all effects then. All effect values are still stored in the state though.
 
   const char *(*get_effect_description)(const struct SoundPluginType *plugin_type, int effect_num);
 
@@ -273,7 +275,7 @@ typedef struct SoundPlugin{
 
   float *savable_effect_values; // When dragging a slider, we want to save that value. But we don't want to save the last sent out automation value. (saving to disk, that is)
   float *initial_effect_values; // Used when resetting.
-
+  
   bool editor_is_on;
 
   // Data used by SoundProducer
