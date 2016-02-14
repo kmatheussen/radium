@@ -1,3 +1,19 @@
+Changes 3.6.2 -> 3.6.3:
+*    Rolled forward again to 3.6.1 and fixed the 3.6.1. player bugs
+*    Using non-native file requester by default on windows. The Qt filerequester doesn't seem so slow anymore.
+*    Fix various keyboard focus issues.
+*    Several deep bug fixes
+*    vst: Dont save and store effect parameters manually. General optimization plus crash fix for the CM 505 plugin.
+*    Faster to save VST plugin presets
+*    vst: Use both .dll and .DLL files
+*    Refuse to start radium if OpenGL version < 2
+*    Fix rare player freeze when CPU is very busy.
+*    Sleep correct amount of time when waiting for vertical refresh and nothing needs to be redrawn
+     (editor might feel less sluggish)
+*    Fix editor sometimes turning blank while playing
+*    Minor jack shutdown fix
+
+
 Changes 3.6.1 -> 3.6.2:
 * Panic fix: Roll back to 3.6.0.
   3.6.1 contained some deep changes to the player, and those changes doesn't quite work yet.
