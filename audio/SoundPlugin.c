@@ -1082,8 +1082,11 @@ void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, f
 
 void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   const SoundPluginType *type=plugin->type;
-  
+
   int i;
+
+#if 0
+  // original code:
   for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
     const char *effect_name = PLUGIN_get_effect_name(plugin,i);
     if(HASH_has_key(effects, effect_name)){
@@ -1097,7 +1100,39 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
         PLUGIN_set_effect_value(plugin, -1, i, val, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
     }else
       plugin->savable_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN); // state didn't have it. Store default value.
+#endif
+
+    
+  const char *effect_names[type->num_effects+NUM_SYSTEM_EFFECTS];
+  
+  for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
+    effect_names[i] = PLUGIN_get_effect_name(plugin,i);
+
+  
+  // 1. Store savable effect values for those effects which are not in the state
+  for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
+    if(!HASH_has_key(effects, effect_names[i]))
+      plugin->savable_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN);
+
+  
+  // 2. Store system effects
+  for(i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+    if(HASH_has_key(effects, effect_names[i])){
+      float val = HASH_get_float(effects, effect_names[i]);
+      PLUGIN_set_effect_value(plugin, -1, i, val, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    }
   }
+
+  // 3. Store custom effects (need lock here)
+  PLAYER_lock();{
+    for(i=0;i<type->num_effects;i++){
+      if(HASH_has_key(effects, effect_names[i])){
+        float val = HASH_get_float(effects, effect_names[i]);
+        type->set_effect_value(plugin, -1, i, val, PLUGIN_FORMAT_NATIVE, FX_single);
+        plugin->savable_effect_values[i] = type->get_effect_value(plugin, i, PLUGIN_FORMAT_SCALED);
+      }
+    }
+  }PLAYER_unlock();
 }
 
 SoundPlugin *PLUGIN_create_from_state(hash_t *state){
