@@ -980,7 +980,7 @@ bool useNativeFileRequesters(void){
 
   if (has_inited==false){
 #if FOR_WINDOWS
-    float default_value = true;
+    float default_value = false; // Was true earlier with an older version of Qt, because it the non-native requester was extremely slow. Hopefully that has been fixed now.
 #else
     float default_value = false;
 #endif
