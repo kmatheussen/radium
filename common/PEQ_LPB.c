@@ -122,12 +122,17 @@ double RT_LPB_get_current_BPM(void){
   else if (is_playing())
     return g_curr_beats_per_minute;
   
-  else 
-    if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->block==NULL) // TODO/FIX, somehow
+  else {
+    struct Blocks *block = ATOMIC_GET(g_curr_block);
+    
+    if (block==NULL)
       return 0.0;
     else
-      return (double)root->tempo * safe_volatile_float_read(&root->song->tracker_windows->wblock->block->reltempo);
+      return (double)root->tempo * safe_volatile_float_read(&block->reltempo);
+  }
+
 }
+
 
 static void print_lpb_iterator_status(const struct Blocks *block){
 #if 0

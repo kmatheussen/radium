@@ -251,7 +251,8 @@ if(window==NULL) return;
 	DLoadWBlocks(newroot,window,window->wblocks);
 
 	window->wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,window->curr_block);
-
+        ATOMIC_SET(g_curr_block, window->wblock->block);
+        
 	if(window->wblock->isgfxdatahere==false){
 		UpdateReallinesDependens(window,window->wblock);
 	}

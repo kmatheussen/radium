@@ -152,12 +152,12 @@ static void start_player(int playtype, int playpos, bool set_curr_playlist, Plac
     
     pc->block=block;
     
-    ATOMIC_SET(root->curr_block, pc->block->l.num);
+    ATOMIC_SET(root->curr_blocknum, pc->block->l.num);
     
   }PLAYER_unlock();
 
   
-  printf("Play. root->curr_block: %d. Block: %p\n",ATOMIC_GET(root->curr_block),pc->block);
+  printf("Play. root->curr_block: %d. Block: %p\n",ATOMIC_GET(root->curr_blocknum),pc->block);
   //abort();
   fflush(stdout);
 

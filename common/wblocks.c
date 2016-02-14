@@ -47,6 +47,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 extern PlayerClass *pc;
 
+DEFINE_ATOMIC(struct Blocks *, g_curr_block);
+
 
 void CloseWBlock(struct Tracker_Windows *window, NInt blocknum){
 	struct WBlocks *temp;
@@ -436,6 +438,8 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 	SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub);
 
 	window->curr_block=wblock->l.num;
+        ATOMIC_SET(g_curr_block, wblock->block);
+        
         //MinimizeBlock_CurrPos(window);
         //window->must_redraw = false;
 

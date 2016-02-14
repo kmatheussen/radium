@@ -1171,7 +1171,6 @@ struct STimes{									/* One element for each line. */
 	blocks.h
 *********************************************************************/
 
-
 struct Blocks{
 	struct ListHeader1 l;
 
@@ -1196,6 +1195,9 @@ struct Blocks{
   bool is_dirty; 
 };
 #define NextBlock(a) (struct Blocks *)((a)->l.next)
+
+
+extern DEFINE_ATOMIC(struct Blocks *, g_curr_block);
 
 
 
@@ -1467,12 +1469,11 @@ struct Song{
 	root.h
 *********************************************************************/
 
-
 struct Root{
 	struct Song *song;
 	
 	int curr_playlist;
-        DEFINE_ATOMIC(NInt, curr_block);
+        DEFINE_ATOMIC(NInt, curr_blocknum);
 
         DEFINE_ATOMIC(bool, setfirstpos);
 

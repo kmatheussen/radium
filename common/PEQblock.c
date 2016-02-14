@@ -77,8 +77,9 @@ void PlayerNewBlockGFX(struct PEventQueue *peq,int doit){
 	// Update graphics.
   //printf("playerNewBlock. curr_before: %d. curr_now: %d\n",root->curr_block,pc->block->l.num);
 
-        ATOMIC_SET(root->curr_block, pc->block->l.num);
+        ATOMIC_SET(root->curr_blocknum, pc->block->l.num);
 	ATOMIC_SET(root->setfirstpos, true);
+        
 	if(doit){
 		Ptask2Mtask(); // TODO: Add latency compensation. (not done since the code in this file is not quite clear)
 	}

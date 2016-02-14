@@ -72,7 +72,7 @@ void P2MUpdateSongPosCallBack(void){
 
   bool setfirstpos=ATOMIC_GET(root->setfirstpos);
 
-  NInt curr_block_num = ATOMIC_GET(root->curr_block);
+  NInt curr_block_num = ATOMIC_GET(root->curr_blocknum);
   
   struct Tracker_Windows *window=root->song->tracker_windows;
   struct WBlocks *wblock = ListFindElement1(&window->wblocks->l,curr_block_num);
@@ -130,7 +130,7 @@ static STime last_time = 0;
 void P2MUpdateSongPosCallBack(void){
 	struct Tracker_Windows *window=root->song->tracker_windows;
 	bool setfirstpos=ATOMIC_GET(root->setfirstpos);
-	NInt curr_block=ATOMIC_GET(root->curr_block);
+	NInt curr_block=ATOMIC_GET(root->curr_blocknum);
 	struct WBlocks *wblock;
 	int till_curr_realline;
 
@@ -144,7 +144,7 @@ void P2MUpdateSongPosCallBack(void){
 		if(window->playalong==true){
 
                   DO_GFX({
-                        wblock=ListFindElement1(&window->wblocks->l,curr_block);
+                        wblock=ListFindElement1(&window->wblocks->l,curr_blocknum);
 			till_curr_realline=ATOMIC_GET(wblock->till_curr_realline);
                         
 			if(window->curr_block!=curr_block){

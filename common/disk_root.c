@@ -34,7 +34,7 @@ void SaveRoot(struct Root *theroot){
 DC_start("ROOT");
 
 //	DC_SSN("def_instrument",theroot->def_instrument->l.num);
-        DC_SSN("curr_block",ATOMIC_GET(theroot->curr_block));
+        DC_SSN("curr_block",ATOMIC_GET(theroot->curr_blocknum));
 	DC_SSI("tempo",theroot->tempo);
 	DC_SSI("lpb",theroot->lpb);
         DC_SSI("signature_numerator",theroot->signature.numerator);
@@ -100,7 +100,7 @@ obj0:
 var0:
 	goto start;			// Don't bother with instruments yet.
 var1:
-	ATOMIC_SET(ret->curr_block, DC_LoadN());
+	ATOMIC_SET(ret->curr_blocknum, DC_LoadN());
 	goto start;
 var2:
 	ret->tempo=DC_LoadI();
