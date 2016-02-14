@@ -339,10 +339,10 @@ static STime jackblock_cycle_start_stime = 0;
 
 static QTime pause_time;
 static bool g_process_plugins = true;
-
+static DEFINE_ATOMIC(bool, g_request_to_pause_plugins) = false;
+  
 void RT_pause_plugins(void){
-  g_process_plugins = false;
-  pause_time.restart();
+  ATOMIC_SET(g_request_to_pause_plugins, true);
 }
 
 #if FOR_WINDOWS
@@ -625,6 +625,12 @@ struct Mixer{
       if((int)num_frames!=_buffer_size)
         printf("What???\n");
 
+      if (ATOMIC_GET(g_request_to_pause_plugins)==true){
+        ATOMIC_SET(g_request_to_pause_plugins, false);
+        g_process_plugins = false;
+        pause_time.restart();
+      }
+      
       if (g_process_plugins==false) {
         if (pause_time.elapsed() > 5000)
           g_process_plugins = true;
