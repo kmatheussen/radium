@@ -1104,35 +1104,36 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
 #endif
 
     
-  const char *effect_names[type->num_effects+NUM_SYSTEM_EFFECTS];
-  
-  for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-    effect_names[i] = PLUGIN_get_effect_name(plugin,i);
-
-  
-  // 1. Store savable effect values for those effects which are not in the state
-  for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-    if(!HASH_has_key(effects, effect_names[i]))
-      plugin->savable_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN);
+  bool has_value[type->num_effects+NUM_SYSTEM_EFFECTS];
+  float values[type->num_effects+NUM_SYSTEM_EFFECTS];
+    
+  for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++) {
+    const char *effect_name = PLUGIN_get_effect_name(plugin,i);
+    has_value[i] = HASH_has_key(effects, effect_name);
+    if (has_value[i])
+      values[i] = HASH_get_float(effects, effect_name);
+  }    
 
   
   // 2. Store system effects
   for(i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
-    if(HASH_has_key(effects, effect_names[i])){
-      float val = HASH_get_float(effects, effect_names[i]);
+    if(has_value[i]){
+      float val = values[i];
       PLUGIN_set_effect_value(plugin, -1, i, val, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-    }
+    }else
+      plugin->savable_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN);
   }
 
   // 3. Store custom effects (need lock here)
   if (type->dont_send_effect_values_from_state_into_plugin ==false) {
     PLAYER_lock();{
       for(i=0;i<type->num_effects;i++){
-        if(HASH_has_key(effects, effect_names[i])){
-          float val = HASH_get_float(effects, effect_names[i]);
+        if(has_value[i]){
+          float val = values[i];
           type->set_effect_value(plugin, -1, i, val, PLUGIN_FORMAT_NATIVE, FX_single);
           plugin->savable_effect_values[i] = type->get_effect_value(plugin, i, PLUGIN_FORMAT_SCALED);
-        }
+        }else
+          plugin->savable_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN);
       }
     }PLAYER_unlock();
   }
