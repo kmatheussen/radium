@@ -507,9 +507,16 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
 #endif
 }
 
-float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
+static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
   Data *data = (Data*)plugin->data;
+#if 1
+  // juce::VSTPluginInstance::getParameter obtains the vst lock. That should not be necessary (Radium ensures that we are alone here), plus that it causes glitches in sound.
+  // So instead, we call the vst getParameter function directly:
+  AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
+  return aeffect->getParameter(aeffect, effect_num);
+#else
   return data->audio_instance->getParameter(effect_num);
+#endif
 }
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
