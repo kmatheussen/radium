@@ -479,11 +479,16 @@ static char *create_info_string(const LADSPA_Descriptor *descriptor){
   return V_strdup(temp);
 }
 
+// This function is suppressed from tsan. (not working though, can't get full backtrace)
+static const LADSPA_Descriptor *call_ladspa_get_descriptor_func(LADSPA_Descriptor_Function get_descriptor_func, int i){
+  return get_descriptor_func(i);
+}
+
 static void add_ladspa_plugin_type(const QFileInfo &file_info){
   //return; // <- TODO: ThreadSanitizer complains on somethine when loading each ladspa plugins, but there is no proper backtrace so I haven't taken the time to find the cause of it yet.
   
   QString filename = file_info.absoluteFilePath();
-
+  
   fprintf(stderr,"\"%s\"... ",filename.toUtf8().constData());
   fflush(stderr);
 
@@ -493,9 +498,9 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
 
   if(get_descriptor_func==NULL){
     if (qlibrary->errorString().contains("dlopen: cannot load any more object with static TLS")){
-      
+
       if (PR_is_initing_vst_first()) {
-        
+
         vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
         
         VECTOR_push_back(&v,"Init LADSPA plugins first");
@@ -528,7 +533,7 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
                     );
       }
     }
-      
+
     delete qlibrary;
     fprintf(stderr,"(failed) ");
     fflush(stderr);
@@ -598,7 +603,7 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
         if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
           const LADSPA_PortRangeHint *range_hint = &descriptor->PortRangeHints[portnum];
           LADSPA_PortRangeHintDescriptor hints = range_hint->HintDescriptor;
-          
+
           if(LADSPA_IS_HINT_BOUNDED_BELOW(hints))
             type_data->min_values[effect_num] = range_hint->LowerBound;
 

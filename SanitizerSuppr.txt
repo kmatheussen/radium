@@ -2,6 +2,7 @@ leak:OS_getmem
 leak:talloc_realloc__
 leak:PR_init_plugin_types
 
+
 # allow reading and writing floats from various threads simultaneously:
 race:safe_float_write
 race:safe_volatile_float_write
@@ -12,3 +13,6 @@ race:safe_double_read
 race:safe_pointer_read
 race:Compressor_wrapper::get_graph_value
 race:Compressor_wrapper::set_parameter
+
+# Calling 3rd party code:
+race:call_ladspa_get_descriptor_func
