@@ -563,6 +563,9 @@ for .emacs:
 ||#
 
 
+(define-macro (<ra> command . args)
+  `( ,(<_> 'ra: (keyword->symbol command)) ,@args))
+
 
 
 ;;;;;;;;;; popup menu

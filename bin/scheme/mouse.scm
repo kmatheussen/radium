@@ -13,7 +13,7 @@
 
 
 (define (set-statusbar-value val)
-  (ra:set-statusbar-text (<-> val)))
+  (<ra> :set-statusbar-text (<-> val)))
 
 ;; Quantitize
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -128,18 +128,18 @@
 
 
 (define (get-quantitized-place-from-y Button Y)
-  (define place (ra:get-place-from-y Y))
-  (quantitize place (ra:get-quantitize)))
+  (define place (<ra> :get-place-from-y Y))
+  (quantitize place (<ra> :get-quantitize)))
 
 (define (get-place-from-y Button Y)
-  (if (ra:ctrl-pressed)
-      (ra:get-place-from-y Y)
-      (ra:get-place-in-grid-from-y Y)))
+  (if (<ra> :ctrl-pressed)
+      (<ra> :get-place-from-y Y)
+      (<ra> :get-place-in-grid-from-y Y)))
 
 (define (get-next-place-from-y Button Y)
-  (if (ra:ctrl-pressed)
-      (ra:get-place-from-y (+ Y 1))
-      (ra:get-next-place-in-grid-from-y Y)))
+  (if (<ra> :ctrl-pressed)
+      (<ra> :get-place-from-y (+ Y 1))
+      (<ra> :get-next-place-in-grid-from-y Y)))
 
 
 ;; Mouse move handlers
@@ -177,10 +177,10 @@
            *mouse-cycles*))
 
 (define (only-y-direction)
-  (ra:shift-pressed))
+  (<ra> :shift-pressed))
 
 (define (only-x-direction)
-  (ra:left-extra-pressed))
+  (<ra> :left-extra-pressed))
 
 (delafina (add-delta-mouse-handler :press :move-and-release :release #f :mouse-pointer-is-hidden #f)
   (define prev-x #f)
@@ -195,14 +195,14 @@
         (begin
           (define dx (cond ((only-y-direction)
                             0)
-                           ((ra:ctrl-pressed)
+                           ((<ra> :ctrl-pressed)
                             (/ (- $x prev-x)
                                10.0))
                            (else
                             (- $x prev-x))))
           (define dy (cond ((only-x-direction)
                             0)
-                           ((ra:ctrl-pressed)
+                           ((<ra> :ctrl-pressed)
                             (/ (- $y prev-y)
                                10.0))
                            (else
@@ -215,12 +215,12 @@
           ;;
           (when mouse-pointer-is-hidden  ;; <- this line can cause mouse pointer to be stuck between 16,16 and 500,500 if something goes wrong.
           ;;(when mouse-pointer-has-been-set ;; <- Workaround. Hopefully there's no problem doing it like this.
-            (when (or (< (ra:get-mouse-pointer-x) 16)
-                      (< (ra:get-mouse-pointer-y) 16)
-                      (> (ra:get-mouse-pointer-x) 500)
-                      (> (ra:get-mouse-pointer-y) 500))
-              (ra:move-mouse-pointer 100 100)
-              ;;(c-display "x/y" (ra:get-mouse-pointer-x) (ra:get-mouse-pointer-y))
+            (when (or (< (<ra> :get-mouse-pointer-x) 16)
+                      (< (<ra> :get-mouse-pointer-y) 16)
+                      (> (<ra> :get-mouse-pointer-x) 500)
+                      (> (<ra> :get-mouse-pointer-y) 500))
+              (<ra> :move-mouse-pointer 100 100)
+              ;;(c-display "x/y" (<ra> :get-mouse-pointer-x) (<ra> :get-mouse-pointer-y))
               (set! prev-x 100)
               (set! prev-y 100)))
           
@@ -254,57 +254,57 @@
 (define mouse-fx-has-been-set #f)
 (define (set-mouse-fx fxnum tracknum)
   (set! mouse-fx-has-been-set #t)
-  (ra:set-mouse-fx fxnum tracknum))
+  (<ra> :set-mouse-fx fxnum tracknum))
 
 (define mouse-track-has-been-set #f)
 (define (set-mouse-track tracknum)
   (set! mouse-track-has-been-set #t)
-  (ra:set-mouse-track tracknum))
+  (<ra> :set-mouse-track tracknum))
 (define (set-mouse-track-to-reltempo)
   (set! mouse-track-has-been-set #t)
-  (ra:set-mouse-track-to-reltempo))
+  (<ra> :set-mouse-track-to-reltempo))
 
 (define mouse-note-has-been-set #f)
 (define (set-mouse-note notenum tracknum)
   (set! mouse-note-has-been-set #t)
-  (ra:set-mouse-note notenum tracknum))
+  (<ra> :set-mouse-note notenum tracknum))
 
 (define indicator-node-has-been-set #f)
 (define (set-indicator-temponode num)
   (set! indicator-node-has-been-set #t)
-  (ra:set-indicator-temponode num))
+  (<ra> :set-indicator-temponode num))
 (define (set-indicator-pitch num tracknum)
   (set! indicator-node-has-been-set #t)
-  (ra:set-indicator-pitch num tracknum))
+  (<ra> :set-indicator-pitch num tracknum))
 (define (set-indicator-velocity-node velocitynum notenum tracknum)
   (set! indicator-node-has-been-set #t)
-  (ra:set-indicator-velocity-node velocitynum notenum tracknum))
+  (<ra> :set-indicator-velocity-node velocitynum notenum tracknum))
 (define (set-indicator-fxnode fxnodenum notenum tracknum)
   (set! indicator-node-has-been-set #t)
-  (ra:set-indicator-fxnode fxnodenum notenum tracknum))
+  (<ra> :set-indicator-fxnode fxnodenum notenum tracknum))
 
 (define current-node-has-been-set #f)
 (define (set-current-temponode num)
   (set! current-node-has-been-set #t)
-  (ra:set-current-temponode num))
+  (<ra> :set-current-temponode num))
 (define (set-current-velocity-node velnum notenum tracknum)
   (set! current-node-has-been-set #t)
-  (ra:set-statusbar-text (<-> "Velocity: " (two-decimal-string (ra:get-velocity-value velnum notenum tracknum))))
-  (ra:set-current-velocity-node velnum notenum tracknum))
+  (<ra> :set-statusbar-text (<-> "Velocity: " (two-decimal-string (<ra> :get-velocity-value velnum notenum tracknum))))
+  (<ra> :set-current-velocity-node velnum notenum tracknum))
 (define (set-current-fxnode fxnodenum fxnum tracknum)
   (set! current-node-has-been-set #t)
-  (ra:set-statusbar-text (ra:get-fx-string fxnodenum fxnum tracknum))
-  (ra:set-current-fxnode fxnodenum fxnum tracknum))
+  (<ra> :set-statusbar-text (<ra> :get-fx-string fxnodenum fxnum tracknum))
+  (<ra> :set-current-fxnode fxnodenum fxnum tracknum))
 (define (set-current-pitch pitchnum tracknum)
   (set! current-node-has-been-set #t)
-  (ra:set-current-pitch pitchnum tracknum)
-  (ra:set-statusbar-text (<-> "Pitch: " (two-decimal-string (ra:get-pitch-value pitchnum tracknum)))))
+  (<ra> :set-current-pitch pitchnum tracknum)
+  (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitch-value pitchnum tracknum)))))
 
 (define current-pianonote-has-been-set #f)
 (define (set-current-pianonote pianonotenum notenum tracknum)
   (set! current-pianonote-has-been-set #t)
-  (ra:set-current-pianonote pianonotenum notenum tracknum))
-;;  (ra:set-statusbar-text (<-> "Pitch: " (two-decimal-string (ra:get-pitch-value pianonotenum tracknum)))))
+  (<ra> :set-current-pianonote pianonotenum notenum tracknum))
+;;  (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitch-value pianonotenum tracknum)))))
 
 (define mouse-pointer-has-been-set #f)
 (define (set-mouse-pointer func)
@@ -315,12 +315,12 @@
 
 ;; TODO: block->is_dirty is set unnecessarily often to true this way.
 (define (cancel-current-stuff)
-  (ra:set-no-mouse-fx)
-  (ra:set-no-mouse-note)
-  (ra:set-no-mouse-track)
-  (ra:cancel-current-node)
-  (ra:cancel-current-pianonote)
-  (ra:cancel-indicator-node)
+  (<ra> :set-no-mouse-fx)
+  (<ra> :set-no-mouse-note)
+  (<ra> :set-no-mouse-track)
+  (<ra> :cancel-current-node)
+  (<ra> :cancel-current-pianonote)
+  (<ra> :cancel-indicator-node)
   )
 
 
@@ -333,7 +333,7 @@
   (set! current-pianonote-has-been-set #f)
   (set! mouse-pointer-has-been-set #f)
 
-  (ra:set-statusbar-text "")
+  (<ra> :set-statusbar-text "")
   
   (define ret
     (catch #t
@@ -344,25 +344,25 @@
              #f)))
   
   (if (not mouse-fx-has-been-set)
-      (ra:set-no-mouse-fx))
+      (<ra> :set-no-mouse-fx))
 
   (if (not mouse-track-has-been-set)
-      (ra:set-no-mouse-track))
+      (<ra> :set-no-mouse-track))
 
   (if (not mouse-note-has-been-set)
-      (ra:set-no-mouse-note))
+      (<ra> :set-no-mouse-note))
 
   (if (not indicator-node-has-been-set)
-      (ra:cancel-indicator-node))
+      (<ra> :cancel-indicator-node))
 
   (if (not current-node-has-been-set)
-      (ra:cancel-current-node))
+      (<ra> :cancel-current-node))
 
   (if (not current-pianonote-has-been-set)
-      (ra:cancel-current-pianonote))
+      (<ra> :cancel-current-pianonote))
 
   ;;(if (not mouse-pointer-has-been-set)
-  ;;    (ra:set-normal-mouse-pointer))
+  ;;    (<ra> :set-normal-mouse-pointer))
 
   ret)
 
@@ -379,7 +379,7 @@
 (define (radium-mouse-move $button $x $y)
   (handling-nodes
    (lambda()
-     ;;(c-display "mouse move2" $button $x $y (ra:ctrl-pressed) (ra:shift-pressed))
+     ;;(c-display "mouse move2" $button $x $y (<ra> :ctrl-pressed) (<ra> :shift-pressed))
      ;;(cancel-current-stuff)
      (if *current-mouse-cycle*
          (begin 
@@ -399,7 +399,7 @@
            (set! *current-mouse-cycle* #f)
            (run-mouse-move-handlers $button $x $y)
            (cancel-current-stuff)
-           (ra:set-normal-mouse-pointer)
+           (<ra> :set-normal-mouse-pointer)
            #t)
          #f))))
 
@@ -426,15 +426,15 @@
                                                (1+ Num)
                                                X2
                                                (if (= Num (- Num-tracks 2))
-                                                   (ra:get-track-x2 (1+ Num))
-                                                   (ra:get-track-x1 (+ 2 Num)))
+                                                   (<ra> :get-track-x2 (1+ Num))
+                                                   (<ra> :get-track-x1 (+ 2 Num)))
                                                Num-tracks))
 
 (define-match get-track-num
-  X Y :> (let ((Num-tracks (ra:get-num-tracks)))
-           (get-track-num-0 X Y (ra:get-leftmost-track-num)
-                            (ra:get-track-x1 (ra:get-leftmost-track-num))
-                            (ra:get-track-x2 (ra:get-leftmost-track-num))
+  X Y :> (let ((Num-tracks (<ra> :get-num-tracks)))
+           (get-track-num-0 X Y (<ra> :get-leftmost-track-num)
+                            (<ra> :get-track-x1 (<ra> :get-leftmost-track-num))
+                            (<ra> :get-track-x2 (<ra> :get-leftmost-track-num))
                             Num-tracks)))
                                                    
   
@@ -456,9 +456,9 @@
              (set! *current-track-num* #f))
          (cond (*current-track-num*
                 (set-mouse-track *current-track-num*))
-               ((and (ra:reltempo-track-visible)
+               ((and (<ra> :reltempo-track-visible)
                      *current-track-num-all-tracks*
-                     (= *current-track-num-all-tracks* (ra:get-rel-tempo-track-num)))
+                     (= *current-track-num-all-tracks* (<ra> :get-rel-tempo-track-num)))
                 (set-mouse-track-to-reltempo)))))
 
 (define *current-subtrack-num* #f)
@@ -466,8 +466,8 @@
 (define-match get-subtrack-from-x-0
   __ _ Num Num   ________ :> #f  
   X1 X Num Total Tracknum :> (let ((X2 (if (= Num (1- Total))
-                                           (ra:get-subtrack-x2 Num Tracknum)                                           
-                                           (ra:get-subtrack-x1 (1+ Num) Tracknum))))
+                                           (<ra> :get-subtrack-x2 Num Tracknum)                                           
+                                           (<ra> :get-subtrack-x1 (1+ Num) Tracknum))))
                                (if (and (>= X X1)
                                         (<  X X2))
                                    Num
@@ -478,26 +478,26 @@
                                                           Tracknum))))
 
 (define-match get-subtrack-from-x
-  X Tracknum :> (get-subtrack-from-x-0 (ra:get-subtrack-x1 0 Tracknum)
+  X Tracknum :> (get-subtrack-from-x-0 (<ra> :get-subtrack-x1 0 Tracknum)
                                        X
                                        0
-                                       (ra:get-num-subtracks Tracknum) Tracknum))
+                                       (<ra> :get-num-subtracks Tracknum) Tracknum))
 
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (set! *current-subtrack-num* (and *current-track-num*
-                                           (inside-box (ra:get-box track-fx *current-track-num*) $x $y)
+                                           (inside-box (<ra> :get-box track-fx *current-track-num*) $x $y)
                                            (get-subtrack-from-x $x *current-track-num*)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;
 
 #||
-(ra:set-reltempo 0.2)
+(<ra> :set-reltempo 0.2)
 ||#
 
 (define (get-common-node-box $x $y)
-  (define width/2 (ra:get-half-of-node-width))
+  (define width/2 (<ra> :get-half-of-node-width))
   (define x1 (- $x width/2))
   (define y1 (- $y width/2))
   (define x2 (+ $x width/2))
@@ -652,9 +652,9 @@
     (define new-y (and (not (= 0 Dy))
                        (let ((try-it (+ (Node :y)
                                         Dy)))
-                         (between (1- (ra:get-top-visible-y))
+                         (between (1- (<ra> :get-top-visible-y))
                                   try-it
-                                  (+ 2 (ra:get-bot-visible-y))))))
+                                  (+ 2 (<ra> :get-bot-visible-y))))))
     
     (define func (if ismoving Move-node Release-node))
                                    
@@ -669,7 +669,7 @@
   
   (define (release Button Dx Dy Node)
     (define node-info (Node :node-info))
-    (ra:move-mouse-pointer (Get-x node-info)
+    (<ra> :move-mouse-pointer (Get-x node-info)
                            (Get-y node-info))
     )
 
@@ -746,39 +746,39 @@
 (add-mouse-move-handler
  :move (lambda ($button X Y)
          (cond ((and *current-track-num*
-                     (inside-box (ra:get-box track-pan-slider *current-track-num*) X Y))
+                     (inside-box (<ra> :get-box track-pan-slider *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer)
                 (show-track-pan-in-statusbar *current-track-num*))
                
                ((and *current-track-num*
-                     (inside-box (ra:get-box track-volume-slider *current-track-num*) X Y))
+                     (inside-box (<ra> :get-box track-volume-slider *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer)
                 (show-track-volume-in-statusbar *current-track-num*))
                
-               ((inside-box (ra:get-box reltempo-slider) X Y)
+               ((inside-box (<ra> :get-box reltempo-slider) X Y)
                 (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer)
                 (show-reltempo-in-statusbar))
                
                ((and *current-track-num*
-                     (inside-box (ra:get-box track-pan-on-off *current-track-num*) X Y))
+                     (inside-box (<ra> :get-box track-pan-on-off *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-pointing-mouse-pointer)
-                (ra:set-statusbar-text (<-> "Track panning slider " (if (ra:get-track-pan-on-off *current-track-num*) "on" "off"))))
+                (<ra> :set-statusbar-text (<-> "Track panning slider " (if (<ra> :get-track-pan-on-off *current-track-num*) "on" "off"))))
                
                ((and *current-track-num*
-                     (inside-box (ra:get-box track-volume-on-off *current-track-num*) X Y))
+                     (inside-box (<ra> :get-box track-volume-on-off *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-pointing-mouse-pointer)
-                (ra:set-statusbar-text (<-> "Track volume slider " (if (ra:get-track-volume-on-off *current-track-num*) "on" "off"))))
+                (<ra> :set-statusbar-text (<-> "Track volume slider " (if (<ra> :get-track-volume-on-off *current-track-num*) "on" "off"))))
 
                ((and *current-track-num*
-                     (< Y (ra:get-track-pan-on-off-y1)))
+                     (< Y (<ra> :get-track-pan-on-off-y1)))
                 (set-mouse-pointer ra:set-pointing-mouse-pointer)
-                (ra:set-statusbar-text (<-> "Select instrument for track " *current-track-num*)))
+                (<ra> :set-statusbar-text (<-> "Select instrument for track " *current-track-num*)))
 
                ((not *current-track-num*)
                 (set-mouse-pointer ra:set-pointing-mouse-pointer))
                
                (else
-                ;;(ra:set-normal-mouse-pointer)
+                ;;(<ra> :set-normal-mouse-pointer)
                 ))))
 
 
@@ -787,38 +787,38 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (show-reltempo-in-statusbar)
-  (ra:set-statusbar-text (<-> "Block tempo multiplied by " (two-decimal-string (ra:get-reltempo)))))
+  (<ra> :set-statusbar-text (<-> "Block tempo multiplied by " (two-decimal-string (<ra> :get-reltempo)))))
 
 
 (define (get-reltemposlider-x)
-  (define box (ra:get-box reltempo-slider))
-  (scale (ra:get-reltempo)
-         (ra:get-min-reltempo)
-         (ra:get-max-reltempo)
+  (define box (<ra> :get-box reltempo-slider))
+  (scale (<ra> :get-reltempo)
+         (<ra> :get-min-reltempo)
+         (<ra> :get-max-reltempo)
          (box :x1)
          (box :x2)))
 
 ;; slider
 (add-horizontal-handler :Get-handler-data (lambda (X Y)
-                                            (define box (ra:get-box reltempo-slider))
+                                            (define box (<ra> :get-box reltempo-slider))
                                             (and (inside-box box X Y)
-                                                 (ra:get-reltempo)))
+                                                 (<ra> :get-reltempo)))
                         :Get-x1 (lambda (_)
-                                  (ra:get-reltempo-slider-x1))
+                                  (<ra> :get-reltempo-slider-x1))
                         :Get-x2 (lambda (_)
-                                  (ra:get-reltempo-slider-x2))
+                                  (<ra> :get-reltempo-slider-x2))
                         :Get-min-value (lambda (_)
-                                         (ra:get-min-reltempo))
+                                         (<ra> :get-min-reltempo))
                         :Get-max-value (lambda (_)
-                                         (ra:get-max-reltempo))
+                                         (<ra> :get-max-reltempo))
                         :Get-x (lambda (_)
                                  (get-reltemposlider-x))
                         :Get-value (lambda (Value)
                                      Value)
                         :Make-undo (lambda (_)
-                                     (ra:undo-reltempo))
+                                     (<ra> :undo-reltempo))
                         :Move (lambda (_ Value)
-                                (ra:set-reltempo Value))
+                                (<ra> :set-reltempo Value))
                         :Publicize (lambda (_)
                                      (show-reltempo-in-statusbar))
                         )
@@ -826,9 +826,9 @@
 ;; reset slider value
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)                                
-                                (cond ((inside-box (ra:get-box reltempo-slider) X Y)
-                                       (ra:undo-reltempo)
-                                       (ra:set-reltempo 1.0)
+                                (cond ((inside-box (<ra> :get-box reltempo-slider) X Y)
+                                       (<ra> :undo-reltempo)
+                                       (<ra> :set-reltempo 1.0)
                                        #f)
                                       (else
                                        #f)))
@@ -843,9 +843,9 @@
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)
                                 (cond ((and *current-track-num*
-                                            (>= X (ra:get-track-x1 0))
-                                            (< Y (ra:get-track-pan-on-off-y1)))
-                                       (ra:set-track-patch *current-track-num*)
+                                            (>= X (<ra> :get-track-x1 0))
+                                            (< Y (<ra> :get-track-pan-on-off-y1)))
+                                       (<ra> :set-track-patch *current-track-num*)
                                        #f)
                                       (else
                                        #f)))
@@ -860,9 +860,9 @@
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)
                                 (cond ((and *current-track-num*
-                                            (inside-box (ra:get-box track-pan-on-off *current-track-num*) X Y))
-                                       (ra:undo-track-pan *current-track-num*)
-                                       (ra:set-track-pan-on-off (not (ra:get-track-pan-on-off *current-track-num*))
+                                            (inside-box (<ra> :get-box track-pan-on-off *current-track-num*) X Y))
+                                       (<ra> :undo-track-pan *current-track-num*)
+                                       (<ra> :set-track-pan-on-off (not (<ra> :get-track-pan-on-off *current-track-num*))
                                                                 *current-track-num*)
                                        #f)
                                       (else
@@ -879,9 +879,9 @@
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)
                                 (cond ((and *current-track-num*
-                                            (inside-box (ra:get-box track-volume-on-off *current-track-num*) X Y))
-                                       (ra:undo-track-volume *current-track-num*)
-                                       (ra:set-track-volume-on-off (not (ra:get-track-volume-on-off *current-track-num*))
+                                            (inside-box (<ra> :get-box track-volume-on-off *current-track-num*) X Y))
+                                       (<ra> :undo-track-volume *current-track-num*)
+                                       (<ra> :set-track-volume-on-off (not (<ra> :get-track-volume-on-off *current-track-num*))
                                                                    *current-track-num*)
                                        #f)
                                       (else
@@ -898,19 +898,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (show-track-pan-in-statusbar Tracknum)
-  (ra:set-statusbar-text (<-> "Track pan " (two-decimal-string (ra:get-track-pan Tracknum)))))
+  (<ra> :set-statusbar-text (<-> "Track pan " (two-decimal-string (<ra> :get-track-pan Tracknum)))))
 
 (define (get-trackpan-x Tracknum)
-  (scale (ra:get-track-pan Tracknum)
+  (scale (<ra> :get-track-pan Tracknum)
          -1
          1
-         (ra:get-track-pan-slider-x1 Tracknum)
-         (ra:get-track-pan-slider-x2 Tracknum)))
+         (<ra> :get-track-pan-slider-x1 Tracknum)
+         (<ra> :get-track-pan-slider-x2 Tracknum)))
 
 ;; slider
 (add-horizontal-handler :Get-handler-data (lambda (X Y)
                                             (and *current-track-num*
-                                                 (inside-box (ra:get-box track-pan-slider *current-track-num*) X Y)
+                                                 (inside-box (<ra> :get-box track-pan-slider *current-track-num*) X Y)
                                                  *current-track-num*))
                         :Get-x1 ra:get-track-pan-slider-x1
                         :Get-x2 ra:get-track-pan-slider-x2
@@ -924,7 +924,7 @@
                         :Make-undo ra:undo-track-pan
                         :Move (lambda (Tracknum Value)
                                 ;;(c-display Tracknum Value)
-                                (ra:set-track-pan Value Tracknum))
+                                (<ra> :set-track-pan Value Tracknum))
                         :Publicize (lambda (Tracknum)
                                      (show-track-pan-in-statusbar Tracknum))
                         )
@@ -933,9 +933,9 @@
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)
                                 (cond ((and *current-track-num*
-                                            (inside-box (ra:get-box track-pan-slider *current-track-num*) X Y))
-                                       (ra:undo-track-pan *current-track-num*)
-                                       (ra:set-track-pan 0.0 *current-track-num*)
+                                            (inside-box (<ra> :get-box track-pan-slider *current-track-num*) X Y))
+                                       (<ra> :undo-track-pan *current-track-num*)
+                                       (<ra> :set-track-pan 0.0 *current-track-num*)
                                        #f)
                                       (else
                                        #f)))
@@ -950,19 +950,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (show-track-volume-in-statusbar Tracknum)
-  (ra:set-statusbar-text (<-> "Track volume " (two-decimal-string (ra:get-track-volume Tracknum)))))
+  (<ra> :set-statusbar-text (<-> "Track volume " (two-decimal-string (<ra> :get-track-volume Tracknum)))))
 
 (define (get-trackvolume-x Tracknum)
-  (scale (ra:get-track-volume Tracknum)
+  (scale (<ra> :get-track-volume Tracknum)
          0
          1
-         (ra:get-track-volume-slider-x1 Tracknum)
-         (ra:get-track-volume-slider-x2 Tracknum)))
+         (<ra> :get-track-volume-slider-x1 Tracknum)
+         (<ra> :get-track-volume-slider-x2 Tracknum)))
 
 ;; slider
 (add-horizontal-handler :Get-handler-data (lambda (X Y)
                                             (and *current-track-num*
-                                                 (inside-box (ra:get-box track-volume-slider *current-track-num*) X Y)
+                                                 (inside-box (<ra> :get-box track-volume-slider *current-track-num*) X Y)
                                                  *current-track-num*))
                         :Get-x1 ra:get-track-volume-slider-x1
                         :Get-x2 ra:get-track-volume-slider-x2
@@ -976,7 +976,7 @@
                         :Make-undo ra:undo-track-volume
                         :Move (lambda (Tracknum Value)
                                 ;;(c-display Tracknum Value)
-                                (ra:set-track-volume Value Tracknum))
+                                (<ra> :set-track-volume Value Tracknum))
                         :Publicize (lambda (Tracknum)
                                      (show-track-volume-in-statusbar Tracknum))
                         )
@@ -986,9 +986,9 @@
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)
                                 (cond ((and *current-track-num*
-                                            (inside-box (ra:get-box track-volume-slider *current-track-num*) X Y))
-                                       (ra:undo-track-volume *current-track-num*)
-                                       (ra:set-track-volume 0.8 *current-track-num*)
+                                            (inside-box (<ra> :get-box track-volume-slider *current-track-num*) X Y))
+                                       (<ra> :undo-track-volume *current-track-num*)
+                                       (<ra> :set-track-volume 0.8 *current-track-num*)
                                        #f)
                                       (else
                                        #f)))
@@ -1005,7 +1005,7 @@
 #||
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
-         (if (inside-box (ra:get-box temponode-area) $x $y)
+         (if (inside-box (<ra> :get-box temponode-area) $x $y)
              (c-display "inside" $x $y))))
 ||#
 
@@ -1014,16 +1014,16 @@
                            (/ 1
                               (- 1 value))
                            (1+ value)))
-  (ra:set-statusbar-text (<-> "Tempo multiplied by " (two-decimal-string actual-value))))
+  (<ra> :set-statusbar-text (<-> "Tempo multiplied by " (two-decimal-string actual-value))))
 
 (define (get-temponode-box $num)
-  (get-common-node-box (ra:get-temponode-x $num)
-                       (ra:get-temponode-y $num)))
+  (get-common-node-box (<ra> :get-temponode-x $num)
+                       (<ra> :get-temponode-y $num)))
 
 (define (temponodeval->01 value)
   (scale value
-         (- (1- (ra:get-temponode-max)))
-         (1- (ra:get-temponode-max))
+         (- (1- (<ra> :get-temponode-max)))
+         (1- (<ra> :get-temponode-max))
          0
          1))
 
@@ -1031,37 +1031,37 @@
   (scale O1
          0
          1
-         (- (1- (ra:get-temponode-max)))
-         (1- (ra:get-temponode-max))))
+         (- (1- (<ra> :get-temponode-max)))
+         (1- (<ra> :get-temponode-max))))
          
-(add-node-mouse-handler :Get-area-box (lambda () (and (ra:reltempo-track-visible) (ra:get-box temponode-area)))
+(add-node-mouse-handler :Get-area-box (lambda () (and (<ra> :reltempo-track-visible) (<ra> :get-box temponode-area)))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  (and (ra:reltempo-track-visible)
-                                                       (inside-box-forgiving (ra:get-box temponode-area) X Y)
-                                                       (match (list (find-node X Y get-temponode-box (ra:get-num-temponodes)))
-                                                              (existing-box Num Box) :> (callback Num (temponodeval->01 (ra:get-temponode-value Num)) (Box :y))
+                                                  (and (<ra> :reltempo-track-visible)
+                                                       (inside-box-forgiving (<ra> :get-box temponode-area) X Y)
+                                                       (match (list (find-node X Y get-temponode-box (<ra> :get-num-temponodes)))
+                                                              (existing-box Num Box) :> (callback Num (temponodeval->01 (<ra> :get-temponode-value Num)) (Box :y))
                                                               _                      :> #f)))
-                        :Get-min-value (lambda (_) 0);(- (1- (ra:get-temponode-max))))
-                        :Get-max-value (lambda (_) 1);(1- (ra:get-temponode-max)))
-                        :Get-x (lambda (Num) (ra:get-temponode-x Num))
-                        :Get-y (lambda (Num) (ra:get-temponode-y Num))
+                        :Get-min-value (lambda (_) 0);(- (1- (<ra> :get-temponode-max))))
+                        :Get-max-value (lambda (_) 1);(1- (<ra> :get-temponode-max)))
+                        :Get-x (lambda (Num) (<ra> :get-temponode-x Num))
+                        :Get-y (lambda (Num) (<ra> :get-temponode-y Num))
                         :Make-undo (lambda (_) ra:undo-temponodes)
                         :Create-new-node (lambda (X Place callback)
-                                           (define Value (scale X (ra:get-temponode-area-x1) (ra:get-temponode-area-x2) 0 1))
-                                           (define Num (ra:create-temponode (01->temponodeval Value) Place))
+                                           (define Value (scale X (<ra> :get-temponode-area-x1) (<ra> :get-temponode-area-x2) 0 1))
+                                           (define Num (<ra> :create-temponode (01->temponodeval Value) Place))
                                            (if (= -1 Num)
                                                #f
-                                               (callback Num (temponodeval->01 (ra:get-temponode-value Num)))))
+                                               (callback Num (temponodeval->01 (<ra> :get-temponode-value Num)))))
                         :Move-node (lambda (Num Value Place)
-                                     (ra:set-temponode Num (01->temponodeval Value) (or Place -1))
-                                     (define new-value (ra:get-temponode-value Num)) ;; might differ from Value
-                                     ;;(c-display "Place/New:" Place (ra:get-temponode-value Num))
+                                     (<ra> :set-temponode Num (01->temponodeval Value) (or Place -1))
+                                     (define new-value (<ra> :get-temponode-value Num)) ;; might differ from Value
+                                     ;;(c-display "Place/New:" Place (<ra> :get-temponode-value Num))
                                      (temponodeval->01 new-value)
                                      Num
                                      )
                         :Publicize (lambda (Num) ;; this version works though. They are, or at least, should be, 100% functionally similar.
                                      (set-indicator-temponode Num)
-                                     (show-temponode-in-statusbar (ra:get-temponode-value Num)))
+                                     (show-temponode-in-statusbar (<ra> :get-temponode-value Num)))
                         :Get-pixels-per-value-unit #f
                         )                        
 
@@ -1070,26 +1070,26 @@
  (make-mouse-cycle
   :press-func (lambda ($button $x $y)
                 (and (= $button *right-button*)
-                     (ra:reltempo-track-visible)
-                     (inside-box (ra:get-box temponode-area) $x $y)                                     
-                     (match (list (find-node $x $y get-temponode-box (ra:get-num-temponodes)))
+                     (<ra> :reltempo-track-visible)
+                     (inside-box (<ra> :get-box temponode-area) $x $y)                                     
+                     (match (list (find-node $x $y get-temponode-box (<ra> :get-num-temponodes)))
                             (existing-box Num Box) :> (begin
-                                                        (ra:undo-temponodes)
-                                                        (ra:delete-temponode Num)
+                                                        (<ra> :undo-temponodes)
+                                                        (<ra> :delete-temponode Num)
                                                         #t)
                             _                      :> #f)))))
 
 ;; highlight current temponode
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
-         (and (ra:reltempo-track-visible)
-              (inside-box-forgiving (ra:get-box temponode-area) $x $y)
-              (match (list (find-node $x $y get-temponode-box (ra:get-num-temponodes)))
+         (and (<ra> :reltempo-track-visible)
+              (inside-box-forgiving (<ra> :get-box temponode-area) $x $y)
+              (match (list (find-node $x $y get-temponode-box (<ra> :get-num-temponodes)))
                      (existing-box Num Box) :> (begin
                                                  (set-mouse-track-to-reltempo)
                                                  (set-current-temponode Num)
                                                  (set-indicator-temponode Num)
-                                                 (show-temponode-in-statusbar (ra:get-temponode-value Num))
+                                                 (show-temponode-in-statusbar (<ra> :get-temponode-value Num))
                                                  #t)
                      _                      :> #f))))
 
@@ -1102,10 +1102,10 @@
 
 (define (get-pitch-box $num)
   ;;(c-display "get-pitch-box" $num)
-  (make-box2 (ra:get-pitch-x1 $num *current-track-num*)
-             (ra:get-pitch-y1 $num *current-track-num*)
-             (ra:get-pitch-x2 $num *current-track-num*)
-             (ra:get-pitch-y2 $num *current-track-num*)))
+  (make-box2 (<ra> :get-pitch-x1 $num *current-track-num*)
+             (<ra> :get-pitch-y1 $num *current-track-num*)
+             (<ra> :get-pitch-x2 $num *current-track-num*)
+             (<ra> :get-pitch-y2 $num *current-track-num*)))
 
 (define (todofunc funcname . $returnvalue)
   (lambda x
@@ -1117,8 +1117,8 @@
 #||
 (set! *current-track-num* 0)
 (box-to-string (get-pitch-box 1))
-(ra:get-num-pitches 0)
-(ra:get-pitch-value 1 0)
+(<ra> :get-num-pitches 0)
+(<ra> :get-pitch-value 1 0)
 ||#
 
 #||
@@ -1134,15 +1134,15 @@
   N N   Least-So-Far :> Least-So-Far
   N Max #f           :> (get-min-pitch-in-current-track-0 (1+ N)
                                                           Max
-                                                          (ra:get-pitch-value N *current-track-num*))
+                                                          (<ra> :get-pitch-value N *current-track-num*))
   N Max Least-So-Far :> (get-min-pitch-in-current-track-0 (1+ N)
                                                           Max
                                                           (min Least-So-Far
-                                                               (ra:get-pitch-value N *current-track-num*))))
+                                                               (<ra> :get-pitch-value N *current-track-num*))))
   
 (define (get-min-pitch-in-current-track)
   (1- (get-min-pitch-in-current-track-0 0
-                                        (ra:get-num-pitches *current-track-num*)
+                                        (<ra> :get-num-pitches *current-track-num*)
                                         #f)))
        
 (define-match get-max-pitch-in-current-track-0
@@ -1150,29 +1150,29 @@
   N N   Least-So-Far :> Least-So-Far
   N Max #f           :> (get-max-pitch-in-current-track-0 (1+ N)
                                                           Max
-                                                          (ra:get-pitch-value N *current-track-num*))
+                                                          (<ra> :get-pitch-value N *current-track-num*))
   N Max Least-So-Far :> (get-max-pitch-in-current-track-0 (1+ N)
                                                           Max
                                                           (max Least-So-Far
-                                                               (ra:get-pitch-value N *current-track-num*))))
+                                                               (<ra> :get-pitch-value N *current-track-num*))))
   
 (define (get-max-pitch-in-current-track)
   (1+ (get-max-pitch-in-current-track-0 0
-                                        (ra:get-num-pitches *current-track-num*)
+                                        (<ra> :get-num-pitches *current-track-num*)
                                         #f)))
 
 ;; add and move pitch
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-track-num*
-                                             (ra:get-box track-notes *current-track-num*)))
+                                             (<ra> :get-box track-notes *current-track-num*)))
                         :Get-existing-node-info (lambda (X Y callback)
                                                   '(c-display "hepp"
                                                               (may-be-a-resize-point-in-track X Y *current-track-num*)
-                                                              (list (find-node X Y get-pitch-box (ra:get-num-pitches *current-track-num*))))
+                                                              (list (find-node X Y get-pitch-box (<ra> :get-num-pitches *current-track-num*))))
                                                   (and *current-track-num*
                                                        (not (may-be-a-resize-point-in-track X Y *current-track-num*))
-                                                       (match (list (find-node X Y get-pitch-box (ra:get-num-pitches *current-track-num*)))
-                                                              (existing-box Num Box) :> (callback Num (ra:get-pitch-value Num *current-track-num*) (Box :y))
+                                                       (match (list (find-node X Y get-pitch-box (<ra> :get-num-pitches *current-track-num*)))
+                                                              (existing-box Num Box) :> (callback Num (<ra> :get-pitch-value Num *current-track-num*) (Box :y))
                                                               _                      :> #f)))
                         :Get-min-value (lambda (_)
                                          (get-min-pitch-in-current-track))
@@ -1180,28 +1180,28 @@
                                          (get-max-pitch-in-current-track))
                         :Get-x (lambda (Num)
                                  ;;(c-display "    NUM----> " Num)
-                                 (ra:get-pitch-x Num *current-track-num*))
+                                 (<ra> :get-pitch-x Num *current-track-num*))
                         :Get-y (lambda (Num)
-                                 (ra:get-pitch-y Num *current-track-num*))
-                        :Make-undo (lambda (_) (ra:undo-notes *current-track-num*))
+                                 (<ra> :get-pitch-y Num *current-track-num*))
+                        :Make-undo (lambda (_) (<ra> :undo-notes *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
                                            (define Value (scale X
-                                                                (ra:get-track-notes-x1 *current-track-num*) (ra:get-track-notes-x2 *current-track-num*) 
+                                                                (<ra> :get-track-notes-x1 *current-track-num*) (<ra> :get-track-notes-x2 *current-track-num*) 
                                                                 (get-min-pitch-in-current-track) (get-max-pitch-in-current-track)))
-                                           (define Num (ra:create-pitch Value Place *current-track-num*))
+                                           (define Num (<ra> :create-pitch Value Place *current-track-num*))
                                            (if (= -1 Num)
                                                #f
-                                               (callback Num (ra:get-pitch-value Num *current-track-num*))))
+                                               (callback Num (<ra> :get-pitch-value Num *current-track-num*))))
                         :Move-node (lambda (Num Value Place)                                     
-                                     (ra:set-pitch Num
-                                                   (if (ra:ctrl-pressed)
+                                     (<ra> :set-pitch Num
+                                                   (if (<ra> :ctrl-pressed)
                                                        Value
                                                        (round Value))
                                                    (or Place -1)
                                                    *current-track-num*))
                         :Publicize (lambda (Num)
                                      (set-indicator-pitch Num *current-track-num*)
-                                     (ra:set-statusbar-text (<-> "Pitch: " (two-decimal-string (ra:get-pitch-value Num *current-track-num*)))))
+                                     (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitch-value Num *current-track-num*)))))
                         :Get-pixels-per-value-unit (lambda (_)
                                                      5.0)
                         )
@@ -1213,11 +1213,11 @@
   :press-func (lambda ($button $x $y)
                 (and (= $button *right-button*)
                      *current-track-num*
-                     (inside-box (ra:get-box track-notes *current-track-num*) $x $y)
-                     (match (list (find-node $x $y get-pitch-box (ra:get-num-pitches *current-track-num*)))
+                     (inside-box (<ra> :get-box track-notes *current-track-num*) $x $y)
+                     (match (list (find-node $x $y get-pitch-box (<ra> :get-num-pitches *current-track-num*)))
                             (existing-box Num Box) :> (begin
-                                                        (ra:undo-notes *current-track-num*)
-                                                        (ra:delete-pitch Num *current-track-num*)
+                                                        (<ra> :undo-notes *current-track-num*)
+                                                        (<ra> :delete-pitch Num *current-track-num*)
                                                         #t)
                             _                      :> #f)))))
 
@@ -1227,8 +1227,8 @@
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (and *current-track-num*
-              (inside-box (ra:get-box track-notes *current-track-num*) $x $y)
-              (match (list (find-node $x $y get-pitch-box (ra:get-num-pitches *current-track-num*)))
+              (inside-box (<ra> :get-box track-notes *current-track-num*) $x $y)
+              (match (list (find-node $x $y get-pitch-box (<ra> :get-num-pitches *current-track-num*)))
                      (existing-box Num Box) :> (begin
                                                  (set-indicator-pitch Num *current-track-num*)
                                                  (set-current-pitch Num  *current-track-num*)
@@ -1255,10 +1255,10 @@
 
 
 (define (get-pianonote-y pianonotenum notenum tracknum move-type)
-  (define y1 (ra:get-pianonote-y1 pianonotenum
+  (define y1 (<ra> :get-pianonote-y1 pianonotenum
                                   notenum
                                   tracknum))
-  (define y2 (ra:get-pianonote-y2 pianonotenum
+  (define y2 (<ra> :get-pianonote-y2 pianonotenum
                                   notenum
                                   tracknum))
 
@@ -1274,18 +1274,18 @@
          
 (define (get-pianonote-box $tracknum $notenum $num)
   ;;(c-display "get-pitch-box" $num)
-  (make-box2 (ra:get-pianonote-x1 $num $notenum $tracknum)
-             (ra:get-pianonote-y1 $num $notenum $tracknum)
-             (+ 2 (ra:get-pianonote-x2 $num $notenum $tracknum))
-             (+ 2 (ra:get-pianonote-y2 $num $notenum $tracknum))))
+  (make-box2 (<ra> :get-pianonote-x1 $num $notenum $tracknum)
+             (<ra> :get-pianonote-y1 $num $notenum $tracknum)
+             (+ 2 (<ra> :get-pianonote-x2 $num $notenum $tracknum))
+             (+ 2 (<ra> :get-pianonote-y2 $num $notenum $tracknum))))
 
 (define (get-pianonote-move-type $y $y1 $y2)
   (define height (- $y2 $y1))
   (define h (if (< height
-                   (* 3 (ra:get-half-of-node-width)))
+                   (* 3 (<ra> :get-half-of-node-width)))
                 (/ height
                    3)
-                (ra:get-half-of-node-width)))                   
+                (<ra> :get-half-of-node-width)))                   
   (cond ((< $y (+ $y1 h))
          *pianonote-move-start*)
         ((> $y (- $y2 h))
@@ -1322,27 +1322,27 @@
                                                                Tracknum
                                                                Notenum
                                                                0
-                                                               (ra:get-num-pianonotes Notenum Tracknum))
+                                                               (<ra> :get-num-pianonotes Notenum Tracknum))
                                           (get-pianonote-info2 X Y
                                                                Tracknum
                                                                (1+ Notenum)
                                                                Num-notes)))
   
 (define (get-pianonote-info $x $y $tracknum)
-  (get-pianonote-info2 $x $y $tracknum 0 (ra:get-num-notes $tracknum)))
+  (get-pianonote-info2 $x $y $tracknum 0 (<ra> :get-num-notes $tracknum)))
 
 
 (define (call-get-existing-node-info-callbacks callback info)
 
-  (define num-pianonotes (ra:get-num-pianonotes (info :notenum) (info :tracknum)))
+  (define num-pianonotes (<ra> :get-num-pianonotes (info :notenum) (info :tracknum)))
   (define pianonotenum (info :pianonotenum))
 
-  (define logtype-holding (ra:is-pianonote-logtype-holding (info :pianonotenum)
+  (define logtype-holding (<ra> :is-pianonote-logtype-holding (info :pianonotenum)
                                                            (info :notenum)
                                                            (info :tracknum)))
 
 
-  (define portamento-enabled (ra:portamento-enabled (info :notenum)
+  (define portamento-enabled (<ra> :portamento-enabled (info :notenum)
                                                     (info :tracknum)))
   
   (define is-end-pitch (and portamento-enabled
@@ -1358,31 +1358,31 @@
                                   
   (callback info
             (if is-end-pitch 
-                (ra:get-note-end-pitch (info :notenum)
+                (<ra> :get-note-end-pitch (info :notenum)
                                        (info :tracknum))
-                (ra:get-pianonote-value (if portamento-enabled
+                (<ra> :get-pianonote-value (if portamento-enabled
                                             value-pianonote-num
                                             0)
                                         (info :notenum)
                                         (info :tracknum)))
             (if (eq? *pianonote-move-end* (info :move-type))
-                (ra:get-pianonote-y2 (info :pianonotenum)
+                (<ra> :get-pianonote-y2 (info :pianonotenum)
                                      (info :notenum)
                                      (info :tracknum))
-                (ra:get-pianonote-y1 (info :pianonotenum)
+                (<ra> :get-pianonote-y1 (info :pianonotenum)
                                      (info :notenum)
                                      (info :tracknum)))))
   
    
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-track-num*
-                                             (ra:pianoroll-visible *current-track-num*)
-                                             (ra:get-box track-pianoroll *current-track-num*)))
+                                             (<ra> :pianoroll-visible *current-track-num*)
+                                             (<ra> :get-box track-pianoroll *current-track-num*)))
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (and *current-track-num*
-                                                       (ra:pianoroll-visible *current-track-num*)
-                                                       (ra:get-box track-pianoroll *current-track-num*)
-                                                       (inside-box (ra:get-box track-pianoroll *current-track-num*) X Y)
+                                                       (<ra> :pianoroll-visible *current-track-num*)
+                                                       (<ra> :get-box track-pianoroll *current-track-num*)
+                                                       (inside-box (<ra> :get-box track-pianoroll *current-track-num*) X Y)
                                                        (let ((info (get-pianonote-info X Y *current-track-num*)))
                                                          ;;(and info
                                                          ;;     (c-display "        NUM " (info :pianonotenum) " type: " (info :move-type)))
@@ -1390,10 +1390,10 @@
                                                               (call-get-existing-node-info-callbacks callback info)))))
                         :Get-min-value (lambda (_) 1)
                         :Get-max-value (lambda (_) 127)
-                        :Get-x (lambda (info) (/ (+ (ra:get-pianonote-x1 (info :pianonotenum)
+                        :Get-x (lambda (info) (/ (+ (<ra> :get-pianonote-x1 (info :pianonotenum)
                                                                          (info :notenum)
                                                                          (info :tracknum))
-                                                    (ra:get-pianonote-x2 (info :pianonotenum)
+                                                    (<ra> :get-pianonote-x2 (info :pianonotenum)
                                                                          (info :notenum)
                                                                          (info :tracknum)))
                                                  2))
@@ -1403,16 +1403,16 @@
                                                      (info :notenum)
                                                      (info :tracknum)
                                                      (info :move-type))))
-                        :Make-undo (lambda (_) (ra:undo-notes *current-track-num*))
+                        :Make-undo (lambda (_) (<ra> :undo-notes *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
                                            ;;(c-display "Create" X Place)
                                            (define Value (scale X
-                                                                (ra:get-track-pianoroll-x1 *current-track-num*)
-                                                                (ra:get-track-pianoroll-x2 *current-track-num*)
-                                                                (ra:get-pianoroll-low-key *current-track-num*)
-                                                                (ra:get-pianoroll-high-key *current-track-num*)))
-                                           (define Next-Place (get-next-place-from-y *left-button* (ra:get-mouse-pointer-y)))
-                                           (define Num (ra:create-pianonote Value Place Next-Place *current-track-num*))
+                                                                (<ra> :get-track-pianoroll-x1 *current-track-num*)
+                                                                (<ra> :get-track-pianoroll-x2 *current-track-num*)
+                                                                (<ra> :get-pianoroll-low-key *current-track-num*)
+                                                                (<ra> :get-pianoroll-high-key *current-track-num*)))
+                                           (define Next-Place (get-next-place-from-y *left-button* (<ra> :get-mouse-pointer-y)))
+                                           (define Num (<ra> :create-pianonote Value Place Next-Place *current-track-num*))
                                            (if (= -1 Num)
                                                #f
                                                (callback (make-pianonote-info :tracknum *current-track-num*
@@ -1443,7 +1443,7 @@
                                               #f)))
                                      (define new-notenum
                                        (func (pianonote-info :pianonotenum)
-                                             (if (ra:ctrl-pressed)
+                                             (if (<ra> :ctrl-pressed)
                                                  Value
                                                  (round Value))
                                              (or Place -1)
@@ -1456,9 +1456,9 @@
                                                           :mouse-delta (pianonote-info :mouse-delta)
                                                           ))
                         :Get-pixels-per-value-unit (lambda (_)
-                                                     (ra:get-pianoroll-low-key *current-track-num*)
-                                                     (ra:get-pianoroll-high-key *current-track-num*)
-                                                     (ra:get-half-of-node-width))
+                                                     (<ra> :get-pianoroll-low-key *current-track-num*)
+                                                     (<ra> :get-pianoroll-high-key *current-track-num*)
+                                                     (<ra> :get-half-of-node-width))
                         )
 
 
@@ -1466,8 +1466,8 @@
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (and *current-track-num*
-              (ra:pianoroll-visible *current-track-num*)
-              (inside-box (ra:get-box track-pianoroll *current-track-num*) $x $y)
+              (<ra> :pianoroll-visible *current-track-num*)
+              (inside-box (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
               ;;(c-display "current-tracknum:" *current-track-num*)
               (let ((pianonote-info (get-pianonote-info $x $y *current-track-num*)))
                 '(c-display $x $y pianonote-info
@@ -1498,69 +1498,69 @@
   :press-func (lambda ($button $x $y)
                 (and (= $button *right-button*)
                      *current-track-num*
-                     (ra:pianoroll-visible *current-track-num*)
-                     (inside-box (ra:get-box track-pianoroll *current-track-num*) $x $y)
+                     (<ra> :pianoroll-visible *current-track-num*)
+                     (inside-box (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
                      (let ((pianonote-info (get-pianonote-info $x $y *current-track-num*)))
                        (if pianonote-info
                            (begin
                              (define (delete-note)
-                               (ra:undo-notes (pianonote-info :tracknum))
-                               (ra:delete-pianonote 0
+                               (<ra> :undo-notes (pianonote-info :tracknum))
+                               (<ra> :delete-pianonote 0
                                                     (pianonote-info :notenum)
                                                     (pianonote-info :tracknum))
                                #f)
                              (define (cut-note)
-                               (ra:undo-notes (pianonote-info :tracknum))
+                               (<ra> :undo-notes (pianonote-info :tracknum))
                                (define Place (get-place-from-y $button $y))
-                               (ra:cut-note Place
+                               (<ra> :cut-note Place
                                             (pianonote-info :notenum)
                                             (pianonote-info :tracknum))
                                #f)
                              (define (delete-pitch)
-                               (ra:undo-notes (pianonote-info :tracknum))
-                               (ra:delete-pianonote (if (= 0 (pianonote-info :pianonotenum))
+                               (<ra> :undo-notes (pianonote-info :tracknum))
+                               (<ra> :delete-pianonote (if (= 0 (pianonote-info :pianonotenum))
                                                         1
                                                         (pianonote-info :pianonotenum))
                                                     (pianonote-info :notenum)
                                                     (pianonote-info :tracknum))
                                #f)
                              (define (enable-portamento)
-                               (ra:undo-notes (pianonote-info :tracknum))
-                               (ra:enable-portamento (pianonote-info :notenum)
+                               (<ra> :undo-notes (pianonote-info :tracknum))
+                               (<ra> :enable-portamento (pianonote-info :notenum)
                                                      (pianonote-info :tracknum))
                                #f)
                              (define (disable-portamento)
-                               (ra:undo-notes (pianonote-info :tracknum))
-                               (ra:disable-portamento (pianonote-info :notenum)
+                               (<ra> :undo-notes (pianonote-info :tracknum))
+                               (<ra> :disable-portamento (pianonote-info :notenum)
                                                       (pianonote-info :tracknum))
                                #f)
                              (define (set-linear!)
-                               (ra:set-pianonote-logtype-holding #f
+                               (<ra> :set-pianonote-logtype-holding #f
                                                                  (pianonote-info :pianonotenum)
                                                                  (pianonote-info :notenum)
                                                                  (pianonote-info :tracknum))
                                #f
                                )
                              (define (set-hold!)
-                               (ra:set-pianonote-logtype-holding #t
+                               (<ra> :set-pianonote-logtype-holding #t
                                                                  (pianonote-info :pianonotenum)
                                                                  (pianonote-info :notenum)
                                                                  (pianonote-info :tracknum))
                                #f
                                )
                              (define (add-pitch)
-                               (ra:undo-notes (pianonote-info :tracknum))
+                               (<ra> :undo-notes (pianonote-info :tracknum))
                                (define Place (get-place-from-y $button $y))
-                               (define Value (ra:get-note-value (pianonote-info :notenum) (pianonote-info :tracknum)))
-                               (ra:add-pianonote-pitch Value Place (pianonote-info :notenum) (pianonote-info :tracknum))
+                               (define Value (<ra> :get-note-value (pianonote-info :notenum) (pianonote-info :tracknum)))
+                               (<ra> :add-pianonote-pitch Value Place (pianonote-info :notenum) (pianonote-info :tracknum))
                                #f)
                              
-                             (define num-pianonotes (ra:get-num-pianonotes (pianonote-info :notenum)
+                             (define num-pianonotes (<ra> :get-num-pianonotes (pianonote-info :notenum)
                                                                            (pianonote-info :tracknum)))
                              
-                             (if (ra:portamento-enabled (pianonote-info :notenum)
+                             (if (<ra> :portamento-enabled (pianonote-info :notenum)
                                                         (pianonote-info :tracknum))
-                                 (let ((is-holding (ra:is-pianonote-logtype-holding (pianonote-info :pianonotenum)
+                                 (let ((is-holding (<ra> :is-pianonote-logtype-holding (pianonote-info :pianonotenum)
                                                                                     (pianonote-info :notenum)
                                                                                     (pianonote-info :tracknum))))
                                    (apply popup-menu (append (list "Add Portamento break point" add-pitch)
@@ -1587,8 +1587,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (get-velocity-box Tracknum Notenum Velocitynum)
-  (get-common-node-box (ra:get-velocity-x Velocitynum Notenum Tracknum)
-                       (ra:get-velocity-y Velocitynum Notenum Tracknum)))
+  (get-common-node-box (<ra> :get-velocity-x Velocitynum Notenum Tracknum)
+                       (<ra> :get-velocity-y Velocitynum Notenum Tracknum)))
 
 (define-struct velocity-info
   :tracknum
@@ -1599,13 +1599,13 @@
   )
 
 (define (velocity-info-rating Y Vi)
-  (define velocity-y (ra:get-velocity-y (Vi :velocitynum) (Vi :notenum) (Vi :tracknum)))
+  (define velocity-y (<ra> :get-velocity-y (Vi :velocitynum) (Vi :notenum) (Vi :tracknum)))
   (cond ((and (= 0
                  (Vi :velocitynum))
               (> Y
                  velocity-y))
          10)
-        ((and (= (1- (ra:get-num-velocities (Vi :notenum) (Vi :tracknum)))
+        ((and (= (1- (<ra> :get-num-velocities (Vi :notenum) (Vi :tracknum)))
                  (Vi :velocitynum))
               (< Y
                  velocity-y))
@@ -1647,7 +1647,7 @@
                                                                                                      (make-velocity-info :velocitynum Velocitynum
                                                                                                                          :notenum Notenum
                                                                                                                          :tracknum Tracknum
-                                                                                                                         :value (ra:get-velocity-value Velocitynum Notenum Tracknum)
+                                                                                                                         :value (<ra> :get-velocity-value Velocitynum Notenum Tracknum)
                                                                                                                          :y (box :y)
                                                                                                                          )))))))
 
@@ -1655,13 +1655,13 @@
   X Y Tracknum Notenum Notenum     :> #f
   X Y Tracknum Notenum Total-Notes :> (highest-rated-velocity-info Y
                                                                    (list (get-velocity-1 X Y Tracknum (1+ Notenum) Total-Notes)
-                                                                         (get-velocity-2 X Y Tracknum Notenum 0 (ra:get-num-velocities Notenum Tracknum)))))
+                                                                         (get-velocity-2 X Y Tracknum Notenum 0 (<ra> :get-num-velocities Notenum Tracknum)))))
                                    
   
 (define-match get-velocity-0
   X Y -1       :> #f
-  X Y Tracknum :> #f :where (>= Tracknum (ra:get-num-tracks))
-  X Y Tracknum :> (get-velocity-1 X Y Tracknum 0 (ra:get-num-notes Tracknum)))
+  X Y Tracknum :> #f :where (>= Tracknum (<ra> :get-num-tracks))
+  X Y Tracknum :> (get-velocity-1 X Y Tracknum 0 (<ra> :get-num-notes Tracknum)))
   
 (define-match get-velocity-info
   X Y #f       :> (get-velocity-info X Y 0)
@@ -1675,8 +1675,8 @@
   (c-display (node :velocitynum) (node :notenum) (node :tracknum)))
         
 
-(ra:get-velocity-x 1 0 0)
-(ra:get-velocity-y 1 0 0)
+(<ra> :get-velocity-x 1 0 0)
+(<ra> :get-velocity-y 1 0 0)
 ||#
 
 (define *current-note-num* #f)
@@ -1685,11 +1685,11 @@
 (define-match get-note-num-0
   _____ ________ Num Num   :> #f
   Place Subtrack Num Total :> (if (and (>= Place
-                                           (ra:get-note-start Num *current-track-num*))
+                                           (<ra> :get-note-start Num *current-track-num*))
                                        (<  Place
-                                           (ra:get-note-end Num *current-track-num*))
+                                           (<ra> :get-note-end Num *current-track-num*))
                                        (=  Subtrack
-                                           (ra:get-note-subtrack Num *current-track-num*)))
+                                           (<ra> :get-note-subtrack Num *current-track-num*)))
                                   Num
                                   (get-note-num-0 Place
                                                   Subtrack
@@ -1697,10 +1697,10 @@
                                                   Total)))
                                                  
 (define-match get-note-num
-  X Y :> (get-note-num-0 (ra:get-place-from-y Y)
+  X Y :> (get-note-num-0 (<ra> :get-place-from-y Y)
                          *current-subtrack-num*
                          0
-                         (ra:get-num-notes *current-track-num*)))
+                         (<ra> :get-num-notes *current-track-num*)))
 
 ;; Set *current-note-num*
 (add-mouse-move-handler
@@ -1717,19 +1717,19 @@
                                                                      Total-vel
                                                                      X Y
                                                                      X2 Y2
-                                                                     (ra:get-velocity-x Vel *current-note-num* *current-track-num*)
-                                                                     (ra:get-velocity-y Vel *current-note-num* *current-track-num*)))
+                                                                     (<ra> :get-velocity-x Vel *current-note-num* *current-track-num*)
+                                                                     (<ra> :get-velocity-y Vel *current-note-num* *current-track-num*)))
 
 (define (get-shortest-velocity-distance X Y)
   (if (not *current-note-num*)
       #f
       (get-shortest-velocity-distance-0 2
-                                        (ra:get-num-velocities *current-note-num* *current-track-num*)
+                                        (<ra> :get-num-velocities *current-note-num* *current-track-num*)
                                         X Y
-                                        (ra:get-velocity-x 0 *current-note-num* *current-track-num*)
-                                        (ra:get-velocity-y 0 *current-note-num* *current-track-num*)
-                                        (ra:get-velocity-x 1 *current-note-num* *current-track-num*)
-                                        (ra:get-velocity-y 1 *current-note-num* *current-track-num*))))
+                                        (<ra> :get-velocity-x 0 *current-note-num* *current-track-num*)
+                                        (<ra> :get-velocity-y 0 *current-note-num* *current-track-num*)
+                                        (<ra> :get-velocity-x 1 *current-note-num* *current-track-num*)
+                                        (<ra> :get-velocity-y 1 *current-note-num* *current-track-num*))))
 
 
 
@@ -1737,7 +1737,7 @@
 ;; add and move velocity
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-track-num*
-                                             (ra:get-box track-fx *current-track-num*)))
+                                             (<ra> :get-box track-fx *current-track-num*)))
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (and *current-track-num*
                                                        (let ((velocity-info (get-velocity-info X Y *current-track-num*)))
@@ -1747,22 +1747,22 @@
                                                                         (velocity-info :y))))))
                         :Get-min-value (lambda (_) 0.0)
                         :Get-max-value (lambda (_) 1.0)
-                        :Get-x (lambda (info) (ra:get-velocity-x (info :velocitynum)
+                        :Get-x (lambda (info) (<ra> :get-velocity-x (info :velocitynum)
                                                                  (info :notenum)
                                                                  (info :tracknum)))
-                        :Get-y (lambda (info) (ra:get-velocity-y (info :velocitynum)
+                        :Get-y (lambda (info) (<ra> :get-velocity-y (info :velocitynum)
                                                                  (info :notenum)
                                                                  (info :tracknum)))
-                        :Make-undo (lambda (_) (ra:undo-notes *current-track-num*))
+                        :Make-undo (lambda (_) (<ra> :undo-notes *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
                                            (and *current-note-num*
                                                 (not (get-current-fxnum))
                                                 (begin
                                                   (define Value (scale X
-                                                                       (ra:get-subtrack-x1 *current-subtrack-num* *current-track-num*)
-                                                                       (ra:get-subtrack-x2 *current-subtrack-num* *current-track-num*)
+                                                                       (<ra> :get-subtrack-x1 *current-subtrack-num* *current-track-num*)
+                                                                       (<ra> :get-subtrack-x2 *current-subtrack-num* *current-track-num*)
                                                                        0 1))
-                                                  (define Num (ra:create-velocity Value Place *current-note-num* *current-track-num*))
+                                                  (define Num (<ra> :create-velocity Value Place *current-note-num* *current-track-num*))
                                                   (if (= -1 Num)
                                                       #f
                                                       (callback (make-velocity-info :tracknum *current-track-num*
@@ -1771,17 +1771,17 @@
                                                                                     :value Value
                                                                                     :y #f ;; dont need it.
                                                                                     )
-                                                                (ra:get-velocity-value Num *current-note-num* *current-track-num*))))))
+                                                                (<ra> :get-velocity-value Num *current-note-num* *current-track-num*))))))
                         :Publicize (lambda (velocity-info)
                                               (set-indicator-velocity-node (velocity-info :velocitynum)
                                                                            (velocity-info :notenum)
                                                                            (velocity-info :tracknum))
-                                              (define value (ra:get-velocity-value (velocity-info :velocitynum)
+                                              (define value (<ra> :get-velocity-value (velocity-info :velocitynum)
                                                                                    (velocity-info :notenum)
                                                                                    (velocity-info :tracknum)))
-                                              (ra:set-statusbar-text (<-> "Velocity: " (two-decimal-string value))))
+                                              (<ra> :set-statusbar-text (<-> "Velocity: " (two-decimal-string value))))
                         :Move-node (lambda (velocity-info Value Place)
-                                     (define note-num (ra:set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
+                                     (define note-num (<ra> :set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
                                      (make-velocity-info :tracknum (velocity-info :tracknum)
                                                          :notenum note-num
                                                          :velocitynum (velocity-info :velocitynum)
@@ -1795,14 +1795,14 @@
   :press-func (lambda (Button X Y)
                 (and (= Button *right-button*)
                      *current-track-num*
-                     (inside-box-forgiving (ra:get-box track *current-track-num*) X Y)
+                     (inside-box-forgiving (<ra> :get-box track *current-track-num*) X Y)
                      (begin
                        (define velocity-info (get-velocity-info X Y *current-track-num*))
                        ;;(c-display "got velocity info " velocity-info)
                        (if velocity-info
                            (begin
-                             (ra:undo-notes (velocity-info :tracknum))
-                             (ra:delete-velocity (velocity-info :velocitynum)
+                             (<ra> :undo-notes (velocity-info :tracknum))
+                             (<ra> :delete-velocity (velocity-info :velocitynum)
                                                  (velocity-info :notenum)
                                                  (velocity-info :tracknum))
                              #t)
@@ -1814,7 +1814,7 @@
 (add-mouse-move-handler
  :move (lambda (Button X Y)
          (and *current-track-num*
-              (inside-box-forgiving (ra:get-box track *current-track-num*) X Y)
+              (inside-box-forgiving (<ra> :get-box track *current-track-num*) X Y)
               (begin
                 (define velocity-info (get-velocity-info X Y *current-track-num*))
                 (c-display "got velocity info " velocity-info)
@@ -1830,11 +1830,11 @@
 ||#
 
 #||
-(ra:get-num-velocities 0 0)
+(<ra> :get-num-velocities 0 0)
 
-(ra:get-velocitynode-y 0 0)
-(ra:get-velocitynode-y 2 0)
-(ra:get-velocity-value 7 1)
+(<ra> :get-velocitynode-y 0 0)
+(<ra> :get-velocitynode-y 2 0)
+(<ra> :get-velocity-value 7 1)
 
 
 
@@ -1851,18 +1851,18 @@
   :y)
 
 (define (may-be-a-resize-point-in-track X Y Tracknum)
-  (and (>= X (- (ra:get-track-x1 Tracknum)
+  (and (>= X (- (<ra> :get-track-x1 Tracknum)
                 2))
-       (<= X (+ (ra:get-track-x1 Tracknum)
-                (ra:get-half-of-node-width)))
-       (>= Y (+ 4 (ra:get-track-volume-on-off-y2)))))
+       (<= X (+ (<ra> :get-track-x1 Tracknum)
+                (<ra> :get-half-of-node-width)))
+       (>= Y (+ 4 (<ra> :get-track-volume-on-off-y2)))))
                 
 
 (define-match get-resize-point-track
-  X _ Tracknum :> (and (>= X (- (ra:get-track-fx-x2 (1- Tracknum))
+  X _ Tracknum :> (and (>= X (- (<ra> :get-track-fx-x2 (1- Tracknum))
                                 2))
-                       Tracknum) :where (= Tracknum (ra:get-num-tracks)) ;; i.e. to the right of the rightmost track
-  X _ Tracknum :> #f       :where (> (ra:get-track-x1 Tracknum) X)
+                       Tracknum) :where (= Tracknum (<ra> :get-num-tracks)) ;; i.e. to the right of the rightmost track
+  X _ Tracknum :> #f       :where (> (<ra> :get-track-x1 Tracknum) X)
   X Y Tracknum :> Tracknum :where (may-be-a-resize-point-in-track X Y Tracknum)
   X Y Tracknum :> (get-resize-point-track X Y (1+ Tracknum)))
 
@@ -1871,7 +1871,7 @@
   (and resize-point-track
        (let ((tracknum (1- resize-point-track)))
          (make-trackwidth-info :tracknum tracknum
-                               :width    (ra:get-track-width tracknum)
+                               :width    (<ra> :get-track-width tracknum)
                                :y        Y))))
 
 #||
@@ -1885,7 +1885,7 @@
                      (define tracknum (trackwidth-info :tracknum))
                      (define new-width (+ DX
                                           (trackwidth-info :width)))
-                     (ra:set-track-width new-width tracknum)
+                     (<ra> :set-track-width new-width tracknum)
                      (make-trackwidth-info :tracknum tracknum
                                              :width    new-width)))
 
@@ -1893,26 +1893,26 @@
 
 (add-horizontal-handler :Get-handler-data get-trackwidth-info
                         :Get-x1 (lambda (Trackwidth-info)
-                                  (ra:get-track-fx-x1 (Trackwidth-info :tracknum)))
+                                  (<ra> :get-track-fx-x1 (Trackwidth-info :tracknum)))
                         :Get-x2 (lambda (Trackwidth-info)
                                   (+ 10000
-                                     (ra:get-track-fx-x1 (Trackwidth-info :tracknum))))
+                                     (<ra> :get-track-fx-x1 (Trackwidth-info :tracknum))))
                         :Get-min-value (lambda (_)
                                          0)
                         :Get-max-value (lambda (_)
                                          10000)
                         :Get-x (lambda (Trackwidth-info)
                                  (define tracknum (Trackwidth-info :tracknum))
-                                 (if (= tracknum (1- (ra:get-num-tracks)))
-                                     (ra:get-track-fx-x2 tracknum)
-                                     (ra:get-track-x1 (1+ tracknum))))
+                                 (if (= tracknum (1- (<ra> :get-num-tracks)))
+                                     (<ra> :get-track-fx-x2 tracknum)
+                                     (<ra> :get-track-x1 (1+ tracknum))))
                         :Get-value (lambda (Trackwidth-info)
                                      (Trackwidth-info :width))
                         :Make-undo (lambda (_)
-                                     (ra:undo-track-width))
+                                     (<ra> :undo-track-width))
                         :Move (lambda (Trackwidth-info Value)
                                 (define tracknum (Trackwidth-info :tracknum))
-                                (ra:set-track-width Value tracknum))
+                                (<ra> :set-track-width Value tracknum))
                         :Publicize (lambda (_)
                                      #f))
                         
@@ -1924,9 +1924,9 @@
   :press-func (lambda (Button X Y)
                 (and (= Button *right-button*)
                      *current-track-num*
-                     (inside-box (ra:get-box track-notes *current-track-num*) X Y)
-                     (ra:change-track-note-area-width *current-track-num*)
-                     (ra:select-track *current-track-num*)
+                     (inside-box (<ra> :get-box track-notes *current-track-num*) X Y)
+                     (<ra> :change-track-note-area-width *current-track-num*)
+                     (<ra> :select-track *current-track-num*)
                      #f))))
 
 
@@ -1934,8 +1934,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (get-fxnode-box Tracknum FX-num FX-nodenum)
-  (get-common-node-box (ra:get-fxnode-x FX-nodenum FX-num Tracknum)
-                       (ra:get-fxnode-y FX-nodenum FX-num Tracknum)))
+  (get-common-node-box (<ra> :get-fxnode-x FX-nodenum FX-num Tracknum)
+                       (<ra> :get-fxnode-y FX-nodenum FX-num Tracknum)))
 
 #||
 (box-to-string (get-fxnode-box 0 0 1))
@@ -1950,13 +1950,13 @@
   )
 
 (define (fxnode-info-rating Y Fi)
-  (define fxnode-y (ra:get-fxnode-y (Fi :fxnodenum) (Fi :fxnum) (Fi :tracknum)))
+  (define fxnode-y (<ra> :get-fxnode-y (Fi :fxnodenum) (Fi :fxnum) (Fi :tracknum)))
   (cond ((and (= 0
                  (Fi :fxnodenum))
               (> Y
                  fxnode-y))
          10)
-        ((and (= (1- (ra:get-num-fxnodes (Fi :fxnum) (Fi :tracknum)))
+        ((and (= (1- (<ra> :get-num-fxnodes (Fi :fxnum) (Fi :tracknum)))
                  (Fi :fxnodenum))
               (< Y
                  fxnode-y))
@@ -1991,7 +1991,7 @@
                                                                                             (make-fxnode-info :fxnodenum Fxnodenum
                                                                                                               :fxnum Fxnum
                                                                                                               :tracknum Tracknum
-                                                                                                              :value (ra:get-fxnode-value Fxnodenum Fxnum Tracknum)
+                                                                                                              :value (<ra> :get-fxnode-value Fxnodenum Fxnum Tracknum)
                                                                                                               :y (box :y)
                                                                                                               )))))))
 
@@ -1999,13 +1999,13 @@
   X Y Tracknum Fxnum Fxnum     :> #f
   X Y Tracknum Fxnum Total-Fxs :> (highest-rated-fxnode-info Y
                                                              (list (get-fxnode-1 X Y Tracknum (1+ Fxnum) Total-Fxs)
-                                                                   (get-fxnode-2 X Y Tracknum Fxnum 0 (ra:get-num-fxnodes Fxnum Tracknum)))))
+                                                                   (get-fxnode-2 X Y Tracknum Fxnum 0 (<ra> :get-num-fxnodes Fxnum Tracknum)))))
 
 
 (define-match get-fxnode-0
   X Y -1       :> #f
-  X Y Tracknum :> #f :where (>= Tracknum (ra:get-num-tracks))
-  X Y Tracknum :> (get-fxnode-1 X Y Tracknum 0 (ra:get-num-fxes Tracknum)))
+  X Y Tracknum :> #f :where (>= Tracknum (<ra> :get-num-tracks))
+  X Y Tracknum :> (get-fxnode-1 X Y Tracknum 0 (<ra> :get-num-fxes Tracknum)))
 
 (define-match get-fxnode-info
   X Y #f       :> (get-fxnode-info X Y 0)
@@ -2015,15 +2015,15 @@
 
 
 #||
-(ra:get-num-fxes 0)
+(<ra> :get-num-fxes 0)
 (let ((node (get-fxnode-info 347 211 0)))
   (c-display "hm?" node)
   (if node
       (c-display "node:" (node :fxnodenum) "value:" (node :value))))
         
-(ra:get-fxnode-x 0 0 0)
-(ra:get-fxnode-y 0 0 0)
-(ra:get-fxnode-value 0 0 0)
+(<ra> :get-fxnode-x 0 0 0)
+(<ra> :get-fxnode-y 0 0 0)
+(<ra> :get-fxnode-value 0 0 0)
 ||#
 
 
@@ -2062,19 +2062,19 @@
                                                               Fx
                                                               X Y
                                                               X2 Y2
-                                                              (ra:get-fxnode-x Nodenum Fx *current-track-num*)
-                                                              (ra:get-fxnode-y Nodenum Fx *current-track-num*)))
+                                                              (<ra> :get-fxnode-x Nodenum Fx *current-track-num*)
+                                                              (<ra> :get-fxnode-y Nodenum Fx *current-track-num*)))
 
 (define-match get-closest-fx-0
   Fx Fx        _ _ :> #f
   Fx Total-Fxs X Y :> (min-fx/distance (get-closest-fx-1 2
-                                                         (ra:get-num-fxnodes Fx *current-track-num*)
+                                                         (<ra> :get-num-fxnodes Fx *current-track-num*)
                                                          Fx
                                                          X Y
-                                                         (ra:get-fxnode-x 0 Fx *current-track-num*)
-                                                         (ra:get-fxnode-y 0 Fx *current-track-num*)
-                                                         (ra:get-fxnode-x 1 Fx *current-track-num*)
-                                                         (ra:get-fxnode-y 1 Fx *current-track-num*))
+                                                         (<ra> :get-fxnode-x 0 Fx *current-track-num*)
+                                                         (<ra> :get-fxnode-y 0 Fx *current-track-num*)
+                                                         (<ra> :get-fxnode-x 1 Fx *current-track-num*)
+                                                         (<ra> :get-fxnode-y 1 Fx *current-track-num*))
                                        (get-closest-fx-0 (1+ Fx)
                                                          Total-Fxs
                                                          X
@@ -2083,40 +2083,40 @@
 
 
 (define (get-closest-fx X Y)
-  (get-closest-fx-0 0 (ra:get-num-fxes *current-track-num*) X Y))
+  (get-closest-fx-0 0 (<ra> :get-num-fxes *current-track-num*) X Y))
 
 #||
-(ra:get-num-fxes 0)
+(<ra> :get-num-fxes 0)
 ||#
 
 ;; add and move fxnode
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-track-num*
-                                             (ra:get-box track-fx *current-track-num*)))
+                                             (<ra> :get-box track-fx *current-track-num*)))
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (and *current-track-num*
                                                        (let ((fxnode-info (get-fxnode-info X Y *current-track-num*)))
                                                          (and fxnode-info
                                                               (callback fxnode-info (fxnode-info :value) (fxnode-info :y))))))
                         :Get-min-value (lambda (fxnode-info)
-                                         (ra:get-fx-min-value (fxnode-info :fxnum)))
+                                         (<ra> :get-fx-min-value (fxnode-info :fxnum)))
                         :Get-max-value (lambda (fxnode-info)
-                                         (ra:get-fx-max-value (fxnode-info :fxnum)))
-                        :Get-x (lambda (info) (ra:get-fxnode-x (info :fxnodenum)
+                                         (<ra> :get-fx-max-value (fxnode-info :fxnum)))
+                        :Get-x (lambda (info) (<ra> :get-fxnode-x (info :fxnodenum)
                                                                (info :fxnum)
                                                                (info :tracknum)))
-                        :Get-y (lambda (info) (ra:get-fxnode-y (info :fxnodenum)
+                        :Get-y (lambda (info) (<ra> :get-fxnode-y (info :fxnodenum)
                                                                (info :fxnum)
                                                                (info :tracknum)))
-                        :Make-undo (lambda (_) (ra:undo-fxs *current-track-num*))
+                        :Make-undo (lambda (_) (<ra> :undo-fxs *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
                                            (define Fxnum (get-current-fxnum))
                                            (and Fxnum
                                                 (begin
                                                   (define Value (scale X
-                                                                       (ra:get-track-fx-x1 *current-track-num*) (ra:get-track-fx-x2 *current-track-num*)
-                                                                       (ra:get-fx-min-value Fxnum) (ra:get-fx-max-value Fxnum)))
-                                                  (define Nodenum (ra:create-fxnode Value Place Fxnum *current-track-num*))
+                                                                       (<ra> :get-track-fx-x1 *current-track-num*) (<ra> :get-track-fx-x2 *current-track-num*)
+                                                                       (<ra> :get-fx-min-value Fxnum) (<ra> :get-fx-max-value Fxnum)))
+                                                  (define Nodenum (<ra> :create-fxnode Value Place Fxnum *current-track-num*))
                                                   (if (= -1 Nodenum)
                                                       #f
                                                       (callback (make-fxnode-info :tracknum *current-track-num*
@@ -2125,15 +2125,15 @@
                                                                                   :value Value
                                                                                   :y #f ;; dont need it.
                                                                                   )
-                                                                (ra:get-fxnode-value Nodenum Fxnum *current-track-num*))))))
+                                                                (<ra> :get-fxnode-value Nodenum Fxnum *current-track-num*))))))
                         :Publicize (lambda (fxnode-info)
                                      (set-indicator-fxnode (fxnode-info :fxnodenum)
                                                            (fxnode-info :fxnum)
                                                            (fxnode-info :tracknum))
-                                     (ra:set-statusbar-text (ra:get-fx-string (fxnode-info :fxnodenum) (fxnode-info :fxnum) (fxnode-info :tracknum))))
+                                     (<ra> :set-statusbar-text (<ra> :get-fx-string (fxnode-info :fxnodenum) (fxnode-info :fxnum) (fxnode-info :tracknum))))
 
                         :Move-node (lambda (fxnode-info Value Place)                                     
-                                     (ra:set-fxnode (fxnode-info :fxnodenum) Value (or Place -1) (fxnode-info :fxnum) (fxnode-info :tracknum))
+                                     (<ra> :set-fxnode (fxnode-info :fxnodenum) Value (or Place -1) (fxnode-info :fxnum) (fxnode-info :tracknum))
                                      fxnode-info)
                         )
 
@@ -2143,14 +2143,14 @@
   :press-func (lambda (Button X Y)
                 (and (= Button *right-button*)
                      *current-track-num*
-                     (inside-box-forgiving (ra:get-box track *current-track-num*) X Y)
+                     (inside-box-forgiving (<ra> :get-box track *current-track-num*) X Y)
                      (begin
                        (define fxnode-info (get-fxnode-info X Y *current-track-num*))
                        ;;(c-display "got fx info " fxnode-info)
                        (if fxnode-info
                            (begin
-                             (ra:undo-fxs *current-track-num*)
-                             (ra:delete-fxnode (fxnode-info :fxnodenum)
+                             (<ra> :undo-fxs *current-track-num*)
+                             (<ra> :delete-fxnode (fxnode-info :fxnodenum)
                                                (fxnode-info :fxnum)
                                                (fxnode-info :tracknum))
                              #t)
@@ -2162,9 +2162,9 @@
   :press-func (lambda (Button X Y)
                 (and (= Button *right-button*)
                      *current-track-num*
-                     (inside-box (ra:get-box track-fx *current-track-num*) X Y)
-                     (ra:select-track *current-track-num*)
-                     (ra:add-fx-mouse-pos)
+                     (inside-box (<ra> :get-box track-fx *current-track-num*) X Y)
+                     (<ra> :select-track *current-track-num*)
+                     (<ra> :add-fx-mouse-pos)
                      #f))))
 
 
@@ -2178,7 +2178,7 @@
          (define resize-mouse-pointer-is-set #f)
          (define result
            (and *current-track-num*
-                (inside-box-forgiving (ra:get-box track *current-track-num*) X Y)
+                (inside-box-forgiving (<ra> :get-box track *current-track-num*) X Y)
                 (lazy
                  (define-lazy velocity-info (get-velocity-info X Y *current-track-num*))
                  (define-lazy fxnode-info (get-fxnode-info X Y *current-track-num*))
@@ -2186,7 +2186,7 @@
                 (define-lazy velocity-dist (get-shortest-velocity-distance X Y))
                 (define-lazy fx-dist (get-closest-fx X Y))
 
-                (define-lazy is-in-fx-area (inside-box (ra:get-box track-fx *current-track-num*) X Y))
+                (define-lazy is-in-fx-area (inside-box (<ra> :get-box track-fx *current-track-num*) X Y))
                   
                 (define-lazy velocity-dist-is-shortest
                   (cond ((not velocity-dist)
@@ -2238,7 +2238,7 @@
 
                       ((and is-in-fx-area fx-dist-is-shortest)
                        (set! *current-fx/distance* fx-dist)
-                       (ra:set-statusbar-text (ra:get-fx-name (fx-dist :fx) *current-track-num*)) ;; TODO: Also write fx value at mouse position.
+                       (<ra> :set-statusbar-text (<ra> :get-fx-name (fx-dist :fx) *current-track-num*)) ;; TODO: Also write fx value at mouse position.
                        (set-mouse-fx (fx-dist :fx) *current-track-num*)
                        )
                       
@@ -2246,12 +2246,12 @@
                        #f)))))
          (if (or (not result)
                  (not resize-mouse-pointer-is-set))
-             (if (and (> Y (ra:get-block-header-y2))
-                      (< Y (ra:get-reltempo-slider-y1))
+             (if (and (> Y (<ra> :get-block-header-y2))
+                      (< Y (<ra> :get-reltempo-slider-y1))
                       *current-track-num*
-                      (or (not (ra:pianoroll-visible *current-track-num*))
-                          (not (inside-box (ra:get-box track-pianoroll *current-track-num*) X Y))))
-                 (ra:set-normal-mouse-pointer)))
+                      (or (not (<ra> :pianoroll-visible *current-track-num*))
+                          (not (inside-box (<ra> :get-box track-pianoroll *current-track-num*) X Y))))
+                 (<ra> :set-normal-mouse-pointer)))
          result))
 
 
@@ -2263,7 +2263,7 @@
   :press-func (lambda (Button X Y)
                 (and ;(= Button *middle-button*)
                  *current-track-num*
-                 (ra:select-track *current-track-num*)
+                 (<ra> :select-track *current-track-num*)
                  #f))))
 
 
@@ -2274,18 +2274,18 @@
   :press-func (lambda (Button X Y)
                 (and (= Button *right-button*)
                      *current-track-num-all-tracks*
-                     (>= Y (ra:get-block-header-y2))
-                     (< Y (ra:get-reltempo-slider-y1))
-                     (cond ((= *current-track-num-all-tracks* (ra:get-rel-tempo-track-num))
+                     (>= Y (<ra> :get-block-header-y2))
+                     (< Y (<ra> :get-reltempo-slider-y1))
+                     (cond ((= *current-track-num-all-tracks* (<ra> :get-rel-tempo-track-num))
                             (c-display "reltempo")
                             (popup-menu "hide tempo multiplier track" ra:show-hide-reltempo-track))
-                           ((= *current-track-num-all-tracks* (ra:get-tempo-track-num))
+                           ((= *current-track-num-all-tracks* (<ra> :get-tempo-track-num))
                             (c-display "tempo")
                             (popup-menu "hide BPM track" ra:show-hide-bpm-track))
-                           ((= *current-track-num-all-tracks* (ra:get-lpb-track-num))
+                           ((= *current-track-num-all-tracks* (<ra> :get-lpb-track-num))
                             (c-display "lpb")
                             (popup-menu "hide LPB track" ra:show-hide-lpb-track))
-                           ((= *current-track-num-all-tracks* (ra:get-signature-track-num))
+                           ((= *current-track-num-all-tracks* (<ra> :get-signature-track-num))
                             (c-display "signature")
                             (popup-menu "hide time signature track" ra:show-hide-signature-track)))
                      #f))))
@@ -2299,15 +2299,15 @@
 (define *report-minor-stuff* #t)                          ; let*, docstring checks, (= 1.5 x), numerical and boolean simplification
 (lint "/home/kjetil/radium/bin/scheme/mouse/mouse.scm")
 
-(c-display (ra:create-temponode 2.1 -5.0))
+(c-display (<ra> :create-temponode 2.1 -5.0))
 
 (box-to-string (find-temponode 210 1210))
 
-(ra:set-temponode 1 65/2 8.0)
-(ra:set-temponode 1 0.01 8.0)
-(ra:set-temponode 3 100.01 8.0)
+(<ra> :set-temponode 1 65/2 8.0)
+(<ra> :set-temponode 1 0.01 8.0)
+(<ra> :set-temponode 3 100.01 8.0)
 
-(ra:ctrl-pressed)
+(<ra> :ctrl-pressed)
 
 (define (mouse-press button x* y*)
   (if (not curr-mouse-cycle)
@@ -2382,6 +2382,6 @@
            )))
 (load "/home/kjetil/radium3.0/bin/scheme/mouse/bug.scm")
 
-(ra:move-mouse-pointer 50 50)
+(<ra> :move-mouse-pointer 50 50)
 ||#
 
