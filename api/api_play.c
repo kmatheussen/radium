@@ -82,3 +82,31 @@ void mute(void){
 int isPlaying(void){
   return is_playing();
 }
+
+float lineDuration(int line, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 1.0;
+
+  struct Blocks *block = wblock->block;
+  
+  if (line < 0){
+    RError("lineDuration: Line must be 0 or larger: %d",line);
+    return 1.0;
+  }
+
+  if (line >= block->num_lines){
+    RError("lineDuration: Line must be less than the number of lines: %d >= %d or larger: %d",line, block->num_lines);
+    return 1.0;
+  }
+  
+  Place p1 = {line, 0, 1};
+  Place p2 = {line+1, 0, 1};
+
+  STime s1 = Place2STime(block, &p1);
+  STime s2 = Place2STime(block, &p2);
+
+  return (double)(s2-s1) / (double)MIXER_get_sample_rate();
+}
