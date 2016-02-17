@@ -1,6 +1,5 @@
 (provide 'common1.scm)
 
-
 ;; redefine 'ow!'
 (define (ow!)
   (call-with-output-string

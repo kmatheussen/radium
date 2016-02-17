@@ -2649,6 +2649,67 @@ void addFXMousePos(int windownum){
   AddFXNodeLineCurrMousePos(window);
 }
 
+int createFx(float value, float floatplace, const char* fx_name, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return -1;
+
+  struct Tracks *track = wtrack->track;
+
+  struct Patch *patch = track->patch;
+
+  if(patch==NULL){
+    RWarning("Track %d has no assigned instrument",tracknum);
+    return -1;
+  }
+
+  int effect_num = 0;
+  VECTOR_FOR_EACH(const char *name,patch->instrument->getFxNames(track)){
+    if (!strcmp(name, fx_name))
+      goto gotit;
+    else
+      effect_num++;
+  }END_VECTOR_FOR_EACH;
+
+  RWarning("createFx: No effect \"%s\" in this track.", fx_name);
+  return -1;
+
+ gotit:
+  {
+    struct FX *fx = patch->instrument->createFX(track, effect_num);
+
+    if (fx==NULL)
+      return -1;
+    
+    Place place;
+    Float2Placement(floatplace, &place);
+
+    printf("  1. p.line: %d, p.c: %d, p.d: %d\n",place.line,place.counter,place.dividor);
+    
+    AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, value);
+
+    printf("  2. p.line: %d, p.c: %d, p.d: %d\n",place.line,place.counter,place.dividor);
+        
+    int num = 0;
+    
+    struct FXs *fxs = wtrack->track->fxs;
+    while(fxs!=NULL){
+      if (fxs->l.num == fx->num)
+        return num;
+
+      num++;
+      fxs = NextFX(fxs);
+    }
+
+    RError("Internal error: Newly created FX not found, even though it was just created");
+    
+    return -1;
+  }
+  
+}
+
 static struct Node *get_fxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -2800,13 +2861,13 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
 
   if (PlaceLessThan(&place, PlaceGetFirstPos())){
     if (floatplace < 0)
-      RWarning("createFx: placement before top of block for fx #%d. (%f)", fxnum, floatplace);
+      RWarning("createFxnode: placement before top of block for fx #%d. (%f)", fxnum, floatplace);
     place = *PlaceGetFirstPos();
   }
 
   if (PlaceGreaterThan(&place, &lastplace)) {
     if (floatplace >= wblock->block->num_lines)
-      RWarning("createFx: placement after fx end for fx #%d (%f)", fxnum, floatplace);
+      RWarning("createFxnode: placement after fx end for fx #%d (%f). num lines: %d", fxnum, floatplace, wblock->block->num_lines);
     
     place = lastplace;
   }
@@ -2826,7 +2887,7 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
                           );
 
   if (ret==-1){
-    //RWarning("createFx: Can not create new fx with the same position as another fx");
+    //RWarning("createFxnode: Can not create new fx with the same position as another fx");
     Undo_CancelLastUndo();
     return -1;
   }
@@ -2872,8 +2933,34 @@ void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int trac
   window->must_redraw_editor = true;
 }
 
+void setFxnodeLogtypeHolding(bool is_holding, int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return;
+  
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
+  if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
+    RWarning("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    return;
+  }
+
+  Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
+
+  struct Node *node = nodes->elements[fxnodenum];
+  struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
+
+  int logtype = is_holding ? LOGTYPE_HOLD : LOGTYPE_LINEAR;
+  
+  fxnodeline->logtype = logtype;
+
+  window->must_redraw_editor = true;
+}
+
 void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
- struct Tracker_Windows *window;
+  struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);

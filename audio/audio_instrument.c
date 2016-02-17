@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../common/OS_Player_proc.h"
+#include "../common/fxlines_proc.h"
 
 #include "SoundPlugin.h"
 #include "Mixer_proc.h"
@@ -232,8 +233,40 @@ static void init_fx(struct FX *fx, int effect_num, const char *name){
 
 }
 
+static vector_t *AUDIO_getFxNames(const struct Tracks *track){
+  struct Patch *patch = track->patch; // patch can not be NULL (we got instrument through track-patch)
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+  const SoundPluginType *plugin_type = plugin->type;
+
+  int num_effects = plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
+  vector_t *v=talloc(sizeof(vector_t));
+
+  int i;
+  for(i=0;i<num_effects;i++) {
+    const char *name = PLUGIN_get_effect_name(plugin, i);
+    VECTOR_push_back(v, name);
+  }
+
+  return v;
+}
+
+static struct FX *AUDIO_createFX(const struct Tracks *track, int effect_num){
+  struct Patch *patch = track->patch; // patch can not be NULL (we got instrument through track-patch)
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+    
+  struct FX *fx=talloc(sizeof(struct FX));
+  fx->color = newFXColor();
+  fx->patch = patch;
+
+  const char *name = PLUGIN_get_effect_name(plugin, effect_num);
+  
+  init_fx(fx,effect_num,name);
+
+  return fx;
+}
+
 static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx){
-  struct Patch *patch = track->patch;
+  struct Patch *patch = track->patch; // patch can not be NULL (we got instrument through track-patch)
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   const SoundPluginType *plugin_type = plugin->type;
 
@@ -461,6 +494,8 @@ int AUDIO_initInstrumentPlugIn(struct Instruments *instrument){
   instrument->instrumentname = "Audio instrument";
 
   //instrument->getMaxVelocity      = AUDIO_getMaxVelocity;
+  instrument->getFxNames          = AUDIO_getFxNames;
+  instrument->createFX            = AUDIO_createFX;
   instrument->getFX               = AUDIO_getFX;
   instrument->getPatch            = AUDIO_getPatch;
   instrument->CloseInstrument     = AUDIO_CloseInstrument;

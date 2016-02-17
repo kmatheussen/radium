@@ -38,6 +38,8 @@ extern LANGSPEC void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt
 
 extern LANGSPEC void FX_update_all_slider_automation_visuals(void);
 
+extern LANGSPEC enum ColorNums newFXColor(void);
+
 extern LANGSPEC int AddFXNodeLine(
                                   struct Tracker_Windows *window,
                                   struct WBlocks *wblock,
@@ -47,6 +49,8 @@ extern LANGSPEC int AddFXNodeLine(
                                   const Place *p1
 );
 
+extern LANGSPEC void AddFXNodeLineCustomFxAndPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FX *fx, const Place *p, float val);
+  
 extern LANGSPEC void AddFXNodeLineCurrMousePos(struct Tracker_Windows *window);
 
 extern LANGSPEC void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);

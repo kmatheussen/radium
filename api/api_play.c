@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/playerclass.h"
 #include "../common/player_proc.h"
 #include "../common/OS_Player_proc.h"
+#include "../common/time_proc.h"
+#include "../audio/Mixer_proc.h"
 
 #include "api_common_proc.h"
 

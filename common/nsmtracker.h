@@ -736,6 +736,9 @@ struct Instruments{
 
         //int (*getMaxVelocity)(const struct Patch *patch);
 
+        vector_t *(*getFxNames)(const struct Tracks *track);
+        struct FX *(*createFX)(const struct Tracks *track, int effect_num);
+  
 	int (*getFX)(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx);
 	int (*getPatch)(struct Tracker_Windows *window,ReqType reqtype,const struct Tracks *track,struct Patch *patch);
 	//void (*treatSpecialCommand)(char *command,struct Tracks *track);

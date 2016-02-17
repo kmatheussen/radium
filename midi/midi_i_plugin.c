@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/playerclass.h"
 #include "../common/settings_proc.h"
 #include "../common/instruments_proc.h"
+#include "../common/fxlines_proc.h"
 
 #include "midi_i_plugin.h"
 
@@ -590,7 +591,24 @@ static int MIDIgetMaxVelocity(const struct Patch *patch){
 }
 #endif
 
+static struct FX *MIDI_createFX(const struct Tracks *track, int effect_num){
+  RError("MIDI_getFxNames is not implemented. Expect the unexpected.");
 
+  struct Patch *patch = track->patch; // patch can not be NULL (we got instrument through track-patch)
+    
+  struct FX *fx=talloc(sizeof(struct FX));
+  fx->color = newFXColor();
+  fx->patch = patch;
+
+  return fx;
+}
+
+static vector_t *MIDI_getFxNames(const struct Tracks *track){
+  vector_t *v=talloc(sizeof(vector_t));
+  RError("MIDI_getFxNames is not implemented");
+  return v;
+}
+  
 void MIDICloseInstrument(struct Instruments *instrument){
   struct MidiPort *midi_port = g_midi_ports;
   while(midi_port != NULL){
@@ -648,6 +666,8 @@ int MIDI_initInstrumentPlugIn(struct Instruments *instrument){
 
   instrument->instrumentname="MIDI instrument";
   //instrument->getMaxVelocity= &MIDIgetMaxVelocity;
+  instrument->getFxNames          = MIDI_getFxNames;
+  instrument->createFX            = MIDI_createFX;
   instrument->getFX= &MIDIgetFX;
   instrument->getPatch= &MIDIgetPatch;
   instrument->CloseInstrument=MIDICloseInstrument;

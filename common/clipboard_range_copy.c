@@ -164,10 +164,10 @@ void CopyRange_fxnodelines(
 	}
 
 	if(PlaceGreaterOrEqual(&fromfxnodeline->l.p,p2)) return;
-
+        
 	fxnodeline=talloc(sizeof(struct FXNodeLines));
-	fxnodeline->val=fromfxnodeline->val;
-	PlaceCopy(&fxnodeline->l.p,&fromfxnodeline->l.p);
+        memcpy(fxnodeline, fromfxnodeline, sizeof(struct FXNodeLines));
+
 	PlaceSub(&fxnodeline->l.p,p1);
 
 	ListAddElement3(tofxnodeline,&fxnodeline->l);

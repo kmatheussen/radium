@@ -180,7 +180,7 @@ void PE_HandleFX(struct PEventQueue *peq,int doit){
 
 		if(next==NULL){
 //			Pdebug("fx, slutt: %d\n",peq->nextfxnodeline->val);
-                       if(doit && peq->fxnodeline->logtype != LOGTYPE_HOLD)
+                       if(doit) // && peq->fxnodeline->logtype != LOGTYPE_HOLD)  // <--- This seems wrong. It should send out final value, also for LOGTYPE_HOLD. ESPECIALLY for LOGTYPE_HOLD, actually.
                            fxhandle(peq->nextfxnodeline->val,peq,0,FX_end);
 
 			ReturnPEQelement(peq);
