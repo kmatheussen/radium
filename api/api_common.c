@@ -149,7 +149,11 @@ struct WTracks *getWTrackFromNumA(
 	}
 
       	(*wblock)=getWBlockFromNumA(windownum,window,wblocknum);
-
+        if ((*wblock)==NULL){
+          RError("WBlock %d does not exist",wblocknum);
+          return NULL;
+        }
+          
 	if(wtracknum==-1) return (*wblock)->wtrack;
 //	printf("So far.. %d,%d\n",wblocknum,wtracknum);
 	struct WTracks *ret = ListFindElement1_num(&(*wblock)->wtracks->l,(NInt)wtracknum);
