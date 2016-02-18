@@ -1013,7 +1013,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
 
       if (data->vibrato_speed <= 0.001) {
         data->vibrato_value = 0.0;
-        data->vibrato_phase = 0.0;
+        data->vibrato_phase = 4.71239;
         data->vibrato_phase_add = -1;
       } else
         data->vibrato_phase_add = data->vibrato_speed * 2.0 * M_PI / data->samplerate;
@@ -1025,7 +1025,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
                                   0,MAX_VIBRATO_DEPTH);
       if (data->vibrato_depth <= 0.001) {
         data->vibrato_value = 0.0;
-        data->vibrato_phase = 0.0;
+        data->vibrato_phase = 4.71239;
         data->vibrato_phase_add = -1;    
       } else
         data->vibrato_phase_add = data->vibrato_speed * 2.0 * M_PI / data->samplerate;
@@ -1573,6 +1573,7 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
     data->vibrato_value = 0.0;
     data->vibrato_depth = old_data->vibrato_depth;
     data->vibrato_speed = old_data->vibrato_speed;
+    data->vibrato_phase = 4.71239;
     data->vibrato_phase_add = old_data->vibrato_phase_add;
     
     data->tremolo_depth = old_data->tremolo_depth;
