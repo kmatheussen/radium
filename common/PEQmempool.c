@@ -50,8 +50,11 @@ static int num_elements_used = 0;
 bool InitPEQmempool(void){
 	int lokke;
 
+#if !RELEASE
         R_ASSERT(num_elements_used==0);
-        
+#endif
+        num_elements_used = 0;
+
         memset(peqrootelements, 0, INITIAL_NUM_ELEMENTS*sizeof(struct PEventQueue)); // So the garbage collector can free unused memory.
 
         peqroot = NULL;
