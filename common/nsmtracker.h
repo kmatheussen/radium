@@ -1476,8 +1476,8 @@ struct Song{
 
 struct Root{
 	struct Song *song;
-	
-	int curr_playlist;
+
+        int curr_playlist;
         DEFINE_ATOMIC(NInt, curr_blocknum);
 
         DEFINE_ATOMIC(bool, setfirstpos);

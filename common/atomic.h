@@ -14,6 +14,9 @@
 #define ATOMIC_GET(name) \
   __atomic_load_n (&(name##_atomic), __ATOMIC_SEQ_CST)
 
+#define ATOMIC_GET2(name) \
+  __atomic_load_n (&(name), __ATOMIC_SEQ_CST)
+
 #define ATOMIC_GET_ARRAY(name,pos)                         \
   __atomic_load_n (&(name##_atomic[pos]), __ATOMIC_SEQ_CST)
 
@@ -85,6 +88,11 @@ static inline bool atomic_compare_and_set_uint32(uint32_t *variable, uint32_t ol
   __atomic_fetch_add (&(name##_atomic), how_much, __ATOMIC_SEQ_CST)
 
 #define ATOMIC_ADD(name, how_much) ATOMIC_ADD_RETURN_OLD(name, how_much)
+
+#define ATOMIC_ADD_RETURN_OLD2(name, how_much)                           \
+  __atomic_fetch_add (&(name), how_much, __ATOMIC_SEQ_CST)
+
+#define ATOMIC_ADD2(name, how_much) ATOMIC_ADD_RETURN_OLD2(name, how_much)
 
 // doesn't work with bool!
 #define ATOMIC_ADD_RETURN_NEW(name, how_much)                           \

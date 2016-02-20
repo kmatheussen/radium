@@ -235,7 +235,7 @@ void PC_GoNextBlock(void){
 
 	pc->playpos++;
 	if(pc->playtype==PLAYSONG)
-          root->curr_playlist++;
+          ATOMIC_ADD2(root->curr_playlist, 1);
 }
 
 
