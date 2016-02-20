@@ -2649,7 +2649,7 @@ void addFXMousePos(int windownum){
   AddFXNodeLineCurrMousePos(window);
 }
 
-int createFx(float value, float floatplace, const char* fx_name, int tracknum, int blocknum, int windownum){
+int createFx3(float value, int line, int counter, int dividor, const char* fx_name, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -2682,15 +2682,14 @@ int createFx(float value, float floatplace, const char* fx_name, int tracknum, i
 
     if (fx==NULL)
       return -1;
-    
-    Place place;
-    Float2Placement(floatplace, &place);
 
-    printf("  1. p.line: %d, p.c: %d, p.d: %d\n",place.line,place.counter,place.dividor);
+    Place place = {line, counter, dividor};
+    
+    //printf("  1. p.line: %d, p.c: %d, p.d: %d\n",place.line,place.counter,place.dividor);
     
     AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, value);
 
-    printf("  2. p.line: %d, p.c: %d, p.d: %d\n",place.line,place.counter,place.dividor);
+    //printf("  2. p.line: %d, p.c: %d, p.d: %d\n",place.line,place.counter,place.dividor);
         
     int num = 0;
     
@@ -2707,7 +2706,13 @@ int createFx(float value, float floatplace, const char* fx_name, int tracknum, i
     
     return -1;
   }
-  
+}
+
+int createFx(float value, float floatplace, const char* fx_name, int tracknum, int blocknum, int windownum){
+  Place place;
+  Float2Placement(floatplace, &place);
+
+  return createFx3(value, place.line, place.counter, place.dividor, fx_name, tracknum, blocknum, windownum);
 }
 
 static struct Node *get_fxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
@@ -2845,7 +2850,7 @@ float getFxMaxValue(int fxnum, int tracknum, int blocknum, int windownum){
 #endif
 }
 
-int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
+int createFxnode3(float value, int line, int counter, int dividor, int fxnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -2856,19 +2861,15 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
   Place lastplace;
   PlaceSetLastPos(wblock->block, &lastplace);
 
-  Place place;
-  Float2Placement(floatplace, &place);
+  Place place = {line, counter, dividor};
 
   if (PlaceLessThan(&place, PlaceGetFirstPos())){
-    if (floatplace < 0)
-      RWarning("createFxnode: placement before top of block for fx #%d. (%f)", fxnum, floatplace);
+    RWarning("createFxnode: placement before top of block for fx #%d. (%s)", fxnum, PlaceToString(&place));
     place = *PlaceGetFirstPos();
   }
 
-  if (PlaceGreaterThan(&place, &lastplace)) {
-    if (floatplace >= wblock->block->num_lines)
-      RWarning("createFxnode: placement after fx end for fx #%d (%f). num lines: %d", fxnum, floatplace, wblock->block->num_lines);
-    
+  if (PlaceGreaterThan(&place, &lastplace)) {    
+    RWarning("createFxnode: placement after fx end for fx #%d (%s). num_lines: #%d", fxnum, PlaceToString(&place), wblock->block->num_lines);
     place = lastplace;
   }
 
@@ -2896,8 +2897,15 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
 
   return ret;
 }
+
+int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
+  Place place;
+  Float2Placement(floatplace, &place);
+
+  return createFxnode3(value, place.line, place.counter, place.dividor, fxnum, tracknum, blocknum, windownum);
+}
   
-void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
+void setFxnode3(int fxnodenum, float value, int line, int counter, int dividor, int fxnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -2914,10 +2922,8 @@ void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int trac
   struct Node *node = nodes->elements[fxnodenum];
   struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
   
-  if (floatplace >= 0.0f){
-    Place place;
-    Float2Placement(floatplace, &place);
-
+  if (line >= 0){
+    Place place = {line, counter, dividor};
     Place *last_pos = PlaceGetLastPos(wblock->block);
     
     PLAYER_lock();{
@@ -2931,6 +2937,20 @@ void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int trac
   fxnodeline->val=scale(value, 0.0f, 1.0f, min, max); //R_BOUNDARIES(min,value,max);
 
   window->must_redraw_editor = true;
+}
+
+void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
+  Place place;
+
+  if (floatplace >= 0.0f)
+    Float2Placement(floatplace, &place);
+  else {
+    place.line = -1;
+    place.counter = 0;
+    place.dividor = 1;
+  }
+  
+  return setFxnode3(fxnodenum, value, place.line, place.counter, place.dividor, fxnum, tracknum, blocknum, windownum);
 }
 
 void setFxnodeLogtypeHolding(bool is_holding, int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
