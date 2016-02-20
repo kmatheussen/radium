@@ -354,8 +354,17 @@ private slots:
     if(num_visitors>0) // event created internally
       return;
 
+    bool wasplaying = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
+        
     PlayStop();
     root->curr_playlist = num;
+
+    blocklist_highlighted(BL_GetBlockFromPos(num)->l.num);
+                            
+    struct Tracker_Windows *window=getWindowFromNum(-1);
+
+    if(wasplaying)
+      PlaySongCurrPos(window);
   }
 
   void playlist_selected(int num){
