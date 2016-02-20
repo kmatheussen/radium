@@ -67,3 +67,4 @@ extern LANGSPEC void Undo(void);
 extern LANGSPEC void Redo(void);
 extern LANGSPEC void SetMaxUndos(struct Tracker_Windows *window);
 
+extern uint64_t g_curr_undo_generation;

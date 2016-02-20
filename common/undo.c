@@ -69,6 +69,8 @@ static int undo_pos_at_last_saving=0;
 static int num_undos=0;
 static int max_num_undos=MAX_NUM_UNDOS;
 
+uint64_t g_curr_undo_generation = 0;
+
 static bool undo_is_open=false;
 
 extern struct Patch *g_currpatch;
@@ -289,6 +291,8 @@ static void Undo_Add_internal(
   if(undo_was_open==false)
     Undo_Close();
 
+  g_curr_undo_generation++;
+  
   update_gfx();
 }
 
