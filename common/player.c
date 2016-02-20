@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "PEQ_type_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../audio/Pd_plugin_proc.h"
+#include "../Qt/Qt_AutoBackups_proc.h"
 #include "scheduler_proc.h"
 
 #include "player_proc.h"
@@ -60,7 +61,8 @@ void PlayerTask(STime reltime){
 
           if (SCHEDULER_clear()) {
             ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);  // Finished. SCHEDULER_clear() cleared everything.
-            player_state = PLAYER_STATE_STOPPED;
+            RT_BACKUP_reset_timer(); // Don't want to take backup right after stopping to play. It's quite annoying.
+            player_state = PLAYER_STATE_STOPPED;           
           } else            
             return; // Must run SCHEDULER_clear() at least one more time. We don't want clear too much at once since it could cause CPU spikes.
           

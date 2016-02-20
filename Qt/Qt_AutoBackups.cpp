@@ -37,8 +37,8 @@ static wchar_t *get_backup_filename(void){
 }
 
 static int64_t get_backup_interval_ms(void){
-  //return autobackupIntervalInMinutes()*60*1000;
-  return 1000;
+  return autobackupIntervalInMinutes()*60*1000;
+  //return 1000;
 }
 
 static void aiai(void){
@@ -115,6 +115,10 @@ static void make_backup(void){
   //printf("               BACKUP finished\n");  
 }
 
+void RT_BACKUP_reset_timer(void){
+  g_backuptime.restart();
+}
+
 void BACKUP_call_very_often(void){
   static bool has_inited = false;
   if (has_inited==false){
@@ -127,6 +131,6 @@ void BACKUP_call_very_often(void){
   
   if (g_backuptime.elapsed() > get_backup_interval_ms()){
     make_backup();
-    g_backuptime.restart();
+    RT_BACKUP_reset_timer();
   }
 }

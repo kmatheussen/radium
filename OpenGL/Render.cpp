@@ -1139,7 +1139,7 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
     const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
     
     if (indicator_pitch_num >= nodes->num_elements)
-      RError("indicator_pitch_node_num(%d) >= nodes->num_elements(%d)",indicator_pitch_num,nodes->num_elements);
+      RError("indicator_pitch_node_num(%d) >= nodes->num_elements(%d)",indicator_pitch_num,nodes->num_elements); // Fix: This has happened.
     else {
       //printf("indicator_pitch_num: %d\n",indicator_pitch_num);
       struct Node *node = (struct Node *)nodes->elements[indicator_pitch_num];
