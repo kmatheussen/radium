@@ -689,7 +689,7 @@ struct Notes *FindNoteOnSubTrack(
         struct Notes *note = track->notes;
         
         while (note != NULL) {
-          if(PlaceIsBetween(placement,&note->l.p,&note->end))
+          if(PlaceIsBetween2(placement,&note->l.p,&note->end))
             if (note->subtrack==subtrack)
               return note;
           
