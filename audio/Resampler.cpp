@@ -135,13 +135,15 @@ process(y0,y1,y2,y3,mu) =  a0*mu*mu2 + a1*mu2 + a2*mu + a3 with{
 // OPTIMAL 4x 4 point 4th order interpolation routine written by Olli Niemitalo.
 // http://yehar.com/blog/wp-content/uploads/2009/08/deip-original.pdf
 // (Original code mashed through faust. Faust reduced the number of adds/subtractions from 17 to 14, but weren't able to reduce the number of multiplications (14)).
+//
+// Sounds horrible. It always uses cubic_interpolate_old instead.
 static float cubic_interpolate(
                                float y0,float y1,
                                float y2,float y3,
                                float mu)
 {
 
-  if (ATOMIC_GET(root->editonoff))
+  if (true || ATOMIC_GET(root->editonoff))
     return cubic_interpolate_old(y0,y1,y2,y3,mu);
   
   // *: 14
