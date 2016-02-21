@@ -186,6 +186,12 @@ void Block_Set_num_tracks(
 		}
 	}
 
+        window=root->song->tracker_windows;
+        if (window->curr_track >= num_tracks) {
+          RError("window->curr_track >= num_tracks: %d >= %d",window->curr_track, num_tracks);
+          window->curr_track = num_tracks - 1;
+        }
+          
 }
 
 

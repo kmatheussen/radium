@@ -34,6 +34,7 @@ int GetRelXSubTrack1(
 	const struct WTracks *wtrack,
 	int subtrack
 ){
+  R_ASSERT_RETURN_IF_FALSE2(wtrack, 100);
   int num_subtracks = GetNumSubtracks(wtrack->track);
   return (wtrack->fxwidth*subtrack/num_subtracks) + (subtrack>0 ? 1 : 0 ) ;
 }
@@ -47,6 +48,7 @@ int GetXSubTrack1(
 	const struct WTracks *wtrack,
 	int subtrack
 ){
+  R_ASSERT_RETURN_IF_FALSE2(wtrack, 100);
 	if(subtrack==-1) return wtrack->notearea.x;
 	return wtrack->fxarea.x + GetRelXSubTrack1(wtrack,subtrack);
 }
@@ -60,6 +62,7 @@ int GetRelXSubTrack2(
 	const struct WTracks *wtrack,
 	int subtrack
 ){
+    R_ASSERT_RETURN_IF_FALSE2(wtrack, 200);
         int num_subtracks = GetNumSubtracks(wtrack->track);
 	return
           (wtrack->fxwidth*(subtrack+1)/num_subtracks) -
@@ -76,6 +79,7 @@ int GetXSubTrack2(
 	const struct WTracks *wtrack,
 	int subtrack
 ){
+    R_ASSERT_RETURN_IF_FALSE2(wtrack, 200);
 	if(subtrack==-1) return wtrack->notearea.x2;
 	return wtrack->fxarea.x + GetRelXSubTrack2(wtrack,subtrack);
 }
