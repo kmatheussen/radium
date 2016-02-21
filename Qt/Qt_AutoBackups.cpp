@@ -38,7 +38,7 @@ static wchar_t *get_backup_filename(void){
 
 static int64_t get_backup_interval_ms(void){
   return autobackupIntervalInMinutes()*60*1000;
-  //return 1000;
+  //return 5000;
 }
 
 static void aiai(void){
@@ -115,21 +115,49 @@ static void make_backup(void){
   //printf("               BACKUP finished\n");  
 }
 
+static double g_time = 0;
+static double g_curr_playing_start_time = 0;
+static double g_curr_playing_duration = 0;
+
 void RT_BACKUP_reset_timer(void){
-  g_backuptime.restart();
+  g_time = TIME_get_ms();
+  g_curr_playing_start_time = 0;
+  g_curr_playing_duration = 0;
+}
+
+static double get_unbackuped_duration(void){
+  double total = TIME_get_ms() - g_time;
+  return total - g_curr_playing_duration;
 }
 
 void BACKUP_call_very_often(void){
   static bool has_inited = false;
   if (has_inited==false){
-    g_backuptime.start();
+    RT_BACKUP_reset_timer();
     has_inited=true;
   }
 
-  if (ATOMIC_GET(pc->player_state)!=PLAYER_STATE_STOPPED)
+  static bool is_playing = false;
+  
+  Player_State player_state = ATOMIC_GET(pc->player_state);
+  
+  if (!is_playing && player_state==PLAYER_STATE_PLAYING){
+    is_playing = true;
+    g_curr_playing_start_time = TIME_get_ms();
+  }
+
+  if (is_playing && player_state==PLAYER_STATE_STOPPED){
+    is_playing = false;
+    double added_playing_duration = TIME_get_ms() - g_curr_playing_start_time;
+    g_curr_playing_duration += added_playing_duration;
+  }
+
+  if (is_playing)
     return;
   
-  if (g_backuptime.elapsed() > get_backup_interval_ms()){
+  //printf("duration: %f\n",get_unbackuped_duration() / 1000.0);
+  
+  if (get_unbackuped_duration()  > get_backup_interval_ms()){
     make_backup();
     RT_BACKUP_reset_timer();
   }
