@@ -724,7 +724,7 @@ class MyUI : public UI
 
     Controller *controller = &_controllers.at(effect_num);
 
-    if(_curr_box_name != NULL && strlen(_curr_box_name) < 10){
+    if(_curr_box_name != NULL && strlen(_curr_box_name) < 10 && strcmp(_curr_box_name, "0x00")){
       controller->name = std::string(_curr_box_name) + ": " + name;
     }else{
       controller->name = name;

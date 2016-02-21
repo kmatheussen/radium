@@ -1600,8 +1600,7 @@ faust_multibandcomp.o: audio/faust_multibandcomp.cpp
 	$(CCC) audio/faust_multibandcomp.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Multibandcomp_dsp -DDSP_NAME=\"Multiband\ Compressor\" -DCREATE_NAME=create_faust_multibandcomp_plugin -DFAUST_THAT_ONE
 
 audio/faust_multibandcomp.cpp: audio/faust_multibandcomp.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
-	cd audio && $(FAUST) -vec -cn Multibandcomp_dsp -a Faust_plugins.cpp faust_multibandcomp.dsp -o /tmp/faust_multibandcomp.cpp
-	sed s/"0x00"/""/ /tmp/faust_multibandcomp.cpp > audio/faust_multibandcomp.cpp
+	cd audio && $(FAUST) -vec -cn Multibandcomp_dsp -a Faust_plugins.cpp faust_multibandcomp.dsp -o faust_multibandcomp.cpp
 
 faust_system_eq.o: audio/faust_system_eq.cpp
 	$(CCC) audio/faust_system_eq.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=System_Eq_dsp -DDSP_NAME=\"System\ Eq\" -DCREATE_NAME=create_faust_system_eq_plugin -DDONT_NORMALIZE_EFFECT_VALUES
