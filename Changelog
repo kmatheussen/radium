@@ -1,3 +1,22 @@
+Changes 3.6.3 -> 3.6.4:
+*    Lighter default peak colors
+*    Remove the "0x00" prefix for all effect names in the multiband compressor
+*    Draw thicker automation lines
+*    Turn off some warnings in RELEASE mode
+*    Fix assert window showing up when pressing delete two times in the velocity area of a note
+*    Try to narrow down a cursor-related crash-bug caused by setting number of tracks
+*    Don't count playing time when deciding to take backup
+*    Show a dialog window when taking backup (saving file takes a little bit more time now)
+*    Change block when changing playlist position
+*    Don't stop playing if changing playlist position
+*    Fix play bug which happens after playing a song to the end.
+     (had to select "Play Song" twice before)
+*    Sampler instrument: Start vibrato phase at lowest pitch. Sounds cool, plus that
+     this behavior is compatible with protracker (!).
+*    api: Dont crash if providing non-existing blocknum
+*    Updated s7 scheme interpreter
+
+
 Changes 3.6.2 -> 3.6.3:
 *    Rolled forward again to 3.6.1 and fixed the 3.6.1. player bugs
 *    Using non-native file requester by default on windows. The Qt filerequester doesn't seem so slow anymore.
