@@ -166,6 +166,9 @@ static double STime2Place2(
 {
   double maybe_result;
 
+  if (low_time==high_time)  // Happens at extreme high tempo.
+    return low_time;
+
   if (num_tries_left==NUM_STIME2PLACE2_TRIES)
     maybe_result = scale_double(correct_time, low_time, high_time, low_result, high_result); // usually correct
   else
