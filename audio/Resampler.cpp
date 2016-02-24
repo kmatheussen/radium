@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   #define ATOMIC_GET(a) a
 
   #define R_ASSERT_NON_RELEASE(a)
+  #define R_ASSERT(a)
 
   #define R_MAX(a,b) (((a)>(b))?(a):(b))
   #define R_MIN(a,b) (((a)<(b))?(a):(b))
@@ -259,10 +260,10 @@ int main(int argc, char **argv){
 
   void *resampler = RESAMPLER_create(src_callback, 1, NULL, RESAMPLER_CUBIC);
 
-  int top = 1024*1024*2 * 64 / num_frames;
+  int top = 1024*1024*8 * 64 / num_frames;
   
   for(int i=0 ; i < top ; i ++)
-    RESAMPLER_read(resampler, scale(0,0,top,0.1,8.0), num_frames, data);
+    RESAMPLER_read(resampler, scale(i,0,top,0.1,8.0), num_frames, data);
   
   //printf("hello\n");
   return 0;

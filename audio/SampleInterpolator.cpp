@@ -16,20 +16,18 @@
 */
 
 //
-// This clase is based on the LagrangeInterpolator class in JUCE, written by Julian Storer.
+// The Interpolator class below is based on the LagrangeInterpolator class in JUCE, written by Julian Storer.
 //
 // I've changed it to use the Catmull-Rom spline interpolator instead (since I found that it sounded a lot better),
 // plus that the 'process' functions takes two extra parameters:
 //
 // 1. 'numOut': The maximum number of samples the 'process' method are allowed to write to 'out'.
-// 2. 'numCounsumed': After 'process' is finished, this variable will contain the actual number of samples written to out.
+// 2. 'numCounsumed': After 'process' is finished, this variable will contain the number of samples read from 'in'.
 //
-// In addition, the 'process' function returns the number of bytes read from 'in' instead of the number
-// of samples read from 'out'.
+// In addition, the 'process' function now returns the number of frames put into 'out', while previously it returned the number
+// of samples read from 'in'.
 //
-// My benchmarking shows that the degrade in performance compared to the original LagrangeInterpolator class is hardly measurable
-// when both classes use the Lagrange interpolator. With the new Catmull-Rom spline interpolator, however, this class is
-// measurably faster, mostly because it only need to remember 4 samples instead of 5.
+// My benchmarking shows that the degrade in performance compared to the original LagrangeInterpolator class is hardly measurable.
 //
 // -Kjetil Matheussen
 
@@ -85,7 +83,6 @@ public:
 
 private:
 
-  // For some reason, the most effective way to make this interpolator faster seems to be to optimize this particular function.
   void push (const float newValue)
   {
     lastInputSamples[3] = lastInputSamples[2];
