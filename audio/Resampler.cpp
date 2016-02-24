@@ -80,7 +80,7 @@ struct InterpolatingResampler : public Resampler{
   float *m_in;
   int    m_num_in_frames_left;
   
-  InterpolatingResampler(src_callback_t callback, int num_channels, void *callback_arg)
+  InterpolatingResampler(src_callback_t callback, void *callback_arg)
     : m_callback(callback)
     , m_callback_arg(callback_arg)
     , m_in(NULL)
@@ -196,9 +196,11 @@ struct SincResampler : public Resampler{
 void *RESAMPLER_create(src_callback_t callback, int num_channels, void *arg, int type){
   Resampler *resampler;
 
-  if(type==RESAMPLER_CUBIC)
-    resampler = new InterpolatingResampler(callback, num_channels, arg);
-  else
+  R_ASSERT(num_channels = 1);
+
+  if(type==RESAMPLER_CUBIC) {
+    resampler = new InterpolatingResampler(callback, arg);
+  } else
     resampler = new SincResampler(callback, num_channels, arg, type);
   
   return resampler;

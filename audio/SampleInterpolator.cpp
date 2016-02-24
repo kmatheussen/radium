@@ -125,6 +125,7 @@ private:
     *numConsumed = num_samples;
     return num_samples;
   }
+
   
 public:
 
