@@ -1390,7 +1390,7 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
 
 
       for(int n=0;n<num_peaks;n++){
-        
+
         float min,max;
         
         int64_t start_time = scale(n,

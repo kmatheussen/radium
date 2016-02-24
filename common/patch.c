@@ -1116,7 +1116,7 @@ int PATCH_get_peaks(struct Patch *patch,
           int64_t voice_end_time = end_time - voice->start*sample_rate/1000;
 
           if(voice->length<=0.001 || ( voice_start_time < (voice->length*sample_rate/1000))){
-            
+
             ret = plugin->type->get_peaks(plugin,
                                           voice_notenum,
                                           ch,

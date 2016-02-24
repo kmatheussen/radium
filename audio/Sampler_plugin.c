@@ -842,7 +842,7 @@ static void get_peaks_from_sample(const Sample *sample, int64_t start_frame, int
   float min=0.0f;
   float max=0.0f;
 
-  int interval = (end_frame-start_frame) / 5; //SAMPLES_PER_PEAK);
+  int interval = R_MAX(1, (end_frame-start_frame) / 5); //SAMPLES_PER_PEAK);
   //  if (interval < SAMPLES_PER_PEAK / 2)
   //  interval = SAMPLES_PER_PEAK / 2;
   
@@ -850,6 +850,7 @@ static void get_peaks_from_sample(const Sample *sample, int64_t start_frame, int
   for(framenum=start_frame ; framenum<end_frame ; framenum+=interval){ //SAMPLES_PER_PEAK){
     float min2;
     float max2;
+
     if(get_peak_sample(sample,framenum,&min2,&max2)==false)
       break;
     if(min2<min)
@@ -911,7 +912,7 @@ static int get_peaks(struct SoundPlugin *plugin,
       Panvals pan = get_pan_vals_vector(das_pan, sample->ch==-1 ? 1 : 2);
       int input_channel = sample->ch==-1 ? 0 : sample->ch;
       float panval = pan.vals[input_channel][ch];
-      
+
       if(panval>0.0f){
         
         float min2;
