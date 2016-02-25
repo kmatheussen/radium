@@ -678,8 +678,14 @@ for .emacs:
          (reverse! (hash-table-ref hash key)))
        keys))
 
-(***assert*** (group-by (lambda (x) x) = '(1 5 2 3 5 1))
-              '((1 1)(5 5)(2)(3)))
+(***assert*** (group-by (lambda (x)
+                          x)
+                        =
+                        '(1 5 2 3 5 1))
+              '((1 1)
+                (5 5)
+                (2)
+                (3)))
 
 (define (true-for-all? pred elements)
   (cond ((null? elements)
@@ -738,3 +744,26 @@ for .emacs:
 
 (define (second-last elements)
   (cadr (reverse elements)))
+
+;; like list-set! except that it doesn't modify the list
+(define (list-replace-element das-list pos new-value)
+  (if (= 0 pos)
+      (cons new-value
+            (cdr das-list))
+      (cons (car das-list)
+            (list-replace-element (cdr das-list)
+                                  (1- pos)
+                                  new-value))))
+
+(define (list-remove das-list pos)
+  (if (= 0 pos)
+      (cdr das-list)
+      (cons (car das-list)
+            (list-remove (cdr das-list)
+                         (1- pos)))))
+
+(***assert*** (list-remove '(0 1 2) 0) '(1 2))
+(***assert*** (list-remove '(0 1 2) 1) '(0 2))
+(***assert*** (list-remove '(0 1 2) 2) '(0 1))
+
+
