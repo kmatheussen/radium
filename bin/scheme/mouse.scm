@@ -1045,7 +1045,7 @@
                         :Get-max-value (lambda (_) 1);(1- (<ra> :get-temponode-max)))
                         :Get-x (lambda (Num) (<ra> :get-temponode-x Num))
                         :Get-y (lambda (Num) (<ra> :get-temponode-y Num))
-                        :Make-undo (lambda (_) ra:undo-temponodes)
+                        :Make-undo (lambda (_) (ra:undo-temponodes))
                         :Create-new-node (lambda (X Place callback)
                                            (define Value (scale X (<ra> :get-temponode-area-x1) (<ra> :get-temponode-area-x2) 0 1))
                                            (define Num (<ra> :create-temponode (01->temponodeval Value) Place))
