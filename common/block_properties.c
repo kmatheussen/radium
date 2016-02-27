@@ -168,12 +168,24 @@ void Block_Set_num_tracks(
 	block->num_tracks=num_tracks;
 
 	if(num_tracks<org_num_tracks){
-		CutListAt1(&block->tracks,num_tracks);
-		while(window!=NULL){
-			wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,block->l.num);
-			CutListAt1(&wblock->wtracks,num_tracks);
-			window=NextWindow(window);
-		}
+
+          if (window->curr_track >= num_tracks){
+            //RError("window->curr_track >= num_tracks: %d >= %d",window->curr_track, num_tracks);
+            //window->curr_track = num_tracks - 1;
+            wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,block->l.num);
+
+            SetCursorPosConcrete(
+                                 window,
+                                 wblock,
+                                 num_tracks - 1,
+                                 -1);
+          }
+          CutListAt1(&block->tracks,num_tracks);
+          while(window!=NULL){
+            wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,block->l.num);
+            CutListAt1(&wblock->wtracks,num_tracks);
+            window=NextWindow(window);
+          }
 	}else{
 		for(lokke=org_num_tracks;lokke<num_tracks;lokke++){
 			AppendTrack(block);
@@ -185,13 +197,6 @@ void Block_Set_num_tracks(
 			window=NextWindow(window);
 		}
 	}
-
-        window=root->song->tracker_windows;
-        if (window->curr_track >= num_tracks) {
-          RError("window->curr_track >= num_tracks: %d >= %d",window->curr_track, num_tracks);
-          window->curr_track = num_tracks - 1;
-        }
-          
 }
 
 
