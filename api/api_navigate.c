@@ -76,7 +76,7 @@ void cursorPercentLine(int percent,int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
-	if(percent<0 || percent>99) return;
+	if(percent<0 || percent>100) return;
 
         window->must_redraw = false;
 
