@@ -174,6 +174,8 @@ struct _Data{
   float a,h,d,s,r;
 
   DEFINE_ATOMIC(bool, loop_onoff);
+  int loop_start;
+  int loop_length;   // if 0, use loop data in sample file instead, if there is any. (loop_start has no meaning if loop_length is 0)
   int crossfade_length;
 
   double vibrato_depth;
@@ -1670,7 +1672,46 @@ static void delete_data(Data *data){
   V_free(data);
 }
 
-static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number, int resampler_type){
+static void set_loop_data(Data *data, int start, int length){
+  if (length==0)
+    ATOMIC_SET(data->loop_onoff, false);
+  else
+    ATOMIC_SET(data->loop_onoff, true);
+  
+  data->loop_start = start;
+  data->loop_length = length;
+  
+  if (length!=0) {
+    
+    int i;
+    for(i=0;i<MAX_NUM_SAMPLES;i++){
+      Sample *sample=(Sample*)&data->samples[i];
+      if(sample->sound!=NULL){
+        if (start < sample->num_frames)
+          sample->loop_start = start;
+        else
+            sample->loop_start = sample->num_frames - 1;
+        
+        int loop_end = sample->loop_start + length;
+        if (loop_end <= sample->num_frames)
+          sample->loop_end = loop_end;
+        else
+          sample->loop_end = sample->num_frames;
+      }
+    }
+  }
+}
+
+void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start, int length){
+  Data *data=plugin->data;
+
+  PLAYER_lock();{  
+    set_loop_data(data, start, length);
+    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->loop_onoff)==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  }PLAYER_unlock();
+}
+
+static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number, int resampler_type, int loop_start, int loop_end){
   bool success=false;
 
   Data *data = NULL;
@@ -1685,6 +1726,8 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
   if(load_sample(data,filename,instrument_number)==false)
     goto exit;
 
+  set_loop_data(data, loop_start, loop_end);
+  
   // Put loop_onoff into storage.
   PLUGIN_set_effect_value2(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->loop_onoff)==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLAYERLOCK_NOT_REQUIRED, PLUGIN_FORMAT_SCALED);
 
@@ -1724,45 +1767,15 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
   return success;
 }
 
-void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start, int length){
-  Data *data=plugin->data;
-
-
-  PLAYER_lock();{  
-    if (length==0)
-      ATOMIC_SET(data->loop_onoff, false);
-    else
-      ATOMIC_SET(data->loop_onoff, true);
-
-    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->loop_onoff)==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-    
-    int i;
-    for(i=0;i<MAX_NUM_SAMPLES;i++){
-      Sample *sample=(Sample*)&data->samples[i];
-      if(sample->sound!=NULL){
-        if (start < sample->num_frames)
-          sample->loop_start = start;
-        else
-          sample->loop_start = sample->num_frames - 1;
-        
-        int loop_end = sample->loop_start + length;
-        if (loop_end <= sample->num_frames)
-          sample->loop_end = loop_end;
-        else
-          sample->loop_end = sample->num_frames;
-      }
-    }
-  }PLAYER_unlock();
-}
 
 bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number){
   Data *data=plugin->data;
-  return set_new_sample(plugin,filename,instrument_number,data->resampler_type);
+  return set_new_sample(plugin,filename,instrument_number,data->resampler_type,data->loop_start,data->loop_length);
 }
 
 bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, int resampler_type){
   Data *data=plugin->data;
-  return set_new_sample(plugin,data->filename,data->instrument_number,resampler_type);
+  return set_new_sample(plugin,data->filename,data->instrument_number,resampler_type,data->loop_start,data->loop_length);
 }
 
 int SAMPLER_get_resampler_type(struct SoundPlugin *plugin){
@@ -1870,13 +1883,15 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
   const wchar_t *filename          = HASH_get_string(state, "filename");
   int            instrument_number = HASH_get_int(state, "instrument_number");
   int            resampler_type    = HASH_get_int(state, "resampler_type");
-
+  int            loop_start        = 0; if (HASH_has_key(state, "loop_start"))  loop_start  = HASH_get_int(state, "loop_start");
+  int            loop_length       = 0; if (HASH_has_key(state, "loop_length")) loop_length = HASH_get_int(state, "loop_length");
+  
   if(filename==NULL){
     RError("filename==NULL");
     return;
   }
 
-  if(set_new_sample(plugin,filename,instrument_number,resampler_type)==false)
+  if(set_new_sample(plugin,filename,instrument_number,resampler_type,loop_start,loop_length)==false)
     GFX_Message(NULL, "Could not load soundfile \"%s\". (instrument number: %d)\n",STRING_get_chars(filename),instrument_number);
 }
 
@@ -1888,6 +1903,9 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   HASH_put_string(state, "filename", maybe_relative_filename);
   HASH_put_int(state, "instrument_number",data->instrument_number);
   HASH_put_int(state, "resampler_type",data->resampler_type);
+
+  HASH_put_int(state, "loop_start",data->loop_start);
+  HASH_put_int(state, "loop_length",data->loop_length);
 }
 
 const wchar_t *SAMPLER_get_filename_display(struct SoundPlugin *plugin){
