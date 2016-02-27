@@ -107,6 +107,39 @@ extern int curr_disk_line;
 
 #include "list_proc.h"
 
+static inline int LoadLogType(void){
+  char *s = DC_LoadS();
+
+  if (!strcmp(s,"LOGTYPE_IRRELEVANT")) return LOGTYPE_IRRELEVANT;
+  if (!strcmp(s,"LOGTYPE_IMMEDIATELY")) return LOGTYPE_IMMEDIATELY;
+  if (!strcmp(s,"LOGTYPE_LINEAR")) return LOGTYPE_LINEAR;
+  if (!strcmp(s,"LOGTYPE_MIN")) return LOGTYPE_MIN;
+  if (!strcmp(s,"LOGTYPE_ALSO_LINEAR")) return LOGTYPE_ALSO_LINEAR;
+  if (!strcmp(s,"LOGTYPE_MAX")) return LOGTYPE_MAX;
+  if (!strcmp(s,"LOGTYPE_HOLD")) return LOGTYPE_HOLD;
+
+  RError("Unknown logtype \"%s\". Returning LOGTYPE_LINEAR instead",s);
+  return LOGTYPE_LINEAR;
+}
+
+static inline void SaveLogType(int logtype){
+  const char *s;
+  
+  switch(logtype){
+  case LOGTYPE_IRRELEVANT:  s = "LOGTYPE_IRRELEVANT" ; break;
+  case LOGTYPE_IMMEDIATELY: s = "LOGTYPE_IMMEDIATELY" ; break;
+  case LOGTYPE_LINEAR:       s = "LOGTYPE_LINEAR" ; break;
+  case LOGTYPE_MIN:          s = "LOGTYPE_MIN" ; break;
+  case LOGTYPE_ALSO_LINEAR:  s = "LOGTYPE_ALSO_LINEAR" ; break;
+  case LOGTYPE_MAX:          s = "LOGTYPE_MAX" ; break;
+  case LOGTYPE_HOLD:         s = "LOGTYPE_HOLD" ; break;
+  default:
+    RError("Unknown logtype %d. Saving LOGTYPE_LINEAR");
+    s = "LOGTYPE_LINEAR" ; break;
+  }
+
+  DC_SaveCleanString(s);DC_SaveCleanString("\n");
+}
 
 #define DC_success() if( ! dc.success ) return
 

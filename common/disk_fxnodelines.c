@@ -36,6 +36,7 @@ DC_start("FXNODELINES");
 	do{
 		SavePlace(&fxnodeline->l.p);
 		DC_SaveI(fxnodeline->val);
+                SaveLogType(fxnodeline->logtype);
 		fxnodeline=NextFXNodeLine(fxnodeline);
 	}while(fxnodeline!=NULL);
 
@@ -57,6 +58,10 @@ void LoadFXNodeLines(struct FXNodeLines **to){
 		fxnodeline->Tcounter=DC_LoadU32();
 		fxnodeline->Tdividor=DC_LoadU32();
 		fxnodeline->val=DC_LoadI();
+
+                if (disk_load_version >= 0.775)
+                  fxnodeline->logtype = LoadLogType();
+
 		ListAddElement3(to,&fxnodeline->l);
 	}
 

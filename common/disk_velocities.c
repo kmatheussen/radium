@@ -36,6 +36,7 @@ DC_start("VELOCITIES");
 	while(velocity!=NULL){
 		SavePlace(&velocity->l.p);
 		DC_SaveI(velocity->velocity);
+                SaveLogType(velocity->logtype);
 		velocity=NextVelocity(velocity);
 	}
 
@@ -56,6 +57,10 @@ void LoadVelocities(struct Velocities **to){
 		velocity->Tcounter=DC_LoadU32();
 		velocity->Tdividor=DC_LoadU32();
 		velocity->velocity=DC_LoadI();  if(disk_load_version<0.67) velocity->velocity=velocity->velocity*MAX_VELOCITY/127;
+                
+                if (disk_load_version >= 0.775)
+                  velocity->logtype = LoadLogType();
+                    
 		ListAddElement3(to,&velocity->l);
 	}
 
@@ -71,6 +76,7 @@ DC_start("PITCHES");
 	while(pitch!=NULL){
 		SavePlace(&pitch->l.p);
 		DC_SaveF(pitch->note);
+                SaveLogType(pitch->logtype);
 		pitch=NextPitch(pitch);
 	}
 
@@ -91,6 +97,10 @@ void LoadPitches(struct Pitches **to){
 		pitch->Tcounter=DC_LoadU32();
 		pitch->Tdividor=DC_LoadU32();
 		pitch->note=DC_LoadF();
+                
+                if (disk_load_version >= 0.775)
+                  pitch->logtype = LoadLogType();
+
 		ListAddElement3(to,&pitch->l);
 	}
 
