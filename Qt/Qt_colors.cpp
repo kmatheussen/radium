@@ -274,7 +274,7 @@ int GFX_MakeRandomCustomColor(int colornum){
   if (colornum==-1)
     colornum = num_colors++;
 
-  custom_colors[colornum] = mix_colors(QColor(qrand()%100, qrand()%105, qrand()%255), get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.07f);
+  custom_colors[colornum] = mix_colors(QColor(qrand()%100, qrand()%105, qrand()%255), get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.14f);
 
   return colornum;
 }
