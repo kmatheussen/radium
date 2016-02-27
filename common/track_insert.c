@@ -75,7 +75,6 @@ static void DeleteTracks(
 	}
 	
 	Block_Set_num_tracks(block,num_tracks);
-
 }
 
 
