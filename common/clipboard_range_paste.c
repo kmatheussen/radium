@@ -20,8 +20,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "list_proc.h"
 #include "clipboard_range.h"
+#include "clipboard_range_copy_proc.h"
 #include "clipboard_range_cut_proc.h"
 #include "wtracks_proc.h"
+#include "fxlines_legalize_proc.h"
 #include "undo_range_proc.h"
 #include "player_proc.h"
 #include "notes_proc.h"
@@ -58,6 +60,7 @@ void PasteRange_velocities(
 
 	PasteRange_velocities(block,tovelocity,NextVelocity(fromvelocity),place);
 }
+
 #if 0
 static bool PasteRange_FX(
 	struct WBlocks *wblock,
@@ -77,11 +80,13 @@ static bool PasteRange_FX(
           totrack->patch = track->patch;
         else
           totrack->patch = NULL;
-        
+
+#if 0
 	if(track->midi_instrumentdata!=NULL){
           totrack->midi_instrumentdata=MIDI_CopyInstrumentData(track);
 	}
-
+#endif
+        
 	totrack->fxs=NULL;
 
 	p1=PlaceGetFirstPos();
@@ -93,7 +98,6 @@ static bool PasteRange_FX(
 
 	return true;
 }
-
 #endif
 
 
@@ -214,6 +218,7 @@ void PasteRange(
 	for(lokke=0;lokke<range->num_tracks;lokke++){
 		PasteRange_notes(block,track,range->notes[lokke],place);
 		PasteRange_stops(block,track,range->stops[lokke],place);
+                //PasteRange_FX(block,track,range->stops[lokke],place);
 		track=NextTrack(track);
 		if(track==NULL) break;
 	}

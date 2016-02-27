@@ -108,6 +108,8 @@ private:
     if (m_num_in_frames_left == 0)
       return total_num_frames_produced;
 
+    R_ASSERT_NON_RELEASE2(m_num_in_frames_left > 0, 0);
+        
     int num_frames_consumed;    
     int num_frames_produced = m_interpolator.process(
                                                      actual_ratio,

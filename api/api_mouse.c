@@ -2656,6 +2656,9 @@ int createFx3(float value, int line, int counter, int dividor, const char* fx_na
   if (wtrack==NULL)
     return -1;
 
+  R_ASSERT(value >= 0.0f);
+  R_ASSERT(value <= 1.0f);
+
   struct Tracks *track = wtrack->track;
 
   struct Patch *patch = track->patch;
@@ -2858,6 +2861,9 @@ int createFxnode3(float value, int line, int counter, int dividor, int fxnum, in
   if (fx==NULL)
     return -1;
 
+  R_ASSERT(value >= 0.0f);
+  R_ASSERT(value <= 1.0f);
+
   Place lastplace;
   PlaceSetLastPos(wblock->block, &lastplace);
 
@@ -2912,6 +2918,9 @@ void setFxnode3(int fxnodenum, float value, int line, int counter, int dividor, 
   struct FXs *fx = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
   if (fx==NULL)
     return;
+
+  R_ASSERT(value >= 0.0f);
+  R_ASSERT(value <= 1.0f);
 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fx);
   if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {

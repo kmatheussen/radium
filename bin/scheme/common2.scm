@@ -767,3 +767,15 @@ for .emacs:
 (***assert*** (list-remove '(0 1 2) 2) '(0 1))
 
 
+(define (remove-duplicates-in-sorted-list comparer das-list)
+  (if (null? das-list)
+      '()
+      (let ((a (car das-list)))
+        (if (null? (cdr das-list))
+            das-list
+            (let ((b (cadr das-list)))
+              (if (comparer a b)
+                  (remove-duplicates-in-sorted-list comparer (cdr das-list))
+                  (cons a
+                        (remove-duplicates-in-sorted-list comparer (cdr das-list)))))))))
+                   

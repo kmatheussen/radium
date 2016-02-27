@@ -19,7 +19,7 @@
 // The Interpolator class below is based on the LagrangeInterpolator class in JUCE, written by Julian Storer.
 //
 // I've changed it to use the Catmull-Rom spline interpolator instead (since I found that it sounded a lot better),
-// plus that the 'process' functions takes two extra parameters:
+// plus that the 'process' function takes two extra parameters:
 //
 // 1. 'numOut': The maximum number of samples the 'process' method are allowed to write to 'out'.
 // 2. 'numCounsumed': After 'process' is finished, this variable will contain the number of samples read from 'in'.

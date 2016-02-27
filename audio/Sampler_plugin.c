@@ -528,8 +528,15 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
       return false;
     }
 
-  float resampled_data[num_frames_to_produce-startpos];
-  int frames_created_by_resampler = RT_get_resampled_data(data,voice,resampled_data,num_frames_to_produce-startpos);
+  int num_frames = num_frames_to_produce-startpos;
+
+  R_ASSERT_NON_RELEASE(num_frames >= 0);
+    
+  if (num_frames <= 0)
+    return false;
+  
+  float resampled_data[num_frames];
+  int frames_created_by_resampler = RT_get_resampled_data(data,voice,resampled_data,num_frames);
   //printf("Frames created by resampler: %d\n",frames_created_by_resampler);
   //printf("peak: %f\n",get_peak(resampled_data,frames_created_by_resampler));
 
@@ -669,16 +676,18 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
     voice->start_pitch = note_num;
     voice->end_pitch   = note_num;
 
-    voice->sample = note->samples[i];
+    const Sample *sample = note->samples[i];
     
-    if(ATOMIC_GET(data->loop_onoff)==true && voice->sample->loop_end > voice->sample->loop_start)
+    voice->sample = sample;
+
+    if(ATOMIC_GET(data->loop_onoff)==true && sample->loop_end > sample->loop_start)
       voice->pos=scale(data->startpos, // set startpos between 0 and loop_end
                        0,1,
-                       0,voice->sample->loop_end);
+                       0,sample->loop_end);
     else
       voice->pos=scale(data->startpos,  // set startpos between 0 and sound length
                        0,1,
-                       0,voice->sample->num_frames);
+                       0,sample->num_frames);
 
     voice->pan = get_pan_vals_vector(pan,voice->sample->ch==-1?1:2);
         
@@ -1074,6 +1083,8 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
   }else{
     switch(effect_num){
     case EFF_STARTPOS:
+      R_ASSERT(value >= 0.0f);
+      R_ASSERT(value <= 1.0f);
       data->startpos = value;
       update_peaks(plugin);
       break;

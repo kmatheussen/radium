@@ -1441,6 +1441,10 @@
                                              (else
                                               (c-display "UNKNOWN pianonote-info type: " (pianonote-info :move-type))
                                               #f)))
+                                     ;(c-display "value:" (<ra> :ctrl-pressed) (if (<ra> :ctrl-pressed)
+                                     ;                                             Value
+                                     ;                                             (round Value))
+                                     ;           Value)
                                      (define new-notenum
                                        (func (pianonote-info :pianonotenum)
                                              (if (<ra> :ctrl-pressed)

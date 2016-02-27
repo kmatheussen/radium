@@ -42,7 +42,7 @@ static void  set_compressor_automation_end(struct Patch *patch, int num){
 static void set_compressor_parameter(struct Patch *patch, int num,float value){
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
   if(plugin!=NULL)
-    PLUGIN_set_effect_value(plugin, 0, plugin->type->num_effects+EFFNUM_COMP_RATIO+num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    PLUGIN_set_native_effect_value(plugin, 0, plugin->type->num_effects+EFFNUM_COMP_RATIO+num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 }
 
 #else // COMPILING_RADIUM

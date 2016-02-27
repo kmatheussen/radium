@@ -197,6 +197,7 @@ enum{
   #define R_ASSERT_NON_RELEASE(a)
 #else
   #define R_ASSERT_NON_RELEASE(a) R_ASSERT(a)
+  #define R_ASSERT_NON_RELEASE2(a, returnvalue) R_ASSERT_RETURN_IF_FALSE2(a, returnvalue)
 #endif
 
 

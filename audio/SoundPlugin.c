@@ -330,7 +330,7 @@ SoundPlugin *PLUGIN_create_plugin(SoundPluginType *plugin_type, hash_t *plugin_s
 
     for(i=plugin_type->num_effects;i<plugin_type->num_effects+NUM_SYSTEM_EFFECTS;i++){
       float value = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN);
-      PLUGIN_set_effect_value(plugin, 0, i, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      PLUGIN_set_native_effect_value(plugin, 0, i, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
     }
 #endif
   }
@@ -604,10 +604,18 @@ static float get_freq_store_value(float value, enum ValueType value_type){
     }                                                           \
   }
 
+
 void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum PlayerLockRequired player_lock_required, enum ValueFormat value_format){
   float store_value = value;
   //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
 
+#if !defined(RELEASE)
+  if(value_format==PLUGIN_FORMAT_SCALED) {
+    R_ASSERT(value >= 0.0f);
+    R_ASSERT(value <= 1.0f);
+  }      
+#endif
+  
   if(effect_num < plugin->type->num_effects){
 
     if (PLAYER_current_thread_has_lock()==false && is_playing()==true){
@@ -1119,7 +1127,7 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   for(i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
     if(has_value[i]){
       float val = values[i];
-      PLUGIN_set_effect_value(plugin, -1, i, val, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      PLUGIN_set_native_effect_value(plugin, -1, i, val, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
     }else
       plugin->savable_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN);
   }

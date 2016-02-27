@@ -16,8 +16,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#ifndef TRACKER_INCLUDE
-
 extern void CopyRange_notes(
 	struct Notes **tonote,
 	struct Notes *fromnote,
@@ -46,6 +44,4 @@ extern void CopyRange(
 extern void CopyRange_CurrPos(
 	struct Tracker_Windows *window
 );
-
-#endif
 
