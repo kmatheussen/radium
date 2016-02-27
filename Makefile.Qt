@@ -1675,7 +1675,7 @@ get_windows_commandlines.o: audio/get_windows_commandlines.c
 Envelope.o: audio/Envelope.cpp
 	$(CCC) audio/Envelope.cpp $(CPPOPT) $(CPUOPT)
 
-Resampler.o: audio/Resampler.cpp
+Resampler.o: audio/Resampler.cpp audio/SampleInterpolator.cpp
 #	$(CCC) audio/Resampler.cpp $(CPPOPT) `$(PKG) --cflags samplerate`
 	$(CCC) audio/Resampler.cpp $(CPPOPT) $(CPUOPT) `$(PKG) --cflags samplerate`
 
