@@ -267,6 +267,22 @@ static void configure_note_colors(void){
 QHash<int, QColor> custom_colors;
 static const int first_custom_colornum = 1024; // just start somewhere.
 
+// Algorithm from http://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/
+static QColor get_next_color(void){
+  const double golden_ratio_conjugate = 0.618033988749895;
+  static double h = 0.5;
+
+  QColor color;
+
+  color.setHsvF(h, 0.5, 0.95);
+
+  h += golden_ratio_conjugate;
+
+  h = fmod(h, 1.0);
+
+  return color;
+}
+
 // if colornum==-1, create new color
 int GFX_MakeRandomCustomColor(int colornum){
   static int num_colors = first_custom_colornum;
@@ -274,11 +290,11 @@ int GFX_MakeRandomCustomColor(int colornum){
   if (colornum==-1)
     colornum = num_colors++;
 
-  custom_colors[colornum] = mix_colors(QColor(qrand()%100, qrand()%105, qrand()%255), get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.14f);
+  //custom_colors[colornum] = get_next_color(); //mix_colors(QColor(qrand()%100, qrand()%105, qrand()%255), get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.14f);
+  custom_colors[colornum] = mix_colors(get_next_color(), get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.24f);
 
   return colornum;
 }
-
 
 
 static bool is_configurable_color(enum ColorNums colornum){

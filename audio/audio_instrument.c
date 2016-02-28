@@ -415,7 +415,8 @@ static void *AUDIO_CopyInstrumentData(const struct Tracks *track){
   return NULL;
 }
 
-static void AUDIO_PlayFromStartHook(struct Instruments *instrument){}
+static void AUDIO_PlayFromStartHook(struct Instruments *instrument){
+}
 
 static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
   SoundPlugin *old_plugin = (SoundPlugin*) old_patch->patchdata;
