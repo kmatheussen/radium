@@ -274,7 +274,7 @@ static QColor get_next_color(void){
 
   QColor color;
 
-  color.setHsvF(h, 0.5, 0.95);
+  color.setHsvF(h, 0.9, 0.95);
 
   h += golden_ratio_conjugate;
 
@@ -291,7 +291,7 @@ int GFX_MakeRandomCustomColor(int colornum){
     colornum = num_colors++;
 
   //custom_colors[colornum] = get_next_color(); //mix_colors(QColor(qrand()%100, qrand()%105, qrand()%255), get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.14f);
-  custom_colors[colornum] = mix_colors(get_next_color(), get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.24f);
+  custom_colors[colornum] = mix_colors(get_next_color(), get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.12f);
 
   return colornum;
 }
