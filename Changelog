@@ -1,3 +1,14 @@
+Changes 3.6.4 -> 3.6.5:
+* Color tweaks and stronger track background colors
+* Put back HOME/END keybindings for scrolling to the start and end of a block.
+* Fix tempo automation undo
+* Don't crash if deleting the rightmost track in a block
+* Sample instrument: Don't crash if setting illegal start pos
+* Cleaned up resampler code. Don't crash if playing too fast.
+* Fix gfx render freeze if tempo is extremely high
+
+
+
 Changes 3.6.3 -> 3.6.4:
 *    Lighter default peak colors
 *    Remove the "0x00" prefix for all effect names in the multiband compressor
@@ -15,6 +26,7 @@ Changes 3.6.3 -> 3.6.4:
      this behavior is compatible with protracker (!).
 *    api: Dont crash if providing non-existing blocknum
 *    Updated s7 scheme interpreter
+
 
 
 Changes 3.6.2 -> 3.6.3:
