@@ -118,8 +118,8 @@ static inline int LoadLogType(void){
   if (!strcmp(s,"LOGTYPE_MAX")) return LOGTYPE_MAX;
   if (!strcmp(s,"LOGTYPE_HOLD")) return LOGTYPE_HOLD;
 
-  RError("Unknown logtype \"%s\". Returning LOGTYPE_LINEAR instead",s);
-  return LOGTYPE_LINEAR;
+  R_ASSERT(false); // not possible yet
+  return atoi(s);
 }
 
 static inline void SaveLogType(int logtype){
@@ -134,8 +134,9 @@ static inline void SaveLogType(int logtype){
   case LOGTYPE_MAX:          s = "LOGTYPE_MAX" ; break;
   case LOGTYPE_HOLD:         s = "LOGTYPE_HOLD" ; break;
   default:
-    RError("Unknown logtype %d. Saving LOGTYPE_LINEAR");
-    s = "LOGTYPE_LINEAR" ; break;
+    R_ASSERT(false); // not possible yet
+    DC_SaveI(logtype);
+    return;
   }
 
   DC_SaveCleanString(s);DC_SaveCleanString("\n");

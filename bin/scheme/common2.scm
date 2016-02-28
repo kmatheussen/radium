@@ -185,7 +185,7 @@
         (let ((key (car arguments))
               (value (cadr arguments)))
           (if (not (memq (keyword->symbol key) keys))
-              (throw (<-displayable-> "key '" key ,(<-> "' not found in struct '" struct-name "'") ". keys: " (map symbol->keyword keys))))
+              (throw (<-displayable-> "key '" key (<-> "' not found in struct '" struct-name "'") ". keys: " (map symbol->keyword keys))))
           (loop (cddr arguments)))))
 
   (define old-table (original :dir))
