@@ -24,7 +24,8 @@
     (define tracknum (+ rangetracknum starttrack))  
     (let ((range-fx (get-range-fx rangetracknum))
           (track-fx (get-track-fx blocknum tracknum)))
-      (if (or (not range-fx track-fx))
+      (if (or (not range-fx)
+              (not track-fx))
           #t
           (begin
             (paste-track-fx blocknum tracknum (merge-fx track-fx range-fx)))
