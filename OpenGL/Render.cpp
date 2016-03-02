@@ -1125,7 +1125,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
 }
 
 static void create_pitches(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
-  bool show_read_lines = wtrack->noteshowtype==GFXTYPE1 || wblock->mouse_track==wtrack->l.num;
+  const bool show_read_lines = true; //wtrack->noteshowtype==GFXTYPE1 || wblock->mouse_track==wtrack->l.num;
 
   GE_Context *line_color = GE_color_alpha(PITCH_LINE_COLOR_NUM, 0.5);
   

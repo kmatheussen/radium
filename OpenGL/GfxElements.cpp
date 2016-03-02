@@ -574,25 +574,6 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
         }
       }
       
-      // 2. Text
-      for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
-        
-        vl::ref<GE_Context> c = iterator->second;
-
-        if(c->textbitmaps.points.size() != 0 || c->textbitmaps_halfsize.points.size() != 0) {
-           
-          setColorBegin(vg, c);
-
-          if(c->textbitmaps.points.size() > 0)
-            c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform));
-        
-          if(c->textbitmaps_halfsize.points.size() > 0)
-            c->textbitmaps_halfsize.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform));
-
-          setColorEnd(vg, c);
-        }
-      }
-
       // 2. triangle strips
       for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
 
@@ -650,8 +631,29 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
           setColorEnd(vg, c);
       }
 
+      // 6. Text
+      for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
+        
+        vl::ref<GE_Context> c = iterator->second;
+
+        if(c->textbitmaps.points.size() != 0 || c->textbitmaps_halfsize.points.size() != 0) {
+           
+          setColorBegin(vg, c);
+
+          if(c->textbitmaps.points.size() > 0)
+            c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform));
+        
+          if(c->textbitmaps_halfsize.points.size() > 0)
+            c->textbitmaps_halfsize.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform));
+
+          setColorEnd(vg, c);
+        }
+      }
+
+
       //printf("************ z: %d, NUM contexts: %d\n",z, (int)g_contexts.size());
 
+      
     }
 
     
