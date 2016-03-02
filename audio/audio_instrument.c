@@ -211,7 +211,7 @@ static void AUDIO_set_FX_string(struct FX *fx,int val,const struct Tracks *track
 static void AUDIO_save_FX(struct FX *fx,const struct Tracks *track);
 static void *AUDIO_LoadFX(struct FX *fx,const struct Tracks *track);
 
-static void init_fx(struct FX *fx, int effect_num, const char *name){
+static void init_fx(struct FX *fx, int effect_num, const char *name, int num_effects){
 
   //AUDIO_FX_data_t *fxdata = talloc_atomic(sizeof(AUDIO_FX_data_t));
   fx->effect_num      = effect_num;
@@ -226,6 +226,12 @@ static void init_fx(struct FX *fx, int effect_num, const char *name){
   fx->treatFX = AUDIO_treat_FX;
   //fx->setFXstring = AUDIO_set_FX_string;
 
+  {
+    int num_fx_colors = AUTOMATION8_COLOR_NUM - AUTOMATION1_COLOR_NUM;
+    int fx_effect_num = scale_int64(effect_num, 0, num_effects-1, num_effects-1, 0); // <- Do this to ensure system effects have same colors across plugins
+    fx->color = AUTOMATION1_COLOR_NUM + (fx_effect_num%num_fx_colors);
+  }
+  
 #if 0
   plugin->num_automations[selection]++;
   plugin->automation_colors[selection]=fx->color;
@@ -255,12 +261,14 @@ static struct FX *AUDIO_createFX(const struct Tracks *track, int effect_num){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
     
   struct FX *fx=talloc(sizeof(struct FX));
-  fx->color = newFXColor();
   fx->patch = patch;
 
   const char *name = PLUGIN_get_effect_name(plugin, effect_num);
-  
-  init_fx(fx,effect_num,name);
+
+  const SoundPluginType *plugin_type = plugin->type;
+  int num_effects = plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
+    
+  init_fx(fx,effect_num,name,num_effects);
 
   return fx;
 }
@@ -299,7 +307,7 @@ static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track
 
   int effect_num = nums[selection];
 
-  init_fx(fx,effect_num,(const char*)v.elements[selection]);
+  init_fx(fx,effect_num,(const char*)v.elements[selection], num_effects);
 
   return FX_SUCCESS;
 }
@@ -319,7 +327,7 @@ static void *AUDIO_LoadFX(struct FX *fx,const struct Tracks *track){
   static char **objs=NULL;
   static char *vars[2]={"num","name"};
 
-  init_fx(fx,0,"Effect name was not set in file (\?\?\?)");
+  init_fx(fx,0,"Effect name was not set in file (\?\?\?)",1);
 
   GENERAL_LOAD(0,2)
 

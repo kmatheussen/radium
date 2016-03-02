@@ -284,6 +284,7 @@ void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float ol
   }
 }
 
+#if 0
 enum ColorNums newFXColor(void){  
   static enum ColorNums last = AUTOMATION8_COLOR_NUM;
   
@@ -321,6 +322,7 @@ enum ColorNums newFXColor(void){
       
   }
 }
+#endif
 
 static struct FX *selectFX(
 	struct Tracker_Windows *window,
@@ -359,7 +361,7 @@ static struct FX *selectFX(
 
 	fx=talloc(sizeof(struct FX));
 
-        fx->color = newFXColor();
+        //fx->color = newFXColor();
 
         fx->patch = patch;
         

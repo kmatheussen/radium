@@ -38,7 +38,7 @@ extern LANGSPEC void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt
 
 extern LANGSPEC void FX_update_all_slider_automation_visuals(void);
 
-extern LANGSPEC enum ColorNums newFXColor(void);
+//extern LANGSPEC enum ColorNums newFXColor(void);
 
 extern LANGSPEC int AddFXNodeLine(
                                   struct Tracker_Windows *window,
