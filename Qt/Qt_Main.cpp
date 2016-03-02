@@ -324,7 +324,9 @@ protected:
     int modifier = OS_SYSTEM_get_modifier(event); // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event on windows. Not too sure about EVENT_EXTRA_R either (VK_APPS key) (doesn't matter, EVENT_EXTRA_R is abandoned, and the key is just used to configure block). In addition, the release value order might be wrong if pressing several modifier keys, still windows only.
 
     //printf("modifier: %d\n",modifier);
-    
+
+    static int last_pressed_key = EVENT_NO;
+
     if (modifier!=EVENT_NO) {
 
       bool must_return_true = false;
@@ -357,7 +359,6 @@ protected:
         last_key_was_lalt = false;
 
       static double last_pressed_key_time = 0;
-      static int last_pressed_key = EVENT_NO;
 
       double time_now = TIME_get_ms();
 
@@ -365,9 +366,9 @@ protected:
         
         last_pressed_key_time = time_now;
         last_pressed_key = modifier;
-        
+               
       } else {
-
+        
         // key release:
         
         if( (time_now - last_pressed_key_time) < 1000/4){ // i.e. only play if holding the key less than 0.25 seconds.
@@ -405,6 +406,8 @@ protected:
 
     int keynum = OS_SYSTEM_get_keynum(event);
 
+    last_pressed_key = keynum;
+            
     //printf("keynum1: %d. switch: %d\n",keynum,tevent.keyswitch);
     
     switch(keynum){
