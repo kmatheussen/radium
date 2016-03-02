@@ -16,3 +16,6 @@ race:Compressor_wrapper::set_parameter
 
 # Calling 3rd party code:
 race:call_ladspa_get_descriptor_func
+
+
+interceptor_via_lib:fglrx_dri.so
