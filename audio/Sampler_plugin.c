@@ -1868,17 +1868,6 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
     return EFFECT_FORMAT_FLOAT;
 }
 
-static int get_effect_num(struct SoundPlugin *plugin, const char *effect_name){
-  int i;
-  for(i=0;i<EFF_NUM_EFFECTS;i++)
-    if(!strcmp(effect_name,get_effect_name(plugin,i)))
-      return i;
-
-  RError("Unknown effect name \"%s\"",effect_name);
-
-  return 0;
-}
-
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
   const wchar_t *filename          = HASH_get_string(state, "filename");
   int            instrument_number = HASH_get_int(state, "instrument_number");
@@ -1923,7 +1912,6 @@ static SoundPluginType plugin_type = {
  note_handling_is_RT      : false,
  num_effects              : EFF_NUM_EFFECTS,
  get_effect_format        : get_effect_format,
- get_effect_num           : get_effect_num,
  get_effect_name          : get_effect_name,
  effect_is_RT             : NULL,
  create_plugin_data       : create_plugin_data,

@@ -1183,19 +1183,6 @@ static const char *get_effect_description(const struct SoundPluginType *plugin_t
   return controller->tooltip;
 }
 
-static int get_effect_num(struct SoundPlugin *plugin, const char *effect_name){
-  const struct SoundPluginType *plugin_type = plugin->type;
-  Data *data = (Data*)plugin_type->data;
-  Voice *voice = &data->voices[0];
-  for(unsigned int i=0;i<voice->myUI._controllers.size();i++){
-    MyUI::Controller *controller = &voice->myUI._controllers.at(i);
-    if(!strcmp(controller->name.c_str(),effect_name))
-      return i;
-  }
-  RError("Couldn't find effect name \"%s\" in plugin %s/%s\n",plugin_type->type_name,plugin_type->name);
-  return 0;
-}
-
 static void fill_type(SoundPluginType *type){
  type->type_name                = "Faust";
  type->note_handling_is_RT      = false;
@@ -1214,8 +1201,6 @@ static void fill_type(SoundPluginType *type){
  type->get_effect_value         = get_effect_value;
  type->get_display_value_string = get_display_value_string;
  type->get_effect_description   = get_effect_description;
-
- type->get_effect_num = get_effect_num;
 
  type->data                     = NULL;
 };

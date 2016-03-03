@@ -430,7 +430,13 @@ int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name){
     if(!strcmp(system_effect_names[i],effect_name))
       return i + plugin_type->num_effects;
 
-  return plugin_type->get_effect_num(plugin,effect_name);
+  for(i=0;i<plugin_type->num_effects;i++)
+    if(!strcmp(effect_name,plugin_type->get_effect_name(plugin,i)))
+      return i;
+
+  fprintf(stderr,"\n\n\n   ************ WARNING! Effect \"%s\" not found in plugin %s/%s ************\n\n\n",effect_name,plugin_type->type_name,plugin_type->name);
+  
+  return -1;
 }
 
 const char *PLUGIN_get_effect_name(struct SoundPlugin *plugin, int effect_num){

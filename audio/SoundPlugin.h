@@ -196,7 +196,7 @@ typedef struct SoundPluginType{
   int (*get_peaks)(struct SoundPlugin *plugin, float note_num, int ch, float pan, int64_t start_time, int64_t end_time, float *min_value, float *max_value);
 
   int (*get_effect_format)(struct SoundPlugin *plugin, int effect_num); // Must return one of the EFFECT_* values above.
-  int (*get_effect_num)(struct SoundPlugin *plugin, const char *effect_name); // Necessary to implement this if the order of effects may change in the future.
+
   const char *(*get_effect_name)(struct SoundPlugin *plugin, int effect_num); // The effect name is used as effect id. Two effects can not have the same name.
 
   // This functions is called if SoundPluginType->effect_is_RT(effect_num) returns false
