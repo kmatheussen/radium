@@ -276,12 +276,26 @@ static QColor get_next_color(void){
 
   //color.setHsvF(h, 0.9, 0.95);
   if (h > 0.135 && h < 0.470) {
-    float middle = 0.470 - 0.135;
-    float half = middle/half;
+    float middle = 0.33; //(0.470 + 0.135) / 2.0;
     float distance = fabs(h-middle);
-    float saturation = scale(distance, 0, middle, 0.9, 0.3);  // don't want too green/yellow-ish color
+    float saturation = scale(distance, 0, middle, 0.3, 0.9);  // don't want too green/yellow-ish color
+    float value = scale(distance, 0, middle, 0.6, 0.9);  // don't want too green/yellow-ish color
                              
-    color.setHsvF(h, saturation / 2, saturation);
+    color.setHsvF(h, saturation, value);
+  } else if (h > 0.77) {
+    float middle = 0.77;
+    float distance = fabs(h-middle);
+    float saturation = scale(distance, 0, middle, 0.6, 0.9);  // don't want too purplish color
+    float value = scale(distance, 0, middle, 0.6, 0.9);  // don't want too purplish color
+                             
+    color.setHsvF(h, saturation, value);
+  } else if (h > 0.66) {
+    float middle = 0.66;
+    float distance = fabs(h-middle);
+    float saturation = scale(distance, 0, middle, 0.7, 0.9);  // don't want too bluish color
+    float value = scale(distance, 0, middle, 0.7, 0.9);  // don't want too bluish color
+                             
+    color.setHsvF(h, saturation, value);
   } else
     color.setHsvF(h, 0.9, 0.95);
 
