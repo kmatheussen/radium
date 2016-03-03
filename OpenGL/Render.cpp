@@ -1370,7 +1370,7 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
 
   //GE_Context *c = Black_color(); //GE_mix_alpha_z(GE_get_rgb(0), Black_rgb(), 100, 0.7, Z_ZERO);
   //GE_Context *c = GE_mix_alpha_z(GE_get_rgb(0), GE_get_rgb(2), 250, 0.9, Z_ZERO);
-  GE_Context *c = GE_mix_color_z(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM), GE_get_rgb(WAVEFORM_COLOR_NUM), 500, Z_ZERO);
+  GE_Context *c = GE_mix_color_z(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM), GE_get_rgb(WAVEFORM_COLOR_NUM), 100, Z_ZERO);
 
 #define NUM_LINES_PER_PEAK 2
 

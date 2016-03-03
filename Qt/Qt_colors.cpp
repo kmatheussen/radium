@@ -274,10 +274,18 @@ static QColor get_next_color(void){
 
   QColor color;
 
-  color.setHsvF(h, 0.9, 0.95);
+  //color.setHsvF(h, 0.9, 0.95);
+  if (h > 0.135 && h < 0.470) {
+    float middle = 0.470 - 0.135;
+    float half = middle/half;
+    float distance = fabs(h-middle);
+    float saturation = scale(distance, 0, middle, 0.9, 0.3);  // don't want too green/yellow-ish color
+                             
+    color.setHsvF(h, saturation / 2, saturation);
+  } else
+    color.setHsvF(h, 0.9, 0.95);
 
   h += golden_ratio_conjugate;
-
   h = fmod(h, 1.0);
 
   return color;

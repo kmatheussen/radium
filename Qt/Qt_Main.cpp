@@ -1107,15 +1107,15 @@ int radium_main(char *arg){
   //printf("col: -%s-, font: -%s-\n",SETTINGS_read_string("last_color_version","0.0"),SETTINGS_read_string("last_system_font_version","0.0"));
 
   
-  if(strcmp(SETTINGS_read_string("last_color_version","0.0"),"3.3.5")){
+  if(strcmp(SETTINGS_read_string("last_color_version","0.0"),"3.6.6")){
     GFX_Message(NULL,
                 "Note!\n\n"
                 "The default colors have changed. In case you have run Radium before, you might want to go to the Edit menu and select \"Set Default Colors\".\n"
                 "\n"
-                "If you have created your own colors, you probably want to adjust the \"Buttons\" color.\n"
+                "If you have created your own colors, you might want to adjust the \"Waveform\" color.\n"
                 "\n"
                 "You will only see this message once.");
-    SETTINGS_write_string("last_color_version","3.3.5");
+    SETTINGS_write_string("last_color_version","3.6.6");
   }
 
   if(strcmp(SETTINGS_read_string("last_system_font_version","0.0"),"1.9.21")){
