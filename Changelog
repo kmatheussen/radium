@@ -1,3 +1,16 @@
+Changes 3.6.5 -> 3.6.6:
+* Various color tweaks
+* Don't mistake shift+space or altgr+space as a "play block"
+  command if releasing the shift or altgr key before the space key
+* Make effect automation lines have the same color every time
+  (i.e don't select a random automation color).
+* Render: Always paint the small pitch indication lines, and always
+  draw text on top of everything else.
+* Don't show middle part of very long vertical effect automation lines
+* Don't erase the stored vblank value when opening the preferences window
+
+
+
 Changes 3.6.4 -> 3.6.5:
 * Color tweaks and stronger track background colors
 * Put back HOME/END keybindings for scrolling to the start and end of a block.
