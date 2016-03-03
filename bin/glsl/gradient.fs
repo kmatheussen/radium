@@ -75,7 +75,7 @@ void main()
   //  /*
     // horizontal gradient effect:
   gl_FragColor = mix(col,
-                     vec4(1.0, 0.0, 1.0, col.a),
+                     vec4(1.0, 0.0, 0.4, col.a),
                      (gl_FragCoord.x - x) / (width*12.0)
                      )
     ;

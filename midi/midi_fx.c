@@ -463,6 +463,9 @@ int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct F
 
         fx->effect_num = midi_fx->effect_num;
 
+        int num_fx_colors = AUTOMATION8_COLOR_NUM - AUTOMATION1_COLOR_NUM;
+        fx->color = AUTOMATION1_COLOR_NUM + (fx->effect_num%num_fx_colors);
+
 	fx->fxdata=midi_fx;
 
 	fx->num   = (NInt)fx->effect_num;

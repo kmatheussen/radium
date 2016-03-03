@@ -72,6 +72,8 @@ class Argument:
             return "s7_make_string"
         elif self.type_string=="bool":
             return "s7_make_boolean"
+        elif self.type_string=="Place":
+            return "s7extra_make_place"
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise "Unknown type '"+type_string+"'"
@@ -87,6 +89,8 @@ class Argument:
             return "(const_char*)s7_string("
         elif self.type_string=="bool":
             return "s7_boolean(radiums7_sc, "
+        elif self.type_string=="Place":
+            return "s7extra_place(radiums7_sc, "
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise "Unknown type '"+type_string+"'"
@@ -102,6 +106,8 @@ class Argument:
             return "s7_is_string"
         elif self.type_string=="bool":
             return "s7_is_boolean"
+        elif self.type_string=="Place":
+            return "s7extra_is_place"
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise "Unknown type '"+type_string+"'"
@@ -157,7 +163,7 @@ class Proto:
         self.proc=Argument(string.strip(parts.pop(0)))
         self.arglen=len(parts)
         self.defaults=false
-        
+
         for lokke in range(self.arglen):
             self.args.append(Argument(string.strip(parts[lokke])))
 
@@ -167,8 +173,21 @@ class Proto:
                 self.defaults=true
                 break
             self.reqarglen+=1
-                           
+
+        self.uses_place = False
+        
+        if self.proc.type_string=="Place":
+            self.uses_place = True
+
+        for arg in self.args:
+            if arg.type_string=="Place":
+                self.uses_place = True
+        
+
     def write(self,oh,dodefault):
+        #if self.uses_place:
+        #    return
+        
         self.proc.write(oh,false)
         oh.write("(");
         if self.args!=[]:
@@ -181,6 +200,9 @@ class Proto:
         oh.write(");\n");
 
     def write_python_wrap_proc(self,oh):
+        if self.uses_place:
+            return
+        
         oh.write("static PyObject *_wrap_"+self.proc.varname)
         if self.defaults==true:
             oh.write("(PyObject *self,PyObject *args,PyObject *keywds){\n")
@@ -288,6 +310,9 @@ class Proto:
         oh.write("}\n\n")
             
     def write_python_wrap_methodstruct(self,oh):
+        if self.uses_place:
+            return
+        
         oh.write("{(char*)\""+self.proc.varname+"\",")
         if self.defaults:
             oh.write("(PyCFunction)")
@@ -624,6 +649,7 @@ class Read:
         oh=open("radium_proc.h","w")
         oh.write("/*This file is automaticly generated from protos.conf.*/\n");
         oh.write("#define const_char const char\n")
+        oh.write("#include \"../common/placement_type.h\"\n")
         self.hs.write(oh)
         self.protos.writeH(oh)
         oh.close()
@@ -649,6 +675,8 @@ class Read:
         oh=sys.stdout
         oh.write("#include \"Python.h\"\n\n")
         oh.write("#include \"s7.h\"\n\n")
+        oh.write("#include \"../common/placement_type.h\"\n\n")
+        oh.write("#include \"../embedded_scheme/s7extra_proc.h\"\n")
         oh.write("#include \"radium_proc.h\"\n\n")
         oh.write("#include \"../crashreporter/crashreporter_proc.h\"\n\n")
         self.protos.write_s7_funcs(oh)

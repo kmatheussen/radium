@@ -176,10 +176,12 @@ class Preferences : public QDialog, public Ui::Preferences {
 
  public:
   bool _initing;
+  bool _is_updating_widgets;
   QColorDialog _color_dialog;
 
  Preferences(QWidget *parent=NULL)
    : QDialog(parent)
+   , _is_updating_widgets(false)
   {
     _initing = true;
 
@@ -231,7 +233,8 @@ class Preferences : public QDialog, public Ui::Preferences {
   }
 
   void updateWidgets(){
-
+    _is_updating_widgets = true;
+  
     // OpenGL
     {
       vsyncOnoff->setChecked(GL_get_vsync());
@@ -316,7 +319,8 @@ class Preferences : public QDialog, public Ui::Preferences {
       else
         record_velocity_off->setChecked(true);
     }
-    
+
+    _is_updating_widgets = false;
   }
 
 public slots:
@@ -335,7 +339,8 @@ public slots:
   }
 
   void on_vsyncOnoff_toggled(bool val){
-    GL_erase_estimated_vblank(); // makes sense
+    if (!_is_updating_widgets)
+      GL_erase_estimated_vblank(); // makes sense
     GL_set_vsync(val);
   }
 

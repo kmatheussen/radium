@@ -35,6 +35,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/placement_proc.h"
 
 #include "scheme_proc.h"
+#include "s7extra_proc.h"
+
+#include "../api/api_proc.h"
+
 
 extern struct Root *root;
 
@@ -42,7 +46,6 @@ extern struct Root *root;
 extern "C" {
   void init_radium_s7(s7_scheme *s7);
 }
-
 
 static s7_scheme *s7;
 static s7webserver_t *s7webserver;
@@ -80,9 +83,38 @@ static Place number_to_place(s7_pointer number){
   if (s7_is_integer(number))
     return place(s7_integer(number), 0, 1);
 
-  RError("scheme.cpp/number_to_place: result was not ratio or integer. Returning 0. is_number: %d, is_integer: %d, is_ratio: %d, is_real: %d, value: %f, is_complex: %d, is_ulong: %d\n\n\n",s7_is_number(number),s7_is_integer(number),s7_is_ratio(number),s7_is_real(number),s7_number_to_real(s7,number),s7_is_complex(number),s7_is_ulong(number));  
+  RError("scheme.cpp/number_to_place: result was not ratio or integer. Returning 0. is_number: %d, is_integer: %d, is_ratio: %d, is_real: %d, value: %f, is_complex: %d, is_ulong: %d\n\n\n",s7_is_number(number),s7_is_integer(number),s7_is_ratio(number),s7_is_real(number),s7_number_to_real(s7,number),s7_is_complex(number),s7_is_ulong(number));
+
+  if (s7_is_real(number)) {
+    Place place;
+    Double2Placement(s7_real(number), &place);
+    return place;
+  }
+    
   return place(0,0,1);
 }
+
+bool s7extra_is_place(s7_pointer place){
+  return s7_is_rational(place);
+}
+
+Place s7extra_place(s7_scheme *s7, s7_pointer place){
+  return number_to_place(place); // Should we allow floating numbers? (i.e. not give error message for it)
+}
+
+s7_pointer s7extra_make_place(s7_scheme *radiums7_sc, Place place){
+  return place_to_ratio(&place);
+}
+
+int placetest(Place dasplacevar,int windownum){
+  return dasplacevar.line;
+}
+
+Place placetest2(int a, int b, int c){
+  Place p = {a,(uint_32)b,(uint_32)c};
+  return p;
+}
+
 
 Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2) {
   static s7_pointer scheme_func = s7_name_to_value(s7, "scale");

@@ -324,7 +324,9 @@ protected:
     int modifier = OS_SYSTEM_get_modifier(event); // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event on windows. Not too sure about EVENT_EXTRA_R either (VK_APPS key) (doesn't matter, EVENT_EXTRA_R is abandoned, and the key is just used to configure block). In addition, the release value order might be wrong if pressing several modifier keys, still windows only.
 
     //printf("modifier: %d\n",modifier);
-    
+
+    static int last_pressed_key = EVENT_NO;
+
     if (modifier!=EVENT_NO) {
 
       bool must_return_true = false;
@@ -357,7 +359,6 @@ protected:
         last_key_was_lalt = false;
 
       static double last_pressed_key_time = 0;
-      static int last_pressed_key = EVENT_NO;
 
       double time_now = TIME_get_ms();
 
@@ -365,9 +366,9 @@ protected:
         
         last_pressed_key_time = time_now;
         last_pressed_key = modifier;
-        
+               
       } else {
-
+        
         // key release:
         
         if( (time_now - last_pressed_key_time) < 1000/4){ // i.e. only play if holding the key less than 0.25 seconds.
@@ -405,6 +406,8 @@ protected:
 
     int keynum = OS_SYSTEM_get_keynum(event);
 
+    last_pressed_key = keynum;
+            
     //printf("keynum1: %d. switch: %d\n",keynum,tevent.keyswitch);
     
     switch(keynum){
@@ -1104,15 +1107,15 @@ int radium_main(char *arg){
   //printf("col: -%s-, font: -%s-\n",SETTINGS_read_string("last_color_version","0.0"),SETTINGS_read_string("last_system_font_version","0.0"));
 
   
-  if(strcmp(SETTINGS_read_string("last_color_version","0.0"),"3.3.5")){
+  if(strcmp(SETTINGS_read_string("last_color_version","0.0"),"3.6.6")){
     GFX_Message(NULL,
                 "Note!\n\n"
                 "The default colors have changed. In case you have run Radium before, you might want to go to the Edit menu and select \"Set Default Colors\".\n"
                 "\n"
-                "If you have created your own colors, you probably want to adjust the \"Buttons\" color.\n"
+                "If you have created your own colors, you might want to adjust the \"Waveform\" color.\n"
                 "\n"
                 "You will only see this message once.");
-    SETTINGS_write_string("last_color_version","3.3.5");
+    SETTINGS_write_string("last_color_version","3.6.6");
   }
 
   if(strcmp(SETTINGS_read_string("last_system_font_version","0.0"),"1.9.21")){

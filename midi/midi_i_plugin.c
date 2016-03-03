@@ -597,7 +597,10 @@ static struct FX *MIDI_createFX(const struct Tracks *track, int effect_num){
   struct Patch *patch = track->patch; // patch can not be NULL (we got instrument through track-patch)
     
   struct FX *fx=talloc(sizeof(struct FX));
-  fx->color = newFXColor();
+
+  int num_fx_colors = AUTOMATION8_COLOR_NUM - AUTOMATION1_COLOR_NUM;
+  fx->color = AUTOMATION1_COLOR_NUM + (effect_num%num_fx_colors);
+  
   fx->patch = patch;
 
   return fx;

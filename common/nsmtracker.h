@@ -130,11 +130,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  define SDB
 #endif
 
-/* Next two lines must be placed in its own OS_depend file later. */
-typedef uint32_t uint_32;	/* A type that should be 64 bits, but may be 32 if 64 is _really_ slow or 64 is not available. */
-                           /* uint_32 is allways loaded/saved as 64, and converted to 64 bit if uint_32 is 32 bit. */
-#define MAX_UINT32 65534  /* Sqr(max(uint_32))-1 (rounded down)*/
-
 //typedef int32_t STime;		/* Time can be negative. */
 typedef int64_t STime;		/* Time can be negative. */
 //typedef STime NInt;
@@ -195,6 +190,7 @@ enum{
 
 #if defined(RELEASE)
   #define R_ASSERT_NON_RELEASE(a)
+  #define R_ASSERT_NON_RELEASE2(a, returnvalue)
 #else
   #define R_ASSERT_NON_RELEASE(a) R_ASSERT(a)
   #define R_ASSERT_NON_RELEASE2(a, returnvalue) R_ASSERT_RETURN_IF_FALSE2(a, returnvalue)
@@ -318,13 +314,8 @@ enum ColorNums {
 
 
 
-struct Placement{
-	int line;
-	SDB
-	uint_32 counter; // What the ...? This is extremely dangerous. It should not be unsigned
-	uint_32 dividor; // Same here, although this one is probably not that much of a problem.
-};
-typedef struct Placement Place;
+#include "placement_type.h" // <--- TODO: place.counter should definitely not be unsigned.
+
 
 
 /*********************************************************************
