@@ -41,6 +41,8 @@
 
 (my-require 'mouse.scm)
 
+(my-require 'fxrange.scm)
+
 (my-require 'quantitize.scm)
 
 ;;(gc #f)

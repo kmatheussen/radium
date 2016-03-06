@@ -412,6 +412,7 @@ typedef struct{
 	logtype.h
 *********************************************************************/
 
+// Note that logtype values have been saved to disk for some time. These enum values can not change values without doing conversion when loading old songs.
 enum{
   LOGTYPE_IRRELEVANT = -2,    // Logtype value of a last node.
   LOGTYPE_IMMEDIATELY = -1,   // Like this: f(x) = f(1),  [ 0 <= x <= 1 ]

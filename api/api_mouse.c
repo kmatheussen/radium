@@ -2613,7 +2613,7 @@ void setIndicatorVelocityNode(int velocitynum, int notenum, int tracknum, int bl
 
 
 
-// fxes
+// fxs
 //////////////////////////////////////////////////
 
 void addFX(int tracknum, int blocknum, int windownum){
@@ -2773,6 +2773,24 @@ float getFxnodeValue(int fxnodenum, int fxnum, int tracknum, int blocknum, int w
   return scale(fxnodeline->val, min, max, 0.0f, 1.0f);
 }
 
+int getFxnodeLogtype(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return 0.0f;
+
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
+  struct Node *node = VECTOR_get(nodes, fxnodenum, "fx node");
+  if (node==NULL)
+    return 0.0f;
+
+  struct FXNodeLines *fxnodeline = (struct FXNodeLines*)node->element;
+
+  return fxnodeline->logtype;
+}
+
 const char* getFxName(int fxnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -2816,7 +2834,7 @@ char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
   return ret;
 }
 
-int getNumFxes(int tracknum, int blocknum, int windownum){
+int getNumFxs(int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   if (wtrack == NULL)
     return 0;
@@ -2969,7 +2987,7 @@ void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int trac
   return setFxnode3(fxnodenum, value, place, fxnum, tracknum, blocknum, windownum);
 }
 
-void setFxnodeLogtypeHolding(bool is_holding, int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
+void setFxnodeLogtype(int logtype, int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -2988,11 +3006,13 @@ void setFxnodeLogtypeHolding(bool is_holding, int fxnodenum, int fxnum, int trac
   struct Node *node = nodes->elements[fxnodenum];
   struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
 
-  int logtype = is_holding ? LOGTYPE_HOLD : LOGTYPE_LINEAR;
-  
   fxnodeline->logtype = logtype;
 
   window->must_redraw_editor = true;
+}
+void setFxnodeLogtypeHolding(bool is_holding, int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
+  int logtype = is_holding ? LOGTYPE_HOLD : LOGTYPE_LINEAR;
+  setFxnodeLogtype(logtype, fxnodenum, fxnum, tracknum, blocknum, windownum);
 }
 
 void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
@@ -3096,6 +3116,156 @@ void undoFxs(int tracknum, int blocknum, int windownum){
 }
 
 
+////////////////////////
+// fxs, clipboard
+
+#include "../common/clipboard_range.h"
+
+extern struct Range *range;
+
+Place getFxrangenodePlace(int fxnodenum, int fxnum, int rangetracknum){
+  if (range==NULL)
+    return place(0,0,1);
+
+  if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
+    RWarning("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
+    return place(0,0,1);
+  }
+  
+  struct FXs *fxs = ListFindElement1_num_r0(&range->fxs[rangetracknum]->l, fxnum);
+  if (fxs==NULL){
+    RWarning("fxnum > num_fxs: %d",fxnum);
+    return place(0,0,1);
+  }
+  
+  struct FXNodeLines *fxnodeline = ListFindElement3_num_r0(&fxs->fxnodelines->l, fxnodenum);
+
+  if (fxnodeline==NULL){
+    RWarning("getFxrangenodeValue: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
+    return place(0,0,1);
+  }
+
+  return fxnodeline->l.p;
+}
+
+
+float getFxrangenodeValue(int fxnodenum, int fxnum, int rangetracknum){
+  if (range==NULL)
+    return 0;
+
+  if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
+    RWarning("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
+    return 0;
+  }
+  
+  struct FXs *fxs = ListFindElement1_num_r0(&range->fxs[rangetracknum]->l, fxnum);
+  if (fxs==NULL){
+    RWarning("fxnum > num_fxs: %d",fxnum);
+    return 0;
+  }
+  
+  struct FXNodeLines *fxnodeline = ListFindElement3_num_r0(&fxs->fxnodelines->l, fxnodenum);
+
+  if (fxnodeline==NULL){
+    RWarning("getFxrangenodeValue: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
+    return 0;
+  }
+
+  int max = fxs->fx->max;
+  int min = fxs->fx->min;
+  
+  return scale(fxnodeline->val, min, max, 0.0f, 1.0f);
+}
+
+int getFxrangenodeLogtype(int fxnodenum, int fxnum, int rangetracknum){
+  if (range==NULL)
+    return 0;
+
+  if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
+    RWarning("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
+    return 0;
+  }
+  
+  struct FXs *fxs = ListFindElement1_num_r0(&range->fxs[rangetracknum]->l, fxnum);
+  if (fxs==NULL){
+    RWarning("fxnum > num_fxs: %d",fxnum);
+    return 0;
+  }
+  
+  struct FXNodeLines *fxnodelines = ListFindElement3_num_r0(&fxs->fxnodelines->l, fxnodenum);
+
+  if (fxnodelines==NULL){
+    RWarning("getFxrangenodeLogtype: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
+    return 0;
+  }
+
+  return fxnodelines->logtype;
+}
+
+const char* getFxrangeName(int fxnum, int rangetracknum){
+  if (range==NULL)
+    return 0;
+
+  if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
+    RWarning("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
+    return 0;
+  }
+
+  struct FXs *fxs = ListFindElement1_num_r0(&range->fxs[rangetracknum]->l, fxnum);
+  if (fxs==NULL){
+    RWarning("fxnum > num_fxs: %d",fxnum);
+    return "";
+  }
+  
+  return fxs->fx->name;
+}
+
+int getNumFxrangenodes(int fxnum, int rangetracknum){
+  if (range==NULL)
+    return 0;
+
+  if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
+    RWarning("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
+    return 0;
+  }
+
+  struct FXs *fxs = ListFindElement1_num_r0(&range->fxs[rangetracknum]->l, fxnum);
+  if (fxs==NULL){
+    RWarning("fxnum > num_fxs: %d",fxnum);
+    return 0;
+  }
+  
+  return ListFindNumElements3(&fxs->fxnodelines->l);
+}
+
+int getNumFxsInRange(int rangetracknum){
+  if (range==NULL)
+    return 0;
+
+  if (rangetracknum >= range->num_tracks || rangetracknum < 0){
+    RWarning("rangetracknum >= range->num_tracks: %d >= %d",rangetracknum, range->num_tracks);
+    return 0;
+  }
+
+  struct FXs *firstfxs = range->fxs[rangetracknum];
+  
+  return ListFindNumElements1(&firstfxs->l);
+}
+
+void clearTrackFX(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  struct Tracks *track = wtrack->track;
+
+  track->fxs = NULL;
+}
+
+
+//////////////////////////////////////////////////
 // track widths
 //////////////////////////////////////////////////
 

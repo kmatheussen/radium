@@ -105,6 +105,7 @@ extern LANGSPEC void ListAddElement1_ff(
 extern LANGSPEC void *ListFindElement1(const struct ListHeader1 *list,NInt num);
 extern LANGSPEC void *ListFindElementP(struct ListHeaderP *list,NInt num);
 extern LANGSPEC void *ListFindElement1_r0(const struct ListHeader1 *list,NInt num);
+extern LANGSPEC void *ListFindElement1_num_r0(const struct ListHeader1 *list,NInt num);
 
 extern LANGSPEC void *ListFindElement3(
 	const struct ListHeader3 *element,

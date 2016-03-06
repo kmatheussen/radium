@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/list_proc.h"
+#include "../common/placement_proc.h"
 #include "../common/velocities_proc.h"
 #include "../common/tempos_proc.h"
 #include "../common/Signature_proc.h"
@@ -518,6 +519,13 @@ int getNumTracks(int blocknum){
   if(wblock==NULL) return 0;
 
   return wblock->block->num_tracks;
+}
+
+int getNumLines(int blocknum){
+  struct WBlocks *wblock = getWBlockFromNum(-1, blocknum);
+  if(wblock==NULL) return 0;
+
+  return wblock->block->num_lines;
 }
 
 int getNumBlocks(void){
@@ -1027,4 +1035,24 @@ void setPlaylistBlock(int pos, int blocknum){
     return;
 
   BL_setBlock(pos, block);
+}
+
+int getLogtypeHold(void){
+  return LOGTYPE_HOLD;
+}
+
+Place getCursorPlace(int blocknum, int windownum){
+  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);if(wblock==NULL) return place(0,0,1);
+
+  return wblock->reallines[wblock->curr_realline]->l.p;
+}
+
+int getCursorTrack(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+
+  return window->curr_track;
+}
+
+int getHighestLegalPlaceDenominator(void){
+  return MAX_UINT32;
 }

@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Python.h"
 
 #include "../common/nsmtracker.h"
+#include "../common/placement_proc.h"
 #include "../common/clipboard_range_proc.h"
 #include "../common/clipboard_range_copy_proc.h"
 #include "../common/clipboard_range_paste_proc.h"
@@ -81,3 +82,22 @@ void markRange(int windownum){
   MarkRange_CurrPos(window);
 }
 
+
+#include "../common/clipboard_range.h"
+
+extern struct Range *range;
+
+
+int getNumTracksInRange(void){
+  if (range==NULL)
+    return 0;
+
+  return range->num_tracks;
+}
+
+Place getRangeLength(void){
+  if (range==NULL)
+    return place(0,0,1);
+
+  return range->length;
+}

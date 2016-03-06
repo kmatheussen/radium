@@ -2009,7 +2009,7 @@
 (define-match get-fxnode-0
   X Y -1       :> #f
   X Y Tracknum :> #f :where (>= Tracknum (<ra> :get-num-tracks))
-  X Y Tracknum :> (get-fxnode-1 X Y Tracknum 0 (<ra> :get-num-fxes Tracknum)))
+  X Y Tracknum :> (get-fxnode-1 X Y Tracknum 0 (<ra> :get-num-fxs Tracknum)))
 
 (define-match get-fxnode-info
   X Y #f       :> (get-fxnode-info X Y 0)
@@ -2019,7 +2019,7 @@
 
 
 #||
-(<ra> :get-num-fxes 0)
+(<ra> :get-num-fxs 0)
 (let ((node (get-fxnode-info 347 211 0)))
   (c-display "hm?" node)
   (if node
@@ -2087,10 +2087,10 @@
 
 
 (define (get-closest-fx X Y)
-  (get-closest-fx-0 0 (<ra> :get-num-fxes *current-track-num*) X Y))
+  (get-closest-fx-0 0 (<ra> :get-num-fxs *current-track-num*) X Y))
 
 #||
-(<ra> :get-num-fxes 0)
+(<ra> :get-num-fxs 0)
 ||#
 
 ;; add and move fxnode

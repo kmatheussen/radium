@@ -24,9 +24,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_range_cut_proc.h"
 #include "wtracks_proc.h"
 #include "fxlines_legalize_proc.h"
+#include "undo.h"
 #include "undo_range_proc.h"
+#include "undo_blocks_proc.h"
 #include "player_proc.h"
 #include "notes_proc.h"
+#include "../embedded_scheme/scheme_proc.h"
 
 #include "clipboard_range_paste_proc.h"
 
@@ -62,41 +65,31 @@ void PasteRange_velocities(
 }
 
 #if 0
-static bool PasteRange_FX(
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	struct WTracks *towtrack
+static bool PasteRange_FXs(
+                           struct Blocks *block,
+                           NInt starttrack,
+                           Place *startplace
 ){
-	struct Tracks *totrack;
-	struct Tracks *track;
-	Place *p1,p2;
 
-        R_ASSERT_RETURN_IF_FALSE2(towtrack!=NULL, false);
+  SCHEME_eval(
+              talloc_format("(paste-range %d %d (+ %d (/ %d %d)))",
+                            block->l.num,
+                            starttrack,
+                            startplace->line, startplace->counter, startplace->dividor
+                            )
+              );
 
-	totrack=towtrack->track;
-	track=wtrack->track;
 
-        if (track->patch != NULL && track->patch->is_usable)
-          totrack->patch = track->patch;
-        else
-          totrack->patch = NULL;
+  struct Tracks *track=ListFindElement1(&block->tracks->l,starttrack);
+  int lokke;
+  for(lokke=0;lokke<range->num_tracks;lokke++){
+    LegalizeFXlines(block,track); // should not be not necessary though.
+    track=NextTrack(track);
+    if(track==NULL) break;
+  }
 
-#if 0
-	if(track->midi_instrumentdata!=NULL){
-          totrack->midi_instrumentdata=MIDI_CopyInstrumentData(track);
-	}
-#endif
-        
-	totrack->fxs=NULL;
 
-	p1=PlaceGetFirstPos();
-	PlaceSetLastPos(wblock->block,&p2);
-
-	CopyRange_fxs(&totrack->fxs,track->fxs,p1,&p2);
-
-	LegalizeFXlines(wblock->block,totrack);
-
-	return true;
+  return true;
 }
 #endif
 
@@ -218,11 +211,11 @@ void PasteRange(
 	for(lokke=0;lokke<range->num_tracks;lokke++){
 		PasteRange_notes(block,track,range->notes[lokke],place);
 		PasteRange_stops(block,track,range->stops[lokke],place);
-                //PasteRange_FX(block,track,range->stops[lokke],place);
 		track=NextTrack(track);
 		if(track==NULL) break;
 	}
 
+        //PasteRange_FXs(block, tracknum, place);
 }
 
 void PasteRange_CurrPos(
@@ -239,16 +232,30 @@ void PasteRange_CurrPos(
 
 	PlayStop();
 
-	Undo_Range(
-		window,
-		block,
-		curr_track,
-		curr_track+range->num_tracks-1,
-		wblock->curr_realline
-	);
+        Undo_Open();{
 
-	PasteRange(block,curr_track,&realline[curr_realline]->l.p);
+          /*
+          Undo_Range(
+                     window,
+                     block,
+                     curr_track,
+                     curr_track+range->num_tracks-1,
+                     wblock->curr_realline
+                   );
+          */
 
+          Undo_Block(window,
+                     wblock,
+                     wblock->wtrack,
+                     wblock->curr_realline
+                     );
+
+          // There should be a Undo_dont_add_more_undo() function which could be called here.
+          
+          PasteRange(block,curr_track,&realline[curr_realline]->l.p);
+
+        }Undo_Close();
+        
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
 		window->wblock,

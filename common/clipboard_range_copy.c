@@ -147,33 +147,76 @@ void CopyRange_stops(
 
 }
 
+static void add_fxnodeline(
+                           struct FXNodeLines **tofxnodeline,
+                           struct FXNodeLines *fromfxnodeline,
+                           Place subtract
+){               
+  struct FXNodeLines *fxnodeline=talloc(sizeof(struct FXNodeLines));
+  memcpy(fxnodeline, fromfxnodeline, sizeof(struct FXNodeLines));
+  
+  fxnodeline->l.p = p_Sub(fxnodeline->l.p, subtract);
+  
+  ListAddElement3(tofxnodeline,&fxnodeline->l);
+}
 
-void CopyRange_fxnodelines(
-	struct FXNodeLines **tofxnodeline,
-	struct FXNodeLines *fromfxnodeline,
-	Place *p1,
-	Place *p2
+
+static void add_scaled_fxnodeline(
+                                  struct FXNodeLines **tofxnodeline,
+                                  struct FXNodeLines *nodeline1,
+                                  struct FXNodeLines *nodeline2,
+                                  Place p,
+                                  Place subtract
 ){
-	struct FXNodeLines *fxnodeline;
+  struct FXNodeLines fxnodeline = *nodeline1;
+  fxnodeline.l.p = p;
 
+  R_ASSERT(p_Greater_Or_Equal(p,              nodeline1->l.p));
+  R_ASSERT(p_Greater_Or_Equal(nodeline2->l.p, p));
+  
+  if (nodeline1->logtype != LOGTYPE_HOLD)
+    fxnodeline.val = scale(p_float(p), p_float(nodeline1->l.p), p_float(nodeline2->l.p), nodeline1->val, nodeline2->val);
+
+  add_fxnodeline(tofxnodeline, &fxnodeline, subtract);
+}
+
+
+
+static void CopyRange_fxnodelines(
+                                  struct FXNodeLines **tofxnodeline,
+                                  struct FXNodeLines *fromfxnodeline,
+                                  struct FXNodeLines *last,
+                                  Place p1,
+                                  Place p2
+){
 	if(fromfxnodeline==NULL) return;
 
-	if(PlaceLessThan(&fromfxnodeline->l.p,p1)){
-		CopyRange_fxnodelines(tofxnodeline,NextFXNodeLine(fromfxnodeline),p1,p2);
-		return;
+	if(p_Less_Than(fromfxnodeline->l.p, p1)){
+          CopyRange_fxnodelines(tofxnodeline,
+                                NextFXNodeLine(fromfxnodeline),
+                                fromfxnodeline,
+                                p1,
+                                p2);
+          return;
 	}
 
-	if(PlaceGreaterOrEqual(&fromfxnodeline->l.p,p2)) return;
-        
-	fxnodeline=talloc(sizeof(struct FXNodeLines));
-        memcpy(fxnodeline, fromfxnodeline, sizeof(struct FXNodeLines));
+        if (last!=NULL)
+          if (p_Less_Than(last->l.p, p1))
+            add_scaled_fxnodeline(tofxnodeline, last, fromfxnodeline, p1, p1);
 
-	PlaceSub(&fxnodeline->l.p,p1);
+        if(p_Greater_Or_Equal(fromfxnodeline->l.p, p2)) {
+          if (last!=NULL)
+            add_scaled_fxnodeline(tofxnodeline, last, fromfxnodeline, p2, p1);
+          return;
+        }
 
-	ListAddElement3(tofxnodeline,&fxnodeline->l);
+        add_fxnodeline(tofxnodeline, fromfxnodeline, p1);
 
-	CopyRange_fxnodelines(tofxnodeline,NextFXNodeLine(fromfxnodeline),p1,p2);
-
+	CopyRange_fxnodelines(tofxnodeline,
+                              NextFXNodeLine(fromfxnodeline),
+                              fromfxnodeline,
+                              p1,
+                              p2);
 }
 
 
@@ -196,7 +239,7 @@ void CopyRange_fxs(
 
 	ListAddElement1(tofxs,&fxs->l);
 
-	CopyRange_fxnodelines(&fxs->fxnodelines,fromfxs->fxnodelines,p1,p2);
+	CopyRange_fxnodelines(&fxs->fxnodelines,fromfxs->fxnodelines,NULL,*p1,*p2);
 
 	CopyRange_fxs(tofxs,NextFX(fromfxs),p1,p2);
 }

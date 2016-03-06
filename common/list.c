@@ -534,6 +534,20 @@ void *ListFindElement1_r0(const struct ListHeader1 *list,NInt num){
 	return NULL;
 }
 
+void *ListFindElement1_num_r0(
+	const struct ListHeader1 *element,
+	NInt num
+){
+	int lokke;
+
+	for(lokke=0;lokke<num && element!=NULL;lokke++)
+          if (element==NULL)
+            return NULL;
+          else
+            element=element->next;
+
+	return (void*)element;
+}
 
 /**********************************************************************
   FUNCTION
