@@ -460,6 +460,8 @@ static void AUDIO_PlayFromStartHook(struct Instruments *instrument){
 }
 
 static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
+  R_ASSERT(PLAYER_current_thread_has_lock());
+    
   SoundPlugin *old_plugin = (SoundPlugin*) old_patch->patchdata;
   const SoundPluginType *old_type = old_plugin->type;
   int num_old_effects = old_type->num_effects;
@@ -479,18 +481,16 @@ static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *tra
     struct FXs *next = NextFX(fxs);
     {
       struct FX *fx = fxs->fx;
-      PLAYER_lock();{
-        if(fx->effect_num >= num_old_effects){
-          fx->effect_num = num_new_effects + (fx->effect_num - num_old_effects);
-          fx->num = fx->effect_num;
-          fxs->l.num = fx->effect_num; // TODO: Merge these three variables into one. I don't think the values of them should ever be different.
-          init_fx_color(fx, new_type->num_effects);
-          ATOMIC_SET(fx->slider_automation_value, OS_SLIDER_obtain_automation_value_pointer(new_patch,fx->effect_num));
-          ATOMIC_SET(fx->slider_automation_color, OS_SLIDER_obtain_automation_color_pointer(new_patch,fx->effect_num));
-        }else{
-          ListRemoveElement1(&track->fxs, &fxs->l);
-        }
-      }PLAYER_unlock();
+      if(fx->effect_num >= num_old_effects){
+        fx->effect_num = num_new_effects + (fx->effect_num - num_old_effects);
+        fx->num = fx->effect_num;
+        fxs->l.num = fx->effect_num; // TODO: Merge these three variables into one. I don't think the values of them should ever be different.
+        init_fx_color(fx, new_type->num_effects);
+        ATOMIC_SET(fx->slider_automation_value, OS_SLIDER_obtain_automation_value_pointer(new_patch,fx->effect_num));
+        ATOMIC_SET(fx->slider_automation_color, OS_SLIDER_obtain_automation_color_pointer(new_patch,fx->effect_num));
+      }else{
+        ListRemoveElement1(&track->fxs, &fxs->l);
+      }
     }
     fxs = next;
   }

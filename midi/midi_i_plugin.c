@@ -647,6 +647,8 @@ void MIDIStopPlaying(struct Instruments *instrument){
 }
 
 static void MIDI_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
+  R_ASSERT(PLAYER_current_thread_has_lock());
+    
   return; // Keep fx. All patches use same fx system.
 }
 

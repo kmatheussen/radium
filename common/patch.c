@@ -96,7 +96,8 @@ void PATCH_reset_time(void){
 }
 
 static void handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
-
+  R_ASSERT(PLAYER_current_thread_has_lock());
+  
   // 1. Do instrument specific changes
   if(old_patch==NULL || new_patch==NULL)
     track->fxs = NULL;
@@ -108,13 +109,11 @@ static void handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, st
   // 2. Update fx->patch value
   struct FXs *fxs = track->fxs;
   if (fxs != NULL) {
-    PLAYER_lock();{
-      while(fxs!=NULL){
-        struct FX *fx = fxs->fx;
-        fx->patch = new_patch;
-        fxs = NextFX(fxs);
-      }
-    }PLAYER_unlock();
+    while(fxs!=NULL){
+      struct FX *fx = fxs->fx;
+      fx->patch = new_patch;
+      fxs = NextFX(fxs);
+    }
   }
 
 }
@@ -343,10 +342,12 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
         if(patch!=NULL){
           struct Tracks *track=wtrack->track;
 
-          handle_fx_when_theres_a_new_patch_for_track(track,track->patch,patch);
-
           PLAYER_lock();{
+
+            handle_fx_when_theres_a_new_patch_for_track(track,track->patch,patch);
+            
             track->patch=patch;
+            
           }PLAYER_unlock();
 
 #if !USE_OPENGL
