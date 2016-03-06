@@ -30,9 +30,12 @@
             (cons fx
                   (remove-fx (cdr fxs) name))))))
   
+
 ;; Returns the range fx for a track, skewed into 'startline'. All fx after 'endline' is not included.
 (define (get-range-fxs rangetracknum startline endline)
+  
   ...)
+
 
 (define (get-track-fxs blocknum tracknum)
   ...)
@@ -118,7 +121,7 @@
          track-fxs)
         (let* ((range-fx (car range-fxs))
                (name (car range-fx))               
-               (track-fx (find-fx track-fxs name)))
+               (track-fx (find-fx-nodes track-fxs name)))
           (if track-fx
               (cons (create-fx name
                                (merge-fx-nodes (cadr track-fx) (cadr range-fxs)))
@@ -135,12 +138,14 @@
 
 (define (paste-range blocknum starttrack)
   (let loop ((rangetracknum 0))
-    (define tracknum (+ rangetracknum starttrack))  
-    (let ((range-fx (get-range-fx rangetracknum))
-          (track-fx (get-track-fx blocknum tracknum)))
+    (define tracknum (+ rangetracknum starttrack))
+    (let ((range-fxs (get-range-fxs rangetracknum))
+          (track-fxs (get-track-fxs blocknum tracknum)))
       (if (or (not range-fx)
               (not track-fx))
           #t
           (begin
-            (paste-track-fx blocknum tracknum (merge-fx track-fx range-fx)))
+            (paste-track-fx blocknum
+                            tracknum
+                            (merge-fxs track-fx range-fx))
             (loop (1+ rangetracknum)))))))

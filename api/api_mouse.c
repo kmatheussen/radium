@@ -153,11 +153,11 @@ void setMouseTrackToReltempo(void){
 // placement (block time)
 ///////////////////////////////////////////////////
 
-float getPlaceFromY(float y, int blocknum, int windownum) {
+Place getPlaceFromY(float y, int blocknum, int windownum) {
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL)
-    return 0.0;
+    return place(0,0,1);
 
   Place place;
 
@@ -169,7 +169,7 @@ float getPlaceFromY(float y, int blocknum, int windownum) {
                            NULL
                            );
   
-  return GetFloatFromPlace(&place);
+  return place;
 }
 
 
@@ -183,11 +183,11 @@ static double get_gridded_abs_y(struct Tracker_Windows *window, float abs_y){
   return rounded * grid * window->fontheight;
 }
 
-float getPlaceInGridFromY(float y, int blocknum, int windownum) {
+Place getPlaceInGridFromY(float y, int blocknum, int windownum) {
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL)
-    return 0.0;
+    return place(0,0,1);
 
   // This is a hack, but it's a relatively clean one, and modifying GetReallineAndPlaceFromY is a quite major work (old code, hard to understand, it should be rewritten).
   float abs_y = (y-wblock->t.y1) + wblock->top_realline*window->fontheight;
@@ -204,7 +204,7 @@ float getPlaceInGridFromY(float y, int blocknum, int windownum) {
                            NULL
                            );
   
-  return GetFloatFromPlace(&place);
+  return place;
 }
 
 
@@ -218,11 +218,11 @@ static double get_next_gridded_abs_y(struct Tracker_Windows *window, float abs_y
   return rounded * grid * window->fontheight;
 }
 
-float getNextPlaceInGridFromY(float y, int blocknum, int windownum) {
+Place getNextPlaceInGridFromY(float y, int blocknum, int windownum) {
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL)
-    return 0.0;
+    return place(0,0,1);
 
   // This is a hack, but it's a relatively clean one, and modifying GetReallineAndPlaceFromY is a quite major work (old code, hard to understand, it should be rewritten).
   float abs_y = (y-wblock->t.y1) + wblock->top_realline*window->fontheight;
@@ -239,7 +239,7 @@ float getNextPlaceInGridFromY(float y, int blocknum, int windownum) {
                            NULL
                            );
   
-  return GetFloatFromPlace(&place);
+  return place;
 }
 
 
@@ -799,7 +799,7 @@ void setIndicatorTemponode(int num, int blocknum){
   setIndicatorNode(&temponode->l);
 }
 
-void setTemponode(int num, float value, float floatplace, int blocknum, int windownum){
+void setTemponode(int num, float value, Place place, int blocknum, int windownum){
 
   PlayStop();
 
@@ -828,12 +828,10 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
     RWarning("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
     return;
     
-  } else if (floatplace < 0) {
+  } else if (place.line < 0) {
     temponode = ListFindElement3_num(&block->temponodes->l, num);
 
   } else {
-    Place place;
-    Float2Placement(floatplace, &place);
     temponode = (struct TempoNodes *)ListMoveElement3_FromNum_ns(&block->temponodes, num, &place, NULL, NULL);
   }
   
@@ -891,7 +889,7 @@ void deleteTemponode(int num, int blocknum){
   window->must_redraw_editor = true;
 }
 
-int createTemponode(float value, float floatplace, int blocknum, int windownum){
+int createTemponode(float value, Place place, int blocknum, int windownum){
   PlayStop();
 
   struct Tracker_Windows *window;
@@ -903,15 +901,12 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
 
   struct Blocks *block = wblock->block;
   
-  if (floatplace<=0.0f)
+  if (place.line < 0)
     return -1;
 
-  if (floatplace>=block->num_lines)
+  if (place.line >= block->num_lines)
     return -1;
   
-  Place place;
-  Float2Placement(floatplace, &place);
-
   if ( (value+1) > wblock->reltempomax) {
     wblock->reltempomax = value+1;      
   } else if ( (value-1) < -wblock->reltempomax) {
