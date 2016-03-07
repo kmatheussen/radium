@@ -262,8 +262,7 @@ static void init_fx(struct FX *fx, int effect_num, const char *name, int num_eff
 
 }
 
-static vector_t *AUDIO_getFxNames(const struct Tracks *track){
-  struct Patch *patch = track->patch; // patch can not be NULL (we got instrument through track-patch)
+static vector_t *AUDIO_getFxNames(const struct Patch *patch){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   const SoundPluginType *plugin_type = plugin->type;
 

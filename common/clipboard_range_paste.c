@@ -64,7 +64,6 @@ void PasteRange_velocities(
 	PasteRange_velocities(block,tovelocity,NextVelocity(fromvelocity),place);
 }
 
-#if 0
 static bool PasteRange_FXs(
                            struct Blocks *block,
                            NInt starttrack,
@@ -91,7 +90,6 @@ static bool PasteRange_FXs(
 
   return true;
 }
-#endif
 
 
 void PasteRange_pitches(
@@ -215,7 +213,7 @@ void PasteRange(
 		if(track==NULL) break;
 	}
 
-        //PasteRange_FXs(block, tracknum, place);
+        PasteRange_FXs(block, tracknum, place);
 }
 
 void PasteRange_CurrPos(

@@ -729,7 +729,7 @@ struct Instruments{
 
         //int (*getMaxVelocity)(const struct Patch *patch);
 
-        vector_t *(*getFxNames)(const struct Tracks *track);
+        vector_t *(*getFxNames)(const struct Patch *patch);
         struct FX *(*createFX)(const struct Tracks *track, int effect_num);
   
 	int (*getFX)(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx);

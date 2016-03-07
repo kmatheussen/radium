@@ -66,6 +66,29 @@ void selectPatchForTrack(int tracknum,int blocknum,int windownum){
   PATCH_select_patch_for_track(window,wtrack,false);
 }
 
+int getInstrumentForTrack(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return -1;
+
+  struct Patch *patch = wtrack->track->patch;
+
+  if (patch==NULL)
+    return -1;
+
+  return patch->id;
+}
+
 void setInstrumentForTrack(int instrument_num, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
@@ -119,6 +142,33 @@ int createAudioInstrument(char *type_name, char *plugin_name, char *name) {
 
   GFX_PP_Update(patch);
   return patch->id;
+}
+
+int getNumInstrumentEffects(int instrument_num){
+  struct Patch *patch = PATCH_get_from_id(instrument_num);
+  if(patch==NULL){
+    RError("instrument %d not found", instrument_num);
+    return 0;
+  }
+
+  return patch->instrument->getFxNames(patch)->num_elements;
+}
+
+const_char* getInstrumentEffectName(int effect_num, int instrument_num){
+  struct Patch *patch = PATCH_get_from_id(instrument_num);
+  if(patch==NULL){
+    RError("instrument %d not found", instrument_num);
+    return "";
+  }
+
+  vector_t *elements = patch->instrument->getFxNames(patch);
+  
+  if (effect_num >= elements->num_elements){
+    RError("effect_num >= num_effects: %d >= %d",effect_num, elements->num_elements);
+    return "";
+  }
+    
+  return talloc_strdup(elements->elements[effect_num]);
 }
 
 void setInstrumentSample(int instrument_num, char *filename){

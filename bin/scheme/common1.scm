@@ -281,6 +281,21 @@
          (find-first (cdr das-list) func))))
 
 
+(define (find-last das-list func)
+  (let loop ((candidate #f)
+             (das-list das-list))
+    (if (null? das-list)
+        candidate
+        (loop (or (and (func (car das-list))
+                       (car das-list))
+                  candidate)
+              (cdr das-list)))))
+
+#||
+(find-last '(2 5 3 9 8) (lambda (x)
+                          (< x 4)))
+||#
+
 (define (split-list das-list func)
   (let loop ((before '())
              (after das-list))

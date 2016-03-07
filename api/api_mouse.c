@@ -2664,7 +2664,7 @@ int createFx3(float value, Place place, const char* fx_name, int tracknum, int b
   }
 
   int effect_num = 0;
-  VECTOR_FOR_EACH(const char *name,patch->instrument->getFxNames(track)){
+  VECTOR_FOR_EACH(const char *name,patch->instrument->getFxNames(patch)){
     if (!strcmp(name, fx_name))
       goto gotit;
     else

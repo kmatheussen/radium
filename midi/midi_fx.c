@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 static struct MIDI_FX MIDI_fxs[MIDI_NUM_FX]={
-  {"Program Change",0,127,PROGRAMCHANGE_CC},
+        {"Program Change",0,127,PROGRAMCHANGE_CC},
 
 	{"-----------------------",0,0,-1},
 
@@ -384,10 +384,73 @@ bool MIDISetTreatFX(struct FX *fx,struct MIDI_FX *midi_fx){
 	return true;
 }
 
-int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx){
+static int init_fx(const struct Tracks *track,struct FX *fx, struct MIDI_FX *midi_fx){
 
 	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->midi_instrumentdata;
 	struct UsedTrackMidiCCs *usmf;
+
+        fx->effect_num = midi_fx->effect_num;
+
+        int num_fx_colors = AUTOMATION8_COLOR_NUM - AUTOMATION1_COLOR_NUM;
+        fx->color = AUTOMATION1_COLOR_NUM + (fx->effect_num%num_fx_colors);
+
+	fx->fxdata=midi_fx;
+
+	fx->num   = (NInt)fx->effect_num;
+	fx->name    = midi_fx->name;
+	fx->min     = midi_fx->min;
+	fx->max     = midi_fx->max;
+	fx->closeFX = &MIDI_closeFX;
+	fx->SaveFX  = MIDISaveFX;
+
+	if( ! MIDISetTreatFX(fx,midi_fx)){
+		return FX_FAILED;
+	}
+
+	usmf          = talloc(sizeof(struct UsedTrackMidiCCs));
+	usmf->next    = tid->usmf;
+	tid->usmf     = usmf;
+	usmf->midi_fx = midi_fx;
+
+	return FX_SUCCESS;
+}
+
+struct FX *MIDI_createFX(const struct Tracks *track, int effect_num){
+  //RError("MIDI_getFxNames is not implemented. Expect the unexpected.");
+
+  struct Patch *patch = track->patch; // patch can not be NULL (we got instrument through track-patch)
+
+  struct MIDI_FX *midi_fx = &MIDI_fxs[effect_num];
+        
+  struct FX *fx=talloc(sizeof(struct FX));
+
+  int num_fx_colors = AUTOMATION8_COLOR_NUM - AUTOMATION1_COLOR_NUM;
+  fx->color = AUTOMATION1_COLOR_NUM + (effect_num%num_fx_colors);
+
+  fx->patch = patch;
+
+  if (init_fx(track, fx, midi_fx)==FX_FAILED)
+    return NULL;
+  
+  return fx;
+}
+
+
+vector_t *MIDI_getFxNames(const struct Patch *patch){
+  vector_t *v=talloc(sizeof(vector_t));
+  //RError("MIDI_getFxNames is not implemented");
+
+  int lokke;
+  
+  for(lokke=0;lokke<MIDI_NUM_FX;lokke++)
+    VECTOR_push_back(v,midi_fxs_fullnames[lokke]);
+
+  return v;
+}
+
+int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx){
+
+	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->midi_instrumentdata;
 	struct MIDI_FX *midi_fx;
 
 	int lokke,selection;
@@ -461,30 +524,8 @@ int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct F
 		if( ! isFXUsed(tid,midi_fx)) break;
 	}
 
-        fx->effect_num = midi_fx->effect_num;
-
-        int num_fx_colors = AUTOMATION8_COLOR_NUM - AUTOMATION1_COLOR_NUM;
-        fx->color = AUTOMATION1_COLOR_NUM + (fx->effect_num%num_fx_colors);
-
-	fx->fxdata=midi_fx;
-
-	fx->num   = (NInt)fx->effect_num;
-	fx->name    = midi_fx->name;
-	fx->min     = midi_fx->min;
-	fx->max     = midi_fx->max;
-	fx->closeFX = &MIDI_closeFX;
-	fx->SaveFX  = MIDISaveFX;
-
-	if( ! MIDISetTreatFX(fx,midi_fx)){
-		return FX_FAILED;
-	}
-
-	usmf          = talloc(sizeof(struct UsedTrackMidiCCs));
-	usmf->next    = tid->usmf;
-	tid->usmf     = usmf;
-	usmf->midi_fx = midi_fx;
-
-	return FX_SUCCESS;
+        
+        return init_fx(track, fx, midi_fx);
 }
 
 

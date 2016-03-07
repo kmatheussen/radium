@@ -307,7 +307,7 @@ bool PLAYER_current_thread_has_lock(void){
 
 static void init_player_lock(void){
 
-  LOCK_INITIALIZE(player_runner_lock); // Don't have to do anything special. It's always called from a realtime thread, and never recursively.
+  LOCK_INITIALIZE(player_runner_lock); // Don't have to do anything special. The player_runner_lock is always called from a realtime thread, and never recursively.
 
 #if defined(FOR_LINUX) || defined(FOR_MACOSX)
   int s1 = pthread_mutexattr_init(&player_lock_mutexattr);

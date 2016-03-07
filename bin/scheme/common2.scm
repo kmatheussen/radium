@@ -613,6 +613,17 @@ for .emacs:
                      (c-display "hepp")))
 ||#
 
+(define *num-radium-ticks* (<ra> :get-highest-legal-place-denominator))
+(define *smallest-radium-tick* (/ 1 *num-radium-ticks*))
+(define (-line linenum)
+  (- linenum *smallest-radium-tick*))
+
+#||
+(define (+line linenum)
+  (+ linenum *smallest-radium-tick*))
+||#
+
+
 (define (my-equal? a b)
   ;;(c-display "my-equal?" a b)
   (cond ((and (pair? a)
