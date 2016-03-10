@@ -192,7 +192,7 @@ void PExpandRange_CurrPos(
 
 	Undo_Range(
 		window,
-		window->wblock->block,
+		window->wblock,
 		window->wblock->rangex1,
 		window->wblock->rangex2,
 		window->wblock->curr_realline
@@ -241,7 +241,7 @@ void PExpandBlock_CurrPos(
 
 	Undo_Range(
 		window,
-		window->wblock->block,
+		window->wblock,
 		0,window->wblock->block->num_tracks-1,
 		window->wblock->curr_realline
 	);

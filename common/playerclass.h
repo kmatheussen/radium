@@ -100,7 +100,7 @@ typedef struct{
 
 	struct PEventQueue *peq;	// Player events.
 
-        int pfreq; // player frequency. i.e. sample rate.
+        int pfreq; // player frequency. i.e. sample rate. TODO: Get rid of this one. Use MIXER_getsamplerate instead.
 
         volatile STime start_time; // During current call to peq->treatMe
         volatile STime end_time;   // During current call to peq->treatMe

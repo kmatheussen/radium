@@ -790,3 +790,13 @@ for .emacs:
                   (cons a
                         (remove-duplicates-in-sorted-list comparer (cdr das-list)))))))))
                    
+
+(define (integer-range start-inclusive end-inclusive)
+  (map (lambda (i)
+         (+ i start-inclusive))
+       (iota (1+ (- end-inclusive start-inclusive)))))
+
+(***assert*** (integer-range 0 5)
+              '(0 1 2 3 4 5))
+(***assert*** (integer-range 5 5)
+              '(5))

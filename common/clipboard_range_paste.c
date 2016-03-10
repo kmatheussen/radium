@@ -71,7 +71,7 @@ static bool PasteRange_FXs(
 ){
 
   SCHEME_eval(
-              talloc_format("(paste-range %d %d (+ %d (/ %d %d)))",
+              talloc_format("(paste-fx-range! %d %d (+ %d (/ %d %d)))",
                             block->l.num,
                             starttrack,
                             startplace->line, startplace->counter, startplace->dividor
@@ -232,21 +232,13 @@ void PasteRange_CurrPos(
 
         Undo_Open();{
 
-          /*
           Undo_Range(
                      window,
-                     block,
+                     wblock,
                      curr_track,
                      curr_track+range->num_tracks-1,
                      wblock->curr_realline
                    );
-          */
-
-          Undo_Block(window,
-                     wblock,
-                     wblock->wtrack,
-                     wblock->curr_realline
-                     );
 
           // There should be a Undo_dont_add_more_undo() function which could be called here.
           

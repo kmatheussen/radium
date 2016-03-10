@@ -21,8 +21,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_range_copy_proc.h"
 #include "clipboard_range_calc_proc.h"
 #include "wtracks_proc.h"
+#include "undo.h"
 #include "undo_range_proc.h"
+#include "undo_blocks_proc.h"
 #include "player_proc.h"
+#include "../embedded_scheme/scheme_proc.h"
 
 #include "clipboard_range_cut_proc.h"
 
@@ -97,6 +100,18 @@ void CutRange(
 		track=NextTrack(track);
 	}
 
+        Place *startplace = p1;
+        Place *endplace = p2;
+
+        SCHEME_eval(
+                    talloc_format("(cut-fx-range! %d %d %d (+ %d (/ %d %d)) (+ %d (/ %d %d)))",
+                                  block->l.num,
+                                  starttrack,
+                                  endtrack,
+                                  startplace->line, startplace->counter, startplace->dividor,
+                                  endplace->line, endplace->counter, endplace->dividor
+                                  )
+                    );
 }
 
 /**********************************************
@@ -115,6 +130,7 @@ void CutRangedRange(
 	p2=getRangeEndPlace(wblock);
 
 	CutRange(wblock->block,wblock->rangex1,wblock->rangex2,p1,p2);
+        
 	wblock->isranged=false;
 }
 
@@ -122,37 +138,41 @@ void CutRangedRange(
 void CutRange_CurrPos(
 	struct Tracker_Windows *window
 ){
+  struct WBlocks *wblock = window->wblock;
+  
 	if( ! window->wblock->isranged) return;
 
 	PlayStop();
 
-	Undo_Range(
-		window,
-		window->wblock->block,
-		window->wblock->rangex1,
-		window->wblock->rangex2,
-		window->wblock->curr_realline
-	);
+	CopyRange(wblock);
 
-	CopyRange(window->wblock);
+        
+        
+	wblock->isranged=true;
 
-	window->wblock->isranged=true;
+        Undo_Open();{
 
-	CutRangedRange(window->wblock);
-
-	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
+            Undo_Range(
 		window,
 		window->wblock,
 		window->wblock->rangex1,
-		window->wblock->rangex2
-	);
+		window->wblock->rangex2,
+		window->wblock->curr_realline
+                );
 
+          CutRangedRange(wblock);
+          
+        }Undo_Close();
+        
+	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
+                                                      window,
+                                                      wblock,
+                                                      wblock->rangex1,
+                                                      wblock->rangex2
+                                                      );
+        
         window->must_redraw = true;
 }
-
-
-
-
 
 
 

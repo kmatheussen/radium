@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "undo.h"
+#include "undo_blocks_proc.h"
 #include "clipboard_range.h"
 #include "placement_proc.h"
 #include "list_proc.h"
@@ -27,6 +28,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "undo_range_proc.h"
 
+
+void Undo_Range(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	NInt starttrack,
+	NInt endtrack,
+	int realline
+){
+  Undo_Block(window,
+             wblock,
+             wblock->wtrack,
+             wblock->curr_realline
+             );
+}
+
+#if 0
+// too flaky
 
 void *Undo_Do_Range(
 	struct Tracker_Windows *window,
@@ -105,3 +123,4 @@ void *Undo_Do_Range(
 }
 
 
+#endif

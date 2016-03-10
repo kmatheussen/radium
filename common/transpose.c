@@ -130,7 +130,7 @@ void TransposeRange_CurrPos(
 	if(!window->wblock->isranged) return;
 
 
-	Undo_Range(window,window->wblock->block,window->wblock->rangex1,window->wblock->rangex2,window->wblock->curr_realline);
+	Undo_Range(window,window->wblock,window->wblock->rangex1,window->wblock->rangex2,window->wblock->curr_realline);
 
 	TransposeRange(window->wblock,trans);
 
@@ -190,7 +190,7 @@ void TransposeBlock_CurrPos(
 
 	Undo_Range(
 		window,
-		window->wblock->block,
+		window->wblock,
 		0,window->wblock->block->num_tracks-1,
 		window->wblock->curr_realline
 	);

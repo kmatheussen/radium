@@ -199,7 +199,7 @@ void Quantitize_block_CurrPos(
 
 	Undo_Range(
 		window,
-		window->wblock->block,
+		window->wblock,
 		0,window->wblock->block->num_tracks-1,
 		window->wblock->curr_realline
 	);
@@ -221,7 +221,7 @@ void Quantitize_range_CurrPos(
 
 	PlayStop();
 
-	Undo_Range(window,window->wblock->block,window->wblock->rangex1,window->wblock->rangex2,window->wblock->curr_realline);
+	Undo_Range(window,window->wblock,window->wblock->rangex1,window->wblock->rangex2,window->wblock->curr_realline);
 
 	Quantitize_range(window->wblock);
 

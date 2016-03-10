@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_range.h"
 #include "wtracks_proc.h"
 #include "notes_proc.h"
+#include "../embedded_scheme/scheme_proc.h"
 
 #include "clipboard_range_copy_proc.h"
 
@@ -278,6 +279,23 @@ void CopyRange(
 		track=NextTrack(track);
 
 	}
+
+        int starttrack = wblock->rangex1;
+        int endtrack = wblock->rangex2;
+        
+        Place *startplace = p1;
+        Place *endplace = p2;
+        
+        SCHEME_eval(
+                    talloc_format("(copy-fx-range! %d %d %d (+ %d (/ %d %d)) (+ %d (/ %d %d)))",
+                                  wblock->block->l.num,
+                                  starttrack,
+                                  endtrack,
+                                  startplace->line, startplace->counter, startplace->dividor,
+                                  endplace->line, endplace->counter, endplace->dividor
+                                  )
+                    );
+
 	wblock->isranged=false;
 }
 
