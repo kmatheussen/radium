@@ -169,78 +169,91 @@ static double get_realline_stime(SharedVariables *sv, int realline){
 
 
 // OpenGL thread
+static bool need_to_reset_timing(SharedVariables *sv, double stime, int last_used_i_realline, const struct Blocks *last_used_block, double last_used_stime){
+  if (stime < 0){
+    fprintf(stderr,"Error: stime: %f, pc->blocktime: %f",stime,ATOMIC_DOUBLE_GET(pc->blocktime));
+    #if 0
+      #if !defined(RELEASE)
+        abort();
+      #endif
+    #endif
+    return true;
+  }
+
+  if (last_used_block != sv->block)    
+    return true;
+  
+  if(last_used_i_realline>=sv->num_reallines) // First check that i_realline is within the range of the block. (block might have changed number of lines)
+    return true;
+    
+  // TODO: Make the "last_stime < stime"-check configurable.
+  if (stime < last_used_stime)
+    return true;
+  
+  if(stime < get_realline_stime(sv, last_used_i_realline)) // Time is now before the line we were at when we left last time. Start searching from 0 again. (Not sure if is correct. It might be last_used_i_realline+1 instead)
+    return true;
+
+  return false;
+}
+
+
+// OpenGL thread
 static double find_current_realline_while_playing(SharedVariables *sv){
 
   double time_in_ms = (ATOMIC_DOUBLE_GET(pc->blocktime)) * 1000.0 / (double)pc->pfreq; // I'm not entirely sure reading pc->start_time_f instead of pc->start_time is unproblematic.
-  double stime      = time_estimator.get(time_in_ms, sv->reltempo) * (double)pc->pfreq / 1000.0;
+  double stime      = time_estimator.get(time_in_ms, sv->reltempo) * (double)pc->pfreq / 1000.0; // Could this value be slightly off because we just changed block, and because of that we skipped a few calles to time_estimator.get ? (it shouldn't matter though, timing is resetted when that happens. 'time_in_ms' should always be valid)
 
-  static int i_realline = 0; // Note that this one is static. The reason is that we are usually placed on the same realline as last time, so we remember last position and start searching from there/
-  static const struct Blocks *block = NULL;
-  
-  bool reset_timing = false;
+  //stime      = time_in_ms* (double)pc->pfreq / 1000.0;
 
-  if (stime < 0){
-    fprintf(stderr,"Error: stime: %f, pc->blocktime: %f",stime,ATOMIC_DOUBLE_GET(pc->blocktime));
-#if !defined(RELEASE)
-    abort();
-#endif
-    stime = 0.0;
-  }
-  
-  if (block != sv->block) {
+  static double last_stime = stime;
     
-    reset_timing = true;
-  
-  } else {
-
-    // Since i_realline is static, we need to first ensure that the current value has a valid valid value we can start searching from.
-
-    if(i_realline>sv->num_reallines) // First check that i_realline is within the range of the block.
-      reset_timing = true;
     
-    else {
-      if(i_realline>0) // Common situation. We are usually on the same line as the last visit, but we need to go one step back to reload prev_line_stime. (we cant store prev_line_stime, because it could have been calculated from a different block)
-        i_realline--;
+  //Strictly speaking, we need to atomically get current block + pc->blocktime. But it is uncertain how important this is is.
+  // Maybe store blocktime in the block itself?
+  
+  static int i_realline = 0; // Note that this one is static. The reason is that we are usually placed on the same realline as last time, so we remember last position and start searching from there.
+  static const struct Blocks *block = NULL; // Remember block used last time. If we are not on the same block now, we can't use the i_realline value used last time.
 
-      if(stime < get_realline_stime(sv, i_realline)) // Behind the time of the last visit. Start searching from 0 again.
-        reset_timing = true;
-    }
-  }
+  R_ASSERT(i_realline>=0);
+  
+  //                                    Common situation. We are usually on the same line as the last visit,
+  if (i_realline > 0) i_realline--; //  but we need to go one step back to reload prev_line_stime.
+  //                                    (storing last used 'stime1' and/or 'stime2' would be an optimization which would make my head hurt and make no difference in cpu usage)
 
-  if (reset_timing==true) {
+  if (need_to_reset_timing(sv, stime, i_realline, block, last_stime)) {
     i_realline = 0;
     block = sv->block;
     time_estimator.set_time(time_in_ms);
-    stime = time_in_ms * (double)pc->pfreq / 1000.0;
+    stime = time_in_ms * (double)pc->pfreq / 1000.0; // Convert the current block time into number of frames.
   }
+
+  last_stime = stime;
   
-  double prev_line_stime = 0.0;
+  double stime2 = get_realline_stime(sv, i_realline);
+  
+  while(true){
 
-  for(; i_realline<=sv->num_reallines; i_realline++){
-    double curr_line_stime = get_realline_stime(sv, i_realline);
-    if (stime < curr_line_stime) {
+    double stime1 = stime2;
+    stime2 = get_realline_stime(sv, i_realline+1);
 
-      if (prev_line_stime==curr_line_stime) {
-#if !defined(RELEASE)
+    if (stime1==stime2){ // Could probably happen if playing really fast... Not sure.
+      #if !defined(RELEASE)
         abort();
-#endif
-        return i_realline;
-      }
-      
-      double ret = scale_double(stime,
-                                prev_line_stime, curr_line_stime,
-                                i_realline-1, i_realline
-                                );
-      if (!std::isfinite(ret)){
-        fprintf(stderr,"Error: prev_line_stime: %f, curr_line_stime: %f, stime: %f, ret: %f, i_realline: %i, reset_timing: %d\n",prev_line_stime, curr_line_stime, stime, ret, i_realline, (int)reset_timing);
-#if !defined(RELEASE)
-        abort();
-#endif
-        return i_realline;
-      }
-      return ret;
+      #endif
+      return i_realline;
     }
-    prev_line_stime = curr_line_stime;
+      
+    if (stime >= stime1 && stime <= stime2){
+      return scale_double(stime,
+                          stime1, stime2,
+                          i_realline, i_realline+1
+                          );
+    }
+
+    i_realline++;
+
+    if (i_realline==sv->num_reallines)
+      break;
   }
 
   return sv->num_reallines;
@@ -417,7 +430,7 @@ public:
     //gets(NULL);
 
 #if FOR_LINUX
-    if(0)set_realtime(SCHED_FIFO,1);
+    if(0)set_realtime(SCHED_FIFO,1); // TODO: Add priority inheritance to all locks. Setting the OpenGL thread to a higher priority might not make a difference because of priority inversion.
 #endif
   }
 
@@ -490,19 +503,6 @@ public:
 private:
 
   // OpenGL thread
-  double find_till_realline(SharedVariables *sv){
-    if(!ATOMIC_GET(root->play_cursor_onoff) && ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING) {
-      int player_id = ATOMIC_GET(pc->play_id);
-
-      double ret = find_current_realline_while_playing(sv);
-      if (ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING && ATOMIC_GET(pc->play_id)==player_id) // check that the player didn't stop and start in the mean time. (not a 100% valid check perhaps, but no big deal)
-        return ret;
-    }
-    
-    return ATOMIC_GET(g_curr_realline);
-  }
-
-  // OpenGL thread
   bool draw(){
     bool needs_repaint;
 
@@ -542,10 +542,14 @@ private:
 
       GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform, _playcursor_transform);
     }
-    
-    if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING && sv->block!=safe_pointer_read((void**)&pc->block)) // sanity check
-      return false;
 
+#if 0
+	// doesn't matter. Same test happens further below, and if it's true, we just set scroll_pos = last_scroll_pos so that there won't be any strange jumps.
+    if (ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING && sv->block!=safe_pointer_read((void**)&pc->block)) { // sanity check
+		return false;
+    }
+#endif
+	
     bool current_realline_while_playing_is_valid = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
 
     double current_realline_while_playing;
@@ -553,6 +557,8 @@ private:
       current_realline_while_playing = find_current_realline_while_playing(sv);
     else
       current_realline_while_playing = 0.0;
+
+    R_ASSERT_NON_RELEASE(current_realline_while_playing >= 0);
     
     double till_realline;
     if (ATOMIC_GET_RELAXED(root->play_cursor_onoff))
@@ -562,22 +568,33 @@ private:
     else
       till_realline = ATOMIC_GET(g_curr_realline);
 
+    
     float scroll_pos = GE_scroll_pos(sv, till_realline);
+    
+    //static float last_pos = 0.0;    
+    //printf("delta_pos: %f\n",last_pos - scroll_pos);
+    //last_pos = scroll_pos;
 
-    //printf("pos: %f\n",pos);
-
+    //printf("current_reallie: %f\n",current_realline_while_playing);
+    
     //if (sv->block!=NULL && pc->block!=NULL)
     //  printf("sv->block: %d, pc->block: %d. pc->playpos: %d, root->curr_playlist: %d\n",sv->block->l.num,pc->block->l.num,pc->playpos,root->curr_playlist);
-    
+
     if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING && sv->block!=safe_pointer_read((void**)&pc->block)) // Do the sanity check once more. pc->block might have changed value during computation of pos.
-      return false;
+      //return false;
+      scroll_pos = last_scroll_pos;
 
+#if 0
+	// what the?
     if (needs_repaint==false && scroll_pos==last_scroll_pos && current_realline_while_playing==last_current_realline_while_playing && ATOMIC_GET(g_curr_realline)==last_curr_realline)
-      return false;
-
+      //return false;
+      scroll_pos = last_scroll_pos;
+#endif
+	
     if (player_id != ATOMIC_GET(pc->play_id)) // In the very weird and unlikely case that the player has stopped and started since the top of this function (the computer is really struggling), we return false.
-      return false;
-        
+      //return false;
+      scroll_pos = last_scroll_pos;
+
 
     //printf("scrolling\n");
 
@@ -706,15 +723,22 @@ public:
             must_swap = true;
         }
 
+        //printf("  %d\n",must_swap);
+        
         if (must_swap)
           swap();
         
         else if (g_safe_mode || !sleep_when_not_painting) // probably doesn't make any sense setting sleep_when_not_painting to false. Besides, setting it to false may cause 100% CPU usage (intel gfx) or very long calls to GL_lock() (nvidia gfx).
           swap();
       
-        else
-          usleep(1000 * 1000 / time_estimator.get_vblank());
-      
+        //else if (ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED) // For some reason, usleep() below is sometimes called for a long while after starting to play (or switching block) unless we do this.
+		//  swap();
+
+        else {
+          //printf("Sleeping %d ms\n",(int)(time_estimator.get_vblank()));
+          usleep(1000 * time_estimator.get_vblank()); // Workaround to avoid heating cpu. Linux intel gfx drivers seems (or at least seemed) to buzy loop when calling swap() without having drawn anything.
+        }
+        
         if (g_safe_mode)
           GL_unlock();
       }
