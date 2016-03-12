@@ -220,9 +220,12 @@ void PC_GoNextBlock(void){
 	ATOMIC_ADD(pc->seqtime, getBlockSTimeLength(pc->block));
 
         struct Blocks *next_block = PC_GetPlayBlock(1);
-        ATOMIC_DOUBLE_SET(next_block->player_time, 0.0); // If not, graphics could jump up and down quickly
-        atomic_pointer_write((void**)&pc->block, next_block);
- 
+
+        if (pc->block != next_block) {
+          ATOMIC_DOUBLE_SET(next_block->player_time, -100.0); // If not, graphics could jump up and down quickly
+          atomic_pointer_write((void**)&pc->block, next_block);
+        }
+        
 	Pdebug("PC_GoNextBlock\n");
 
 	if(pc->block!=NULL){

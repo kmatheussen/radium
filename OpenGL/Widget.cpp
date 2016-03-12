@@ -517,14 +517,6 @@ private:
 
     SharedVariables *sv = GE_get_shared_variables(painting_data);
 
-    bool is_playing = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
-
-    const struct Blocks *block = (const struct Blocks*)atomic_pointer_read((void**)&pc->block);
-        
-    if (is_playing && sv->block!=block) { // Check that our blocktime belongs to the block that is rendered.
-		return false;
-    }
-
     if (needs_repaint) {
 
       if (current_height != new_height || current_width != new_width){
@@ -553,12 +545,31 @@ private:
       //printf("   Drawing\n");
     }
 
-    double current_realline_while_playing;
-    if (is_playing)
-      current_realline_while_playing = find_current_realline_while_playing(sv, ATOMIC_DOUBLE_GET(block->player_time));
-    else
-      current_realline_while_playing = 0.0;
+    bool is_playing = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
 
+
+    double current_realline_while_playing;
+    
+    if (is_playing) {
+      
+      const struct Blocks *block = (const struct Blocks*)atomic_pointer_read((void**)&pc->block);
+        
+      if (sv->block!=block) { // Check that our blocktime belongs to the block that is rendered.
+        return false;
+      }
+      
+      double blocktime = ATOMIC_DOUBLE_GET(block->player_time);
+      if (blocktime < -10.0)
+        return false; // I.e. we just switched block, but the blocktime has not been calculated yet.
+      
+      current_realline_while_playing = find_current_realline_while_playing(sv, blocktime);
+      
+    } else {
+      
+      current_realline_while_playing = 0.0;
+      
+    }
+    
     R_ASSERT_NON_RELEASE(current_realline_while_playing >= 0);
     
     double till_realline;
