@@ -169,9 +169,9 @@ static double get_realline_stime(SharedVariables *sv, int realline){
 
 
 // OpenGL thread
-static bool need_to_reset_timing(SharedVariables *sv, double stime, int last_used_i_realline, const struct Blocks *last_used_block, double last_used_stime){
+static bool need_to_reset_timing(SharedVariables *sv, double stime, int last_used_i_realline, const struct Blocks *last_used_block, double last_used_stime, double blocktime){
   if (stime < 0){
-    fprintf(stderr,"Error: stime: %f, pc->blocktime: %f",stime,ATOMIC_DOUBLE_GET(pc->blocktime));
+    fprintf(stderr,"Error: stime: %f, pc->blocktime: %f",stime,blocktime);
     #if 0
       #if !defined(RELEASE)
         abort();
@@ -198,9 +198,9 @@ static bool need_to_reset_timing(SharedVariables *sv, double stime, int last_use
 
 
 // OpenGL thread
-static double find_current_realline_while_playing(SharedVariables *sv){
+static double find_current_realline_while_playing(SharedVariables *sv, double blocktime){
 
-  double time_in_ms = (ATOMIC_DOUBLE_GET(pc->blocktime)) * 1000.0 / (double)pc->pfreq; // I'm not entirely sure reading pc->start_time_f instead of pc->start_time is unproblematic.
+  double time_in_ms = blocktime * 1000.0 / (double)pc->pfreq; // I'm not entirely sure reading pc->start_time_f instead of pc->start_time is unproblematic.
   double stime      = time_estimator.get(time_in_ms, sv->reltempo) * (double)pc->pfreq / 1000.0; // Could this value be slightly off because we just changed block, and because of that we skipped a few calles to time_estimator.get ? (it shouldn't matter though, timing is resetted when that happens. 'time_in_ms' should always be valid)
 
   //stime      = time_in_ms* (double)pc->pfreq / 1000.0;
@@ -220,7 +220,7 @@ static double find_current_realline_while_playing(SharedVariables *sv){
   if (i_realline > 0) i_realline--; //  but we need to go one step back to reload prev_line_stime.
   //                                    (storing last used 'stime1' and/or 'stime2' would be an optimization which would make my head hurt and make no difference in cpu usage)
 
-  if (need_to_reset_timing(sv, stime, i_realline, block, last_stime)) {
+  if (need_to_reset_timing(sv, stime, i_realline, block, last_stime, blocktime)) {
     i_realline = 0;
     block = sv->block;
     time_estimator.set_time(time_in_ms);
@@ -517,6 +517,14 @@ private:
 
     SharedVariables *sv = GE_get_shared_variables(painting_data);
 
+    bool is_playing = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
+
+    const struct Blocks *block = (const struct Blocks*)atomic_pointer_read((void**)&pc->block);
+        
+    if (is_playing && sv->block!=block) { // Check that our blocktime belongs to the block that is rendered.
+		return false;
+    }
+
     if (needs_repaint) {
 
       if (current_height != new_height || current_width != new_width){
@@ -536,25 +544,18 @@ private:
 
       } else {
         vg->clear();
+        //printf("   Clearing\n");
       }
       
       //GE_set_curr_realline(sv->curr_realline);
 
       GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform, _playcursor_transform);
+      //printf("   Drawing\n");
     }
-
-#if 0
-	// doesn't matter. Same test happens further below, and if it's true, we just set scroll_pos = last_scroll_pos so that there won't be any strange jumps.
-    if (ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING && sv->block!=safe_pointer_read((void**)&pc->block)) { // sanity check
-		return false;
-    }
-#endif
-	
-    bool current_realline_while_playing_is_valid = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
 
     double current_realline_while_playing;
-    if (current_realline_while_playing_is_valid)
-      current_realline_while_playing = find_current_realline_while_playing(sv);
+    if (is_playing)
+      current_realline_while_playing = find_current_realline_while_playing(sv, ATOMIC_DOUBLE_GET(block->player_time));
     else
       current_realline_while_playing = 0.0;
 
@@ -563,38 +564,17 @@ private:
     double till_realline;
     if (ATOMIC_GET_RELAXED(root->play_cursor_onoff))
       till_realline = ATOMIC_GET(g_curr_realline);
-    else if (current_realline_while_playing_is_valid)
+    else if (is_playing)
       till_realline = current_realline_while_playing;
     else
       till_realline = ATOMIC_GET(g_curr_realline);
 
     
     float scroll_pos = GE_scroll_pos(sv, till_realline);
+
     
-    //static float last_pos = 0.0;    
-    //printf("delta_pos: %f\n",last_pos - scroll_pos);
-    //last_pos = scroll_pos;
-
-    //printf("current_reallie: %f\n",current_realline_while_playing);
-    
-    //if (sv->block!=NULL && pc->block!=NULL)
-    //  printf("sv->block: %d, pc->block: %d. pc->playpos: %d, root->curr_playlist: %d\n",sv->block->l.num,pc->block->l.num,pc->playpos,root->curr_playlist);
-
-    if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING && sv->block!=safe_pointer_read((void**)&pc->block)) // Do the sanity check once more. pc->block might have changed value during computation of pos.
-      //return false;
-      scroll_pos = last_scroll_pos;
-
-#if 0
-	// what the?
-    if (needs_repaint==false && scroll_pos==last_scroll_pos && current_realline_while_playing==last_current_realline_while_playing && ATOMIC_GET(g_curr_realline)==last_curr_realline)
-      //return false;
-      scroll_pos = last_scroll_pos;
-#endif
-	
-    if (player_id != ATOMIC_GET(pc->play_id)) // In the very weird and unlikely case that the player has stopped and started since the top of this function (the computer is really struggling), we return false.
-      //return false;
-      scroll_pos = last_scroll_pos;
-
+    if (player_id != ATOMIC_GET(pc->play_id)) // In the very weird and unlikely case that the player has stopped and started since the top of this function (the computer is really struggling), we return false
+      return false;
 
     //printf("scrolling\n");
 
@@ -616,7 +596,7 @@ private:
     {
       vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
       float scrollbarpos = scale(till_realline,
-                                 0, sv->num_reallines - (ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING?0:1),
+                                 0, sv->num_reallines - (is_playing?0:1),
                                  -2, -(sv->scrollbar_height - sv->scrollbar_scroller_height - 1)
                                  );
       //printf("bar_length: %f, till_realline: %f. scrollpos: %f, pos: %f, max: %d\n",bar_length,till_realline, scrollpos, pos, window->leftslider.x2);
@@ -642,7 +622,7 @@ private:
     last_scroll_pos = scroll_pos;
     last_current_realline_while_playing = current_realline_while_playing;
     last_curr_realline = ATOMIC_GET(g_curr_realline);
-  
+
     return true;
   }
 
@@ -650,7 +630,7 @@ private:
   void swap(void){
     radium::ScopedMutex lock(&mutex);
     
-    // show rendering
+    // Swap to the newly rendered buffer
     if ( openglContext()->hasDoubleBuffer() )
       openglContext()->swapBuffers();
   }
@@ -698,10 +678,7 @@ public:
         ATOMIC_SET(is_training_vblank_estimator, time_estimator.train());
 
     }
-
-
-    //printf("        vblank: %f\n",(float)time_estimator.get_vblank());
-
+    
 
     // This is the only place the opengl thread waits. When swap()/usleep() returns, updateEvent is called again immediately.
 
@@ -717,32 +694,27 @@ public:
         {
           radium::ScopedMutex lock(&draw_mutex);
 
-          if (canDraw())
+          if (canDraw()) {
             must_swap = draw();
-          else
+          } else {
             must_swap = true;
+          }
         }
 
-        //printf("  %d\n",must_swap);
-        
         if (must_swap)
           swap();
         
         else if (g_safe_mode || !sleep_when_not_painting) // probably doesn't make any sense setting sleep_when_not_painting to false. Besides, setting it to false may cause 100% CPU usage (intel gfx) or very long calls to GL_lock() (nvidia gfx).
           swap();
-      
-        //else if (ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED) // For some reason, usleep() below is sometimes called for a long while after starting to play (or switching block) unless we do this.
-		//  swap();
 
-        else {
-          //printf("Sleeping %d ms\n",(int)(time_estimator.get_vblank()));
-          usleep(1000 * time_estimator.get_vblank()); // Workaround to avoid heating cpu. Linux intel gfx drivers seems (or at least seemed) to buzy loop when calling swap() without having drawn anything.
-        }
+        else
+          usleep(20); // Don't want to buzy-loop
         
         if (g_safe_mode)
           GL_unlock();
       }
     }
+
   }
 
   // Main thread
@@ -873,7 +845,25 @@ static bool have_earlier_estimated_value(){
   return SETTINGS_read_double("vblank", -1.0) > 0.0;
 }
 
+/*
+(gdb) bt
+#0  GL_pause_gl_thread_a_short_while () at OpenGL/Widget.cpp:917
+#1  0x000000000081c88b in GL_PauseCaller::GL_PauseCaller (this=0x4344430) at Qt/helpers.h:16
+#2  0x000000000081dc28 in FocusSnifferQLineEdit::FocusSnifferQLineEdit (this=0x4344430, parent=0x33226d0, name=0xff901f "gakk") at Qt/FocusSniffers.h:76
+#3  0x0000000000885e98 in NoteNameFocusSnifferQLineEdit::NoteNameFocusSnifferQLineEdit (this=0x4344430, parent=0x33226d0) at Qt/lzqlineedit.h:105
+#4  0x0000000000886193 in Ui_Pianorollheader::setupUi (this=0x33226f8, Pianorollheader=0x33226d0) at Qt/Qt_pianorollheader.h:43
+#5  0x00000000008855d9 in (anonymous namespace)::Pianorollheader::Pianorollheader (this=0x33226d0, parent=0x2c5ae60) at Qt/Qt_pianorollheader_callbacks.h:40
+#6  0x0000000000885cf5 in PIANOROLLHEADER_create () at Qt/Qt_pianorollheader_callbacks.cpp:28
+#7  0x00000000007e933c in get_pianorollheader (tracknum=8) at common/gfx_wtrackheaders.c:235
+#8  0x00000000007e939f in UpdateAllPianoRollHeaders (window=0x5643520, wblock=0x55c9fd0) at common/gfx_wtrackheaders.c:250
+#9  0x00000000007e94f5 in DrawAllWTrackHeaders (window=0x5643520, wblock=0x55c9fd0) at common/gfx_wtrackheaders.c:292
+#10 0x00000000007d79d5 in DrawWBlock (window=0x5643520, wblock=0x55c9fd0) at common/gfx_wblocks.c:568
+#11 0x00000000007c5e7d in DrawUpTrackerWindow (window=0x5643520) at common/windows.c:259
+#12 0x000000000080bcad in EditorWidget::paintEvent (this=0x2c5ae60, e=0x7fffffffbf40) at Qt/Qt_EventReceiver.cpp:109
+ */
 void GL_pause_gl_thread_a_short_while(void){
+  return;
+  
   if (g_gl_widget_started == false) // deadlock without this check.
     return;
 
@@ -897,7 +887,10 @@ void GL_pause_gl_thread_a_short_while(void){
   }
 }
 
+
 void GL_EnsureMakeCurrentIsCalled(void){
+  //printf("  Ensure make current\n");
+  
   R_ASSERT_RETURN_IF_FALSE(g_gl_lock_visits>=1); 
   if (g_gl_lock_visits>=2) // If this happens we are probably called from inside a widget/dialog->exec() call. Better not wake up the gl thread.
     return;

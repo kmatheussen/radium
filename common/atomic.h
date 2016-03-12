@@ -135,8 +135,18 @@ static inline float safe_float_read(float *pos){
 
 /************** pointers ******************/
 
+#if 0
 static inline void *safe_pointer_read(void **p){
   return __atomic_load_n(p, __ATOMIC_RELAXED);
+}
+#endif
+
+static inline void *atomic_pointer_read(void **p){
+  return __atomic_load_n(p, __ATOMIC_SEQ_CST);
+}
+
+static inline void atomic_pointer_write(void **p, void *v){
+  __atomic_store_n(p, v, __ATOMIC_SEQ_CST);
 }
 
 

@@ -295,7 +295,7 @@ static void EditorFollowsPlayCursorLoop(void){
 // called very often
 static void PlayHandleRangeLoop(void){
 
-  struct Blocks *block = safe_pointer_read((void**)&pc->block);
+  struct Blocks *block = atomic_pointer_read((void**)&pc->block);
   
   if (pc->is_playing_range == false || block==NULL)
     return;

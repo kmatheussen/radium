@@ -21,9 +21,9 @@ struct SharedVariables{
   float scrollbar_height;
   float scrollbar_scroller_height;
 
-  const struct Blocks *block; // Only used like this: if(sv->block==pc->block){...}. Reading anything inside 'block' would be dangerous.
+  const struct Blocks *block; // We store it in g_shared_variables_gc_storage, so it can not be garbage collected while it is here.
   
-  const struct STimes *times;
+  const struct STimes *times; // Also stored in g_shread_variables_gc_storage.
 
   Place *realline_places;
 
@@ -53,14 +53,15 @@ static inline float get_scrollbar_scroller_height(const struct Tracker_Windows *
 #ifdef OPENGL_GFXELEMENTS_CPP
 
 static radium::Mutex vector_mutex;
-static vector_t g_times_storage; // We just copy the 'times' pointer from 'root' (not the content), so we need to store the pointer somewhere where the GC can get hold of it.
+static vector_t g_shared_variables_gc_storage; // Here we store stuff in used SharedVariables that should not be garbage collected
 
 // Called from OpenGL thread
 SharedVariables::~SharedVariables(){
   V_free(realline_places);
   {
     radium::ScopedMutex locker(&vector_mutex);
-    VECTOR_remove(&g_times_storage, times);
+    VECTOR_remove(&g_shared_variables_gc_storage, this->times);
+    VECTOR_remove(&g_shared_variables_gc_storage, this->block);
   }
 }
 
@@ -88,7 +89,8 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
 
   {
     radium::ScopedMutex locker(&vector_mutex);
-    VECTOR_push_back(&g_times_storage, sv->times);
+    VECTOR_push_back(&g_shared_variables_gc_storage, sv->times);
+    VECTOR_push_back(&g_shared_variables_gc_storage, sv->block);
   }
   
   sv->realline_places = (Place*)V_malloc(sv->num_reallines * sizeof(Place));

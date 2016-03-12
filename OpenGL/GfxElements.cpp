@@ -214,6 +214,7 @@ struct GradientTrianglesCollection {
     
     GradientTriangles *gradient = used_gradient_triangles;
 
+    //printf("    Collecting gradient garbage\n");
     GL_draw_lock();{
       while(gradient!=NULL){
         GradientTriangles *next = gradient->next;
@@ -230,6 +231,7 @@ struct GradientTrianglesCollection {
         gradient = next;
       }
     }GL_draw_unlock();
+    //printf("    Collecting gradient garbage finished\n");
     
     used_gradient_triangles = new_used;
     free_gradient_triangles = new_free;

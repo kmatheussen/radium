@@ -1188,6 +1188,8 @@ struct Blocks{
 
 	volatile float reltempo;					/* factor that the tempo is multiplied with when playing this block. */
 
+        DEFINE_ATOMIC(double, player_time);	/* = pc->start_time_f - pc->seqtime */
+
   // This variable is checked after each keyboard or menu event. If true, trackreallines, wtracks, etc. will be updated.
   bool is_dirty; 
 };
@@ -1471,7 +1473,7 @@ struct Root{
 	struct Song *song;
 
         int curr_playlist;
-        DEFINE_ATOMIC(NInt, curr_blocknum);
+        DEFINE_ATOMIC(NInt, curr_blocknum); // Currently playing blocknum
 
         DEFINE_ATOMIC(bool, setfirstpos);
 

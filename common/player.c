@@ -124,7 +124,7 @@ void PlayerTask(STime reltime){
 
         //printf("Setting new starttime to %f (%d)\n",pc->end_time_f,(int)pc->end_time);
         ATOMIC_DOUBLE_SET(pc->start_time_f, pc->end_time_f);
-        ATOMIC_DOUBLE_SET(pc->blocktime, ATOMIC_DOUBLE_GET(pc->start_time_f) - (double)ATOMIC_GET(pc->seqtime));
+        ATOMIC_DOUBLE_SET(pc->block->player_time, ATOMIC_DOUBLE_GET(pc->start_time_f) - (double)ATOMIC_GET(pc->seqtime));
         pc->end_time_f  += tempoadjusted_reltime_f;
         
 #ifdef WITH_PD
