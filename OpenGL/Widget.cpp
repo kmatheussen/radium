@@ -504,22 +504,63 @@ private:
 
   // OpenGL thread
   bool draw(){
+    static bool needs_repaint2 = false; // TODO: Clean up this.
+    
     bool needs_repaint;
 
     int player_id = ATOMIC_GET(pc->play_id);
-
+    bool is_playing = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
+    
     painting_data = GE_get_painting_data(painting_data, &needs_repaint);
     //printf("needs_repaint: %d, painting_data: %p\n",(int)needs_repaint,painting_data);
-
+    
     if (painting_data==NULL){
       return false;
     }
-
+    
+    
+    needs_repaint2 = needs_repaint2 || needs_repaint;
+    
     SharedVariables *sv = GE_get_shared_variables(painting_data);
+    
+    //if (needs_repaint)
+    //  printf("   Needs repaint %d\n",sv->block->l.num);
+    
+    const struct Blocks *block = (const struct Blocks*)atomic_pointer_read((void**)&pc->block);
+    double blocktime = 0.0;
+    
+    if (is_playing){
+      if (sv->block!=block) { // Check that our blocktime belongs to the block that is rendered.
+        #if 1     
+          _rendering->render();
+          return true;
+        #else
+          return false;
+        #endif
+      }
 
+      blocktime = ATOMIC_DOUBLE_GET(block->player_time);
+
+      R_ASSERT_NON_RELEASE(blocktime==-100 || blocktime>=0.0);
+
+      //printf("blocktime: %f\n",blocktime);
+      
+      if (is_playing){
+        if (blocktime < -10.0) {  // I.e. we just switched block, but the blocktime has not been calculated yet.
+          //return false;
+          _rendering->render();
+          return true;      
+        }
+      }
+
+    }
+    
+    
     if (needs_repaint) {
 
       if (current_height != new_height || current_width != new_width){
+
+        printf("Changing height\n");
         
         //_rendering->sceneManagers()->clear();
         _rendering->camera()->viewport()->setWidth(new_width);
@@ -542,25 +583,14 @@ private:
       //GE_set_curr_realline(sv->curr_realline);
 
       GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform, _playcursor_transform);
-      //printf("   Drawing\n");
+
+      needs_repaint2 = false;
     }
-
-    bool is_playing = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
-
 
     double current_realline_while_playing;
     
     if (is_playing) {
       
-      const struct Blocks *block = (const struct Blocks*)atomic_pointer_read((void**)&pc->block);
-        
-      if (sv->block!=block) { // Check that our blocktime belongs to the block that is rendered.
-        return false;
-      }
-      
-      double blocktime = ATOMIC_DOUBLE_GET(block->player_time);
-      if (blocktime < -10.0)
-        return false; // I.e. we just switched block, but the blocktime has not been calculated yet.
       
       current_realline_while_playing = find_current_realline_while_playing(sv, blocktime);
       
@@ -615,7 +645,7 @@ private:
       _scrollbar_transform->setLocalAndWorldMatrix(mat);
     }
     
-    // playcursor
+    // playcursor (i.e. the red horizontal line which is moving down when playing and the "PC" button is pressed)
     {
       vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
 
@@ -624,7 +654,7 @@ private:
       mat.translate(0,playcursorpos,0);
       _playcursor_transform->setLocalAndWorldMatrix(mat);
     }
-    
+
     GE_update_triangle_gradient_shaders(painting_data, scroll_pos);
     
     _rendering->render();
@@ -719,8 +749,9 @@ public:
           swap();
 
         else
-          usleep(20); // Don't want to buzy-loop
-        
+          //usleep(20); // Don't want to buzy-loop
+          usleep(1000 * time_estimator.get_vblank());
+                 
         if (g_safe_mode)
           GL_unlock();
       }

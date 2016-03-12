@@ -222,7 +222,9 @@ void PC_GoNextBlock(void){
         struct Blocks *next_block = PC_GetPlayBlock(1);
 
         if (pc->block != next_block) {
-          ATOMIC_DOUBLE_SET(next_block->player_time, -100.0); // If not, graphics could jump up and down quickly
+          if (next_block != NULL)
+            ATOMIC_DOUBLE_SET(next_block->player_time, -100.0); // Any value less than -10 will delay rendering the new block. Instead we wait until player.c is called and a proper player_time value is calculated, to avoid jumpy graphics.
+          
           atomic_pointer_write((void**)&pc->block, next_block);
         }
         

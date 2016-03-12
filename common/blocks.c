@@ -51,6 +51,7 @@ void NewBlock(
 	block->num_lines=num_lines;
 	block->name=name;
 	block->reltempo=1.0f;
+        //ATOMIC_DOUBLE_SET(block->player_time, -200.0);
 
 	temponode=talloc(sizeof(struct TempoNodes));
 	temponode->l.p.dividor=1;

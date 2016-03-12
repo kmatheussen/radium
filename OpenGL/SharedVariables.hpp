@@ -26,7 +26,7 @@ struct SharedVariables{
   const struct STimes *times; // Also stored in g_shread_variables_gc_storage.
 
   Place *realline_places;
-
+  
   SharedVariables()
     : realline_places(NULL)
   {}

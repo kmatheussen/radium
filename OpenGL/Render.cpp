@@ -1763,7 +1763,7 @@ static void create_tracks(const struct Tracker_Windows *window, const struct WBl
 }
 
 static void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-
+  
   GE_Context *c = GE_z(GE_alpha(GE_get_rgb(ATOMIC_GET(root->editonoff)?CURSOR_EDIT_ON_COLOR_NUM:CURSOR_EDIT_OFF_COLOR_NUM), 0.2), Z_STATIC);
   
   NInt track    = window->curr_track;

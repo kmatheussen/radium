@@ -113,7 +113,7 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 #if 1
   if (window->must_redraw_editor==true){
     window->must_redraw_editor=false;
-    //printf("calling gl_create\n")
+    //printf("calling gl_create\n");
     GL_create(window, window->wblock);
   }
 #endif
@@ -152,6 +152,7 @@ void EditorWidget::updateEditor(){
   
   if (this->window->must_redraw_editor==true){
     this->window->must_redraw_editor=false;
+    //printf("a3\n");
     GL_create(this->window, this->window->wblock);
   }
 

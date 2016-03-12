@@ -131,9 +131,9 @@ typedef struct{
         bool is_playing_range;
         STime range_duration;
         
-	struct Blocks *block;		                // The block now playing.
+	struct Blocks *block;		// The block now playing. Must be read and written atomically, except when we are reading in the player thread. Can only be written to in the player thread.
 
-	volatile int playpos;				// Number of blocks currently being played. Not the same as root->curr_playlist.
+	volatile int playpos;		// Number of blocks currently being played. Not the same as root->curr_playlist.
 	STime pausetime;
 	bool nowpausing;
 
