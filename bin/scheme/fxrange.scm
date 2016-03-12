@@ -792,7 +792,7 @@
          track-fxs)
         (else
          (let* ((range-fx (car range-fxs))
-                (name (car range-fx))               
+                (name (fx-name range-fx))
                 (track-fx (find-fx track-fxs name)))
            ;;(c-display "track-fx" track-fx)
            (if track-fx
@@ -803,6 +803,21 @@
                (cons range-fx
                      (merge-fxs track-fxs
                                 (cdr range-fxs))))))))
+
+(define (skew-fxnodes fxnodes how-much)
+  (map (lambda (fxnode)
+         (fxnode-replace-place fxnode (+ (fxnode-place fxnode)
+                                         how-much)))
+       fxnodes))
+
+(define (skew-fxs fxs how-much)
+  (if (null? fxs)
+      '()
+      (let ((fx (car fxs)))
+        (cons (create-fx (fx-name fx)
+                         (skew-fxnodes (fx-nodes fx) how-much))
+              (skew-fxs (cdr fxs)
+                        how-much)))))
 
 
 (define (get-fxnames instrument)
@@ -861,9 +876,10 @@
 (define (copy-fx-range! blocknum starttrack endtrack startplace endplace)
   (set! *clipboard-fxs*
         (map (lambda (tracknum)
-               (scissor-fxs-keep-inside (get-track-fxs blocknum tracknum)
-                                        startplace
-                                        endplace))
+               (skew-fxs (scissor-fxs-keep-inside (get-track-fxs blocknum tracknum)
+                                                  startplace
+                                                  endplace)
+                         (- startplace)))
              (integer-range starttrack endtrack))))
 
 
@@ -886,7 +902,8 @@
 
   (for-each (lambda (range-fxs tracknum)
               (when (< tracknum (<ra> :get-num-tracks blocknum))
-                    (let ((track-fxs (get-track-fxs blocknum tracknum)))
+                    (let ((track-fxs (get-track-fxs blocknum tracknum))
+                          (range-fxs (skew-fxs range-fxs startplace)))
                       (paste-track-fxs! blocknum
                                         tracknum
                                         (merge-fxs track-fxs range-fxs)))))
