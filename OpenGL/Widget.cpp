@@ -617,6 +617,9 @@ private:
     if (player_id != ATOMIC_GET(pc->play_id)) // In the very weird and unlikely case that the player has stopped and started since the top of this function (the computer is really struggling), we return false
       return false;
 
+    if (!is_playing && scroll_pos == last_scroll_pos && !needs_repaint)
+      return false; // Use less cpu.
+
     //printf("scrolling\n");
 
     // scroll
