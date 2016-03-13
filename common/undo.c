@@ -79,6 +79,12 @@ static bool currently_undoing = false;
 
 static bool showing_star_in_filename = false;
 
+static int ignore_undo_operations_level = 0;
+
+static inline bool ignore(void){
+  return ignore_undo_operations_level > 0;
+}
+
 static const wchar_t *get_filename(void){
   if(dc.filename==NULL)
     return STRING_create("Radium - New song.");
@@ -126,6 +132,11 @@ void Undo_saved_song(void){
 }
 
 void ResetUndo(void){
+  if (ignore()) {
+    R_ASSERT(ignore()==false);
+    ignore_undo_operations_level = 0;
+  }
+
   if(currently_undoing){
     RError("Can not call ResetUndo from Undo()\n");
   }
@@ -177,6 +188,8 @@ bool Undo_Is_Open(void){
 }
 
 void Undo_Open(void){
+  if (ignore()) return;
+
   if(currently_undoing){
     RError("Can not call Undo_Open from Undo()\n");
   }
@@ -210,6 +223,9 @@ void Undo_Open(void){
 }
 
 bool Undo_Close(void){
+
+  if (ignore()) return false;
+
   if(currently_undoing){
     RError("Can not call Undo_Close from Undo()\n");
   }
@@ -234,6 +250,8 @@ bool Undo_Close(void){
 }
 
 void Undo_CancelLastUndo(void){
+  if (ignore()) return;
+
   R_ASSERT_RETURN_IF_FALSE(currently_undoing==false);
   R_ASSERT_RETURN_IF_FALSE(undo_is_open==false);
 
@@ -267,6 +285,8 @@ static void Undo_Add_internal(
               UndoFunction undo_function,
               bool stop_playing_when_undoing
 ){
+  if (ignore()) return;
+
   if(currently_undoing){
     RError("Can not call Undo_Add from Undo()\n");
   }
@@ -318,7 +338,23 @@ void Undo_Add_dont_stop_playing(
   Undo_Add_internal(windownum,blocknum,tracknum,realline,pointer,undo_function,false);
 }
 
+void Undo_start_ignoring_undo_operations(void){
+  R_ASSERT(currently_undoing==false);
+
+  ignore_undo_operations_level++;
+}
+
+void Undo_stop_ignoring_undo_operations(void){
+  R_ASSERT(currently_undoing==false);
+
+  R_ASSERT_RETURN_IF_FALSE(ignore_undo_operations_level > 0);
+
+  ignore_undo_operations_level--;
+}
+
 void Undo(void){
+  R_ASSERT(ignore()==false);
+
 	struct Undo *undo=CurrUndo;
 
 	if(undo==&UndoRoot) return;
@@ -426,6 +462,8 @@ currently_undoing = false;
 
 void Redo(void){
   //printf("CurrUndo: %p, CurrUndo->next: %p, UndoRoot: %p, UndoRoot->next: %p\n",CurrUndo,CurrUndo->next,&UndoRoot,UndoRoot.next);
+
+  R_ASSERT(ignore()==false);
 
 	if(CurrUndo->next==NULL) return;
 

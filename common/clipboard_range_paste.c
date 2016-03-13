@@ -230,22 +230,18 @@ void PasteRange_CurrPos(
 
 	PlayStop();
 
-        Undo_Open();{
-
-          Undo_Range(
-                     window,
-                     wblock,
-                     curr_track,
-                     curr_track+range->num_tracks-1,
-                     wblock->curr_realline
+        Undo_Range(
+                   window,
+                   wblock,
+                   curr_track,
+                   curr_track+range->num_tracks-1,
+                   wblock->curr_realline
                    );
 
-          // There should be a Undo_dont_add_more_undo() function which could be called here.
-          
+        Undo_start_ignoring_undo_operations();{
           PasteRange(block,curr_track,&realline[curr_realline]->l.p);
+        }Undo_stop_ignoring_undo_operations();
 
-        }Undo_Close();
-        
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
 		window->wblock,

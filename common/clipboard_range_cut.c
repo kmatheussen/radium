@@ -146,24 +146,20 @@ void CutRange_CurrPos(
 
 	CopyRange(wblock);
 
-        
-        
 	wblock->isranged=true;
 
-        Undo_Open();{
+        Undo_Range(
+                   window,
+                   window->wblock,
+                   window->wblock->rangex1,
+                   window->wblock->rangex2,
+                   window->wblock->curr_realline
+                   );
 
-            Undo_Range(
-		window,
-		window->wblock,
-		window->wblock->rangex1,
-		window->wblock->rangex2,
-		window->wblock->curr_realline
-                );
-
+        Undo_start_ignoring_undo_operations();{
           CutRangedRange(wblock);
-          
-        }Undo_Close();
-        
+        }Undo_stop_ignoring_undo_operations();
+
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
                                                       window,
                                                       wblock,

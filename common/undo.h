@@ -50,6 +50,10 @@ extern LANGSPEC void Undo_Add_dont_stop_playing(
                                                 UndoFunction undo_function
                                                 );
 
+extern LANGSPEC void Undo_start_ignoring_undo_operations(void);
+extern LANGSPEC void Undo_stop_ignoring_undo_operations(void);
+
+
 #if 0
 extern void Undo_New(
 	NInt windownum,
