@@ -371,89 +371,89 @@
 
 ;; only before
 (***assert*** (scissor-fxnodes-keep-inside '((1 10 0)
-                                 (2 11 0))
-                               5 8)
+                                             (2 11 0))
+                                           5 8)
               '())
 
 ;; only after
 (***assert*** (scissor-fxnodes-keep-inside '((10 10 0)
-                                 (20 11 0))
-                               5 8)
+                                             (20 11 0))
+                                           5 8)
               '())
 
 ;; On first line
 (***assert*** (scissor-fxnodes-keep-inside '((1 10 0)
-                                 (2 11 0)
-                                 (5 12 0))
-                               5 8)
+                                             (2 11 0)
+                                             (5 12 0))
+                                           5 8)
               '((5 12 0)))
 
 ;; On last line
 (***assert*** (scissor-fxnodes-keep-inside '((8 10 0)
-                                 (9 11 0)
-                                 (10 12 0))
-                               5 8)
+                                             (9 11 0)
+                                             (10 12 0))
+                                           5 8)
               '((8 10 0)))
 
 ;; Before and inside, and on first line
 (***assert*** (scissor-fxnodes-keep-inside '((1 10 0)
-                                 (2 11 0)
-                                 (5 12 0)
-                                 (6 13 0))
-                               5 8)
+                                             (2 11 0)
+                                             (5 12 0)
+                                             (6 13 0))
+                                           5 8)
               '((5 12 0)
                 (6 13 0)))
 
 
 ;; Before and inside
 (***assert*** (scissor-fxnodes-keep-inside '((1 10 0)
-                                 (2 11 0)
-                                 (6 13 0))
-                               5 8)
+                                             (2 11 0)
+                                             (6 13 0))
+                                           5 8)
               `((5 ,(scale 5 2 6 11 13) 0)
                 (6 13 0)))
 
 ;; Before(hold) and inside
 (***assert*** (scissor-fxnodes-keep-inside `((2 11 ,(<ra> :get-logtype-hold))
-                                 (6 13 0))
-                               5 8)
+                                             (6 13 0))
+                                           5 8)
               `((5 11 ,(<ra> :get-logtype-hold))
                 (6 13 0)))
 
 ;; On first line and inside
 (***assert*** (scissor-fxnodes-keep-inside '((5 11 0)
-                                 (6 13 0))
-                               5 8)
+                                             (6 13 0))
+                                           5 8)
               '((5 11 0)
                 (6 13 0)))
 
 ;; Inside
 (***assert*** (scissor-fxnodes-keep-inside '((6 11 0)
-                                 (7 13 0))
-                               5 8)
+                                             (7 13 0))
+                                           5 8)
               '((6 11 0)
                 (7 13 0)))
 
 ;; Inside and last line
 (***assert*** (scissor-fxnodes-keep-inside '((6 11 0)
-                                 (8 13 0))
-                               5 8)
+                                             (8 13 0))
+                                           5 8)
               '((6 11 0)
                 (8 13 0)))
 
 
 ;; Inside and last line and after
 (***assert*** (scissor-fxnodes-keep-inside '((6 11 0)
-                                 (8 13 0)
-                                 (9 14 0))
-                               5 8)
+                                             (8 13 0)
+                                             (9 14 0))
+                                           5 8)
               '((6 11 0)
                 (8 13 0)))
 
 ;; Inside and after
 (***assert*** (scissor-fxnodes-keep-inside '((6 11 0)
-                                 (9 14 0))
-                               5 8)
+                                             (9 14 0))
+                                           5 8)
               `((6 11 0)
                 (8 ,(scale 8 6 9 11 14) 0)))
 
@@ -466,11 +466,11 @@
 
 ;; Before, on first line, inside, on last line, after
 (***assert*** (scissor-fxnodes-keep-inside '((4 11 0)
-                                 (5 12 0)
-                                 (6 13 0)
-                                 (8 14 0)
-                                 (9 15 0))
-                               5 8)
+                                             (5 12 0)
+                                             (6 13 0)
+                                             (8 14 0)
+                                             (9 15 0))
+                                           5 8)
               `((5 12 0)
                 (6 13 0)
                 (8 14 0)))
@@ -478,25 +478,25 @@
 
 ;; Before, inside, after
 (***assert*** (scissor-fxnodes-keep-inside '((4 11 0)
-                                 (6 13 0)
-                                 (9 15 0))
-                               5 8)
+                                             (6 13 0)
+                                             (9 15 0))
+                                           5 8)
               `((5 ,(scale 5 4 6 11 13) 0)
                 (6 13 0)
                 (8 ,(scale 8 6 9 13 15) 0)))
 
 ;; Before and after
 (***assert*** (scissor-fxnodes-keep-inside '((4 11 0)
-                                 (9 15 0))
-                               5 8)
+                                             (9 15 0))
+                                           5 8)
               `((5 ,(scale 5 4 9 11 15) 0)
                 (8 ,(scale 8 4 9 11 15) 0)))
 
 
 ;; Before(hold) and after
 (***assert*** (scissor-fxnodes-keep-inside `((4 11 ,(<ra> :get-logtype-hold))
-                                 (9 15 0))
-                               5 8)
+                                             (9 15 0))
+                                           5 8)
               `((5 11 ,(<ra> :get-logtype-hold))
                 (8 11 ,(<ra> :get-logtype-hold))))
 
@@ -506,13 +506,9 @@
 (define (scissor-fxs-keep-inside fxs startplace endplace)
   (map (lambda (fx)
          (create-fx (fx-name fx)
-                    (map (lambda (fxnode)
-                           (fxnode-replace-place fxnode
-                                                 (+ (fxnode-place fxnode)
-                                                    startplace)))
-                         (scissor-fxnodes-keep-inside (fx-nodes fx)
-                                                      startplace
-                                                      endplace))))
+                    (scissor-fxnodes-keep-inside (fx-nodes fx)
+                                                 startplace
+                                                 endplace)))
        fxs))
 
 
@@ -833,6 +829,14 @@
       (let ((effect-names  (get-fxnames instrument)))  
         (<ra> :clear-track-fx tracknum blocknum)
         (c-display "effect-names" effect-names)
+
+        (define num-lines (<ra> :get-num-lines blocknum))
+        (define (legal-place pos)
+          (if #t
+              pos ;; No, those should have been removed before calling paste-track-fxs. TODO: Add assertion.
+              (min (-line num-lines)
+                   pos)))
+
         (for-each (lambda (fx)
                     (define name (fx-name fx))
                     (define fx-nodes (fx-nodes fx))
@@ -844,10 +848,11 @@
                           (define fx-node (car fx-nodes))
                           (define fxnum (<ra> :create-fx3
                                               (fxnode-value fx-node)
-                                              (fxnode-place fx-node)
+                                              (legal-place (fxnode-place fx-node))
                                               (<-> name)
                                               tracknum
                                               blocknum))
+                          (c-display "fxnum" fxnum (fxnode-place fx-node))
                           (when (>= fxnum 0)
                                 (<ra> :set-fxnode-logtype (fxnode-logtype fx-node) 0 fxnum tracknum blocknum)
                                 
@@ -855,7 +860,7 @@
                                 (<ra> :set-fxnode3  ;; Need a better API for creating fx
                                       1
                                       (fxnode-value fx-node2)
-                                      (fxnode-place fx-node2)
+                                      (legal-place (fxnode-place fx-node2))
                                       fxnum
                                       tracknum
                                       blocknum)
@@ -864,16 +869,20 @@
                                 (for-each (lambda (fxnode)
                                             (define nodenum (<ra> :create-fxnode3
                                                                   (fxnode-value fxnode)
-                                                                  (fxnode-place fxnode)
+                                                                  (legal-place (fxnode-place fxnode))
                                                                   fxnum
                                                                   tracknum
                                                                   blocknum))
-                                            (<ra> :set-fxnode-logtype (fxnode-logtype fxnode) nodenum fxnum tracknum blocknum))
+                                            ;;(c-display "Creating node" nodenum " at place" (* 1.0 (fxnode-place fxnode)))
+                                            (if (>= nodenum 0)
+                                                (<ra> :set-fxnode-logtype (fxnode-logtype fxnode) nodenum fxnum tracknum blocknum))
+                                            )
                                           (cddr fx-nodes)))))
                   fxs))))
 
 
 (define (copy-fx-range! blocknum starttrack endtrack startplace endplace)
+  (c-display "COPY " startplace endplace)
   (set! *clipboard-fxs*
         (map (lambda (tracknum)
                (skew-fxs (scissor-fxs-keep-inside (get-track-fxs blocknum tracknum)
@@ -903,10 +912,12 @@
   (for-each (lambda (range-fxs tracknum)
               (when (< tracknum (<ra> :get-num-tracks blocknum))
                     (let ((track-fxs (get-track-fxs blocknum tracknum))
-                          (range-fxs (skew-fxs range-fxs startplace)))
+                          (scissored-range-fxs (scissor-fxs-keep-inside (skew-fxs range-fxs startplace)
+                                                                        0
+                                                                        endplace)))
                       (paste-track-fxs! blocknum
                                         tracknum
-                                        (merge-fxs track-fxs range-fxs)))))
+                                        (merge-fxs track-fxs scissored-range-fxs)))))
             *clipboard-fxs*
             (map (lambda (tracknum)
                    (+ starttrack tracknum))

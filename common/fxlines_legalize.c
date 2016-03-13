@@ -58,7 +58,7 @@ void LegalizeFXlines(struct Blocks *block, struct Tracks *track){
 			p=&fxnodeline->l.p;
 			if(
 				PlaceLessThan(p,p1)
-				|| PlaceGreaterOrEqual(p,&p2)
+				|| PlaceGreaterThan(p,&p2)
 				|| (p1 != PlaceGetFirstPos() && PlaceEqual(p,p1))
 			){
 				temp2=NextFXNodeLine(fxnodeline);
