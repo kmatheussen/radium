@@ -688,7 +688,7 @@ public:
 
     if (g_order_pause_gl_thread.tryWait()) {
       g_ack_pause_gl_thread.notify_one();
-      OS_WaitAtLeast(1000);
+      OS_WaitAtLeast(200);
     }
     
     if (g_order_make_current.tryWait()) {
