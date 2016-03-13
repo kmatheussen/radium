@@ -984,19 +984,22 @@ void setModalWindows(bool doit){
 static bool g_native_file_requesters;
 
 bool useNativeFileRequesters(void){
+#if FOR_WINDOWS
+
+  return true;  // Workaround. QFileDialog has lots bugs on windows, both native and non-native. I have not found anything in Qt that works.
+
+#else
+
   static bool has_inited = false;
 
   if (has_inited==false){
-#if FOR_WINDOWS
-    float default_value = false; // Was true earlier with an older version of Qt, because it the non-native requester was extremely slow. Hopefully that has been fixed now.
-#else
     float default_value = false;
-#endif
     g_native_file_requesters = SETTINGS_read_bool("native_file_requesters", default_value);
     has_inited = true;
   }
 
   return g_native_file_requesters;
+#endif
 }
 
 void setUseNativeFileRequesters(bool doit){
