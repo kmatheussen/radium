@@ -1001,7 +1001,7 @@ static float get_notenum(vector_t *trs){
   return get_notenum(tr2);
 }
 
-static ColorNums get_colnum(TrackRealline2 *tr2, bool isranged){
+static ColorNums get_colnum(TrackRealline2 *tr2){
   if (tr2!=NULL && tr2->pitch != NULL)
     return PORTAMENTO_NOTE_TEXT_COLOR_NUM;
   else if(tr2!=NULL && tr2->is_end_pitch==true)
@@ -1020,56 +1020,52 @@ static void paint_halfsize_note(GE_Context *c, int num, const char *notetext, in
 #endif
 }
 
-static void paint_tr2(TrackRealline2 *tr2, char **NotesTexts, int num, bool isranged, int x, int y){
-  GE_Context *c = GE_textcolor(get_colnum(tr2, isranged));
+static void paint_tr2(TrackRealline2 *tr2, char **NotesTexts, int num, int x, int y){
+  GE_Context *c = GE_textcolor(get_colnum(tr2));
   float notenum = get_notenum(tr2);
   paint_halfsize_note(c, num, NotesTexts[(int)notenum], x, y);
   //GE_text_halfsize(foreground, NotesTexts[(int)notenum1], x, y);
 }
 
-static void paint_multinotes(const struct WTracks *wtrack, vector_t *tr, char **NotesTexts, bool isranged, int y1, int y2){
+static void paint_multinotes(const struct WTracks *wtrack, vector_t *tr, char **NotesTexts, int y1, int y2){
   int num_elements = tr->num_elements;
 
   int x1 = wtrack->notearea.x;
   int y_middle = (y1+y2)/2;
 
-  paint_tr2((TrackRealline2*)tr->elements[0], NotesTexts, 1, isranged, x1, y1);
+  paint_tr2((TrackRealline2*)tr->elements[0], NotesTexts, 1, x1, y1);
   
-  paint_tr2((TrackRealline2*)tr->elements[1], NotesTexts, 2, isranged, x1, y_middle);
+  paint_tr2((TrackRealline2*)tr->elements[1], NotesTexts, 2, x1, y_middle);
 
   if (num_elements == 2)
     return;
 
   int x_middle = (wtrack->notearea.x2 + wtrack->notearea.x ) / 2;
 
-  paint_tr2((TrackRealline2*)tr->elements[2], NotesTexts, 3, isranged, x_middle, y1);
+  paint_tr2((TrackRealline2*)tr->elements[2], NotesTexts, 3, x_middle, y1);
   
   if (num_elements == 3)
     return;
 
   if (num_elements>4){
-    GE_Context *c = GE_textcolor(get_colnum(NULL, isranged));
+    GE_Context *c = GE_textcolor(get_colnum(NULL));
     paint_halfsize_note(c, 4, NotesTexts[NOTE_MUL], x_middle, y_middle);
   } else {
-    paint_tr2((TrackRealline2*)tr->elements[3], NotesTexts, 4, isranged, x_middle, y_middle);
+    paint_tr2((TrackRealline2*)tr->elements[3], NotesTexts, 4, x_middle, y_middle);
   }
 }
 
 static void create_track_text(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, vector_t *tr, int realline){
   char **NotesTexts = wtrack->notelength==3?NotesTexts3:NotesTexts2;
   float  notenum    = get_notenum(tr); //trackrealline->note;
-  bool   isranged   = wblock->isranged && wblock->rangex1<=wtrack->l.num && wblock->rangex2>=wtrack->l.num && realline>=wblock->rangey1 && realline<wblock->rangey2;
 
   int y1 = get_realline_y1(window, realline);
   int y2 = get_realline_y2(window, realline);
 
   TrackRealline2 *tr2 = tr->num_elements==0 ? NULL : (TrackRealline2*)tr->elements[0];
 
-  enum ColorNums colnum = get_colnum(tr2, isranged);
+  enum ColorNums colnum = get_colnum(tr2);
   
-  if (isranged)
-    GE_filledBox(GE_color(RANGE_COLOR_NUM),wtrack->notearea.x,y1,wtrack->notearea.x2,y2);
-
   if(tr2!=NULL && wtrack->noteshowtype==TEXTTYPE){
 
     // Paint THISNOTELINES
@@ -1098,11 +1094,11 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
     
     int cents = R_BOUNDARIES(0,round((notenum - (int)notenum)*100.0),99);
 
-    if(isranged==false && notenum>0 && notenum<128)
+    if(notenum>0 && notenum<128)
       GE_filledBox(get_note_background(notenum, highlight), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
 
     if (tr->num_elements > 1)
-      paint_multinotes(wtrack, tr, NotesTexts, isranged, y1, y2);
+      paint_multinotes(wtrack, tr, NotesTexts, y1, y2);
     
     else if (wblock->mouse_track == wtrack->l.num || wtrack->is_wide==true || cents!=0) {
       GE_Context *foreground = GE_textcolor_z(colnum,Z_ABOVE(Z_ZERO));
@@ -1762,6 +1758,38 @@ static void create_tracks(const struct Tracker_Windows *window, const struct WBl
   }
 }
 
+static void create_range(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+
+  if (!wblock->isranged)
+    return;
+  
+  int tracknum1 = R_MIN(wblock->block->num_tracks-1, wblock->rangex1);
+  int tracknum2 = R_MIN(wblock->block->num_tracks-1, wblock->rangex2);
+
+  int realline1 = R_MIN(wblock->block->num_lines-1, wblock->rangey1);
+  int realline2 = R_MIN(wblock->block->num_lines-1, wblock->rangey2);
+
+  struct WTracks *wtrack1=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,tracknum1);
+  struct WTracks *wtrack2=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,tracknum2);
+
+  //const struct LocalZooms *localzoom1 = wblock->reallines[realline1];
+  //const struct LocalZooms *localzoom2 = wblock->reallines[realline2];
+
+  float x1 = wtrack1->x;
+  float x2 = wtrack2->x2;
+
+  int y1 = get_realline_y1(window, realline1);
+  int y2 = get_realline_y2(window, realline2-1);
+
+
+  GE_Context *c = GE_color_alpha_z(RANGE_COLOR_NUM, 0.6, Z_MAX_SCROLLTRANSFORM);
+
+  GE_filledBox(c, //GE_mix_alpha_z(GE_get_rgb(color), White_rgb(), 300, 0.3, z),
+               x1,y1,
+               x2,y2
+               );
+}
+
 static void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   
   GE_Context *c = GE_z(GE_alpha(GE_get_rgb(ATOMIC_GET(root->editonoff)?CURSOR_EDIT_ON_COLOR_NUM:CURSOR_EDIT_OFF_COLOR_NUM), 0.2), Z_STATIC);
@@ -1865,6 +1893,7 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
     if(window->show_reltempo_track)
       create_reltempotrack(window, wblock);
     create_tracks(window, wblock);
+    create_range(window, wblock);
     create_cursor(window, wblock);
     create_playcursor(window, wblock);
     
