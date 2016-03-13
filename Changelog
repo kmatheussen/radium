@@ -1,3 +1,20 @@
+Changes 3.6.6 -> 3.6.7:
+* Only pause GL thread 200ms (instead of 1 second) when creating new Qt widgets
+  Hopefully that is enough to avoid crash in buggy gfx drivers.
+* Create a bunch of track headers during program initialization to avoid creating
+  one while playing and causing everything to freeze for one second.
+* Windows: Disable completely non-native file requesters and file requester filters.
+  None of those works properly (or at all) with Qt on windows.
+* Render: Draw range better
+* Copy/cut/paste automation range
+* Render: Disabled red "Rec" update, cause it caused block to be rendered
+  twice when switching block during playback.
+* Various OpenGL rendering fixes. Stuttering and/or negative jumps should not
+  happen when changing block or re-render the block in other ways.
+* Fix possible (but in case, probably very rare) crash and/or undefined
+  behavior when changing instrument for a track.
+
+
 Changes 3.6.5 -> 3.6.6:
 * Various color tweaks
 * Don't mistake shift+space or altgr+space as a "play block"
