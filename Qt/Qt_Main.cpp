@@ -57,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_visual_input.h"
 #include "../common/scancodes_proc.h"
 #include "../common/player_proc.h"
+#include "../common/gfx_wtrackheaders_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -1135,6 +1136,8 @@ int radium_main(char *arg){
   }
 
 
+  INIT_Pianoroll_headers();
+
   ATOMIC_SET(is_starting_up, false);
 
   window->must_redraw = true;
@@ -1180,6 +1183,7 @@ int radium_main(char *arg){
 
   UPDATECHECKER_doit();
 
+  
        
 #if USE_QT_VISUAL
   qapplication->exec();

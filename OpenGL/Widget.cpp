@@ -890,24 +890,7 @@ static bool have_earlier_estimated_value(){
   return SETTINGS_read_double("vblank", -1.0) > 0.0;
 }
 
-/*
-(gdb) bt
-#0  GL_pause_gl_thread_a_short_while () at OpenGL/Widget.cpp:917
-#1  0x000000000081c88b in GL_PauseCaller::GL_PauseCaller (this=0x4344430) at Qt/helpers.h:16
-#2  0x000000000081dc28 in FocusSnifferQLineEdit::FocusSnifferQLineEdit (this=0x4344430, parent=0x33226d0, name=0xff901f "gakk") at Qt/FocusSniffers.h:76
-#3  0x0000000000885e98 in NoteNameFocusSnifferQLineEdit::NoteNameFocusSnifferQLineEdit (this=0x4344430, parent=0x33226d0) at Qt/lzqlineedit.h:105
-#4  0x0000000000886193 in Ui_Pianorollheader::setupUi (this=0x33226f8, Pianorollheader=0x33226d0) at Qt/Qt_pianorollheader.h:43
-#5  0x00000000008855d9 in (anonymous namespace)::Pianorollheader::Pianorollheader (this=0x33226d0, parent=0x2c5ae60) at Qt/Qt_pianorollheader_callbacks.h:40
-#6  0x0000000000885cf5 in PIANOROLLHEADER_create () at Qt/Qt_pianorollheader_callbacks.cpp:28
-#7  0x00000000007e933c in get_pianorollheader (tracknum=8) at common/gfx_wtrackheaders.c:235
-#8  0x00000000007e939f in UpdateAllPianoRollHeaders (window=0x5643520, wblock=0x55c9fd0) at common/gfx_wtrackheaders.c:250
-#9  0x00000000007e94f5 in DrawAllWTrackHeaders (window=0x5643520, wblock=0x55c9fd0) at common/gfx_wtrackheaders.c:292
-#10 0x00000000007d79d5 in DrawWBlock (window=0x5643520, wblock=0x55c9fd0) at common/gfx_wblocks.c:568
-#11 0x00000000007c5e7d in DrawUpTrackerWindow (window=0x5643520) at common/windows.c:259
-#12 0x000000000080bcad in EditorWidget::paintEvent (this=0x2c5ae60, e=0x7fffffffbf40) at Qt/Qt_EventReceiver.cpp:109
- */
 void GL_pause_gl_thread_a_short_while(void){
-  return;
   
   if (g_gl_widget_started == false) // deadlock without this check.
     return;

@@ -231,11 +231,20 @@ static void DrawAllPianoRollHeaders_old(
 static vector_t g_pianorollheaders = {0};
 
 static void *get_pianorollheader(int tracknum){
+  if (tracknum < 200 && tracknum>= g_pianorollheaders.num_elements)
+    R_ASSERT("INIT_Pianoroll_headers not called");
+
   while (tracknum >= g_pianorollheaders.num_elements)
     VECTOR_push_back(&g_pianorollheaders, PIANOROLLHEADER_create());
 
   return g_pianorollheaders.elements[tracknum];    
 }
+
+// Call this function first to avoid having to allocate pianorollheader widgets while playing.
+void INIT_Pianoroll_headers(void){
+  get_pianorollheader(200);
+}
+
 
 static void UpdateAllPianoRollHeaders(
                                       struct Tracker_Windows *window,
