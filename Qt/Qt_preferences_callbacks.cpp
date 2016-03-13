@@ -299,7 +299,11 @@ class Preferences : public QDialog, public Ui::Preferences {
     // Windows
     {
       modal_windows->setChecked(doModalWindows());
+#if FOR_WINDOWS
+      native_file_requesters->hide();
+#else
       native_file_requesters->setChecked(useNativeFileRequesters());
+#endif
     }
     
     // MIDI

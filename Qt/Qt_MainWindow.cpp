@@ -553,7 +553,7 @@ void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title){
 }
 
 static QString get_postfixes_filter(const char *postfixes){
-#if 1 //FOR_WINDOWS
+#if FOR_WINDOWS
   return ""; // Workaround. QFileDialog has lots bugs on windows, both native and non-native. I have not found anything in Qt that works. Any third party file requesters available, or perhaps it's simple to use the windows api directly?
 #else
   return postfixes==NULL 
