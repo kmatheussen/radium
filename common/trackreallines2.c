@@ -161,7 +161,7 @@ static void TRS_print(const struct WBlocks *wblock, vector_t *trs){
 }
 #endif
 
-// Returns a pointer to an array of vectors (one vector for each realline), not a pointer to a vector.
+// Returns a pointer to AN ARRAY of vectors (one vector for each realline), not a pointer to a vector.
 vector_t *TRS_get(const struct WBlocks *wblock, const struct WTracks *wtrack){
   int num_reallines = wblock->num_reallines;
   vector_t *trs = talloc(sizeof(vector_t) * num_reallines);

@@ -890,6 +890,16 @@ typedef struct{
 } TrackRealline2;
 
 
+typedef struct{
+  Place p;
+  struct Notes *note;
+  struct Velocities *velocity;
+  int value;
+  int logtype;
+  bool is_first_velocity;
+  bool is_last_velocity;
+} VelText;
+
 
 /*********************************************************************
 	nodelinens.h
@@ -962,6 +972,10 @@ struct WTracks{
 	int notelength;					/* Number of characters the notes is. Usually 2 or 3. */
         int notewidth;
 	Area notearea;						/* These are all parts of the GFX area. */
+
+        bool veltext_on; // Is always false on polyphonic tracks. I.e. can not be true on polyphonic tracks. (makes things much simpler)
+        Area veltextarea;
+  
 	int fxonoff;						/* FX area on/off */
 	int fxwidth;						/* is fxarea.x2-fxarea.x */
 	Area fxarea;

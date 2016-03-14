@@ -479,14 +479,20 @@ void GE_start_writing(void){
 
 // Called from the main thread
 void GE_end_writing(GE_Rgb new_background_color){
-  radium::ScopedMutex locker(&mutex);
+  PaintingData *to_delete;
   
-  if (g_last_written_painting_data != NULL) // Unnecessary, but the code is clearer this way. It shows that the variable might be NULL.
-    delete g_last_written_painting_data;
+  {
+    radium::ScopedMutex locker(&mutex);
 
-  g_last_written_painting_data = g_painting_data;
+    to_delete = g_last_written_painting_data;
+    
+    g_last_written_painting_data = g_painting_data;
+    
+    background_color = new_background_color;
+  }
 
-  background_color = new_background_color;
+  if (to_delete != NULL) // Unnecessary check, but the code is clearer this way. It shows that the variable might be NULL.
+    delete to_delete;
 }
 
 

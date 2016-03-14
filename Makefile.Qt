@@ -205,7 +205,7 @@ OBJ1= windows.o window_config.o list.o vector.o hashmap.o song.o blocks.o block_
 
 OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o common.o gfx_wtext.o gfx_text.o gfx_lines.o gfx_point.o gfx_op_queue.o
 
-OBJ3= eventreciever.o scancodes.o reallines.o notestext.o trackreallines2.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o expand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
+OBJ3= eventreciever.o scancodes.o reallines.o notestext.o trackreallines2.o veltext.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o expand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
 
 OBJ4 = tbox.o area.o range.o nodelines.o
 
@@ -538,6 +538,9 @@ notestext.o:  $(BUILD_DEPENDENCIES) $(CD)notestext.c
 
 trackreallines2.o:  $(BUILD_DEPENDENCIES) $(CD)trackreallines2.c
 	$(CC) $(CD)trackreallines2.c $(OPT)
+
+veltext.o:  $(BUILD_DEPENDENCIES) $(CD)veltext.c
+	$(CC) $(CD)veltext.c $(OPT)
 
 debug.o:  $(BUILD_DEPENDENCIES) $(CD)debug.c
 	$(CC) $(CD)debug.c $(OPT) 

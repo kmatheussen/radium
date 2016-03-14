@@ -12,6 +12,7 @@
 #include "../common/patch_proc.h"
 #include "../common/common_proc.h"
 #include "../common/trackreallines2_proc.h"
+#include "../common/veltext_proc.h"
 #include "../common/notes_proc.h"
 #include "../common/nodelines_proc.h"
 #include "../common/Signature_proc.h"
@@ -1575,6 +1576,7 @@ static void create_velocities_gradient_background(
   }
 }
 
+
 static void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
 
   //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
@@ -1699,6 +1701,49 @@ static void create_track_is_recording(const struct Tracker_Windows *window, cons
   GE_text(c, "Rec", wtrack->x, 0);
 }
 
+static void create_track_veltext2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int realline, char v1, char v2, char v3){
+
+  char text[]={v1, v2, '|', v3, '\0'};
+
+  float x = wtrack->veltextarea.x;
+  int y1 = get_realline_y1(window, realline);
+
+  GE_Context *c = GE_textcolor(TEXT_COLOR_NUM);
+  
+  GE_text(c, text, x, y1);
+}
+  
+static void create_track_veltext(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, vector_t *tr, int realline){
+  int num_elements = tr->num_elements;
+  
+  if (num_elements == 0)
+    return;
+
+  if (num_elements > 1){
+    create_track_veltext2(window, wblock, wtrack, realline, 'M', 'U', 'L');
+    return;
+  }
+
+  VelText *vt = (VelText*)tr->elements[0];
+  int scaled = scale_int64(vt->value, 0, MAX_VELOCITY, 0, 0xff);
+  char v1,v2,v3;
+
+  if (scaled < 0x10)
+    v1 = ' ';
+  else
+    v1 = "0123456789abcdef" [scaled / 0x10];
+  
+
+  v2 = "0123456789abcdef" [scaled % 0x10];
+
+  if (vt->logtype==LOGTYPE_HOLD)
+    v3 = 'f';
+  else
+    v3 = '0';
+
+  create_track_veltext2(window, wblock, wtrack, realline, v1, v2, v3);
+}
+
 static void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, int left_subtrack){
   create_track_borders(window, wblock, wtrack, left_subtrack);
 
@@ -1727,6 +1772,14 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
   }
 
 
+  // velocity text
+  if (true || wtrack->veltext_on){
+    vector_t *veltexts = VELTEXTS_get(wblock, wtrack);
+
+    for(int realline = 0 ; realline<wblock->num_reallines ; realline++)
+      create_track_veltext(window, wblock, wtrack, &veltexts[realline], realline);
+  }
+  
   // fxs
   if(left_subtrack<=0){
     

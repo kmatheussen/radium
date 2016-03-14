@@ -160,7 +160,13 @@ void UpdateWTrackCoordinates(
         if(wtrack->is_wide)
           wtrack->notearea.x2 += 100;
 
-	wtrack->fxarea.x    = wtrack->notearea.x2 + 2;
+	wtrack->veltextarea.x  = wtrack->notearea.x2 + 2;
+	wtrack->veltextarea.x2 = wtrack->veltextarea.x + (window->fontwidth * 4);
+
+        if (true || wtrack->veltext_on==true)
+          wtrack->fxarea.x  = wtrack->veltextarea.x2 + 2;
+        else
+          wtrack->fxarea.x  = wtrack->notearea.x2 + 2;
 	wtrack->fxarea.x2   = wtrack->fxarea.x    + wtrack->fxonoff*wtrack->fxwidth;
 
 	wtrack->x  = wtrack_x;
