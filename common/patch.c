@@ -164,6 +164,7 @@ struct Patch *NewPatchCurrPos(int instrumenttype, void *patchdata, const char *n
   return PATCH_create(instrumenttype, patchdata, name);
 }
 
+/*
 struct Patch *NewPatchCurrPos_set_track(int instrumenttype, void *patchdata, const char *name){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
@@ -198,6 +199,7 @@ struct Patch *NewPatchCurrPos_set_track(int instrumenttype, void *patchdata, con
   }
 
 }
+*/
 
 void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patch){
   R_ASSERT_RETURN_IF_FALSE(Undo_Is_Open());
@@ -215,8 +217,11 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
         PlayStop();
 
         Undo_Track(window,wblock,wtrack,wblock->curr_realline);
-        handle_fx_when_theres_a_new_patch_for_track(track,track->patch,new_patch);
-        track->patch = new_patch;
+
+        PLAYER_lock();{
+          handle_fx_when_theres_a_new_patch_for_track(track,track->patch,new_patch);
+          track->patch = new_patch;
+        }PLAYER_unlock();
         
       }
       wtrack = NextWTrack(wtrack);
