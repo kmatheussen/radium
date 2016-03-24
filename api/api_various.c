@@ -679,6 +679,52 @@ void switchBlockNoteShowType(int blocknum,int windownum){
   setBlockNoteShowType(type, blocknum, windownum);
 }
 
+void showHideVeltext(int tracknum,int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return;
+
+  wtrack->veltext_on = !wtrack->veltext_on;
+
+  UpdateAllWBlockCoordinates(window);
+}
+
+void showHideVeltextInBlock(int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	-1
+	);
+
+  if(wtrack==NULL) return;
+
+  bool on = !wtrack->veltext_on;
+
+  wtrack = wblock->wtracks;
+  while(wtrack!=NULL){
+    wtrack->veltext_on = on;
+    wtrack = NextWTrack(wtrack);
+  }
+  
+  UpdateAllWBlockCoordinates(window);
+}
+
 void showHidePianoroll(int tracknum,int blocknum,int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
