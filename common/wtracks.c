@@ -187,7 +187,7 @@ void UpdateWTrackCoordinates(
         int y1_ = (wblock->a.y1+wblock->linearea.y)/2;
         int y2_ = (y1_+wblock->linearea.y)/2;
 
-	wtrack->pan.x1 = wtrack->fxarea.x;
+	wtrack->pan.x1 = wtrack->notearea.x2 + 2;
 	wtrack->pan.x2 = wtrack->x2;
 	//wtrack->pan.y1 = wblock->a.y1+(window->systemfontheight) + WTRACKS_SPACE*2;
 	wtrack->pan.y1 = y1_;
@@ -200,7 +200,7 @@ void UpdateWTrackCoordinates(
 	wtrack->panonoff.y1 = wtrack->pan.y1;
 	wtrack->panonoff.y2 = wtrack->pan.y2;
 
-	wtrack->volume.x1 = wtrack->fxarea.x;
+	wtrack->volume.x1 = wtrack->notearea.x2 + 2;
 	wtrack->volume.x2 = wtrack->x2;
 	wtrack->volume.y1 = wtrack->pan.y2+2;
 	//wtrack->volume.y2 = wblock->a.y1+(window->systemfontheight*2)-2;
