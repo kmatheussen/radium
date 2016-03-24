@@ -58,6 +58,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/scancodes_proc.h"
 #include "../common/player_proc.h"
 #include "../common/gfx_wtrackheaders_proc.h"
+#include "../common/veltext_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -436,25 +437,34 @@ protected:
         
     
     bool ret;
-    
-    if (keynum==EVENT_NO)
-      ret = false;
-    else
-      ret = EventReciever(&tevent,window);
-    
-    if (ret==false) {
-      keynum = OS_SYSTEM_get_qwerty_keynum(event); // e.g. using scancode.
 
-      //printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
+    bool veltext_used_key = VELTEXT_keypress(window, tevent.SubID, is_key_press);
+
+    if (veltext_used_key) {
       
-      if (keynum==EVENT_NO){
-        //printf("Unknown key for n%p\n",event);//virtual_key);
-        return false;
+      ret = true;
+
+    } else {
+      
+      if (keynum==EVENT_NO)
+        ret = false;
+      else
+        ret = EventReciever(&tevent,window);
+      
+      if (ret==false) {
+        keynum = OS_SYSTEM_get_qwerty_keynum(event); // e.g. using scancode.
+        
+        //printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
+        
+        if (keynum==EVENT_NO){
+          //printf("Unknown key for n%p\n",event);//virtual_key);
+          return false;
+        }
+        
+        tevent.SubID=keynum;
+        
+        ret = EventReciever(&tevent,window);
       }
-      
-      tevent.SubID=keynum;
-      
-      ret = EventReciever(&tevent,window);
     }
 
     //printf("ret2: %d\n",ret);

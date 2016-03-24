@@ -17,6 +17,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 //extern void SetNum_Vel(struct WTracks *wtrack);
 
+struct Velocities *AddVelocity2(
+                                int velocityvelocity,
+                                const Place *placement,
+                                struct Notes *note
+                                );
+
 extern int AddVelocity(
                        int velocityvelocity,
                        const Place *placement,

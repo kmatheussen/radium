@@ -53,7 +53,7 @@ int GetXSubTrack1(
   if(subtrack==-1)
     return wtrack->notearea.x;
 
-  int fontwidth = (wtrack->veltextarea.x2 - wtrack->veltextarea.x) /  4;
+  int fontwidth = (wtrack->veltextarea.x2 - wtrack->veltextarea.x) /  3;
   
   int sn = 0;
   
@@ -63,7 +63,7 @@ int GetXSubTrack1(
     if (subtrack == sn+1)
       return wtrack->veltextarea.x + fontwidth;
     if (subtrack == sn+2)
-      return wtrack->veltextarea.x + (fontwidth*3);
+      return wtrack->veltextarea.x + (fontwidth*2);
 
     sn +=3;
   }
@@ -103,7 +103,7 @@ int GetXSubTrack2(
     R_ASSERT_RETURN_IF_FALSE2(wtrack, 200);
     if(subtrack==-1) return wtrack->notearea.x2;
 
-    int fontwidth = (wtrack->veltextarea.x2 - wtrack->veltextarea.x) / 4;
+    int fontwidth = (wtrack->veltextarea.x2 - wtrack->veltextarea.x) / 3;
   
     int sn = 0;
   
@@ -113,7 +113,7 @@ int GetXSubTrack2(
       if (subtrack == sn+1)
         return wtrack->veltextarea.x + (fontwidth*2);
       if (subtrack == sn+2)
-        return wtrack->veltextarea.x + (fontwidth*4);
+        return wtrack->veltextarea.x + (fontwidth*3);
       
       sn +=3;
     }

@@ -2409,7 +2409,7 @@ int createVelocity3(float value, int line, int counter, int dividor, int notenum
     return -1;
   }
 
-
+  
   window->must_redraw_editor = true;
 
   return ret+1;

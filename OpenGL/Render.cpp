@@ -931,9 +931,10 @@ void create_track_borders(const struct Tracker_Windows *window, const struct WBl
                          y1,
                          y2);
 
-  int num_subtracks = WTRACK_num_subtracks(wtrack);
-  
-  for(int lokke=R_MAX(1, left_subtrack) ; lokke < num_subtracks ; lokke++){
+  int num_subtracks = WTRACK_num_subtracks(wtrack); 
+  int first_polyphony_subtrack = WTRACK_num_non_polyphonic_subtracks(wtrack);
+                                      
+  for(int lokke=R_MAX(1, R_MAX(first_polyphony_subtrack, left_subtrack)) ; lokke < num_subtracks ; lokke++){
     create_single_border(
                          GetXSubTrack1(wtrack,lokke)-1,
                          y1,
@@ -1705,12 +1706,15 @@ static void create_track_is_recording(const struct Tracker_Windows *window, cons
 
 static void create_track_veltext2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int realline, char v1, char v2, char v3){
 
-  char text[]={v1, v2, '|', v3, '\0'};
+  if (v3=='8')
+    v3 = ' ';
+  
+  char text[]={v1, v2, v3, '\0'};
 
   float x = wtrack->veltextarea.x;
   int y1 = get_realline_y1(window, realline);
 
-  GE_Context *c = GE_textcolor(PORTAMENTO_NOTE_TEXT_COLOR_NUM);
+  GE_Context *c = GE_textcolor(VELOCITY_TEXT_COLOR_NUM);
   
   GE_text(c, text, x, y1);
 }
@@ -1727,19 +1731,18 @@ static void create_track_veltext(const struct Tracker_Windows *window, const str
   }
 
   VelText *vt = (VelText*)tr->elements[0];
-  int scaled = scale_int64(vt->value, 0, MAX_VELOCITY, 0, 0xff);
   char v1,v2,v3;
 
-  if (scaled < 0x10)
+  if (vt->value < 0x10)
     v1 = ' ';
   else
-    v1 = "0123456789abcdef" [scaled / 0x10];
+    v1 = "0123456789abcdef" [vt->value / 0x10];
   
 
-  v2 = "0123456789abcdef" [scaled % 0x10];
+  v2 = "0123456789abcdef" [vt->value % 0x10];
 
   if (vt->logtype==LOGTYPE_HOLD)
-    v3 = '0';
+    v3 = 'x';
   else
     v3 = '8';
 

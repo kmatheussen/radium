@@ -100,26 +100,53 @@ void SetNum_Vel(
 }
 #endif
 
-
-int AddVelocity(
-                int velocityvelocity,
-                const Place *placement,
-                struct Notes *note
-){
-  if(PlaceLessOrEqual(placement, &note->l.p)) return -1;
-  if(PlaceGreaterOrEqual(placement, &note->end)) return -1;
+static struct Velocities *add_velocity(
+                                int velocityvelocity,
+                                const Place *placement,
+                                struct Notes *note,
+                                int *pos
+                                )
+{
+  *pos = -1;
+  
+  if(PlaceLessOrEqual(placement, &note->l.p)) return NULL;
+  if(PlaceGreaterOrEqual(placement, &note->end)) return NULL;
   struct Velocities *velocity=talloc(sizeof(struct Velocities));
   PlaceCopy(&velocity->l.p,placement);
   velocity->velocity=R_BOUNDARIES(0,velocityvelocity,MAX_VELOCITY);
   
   /* ListAddElement3_ns returns -1 (and doesnt do anything else)
      if there allready is an element with the same placement. */
-  int ret;
 
   PLAYER_lock();{
-    ret = ListAddElement3_ns(&note->velocities,&velocity->l);
+    *pos = ListAddElement3_ns(&note->velocities,&velocity->l);
   }PLAYER_unlock();
-  
+
+  if (*pos==-1)
+    return NULL;
+  else
+    return velocity;
+}
+
+struct Velocities *AddVelocity2(
+                                int velocityvelocity,
+                                const Place *placement,
+                                struct Notes *note
+                                )
+{
+  int ret;
+  return add_velocity(velocityvelocity, placement, note, &ret);
+}
+
+int AddVelocity(
+                int velocityvelocity,
+                const Place *placement,
+                struct Notes *note
+){
+  int ret;
+
+  add_velocity(velocityvelocity, placement, note, &ret);
+
   return ret;
 }
 

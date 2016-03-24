@@ -74,6 +74,8 @@ static const ColorConfig g_colorconfig[] = {
   {BUTTONS_COLOR_NUM,                  "color13", "Buttons"},
   {PORTAMENTO_NOTE_TEXT_COLOR_NUM,                  "color14", "Portamento note text"},
   {PORTAMENTO_END_NOTE_TEXT_COLOR_NUM,                  "portamento_end_note_text", "Portamento end note text"},
+  {VELOCITY_TEXT_COLOR_NUM,     "velocity_text", "Velocity text"},
+   
   {HIGH_EDITOR_BACKGROUND_COLOR_NUM,                  "color15", "High Editor background"},
 
   {SOUNDFONT_COLOR_NUM,         "soundfont",          "Browser: Soundfont"},
@@ -137,6 +139,7 @@ static ReplacementColorNum g_replacement_color_num[] = {
   {PEAKS_COLOR_NUM, BUTTONS_COLOR_NUM},
   {PEAKS_0DB_COLOR_NUM, VELOCITY2_COLOR_NUM},
   {PEAKS_4DB_COLOR_NUM, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
+  {VELOCITY_TEXT_COLOR_NUM, TEXT_COLOR_NUM},
 
   {PIANONOTE_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
   
