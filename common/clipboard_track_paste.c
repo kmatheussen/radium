@@ -248,7 +248,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			break;
 	}
 
-        SetNoteSubtrackAttributes(wtrack->track);
+        SetNotePolyphonyAttributes(wtrack->track);
         ValidateCursorPos(window);
 }
 

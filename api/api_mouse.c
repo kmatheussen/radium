@@ -1990,7 +1990,7 @@ static int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *no
       note->l.p = *place;
       ListAddElement3(&track->notes, &note->l);
       if (replace_note_ends && !ctrlPressed())
-        ReplaceNoteEnds(block, track, &old_place, place, note->subtrack);
+        ReplaceNoteEnds(block, track, &old_place, place, note->polyphony_num);
       NOTE_validate(block, track, note);
     }PLAYER_unlock();
 
@@ -2203,7 +2203,7 @@ int getNumSubtracks(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return 1;
 
-  return GetNumSubtracks(wtrack->track);
+  return GetNumSubtracks(wtrack);
 }
 
 static struct WTracks *getSubtrackWTrack(int subtracknum, int tracknum, int blocknum, int windownum){
@@ -2213,8 +2213,8 @@ static struct WTracks *getSubtrackWTrack(int subtracknum, int tracknum, int bloc
   if (wtrack==NULL)
     return NULL;
 
-  if (subtracknum>=GetNumSubtracks(wtrack->track)){
-    RWarning("No subtrack %d in track %d in block %d (only %d subtracks in this track)\n", subtracknum, tracknum, blocknum, GetNumSubtracks(wtrack->track));
+  if (subtracknum>=GetNumSubtracks(wtrack)){
+    RWarning("No subtrack %d in track %d in block %d (only %d subtracks in this track)\n", subtracknum, tracknum, blocknum, GetNumSubtracks(wtrack));
     return 0;
   }
 
@@ -2293,7 +2293,7 @@ int getNoteSubtrack(int notenum, int tracknum, int blocknum, int windownum){
   if (note==NULL)
     return 0;
 
-  return GetNoteSubtrack(wtrack->track, note);
+  return GetNoteSubtrack(wtrack, note);
 }
 
 void setNoMouseNote(int blocknum, int windownum){

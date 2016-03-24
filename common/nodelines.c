@@ -384,8 +384,8 @@ const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window
   last_velocity->logtype = LOGTYPE_IRRELEVANT;
   
   //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
-  subtrack_x1 = GetXSubTrack1(wtrack,note->subtrack);
-  subtrack_x2 = GetXSubTrack2(wtrack,note->subtrack);
+  subtrack_x1 = GetNoteX1(wtrack,note);
+  subtrack_x2 = GetNoteX2(wtrack,note);
   
   return create_nodelines(window,
                           wblock,

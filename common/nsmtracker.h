@@ -370,7 +370,7 @@ typedef struct _hash_t hash_t;
 
 typedef struct{
   int num_elements;
-  int num_elements_allocated;
+  int num_elements_allocated; // private
   void **elements;
 } vector_t;
 
@@ -495,7 +495,7 @@ struct Notes{
 	struct Velocities first_velocity; // used by nodelines
 	struct Velocities last_velocity; // used by nodelines
 
-	int subtrack;
+        int polyphony_num; //subtrack;
 
 	int noend;
 
@@ -800,7 +800,7 @@ struct Tracks{
 	struct Stops *stops;
 	int onoff;
 
-        int num_subtracks;
+        int polyphony;
   
 	const char *trackname;
 	struct Patch *patch;
@@ -1006,6 +1006,23 @@ struct WTracks{
 #define TEXTTYPE 0
 #define GFXTYPE1 1
 #define MAXTYPE 1
+
+static inline int WTRACK_num_non_polyphonic_subtracks(const struct WTracks *wtrack){
+  int ret = 0;
+  
+  if (wtrack->veltext_on)
+    ret+=3;
+
+  return ret;
+}
+
+static inline int WTRACK_num_subtracks(const struct WTracks *wtrack){
+  return WTRACK_num_non_polyphonic_subtracks(wtrack) + wtrack->track->polyphony;
+}
+
+static inline int NOTE_subtrack(const struct WTracks *wtrack, const struct Notes *note){
+  return WTRACK_num_non_polyphonic_subtracks(wtrack) + note->polyphony_num;
+}
 
 struct CurrentPianoNote{
   int tracknum;

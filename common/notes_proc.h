@@ -15,10 +15,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-extern LANGSPEC void SetNoteSubtrackAttributes(struct Tracks *track);
-extern LANGSPEC int GetNoteSubtrack(struct Tracks *track, struct Notes *note);
-extern LANGSPEC int GetNumSubtracks(struct Tracks *track);
-  
+extern LANGSPEC void SetNotePolyphonyAttributes(struct Tracks *track);
+extern LANGSPEC int GetNoteSubtrack(const struct WTracks *wtrack, struct Notes *note);
+extern LANGSPEC int GetNumSubtracks(const struct WTracks *wtrack);
+
 struct Notes *GetCurrNote(struct Tracker_Windows *window);
 
 #define NOTE_ID_RESOLUTION 256 // i.e. 256 id's per note.
@@ -73,7 +73,7 @@ extern void RemoveNoteCurrPos(struct Tracker_Windows *window);
 extern struct Notes *FindPrevNoteOnSameSubTrack(struct Tracks *track, struct Notes *note);
 
 extern struct Notes *FindNoteOnSubTrack(
-                                        struct Tracks *track,
+                                        const struct WTracks *wtrack,
                                         int subtrack,
                                         Place *placement
 );

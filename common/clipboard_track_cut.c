@@ -141,7 +141,7 @@ void CB_CutTrack_CurrPos(
 				window->curr_track,
 				window->curr_track
 			);
-                        SetNoteSubtrackAttributes(wtrack->track);
+                        SetNotePolyphonyAttributes(wtrack->track);
                         ValidateCursorPos(window);
                         //#endif
 			break;

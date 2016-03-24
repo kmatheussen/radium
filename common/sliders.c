@@ -132,7 +132,7 @@ static SliderData get_sliderdata(struct Tracker_Windows *window){
     data.leftmost_visible_x = 0;
 
   while(wtrack != NULL){
-    int num_subtracks = wtrack->track->num_subtracks;
+    int num_subtracks = WTRACK_num_subtracks(wtrack);
     int track_width = WTRACK_getWidth(window, wtrack);
 
     if (wtrack->l.num == wblock->left_track){

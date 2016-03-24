@@ -30,13 +30,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     Returns the left X coordinate relative to track->fx.y for the subtrack
     'subtrack'.
 ************************************************************************/
-int GetRelXSubTrack1(
+static int GetPolyX1(
 	const struct WTracks *wtrack,
-	int subtrack
+	int polyphony_num
 ){
   R_ASSERT_RETURN_IF_FALSE2(wtrack, 100);
-  int num_subtracks = GetNumSubtracks(wtrack->track);
-  return (wtrack->fxwidth*subtrack/num_subtracks) + (subtrack>0 ? 1 : 0 ) ;
+
+  return (wtrack->fxwidth*polyphony_num/wtrack->track->polyphony) + (polyphony_num>0 ? 1 : 0 ) ;
 }
 
 /************************************************************************
@@ -49,25 +49,46 @@ int GetXSubTrack1(
 	int subtrack
 ){
   R_ASSERT_RETURN_IF_FALSE2(wtrack, 100);
-	if(subtrack==-1) return wtrack->notearea.x;
-	return wtrack->fxarea.x + GetRelXSubTrack1(wtrack,subtrack);
+
+  if(subtrack==-1)
+    return wtrack->notearea.x;
+
+  int fontwidth = (wtrack->veltextarea.x2 - wtrack->veltextarea.x) /  4;
+  
+  int sn = 0;
+  
+  if (wtrack->veltext_on){
+    if (subtrack == sn)
+      return wtrack->veltextarea.x;
+    if (subtrack == sn+1)
+      return wtrack->veltextarea.x + fontwidth;
+    if (subtrack == sn+2)
+      return wtrack->veltextarea.x + (fontwidth*3);
+
+    sn +=3;
+  }
+
+  int polyphony_num = subtrack - sn;
+  return wtrack->fxarea.x + GetPolyX1(wtrack,polyphony_num);
 }
+
 
 /************************************************************************
   FUNCTION
     Returns the right X coordinate relative to track->fx.y for the subtrack
     'subtrack'.
 ************************************************************************/
-int GetRelXSubTrack2(
+static int GetPolyX2(
 	const struct WTracks *wtrack,
-	int subtrack
+	int polyphony_num
 ){
     R_ASSERT_RETURN_IF_FALSE2(wtrack, 200);
-        int num_subtracks = GetNumSubtracks(wtrack->track);
-	return
-          (wtrack->fxwidth*(subtrack+1)/num_subtracks) -
-          (subtrack == num_subtracks-1 ? 0 : 1)
-          ;
+    
+    int num_subtracks = GetNumSubtracks(wtrack);
+    return
+      (wtrack->fxwidth*(polyphony_num+1)/wtrack->track->polyphony) -
+      (polyphony_num == num_subtracks-1 ? 0 : 1)
+      ;
 }
 
 /************************************************************************
@@ -80,10 +101,29 @@ int GetXSubTrack2(
 	int subtrack
 ){
     R_ASSERT_RETURN_IF_FALSE2(wtrack, 200);
-	if(subtrack==-1) return wtrack->notearea.x2;
-	return wtrack->fxarea.x + GetRelXSubTrack2(wtrack,subtrack);
+    if(subtrack==-1) return wtrack->notearea.x2;
+
+    int fontwidth = (wtrack->veltextarea.x2 - wtrack->veltextarea.x) / 4;
+  
+    int sn = 0;
+  
+    if (wtrack->veltext_on){
+      if (subtrack == sn)
+        return wtrack->veltextarea.x + fontwidth;
+      if (subtrack == sn+1)
+        return wtrack->veltextarea.x + (fontwidth*2);
+      if (subtrack == sn+2)
+        return wtrack->veltextarea.x + (fontwidth*4);
+      
+      sn +=3;
+    }
+
+    int polyphony_num = subtrack - sn;
+    return wtrack->fxarea.x + GetPolyX2(wtrack,polyphony_num);
 }
 
+
+  
 /************************************************************************
   FUNCTION
     These two functions works just like GetXSubTrack1 and 2, except
@@ -138,10 +178,25 @@ int GetXSubTrack_B2(
 	return 0;
 }
 
+
+int GetNoteX1(const struct WTracks *wtrack, const struct Notes *note){
+  return GetXSubTrack1(wtrack,
+                       WTRACK_num_non_polyphonic_subtracks(wtrack) + note->polyphony_num
+                       );
+}
+
+int GetNoteX2(const struct WTracks *wtrack, const struct Notes *note){
+  return GetXSubTrack2(wtrack,
+                       WTRACK_num_non_polyphonic_subtracks(wtrack) + note->polyphony_num
+                       );
+}
+
+
 /************************************************************************
   FUNCTION
     Make shure that x is placed within the boundaries of the subtrack.
 ************************************************************************/
+/*
 int SubtrackBoundaries(const struct WTracks *wtrack,int subtrack,int x){
 	int x1=GetRelXSubTrack1(wtrack,subtrack);
 	int x2=GetRelXSubTrack2(wtrack,subtrack);
@@ -149,11 +204,13 @@ int SubtrackBoundaries(const struct WTracks *wtrack,int subtrack,int x){
 	if(x>x2) return x2;
 	return x;
 }
+*/
 
 
 int GetSubTrackWidth(const struct WTracks *wtrack,int subtrack){
 	return GetXSubTrack2(wtrack,subtrack)-GetXSubTrack1(wtrack,subtrack);
 }
+
 
 
 /**************************************************************
@@ -163,6 +220,7 @@ int GetSubTrackWidth(const struct WTracks *wtrack,int subtrack){
   INPUTS
     subtrack - Start at zero.
 **************************************************************/
+/*
 int GetSubTrackPos(
 	const struct WTracks *wtrack,
 	float x,
@@ -176,18 +234,21 @@ int GetSubTrackPos(
 
 	return (int) (x2+0.5);
 }
+*/
+
 
 /**************************************************************
   FUNCTION
     Returns the subtrack 'x' belongs to in the wtrack 'wtrack'.
     If it doesn't belong to a subtrack. Returns -2;
 **************************************************************/
+/*
 int GetSubTrack(
 	const struct WTracks *wtrack,
 	int x
 ){
 	int lokke;
-        int num_subtracks = GetNumSubtracks(wtrack->track);
+        int num_subtracks = GetNumSubtracks(wtrack);
 
 	for(lokke= -1;lokke<num_subtracks;lokke++){
 		if(x==SubtrackBoundaries(wtrack,lokke,x)) return lokke;
@@ -195,7 +256,7 @@ int GetSubTrack(
 
 	return -2;
 }
-
+*/
 
 
 

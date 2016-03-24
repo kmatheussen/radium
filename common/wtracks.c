@@ -54,6 +54,8 @@ struct WTracks *WTRACK_new(void){
   wtrack->pianoroll_lowkey = 48;
   wtrack->pianoroll_highkey = 60;
   wtrack->pianoroll_width = 240;
+
+  //wtrack->veltext_on = true;
   
   return wtrack;
 }
@@ -110,6 +112,13 @@ void UpdateWTracks(struct Tracker_Windows *window, struct WBlocks *wblock){
 	}
 }
 
+static int WTRACKS_get_non_polyphonic_subtracks_width(const struct Tracker_Windows *window, const struct WTracks *wtrack){
+  if (wtrack->veltext_on)
+    return (4 * window->fontwidth) + 2;
+  else
+    return 0;
+}
+    
 static int WTRACK_get_pianoroll_width(
                                       struct Tracker_Windows *window,
                                       struct WTracks *wtrack
@@ -129,7 +138,8 @@ int WTRACK_getWidth(
 {
   return 
     wtrack->notesonoff*((window->fontwidth*wtrack->notelength)) +
-    2 + (wtrack->fxwidth*wtrack->fxonoff)
+    + WTRACKS_get_non_polyphonic_subtracks_width(window, wtrack)
+    + 2 + (wtrack->fxwidth*wtrack->fxonoff)
     + WTRACK_get_pianoroll_width(window, wtrack)
     + 3
     ;
@@ -163,7 +173,7 @@ void UpdateWTrackCoordinates(
 	wtrack->veltextarea.x  = wtrack->notearea.x2 + 2;
 	wtrack->veltextarea.x2 = wtrack->veltextarea.x + (window->fontwidth * 4);
 
-        if (true || wtrack->veltext_on==true)
+        if (wtrack->veltext_on==true)
           wtrack->fxarea.x  = wtrack->veltextarea.x2 + 2;
         else
           wtrack->fxarea.x  = wtrack->notearea.x2 + 2;
@@ -235,10 +245,10 @@ void UpdateAllWTracksCoordinates(
 	if(wtrack==NULL) return;
 
 	while(wtrack!=NULL){
-          SetNoteSubtrackAttributes(wtrack->track); // need track->num_subtracks variable
+          SetNotePolyphonyAttributes(wtrack->track); // Make sure track->polyphony is valid
 	  wtrack=NextWTrack(wtrack);
 	}
-        
+
 	leftX = wblock->t.x1;
 
 	wtrack=wblock->wtracks;
@@ -253,9 +263,10 @@ void UpdateAllWTracksCoordinates(
           GFX_SetMinimumWindowWidth(window, left_wtrack->x2);
         }
 
-	if(wblock->left_subtrack>-1){
-	  leftX -= (wtrack->fxwidth*wblock->left_subtrack/wtrack->track->num_subtracks)
-       	           + (wblock->left_subtrack>0 ? 1 : 0);
+        // TODO: Fix with the new subtrack system
+	if(wblock->left_subtrack>=0){
+	  leftX -= (wtrack->fxwidth*wblock->left_subtrack/wtrack->track->polyphony)
+                 + (wblock->left_subtrack>0 ? 1 : 0);
 	}
 
 	UpdateWTrackCoordinates(window,wblock,wblock->wtracks,leftX);
@@ -284,7 +295,8 @@ void UpdateAllWTracksCoordinates(
 	while(wtrack!=NULL){
 		wblock->right_track=wtrack->l.num;
 		if(NextWTrack(wtrack)==NULL){
-                  wblock->right_subtrack=wtrack->track->num_subtracks-1;
+                  int num_subtracks = WTRACK_num_subtracks(wtrack);
+                  wblock->right_subtrack=num_subtracks-1;
                   goto exit;
 		}
 		if(NextWTrack(wtrack)->notearea.x>=wblock->a.x2-2) break;
@@ -401,10 +413,8 @@ void MinimizeTrack_CurrPos(
 	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack=wblock->wtrack;
 
-        int num_subtracks = GetNumSubtracks(wtrack->track);
-        
 	SetNoteLength(window,wtrack,2);
-	wtrack->fxwidth=window->fontwidth*num_subtracks*2;
+	wtrack->fxwidth=window->fontwidth*wtrack->track->polyphony*2;
 
 #if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,wtrack);
@@ -465,8 +475,8 @@ void MinimizeBlock_CurrPos(
 	wtrack=wblock->wtracks;
 	while(wtrack!=NULL){
 		SetNoteLength(window,wtrack,2);
-                int num_subtracks = GetNumSubtracks(wtrack->track);
-		wtrack->fxwidth=window->fontwidth*num_subtracks;
+                int polyphony = wtrack->track->polyphony;
+		wtrack->fxwidth=window->fontwidth*polyphony;
 		wtrack=NextWTrack(wtrack);
 	}
 	UpdateWBlockCoordinates(window,window->wblock);
@@ -482,8 +492,7 @@ void MinimizeBlock_CurrPos(
 	wblock->temponodearea.width=window->fontwidth*3;
 	while(wtrack!=NULL){
 		SetNoteLength(window,wtrack,3);
-                int num_subtracks = GetNumSubtracks(wtrack->track);
-		wtrack->fxwidth=window->fontwidth*num_subtracks;
+		wtrack->fxwidth=window->fontwidth*wtrack->track->polyphony;
 		wtrack=NextWTrack(wtrack);
 	}
 	UpdateWBlockCoordinates(window,window->wblock);
@@ -516,8 +525,7 @@ void MinimizeBlock_CurrPos(
 		wtrack=wblock->wtracks;
 		while(wtrack!=NULL){
 			SetNoteLength(window,wtrack,notelength);
-                        int num_subtracks = GetNumSubtracks(wtrack->track);
-			wtrack->fxwidth=(window->fontwidth*num_subtracks*nummul)+inc;
+			wtrack->fxwidth=(window->fontwidth*wtrack->track->polyphony*nummul)+inc;
 			wtrack=NextWTrack(wtrack);
 		}
 		UpdateWBlockCoordinates(window,window->wblock);
@@ -527,8 +535,7 @@ void MinimizeBlock_CurrPos(
 	wtrack=wblock->wtracks;
 	while(wtrack!=NULL){
 		SetNoteLength(window,wtrack,notelength);
-                int num_subtracks = GetNumSubtracks(wtrack->track);
-		wtrack->fxwidth=(window->fontwidth*num_subtracks*nummul)+inc-1;
+		wtrack->fxwidth=(window->fontwidth*wtrack->track->polyphony*nummul)+inc-1;
 		wtrack=NextWTrack(wtrack);
 	}
 	UpdateWBlockCoordinates(window,window->wblock);

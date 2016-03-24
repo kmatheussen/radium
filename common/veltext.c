@@ -21,6 +21,8 @@ static void add_velocity(const struct WBlocks *wblock, vector_t *veltexts, const
 
 static void add_note(const struct WBlocks *wblock, vector_t *veltexts, struct Notes *note){
 
+  int last_velocity = note->velocity;
+
   {
     VelText *tr = talloc(sizeof(VelText));
     tr->p = note->l.p;
@@ -34,10 +36,11 @@ static void add_note(const struct WBlocks *wblock, vector_t *veltexts, struct No
   struct Velocities *velocity = note->velocities;
   while(velocity != NULL){
     add_velocity(wblock, veltexts, note, velocity);
+    last_velocity = velocity->velocity;
     velocity = NextVelocity(velocity);
   }
 
-  {
+  if (last_velocity != note->velocity_end)  {
     VelText *tr = talloc(sizeof(VelText));
     tr->p = note->end;
     tr->note = note;

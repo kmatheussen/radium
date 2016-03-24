@@ -931,7 +931,9 @@ void create_track_borders(const struct Tracker_Windows *window, const struct WBl
                          y1,
                          y2);
 
-  for(int lokke=R_MAX(1, left_subtrack) ; lokke < wtrack->track->num_subtracks ; lokke++){
+  int num_subtracks = WTRACK_num_subtracks(wtrack);
+  
+  for(int lokke=R_MAX(1, left_subtrack) ; lokke < num_subtracks ; lokke++){
     create_single_border(
                          GetXSubTrack1(wtrack,lokke)-1,
                          y1,
@@ -1070,11 +1072,11 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
   if(tr2!=NULL && wtrack->noteshowtype==TEXTTYPE){
 
     // Paint THISNOTELINES
-    if(tr->num_elements < 2 && tr2->note!=NULL && tr2->note->subtrack>0) {
+    if(tr->num_elements < 2 && tr2->note!=NULL && tr2->note->polyphony_num>0) {
       //printf("Gakk: %s (%s), %d, pointer: %p\n",NotesTexts[(int)notenum],NotesTexts[(int)note->note],note->subtrack,note);
       float y = (y1+y2) / 2.0f;
       float x1 = wtrack->notearea.x2;
-      float x2 = (GetXSubTrack1(wtrack,tr2->note->subtrack) + GetXSubTrack2(wtrack,tr2->note->subtrack)) / 2.0f;
+      float x2 = (GetNoteX1(wtrack,tr2->note) + GetNoteX2(wtrack,tr2->note)) / 2.0f;
       GE_line(GE_color(TEXT_COLOR_NUM),
               x1, y,
               x2, y,
@@ -1580,8 +1582,8 @@ static void create_velocities_gradient_background(
 static void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
 
   //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
-  subtrack_x1 = GetXSubTrack1(wtrack,note->subtrack);
-  subtrack_x2 = GetXSubTrack2(wtrack,note->subtrack);
+  subtrack_x1 = GetNoteX1(wtrack,note);
+  subtrack_x2 = GetNoteX2(wtrack,note);
 
   const struct NodeLine *nodelines = GetVelocityNodeLines(window, wblock, wtrack, note);
   const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
@@ -1708,7 +1710,7 @@ static void create_track_veltext2(const struct Tracker_Windows *window, const st
   float x = wtrack->veltextarea.x;
   int y1 = get_realline_y1(window, realline);
 
-  GE_Context *c = GE_textcolor(TEXT_COLOR_NUM);
+  GE_Context *c = GE_textcolor(PORTAMENTO_NOTE_TEXT_COLOR_NUM);
   
   GE_text(c, text, x, y1);
 }
@@ -1737,9 +1739,9 @@ static void create_track_veltext(const struct Tracker_Windows *window, const str
   v2 = "0123456789abcdef" [scaled % 0x10];
 
   if (vt->logtype==LOGTYPE_HOLD)
-    v3 = 'f';
-  else
     v3 = '0';
+  else
+    v3 = '8';
 
   create_track_veltext2(window, wblock, wtrack, realline, v1, v2, v3);
 }
@@ -1747,13 +1749,13 @@ static void create_track_veltext(const struct Tracker_Windows *window, const str
 static void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, int left_subtrack){
   create_track_borders(window, wblock, wtrack, left_subtrack);
 
-  SetNoteSubtrackAttributes(wtrack->track);
+  SetNotePolyphonyAttributes(wtrack->track);
    
   // velocities and pitches
   {  
     const struct Notes *note=wtrack->track->notes;
     while(note != NULL){
-      if(note->subtrack >= left_subtrack) {
+      if(NOTE_subtrack(wtrack, note) >= left_subtrack) {
         if (left_subtrack==-1 && wtrack->notesonoff==1)
           create_pitches(window, wblock, wtrack, note);
         create_track_velocities(window, wblock, wtrack, note);
@@ -1773,7 +1775,7 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
 
 
   // velocity text
-  if (true || wtrack->veltext_on){
+  if (wtrack->veltext_on){
     vector_t *veltexts = VELTEXTS_get(wblock, wtrack);
 
     for(int realline = 0 ; realline<wblock->num_reallines ; realline++)

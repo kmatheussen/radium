@@ -53,7 +53,7 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 	if(window->curr_track>=0){
 
 		window->curr_track_sub++;
-                int num_subtracks = GetNumSubtracks(wtrack->track);
+                int num_subtracks = GetNumSubtracks(wtrack);
 
 		if(window->curr_track_sub>=num_subtracks){
 			window->curr_track++;
@@ -76,7 +76,7 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 			 )
 		){
 			leftwtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
-                        int num_subtracks = GetNumSubtracks(leftwtrack->track);
+                        int num_subtracks = GetNumSubtracks(leftwtrack);
 			wblock->left_subtrack++;
 			if(wblock->left_subtrack>=num_subtracks){
                           if (wblock->left_track < wblock->block->num_tracks-1) {
@@ -102,7 +102,7 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 		}
 		for(;;){
 		  rightwtrack=ListFindElement1(&wblock->wtracks->l,window->curr_track);
-                  int num_subtracks = GetNumSubtracks(rightwtrack->track);
+                  int num_subtracks = GetNumSubtracks(rightwtrack);
 		  x2=GetXSubTrack2(rightwtrack,window->curr_track_sub);
 		  if(x2>wblock->a.x2){
 			leftwtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
@@ -183,7 +183,7 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 		if(window->curr_track_sub==-2){
 			wblock->wtrack=ListFindElement1(&wblock->wtracks->l,wtrack->l.num-1);
-                        int num_subtracks = GetNumSubtracks(wblock->wtrack->track);
+                        int num_subtracks = GetNumSubtracks(wblock->wtrack);
 			window->curr_track_sub=num_subtracks-1;
 			window->curr_track--;
 		}
@@ -312,7 +312,7 @@ int SetCursorPosConcrete(
 		}
 	}else{
 		wtrack=ListFindElement1(&wblock->wtracks->l,tracknum);
-                int num_subtracks = GetNumSubtracks(wtrack->track);
+                int num_subtracks = GetNumSubtracks(wtrack);
 
 		subtrack=R_MIN(num_subtracks-1,subtrack);
 

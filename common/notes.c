@@ -48,13 +48,13 @@ extern PlayerClass *pc;
 static const int end_places_size = 1024*32;
 static Place **end_places = NULL;
 
-static int last_free_subtrack;
+static int last_free_polyphony_num;
 
-static int FindFirstFreeSubTrack(Place *p){
+static int FindFirstFreePolyphony_num(Place *p){
   int i;
   for(i=0 ; i < end_places_size ; i++){
-    if (i==last_free_subtrack) {
-      last_free_subtrack++;
+    if (i==last_free_polyphony_num) {
+      last_free_polyphony_num++;
       return i;
     }
     if (PlaceGreaterOrEqual(p, end_places[i]))
@@ -64,36 +64,36 @@ static int FindFirstFreeSubTrack(Place *p){
   return 0; // A polyphony of 32*1024 voices. Impressive.
 }
 
-// Also sets the track->num_subtracks attribute.
-void SetNoteSubtrackAttributes(struct Tracks *track){
-  last_free_subtrack = 0; // reset
+// Also sets the track->polyphony attribute.
+void SetNotePolyphonyAttributes(struct Tracks *track){
+  last_free_polyphony_num = 0; // reset
   
   if (end_places==NULL)
     end_places = V_calloc(end_places_size,sizeof(Place*)); // Using calloc since this memory is only used temporarily in here, so it's not necessary for the GC to know about it in any way.
 
-  track->num_subtracks = 1;
+  track->polyphony = 1;
   
   struct Notes *note = track->notes;
   while(note != NULL){
-    int subtrack = FindFirstFreeSubTrack(&note->l.p);
-    note->subtrack = subtrack;
+    int polyphony_num = FindFirstFreePolyphony_num(&note->l.p);
+    note->polyphony_num = polyphony_num;
     
-    if (subtrack+1 > track->num_subtracks)
-      track->num_subtracks = subtrack+1;
+    if (polyphony_num+1 > track->polyphony)
+      track->polyphony = polyphony_num+1;
     
-    end_places[subtrack] = &note->end;
+    end_places[polyphony_num] = &note->end;
     note = NextNote(note);
   }
 }
 
-int GetNoteSubtrack(struct Tracks *track, struct Notes *note){
-  SetNoteSubtrackAttributes(track);
-  return note->subtrack;
+int GetNoteSubtrack(const struct WTracks *wtrack, struct Notes *note){
+  SetNotePolyphonyAttributes(wtrack->track);
+  return WTRACK_num_non_polyphonic_subtracks(wtrack) + note->polyphony_num;
 }
 
-int GetNumSubtracks(struct Tracks *track){
-  SetNoteSubtrackAttributes(track);
-  return track->num_subtracks;
+int GetNumSubtracks(const struct WTracks *wtrack){
+  SetNotePolyphonyAttributes(wtrack->track);
+  return WTRACK_num_subtracks(wtrack);
 }
 
 /**************************************************************
@@ -570,11 +570,11 @@ void ReplaceNoteEnds(
 	struct Tracks *track,
 	Place *old_placement,
         Place *new_placement,
-        int subtrack
+        int polyphony_num
 ){
 	struct Notes *note=track->notes;
 	while(note!=NULL){
-          if (note->subtrack == subtrack) {
+          if (note->polyphony_num == polyphony_num) {
             if(PlaceGreaterThan(&note->l.p,old_placement)) break;
             if(PlaceEqual(&note->end,old_placement)) {
               note->end = *new_placement;
@@ -635,7 +635,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
       ListRemoveElement3(&track->notes,&tr2->note->l);
       LengthenNotesTo(wblock->block,track,&realline->l.p);
     }PLAYER_unlock();
-    SetNoteSubtrackAttributes(wtrack->track);
+    SetNotePolyphonyAttributes(wtrack->track);
     ValidateCursorPos(window);
     if (tr->num_elements==1)
       MaybeScrollEditorDown(window);
@@ -657,7 +657,7 @@ struct Notes *FindPrevNoteOnSameSubTrack(struct Tracks *track, struct Notes *not
   struct Notes *prev = NULL;
   
   while(notes != note){
-    if (notes->subtrack == note->subtrack)
+    if (notes->polyphony_num == note->polyphony_num)
       prev = notes;
     notes = NextNote(notes);
   }
@@ -666,11 +666,11 @@ struct Notes *FindPrevNoteOnSameSubTrack(struct Tracks *track, struct Notes *not
 }
 
 struct Notes *FindNextNoteOnSameSubtrack(struct Notes *note){
-  int subtrack = note->subtrack;
+  int polyphony_num = note->polyphony_num;
 
   note = NextNote(note);
   while(note!=NULL){
-    if (note->subtrack==subtrack)
+    if (note->polyphony_num==polyphony_num)
       return note;
     else
       note = NextNote(note);
@@ -680,17 +680,17 @@ struct Notes *FindNextNoteOnSameSubtrack(struct Notes *note){
 
 
 struct Notes *FindNoteOnSubTrack(
-                                 struct Tracks *track,
+                                 const struct WTracks *wtrack,
                                  int subtrack,
                                  Place *placement
 ){
-        SetNoteSubtrackAttributes(track);
+        SetNotePolyphonyAttributes(wtrack->track);
   
-        struct Notes *note = track->notes;
+        struct Notes *note = wtrack->track->notes;
         
         while (note != NULL) {
           if(PlaceIsBetween2(placement,&note->l.p,&note->end))
-            if (note->subtrack==subtrack)
+            if (NOTE_subtrack(wtrack, note)==subtrack)
               return note;
           
           note = NextNote(note);
@@ -1152,7 +1152,7 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	realline=wblock->reallines[reallinerealline];
 	subtrack=window->curr_track_sub;
         
-	note=FindNoteOnSubTrack(wtrack->track,subtrack,&realline->l.p);
+	note=FindNoteOnSubTrack(wtrack,subtrack,&realline->l.p);
 	if(note==NULL)
           return;
 
@@ -1161,7 +1161,7 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
         if(PlaceGreaterOrEqual(&note->l.p,&realline->l.p)){
           PLAYER_lock();{
             RemoveNote(wblock->block,wtrack->track,note);
-            SetNoteSubtrackAttributes(wtrack->track);
+            SetNotePolyphonyAttributes(wtrack->track);
             ValidateCursorPos(window);
           }PLAYER_unlock();
 	}else{

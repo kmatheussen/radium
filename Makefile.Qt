@@ -482,7 +482,7 @@ tracks.o:  $(BUILD_DEPENDENCIES) $(CD)tracks.c
 localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)localzooms.c 
 	$(CC) $(CD)localzooms.c $(OPT)
 
-notes.o:  $(BUILD_DEPENDENCIES) $(CD)notes.c 
+notes.o:  $(BUILD_DEPENDENCIES) $(CD)notes.c common/nsmtracker.h
 	$(CC) $(CD)notes.c $(OPT)
 
 pitches.o:  $(BUILD_DEPENDENCIES) $(CD)pitches.c 
@@ -569,7 +569,7 @@ velocities.o:  $(BUILD_DEPENDENCIES) $(CD)velocities.c
 realline_calc.o:  $(BUILD_DEPENDENCIES) $(CD)realline_calc.c
 	$(CC) $(CD)realline_calc.c $(OPT)
 
-gfx_subtrack.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_subtrack.c
+gfx_subtrack.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_subtrack.c common/nsmtracker.h
 	$(CC) $(CD)gfx_subtrack.c $(OPT)
 
 tempos.o:  $(BUILD_DEPENDENCIES) $(CD)tempos.c
