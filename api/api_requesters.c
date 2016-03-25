@@ -164,3 +164,13 @@ void showWarning(char *text){
 void showError(char *text){
   RError(text);
 }
+
+void openProgressWindow(const char *message){
+  GFX_OpenProgress(message);
+}
+void showProgressWindowMessage(const char *message){
+  GFX_ShowProgressMessage(message);
+}
+void closeProgressWindow(void){
+  GFX_CloseProgress();
+}

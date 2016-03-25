@@ -38,6 +38,9 @@ int GFX_Message(vector_t *buttons, QString message);
 #endif
 #endif
 
+extern LANGSPEC void GFX_OpenProgress(const char *message);
+extern LANGSPEC void GFX_ShowProgressMessage(const char *message);
+extern LANGSPEC void GFX_CloseProgress(void);
 extern LANGSPEC int GFX_Message(vector_t *buttons,const char *fmt,...);
 extern LANGSPEC const char *GFX_qVersion(void);
 

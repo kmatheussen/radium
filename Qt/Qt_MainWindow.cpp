@@ -687,6 +687,28 @@ int GFX_Message(vector_t *buttons, const char *fmt,...){
   }
 }
 
+static QMessageBox *progressBox = NULL;
+
+void GFX_OpenProgress(const char *message){
+  progressBox = new QMessageBox(g_editor);
+  progressBox->setStandardButtons(0);
+  progressBox->setText(message);
+  safeShow(progressBox);
+  progressBox->repaint();
+  QCoreApplication::processEvents();
+}
+
+void GFX_ShowProgressMessage(const char *message){
+  progressBox->setInformativeText(message);
+  progressBox->repaint();
+  QCoreApplication::processEvents();
+}
+
+void GFX_CloseProgress(void){
+  delete progressBox;
+  progressBox = NULL;
+}
+
 const char *GFX_qVersion(void){
   return qVersion();
 }
