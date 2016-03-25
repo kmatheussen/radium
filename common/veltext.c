@@ -118,6 +118,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
     case EVENT_D: val = 13; break;
     case EVENT_E: val = 14; break;
     case EVENT_F: val = 15; break;
+    case EVENT_G: val = 15; break;
     case EVENT_X: val = 15; break;
     case EVENT_LR3: val = 15; break; // TODO: Investigate why this isnt working.
   }
@@ -135,8 +136,8 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
 
   vector_t *veltext = &veltexts[realline];
 
-  if (veltext->num_elements == 0 && val==0)
-    return true;
+  //  if (veltext->num_elements == 0 && val==0)
+  //   return true;
   
   Undo_Notes_CurrPos(window);  
 
@@ -167,7 +168,9 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
       int logtype = LOGTYPE_LINEAR;
         
       int value = 0;
-      if (curr_track_sub == 0) {
+      if (key==EVENT_G){
+        value = MAX_VELOCITY;
+      }else if (curr_track_sub == 0) {
         value = scale(val * 0x10, 0, 0xff, 0, MAX_VELOCITY);
       } else if (curr_track_sub == 1) {
         value = scale(val, 0, 0xff, 0, MAX_VELOCITY);
