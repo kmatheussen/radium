@@ -41,3 +41,10 @@ void resetUndo(void){
   ResetUndo();
 }
 
+void startIgnoringUndo(void){
+  Undo_start_ignoring_undo_operations();
+}
+
+void stopIgnoringUndo(void){
+  Undo_stop_ignoring_undo_operations();
+}

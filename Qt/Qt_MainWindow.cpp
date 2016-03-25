@@ -690,15 +690,20 @@ int GFX_Message(vector_t *buttons, const char *fmt,...){
 static QMessageBox *progressBox = NULL;
 
 void GFX_OpenProgress(const char *message){
+  delete progressBox;
+
   progressBox = new QMessageBox(g_editor);
   progressBox->setStandardButtons(0);
-  progressBox->setText(message);
+  progressBox->setText(QString(message) + "             \n            \n              \n                \n               \n");
   safeShow(progressBox);
   progressBox->repaint();
   QCoreApplication::processEvents();
 }
 
 void GFX_ShowProgressMessage(const char *message){
+  if (progressBox == NULL)
+    GFX_OpenProgress("...");
+
   progressBox->setInformativeText(message);
   progressBox->repaint();
   QCoreApplication::processEvents();
