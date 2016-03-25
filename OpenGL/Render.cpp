@@ -1726,7 +1726,7 @@ static void create_track_veltext(const struct Tracker_Windows *window, const str
     return;
 
   if (num_elements > 1){
-    create_track_veltext2(window, wblock, wtrack, realline, 'M', 'U', 'L');
+    create_track_veltext2(window, wblock, wtrack, realline, 'x', 'x', 'x');
     return;
   }
 
@@ -1742,7 +1742,7 @@ static void create_track_veltext(const struct Tracker_Windows *window, const str
   v2 = "0123456789abcdef" [vt->value % 0x10];
 
   if (vt->logtype==LOGTYPE_HOLD)
-    v3 = 'x';
+    v3 = '|';
   else
     v3 = '8';
 

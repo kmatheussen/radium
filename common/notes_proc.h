@@ -27,6 +27,7 @@ static inline int64_t NotenumId(float notenum){
   return n*NUM_PATCH_VOICES;
 }
 
+void NOTE_init(struct Notes *note);
 struct Notes *NewNote(void);
 
 bool NOTES_sorted_by_pitch_questionmark(struct Notes *notes);

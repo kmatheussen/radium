@@ -100,25 +100,26 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
   int val = -1;
   
   switch (key){ 
-  case EVENT_DEL: val = 0; break;
-  case EVENT_RETURN: val = 8; break;
-  case EVENT_0: val = 0; break;
-  case EVENT_1: val = 1; break;
-  case EVENT_2: val = 2; break;
-  case EVENT_3: val = 3; break;
-  case EVENT_4: val = 4; break;
-  case EVENT_5: val = 5; break;
-  case EVENT_6: val = 6; break;
-  case EVENT_7: val = 7; break;
-  case EVENT_8: val = 8; break;
-  case EVENT_9: val = 9; break;    
-  case EVENT_A: val = 10; break;
-  case EVENT_B: val = 11; break;
-  case EVENT_C: val = 12; break;
-  case EVENT_D: val = 13; break;
-  case EVENT_E: val = 14; break;
-  case EVENT_F: val = 15; break;
-  case EVENT_X: val = 15; break;
+    case EVENT_DEL: val = 0; break;
+    case EVENT_RETURN: val = 8; break;
+    case EVENT_0: val = 0; break;
+    case EVENT_1: val = 1; break;
+    case EVENT_2: val = 2; break;
+    case EVENT_3: val = 3; break;
+    case EVENT_4: val = 4; break;
+    case EVENT_5: val = 5; break;
+    case EVENT_6: val = 6; break;
+    case EVENT_7: val = 7; break;
+    case EVENT_8: val = 8; break;
+    case EVENT_9: val = 9; break;    
+    case EVENT_A: val = 10; break;
+    case EVENT_B: val = 11; break;
+    case EVENT_C: val = 12; break;
+    case EVENT_D: val = 13; break;
+    case EVENT_E: val = 14; break;
+    case EVENT_F: val = 15; break;
+    case EVENT_X: val = 15; break;
+    case EVENT_LR3: val = 15; break; // TODO: Investigate why this isnt working.
   }
 
   if (val==-1)

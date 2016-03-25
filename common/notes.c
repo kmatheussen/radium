@@ -191,16 +191,20 @@ static void StopAllNotesAtPlace(
 	}
 }
 
-struct Notes *NewNote(void){
+void NOTE_init(struct Notes *note){
   static int64_t curr_id = -1;
 
   if(curr_id==-1)
     curr_id = NotenumId(1024);
 
-  struct Notes *note=talloc(sizeof(struct Notes));
   note->id = curr_id;
   curr_id += NUM_PATCH_VOICES; // Temp hack. Maybe.
   //printf("note->id: %d\n",(int)note->id);
+}
+
+struct Notes *NewNote(void){
+  struct Notes *note=talloc(sizeof(struct Notes));
+  NOTE_init(note);
 
   return note;
 }

@@ -45,8 +45,8 @@ void CopyRange_velocities(
 	if(PlaceGreaterOrEqual(&fromvelocity->l.p,p2)) return;
 
 	velocity=talloc(sizeof(struct Velocities));
-	velocity->velocity=fromvelocity->velocity;
-	PlaceCopy(&velocity->l.p,&fromvelocity->l.p);
+        memcpy(velocity, fromvelocity, sizeof(struct Velocities));
+
 	PlaceSub(&velocity->l.p,p1);
 
 	ListAddElement3(tovelocity,&velocity->l);
@@ -68,8 +68,8 @@ void CopyRange_pitches(
 	if(PlaceGreaterOrEqual(&frompitch->l.p,p2)) return;
 
 	pitch=talloc(sizeof(struct Pitches));
-	pitch->note=frompitch->note;
-	PlaceCopy(&pitch->l.p,&frompitch->l.p);
+        memcpy(pitch, frompitch, sizeof(struct Pitches));
+
 	PlaceSub(&pitch->l.p,p1);
 
 	ListAddElement3(topitch,&pitch->l);
@@ -99,18 +99,14 @@ void CopyRange_notes(
 		return;
 	}
 
-	note=NewNote();
-	note->note=fromnote->note;
-	note->velocity=fromnote->velocity;
-	note->noend=fromnote->noend;
+	note=talloc(sizeof(struct Notes));
+        memcpy(note, fromnote, sizeof(struct Notes));
+        note->pitches = NULL;
+        note->velocities = NULL;
+        NOTE_init(note);
 
-	PlaceCopy(&note->l.p,&fromnote->l.p);
 	PlaceSub(&note->l.p,p1);
-	PlaceCopy(&note->end,&fromnote->end);
 	PlaceSub(&note->end,p1);
-
-	note->velocity_end=fromnote->velocity_end;
-        note->pitch_end=fromnote->pitch_end;
 
 	ListAddElement3(tonote,&note->l);
 
@@ -139,7 +135,7 @@ void CopyRange_stops(
 	if(PlaceGreaterOrEqual(&fromstop->l.p,p2)) return;
 
 	stop=talloc(sizeof(struct Stops));
-	PlaceCopy(&stop->l.p,&fromstop->l.p);
+        memcpy(stop, fromstop, sizeof(struct Stops));
 	PlaceSub(&stop->l.p,p1);
 
 	ListAddElement3(tostop,&stop->l);
