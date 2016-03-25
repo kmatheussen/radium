@@ -486,8 +486,10 @@ static void import_importmod_file(void){
 }
 
 void importMod(void){
-  import_importmod_file();
-  PyRun_SimpleString("import_mod.import_mod()");
+  //import_importmod_file();
+  //PyRun_SimpleString("import_mod.import_mod()");
+  SCHEME_eval("(my-require 'import_mod.scm)");
+  SCHEME_eval("(load-protracker-module)");
 }
 
 void importXM(void){

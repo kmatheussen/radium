@@ -696,8 +696,11 @@ void GFX_OpenProgress(const char *message){
   progressBox->setStandardButtons(0);
   progressBox->setText(QString(message) + "             \n            \n              \n                \n               \n");
   safeShow(progressBox);
-  progressBox->repaint();
-  QCoreApplication::processEvents();
+  for(int i=0; i < 100 ; i++){
+    progressBox->repaint();
+    QCoreApplication::processEvents();
+    usleep(100);
+  }
 }
 
 void GFX_ShowProgressMessage(const char *message){
