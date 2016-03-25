@@ -204,7 +204,10 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
       int v2 = vt->value & 0x0f;
 
     
-      if (curr_track_sub == 0) {
+      if (key==EVENT_G){
+        v1 = 0xf;
+        v2 = 0xf;
+      }else if (curr_track_sub == 0) {
         v1 = val;
       } else if (curr_track_sub == 1) {
         v2 = val;
@@ -219,6 +222,11 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
       
       int v = v1 * 0x10 + v2;
       int scaled = round(scale_double(v, 0, 0xff, 0, MAX_VELOCITY));
+
+      if (v1==0 && v2==0)
+        scaled = 0;
+      if (v1==0xf && v2==0xf)
+        scaled = MAX_VELOCITY;
       
       printf("v1: %x, v2: %x, val: %x, v: %x\n",v1,v2,val,v);
       

@@ -174,3 +174,7 @@ void showProgressWindowMessage(const char *message){
 void closeProgressWindow(void){
   GFX_CloseProgress();
 }
+
+void showVelocityHelpWindow(void){
+  GFX_showVelocityHelpWidget();
+}

@@ -718,5 +718,37 @@ const char *GFX_qVersion(void){
   return qVersion();
 }
 
+
+  
+  
+
+void GFX_showVelocityHelpWidget(void){
+    static QMessageBox *msgBox = new QMessageBox;
+        
+    msgBox->setText("Velocity text");
+    msgBox->setInformativeText(
+                               "<pre>"
+                               "Velocity text is an alternative way to edit the velocities of a note.\n"
+                               "Editing text is sometimes quicker than editing graphically.\n"
+                               "\n"
+                               "Key bindings:\n"
+                               "\n"
+                               "  Left Alt  + Y: Turn on/off velocity text for track\n"
+                               "  Left Ctrl + Y: Turn on/off velocity text for all tracks in block\n"
+                               "\n"
+                               "Velocity text format: \"xxt\"\n"
+                               "\n"
+                               "  xx = Velocity value. 0 = lowest velocity, ff = highest velocity. (hex format)\n"
+                               "   t = Whether to glide to the velocity or not.\n"
+                               "\n"
+                               "  Tip: To quickly add an \"ff\" velocity, press the G button.\n"
+                               "\n"                               
+                               "</pre>"
+                               );
+    msgBox->setStandardButtons(QMessageBox::Ok);
+
+    safeShowOrExec(msgBox);
+}
+
 //#include "mgakk.cpp"
 
