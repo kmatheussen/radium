@@ -1,3 +1,10 @@
+Changes 3.6.7 -> 3.6.8:
+* New and much better tracker module importer.
+* Optionally edit velocities by text instead of graphics, like
+  in a normal tracker.
+* Fix race condition bug when replacing instrument.
+
+
 Changes 3.6.6 -> 3.6.7:
 * Only pause GL thread 200ms (instead of 1 second) when creating new Qt widgets
   Hopefully that is enough to avoid crash in buggy gfx drivers.
