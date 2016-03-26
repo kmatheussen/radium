@@ -50,9 +50,9 @@ class NullWriter(object):
 
 if __name__ == "__main__":
     sys.g_program_path = '__main__' # hack to be able to import import_midi
-else:
-    if platform.system() != "Linux" and os.isatty(sys.stdout.fileno()):
-        sys.stdout = sys.stderr = NullWriter()
+                                    #else:
+                                    #  if platform.system() != "Linux" and os.isatty(sys.stdout.fileno()):
+                                    #        sys.stdout = sys.stderr = NullWriter() # printing too much causes program to fail under windows
 
 
 import import_midi # for radum mock
@@ -1686,7 +1686,14 @@ def import_xm(filename=""):
 def import_mod(filename_base64):
     filename = radium.fromBase64(filename_base64)
 
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
+    if platform.system() != "Linux":
+        sys.stdout = NullWriter()
+        sys.stderr = NullWriter()
+        
     try:
+        print " --- ",filename
         file = open(filename, "rb")
 
     #file = open("workerstecnopop3.mod", "rb")
@@ -1699,6 +1706,7 @@ def import_mod(filename_base64):
     #file = open("/home/kjetil/Downloads/velcoitytest.mod", "rb")
 
         radium.evalScheme('(start-adding-protracker-events!)')
+
         song = read_song(file)
 
         # add instrument list
@@ -1715,7 +1723,8 @@ def import_mod(filename_base64):
             code +=     "#f"                          # 7.
             code += ")"
         code += "))"
-        
+
+        print "code1:",code
         radium.evalScheme(code)
 
         #for sample in song.samples:
@@ -1726,10 +1735,11 @@ def import_mod(filename_base64):
         for patternnum in song.playlist.patternnums:
             code += " " + str(patternnum) + " "
         code += "))"
-        
+        print "code2:",code
         radium.evalScheme(code)
 
         code = "(set-protracker-pattern-format " + str(song.numchannels) + " 64)"
+        print "code3:",code
         radium.evalScheme(code)
         
         #generate_from_mod(song)
@@ -1745,6 +1755,10 @@ def import_mod(filename_base64):
             for m in message.split("\n"):
                 radium.showMessage(m)
 
+    finally:
+        if platform.system() != "Linux":
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
     
 
 if __name__ == "__main__":
