@@ -744,7 +744,7 @@ void GFX_showVelocityHelpWidget(void){
                                "Velocity text format: \"xxt\"\n"
                                "\n"
                                "  xx = Velocity value. 0 = lowest velocity, ff = highest velocity. (hex format)\n"
-                               "   t = Whether to glide to the velocity or not.\n"
+                               "   t = Whether to glide to the next velocity or not.\n"
                                "\n"
                                "  Tip: To quickly add an \"ff\" velocity, press the G button.\n"
                                "\n"                               
