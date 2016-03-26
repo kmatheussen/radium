@@ -1107,3 +1107,11 @@ int getCursorTrack(int windownum){
 int getHighestLegalPlaceDenominator(void){
   return MAX_UINT32;
 }
+
+char *toBase64(const char *s){
+  return STRING_get_chars(STRING_toBase64(STRING_create(s)));
+}
+
+char *fromBase64(const char *s){
+  return STRING_get_chars(STRING_fromBase64(STRING_create(s)));
+}

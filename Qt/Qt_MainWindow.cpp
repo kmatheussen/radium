@@ -732,7 +732,7 @@ void GFX_showVelocityHelpWidget(void){
     msgBox->setInformativeText(
                                "<pre>"
                                "Velocity text is an alternative way to edit the velocities of a note.\n"
-                               "Editing text is sometimes quicker than editing graphically.\n"
+                               "Editing text is often quicker than editing velocities graphically.\n"
                                "\n"
                                "Key bindings:\n"
                                "\n"

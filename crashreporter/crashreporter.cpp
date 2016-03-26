@@ -74,12 +74,14 @@ static const char *g_no_plugin_name = "<noplugin>";
 #define NOEMERGENCYSAVE "<noemergencysave>"
 
 
+namespace local{
 static QString toBase64(QString s){
   return s.toLocal8Bit().toBase64();
 }
 
 static QString fromBase64(QString encoded){
   return QString::fromLocal8Bit(QByteArray::fromBase64(encoded.toLocal8Bit()).data());
+}
 }
 
 
@@ -273,11 +275,11 @@ int main(int argc, char **argv){
   
   QApplication app(argc,argv);
 
-  QString filename = fromBase64(argv[1]);
+  QString filename = local::fromBase64(argv[1]);
 
-  QString running_plugin_names = fromBase64(argv[2]);
+  QString running_plugin_names = local::fromBase64(argv[2]);
   
-  QString emergency_save_filename = fromBase64(argv[3]);
+  QString emergency_save_filename = local::fromBase64(argv[3]);
     
   Crash_Type crash_type = QString(argv[4])=="is_crash" ? CT_CRASH : QString(argv[4])=="is_error" ? CT_ERROR : CT_WARNING;
 
@@ -557,9 +559,9 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
       emergency_save_file.open();
     
     run_program(program,
-                toBase64(file->fileName()),
-                toBase64(plugin_names),
-                toBase64(dosave ? emergency_save_file.fileName() : NOEMERGENCYSAVE),
+                local::toBase64(file->fileName()),
+                local::toBase64(plugin_names),
+                local::toBase64(dosave ? emergency_save_file.fileName() : NOEMERGENCYSAVE),
                 crash_type==CT_CRASH ? "is_crash" : crash_type==CT_ERROR ? "is_error" : "is_warning",
                 do_block
                 );

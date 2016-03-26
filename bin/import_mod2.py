@@ -1683,7 +1683,9 @@ def import_xm(filename=""):
         #        for m in message.split("\n"):
         radium.showMessage(message)
 
-def import_mod(filename):
+def import_mod(filename_base64):
+    filename = radium.fromBase64(filename_base64)
+
     try:
         file = open(filename, "rb")
 
@@ -1703,8 +1705,8 @@ def import_mod(filename):
         code = "(set-protracker-instrumentlist! (vector"
         for sample in song.samples:
             code += "(vector "
-            code +=     '"' + sample.name.replace('"','\\"') + '" '      # 0.
-            code +=     '"' + sample.filename.replace('"','\\"') + '" '  # 1.
+            code +=     '"' + radium.toBase64(sample.name) + '" '      # 0.
+            code +=     '"' + radium.toBase64(sample.filename) + '" '  # 1.
             code +=     str(sample.num_bytes()) + " " # 2.
             code +=     str(sample.finetune) + " "    # 3.
             code +=     str(sample.volume) + " "      # 4.
@@ -1744,42 +1746,6 @@ def import_mod(filename):
                 radium.showMessage(m)
 
     
-def import_mod_org(filename=""):
-    #import_xm(filename)
-    #return
-
-    if filename=="":
-        filename = radium.getLoadFilename("Choose MOD file", "*.mod *.MOD mod.* MOD.*")
-    if not filename or filename=="":
-        return
-
-    try:
-        file = open(filename, "rb")
-
-    #file = open("workerstecnopop3.mod", "rb")
-    #file = open("/home/kjetil/Downloads/temp/NIAGRA.MOD", "rb")
-    #file = open("/home/kjetil/Downloads/GODZILLA.MOD", "rb")
-    #file = open("/home/kjetil/Downloads/hoffman_and_daytripper_-_professional_tracker.mod", "rb")
-    #file = open("/home/kjetil/Downloads/hoisaga1.mod", "rb")
-    #file = open("/home/kjetil/Downloads/knulla-kuk.mod", "rb")
-    #file = open("/home/kjetil/Downloads/DOPE.MOD", "rb")
-    #file = open("/home/kjetil/Downloads/velcoitytest.mod", "rb")
-
-        song = read_song(file)
-
-        generate_from_mod(song)
-        
-    except:
-        e = sys.exc_info()[0]
-        message = traceback.format_exc()
-        print message
-        radium.showMessage("Loading "+filename+" failed. If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
-        if platform.system() == "Linux":
-            radium.showMessage(message)
-        else:
-            for m in message.split("\n"):
-                radium.showMessage(m)
-
 
 if __name__ == "__main__":
     print "hmm"

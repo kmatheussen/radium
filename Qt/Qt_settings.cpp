@@ -139,6 +139,17 @@ wchar_t *STRING_append(const wchar_t *s1, const wchar_t *s2){
   return STRING_create(STRING_get_qstring(s1) + STRING_get_qstring(s2));
 }
 
+wchar_t *STRING_toBase64(const wchar_t *s){
+  QString s2 = STRING_get_qstring(s);
+  QString encoded = s2.toLocal8Bit().toBase64();
+  return STRING_create(encoded);
+}
+
+wchar_t *STRING_fromBase64(const wchar_t *encoded){
+  QString encoded2 = STRING_get_qstring(encoded);
+  QString decoded = QString::fromLocal8Bit(QByteArray::fromBase64(encoded2.toLocal8Bit()).data());
+  return STRING_create(decoded);
+}
 
 // TODO: Rename to OS_get_program_path
 const wchar_t *OS_get_program_path2(void){

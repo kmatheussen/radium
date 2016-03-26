@@ -28,6 +28,10 @@ static inline double STRING_get_double(const wchar_t *string){
 }
 extern LANGSPEC wchar_t *STRING_append(const wchar_t *s1, const wchar_t *w2);
 
+extern LANGSPEC wchar_t *STRING_toBase64(const wchar_t *s);
+
+extern LANGSPEC wchar_t *STRING_fromBase64(const wchar_t *encoded);
+
 
 #ifdef USE_QT4
 

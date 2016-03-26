@@ -4416,9 +4416,9 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (set! *instrumentlist* daslist))
 
 (define (instrument-sample-name instr)
-  (instr 0))
+  (<ra> :from-base64 (instr 0)))
 (define (instrument-sample-filename instr)
-  (instr 1))
+  (<ra> :from-base64 (instr 1)))
 (define (instrument-num-samples instr)
   (instr 2))
 (define (instrument-finetune instr)
@@ -5751,7 +5751,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
            
            (set! *playlist* #f)
            
-           (<ra> :eval-python (<-> "import_mod2.import_mod(\"" filename "\")"))
+           (<ra> :eval-python (<-> "import_mod2.import_mod(\"" (<ra> :to-base64 filename) "\")"))
            
            (let* ((stuff (process-events *playlist*
                                          *instrumentlist*
