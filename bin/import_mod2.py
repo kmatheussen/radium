@@ -26,16 +26,6 @@
 
 from __future__ import division # we always want floating point division
 
-'''
-1. "Play" through the song.
-2. When doing that, assign new instrument numbers for notes with instrument 0, and if there are mismatches, create new block.
-3. Same goes for tempo, and effects.
-4. Same goes for note stops
-5. And do something for position jumps, loops, etc. too
-
-Loesning: Om det henger igjen en note, bare smell to patterns i hop.
-'''
-
 
 import sys, os, filecmp, traceback
 import platform
