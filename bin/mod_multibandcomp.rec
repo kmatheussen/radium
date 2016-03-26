@@ -1,0 +1,313 @@
+>> HASH MAP V2 BEGIN
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
+effects
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+73
+Band 1:  Solo
+0
+FLOAT_TYPE
+0
+Band 1: Attack
+0
+FLOAT_TYPE
+100
+Band 1: Bypass
+0
+FLOAT_TYPE
+0
+Band 1: Input Gain
+0
+FLOAT_TYPE
+5.520000457763672
+Band 1: Output Gain
+0
+FLOAT_TYPE
+3.136001586914062
+Band 1: Ratio
+0
+FLOAT_TYPE
+1.999400019645691
+Band 1: Release
+0
+FLOAT_TYPE
+200
+Band 1: Threshold
+0
+FLOAT_TYPE
+-20.01899719238281
+Band 2:  Solo
+0
+FLOAT_TYPE
+0
+Band 2: Attack
+0
+FLOAT_TYPE
+100
+Band 2: Bypass
+0
+FLOAT_TYPE
+0
+Band 2: Input Gain
+0
+FLOAT_TYPE
+-0.2639999389648438
+Band 2: Output Gain
+0
+FLOAT_TYPE
+-0.7919998168945312
+Band 2: Ratio
+0
+FLOAT_TYPE
+1.999400019645691
+Band 2: Release
+0
+FLOAT_TYPE
+200
+Band 2: Threshold
+0
+FLOAT_TYPE
+-20.01899719238281
+Band 3:  Solo
+0
+FLOAT_TYPE
+0
+Band 3: Attack
+0
+FLOAT_TYPE
+100
+Band 3: Bypass
+0
+FLOAT_TYPE
+0
+Band 3: Input Gain
+0
+FLOAT_TYPE
+0
+Band 3: Output Gain
+0
+FLOAT_TYPE
+3.936000823974609
+Band 3: Ratio
+0
+FLOAT_TYPE
+1.999400019645691
+Band 3: Release
+0
+FLOAT_TYPE
+200
+Band 3: Threshold
+0
+FLOAT_TYPE
+-20.01899719238281
+Final Output Gain
+0
+FLOAT_TYPE
+7.248001098632812
+Limiter Attack
+0
+FLOAT_TYPE
+179.0419921875
+Limiter Bypass
+0
+FLOAT_TYPE
+1
+Limiter Input Gain
+0
+FLOAT_TYPE
+0
+Limiter Output Gain
+0
+FLOAT_TYPE
+1.840000152587891
+Limiter Ratio
+0
+FLOAT_TYPE
+4
+Limiter Release
+0
+FLOAT_TYPE
+119.9300003051758
+Split Freq 1
+0
+FLOAT_TYPE
+244.7464904785156
+Split Freq 2
+0
+FLOAT_TYPE
+2603
+System Chorus
+0
+FLOAT_TYPE
+0
+System Chorus On/Off
+0
+FLOAT_TYPE
+1
+System Compression Attack
+0
+FLOAT_TYPE
+49.807373046875
+System Compression Makeup Gain
+0
+FLOAT_TYPE
+0
+System Compression On/Off
+0
+FLOAT_TYPE
+0
+System Compression Ratio
+0
+FLOAT_TYPE
+2
+System Compression Release
+0
+FLOAT_TYPE
+100.2368087768555
+System Compression Threshold
+0
+FLOAT_TYPE
+-20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
+System Dry/Wet
+0
+FLOAT_TYPE
+1
+System Effects On/Off
+0
+FLOAT_TYPE
+1
+System Eq1 F.
+0
+FLOAT_TYPE
+400.0001525878906
+System Eq1 L.
+0
+FLOAT_TYPE
+0
+System Eq1 On/Off
+0
+FLOAT_TYPE
+0
+System Eq2 F.
+0
+FLOAT_TYPE
+1000.000366210938
+System Eq2 L.
+0
+FLOAT_TYPE
+0
+System Eq2 On/Off
+0
+FLOAT_TYPE
+0
+System Hs F.
+0
+FLOAT_TYPE
+1500.000732421875
+System Hs L.
+0
+FLOAT_TYPE
+0
+System Hs On/Off
+0
+FLOAT_TYPE
+0
+System In
+0
+FLOAT_TYPE
+1.000000476837158
+System In On/Off
+0
+FLOAT_TYPE
+1
+System Lowpass On/Off
+0
+FLOAT_TYPE
+0
+System Lp F.
+0
+FLOAT_TYPE
+4999.99951171875
+System Ls F.
+0
+FLOAT_TYPE
+400.0001525878906
+System Ls L.
+0
+FLOAT_TYPE
+0
+System Ls On/Off
+0
+FLOAT_TYPE
+0
+System Out
+0
+FLOAT_TYPE
+1.000000476837158
+System Out On/Off
+0
+FLOAT_TYPE
+1
+System Pan
+0
+FLOAT_TYPE
+0.5
+System Pan On/Off
+0
+FLOAT_TYPE
+0
+System Reverb
+0
+FLOAT_TYPE
+0
+System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
+System Show Compressor GUI
+0
+FLOAT_TYPE
+0
+System Show Equalizer GUI
+0
+FLOAT_TYPE
+1
+System Volume
+0
+FLOAT_TYPE
+1.000000476837158
+System Volume On/Off
+0
+FLOAT_TYPE
+1
+System Width
+0
+FLOAT_TYPE
+33.05500030517578
+System Width On/Off
+0
+FLOAT_TYPE
+0
+<< HASH MAP V2 END
+name
+0
+STRING_TYPE
+Multiband Compressor
+type_name
+0
+STRING_TYPE
+Faust
+<< HASH MAP V2 END
