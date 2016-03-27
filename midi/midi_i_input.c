@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/settings_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../common/OS_Player_proc.h"
+#include "../common/visual_proc.h"
 
 #include "midi_i_input_proc.h"
 
@@ -90,16 +91,24 @@ static void record_midi_event(uint32_t msg){
   if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL)
     return;
 
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+  struct WTracks *wtrack = wblock->wtrack;
+  struct Tracks *track = wtrack->track;
+  
   midi_event_t *midi_event = get_midi_event();
 
   midi_event->next = NULL;
   
-  midi_event->wblock    = root->song->tracker_windows->wblock;
-  midi_event->wtrack    = midi_event->wblock->wtrack;
+  midi_event->wblock    = wblock;
+  midi_event->wtrack    = wtrack;
   midi_event->blocktime = R_MAX(0, MIXER_get_accurate_radium_time() - ATOMIC_GET(pc->seqtime)); // TODO/FIX: This can fail if pc->seqtime is not updated at the same time as 'jackblock_cycle_start_stime' in Mixer.cpp.
   midi_event->msg       = msg;
 
-  midi_event->wtrack->track->is_recording = true;
+  if (track->is_recording == false){
+    GFX_ScheduleEditorRedraw();
+    track->is_recording = true;
+  }
 
   //printf("Rec %d: %x, %x, %x\n",(int)midi_event->blocktime,cc,data1,data2);
 

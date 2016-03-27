@@ -104,22 +104,6 @@ void P2MUpdateSongPosCallBack(void){
     //printf("Aft. w: %d, r: %d\n",window->curr_block,root->curr_block);
   }      
 
-#if 0
-  // make sure "Rec" is updated
-  {
-    static struct Tracks *current_track = NULL;
-    static bool current_track_recording = false;
-    
-    struct Tracks *track = wblock->wtrack->track;
-    if (track != current_track || (current_track!=NULL && track->is_recording != current_track_recording)){
-      //printf("   ptask2mtask, calling gl_create %d %d\n",track != current_track,(current_track!=NULL && track->is_recording != current_track_recording));
-      current_track = track;
-      current_track_recording = current_track->is_recording;
-      GL_create(window, wblock);
-    }
-  }
-#endif
-  
   //GE_set_curr_realline(wblock->curr_realline);
   //  printf("till_curr_realline: %d\n",wblock->till_curr_realline);
   //ScrollEditorToRealLine(window,wblock,wblock->curr_realline);
