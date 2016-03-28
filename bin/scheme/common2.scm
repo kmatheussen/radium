@@ -594,21 +594,26 @@ for .emacs:
   (c-display "relations: " relations)
   (c-display "strings: " strings)
   (c-display "popup-arg: " popup-arg)
+
+  (define (get-func n)
+    (define result-string (vector-ref strings n))
+    (cadr (assoc result-string relations)))
   
-  (define result-num (ra:popup-menu popup-arg))
+  (define result-num (<ra> :popup-menu2 popup-arg (lambda (n val)
+                                                    (define result-string (vector-ref strings n))
+                                                    (c-display "n: " n ", val:" val)
+                                                    ((get-func n) val))))
 
   (if (not (= -1 result-num))
-      (begin
-        (define result-string (vector-ref strings result-num))
-        (c-display "result-string: " result-string)
-  
-        ((cadr (assoc result-string relations)))))
+      ((get-func result-num)))
   )
 
 
 #||
-(popup-menu "gakk" (lambda ()
-                     (c-display "gakk"))
+(popup-menu "[check on] gakk1 on" (lambda (ison)
+                                   (c-display "gakk1 " ison))
+            "[check off] gakk2 off" (lambda (ison)
+                                     (c-display "gakk2 " ison))
             "hepp" (lambda ()
                      (c-display "hepp")))
 ||#

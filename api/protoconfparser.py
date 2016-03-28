@@ -74,6 +74,8 @@ class Argument:
             return "s7_make_boolean"
         elif self.type_string=="Place":
             return "s7extra_make_place"
+        elif self.type_string=="func_t*":
+            raise "Returning func is not supported"
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise "Unknown type '"+type_string+"'"
@@ -91,6 +93,8 @@ class Argument:
             return "s7_boolean(radiums7_sc, "
         elif self.type_string=="Place":
             return "s7extra_place(radiums7_sc, "
+        elif self.type_string=="func_t*":
+            return "s7extra_func(radiums7_sc, "
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise "Unknown type '"+type_string+"'"
@@ -106,6 +110,8 @@ class Argument:
             return "s7_is_string"
         elif self.type_string=="bool":
             return "s7_is_boolean"
+        elif self.type_string=="func_t*":
+            return "s7_is_procedure"
         elif self.type_string=="Place":
             return "s7extra_is_place"
         else:
@@ -183,6 +189,14 @@ class Proto:
             if arg.type_string=="Place":
                 self.uses_place = True
         
+        self.uses_func = False
+         
+        if self.proc.type_string=="func_t*":
+            self.uses_func = True
+
+        for arg in self.args:
+            if arg.type_string=="func_t*":
+                self.uses_func = True
 
     def write(self,oh,dodefault):
         #if self.uses_place:
@@ -201,6 +215,8 @@ class Proto:
 
     def write_python_wrap_proc(self,oh):
         if self.uses_place:
+            return
+        if self.uses_func:
             return
         
         oh.write("static PyObject *_wrap_"+self.proc.varname)
@@ -311,6 +327,8 @@ class Proto:
             
     def write_python_wrap_methodstruct(self,oh):
         if self.uses_place:
+            return
+        if self.uses_func:
             return
         
         oh.write("{(char*)\""+self.proc.varname+"\",")

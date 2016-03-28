@@ -4,6 +4,8 @@
 
 #include <stdint.h>
 
+typedef struct _func_t func_t;
+
 
 typedef uint32_t uint_32;
 #define MAX_UINT32 65534  /* Sqr(max(uint_32))-1 (rounded down)*/

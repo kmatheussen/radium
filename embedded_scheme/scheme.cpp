@@ -112,6 +112,21 @@ s7_pointer s7extra_make_place(s7_scheme *radiums7_sc, Place place){
   return place_to_ratio(&place);
 }
 
+func_t *s7extra_func(s7_scheme *s7, s7_pointer func){
+  return (func_t*)func;
+}
+
+void s7extra_callFunc_void_int_bool(func_t *func, int arg1, bool arg2){
+  s7_call(s7,
+          (s7_pointer)func,
+          s7_list(s7,
+                  2,
+                  s7_make_integer(s7, arg1),
+                  s7_make_boolean(s7, arg2)
+                  )
+          );
+}
+
 int placetest(Place dasplacevar,int windownum){
   return dasplacevar.line;
 }

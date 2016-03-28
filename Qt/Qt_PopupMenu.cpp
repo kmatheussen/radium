@@ -17,21 +17,63 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if USE_QT_MENU
 
 #include <QAction>
+#include <QWidgetAction>
+#include <QCheckBox>
 #include <QMenu>
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 
+#include "../api/api_proc.h"
+
 #include "EditorWidget.h"
+
 
 static const int max_submenues = 200;
 
-int GFX_Menu(
-             struct Tracker_Windows *tvisual,
-             ReqType reqtype,
-             const char *seltext,
-             vector_t *v
-             )
+namespace{
+  class MyAction : public QWidgetAction
+  {
+    Q_OBJECT
+
+    int num;
+    func_t *callback;
+
+  public:
+    
+    MyAction(const QString & text, bool is_on, QWidget * parent, int num, func_t *callback)
+      : QWidgetAction(parent)
+      , num(num)
+      , callback(callback)
+    {
+      
+      QCheckBox *checkBox = new QCheckBox(text, parent);
+      setDefaultWidget(checkBox);
+      
+      //setCheckable(true);
+      
+      checkBox->setChecked(is_on);
+            
+      connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));
+      
+    }
+
+  public slots:
+    void toggled(bool checked){
+    //void clicked(bool checked){
+      printf("CLICKED %d\n",checked);
+      callFunc_void_int_bool(callback, num, checked);
+    }
+  };
+}
+
+int GFX_Menu2(
+              struct Tracker_Windows *tvisual,
+              ReqType reqtype,
+              const char *seltext,
+              vector_t *v,
+              func_t *callback
+              )
 {
   if(reqtype==NULL || v->num_elements>20){
    
@@ -45,12 +87,22 @@ int GFX_Menu(
       if (text.startsWith("----"))
         menu.addSeparator();
       else {
+        
         if (n_submenues==max_submenues){
           curr_menu = curr_menu->addMenu("Next");
           n_submenues=0;
         }
 
-        QAction *action = new QAction(text,curr_menu);
+        QAction *action;
+        
+        if (text.startsWith("[check ")){
+          if (text.startsWith("[check on]"))
+            action = new MyAction(text.right(text.size() - 10), true, curr_menu, i, callback);
+          else
+            action = new MyAction(text.right(text.size() - 11), false, curr_menu, i, callback);
+        } else
+          action = new QAction(text, curr_menu);
+        
         action->setData(i);
         curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu?
 
@@ -65,9 +117,9 @@ int GFX_Menu(
     bool ok;
     int i=action->data().toInt(&ok);
 
-    if (ok)
+    if (ok)      
       return i;
-
+    
     //RWarning("Got unknown action %p %s\n",action,action->text().toAscii().constData());
 
     return -1;
@@ -77,6 +129,17 @@ int GFX_Menu(
     return GFX_ReqTypeMenu(tvisual,reqtype,seltext,v);
 
   }
+}
+
+
+int GFX_Menu(
+             struct Tracker_Windows *tvisual,
+             ReqType reqtype,
+             const char *seltext,
+             vector_t *v
+             )
+{
+  return GFX_Menu2(tvisual, reqtype, seltext, v, NULL);
 }
 
 // The returned vector can be used as argument for GFX_Menu.
@@ -93,5 +156,7 @@ vector_t *GFX_MenuParser(const char *texts, const char *separator){
 
   return ret;
 }
-                   
+
+#include "mQt_PopupMenu.cpp"
+
 #endif // USE_QT_MENU

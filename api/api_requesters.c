@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/block_properties_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../common/OS_string_proc.h"
+#include "../embedded_scheme/s7extra_proc.h"
 
 #include "../midi/midi_i_plugin_proc.h"
 
@@ -143,6 +144,16 @@ int popupMenu(char *texts){
   struct Tracker_Windows *window=getWindowFromNum(-1);
   vector_t *vec = GFX_MenuParser(texts, "%");
   return GFX_Menu(window, NULL,"",vec);
+}
+
+int popupMenu2(char *texts, func_t* callback){
+  struct Tracker_Windows *window=getWindowFromNum(-1);
+  vector_t *vec = GFX_MenuParser(texts, "%");
+  return GFX_Menu2(window, NULL,"",vec, callback);
+}
+
+void callFunc_void_int_bool(func_t* callback, int arg1, bool arg2){
+  s7extra_callFunc_void_int_bool(callback, arg1, arg2);
 }
 
 char* requestMidiPort(void){
