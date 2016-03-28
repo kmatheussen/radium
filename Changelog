@@ -1,3 +1,10 @@
+Changes 3.6.8 -> 3.6.9:
+* Write "Rec." again immediately at the top of a track when starting to
+  record notes via MIDI.
+* Fix output level on the tracker module template song file.
+  (It was too high and created distortions)
+
+
 Changes 3.6.7 -> 3.6.8:
 * New and much better tracker module importer.
 * Optionally edit velocities by text instead of graphics, like
