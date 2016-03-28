@@ -837,6 +837,14 @@
                   :release-func (lambda ($button $x $y)
                                   #f)))
 
+(define (track-configuration-popup)
+  (popup-menu "Show/hide Velocity text" (lambda ()
+                                          (<ra> :show-hide-veltext *current-track-num*))
+              "Show/hide Pianoroll"     (lambda ()
+                                          (<ra> :show-hide-pianoroll *current-track-num*))
+              "Show/hide Notes"         (lambda ()
+                                          (<ra> :show-hide-note-track *current-track-num*))
+              ))
 
 ;; select patch for track
 ;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -845,7 +853,9 @@
                                 (cond ((and *current-track-num*
                                             (>= X (<ra> :get-track-x1 0))
                                             (< Y (<ra> :get-track-pan-on-off-y1)))
-                                       (<ra> :set-track-patch *current-track-num*)
+                                       (if (= Button *right-button*)
+                                           (track-configuration-popup)
+                                           (<ra> :set-track-patch *current-track-num*))
                                        #f)
                                       (else
                                        #f)))
