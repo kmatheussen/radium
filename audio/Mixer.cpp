@@ -339,6 +339,9 @@ static void init_player_lock(void){
 int jackblock_size = 0;
 jack_time_t jackblock_delta_time = 0;
 static STime jackblock_cycle_start_stime = 0;
+static STime jackblock_last_frame_stime = 0;
+
+static DEFINE_SPINLOCK(jackblock_spinlock); // used by two realtime threads (midi input and audio thread)
 
 static QTime pause_time;
 static bool g_process_plugins = true;
@@ -667,9 +670,12 @@ struct Mixer{
 
       RT_lock_player();
 
-      jackblock_size = num_frames;
-      jackblock_cycle_start_stime = pc->end_time;
-
+      SPINLOCK_OBTAIN(jackblock_spinlock);{ // Not quite RT safe, but it's extremely unlikely to be a problem.
+        jackblock_size = num_frames;
+        jackblock_cycle_start_stime = pc->end_time;
+        jackblock_last_frame_stime = jack_last_frame_time(_rjack_client);
+      }SPINLOCK_RELEASE(jackblock_spinlock);
+      
       if(g_test_crashreporter_in_audio_thread){
         int *ai2=NULL;
         ai2[0] = 50;
@@ -947,19 +953,36 @@ int64_t MIXER_get_time(void){
 }
 */
 
+static STime get_audioblock_time(STime jack_block_start_time){
+  STime abs_jack_time = jack_frame_time(g_mixer->_rjack_client);
+
+  return abs_jack_time - abs_block_start_time_time;
+}
+
 // Like pc->start_time, but sub-block accurately
 STime MIXER_get_accurate_radium_time(void){
-  struct Blocks *block = pc->block;
+  struct Blocks *block = (struct Blocks*)atomic_pointer_read((void**)&pc->block);
 
   if (block==NULL)
     return pc->start_time;
 
-  int deltatime = jack_frames_since_cycle_start(g_mixer->_rjack_client);
+  STime jackblock_cycle_start_stime2;
+  STime jackblock_last_frame_stime2;
+  STime jackblock_size2;
+
+  SPINLOCK_OBTAIN(jackblock_spinlock);{
+    jackblock_cycle_start_stime2 = jackblock_cycle_start_stime;
+    jackblock_last_frame_stime2 = jackblock_last_frame_stime;
+    jackblock_size2 = jackblock_size; 
+  }SPINLOCK_RELEASE(jackblock_spinlock);
+  
+  int deltatime = get_audioblock_time(jackblock_last_frame_stime2);
+  
   return
-    jackblock_cycle_start_stime +
+    jackblock_cycle_start_stime2 +
     scale(deltatime,
-          0, jackblock_size,
-          0, jackblock_size * safe_volatile_float_read(&block->reltempo)
+          0, jackblock_size2,
+          0, jackblock_size2 * safe_volatile_float_read(&block->reltempo)
           );
 }
 

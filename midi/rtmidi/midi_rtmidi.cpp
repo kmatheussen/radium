@@ -424,11 +424,11 @@ void MIDI_OS_SetInputPort(const char *portname){
         inport_alsa = new RtMidiIn(RtMidi::LINUX_ALSA,std::string("Radium"));
         fprintf(stderr,"Got. trying to open\n");
         if(inport_alsa!=NULL){
+          inport_alsa->setCallback(mycallback,NULL);
           if(portnum==-1)
             inport_alsa->openVirtualPort(portname);
           else
             inport_alsa->openPort(portnum,portname);
-          inport_alsa->setCallback(mycallback,NULL);
         }
       
       }catch ( RtError &error ) {
@@ -458,9 +458,9 @@ void MIDI_OS_SetInputPort(const char *portname){
 
       try{
         inport_winmm = new RtMidiIn(RtMidi::WINDOWS_MM,std::string("Radium"));
-        if(inport_winmm!=NULL){
-          inport_winmm->openPort(portnum,"in");
+        if(inport_winmm!=NULL){ 
           inport_winmm->setCallback(mycallback,NULL);          
+          inport_winmm->openPort(portnum,"in");
         }
       }catch ( RtError &error ) {
         GFX_Message(NULL, "Couldn't open %s. (%s)", portname, error.what());
@@ -486,11 +486,11 @@ void MIDI_OS_SetInputPort(const char *portname){
       try{
         inport_coremidi = new RtMidiIn(RtMidi::MACOSX_CORE,std::string("Radium"));
         if(inport_coremidi!=NULL){
+          inport_coremidi->setCallback(mycallback,NULL);
           if(portnum==-1)
             inport_coremidi->openVirtualPort("in");
           else
             inport_coremidi->openPort(portnum,"in");
-          inport_coremidi->setCallback(mycallback,NULL);
         }
       }catch ( RtError &error ) {
         GFX_Message(NULL, "Couldn't open %s. (%s)", portname, error.what());
