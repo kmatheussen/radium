@@ -670,7 +670,7 @@ struct Mixer{
 
       RT_lock_player();
 
-      SPINLOCK_OBTAIN(jackblock_spinlock);{ // Not quite RT safe, but it's extremely unlikely to be a problem.
+      SPINLOCK_OBTAIN(jackblock_spinlock);{ // Not quite RT safe, but it's extremely unlikely to be a problem. (the other thread obtaining this lock is also an RT thread, but with a lower priority)
         jackblock_size = num_frames;
         jackblock_cycle_start_stime = pc->end_time;
         jackblock_last_frame_stime = jack_last_frame_time(_rjack_client);

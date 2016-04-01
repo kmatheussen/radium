@@ -115,14 +115,13 @@ public:
   }
   ~MyNetworkAccessManager()
   {
+    //R_ASSERT("We are not supposed to be here");
     delete m_pBuffer;
     delete reply;
   }
   
 private slots:
 
-  //If the reply is finished, save data in buffer to disk
-  //as a png image: google_image_logo.png
   void slotFinished()
   {
     QString all = m_pBuffer->constData(); //reply->readAll().constData();
@@ -140,6 +139,10 @@ private slots:
         maybeInformAboutNewVersion(versionString);
       }
     }
+
+    //reply->deleteLater();
+    //m_pBuffer->deleteLater();
+    this->deleteLater();
   }
 
   void slotReadData()
@@ -158,10 +161,10 @@ private:
 
 
 
+static MyNetworkAccessManager *nam;
 
 void UPDATECHECKER_doit(void){
-  //MyNetworkAccessManager *nam = 
-  new MyNetworkAccessManager;
+  nam = new MyNetworkAccessManager;
 }
 
 
