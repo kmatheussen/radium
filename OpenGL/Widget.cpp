@@ -556,7 +556,7 @@ private:
     }
     
     
-    if (needs_repaint) {
+    if (needs_repaint || current_height != new_height || current_width != new_width) {
 
       if (current_height != new_height || current_width != new_width){
 
@@ -781,19 +781,22 @@ public:
     new_height = h;
 
 
-#if 0
+#if 1
+    /*
     _rendering->sceneManagers()->clear();
 
     _rendering->camera()->viewport()->setWidth(w);
     _rendering->camera()->viewport()->setHeight(h);
     _rendering->camera()->setProjectionOrtho(-0.5f);
-
+    */
+    
     GE_set_height(h);
     //create_block(_rendering->camera()->viewport()->width(), _rendering->camera()->viewport()->height());
 
-    initEvent();
+    //initEvent();
 #endif
-    //updateEvent();
+    
+    updateEvent();
   }
   // The rest of the methods in this class are virtual methods required by the vl::UIEventListener class. Not used.
 

@@ -64,6 +64,8 @@ void selectPatchForTrack(int tracknum,int blocknum,int windownum){
   if(wtrack==NULL) return;
 
   PATCH_select_patch_for_track(window,wtrack,false);
+
+  window->must_redraw = true;
 }
 
 int getInstrumentForTrack(int tracknum, int blocknum, int windownum){

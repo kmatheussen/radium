@@ -850,31 +850,31 @@
                name)
           (lambda (is-on)
             (set-visible! is-on *current-track-num*))))
-  (apply popup-menu (append (create "Pianoroll"
+  (apply popup-menu (append (create "Pianoroll     (left alt + p)"
                                     (<ra> :pianoroll-visible *current-track-num*)
                                     ra:show-pianoroll)
-                            (create "Note text"
+                            (create "Note text     (left alt + n)"
                                     (<ra> :note-track-visible *current-track-num*)
                                     ra:show-note-track)
-                            (create "Velocity text"
+                            (create "Velocity text (left alt + y)"
                                     (<ra> :veltext-visible *current-track-num*)
                                     ra:show-veltext)
                             (list
                              "-------" (lambda () 90)
-                             "Copy Track" (lambda ()
+                             "Copy Track     (left alt + c)" (lambda ()
                                             (<ra> :copy-track *current-track-num*))
-                             "Cut Track" (lambda ()
+                             "Cut Track      (left alt + x)"     (lambda ()
                                            (<ra> :cut-track *current-track-num*))
-                             "Paste Track" (lambda ()
+                             "Paste Track    (left alt + v)" (lambda ()
                                              (<ra> :paste-track *current-track-num*))
-                             "Insert Track" (lambda ()
+                             "Insert Track     (left alt + i)" (lambda ()
                                               (<ra> :insert-track *current-track-num*)
                                               (set-current-track-num! X Y))
-                             "Delete Track" (lambda ()
+                             "Delete Track     (left alt + r)" (lambda ()
                                               (<ra> :delete-track *current-track-num*)
                                               (set-current-track-num! X Y))
                              "-------" (lambda () 90)
-                             "Set Instrument" (lambda ()
+                             "Set Instrument     (F12)" (lambda ()
                                                 (<ra> :set-track-patch *current-track-num*))
                              ))))
 
