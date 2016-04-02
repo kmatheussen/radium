@@ -933,15 +933,6 @@ int createTemponode(float value, Place place, int blocknum, int windownum){
 // pianoroll
 //////////////////////////////////////////////////
 
-bool pianorollVisible(int tracknum, int blocknum, int windownum){
-  struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
-
-  if (wtrack==NULL)
-    return false;
-
-  return wtrack->pianoroll_on;
-}
-
 int getPioanorollLowKey(int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
 

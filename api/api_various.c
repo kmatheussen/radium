@@ -506,6 +506,27 @@ void deleteTracks(int numtracks,int windownum){
   insertTracks(-numtracks,windownum);
 }
 
+void deleteTrack(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WBlocks *wblock;
+
+  wblock=getWBlockFromNumA(
+                           windownum,
+                           &window,
+                           blocknum
+                           );
+
+  if(wblock==NULL) return;
+
+  if (tracknum==-1)
+    tracknum = wblock->wtrack->l.num;
+  
+  DeleteTracks(window,
+               wblock,
+               tracknum,
+               1);
+}
+
 void deleteBlock(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   DeleteBlock_CurrPos(window);
@@ -681,24 +702,39 @@ void switchBlockNoteShowType(int blocknum,int windownum){
   setBlockNoteShowType(type, blocknum, windownum);
 }
 
-void showHideVeltext(int tracknum,int blocknum,int windownum){
+void showVeltext(bool showit, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
   struct WBlocks *wblock;
 
   wtrack=getWTrackFromNumA(
-	windownum,
-	&window,
-	blocknum,
-	&wblock,
-	tracknum
-	);
+                           windownum,
+                           &window,
+                           blocknum,
+                           &wblock,
+                           tracknum
+                           );
 
   if(wtrack==NULL) return;
 
-  wtrack->veltext_on = !wtrack->veltext_on;
+  wtrack->veltext_on = showit;
 
   UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
+}
+
+bool veltextVisible(int tracknum,int blocknum,int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
+
+  if (wtrack==NULL)
+    return false;
+
+  return wtrack->veltext_on;
+}
+
+void showHideVeltext(int tracknum,int blocknum,int windownum){
+  showVeltext(!veltextVisible(tracknum, blocknum, windownum),
+              tracknum, blocknum, windownum);
 }
 
 void showHideVeltextInBlock(int blocknum,int windownum){
@@ -725,9 +761,10 @@ void showHideVeltextInBlock(int blocknum,int windownum){
   }
   
   UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
 }
 
-void showHidePianoroll(int tracknum,int blocknum,int windownum){
+void showPianoroll(bool showit, int tracknum,int blocknum,int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
   struct WBlocks *wblock;
@@ -742,9 +779,24 @@ void showHidePianoroll(int tracknum,int blocknum,int windownum){
 
   if(wtrack==NULL) return;
 
-  wtrack->pianoroll_on = !wtrack->pianoroll_on;
+  wtrack->pianoroll_on = showit;
 
   UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
+}
+
+bool pianorollVisible(int tracknum,int blocknum,int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
+
+  if (wtrack==NULL)
+    return false;
+
+  return wtrack->pianoroll_on;
+}
+
+void showHidePianoroll(int tracknum,int blocknum,int windownum){
+  showPianoroll(!pianorollVisible(tracknum, blocknum, windownum),
+                tracknum, blocknum, windownum);
 }
 
 void showHidePianorollInBlock(int blocknum,int windownum){
@@ -771,9 +823,10 @@ void showHidePianorollInBlock(int blocknum,int windownum){
   }
   
   UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
 }
 
-void showHideNoteTrack(int tracknum,int blocknum,int windownum){
+void showNoteTrack(bool showit, int tracknum,int blocknum,int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
   struct WBlocks *wblock;
@@ -788,12 +841,29 @@ void showHideNoteTrack(int tracknum,int blocknum,int windownum){
 
   if(wtrack==NULL) return;
 
-  if (wtrack->notesonoff==0)
+  if (showit)
     wtrack->notesonoff = 1;
   else
     wtrack->notesonoff = 0;
       
   UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
+}
+
+
+bool noteTrackVisible(int tracknum,int blocknum,int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
+
+  if (wtrack==NULL)
+    return false;
+
+  return wtrack->notesonoff==1;
+}
+
+
+void showHideNoteTrack(int tracknum,int blocknum,int windownum){
+  bool is_visible = noteTrackVisible(tracknum, blocknum, windownum);
+  showNoteTrack(!is_visible, tracknum, blocknum, windownum);
 }
 
 void showHideNoteTracksInBlock(int blocknum,int windownum){
@@ -824,6 +894,7 @@ void showHideNoteTracksInBlock(int blocknum,int windownum){
   }
   
   UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
 }
 
 void showHideSignatureTrack(int windownum){
@@ -835,6 +906,7 @@ void showHideSignatureTrack(int windownum){
     window->curr_track = 0;
 
   UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
 }
 
 void showHideLPBTrack(int windownum){
@@ -846,6 +918,7 @@ void showHideLPBTrack(int windownum){
     window->curr_track = 0;
 
   UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
 }
 
 void showHideBPMTrack(int windownum){

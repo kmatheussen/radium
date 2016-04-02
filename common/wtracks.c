@@ -222,6 +222,8 @@ void UpdateWTrackCoordinates(
 		UpdateWTrackCoordinates(window,wblock,NextWTrack(wtrack),wtrack->x2+3);
 
 //	wblock->right_track=wtrack->l.num;
+        
+        //window->must_redraw = true;  // Can not call must_redraw here since UpdateWTrackCoordinates is called from DrawUpTrackerWindow()
 
 	return;
 }

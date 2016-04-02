@@ -42,9 +42,29 @@ void cutRange(int windownum){
   CutRange_CurrPos(window);
 }
 
-void cutTrack(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  CB_CutTrack_CurrPos(window);
+void cutTrack(int tracknum, int blocknum, int windownum){
+  if (tracknum==-1 && blocknum==-1){
+    struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+    CB_CutTrack_CurrPos(window);
+  }
+
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return;
+
+  CB_CutTrack(window, wblock, wtrack);
+
+  window->must_redraw = true;
 }
 
 void copyRange(int windownum){
@@ -52,9 +72,29 @@ void copyRange(int windownum){
   CopyRange_CurrPos(window);
 }
 
-void copyTrack(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  CB_CopyTrack_CurrPos(window);
+void copyTrack(int tracknum, int blocknum, int windownum){
+  if (tracknum==-1 && blocknum==-1){
+    struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+    CB_CopyTrack_CurrPos(window);
+  }
+
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return;
+
+  CB_CopyTrack(wblock, wtrack);
+
+  window->must_redraw = true;
 }
 
 void copyBlock(int windownum){
@@ -67,9 +107,30 @@ void pasteRange(int windownum){
   PasteRange_CurrPos(window);
 }
 
-void pasteTrack(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  CB_PasteTrack_CurrPos(window);
+void pasteTrack(int tracknum, int blocknum, int windownum){
+    if (tracknum==-1 && blocknum==-1){
+    struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+    CB_PasteTrack_CurrPos(window);
+  }
+
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return;
+
+  if (cb_wtrack != NULL)
+    CB_PasteTrack(wblock, cb_wtrack, wtrack);
+
+  window->must_redraw = true;
 }
 
 void pasteBlock(int windownum){

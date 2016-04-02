@@ -50,11 +50,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "windows_proc.h"
 #include "wblocks_proc.h"
 #include "Beats_proc.h"
+#include "clipboard_track_copy_proc.h"
 
 #include "clipboard_track_paste_proc.h"
 
-
-extern struct WTracks *cb_wtrack;
 
 extern struct Signatures *cb_signature;
 extern struct LPBs *cb_lpb;

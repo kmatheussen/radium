@@ -838,6 +838,40 @@
                                   #f)))
 
 (define (track-configuration-popup)
+  (define (create name
+                  is-visible
+                  set-visible!)
+    (list (<-> (if is-visible
+                   "[check on]"
+                   "[check off]")
+               name)
+          (lambda (is-on)
+            (set-visible! is-on *current-track-num*))))
+  (apply popup-menu (append (create "Velocity text"
+                                    (<ra> :veltext-visible *current-track-num*)
+                                    ra:show-veltext)
+                            (create "Pianoroll"
+                                    (<ra> :pianoroll-visible *current-track-num*)
+                                    ra:show-pianoroll)
+                            (create "Notes"
+                                    (<ra> :note-track-visible *current-track-num*)
+                                    ra:show-note-track)
+                            (list
+                             "-------" (lambda () 90)
+                             "Copy Track" (lambda ()
+                                            (<ra> :copy-track *current-track-num*))
+                             "Cut Track" (lambda ()
+                                           (<ra> :cut-track *current-track-num*))
+                             "Paste Track" (lambda ()
+                                             (<ra> :paste-track *current-track-num*))
+                             "Delete Track" (lambda ()
+                                              (<ra> :delete-track *current-track-num*))
+                             "-------" (lambda () 90)
+                             "Set Instrument" (lambda ()
+                                                (<ra> :set-track-patch *current-track-num*))
+                             ))))
+
+#||        
   (popup-menu "Show/hide Velocity text" (lambda ()
                                           (<ra> :show-hide-veltext *current-track-num*))
               "Show/hide Pianoroll"     (lambda ()
@@ -845,6 +879,8 @@
               "Show/hide Notes"         (lambda ()
                                           (<ra> :show-hide-note-track *current-track-num*))
               ))
+||#
+
 
 ;; select patch for track
 ;;;;;;;;;;;;;;;;;;;;;;;;;

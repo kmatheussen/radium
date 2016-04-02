@@ -38,12 +38,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 /* Private function. Should only be called by InsertTracks. */
 
-static void DeleteTracks(
-                         struct Tracker_Windows *window,
-                         struct WBlocks *wblock,
-                         NInt tracknum,
-                         NInt todelete
-                         ){
+void DeleteTracks(
+                  struct Tracker_Windows *window,
+                  struct WBlocks *wblock,
+                  NInt tracknum,
+                  NInt todelete
+                  )
+{
 	NInt lokke;
 	NInt num_tracks;
 	struct Blocks *block=wblock->block;

@@ -36,33 +36,36 @@ namespace{
   {
     Q_OBJECT
 
+    QString text;
     int num;
     func_t *callback;
 
   public:
+
+    ~MyAction(){
+      printf("I was deleted: %s\n",text.toUtf8().constData());
+    }
     
     MyAction(const QString & text, bool is_on, QWidget * parent, int num, func_t *callback)
       : QWidgetAction(parent)
+      , text(text)
       , num(num)
       , callback(callback)
     {
-      
       QCheckBox *checkBox = new QCheckBox(text, parent);
       setDefaultWidget(checkBox);
       
-      //setCheckable(true);
-      
       checkBox->setChecked(is_on);
             
-      connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));
-      
+      connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));      
     }
 
   public slots:
     void toggled(bool checked){
     //void clicked(bool checked){
       printf("CLICKED %d\n",checked);
-      callFunc_void_int_bool(callback, num, checked);
+      if (callback!=NULL)
+        callFunc_void_int_bool(callback, num, checked);
     }
   };
 }

@@ -28,6 +28,8 @@ extern void CB_CopyTrack_CurrPos(
 	struct Tracker_Windows *window
 );
 
+extern struct WTracks *cb_wtrack;
+
 #endif
 
 

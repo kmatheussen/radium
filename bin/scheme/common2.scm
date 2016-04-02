@@ -585,7 +585,7 @@ for .emacs:
   (define relations (make-assoc-from-flat-list options))
   (define strings (list->vector (map car relations)))
   
-  (define popup-arg (let loop ((strings (map car relations)))
+  (define popup-arg (let loop ((strings (vector->list strings)))
                       (c-display "strings" strings)
                       (if (null? strings)
                           ""

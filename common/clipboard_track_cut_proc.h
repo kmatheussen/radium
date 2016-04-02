@@ -22,6 +22,12 @@ void CB_CutTrack_Force(
 	struct WTracks *wtrack
 );
 
+void CB_CutTrack(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack
+                 );
+
 extern void CB_CutTrack_CurrPos(
 	struct Tracker_Windows *window
 );
