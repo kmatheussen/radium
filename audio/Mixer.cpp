@@ -956,7 +956,7 @@ int64_t MIXER_get_time(void){
 static STime get_audioblock_time(STime jack_block_start_time){
   STime abs_jack_time = jack_frame_time(g_mixer->_rjack_client);
 
-  return abs_jack_time - abs_block_start_time_time;
+  return abs_jack_time - jack_block_start_time;
 }
 
 // Like pc->start_time, but sub-block accurately
