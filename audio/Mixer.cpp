@@ -670,6 +670,11 @@ struct Mixer{
 
       RT_lock_player();
 
+      // Isn't there a theoretical chance of deadlock here if we run on a uniprocessor?
+      // The audio thread is running SCHED_FIFO, while the midi thread is running SCHED_RR, so if the audio thread takes over while the midi thread holds the spinlock, we will probably deadlock
+      // since sched_fifo is not allowed to give up execution to a lowerered priority thread... (TODO: fix)
+      // (And not only do we risk deadlock, the computer itself will freeze too unless there is some safety mechanism enabled in the OS or an external watchdog is running)
+      //
       SPINLOCK_OBTAIN(jackblock_spinlock);{ // Not quite RT safe, but it's extremely unlikely to be a problem. (the other thread obtaining this lock is also an RT thread, but with a lower priority)
         jackblock_size = num_frames;
         jackblock_cycle_start_stime = pc->end_time;
