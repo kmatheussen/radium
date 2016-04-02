@@ -19,7 +19,7 @@ extern LANGSPEC void SetNotePolyphonyAttributes(struct Tracks *track);
 extern LANGSPEC int GetNoteSubtrack(const struct WTracks *wtrack, struct Notes *note);
 extern LANGSPEC int GetNumSubtracks(const struct WTracks *wtrack);
 
-struct Notes *GetCurrNote(struct Tracker_Windows *window);
+extern LANGSPEC struct Notes *GetCurrNote(struct Tracker_Windows *window);
 
 #define NOTE_ID_RESOLUTION 256 // i.e. 256 id's per note.
 static inline int64_t NotenumId(float notenum){
@@ -27,15 +27,15 @@ static inline int64_t NotenumId(float notenum){
   return n*NUM_PATCH_VOICES;
 }
 
-void NOTE_init(struct Notes *note);
-struct Notes *NewNote(void);
+extern LANGSPEC void NOTE_init(struct Notes *note);
+extern LANGSPEC struct Notes *NewNote(void);
 
-bool NOTES_sorted_by_pitch_questionmark(struct Notes *notes);
-struct Notes *NOTES_sort_by_pitch(struct Notes *notes);
+extern LANGSPEC bool NOTES_sorted_by_pitch_questionmark(struct Notes *notes);
+extern LANGSPEC struct Notes *NOTES_sort_by_pitch(struct Notes *notes);
 
 extern LANGSPEC void NOTE_validate(const struct Blocks *block, struct Tracks *track, struct Notes *note);
 
-extern struct Notes *InsertNote(
+extern LANGSPEC struct Notes *InsertNote(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
 	Place *placement,
@@ -45,16 +45,16 @@ extern struct Notes *InsertNote(
 	bool polyphonic
 );
 
-int NOTE_get_velocity(struct Tracks *track);
+extern LANGSPEC int NOTE_get_velocity(struct Tracks *track);
 
-extern void InsertNoteCurrPos(struct Tracker_Windows *window,float notenum,bool polyphonic, float velocity);
+extern LANGSPEC void InsertNoteCurrPos(struct Tracker_Windows *window,float notenum,bool polyphonic, float velocity);
 
-void LengthenNotesTo(
+extern LANGSPEC void LengthenNotesTo(
                      struct Blocks *block,
                      struct Tracks *track,
                      Place *placement
                      );
-void ReplaceNoteEnds(
+extern LANGSPEC void ReplaceNoteEnds(
                     struct Blocks *block,
                     struct Tracks *track,
                     Place *old_placement,
@@ -62,35 +62,35 @@ void ReplaceNoteEnds(
                     int subtrack
                     );
 
-void CutNoteAt(struct Blocks *block, struct Tracks *track,struct Notes *note, Place *place);
+extern LANGSPEC void CutNoteAt(struct Blocks *block, struct Tracks *track,struct Notes *note, Place *place);
   
-void RemoveNote(struct Blocks *block,
+extern LANGSPEC void RemoveNote(struct Blocks *block,
                 struct Tracks *track,
                 struct Notes *note
                 );
 
-extern void RemoveNoteCurrPos(struct Tracker_Windows *window);
+extern LANGSPEC void RemoveNoteCurrPos(struct Tracker_Windows *window);
 
-extern struct Notes *FindPrevNoteOnSameSubTrack(struct Tracks *track, struct Notes *note);
+extern LANGSPEC struct Notes *FindPrevNoteOnSameSubTrack(struct Tracks *track, struct Notes *note);
 
-extern struct Notes *FindNoteOnSubTrack(
+extern LANGSPEC struct Notes *FindNoteOnSubTrack(
                                         const struct WTracks *wtrack,
                                         int subtrack,
                                         Place *placement
 );
 
-struct Notes *FindNextNoteOnSameSubtrack(struct Notes *note);
+extern LANGSPEC struct Notes *FindNextNoteOnSameSubtrack(struct Notes *note);
 
-struct Notes *FindNote(
+extern LANGSPEC struct Notes *FindNote(
                        struct Tracks *track,
                        Place *placement
                        );
 
-struct Notes *FindNoteCurrPos(struct Tracker_Windows *window);
+extern LANGSPEC struct Notes *FindNoteCurrPos(struct Tracker_Windows *window);
 
-char *notetext_from_notenum(float notenumf);
-float notenum_from_notetext(char *notetext);
+extern LANGSPEC char *notetext_from_notenum(float notenumf);
+extern LANGSPEC float notenum_from_notetext(char *notetext);
 
-void EditNoteCurrPos(struct Tracker_Windows *window);
+extern LANGSPEC void EditNoteCurrPos(struct Tracker_Windows *window);
 
-extern void StopVelocityCurrPos(struct Tracker_Windows *window,int noend);
+extern LANGSPEC void StopVelocityCurrPos(struct Tracker_Windows *window,int noend);

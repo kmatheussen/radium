@@ -17,22 +17,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-#ifndef TRACKER_INCLUDE
-
-extern void Undo_Notes(
+extern LANGSPEC void Undo_Notes(
 	struct Tracker_Windows *window,
 	struct Blocks *block,
 	struct Tracks *track,
 	int realline
 );
 
-extern void Undo_Notes_CurrPos(
+extern LANGSPEC void Undo_Notes_CurrPos(
 	struct Tracker_Windows *window
 );
-
-
-#endif
 
 
 

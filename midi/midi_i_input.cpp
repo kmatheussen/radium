@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/Mutex.hpp"
 
 #include "midi_i_input_proc.h"
 
@@ -60,15 +61,16 @@ typedef struct _midi_event_t{
   uint32_t msg;
 } midi_event_t;
 
+static radium::Mutex g_midi_event_mutex;
 static midi_event_t *g_midi_events = NULL;
 static midi_event_t *g_recorded_midi_events = NULL;
 static midi_event_t *g_last_recorded_midi_event = NULL;
 
 static midi_event_t *get_midi_event(void){
-  
+
   if (g_midi_events==NULL) {
     
-    midi_event_t *midi_events = V_calloc(1024, sizeof(midi_event_t));
+    midi_event_t *midi_events = (midi_event_t*)V_calloc(1024, sizeof(midi_event_t));
     int i;
     for(i=1;i<1023;i++)
       midi_events[i].next = &midi_events[i+1];
@@ -88,6 +90,8 @@ static midi_event_t *get_midi_event(void){
 
 static void record_midi_event(uint32_t msg){
 
+  radium::ScopedMutex lock(&g_midi_event_mutex);  // Having to wait for this one would be extremely rare (will probably never happen)
+  
   if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL)
     return;
 
@@ -142,7 +146,10 @@ static midi_event_t *find_midievent_end_note(midi_event_t *midi_event, int noten
   return NULL;
 }
 
+
 void MIDI_insert_recorded_midi_events(void){
+  radium::ScopedMutex lock(&g_midi_event_mutex); // Will wait here in case record_midi_event is not finished. Probably a very rare situation.
+  
   midi_event_t *midi_event = g_recorded_midi_events;
 
   if (midi_event==NULL)
@@ -161,7 +168,7 @@ void MIDI_insert_recorded_midi_events(void){
         struct Tracks *track = midi_event->wtrack->track;
         ATOMIC_SET(track->is_recording, false);
         
-        char *key = talloc_format("%x",midi_event->wtrack);
+        char *key = (char*)talloc_format("%x",midi_event->wtrack);
         if (HASH_has_key(track_set, key)==false){
 
           Undo_Notes(root->song->tracker_windows,
@@ -250,7 +257,7 @@ void RT_MIDI_handle_play_buffer(void){
 
         uint32_t msg = event.msg;
         
-        uint8_t data[3] = {MIDI_msg_byte1(msg), MIDI_msg_byte2(msg), MIDI_msg_byte3(msg)};
+        uint8_t data[3] = {(uint8_t)MIDI_msg_byte1(msg), (uint8_t)MIDI_msg_byte2(msg), (uint8_t)MIDI_msg_byte3(msg)};
           
         RT_MIDI_send_msg_to_patch((struct Patch*)patch, data, 3, -1);
       }
@@ -344,6 +351,8 @@ void MIDI_HandleInputMessage(void){
 }
 
 void MIDI_input_init(void){
+  radium::ScopedMutex lock(&g_midi_event_mutex);
+    
   MIDI_set_record_accurately(SETTINGS_read_bool("record_midi_accurately", true));
   MIDI_set_record_velocity(SETTINGS_read_bool("always_record_midi_velocity", false));
   

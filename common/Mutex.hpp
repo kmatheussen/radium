@@ -5,9 +5,9 @@
 
 #include <pthread.h>
 #include <sys/time.h>
+# include <errno.h>
 
 #ifdef FOR_MACOSX
-# include <errno.h>
 # include <sys/types.h>
 # include <sys/socket.h>
 #endif
@@ -62,7 +62,8 @@ struct Mutex {
 
   pthread_mutex_t mutex;
 
-  Mutex(bool is_recursive = false){
+  Mutex(bool is_recursive = false)
+  {
     if (is_recursive){
       pthread_mutexattr_t attr;
       pthread_mutexattr_init(&attr);
@@ -81,7 +82,7 @@ struct Mutex {
     pthread_mutex_lock(&mutex);
   }
 
-  void unlock(void){    
+  void unlock(void){
     pthread_mutex_unlock(&mutex);
   }
 };
