@@ -1,3 +1,11 @@
+Changes 3.6.9 -> 3.7.0:
+* Fixed various issues when recording MIDI
+* Show correct line when playing a block with a low multiplier value
+* Make sure editor is updated after resizing
+* Popup menu when right clicking on track header.
+  (copy track / insert track / delete track / etc.)
+
+
 Changes 3.6.8 -> 3.6.9:
 * Write "Rec." again immediately at the top of a track when starting to
   record notes via MIDI.
