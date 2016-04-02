@@ -150,7 +150,7 @@ static void start_player(int playtype, int playpos, bool set_curr_playlist, Plac
     
     pc->playtype = playtype;
     
-    pc->block=block;
+    atomic_pointer_write((void**)&pc->block, block);
     
     ATOMIC_SET(root->curr_blocknum, pc->block->l.num);
     

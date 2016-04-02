@@ -18,4 +18,4 @@ race:Compressor_wrapper::set_parameter
 race:call_ladspa_get_descriptor_func
 
 
-interceptor_via_lib:fglrx_dri.so
+#interceptor_via_lib:fglrx_dri.so
