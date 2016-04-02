@@ -36,8 +36,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "track_insert_proc.h"
 
 
-/* Private function. Should only be called by InsertTracks. */
-
 void DeleteTracks(
                   struct Tracker_Windows *window,
                   struct WBlocks *wblock,
@@ -50,6 +48,8 @@ void DeleteTracks(
 	struct Blocks *block=wblock->block;
 	struct WTracks *wtrack;
 
+        if(tracknum>=block->num_tracks+1 || tracknum<0) return;
+                
 	if(tracknum-todelete>=block->num_tracks){
 	  todelete=block->num_tracks-tracknum;
 	}
@@ -79,8 +79,6 @@ void DeleteTracks(
 }
 
 
-
-/* Not private function. toinsert may be negative. */
 
 void InsertTracks(
                   struct Tracker_Windows *window,

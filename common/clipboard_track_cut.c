@@ -69,14 +69,14 @@ void CB_CutTrack_Force(
 	wtrack->track->fxs=NULL;
 }
 
-void CB_CutTrack(
+struct WTracks *CB_CutTrack(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
 	struct FXs *fxs=wtrack->track->fxs;
 
-	cb_wtrack=CB_CopyTrack(wblock,wtrack);
+	struct WTracks *ret=CB_CopyTrack(wblock,wtrack);
 
         //	if(window->curr_track_sub<0){
 		wtrack->track->notes=NULL;
@@ -89,6 +89,8 @@ void CB_CutTrack(
 	}
 
 	wtrack->track->fxs=NULL;
+
+        return ret;
 }
 
 void CB_CutTrack_CurrPos(
@@ -133,7 +135,7 @@ void CB_CutTrack_CurrPos(
 			break;
 		default:
 			Undo_Track_CurrPos(window);
-			CB_CutTrack(window,wblock,wtrack);
+			cb_wtrack = CB_CutTrack(window,wblock,wtrack);
                         //#if !USE_OPENGL
 			UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 				window,

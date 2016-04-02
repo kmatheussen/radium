@@ -53,16 +53,16 @@ void cutTrack(int tracknum, int blocknum, int windownum){
   struct WBlocks *wblock;
 
   wtrack=getWTrackFromNumA(
-	windownum,
-	&window,
-	blocknum,
-	&wblock,
-	tracknum
-	);
+                           windownum,
+                           &window,
+                           blocknum,
+                           &wblock,
+                           tracknum
+                           );
 
   if(wtrack==NULL) return;
 
-  CB_CutTrack(window, wblock, wtrack);
+  cb_wtrack = CB_CutTrack(window, wblock, wtrack);
 
   window->must_redraw = true;
 }
@@ -83,16 +83,16 @@ void copyTrack(int tracknum, int blocknum, int windownum){
   struct WBlocks *wblock;
 
   wtrack=getWTrackFromNumA(
-	windownum,
-	&window,
-	blocknum,
-	&wblock,
-	tracknum
-	);
-
+                           windownum,
+                           &window,
+                           blocknum,
+                           &wblock,
+                           tracknum
+                           );
+  
   if(wtrack==NULL) return;
 
-  CB_CopyTrack(wblock, wtrack);
+  cb_wtrack = CB_CopyTrack(wblock, wtrack);
 
   window->must_redraw = true;
 }

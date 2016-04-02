@@ -445,21 +445,24 @@
 (define *current-track-num-all-tracks* #f) ;; Includes the time tracks, linenumbers, and so forth. (see nsmtracker.h)
 (define *current-track-num* #f)
 
+(define (set-current-track-num! X Y)
+  (define track-num (get-track-num X Y))
+  (set! *current-track-num-all-tracks* track-num)
+  (if (and track-num
+           (>= track-num 0))
+      (set! *current-track-num* track-num)
+      (set! *current-track-num* #f))
+  (cond (*current-track-num*
+         (set-mouse-track *current-track-num*))
+        ((and (<ra> :reltempo-track-visible)
+              *current-track-num-all-tracks*
+              (= *current-track-num-all-tracks* (<ra> :get-rel-tempo-track-num)))
+         (set-mouse-track-to-reltempo))))
+
 ;; Set current track and mouse track
 (add-mouse-move-handler
  :move (lambda (Button X Y)
-         (define track-num (get-track-num X Y))
-         (set! *current-track-num-all-tracks* track-num)
-         (if (and track-num
-                  (>= track-num 0))
-             (set! *current-track-num* track-num)
-             (set! *current-track-num* #f))
-         (cond (*current-track-num*
-                (set-mouse-track *current-track-num*))
-               ((and (<ra> :reltempo-track-visible)
-                     *current-track-num-all-tracks*
-                     (= *current-track-num-all-tracks* (<ra> :get-rel-tempo-track-num)))
-                (set-mouse-track-to-reltempo)))))
+         (set-current-track-num! X Y)))
 
 (define *current-subtrack-num* #f)
 
@@ -837,7 +840,7 @@
                   :release-func (lambda ($button $x $y)
                                   #f)))
 
-(define (track-configuration-popup)
+(define (track-configuration-popup X Y)
   (define (create name
                   is-visible
                   set-visible!)
@@ -847,15 +850,15 @@
                name)
           (lambda (is-on)
             (set-visible! is-on *current-track-num*))))
-  (apply popup-menu (append (create "Velocity text"
-                                    (<ra> :veltext-visible *current-track-num*)
-                                    ra:show-veltext)
-                            (create "Pianoroll"
+  (apply popup-menu (append (create "Pianoroll"
                                     (<ra> :pianoroll-visible *current-track-num*)
                                     ra:show-pianoroll)
-                            (create "Notes"
+                            (create "Note text"
                                     (<ra> :note-track-visible *current-track-num*)
                                     ra:show-note-track)
+                            (create "Velocity text"
+                                    (<ra> :veltext-visible *current-track-num*)
+                                    ra:show-veltext)
                             (list
                              "-------" (lambda () 90)
                              "Copy Track" (lambda ()
@@ -864,8 +867,12 @@
                                            (<ra> :cut-track *current-track-num*))
                              "Paste Track" (lambda ()
                                              (<ra> :paste-track *current-track-num*))
+                             "Insert Track" (lambda ()
+                                              (<ra> :insert-track *current-track-num*)
+                                              (set-current-track-num! X Y))
                              "Delete Track" (lambda ()
-                                              (<ra> :delete-track *current-track-num*))
+                                              (<ra> :delete-track *current-track-num*)
+                                              (set-current-track-num! X Y))
                              "-------" (lambda () 90)
                              "Set Instrument" (lambda ()
                                                 (<ra> :set-track-patch *current-track-num*))
@@ -890,7 +897,7 @@
                                             (>= X (<ra> :get-track-x1 0))
                                             (< Y (<ra> :get-track-pan-on-off-y1)))
                                        (if (= Button *right-button*)
-                                           (track-configuration-popup)
+                                           (track-configuration-popup X Y)
                                            (<ra> :set-track-patch *current-track-num*))
                                        #f)
                                       (else

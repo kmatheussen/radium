@@ -47,10 +47,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_settings_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../common/settings_proc.h"
+#include "../common/player_proc.h"
+#include "../common/undo_blocks_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
 #include "../OpenGL/Widget_proc.h"
 #include "../common/OS_string_proc.h"
 #include "../audio/SoundProducer_proc.h"
+
 
 #ifdef _AMIGA
 #include "Amiga_colors_proc.h"
@@ -502,14 +505,12 @@ void insertTracks(int numtracks,int windownum){
   InsertTracks_CurrPos(window,(NInt)numtracks);
 }
 
-void deleteTracks(int numtracks,int windownum){
-  insertTracks(-numtracks,windownum);
-}
-
-void deleteTrack(int tracknum, int blocknum, int windownum){
+static void insertOrDeleteTrack(int tracknum, int blocknum, int windownum, int num_to_insert){
   struct Tracker_Windows *window=NULL;
   struct WBlocks *wblock;
 
+  PlayStop();
+  
   wblock=getWBlockFromNumA(
                            windownum,
                            &window,
@@ -520,11 +521,28 @@ void deleteTrack(int tracknum, int blocknum, int windownum){
 
   if (tracknum==-1)
     tracknum = wblock->wtrack->l.num;
+
+  Undo_Block_CurrPos(window);
   
-  DeleteTracks(window,
+  InsertTracks(window,
                wblock,
                tracknum,
-               1);
+               num_to_insert
+               );
+
+  window->must_redraw = true;
+}
+
+void insertTrack(int tracknum, int blocknum, int windownum){
+  insertOrDeleteTrack(tracknum, blocknum, windownum, 1);
+}
+
+void deleteTracks(int numtracks,int windownum){
+  insertTracks(-numtracks,windownum);
+}
+
+void deleteTrack(int tracknum, int blocknum, int windownum){
+  insertOrDeleteTrack(tracknum, blocknum, windownum, -1);
 }
 
 void deleteBlock(int windownum){
