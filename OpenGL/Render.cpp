@@ -1801,7 +1801,7 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
   create_pianoroll(window, wblock, wtrack);
 
   // rec.
-  if (wtrack->track->is_recording)
+  if (ATOMIC_GET(wtrack->track->is_recording))
     create_track_is_recording(window, wblock, wtrack);
 }
 

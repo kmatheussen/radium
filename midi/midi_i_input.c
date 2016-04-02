@@ -105,9 +105,9 @@ static void record_midi_event(uint32_t msg){
   midi_event->blocktime = R_MAX(0, MIXER_get_accurate_radium_time() - ATOMIC_GET(pc->seqtime)); // TODO/FIX: This can fail if pc->seqtime is not updated at the same time as 'jackblock_cycle_start_stime' in Mixer.cpp.
   midi_event->msg       = msg;
 
-  if (track->is_recording == false){
+  if (ATOMIC_GET(track->is_recording) == false){
     GFX_ScheduleEditorRedraw();
-    track->is_recording = true;
+    ATOMIC_SET(track->is_recording, true);
   }
 
   //printf("Rec %d: %x, %x, %x\n",(int)midi_event->blocktime,cc,data1,data2);
@@ -159,7 +159,7 @@ void MIDI_insert_recorded_midi_events(void){
 
         struct Blocks *block = midi_event->wblock->block;
         struct Tracks *track = midi_event->wtrack->track;
-        track->is_recording = false;
+        ATOMIC_SET(track->is_recording, false);
         
         char *key = talloc_format("%x",midi_event->wtrack);
         if (HASH_has_key(track_set, key)==false){
