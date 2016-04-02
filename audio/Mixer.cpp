@@ -341,7 +341,8 @@ jack_time_t jackblock_delta_time = 0;
 static STime jackblock_cycle_start_stime = 0;
 static STime jackblock_last_frame_stime = 0;
 
-static DEFINE_SPINLOCK(jackblock_spinlock); // used by two realtime threads (midi input and audio thread)
+//static DEFINE_SPINLOCK(jackblock_spinlock); // used by two realtime threads (midi input and audio thread)
+static SetSeveralAtomicVariables jackblock_variables_protector;
 
 static QTime pause_time;
 static bool g_process_plugins = true;
@@ -670,16 +671,11 @@ struct Mixer{
 
       RT_lock_player();
 
-      // Isn't there a theoretical chance of deadlock here if we run on a uniprocessor?
-      // The audio thread is running SCHED_FIFO, while the midi thread is running SCHED_RR, so if the audio thread takes over while the midi thread holds the spinlock, we will probably deadlock
-      // since sched_fifo is not allowed to give up execution to a lowerered priority thread... (TODO: fix)
-      // (And not only do we risk deadlock, the computer itself will freeze too unless there is some safety mechanism enabled in the OS or an external watchdog is running)
-      //
-      SPINLOCK_OBTAIN(jackblock_spinlock);{ // Not quite RT safe, but it's extremely unlikely to be a problem. (the other thread obtaining this lock is also an RT thread, but with a lower priority)
+      jackblock_variables_protector.write_start();{
         jackblock_size = num_frames;
         jackblock_cycle_start_stime = pc->end_time;
         jackblock_last_frame_stime = jack_last_frame_time(_rjack_client);
-      }SPINLOCK_RELEASE(jackblock_spinlock);
+      }jackblock_variables_protector.write_end();
       
       if(g_test_crashreporter_in_audio_thread){
         int *ai2=NULL;
@@ -975,11 +971,15 @@ STime MIXER_get_accurate_radium_time(void){
   STime jackblock_last_frame_stime2;
   STime jackblock_size2;
 
-  SPINLOCK_OBTAIN(jackblock_spinlock);{
+  int generation;
+  do{
+    generation = jackblock_variables_protector.read_start();
+    
     jackblock_cycle_start_stime2 = jackblock_cycle_start_stime;
     jackblock_last_frame_stime2 = jackblock_last_frame_stime;
-    jackblock_size2 = jackblock_size; 
-  }SPINLOCK_RELEASE(jackblock_spinlock);
+    jackblock_size2 = jackblock_size;
+    
+  } while(jackblock_variables_protector.read_end(generation)==false);
   
   int deltatime = get_audioblock_time(jackblock_last_frame_stime2);
   

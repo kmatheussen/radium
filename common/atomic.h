@@ -98,8 +98,14 @@ static inline bool atomic_compare_and_set_uint32(uint32_t *variable, uint32_t ol
 #define ATOMIC_ADD_RETURN_NEW(name, how_much)                           \
   (__atomic_fetch_add (&(name##_atomic), how_much, __ATOMIC_SEQ_CST) + how_much)
 
+#define DEFINE_SPINLOCK_NOINIT(name) \
+  DEFINE_ATOMIC(bool, name)
+
+#define INIT_SPINLOCK(name) \
+  ATOMIC_SET(name, false)
+
 #define DEFINE_SPINLOCK(name) \
-  DEFINE_ATOMIC(bool, name) = false;
+  DEFINE_SPINLOCK_NOINIT(name) = false
 
 #define SPINLOCK_OBTAIN(name)                                           \
   while(atomic_compare_and_set_bool(&(name##_atomic), false, true)==false)
@@ -181,5 +187,54 @@ static inline void atomic_double_write(atomic_double_t *atomic_double, double ne
 }
 */
 
+
+
+#ifdef __cplusplus
+
+// Can be used if one thread set a set of variables, while another thread read the set of variables
+// The writing thread will not block, while the reading thread might block.
+// Note: I'm not 100% sure the code is correct, but it probably protects more than if it had not been used.
+// Class should not be used if it is extremely important that it works correctly.
+//
+class SetSeveralAtomicVariables{
+  DEFINE_ATOMIC(int, generation);
+  DEFINE_ATOMIC(bool, is_writing);
+                  
+ public:
+  
+  SetSeveralAtomicVariables(){
+    ATOMIC_SET(generation, 0);
+    ATOMIC_SET(is_writing, false);
+  }
+
+  void write_start(void){
+    ATOMIC_ADD(generation, 1);
+    ATOMIC_SET(is_writing, true);
+    ATOMIC_ADD(generation, 1);
+  }
+
+  void write_end(void){
+    ATOMIC_ADD(generation, 1);
+    ATOMIC_SET(is_writing, false);
+    ATOMIC_ADD(generation, 1);
+  }
+
+  int read_start(void){
+    while(ATOMIC_GET(is_writing)==true);
+    
+    return ATOMIC_GET(generation);
+  }
+
+  bool read_end(int read_start_generation){
+    while(ATOMIC_GET(is_writing)==true);
+    
+    if (ATOMIC_GET(generation) == read_start_generation)
+      return true;
+    else
+      return false;
+  }
+};
+
+#endif
 
 #endif
