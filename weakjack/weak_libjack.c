@@ -55,7 +55,7 @@ static void* lib_symbol(void* const lib, const char* const sym) {
 
 #if _MSC_VER && !__INTEL_COMPILER
 typedef void * pvoid_t;
-#define MAPSYM(SYM, FAIL) _j._ ## SYM = (func_t)lib_symbol(lib, "jack_" # SYM); \
+#define MAPSYM(SYM, FAIL) _j._ ## SYM = (weak_libjack_func_t)lib_symbol(lib, "jack_" # SYM); \
 	if (!_j._ ## SYM) err |= FAIL;
 #elif defined NDEBUG
 typedef void * __attribute__ ((__may_alias__)) pvoid_t;
@@ -72,16 +72,16 @@ typedef void * __attribute__ ((__may_alias__)) pvoid_t;
 	}
 #endif
 
-typedef void (* func_t) (void);
+typedef void (* weak_libjack_func_t) (void);
 
 /* function pointers to the real jack API */
 static struct WeakJack {
-	func_t _client_open; // special case due to varargs
+	weak_libjack_func_t _client_open; // special case due to varargs
 
-#define JCFUN(ERR, RTYPE, NAME, RVAL)              func_t _ ## NAME ;
-#define JPFUN(ERR, RTYPE, NAME, DEF, ARGS, RVAL)   func_t _ ## NAME ;
-#define JXFUN(ERR, RTYPE, NAME, DEF, ARGS, CODE)   func_t _ ## NAME ;
-#define JVFUN(ERR, NAME, DEF, ARGS, CODE)          func_t _ ## NAME ;
+#define JCFUN(ERR, RTYPE, NAME, RVAL)              weak_libjack_func_t _ ## NAME ;
+#define JPFUN(ERR, RTYPE, NAME, DEF, ARGS, RVAL)   weak_libjack_func_t _ ## NAME ;
+#define JXFUN(ERR, RTYPE, NAME, DEF, ARGS, CODE)   weak_libjack_func_t _ ## NAME ;
+#define JVFUN(ERR, NAME, DEF, ARGS, CODE)          weak_libjack_func_t _ ## NAME ;
 
 #include "weak_libjack.def"
 
@@ -190,7 +190,7 @@ int have_libjack (void) {
  */
 
 /* dedicated support for jack_client_open(,..) variable arg function macro */
-func_t WJACK_get_client_open(void) {
+weak_libjack_func_t WJACK_get_client_open(void) {
 	if (_status == -1) {
 		init_weak_jack();
 	}
