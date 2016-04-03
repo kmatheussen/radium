@@ -240,7 +240,18 @@ void setAutoRepeat(bool doit){
 extern int g_downscroll;
 void setNoteScrollLength(int l){
   R_ASSERT_RETURN_IF_FALSE(l>=0);
-  g_downscroll = l;
+
+  if (l != g_downscroll){
+  
+    g_downscroll = l;
+
+    if(ATOMIC_GET(is_starting_up)==false)
+      GFX_OS_update_bottombar();
+  }
+}
+
+int getNoteScrollLength(void){
+  return g_downscroll;
 }
 
 int getMaxVolume(){

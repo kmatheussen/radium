@@ -201,6 +201,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     signature->setText(Rational(root->signature).toString());
     lpb->setValue(root->lpb);
     bpm->setValue(root->tempo);
+    editlines->setValue(getNoteScrollLength());
     editor_follows_play_cursor_onoff->setVisible(ATOMIC_GET(root->play_cursor_onoff));
   }
 
