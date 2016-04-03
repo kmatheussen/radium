@@ -230,19 +230,24 @@ static void DrawAllPianoRollHeaders_old(
 
 static vector_t g_pianorollheaders = {0};
 
-static void *get_pianorollheader(int tracknum){
+static void *get_pianorollheader(int tracknum, bool create_new){
   if (tracknum < 200 && tracknum>= g_pianorollheaders.num_elements)
     R_ASSERT("INIT_Pianoroll_headers not called");
 
-  while (tracknum >= g_pianorollheaders.num_elements)
-    VECTOR_push_back(&g_pianorollheaders, PIANOROLLHEADER_create());
-
+  if (tracknum >= g_pianorollheaders.num_elements) {
+    if (create_new)
+      while (tracknum >= g_pianorollheaders.num_elements)
+        VECTOR_push_back(&g_pianorollheaders, PIANOROLLHEADER_create());
+    else
+      return NULL;
+  }
+    
   return g_pianorollheaders.elements[tracknum];    
 }
 
 // Call this function first to avoid having to allocate pianorollheader widgets while playing.
 void INIT_Pianoroll_headers(void){
-  get_pianorollheader(200);
+  get_pianorollheader(200, true);
 }
 
 
@@ -253,10 +258,14 @@ static void UpdateAllPianoRollHeaders(
 {
 
   struct WTracks *wtrack=wblock->wtracks;
+
+  int tracknum = 0;
+  if (wtrack!=NULL)
+    R_ASSERT(tracknum==wtrack->l.num);
   
   while(wtrack!=NULL) {
 
-    void *pianorollheader = get_pianorollheader(wtrack->l.num);
+    void *pianorollheader = get_pianorollheader(wtrack->l.num, true);
     
     if (wtrack->l.num < wblock->left_track || wtrack->l.num > wblock->right_track+1) {
 
@@ -277,7 +286,20 @@ static void UpdateAllPianoRollHeaders(
     }
     
     wtrack=NextWTrack(wtrack);
+    tracknum++;
+    if (wtrack!=NULL)
+      R_ASSERT(tracknum==wtrack->l.num);
   }
+
+  // Make sure all pianoroll headers to the right of the rightmost track is hidden.
+  for(;;){
+    void *pianorollheader = get_pianorollheader(tracknum, false);
+    if (pianorollheader==NULL)
+      break;
+    PIANOROLLHEADER_hide(pianorollheader);
+    tracknum++;
+  }
+    
 }
 
 
