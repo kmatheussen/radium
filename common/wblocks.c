@@ -259,7 +259,7 @@ void UpdateWBlockCoordinates(
 	wblock->t.y2 = wblock->a.y2;
 
 
-        wblock->bottombar.x1 = wblock->a.x1;
+        wblock->bottombar.x1 = wblock->t.x1;
         wblock->bottombar.y1 = wblock->a.y2;
         wblock->bottombar.x2 = wblock->a.y2;
         wblock->bottombar.y2 = window->height;
