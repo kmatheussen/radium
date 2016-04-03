@@ -71,7 +71,7 @@ static int max_num_undos=MAX_NUM_UNDOS;
 
 uint64_t g_curr_undo_generation = 0;
 
-static bool undo_is_open=false;
+static int undo_is_open=0;
 
 extern struct Patch *g_currpatch;
 
@@ -184,7 +184,7 @@ bool Undo_are_you_shure_questionmark(void){
 }
 
 bool Undo_Is_Open(void){
-  return undo_is_open;
+  return undo_is_open > 0;
 }
 
 void Undo_Open(void){
@@ -201,8 +201,8 @@ void Undo_Open(void){
 
   //printf("Undo_Open\n");
 
-  if(undo_is_open==true)
-    RError("Undo_Open: Undo_is_open==true");
+  if(Undo_Is_Open())
+    RError("Undo_Open: Undo_is_open==true: %d", undo_is_open);
 
   curr_open_undo = talloc(sizeof(struct Undo));
   curr_open_undo->windownum=window->l.num;
@@ -219,7 +219,7 @@ void Undo_Open(void){
   }
 #endif
 
-  undo_is_open = true;
+  undo_is_open++;
 }
 
 bool Undo_Close(void){
@@ -230,7 +230,23 @@ bool Undo_Close(void){
     RError("Can not call Undo_Close from Undo()\n");
   }
 
-  undo_is_open = false;
+  if (undo_is_open > 1)
+    RError("undo_is_open > 1: %d", undo_is_open);
+
+  if (undo_is_open==0){
+    RError("undo_is_open==0");
+    return false;
+  }
+  
+  undo_is_open--;
+
+  if (undo_is_open > 0)
+    return false;
+
+  if (undo_is_open < 0){
+    RError("undo_is_open < 0: %d", undo_is_open);
+    undo_is_open = 0;
+  }
 
   struct Undo *undo = curr_open_undo;
 
@@ -253,7 +269,7 @@ void Undo_CancelLastUndo(void){
   if (ignore()) return;
 
   R_ASSERT_RETURN_IF_FALSE(currently_undoing==false);
-  R_ASSERT_RETURN_IF_FALSE(undo_is_open==false);
+  R_ASSERT_RETURN_IF_FALSE(Undo_Is_Open()==false);
 
   CurrUndo=CurrUndo->prev;
   CurrUndo->next=NULL;
@@ -291,9 +307,9 @@ static void Undo_Add_internal(
     RError("Can not call Undo_Add from Undo()\n");
   }
 
-  bool undo_was_open = undo_is_open;
+  bool undo_was_open = Undo_Is_Open();
 
-  if(undo_is_open==false)
+  if(Undo_Is_Open()==false)
     Undo_Open();
 
   struct UndoEntry *entry=talloc(sizeof(struct UndoEntry));
