@@ -1,3 +1,12 @@
+Changes 3.7.0 -> 3.7.1:
+* Update scroll length in bottom bar when pressing Ctrl+1/2/3/4/5
+* Hide all pianoroll track headers from previously visible block when switching to a new block
+* Set correct x1 value for track slider
+* Behave correctly if trying to nest Undo_Open / Undo_Close calls.
+  The user still gets a warning though (because there shouldn't be any
+  situations where this is needed).
+
+
 Changes 3.6.9 -> 3.7.0:
 * Fixed various issues when recording MIDI
 * Show correct line when playing a block with a low multiplier value
