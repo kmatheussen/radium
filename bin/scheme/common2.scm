@@ -581,7 +581,38 @@ for .emacs:
 (make-assoc-from-flat-list (list "a" 50 "b" 90 "c" 100))
 ||#
 
-(define (popup-menu . options)
+(define (parse-popup-menu-options args)
+  (if (null? args)
+      '()
+      (let ((arg1 (car args))
+            (arg2 (cadr args)))
+        (cond ((procedure? arg2)
+               (cons arg1
+                     (cons arg2
+                           (parse-popup-menu-options (cddr args)))))
+              ((list? arg2)
+               (append (list (<-> "[submenu start]" arg1)
+                             (lambda () #t))
+                       (parse-popup-menu-options arg2)
+                       (list "[submenu end]"
+                             (lambda () #t))
+                       (parse-popup-menu-options (cddr args))))))))
+
+#||
+(parse-popup-menu-options (list "hello1" (lambda ()
+                                           (c-display "hepp1"))
+                                "submenu" (list
+                                           "hello2" (lambda ()
+                                                      (c-display "hepp2"))
+                                           "hello3" (lambda ()
+                                                      (c-display "hepp3")))
+                                "hello4" (lambda ()
+                                           (c-display "hepp4"))))
+||#
+
+(define (popup-menu . args)
+  (define options (parse-popup-menu-options args))
+  (c-display "optinos:" options)
   (define relations (make-assoc-from-flat-list options))
   (define strings (list->vector (map car relations)))
   
@@ -616,6 +647,27 @@ for .emacs:
                                      (c-display "gakk2 " ison))
             "hepp" (lambda ()
                      (c-display "hepp")))
+(popup-menu "hello" (lambda ()
+                      (c-display "hepp"))
+            "[submenu start]Gakk gakk-" (lambda () #t)
+            "[submenu start]Gakk gakk-" (lambda () #t)
+            "hello2" (lambda ()
+                       (c-display "hepp2"))
+            "[submenu end]" (lambda () #t)
+            "[submenu end]" (lambda () #t)
+            "[submenu end]" (lambda () #t)
+            "hepp" (lambda ()
+                     (c-display "hepp3")))
+(popup-menu "hello" (lambda ()
+                      (c-display "hepp"))
+            "Gakk gakk" (list
+                         "Gakk gakk2" (list
+                                       "hello2" (lambda ()
+                                                  (c-display "hepp2"))
+                                       "hello3" (lambda ()
+                                                  (c-display "hepp3"))))
+            "hepp" (lambda ()
+                     (c-display "hepp3")))
 ||#
 
 (define *num-radium-ticks* (<ra> :get-highest-legal-place-denominator))

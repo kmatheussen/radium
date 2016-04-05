@@ -96,19 +96,29 @@ int GFX_Menu2(
           n_submenues=0;
         }
 
-        QAction *action;
+        QAction *action = NULL;
         
         if (text.startsWith("[check ")){
           if (text.startsWith("[check on]"))
             action = new MyAction(text.right(text.size() - 10), true, curr_menu, i, callback);
           else
             action = new MyAction(text.right(text.size() - 11), false, curr_menu, i, callback);
+        } else if (text.startsWith("[submenu start]")){
+          curr_menu = curr_menu->addMenu(text.right(text.size() - 15));
+        } else if (text.startsWith("[submenu end]")){
+          QMenu *parent = dynamic_cast<QMenu*>(curr_menu->parent());
+          if (parent==NULL)
+            RError("parent of [submenu end] is not a QMenu");
+          else
+            curr_menu = parent;
         } else
           action = new QAction(text, curr_menu);
-        
-        action->setData(i);
-        curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu?
 
+        if (action != NULL){
+          action->setData(i);
+          curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu?
+        }
+        
         n_submenues++;
       }
     }
