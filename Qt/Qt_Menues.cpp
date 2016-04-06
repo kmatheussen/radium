@@ -39,7 +39,7 @@ struct Menues{
   QMenu *menu;
   QMenuBar *base;
 };
-}
+
 
 static struct Menues *current_menu = NULL;
 
@@ -97,6 +97,8 @@ public slots:
       qapplication->quit();
   }
 };
+}
+
 
 #include "mQt_Menues.cpp"
 
