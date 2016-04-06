@@ -746,12 +746,14 @@ void GFX_showVelocityHelpWidget(void){
                                "  xx = Velocity value. 0 = lowest velocity, ff = highest velocity. (hex format)\n"
                                "   t = Whether to glide to the next velocity or not.\n"
                                "\n"
-                               "  Tip: To quickly add an \"ff\" velocity, press the G button.\n"
+                               "  Tip: To quickly add an \"ff\" velocity, press 'G'.\n"
                                "\n"                               
                                "</pre>"
                                );
     msgBox->setStandardButtons(QMessageBox::Ok);
 
+    msgBox->setModal(false);
+     
     safeShowOrExec(msgBox);
 }
 
