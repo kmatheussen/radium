@@ -189,3 +189,6 @@ void closeProgressWindow(void){
 void showVelocityHelpWindow(void){
   GFX_showVelocityHelpWidget();
 }
+void showFXHelpWindow(void){
+  GFX_showFXHelpWidget();
+}

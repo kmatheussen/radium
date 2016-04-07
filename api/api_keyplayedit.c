@@ -44,10 +44,6 @@ void keyDownPlay(int notenum,int windownum){
 	if(notenum<=0 || notenum>127) return;
 	if(window==NULL || window->curr_track<0) return;
 
-        if (window->wblock->wtrack->veltext_on==true && window->curr_track_sub>=0 && window->curr_track_sub<=2)
-          return;
-
-        
 	PATCH_playNoteCurrPos(window,notenum,-1);
         if(ATOMIC_GET(root->editonoff))
           InsertNoteCurrPos(window,notenum,false,-1);
@@ -60,9 +56,6 @@ void polyKeyDownPlay(int notenum,int windownum){
 
 	if(notenum<=0 || notenum>127) return;
 	if(window==NULL || window->curr_track<0) return;
-
-        if (window->wblock->wtrack->veltext_on==true && window->curr_track_sub>=0 && window->curr_track_sub<=2)
-          return;
 
 	PATCH_playNoteCurrPos(window,notenum,-1);
         if(ATOMIC_GET(root->editonoff))
@@ -77,9 +70,6 @@ void keyUpPlay(int notenum,int windownum){
 	if(notenum<=0 || notenum>127) return;
 	if(window==NULL || window->curr_track<0) return;
         
-        if (window->wblock->wtrack->veltext_on==true && window->curr_track_sub>=0 && window->curr_track_sub<=2)
-          return;
-
         PATCH_stopNoteCurrPos(window,notenum,-1);
 }
 

@@ -14,6 +14,21 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+static inline int WTRACK_fxtrack_width(const int fontwidth){
+  return (3 * fontwidth) + 2;
+}
+
+extern LANGSPEC int WTRACK_num_non_polyphonic_subtracks(const struct WTracks *wtrack);
+
+static inline int WTRACK_num_subtracks(const struct WTracks *wtrack){
+  return WTRACK_num_non_polyphonic_subtracks(wtrack) + wtrack->track->polyphony;
+}
+
+static inline int NOTE_subtrack(const struct WTracks *wtrack, const struct Notes *note){
+  return WTRACK_num_non_polyphonic_subtracks(wtrack) + note->polyphony_num;
+}
+
+
 int WTRACK_getWidth(
                     struct Tracker_Windows *window,
                     struct WTracks *wtrack

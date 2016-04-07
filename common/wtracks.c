@@ -38,7 +38,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern PlayerClass *pc;
 
 
+int WTRACK_num_non_polyphonic_subtracks(const struct WTracks *wtrack){
+  int ret = 0;
+  
+  if (wtrack->veltext_on)
+    ret+=3;
 
+  if (wtrack->fxtext_on)
+    ret += ListFindNumElements1(&wtrack->track->fxs->l) * 3;
+  
+  return ret;
+}
 
 void CloseWTrack(struct WBlocks *wblock, NInt wtracknum){
 	struct WTracks *temp=(struct WTracks *)ListFindElement1(&wblock->wtracks->l,wtracknum);
@@ -56,6 +66,7 @@ struct WTracks *WTRACK_new(void){
   wtrack->pianoroll_width = 240;
 
   //wtrack->veltext_on = true;
+  //wtrack->fxtext_on = true;
   
   return wtrack;
 }
@@ -112,11 +123,21 @@ void UpdateWTracks(struct Tracker_Windows *window, struct WBlocks *wblock){
 	}
 }
 
+static int get_fxtextarea_width(const struct Tracker_Windows *window, const struct WTracks *wtrack){
+  int num_fxs = ListFindNumElements1(&wtrack->track->fxs->l);
+  return num_fxs * WTRACK_fxtrack_width(window->fontwidth);
+}
+
 static int WTRACKS_get_non_polyphonic_subtracks_width(const struct Tracker_Windows *window, const struct WTracks *wtrack){
+  int ret = 0;
+  
   if (wtrack->veltext_on)
-    return (4 * window->fontwidth) + 2;
-  else
-    return 0;
+    ret += (3 * window->fontwidth) + 2;
+
+  if (wtrack->fxtext_on)
+    ret += get_fxtextarea_width(window, wtrack);
+  
+  return ret;
 }
     
 static int WTRACK_get_pianoroll_width(
@@ -174,6 +195,14 @@ void UpdateWTrackCoordinates(
 	wtrack->veltextarea.x2 = wtrack->veltextarea.x + (window->fontwidth * 3);
 
         if (wtrack->veltext_on==true)
+          wtrack->fxtextarea.x = wtrack->veltextarea.x2 + 2;
+        else
+          wtrack->fxtextarea.x  = wtrack->notearea.x2 + 2;
+        wtrack->fxtextarea.x2 = wtrack->fxtextarea.x + get_fxtextarea_width(window, wtrack);
+
+        if (wtrack->fxtext_on==true)
+          wtrack->fxarea.x  = wtrack->fxtextarea.x2 + 2;
+        else if (wtrack->veltext_on==true)
           wtrack->fxarea.x  = wtrack->veltextarea.x2 + 2;
         else
           wtrack->fxarea.x  = wtrack->notearea.x2 + 2;

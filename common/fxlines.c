@@ -402,7 +402,7 @@ int AddFXNodeLine(
         return ret;
 }
 
-static void AddNewTypeOfFxNodeLine(const struct WBlocks *wblock, struct WTracks *wtrack, struct FX *fx, const Place *p2, int val){
+static void AddNewTypeOfFxNodeLine(struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, struct FX *fx, const Place *p2, int val){
   printf("new, fxnum: %d, wtrack->fxs->l.num:%d\n",fx->num,wtrack->track->fxs==NULL?-1000:wtrack->track->fxs->l.num);
   
   struct FXs *fxs=talloc(sizeof(struct FXs));
@@ -414,6 +414,9 @@ static void AddNewTypeOfFxNodeLine(const struct WBlocks *wblock, struct WTracks 
   fxnodeline->val=val;
   PlaceCopy(&fxnodeline->l.p,p2);
   ListAddElement3(&fxs->fxnodelines,&fxnodeline->l);
+
+  UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
 }
 
 static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FX *fx, const Place *place, int val){
@@ -443,7 +446,7 @@ static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct 
             p1.counter = 0;
           }
 
-          AddNewTypeOfFxNodeLine(wblock, wtrack, fx, &p2, val);
+          AddNewTypeOfFxNodeLine(window, wblock, wtrack, fx, &p2, val);
         }
 
 	AddFXNodeLine(
@@ -516,22 +519,36 @@ void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
 }
 
 
-void DeleteFxNodeLine(struct WTracks *wtrack, struct FXs *fxs, struct FXNodeLines *fxnodeline){
+void DeleteFxNodeLine(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, struct FXNodeLines *fxnodeline){
 
-  R_ASSERT(ListFindNumElements3(&fxs->fxnodelines->l)>1);
+  int num_elements = ListFindNumElements3(&fxs->fxnodelines->l);
 
-  PLAYER_lock();{
-    ListRemoveElement3(&fxs->fxnodelines,&fxnodeline->l);
-  }PLAYER_unlock();
+  R_ASSERT(num_elements > 1);
 
-  if (ListFindNumElements3(&fxs->fxnodelines->l) <= 1 ){
+  if (num_elements > 2){
+  
+    PLAYER_lock();{
+      ListRemoveElement3(&fxs->fxnodelines,&fxnodeline->l);
+    }PLAYER_unlock();
+
+  } else if (NextFXNodeLine(fxnodeline) == NULL && fxnodeline->val != fxs->fxnodelines->val) {
+    
+    safe_int_write(&fxnodeline->val, fxs->fxnodelines->val);
+    
+  } else {
+    
     PlayStop();
 
+    ListRemoveElement3(&fxs->fxnodelines,&fxnodeline->l);
+          
     struct FX *fx = fxs->fx;
     struct Tracks *track = wtrack->track;
     
     OS_SLIDER_release_automation_pointers(track->patch,fx->effect_num);
     (*fx->closeFX)(fx,track);
     ListRemoveElement1(&track->fxs,&fxs->l);
+
+    UpdateAllWBlockCoordinates(window);
+    window->must_redraw = true;
   }
 }

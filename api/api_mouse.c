@@ -3025,7 +3025,7 @@ void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
   struct Node *node = nodes->elements[fxnodenum];
   struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
   
-  DeleteFxNodeLine(wtrack, fxs, fxnodeline); // DeleteFxNodeLine locks player / stops playing
+  DeleteFxNodeLine(window, wtrack, fxs, fxnodeline); // DeleteFxNodeLine locks player / stops playing
 
   window->must_redraw_editor = true;
 }

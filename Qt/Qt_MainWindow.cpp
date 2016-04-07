@@ -725,8 +725,6 @@ const char *GFX_qVersion(void){
 
 
   
-  
-
 void GFX_showVelocityHelpWidget(void){
     static QMessageBox *msgBox = new QMessageBox;
         
@@ -757,5 +755,33 @@ void GFX_showVelocityHelpWidget(void){
     safeShowOrExec(msgBox);
 }
 
-//#include "mgakk.cpp"
+  
+
+void GFX_showFXHelpWidget(void){
+    static QMessageBox *msgBox = new QMessageBox;
+        
+    msgBox->setText("FX text");
+    msgBox->setInformativeText(
+                               "<pre>"
+                               "FX text is an alternative way to edit effects.\n"
+                               "Editing text is often quicker than editing effects graphically.\n"
+                               "\n"
+                               "FX text format: \"xxt\"\n"
+                               "\n"
+                               "  xx = effect value. 0 = lowest value, ff = highest value. (hex format)\n"
+                               "   t = Whether to glide to the next effect or not.\n"
+                               "\n"
+                               "  Tip: To quickly add an \"ff\" effect, press 'G'.\n"
+                               "\n"                               
+                               "</pre>"
+                               );
+    msgBox->setStandardButtons(QMessageBox::Ok);
+
+    msgBox->setModal(false);
+     
+    safeShowOrExec(msgBox);
+}
+
+
+
 

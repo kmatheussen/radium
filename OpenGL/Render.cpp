@@ -7,12 +7,14 @@
 #include "../common/placement_proc.h"
 #include "../common/realline_calc_proc.h"
 #include "../common/gfx_subtrack_proc.h"
+#include "../common/wtracks_proc.h"
 #include "../common/time_proc.h"
 #include "../common/tracks_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/common_proc.h"
 #include "../common/trackreallines2_proc.h"
 #include "../common/veltext_proc.h"
+#include "../common/fxtext_proc.h"
 #include "../common/notes_proc.h"
 #include "../common/nodelines_proc.h"
 #include "../common/Signature_proc.h"
@@ -933,7 +935,28 @@ void create_track_borders(const struct Tracker_Windows *window, const struct WBl
 
   int num_subtracks = WTRACK_num_subtracks(wtrack); 
   int first_polyphony_subtrack = WTRACK_num_non_polyphonic_subtracks(wtrack);
-                                      
+
+  if (wtrack->fxtext_on){      
+    int column = 0;
+    const struct FXs *fxs=wtrack->track->fxs;
+
+    if (wtrack->veltext_on && fxs !=NULL)
+      create_single_border(
+                           wtrack->veltextarea.x2+1,
+                           y1,
+                           y2);
+    
+    while(fxs != NULL && fxs->l.next != NULL){
+      create_single_border(                           
+                           wtrack->fxtextarea.x + (1+column)*WTRACK_fxtrack_width(window->fontwidth) - 1,
+                           y1,
+                           y2);
+      fxs = NextFX(fxs);
+      column++;
+    }
+
+  }
+  
   for(int lokke=R_MAX(1, R_MAX(first_polyphony_subtrack, left_subtrack)) ; lokke < num_subtracks ; lokke++){
     create_single_border(
                          GetXSubTrack1(wtrack,lokke)-1,
@@ -1704,11 +1727,9 @@ static void create_track_is_recording(const struct Tracker_Windows *window, cons
   GE_text(c, "Rec", wtrack->x, 0);
 }
 
+
 static void create_track_veltext2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int realline, char v1, char v2, char v3){
 
-  if (v3=='8')
-    v3 = ' ';
-  
   char text[]={v1, v2, v3, '\0'};
 
   float x = wtrack->veltextarea.x;
@@ -1744,9 +1765,53 @@ static void create_track_veltext(const struct Tracker_Windows *window, const str
   if (vt->logtype==LOGTYPE_HOLD)
     v3 = '|';
   else
-    v3 = '8';
+    v3 = ' ';
 
   create_track_veltext2(window, wblock, wtrack, realline, v1, v2, v3);
+}
+
+
+static void create_track_fxtext2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int realline, ColorNums colornum, int column, char v1, char v2, char v3){
+
+  char text[]={v1, v2, v3, '\0'};
+
+  float x = wtrack->fxtextarea.x + (column * WTRACK_fxtrack_width(window->fontwidth));
+  int y1 = get_realline_y1(window, realline);
+
+  GE_Context *c = GE_textcolor(colornum);
+  
+  GE_text(c, text, x, y1);
+}
+
+static void create_track_fxtext(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, vector_t *tr, int realline, int column){
+  int num_elements = tr->num_elements;
+
+  if (num_elements == 0)
+    return;
+
+  FXText *vt = (FXText*)tr->elements[0];
+
+  if (num_elements > 1){
+    create_track_fxtext2(window, wblock, wtrack, realline, vt->fx->color, column, 'x', 'x', 'x');
+    return;
+  }
+
+  char v1,v2,v3;
+
+  if (vt->value < 0x10)
+    v1 = ' ';
+  else
+    v1 = "0123456789abcdef" [vt->value / 0x10];
+  
+
+  v2 = "0123456789abcdef" [vt->value % 0x10];
+
+  if (vt->logtype==LOGTYPE_HOLD)
+    v3 = '|';
+  else
+    v3 = ' ';
+
+  create_track_fxtext2(window, wblock, wtrack, realline, vt->fx->color, column, v1, v2, v3);
 }
 
 static void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, int left_subtrack){
@@ -1784,18 +1849,32 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
     for(int realline = 0 ; realline<wblock->num_reallines ; realline++)
       create_track_veltext(window, wblock, wtrack, &veltexts[realline], realline);
   }
+
+  // fx text
+  if (wtrack->fxtext_on){
+    int column = 0;
+    const struct FXs *fxs=wtrack->track->fxs;
+    while(fxs != NULL){
+      vector_t *fxtexts = FXTEXTS_get(wblock, wtrack, fxs);
+      for(int realline = 0 ; realline<wblock->num_reallines ; realline++)
+        create_track_fxtext(window, wblock, wtrack, &fxtexts[realline], realline, column);
+      fxs = NextFX(fxs);
+      column++;
+    }
+
+  }
   
   // fxs
-  if(left_subtrack<=0){
-    
+  if(left_subtrack<=0){    
     const struct FXs *fxs=wtrack->track->fxs;
     while(fxs != NULL){
       create_track_fxs(window, wblock, wtrack, fxs);
       fxs = NextFX(fxs);
     }
-
-    create_track_stops(window, wblock, wtrack);
   }
+
+  // stop lines
+  create_track_stops(window, wblock, wtrack);
 
   // piano roll
   create_pianoroll(window, wblock, wtrack);

@@ -879,6 +879,17 @@ typedef struct{
 
 
 /*********************************************************************
+	data_as_text.h
+*********************************************************************/
+
+typedef struct{
+  int value;
+  int logtype;
+  bool is_valid;
+} data_as_text_t;
+
+
+/*********************************************************************
 	trackreallines2.h
 *********************************************************************/
 
@@ -900,6 +911,15 @@ typedef struct{
   bool is_first_velocity;
   bool is_last_velocity;
 } VelText;
+
+typedef struct{
+  Place p;
+  const struct FX *fx;
+  struct FXNodeLines *fxnodeline;
+
+  int value;
+  int logtype;
+} FXText;
 
 
 /*********************************************************************
@@ -974,8 +994,11 @@ struct WTracks{
         int notewidth;
 	Area notearea;						/* These are all parts of the GFX area. */
 
-        bool veltext_on; // Is always false on polyphonic tracks. I.e. can not be true on polyphonic tracks. (makes things much simpler)
+        bool veltext_on;
         Area veltextarea;
+
+        bool fxtext_on;
+        Area fxtextarea;
   
 	int fxonoff;						/* FX area on/off */
 	int fxwidth;						/* is fxarea.x2-fxarea.x */
@@ -1007,23 +1030,6 @@ struct WTracks{
 #define TEXTTYPE 0
 #define GFXTYPE1 1
 #define MAXTYPE 1
-
-static inline int WTRACK_num_non_polyphonic_subtracks(const struct WTracks *wtrack){
-  int ret = 0;
-  
-  if (wtrack->veltext_on)
-    ret+=3;
-
-  return ret;
-}
-
-static inline int WTRACK_num_subtracks(const struct WTracks *wtrack){
-  return WTRACK_num_non_polyphonic_subtracks(wtrack) + wtrack->track->polyphony;
-}
-
-static inline int NOTE_subtrack(const struct WTracks *wtrack, const struct Notes *note){
-  return WTRACK_num_non_polyphonic_subtracks(wtrack) + note->polyphony_num;
-}
 
 struct CurrentPianoNote{
   int tracknum;

@@ -15,7 +15,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
+#ifndef RADIUM_COMMON_LIST_PROC_H
+#define RADIUM_COMMON_LIST_PROC_H
 
 extern LANGSPEC void ListAddElement3(
 	void *listroot,
@@ -205,8 +206,6 @@ extern LANGSPEC void List_InsertPlaceLen3(
 	void (*Insert_PlaceLen_extra)(struct Blocks *block,void *to,struct ListHeader3 *l,float place,float toplace)
 );
 
-#endif
-
 #ifndef TRACKER_LIST_PROC_MACROS
 #define TRACKER_LIST_PROC_MACROS
 
@@ -216,5 +215,7 @@ extern LANGSPEC void List_InsertPlaceLen3(
 #define ListFindNumElementsP(a) ListFindNumElements1((struct ListHeader1 *)(a));
 #define ListLastP(a) ListLast1((struct ListHeader1 *)(a));
 
+
+#endif
 
 #endif

@@ -859,6 +859,9 @@
                             (create "Velocity text (left alt + y)"
                                     (<ra> :veltext-visible *current-track-num*)
                                     ra:show-veltext)
+                            (create "FX text"
+                                    (<ra> :fxtext-visible *current-track-num*)
+                                    ra:show-fxtext)
                             (list
                              "-------" (lambda () 90)
                              "Copy Track     (left alt + c)" (lambda ()
@@ -876,7 +879,12 @@
                                               (set-current-track-num! X Y))
                              "-------" (lambda () 90)
                              "Set Instrument     (F12)" (lambda ()
-                                                (<ra> :set-track-patch *current-track-num*))
+                                                          (<ra> :set-track-patch *current-track-num*))
+                             "-------" (lambda () 90)
+                             "Help Velocity text" (lambda ()
+                                              (<ra> :show-velocity-help-window))
+                             "Help FX text" (lambda ()
+                                              (<ra> :show-fx-help-window))
                              ))))
 
 #||        

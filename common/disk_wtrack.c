@@ -48,6 +48,7 @@ DC_start("WTRACK");
         DC_SSI("pianoroll_highkey",wtrack->pianoroll_highkey);
         
         DC_SSB("show_veltext",wtrack->veltext_on);
+        DC_SSB("show_fxtext",wtrack->fxtext_on);
 
 DC_end();
 SaveWTrack(NextWTrack(wtrack));
@@ -57,7 +58,7 @@ SaveWTrack(NextWTrack(wtrack));
 
 struct WTracks *LoadWTrack(void){
 	static char **objs=NULL;
-	static char *vars[9]={
+	static char *vars[10]={
 		"notesonoff",
 		"notelength",
 		"fxwidth",
@@ -66,12 +67,13 @@ struct WTracks *LoadWTrack(void){
                 "show_pianoroll",
                 "pianoroll_lowkey",
                 "pianoroll_highkey",
+                "show_veltext",
                 "show_veltext"
 	};
 	struct WTracks *wtrack = WTRACK_new();
 	wtrack->l.num=DC_LoadN();
 
-	GENERAL_LOAD(0,9);
+	GENERAL_LOAD(0,10);
 
 
 var0:
@@ -103,6 +105,8 @@ var8:
         wtrack->veltext_on = DC_LoadB();
         goto start;
 var9:
+        wtrack->fxtext_on = DC_LoadB();
+        goto start;
 var10:
 var11:
 var12:

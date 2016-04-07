@@ -137,6 +137,13 @@ static inline float safe_float_read(float *pos){
   return *pos;
 }
 
+static inline void safe_int_write(int *pos, int value){
+  *pos = value;
+}
+
+static inline int safe_int_read(int *pos){
+  return *pos;
+}
 
 
 /************** pointers ******************/

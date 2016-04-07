@@ -782,6 +782,68 @@ void showHideVeltextInBlock(int blocknum,int windownum){
   window->must_redraw = true;
 }
 
+void showFxtext(bool showit, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+                           windownum,
+                           &window,
+                           blocknum,
+                           &wblock,
+                           tracknum
+                           );
+
+  if(wtrack==NULL) return;
+
+  wtrack->fxtext_on = showit;
+
+  UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
+}
+
+bool fxtextVisible(int tracknum,int blocknum,int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
+
+  if (wtrack==NULL)
+    return false;
+
+  return wtrack->fxtext_on;
+}
+
+void showHideFxtext(int tracknum,int blocknum,int windownum){
+  showFxtext(!fxtextVisible(tracknum, blocknum, windownum),
+              tracknum, blocknum, windownum);
+}
+
+void showHideFxtextInBlock(int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	-1
+	);
+
+  if(wtrack==NULL) return;
+
+  bool on = !wtrack->fxtext_on;
+
+  wtrack = wblock->wtracks;
+  while(wtrack!=NULL){
+    wtrack->fxtext_on = on;
+    wtrack = NextWTrack(wtrack);
+  }
+  
+  UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
+}
+
 void showPianoroll(bool showit, int tracknum,int blocknum,int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;

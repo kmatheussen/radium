@@ -58,7 +58,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/scancodes_proc.h"
 #include "../common/player_proc.h"
 #include "../common/gfx_wtrackheaders_proc.h"
-#include "../common/veltext_proc.h"
+#include "../common/data_as_text_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -438,9 +438,9 @@ protected:
     
     bool ret;
 
-    bool veltext_used_key = VELTEXT_keypress(window, tevent.SubID, is_key_press);
+    bool dat_used_key = DAT_keypress(window, tevent.SubID, is_key_press);
 
-    if (veltext_used_key) {
+    if (dat_used_key) {
       
       ret = true;
 
