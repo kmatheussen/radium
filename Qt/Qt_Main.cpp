@@ -311,7 +311,7 @@ protected:
     
     struct Tracker_Windows *window = root->song->tracker_windows;
 
-    bool ignore_autorepeat = !doAutoRepeat();
+    bool ignore_autorepeat = !doAutoRepeat() && editor_has_keyboard == true;
     
     int type = OS_SYSTEM_get_event_type(event, ignore_autorepeat);
 
