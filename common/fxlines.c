@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "OS_visual_input.h"
 #include "instruments_proc.h"
+#include "wblocks_proc.h"
 #include "wtracks_proc.h"
 #include "common_proc.h"
 #include "OS_Player_proc.h"
@@ -458,7 +459,7 @@ static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct 
 	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 #endif
-
+        
         return;
 }
 

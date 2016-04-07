@@ -503,7 +503,7 @@ public:
 private:
 
   // OpenGL thread
-  bool draw(){
+  bool draw(bool force_repaint = false){
     static bool needs_repaint2 = false; // TODO: Clean up this.
     
     bool needs_repaint;
@@ -556,7 +556,7 @@ private:
     }
     
     
-    if (needs_repaint || current_height != new_height || current_width != new_width) {
+    if (force_repaint || needs_repaint || current_height != new_height || current_width != new_width) {
 
       if (current_height != new_height || current_width != new_width){
 
@@ -782,6 +782,7 @@ public:
 
 
 #if 1
+
     /*
     _rendering->sceneManagers()->clear();
 
@@ -790,13 +791,19 @@ public:
     _rendering->camera()->setProjectionOrtho(-0.5f);
     */
     
-    GE_set_height(h);
-    //create_block(_rendering->camera()->viewport()->width(), _rendering->camera()->viewport()->height());
-
-    //initEvent();
-#endif
+    initEvent();
     
+    ////create_block(_rendering->camera()->viewport()->width(), _rendering->camera()->viewport()->height());
+#endif
+
+    GE_set_height(h);
+
+    //for(int i = 0; i < 100 ; i ++){
+    GFX_ScheduleEditorRedraw();
+    //draw(true);
     updateEvent();
+    //usleep(5000);
+    //    }
   }
   // The rest of the methods in this class are virtual methods required by the vl::UIEventListener class. Not used.
 
