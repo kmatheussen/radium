@@ -4,7 +4,7 @@ color0 = #505b59
 color1 = #ffffff
 color2 = #222222
 color3 = #ffffff
-color4 = #7eff57
+color4 = #71e54e
 color5 = #434a43
 color6 = #93794f
 color7 = #0b186c
@@ -28,7 +28,7 @@ soundfile_color = #0000f0
 current_soundfile_color = #010101
 
 override_default_qt_colors = true
-last_color_version = 3.6.6
+last_color_version = 3.7.2
 
 colored_tracks = true
 bar_text_color = #fdfec8

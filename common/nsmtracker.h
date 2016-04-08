@@ -1429,6 +1429,8 @@ struct Tracker_Windows{
 	bool playalong;					/* If true, this window allso shows whats being played
 											   if any other window is playing. default=true. */
 
+        const char *message;
+  
 	struct WBlocks *wblock;			/* Current wblock. Only referenced. */
 	struct WBlocks *wblocks;
 

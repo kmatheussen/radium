@@ -5,11 +5,6 @@
 #include <QTimer>
 #include <QMessageBox>
 #include <QMainWindow>
-#if 0
-  #include <QFutureWatcher>
-  #include <QFuture>
-  #include <QtConcurrentRun>
-#endif
 #include <QApplication>
 
 #include "../common/nsmtracker.h"
@@ -17,13 +12,11 @@
 #include "../common/disk_save_proc.h"
 #include "../common/OS_string_proc.h"
 #include "../common/undo.h"
-
+#include "../OpenGL/Render_proc.h"
 #include "../api/api_proc.h"
 
 #include "Qt_AutoBackups_proc.h"
 
-
-extern QMainWindow *g_main_window;
 
 extern struct Root *root;
 
@@ -41,47 +34,6 @@ static int64_t get_backup_interval_ms(void){
   //return 5000;
 }
 
-static void aiai(void){
-  printf("            STARTING TO aiai\n");
-
-  wchar_t *backup_filename = get_backup_filename();
-  Save_Backup(backup_filename, root);
-  
-  //usleep(1000*500);
-
-  printf("            FINISHED aiai\n");
-}
-
-
-namespace{
-
-class BackupTimer : public QTimer { // stupid workaround
-
-  QMessageBox msgBox;
-
-public:
-  BackupTimer()
-    : msgBox(g_main_window)
-  {
-    msgBox.setText("Please wait. Saving backup");
-    msgBox.setStandardButtons(0);
-    msgBox.show();
-    
-    setInterval(500);
-    setSingleShot(true);
-    start();
-  }
-protected:
-
-  void 	timerEvent ( QTimerEvent * e ){
-    aiai();
-    printf("hello");
-    delete this;
-  }
-};
-}
-
-
 static void make_backup(void){
   if (Undo_num_undos() == 0)
     return;
@@ -95,23 +47,15 @@ static void make_backup(void){
   // Set this immediately so we don't start several BackupTimers.
   g_undo_generation_for_last_backup = g_curr_undo_generation;
 
-  //QMessageBox msgBox(g_main_window);
+  root->song->tracker_windows->message = "Please wait. Saving backup";
+  GL_create(root->song->tracker_windows, root->song->tracker_windows->wblock);
 
-  // This was a bad idea. QFuture starts a new thread. It's completely ridiculous that there is no safe and easy way to show a "please wait" window in Qt. (could start a new process though)
-#if 0
-  QFutureWatcher<void> watcher;
-  msgBox.connect(&watcher, SIGNAL(finished()), &msgBox, SLOT(hide()));
-  QFuture<void> future = QtConcurrent::run(aiai);
-  watcher.setFuture(future);    
-  
-  obtain_keyboard_focus();
-  msgBox.exec();
-  release_keyboard_focus();
-#endif
+  wchar_t *backup_filename = get_backup_filename();
+  Save_Backup(backup_filename, root);
 
-  // Anyway, the almost always working workaround:
-  new BackupTimer();
-  
+  root->song->tracker_windows->message = NULL;
+  GL_create(root->song->tracker_windows, root->song->tracker_windows->wblock);
+    
   //printf("               BACKUP finished\n");  
 }
 

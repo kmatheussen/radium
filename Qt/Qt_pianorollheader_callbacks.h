@@ -4,7 +4,6 @@
 #include <sndfile.h>
 #include <unistd.h>
 
-#include <QMessageBox>
 #include <QFileDialog>
 #include <FocusSniffers.h>
 

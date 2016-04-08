@@ -2000,6 +2000,38 @@ static void create_playcursor(const struct Tracker_Windows *window, const struct
   }
 }
 
+static void show_message(const struct Tracker_Windows *window){
+  const char *message = window->message;
+
+  if (message==NULL)
+    return;
+
+  int width = strlen(message) * window->fontwidth;
+  int height = window->fontheight;
+  
+  int middle_x = window->width / 2;
+  int middle_y = window->height / 2;
+
+  int x1 = middle_x - width;
+  int x2 = middle_x + width;
+
+  int y1 = middle_y - height;
+  int y2 = middle_y + height;
+  
+  GE_Context *background = GE_z(Black_rgb(), Z_STATIC);
+  GE_filledBox(background, x1, y1, x2, y2);
+
+  GE_Context *border = GE_z(White_rgb(), Z_STATIC);
+  GE_box(border, x1, y1, x2, y2, 1.0);
+
+  int x = middle_x - width/2;
+  int y = middle_y - height/2;
+  
+  GE_Context *text_color = GE_z(White_rgb(), Z_STATIC);
+  GE_text(text_color, message, x, y);
+    
+}
+
 /************************************
    block
  ************************************/
@@ -2033,6 +2065,8 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
     create_range(window, wblock);
     create_cursor(window, wblock);
     create_playcursor(window, wblock);
+
+    show_message(window);
     
   } GE_end_writing(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM));
 }
