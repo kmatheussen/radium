@@ -83,7 +83,9 @@
 (define (two-decimal-string number)
   (format #f "~,2F" (* 1.0 number)))
 
-
+(define (one-decimal-percentage-string number)
+  (format #f "~,1F" (* 100.0 number)))
+   
 (define (min-notfalse . Args)
   (match (list Args)
          ()          :> #f
@@ -568,119 +570,6 @@ for .emacs:
 
 
 
-;;;;;;;;;; popup menu
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; a 50 b 90 c 100 -> '((a 50)(b 90)(c 100))
-(define-match make-assoc-from-flat-list
-  ()           :> '()
-  (A B . Rest) :> (cons (list A B)
-                        (make-assoc-from-flat-list Rest)))
-
-#||
-(make-assoc-from-flat-list (list "a" 50 "b" 90 "c" 100))
-||#
-
-(define (parse-popup-menu-options args)
-  (if (null? args)
-      '()
-      (let ((arg1 (car args))
-            (arg2 (cadr args)))
-        (cond ((procedure? arg2)
-               (cons arg1
-                     (cons arg2
-                           (parse-popup-menu-options (cddr args)))))
-              ((list? arg2)
-               (append (list (<-> "[submenu start]" arg1)
-                             (lambda () #t))
-                       (parse-popup-menu-options arg2)
-                       (list "[submenu end]"
-                             (lambda () #t))
-                       (parse-popup-menu-options (cddr args))))))))
-
-#||
-(parse-popup-menu-options (list "hello1" (lambda ()
-                                           (c-display "hepp1"))
-                                "submenu" (list
-                                           "hello2" (lambda ()
-                                                      (c-display "hepp2"))
-                                           "hello3" (lambda ()
-                                                      (c-display "hepp3")))
-                                "hello4" (lambda ()
-                                           (c-display "hepp4"))))
-||#
-
-(define (popup-menu . args)
-  (define options (parse-popup-menu-options args))
-  (c-display "optinos:" options)
-  (define relations (make-assoc-from-flat-list options))
-  (define strings (list->vector (map car relations)))
-  
-  (define popup-arg (let loop ((strings (vector->list strings)))
-                      (c-display "strings" strings)
-                      (if (null? strings)
-                          ""
-                          (<-> (car strings) " % " (loop (cdr strings))))))
-    
-  (c-display "relations: " relations)
-  (c-display "strings: " strings)
-  (c-display "popup-arg: " popup-arg)
-
-  (define (get-func n)
-    (define result-string (vector-ref strings n))
-    (cadr (assoc result-string relations)))
-  
-  (define result-num (<ra> :popup-menu2 popup-arg (lambda (n val)
-                                                    (define result-string (vector-ref strings n))
-                                                    (c-display "n: " n ", val:" val)
-                                                    ((get-func n) val))))
-
-  (if (not (= -1 result-num))
-      ((get-func result-num)))
-  )
-
-
-#||
-(popup-menu "[check on] gakk1 on" (lambda (ison)
-                                   (c-display "gakk1 " ison))
-            "[check off] gakk2 off" (lambda (ison)
-                                     (c-display "gakk2 " ison))
-            "hepp" (lambda ()
-                     (c-display "hepp")))
-(popup-menu "hello" (lambda ()
-                      (c-display "hepp"))
-            "[submenu start]Gakk gakk-" (lambda () #t)
-            "[submenu start]Gakk gakk-" (lambda () #t)
-            "hello2" (lambda ()
-                       (c-display "hepp2"))
-            "[submenu end]" (lambda () #t)
-            "[submenu end]" (lambda () #t)
-            "[submenu end]" (lambda () #t)
-            "hepp" (lambda ()
-                     (c-display "hepp3")))
-(popup-menu "hello" (lambda ()
-                      (c-display "hepp"))
-            "Gakk gakk" (list
-                         "Gakk gakk2" (list
-                                       "hello2" (lambda ()
-                                                  (c-display "hepp2"))
-                                       "hello3" (lambda ()
-                                                  (c-display "hepp3"))))
-            "hepp" (lambda ()
-                     (c-display "hepp3")))
-||#
-
-(define *num-radium-ticks* (<ra> :get-highest-legal-place-denominator))
-(define *smallest-radium-tick* (/ 1 *num-radium-ticks*))
-(define (-line linenum)
-  (- linenum *smallest-radium-tick*))
-
-#||
-(define (+line linenum)
-  (+ linenum *smallest-radium-tick*))
-||#
-
-
 (define (my-equal? a b)
   ;;(c-display "my-equal?" a b)
   (cond ((and (pair? a)
@@ -857,3 +746,152 @@ for .emacs:
               '(0 1 2 3 4 5))
 (***assert*** (integer-range 5 5)
               '(5))
+
+
+
+;;;;;;;;;; popup menu
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; a 50 b 90 c 100 -> '((a 50)(b 90)(c 100))
+(define-match make-assoc-from-flat-list
+  ()           :> '()
+  (A B . Rest) :> (cons (list A B)
+                        (make-assoc-from-flat-list Rest)))
+
+#||
+(make-assoc-from-flat-list (list "a" 50 "b" 90 "c" 100))
+||#
+
+(define (string-starts-with? string startswith)
+  (define (loop string startswith)
+    (cond ((null? startswith)
+           #t)
+          ((null? string)
+           #f)
+          ((char=? (car string) (car startswith))
+           (loop (cdr string) (cdr startswith)))
+          (else
+           #f)))
+  (loop (string->list string)
+        (string->list startswith)))
+
+(***assert*** (string-starts-with? "asdf" "as") #t)
+(***assert*** (string-starts-with? "asdf" "") #t)
+(***assert*** (string-starts-with? "" "a") #f)
+(***assert*** (string-starts-with? "a" "a") #t)
+(***assert*** (string-starts-with? "a" "b") #f)
+(***assert*** (string-starts-with? "ab" "a") #t)
+
+(define (parse-popup-menu-options args)
+  (if (null? args)
+      '()
+      (let ((arg1 (car args)))
+        (cond ((list? arg1)
+               (assert (string=? "[check]" (car arg1)))
+               (let ((check-on (cadr arg1))
+                     (text (caddr arg1))
+                     (func (cadddr arg1)))
+                 (cons (<-> (if check-on "[check on]" "[check off]") text)
+                       (cons func
+                             (parse-popup-menu-options (cdr args))))))
+              ((not arg1)
+               (parse-popup-menu-options (cdr args)))
+              ((string-starts-with? arg1 "--")
+               (cons arg1
+                     (cons (lambda _ #t)
+                           (parse-popup-menu-options (cdr args)))))
+              ((procedure? (cadr args))
+               (cons arg1
+                     (cons (cadr args)
+                           (parse-popup-menu-options (cddr args)))))
+              ((list? (cadr args))
+               (append (list (<-> "[submenu start]" arg1)
+                             (lambda () #t))
+                       (parse-popup-menu-options (cadr args))
+                       (list "[submenu end]"
+                             (lambda () #t))
+                       (parse-popup-menu-options (cddr args))))))))
+
+#||
+(parse-popup-menu-options (list "hello1" (lambda ()
+                                           (c-display "hepp1"))
+                                "submenu" (list
+                                           "hello2" (lambda ()
+                                                      (c-display "hepp2"))
+                                           "hello3" (lambda ()
+                                                      (c-display "hepp3")))
+                                "hello4" (lambda ()
+                                           (c-display "hepp4"))))
+||#
+
+(define (popup-menu . args)
+  (define options (parse-popup-menu-options args))
+  (c-display "optinos:" options)
+  (define relations (make-assoc-from-flat-list options))
+  (define strings (list->vector (map car relations)))
+  
+  (define popup-arg (let loop ((strings (vector->list strings)))
+                      (c-display "strings" strings)
+                      (if (null? strings)
+                          ""
+                          (<-> (car strings) " % " (loop (cdr strings))))))
+    
+  (c-display "relations: " relations)
+  (c-display "strings: " strings)
+  (c-display "popup-arg: " popup-arg)
+
+  (define (get-func n)
+    (c-display "N: " n)
+    (define result-string (vector-ref strings n))
+    (cadr (assoc result-string relations)))
+  
+  (define result-num (<ra> :popup-menu2 popup-arg (lambda (n val)
+                                                    (define result-string (vector-ref strings n))
+                                                    (c-display "n: " n ", val:" val)
+                                                    ((get-func n) val))))
+
+  (if (not (= -1 result-num))
+      ((get-func result-num)))
+  )
+
+
+#||
+(popup-menu "[check on] gakk1 on" (lambda (ison)
+                                   (c-display "gakk1 " ison))
+            "[check off] gakk2 off" (lambda (ison)
+                                     (c-display "gakk2 " ison))
+            "hepp" (lambda ()
+                     (c-display "hepp")))
+(popup-menu "hello" (lambda ()
+                      (c-display "hepp"))
+            "[submenu start]Gakk gakk-" (lambda () #t)
+            "[submenu start]Gakk gakk-" (lambda () #t)
+            "hello2" (lambda ()
+                       (c-display "hepp2"))
+            "[submenu end]" (lambda () #t)
+            "[submenu end]" (lambda () #t)
+            "[submenu end]" (lambda () #t)
+            "hepp" (lambda ()
+                     (c-display "hepp3")))
+(popup-menu "hello" (lambda ()
+                      (c-display "hepp"))
+            "Gakk gakk" (list
+                         "Gakk gakk2" (list
+                                       "hello2" (lambda ()
+                                                  (c-display "hepp2"))
+                                       "hello3" (lambda ()
+                                                  (c-display "hepp3"))))
+            "hepp" (lambda ()
+                     (c-display "hepp3")))
+||#
+
+(define *num-radium-ticks* (<ra> :get-highest-legal-place-denominator))
+(define *smallest-radium-tick* (/ 1 *num-radium-ticks*))
+(define (-line linenum)
+  (- linenum *smallest-radium-tick*))
+
+#||
+(define (+line linenum)
+  (+ linenum *smallest-radium-tick*))
+||#
+

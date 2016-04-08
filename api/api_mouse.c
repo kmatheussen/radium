@@ -2356,6 +2356,15 @@ float getVelocityValue(int velocitynum, int notenum, int tracknum, int blocknum,
   return velocity->velocity / (float)MAX_VELOCITY;
 }
 
+int getVelocityLogtype(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Node *node = get_velocitynode(velocitynum, notenum, tracknum, blocknum, windownum);
+  if (node==NULL)
+    return 0;
+
+  struct Velocities *velocity = (struct Velocities*)node->element;
+  return velocity->logtype;
+}
+
 int getNumVelocities(int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -2561,6 +2570,8 @@ void setVelocityLogtypeHolding(bool is_holding, int velocitynum, int notenum, in
 
     velocity->logtype = logtype;
   }
+
+  window->must_redraw_editor = true;
 }
   
 

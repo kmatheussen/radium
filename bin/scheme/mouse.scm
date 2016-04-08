@@ -1,5 +1,8 @@
 (provide 'mouse.scm)
 
+(define *logtype-hold* (<ra> :get-logtype-hold))
+(define *logtype-linear* 0)
+
 (define *left-button* 1)
 (define *middle-button* 3)
 (define *right-button* 5)
@@ -14,6 +17,10 @@
 
 (define (set-statusbar-value val)
   (<ra> :set-statusbar-text (<-> val)))
+
+(define (set-velocity-statusbar-text value)
+  (<ra> :set-statusbar-text (<-> "Velocity: " (one-decimal-percentage-string value) "%")))
+
 
 ;; Quantitize
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -160,8 +167,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define-struct mouse-cycle
   :press-func 
-  :drag-func (lambda _ #f)
-  :release-func (lambda _ #f)
+  :drag-func #f
+  :release-func #f
   )
 
 (define *mouse-cycles* '())
@@ -289,7 +296,7 @@
   (<ra> :set-current-temponode num))
 (define (set-current-velocity-node velnum notenum tracknum)
   (set! current-node-has-been-set #t)
-  (<ra> :set-statusbar-text (<-> "Velocity: " (two-decimal-string (<ra> :get-velocity-value velnum notenum tracknum))))
+  (set-velocity-statusbar-text (<ra> :get-velocity-value velnum notenum tracknum))
   (<ra> :set-current-velocity-node velnum notenum tracknum))
 (define (set-current-fxnode fxnodenum fxnum tracknum)
   (set! current-node-has-been-set #t)
@@ -323,7 +330,6 @@
   (<ra> :cancel-indicator-node)
   )
 
-
 (define (handling-nodes thunk)
   (set! mouse-fx-has-been-set #f)
   (set! mouse-track-has-been-set #f)
@@ -339,7 +345,11 @@
     (catch #t
            thunk
            (lambda args
-             (c-display "Resetting mouse cycle since I caught something: " args)
+             (display "args")(display args)(newline)
+             (c-display "Resetting mouse cycle since I caught something:" (car args))
+             ;;(apply format (cons '() args)))
+             (apply format #t (cadr args))
+             (display (ow!))
              (set! *current-mouse-cycle* #f)
              #f)))
   
@@ -373,7 +383,10 @@
      ;;(c-display "%%%%%%%%%%%%%%%%% mouse press" $button $x $y *current-mouse-cycle*)
      ;;(cancel-current-stuff)
      (if (not *current-mouse-cycle*)
-         (set! *current-mouse-cycle* (get-mouse-cycle $button $x $y)))
+         (let ((new-mouse-cycle (get-mouse-cycle $button $x $y)))
+           (if (and new-mouse-cycle
+                    (new-mouse-cycle :drag-func))
+               (set! *current-mouse-cycle* new-mouse-cycle))))
      *current-mouse-cycle*)))
 
 (define (radium-mouse-move $button $x $y)
@@ -834,58 +847,36 @@
                                        (<ra> :set-reltempo 1.0)
                                        #f)
                                       (else
-                                       #f)))
-                  :drag-func  (lambda (Button X Y)
-                                #f)
-                  :release-func (lambda ($button $x $y)
-                                  #f)))
+                                       #f)))))
 
 (define (track-configuration-popup X Y)
-  (define (create name
-                  is-visible
-                  set-visible!)
-    (list (<-> (if is-visible
-                   "[check on]"
-                   "[check off]")
-               name)
-          (lambda (is-on)
-            (set-visible! is-on *current-track-num*))))
-  (apply popup-menu (append (create "Pianoroll     (left alt + p)"
-                                    (<ra> :pianoroll-visible *current-track-num*)
-                                    ra:show-pianoroll)
-                            (create "Note text     (left alt + n)"
-                                    (<ra> :note-track-visible *current-track-num*)
-                                    ra:show-note-track)
-                            (create "Velocity text (left alt + y)"
-                                    (<ra> :veltext-visible *current-track-num*)
-                                    ra:show-veltext)
-                            (create "FX text"
-                                    (<ra> :fxtext-visible *current-track-num*)
-                                    ra:show-fxtext)
-                            (list
-                             "-------" (lambda () 90)
-                             "Copy Track     (left alt + c)" (lambda ()
-                                            (<ra> :copy-track *current-track-num*))
-                             "Cut Track      (left alt + x)"     (lambda ()
-                                           (<ra> :cut-track *current-track-num*))
-                             "Paste Track    (left alt + v)" (lambda ()
-                                                               (<ra> :paste-track *current-track-num*))
-                             "-------" (lambda () 90)
-                             "Insert Track     (left alt + i)" (lambda ()
-                                              (<ra> :insert-track *current-track-num*)
-                                              (set-current-track-num! X Y))
-                             "Delete Track     (left alt + r)" (lambda ()
-                                              (<ra> :delete-track *current-track-num*)
-                                              (set-current-track-num! X Y))
-                             "-------" (lambda () 90)
-                             "Set Instrument     (F12)" (lambda ()
-                                                          (<ra> :set-track-patch *current-track-num*))
-                             "-------" (lambda () 90)
-                             "Help Velocity text" (lambda ()
-                                              (<ra> :show-velocity-help-window))
-                             "Help FX text" (lambda ()
-                                              (<ra> :show-fx-help-window))
-                             ))))
+  (popup-menu (list "[check]" (<ra> :pianoroll-visible *current-track-num*)   "Pianoroll     (left alt + p)" ra:show-pianoroll)
+              (list "[check]" (<ra> :note-track-visible *current-track-num*)  "Note text     (left alt + n)" ra:show-note-track)
+              (list "[check]" (<ra> :veltext-visible *current-track-num*)     "Velocity text (left alt + y)" ra:show-veltext)
+              (list "[check]" (<ra> :fxtext-visible *current-track-num*)      "FX text"                      ra:show-fxtext)
+              "-------"
+              "Copy Track     (left alt + c)" (lambda ()
+                                                (<ra> :copy-track *current-track-num*))
+              "Cut Track      (left alt + x)"     (lambda ()
+                                                    (<ra> :cut-track *current-track-num*))
+              "Paste Track    (left alt + v)" (lambda ()
+                                                (<ra> :paste-track *current-track-num*))
+              "-------"
+              "Insert Track     (left alt + i)" (lambda ()
+                                                  (<ra> :insert-track *current-track-num*)
+                                                  (set-current-track-num! X Y))
+              "Delete Track     (left alt + r)" (lambda ()
+                                                  (<ra> :delete-track *current-track-num*)
+                                                  (set-current-track-num! X Y))
+              "-------"
+              "Set Instrument     (F12)" (lambda ()
+                                           (<ra> :set-track-patch *current-track-num*))
+              "-------"
+              "Help Velocity text" (lambda ()
+                                     (<ra> :show-velocity-help-window))
+              "Help FX text" (lambda ()
+                               (<ra> :show-fx-help-window))
+              ))
 
 #||        
   (popup-menu "Show/hide Velocity text" (lambda ()
@@ -910,11 +901,7 @@
                                            (<ra> :set-track-patch *current-track-num*))
                                        #f)
                                       (else
-                                       #f)))
-                  :drag-func  (lambda (Button X Y)
-                                #f)
-                  :release-func (lambda ($button $x $y)
-                                  #f)))
+                                       #f)))))
 
 
 ;; track pan on/off
@@ -928,12 +915,7 @@
                                                                 *current-track-num*)
                                        #f)
                                       (else
-                                       #f)))
-                  :drag-func  (lambda (Button X Y)
-                                #f)
-                  :release-func (lambda ($button $x $y)
-                                  #f)))
-
+                                       #f)))))
 
 
 ;; track volume on/off
@@ -947,11 +929,7 @@
                                                                    *current-track-num*)
                                        #f)
                                       (else
-                                       #f)))
-                  :drag-func  (lambda (Button X Y)
-                                #f)
-                  :release-func (lambda ($button $x $y)
-                                  #f)))
+                                       #f)))))
 
 
 
@@ -1000,11 +978,7 @@
                                        (<ra> :set-track-pan 0.0 *current-track-num*)
                                        #f)
                                       (else
-                                       #f)))
-                  :drag-func  (lambda (Button X Y)
-                                #f)
-                  :release-func (lambda ($button $x $y)
-                                  #f)))
+                                       #f)))))
 
      
 
@@ -1053,11 +1027,7 @@
                                        (<ra> :set-track-volume 0.8 *current-track-num*)
                                        #f)
                                       (else
-                                       #f)))
-                  :drag-func  (lambda (Button X Y)
-                                #f)
-                  :release-func (lambda ($button $x $y)
-                                  #f)))
+                                       #f)))))
 
      
 
@@ -1626,23 +1596,24 @@
                              
                              (if (<ra> :portamento-enabled (pianonote-info :notenum)
                                                         (pianonote-info :tracknum))
-                                 (let ((is-holding (<ra> :is-pianonote-logtype-holding (pianonote-info :pianonotenum)
-                                                                                    (pianonote-info :notenum)
-                                                                                    (pianonote-info :tracknum))))
-                                   (apply popup-menu (append (list "Add Portamento break point" add-pitch)
-                                                             (if (> num-pianonotes 1)
+                                 (let ((is-holding (<ra> :is-pianonote-logtype-holding
+                                                         (pianonote-info :pianonotenum)
+                                                         (pianonote-info :notenum)
+                                                         (pianonote-info :tracknum))))
+                                   (apply popup-menu (append (if (> num-pianonotes 1)
                                                                  (list "Delete break point" delete-pitch)
-                                                                 (list "Disable Portamento" disable-portamento))
-                                                             ;(cond (is-holding
-                                                             ;       (list "Enable portamento" set-linear!))
-                                                             ;      ((> num-pianonotes 1)
-                                                             ;       (list "Disable portamento" set-hold!))
-                                                             ;      (else
-                                                             ;       '()))
+                                                                 (list (list "[check]" #t "Portamento" (lambda _ (disable-portamento)))))
+                                                             (list "Add Portamento break point" add-pitch)
+                                                             (if (> num-pianonotes 1)
+                                                                 (list (list "[check]" (not is-holding) "glide" (lambda (maybe)
+                                                                                                                  (if maybe
+                                                                                                                      (set-linear!)
+                                                                                                                      (set-hold!)))))
+                                                                 '())
                                                              (list "Cut Note" cut-note)
                                                              ;(list "Stop note here" stop-note)
                                                              )))
-                                 (popup-menu "Enable Portamento" enable-portamento
+                                 (popup-menu (list "[check]" #f "Portamento" (lambda _ (enable-portamento)))
                                              "Delete Note" delete-note
                                              "Cut Note" cut-note
                                              ))))
@@ -1845,7 +1816,7 @@
                                               (define value (<ra> :get-velocity-value (velocity-info :velocitynum)
                                                                                    (velocity-info :notenum)
                                                                                    (velocity-info :tracknum)))
-                                              (<ra> :set-statusbar-text (<-> "Velocity: " (two-decimal-string value))))
+                                              (set-velocity-statusbar-text value))
                         :Move-node (lambda (velocity-info Value Place)
                                      (define note-num (<ra> :set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
                                      (make-velocity-info :tracknum (velocity-info :tracknum)
@@ -1855,7 +1826,7 @@
                                                          :y (velocity-info :y)))
                         )
 
-;; delete velocity
+;; velocity popup
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
@@ -1867,10 +1838,42 @@
                        ;;(c-display "got velocity info " velocity-info)
                        (if velocity-info
                            (begin
-                             (<ra> :undo-notes (velocity-info :tracknum))
-                             (<ra> :delete-velocity (velocity-info :velocitynum)
-                                                 (velocity-info :notenum)
-                                                 (velocity-info :tracknum))
+                             (define (delete-velocity!)
+                               (<ra> :undo-notes (velocity-info :tracknum))
+                               (<ra> :delete-velocity
+                                     (velocity-info :velocitynum)
+                                     (velocity-info :notenum)
+                                     (velocity-info :tracknum)))
+                             (define (set-hold!)
+                               (<ra> :undo-notes (velocity-info :tracknum))
+                               (<ra> :set-velocity-logtype-holding
+                                     #t
+                                     (velocity-info :velocitynum)
+                                     (velocity-info :notenum)
+                                     (velocity-info :tracknum)))
+                             (define (set-linear!)
+                               (<ra> :undo-notes (velocity-info :tracknum))
+                               (<ra> :set-velocity-logtype-holding
+                                     #f
+                                     (velocity-info :velocitynum)
+                                     (velocity-info :notenum)
+                                     (velocity-info :tracknum)))
+                             (let ((is-holding (= (<ra> :get-velocity-logtype
+                                                        (velocity-info :velocitynum)
+                                                        (velocity-info :notenum)
+                                                        (velocity-info :tracknum))
+                                                  *logtype-hold*))
+                                   (num-nodes (<ra> :get-num-velocities (velocity-info :notenum) (velocity-info :tracknum))))
+                               (popup-menu "Delete Velocity" delete-velocity!
+                                           (if (= (velocity-info :velocitynum)
+                                                  (1- num-nodes))
+                                               #f
+                                               (list "[check]" (not is-holding) "glide" (lambda (maybe)
+                                                                                          (if maybe
+                                                                                              (set-linear!)
+                                                                                              (set-hold!))))))
+                               )
+
                              #t)
                            #f))))))
 
@@ -2203,7 +2206,7 @@
                                      fxnode-info)
                         )
 
-;; delete fx
+;; fx popup
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
@@ -2215,10 +2218,41 @@
                        ;;(c-display "got fx info " fxnode-info)
                        (if fxnode-info
                            (begin
-                             (<ra> :undo-fxs *current-track-num*)
-                             (<ra> :delete-fxnode (fxnode-info :fxnodenum)
-                                               (fxnode-info :fxnum)
-                                               (fxnode-info :tracknum))
+                             (define (delete-node!)
+                               (<ra> :undo-fxs *current-track-num*)
+                               (<ra> :delete-fxnode
+                                     (fxnode-info :fxnodenum)
+                                     (fxnode-info :fxnum)
+                                     (fxnode-info :tracknum)))
+                             (define (set-hold!)
+                               (<ra> :undo-fxs *current-track-num*)
+                               (<ra> :set-fxnode-logtype
+                                     *logtype-hold*
+                                     (fxnode-info :fxnodenum)
+                                     (fxnode-info :fxnum)
+                                     (fxnode-info :tracknum)))
+                             (define (set-linear!)
+                               (<ra> :undo-fxs *current-track-num*)
+                               (<ra> :set-fxnode-logtype
+                                     *logtype-linear*
+                                     (fxnode-info :fxnodenum)
+                                     (fxnode-info :fxnum)
+                                     (fxnode-info :tracknum)))
+                             (let ((is-holding (= (<ra> :get-fxnode-logtype
+                                                        (fxnode-info :fxnodenum)
+                                                        (fxnode-info :fxnum)
+                                                        (fxnode-info :tracknum))
+                                                  *logtype-hold*))
+                                   (num-nodes (<ra> :get-num-fxnodes (fxnode-info :fxnum) (fxnode-info :tracknum))))
+                               (popup-menu "Delete Node" delete-node!
+                                           (if (= (fxnode-info :fxnodenum)
+                                                  (1- num-nodes))
+                                               #f
+                                               (list "[check]" (not is-holding) "glide" (lambda (maybe)
+                                                                                          (if maybe
+                                                                                              (set-linear!)
+                                                                                              (set-hold!))))))
+                               )
                              #t)
                            #f))))))
 

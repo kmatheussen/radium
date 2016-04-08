@@ -1094,8 +1094,8 @@ Done during input reading instead.
 
 (define (merge-patterns playlist events num-channels)
   (c-display "merge 1 " (length events))
-  (define new-events (replace-c00-with-stops
-                      events))
+  (define new-events events);(replace-c00-with-stops
+                      ;events))
   (c-display "merge 2")
   (define patterns (group-events-in-patterns new-events))
   (c-display "merge 3")
