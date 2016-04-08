@@ -32,27 +32,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 static const int max_submenues = 200;
 
 namespace{
-  class MyAction : public QWidgetAction
+  class CheckableAction : public QWidgetAction
   {
     Q_OBJECT
 
     QString text;
+    QMenu *qmenu;
     int num;
     func_t *callback;
 
   public:
 
-    ~MyAction(){
+    ~CheckableAction(){
       printf("I was deleted: %s\n",text.toUtf8().constData());
     }
     
-    MyAction(const QString & text, bool is_on, QWidget * parent, int num, func_t *callback)
-      : QWidgetAction(parent)
+    CheckableAction(const QString & text, bool is_on, QMenu *qmenu, int num, func_t *callback)
+      : QWidgetAction(qmenu)
       , text(text)
+      , qmenu(qmenu)
       , num(num)
       , callback(callback)
     {
-      QCheckBox *checkBox = new QCheckBox(text, parent);
+      QCheckBox *checkBox = new QCheckBox(text, qmenu);
       setDefaultWidget(checkBox);
       
       checkBox->setChecked(is_on);
@@ -66,6 +68,8 @@ namespace{
       printf("CLICKED %d\n",checked);
       if (callback!=NULL)
         callFunc_void_int_bool(callback, num, checked);
+      qmenu->close();
+      //delete parent;
     }
   };
 }
@@ -100,9 +104,9 @@ int GFX_Menu2(
         
         if (text.startsWith("[check ")){
           if (text.startsWith("[check on]"))
-            action = new MyAction(text.right(text.size() - 10), true, curr_menu, i, callback);
+            action = new CheckableAction(text.right(text.size() - 10), true, curr_menu, i, callback);
           else
-            action = new MyAction(text.right(text.size() - 11), false, curr_menu, i, callback);
+            action = new CheckableAction(text.right(text.size() - 11), false, curr_menu, i, callback);
         } else if (text.startsWith("[submenu start]")){
           curr_menu = curr_menu->addMenu(text.right(text.size() - 15));
         } else if (text.startsWith("[submenu end]")){
@@ -125,6 +129,9 @@ int GFX_Menu2(
 
     QAction *action = menu.exec(QCursor::pos());
     if(action==NULL)
+      return -1;
+
+    if (dynamic_cast<CheckableAction*>(action) != NULL)
       return -1;
     
     bool ok;
