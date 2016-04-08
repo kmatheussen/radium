@@ -2810,7 +2810,7 @@ char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
 
   float val = fxnodeline->val;
 
-  // Turned out this was a lot of work. Fix later, hopefully.
+  // Turned out this was a lot of work. Fix later, hopefully. No, it's hopeless. For VST, it can't be done without doing some type of hacking we don't want to do, and for the other types of sound plugins, it's extremely hairy.
   //return fx->getFXstring(fx, wtrack->track, val);
 
   // instead we just do this:
@@ -2820,7 +2820,7 @@ char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
   if (wtrack->track->patch->instrument==get_MIDI_instrument())
     snprintf(ret, 511, "%s: %d", fx->name, (int)val);
   else
-    snprintf(ret, 511, "%s: %.02f", fx->name, scale(val, fx->min, fx->max, 0.0f, 1.0f));
+    snprintf(ret, 511, "%s: %.01f%%", fx->name, scale(val, fx->min, fx->max, 0, 100));
 
   return ret;
 }
