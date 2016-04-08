@@ -1348,14 +1348,19 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
 
           struct Pitches *pitch = (struct Pitches*)nodeline->element1;
           float  notenum = pitch->note;
-  
-          draw_pianonote_text(window, notenum, is_current, (nodeline->x1 + nodeline->x2) / 2, nodeline->y1);
 
-          // pitch_end
-          if (nodeline->next==NULL && note->pitch_end > 0) {
-            struct Pitches *pitch = (struct Pitches*)nodeline->element2;
-            float  notenum = pitch->note;
-            draw_pianonote_text(window, notenum, is_current, (nodeline->x1 + nodeline->x2) / 2, nodeline->y2);
+          float x_text = (nodeline->x1 + nodeline->x2) / 2;
+          bool text_is_inside = (x_text > wtrack->pianoroll_area.x - 20) && (x_text < wtrack->pianoroll_area.x2 + 20);
+            
+          if (text_is_inside) {
+            draw_pianonote_text(window, notenum, is_current, x_text, nodeline->y1);
+
+            // pitch_end
+            if (nodeline->next==NULL && note->pitch_end > 0) {
+              struct Pitches *pitch = (struct Pitches*)nodeline->element2;
+              float  notenum = pitch->note;
+              draw_pianonote_text(window, notenum, is_current, (nodeline->x1 + nodeline->x2) / 2, nodeline->y2);
+            }
           }
         }
       }
