@@ -496,7 +496,7 @@ public:
   }
 
   virtual void paintEvent( QPaintEvent *e ){
-    fprintf(stderr,"GLWindow paintEvent\n");
+    //fprintf(stderr,"GLWindow paintEvent\n");
     GL_create(get_window(), get_window()->wblock);
   }
 
