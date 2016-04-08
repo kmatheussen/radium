@@ -400,7 +400,9 @@ public:
     int effect_num = type->num_effects + system_effect;
 
     MyQSlider* slider = get_system_slider(system_effect);
-    slider->setValue(PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE) * 10000);
+    float value = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE);
+    //printf("            %s, value: %f\n",PLUGIN_get_effect_name(plugin, effect_num), value);
+    slider->setValue(value * 10000);
 
     updateSliderString(system_effect);
   }

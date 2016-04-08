@@ -513,7 +513,7 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
     break;
 
   case EFFNUM_PAN:
-    snprintf(buffer,buffersize-1,"%d %s",(int)scale(plugin->pan.target_value,0,1,-90,90),"\u00B0");
+    snprintf(buffer,buffersize-1,"%d %s",(int)scale(SMOOTH_get_target_value(&plugin->pan),0,1,-90,90),"\u00B0");
     break;
   case EFFNUM_PAN_ONOFF:
     snprintf(buffer,buffersize-1,"%s",ATOMIC_GET(plugin->pan_is_on)==true?"ON":"OFF");
@@ -562,7 +562,7 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
 
   case EFFNUM_DRYWET:
     {
-      int wet = plugin->drywet.target_value * 100;
+      int wet = SMOOTH_get_target_value(&plugin->drywet) * 100;
       int dry = 100-wet;
       snprintf(buffer,buffersize-1,"Dry: %d%%. Wet: %d%%",dry,wet);
     }

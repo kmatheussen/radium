@@ -943,7 +943,7 @@ public:
     // Input peaks
     {
       for(int ch=0;ch<_num_dry_sounds;ch++){
-        float peak = do_bypass ? 0.0f : RT_get_max_val(_dry_sound[ch],num_frames) *  _plugin->input_volume.target_value;
+        float peak = do_bypass ? 0.0f : RT_get_max_val(_dry_sound[ch],num_frames) *  SMOOTH_get_target_value(&_plugin->input_volume);
 
         float *input_volume_peak_values_for_chip = ATOMIC_GET(_plugin->input_volume_peak_values_for_chip);
         if(input_volume_peak_values_for_chip!=NULL)
