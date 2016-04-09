@@ -782,6 +782,33 @@ void GFX_showFXHelpWidget(void){
     safeShowOrExec(msgBox);
 }
 
-
+void GFX_showMixerHelpWindow(void){
+    static QMessageBox *msgBox = new QMessageBox;
+        
+    msgBox->setText("Mixer Interface");
+    msgBox->setInformativeText(
+                              "* Move objects with right mouse button.\n"
+                              "\n"
+                              "* Double-click the name of an object to open GUI.\n"
+                              "\n"
+                              "* Delete objects or connections by pressing SHIFT and click left (or right).\n"
+                              "  - Alternatively, click with middle mouse button.\n"
+                              "\n"
+                              "* Select more than one object by holding CTRL when clicking.\n"
+                              "  - Alternatively, mark an area of objects with left mouse button.\n"
+                              "\n"
+                              "* To autoconnect a new object to an existing object, right-click at \n"
+                              "   the input or output of an existing object.\n"
+                              "\n"
+                              "* To move and connect an object in one operation, place one object on \n"
+                              "   top of another object.\n"
+                              "\n"
+                              "* Zoom in and out by pressing CTRL and using the scroll wheel.\n"
+                              );
+    msgBox->setStandardButtons(QMessageBox::Ok);
+    msgBox->setModal(false);
+    
+    safeShowOrExec(msgBox);
+}
 
 

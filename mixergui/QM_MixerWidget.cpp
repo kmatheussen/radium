@@ -102,6 +102,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern EditorWidget *g_editor;
 
+/*
 struct HelpText : public QTimer{
   QGraphicsTextItem *_text;
 
@@ -117,7 +118,7 @@ struct HelpText : public QTimer{
                            "\n"
                            "* Double-click the name of an object to open GUI. (only if there is one)\n"
                            "\n"
-                           "* Delete objects or connections by pressing SHIFT and click left.\n"
+                           "* Delete objects or connections by pressing SHIFT and click left (or right).\n"
                            "  - Alternatively, click with middle mouse button.\n"
                            "\n"
                            "* Select more than one object by holding CTRL when clicking.\n"
@@ -143,7 +144,7 @@ struct HelpText : public QTimer{
     delete this;
   }
 };
-
+*/
 
 class SlotIndicatorItem : public QGraphicsItem
  {
@@ -853,7 +854,7 @@ static bool event_can_delete(QGraphicsSceneMouseEvent *event){
   if(event->button()==Qt::MiddleButton)
     return true;
 
-  else if(event->button()==Qt::LeftButton && (event->modifiers() & Qt::ShiftModifier))
+  else if(event->modifiers() & Qt::ShiftModifier)
     return true;
 
   else

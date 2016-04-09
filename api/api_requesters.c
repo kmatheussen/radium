@@ -186,6 +186,10 @@ void closeProgressWindow(void){
   GFX_CloseProgress();
 }
 
+void showMixerHelpWindow(void){
+  GFX_showMixerHelpWindow();
+}
+
 void showVelocityHelpWindow(void){
   GFX_showVelocityHelpWidget();
 }
