@@ -1528,6 +1528,25 @@
                     (set-mouse-pointer ra:set-vertical-resize-mouse-pointer)
                     (set-mouse-pointer ra:set-pointing-mouse-pointer))))))
 
+;; Delete note (shift + right mouse)
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda ($button $x $y)
+                (and (= $button *right-button*)
+                     (<ra> :shift-pressed)
+                     *current-track-num*
+                     (<ra> :pianoroll-visible *current-track-num*)
+                     (inside-box (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
+                     (let ((pianonote-info (get-pianonote-info $x $y *current-track-num*)))
+                       (if pianonote-info
+                           (begin
+                             (<ra> :undo-notes (pianonote-info :tracknum))
+                             (<ra> :delete-pianonote 0
+                                   (pianonote-info :notenum)
+                                   (pianonote-info :tracknum))
+                             #t)))))))
+
+                               
 ;; delete note / add pitch / delete pitch
 (add-mouse-cycle
  (make-mouse-cycle
@@ -1541,9 +1560,10 @@
                            (begin
                              (define (delete-note)
                                (<ra> :undo-notes (pianonote-info :tracknum))
-                               (<ra> :delete-pianonote 0
-                                                    (pianonote-info :notenum)
-                                                    (pianonote-info :tracknum))
+                               (<ra> :delete-pianonote
+                                     0
+                                     (pianonote-info :notenum)
+                                     (pianonote-info :tracknum))
                                #f)
                              (define (cut-note)
                                (<ra> :undo-notes (pianonote-info :tracknum))
@@ -1606,20 +1626,20 @@
                                            "--------"
                                            "Delete break point" :enabled (> num-pianonotes 1) delete-pitch
                                            "Add break point" add-pitch
-                                           "Glide to next break point"
-                                           :check (if (< num-pianonotes 2)
-                                                      portamento-enabled
-                                                      (not is-holding))
-                                           ;;:enabled (> num-pianonotes 1)
-                                           (lambda (maybe)
-                                             (c-display "   ______________________________   Glide1 called " maybe)
-                                             (if (< num-pianonotes 2)
-                                                 (if maybe
-                                                     (enable-portamento)
-                                                     (disable-portamento))
-                                                 (if maybe
-                                                     (set-linear!)
-                                                     (set-hold!))))
+                                           (list "Glide to next break point"
+                                                 :check (if (< num-pianonotes 2)
+                                                            portamento-enabled
+                                                            (not is-holding))
+                                                 ;;:enabled (> num-pianonotes 1)
+                                                 (lambda (maybe)
+                                                   (c-display "   ______________________________   Glide1 called " maybe)
+                                                   (if (< num-pianonotes 2)
+                                                       (if maybe
+                                                           (enable-portamento)
+                                                           (disable-portamento))
+                                                       (if maybe
+                                                           (set-linear!)
+                                                           (set-hold!)))))
                                            ;;"--------"
                                            ;;"Glide to end position" :check portamento-enabled :enabled (< num-pianonotes 2) (lambda (ison)
                                            ;;                                                                                  (c-display "   ______________________________   Glide2 called " ison)
@@ -1837,6 +1857,25 @@
                                                          :value (velocity-info :value)
                                                          :y (velocity-info :y)))
                         )
+
+;; delete velocity (shift + right mouse)
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (and (= Button *right-button*)
+                     (<ra> :shift-pressed)
+                     *current-track-num*
+                     (inside-box-forgiving (<ra> :get-box track *current-track-num*) X Y)
+                     (begin
+                       (define velocity-info (get-velocity-info X Y *current-track-num*))
+                       ;;(c-display "got velocity info " velocity-info)
+                       (if velocity-info
+                           (begin
+                             (<ra> :undo-notes (velocity-info :tracknum))
+                             (<ra> :delete-velocity
+                                   (velocity-info :velocitynum)
+                                   (velocity-info :notenum)
+                                   (velocity-info :tracknum)))))))))
 
 ;; velocity popup
 (add-mouse-cycle
@@ -2218,6 +2257,26 @@
                                      fxnode-info)
                         )
 
+;; Delete fx node (shift + right mouse)
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda ($button X Y)
+                (and (= $button *right-button*)
+                     (<ra> :shift-pressed)
+                     *current-track-num*
+                     (<ra> :pianoroll-visible *current-track-num*)
+                     (inside-box-forgiving (<ra> :get-box track *current-track-num*) X Y)
+                     (begin
+                       (define fxnode-info (get-fxnode-info X Y *current-track-num*))
+                       (if fxnode-info
+                           (begin
+                             (<ra> :undo-fxs *current-track-num*)
+                             (<ra> :delete-fxnode
+                                   (fxnode-info :fxnodenum)
+                                   (fxnode-info :fxnum)
+                                   (fxnode-info :tracknum))
+                             #t)))))))
+
 ;; fx popup
 (add-mouse-cycle
  (make-mouse-cycle
@@ -2250,20 +2309,22 @@
                                      (fxnode-info :fxnodenum)
                                      (fxnode-info :fxnum)
                                      (fxnode-info :tracknum)))
-                             (let ((is-holding (= (<ra> :get-fxnode-logtype
-                                                        (fxnode-info :fxnodenum)
-                                                        (fxnode-info :fxnum)
-                                                        (fxnode-info :tracknum))
+                             (let* ((is-holding (= (<ra> :get-fxnode-logtype
+                                                         (fxnode-info :fxnodenum)
+                                                         (fxnode-info :fxnum)
+                                                         (fxnode-info :tracknum))
                                                   *logtype-hold*))
-                                   (num-nodes (<ra> :get-num-fxnodes (fxnode-info :fxnum) (fxnode-info :tracknum))))
+                                    (num-nodes (<ra> :get-num-fxnodes (fxnode-info :fxnum) (fxnode-info :tracknum)))
+                                    (is-last (= (fxnode-info :fxnodenum)
+                                                (1- num-nodes))))
                                (popup-menu "Delete Node" delete-node!
-                                           (if (= (fxnode-info :fxnodenum)
-                                                  (1- num-nodes))
-                                               #f
-                                               (list "glide" :check (not is-holding) (lambda (maybe)
-                                                                                       (if maybe
-                                                                                           (set-linear!)
-                                                                                           (set-hold!))))))
+                                           (list "glide"
+                                                 :check (and (not is-holding) (not is-last))
+                                                 :enabled (not is-last)
+                                                 (lambda (maybe)
+                                                   (if maybe
+                                                       (set-linear!)
+                                                       (set-hold!)))))
                                )
                              #t)
                            #f))))))

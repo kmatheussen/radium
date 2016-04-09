@@ -786,39 +786,40 @@ for .emacs:
 (define (parse-popup-menu-options args)
   (if (null? args)
       '()
-      (if (list? (car args))
-          (parse-popup-menu-options (append (car args)
-                                            (cdr args)))      
-          (let ((text (car args))
-                (arg2 (cadr args)))
-            (cond ((eq? :check arg2)
-                   (let ((check-on (caddr args)))
-                     (parse-popup-menu-options (cons (<-> (if check-on "[check on]" "[check off]") text)
-                                                     (cdddr args)))))
-                  ((eq? :enabled arg2)
-                   (let ((enabled (caddr args)))
-                     (if enabled
-                         (parse-popup-menu-options (cons text
-                                                         (cdddr args)))
-                         (parse-popup-menu-options (cons (<-> "[disabled]" text)
-                                                         (cdddr args))))))
-                  ((not text)
-                   (parse-popup-menu-options (cdr args)))
-                  ((string-starts-with? text "--")
-                   (cons text
-                         (cons (lambda _ #t)
-                               (parse-popup-menu-options (cdr args)))))
-                  ((procedure? (cadr args))
-                   (cons text
-                         (cons (cadr args)
-                               (parse-popup-menu-options (cddr args)))))
-                  ((list? arg2)
-                   (append (list (<-> "[submenu start]" text)
-                                 (lambda () #t))
-                           (parse-popup-menu-options arg2)
-                           (list "[submenu end]"
-                                 (lambda () #t))
-                           (parse-popup-menu-options (cddr args)))))))))
+      (cond ((list? (car args))
+             (parse-popup-menu-options (append (car args)
+                                               (cdr args))))
+            ((not (car args))
+             (parse-popup-menu-options (cdr args)))
+            (else
+             (let ((text (car args))
+                   (arg2 (cadr args)))
+               (cond ((eq? :check arg2)
+                      (let ((check-on (caddr args)))
+                        (parse-popup-menu-options (cons (<-> (if check-on "[check on]" "[check off]") text)
+                                                        (cdddr args)))))
+                     ((eq? :enabled arg2)
+                      (let ((enabled (caddr args)))
+                        (if enabled
+                            (parse-popup-menu-options (cons text
+                                                            (cdddr args)))
+                            (parse-popup-menu-options (cons (<-> "[disabled]" text)
+                                                            (cdddr args))))))
+                     ((string-starts-with? text "--")
+                      (cons text
+                            (cons (lambda _ #t)
+                                  (parse-popup-menu-options (cdr args)))))
+                     ((procedure? (cadr args))
+                      (cons text
+                            (cons (cadr args)
+                                  (parse-popup-menu-options (cddr args)))))
+                     ((list? arg2)
+                      (append (list (<-> "[submenu start]" text)
+                                    (lambda () #t))
+                              (parse-popup-menu-options arg2)
+                              (list "[submenu end]"
+                                    (lambda () #t))
+                              (parse-popup-menu-options (cddr args))))))))))
 
 #||
 (parse-popup-menu-options (list "hello1" :enabled #t (lambda ()
