@@ -1094,8 +1094,7 @@ Done during input reading instead.
 
 (define (merge-patterns playlist events num-channels)
   (c-display "merge 1 " (length events))
-  (define new-events events);(replace-c00-with-stops
-                      ;events))
+  (define new-events (replace-c00-with-stops events))
   (c-display "merge 2")
   (define patterns (group-events-in-patterns new-events))
   (c-display "merge 3")
@@ -5582,6 +5581,9 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 
   (set-playlist-and-events! "Remove temporarily created patterns"
                             (remove-unused-patterns playlist events num-original-patterns))
+
+  ;;(set-events! "Convert c00 into STP"
+  ;;             (replace-c00-with-stops events))
 
   (set-playlist-and-events! "Split long patterns"
                             (split-long-patterns playlist events num-channels))
