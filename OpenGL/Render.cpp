@@ -282,18 +282,33 @@ void create_single_linenum_border(
 
 
 
+static void stipled_vertical_line(GE_Context *c, float x, float y1, float y2){
+  const float width = 0.3;
+  const float bit = 4 + 4 * (float)qrand()/(float)RAND_MAX;
 
+  for (float y = y1 ; y < y2 ; y += bit){
+    float y22 = R_MIN(y2, y+bit/2);
+    GE_line(c, x, y, x, y22, width);
+  }
+}
 
 
 static GE_Context *drawNodeLines(const struct NodeLine *nodelines, enum ColorNums colnum, bool is_selected, float alpha, float alpha_selected, bool hide_vertical){
   const float cut_size1 = 20;
-  const float cut_size2 = 10;
+  //const float cut_size2 = 10;
+
   
   float width = get_nodeline_width(is_selected);
   GE_Context *c = GE_color_alpha_z(colnum, is_selected ? alpha_selected : alpha, Z_ABOVE(Z_ABOVE(Z_ZERO)));
   
   for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next)
     if (hide_vertical && is_selected==false && ns->x1 == ns->x2 && (ns->y2 - ns->y1) > cut_size1*2) {
+#if 1
+      GE_line(c, ns->x1, ns->y1, ns->x2, ns->y1 + cut_size1, width);
+      GE_line(c, ns->x1, ns->y2 - cut_size1, ns->x2, ns->y2, width);
+      
+      stipled_vertical_line(c, ns->x1, ns->y1+cut_size1, ns->y2-cut_size1);
+#else
       GE_line(c, ns->x1, ns->y1, ns->x2, ns->y1 + cut_size1, width);
       // arrow
       GE_line(c, ns->x2-3, ns->y1+cut_size1-5, ns->x2, ns->y1 + cut_size1, width);
@@ -303,7 +318,7 @@ static GE_Context *drawNodeLines(const struct NodeLine *nodelines, enum ColorNum
       // arrow
       GE_line(c, ns->x2-3, ns->y2-cut_size2-5, ns->x2, ns->y2 - cut_size2, width);
       GE_line(c, ns->x2+3, ns->y2-cut_size2-5, ns->x2, ns->y2 - cut_size2, width);
-
+#endif
     } else {
       GE_line(c, ns->x1, ns->y1, ns->x2, ns->y2, width);
     }
