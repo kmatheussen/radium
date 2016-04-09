@@ -68,7 +68,7 @@ struct WTracks *LoadWTrack(void){
                 "pianoroll_lowkey",
                 "pianoroll_highkey",
                 "show_veltext",
-                "show_veltext"
+                "show_fxtext"
 	};
 	struct WTracks *wtrack = WTRACK_new();
 	wtrack->l.num=DC_LoadN();
