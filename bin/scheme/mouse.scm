@@ -850,10 +850,10 @@
                                        #f)))))
 
 (define (track-configuration-popup X Y)
-  (popup-menu (list "[check]" (<ra> :pianoroll-visible *current-track-num*)   "Pianoroll     (left alt + p)" ra:show-pianoroll)
-              (list "[check]" (<ra> :note-track-visible *current-track-num*)  "Note text     (left alt + n)" ra:show-note-track)
-              (list "[check]" (<ra> :veltext-visible *current-track-num*)     "Velocity text (left alt + y)" ra:show-veltext)
-              (list "[check]" (<ra> :fxtext-visible *current-track-num*)      "FX text"                      ra:show-fxtext)
+  (popup-menu "Pianoroll     (left alt + p)" :check (<ra> :pianoroll-visible *current-track-num*)  ra:show-pianoroll
+              "Note text     (left alt + n)" :check (<ra> :note-track-visible *current-track-num*) ra:show-note-track
+              "Velocity text (left alt + y)" :check (<ra> :veltext-visible *current-track-num*)    ra:show-veltext
+              "FX text"                      :check (<ra> :fxtext-visible *current-track-num*)     ra:show-fxtext
               "-------"
               "Copy Track     (left alt + c)" (lambda ()
                                                 (<ra> :copy-track *current-track-num*))
@@ -1594,26 +1594,27 @@
                              (define num-pianonotes (<ra> :get-num-pianonotes (pianonote-info :notenum)
                                                                            (pianonote-info :tracknum)))
                              
-                             (if (<ra> :portamento-enabled (pianonote-info :notenum)
-                                                        (pianonote-info :tracknum))
+                             (if (<ra> :portamento-enabled
+                                       (pianonote-info :notenum)
+                                       (pianonote-info :tracknum))
                                  (let ((is-holding (<ra> :is-pianonote-logtype-holding
                                                          (pianonote-info :pianonotenum)
                                                          (pianonote-info :notenum)
                                                          (pianonote-info :tracknum))))
-                                   (apply popup-menu (append (if (> num-pianonotes 1)
-                                                                 (list "Delete break point" delete-pitch)
-                                                                 (list (list "[check]" #t "Portamento" (lambda _ (disable-portamento)))))
-                                                             (list "Add Portamento break point" add-pitch)
-                                                             (if (> num-pianonotes 1)
-                                                                 (list (list "[check]" (not is-holding) "glide" (lambda (maybe)
-                                                                                                                  (if maybe
-                                                                                                                      (set-linear!)
-                                                                                                                      (set-hold!)))))
-                                                                 '())
-                                                             (list "Cut Note" cut-note)
-                                                             ;(list "Stop note here" stop-note)
-                                                             )))
-                                 (popup-menu (list "[check]" #f "Portamento" (lambda _ (enable-portamento)))
+                                   (popup-menu (if (> num-pianonotes 1)
+                                                   (list "Delete break point" delete-pitch)
+                                                   (list "Portamento" :check #t (lambda _ (disable-portamento))))
+                                               "Add Portamento break point" add-pitch
+                                               (if (> num-pianonotes 1)
+                                                   (list "glide" :check (not is-holding) (lambda (maybe)
+                                                                                           (if maybe
+                                                                                               (set-linear!)
+                                                                                               (set-hold!))))
+                                                   #f)
+                                               "Cut Note" cut-note
+                                               ;; "Stop note here" stop-note
+                                               ))
+                                 (popup-menu "Portamento" :check #f (lambda _ (enable-portamento))
                                              "Delete Note" delete-note
                                              "Cut Note" cut-note
                                              ))))
@@ -1868,10 +1869,10 @@
                                            (if (= (velocity-info :velocitynum)
                                                   (1- num-nodes))
                                                #f
-                                               (list "[check]" (not is-holding) "glide" (lambda (maybe)
-                                                                                          (if maybe
-                                                                                              (set-linear!)
-                                                                                              (set-hold!))))))
+                                               (list "glide" :check (not is-holding) (lambda (maybe)
+                                                                                       (if maybe
+                                                                                           (set-linear!)
+                                                                                           (set-hold!))))))
                                )
 
                              #t)
@@ -2248,10 +2249,10 @@
                                            (if (= (fxnode-info :fxnodenum)
                                                   (1- num-nodes))
                                                #f
-                                               (list "[check]" (not is-holding) "glide" (lambda (maybe)
-                                                                                          (if maybe
-                                                                                              (set-linear!)
-                                                                                              (set-hold!))))))
+                                               (list "glide" :check (not is-holding) (lambda (maybe)
+                                                                                       (if maybe
+                                                                                           (set-linear!)
+                                                                                           (set-hold!))))))
                                )
                              #t)
                            #f))))))

@@ -782,39 +782,64 @@ for .emacs:
 (***assert*** (string-starts-with? "a" "b") #f)
 (***assert*** (string-starts-with? "ab" "a") #t)
 
+
 (define (parse-popup-menu-options args)
   (if (null? args)
       '()
-      (let ((arg1 (car args)))
-        (cond ((list? arg1)
-               (assert (string=? "[check]" (car arg1)))
-               (let ((check-on (cadr arg1))
-                     (text (caddr arg1))
-                     (func (cadddr arg1)))
-                 (cons (<-> (if check-on "[check on]" "[check off]") text)
-                       (cons func
-                             (parse-popup-menu-options (cdr args))))))
-              ((not arg1)
-               (parse-popup-menu-options (cdr args)))
-              ((string-starts-with? arg1 "--")
-               (cons arg1
-                     (cons (lambda _ #t)
-                           (parse-popup-menu-options (cdr args)))))
-              ((procedure? (cadr args))
-               (cons arg1
-                     (cons (cadr args)
-                           (parse-popup-menu-options (cddr args)))))
-              ((list? (cadr args))
-               (append (list (<-> "[submenu start]" arg1)
-                             (lambda () #t))
-                       (parse-popup-menu-options (cadr args))
-                       (list "[submenu end]"
-                             (lambda () #t))
-                       (parse-popup-menu-options (cddr args))))))))
+      (if (list? (car args))
+          (parse-popup-menu-options (append (car args)
+                                            (cdr args)))      
+          (let ((text (car args))
+                (arg2 (cadr args)))
+            (cond ((eq? :check arg2)
+                   (let ((check-on (caddr args)))
+                     (parse-popup-menu-options (cons (<-> (if check-on "[check on]" "[check off]") text)
+                                                     (cdddr args)))))
+                  ((eq? :enabled arg2)
+                   (let ((enabled (caddr args)))
+                     (if enabled
+                         (parse-popup-menu-options (cons text
+                                                         (cdddr args)))
+                         (parse-popup-menu-options (cons (<-> "[disabled]" text)
+                                                         (cdddr args))))))
+                  ((not text)
+                   (parse-popup-menu-options (cdr args)))
+                  ((string-starts-with? text "--")
+                   (cons text
+                         (cons (lambda _ #t)
+                               (parse-popup-menu-options (cdr args)))))
+                  ((procedure? (cadr args))
+                   (cons text
+                         (cons (cadr args)
+                               (parse-popup-menu-options (cddr args)))))
+                  ((list? arg2)
+                   (append (list (<-> "[submenu start]" text)
+                                 (lambda () #t))
+                           (parse-popup-menu-options arg2)
+                           (list "[submenu end]"
+                                 (lambda () #t))
+                           (parse-popup-menu-options (cddr args)))))))))
 
 #||
+(parse-popup-menu-options (list "hello1" :enabled #t (lambda ()
+                                                       (c-display "hepp1"))
+                                "hello2" :enabled #f (lambda ()
+                                                       (c-display "hepp2"))                                
+                                "hello4" (lambda ()
+                                           (c-display "hepp4"))))
+
+(parse-popup-menu-options (list "hello1" :check #t (lambda ()
+                                                     (c-display "hepp1"))                                
+                                "hello4" (lambda ()
+                                           (c-display "hepp4"))))
+
+(parse-popup-menu-options (list "hello1" :check #f (lambda ()
+                                                     (c-display "hepp1"))                                
+                                "hello4" (lambda ()
+                                           (c-display "hepp4"))))
+
 (parse-popup-menu-options (list "hello1" (lambda ()
-                                           (c-display "hepp1"))
+                                           (c-display "hepp1"))                                
                                 "submenu" (list
                                            "hello2" (lambda ()
                                                       (c-display "hepp2"))
@@ -856,19 +881,32 @@ for .emacs:
 
 
 #||
+(popup-menu "hello" :check #t (lambda (ison)
+                                (c-display "gakk1" ison))
+            "hello2" :enabled #t (lambda ()
+                                   (c-display "gakk2" ison))
+            "hello3" :enabled #f (lambda ()
+                                   (c-display "gakk3" ison))
+            )
+||#
+            
+#||
 (popup-menu "[check on] gakk1 on" (lambda (ison)
                                    (c-display "gakk1 " ison))
             "[check off] gakk2 off" (lambda (ison)
                                      (c-display "gakk2 " ison))
-            "hepp" (lambda ()
-                     (c-display "hepp")))
+            "hepp1" (lambda ()
+                     (c-display "hepp1"))
+            "hepp2" (lambda ()
+                     (c-display "hepp2"))
+            )
+
 (popup-menu "hello" (lambda ()
                       (c-display "hepp"))
             "[submenu start]Gakk gakk-" (lambda () #t)
             "[submenu start]Gakk gakk-" (lambda () #t)
             "hello2" (lambda ()
                        (c-display "hepp2"))
-            "[submenu end]" (lambda () #t)
             "[submenu end]" (lambda () #t)
             "[submenu end]" (lambda () #t)
             "hepp" (lambda ()

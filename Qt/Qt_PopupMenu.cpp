@@ -101,6 +101,14 @@ int GFX_Menu2(
         }
 
         QAction *action = NULL;
+
+
+        bool disabled = false;
+        
+        if (text.startsWith("[disabled]")){
+          text = text.right(text.size() - 10);
+          disabled = true;
+        }
         
         if (text.startsWith("[check ")){
           if (text.startsWith("[check on]"))
@@ -117,16 +125,20 @@ int GFX_Menu2(
             curr_menu = parent;
         } else
           action = new QAction(text, curr_menu);
-
+        
         if (action != NULL){
           action->setData(i);
           curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu?
         }
         
+        if (disabled)
+          action->setDisabled(true);
+
         n_submenues++;
       }
     }
 
+    
     QAction *action = menu.exec(QCursor::pos());
     if(action==NULL)
       return -1;
