@@ -1,3 +1,28 @@
+Changes 3.7.1 -> 3.7.2:
+* Upgrade s7 scheme interpreter
+* Render: Use thin stipled lines for those vertical fx lines
+  (instead of showing nothing, like now)
+* Show mixer help window in the help menu,
+* Right mouse button + shift is now the general way to delete things.
+* mouse: clean up popup menues a bit
+* Fix Dry/Wet and Pan slider display
+* Mouse: Add glide option to fx/velocity/pitch and clean up various tings
+* popup menues: Close popup menu after clicking on a checkable item
+* Only draw pianonote text if it is approximately inside the pianobar
+  is the current pianonote
+* Show the "Please wait, saving backup" message in the editor,
+  not in a popup window
+* Make automation colors more distinct
+* Show percentages in bottom bar for automation values
+  (it's impossible to show the real values without doing
+  some tricks we really dont want to do)
+* FX text (similar to velocity text). Enable by right clicking in the
+  track header and select "FX text".
+* Only disable autorepeat if the editor currently has keyboard focus
+* Another attempt to fix resize
+* Make velocity/fx/mixer help windows non-modal
+
+
 Changes 3.7.0 -> 3.7.1:
 * Update scroll length in bottom bar when pressing Ctrl+1/2/3/4/5
 * Hide all pianoroll track headers from previously visible block when switching to a new block
