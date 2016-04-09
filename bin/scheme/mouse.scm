@@ -1601,20 +1601,31 @@
                                                      (pianonote-info :notenum)
                                                      (pianonote-info :tracknum))))
                                
-                               (popup-menu "Delete break point" :enabled (> num-pianonotes 1) delete-pitch
-                                           "Add break point" add-pitch
-                                           "Glide to next break point" :check (not is-holding) :enabled (> num-pianonotes 1) (lambda (maybe)
-                                                                                                                               (if maybe
-                                                                                                                                   (set-linear!)
-                                                                                                                                   (set-hold!)))
-                                           "--------"
-                                           "Cut Note at mouse position" cut-note
+                               (popup-menu "Cut Note at mouse position" cut-note
                                            "Delete Note" delete-note
                                            "--------"
-                                           "Glide to end position" :check portamento-enabled :enabled (< num-pianonotes 2) (lambda (ison)
-                                                                                                                             (if ison
-                                                                                                                                 (enable-portamento)
-                                                                                                                                 (disable-portamento)))
+                                           "Delete break point" :enabled (> num-pianonotes 1) delete-pitch
+                                           "Add break point" add-pitch
+                                           "Glide to next break point"
+                                           :check (if (< num-pianonotes 2)
+                                                      portamento-enabled
+                                                      (not is-holding))
+                                           ;;:enabled (> num-pianonotes 1)
+                                           (lambda (maybe)
+                                             (c-display "   ______________________________   Glide1 called " maybe)
+                                             (if (< num-pianonotes 2)
+                                                 (if maybe
+                                                     (enable-portamento)
+                                                     (disable-portamento))
+                                                 (if maybe
+                                                     (set-linear!)
+                                                     (set-hold!))))
+                                           ;;"--------"
+                                           ;;"Glide to end position" :check portamento-enabled :enabled (< num-pianonotes 2) (lambda (ison)
+                                           ;;                                                                                  (c-display "   ______________________________   Glide2 called " ison)
+                                           ;;                                                                                  (if ison
+                                           ;;                                                                                      (enable-portamento)
+                                           ;;                                                                                      (disable-portamento)))
                                            
                                            ;; "Stop note here" stop-note
                                            ))))
