@@ -1593,31 +1593,31 @@
                              
                              (define num-pianonotes (<ra> :get-num-pianonotes (pianonote-info :notenum)
                                                                            (pianonote-info :tracknum)))
-                             
-                             (if (<ra> :portamento-enabled
-                                       (pianonote-info :notenum)
-                                       (pianonote-info :tracknum))
-                                 (let ((is-holding (<ra> :is-pianonote-logtype-holding
-                                                         (pianonote-info :pianonotenum)
-                                                         (pianonote-info :notenum)
-                                                         (pianonote-info :tracknum))))
-                                   (popup-menu (if (> num-pianonotes 1)
-                                                   (list "Delete break point" delete-pitch)
-                                                   (list "Portamento" :check #t (lambda _ (disable-portamento))))
-                                               "Add Portamento break point" add-pitch
-                                               (if (> num-pianonotes 1)
-                                                   (list "glide" :check (not is-holding) (lambda (maybe)
-                                                                                           (if maybe
-                                                                                               (set-linear!)
-                                                                                               (set-hold!))))
-                                                   #f)
-                                               "Cut Note" cut-note
-                                               ;; "Stop note here" stop-note
-                                               ))
-                                 (popup-menu "Portamento" :check #f (lambda _ (enable-portamento))
-                                             "Delete Note" delete-note
-                                             "Cut Note" cut-note
-                                             ))))
+                             (let ((portamento-enabled (<ra> :portamento-enabled
+                                                             (pianonote-info :notenum)
+                                                             (pianonote-info :tracknum)))
+                                   (is-holding (<ra> :is-pianonote-logtype-holding
+                                                     (pianonote-info :pianonotenum)
+                                                     (pianonote-info :notenum)
+                                                     (pianonote-info :tracknum))))
+                               
+                               (popup-menu "Delete break point" :enabled (> num-pianonotes 1) delete-pitch
+                                           "Add break point" add-pitch
+                                           "Glide to next break point" :check (not is-holding) :enabled (> num-pianonotes 1) (lambda (maybe)
+                                                                                                                               (if maybe
+                                                                                                                                   (set-linear!)
+                                                                                                                                   (set-hold!)))
+                                           "--------"
+                                           "Cut Note at mouse position" cut-note
+                                           "Delete Note" delete-note
+                                           "--------"
+                                           "Glide to end position" :check portamento-enabled :enabled (< num-pianonotes 2) (lambda (ison)
+                                                                                                                             (if ison
+                                                                                                                                 (enable-portamento)
+                                                                                                                                 (disable-portamento)))
+                                           
+                                           ;; "Stop note here" stop-note
+                                           ))))
                        #f)))))
 
 
