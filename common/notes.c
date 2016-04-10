@@ -716,6 +716,20 @@ struct Notes *FindNote(
   return note;
 }
 
+struct Notes *FindNextNote(
+                       struct Tracks *track,
+                       Place *placement
+                       )
+{
+  struct Notes *note = track->notes;
+  while(note != NULL) {
+    if (PlaceGreaterOrEqual(&note->l.p, placement))
+      break;
+    note = NextNote(note);
+  }
+  return note;
+}
+
 static bool is_at_last_line_of_note(const struct WBlocks *wblock, const struct Notes *note, int realline){  
   int last_note_line = FindRealLineFor(wblock, 0, &note->end);
   //printf("last_note_line/realline: %d %d\n",last_note_line,realline);

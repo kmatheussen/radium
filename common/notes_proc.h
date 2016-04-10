@@ -87,6 +87,11 @@ extern LANGSPEC struct Notes *FindNoteOnSubTrack(
 
 extern LANGSPEC struct Notes *FindNextNoteOnSameSubtrack(struct Notes *note);
 
+extern LANGSPEC struct Notes *FindNextNote(
+                                           struct Tracks *track,
+                                           Place *placement
+                                           );
+
 extern LANGSPEC struct Notes *FindNote(
                        struct Tracks *track,
                        Place *placement

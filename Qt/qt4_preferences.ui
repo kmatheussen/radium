@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>746</width>
+    <width>752</width>
     <height>516</height>
    </rect>
   </property>
@@ -495,7 +495,8 @@
           </size>
          </property>
          <property name="text">
-          <string>Cut note at cursor position when pasting range</string>
+          <string>Stop existing notes at cursor position when pasting range, and stop inserted notes at next note after range.
+(Avoid creating polyphonic tracks when pasting range)</string>
          </property>
          <property name="checkable">
           <bool>true</bool>

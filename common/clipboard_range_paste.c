@@ -209,16 +209,26 @@ void PasteRange(
 	track=ListFindElement1(&block->tracks->l,tracknum);
 	if(track==NULL) return;
 
-        if (doRangePasteCut())
-          StopAllNotesAtPlace(block,track,place);
-        
-	for(lokke=0;lokke<range->num_tracks;lokke++){
-		PasteRange_notes(block,track,range->notes[lokke],place);
-		PasteRange_stops(block,track,range->stops[lokke],place);
-		track=NextTrack(track);
-		if(track==NULL) break;
-	}
+        {
+          for(lokke=0;lokke<range->num_tracks;lokke++){
+            if (doRangePasteCut())
+              StopAllNotesAtPlace(block,track,place);
 
+            PasteRange_notes(block,track,range->notes[lokke],place);
+            PasteRange_stops(block,track,range->stops[lokke],place);
+
+            if (doRangePasteCut()) {
+              struct Notes *note = FindNextNote(track, &p2);
+              printf("   p2: %d, NOTE: %d\n",p2.line, note == NULL ? -1 : note->l.p.line);
+              if (note !=NULL )
+                StopAllNotesAtPlace(block,track,&note->l.p);
+            }
+
+            track=NextTrack(track);
+            if(track==NULL) break;
+          }
+        }
+        
         PasteRange_FXs(block, tracknum, place);
 }
 
