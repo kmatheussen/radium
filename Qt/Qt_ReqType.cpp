@@ -163,6 +163,12 @@ namespace{
 #endif
       }
     }
+
+    void mousePressEvent( QMouseEvent *qmouseevent){                    
+      printf("mousepressed\n");                                         
+      obtain_keyboard_focus();                                          
+    }                                                                   
+
     bool gotit;
   };
 }
