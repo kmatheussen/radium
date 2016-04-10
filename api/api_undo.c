@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/undo.h"
+#include "../common/undo_blocks_proc.h"
+#include "../common/undo_tracks_proc.h"
 
 #include "api_common_proc.h"
 
@@ -47,4 +49,14 @@ void startIgnoringUndo(void){
 
 void stopIgnoringUndo(void){
   Undo_stop_ignoring_undo_operations();
+}
+
+void addUndoBlock(void){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+  Undo_Block_CurrPos(window);
+}
+
+void addUndoTrack(void){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+  Undo_Track_CurrPos(window);
 }
