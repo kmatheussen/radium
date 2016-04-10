@@ -186,6 +186,18 @@ void AddVelocityCurrPos(struct Tracker_Windows *window){
 }
 
 
+static void increase_note_velocity(struct Notes *note, int inc){
+  int maxvelocity=MAX_VELOCITY;
+  
+  note->velocity=R_BOUNDARIES(0,note->velocity+inc,maxvelocity);
+  
+  struct Velocities *velocity = note->velocities;
+  while(velocity != NULL){
+    velocity->velocity = R_BOUNDARIES(0,velocity->velocity+inc,maxvelocity);
+    velocity = NextVelocity(velocity);
+  }
+  note->velocity_end=R_BOUNDARIES(0,note->velocity_end+inc,maxvelocity);
+}
 
 void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
@@ -193,7 +205,6 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
 	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack=wblock->wtrack;
-	int maxvelocity=MAX_VELOCITY;
         
         if(is_track_ranged(wblock,wtrack) && is_realline_ranged(wblock,wblock->curr_realline)){
 
@@ -207,10 +218,8 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
           Undo_Block_CurrPos(window);
 
-          VECTOR_FOR_EACH(struct Notes *note,notes){ 
-            note->velocity=R_BOUNDARIES(0,note->velocity+inc,maxvelocity);
-            if(note->velocities==NULL)
-              note->velocity_end=R_BOUNDARIES(0,note->velocity_end+inc,maxvelocity);
+          VECTOR_FOR_EACH(struct Notes *note,notes){
+            increase_note_velocity(note, inc);
           }END_VECTOR_FOR_EACH;
 
           window->must_redraw = true;
@@ -224,9 +233,7 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
           struct Notes *note = FindNoteCurrPos(window);
 
           if (note != NULL) {
-            note->velocity=R_BOUNDARIES(0,note->velocity+inc,maxvelocity);
-            if(note->velocities==NULL)
-              note->velocity_end=R_BOUNDARIES(0,note->velocity_end+inc,maxvelocity);
+            increase_note_velocity(note, inc);
           }
         }
 
