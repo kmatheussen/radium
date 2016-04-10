@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_op_queue_proc.h"
 #include "../common/gfx_proc.h"
 
+#include "FocusSniffers.h"
+
 #include "EditorWidget.h"
 
 #include "Qt_MainWindow_proc.h"
@@ -139,10 +141,10 @@ void GFX_SetString(ReqType das_reqtype,const char *text){
 }
 
 namespace{
-  class MyQLineEdit : public QLineEdit {
+  class MyQLineEdit : public FocusSnifferQLineEdit {
   public:
     MyQLineEdit(QFrame *parent)
-      : QLineEdit(parent)
+      : FocusSnifferQLineEdit(parent)
       , gotit(false)
     {
       setContextMenuPolicy(Qt::NoContextMenu); // Only way I've found to avoid it from popping up on windows.
@@ -163,12 +165,6 @@ namespace{
 #endif
       }
     }
-
-    void mousePressEvent( QMouseEvent *qmouseevent){                    
-      printf("mousepressed\n");                                         
-      obtain_keyboard_focus();                                          
-    }                                                                   
-
     bool gotit;
   };
 }
