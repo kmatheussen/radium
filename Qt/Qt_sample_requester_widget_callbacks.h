@@ -114,7 +114,7 @@ static QString get_sample_filename_display_string(QFileInfo file_info){
   return ret;
 }
 
-static QString get_display_name(const wchar_t *filename, int bank=-1, int preset=-1){
+static QString get_display_name(QString filename, int bank=-1, int preset=-1){
   int fontsize = QApplication::font().pointSize();
   if(fontsize<=0)
     fontsize = 7;
@@ -124,8 +124,8 @@ static QString get_display_name(const wchar_t *filename, int bank=-1, int preset
   QString str("<html><head/><body><p><span style=\" font-size:");
 
   str += QString::number(fontsize);
-  str += QString("pt; font-weight:600; color:#4a4808;\">");
-  str += STRING_get_qstring(filename);
+  str += QString("pt; font-weight:600; color:'%1';\">").arg(get_qcolor(CURRENT_SOUNDFILE_COLOR_NUM).name());
+  str += filename;
     
   if (bank>=0)
     str += str.sprintf(", b: %d, p: %d",bank,preset);
@@ -190,8 +190,9 @@ class Sample_requester_widget : public QWidget
     updateWidgets();
   }
 
-  void update_sample_name_label(QString text){
-    _sample_name_label->setText(QString("<font color='%1'>%2</font").arg(get_qcolor(CURRENT_SOUNDFILE_COLOR_NUM).name(), text));
+  void update_sample_name_label(QString text, int bank=-1, int preset=-1){
+    //_sample_name_label->setText(QString("<font color='%1'>%2</font").arg(get_qcolor(CURRENT_SOUNDFILE_COLOR_NUM).name(), text));
+    _sample_name_label->setText(get_display_name(text, bank, preset));
   }
   
   void updateWidgets(){
@@ -200,7 +201,7 @@ class Sample_requester_widget : public QWidget
     if(QString("Sample Player") == plugin->type->type_name){
       update_sample_name_label(STRING_get_qstring(SAMPLER_get_filename_display(plugin)));
     }else{
-      update_sample_name_label(get_display_name(FLUIDSYNTH_get_filename_display(plugin)));
+      update_sample_name_label(STRING_get_qstring(FLUIDSYNTH_get_filename_display(plugin)));
     }
   }
 
@@ -331,7 +332,7 @@ class Sample_requester_widget : public QWidget
       successfully_selected = FLUIDSYNTH_set_new_preset(plugin, STRING_create(_sf2_file), bank_num, preset_num);
 
     if(successfully_selected){
-      update_sample_name_label(get_display_name(STRING_create(_sf2_file),bank_num,preset_num));
+      update_sample_name_label(_sf2_file,bank_num,preset_num);
     }
 
     if(successfully_selected==true && ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED){
@@ -402,7 +403,7 @@ class Sample_requester_widget : public QWidget
         //printf("playing note 2\n");
         PATCH_play_note(g_currpatch, 12*_preview_octave, -1, 0.5f, 0.0f);
       }
-      update_sample_name_label(get_display_name(STRING_create(filename)));
+      update_sample_name_label(filename);
     }
   }
 
