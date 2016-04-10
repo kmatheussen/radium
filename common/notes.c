@@ -168,14 +168,13 @@ void SetEndAttributes(
     Stops all notes before line+(counter/dividor) at
     line+(counter/dividor, if they last that long.
 **************************************************************/
-static void StopAllNotesAtPlace(
-                                struct WBlocks *wblock,
-                                struct WTracks *wtrack,
-                                Place *placement
+void StopAllNotesAtPlace(
+                         struct Blocks *block,
+                         struct Tracks *track,
+                         Place *placement
 ){
-        R_ASSERT(PLAYER_current_thread_has_lock());
+        R_ASSERT(PLAYER_current_thread_has_lock() || is_playing()==false);
           
-	struct Tracks *track=wtrack->track;
 	struct Notes *temp;
 
 	temp=track->notes;
@@ -185,7 +184,7 @@ static void StopAllNotesAtPlace(
 			CutListAt(&temp->velocities,placement);
 			CutListAt(&temp->pitches,placement);
 			PlaceCopy(&temp->end,placement);
-                        NOTE_validate(wblock->block, track, temp);
+                        NOTE_validate(block, track, temp);
 		}
 		temp=NextNote(temp);
 	}
@@ -378,8 +377,8 @@ static void set_legal_start_and_end_pos(const struct Blocks *block, struct Track
 void NOTE_validate(const struct Blocks *block, struct Tracks *track, struct Notes *note){
   R_ASSERT_RETURN_IF_FALSE(block!=NULL);
   R_ASSERT_RETURN_IF_FALSE(note!=NULL);
-  
-  R_ASSERT(track==NULL || PLAYER_current_thread_has_lock());
+
+  R_ASSERT(track==NULL || PLAYER_current_thread_has_lock() || is_playing()==false);
   
   if (note->note<=0.0f){
     RError("notenum<=0.0f: %f. Setting to 0.01",note->note);
@@ -426,7 +425,7 @@ struct Notes *InsertNote(
           ListAddElement3(&track->notes,&note->l);
 
           if(polyphonic==false)
-            StopAllNotesAtPlace(wblock,wtrack,placement);
+            StopAllNotesAtPlace(block,track,placement);
 
           if (end_placement==NULL)
             SetEndAttributes(block,track,note);
@@ -540,7 +539,7 @@ static void InsertStop(
 	PlaceCopy(&stop->l.p,placement);
 
         PLAYER_lock();{
-          StopAllNotesAtPlace(wblock,wtrack,placement);
+          StopAllNotesAtPlace(wblock->block,wtrack->track,placement);
   	  ListAddElement3(&wtrack->track->stops,&stop->l);
         }PLAYER_unlock();
 }

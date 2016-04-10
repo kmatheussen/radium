@@ -263,7 +263,8 @@ void CopyRange(
 	p1=getRangeStartPlace(wblock);
 	p2=getRangeEndPlace(wblock);
 	getRangePlaceLength(&range->length,wblock);
-
+        range->num_lines = wblock->rangey2 - wblock->rangey1;
+        
 	track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
 
 	for(lokke=0;lokke<=wblock->rangex2-wblock->rangex1;lokke++){

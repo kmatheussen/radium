@@ -340,6 +340,10 @@ class Preferences : public QDialog, public Ui::Preferences {
 
       autorepeatbutton->setChecked(doAutoRepeat());
 
+      range_paste_cut_button->setChecked(doRangePasteCut());
+
+      range_paste_scroll_down_button->setChecked(doRangePasteScrollDown());
+
       if (linenumbersVisible())
         showLineNumbers->setChecked(true);
       else
@@ -469,6 +473,12 @@ public slots:
   }
   void on_autorepeatbutton_toggled(bool val){
     setAutoRepeat(val);
+  }
+  void on_range_paste_cut_button_toggled(bool val){
+    setRangePasteCut(val);
+  }
+  void on_range_paste_scroll_down_button_toggled(bool val){
+    setRangePasteScrollDown(val);
   }
   void on_showLineNumbers_toggled(bool val){
     setLinenumbersVisible(val);

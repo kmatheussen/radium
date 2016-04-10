@@ -29,7 +29,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_blocks_proc.h"
 #include "player_proc.h"
 #include "notes_proc.h"
+#include "cursor_updown_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
+
+#include "../api/api_proc.h"
 
 #include "clipboard_range_paste_proc.h"
 
@@ -206,6 +209,9 @@ void PasteRange(
 	track=ListFindElement1(&block->tracks->l,tracknum);
 	if(track==NULL) return;
 
+        if (doRangePasteCut())
+          StopAllNotesAtPlace(block,track,place);
+        
 	for(lokke=0;lokke<range->num_tracks;lokke++){
 		PasteRange_notes(block,track,range->notes[lokke],place);
 		PasteRange_stops(block,track,range->stops[lokke],place);
@@ -249,6 +255,9 @@ void PasteRange_CurrPos(
 		curr_track+range->num_tracks-1
 	);
 
+        if (doRangePasteScrollDown())
+          ScrollEditorDown(window, range->num_lines);
+        
         window->must_redraw = true;
 }
 

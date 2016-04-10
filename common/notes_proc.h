@@ -19,6 +19,12 @@ extern LANGSPEC void SetNotePolyphonyAttributes(struct Tracks *track);
 extern LANGSPEC int GetNoteSubtrack(const struct WTracks *wtrack, struct Notes *note);
 extern LANGSPEC int GetNumSubtracks(const struct WTracks *wtrack);
 
+extern LANGSPEC void StopAllNotesAtPlace(
+                                         struct Blocks *block,
+                                         struct Tracks *track,
+                                         Place *placement
+                                         );
+
 extern LANGSPEC struct Notes *GetCurrNote(struct Tracker_Windows *window);
 
 #define NOTE_ID_RESOLUTION 256 // i.e. 256 id's per note.

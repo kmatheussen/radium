@@ -33,7 +33,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLayout>
 #include <QDesktopServices>
 #include <QTextCodec>
-#include <QLineEdit>
 
 #ifdef __linux__
 #include <QX11Info>

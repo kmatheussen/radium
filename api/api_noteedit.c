@@ -237,6 +237,45 @@ void setAutoRepeat(bool doit){
 }
 
 
+static bool g_do_range_paste_cut = true;
+
+bool doRangePasteCut(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_do_range_paste_cut = SETTINGS_read_bool("range_paste_cut", true);
+    has_inited = true;
+  }
+
+  return g_do_range_paste_cut;
+}
+
+void setRangePasteCut(bool doit){
+  g_do_range_paste_cut = doit;
+  SETTINGS_write_bool("range_paste_cut", doit);
+}
+
+
+static bool g_do_range_paste_scroll_down = true;
+
+bool doRangePasteScrollDown(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_do_range_paste_scroll_down = SETTINGS_read_bool("range_paste_scroll_down", true);
+    has_inited = true;
+  }
+
+  return g_do_range_paste_scroll_down;
+}
+
+void setRangePasteScrollDown(bool doit){
+  g_do_range_paste_scroll_down = doit;
+  SETTINGS_write_bool("range_paste_scroll_down", doit);
+}
+
+
+
 extern int g_downscroll;
 void setNoteScrollLength(int l){
   R_ASSERT_RETURN_IF_FALSE(l>=0);

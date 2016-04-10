@@ -25,6 +25,7 @@ struct Range{
   //struct Instruments **instruments;
 	struct FXs **fxs;
 	Place length;
+        int num_lines;
 };
 
 #endif
