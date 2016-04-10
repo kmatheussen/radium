@@ -38,6 +38,13 @@ void switchTrackOn(int tracknum,int windownum){
 	TRACK_OF_switch_spesified_CurrPos(window,tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum);
 }
 
+bool trackOn(int tracknum,int blocknum,int windownum){
+        struct WTracks *wtrack=getWTrackFromNum(windownum,blocknum,tracknum);
+        if(wtrack==NULL) return true;
+        
+        return wtrack->track->onoff==1;
+}
+
 void soloTrack(int tracknum,int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
