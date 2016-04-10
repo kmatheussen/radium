@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QMessageBox>
 #include <QColorDialog>
+#include <QCloseEvent>
+#include <QHideEvent>
 
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
@@ -57,6 +59,22 @@ struct ColorButton;
 static radium::Vector<ColorButton*> all_buttons;
 
 static enum ColorNums g_current_colornum = LOW_EDITOR_BACKGROUND_COLOR_NUM;
+
+struct MyColorDialog : public QColorDialog {
+
+public: 
+    
+#if FOR_MACOSX
+  void closeEvent(QCloseEvent *event) {
+    hide();
+    event->ignore(); // Only hide the window, dont close it.
+  }
+  void myshow(){
+    safeShow(this);
+    raise();
+  }
+#endif
+};
  
 struct ColorButton : public QPushButton{
   Q_OBJECT
@@ -66,10 +84,10 @@ public:
   enum ColorNums colornum;
   bool is_current;
 
-  QColorDialog *color_dialog;
+  MyColorDialog *color_dialog;
   
   
-  ColorButton(QString name, enum ColorNums colornum, QColorDialog *color_dialog)
+  ColorButton(QString name, enum ColorNums colornum, MyColorDialog *color_dialog)
     : QPushButton(name)
     , colornum(colornum)
     , is_current(colornum==g_current_colornum)
@@ -148,6 +166,9 @@ public:
 
     g_current_colornum = colornum;
     color_dialog->setCurrentColor(get_qcolor(colornum));
+#if FOR_MACOSX
+    color_dialog->myshow();
+#endif
     
     update();
   }
@@ -177,7 +198,7 @@ class Preferences : public QDialog, public Ui::Preferences {
  public:
   bool _initing;
   bool _is_updating_widgets;
-  QColorDialog _color_dialog;
+  MyColorDialog _color_dialog;
 
  Preferences(QWidget *parent=NULL)
    : QDialog(parent)
@@ -199,12 +220,27 @@ class Preferences : public QDialog, public Ui::Preferences {
 
     // Colors
     {
-      colorlayout_right->insertWidget(0, &_color_dialog);
       _color_dialog.setOption(QColorDialog::NoButtons, true);
-      _color_dialog.setOption(QColorDialog::DontUseNativeDialog, true);      
+      
+#if FOR_MACOSX
+      //_color_dialog.hide();
+      _color_dialog.setOption(QColorDialog::DontUseNativeDialog, true);
+#if 0
+      _color_dialog.setWindowFlags(Qt::Widget);
+      _color_dialog.setParent(this);
+      colorlayout_right->insertWidget(0, &_color_dialog);
+#endif
+      
+#else
+      _color_dialog.setOption(QColorDialog::DontUseNativeDialog, true);
       //_color_dialog.setOption(QColorDialog::ShowAlphaChannel, true);
 
+      colorlayout_right->insertWidget(0, &_color_dialog);
+#endif
+
+
       connect(&_color_dialog, SIGNAL(currentColorChanged(const QColor &)), this, SLOT(color_changed(const QColor &)));
+      connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(current_tab_changed(int)));
 
       scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
       scrollArea->setWidgetResizable(true);
@@ -218,9 +254,7 @@ class Preferences : public QDialog, public Ui::Preferences {
       
         layout->addWidget(l);
         //l->move(0, i*20);
-        GL_lock();{
-          l->show();
-        } GL_unlock();
+        safeShow(l);
         //contents->resize(contents->width(), 200*20);
       }
       
@@ -232,6 +266,25 @@ class Preferences : public QDialog, public Ui::Preferences {
     _initing = false;
   }
 
+#if FOR_MACOSX
+  void hideEvent(QHideEvent *event) {
+    _color_dialog.close();
+    event->accept();
+  }
+
+  #if 0
+  void changeEvent(QEvent *event) {
+
+    if (tabWidget->currentWidget() != colors)
+      _color_dialog.close();
+    else
+      _color_dialog.myshow();
+    event->accept();
+  }
+  #endif
+  
+#endif
+  
   void updateWidgets(){
     _is_updating_widgets = true;
   
@@ -446,9 +499,18 @@ public slots:
     for(auto button : all_buttons){
       button->update();
     }
-
   }
 
+  void current_tab_changed(int tabnum){
+#if FOR_MACOSX
+    printf("   CHangeEvent called %d\n",tabnum);
+    if (tabWidget->currentWidget() != colors)
+      _color_dialog.close();
+    else
+      _color_dialog.myshow();
+#endif
+  }
+  
   void on_color_reset_button_clicked(){
     printf("HHH");
     GFX_ResetColor(g_current_colornum);
