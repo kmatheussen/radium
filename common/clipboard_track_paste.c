@@ -144,7 +144,9 @@ bool CB_PasteTrack(
 
 	CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
 	CopyRange_stops(&totrack->stops,track->stops,p1,&p2);
-	CopyRange_fxs(&totrack->fxs,track->fxs,p1,&p2);
+
+        if (totrack->patch != NULL)
+          CopyRange_fxs(&totrack->fxs,track->fxs,p1,&p2);
 
 	LegalizeFXlines(wblock->block,totrack);
 	LegalizeNotes(wblock->block,totrack);
