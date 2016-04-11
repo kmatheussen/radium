@@ -996,6 +996,9 @@ struct WTracks{
         int notewidth;
 	Area notearea;						/* These are all parts of the GFX area. */
 
+        bool centtext_on;
+        Area centtextarea;
+  
         bool veltext_on;
         Area veltextarea;
 

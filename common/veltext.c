@@ -102,12 +102,14 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
   if (wtrack->veltext_on == false)
     return false;
 
+  if (wtrack->centtext_on)
+    curr_track_sub -= 2;
+  
   if (curr_track_sub < 0)
     return false;
 
   if (curr_track_sub > 2)
     return false;
-
 
   vector_t *veltexts = VELTEXTS_get(wblock, wtrack);
 
@@ -179,7 +181,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
       
     } else {
 
-      data_as_text_t dat = DAT_get_overwrite(vt->value, vt->logtype, curr_track_sub, key, 0, MAX_VELOCITY);
+      data_as_text_t dat = DAT_get_overwrite(vt->value, vt->logtype, curr_track_sub, key, 0, MAX_VELOCITY, true);
 
       if (dat.is_valid==false)
         return false;

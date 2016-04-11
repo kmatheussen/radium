@@ -40,7 +40,10 @@ extern PlayerClass *pc;
 
 int WTRACK_num_non_polyphonic_subtracks(const struct WTracks *wtrack){
   int ret = 0;
-  
+
+  if (wtrack->centtext_on)
+    ret+=2;
+      
   if (wtrack->veltext_on)
     ret+=3;
 
@@ -65,6 +68,7 @@ struct WTracks *WTRACK_new(void){
   wtrack->pianoroll_highkey = 60;
   wtrack->pianoroll_width = 240;
 
+  wtrack->centtext_on = true;
   //wtrack->veltext_on = true;
   //wtrack->fxtext_on = true;
   
@@ -130,6 +134,9 @@ static int get_fxtextarea_width(const struct Tracker_Windows *window, const stru
 
 static int WTRACKS_get_non_polyphonic_subtracks_width(const struct Tracker_Windows *window, const struct WTracks *wtrack){
   int ret = 0;
+
+  if (wtrack->centtext_on)
+    ret += (2 * window->fontwidth) + 2;
   
   if (wtrack->veltext_on)
     ret += (3 * window->fontwidth) + 2;
@@ -191,22 +198,28 @@ void UpdateWTrackCoordinates(
         if(wtrack->is_wide)
           wtrack->notearea.x2 += 100;
 
-	wtrack->veltextarea.x  = wtrack->notearea.x2 + 2;
+        x = wtrack->notearea.x2 + 2;
+        
+        wtrack->centtextarea.x = x;
+        wtrack->centtextarea.x2 = wtrack->centtextarea.x + (window->fontwidth * 2);
+
+        if (wtrack->centtext_on==true)
+          x = wtrack->centtextarea.x2 + 2;
+            
+        wtrack->veltextarea.x  = x;
 	wtrack->veltextarea.x2 = wtrack->veltextarea.x + (window->fontwidth * 3);
 
         if (wtrack->veltext_on==true)
-          wtrack->fxtextarea.x = wtrack->veltextarea.x2 + 2;
-        else
-          wtrack->fxtextarea.x  = wtrack->notearea.x2 + 2;
+          x = wtrack->veltextarea.x2 + 2;
+        
+        wtrack->fxtextarea.x = x;
         wtrack->fxtextarea.x2 = wtrack->fxtextarea.x + get_fxtextarea_width(window, wtrack);
 
-        if (wtrack->fxtext_on==true)
-          wtrack->fxarea.x  = wtrack->fxtextarea.x2 + 2;
-        else if (wtrack->veltext_on==true)
-          wtrack->fxarea.x  = wtrack->veltextarea.x2 + 2;
-        else
-          wtrack->fxarea.x  = wtrack->notearea.x2 + 2;
-	wtrack->fxarea.x2   = wtrack->fxarea.x    + wtrack->fxonoff*wtrack->fxwidth;
+        if (wtrack->fxtext_on)
+          x = wtrack->fxtextarea.x2 + 2;
+        
+        wtrack->fxarea.x  = x;
+	wtrack->fxarea.x2 = wtrack->fxarea.x    + wtrack->fxonoff*wtrack->fxwidth;
 
 	wtrack->x  = wtrack_x;
 	wtrack->y  = wblock->a.y1;

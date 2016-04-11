@@ -960,9 +960,18 @@ void create_track_borders(const struct Tracker_Windows *window, const struct WBl
   int num_subtracks = WTRACK_num_subtracks(wtrack); 
   int first_polyphony_subtrack = WTRACK_num_non_polyphonic_subtracks(wtrack);
 
+  const struct FXs *fxs=wtrack->track->fxs;
+
+  if (wtrack->centtext_on){
+    if (wtrack->veltext_on || (wtrack->fxtext_on && fxs != NULL))
+      create_single_border(
+                           wtrack->centtextarea.x2+1,
+                           y1,
+                           y2);
+  }
+  
   if (wtrack->fxtext_on){      
     int column = 0;
-    const struct FXs *fxs=wtrack->track->fxs;
 
     if (wtrack->veltext_on && fxs !=NULL)
       create_single_border(
@@ -1106,7 +1115,7 @@ static void paint_multinotes(const struct WTracks *wtrack, vector_t *tr, char **
   }
 }
 
-static void create_track_text(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, vector_t *tr, int realline){
+static void create_track_text(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, vector_t *tr, int realline, bool show_notes, bool show_cents){
   char **NotesTexts = wtrack->notelength==3?NotesTexts3:NotesTexts2;
   float  notenum    = get_notenum(tr); //trackrealline->note;
 
@@ -1117,56 +1126,59 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
 
   enum ColorNums colnum = get_colnum(tr2);
   
-  if(tr2!=NULL && wtrack->noteshowtype==TEXTTYPE){
+  if(tr2!=NULL) {
 
-    // Paint THISNOTELINES
-    if(tr->num_elements < 2 && tr2->note!=NULL && tr2->note->polyphony_num>0) {
-      //printf("Gakk: %s (%s), %d, pointer: %p\n",NotesTexts[(int)notenum],NotesTexts[(int)note->note],note->subtrack,note);
-      float y = (y1+y2) / 2.0f;
-      float x1 = wtrack->notearea.x2;
-      float x2 = (GetNoteX1(wtrack,tr2->note) + GetNoteX2(wtrack,tr2->note)) / 2.0f;
-      GE_line(GE_color(TEXT_COLOR_NUM),
-              x1, y,
-              x2, y,
-              0.8);
+    if (wtrack->noteshowtype==TEXTTYPE && show_notes){
+
+      // Paint THISNOTELINES
+      if(tr->num_elements < 2 && tr2->note!=NULL && tr2->note->polyphony_num>0) {
+        //printf("Gakk: %s (%s), %d, pointer: %p\n",NotesTexts[(int)notenum],NotesTexts[(int)note->note],note->subtrack,note);
+        float y = (y1+y2) / 2.0f;
+        float x1 = wtrack->notearea.x2;
+        float x2 = (GetNoteX1(wtrack,tr2->note) + GetNoteX2(wtrack,tr2->note)) / 2.0f;
+        GE_line(GE_color(TEXT_COLOR_NUM),
+                x1, y,
+                x2, y,
+                0.8);
+      }
+
+      bool highlight;
+      
+      if (tr2->pitch != NULL && &tr2->pitch->l==current_node)
+        highlight = true;
+      else if (tr2->note != NULL && &tr2->note->l==current_node)
+        highlight = true;
+      else
+        highlight = false;
+      
+      //printf("highlight: %d %p %p\n",highlight,trackrealline->daspitch,trackrealline->dasnote);
+      //printf("current_node: %p\n\n",current_node);
+      
+
+      if(notenum>0 && notenum<128)
+        GE_filledBox(get_note_background(notenum, highlight), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
+      
+      if (tr->num_elements > 1)
+        paint_multinotes(wtrack, tr, NotesTexts, y1, y2);
+
+      else if (wblock->mouse_track == wtrack->l.num) {
+        GE_Context *foreground = GE_textcolor_z(colnum,Z_ABOVE(Z_ZERO));
+
+        GE_text(foreground, NotesTexts[(int)notenum], wtrack->notearea.x, y1);
+        
+      }else
+        draw_bordered_text(window, GE_textcolor_z(colnum, Z_ZERO), NotesTexts[(int)notenum], wtrack->notearea.x, y1);
     }
 
-    bool highlight;
-    
-    if (tr2->pitch != NULL && &tr2->pitch->l==current_node)
-      highlight = true;
-    else if (tr2->note != NULL && &tr2->note->l==current_node)
-      highlight = true;
-    else
-      highlight = false;
+    if (show_cents) {
+      int cents = R_BOUNDARIES(0,round((notenum - (int)notenum)*100.0),99);
 
-    //printf("highlight: %d %p %p\n",highlight,trackrealline->daspitch,trackrealline->dasnote);
-    //printf("current_node: %p\n\n",current_node);
-    
-    int cents = R_BOUNDARIES(0,round((notenum - (int)notenum)*100.0),99);
-
-    if(notenum>0 && notenum<128)
-      GE_filledBox(get_note_background(notenum, highlight), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
-
-    if (tr->num_elements > 1)
-      paint_multinotes(wtrack, tr, NotesTexts, y1, y2);
-    
-    else if (wblock->mouse_track == wtrack->l.num || wtrack->is_wide==true || cents!=0) {
       GE_Context *foreground = GE_textcolor_z(colnum,Z_ABOVE(Z_ZERO));
-      
-      if (cents==0)
-        GE_text(foreground, NotesTexts[(int)notenum], wtrack->notearea.x, y1); 
-      else{
-        char temp[32];
-        if (wtrack->is_wide)
-          sprintf(temp,"%s.%d",NotesTexts[(int)notenum],cents);
-        else
-          sprintf(temp,"%s %d",NotesTexts[(int)notenum],cents);
-        GE_text(foreground, temp, wtrack->notearea.x, y1); 
-      }
-      
-    }else
-      draw_bordered_text(window, GE_textcolor_z(colnum, Z_ZERO), NotesTexts[(int)notenum], wtrack->notearea.x, y1);
+
+      char centtext[16];
+      sprintf(centtext,"%s%d",cents<10?" ":"",cents); // Never remembers the short syntax for this.
+      GE_text(foreground, centtext, wtrack->centtextarea.x, y1);
+    }
 
   }
 }
@@ -1864,15 +1876,19 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
     }
   }
 
-  // note/pitch names / cents
-  if(left_subtrack==-1 && wtrack->notesonoff==1) {
+  vector_t *trs = NULL;
 
-    vector_t *trs = TRS_get(wblock, wtrack);
+  // note/pitch names / cents
+  if( (left_subtrack==-1 && wtrack->notesonoff==1) || wtrack->centtext_on) {
+
+    bool show_notes = (left_subtrack==-1 && wtrack->notesonoff==1);
+    bool show_cents = wtrack->centtext_on;
+    
+    trs = TRS_get(wblock, wtrack);
       
     for(int realline = 0 ; realline<wblock->num_reallines ; realline++)
-      create_track_text(window, wblock, wtrack, &trs[realline], realline);
+      create_track_text(window, wblock, wtrack, &trs[realline], realline, show_notes, show_cents);
   }
-
 
   // velocity text
   if (wtrack->veltext_on){

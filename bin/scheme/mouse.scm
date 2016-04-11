@@ -1625,7 +1625,7 @@
                                            "Delete Note" delete-note
                                            "--------"
                                            "Delete break point" :enabled (> num-pianonotes 1) delete-pitch
-                                           "Add break point" add-pitch
+                                           "Add break point at mouse position" add-pitch
                                            (list "Glide to next break point"
                                                  :check (if (< num-pianonotes 2)
                                                             portamento-enabled
