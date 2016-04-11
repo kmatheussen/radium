@@ -846,6 +846,7 @@ struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, 
   
   struct Patch *patch = CHIP_create_from_plugin_state(state, name, x, y, MIXER_get_buses());
   if (patch!=NULL){
+    R_ASSERT(patch->patchdata != NULL);
     if (autoconnect) {
       struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
       MW_autoconnect_plugin(plugin);

@@ -78,9 +78,10 @@ bool CB_PasteTrackFX(
 	track=wtrack->track;
 
         if (track->patch != NULL) {
-          if (track->patch->is_usable)
+          if (!track->patch->is_usable)
             track->patch = InstrumentWidget_new_from_preset(track->patch->state, NULL, -100000,-100000,true);
           totrack->patch = track->patch;
+          R_ASSERT(totrack->patch->patchdata != NULL);
         } else
           totrack->patch = NULL;
         
@@ -122,9 +123,10 @@ bool CB_PasteTrack(
 	towtrack->fxwidth=wtrack->fxwidth;
 
         if (track->patch != NULL) {
-          if (track->patch->is_usable)
+          if (!track->patch->is_usable)
             track->patch = InstrumentWidget_new_from_preset(track->patch->state, NULL, -100000,-100000,true);
           totrack->patch = track->patch;
+          R_ASSERT(totrack->patch->patchdata != NULL);
         } else
           totrack->patch = NULL;
         
