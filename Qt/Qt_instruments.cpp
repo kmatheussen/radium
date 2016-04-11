@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_proc.h"
 #include "../common/gfx_wtrackheaders_proc.h"
 #include "../common/settings_proc.h"
+#include "../audio/audio_instrument_proc.h"
 #include "../midi/midi_i_plugin.h"
 #include "../midi/midi_i_plugin_proc.h"
 #include "../midi/midi_i_input_proc.h"
@@ -911,6 +912,11 @@ static void replace(struct Patch *old_patch, hash_t *state){
 }
 
 void InstrumentWidget_replace(struct Patch *old_patch){
+  if(AUDIO_is_permanent_patch(old_patch)==true){
+    GFX_Message(NULL,"Can not replace this one");
+    return;
+  }
+
   SoundPluginType *plugin_type = MW_popup_plugin_selector(NULL, 200, 200, false, NULL);
   if (plugin_type==NULL)
     return;
@@ -924,6 +930,11 @@ void InstrumentWidget_replace(struct Patch *old_patch){
 }
 
 void InstrumentWidget_load_preset(struct Patch *old_patch){
+  if(AUDIO_is_permanent_patch(old_patch)==true){
+    GFX_Message(NULL,"Can not load preset on this one");
+    return;
+  }
+
   hash_t *state = load_preset_state();
   if (state==NULL)
     return;
@@ -934,7 +945,11 @@ void InstrumentWidget_load_preset(struct Patch *old_patch){
 void InstrumentWidget_save_preset(struct Patch *patch){
 
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-
+  if (!strcmp(plugin->type->type_name,"Bus")){
+    GFX_Message(NULL, "Can not save state of Bus");
+    return;
+  }
+ 
   obtain_keyboard_focus();
 
   QString filename;

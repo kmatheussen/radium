@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../mixergui/undo_mixer_connections_proc.h"
 
 #include "../audio/SoundPlugin.h"
+#include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundPluginRegistry_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../Qt/Qt_instruments_proc.h"
@@ -296,6 +297,28 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
   VECTOR_push_back(&v,"<New Audio Instrument>");
   VECTOR_push_back(&v,"<Load New Preset>");
 
+  VECTOR_push_back(&v,"----------");
+
+  VECTOR_push_back(&v,"[submenu start]Copy Audio Instrument");
+  int start_copy_patch = v.num_elements;
+  int copy_patch_vector[patches->num_elements];
+  {
+    int i=0;
+    VECTOR_FOR_EACH(struct Patch *patch,patches){
+      if (patch->instrument==get_audio_instrument()) {
+        if(AUDIO_is_permanent_patch(patch)==false){
+          VECTOR_push_back(&v,talloc_format("%d. %s",iterator666,patch->name));
+          copy_patch_vector[i++] = iterator666;
+        }
+      }
+    }END_VECTOR_FOR_EACH;
+  }
+  VECTOR_push_back(&v,"[submenu end]");
+
+  VECTOR_push_back(&v,"----------");
+  
+  int start_select_patch = v.num_elements;
+  
   VECTOR_FOR_EACH(struct Patch *patch,patches){
     VECTOR_push_back(&v,talloc_format("%d. %s",iterator666,patch->name));
   }END_VECTOR_FOR_EACH;
@@ -311,8 +334,16 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
 
         Undo_Track(window,window->wblock,wtrack,window->wblock->curr_realline);
 
-        if(selection>=6){
-          patch=patches->elements[selection-6];
+        if(selection>=start_select_patch){
+          patch=patches->elements[selection-start_select_patch];
+
+        }else if(selection>=start_copy_patch){
+          int elementnum = copy_patch_vector[selection-start_copy_patch];
+          struct Patch *old_patch = patches->elements[elementnum];
+          SoundPlugin *old_plugin = (SoundPlugin*)old_patch->patchdata;
+          hash_t *old_state = PLUGIN_get_state(old_plugin);
+
+          patch = InstrumentWidget_new_from_preset(old_state, NULL, -100000,-100000,true);
 
         }else if(selection==0){
           patch = NewPatchCurrPos(MIDI_INSTRUMENT_TYPE, NULL, "Unnamed");
