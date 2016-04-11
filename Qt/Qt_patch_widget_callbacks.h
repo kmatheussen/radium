@@ -74,11 +74,18 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     return o[i];
   }
 
+#if 0
   MyQSpinBox *get_t(int i){
     MyQSpinBox *t[6]={t1,t2,t3,t4,t5,t6};
     return t[i];
   }
-
+#else
+  FocusSnifferQDoubleSpinBox *get_t(int i){
+    FocusSnifferQDoubleSpinBox *t[6]={t1,t2,t3,t4,t5,t6};
+    return t[i];
+  }
+#endif
+  
   MyQSpinBox *get_v(int i){
     MyQSpinBox *v[6]={v1,v2,v3,v4,v5,v6};
     return v[i];
@@ -144,7 +151,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
 
   void set_transpose(int voicenum){
-    int transpose=get_t(voicenum)->value();
+    float transpose=get_t(voicenum)->value();
     if(transpose!=_voices[voicenum].transpose){
       Undo_PatchVoice_CurrPos(_patch,voicenum);
       PATCH_change_voice_transpose(_patch, voicenum, transpose);

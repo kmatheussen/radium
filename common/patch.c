@@ -1050,7 +1050,7 @@ void PATCH_turn_voice_off(struct Patch *patch, int voicenum){
   }PLAYER_unlock();
 }
 
-void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, int new_transpose){
+void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, float new_transpose){
   PLAYER_lock();{
     bool was_on = patch->voices[voicenum].is_on;
 

@@ -530,7 +530,7 @@ enum TimeFormat{
 
 struct PatchVoice{
   bool is_on;
-  int transpose;
+  float transpose;
   float volume;
   float start;
   float length;
