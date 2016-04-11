@@ -290,12 +290,16 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
     reqtype=GFX_OpenReq(window,70,(int)(num_patches+50),"Select Patch");
 
   vector_t v={0};
-  VECTOR_push_back(&v,"<New MIDI Instrument>");
-  VECTOR_push_back(&v,"<New Sample Player>");
-  VECTOR_push_back(&v,"<New FluidSynth>");
-  VECTOR_push_back(&v,"<New Pd Instrument>");
-  VECTOR_push_back(&v,"<New Audio Instrument>");
-  VECTOR_push_back(&v,"<Load New Preset>");
+  int new_midi_instrument = VECTOR_push_back(&v,"<New MIDI Instrument>");
+  int new_sample_player = VECTOR_push_back(&v,"<New Sample Player>");
+  int new_fluid_synth = VECTOR_push_back(&v,"<New FluidSynth>");
+#ifdef WITH_PD
+  int new_pd_instrument = VECTOR_push_back(&v,"<New Pd Instrument>");
+#else
+  int new_pd_instrument = -1000;
+#endif
+  int new_audio_instrument = VECTOR_push_back(&v,"<New Audio Instrument>");
+  int load_preset = VECTOR_push_back(&v,"<Load New Preset>");
 
   VECTOR_push_back(&v,"----------");
 
@@ -345,33 +349,33 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
 
           patch = InstrumentWidget_new_from_preset(old_state, NULL, -100000,-100000,true);
 
-        }else if(selection==0){
+        }else if(selection==new_midi_instrument){
           patch = NewPatchCurrPos(MIDI_INSTRUMENT_TYPE, NULL, "Unnamed");
           GFX_PP_Update(patch);
 
-        }else if(selection==1){
+        }else if(selection==new_sample_player){
           SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "Sample Player","Sample Player"),-100000,-100000,true,NULL,MIXER_get_buses());
           if(plugin!=NULL)
             patch = (struct Patch*)plugin->patch;
             
-        }else if(selection==2){
+        }else if(selection==new_fluid_synth){
           SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "FluidSynth","FluidSynth"),-100000,-100000,true,NULL,MIXER_get_buses());
           if(plugin!=NULL)
             patch = (struct Patch*)plugin->patch;
             
-        }else if(selection==3){
+        }else if(selection==new_pd_instrument){
           SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "Pd","Simple Midi Synth"),-100000,-100000,true,NULL,MIXER_get_buses());
           if(plugin!=NULL)
             patch = (struct Patch*)plugin->patch;
 
-        }else if(selection==4){
+        }else if(selection==new_audio_instrument){
           SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,-100000,-100000,true,NULL,MIXER_get_buses());
           if(plugin!=NULL)
             patch = (struct Patch*)plugin->patch;
 
           printf("   PLUGIN: %p, patch: %p\n",plugin,patch);
           
-        }else if(selection==5){
+        }else if(selection==load_preset){
           patch = InstrumentWidget_new_from_preset(NULL, NULL, -100000,-100000,true);
 
         }else

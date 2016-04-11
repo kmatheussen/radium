@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <string.h>
 
-static inline void VECTOR_push_back(vector_t *v, const void *element){
+static inline int VECTOR_push_back(vector_t *v, const void *element){
   const int num_elements = v->num_elements;
 
   if(num_elements==v->num_elements_allocated){
@@ -40,6 +40,8 @@ static inline void VECTOR_push_back(vector_t *v, const void *element){
 
   v->elements[num_elements] = (void*)element;
   v->num_elements = num_elements+1;
+  
+  return num_elements;
 }
 
 static inline void VECTOR_insert(vector_t *v, const void *element, int pos){
