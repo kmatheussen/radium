@@ -267,7 +267,7 @@ static void UpdateAllPianoRollHeaders(
 
     void *pianorollheader = get_pianorollheader(wtrack->l.num, true);
     
-    if (wtrack->l.num < wblock->left_track || wtrack->l.num > wblock->right_track+1) {
+    if (wtrack->l.num < wblock->left_track || wtrack->l.num > wblock->right_track+1 ||  wtrack->pianoroll_area.x < wblock->t.x1) {
 
       if (pianorollheader != NULL)
         PIANOROLLHEADER_hide(pianorollheader);

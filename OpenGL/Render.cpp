@@ -427,7 +427,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
       struct WTracks *wtrack=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,wblock->left_track);
       while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
 
-        int x1 = wtrack->x - 1;
+        int x1 = R_MAX(wtrack->x - 1, wblock->t.x1);
         int x2 = wtrack->x2;
         //int y1 = wtrack1->y;
         //int y2 = wtrack1->panonoff.y1 - 1;
@@ -1284,6 +1284,9 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
   if (wtrack->pianoroll_on==false)
     return;
 
+  if (wtrack->pianoroll_area.x < wblock->t.x1)
+    return;
+  
   float gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
   float notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
   float note_width = gfx_width / notespan;
