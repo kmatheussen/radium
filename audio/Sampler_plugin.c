@@ -193,7 +193,8 @@ struct _Data{
   int resampler_type;
   const wchar_t *filename;
   int instrument_number;
-
+  bool using_default_sound;
+  
   //int num_channels; // not used for anything, I think.
 
   const Note notes[128];
@@ -1633,11 +1634,13 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
                                                   : STRING_create("016.WAV")))));
     
   Data *data = create_data(samplerate,NULL,default_sound_filename,0,RESAMPLER_CUBIC); // cubic is the default
-
+  
   if(load_sample(data,default_sound_filename,0)==false){
     V_free(data);
     return NULL;
   }
+
+  data->using_default_sound = true;
 
   return data;
 }
@@ -1895,6 +1898,12 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 
   HASH_put_int(state, "loop_start",data->loop_start);
   HASH_put_int(state, "loop_length",data->loop_length);
+}
+
+const wchar_t *SAMPLER_get_filename(struct SoundPlugin *plugin, bool *is_default_sound){
+  Data *data=(Data*)plugin->data;
+  *is_default_sound = data->using_default_sound;
+  return data->filename;
 }
 
 const wchar_t *SAMPLER_get_filename_display(struct SoundPlugin *plugin){
