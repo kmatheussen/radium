@@ -138,6 +138,7 @@ typedef struct _Voice{
   float crossfade_buffer[CROSSFADE_BUFFER_LENGTH];
 
   // Same for pitch
+  float pitch;
   float start_pitch;
   float end_pitch;
 
@@ -478,7 +479,7 @@ static double RT_get_src_ratio(Data *data, Voice *voice){
   //int notenum = voice->note_num + (int)data->note_adjust;
   //float pitch = voice->end_pitch + scale(data->finetune, 0, 1, -1, 1) + (int)data->note_adjust;
 
-  float pitch = voice->end_pitch;
+  float pitch = voice->pitch;
 
   // Add vibrato here instead of in get_src_ratio3 to avoid weird peaks
   if (data->vibrato_phase_add > 0.0) {
@@ -514,6 +515,24 @@ static float get_peak(float *samples, int num_samples){
 #endif
 
 static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, float **outputs){
+  // portamento
+  {
+#if 0
+    voice->pitch = voice->end_pitch;
+#else
+    const float how_much = 0.1;
+    if (voice->end_pitch > voice->pitch){
+      voice->pitch += how_much;
+      if (voice->pitch > voice->end_pitch)
+        voice->pitch = voice->end_pitch;
+    } else if (voice->end_pitch < voice->pitch){
+      voice->pitch -= how_much;
+      if (voice->pitch < voice->end_pitch)
+        voice->pitch = voice->end_pitch;
+    }
+#endif
+  }
+  
   int startpos = voice->delta_pos_at_start;
   int endpos = voice->delta_pos_at_end;
 
@@ -619,7 +638,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     data->vibrato_value = data->vibrato_depth * sin(data->vibrato_phase);
     data->vibrato_phase += data->vibrato_phase_add*(double)num_frames;
   }
-
+  
   bool was_playing_something = data->voices_playing != NULL;
   
   while(voice!=NULL){
@@ -676,6 +695,7 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
     voice->start_volume = velocity2gain(volume);
     voice->end_volume = voice->start_volume;
 
+    voice->pitch       = note_num;
     voice->start_pitch = note_num;
     voice->end_pitch   = note_num;
 
