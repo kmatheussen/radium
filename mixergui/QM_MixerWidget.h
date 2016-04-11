@@ -149,7 +149,7 @@ SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, double x, double y, Bus
 
 void MW_autoconnect_plugin(SoundPlugin *plugin);
 
-SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, bool autoconnect);
+SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, bool autoconnect, struct Patch **created_patch_instead);
 
 #endif // __cplusplus
 

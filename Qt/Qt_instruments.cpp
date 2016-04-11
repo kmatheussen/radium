@@ -586,11 +586,22 @@ static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch)
 // * The entry point for delete any instrument is common/patch.c/PATCH_delete
 //
 SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type, double x, double y, bool autoconnect, const char *name, Buses buses){
-    if(plugin_type==NULL)
-      plugin_type = MW_popup_plugin_selector(name, x, y, autoconnect);
+  
+    if(plugin_type==NULL) {
+      struct Patch *created_patch_instead = NULL;
+      
+      plugin_type = MW_popup_plugin_selector(name, x, y, autoconnect, &created_patch_instead);
 
-    if(plugin_type==NULL)
-      return NULL;
+      if (plugin_type==NULL) {
+
+        if (created_patch_instead != NULL)
+          return (struct SoundPlugin*)created_patch_instead->patchdata;
+        else
+          return NULL;
+
+      }
+    }
+    
 
     SoundPlugin *plugin;
 
@@ -900,7 +911,7 @@ static void replace(struct Patch *old_patch, hash_t *state){
 }
 
 void InstrumentWidget_replace(struct Patch *old_patch){
-  SoundPluginType *plugin_type = MW_popup_plugin_selector(NULL, 200, 200, false);
+  SoundPluginType *plugin_type = MW_popup_plugin_selector(NULL, 200, 200, false, NULL);
   if (plugin_type==NULL)
     return;
 

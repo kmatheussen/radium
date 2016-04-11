@@ -103,7 +103,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
         return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
         //}
       } else if (ret==1) {
-        SoundPluginType *plugintype = MW_popup_plugin_selector(NULL, 0, 0, false);
+        SoundPluginType *plugintype = MW_popup_plugin_selector(NULL, 0, 0, false, NULL);
         if (plugintype==NULL)
           break;
         else

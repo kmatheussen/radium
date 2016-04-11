@@ -1305,7 +1305,7 @@ static int menu_up(QMenu *menu, const radium::Vector<PluginMenuEntry> &entries, 
 }
 
 
-SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, bool autoconnect){
+SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, bool autoconnect, struct Patch **created_patch_instead){
   QMenu menu(0);
 
   menu_up(&menu, PR_get_menu_entries(), 0);
@@ -1360,7 +1360,10 @@ SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, 
       return plugin_type_container->plugin_types[selection];
 
    }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
-    InstrumentWidget_new_from_preset(NULL, name, x, y, autoconnect);
+    
+    struct Patch *patch = InstrumentWidget_new_from_preset(NULL, name, x, y, autoconnect);
+    if (created_patch_instead!=NULL)
+      *created_patch_instead = patch;
     
     return NULL;
     
