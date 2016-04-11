@@ -561,8 +561,10 @@ static inline PatchPlayingNote NewPatchPlayingNote(float note_num, int64_t note_
 // Note that Patch objects are stored directly in undo/redo (not copied), so it must not be freed, reused for other purposes, or othervice manipulated when not available.
 struct Patch{
   int id;
+  
   bool is_usable; // If pasting a track with this patch, this flag tells whether the patch can be used on the new track.
-
+  hash_t *state; // If is_usable==false, this field contains the plugin state.
+  
   bool name_is_edited;
   const char *name;
 
