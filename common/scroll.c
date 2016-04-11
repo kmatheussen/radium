@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "common_proc.h"
 #include "gfx_subtrack_proc.h"
 #include "../OpenGL/Widget_proc.h"
+#include "player_proc.h"
 
 #include "scroll_proc.h"
 
@@ -116,6 +117,18 @@ void Scroll_scroll(
 	struct Tracker_Windows *window,
 	int num_lines
 ){
+
+  bool was_playing = false;
+  int playtype = 0;
+  bool was_playing_range = false;
+  
+  if (is_playing()){
+    playtype = pc->playtype;
+    was_playing_range = pc->is_playing_range;
+    PlayStop();
+    was_playing = true;
+  }
+  
 //  int lokke;
 	struct WBlocks *wblock=window->wblock;
 
@@ -164,6 +177,15 @@ void Scroll_scroll(
 	}
 #endif
 
+        if (was_playing) {
+          if (was_playing_range)
+            PlayRangeCurrPos(window);
+          else if (playtype==PLAYSONG)
+            PlaySongCurrPos(window);
+          else if (playtype==PLAYBLOCK)
+            PlayBlockCurrPos(window);
+        }
+        
 //	printf("scroll3: n: %d\n",num_lines);
 //  for(lokke=0;lokke<window->wblock->num_visiblelines;lokke++)
 //    printf("vis: %d, val: %d\n",lokke,window->pixmapdefs[lokke]);
