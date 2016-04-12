@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "veltext_proc.h"
 #include "fxtext_proc.h"
+#include "centtext_proc.h"
 #include "cursor_updown_proc.h"
 
 extern int g_downscroll;
@@ -92,7 +93,7 @@ data_as_text_t DAT_get_newvalue(int subsubtrack, int key, int default_value, int
   return dat;
 }
 
-data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, int key, int min_value, int max_value){
+data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, int key, int min_value, int max_value, bool is_hex){
 
   data_as_text_t dat;
   dat.is_valid = false;
@@ -100,13 +101,18 @@ data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, in
   int val = get_val_from_key(key);
   if (val==-1)
     return dat;
-  
-  int v1 = (old_value & 0xf0) / 0x10;
-  int v2 = old_value & 0x0f;
+
+  int base = 10;
+  if (is_hex)
+    base = 0x10;
+
+  int v1 = old_value / base;  
+  //int v1 = (old_value & 0xf0) / 0x10;
+  int v2 = old_value - (v1 * base); //& 0x0f;
     
   if (key==EVENT_G){
-    v1 = 0xf;
-    v2 = 0xf;
+    v1 = base-1;
+    v2 = base-1;
   }else if (subsubtrack == 0) {
     v1 = val;
   } else if (subsubtrack == 1) {
@@ -120,15 +126,15 @@ data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, in
   } else
     RError("Unknown subsubtrack: %d",subsubtrack);
       
-  int v = v1 * 0x10 + v2;
-  int scaled = round(scale_double(v, 0, 0xff, min_value, max_value));
+  int v = v1 * base + v2;
+  int scaled = round(scale_double(v, 0, base*base - 1, min_value, max_value));
 
   if (v1==0 && v2==0)
     scaled = min_value;
-  if (v1==0xf && v2==0xf)
+  if (v1==base-1 && v2==base-1)
     scaled = max_value;
       
-  printf("v1: %x, v2: %x, val: %x, v: %x\n",v1,v2,val,v);
+  printf("old_value: %d, v1: %x, v2: %x, val: %x, v: %x, scaled: %d\n",old_value,v1,v2,val,v,scaled);
 
   dat.value = scaled;
   dat.logtype = logtype;
@@ -157,7 +163,9 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
 
   if (VELTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
     if (FXTEXT_keypress(window, wblock, wtrack, realline, place,key) == false) {
-      return false;
+      if (CENTTEXT_keypress(window, wblock, wtrack, realline, place,key) == false) {
+        return false;
+      }
     }
   }
   

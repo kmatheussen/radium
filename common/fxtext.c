@@ -164,7 +164,7 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
       
     } else {
 
-      data_as_text_t dat = DAT_get_overwrite(vt->value, vt->logtype, subsubtrack, key, fx->min, fx->max);
+      data_as_text_t dat = DAT_get_overwrite(vt->value, vt->logtype, subsubtrack, key, fx->min, fx->max, true);
 
       if (dat.is_valid==false)
         return false;

@@ -34,7 +34,7 @@ static void SavePatchVoice(struct PatchVoice *voice, int voicenum){
   DC_SaveI(voicenum);
   {
     DC_SSB("is_on",voice->is_on);
-    DC_SSI("transpose",voice->transpose);
+    DC_SSF("transpose",voice->transpose);
     DC_SSF("volume",voice->volume);
     DC_SSF("start",voice->start);
     DC_SSF("length",voice->length);
@@ -53,7 +53,7 @@ static void LoadPatchVoice(struct PatchVoice *voice){
   voice->is_on = DC_LoadB();
   goto start;
  var1:
-  voice->transpose = DC_LoadI();
+  voice->transpose = DC_LoadF();
   goto start;
  var2:
   voice->volume = DC_LoadF();

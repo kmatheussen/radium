@@ -142,6 +142,9 @@ class Sample_requester_widget : public QWidget
 
  public:
 
+  bool is_starting_up;
+  
+
   //SoundPlugin *_plugin; // Nope, this value can not be stored. SoundPlugin objects must be used from the patch: (SoundPlugin*)patch->patchdata;
   struct Patch *_patch;
 
@@ -165,20 +168,54 @@ class Sample_requester_widget : public QWidget
 
  Sample_requester_widget(QWidget *instrument_widget, QLineEdit *instrument_name_widget, QLabel *sample_name_label, Patch *patch)
    : QWidget(instrument_widget)
-    , _patch(patch)
-    , _instrument_name_widget(instrument_name_widget)
-    , _instrument_widget(instrument_widget)
-    , _preview_octave(4)
-    , _sample_name_label(sample_name_label)
+   , is_starting_up(true)
+   , _patch(patch)
+   , _instrument_name_widget(instrument_name_widget)
+   , _instrument_widget(instrument_widget)
+   , _preview_octave(4)
+   , _sample_name_label(sample_name_label)
   {
     setupUi(this);
-    //_dir = QDir("/home/kjetil/brenn/downloaded/temp/CATEGORY"); //QDir::currentPath();
-    //_dir = QDir::currentPath();
-    _dir = QDir(SETTINGS_read_qstring("samples_dir",QDir::currentPath()));
 
-    if(_dir.exists()==false)
-      _dir = QDir(QDir::currentPath());
+    // set _dir
+    {
+      bool use_saved_path = true;
+      
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
+      if (plugin->type==PR_get_plugin_type_by_name(NULL, "Sample Player","Sample Player") || plugin->type==PR_get_plugin_type_by_name(NULL, "Sample Player","Click")) {
+        
+        bool is_default_sound;
+        QString filename = STRING_get_qstring(SAMPLER_get_filename(plugin, &is_default_sound));
+        if (!is_default_sound) {
+          _dir = QFileInfo(filename).absoluteDir();
+          use_saved_path = false;
+        }
+        
+        printf("   default: %d. Filename: -%s-\n",is_default_sound, filename.toUtf8().constData());
+        
+      } else if (plugin->type==PR_get_plugin_type_by_name(NULL, "FluidSynth","FluidSynth")){
+        
+        bool is_default_sound;
+        QString filename = STRING_get_qstring(FLUIDSYNTH_get_filename(plugin, &is_default_sound));
+        if (!is_default_sound) {
+          _dir = QFileInfo(filename).absoluteDir();
+          use_saved_path = false;
+        }
+        
+      }
+
+      if (use_saved_path)
+        _dir = QDir(SETTINGS_read_qstring("samples_dir",QDir::currentPath()));
+      else
+        SETTINGS_write_string("samples_dir",_dir.absolutePath());
+      
+      if(_dir.exists()==false) {
+        printf(" Dir %s didnt exist\n",_dir.absolutePath().toUtf8().constData());
+        _dir = QDir(QDir::currentPath());
+      }
+    }
+    
     _file_chooser_state = IN_DIRECTORY;
 
     octave->setToolTip("Preview octave.");
@@ -188,6 +225,8 @@ class Sample_requester_widget : public QWidget
     update_file_list();
 
     updateWidgets();
+
+    is_starting_up = false;
   }
 
   void update_sample_name_label(QString text, int bank=-1, int preset=-1){
@@ -524,7 +563,7 @@ public slots:
 
   void on_file_list_currentItemChanged ( QListWidgetItem * current, QListWidgetItem * previous ){
     printf("Current item changed!\n");
-    if( current!=NULL && !current->text().endsWith("/"))
+    if(is_starting_up==false && current!=NULL && !current->text().endsWith("/"))
       handle_item_pressed(current->text());
   }
 

@@ -236,7 +236,7 @@ static double find_current_realline_while_playing(SharedVariables *sv, double bl
     double stime1 = stime2;
     stime2 = get_realline_stime(sv, i_realline+1);
 
-    if (stime1==stime2){ // Could probably happen if playing really fast... Not sure.
+    if (stime1==stime2){ // Could probably happen if playing really fast... Not sure. (yes, it happens if playing really fast)
       #if !defined(RELEASE)
         abort();
       #endif

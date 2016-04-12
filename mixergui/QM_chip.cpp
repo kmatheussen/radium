@@ -1363,17 +1363,17 @@ struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *na
   struct Patch *patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, plugin, name);
   patch->patchdata = plugin;
   plugin->patch = patch;
-
+  
   SoundProducer   *sound_producer = SP_create(plugin, buses);
-
+    
   if(x<=-100000)
     MW_set_autopos(&x, &y);    
 
   Chip *chip = new Chip(&g_mixer_widget->scene,sound_producer, x, y);
   printf("Made chip %p\n",chip);
-
-  MW_move_chip_to_slot(chip, x, y); // unfortunately, this function very often moves the chip to the right unnecessarily.
   
+  MW_move_chip_to_slot(chip, x, y); // unfortunately, this function very often moves the chip to the right unnecessarily.
+
   return patch;
 }
 

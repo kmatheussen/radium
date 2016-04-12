@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>379</width>
-    <height>175</height>
+    <width>711</width>
+    <height>319</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -27,7 +27,7 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QWidget" name="" native="true">
+    <widget class="QWidget" name="widget" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
        <horstretch>0</horstretch>
@@ -220,7 +220,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QSpinBox" name="t1">
+         <widget class="QDoubleSpinBox" name="t1">
           <property name="toolTip">
            <string>Transpose voice</string>
           </property>
@@ -234,10 +234,10 @@
            <enum>QAbstractSpinBox::NoButtons</enum>
           </property>
           <property name="minimum">
-           <number>-127</number>
+           <double>-99.000000000000000</double>
           </property>
-          <property name="maximum">
-           <number>127</number>
+          <property name="singleStep">
+           <double>0.250000000000000</double>
           </property>
          </widget>
         </item>
@@ -354,7 +354,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QSpinBox" name="t2">
+         <widget class="QDoubleSpinBox" name="t2">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -371,13 +371,10 @@
            <enum>QAbstractSpinBox::NoButtons</enum>
           </property>
           <property name="minimum">
-           <number>-127</number>
+           <double>-99.000000000000000</double>
           </property>
-          <property name="maximum">
-           <number>127</number>
-          </property>
-          <property name="value">
-           <number>12</number>
+          <property name="singleStep">
+           <double>0.250000000000000</double>
           </property>
          </widget>
         </item>
@@ -512,7 +509,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QSpinBox" name="t3">
+         <widget class="QDoubleSpinBox" name="t3">
           <property name="frame">
            <bool>false</bool>
           </property>
@@ -523,13 +520,10 @@
            <enum>QAbstractSpinBox::NoButtons</enum>
           </property>
           <property name="minimum">
-           <number>-127</number>
+           <double>-99.000000000000000</double>
           </property>
-          <property name="maximum">
-           <number>127</number>
-          </property>
-          <property name="value">
-           <number>19</number>
+          <property name="singleStep">
+           <double>0.250000000000000</double>
           </property>
          </widget>
         </item>
@@ -646,7 +640,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QSpinBox" name="t4">
+         <widget class="QDoubleSpinBox" name="t4">
           <property name="frame">
            <bool>false</bool>
           </property>
@@ -657,10 +651,10 @@
            <enum>QAbstractSpinBox::NoButtons</enum>
           </property>
           <property name="minimum">
-           <number>-127</number>
+           <double>-99.000000000000000</double>
           </property>
-          <property name="value">
-           <number>24</number>
+          <property name="singleStep">
+           <double>0.250000000000000</double>
           </property>
          </widget>
         </item>
@@ -780,7 +774,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QSpinBox" name="t5">
+         <widget class="QDoubleSpinBox" name="t5">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
             <horstretch>0</horstretch>
@@ -797,13 +791,10 @@
            <enum>QAbstractSpinBox::NoButtons</enum>
           </property>
           <property name="minimum">
-           <number>-127</number>
+           <double>-99.000000000000000</double>
           </property>
-          <property name="maximum">
-           <number>127</number>
-          </property>
-          <property name="value">
-           <number>-12</number>
+          <property name="singleStep">
+           <double>0.250000000000000</double>
           </property>
          </widget>
         </item>
@@ -938,7 +929,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QSpinBox" name="t6">
+         <widget class="QDoubleSpinBox" name="t6">
           <property name="frame">
            <bool>false</bool>
           </property>
@@ -949,13 +940,10 @@
            <enum>QAbstractSpinBox::NoButtons</enum>
           </property>
           <property name="minimum">
-           <number>-127</number>
+           <double>-99.000000000000000</double>
           </property>
-          <property name="maximum">
-           <number>127</number>
-          </property>
-          <property name="value">
-           <number>-24</number>
+          <property name="singleStep">
+           <double>0.250000000000000</double>
           </property>
          </widget>
         </item>

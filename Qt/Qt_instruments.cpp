@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_proc.h"
 #include "../common/gfx_wtrackheaders_proc.h"
 #include "../common/settings_proc.h"
+#include "../audio/audio_instrument_proc.h"
 #include "../midi/midi_i_plugin.h"
 #include "../midi/midi_i_plugin_proc.h"
 #include "../midi/midi_i_input_proc.h"
@@ -586,11 +587,22 @@ static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch)
 // * The entry point for delete any instrument is common/patch.c/PATCH_delete
 //
 SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type, double x, double y, bool autoconnect, const char *name, Buses buses){
-    if(plugin_type==NULL)
-      plugin_type = MW_popup_plugin_selector(name, x, y, autoconnect);
+  
+    if(plugin_type==NULL) {
+      struct Patch *created_patch_instead = NULL;
+      
+      plugin_type = MW_popup_plugin_selector(name, x, y, autoconnect, &created_patch_instead);
 
-    if(plugin_type==NULL)
-      return NULL;
+      if (plugin_type==NULL) {
+
+        if (created_patch_instead != NULL)
+          return (struct SoundPlugin*)created_patch_instead->patchdata;
+        else
+          return NULL;
+
+      }
+    }
+    
 
     SoundPlugin *plugin;
 
@@ -834,6 +846,7 @@ struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, 
   
   struct Patch *patch = CHIP_create_from_plugin_state(state, name, x, y, MIXER_get_buses());
   if (patch!=NULL){
+    R_ASSERT(patch->patchdata != NULL);
     if (autoconnect) {
       struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
       MW_autoconnect_plugin(plugin);
@@ -900,7 +913,12 @@ static void replace(struct Patch *old_patch, hash_t *state){
 }
 
 void InstrumentWidget_replace(struct Patch *old_patch){
-  SoundPluginType *plugin_type = MW_popup_plugin_selector(NULL, 200, 200, false);
+  if(AUDIO_is_permanent_patch(old_patch)==true){
+    GFX_Message(NULL,"Can not replace this one");
+    return;
+  }
+
+  SoundPluginType *plugin_type = MW_popup_plugin_selector(NULL, 200, 200, false, NULL);
   if (plugin_type==NULL)
     return;
 
@@ -913,6 +931,11 @@ void InstrumentWidget_replace(struct Patch *old_patch){
 }
 
 void InstrumentWidget_load_preset(struct Patch *old_patch){
+  if(AUDIO_is_permanent_patch(old_patch)==true){
+    GFX_Message(NULL,"Can not load preset on this one");
+    return;
+  }
+
   hash_t *state = load_preset_state();
   if (state==NULL)
     return;
@@ -923,7 +946,11 @@ void InstrumentWidget_load_preset(struct Patch *old_patch){
 void InstrumentWidget_save_preset(struct Patch *patch){
 
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-
+  if (!strcmp(plugin->type->type_name,"Bus")){
+    GFX_Message(NULL, "Can not save state of Bus");
+    return;
+  }
+ 
   obtain_keyboard_focus();
 
   QString filename;

@@ -210,6 +210,8 @@ struct MyQSlider : public QSlider {
         //VECTOR_push_back(&options, "Set Value");
       }
 
+      //VECTOR_push_back(&options, "");
+      
       //VECTOR_push_back(&options, "Set Value");
 
       int command = GFX_Menu(root->song->tracker_windows, NULL, "", &options);

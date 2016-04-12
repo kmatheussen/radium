@@ -56,6 +56,15 @@ int GetXSubTrack1(
   int fontwidth = (wtrack->veltextarea.x2 - wtrack->veltextarea.x) /  3;
   
   int sn = 0;
+
+  if (wtrack->centtext_on){
+    if (subtrack == sn)
+      return wtrack->centtextarea.x;
+    if (subtrack == sn+1)
+      return wtrack->centtextarea.x + fontwidth;
+
+    sn += 2;
+  }
   
   if (wtrack->veltext_on){
     if (subtrack == sn)
@@ -65,7 +74,7 @@ int GetXSubTrack1(
     if (subtrack == sn+2)
       return wtrack->veltextarea.x + (fontwidth*2);
 
-    sn +=3;
+    sn += 3;
   }
 
   if (wtrack->fxtext_on){
@@ -122,7 +131,16 @@ int GetXSubTrack2(
     int fontwidth = (wtrack->veltextarea.x2 - wtrack->veltextarea.x) / 3;
   
     int sn = 0;
-  
+
+    if (wtrack->centtext_on){
+      if (subtrack == sn)
+        return wtrack->centtextarea.x + fontwidth;
+      if (subtrack == sn+1)
+        return wtrack->centtextarea.x + (fontwidth*2);
+      
+      sn += 2;
+    }
+    
     if (wtrack->veltext_on){
       if (subtrack == sn)
         return wtrack->veltextarea.x + fontwidth;

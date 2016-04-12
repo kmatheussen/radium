@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wblocks_proc.h"
 #include "Beats_proc.h"
 #include "clipboard_track_copy_proc.h"
+#include "../Qt/Qt_instruments_proc.h"
 
 #include "clipboard_track_paste_proc.h"
 
@@ -76,9 +77,12 @@ bool CB_PasteTrackFX(
 	totrack=towtrack->track;
 	track=wtrack->track;
 
-        if (track->patch != NULL && track->patch->is_usable)
+        if (track->patch != NULL) {
+          if (!track->patch->is_usable)
+            track->patch = InstrumentWidget_new_from_preset(track->patch->state, NULL, -100000,-100000,true);
           totrack->patch = track->patch;
-        else
+          R_ASSERT(totrack->patch->patchdata != NULL);
+        } else
           totrack->patch = NULL;
         
 	if(track->midi_instrumentdata!=NULL){
@@ -118,11 +122,14 @@ bool CB_PasteTrack(
 	towtrack->notelength=wtrack->notelength;
 	towtrack->fxwidth=wtrack->fxwidth;
 
-        if (track->patch != NULL && track->patch->is_usable)
+        if (track->patch != NULL) {
+          if (!track->patch->is_usable)
+            track->patch = InstrumentWidget_new_from_preset(track->patch->state, NULL, -100000,-100000,true);
           totrack->patch = track->patch;
-        else
+          R_ASSERT(totrack->patch->patchdata != NULL);
+        } else
           totrack->patch = NULL;
-
+        
 	totrack->onoff=track->onoff;
 	totrack->pan=track->pan;
 	totrack->volume=track->volume;

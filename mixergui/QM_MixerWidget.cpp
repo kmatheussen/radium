@@ -1238,11 +1238,13 @@ void MW_delete_plugin(SoundPlugin *plugin){
     if(chip!=NULL){
       SoundProducer *producer = chip->_sound_producer;
       if(SP_get_plugin(producer)==plugin){
+        hash_t *state = PLUGIN_get_state(plugin);
         delete chip; // audio connections are deleted via ~Chip(). (Yes, it's somewhat messy)
         SP_delete(producer);
         volatile struct Patch *patch = plugin->patch;
         PLUGIN_delete_plugin(plugin);
         patch->patchdata = NULL; // Correct thing to do. A subtle bug in GFX_update_all_instrument_widgets prompted me to do add it (QT tabs are note updated right away). Somewhat messy this too.
+        patch->state = state;
         patch->is_usable = false; // Make sure we don't use this patch if pasting it.
         return;
       }
@@ -1305,7 +1307,7 @@ static int menu_up(QMenu *menu, const radium::Vector<PluginMenuEntry> &entries, 
 }
 
 
-SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, bool autoconnect){
+SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, bool autoconnect, struct Patch **created_patch_instead){
   QMenu menu(0);
 
   menu_up(&menu, PR_get_menu_entries(), 0);
@@ -1360,7 +1362,10 @@ SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, 
       return plugin_type_container->plugin_types[selection];
 
    }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
-    InstrumentWidget_new_from_preset(NULL, name, x, y, autoconnect);
+    
+    struct Patch *patch = InstrumentWidget_new_from_preset(NULL, name, x, y, autoconnect);
+    if (created_patch_instead!=NULL)
+      *created_patch_instead = patch;
     
     return NULL;
     

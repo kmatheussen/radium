@@ -396,6 +396,11 @@ static void setScrollTransform(vl::ref<GE_Context> c, vl::Actor *actor, vl::ref<
   vl::Transform *transform = c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
   if (transform != NULL)
     actor->setTransform(transform);
+
+#if 0
+  if (transform==scroll_transform)
+    actor->setScissor(new vl::Scissor(100, 100, 500, 500));
+#endif
 }
 
 

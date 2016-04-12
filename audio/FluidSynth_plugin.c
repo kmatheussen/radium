@@ -62,7 +62,8 @@ typedef struct _Data{
   const wchar_t *filename;
   int bank_num;
   int preset_num;
-
+  bool using_default_sound;
+  
   // These two are used when switching sound in realtime
   struct _Data *new_data;
   RSemaphore *signal_from_RT;
@@ -467,6 +468,9 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
     fluid_synth_bank_select(data->synth,0,0);
     fluid_synth_program_change(data->synth,0,0);
   }
+
+  data->using_default_sound = true;
+
   return data;
 }
 
@@ -536,7 +540,14 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   HASH_put_int(state, "preset_num", data->preset_num);
 }
 
-wchar_t *FLUIDSYNTH_get_filename_display(struct SoundPlugin *plugin){
+const wchar_t *FLUIDSYNTH_get_filename(struct SoundPlugin *plugin, bool *is_default_sound){
+  Data *data=(Data*)plugin->data;
+  
+  *is_default_sound = data->using_default_sound;
+  return data->filename;
+}
+
+const wchar_t *FLUIDSYNTH_get_filename_display(struct SoundPlugin *plugin){
   Data *data=(Data*)plugin->data;
 
   char *s2 = talloc_format(", b: %d, p: %d", data->bank_num, data->preset_num);

@@ -462,6 +462,8 @@ static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *tra
   R_ASSERT(PLAYER_current_thread_has_lock());
     
   SoundPlugin *old_plugin = (SoundPlugin*) old_patch->patchdata;
+  R_ASSERT_RETURN_IF_FALSE(old_plugin!=NULL);
+  
   const SoundPluginType *old_type = old_plugin->type;
   int num_old_effects = old_type->num_effects;
 

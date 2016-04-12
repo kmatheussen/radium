@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../mixergui/undo_mixer_connections_proc.h"
 
 #include "../audio/SoundPlugin.h"
+#include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundPluginRegistry_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../Qt/Qt_instruments_proc.h"
@@ -289,13 +290,39 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
     reqtype=GFX_OpenReq(window,70,(int)(num_patches+50),"Select Patch");
 
   vector_t v={0};
-  VECTOR_push_back(&v,"<New MIDI Instrument>");
-  VECTOR_push_back(&v,"<New Sample Player>");
-  VECTOR_push_back(&v,"<New FluidSynth>");
-  VECTOR_push_back(&v,"<New Pd Instrument>");
-  VECTOR_push_back(&v,"<New Audio Instrument>");
-  VECTOR_push_back(&v,"<Load New Preset>");
+  int new_midi_instrument = VECTOR_push_back(&v,"<New MIDI Instrument>");
+  int new_sample_player = VECTOR_push_back(&v,"<New Sample Player>");
+  int new_fluid_synth = VECTOR_push_back(&v,"<New FluidSynth>");
+#ifdef WITH_PD
+  int new_pd_instrument = VECTOR_push_back(&v,"<New Pd Instrument>");
+#else
+  int new_pd_instrument = -1000;
+#endif
+  int new_audio_instrument = VECTOR_push_back(&v,"<New Audio Instrument>");
+  int load_preset = VECTOR_push_back(&v,"<Load New Preset>");
 
+  VECTOR_push_back(&v,"----------");
+
+  VECTOR_push_back(&v,"[submenu start]Copy Audio Instrument");
+  int start_copy_patch = v.num_elements;
+  int copy_patch_vector[patches->num_elements];
+  {
+    int i=0;
+    VECTOR_FOR_EACH(struct Patch *patch,patches){
+      if (patch->instrument==get_audio_instrument()) {
+        if(AUDIO_is_permanent_patch(patch)==false){
+          VECTOR_push_back(&v,talloc_format("%d. %s",iterator666,patch->name));
+          copy_patch_vector[i++] = iterator666;
+        }
+      }
+    }END_VECTOR_FOR_EACH;
+  }
+  VECTOR_push_back(&v,"[submenu end]");
+
+  VECTOR_push_back(&v,"----------");
+  
+  int start_select_patch = v.num_elements;
+  
   VECTOR_FOR_EACH(struct Patch *patch,patches){
     VECTOR_push_back(&v,talloc_format("%d. %s",iterator666,patch->name));
   }END_VECTOR_FOR_EACH;
@@ -311,34 +338,44 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
 
         Undo_Track(window,window->wblock,wtrack,window->wblock->curr_realline);
 
-        if(selection>=6){
-          patch=patches->elements[selection-6];
+        if(selection>=start_select_patch){
+          patch=patches->elements[selection-start_select_patch];
 
-        }else if(selection==0){
+        }else if(selection>=start_copy_patch){
+          int elementnum = copy_patch_vector[selection-start_copy_patch];
+          struct Patch *old_patch = patches->elements[elementnum];
+          SoundPlugin *old_plugin = (SoundPlugin*)old_patch->patchdata;
+          hash_t *old_state = PLUGIN_get_state(old_plugin);
+
+          patch = InstrumentWidget_new_from_preset(old_state, NULL, -100000,-100000,true);
+
+        }else if(selection==new_midi_instrument){
           patch = NewPatchCurrPos(MIDI_INSTRUMENT_TYPE, NULL, "Unnamed");
           GFX_PP_Update(patch);
 
-        }else if(selection==1){
+        }else if(selection==new_sample_player){
           SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "Sample Player","Sample Player"),-100000,-100000,true,NULL,MIXER_get_buses());
           if(plugin!=NULL)
             patch = (struct Patch*)plugin->patch;
             
-        }else if(selection==2){
+        }else if(selection==new_fluid_synth){
           SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "FluidSynth","FluidSynth"),-100000,-100000,true,NULL,MIXER_get_buses());
           if(plugin!=NULL)
             patch = (struct Patch*)plugin->patch;
             
-        }else if(selection==3){
+        }else if(selection==new_pd_instrument){
           SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "Pd","Simple Midi Synth"),-100000,-100000,true,NULL,MIXER_get_buses());
           if(plugin!=NULL)
             patch = (struct Patch*)plugin->patch;
 
-        }else if(selection==4){
+        }else if(selection==new_audio_instrument){
           SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,-100000,-100000,true,NULL,MIXER_get_buses());
           if(plugin!=NULL)
             patch = (struct Patch*)plugin->patch;
 
-        }else if(selection==5){
+          printf("   PLUGIN: %p, patch: %p\n",plugin,patch);
+          
+        }else if(selection==load_preset){
           patch = InstrumentWidget_new_from_preset(NULL, NULL, -100000,-100000,true);
 
         }else
@@ -1013,7 +1050,7 @@ void PATCH_turn_voice_off(struct Patch *patch, int voicenum){
   }PLAYER_unlock();
 }
 
-void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, int new_transpose){
+void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, float new_transpose){
   PLAYER_lock();{
     bool was_on = patch->voices[voicenum].is_on;
 
