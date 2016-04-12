@@ -92,6 +92,11 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
 
   return ret;
 }
+
+int OS_SYSTEM_get_keycode(void *void_event){
+  NSEvent *event = (NSEvent *)void_event;
+  return [event keyCode];
+}
                              
 int OS_SYSTEM_get_modifier(void *void_event){
 

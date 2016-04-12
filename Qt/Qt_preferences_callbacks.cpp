@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern struct Root *root;
+bool g_show_modifier_keys = false;
 
 
 namespace{
@@ -323,6 +324,7 @@ class Preferences : public QDialog, public Ui::Preferences {
       eraseEstimatedVBlankInterval->setText(vblankbuttontext);
 
       safeModeOnoff->setChecked(GL_get_safe_mode());
+      showModifierKeysOnoff->setChecked(false);
 
       colorTracksOnoff->setChecked(GL_get_colored_tracks());
     }
@@ -407,6 +409,10 @@ public slots:
 
   void on_safeModeOnoff_toggled(bool val){
     GL_set_safe_mode(val);
+  }
+
+  void on_showModifierKeysOnoff_toggled(bool val){
+    g_show_modifier_keys = true;
   }
 
   void on_colorTracksOnoff_toggled(bool val){
