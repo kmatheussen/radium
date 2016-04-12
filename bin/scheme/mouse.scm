@@ -1532,7 +1532,7 @@
                     (set-mouse-pointer ra:set-vertical-resize-mouse-pointer)
                     (set-mouse-pointer ra:set-pointing-mouse-pointer))))))
 
-;; Delete note (shift + right mouse)
+;; Delete pianonote (shift + right mouse)
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda ($button $x $y)
@@ -1542,13 +1542,13 @@
                      (<ra> :pianoroll-visible *current-track-num*)
                      (inside-box (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
                      (let ((pianonote-info (get-pianonote-info $x $y *current-track-num*)))
-                       (if pianonote-info
-                           (begin
-                             (<ra> :undo-notes (pianonote-info :tracknum))
-                             (<ra> :delete-pianonote 0
-                                   (pianonote-info :notenum)
-                                   (pianonote-info :tracknum))
-                             #t)))))))
+                       (and pianonote-info
+                            (begin
+                              (<ra> :undo-notes (pianonote-info :tracknum))
+                              (<ra> :delete-pianonote 0
+                                    (pianonote-info :notenum)
+                                    (pianonote-info :tracknum))
+                              #t)))))))
 
                                
 ;; delete note / add pitch / delete pitch
@@ -1873,13 +1873,14 @@
                      (begin
                        (define velocity-info (get-velocity-info X Y *current-track-num*))
                        ;;(c-display "got velocity info " velocity-info)
-                       (if velocity-info
-                           (begin
-                             (<ra> :undo-notes (velocity-info :tracknum))
-                             (<ra> :delete-velocity
-                                   (velocity-info :velocitynum)
-                                   (velocity-info :notenum)
-                                   (velocity-info :tracknum)))))))))
+                       (and velocity-info
+                            (begin
+                              (<ra> :undo-notes (velocity-info :tracknum))
+                              (<ra> :delete-velocity
+                                    (velocity-info :velocitynum)
+                                    (velocity-info :notenum)
+                                    (velocity-info :tracknum))
+                              #t)))))))
 
 ;; velocity popup
 (add-mouse-cycle
@@ -2268,18 +2269,17 @@
                 (and (= $button *right-button*)
                      (<ra> :shift-pressed)
                      *current-track-num*
-                     (<ra> :pianoroll-visible *current-track-num*)
                      (inside-box-forgiving (<ra> :get-box track *current-track-num*) X Y)
                      (begin
                        (define fxnode-info (get-fxnode-info X Y *current-track-num*))
-                       (if fxnode-info
-                           (begin
-                             (<ra> :undo-fxs *current-track-num*)
-                             (<ra> :delete-fxnode
-                                   (fxnode-info :fxnodenum)
-                                   (fxnode-info :fxnum)
-                                   (fxnode-info :tracknum))
-                             #t)))))))
+                       (and fxnode-info
+                            (begin
+                              (<ra> :undo-fxs *current-track-num*)
+                              (<ra> :delete-fxnode
+                                    (fxnode-info :fxnodenum)
+                                    (fxnode-info :fxnum)
+                                    (fxnode-info :tracknum))
+                              #t)))))))
 
 ;; fx popup
 (add-mouse-cycle
