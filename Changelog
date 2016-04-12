@@ -7,7 +7,8 @@ Changes 3.7.2 -> 3.7.4:
 * Handle corner case situation where if we play really extremely
   fast (probably a billion times faster than anyone ever will
   ever have use for), editor stops moving.
-* Make velocity text a bit more yellow/brown option to show key code in the editor
+* Make velocity text a bit more yellow/brown
+* Option to show key code in the editor. Useful when reporting non-working keys.
 * Cent text track. Enable by right clicking the track header.
   It is also enabled automatically if there are notes with cents not equal to 0, and other "text" tracks.
 * Don't paint pianoroll if it's to the left of the track area.
