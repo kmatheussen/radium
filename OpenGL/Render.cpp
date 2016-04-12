@@ -1125,7 +1125,10 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
   TrackRealline2 *tr2 = tr->num_elements==0 ? NULL : (TrackRealline2*)tr->elements[0];
 
   enum ColorNums colnum = get_colnum(tr2);
-  
+
+  double cents_d = (notenum - floor(notenum))*100.0;
+  int cents = R_BOUNDARIES(0,round(cents_d),99);
+        
   if(tr2!=NULL) {
 
     if (wtrack->noteshowtype==TEXTTYPE && show_notes){
@@ -1161,19 +1164,27 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
       if (tr->num_elements > 1)
         paint_multinotes(wtrack, tr, NotesTexts, y1, y2);
 
-      else if (wblock->mouse_track == wtrack->l.num) {
+      else if (wblock->mouse_track == wtrack->l.num || cents!=0 || wtrack->is_wide==true) {
         GE_Context *foreground = GE_textcolor_z(colnum,Z_ABOVE(Z_ZERO));
 
-        GE_text(foreground, NotesTexts[(int)notenum], wtrack->notearea.x, y1);
+        if (cents==0 || wtrack->centtext_on==true)
+          GE_text(foreground, NotesTexts[(int)notenum], wtrack->notearea.x, y1); 
+        else{
+          char temp[32];
+          if (wtrack->is_wide)
+            sprintf(temp,"%s.%d",NotesTexts[(int)notenum],cents);
+          else
+            sprintf(temp,"%s %d",NotesTexts[(int)notenum],cents);
+          GE_text(foreground, temp, wtrack->notearea.x, y1); 
+        }
+
+        //GE_text(foreground, NotesTexts[(int)notenum], wtrack->notearea.x, y1);
         
       }else
         draw_bordered_text(window, GE_textcolor_z(colnum, Z_ZERO), NotesTexts[(int)notenum], wtrack->notearea.x, y1);
     }
 
-    double cents_d = (notenum - floor(notenum))*100.0;
-    
     if (wtrack->centtext_on) {
-      int cents = R_BOUNDARIES(0,round(cents_d),99);
 
       GE_Context *foreground = GE_textcolor_z(colnum,Z_ABOVE(Z_ZERO));
 
@@ -1184,7 +1195,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
       }
     }
 
-    if (wtrack->centtext_on==false && cents_d != 0.0){
+    if (wtrack->centtext_on==false && cents_d != 0.0 && WTRACK_num_non_polyphonic_subtracks(wtrack)>0){
       printf("     %d: cents_d: %f\n",wtrack->l.num, cents_d);
       wtrack->centtext_on = true;
       GFX_ScheduleCalculateCoordinates();
