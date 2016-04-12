@@ -93,22 +93,22 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
       
     } else {
 
-      float note;
+      double note;
       
       if (pitch!=NULL)
         note = pitch->note;
       else
         note = dasnote->note;
 
-      int cents = roundf((note - floorf(note)) * 100);
+      int cents = round((note - floor(note)) * 100);
         
       data_as_text_t dat = DAT_get_overwrite(cents, 0, curr_track_sub, key, 0, 99, false);
 
       if (dat.is_valid==false)
         return false;
 
-      float new_note = floorf(note) + ((float)dat.value / 100.0f);
-      //printf("new_note: %f, dat.value: %d / %f\n",new_note,dat.value,((float)dat.value / 100.0f));
+      double new_note = floor(note) + ((double)dat.value / 100.0);
+      printf("new_note: %f, dat.value: %d / %f\n",new_note,dat.value,((float)dat.value / 100.0f));
       
       if (pitch!=NULL)
         safe_float_write(&pitch->note, new_note);

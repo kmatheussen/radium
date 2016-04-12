@@ -1170,20 +1170,22 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
         draw_bordered_text(window, GE_textcolor_z(colnum, Z_ZERO), NotesTexts[(int)notenum], wtrack->notearea.x, y1);
     }
 
-    float cents_f = (notenum - (int)notenum)*100.0;
+    double cents_d = (notenum - floor(notenum))*100.0;
     
     if (wtrack->centtext_on) {
-      int cents = R_BOUNDARIES(0,cents_f,99);
+      int cents = R_BOUNDARIES(0,round(cents_d),99);
 
       GE_Context *foreground = GE_textcolor_z(colnum,Z_ABOVE(Z_ZERO));
 
-      char centtext[16];
-      sprintf(centtext,"%s%d",cents<10?" ":"",cents); // Never remembers the short syntax for this.
-      GE_text(foreground, centtext, wtrack->centtextarea.x, y1);
+      if (cents != 0){
+        char centtext[16];
+        sprintf(centtext,"%s%d",cents<10?" ":"",cents); // Never remembers the short syntax for this.
+        GE_text(foreground, centtext, wtrack->centtextarea.x, y1);
+      }
     }
 
-    if (wtrack->centtext_on==false && cents_f != 0.0){
-      printf("     %d: cents_f: %f\n",wtrack->l.num, cents_f);
+    if (wtrack->centtext_on==false && cents_d != 0.0){
+      printf("     %d: cents_d: %f\n",wtrack->l.num, cents_d);
       wtrack->centtext_on = true;
       GFX_ScheduleCalculateCoordinates();
     }
