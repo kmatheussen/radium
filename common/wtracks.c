@@ -313,8 +313,9 @@ void UpdateAllWTracksCoordinates(
                  + (wblock->left_subtrack>0 ? 1 : 0);
 	}
 
-	UpdateWTrackCoordinates(window,wblock,wblock->wtracks,leftX);
-
+	//UpdateWTrackCoordinates(window,wblock,wblock->wtracks,leftX);
+        UpdateWTrackCoordinates(window,wblock,wtrack,wblock->t.x1);
+        
 #if 0
 	wtrack=wblock->wtracks;
 	while(wtrack->l.num < wblock->left_track){

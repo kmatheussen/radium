@@ -192,11 +192,14 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
 			window->curr_track<wblock->left_track ||
 			(window->curr_track==wblock->left_track && window->curr_track_sub<wblock->left_subtrack)
 		){
-			wblock->left_subtrack=window->curr_track_sub;
+                        wblock->left_subtrack=-1;//window->curr_track_sub;
 			wblock->left_track=window->curr_track;
-			UpdateAllWTracksCoordinates(window,wblock);
+                        printf("   left_track: %d, left_subtrack: %d. curr_track: %d\n",wblock->left_track, wblock->left_subtrack,window->curr_track);
+			//UpdateAllWTracksCoordinates(window,wblock);
+                        UpdateWBlockCoordinates(window,wblock);
 			return 2;
 		}else{
+                        printf("   left_track: %d, left_subtrack: %d, curr_track: %d\n",wblock->left_track, wblock->left_subtrack,window->curr_track);
 			return 1;
 		}
 	}else{
