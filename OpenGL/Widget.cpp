@@ -234,13 +234,23 @@ static double find_current_realline_while_playing(SharedVariables *sv, double bl
   while(true){
 
     double stime1 = stime2;
-    stime2 = get_realline_stime(sv, i_realline+1);
+    for(;;){ // This for loop is here to handle a very special situation where we play so fast that stime1==stime2. In normal songs, this should not happen.
+      stime2 = get_realline_stime(sv, i_realline+1);
 
-    if (stime1==stime2){ // Could probably happen if playing really fast... Not sure. (yes, it happens if playing really fast)
-      #if !defined(RELEASE)
-        abort();
-      #endif
-      return i_realline;
+#if 0
+      if (stime1==stime2){ // Could probably happen if playing really fast... Not sure. (yes, it happens if playing really fast)
+#if !defined(RELEASE)
+        /abort();
+#endif
+        return i_realline;
+      }
+#endif
+      if (i_realline==sv->num_reallines-1)
+        return sv->num_reallines;
+      if (stime1==stime2)
+        i_realline++;
+      else
+        break;
     }
       
     if (stime >= stime1 && stime <= stime2){
