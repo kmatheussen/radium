@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>752</width>
-    <height>516</height>
+    <width>762</width>
+    <height>554</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -512,7 +512,7 @@ This option is only useful&lt;br&gt;for debugging Radium.
           </size>
          </property>
          <property name="text">
-          <string>Enable keyboard autorepeat</string>
+          <string>Enable keyboard autorepeat in the editor</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -1757,19 +1757,6 @@ This option is only useful&lt;br&gt;for debugging Radium.
         </widget>
        </item>
        <item>
-        <spacer name="verticalSpacer_18">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
         <widget class="QCheckBox" name="native_file_requesters">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
@@ -1849,8 +1836,8 @@ This option is only useful&lt;br&gt;for debugging Radium.
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>447</width>
-            <height>414</height>
+            <width>524</width>
+            <height>442</height>
            </rect>
           </property>
           <property name="sizePolicy">

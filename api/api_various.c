@@ -720,6 +720,101 @@ void switchBlockNoteShowType(int blocknum,int windownum){
   setBlockNoteShowType(type, blocknum, windownum);
 }
 
+bool centtextCanBeTurnedOff(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+                           windownum,
+                           &window,
+                           blocknum,
+                           &wblock,
+                           tracknum
+                           );
+
+  if(wtrack==NULL) return true;
+
+  struct Notes *note = wtrack->track->notes;
+  while(note!=NULL){
+    if (note->note != floorf(note->note))
+      return false;
+    
+    struct Pitches *pitch = note->pitches;
+    while(pitch != NULL){
+      if (pitch->note != floorf(pitch->note))
+        return false;
+      pitch = NextPitch(pitch);
+    }
+    
+    note = NextNote(note);
+  }
+
+  return true;
+}
+
+void showCenttext(bool showit, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+                           windownum,
+                           &window,
+                           blocknum,
+                           &wblock,
+                           tracknum
+                           );
+
+  if(wtrack==NULL) return;
+
+  wtrack->centtext_on = showit;
+
+  UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
+}
+
+bool centtextVisible(int tracknum,int blocknum,int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
+
+  if (wtrack==NULL)
+    return false;
+
+  return wtrack->centtext_on;
+}
+
+void showHideCenttext(int tracknum,int blocknum,int windownum){
+  showCenttext(!centtextVisible(tracknum, blocknum, windownum),
+              tracknum, blocknum, windownum);
+}
+
+void showHideCenttextInBlock(int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	-1
+	);
+
+  if(wtrack==NULL) return;
+
+  bool on = !wtrack->centtext_on;
+
+  wtrack = wblock->wtracks;
+  while(wtrack!=NULL){
+    wtrack->centtext_on = on;
+    wtrack = NextWTrack(wtrack);
+  }
+  
+  UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
+}
+
 void showVeltext(bool showit, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;

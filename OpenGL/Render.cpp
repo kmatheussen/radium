@@ -1115,7 +1115,7 @@ static void paint_multinotes(const struct WTracks *wtrack, vector_t *tr, char **
   }
 }
 
-static void create_track_text(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, vector_t *tr, int realline, bool show_notes, bool show_cents){
+static void create_track_text(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, vector_t *tr, int realline, bool show_notes){
   char **NotesTexts = wtrack->notelength==3?NotesTexts3:NotesTexts2;
   float  notenum    = get_notenum(tr); //trackrealline->note;
 
@@ -1170,14 +1170,22 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
         draw_bordered_text(window, GE_textcolor_z(colnum, Z_ZERO), NotesTexts[(int)notenum], wtrack->notearea.x, y1);
     }
 
-    if (show_cents) {
-      int cents = R_BOUNDARIES(0,round((notenum - (int)notenum)*100.0),99);
+    float cents_f = (notenum - (int)notenum)*100.0;
+    
+    if (wtrack->centtext_on) {
+      int cents = R_BOUNDARIES(0,cents_f,99);
 
       GE_Context *foreground = GE_textcolor_z(colnum,Z_ABOVE(Z_ZERO));
 
       char centtext[16];
       sprintf(centtext,"%s%d",cents<10?" ":"",cents); // Never remembers the short syntax for this.
       GE_text(foreground, centtext, wtrack->centtextarea.x, y1);
+    }
+
+    if (wtrack->centtext_on==false && cents_f != 0.0){
+      printf("     %d: cents_f: %f\n",wtrack->l.num, cents_f);
+      wtrack->centtext_on = true;
+      GFX_ScheduleCalculateCoordinates();
     }
 
   }
@@ -1882,12 +1890,11 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
   if( (left_subtrack==-1 && wtrack->notesonoff==1) || wtrack->centtext_on) {
 
     bool show_notes = (left_subtrack==-1 && wtrack->notesonoff==1);
-    bool show_cents = wtrack->centtext_on;
     
     trs = TRS_get(wblock, wtrack);
       
     for(int realline = 0 ; realline<wblock->num_reallines ; realline++)
-      create_track_text(window, wblock, wtrack, &trs[realline], realline, show_notes, show_cents);
+      create_track_text(window, wblock, wtrack, &trs[realline], realline, show_notes);
   }
 
   // velocity text

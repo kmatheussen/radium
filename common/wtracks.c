@@ -68,7 +68,7 @@ struct WTracks *WTRACK_new(void){
   wtrack->pianoroll_highkey = 60;
   wtrack->pianoroll_width = 240;
 
-  wtrack->centtext_on = true;
+  //wtrack->centtext_on = true;
   //wtrack->veltext_on = true;
   //wtrack->fxtext_on = true;
   

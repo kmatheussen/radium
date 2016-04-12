@@ -852,6 +852,10 @@
 (define (track-configuration-popup X Y)
   (popup-menu "Pianoroll     (left alt + p)" :check (<ra> :pianoroll-visible *current-track-num*)  ra:show-pianoroll
               "Note text     (left alt + n)" :check (<ra> :note-track-visible *current-track-num*) ra:show-note-track
+              (list "Cents"
+                    :check (<ra> :centtext-visible *current-track-num*)
+                    :enabled (<ra> :centtext-can-be-turned-off *current-track-num*)
+                    ra:show-centtext)
               "Velocity text (left alt + y)" :check (<ra> :veltext-visible *current-track-num*)    ra:show-veltext
               "FX text"                      :check (<ra> :fxtext-visible *current-track-num*)     ra:show-fxtext
               "-------"

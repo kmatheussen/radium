@@ -76,6 +76,7 @@ extern PlayerClass *pc;
 
 DEFINE_ATOMIC(bool, atomic_must_redraw) = false;
 DEFINE_ATOMIC(bool, atomic_must_redraw_editor) = false;
+DEFINE_ATOMIC(bool, atomic_must_calculate_coordinates) = false;
 
 static void transfer_atomic_must_redraws(struct Tracker_Windows *window)
 {
@@ -89,6 +90,12 @@ static void transfer_atomic_must_redraws(struct Tracker_Windows *window)
   if (a_must_redraw_editor){
     ATOMIC_SET(atomic_must_redraw_editor, false);
     window->must_redraw_editor = true;
+  }
+  
+  bool a_must_calculate = ATOMIC_GET(atomic_must_calculate_coordinates);
+  if (a_must_calculate){
+    ATOMIC_SET(atomic_must_calculate_coordinates, false);
+    window->must_calculate_coordinates = true;
   }
 }
 
@@ -149,6 +156,11 @@ void EditorWidget::updateEditor(){
   transfer_atomic_must_redraws(window);
 
   //if (this->window->must_redraw) printf(" MUST REDRAW == TRUE (has_beenscheduled: %d)\n",this->window->redraw_has_been_scheduled);
+
+  if (this->window->must_calculate_coordinates==true){
+    window->must_calculate_coordinates=false;
+    UpdateWBlockCoordinates(this->window, this->window->wblock);
+  }
   
   if (this->window->must_redraw_editor==true){
     this->window->must_redraw_editor=false;
