@@ -340,7 +340,7 @@
            <widget class="QLabel" name="label_6">
             <property name="text">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Enable this option to show key codes in the editor. 
-This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work, write down the numbers shown in the editor.
+This option is only useful&lt;br&gt;for debugging Radium. If a key doesn'twork, report which key&lt;br&gt;and what numbers is shown in the editor.
 &lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
@@ -1918,8 +1918,8 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>709</width>
-            <height>442</height>
+            <width>396</width>
+            <height>26</height>
            </rect>
           </property>
           <property name="sizePolicy">

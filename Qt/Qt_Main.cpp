@@ -327,7 +327,9 @@ protected:
 
     //printf("modifier: %d\n",modifier);
     if (g_show_key_codes){
-      window->message=talloc_format("%d - %d", modifier, OS_SYSTEM_get_keycode(event));
+      char *message = talloc_format("%d - %d - %d", is_key_press ? 1 : 0, modifier, OS_SYSTEM_get_keycode(event));
+      printf("  Got key: %s\n",message);
+      window->message=message;
       
       GL_create(window,window->wblock);
     }
