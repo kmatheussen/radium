@@ -121,7 +121,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern bool doquit;
 extern struct Root *root;
 
-extern bool g_show_modifier_keys;
+extern bool g_show_key_codes;
 
 static bool editor_has_keyboard = true;
 
@@ -326,12 +326,8 @@ protected:
     int modifier = OS_SYSTEM_get_modifier(event); // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event on windows. Not too sure about EVENT_EXTRA_R either (VK_APPS key) (doesn't matter, EVENT_EXTRA_R is abandoned, and the key is just used to configure block). In addition, the release value order might be wrong if pressing several modifier keys, still windows only.
 
     //printf("modifier: %d\n",modifier);
-    if (g_show_modifier_keys){
-#if FOR_MACOSX
+    if (g_show_key_codes){
       window->message=talloc_format("%d - %d", modifier, OS_SYSTEM_get_keycode(event));
-#else
-      window->message=talloc_format("%d", modifier);
-#endif
       
       GL_create(window,window->wblock);
     }

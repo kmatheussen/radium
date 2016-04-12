@@ -51,7 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern struct Root *root;
-bool g_show_modifier_keys = false;
+bool g_show_key_codes = false;
 
 
 namespace{
@@ -324,7 +324,7 @@ class Preferences : public QDialog, public Ui::Preferences {
       eraseEstimatedVBlankInterval->setText(vblankbuttontext);
 
       safeModeOnoff->setChecked(GL_get_safe_mode());
-      showModifierKeysOnoff->setChecked(false);
+      showKeyCodesOnoff->setChecked(false);
 
       colorTracksOnoff->setChecked(GL_get_colored_tracks());
     }
@@ -411,8 +411,12 @@ public slots:
     GL_set_safe_mode(val);
   }
 
-  void on_showModifierKeysOnoff_toggled(bool val){
-    g_show_modifier_keys = true;
+  void on_showKeyCodesOnoff_toggled(bool val){
+    g_show_key_codes = val;
+    if (g_show_key_codes==false && _initing==false) {
+      root->song->tracker_windows->message=NULL;
+      root->song->tracker_windows->must_redraw = true;
+    }
   }
 
   void on_colorTracksOnoff_toggled(bool val){

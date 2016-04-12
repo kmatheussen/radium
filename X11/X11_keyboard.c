@@ -238,6 +238,12 @@ int OS_SYSTEM_get_qwerty_keynum(void *event){
   return get_subID_from_scancode(key_event->keycode-8);
 }
 
+int OS_SYSTEM_get_keycode(void *event){
+  XKeyEvent *key_event = event;
+  
+  return key_event->keycode-8;
+}
+
 
 
 
