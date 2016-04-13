@@ -132,7 +132,7 @@ static int get_playlist_x2(bool stacked, int width, int height){
 }
 
 static int get_playlist_y2(bool stacked, int width, int height){
-  return height;//-yborder;
+  return height-button_height;//-yborder;
 }
 
 static int get_add_button_x1(bool stacked, int width, int height){
@@ -185,8 +185,38 @@ static int get_remove_button_y2(bool stacked, int width, int height){
   return get_remove_button_y1(stacked,width,height) + button_height;
 }
 
+// move up button
+static int get_move_up_button_x1(bool stacked, int width, int height){
+  return get_add_button_x1(stacked, width, height);
+}
+static int get_move_up_button_x2(bool stacked, int width, int height){
+  return get_add_button_x2(stacked, width, height);
+}
+static int get_move_up_button_y1(bool stacked, int width, int height){
+  return get_playlist_y2(stacked, width, height);
+}
+static int get_move_up_button_y2(bool stacked, int width, int height){
+  return height;
+}
+
+// move down button
+static int get_move_down_button_x1(bool stacked, int width, int height){
+  return get_remove_button_x1(stacked, width, height);
+}
+static int get_move_down_button_x2(bool stacked, int width, int height){
+  return get_remove_button_x2(stacked, width, height);
+}
+static int get_move_down_button_y1(bool stacked, int width, int height){
+  return get_move_up_button_y1(stacked, width, height);
+}
+static int get_move_down_button_y2(bool stacked, int width, int height){
+  return get_move_up_button_y2(stacked, width, height);
+}
+
+
 static int num_visitors;
 
+namespace{
 struct ScopedVisitors{
   ScopedVisitors(){
     num_visitors++;
@@ -195,6 +225,7 @@ struct ScopedVisitors{
     num_visitors--;
   }
 };
+}
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -210,6 +241,7 @@ struct ScopedVisitors{
   if (daswidth>0 && dasheight>0) widget.setFixedSize(daswidth,dasheight); \
   }while(0);
 
+namespace{
 class BlockSelector : public QWidget
 {
   Q_OBJECT
@@ -217,8 +249,10 @@ class BlockSelector : public QWidget
 public:
   BlockSelector(QWidget *parent)
     : QWidget(parent) //, Qt::Dialog)
-    , add_button("->",this)
-    , remove_button("<-",this)
+    , add_button("Insert",this)
+    , remove_button("Remove",this)
+    , move_down_button(QString::fromUtf8("\u21e9"), this)
+    , move_up_button(QString::fromUtf8("\u21e7"), this)
     , playlist(this)
     , blocklist(this)
     , last_shown_width(0) // frustrating: SETTINGS_read_int((char*)"blocklist_width",0))
@@ -230,6 +264,8 @@ public:
     playlist.show();
     add_button.show();
     remove_button.show();
+    move_down_button.show();
+    move_up_button.show();
 
     playlist.insertItem(" "); // Make it possible to put a block at the end of the playlist.
 
@@ -251,6 +287,9 @@ public:
 
     connect(&add_button, SIGNAL(pressed()), this, SLOT(add_to_playlist()));
     connect(&remove_button, SIGNAL(pressed()), this, SLOT(remove_from_playlist()));
+
+    connect(&move_down_button, SIGNAL(pressed()), this, SLOT(move_down()));
+    connect(&move_up_button, SIGNAL(pressed()), this, SLOT(move_up()));
 
     setWidgetColors(this);
 
@@ -277,10 +316,14 @@ public:
     MOVE_WIDGET(playlist);
     MOVE_WIDGET(add_button);
     MOVE_WIDGET(remove_button);
+    MOVE_WIDGET(move_down_button);
+    MOVE_WIDGET(move_up_button);
   }
 
   QPushButton add_button;
   QPushButton remove_button;
+  QPushButton move_down_button;
+  QPushButton move_up_button;
   QListBox playlist;
   QListBox blocklist;
 
@@ -316,6 +359,26 @@ private slots:
     printf("remove from playlist\n");
   }
 
+  void move_down(void){
+    int num = playlist.currentItem();
+    if(num==-1)
+      return;
+    if (num>=playlist.count()-2)
+      return;
+    BL_moveDown(num);
+    playlist.setSelected(num+1, true);
+  }
+
+  void move_up(void){
+    int num = playlist.currentItem();
+    if(num<=0)
+      return;
+    if (num==playlist.count()-1)
+      return;
+    BL_moveUp(num);
+    playlist.setSelected(num-1, true);
+  }
+  
   void blocklist_highlighted(int num){
     if(num==-1)
       return;
@@ -375,6 +438,7 @@ private slots:
     remove_from_playlist();
   }
 };
+}
 
 
 static BlockSelector *bs;

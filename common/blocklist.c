@@ -204,3 +204,43 @@ void BL_setBlock(int pos, struct Blocks *block){
 
   BS_UpdatePlayList();
 }
+
+void BL_moveDown(int pos){
+  if (pos < 0 || pos >= root->song->length){
+    GFX_Message(NULL, "No such playlist pos: %d (pos must be between %d and %d)\n",pos, 0, root->song->length-1);
+    return;
+  }
+
+  if (pos==root->song->length-1)
+    return;
+  
+  PlayStop();
+  Undo_Playlist();
+
+  struct Blocks *old = root->song->playlist[pos+1];
+  
+  root->song->playlist[pos+1] = root->song->playlist[pos];
+  root->song->playlist[pos] = old;
+
+  BS_UpdatePlayList();
+}
+
+void BL_moveUp(int pos){
+  if (pos < 0 || pos >= root->song->length){
+    GFX_Message(NULL, "No such playlist pos: %d (pos must be between %d and %d)\n",pos, 0, root->song->length-1);
+    return;
+  }
+
+  if (pos==0)
+    return;
+
+  PlayStop();
+  Undo_Playlist();
+
+  struct Blocks *old = root->song->playlist[pos-1];
+  
+  root->song->playlist[pos-1] = root->song->playlist[pos];
+  root->song->playlist[pos] = old;
+
+  BS_UpdatePlayList();
+}

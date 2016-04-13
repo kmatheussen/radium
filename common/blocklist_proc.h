@@ -28,3 +28,6 @@ extern LANGSPEC void BL_removeBlockFromPlaylist(struct Blocks *block);
 extern LANGSPEC void BL_setLength(int length);
 extern LANGSPEC void BL_setBlock(int pos, struct Blocks *block);
 
+extern LANGSPEC void BL_moveDown(int pos);
+extern LANGSPEC void BL_moveUp(int pos);
+
