@@ -1195,7 +1195,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
       }
     }
 
-    if (wtrack->centtext_on==false && cents_d != 0.0 && WTRACK_num_non_polyphonic_subtracks(wtrack)>0){
+    if (wtrack->centtext_on==false && cents_d != 0.0 && WTRACK_num_non_polyphonic_subtracks(wtrack)>0 && wtrack->notesonoff==1){
       printf("     %d: cents_d: %f\n",wtrack->l.num, cents_d);
       wtrack->centtext_on = true;
       GFX_ScheduleCalculateCoordinates();
