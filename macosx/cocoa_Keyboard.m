@@ -33,12 +33,14 @@ extern struct TEvent tevent;
 extern struct Root *root;
 
 
-static bool modifiers[64] = {false};
+static bool modifiers[64] = {false}; // These are used to keep track of whether it's a key up or key down event when pressing a modifier key. Unfortunately we get NSFlagsChanged events for modifier keys.
 
 static void clear_modifiers(void){
   int i;
   for(i=0;i<64;i++)
     modifiers[i]=false;
+
+  OS_SYSTEM_ResetKeysUpDowns(); // Sync
 }
 
 
@@ -75,8 +77,10 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
     
     else if (type==NSKeyUp)
       ret = TR_KEYBOARDUP;
+
     
     // Probably not necessary, but just in case, in case things get out sync (see above)
+    // WARNING: [event modifierFlags] is resetted when clicking mouse.
     if ( ([event modifierFlags] & NSCommandKeyMask) == 0 &&
          ([event modifierFlags] & NSAlphaShiftKeyMask) == 0 &&
          ([event modifierFlags] & NSShiftKeyMask) == 0 &&
@@ -85,7 +89,8 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
          ([event modifierFlags] & NSFunctionKeyMask) == 0
          )
       {
-        //printf("No modifiers. Resetting\n");
+        //printf("****** No modifiers. Resetting\n");
+        // Since modifierFlags are resetted when clicking mouse, perhaps it's better not to do this. (no, tried it, didn't work)
         clear_modifiers();
       }
   }

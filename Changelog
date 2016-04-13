@@ -1,3 +1,38 @@
+Changes 3.7.2 -> 3.7.4:
+* osx: Fix modifier keys when clicking mouse
+* Hack fixes for positioning leftmost track.
+  We dont show half-tracks anymore on the leftmost part of the editor since its both
+  confusing for the user and complicated to implement.
+* Fix deleting FX node by shift+right clicking
+* Handle corner case situation where if we play really extremely
+  fast (probably a billion times faster than anyone ever will
+  ever have use for), editor stops moving.
+* Make velocity text a bit more yellow/brown
+* Option to show key code in the editor. Useful when reporting non-working keys.
+* Cent text track. Enable by right clicking the track header.
+  It is also enabled automatically if there are notes with cents not equal to 0, and other "text" tracks.
+* Don't paint pianoroll if it's to the left of the track area.
+* Recreate sound object if pasting a track using a deleted sound object
+  (This also fixes crash if the track with the deleted sound object contained FX)
+* Use floats for transpose in the note duplicator. Step also changed from 1 to 0.25.
+* osx: Disable fullscreen (since it makes the program crash)
+* player: Possible to change play position while playing
+* Copy audio instrument. (select "copy instrument" in the track header left clicking or pressing F12)
+* Remove some potential crash bugs by disallowing to replace/load permantent
+  sound object (i.e. buses + main pipe)
+* Fix instrument assignment for track when selecting new audio -> load preset from track header
+* sampler: Set browser to the dir of the current sound file
+* Option to clear all muted tracks (under Edit -> Block)
+* range paste: Options to cut note at cursor (if any) and pasted notes
+  at next note, and option to automatically scroll down after pasting
+* AltGr + left/right arrow changes all velocities of a note, not just the first velocity.
+* Only show Blowfish song in the Project menu on Linux
+* Fix focus issues for the line requester (e.g. when asking yes/no questions)
+* Show correct color for current sample file name
+* OSX: Workaround for various bugs in QColorDialog on OSX.
+
+
+
 Changes 3.7.1 -> 3.7.2:
 * Upgrade s7 scheme interpreter
 * Render: Use thin stipled lines for those vertical fx lines
