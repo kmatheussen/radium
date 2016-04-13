@@ -468,6 +468,7 @@ LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
     return CallNextHookEx( g_hKeyboardHook, nCode, wParam, lParam );
 }
 
+// Needs to be run in separate thread on windows 7. See example here: https://social.msdn.microsoft.com/Forums/windowsdesktop/en-US/f6032ca1-31b8-4ad5-be39-f78dd29952da/hooking-problem-in-windows-7?forum=windowscompatibility
 void OS_SYSTEM_init_keyboard(void) {
   init_keymap();  
   g_hKeyboardHook = SetWindowsHookEx( WH_KEYBOARD_LL,  LowLevelKeyboardProc, GetModuleHandle(NULL), 0 );
