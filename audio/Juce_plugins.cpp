@@ -63,7 +63,7 @@ namespace{
       //printf("parm %d changed to %f\n",parameterIndex,newValue);
       volatile struct Patch *patch = plugin->patch;
       if (patch != NULL)
-        patch->widget_needs_to_be_updated = true;
+        ATOMIC_SET(patch->widget_needs_to_be_updated, true);
     }
  
     // Called to indicate that something else in the plugin has changed, like its program, number of parameters, etc.

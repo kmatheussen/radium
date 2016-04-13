@@ -75,6 +75,9 @@ static inline bool atomic_compare_and_set_uint32(uint32_t *variable, uint32_t ol
   return __atomic_compare_exchange_n (variable, &old_value, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
+#define ATOMIC_COMPARE_AND_SET_BOOL(name, old_value, new_value) \
+  atomic_compare_and_set_bool(&(name##_atomic), old_value, new_value)
+
 #define ATOMIC_COMPARE_AND_SET_INT(name, old_value, new_value) \
   atomic_compare_and_set_int(&(name##_atomic), old_value, new_value)
 

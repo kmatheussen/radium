@@ -601,7 +601,7 @@ struct Patch{
 
   DEFINE_ATOMIC(int, visual_note_intencity); // Used by the mixer to keep track of how bright the note indicator should light up.
 
-  volatile bool widget_needs_to_be_updated;
+  DEFINE_ATOMIC(bool, widget_needs_to_be_updated);
 };
 #define PATCH_FAILED 0
 #define PATCH_SUCCESS 1

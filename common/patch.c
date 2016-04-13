@@ -496,10 +496,8 @@ void PATCH_call_very_often(void){
   while(instrument!=NULL){
 
     VECTOR_FOR_EACH(struct Patch *patch, &instrument->patches){
-      if (patch->widget_needs_to_be_updated) {
-        patch->widget_needs_to_be_updated = false;
+      if (ATOMIC_COMPARE_AND_SET_BOOL(patch->widget_needs_to_be_updated, true, false))
         GFX_update_instrument_widget(patch);
-      }
     }END_VECTOR_FOR_EACH;
 
     instrument = NextInstrument(instrument);
