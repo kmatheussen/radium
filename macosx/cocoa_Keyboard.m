@@ -195,6 +195,7 @@ static void init_keymaps(void){
 
   // row 2
   keymap_qwerty[kVK_ISO_Section] = EVENT_1L1;
+  keymap_qwerty[kVK_ANSI_Grave]  = EVENT_1L1;
   keymap_qwerty[kVK_ANSI_Minus] = EVENT_0R1;
   keymap_qwerty[kVK_ANSI_Equal] = EVENT_0R2;
   keymap_qwerty[kVK_Delete] = EVENT_BACKSPACE;
