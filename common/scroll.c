@@ -122,7 +122,7 @@ void Scroll_scroll(
   int playtype = 0;
   bool was_playing_range = false;
   
-  if (is_playing()){
+  if (ATOMIC_GET(root->play_cursor_onoff)==false && is_playing()){
     playtype = pc->playtype;
     was_playing_range = pc->is_playing_range;
     PlayStop();
@@ -177,7 +177,7 @@ void Scroll_scroll(
 	}
 #endif
 
-        if (was_playing) {
+        if (ATOMIC_GET(root->play_cursor_onoff)==false && was_playing) {
           if (was_playing_range)
             PlayRangeCurrPos(window);
           else if (playtype==PLAYSONG)
@@ -185,6 +185,7 @@ void Scroll_scroll(
           else if (playtype==PLAYBLOCK)
             PlayBlockCurrPos(window);
         }
+
         
 //	printf("scroll3: n: %d\n",num_lines);
 //  for(lokke=0;lokke<window->wblock->num_visiblelines;lokke++)
