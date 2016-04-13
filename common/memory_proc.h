@@ -16,6 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include <stdlib.h>
+#include <string.h>
 
 #ifndef TRACKER_INCLUDE
 
@@ -71,7 +72,7 @@ extern LANGSPEC char *talloc_floatstring__(float number, const char *filename, i
 
 #define talloc_floatstring(a) talloc_floatstring__(a,__FILE__,__LINE__)
 
-
+#define tcopy(mem, size) memcpy(talloc(size), mem, size)
 
 extern LANGSPEC char *talloc_format(const char *fmt,...);
 

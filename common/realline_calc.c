@@ -57,6 +57,11 @@ float FindReallineForF(
           }
         }
 
+        if (realline>wblock->num_reallines){
+          RError("realline>wblock->num_reallines: %d > %d. place: %s",realline,wblock->num_reallines,PlaceToString(place));
+          return wblock->block->num_lines;
+        }
+        
         Place *p1 = &reallines[realline-1]->l.p;
         Place *p2 = realline==wblock->num_reallines ? NULL  : &reallines[realline]->l.p;
 

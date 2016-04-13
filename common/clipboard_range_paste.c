@@ -40,27 +40,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Range *range;
 
-void PasteRange_velocities(
+static void PasteRange_velocities(
 	struct Blocks *block,
 	struct Velocities **tovelocity,
-	struct Velocities *fromvelocity,
+	const struct Velocities *fromvelocity,
 	Place *place
 ){
-	Place lastplace;
-	struct Velocities *velocity;
+	if(fromvelocity==NULL)
+          return;
 
-	if(fromvelocity==NULL) return;
+        Place lastplace = p_Last_Pos(block);
+                
+        struct Velocities *velocity = tcopy(fromvelocity, sizeof(struct Velocities));
+        PlaceAdd(&velocity->l.p,place);
 
-	velocity=talloc(sizeof(struct Velocities));
-
-	PlaceSetLastPos(block,&lastplace);
-
-	PlaceCopy(&velocity->l.p,&fromvelocity->l.p);
-	PlaceAdd(&velocity->l.p,place);
-
-	if(PlaceGreaterOrEqual(&velocity->l.p,&lastplace)) return;
-
-	velocity->velocity=fromvelocity->velocity;
+        if(PlaceGreaterOrEqual(&velocity->l.p,&lastplace))
+          return;
 
 	ListAddElement3(tovelocity,&velocity->l);
 
