@@ -49,6 +49,7 @@ static int get_val_from_key(int key){
     case EVENT_E: val = 14; break;
     case EVENT_F: val = 15; break;
     case EVENT_G: val = 15; break;
+    case EVENT_T: val = 15; break;
     case EVENT_X: val = 15; break;
     case EVENT_LR3: val = 15; break; // TODO: Investigate why this isnt working.
   }
@@ -70,7 +71,11 @@ data_as_text_t DAT_get_newvalue(int subsubtrack, int key, int default_value, int
   
   if (key==EVENT_G){
     value = max_value;
-    
+
+  } else if (key==EVENT_T){
+    value = default_value;
+    logtype = LOGTYPE_HOLD;
+  
   }else if (subsubtrack == 0) {
     value = round(scale_double(val * 0x10, 0, 0xff, min_value, max_value));
     
@@ -113,6 +118,13 @@ data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, in
   if (key==EVENT_G){
     v1 = base-1;
     v2 = base-1;
+    
+  } else if (key==EVENT_T){
+    if (logtype==LOGTYPE_LINEAR)
+      logtype = LOGTYPE_HOLD;
+    else
+      logtype = LOGTYPE_LINEAR;
+    
   }else if (subsubtrack == 0) {
     v1 = val;
   } else if (subsubtrack == 1) {

@@ -744,7 +744,8 @@ void GFX_showVelocityHelpWidget(void){
                                "  xx = Velocity value. 0 = lowest velocity, ff = highest velocity. (hex format)\n"
                                "   t = Whether to glide to the next velocity or not.\n"
                                "\n"
-                               "  Tip: To quickly add an \"ff\" velocity, press 'G'.\n"
+                               "  Tips: -To quickly add an \"ff\" velocity, press 'G'.\n"
+                               "        -To switch glide mode, press 'T'.\n"
                                "\n"                               
                                "</pre>"
                                );
@@ -771,7 +772,8 @@ void GFX_showFXHelpWidget(void){
                                "  xx = effect value. 0 = lowest value, ff = highest value. (hex format)\n"
                                "   t = Whether to glide to the next effect or not.\n"
                                "\n"
-                               "  Tip: To quickly add an \"ff\" effect, press 'G'.\n"
+                               "  Tips: -To quickly add an \"ff\" velocity, press 'G'.\n"
+                               "        -To switch glide mode, press 'T'.\n"
                                "\n"                               
                                "</pre>"
                                );
