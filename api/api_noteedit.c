@@ -393,6 +393,32 @@ void setBPM(int bpm_value){
   UpdateAllSTimes();
 }
 
+
+int numSignatures(int blocknum, int windownum){
+  struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return ListFindNumElements3(&wblock->block->signatures->l);
+}
+
+int numLPBs(int blocknum, int windownum){
+  struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return ListFindNumElements3(&wblock->block->lpbs->l);
+}
+
+int numBPMs(int blocknum, int windownum){
+  struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return ListFindNumElements3(&wblock->block->tempos->l);
+}
+
+
 int addSignature(int numerator, int denominator,
                  int line,int counter,int dividor,
                  int blocknum)
@@ -421,10 +447,8 @@ int addLPB(int lpb_value,
            int blocknum)
 {
   struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
-  if(wblock==NULL) {
-    GFX_Message(NULL, "unknown block(%p)",blocknum);
+  if(wblock==NULL)
     return -1;
-  }
 
   Place *place = PlaceCreate(line,counter,dividor);
   if (!PlaceLegal(wblock->block, place)) {
@@ -439,15 +463,14 @@ int addLPB(int lpb_value,
   return ListFindElementPos3(&wblock->block->lpbs->l,&lpb->l);
 }
 
+
 int addBPM(int bpm,
            int line,int counter,int dividor,
            int blocknum)
 {
   struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
-  if(wblock==NULL) {
-    GFX_Message(NULL, "unknown block(%p)",blocknum);
+  if(wblock==NULL)
     return -1;
-  }
 
   Place *place = PlaceCreate(line,counter,dividor);
   if (!PlaceLegal(wblock->block, place)) {

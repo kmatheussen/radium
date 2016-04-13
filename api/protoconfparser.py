@@ -141,6 +141,11 @@ class Argument:
 
             
         #print(self.varname)
+
+        if self.varname=="numLPBs":
+            return "ra:num-lpbs"
+        if self.varname=="numBPMs":
+            return "ra:num-bpms"
         
         result = ""
         for element in loop(string.capitalize(self.varname[0]),self.varname[1:]+" ", True):
