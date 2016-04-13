@@ -1,3 +1,26 @@
+Changes 3.7.4 -> 3.7.5:
+* windows: Run low level keyboard hook in separate thread.
+  Hopefully this will prevent left windows key from suddenly
+  showing the windows menu on Windows 7.
+* osx: Support the 1L1 key on non-iso keyboards.
+* playlist move up/down buttons
+* Make slider text color configurable
+* Don't change play position when play cursor is enabled
+* Scroll down when adding note, and playing, and play cursor is enabled
+* If trying to scroll past last line, jump to line 1 instead of stopping
+  at last line.
+* Fix not smoothly scrolling the last line (bug introduced in 3.7.3)
+* Keep "glide" when pasting pitches.
+* Keep "glide" when pasting velocities
+* Switch glide mode in text tracks by pressing T
+* api: numSignatures/numLPBs/numBPMs
+* Possible to hide centtext track if notetext track is not visible
+* vst: Don't do debug printing in the callbacks
+* Fix vst sliders in radium might not always update if the slider
+  was updated in the native gui. (The bug is quite unlikely to have
+  ever happened though)
+
+
 Changes 3.7.2 -> 3.7.4:
 * osx: Fix modifier keys when clicking mouse
 * Hack fixes for positioning leftmost track.
