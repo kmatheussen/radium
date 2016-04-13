@@ -56,7 +56,7 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 		wblock->curr_realline<wblock->num_reallines-1 &&
 		wblock->curr_realline+num_lines>wblock->num_reallines-1
 	){
-		num_lines=wblock->num_reallines-1 - wblock->curr_realline;
+		num_lines=wblock->num_reallines - wblock->curr_realline;
 	}
 
 	if(num_lines/getScrollMultiplication()==1 || num_lines/getScrollMultiplication()==-1)
