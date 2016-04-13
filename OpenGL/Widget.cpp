@@ -245,7 +245,8 @@ static double find_current_realline_while_playing(SharedVariables *sv, double bl
         return i_realline;
       }
 #endif
-      if (i_realline==sv->num_reallines-1)
+      
+      if (i_realline==sv->num_reallines)
         return sv->num_reallines;
       if (stime1==stime2)
         i_realline++;
