@@ -211,6 +211,8 @@ struct Notes *NewNote(void){
 struct Notes *CopyNote(const struct Notes *old_note){
   struct Notes *note=tcopy(old_note, sizeof(struct Notes));
   note->l.next = NULL;
+  note->velocities = NULL;
+  note->pitches = NULL;
   
   NOTE_init(note);
 

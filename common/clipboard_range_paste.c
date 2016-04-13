@@ -125,8 +125,6 @@ void PasteRange_notes(
 	struct Notes *note=CopyNote(fromnote);
 	PlaceAdd(&note->l.p,place);
 	PlaceAdd(&note->end,place);
-        note->velocities = NULL;
-        note->pitches = NULL;
         
         Place lastplace = p_Last_Pos(block);
 
