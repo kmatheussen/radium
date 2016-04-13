@@ -208,6 +208,15 @@ struct Notes *NewNote(void){
   return note;
 }
 
+struct Notes *CopyNote(const struct Notes *old_note){
+  struct Notes *note=tcopy(old_note, sizeof(struct Notes));
+  note->l.next = NULL;
+  
+  NOTE_init(note);
+
+  return note;
+}
+
 static struct Notes *sort_notes_by_pitch_a_little_bit(struct Notes *notes){
   struct Notes *ret = notes;
   struct Notes *note_to_place_after = NULL;

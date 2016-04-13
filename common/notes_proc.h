@@ -35,6 +35,7 @@ static inline int64_t NotenumId(float notenum){
 
 extern LANGSPEC void NOTE_init(struct Notes *note);
 extern LANGSPEC struct Notes *NewNote(void);
+struct Notes *CopyNote(const struct Notes *old_note);
 
 extern LANGSPEC bool NOTES_sorted_by_pitch_questionmark(struct Notes *notes);
 extern LANGSPEC struct Notes *NOTES_sort_by_pitch(struct Notes *notes);

@@ -41,10 +41,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Range *range;
 
 static void PasteRange_velocities(
-	struct Blocks *block,
-	struct Velocities **tovelocity,
-	const struct Velocities *fromvelocity,
-	Place *place
+                                  const struct Blocks *block,
+                                  struct Velocities **tovelocity,
+                                  const struct Velocities *fromvelocity,
+                                  const Place *place
 ){
 	if(fromvelocity==NULL)
           return;
@@ -54,7 +54,7 @@ static void PasteRange_velocities(
         struct Velocities *velocity = tcopy(fromvelocity, sizeof(struct Velocities));
         PlaceAdd(&velocity->l.p,place);
 
-        if(PlaceGreaterOrEqual(&velocity->l.p,&lastplace))
+        if(PlaceGreaterThan(&velocity->l.p,&lastplace))
           return;
 
 	ListAddElement3(tovelocity,&velocity->l);
@@ -91,26 +91,21 @@ static bool PasteRange_FXs(
 
 
 void PasteRange_pitches(
-	struct Blocks *block,
-	struct Pitches **topitch,
-	struct Pitches *frompitch,
-	Place *place
+                        const struct Blocks *block,
+                        struct Pitches **topitch,
+                        const struct Pitches *frompitch,
+                        const Place *place
 ){
-	Place lastplace;
-	struct Pitches *pitch;
 
 	if(frompitch==NULL) return;
 
-	pitch=talloc(sizeof(struct Pitches));
+        Place lastplace = p_Last_Pos(block);
 
-	PlaceSetLastPos(block,&lastplace);
-
-	PlaceCopy(&pitch->l.p,&frompitch->l.p);
+	struct Pitches *pitch=tcopy(frompitch, sizeof(struct Pitches));
 	PlaceAdd(&pitch->l.p,place);
 
-	if(PlaceGreaterOrEqual(&pitch->l.p,&lastplace)) return;
-
-	pitch->note=frompitch->note;
+	if(PlaceGreaterThan(&pitch->l.p,&lastplace))
+          return;
 
 	ListAddElement3(topitch,&pitch->l);
 
@@ -118,41 +113,33 @@ void PasteRange_pitches(
 }
 
 void PasteRange_notes(
-	struct Blocks *block,
-	struct Tracks *track,
-	struct Notes *fromnote,
-	Place *place
-){
-	Place lastplace;
-	struct Notes *note;
+                      const struct Blocks *block,
+                      struct Tracks *track,
+                      const struct Notes *fromnote,
+                      const Place *place
+                      )
+{
 
 	if(fromnote==NULL) return;
 
-	note=NewNote();
-
-	note->noend=fromnote->noend;
-
-	PlaceSetLastPos(block,&lastplace);
-
-	PlaceCopy(&note->l.p,&fromnote->l.p);
+	struct Notes *note=CopyNote(fromnote);
 	PlaceAdd(&note->l.p,place);
-
-	if(PlaceGreaterOrEqual(&note->l.p,&lastplace)) return;
-
-	PlaceCopy(&note->end,&fromnote->end);
 	PlaceAdd(&note->end,place);
-	if(PlaceGreaterOrEqual(&note->end,&lastplace)){
-		PlaceSetLastPos(block,&note->end);
-		note->noend=1;
+        note->velocities = NULL;
+        note->pitches = NULL;
+        
+        Place lastplace = p_Last_Pos(block);
+
+	if(PlaceGreaterThan(&note->l.p,&lastplace))
+          return;
+
+	if(PlaceGreaterThan(&note->end,&lastplace)){
+          PlaceSetLastPos(block,&note->end);
+          note->noend=1;
 	}
 
-	note->note=fromnote->note;
-	note->velocity=fromnote->velocity;
-	note->velocity_end=fromnote->velocity_end;
-        note->pitch_end=fromnote->pitch_end;
-
 	ListAddElement3(&track->notes,&note->l);
-
+        
 	PasteRange_velocities(block,&note->velocities,fromnote->velocities,place);
 	PasteRange_pitches(block,&note->pitches,fromnote->pitches,place);
 
@@ -166,19 +153,16 @@ void PasteRange_stops(
 	struct Stops *fromstop,
 	Place *place
 ){
-	Place lastplace;
-	struct Stops *stop;
 
 	if(fromstop==NULL) return;
 
-	stop=talloc(sizeof(struct Stops));
+        Place lastplace = p_Last_Pos(block);
 
-	PlaceSetLastPos(block,&lastplace);
-
-	PlaceCopy(&stop->l.p,&fromstop->l.p);
+	struct Stops *stop=tcopy(fromstop, sizeof(struct Stops));
 	PlaceAdd(&stop->l.p,place);
 
-	if(PlaceGreaterOrEqual(&stop->l.p,&lastplace)) return;
+	if(PlaceGreaterThan(&stop->l.p,&lastplace))
+          return;
 
 	ListAddElement3(&track->stops,&stop->l);
 
@@ -265,5 +249,4 @@ void PasteRange_CurrPos(
         
         window->must_redraw = true;
 }
-
 
