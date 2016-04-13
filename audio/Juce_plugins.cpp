@@ -68,19 +68,19 @@ namespace{
  
     // Called to indicate that something else in the plugin has changed, like its program, number of parameters, etc.
     virtual void 	audioProcessorChanged (AudioProcessor *processor) {
-      printf("audioProcessorChanged...\n");
+      //printf("audioProcessorChanged...\n");
     }
  
 
     //Indicates that a parameter change gesture has started.
     virtual void 	audioProcessorParameterChangeGestureBegin (AudioProcessor *processor, int parameterIndex) {
-      printf("gesture starts for %d\n",parameterIndex);
+      //printf("gesture starts for %d\n",parameterIndex);
     }
 
     
     //Indicates that a parameter change gesture has finished. 
     virtual void 	audioProcessorParameterChangeGestureEnd (AudioProcessor *processor, int parameterIndex) {
-      printf("gesture ends for %d\n",parameterIndex);
+      //printf("gesture ends for %d\n",parameterIndex);
     }
   };
 
