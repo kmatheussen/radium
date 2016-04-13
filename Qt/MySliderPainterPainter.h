@@ -92,7 +92,7 @@ static inline void SLIDERPAINTERPAINTER_paint(MyPainter *p, int x1, int y1, int 
     MyRect rect(5,2,width,height);
 
     if(text.compare("")!=0){
-      MyColor c(1);
+      MyColor c(get_qcolor(SLIDER_TEXT_COLOR_NUM));
 #ifndef JUCE_API
       if(is_enabled)
         c.setAlpha(160);
