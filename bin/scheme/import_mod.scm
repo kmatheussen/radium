@@ -105,11 +105,6 @@
             (cons event
                   (add-event (cdr events) new-event))))))
 
-(define *num-radium-ticks* (<ra> :get-highest-legal-place-denominator))
-(define *smallest-radium-tick* (/ 1 *num-radium-ticks*))
-(define (-line linenum)
-  (- linenum *smallest-radium-tick*))
-
 
 (define (place-line place)
   (floor place))

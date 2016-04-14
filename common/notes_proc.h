@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef RADIUM_COMMON_NOTES_PROC_H
+#define RADIUM_COMMON_NOTES_PROC_H
 
 extern LANGSPEC void SetNotePolyphonyAttributes(struct Tracks *track);
 extern LANGSPEC int GetNoteSubtrack(const struct WTracks *wtrack, struct Notes *note);
@@ -106,3 +108,12 @@ extern LANGSPEC float notenum_from_notetext(char *notetext);
 extern LANGSPEC void EditNoteCurrPos(struct Tracker_Windows *window);
 
 extern LANGSPEC void StopVelocityCurrPos(struct Tracker_Windows *window,int noend);
+
+static inline bool note_continues_next_block(const struct Blocks *block, const struct Notes *note){
+  return note->noend==1 &&
+    note->end.line==block->num_lines-1 &&
+    note->end.counter==MAX_UINT32-1 &&
+    note->end.dividor==MAX_UINT32;
+}
+
+#endif

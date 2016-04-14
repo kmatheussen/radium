@@ -2356,6 +2356,15 @@ float getVelocityValue(int velocitynum, int notenum, int tracknum, int blocknum,
   return velocity->velocity / (float)MAX_VELOCITY;
 }
 
+Place getVelocityPlace(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Node *node = get_velocitynode(velocitynum, notenum, tracknum, blocknum, windownum);
+  if (node==NULL)
+    return place(0,0,1);
+
+  struct Velocities *velocity = (struct Velocities*)node->element;
+  return velocity->l.p;
+}
+
 int getVelocityLogtype(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
   struct Node *node = get_velocitynode(velocitynum, notenum, tracknum, blocknum, windownum);
   if (node==NULL)
@@ -2421,7 +2430,7 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
   return createVelocity3(value, place.line, place.counter, place.dividor, notenum, tracknum, blocknum, windownum);
 }
 
-int setVelocity3(int velocitynum, float value, int line, int counter, int dividor, int notenum, int tracknum, int blocknum, int windownum){
+int setVelocity3(int velocitynum, float value, Place place, int notenum, int tracknum, int blocknum, int windownum){
   
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -2443,25 +2452,23 @@ int setVelocity3(int velocitynum, float value, int line, int counter, int divido
 
   //printf("velocitynum==%d. floatplace: %f\n",velocitynum,floatplace);
 
-  Place place = {line, counter, dividor};
-
   if (velocitynum==0) {
     
     note->velocity = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
-    if (line>=0)
+    if (place.line>=0)
       return MoveNote(block, track, note, &place, true);
     
   } else if (velocitynum==nodes->num_elements-1) {
     
     note->velocity_end = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
-    if (line>=0)
+    if (place.line>=0)
       MoveEndNote(block, track, note, &place, true);
 
   } else {
 
     struct Velocities *velocity;
 
-    if (line < 0 ) {
+    if (place.line < 0 ) {
       velocity = ListFindElement3_num(&note->velocities->l, velocitynum-1);
     } else {
       Place firstLegalPlace,lastLegalPlace;
@@ -2481,12 +2488,15 @@ int setVelocity3(int velocitynum, float value, int line, int counter, int divido
 }
 
 int setVelocity(int velocitynum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
-  if (floatplace < 0)
-    return setVelocity3(velocitynum, value, -1, 0, 1, notenum, tracknum, blocknum, windownum);
-
   Place place;
-  Float2Placement(floatplace, &place);
-  return setVelocity3(velocitynum, value, place.line, place.counter, place.dividor, notenum, tracknum, blocknum, windownum);
+  
+  if (floatplace < 0) {
+    place.line=-1;
+    place.counter=0;
+    place.dividor=1;
+  }else
+    Float2Placement(floatplace, &place);
+  return setVelocity3(velocitynum, value, place, notenum, tracknum, blocknum, windownum);
 }
 
 void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){

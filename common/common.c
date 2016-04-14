@@ -278,9 +278,13 @@ int GetReallineAndPlaceFromY(
                 */
 	}else{
 		if(at_bottom){
-			temp.counter=temp.counter*window->fontheight+(window->fontheight-1);
-			temp.dividor=temp.dividor*window->fontheight;
-			PlaceHandleOverflow(&temp);
+                  if (realline==num_reallines-1){
+                    PlaceSetLastPos(wblock->block, &temp);
+                  } else {
+                    temp.counter=temp.counter*window->fontheight+(window->fontheight-1);
+                    temp.dividor=temp.dividor*window->fontheight;
+                    PlaceHandleOverflow(&temp);
+                  }
 		}
 	}
 

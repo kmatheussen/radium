@@ -12,6 +12,7 @@
 #include "../common/tracks_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/common_proc.h"
+#include "../common/notes_proc.h"
 #include "../common/trackreallines2_proc.h"
 #include "../common/veltext_proc.h"
 #include "../common/fxtext_proc.h"
@@ -1218,8 +1219,18 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
   
   // lines
   for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
-    if(show_read_lines || nodeline->x1!=nodeline->x2)
+    if(show_read_lines || nodeline->x1!=nodeline->x2) {
       GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, get_pitchline_width());
+      if (nodeline->next==NULL){
+        if (note_continues_next_block(wblock->block, note)){
+          float y1 = nodeline->y2;
+          float y2 = nodeline->y2 + 25;
+          GE_line(line_color, nodeline->x2, y1, nodeline->x2, y2, get_pitchline_width());
+          GE_line(line_color, nodeline->x2 - 5, y2 - 8, nodeline->x2, y2, get_pitchline_width());
+          GE_line(line_color, nodeline->x2 + 5, y2 - 8, nodeline->x2, y2, get_pitchline_width());
+        }
+      }
+    }
   
   // indicator node
   if (indicator_node == &note->l && indicator_pitch_num!=-1) {
@@ -1356,6 +1367,12 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
     for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next) {
       GE_Context *c = note_color;
 
+      bool is_continuing = false;
+      
+      if (nodeline->next==NULL)
+        if (note_continues_next_block(wblock->block, note))
+          is_continuing = true;
+
       if (nodeline->is_node)
         pianonotenum++;      
 
@@ -1367,12 +1384,19 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
         c = current_note_color;
         GE_unset_x_scissor();
       }
-      
-      GE_line(c,
-              nodeline->x1, nodeline->y1,
-              nodeline->x2, nodeline->y2,
-              note_width
-              );
+
+      if (is_continuing)
+        GE_line(c,
+                nodeline->x1, nodeline->y1,
+                nodeline->x2, nodeline->y2+15,
+                note_width
+                );
+      else
+        GE_line(c,
+                nodeline->x1, nodeline->y1,
+                nodeline->x2, nodeline->y2,
+                note_width
+                );
 
       //float x_min = R_MIN(nodeline->x1, nodeline->x2);
       //float x_max = R_MAX(nodeline->x1, nodeline->x2);
@@ -1400,11 +1424,13 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
           is_inside = true;
         
         if (is_inside || is_current) {
-          GE_box(border_color,
-                 nodelineBox.x1, nodelineBox.y1,
-                 nodelineBox.x2, nodelineBox.y2,
-                 1.0
-                 );
+
+          if (!is_continuing)
+            GE_box(border_color,
+                   nodelineBox.x1, nodelineBox.y1,
+                   nodelineBox.x2, nodelineBox.y2,
+                   1.0
+                   );
 
           struct Pitches *pitch = (struct Pitches*)nodeline->element1;
           float  notenum = pitch->note;
@@ -1422,9 +1448,58 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
               draw_pianonote_text(window, notenum, is_current, (nodeline->x1 + nodeline->x2) / 2, nodeline->y2);
             }
           }
-        }
-      }
+
+          if (is_continuing){
+            float dx = 5;
+            float x1 = nodelineBox.x1 - dx;
+            float x =  nodeline->x2;
+            float x2 = nodelineBox.x2 + dx;
+            float y1 = nodeline->y2 + 15;
+            float y2 = nodeline->y2 + 25;
+          
+            GE_trianglestrip_start();
+            GE_trianglestrip_add(c,x1,y1);
+            GE_trianglestrip_add(c,x2,y1);
+            GE_trianglestrip_add(c,x,y2);
+            GE_trianglestrip_end(c);
+
+            // box (without the x1,y2 -> x2,y2 line)
+            GE_box(border_color,
+                   nodelineBox.x1,nodelineBox.y1,
+                   nodelineBox.x2,nodelineBox.y1,
+                   1.0);
+            GE_box(border_color,
+                   nodelineBox.x2,nodelineBox.y1,
+                   nodelineBox.x2,y1,
+                   1.0);
+            GE_box(border_color,
+                   nodelineBox.x1,nodelineBox.y1,
+                   nodelineBox.x1,y1,
+                   1.0);
+          
+            // arrow
+            GE_line(border_color,
+                    x1,y1,
+                    nodelineBox.x1,y1,
+                    1.0);
+            GE_line(border_color,
+                    nodelineBox.x2,y1,
+                    x2,y1,
+                    1.0);
+            GE_line(border_color,
+                    x1,y1,
+                    x,y2,
+                    1.0);
+            GE_line(border_color,
+                    x2,y1,
+                    x,y2,
+                    1.0);
+          }
         
+        }
+
+      }
+
       if (is_current)
         GE_set_x_scissor(wtrack->pianoroll_area.x,
                          wtrack->pianoroll_area.x2+1);
@@ -1888,7 +1963,7 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
   {  
     const struct Notes *note=wtrack->track->notes;
     while(note != NULL){
-      if(NOTE_subtrack(wtrack, note) >= left_subtrack) {
+      if(NOTE_subtrack(wtrack, note) >= left_subtrack) {        
         if (left_subtrack==-1 && wtrack->notesonoff==1)
           create_pitches(window, wblock, wtrack, note);
         create_track_velocities(window, wblock, wtrack, note);

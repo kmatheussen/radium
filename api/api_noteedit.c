@@ -504,6 +504,17 @@ void setNoteEndPlace(int line,int counter,int dividor,int windownum,int blocknum
   PlaceCopy(&note->end, place);
 }
 
+bool noteContinuesNextBlock(int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return false;
+
+  return note_continues_next_block(wblock->block, note);
+}
+
 void setNoteContinueNextBlock(bool continuenextblock, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;

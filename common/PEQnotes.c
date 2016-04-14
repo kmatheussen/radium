@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "time_proc.h"
 #include "list_proc.h"
 #include "patch_proc.h"
+#include "notes_proc.h"
 #include "scheduler_proc.h"
 
 #include "PEQnotes_proc.h"
@@ -55,12 +56,8 @@ void InitPEQendnote(
 	peq->track=track;
 	peq->note=note;
 
-	if(
-		note->noend==1 &&
-		note->end.line==block->num_lines-1 &&
-		note->end.counter==MAX_UINT32-1 &&
-		note->end.dividor==MAX_UINT32
-	){
+	if(note_continues_next_block(block, note)){
+          
 		if(PC_isPlayingBlock()) playlistaddpos=0;
 
 		for(;;){

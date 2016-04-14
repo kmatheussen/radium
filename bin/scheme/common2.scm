@@ -933,4 +933,3 @@ for .emacs:
 (define (+line linenum)
   (+ linenum *smallest-radium-tick*))
 ||#
-

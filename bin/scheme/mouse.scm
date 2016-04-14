@@ -674,7 +674,9 @@
     
     (define func (if ismoving Move-node Release-node))
                                    
-    (let ((node-info (func node-info new-value (and new-y (get-place-from-y Button new-y)))))
+    (let ((node-info (func node-info new-value
+                           (and new-y
+                                (get-place-from-y Button new-y)))))
       (Publicize node-info)
       (make-node :node-info node-info
                  :value new-value
@@ -1854,7 +1856,8 @@
                                                                                    (velocity-info :tracknum)))
                                               (set-velocity-statusbar-text value))
                         :Move-node (lambda (velocity-info Value Place)
-                                     (define note-num (<ra> :set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
+                                     (c-display "Place: " Place)
+                                     (define note-num (<ra> :set-velocity3 (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
                                      (make-velocity-info :tracknum (velocity-info :tracknum)
                                                          :notenum note-num
                                                          :velocitynum (velocity-info :velocitynum)
@@ -1914,22 +1917,40 @@
                                      (velocity-info :velocitynum)
                                      (velocity-info :notenum)
                                      (velocity-info :tracknum)))
-                             (let ((is-holding (= (<ra> :get-velocity-logtype
-                                                        (velocity-info :velocitynum)
-                                                        (velocity-info :notenum)
-                                                        (velocity-info :tracknum))
-                                                  *logtype-hold*))
-                                   (num-nodes (<ra> :get-num-velocities (velocity-info :notenum) (velocity-info :tracknum))))
-                               (popup-menu "Delete Velocity" delete-velocity!
-                                           (if (= (velocity-info :velocitynum)
-                                                  (1- num-nodes))
-                                               #f
-                                               (list "glide" :check (not is-holding) (lambda (maybe)
-                                                                                       (if maybe
-                                                                                           (set-linear!)
-                                                                                           (set-hold!))))))
-                               )
-
+                             (let* ((is-holding (= (<ra> :get-velocity-logtype
+                                                         (velocity-info :velocitynum)
+                                                         (velocity-info :notenum)
+                                                         (velocity-info :tracknum))
+                                                   *logtype-hold*))
+                                    (num-nodes (<ra> :get-num-velocities (velocity-info :notenum) (velocity-info :tracknum)))
+                                    (is-last-node (= (velocity-info :velocitynum)
+                                                     (1- num-nodes)))
+                                    (is-last-place (and is-last-node
+                                                        (= (-line (<ra> :get-num-lines))
+                                                           (<ra> :get-velocity-place
+                                                                 (velocity-info :velocitynum)
+                                                                 (velocity-info :notenum)
+                                                                 (velocity-info :tracknum))))))
+                               (c-display "place" (<ra> :get-velocity-place
+                                                          (velocity-info :velocitynum)
+                                                          (velocity-info :notenum)
+                                                          (velocity-info :tracknum))
+                                            (-line (<ra> :get-num-lines)))
+                                 (popup-menu "Delete Velocity" delete-velocity!
+                                             (list "glide"
+                                                   :check (and (not is-holding)
+                                                               (not is-last-node))
+                                                   :enabled (not is-last-node)
+                                                   (lambda (maybe)
+                                                     (if maybe
+                                                         (set-linear!)
+                                                         (set-hold!))))
+                                             (list "continue playing note into next block"
+                                                   :check (and is-last-place
+                                                               (<ra> :note-continues-next-block (velocity-info :notenum) (velocity-info :tracknum)))
+                                                   :enabled is-last-place
+                                                   (lambda (maybe)
+                                                     (<ra> :set-note-continue-next-block maybe (velocity-info :notenum) (velocity-info :tracknum))))))
                              #t)
                            #f))))))
 
