@@ -434,7 +434,7 @@ int OS_SYSTEM_get_modifier(void *void_msg){
 static HHOOK g_hKeyboardHook = NULL;
 
 // http://msdn.microsoft.com/en-us/library/windows/desktop/ee416808(v=vs.85).aspx
-LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
+static LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
           
     if (nCode < 0 || nCode != HC_ACTION )  // do not process message 

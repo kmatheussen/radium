@@ -200,10 +200,12 @@ static void init_keynums(XEvent *event){
 
 static int get_modifier(KeySym keysym){
 # define S(X11_VAL, EVENT_VAL) case XK_##X11_VAL: return EVENT_##EVENT_VAL;
-  
+
+  //printf("keysum: %d, caps_lock: %d\n",(int)keysym,XK_Caps_Lock);
   switch(keysym){
     S(Control_L, CTRL_L);
     S(Control_R, CTRL_R);
+    S(Caps_Lock, CAPS);
     S(Shift_L, SHIFT_L);
     S(Shift_R, SHIFT_R);
     S(Alt_L, ALT_L);
@@ -223,7 +225,12 @@ int OS_SYSTEM_get_modifier(void *void_event){
     
   //KeySym keysym = (KeySym)virtualkey;
 
-  return get_modifier(keysym);
+  int ret = get_modifier(keysym);
+
+  if (ret==EVENT_NO && get_subID_from_scancode(OS_SYSTEM_get_keycode(void_event))==EVENT_CAPS) // caps lock key doesn't map to XK_Caps_Lock on my keyboard.
+    return EVENT_CAPS;
+
+  return ret;
 }
 
 int OS_SYSTEM_get_keynum(void *event){

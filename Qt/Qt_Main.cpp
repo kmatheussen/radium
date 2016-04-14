@@ -155,7 +155,7 @@ static void set_keyswitch(void){
 #else
 static void set_keyswitch(void){
   static int keynumswitch[]={
-    EVENT_CTRL_L, EVENT_SHIFT_L,EVENT_CAPS,
+    EVENT_CTRL_L, EVENT_SHIFT_L, EVENT_CAPS,
     EVENT_EXTRA_L,EVENT_ALT_L,EVENT_ALT_R,
     EVENT_EXTRA_R, EVENT_CTRL_R, EVENT_SHIFT_R
   };
