@@ -34,8 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct TEvent tevent;
 
-static bool left_windows_down = false;
-static bool right_windows_down = false;
+static DEFINE_ATOMIC(bool, left_windows_down) = false;
+static DEFINE_ATOMIC(bool, right_windows_down) = false;
 
 static unsigned int g_last_keyswitch;
 
@@ -64,9 +64,9 @@ static uint32_t get_keyswitch(void){
   if(GetKeyState(VK_RMENU)&0x8000)
     keyswitch |= EVENT_RIGHTALT;
 
-  if(left_windows_down)
+  if(ATOMIC_GET(left_windows_down))
     keyswitch |= EVENT_LEFTEXTRA1;
-  if(right_windows_down)
+  if(ATOMIC_GET(right_windows_down))
     keyswitch |= EVENT_RIGHTEXTRA1;
 
   bool is_right_alt =    
@@ -325,7 +325,7 @@ int OS_SYSTEM_get_keycode(void *void_event) {
   return scancode;
 }
 
-static bool g_bWindowActive = true;
+static DEFINE_ATOMIC(bool, g_bWindowActive) = true;
 
 void OS_SYSTEM_EventPreHandler(void *void_event){
   MSG *msg = (MSG*)void_event;
@@ -333,19 +333,19 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
   switch(msg->message){
     
   case WM_NCACTIVATE:
-    g_bWindowActive = msg->wParam ? true : false;
+    ATOMIC_SET(g_bWindowActive, msg->wParam ? true : false);
     //printf("1. Got NC Activate. wParam: %d\n",(int)msg->wParam);
     //fflush(stdout);
     break;
     
   case WM_ACTIVATE:
-    g_bWindowActive = msg->wParam ? true : false;
+    ATOMIC_SET(g_bWindowActive, msg->wParam ? true : false);
     //printf("2. Got Activate. wParam: %d\n",(int)msg->wParam);
     //fflush(stdout);
     break;
     
   case WM_ACTIVATEAPP:
-    g_bWindowActive = msg->wParam ? true : false;
+    ATOMIC_SET(g_bWindowActive, msg->wParam ? true : false);
     //printf("3. Got Activate app. wParam: %d\n",(int)msg->wParam);
     //fflush(stdout);
     break;
@@ -449,18 +449,20 @@ LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
       if(p->vkCode==VK_LWIN || p->vkCode==VK_RWIN){
 
         if(p->vkCode==VK_LWIN)
-          left_windows_down  = wParam==WM_KEYDOWN;
+          ATOMIC_SET(left_windows_down, wParam==WM_KEYDOWN);
         else
-          right_windows_down = wParam==WM_KEYDOWN;
+          ATOMIC_SET(right_windows_down, wParam==WM_KEYDOWN);
 
+        #if 0
         // Don't think this is any point.
         if (left_windows_down)
           tevent.keyswitch |= EVENT_LEFTEXTRA1;
         else
           tevent.keyswitch &= (~EVENT_LEFTEXTRA1);
+        #endif
         
         //printf("active: %d, left: %s, right: %s. switch: %x\n",g_bWindowActive, left_windows_down?"down":"up", right_windows_down?"down":"up", );
-        if(g_bWindowActive)
+        if(ATOMIC_GET(g_bWindowActive)==true)
           return 1; // To avoid having the windows menu pop up when the radium window is active and pressing left windows key.
       }
     }
@@ -468,15 +470,41 @@ LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
     return CallNextHookEx( g_hKeyboardHook, nCode, wParam, lParam );
 }
 
-// Needs to be run in separate thread on windows 7. See example here: https://social.msdn.microsoft.com/Forums/windowsdesktop/en-US/f6032ca1-31b8-4ad5-be39-f78dd29952da/hooking-problem-in-windows-7?forum=windowscompatibility
+
+// Code copied from here: https://social.msdn.microsoft.com/Forums/windowsdesktop/en-US/f6032ca1-31b8-4ad5-be39-f78dd29952da/hooking-problem-in-windows-7?forum=windowscompatibility
+static DWORD WINAPI mouseLLHookThreadProc(LPVOID lParam)
+{
+    MSG msg;
+
+    g_hKeyboardHook = SetWindowsHookEx( WH_KEYBOARD_LL,  LowLevelKeyboardProc, GetModuleHandle(NULL), 0 );
+    
+    while(GetMessage(&msg, NULL, 0, 0) != FALSE)
+    {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    return 0;
+}
+
 void OS_SYSTEM_init_keyboard(void) {
   init_keymap();  
-  g_hKeyboardHook = SetWindowsHookEx( WH_KEYBOARD_LL,  LowLevelKeyboardProc, GetModuleHandle(NULL), 0 );
+
+  CreateThread( 
+               NULL,                   // default security attributes
+               0,                      // use default stack size  
+               mouseLLHookThreadProc,       // thread function name
+               NULL,          // argument to thread function 
+               0,                      // use default creation flags 
+               NULL   // returns the thread identifier 
+                );
+    
+  //g_hKeyboardHook = SetWindowsHookEx( WH_KEYBOARD_LL,  LowLevelKeyboardProc, GetModuleHandle(NULL), 0 );
 }
 
 void W_KeyboardHandlerShutDown(void){
-  if(g_hKeyboardHook!=NULL)
-    UnhookWindowsHookEx(g_hKeyboardHook);
+  //if(g_hKeyboardHook!=NULL)
+  //  UnhookWindowsHookEx(g_hKeyboardHook);
 }
 
 #ifdef RUN_TEST
