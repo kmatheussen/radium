@@ -54,22 +54,102 @@ void cursorUp(int numlines,int windownum){
 	ScrollEditorUp(window,numlines * getScrollMultiplication());
 }
 
-void cursorNextNote(int windownum){
-	struct Tracker_Windows *window=getWindowFromNum(windownum);
-	if(window==NULL) return;
+void cursorNextNote(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
 
-        window->must_redraw = false;
+  window->must_redraw = false;
 
-	ScrollEditorNextNote(window);
+  ScrollEditorNextNote(window, wblock, wtrack);
 }
 
-void cursorPrevNote(int windownum){
-	struct Tracker_Windows *window=getWindowFromNum(windownum);
-	if(window==NULL) return;
+void cursorPrevNote(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
 
-        window->must_redraw = false;
+  window->must_redraw = false;
 
-	ScrollEditorPrevNote(window);
+  ScrollEditorPrevNote(window, wblock, wtrack);
+}
+
+void cursorNextVelocity(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  window->must_redraw = false;
+
+  ScrollEditorNextVelocity(window, wblock, wtrack);
+}
+
+void cursorPrevVelocity(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  window->must_redraw = false;
+
+  ScrollEditorPrevVelocity(window, wblock, wtrack);
+}
+
+void cursorNextFx(int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return;
+
+  window->must_redraw = false;
+
+  ScrollEditorNextFx(window, wblock, wtrack, fxs);
+}
+
+void cursorPrevFx(int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return;
+
+  window->must_redraw = false;
+
+  ScrollEditorPrevFx(window, wblock, wtrack, fxs);
+}
+
+void cursorNextSomething(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  window->must_redraw = false;
+
+  ScrollEditorNextSomething(window, wblock, wtrack);
+}
+
+void cursorPrevSomething(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  window->must_redraw = false;
+
+  ScrollEditorPrevSomething(window, wblock, wtrack);
 }
 
 void cursorPercentLine(int percent,int windownum){

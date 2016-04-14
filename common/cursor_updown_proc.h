@@ -21,9 +21,16 @@ extern LANGSPEC void ScrollEditorDown(struct Tracker_Windows *window,int num_lin
 
 extern LANGSPEC void ScrollEditorUp(struct Tracker_Windows *window,int num_lines);
 
-extern LANGSPEC void ScrollEditorNextNote(struct Tracker_Windows *window);
-extern LANGSPEC void ScrollEditorPrevNote(struct Tracker_Windows *window);
+extern LANGSPEC void ScrollEditorNextNote(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
+extern LANGSPEC void ScrollEditorPrevNote(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
+extern LANGSPEC void ScrollEditorNextVelocity(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
+extern LANGSPEC void ScrollEditorPrevVelocity(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
+extern LANGSPEC void ScrollEditorNextFx(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FXs *fxs);
+extern LANGSPEC void ScrollEditorPrevFx(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FXs *fxs);
+extern LANGSPEC void ScrollEditorNextSomething(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
+extern LANGSPEC void ScrollEditorPrevSomething(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
 
+  
 extern LANGSPEC void ScrollEditorToRealLine(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,

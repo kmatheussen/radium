@@ -62,39 +62,39 @@ vector_t *FXTEXTS_get(const struct WBlocks *wblock, const struct WTracks *wtrack
   return fxtexts;
 }
 
-static struct FXs *find_fxs(const struct Tracker_Windows *window, struct WTracks *wtrack, int *subsubtrack){
-  *subsubtrack = window->curr_track_sub;
+int FXTEXT_subsubtrack(const struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs **to_fxs){
+  if (wtrack->fxtext_on == false)
+    return -1;
+
+  int subsubtrack = window->curr_track_sub;
   
   if (wtrack->veltext_on == true)
-    *subsubtrack -= 3;
+    subsubtrack -= 3;
 
-  if (*subsubtrack < 0)
+  if (subsubtrack < 0)
     return false;
 
   struct FXs *fxs = wtrack->track->fxs;
   while(fxs!=NULL){
     
-    if (*subsubtrack == 0 || *subsubtrack == 1 || *subsubtrack == 2){
-      *subsubtrack = *subsubtrack;
-      return fxs;
+    if (subsubtrack == 0 || subsubtrack == 1 || subsubtrack == 2){
+      if (to_fxs!=NULL)
+        *to_fxs = fxs;
+      return subsubtrack;
     }
     
-    *subsubtrack -= 3;
+    subsubtrack -= 3;
     fxs = NextFX(fxs);
   }
   
-  return NULL;
+  return -1;
 }
 
 bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, Place *place, int key){
-
-  if (wtrack->fxtext_on == false)
-    return false;
-
-  int subsubtrack;
-    
-  struct FXs *fxs = find_fxs(window, wtrack, &subsubtrack);
-  if (fxs==NULL)
+  struct FXs *fxs;
+  
+  int subsubtrack = FXTEXT_subsubtrack(window, wtrack, &fxs);
+  if (subsubtrack==-1)
     return false;
 
   struct FX *fx = fxs->fx;

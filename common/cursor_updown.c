@@ -31,6 +31,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "blts_proc.h"
 #include "list_proc.h"
 #include "trackreallines2_proc.h"
+#include "centtext_proc.h"
+#include "veltext_proc.h"
+#include "fxtext_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
 #include "../api/api_proc.h"
@@ -200,11 +203,7 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 }
 
 
-void ScrollEditorNextNote(struct Tracker_Windows *window){
-	struct WBlocks *wblock=window->wblock;
-	struct WTracks *wtrack=wblock->wtrack;
-        vector_t *trs = TRS_get(wblock, wtrack);
-
+static void scroll_next(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, vector_t *trs){
 	int curr_realline=wblock->curr_realline;
 
         if(curr_realline==wblock->num_reallines-1){ // last line
@@ -223,12 +222,7 @@ void ScrollEditorNextNote(struct Tracker_Windows *window){
 	ScrollEditorDown(window,new_realline-curr_realline);
 }
 
-
-void ScrollEditorPrevNote(struct Tracker_Windows *window){
-	struct WBlocks *wblock=window->wblock;
-	struct WTracks *wtrack=wblock->wtrack;
-        vector_t *trs = TRS_get(wblock, wtrack);
-
+static void scroll_prev(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, vector_t *trs){
 	int curr_realline=wblock->curr_realline;
 
         if (curr_realline==0){
@@ -245,6 +239,79 @@ void ScrollEditorPrevNote(struct Tracker_Windows *window){
         }
 
 	ScrollEditorUp(window,curr_realline-new_realline);
+}
+
+void ScrollEditorNextNote(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
+        vector_t *trs = TRS_get(wblock, wtrack);
+
+        scroll_next(window, wblock, wtrack, trs);
+}
+
+
+void ScrollEditorPrevNote(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
+        vector_t *trs = TRS_get(wblock, wtrack);
+
+        scroll_prev(window, wblock, wtrack, trs);
+}
+
+void ScrollEditorNextVelocity(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
+        vector_t *trs = VELTEXTS_get(wblock, wtrack);
+
+        scroll_next(window, wblock, wtrack, trs);
+}
+
+void ScrollEditorPrevVelocity(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
+        vector_t *trs = VELTEXTS_get(wblock, wtrack);
+
+        scroll_prev(window, wblock, wtrack, trs);
+}
+
+void ScrollEditorNextFx(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FXs *fxs){
+        vector_t *trs = FXTEXTS_get(wblock, wtrack, fxs);
+
+        scroll_next(window, wblock, wtrack, trs);
+}
+
+void ScrollEditorPrevFx(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FXs *fxs){
+        vector_t *trs = FXTEXTS_get(wblock, wtrack, fxs);
+
+        scroll_prev(window, wblock, wtrack, trs);
+}
+
+void ScrollEditorNextSomething(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
+  if (window->curr_track < 0 || window->curr_track_sub==-1 || CENTTEXT_subsubtrack(window, wtrack)!=-1){
+    ScrollEditorNextNote(window, wblock, wtrack);
+    return;
+  }
+
+  if (VELTEXT_subsubtrack(window, wtrack) != -1){
+    ScrollEditorNextVelocity(window, wblock, wtrack);
+    return;
+  }
+
+  struct FXs *fxs;  
+  if (FXTEXT_subsubtrack(window, wtrack, &fxs) != -1){
+    ScrollEditorNextFx(window, wblock, wtrack, fxs);
+    return;
+  }
+}
+
+void ScrollEditorPrevSomething(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
+  if (window->curr_track < 0 || window->curr_track_sub==-1 || CENTTEXT_subsubtrack(window, wtrack)!=-1){
+    ScrollEditorPrevNote(window, wblock, wtrack);
+    return;
+  }
+
+  if (VELTEXT_subsubtrack(window, wtrack) != -1){
+    ScrollEditorPrevVelocity(window, wblock, wtrack);
+    return;
+  }
+
+  struct FXs *fxs;  
+  if (FXTEXT_subsubtrack(window, wtrack, &fxs) != -1){
+    ScrollEditorPrevFx(window, wblock, wtrack, fxs);
+    return;
+  }
 }
 
 void ScrollEditorToRealLine(

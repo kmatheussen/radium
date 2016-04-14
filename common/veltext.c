@@ -95,22 +95,32 @@ vector_t *VELTEXTS_get(const struct WBlocks *wblock, const struct WTracks *wtrac
   return veltexts;
 }
 
-
-bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, Place *place, int key){
+int VELTEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrack){
   int curr_track_sub = window->curr_track_sub;
 
   if (wtrack->veltext_on == false)
-    return false;
+    return -1;
 
   if (wtrack->centtext_on)
     curr_track_sub -= 2;
   
   if (curr_track_sub < 0)
-    return false;
+    return -1;
 
   if (curr_track_sub > 2)
-    return false;
+    return -1;
 
+  return curr_track_sub;
+}
+
+
+
+bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, Place *place, int key){
+  int subsubtrack = VELTEXT_subsubtrack(window, wtrack);
+
+  if (subsubtrack==-1)
+    return false;
+  
   vector_t *veltexts = VELTEXTS_get(wblock, wtrack);
 
   vector_t *veltext = &veltexts[realline];
@@ -152,7 +162,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
       
     } else {
 
-      data_as_text_t dat = DAT_get_newvalue(curr_track_sub, key, NOTE_get_velocity(wtrack->track), 0, MAX_VELOCITY);
+      data_as_text_t dat = DAT_get_newvalue(subsubtrack, key, NOTE_get_velocity(wtrack->track), 0, MAX_VELOCITY);
 
       if (dat.is_valid==false)
         return false;
@@ -173,7 +183,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
     if (key == EVENT_DEL && velocity != NULL) {
 
       PLAYER_lock();{
-        if (curr_track_sub == 2)
+        if (subsubtrack == 2)
           velocity->logtype = LOGTYPE_LINEAR;
         else
           ListRemoveElement3(&note->velocities, &velocity->l);
@@ -181,7 +191,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
       
     } else {
 
-      data_as_text_t dat = DAT_get_overwrite(vt->value, vt->logtype, curr_track_sub, key, 0, MAX_VELOCITY, true);
+      data_as_text_t dat = DAT_get_overwrite(vt->value, vt->logtype, subsubtrack, key, 0, MAX_VELOCITY, true);
 
       if (dat.is_valid==false)
         return false;

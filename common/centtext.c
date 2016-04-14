@@ -29,20 +29,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "centtext_proc.h"
 
-
-
-bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, Place *place, int key){
+int CENTTEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrack){
   int curr_track_sub = window->curr_track_sub;
-
   if (wtrack->centtext_on == false)
-    return false;
+    return -1;
 
   if (curr_track_sub < 0)
-    return false;
+    return -1;
 
   if (curr_track_sub >= 2)
-    return false;
+    return -1;
 
+  return curr_track_sub;
+}
+
+bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, Place *place, int key){
+  int subsubtrack = CENTTEXT_subsubtrack(window, wtrack);
+
+  if (subsubtrack==-1)
+    return false;
+  
   vector_t *trs = TRS_get(wblock, wtrack);
 
   vector_t *tr = &trs[realline];
@@ -102,7 +108,7 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
 
       int cents = round((note - floor(note)) * 100);
         
-      data_as_text_t dat = DAT_get_overwrite(cents, 0, curr_track_sub, key, 0, 99, false);
+      data_as_text_t dat = DAT_get_overwrite(cents, 0, subsubtrack, key, 0, 99, false);
 
       if (dat.is_valid==false)
         return false;
