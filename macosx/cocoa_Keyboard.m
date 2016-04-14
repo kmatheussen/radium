@@ -112,7 +112,8 @@ int OS_SYSTEM_get_modifier(void *void_event){
     //return EVENT_EXTRA_R;
   case 55: // Left Command
     return EVENT_EXTRA_L;
-  //case 57: // Capslock
+  case 57: // Capslock
+    return EVENT_CAPS;
   case 56: // Left Shift
     return EVENT_SHIFT_L;
   case 60: // Right Shift
