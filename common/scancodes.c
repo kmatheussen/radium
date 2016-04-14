@@ -39,7 +39,7 @@ static void init_scancodes(void){
   s(17, 	QWERTY_I);
   s(18, 	QWERTY_O);
   s(19, 	QWERTY_P);    s(39, 	SPACE);
-  s(1A, 	PR1);
+  s(1A, 	PR1);         s(3A,     CAPS);
   s(1B, 	PR2);         s(3B, 	F1);
   s(1C,  	RETURN);      s(3C, 	F2);
                               s(3D, 	F3);
