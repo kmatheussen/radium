@@ -220,7 +220,8 @@ static void init_keymaps(void){
 
   // row 6
   keymap[kVK_Space] = EVENT_SPACE;
-
+  keymap[54] = EVENT_MENU; // I.e. EXTRA_R
+  
   // insert/del/etc.
   keymap[kVK_Help] = EVENT_INSERT;
   keymap[kVK_Home] = EVENT_HOME;
