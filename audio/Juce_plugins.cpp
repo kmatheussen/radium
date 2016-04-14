@@ -204,6 +204,8 @@ namespace{
         this->setTopLeftPosition(data->x, data->y);
       }
 
+      this->setAlwaysOnTop(true);
+        
       this->setVisible(true);
     }
 
