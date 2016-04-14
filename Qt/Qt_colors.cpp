@@ -85,7 +85,7 @@ static const ColorConfig g_colorconfig[] = {
   {SLIDER1_COLOR_NUM,           "slider1",            "Slider 1"},
   {SLIDER2_COLOR_NUM,           "slider2",            "Slider 2"},
   {SLIDER_DISABLED_COLOR_NUM,   "slider_disabled",    "Slider disabled"},
-  {SLIDER_TEXT_COLOR_NUM,       "slider_text",        "Slidet Text"},
+  {SLIDER_TEXT_COLOR_NUM,       "slider_text",        "Slider Text"},
    
   {PEAKS_COLOR_NUM,             "peaks",                    "Peaks < 0dB"},
   {PEAKS_0DB_COLOR_NUM,         "peaks0db",                 "Peaks 0dB - 4dB"},
@@ -126,6 +126,8 @@ static const ColorConfig g_colorconfig[] = {
   {CURSOR_EDIT_OFF_COLOR_NUM,     "cursor_edit_off",  "Cursor, edit OFF"},
   {PLAY_CURSOR_COLOR_NUM,     "play_cursor_edit_off",  "Play cursor"},
 
+  {MIXER_TEXT_COLOR_NUM, "mixer_text_color", "Mixer text color"},
+  
   {END_CONFIG_COLOR_NUM, NULL, NULL}
 };
 
@@ -186,7 +188,9 @@ static ReplacementColor g_replacement_color[] = {
   {SLIDER_TEXT_COLOR_NUM, QColor(0,0,0)},
   {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor(1,1,1)},
   {PLAY_CURSOR_COLOR_NUM, QColor(255, 0, 0)},
-  
+
+  {MIXER_TEXT_COLOR_NUM, QColor(1,1,1)},
+
   {END_CONFIG_COLOR_NUM, QColor(1,2,3)}
 };
 

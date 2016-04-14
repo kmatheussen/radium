@@ -1011,7 +1011,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     float width = x2-x1;
 
     {
-      QColor c = get_qcolor(BLACK_COLOR_NUM);
+      QColor c = get_qcolor(MIXER_TEXT_COLOR_NUM);
       if(is_current_patch==false)
         c.setAlpha(160);
 
