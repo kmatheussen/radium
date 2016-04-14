@@ -168,7 +168,8 @@ Place getPlaceFromY(float y, int blocknum, int windownum) {
                            NULL,
                            NULL
                            );
-  
+
+  //printf("Got place %s\n",PlaceToString(&place));
   return place;
 }
 
@@ -203,6 +204,8 @@ Place getPlaceInGridFromY(float y, int blocknum, int windownum) {
                            NULL,
                            NULL
                            );
+
+  //printf("Got grid-place %s\n",PlaceToString(&place));
   
   return place;
 }

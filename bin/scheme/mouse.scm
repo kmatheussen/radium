@@ -1133,7 +1133,15 @@
 
 
 
-
+;; notes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (note-spans-last-place notenum tracknum)
+  (define num-nodes (<ra> :get-num-velocities notenum tracknum))
+  (and (= (-line (<ra> :get-num-lines))
+          (<ra> :get-velocity-place
+                (1- num-nodes)
+                notenum
+                tracknum))))
 
 ;; pitches
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1646,6 +1654,16 @@
                                                        (if maybe
                                                            (set-linear!)
                                                            (set-hold!)))))
+                                           (let ((note-spans-last-place (note-spans-last-place (pianonote-info :notenum)
+                                                                                               (pianonote-info :tracknum))))
+                                             (list "continue playing note into next block"
+                                                   :check (and note-spans-last-place
+                                                               (<ra> :note-continues-next-block (pianonote-info :notenum) (pianonote-info :tracknum)))
+                                                   :enabled note-spans-last-place
+                                                   (lambda (maybe)
+                                                     (<ra> :set-note-continue-next-block maybe (pianonote-info :notenum) (pianonote-info :tracknum)))))
+
+
                                            ;;"--------"
                                            ;;"Glide to end position" :check portamento-enabled :enabled (< num-pianonotes 2) (lambda (ison)
                                            ;;                                                                                  (c-display "   ______________________________   Glide2 called " ison)
@@ -1856,7 +1874,6 @@
                                                                                    (velocity-info :tracknum)))
                                               (set-velocity-statusbar-text value))
                         :Move-node (lambda (velocity-info Value Place)
-                                     (c-display "Place: " Place)
                                      (define note-num (<ra> :set-velocity3 (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
                                      (make-velocity-info :tracknum (velocity-info :tracknum)
                                                          :notenum note-num
@@ -1925,32 +1942,28 @@
                                     (num-nodes (<ra> :get-num-velocities (velocity-info :notenum) (velocity-info :tracknum)))
                                     (is-last-node (= (velocity-info :velocitynum)
                                                      (1- num-nodes)))
-                                    (is-last-place (and is-last-node
-                                                        (= (-line (<ra> :get-num-lines))
-                                                           (<ra> :get-velocity-place
-                                                                 (velocity-info :velocitynum)
-                                                                 (velocity-info :notenum)
-                                                                 (velocity-info :tracknum))))))
-                               (c-display "place" (<ra> :get-velocity-place
-                                                          (velocity-info :velocitynum)
-                                                          (velocity-info :notenum)
-                                                          (velocity-info :tracknum))
-                                            (-line (<ra> :get-num-lines)))
-                                 (popup-menu "Delete Velocity" delete-velocity!
-                                             (list "glide"
-                                                   :check (and (not is-holding)
-                                                               (not is-last-node))
-                                                   :enabled (not is-last-node)
-                                                   (lambda (maybe)
-                                                     (if maybe
-                                                         (set-linear!)
-                                                         (set-hold!))))
-                                             (list "continue playing note into next block"
-                                                   :check (and is-last-place
-                                                               (<ra> :note-continues-next-block (velocity-info :notenum) (velocity-info :tracknum)))
-                                                   :enabled is-last-place
-                                                   (lambda (maybe)
-                                                     (<ra> :set-note-continue-next-block maybe (velocity-info :notenum) (velocity-info :tracknum))))))
+                                    (note-spans-last-place (note-spans-last-place (velocity-info :notenum)
+                                                                                  (velocity-info :tracknum))))
+                               '(c-display "place" (<ra> :get-velocity-place
+                                                        (velocity-info :velocitynum)
+                                                        (velocity-info :notenum)
+                                                        (velocity-info :tracknum))
+                                          (-line (<ra> :get-num-lines)))
+                               (popup-menu "Delete Velocity" delete-velocity!
+                                           (list "glide"
+                                                 :check (and (not is-holding)
+                                                             (not is-last-node))
+                                                 :enabled (not is-last-node)
+                                                 (lambda (maybe)
+                                                   (if maybe
+                                                       (set-linear!)
+                                                       (set-hold!))))
+                                           (list "continue playing note into next block"
+                                                 :check (and note-spans-last-place
+                                                             (<ra> :note-continues-next-block (velocity-info :notenum) (velocity-info :tracknum)))
+                                                 :enabled note-spans-last-place
+                                                 (lambda (maybe)
+                                                   (<ra> :set-note-continue-next-block maybe (velocity-info :notenum) (velocity-info :tracknum))))))
                              #t)
                            #f))))))
 

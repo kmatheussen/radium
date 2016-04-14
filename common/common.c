@@ -292,7 +292,7 @@ int GetReallineAndPlaceFromY(
           minplace = PlaceGetFirstPos();
         
         if(maxplace==NULL)
-          maxplace = PlaceGetLastPos(wblock->block);
+          maxplace = PlaceCreate(num_reallines,0,1);
         
 	if(PlaceLessOrEqual(&temp,minplace)){
 		if(ret>=0) ret=window->fontheight*(ret-FindRealLineFor(wblock,0,minplace));
