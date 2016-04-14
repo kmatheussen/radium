@@ -193,18 +193,17 @@ namespace{
       , data(data)
       , title(title)
     {
+      this->setAlwaysOnTop(true);
       this->setSize (400, 300);
       this->setUsingNativeTitleBar(true);
-
+      
       this->setContentOwned(editor, true);
       
       if (data->x <= 0 || data->y <= 0) {
         this->centreWithSize (getWidth(), getHeight());
       } else {
         this->setTopLeftPosition(data->x, data->y);
-      }
-
-      this->setAlwaysOnTop(true);
+      }      
         
       this->setVisible(true);
     }
