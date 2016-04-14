@@ -190,6 +190,14 @@ void enablePlayCursor(bool onoff){
   window->must_redraw = true;
 }
 
+bool playCursorEnabled(void){
+  return ATOMIC_GET(root->play_cursor_onoff);
+}
+
+void switchPlayCursorOnOff(void){
+  return enablePlayCursor(!playCursorEnabled());
+}
+
 void enableEditorFollowsPlayCursor(bool onoff){
   ATOMIC_SET(root->editor_follows_play_cursor_onoff, onoff);
   
