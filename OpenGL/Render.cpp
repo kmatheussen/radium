@@ -1385,18 +1385,11 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
         GE_unset_x_scissor();
       }
 
-      if (is_continuing)
-        GE_line(c,
-                nodeline->x1, nodeline->y1,
-                nodeline->x2, nodeline->y2+15,
-                note_width
-                );
-      else
-        GE_line(c,
-                nodeline->x1, nodeline->y1,
-                nodeline->x2, nodeline->y2,
-                note_width
-                );
+      GE_line(c,
+              nodeline->x1, nodeline->y1,
+              nodeline->x2, nodeline->y2,
+              note_width
+              );
 
       //float x_min = R_MIN(nodeline->x1, nodeline->x2);
       //float x_max = R_MAX(nodeline->x1, nodeline->x2);
@@ -1431,7 +1424,22 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
                    nodelineBox.x2, nodelineBox.y2,
                    1.0
                    );
-
+          else { 
+            // box (without the x1,y2 -> x2,y2 line)
+            GE_line(border_color,
+                    nodelineBox.x1,nodelineBox.y1,
+                    nodelineBox.x2,nodelineBox.y1,
+                    1.0);
+            GE_line(border_color,
+                    nodelineBox.x2,nodelineBox.y1,
+                    nodelineBox.x2,nodelineBox.y2,
+                    1.0);
+            GE_line(border_color,
+                    nodelineBox.x1,nodelineBox.y1,
+                    nodelineBox.x1,nodelineBox.y2,
+                    1.0);
+          }
+          
           struct Pitches *pitch = (struct Pitches*)nodeline->element1;
           float  notenum = pitch->note;
 
@@ -1450,48 +1458,70 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
           }
 
           if (is_continuing){
+
+            float midpos = nodeline->x2;
+
             float dx = 5;
-            float x1 = nodelineBox.x1 - dx;
-            float x =  nodeline->x2;
-            float x2 = nodelineBox.x2 + dx;
+            
+            float x1 = midpos - note_width/2; //nodelineBox.x1 - dx;
+            float dx1 = x1 - dx;
+            
+            float x =  midpos; //nodeline->x2;
+            
+            float x2 = midpos + note_width/2; //nodelineBox.x2 + dx;
+            float dx2 = x2 + dx;
+
+            float y0 = nodeline->y2;
             float y1 = nodeline->y2 + 15;
             float y2 = nodeline->y2 + 25;
           
+            GE_filledBox(c,
+                         x1, y0,
+                         x2, y1
+                         );
+            
             GE_trianglestrip_start();
-            GE_trianglestrip_add(c,x1,y1);
-            GE_trianglestrip_add(c,x2,y1);
+
+            GE_trianglestrip_add(c,dx1,y1);
+            GE_trianglestrip_add(c,dx2,y1);
             GE_trianglestrip_add(c,x,y2);
             GE_trianglestrip_end(c);
 
-            // box (without the x1,y2 -> x2,y2 line)
-            GE_box(border_color,
-                   nodelineBox.x1,nodelineBox.y1,
-                   nodelineBox.x2,nodelineBox.y1,
-                   1.0);
-            GE_box(border_color,
-                   nodelineBox.x2,nodelineBox.y1,
-                   nodelineBox.x2,y1,
-                   1.0);
-            GE_box(border_color,
-                   nodelineBox.x1,nodelineBox.y1,
-                   nodelineBox.x1,y1,
-                   1.0);
-          
+            // Connecting lines between the two objects
+            GE_line(border_color,
+                    x1, y0,
+                    nodelineBox.x1, y0,
+                    1.0);            
+            GE_line(border_color,
+                    x2, y0,
+                    nodelineBox.x2, y0,
+                    1.0);
+
+            GE_line(border_color,
+                    x1, y0,
+                    x1, y1,
+                    1.0);
+            GE_line(border_color,
+                    x2, y0,
+                    x2, y1,
+                    1.0);
+            
+            
             // arrow
             GE_line(border_color,
+                    dx1,y1,
                     x1,y1,
-                    nodelineBox.x1,y1,
                     1.0);
             GE_line(border_color,
-                    nodelineBox.x2,y1,
                     x2,y1,
+                    dx2,y1,
                     1.0);
             GE_line(border_color,
-                    x1,y1,
+                    dx1,y1,
                     x,y2,
                     1.0);
             GE_line(border_color,
-                    x2,y1,
+                    dx2,y1,
                     x,y2,
                     1.0);
           }
