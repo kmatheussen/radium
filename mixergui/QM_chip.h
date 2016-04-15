@@ -90,7 +90,7 @@ public:
 
   QPen getPen(){
     QPen pen(Qt::gray, 50);
-    pen.setWidth(3);
+    pen.setWidthF(1.2);
     pen.setJoinStyle(Qt::RoundJoin);
     pen.setCapStyle(Qt::RoundCap);
     //pen.setColor(QColor(30,25,70,6));
