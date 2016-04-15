@@ -331,8 +331,8 @@ bool CHIP_is_at_output_eport(Chip *chip, int x, int y){
 
 
 static void paint_checkbutton(QPainter *painter, int x1, int y1, int x2, int y2, bool is_on){
-  painter->setPen(QPen(Qt::black, 2));
-
+  painter->setPen(QPen(get_qcolor(MIXER_BORDER_COLOR_NUM), 2));
+  
   painter->drawRect(x1, y1, x2-x1, y2-y1);
   if(is_on){
     QColor c(10,12,30,65);
@@ -903,7 +903,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
   bool is_current_patch = get_current_instruments_gui_patch()==patch;
 
-  QColor border_color = get_qcolor(BLACK_COLOR_NUM);
+  QColor border_color = get_qcolor(MIXER_BORDER_COLOR_NUM);
   if(is_current_patch==false)
     border_color.setAlpha(160);
 
@@ -937,7 +937,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     button_x2 = x2;
 
     {
-      QColor c = get_qcolor(BLACK_COLOR_NUM);
+      QColor c = get_qcolor(MIXER_BORDER_COLOR_NUM);
       c.setAlpha(10);
       painter->setBrush(QBrush(c,Qt::SolidPattern));
       painter->fillRect(x1,y1,x2-x1,y2-y1, c);

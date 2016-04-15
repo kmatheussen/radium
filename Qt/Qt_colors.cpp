@@ -93,9 +93,6 @@ static const ColorConfig g_colorconfig[] = {
 
   {PIANONOTE_COLOR_NUM,         "pianonote",                "Pianoroll note"},
 
-  {NOTE_EVENT_INDICATOR_COLOR_NUM, "note_event_indicator",  "Note event indicator"},
-  {NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM, "note_event_indicator_border",  "Note event indicator border"},
-
   {AUTOMATION4_COLOR_NUM,                   "automation4",  "Automation 4"},
   {AUTOMATION5_COLOR_NUM,                   "automation5",  "Automation 5"},
   {AUTOMATION6_COLOR_NUM,                   "automation6",  "Automation 6"},
@@ -127,6 +124,10 @@ static const ColorConfig g_colorconfig[] = {
   {PLAY_CURSOR_COLOR_NUM,     "play_cursor_edit_off",  "Play cursor"},
 
   {MIXER_TEXT_COLOR_NUM, "mixer_text_color", "Mixer text color"},
+  {MIXER_BORDER_COLOR_NUM, "mixer_border_color", "Mixer border color"},
+  
+  {NOTE_EVENT_INDICATOR_COLOR_NUM, "note_event_indicator",  "Note event indicator"},
+  {NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM, "note_event_indicator_border",  "Note event indicator border"},
   
   {END_CONFIG_COLOR_NUM, NULL, NULL}
 };
@@ -190,6 +191,7 @@ static ReplacementColor g_replacement_color[] = {
   {PLAY_CURSOR_COLOR_NUM, QColor(255, 0, 0)},
 
   {MIXER_TEXT_COLOR_NUM, QColor(1,1,1)},
+  {MIXER_BORDER_COLOR_NUM, QColor(1,1,1)},
 
   {END_CONFIG_COLOR_NUM, QColor(1,2,3)}
 };
