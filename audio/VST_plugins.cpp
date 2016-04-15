@@ -1272,7 +1272,6 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
   return true;
 }
 
-#if !defined(FOR_MACOSX)
 static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, bool is_juce_plugin)
 {
   QDir dir(sDir);
@@ -1298,6 +1297,22 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
         return false;
     }
 
+#if FOR_MACOSX
+    QDir dir(file_info.absoluteFilePath() + "/Contents/MacOS/");
+    if (dir.exists()) {
+      dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
+      dir.setSorting(QDir::Name);
+        
+      QFileInfoList list = dir.entryInfoList();
+      for (int i = 0; i < list.size(); ++i) {
+        QFileInfo fileInfo = list.at(i);
+        if (add_vst_plugin_type(fileInfo, file_info.absoluteFilePath(), is_juce_plugin)==true)
+          break; // i.e. there was a file in that directory that probably was a vst library file we could run.
+      }
+
+    } else
+#endif
+      
     if (file_info.isDir()) {
       PR_add_menu_entry(PluginMenuEntry::level_up(file_info.baseName().toUtf8().constData()));
       bool continuing = create_vst_plugins_recursively(file_path, time, is_juce_plugin);
@@ -1305,22 +1320,30 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
 
       if (!continuing)
         return false;
-        
-    }else if(file_info.suffix().toLower()==VST_SUFFIX || file_info.suffix().toLower()==VST3_SUFFIX){
+    }
+    
+#if !defined(FOR_MACOSX)       
+    else if(file_info.suffix().toLower()==VST_SUFFIX || file_info.suffix().toLower()==VST3_SUFFIX){
       add_vst_plugin_type(file_info, file_path, is_juce_plugin);
     }
+#endif
   }
 
   return true;
 }
-#endif
 
 
 void create_vst_plugins(bool is_juce_plugin){
 
-#if defined(FOR_MACOSX)
-  QDir dir("/Library/Audio/Plug-Ins/VST/");
+  QTime time;
+  time.start();
 
+#if defined(FOR_MACOSX)
+
+  create_vst_plugins_recursively("/Library/Audio/Plug-Ins/VST/", &time, is_juce_plugin);
+
+  #if 0
+  QDir dir("/Library/Audio/Plug-Ins/VST/");
   //Digits.vst/Contents/MacOS/Digits 
 
   dir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
@@ -1341,15 +1364,14 @@ void create_vst_plugins(bool is_juce_plugin){
         break; // i.e. there was a file in that directory that probably was a vst library file we could run.
     }
   }
-
+  #endif
+  
 #else // !defined(FOR_MACOSX)
-  QTime time;
-  time.start();
-
+  
   int num_paths = SETTINGS_read_int("num_vst_paths", 0);
 
   for(int i=0;i<num_paths; i++){
-    QString vst_path = SETTINGS_read_qstring(QString("vst_path")+QString::number(i), QString(""));
+    QString vst_path = SETTINGS_read_qstring(QString("vst_path")+QString::number(i), i==0 ? QString(""));
     if(vst_path=="")
       continue;
     printf("vst_path: %s\n",vst_path.toUtf8().constData());
