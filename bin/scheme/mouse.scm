@@ -903,7 +903,9 @@
                                             (>= X (<ra> :get-track-x1 0))
                                             (< Y (<ra> :get-track-pan-on-off-y1)))
                                        (if (= Button *right-button*)
-                                           (track-configuration-popup X Y)
+                                           (if (<ra> :shift-pressed)
+                                               (<ra> :delete-track *current-track-num*)
+                                               (track-configuration-popup X Y))
                                            (<ra> :set-track-patch *current-track-num*))
                                        #f)
                                       (else
