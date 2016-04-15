@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_proc.h"
 #include "../common/settings_proc.h"
 
+#include "../api/api_proc.h"
+
 #include "EditorWidget.h"
 #include "Qt_colors_proc.h"
 
@@ -285,6 +287,9 @@ public:
     connect(&playlist, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(playlist_doubleclicked(QListWidgetItem*)));
 #endif
 
+    connect(&blocklist, SIGNAL(itemPressed(QListWidgetItem*)), this, SLOT(blocklist_itemPressed(QListWidgetItem*)));
+    connect(&playlist, SIGNAL(itemPressed(QListWidgetItem*)), this, SLOT(playlist_itemPressed(QListWidgetItem*)));
+      
     connect(&add_button, SIGNAL(pressed()), this, SLOT(add_to_playlist()));
     connect(&remove_button, SIGNAL(pressed()), this, SLOT(remove_from_playlist()));
 
@@ -382,11 +387,12 @@ private slots:
   void blocklist_highlighted(int num){
     if(num==-1)
       return;
-    //printf("num: %d\n",num);
 
     if(num_visitors>0) // event created internally
       return;
 
+    printf("block high num: %d\n",num);
+    
     bool wasplaying = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
 
     PlayStop();
@@ -408,6 +414,21 @@ private slots:
     add_to_playlist();
   }
 
+  void blocklist_itemPressed(QListWidgetItem * item){
+    printf("pressed: %d\n",(int)QApplication::mouseButtons());
+    
+    if (QApplication::mouseButtons()==Qt::RightButton){
+      
+      // First make sure this one is selected.
+      int pos = blocklist.currentItem();
+      blocklist_highlighted(pos);
+      
+      if (shiftPressed()){
+        deleteBlock(-1);
+      }
+    }
+  }
+  
   void playlist_highlighted(int num){
     if(num==-1)
       return;
@@ -430,6 +451,17 @@ private slots:
       PlaySongCurrPos(window);
   }
 
+  void playlist_itemPressed(QListWidgetItem * item){
+    printf("pressed 2: %d\n",(int)QApplication::mouseButtons());
+    
+    if (QApplication::mouseButtons()==Qt::RightButton){
+      
+      if (shiftPressed()){
+        remove_from_playlist();
+      }
+    }
+  }
+  
   void playlist_selected(int num){
     remove_from_playlist();
   }
