@@ -81,7 +81,7 @@ public:
 
     bool gotit = false;
     
-    if(event->button()==Qt::RightButton && is_blocklist){
+    if(event->button()==Qt::RightButton && is_blocklist && shiftPressed()==false){
     
       //printf("mouse pressed %d %d %p\n",(int)event->buttons(),is_blocklist,item);
       
