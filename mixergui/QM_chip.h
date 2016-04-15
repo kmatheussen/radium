@@ -76,6 +76,7 @@ struct SoundPlugin;
 
 #include "../audio/SoundProducer_proc.h"
 #include "../Qt/Qt_SliderPainter_proc.h"
+#include "../Qt/Qt_colors_proc.h"
 
 
 
@@ -93,10 +94,15 @@ public:
     pen.setJoinStyle(Qt::RoundJoin);
     pen.setCapStyle(Qt::RoundCap);
     //pen.setColor(QColor(30,25,70,6));
-    if(_is_event_connection)
-      pen.setColor(QColor(30,95,70,140));
-    else
-      pen.setColor(QColor(50,25,70,140));
+    if(_is_event_connection){
+      QColor c = get_qcolor(MIXER_EVENT_CONNECTION_COLOR_NUM);
+      c.setAlpha(140);
+      pen.setColor(c); //
+    }else{
+      QColor c = get_qcolor(MIXER_AUDIO_CONNECTION_COLOR_NUM);
+      c.setAlpha(140);
+      pen.setColor(c);//
+    }
     return pen;
   }
 
@@ -133,6 +139,13 @@ public:
     */
   }
 
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
+             QWidget *widget)
+  {
+    update_colors();
+    QGraphicsLineItem::paint(painter,option,widget);    
+  }
+
   Chip *from;
   Chip *to;
   bool is_selected;
@@ -164,6 +177,10 @@ public:
     QGraphicsLineItem::setLine(x1-14,y1,x2+14,y2);
   }
 
+  void update_colors(void){
+    visible_line.setPen(getPen());
+  }
+  
   void update_position(void);
 
 #if 0

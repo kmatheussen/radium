@@ -128,6 +128,9 @@ static const ColorConfig g_colorconfig[] = {
   
   {NOTE_EVENT_INDICATOR_COLOR_NUM, "note_event_indicator",  "Note event indicator"},
   {NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM, "note_event_indicator_border",  "Note event indicator border"},
+
+  {MIXER_EVENT_CONNECTION_COLOR_NUM, "mixer_event_connection_color", "Event connection color"},
+  {MIXER_AUDIO_CONNECTION_COLOR_NUM, "mixer_audio_connection_color", "Audio connection color"},
   
   {END_CONFIG_COLOR_NUM, NULL, NULL}
 };
@@ -192,6 +195,9 @@ static ReplacementColor g_replacement_color[] = {
 
   {MIXER_TEXT_COLOR_NUM, QColor(1,1,1)},
   {MIXER_BORDER_COLOR_NUM, QColor(1,1,1)},
+
+  {MIXER_EVENT_CONNECTION_COLOR_NUM, QColor(30,95,70,140)},
+  {MIXER_AUDIO_CONNECTION_COLOR_NUM, QColor(50,25,70,140)},
 
   {END_CONFIG_COLOR_NUM, QColor(1,2,3)}
 };
