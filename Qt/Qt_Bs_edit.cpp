@@ -50,7 +50,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 namespace{
 class QListBox : public QListWidget{
 public:
-  QListBox(QWidget *parent) : QListWidget(parent) {}
+  bool is_blocklist;
+  
+  QListBox(QWidget *parent, bool is_blocklist)
+    : QListWidget(parent)
+    , is_blocklist(is_blocklist)
+  {
+  }
   void insertItem(QString text){
     QListWidget::addItem(text);
   }
@@ -66,6 +72,40 @@ public:
   void removeItem(int pos){
     QListWidget::takeItem(pos);
   }
+
+  // popup menu
+  void mousePressEvent(QMouseEvent *event){
+    QListWidgetItem *item = itemAt(event->pos());
+
+    QListWidget::mousePressEvent(event);
+
+    bool gotit = false;
+    
+    if(event->button()==Qt::RightButton && is_blocklist){
+    
+      //printf("mouse pressed %d %d %p\n",(int)event->buttons(),is_blocklist,item);
+      
+      int result = popupMenu(talloc_format("Insert new block%%Append new block%%%sDelete block",item==NULL?"[disabled]":""));
+      //printf("result: %d\n",result);
+
+      if (result != -1){
+        //int pos = currentItem();
+        //printf("pos: %d\n",pos);
+        if (result==0){
+          insertBlock(-1);
+        } else if (result==1){
+          appendBlock();
+        } else if (result==2){
+          deleteBlock(-1);
+        }
+        gotit = true;
+      }
+    }
+    
+    if (gotit)
+      event->accept();
+  }
+
 };
 }
 
@@ -255,8 +295,8 @@ public:
     , remove_button("Remove",this)
     , move_down_button(QString::fromUtf8("\u21e9"), this)
     , move_up_button(QString::fromUtf8("\u21e7"), this)
-    , playlist(this)
-    , blocklist(this)
+    , playlist(this, false)
+    , blocklist(this, true)
     , last_shown_width(0) // frustrating: SETTINGS_read_int((char*)"blocklist_width",0))
   {
     button_width = add_button.width();

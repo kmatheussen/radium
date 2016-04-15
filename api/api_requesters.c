@@ -140,13 +140,13 @@ int requestMenu(char *text, PyObject* arguments){
   return 0;
 }
 
-int popupMenu(char *texts){
+int popupMenu(const char *texts){
   struct Tracker_Windows *window=getWindowFromNum(-1);
   vector_t *vec = GFX_MenuParser(texts, "%");
   return GFX_Menu(window, NULL,"",vec);
 }
 
-int popupMenu2(char *texts, func_t* callback){
+int popupMenu2(const char *texts, func_t* callback){
   struct Tracker_Windows *window=getWindowFromNum(-1);
   vector_t *vec = GFX_MenuParser(texts, "%");
   return GFX_Menu2(window, NULL,"",vec, callback);
