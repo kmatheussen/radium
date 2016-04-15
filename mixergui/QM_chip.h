@@ -88,21 +88,23 @@ public:
 
   bool _is_event_connection;
 
+  QColor getColor(){
+    if(_is_event_connection){
+      return get_qcolor(MIXER_EVENT_CONNECTION_COLOR_NUM);
+    }else{
+      return get_qcolor(MIXER_AUDIO_CONNECTION_COLOR_NUM);
+    }
+  }
+  
   QPen getPen(){
     QPen pen(Qt::gray, 50);
     pen.setWidthF(1.2);
     pen.setJoinStyle(Qt::RoundJoin);
     pen.setCapStyle(Qt::RoundCap);
     //pen.setColor(QColor(30,25,70,6));
-    if(_is_event_connection){
-      QColor c = get_qcolor(MIXER_EVENT_CONNECTION_COLOR_NUM);
-      c.setAlpha(140);
-      pen.setColor(c); //
-    }else{
-      QColor c = get_qcolor(MIXER_AUDIO_CONNECTION_COLOR_NUM);
-      c.setAlpha(140);
-      pen.setColor(c);//
-    }
+    QColor c = getColor();
+    c.setAlpha(140);
+    pen.setColor(c);
     return pen;
   }
 
@@ -119,13 +121,14 @@ public:
     pen.setJoinStyle(Qt::RoundJoin);
     pen.setCapStyle(Qt::RoundCap);
     pen.setColor(QColor(30,25,70,6));
-
+    pen.setWidth(3);
+    
     setPen(pen);
     //_line_item->setPen(QPen(Qt::black, 2));
     //_line_item->setPos(QPointF(x+50,y+50));
 
-    setZValue(-2);
-
+    setZValue(-2);    
+    
     setAcceptHoverEvents(true);
 
     visible_line.setPen(getPen());
@@ -174,7 +177,7 @@ public:
     QGraphicsLineItem::setLine(x1-14,y1,x2+14,y2);
     */
 
-    QGraphicsLineItem::setLine(x1-14,y1,x2+14,y2);
+    QGraphicsLineItem::setLine(x1,y1,x2,y2);
   }
 
   void update_colors(void){
@@ -194,20 +197,29 @@ public:
   void hoverEnterEvent ( QGraphicsSceneHoverEvent * event ){
     //printf("hover enter\n");
 
+    /*
     QPen pen(Qt::gray,6);
     pen.setJoinStyle(Qt::RoundJoin);
     pen.setCapStyle(Qt::RoundCap);
     pen.setColor(QColor(120,35,50,40));
 
     visible_line.setPen(pen);
-
+    */
+    
     {
       QPen pen(Qt::gray, 50);
       pen.setJoinStyle(Qt::RoundJoin);
       pen.setCapStyle(Qt::RoundCap);
-      pen.setColor(QColor(120,35,50,18));
-      //pen.setColor(QColor(30,25,70,18));
+      //pen.setMiterLimit(0);
 
+      QColor c = getColor();
+      c.setAlpha(100);
+      pen.setColor(c);
+      
+      //pen.setColor(QColor(120,35,50,18));
+      //pen.setColor(QColor(30,25,70,18));
+      pen.setWidthF(26);
+      
       setPen(pen);
     }
   }
@@ -222,7 +234,7 @@ public:
     pen.setColor(QColor(30,25,70,40));
     */
 
-    visible_line.setPen(getPen());
+    //visible_line.setPen(getPen());
 
     {
       QPen pen(Qt::gray, 50);
