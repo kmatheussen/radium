@@ -844,12 +844,13 @@
 ;; reset slider value
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)                                
-                                (cond ((inside-box (<ra> :get-box reltempo-slider) X Y)
-                                       (<ra> :undo-reltempo)
-                                       (<ra> :set-reltempo 1.0)
-                                       #f)
-                                      (else
-                                       #f)))))
+                                (if (inside-box (<ra> :get-box reltempo-slider) X Y)
+                                    (begin
+                                      (<ra> :undo-reltempo)
+                                      (<ra> :set-reltempo 1.0)
+                                      #t)
+                                    #f))))
+
 
 (define (track-configuration-popup X Y)
   (popup-menu "Pianoroll     (left alt + p)" :check (<ra> :pianoroll-visible *current-track-num*)  ra:show-pianoroll
@@ -907,7 +908,7 @@
                                                (<ra> :delete-track *current-track-num*)
                                                (track-configuration-popup X Y))
                                            (<ra> :set-track-patch *current-track-num*))
-                                       #f)
+                                       #t)
                                       (else
                                        #f)))))
 
@@ -921,7 +922,7 @@
                                        (<ra> :undo-track-pan *current-track-num*)
                                        (<ra> :set-track-pan-on-off (not (<ra> :get-track-pan-on-off *current-track-num*))
                                                                 *current-track-num*)
-                                       #f)
+                                       #t)
                                       (else
                                        #f)))))
 
@@ -935,7 +936,7 @@
                                        (<ra> :undo-track-volume *current-track-num*)
                                        (<ra> :set-track-volume-on-off (not (<ra> :get-track-volume-on-off *current-track-num*))
                                                                    *current-track-num*)
-                                       #f)
+                                       #t)
                                       (else
                                        #f)))))
 
@@ -984,7 +985,7 @@
                                             (inside-box (<ra> :get-box track-pan-slider *current-track-num*) X Y))
                                        (<ra> :undo-track-pan *current-track-num*)
                                        (<ra> :set-track-pan 0.0 *current-track-num*)
-                                       #f)
+                                       #t)
                                       (else
                                        #f)))))
 
@@ -1033,7 +1034,7 @@
                                             (inside-box (<ra> :get-box track-volume-slider *current-track-num*) X Y))
                                        (<ra> :undo-track-volume *current-track-num*)
                                        (<ra> :set-track-volume 0.8 *current-track-num*)
-                                       #f)
+                                       #t)
                                       (else
                                        #f)))))
 
@@ -2378,7 +2379,7 @@
                      (inside-box (<ra> :get-box track-fx *current-track-num*) X Y)
                      (<ra> :select-track *current-track-num*)
                      (<ra> :add-fx-mouse-pos)
-                     #f))))
+                     #t))))
 
 
 
@@ -2477,7 +2478,7 @@
                 (and ;(= Button *middle-button*)
                  *current-track-num*
                  (<ra> :select-track *current-track-num*)
-                 #f))))
+                 #t))))
 
 
 ;; show/hide time tracks
@@ -2501,7 +2502,7 @@
                            ((= *current-track-num-all-tracks* (<ra> :get-signature-track-num))
                             (c-display "signature")
                             (popup-menu "hide time signature track" ra:show-hide-signature-track)))
-                     #f))))
+                     #t))))
 
 #||
 (load "lint.scm")
