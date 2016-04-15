@@ -814,7 +814,8 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
 
    setFlags(ItemIsSelectable | ItemIsMovable | ItemSendsGeometryChanges);
    setAcceptsHoverEvents(true);
-
+   setZValue(10);
+   
    init_new_plugin();
    
    printf("New Chip. Inputs: %d, Ouptuts: %d\n",_num_inputs,_num_outputs);

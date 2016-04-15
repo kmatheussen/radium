@@ -124,7 +124,7 @@ public:
     //_line_item->setPen(QPen(Qt::black, 2));
     //_line_item->setPos(QPointF(x+50,y+50));
 
-    setZValue(-1);
+    setZValue(-2);
 
     setAcceptHoverEvents(true);
 

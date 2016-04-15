@@ -184,7 +184,7 @@ MyScene::MyScene(QWidget *parent)
 
   QColor color(40,40,40);
   _slot_indicator = new SlotIndicatorItem(); //addRect(0,0,chip_width,chip_width, QPen(color));//, Qt::SolidPattern);
-  _slot_indicator->setZValue(-2);
+  _slot_indicator->setZValue(-20);
 
   addItem(_slot_indicator);
   //new HelpText(this);
