@@ -1349,9 +1349,11 @@ int main(int argc, char **argv){
   
 
   CRASHREPORTER_init();
-
+  
+  //GC_enable_incremental();
   GC_INIT(); // mingw/wine crashes immediately if not doing this when compiling without --enable-threads=no. (wine doesn't work very well with libgc. Should perhaps file a report.)
-
+  //GC_disable();
+  
   QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));
   g_splashscreen = new QSplashScreen(pixmap);
 #ifdef RELEASE

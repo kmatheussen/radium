@@ -156,6 +156,9 @@ data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, in
 }
 
 
+extern struct TEvent tevent;
+
+
 // We circumvent the normal keyboard configuration system here.
 bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
   if (window->curr_track < 0)
@@ -163,6 +166,9 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
 
   struct WBlocks *wblock = window->wblock;
   struct WTracks *wtrack = wblock->wtrack;
+  
+  if (tevent.keyswitch != 0)
+    return false;
   
   if (get_val_from_key(key)==-1)
     return false;
