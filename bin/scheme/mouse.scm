@@ -852,13 +852,45 @@
                                     #f))))
 
 ;; track slider
+#||
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)                                
                                 (if (inside-box (<ra> :get-box track-slider) X Y)
                                     (begin
-                                      (<ra> :show-message "The track slider can not be moved")
+                                      (<ra> :show-message "The track slider can not be moved.\nOnly keyboard is supported to navigate to other tracks.")
                                       #t)
                                     #f))))
+||#
+
+(add-horizontal-handler :Get-handler-data (lambda (X Y)
+                                            (define box (<ra> :get-box track-slider))
+                                            (and (inside-box box X Y)
+                                                 (<ra> :current-track)))
+                        :Get-x1 (lambda (_)
+                                  (<ra> :get-track-slider-x1))
+                        :Get-x2 (lambda (_)
+                                  (<ra> :get-track-slider-x2))
+                        :Get-min-value (lambda (_)
+                                         0)
+                        :Get-max-value (lambda (_)
+                                         (<ra> :get-num-tracks))
+                        :Get-x (lambda (_)
+                                 (/ (+ (<ra> :get-track-slider-x1)
+                                       (<ra> :get-track-slider-x2))
+                                    2))
+                        :Get-value (lambda (Value)
+                                     Value)
+                        :Make-undo (lambda (_)
+                                     50)
+                        :Move (lambda (_ Value)
+                                (cond ((>= Value (1+ (<ra> :current-track)))
+                                       (<ra> :cursor-right))
+                                      ((<= Value (1- (<ra> :current-track)))
+                                       (<ra> :cursor-left)))
+                                Value)
+                        :Publicize (lambda (_)
+                                     60)
+                        )
 
 (define (track-configuration-popup X Y)
   (popup-menu "Pianoroll     (left alt + p)" :check (<ra> :pianoroll-visible *current-track-num*)  ra:show-pianoroll
