@@ -851,6 +851,14 @@
                                       #t)
                                     #f))))
 
+;; track slider
+(add-mouse-cycle (make-mouse-cycle
+                  :press-func (lambda (Button X Y)                                
+                                (if (inside-box (<ra> :get-box track-slider) X Y)
+                                    (begin
+                                      (<ra> :show-message "The track slider can not be moved")
+                                      #t)
+                                    #f))))
 
 (define (track-configuration-popup X Y)
   (popup-menu "Pianoroll     (left alt + p)" :check (<ra> :pianoroll-visible *current-track-num*)  ra:show-pianoroll

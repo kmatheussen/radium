@@ -303,6 +303,23 @@ float getMaxReltempo(void){
 
 
 
+// The track "scrollbar"
+///////////////////////////////////////////////////
+float getTrackSliderX1(void){
+  return root->song->tracker_windows->bottomslider.x;
+}
+float getTrackSliderY1(void){
+  return root->song->tracker_windows->wblock->reltempo.y1;
+}
+float getTrackSliderX2(void){
+  return root->song->tracker_windows->bottomslider.x2;
+}
+float getTrackSliderY2(void){
+  return root->song->tracker_windows->wblock->reltempo.y2;
+}
+
+
+
 // Set track patch
 ///////////////////////////////////////////////////
 void setTrackPatch(int tracknum, int blocknum, int windownum){
