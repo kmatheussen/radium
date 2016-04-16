@@ -331,14 +331,33 @@ bool CHIP_is_at_output_eport(Chip *chip, int x, int y){
 
 
 static void paint_checkbutton(QPainter *painter, int x1, int y1, int x2, int y2, bool is_on){
-  painter->setPen(QPen(get_qcolor(MIXER_BORDER_COLOR_NUM), 2));
+  QColor c = get_qcolor(MIXER_BORDER_COLOR_NUM);
+  painter->setPen(QPen(c, 2));
   
   painter->drawRect(x1, y1, x2-x1, y2-y1);
-  if(is_on){
-    QColor c(10,12,30,65);
-    painter->setPen(QPen(c, 2));
+  if(!is_on){
+    //#if 0
 
+    QColor c = get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1);
+
+#if 0
+    
+    painter->setPen(c);
+    painter->drawEllipse((x1+x2)/2.0f, (y1+y2)/2.0f, x2-x1, y2-y1);
+#else
+    painter->drawLine(x1, y1, x2, y2);
+    painter->drawLine(x2, y1, x1, y2);
+    //#else
+    //QColor c(10,12,30,65);
+    //painter->setPen(QPen(c, 2));
+    c.setAlpha(100);
     painter->fillRect(x1, y1, x2-x1-1, y2-y1, c);
+    //#endif
+
+    c.setAlpha(255);
+    painter->drawLine(x1, y1, x2, y2);
+    painter->drawLine(x2, y1, x1, y2);
+#endif
   }
 }
 
@@ -967,22 +986,24 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
   }
 
 #if 0
-  if(0){
+  if(1){
   // makesound button
   {
     int x1,y1,x2,y2;
-    get_makesound_button_coordinates(x1,y1,x2,y2);
+    get_volume_onoff_coordinates(x1,y1,x2,y2);
+    //get_makesound_button_coordinates(x1,y1,x2,y2);
     painter->translate(x1,y1);
-    CHECKBOX_paint_arc(painter, plugin->volume_is_on, plugin->type->num_outputs>0, x2-x1, y2-y1);
+    CHECKBOX_paint_arc(painter, ATOMIC_GET(plugin->volume_is_on), true, x2-x1, y2-y1);
     painter->translate(-x1,-y1);
   }
 
   // wet button
   {
     int x1,y1,x2,y2;
-    get_dontbypass_button_coordinates(x1,y1,x2,y2);
+    //get_dontbypass_button_coordinates(x1,y1,x2,y2);
+    get_effects_onoff_coordinates(x1,y1,x2,y2);
     painter->translate(x1,y1);
-    CHECKBOX_paint_arc(painter, !plugin->effects_are_on, plugin->type->num_inputs>0 && plugin->type->num_outputs>0 , x2-x1, y2-y1);
+    CHECKBOX_paint_arc(painter, !ATOMIC_GET(plugin->effects_are_on), true, x2-x1, y2-y1);
     painter->translate(-x1,-y1);
   }
   }
@@ -1030,6 +1051,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       painter->drawText(x1, y1, width, y2-y1, Qt::AlignLeft, text);
     }
 
+#if 1
     // checbuttons.
     {
       int x1,y1,x2,y2;
@@ -1039,7 +1061,8 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       get_effects_onoff_coordinates(x1,y1,x2,y2);
       paint_checkbutton(painter, x1,y1,x2,y2, ATOMIC_GET(plugin->effects_are_on));
     }
-
+#endif
+    
 #if 0
     {
       painter->setPen(QPen(Qt::black, 2));
