@@ -621,7 +621,8 @@ static void RT_pdfloathook(void *d, const char *sym, float val){
 
     float scaled_value = scale(val, controller->min_value, controller->max_value,
                                0.0f, 1.0f);
-
+    scaled_value = R_BOUNDARIES(0.0f, scaled_value, 1.0f);
+    
     controller->calling_from_pd = true; {
       RT_PLAYER_runner_lock();{
         PLUGIN_set_effect_value(controller->plugin, -1, controller->num, scaled_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single); // PLUGIN_set_effect_value only works with NONSTORED_TYPE for system effects. (should be fixed)
@@ -839,10 +840,26 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
        libpd_is_float(argv[0]))
       {
         float tempo = libpd_get_float(argv[0]);
-        if(tempo>100 || tempo <0.0001)
-          printf("Illegal tempo: %f\n",tempo);
-        else
-          safe_volatile_float_write(&pc->block->reltempo, tempo);
+
+        if(tempo>100 || tempo <0.0001) {
+          printf("Illegal tempo: %f. Must be between 0.0001 and 100.\n",tempo);
+          tempo = R_BOUNDARIES(0.0001, tempo, 100);
+        }
+        
+        {
+          struct Blocks *block;
+          
+          if (ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING)
+            block = pc->block;
+          else
+            block = root->song->tracker_windows->wblock->block;
+          
+          if (tempo != block->reltempo){
+            safe_volatile_float_write(&block->reltempo, tempo);
+            GFX_ScheduleRedraw();
+            //printf("   SCHEDULING redraw\n");
+          }
+        }
       }
     else
       printf("Wrong args for radium_send_blockreltempo\n");

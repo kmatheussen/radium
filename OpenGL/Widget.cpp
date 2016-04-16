@@ -537,10 +537,12 @@ private:
     //if (needs_repaint)
     //  printf("   Needs repaint %d\n",sv->block->l.num);
     
-    const struct Blocks *block = (const struct Blocks*)atomic_pointer_read((void**)&pc->block);
     double blocktime = 0.0;
     
     if (is_playing){
+      
+      const struct Blocks *block = (const struct Blocks*)atomic_pointer_read((void**)&pc->block);
+      
       if (sv->block!=block) { // Check that our blocktime belongs to the block that is rendered.
         #if 1     
           _rendering->render();
