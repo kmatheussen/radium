@@ -125,7 +125,7 @@ void PlayerNewBlock(struct PEventQueue *peq,int doit){
 
 	// Insert the block gfx-change event.
 
-	peq->TreatMe=PlayerNewBlockGFX;
+ 	peq->TreatMe=PlayerNewBlockGFX;
 
 	ListAddElementP_a(&pc->peq,&peq->l);
 

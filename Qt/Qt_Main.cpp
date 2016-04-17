@@ -675,28 +675,21 @@ protected:
     }
 
     num_calls++;
+
+    struct Tracker_Windows *window=root->song->tracker_windows;
     
-    if(editor_has_keyboard==true){
+    if(num_calls<1000/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
+      window->must_redraw = true;
+    }
       
-      if(num_calls<1000/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
-        root->song->tracker_windows->must_redraw = true;
-      }
-      
-      {
-        struct Tracker_Windows *window=root->song->tracker_windows;
-        DO_GFX({
-            MIDI_HandleInputMessage();
+    {
+      DO_GFX({
+          MIDI_HandleInputMessage();
 #if !USE_OPENGL
-            TRACKREALLINES_call_very_often(window);
+          TRACKREALLINES_call_very_often(window);
 #endif
-          });
-        static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function
-        
-        if(doquit==true) {
-          QApplication::quit();
-        }
-      }
-    } // editor_has_keyboard==true
+        });
+    }
 
     // Check if player has shut down
     if (PLAYER_is_running()==false)
@@ -710,6 +703,12 @@ protected:
     if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING){
       P2MUpdateSongPosCallBack();
       PlayCallVeryOften();
+    }
+
+    static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function    
+
+    if(doquit==true) {
+      QApplication::quit();
     }
 
     PATCH_call_very_often();
