@@ -1168,14 +1168,14 @@ int radium_main(char *arg){
 
   // Hack to make Qt text input widgets not crash the program when using intel gfx driver and running opengl in separate thread (crash caused by opening two opengl contexts simultaneously from two threads). (strange stuff)
   GL_lock();
-  GL_draw_lock();
+  //GL_draw_lock(); // <-- This prevents some crashes in buggy gfx drivers, but it could also cause a deadlock (not sure).
   {
     QTextEdit e;
     e.show();
     e.setFocus();
     qApp->processEvents();
   }
-  GL_draw_unlock();
+  //GL_draw_unlock();
   GL_unlock();
 
 #if 0

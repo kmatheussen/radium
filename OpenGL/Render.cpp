@@ -2243,3 +2243,13 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
     
   } GE_end_writing(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM));
 }
+
+void GL_create_all(const struct Tracker_Windows *window){
+  struct WBlocks *wblock = window->wblocks;
+  while(wblock!=NULL){
+    GL_create(window, wblock);
+    GE_wait_until_block_is_rendered();
+    wblock = NextWBlock(wblock);
+  }
+  GL_create(window, window->wblock);
+}

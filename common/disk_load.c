@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_settings_proc.h"
 #include "../mmd2loader/mmd2load_proc.h"
 #include "../OpenGL/Widget_proc.h"
+#include "../OpenGL/Render_proc.h"
 #include "OS_Player_proc.h"
 
 #ifdef _AMIGA
@@ -166,6 +167,9 @@ static bool Load(const wchar_t *filename){
         }GL_draw_unlock();
         
         DLoadRoot(newroot);
+
+        GL_create_all(root->song->tracker_windows);
+        
 
         if(COMMENT_show_after_loading())
           COMMENTDIALOG_open();

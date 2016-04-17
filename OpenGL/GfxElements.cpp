@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <stdint.h>
 
+#include <unistd.h>
+
 #include <map>
 #include <vector>
 
@@ -500,7 +502,16 @@ void GE_end_writing(GE_Rgb new_background_color){
     delete to_delete;
 }
 
-
+void GE_wait_until_block_is_rendered(void){
+  for(int i = 0; i < 50; i++){
+    {
+      radium::ScopedMutex locker(&mutex);
+      if (g_last_written_painting_data==NULL)
+        return;
+    }
+    usleep(1000*20);
+  }
+}
 
 /*****************************************/
 /* Drawing.  Called from OpenGL thread. */

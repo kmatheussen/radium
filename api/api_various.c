@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_blocks_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
 #include "../OpenGL/Widget_proc.h"
+#include "../OpenGL/Render_proc.h"
 #include "../common/OS_string_proc.h"
 #include "../audio/SoundProducer_proc.h"
 
@@ -489,11 +490,13 @@ void importMidi(void){
 
 static void import_importmod_file(void){
   static bool imported=false;
-    if(imported==false){
-      PyRun_SimpleString("import import_mod");
-      imported=true;
-    }else
-      PyRun_SimpleString("import_mod=reload(import_mod)"); // Avoid having to restart radium if code is changed. Practical during development. No practical impact on performance either.
+  if(imported==false){
+    PyRun_SimpleString("import import_mod");
+    imported=true;
+  }else
+    PyRun_SimpleString("import_mod=reload(import_mod)"); // Avoid having to restart radium if code is changed. Practical during development. No practical impact on performance either.
+  
+  GL_create_all(root->song->tracker_windows);
 }
 
 void importMod(void){
@@ -501,11 +504,13 @@ void importMod(void){
   //PyRun_SimpleString("import_mod.import_mod()");
   SCHEME_eval("(my-require 'import_mod.scm)");
   SCHEME_eval("(load-protracker-module)");
+  GL_create_all(root->song->tracker_windows);
 }
 
 void importXM(void){
   import_importmod_file();
   PyRun_SimpleString("import_mod.import_xm()");
+  GL_create_all(root->song->tracker_windows);
 }
 
 void insertTracks(int numtracks,int windownum){

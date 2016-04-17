@@ -87,6 +87,7 @@ PaintingData *GE_get_painting_data(PaintingData *current_painting_data, bool *ne
 
 void GE_start_writing(void);
 void GE_end_writing(GE_Rgb new_background_color);
+void GE_wait_until_block_is_rendered(void);
 
 GE_Context *GE_z(const GE_Rgb rgb, int z);
 static inline GE_Context *GE(const GE_Rgb rgb){
