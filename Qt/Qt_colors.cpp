@@ -417,6 +417,14 @@ static void clear_config_colors(void){
 }
 
 static QColor get_config_qcolor(enum ColorNums colornum){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    has_inited = true;
+
+    for(int i=START_CONFIG_COLOR_NUM;i<END_CONFIG_COLOR_NUM;i++)
+      get_config_qcolor((enum ColorNums)i);    
+  }
 
   if (g_config_colors[colornum]!=NULL)
     return *g_config_colors[colornum];

@@ -261,6 +261,11 @@ QString OS_get_config_filename(const char *key){
 
   printf("dir: \"%s\"\n",config_info.absoluteFilePath().toUtf8().constData());
 
+#if 0
+  if(is_playing())
+    abort();
+#endif
+
   return config_info.absoluteFilePath();
 }
 

@@ -147,6 +147,8 @@ extern PlayerClass *pc;
 // Should only be used if it's not important if the variables that are initialized when starting to play, have actually been initialized.
 // If that is important, then ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING must be used instead.
 static inline bool is_playing(void){
+  if (pc==NULL)
+    return false;
   Player_State state = ATOMIC_GET(pc->player_state);
   return state==PLAYER_STATE_STARTING_TO_PLAY || state==PLAYER_STATE_PLAYING;
 }
