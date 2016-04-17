@@ -497,11 +497,20 @@ void AddFXNodeLineCurrMousePos(struct Tracker_Windows *window){
   if(fx==NULL)
     return;
 
-  float val = scale(x, wtrack->fxarea.x, wtrack->fxarea.x2, 0, 1);
+  bool use_mouse_pos = false;
 
-  Undo_FXs_CurrPos(window);
-
-  AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, val);
+  if (fx->patch != NULL && fx->patch->instrument==get_MIDI_instrument())
+    use_mouse_pos = true;
+  
+  if (use_mouse_pos){
+    float val = scale(x, wtrack->fxarea.x, wtrack->fxarea.x2, 0, 1);
+    Undo_FXs_CurrPos(window);
+    AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, val);
+  } else {
+    int val = fx->defaultFXValue(fx);
+    AddFXNodeLineCurrPosInternal(window, wblock, wtrack, fx, &place, val);
+    Undo_FXs_CurrPos(window);
+  }
 }
 
 void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){

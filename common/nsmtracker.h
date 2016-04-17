@@ -710,6 +710,7 @@ struct FX{
 	void (*closeFX)(struct FX *fx,const struct Tracks *track);
 	void *fxdata;	//Free use for the instrument plug-in.
 	void (*SaveFX)(struct FX *fx,const struct Tracks *track);
+        int (*defaultFXValue)(const struct FX *fx);
 
   //void (*setFXstring)(struct FX *fx,struct Tracks *track, char *string);
 };

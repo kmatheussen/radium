@@ -2710,7 +2710,7 @@ int createFx(float value, Place place, const char* fx_name, int tracknum, int bl
       return -1;
 
     //printf("  1. p.line: %d, p.c: %d, p.d: %d\n",place.line,place.counter,place.dividor);
-    
+
     AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, value);
 
     //printf("  2. p.line: %d, p.c: %d, p.d: %d\n",place.line,place.counter,place.dividor);

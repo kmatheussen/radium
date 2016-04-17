@@ -197,6 +197,20 @@ static void AUDIO_treat_FX(struct FX *fx,int val,STime time,int skip, FX_when wh
   PLUGIN_set_effect_value(plugin,PLAYER_get_block_delta_time(time),fx->effect_num,effect_val, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, when);
 }
 
+// NOT called from RT thread
+static int AUDIO_default_FX_value(const struct FX *fx){
+  struct Patch *patch = fx->patch;
+  
+  R_ASSERT_RETURN_IF_FALSE2(patch->instrument==get_audio_instrument(), fx->min);
+          
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+  //AUDIO_FX_data_t *fxdata = (AUDIO_FX_data_t*)fx->fxdata;
+  if (plugin==NULL) // i.e. plugin has been deleted and removed from the patch.
+    return (fx->min+fx->max)/2;
+
+  return PLUGIN_get_effect_value(plugin, fx->effect_num, VALUE_FROM_PLUGIN) * MAX_FX_VAL;
+}
+
 #if 0
 static void AUDIO_set_FX_string(struct FX *fx,int val,const struct Tracks *track,char *string){
   SoundPlugin *plugin = (SoundPlugin*) track->patch->patchdata;
@@ -251,6 +265,7 @@ static void init_fx(struct FX *fx, int effect_num, const char *name, int num_eff
   fx->closeFX = AUDIO_close_FX;
   fx->SaveFX  = AUDIO_save_FX;
   fx->treatFX = AUDIO_treat_FX;
+  fx->defaultFXValue = AUDIO_default_FX_value;
   //fx->setFXstring = AUDIO_set_FX_string;
 
   init_fx_color(fx, num_effects);

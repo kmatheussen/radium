@@ -384,6 +384,11 @@ bool MIDISetTreatFX(struct FX *fx,struct MIDI_FX *midi_fx){
 	return true;
 }
 
+// NOT called from RT thread
+static int MIDI_default_FX_value(const struct FX *fx){
+  return (fx->min + fx->max) / 2;
+}
+
 static int init_fx(const struct Tracks *track,struct FX *fx, struct MIDI_FX *midi_fx){
 
 	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->midi_instrumentdata;
@@ -406,7 +411,8 @@ static int init_fx(const struct Tracks *track,struct FX *fx, struct MIDI_FX *mid
 	if( ! MIDISetTreatFX(fx,midi_fx)){
 		return FX_FAILED;
 	}
-
+        fx->defaultFXValue = MIDI_default_FX_value;
+  
 	usmf          = talloc(sizeof(struct UsedTrackMidiCCs));
 	usmf->next    = tid->usmf;
 	tid->usmf     = usmf;
