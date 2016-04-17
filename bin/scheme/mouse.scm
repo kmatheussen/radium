@@ -1301,6 +1301,7 @@
  (make-mouse-cycle
   :press-func (lambda ($button $x $y)
                 (and (= $button *right-button*)
+                     (<ra> :shift-pressed)
                      *current-track-num*
                      (inside-box (<ra> :get-box track-notes *current-track-num*) $x $y)
                      (match (list (find-node $x $y get-pitch-box (<ra> :get-num-pitches *current-track-num*)))
@@ -1310,6 +1311,26 @@
                                                         #t)
                             _                      :> #f)))))
 
+#||
+;; pitch popup menu
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda ($button $x $y)
+                (and (= $button *right-button*)
+                     *current-track-num*
+                     (inside-box (<ra> :get-box track-notes *current-track-num*) $x $y)
+                     (match (list (find-node $x $y get-pitch-box (<ra> :get-num-pitches *current-track-num*)))
+                            (existing-box Num Box) :> (begin
+                                                        (define (delete-pitch)
+                                                          (<ra> :undo-notes *current-track-num*)
+                                                          (<ra> :delete-pitch Num *current-track-num*))
+
+                                                        (popup-menu "Delete pitch" delete-pitch)
+                                                        (list "Glide to next pitch"
+                                                              :check )
+                                                        #t)
+                            _                      :> #f)))))
+||#
 
 
 ;; highlight current pitch
