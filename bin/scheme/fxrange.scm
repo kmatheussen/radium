@@ -857,7 +857,7 @@
                                 (<ra> :set-fxnode-logtype (fxnode-logtype fx-node) 0 fxnum tracknum blocknum)
                                 
                                 (define fx-node2 (cadr fx-nodes))
-                                (<ra> :set-fxnode3  ;; Need a better API for creating fx
+                                (<ra> :set-fxnode  ;; Need a better API for creating fx
                                       1
                                       (fxnode-value fx-node2)
                                       (legal-place (fxnode-place fx-node2))

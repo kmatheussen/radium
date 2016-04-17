@@ -2965,7 +2965,7 @@ int createFxnodeF(float value, float floatplace, int fxnum, int tracknum, int bl
   return createFxnode(value, place, fxnum, tracknum, blocknum, windownum);
 }
   
-void setFxnode3(int fxnodenum, float value, Place place, int fxnum, int tracknum, int blocknum, int windownum){
+void setFxnode(int fxnodenum, float value, Place place, int fxnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -3001,7 +3001,7 @@ void setFxnode3(int fxnodenum, float value, Place place, int fxnum, int tracknum
   window->must_redraw_editor = true;
 }
 
-void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
+void setFxnodeF(int fxnodenum, float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
   Place place;
 
   if (floatplace >= 0.0f)
@@ -3012,7 +3012,7 @@ void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int trac
     place.dividor = 1;
   }
   
-  return setFxnode3(fxnodenum, value, place, fxnum, tracknum, blocknum, windownum);
+  return setFxnode(fxnodenum, value, place, fxnum, tracknum, blocknum, windownum);
 }
 
 void setFxnodeLogtype(int logtype, int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){

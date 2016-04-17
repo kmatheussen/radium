@@ -4903,7 +4903,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (assert (<= second-value 1))
   (assert (>= second-value 0))
 
-  (<ra> :set-fxnode3 1 second-value second-pos fx-num tracknum)
+  (<ra> :set-fxnode 1 second-value second-pos fx-num tracknum)
   (<ra> :set-fxnode-logtype-holding #t 1 fx-num tracknum)
 
   (if (and (= tracknum 1)
