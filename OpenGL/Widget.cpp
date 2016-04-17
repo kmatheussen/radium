@@ -544,11 +544,11 @@ private:
       const struct Blocks *block = (const struct Blocks*)atomic_pointer_read((void**)&pc->block);
 #if 1    
       if (sv->block!=block) { // Check that our blocktime belongs to the block that is rendered.
-        #if 0 // Returning false uses more CPU on Intel gfx, and generally seems to may cause jumpy graphics, but here we are just waiting for the block to be rendered.
+        #if 1
           _rendering->render();
           return true;
         #else
-          return false;
+          return false; // Returning false uses more CPU on Intel gfx, and generally seems to may cause jumpy graphics, but here we are just waiting for the block to be rendered.
         #endif
       }
 #endif
