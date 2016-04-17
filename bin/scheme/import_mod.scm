@@ -4893,7 +4893,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (assert (<= first-value 1))
   (assert (>= first-value 0))
 
-  (define fx-num (<ra> :create-fx3 first-value first-pos fx-name tracknum))
+  (define fx-num (<ra> :create-fx first-value first-pos fx-name tracknum))
   
   (<ra> :set-fxnode-logtype-holding #t 0 fx-num tracknum)
 
@@ -4919,7 +4919,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                 (assert (not (caddr gliding))) ;; Always HOLD glide mode. Can't do it any other way in protracker. (volume and pitch can glide linearly, but not vibrato/tremolo/finetune/startoffset)
                 (assert (<= value 1))
                 (assert (>= value 0))
-                (define fxnode-num (<ra> :create-fxnode3 value place fx-num tracknum))
+                (define fxnode-num (<ra> :create-fxnode value place fx-num tracknum))
                 (<ra> :set-fxnode-logtype-holding #t fxnode-num fx-num tracknum)
                 )
               )

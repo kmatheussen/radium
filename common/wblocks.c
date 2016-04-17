@@ -190,7 +190,7 @@ void UpdateWBlockCoordinates(
                              struct Tracker_Windows *window,
                              struct WBlocks *wblock
 ){
-  //printf("****** UpdateWblockCoordinates called\n");
+  //  printf("****** UpdateWblockCoordinates called\n");
   	wblock->signaturearea.width = window->fontwidth*GetMaxSignatureWidth(wblock->block);
     
 	wblock->a.x1  = window->leftslider.width; //R_MAX(window->fontwidth+3,window->leftslider.width+1);

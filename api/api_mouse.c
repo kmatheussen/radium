@@ -2676,7 +2676,7 @@ void addFXMousePos(int windownum){
   AddFXNodeLineCurrMousePos(window);
 }
 
-int createFx3(float value, Place place, const char* fx_name, int tracknum, int blocknum, int windownum){
+int createFx(float value, Place place, const char* fx_name, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -2736,11 +2736,11 @@ int createFx3(float value, Place place, const char* fx_name, int tracknum, int b
   }
 }
 
-int createFx(float value, float floatplace, const char* fx_name, int tracknum, int blocknum, int windownum){
+int createFxF(float value, float floatplace, const char* fx_name, int tracknum, int blocknum, int windownum){
   Place place;
   Float2Placement(floatplace, &place);
 
-  return createFx3(value, place, fx_name, tracknum, blocknum, windownum);
+  return createFx(value, place, fx_name, tracknum, blocknum, windownum);
 }
 
 static struct Node *get_fxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
@@ -2913,7 +2913,7 @@ float getFxMaxValue(int fxnum, int tracknum, int blocknum, int windownum){
 #endif
 }
 
-int createFxnode3(float value, Place place, int fxnum, int tracknum, int blocknum, int windownum){
+int createFxnode(float value, Place place, int fxnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -2962,11 +2962,11 @@ int createFxnode3(float value, Place place, int fxnum, int tracknum, int blocknu
   return ret;
 }
 
-int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
+int createFxnodeF(float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
   Place place;
   Float2Placement(floatplace, &place);
 
-  return createFxnode3(value, place, fxnum, tracknum, blocknum, windownum);
+  return createFxnode(value, place, fxnum, tracknum, blocknum, windownum);
 }
   
 void setFxnode3(int fxnodenum, float value, Place place, int fxnum, int tracknum, int blocknum, int windownum){
