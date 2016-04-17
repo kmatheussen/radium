@@ -52,7 +52,7 @@ class Pianorollheader : public QWidget, public Ui::Pianorollheader {
     int lowKey = getPianorollLowKey(tracknum, blocknum, -1);
     int highKey = getPianorollHighKey(tracknum, blocknum, -1);
     lowkey->setText(getNoteName3(lowKey));
-    highkey->setText(getNoteName3(highKey));
+    highkey->setText(getNoteName3(highKey-1));
   }
 
 public slots:
@@ -63,8 +63,8 @@ public slots:
     //autorange->setDown(false);
     //autorange->update();
 
-    int minkey = getLowestKey(tracknum, blocknum, -1);
-    int maxkey = getHighestKey(tracknum, blocknum, -1);
+    int minkey = floorf(getLowestKey(tracknum, blocknum, -1));
+    int maxkey = floorf(getHighestKey(tracknum, blocknum, -1));
 
     if (minkey==-1)
       return;    
@@ -73,7 +73,7 @@ public slots:
       if (minkey>0)
         minkey--;
       if (maxkey<127)
-        maxkey++;
+        maxkey = maxkey + 2;
     }while((maxkey - minkey) < 5);
 
     setPianorollLowKey(minkey,tracknum,blocknum,-1);
