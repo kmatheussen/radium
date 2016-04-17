@@ -5,22 +5,25 @@ Changes 3.7.5 -> 3.7.6:
   notably different between 3.7.3 and 3.7.5.
 * Option to turn on/off garbage collector under edit->preferences->various.
   This can be useful to find out what's causing the gui to freeze sometimes.
-* Handle MIDI input and update graphics, also when the editor doesn't have keyboard focus.
-* Read all colors from config file during startup, to avoid reading config file during playback
+* Handle MIDI input and update graphics,
+  also when the editor doesn't have keyboard focus.
+* Read all colors from config file during startup,
+  to avoid reading config file during playback
 * mouse: Must press shift to delete pitch
 * pianoroll: Show correct notename for highest visible note (not the note above)
-* Use plugin value when adding new fx. (Not for MIDI instrument though)
-* api: setVelocity -> setVelocityF, createPitch -> createPitchF, etc.
-* api: createVelocity -> createVelocityF, createVelocity3 -> createVelocity
-* api: createFx -> createFxF, createFxNode3 -> createFxNodeF
-* mouse: quasi track scroll bar (dragging the track slider causes
-  cursor to move left/right).
+* Use already stored value when adding new fx, not mouse position.
+  (Not when adding fx to a MIDI instrument though.)
+* api: setVelocity -> setVelocityF, createPitch -> createPitchF,
+  createVelocity -> createVelocityF, createVelocity3 -> createVelocity,
+  createFx -> createFxF, createFxNode3 -> createFxNodeF, etc.
+* mouse: quasi track scroll bar (dragging the track slider now causes
+  the cursor to move left/right).
 * Fix modifier key handling when cursor is placed on a "text track"
 * pd: Fix radium_send_blockreltempo message
 * mixer: Improve check button rendering. Needs more work though
 * mixer: Improve connection graphics
-* mixer: Reduced connection width from 3 to 1.2 pixels
-* mixer: Put connections below chips
+* mixer: Reduced connection line width from 3 to 1.2 pixels
+* mixer: Put connections below sound objects
 * Update fx text documentation
 * Possible to configure mixer connection colors
 * Adjust some colors
@@ -30,15 +33,16 @@ Changes 3.7.5 -> 3.7.6:
 * macosx: Enable menu key if using a pc keyboard
 * Popup menu in blocklist to insert/append/delete block
 * shift+right mouse deletes track when clicked in track header
-* shift+right mouse deletes block/playlist in the blocklist/playlist window.
+* shift+right mouse deletes block/playlist when clicked
+  in the blocklist/playlist window.
 * Make mixer text color configurable
 * api: playCursorEnabled/switchPlayCursorOnOff
 * AltGr+up/down jumps to prev/next "text" entry,
   depending on cursor position, not just prev/next note
-* osx: Support the MENU button (i.e. "Left Cmd" key).
-* Show visually when a note continues playing in the next block
+* osx: Support the MENU button (i.e. the "Right Cmd" key).
+* Show visually when a note continues playing into the next block
 * Popup menu options for whether to continue playing note into next block
-* vst: Try to always show on top.
+* vst: Try to always show native gui on top of all other windows.
 * macosx: Fix caps lock modifier key.
 * Fix keybindings for selecting/solo/etc. track
   which uses CAPS, plus fix CAPS key on Linux.
