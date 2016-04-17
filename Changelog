@@ -2,7 +2,7 @@ Changes 3.7.5 -> 3.7.6:
 * Render block more immedately when switching block when playing song
 * sampler instrument: Disable portamento test code (was never meant to be enabled).
   Bug introduced in 3.7.3. This can cause some pitch glides to sound
-  notably different between 3.7.3 and 3.7.5.
+  notably different between 3.7.3 and 3.7.6.
 * Option to turn on/off garbage collector under edit->preferences->various.
   This can be useful to find out what's causing the gui to freeze sometimes.
 * Handle MIDI input and update graphics,

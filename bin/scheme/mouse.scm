@@ -134,9 +134,11 @@
 ||#
 
 
+#||
 (define (get-quantitized-place-from-y Button Y)
   (define place (<ra> :get-place-from-y Y))
   (quantitize place (<ra> :get-quantitize)))
+||#
 
 (define (get-place-from-y Button Y)
   (if (<ra> :ctrl-pressed)
@@ -204,14 +206,14 @@
                             0)
                            ((<ra> :ctrl-pressed)
                             (/ (- $x prev-x)
-                               10.0))
+                               10))
                            (else
                             (- $x prev-x))))
           (define dy (cond ((only-x-direction)
                             0)
                            ((<ra> :ctrl-pressed)
                             (/ (- $y prev-y)
-                               10.0))
+                               10))
                            (else
                             (- $y prev-y))))
 
