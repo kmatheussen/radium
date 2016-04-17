@@ -162,7 +162,7 @@ void EditorWidget::updateEditor(){
     UpdateWBlockCoordinates(this->window, this->window->wblock);
   }
   
-  if (this->window->must_redraw_editor==true){
+  if (this->window->must_redraw_editor==true || this->window->must_redraw==true){
     this->window->must_redraw_editor=false;
     //printf("a3\n");
     GL_create(this->window, this->window->wblock);
