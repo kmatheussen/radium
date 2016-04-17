@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <sndfile.h>
 #include <unistd.h>
 
+#include <gc.h>
+
 #include <QMessageBox>
 #include <QColorDialog>
 #include <QCloseEvent>
@@ -327,6 +329,8 @@ class Preferences : public QDialog, public Ui::Preferences {
       showKeyCodesOnoff->setChecked(false);
 
       colorTracksOnoff->setChecked(GL_get_colored_tracks());
+
+      gcOnOff->setChecked(true);
     }
 
     // CPU
@@ -421,6 +425,13 @@ public slots:
 
   void on_colorTracksOnoff_toggled(bool val){
     GL_set_colored_tracks(val);
+  }
+
+  void on_gcOnOff_toggled(bool val){
+    if (val)
+      GC_enable();
+    else
+      GC_enable();
   }
 
   void on_mma1_toggled(bool val){
