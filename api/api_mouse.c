@@ -2407,7 +2407,7 @@ int getNumVelocities(int notenum, int tracknum, int blocknum, int windownum){
   return nodes->num_elements;
 }
 
-int createVelocity3(float value, int line, int counter, int dividor, int notenum, int tracknum, int blocknum, int windownum){
+int createVelocity(float value, Place place, int notenum, int tracknum, int blocknum, int windownum){
 
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -2415,8 +2415,6 @@ int createVelocity3(float value, int line, int counter, int dividor, int notenum
   struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
   if (note==NULL)
     return -1;
-
-  Place place = {line, counter, dividor};
 
   if (PlaceLessOrEqual(&place, &note->l.p)) {
     //if (notenum>0)
@@ -2444,10 +2442,10 @@ int createVelocity3(float value, int line, int counter, int dividor, int notenum
   return ret+1;
 }
 
-int createVelocity(float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+int createVelocityF(float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
   Place place;
   Float2Placement(floatplace, &place);
-  return createVelocity3(value, place.line, place.counter, place.dividor, notenum, tracknum, blocknum, windownum);
+  return createVelocity(value, place, notenum, tracknum, blocknum, windownum);
 }
 
 int setVelocity3(int velocitynum, float value, Place place, int notenum, int tracknum, int blocknum, int windownum){

@@ -4812,12 +4812,11 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                           (c-display "num-lines" num-lines)
                           (print-events events)
                           (assert #f))
-                    (let ((place (place-list (car velocity))))
-                      (<ra> :create-velocity3
-                            (/ (cadr velocity) 64) ;; value
-                            (car place) (cadr place) (caddr place)
-                            radium-notenum
-                            channelnum)))
+                    (<ra> :create-velocity
+                          (/ (cadr velocity) 64) ;; value
+                          (car velocity) ;; place
+                          radium-notenum
+                          channelnum))
                   (butlast (cdr velocities)))
 
         ;; set velocity logtypes

@@ -55,8 +55,8 @@ class RadiumMock:
         print "addLPB", str(linenum) + ": "+hex(lpb)
     def addBPM(self, bpm, linenum, counter, dividor):
         print "addBPM", str(linenum) + ": "+hex(bpm)
-    def createVelocity(self, value, floatplace, notenum, tracknum):
-        print "   createVelocity",floatplace,value
+    def createVelocityF(self, value, floatplace, notenum, tracknum):
+        print "   createVelocityF",floatplace,value
     def getMaxVolume(self):
         return 127
 
