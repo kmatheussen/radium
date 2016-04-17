@@ -105,7 +105,7 @@ bool s7extra_is_place(s7_pointer place){
 }
 
 Place s7extra_place(s7_scheme *s7, s7_pointer place){
-  return number_to_place(place); // Should we allow floating numbers? (i.e. not give error message for it)
+  return number_to_place(place); // Should we allow floating numbers? (i.e. not give error message for it) Yes, definitely.
 }
 
 s7_pointer s7extra_make_place(s7_scheme *radiums7_sc, Place place){

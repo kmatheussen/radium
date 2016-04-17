@@ -205,7 +205,7 @@ class Note:
 
         # 2. set end note velocity (if necessary)
         #        if len(self.velocities) > 0:
-        #    radium.setVelocity(1, self.velocities[-1].value / 64, end_line + (end_counter/end_dividor), radium_notenum, self.radium_tracknum)
+        #    radium.setVelocityF(1, self.velocities[-1].value / 64, end_line + (end_counter/end_dividor), radium_notenum, self.radium_tracknum)
 
         last_volume = 0
         # 3. add velocities
@@ -218,7 +218,7 @@ class Note:
                     radium.createVelocityF(last_volume / 64, place-radium_smallest_tick, radium_notenum, self.radium_tracknum)
                     if velocity.linenum==self.end_linenum:
                         num_velocities = radium.getNumVelocities(radium_notenum, self.radium_tracknum)
-                        radium.setVelocity(num_velocities-1, velocity.value / 64, end_line + (end_counter/end_dividor), radium_notenum, self.radium_tracknum)
+                        radium.setVelocityF(num_velocities-1, velocity.value / 64, end_line + (end_counter/end_dividor), radium_notenum, self.radium_tracknum)
                     else:
                         radium.createVelocityF(velocity.value / 64, place, radium_notenum, self.radium_tracknum)
                         

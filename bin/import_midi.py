@@ -99,7 +99,7 @@ def get_radium_mock():
     radium.setTrackPanOnOff = radium.dummy
     radium.setPlaylistLength = radium.dummy
     radium.minimizeBlockTracks = radium.dummy
-    radium.setVelocity = radium.dummy
+    radium.setVelocityF = radium.dummy
     radium.newSong = radium.dummy
     radium.resetUndo = radium.dummy
     return radium

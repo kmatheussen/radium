@@ -2116,7 +2116,7 @@ static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, stru
   return getPitchNum(wtrack->track, note, pitch, false);
 }
 
-int createPitch3(float value, int line, int counter, int dividor, int tracknum, int blocknum, int windownum){
+int createPitch(float value, Place place, int tracknum, int blocknum, int windownum){
 
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -2125,8 +2125,6 @@ int createPitch3(float value, int line, int counter, int dividor, int tracknum, 
   if (wtrack==NULL)
     return -1;
 
-  Place place = {line, counter, dividor};
-  
   struct Notes *note = getNoteAtPlace(wtrack->track, &place);
 
   value = R_BOUNDARIES(0,value,127);
@@ -2143,14 +2141,14 @@ int createPitch3(float value, int line, int counter, int dividor, int tracknum, 
   if (ret==-1)
     Undo_CancelLastUndo();
 
-  printf("\n\n\n\n ***** NUM: %d\n",ret);
+  //printf("\n\n\n\n ***** NUM: %d\n",ret);
   return ret;
 }
 
-int createPitch(float value, float floatplace, int tracknum, int blocknum, int windownum){
+int createPitchF(float value, float floatplace, int tracknum, int blocknum, int windownum){
   Place place;
   Float2Placement(floatplace, &place);
-  return createPitch3(value, place.line, place.counter, place.dividor, tracknum, blocknum, windownum);
+  return createPitch(value, place, tracknum, blocknum, windownum);
 }
 
 bool portamentoEnabled(int notenum, int tracknum, int blocknum, int windownum){
@@ -2448,7 +2446,7 @@ int createVelocityF(float value, float floatplace, int notenum, int tracknum, in
   return createVelocity(value, place, notenum, tracknum, blocknum, windownum);
 }
 
-int setVelocity3(int velocitynum, float value, Place place, int notenum, int tracknum, int blocknum, int windownum){
+int setVelocity(int velocitynum, float value, Place place, int notenum, int tracknum, int blocknum, int windownum){
   
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -2505,7 +2503,7 @@ int setVelocity3(int velocitynum, float value, Place place, int notenum, int tra
   return notenum;
 }
 
-int setVelocity(int velocitynum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+int setVelocityF(int velocitynum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
   Place place;
   
   if (floatplace < 0) {
@@ -2514,7 +2512,7 @@ int setVelocity(int velocitynum, float value, float floatplace, int notenum, int
     place.dividor=1;
   }else
     Float2Placement(floatplace, &place);
-  return setVelocity3(velocitynum, value, place, notenum, tracknum, blocknum, windownum);
+  return setVelocity(velocitynum, value, place, notenum, tracknum, blocknum, windownum);
 }
 
 void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
