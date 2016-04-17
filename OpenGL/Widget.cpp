@@ -542,16 +542,16 @@ private:
     if (is_playing){
       
       const struct Blocks *block = (const struct Blocks*)atomic_pointer_read((void**)&pc->block);
-      
+#if 1    
       if (sv->block!=block) { // Check that our blocktime belongs to the block that is rendered.
-        #if 1     
+        #if 0 // Returning false uses more CPU on Intel gfx, and generally seems to may cause jumpy graphics, but here we are just waiting for the block to be rendered.
           _rendering->render();
           return true;
         #else
           return false;
         #endif
       }
-
+#endif
       blocktime = ATOMIC_DOUBLE_GET(block->player_time);
 
       R_ASSERT_NON_RELEASE(blocktime==-100 || blocktime>=0.0);
