@@ -517,7 +517,7 @@ static float get_peak(float *samples, int num_samples){
 static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, float **outputs){
   // portamento
   {
-#if 0
+#if 1
     voice->pitch = voice->end_pitch;
 #else
     const float how_much = 0.1;
