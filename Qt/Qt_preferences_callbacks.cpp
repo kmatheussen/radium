@@ -334,7 +334,7 @@ class Preferences : public QDialog, public Ui::Preferences {
 
       gcOnOff->setChecked(true);
 
-      bool incremental_gc = SETTINGS_read_bool("incremental_gc",false));
+      bool incremental_gc = SETTINGS_read_bool("incremental_gc",false);
     
       incrementalGcNextTime->setChecked(false);
 
