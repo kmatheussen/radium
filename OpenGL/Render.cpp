@@ -2244,10 +2244,14 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
 
 void GL_create_all(const struct Tracker_Windows *window){
   struct WBlocks *wblock = window->wblocks;
-  while(wblock!=NULL){
-    GL_create(window, wblock);
-    GE_wait_until_block_is_rendered();
-    wblock = NextWBlock(wblock);
+  
+  if (NextWBlock(wblock) != NULL){
+    while(wblock!=NULL){
+      GL_create(window, wblock);
+      GE_wait_until_block_is_rendered();
+      wblock = NextWBlock(wblock);
+    }
   }
+  
   GL_create(window, window->wblock);
 }
