@@ -158,9 +158,9 @@ struct GradientTriangles : public vl::Effect {
     if (glsl.get()==NULL) {
       vl::Shader* shader = this->shader();
       shader->enable(vl::EN_BLEND);
-        
+
+      // These two lines probably takes a lot of time.
       glsl = shader->gocGLSLProgram();    
-      //glsl->attachShader(get_gradient_vertex_shader()); 
       glsl->attachShader(get_gradient_fragment_shader(type)); 
 
       if (type==GradientType::VELOCITY)
