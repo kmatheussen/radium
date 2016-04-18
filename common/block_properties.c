@@ -68,6 +68,7 @@ void Block_Set_num_lines(
 
 	if(num_lines<org_num_lines){
 
+                CutListAt_a(&block->signatures,&lastplace);
 		CutListAt_a(&block->lpbs,&lastplace);
 		CutListAt_a(&block->tempos,&lastplace);
 		CutListAt_a(&block->temponodes,&lastplace);
