@@ -105,6 +105,8 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
   if(ATOMIC_GET(is_starting_up)==true)
     return;
 
+  //printf("    UPDATE called\n");
+  
   transfer_atomic_must_redraws(window);
   
   window->redraw_has_been_scheduled=false;
@@ -161,13 +163,31 @@ void EditorWidget::updateEditor(){
     window->must_calculate_coordinates=false;
     UpdateWBlockCoordinates(this->window, this->window->wblock);
   }
-  
+
+#if 1
+  if (this->window->must_redraw_editor==true){
+    this->window->must_redraw_editor=false;
+    //printf("a3\n");
+    GL_create(this->window, this->window->wblock);
+  }
+#else
+  // This version is probably not faster, since update() will call paintEvent immedately (?).
+  // It also complicates things since the call to GL_create in paintEvent() should be removed to avoid calling GL_create twice. But it cannot always be removed.
   if (this->window->must_redraw_editor==true || this->window->must_redraw==true){
     this->window->must_redraw_editor=false;
     //printf("a3\n");
     GL_create(this->window, this->window->wblock);
   }
+#endif
 
+#if 0
+  if (is_playing()){
+    if(this->window->must_redraw==true) {
+      GL_create(this->window, this->window->wblock);
+      this->window->must_redraw=false;
+    }
+  } else
+#endif
   if (this->window->redraw_has_been_scheduled==false) {    
     if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0) {
       this->window->redraw_has_been_scheduled=true;

@@ -91,6 +91,7 @@ void P2MUpdateSongPosCallBack(void){
     BS_SelectPlaylistPos(ATOMIC_GET2(root->curr_playlist));
   
   if(window->curr_block!=curr_block_num){
+    //GL_create(window,wblock); // <-- Faster update (no, doesn't seem to make a difference), but it's also complicated to avoid calling GL_create twice when doing this. (need separate update variables for editor and non-editor)
     //printf("Bef. w: %d, r: %d\n",window->curr_block,root->curr_block);
     if(setfirstpos){
       wblock->curr_realline=0;

@@ -545,6 +545,7 @@ private:
 #if 1    
       if (sv->block!=block) { // Check that our blocktime belongs to the block that is rendered.
         #if 1
+          //printf("Waiting...\n");
           _rendering->render();
           return true;
         #else

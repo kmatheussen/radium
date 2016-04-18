@@ -437,7 +437,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 	window->curr_track=0;
 	window->curr_track_sub=-1;
 
-	SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub);
+        SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub);
 
 	window->curr_block=wblock->l.num;
         ATOMIC_SET(g_curr_block, wblock->block);
@@ -447,7 +447,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 	//window->must_redraw = true;
 
-	BS_SelectBlock(wblock->block);
+        BS_SelectBlock(wblock->block);
 
 	if( ! is_playing()){
           GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
