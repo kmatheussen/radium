@@ -77,7 +77,8 @@ static int find_linenum(const char* key, QVector<QString> lines){
       return linenum;
   return -1;
 }
-  
+
+// Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
 static QVector<QString> get_lines(const char* key){
   R_ASSERT(THREADING_is_main_thread());
   
@@ -134,7 +135,7 @@ static QVector<QString> get_lines(const char* key){
 
   file.close();
   
-  QString version_line = QString("settings_version = ") + QString(OS_get_string_from_double(SETTINGSVERSION)) + " # dont change this one";
+  QString version_line = QString("settings_version = ") + OS_get_qstring_from_double(SETTINGSVERSION) + " # dont change this one";
 
   int version_linenum = find_linenum("settings_version",ret);
   if(version_linenum==-1)
@@ -158,6 +159,7 @@ static QVector<QString> get_lines(const char* key){
   return ret;
 }
 
+// Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
 static void transfer_temporary_file_to_file(QString from, QString to){
   
   // Maybe take backup of the existing file here.
@@ -168,6 +170,7 @@ static void transfer_temporary_file_to_file(QString from, QString to){
     GFX_Message(NULL, "Unable to write config file (\%s\")",to.toUtf8().constData());
 }
 
+// Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
 static void write_lines(const char* key, QVector<QString> lines){
   R_ASSERT(THREADING_is_main_thread());
   
@@ -213,6 +216,7 @@ static void append_line(const char** lines, const char* line){
 }
 #endif
 
+// Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
 static void SETTINGS_put(const char* key, QString val){
   QVector<QString> lines = get_lines(key);
   if(lines.size()==0)
@@ -230,6 +234,7 @@ static void SETTINGS_put(const char* key, QString val){
   write_lines(key, lines);
 }
 
+// Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
 static QString SETTINGS_get(const char* key){
   QVector<QString> lines = get_lines(key);
   if(lines.size()==0)

@@ -60,5 +60,8 @@ extern LANGSPEC void OS_make_config_file_expired(const char *key);
 extern LANGSPEC double OS_get_double_from_string(const char *s);
 extern LANGSPEC char *OS_get_string_from_double(double d);
 
+#ifdef USE_QT4
+QString OS_get_qstring_from_double(double d);
+#endif
 
 #endif

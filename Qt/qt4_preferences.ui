@@ -1205,6 +1205,22 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn'twork, 
            </property>
           </widget>
          </item>
+         <item row="5" column="0">
+          <widget class="QCheckBox" name="incrementalGc">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="statusTip">
+            <string/>
+           </property>
+           <property name="text">
+            <string>Enable Incremental Garbage Collector permantently.</string>
+           </property>
+          </widget>
+         </item>
          <item row="3" column="2">
           <widget class="QLabel" name="lab">
            <property name="text">
@@ -1697,6 +1713,39 @@ Disabling this option will cause Radium to eventually run out of memory prematur
            </property>
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QCheckBox" name="incrementalGcNextTime">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="statusTip">
+            <string/>
+           </property>
+           <property name="text">
+            <string>Enable Incremental Garbage Collector next time.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="2">
+          <widget class="QLabel" name="lab_2">
+           <property name="text">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Try to enable incremental garbage collection the next time Radium starts up.
+&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="2">
+          <widget class="QLabel" name="lab_3">
+           <property name="text">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Enable incremental garbage collection.&lt;br&gt;
+ Note that you have to set &quot;Enable Incremental Garbage Collector next time&quot;&lt;br&gt;and restart Radium before you can set this value.
+&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>

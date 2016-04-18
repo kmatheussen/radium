@@ -55,6 +55,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 bool g_show_key_codes = false;
 
+extern bool g_gc_is_incremental;
+
 
 namespace{
 
@@ -331,6 +333,18 @@ class Preferences : public QDialog, public Ui::Preferences {
       colorTracksOnoff->setChecked(GL_get_colored_tracks());
 
       gcOnOff->setChecked(true);
+
+      bool incremental_gc = SETTINGS_read_bool("incremental_gc",false));
+    
+      incrementalGcNextTime->setChecked(false);
+
+      incrementalGc->setChecked(incremental_gc);
+
+      if (g_gc_is_incremental==false)
+        incrementalGc->setDisabled(true);
+
+      if (incremental_gc)
+        incrementalGcNextTime->setDisabled(true);
     }
 
     // CPU
@@ -432,6 +446,14 @@ public slots:
       GC_enable();
     else
       GC_enable();
+  }
+
+  void on_incrementalGcNextTime_toggled(bool val){
+    SETTINGS_write_bool("try_incremental_gc",val);
+  }
+
+  void on_incrementalGc_toggled(bool val){
+    SETTINGS_write_bool("incremental_gc",val);
   }
 
   void on_mma1_toggled(bool val){

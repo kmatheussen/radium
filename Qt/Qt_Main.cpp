@@ -125,6 +125,8 @@ extern bool g_show_key_codes;
 
 static bool editor_has_keyboard = true;
 
+bool g_gc_is_incremental = false;
+
 void obtain_keyboard_focus(void){
   editor_has_keyboard = false;
 }
@@ -1350,8 +1352,15 @@ int main(int argc, char **argv){
   
 
   CRASHREPORTER_init();
+
+  bool try_incremental_gc = SETTINGS_read_bool("try_incremental_gc",false);
+  if (try_incremental_gc || SETTINGS_read_bool("incremental_gc",false)) {
+    if (try_incremental_gc)
+      SETTINGS_write_bool("try_incremental_gc",false); // Set back before calling 'GC_enable_incremental' in case 'GC_enable_incremental' crashes.
+    GC_enable_incremental();
+    g_gc_is_incremental = true;
+  }
   
-  //GC_enable_incremental();
   GC_INIT(); // mingw/wine crashes immediately if not doing this when compiling without --enable-threads=no. (wine doesn't work very well with libgc. Should perhaps file a report.)
   //GC_disable();
   

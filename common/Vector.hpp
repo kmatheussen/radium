@@ -189,7 +189,7 @@ public:
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
     
     R_ASSERT(next_elements == NULL);
-    
+
     for (T t : *ts)
       basic_add(t);
   }

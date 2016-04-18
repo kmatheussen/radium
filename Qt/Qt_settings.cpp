@@ -279,3 +279,7 @@ char *OS_get_string_from_double(double d){
   QString string = QString::number(d,'g',16);
   return talloc_strdup(string.toUtf8().constData());
 }
+
+QString OS_get_qstring_from_double(double d){
+  return QString::number(d,'g',16);
+}
