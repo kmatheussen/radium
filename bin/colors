@@ -70,3 +70,4 @@ mixer_text_color = #010101
 mixer_border_color = #010101
 mixer_event_connection_color = #cfcf00
 mixer_audio_connection_color = #321946
+track_slider_color = #939393

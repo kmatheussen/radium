@@ -546,7 +546,7 @@ public slots:
   
   // colors
   void color_changed(const QColor &col){
-    printf("HAPP! %s\n",col.name().toUtf8().constData());
+    //printf("HAPP! %s\n",col.name().toUtf8().constData());
     testColorInRealtime(g_current_colornum, col);
 
     for(auto button : all_buttons){

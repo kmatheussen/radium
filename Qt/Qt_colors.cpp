@@ -71,6 +71,7 @@ static const ColorConfig g_colorconfig[] = {
   {AUTOMATION3_COLOR_NUM,                  "color10", "Automation 3"},
   {HIGH_BACKGROUND_COLOR_NUM,                  "color11", "High Background"},
   {EDITOR_SLIDERS_COLOR_NUM,                  "color12", "Editor sliders"},
+  {TRACK_SLIDER_COLOR_NUM,     "track_slider", "Track slider"},
   {BUTTONS_COLOR_NUM,                  "color13", "Buttons"},
   {PORTAMENTO_NOTE_TEXT_COLOR_NUM,                  "color14", "Portamento note text"},
   {PORTAMENTO_END_NOTE_TEXT_COLOR_NUM,                  "portamento_end_note_text", "Portamento end note text"},
@@ -142,7 +143,8 @@ static ReplacementColorNum g_replacement_color_num[] = {
     
   {SLIDER2_COLOR_NUM, BUTTONS_COLOR_NUM},
   {SLIDER_DISABLED_COLOR_NUM, HIGH_BACKGROUND_COLOR_NUM},
-
+  {TRACK_SLIDER_COLOR_NUM, TEXT_COLOR_NUM},
+  
   {PEAKS_COLOR_NUM, BUTTONS_COLOR_NUM},
   {PEAKS_0DB_COLOR_NUM, VELOCITY2_COLOR_NUM},
   {PEAKS_4DB_COLOR_NUM, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
