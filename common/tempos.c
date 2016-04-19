@@ -64,6 +64,11 @@ struct Tempos *SetTempo(
 	Place *place,
 	int newtempo
 ){
+  if (newtempo<=0){
+    RError("Illegal tempo %d at position %s\n",newtempo,PlaceToString(place));
+    newtempo = 1;
+  }
+
 	struct Tempos *tempo;
 	tempo=ListFindElement3(&block->tempos->l,place);
 
@@ -87,7 +92,7 @@ void SetTempoCurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 	int curr_realline=wblock->curr_realline;
 	Place *place= &wblock->reallines[curr_realline]->l.p;
-	int newtempo=GFX_GetInteger(window,NULL,"New tempo: >",0,999);
+	int newtempo=GFX_GetInteger(window,NULL,"New tempo: >",1,999);
 	if(newtempo==-1) return;
 
 	PlayStop();

@@ -77,6 +77,10 @@ struct LPBs *SetLPB(
 	Place *place,
 	int newlpb
 ){
+  if (newlpb<=0){
+    RError("Illegal lpb %d at position %s\n",newlpb,PlaceToString(place));
+    newlpb = 1;
+  }
 	struct LPBs *lpb;
 	lpb=ListFindElement3(&block->lpbs->l,place);
 
@@ -100,7 +104,7 @@ void SetLPBCurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 	int curr_realline=wblock->curr_realline;
 	Place *place= &wblock->reallines[curr_realline]->l.p;
-	int newlpb=GFX_GetInteger(window,NULL,"New LPB: >",0,99);
+	int newlpb=GFX_GetInteger(window,NULL,"New LPB: >",1,99);
 	if(newlpb==-1) return;
 
 	PlayStop();
