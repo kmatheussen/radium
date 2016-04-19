@@ -91,12 +91,12 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
 
       //QRect rect(5,3,width-5,height-3);
       QRect rect(1,1,width-2,height-1);//5,3,width-5,height-3);
-      QColor black(0,0,0);
+      QColor button_text_color = get_qcolor(BUTTONS_TEXT_COLOR_NUM);
       if(is_checked==true)
-        black.setAlpha(190);
+        button_text_color.setAlpha(190);
       else
-        black.setAlpha(120);
-      painter->setPen(black);
+        button_text_color.setAlpha(120);
+      painter->setPen(button_text_color);
 
       if(text=="Loop")
         text = text + " " + QChar(8634);

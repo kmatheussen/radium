@@ -72,7 +72,10 @@ static const ColorConfig g_colorconfig[] = {
   {HIGH_BACKGROUND_COLOR_NUM,                  "color11", "High Background"},
   {EDITOR_SLIDERS_COLOR_NUM,                  "color12", "Editor sliders"},
   {TRACK_SLIDER_COLOR_NUM,     "track_slider", "Track slider"},
+  
   {BUTTONS_COLOR_NUM,                  "color13", "Buttons"},
+  {BUTTONS_TEXT_COLOR_NUM,                  "buttons_text", "Button Text"},
+  
   {PORTAMENTO_NOTE_TEXT_COLOR_NUM,                  "color14", "Portamento note text"},
   {PORTAMENTO_END_NOTE_TEXT_COLOR_NUM,                  "portamento_end_note_text", "Portamento end note text"},
   {VELOCITY_TEXT_COLOR_NUM,     "velocity_text", "Velocity text"},
@@ -144,7 +147,7 @@ static ReplacementColorNum g_replacement_color_num[] = {
   {SLIDER2_COLOR_NUM, BUTTONS_COLOR_NUM},
   {SLIDER_DISABLED_COLOR_NUM, HIGH_BACKGROUND_COLOR_NUM},
   {TRACK_SLIDER_COLOR_NUM, TEXT_COLOR_NUM},
-  
+
   {PEAKS_COLOR_NUM, BUTTONS_COLOR_NUM},
   {PEAKS_0DB_COLOR_NUM, VELOCITY2_COLOR_NUM},
   {PEAKS_4DB_COLOR_NUM, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
@@ -195,6 +198,8 @@ static ReplacementColor g_replacement_color[] = {
   {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor(1,1,1)},
   {PLAY_CURSOR_COLOR_NUM, QColor(255, 0, 0)},
 
+  {BUTTONS_TEXT_COLOR_NUM, QColor(1,1,1)},
+  
   {MIXER_TEXT_COLOR_NUM, QColor(1,1,1)},
   {MIXER_BORDER_COLOR_NUM, QColor(1,1,1)},
 
