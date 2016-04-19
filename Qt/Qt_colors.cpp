@@ -75,6 +75,7 @@ static const ColorConfig g_colorconfig[] = {
   {LINE_SLIDER_COLOR_NUM,     "line_slider", "Line slider (left of editor)"},
   
   {BUTTONS_COLOR_NUM,                  "color13", "Buttons"},
+  {BUTTONS_ON_OFF_COLOR_NUM,                  "color13", "Enabled Check Buttons"},
   {BUTTONS_TEXT_COLOR_NUM,                  "buttons_text", "Button Text"},
   
   {PORTAMENTO_NOTE_TEXT_COLOR_NUM,                  "color14", "Portamento note text"},
@@ -141,7 +142,7 @@ static const ColorConfig g_colorconfig[] = {
 };
 
 static ReplacementColorNum g_replacement_color_num[] = {
-  {SOUNDFONT_COLOR_NUM, BUTTONS_COLOR_NUM}, // 13=green
+  {SOUNDFONT_COLOR_NUM, BUTTONS_COLOR_NUM}, // 13=green  
   {SOUNDFILE_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM}, // 7=bluish
   {CURRENT_SOUNDFILE_COLOR_NUM, VELOCITY2_COLOR_NUM},
     
@@ -198,6 +199,7 @@ static ReplacementColor g_replacement_color[] = {
   {SLIDER_TEXT_COLOR_NUM, QColor(0,0,0)},
   {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor(1,1,1)},
   {PLAY_CURSOR_COLOR_NUM, QColor(255, 0, 0)},
+  {BUTTONS_ON_OFF_COLOR_NUM, QColor(40, 40, 40)},
   {LINE_SLIDER_COLOR_NUM, QColor(1,1,1)},
 
   {BUTTONS_TEXT_COLOR_NUM, QColor(1,1,1)},

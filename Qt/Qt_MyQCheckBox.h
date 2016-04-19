@@ -63,7 +63,9 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
       col.setAlpha(76);
 #endif
     }else{
-      col = get_qcolor(HIGH_BACKGROUND_COLOR_NUM).light(52);
+      //col = get_qcolor(HIGH_BACKGROUND_COLOR_NUM).light(52);
+      col = get_qcolor(BUTTONS_ON_OFF_COLOR_NUM);
+      //col = get_qcolor(PEAKS_COLOR_NUM);
    }
 
 
