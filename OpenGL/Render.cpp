@@ -335,7 +335,7 @@ static GE_Context *drawNodeLines(const struct NodeLine *nodelines, enum ColorNum
  ************************************/
 
 static void create_left_slider(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  GE_Context *border = GE_z(Black_rgb(), Z_STATIC);
+  GE_Context *border = GE_color_z(LINE_SLIDER_COLOR_NUM, Z_STATIC);
 
   GE_box(border,
          0,                        get_scrollbar_y1(window, wblock),
@@ -344,7 +344,7 @@ static void create_left_slider(const struct Tracker_Windows *window, const struc
 
 
   //GE_Context *scrollbar = GE_mix_color_z(Black_rgb(), GE_get_rgb(0), 900, Z_SCROLLBAR);
-  GE_Context *scrollbar = GE_z(Black_rgb(), Z_SCROLLBAR);
+  GE_Context *scrollbar = GE_color_z(LINE_SLIDER_COLOR_NUM, Z_SCROLLBAR);
 
   GE_filledBox(scrollbar,
                2,                            0,

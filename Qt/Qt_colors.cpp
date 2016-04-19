@@ -71,7 +71,8 @@ static const ColorConfig g_colorconfig[] = {
   {AUTOMATION3_COLOR_NUM,                  "color10", "Automation 3"},
   {HIGH_BACKGROUND_COLOR_NUM,                  "color11", "High Background"},
   {EDITOR_SLIDERS_COLOR_NUM,                  "color12", "Editor sliders"},
-  {TRACK_SLIDER_COLOR_NUM,     "track_slider", "Track slider"},
+  {TRACK_SLIDER_COLOR_NUM,     "track_slider", "Track slider (bottom of editor)"},
+  {LINE_SLIDER_COLOR_NUM,     "line_slider", "Line slider (left of editor)"},
   
   {BUTTONS_COLOR_NUM,                  "color13", "Buttons"},
   {BUTTONS_TEXT_COLOR_NUM,                  "buttons_text", "Button Text"},
@@ -197,6 +198,7 @@ static ReplacementColor g_replacement_color[] = {
   {SLIDER_TEXT_COLOR_NUM, QColor(0,0,0)},
   {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor(1,1,1)},
   {PLAY_CURSOR_COLOR_NUM, QColor(255, 0, 0)},
+  {LINE_SLIDER_COLOR_NUM, QColor(1,1,1)},
 
   {BUTTONS_TEXT_COLOR_NUM, QColor(1,1,1)},
   
