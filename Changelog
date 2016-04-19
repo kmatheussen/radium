@@ -1,3 +1,22 @@
+Changes 3.7.6 -> 3.7.7:
+* Update gfx as soon as possible when switching block while playing
+  if edit mode is off. (test code, this shouldn't make a difference)
+* Color tweaks
+* Configurable check button color
+* Configurable line slider color
+* Configurable button text color
+* Configurable track slider color
+* Fix setting high note in pianoroll header.
+  (bug introduced in 3.7.6)
+* Don't allow adding LPB or BPM with value 0.
+* Options for trying/using incremental garbage collector
+* Don't wait one second during startup
+* Don't redraw twice. (bug introduced in 3.7.6)
+* Don't crash when changing number of lines for a block
+  with custom signatures
+* mouse: Try to fix some warnings
+
+
 Changes 3.7.5 -> 3.7.6:
 * Render block more immedately when switching block when playing song
 * sampler instrument: Disable portamento test code (was never meant to be enabled).

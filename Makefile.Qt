@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 3.7.6
+VERSION = 3.7.7
 
 #----------------USER SETTINGS-------------------------------
 
@@ -85,8 +85,9 @@ SAMPLERATEOPT ?= `$(PKG) --cflags samplerate`
 GLIBOPT ?= `$(PKG) --cflags glib-2.0`
 # (G_BYTE_ORDER == G_LITTLE_ENDIAN)
 
-PYPATH ?= 
-QT_CFLAGS ?= `$(PKG) --cflags QtGui --cflags QtNetwork --cflags QtOpenGL` -Ibin/packages/qhttpserver-master/src -DQHTTPSERVER_EXPORT
+PYPATH ?=
+QT_SYSTEM_CFLAGS ?=
+QT_CFLAGS ?= `$(PKG) --cflags QtGui --cflags QtNetwork --cflags QtOpenGL` -Ibin/packages/qhttpserver-master/src -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS)
 QT_LDFLAGS ?= `$(PKG) --libs QtGui --libs QtOpenGL --libs QtNetwork`
 GTK_CFLAGS ?= `$(PKG) --cflags gtk+-2.0`
 GTK_LDFLAGS ?= `$(PKG) --libs gtk+-2.0`
@@ -115,8 +116,8 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 FULL_VERSION ?= 1
 
 # Note that "make clean" must be run for DEBUG_BUILD_OPTS to take effect
-DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -DDISABLE_BDWGC -Og -fsanitize=address
-# -Og 
+DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -DDISABLE_BDWGC 
+# -Og -Og -fsanitize=address
 #-Og 
 #  -fsanitize=thread 
 # -Og -fsanitize=address 
@@ -1473,7 +1474,7 @@ Sampler_plugin.o: audio/Sampler_plugin.c audio/Sampler_plugin_wav_parse.c audio/
 	$(GCC) $(OPT)  $(CPUOPT) audio/Sampler_plugin.c $(SNDFILEOPT) $(SAMPLERATEOPT) $(GLIBOPT)
 
 FluidSynth_plugin.o: audio/FluidSynth_plugin.c
-	$(CC) -Ibin/packages/fluidsynth-1.1.6/include $(OPT) $(CPUOPT) audio/FluidSynth_plugin.c
+	$(CC) $(OPT) $(CPUOPT) audio/FluidSynth_plugin.c
 #`$(PKG) --cflags fluidsynth`
 
 Pd_plugin.o: audio/Pd_plugin.cpp
