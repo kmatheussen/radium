@@ -2251,7 +2251,7 @@ void GL_create_all(const struct Tracker_Windows *window){
       GE_wait_until_block_is_rendered();
       wblock = NextWBlock(wblock);
     }
+    GL_create(window, window->wblock);
   }
   
-  GL_create(window, window->wblock);
 }
