@@ -111,7 +111,7 @@ public slots:
       
       int keynum = getNoteNameValue((char*)highkey->text().toUtf8().constData());
       if (keynum!=-1)
-        setPianorollHighKey(keynum,tracknum,blocknum,-1);
+        setPianorollHighKey(keynum+1,tracknum,blocknum,-1);
 
       updateWidgets();
 
