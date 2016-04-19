@@ -75,7 +75,7 @@ static const ColorConfig g_colorconfig[] = {
   {LINE_SLIDER_COLOR_NUM,     "line_slider", "Line slider (left of editor)"},
   
   {BUTTONS_COLOR_NUM,                  "color13", "Buttons"},
-  {BUTTONS_ON_OFF_COLOR_NUM,                  "color13", "Enabled Check Buttons"},
+  {BUTTONS_ON_OFF_COLOR_NUM,                  "check_button_enabled", "Enabled Check Buttons"},
   {BUTTONS_TEXT_COLOR_NUM,                  "buttons_text", "Button Text"},
   
   {PORTAMENTO_NOTE_TEXT_COLOR_NUM,                  "color14", "Portamento note text"},

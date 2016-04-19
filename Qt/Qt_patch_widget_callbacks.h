@@ -106,6 +106,12 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     return f[i];
   }
 
+  void update_label_color(QLabel *l){
+    QString text = l->text();
+    int pos = text.indexOf("#");
+    l->setText(text.replace(pos, 7, get_qcolor(TEXT_COLOR_NUM).name()));
+  }
+  
   void updateWidgets(){
 
     for(int i=0;i<6;i++){
@@ -126,6 +132,11 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 
     name_widget->setText(_patch->name);
     through_onoff->setChecked(_patch->forward_events);
+
+    update_label_color(nd_label1);
+    update_label_color(nd_label2);
+    update_label_color(nd_label3);
+    update_label_color(nd_label4);
   }
 
   void update_peaks(){
