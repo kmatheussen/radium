@@ -631,8 +631,8 @@ void SwapTrack_CurrPos(
 
 	temp=CB_CopyTrack(wblock,wtrack);
 
-	CB_PasteTrack(wblock,next,wtrack);
-	CB_PasteTrack(wblock,temp,next);
+	mo_CB_PasteTrack(wblock,next,wtrack);
+	mo_CB_PasteTrack(wblock,temp,next);
 
 #if !USE_OPENGL       
 	UpdateFXNodeLines(window,wblock,wtrack);

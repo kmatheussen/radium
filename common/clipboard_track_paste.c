@@ -63,7 +63,7 @@ extern struct TempoNodes *cb_temponode;
 
 
 
-bool CB_PasteTrackFX(
+static bool co_CB_PasteTrackFX(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
 	struct WTracks *towtrack
@@ -101,35 +101,19 @@ bool CB_PasteTrackFX(
 	return true;
 }
 
-
-bool CB_PasteTrack(
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	struct WTracks *towtrack
-){
-	struct Tracks *totrack;
-	struct Tracks *track;
-	Place *p1,p2;
-
-	if(towtrack==NULL){
-		RError("Error in function CB_PasteTrack in file clipboard_track_paste.c; towtrack=NULL\n");
-		return false;
-	}
-
-	totrack=towtrack->track;
-	track=wtrack->track;
+static bool paste_track(
+                        struct WBlocks *wblock,
+                        struct WTracks *wtrack,
+                        struct WTracks *towtrack
+                        )
+{
+        struct Tracks *totrack = towtrack->track;
+        struct Tracks *track = wtrack->track;
+        Place *p1,p2;
 
 	towtrack->notelength=wtrack->notelength;
 	towtrack->fxwidth=wtrack->fxwidth;
 
-        if (track->patch != NULL) {
-          if (!track->patch->is_usable)
-            track->patch = InstrumentWidget_new_from_preset(track->patch->state, NULL, -100000,-100000,true);
-          totrack->patch = track->patch;
-          R_ASSERT(totrack->patch->patchdata != NULL);
-        } else
-          totrack->patch = NULL;
-        
 	totrack->onoff=track->onoff;
 	totrack->pan=track->pan;
 	totrack->volume=track->volume;
@@ -159,6 +143,53 @@ bool CB_PasteTrack(
 	LegalizeNotes(wblock->block,totrack);
 
 	return true;
+
+}
+
+bool mo_CB_PasteTrack(
+                      struct WBlocks *wblock,
+                      struct WTracks *wtrack,
+                      struct WTracks *towtrack
+                      )
+{
+	if(towtrack==NULL){
+          RError("Error in function CB_PasteTrack in file clipboard_track_paste.c; towtrack=NULL\n");
+          return false;
+        }
+
+
+        struct Tracks *totrack = towtrack->track;
+        struct Tracks *track = wtrack->track;
+
+        totrack->patch = track->patch;
+
+        return paste_track(wblock, wtrack, towtrack);
+}
+
+
+bool co_CB_PasteTrack(
+                      struct WBlocks *wblock,
+                      struct WTracks *wtrack,
+                      struct WTracks *towtrack
+                      )
+{
+
+	if(towtrack==NULL){
+		RError("Error in function CB_PasteTrack in file clipboard_track_paste.c; towtrack=NULL\n");
+		return false;
+	}
+
+        struct Tracks *totrack = towtrack->track;
+	struct Tracks *track = wtrack->track;
+
+        if (track->patch != NULL && !track->patch->is_usable) {
+          track->patch = InstrumentWidget_new_from_preset(track->patch->state, NULL, -100000, -100000, true);
+          totrack->patch = track->patch;
+          R_ASSERT(totrack->patch->patchdata != NULL);
+        } else
+          totrack->patch = track->patch;
+
+        return paste_track(wblock, wtrack, towtrack);
 }
 
 void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
@@ -221,7 +252,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			if(cb_wtrack==NULL) return;
 			Undo_Track_CurrPos(window);
 			if(window->curr_track_sub==-1){
-				if(CB_PasteTrack(wblock,cb_wtrack,wtrack)){
+				if(co_CB_PasteTrack(wblock,cb_wtrack,wtrack)){
 #if !USE_OPENGL
 					UpdateFXNodeLines(window,wblock,wtrack);
 #endif
@@ -237,7 +268,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 #endif
 				}
 			}else{
-				if(CB_PasteTrackFX(wblock,cb_wtrack,wtrack)){
+				if(co_CB_PasteTrackFX(wblock,cb_wtrack,wtrack)){
 #if !USE_OPENGL
                                   UpdateFXNodeLines(window,wblock,wtrack);
 #endif

@@ -615,7 +615,6 @@ SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type
       Undo_Track(window,wblock,wtrack,wblock->curr_realline);      
       Undo_Patch_CurrPos();
       Undo_InstrumentsWidget_CurrPos();
-      Undo_MixerConnections_CurrPos();
 
       plugin = MW_add_plugin(plugin_type, x, y, buses);
       if(plugin==NULL)
@@ -630,8 +629,10 @@ SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type
 
       create_audio_instrument_widget(patch);
 
-      if(autoconnect==true)
+      if(autoconnect==true) {
+        Undo_MixerConnections_CurrPos();
         MW_autoconnect_plugin(plugin);
+      }
     }
 
     return plugin;
@@ -829,6 +830,19 @@ static hash_t *load_preset_state(void){
 }
 
 
+static struct Patch *M_InstrumentWidget_new_from_preset(hash_t *state, const char *name, double x, double y){
+  struct Patch *patch = CHIP_create_from_plugin_state(state, name, x, y, MIXER_get_buses());
+  
+  if (patch!=NULL){
+    R_ASSERT(patch->patchdata != NULL);
+
+    create_audio_instrument_widget(patch);
+  }
+
+  return patch;
+}
+
+
 struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, double x, double y, bool autoconnect){
   if (state==NULL) {
     state = load_preset_state();
@@ -844,18 +858,17 @@ struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, 
   Undo_InstrumentsWidget_CurrPos();
   Undo_MixerConnections_CurrPos();
   
-  struct Patch *patch = CHIP_create_from_plugin_state(state, name, x, y, MIXER_get_buses());
-  if (patch!=NULL){
-    R_ASSERT(patch->patchdata != NULL);
+  struct Patch *patch = M_InstrumentWidget_new_from_preset(state, name, x, y);
+
+  if (patch != NULL){
     if (autoconnect) {
       struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
       MW_autoconnect_plugin(plugin);
     }
 
     Undo_Chip_Add_CurrPos(patch); // It works fine to call Undo_Chip_Add right after the chip has been created. (except that it's not very logical)
-    create_audio_instrument_widget(patch);
   }
-
+  
   return patch;
 }
 

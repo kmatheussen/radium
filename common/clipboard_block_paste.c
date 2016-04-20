@@ -121,7 +121,7 @@ void CB_PasteBlock(
 			break;
 		}
 
-		CB_PasteTrack(towblock,wtrack,towtrack);
+		co_CB_PasteTrack(towblock,wtrack,towtrack);
 		towtrack=NextWTrack(towtrack);
 		wtrack=NextWTrack(wtrack);
 	}

@@ -328,7 +328,7 @@ void TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct W
     struct WTracks *towtrack = ListFindElement1(&wblock->wtracks->l, wtrack->l.num+i);
     
     if (i>0)
-      CB_PasteTrack(wblock, wtrack_copy, towtrack);
+      co_CB_PasteTrack(wblock, wtrack_copy, towtrack);
 
     towtrack->track->notes = notesvector.elements[i];
   }

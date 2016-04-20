@@ -71,7 +71,7 @@ void *Undo_Do_Track(
 
         printf("*** undo_do_track called. Tracknum: %d\n",wtrack->l.num);
 
-	CB_PasteTrack(wblock,undo_wtrack,wtrack);
+	mo_CB_PasteTrack(wblock,undo_wtrack,wtrack);
 
 #if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,wtrack);

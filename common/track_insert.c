@@ -68,11 +68,11 @@ void DeleteTracks(
 			      wblock,
 			      ListFindElement1(&wblock->wtracks->l,lokke+todelete)
 			      );
-	  CB_PasteTrack(
-			wblock,
-			wtrack,
-			ListFindElement1(&wblock->wtracks->l,lokke)
-			);
+	  co_CB_PasteTrack(
+                           wblock,
+                           wtrack,
+                           ListFindElement1(&wblock->wtracks->l,lokke)
+                           );
 	}
 	
 	Block_Set_num_tracks(block,num_tracks);
@@ -108,11 +108,11 @@ void InsertTracks(
 			wblock,
 			ListFindElement1(&wblock->wtracks->l,lokke-toinsert)
 		);
-		CB_PasteTrack(
-			wblock,
-			wtrack,
-			ListFindElement1(&wblock->wtracks->l,lokke)
-		);
+		co_CB_PasteTrack(
+                                 wblock,
+                                 wtrack,
+                                 ListFindElement1(&wblock->wtracks->l,lokke)
+                                 );
 	}
 
 	for(lokke=tracknum;lokke<tracknum+toinsert;lokke++){

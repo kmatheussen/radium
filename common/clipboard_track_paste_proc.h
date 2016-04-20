@@ -20,7 +20,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
-extern bool CB_PasteTrack(
+extern bool mo_CB_PasteTrack(
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	struct WTracks *towtrack
+);
+
+extern bool co_CB_PasteTrack(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
 	struct WTracks *towtrack

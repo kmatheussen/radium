@@ -14,6 +14,8 @@ NSLog(@"subview's frame after  resizing: %@", NSStringFromRect([subView frame]))
 
 #endif
 
+#if 0
+
 #import <Cocoa/Cocoa.h>
 
 #include <gdk/gdkquartz.h>
@@ -42,4 +44,7 @@ void cocoa_embed(void *super_view, GdkWindow *sub_view){
   NSLog(@"subview's frame after  resizing: %@", NSStringFromRect([subView frame]));
 */
 }
+
+
+#endif
 

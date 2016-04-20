@@ -1357,7 +1357,11 @@ int main(int argc, char **argv){
   if (try_incremental_gc || SETTINGS_read_bool("incremental_gc",false)) {
     if (try_incremental_gc)
       SETTINGS_write_bool("try_incremental_gc",false); // Set back before calling 'GC_enable_incremental' in case 'GC_enable_incremental' crashes.
+    
+#if defined(RELEASE) // incremental crashes under gdb
     GC_enable_incremental();
+#endif
+    
     g_gc_is_incremental = true;
   }
   

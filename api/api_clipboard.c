@@ -108,7 +108,7 @@ void pasteRange(int windownum){
 }
 
 void pasteTrack(int tracknum, int blocknum, int windownum){
-    if (tracknum==-1 && blocknum==-1){
+  if (tracknum==-1 && blocknum==-1){
     struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
     CB_PasteTrack_CurrPos(window);
   }
@@ -128,7 +128,7 @@ void pasteTrack(int tracknum, int blocknum, int windownum){
   if(wtrack==NULL) return;
 
   if (cb_wtrack != NULL)
-    CB_PasteTrack(wblock, cb_wtrack, wtrack);
+    co_CB_PasteTrack(wblock, cb_wtrack, wtrack);
 
   window->must_redraw = true;
 }
