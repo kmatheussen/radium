@@ -1180,13 +1180,16 @@
 
 ;; notes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (place-is-last-place place)
+  (= (-line (<ra> :get-num-lines))
+     place))
+
 (define (note-spans-last-place notenum tracknum)
   (define num-nodes (<ra> :get-num-velocities notenum tracknum))
-  (and (= (-line (<ra> :get-num-lines))
-          (<ra> :get-velocity-place
-                (1- num-nodes)
-                notenum
-                tracknum))))
+  (place-is-last-place (<ra> :get-velocity-place
+                             (1- num-nodes)
+                             notenum
+                             tracknum)))
 
 ;; pitches
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1276,13 +1279,16 @@
                                  (<ra> :get-pitch-y Num *current-track-num*))
                         :Make-undo (lambda (_) (<ra> :undo-notes *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
-                                           (define Value (scale X
-                                                                (<ra> :get-track-notes-x1 *current-track-num*) (<ra> :get-track-notes-x2 *current-track-num*) 
-                                                                (get-min-pitch-in-current-track) (get-max-pitch-in-current-track)))
-                                           (define Num (<ra> :create-pitch Value Place *current-track-num*))
-                                           (if (= -1 Num)
+                                           (if (place-is-last-place Place)
                                                #f
-                                               (callback Num (<ra> :get-pitch-value Num *current-track-num*))))
+                                               (begin
+                                                 (define Value (scale X
+                                                                      (<ra> :get-track-notes-x1 *current-track-num*) (<ra> :get-track-notes-x2 *current-track-num*) 
+                                                                      (get-min-pitch-in-current-track) (get-max-pitch-in-current-track)))
+                                                 (define Num (<ra> :create-pitch Value Place *current-track-num*))
+                                                 (if (= -1 Num)
+                                                     #f
+                                                     (callback Num (<ra> :get-pitch-value Num *current-track-num*))))))
                         :Move-node (lambda (Num Value Place)                                     
                                      (<ra> :set-pitch Num
                                                    (if (<ra> :ctrl-pressed)
