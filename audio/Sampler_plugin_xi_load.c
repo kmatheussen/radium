@@ -199,7 +199,7 @@ static double xi_get_frequency(disk_t *file, int note, int sample_num){
 //
 // Also, the interface for loading xi intruments with libsndfile is currently too limited, so we have to parse the files manually anyway.
 
-bool load_xi_instrument(Data *data,const wchar_t *filename){
+bool load_xi_instrument(Data *data,const wchar_t *filename, bool set_loop_on_off){
   bool ret=false;
 
   disk_t *file=DISK_open_binary_for_reading(filename);
@@ -235,12 +235,14 @@ bool load_xi_instrument(Data *data,const wchar_t *filename){
 
     sample->num_frames   = xi_get_num_frames(file,sample_num);
 
-    set_legal_loop_points(sample,-1,-1); // By default, loop all.
+    set_legal_loop_points(sample,-1,-1, set_loop_on_off); // By default, loop all.
 
     if(xi_get_loop_type(file,sample_num)!=0){ // TODO: Implement those other types of loops.
       set_legal_loop_points(sample,
                             xi_get_loop_start(file,sample_num),
-                            xi_get_loop_end(file,sample_num));
+                            xi_get_loop_end(file,sample_num),
+                            set_loop_on_off
+                            );
     }
 
     sample->sound = xi_get_sample(file, sample_num);

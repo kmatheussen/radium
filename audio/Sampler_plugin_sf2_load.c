@@ -3,7 +3,7 @@
 
 #include "../common/hashmap_proc.h"
 
-static bool load_sf2_instrument(Data *data, const wchar_t *filename, int preset_bag_number){
+static bool load_sf2_instrument(Data *data, const wchar_t *filename, int preset_bag_number, bool set_loop_on_off){
   hash_t *info = SF2_get_info(filename);
   if(info==NULL)
     return false;
@@ -65,10 +65,12 @@ static bool load_sf2_instrument(Data *data, const wchar_t *filename, int preset_
       sample->volume = 1.0f;
       sample->num_frames = HASH_get_int(sample_info,"num_frames");
 
-      set_legal_loop_points(sample,-1,-1); // By default, loop all.
+      set_legal_loop_points(sample,-1,-1, set_loop_on_off); // By default, loop all.
       set_legal_loop_points(sample,
                             HASH_get_int(sample_info,"loop start"),
-                            HASH_get_int(sample_info,"loop end"));
+                            HASH_get_int(sample_info,"loop end"),
+                            set_loop_on_off
+                            );
 
       printf("Loop start / end: %d %d\n",sample->loop_start,sample->loop_end);
       

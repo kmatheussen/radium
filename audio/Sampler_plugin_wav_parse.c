@@ -172,7 +172,7 @@ static int find_cue_id_for_label(disk_t *file, char *label){
   return -1;
 }
 
-static bool set_wav_loop_points_using_cues(Sample *sample, disk_t *file){
+static bool set_wav_loop_points_using_cues(Sample *sample, disk_t *file, bool set_loop_on_off){
   int cue_id_loop_start=find_cue_id_for_label(file, "Loop Start");
   int cue_id_loop_end=find_cue_id_for_label(file, "Loop End");
 
@@ -188,7 +188,7 @@ static bool set_wav_loop_points_using_cues(Sample *sample, disk_t *file){
   int loop_start = find_loop_cue_pos(file,cue_id_loop_start,num_cues);
   int loop_end = find_loop_cue_pos(file,cue_id_loop_end,num_cues);
 
-  set_legal_loop_points(sample, loop_start, loop_end);
+  set_legal_loop_points(sample, loop_start, loop_end, set_loop_on_off);
 
   printf("*************** num_cues: %d. loop_start: %d, loop_end: %d\n",num_cues,loop_start,loop_end);
   return true;
@@ -214,7 +214,7 @@ static int get_bytes_per_frame_in_wav(disk_t *file){
 }
 #endif
 
-static bool set_wav_loop_points_using_smpl_chunk(Sample *sample, disk_t *file){
+static bool set_wav_loop_points_using_smpl_chunk(Sample *sample, disk_t *file, bool set_loop_on_off){
   if(spool_to_wav_chunk(file, "smpl", 0)==false)
     return false;
 
@@ -238,15 +238,15 @@ static bool set_wav_loop_points_using_smpl_chunk(Sample *sample, disk_t *file){
          loop_end,loop_end/bytes_per_frame,
          bytes_per_frame);
 
-  set_legal_loop_points(sample, loop_start/bytes_per_frame, loop_end/bytes_per_frame);
+  set_legal_loop_points(sample, loop_start/bytes_per_frame, loop_end/bytes_per_frame, set_loop_on_off);
 #endif
 
-  set_legal_loop_points(sample, loop_start, loop_end);
+  set_legal_loop_points(sample, loop_start, loop_end, set_loop_on_off);
   
   return true;
 }
 
-static void set_wav_loop_points(Sample *sample, const wchar_t *filename){
+static void set_wav_loop_points(Sample *sample, const wchar_t *filename, bool set_loop_on_off){
   
   disk_t *file = DISK_open_binary_for_reading(filename);
   
@@ -255,8 +255,8 @@ static void set_wav_loop_points(Sample *sample, const wchar_t *filename){
     return;
   }
 
-  if(set_wav_loop_points_using_smpl_chunk(sample,file)==false)
-    set_wav_loop_points_using_cues(sample,file);
+  if(set_wav_loop_points_using_smpl_chunk(sample,file, set_loop_on_off)==false)
+    set_wav_loop_points_using_cues(sample,file, set_loop_on_off);
 
   DISK_close_and_delete(file);
 }

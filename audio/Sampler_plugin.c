@@ -79,8 +79,6 @@ const char *g_click_name = "Click";
 
 // Effect order.
 //
-// !! Remember to copy value in 'create_data' when adding new fields !!
-//
 enum{
   EFF_STARTPOS,
   EFF_FINETUNE,
@@ -168,18 +166,17 @@ typedef struct{
   const Sample *samples[MAX_NUM_SAMPLES];
 } Note;
 
-struct _Data{
+// The part of "Data" that can be memcpy-ed when creating a new Data from old Data.
+typedef struct{
+  float startpos;
+
   float finetune; // -100 -> +100
   float note_adjust; // -6 -> +6      (must be float because of conversions)
   //float octave_adjust; // -10 -> +10. (must be float because of conversions)
 
-  float startpos;
-
   float a,h,d,s,r;
 
   DEFINE_ATOMIC(bool, loop_onoff);
-  int loop_start;
-  int loop_length;   // if 0, use loop data in sample file instead, if there is any. (loop_start has no meaning if loop_length is 0)
   int crossfade_length;
 
   double vibrato_depth;
@@ -188,9 +185,20 @@ struct _Data{
   double vibrato_phase;
   double vibrato_value;
 
-  struct SoundPlugin *tremolo;
   float tremolo_depth;
   float tremolo_speed;
+
+} CopyData;
+
+struct _Data{
+
+  CopyData p;
+
+  // Should loop start/length be placed in CopyData?
+  int loop_start;
+  int loop_length;   // if 0, use loop data in sample file instead, if there is any. (loop_start has no meaning if loop_length is 0)
+
+  struct SoundPlugin *tremolo;
   
   float samplerate; // The system samplerate. I.e. the jack samplerate, not soundfile samplerate.
 
@@ -323,7 +331,7 @@ static long RT_crossfade(int start_pos, int end_pos, int crossfade_start, int cr
 }
 
 static int RT_legal_crossfade_length(const Sample *sample, Data *data){
-  int crossfade_length = data->crossfade_length;
+  int crossfade_length = data->p.crossfade_length;
   int loop_length = sample->loop_end - sample->loop_start;
 
   return R_MIN(crossfade_length, loop_length/2);
@@ -417,10 +425,10 @@ static long RT_src_callback(void *cb_data, float **out_data){
   int start_pos        = voice->pos;
   Data  *data          = sample->data;
 
-  if(ATOMIC_GET(sample->data->loop_onoff)==false || sample->loop_end <= sample->loop_start)
+  if(ATOMIC_GET(sample->data->p.loop_onoff)==false || sample->loop_end <= sample->loop_start)
     return RT_src_callback_nolooping(voice, sample, data, start_pos, out_data);
 
-  else if(data->crossfade_length > 0)
+  else if(data->p.crossfade_length > 0)
     return RT_src_callback_with_crossfade_looping(voice, sample, data, start_pos, out_data);
 
   else
@@ -471,24 +479,24 @@ static double RT_get_src_ratio3(Data *data, const Sample *sample, float pitch){
 // Note: Also called from get_peaks
 static double RT_get_src_ratio2(Data *data, const Sample *sample, float pitch){
 
-  //printf("note_adjust: %d (%f)\n",(int)data->note_adjust,data->note_adjust);
-  double adjusted_pitch = pitch + scale(data->finetune, 0, 1, -1, 1) + (int)data->note_adjust;
+  //printf("note_adjust: %d (%f)\n",(int)data->p.note_adjust,data->p.note_adjust);
+  double adjusted_pitch = pitch + scale(data->p.finetune, 0, 1, -1, 1) + (int)data->p.note_adjust;
   return RT_get_src_ratio3(data, sample, adjusted_pitch);
 }
 
 static double RT_get_src_ratio(Data *data, Voice *voice){
   const Sample *sample = voice->sample;
 
-  //int notenum = voice->note_num + (int)data->octave_adjust*12 + (int)data->note_adjust;
-  //int notenum = voice->note_num + (int)data->note_adjust;
-  //float pitch = voice->end_pitch + scale(data->finetune, 0, 1, -1, 1) + (int)data->note_adjust;
+  //int notenum = voice->note_num + (int)data->octave_adjust*12 + (int)data->p.note_adjust;
+  //int notenum = voice->note_num + (int)data->p.note_adjust;
+  //float pitch = voice->end_pitch + scale(data->p.finetune, 0, 1, -1, 1) + (int)data->p.note_adjust;
 
   float pitch = voice->pitch;
 
   // Add vibrato here instead of in get_src_ratio3 to avoid weird peaks
-  if (data->vibrato_phase_add > 0.0) {
-    pitch += data->vibrato_value;
-    //printf("%f ,%f",data->vibrato_depth,data->vibrato_value);
+  if (data->p.vibrato_phase_add > 0.0) {
+    pitch += data->p.vibrato_value;
+    //printf("%f ,%f",data->p.vibrato_depth,data->p.vibrato_value);
   }
 
   return RT_get_src_ratio2(data,sample,pitch);
@@ -638,9 +646,9 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   memset(outputs[0],0,num_frames*sizeof(float));
   memset(outputs[1],0,num_frames*sizeof(float));
 
-  if (data->vibrato_phase_add > 0.0) {
-    data->vibrato_value = data->vibrato_depth * sin(data->vibrato_phase);
-    data->vibrato_phase += data->vibrato_phase_add*(double)num_frames;
+  if (data->p.vibrato_phase_add > 0.0) {
+    data->p.vibrato_value = data->p.vibrato_depth * sin(data->p.vibrato_phase);
+    data->p.vibrato_phase += data->p.vibrato_phase_add*(double)num_frames;
   }
   
   bool was_playing_something = data->voices_playing != NULL;
@@ -691,7 +699,7 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
     RT_remove_voice(&data->voices_not_playing, voice);
     RT_add_voice(&data->voices_playing, voice);
     
-    voice->last_finetune_value = data->finetune;
+    voice->last_finetune_value = data->p.finetune;
     
     voice->note_num = note_num;
     voice->note_id = note_id;
@@ -707,12 +715,12 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
     
     voice->sample = sample;
 
-    if(ATOMIC_GET(data->loop_onoff)==true && sample->loop_end > sample->loop_start)
-      voice->pos=scale(data->startpos, // set startpos between 0 and loop_end
+    if(ATOMIC_GET(data->p.loop_onoff)==true && sample->loop_end > sample->loop_start)
+      voice->pos=scale(data->p.startpos, // set startpos between 0 and loop_end
                        0,1,
                        0,sample->loop_end);
     else
-      voice->pos=scale(data->startpos,  // set startpos between 0 and sound length
+      voice->pos=scale(data->p.startpos,  // set startpos between 0 and sound length
                        0,1,
                        0,sample->num_frames);
 
@@ -720,7 +728,7 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
         
     RESAMPLER_reset(voice->resampler);
     ADSR_reset(voice->adsr);
-    ADSR_set_adsr(voice->adsr, data->a, data->h, data->d, data->s, data->r);
+    ADSR_set_adsr(voice->adsr, data->p.a, data->p.h, data->p.d, data->p.s, data->p.r);
 
     voice->delta_pos_at_start=time;
     voice->delta_pos_at_end=-1;
@@ -810,7 +818,7 @@ static int time_to_frame(Data *data, double time, float f_note_num){
     samplenum++;
     if (samplenum==note->num_samples) {
       RError("samplenum==num_samples. %f\n",f_note_num);
-      return data->startpos*sample->num_frames + time/30000.0f;
+      return data->p.startpos*sample->num_frames + time/30000.0f;
     }
   }
   
@@ -818,7 +826,7 @@ static int time_to_frame(Data *data, double time, float f_note_num){
   double src_ratio = RT_get_src_ratio2(data, sample, f_note_num);
 
   return
-    data->startpos*sample->num_frames 
+    data->p.startpos*sample->num_frames 
     + time/src_ratio ;
 }
 
@@ -827,22 +835,22 @@ static void apply_adsr_to_peak(Data *data, int64_t time, float *min_value, float
   float ms = time*1000 / data->samplerate;
   float mul;
 
-  if(ms >= data->a+data->h+data->d)
-    mul = data->s;
+  if(ms >= data->p.a+data->p.h+data->p.d)
+    mul = data->p.s;
 
-  else if(ms >= data->a+data->h)
+  else if(ms >= data->p.a+data->p.h)
     mul = scale(ms,
-                (data->a+data->h),
-                (data->a+data->h+data->d), 
+                (data->p.a+data->p.h),
+                (data->p.a+data->p.h+data->p.d), 
                 1.0f,
-                data->s);
+                data->p.s);
 
-  else if(ms >= data->a)
+  else if(ms >= data->p.a)
     mul = 1.0f;
 
   else
     mul = scale(ms,
-                0.0f,data->a,
+                0.0f,data->p.a,
                 0.0f,1.0f);
 
 
@@ -852,7 +860,7 @@ static void apply_adsr_to_peak(Data *data, int64_t time, float *min_value, float
 
 static bool get_peak_sample(const Sample *sample, int64_t framenum, float *min_value, float *max_value){
 
-  if(ATOMIC_GET(sample->data->loop_onoff)==true && framenum>=sample->loop_end && sample->loop_end>sample->loop_start){
+  if(ATOMIC_GET(sample->data->p.loop_onoff)==true && framenum>=sample->loop_end && sample->loop_end>sample->loop_start){
 
     framenum -= sample->loop_end; // i.e. how far after loop end are we?
 
@@ -994,11 +1002,11 @@ static void update_peaks(SoundPlugin *plugin){
 }
 
 static void set_loop_onoff(Data *data, bool loop_onoff){
-  ATOMIC_SET(data->loop_onoff, loop_onoff);
+  ATOMIC_SET(data->p.loop_onoff, loop_onoff);
 }
 
 static bool get_loop_onoff(Data *data){
-  return ATOMIC_GET(data->loop_onoff);
+  return ATOMIC_GET(data->p.loop_onoff);
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
@@ -1007,87 +1015,87 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
   if(value_format==PLUGIN_FORMAT_SCALED){
     switch(effect_num){
     case EFF_STARTPOS:
-      data->startpos = value;
+      data->p.startpos = value;
       update_peaks(plugin);
       break;
     case EFF_FINETUNE:
-      data->finetune = value;
+      data->p.finetune = value;
       update_peaks(plugin);
       break;
     case EFF_A:
-      data->a = scale(value,
+      data->p.a = scale(value,
                       0.0,1.0,
                       0,MAX_A);
       update_peaks(plugin);
       break;
     case EFF_H:
-      data->h = scale(value,
+      data->p.h = scale(value,
                       0.0,1.0,
                       0,MAX_H);
       update_peaks(plugin);
       break;
     case EFF_D:
-      data->d = scale(value,
+      data->p.d = scale(value,
                       0.0,1.0,
                       0,MAX_D);
       update_peaks(plugin);
       break;
     case EFF_S:
-      data->s = scale(value,
+      data->p.s = scale(value,
                       0.0,1.0,
                       0,MAX_S);
       update_peaks(plugin);
       break;
     case EFF_R:
-      data->r = scale(value,
+      data->p.r = scale(value,
                       0.0,1.0,
                       0,MAX_R);
       break;
     case EFF_VIBRATO_SPEED:
-      data->vibrato_speed = scale(value,
+      data->p.vibrato_speed = scale(value,
                                   0.0,1.0,
                                   0,MAX_VIBRATO_SPEED);
 
-      if (data->vibrato_speed <= 0.001) {
-        data->vibrato_value = 0.0;
-        data->vibrato_phase = 4.71239;
-        data->vibrato_phase_add = -1;
+      if (data->p.vibrato_speed <= 0.001) {
+        data->p.vibrato_value = 0.0;
+        data->p.vibrato_phase = 4.71239;
+        data->p.vibrato_phase_add = -1;
       } else
-        data->vibrato_phase_add = data->vibrato_speed * 2.0 * M_PI / data->samplerate;
+        data->p.vibrato_phase_add = data->p.vibrato_speed * 2.0 * M_PI / data->samplerate;
       
       break;
     case EFF_VIBRATO_DEPTH:
-      data->vibrato_depth = scale(value,
+      data->p.vibrato_depth = scale(value,
                                   0.0,1.0,
                                   0,MAX_VIBRATO_DEPTH);
-      if (data->vibrato_depth <= 0.001) {
-        data->vibrato_value = 0.0;
-        data->vibrato_phase = 4.71239;
-        data->vibrato_phase_add = -1;    
+      if (data->p.vibrato_depth <= 0.001) {
+        data->p.vibrato_value = 0.0;
+        data->p.vibrato_phase = 4.71239;
+        data->p.vibrato_phase_add = -1;    
       } else
-        data->vibrato_phase_add = data->vibrato_speed * 2.0 * M_PI / data->samplerate;
+        data->p.vibrato_phase_add = data->p.vibrato_speed * 2.0 * M_PI / data->samplerate;
       break;
     case EFF_TREMOLO_SPEED:
-      data->tremolo_speed = scale(value,
+      data->p.tremolo_speed = scale(value,
                                   0.0,1.0,
                                   0,MAX_TREMOLO_SPEED);
-      data->tremolo->type->set_effect_value(data->tremolo, time, 0, data->tremolo_speed, PLUGIN_FORMAT_NATIVE, when);
+      data->tremolo->type->set_effect_value(data->tremolo, time, 0, data->p.tremolo_speed, PLUGIN_FORMAT_NATIVE, when);
       break;
     case EFF_TREMOLO_DEPTH:
-      data->tremolo_depth = scale(value,
+      data->p.tremolo_depth = scale(value,
                                   0.0,1.0,
                                   0,MAX_TREMOLO_DEPTH);
-      data->tremolo->type->set_effect_value(data->tremolo, time, 1, data->tremolo_depth, PLUGIN_FORMAT_NATIVE, when);
+      data->tremolo->type->set_effect_value(data->tremolo, time, 1, data->p.tremolo_depth, PLUGIN_FORMAT_NATIVE, when);
       break;
     case EFF_NOTE_ADJUST:
-      data->note_adjust = scale(value,
+      data->p.note_adjust = scale(value,
                                 0.0,1.0,
                                 -6.99,6.99);
       update_peaks(plugin);
       break;
 #if 0
     case EFF_OCTAVE_ADJUST:
-      data->octave_adjust = scale(value,
+      data->p.octave_adjust = scale(value,
                                   0,1,
                                   -10.99,10.99);
       break;
@@ -1098,10 +1106,10 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       break;
       
     case EFF_CROSSFADE_LENGTH:
-      data->crossfade_length = scale(value,
-                                     0.0, 1.0,
-                                     0, MAX_CROSSFADE_LENGTH
-                                     );
+      data->p.crossfade_length = scale(value,
+                                       0.0, 1.0,
+                                       0, MAX_CROSSFADE_LENGTH
+                                       );
       break;
       
     default:
@@ -1112,54 +1120,54 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
     case EFF_STARTPOS:
       R_ASSERT(value >= 0.0f);
       R_ASSERT(value <= 1.0f);
-      data->startpos = value;
+      data->p.startpos = value;
       update_peaks(plugin);
       break;
     case EFF_FINETUNE:
-      data->finetune = value;
+      data->p.finetune = value;
       update_peaks(plugin);
       break;
     case EFF_A:
-      data->a = value;
+      data->p.a = value;
       update_peaks(plugin);
       break;
     case EFF_H:
-      data->h = value;
+      data->p.h = value;
       update_peaks(plugin);
       break;
     case EFF_D:
-      data->d = value;
+      data->p.d = value;
       update_peaks(plugin);
       break;
     case EFF_S:
-      data->s = value;
+      data->p.s = value;
       update_peaks(plugin);
       break;
     case EFF_R:
-      data->r = value;
+      data->p.r = value;
       break;
     case EFF_VIBRATO_SPEED:
-      data->vibrato_speed = value;
-      data->vibrato_phase_add = data->vibrato_speed * 2.0 * M_PI / data->samplerate;
+      data->p.vibrato_speed = value;
+      data->p.vibrato_phase_add = data->p.vibrato_speed * 2.0 * M_PI / data->samplerate;
       break;
     case EFF_VIBRATO_DEPTH:
-      data->vibrato_depth = value;
+      data->p.vibrato_depth = value;
       break;
     case EFF_TREMOLO_SPEED:
-      data->tremolo_speed = value;
-      data->tremolo->type->set_effect_value(data->tremolo, time, 0, data->tremolo_speed, PLUGIN_FORMAT_NATIVE, when);
+      data->p.tremolo_speed = value;
+      data->tremolo->type->set_effect_value(data->tremolo, time, 0, data->p.tremolo_speed, PLUGIN_FORMAT_NATIVE, when);
       break;
     case EFF_TREMOLO_DEPTH:
-      data->tremolo_depth = value;
-      data->tremolo->type->set_effect_value(data->tremolo, time, 1, data->tremolo_depth, PLUGIN_FORMAT_NATIVE, when);
+      data->p.tremolo_depth = value;
+      data->tremolo->type->set_effect_value(data->tremolo, time, 1, data->p.tremolo_depth, PLUGIN_FORMAT_NATIVE, when);
       break;
     case EFF_NOTE_ADJUST:
-      data->note_adjust = value;
+      data->p.note_adjust = value;
       update_peaks(plugin);
       break;
 #if 0
     case EFF_OCTAVE_ADJUST:
-      data->octave_adjust = value;
+      data->p.octave_adjust = value;
       break;
 #endif
     case EFF_LOOP_ONOFF:
@@ -1168,7 +1176,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       break;
 
     case EFF_CROSSFADE_LENGTH:
-      data->crossfade_length = value;
+      data->p.crossfade_length = value;
       break;
 
     default:
@@ -1183,56 +1191,56 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
   if(value_format==PLUGIN_FORMAT_SCALED){
     switch(effect_num){
     case EFF_STARTPOS:
-      return data->startpos;
+      return data->p.startpos;
     case EFF_FINETUNE:
-      return data->finetune;
+      return data->p.finetune;
     case EFF_A:
-      return scale(data->a,
+      return scale(data->p.a,
                    0,MAX_A,
                    0.0,1.0);
     case EFF_H:
-      return scale(data->h,
+      return scale(data->p.h,
                    0,MAX_H,
                    0.0,1.0);
     case EFF_D:
-      return scale(data->d,
+      return scale(data->p.d,
                    0,MAX_D,
                    0.0,1.0);
     case EFF_S:
-      return scale(data->s,
+      return scale(data->p.s,
                    0,MAX_S,
                    0.0,1.0);
     case EFF_R:
-      return scale(data->r,
+      return scale(data->p.r,
                    0,MAX_R,
                    0.0,1.0);
     case EFF_VIBRATO_SPEED:
-      return scale(data->vibrato_speed,
+      return scale(data->p.vibrato_speed,
                    0,MAX_VIBRATO_SPEED,
                    0.0,1.0
                    );
     case EFF_VIBRATO_DEPTH:
-      return scale(data->vibrato_depth,
+      return scale(data->p.vibrato_depth,
                    0,MAX_VIBRATO_DEPTH,
                    0.0,1.0
                    );      
     case EFF_TREMOLO_SPEED:
-      return scale(data->tremolo_speed,
+      return scale(data->p.tremolo_speed,
                    0,MAX_TREMOLO_SPEED,
                    0.0,1.0
                    );
     case EFF_TREMOLO_DEPTH:
-      return scale(data->tremolo_depth,
+      return scale(data->p.tremolo_depth,
                    0,MAX_TREMOLO_DEPTH,
                    0.0,1.0
                    );      
     case EFF_NOTE_ADJUST:
-      return scale(data->note_adjust,
+      return scale(data->p.note_adjust,
                    -6.99,6.99,
                    0,1);
 #if 0
     case EFF_OCTAVE_ADJUST:
-      return scale(data->octave_adjust,
+      return scale(data->p.octave_adjust,
                    -10.99,10.99,
                    0,1);
 #endif
@@ -1241,7 +1249,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       break;
 
     case EFF_CROSSFADE_LENGTH:
-      return scale(data->crossfade_length,0,MAX_CROSSFADE_LENGTH,0,1);
+      return scale(data->p.crossfade_length,0,MAX_CROSSFADE_LENGTH,0,1);
       break;
 
     default:
@@ -1251,38 +1259,38 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
   }else{
     switch(effect_num){
     case EFF_STARTPOS:
-      return data->startpos;
+      return data->p.startpos;
     case EFF_FINETUNE:
-      return data->finetune;
+      return data->p.finetune;
     case EFF_A:
-      return data->a;
+      return data->p.a;
     case EFF_H:
-      return data->h;
+      return data->p.h;
     case EFF_D:
-      return data->d;
+      return data->p.d;
     case EFF_S:
-      return data->s;
+      return data->p.s;
     case EFF_R:
-      return data->r;
+      return data->p.r;
     case EFF_VIBRATO_SPEED:
-      return data->vibrato_speed;
+      return data->p.vibrato_speed;
     case EFF_VIBRATO_DEPTH:
-      return data->vibrato_depth;
+      return data->p.vibrato_depth;
     case EFF_TREMOLO_SPEED:
-      return data->tremolo_speed;
+      return data->p.tremolo_speed;
     case EFF_TREMOLO_DEPTH:
-      return data->tremolo_depth;
+      return data->p.tremolo_depth;
     case EFF_NOTE_ADJUST:
-      return data->note_adjust;
+      return data->p.note_adjust;
 #if 0
     case EFF_OCTAVE_ADJUST:
-      return data->octave_adjust;
+      return data->p.octave_adjust;
 #endif
     case EFF_LOOP_ONOFF:
       return get_loop_onoff(data)==true?1.0f:0.0f;
 
     case EFF_CROSSFADE_LENGTH:
-      return data->crossfade_length;
+      return data->p.crossfade_length;
 
     default:
       RError("Unknown effect number %d\n",effect_num);
@@ -1295,43 +1303,43 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
   Data *data = (Data*)plugin->data;
   switch(effect_num){
   case EFF_STARTPOS:
-    snprintf(buffer,buffersize-1,"%.2f%%",scale(data->startpos,0.0,1.0,0,100));
+    snprintf(buffer,buffersize-1,"%.2f%%",scale(data->p.startpos,0.0,1.0,0,100));
     break;
   case EFF_FINETUNE:
-    snprintf(buffer,buffersize-1,"%f cents",scale(data->finetune,0.0,1.0,-100,100));
+    snprintf(buffer,buffersize-1,"%f cents",scale(data->p.finetune,0.0,1.0,-100,100));
     break;
   case EFF_A:
-    snprintf(buffer,buffersize-1,"%f ms",data->a);
+    snprintf(buffer,buffersize-1,"%f ms",data->p.a);
     break;
   case EFF_H:
-    snprintf(buffer,buffersize-1,"%f ms",data->h);
+    snprintf(buffer,buffersize-1,"%f ms",data->p.h);
     break;
   case EFF_D:
-    snprintf(buffer,buffersize-1,"%f ms",data->d);
+    snprintf(buffer,buffersize-1,"%f ms",data->p.d);
     break;
   case EFF_S:
-    snprintf(buffer,buffersize-1,"%f",data->s);
+    snprintf(buffer,buffersize-1,"%f",data->p.s);
     break;
   case EFF_R:
-    snprintf(buffer,buffersize-1,"%f ms",data->r);
+    snprintf(buffer,buffersize-1,"%f ms",data->p.r);
     break;
   case EFF_VIBRATO_SPEED:
-    snprintf(buffer,buffersize-1,"%.1fHz",data->vibrato_speed);
+    snprintf(buffer,buffersize-1,"%.1fHz",data->p.vibrato_speed);
     break;
   case EFF_VIBRATO_DEPTH:
-    snprintf(buffer,buffersize-1,"%.2f",data->vibrato_depth);
+    snprintf(buffer,buffersize-1,"%.2f",data->p.vibrato_depth);
     break;
   case EFF_TREMOLO_SPEED:
-    snprintf(buffer,buffersize-1,"%.1fHz",data->tremolo_speed);
+    snprintf(buffer,buffersize-1,"%.1fHz",data->p.tremolo_speed);
     break;
   case EFF_TREMOLO_DEPTH:
-    snprintf(buffer,buffersize-1,"%.2f",data->tremolo_depth);
+    snprintf(buffer,buffersize-1,"%.2f",data->p.tremolo_depth);
     break;
   case EFF_NOTE_ADJUST:
     if(false && data->num_different_samples>1)
       snprintf(buffer,buffersize-1,"disabled (multi-sample instrument)");
     else{
-      int adjust = data->note_adjust;
+      int adjust = data->p.note_adjust;
       snprintf(buffer,buffersize-1,"%s%d note%s",adjust>0?"+":"",adjust,adjust==-1?"":adjust==1?"":"s");
     }
     break;
@@ -1340,13 +1348,13 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     if(false && data->num_different_samples>1)
       snprintf(buffer,buffersize-1,"disabled (multi-sample instrument)");
     else{
-      int adjust=data->octave_adjust;
+      int adjust=data->p.octave_adjust;
       snprintf(buffer,buffersize-1,"%s%d octave%s",adjust>0?"+":"",adjust,adjust==-1?"":adjust==1?"":"s");
     }
     break;
 #endif
   case EFF_CROSSFADE_LENGTH:
-    snprintf(buffer,buffersize-1,"%d samples",(int)data->crossfade_length);
+    snprintf(buffer,buffersize-1,"%d samples",(int)data->p.crossfade_length);
     break;
 
   default:
@@ -1372,7 +1380,7 @@ static double get_ratio(int sample_note_num, int play_note_num){
 
 
 // Note, if start==-1 and end==-1, loop_start is set to 0 and loop_end is set to sample->num_frames, and loop_onoff is not set.
-static void set_legal_loop_points(Sample *sample, int start, int end){
+static void set_legal_loop_points(Sample *sample, int start, int end, bool set_loop_on_off){
   if(start==-1 && end==-1){ 
     sample->loop_start=0;
     sample->loop_end=sample->num_frames;
@@ -1391,7 +1399,8 @@ static void set_legal_loop_points(Sample *sample, int start, int end){
   }else{
     sample->loop_start=start;
     sample->loop_end=end;
-    ATOMIC_SET(sample->data->loop_onoff, true);
+    if (set_loop_on_off)
+      ATOMIC_SET(sample->data->p.loop_onoff, true);
   }
 }
 
@@ -1434,7 +1443,7 @@ static float *load_interleaved_samples(const wchar_t *filename, SF_INFO *sf_info
   return ret;
 }
 
-static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename){
+static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename, bool set_loop_on_off){
   SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
 
   data->num_different_samples = 1;
@@ -1476,11 +1485,11 @@ static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename){
     for(ch=0;ch<num_channels;ch++){     
       Sample *sample=(Sample*)&data->samples[ch];
 
-      set_legal_loop_points(sample,-1,-1); // By default, don't loop, but if set, loop all.
+      set_legal_loop_points(sample,-1,-1, set_loop_on_off); // By default, don't loop, but if set, loop all.
               
       if((sf_info.format&0xffff0000) == SF_FORMAT_WAV){
         printf("format: 0x%x. sections: %d, num_frames: %d. SF_FORMAT_WAV: 0x%x. og: 0x%x\n",sf_info.format,sf_info.sections,(int)sf_info.frames,SF_FORMAT_WAV,sf_info.format&SF_FORMAT_WAV);
-        set_wav_loop_points(sample,filename);
+        set_wav_loop_points(sample,filename,set_loop_on_off);
       }
 
       if(num_channels==1)
@@ -1544,10 +1553,10 @@ static void generate_peaks(Data *data){
 }
 
 
-static bool load_sample(Data *data, const wchar_t *filename, int instrument_number){
-  if(load_xi_instrument(data,filename)==false)
-    if(load_sample_with_libsndfile(data,filename)==false)
-      if(load_sf2_instrument(data,filename,instrument_number)==false)
+static bool load_sample(Data *data, const wchar_t *filename, int instrument_number, bool set_loop_on_off){
+  if(load_xi_instrument(data,filename, set_loop_on_off)==false)
+    if(load_sample_with_libsndfile(data,filename, set_loop_on_off)==false)
+      if(load_sf2_instrument(data,filename,instrument_number, set_loop_on_off)==false)
         return false;
   
   //data->num_channels = data->samples[0].num_channels; // All samples must contain the same number of channels.
@@ -1589,41 +1598,26 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
   data->tremolo = create_tremolo();
       
   if(old_data==NULL){
-    data->finetune = 0.5f;
     
-    data->a=DEFAULT_A;
-    data->d=DEFAULT_D;
-    data->s=DEFAULT_S;
-    data->r=DEFAULT_R;
+    data->p.finetune = 0.5f;
+    
+    data->p.a=DEFAULT_A;
+    data->p.d=DEFAULT_D;
+    data->p.s=DEFAULT_S;
+    data->p.r=DEFAULT_R;
 
-    data->vibrato_phase_add = -1;
+    data->p.vibrato_phase_add = -1;
         
   }else{
 
-    data->startpos = old_data->startpos;
-    data->finetune = old_data->finetune;
-    data->note_adjust = old_data->note_adjust;
+    memcpy(&data->p, &old_data->p, sizeof(CopyData));
     
-    data->a = old_data->a;
-    data->h = old_data->h;
-    data->d = old_data->d;
-    data->s = old_data->s;
-    data->r = old_data->r;
+    data->p.vibrato_value = 0.0;
+    data->p.vibrato_phase = 4.71239;
     
-    data->vibrato_value = 0.0;
-    data->vibrato_speed = old_data->vibrato_speed;
-    data->vibrato_depth = old_data->vibrato_depth;
-    data->vibrato_phase = 4.71239;
-    data->vibrato_phase_add = old_data->vibrato_phase_add;
+    data->tremolo->type->set_effect_value(data->tremolo, 0, 0, data->p.tremolo_speed, PLUGIN_FORMAT_NATIVE, FX_single);
+    data->tremolo->type->set_effect_value(data->tremolo, 0, 1, data->p.tremolo_depth, PLUGIN_FORMAT_NATIVE, FX_single);
     
-    data->tremolo_depth = old_data->tremolo_depth;
-    data->tremolo_speed = old_data->tremolo_speed;
-    
-    data->tremolo->type->set_effect_value(data->tremolo, 0, 0, data->tremolo_speed, PLUGIN_FORMAT_NATIVE, FX_single);
-    data->tremolo->type->set_effect_value(data->tremolo, 0, 1, data->tremolo_depth, PLUGIN_FORMAT_NATIVE, FX_single);
-    
-    ATOMIC_SET(data->loop_onoff, ATOMIC_GET(old_data->loop_onoff));
-    data->crossfade_length = old_data->crossfade_length;
   }
   
   data->samplerate = samplerate;
@@ -1663,7 +1657,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
     
   Data *data = create_data(samplerate,NULL,default_sound_filename,0,RESAMPLER_CUBIC); // cubic is the default
   
-  if(load_sample(data,default_sound_filename,0)==false){
+  if(load_sample(data,default_sound_filename,0, true)==false){
     V_free(data);
     return NULL;
   }
@@ -1703,11 +1697,14 @@ static void delete_data(Data *data){
   V_free(data);
 }
 
-static void set_loop_data(Data *data, int start, int length){
-  if (length==0)
-    ATOMIC_SET(data->loop_onoff, false);
-  else
-    ATOMIC_SET(data->loop_onoff, true);
+static void set_loop_data(Data *data, int start, int length, bool set_loop_on_off){
+  
+  if (set_loop_on_off) {
+    if (length==0)
+      ATOMIC_SET(data->p.loop_onoff, false);
+    if (length > 0)
+      ATOMIC_SET(data->p.loop_onoff, true);
+  }
   
   data->loop_start = start;
   data->loop_length = length;
@@ -1737,8 +1734,8 @@ void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start, int length){
   Data *data=plugin->data;
 
   PLAYER_lock();{  
-    set_loop_data(data, start, length);
-    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->loop_onoff)==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    set_loop_data(data, start, length, true);
+    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
   }PLAYER_unlock();
 }
 
@@ -1754,13 +1751,13 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
 
   data = create_data(old_data->samplerate, old_data, filename, instrument_number, resampler_type);
 
-  if(load_sample(data,filename,instrument_number)==false)
+  if(load_sample(data,filename,instrument_number, false)==false)
     goto exit;
 
-  set_loop_data(data, loop_start, loop_end);
+  set_loop_data(data, loop_start, loop_end, false);
   
   // Put loop_onoff into storage.
-  PLUGIN_set_effect_value2(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->loop_onoff)==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLAYERLOCK_NOT_REQUIRED, PLUGIN_FORMAT_SCALED);
+  PLUGIN_set_effect_value2(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLAYERLOCK_NOT_REQUIRED, PLUGIN_FORMAT_SCALED);
 
   if(SP_is_plugin_running(plugin)){
 
