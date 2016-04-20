@@ -77,7 +77,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 const char *g_click_name = "Click";
 
-// Effect order
+// Effect order.
+//
+// !! Remember to copy value in 'create_data' when adding new fields !!
+//
 enum{
   EFF_STARTPOS,
   EFF_FINETUNE,
@@ -468,6 +471,7 @@ static double RT_get_src_ratio3(Data *data, const Sample *sample, float pitch){
 // Note: Also called from get_peaks
 static double RT_get_src_ratio2(Data *data, const Sample *sample, float pitch){
 
+  //printf("note_adjust: %d (%f)\n",(int)data->note_adjust,data->note_adjust);
   double adjusted_pitch = pitch + scale(data->finetune, 0, 1, -1, 1) + (int)data->note_adjust;
   return RT_get_src_ratio3(data, sample, adjusted_pitch);
 }
@@ -1586,7 +1590,7 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
       
   if(old_data==NULL){
     data->finetune = 0.5f;
-
+    
     data->a=DEFAULT_A;
     data->d=DEFAULT_D;
     data->s=DEFAULT_S;
@@ -1598,16 +1602,17 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
 
     data->startpos = old_data->startpos;
     data->finetune = old_data->finetune;
+    data->note_adjust = old_data->note_adjust;
+    
     data->a = old_data->a;
+    data->h = old_data->h;
     data->d = old_data->d;
     data->s = old_data->s;
     data->r = old_data->r;
-    ATOMIC_SET(data->loop_onoff, ATOMIC_GET(old_data->loop_onoff));
-    data->crossfade_length = old_data->crossfade_length;
     
     data->vibrato_value = 0.0;
-    data->vibrato_depth = old_data->vibrato_depth;
     data->vibrato_speed = old_data->vibrato_speed;
+    data->vibrato_depth = old_data->vibrato_depth;
     data->vibrato_phase = 4.71239;
     data->vibrato_phase_add = old_data->vibrato_phase_add;
     
@@ -1616,6 +1621,9 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
     
     data->tremolo->type->set_effect_value(data->tremolo, 0, 0, data->tremolo_speed, PLUGIN_FORMAT_NATIVE, FX_single);
     data->tremolo->type->set_effect_value(data->tremolo, 0, 1, data->tremolo_depth, PLUGIN_FORMAT_NATIVE, FX_single);
+    
+    ATOMIC_SET(data->loop_onoff, ATOMIC_GET(old_data->loop_onoff));
+    data->crossfade_length = old_data->crossfade_length;
   }
   
   data->samplerate = samplerate;

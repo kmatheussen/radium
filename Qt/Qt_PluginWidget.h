@@ -41,7 +41,7 @@ class ParamWidget : public QWidget{
   MyQSlider *_slider;
   //QToolButton *_check_button;
   MyQCheckBox *_check_button;
-  bool _dont_update_effect_value;
+  bool _can_update_effect_value;
   QString _name;
     
  ParamWidget(QWidget *parent, struct Patch *patch, int effect_num)
@@ -50,7 +50,7 @@ class ParamWidget : public QWidget{
     , _effect_num(effect_num)
     , _slider(NULL)
     , _check_button(NULL)
-    , _dont_update_effect_value(false)
+    , _can_update_effect_value(false)
     {
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       const SoundPluginType *type  = plugin->type;
@@ -139,27 +139,27 @@ class ParamWidget : public QWidget{
                 this,
                 SLOT(sliderValueChanged(int)));
 
-        _dont_update_effect_value = true; {
-          _slider->setValue(PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE)*10000);
-          sliderValueChanged(PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE)*10000);
+        _slider->setValue(PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE)*10000);
+        sliderValueChanged(PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE)*10000);
 
-          if(!strcmp(type->type_name,"Faust")){
-            float *peak_pointers = FAUST_get_peak_value_pointer(plugin, effect_num);
-            if(peak_pointers != NULL)
-              SLIDERPAINTER_set_peak_value_pointers(_slider->_painter, 1, peak_pointers);
-          }
+        if(!strcmp(type->type_name,"Faust")){
+          float *peak_pointers = FAUST_get_peak_value_pointer(plugin, effect_num);
+          if(peak_pointers != NULL)
+            SLIDERPAINTER_set_peak_value_pointers(_slider->_painter, 1, peak_pointers);
         }
         
         if(_check_button){
           _check_button->setChecked(PLUGIN_get_effect_value(plugin, effect_num,VALUE_FROM_STORAGE)>0.5f);        
         }
-      }_dont_update_effect_value = false;        
+      }
 
       setLayout(grid_layout);
+      
+      _can_update_effect_value = true;
     }
 
   void set_effect_value(float value){
-    if (_dont_update_effect_value == false) {
+    if (_can_update_effect_value) {
 
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
@@ -181,14 +181,14 @@ class ParamWidget : public QWidget{
 
     //printf("UPDATE GUI ELEMENT %d for %s (%p / %p). Value: %f\n",_effect_num,plugin->type->name,_slider,_check_button,value);
 
-    _dont_update_effect_value = true; {
+    _can_update_effect_value = false; {
       
       if(_slider!=NULL)
         _slider->setValue(value * 10000.0f);
       else if(_check_button!=NULL)
         _check_button->setChecked(value>0.5f);
       
-    }_dont_update_effect_value = false;
+    }_can_update_effect_value = true;
   }
 
   public slots:
@@ -199,7 +199,7 @@ class ParamWidget : public QWidget{
         set_effect_value(value/10000.0f);
         SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
         char buf[64]={0};
-        plugin->type->get_display_value_string(plugin,_effect_num, buf, 64);
+        PLUGIN_get_display_value_string(plugin, _effect_num, buf, 64);
         SLIDERPAINTER_set_string(_slider->_painter, _name + ": " + QString::fromUtf8(buf));
         //_slider->display_string.sprintf("%s: %s",_name.toUtf8().constData(),
         //printf("Has set value to %s\n",_slider->_painter->display_string.toUtf8().constData());
