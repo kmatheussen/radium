@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "centtext_proc.h"
 #include "veltext_proc.h"
 #include "fxtext_proc.h"
+#include "realline_calc_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
 #include "../api/api_proc.h"
@@ -371,10 +372,9 @@ void ScrollEditorToLine_CurrPos(
 	int line
 ){
 	struct WBlocks *wblock=window->wblock;
-	struct Blocks *block=wblock->block;
 
-	line=R_MIN(line,block->num_lines-1);
-	ScrollEditorToRealLine(window,wblock,wblock->reallines[line]->realline);
+        int realline = FindRealLineFor(wblock, 0, PlaceCreate2(line));
+	ScrollEditorToRealLine(window,wblock,realline);
 }
 
 void ScrollEditorToPercentLine_CurrPos(
@@ -388,10 +388,3 @@ void ScrollEditorToPercentLine_CurrPos(
 
 	ScrollEditorToLine_CurrPos(window,line);
 }
-
-
-
-
-
-
-
