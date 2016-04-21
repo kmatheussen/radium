@@ -778,12 +778,11 @@ void GFX_PP_Update(struct Patch *patch){
 static QString last_filename;
 static QString last_preset_path = "";
 
-
-static hash_t *load_preset_state(void){
-  obtain_keyboard_focus();
-  
+QString request_load_preset_filename(void){
   QString filename;
-  
+
+  obtain_keyboard_focus();
+
   GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
     filename = QFileDialog::getOpenFileName(
                                             g_mixer_widget,
@@ -797,6 +796,13 @@ static hash_t *load_preset_state(void){
 
   release_keyboard_focus();
 
+  return filename;
+}
+
+static hash_t *load_preset_state(void){
+  
+  QString filename = request_load_preset_filename();
+  
   if(filename=="")
     return NULL;
 

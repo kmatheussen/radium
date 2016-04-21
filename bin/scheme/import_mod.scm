@@ -5476,6 +5476,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (for-each (lambda (instrument)
               (when (> (instrument-num-samples instrument) 0)
                     (define radium-instrument-num (<ra> :create-audio-instrument "Sample Player" "Sample Player" (instrument-sample-name instrument)))
+                    (<ra> :connect-audio-instrument-to-main-pipe radium-instrument-num)
                     
                     (set-instrument-radium-instrument-num! instrument radium-instrument-num)
                     

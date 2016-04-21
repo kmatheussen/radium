@@ -96,7 +96,7 @@ void PATCH_reset_time(void){
   }END_VECTOR_FOR_EACH;
 }
 
-static void handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
+void handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
   R_ASSERT(PLAYER_current_thread_has_lock());
   
   // 1. Do instrument specific changes

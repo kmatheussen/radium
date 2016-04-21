@@ -115,8 +115,9 @@ class Argument:
         elif self.type_string=="Place":
             return "s7extra_is_place"
         else:
-            sys.stderr.write("Unknown type '"+type_string+"'")
-            raise "Unknown type '"+type_string+"'"
+            sys.stderr.write("Unknown type '"+self.type_string+"'\n")
+            sys.stderr.write("varname:"+self.varname+"\n")
+            raise "Unknown type '"+self.type_string+"'"
 
     # keyDownPlay -> r-key-down-play
     # keyDownBPM -> r-key-down-bpm
@@ -624,7 +625,9 @@ class Read:
         self.protos=Protos()
         self.iss=Radium_is()
         self.hs=Radium_hs()
-
+        
+        self.isComment = False
+        
         notend=true
         while notend:
             notend=self.readNextLine()
@@ -638,7 +641,7 @@ class Read:
 
         if line=="":
             self.fh.close()
-            return false
+            return False
 
         line = line.rstrip().split("#")[0].strip()
 
@@ -651,6 +654,13 @@ class Read:
         if len(line)>1:
             if line[:2]=="?S":
                 self.iss.add(line)
+            elif line=="'''" or line=='"""':
+                if self.isComment:
+                    self.isComment = False
+                else:
+                    self.isComment = True
+            elif self.isComment:
+                return True
             else:
                 if line[:2]=="?H":
                     self.hs.add(line)
@@ -659,7 +669,7 @@ class Read:
         else:
             self.protos.add(line)
 
-        return true
+        return True
 
     def makeRadium_i(self):
         oh=open("radium.i","w")

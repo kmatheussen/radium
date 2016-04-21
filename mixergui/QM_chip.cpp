@@ -410,17 +410,22 @@ void CHIP_has_new_plugin(SoundPlugin *plugin){
   
 float CHIP_get_pos_x(struct Patch *patch){
   Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, (SoundPlugin*)patch->patchdata);
+  if (chip==NULL)
+    return 0;
   return chip->x();
 }
 
 float CHIP_get_pos_y(struct Patch *patch){
   Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, (SoundPlugin*)patch->patchdata);
+  if (chip==NULL)
+    return 0;
   return chip->y();
 }
 
 void CHIP_set_pos(struct Patch *patch,float x,float y){
   Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, (SoundPlugin*)patch->patchdata);
-  chip->setPos(x,y);
+  if (chip!=NULL)
+    chip->setPos(x,y);
 }
 
 static void CHIP_kick_left_rec(Chip *chip, std::set<Chip*> &kicks){
@@ -1376,6 +1381,8 @@ void CHIP_create_from_state(hash_t *state, Buses buses){
     printf("Unable to create chip\n"); // proper error message given elsewhere. (ladspa or vst)
   }
 }
+
+
 
 struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *name, double x, double y, Buses buses){
   struct SoundPlugin *plugin = PLUGIN_create_from_state(plugin_state);

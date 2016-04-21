@@ -1307,6 +1307,84 @@ static int menu_up(QMenu *menu, const radium::Vector<PluginMenuEntry> &entries, 
 }
 
 
+static char *create_selector_text(SoundPluginType *type){
+  return talloc_format(
+                       "1%s:%s",
+                       STRING_get_chars(STRING_toBase64(STRING_create(type->type_name))),
+                       STRING_get_chars(STRING_toBase64(STRING_create(type->name)))
+                       );
+}
+
+char *MW_popup_plugin_selector2(void){
+  QMenu menu(0);
+
+  menu_up(&menu, PR_get_menu_entries(), 0);
+
+  MyQAction *action;
+
+  if (doModalWindows()) {
+    
+    GL_lock();{
+      action = dynamic_cast<MyQAction*>(menu.exec(QCursor::pos()));
+    }GL_unlock();
+    
+  } else {
+    
+    GL_lock();{
+      GL_pause_gl_thread_a_short_while();
+    }GL_unlock();    
+    action = dynamic_cast<MyQAction*>(menu.exec(QCursor::pos()));
+    
+  }
+  
+  if (action==NULL)
+    return NULL;
+
+  struct PluginMenuEntry entry = action->entry;
+
+  if (entry.type==PluginMenuEntry::IS_CONTAINER) {
+
+    vector_t names={};
+
+    SoundPluginTypeContainer *plugin_type_container = entry.plugin_type_container;
+    plugin_type_container->populate(plugin_type_container);
+
+    if (plugin_type_container->num_types==0) {
+      //GFX_Message(NULL, talloc_format("%s does not contain any plugin",plugin_type_container->name));
+      return NULL; // no error message here. populate() must do that.
+    }
+     
+    if (plugin_type_container->num_types==1)
+      return create_selector_text(plugin_type_container->plugin_types[0]);
+
+    for(int i=0 ; i < plugin_type_container->num_types ;  i++)
+      VECTOR_push_back(&names,plugin_type_container->plugin_types[i]->name);
+
+    char temp[1024];
+    sprintf(temp,"Select plugin contained in %s", plugin_type_container->name);
+    int selection=GFX_Menu(NULL,NULL,temp,&names);
+    
+    if (selection==-1)
+      return NULL;
+    else
+      return create_selector_text(plugin_type_container->plugin_types[selection]);
+
+   }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
+
+    QString filename = request_load_preset_filename();
+    if (filename=="")
+      return NULL;
+
+    return talloc_format("2%s",STRING_get_chars(STRING_toBase64(STRING_create(filename)))); // Converting to base64 to avoid having to worry about utf8 conversion problems in filenames.
+    
+  } else {
+
+    return create_selector_text(entry.plugin_type);
+
+  }
+}
+
+// Old version. Will be deleted as soon as it's not used anymore
 SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, bool autoconnect, struct Patch **created_patch_instead){
   QMenu menu(0);
 
