@@ -23,6 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "fxtext_proc.h"
 #include "centtext_proc.h"
 #include "cursor_updown_proc.h"
+#include "wtracks_proc.h"
+
+#include "data_as_text_proc.h"
+
 
 extern int g_downscroll;
 
@@ -146,8 +150,8 @@ data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, in
   if (v1==base-1 && v2==base-1)
     scaled = max_value;
       
-  printf("old_value: %d, v1: %x, v2: %x, val: %x, v: %x, scaled: %d\n",old_value,v1,v2,val,v,scaled);
-
+  //printf("old_value: %d, v1: %x, v2: %x, val: %x, v: %x, scaled: %d\n",old_value,v1,v2,val,v,scaled);
+  
   dat.value = scaled;
   dat.logtype = logtype;
   dat.is_valid = true;
@@ -161,12 +165,14 @@ extern struct TEvent tevent;
 
 // We circumvent the normal keyboard configuration system here.
 bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
-  if (window->curr_track < 0)
-    return false;
-
   struct WBlocks *wblock = window->wblock;
   struct WTracks *wtrack = wblock->wtrack;
-  
+
+  int subtrack = window->curr_track_sub;
+
+  if (subtrack < 0 || subtrack >= WTRACK_num_non_polyphonic_subtracks(wtrack)) // subtrack -1 = note text
+    return false;
+
   if (tevent.keyswitch != 0)
     return false;
   
