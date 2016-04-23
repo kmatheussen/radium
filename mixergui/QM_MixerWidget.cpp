@@ -417,11 +417,11 @@ bool MW_move_chip_to_slot(Chip *chip, float x, float y){
   return move_chip_to_slot(chip, x, y);
 }
   
-static Connection *find_clean_connection_at(MyScene *scene, float x, float y);
+static AudioConnection *find_clean_connection_at(MyScene *scene, float x, float y);
 
 // Also kicks.
 static bool autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
-  bool do_autoconnect = chip->_connections.size()==0; // don't autoconnect if the chip already has connections.
+  bool do_autoconnect = chip->audio_connections.size()==0; // don't autoconnect if the chip already has connections.
 
   Chip *chip_under = MW_get_chip_at(x,y,chip);
 
@@ -447,13 +447,13 @@ static bool autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
     
   }else if(do_autoconnect){
 
-    Connection *connection = find_clean_connection_at(myscene, x, y);
+    AudioConnection *connection = find_clean_connection_at(myscene, x, y);
     if(connection!=NULL){
       Undo_MixerConnections_CurrPos();
 
       Chip *from = connection->from;
       Chip *to = connection->to;
-      CONNECTION_delete_connection(connection);
+      CONNECTION_delete_audio_connection(connection);
       CHIP_connect_chips(myscene, from, chip);
       CHIP_connect_chips(myscene, chip, to);
 
@@ -599,14 +599,14 @@ Chip *MW_get_chip_at(float x, float y, Chip *except){
   return NULL;
 }
 
-static Connection *find_clean_connection_at(MyScene *scene, float x, float y){
+static AudioConnection *find_clean_connection_at(MyScene *scene, float x, float y){
   int slot_x = get_slot_x(x);
   int slot_y = get_slot_y(y);
 
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
-    Connection *connection = dynamic_cast<Connection*>(das_items.at(i));
+    AudioConnection *connection = dynamic_cast<AudioConnection*>(das_items.at(i));
     if(connection != NULL){
       if(get_chip_slot_y(connection->from)==slot_y && get_chip_slot_y(connection->to)==slot_y){
         if(get_chip_slot_x(connection->from)<slot_x && get_chip_slot_x(connection->to)>slot_x)
@@ -642,7 +642,7 @@ static Chip *get_chip_with_port_at(QGraphicsScene *scene,int x, int y){
 // Also returns false if there are 0 before chips, or 0 after chips.
 // Neither 'before' nor 'after' is set if the function returns false.
 static bool get_before_and_after_chip(Chip *chip, Chip **before, Chip **after){
-  std::vector<Connection*> connections=chip->_connections;
+  std::vector<AudioConnection*> connections=chip->audio_connections;
   if(connections.size()!=2)
     return false;
 
@@ -726,7 +726,7 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
       } if(scene->_current_from_chip!=NULL || scene->_current_to_chip!=NULL){
         //printf("x: %d, y: %d. Item: %p. input/output: %d/%d\n",(int)mouse_x,(int)mouse_y,item,_current_input_port,_current_output_port);
         
-        scene->_current_connection = new Connection(scene);
+        scene->_current_connection = new AudioConnection(scene);
         scene->addItem(scene->_current_connection);
         
         scene->_current_connection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
@@ -746,7 +746,7 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
         scene->_ecurrent_to_chip = chip;
 
       if(scene->_ecurrent_from_chip!=NULL || scene->_ecurrent_to_chip!=NULL){
-        scene->_current_econnection = new Connection(scene, true);
+        scene->_current_econnection = new EventConnection(scene);
         scene->addItem(scene->_current_econnection);
         
         scene->_current_econnection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
@@ -762,12 +762,12 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
 }
 
 static bool mousepress_delete_connection(MyScene *scene, QGraphicsSceneMouseEvent * event, QGraphicsItem *item, float mouse_x, float mouse_y){
-  Connection *connection = dynamic_cast<Connection*>(item);
+  SuperConnection *connection = dynamic_cast<SuperConnection*>(item);
 
   if(connection==NULL){
     QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
     for (int i = 0; i < das_items.size(); ++i) {
-      connection = dynamic_cast<Connection*>(das_items.at(i));
+      connection = dynamic_cast<SuperConnection*>(das_items.at(i));
       if(connection!=NULL && connection->isUnderMouse()==true)
         break;
       else
@@ -1491,7 +1491,8 @@ static bool delete_a_connection(){
 
 static void MW_cleanup_connections(void){
   radium::Vector<SoundProducer*> producers;
-  radium::Vector<Connection*> connections;
+  radium::Vector<AudioConnection*> audio_connections;
+  radium::Vector<EventConnection*> event_connections;
   
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
 
@@ -1500,9 +1501,12 @@ static void MW_cleanup_connections(void){
     if(chip!=NULL)
       producers.add(chip->_sound_producer);
     else{
-      Connection *connection = dynamic_cast<Connection*>(das_items.at(i));
-      if(connection!=NULL)
-        connections.add(connection);
+      AudioConnection *audio_connection = dynamic_cast<AudioConnection*>(das_items.at(i));
+      if(audio_connection!=NULL)
+        audio_connections.add(audio_connection);
+      EventConnection *event_connection = dynamic_cast<EventConnection*>(das_items.at(i));
+      if(event_connection!=NULL)
+        event_connections.add(event_connection);
     }
   }
 
@@ -1515,8 +1519,11 @@ static void MW_cleanup_connections(void){
       PATCH_remove_all_event_receivers((struct Patch*)patch);
   }
 
-  for(auto connection : connections)
-    CONNECTION_delete_a_connection_where_all_links_have_been_removed(connection);
+  for(auto audio_connection : audio_connections)
+    CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(audio_connection);
+  
+  for(auto event_connection : event_connections)
+    CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(event_connection);
 }
 
 
@@ -1563,7 +1570,7 @@ hash_t *MW_get_connections_state(void){
 
   int num_connections=0;
   for (int i = 0; i < das_items.size(); ++i) {
-    Connection *connection = dynamic_cast<Connection*>(das_items.at(i));
+    SuperConnection *connection = dynamic_cast<SuperConnection*>(das_items.at(i));
     if(connection!=NULL)
       if(connection->from!=NULL && connection->to!=NULL) // dont save ongoing connections.
         HASH_put_hash_at(connections, "", num_connections++, CONNECTION_get_state(connection));

@@ -82,18 +82,15 @@ struct SoundPlugin;
 
 class Chip;
 
-class Connection : public QGraphicsLineItem{
+class SuperConnection  : public QGraphicsLineItem {
 
 public:
 
-  bool _is_event_connection;
-
-  QColor getColor(){
-    if(_is_event_connection){
-      return get_qcolor(MIXER_EVENT_CONNECTION_COLOR_NUM);
-    }else{
-      return get_qcolor(MIXER_AUDIO_CONNECTION_COLOR_NUM);
-    }
+  bool is_event_connection;
+  enum ColorNums color_num;
+  
+  QColor getColor(void) {
+    return get_qcolor(color_num);
   }
   
   QPen getPen(){
@@ -108,9 +105,10 @@ public:
     return pen;
   }
 
- Connection(QGraphicsScene *parent, bool is_event_connection = false)
+  SuperConnection(QGraphicsScene *parent, bool is_event_connection, enum ColorNums color_num)
     : QGraphicsLineItem()
-    , _is_event_connection(is_event_connection)
+    , is_event_connection(is_event_connection)
+    , color_num(color_num)
     , from(NULL)
     , to(NULL)
     , is_selected(false)
@@ -184,7 +182,9 @@ public:
     visible_line.setPen(getPen());
   }
   
-  void update_position(void);
+  virtual void update_position(void) {
+    R_ASSERT(false);
+  }
 
 #if 0
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
@@ -247,6 +247,27 @@ public:
   }
 };
 
+class AudioConnection : public SuperConnection {
+  
+public:
+  
+ AudioConnection(QGraphicsScene *parent)
+   : SuperConnection(parent, false, MIXER_AUDIO_CONNECTION_COLOR_NUM)
+  {}
+
+  virtual void update_position(void);
+};
+
+class EventConnection : public SuperConnection {
+  
+public:
+
+  EventConnection(QGraphicsScene *parent)
+    : SuperConnection(parent, true, MIXER_EVENT_CONNECTION_COLOR_NUM)
+  {}
+  
+  virtual void update_position(void);
+};
 
 class Chip : public QGraphicsItem
 {
@@ -281,8 +302,8 @@ public:
   int _num_inputs;
   int _num_outputs;
   QColor _color;
-  std::vector<Connection*> _connections;   // TODO: use radium::Vector instead. TODO2: Use different types for econnections and connections, it's FAR to easy to mix them up.
-  std::vector<Connection*> _econnections;  // TODO: use radium::Vector instead
+  std::vector<AudioConnection*> audio_connections;   // TODO: use radium::Vector instead. TODO2: Use different types for econnections and connections, it's FAR to easy to mix them up.
+  std::vector<EventConnection*> event_connections;  // TODO: use radium::Vector instead
 
   SliderPainter *_input_slider;
   SliderPainter *_output_slider;
@@ -302,9 +323,12 @@ extern Chip *find_chip_for_plugin(QGraphicsScene *scene, SoundPlugin *plugin);
 extern void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
 extern void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to);
 
-extern void CONNECTION_delete_a_connection_where_all_links_have_been_removed(Connection *connection);
-extern void CONNECTION_delete_connection(Connection *connection);
-
+extern void CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(AudioConnection *connection);
+extern void CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(EventConnection *connection);
+extern void CONNECTION_delete_audio_connection(AudioConnection *connection);
+extern void CONNECTION_delete_event_connection(EventConnection *connection);
+extern void CONNECTION_delete_connection(SuperConnection *connection);
+  
 extern void CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
 extern void CHIP_econnect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to);
 
@@ -329,7 +353,7 @@ Chip *CHIP_get(QGraphicsScene *scene, const Patch *patch);
 struct Patch *CHIP_get_patch(Chip *chip);
 hash_t *CHIP_get_state(Chip *chip);
 
-hash_t *CONNECTION_get_state(Connection *connection);
+hash_t *CONNECTION_get_state(SuperConnection *connection);
 void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int patch_id_old, int patch_id_new);
 
 #endif // __cplusplus

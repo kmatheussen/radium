@@ -97,11 +97,11 @@ class MyScene : public QGraphicsScene{
  public:
   QWidget *_parent;
 
-  Connection *_current_connection;
+  AudioConnection *_current_connection;
   Chip *_current_from_chip;
   Chip *_current_to_chip;
 
-  Connection *_current_econnection;
+  EventConnection *_current_econnection;
   Chip *_ecurrent_from_chip;
   Chip *_ecurrent_to_chip;
 
