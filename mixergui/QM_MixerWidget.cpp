@@ -642,22 +642,21 @@ static Chip *get_chip_with_port_at(QGraphicsScene *scene,int x, int y){
 // Also returns false if there are 0 before chips, or 0 after chips.
 // Neither 'before' nor 'after' is set if the function returns false.
 static bool get_before_and_after_chip(Chip *chip, Chip **before, Chip **after){
-  std::vector<AudioConnection*> connections=chip->audio_connections;
-  if(connections.size()!=2)
+  if(chip->audio_connections.size()!=2)
     return false;
 
-  if(connections.at(0)->to==chip && connections.at(1)->to==chip)
+  if(chip->audio_connections[0]->to==chip && chip->audio_connections[1]->to==chip)
     return false;
 
-  if(connections.at(0)->from==chip && connections.at(1)->from==chip)
+  if(chip->audio_connections[0]->from==chip && chip->audio_connections[1]->from==chip)
     return false;
 
-  if(connections.at(0)->to==chip){
-    *before = connections.at(0)->from;
-    *after  = connections.at(1)->to;
+  if(chip->audio_connections[0]->to==chip){
+    *before = chip->audio_connections[0]->from;
+    *after  = chip->audio_connections[1]->to;
   }else{
-    *before = connections.at(1)->from;
-    *after  = connections.at(0)->to;
+    *before = chip->audio_connections[1]->from;
+    *after  = chip->audio_connections[0]->to;
   }
 
   return true;

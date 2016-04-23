@@ -302,8 +302,8 @@ public:
   int _num_inputs;
   int _num_outputs;
   QColor _color;
-  std::vector<AudioConnection*> audio_connections;   // TODO: use radium::Vector instead. TODO2: Use different types for econnections and connections, it's FAR to easy to mix them up.
-  std::vector<EventConnection*> event_connections;  // TODO: use radium::Vector instead
+  radium::Vector<AudioConnection*> audio_connections;   // TODO: use radium::Vector instead. TODO2: Use different types for econnections and connections, it's FAR to easy to mix them up.
+  radium::Vector<EventConnection*> event_connections;  // TODO: use radium::Vector instead
 
   SliderPainter *_input_slider;
   SliderPainter *_output_slider;

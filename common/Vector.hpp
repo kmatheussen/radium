@@ -155,6 +155,8 @@ public:
   // Only RT safe if ensure_there_is_room_for_one_more_without_having_to_allocate_memory is called first AND post_add is called afterwards.
   //
   // This function can NOT be called in parallell with other functions
+  //
+  // Note: Maybe rename it to push_back instead. It's a more common name, and more descriptive as well.
   void add(T t){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 

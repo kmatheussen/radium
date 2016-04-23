@@ -543,21 +543,17 @@ static bool econnect(QGraphicsScene *scene, Chip *from, Chip *to){
 }
 
 static bool chips_are_connected(Chip *from, Chip *to){
-  for(unsigned int i=0;i<from->audio_connections.size();i++){
-    AudioConnection *connection = from->audio_connections.at(i);
+  for(AudioConnection *connection : from->audio_connections)
     if(connection->from==from && connection->to==to)
       return true;
-  }
 
   return false;
 }
 
 static bool chips_are_econnected(Chip *from, Chip *to){
-  for(unsigned int i=0;i<from->event_connections.size();i++){
-    EventConnection *econnection = from->event_connections.at(i);
-    if(econnection->from==from && econnection->to==to)
+  for(EventConnection *connection : from->event_connections)
+    if(connection->from==from && connection->to==to)
       return true;
-  }
 
   return false;
 }
@@ -593,8 +589,8 @@ void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   connection->from = from;
   connection->to = to;
   
-  from->audio_connections.push_back(connection);
-  to->audio_connections.push_back(connection);
+  from->audio_connections.add(connection);
+  to->audio_connections.add(connection);
   
   connection->update_position();
   scene->addItem(connection);
@@ -617,8 +613,8 @@ void CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   econnection->from = from;
   econnection->to = to;
   
-  from->event_connections.push_back(econnection);
-  to->event_connections.push_back(econnection);
+  from->event_connections.add(econnection);
+  to->event_connections.add(econnection);
   
   econnection->update_position();
   scene->addItem(econnection);
@@ -634,12 +630,10 @@ int CHIP_get_num_in_connections(const Patch *patch){
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
-  
-  for(unsigned int i=0;i<chip->audio_connections.size();i++){
-    AudioConnection *connection = chip->audio_connections.at(i);
+
+  for (AudioConnection *connection : chip->audio_connections)
     if(connection->to==chip)
       num++;
-  }
 
   return num;
 }
@@ -649,12 +643,10 @@ int CHIP_get_num_out_connections(const Patch *patch){
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
-  
-  for(unsigned int i=0;i<chip->audio_connections.size();i++){
-    AudioConnection *connection = chip->audio_connections.at(i);
+
+  for (AudioConnection *connection : chip->audio_connections)
     if(connection->from==chip)
       num++;
-  }
 
   return num;
 }
@@ -664,12 +656,10 @@ int CHIP_get_num_in_econnections(const Patch *patch){
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
-  
-  for(unsigned int i=0;i<chip->event_connections.size();i++){
-    EventConnection *econnection = chip->event_connections.at(i);
+
+  for (EventConnection *econnection : chip->event_connections)
     if(econnection->to==chip)
       num++;
-  }
 
   return num;
 }
@@ -679,12 +669,10 @@ int CHIP_get_num_out_econnections(const Patch *patch){
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
-  
-  for(unsigned int i=0;i<chip->event_connections.size();i++){
-    EventConnection *econnection = chip->event_connections.at(i);
+
+  for (EventConnection *econnection : chip->event_connections)
     if(econnection->from==chip)
       num++;
-  }
 
   return num;
 }
@@ -694,15 +682,13 @@ struct Patch* CHIP_get_source(const struct Patch *patch, int connectionnum){
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
-  
-  for(unsigned int i=0;i<chip->audio_connections.size();i++){
-    AudioConnection *connection = chip->audio_connections.at(i);
+
+  for (AudioConnection *connection : chip->audio_connections)
     if(connection->to==chip){
       if (num==connectionnum)
         return CHIP_get_patch(connection->from);
       num++;
     }
-  }
 
   return NULL;  
 }
@@ -712,15 +698,13 @@ struct Patch* CHIP_get_dest(const struct Patch *patch, int connectionnum){
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
-  
-  for(unsigned int i=0;i<chip->audio_connections.size();i++){
-    AudioConnection *connection = chip->audio_connections.at(i);
+
+  for (AudioConnection *connection : chip->audio_connections)
     if(connection->from==chip){
       if (num==connectionnum)
         return CHIP_get_patch(connection->to);
       num++;
     }
-  }
 
   return NULL;  
 }
@@ -730,15 +714,13 @@ struct Patch* CHIP_get_esource(const struct Patch *patch, int connectionnum){
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
-  
-  for(unsigned int i=0;i<chip->event_connections.size();i++){
-    EventConnection *econnection = chip->event_connections.at(i);
+
+  for (EventConnection *econnection : chip->event_connections)
     if(econnection->to==chip){
       if (num==connectionnum)
         return CHIP_get_patch(econnection->from);
       num++;
     }
-  }
 
   return NULL;  
 }
@@ -748,15 +730,13 @@ struct Patch* CHIP_get_edest(const struct Patch *patch, int connectionnum){
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
-  
-  for(unsigned int i=0;i<chip->event_connections.size();i++){
-    EventConnection *econnection = chip->event_connections.at(i);
+
+  for (EventConnection *econnection : chip->event_connections)
     if(econnection->from==chip){
       if (num==connectionnum)
         return CHIP_get_patch(econnection->to);
       num++;
     }
-  }
 
   return NULL;  
 }
@@ -765,15 +745,8 @@ void CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(Aud
   Chip *from = connection->from;
   Chip *to = connection->to;
 
-  {
-    // Why does std::vector do this so incredibly complicated?
-    std::vector<AudioConnection*>::iterator newEnd = std::remove(from->audio_connections.begin(), from->audio_connections.end(), connection);
-    from->audio_connections.erase(newEnd, from->audio_connections.end());
-  }
-  {
-    std::vector<AudioConnection*>::iterator newEnd = std::remove(to->audio_connections.begin(), to->audio_connections.end(), connection);
-    to->audio_connections.erase(newEnd, to->audio_connections.end());
-  }
+  from->audio_connections.remove(connection);
+  to->audio_connections.remove(connection);
 
   delete connection;
 }
@@ -783,15 +756,8 @@ void CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(Eve
   Chip *from = connection->from;
   Chip *to = connection->to;
 
-  {
-    // Why does std::vector do this so incredibly complicated?
-    std::vector<EventConnection*>::iterator newEnd = std::remove(from->event_connections.begin(), from->event_connections.end(), connection);
-    from->event_connections.erase(newEnd, from->event_connections.end());
-  }
-  {
-    std::vector<EventConnection*>::iterator newEnd = std::remove(to->event_connections.begin(), to->event_connections.end(), connection);
-    to->event_connections.erase(newEnd, to->event_connections.end());
-  }
+  from->event_connections.remove(connection);
+  to->event_connections.remove(connection);
   
   delete connection;
 }
@@ -888,13 +854,11 @@ void CHIP_connect_left(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip)
   std::vector<AudioConnection*> connections_to_delete;
   std::vector<Chip*> chips_to_connect_to;
 
-  for(unsigned int i=0;i<left_chip->audio_connections.size();i++){
-    AudioConnection *connection = left_chip->audio_connections.at(i);
+  for (AudioConnection *connection : left_chip->audio_connections)
     if(connection->from==left_chip){
       connections_to_delete.push_back(connection);
       chips_to_connect_to.push_back(connection->to);
     }
-  }
 
   for(unsigned int i=0;i<connections_to_delete.size();i++)
     CONNECTION_delete_audio_connection(connections_to_delete.at(i));
@@ -910,13 +874,11 @@ void CHIP_connect_right(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip
   std::vector<AudioConnection*> connections_to_delete;
   std::vector<Chip*> chips_to_connect_to;
 
-  for(unsigned int i=0;i<right_chip->audio_connections.size();i++){
-    AudioConnection *connection = right_chip->audio_connections.at(i);
+  for (AudioConnection *connection : right_chip->audio_connections)
     if(connection->to==right_chip){
       connections_to_delete.push_back(connection);
       chips_to_connect_to.push_back(connection->from);
     }
-  }
 
   for(unsigned int i=0;i<connections_to_delete.size();i++)
     CONNECTION_delete_audio_connection(connections_to_delete.at(i));
@@ -995,11 +957,11 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
 Chip::~Chip(){
   while(audio_connections.size()>0){
     fprintf(stderr,"Deleting connection. Connections left: %d\n",(int)audio_connections.size());
-    CONNECTION_delete_audio_connection(audio_connections.at(0));
+    CONNECTION_delete_audio_connection(audio_connections[0]);
   }
   while(event_connections.size()>0){
     fprintf(stderr,"Deleting econnection. EConnections left: %d\n",(int)event_connections.size());
-    CONNECTION_delete_event_connection(event_connections.at(0));
+    CONNECTION_delete_event_connection(event_connections[0]);
   }
 
   PLAYER_lock();{ // The player checks if these values are not null, before reading them. I got two valgrind hits because the player read these variables after they were freed, so that's why there is a lock here. The situation should never happen on a normal computer.
@@ -1402,10 +1364,10 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
 QVariant Chip::itemChange(GraphicsItemChange change, const QVariant &value) {
   if (change == ItemPositionHasChanged && this->scene()) {
-    for(unsigned int i=0;i<audio_connections.size();i++)
-      audio_connections[i]->update_position();
-    for(unsigned int i=0;i<event_connections.size();i++)
-      event_connections[i]->update_position();
+    for (AudioConnection *connection : audio_connections)
+      connection->update_position();
+    for (EventConnection *connection : event_connections)
+      connection->update_position();
     //printf("item pos changed\n");
   }
 
