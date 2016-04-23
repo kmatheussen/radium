@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-void *Undo_Do_Patch(
+void *Undo_Do_Patches(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -45,7 +45,7 @@ static vector_t *get_all_patches(void){
   return patches;
 }
 
-void Undo_Patch(
+void Undo_Patches(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
@@ -56,15 +56,16 @@ void Undo_Patch(
                              wblock->wtrack->l.num,
                              wblock->curr_realline,
                              get_all_patches(),
-                             Undo_Do_Patch
+                             Undo_Do_Patches,
+                             "Patches"
                              );
 }
 
-void Undo_Patch_CurrPos(void){
-  Undo_Patch(root->song->tracker_windows,root->song->tracker_windows->wblock);
+void Undo_Patches_CurrPos(void){
+  Undo_Patches(root->song->tracker_windows,root->song->tracker_windows->wblock);
 }
 
-void *Undo_Do_Patch(
+void *Undo_Do_Patches(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

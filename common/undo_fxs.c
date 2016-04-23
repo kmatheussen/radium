@@ -68,7 +68,8 @@ void Undo_FXs(
                  track->l.num,
                  realline,
                  undo_fxs,
-                 Undo_Do_FXs
+                 Undo_Do_FXs,
+                 "Track fxs"
                  );
 
 }

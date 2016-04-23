@@ -65,13 +65,14 @@ static void Undo_Chip_AddRemove(
   }
 
   Undo_Add_dont_stop_playing(
-           window->l.num,
-           wblock->l.num,
-           wblock->wtrack->l.num,
-           wblock->curr_realline,
-           u_rt,
-           Undo_Do_Chip_AddRemove
-           );
+                             window->l.num,
+                             wblock->l.num,
+                             wblock->wtrack->l.num,
+                             wblock->curr_realline,
+                             u_rt,
+                             Undo_Do_Chip_AddRemove,
+                             talloc_format("%s %s", going_to_add ? "Add chip" : "Remove chip", patch->name)
+                             );
 }
 
 void Undo_Chip_Add_CurrPos(struct Patch *patch){

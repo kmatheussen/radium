@@ -59,13 +59,14 @@ static void Undo_ChipPos(
   printf("********* Storing chipos undo. value: %f\n",undo_ae->x);
 
   Undo_Add_dont_stop_playing(
-           window->l.num,
-           wblock->l.num,
-           wblock->wtrack->l.num,
-           wblock->curr_realline,
-           undo_ae,
-           Undo_Do_ChipPos
-           );
+                             window->l.num,
+                             wblock->l.num,
+                             wblock->wtrack->l.num,
+                             wblock->curr_realline,
+                             undo_ae,
+                             Undo_Do_ChipPos,
+                             talloc_format("Chip position %s",patch->name)
+                             );
 }
 
 void Undo_ChipPos_CurrPos(struct Patch *patch){

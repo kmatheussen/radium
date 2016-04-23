@@ -51,7 +51,8 @@ void Undo_Tempos(
                  tracknum,
                  realline,
                  CB_CopyTempos(block->tempos),
-                 Undo_Do_Tempos
+                 Undo_Do_Tempos,
+                 "Block BPMs"
 	);
 }
 

@@ -67,7 +67,8 @@ static void Undo_AudioEffect(
                              wblock->wtrack->l.num,
                              wblock->curr_realline,
                              undo_ae,
-                             Undo_Do_AudioEffect
+                             Undo_Do_AudioEffect,
+                             talloc_format("Undo audio effect %s %d",patch->name, effect_num)
                              );
 
 }

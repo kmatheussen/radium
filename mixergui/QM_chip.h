@@ -281,8 +281,8 @@ public:
   int _num_inputs;
   int _num_outputs;
   QColor _color;
-  std::vector<Connection*> _connections;
-  std::vector<Connection*> _econnections;
+  std::vector<Connection*> _connections;   // TODO: use radium::Vector instead. TODO2: Use different types for econnections and connections, it's FAR to easy to mix them up.
+  std::vector<Connection*> _econnections;  // TODO: use radium::Vector instead
 
   SliderPainter *_input_slider;
   SliderPainter *_output_slider;
@@ -301,6 +301,7 @@ extern void CHIP_kick_right(Chip *chip);
 extern Chip *find_chip_for_plugin(QGraphicsScene *scene, SoundPlugin *plugin);
 extern void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
 extern void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to);
+
 extern void CONNECTION_delete_a_connection_where_all_links_have_been_removed(Connection *connection);
 extern void CONNECTION_delete_connection(Connection *connection);
 
@@ -323,6 +324,9 @@ int CHIP_get_eport_x(Chip *chip);
 bool CHIP_is_at_input_eport(Chip *chip, int x, int y);
 bool CHIP_is_at_output_eport(Chip *chip, int x, int y);
 
+Chip *CHIP_get(QGraphicsScene *scene, const Patch *patch);
+
+struct Patch *CHIP_get_patch(Chip *chip);
 hash_t *CHIP_get_state(Chip *chip);
 
 hash_t *CONNECTION_get_state(Connection *connection);
@@ -332,16 +336,28 @@ void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int patc
 
 struct SoundProducer;
 
-extern LANGSPEC void CHIP_has_new_plugin(struct SoundPlugin *plugin);
+//extern LANGSPEC void CHIP_init_because_it_has_new_plugin(struct SoundPlugin *plugin);
 
 extern LANGSPEC void CHIP_create_from_state(hash_t *state, Buses buses);
 extern LANGSPEC struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *name, double x, double y, Buses buses);
 
 extern LANGSPEC void CHIP_update(struct SoundPlugin *plugin);
 
-extern LANGSPEC float CHIP_get_pos_x(struct Patch *patch);
-extern LANGSPEC float CHIP_get_pos_y(struct Patch *patch);
+extern LANGSPEC float CHIP_get_pos_x(const struct Patch *patch);
+extern LANGSPEC float CHIP_get_pos_y(const struct Patch *patch);
 extern LANGSPEC void CHIP_set_pos(struct Patch *patch,float x, float y);
+
+extern LANGSPEC int CHIP_get_num_in_connections(const struct Patch *patch);
+extern LANGSPEC int CHIP_get_num_out_connections(const struct Patch *patch);
+  
+extern LANGSPEC int CHIP_get_num_in_econnections(const struct Patch *patch);
+extern LANGSPEC int CHIP_get_num_out_econnections(const struct Patch *patch);
+
+extern LANGSPEC struct Patch* CHIP_get_source(const struct Patch *patch, int connectionnum);
+extern LANGSPEC struct Patch* CHIP_get_dest(const struct Patch *patch, int connectionnum);
+extern LANGSPEC struct Patch* CHIP_get_esource(const struct Patch *patch, int connectionnum);
+extern LANGSPEC struct Patch* CHIP_get_edest(const struct Patch *patch, int connectionnum);
+
 
 extern LANGSPEC void CHIP_delete_from_patch(struct Patch *patch);
 extern LANGSPEC hash_t *CHIP_get_chip_state_from_patch(struct Patch *patch);

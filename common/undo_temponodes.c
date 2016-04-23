@@ -51,7 +51,8 @@ void Undo_TempoNodes(
                  tracknum,
                  realline,
                  CB_CopyTempoNodes(block->temponodes),
-                 Undo_Do_TempoNodes
+                 Undo_Do_TempoNodes,
+                 "Block tempo nodes"
 	);
 }
 

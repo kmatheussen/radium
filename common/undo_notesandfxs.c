@@ -69,7 +69,10 @@ void Undo_NotesAndFXs(
                  block->l.num,
                  track->l.num,
                  realline,
-                 undo_notesandfxs,Undo_Do_NotesAndFXs);
+                 undo_notesandfxs,
+                 Undo_Do_NotesAndFXs,
+                 "Track notes and fxs"
+                 );
 
 }
 

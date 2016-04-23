@@ -69,7 +69,8 @@ static void Undo_PatchName(
                              wblock->wtrack->l.num,
                              wblock->curr_realline,
                              undo_ae,
-                             Undo_Do_PatchName
+                             Undo_Do_PatchName,
+                             "Patch name"
                              );
 }
 

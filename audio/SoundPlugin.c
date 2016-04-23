@@ -1210,6 +1210,8 @@ void PLUGIN_set_from_patch(SoundPlugin *old_plugin, struct Patch *new_patch){
   MW_create_connections_from_state_and_replace_patch(connections_state, old_patch->id, new_patch->id);
 }
 
+
+
 SoundPlugin *PLUGIN_set_from_state(SoundPlugin *old_plugin, hash_t *state){
 
   R_ASSERT(Undo_Is_Open());

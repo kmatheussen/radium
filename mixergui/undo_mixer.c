@@ -54,7 +54,8 @@ static void Undo_Mixer(
                  wblock->wtrack->l.num,
                  wblock->curr_realline,
                  MW_get_state(),
-                 Undo_Do_Mixer
+                 Undo_Do_Mixer,
+                 "Mixer"
 	);
 
 }

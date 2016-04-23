@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Python.h"
 
 #include "../common/nsmtracker.h"
+#include "../common/vector_proc.h"
 #include "../common/undo.h"
 #include "../common/undo_blocks_proc.h"
 #include "../common/undo_tracks_proc.h"
@@ -29,6 +30,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 void setMaxUndos(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   SetMaxUndos(window);
+}
+
+char *getUndoHistory(void){
+  char *ret = "\n";
+  vector_t history = Undo_get_history();
+  VECTOR_FOR_EACH(char *line, &history){
+    ret = talloc_format("%s%s\n", ret, line);
+  }END_VECTOR_FOR_EACH;
+
+  return ret;
 }
 
 void redo(void){
@@ -59,4 +70,12 @@ void addUndoBlock(void){
 void addUndoTrack(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   Undo_Track_CurrPos(window);
+}
+
+void openUndo(void){
+  Undo_Open_rec();
+}
+
+void closeUndo(void){
+  Undo_Close();
 }

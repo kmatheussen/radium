@@ -45,7 +45,8 @@ void Undo_Playlist(void){
            window->curr_track,
            window->wblock->curr_realline,
            BL_copy(),
-           Undo_Do_Playlist
+           Undo_Do_Playlist,
+           "Playlist"
            );
 }
 

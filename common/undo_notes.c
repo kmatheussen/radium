@@ -61,7 +61,9 @@ void Undo_Notes(
                  track->l.num,
                  realline,
                  undo_notes,
-                 Undo_Do_Notes);
+                 Undo_Do_Notes,
+                 "Track notes and stops"
+                 );
 }
 
 void Undo_Notes_CurrPos(

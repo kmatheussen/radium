@@ -40,7 +40,8 @@ void Undo_MainTempo(
                  wblock->wtrack->l.num,
                  wblock->curr_realline,
                  u_rt,
-                 Undo_Do_MainTempo
+                 Undo_Do_MainTempo,
+                 "Block tempo/lpb/signature/quantiatize settings"
 	);
 
 }

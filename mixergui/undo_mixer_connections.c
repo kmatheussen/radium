@@ -54,7 +54,8 @@ static void Undo_MixerConnections(
                              wblock->wtrack->l.num,
                              wblock->curr_realline,
                              MW_get_connections_state(),
-                             Undo_Do_MixerConnections
+                             Undo_Do_MixerConnections,
+                             "Mixer connections"
                              );
 
 }

@@ -240,6 +240,12 @@ void PATCH_delete(struct Patch *patch){
 
   R_ASSERT(Undo_Is_Open());
 
+  if(patch->instrument==get_audio_instrument())
+    if(AUDIO_is_permanent_patch(patch)==true){
+      GFX_Message(NULL,"Can not be deleted");
+      return;
+    }
+
   remove_patch_from_song(patch);
 
   if(patch->instrument==get_audio_instrument()){
@@ -251,17 +257,11 @@ void PATCH_delete(struct Patch *patch){
 
   patch->instrument->remove_patch(patch);
 
-  Undo_Patch_CurrPos();
+  Undo_Patches_CurrPos();
   VECTOR_remove(&patch->instrument->patches,patch);
-
 }
 
 void PATCH_delete_CurrPos(struct Patch *patch){
-  if(patch->instrument==get_audio_instrument())
-    if(AUDIO_is_permanent_patch(patch)==true){
-      GFX_Message(NULL,"Can not be deleted");
-      return;
-    }
 
   Undo_Open();{
     
@@ -269,7 +269,8 @@ void PATCH_delete_CurrPos(struct Patch *patch){
 
   }Undo_Close();
 
-  DrawUpTrackerWindow(root->song->tracker_windows);
+  root->song->tracker_windows->must_redraw=true;
+  //DrawUpTrackerWindow(root->song->tracker_windows);
 }
 
                    

@@ -85,7 +85,8 @@ static void Undo_InstrumentsWidget(
                              wblock->wtrack->l.num,
                              wblock->curr_realline,
                              create_instruments_widget_state(),
-                             Undo_Do_InstrumentsWidget
+                             Undo_Do_InstrumentsWidget,
+                             "Instruments widget"
                              );
 }
 

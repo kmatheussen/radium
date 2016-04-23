@@ -90,7 +90,9 @@ void Undo_Range(
 	}
 
 	Undo_Add(window->l.num,block->l.num,starttrack,realline,
-                 undo_range,Undo_Do_Range);
+                 undo_range,Undo_Do_Range,
+                 "Range"
+                 );
 }
 
 void *Undo_Do_Range(

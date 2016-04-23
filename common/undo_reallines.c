@@ -51,7 +51,8 @@ void Undo_Reallines(
                                    tracknum,
                                    realline,
                                    tolocalzoom,
-                                   Undo_Do_Reallines
+                                   Undo_Do_Reallines,
+                                   "Reallines (localzooms)"
                                    );
 }
 

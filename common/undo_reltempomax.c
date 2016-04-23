@@ -52,7 +52,8 @@ void Undo_RelTempoMax(
                  wblock->wtrack->l.num,
                  wblock->curr_realline,
                  u_rt,
-                 Undo_Do_RelTempoMax
+                 Undo_Do_RelTempoMax,
+                 "Reltempo max"
 	);
 
 }

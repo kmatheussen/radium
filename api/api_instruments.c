@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/list_proc.h"
 #include "../common/vector_proc.h"
 #include "../common/OS_visual_input.h"
+#include "../common/undo.h"
 #include "../common/undo_tracks_proc.h"
 
 #include "../midi/midi_i_plugin.h"
@@ -39,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../mixergui/QM_chip.h"
 #include "../mixergui/undo_chip_position_proc.h"
 #include "../mixergui/undo_mixer_connections_proc.h"
+#include "../mixergui/undo_mixer_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"
 
@@ -112,11 +114,9 @@ void setInstrumentForTrack(int instrument_id, int tracknum, int blocknum, int wi
 
   if(wtrack==NULL) return;
 
-  struct Patch *new_patch = PATCH_get_from_id(instrument_id);
-  if(new_patch==NULL){
-    RError("instrument %d not found", instrument_id);
+  struct Patch *new_patch = getPatchFromNum(instrument_id);
+  if(new_patch==NULL)
     return;
-  }
 
   struct Patch *old_patch = wtrack->track->patch;
 
@@ -152,18 +152,21 @@ int createAudioInstrument(char *type_name, char *plugin_name, char *name) {
     return -1;
   }
 
-  if (strlen(name)==0)
+  if (name!=NULL && strlen(name)==0)
     name = NULL;
-  else
-    name = talloc_strdup(name);
-      
+
+  struct Patch *patch = add_new_audio_instrument_widget2(type,-100000,-100000,name);
+  /*
+  SoundPlugin *plugin = add_new_audio_instrument_widget(type,-100000,-100000,false,name,MIXER_get_buses());
   SoundPlugin *plugin = add_new_audio_instrument_widget(type,-100000,-100000,false,name,MIXER_get_buses());
   if (plugin==NULL)
     return -1;
 
   struct Patch *patch = (struct Patch*)plugin->patch;
-  if (patch==NULL){
-    RError(NULL, "Plugin contains no patch");
+  */
+
+  if (patch==NULL) {
+    GFX_Message(NULL, "Failed to create plugin %s: %s",type_name,plugin_name);
     return -1;
   }
 
@@ -171,9 +174,12 @@ int createAudioInstrument(char *type_name, char *plugin_name, char *name) {
   return patch->id;
 }
 
-int createAudioInstrument2(const char *instrument_description, char *name){
+int createAudioInstrumentFromDescription(const char *instrument_description, char *name){
   if (strlen(instrument_description)==0)
     return -1;
+
+  if (strlen(name)==0)
+    name = NULL;
 
   if (instrument_description[0]=='1'){
     char *descr = talloc_strdup(instrument_description);
@@ -192,10 +198,10 @@ int createAudioInstrument2(const char *instrument_description, char *name){
   }
 
   if (instrument_description[0]=='2'){
-    char *filename = STRING_get_chars(STRING_fromBase64(STRING_create(&instrument_description[1])));
-    printf("filename: %s\n",filename);
+    wchar_t *filename = STRING_fromBase64(STRING_create(&instrument_description[1]));
+    //printf("filename: %s\n",filename);
 
-    struct Patch *patch = InstrumentWidget_new_from_preset(NULL, name, x, y, false);
+    struct Patch *patch = InstrumentWidget_new_from_preset2(filename, name, -100000, -100000);
     if (patch==NULL)
       return -1;
     
@@ -207,16 +213,9 @@ int createAudioInstrument2(const char *instrument_description, char *name){
 }
 
 void connectAudioInstrumentToMainPipe(int instrument_id){
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
-  if(patch==NULL){
-    RError("instrument %d not found", instrument_id);
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
     return;
-  }
-
-  if (patch->instrument != get_audio_instrument()) {
-    GFX_Message(NULL, "instrument %d is not an audio instrument", instrument_id);
-    return;
-  }
 
   Undo_MixerConnections_CurrPos();
   MW_autoconnect_plugin((SoundPlugin *)patch->patchdata);
@@ -227,21 +226,17 @@ const_char* instrumentDescriptionPopupMenu(void){
 }
   
 int getNumInstrumentEffects(int instrument_id){
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
-  if(patch==NULL){
-    RError("instrument %d not found", instrument_id);
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
     return 0;
-  }
 
   return patch->instrument->getFxNames(patch)->num_elements;
 }
 
 const_char* getInstrumentEffectName(int effect_num, int instrument_id){
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
-  if(patch==NULL){
-    RError("instrument %d not found", instrument_id);
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
     return "";
-  }
 
   vector_t *elements = patch->instrument->getFxNames(patch);
   
@@ -254,21 +249,14 @@ const_char* getInstrumentEffectName(int effect_num, int instrument_id){
 }
 
 void setInstrumentSample(int instrument_id, char *filename){
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
-  if(patch==NULL){
-    GFX_Message(NULL, "instrument %d not found", instrument_id);
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
     return;
-  }
-
-  if (patch->instrument != get_audio_instrument()) {
-    GFX_Message(NULL, "instrument %d is not an audio instrument", instrument_id);
-    return;
-  }
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
 
   if (strcmp(plugin->type->name, "Sample Player")) {
-    GFX_Message(NULL, "instrument %d is not a Sample Player plugin", instrument_id);
+    GFX_Message(NULL, "instrument %d is not a Sample Player", instrument_id);
     return;
   }
 
@@ -277,21 +265,14 @@ void setInstrumentSample(int instrument_id, char *filename){
 }
 
 void setInstrumentLoopData(int instrument_id, int start, int length){
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
-  if(patch==NULL){
-    GFX_Message(NULL, "instrument %d not found", instrument_id);
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
     return;
-  }
-
-  if (patch->instrument != get_audio_instrument()) {
-    GFX_Message(NULL, "instrument %d is not an audio instrument", instrument_id);
-    return;
-  }
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
 
   if (strcmp(plugin->type->name, "Sample Player")) {
-    GFX_Message(NULL, "instrument %d is not a Sample Player plugin", instrument_id);
+    GFX_Message(NULL, "instrument %d is not a Sample Player", instrument_id);
     return;
   }
 
@@ -302,13 +283,18 @@ void setInstrumentLoopData(int instrument_id, int start, int length){
 
 }
 
+char *getInstrumentName(int instrument_id) {
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return "";
+
+  return (char*)patch->name;
+}
 
 void setInstrumentName(int instrument_id, char *name) {
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
-  if(patch==NULL){
-    GFX_Message(NULL, "instrument %d not found", instrument_id);
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
     return;
-  }
 
   patch->name = talloc_strdup(name);
 
@@ -316,16 +302,9 @@ void setInstrumentName(int instrument_id, char *name) {
 }
 
 void setInstrumentEffect(int instrument_id, char *effect_name, float value){
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
-  if(patch==NULL){
-    GFX_Message(NULL, "instrument %d not found", instrument_id);
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
     return;
-  }
-
-  if (patch->instrument != get_audio_instrument()) {
-    GFX_Message(NULL, "instrument %d is not an audio instrument", instrument_id);
-    return;
-  }
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
 
@@ -339,15 +318,6 @@ void setInstrumentEffect(int instrument_id, char *effect_name, float value){
   GFX_update_instrument_widget(patch);
 }
 
-char *getInstrumentName(int instrument_id) {
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
-  if(patch==NULL){
-    GFX_Message(NULL, "instrument %d not found", instrument_id);
-    return NULL;
-  }
-
-  return (char*)patch->name;
-}
 
 #if 0
 void setInstrumentVolume(int instrument_id, float volume) {
@@ -364,11 +334,9 @@ float getInstrumentVolume(int instrument_id) {
 #endif
 
 void setInstrumentData(int instrument_id, char *key, char *value) {
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
-  if(patch==NULL){
-    GFX_Message(NULL, "instrument %d not found", instrument_id);
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
     return;
-  }
 
   patch->instrument->setPatchData(patch, key, value);
 
@@ -376,11 +344,9 @@ void setInstrumentData(int instrument_id, char *key, char *value) {
 }
 
 char *getInstrumentData(int instrument_id, char *key) {
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
-  if(patch==NULL){
-    GFX_Message(NULL, "instrument %d not found", instrument_id);
-    return NULL;
-  }
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return "";
 
   return patch->instrument->getPatchData(patch, key);
 }
@@ -401,46 +367,147 @@ int getAudioInstrumentId(int instrument_num){
 
 // Mixer GUI
 float getInstrumentX(int instrument_id){
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
-  if(patch==NULL){
-    GFX_Message(NULL, "instrument %d not found", instrument_id);
-    return 0;
-  }
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0.0;
 
   return CHIP_get_pos_x(patch);
 }
 
 float getInstrumentY(int instrument_id){
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
-  if(patch==NULL){
-    GFX_Message(NULL, "instrument %d not found", instrument_id);
-    return 0;
-  }
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0.0;
 
   return CHIP_get_pos_y(patch);
 }
 
 void setInstrumentPosition(float x, float y, int instrument_id){
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
-  if(patch==NULL){
-    GFX_Message(NULL, "instrument %d not found", instrument_id);
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
     return;
-  }
 
   Undo_ChipPos_CurrPos(patch);
   
   CHIP_set_pos(patch,x,y);
 }
 
+int getNumInAudioConnections(int instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
 
-void deleteInstrument(int instrument_id){
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
-  if(patch==NULL){
-    GFX_Message(NULL, "instrument %d not found", instrument_id);
+  return CHIP_get_num_in_connections(patch);
+}
+
+int getNumInEventConnections(int instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
+
+  return CHIP_get_num_in_econnections(patch);
+}
+
+int getNumOutAudioConnections(int instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
+
+  return CHIP_get_num_out_connections(patch);
+}
+
+int getNumOutEventConnections(int instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
+
+  return CHIP_get_num_out_econnections(patch);
+}
+
+int getAudioConnectionSourceInstrument(int connectionnum, int instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
+
+  struct Patch *source = CHIP_get_source(patch, connectionnum);
+  if (source == NULL)
+    return 0;
+    
+  return source->id;
+}
+
+int getEventConnectionSourceInstrument(int connectionnum, int instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
+
+  struct Patch *source = CHIP_get_esource(patch, connectionnum);
+  if (source == NULL)
+    return 0;
+    
+  return source->id;
+}
+
+int getAudioConnectionDestInstrument(int connectionnum, int instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
+
+  struct Patch *dest = CHIP_get_dest(patch, connectionnum);
+  if (dest == NULL)
+    return 0;
+  
+  return dest->id;
+}
+
+int getEventConnectionDestInstrument(int connectionnum, int instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
+
+  struct Patch *dest = CHIP_get_edest(patch, connectionnum);
+  if (dest == NULL)
+    return 0;
+  
+  return dest->id;
+}
+
+void createAudioConnection(int source_id, int dest_id){
+  struct Patch *source = getAudioPatchFromNum(source_id);
+  if(source==NULL)
     return;
-  }
 
-  PATCH_delete_CurrPos(patch);
+  struct Patch *dest = getAudioPatchFromNum(dest_id);
+  if(dest==NULL)
+    return;
+
+  MW_connect(source, dest); 
+}
+                           
+void createEventConnection(int source_id, int dest_id){
+  struct Patch *source = getAudioPatchFromNum(source_id);
+  if(source==NULL)
+    return;
+
+  struct Patch *dest = getAudioPatchFromNum(dest_id);
+  if(dest==NULL)
+    return;
+
+  MW_econnect(source, dest); 
+}
+                           
+void deleteInstrument(int instrument_id){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  Undo_Open_rec();{
+
+    PATCH_delete(patch);
+
+  }Undo_Close();
+
+  root->song->tracker_windows->must_redraw=true;
 }
 
 

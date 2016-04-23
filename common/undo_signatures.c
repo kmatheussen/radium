@@ -52,7 +52,8 @@ void Undo_Signatures(
                  tracknum,
                  realline,
                  CB_CopySignatures(block->signatures),
-                 Undo_Do_Signatures
+                 Undo_Do_Signatures,
+                 "Block signatures"
 	);
 }
 

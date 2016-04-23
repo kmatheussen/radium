@@ -1454,6 +1454,26 @@ SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, 
   }
 }
 
+void MW_connect(Patch *source, Patch *dest){
+  Chip *chip_source = CHIP_get(&g_mixer_widget->scene, source);
+  R_ASSERT_RETURN_IF_FALSE(chip_source!=NULL);
+  
+  Chip *chip_dest = CHIP_get(&g_mixer_widget->scene, dest);
+  R_ASSERT_RETURN_IF_FALSE(chip_dest!=NULL);
+
+  CHIP_connect_chips(&g_mixer_widget->scene, chip_source, chip_dest);
+}
+
+void MW_econnect(Patch *source, Patch *dest){
+  Chip *chip_source = CHIP_get(&g_mixer_widget->scene, source);
+  R_ASSERT_RETURN_IF_FALSE(chip_source!=NULL);
+  
+  Chip *chip_dest = CHIP_get(&g_mixer_widget->scene, dest);
+  R_ASSERT_RETURN_IF_FALSE(chip_dest!=NULL);
+
+  CHIP_econnect_chips(&g_mixer_widget->scene, chip_source, chip_dest);
+}
+
 #if 0
 static bool delete_a_connection(){
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();

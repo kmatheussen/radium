@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/placement_proc.h"
 #include "../common/notes_proc.h"
 #include "../common/instruments_proc.h"
+#include "../common/patch_proc.h"
+#include "../common/visual_proc.h"
 
 #include "api_common_proc.h"
 
@@ -215,4 +217,24 @@ struct FXs *getFXsFromNum(int windownum,int blocknum,int tracknum,int fxnum){
   return getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
 }
 
+struct Patch *getPatchFromNum(int instrument_id){
+  struct Patch *patch = PATCH_get_from_id(instrument_id);
+  if(patch==NULL)
+    GFX_Message(NULL, "instrument %d not found", instrument_id);
+  
+  return patch;
+}
+
+struct Patch *getAudioPatchFromNum(int instrument_id){
+  struct Patch *patch = PATCH_get_from_id(instrument_id);
+  if(patch==NULL)
+    GFX_Message(NULL, "instrument %d not found", instrument_id);
+
+  if (patch->instrument != get_audio_instrument()) {
+    GFX_Message(NULL, "instrument %d is not an audio instrument", instrument_id);
+    return NULL;
+  }
+
+  return patch;
+}
 

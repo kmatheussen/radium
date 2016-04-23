@@ -27,6 +27,7 @@ extern LANGSPEC void recreate_instrument_widget_order_from_state(hash_t *state);
 extern QString request_load_preset_filename(void);
 #endif
 
+extern LANGSPEC struct Patch *InstrumentWidget_new_from_preset2(wchar_t *filename, const char *name, double x, double y);
 extern LANGSPEC struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, double x, double y, bool autoconnect); // A file requester will pop up if state is NULL.
 extern LANGSPEC void InstrumentWidget_replace(struct Patch *patch);
 extern LANGSPEC void InstrumentWidget_load_preset(struct Patch *patch);
@@ -43,6 +44,7 @@ struct SoundPlugin;
 struct SoundPluginType;
 struct SoundProducer;
 
+extern LANGSPEC struct Patch *add_new_audio_instrument_widget2(struct SoundPluginType *plugin_type, double x, double y, const char *name);
 extern LANGSPEC struct SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type, double x, double y, bool autoconnect, const char *name, Buses buses);
 extern LANGSPEC void close_all_instrument_widgets(void);
 

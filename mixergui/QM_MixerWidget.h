@@ -155,6 +155,9 @@ extern LANGSPEC char *MW_popup_plugin_selector2(void);
 
 extern LANGSPEC void MW_autoconnect_plugin(SoundPlugin *plugin);
 
+extern LANGSPEC void MW_connect(struct Patch *source, struct Patch *dest);
+extern LANGSPEC void MW_econnect(struct Patch *source, struct Patch *dest);
+
 extern LANGSPEC void MW_cleanup(void);
 
 extern LANGSPEC hash_t *MW_get_connections_state(void);

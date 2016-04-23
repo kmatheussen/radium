@@ -27,11 +27,14 @@ extern LANGSPEC int Undo_num_undos_since_last_save(void);
 extern LANGSPEC void Undo_saved_song(void);
 extern LANGSPEC int Undo_num_undos(void);
 
+extern LANGSPEC void Undo_Open_rec(void); // Allow creating new level, even when level already is > 0.
 extern LANGSPEC void Undo_Open(void);
 extern LANGSPEC bool Undo_Close(void);
 extern LANGSPEC bool Undo_Is_Open(void);
 extern LANGSPEC void Undo_CancelLastUndo(void);
 extern LANGSPEC UndoFunction Undo_get_last_function(void);
+
+extern LANGSPEC vector_t Undo_get_history(void);
 
 extern LANGSPEC void Undo_Add(
                               int windownum,
@@ -39,7 +42,9 @@ extern LANGSPEC void Undo_Add(
                               int tracknum,
                               int realline,
                               void *pointer,
-                              UndoFunction undo_function);
+                              UndoFunction undo_function,
+                              const char *info
+                              );
 
 extern LANGSPEC void Undo_Add_dont_stop_playing(
                                                 int windownum,
@@ -47,7 +52,8 @@ extern LANGSPEC void Undo_Add_dont_stop_playing(
                                                 int tracknum,
                                                 int realline,
                                                 void *pointer,
-                                                UndoFunction undo_function
+                                                UndoFunction undo_function,
+                                                const char *info
                                                 );
 
 extern LANGSPEC void Undo_start_ignoring_undo_operations(void);

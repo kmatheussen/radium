@@ -64,7 +64,8 @@ void Undo_Block(
              wtrack->l.num,
              realline,
              CB_CopyBlock(wblock),
-             Undo_Do_Block
+             Undo_Do_Block,
+             "Block"
              );
 
   last_undo_block_time = time_now;

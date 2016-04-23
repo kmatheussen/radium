@@ -52,7 +52,8 @@ void Undo_LPBs(
                  tracknum,
                  realline,
                  CB_CopyLPBs(block->lpbs),
-                 Undo_Do_LPBs
+                 Undo_Do_LPBs,
+                 "LPBs"
 	);
 }
 

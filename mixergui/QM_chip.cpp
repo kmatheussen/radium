@@ -403,19 +403,21 @@ void CHIP_update(SoundPlugin *plugin){
   chip->update();
 }
 
-void CHIP_has_new_plugin(SoundPlugin *plugin){
+/*
+void CHIP_init_because_it_has_new_plugin(SoundPlugin *plugin){
   Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, plugin);
   chip->init_new_plugin();
 }
-  
-float CHIP_get_pos_x(struct Patch *patch){
+*/
+
+float CHIP_get_pos_x(const struct Patch *patch){
   Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, (SoundPlugin*)patch->patchdata);
   if (chip==NULL)
     return 0;
   return chip->x();
 }
 
-float CHIP_get_pos_y(struct Patch *patch){
+float CHIP_get_pos_y(const struct Patch *patch){
   Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, (SoundPlugin*)patch->patchdata);
   if (chip==NULL)
     return 0;
@@ -626,6 +628,139 @@ void CHIP_econnect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *
   CHIP_econnect_chips(scene, find_chip_for_plugin(scene, from), find_chip_for_plugin(scene, to));
 }
 
+
+int CHIP_get_num_in_connections(const Patch *patch){
+  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
+
+  int num=0;
+  
+  for(unsigned int i=0;i<chip->_connections.size();i++){
+    Connection *connection = chip->_connections.at(i);
+    if(connection->to==chip)
+      num++;
+  }
+
+  return num;
+}
+
+int CHIP_get_num_out_connections(const Patch *patch){
+  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
+
+  int num=0;
+  
+  for(unsigned int i=0;i<chip->_connections.size();i++){
+    Connection *connection = chip->_connections.at(i);
+    if(connection->from==chip)
+      num++;
+  }
+
+  return num;
+}
+
+int CHIP_get_num_in_econnections(const Patch *patch){
+  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
+
+  int num=0;
+  
+  for(unsigned int i=0;i<chip->_econnections.size();i++){
+    Connection *econnection = chip->_econnections.at(i);
+    if(econnection->to==chip)
+      num++;
+  }
+
+  return num;
+}
+
+int CHIP_get_num_out_econnections(const Patch *patch){
+  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
+
+  int num=0;
+  
+  for(unsigned int i=0;i<chip->_econnections.size();i++){
+    Connection *econnection = chip->_econnections.at(i);
+    if(econnection->from==chip)
+      num++;
+  }
+
+  return num;
+}
+
+struct Patch* CHIP_get_source(const struct Patch *patch, int connectionnum){
+  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
+
+  int num=0;
+  
+  for(unsigned int i=0;i<chip->_connections.size();i++){
+    Connection *connection = chip->_connections.at(i);
+    if(connection->to==chip){
+      if (num==connectionnum)
+        return CHIP_get_patch(connection->from);
+      num++;
+    }
+  }
+
+  return NULL;  
+}
+  
+struct Patch* CHIP_get_dest(const struct Patch *patch, int connectionnum){
+  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
+
+  int num=0;
+  
+  for(unsigned int i=0;i<chip->_connections.size();i++){
+    Connection *connection = chip->_connections.at(i);
+    if(connection->from==chip){
+      if (num==connectionnum)
+        return CHIP_get_patch(connection->to);
+      num++;
+    }
+  }
+
+  return NULL;  
+}
+  
+struct Patch* CHIP_get_esource(const struct Patch *patch, int connectionnum){
+  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
+
+  int num=0;
+  
+  for(unsigned int i=0;i<chip->_econnections.size();i++){
+    Connection *econnection = chip->_econnections.at(i);
+    if(econnection->to==chip){
+      if (num==connectionnum)
+        return CHIP_get_patch(econnection->from);
+      num++;
+    }
+  }
+
+  return NULL;  
+}
+  
+struct Patch* CHIP_get_edest(const struct Patch *patch, int connectionnum){
+  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
+
+  int num=0;
+  
+  for(unsigned int i=0;i<chip->_econnections.size();i++){
+    Connection *econnection = chip->_econnections.at(i);
+    if(econnection->from==chip){
+      if (num==connectionnum)
+        return CHIP_get_patch(econnection->to);
+      num++;
+    }
+  }
+
+  return NULL;  
+}
+  
 void CONNECTION_delete_a_connection_where_all_links_have_been_removed(Connection *connection){
   Chip *from = connection->from;
   Chip *to = connection->to;
@@ -1315,15 +1450,14 @@ void Chip::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
   event->accept();
 }
 
-static struct Patch *get_patch_from_chip(Chip *chip){
+struct Patch *CHIP_get_patch(Chip *chip){
   SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
   volatile struct Patch *patch = plugin->patch;
   R_ASSERT(patch!=NULL);
   return (struct Patch*)patch;
 }
 
-static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int patch_id){
-  struct Patch *patch = PATCH_get_from_id(patch_id);
+Chip *CHIP_get(QGraphicsScene *scene, const Patch *patch){
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
 
   QList<QGraphicsItem *> das_items = scene->items();
@@ -1338,11 +1472,17 @@ static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int patch_id){
   return NULL;
 }
 
+static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int patch_id){
+  struct Patch *patch = PATCH_get_from_id(patch_id);
+
+  return CHIP_get(scene, patch);
+}
+
 hash_t *CHIP_get_state(Chip *chip){
   hash_t *state=HASH_create(4);
 
   SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
-  struct Patch *patch = get_patch_from_chip(chip);
+  struct Patch *patch = CHIP_get_patch(chip);
 
   HASH_put_int(state, "patch", patch->id);
   HASH_put_float(state, "x", chip->x());
@@ -1413,8 +1553,8 @@ hash_t *CONNECTION_get_state(Connection *connection){
 
   //struct Patch *patch = get_patch_from_chip(chip);
 
-  HASH_put_int(state, "from_patch", get_patch_from_chip(connection->from)->id);
-  HASH_put_int(state, "to_patch", get_patch_from_chip(connection->to)->id);
+  HASH_put_int(state, "from_patch", CHIP_get_patch(connection->from)->id);
+  HASH_put_int(state, "to_patch", CHIP_get_patch(connection->to)->id);
   HASH_put_int(state, "is_event_connection", connection->_is_event_connection ? 1 : 0);
 
   return state;

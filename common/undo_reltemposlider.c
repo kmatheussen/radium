@@ -32,7 +32,8 @@ void Undo_RelTempoSlider(
                                    wblock->wtrack->l.num,
                                    window->wblock->curr_realline,
                                    u_rts,
-                                   Undo_Do_RelTempoSlider
+                                   Undo_Do_RelTempoSlider,
+                                   "Block multiplier"
                                    );
 }
 

@@ -40,7 +40,8 @@ void Undo_TrackHeader(
                                    track->l.num,
                                    realline,
                                    u_th,
-                                   Undo_Do_TrackHeader
+                                   Undo_Do_TrackHeader,
+                                   "Block track header"
                                    );
 
 }

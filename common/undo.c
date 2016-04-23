@@ -44,6 +44,8 @@ struct UndoEntry{
 
   void *pointer;
   UndoFunction function;
+
+  const char *info;
 };
 
 
@@ -69,7 +71,7 @@ static int undo_pos_at_last_saving=0;
 static int num_undos=0;
 static int max_num_undos=MAX_NUM_UNDOS;
 
-uint64_t g_curr_undo_generation = 0;
+uint64_t g_curr_undo_generation = 0;  // used by autobackup
 
 static int undo_is_open=0;
 
@@ -187,51 +189,63 @@ bool Undo_Is_Open(void){
   return undo_is_open > 0;
 }
 
-void Undo_Open(void){
+void Undo_Open_rec(void){
   if (ignore()) return;
 
   if(currently_undoing){
     RError("Can not call Undo_Open from Undo()\n");
+    return;
   }
 
-  struct Tracker_Windows *window = root->song->tracker_windows;
-  struct WBlocks *wblock = window->wblock;
-  struct WTracks *wtrack = wblock->wtrack;
-  int realline = wblock->curr_realline;
-
-  //printf("Undo_Open\n");
-
-  if(Undo_Is_Open())
-    RError("Undo_Open: Undo_is_open==true: %d", undo_is_open);
-
-  curr_open_undo = talloc(sizeof(struct Undo));
-  curr_open_undo->windownum=window->l.num;
-  curr_open_undo->blocknum=wblock->l.num;
-  curr_open_undo->tracknum=wtrack->l.num;
-  curr_open_undo->realline=realline;
+  if (!Undo_Is_Open()){
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    struct WBlocks *wblock = window->wblock;
+    struct WTracks *wtrack = wblock->wtrack;
+    int realline = wblock->curr_realline;
     
-
+    //printf("Undo_Open\n");
+    
+    curr_open_undo = talloc(sizeof(struct Undo));
+    curr_open_undo->windownum=window->l.num;
+    curr_open_undo->blocknum=wblock->l.num;
+    curr_open_undo->tracknum=wtrack->l.num;
+    curr_open_undo->realline=realline;
+    
+    
 #if 0 // Disabled. Code doesn't look right.
-  if(num_undos!=0 && num_undos>max_num_undos){
-    num_undos--;
-    UndoRoot.next=UndoRoot.next->next;
-    UndoRoot.next->prev=&UndoRoot;
-  }
+    if(num_undos!=0 && num_undos>max_num_undos){
+      num_undos--;
+      UndoRoot.next=UndoRoot.next->next;
+      UndoRoot.next->prev=&UndoRoot;
+    }
 #endif
+    
+  }
 
   undo_is_open++;
 }
 
+void Undo_Open(void){
+  if (ignore()) return;
+  
+  if(Undo_Is_Open())
+    RError("Undo_Open: Undo_is_open==true: %d", undo_is_open);
+
+  Undo_Open_rec();
+}
+
+// Returns true if we created another undo entry.
 bool Undo_Close(void){
 
   if (ignore()) return false;
 
   if(currently_undoing){
-    RError("Can not call Undo_Close from Undo()\n");
+    RError("Can not call Undo_Close from Undo()\n");    
+    return false;
   }
 
-  if (undo_is_open > 1)
-    RError("undo_is_open > 1: %d", undo_is_open);
+  //if (undo_is_open > 1)
+  //  RError("undo_is_open > 1: %d", undo_is_open);
 
   if (undo_is_open==0){
     RError("undo_is_open==0");
@@ -288,6 +302,29 @@ UndoFunction Undo_get_last_function(void){
 }
 
 
+vector_t Undo_get_history(void){
+  vector_t ret = {0};
+
+  struct Undo *undo = CurrUndo;
+  int pos = 0;
+
+  if (Undo_Is_Open()){
+    VECTOR_FOR_EACH(struct UndoEntry* entry, &curr_open_undo->entries){
+      VECTOR_push_back(&ret, talloc_format("curr: %s", entry->info));
+    }END_VECTOR_FOR_EACH;
+  }
+  
+  while(undo != NULL){
+    VECTOR_FOR_EACH(struct UndoEntry* entry, &undo->entries){
+      VECTOR_push_back(&ret, talloc_format("%d: %s", pos, entry->info));
+    }END_VECTOR_FOR_EACH;
+    undo = undo->prev;
+    pos++;
+  }
+
+  return ret;
+}
+
 /***************************************************
   FUNCTION
     Insert a new undo-element.
@@ -299,37 +336,34 @@ static void Undo_Add_internal(
               int realline,
               void *pointer,
               UndoFunction undo_function,
-              bool stop_playing_when_undoing
+              bool stop_playing_when_undoing,
+              const char *info
 ){
   if (ignore()) return;
 
   if(currently_undoing){
     RError("Can not call Undo_Add from Undo()\n");
+    return;
   }
 
-  bool undo_was_open = Undo_Is_Open();
+  Undo_Open_rec();{
 
-  if(Undo_Is_Open()==false)
-    Undo_Open();
+    struct UndoEntry *entry=talloc(sizeof(struct UndoEntry));
+    entry->windownum=windownum;
+    entry->blocknum=blocknum;
+    entry->tracknum=tracknum;
+    entry->realline=realline;
+    entry->current_patch = g_currpatch;
+    entry->pointer=pointer;
+    entry->function=undo_function;
+    entry->stop_playing=stop_playing_when_undoing;
+    entry->info = talloc_strdup(info);
+  
+    VECTOR_push_back(&curr_open_undo->entries,entry);
 
-  struct UndoEntry *entry=talloc(sizeof(struct UndoEntry));
-  entry->windownum=windownum;
-  entry->blocknum=blocknum;
-  entry->tracknum=tracknum;
-  entry->realline=realline;
-  entry->current_patch = g_currpatch;
-  entry->pointer=pointer;
-  entry->function=undo_function;
-  entry->stop_playing=stop_playing_when_undoing;
-
-  VECTOR_push_back(&curr_open_undo->entries,entry);
-
-  if(undo_was_open==false)
-    Undo_Close();
+  }Undo_Close();
 
   g_curr_undo_generation++;
-  
-  update_gfx();
 }
 
 void Undo_Add(
@@ -338,9 +372,10 @@ void Undo_Add(
               int tracknum,
               int realline,
               void *pointer,
-              UndoFunction undo_function
+              UndoFunction undo_function,
+              const char *info
 ){
-  Undo_Add_internal(windownum,blocknum,tracknum,realline,pointer,undo_function,true);
+  Undo_Add_internal(windownum,blocknum,tracknum,realline,pointer,undo_function,true,info);
 }
 
 void Undo_Add_dont_stop_playing(
@@ -349,9 +384,10 @@ void Undo_Add_dont_stop_playing(
               int tracknum,
               int realline,
               void *pointer,
-              UndoFunction undo_function
+              UndoFunction undo_function,
+              const char *info
 ){
-  Undo_Add_internal(windownum,blocknum,tracknum,realline,pointer,undo_function,false);
+  Undo_Add_internal(windownum,blocknum,tracknum,realline,pointer,undo_function,false,info);
 }
 
 void Undo_start_ignoring_undo_operations(void){

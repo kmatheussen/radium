@@ -70,7 +70,8 @@ void Undo_Block_Insert(
 		window->curr_track,
 		wblock->curr_realline,
 		ubi,
-		Undo_Do_Block_Insert
+		Undo_Do_Block_Insert,
+                "Block insert"
 	);
 }
 
@@ -92,7 +93,8 @@ void Undo_Block_Delete(
 		window->curr_track,
 		wblock->curr_realline,
 		ubi,
-		Undo_Do_Block_Delete
+		Undo_Do_Block_Delete,
+                "Block delete"
 	);
 }
 
