@@ -139,8 +139,11 @@ struct SliderPainter{
     void timerEvent(QTimerEvent * e){
       R_ASSERT(THREADING_is_main_thread());
 
-      if (_painter->_timer_can_run==false) //another hack
+      if (_painter->_timer_can_run==false){ //another hack
+        printf("SliderPainter::Timer::timerEvent: _painter->_timer_can_run==false\n");
+        //R_ASSERT(false);
         return;
+      }
       
       if(_painter->isVisible()==false)
         return;
@@ -493,8 +496,9 @@ void SLIDERPAINTER_start_auto_updater(SliderPainter *painter){
 void SLIDERPAINTER_became_visible(SliderPainter *painter){
   R_ASSERT(THREADING_is_main_thread());
   if(painter->_auto_updater_has_started==true)
-    if (painter->_timer_can_run == false)
+    if (painter->_timer_can_run == true) {
       painter->_timer.start();
+    }
 }
 
 void SLIDERPAINTER_became_invisible(SliderPainter *painter){
