@@ -138,7 +138,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
     //PluginParam *pParam = param.value();
     //PluginParamWidget *pParamWidget = new PluginParamWidget(pParam, this);
     ParamWidget *param_widget = new ParamWidget(widget, patch, effect_num);
-    widget->_param_widgets.push_back(param_widget);
+    widget->_param_widgets.add(param_widget);
     pGridLayout->addWidget(param_widget, iY, iX);
     if (++iY >= iYsPerPage) {
       iY = 0;

@@ -1051,6 +1051,12 @@ void InstrumentWidget_save_preset(struct Patch *patch){
   DISK_close_and_delete(file);
 }
 
+void InstrumentWidget_prepare_for_deletion(struct Patch *patch){
+  Audio_instrument_widget *w2 = get_audio_instrument_widget(patch);
+  if (w2!=NULL)
+    w2->prepare_for_deletion(); // <- We can't delete the widget (for various spaghetti reasons), so we do this instead.
+}
+
 static void InstrumentWidget_remove_patch(struct Patch *patch){
   QStackedWidget* tabs = instruments_widget->tabs;
 
@@ -1068,6 +1074,9 @@ static void InstrumentWidget_remove_patch(struct Patch *patch){
     return;
   } else
     tabs->removeWidget(w2);  // Undo is storing the tab widget, so we can't delete it.
+
+  w2->prepare_for_deletion(); // <- We can't delete the widget (for various spaghetti reasons), so we do this instead.
+  //delete w2;
 }
 
 void InstrumentWidget_update(struct Patch *patch){

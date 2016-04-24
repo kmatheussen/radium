@@ -208,13 +208,19 @@ public:
     update_widget();
   }
 
+  void prepare_for_deletion(void){
+    _timer.stop();
+  }
+  
+  ~Plugin_widget(){
+    prepare_for_deletion();
+  }
+      
   void update_widget() {
     if(_plugin_widget != NULL)
-      for(unsigned int i=0;i<_plugin_widget->_param_widgets.size();i++){
-        ParamWidget *param_widget = _plugin_widget->_param_widgets.at(i);
+      for(ParamWidget *param_widget : _plugin_widget->_param_widgets)
         param_widget->update_gui_element();
-      }
-
+    
     if(_pd_plugin_widget != NULL)
       _pd_plugin_widget->update_gui();
 

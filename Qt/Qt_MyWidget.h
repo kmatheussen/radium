@@ -247,30 +247,30 @@ namespace cvs{
       }
     };
 
-    MyQWidget2 w;
+    MyQWidget2 *w;
 
     MyWidget(void *parent)
-      : w(static_cast<QWidget*>(parent),this)
+      : w(new MyQWidget2(static_cast<QWidget*>(parent),this))
     {}
 
     void update(int x1,int y1,int x2,int y2){
-      w.update(x1,y1,x2-x1,y2-y1);
+      w->update(x1,y1,x2-x1,y2-y1);
     }
     void update(const MyRect &r){
       update(r.x1,r.y1,r.x2,r.y2);
     }
 
     void update(){
-      w.update();
+      w->update();
     }
 
-    int width(){return w.width();}
-    int height(){return w.height();}
+    int width(){return w->width();}
+    int height(){return w->height();}
 
-    bool isVisible(){return w.isVisible();}
+    bool isVisible(){return w->isVisible();}
     bool isEnabled(){
       //printf("w is %s\n",w.isEnabled()?"enabled":"disabled");
-      return w.isEnabled();
+      return w->isEnabled();
     }
 
     virtual void resized() = 0;
@@ -297,15 +297,25 @@ namespace cvs{
       }
     };
 
-    MyQTimer qtimer;
+    MyQTimer *qtimer;
 
-    MyTimer() : qtimer(this) {}
+    MyTimer()
+      : qtimer(new MyQTimer(this))
+    {}
 
+    void prepare_for_deletion(void){
+      qtimer->stop(); // Is it okay to call this one without first calling start?
+    }
+    
+    ~MyTimer(){
+      prepare_for_deletion();
+    }
+    
     virtual void timer() = 0;
 
     void startTimer(int interval_in_milliseconds){
-      qtimer.setInterval(interval_in_milliseconds);
-      qtimer.start();
+      qtimer->setInterval(interval_in_milliseconds);
+      qtimer->start();
     }
   };
 

@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QString>
 
 #include "../common/OS_Player_proc.h"
+#include "../common/Vector.hpp"
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/undo_audio_effect_proc.h"
 #include "../audio/Faust_plugins_proc.h"
@@ -158,6 +159,15 @@ class ParamWidget : public QWidget{
       _can_update_effect_value = true;
     }
 
+  void prepare_for_deletion(void){
+    if(_slider!=NULL)
+      _slider->prepare_for_deletion();
+  }
+  
+  ~ParamWidget(){
+    prepare_for_deletion();
+  }
+     
   void set_effect_value(float value){
     if (_can_update_effect_value) {
 
@@ -223,11 +233,19 @@ class ParamWidget : public QWidget{
 
 
 struct PluginWidget : public QWidget{
+  radium::Vector<ParamWidget*> _param_widgets;
+
   PluginWidget(QWidget *parent)
     : QWidget(parent)
   {}
 
-  std::vector<ParamWidget*> _param_widgets;
+  void prepare_for_deletion(void){
+    for (auto *param_widget : _param_widgets)
+      param_widget->prepare_for_deletion();
+  }
+  
+  ~PluginWidget(){
+  }
 };
 
 PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch);

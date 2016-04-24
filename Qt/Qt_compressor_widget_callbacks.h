@@ -115,13 +115,13 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
     comp = new cvs::Comp(patch,parent_for_comp);
 
 #ifdef COMPILING_RADIUM
-    comp->w.setEnabled(false);
+    comp->w->setEnabled(false);
 #else
     attack_slider->setEnabled(true);
     release_slider->setEnabled(true);
     enable_checkbox->setVisible(false);
 #endif
-    verticalLayout->insertWidget(1,&comp->w);
+    verticalLayout->insertWidget(1,comp->w);
 
 #ifdef COMPILING_RADIUM
     // Enable MyQSlider and MyQCheckBox to take care of undo/redo.
@@ -140,6 +140,14 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
     initing = false;
   }
 
+  void prepare_for_deletion(void){
+    comp->prepare_for_deletion();
+  }
+  
+  ~Compressor_widget(){
+    prepare_for_deletion();
+  }
+     
   float get_exp_value(double val, double max_val, double y1, double y2){
     return scale_double(exp(val/max_val),
                         exp(0.0),expf(1.0),
@@ -199,7 +207,7 @@ void on_enable_checkbox_toggled(bool val){
   attack_slider->setEnabled(val);
   release_slider->setEnabled(val);
   comp->background_image_must_be_updated=true;
-  comp->w.setEnabled(val);
+  comp->w->setEnabled(val);
 #endif
 }
 

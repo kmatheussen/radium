@@ -314,12 +314,25 @@ struct SliderPainter{
     init();
   }
 
+  void prepare_for_deletion(void){
+    _timer.stop();
+  }
+  
   ~SliderPainter(){
+
+    prepare_for_deletion();
+        
+    fprintf(stderr, "FIXME: Delete sliderpainter data\n");
+
+    // It's not quite safe to delete here. Fix after refactoring.
+    
+    /*
     if(_local_peak_values==true)
       V_free(_peak_values);
 
     for(int i=0;i<(int)_data.size();i++) // Don't like iterators. Rather free memory manually than using them.
       delete _data.at(i);
+    */
   }
 
   void start_auto_updater() {
@@ -453,6 +466,9 @@ SliderPainter *SLIDERPAINTER_create(QGraphicsItem *graphics_item, int x1, int y1
   return painter;
 }
 
+void SLIDERPAINTER_prepare_for_deletion(SliderPainter *painter){
+  painter->prepare_for_deletion();
+}
 
 void SLIDERPAINTER_delete(SliderPainter *painter){
   R_ASSERT(THREADING_is_main_thread());

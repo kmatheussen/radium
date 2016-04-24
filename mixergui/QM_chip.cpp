@@ -1484,14 +1484,16 @@ void CHIP_create_from_state(hash_t *state, Buses buses){
   struct SoundPlugin *plugin = PLUGIN_create_from_state(HASH_get_hash(state, "plugin"));
   R_ASSERT(plugin != NULL);
   patch->patchdata = plugin;
-
+  
   if(plugin!=NULL){
+    patch->is_usable = true;
     plugin->patch = patch;
     Chip *chip = new Chip(&g_mixer_widget->scene,
                           SP_create(plugin,buses),
-                          x,y);
+                          x,y);    
     printf("Made chip %p\n",chip);
   }else{
+    patch->is_usable = false;
     printf("Unable to create chip\n"); // proper error message given elsewhere. (ladspa or vst)
   }
 }

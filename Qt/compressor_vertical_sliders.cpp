@@ -408,8 +408,15 @@ struct Comp : public MyWidget, public MyTimer{
     }
   }
 
+  void prepare_for_deletion(void){
+    MyTimer::prepare_for_deletion(); // <- This causes graphics to stop updating after redoing an undo. This will be fixed later.
+  }
+  
   virtual ~Comp(){
+    prepare_for_deletion();
+    R_ASSERT_RETURN_IF_FALSE(false);
     delete background_image;
+    background_image = NULL;
   }
 
  Comp(Patch *patch, void *parent)

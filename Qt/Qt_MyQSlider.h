@@ -96,7 +96,13 @@ struct MyQSlider : public QSlider {
   MyQSlider ( QWidget * parent = 0 ) : QSlider(parent) {init();}
   MyQSlider ( Qt::Orientation orientation, QWidget * parent = 0 ) : QSlider(orientation,parent) { init();}
 
+  void prepare_for_deletion(void){
+    SLIDERPAINTER_prepare_for_deletion(_painter);
+  }
+  
   ~MyQSlider(){
+    prepare_for_deletion();
+    
     //R_ASSERT(false);
     g_all_myqsliders.remove(g_all_myqsliders.indexOf(this));
     SLIDERPAINTER_delete(_painter);

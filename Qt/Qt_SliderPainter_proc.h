@@ -23,6 +23,7 @@ struct SliderPainter;
 
 SliderPainter *SLIDERPAINTER_create(QAbstractSlider *qslider);
 SliderPainter *SLIDERPAINTER_create(QGraphicsItem *graphics_item, int x1, int y1, int x2, int y2);
+void SLIDERPAINTER_prepare_for_deletion(SliderPainter *painter);
 void SLIDERPAINTER_delete(SliderPainter *painter);
 void SLIDERPAINTER_start_auto_updater(SliderPainter *painter);
 

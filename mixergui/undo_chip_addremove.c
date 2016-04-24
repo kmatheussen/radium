@@ -18,8 +18,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/undo.h"
 #include "../common/hashmap_proc.h"
+#include "../common/patch_proc.h"
 
 #include "../audio/Mixer_proc.h"
+
+#include "../Qt/Qt_instruments_proc.h"
 
 #include "QM_MixerWidget.h"
 #include "QM_chip.h"
@@ -34,7 +37,7 @@ struct Undo_Chip_AddRemove{
   bool is_present;
 
   hash_t *chip_state;
-  hash_t *connections_state;
+  //hash_t *connections_state;
 };
 
 static void *Undo_Do_Chip_AddRemove(
@@ -99,7 +102,9 @@ static void *Undo_Do_Chip_AddRemove(
   {
     if(is_present==true){
       u_rt->chip_state = CHIP_get_chip_state_from_patch(u_rt->patch);
+      InstrumentWidget_prepare_for_deletion(u_rt->patch); // <- Stop timers.
       MW_delete_plugin((SoundPlugin *)u_rt->patch->patchdata);
+      //PATCH_delete(u_rt->patch); <--- This is the correct way to do this. Refactoring needed.
       u_rt->is_present=false;
     }else{
       CHIP_create_from_state(u_rt->chip_state, MIXER_get_buses());

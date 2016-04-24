@@ -284,6 +284,18 @@ public:
     is_starting = false;
   }
 
+  void prepare_for_deletion(void){
+    timer.stop();
+    _comp_widget->prepare_for_deletion();
+    _plugin_widget->prepare_for_deletion();
+    if (_system_out_slider != NULL)
+      _system_out_slider->prepare_for_deletion();
+  }
+
+  ~Audio_instrument_widget(){
+    prepare_for_deletion();
+  }
+     
   MyQSlider *get_system_slider(int system_effect){
     switch(system_effect){
 
