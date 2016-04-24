@@ -101,8 +101,8 @@ static void *Undo_Do_Chip_AddRemove(
 //hash_t *new_connections_state = MW_get_connections_state();
   {
     if(is_present==true){
-      u_rt->chip_state = CHIP_get_chip_state_from_patch(u_rt->patch);
       InstrumentWidget_prepare_for_deletion(u_rt->patch); // <- Stop timers.
+      u_rt->chip_state = CHIP_get_chip_state_from_patch(u_rt->patch);
       MW_delete_plugin((SoundPlugin *)u_rt->patch->patchdata);
       //PATCH_delete(u_rt->patch); <--- This is the correct way to do this. Refactoring needed.
       u_rt->is_present=false;

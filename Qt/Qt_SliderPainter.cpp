@@ -138,6 +138,9 @@ struct SliderPainter{
 
     void timerEvent(QTimerEvent * e){
       R_ASSERT(THREADING_is_main_thread());
+
+      if (_painter->_timer_can_run==false) //another hack
+        return;
       
       if(_painter->isVisible()==false)
         return;
@@ -206,10 +209,11 @@ struct SliderPainter{
   enum ColorNums _peak_color;
 
   bool _alternative_color;
-
+  
   int _value;
 
   Timer _timer;
+  bool _timer_can_run;
 
   QString _display_string;
 
@@ -298,6 +302,7 @@ struct SliderPainter{
     _alternative_color = false;
     _auto_updater_has_started = false;
     _automation_value = 0.0f;
+    _timer_can_run = true;
   }
 
   SliderPainter(QAbstractSlider *widget)
@@ -315,6 +320,7 @@ struct SliderPainter{
   }
 
   void prepare_for_deletion(void){
+    _timer_can_run = false;
     _timer.stop();
   }
   
@@ -487,7 +493,8 @@ void SLIDERPAINTER_start_auto_updater(SliderPainter *painter){
 void SLIDERPAINTER_became_visible(SliderPainter *painter){
   R_ASSERT(THREADING_is_main_thread());
   if(painter->_auto_updater_has_started==true)
-    painter->_timer.start();
+    if (painter->_timer_can_run == false)
+      painter->_timer.start();
 }
 
 void SLIDERPAINTER_became_invisible(SliderPainter *painter){

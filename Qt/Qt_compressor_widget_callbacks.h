@@ -142,6 +142,8 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
 
   void prepare_for_deletion(void){
     comp->prepare_for_deletion();
+    attack_slider->prepare_for_deletion();
+    release_slider->prepare_for_deletion();
   }
   
   ~Compressor_widget(){
