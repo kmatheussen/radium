@@ -1216,6 +1216,13 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
 
 #if defined(FOR_MACOSX)
   const char *plugin_name = talloc_strdup(QFileInfo(QDir(file_or_identifier).dirName()).baseName().toUtf8().constData());
+  filename = file_or_identifier + "/Contents/MacOS/" + plugin_name; // hopefully this is always how it is on that platform.
+  if(QFileInfo(filename).exists()==false) {
+    fprintf(stderr,"   Could not find -%s\n",filename.toUtf8().constData());
+    abort();
+    return false;
+  }
+  
 #else
   if(file_info.suffix().toLower()==VST_SUFFIX)
     basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
@@ -1300,16 +1307,7 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
 #if FOR_MACOSX
     QDir dir(file_info.absoluteFilePath() + "/Contents/MacOS/");
     if (dir.exists()) {
-      dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
-      dir.setSorting(QDir::Name);
-        
-      QFileInfoList list = dir.entryInfoList();
-      for (int i = 0; i < list.size(); ++i) {
-        QFileInfo fileInfo = list.at(i);
-        if (add_vst_plugin_type(fileInfo, file_info.absoluteFilePath(), is_juce_plugin)==true)
-          break; // i.e. there was a file in that directory that probably was a vst library file we could run.
-      }
-
+      add_vst_plugin_type(file_info, file_info.absoluteFilePath(), is_juce_plugin);
     } else
 #endif
       
