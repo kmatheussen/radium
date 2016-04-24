@@ -1,3 +1,15 @@
+Changes 3.7.8 -> 3.7.9:
+* macosx: Fix for VST plugins that have other files in Contents/MacOS/ than
+  the plugin file itself.
+* Many band aids for various problems caused by running timers in instrument
+  windows after the plugins have been deleted. Peaks and automation indicator
+  lines on top of the sliders are not updated after undo or redo now, but it
+  will be fixed later.
+* Code cleanup
+* api: many new functions and fixes for instruments and undo/redo
+* Fix computer keyboard release key to stop playing note
+
+
 Changes 3.7.7 -> 3.7.8:
 * Fix fx text editing when cent text and/or velocity text is enabled
 * Sampler instrument: Remember loop on/off setting when changing sample
