@@ -530,6 +530,9 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 #endif
   
   Data *data = (Data*)plugin->data;
+  
+  String l = data->audio_instance->getParameterLabel(effect_num);
+  const char *label = l.toRawUTF8();
 
   if (true) // audio_instance->getParameterText() sometimes crashes. Doing it manually instead.
   {
@@ -538,16 +541,16 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     const int effGetParamDisplay = 7;
     aeffect->dispatcher(aeffect,effGetParamDisplay,
 			effect_num, 0, (void *) disp, 0.0f);
-    
+
     if (disp[0]==0){
-      snprintf(buffer,buffersize-1,"%f%s",aeffect->getParameter(aeffect,effect_num),"lab");//plugin->type_data->params[effect_num].label);
+      snprintf(buffer,buffersize-1,"%f%s",aeffect->getParameter(aeffect,effect_num),label);//plugin->type_data->params[effect_num].label);
     }else{
-      const char *label = "bal";//type_data->params[effect_num].label;
-      snprintf(buffer,buffersize-1,"%s%s",disp,label==NULL ? "" : label);
+      snprintf(buffer,buffersize-1,"%s%s",disp,label);
     }
   }
   else {
-    snprintf(buffer,buffersize-1,"empty: %s",data->audio_instance->getParameterText(effect_num, buffersize-1).toRawUTF8());
+    String l = data->audio_instance->getParameterText(effect_num, buffersize-1);
+    snprintf(buffer,buffersize-1,"%s%s",l.toRawUTF8(),label);
   }
 }
 
