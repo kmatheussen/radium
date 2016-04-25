@@ -1233,6 +1233,18 @@ void PLUGINHOST_init(void){
   testing();
   exit(0);
 #endif
+
+#if 0
+  
+  // Provoce a very hard crash inside juce:
+  
+  fprintf(stderr,"init1\n");
+  const char crash[] = {3,1,1,1,1,-128,-128,-128,-128,16,1,1,1,1,1,77,26,52,
+                        111,4,77,26,52,111,4,1,1,1,1,1,1,0};
+  String(CharPointer_UTF8(crash));
+  fprintf(stderr,"init2\n");
+  
+#endif
   
 #if JUCE_LINUX // Seems like a separate thread is only necessary on linux.
 

@@ -805,7 +805,11 @@ QString request_load_preset_filename(void){
                                             g_mixer_widget,
                                             "Load Effect configuration",
                                             last_preset_path,
-                                            "Radium Effect Configuration (*.rec)",
+#if FOR_WINDOWS
+                                            "*.rec ;; All files (*)",
+#else
+                                            "Radium Effect Configuration (*.rec) ;; All files (*)",
+#endif
                                             0,
                                             useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
                                             );
@@ -1020,7 +1024,11 @@ void InstrumentWidget_save_preset(struct Patch *patch){
                                             g_mixer_widget,
                                             "Save Effect configuration",
                                             last_preset_path,
-                                            "Radium Effect Configuration (*.rec)",
+#if FOR_WINDOWS
+                                            "*.rec ;; All files (*)",
+#else
+                                            "Radium Effect Configuration (*.rec) ;; All files (*)",
+#endif
                                             0,
                                             useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
                                             );

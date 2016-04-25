@@ -5,7 +5,6 @@
 #include <unistd.h>
 
 #include <QMessageBox>
-#include <QFileDialog>
 #include <FocusSniffers.h>
 
 #include "../common/nsmtracker.h"

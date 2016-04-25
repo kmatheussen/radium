@@ -4,7 +4,6 @@
 #include <sndfile.h>
 #include <unistd.h>
 
-#include <QFileDialog>
 #include <FocusSniffers.h>
 
 #include "../common/nsmtracker.h"

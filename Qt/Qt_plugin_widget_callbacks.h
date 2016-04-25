@@ -263,7 +263,11 @@ private:
                                               g_mixer_widget,
                                               is_fxb ? "Save VST FXB file" : "Save VST FXP file",
                                               last_fxb_preset_path,
+#if FOR_WINDOWS
+                                              is_fxb ? "*.fxb ;; All files (*)" : "*.fxp ;; All files (*)",
+#else
                                               is_fxb ? "VST FXB (*.fxb) ;; All files (*)" : "VST FXP (*.fxp) ;; All files (*)",
+#endif
                                               0,
                                               useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
                                               );
@@ -294,7 +298,11 @@ private:
                                               g_mixer_widget,
                                               "Load VST FXB or FXP file",
                                               last_fxb_preset_path,
+#if FOR_WINDOWS
+                                              "*.fxb *.fxp ;; All files (*)",
+#else
                                               "VST FXB/FXP files (*.fxb *.fxp) ;; All files (*)",
+#endif
                                               0,
                                               useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
                                               );
