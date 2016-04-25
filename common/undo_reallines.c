@@ -52,7 +52,8 @@ void Undo_Reallines(
                                    realline,
                                    tolocalzoom,
                                    Undo_Do_Reallines,
-                                   "Reallines (localzooms)"
+                                   "Reallines (localzooms)",
+                                   LOC()
                                    );
 }
 

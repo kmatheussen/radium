@@ -44,7 +44,8 @@ void Undo_Notes(
 	struct Tracker_Windows *window,
 	struct Blocks *block,
 	struct Tracks *track,
-	int realline
+	int realline,
+        source_pos_t source_pos
 ){
 	Place *p1=PlaceGetFirstPos();
 	Place p2;
@@ -62,14 +63,16 @@ void Undo_Notes(
                  realline,
                  undo_notes,
                  Undo_Do_Notes,
-                 "Track notes and stops"
+                 "Track notes and stops",
+                 source_pos
                  );
 }
 
 void Undo_Notes_CurrPos(
-	struct Tracker_Windows *window
+                        struct Tracker_Windows *window,
+                        source_pos_t source_pos
 ){
-	Undo_Notes(window,window->wblock->block,window->wblock->wtrack->track,window->wblock->curr_realline);
+  Undo_Notes(window,window->wblock->block,window->wblock->wtrack->track,window->wblock->curr_realline,source_pos);
 }
 
 

@@ -52,7 +52,8 @@ void Undo_Tempos(
                  realline,
                  CB_CopyTempos(block->tempos),
                  Undo_Do_Tempos,
-                 "Block BPMs"
+                 "Block BPMs",
+                 LOC()
 	);
 }
 

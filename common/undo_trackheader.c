@@ -41,7 +41,8 @@ void Undo_TrackHeader(
                                    realline,
                                    u_th,
                                    Undo_Do_TrackHeader,
-                                   "Block track header"
+                                   "Block track header",
+                                   LOC()
                                    );
 
 }

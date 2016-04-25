@@ -218,6 +218,23 @@ static inline float scale(float x, float x1, float x2, float y1, float y2){
                 );
 }
 
+typedef struct{
+  const char *filename;
+  const char *function_name;
+  const int linenum;
+  const char *extra_info;
+} source_pos_t;
+
+#define LOC() ({                                          \
+      source_pos_t sp = {__FILE__,  __FUNCTION__, __LINE__,NULL};   \
+      sp;                                                       \
+    })
+#define LOC2(a) ({                                          \
+      source_pos_t sp = {__FILE__,  __FUNCTION__, __LINE__,a};   \
+      sp;                                                       \
+    })
+
+  
 /*********************************************************************
 	time.h
 *********************************************************************/

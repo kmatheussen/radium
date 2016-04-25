@@ -133,7 +133,7 @@ void InvertTrack_CurrPos(
 	struct Tracker_Windows *window
 ){
 
-	Undo_Notes_CurrPos(window);
+  Undo_Notes_CurrPos(window,LOC());
 
 	InvertTrack(window->wblock->block,window->wblock->wtrack->track);
 

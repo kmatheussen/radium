@@ -590,7 +590,7 @@ struct Patch *add_new_audio_instrument_widget2(struct SoundPluginType *plugin_ty
 
   struct Patch *patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, plugin, name==NULL ? PLUGIN_generate_new_patchname(plugin_type) : name);
   
-  Undo_Chip_Add_CurrPos(patch); // Added afterwards. (can not add before when we don't know what to add!)
+  Undo_Chip_Add_CurrPos(patch,LOC()); // Added afterwards. (can not add before when we don't know what to add!)
   
   plugin->patch = patch;
   
@@ -631,7 +631,7 @@ SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type
 
       Undo_Track(window,wblock,wtrack,wblock->curr_realline); // why?
       Undo_Patches_CurrPos(); // why?
-      Undo_InstrumentsWidget_CurrPos(); // Probably not any point anylonger.
+      Undo_InstrumentsWidget_CurrPos(LOC()); // Probably not any point anylonger.
 
       plugin = MW_add_plugin(plugin_type, x, y, buses);
       if(plugin==NULL)
@@ -639,7 +639,7 @@ SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type
 
       struct Patch *patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, plugin, name==NULL ? PLUGIN_generate_new_patchname(plugin_type) : name);
 
-      Undo_Chip_Add_CurrPos(patch); // It works fine to call Undo_Chip_Add right after the chip has been created (it's the only way to do it).
+      Undo_Chip_Add_CurrPos(patch, LOC()); // It works fine to call Undo_Chip_Add right after the chip has been created (it's the only way to do it).
 
       //wtrack->track->patch = patch; // Bang!
       plugin->patch = patch;
@@ -647,7 +647,7 @@ SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type
       create_audio_instrument_widget(patch);
 
       if(autoconnect==true) {
-        Undo_MixerConnections_CurrPos();
+        Undo_MixerConnections_CurrPos(LOC());
         MW_autoconnect_plugin(plugin);
       }
     }
@@ -884,7 +884,7 @@ struct Patch *InstrumentWidget_new_from_preset2(wchar_t *filename, const char *n
   struct Patch *patch = M_InstrumentWidget_new_from_preset(state, name, x, y);
 
   if (patch != NULL)
-    Undo_Chip_Add_CurrPos(patch); // It works fine to call Undo_Chip_Add right after the chip has been created. (except that it's not very logical)
+    Undo_Chip_Add_CurrPos(patch,LOC()); // It works fine to call Undo_Chip_Add right after the chip has been created. (except that it's not very logical)
   
   return patch;
 }
@@ -902,8 +902,8 @@ struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, 
 
   //Undo_Track(window,wblock,wtrack,wblock->curr_realline);      
   Undo_Patches_CurrPos();
-  Undo_InstrumentsWidget_CurrPos();
-  Undo_MixerConnections_CurrPos();
+  Undo_InstrumentsWidget_CurrPos(LOC());
+  Undo_MixerConnections_CurrPos(LOC());
   
   struct Patch *patch = M_InstrumentWidget_new_from_preset(state, name, x, y);
 
@@ -913,7 +913,7 @@ struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, 
       MW_autoconnect_plugin(plugin);
     }
 
-    Undo_Chip_Add_CurrPos(patch); // It works fine to call Undo_Chip_Add right after the chip has been created. (except that it's not very logical)
+    Undo_Chip_Add_CurrPos(patch,LOC()); // It works fine to call Undo_Chip_Add right after the chip has been created. (except that it's not very logical)
   }
   
   return patch;
@@ -1060,7 +1060,7 @@ void InstrumentWidget_prepare_for_deletion(struct Patch *patch){
 static void InstrumentWidget_remove_patch(struct Patch *patch){
   QStackedWidget* tabs = instruments_widget->tabs;
 
-  Undo_InstrumentsWidget_CurrPos();
+  Undo_InstrumentsWidget_CurrPos(LOC());
 
   MIDI_instrument_widget *w1 = get_midi_instrument_widget(patch);
   if(w1!=NULL){

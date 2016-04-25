@@ -64,7 +64,8 @@ static void Undo_Sample(
                              wblock->curr_realline,
                              undo_ae,
                              Undo_Do_Sample,
-                             talloc_format("Sample %s",patch->name)
+                             talloc_format("Sample %s",patch->name),
+                             LOC()
                              );
 
 }

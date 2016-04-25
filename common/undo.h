@@ -43,7 +43,8 @@ extern LANGSPEC void Undo_Add(
                               int realline,
                               void *pointer,
                               UndoFunction undo_function,
-                              const char *info
+                              const char *info,
+                              source_pos_t source_pos
                               );
 
 extern LANGSPEC void Undo_Add_dont_stop_playing(
@@ -53,7 +54,8 @@ extern LANGSPEC void Undo_Add_dont_stop_playing(
                                                 int realline,
                                                 void *pointer,
                                                 UndoFunction undo_function,
-                                                const char *info
+                                                const char *info,
+                                                source_pos_t source_pos
                                                 );
 
 extern LANGSPEC void Undo_start_ignoring_undo_operations(void);

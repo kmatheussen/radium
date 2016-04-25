@@ -42,8 +42,9 @@ static void *Undo_Do_MixerConnections(
 );
 
 static void Undo_MixerConnections(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
+                                  struct Tracker_Windows *window,
+                                  struct WBlocks *wblock,
+                                  source_pos_t source_pos
 ){
   //struct Undo_MixerConnections *u_rt=talloc(sizeof(struct Undo_MixerConnections));
   //u_rt->reltempomax=wblock->reltempomax;
@@ -55,14 +56,15 @@ static void Undo_MixerConnections(
                              wblock->curr_realline,
                              MW_get_connections_state(),
                              Undo_Do_MixerConnections,
-                             "Mixer connections"
+                             "Mixer connections",
+                             source_pos
                              );
 
 }
 
-void Undo_MixerConnections_CurrPos(void){
+void Undo_MixerConnections_CurrPos(source_pos_t source_pos){
   struct Tracker_Windows *window = root->song->tracker_windows;
-  Undo_MixerConnections(window,window->wblock);
+  Undo_MixerConnections(window,window->wblock,source_pos);
 }
 
 static void *Undo_Do_MixerConnections(

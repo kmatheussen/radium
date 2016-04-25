@@ -46,6 +46,7 @@ struct UndoEntry{
   UndoFunction function;
 
   const char *info;
+  source_pos_t source_pos;
 };
 
 
@@ -301,6 +302,15 @@ UndoFunction Undo_get_last_function(void){
   return entry->function;
 }
 
+static char *get_entry_string(struct UndoEntry *entry){
+  return talloc_format("%s. %s:%d. Function: %s.%s",
+                       entry->info,
+                       entry->source_pos.filename,
+                       entry->source_pos.linenum,
+                       entry->source_pos.function_name,
+                       entry->source_pos.extra_info==NULL?"":talloc_format(" (%s)",entry->source_pos.extra_info)
+                       );
+}
 
 vector_t Undo_get_history(void){
   vector_t ret = {0};
@@ -310,13 +320,13 @@ vector_t Undo_get_history(void){
 
   if (Undo_Is_Open()){
     VECTOR_FOR_EACH(struct UndoEntry* entry, &curr_open_undo->entries){
-      VECTOR_push_back(&ret, talloc_format("curr: %s", entry->info));
+      VECTOR_push_back(&ret, talloc_format("curr: %s", get_entry_string(entry)));
     }END_VECTOR_FOR_EACH;
   }
   
   while(undo != NULL){
     VECTOR_FOR_EACH(struct UndoEntry* entry, &undo->entries){
-      VECTOR_push_back(&ret, talloc_format("%d: %s", pos, entry->info));
+      VECTOR_push_back(&ret, talloc_format("%d: %s", pos, get_entry_string(entry)));
     }END_VECTOR_FOR_EACH;
     undo = undo->prev;
     pos++;
@@ -337,7 +347,8 @@ static void Undo_Add_internal(
               void *pointer,
               UndoFunction undo_function,
               bool stop_playing_when_undoing,
-              const char *info
+              const char *info,
+              source_pos_t source_pos
 ){
   if (ignore()) return;
 
@@ -358,7 +369,8 @@ static void Undo_Add_internal(
     entry->function=undo_function;
     entry->stop_playing=stop_playing_when_undoing;
     entry->info = talloc_strdup(info);
-  
+    memcpy(&entry->source_pos, &source_pos, sizeof(source_pos_t));
+      
     VECTOR_push_back(&curr_open_undo->entries,entry);
 
   }Undo_Close();
@@ -373,9 +385,10 @@ void Undo_Add(
               int realline,
               void *pointer,
               UndoFunction undo_function,
-              const char *info
+              const char *info,
+              source_pos_t source_pos
 ){
-  Undo_Add_internal(windownum,blocknum,tracknum,realline,pointer,undo_function,true,info);
+  Undo_Add_internal(windownum,blocknum,tracknum,realline,pointer,undo_function,true,info,source_pos);
 }
 
 void Undo_Add_dont_stop_playing(
@@ -385,9 +398,10 @@ void Undo_Add_dont_stop_playing(
               int realline,
               void *pointer,
               UndoFunction undo_function,
-              const char *info
+              const char *info,
+              source_pos_t source_pos
 ){
-  Undo_Add_internal(windownum,blocknum,tracknum,realline,pointer,undo_function,false,info);
+  Undo_Add_internal(windownum,blocknum,tracknum,realline,pointer,undo_function,false,info,source_pos);
 }
 
 void Undo_start_ignoring_undo_operations(void){

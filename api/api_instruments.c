@@ -217,7 +217,7 @@ void connectAudioInstrumentToMainPipe(int instrument_id){
   if(patch==NULL)
     return;
 
-  Undo_MixerConnections_CurrPos();
+  Undo_MixerConnections_CurrPos(LOC());
   MW_autoconnect_plugin((SoundPlugin *)patch->patchdata);
 }
 

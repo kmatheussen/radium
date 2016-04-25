@@ -53,7 +53,8 @@ void Undo_LPBs(
                  realline,
                  CB_CopyLPBs(block->lpbs),
                  Undo_Do_LPBs,
-                 "LPBs"
+                 "LPBs",
+                 LOC()
 	);
 }
 

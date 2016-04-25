@@ -526,7 +526,8 @@ void setNoteContinueNextBlock(bool continuenextblock, int notenum, int tracknum,
   Undo_Notes(window,
              wblock->block,
              wtrack->track,
-             wblock->curr_realline
+             wblock->curr_realline,
+             LOC()
              );
 
   note->noend = continuenextblock?1:0;

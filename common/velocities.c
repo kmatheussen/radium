@@ -160,7 +160,7 @@ void AddVelocityCurrPos(struct Tracker_Windows *window){
         if(-1==subtrack)
           return;
 
-	Undo_Notes_CurrPos(window);
+	Undo_Notes_CurrPos(window,LOC());
 
         struct Notes *note = FindNoteOnSubTrack(
                                                 wblock->wtrack,
@@ -228,7 +228,7 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
           PC_Pause();
 
-          Undo_Notes_CurrPos(window);
+          Undo_Notes_CurrPos(window,LOC());
 
           struct Notes *note = FindNoteCurrPos(window);
 

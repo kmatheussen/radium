@@ -128,7 +128,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
   //  if (veltext->num_elements == 0 && val==0)
   //   return true;
   
-  Undo_Notes_CurrPos(window);  
+  Undo_Notes_CurrPos(window,LOC());  
 
   if (veltext->num_elements > 1) {
 

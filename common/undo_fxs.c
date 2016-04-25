@@ -69,7 +69,8 @@ void Undo_FXs(
                  realline,
                  undo_fxs,
                  Undo_Do_FXs,
-                 "Track fxs"
+                 "Track fxs",
+                 LOC()
                  );
 
 }

@@ -21,11 +21,13 @@ extern LANGSPEC void Undo_Notes(
 	struct Tracker_Windows *window,
 	struct Blocks *block,
 	struct Tracks *track,
-	int realline
+	int realline,
+        source_pos_t source_pos
 );
 
 extern LANGSPEC void Undo_Notes_CurrPos(
-	struct Tracker_Windows *window
+                                        struct Tracker_Windows *window,
+                                        source_pos_t source_pos
 );
 
 

@@ -52,7 +52,8 @@ void Undo_TempoNodes(
                  realline,
                  CB_CopyTempoNodes(block->temponodes),
                  Undo_Do_TempoNodes,
-                 "Block tempo nodes"
+                 "Block tempo nodes",
+                 LOC()
 	);
 }
 

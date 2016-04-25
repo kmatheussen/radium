@@ -15,5 +15,5 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-extern LANGSPEC void Undo_Chip_Add_CurrPos(struct Patch *patch);
-extern LANGSPEC void Undo_Chip_Remove_CurrPos(struct Patch *patch);
+extern LANGSPEC void Undo_Chip_Add_CurrPos(struct Patch *patch,source_pos_t source_pos);
+extern LANGSPEC void Undo_Chip_Remove_CurrPos(struct Patch *patch,source_pos_t source_pos);

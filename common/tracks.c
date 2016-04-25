@@ -226,7 +226,8 @@ void TRACK_make_monophonic_destructively(struct Tracks *track){
         Undo_Notes(window,
                    wblock->block,
                    track,
-                   wblock->curr_realline
+                   wblock->curr_realline,
+                   LOC()
                    );
 
         have_made_undo = true;

@@ -149,7 +149,7 @@ void TransposeTrack_CurrPos(
 ){
 
 
-	Undo_Notes_CurrPos(window);
+  Undo_Notes_CurrPos(window,LOC());
 
 	TransposeTrack(window->wblock->wtrack->track,trans);
 
@@ -170,7 +170,7 @@ void TransposeNote_CurrPos(
         if (note==NULL)
           return;
         
-	Undo_Notes_CurrPos(window);
+	Undo_Notes_CurrPos(window,LOC());
 
 	Transpose_note(note,trans);
 

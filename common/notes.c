@@ -487,7 +487,7 @@ static void MaybeScrollEditorDown(struct Tracker_Windows *window){
 void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyphonic, float velocity){
   if(notenum<0.001 || notenum>127.9) return;
 
-  Undo_Notes_CurrPos(window);
+  Undo_Notes_CurrPos(window,LOC());
 
   struct WBlocks *wblock        = window->wblock;
   struct WTracks *wtrack        = wblock->wtrack;
@@ -618,7 +618,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   
   vector_t *tr = TR_get(wblock, wtrack, curr_realline);
 
-  Undo_Notes_CurrPos(window);
+  Undo_Notes_CurrPos(window,LOC());
 
   if (tr->num_elements==0) {
     InsertStop(window,wblock,wtrack,&realline->l.p);
@@ -1185,7 +1185,7 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	if(note==NULL)
           return;
 
-        Undo_Notes_CurrPos(window);
+        Undo_Notes_CurrPos(window, LOC());
         
         if(PlaceGreaterOrEqual(&note->l.p,&realline->l.p)){
           PLAYER_lock();{

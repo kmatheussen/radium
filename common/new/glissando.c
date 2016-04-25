@@ -85,7 +85,7 @@ void Glissando_CurrPos(struct Tracker_Windows *window){
 
 		if(PlaceIsBetween2(p,&note->l.p,&nextnote->l.p)){
 			PlayStop();
-			Undo_Notes_CurrPos(window);
+			Undo_Notes_CurrPos(window,LOC());
 			Glissando(wblock,wtrack,note);
 			UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 				window,

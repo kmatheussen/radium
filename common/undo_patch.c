@@ -57,7 +57,8 @@ void Undo_Patches(
                              wblock->curr_realline,
                              get_all_patches(),
                              Undo_Do_Patches,
-                             "Patches"
+                             "Patches",
+                             LOC()
                              );
 }
 

@@ -18,6 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef UNDO_INSTRUMENT_WIDGETS_PROC_H
 #define  UNDO_INSTRUMENT_WIDGETS_PROC_H
 
-extern LANGSPEC void Undo_InstrumentsWidget_CurrPos(void);
+extern LANGSPEC void Undo_InstrumentsWidget_CurrPos(source_pos_t source_pos);
 
 #endif //  UNDO_INSTRUMENT_WIDGETS_PROC_H

@@ -66,7 +66,8 @@ static void Undo_PatchVoice(
            wblock->curr_realline,
            undo_ae,
            Undo_Do_PatchVoice,
-           "Patch voice"
+           "Patch voice",
+           LOC()
            );
 
 }

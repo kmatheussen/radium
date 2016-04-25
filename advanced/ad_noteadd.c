@@ -190,7 +190,7 @@ void AD_installNoteAdds_track_do(
 	}
 
 	if(undo==false){
-		Undo_Notes(window,wblock->block,wtrack->track,wblock->curr_realline);
+          Undo_Notes(window,wblock->block,wtrack->track,wblock->curr_realline,LOC());
 	}
 
 	AD_installNoteAdds_track(

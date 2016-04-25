@@ -217,7 +217,7 @@ void PExpandTrack_CurrPos(
 	while(scalefactor<0)
 	  scalefactor=GetScaleFactor(window);
 
-	Undo_Notes_CurrPos(window);
+	Undo_Notes_CurrPos(window,LOC());
 
 	PExpandTrack(window->wblock->block,window->wblock->wtrack->track,scalefactor);
 

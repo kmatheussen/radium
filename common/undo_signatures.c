@@ -53,7 +53,8 @@ void Undo_Signatures(
                  realline,
                  CB_CopySignatures(block->signatures),
                  Undo_Do_Signatures,
-                 "Block signatures"
+                 "Block signatures",
+                 LOC()
 	);
 }
 

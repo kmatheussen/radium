@@ -53,7 +53,8 @@ void Undo_RelTempoMax(
                  wblock->curr_realline,
                  u_rt,
                  Undo_Do_RelTempoMax,
-                 "Reltempo max"
+                 "Reltempo max",
+                 LOC()
 	);
 
 }

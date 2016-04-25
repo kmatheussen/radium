@@ -71,7 +71,8 @@ void Undo_NotesAndFXs(
                  realline,
                  undo_notesandfxs,
                  Undo_Do_NotesAndFXs,
-                 "Track notes and fxs"
+                 "Track notes and fxs",
+                 LOC()
                  );
 
 }

@@ -46,7 +46,8 @@ void Undo_Playlist(void){
            window->wblock->curr_realline,
            BL_copy(),
            Undo_Do_Playlist,
-           "Playlist"
+           "Playlist",
+           LOC()
            );
 }
 

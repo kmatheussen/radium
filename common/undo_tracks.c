@@ -50,7 +50,8 @@ void Undo_Track(
                  realline,
                  CB_CopyTrack(wblock,wtrack),
                  Undo_Do_Track,
-                 "Track"
+                 "Track",
+                 LOC()
                  );
 }
 

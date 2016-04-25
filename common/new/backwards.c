@@ -157,7 +157,7 @@ void BackWardsTrack_CurrPos(
 
 	PlayStop();
 
-	Undo_Notes_CurrPos(window);
+	Undo_Notes_CurrPos(window,LOC());
 
 	BackWardsTrack(window,window->wblock,window->wblock->wtrack);
 

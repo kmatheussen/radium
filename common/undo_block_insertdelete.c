@@ -71,7 +71,8 @@ void Undo_Block_Insert(
 		wblock->curr_realline,
 		ubi,
 		Undo_Do_Block_Insert,
-                "Block insert"
+                "Block insert",
+                LOC()
 	);
 }
 
@@ -94,7 +95,8 @@ void Undo_Block_Delete(
 		wblock->curr_realline,
 		ubi,
 		Undo_Do_Block_Delete,
-                "Block delete"
+                "Block delete",
+                LOC()
 	);
 }
 

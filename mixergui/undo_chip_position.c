@@ -65,7 +65,8 @@ static void Undo_ChipPos(
                              wblock->curr_realline,
                              undo_ae,
                              Undo_Do_ChipPos,
-                             talloc_format("Chip position %s",patch->name)
+                             talloc_format("Chip position %s",patch->name),
+                             LOC()
                              );
 }
 

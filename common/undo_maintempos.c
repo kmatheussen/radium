@@ -41,7 +41,8 @@ void Undo_MainTempo(
                  wblock->curr_realline,
                  u_rt,
                  Undo_Do_MainTempo,
-                 "Block tempo/lpb/signature/quantiatize settings"
+                 "Block tempo/lpb/signature/quantiatize settings",
+                 LOC()
 	);
 
 }

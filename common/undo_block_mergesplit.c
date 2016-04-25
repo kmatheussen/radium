@@ -62,7 +62,8 @@ void Undo_Block_Split_CurrPos(void){
 		wblock->curr_realline,
 		ubm,
 		Undo_Do_Block_Split,
-                "Block split"
+                "Block split",
+                LOC()
 	);
 }
 

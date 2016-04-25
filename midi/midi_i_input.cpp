@@ -174,7 +174,8 @@ void MIDI_insert_recorded_midi_events(void){
           Undo_Notes(root->song->tracker_windows,
                      block,
                      track,
-                     midi_event->wblock->curr_realline
+                     midi_event->wblock->curr_realline,
+                     LOC()
                      );
           HASH_put_int(track_set, key, 1);
         }

@@ -216,7 +216,7 @@ void InsertRealLines_CurrPos(
 				UpdateFXNodeLines(window,wblock,wblock->wtrack);
 #endif
 			}else{
-				Undo_Notes_CurrPos(window);
+                          Undo_Notes_CurrPos(window,LOC());
 			}
 			InsertPlace_notes(block,wblock->wtrack->track,place,toplace);
 			InsertPlace_stops(block,wblock->wtrack->track,place,toplace);

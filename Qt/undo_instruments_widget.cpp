@@ -76,8 +76,9 @@ static void recreate_instruments_widget_from_state(vector_t *state){
 }
 
 static void Undo_InstrumentsWidget(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
+                                   struct Tracker_Windows *window,
+                                   struct WBlocks *wblock,
+                                   source_pos_t source_pos
 ){
   Undo_Add_dont_stop_playing(
                              window->l.num,
@@ -86,13 +87,14 @@ static void Undo_InstrumentsWidget(
                              wblock->curr_realline,
                              create_instruments_widget_state(),
                              Undo_Do_InstrumentsWidget,
-                             "Instruments widget"
+                             "Instruments widget",
+                             source_pos
                              );
 }
 
-void Undo_InstrumentsWidget_CurrPos(void){
+void Undo_InstrumentsWidget_CurrPos(source_pos_t source_pos){
   struct Tracker_Windows *window = root->song->tracker_windows;
-  Undo_InstrumentsWidget(window,window->wblock);
+  Undo_InstrumentsWidget(window,window->wblock, source_pos);
 }
 
 static void *Undo_Do_InstrumentsWidget(

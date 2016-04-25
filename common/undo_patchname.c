@@ -70,7 +70,8 @@ static void Undo_PatchName(
                              wblock->curr_realline,
                              undo_ae,
                              Undo_Do_PatchName,
-                             "Patch name"
+                             "Patch name",
+                             LOC()
                              );
 }
 

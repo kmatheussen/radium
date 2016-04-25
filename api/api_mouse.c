@@ -1438,7 +1438,7 @@ int createPianonote(float value, float floatplace, float endfloatplace, int trac
   Place endplace;
   Float2Placement(endfloatplace, &endplace);
 
-  Undo_Notes(window,block,track,window->wblock->curr_realline);
+  Undo_Notes(window,block,track,window->wblock->curr_realline,LOC());
 
   struct Notes *note = InsertNote(wblock, wtrack, &startplace, &endplace, value, NOTE_get_velocity(track), true);
   
@@ -2129,7 +2129,7 @@ int createPitch(float value, Place place, int tracknum, int blocknum, int window
 
   value = R_BOUNDARIES(0,value,127);
 
-  Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline);
+  Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline,LOC());
 
   int ret;
   
@@ -2255,7 +2255,7 @@ void undoNotes(int tracknum, int blocknum){
   struct WTracks *wtrack = getWTrackFromNumA(-1, &window, blocknum, &wblock, tracknum);
   if(wtrack==NULL)
     return;
-  Undo_Notes(window,window->wblock->block,wtrack->track,window->wblock->curr_realline);
+  Undo_Notes(window,window->wblock->block,wtrack->track,window->wblock->curr_realline,LOC());
 }
 
 float getNoteStart(int notenum, int tracknum, int blocknum, int windownum){
@@ -2425,7 +2425,7 @@ int createVelocity(float value, Place place, int notenum, int tracknum, int bloc
     return -1;
   }
 
-  Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline);
+  Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline,LOC());
 
   int ret = AddVelocity(value*MAX_VELOCITY, &place, note);
 
