@@ -23,11 +23,13 @@ void Undo_Block(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
-	int realline
+	int realline,
+        source_pos_t source_pos
 );
 
 extern void Undo_Block_CurrPos(
-	struct Tracker_Windows *window
+                               struct Tracker_Windows *window,
+                               source_pos_t source_pos
 );
 
 #endif

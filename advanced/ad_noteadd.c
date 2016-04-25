@@ -167,14 +167,14 @@ void AD_installNoteAdds_track_do(
 
 	if(PlaceGreaterOrEqual(&maxp,&lastplace)){
 		if(undo==false){
-			Undo_Block(window,wblock,wblock->wtrack,wblock->curr_realline);
+                  Undo_Block(window,wblock,wblock->wtrack,wblock->curr_realline,LOC());
 		}
 		num_lines=maxp.line+1;
 		dochangeblockproperties=true;
 	}
 
 	if(dochangeblockproperties==true){
-		Undo_Block(window,wblock,wblock->wtrack,wblock->curr_realline);
+          Undo_Block(window,wblock,wblock->wtrack,wblock->curr_realline,LOC());
 		Block_Properties(
 			wblock->block,
 			num_tracks,
@@ -263,7 +263,7 @@ void AD_insertNoteAdds_block_do(
 		maxtrack=R_MAX(maxtrack,itemp);
 	}
 
-	Undo_Block(window,wblock,wblock->wtrack,wblock->curr_realline);
+	Undo_Block(window,wblock,wblock->wtrack,wblock->curr_realline,LOC());
 
 	Float2Placement((float)(maxplace),&maxp);
 
@@ -280,7 +280,7 @@ void AD_insertNoteAdds_block_do(
 	}
 
 	if(dochangeblockproperties==true){
-		Undo_Block(window,wblock,wblock->wtrack,wblock->curr_realline);
+          Undo_Block(window,wblock,wblock->wtrack,wblock->curr_realline,LOC());
 		Block_Properties(
 			wblock->block,
 			num_tracks,

@@ -54,7 +54,8 @@ void *Undo_Do_Block_Insert(
 
 
 void Undo_Block_Insert(
-	NInt blockpos
+                       NInt blockpos,
+                       source_pos_t source_pos
 ){
 	struct Tracker_Windows *window=root->song->tracker_windows;
 	struct WBlocks *wblock=window->wblock;
@@ -72,13 +73,14 @@ void Undo_Block_Insert(
 		ubi,
 		Undo_Do_Block_Insert,
                 "Block insert",
-                LOC()
+                source_pos
 	);
 }
 
 
 void Undo_Block_Delete(
-	NInt blockpos
+                       NInt blockpos,
+                       source_pos_t source_pos
 ){
 	struct Tracker_Windows *window=root->song->tracker_windows;
 	struct WBlocks *wblock=window->wblock;
@@ -96,7 +98,7 @@ void Undo_Block_Delete(
 		ubi,
 		Undo_Do_Block_Delete,
                 "Block delete",
-                LOC()
+                source_pos
 	);
 }
 

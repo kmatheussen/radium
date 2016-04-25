@@ -535,7 +535,7 @@ static void insertOrDeleteTrack(int tracknum, int blocknum, int windownum, int n
   if (tracknum==-1)
     tracknum = wblock->wtrack->l.num;
 
-  Undo_Block_CurrPos(window);
+  Undo_Block_CurrPos(window,LOC());
   
   InsertTracks(window,
                wblock,

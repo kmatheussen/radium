@@ -123,7 +123,7 @@ void setInstrumentForTrack(int instrument_id, int tracknum, int blocknum, int wi
   if (new_patch==old_patch)
     return;
 
-  Undo_Track(window,wblock,wtrack,wblock->curr_realline);
+  Undo_Track(window,wblock,wtrack,wblock->curr_realline,LOC());
 
   PLAYER_lock();{
     

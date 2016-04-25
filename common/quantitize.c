@@ -172,7 +172,7 @@ void Quantitize_track_CurrPos(
 
 	PlayStop();
 
-	Undo_Track_CurrPos(window);
+	Undo_Track_CurrPos(window,LOC());
 	Quantitize_track(wblock->block,wblock->wtrack->track);
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(

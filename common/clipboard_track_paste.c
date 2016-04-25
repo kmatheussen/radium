@@ -250,7 +250,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			break;
 		default:
 			if(cb_wtrack==NULL) return;
-			Undo_Track_CurrPos(window);
+			Undo_Track_CurrPos(window,LOC());
 			if(window->curr_track_sub==-1){
 				if(co_CB_PasteTrack(wblock,cb_wtrack,wtrack)){
 #if !USE_OPENGL

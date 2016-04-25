@@ -3319,7 +3319,7 @@ void undoTrackWidth(void){
   if(window==NULL)
     return;
   
-  Undo_Block_CurrPos(window); // can be optimized a lot
+  Undo_Block_CurrPos(window,LOC()); // can be optimized a lot
 }
 
 void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){

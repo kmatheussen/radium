@@ -202,7 +202,7 @@ void InsertLines_CurrPos(
 
 	if(toinsert==-(num_lines-curr_line)-1) return;
 
-	Undo_Block_CurrPos(window);
+	Undo_Block_CurrPos(window,LOC());
         
 	InsertLines(window->wblock->block,curr_line,toinsert);
 

@@ -91,7 +91,7 @@ void InsertBlock_CurrPos(
 
 	PlayStop();
 
-	Undo_Block_Insert(blockpos);
+	Undo_Block_Insert(blockpos,LOC());
 
 	InsertBlock(blockpos,wblock->block->num_tracks,wblock->block->num_lines,"NN");
 

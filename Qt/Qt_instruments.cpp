@@ -629,8 +629,8 @@ SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type
       struct WBlocks *wblock = window->wblock;
       struct WTracks *wtrack = wblock->wtrack;
 
-      Undo_Track(window,wblock,wtrack,wblock->curr_realline); // why?
-      Undo_Patches_CurrPos(); // why?
+      Undo_Track(window,wblock,wtrack,wblock->curr_realline,LOC()); // why?
+      Undo_Patches_CurrPos(LOC()); // why?
       Undo_InstrumentsWidget_CurrPos(LOC()); // Probably not any point anylonger.
 
       plugin = MW_add_plugin(plugin_type, x, y, buses);
@@ -905,7 +905,7 @@ struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, 
     return NULL;
 
   //Undo_Track(window,wblock,wtrack,wblock->curr_realline);      
-  Undo_Patches_CurrPos();
+  Undo_Patches_CurrPos(LOC());
   Undo_InstrumentsWidget_CurrPos(LOC());
   Undo_MixerConnections_CurrPos(LOC());
   

@@ -158,7 +158,7 @@ void EXPAND_Block(struct Tracker_Windows *window, struct WBlocks *wblock, int st
 void EXPAND_Block_full_control_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, int start_line, int end_line, int num_lines){
   PlayStop();
 
-  Undo_Block_CurrPos(window);
+  Undo_Block_CurrPos(window,LOC());
 
   EXPAND_Block(window, wblock, start_line, end_line, num_lines);
 

@@ -268,7 +268,7 @@ void TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct W
   bool have_made_undo = false;
 
   if (NOTES_sorted_by_pitch_questionmark(track->notes)==false) {
-    Undo_Block_CurrPos(window);    
+    Undo_Block_CurrPos(window,LOC());    
     have_made_undo = true;
     notes = NOTES_sort_by_pitch(notes);
   }

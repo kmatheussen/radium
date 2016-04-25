@@ -134,7 +134,7 @@ void CB_CutTrack_CurrPos(
 			UpdateSTimes(block);
 			break;
 		default:
-			Undo_Track_CurrPos(window);
+                  Undo_Track_CurrPos(window,LOC());
 			cb_wtrack = CB_CutTrack(window,wblock,wtrack);
                         //#if !USE_OPENGL
 			UpdateAndClearSomeTrackReallinesAndGfxWTracks(

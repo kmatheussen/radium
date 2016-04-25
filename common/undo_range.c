@@ -39,7 +39,8 @@ void Undo_Range(
   Undo_Block(window,
              wblock,
              wblock->wtrack,
-             wblock->curr_realline
+             wblock->curr_realline,
+             LOC()
              );
 }
 

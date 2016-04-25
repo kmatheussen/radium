@@ -216,7 +216,7 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
           PC_Pause();
 
-          Undo_Block_CurrPos(window);
+          Undo_Block_CurrPos(window,LOC());
 
           VECTOR_FOR_EACH(struct Notes *note,notes){
             increase_note_velocity(note, inc);

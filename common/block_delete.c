@@ -63,7 +63,7 @@ void DeleteBlock_CurrPos(
 
 	blockpos=window->wblock->l.num;
 
-	Undo_Block_Delete(blockpos);
+	Undo_Block_Delete(blockpos,LOC());
 
 	DeleteBlock(blockpos);
 

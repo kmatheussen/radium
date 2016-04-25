@@ -498,7 +498,7 @@ void MinimizeBlock_CurrPos(
 	int nummul=1;
 	//	int orgnotelenght=wblock->wtrack->notelength;
 
-        Undo_Block_CurrPos(window);
+        Undo_Block_CurrPos(window,LOC());
 
 	SetCursorPosConcrete(window,wblock,0,-1);
 
@@ -627,7 +627,7 @@ void SwapTrack_CurrPos(
 		next=wblock->wtracks;
 	}
 
-	Undo_Block_CurrPos(window);
+	Undo_Block_CurrPos(window,LOC());
 
 	temp=CB_CopyTrack(wblock,wtrack);
 
@@ -652,7 +652,7 @@ void AppendWTrack_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
 
 	PlayStop();
 
-	Undo_Block_CurrPos(window);
+	Undo_Block_CurrPos(window,LOC());
         printf("appending tracks. Before: %d\n",wblock->block->num_tracks);
 
 	AppendTrack(wblock->block);

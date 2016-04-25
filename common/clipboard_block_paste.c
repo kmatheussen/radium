@@ -147,7 +147,7 @@ void CB_PasteBlock_CurrPos(
 
 	PlayStop();
 
-	Undo_Block_CurrPos(window);
+	Undo_Block_CurrPos(window,LOC());
 
 	CB_PasteBlock(window,cb_wblock,window->wblock);
 	SelectWBlock(window,window->wblock);

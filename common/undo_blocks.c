@@ -42,7 +42,8 @@ void Undo_Block(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
-	int realline
+	int realline,
+        source_pos_t source_pos
 ){
   static struct WBlocks *last_wblock;
   static struct WTracks *last_wtrack;
@@ -66,7 +67,7 @@ void Undo_Block(
              CB_CopyBlock(wblock),
              Undo_Do_Block,
              "Block",
-             LOC()
+             source_pos
              );
 
   last_undo_block_time = time_now;
@@ -76,9 +77,10 @@ void Undo_Block(
 }
 
 void Undo_Block_CurrPos(
-	struct Tracker_Windows *window
+                        struct Tracker_Windows *window,
+                        source_pos_t source_pos
 ){
-	Undo_Block(window,window->wblock,window->wblock->wtrack,window->wblock->curr_realline);
+  Undo_Block(window,window->wblock,window->wblock->wtrack,window->wblock->curr_realline,source_pos);
 }
 
 void *Undo_Do_Block(

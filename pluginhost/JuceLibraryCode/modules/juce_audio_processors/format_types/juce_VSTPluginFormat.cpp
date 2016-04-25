@@ -1755,6 +1755,9 @@ private:
         jassert (index >= 0 && index < effect->numParams);
         char nm [256] = { 0 };
         dispatch (opcode, index, 0, nm, 0);
+        //for(int i=0;nm[i]!=0;i++)
+        //  fprintf(stderr,"%d, ",nm[i]);
+        //fprintf(stderr,"\n%s\n",nm);fflush(stderr); //String (CharPointer_UTF8 (nm)); //String::empty;
         return String (CharPointer_UTF8 (nm)).trim();
     }
 

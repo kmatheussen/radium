@@ -41,7 +41,8 @@ void Undo_Track(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
-	int realline
+	int realline,
+        source_pos_t source_pos
 ){
 	Undo_Add(
                  window->l.num,
@@ -51,14 +52,15 @@ void Undo_Track(
                  CB_CopyTrack(wblock,wtrack),
                  Undo_Do_Track,
                  "Track",
-                 LOC()
+                 source_pos
                  );
 }
 
 void Undo_Track_CurrPos(
-	struct Tracker_Windows *window
+                        struct Tracker_Windows *window,
+                        source_pos_t source_pos
 ){
-	Undo_Track(window,window->wblock,window->wblock->wtrack,window->wblock->curr_realline);
+  Undo_Track(window,window->wblock,window->wblock->wtrack,window->wblock->curr_realline,source_pos);
 }
 
 void *Undo_Do_Track(
