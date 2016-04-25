@@ -375,6 +375,7 @@ int RT_MIDI_send_msg_to_patch(struct Patch *patch, void *data, int data_size, in
 
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
+  
   Data *data = (Data*)plugin->data;
 
 #if 0
@@ -398,20 +399,20 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   for(int ch=0; ch<data->num_output_channels ; ch++)
     memcpy(outputs[ch], buffer.getReadPointer(ch), sizeof(float)*num_frames);
 
-
+  
   // 2. Send out midi
   if (!data->midi_buffer.isEmpty()){
 
     volatile struct Patch *patch = plugin->patch;
-      
+
     MidiBuffer::Iterator iterator(data->midi_buffer);
     
     RT_PLAYER_runner_lock();{
-
       MidiMessage message;
       int samplePosition;
 
       while(iterator.getNextEvent(message, samplePosition)){
+
 #ifndef RELEASE
         if (samplePosition >= num_frames || samplePosition < 0)
           RT_message("The instrument named \"%s\" of type %s/%s\n"
@@ -426,21 +427,19 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
           samplePosition = num_frames-1;
         if (samplePosition < 0)
           samplePosition = 0;
-        
-        int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+samplePosition);
-        int64_t radium_time = pc->start_time + delta_time;
-        
-        if (patch != NULL) {
-          RT_MIDI_send_msg_to_patch_receivers((struct Patch*)patch, message, radium_time);
-        }
 
-        
+        int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+samplePosition);
+
+        int64_t radium_time = pc->start_time + delta_time;
+
+        if (patch != NULL) {          
+          RT_MIDI_send_msg_to_patch_receivers((struct Patch*)patch, message, radium_time);
+        }        
       }
 
     }RT_PLAYER_runner_unlock();
 
     data->midi_buffer.clear();
-
   }
 
 }
@@ -500,7 +499,9 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
   // juce::VSTPluginInstance::setParameter obtains the vst lock. That should not be necessary (Radium ensures that we are alone here), plus that it causes glitches in sound.
   // So instead, we call the vst setParameter function directly:
   AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
+
   aeffect->setParameter(aeffect, effect_num, value);
+
 #else
   // This causes glitches, especially when doing heavy operations such as opening the gui:
    data->audio_instance->setParameter(effect_num, value);
@@ -513,19 +514,41 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
   // juce::VSTPluginInstance::getParameter obtains the vst lock. That should not be necessary (Radium ensures that we are alone here), plus that it causes glitches in sound.
   // So instead, we call the vst getParameter function directly:
   AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
-  return aeffect->getParameter(aeffect, effect_num);
+
+  float val = aeffect->getParameter(aeffect, effect_num);
+
+  return val;
 #else
   return data->audio_instance->getParameter(effect_num);
 #endif
 }
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
+  
 #if JUCE_LINUX
   const MessageManagerLock mmLock;
 #endif
   
   Data *data = (Data*)plugin->data;
-  snprintf(buffer,buffersize-1,"%s",data->audio_instance->getParameterText(effect_num, buffersize-1).toRawUTF8());
+
+  if (true) // audio_instance->getParameterText() sometimes crashes. Doing it manually instead.
+  {
+    char disp[128] = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
+    AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
+    const int effGetParamDisplay = 7;
+    aeffect->dispatcher(aeffect,effGetParamDisplay,
+			effect_num, 0, (void *) disp, 0.0f);
+    
+    if (disp[0]==0){
+      snprintf(buffer,buffersize-1,"%f%s",aeffect->getParameter(aeffect,effect_num),"lab");//plugin->type_data->params[effect_num].label);
+    }else{
+      const char *label = "bal";//type_data->params[effect_num].label;
+      snprintf(buffer,buffersize-1,"%s%s",disp,label==NULL ? "" : label);
+    }
+  }
+  else {
+    snprintf(buffer,buffersize-1,"empty: %s",data->audio_instance->getParameterText(effect_num, buffersize-1).toRawUTF8());
+  }
 }
 
 static bool gui_is_visible(struct SoundPlugin *plugin){
@@ -608,9 +631,9 @@ static AudioPluginInstance *get_audio_instance(const TypeData *type_data, float 
   
   description.fileOrIdentifier = String(type_data->file_or_identifier);
   description.uid = type_data->uid;
-      
-  AudioPluginInstance *instance = formatManager.createPluginInstance(description,sample_rate,block_size,errorMessage);
 
+  AudioPluginInstance *instance = formatManager.createPluginInstance(description,sample_rate,block_size,errorMessage);
+  
   if (instance==NULL){
     GFX_Message(NULL, "Unable to open VST plugin %s: %s\n",description.fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
     return NULL;
@@ -917,9 +940,8 @@ static SoundPluginType *create_plugin_type(const char *name, int uid, const wcha
   plugin_type->get_preset_name = get_preset_name;
   plugin_type->set_preset_name = set_preset_name;
 
-  printf("\n\n\nPopulated %s/%s\n",plugin_type->type_name,plugin_type->name);
   PR_add_plugin_type_no_menu(plugin_type);
-
+  
   return plugin_type;
 }
 
@@ -946,9 +968,11 @@ static void populate(SoundPluginTypeContainer *container){
     const char *name = element->name;
     if (name==NULL)
       name = container->name;
+    //fprintf(stderr,"i: %d, %d, name: %s, containername: %s\n",i,name==NULL,name,container->name);fflush(stderr);
     container->plugin_types[i] = create_plugin_type(name, element->uid, data->file_or_identifier, container);
   }
-  
+
+  fflush(stderr);  
 }
 
 
@@ -1133,8 +1157,7 @@ static void testing(void){
   float a = RT_get_max_val(test_data,64);
   float b = RT_get_max_val2(test_data,64);
 
-  fprintf(stderr,"time: %f (%f), %f %f\n",duration,result,a,b);
-  
+  fprintf(stderr,"time: %f (%f), %f %f\n",duration,result,a,b);fflush(stderr);  
 }
 #endif
 
@@ -1217,7 +1240,7 @@ void PLUGINHOST_init(void){
     Thread::sleep(20);
   
 #else
-  
+
   initialiseJuce_GUI();
 
 #endif

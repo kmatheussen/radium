@@ -1118,7 +1118,7 @@ static vector_t *VST_get_uids2(const wchar_t *w_filename, QString &resolve_error
   
   if (category == kPlugCategShell) {
     char buf[40];
-    fprintf(stderr,"found shell vst plugin %s\n",filename.toUtf8().constData());
+    fprintf(stderr,"found shell vst plugin %s\n",filename.toUtf8().constData());fflush(stderr);
 
     while(true){
       buf[0] = (char) 0; // these lines are copied from qtractor
@@ -1190,10 +1190,11 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
 #else
 
   QString resolve_error_message = "";
-  vector_t *ret = VST_get_uids2(w_filename);
+  vector_t *ret = VST_get_uids2(w_filename, resolve_error_message);
   if (resolve_error_message != "")
     GFX_Message(NULL, resolve_error_message.toUtf8().constData());
 
+  return ret;
 #endif
 }
 
