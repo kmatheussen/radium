@@ -1,5 +1,5 @@
 Changes 3.7.8 -> 3.7.9:
-* macosx: Fix for VST plugins that have other files in Contents/MacOS/ than
+* macosx: Fix for VST plugins that have other files in Content/MacOS/ than
   the plugin file itself.
 * Many band aids for various problems caused by running timers in instrument
   windows after the plugins have been deleted. Peaks and automation indicator

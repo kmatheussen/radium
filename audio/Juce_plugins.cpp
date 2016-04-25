@@ -168,16 +168,15 @@ namespace{
   static MyAudioPlayHead myAudioPlayHead;
 
   struct TypeData{
-    const wchar_t *file_or_identifier; // used by QLibrary
+    const wchar_t *file_or_identifier; // used by Juce
     int uid;
-    const wchar_t *library_file_full_path; // used by Juce
     AudioProcessor::WrapperType wrapper_type;
     const char **effect_names; // set the first time the plugin is loaded
   };
 
   struct ContainerData{
-    const wchar_t *file_or_identifier; // used by QLibrary
-    const wchar_t *library_file_full_path; // used by Juce
+    const wchar_t *file_or_identifier; // used by Juce
+    const wchar_t *library_file_full_path; // used by VST_get_uids()
     AudioProcessor::WrapperType wrapper_type;
   };
 

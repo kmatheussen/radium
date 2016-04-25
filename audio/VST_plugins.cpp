@@ -1034,23 +1034,15 @@ struct MyQLibrary : public QLibrary {
 };
 }
 
-vector_t *VST_get_uids(const wchar_t *w_filename){
+static vector_t *VST_get_uids2(const wchar_t *w_filename, QString &resolve_error_message){
   vector_t *uids = (vector_t*)talloc(sizeof(vector_t));
-  
-  if (false) {
-    radium_vst_uids_t *ruid = (radium_vst_uids_t *)talloc(sizeof(radium_vst_uids_t));
-    ruid->name = NULL; //talloc_strdup(plugin_name);
-    ruid->uid = 0;
-    
-    VECTOR_push_back(uids, ruid);
-    return uids;
-  }
   
   bool effect_opened = false;
 
   QString filename = STRING_get_qstring(w_filename);
   const char *plugin_name = STRING_get_chars(w_filename);
 
+  
 #if 0
   if (QFileInfo(filename).suffix().toLower()===VST3_SUFFIX) {
     radium_vst_uids_t *ruid = (radium_vst_uids_t *)talloc(sizeof(radium_vst_uids_t));
@@ -1061,6 +1053,7 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
     return uids;
   }
 #endif
+
   
   MyQLibrary myLib(filename);
   
@@ -1095,7 +1088,11 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
         PR_set_init_vst_first();
 
     } else {
-      GFX_Message(NULL, myLib.errorString().toUtf8().constData());
+      resolve_error_message = myLib.errorString().toUtf8().constData();
+      if (resolve_error_message.contains("no matching architecture"))
+        resolve_error_message = "Architecture mismatch. Most likely this is a 32 bit plugin. Radium can only load 64 bit plugins.\n\nSystem message:\n\n"+resolve_error_message;
+      else
+        resolve_error_message = "System message:\n\n"+resolve_error_message;
     }
 
     return uids;
@@ -1103,7 +1100,7 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
   
   AEffect *effect = get_plugin_instance(VSTS_audioMaster);
   if (effect == NULL) {
-    GFX_Message(NULL, "Unable to load plugin instance in the file \"%s\"",plugin_name);
+    resolve_error_message = QString(talloc_format("Unable to load plugin instance in the file \"%s\"",plugin_name));
     return uids;
   }
 
@@ -1163,6 +1160,44 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
 }
 
 
+vector_t *VST_get_uids(const wchar_t *w_filename){
+#if defined(FOR_MACOSX)
+  
+  vector_t *ret = (vector_t*)talloc(sizeof(vector_t));
+  QString resolve_error_message = "";
+  
+  QDir dir(STRING_get_qstring(w_filename));
+  dir.setSorting(QDir::Name);
+  
+  QFileInfoList list = dir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
+
+  for (int i = 0 ; i<list.count();i++){
+    QFileInfo file_info = list[i];
+    QString file_path = file_info.absoluteFilePath();
+
+    QString error = "";
+    vector_t *uids = VST_get_uids2(STRING_create(file_path), error);
+    VECTOR_append(ret, uids);
+    if (error != "")
+      resolve_error_message = resolve_error_message + "\n\n" + error;
+  }
+
+  if (ret->num_elements==0 && resolve_error_message!="")
+    GFX_Message(NULL, resolve_error_message.toUtf8().constData());
+  
+  return ret;
+  
+#else
+
+  QString resolve_error_message = "";
+  vector_t *ret = VST_get_uids2(w_filename);
+  if (resolve_error_message != "")
+    GFX_Message(NULL, resolve_error_message.toUtf8().constData());
+
+#endif
+}
+
+
 bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool is_juce_plugin){
   QString filename = file_info.absoluteFilePath();
 
@@ -1216,10 +1251,10 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
 
 #if defined(FOR_MACOSX)
   const char *plugin_name = talloc_strdup(QFileInfo(QDir(file_or_identifier).dirName()).baseName().toUtf8().constData());
-  filename = file_or_identifier + "/Contents/MacOS/" + plugin_name; // hopefully this is always how it is on that platform.
+  filename = file_or_identifier + "/Contents/MacOS/"; // Confusion: this is actually the name of a directory, not a filename. The dirname is used in VST_get_uids.
   if(QFileInfo(filename).exists()==false) {
     fprintf(stderr,"   Could not find -%s\n",filename.toUtf8().constData());
-    abort();
+    //abort();
     return false;
   }
   
