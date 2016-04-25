@@ -1,3 +1,13 @@
+Changes 3.7.9 -> 3.8.0:
+* Don't crash if deleting jack or pd plugin (bug introduced in 3.7.9)
+* Add filename/linenumber/etc. to undo entries, and add undo entries to
+  crash log.
+* VST: Print unit in Radium sliders
+* VST: Don't crash when parameter string provided by the plugin is garbled.
+* OSX: Fix loading VST plugins with mismatched plugin name and library file
+  name. (And don't abort during startup.)
+
+
 Changes 3.7.8 -> 3.7.9:
 * macosx: Fix for VST plugins that have other files in Content/MacOS/ than
   the plugin file itself.
