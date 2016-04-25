@@ -210,7 +210,8 @@ public:
 
   void prepare_for_deletion(void){
     _timer.stop();
-    _plugin_widget->prepare_for_deletion();
+    if (_plugin_widget != NULL)
+      _plugin_widget->prepare_for_deletion();
   }
   
   ~Plugin_widget(){
