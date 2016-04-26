@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../mixergui/undo_chip_addremove_proc.h"
 #include "../mixergui/undo_mixer_connections_proc.h"
 #include "undo_instruments_widget_proc.h"
-#include "../common/undo_patch_proc.h"
+#include "../common/undo_patchlist_proc.h"
 #include "../common/undo_tracks_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/gfx_proc.h"
@@ -630,7 +630,7 @@ SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type
       struct WTracks *wtrack = wblock->wtrack;
 
       Undo_Track(window,wblock,wtrack,wblock->curr_realline,LOC()); // why?
-      Undo_Patches_CurrPos(LOC()); // why?
+      Undo_Patchlist_CurrPos(LOC()); // why?
       Undo_InstrumentsWidget_CurrPos(LOC()); // Probably not any point anylonger.
 
       plugin = MW_add_plugin(plugin_type, x, y, buses);
@@ -905,7 +905,7 @@ struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, 
     return NULL;
 
   //Undo_Track(window,wblock,wtrack,wblock->curr_realline);      
-  Undo_Patches_CurrPos(LOC());
+  Undo_Patchlist_CurrPos(LOC());
   Undo_InstrumentsWidget_CurrPos(LOC());
   Undo_MixerConnections_CurrPos(LOC());
   

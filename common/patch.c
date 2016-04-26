@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "undo.h"
 #include "undo_tracks_proc.h"
-#include "undo_patch_proc.h"
+#include "undo_patchlist_proc.h"
 #include "windows_proc.h"
 #include "notes_proc.h"
 #include "../api/api_common_proc.h"
@@ -257,7 +257,7 @@ void PATCH_delete(struct Patch *patch){
 
   patch->instrument->remove_patch(patch);
 
-  Undo_Patches_CurrPos(LOC());
+  Undo_Patchlist_CurrPos(LOC());
   VECTOR_remove(&patch->instrument->patches,patch);
 }
 

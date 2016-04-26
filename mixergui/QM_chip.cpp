@@ -931,7 +931,7 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
   , _input_slider(NULL)
   , _output_slider(NULL)
   , _slider_being_edited(0)
- {
+{
 
    setPos(QPointF(x,y));
    //MW_move_chip_to_slot(this, x, y); // unfortunately, this function very often moves the chip to the right unnecessarily.

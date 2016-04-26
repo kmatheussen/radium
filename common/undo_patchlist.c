@@ -25,12 +25,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "vector_proc.h"
 #include "instruments_proc.h"
 
-#include "undo_patch_proc.h"
+#include "undo_patchlist_proc.h"
 
 
 extern struct Root *root;
 
-void *Undo_Do_Patches(
+static void *Undo_Do_Patches(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -45,7 +45,7 @@ static vector_t *get_all_patches(void){
   return patches;
 }
 
-void Undo_Patches(
+void Undo_Patchlist(
                   struct Tracker_Windows *window,
                   struct WBlocks *wblock,
                   source_pos_t source_pos
@@ -63,11 +63,11 @@ void Undo_Patches(
                              );
 }
 
-void Undo_Patches_CurrPos(source_pos_t source_pos){
-  Undo_Patches(root->song->tracker_windows,root->song->tracker_windows->wblock,source_pos);
+void Undo_Patchlist_CurrPos(source_pos_t source_pos){
+  Undo_Patchlist(root->song->tracker_windows,root->song->tracker_windows->wblock,source_pos);
 }
 
-void *Undo_Do_Patches(
+static void *Undo_Do_Patches(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
