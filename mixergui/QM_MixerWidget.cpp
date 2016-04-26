@@ -1143,10 +1143,10 @@ void MixerWidget::populateScene()
 {
 #if 0
   SoundPluginType *type1 = PR_get_plugin(0);
-  SoundPlugin *plugin1 = PLUGIN_create_plugin(type1, NULL);
+  SoundPlugin *plugin1 = PLUGIN_create(type1, NULL);
 
   SoundPluginType *type2 = PR_get_plugin(1);
-  SoundPlugin *plugin2 = PLUGIN_create_plugin(type2, NULL);
+  SoundPlugin *plugin2 = PLUGIN_create(type2, NULL);
 
   SoundProducer *sound_producer1 = SP_create(plugin1);
   SoundProducer *sound_producer2 = SP_create(plugin2);
@@ -1213,7 +1213,7 @@ SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, double x, double y, Bus
   if (PLAYER_is_running()==false)
     return NULL;
 
-  SoundPlugin *plugin = PLUGIN_create_plugin(plugin_type, NULL);
+  SoundPlugin *plugin = PLUGIN_create(plugin_type, NULL);
   if(plugin==NULL)
     return NULL;
 
@@ -1240,7 +1240,7 @@ void MW_delete_plugin(SoundPlugin *plugin){
         delete chip; // audio connections are deleted via ~Chip(). (Yes, it's somewhat messy)
         SP_delete(producer);
         volatile struct Patch *patch = plugin->patch;
-        PLUGIN_delete_plugin(plugin);
+        PLUGIN_delete(plugin);
         patch->patchdata = NULL; // Correct thing to do. A subtle bug in GFX_update_all_instrument_widgets prompted me to do add it (QT tabs are note updated right away). Somewhat messy this too.
         patch->state = state;
         patch->is_usable = false; // Make sure we don't use this patch if pasting it.

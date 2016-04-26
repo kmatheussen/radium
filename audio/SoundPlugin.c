@@ -249,7 +249,7 @@ static void release_system_filter(SystemFilter *filter, int num_channels){
   V_free(filter->plugins);
 }
 
-SoundPlugin *PLUGIN_create_plugin(SoundPluginType *plugin_type, hash_t *plugin_state){
+SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state){
   SoundPlugin *plugin = V_calloc(1,sizeof(SoundPlugin));
   plugin->type = plugin_type;
 
@@ -345,7 +345,7 @@ SoundPlugin *PLUGIN_create_plugin(SoundPluginType *plugin_type, hash_t *plugin_s
   return plugin;
 }
 
-void PLUGIN_delete_plugin(SoundPlugin *plugin){
+void PLUGIN_delete(SoundPlugin *plugin){
   const SoundPluginType *plugin_type = plugin->type;
 
   if(!strcmp(plugin_type->type_name,"Bus")) // RT_process needs buses to always be alive.
@@ -1176,7 +1176,7 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state){
   else
     plugin_state=NULL;
   
-  SoundPlugin *plugin = PLUGIN_create_plugin(type, plugin_state);
+  SoundPlugin *plugin = PLUGIN_create(type, plugin_state);
 
   if(plugin==NULL)
     return NULL;

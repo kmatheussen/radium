@@ -934,7 +934,7 @@ void InstrumentWidget_replace_old(struct Patch *old_patch){
   
   Undo_Open();{
 
-    //SoundPlugin *new_plugin = PLUGIN_create_plugin(plugin_type, NULL);
+    //SoundPlugin *new_plugin = PLUGIN_create(plugin_type, NULL);
     //SoundPlugin *new_plugin = MW_add_plugin(plugin_type, 0,0);
     new_plugin = add_new_audio_instrument_widget(plugin_type, 0, 0, false, NULL, MIXER_get_buses());
     if (new_plugin != NULL) {
@@ -986,10 +986,10 @@ void InstrumentWidget_replace(struct Patch *old_patch){
   if (plugin_type==NULL)
     return;
 
-  SoundPlugin *plugin = PLUGIN_create_plugin(plugin_type, NULL);
+  SoundPlugin *plugin = PLUGIN_create(plugin_type, NULL);
   hash_t *state = PLUGIN_get_state(plugin);
 
-  PLUGIN_delete_plugin(plugin); // not ideally to temporarily create a plugin, but alternative seems quite horrific, unfortunately. (Note that this is not dangerous, we only briefly create a plugin in order to harvest a "state" from it)
+  PLUGIN_delete(plugin); // not ideally to temporarily create a plugin, but alternative seems quite horrific, unfortunately. (Note that this is not dangerous, we only briefly create a plugin in order to harvest a state from it.)
     
   replace(old_patch, state);
 }
