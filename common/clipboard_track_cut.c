@@ -104,7 +104,7 @@ void CB_CutTrack_CurrPos(
 
 	switch(window->curr_track){
 		case SIGNATURETRACK:
-			Undo_Signatures_CurrPos(window);
+                  ADD_UNDO(Signatures_CurrPos(window));
 			cb_signature=CB_CopySignatures(block->signatures);
 			block->signatures=NULL;
                         UpdateBeats(block);
@@ -113,7 +113,7 @@ void CB_CutTrack_CurrPos(
 			//UpdateWLPBs(window,wblock);
 			break;
 		case LPBTRACK:
-			Undo_LPBs_CurrPos(window);
+                  ADD_UNDO(LPBs_CurrPos(window));
 			cb_lpb=CB_CopyLPBs(block->lpbs);
 			block->lpbs=NULL;
 			UpdateSTimes(block);
@@ -121,20 +121,20 @@ void CB_CutTrack_CurrPos(
 			//UpdateWLPBs(window,wblock);
 			break;
 		case TEMPOTRACK:
-			Undo_Tempos_CurrPos(window);
+                  ADD_UNDO(Tempos_CurrPos(window));
 			cb_tempo=CB_CopyTempos(block->tempos);
 			block->tempos=NULL;
 			UpdateSTimes(block);
 			break;
 		case TEMPONODETRACK:
-			Undo_TempoNodes_CurrPos(window);
+                  ADD_UNDO(TempoNodes_CurrPos(window));
 			cb_temponode=CB_CopyTempoNodes(block->temponodes);
 			block->temponodes=NULL;
 			LegalizeTempoNodes(block);
 			UpdateSTimes(block);
 			break;
 		default:
-                  Undo_Track_CurrPos(window,LOC());
+                  ADD_UNDO(Track_CurrPos(window));
 			cb_wtrack = CB_CutTrack(window,wblock,wtrack);
                         //#if !USE_OPENGL
 			UpdateAndClearSomeTrackReallinesAndGfxWTracks(

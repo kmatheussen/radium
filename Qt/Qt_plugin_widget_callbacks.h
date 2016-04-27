@@ -325,7 +325,7 @@ private:
 public slots:
 
   void on_new_pd_controller_button_released() {
-    Undo_PdControllers_CurrPos(_patch);
+    ADD_UNDO(PdControllers_CurrPos(_patch));
     _pd_plugin_widget->new_controller();  
   }
 

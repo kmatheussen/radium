@@ -1576,6 +1576,16 @@ extern DEFINE_ATOMIC(bool, is_starting_up);
 
 
 
+
+/*********************************************************************
+	undo.h
+*********************************************************************/
+
+#include "undo.h"
+
+
+
+
 /*************************************************
  Structures for the advanced functions.
  (especially made for extension language support.)

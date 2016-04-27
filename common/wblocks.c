@@ -504,7 +504,7 @@ void AppendWBlock(struct Tracker_Windows *window){
 
 	PlayStop();
 
-	Undo_Block_Insert(root->song->num_blocks,LOC());
+	ADD_UNDO(Block_Insert(root->song->num_blocks));
 
 	AppendBlock();
 	UpdateWBlocks(window);
@@ -520,7 +520,7 @@ void AppendWBlock_spes(struct Tracker_Windows *window,int num_lines,NInt num_tra
 
 	PlayStop();
 
-	Undo_Block_Insert(root->song->num_blocks,LOC());
+	ADD_UNDO(Block_Insert(root->song->num_blocks));
 
 	AppendBlock_spes(num_lines,num_tracks);
 	UpdateWBlocks(window);

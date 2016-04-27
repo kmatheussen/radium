@@ -1239,7 +1239,7 @@ void PD_delete_controller(SoundPlugin *plugin, int controller_num){
 
   R_ASSERT_RETURN_IF_FALSE(plugin->patch!=NULL);
   
-  Undo_PdControllers_CurrPos((struct Patch*)plugin->patch);
+  ADD_UNDO(PdControllers_CurrPos((struct Patch*)plugin->patch));
 
   int i;
   hash_t *state = HASH_create(NUM_PD_CONTROLLERS);

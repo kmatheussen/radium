@@ -466,7 +466,7 @@ void CHIP_kick_left(Chip *chip){
     volatile struct Patch *patch = plugin->patch;
     R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
     
-    Undo_ChipPos_CurrPos((struct Patch*)patch);
+    ADD_UNDO(ChipPos_CurrPos((struct Patch*)patch));
     (*chip)->setPos(pos.x()-grid_width, pos.y());
   }
 }
@@ -508,7 +508,7 @@ void CHIP_kick_right(Chip *chip){
     volatile struct Patch *patch = plugin->patch;
     R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
-    Undo_ChipPos_CurrPos((struct Patch*)patch);
+    ADD_UNDO(ChipPos_CurrPos((struct Patch*)patch));
     (*chip)->setPos(pos.x()+grid_width, pos.y());
   }
 }
@@ -1288,7 +1288,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       int x1,y1,x2,y2;
       get_volume_onoff_coordinates(x1,y1,x2,y2);
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
-        Undo_AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_VOLUME_ONOFF);
+        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_VOLUME_ONOFF));
 
         //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
         float new_value = ATOMIC_GET(plugin->volume_is_on)?0.0f:1.0f;
@@ -1307,7 +1307,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       int x1,y1,x2,y2;
       get_effects_onoff_coordinates(x1,y1,x2,y2);
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
-        Undo_AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF);
+        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF));
 
         float new_value = ATOMIC_GET(plugin->effects_are_on)?0.0f:1.0f;
 
@@ -1342,7 +1342,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         else
           effect_num = num_effects+EFFNUM_VOLUME;
 
-        Undo_AudioEffect_CurrPos((struct Patch*)patch, effect_num);
+        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
 
         float value = ::scale(pos.x(),x1,x2,0,1.0);
         PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
@@ -1452,6 +1452,7 @@ static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int patch_id){
   return CHIP_get(scene, patch);
 }
 
+// will be unnecessary
 hash_t *CHIP_get_state(Chip *chip){
   hash_t *state=HASH_create(4);
 

@@ -16,4 +16,4 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-extern LANGSPEC void Undo_PatchName_CurrPos(struct Patch *patch);
+extern LANGSPEC void ADD_UNDO_FUNC(PatchName_CurrPos(struct Patch *patch));

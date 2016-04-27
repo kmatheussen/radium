@@ -71,7 +71,7 @@ void BLOCK_Split_CurrPos(
 	if(splitline<3) return;
 	if(splitline>wblock->block->num_lines-3) return;
 
-	Undo_Block_Split_CurrPos();
+	ADD_UNDO(Block_Split_CurrPos());
 
 	BLOCK_Split(wblock->block,splitline);
 

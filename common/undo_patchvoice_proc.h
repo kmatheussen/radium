@@ -16,4 +16,4 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-extern LANGSPEC void Undo_PatchVoice_CurrPos(struct Patch *patch, int voicenum);
+extern LANGSPEC void ADD_UNDO_FUNC(PatchVoice_CurrPos(struct Patch *patch, int voicenum));

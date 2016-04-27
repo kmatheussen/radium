@@ -37,20 +37,23 @@ struct Undo_NotesAndFXs{
 };
 
 
-void *Undo_Do_NotesAndFXs(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	int realline,
-	void *pointer
-);
+static void *Undo_Do_NotesAndFXs(
+                                 struct Tracker_Windows *window,
+                                 struct WBlocks *wblock,
+                                 struct WTracks *wtrack,
+                                 int realline,
+                                 void *pointer
+                                 );
 
-void Undo_NotesAndFXs(
-	struct Tracker_Windows *window,
-	struct Blocks *block,
-	struct Tracks *track,
-	int realline
-){
+void ADD_UNDO_FUNC(
+                   NotesAndFXs(
+                               struct Tracker_Windows *window,
+                               struct Blocks *block,
+                               struct Tracks *track,
+                               int realline
+                               )
+                   )
+{
 	Place *p1=PlaceGetFirstPos();
 	Place p2;
 	struct Undo_NotesAndFXs *undo_notesandfxs=talloc(sizeof(struct Undo_NotesAndFXs));
@@ -71,13 +74,21 @@ void Undo_NotesAndFXs(
                  realline,
                  undo_notesandfxs,
                  Undo_Do_NotesAndFXs,
-                 "Track notes and fxs",
-                 LOC()
+                 "Track notes and fxs"
                  );
 
 }
 
-void *Undo_Do_NotesAndFXs(
+void ADD_UNDO_FUNC(NotesAndFXs_CurrPos(
+	struct Tracker_Windows *window
+                                       ))
+{
+  CALL_ADD_UNDO_FUNC(NotesAndFXs(window,window->wblock->block,window->wblock->wtrack->track,window->wblock->curr_realline));
+}
+
+
+
+static void *Undo_Do_NotesAndFXs(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -112,13 +123,6 @@ void *Undo_Do_NotesAndFXs(
 	UpdateFXNodeLines(window,wblock,wtrack);
 #endif
 	return undo_notesandfxs;
-}
-
-
-void Undo_NotesAndFXs_CurrPos(
-	struct Tracker_Windows *window
-){
-	Undo_NotesAndFXs(window,window->wblock->block,window->wblock->wtrack->track,window->wblock->curr_realline);
 }
 
 

@@ -39,21 +39,25 @@
        (iota (<ra> :get-num-out-event-connections id-instrument))))
 
 (define (duplicate-connections id-old-instrument id-new-instrument)
+  ;; in audio
   (for-each (lambda (from-instrument)
               (<ra> :create-audio-connection
                     from-instrument
                     id-new-instrument))
             (get-instruments-connecting-to-instrument id-old-instrument))
+  ;; out audio
   (for-each (lambda (to-instrument)
               (<ra> :create-audio-connection
                     id-new-instrument
                     to-instrument))
             (get-instruments-connecting-from-instrument id-old-instrument))
+  ;; in event
   (for-each (lambda (from-instrument)
               (<ra> :create-event-connection
                     from-instrument
                     id-new-instrument))
             (get-instruments-econnecting-to-instrument id-old-instrument))
+  ;; out event
   (for-each (lambda (to-instrument)
               (<ra> :create-event-connection
                     id-new-instrument

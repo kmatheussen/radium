@@ -1,13 +1,10 @@
 
-#ifndef TRACKER_INCLUDE
-
-extern void Undo_TrackHeader(
+extern void ADD_UNDO_FUNC(TrackHeader(
 	struct Tracker_Windows *window,
 	struct Blocks *block,
 	struct Tracks *track,
 	int realline
-);
+                                      ));
 
-#endif
 
 

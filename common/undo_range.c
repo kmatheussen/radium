@@ -29,19 +29,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_range_proc.h"
 
 
-void Undo_Range(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	NInt starttrack,
-	NInt endtrack,
-	int realline
-){
-  Undo_Block(window,
-             wblock,
-             wblock->wtrack,
-             wblock->curr_realline,
-             LOC()
-             );
+void ADD_UNDO_FUNC(Range(
+                         struct Tracker_Windows *window,
+                         struct WBlocks *wblock,
+                         NInt starttrack,
+                         NInt endtrack,
+                         int realline
+                         )
+                   )
+{
+  CALL_ADD_UNDO_FUNC(Block(window,
+                           wblock,
+                           wblock->wtrack,
+                           wblock->curr_realline
+                           ));
 }
 
 #if 0

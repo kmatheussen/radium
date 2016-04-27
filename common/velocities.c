@@ -160,7 +160,7 @@ void AddVelocityCurrPos(struct Tracker_Windows *window){
         if(-1==subtrack)
           return;
 
-	Undo_Notes_CurrPos(window,LOC());
+	ADD_UNDO(Notes_CurrPos(window));
 
         struct Notes *note = FindNoteOnSubTrack(
                                                 wblock->wtrack,
@@ -216,7 +216,7 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
           PC_Pause();
 
-          Undo_Block_CurrPos(window,LOC());
+          ADD_UNDO(Block_CurrPos(window));
 
           VECTOR_FOR_EACH(struct Notes *note,notes){
             increase_note_velocity(note, inc);
@@ -228,7 +228,7 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
           PC_Pause();
 
-          Undo_Notes_CurrPos(window,LOC());
+          ADD_UNDO(Notes_CurrPos(window));
 
           struct Notes *note = FindNoteCurrPos(window);
 

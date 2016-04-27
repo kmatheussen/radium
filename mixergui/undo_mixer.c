@@ -43,8 +43,7 @@ static void *Undo_Do_Mixer(
 
 static void Undo_Mixer(
 	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-        source_pos_t source_pos
+	struct WBlocks *wblock
 ){
   //struct Undo_Mixer *u_rt=talloc(sizeof(struct Undo_Mixer));
   //u_rt->reltempomax=wblock->reltempomax;
@@ -56,15 +55,14 @@ static void Undo_Mixer(
                  wblock->curr_realline,
                  MW_get_state(),
                  Undo_Do_Mixer,
-                 "Mixer",
-                 source_pos
+                 "Mixer"
 	);
 
 }
 
-void Undo_Mixer_CurrPos(source_pos_t source_pos){
+void ADD_UNDO_FUNC(Mixer_CurrPos(void)){
   struct Tracker_Windows *window = root->song->tracker_windows;
-  Undo_Mixer(window,window->wblock,source_pos);
+  Undo_Mixer(window,window->wblock);
 }
 
 static void *Undo_Do_Mixer(

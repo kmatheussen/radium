@@ -97,7 +97,7 @@ void SetTempoCurrPos(struct Tracker_Windows *window){
 
 	PlayStop();
 
-	Undo_Tempos_CurrPos(window);
+	ADD_UNDO(Tempos_CurrPos(window));
 
 	SetTempo(wblock->block,place,newtempo);
 
@@ -121,7 +121,7 @@ void RemoveTemposCurrPos(struct Tracker_Windows *window){
 
 	PlayStop();
 
-	Undo_Tempos_CurrPos(window);
+	ADD_UNDO(Tempos_CurrPos(window));
 
 	PlaceSetReallinePlace(wblock,curr_realline,&p1);
 	PlaceSetReallinePlace(wblock,curr_realline+1,&p2);

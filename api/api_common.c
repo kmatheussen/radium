@@ -227,9 +227,11 @@ struct Patch *getPatchFromNum(int instrument_id){
 
 struct Patch *getAudioPatchFromNum(int instrument_id){
   struct Patch *patch = PATCH_get_from_id(instrument_id);
-  if(patch==NULL)
+  if(patch==NULL) {
     GFX_Message(NULL, "instrument %d not found", instrument_id);
-
+    return NULL;
+  }
+  
   if (patch->instrument != get_audio_instrument()) {
     GFX_Message(NULL, "instrument %d is not an audio instrument", instrument_id);
     return NULL;

@@ -52,8 +52,7 @@ static void Undo_Chip_AddRemove(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
         struct Patch *patch,
-        bool going_to_add,
-        source_pos_t source_pos
+        bool going_to_add
 ){
 
   struct Undo_Chip_AddRemove *u_rt=talloc(sizeof(struct Undo_Chip_AddRemove));
@@ -75,19 +74,18 @@ static void Undo_Chip_AddRemove(
                              wblock->curr_realline,
                              u_rt,
                              Undo_Do_Chip_AddRemove,
-                             talloc_format("%s %s", going_to_add ? "Add chip" : "Remove chip", patch->name),
-                             source_pos
+                             talloc_format("%s %s", going_to_add ? "Add chip" : "Remove chip", patch->name)
                              );
 }
 
-void Undo_Chip_Add_CurrPos(struct Patch *patch, source_pos_t source_pos){
+void ADD_UNDO_FUNC(Chip_Add_CurrPos(struct Patch *patch)){
   struct Tracker_Windows *window = root->song->tracker_windows;
-  Undo_Chip_AddRemove(window,window->wblock,patch, true, source_pos);
+  Undo_Chip_AddRemove(window,window->wblock,patch, true);
 }
 
-void Undo_Chip_Remove_CurrPos(struct Patch *patch, source_pos_t source_pos){
+void ADD_UNDO_FUNC(Chip_Remove_CurrPos(struct Patch *patch)){
   struct Tracker_Windows *window = root->song->tracker_windows;
-  Undo_Chip_AddRemove(window,window->wblock,patch, false, source_pos);
+  Undo_Chip_AddRemove(window,window->wblock,patch, false);
 }
 
 static void *Undo_Do_Chip_AddRemove(

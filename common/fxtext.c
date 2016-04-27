@@ -110,7 +110,7 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
   //  if (fxtext->num_elements == 0 && val==0)
   //   return true;
 
-  Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
+  ADD_UNDO(FXs(window, wblock->block, wtrack->track, wblock->curr_realline));
 
   if (fxtext->num_elements > 1) {
 

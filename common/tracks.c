@@ -223,12 +223,12 @@ void TRACK_make_monophonic_destructively(struct Tracks *track){
       }PLAYER_unlock();
 
       if (have_made_undo==false){      
-        Undo_Notes(window,
-                   wblock->block,
-                   track,
-                   wblock->curr_realline,
-                   LOC()
-                   );
+        ADD_UNDO(Notes(window,
+                       wblock->block,
+                       track,
+                       wblock->curr_realline
+                       )
+                 );
 
         have_made_undo = true;
       }
@@ -268,7 +268,7 @@ void TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct W
   bool have_made_undo = false;
 
   if (NOTES_sorted_by_pitch_questionmark(track->notes)==false) {
-    Undo_Block_CurrPos(window,LOC());    
+    ADD_UNDO(Block_CurrPos(window));    
     have_made_undo = true;
     notes = NOTES_sort_by_pitch(notes);
   }

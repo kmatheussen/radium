@@ -11,7 +11,7 @@ struct Undo_RelTempoSlider{
 	float reltempo;
 };
 
-void *Undo_Do_RelTempoSlider(
+static void *Undo_Do_RelTempoSlider(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -19,10 +19,12 @@ void *Undo_Do_RelTempoSlider(
 	void *pointer
 );
 
-void Undo_RelTempoSlider(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
-){
+void ADD_UNDO_FUNC(RelTempoSlider(
+                                  struct Tracker_Windows *window,
+                                  struct WBlocks *wblock
+                                  )
+                   )
+{
 	struct Undo_RelTempoSlider *u_rts=talloc_atomic(sizeof(struct Undo_RelTempoSlider));
 	u_rts->reltempo=wblock->block->reltempo;
 
@@ -33,12 +35,11 @@ void Undo_RelTempoSlider(
                                    window->wblock->curr_realline,
                                    u_rts,
                                    Undo_Do_RelTempoSlider,
-                                   "Block multiplier",
-                                   LOC()
+                                   "Block multiplier"
                                    );
 }
 
-void *Undo_Do_RelTempoSlider(
+static void *Undo_Do_RelTempoSlider(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

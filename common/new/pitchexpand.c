@@ -190,13 +190,13 @@ void PExpandRange_CurrPos(
 	while(scalefactor<0)
 	  scalefactor=GetScaleFactor(window);
 
-	Undo_Range(
+	ADD_UNDO(Range(
 		window,
 		window->wblock,
 		window->wblock->rangex1,
 		window->wblock->rangex2,
 		window->wblock->curr_realline
-	);
+                       ));
 
 	PExpandRange(window->wblock,scalefactor);
 
@@ -217,7 +217,7 @@ void PExpandTrack_CurrPos(
 	while(scalefactor<0)
 	  scalefactor=GetScaleFactor(window);
 
-	Undo_Notes_CurrPos(window,LOC());
+	ADD_UNDO(Notes_CurrPos(window));
 
 	PExpandTrack(window->wblock->block,window->wblock->wtrack->track,scalefactor);
 
@@ -239,12 +239,12 @@ void PExpandBlock_CurrPos(
 	while(scalefactor<0)
 	  scalefactor=GetScaleFactor(window);
 
-	Undo_Range(
+	ADD_UNDO(Range(
 		window,
 		window->wblock,
 		0,window->wblock->block->num_tracks-1,
 		window->wblock->curr_realline
-	);
+                       ));
 
 	PExpandBlock(window->wblock->block,scalefactor);
 

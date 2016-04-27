@@ -32,7 +32,7 @@ struct Undo_Notes{
 };
 
 
-void *Undo_Do_Notes(
+static void *Undo_Do_Notes(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -40,13 +40,15 @@ void *Undo_Do_Notes(
 	void *pointer
 );
 
-void Undo_Notes(
-	struct Tracker_Windows *window,
-	struct Blocks *block,
-	struct Tracks *track,
-	int realline,
-        source_pos_t source_pos
-){
+void ADD_UNDO_FUNC(
+                   Notes(
+                         struct Tracker_Windows *window,
+                         struct Blocks *block,
+                         struct Tracks *track,
+                         int realline
+                         )
+                   )
+{
 	Place *p1=PlaceGetFirstPos();
 	Place p2;
 	struct Undo_Notes *undo_notes=talloc(sizeof(struct Undo_Notes));
@@ -63,20 +65,20 @@ void Undo_Notes(
                  realline,
                  undo_notes,
                  Undo_Do_Notes,
-                 "Track notes and stops",
-                 source_pos
+                 "Track notes and stops"
                  );
 }
 
-void Undo_Notes_CurrPos(
-                        struct Tracker_Windows *window,
-                        source_pos_t source_pos
-){
-  Undo_Notes(window,window->wblock->block,window->wblock->wtrack->track,window->wblock->curr_realline,source_pos);
+void ADD_UNDO_FUNC(Notes_CurrPos(
+                                 struct Tracker_Windows *window
+                                 )
+                   )
+{
+  CALL_ADD_UNDO_FUNC(Notes(window,window->wblock->block,window->wblock->wtrack->track,window->wblock->curr_realline));
 }
 
 
-void *Undo_Do_Notes(
+static void *Undo_Do_Notes(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

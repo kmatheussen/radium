@@ -16,14 +16,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-#ifndef TRACKER_INCLUDE
-
-extern void Undo_Reallines_CurrPos(
+extern void ADD_UNDO_FUNC(Reallines_CurrPos(
 	struct Tracker_Windows *window
-);
-
-#endif
-
+                                            ));
 
 

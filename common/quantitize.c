@@ -172,7 +172,7 @@ void Quantitize_track_CurrPos(
 
 	PlayStop();
 
-	Undo_Track_CurrPos(window,LOC());
+	ADD_UNDO(Track_CurrPos(window));
 	Quantitize_track(wblock->block,wblock->wtrack->track);
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
@@ -197,12 +197,12 @@ void Quantitize_block_CurrPos(
 
 	PlayStop();
 
-	Undo_Range(
+	ADD_UNDO(Range(
 		window,
 		window->wblock,
 		0,window->wblock->block->num_tracks-1,
 		window->wblock->curr_realline
-	);
+                       ));
 
 	Quantitize_block(window->wblock->block);
 
@@ -221,7 +221,7 @@ void Quantitize_range_CurrPos(
 
 	PlayStop();
 
-	Undo_Range(window,window->wblock,window->wblock->rangex1,window->wblock->rangex2,window->wblock->curr_realline);
+	ADD_UNDO(Range(window,window->wblock,window->wblock->rangex1,window->wblock->rangex2,window->wblock->curr_realline));
 
 	Quantitize_range(window->wblock);
 
@@ -263,7 +263,7 @@ void SetQuantitize_CurrPos(
         if (root->quantitize_options.quant.numerator == (int)after.counter && root->quantitize_options.quant.denominator == (int)after.dividor)
           return;
 
-        Undo_MainTempo(window, window->wblock);
+        ADD_UNDO(MainTempo(window, window->wblock));
                        
         root->quantitize_options.quant.numerator = after.counter;
         root->quantitize_options.quant.denominator = after.dividor;

@@ -271,7 +271,7 @@ void Block_Properties_CurrPos(
 		return;
 	}
 
-	Undo_Block_CurrPos(window,LOC());
+	ADD_UNDO(Block_CurrPos(window));
 
 	Block_Properties(block,num_tracks,num_lines);
 

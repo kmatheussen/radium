@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern PlayerClass *pc;
 
-void *Undo_Do_Block(
+static void *Undo_Do_Block(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -38,13 +38,14 @@ void *Undo_Do_Block(
 );
 
 
-void Undo_Block(
+void ADD_UNDO_FUNC(Block(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
-	int realline,
-        source_pos_t source_pos
-){
+	int realline
+                         )
+                   )
+{
   static struct WBlocks *last_wblock;
   static struct WTracks *last_wtrack;
   static int last_realline;
@@ -66,8 +67,7 @@ void Undo_Block(
              realline,
              CB_CopyBlock(wblock),
              Undo_Do_Block,
-             "Block",
-             source_pos
+             "Block"
              );
 
   last_undo_block_time = time_now;
@@ -76,14 +76,15 @@ void Undo_Block(
   last_realline=realline;
 }
 
-void Undo_Block_CurrPos(
-                        struct Tracker_Windows *window,
-                        source_pos_t source_pos
-){
-  Undo_Block(window,window->wblock,window->wblock->wtrack,window->wblock->curr_realline,source_pos);
+void ADD_UNDO_FUNC(Block_CurrPos(
+                                 struct Tracker_Windows *window
+                                 )
+                   )
+{
+  CALL_ADD_UNDO_FUNC(Block(window,window->wblock,window->wblock->wtrack,window->wblock->curr_realline));
 }
 
-void *Undo_Do_Block(
+static void *Undo_Do_Block(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

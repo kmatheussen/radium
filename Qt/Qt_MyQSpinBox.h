@@ -74,7 +74,7 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
     if (event->button() == Qt::LeftButton){      
       //setSliderDown(true);    
       if(_undo_patchvoice==true)
-        Undo_PatchVoice_CurrPos(_patch,_effect_num);
+        ADD_UNDO(PatchVoice_CurrPos(_patch,_effect_num));
 
       printf("Got it %p %d\n",_patch,_effect_num);
       //setChecked(!isChecked());

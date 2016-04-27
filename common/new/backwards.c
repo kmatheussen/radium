@@ -133,12 +133,12 @@ void BackWardsRange_CurrPos(
 
 	PlayStop();
 
-	Undo_Range(
+	ADD_UNDO(Range(
 		window,
 		window->wblock,
 		0,window->wblock->block->num_tracks-1,
 		window->wblock->curr_realline
-	);
+                       ));
 
 	BackWardsRange(window,window->wblock);
 
@@ -157,7 +157,7 @@ void BackWardsTrack_CurrPos(
 
 	PlayStop();
 
-	Undo_Notes_CurrPos(window,LOC());
+	ADD_UNDO(Notes_CurrPos(window));
 
 	BackWardsTrack(window,window->wblock,window->wblock->wtrack);
 
@@ -177,12 +177,12 @@ void BackWardsBlock_CurrPos(
 
 	PlayStop();
 
-	Undo_Range(
+	ADD_UNDO(Range(
 		window,
 		window->wblock,
 		0,window->wblock->block->num_tracks-1,
 		window->wblock->curr_realline
-	);
+                       ));
 
 	BackWardsBlock(window,window->wblock);
 

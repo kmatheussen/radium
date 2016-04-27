@@ -274,7 +274,7 @@ float getReltempo(int blocknum, int windownum){
 
 void undoReltempo(void){
   struct Tracker_Windows *window = root->song->tracker_windows;
-  Undo_RelTempoSlider(window,window->wblock);
+  ADD_UNDO(RelTempoSlider(window,window->wblock));
 }
 
 void setReltempo(float reltempo){
@@ -391,7 +391,7 @@ void undoTrackPanOnOff(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return;
 
-  Undo_TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline);
+  ADD_UNDO(TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline));
 }
 
 void setTrackPanOnOff(bool onoff, int tracknum, int blocknum, int windownum){
@@ -464,7 +464,7 @@ void undoTrackVolumeOnOff(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return;
 
-  Undo_TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline);
+  ADD_UNDO(TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline));
 }
 
 void setTrackVolumeOnOff(bool onoff, int tracknum, int blocknum, int windownum){
@@ -537,7 +537,7 @@ void undoTrackPan(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return;
 
-  Undo_TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline);
+  ADD_UNDO(TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline));
 }
 
 // void setTrackPan(float pan, int tracknum, int blocknum, int windownum)
@@ -602,7 +602,7 @@ void undoTrackVolume(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return;
 
-  Undo_TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline);
+  ADD_UNDO(TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline));
 }
 
 // void setTrackVolume(float volume, int tracknum, int blocknum, int windownum)
@@ -792,7 +792,7 @@ float getTemponodeValue(int num, int blocknum, int windownum){
 
 void undoTemponodes(void){
   struct Tracker_Windows *window = root->song->tracker_windows;
-  Undo_TempoNodes_CurrPos(window);
+  ADD_UNDO(TempoNodes_CurrPos(window));
 }
 
 void setCurrentTemponode(int num, int blocknum){
@@ -1438,7 +1438,7 @@ int createPianonote(float value, float floatplace, float endfloatplace, int trac
   Place endplace;
   Float2Placement(endfloatplace, &endplace);
 
-  Undo_Notes(window,block,track,window->wblock->curr_realline,LOC());
+  ADD_UNDO(Notes(window,block,track,window->wblock->curr_realline));
 
   struct Notes *note = InsertNote(wblock, wtrack, &startplace, &endplace, value, NOTE_get_velocity(track), true);
   
@@ -2129,7 +2129,7 @@ int createPitch(float value, Place place, int tracknum, int blocknum, int window
 
   value = R_BOUNDARIES(0,value,127);
 
-  Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline,LOC());
+  ADD_UNDO(Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline));
 
   int ret;
   
@@ -2255,7 +2255,7 @@ void undoNotes(int tracknum, int blocknum){
   struct WTracks *wtrack = getWTrackFromNumA(-1, &window, blocknum, &wblock, tracknum);
   if(wtrack==NULL)
     return;
-  Undo_Notes(window,window->wblock->block,wtrack->track,window->wblock->curr_realline,LOC());
+  ADD_UNDO(Notes(window,window->wblock->block,wtrack->track,window->wblock->curr_realline));
 }
 
 float getNoteStart(int notenum, int tracknum, int blocknum, int windownum){
@@ -2425,7 +2425,7 @@ int createVelocity(float value, Place place, int notenum, int tracknum, int bloc
     return -1;
   }
 
-  Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline,LOC());
+  ADD_UNDO(Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline));
 
   int ret = AddVelocity(value*MAX_VELOCITY, &place, note);
 
@@ -2933,7 +2933,7 @@ int createFxnode(float value, Place place, int fxnum, int tracknum, int blocknum
     place = lastplace;
   }
 
-  Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
+  ADD_UNDO(FXs(window, wblock->block, wtrack->track, wblock->curr_realline));
 
   int max = fx->fx->max;
   int min = fx->fx->min;
@@ -3029,7 +3029,7 @@ void setFxnodeLogtype(int logtype, int fxnodenum, int fxnum, int tracknum, int b
     return;
   }
 
-  Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
+  ADD_UNDO(FXs(window, wblock->block, wtrack->track, wblock->curr_realline));
 
   struct Node *node = nodes->elements[fxnodenum];
   struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
@@ -3057,7 +3057,7 @@ void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
     return;
   }
 
-  Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
+  ADD_UNDO(FXs(window, wblock->block, wtrack->track, wblock->curr_realline));
 
   struct Node *node = nodes->elements[fxnodenum];
   struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
@@ -3140,7 +3140,7 @@ void undoFxs(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return;
 
-  Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
+  ADD_UNDO(FXs(window, wblock->block, wtrack->track, wblock->curr_realline));
 }
 
 
@@ -3319,7 +3319,7 @@ void undoTrackWidth(void){
   if(window==NULL)
     return;
   
-  Undo_Block_CurrPos(window,LOC()); // can be optimized a lot
+  ADD_UNDO(Block_CurrPos(window)); // can be optimized a lot
 }
 
 void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){

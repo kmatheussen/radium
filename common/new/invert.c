@@ -110,13 +110,13 @@ void InvertRange_CurrPos(
 	if(!window->wblock->isranged) return;
 
 
-	Undo_Range(
+	ADD_UNDO(Range(
 		window,
 		window->wblock,
 		window->wblock->rangex1,
 		window->wblock->rangex2,
 		window->wblock->curr_realline
-	);
+                       ));
 
 	InvertRange(window->wblock);
 
@@ -133,7 +133,7 @@ void InvertTrack_CurrPos(
 	struct Tracker_Windows *window
 ){
 
-  Undo_Notes_CurrPos(window,LOC());
+  ADD_UNDO(Notes_CurrPos(window));
 
 	InvertTrack(window->wblock->block,window->wblock->wtrack->track);
 
@@ -151,12 +151,12 @@ void InvertBlock_CurrPos(
 	struct Tracker_Windows *window
 ){
 
-	Undo_Range(
+	ADD_UNDO(Range(
 		window,
 		window->wblock,
 		0,window->wblock->block->num_tracks-1,
 		window->wblock->curr_realline
-	);
+                       ));
 
 	InvertBlock(window->wblock->block);
 

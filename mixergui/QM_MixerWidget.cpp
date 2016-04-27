@@ -386,7 +386,7 @@ static void start_moving_chips(MyScene *myscene, QGraphicsSceneMouseEvent * even
       volatile struct Patch *patch = plugin->patch;
       R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
-      Undo_ChipPos_CurrPos((struct Patch*)patch);
+      ADD_UNDO(ChipPos_CurrPos((struct Patch*)patch));
 
       chip->_moving_x_offset = chip->scenePos().x() - mouse_x;
       chip->_moving_y_offset = chip->scenePos().y() - mouse_y;
@@ -429,7 +429,7 @@ static bool autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
 
       CHIP_kick_right(chip_under);
       if(do_autoconnect){
-        Undo_MixerConnections_CurrPos(LOC());
+        ADD_UNDO(MixerConnections_CurrPos());
         CHIP_connect_right(myscene, chip, chip_under);
       }
 
@@ -437,7 +437,7 @@ static bool autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
 
       CHIP_kick_left(chip_under);
       if(do_autoconnect){
-        Undo_MixerConnections_CurrPos(LOC());
+        ADD_UNDO(MixerConnections_CurrPos());
         CHIP_connect_left(myscene,chip_under, chip);
       }
     }
@@ -448,7 +448,7 @@ static bool autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
 
     AudioConnection *connection = find_clean_connection_at(myscene, x, y);
     if(connection!=NULL){
-      Undo_MixerConnections_CurrPos(LOC());
+      ADD_UNDO(MixerConnections_CurrPos());
 
       Chip *from = connection->from;
       Chip *to = connection->to;
@@ -774,7 +774,7 @@ static bool mousepress_delete_connection(MyScene *scene, QGraphicsSceneMouseEven
   }
 
   if(connection!=NULL){
-    Undo_MixerConnections_CurrPos(LOC());
+    ADD_UNDO(MixerConnections_CurrPos());
     CONNECTION_delete_connection(connection);
     event->accept();
     return true;
@@ -939,12 +939,12 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
 
       if(_current_from_chip != NULL && chip != _current_from_chip){
 
-        Undo_MixerConnections_CurrPos(LOC());
+        ADD_UNDO(MixerConnections_CurrPos());
         CHIP_connect_chips(this, _current_from_chip, chip);
 
       }else if(_current_to_chip != NULL && chip != _current_to_chip){
 
-        Undo_MixerConnections_CurrPos(LOC());
+        ADD_UNDO(MixerConnections_CurrPos());
         CHIP_connect_chips(this, chip, _current_to_chip);
 
       }
@@ -964,12 +964,12 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
 
       if(_ecurrent_from_chip != NULL && chip != _ecurrent_from_chip){
 
-        Undo_MixerConnections_CurrPos(LOC());
+        ADD_UNDO(MixerConnections_CurrPos());
         CHIP_econnect_chips(this, _ecurrent_from_chip, chip);
 
       }else if(_ecurrent_to_chip != NULL && chip != _ecurrent_to_chip){
 
-        Undo_MixerConnections_CurrPos(LOC());
+        ADD_UNDO(MixerConnections_CurrPos());
         CHIP_econnect_chips(this, chip, _ecurrent_to_chip);
 
       }

@@ -326,7 +326,7 @@ public slots:
     if(highest > new_value)
       reltempomax->setValue(highest);
     
-    Undo_RelTempoMax(window,wblock);
+    ADD_UNDO(RelTempoMax(window,wblock));
 
     wblock->reltempomax=new_value;
 

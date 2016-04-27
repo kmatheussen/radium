@@ -20,9 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
-void Undo_Tempos_CurrPos(
+void ADD_UNDO_FUNC(Tempos_CurrPos(
 	struct Tracker_Windows *window
-);
+                                  ));
 
 
 #endif

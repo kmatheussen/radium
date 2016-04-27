@@ -45,10 +45,10 @@ static vector_t *get_all_patches(void){
   return patches;
 }
 
-void Undo_Patchlist(
-                  struct Tracker_Windows *window,
-                  struct WBlocks *wblock,
-                  source_pos_t source_pos
+void ADD_UNDO_FUNC(Patchlist(
+                             struct Tracker_Windows *window,
+                             struct WBlocks *wblock
+                             )
 ){
 
   Undo_Add_dont_stop_playing(
@@ -58,13 +58,12 @@ void Undo_Patchlist(
                              wblock->curr_realline,
                              get_all_patches(),
                              Undo_Do_Patches,
-                             "Patches",
-                             source_pos
+                             "Patches"
                              );
 }
 
-void Undo_Patchlist_CurrPos(source_pos_t source_pos){
-  Undo_Patchlist(root->song->tracker_windows,root->song->tracker_windows->wblock,source_pos);
+void ADD_UNDO_FUNC(Patchlist_CurrPos(void)){
+  CALL_ADD_UNDO_FUNC(Patchlist(root->song->tracker_windows,root->song->tracker_windows->wblock));
 }
 
 static void *Undo_Do_Patches(

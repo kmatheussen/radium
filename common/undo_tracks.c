@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_tracks_proc.h"
 
 
-void *Undo_Do_Track(
+static void *Undo_Do_Track(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -37,13 +37,14 @@ void *Undo_Do_Track(
 );
 
 
-void Undo_Track(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	int realline,
-        source_pos_t source_pos
-){
+void ADD_UNDO_FUNC(Track(
+                         struct Tracker_Windows *window,
+                         struct WBlocks *wblock,
+                         struct WTracks *wtrack,
+                         int realline
+                         )
+                   )
+{
 	Undo_Add(
                  window->l.num,
                  wblock->l.num,
@@ -51,19 +52,19 @@ void Undo_Track(
                  realline,
                  CB_CopyTrack(wblock,wtrack),
                  Undo_Do_Track,
-                 "Track",
-                 source_pos
+                 "Track"
                  );
 }
 
-void Undo_Track_CurrPos(
-                        struct Tracker_Windows *window,
-                        source_pos_t source_pos
-){
-  Undo_Track(window,window->wblock,window->wblock->wtrack,window->wblock->curr_realline,source_pos);
+void ADD_UNDO_FUNC(Track_CurrPos(
+                                 struct Tracker_Windows *window
+                                 )
+                   )
+{
+  CALL_ADD_UNDO_FUNC(Track(window,window->wblock,window->wblock->wtrack,window->wblock->curr_realline));
 }
 
-void *Undo_Do_Track(
+static void *Undo_Do_Track(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

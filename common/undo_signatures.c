@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void *Undo_Do_Signatures(
+static void *Undo_Do_Signatures(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -40,12 +40,14 @@ void *Undo_Do_Signatures(
 );
 
 
-void Undo_Signatures(
+void ADD_UNDO_FUNC(Signatures(
 	struct Tracker_Windows *window,
 	struct Blocks *block,
 	NInt tracknum,
 	int realline
-){
+                              )
+                   )
+{
 	Undo_Add(
                  window->l.num,
                  block->l.num,
@@ -53,18 +55,18 @@ void Undo_Signatures(
                  realline,
                  CB_CopySignatures(block->signatures),
                  Undo_Do_Signatures,
-                 "Block signatures",
-                 LOC()
+                 "Block signatures"
 	);
 }
 
-void Undo_Signatures_CurrPos(
+void ADD_UNDO_FUNC(Signatures_CurrPos(
 	struct Tracker_Windows *window
-){
-	Undo_Signatures(window,window->wblock->block,window->curr_track,window->wblock->curr_realline);
+                                      ))
+{
+  CALL_ADD_UNDO_FUNC(Signatures(window,window->wblock->block,window->curr_track,window->wblock->curr_realline));
 }
 
-void *Undo_Do_Signatures(
+static void *Undo_Do_Signatures(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

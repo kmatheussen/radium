@@ -34,8 +34,9 @@ extern LANGSPEC void InstrumentWidget_load_preset(struct Patch *patch);
 extern LANGSPEC void InstrumentWidget_save_preset(struct Patch *patch);
 
 //extern LANGSPEC void InstrumentWidget_remove_patch(struct Patch *patch);
-//extern LANGSPEC void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch);
+extern LANGSPEC void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch);
 extern LANGSPEC void InstrumentWidget_update(struct Patch *patch);
+extern LANGSPEC void InstrumentWidget_delete(struct Patch *patch);
 
 extern LANGSPEC void InstrumentWidget_prepare_for_deletion(struct Patch *patch);
 extern LANGSPEC void GFX_update_instrument_widget(struct Patch *patch);

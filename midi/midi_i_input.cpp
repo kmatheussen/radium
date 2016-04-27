@@ -171,12 +171,11 @@ void MIDI_insert_recorded_midi_events(void){
         char *key = (char*)talloc_format("%x",midi_event->wtrack);
         if (HASH_has_key(track_set, key)==false){
 
-          Undo_Notes(root->song->tracker_windows,
+          ADD_UNDO(Notes(root->song->tracker_windows,
                      block,
                      track,
-                     midi_event->wblock->curr_realline,
-                     LOC()
-                     );
+                     midi_event->wblock->curr_realline
+                         ));
           HASH_put_int(track_set, key, 1);
         }
         

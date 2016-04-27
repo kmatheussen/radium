@@ -53,7 +53,7 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
 
   vector_t *tr = &trs[realline];
 
-  Undo_Notes_CurrPos(window,LOC());  
+  ADD_UNDO(Notes_CurrPos(window));  
 
   if (tr->num_elements > 1) {
 

@@ -19,18 +19,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
-void Undo_Block(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	int realline,
-        source_pos_t source_pos
-);
+void ADD_UNDO_FUNC(
+                   Block(
+                         struct Tracker_Windows *window,
+                         struct WBlocks *wblock,
+                         struct WTracks *wtrack,
+                         int realline
+                         )
+                   );
 
-extern void Undo_Block_CurrPos(
-                               struct Tracker_Windows *window,
-                               source_pos_t source_pos
-);
+extern void ADD_UNDO_FUNC(
+                          Block_CurrPos(
+                                        struct Tracker_Windows *window
+                                        )
+                          );
 
 #endif
 

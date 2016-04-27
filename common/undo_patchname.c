@@ -70,12 +70,11 @@ static void Undo_PatchName(
                              wblock->curr_realline,
                              undo_ae,
                              Undo_Do_PatchName,
-                             "Patch name",
-                             LOC()
+                             "Patch name"
                              );
 }
 
-void Undo_PatchName_CurrPos(struct Patch *patch){
+void ADD_UNDO_FUNC(PatchName_CurrPos(struct Patch *patch)){
   struct Tracker_Windows *window = root->song->tracker_windows;
 
   Undo_PatchName(window,window->wblock, patch);

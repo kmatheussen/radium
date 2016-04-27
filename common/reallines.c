@@ -438,7 +438,7 @@ void ExpandLineCurrPos(
         if (!ensure_positive_expand_lines(wblock))
           return;
 
-	Undo_Reallines_CurrPos(window);
+	ADD_UNDO(Reallines_CurrPos(window));
 
         ExpandLine(window,wblock,wblock->curr_realline,num_newreallines);
           
@@ -487,7 +487,7 @@ void UnexpandCurrPos(struct Tracker_Windows *window){
         if (!ensure_positive_expand_lines(wblock))
           return;
 
-	Undo_Reallines_CurrPos(window);
+	ADD_UNDO(Reallines_CurrPos(window));
 
         Unexpand(window,wblock,realline);
           
@@ -513,7 +513,7 @@ void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom){
 
 	//zoomlineareawidth=wblock->zoomlinearea.width;
 
-	Undo_Reallines_CurrPos(window);
+	ADD_UNDO(Reallines_CurrPos(window));
 
         {
 
@@ -595,7 +595,7 @@ void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int n
     num_lines = 1;
   }
 
-  Undo_Reallines_CurrPos(window);
+  ADD_UNDO(Reallines_CurrPos(window));
 
   if (num_lines<1) {
     wblock->num_expand_lines = num_lines;

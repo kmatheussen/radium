@@ -36,7 +36,7 @@ struct Undo_FXs{
 	void *midi_instrumentdata;
 };
 
-void *Undo_Do_FXs(
+static void *Undo_Do_FXs(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -44,12 +44,15 @@ void *Undo_Do_FXs(
 	void *pointer
 );
 
-void Undo_FXs(
-	struct Tracker_Windows *window,
-	struct Blocks *block,
-	struct Tracks *track,
-	int realline
-){
+void ADD_UNDO_FUNC(
+                   FXs(
+                       struct Tracker_Windows *window,
+                       struct Blocks *block,
+                       struct Tracks *track,
+                       int realline
+                       )
+                   )
+{
 
 	Place *p1=PlaceGetFirstPos();
 	Place p2;
@@ -69,19 +72,20 @@ void Undo_FXs(
                  realline,
                  undo_fxs,
                  Undo_Do_FXs,
-                 "Track fxs",
-                 LOC()
+                 "Track fxs"
                  );
 
 }
 
-void Undo_FXs_CurrPos(
-	struct Tracker_Windows *window
-){
-	Undo_FXs(window,window->wblock->block,window->wblock->wtrack->track,window->wblock->curr_realline);
+void ADD_UNDO_FUNC(FXs_CurrPos(
+                               struct Tracker_Windows *window
+                               )
+                   )
+{
+  CALL_ADD_UNDO_FUNC(FXs(window,window->wblock->block,window->wblock->wtrack->track,window->wblock->curr_realline));
 }
 
-void *Undo_Do_FXs(
+static void *Undo_Do_FXs(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

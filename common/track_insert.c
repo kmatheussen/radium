@@ -139,7 +139,7 @@ void InsertTracks_CurrPos(
 	curr_track=window->curr_track;
 	if(curr_track<0) return;
 
-	Undo_Block_CurrPos(window,LOC());
+	ADD_UNDO(Block_CurrPos(window));
 
 	wblock=window->wblock;
 

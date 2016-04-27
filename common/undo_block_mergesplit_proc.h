@@ -15,5 +15,5 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-void Undo_Block_Split_CurrPos(void);
+void ADD_UNDO_FUNC(Block_Split_CurrPos(void));
 

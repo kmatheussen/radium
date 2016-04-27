@@ -16,11 +16,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-extern void Undo_Range(
+extern void ADD_UNDO_FUNC(Range(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	NInt starttrack,
 	NInt endtrack,
 	int realline
-);
+                                ));
 

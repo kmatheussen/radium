@@ -109,7 +109,7 @@ void SetLPBCurrPos(struct Tracker_Windows *window){
 
 	PlayStop();
 
-	Undo_LPBs_CurrPos(window);
+	ADD_UNDO(LPBs_CurrPos(window));
 
 	SetLPB(wblock->block,place,newlpb);
 
@@ -133,7 +133,7 @@ void RemoveLPBsCurrPos(struct Tracker_Windows *window){
 
 	PlayStop();
 
-	Undo_LPBs_CurrPos(window);
+	ADD_UNDO(LPBs_CurrPos(window));
 
 	PlaceSetReallinePlace(wblock,curr_realline,&p1);
 	PlaceSetReallinePlace(wblock,curr_realline+1,&p2);

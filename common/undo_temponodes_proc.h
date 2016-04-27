@@ -21,16 +21,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
-extern void Undo_TempoNodes(
+extern void ADD_UNDO_FUNC(TempoNodes(
 	struct Tracker_Windows *window,
 	struct Blocks *block,
 	NInt tracknum,
 	int realline
-);
+                                     ));
 
-extern void Undo_TempoNodes_CurrPos(
+extern void ADD_UNDO_FUNC(TempoNodes_CurrPos(
 	struct Tracker_Windows *window
-);
+                                             ));
 
 #endif
 

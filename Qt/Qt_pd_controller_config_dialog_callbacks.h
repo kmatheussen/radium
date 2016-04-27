@@ -178,7 +178,7 @@ public:
 
     Undo_Open();{
 
-      Undo_PdControllers_CurrPos(_patch);
+      ADD_UNDO(PdControllers_CurrPos(_patch));
 
       float old_min = controller->min_value;
       float old_max = controller->max_value;
@@ -229,7 +229,7 @@ public slots:
 
     if(_is_updating_gui==false)
       if(val!=controller->type) {
-        Undo_PdControllers_CurrPos(_patch);
+        ADD_UNDO(PdControllers_CurrPos(_patch));
         controller->type = val;
         update_gui();
       }
@@ -260,7 +260,7 @@ public slots:
       printf("name: -%s-\n",name_widget->text().toUtf8().constData());
       QString name = name_widget->text();
       if(name != controller->name) {
-        Undo_PdControllers_CurrPos(_patch);
+        ADD_UNDO(PdControllers_CurrPos(_patch));
         PD_set_controller_name(plugin, controller->num, STRING_create(name));
       }
       //set_editor_focus();

@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/visual_proc.h"
-#include "../common/undo_patch_proc.h"
+#include "../common/undo_patchlist_proc.h"
 #include "../common/player_proc.h"
 #include "../common/patch_proc.h"
 
@@ -1237,7 +1237,7 @@ SoundPlugin *PLUGIN_set_from_state(SoundPlugin *old_plugin, hash_t *state){
   
   if (can_replace_patch==false) { 
     for(int i=0;i<old_plugin->type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-      Undo_AudioEffect_CurrPos((struct Patch*)patch, i);
+      ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, i));
     
     PLUGIN_set_effects_from_state(old_plugin, state);
 
@@ -1279,7 +1279,7 @@ void PLUGIN_reset(SoundPlugin *plugin){
   
   Undo_Open();{
     for(i=0;i<type->num_effects;i++)
-      Undo_AudioEffect_CurrPos((struct Patch*)patch, i);
+      ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, i));
   }Undo_Close();
 
   PLAYER_lock();{
@@ -1292,7 +1292,7 @@ void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num){
   volatile struct Patch *patch = plugin->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
   
-  Undo_AudioEffect_CurrPos((struct Patch*)patch, effect_num);
+  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
   PLAYER_lock();{
     PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values[effect_num], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
   }PLAYER_unlock();
@@ -1316,7 +1316,7 @@ void PLUGIN_random(SoundPlugin *plugin){
 
   Undo_Open();{
     for(i=0;i<type->num_effects;i++)
-      Undo_AudioEffect_CurrPos((struct Patch*)patch, i);
+      ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, i));
   }Undo_Close();
 
   float values[type->num_effects];

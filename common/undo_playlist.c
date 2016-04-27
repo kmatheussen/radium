@@ -36,7 +36,7 @@ static void *Undo_Do_Playlist(
 );
 
 
-void Undo_Playlist(void){
+void ADD_UNDO_FUNC(Playlist(void)){
   struct Tracker_Windows *window = root->song->tracker_windows;
 
   Undo_Add(
@@ -46,12 +46,11 @@ void Undo_Playlist(void){
            window->wblock->curr_realline,
            BL_copy(),
            Undo_Do_Playlist,
-           "Playlist",
-           LOC()
+           "Playlist"
            );
 }
 
-void *Undo_Do_Playlist(
+static void *Undo_Do_Playlist(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

@@ -176,12 +176,12 @@ void InsertRealLines_CurrPos(
 
 	switch(window->curr_track){
 		case SIGNATURETRACK:
-			Undo_Signatures_CurrPos(window);
+                  ADD_UNDO(Signatures_CurrPos(window));
 			InsertPlace_signatures(block,place,toplace);
                         UpdateBeats(block);
 			break;
 		case LPBTRACK:
-			Undo_LPBs_CurrPos(window);
+                  ADD_UNDO(LPBs_CurrPos(window));
 			InsertPlace_lpbs(block,place,toplace);
 			//UpdateWLPBs(window,wblock);
 #if !USE_OPENGL
@@ -191,7 +191,7 @@ void InsertRealLines_CurrPos(
                         UpdateBeats(block);
 			break;
 		case TEMPOTRACK:
-			Undo_Tempos_CurrPos(window);
+                  ADD_UNDO(Tempos_CurrPos(window));
 			InsertPlace_tempos(block,place,toplace);
 			//UpdateWTempos(window,wblock);
 #if !USE_OPENGL
@@ -200,7 +200,7 @@ void InsertRealLines_CurrPos(
 			UpdateSTimes(wblock->block);
 			break;
 		case TEMPONODETRACK:
-			Undo_TempoNodes_CurrPos(window);
+                  ADD_UNDO(TempoNodes_CurrPos(window));
 			InsertPlace_temponodes(block,place,toplace);
 #if !USE_OPENGL
 			UpdateWTempoNodes(window,wblock);
@@ -210,13 +210,13 @@ void InsertRealLines_CurrPos(
 			break;
 		default:
 			if(window->curr_track_sub>=0){
-				Undo_NotesAndFXs_CurrPos(window);
+                          ADD_UNDO(NotesAndFXs_CurrPos(window));
 				InsertPlace_fxs(block,wblock->wtrack->track,place,toplace);
 #if !USE_OPENGL
 				UpdateFXNodeLines(window,wblock,wblock->wtrack);
 #endif
 			}else{
-                          Undo_Notes_CurrPos(window,LOC());
+                          ADD_UNDO(Notes_CurrPos(window));
 			}
 			InsertPlace_notes(block,wblock->wtrack->track,place,toplace);
 			InsertPlace_stops(block,wblock->wtrack->track,place,toplace);

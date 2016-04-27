@@ -65,12 +65,11 @@ static void Undo_ChipPos(
                              wblock->curr_realline,
                              undo_ae,
                              Undo_Do_ChipPos,
-                             talloc_format("Chip position %s",patch->name),
-                             LOC()
+                             talloc_format("Chip position %s",patch->name)
                              );
 }
 
-void Undo_ChipPos_CurrPos(struct Patch *patch){
+void ADD_UNDO_FUNC(ChipPos_CurrPos(struct Patch *patch)){
   struct Tracker_Windows *window = root->song->tracker_windows;
 
   Undo_ChipPos(window,window->wblock, patch);

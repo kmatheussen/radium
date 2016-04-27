@@ -146,9 +146,9 @@ struct MyQCheckBox : public QCheckBox{
       //setSliderDown(true);    
 #ifdef COMPILING_RADIUM
       if(_undo_patchvoice==true)
-        Undo_PatchVoice_CurrPos(_patch,_effect_num);
+        ADD_UNDO(PatchVoice_CurrPos(_patch,_effect_num));
       else if(_patch!=NULL  && _patch->instrument==get_audio_instrument())
-        Undo_AudioEffect_CurrPos(_patch, _effect_num);
+        ADD_UNDO(AudioEffect_CurrPos(_patch, _effect_num));
 #endif
       //handle_mouse_event(event);
       _has_mouse = true;

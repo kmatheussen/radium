@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void *Undo_Do_TempoNodes(
+static void *Undo_Do_TempoNodes(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -39,12 +39,13 @@ void *Undo_Do_TempoNodes(
 );
 
 
-void Undo_TempoNodes(
+void ADD_UNDO_FUNC(TempoNodes(
 	struct Tracker_Windows *window,
 	struct Blocks *block,
 	NInt tracknum,
 	int realline
-){
+                              ))
+{
 	Undo_Add(
                  window->l.num,
                  block->l.num,
@@ -52,18 +53,19 @@ void Undo_TempoNodes(
                  realline,
                  CB_CopyTempoNodes(block->temponodes),
                  Undo_Do_TempoNodes,
-                 "Block tempo nodes",
-                 LOC()
+                 "Block tempo nodes"
 	);
 }
 
-void Undo_TempoNodes_CurrPos(
-	struct Tracker_Windows *window
-){
-	Undo_TempoNodes(window,window->wblock->block,window->curr_track,window->wblock->curr_realline);
+void ADD_UNDO_FUNC(TempoNodes_CurrPos(
+                                      struct Tracker_Windows *window
+                                      )
+                   )
+{
+  CALL_ADD_UNDO_FUNC(TempoNodes(window,window->wblock->block,window->curr_track,window->wblock->curr_realline));
 }
 
-void *Undo_Do_TempoNodes(
+static void *Undo_Do_TempoNodes(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

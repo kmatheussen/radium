@@ -147,7 +147,7 @@ void SetSignatureCurrPos(struct Tracker_Windows *window){
         
 	PlayStop();
 
-	Undo_Signatures_CurrPos(window);
+	ADD_UNDO(Signatures_CurrPos(window));
 
 	SetSignature(wblock->block,place,rational.get_ratio());
 
@@ -176,7 +176,7 @@ void RemoveSignaturesCurrPos(struct Tracker_Windows *window){
 
 	PlayStop();
 
-	Undo_Signatures_CurrPos(window);
+	ADD_UNDO(Signatures_CurrPos(window));
 
 	PlaceSetReallinePlace(wblock,curr_realline,&p1);
 	PlaceSetReallinePlace(wblock,curr_realline+1,&p2);

@@ -265,7 +265,7 @@ void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float ol
 
             struct FXNodeLines *fxnode = fxs->fxnodelines;
 
-            Undo_FXs(root->song->tracker_windows, block, track, 0);
+            ADD_UNDO(FXs(root->song->tracker_windows, block, track, 0));
 
             while(fxnode != NULL) {
               double real_val = scale_double(fxnode->val, fx_min,  fx_max,  old_min, old_max);
@@ -504,12 +504,12 @@ void AddFXNodeLineCurrMousePos(struct Tracker_Windows *window){
   
   if (use_mouse_pos){
     float val = scale(x, wtrack->fxarea.x, wtrack->fxarea.x2, 0, 1);
-    Undo_FXs_CurrPos(window);
+    ADD_UNDO(FXs_CurrPos(window));
     AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, val);
   } else {
     int val = fx->defaultFXValue(fx);
+    ADD_UNDO(FXs_CurrPos(window));
     AddFXNodeLineCurrPosInternal(window, wblock, wtrack, fx, &place, val);
-    Undo_FXs_CurrPos(window);
   }
 }
 
@@ -522,7 +522,7 @@ void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
   Place place;
   PlaceCopy(&place, &wblock->reallines[wblock->curr_realline]->l.p);
 
-  Undo_FXs_CurrPos(window);
+  ADD_UNDO(FXs_CurrPos(window));
 
   AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, 0.5);
 }

@@ -64,12 +64,12 @@ void stopIgnoringUndo(void){
 
 void addUndoBlock(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
-  Undo_Block_CurrPos(window,LOC());
+  ADD_UNDO(Block_CurrPos(window));
 }
 
 void addUndoTrack(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
-  Undo_Track_CurrPos(window,LOC());
+  ADD_UNDO(Track_CurrPos(window));
 }
 
 void openUndo(void){

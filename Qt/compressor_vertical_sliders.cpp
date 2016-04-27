@@ -729,7 +729,7 @@ struct Comp : public MyWidget, public MyTimer{
     if(in_box.inside(x,y)){
 #ifdef COMPILING_RADIUM
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      Undo_AudioEffect_CurrPos(_patch, plugin->type->num_effects+EFFNUM_COMP_THRESHOLD);
+      ADD_UNDO(AudioEffect_CurrPos(_patch, plugin->type->num_effects+EFFNUM_COMP_THRESHOLD));
 #endif
 
       curr_slider = THRESHOLD_SLIDER;
@@ -739,7 +739,7 @@ struct Comp : public MyWidget, public MyTimer{
     }else if(out_box.inside(x,y)){
 #ifdef COMPILING_RADIUM
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      Undo_AudioEffect_CurrPos(_patch, plugin->type->num_effects+EFFNUM_COMP_RATIO);
+      ADD_UNDO(AudioEffect_CurrPos(_patch, plugin->type->num_effects+EFFNUM_COMP_RATIO));
 #endif
 
       curr_slider = RATIO_SLIDER;
@@ -752,7 +752,7 @@ struct Comp : public MyWidget, public MyTimer{
     }else if(vol_box.inside(x,y)){
 #ifdef COMPILING_RADIUM
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      Undo_AudioEffect_CurrPos(_patch, plugin->type->num_effects+EFFNUM_COMP_OUTPUT_VOLUME);
+      ADD_UNDO(AudioEffect_CurrPos(_patch, plugin->type->num_effects+EFFNUM_COMP_OUTPUT_VOLUME));
 #endif
 
       curr_slider = MAKEUPGAIN_SLIDER;

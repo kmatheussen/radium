@@ -64,13 +64,11 @@ static void Undo_Sample(
                              wblock->curr_realline,
                              undo_ae,
                              Undo_Do_Sample,
-                             talloc_format("Sample %s",patch->name),
-                             LOC()
+                             talloc_format("Sample %s",patch->name)
                              );
-
 }
 
-void Undo_Sample_CurrPos(struct Patch *patch){
+void ADD_UNDO_FUNC(Sample_CurrPos(struct Patch *patch)){
   struct Tracker_Windows *window = root->song->tracker_windows;
 
   Undo_Sample(window,window->wblock, patch);

@@ -1,4 +1,4 @@
-void Undo_RelTempoSlider(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
-);
+void ADD_UNDO_FUNC(RelTempoSlider(
+                                  struct Tracker_Windows *window,
+                                  struct WBlocks *wblock
+                                  ));

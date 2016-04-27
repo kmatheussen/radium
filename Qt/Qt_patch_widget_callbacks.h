@@ -164,7 +164,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   void set_transpose(int voicenum){
     float transpose=get_t(voicenum)->value();
     if(transpose!=_voices[voicenum].transpose){
-      Undo_PatchVoice_CurrPos(_patch,voicenum);
+      ADD_UNDO(PatchVoice_CurrPos(_patch,voicenum));
       PATCH_change_voice_transpose(_patch, voicenum, transpose);
     }
     set_editor_focus();
@@ -174,7 +174,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   void set_volume(int voicenum){
     float volume=get_v(voicenum)->value();
     if(_voices[voicenum].volume != volume){
-      Undo_PatchVoice_CurrPos(_patch,voicenum);
+      ADD_UNDO(PatchVoice_CurrPos(_patch,voicenum));
       _voices[voicenum].volume = volume;
     }
     set_editor_focus();
@@ -184,7 +184,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   void set_start(int voicenum){
     float start=get_s(voicenum)->value();
     if(_voices[voicenum].start != start){
-      Undo_PatchVoice_CurrPos(_patch,voicenum);
+      ADD_UNDO(PatchVoice_CurrPos(_patch,voicenum));
       _voices[voicenum].start = start;
     }
     set_editor_focus();
@@ -194,7 +194,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   void set_length(int voicenum){
     float length=get_l(voicenum)->value();
     if(_voices[voicenum].length != length){
-      Undo_PatchVoice_CurrPos(_patch,voicenum);
+      ADD_UNDO(PatchVoice_CurrPos(_patch,voicenum));
       _voices[voicenum].length = length;
     }
     set_editor_focus();
@@ -290,7 +290,7 @@ public slots:
 
     printf("Calling Undo patchname. Old name: %s. New name: %s\n",_patch->name,new_name.toUtf8().constData());
 
-    Undo_PatchName_CurrPos(_patch);
+    ADD_UNDO(PatchName_CurrPos(_patch));
 
     //QTabBar *tab_bar = instruments_widget->tabs->tabBar();
     //tab_bar->tab(tab_bar->currentTab())->setText(name_widget->text());
@@ -323,7 +323,7 @@ public slots:
 
   void on_through_onoff_toggled(bool val){
     if(val != _patch->forward_events) {
-      Undo_PatchName_CurrPos(_patch);
+      ADD_UNDO(PatchName_CurrPos(_patch));
       _patch->forward_events = val;
     }
   }

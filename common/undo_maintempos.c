@@ -16,7 +16,7 @@ struct Undo_MainTempo{
         quantitize_options_t quantitize_options;
 };
 
-void *Undo_Do_MainTempo(
+static void *Undo_Do_MainTempo(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -24,10 +24,13 @@ void *Undo_Do_MainTempo(
 	void *pointer
 );
 
-void Undo_MainTempo(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
-){
+void ADD_UNDO_FUNC(
+                   MainTempo(
+                             struct Tracker_Windows *window,
+                             struct WBlocks *wblock
+                             )
+                   )
+{
 	struct Undo_MainTempo *u_rt=talloc_atomic(sizeof(struct Undo_MainTempo));
 	u_rt->tempo=root->tempo;
 	u_rt->lpb=root->lpb;
@@ -41,13 +44,12 @@ void Undo_MainTempo(
                  wblock->curr_realline,
                  u_rt,
                  Undo_Do_MainTempo,
-                 "Block tempo/lpb/signature/quantiatize settings",
-                 LOC()
+                 "Block tempo/lpb/signature/quantiatize settings"
 	);
 
 }
 
-void *Undo_Do_MainTempo(
+static void *Undo_Do_MainTempo(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

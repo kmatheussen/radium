@@ -346,7 +346,7 @@ void setSignature(int numerator, int denominator){
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblock;
 
-  Undo_MainTempo(window,wblock);
+  ADD_UNDO(MainTempo(window,wblock));
   
   root->signature = ratio(numerator, denominator);
   UpdateAllBeats();
@@ -366,7 +366,7 @@ void setLPB(int lpb_value){
   struct WBlocks *wblock = window->wblock;
 
   printf("Undo MainTempo lpb: %d\n",lpb_value);
-  Undo_MainTempo(window,wblock);
+  ADD_UNDO(MainTempo(window,wblock));
   
   root->lpb=lpb_value;
   UpdateAllSTimes();
@@ -387,7 +387,7 @@ void setBPM(int bpm_value){
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblock;
   
-  Undo_MainTempo(window,wblock);
+  ADD_UNDO(MainTempo(window,wblock));
   
   root->tempo=bpm_value;
   UpdateAllSTimes();
@@ -523,12 +523,12 @@ void setNoteContinueNextBlock(bool continuenextblock, int notenum, int tracknum,
   if (note==NULL)
     return;
   
-  Undo_Notes(window,
-             wblock->block,
-             wtrack->track,
-             wblock->curr_realline,
-             LOC()
-             );
+  ADD_UNDO(Notes(window,
+                 wblock->block,
+                 wtrack->track,
+                 wblock->curr_realline
+                 )
+           );
 
   note->noend = continuenextblock?1:0;
 }

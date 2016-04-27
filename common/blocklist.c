@@ -98,7 +98,7 @@ void BL_insert(int pos,struct Blocks *block){
 
 void BL_insertCurrPos(int pos,struct Blocks *block){
   PlayStop();
-  Undo_Playlist();
+  ADD_UNDO(Playlist());
   BL_insert(pos,block);
   BS_UpdatePlayList();
 }
@@ -132,7 +132,7 @@ void BL_delete(int pos){
 
 void BL_deleteCurrPos(int pos){
   PlayStop();
-  Undo_Playlist();
+  ADD_UNDO(Playlist());
   BL_delete(pos);
   BS_UpdatePlayList();
 }
@@ -164,7 +164,7 @@ void BL_removeBlockFromPlaylist(struct Blocks *block){
 
 void BL_setLength(int length){
   PlayStop();
-  Undo_Playlist();
+  ADD_UNDO(Playlist());
 
   if (length < 1) {
     GFX_Message(NULL, "Can not set playlist length to %d",length);
@@ -198,7 +198,7 @@ void BL_setBlock(int pos, struct Blocks *block){
   }
     
   PlayStop();
-  Undo_Playlist();
+  ADD_UNDO(Playlist());
 
   root->song->playlist[pos] = block;
 
@@ -215,7 +215,7 @@ void BL_moveDown(int pos){
     return;
   
   PlayStop();
-  Undo_Playlist();
+  ADD_UNDO(Playlist());
 
   struct Blocks *old = root->song->playlist[pos+1];
   
@@ -235,7 +235,7 @@ void BL_moveUp(int pos){
     return;
 
   PlayStop();
-  Undo_Playlist();
+  ADD_UNDO(Playlist());
 
   struct Blocks *old = root->song->playlist[pos-1];
   

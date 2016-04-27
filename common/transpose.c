@@ -130,7 +130,7 @@ void TransposeRange_CurrPos(
 	if(!window->wblock->isranged) return;
 
 
-	Undo_Range(window,window->wblock,window->wblock->rangex1,window->wblock->rangex2,window->wblock->curr_realline);
+	ADD_UNDO(Range(window,window->wblock,window->wblock->rangex1,window->wblock->rangex2,window->wblock->curr_realline));
 
 	TransposeRange(window->wblock,trans);
 
@@ -149,7 +149,7 @@ void TransposeTrack_CurrPos(
 ){
 
 
-  Undo_Notes_CurrPos(window,LOC());
+  ADD_UNDO(Notes_CurrPos(window));
 
 	TransposeTrack(window->wblock->wtrack->track,trans);
 
@@ -170,7 +170,7 @@ void TransposeNote_CurrPos(
         if (note==NULL)
           return;
         
-	Undo_Notes_CurrPos(window,LOC());
+	ADD_UNDO(Notes_CurrPos(window));
 
 	Transpose_note(note,trans);
 
@@ -188,12 +188,12 @@ void TransposeBlock_CurrPos(
 	int trans
 ){
 
-	Undo_Range(
+	ADD_UNDO(Range(
 		window,
 		window->wblock,
 		0,window->wblock->block->num_tracks-1,
 		window->wblock->curr_realline
-	);
+                       ));
 
 	TransposeBlock(window->wblock->block,trans);
 

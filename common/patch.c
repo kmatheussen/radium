@@ -186,7 +186,7 @@ struct Patch *NewPatchCurrPos_set_track(int instrumenttype, void *patchdata, con
     struct Patch *patch=PATCH_create(instrumenttype, patchdata, name);
 
     {
-      Undo_Track_CurrPos(window,LOC());
+      ADD_UNDO(Track_CurrPos(window));
       handle_fx_when_theres_a_new_patch_for_track(wtrack->track,wtrack->track->patch,patch);
       wtrack->track->patch = patch;
     }
@@ -217,7 +217,7 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
 
         PlayStop();
 
-        Undo_Track(window,wblock,wtrack,wblock->curr_realline,LOC());
+        ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
 
         PLAYER_lock();{
           handle_fx_when_theres_a_new_patch_for_track(track,track->patch,new_patch);
@@ -249,15 +249,15 @@ void PATCH_delete(struct Patch *patch){
   remove_patch_from_song(patch);
 
   if(patch->instrument==get_audio_instrument()){
-    Undo_MixerConnections_CurrPos(LOC());
-    Undo_Chip_Remove_CurrPos(patch, LOC());
+    ADD_UNDO(MixerConnections_CurrPos());
+    ADD_UNDO(Chip_Remove_CurrPos(patch));
   }
 
   GFX_remove_patch_gui(patch);
 
   patch->instrument->remove_patch(patch);
 
-  Undo_Patchlist_CurrPos(LOC());
+  ADD_UNDO(Patchlist_CurrPos());
   VECTOR_remove(&patch->instrument->patches,patch);
 }
 
@@ -337,7 +337,7 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
 
       Undo_Open();{
 
-        Undo_Track(window,window->wblock,wtrack,window->wblock->curr_realline,LOC());
+        ADD_UNDO(Track(window,window->wblock,wtrack,window->wblock->curr_realline));
 
         if(selection>=start_select_patch){
           patch=patches->elements[selection-start_select_patch];

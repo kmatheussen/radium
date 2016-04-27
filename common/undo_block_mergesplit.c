@@ -37,7 +37,7 @@ struct Undo_Block_MergeSplit{
 
 
 
-void *Undo_Do_Block_Split(
+static void *Undo_Do_Block_Split(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -46,7 +46,7 @@ void *Undo_Do_Block_Split(
 );
 
 
-void Undo_Block_Split_CurrPos(void){
+void ADD_UNDO_FUNC(Block_Split_CurrPos(void)){
 	struct Tracker_Windows *window=root->song->tracker_windows;
 	struct WBlocks *wblock=window->wblock;
 
@@ -62,14 +62,13 @@ void Undo_Block_Split_CurrPos(void){
 		wblock->curr_realline,
 		ubm,
 		Undo_Do_Block_Split,
-                "Block split",
-                LOC()
+                "Block split"
 	);
 }
 
 
 
-void *Undo_Do_Block_Split(
+static void *Undo_Do_Block_Split(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

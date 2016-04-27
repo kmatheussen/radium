@@ -43,12 +43,13 @@ static void *Undo_Do_PatchVoice(
                                  void *pointer
                                  );
 
-static void Undo_PatchVoice(
-                             struct Tracker_Windows *window,
-                             struct WBlocks *wblock,
-                             struct Patch *patch,
-                             int voicenum
-                             )
+static void ADD_UNDO_FUNC(PatchVoice(
+                                     struct Tracker_Windows *window,
+                                     struct WBlocks *wblock,
+                                     struct Patch *patch,
+                                     int voicenum
+                                     )
+                          )
 {
   struct Undo_PatchVoice *undo_ae=talloc(sizeof(struct Undo_PatchVoice));
   
@@ -66,16 +67,15 @@ static void Undo_PatchVoice(
            wblock->curr_realline,
            undo_ae,
            Undo_Do_PatchVoice,
-           "Patch voice",
-           LOC()
+           "Patch voice"
            );
 
 }
 
-void Undo_PatchVoice_CurrPos(struct Patch *patch, int voicenum){
+void ADD_UNDO_FUNC(PatchVoice_CurrPos(struct Patch *patch, int voicenum)){
   struct Tracker_Windows *window = root->song->tracker_windows;
 
-  Undo_PatchVoice(window,window->wblock, patch, voicenum);
+  CALL_ADD_UNDO_FUNC(PatchVoice(window,window->wblock, patch, voicenum));
 }
 
 static void *Undo_Do_PatchVoice(

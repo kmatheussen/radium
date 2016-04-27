@@ -14,7 +14,7 @@ struct Undo_TrackHeader{
 	bool panonoff;
 };
 
-void *Undo_Do_TrackHeader(
+static void *Undo_Do_TrackHeader(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -22,12 +22,14 @@ void *Undo_Do_TrackHeader(
 	void *pointer
 );
 
-void Undo_TrackHeader(
+void ADD_UNDO_FUNC(TrackHeader(
 	struct Tracker_Windows *window,
 	struct Blocks *block,
 	struct Tracks *track,
 	int realline
-){
+                               )
+                   )
+{
 	struct Undo_TrackHeader *u_th=talloc_atomic(sizeof(struct Undo_TrackHeader));
 	u_th->volume=track->volume;
 	u_th->pan=track->pan;
@@ -41,14 +43,13 @@ void Undo_TrackHeader(
                                    realline,
                                    u_th,
                                    Undo_Do_TrackHeader,
-                                   "Block track header",
-                                   LOC()
+                                   "Block track header"
                                    );
 
 }
 
 
-void *Undo_Do_TrackHeader(
+static void *Undo_Do_TrackHeader(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

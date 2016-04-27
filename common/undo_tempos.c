@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void *Undo_Do_Tempos(
+static void *Undo_Do_Tempos(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -39,12 +39,14 @@ void *Undo_Do_Tempos(
 );
 
 
-void Undo_Tempos(
+void ADD_UNDO_FUNC(Tempos(
 	struct Tracker_Windows *window,
 	struct Blocks *block,
 	NInt tracknum,
 	int realline
-){
+                          )
+                   )
+{
 	Undo_Add(
                  window->l.num,
                  block->l.num,
@@ -52,18 +54,19 @@ void Undo_Tempos(
                  realline,
                  CB_CopyTempos(block->tempos),
                  Undo_Do_Tempos,
-                 "Block BPMs",
-                 LOC()
+                 "Block BPMs"
 	);
 }
 
-void Undo_Tempos_CurrPos(
-	struct Tracker_Windows *window
-){
-	Undo_Tempos(window,window->wblock->block,window->curr_track,window->wblock->curr_realline);
+void ADD_UNDO_FUNC(Tempos_CurrPos(
+                                  struct Tracker_Windows *window
+                                  )
+                   )
+{
+  CALL_ADD_UNDO_FUNC(Tempos(window,window->wblock->block,window->curr_track,window->wblock->curr_realline));
 }
 
-void *Undo_Do_Tempos(
+static void *Undo_Do_Tempos(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

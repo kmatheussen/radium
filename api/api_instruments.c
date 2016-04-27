@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
+#include "../audio/SoundProducer_proc.h"
 #include "../audio/SoundPluginRegistry_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../audio/Sampler_plugin_proc.h"
@@ -39,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../mixergui/QM_MixerWidget.h"
 #include "../mixergui/QM_chip.h"
 #include "../mixergui/undo_chip_position_proc.h"
+#include "../mixergui/undo_chip_addremove_proc.h"
 #include "../mixergui/undo_mixer_connections_proc.h"
 #include "../mixergui/undo_mixer_proc.h"
 
@@ -123,7 +125,7 @@ void setInstrumentForTrack(int instrument_id, int tracknum, int blocknum, int wi
   if (new_patch==old_patch)
     return;
 
-  Undo_Track(window,wblock,wtrack,wblock->curr_realline,LOC());
+  ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
 
   PLAYER_lock();{
     
@@ -217,7 +219,7 @@ void connectAudioInstrumentToMainPipe(int instrument_id){
   if(patch==NULL)
     return;
 
-  Undo_MixerConnections_CurrPos(LOC());
+  ADD_UNDO(MixerConnections_CurrPos());
   MW_autoconnect_plugin((SoundPlugin *)patch->patchdata);
 }
 
@@ -387,7 +389,7 @@ void setInstrumentPosition(float x, float y, int instrument_id){
   if(patch==NULL)
     return;
 
-  Undo_ChipPos_CurrPos(patch);
+  ADD_UNDO(ChipPos_CurrPos(patch));
   
   CHIP_set_pos(patch,x,y);
 }
@@ -503,7 +505,7 @@ void deleteInstrument(int instrument_id){
 
   Undo_Open_rec();{
 
-    PATCH_delete(patch);
+    PATCH_make_inactive(patch);
 
   }Undo_Close();
 

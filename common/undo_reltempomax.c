@@ -31,7 +31,7 @@ struct Undo_RelTempoMax{
 	float reltempomax;
 };
 
-void *Undo_Do_RelTempoMax(
+static void *Undo_Do_RelTempoMax(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -39,10 +39,12 @@ void *Undo_Do_RelTempoMax(
 	void *pointer
 );
 
-void Undo_RelTempoMax(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
-){
+void ADD_UNDO_FUNC(RelTempoMax(
+                               struct Tracker_Windows *window,
+                               struct WBlocks *wblock
+                               )
+                   )
+{
 	struct Undo_RelTempoMax *u_rt=talloc_atomic(sizeof(struct Undo_RelTempoMax));
 	u_rt->reltempomax=wblock->reltempomax;
 
@@ -53,13 +55,12 @@ void Undo_RelTempoMax(
                  wblock->curr_realline,
                  u_rt,
                  Undo_Do_RelTempoMax,
-                 "Reltempo max",
-                 LOC()
+                 "Reltempo max"
 	);
 
 }
 
-void *Undo_Do_RelTempoMax(
+static void *Undo_Do_RelTempoMax(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

@@ -134,6 +134,10 @@ void Undo_saved_song(void){
   update_gfx();
 }
 
+bool Undo_Is_Currently_Undoing(void){
+  return currently_undoing;
+}
+
 void ResetUndo(void){
   if (ignore()) {
     R_ASSERT(ignore()==false);
@@ -142,6 +146,7 @@ void ResetUndo(void){
 
   if(currently_undoing){
     RError("Can not call ResetUndo from Undo()\n");
+    return;
   }
 
   memset(&UndoRoot,0,sizeof(struct Undo));
@@ -184,6 +189,23 @@ bool Undo_are_you_shure_questionmark(void){
   }
 
   return true;
+}
+
+static bool g_is_adding_undo = false;
+static source_pos_t g_curr_source_pos;
+
+bool Undo_Currently_Adding_Undo(void){
+  return g_is_adding_undo;
+}
+void Undo_Start_Adding_Undo(source_pos_t source_pos){
+  memcpy(&g_curr_source_pos, &source_pos, sizeof(source_pos_t));
+  R_ASSERT(g_is_adding_undo==false);
+  g_is_adding_undo = true;
+}
+
+void Undo_End_Adding_Undo(void){
+  R_ASSERT(g_is_adding_undo==true);
+  g_is_adding_undo = false;
 }
 
 bool Undo_Is_Open(void){
@@ -369,7 +391,7 @@ static void Undo_Add_internal(
     entry->function=undo_function;
     entry->stop_playing=stop_playing_when_undoing;
     entry->info = talloc_strdup(info);
-    memcpy(&entry->source_pos, &source_pos, sizeof(source_pos_t));
+    memcpy(&entry->source_pos, &g_curr_source_pos, sizeof(source_pos_t));
       
     VECTOR_push_back(&curr_open_undo->entries,entry);
 
@@ -387,10 +409,9 @@ void Undo_Add(
               int realline,
               void *pointer,
               UndoFunction undo_function,
-              const char *info,
-              source_pos_t source_pos
+              const char *info
 ){
-  Undo_Add_internal(windownum,blocknum,tracknum,realline,pointer,undo_function,true,info,source_pos);
+  Undo_Add_internal(windownum,blocknum,tracknum,realline,pointer,undo_function,true,info);
 }
 
 void Undo_Add_dont_stop_playing(
@@ -400,10 +421,9 @@ void Undo_Add_dont_stop_playing(
               int realline,
               void *pointer,
               UndoFunction undo_function,
-              const char *info,
-              source_pos_t source_pos
+              const char *info
 ){
-  Undo_Add_internal(windownum,blocknum,tracknum,realline,pointer,undo_function,false,info,source_pos);
+  Undo_Add_internal(windownum,blocknum,tracknum,realline,pointer,undo_function,false,info);
 }
 
 void Undo_start_ignoring_undo_operations(void){
@@ -427,6 +447,7 @@ void Undo(void){
 
 	if(undo==&UndoRoot) return;
 
+        
 currently_undoing = true;
 
 
@@ -435,6 +456,7 @@ currently_undoing = true;
        {
           int i;
           for(i=undo->entries.num_elements-1 ; i>=0 ; i--){
+            //for(i=0 ; i < undo->entries.num_elements; i++){
 
             struct UndoEntry *entry=undo->entries.elements[i];
 

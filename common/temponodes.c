@@ -131,7 +131,7 @@ struct TempoNodes *AddTempoNode(
 
 	PlaceCopy(&temponode->l.p,p);
 
-        Undo_TempoNodes_CurrPos(window);
+        ADD_UNDO(TempoNodes_CurrPos(window));
 
 	if(ListAddElement3_ns(&block->temponodes,&temponode->l)==-1) {
           Undo_CancelLastUndo();
@@ -172,7 +172,7 @@ void RemoveAllTempoNodesOnReallineCurrPos(struct Tracker_Windows *window){
 
 	PlayStop();
 
-	Undo_TempoNodes_CurrPos(window);
+	ADD_UNDO(TempoNodes_CurrPos(window));
 
 	wtemponode=wblock->wtemponodes[realline];
 

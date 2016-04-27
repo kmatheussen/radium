@@ -65,13 +65,12 @@ static void Undo_PdControllers(
                              wblock->curr_realline,
                              undo_ae,
                              Undo_Do_PdControllers,
-                             "Pd controllers",
-                             LOC()
+                             "Pd controllers"
                              );
 
 }
 
-void Undo_PdControllers_CurrPos(struct Patch *patch){
+void ADD_UNDO_FUNC(PdControllers_CurrPos(struct Patch *patch)){
   struct Tracker_Windows *window = root->song->tracker_windows;
   printf("Undo_PdControllers_CurrPos\n");
   Undo_PdControllers(window,window->wblock, patch);

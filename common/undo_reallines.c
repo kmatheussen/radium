@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_reallines_proc.h"
 
 
-void *Undo_Do_Reallines(
+static void *Undo_Do_Reallines(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -36,12 +36,13 @@ void *Undo_Do_Reallines(
 );
 
 
-void Undo_Reallines(
+void ADD_UNDO_FUNC(Reallines(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	NInt tracknum,
 	int realline
-){
+                             ))
+{
 	struct LocalZooms *tolocalzoom=NULL;
 	CB_CopyLocalZoomsRec(&tolocalzoom,wblock->localzooms);
 
@@ -52,18 +53,19 @@ void Undo_Reallines(
                                    realline,
                                    tolocalzoom,
                                    Undo_Do_Reallines,
-                                   "Reallines (localzooms)",
-                                   LOC()
+                                   "Reallines (localzooms)"
                                    );
 }
 
-void Undo_Reallines_CurrPos(
-	struct Tracker_Windows *window
-){
-	Undo_Reallines(window,window->wblock,window->curr_track,window->wblock->curr_realline);
+void ADD_UNDO_FUNC(Reallines_CurrPos(
+                                     struct Tracker_Windows *window
+                                     )
+                   )
+{
+  CALL_ADD_UNDO_FUNC(Reallines(window,window->wblock,window->curr_track,window->wblock->curr_realline));
 }
 
-void *Undo_Do_Reallines(
+static void *Undo_Do_Reallines(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

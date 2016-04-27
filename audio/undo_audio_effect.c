@@ -68,13 +68,12 @@ static void Undo_AudioEffect(
                              wblock->curr_realline,
                              undo_ae,
                              Undo_Do_AudioEffect,
-                             talloc_format("Undo audio effect %s %d",patch->name, effect_num),
-                             LOC()
+                             talloc_format("Undo audio effect %s %d",patch->name, effect_num)
                              );
 
 }
 
-void Undo_AudioEffect_CurrPos(struct Patch *patch, int effect_num){
+void ADD_UNDO_FUNC(AudioEffect_CurrPos(struct Patch *patch, int effect_num)){
   struct Tracker_Windows *window = root->song->tracker_windows;
   //printf("Undo_AudioEffect_CurrPos\n");
   Undo_AudioEffect(window,window->wblock, patch, effect_num);

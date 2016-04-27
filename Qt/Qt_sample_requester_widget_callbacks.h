@@ -361,7 +361,7 @@ class Sample_requester_widget : public QWidget
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
-    Undo_Sample_CurrPos(_patch);
+    ADD_UNDO(Sample_CurrPos(_patch));
 
     bool successfully_selected;
 
@@ -435,7 +435,7 @@ class Sample_requester_widget : public QWidget
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
-    Undo_Sample_CurrPos(_patch);
+    ADD_UNDO(Sample_CurrPos(_patch));
 
     if(SAMPLER_set_new_sample(plugin,STRING_create(filename),file_list->currentRow()-1)==true){
       if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED){

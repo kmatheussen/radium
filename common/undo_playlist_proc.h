@@ -17,6 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef UNDO_PLAYLIST_PROC_H
 #define UNDO_PLAYLIST_PROC_H
 
-extern LANGSPEC void Undo_Playlist(void);
+extern LANGSPEC void ADD_UNDO_FUNC(Playlist(void));
 
 #endif

@@ -205,7 +205,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 	switch(window->curr_track){
 		case SIGNATURETRACK:
 			if(cb_signature==NULL) return;
-			Undo_Signatures_CurrPos(window);
+			ADD_UNDO(Signatures_CurrPos(window));
 			block->signatures=CB_CopySignatures(cb_signature);
 			CutListAt_a(&block->signatures,&lastplace);
                         UpdateWBlockWidths(window, wblock);
@@ -215,7 +215,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			break;
 		case LPBTRACK:
 			if(cb_lpb==NULL) return;
-			Undo_LPBs_CurrPos(window);
+			ADD_UNDO(LPBs_CurrPos(window));
 			block->lpbs=CB_CopyLPBs(cb_lpb);
 			CutListAt_a(&block->lpbs,&lastplace);
 			UpdateSTimes(block);
@@ -227,7 +227,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			break;
 		case TEMPOTRACK:
 			if(cb_tempo==NULL) return;
-			Undo_Tempos_CurrPos(window);
+			ADD_UNDO(Tempos_CurrPos(window));
 			block->tempos=CB_CopyTempos(cb_tempo);
 			CutListAt_a(&block->tempos,&lastplace);
 			//UpdateWTempos(window,wblock);
@@ -238,7 +238,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			break;
 		case TEMPONODETRACK:
 			if(cb_temponode==NULL) return;
-			Undo_TempoNodes_CurrPos(window);
+			ADD_UNDO(TempoNodes_CurrPos(window));
 			block->temponodes=CB_CopyTempoNodes(cb_temponode);
 			CutListAt_a(&block->temponodes,&lastplace);
 			LegalizeTempoNodes(block);
@@ -250,7 +250,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			break;
 		default:
 			if(cb_wtrack==NULL) return;
-			Undo_Track_CurrPos(window,LOC());
+			ADD_UNDO(Track_CurrPos(window));
 			if(window->curr_track_sub==-1){
 				if(co_CB_PasteTrack(wblock,cb_wtrack,wtrack)){
 #if !USE_OPENGL
