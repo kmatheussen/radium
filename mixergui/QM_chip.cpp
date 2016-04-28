@@ -952,7 +952,15 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
    init_new_plugin();
    
    printf("New Chip. Inputs: %d, Ouptuts: %d\n",_num_inputs,_num_outputs);
- }
+}
+
+void CHIP_create(SoundProducer *sound_producer){
+  Chip *chip = new Chip(&g_mixer_widget->scene, sound_producer, -100000, -100000);
+  double x,y;
+  MW_set_autopos(&x, &y);
+  MW_move_chip_to_slot(chip, x, y);
+  //chip->setPos(x,y);
+}
 
 Chip::~Chip(){
   while(audio_connections.size()>0){
@@ -971,6 +979,12 @@ Chip::~Chip(){
 
   SLIDERPAINTER_delete(_input_slider);
   SLIDERPAINTER_delete(_output_slider);
+}
+
+void CHIP_delete(Patch *patch){
+  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  printf("     Deleting chip %p (%s)\n",chip,CHIP_get_patch(chip)->name);
+  delete chip;
 }
 
 QRectF Chip::boundingRect() const
@@ -1473,7 +1487,7 @@ hash_t *CHIP_get_chip_state_from_patch(struct Patch *patch){
   return CHIP_get_state(chip);
 }
 
-
+// Will be removed. Currently used when loading.
 void CHIP_create_from_state(hash_t *state, Buses buses){
   if (PLAYER_is_running()==false)
     return;
@@ -1497,32 +1511,6 @@ void CHIP_create_from_state(hash_t *state, Buses buses){
     patch->is_usable = false;
     printf("Unable to create chip\n"); // proper error message given elsewhere. (ladspa or vst)
   }
-}
-
-
-
-struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *name, double x, double y, Buses buses){
-  struct SoundPlugin *plugin = PLUGIN_create_from_state(plugin_state);
-  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, NULL);
-
-  if (name==NULL)
-    name = PLUGIN_generate_new_patchname(plugin->type);
-
-  struct Patch *patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, plugin, name);
-  patch->patchdata = plugin;
-  plugin->patch = patch;
-  
-  SoundProducer   *sound_producer = SP_create(plugin, buses);
-    
-  if(x<=-100000)
-    MW_set_autopos(&x, &y);    
-
-  Chip *chip = new Chip(&g_mixer_widget->scene,sound_producer, x, y);
-  printf("Made chip %p\n",chip);
-  
-  MW_move_chip_to_slot(chip, x, y); // unfortunately, this function very often moves the chip to the right unnecessarily.
-
-  return patch;
 }
 
 hash_t *CONNECTION_get_state(SuperConnection *connection){

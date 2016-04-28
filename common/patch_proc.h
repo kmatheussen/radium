@@ -23,12 +23,12 @@ extern LANGSPEC void PATCH_handle_fx_when_theres_a_new_patch_for_track(struct Tr
 extern LANGSPEC void PATCH_reset_time(void);
 extern LANGSPEC void handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch);
 extern LANGSPEC void PATCH_init_voices(struct Patch *patch);
-extern LANGSPEC struct Patch *NewPatchCurrPos(int patchtype, void *patchdata, const char *name);
+extern LANGSPEC bool PATCH_make_active_audio(struct Patch *patch, char *type_name, char *plugin_name, hash_t *state);
+extern LANGSPEC struct Patch *PATCH_create_audio(char *type_name, char *plugin_name, const char *name, hash_t *state);
+extern LANGSPEC struct Patch *PATCH_create_midi(const char *name);
 extern LANGSPEC void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patch);
-extern LANGSPEC void PATCH_delete(struct Patch *patch);
-extern LANGSPEC void PATCH_delete_CurrPos(struct Patch *patch);
-extern LANGSPEC void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks *wtrack, bool use_popup);
-//extern LANGSPEC void SelectPatch(struct Tracker_Windows *window,struct Tracks *track,bool use_popup);
+extern LANGSPEC void PATCH_make_inactive(struct Patch *patch);
+extern LANGSPEC void PATCH_force_make_inactive(struct Patch *patch);
 extern LANGSPEC void PATCH_call_very_often(void);
 extern LANGSPEC void PATCH_init(void);
 

@@ -42,7 +42,7 @@ extern LANGSPEC void MIDICloseInstrument(struct Instruments *instrument);
 //extern LANGSPEC void MIDIstopnote(int notenum,int velocity, const struct Tracks *track,struct Notes *note);
 //extern LANGSPEC void MIDIplaynote(int notenum, int velocity, const struct Tracks *track,struct Notes *note);
 //extern LANGSPEC void MIDIclosePatch(void);
-extern LANGSPEC void MIDI_InitPatch(struct Patch *patch, void *patchdata);
+extern LANGSPEC void MIDI_InitPatch(struct Patch *patch);
 
 extern LANGSPEC void MIDI_init_track(struct Tracks *track);
 

@@ -51,7 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wblocks_proc.h"
 #include "Beats_proc.h"
 #include "clipboard_track_copy_proc.h"
-#include "../Qt/Qt_instruments_proc.h"
+#include "patch_proc.h"
 
 #include "clipboard_track_paste_proc.h"
 
@@ -78,8 +78,10 @@ static bool co_CB_PasteTrackFX(
 	track=wtrack->track;
 
         if (track->patch != NULL) {
-          if (!track->patch->is_usable)
-            track->patch = InstrumentWidget_new_from_preset(track->patch->state, NULL, -100000,-100000,true);
+          if (!track->patch->is_usable) {
+            track->patch = PATCH_create_audio(NULL, NULL, track->patch->name, track->patch->state);
+            //track->patch = InstrumentWidget_new_from_preset(track->patch->state, NULL, -100000,-100000,true);
+          }
           totrack->patch = track->patch;
           R_ASSERT(totrack->patch->patchdata != NULL);
         } else
@@ -183,7 +185,8 @@ bool co_CB_PasteTrack(
 	struct Tracks *track = wtrack->track;
 
         if (track->patch != NULL && !track->patch->is_usable) {
-          track->patch = InstrumentWidget_new_from_preset(track->patch->state, NULL, -100000, -100000, true);
+          track->patch = PATCH_create_audio(NULL, NULL, track->patch->name, track->patch->state);
+          //track->patch = InstrumentWidget_new_from_preset(track->patch->state, NULL, -100000, -100000, true);
           totrack->patch = track->patch;
           R_ASSERT(totrack->patch->patchdata != NULL);
         } else

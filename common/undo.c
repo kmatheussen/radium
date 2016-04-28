@@ -216,7 +216,7 @@ void Undo_Open_rec(void){
   if (ignore()) return;
 
   if(currently_undoing){
-    RError("Can not call Undo_Open from Undo()\n");
+    //RError("Can not call Undo_Open from Undo()\n");
     return;
   }
 
@@ -263,7 +263,7 @@ bool Undo_Close(void){
   if (ignore()) return false;
 
   if(currently_undoing){
-    RError("Can not call Undo_Close from Undo()\n");    
+    //RError("Can not call Undo_Close from Undo()\n");    
     return false;
   }
 
@@ -369,13 +369,12 @@ static void Undo_Add_internal(
               void *pointer,
               UndoFunction undo_function,
               bool stop_playing_when_undoing,
-              const char *info,
-              source_pos_t source_pos
+              const char *info
 ){
   if (ignore()) return;
 
   if(currently_undoing){
-    RError("Can not call Undo_Add from Undo()\n");
+    RError("Can not call Undo_Add from Undo()\n",info);
     return;
   }
 

@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/hashmap_proc.h"
 #include "../common/undo.h"
 #include "../common/player_proc.h"
-#include "../mixergui/undo_chip_addremove_proc.h"
+//#include "../mixergui/undo_chip_addremove_proc.h"
 #include "../mixergui/undo_mixer_connections_proc.h"
 #include "undo_instruments_widget_proc.h"
 #include "../common/undo_patchlist_proc.h"
@@ -394,13 +394,8 @@ static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, s
 static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch){
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   Audio_instrument_widget *instrument = new Audio_instrument_widget(editor->main_window,patch);
-
-  fprintf(stderr,"instrument: %p, patch: %p\n",instrument,patch);
-  if(instrument==NULL){
-    fprintf(stderr,"instrument==NULL\n");
-    return NULL;
-  }
-
+  R_ASSERT_RETURN_IF_FALSE2(instrument!=NULL, NULL);
+  
   instrument->_patch_widget->name_widget->setText(patch->name);
 
   //instruments_widget->tabs->insertTab(instrument, QString::fromLatin1(patch->name), instruments_widget->tabs->count());
@@ -411,12 +406,13 @@ static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *pat
   MW_update_all_chips();
 
   instrument->updateWidgets();
-
+  
   return instrument;
 }
 
-static void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch){
+void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch){
   create_audio_instrument_widget(patch);
+  GFX_PP_Update(patch);  
 }
 
 static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch){
@@ -583,77 +579,6 @@ static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch)
   return NULL;
 }
 
-struct Patch *add_new_audio_instrument_widget2(struct SoundPluginType *plugin_type, double x, double y, const char *name){
-  SoundPlugin *plugin = MW_add_plugin(plugin_type, x, y, MIXER_get_buses()); //<- todo: 1. rename MW_add_plugin2, and do undo things in there. Or maybe simplify add undo.
-  if(plugin==NULL)
-    return NULL;
-
-  struct Patch *patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, plugin, name==NULL ? PLUGIN_generate_new_patchname(plugin_type) : name);
-  
-  ADD_UNDO(Chip_Add_CurrPos(patch)); // Added afterwards. (can not add before when we don't know what to add!)
-  
-  plugin->patch = patch;
-  
-  create_audio_instrument_widget(patch);
-  
-  return patch;
-}
-  
-// * This is the entry point for creating audio instruments.
-// * The entry point for delete any instrument is common/patch.c/PATCH_delete
-//
-// Old version, will be deleted when no longer used
-SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type, double x, double y, bool autoconnect, const char *name, Buses buses){
-  
-  if(plugin_type==NULL) {
-      struct Patch *created_patch_instead = NULL;
-      
-      plugin_type = MW_popup_plugin_selector(name, x, y, autoconnect, &created_patch_instead);
-
-      if (plugin_type==NULL) {
-
-        if (created_patch_instead != NULL)
-          return (struct SoundPlugin*)created_patch_instead->patchdata;
-        else
-          return NULL;
-
-      }
-    }
-    
-
-    SoundPlugin *plugin;
-
-    {
-
-      struct Tracker_Windows *window = root->song->tracker_windows;
-      struct WBlocks *wblock = window->wblock;
-      struct WTracks *wtrack = wblock->wtrack;
-
-      ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline)); // why?
-      ADD_UNDO(Patchlist_CurrPos()); // why?
-      ADD_UNDO(InstrumentsWidget_CurrPos()); // Probably not any point anylonger.
-
-      plugin = MW_add_plugin(plugin_type, x, y, buses);
-      if(plugin==NULL)
-        return NULL;
-
-      struct Patch *patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, plugin, name==NULL ? PLUGIN_generate_new_patchname(plugin_type) : name);
-
-      ADD_UNDO(Chip_Add_CurrPos(patch)); // It works fine to call ADD_UNDO(Chip_Add right after the chip has been created (it's the only way to do it).
-
-      //wtrack->track->patch = patch; // Bang!
-      plugin->patch = patch;
-
-      create_audio_instrument_widget(patch);
-
-      if(autoconnect==true) {
-        ADD_UNDO(MixerConnections_CurrPos());
-        MW_autoconnect_plugin(plugin);
-      }
-    }
-
-    return plugin;
-}
 
 static void update_midi_instrument_widget(MIDI_instrument_widget *instrument, struct Patch *patch){
   struct PatchData *patchdata = (struct PatchData*)patch->patchdata;
@@ -744,8 +669,8 @@ static bool called_from_pp_update = false;
 
 void GFX_PP_Update(struct Patch *patch){
   called_from_pp_update = true;{
-    if(g_currpatch==patch)
-      goto exit;
+    //if(g_currpatch==patch)
+    //  goto exit;
     if(patch==NULL){
 
       //instruments_widget->tabs->showPage(no_instrument_widget);
@@ -770,6 +695,7 @@ void GFX_PP_Update(struct Patch *patch){
     }else if(patch->instrument==get_audio_instrument()){
       Audio_instrument_widget *instrument = get_audio_instrument_widget(patch);
       if(instrument==NULL){
+        fprintf(stderr,"                 WARNING: patch %s didn't have an instrument widget. Creating one now. (Might happen when loading song or starting up. Nothing is wrong if that is the case)\n",patch->name);
         instrument = create_audio_instrument_widget(patch);
         //instrument = get_audio_instrument_widget(patch);
       }
@@ -788,7 +714,9 @@ void GFX_PP_Update(struct Patch *patch){
     g_currpatch = patch;
 
 
-  }exit: called_from_pp_update = false;
+  }
+  //exit:
+  called_from_pp_update = false;
 }
 
 
@@ -820,6 +748,14 @@ QString request_load_preset_filename(void){
   return filename;
 }
 
+const char *request_load_preset_encoded_filename(void){
+  QString filename = request_load_preset_filename();
+  if (filename=="")
+    return NULL;
+
+  return STRING_get_chars(STRING_toBase64(STRING_create(filename))); // Converting to base64 to avoid having to worry about utf8 conversion problems in filenames.
+}
+  
 static hash_t *get_preset_state_from_filename(QString filename){
   last_preset_path = QFileInfo(filename).absoluteDir().path();
   
@@ -850,162 +786,13 @@ static hash_t *get_preset_state_from_filename(QString filename){
   return state;
 }
 
-static hash_t *load_preset_state(void){
+void InstrumentWidget_set_last_used_preset_filename(const wchar_t *wfilename){
+  QString filename = STRING_get_qstring(wfilename);
   
-  QString filename = request_load_preset_filename();
-  
-  if(filename=="")
-    return NULL;
-
-  return get_preset_state_from_filename(filename);
+  last_preset_path = QFileInfo(filename).absoluteDir().path();
+  last_filename = QFileInfo(filename).baseName();
 }
 
-
-static struct Patch *M_InstrumentWidget_new_from_preset(hash_t *state, const char *name, double x, double y){
-  struct Patch *patch = CHIP_create_from_plugin_state(state, name, x, y, MIXER_get_buses());
-  
-  if (patch!=NULL){
-    R_ASSERT(patch->patchdata != NULL);
-
-    create_audio_instrument_widget(patch);
-  }
-
-  return patch;
-}
-
-
-struct Patch *InstrumentWidget_new_from_preset2(wchar_t *filename, const char *name, double x, double y){
-  if (filename==NULL)
-    return NULL;
-  
-  hash_t *state = get_preset_state_from_filename(STRING_get_qstring(filename));
-  if (state == NULL)
-    return NULL;
-
-  if (name==NULL)
-    name = talloc_strdup(last_filename.toUtf8().constData());
-  
-  struct Patch *patch = M_InstrumentWidget_new_from_preset(state, name, x, y);
-
-  if (patch != NULL)
-    ADD_UNDO(Chip_Add_CurrPos(patch)); // It works fine to call ADD_UNDO(Chip_Add right after the chip has been created. (except that it's not very logical)
-  
-  return patch;
-}
-
-// Old version, will be deleted when no longer used
-struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, double x, double y, bool autoconnect){
-  if (state==NULL) {
-    state = load_preset_state();
-    if (state != NULL && name==NULL)
-      name = talloc_strdup(last_filename.toUtf8().constData());      
-  }
-  
-  if (state == NULL)
-    return NULL;
-
-  //ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));      
-  ADD_UNDO(Patchlist_CurrPos());
-  ADD_UNDO(InstrumentsWidget_CurrPos());
-  ADD_UNDO(MixerConnections_CurrPos());
-  
-  struct Patch *patch = M_InstrumentWidget_new_from_preset(state, name, x, y);
-
-  if (patch != NULL){
-    if (autoconnect) {
-      struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-      MW_autoconnect_plugin(plugin);
-    }
-
-    ADD_UNDO(Chip_Add_CurrPos(patch)); // It works fine to call ADD_UNDO(Chip_Add right after the chip has been created. (except that it's not very logical)
-  }
-  
-  return patch;
-}
-
-#if 0
-void InstrumentWidget_replace_old(struct Patch *old_patch){
-  SoundPluginType *plugin_type = MW_popup_plugin_selector(NULL, 200, 200, false);
-  if (plugin_type==NULL)
-    return;
-
-  struct Patch *new_patch = NULL;
-  SoundPlugin *new_plugin = NULL;
-  
-  Undo_Open();{
-
-    //SoundPlugin *new_plugin = PLUGIN_create(plugin_type, NULL);
-    //SoundPlugin *new_plugin = MW_add_plugin(plugin_type, 0,0);
-    new_plugin = add_new_audio_instrument_widget(plugin_type, 0, 0, false, NULL, MIXER_get_buses());
-    if (new_plugin != NULL) {
-  
-      new_patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, new_plugin, PLUGIN_generate_new_patchname(plugin_type));
-      if (new_patch==NULL){
-        RError("new_patch!=NULL");
-      } else {
-        SoundPlugin *old_plugin = (SoundPlugin*)old_patch->patchdata;
-        PLUGIN_set_from_patch(old_plugin, new_patch);
-      }
-    }
-    
-  }Undo_Close();
-        
-
-  if (new_plugin==NULL)
-    Undo_CancelLastUndo();
-  else 
-    GFX_update_instrument_widget(new_patch);
-}
-#endif
-
-static void replace(struct Patch *old_patch, hash_t *state){
-  SoundPlugin *old_plugin = (SoundPlugin*)old_patch->patchdata;
-  SoundPlugin *new_plugin = NULL;
-  
-  Undo_Open();{
-    new_plugin = PLUGIN_set_from_state(old_plugin, state);
-  }Undo_Close();
-
-  if (new_plugin==NULL)
-    Undo_CancelLastUndo();
-  else {
-    volatile struct Patch *new_patch = new_plugin->patch;
-    R_ASSERT_RETURN_IF_FALSE(new_patch!=NULL);
-
-    GFX_update_instrument_widget((struct Patch*)new_patch);
-  }
-}
-
-void InstrumentWidget_replace(struct Patch *old_patch){
-  if(AUDIO_is_permanent_patch(old_patch)==true){
-    GFX_Message(NULL,"Can not replace this one");
-    return;
-  }
-
-  SoundPluginType *plugin_type = MW_popup_plugin_selector(NULL, 200, 200, false, NULL);
-  if (plugin_type==NULL)
-    return;
-
-  SoundPlugin *plugin = PLUGIN_create(plugin_type, NULL);
-  hash_t *state = PLUGIN_get_state(plugin);
-
-  PLUGIN_delete(plugin); // not ideally to temporarily create a plugin, but alternative seems quite horrific, unfortunately. (Note that this is not dangerous, we only briefly create a plugin in order to harvest a state from it.)
-    
-  replace(old_patch, state);
-}
-
-void InstrumentWidget_load_preset(struct Patch *old_patch){
-  if(AUDIO_is_permanent_patch(old_patch)==true){
-    GFX_Message(NULL,"Can not load preset on this one");
-    return;
-  }
-
-  hash_t *state = load_preset_state();
-  if (state==NULL)
-    return;
-
-  replace(old_patch, state);
-}
 
 void InstrumentWidget_save_preset(struct Patch *patch){
 
@@ -1090,47 +877,6 @@ void InstrumentWidget_delete(struct Patch *patch){
 
 }
 
-// old version, will be deleted (
-void InstrumentWidget_remove_patch(struct Patch *patch){
-  QStackedWidget* tabs = instruments_widget->tabs;
-
-  ADD_UNDO(InstrumentsWidget_CurrPos());
-
-  MIDI_instrument_widget *w1 = get_midi_instrument_widget(patch);
-  if(w1!=NULL){
-    tabs->removeWidget(w1); // Undo is storing the tab widget, so we can't delete it.
-    return;
-  }
-
-  Audio_instrument_widget *w2 = get_audio_instrument_widget(patch);
-  if(w2==NULL){
-    RError("No such patch widget: %p\n",patch);
-    return;
-  } else {
-    w2->prepare_for_deletion(); // <- We can't delete the widget (for various spaghetti reasons), so we do this instead.
-    tabs->removeWidget(w2);  // Undo is storing the tab widget, so we can't delete it.
-    //delete w2;
-  }
-
-}
-
-void InstrumentWidget_update(struct Patch *patch){
-  InstrumentWidget_remove_patch(patch);
-  InstrumentWidget_create_audio_instrument_widget(patch);
-}
-
-void GFX_remove_patch_gui(struct Patch *patch){
-  InstrumentWidget_remove_patch(patch);
-
-  if (patch->instrument==get_audio_instrument()) {
-    
-    SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
-    MW_delete_plugin(plugin);
-
-    MW_update_all_chips();
-      
-  }
-}
 
 void GFX_update_instrument_patch_gui(struct Patch *patch){
   printf("Called GFX_update_instrument_patch_gui for patch \"%s\"\n",patch==NULL?"<>":patch->name);
@@ -1218,21 +964,6 @@ static void tab_selected(){
   }
 }
 #endif
-
-void close_all_instrument_widgets(void){
-  QStackedWidget* tabs = instruments_widget->tabs;
-
-  while(tabs->count()>0){
-    //if(dynamic_cast<No_instrument_widget*>(tabs->page(0)))
-    //  tabs->removeTab(1);
-    //else
-    tabs->removeWidget(tabs->widget(0));
-  }
-
-  MW_update_all_chips();
-
-  //ResetUndo();
-}
 
 struct Patch *get_current_instruments_gui_patch(void){
   if(instruments_widget==NULL || instruments_widget->tabs==NULL)

@@ -57,7 +57,7 @@ DC_start("SONG");
 	SavePlayList(song->playlist,song->length);
 
 	SaveInstrument(get_MIDI_instrument());
-	SaveInstrument(get_audio_instrument()); //TODO.
+	SaveInstrument(get_audio_instrument());
 
         // Patchdata for audio patches are saved here, not in disk_patches.
         DC_start("MIXERWIDGET");{
@@ -85,6 +85,8 @@ struct Song *LoadSong(void){
 	};
 	struct Song *song=DC_alloc(sizeof(struct Song));
 
+        MW_cleanup();
+        
         VECTOR_clean(&get_MIDI_instrument()->patches);
         VECTOR_clean(&get_audio_instrument()->patches);
 

@@ -27,15 +27,13 @@ extern LANGSPEC void recreate_instrument_widget_order_from_state(hash_t *state);
 extern QString request_load_preset_filename(void);
 #endif
 
-extern LANGSPEC struct Patch *InstrumentWidget_new_from_preset2(wchar_t *filename, const char *name, double x, double y);
-extern LANGSPEC struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, double x, double y, bool autoconnect); // A file requester will pop up if state is NULL.
-extern LANGSPEC void InstrumentWidget_replace(struct Patch *patch);
-extern LANGSPEC void InstrumentWidget_load_preset(struct Patch *patch);
+extern LANGSPEC const char *request_load_preset_encoded_filename(void);
+
+extern LANGSPEC void InstrumentWidget_set_last_used_preset_filename(const wchar_t *wfilename);
+  
 extern LANGSPEC void InstrumentWidget_save_preset(struct Patch *patch);
 
-//extern LANGSPEC void InstrumentWidget_remove_patch(struct Patch *patch);
 extern LANGSPEC void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch);
-extern LANGSPEC void InstrumentWidget_update(struct Patch *patch);
 extern LANGSPEC void InstrumentWidget_delete(struct Patch *patch);
 
 extern LANGSPEC void InstrumentWidget_prepare_for_deletion(struct Patch *patch);
@@ -45,10 +43,6 @@ extern LANGSPEC void GFX_update_current_instrument_widget(void);
 struct SoundPlugin;
 struct SoundPluginType;
 struct SoundProducer;
-
-extern LANGSPEC struct Patch *add_new_audio_instrument_widget2(struct SoundPluginType *plugin_type, double x, double y, const char *name);
-extern LANGSPEC struct SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type, double x, double y, bool autoconnect, const char *name, Buses buses);
-extern LANGSPEC void close_all_instrument_widgets(void);
 
 extern LANGSPEC struct Patch *get_current_instruments_gui_patch(void);
 

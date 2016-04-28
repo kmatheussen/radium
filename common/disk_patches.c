@@ -248,7 +248,7 @@ var5:
 
 obj0:
         is_MIDI_instrument = true;
-        MIDI_InitPatch(patch, NULL);
+        MIDI_InitPatch(patch);
         //printf("---Load MIDI Patch Data: %p\n",patch->patchdata);
 	LoadMIDIPatchData(patch->patchdata);
         //printf("---Finished Load MIDI Patch Data\n");
@@ -286,7 +286,8 @@ error:
 end:
 
         if(is_MIDI_instrument==false)
-          AUDIO_InitPatch(patch,NULL);
+          //PATCH_create_audio("Sample Player", "Sample Player", name, NULL);
+          AUDIO_set_patch_attributes(patch,NULL);
 
 
         if(patch->colornum==0)

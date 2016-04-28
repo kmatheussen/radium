@@ -78,13 +78,14 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
     while(true){
       vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
-      VECTOR_push_back(&v, "Select plugin file");
-      VECTOR_push_back(&v, "Use different plugin");
-      VECTOR_push_back(&v, "Replace with pipe");
-
+      int select_plugin_file = VECTOR_push_back(&v, "Select plugin file");
+      int use_different_plugin = VECTOR_push_back(&v, "Use different plugin");
+      int replace_with_pipe = VECTOR_push_back(&v, "Replace with pipe");
+      (void)replace_with_pipe; // default
+      
       int ret = GFX_Message(&v, ("VST Plugin " + QString(plugin_name) + " not found.").toUtf8().constData());
 
-      if (ret==0) {
+      if (ret==select_plugin_file) {
         QString filename = QFileDialog::getOpenFileName(NULL,
                                                         plugin_name,
                                                         QString(),
@@ -102,8 +103,8 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
         PR_init_plugin_types();
         return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
         //}
-      } else if (ret==1) {
-        SoundPluginType *plugintype = MW_popup_plugin_selector(NULL, 0, 0, false, NULL);
+      } else if (ret==use_different_plugin) {
+        SoundPluginType *plugintype = MW_popup_plugin_type_selector();
         if (plugintype==NULL)
           break;
         else

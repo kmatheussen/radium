@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo.h"
 #include "../common/undo_tracks_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "../midi/midi_i_plugin.h"
 #include "../midi/midi_i_plugin_proc.h"
 #include "../midi/midi_i_input_proc.h"
@@ -36,11 +38,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPluginRegistry_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../audio/Sampler_plugin_proc.h"
+#include "../audio/audio_instrument_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../mixergui/QM_chip.h"
 #include "../mixergui/undo_chip_position_proc.h"
-#include "../mixergui/undo_chip_addremove_proc.h"
+//#include "../mixergui/undo_chip_addremove_proc.h"
 #include "../mixergui/undo_mixer_connections_proc.h"
 #include "../mixergui/undo_mixer_proc.h"
 
@@ -58,24 +61,16 @@ extern struct Root *root;
 // (TODO: detect this automatically.)
 
 
-void selectPatchForTrack(int tracknum,int blocknum,int windownum){
-  struct Tracker_Windows *window=NULL;
-  struct WTracks *wtrack;
-  struct WBlocks *wblock;
+void selectInstrumentForTrack(int tracknum){
+  s7extra_callFunc2_void_int("select-track-instrument", tracknum);
+}
 
-  wtrack=getWTrackFromNumA(
-	windownum,
-	&window,
-	blocknum,
-	&wblock,
-	tracknum
-	);
+void replaceInstrument(int instrument_id, const_char* instrument_description){
+  s7extra_callFunc2_void_int_charpointer("replace-instrument", instrument_id, instrument_description);
+}
 
-  if(wtrack==NULL) return;
-
-  PATCH_select_patch_for_track(window,wtrack,false);
-
-  window->must_redraw = true;
+void loadInstrumentPreset(int instrument_id, const_char* instrument_description){
+  s7extra_callFunc2_void_int_charpointer("load-instrument-preset", instrument_id, instrument_description);
 }
 
 int getInstrumentForTrack(int tracknum, int blocknum, int windownum){
@@ -96,7 +91,7 @@ int getInstrumentForTrack(int tracknum, int blocknum, int windownum){
   struct Patch *patch = wtrack->track->patch;
 
   if (patch==NULL)
-    return -1;
+    return -2;
 
   return patch->id;
 }
@@ -142,45 +137,69 @@ void setInstrumentForTrack(int instrument_id, int tracknum, int blocknum, int wi
 }
 
 int createMIDIInstrument(char *name) {
-  struct Patch *patch = NewPatchCurrPos(MIDI_INSTRUMENT_TYPE, NULL, name);
+  struct Patch *patch = PATCH_create_midi(name);
   GFX_PP_Update(patch);
   return patch->id;
 }
 
+// There was a good reason for the 'name' parameter. Think it had something to do with replace instrument, and whether to use old name or autogenerate new one.
 int createAudioInstrument(char *type_name, char *plugin_name, char *name) {
-  SoundPluginType *type = PR_get_plugin_type_by_name(NULL, type_name, plugin_name);
-  if (type==NULL){
-    GFX_Message(NULL, "Audio plugin %s / %s not found", type_name, plugin_name);
-    return -1;
-  }
-
   if (name!=NULL && strlen(name)==0)
     name = NULL;
 
-  struct Patch *patch = add_new_audio_instrument_widget2(type,-100000,-100000,name);
-  /*
-  SoundPlugin *plugin = add_new_audio_instrument_widget(type,-100000,-100000,false,name,MIXER_get_buses());
-  SoundPlugin *plugin = add_new_audio_instrument_widget(type,-100000,-100000,false,name,MIXER_get_buses());
-  if (plugin==NULL)
+  struct Patch *patch = PATCH_create_audio(type_name, plugin_name, name, NULL);
+  if (patch==NULL)
     return -1;
 
-  struct Patch *patch = (struct Patch*)plugin->patch;
-  */
+  return patch->id;
+}
 
-  if (patch==NULL) {
-    GFX_Message(NULL, "Failed to create plugin %s: %s",type_name,plugin_name);
-    return -1;
+static hash_t *get_preset_state_from_filename(const wchar_t *filename){
+  //last_preset_path = QFileInfo(filename).absoluteDir().path();
+  
+  disk_t *file = DISK_open_for_reading(filename);
+  if(file==NULL){
+    GFX_Message(NULL, "Could not open file.");
+    return NULL;
   }
 
-  GFX_PP_Update(patch);
+  hash_t *state = HASH_load(file);
+  DISK_close_and_delete(file);
+
+  if(state==NULL){
+    GFX_Message(NULL, "File does not appear to be a valid effects settings file");
+    return NULL;
+  }
+
+  //last_filename = QFileInfo(filename).baseName();
+
+  return state;
+}
+
+static int createAudioInstrumentFromPreset2(const wchar_t *filename, char *name) {
+  if (name!=NULL && strlen(name)==0)
+    name = NULL;
+
+  hash_t *state = get_preset_state_from_filename(filename);
+
+  InstrumentWidget_set_last_used_preset_filename(filename);
+  
+  struct Patch *patch = PATCH_create_audio(NULL, NULL, name, state);
+  if (patch==NULL)
+    return -1;
+
   return patch->id;
+}
+
+int createAudioInstrumentFromPreset(const char *filename, char *name) {
+  return createAudioInstrumentFromPreset2(STRING_create(filename), name);
 }
 
 int createAudioInstrumentFromDescription(const char *instrument_description, char *name){
   if (strlen(instrument_description)==0)
     return -1;
 
-  if (strlen(name)==0)
+  if (name!=NULL && strlen(name)==0)
     name = NULL;
 
   if (instrument_description[0]=='1'){
@@ -203,15 +222,26 @@ int createAudioInstrumentFromDescription(const char *instrument_description, cha
     wchar_t *filename = STRING_fromBase64(STRING_create(&instrument_description[1]));
     //printf("filename: %s\n",filename);
 
-    struct Patch *patch = InstrumentWidget_new_from_preset2(filename, name, -100000, -100000);
-    if (patch==NULL)
-      return -1;
-    
-    return patch->id;
+    return createAudioInstrumentFromPreset2(filename, name);
   }
 
   GFX_Message(NULL, "Illegal instrument_description: %s (string doesn't start with '1' or '2')",instrument_description);
   return -1;  
+}
+
+int cloneAudioInstrument(int instrument_id){
+  struct Patch *old_patch = getAudioPatchFromNum(instrument_id);
+  if(old_patch==NULL)
+    return -1;
+  
+  SoundPlugin *old_plugin = (struct SoundPlugin*)old_patch->patchdata;
+  hash_t *state = PLUGIN_get_state(old_plugin);
+
+  struct Patch *new_patch = PATCH_create_audio(NULL, NULL, talloc_format("Clone of %s",old_patch->name), state);
+  if (new_patch==NULL)
+    return -1;
+
+  return new_patch->id;
 }
 
 void connectAudioInstrumentToMainPipe(int instrument_id){
@@ -226,7 +256,11 @@ void connectAudioInstrumentToMainPipe(int instrument_id){
 const_char* instrumentDescriptionPopupMenu(void){
   return MW_popup_plugin_selector2();
 }
-  
+
+const_char* requestLoadPresetInstrumentDescription(void){
+  return MW_request_load_preset_instrument_description();
+}
+
 int getNumInstrumentEffects(int instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -248,6 +282,14 @@ const_char* getInstrumentEffectName(int effect_num, int instrument_id){
   }
     
   return talloc_strdup(elements->elements[effect_num]);
+}
+
+bool hasPureData(void){
+#if WITH_PD
+  return true;
+#else
+  return false;
+#endif
 }
 
 void setInstrumentSample(int instrument_id, char *filename){
@@ -293,14 +335,23 @@ char *getInstrumentName(int instrument_id) {
   return (char*)patch->name;
 }
 
-void setInstrumentName(int instrument_id, char *name) {
+void setInstrumentName(char *name, int instrument_id) {
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
 
   patch->name = talloc_strdup(name);
-
+  patch->name_is_edited = true;
+  
   (*patch->instrument->PP_Update)(patch->instrument,patch);
+}
+
+bool instrumentNameWasAutogenerated(int instrument_id){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  return !patch->name_is_edited;
 }
 
 void setInstrumentEffect(int instrument_id, char *effect_name, float value){
@@ -366,6 +417,18 @@ int getAudioInstrumentId(int instrument_num){
   struct Patch *patch = get_audio_instrument()->patches.elements[instrument_num];
   return patch->id;
 }
+
+bool instrumentIsPermanent(int instrument_id){  
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  if (patch->instrument == get_audio_instrument())
+    return AUDIO_is_permanent_patch(patch);
+  else
+    return true; // Can not delete midi instruments.
+}
+
 
 // Mixer GUI
 float getInstrumentX(int instrument_id){

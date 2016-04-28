@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../mixergui/QM_chip.h"
 #include "../mixergui/QM_MixerWidget.h"
-#include "../mixergui/undo_chip_addremove_proc.h"
 #include "../mixergui/undo_mixer_proc.h"
 #include "../Qt/Qt_instruments_proc.h"
 #include "../Qt/undo_instruments_widget_proc.h"
@@ -1195,80 +1194,7 @@ char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type){
   return talloc_format("%s %d",plugin_type->name,++plugin_type->instance_num);    
 }
 
-
-void PLUGIN_set_from_patch(SoundPlugin *old_plugin, struct Patch *new_patch){
-  struct Patch *old_patch = (struct Patch*)old_plugin->patch;
-  R_ASSERT_RETURN_IF_FALSE(old_patch!=NULL);
-
-  CHIP_set_pos(new_patch, CHIP_get_pos_x(old_patch), CHIP_get_pos_y(old_patch)); // Hack. MW_move_chip_to_slot (called from Chip::Chip) sometimes kicks the chip one or to slots to the left.
-  
-  hash_t *connections_state = MW_get_connections_state();
-    
-  PATCH_replace_patch_in_song(old_patch, new_patch);
-  PATCH_delete(old_patch);
-    
-  MW_create_connections_from_state_and_replace_patch(connections_state, old_patch->id, new_patch->id);
-}
-
-
-
-SoundPlugin *PLUGIN_set_from_state(SoundPlugin *old_plugin, hash_t *state){
-
-  R_ASSERT(Undo_Is_Open());
-    
-  volatile struct Patch *patch = old_plugin->patch;
-  if (patch==NULL) {
-    RError("patch not found for old plugin");
-    return NULL;
-  }
-
-  bool can_replace_patch = true;
-  
-  if (HASH_has_key(state, "___radium_plugin_state_v3")==false)  // Before 3.0.rc15, loading/saving states in the instrument widgets only loaded/saved the effect values, not the complete plugin state.
-    can_replace_patch = false;
-  
-  else if(AUDIO_is_permanent_patch((struct Patch*)patch)) {
-    state = HASH_get_hash(state, "effects");
-    R_ASSERT(state!=NULL);
-    can_replace_patch = false;
-  }
-        
-
-  
-  if (can_replace_patch==false) { 
-    for(int i=0;i<old_plugin->type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-      ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, i));
-    
-    PLUGIN_set_effects_from_state(old_plugin, state);
-
-    return old_plugin;
-  }
-
-  struct Patch *old_patch = (struct Patch*)old_plugin->patch;
-  R_ASSERT_RETURN_IF_FALSE2(old_patch!=NULL, NULL);
-
-  struct Patch *new_patch = InstrumentWidget_new_from_preset(state, old_patch->name, CHIP_get_pos_x(old_patch), CHIP_get_pos_y(old_patch), false);
-
-  if (new_patch!=NULL) {
-    
-    PLUGIN_set_from_patch(old_plugin, new_patch);
-    
-    SoundPlugin *new_plugin = (SoundPlugin*)new_patch->patchdata;
-    
-    if (!old_patch->name_is_edited)
-      new_patch->name = PLUGIN_generate_new_patchname(new_plugin->type);
-
-    new_patch->name_is_edited = old_patch->name_is_edited;
-    
-    return new_plugin;
-    
-  } else {
-    
-    return NULL;
-    
-  }
-}
-
+ 
 
 void PLUGIN_reset(SoundPlugin *plugin){
   const SoundPluginType *type = plugin->type;

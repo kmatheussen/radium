@@ -123,7 +123,7 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
 }
 
 int GFX_ShutDownVisual(struct Tracker_Windows *tvisual){
-  close_all_instrument_widgets();
+  //close_all_instrument_widgets();
   return 0;
 }
 
@@ -759,5 +759,4 @@ void GFX_enable_mouse_keyboard(void){
 
 
 #endif // USE_QT_VISUAL
-
 

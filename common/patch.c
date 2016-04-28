@@ -32,12 +32,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo.h"
 #include "undo_tracks_proc.h"
 #include "undo_patchlist_proc.h"
+#include "undo_audio_patch_addremove_proc.h"
 #include "windows_proc.h"
 #include "notes_proc.h"
 #include "../api/api_common_proc.h"
 #include "../midi/midi_i_plugin_proc.h"
 #include "../audio/audio_instrument_proc.h"
-#include "../mixergui/undo_chip_addremove_proc.h"
+
+//#include "../mixergui/undo_chip_addremove_proc.h"
 #include "../mixergui/undo_mixer_connections_proc.h"
 
 #include "../audio/SoundPlugin.h"
@@ -67,8 +69,11 @@ static vector_t *get_all_patches(void){
 }
 
 int PATCH_get_new_id(void){
+  static int id = 0;
+  id++;
+  
+  // When we load a song, the songs also contains patch id number, so we need to check that the id is not already used.
   vector_t *v=get_all_patches();
-  int id=0;
   int i;
   for(i=0;i<v->num_elements;i++){
     struct Patch *patch=v->elements[i];
@@ -99,25 +104,19 @@ void PATCH_reset_time(void){
 void handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
   R_ASSERT(PLAYER_current_thread_has_lock());
   
-  // 1. Do instrument specific changes
-  if(old_patch==NULL || new_patch==NULL)
+  if(old_patch==NULL || new_patch==NULL) {
     track->fxs = NULL;
-  else if(old_patch->instrument == new_patch->instrument)
-    old_patch->instrument->handle_fx_when_theres_a_new_patch_for_track(track,old_patch,new_patch);
-  else
-    track->fxs = NULL;
-
-  // 2. Update fx->patch value
-  struct FXs *fxs = track->fxs;
-  if (fxs != NULL) {
-    while(fxs!=NULL){
-      struct FX *fx = fxs->fx;
-      fx->patch = new_patch;
-      fxs = NextFX(fxs);
-    }
+    return;
   }
 
+  if (old_patch->instrument != new_patch->instrument) {
+    track->fxs = NULL;
+    return;
+  }
+  
+  old_patch->instrument->handle_fx_when_theres_a_new_patch_for_track(track,old_patch,new_patch);
 }
+
 
 void PATCH_init_voices(struct Patch *patch){
   patch->voices[0].is_on=true;
@@ -136,74 +135,60 @@ void PATCH_init_voices(struct Patch *patch){
   patch->voices[5].time_format = TIME_IN_MS;
 }
 
-static struct Patch *PATCH_create(int instrumenttype, void *patchdata, const char *name){
+static struct Patch *create_new_patch(const char *name){
   struct Patch *patch = talloc(sizeof(struct Patch));
   patch->id = PATCH_get_new_id();
-  patch->is_usable = true;
   patch->forward_events = true;
 
-  patch->name = talloc_strdup(name);
+  patch->name = name==NULL ? "" : talloc_strdup(name);
   patch->colornum = GFX_MakeRandomCustomColor(-1);
 
   PATCH_init_voices(patch);
 
-  if(instrumenttype==MIDI_INSTRUMENT_TYPE){
-    MIDI_InitPatch(patch, patchdata);
-  }else if(instrumenttype==AUDIO_INSTRUMENT_TYPE){
-    AUDIO_InitPatch(patch, patchdata);
-  }else{
-    fprintf(stderr,"Unkown instrumenttype %d\n",instrumenttype);
-    abort();
+  return patch;
+}
+
+bool PATCH_make_active_audio(struct Patch *patch, char *type_name, char *plugin_name, hash_t *state) {
+  R_ASSERT_RETURN_IF_FALSE2(patch->instrument==get_audio_instrument(),false);
+
+  if (VECTOR_is_in_vector(&patch->instrument->patches,patch)){
+    RError("Patch %s is already active",patch->name);
+    return true;
   }
   
+  if (AUDIO_InitPatch2(patch, type_name, plugin_name, state)==false)
+    return false;
+
+  ADD_UNDO(Audio_Patch_Add_CurrPos(patch));
+
+  VECTOR_push_back(&patch->instrument->patches,patch);
+
+  return true;
+}
+
+struct Patch *PATCH_create_audio(char *type_name, char *plugin_name, const char *name, hash_t *state) {
+  struct Patch *patch = create_new_patch(name);
+
+  patch->instrument=get_audio_instrument();
+
+  if (PATCH_make_active_audio(patch, type_name, plugin_name, state)==false)
+    return NULL;
+  
+  return patch;
+}
+
+struct Patch *PATCH_create_midi(const char *name){
+  struct Patch *patch = create_new_patch(name);
+  
+  MIDI_InitPatch(patch);
+
   VECTOR_push_back(&patch->instrument->patches,patch);
 
   return patch;
 }
 
-struct Patch *NewPatchCurrPos(int instrumenttype, void *patchdata, const char *name){
-  return PATCH_create(instrumenttype, patchdata, name);
-}
-
-/*
-struct Patch *NewPatchCurrPos_set_track(int instrumenttype, void *patchdata, const char *name){
-  struct Tracker_Windows *window=NULL;
-  struct WTracks *wtrack;
-  struct WBlocks *wblock;
-
-  wtrack=getWTrackFromNumA(
-                           -1,
-                           &window,
-                           -1,
-                           &wblock,
-                           -1
-                           );
-
-  if(wtrack==NULL)
-    return NULL;
-
-  {
-    struct Patch *patch=PATCH_create(instrumenttype, patchdata, name);
-
-    {
-      ADD_UNDO(Track_CurrPos(window));
-      handle_fx_when_theres_a_new_patch_for_track(wtrack->track,wtrack->track->patch,patch);
-      wtrack->track->patch = patch;
-    }
-
-#if !USE_OPENGL
-    UpdateFXNodeLines(window,wblock,wtrack);
-#endif
-    window->must_redraw = true;
-
-    return patch;
-  }
-
-}
-*/
-
 void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patch){
-  R_ASSERT_RETURN_IF_FALSE(Undo_Is_Open());
+  R_ASSERT_RETURN_IF_FALSE(Undo_Is_Open() || Undo_Is_Currently_Undoing());
 
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblocks;
@@ -236,185 +221,46 @@ static void remove_patch_from_song(struct Patch *patch){
 }
 
 
-void PATCH_delete(struct Patch *patch){
+static void make_inactive(struct Patch *patch, bool force_removal){
 
-  R_ASSERT(Undo_Is_Open());
-
-  if(patch->instrument==get_audio_instrument())
-    if(AUDIO_is_permanent_patch(patch)==true){
-      GFX_Message(NULL,"Can not be deleted");
-      return;
-    }
-
-  remove_patch_from_song(patch);
-
-  if(patch->instrument==get_audio_instrument()){
-    ADD_UNDO(MixerConnections_CurrPos());
-    ADD_UNDO(Chip_Remove_CurrPos(patch));
+  R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Undoing());
+  
+  if (!VECTOR_is_in_vector(&patch->instrument->patches,patch)){
+    RError("Patch %s is already inactive",patch->name);
+    return;
   }
 
-  GFX_remove_patch_gui(patch);
+  if(patch->instrument!=get_audio_instrument()){
+    GFX_Message(NULL, "Not possible to delete MIDI instrument");
+    return;
+  }
 
+  if(force_removal==false && AUDIO_is_permanent_patch(patch)==true){
+    GFX_Message(NULL,"Can not be deleted");
+    return;
+  }
+  
+  remove_patch_from_song(patch);
+
+  hash_t *audio_patch_state = AUDIO_get_patch_state(patch); // The state is unavailable after calling remove_patch().
+  
   patch->instrument->remove_patch(patch);
 
-  ADD_UNDO(Patchlist_CurrPos());
+  ADD_UNDO(Audio_Patch_Remove_CurrPos(patch, audio_patch_state)); // Must be called last, if not the undo/redo order will be wrong.
+
+  //Undo_Patchlist_CurrPos(LOC());
   VECTOR_remove(&patch->instrument->patches,patch);
 }
 
-void PATCH_delete_CurrPos(struct Patch *patch){
-
-  Undo_Open();{
-    
-    PATCH_delete(patch);
-
-  }Undo_Close();
-
-  root->song->tracker_windows->must_redraw=true;
-  //DrawUpTrackerWindow(root->song->tracker_windows);
+void PATCH_make_inactive(struct Patch *patch){
+  make_inactive(patch, false);
 }
 
-                   
-
-void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks *wtrack, bool use_popup){
-  ReqType reqtype;
-
-  vector_t *patches=get_all_patches();
-
-  NInt num_patches=patches->num_elements;
-
-  if(num_patches==0)
-    return;
-
-  if(use_popup==true)
-    reqtype=NULL;
-  else
-    reqtype=GFX_OpenReq(window,70,(int)(num_patches+50),"Select Patch");
-
-  vector_t v={0};
-  int new_midi_instrument = VECTOR_push_back(&v,"<New MIDI Instrument>");
-  int new_sample_player = VECTOR_push_back(&v,"<New Sample Player>");
-  int new_fluid_synth = VECTOR_push_back(&v,"<New FluidSynth>");
-#ifdef WITH_PD
-  int new_pd_instrument = VECTOR_push_back(&v,"<New Pd Instrument>");
-#else
-  int new_pd_instrument = -1000;
-#endif
-  int new_audio_instrument = VECTOR_push_back(&v,"<New Audio Instrument>");
-  int load_preset = VECTOR_push_back(&v,"<Load New Preset>");
-
-  VECTOR_push_back(&v,"----------");
-
-  VECTOR_push_back(&v,"[submenu start]Copy Audio Instrument");
-  int start_copy_patch = v.num_elements;
-  int copy_patch_vector[patches->num_elements];
-  {
-    int i=0;
-    VECTOR_FOR_EACH(struct Patch *patch,patches){
-      if (patch->instrument==get_audio_instrument()) {
-        if(AUDIO_is_permanent_patch(patch)==false){
-          VECTOR_push_back(&v,talloc_format("%d. %s",iterator666,patch->name));
-          copy_patch_vector[i++] = iterator666;
-        }
-      }
-    }END_VECTOR_FOR_EACH;
-  }
-  VECTOR_push_back(&v,"[submenu end]");
-
-  VECTOR_push_back(&v,"----------");
-  
-  int start_select_patch = v.num_elements;
-  
-  VECTOR_FOR_EACH(struct Patch *patch,patches){
-    VECTOR_push_back(&v,talloc_format("%d. %s",iterator666,patch->name));
-  }END_VECTOR_FOR_EACH;
-
-  {
-    struct Patch *patch = NULL;
-
-    int selection=GFX_Menu(window,reqtype,"Select Patch",&v);
-
-    if(selection>=0){
-
-      Undo_Open();{
-
-        ADD_UNDO(Track(window,window->wblock,wtrack,window->wblock->curr_realline));
-
-        if(selection>=start_select_patch){
-          patch=patches->elements[selection-start_select_patch];
-
-        }else if(selection>=start_copy_patch){
-          int elementnum = copy_patch_vector[selection-start_copy_patch];
-          struct Patch *old_patch = patches->elements[elementnum];
-          SoundPlugin *old_plugin = (SoundPlugin*)old_patch->patchdata;
-          hash_t *old_state = PLUGIN_get_state(old_plugin);
-
-          patch = InstrumentWidget_new_from_preset(old_state, NULL, -100000,-100000,true);
-
-        }else if(selection==new_midi_instrument){
-          patch = NewPatchCurrPos(MIDI_INSTRUMENT_TYPE, NULL, "Unnamed");
-          GFX_PP_Update(patch);
-
-        }else if(selection==new_sample_player){
-          SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "Sample Player","Sample Player"),-100000,-100000,true,NULL,MIXER_get_buses());
-          if(plugin!=NULL)
-            patch = (struct Patch*)plugin->patch;
-            
-        }else if(selection==new_fluid_synth){
-          SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "FluidSynth","FluidSynth"),-100000,-100000,true,NULL,MIXER_get_buses());
-          if(plugin!=NULL)
-            patch = (struct Patch*)plugin->patch;
-            
-        }else if(selection==new_pd_instrument){
-          SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "Pd","Simple Midi Synth"),-100000,-100000,true,NULL,MIXER_get_buses());
-          if(plugin!=NULL)
-            patch = (struct Patch*)plugin->patch;
-
-        }else if(selection==new_audio_instrument){
-          SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,-100000,-100000,true,NULL,MIXER_get_buses());
-          if(plugin!=NULL)
-            patch = (struct Patch*)plugin->patch;
-
-          printf("   PLUGIN: %p, patch: %p\n",plugin,patch);
-          
-        }else if(selection==load_preset){
-          patch = InstrumentWidget_new_from_preset(NULL, NULL, -100000,-100000,true);
-
-        }else
-          printf("Unknown option\n");
-
-        if(patch!=NULL){
-          struct Tracks *track=wtrack->track;
-
-          PLAYER_lock();{
-
-            handle_fx_when_theres_a_new_patch_for_track(track,track->patch,patch);
-            
-            track->patch=patch;
-            
-          }PLAYER_unlock();
-
-#if !USE_OPENGL
-          UpdateFXNodeLines(window,window->wblock,wtrack);
-#endif
-          window->must_redraw = true;
-              
-          (*patch->instrument->PP_Update)(patch->instrument,patch);
-        }
-
-      }Undo_Close();
-
-      if (patch==NULL)
-        Undo_CancelLastUndo();
-      
-    } // if(selection>=0)
-
-  }
-
-
-  if(reqtype!=NULL)
-    GFX_CloseReq(window,reqtype);
+// Only used when cleaning mixer
+void PATCH_force_make_inactive(struct Patch *patch){
+  make_inactive(patch, true);
 }
-
+  
 
 static bool has_recursive_event_connection(struct Patch *patch, struct Patch *start_patch){
   if(start_patch==patch)

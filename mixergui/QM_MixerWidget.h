@@ -140,23 +140,19 @@ bool MW_move_chip_to_slot(Chip *chip, float x, float y);
 Chip *MW_get_chip_at(float x, float y, Chip *except);
 
 void MW_set_selected_chip(Chip *chip);
-void MW_update_all_chips(void);
-
-// MW_add_plugin/MW_delete_plugin are the entry points for audio plugins.
-// Creating/deleting a plugin goes through here, not through audio/
-
-SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, double x, double y, Buses buses);
-
-SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, bool autoconnect, struct Patch **created_patch_instead);
 
 #endif // __cplusplus
 
+extern LANGSPEC char *MW_request_load_preset_instrument_description(void);
 extern LANGSPEC char *MW_popup_plugin_selector2(void);
+extern LANGSPEC SoundPluginType *MW_popup_plugin_type_selector(void);
 
 extern LANGSPEC void MW_autoconnect_plugin(SoundPlugin *plugin);
 
 extern LANGSPEC void MW_connect(struct Patch *source, struct Patch *dest);
 extern LANGSPEC void MW_econnect(struct Patch *source, struct Patch *dest);
+
+extern LANGSPEC void MW_update_all_chips(void);
 
 extern LANGSPEC void MW_cleanup(void);
 
@@ -165,7 +161,6 @@ extern LANGSPEC hash_t *MW_get_state(void);
 extern LANGSPEC void MW_create_connections_from_state(hash_t *connections);
 extern LANGSPEC void MW_create_connections_from_state_and_replace_patch(hash_t *connections, int patch_id_old, int patch_id_new);
 extern LANGSPEC void MW_create_from_state(hash_t *state);
-extern LANGSPEC void MW_delete_plugin(SoundPlugin *plugin); // Deletes chip, plugin soundproducer and connections.
 
 extern LANGSPEC void MW_create_plain(void);
 

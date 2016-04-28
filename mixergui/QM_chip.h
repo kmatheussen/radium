@@ -359,11 +359,14 @@ void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int patc
 #endif // __cplusplus
 
 struct SoundProducer;
+struct Patch;
 
+extern LANGSPEC void CHIP_create(struct SoundProducer *sound_producer);
+extern LANGSPEC void CHIP_delete(struct Patch *patch);
+  
 //extern LANGSPEC void CHIP_init_because_it_has_new_plugin(struct SoundPlugin *plugin);
 
 extern LANGSPEC void CHIP_create_from_state(hash_t *state, Buses buses);
-extern LANGSPEC struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *name, double x, double y, Buses buses);
 
 extern LANGSPEC void CHIP_update(struct SoundPlugin *plugin);
 
@@ -383,7 +386,7 @@ extern LANGSPEC struct Patch* CHIP_get_esource(const struct Patch *patch, int co
 extern LANGSPEC struct Patch* CHIP_get_edest(const struct Patch *patch, int connectionnum);
 
 
-extern LANGSPEC void CHIP_delete_from_patch(struct Patch *patch);
+//extern LANGSPEC void CHIP_delete_from_patch(struct Patch *patch);
 extern LANGSPEC hash_t *CHIP_get_chip_state_from_patch(struct Patch *patch);
 
 #endif

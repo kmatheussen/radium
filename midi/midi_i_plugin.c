@@ -544,7 +544,7 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char
   return midi_port;
 }
 
-void MIDI_InitPatch(struct Patch *patch, void *patchdata) {
+void MIDI_InitPatch(struct Patch *patch) {
   patch->playnote=MIDIplaynote;
   patch->stopnote=MIDIstopnote;
   patch->changevelocity=MIDIchangevelocity;
@@ -553,9 +553,11 @@ void MIDI_InitPatch(struct Patch *patch, void *patchdata) {
   patch->closePatch=MIDIclosePatch;
   patch->changeTrackPan=MIDIchangeTrackPan;
 
-  patch->patchdata = createPatchData(); // The 'patchdata' argument for this function is ignored. There is basically only one type of MIDI patch class, so we create it here instead.
+  patch->patchdata = createPatchData();
 
   patch->instrument = get_MIDI_instrument();
+  
+  patch->is_usable = true;
 }
 
 int MIDIgetPatch(
@@ -564,7 +566,7 @@ int MIDIgetPatch(
 	const struct Tracks *track,
 	struct Patch *patch
 ){
-        MIDI_InitPatch(patch, NULL);
+        MIDI_InitPatch(patch);
 
 	struct MidiPort *midi_port = MIDIgetPort(window,reqtype,NULL);
 
@@ -628,8 +630,15 @@ void MIDIStopPlaying(struct Instruments *instrument){
 
 static void MIDI_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
   R_ASSERT(PLAYER_current_thread_has_lock());
-    
-  return; // Keep fx. All patches use same fx system.
+
+  struct FXs *fxs = track->fxs;
+  while(fxs!=NULL){
+    struct FX *fx = fxs->fx;
+    fx->patch = new_patch; // Only need to change patch. All patches use the same fx system.
+    fxs = NextFX(fxs);
+  }
+
+  return;
 }
 
 static void MIDI_remove_patch(struct Patch *patch){

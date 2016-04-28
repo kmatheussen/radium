@@ -30,8 +30,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Mixer_proc.h"
 
 #include "SoundPlugin_proc.h"
+#include "SoundPluginRegistry_proc.h"
+#include "SoundProducer_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
+#include "../mixergui/QM_chip.h"
+//#include "../mixergui/undo_chip_addremove_proc.h"
+#include "../mixergui/undo_mixer_connections_proc.h"
+
 #include "../Qt/Qt_instruments_proc.h"
 
 #include "audio_instrument_proc.h"
@@ -140,9 +146,8 @@ static void AUDIO_changeTrackPan(int newpan,const struct Tracks *track){
 #endif
 }
 
-
-// Note that patchdata is NULL when called from disk_patches.c
-void AUDIO_InitPatch(struct Patch *patch, void *patchdata) {
+// Must only be called from AUDIO_InitPatch and disk_patches.c
+void AUDIO_set_patch_attributes(struct Patch *patch, void *patchdata) {
   patch->playnote       = AUDIO_playnote;
   patch->stopnote       = AUDIO_stopnote;
   patch->changevelocity = AUDIO_changevelocity;
@@ -154,7 +159,91 @@ void AUDIO_InitPatch(struct Patch *patch, void *patchdata) {
   //R_ASSERT(patchdata!=NULL);
   patch->patchdata = patchdata;
 
-  patch->instrument=get_audio_instrument();    
+  patch->instrument=get_audio_instrument();
+}
+
+// this is quite flaky.
+static bool state_only_contains_plugin(hash_t *state){
+  if (HASH_get_num_elements(state) != 4)
+    return true;
+
+  if (!HASH_has_key(state, "patch"))
+    return true;
+
+  if (!HASH_has_key(state, "plugin"))
+    return true;
+
+  if (!HASH_has_key(state, "x"))
+    return true;
+
+  if (!HASH_has_key(state, "y"))
+    return true;
+
+  return false;
+}
+
+bool AUDIO_InitPatch2(struct Patch *patch, char *type_name, char *plugin_name, hash_t *state) {
+
+  SoundPluginType *type;
+  struct SoundPlugin *plugin;
+
+  bool state_only_has_plugin = state!=NULL && state_only_contains_plugin(state);
+  
+  if (state!=NULL){
+    
+    R_ASSERT(type_name==NULL);
+    R_ASSERT(plugin_name==NULL);
+
+    hash_t *plugin_state;
+
+    if (state_only_has_plugin)
+      plugin_state = state;
+    else
+      plugin_state = HASH_get_hash(state, "plugin");
+  
+    plugin = PLUGIN_create_from_state(plugin_state);
+    type = plugin->type;
+    
+  } else {
+
+    R_ASSERT_RETURN_IF_FALSE2(type_name!=NULL, false);
+    R_ASSERT_RETURN_IF_FALSE2(plugin_name!=NULL, false);
+    
+    type = PR_get_plugin_type_by_name(NULL, type_name, plugin_name);
+    if (type==NULL){
+      GFX_Message(NULL, "Audio plugin %s / %s not found", type_name, plugin_name);
+      return false;
+    }
+
+    plugin = PLUGIN_create(type, NULL);
+  }
+
+  if (patch->name==NULL || strlen(patch->name)==0)
+    patch->name = PLUGIN_generate_new_patchname(type);  
+
+  if(plugin==NULL) {
+    GFX_Message(NULL, "Failed to create plugin %s: %s",type_name,plugin_name);
+    return false;
+  }
+
+  plugin->patch = patch;
+
+  AUDIO_set_patch_attributes(patch, plugin);
+  
+  struct SoundProducer *sound_producer = SP_create(plugin, MIXER_get_buses());
+  R_ASSERT_RETURN_IF_FALSE2(sound_producer!=NULL, false);
+
+  // Create mixer object
+  CHIP_create(sound_producer);
+  if (state != NULL && !state_only_has_plugin)
+    CHIP_set_pos(patch, HASH_get_float(state, "x"), HASH_get_float(state, "y"));
+  
+  // Create instrument widget
+  InstrumentWidget_create_audio_instrument_widget(patch);
+  
+  patch->is_usable = true;
+  
+  return true;
 }
 
 
@@ -504,6 +593,7 @@ static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *tra
         init_fx_color(fx, new_type->num_effects);
         ATOMIC_SET(fx->slider_automation_value, OS_SLIDER_obtain_automation_value_pointer(new_patch,fx->effect_num));
         ATOMIC_SET(fx->slider_automation_color, OS_SLIDER_obtain_automation_color_pointer(new_patch,fx->effect_num));
+        fx->patch = new_patch;
       }else{
         ListRemoveElement1(&track->fxs, &fxs->l);
       }
@@ -512,12 +602,47 @@ static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *tra
   }
 }
 
-static void AUDIO_remove_patch(struct Patch *patch){
-  printf("AUDIO_remove_patch serves no purpose.\n");
-  //SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
-  //const SoundPluginType *plugin_type = plugin->type;
+hash_t *AUDIO_get_patch_state(struct Patch *patch){
+  hash_t *state=HASH_create(4);
+
+  R_ASSERT_RETURN_IF_FALSE2(patch->is_usable, NULL);
+  R_ASSERT_RETURN_IF_FALSE2(patch->patchdata != NULL, NULL);
   
-  //PLUGIN_delete_plugin(plugin);
+  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+
+  // Note: If changing the state format, the 'state_only_contains_plugin' function above must be updated. (test by adding instrument and undo)
+  
+  HASH_put_int(state, "patch", patch->id);
+  HASH_put_float(state, "x", CHIP_get_pos_x(patch));
+  HASH_put_float(state, "y", CHIP_get_pos_y(patch));
+
+  HASH_put_hash(state, "plugin", PLUGIN_get_state(plugin));
+
+  return state;
+}
+
+static void AUDIO_remove_patch(struct Patch *patch){
+  ADD_UNDO(MixerConnections_CurrPos());
+  
+  InstrumentWidget_delete(patch);
+    
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+  struct SoundProducer *sound_producer = SP_get_SoundProducer(plugin);
+
+  hash_t *state = PLUGIN_get_state(plugin);
+          
+  CHIP_delete(patch);
+
+  PLAYER_lock();{
+    patch->patchdata = NULL;
+    patch->state = state;
+    patch->is_usable = false;
+  }PLAYER_unlock();
+
+  SP_delete(sound_producer);
+  PLUGIN_delete(plugin);
+
+  MW_update_all_chips();
 }
 
 static void AUDIO_setPatchData(struct Patch *patch, char *key, char *value){}
@@ -529,6 +654,8 @@ static char *AUDIO_getPatchData(struct Patch *patch, char *key){
 extern SoundPlugin *g_system_bus;
 
 bool AUDIO_is_permanent_patch(struct Patch *patch){
+  R_ASSERT_RETURN_IF_FALSE2(patch->patchdata!=NULL, true);
+  
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   if(plugin==get_main_pipe() ||
      //(!strcmp(plugin->type->type_name,"Sample Player") && !strcmp(plugin->type->name, "Click")) ||

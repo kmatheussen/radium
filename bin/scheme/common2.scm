@@ -852,28 +852,28 @@ for .emacs:
 
 (define (popup-menu . args)
   (define options (parse-popup-menu-options args))
-  (c-display "optinos:" options)
+  ;;(c-display "optinos:" options)
   (define relations (make-assoc-from-flat-list options))
   (define strings (list->vector (map car relations)))
   
   (define popup-arg (let loop ((strings (vector->list strings)))
-                      (c-display "strings" strings)
+                      ;;(c-display "strings" strings)
                       (if (null? strings)
                           ""
                           (<-> (car strings) " % " (loop (cdr strings))))))
     
-  (c-display "relations: " relations)
-  (c-display "strings: " strings)
-  (c-display "popup-arg: " popup-arg)
+  ;;(c-display "relations: " relations)
+  ;;(c-display "strings: " strings)
+  ;;(c-display "popup-arg: " popup-arg)
 
   (define (get-func n)
-    (c-display "N: " n)
+    ;;(c-display "N: " n)
     (define result-string (vector-ref strings n))
     (cadr (assoc result-string relations)))
   
   (define result-num (<ra> :popup-menu2 popup-arg (lambda (n val)
                                                     (define result-string (vector-ref strings n))
-                                                    (c-display "n: " n ", val:" val)
+                                                    ;;(c-display "n: " n ", val:" val)
                                                     ((get-func n) val))))
 
   (if (not (= -1 result-num))
@@ -933,3 +933,15 @@ for .emacs:
 (define (+line linenum)
   (+ linenum *smallest-radium-tick*))
 ||#
+
+
+(define (undo-block block)
+  (<ra> :open-undo)
+  (catch #t
+         block
+         (lambda args ;; Catch exceptions to ensure (<ra> :cose-undo) will be called
+           (display "args")(display args)(newline)
+           (apply format #t (cadr args))
+           (display (ow!))))
+  (<ra> :close-undo))
+

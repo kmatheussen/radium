@@ -381,11 +381,11 @@ public slots:
     }
 
     void on_load_button_clicked(){
-      InstrumentWidget_load_preset(_patch);      
+      loadInstrumentPreset(_patch->id, "");
     }
 
     void on_replace_button_clicked(){
-      InstrumentWidget_replace(_patch);
+      replaceInstrument(_patch->id, "");
     }
     
     void on_reset_button_clicked(){

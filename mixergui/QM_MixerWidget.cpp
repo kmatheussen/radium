@@ -590,6 +590,7 @@ Chip *MW_get_chip_at(float x, float y, Chip *except){
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
     if(chip!=NULL && chip!=except){
       QPointF pos = chip->pos();
+      printf("%d / %d,    %d / %d\n",get_slot_x(pos.x()+grid_width/2), slot_x,    get_slot_y(pos.y()+grid_height/2), slot_y);
       if(get_slot_x(pos.x()+grid_width/2)==slot_x && get_slot_y(pos.y()+grid_height/2)==slot_y)
         return chip;
     }
@@ -670,21 +671,23 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
     Chip *before=NULL;
     Chip *after=NULL;
     get_before_and_after_chip(chip, &before, &after);
+
+    Undo_Open_rec();{
+      
+      struct Instruments *instrument = get_audio_instrument();
+      VECTOR_FOR_EACH(struct Patch *,patch,&instrument->patches){
+        if(patch->patchdata==SP_get_plugin(chip->_sound_producer)){
+          printf("Found patch\n");
+          deleteInstrument(patch->id);
+          break;
+        }
+      }END_VECTOR_FOR_EACH;
+      
+      if(before!=NULL)
+        CHIP_connect_chips(scene, before, after);
+      
+    }Undo_Close();
     
-    struct Instruments *instrument = get_audio_instrument();
-    VECTOR_FOR_EACH(struct Patch *,patch,&instrument->patches){
-      if(patch->patchdata==SP_get_plugin(chip->_sound_producer)){
-        printf("Found patch\n");
-        PATCH_delete_CurrPos(patch);
-        break;
-      }
-    }END_VECTOR_FOR_EACH;
-
-    if(before!=NULL)
-      CHIP_connect_chips(scene, before, after); // undo for the connections are made in PATCH_delete_CurrPos
-
-    // Shouldn't there be a "delete chip" call here? (Guess it's deleted through PATCH_delete). TODO: Check that this is correct, and add a comment here why there is no "delete chip" call here.
-
     event->accept();
     return true;
   }
@@ -811,7 +814,7 @@ static bool mouserelease_replace_patch(MyScene *scene, float mouse_x, float mous
       volatile struct Patch *patch = plugin->patch;
       R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
 
-      InstrumentWidget_replace((struct Patch*)patch);
+      replaceInstrument(patch->id, "");
         
       return true;
     }
@@ -830,19 +833,31 @@ static bool mousepress_create_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
   //scene->addItem(_slot_indicator);
   draw_slot(scene,mouse_x,mouse_y);
 
-  Undo_Open();{
+  const char *instrument_description = instrumentDescriptionPopupMenu();
+  if (instrument_description != NULL){
 
-    SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,mouse_x,mouse_y,false,NULL, MIXER_get_buses());
+    Undo_Open();{
 
-    if(plugin!=NULL){
+      int patch_id = createAudioInstrumentFromDescription(instrument_description, NULL);
+      //SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,mouse_x,mouse_y,false,NULL, MIXER_get_buses());
 
-      Chip *chip = find_chip_for_plugin(scene, plugin);
+      if(patch_id >= 0){
+
+        struct Patch *patch = PATCH_get_from_id(patch_id);
+        
+        Chip *chip = CHIP_get(scene, patch);
+
+        ADD_UNDO(ChipPos_CurrPos(patch));
+        
+        MW_move_chip_to_slot(chip, mouse_x, mouse_y);
+        
+        autoconnect_chip(scene, chip, mouse_x, mouse_y);
+      }
       
-      autoconnect_chip(scene, chip, mouse_x, mouse_y);
-    }
+    }Undo_Close();
 
-  }Undo_Close();
-  
+  }
+
   //scene->removeItem(_slot_indicator);
   event->accept();
   return true;
@@ -1204,51 +1219,6 @@ void MW_set_autopos(double *x, double *y){
   printf("Adding at pos %f %f\n",*x,*y);
 }
 
-// MW_add_plugin/MW_delete_plugin are one of two entry points for audio plugins.
-// Creating/deleting a plugin goes through here, not through audio/.
-//
-// The other entry point is CHIP_create_from_state, which is called from undo/redo and load.
-//
-SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, double x, double y, Buses buses){
-  if (PLAYER_is_running()==false)
-    return NULL;
-
-  SoundPlugin *plugin = PLUGIN_create(plugin_type, NULL);
-  if(plugin==NULL)
-    return NULL;
-
-  if(x<=-100000)
-    MW_set_autopos(&x, &y);
-    
-  SoundProducer   *sound_producer = SP_create(plugin, buses);
-  Chip *chip = new Chip(&g_mixer_widget->scene,sound_producer,x,y);
-
-  MW_move_chip_to_slot(chip, x, y);
-    
-  return plugin;
-}
-
-void MW_delete_plugin(SoundPlugin *plugin){
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
-
-  for (int i = 0; i < das_items.size(); ++i) {
-    Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
-    if(chip!=NULL){
-      SoundProducer *producer = chip->_sound_producer;
-      if(SP_get_plugin(producer)==plugin){
-        hash_t *state = PLUGIN_get_state(plugin);
-        delete chip; // audio connections are deleted via ~Chip(). (Yes, it's somewhat messy)
-        SP_delete(producer);
-        volatile struct Patch *patch = plugin->patch;
-        PLUGIN_delete(plugin);
-        patch->patchdata = NULL; // Correct thing to do. A subtle bug in GFX_update_all_instrument_widgets prompted me to do add it (QT tabs are note updated right away). Somewhat messy this too.
-        patch->state = state;
-        patch->is_usable = false; // Make sure we don't use this patch if pasting it.
-        return;
-      }
-    }
-  }
-}
 
 namespace{
   struct MyQAction : public QAction{
@@ -1260,7 +1230,7 @@ namespace{
   };
 }
 
-static int menu_up(QMenu *menu, const radium::Vector<PluginMenuEntry> &entries, int i){
+static int menu_up(QMenu *menu, const radium::Vector<PluginMenuEntry> &entries, int i, bool include_load_preset){
   while(i < entries.size()){
     PluginMenuEntry entry = entries[i];
     i++;
@@ -1272,7 +1242,7 @@ static int menu_up(QMenu *menu, const radium::Vector<PluginMenuEntry> &entries, 
       const char *name = entry.level_up_name;
       QMenu *new_menu = new QMenu(name,menu);
       menu->addMenu(new_menu);
-      i = menu_up(new_menu,entries, i);
+      i = menu_up(new_menu,entries, i, include_load_preset);
 
     }else if(entry.type==PluginMenuEntry::IS_LEVEL_DOWN){
       return i;
@@ -1292,8 +1262,12 @@ static int menu_up(QMenu *menu, const radium::Vector<PluginMenuEntry> &entries, 
       menu->addAction(new MyQAction(name,menu,entry));
 
     }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
-      menu->addAction(new MyQAction("Load Preset", menu, entry));
+
+      MyQAction *action = new MyQAction("Load Preset", menu, entry);
+      menu->addAction(action);
       menu->addSeparator();
+      if (include_load_preset==false)
+        action->setEnabled(false);
 
     }else{
       const char *name = entry.plugin_type->name;
@@ -1313,10 +1287,21 @@ static char *create_selector_text(SoundPluginType *type){
                        );
 }
 
-char *MW_popup_plugin_selector2(void){
+char *MW_request_load_preset_instrument_description(void){
+  const char *encoded_filename = request_load_preset_encoded_filename();
+  if (encoded_filename==NULL)
+    return talloc_strdup("");
+
+  return talloc_format("2%s",encoded_filename); // Converting to base64 to avoid having to worry about utf8 conversion problems in filenames.
+}
+
+static char *popup_plugin_selector(SoundPluginType **type){
   QMenu menu(0);
 
-  menu_up(&menu, PR_get_menu_entries(), 0);
+  if (type!=NULL)
+    *type = NULL;
+  
+  menu_up(&menu, PR_get_menu_entries(), 0, type==NULL);
 
   MyQAction *action;
 
@@ -1352,9 +1337,12 @@ char *MW_popup_plugin_selector2(void){
       return NULL; // no error message here. populate() must do that.
     }
      
-    if (plugin_type_container->num_types==1)
+    if (plugin_type_container->num_types==1) {
+      if (type!=NULL)
+        *type = plugin_type_container->plugin_types[0];
       return create_selector_text(plugin_type_container->plugin_types[0]);
-
+    }
+    
     for(int i=0 ; i < plugin_type_container->num_types ;  i++)
       VECTOR_push_back(&names,plugin_type_container->plugin_types[i]->name);
 
@@ -1368,89 +1356,29 @@ char *MW_popup_plugin_selector2(void){
       return create_selector_text(plugin_type_container->plugin_types[selection]);
 
    }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
-
-    QString filename = request_load_preset_filename();
-    if (filename=="")
-      return NULL;
-
-    return talloc_format("2%s",STRING_get_chars(STRING_toBase64(STRING_create(filename)))); // Converting to base64 to avoid having to worry about utf8 conversion problems in filenames.
     
+    return MW_request_load_preset_instrument_description();
+      
   } else {
 
+    if (type!=NULL)
+      *type = entry.plugin_type;
+    
     return create_selector_text(entry.plugin_type);
 
   }
 }
-
-// Old version. Will be deleted as soon as it's not used anymore
-SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, bool autoconnect, struct Patch **created_patch_instead){
-  QMenu menu(0);
-
-  menu_up(&menu, PR_get_menu_entries(), 0);
-
-  MyQAction *action;
-
-  if (doModalWindows()) {
-    
-    GL_lock();{
-      action = dynamic_cast<MyQAction*>(menu.exec(QCursor::pos()));
-    }GL_unlock();
-    
-  } else {
-    
-    GL_lock();{
-      GL_pause_gl_thread_a_short_while();
-    }GL_unlock();    
-    action = dynamic_cast<MyQAction*>(menu.exec(QCursor::pos()));
-    
-  }
-  
-  if (action==NULL)
-    return NULL;
-
-  struct PluginMenuEntry entry = action->entry;
-
-  if (entry.type==PluginMenuEntry::IS_CONTAINER) {
-
-    vector_t names={};
-
-    SoundPluginTypeContainer *plugin_type_container = entry.plugin_type_container;
-    plugin_type_container->populate(plugin_type_container);
-
-    if (plugin_type_container->num_types==0) {
-      //GFX_Message(NULL, talloc_format("%s does not contain any plugin",plugin_type_container->name));
-      return NULL; // no error message here. populate() must do that.
-    }
-     
-    if (plugin_type_container->num_types==1)
-      return plugin_type_container->plugin_types[0];
-
-    for(int i=0 ; i < plugin_type_container->num_types ;  i++)
-      VECTOR_push_back(&names,plugin_type_container->plugin_types[i]->name);
-
-    char temp[1024];
-    sprintf(temp,"Select plugin contained in %s", plugin_type_container->name);
-    int selection=GFX_Menu(NULL,NULL,temp,&names);
-    
-    if (selection==-1)
-      return NULL;
-    else
-      return plugin_type_container->plugin_types[selection];
-
-   }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
-    
-    struct Patch *patch = InstrumentWidget_new_from_preset(NULL, name, x, y, autoconnect);
-    if (created_patch_instead!=NULL)
-      *created_patch_instead = patch;
-    
-    return NULL;
-    
-  } else {
-
-    return entry.plugin_type;
-
-  }
+                                  
+char *MW_popup_plugin_selector2(void){
+  return popup_plugin_selector(NULL);
 }
+
+SoundPluginType *MW_popup_plugin_type_selector(void){
+  SoundPluginType *type;
+  popup_plugin_selector(&type);
+  return type;
+}
+
 
 void MW_connect(Patch *source, Patch *dest){
   Chip *chip_source = CHIP_get(&g_mixer_widget->scene, source);
@@ -1529,13 +1457,20 @@ static void MW_cleanup_connections(void){
 static bool delete_a_chip(){
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
 
+  Undo_Open_rec();{
+    
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
     if(chip!=NULL){
-      MW_delete_plugin(SP_get_plugin(chip->_sound_producer));
+      printf("  MAKING %p inactive (%s), by force\n",chip,CHIP_get_patch(chip)->name);
+      PATCH_force_make_inactive(CHIP_get_patch(chip));
+      //MW_delete_plugin(SP_get_plugin(chip->_sound_producer));
       return true;
     }
   }
+
+  } Undo_Close();
+  
   return false;
 }
 
@@ -1650,7 +1585,7 @@ static hash_t *convert_state_to_new_type(hash_t *state){
 // However, patch->patchdata are created here.
 void MW_create_from_state(hash_t *state){
 
-  MW_cleanup();
+  //MW_cleanup();
 
   if (!HASH_has_key(state, "bus_chips"))
     state = convert_state_to_new_type(state);
@@ -1682,7 +1617,7 @@ void MW_create_from_state(hash_t *state){
 
 // This function is called when loading a song saved with a version of radium made before the audio system was added.
 void MW_create_plain(void){
-  MW_cleanup();
+  //MW_cleanup();
   g_mixer_widget->populateScene();
 }
 

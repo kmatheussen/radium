@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "common_proc.h"
 #include "OS_Player_proc.h"
 #include "patch_proc.h"
+#include "../api/api_proc.h"
 
 #include "fxlines_proc.h"
 
@@ -335,8 +336,7 @@ static struct FX *selectFX(
   struct Patch *patch = track->patch;
   
   if(patch==NULL) {
-    PATCH_select_patch_for_track(window,wtrack,true);
-    //GFX_Message(NULL, "No instrument set for track %d\n",wtrack->l.num);
+    selectInstrumentForTrack(track->l.num);
     return NULL;
   }
   

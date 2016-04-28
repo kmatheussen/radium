@@ -919,7 +919,7 @@
                                                   (set-current-track-num! X Y))
               "-------"
               "Set Instrument     (F12)" (lambda ()
-                                           (<ra> :set-track-patch *current-track-num*))
+                                           (select-track-instrument *current-track-num*))
               "-------"
               "Help Velocity text" (lambda ()
                                      (<ra> :show-velocity-help-window))
@@ -938,8 +938,8 @@
 ||#
 
 
-;; select patch for track
-;;;;;;;;;;;;;;;;;;;;;;;;;
+;; select instrument for track
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)
                                 (cond ((and *current-track-num*
@@ -949,7 +949,7 @@
                                            (if (<ra> :shift-pressed)
                                                (<ra> :delete-track *current-track-num*)
                                                (track-configuration-popup X Y))
-                                           (<ra> :set-track-patch *current-track-num*))
+                                           (select-track-instrument *current-track-num*))
                                        #t)
                                       (else
                                        #f)))))
