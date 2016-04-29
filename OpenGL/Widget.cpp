@@ -915,6 +915,9 @@ static bool have_earlier_estimated_value(){
 }
 
 void GL_pause_gl_thread_a_short_while(void){
+
+  if (GL_get_pause_rendering_on_off()==false)
+    return;
   
   if (g_gl_widget_started == false) // deadlock without this check.
     return;
@@ -998,6 +1001,21 @@ bool GL_get_safe_mode(void){
   return SETTINGS_read_bool("safe_mode", false);
 }
 
+static bool g_pause_rendering_on_off = true;
+
+static void init_g_pause_rendering_on_off(void){
+  g_pause_rendering_on_off = SETTINGS_read_bool("pause_rendering", true);
+}
+
+void GL_set_pause_rendering_on_off(bool onoff){
+  SETTINGS_write_bool("pause_rendering", onoff);
+  g_pause_rendering_on_off = onoff;
+}
+
+bool GL_get_pause_rendering_on_off(void){
+  return g_pause_rendering_on_off;
+}
+
 static void show_message_box(QMessageBox *box){
   box->setText("Please wait, estimating vblank refresh rate. This takes 3 - 10 seconds");
   box->setInformativeText("!!! Don't move the mouse or press any key !!!");
@@ -1076,6 +1094,7 @@ QWidget *GL_create_widget(QWidget *parent){
 #endif
 
   g_safe_mode = GL_get_safe_mode();
+  init_g_pause_rendering_on_off();
     
   if (QGLFormat::hasOpenGL()==false) {
     GFX_Message(NULL,"OpenGL not found");

@@ -173,7 +173,7 @@ struct TimeEstimator{
 
     if (a_num_periods_wrong > (period_multiplier*k_num_periods_to_correct)) {
       #if !defined(RELEASE)
-        printf("NOT RETURNING NEW_VALUE. New_Value (calculated): %f. Returning instead (approx correct): %f\n",(float)new_value,(float)approx_correct);
+      //printf("NOT RETURNING NEW_VALUE. New_Value (calculated): %f. Returning instead (approx correct): %f\n",(float)new_value,(float)approx_correct);
       #endif
       
       set_time(approx_correct);

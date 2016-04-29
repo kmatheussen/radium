@@ -29,6 +29,10 @@ extern int GL_get_multisample(void);
 extern void GL_set_safe_mode(bool onoff);
 extern bool GL_get_safe_mode(void);
 
+extern void GL_set_pause_rendering_on_off(bool onoff);
+extern bool GL_get_pause_rendering_on_off(void);
+
+  
 extern void GL_lock(void);
 extern void GL_unlock(void);
 extern bool GL_maybeLock(void);

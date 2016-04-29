@@ -138,8 +138,24 @@ int GFX_Menu2(
       }
     }
 
+
+    QAction *action;
+
+    if (doModalWindows()) {
+      
+      GL_lock();{
+        action = menu.exec(QCursor::pos());
+      }GL_unlock();
+      
+    } else {
     
-    QAction *action = menu.exec(QCursor::pos());
+      GL_lock();{
+        GL_pause_gl_thread_a_short_while();
+      }GL_unlock();    
+      action = menu.exec(QCursor::pos());
+      
+    }
+
     if(action==NULL)
       return -1;
 

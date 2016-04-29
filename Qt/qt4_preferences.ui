@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>3</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -177,18 +177,21 @@
             </property>
            </spacer>
           </item>
-          <item row="1" column="3">
-           <spacer name="horizontalSpacer_11">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="safeModeOnoff">
+            <property name="enabled">
+             <bool>true</bool>
             </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
+            <property name="toolTip">
+             <string/>
             </property>
-           </spacer>
+            <property name="statusTip">
+             <string/>
+            </property>
+            <property name="text">
+             <string>Safe mode</string>
+            </property>
+           </widget>
           </item>
           <item row="0" column="3">
            <spacer name="horizontalSpacer_10">
@@ -202,6 +205,39 @@
              </size>
             </property>
            </spacer>
+          </item>
+          <item row="1" column="3">
+           <spacer name="horizontalSpacer_11">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="1">
+           <spacer name="horizontalSpacer_8">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;If the graphics behaves strange, it might help to enable Safe mode.&lt;/span&gt;&lt;br&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note that this mode should only be used to debug Radium.&lt;/span&gt;&lt;br&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Safe mode is likely to lower graphical performance, and it could make the program crash.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
           </item>
           <item row="0" column="1">
            <spacer name="horizontalSpacer_6">
@@ -229,21 +265,8 @@
             </property>
            </spacer>
           </item>
-          <item row="1" column="1">
-           <spacer name="horizontalSpacer_8">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="0">
-           <widget class="QCheckBox" name="safeModeOnoff">
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="pauseRenderingOnoff">
             <property name="enabled">
              <bool>true</bool>
             </property>
@@ -254,14 +277,19 @@
              <string/>
             </property>
             <property name="text">
-             <string>Safe mode</string>
+             <string>Briefly pause graphics rendering when opening windows</string>
             </property>
            </widget>
           </item>
-          <item row="0" column="2">
-           <widget class="QLabel" name="label_2">
+          <item row="1" column="2">
+           <widget class="QLabel" name="label_7">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;If the graphics behaves strange, it might help to enable Safe mode.&lt;/span&gt;&lt;br&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note that this mode should only be used to debug Radium.&lt;/span&gt;&lt;br&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Safe mode is likely to lower graphical performance, and it could make the program crash.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
+Some GFX drivers may crash when Qt opens a window in a separate&lt;br&gt;
+thread while rendering graphics with OpenGL. In order to work around&lt;br&gt;
+this problem, we pause rendering briefly (but noticably) while the window opens.&lt;br&gt;
+If you use Windows or a driver from nvidia, it's probably safe to uncheck this option.
+&lt;/span&gt;&lt;br&gt;&lt;span style=&quot; color:#000000;&quot;&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -2440,7 +2468,7 @@ Disabling this option will cause Radium to eventually run out of memory prematur
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Has no effect in Linux.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="text">
-          <string>Use native file requesters. (The Qt file requester can be very slow on windows)</string>
+          <string>Use native file requesters.</string>
          </property>
          <property name="checkable">
           <bool>true</bool>

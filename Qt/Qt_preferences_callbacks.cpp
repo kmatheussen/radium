@@ -328,6 +328,7 @@ class Preferences : public QDialog, public Ui::Preferences {
       eraseEstimatedVBlankInterval->setText(vblankbuttontext);
 
       safeModeOnoff->setChecked(GL_get_safe_mode());
+      pauseRenderingOnoff->setChecked(GL_get_pause_rendering_on_off());
       showKeyCodesOnoff->setChecked(false);
 
       colorTracksOnoff->setChecked(GL_get_colored_tracks());
@@ -427,6 +428,10 @@ public slots:
 
   void on_safeModeOnoff_toggled(bool val){
     GL_set_safe_mode(val);
+  }
+
+  void on_pauseRenderingOnoff_toggled(bool val){
+    GL_set_pause_rendering_on_off(val);
   }
 
   void on_showKeyCodesOnoff_toggled(bool val){
