@@ -56,14 +56,14 @@ DC_start("SONG");
 	SaveBlock(song->blocks);
 	SavePlayList(song->playlist,song->length);
 
-	SaveInstrument(get_MIDI_instrument());
-	SaveInstrument(get_audio_instrument());
-
         // Patchdata for audio patches are saved here, not in disk_patches.
         DC_start("MIXERWIDGET");{
           HASH_save(MW_get_state(), dc.file);
           //HASH_save(create_instrument_widget_order_state(),dc.file);
         }DC_end();
+
+        SaveInstrument(get_MIDI_instrument());
+	SaveInstrument(get_audio_instrument());
 
 DC_end();
 }
