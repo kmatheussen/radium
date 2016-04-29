@@ -148,6 +148,66 @@ static struct Patch *create_new_patch(const char *name){
   return patch;
 }
 
+static hash_t *PATCHVOICE_get_state(struct PatchVoice voice){
+  hash_t *state = HASH_create(6);
+  
+  HASH_put_int(state, "is_on", voice.is_on ? 1 : 0);
+  HASH_put_float(state, "transpose", voice.transpose);
+  HASH_put_float(state, "volume", voice.volume);
+  HASH_put_float(state, "start", voice.start);
+  HASH_put_float(state, "length", voice.length);
+  HASH_put_int(state, "time_format", voice.time_format);
+
+  return state;
+}
+
+static void apply_patchvoice_state(struct PatchVoice *voice, hash_t *state){
+  voice->is_on = HASH_get_int(state, "is_on") == 1 ? true : false;
+  voice->transpose = HASH_get_float(state, "transpose");
+  voice->volume = HASH_get_float(state, "volume");
+  voice->start = HASH_get_float(state, "start");
+  voice->length = HASH_get_float(state, "length");
+  voice->time_format = HASH_get_int(state, "time_format");
+}
+                                                
+hash_t *PATCH_get_state(struct Patch *patch){
+  hash_t *state = HASH_create(5);
+
+  HASH_put_int(state, "___radium_patch_state_v3", 1);
+
+  HASH_put_int(state, "forward_events", patch->forward_events ? 1 : 0);
+
+  int i;
+  for (i=0;i<NUM_PATCH_VOICES; i++)
+    HASH_put_hash_at(state, "patchvoice", i, PATCHVOICE_get_state(patch->voices[i]));
+
+  if (patch->instrument==get_audio_instrument()) {
+    struct SoundPlugin *plugin = patch->patchdata;
+    R_ASSERT(plugin!=NULL);
+    if (plugin!=NULL)
+      HASH_put_hash(state, "audio", PLUGIN_get_state(patch->patchdata));
+  }
+
+  // We add some more info, for future compatibility. We're not currently using any of these, but perhaps it is used later.
+  HASH_put_int(state, "id", patch->id);
+  HASH_put_int(state, "name_is_edited", patch->name_is_edited ? 1 : 0);
+  HASH_put_chars(state, "name", patch->name);
+  HASH_put_int(state, "colornum", patch->colornum);
+  HASH_put_chars(state, "instrument", patch->instrument==get_audio_instrument() ? "audio" : "MIDI");
+  
+  return state;
+}
+
+static void apply_patch_state(struct Patch *patch, hash_t *state){
+  R_ASSERT(state!=NULL && HASH_has_key(state, "___radium_patch_state_v3"));
+  patch->forward_events = HASH_get_int(state, "forward_events")==1 ? true : false;
+  int i;
+  for (i=0;i<NUM_PATCH_VOICES; i++)
+    apply_patchvoice_state(&patch->voices[i], HASH_get_hash_at(state, "patchvoice", i));
+}
+
+
+// Only called from PATCH_create_audio and undo create patch.
 bool PATCH_make_active_audio(struct Patch *patch, char *type_name, char *plugin_name, hash_t *state) {
   R_ASSERT_RETURN_IF_FALSE2(patch->instrument==get_audio_instrument(),false);
 
@@ -155,8 +215,15 @@ bool PATCH_make_active_audio(struct Patch *patch, char *type_name, char *plugin_
     RError("Patch %s is already active",patch->name);
     return true;
   }
+
+  hash_t *audio_state = state;
   
-  if (AUDIO_InitPatch2(patch, type_name, plugin_name, state)==false)
+  if (state!=NULL && HASH_has_key(state, "___radium_patch_state_v3")){
+    audio_state = HASH_get_hash(state, "audio");
+    apply_patch_state(patch, state);
+  }
+  
+  if (AUDIO_InitPatch2(patch, type_name, plugin_name, audio_state)==false)
     return false;
 
   ADD_UNDO(Audio_Patch_Add_CurrPos(patch));
@@ -242,7 +309,7 @@ static void make_inactive(struct Patch *patch, bool force_removal){
   
   remove_patch_from_song(patch);
 
-  hash_t *audio_patch_state = AUDIO_get_patch_state(patch); // The state is unavailable after calling remove_patch().
+  hash_t *audio_patch_state = AUDIO_get_audio_patch_state(patch); // The state is unavailable after calling remove_patch().
   
   patch->instrument->remove_patch(patch);
 

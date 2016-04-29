@@ -74,7 +74,7 @@ static void Undo_Audio_Patch_AddRemove(
 
 void ADD_UNDO_FUNC(Audio_Patch_Add_CurrPos(struct Patch *patch)){
   struct Tracker_Windows *window = root->song->tracker_windows;
-  Undo_Audio_Patch_AddRemove(window,window->wblock,patch, AUDIO_get_patch_state(patch), true);
+  Undo_Audio_Patch_AddRemove(window,window->wblock,patch, AUDIO_get_audio_patch_state(patch), true);
 }
 
 void ADD_UNDO_FUNC(Audio_Patch_Remove_CurrPos(struct Patch *patch, hash_t *state)){

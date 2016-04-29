@@ -108,10 +108,13 @@ obj3:
 	goto start;
 
 obj4:
-        song->mixerwidget_state = HASH_load(dc.file);
-        //song->instrument_widget_order_state = HASH_load(dc.file);
-        DC_fgets();
-        goto start;
+        {
+          hash_t *mixer_state = HASH_load(dc.file);
+          DC_fgets();
+          
+          song->mixerwidget_state = mixer_state;
+          goto start;
+        }
 
 obj5:
         COMMENT_set_state(HASH_load(dc.file));

@@ -839,7 +839,7 @@ void InstrumentWidget_save_preset(struct Patch *patch){
     return;
   }
   
-  hash_t *state = PLUGIN_get_state(plugin);
+  hash_t *state = PATCH_get_state(patch);
   
   HASH_save(state, file);
   

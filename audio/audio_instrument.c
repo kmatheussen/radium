@@ -182,14 +182,14 @@ static bool state_only_contains_plugin(hash_t *state){
   return false;
 }
 
-bool AUDIO_InitPatch2(struct Patch *patch, char *type_name, char *plugin_name, hash_t *state) {
+bool AUDIO_InitPatch2(struct Patch *patch, char *type_name, char *plugin_name, hash_t *audio_state) {
 
   SoundPluginType *type;
   struct SoundPlugin *plugin;
 
-  bool state_only_has_plugin = state!=NULL && state_only_contains_plugin(state);
+  bool state_only_has_plugin = audio_state!=NULL && state_only_contains_plugin(audio_state);
   
-  if (state!=NULL){
+  if (audio_state!=NULL){
     
     R_ASSERT(type_name==NULL);
     R_ASSERT(plugin_name==NULL);
@@ -197,9 +197,9 @@ bool AUDIO_InitPatch2(struct Patch *patch, char *type_name, char *plugin_name, h
     hash_t *plugin_state;
 
     if (state_only_has_plugin)
-      plugin_state = state;
+      plugin_state = audio_state;
     else
-      plugin_state = HASH_get_hash(state, "plugin");
+      plugin_state = HASH_get_hash(audio_state, "plugin");
   
     plugin = PLUGIN_create_from_state(plugin_state);
     type = plugin->type;
@@ -235,8 +235,8 @@ bool AUDIO_InitPatch2(struct Patch *patch, char *type_name, char *plugin_name, h
 
   // Create mixer object
   CHIP_create(sound_producer);
-  if (state != NULL && !state_only_has_plugin)
-    CHIP_set_pos(patch, HASH_get_float(state, "x"), HASH_get_float(state, "y"));
+  if (audio_state != NULL && !state_only_has_plugin)
+    CHIP_set_pos(patch, HASH_get_float(audio_state, "x"), HASH_get_float(audio_state, "y"));
   
   // Create instrument widget
   InstrumentWidget_create_audio_instrument_widget(patch);
@@ -602,7 +602,7 @@ static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *tra
   }
 }
 
-hash_t *AUDIO_get_patch_state(struct Patch *patch){
+hash_t *AUDIO_get_audio_patch_state(struct Patch *patch){
   hash_t *state=HASH_create(4);
 
   R_ASSERT_RETURN_IF_FALSE2(patch->is_usable, NULL);

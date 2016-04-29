@@ -55,7 +55,7 @@ extern LANGSPEC hash_t *HASH_get_hash(const hash_t *hash, const char *key);
 
 // Array interface
 
-extern LANGSPEC int HASH_get_array_size(const hash_t *hash);
+extern LANGSPEC int HASH_get_array_size(const hash_t *hash); // This function probably only makes sense if there is only ONE array type in the hash map. (it returns the highest of all array types)
 
 extern LANGSPEC void HASH_put_string_at(hash_t *hash, const char *key, int i, const wchar_t *val);
 extern LANGSPEC void HASH_put_chars_at(hash_t *hash, const char *key, int i, const char *val);

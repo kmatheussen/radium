@@ -234,8 +234,7 @@ int cloneAudioInstrument(int instrument_id){
   if(old_patch==NULL)
     return -1;
   
-  SoundPlugin *old_plugin = (struct SoundPlugin*)old_patch->patchdata;
-  hash_t *state = PLUGIN_get_state(old_plugin);
+  hash_t *state = PATCH_get_state(old_patch);
 
   struct Patch *new_patch = PATCH_create_audio(NULL, NULL, talloc_format("Clone of %s",old_patch->name), state);
   if (new_patch==NULL)
