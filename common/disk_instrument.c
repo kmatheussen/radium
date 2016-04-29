@@ -43,8 +43,10 @@ var0:
 	goto start;
 
 obj0:
-        if(instrument==NULL)
+        if(instrument==NULL) {
           RError("Instrument==NULL in disk_instrument.c. instrument_name: \"%s\", strcmp returns: %d, get_audio_instrument() returns: %p",instrument_name,strcmp("Audio instrument",instrument_name),get_audio_instrument());
+          instrument = get_MIDI_instrument();
+        }
           
 	VECTOR_push_back(&instrument->patches,LoadPatch());
 	goto start;

@@ -634,6 +634,18 @@ struct Patch{
 #define PATCH_SUCCESS 1
 #define NextPatch(a) ((struct Patch *)((a)->l.next))
 
+#if 0
+// Not necessary. Just create state from 'source' and apply it to 'dest'.
+static inline void Patch_copyAttributesFromAnotherPatch(struct Patch *dest, struct Patch *source){
+  dest->name_is_edited = source->name_is_edited;
+  dest->name = source->name;
+  dest->forward_events = source->forward_events;
+  int i;
+  for (i=0;i<NUM_PATCH_VOICES; i++)
+    dest->voices[i] = source->voices[i];
+}
+#endif
+
 static inline void Patch_addPlayingVoice(struct Patch *patch, float note_num, int64_t note_id, float pan){
 #if 0
   printf("Adding note with id %d\n",(int)note_id);

@@ -182,7 +182,7 @@ static bool state_only_contains_plugin(hash_t *state){
   return false;
 }
 
-bool AUDIO_InitPatch2(struct Patch *patch, char *type_name, char *plugin_name, hash_t *audio_state) {
+bool AUDIO_InitPatch2(struct Patch *patch, char *type_name, char *plugin_name, hash_t *audio_state, bool is_loading_song) {
 
   SoundPluginType *type;
   struct SoundPlugin *plugin;
@@ -234,7 +234,7 @@ bool AUDIO_InitPatch2(struct Patch *patch, char *type_name, char *plugin_name, h
   R_ASSERT_RETURN_IF_FALSE2(sound_producer!=NULL, false);
 
   // Create mixer object
-  CHIP_create(sound_producer);
+  CHIP_create(sound_producer, is_loading_song);
   if (audio_state != NULL && !state_only_has_plugin)
     CHIP_set_pos(patch, HASH_get_float(audio_state, "x"), HASH_get_float(audio_state, "y"));
   

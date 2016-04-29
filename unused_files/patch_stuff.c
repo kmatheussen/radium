@@ -797,3 +797,63 @@ struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *na
   return patch;
 }
 #endif
+
+
+//extern LANGSPEC void CHIP_delete_from_patch(struct Patch *patch);
+extern LANGSPEC hash_t *CHIP_get_chip_state_from_patch(struct Patch *patch);
+
+
+#if 0
+// Will be removed. Currently used when loading.
+void CHIP_create_from_state(hash_t *state, Buses buses){
+  if (PLAYER_is_running()==false)
+    return;
+
+  struct Patch *patch = PATCH_get_from_id(HASH_get_int(state, "patch"));
+  double x = HASH_get_float(state, "x");
+  double y = HASH_get_float(state, "y");
+
+  struct SoundPlugin *plugin = PLUGIN_create_from_state(HASH_get_hash(state, "plugin"));
+  R_ASSERT(plugin != NULL);
+  patch->patchdata = plugin;
+  
+  if(plugin!=NULL){
+    patch->is_usable = true;
+    plugin->patch = patch;
+    Chip *chip = new Chip(&g_mixer_widget->scene,
+                          SP_create(plugin,buses),
+                          x,y);    
+    printf("Made chip %p\n",chip);
+  }else{
+    patch->is_usable = false;
+    printf("Unable to create chip\n"); // proper error message given elsewhere. (ladspa or vst)
+  }
+}
+#endif
+
+
+hash_t *CHIP_get_state(Chip *chip);
+
+
+#if 0
+// will be unnecessary
+hash_t *CHIP_get_state(Chip *chip){
+  hash_t *state=HASH_create(4);
+
+  SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+  struct Patch *patch = CHIP_get_patch(chip);
+
+  HASH_put_int(state, "patch", patch->id);
+  HASH_put_float(state, "x", chip->x());
+  HASH_put_float(state, "y", chip->y());
+
+  HASH_put_hash(state, "plugin", PLUGIN_get_state(plugin));
+
+  return state;
+}
+
+hash_t *CHIP_get_chip_state_from_patch(struct Patch *patch){
+  Chip *chip = get_chip_from_patch_id(&g_mixer_widget->scene, patch->id);
+  return CHIP_get_state(chip);
+}
+#endif

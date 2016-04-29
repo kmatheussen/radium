@@ -480,8 +480,10 @@ public:
     _is_bus = _bus_num >= 0;
 
     if (_is_bus) {
-      R_ASSERT(buses.bus1==NULL);
-      R_ASSERT(buses.bus2==NULL);
+      if (_bus_num == 0)
+        R_ASSERT(buses.bus1==NULL);
+      if (_bus_num == 1)
+        R_ASSERT(buses.bus2==NULL);
     }else{
       R_ASSERT(buses.bus1!=NULL);
       R_ASSERT(buses.bus2!=NULL);

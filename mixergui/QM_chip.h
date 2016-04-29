@@ -351,7 +351,6 @@ bool CHIP_is_at_output_eport(Chip *chip, int x, int y);
 Chip *CHIP_get(QGraphicsScene *scene, const Patch *patch);
 
 struct Patch *CHIP_get_patch(Chip *chip);
-hash_t *CHIP_get_state(Chip *chip);
 
 hash_t *CONNECTION_get_state(SuperConnection *connection);
 void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int patch_id_old, int patch_id_new);
@@ -361,7 +360,7 @@ void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int patc
 struct SoundProducer;
 struct Patch;
 
-extern LANGSPEC void CHIP_create(struct SoundProducer *sound_producer);
+extern LANGSPEC void CHIP_create(struct SoundProducer *sound_producer, bool is_loading_song);
 extern LANGSPEC void CHIP_delete(struct Patch *patch);
   
 //extern LANGSPEC void CHIP_init_because_it_has_new_plugin(struct SoundPlugin *plugin);
@@ -385,8 +384,5 @@ extern LANGSPEC struct Patch* CHIP_get_dest(const struct Patch *patch, int conne
 extern LANGSPEC struct Patch* CHIP_get_esource(const struct Patch *patch, int connectionnum);
 extern LANGSPEC struct Patch* CHIP_get_edest(const struct Patch *patch, int connectionnum);
 
-
-//extern LANGSPEC void CHIP_delete_from_patch(struct Patch *patch);
-extern LANGSPEC hash_t *CHIP_get_chip_state_from_patch(struct Patch *patch);
 
 #endif

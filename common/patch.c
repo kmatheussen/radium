@@ -223,7 +223,7 @@ bool PATCH_make_active_audio(struct Patch *patch, char *type_name, char *plugin_
     apply_patch_state(patch, state);
   }
   
-  if (AUDIO_InitPatch2(patch, type_name, plugin_name, audio_state)==false)
+  if (AUDIO_InitPatch2(patch, type_name, plugin_name, audio_state, false)==false)
     return false;
 
   ADD_UNDO(Audio_Patch_Add_CurrPos(patch));
@@ -233,6 +233,11 @@ bool PATCH_make_active_audio(struct Patch *patch, char *type_name, char *plugin_
   return true;
 }
 
+void PATCH_init_audio_when_loading_song(struct Patch *patch, hash_t *state) {
+  AUDIO_InitPatch2(patch, NULL, NULL, state, true);
+}
+
+// Either type_name and plugin_name is NULL, or state==NULL
 struct Patch *PATCH_create_audio(char *type_name, char *plugin_name, const char *name, hash_t *state) {
   struct Patch *patch = create_new_patch(name);
 

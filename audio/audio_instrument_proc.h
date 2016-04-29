@@ -22,7 +22,7 @@ struct SoundPlugin;
 
 extern LANGSPEC hash_t *AUDIO_get_audio_patch_state(struct Patch *patch);
 extern LANGSPEC void AUDIO_set_patch_attributes(struct Patch *patch, void *patchdata);
-extern LANGSPEC bool AUDIO_InitPatch2(struct Patch *patch, char *type_name, char *plugin_name, hash_t *state);
+extern LANGSPEC bool AUDIO_InitPatch2(struct Patch *patch, char *type_name, char *plugin_name, hash_t *state, bool is_loading_song);
 extern LANGSPEC int AUDIO_initInstrumentPlugIn(struct Instruments *instrument);
   
 extern LANGSPEC void DLoadAudioInstrument(void);
