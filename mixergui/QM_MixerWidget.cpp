@@ -590,7 +590,7 @@ Chip *MW_get_chip_at(float x, float y, Chip *except){
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
     if(chip!=NULL && chip!=except){
       QPointF pos = chip->pos();
-      printf("%d / %d,    %d / %d\n",get_slot_x(pos.x()+grid_width/2), slot_x,    get_slot_y(pos.y()+grid_height/2), slot_y);
+      //printf("%d / %d,    %d / %d\n",get_slot_x(pos.x()+grid_width/2), slot_x,    get_slot_y(pos.y()+grid_height/2), slot_y);
       if(get_slot_x(pos.x()+grid_width/2)==slot_x && get_slot_y(pos.y()+grid_height/2)==slot_y)
         return chip;
     }

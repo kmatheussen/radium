@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>937</width>
-    <height>567</height>
+    <width>932</width>
+    <height>516</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -164,19 +164,6 @@
           <property name="sizeConstraint">
            <enum>QLayout::SetDefaultConstraint</enum>
           </property>
-          <item row="1" column="4">
-           <spacer name="horizontalSpacer_5">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
           <item row="0" column="0">
            <widget class="QCheckBox" name="safeModeOnoff">
             <property name="enabled">
@@ -195,32 +182,6 @@
           </item>
           <item row="0" column="3">
            <spacer name="horizontalSpacer_10">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="1" column="3">
-           <spacer name="horizontalSpacer_11">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="1" column="1">
-           <spacer name="horizontalSpacer_8">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -264,34 +225,6 @@
              </size>
             </property>
            </spacer>
-          </item>
-          <item row="1" column="0">
-           <widget class="QCheckBox" name="pauseRenderingOnoff">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
-            <property name="toolTip">
-             <string/>
-            </property>
-            <property name="statusTip">
-             <string/>
-            </property>
-            <property name="text">
-             <string>Briefly pause graphics rendering when opening windows</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QLabel" name="label_7">
-            <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
-Some GFX drivers may crash when Qt opens a window in a separate&lt;br&gt;
-thread while rendering graphics with OpenGL. In order to work around&lt;br&gt;
-this problem, we pause rendering briefly (but noticably) while the window opens.&lt;br&gt;
-If you use Windows or a driver from nvidia, it's probably safe to uncheck this option.
-&lt;/span&gt;&lt;br&gt;&lt;span style=&quot; color:#000000;&quot;&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-           </widget>
           </item>
          </layout>
         </widget>
@@ -2408,21 +2341,24 @@ Disabling this option will cause Radium to eventually run out of memory prematur
       <attribute name="title">
        <string>Windows</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_8">
-       <item>
-        <spacer name="verticalSpacer_15">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="0" column="1">
+        <widget class="QLabel" name="label_8">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;color:#000000;&quot;&gt;
+A &lt;span style=&quot; font-style:italic;&quot;&gt;modal &lt;/span&gt;window is a window that doesn't allow you to do&lt;br&gt;
+anything else in any other window while it is open. You normally don't want this.&lt;br&gt;
+However, older Intel and AMD drivers on Linux sometimes crashes when windows&lt;br&gt;
+are not opened modally. For instance, if Radium sometimes crashes immediately when&lt;br&gt;
+ you open a new window, e.g. this Preferences window, or the Song Comment window,&lt;br&gt;
+you should check this box.
+&lt;/span&gt;
+&lt;/body&gt;&lt;/html&gt;
+</string>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
+        </widget>
        </item>
-       <item>
+       <item row="0" column="0">
         <widget class="QCheckBox" name="modal_windows">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
@@ -2450,7 +2386,7 @@ Disabling this option will cause Radium to eventually run out of memory prematur
          </property>
         </widget>
        </item>
-       <item>
+       <item row="2" column="0">
         <widget class="QCheckBox" name="native_file_requesters">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
@@ -2478,44 +2414,33 @@ Disabling this option will cause Radium to eventually run out of memory prematur
          </property>
         </widget>
        </item>
-       <item>
-        <spacer name="verticalSpacer_17">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
+       <item row="1" column="1">
+        <widget class="QLabel" name="label_7">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
+Some GFX drivers may crash when Qt opens a window in a separate&lt;br&gt;
+thread while rendering graphics with OpenGL. In order to work around&lt;br&gt;
+this problem, we pause rendering briefly (but noticably) while the window opens.&lt;br&gt;
+This option should be considered as a lightweight version of  &quot;Only show modal windows&quot;.
+&lt;/span&gt;&lt;br&gt;&lt;span style=&quot; color:#000000;&quot;&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
+        </widget>
        </item>
-       <item>
-        <spacer name="verticalSpacer_18">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
+       <item row="1" column="0">
+        <widget class="QCheckBox" name="pauseRenderingOnoff">
+         <property name="enabled">
+          <bool>true</bool>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
+         <property name="toolTip">
+          <string/>
          </property>
-        </spacer>
-       </item>
-       <item>
-        <spacer name="verticalSpacer_16">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
+         <property name="statusTip">
+          <string/>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
+         <property name="text">
+          <string>Briefly pause graphics rendering when opening windows</string>
          </property>
-        </spacer>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -2543,8 +2468,8 @@ Disabling this option will cause Radium to eventually run out of memory prematur
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>638</width>
-            <height>464</height>
+            <width>633</width>
+            <height>413</height>
            </rect>
           </property>
           <property name="sizePolicy">

@@ -1001,10 +1001,10 @@ bool GL_get_safe_mode(void){
   return SETTINGS_read_bool("safe_mode", false);
 }
 
-static bool g_pause_rendering_on_off = true;
+static bool g_pause_rendering_on_off = false;
 
 static void init_g_pause_rendering_on_off(void){
-  g_pause_rendering_on_off = SETTINGS_read_bool("pause_rendering", true);
+  g_pause_rendering_on_off = SETTINGS_read_bool("pause_rendering", false);
 }
 
 void GL_set_pause_rendering_on_off(bool onoff){
