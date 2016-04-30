@@ -197,6 +197,46 @@ struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,int notenum
   return getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
 }
 
+struct Signatures *getSignatureFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int num){
+  (*wblock) = getWBlockFromNumA(windownum, window, blocknum);
+  if ((*wblock)==NULL)
+    return NULL;
+
+  struct Blocks *block = (*wblock)->block;
+  
+  struct Signatures *ret = ListFindElement3_num(&block->signatures->l,(NInt)num);
+  if (ret==NULL)
+      RError("Signature #%d in block #%d does not exist",num,blocknum);
+    
+  return ret;
+}
+
+struct Signatures *getSignatureFromNum(int windownum,int blocknum,int num){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  return getSignatureFromNumA(windownum, &window, blocknum, &wblock, num);
+}
+
+struct LPBs *getLPBFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int num){
+  (*wblock) = getWBlockFromNumA(windownum, window, blocknum);
+  if ((*wblock)==NULL)
+    return NULL;
+
+  struct Blocks *block = (*wblock)->block;
+  
+  struct LPBs *ret = ListFindElement3_num(&block->signatures->l,(NInt)num);
+  if (ret==NULL)
+      RError("LPB #%d in block #%d does not exist",num,blocknum);
+    
+  return ret;
+}
+
+struct LPBs *getLPBFromNum(int windownum,int blocknum,int num){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  return getLPBFromNumA(windownum, &window, blocknum, &wblock, num);
+}
+
 struct BPMs *getBPMFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int bpmnum){
   (*wblock) = getWBlockFromNumA(windownum, window, blocknum);
   if ((*wblock)==NULL)

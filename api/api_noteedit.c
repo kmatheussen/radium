@@ -358,6 +358,14 @@ int addSignature3(int numerator, int denominator,
   return addSignature(numerator, denominator, place, blocknum);
 }
 
+// Return a place, for convenience. The line part of the returned value is always 0 (even if numerator > denominator). Returns -1 on error.
+Place getSignature(int signaturenum, int blocknum, int windownum){
+  struct Signatures *signature = getSignatureFromNum(windownum, blocknum, signaturenum);
+  if (signature==NULL)
+    return place(0,-1,1);
+  else
+    return place(0, signature->signature.numerator, signature->signature.denominator);
+}
 
 /******************* LPBs *************************/
 
@@ -421,6 +429,14 @@ int addLPB3(int lpb,
   return addLPB(lpb, place, blocknum);
 }
 
+int getLPB(int num, int blocknum, int windownum){
+  struct LPBs *lpb = getLPBFromNum(windownum, blocknum, num);
+  if (lpb==NULL)
+    return -1;
+  else
+    return lpb->lpb;
+}
+
 
 /***************** BPMs *************************/
 
@@ -480,6 +496,13 @@ int addBPM3(int bpm,
   return addBPM(bpm, place, blocknum);
 }
            
+int getBPM(int num, int blocknum, int windownum){
+  struct BPMs *bpm = getBPMFromNum(windownum, blocknum, num);
+  if (bpm==NULL)
+    return -1;
+  else
+    return bpm->tempo;
+}
 
 
 /****************** notes **********************/
