@@ -45,16 +45,16 @@ class RadiumMock:
                 windownum, blocknum, tracknum):
 #        return
         print "addNote",tracknum,line,end_line,notenum,velocity
-    def setLPB(self,lpb):
+    def setMainLPB(self,lpb):
         pass
-    def setBPM(self,pbm):
+    def setMainBPM(self,pbm):
         pass
     def dummy(self,*args):
         pass
-    def addLPB(self, lpb, linenum, counter, dividor):
-        print "addLPB", str(linenum) + ": "+hex(lpb)
-    def addBPM(self, bpm, linenum, counter, dividor):
-        print "addBPM", str(linenum) + ": "+hex(bpm)
+    def addLPB3(self, lpb, linenum, counter, dividor):
+        print "addLPB3", str(linenum) + ": "+hex(lpb)
+    def addBPM3(self, bpm, linenum, counter, dividor):
+        print "addBPM3", str(linenum) + ": "+hex(bpm)
     def createVelocityF(self, value, floatplace, notenum, tracknum):
         print "   createVelocityF",floatplace,value
     def getMaxVolume(self):
@@ -77,13 +77,14 @@ def get_radium_mock():
     radium = RadiumMock()
     radium.addNote = radium.addNote
     radium.addNote2 = radium.addNote
-    radium.setLPB = radium.setLPB
-    radium.setBPM = radium.setBPM
+    radium.setMainLPB = radium.setLPB
+    radium.setMainBPM = radium.setMainBPM
     radium.setNumLines = radium.dummy
     radium.setNumTracks = radium.dummy
     radium.openRequester = radium.dummy
     radium.closeRequester = radium.dummy
     radium.addSignature = radium.dummy
+    radium.addSignature3 = radium.dummy
     radium.createMIDIInstrument = radium.dummy
     radium.createAudioInstrument = radium.dummy
     radium.setInstrumentSample = radium.dummy
@@ -317,7 +318,7 @@ class Tempos:
     def send_tempos_to_radium(self, resolution, lpb):
         for tempo in sorted(self.tempos, key=lambda event: event.tick):
             place = tick_to_place(tempo.tick, resolution, lpb)
-            radium.addBPM(int(tempo.bpm), place[0], place[1], place[2])
+            radium.addBPM3(int(tempo.bpm), place[0], place[1], place[2])
 
         
 class Signatures:
@@ -334,8 +335,8 @@ class Signatures:
     def send_signatures_to_radium(self, resolution, lpb):
         for signature in sorted(self.signatures, key=lambda event: event.tick):
             place = tick_to_place(signature.tick, resolution, lpb)
-            radium.addSignature(int(signature.get_numerator()), int(signature.get_denominator()),
-                                place[0], place[1], place[2])
+            radium.addSignature3(int(signature.get_numerator()), int(signature.get_denominator()),
+                                 place[0], place[1], place[2])
 
         
 class Events:
@@ -621,8 +622,8 @@ def import_midi_do(tracks, lpb=4, midi_port="", polyphonic=True):
 
     clear_radium_editor()    
 
-    radium.setLPB(lpb)
-    radium.setBPM(120) # Default SMF value.
+    radium.setMainLPB(lpb)
+    radium.setMainBPM(120) # Default SMF value.
 
     last_place = tick_to_place(get_last_tick(tracks), resolution, lpb)
     radium.setNumLines(last_place[0] + 2)

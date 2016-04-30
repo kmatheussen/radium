@@ -5356,15 +5356,16 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                (bpm (caddr tempo)))
           ;;(c-display "l1")
           (when (not (= lpb last-lpb))
-                ;;(c-display line ": LPB" lpb)
-                (<ra> :add-lpb lpb line 0 1))
+            ;;(c-display line ": LPB" lpb)
+            (<ra> :add-lpb lpb line))
           ;;(c-display "l2")
           (when (not (= bpm last-bpm))
-                ;;(c-display line ": BPM" bpm)
-                (<ra> :add-bpm (if (= lpb 8)
-                                (round (/ bpm 2))
-                                bpm)
-                            line 0 1))
+            ;;(c-display line ": BPM" bpm)
+            (<ra> :add-bpm
+                  (if (= lpb 8)
+                      (round (/ bpm 2))
+                      bpm)
+                  line))
           ;;(c-display "l3")
           (loop (cdr tempos) lpb bpm)))))
 
@@ -5451,8 +5452,8 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 (define (send-events-to-radium playlist instruments patterns)
   (clear-radium-editor)
   
-  (<ra> :set-lpb 4)
-  (<ra> :set-bpm 125) ;; Default mod value
+  (<ra> :set-main-lpb 4)
+  (<ra> :set-main-bpm 125) ;; Default mod value
 
   (define num-patterns (length patterns))
   

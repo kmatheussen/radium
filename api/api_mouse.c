@@ -46,6 +46,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nodelines_proc.h"
 #include "../common/wtracks_proc.h"
 #include "../common/undo_blocks_proc.h"
+#include "../common/tempos_proc.h"
+#include "../common/undo_tempos_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 
@@ -246,6 +248,16 @@ Place getNextPlaceInGridFromY(float y, int blocknum, int windownum) {
 }
 
 
+// bpm
+///////////////////////////////////////////////////
+int getNumBPMs(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return 0;
+
+  return ListFindNumElements3(&wblock->block->tempos->l);
+}
 
 
 // reltempo

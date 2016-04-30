@@ -168,7 +168,7 @@ public:
 
   void pushValuesToRoot(Rational rational){
     if (rational.is_valid() && rational.numerator>0 && rational.denominator>0) {
-      setSignature(rational.numerator, rational.denominator);
+      setMainSignature(rational.numerator, rational.denominator);
     }
   }
   

@@ -197,6 +197,26 @@ struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,int notenum
   return getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
 }
 
+struct BPMs *getBPMFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int bpmnum){
+  (*wblock) = getWBlockFromNumA(windownum, window, blocknum);
+  if ((*wblock)==NULL)
+    return NULL;
+
+  struct Blocks *block = (*wblock)->block;
+  
+  struct BPMs *ret = ListFindElement3_num(&block->tempos->l,(NInt)bpmnum);
+  if (ret==NULL)
+      RError("BPM #%d in block #%d does not exist",bpmnum,blocknum);
+    
+  return ret;
+}
+
+struct BPMs *getBPMFromNum(int windownum,int blocknum,int bpmnum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  return getBPMFromNumA(windownum, &window, blocknum, &wblock, bpmnum);
+}
+
 struct FXs *getFXsFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int fxnum){
   (*wtrack) = getWTrackFromNumA(windownum, window, blocknum, wblock, tracknum);
   if ((*wtrack)==NULL)

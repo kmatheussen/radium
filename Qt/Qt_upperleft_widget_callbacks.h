@@ -295,13 +295,13 @@ public slots:
 
   void on_lpb_editingFinished(){
     printf("lpb upperleft\n");
-    setLPB(lpb->value());
+    setMainLPB(lpb->value());
     set_editor_focus();
   }
 
   void on_bpm_editingFinished(){
     printf("bpm upperleft\n");
-    setBPM(bpm->value());
+    setMainBPM(bpm->value());
     set_editor_focus();
   }
 

@@ -368,13 +368,13 @@ class Tempo:
     def generate(self, last_lpb):
         if self.bpm > 999: # bpm can be between 32 and 1530, while radium has a bpm range of 1-999. Need to use higher lpb for bpm above 999.
             if last_lpb != 8:
-                radium.addLPB(8, self.linenum, 0, 1) 
-            radium.addBPM(int(round(self.bpm/2)), self.linenum, 0, 1)
+                radium.addLPB3(8, self.linenum, 0, 1) 
+            radium.addBPM3(int(round(self.bpm/2)), self.linenum, 0, 1)
             return 8
         else:
             if last_lpb != 4:
-                radium.addLPB(4, self.linenum, 0, 1)
-            radium.addBPM(int(round(self.bpm)), self.linenum, 0, 1)
+                radium.addLPB3(4, self.linenum, 0, 1)
+            radium.addBPM3(int(round(self.bpm)), self.linenum, 0, 1)
             return 4
 
 class ModSpeed:
@@ -1129,8 +1129,8 @@ class Song:
         for sample in self.samples:
             sample.generate()
 
-        radium.setLPB(4)   # Deafult mod value (not really used I think)
-        radium.setBPM(125) # Default mod value (not really used though)
+        radium.setMainLPB(4)   # Deafult mod value (not really used I think)
+        radium.setMainBPM(125) # Default mod value (not really used though)
 
         for pattern in self.patterns:
             pattern.generate(self)

@@ -51,6 +51,9 @@ extern LANGSPEC struct WTracks *getWTrackFromNumA(
 extern LANGSPEC struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,int notenum);
 extern LANGSPEC struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum);
 
+extern LANGSPEC struct BPMs *getBPMFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int bpmnum);
+extern LANGSPEC struct BPMs *getBPMFromNum(int windownum,int blocknum,int bpmnum);
+
 extern LANGSPEC struct FXs *getFXsFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int fxnum);
 extern LANGSPEC struct FXs *getFXsFromNum(int windownum,int blocknum,int tracknum,int fxnum);
 

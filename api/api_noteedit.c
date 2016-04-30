@@ -297,6 +297,193 @@ int getMaxVolume(){
   return MAX_VELOCITY;
 }
 
+
+
+/********** Signatures  **********/
+
+void setMainSignature(int numerator, int denominator){
+  if (numerator<=0 || denominator<=0)
+    return;
+  if (numerator==root->signature.numerator && denominator==root->signature.denominator)
+    return;
+  
+  PlayStop();
+
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+
+  ADD_UNDO(MainTempo(window,wblock));
+  
+  root->signature = ratio(numerator, denominator);
+  UpdateAllBeats();
+  
+  window->must_redraw = true;
+}
+
+int numSignatures(int blocknum, int windownum){
+  struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return ListFindNumElements3(&wblock->block->signatures->l);
+}
+
+int addSignature(int numerator, int denominator,
+                 Place place,
+                 int blocknum)
+{
+  struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
+  if(wblock==NULL) {
+    GFX_Message(NULL, "unknown block(%p)",blocknum);
+    return -1;
+  }
+
+  if (!PlaceLegal(wblock->block, &place)) {
+    GFX_Message(NULL, "Place %s is not legal", PlaceToString(&place));
+    return -1;
+  }
+
+  struct Signatures *signature = SetSignature(wblock->block,&place,ratio(numerator, denominator));
+
+  wblock->block->is_dirty = true;
+
+  return ListFindElementPos3(&wblock->block->signatures->l,&signature->l);
+}
+
+int addSignature3(int numerator, int denominator,
+                  int line,int counter,int dividor,
+                  int blocknum)
+{
+  Place place = {line, counter, dividor};
+  return addSignature(numerator, denominator, place, blocknum);
+}
+
+
+/******************* LPBs *************************/
+
+void setMainLPB(int lpb_value){
+  if (lpb_value <=1)
+    return;
+  if (lpb_value == root->lpb)
+    return;
+  
+  PlayStop();
+
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+
+  printf("Undo MainTempo lpb: %d\n",lpb_value);
+  ADD_UNDO(MainTempo(window,wblock));
+  
+  root->lpb=lpb_value;
+  UpdateAllSTimes();
+  UpdateAllBeats();
+  
+  //UpdateAllWLPBs(window);
+  window->must_redraw = true;
+}
+
+int numLPBs(int blocknum, int windownum){
+  struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return ListFindNumElements3(&wblock->block->lpbs->l);
+}
+
+int addLPB(int lpb_value,
+           Place place,
+           int blocknum)
+{
+  struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
+  if(wblock==NULL)
+    return -1;
+
+  if (!PlaceLegal(wblock->block, &place)) {
+    GFX_Message(NULL, "Place %s is not legal", PlaceToString(&place));
+    return -1;
+  }
+
+  struct LPBs *lpb = SetLPB(wblock->block,&place,lpb_value);
+
+  wblock->block->is_dirty = true;
+
+  return ListFindElementPos3(&wblock->block->lpbs->l,&lpb->l);
+}
+
+int addLPB3(int lpb,
+            int line,int counter,int dividor,
+            int blocknum
+            )
+{
+  Place place = {line, counter, dividor};
+
+  return addLPB(lpb, place, blocknum);
+}
+
+
+/***************** BPMs *************************/
+
+void setMainBPM(int bpm_value){
+  if (bpm_value <=1)
+    return;
+  if (bpm_value == root->tempo)
+    return;
+
+  PlayStop();
+
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+  
+  ADD_UNDO(MainTempo(window,wblock));
+  
+  root->tempo=bpm_value;
+  UpdateAllSTimes();
+}
+
+int numBPMs(int blocknum, int windownum){
+  struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return ListFindNumElements3(&wblock->block->tempos->l);
+}
+
+
+int addBPM(int bpm,
+           Place place,
+           int blocknum)
+{
+  struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
+  if(wblock==NULL)
+    return -1;
+
+  if (!PlaceLegal(wblock->block, &place)) {
+    GFX_Message(NULL, "Place %s is not legal", PlaceToString(&place));
+    return -1;
+  }
+    
+  struct Tempos *tempo = SetTempo(wblock->block,&place,bpm);
+
+  wblock->block->is_dirty = true;
+
+  return ListFindElementPos3(&wblock->block->tempos->l,&tempo->l);
+}
+
+int addBPM3(int bpm,
+            int line,int counter,int dividor,
+            int blocknum
+            )
+{
+  Place place = {line, counter, dividor};
+
+  return addBPM(bpm, place, blocknum);
+}
+           
+
+
+/****************** notes **********************/
+
 int getNoteVolume(int windownum,int blocknum,int tracknum,int notenum){
 	struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
 
@@ -334,157 +521,6 @@ int getNumNotes(int tracknum,int blocknum,int windownum){
 
 	return ListFindNumElements3(&wtrack->track->notes->l);
 }
-
-void setSignature(int numerator, int denominator){
-  if (numerator<=0 || denominator<=0)
-    return;
-  if (numerator==root->signature.numerator && denominator==root->signature.denominator)
-    return;
-  
-  PlayStop();
-
-  struct Tracker_Windows *window = root->song->tracker_windows;
-  struct WBlocks *wblock = window->wblock;
-
-  ADD_UNDO(MainTempo(window,wblock));
-  
-  root->signature = ratio(numerator, denominator);
-  UpdateAllBeats();
-  
-  window->must_redraw = true;
-}
-
-void setLPB(int lpb_value){
-  if (lpb_value <=1)
-    return;
-  if (lpb_value == root->lpb)
-    return;
-  
-  PlayStop();
-
-  struct Tracker_Windows *window = root->song->tracker_windows;
-  struct WBlocks *wblock = window->wblock;
-
-  printf("Undo MainTempo lpb: %d\n",lpb_value);
-  ADD_UNDO(MainTempo(window,wblock));
-  
-  root->lpb=lpb_value;
-  UpdateAllSTimes();
-  UpdateAllBeats();
-  
-  //UpdateAllWLPBs(window);
-  window->must_redraw = true;
-}
-
-void setBPM(int bpm_value){
-  if (bpm_value <=1)
-    return;
-  if (bpm_value == root->tempo)
-    return;
-
-  PlayStop();
-
-  struct Tracker_Windows *window = root->song->tracker_windows;
-  struct WBlocks *wblock = window->wblock;
-  
-  ADD_UNDO(MainTempo(window,wblock));
-  
-  root->tempo=bpm_value;
-  UpdateAllSTimes();
-}
-
-
-int numSignatures(int blocknum, int windownum){
-  struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
-  if(wblock==NULL)
-    return 0;
-
-  return ListFindNumElements3(&wblock->block->signatures->l);
-}
-
-int numLPBs(int blocknum, int windownum){
-  struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
-  if(wblock==NULL)
-    return 0;
-
-  return ListFindNumElements3(&wblock->block->lpbs->l);
-}
-
-int numBPMs(int blocknum, int windownum){
-  struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
-  if(wblock==NULL)
-    return 0;
-
-  return ListFindNumElements3(&wblock->block->tempos->l);
-}
-
-
-int addSignature(int numerator, int denominator,
-                 int line,int counter,int dividor,
-                 int blocknum)
-{
-  struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
-  if(wblock==NULL) {
-    GFX_Message(NULL, "unknown block(%p)",blocknum);
-    return -1;
-  }
-
-  Place dasplace = place(line,counter,dividor);
-  if (!PlaceLegal(wblock->block, &dasplace)) {
-    GFX_Message(NULL, "Place %d + %d/%d is not legal", line, counter, dividor);
-    return -1;
-  }
-
-  struct Signatures *signature = SetSignature(wblock->block,&dasplace,ratio(numerator, denominator));
-
-  wblock->block->is_dirty = true;
-
-  return ListFindElementPos3(&wblock->block->signatures->l,&signature->l);
-}
-
-int addLPB(int lpb_value,
-           int line,int counter,int dividor,
-           int blocknum)
-{
-  struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
-  if(wblock==NULL)
-    return -1;
-
-  Place *place = PlaceCreate(line,counter,dividor);
-  if (!PlaceLegal(wblock->block, place)) {
-    GFX_Message(NULL, "Place %d + %d/%d is not legal", line, counter, dividor);
-    return -1;
-  }
-
-  struct LPBs *lpb = SetLPB(wblock->block,place,lpb_value);
-
-  wblock->block->is_dirty = true;
-
-  return ListFindElementPos3(&wblock->block->lpbs->l,&lpb->l);
-}
-
-
-int addBPM(int bpm,
-           int line,int counter,int dividor,
-           int blocknum)
-{
-  struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
-  if(wblock==NULL)
-    return -1;
-
-  Place *place = PlaceCreate(line,counter,dividor);
-  if (!PlaceLegal(wblock->block, place)) {
-    GFX_Message(NULL, "Place %d + %d/%d is not legal", line, counter, dividor);
-    return -1;
-  }
-    
-  struct Tempos *tempo = SetTempo(wblock->block,place,bpm);
-
-  wblock->block->is_dirty = true;
-
-  return ListFindElementPos3(&wblock->block->tempos->l,&tempo->l);
-}
-
 
 void setNoteEndPlace(int line,int counter,int dividor,int windownum,int blocknum,int tracknum,int notenum){
   struct Tracker_Windows *window;
