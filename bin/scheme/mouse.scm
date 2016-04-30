@@ -810,6 +810,16 @@
   (<ra> :set-statusbar-text (<-> "Block tempo multiplied by " (two-decimal-string (<ra> :get-reltempo)))))
 
 
+(define (get-BPMs)
+  (map (lambda (bpmnum)
+         (list (<ra> :get-bpm-place bpmnum)
+               (<ra> :get-bpm bpmnum)))
+       (iota (<ra> :num-bpms))))
+
+#!!
+(get-BPMs)
+!!#
+
 (define (get-reltemposlider-x)
   (define box (<ra> :get-box reltempo-slider))
   (scale (<ra> :get-reltempo)
@@ -847,9 +857,26 @@
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)                                
                                 (if (inside-box (<ra> :get-box reltempo-slider) X Y)
-                                    (begin
-                                      (<ra> :undo-reltempo)
-                                      (<ra> :set-reltempo 1.0)
+                                    (let ((reset-reltempo (lambda ()
+                                                            (<ra> :undo-reltempo)
+                                                            (<ra> :set-reltempo 1.0))))
+                                      (popup-menu "Reset" reset-reltempo
+                                                  "Apply tempo" (lambda ()
+                                                                  (undo-block
+                                                                   (lambda ()
+                                                                     (let* ((reltempo (<ra> :get-reltempo))
+                                                                            (bpms (get-BPMs))
+                                                                            (scale-bpm (lambda (bpm)
+                                                                                         (round (* reltempo bpm)))))
+                                                                       (for-each (lambda (place-and-bpm)
+                                                                                   (let ((place (car place-and-bpm))
+                                                                                         (bpm (cadr place-and-bpm)))
+                                                                                     (<ra> :add-bpm (scale-bpm bpm) place)))
+                                                                                 bpms)
+                                                                       (if (or (null? bpms)
+                                                                               (> (car (car bpms)) 0))
+                                                                           (<ra> :add-bpm (scale-bpm (<ra> :get-main-bpm)) 0))
+                                                                       (reset-reltempo))))))
                                       #t)
                                     #f))))
 

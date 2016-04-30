@@ -27,6 +27,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/tempos_proc.h"
 #include "../common/LPB_proc.h"
 #include "../common/Signature_proc.h"
+#include "../common/undo_signatures_proc.h"
+#include "../common/undo_lpbs_proc.h"
+#include "../common/undo_tempos_proc.h"
 #include "../common/time_proc.h"
 #include "../advanced/ad_noteadd_proc.h"
 #include "../common/player_proc.h"
@@ -320,6 +323,10 @@ void setMainSignature(int numerator, int denominator){
   window->must_redraw = true;
 }
 
+Place getMainSignature(void){
+  return place(0,root->signature.numerator,root->signature.denominator);
+}
+
 int numSignatures(int blocknum, int windownum){
   struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
   if(wblock==NULL)
@@ -332,7 +339,8 @@ int addSignature(int numerator, int denominator,
                  Place place,
                  int blocknum)
 {
-  struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock=getWBlockFromNumA(-1,&window,blocknum);
   if(wblock==NULL) {
     GFX_Message(NULL, "unknown block(%p)",blocknum);
     return -1;
@@ -343,9 +351,11 @@ int addSignature(int numerator, int denominator,
     return -1;
   }
 
+  ADD_UNDO(Signatures_CurrPos(window));
+        
   struct Signatures *signature = SetSignature(wblock->block,&place,ratio(numerator, denominator));
 
-  wblock->block->is_dirty = true;
+  window->must_redraw=true;
 
   return ListFindElementPos3(&wblock->block->signatures->l,&signature->l);
 }
@@ -391,6 +401,10 @@ void setMainLPB(int lpb_value){
   window->must_redraw = true;
 }
 
+int getMainLPB(void){
+  return root->lpb;
+}
+
 int numLPBs(int blocknum, int windownum){
   struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
   if(wblock==NULL)
@@ -403,7 +417,8 @@ int addLPB(int lpb_value,
            Place place,
            int blocknum)
 {
-  struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock=getWBlockFromNumA(-1,&window,blocknum);
   if(wblock==NULL)
     return -1;
 
@@ -412,9 +427,11 @@ int addLPB(int lpb_value,
     return -1;
   }
 
+  ADD_UNDO(LPBs_CurrPos(window));
+  
   struct LPBs *lpb = SetLPB(wblock->block,&place,lpb_value);
 
-  wblock->block->is_dirty = true;
+  window->must_redraw=true;
 
   return ListFindElementPos3(&wblock->block->lpbs->l,&lpb->l);
 }
@@ -457,6 +474,10 @@ void setMainBPM(int bpm_value){
   UpdateAllSTimes();
 }
 
+int getMainBPM(void){
+  return root->tempo;
+}
+
 int numBPMs(int blocknum, int windownum){
   struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
   if(wblock==NULL)
@@ -470,7 +491,8 @@ int addBPM(int bpm,
            Place place,
            int blocknum)
 {
-  struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock=getWBlockFromNumA(-1,&window,blocknum);
   if(wblock==NULL)
     return -1;
 
@@ -478,10 +500,12 @@ int addBPM(int bpm,
     GFX_Message(NULL, "Place %s is not legal", PlaceToString(&place));
     return -1;
   }
-    
+
+  ADD_UNDO(Tempos_CurrPos(window));
+
   struct Tempos *tempo = SetTempo(wblock->block,&place,bpm);
 
-  wblock->block->is_dirty = true;
+  window->must_redraw=true;
 
   return ListFindElementPos3(&wblock->block->tempos->l,&tempo->l);
 }
@@ -502,6 +526,14 @@ int getBPM(int num, int blocknum, int windownum){
     return -1;
   else
     return bpm->tempo;
+}
+
+Place getBPMPlace(int num, int blocknum, int windownum){
+  struct BPMs *bpm = getBPMFromNum(windownum, blocknum, num);
+  if (bpm==NULL)
+    return place(-1,0,1);
+  else
+    return bpm->l.p;
 }
 
 
@@ -597,7 +629,8 @@ int addNote2(float notenum,int velocity,
              int end_line,int end_counter,int end_dividor, 
              int windownum, int blocknum, int tracknum)
 {
-  struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock=getWBlockFromNumA(-1,&window,blocknum);
   struct WTracks *wtrack=getWTrackFromNum(windownum,blocknum,tracknum);
   if(wblock==NULL || wtrack==NULL) {
     GFX_Message(NULL, "unknown wblock(%p) or wtrack(%p) %d/%d/%d\n",wblock,wtrack,windownum,blocknum,tracknum);
@@ -630,7 +663,7 @@ int addNote2(float notenum,int velocity,
                                   velocity,
                                   true);
 
-  wblock->block->is_dirty = true;
+  window->must_redraw=true;
 
   return ListFindElementPos3(&wtrack->track->notes->l,&note->l);
 }
