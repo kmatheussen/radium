@@ -53,7 +53,8 @@ static s7webserver_t *s7webserver;
 static s7_pointer place_to_ratio(const Place *p){
   R_ASSERT(p->dividor != 0);
 
-  s7_Int a = p->line*p->dividor + p->counter;
+  s7_Int temp = p->line*p->dividor; // use temp variable (of type s7_Int, which is at least 64 bit) to make sure it doesn't overflow.
+  s7_Int a = temp + p->counter;
   s7_Int b = p->dividor;
   s7_pointer ratio = s7_make_ratio(s7, a, b);
   
@@ -186,8 +187,13 @@ Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place 
     return ratio_to_place(result);
   else if (s7_is_integer(result))
     return PlaceCreate(s7_integer(result), 0, 1);
-  else {
-    RError("result was not ratio or integer. Returning 0");
+  else if (s7_is_real(result)) {
+    RError("PlaceScale: result was a real (strange): %f (%s %s %s %s %s)",s7_real(result),PlaceToString(x),PlaceToString(x1),PlaceToString(x2),PlaceToString(y1),PlaceToString(y2));
+    Place *ret = (Place*)talloc_atomic(sizeof(Place));
+    Double2Placement(s7_real(result), ret);
+    return ret;
+  } else {
+    RError("result was not ratio or integer. Returning 0 (%s %s %s %s %s)",PlaceToString(x),PlaceToString(x1),PlaceToString(x2),PlaceToString(y1),PlaceToString(y2));
     return PlaceCreate(0,0,1);
   }
 }
@@ -232,6 +238,9 @@ bool quantitize_note(const struct Blocks *block, struct Notes *note) {
 
 
 static void place_operation_void_p1_p2(s7_pointer scheme_func, Place *p1,  const Place *p2){
+  R_ASSERT(p1->dividor > 0);
+  R_ASSERT(p2->dividor > 0);
+  
   s7_pointer result = s7_call(s7,
                               scheme_func,
                               s7_list(s7,
@@ -245,8 +254,11 @@ static void place_operation_void_p1_p2(s7_pointer scheme_func, Place *p1,  const
     PlaceCopy(p1, ratio_to_place(result));
   else if (s7_is_integer(result))
     PlaceCopy(p1, PlaceCreate(s7_integer(result), 0, 1));
-  else {
-    RError("result was not ratio or integer. Returning 0");
+  else if (s7_is_real(result)) {
+    RError("result was a real (strange): %f (%s %s)",s7_real(result),PlaceToString(p1),PlaceToString(p2));
+    Double2Placement(s7_real(result), p1);
+  }else {
+    RError("result was not ratio or integer. Returning 0 (%s %s)",PlaceToString(p1),PlaceToString(p2));
     PlaceCopy(p1, PlaceCreate(0,0,1));
   }
 }
