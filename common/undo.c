@@ -220,7 +220,7 @@ void Undo_Open_rec(void){
     return;
   }
 
-  if (!Undo_Is_Open()){
+  if (undo_is_open==0){
     struct Tracker_Windows *window = root->song->tracker_windows;
     struct WBlocks *wblock = window->wblock;
     struct WTracks *wtrack = wblock->wtrack;

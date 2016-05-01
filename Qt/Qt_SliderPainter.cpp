@@ -335,7 +335,7 @@ struct SliderPainter{
 
     // It's not quite safe to delete here. Fix after refactoring.
     
-    /*
+        /*
     if(_local_peak_values==true)
       V_free(_peak_values);
 

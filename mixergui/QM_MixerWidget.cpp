@@ -1460,23 +1460,26 @@ static void MW_cleanup_connections(void){
 
 
 static bool delete_a_chip(){
+  bool ret = false;
+  
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
 
   Undo_Open_rec();{
     
-  for (int i = 0; i < das_items.size(); ++i) {
-    Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
-    if(chip!=NULL){
-      printf("  MAKING %p inactive (%s), by force\n",chip,CHIP_get_patch(chip)->name);
-      PATCH_force_make_inactive(CHIP_get_patch(chip));
-      //MW_delete_plugin(SP_get_plugin(chip->_sound_producer));
-      return true;
+    for (int i = 0; i < das_items.size(); ++i) {
+      Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
+      if(chip!=NULL){
+        printf("  MAKING %p inactive (%s), by force\n",chip,CHIP_get_patch(chip)->name);
+        PATCH_force_make_inactive(CHIP_get_patch(chip));
+        //MW_delete_plugin(SP_get_plugin(chip->_sound_producer));
+        ret = true;
+        break;
+      }
     }
-  }
 
   } Undo_Close();
-  
-  return false;
+
+  return ret;
 }
 
 void MW_cleanup(void){
