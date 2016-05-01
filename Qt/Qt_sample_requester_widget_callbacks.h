@@ -165,6 +165,7 @@ class Sample_requester_widget : public QWidget
     IN_DIRECTORY
   } _file_chooser_state;
 
+  int _bookmark;
 
  Sample_requester_widget(QWidget *instrument_widget, QLineEdit *instrument_name_widget, QLabel *sample_name_label, Patch *patch)
    : QWidget(instrument_widget)
@@ -174,6 +175,7 @@ class Sample_requester_widget : public QWidget
    , _instrument_widget(instrument_widget)
    , _preview_octave(4)
    , _sample_name_label(sample_name_label)
+   , _bookmark(-1)
   {
     setupUi(this);
 
@@ -205,9 +207,12 @@ class Sample_requester_widget : public QWidget
         
       }
 
-      if (use_saved_path)
-        _dir = QDir(SETTINGS_read_qstring("samples_dir",QDir::currentPath()));
-      else
+      
+      if (use_saved_path) {
+        _bookmark = 1;
+        _dir = QDir(QDir::currentPath());
+        read_bookmark_and_set_dir();
+      } else
         SETTINGS_write_string("samples_dir",_dir.absolutePath());
       
       if(_dir.exists()==false) {
@@ -228,7 +233,30 @@ class Sample_requester_widget : public QWidget
 
     is_starting_up = false;
   }
+  
+  void read_bookmark_and_set_dir(void){
+    QString path = SETTINGS_read_qstring(
+                                         QString("sample_bookmarks")+QString::number(_bookmark),
+                                         SETTINGS_read_qstring(
+                                                               "samples_dir", // "samples_dir" contains last used sample.
+                                                               _dir.dirName()
+                                                               )
+                                         );
+    _dir = QDir(path);
+    
+    if(_dir.exists()==false) {
+      GFX_Message(NULL, "Directory %s doesn't exist",_dir.absolutePath().toUtf8().constData());
+      _dir = QDir(QDir::currentPath());
+    }
+  }
 
+  void write_bookmark(void){
+    if (_bookmark > 0)
+      SETTINGS_write_string(QString("sample_bookmarks")+QString::number(_bookmark), _dir.absolutePath());
+
+    SETTINGS_write_string("samples_dir",_dir.absolutePath());
+  }
+  
   void update_sample_name_label(QString text, int bank=-1, int preset=-1){
     //_sample_name_label->setText(QString("<font color='%1'>%2</font").arg(get_qcolor(CURRENT_SOUNDFILE_COLOR_NUM).name(), text));
     _sample_name_label->setText(get_display_name(text, bank, preset));
@@ -247,7 +275,7 @@ class Sample_requester_widget : public QWidget
   void update_file_list(){
     file_list->clear();
     file_list->setSortingEnabled(false);
-
+    
     printf("directory_path: \"%s\"\n",_dir.absolutePath().toUtf8().constData());
     path_edit->setText(_dir.absolutePath());
 
@@ -339,7 +367,13 @@ class Sample_requester_widget : public QWidget
 
   hash_t *get_bank(const wchar_t *filename, QString bank_name){
     hash_t *info = SF2_get_info(filename);
+    R_ASSERT(info!=NULL);
+    if (info==NULL)
+      return NULL;
     hash_t *menu = HASH_get_hash(info,"menu");
+    R_ASSERT(menu!=NULL);
+    if (menu==NULL)
+      return NULL;
     hash_t *bank = HASH_get_hash(menu,bank_name.toUtf8().constData());
     return bank;
   }
@@ -393,8 +427,10 @@ class Sample_requester_widget : public QWidget
     _sf2_bank = remove_last_char(item_text);
 
     hash_t *bank = get_bank(STRING_create(_sf2_file),_sf2_bank);
-    hash_t *preset_names = HASH_get_keys(bank);
-    update_sf2_file_list(preset_names);
+    if (bank != NULL){
+      hash_t *preset_names = HASH_get_keys(bank);
+      update_sf2_file_list(preset_names);
+    }
   }
 
   void handle_sf2_file_pressed(QString item_text){
@@ -414,9 +450,8 @@ class Sample_requester_widget : public QWidget
     _dir.cd(item_text);
     update_file_list();
 
-    SETTINGS_write_string("samples_dir",_dir.absolutePath());
-    //g_last_dir = _dir;
-
+    write_bookmark();
+    
     if(item_text=="../") {
       QList<QListWidgetItem *> items = file_list->findItems(org_directory_name+"/",Qt::MatchExactly);
       printf("cursor_entry: \"%s\", num_items: %d\n",org_directory_name.toUtf8().constData(),items.count());
@@ -514,6 +549,14 @@ class Sample_requester_widget : public QWidget
     }
   }
 
+  void bookmark_selected(int num){
+    printf("bookmark %d\n",num);
+    _bookmark = num;
+    _file_chooser_state = IN_DIRECTORY;
+    read_bookmark_and_set_dir();
+    update_file_list();
+  }
+  
 public slots:
 
   void on_up_clicked(bool){
@@ -588,5 +631,49 @@ public slots:
     set_editor_focus();
   }
 
+  void on_bookmark1_toggled(bool is_on){
+    if (is_on)
+      bookmark_selected(1);
+  }
+  
+  void on_bookmark2_toggled(bool is_on){
+    if (is_on)
+      bookmark_selected(2);
+  }
+  
+  void on_bookmark3_toggled(bool is_on){
+    if (is_on)
+      bookmark_selected(3);
+  }
+  
+  void on_bookmark4_toggled(bool is_on){
+    if (is_on)
+      bookmark_selected(4);
+  }
+  
+  void on_bookmark5_toggled(bool is_on){
+    if (is_on)
+      bookmark_selected(5);
+  }
+  
+  void on_bookmark6_toggled(bool is_on){
+    if (is_on)
+      bookmark_selected(6);
+  }
+  
+  void on_bookmark7_toggled(bool is_on){
+    if (is_on)
+      bookmark_selected(7);
+  }
+  
+  void on_bookmark8_toggled(bool is_on){
+    if (is_on)
+      bookmark_selected(8);
+  }
+  
+  void on_bookmark9_toggled(bool is_on){
+    if (is_on)
+      bookmark_selected(9);
+  }
   
 };

@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/patch_proc.h"
 #include "../common/instruments_proc.h"
+#include "../common/settings_proc.h"
 
 #include "api_common_proc.h"
 
@@ -574,6 +575,13 @@ void deleteInstrument(int instrument_id){
   root->song->tracker_windows->must_redraw=true;
 }
 
+const_char* getSampleBookmarks(int num){
+  return SETTINGS_read_string(talloc_format("sample_bookmarks%d",num), "/");
+}
+
+void setSampleBookmarks(int num, char* path){
+  SETTINGS_write_string(talloc_format("sample_bookmarks%d",num), path);
+}
 
 void midi_resetAllControllers(void){
   printf("midi_resetAllControllers called\n");

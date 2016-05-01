@@ -34,8 +34,10 @@ extern LANGSPEC void SETTINGS_write_string(const char *key, const char *val);
 extern void SETTINGS_set_custom_configfile(QString filename);
 extern void SETTINGS_unset_custom_configfile(void);
 extern void SETTINGS_write_string(const char *key, QString val);
-extern QString SETTINGS_read_qstring(const char *key, QString val);
-extern QString SETTINGS_read_qstring(QString key, QString val);
+extern void SETTINGS_write_string(QString key, const char *val);
+extern void SETTINGS_write_string(QString key, QString val);
+extern QString SETTINGS_read_qstring(const char *key, QString def);
+extern QString SETTINGS_read_qstring(QString key, QString def);
 #endif
 
 extern LANGSPEC void PREFERENCES_open(void); // open gui

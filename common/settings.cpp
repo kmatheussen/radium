@@ -332,10 +332,18 @@ void SETTINGS_write_double(const char* key, double val){
   SETTINGS_put(key,temp);
 }
 
+void SETTINGS_write_string(const char* key, const char* val){
+  SETTINGS_put(key,val);
+}
+
 void SETTINGS_write_string(const char* key, QString val){
   SETTINGS_put(key,val);
 }
 
-void SETTINGS_write_string(const char* key, const char* val){
-  SETTINGS_put(key,val);
+void SETTINGS_write_string(QString key, const char* val){
+  SETTINGS_put(key.toUtf8().constData(),val);
+}
+
+void SETTINGS_write_string(QString key, QString val){
+  SETTINGS_put(key.toUtf8().constData(),val);
 }
