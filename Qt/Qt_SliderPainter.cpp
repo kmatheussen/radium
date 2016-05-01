@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "MySliderPainterPainter.h"
 
 
-static const int k_timer_interval = 50;
+static const int k_timer_interval = 50; // = 3*16.666
 
 static int scale_int(int x, int x1, int x2, int y1, int y2){
   return (int)scale((float)x,(float)x1,(float)x2,(float)y1,(float)y2);
@@ -108,8 +108,8 @@ public:
     return safe_float_read(value);
   }
   
-  int requested_pos;
-  int last_drawn_pos;
+  float requested_pos;
+  float last_drawn_pos;
 
   enum ColorNums color;
 
@@ -181,10 +181,10 @@ struct SliderPainter{
           int height = y2-y1;
 
           //printf("y1: %d, y2: %d, height: %d. req: %d, last: %d\n",y1,y2,height,data->requested_pos,data->last_drawn_pos);
-          _painter->update(data->requested_pos,
-                           y1,4,height+1);
-          _painter->update(data->last_drawn_pos,
-                           y1,4,height+1);
+          _painter->update(data->requested_pos-1,
+                           y1,6,height+1);
+          _painter->update(data->last_drawn_pos-1,
+                           y1,6,height+1);
 
           //printf("%d - %d\n",data->requested_pos,data->last_drawn_pos);
         }
@@ -424,15 +424,17 @@ struct SliderPainter{
       int y1 = DATA_get_y1(data,height());
       int y2 = DATA_get_y2(data,height());
       int height = y2-y1;
-
-      p->fillRect(data->requested_pos+1 ,y1+1,
-                  2,                    height-1,
-                  get_qcolor(data->color)
-                  );
+      
+      QRectF f(data->requested_pos+1 ,y1+1,
+               2,                    height-1);
+      p->fillRect(f, get_qcolor(data->color));
       
       p->setPen(QPen(get_qcolor(HIGH_BACKGROUND_COLOR_NUM).light(120),1));
-      p->drawRect(data->requested_pos, y1,
-                  3,                   height);
+
+      QRectF f2(data->requested_pos+1 ,y1+1,
+                2,                    height-1);
+
+      p->drawRect(f2);
 
       data->last_drawn_pos = data->requested_pos;
     }
