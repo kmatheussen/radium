@@ -38,7 +38,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0,0,0,0,0">
+      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0,0,0,0,0,0">
        <item>
         <widget class="QCheckBox" name="bookmark1">
          <property name="text">
@@ -123,6 +123,16 @@
         <widget class="QCheckBox" name="bookmark9">
          <property name="text">
           <string>9</string>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">buttonGroup</string>
+         </attribute>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="bookmarkA">
+         <property name="text">
+          <string>A</string>
          </property>
          <attribute name="buttonGroup">
           <string notr="true">buttonGroup</string>
