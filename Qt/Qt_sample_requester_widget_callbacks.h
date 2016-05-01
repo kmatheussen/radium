@@ -15,11 +15,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
 #include <sndfile.h>
 
 #include <QDirIterator>
 #include <QFileInfo>
+#include <QTime>
 
 #include "Qt_sample_requester_widget.h"
 
@@ -273,6 +273,11 @@ class Sample_requester_widget : public QWidget
   }
 
   void update_file_list(){
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    QTime time;
+
+    time.start();
+    
     file_list->clear();
     file_list->setSortingEnabled(false);
     
@@ -283,6 +288,13 @@ class Sample_requester_widget : public QWidget
     
     QFileInfoList list = _dir.entryInfoList();
     for (int i = 0; i < list.size(); ++i) {
+
+      if (time.elapsed() > 500 || (window->message!=NULL && time.elapsed() >= 16)){
+        time.restart();
+        window->message = talloc_format("Please wait, loading sample directory (%d / %d)", i, list.size());
+        GL_create(window, window->wblock);
+      }
+      
       QFileInfo file_info = list.at(i);
       //QListWidgetItem *item = new QListWidgetItem(file_info.fileName(),file_list);
       //item->
@@ -334,7 +346,12 @@ class Sample_requester_widget : public QWidget
     }
 
     file_list->setCurrentRow(1);
-  }
+    
+    if (window->message!=NULL){      
+      window->message=NULL;
+      GL_create(window, window->wblock);
+    }
+  }  
 
   void update_sf2_file_list(hash_t *name_list){
     file_list->clear();
