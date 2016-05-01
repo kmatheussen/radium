@@ -49,10 +49,10 @@ static inline int scale_int(int x, int x1, int x2, int y1, int y2){
 
 
 #ifdef COMPILING_RADIUM
-extern QVector<MyQSlider*> g_all_myqsliders;
+//extern QVector<MyQSlider*> g_all_myqsliders;
 extern struct Root *root;
 #else
-QVector<MyQSlider*> g_all_myqsliders;
+//QVector<MyQSlider*> g_all_myqsliders;
 #endif
 
 extern struct TEvent tevent;
@@ -90,7 +90,7 @@ struct MyQSlider : public QSlider {
 
     _painter = SLIDERPAINTER_create(this);
 
-    g_all_myqsliders.push_back(this);
+    //g_all_myqsliders.push_back(this);
   }
 
   MyQSlider ( QWidget * parent = 0 ) : QSlider(parent) {init();}
@@ -104,7 +104,7 @@ struct MyQSlider : public QSlider {
     prepare_for_deletion();
     
     //R_ASSERT(false);
-    g_all_myqsliders.remove(g_all_myqsliders.indexOf(this));
+    //g_all_myqsliders.remove(g_all_myqsliders.indexOf(this));
     SLIDERPAINTER_delete(_painter);
     
     _painter = NULL; // quicker to discover memory corruption

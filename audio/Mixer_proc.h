@@ -43,3 +43,5 @@ extern LANGSPEC struct Patch **RT_MIXER_get_all_click_patches(int *num_click_pat
 extern LANGSPEC float MIXER_get_sample_rate(void);
 
 extern LANGSPEC int MIXER_get_buffer_size(void);
+
+extern LANGSPEC struct SoundPlugin *MIXER_get_soundplugin(const char *type_name, const char *name);

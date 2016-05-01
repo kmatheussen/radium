@@ -36,11 +36,8 @@ void SLIDERPAINTER_set_num_channels(SliderPainter *painter, int num_channels);
 
 void SLIDERPAINTER_setValue(SliderPainter *painter, int value); // only works with graphics item.
 
-float *SLIDERPAINTER_obtain_peak_value_pointers(SliderPainter *painter, int num_channels);
 void SLIDERPAINTER_set_peak_value_pointers(SliderPainter *painter, int num_channels, float *pointers);
-float *SLIDERPAINTER_obtain_automation_value_pointer(SliderPainter *painter);
-enum ColorNums *SLIDERPAINTER_obtain_automation_color_pointer(SliderPainter *painter);
-void SLIDERPAINTER_release_automation_pointers(SliderPainter *painter);
+void SLIDERPAINTER_set_automation_value_pointer(SliderPainter *painter, enum ColorNums color_num, float *pointer);
 
 void SLIDERPAINTER_set_alternative_color(SliderPainter *painter);
 void SLIDERPAINTER_set_string(SliderPainter *painter,QString string);

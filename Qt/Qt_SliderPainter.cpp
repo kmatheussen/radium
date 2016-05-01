@@ -111,7 +111,7 @@ public:
   int requested_pos;
   int last_drawn_pos;
 
-  enum ColorNums *color;
+  enum ColorNums color;
 
   int ch;
   int num_ch;
@@ -365,8 +365,6 @@ struct SliderPainter{
     data->requested_pos  = 0;
     data->last_drawn_pos = 0;
 
-    data->color = &_automation_color;
-
     data->ch     = 0;
     data->num_ch = 1;
 
@@ -379,28 +377,16 @@ struct SliderPainter{
     return data;
   }
 
-  float *obtain_automation_value_pointer(){
-    create_automation_data();
-    return &_automation_value;
+  void set_automation_value_pointer(enum ColorNums color_num, float *automation_value){
+    AutomationOrPeakData *data = create_automation_data(automation_value);
+    data->color = color_num;
   }
 
-  enum ColorNums *obtain_automation_color_pointer(){
-    return &_automation_color;
-  }
-
-  float *obtain_peak_value_pointers(int num_channels, float *peak_values){
+  void set_peak_value_pointers(int num_channels, float *peak_values){
     R_ASSERT(THREADING_is_main_thread());
-    
-    if(peak_values==NULL) {
-      _peak_values = (float*)V_calloc(sizeof(float),num_channels);
+    R_ASSERT(peak_values != NULL);
 
-      _local_peak_values = true;
-
-    } else {
-
-      _peak_values = peak_values;
-    } 
-
+    _peak_values = peak_values;
     
     _data.clear();
 
@@ -409,14 +395,8 @@ struct SliderPainter{
       data->ch            = ch;
       data->num_ch        = num_channels;
       data->is_automation = false;
-      data->color         = &_peak_color;
+      data->color         = _peak_color;
     }
-
-    return _peak_values;
-  }
-
-  void set_peak_value_pointers(int num_channels, float *pointers){
-    obtain_peak_value_pointers(num_channels, pointers);
   }
 
   void paint(QPainter *p){
@@ -444,16 +424,16 @@ struct SliderPainter{
       int y1 = DATA_get_y1(data,height());
       int y2 = DATA_get_y2(data,height());
       int height = y2-y1;
-      
+
       p->fillRect(data->requested_pos+1 ,y1+1,
                   2,                    height-1,
-                  get_qcolor(__atomic_load_n(data->color, __ATOMIC_SEQ_CST))
+                  get_qcolor(data->color)
                   );
       
       p->setPen(QPen(get_qcolor(HIGH_BACKGROUND_COLOR_NUM).light(120),1));
       p->drawRect(data->requested_pos, y1,
                   3,                   height);
-      
+
       data->last_drawn_pos = data->requested_pos;
     }
   }
@@ -519,27 +499,13 @@ void SLIDERPAINTER_paint(SliderPainter *painter, QPainter *p){
   painter->paint(p);
 }
 
-float *SLIDERPAINTER_obtain_peak_value_pointers(SliderPainter *painter, int num_channels){
-  return painter->obtain_peak_value_pointers(num_channels,NULL);
-}
-
 void SLIDERPAINTER_set_peak_value_pointers(SliderPainter *painter, int num_channels, float *pointers){
   painter->set_peak_value_pointers(num_channels, pointers);
   //painter->set_peak_value_pointers(num_channels, NULL);
 }
 
-float *SLIDERPAINTER_obtain_automation_value_pointer(SliderPainter *painter){
-  return painter->obtain_automation_value_pointer();
-}
-enum ColorNums *SLIDERPAINTER_obtain_automation_color_pointer(SliderPainter *painter){
-  return painter->obtain_automation_color_pointer();
-}
-void SLIDERPAINTER_release_automation_pointers(SliderPainter *painter){
-  // Removed: 1. It's not very important to remove it.
-  //          2. In order to remove the correct one, we need to know which automation to remove.
-  //          3. Code was very complicated
-  //          4. Peaks for the bottom bar disappeared. (very complicated code)
-  //painter->release_automation_pointers();
+void SLIDERPAINTER_set_automation_value_pointer(SliderPainter *painter, enum ColorNums color_num, float *pointer){
+  painter->set_automation_value_pointer(color_num, pointer);
 }
 
 // Used for chips where the slider controls input volume instead of output volume.

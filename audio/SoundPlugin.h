@@ -329,17 +329,18 @@ typedef struct SoundPlugin{
 
   bool show_compressor_gui;
 
-  DEFINE_ATOMIC(float *, volume_peak_values);
-  DEFINE_ATOMIC(float *, volume_peak_values_for_chip);
+  float *volume_peak_values;
+  //DEFINE_ATOMIC(float *, volume_peak_values_for_chip);
 
-  DEFINE_ATOMIC(float *, output_volume_peak_values);
+  float *output_volume_peak_values;
+  float *output_volume_peak_values_for_chip;
 
-  DEFINE_ATOMIC(float *, input_volume_peak_values);
-  DEFINE_ATOMIC(float *, input_volume_peak_values_for_chip);
+  float *input_volume_peak_values;
+  //DEFINE_ATOMIC(float *, input_volume_peak_values_for_chip);
 
-  volatile float system_volume_peak_values[2]; // The one in the status bar. (Only if this is the system out plugin.) Set in Jack_plugin.c
-  DEFINE_ATOMIC(float *, bus_volume_peak_values0);
-  DEFINE_ATOMIC(float *, bus_volume_peak_values1);
+  //volatile float system_volume_peak_values[2]; // The one in the status bar. (Only if this is the system out plugin.) Set in Jack_plugin.c
+  float *bus_volume_peak_values0;
+  float *bus_volume_peak_values1;
 } SoundPlugin;
 
 

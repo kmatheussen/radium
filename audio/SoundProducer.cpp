@@ -947,16 +947,10 @@ public:
       for(int ch=0;ch<_num_dry_sounds;ch++){
         float peak = do_bypass ? 0.0f : RT_get_max_val(_dry_sound[ch],num_frames) *  SMOOTH_get_target_value(&_plugin->input_volume);
 
-        float *input_volume_peak_values_for_chip = ATOMIC_GET(_plugin->input_volume_peak_values_for_chip);
-        if(input_volume_peak_values_for_chip!=NULL)
-          safe_float_write(&input_volume_peak_values_for_chip[ch], peak);
+        safe_float_write(&_plugin->input_volume_peak_values[ch], peak);
 
-        float *input_volume_peak_values = ATOMIC_GET(_plugin->input_volume_peak_values);
-        if(input_volume_peak_values!=NULL)
-          safe_float_write(&input_volume_peak_values[ch], peak);
-
-        if (ch<2)
-          safe_volatile_float_write(&_plugin->system_volume_peak_values[ch], peak); // Value only used by the slider at the bottom bar.
+        //        if (ch<2)
+        //          safe_volatile_float_write(&_plugin->system_volume_peak_values[ch], peak); // Value only used by the slider at the bottom bar.
       }
     }
 
@@ -1018,36 +1012,24 @@ public:
         float volume_peak = RT_get_max_val(_output_sound[ch],num_frames) * _plugin->volume;
 
         // "Volume"
-        float *volume_peak_values = ATOMIC_GET(_plugin->volume_peak_values);
-        if(volume_peak_values!=NULL)
-          safe_float_write(&volume_peak_values[ch], volume_peak);
+        safe_float_write(&_plugin->volume_peak_values[ch], volume_peak);
         
         // "Reverb Bus" and "Chorus Bus"
         if (ch < 2) { // buses only have two channels
-          float *bus_volume_peak_values0 = ATOMIC_GET(_plugin->bus_volume_peak_values0);
-          if(bus_volume_peak_values0!=NULL)
-            safe_float_write(&bus_volume_peak_values0[ch], volume_peak * _plugin->bus_volume[0]);
-          
-          float *bus_volume_peak_values1 = ATOMIC_GET(_plugin->bus_volume_peak_values1);
-          if(bus_volume_peak_values1!=NULL)
-            safe_float_write(&bus_volume_peak_values1[ch], volume_peak * _plugin->bus_volume[1]);
+          safe_float_write(&_plugin->bus_volume_peak_values0[ch], volume_peak * _plugin->bus_volume[0]);
+          safe_float_write(&_plugin->bus_volume_peak_values1[ch], volume_peak * _plugin->bus_volume[1]);
         }
         
         // "Out" and Chip volume  (same value)
         {
           float output_volume_peak = volume_peak * _plugin->output_volume;
           
-          float *output_volume_peak_values = ATOMIC_GET(_plugin->output_volume_peak_values);
-          if(output_volume_peak_values!=NULL)
-            safe_float_write(&output_volume_peak_values[ch], output_volume_peak);
+          safe_float_write(&_plugin->output_volume_peak_values[ch], output_volume_peak);
           
-          float *volume_peak_values_for_chip = ATOMIC_GET(_plugin->volume_peak_values_for_chip);
-          if(volume_peak_values_for_chip!=NULL) {
-            if (ATOMIC_GET(_plugin->output_volume_is_on))
-              safe_float_write(&volume_peak_values_for_chip[ch], output_volume_peak);
-            else
-              safe_float_write(&volume_peak_values_for_chip[ch], 0.0f); // The chip volume slider is not grayed out, like the out "out" slider.
-          }
+          if (ATOMIC_GET(_plugin->output_volume_is_on))
+            safe_float_write(&_plugin->output_volume_peak_values_for_chip[ch], output_volume_peak);
+          else
+            safe_float_write(&_plugin->output_volume_peak_values_for_chip[ch], 0.0f); // The chip volume slider is not grayed out, like the out "out" slider.
         }
       }
     }

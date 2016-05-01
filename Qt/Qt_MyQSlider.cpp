@@ -14,14 +14,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
 #include "Qt_MyQSlider.h"
 
 #include "Qt_SliderPainter_proc.h"
 
 #include "../common/OS_visual_input.h"
 
-
+#if 0
 QVector<MyQSlider*> g_all_myqsliders;
 
 static MyQSlider *find_slider(struct Patch *patch, int effect_num){
@@ -34,6 +33,7 @@ static MyQSlider *find_slider(struct Patch *patch, int effect_num){
   //  abort();
   return NULL;
 }
+
 
 float *OS_SLIDER_obtain_automation_value_pointer(struct Patch *patch,int effect_num){
   MyQSlider *slider= find_slider(patch,effect_num);
@@ -59,4 +59,17 @@ void OS_SLIDER_release_automation_pointers(struct Patch *patch,int effect_num){
   else
     SLIDERPAINTER_release_automation_pointers(slider->_painter);
 }
+
+#endif
+
+
+#if 0
+void OS_SLIDER_set_peak_value_pointers(SliderPainter *painter, int num_channels, float *pointers){
+  SLIDERPAINTER_set_peak_value_pointers(painter, num_channels, pointers);
+}
+
+void OS_SLIDER_set_automation_value_pointer(SliderPainter *painter, enum ColorNums color_num, float *pointer){
+  SLIDERPAINTER_set_automation_value_pointer(painter, color_num, pointer);
+}
+#endif
 

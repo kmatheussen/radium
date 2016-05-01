@@ -277,7 +277,7 @@ public:
     scrollArea->horizontalScrollBar()->setFixedHeight(10);
 
     updateWidgets();
-
+    setupPeakStuff();
 
     timer.start();
 
@@ -469,6 +469,32 @@ public:
     }
   }
 
+  void setupPeakStuff(void){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    const SoundPluginType *type = plugin->type;
+    
+    int num_inputs = type->num_inputs;
+    int num_outputs = type->num_outputs;
+
+    if(num_outputs>0){
+      SLIDERPAINTER_set_peak_value_pointers(volume_slider->_painter, num_outputs, plugin->volume_peak_values);
+
+      SLIDERPAINTER_set_peak_value_pointers(output_volume_slider->_painter, num_outputs, plugin->output_volume_peak_values);
+
+      SLIDERPAINTER_set_peak_value_pointers(bus1_slider->_painter,2, plugin->bus_volume_peak_values0);
+
+      SLIDERPAINTER_set_peak_value_pointers(bus2_slider->_painter,2, plugin->bus_volume_peak_values1);
+    }
+
+    if(num_inputs>0 || num_outputs>0){//plugin->input_volume_peak_values==NULL){
+      if(num_inputs>0)
+        SLIDERPAINTER_set_peak_value_pointers(input_volume_slider->_painter, num_inputs, plugin->input_volume_peak_values);
+      else
+        SLIDERPAINTER_set_peak_value_pointers(input_volume_slider->_painter, num_outputs, plugin->input_volume_peak_values);
+    }
+
+  }
+  
   void updateWidgets(){
     set_arrow_style(controlsArrow, false);
     set_arrow_style(arrow2, false);
@@ -519,31 +545,6 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
 
-    int num_inputs = type->num_inputs;
-    int num_outputs = type->num_outputs;
-
-    if(num_outputs>0){
-      if(ATOMIC_GET(plugin->volume_peak_values)==NULL)
-        ATOMIC_SET(plugin->volume_peak_values, SLIDERPAINTER_obtain_peak_value_pointers(volume_slider->_painter, num_outputs));
-
-      if(ATOMIC_GET(plugin->output_volume_peak_values)==NULL)
-        ATOMIC_SET(plugin->output_volume_peak_values, SLIDERPAINTER_obtain_peak_value_pointers(output_volume_slider->_painter, num_outputs));
-
-      if(ATOMIC_GET(plugin->bus_volume_peak_values0)==NULL)
-        ATOMIC_SET(plugin->bus_volume_peak_values0, SLIDERPAINTER_obtain_peak_value_pointers(bus1_slider->_painter,2));
-
-      if(ATOMIC_GET(plugin->bus_volume_peak_values1)==NULL)
-        ATOMIC_SET(plugin->bus_volume_peak_values1, SLIDERPAINTER_obtain_peak_value_pointers(bus2_slider->_painter,2));
-    }
-
-    if(ATOMIC_GET(plugin->input_volume_peak_values)==NULL)
-      if(num_inputs>0 || num_outputs>0){//plugin->input_volume_peak_values==NULL){
-        if(num_inputs>0)
-          ATOMIC_SET(plugin->input_volume_peak_values, SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, num_inputs));
-        else
-          ATOMIC_SET(plugin->input_volume_peak_values, SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, num_outputs));
-      }
-
     for(int system_effect=EFFNUM_INPUT_VOLUME;system_effect<NUM_SYSTEM_EFFECTS;system_effect++){
       MyQSlider *slider = get_system_slider(system_effect);
       if(slider!=NULL){
@@ -566,6 +567,9 @@ public:
 
     bus1_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
     bus2_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
+
+    //int num_inputs = type->num_inputs;
+    int num_outputs = type->num_outputs;
 
     if(num_outputs>0){
       input_volume_layout->setEnabled(ATOMIC_GET(plugin->effects_are_on));

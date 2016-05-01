@@ -189,7 +189,7 @@ void DLoadSong(struct Root *newroot,struct Song *song){
         BS_UpdateBlockList();
         BS_UpdatePlayList();
 
-        FX_update_all_slider_automation_visuals();
+        //FX_update_all_slider_automation_visuals();
 
         // Audio plugins are created after creating trackreallines.
         //TRACKREALLINES_update_peak_tracks(song->tracker_windows);

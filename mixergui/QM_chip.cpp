@@ -917,9 +917,11 @@ void Chip::init_new_plugin(void){
   }
   
   if(_num_outputs>0)
-    ATOMIC_SET(plugin->volume_peak_values_for_chip, SLIDERPAINTER_obtain_peak_value_pointers(_output_slider,_num_outputs));
+    SLIDERPAINTER_set_peak_value_pointers(_output_slider, _num_outputs, plugin->output_volume_peak_values_for_chip);
+  //ATOMIC_SET(plugin->volume_peak_values_for_chip, SLIDERPAINTER_obtain_peak_value_pointers(_output_slider,_num_outputs));
   else if(_num_inputs>0)
-    ATOMIC_SET(plugin->input_volume_peak_values_for_chip, SLIDERPAINTER_obtain_peak_value_pointers(_input_slider,_num_inputs));
+    SLIDERPAINTER_set_peak_value_pointers(_input_slider, _num_inputs, plugin->input_volume_peak_values);
+  //ATOMIC_SET(plugin->input_volume_peak_values_for_chip, SLIDERPAINTER_obtain_peak_value_pointers(_input_slider,_num_inputs));
   
   CHIP_update(plugin);
 }
@@ -972,11 +974,6 @@ Chip::~Chip(){
     fprintf(stderr,"Deleting econnection. EConnections left: %d\n",(int)event_connections.size());
     CONNECTION_delete_event_connection(event_connections[0]);
   }
-
-  PLAYER_lock();{ // The player checks if these values are not null, before reading them. I got two valgrind hits because the player read these variables after they were freed, so that's why there is a lock here. The situation should never happen on a normal computer.
-    ATOMIC_SET(SP_get_plugin(_sound_producer)->input_volume_peak_values_for_chip, NULL);
-    ATOMIC_SET(SP_get_plugin(_sound_producer)->volume_peak_values_for_chip, NULL);
-  }PLAYER_unlock();
 
   SLIDERPAINTER_delete(_input_slider);
   SLIDERPAINTER_delete(_output_slider);

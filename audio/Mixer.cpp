@@ -1060,3 +1060,17 @@ int MIXER_get_buffer_size(void){
   return RADIUM_BLOCKSIZE; //g_mixer->_buffer_size;
 }
 
+// Returns first sound plugin in mixer that matches type_name and name. name can be NULL.
+struct SoundPlugin *MIXER_get_soundplugin(const char *type_name, const char *name){
+  for (SoundProducer *sp : g_mixer->_sound_producers) {
+    SoundPlugin *plugin = SP_get_plugin(sp);
+    if (!strcmp(plugin->type->type_name,type_name)){
+      if (name==NULL)
+        return plugin;
+      if(!strcmp(plugin->type->name,name))
+        return plugin;
+    }
+  }
+
+  return NULL;
+}

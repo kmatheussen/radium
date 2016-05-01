@@ -591,8 +591,8 @@ static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *tra
         fx->num = fx->effect_num;
         fxs->l.num = fx->effect_num; // TODO: Merge these three variables into one. I don't think the values of them should ever be different.
         init_fx_color(fx, new_type->num_effects);
-        ATOMIC_SET(fx->slider_automation_value, OS_SLIDER_obtain_automation_value_pointer(new_patch,fx->effect_num));
-        ATOMIC_SET(fx->slider_automation_color, OS_SLIDER_obtain_automation_color_pointer(new_patch,fx->effect_num));
+        //ATOMIC_SET(fx->slider_automation_value, OS_SLIDER_obtain_automation_value_pointer(new_patch,fx->effect_num));
+        //ATOMIC_SET(fx->slider_automation_color, OS_SLIDER_obtain_automation_color_pointer(new_patch,fx->effect_num));
         fx->patch = new_patch;
       }else{
         ListRemoveElement1(&track->fxs, &fxs->l);

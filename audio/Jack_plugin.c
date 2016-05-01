@@ -157,7 +157,6 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   }
 }
 
-static SoundPlugin *system_out = NULL;
 
 void PLAYER_volumeUp(float db){
   OS_GFX_IncVolume(500); // 5 percent
@@ -173,8 +172,7 @@ void PLAYER_mute(void){
 
 void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
   if(!strcmp(plugin_type->name,"System Out")) {
-    GFX_OS_set_system_volume_peak_pointers((float*)&plugin->system_volume_peak_values[0], plugin_type->num_inputs);
-    system_out = plugin;
+    GFX_OS_set_system_volume_peak_pointers(plugin->input_volume_peak_values, plugin_type->num_inputs);
   }
 
   const char *input_portnames[plugin_type->num_outputs];
@@ -199,8 +197,14 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   Data *data = plugin->data;
 
   if(!strcmp(plugin->type->name,"System Out")) {
-    system_out = NULL;
-    GFX_OS_set_system_volume_peak_pointers(NULL, plugin->type->num_inputs);
+
+    struct SoundPlugin *other_system_out = MIXER_get_soundplugin("Jack", "System Out");
+    if (other_system_out != NULL) {
+      GFX_OS_set_system_volume_peak_pointers(other_system_out->input_volume_peak_values, other_system_out->type->num_inputs);
+    } else {
+      static float nullfloats[2] = {0.0f, 0.0f};
+      GFX_OS_set_system_volume_peak_pointers(&nullfloats[0], 2);
+    }
   }
 
   for(i=0;i<plugin->type->num_outputs;i++)

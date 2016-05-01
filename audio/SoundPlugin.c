@@ -254,6 +254,22 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state){
 
   int buffer_size = MIXER_get_buffer_size();
 
+  //TODO: Free peak values  
+
+  plugin->volume_peak_values = V_calloc(sizeof(float),plugin_type->num_outputs);
+
+  plugin->output_volume_peak_values = V_calloc(sizeof(float),plugin_type->num_outputs);
+  plugin->output_volume_peak_values_for_chip = V_calloc(sizeof(float),plugin_type->num_outputs);
+
+  if (plugin_type->num_inputs==0)
+    plugin->input_volume_peak_values = V_calloc(sizeof(float),plugin_type->num_outputs);
+  else
+    plugin->input_volume_peak_values = V_calloc(sizeof(float),plugin_type->num_inputs);
+  
+  plugin->bus_volume_peak_values0 = V_calloc(sizeof(float),2);
+  plugin->bus_volume_peak_values1 = V_calloc(sizeof(float),2);
+
+
   // TODO: Don't do this. Check if all plugins can be initialized later.
   plugin->data = plugin_type->create_plugin_data(plugin_type, plugin, plugin_state, MIXER_get_sample_rate(), buffer_size);
   if(plugin->data==NULL){
@@ -338,8 +354,6 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state){
     plugin->initial_effect_values=V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
     memcpy(plugin->initial_effect_values, plugin->savable_effect_values, sizeof(float) * (plugin_type->num_effects+NUM_SYSTEM_EFFECTS));
   }
-
-  //plugin->bus_num = -1;
 
   return plugin;
 }

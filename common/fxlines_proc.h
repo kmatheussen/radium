@@ -36,7 +36,7 @@ extern LANGSPEC void UpdateSomeFXNodeLines(
 
 extern LANGSPEC void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float old_min, float old_max, float new_min, float new_max);
 
-extern LANGSPEC void FX_update_all_slider_automation_visuals(void);
+//extern LANGSPEC void FX_update_all_slider_automation_visuals(void);
 
 //extern LANGSPEC enum ColorNums newFXColor(void);
 
