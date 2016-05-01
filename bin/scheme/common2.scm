@@ -861,20 +861,24 @@ for .emacs:
                       (if (null? strings)
                           ""
                           (<-> (car strings) " % " (loop (cdr strings))))))
-    
-  ;;(c-display "relations: " relations)
+
+  ;;(c-display "   relations: " relations)
+  ;;(for-each c-display relations (iota (length relations)))
   ;;(c-display "strings: " strings)
   ;;(c-display "popup-arg: " popup-arg)
 
   (define (get-func n)
     ;;(c-display "N: " n)
-    (define result-string (vector-ref strings n))
-    (cadr (assoc result-string relations)))
+    ;;(define result-string (vector-ref strings n))
+    ;;(cadr (assoc result-string relations))
+    (cadr (list-ref relations n))
+    )
   
   (define result-num (<ra> :popup-menu2 popup-arg (lambda (n val)
                                                     (define result-string (vector-ref strings n))
                                                     ;;(c-display "n: " n ", val:" val)
                                                     ((get-func n) val))))
+  ;;(c-display "     RESULT-NUM" result-num)
 
   (if (not (= -1 result-num))
       ((get-func result-num)))
@@ -882,12 +886,18 @@ for .emacs:
 
 
 #||
+(popup-menu "aaa" (lambda ()
+                    (c-display "main menu"))
+            "bbb" (list "aaa"
+                        (lambda ()
+                          (c-display "submenu"))))
+
 (popup-menu "hello" :check #t (lambda (ison)
                                 (c-display "gakk1" ison))
             "hello2" :enabled #t (lambda ()
-                                   (c-display "gakk2" ison))
+                                   (c-display "gakk2"))
             "hello3" :enabled #f (lambda ()
-                                   (c-display "gakk3" ison))
+                                   (c-display "gakk3"))
             )
 ||#
             
