@@ -52,6 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Beats_proc.h"
 #include "clipboard_track_copy_proc.h"
 #include "patch_proc.h"
+#include "../api/api_proc.h"
 
 #include "clipboard_track_paste_proc.h"
 
@@ -184,9 +185,11 @@ bool co_CB_PasteTrack(
         struct Tracks *totrack = towtrack->track;
 	struct Tracks *track = wtrack->track;
 
-        if (track->patch != NULL && !track->patch->is_usable) {
+        if (track->patch != NULL && !track->patch->is_usable) {          
           struct Patch *new_patch = PATCH_create_audio(NULL, NULL, track->patch->name, track->patch->state);
+          connectAudioInstrumentToMainPipe(new_patch->id);
 
+          ADD_UNDO(Track(root->song->tracker_windows,wblock,wtrack,wblock->curr_realline)); // undo_track adds undo for patch as well.
           track->patch = new_patch;
 
           struct FXs *fxs = track->fxs;
@@ -263,40 +266,46 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			break;
 		default:
 			if(cb_wtrack==NULL) return;
-			ADD_UNDO(Track_CurrPos(window));
-			if(window->curr_track_sub==-1){
-				if(co_CB_PasteTrack(wblock,cb_wtrack,wtrack)){
+
+                        Undo_Open_rec();{
+                            
+                          ADD_UNDO(Track_CurrPos(window));
+                          if(window->curr_track_sub==-1){
+                            if(co_CB_PasteTrack(wblock,cb_wtrack,wtrack)){
 #if !USE_OPENGL
-					UpdateFXNodeLines(window,wblock,wtrack);
+                              UpdateFXNodeLines(window,wblock,wtrack);
 #endif
-					window->must_redraw = true;
-				}else{
+                              window->must_redraw = true;
+                            }else{
 #if !USE_OPENGL
-					UpdateAndClearSomeTrackReallinesAndGfxWTracks(
-						window,
-						wblock,
-						window->curr_track,
-						window->curr_track
-					);
+                              UpdateAndClearSomeTrackReallinesAndGfxWTracks(
+                                                                            window,
+                                                                            wblock,
+                                                                            window->curr_track,
+                                                                            window->curr_track
+                                                                            );
 #endif
-				}
-			}else{
-				if(co_CB_PasteTrackFX(wblock,cb_wtrack,wtrack)){
+                            }
+                          }else{
+                            if(co_CB_PasteTrackFX(wblock,cb_wtrack,wtrack)){
 #if !USE_OPENGL
-                                  UpdateFXNodeLines(window,wblock,wtrack);
+                              UpdateFXNodeLines(window,wblock,wtrack);
 #endif
-					window->must_redraw = true;
-				}else{
+                              window->must_redraw = true;
+                            }else{
 #if !USE_OPENGL
-					UpdateAndClearSomeTrackReallinesAndGfxWTracks(
-						window,
-						wblock,
-						window->curr_track,
-						window->curr_track
-					);
+                              UpdateAndClearSomeTrackReallinesAndGfxWTracks(
+                                                                            window,
+                                                                            wblock,
+                                                                            window->curr_track,
+                                                                            window->curr_track
+                                                                            );
 #endif
-				}
-			}
+                            }
+                          }
+
+                        }Undo_Close();
+                        
 			break;
 	}
 
