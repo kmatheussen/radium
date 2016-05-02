@@ -168,7 +168,7 @@ struct SliderPainter{
         }
 
         data->requested_pos = scale(gain,0.0f,1.0f,
-                                    0.0f,(float)_painter->width())
+                                    0.0f,(float)_painter->width()-2)
                               - 1;
 
         if(data->last_drawn_pos != data->requested_pos){
