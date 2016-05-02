@@ -1020,21 +1020,39 @@ MixerWidget *g_mixer_widget = NULL;
 namespace{
   class MixerWidgetTimer : public QTimer{
     void 	timerEvent ( QTimerEvent * e ){
-      QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
-      
-      for (int i = 0; i < das_items.size(); ++i) {
-        Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
-        if(chip!=NULL){
-          SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
-          if(plugin != NULL){
-            volatile struct Patch *patch = plugin->patch;
-            if(patch!=NULL){
-              if(ATOMIC_GET(patch->visual_note_intencity) > 0) {
-                ATOMIC_ADD_RETURN_OLD(patch->visual_note_intencity, -1);
-                //printf("intencity: %d\n",intencity);
-                int x1,y1,x2,y2;
-                CHIP_get_name_coordinates(x1,y1,x2,y2);
-                chip->update(x1,y1,x2-x1,y2-y1);
+      if (g_mixer_widget->isVisible()){
+
+        //printf("UPDATING mixer\n");
+
+        QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+        
+        for (int i = 0; i < das_items.size(); ++i) {
+          
+          Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
+          
+          if(chip!=NULL){
+            
+            SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+            
+            if(plugin != NULL){
+              
+              volatile struct Patch *patch = plugin->patch;
+              
+              if(patch!=NULL){
+                
+                if(ATOMIC_GET(patch->visual_note_intencity) > 0) {
+                  ATOMIC_ADD_RETURN_OLD(patch->visual_note_intencity, -1);
+                  //printf("intencity: %d\n",intencity);
+                  int x1,y1,x2,y2;
+                  CHIP_get_name_coordinates(x1,y1,x2,y2);
+                  chip->update(x1,y1,x2-x1,y2-y1);
+                }
+                
+                if (chip->_input_slider != NULL)
+                  SLIDERPAINTER_call_regularly(chip->_input_slider);
+                
+                if (chip->_output_slider != NULL)
+                  SLIDERPAINTER_call_regularly(chip->_output_slider);
               }
             }
           }
@@ -1108,7 +1126,7 @@ MixerWidget::MixerWidget(QWidget *parent)
 
     {
       MixerWidgetTimer *timer = new MixerWidgetTimer;
-      timer->setInterval(30);
+      timer->setInterval(50); // 3*16.666
       timer->start();
     }
 }

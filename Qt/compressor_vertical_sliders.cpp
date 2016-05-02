@@ -22,7 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 static const int min_db = -40;
 static const int max_db = 40;
 
+#if !defined(COMPILING_RADIUM)
 static const int k_timer_interval = 30;
+#endif
 
 const float def_threshold = 0.7f;
 const float def_ratio = 0.3;
@@ -30,7 +32,12 @@ const float def_makeupgain = 0.3f;
 
 namespace cvs{
 
-struct Comp : public MyWidget, public MyTimer{
+struct Comp
+  : public MyWidget
+#if !defined(COMPILING_RADIUM)
+  , public MyTimer
+#endif
+{
   Patch *_patch;
 
   // All values have the value 0 at top, and 1 at bottom, and:
@@ -395,7 +402,9 @@ struct Comp : public MyWidget, public MyTimer{
   Image cachedImage_radium_256x256x32_transparent_png;
 #endif
 
+#if !defined(COMPILING_RADIUM)
   void timer(){ // virtual method from MyTimer
+
     if(isVisible()){
 #ifdef JUCE_API
       if(gui_parameters_are_dirty.compareAndSetValue(0,1)){
@@ -406,15 +415,19 @@ struct Comp : public MyWidget, public MyTimer{
 #endif
       update_peaks();
     }
-  }
 
+  }
+#endif
+  
   void prepare_for_deletion(void){
+#if !defined(COMPILING_RADIUM)
     MyTimer::prepare_for_deletion(); // <- This causes graphics to stop updating after redoing an undo. This will be fixed later.
+#endif
   }
   
   virtual ~Comp(){
     prepare_for_deletion();
-    R_ASSERT_RETURN_IF_FALSE(false);
+    //R_ASSERT_RETURN_IF_FALSE(false);
     delete background_image;
     background_image = NULL;
   }
@@ -444,9 +457,11 @@ struct Comp : public MyWidget, public MyTimer{
 #endif
 
     createBackgroundImage();
-      
-    startTimer(k_timer_interval); // MyTimer
 
+#if !defined(COMPILING_RADIUM)
+    startTimer(k_timer_interval); // MyTimer
+#endif
+    
     set_gui_parameters();
     //set_threshold(def_threshold);
     //set_compressor_parameters();
@@ -998,6 +1013,13 @@ struct Comp : public MyWidget, public MyTimer{
     peaks_vol.update_line_rect(this,vol_box);
   }
 
+#if defined(COMPILING_RADIUM)
+  void calledRegularlyByParent(void){
+    //printf("   comp reg %p\n",this);
+    update_peaks();
+  }
+#endif
+  
   void paintPeaks(MyPainter *p, const Box &in_box, const Box &out_box, const Box &vol_box){
 
     // peak lines

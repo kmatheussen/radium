@@ -40,60 +40,8 @@ class Audio_instrument_widget : public QWidget, public Ui::Audio_instrument_widg
 
 public:
 
-  struct Timer : public QTimer{
-
-    Audio_instrument_widget *w;
-
-    // horror
-    void timerEvent(QTimerEvent * e){
-
-      if (ATOMIC_GET(is_starting_up))
-        return;
-      
-      static bool shrinking = false;
-      static int num_times_horizontal_is_not_visible;
-      static bool can_shrink = true;
-      static bool last_time_shrank = false;
-
-      bool is_visible = w->scrollArea->verticalScrollBar()->isVisible();
-
-      if (w->scrollArea->horizontalScrollBar()->isVisible())
-        num_times_horizontal_is_not_visible=0;
-      else
-        num_times_horizontal_is_not_visible++;
-
-      if (is_visible){
-        if (last_time_shrank)
-          can_shrink = false;
-        else
-          can_shrink = true;
-        w->setMinimumHeight(w->height()+1);
-        shrinking = false;
-      } else if (is_visible==false && num_times_horizontal_is_not_visible>50 && can_shrink==true){
-        shrinking = true;
-      }
-
-      if (shrinking){
-        int old_size = w->minimumHeight();
-        int new_size = old_size-1;
-        if(new_size > 50){
-          w->setMinimumHeight(new_size);
-        }
-        last_time_shrank = true;
-      }else
-        last_time_shrank = false;
-    }
-
-    Timer(Audio_instrument_widget *w){
-      this->w = w;
-      setInterval(60);
-    }
-  };
-
   bool is_starting;
   
-  Timer timer;
-
   bool _i_am_system_out;
   struct Patch *_patch;
 
@@ -140,7 +88,6 @@ public:
  Audio_instrument_widget(QWidget *parent,struct Patch *patch)
     : QWidget(parent)
     , is_starting(true)
-    , timer(this)
     , _i_am_system_out(false)
     , _patch(patch)
     , _plugin_widget(NULL)
@@ -279,13 +226,10 @@ public:
     updateWidgets();
     setupPeakAndAutomationStuff();
 
-    timer.start();
-
     is_starting = false;
   }
 
   void prepare_for_deletion(void){
-    timer.stop();
     _comp_widget->prepare_for_deletion();
     _plugin_widget->prepare_for_deletion();
     if (_system_out_slider != NULL)
@@ -466,6 +410,104 @@ public:
 
     if(system_effect==EFFNUM_DELAY_ONOFF){
       rightdelay_slider->setEnabled(val);
+    }
+  }
+
+
+  void calledRegularlyByParent(void){
+    
+    //printf("hello %p\n", this);
+
+    if (_plugin_widget->isVisible())
+      _plugin_widget->calledRegularlyByParent();
+    
+    callSliderpainterUpdateCallbacks();
+    
+    if (_comp_widget->isVisible())
+      _comp_widget->calledRegularlyByParent();
+
+    adjustWidgetHeight();
+  }
+
+  // horror
+  void adjustWidgetHeight(void){
+    static bool shrinking = false;
+    static int num_times_horizontal_is_not_visible;
+    static bool can_shrink = true;
+    static bool last_time_shrank = false;
+
+    bool is_visible = scrollArea->verticalScrollBar()->isVisible();
+    
+    if (scrollArea->horizontalScrollBar()->isVisible())
+      num_times_horizontal_is_not_visible=0;
+    else
+      num_times_horizontal_is_not_visible++;
+    
+    if (is_visible){
+      if (last_time_shrank)
+        can_shrink = false;
+      else
+        can_shrink = true;
+      setMinimumHeight(height()+1);
+      //printf(" adjust 1\n");
+      shrinking = false;
+    } else if (is_visible==false && num_times_horizontal_is_not_visible>50 && can_shrink==true){
+      shrinking = true;
+    }
+    
+    if (shrinking){
+      int old_size = minimumHeight();
+      int new_size = old_size-1;
+      if(new_size > 50){
+        setMinimumHeight(new_size);
+        //printf(" adjust 2\n");
+      }
+      last_time_shrank = true;
+    }else
+      last_time_shrank = false;
+    
+  }
+                                      
+  void callSliderpainterUpdateCallbacks(void){
+    
+    for(int system_effect=0 ; system_effect<NUM_SYSTEM_EFFECTS ; system_effect++){
+      MyQSlider *slider = get_system_slider(system_effect);
+      if (slider != NULL) // effect can be a checkbox.
+        SLIDERPAINTER_call_regularly(slider->_painter);
+    }
+
+    if (_plugin_widget->_plugin_widget != NULL){
+
+      bool has_been_visible = false;
+      
+      for(ParamWidget *paramWidget : _plugin_widget->_plugin_widget->_param_widgets){
+        MyQSlider *slider = paramWidget->_slider;
+        if (slider != NULL){
+          bool is_visible = slider->isVisible();
+          if (is_visible==true)
+            has_been_visible = true;
+          
+          if (is_visible==false && has_been_visible ==true) // Optimize a bit. some vst plugins have thousands of parameters.
+            break;
+
+          if (is_visible) {
+            //printf(" redraing effect %d\n", paramWidget->_effect_num);
+            SLIDERPAINTER_call_regularly(slider->_painter);
+          }
+        }
+      }
+    }
+    
+    if (_plugin_widget->_pd_plugin_widget != NULL){
+      
+      for(unsigned int i=0; i<_plugin_widget->_pd_plugin_widget->_controllers.size(); i++) {
+        Pd_Controller_widget *c = _plugin_widget->_pd_plugin_widget->_controllers[i];
+        
+        MyQSlider *slider = c->value_slider;
+        if (slider != NULL){
+          SLIDERPAINTER_call_regularly(slider->_painter);
+        }
+      }
     }
   }
 

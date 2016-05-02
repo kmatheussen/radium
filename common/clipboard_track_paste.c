@@ -185,9 +185,19 @@ bool co_CB_PasteTrack(
 	struct Tracks *track = wtrack->track;
 
         if (track->patch != NULL && !track->patch->is_usable) {
-          track->patch = PATCH_create_audio(NULL, NULL, track->patch->name, track->patch->state);
-          //track->patch = InstrumentWidget_new_from_preset(track->patch->state, NULL, -100000, -100000, true);
+          struct Patch *new_patch = PATCH_create_audio(NULL, NULL, track->patch->name, track->patch->state);
+
+          track->patch = new_patch;
+
+          struct FXs *fxs = track->fxs;
+          while(fxs!=NULL){
+            struct FX *fx = fxs->fx;
+            fx->patch = new_patch;
+            fxs = NextFX(fxs);
+          }
+
           totrack->patch = track->patch;
+
           R_ASSERT(totrack->patch->patchdata != NULL);
         } else
           totrack->patch = track->patch;

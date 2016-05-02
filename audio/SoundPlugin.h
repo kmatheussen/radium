@@ -172,6 +172,8 @@ typedef struct SoundPluginType{
   void *(*create_plugin_data)(const struct SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size); // Called by Radium during the instantiation of a plugin. The function returns plugin->data. Note that "state" is the same variable that is sent to "recreate_from_state", but this function is called BEFORE the effect values are set. "state" is NULL when the instance is created from nothing, i.e. not loaded from file or undo information.
   void (*cleanup_plugin_data)(struct SoundPlugin *plugin);
 
+  void (*called_after_plugin_has_been_created)(const struct SoundPluginType *plugin_type, struct SoundPlugin *plugin); // May be NULL
+  
   // If set, this callback will be called when the 'num_frames' argument to RT_process changes. The audio thread is suspended while this function is called.
   void (*buffer_size_is_changed)(struct SoundPlugin *plugin, int new_buffer_size);
 

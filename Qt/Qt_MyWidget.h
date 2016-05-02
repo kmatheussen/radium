@@ -285,6 +285,7 @@ namespace cvs{
     virtual bool mouseRelease(int x, int y) = 0;
   };
 
+  // Used by the compressor
   struct MyTimer{
 
     struct MyQTimer : public QTimer{

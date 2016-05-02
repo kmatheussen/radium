@@ -158,11 +158,11 @@ const char **get_ccnames(void){
 #endif
 
 #if USE_QT4
-#include "mQt_instruments_widget_callbacks.h"
 #include "mQt_control_change_widget_callbacks.h"
 #include "mQt_patch_widget_callbacks.h"
 #include "mQt_midi_instrument_widget_callbacks.h"
 #include "mQt_audio_instrument_widget_callbacks.h"
+#include "mQt_instruments_widget_callbacks.h"
 //#include "mQt_mixer_widget_callbacks.h"
 #endif
 

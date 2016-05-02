@@ -857,3 +857,25 @@ hash_t *CHIP_get_chip_state_from_patch(struct Patch *patch){
   return CHIP_get_state(chip);
 }
 #endif
+
+
+#if 0
+// Called after loading and undo. Can be called at any time.
+void FX_update_all_slider_automation_visuals(void){
+  struct Blocks *block = root->song->blocks;
+  while(block!=NULL){
+    struct Tracks *track = block->tracks;
+    while(track!=NULL){
+      struct FXs *fxs=track->fxs;
+      while(fxs!=NULL){
+        ATOMIC_SET(fxs->fx->slider_automation_value, OS_SLIDER_obtain_automation_value_pointer(track->patch,fxs->fx->effect_num));
+        ATOMIC_SET(fxs->fx->slider_automation_color, OS_SLIDER_obtain_automation_color_pointer(track->patch,fxs->fx->effect_num));
+        
+        fxs = NextFX(fxs);
+      }
+      track = NextTrack(track);
+    }
+    block = NextBlock(block);
+  }
+}
+#endif

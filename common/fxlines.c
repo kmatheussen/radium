@@ -229,26 +229,6 @@ struct FX *getTrackFX(struct Tracks *track,int num){
 	return NULL;
 }
 
-#if 0
-// Called after loading and undo. Can be called at any time.
-void FX_update_all_slider_automation_visuals(void){
-  struct Blocks *block = root->song->blocks;
-  while(block!=NULL){
-    struct Tracks *track = block->tracks;
-    while(track!=NULL){
-      struct FXs *fxs=track->fxs;
-      while(fxs!=NULL){
-        ATOMIC_SET(fxs->fx->slider_automation_value, OS_SLIDER_obtain_automation_value_pointer(track->patch,fxs->fx->effect_num));
-        ATOMIC_SET(fxs->fx->slider_automation_color, OS_SLIDER_obtain_automation_color_pointer(track->patch,fxs->fx->effect_num));
-        
-        fxs = NextFX(fxs);
-      }
-      track = NextTrack(track);
-    }
-    block = NextBlock(block);
-  }
-}
-#endif
 
 void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float old_min, float old_max, float new_min, float new_max){
   struct Blocks *block = root->song->blocks;
@@ -364,8 +344,6 @@ static struct FX *selectFX(
 
 	fx=talloc(sizeof(struct FX));
 
-        //fx->color = newFXColor();
-
         fx->patch = patch;
         
 	if(
@@ -375,9 +353,6 @@ static struct FX *selectFX(
 	){
 		return NULL;
 	}
-
-        //ATOMIC_SET(fx->slider_automation_value, OS_SLIDER_obtain_automation_value_pointer(patch,fx->effect_num));
-        //ATOMIC_SET(fx->slider_automation_color, OS_SLIDER_obtain_automation_color_pointer(patch,fx->effect_num));
 
 	return fx;
 }

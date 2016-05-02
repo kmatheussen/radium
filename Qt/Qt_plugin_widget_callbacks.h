@@ -49,41 +49,6 @@ public:
 
   PluginWidget *_plugin_widget;
 
-private:
-
-  struct MyQTimer : public QTimer{
-    Plugin_widget *plugin_widget;
-    
-    MyQTimer(Plugin_widget *plugin_widget)
-      : plugin_widget(plugin_widget)
-    {
-      setInterval(100);
-    }
-    
-    void timerEvent(QTimerEvent * e){ // virtual method from QTimer
-      SoundPlugin *plugin = (SoundPlugin*)plugin_widget->_patch->patchdata;
-
-      if (plugin != NULL) {
-        const SoundPluginType *type = plugin->type;
-        
-        if (plugin_widget->isVisible()==true){
-          if(type->gui_is_visible!=NULL){
-            bool checkbox = plugin_widget->show_gui_checkbox->isChecked();
-            bool gui = type->gui_is_visible(plugin);
-            if (checkbox==false && gui==true)
-              plugin_widget->show_gui_checkbox->setChecked(true);
-            else if(checkbox==true && gui==false)
-              plugin_widget->show_gui_checkbox->setChecked(false);
-          }
-          
-          plugin_widget->update_preset_widgets();
-        }
-      }
-    }
-  };
-
-  MyQTimer _timer;
-
 public:
 
   Plugin_widget(QWidget *parent, struct Patch *patch)
@@ -93,7 +58,6 @@ public:
     , _jack_plugin_widget(NULL)
     , _ignore_show_gui_checkbox_stateChanged(false)
     , _plugin_widget(NULL)
-    , _timer(this)
     {
       R_ASSERT(_patch!=NULL);
         
@@ -181,7 +145,7 @@ public:
       // Others:
     } else {
       new_pd_controller_button->hide();
-      _plugin_widget=PluginWidget_create(NULL, _patch);
+      _plugin_widget=PluginWidget_create(this, _patch);
       vertical_layout->insertWidget(1,_plugin_widget);
     }
 
@@ -194,10 +158,6 @@ public:
     if(plugin->type->show_gui!=NULL && plugin->type->hide_gui!=NULL)
       show_gui_button->hide();
 
-    if(plugin->type->gui_is_visible!=NULL){
-      _timer.start();
-    }
-
     if (type->get_num_presets==NULL || type->get_num_presets(plugin)==0){
       preset_selector->hide();
       preset_button->hide();
@@ -209,8 +169,27 @@ public:
     update_widget();
   }
 
+  // only called when visible
+  void calledRegularlyByParent(void){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
+    if (plugin != NULL) {
+      const SoundPluginType *type = plugin->type;
+      
+      if(type->gui_is_visible!=NULL){
+        bool checkbox = show_gui_checkbox->isChecked();
+        bool gui = type->gui_is_visible(plugin);
+        if (checkbox==false && gui==true)
+          show_gui_checkbox->setChecked(true);
+        else if(checkbox==true && gui==false)
+          show_gui_checkbox->setChecked(false);
+      }
+      
+      update_preset_widgets();
+    }
+  }
+  
   void prepare_for_deletion(void){
-    _timer.stop();
     if (_plugin_widget != NULL)
       _plugin_widget->prepare_for_deletion();
   }

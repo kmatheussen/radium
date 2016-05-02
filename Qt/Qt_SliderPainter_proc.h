@@ -25,7 +25,6 @@ SliderPainter *SLIDERPAINTER_create(QAbstractSlider *qslider);
 SliderPainter *SLIDERPAINTER_create(QGraphicsItem *graphics_item, int x1, int y1, int x2, int y2);
 void SLIDERPAINTER_prepare_for_deletion(SliderPainter *painter);
 void SLIDERPAINTER_delete(SliderPainter *painter);
-void SLIDERPAINTER_start_auto_updater(SliderPainter *painter);
 
 void SLIDERPAINTER_became_visible(SliderPainter *painter);
 void SLIDERPAINTER_became_invisible(SliderPainter *painter);
@@ -38,6 +37,7 @@ void SLIDERPAINTER_setValue(SliderPainter *painter, int value); // only works wi
 
 void SLIDERPAINTER_set_peak_value_pointers(SliderPainter *painter, int num_channels, float *pointers);
 void SLIDERPAINTER_set_automation_value_pointer(SliderPainter *painter, enum ColorNums color_num, float *pointer);
+void SLIDERPAINTER_call_regularly(SliderPainter *painter);
 
 void SLIDERPAINTER_set_alternative_color(SliderPainter *painter);
 void SLIDERPAINTER_set_string(SliderPainter *painter,QString string);

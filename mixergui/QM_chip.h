@@ -72,7 +72,6 @@ struct SoundPlugin;
 #include <QGraphicsItem>
 #include <QGraphicsScene>
 #include <QStyleOptionGraphicsItem>
-#include <QTimer>
 
 #include "../audio/SoundProducer_proc.h"
 #include "../Qt/Qt_SliderPainter_proc.h"

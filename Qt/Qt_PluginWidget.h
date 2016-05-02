@@ -166,6 +166,7 @@ class ParamWidget : public QWidget{
   
   ~ParamWidget(){
     prepare_for_deletion();
+    printf("           Deleting ParamWidget %d\n",_effect_num);
   }
      
   void set_effect_value(float value){
@@ -245,6 +246,7 @@ struct PluginWidget : public QWidget{
   }
   
   ~PluginWidget(){
+    printf("        Deleting PluginWidget\n");
   }
 };
 

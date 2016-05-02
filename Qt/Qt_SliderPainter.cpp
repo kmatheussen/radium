@@ -19,9 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QWidget>
 #include <QGraphicsItem>
-#include <QTimer>
 #include <QAbstractSlider>
-#include <QTimerEvent>
 
 #include "EditorWidget.h"
 #include "../common/threading.h"
@@ -31,8 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MyWidget.h"
 #include "MySliderPainterPainter.h"
 
-
-static const int k_timer_interval = 50; // = 3*16.666
 
 static int scale_int(int x, int x1, int x2, int y1, int y2){
   return (int)scale((float)x,(float)x1,(float)x2,(float)y1,(float)y2);
@@ -102,6 +98,7 @@ private:
 public:
   AutomationOrPeakData(float *value)
     : value(value)
+    , last_value(-100000)
   {}
 
   float get_automation_or_peak_value(void){
@@ -111,6 +108,8 @@ public:
   float requested_pos;
   float last_drawn_pos;
 
+  float last_value;
+  
   enum ColorNums color;
 
   int ch;
@@ -133,67 +132,6 @@ static int DATA_get_y2(AutomationOrPeakData *data, int height){
 
 struct SliderPainter{
 
-  struct Timer : public QTimer{
-    SliderPainter *_painter;
-
-    void timerEvent(QTimerEvent * e){
-      R_ASSERT(THREADING_is_main_thread());
-
-      if (_painter->_timer_can_run==false){ //another hack
-        printf("SliderPainter::Timer::timerEvent: _painter->_timer_can_run==false\n");
-        //R_ASSERT(false);
-        return;
-      }
-      
-      if(_painter->isVisible()==false)
-        return;
-
-      for(int i=0;i<(int)_painter->_data.size();i++){
-        AutomationOrPeakData *data = _painter->_data.at(i);
-    
-        float gain;
-
-        if(data->is_automation)
-          gain = data->get_automation_or_peak_value();
-        else{
-          float db = gain2db(data->get_automation_or_peak_value());
-          if(db>4.0f)
-            _painter->_peak_color = PEAKS_4DB_COLOR_NUM;
-          else if(db>0.0f)
-            _painter->_peak_color = PEAKS_0DB_COLOR_NUM;
-          else
-            _painter->_peak_color = PEAKS_COLOR_NUM;
-
-          gain = db2linear(db);
-        }
-
-        data->requested_pos = scale(gain,0.0f,1.0f,
-                                    0.0f,(float)_painter->width()-2)
-                              - 1;
-
-        if(data->last_drawn_pos != data->requested_pos){
-
-          //printf("Painting. Last drawn: %d. requested: %d\n",data->last_drawn_pos,data->requested_pos);
-
-
-          int y1 = DATA_get_y1(data,_painter->height());
-          int y2 = DATA_get_y2(data,_painter->height());
-          int height = y2-y1;
-
-          //printf("y1: %d, y2: %d, height: %d. req: %d, last: %d\n",y1,y2,height,data->requested_pos,data->last_drawn_pos);
-          _painter->update(data->requested_pos-1,
-                           y1,6,height+1);
-          _painter->update(data->last_drawn_pos-1,
-                           y1,6,height+1);
-
-          //printf("%d - %d\n",data->requested_pos,data->last_drawn_pos);
-        }
-      }
-
-      //e->accept();
-    }
-  }; // struct Timer
-
   std::vector<AutomationOrPeakData*>_data;
   //QVector<AutomationOrPeakData*>_data;
   
@@ -214,9 +152,6 @@ struct SliderPainter{
   bool _alternative_color;
   
   int _value;
-
-  Timer _timer;
-  bool _timer_can_run;
 
   QString _display_string;
 
@@ -305,7 +240,6 @@ struct SliderPainter{
     _alternative_color = false;
     _auto_updater_has_started = false;
     _automation_value = 0.0f;
-    _timer_can_run = true;
   }
 
   SliderPainter(QAbstractSlider *widget)
@@ -322,35 +256,64 @@ struct SliderPainter{
     init();
   }
 
-  void prepare_for_deletion(void){
-    _timer_can_run = false;
-    _timer.stop();
-  }
-  
   ~SliderPainter(){
-
-    prepare_for_deletion();
-        
-    fprintf(stderr, "FIXME: Delete sliderpainter data\n");
-
-    // It's not quite safe to delete here. Fix after refactoring.
-    
-        /*
     if(_local_peak_values==true)
       V_free(_peak_values);
 
     for(int i=0;i<(int)_data.size();i++) // Don't like iterators. Rather free memory manually than using them.
       delete _data.at(i);
-    */
   }
 
-  void start_auto_updater() {
-    R_ASSERT(THREADING_is_main_thread());
-    if (_auto_updater_has_started==false){
-      _timer._painter = this;
-      _timer.setInterval(k_timer_interval);
-      _timer.start();
-      _auto_updater_has_started = true;
+  void call_regularly(void){
+    for(int i=0;i<(int)_data.size();i++){
+      AutomationOrPeakData *data = _data.at(i);
+
+      float value = data->get_automation_or_peak_value();
+
+      if (value >= 0.0f && value != data->last_value) {
+
+        float gain;
+        
+        if(data->is_automation)
+          gain = value;
+        else{
+          float db = gain2db(value);
+          if(db>4.0f)
+            _peak_color = PEAKS_4DB_COLOR_NUM;
+          else if(db>0.0f)
+            _peak_color = PEAKS_0DB_COLOR_NUM;
+          else
+            _peak_color = PEAKS_COLOR_NUM;
+          
+          gain = db2linear(db);
+        }
+        
+        data->requested_pos = scale(gain,0.0f,1.0f,
+                                    0.0f,(float)width()-2)
+          - 1;
+        
+        if(data->last_drawn_pos != data->requested_pos){
+          
+          //printf("Painting. Last drawn: %d. requested: %d\n",data->last_drawn_pos,data->requested_pos);
+          
+          
+          int y1 = DATA_get_y1(data,height());
+          int y2 = DATA_get_y2(data,height());
+          int height = y2-y1;
+        
+          //printf("y1: %d, y2: %d, height: %d. req: %d, last: %d\n",y1,y2,height,data->requested_pos,data->last_drawn_pos);
+          update(data->requested_pos-1,
+                 y1,6,height+1);
+          update(data->last_drawn_pos-1,
+                 y1,6,height+1);
+          
+          //printf("%d - %d\n",data->requested_pos,data->last_drawn_pos);
+        }
+
+      }
+
+      data->last_value = value;
+
     }
   }
 
@@ -371,8 +334,6 @@ struct SliderPainter{
     data->is_automation = true;
 
     _data.push_back(data);
-
-    start_auto_updater();
 
     return data;
   }
@@ -419,24 +380,27 @@ struct SliderPainter{
     for(int i=0;i<(int)_data.size();i++){
       AutomationOrPeakData *data = _data.at(i);
 
-      //printf("%s: sp: %p, i: %d, size: %d (%d/%d)\n",_display_string.toUtf8().constData(),this,(int)i,(int)_data.size(),sizeof(float),sizeof(float*));
-      
-      int y1 = DATA_get_y1(data,height());
-      int y2 = DATA_get_y2(data,height());
-      int height = y2-y1;
-      
-      QRectF f(data->requested_pos+1 ,y1+1,
-               2,                    height-1);
-      p->fillRect(f, get_qcolor(data->color));
-      
-      p->setPen(QPen(get_qcolor(HIGH_BACKGROUND_COLOR_NUM).light(120),1));
-
-      QRectF f2(data->requested_pos+1 ,y1+1,
-                2,                    height-1);
-
-      p->drawRect(f2);
-
-      data->last_drawn_pos = data->requested_pos;
+      if (data->last_value >= 0.0f){
+          
+        //printf("%s: sp: %p, i: %d, size: %d (%d/%d)\n",_display_string.toUtf8().constData(),this,(int)i,(int)_data.size(),sizeof(float),sizeof(float*));
+        
+        int y1 = DATA_get_y1(data,height());
+        int y2 = DATA_get_y2(data,height());
+        int height = y2-y1;
+        
+        QRectF f(data->requested_pos+1 ,y1+1,
+                 2,                    height-1);
+        p->fillRect(f, get_qcolor(data->color));
+        
+        p->setPen(QPen(get_qcolor(HIGH_BACKGROUND_COLOR_NUM).light(120),1));
+        
+        QRectF f2(data->requested_pos+1 ,y1+1,
+                  2,                    height-1);
+        
+        p->drawRect(f2);
+        
+        data->last_drawn_pos = data->requested_pos;
+      }
     }
   }
 
@@ -458,7 +422,6 @@ SliderPainter *SLIDERPAINTER_create(QGraphicsItem *graphics_item, int x1, int y1
 }
 
 void SLIDERPAINTER_prepare_for_deletion(SliderPainter *painter){
-  painter->prepare_for_deletion();
 }
 
 void SLIDERPAINTER_delete(SliderPainter *painter){
@@ -470,23 +433,12 @@ void SLIDERPAINTER_delete(SliderPainter *painter){
 #endif
 }
 
-void SLIDERPAINTER_start_auto_updater(SliderPainter *painter){
-  R_ASSERT(THREADING_is_main_thread());
-  painter->start_auto_updater();
-}
-
 void SLIDERPAINTER_became_visible(SliderPainter *painter){
   R_ASSERT(THREADING_is_main_thread());
-  if(painter->_auto_updater_has_started==true)
-    if (painter->_timer_can_run == true) {
-      painter->_timer.start();
-    }
 }
 
 void SLIDERPAINTER_became_invisible(SliderPainter *painter){
   R_ASSERT(THREADING_is_main_thread());
-  if(painter->_auto_updater_has_started==true)
-    painter->_timer.stop();
 }
 
 void SLIDERPAINTER_setValue(SliderPainter *painter, int value){
@@ -510,6 +462,10 @@ void SLIDERPAINTER_set_automation_value_pointer(SliderPainter *painter, enum Col
   painter->set_automation_value_pointer(color_num, pointer);
 }
 
+void SLIDERPAINTER_call_regularly(SliderPainter *painter){
+  painter->call_regularly();
+}
+
 // Used for chips where the slider controls input volume instead of output volume.
 void SLIDERPAINTER_set_alternative_color(SliderPainter *painter){
   painter->_alternative_color = true;
@@ -522,3 +478,4 @@ void SLIDERPAINTER_set_string(SliderPainter *painter,QString string){
 QString SLIDERPAINTER_get_string(SliderPainter *painter){
   return painter->_display_string;
 }
+

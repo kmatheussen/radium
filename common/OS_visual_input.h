@@ -101,16 +101,7 @@ extern LANGSPEC void OS_GFX_IncVolume(int how_much);
 extern LANGSPEC void GFX_update_instrument_patch_gui(struct Patch *patch);
 extern LANGSPEC void GFX_remove_patch_gui(struct Patch *patch); // Also deletes the audio object itself. (yes, it's messy)
 
-//extern LANGSPEC float *OS_SLIDER_obtain_automation_value_pointer(struct Patch *patch,int effect_num);
-//extern LANGSPEC enum ColorNums *OS_SLIDER_obtain_automation_color_pointer(struct Patch *patch,int effect_num);
-//extern LANGSPEC void OS_SLIDER_release_automation_pointers(struct Patch *patch,int effect_num);
-
-//extern LANGSPEC void OS_SLIDER_set_peak_value_pointers(struct Patch *patch, int num_channels, float *pointers);
-//extern LANGSPEC void OS_SLIDER_set_automation_value_pointer(struct Patch *patch, enum ColorNums color_num, float *pointer);
-
-  
 extern LANGSPEC void GFX_OS_set_system_volume_peak_pointers(float *pointers, int num_channels);
-//extern LANGSPEC float *GFX_OS_get_system_volume_peak_pointers(int num_channels);
 
 extern LANGSPEC void GFX_update_all_instrument_widgets(void);
 

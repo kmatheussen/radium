@@ -148,8 +148,13 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
   
   ~Compressor_widget(){
     prepare_for_deletion();
+    delete comp;  // <- 'comp' is not a QObect subclass (i.e a child widget of 'this'), and must therefore be deleted manually.
   }
-     
+
+  void calledRegularlyByParent(void){
+    comp->calledRegularlyByParent();
+  }
+  
   float get_exp_value(double val, double max_val, double y1, double y2){
     return scale_double(exp(val/max_val),
                         exp(0.0),expf(1.0),

@@ -253,9 +253,16 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state){
   plugin->type = plugin_type;
 
   int buffer_size = MIXER_get_buffer_size();
+  
+  // TODO: Don't do this. Check if all plugins can be initialized later.
+  plugin->data = plugin_type->create_plugin_data(plugin_type, plugin, plugin_state, MIXER_get_sample_rate(), buffer_size);
+  if(plugin->data==NULL){
+    V_free(plugin);
+    return NULL;
+  }
 
-  //TODO: Free peak values  
 
+  // peak and automation pointers (for displaying in the sliders)
   plugin->volume_peak_values = V_calloc(sizeof(float),plugin_type->num_outputs);
 
   plugin->output_volume_peak_values = V_calloc(sizeof(float),plugin_type->num_outputs);
@@ -271,15 +278,9 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state){
 
   plugin->automation_values = V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
   for(int e = 0 ; e<plugin_type->num_effects+NUM_SYSTEM_EFFECTS ; e++)
-    plugin->automation_values[e] = 0.5;
-  
-  // TODO: Don't do this. Check if all plugins can be initialized later.
-  plugin->data = plugin_type->create_plugin_data(plugin_type, plugin, plugin_state, MIXER_get_sample_rate(), buffer_size);
-  if(plugin->data==NULL){
-    V_free(plugin);
-    return NULL;
-  }
+    plugin->automation_values[e] = -10;
 
+  
   SMOOTH_init(&plugin->input_volume  , 1.0f, buffer_size);
   plugin->output_volume = 1.0f;
   SMOOTH_init(&plugin->pan           , 0.5f, buffer_size);
@@ -358,6 +359,9 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state){
     memcpy(plugin->initial_effect_values, plugin->savable_effect_values, sizeof(float) * (plugin_type->num_effects+NUM_SYSTEM_EFFECTS));
   }
 
+  if (plugin_type->called_after_plugin_has_been_created != NULL)    
+    plugin_type->called_after_plugin_has_been_created(plugin_type, plugin);
+  
   return plugin;
 }
 
@@ -392,6 +396,20 @@ void PLUGIN_delete(SoundPlugin *plugin){
   release_system_filter(&plugin->highshelf, plugin_type->num_outputs);
   
   release_system_filter(&plugin->delay, plugin_type->num_outputs);
+
+  // peak and automation pointers (for displaying in the sliders)
+  V_free(plugin->volume_peak_values);
+
+  V_free(plugin->output_volume_peak_values);
+  V_free(plugin->output_volume_peak_values_for_chip);
+
+  V_free(plugin->input_volume_peak_values);
+  
+  V_free(plugin->bus_volume_peak_values0);
+  V_free(plugin->bus_volume_peak_values1);
+
+  V_free(plugin->automation_values);
+
   
   memset(plugin,-1,sizeof(SoundPlugin)); // for debugging. Crashes faster if something is wrong.
   V_free(plugin);
