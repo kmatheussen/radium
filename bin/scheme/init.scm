@@ -39,6 +39,8 @@
 
 (my-require 'common2.scm)
 
+(my-require 'nodes.scm)
+
 (my-require 'mouse.scm)
 
 (my-require 'instruments.scm)

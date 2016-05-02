@@ -771,6 +771,24 @@ float getTemponodeY(int num){
   return nodeline==NULL ? 0 : nodeline->y-get_scroll_pos();
 }
 
+Place getTemponodePlace(int num, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL) {
+    RWarning("getTemponodeValue: No block %d in window %d",blocknum,windownum);
+    return place(0,0,1);
+  }
+
+  struct Blocks *block = wblock->block;
+  struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
+  if (temponode==NULL) {
+    RWarning("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
+    return place(0,0,1);
+  }
+
+  return temponode->l.p;
+}
+
 float getTemponodeValue(int num, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);

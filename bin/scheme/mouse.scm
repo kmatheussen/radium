@@ -820,6 +820,51 @@
 (get-BPMs)
 !!#
 
+(define (get-temponodes)
+  (map (lambda (num)
+         (list (<ra> :get-temponode-place num)
+               (<ra> :get-temponode-value num)))
+       (iota (<ra> :get-num-temponodes))))
+#!!
+(get-temponodes)
+!!#
+
+
+(define (reset-tempo-multiplier)
+  (<ra> :undo-reltempo)
+  (<ra> :set-reltempo 1.0))
+
+(define (apply-tempo-multiplier-to-block)
+  (undo-block
+   (lambda ()
+     (let* ((reltempo (<ra> :get-reltempo))
+            (bpms (get-BPMs))
+            (scale-bpm (lambda (bpm)
+                         (round (* reltempo bpm)))))
+       (for-each (lambda (place-and-bpm)
+                   (let ((place (car place-and-bpm))
+                         (bpm (cadr place-and-bpm)))
+                     (<ra> :add-bpm (scale-bpm bpm) place)))
+                 bpms)
+       (if (or (null? bpms)
+               (> (car (car bpms)) 0))
+           (<ra> :add-bpm (scale-bpm (<ra> :get-main-bpm)) 0))
+       (reset-tempo-multiplier)))))
+
+(define (apply-bpm-glide bpmnum)
+  (undo-block
+   (lambda ()
+     (define bpms (get-BPMs))
+     (define bpm1 (list-ref bpms bpmnum))
+     (define bpm2 (list-ref bpms (1+ bpmnum)))
+     (define temponodes (get-temponodes))
+     (set! temponodes (nodelist-add-same-value-at-place (car bpm1) 0))
+     (set! temponodes (nodelist-add-same-value-at-place (car bpm2) 0))
+     (set! temponodes (nodelist-mix temponodes (list (create-node (car bpm1) 0)
+                                                     (create-node (-line (car bpm2)) 2)))) ;; Fix 2.
+     )))
+
+
 (define (get-reltemposlider-x)
   (define box (<ra> :get-box reltempo-slider))
   (scale (<ra> :get-reltempo)
@@ -857,26 +902,9 @@
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)                                
                                 (if (inside-box (<ra> :get-box reltempo-slider) X Y)
-                                    (let ((reset-reltempo (lambda ()
-                                                            (<ra> :undo-reltempo)
-                                                            (<ra> :set-reltempo 1.0))))
-                                      (popup-menu "Reset" reset-reltempo
-                                                  "Apply tempo" (lambda ()
-                                                                  (undo-block
-                                                                   (lambda ()
-                                                                     (let* ((reltempo (<ra> :get-reltempo))
-                                                                            (bpms (get-BPMs))
-                                                                            (scale-bpm (lambda (bpm)
-                                                                                         (round (* reltempo bpm)))))
-                                                                       (for-each (lambda (place-and-bpm)
-                                                                                   (let ((place (car place-and-bpm))
-                                                                                         (bpm (cadr place-and-bpm)))
-                                                                                     (<ra> :add-bpm (scale-bpm bpm) place)))
-                                                                                 bpms)
-                                                                       (if (or (null? bpms)
-                                                                               (> (car (car bpms)) 0))
-                                                                           (<ra> :add-bpm (scale-bpm (<ra> :get-main-bpm)) 0))
-                                                                       (reset-reltempo))))))
+                                    (begin
+                                      (popup-menu "Reset" reset-tempo-multiplier
+                                                  "Apply tempo" apply-tempo-multiplier-to-block)
                                       #t)
                                     #f))))
 
