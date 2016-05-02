@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>4</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -1185,10 +1185,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn'twork, 
          <item row="3" column="2">
           <widget class="QLabel" name="lab">
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;This mode should only be used to debug Radium. If you notice that the&lt;br&gt;graphics freezes, you can try to turn off this option to see if it helps.&lt;br&gt;
-&lt;b&gt;In all other situations, this option must be turned on&lt;/b&gt;&lt;br&gt;
-Disabling this option will cause Radium to eventually run out of memory prematurly.
-&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Disabling this mode should only be used to debug Radium.&lt;br&gt;
+Disabling this option will cause Radium to eventually run out of memory prematurly.&lt;br&gt;
+ If you notice that the graphics freezes for a few milliseconds now and then,&lt;br&gt;
+you can try to turn off this option to see if the garbage collector was&lt;br&gt;
+the cause of the freezes. If it helped, you might want to enable&lt;br&gt;
+the &quot;Incremental Garbage Collector&quot; option below. Please report if you need to&lt;br&gt;
+enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.&lt;br&gt;
+&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;
+</string>
            </property>
           </widget>
          </item>
