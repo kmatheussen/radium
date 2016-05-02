@@ -692,10 +692,5 @@ public slots:
     if (is_on)
       bookmark_selected(9);
   }
-
-  void on_bookmarkA_toggled(bool is_on){
-    if (is_on)
-      bookmark_selected(10);
-  }
   
 };
