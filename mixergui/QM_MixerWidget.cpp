@@ -679,6 +679,7 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
         if(patch->patchdata==SP_get_plugin(chip->_sound_producer)){
           printf("Found patch\n");
           deleteInstrument(patch->id);
+          event->accept();
           break;
         }
       }END_VECTOR_FOR_EACH;
@@ -941,7 +942,7 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
   printf("mouse release: %p\n",_current_connection);
 
   GFX_ScheduleRedraw();
-    
+
   QPointF pos=event->scenePos();
   float mouse_x = pos.x();
   float mouse_y = pos.y();
@@ -1004,8 +1005,9 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
   }else{
 
     bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
-    
-    if (event->button()==Qt::RightButton && ctrl_pressed==false && mouserelease_replace_patch(this,mouse_x,mouse_y)==true) {
+    bool shift_pressed = (event->modifiers() & Qt::ShiftModifier);
+        
+    if (event->button()==Qt::RightButton && shift_pressed==false && ctrl_pressed==false && mouserelease_replace_patch(this,mouse_x,mouse_y)==true) {
       event->accept();
       return;
     }
