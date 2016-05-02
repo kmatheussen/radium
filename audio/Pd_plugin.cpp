@@ -1095,7 +1095,8 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   libpds_closefile(data->pd, data->file);  
   libpds_delete(data->pd);
 
-  PDGUI_clear(ATOMIC_GET(data->qtgui));
+  // Not necessary anymore since widgets are now deleted. (and it's not very healthy to call PDGUI_clear on a deleted widget)
+  //PDGUI_clear(ATOMIC_GET(data->qtgui));
 
   delete data->pdfile;
 
