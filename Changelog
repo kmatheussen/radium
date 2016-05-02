@@ -1,3 +1,36 @@
+Changes 3.8.0 -> 3.8.1:
+* Track paste: Fix undo/redo if it was necessary to create instrument,
+  and autoconnect to main bus if creating new instrument.
+* Don't try to replace mixer object if pressing shift while releasing right
+  mouse button.
+* Refactoring automation/peak rendering in sliders. The program might
+  be noticable faster and more stable now.
+* Update garbage collector help text in the preferences window.
+* Make automation/peak rendering in sliders visible also when value is at maximum.
+* Show "Please wait, loading samples directory (<num> / <total>)" when
+  it takes more than 1/2 second to load a samples directory
+  in the sample browser.
+* Paint automation and peak in sliders with subpixel accuracy.
+* Make sure the bottom bar volume peaks points always show peaks of
+  a "System out" object, if one exist.
+* Popup menu: Fix selecting entries with same name. (Fixes the
+  bug that caused instruments to be cloned when trying to select
+  instrument for a track.)
+* Bookmarks for the sample instrument sample browser.
+* mouse: "Apply tempo" option to popup menu when right clicking
+  the block tempo multiplier slider
+* api: getSignature/getLPB/getBPM/getTemponodePlace
+* Option to turn off GL pause (plus perform a GL pause when opening
+  a popup menu, which I had forgotten). Also turn off GL pause
+  by default now, since it's probably (i.e. hopefully) only necessary
+  if using older AMD or Intel drivers on Linux.
+* Save note duplicator data + forward events into preset files,
+  plus clone these data when cloning instruments
+* Refactor audio instrument creation / deletion / etc. Major change.
+  Radium should be more stable when creating and deleting instruments.
+* windows: Windows file requester filter workaround.
+
+
 Changes 3.7.9 -> 3.8.0:
 * Don't crash if deleting jack or pd plugin (bug introduced in 3.7.9)
 * Add filename/linenumber/etc. to undo entries, and add undo entries to
