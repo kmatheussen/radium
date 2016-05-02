@@ -269,7 +269,10 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state){
   plugin->bus_volume_peak_values0 = V_calloc(sizeof(float),2);
   plugin->bus_volume_peak_values1 = V_calloc(sizeof(float),2);
 
-
+  plugin->automation_values = V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+  for(int e = 0 ; e<plugin_type->num_effects+NUM_SYSTEM_EFFECTS ; e++)
+    plugin->automation_values[e] = 0.5;
+  
   // TODO: Don't do this. Check if all plugins can be initialized later.
   plugin->data = plugin_type->create_plugin_data(plugin_type, plugin, plugin_state, MIXER_get_sample_rate(), buffer_size);
   if(plugin->data==NULL){

@@ -223,7 +223,9 @@ struct TextBitmaps{
     y = (int)y;
 
     if(!imageholders->contains(c)) {
+#if !defined(RELEASE)
       RWarning("TextBitmaps.hpp: '%c' was not precomputed\n",c);
+#endif
       char chars[2];
       chars[0] = c;
       chars[1] = 0;

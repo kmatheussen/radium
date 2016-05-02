@@ -133,7 +133,7 @@ public:
     if(_controllers.empty()) {
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       //test if plugin==NULL here?
-      for(int controller_num=0; controller_num < 40; controller_num++){
+      for(int controller_num=0; controller_num < NUM_PD_CONTROLLERS; controller_num++){
         Pd_Controller *controller = PD_get_controller(plugin, controller_num);
         if(controller->has_gui)
           new_controller(controller_num);
@@ -142,7 +142,7 @@ public:
   }
 
   void new_controller(int controller_num){
-    if(_num_controllers>=40)
+    if(_num_controllers>=NUM_PD_CONTROLLERS)
       return;
 
     if(_num_controllers != controller_num)
@@ -163,6 +163,7 @@ public:
     new_controller(_num_controllers);
   }
 
+  
   void clear(){
     for(unsigned int i=0; i<_controllers.size(); i++) {
       Pd_Controller_widget *c = _controllers[i];
@@ -180,6 +181,7 @@ public:
     _num_controllers = 0;
   }
 
+  
 public slots:
 
 };

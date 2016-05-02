@@ -47,8 +47,9 @@ public:
 
   QMessageBox infoBox;
 
-private:
   PluginWidget *_plugin_widget;
+
+private:
 
   struct MyQTimer : public QTimer{
     Plugin_widget *plugin_widget;

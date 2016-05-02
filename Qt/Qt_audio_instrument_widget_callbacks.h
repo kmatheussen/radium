@@ -277,7 +277,7 @@ public:
     scrollArea->horizontalScrollBar()->setFixedHeight(10);
 
     updateWidgets();
-    setupPeakStuff();
+    setupPeakAndAutomationStuff();
 
     timer.start();
 
@@ -469,9 +469,11 @@ public:
     }
   }
 
-  void setupPeakStuff(void){
+  void setupPeakAndAutomationStuff(void){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
+
+    // peaks
     
     int num_inputs = type->num_inputs;
     int num_outputs = type->num_outputs;
@@ -493,6 +495,40 @@ public:
         SLIDERPAINTER_set_peak_value_pointers(input_volume_slider->_painter, num_outputs, plugin->input_volume_peak_values);
     }
 
+    // automation
+
+    for(int system_effect=0 ; system_effect<NUM_SYSTEM_EFFECTS ; system_effect++){
+      int effect_num = type->num_effects + system_effect;
+      
+      MyQSlider *slider = get_system_slider(system_effect);
+      if (slider != NULL) // effect can be a checkbox.
+        SLIDERPAINTER_set_automation_value_pointer(slider->_painter, get_effect_color(plugin, effect_num), &plugin->automation_values[effect_num]);
+    }
+
+    if (_plugin_widget->_plugin_widget != NULL){
+    
+      for(ParamWidget *paramWidget : _plugin_widget->_plugin_widget->_param_widgets){
+        int effect_num = paramWidget->_effect_num;
+        
+        MyQSlider *slider = paramWidget->_slider;
+        if (slider != NULL){
+          SLIDERPAINTER_set_automation_value_pointer(slider->_painter, get_effect_color(plugin, effect_num), &plugin->automation_values[effect_num]);
+        }
+      }
+    }
+    
+    if (_plugin_widget->_pd_plugin_widget != NULL){
+
+      for(unsigned int i=0; i<_plugin_widget->_pd_plugin_widget->_controllers.size(); i++) {
+        Pd_Controller_widget *c = _plugin_widget->_pd_plugin_widget->_controllers[i];
+
+        MyQSlider *slider = c->value_slider;
+        if (slider != NULL){
+          int effect_num = slider->_effect_num;
+          SLIDERPAINTER_set_automation_value_pointer(slider->_painter, get_effect_color(plugin, effect_num), &plugin->automation_values[effect_num]);
+        }
+      }
+    }
   }
   
   void updateWidgets(){

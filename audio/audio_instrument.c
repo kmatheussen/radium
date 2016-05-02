@@ -283,6 +283,8 @@ static void AUDIO_treat_FX(struct FX *fx,int val,STime time,int skip, FX_when wh
   
   float effect_val = val / (float)MAX_FX_VAL;
 
+  plugin->automation_values[fx->effect_num] = effect_val;
+
   PLUGIN_set_effect_value(plugin,PLAYER_get_block_delta_time(time),fx->effect_num,effect_val, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, when);
 }
 
@@ -314,35 +316,8 @@ static void AUDIO_set_FX_string(struct FX *fx,int val,const struct Tracks *track
 static void AUDIO_save_FX(struct FX *fx,const struct Tracks *track);
 static void *AUDIO_LoadFX(struct FX *fx,const struct Tracks *track);
 
-static void init_fx_color(struct FX *fx, int num_plugin_effects){
-  {
-    const enum ColorNums cols[8] = { // not really necessary. automation1_color_num ... automation8_color_num are sequential.
-      AUTOMATION1_COLOR_NUM,
-      AUTOMATION2_COLOR_NUM,
-      AUTOMATION3_COLOR_NUM,
-      AUTOMATION4_COLOR_NUM,
-      AUTOMATION5_COLOR_NUM,
-      AUTOMATION6_COLOR_NUM,
-      AUTOMATION7_COLOR_NUM,
-      AUTOMATION8_COLOR_NUM
-    };
+static void init_fx(struct FX *fx, int effect_num, const char *name, struct SoundPlugin *plugin){
 
-    int num_fx_colors = 8;
-    int fx_effect_num = fx->effect_num;
-    
-    if (fx->effect_num > num_plugin_effects)
-      fx_effect_num = fx->effect_num - num_plugin_effects;  // <- Do this to ensure system effects have same colors across plugins
-        
-    fx->color = cols[(fx_effect_num%num_fx_colors)];
-  }
-  
-}
-
-static void init_fx(struct FX *fx, int effect_num, const char *name, int num_effects){
-
-  R_ASSERT(num_effects > 0);
-  R_ASSERT(effect_num < num_effects);
-  
   //AUDIO_FX_data_t *fxdata = talloc_atomic(sizeof(AUDIO_FX_data_t));
   fx->effect_num      = effect_num;
   //fx->fxdata          = fxdata;
@@ -357,13 +332,10 @@ static void init_fx(struct FX *fx, int effect_num, const char *name, int num_eff
   fx->defaultFXValue = AUDIO_default_FX_value;
   //fx->setFXstring = AUDIO_set_FX_string;
 
-  init_fx_color(fx, num_effects);
-
-#if 0
-  plugin->num_automations[selection]++;
-  plugin->automation_colors[selection]=fx->color;
-#endif
-
+  if (plugin==NULL)
+    fx->color = AUTOMATION1_COLOR_NUM; // Hapens when loading song. plugin is not available yet, so the color will be set later.
+  else
+    fx->color = get_effect_color(plugin, effect_num);
 }
 
 static vector_t *AUDIO_getFxNames(const struct Patch *patch){
@@ -391,10 +363,7 @@ static struct FX *AUDIO_createFX(const struct Tracks *track, int effect_num){
 
   const char *name = PLUGIN_get_effect_name(plugin, effect_num);
 
-  const SoundPluginType *plugin_type = plugin->type;
-  int num_effects = plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
-    
-  init_fx(fx,effect_num,name,num_effects);
+  init_fx(fx,effect_num,name,plugin);
 
   return fx;
 }
@@ -433,7 +402,7 @@ static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track
 
   int effect_num = nums[selection];
 
-  init_fx(fx,effect_num,(const char*)v.elements[selection], num_effects);
+  init_fx(fx,effect_num,(const char*)v.elements[selection], plugin);
 
   return FX_SUCCESS;
 }
@@ -453,7 +422,7 @@ static void *AUDIO_LoadFX(struct FX *fx,const struct Tracks *track){
   static char **objs=NULL;
   static char *vars[2]={"num","name"};
 
-  init_fx(fx,0,"Effect name was not set in file (\?\?\?)",1);
+  init_fx(fx,0,"Effect name was not set in file (\?\?\?)",NULL);
 
   GENERAL_LOAD(0,2)
 
@@ -514,6 +483,7 @@ void DLoadAudioInstrument(void){
           struct FX *fx = fxs->fx;
           
           SoundPlugin *plugin = patch->patchdata;
+          //R_ASSERT(plugin!=NULL);
           if(plugin!=NULL){
             //R_ASSERT(plugin->type->get_effect_num != NULL);
             //if(plugin->type->get_effect_num!=NULL){
@@ -523,7 +493,7 @@ void DLoadAudioInstrument(void){
               fx->num = fx->effect_num;
             }
             
-            init_fx_color(fx, plugin->type->num_effects);
+            fx->color = get_effect_color(plugin, fx->effect_num);
                           
           }
           
@@ -590,7 +560,7 @@ static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *tra
         fx->effect_num = num_new_effects + (fx->effect_num - num_old_effects);
         fx->num = fx->effect_num;
         fxs->l.num = fx->effect_num; // TODO: Merge these three variables into one. I don't think the values of them should ever be different.
-        init_fx_color(fx, new_type->num_effects);
+        fx->color = get_effect_color(new_plugin, fx->effect_num);
         //ATOMIC_SET(fx->slider_automation_value, OS_SLIDER_obtain_automation_value_pointer(new_patch,fx->effect_num));
         //ATOMIC_SET(fx->slider_automation_color, OS_SLIDER_obtain_automation_color_pointer(new_patch,fx->effect_num));
         fx->patch = new_patch;

@@ -329,20 +329,32 @@ typedef struct SoundPlugin{
 
   bool show_compressor_gui;
 
+  float *automation_values;
+  
+  // peaks
+  //
   float *volume_peak_values;
-  //DEFINE_ATOMIC(float *, volume_peak_values_for_chip);
 
   float *output_volume_peak_values;
   float *output_volume_peak_values_for_chip;
 
   float *input_volume_peak_values;
-  //DEFINE_ATOMIC(float *, input_volume_peak_values_for_chip);
-
-  //volatile float system_volume_peak_values[2]; // The one in the status bar. (Only if this is the system out plugin.) Set in Jack_plugin.c
+  
   float *bus_volume_peak_values0;
   float *bus_volume_peak_values1;
 } SoundPlugin;
 
+
+static inline enum ColorNums get_effect_color(SoundPlugin *plugin, int effect_num){
+  const int start = AUTOMATION1_COLOR_NUM;
+  const int end = AUTOMATION8_COLOR_NUM;
+  const int len = end-start + 1;
+
+  if (effect_num >= plugin->type->num_effects)
+    return (enum ColorNums)(start + ((effect_num - plugin->type->num_effects) % len));
+  else
+    return (enum ColorNums)(start + (effect_num % len));
+}
 
 // Call this function to get effects from the realtime process.
 // For instance, if there is a volume starting from 0.5, and ending at 1.0, in the current block of 1024 frames,
