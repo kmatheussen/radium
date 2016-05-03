@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>3</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -2425,7 +2425,7 @@ you should check this box.
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
 Some GFX drivers may crash when Qt opens a window in a separate&lt;br&gt;
 thread while rendering graphics with OpenGL. In order to work around&lt;br&gt;
-this problem, we pause rendering briefly (but noticably) while the window opens.&lt;br&gt;
+this problem, we pause rendering briefly (but noticeably) while the window opens.&lt;br&gt;
 This option should be considered as a lightweight version of  &quot;Only show modal windows&quot;.
 &lt;/span&gt;&lt;br&gt;&lt;span style=&quot; color:#000000;&quot;&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>

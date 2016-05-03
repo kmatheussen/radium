@@ -405,6 +405,19 @@ char *getInstrumentData(int instrument_id, char *key) {
 }
 
 
+int getNumMIDIInstruments(void){
+  return get_MIDI_instrument()->patches.num_elements;
+}
+
+int getMIDIInstrumentId(int instrument_num){
+  if (instrument_num>=getNumMIDIInstruments()){
+    RError("No instrument #%d",instrument_num);
+    return -1;
+  }
+  struct Patch *patch = get_MIDI_instrument()->patches.elements[instrument_num];
+  return patch->id;
+}
+
 int getNumAudioInstruments(void){
   return get_audio_instrument()->patches.num_elements;
 }

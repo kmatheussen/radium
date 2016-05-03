@@ -8,6 +8,11 @@
                         (iota (<ra> :get-num-tracks blocknum))))
             (iota (<ra> :get-num-blocks))))
 
+(define (get-all-midi-instruments)
+  (map (lambda (instrument-num)
+         (<ra> :get-midi-instrument-id instrument-num))
+       (iota (<ra> :get-num-midi-instruments))))
+         
 (define (get-all-audio-instruments)
   (map (lambda (instrument-num)
          (<ra> :get-audio-instrument-id instrument-num))
@@ -158,6 +163,7 @@ todo:
 (define (select-track-instrument tracknum)
   (undo-block
    (lambda ()
+     (define midi-instruments (get-all-midi-instruments))
      (define instruments-before (get-all-audio-instruments))
      (define id-instrument
        (popup-menu
@@ -186,7 +192,14 @@ todo:
                                                     (<ra> :clone-audio-instrument instrument-id)))))
                                       (iota (length instruments-before))
                                       instruments-before)
-        
+        (and (> (length midi-instruments) 0)
+             (list "----------"
+                   (map (lambda (num instrument-id)
+                          (list (<-> num ". " (<ra> :get-instrument-name instrument-id))                     
+                                (lambda ()
+                                  instrument-id)))
+                        (iota (length midi-instruments))
+                        midi-instruments)))
         "----------"
         (map (lambda (num instrument-id)
                (list (<-> num ". " (<ra> :get-instrument-name instrument-id))                     
