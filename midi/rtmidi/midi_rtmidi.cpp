@@ -151,6 +151,10 @@ void OS_PutMidi(MidiPortOs port,
                 STime time
                 )
 {
+  int len = midi_msg_len(cc);
+  if(len==0)
+    return;
+
   if(port==NULL)
     return;
 
@@ -166,28 +170,24 @@ void OS_PutMidi(MidiPortOs port,
 
   //printf("current time: %f\n",(float)RtMidiOut::getCurrentTime(myport->midiout->getCurrentApi()));
 
-  double rtmidi_time;
-
-  if(time<0)
-    rtmidi_time=myport->last_time; // Necessary to ensure midi messages are sent out in the same order as they got in to this function.
-  else{
-    rtmidi_time=startup_time + ((double)(time+LATENCY)/(double)pc->pfreq);
-    if(rtmidi_time<myport->last_time)
-      rtmidi_time=myport->last_time;  // Necessary to ensure all midi messages are sent in order.
-  }
-
-  myport->last_time = rtmidi_time;
-
-  //printf("got midi: %x,%x,%x at time %f (rtmidi_time: %f) (current_time: %f)\n",cc,data1,data2,(float)time/(double)PFREQ,rtmidi_time,(float)RtMidiOut::getCurrentTime(midiout->getCurrentApi()));
-
-  int len = midi_msg_len(cc);
-  if(len==0)
-    return;
-
   {
     ScopedPutMidiLock lock; // Sometimes, the GUI wants to send midi signals, and that's why we need a lock here.
                             // Don't think any effect caused by priority inheritance should be an issue when the user drags sliders, etc.
 
+    double rtmidi_time;
+
+    if(time<0)
+      rtmidi_time=myport->last_time; // Necessary to ensure midi messages are sent out in the same order as they got in to this function.
+    else{
+      rtmidi_time=startup_time + ((double)(time+LATENCY)/(double)pc->pfreq);
+      if(rtmidi_time<myport->last_time)
+        rtmidi_time=myport->last_time;  // Necessary to ensure all midi messages are sent in order.
+    }
+    
+    myport->last_time = rtmidi_time;
+    
+    //printf("got midi: %x,%x,%x at time %f (rtmidi_time: %f) (current_time: %f)\n",cc,data1,data2,(float)time/(double)PFREQ,rtmidi_time,(float)RtMidiOut::getCurrentTime(midiout->getCurrentApi()));
+    
     if(len==1){
       message1[0]=cc;
       myport->midiout->sendMessage(&message1,rtmidi_time);
