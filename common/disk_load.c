@@ -109,7 +109,7 @@ static bool Load(const wchar_t *filename){
                       );
         }
 #endif
-        
+
         if(disk_load_version>DISKVERSION+0.0001){
           GFX_Message(NULL,"Need a newer version of Radium to load this song. The song version is %f, while this program only supports %f.\n",disk_load_version,DISKVERSION);
           return false;

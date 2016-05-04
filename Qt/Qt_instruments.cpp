@@ -63,8 +63,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern QApplication *qapplication;
 
-extern struct Root *root;
-extern struct Patch *g_currpatch;
 
 #include "FocusSniffers.h"
 
@@ -577,6 +575,14 @@ static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch)
   }
 
   return NULL;
+}
+
+Ui::Audio_instrument_widget *InstrumentWidget_get_audio_instrument_widget(struct Patch *patch){
+  Audio_instrument_widget *w = get_audio_instrument_widget(patch);
+  if (w==NULL)
+    return NULL;
+
+  return dynamic_cast<Ui::Audio_instrument_widget*>(w);
 }
 
 

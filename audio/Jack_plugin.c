@@ -189,7 +189,9 @@ void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin 
 }
 
 static void called_after_system_out_has_been_created(const SoundPluginType *plugin_type, struct SoundPlugin *plugin){
-  GFX_OS_set_system_volume_peak_pointers(plugin->input_volume_peak_values, plugin_type->num_inputs);
+  //GFX_OS_set_system_volume_peak_pointers(plugin->input_volume_peak_values, plugin_type->num_inputs);
+  
+  GFX_OS_set_system_volume_plugin(plugin);
 }
   
 static void cleanup_plugin_data(SoundPlugin *plugin){
@@ -199,12 +201,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   if(!strcmp(plugin->type->name,"System Out")) {
 
     struct SoundPlugin *other_system_out = MIXER_get_soundplugin("Jack", "System Out");
-    if (other_system_out != NULL) {
-      GFX_OS_set_system_volume_peak_pointers(other_system_out->input_volume_peak_values, other_system_out->type->num_inputs);
-    } else {
-      static float nullfloats[2] = {0.0f, 0.0f};
-      GFX_OS_set_system_volume_peak_pointers(&nullfloats[0], 2);
-    }
+    GFX_OS_set_system_volume_plugin(other_system_out);
   }
 
   for(i=0;i<plugin->type->num_outputs;i++)

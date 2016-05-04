@@ -101,7 +101,10 @@ extern LANGSPEC void OS_GFX_IncVolume(int how_much);
 extern LANGSPEC void GFX_update_instrument_patch_gui(struct Patch *patch);
 extern LANGSPEC void GFX_remove_patch_gui(struct Patch *patch); // Also deletes the audio object itself. (yes, it's messy)
 
-extern LANGSPEC void GFX_OS_set_system_volume_peak_pointers(float *pointers, int num_channels);
+struct SoundPlugin;
+extern LANGSPEC void GFX_OS_set_system_volume_plugin(struct SoundPlugin *plugin);
+extern LANGSPEC bool GFX_OS_patch_is_system_out(struct Patch *patch);
+//extern LANGSPEC void GFX_OS_set_system_volume_peak_pointers(float *pointers, int num_channels);
 
 extern LANGSPEC void GFX_update_all_instrument_widgets(void);
 

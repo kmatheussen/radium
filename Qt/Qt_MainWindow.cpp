@@ -57,6 +57,7 @@ extern bool g_qt_is_running;
 static HWND gtk_hwnd = NULL;
 #endif
 
+
 #include "EditorWidget.h"
 #include "../common/threading.h"
 
@@ -82,6 +83,7 @@ static HWND gtk_hwnd = NULL;
 
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQCheckBox.h"
+
 
 class Bottom_bar_widget;
 static Bottom_bar_widget *g_bottom_bar = NULL; // need to be defined here since it's used by the upperleft widget.

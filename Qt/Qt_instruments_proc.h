@@ -17,6 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef QT_INSTRUMENTS_PROC_H
 #define QT_INSTRUMENTS_PROC_H
 
+extern struct Patch *g_currpatch;
+
 extern LANGSPEC const char **get_ccnames(void);
   
 extern LANGSPEC hash_t *create_instrument_widget_order_state(void);
@@ -47,6 +49,14 @@ struct SoundProducer;
 extern LANGSPEC struct Patch *get_current_instruments_gui_patch(void);
 
 #ifdef __cplusplus
+
+namespace Ui{
+  class Audio_instrument_widget;
+};
+
+Ui::Audio_instrument_widget *InstrumentWidget_get_audio_instrument_widget(struct Patch *patch);
+
+
 class QWidget;
 QWidget *createInstrumentsWidget(void);
 #endif // __cplusplus

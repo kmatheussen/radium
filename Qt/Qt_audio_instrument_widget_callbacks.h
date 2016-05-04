@@ -16,6 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "../audio/SoundPlugin_proc.h"
+#include "../audio/SoundPluginRegistry_proc.h"
 
 /*
 class Pd_Plugin_widget;
@@ -33,7 +34,7 @@ static Pd_Plugin_widget *AUDIOWIDGET_get_pd_plugin_widget(Audio_instrument_widge
 #include "../audio/Bus_plugins_proc.h"
 
 
-extern void BottomBar_set_system_audio_instrument_widget_and_patch(Ui::Audio_instrument_widget *system_audio_instrument_widget, struct Patch *patch);
+//extern void BottomBar_set_system_audio_instrument_widget_and_patch(Ui::Audio_instrument_widget *system_audio_instrument_widget, struct Patch *patch);
 
 class Audio_instrument_widget : public QWidget, public Ui::Audio_instrument_widget{
   Q_OBJECT;
@@ -42,7 +43,6 @@ public:
 
   bool is_starting;
   
-  bool _i_am_system_out;
   struct Patch *_patch;
 
   Patch_widget *_patch_widget;
@@ -50,8 +50,6 @@ public:
   
   Sample_requester_widget *_sample_requester_widget;
   Compressor_widget *_comp_widget;
-
-  MyQSlider *_system_out_slider;
 
   static void set_arrow_style(QWidget *arrow, bool set_size_policy=true){
     QPalette palette2;
@@ -88,11 +86,9 @@ public:
  Audio_instrument_widget(QWidget *parent,struct Patch *patch)
     : QWidget(parent)
     , is_starting(true)
-    , _i_am_system_out(false)
     , _patch(patch)
     , _plugin_widget(NULL)
     , _sample_requester_widget(NULL)
-    , _system_out_slider(NULL)
   {
     setupUi(this);    
 
@@ -112,12 +108,14 @@ public:
     SLIDERPAINTER_set_string(drywet_slider->_painter, "Dry/Wet");
     SLIDERPAINTER_set_string(bus1_slider->_painter, "Reverb");
     SLIDERPAINTER_set_string(bus2_slider->_painter, "Chorus");
-                                                      
+
+    /*
     if(!strcmp(plugin->type->type_name,"Jack") && !strcmp(plugin->type->name,"System Out")){
       _i_am_system_out = true;
       BottomBar_set_system_audio_instrument_widget_and_patch(this, _patch);
     }
-
+    */
+    
 #if 0
     if(plugin->type->num_inputs==0){
       drywet_slider->setDisabled(true);
@@ -232,8 +230,6 @@ public:
   void prepare_for_deletion(void){
     _comp_widget->prepare_for_deletion();
     _plugin_widget->prepare_for_deletion();
-    if (_system_out_slider != NULL)
-      _system_out_slider->prepare_for_deletion();
   }
 
   ~Audio_instrument_widget(){
@@ -783,8 +779,8 @@ public slots:
   void on_input_volume_slider_valueChanged(int val){
     if(_patch->patchdata != NULL) { // temp fix
       set_plugin_value(val, EFFNUM_INPUT_VOLUME);
-      
-      if(_i_am_system_out==true)
+
+      if (GFX_OS_patch_is_system_out(_patch))
         OS_GFX_SetVolume(val);
 
       CHIP_update((SoundPlugin*)_patch->patchdata);

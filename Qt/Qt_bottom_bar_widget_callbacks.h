@@ -15,8 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
-
 #include "../common/patch_proc.h"
 #include "../common/instruments_proc.h"
 #include "../common/undo.h"
@@ -32,15 +30,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "FocusSniffers.h"
 
+#include "Qt_instruments_proc.h"
+
 #include "Qt_audio_instrument_widget.h"
 
 #include "Qt_bottom_bar_widget.h"
+
 
 class Bottom_bar_widget;
 
 Bottom_bar_widget *g_bottom_bar_widget = NULL;
 Ui::Audio_instrument_widget *g_system_audio_instrument_widget = NULL;
 struct Patch *g_system_out_patch = NULL;
+struct SoundPlugin *g_system_out_plugin = NULL;
 
 extern bool drunk_velocity;
 extern DEFINE_ATOMIC(int, g_max_cpu_usage);
@@ -79,8 +81,11 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   };
 
   struct Timer2 : public QTimer{
+    
     Bottom_bar_widget *bottom_bar_widget;
+    
     void timerEvent(QTimerEvent * e){
+      
       if (bottom_bar_widget->edit_onoff->isChecked() != ATOMIC_GET(root->editonoff))
         bottom_bar_widget->edit_onoff->setChecked(ATOMIC_GET(root->editonoff));
       
@@ -92,6 +97,17 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
       
       if (bottom_bar_widget->editor_follows_play_cursor_onoff->isChecked() != ATOMIC_GET(root->editor_follows_play_cursor_onoff))
         bottom_bar_widget->editor_follows_play_cursor_onoff->setChecked(ATOMIC_GET(root->editor_follows_play_cursor_onoff));
+
+      if (g_system_out_patch==NULL && g_system_out_plugin != NULL)
+        g_system_out_patch = (struct Patch*)g_system_out_plugin->patch;
+      
+      if (g_system_audio_instrument_widget == NULL && g_system_out_patch != NULL) {
+        g_system_audio_instrument_widget = InstrumentWidget_get_audio_instrument_widget(g_system_out_patch);
+        if (g_system_audio_instrument_widget != NULL)
+          bottom_bar_widget->system_volume_slider->setValue(g_system_audio_instrument_widget->input_volume_slider->value());
+      }
+
+      SLIDERPAINTER_call_regularly(bottom_bar_widget->system_volume_slider->_painter);
     }
   };
 
@@ -165,7 +181,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
       _timer.start();
       
       _timer2.bottom_bar_widget = this;
-      _timer2.setInterval(70);
+      _timer2.setInterval(50);
       _timer2.start();
     }
 
@@ -276,17 +292,18 @@ public slots:
   }
   
   void on_system_volume_slider_valueChanged(int val){
-    g_system_audio_instrument_widget->input_volume_slider->setValue(val);
-    printf("val: %d\n",val);
+    //printf("val: %d %p / %p / %p\n",val,g_system_audio_instrument_widget,g_system_out_patch,g_system_out_plugin);
     GFX_SetBrightness(root->song->tracker_windows, scale(val,0,10000,0,1));
-                      
-    SoundPlugin *plugin = (SoundPlugin*)g_system_out_patch->patchdata;
-    if (plugin != NULL) { // temp fix
-      const SoundPluginType *type = plugin->type;
+
+    if (g_system_audio_instrument_widget != NULL)
+      g_system_audio_instrument_widget->input_volume_slider->setValue(val);
     
+    if (g_system_out_plugin != NULL) {
+      const SoundPluginType *type = g_system_out_plugin->type;
+        
       char buf[64]={0};
-      PLUGIN_get_display_value_string(plugin, type->num_effects+EFFNUM_INPUT_VOLUME, buf, 64);
-    
+      PLUGIN_get_display_value_string(g_system_out_plugin, type->num_effects+EFFNUM_INPUT_VOLUME, buf, 64);
+
       SLIDERPAINTER_set_string(system_volume_slider->_painter, buf);
     }
   }
@@ -364,8 +381,29 @@ public slots:
 };
 
 extern "C"{
+  /*
   void GFX_OS_set_system_volume_peak_pointers(float *pointers, int num_channels){
     SLIDERPAINTER_set_peak_value_pointers(g_bottom_bar_widget->system_volume_slider->_painter, num_channels, pointers);
+  }
+  */
+  
+  void GFX_OS_set_system_volume_plugin(struct SoundPlugin *plugin){
+    g_system_out_plugin = plugin;
+    g_system_out_patch = NULL;
+    g_system_audio_instrument_widget = NULL;
+    
+    if (plugin == NULL){
+      
+      static float nullfloats[2] = {0.0f, 0.0f};
+      SLIDERPAINTER_set_peak_value_pointers(g_bottom_bar_widget->system_volume_slider->_painter, 2, nullfloats);
+      
+    } else {
+
+      const SoundPluginType *type = plugin->type;
+
+      SLIDERPAINTER_set_peak_value_pointers(g_bottom_bar_widget->system_volume_slider->_painter, type->num_inputs, plugin->input_volume_peak_values);
+      
+    }    
   }
 
   void GFX_OS_UpdateKeyOctave(void){
@@ -398,8 +436,13 @@ extern "C"{
   }
 }
 
+bool GFX_OS_patch_is_system_out(struct Patch *patch){
+  return patch==g_system_out_patch;
+}
+
+/*
 void BottomBar_set_system_audio_instrument_widget_and_patch(Ui::Audio_instrument_widget *system_audio_instrument_widget, struct Patch *system_out_patch){
-  g_system_audio_instrument_widget = system_audio_instrument_widget;
+g_system_audio_instrument_widget = system_audio_instrument_widget;
   g_system_out_patch = system_out_patch;
 
   SoundPlugin *plugin = (SoundPlugin*)g_system_out_patch->patchdata;
@@ -413,4 +456,6 @@ void BottomBar_set_system_audio_instrument_widget_and_patch(Ui::Audio_instrument
 
   GFX_OS_UpdateKeyOctave();
 }
-    
+  
+*/
+
