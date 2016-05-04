@@ -46,14 +46,14 @@ public slots:
 
   void on_volume_slider_valueChanged( int val)
   {
-    volume_spin->setValue(val);
+    volume_spin->setValue(127-val);
   }
 
 
   void on_volume_spin_valueChanged( int val )
   {
-    if( volume_slider->value() != val)
-      volume_slider->setValue(val);
+    if( volume_slider->value() != 127-val)
+      volume_slider->setValue(127-val);
 
     fprintf(stderr,"Volume: %d. channel: %d\n",val,patchdata->channel);
     
