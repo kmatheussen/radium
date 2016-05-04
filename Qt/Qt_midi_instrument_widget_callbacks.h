@@ -55,7 +55,7 @@ public slots:
     if( volume_slider->value() != 127-val)
       volume_slider->setValue(127-val);
 
-    fprintf(stderr,"Volume: %d. channel: %d\n",val,patchdata->channel);
+    //fprintf(stderr,"Volume: %d. channel: %d\n",val,patchdata->channel);
     
     patchdata->volume = val;
 
