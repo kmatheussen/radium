@@ -58,6 +58,19 @@ extern struct Root *root;
 
 struct Patch *g_currpatch=NULL;
 
+static vector_t unused_patches; // <-- patches are never deleted, but they are removed from the instruments. In order for the gc to find the removed patches (when stored some place where the gc can't find them, for instance in a C++ object), we put them here. (There shouldn't be any situation where this might happen, but we do it anyway, just in case, because GC bugs are so hard to find.)
+
+void PATCH_remove_from_instrument(struct Patch *patch){
+  VECTOR_remove(&patch->instrument->patches, patch);
+  VECTOR_push_back(&unused_patches, patch);
+}
+
+static void PATCH_add_to_instrument(struct Patch *patch){
+  if (VECTOR_is_in_vector(&unused_patches, patch))
+    VECTOR_remove(&unused_patches, patch);
+  VECTOR_push_back(&patch->instrument->patches, patch);
+}
+
 static vector_t *get_all_patches(void){
   vector_t *v=talloc(sizeof(vector_t));
   struct Instruments *instrument = get_all_instruments();
@@ -228,7 +241,7 @@ bool PATCH_make_active_audio(struct Patch *patch, char *type_name, char *plugin_
 
   ADD_UNDO(Audio_Patch_Add_CurrPos(patch));
 
-  VECTOR_push_back(&patch->instrument->patches,patch);
+  PATCH_add_to_instrument(patch);
 
   return true;
 }
@@ -254,7 +267,7 @@ struct Patch *PATCH_create_midi(const char *name){
   
   MIDI_InitPatch(patch);
 
-  VECTOR_push_back(&patch->instrument->patches,patch);
+  PATCH_add_to_instrument(patch);
 
   return patch;
 }
@@ -321,7 +334,8 @@ static void make_inactive(struct Patch *patch, bool force_removal){
   ADD_UNDO(Audio_Patch_Remove_CurrPos(patch, audio_patch_state)); // Must be called last, if not the undo/redo order will be wrong.
 
   //Undo_Patchlist_CurrPos(LOC());
-  VECTOR_remove(&patch->instrument->patches,patch);
+  //VECTOR_remove(&patch->instrument->patches, patch);
+  PATCH_remove_from_instrument(patch);
 }
 
 void PATCH_make_inactive(struct Patch *patch){

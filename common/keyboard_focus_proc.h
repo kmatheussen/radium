@@ -7,7 +7,8 @@ extern "C"{
   
 extern void obtain_keyboard_focus(void);
 extern void release_keyboard_focus(void);
-
+extern bool editor_has_keyboard_focus(void);
+  
 #  ifdef __cplusplus
 }
 #endif

@@ -658,26 +658,26 @@ int MIDI_initInstrumentPlugIn(struct Instruments *instrument){
     return INSTRUMENT_FAILED;
   }
 
-  instrument->instrumentname="MIDI instrument";
-  //instrument->getMaxVelocity= &MIDIgetMaxVelocity;
-  instrument->getFxNames          = MIDI_getFxNames;
-  instrument->createFX            = MIDI_createFX;
-  instrument->getFX= &MIDIgetFX;
-  instrument->getPatch= &MIDIgetPatch;
-  instrument->CloseInstrument=MIDICloseInstrument;
-  instrument->StopPlaying=MIDIStopPlaying;
+  instrument->instrumentname   = "MIDI instrument";
+  //instrument->getMaxVelocity = &MIDIgetMaxVelocity;
+  instrument->getFxNames       = MIDI_getFxNames;
+  instrument->createFX         = MIDI_createFX;
+  instrument->getFX            = &MIDIgetFX;
+  instrument->getPatch         = &MIDIgetPatch;
+  instrument->CloseInstrument  = MIDICloseInstrument;
+  instrument->StopPlaying      = MIDIStopPlaying;
 
-  instrument->CopyInstrumentData=MIDI_CopyInstrumentData;
-  instrument->PlayFromStartHook=MIDIPlayFromStartHook;
-  instrument->LoadFX=MIDILoadFX;
+  instrument->CopyInstrumentData = MIDI_CopyInstrumentData;
+  instrument->PlayFromStartHook  = MIDIPlayFromStartHook;
+  instrument->LoadFX             = MIDILoadFX;
 
-  instrument->PP_Update=MIDI_PP_Update;
+  instrument->PP_Update = MIDI_PP_Update;
 
-  instrument->handle_fx_when_theres_a_new_patch_for_track=MIDI_handle_fx_when_theres_a_new_patch_for_track;
-  instrument->remove_patch = MIDI_remove_patch;
+  instrument->handle_fx_when_theres_a_new_patch_for_track = MIDI_handle_fx_when_theres_a_new_patch_for_track;
+  instrument->remove_patch                                = MIDI_remove_patch;
 
-  instrument->setPatchData=MIDISetPatchData;
-  instrument->getPatchData=MIDIGetPatchData;
+  instrument->setPatchData = MIDISetPatchData;
+  instrument->getPatchData = MIDIGetPatchData;
 
   return INSTRUMENT_SUCCESS;
   

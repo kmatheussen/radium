@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static struct Instruments *g_instruments;
 
-// Called during program startup
+// Called during program shutdown
 static void CloseInstrument(NInt instrumentnum){
 	struct Instruments *temp=(struct Instruments *)ListFindElement1(
                 &g_instruments->l,
@@ -48,7 +48,7 @@ void CloseAllInstruments(void){
 
 
 
-/* This function must be made more general later. */
+/* Called during program init. */
 bool OpenInstruments(void){
   {
     struct Instruments *instrument=talloc(sizeof(struct Instruments));

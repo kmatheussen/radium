@@ -131,7 +131,7 @@ static bool Load(const wchar_t *filename){
 	}
 
 	LoadOsStuff();
-
+        
 	printf("dc.ls: -%s-\n",dc.ls);
 	if(strcmp(dc.ls,"ROOT")){
           GFX_Message(NULL, "ROOT not found. Found '%s' instead.\n", dc.ls);
@@ -141,7 +141,7 @@ static bool Load(const wchar_t *filename){
 	}
 
 	newroot=LoadRoot();
-
+        
         DISK_close_and_delete(dc.file);
 
 	if(!dc.success){
@@ -149,10 +149,10 @@ static bool Load(const wchar_t *filename){
           EndProgram();
           exit(6);
 	}
-
-
+        
 	ResetUndo();
 
+        
 #ifdef _AMIGA
 	CloseHelpWindow();
 	CloseCPPWindowWindow();
@@ -165,7 +165,7 @@ static bool Load(const wchar_t *filename){
             root=newroot;		//BANG!
           //}PLAYER_unlock();
         }GL_draw_unlock();
-        
+
         DLoadRoot(newroot);
 
         GL_create_all(root->song->tracker_windows);

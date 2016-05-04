@@ -58,6 +58,7 @@ DC_end();
 /*********** Start Load song *************************/
 
 struct Root *LoadRoot(void){
+          
 	static char *objs[1]={
 		"SONG"
 	};

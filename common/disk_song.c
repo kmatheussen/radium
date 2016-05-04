@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "vector_proc.h"
 #include "hashmap_proc.h"
 #include "fxlines_proc.h"
+#include "patch_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
@@ -86,9 +87,12 @@ struct Song *LoadSong(void){
 	struct Song *song=DC_alloc(sizeof(struct Song));
 
         MW_cleanup();
+
+        while(get_MIDI_instrument()->patches.num_elements > 0)
+          PATCH_remove_from_instrument(get_MIDI_instrument()->patches.elements[0]);
         
-        VECTOR_clean(&get_MIDI_instrument()->patches);
-        VECTOR_clean(&get_audio_instrument()->patches);
+        while(get_audio_instrument()->patches.num_elements > 0)
+          PATCH_remove_from_instrument(get_audio_instrument()->patches.elements[0]);
 
         COMMENT_reset();
 

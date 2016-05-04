@@ -41,12 +41,12 @@ static void make_backup(void){
   if (dc.filename==NULL)
     return;
 
-  if (g_undo_generation_for_last_backup == g_curr_undo_generation)
-    return;
-
   if (!editor_has_keyboard_focus()) // If showing popup menu, editing text widgets, etc. we don't want to disturb the user.
     return;
   
+  if (g_undo_generation_for_last_backup == g_curr_undo_generation)
+    return;
+
   // Set this immediately so we don't start several BackupTimers.
   g_undo_generation_for_last_backup = g_curr_undo_generation;
 
