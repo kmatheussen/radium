@@ -88,6 +88,10 @@ struct Song *LoadSong(void){
 
         MW_cleanup();
 
+        VECTOR_FOR_EACH(struct Patch *patch, &get_MIDI_instrument()->patches){
+          InstrumentWidget_delete(patch);
+        }END_VECTOR_FOR_EACH;
+        
         while(get_MIDI_instrument()->patches.num_elements > 0)
           PATCH_remove_from_instrument(get_MIDI_instrument()->patches.elements[0]);
         

@@ -859,14 +859,14 @@ void InstrumentWidget_prepare_for_deletion(struct Patch *patch){
 }
 
 void InstrumentWidget_delete(struct Patch *patch){
-  QStackedWidget* tabs = instruments_widget->tabs;
+  //QStackedWidget* tabs = instruments_widget->tabs;
 
   //ADD_UNDO(InstrumentsWidget_CurrPos());
 
   MIDI_instrument_widget *w1 = get_midi_instrument_widget(patch);
   if(w1!=NULL){
-    tabs->removeWidget(w1); // Undo is storing the tab widget, so we can't delete it.
-    //delete w1
+    //tabs->removeWidget(w1); // Undo is storing the tab widget, so we can't delete it. (not anymore)
+    delete w1;
     return;
   }
 
@@ -882,7 +882,6 @@ void InstrumentWidget_delete(struct Patch *patch){
   }
 
 }
-
 
 void GFX_update_instrument_patch_gui(struct Patch *patch){
   printf("Called GFX_update_instrument_patch_gui for patch \"%s\"\n",patch==NULL?"<>":patch->name);
