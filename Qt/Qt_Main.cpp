@@ -135,6 +135,10 @@ void release_keyboard_focus(void){
   editor_has_keyboard = true;
 }
 
+bool editor_has_keyboard_focus(void){
+  return editor_has_keyboard;
+}
+
 
 
 DEFINE_ATOMIC(bool, is_starting_up) = true;
