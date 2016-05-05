@@ -1384,3 +1384,8 @@ char *toBase64(const char *s){
 char *fromBase64(const char *s){
   return STRING_get_chars(STRING_fromBase64(STRING_create(s)));
 }
+
+void msleep(int ms){
+  usleep(1000*ms);
+}
+
