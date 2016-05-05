@@ -145,10 +145,7 @@
 
 (<ra> :get-undo-history)
 
-todo:
-* Fix load preset
-* Check if cancelUndo is called automatically if no undo has been added.
-* Check if instrument widget for deleted patch is hidden.
+
 !!#
 
 
