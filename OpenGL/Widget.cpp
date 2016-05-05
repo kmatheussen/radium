@@ -1180,9 +1180,29 @@ QWidget *GL_create_widget(QWidget *parent){
     printf("vendor: %s, renderer: %s, version: %s \n",(const char*)ATOMIC_GET(GE_vendor_string),(const char*)ATOMIC_GET(GE_renderer_string),(const char*)ATOMIC_GET(GE_version_string));
     //getchar();
 
+    
+        
+
     bool show_mesa_warning = true;
     
 #ifdef FOR_LINUX
+    if (!s_version.contains("nvidia", Qt::CaseInsensitive) && SETTINGS_read_bool("show_not_nvidia_warning", true)) {
+      GL_set_pause_rendering_on_off(true);
+        
+      GFX_Message(NULL,
+                  "It seems like you are not using an NVIDIA card or the nvidia gfx driver."
+                  "<p>"
+                  "In order to avoid seemingly random crashes, the option \"Briefly pause graphics rendering when opening windows\" has been enabled "
+                  "under the \"Windows\" tab in the \"Preferences\" window."
+                  "<p>"
+                  "In case you are using a new GFX driver, you might want to uncheck this option."
+                  "<p>"
+                  "You will not see this warning again."
+                  );
+      
+      SETTINGS_write_bool("show_not_nvidia_warning", false);
+    }
+    
     if (s_vendor.contains("ATI"))
       if (SETTINGS_read_bool("show_catalyst_gfx_message_during_startup", true)) {
         vector_t v = {};
@@ -1296,7 +1316,7 @@ QWidget *GL_create_widget(QWidget *parent){
                   "\n"
                   "In addition, the graphics tends to not look as good."
                   );
-    
+
   }  
 
   g_gl_widget_started = true;
