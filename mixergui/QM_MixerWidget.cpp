@@ -516,11 +516,13 @@ static bool stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
 
   Undo_Close();
 
+  // TODO: has_updated returns true if the chip was just moved around a bit. Need to store original position for has_updated to get correct value.
   if (has_updated==false)
     Undo_CancelLastUndo();
 
   myscene->_moving_chips.clear();
 
+  // TODO: the function currently returns correct value, but it can not return 'has_updated' when 'has_updated' gets correct value, since we don't want to ask user to replace chip after moving it around a bit.
   return has_updated;
 }
 
