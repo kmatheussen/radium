@@ -416,6 +416,11 @@ void openToolsDialog(void){
 }
 
 void openAboutWindow(void){
+  float length = getSongLength();
+  int minutes = length / 60;
+  int seconds = length - (minutes*60);
+  int s2      = (length - floorf(length)) * 100.0f;
+
   GFX_Message(NULL,"<center><b>Radium "  VERSION "</b></center>"
               "<p>"
               "OpenGL vendor: \"%s\"<br>"
@@ -424,12 +429,15 @@ void openAboutWindow(void){
               "OpenGL flags: %x<br>"
               "Qt version: \"%s\""
               "<p>"
-              "<A href=\"http://users.notam02.no/~kjetism/radium/development.php\">Credits</A>",
+              "<A href=\"http://users.notam02.no/~kjetism/radium/development.php\">Credits</A>"
+              "<p>"
+              "Song length: %02d : %02d : %02d",
               ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : ATOMIC_GET(GE_vendor_string),
               ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : ATOMIC_GET(GE_renderer_string),
               ATOMIC_GET(GE_version_string)==NULL ? "(null)" : ATOMIC_GET(GE_version_string),
               ATOMIC_GET(GE_opengl_version_flags),
-              GFX_qVersion()
+              GFX_qVersion(),
+              minutes, seconds, s2
               );
 }
 
