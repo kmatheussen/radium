@@ -54,6 +54,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Render_proc.h"
 #include "../common/OS_string_proc.h"
 #include "../audio/SoundProducer_proc.h"
+#include "../audio/Mixer_proc.h"
 
 
 #ifdef _AMIGA
@@ -1356,6 +1357,33 @@ void setPlaylistBlock(int pos, int blocknum){
 
   BL_setBlock(pos, block);
 }
+
+static double get_block_length(struct Blocks *block){
+  double time = block->times[block->num_lines].time;
+
+  time /= (double)block->reltempo;
+
+  return time / (double)MIXER_get_sample_rate();
+}
+
+float getBlockLength(int blocknum, int windownum){
+  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  if(wblock==NULL) return 1.0; // return 1.0 instead of 0.0 to avoid divide by zero errors.
+
+  return get_block_length(wblock->block);
+}
+
+float getSongLength(void){
+  struct Blocks **playlist = root->song->playlist;
+  double result = 0.0;
+
+  int i;
+  for(i=0;i<root->song->length;i++)
+    result += get_block_length(playlist[i]);
+
+  return result;
+}
+
 
 int getLogtypeHold(void){
   return LOGTYPE_HOLD;
