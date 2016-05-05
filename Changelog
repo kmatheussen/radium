@@ -1,3 +1,21 @@
+Changes 3.8.1 -> 3.8.2:
+* Fix reset bottom bar volume slider
+* Turn on GL pause by default for Linux users not using an nvidia card
+* mouse: Use track under mouse when turning on/off cent text / velocity text /
+  fx text, not the track the cursor is placed on.
+* Upgraded to latest version of s7
+* api: msleep
+* Add Post-recording tools GUI to the quantization menu (in addition to the MIDI menu)
+* Fix inverted MIDI volume slider
+* Delete all MIDI instrument windows when creating new song. Also fixes
+  crashes that can happen when loading new song.
+* Fix peaks in bottom bar volume slider, and don't crash if creating and deleting
+  "System output" sound objects in a special order.
+* Don't do autobackup if the editor doesn't have keyboard focus
+* Obtain keyboard focus when showing popup menu
+* Can select MIDI instruments from track header again
+
+
 Changes 3.8.0 -> 3.8.1:
 * Track paste: Fix undo/redo if it was necessary to create instrument,
   and autoconnect to main bus if creating new instrument.
