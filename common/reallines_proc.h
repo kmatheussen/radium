@@ -45,3 +45,4 @@ extern LANGSPEC void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,
 
 extern LANGSPEC void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int num_lines);
 extern LANGSPEC void LineZoomBlockInc(struct Tracker_Windows *window, struct WBlocks *wblock, int inc_num_lines);
+extern LANGSPEC int GetLineZoomBlock(struct WBlocks *wblock);

@@ -254,7 +254,7 @@ public slots:
       
       updateWidgets(wblock);
 
-    } else if (value != wblock->num_expand_lines) {
+    } else if (value != GetLineZoomBlock(wblock)) {
       
       LineZoomBlock(window,wblock,value);
       window->must_redraw = true;

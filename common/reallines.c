@@ -670,3 +670,7 @@ void LineZoomBlockInc(struct Tracker_Windows *window, struct WBlocks *wblock, in
   
   LineZoomBlock(window,wblock,num_expand_lines);
 }
+
+int GetLineZoomBlock(struct WBlocks *wblock){
+  return wblock->num_expand_lines;
+}

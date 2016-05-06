@@ -87,6 +87,14 @@ void lineZoomBlock(int numlines, int blocknum, int windownum){
   LineZoomBlockInc(window, wblock, numlines);
 }
 
+int getLineZoomBlock(int blocknum, int windownum){
+  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  if (wblock==NULL)
+    return 1;
+
+  return GetLineZoomBlock(wblock);
+}
+
 void expandLine(int numlines,int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
