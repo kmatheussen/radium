@@ -100,8 +100,10 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
       if (g_system_out_patch==NULL && g_system_out_plugin != NULL)
         g_system_out_patch = (struct Patch*)g_system_out_plugin->patch;
-      
+        
       if (g_system_audio_instrument_widget == NULL && g_system_out_patch != NULL) {
+        g_bottom_bar_widget->system_volume_slider->_patch = g_system_out_patch;
+                
         g_system_audio_instrument_widget = InstrumentWidget_get_audio_instrument_widget(g_system_out_patch);
         if (g_system_audio_instrument_widget != NULL)
           bottom_bar_widget->system_volume_slider->setValue(g_system_audio_instrument_widget->input_volume_slider->value());
@@ -391,7 +393,10 @@ extern "C"{
     g_system_out_plugin = plugin;
     g_system_out_patch = NULL;
     g_system_audio_instrument_widget = NULL;
-    
+
+    g_bottom_bar_widget->system_volume_slider->_patch = NULL;
+    g_bottom_bar_widget->system_volume_slider->_effect_num = EFFNUM_INPUT_VOLUME;
+
     if (plugin == NULL){
       
       static float nullfloats[2] = {0.0f, 0.0f};

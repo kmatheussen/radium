@@ -54,6 +54,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Render_proc.h"
 #include "../common/OS_string_proc.h"
 #include "../audio/SoundProducer_proc.h"
+#include "../audio/Mixer_proc.h"
 
 
 #ifdef _AMIGA
@@ -415,6 +416,11 @@ void openToolsDialog(void){
 }
 
 void openAboutWindow(void){
+  float length = getSongLength();
+  int minutes = length / 60;
+  int seconds = length - (minutes*60);
+  int s2      = (length - floorf(length)) * 100.0f;
+
   GFX_Message(NULL,"<center><b>Radium "  VERSION "</b></center>"
               "<p>"
               "OpenGL vendor: \"%s\"<br>"
@@ -423,12 +429,15 @@ void openAboutWindow(void){
               "OpenGL flags: %x<br>"
               "Qt version: \"%s\""
               "<p>"
-              "<A href=\"http://users.notam02.no/~kjetism/radium/development.php\">Credits</A>",
+              "<A href=\"http://users.notam02.no/~kjetism/radium/development.php\">Credits</A>"
+              "<p>"
+              "Song length: %02d : %02d : %02d",
               ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : ATOMIC_GET(GE_vendor_string),
               ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : ATOMIC_GET(GE_renderer_string),
               ATOMIC_GET(GE_version_string)==NULL ? "(null)" : ATOMIC_GET(GE_version_string),
               ATOMIC_GET(GE_opengl_version_flags),
-              GFX_qVersion()
+              GFX_qVersion(),
+              minutes, seconds, s2
               );
 }
 
@@ -1357,6 +1366,33 @@ void setPlaylistBlock(int pos, int blocknum){
   BL_setBlock(pos, block);
 }
 
+static double get_block_length(struct Blocks *block){
+  double time = block->times[block->num_lines].time;
+
+  time /= (double)block->reltempo;
+
+  return time / (double)MIXER_get_sample_rate();
+}
+
+float getBlockLength(int blocknum, int windownum){
+  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  if(wblock==NULL) return 1.0; // return 1.0 instead of 0.0 to avoid divide by zero errors.
+
+  return get_block_length(wblock->block);
+}
+
+float getSongLength(void){
+  struct Blocks **playlist = root->song->playlist;
+  double result = 0.0;
+
+  int i;
+  for(i=0;i<root->song->length;i++)
+    result += get_block_length(playlist[i]);
+
+  return result;
+}
+
+
 int getLogtypeHold(void){
   return LOGTYPE_HOLD;
 }
@@ -1384,3 +1420,8 @@ char *toBase64(const char *s){
 char *fromBase64(const char *s){
   return STRING_get_chars(STRING_fromBase64(STRING_create(s)));
 }
+
+void msleep(int ms){
+  usleep(1000*ms);
+}
+

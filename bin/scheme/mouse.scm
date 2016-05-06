@@ -950,14 +950,20 @@
                         )
 
 (define (track-configuration-popup X Y)
-  (popup-menu "Pianoroll     (left alt + p)" :check (<ra> :pianoroll-visible *current-track-num*)  ra:show-pianoroll
-              "Note text     (left alt + n)" :check (<ra> :note-track-visible *current-track-num*) ra:show-note-track
+  (c-display "TRACK " *current-track-num*)
+  (popup-menu "Pianoroll     (left alt + p)" :check (<ra> :pianoroll-visible *current-track-num*) (lambda (onoff)
+                                                                                                    (<ra> :show-pianoroll onoff *current-track-num*))
+              "Note text     (left alt + n)" :check (<ra> :note-track-visible *current-track-num*) (lambda (onoff)
+                                                                                                     (<ra> :show-note-track onoff *current-track-num*))
               (list "Cents"
                     :check (<ra> :centtext-visible *current-track-num*)
                     :enabled (<ra> :centtext-can-be-turned-off *current-track-num*)
-                    ra:show-centtext)
-              "Velocity text (left alt + y)" :check (<ra> :veltext-visible *current-track-num*)    ra:show-veltext
-              "FX text"                      :check (<ra> :fxtext-visible *current-track-num*)     ra:show-fxtext
+                    (lambda (onoff)
+                      (<ra> :show-centtext  onoff *current-track-num*)))
+              "Velocity text (left alt + y)" :check (<ra> :veltext-visible *current-track-num*) (lambda (onoff)
+                                                                                                  (<ra> :show-veltext onoff *current-track-num*))
+              "FX text"                      :check (<ra> :fxtext-visible *current-track-num*)   (lambda (onoff)
+                                                                                                   (<ra> :show-fxtext onoff *current-track-num*))
               "-------"
               "Copy Track     (left alt + c)" (lambda ()
                                                 (<ra> :copy-track *current-track-num*))

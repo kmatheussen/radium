@@ -121,14 +121,18 @@ static float gain_2_slider(float gain, float db_min, float db_max){
   const float threshold_gain = powf(10,
                                     scale(threshold_val, 0.0f, 1.0f, db_min, db_max) / 20.0f);
 
+  float ret;
+  
   if(gain <= threshold_gain) // Below threshold, we do a linear conversion. If not there will be a jump between 0 and almost 0.
-    return scale(gain, 
+    ret = scale(gain, 
                  0.0f, threshold_val,
                  0.0f, threshold_gain);
   else
-    return scale(20 * log10(gain),
-                 db_min, db_max,
-                 0.0f, 1.0f);
+    ret = scale(20 * log10(gain),
+                db_min, db_max,
+                0.0f, 1.0f);
+
+  return R_BOUNDARIES(0.0f, ret, 1.0f);
 }
 
 static float gain_2_db(float val, const float db_min, const float db_max){
@@ -156,9 +160,11 @@ static float gain_2_db(float val, const float db_min, const float db_max){
 
 static float frequency_2_slider(float freq, const float min_freq, const float max_freq){
   const float min_output = logf(min_freq)/logf(max_freq);
-  return scale( logf(freq)/logf(max_freq),
-                min_output, 1.0,
-                0.0, 1.0);
+  return R_BOUNDARIES(0.0f,
+                      scale( logf(freq)/logf(max_freq),
+                             min_output, 1.0,
+                             0.0, 1.0),
+                      1.0f);
 }
 
 static float slider_2_frequency(float slider, const float min_freq, const float max_freq){
@@ -649,12 +655,13 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
   float store_value = value;
   //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
 
-#if !defined(RELEASE)
   if(value_format==PLUGIN_FORMAT_SCALED) {
-    R_ASSERT(value >= 0.0f);
-    R_ASSERT(value <= 1.0f);
-  }      
+#if !defined(RELEASE)
+    R_ASSERT(value >= -0.0001f); // don't report floating point rounding errors
+    R_ASSERT(value <= 1.0001f); // don't report floating point rounding errors
 #endif
+    value = R_BOUNDARIES(0.0f, value, 1.0f);
+  }      
   
   if(effect_num < plugin->type->num_effects){
 
