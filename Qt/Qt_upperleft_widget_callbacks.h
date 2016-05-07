@@ -335,3 +335,4 @@ public slots:
     set_editor_focus();
   }
 };
+

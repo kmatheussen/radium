@@ -597,9 +597,12 @@ void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int n
 
   ADD_UNDO(Reallines_CurrPos(window));
 
+  window->must_redraw = true;
+
   if (num_lines<1) {
     wblock->num_expand_lines = num_lines;
     UpdateRealLines(window,wblock);
+    GFX_UpdateUpperLeft(window, wblock);
     return;
   }
 
@@ -653,7 +656,7 @@ void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int n
         set_curr_realline(wblock, wblock->curr_realline+1);
       }
 
-  window->must_redraw = true;
+  GFX_UpdateUpperLeft(window, wblock);
 }
 
 void LineZoomBlockInc(struct Tracker_Windows *window, struct WBlocks *wblock, int inc_num_lines){

@@ -417,8 +417,8 @@ extern "C"{
 
   void GFX_OS_update_bottombar(void){
     g_bottom_bar_widget->updateWidgets();
-  }
-  
+  } 
+ 
   void OS_GFX_NumUndosHaveChanged(int num_undos, bool redos_are_available, bool has_unsaved_undos){
     g_bottom_bar_widget->num_undos_label->setText(QString::number(num_undos));
     g_bottom_bar_widget->unsaved_undos->setText(has_unsaved_undos?"*":" ");
