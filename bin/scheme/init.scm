@@ -47,6 +47,8 @@
 
 (my-require 'fxrange.scm)
 
+(my-require 'various.scm)
+
 (my-require 'quantitize.scm)
 
 ;;(gc #f)
