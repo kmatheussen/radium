@@ -1,3 +1,15 @@
+Changes 3.8.2 -> 3.8.3:
+* Show message in editor when temporarily stopping player
+* In general, start player again if player had to be stopped before doing an operation.
+* Lowered undo block interval from 3 to 1/2 second. (computers have more memory now)
+* Revitalize PC_Pause and PC_StopPause
+* Disable faster render test code (which really wasn't faster, at least not noticably)
+* Render: Don"t crash if current track number doesn"t exist
+* Make sure "LZ" is updated in the window when the value changes
+* Zoom in/out exponentially
+* api: getLineZoomBlock, getBlockLength, getSongLength
+
+
 Changes 3.8.1 -> 3.8.2:
 * Fix reset bottom bar volume slider
 * Turn on GL pause by default for Linux users not using an nvidia card
