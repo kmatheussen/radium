@@ -92,8 +92,10 @@ void P2MUpdateSongPosCallBack(void){
   
   if(window->curr_block!=curr_block_num){
 
+#if 0
     if (ATOMIC_GET(root->editonoff)==false)
       GL_create(window,wblock); // <-- Faster update (no, doesn't seem to make a difference), but it's also complicated to avoid calling GL_create twice when doing this. (need separate update variables for editor and non-editor)
+#endif
 
     //printf("Bef. w: %d, r: %d\n",window->curr_block,root->curr_block);
 
