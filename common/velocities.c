@@ -151,7 +151,6 @@ int AddVelocity(
 }
 
 void AddVelocityCurrPos(struct Tracker_Windows *window){
-	PC_Pause();
 
 	struct WBlocks *wblock=window->wblock;
 	struct LocalZooms *realline= wblock->reallines[wblock->curr_realline];
@@ -182,7 +181,6 @@ void AddVelocityCurrPos(struct Tracker_Windows *window){
 	UpdateWTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);
 #endif
 
-	PC_StopPause();
 }
 
 
@@ -214,8 +212,6 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
           if(notes->num_elements==0)
             return;
 
-          PC_Pause();
-
           ADD_UNDO(Block_CurrPos(window));
 
           VECTOR_FOR_EACH(struct Notes *note,notes){
@@ -226,8 +222,6 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
         } else {
 
-          PC_Pause();
-
           ADD_UNDO(Notes_CurrPos(window));
 
           struct Notes *note = FindNoteCurrPos(window);
@@ -237,7 +231,6 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
           }
         }
 
-	PC_StopPause();
 }
 
 

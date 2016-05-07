@@ -48,6 +48,41 @@ void PC_Pause(void){
 }
 */
 
+static bool g_was_playing = false;
+static int g_playtype = 0;
+static bool g_was_playing_range = false;
+  
+
+void PC_Pause(void){
+  g_was_playing = false;
+  g_playtype = 0;
+  g_was_playing_range = false;
+  
+  if (is_playing()){
+    g_playtype = pc->playtype;
+    g_was_playing_range = pc->is_playing_range;
+    PlayStop();
+    g_was_playing = true;
+  }
+}
+
+void PC_StopPause(struct Tracker_Windows *window){
+  if (g_was_playing) {
+    if (g_was_playing_range)
+      PlayRangeCurrPos(window);
+    else if (g_playtype==PLAYSONG)
+      PlaySongCurrPos(window);
+    else if (g_playtype==PLAYBLOCK)
+      PlayBlockCurrPos(window);
+  }
+}
+
+  
+
+// Old code below. It was more sophisticated, but also a bit more complicated.
+
+#if 0
+
 void PC_Pause(void){
 
   if( ! is_playing()){
@@ -114,5 +149,6 @@ void PC_StopPause(void){
 }
 
 
+#endif
 
 

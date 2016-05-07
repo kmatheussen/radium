@@ -14,14 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
-
-#ifndef TRACKER_INCLUDE
-
 extern void PC_Pause(void);
 
-extern void PC_StopPause(void);
-
-#endif
-
+extern void PC_StopPause(struct Tracker_Windows *window);
 

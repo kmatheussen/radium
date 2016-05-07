@@ -53,13 +53,11 @@ struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock,
   //pitch->note_note = note;
 
   int pos;
-  PC_Pause(); {
-    pos=ListAddElement3_ns(&note->pitches, &pitch->l);
-    if (pos >= 0){
-      if (note->pitch_end==0.0)
-        note->pitch_end = notenum;
-    }
-  }PC_StopPause();
+  pos=ListAddElement3_ns(&note->pitches, &pitch->l);
+  if (pos >= 0){
+    if (note->pitch_end==0.0)
+      note->pitch_end = notenum;
+  }
 
   if(pos==-1)
     return NULL;
