@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "undo_blocks_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "wblocks_proc.h"
 #include "block_properties_proc.h"
 #include "Beats_proc.h"
@@ -129,60 +130,65 @@ void InsertLines(
 
 	if(toinsert==0 || num_lines+toinsert<2 || num_lines+toinsert>=MAX_UINT32) return;
 
-	blocktobelongtoforinsertlines_notes_a_terrible_hack=block;
+        
+        PC_Pause();{
+        
+          blocktobelongtoforinsertlines_notes_a_terrible_hack=block;
+          
+          block->num_lines=num_lines+toinsert;
+          
+          List_InsertLines3(&block->temponodes,block->temponodes->l.next,line,toinsert,NULL);
+          LegalizeTempoNodes(block);
+          List_InsertLines3(&block->signatures,&block->signatures->l,line,toinsert,NULL);
+          List_InsertLines3(&block->lpbs,&block->lpbs->l,line,toinsert,NULL);
+          List_InsertLines3(&block->tempos,&block->tempos->l,line,toinsert,NULL);
+          
+          UpdateSTimes(block);
+          UpdateBeats(block);
 
-	block->num_lines=num_lines+toinsert;
+          while(track!=NULL){
+            List_InsertLines3(&track->notes,&track->notes->l,line,toinsert,InsertLines_notes);
+            LegalizeNotes(block,track);
+            List_InsertLines3(&track->stops,&track->stops->l,line,toinsert,NULL);
+            fxs=track->fxs;
+            while(fxs!=NULL){
+              List_InsertLines3(&fxs->fxnodelines,&fxs->fxnodelines->l,line,toinsert,NULL);
+              fxs=NextFX(fxs);
+            }
+            LegalizeFXlines(block,track);
+            track=NextTrack(track);
+          }
 
-	List_InsertLines3(&block->temponodes,block->temponodes->l.next,line,toinsert,NULL);
-	LegalizeTempoNodes(block);
-	List_InsertLines3(&block->signatures,&block->signatures->l,line,toinsert,NULL);
-	List_InsertLines3(&block->lpbs,&block->lpbs->l,line,toinsert,NULL);
-	List_InsertLines3(&block->tempos,&block->tempos->l,line,toinsert,NULL);
+          while(window!=NULL){
+            wblock=ListFindElement1(&window->wblocks->l,block->l.num);
+            List_InsertLines3(
+                              &wblock->localzooms,
+                              &wblock->localzooms->l,
+                              line,
+                              toinsert,
+                              InsertLines_localzooms
+                              //			NULL
+                              );
+            for(lokke=line;lokke<line+toinsert;lokke++){
+              localzoom=talloc(sizeof(struct LocalZooms));
+              localzoom->Tline=lokke;
+              localzoom->Tdividor=1;
+              localzoom->zoomline=lokke;
+              ListAddElement3(&wblock->localzooms,&localzoom->l);
+            }
+            UpdateWBlockWidths(window,wblock);
+            wblock->reallines = NULL; // We changed the localzooms, which is used to set new curr_realline. We don't need to set new curr_realline, so just set reallines to NULL.
+            UpdateRealLines(window,wblock);
+            UpdateReallinesDependens(window,wblock);
+            if(wblock->curr_realline>=wblock->num_reallines){
+              wblock->curr_realline=wblock->num_reallines-1;
+            }
+            window=NextWindow(window);
+          }
+          
+          blocktobelongtoforinsertlines_notes_a_terrible_hack=NULL;
 
-	UpdateSTimes(block);
-        UpdateBeats(block);
-
-	while(track!=NULL){
-		List_InsertLines3(&track->notes,&track->notes->l,line,toinsert,InsertLines_notes);
-		LegalizeNotes(block,track);
-		List_InsertLines3(&track->stops,&track->stops->l,line,toinsert,NULL);
-		fxs=track->fxs;
-		while(fxs!=NULL){
-			List_InsertLines3(&fxs->fxnodelines,&fxs->fxnodelines->l,line,toinsert,NULL);
-			fxs=NextFX(fxs);
-		}
-		LegalizeFXlines(block,track);
-		track=NextTrack(track);
-	}
-
-	while(window!=NULL){
-		wblock=ListFindElement1(&window->wblocks->l,block->l.num);
-		List_InsertLines3(
-			&wblock->localzooms,
-			&wblock->localzooms->l,
-			line,
-			toinsert,
-			InsertLines_localzooms
-//			NULL
-		);
-		for(lokke=line;lokke<line+toinsert;lokke++){
-			localzoom=talloc(sizeof(struct LocalZooms));
-			localzoom->Tline=lokke;
-			localzoom->Tdividor=1;
-			localzoom->zoomline=lokke;
-			ListAddElement3(&wblock->localzooms,&localzoom->l);
-		}
-                UpdateWBlockWidths(window,wblock);
-                wblock->reallines = NULL; // We changed the localzooms, which is used to set new curr_realline. We don't need to set new curr_realline, so just set reallines to NULL.
-                UpdateRealLines(window,wblock);
-		UpdateReallinesDependens(window,wblock);
-		if(wblock->curr_realline>=wblock->num_reallines){
-			wblock->curr_realline=wblock->num_reallines-1;
-		}
-		window=NextWindow(window);
-	}
-
-	blocktobelongtoforinsertlines_notes_a_terrible_hack=NULL;
+        }PC_StopPause(window);
 }
 
 
@@ -195,15 +201,13 @@ void InsertLines_CurrPos(
 	int curr_line=wblock->reallines[curr_realline]->Tline;
 	int num_lines=wblock->block->num_lines;
 
-	PlayStop();
-
         if(toinsert==0)
 	  toinsert=GFX_GetInteger(window,NULL,"Number of lines to insert\n(number can be negative): ",-(num_lines-curr_line),10000);
 
 	if(toinsert==-(num_lines-curr_line)-1) return;
 
 	ADD_UNDO(Block_CurrPos(window));
-        
+
 	InsertLines(window->wblock->block,curr_line,toinsert);
 
 	window=root->song->tracker_windows;

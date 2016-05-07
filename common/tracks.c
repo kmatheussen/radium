@@ -255,8 +255,8 @@ void TRACK_make_monophonic_destructively_CurrPos(struct Tracker_Windows *window)
 
 
 void TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
-
-  PlayStop();
+  
+  PlayStop(); // This function is too chaotic. Don't bother pausing player.
 
   vector_t notesvector = {0};
   

@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include "nsmtracker.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "list_proc.h"
 #include "undo_playlist_proc.h"
 #include "OS_Bs_edit_proc.h"
@@ -97,10 +98,11 @@ void BL_insert(int pos,struct Blocks *block){
 }
 
 void BL_insertCurrPos(int pos,struct Blocks *block){
-  PlayStop();
   ADD_UNDO(Playlist());
-  BL_insert(pos,block);
-  BS_UpdatePlayList();
+  PC_Pause();{
+    BL_insert(pos,block);
+    BS_UpdatePlayList();
+  }PC_StopPause(NULL);
 }
 
 void BL_delete(int pos){
@@ -131,10 +133,11 @@ void BL_delete(int pos){
 }
 
 void BL_deleteCurrPos(int pos){
-  PlayStop();
   ADD_UNDO(Playlist());
-  BL_delete(pos);
-  BS_UpdatePlayList();
+  PC_Pause();{
+    BL_delete(pos);
+    BS_UpdatePlayList();
+  }PC_StopPause(NULL);
 }
 
 struct Blocks *BL_GetBlockFromPos(int pos){
@@ -163,7 +166,6 @@ void BL_removeBlockFromPlaylist(struct Blocks *block){
 }
 
 void BL_setLength(int length){
-  PlayStop();
   ADD_UNDO(Playlist());
 
   if (length < 1) {
@@ -171,23 +173,27 @@ void BL_setLength(int length){
     return;
   }
 
-  if (length > root->song->length) {
-
-    struct Blocks **playlist = talloc(sizeof(struct Blocks*)*length);
-
-    int pos;
-
-    for(pos=0;pos<root->song->length;pos++)
-      playlist[pos] = root->song->playlist[pos];
+  PC_Pause();{
     
-    for(;pos<length;pos++)
-      playlist[pos] = playlist[root->song->length-1];
+    if (length > root->song->length) {
+      
+      struct Blocks **playlist = talloc(sizeof(struct Blocks*)*length);
+      
+      int pos;
+      
+      for(pos=0;pos<root->song->length;pos++)
+        playlist[pos] = root->song->playlist[pos];
+      
+      for(;pos<length;pos++)
+        playlist[pos] = playlist[root->song->length-1];
+      
+      root->song->playlist = playlist;
+    }
 
-    root->song->playlist = playlist;
-  }
-
-  root->song->length = length;
-
+    root->song->length = length;
+    
+  }PC_StopPause(NULL);
+  
   BS_UpdatePlayList();
 }
 
@@ -197,11 +203,12 @@ void BL_setBlock(int pos, struct Blocks *block){
     return;
   }
     
-  PlayStop();
   ADD_UNDO(Playlist());
 
-  root->song->playlist[pos] = block;
-
+  PC_Pause();{
+    root->song->playlist[pos] = block;
+  }PC_StopPause(NULL);
+  
   BS_UpdatePlayList();
 }
 
@@ -214,14 +221,15 @@ void BL_moveDown(int pos){
   if (pos==root->song->length-1)
     return;
   
-  PlayStop();
   ADD_UNDO(Playlist());
 
   struct Blocks *old = root->song->playlist[pos+1];
-  
-  root->song->playlist[pos+1] = root->song->playlist[pos];
-  root->song->playlist[pos] = old;
 
+  PC_Pause();{
+    root->song->playlist[pos+1] = root->song->playlist[pos];
+    root->song->playlist[pos] = old;
+  }PC_StopPause(NULL);
+  
   BS_UpdatePlayList();
 }
 
@@ -234,13 +242,14 @@ void BL_moveUp(int pos){
   if (pos==0)
     return;
 
-  PlayStop();
   ADD_UNDO(Playlist());
 
   struct Blocks *old = root->song->playlist[pos-1];
-  
-  root->song->playlist[pos-1] = root->song->playlist[pos];
-  root->song->playlist[pos] = old;
 
+  PC_Pause();{
+    root->song->playlist[pos-1] = root->song->playlist[pos];
+    root->song->playlist[pos] = old;
+  }PC_StopPause(NULL);
+  
   BS_UpdatePlayList();
 }

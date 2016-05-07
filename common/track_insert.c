@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "windows_proc.h"
 #include "cursor_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 
 #include "track_insert_proc.h"
 
@@ -53,10 +54,12 @@ void DeleteTracks(
 	if(tracknum-todelete>=block->num_tracks){
 	  todelete=block->num_tracks-tracknum;
 	}
-	
+
+        PC_Pause();
+          
 	if(block->num_tracks==1){
           CB_CutTrack_CurrPos(window);
-          return;
+          goto exit;
         }
 
 	num_tracks=block->num_tracks-todelete;
@@ -76,6 +79,9 @@ void DeleteTracks(
 	}
 	
 	Block_Set_num_tracks(block,num_tracks);
+
+ exit:
+        PC_StopPause(NULL);
 }
 
 
@@ -101,29 +107,31 @@ void InsertTracks(
 
 	num_tracks=block->num_tracks+toinsert;
 
-	Block_Set_num_tracks(block,num_tracks);
+        PC_Pause();{
+          Block_Set_num_tracks(block,num_tracks);
 
-	for(lokke=num_tracks-1;lokke>=tracknum+toinsert;lokke--){
-		wtrack=CB_CopyTrack(
-			wblock,
-			ListFindElement1(&wblock->wtracks->l,lokke-toinsert)
-		);
-		co_CB_PasteTrack(
-                                 wblock,
-                                 wtrack,
-                                 ListFindElement1(&wblock->wtracks->l,lokke)
-                                 );
-	}
-
-	for(lokke=tracknum;lokke<tracknum+toinsert;lokke++){
-		wtrack=ListFindElement1(&wblock->wtracks->l,lokke);
-		track=wtrack->track;
-
-		track->notes=NULL;
-		track->stops=NULL;
-		track->fxs=NULL;
-		track->patch=NULL;
-	}
+          for(lokke=num_tracks-1;lokke>=tracknum+toinsert;lokke--){
+            wtrack=CB_CopyTrack(
+                                wblock,
+                                ListFindElement1(&wblock->wtracks->l,lokke-toinsert)
+                                );
+            co_CB_PasteTrack(
+                             wblock,
+                             wtrack,
+                             ListFindElement1(&wblock->wtracks->l,lokke)
+                             );
+          }
+          
+          for(lokke=tracknum;lokke<tracknum+toinsert;lokke++){
+            wtrack=ListFindElement1(&wblock->wtracks->l,lokke);
+            track=wtrack->track;
+            
+            track->notes=NULL;
+            track->stops=NULL;
+            track->fxs=NULL;
+            track->patch=NULL;
+          }
+        }PC_StopPause(NULL);
 }
 
 
@@ -133,8 +141,6 @@ void InsertTracks_CurrPos(
 ){
 	struct WBlocks *wblock;
 	NInt curr_track;
-
-	PlayStop();
 
 	curr_track=window->curr_track;
 	if(curr_track<0) return;

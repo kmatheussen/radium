@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_tempos_proc.h"
 #include "undo_temponodes_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "fxlines_legalize_proc.h"
 #include "notes_legalize_proc.h"
 #include "../midi/midi_fx_proc.h"
@@ -214,13 +215,13 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 	struct WTracks *wtrack=wblock->wtrack;
 	Place lastplace;
 
-	PlayStop();
-
 	PlaceSetLastPos(wblock->block,&lastplace);
 
+        PC_Pause();
+                  
 	switch(window->curr_track){
 		case SIGNATURETRACK:
-			if(cb_signature==NULL) return;
+                  if(cb_signature==NULL) goto exit;
 			ADD_UNDO(Signatures_CurrPos(window));
 			block->signatures=CB_CopySignatures(cb_signature);
 			CutListAt_a(&block->signatures,&lastplace);
@@ -230,7 +231,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			//UpdateWLPBs(window,wblock);
 			break;
 		case LPBTRACK:
-			if(cb_lpb==NULL) return;
+			if(cb_lpb==NULL) goto exit;
 			ADD_UNDO(LPBs_CurrPos(window));
 			block->lpbs=CB_CopyLPBs(cb_lpb);
 			CutListAt_a(&block->lpbs,&lastplace);
@@ -242,7 +243,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 #endif
 			break;
 		case TEMPOTRACK:
-			if(cb_tempo==NULL) return;
+			if(cb_tempo==NULL) goto exit;
 			ADD_UNDO(Tempos_CurrPos(window));
 			block->tempos=CB_CopyTempos(cb_tempo);
 			CutListAt_a(&block->tempos,&lastplace);
@@ -253,7 +254,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			UpdateSTimes(block);
 			break;
 		case TEMPONODETRACK:
-			if(cb_temponode==NULL) return;
+			if(cb_temponode==NULL) goto exit;
 			ADD_UNDO(TempoNodes_CurrPos(window));
 			block->temponodes=CB_CopyTempoNodes(cb_temponode);
 			CutListAt_a(&block->temponodes,&lastplace);
@@ -265,7 +266,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			UpdateSTimes(block);
 			break;
 		default:
-			if(cb_wtrack==NULL) return;
+			if(cb_wtrack==NULL) goto exit;
 
                         Undo_Open_rec();{
                             
@@ -311,6 +312,10 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 
         SetNotePolyphonyAttributes(wtrack->track);
         ValidateCursorPos(window);
+
+
+ exit:
+        PC_StopPause(window);
 }
 
 

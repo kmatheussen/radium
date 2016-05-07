@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "undo_blocks_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "Beats_proc.h"
 
@@ -145,13 +146,14 @@ void CB_PasteBlock_CurrPos(
 ){
 	if(cb_wblock==NULL) return;
 
-	PlayStop();
+        PC_Pause();{
 
-	ADD_UNDO(Block_CurrPos(window));
+          ADD_UNDO(Block_CurrPos(window));
 
-	CB_PasteBlock(window,cb_wblock,window->wblock);
-	SelectWBlock(window,window->wblock);
-
+          CB_PasteBlock(window,cb_wblock,window->wblock);
+          SelectWBlock(window,window->wblock);
+          
+        }PC_StopPause(window);
 }
 
 

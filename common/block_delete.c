@@ -6,6 +6,7 @@
 #include "OS_Bs_edit_proc.h"
 #include "undo_block_insertdelete_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "blocklist_proc.h"
 
 #include "block_delete_proc.h"
@@ -56,27 +57,30 @@ void DeleteBlock_CurrPos(
 ){
 	struct WBlocks *wblock=window->wblock;
 	NInt blockpos;
-
-	PlayStop();
-
+    
 	if(wblock->l.next==NULL && wblock==window->wblocks) return;
 
-	blockpos=window->wblock->l.num;
 
-	ADD_UNDO(Block_Delete(blockpos));
+        blockpos=window->wblock->l.num;
 
-	DeleteBlock(blockpos);
+        ADD_UNDO(Block_Delete(blockpos));
 
-	wblock=ListFindElement1_r0(&window->wblocks->l,blockpos);
+        PC_Pause();{
 
-	if(wblock==NULL){
-		wblock=ListLast1(&window->wblocks->l);
-	}
+          DeleteBlock(blockpos);
 
-	SelectWBlock(window,wblock);
+          wblock=ListFindElement1_r0(&window->wblocks->l,blockpos);
 
-	BS_UpdateBlockList();
-	BS_UpdatePlayList();
+          if(wblock==NULL){
+            wblock=ListLast1(&window->wblocks->l);
+          }
+
+          SelectWBlock(window,wblock);
+
+          BS_UpdateBlockList();
+          BS_UpdatePlayList();
+          
+        }PC_StopPause(NULL);
 }
 
 

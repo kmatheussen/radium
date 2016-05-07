@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_tempos_proc.h"
 #include "undo_temponodes_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "windows_proc.h"
 #include "notes_proc.h"
 #include "wblocks_proc.h"
@@ -100,8 +101,8 @@ void CB_CutTrack_CurrPos(
 	struct Blocks *block=wblock->block;
 	struct WTracks *wtrack=wblock->wtrack;
 
-	PlayStop();
-
+        PC_Pause();{
+          
 	switch(window->curr_track){
 		case SIGNATURETRACK:
                   ADD_UNDO(Signatures_CurrPos(window));
@@ -149,6 +150,7 @@ void CB_CutTrack_CurrPos(
 			break;
 	}
 
+        }PC_StopPause(window);
         
         window->must_redraw=true;
 }

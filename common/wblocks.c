@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "playerclass.h"
 #include "blocklist_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "visual_proc.h"
 #include "Signature_proc.h"
 #include "../OpenGL/Widget_proc.h"
@@ -463,73 +464,73 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 }
 
 void SelectPrevWBlock(struct Tracker_Windows *window){
-	PlayStop();
-	SelectWBlock(window,ListPrevElement1(&window->wblocks->l,&window->wblock->l));
+        PC_Pause();{
+          SelectWBlock(window,ListPrevElement1(&window->wblocks->l,&window->wblock->l));
+        }PC_StopPause(NULL);
 }
 
 void SelectNextWBlock(struct Tracker_Windows *window){
-	PlayStop();
-	SelectWBlock(window,NextWBlock(window->wblock));
+  PC_Pause();{
+    SelectWBlock(window,NextWBlock(window->wblock));
+  }PC_StopPause(NULL);
 }
 
 void SelectPrevPlaylistWBlock(struct Tracker_Windows *window){
 	struct Blocks *block=BL_GetBlockFromPos(root->curr_playlist-1);
 	if(block==NULL) return;
 
-	PlayStop();
+        PC_Pause();{
+          root->curr_playlist-=1;
 
-	root->curr_playlist-=1;
+          SelectWBlock(window,ListFindElement1(&window->wblocks->l,block->l.num));
 
-	SelectWBlock(window,ListFindElement1(&window->wblocks->l,block->l.num));
-
-	BS_SelectPlaylistPos(root->curr_playlist);
+          BS_SelectPlaylistPos(root->curr_playlist);
+        }PC_StopPause(NULL);
 }
 
 void SelectNextPlaylistWBlock(struct Tracker_Windows *window){
 	struct Blocks *block=BL_GetBlockFromPos(root->curr_playlist+1);
 	if(block==NULL) return;
 
-	PlayStop();
+        PC_Pause();{
+          root->curr_playlist+=1;
 
-	root->curr_playlist+=1;
+          SelectWBlock(window,ListFindElement1(&window->wblocks->l,block->l.num));
 
-	SelectWBlock(window,ListFindElement1(&window->wblocks->l,block->l.num));
-
-	BS_SelectPlaylistPos(root->curr_playlist);
+          BS_SelectPlaylistPos(root->curr_playlist);
+        }PC_StopPause(NULL);
 }
 
 extern size_t allocated;
 
 void AppendWBlock(struct Tracker_Windows *window){
 
-	PlayStop();
-
 	ADD_UNDO(Block_Insert(root->song->num_blocks));
 
-	AppendBlock();
-	UpdateWBlocks(window);
-	SelectWBlock(
-		window,
-		(struct WBlocks *)ListLast1(&window->wblocks->l)
-	);
-	BS_UpdateBlockList();
-
+        PC_Pause();{
+          AppendBlock();
+          UpdateWBlocks(window);
+          SelectWBlock(
+                       window,
+                       (struct WBlocks *)ListLast1(&window->wblocks->l)
+                       );
+          BS_UpdateBlockList();
+        }PC_StopPause(NULL);
 }
 
 void AppendWBlock_spes(struct Tracker_Windows *window,int num_lines,NInt num_tracks){
 
-	PlayStop();
-
 	ADD_UNDO(Block_Insert(root->song->num_blocks));
 
-	AppendBlock_spes(num_lines,num_tracks);
-	UpdateWBlocks(window);
-	SelectWBlock(
-		window,
-		(struct WBlocks *)ListLast1(&window->wblocks->l)
-	);
-	BS_UpdateBlockList();
-
+        PC_Pause();{
+          AppendBlock_spes(num_lines,num_tracks);
+          UpdateWBlocks(window);
+          SelectWBlock(
+                       window,
+                       (struct WBlocks *)ListLast1(&window->wblocks->l)
+                       );
+          BS_UpdateBlockList();
+        }PC_StopPause(NULL);
 }
 
 

@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "notes_legalize_proc.h"
 #include "clipboard_range_copy_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "visual_proc.h"
 #include "../Qt/Rational.h"
 #include "../embedded_scheme/scheme_proc.h"
@@ -86,7 +87,8 @@ static void Quantitize_Note(
     ListAddElement3(notes,&note->l);        
 }
 
-void Quantitize_range(
+static void Quantitize_range(
+                      struct Tracker_Windows *window,
                       struct WBlocks *wblock
 ){
 	Place first,last;
@@ -120,8 +122,10 @@ void Quantitize_range(
             note=next;
           }
 
-          track->notes=new_notes;          
-          LegalizeNotes(wblock->block,track);
+          PC_Pause();{
+            track->notes=new_notes;          
+            LegalizeNotes(wblock->block,track);
+          }PC_StopPause(window);
 
           track=NextTrack(track);
 	}
@@ -139,7 +143,7 @@ void Quantitize_track(
 
 	PlaceSetFirstPos(&first);
 	PlaceSetLastPos(block,&last);
-
+        
 	CopyRange_notes(&note,track->notes,&first,&last);
 
 	while(note!=NULL){
@@ -147,9 +151,12 @@ void Quantitize_track(
 		Quantitize_Note(block,&notes,note);
 		note=temp;
 	}
-	track->notes=notes;
 
-	LegalizeNotes(block,track);
+        PC_Pause();{
+          track->notes=notes;        
+          LegalizeNotes(block,track);
+        }PC_StopPause(NULL);
+
 }
 
 
@@ -169,8 +176,6 @@ void Quantitize_track_CurrPos(
 	struct Tracker_Windows *window
 ){
 	struct WBlocks *wblock=window->wblock;
-
-	PlayStop();
 
 	ADD_UNDO(Track_CurrPos(window));
 	Quantitize_track(wblock->block,wblock->wtrack->track);
@@ -195,8 +200,6 @@ void Quantitize_block_CurrPos(
 	struct Tracker_Windows *window
 ){
 
-	PlayStop();
-
 	ADD_UNDO(Range(
 		window,
 		window->wblock,
@@ -219,11 +222,9 @@ void Quantitize_range_CurrPos(
 ){
 	if(!window->wblock->isranged) return;
 
-	PlayStop();
-
 	ADD_UNDO(Range(window,window->wblock,window->wblock->rangex1,window->wblock->rangex2,window->wblock->curr_realline));
 
-	Quantitize_range(window->wblock);
+	Quantitize_range(window,window->wblock);
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,

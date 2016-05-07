@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_range_proc.h"
 #include "undo_blocks_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "notes_proc.h"
 #include "cursor_updown_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
@@ -221,8 +222,6 @@ void PasteRange_CurrPos(
 
 	if(curr_track<0 || range==NULL) return;
 
-	PlayStop();
-
         ADD_UNDO(Range(
                        window,
                        wblock,
@@ -233,7 +232,9 @@ void PasteRange_CurrPos(
                  );
 
         Undo_start_ignoring_undo_operations();{
-          PasteRange(block,curr_track,&realline[curr_realline]->l.p);
+          PC_Pause();{
+            PasteRange(block,curr_track,&realline[curr_realline]->l.p);
+          }PC_StopPause(window);
         }Undo_stop_ignoring_undo_operations();
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(

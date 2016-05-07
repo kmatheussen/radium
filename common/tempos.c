@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "time_proc.h"
 #include "undo_tempos_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 
 #include "tempos_proc.h"
 
@@ -72,17 +73,21 @@ struct Tempos *SetTempo(
 	struct Tempos *tempo;
 	tempo=ListFindElement3(&block->tempos->l,place);
 
-	if(tempo!=NULL && PlaceEqual(&tempo->l.p,place)){
-		tempo->tempo=newtempo;
-	}else{
-		tempo=talloc(sizeof(struct Tempos));
-		PlaceCopy(&tempo->l.p,place);
-		tempo->tempo=newtempo;
-		ListAddElement3(&block->tempos,&tempo->l);
-	}
-
-	UpdateSTimes(block);
-
+        PC_Pause();{
+          
+          if(tempo!=NULL && PlaceEqual(&tempo->l.p,place)){
+            tempo->tempo=newtempo;
+          }else{
+            tempo=talloc(sizeof(struct Tempos));
+            PlaceCopy(&tempo->l.p,place);
+            tempo->tempo=newtempo;
+            ListAddElement3(&block->tempos,&tempo->l);
+          }
+          
+          UpdateSTimes(block);
+          
+        }PC_StopPause(NULL);
+        
         return tempo;
 }
 
@@ -94,8 +99,6 @@ void SetTempoCurrPos(struct Tracker_Windows *window){
 	Place *place= &wblock->reallines[curr_realline]->l.p;
 	int newtempo=GFX_GetInteger(window,NULL,"New tempo: >",1,999);
 	if(newtempo==-1) return;
-
-	PlayStop();
 
 	ADD_UNDO(Tempos_CurrPos(window));
 
@@ -110,7 +113,10 @@ void SetTempoCurrPos(struct Tracker_Windows *window){
 }
 
 void RemoveTempos(struct Blocks *block,Place *p1,Place *p2){
-	ListRemoveElements3(&block->tempos,p1,p2);
+  PC_Pause();{
+    ListRemoveElements3(&block->tempos,p1,p2);
+    UpdateSTimes(block);
+  }PC_StopPause(NULL);
 }
 
 void RemoveTemposCurrPos(struct Tracker_Windows *window){
@@ -118,8 +124,6 @@ void RemoveTemposCurrPos(struct Tracker_Windows *window){
 	int curr_realline=wblock->curr_realline;
 
 	Place p1,p2;
-
-	PlayStop();
 
 	ADD_UNDO(Tempos_CurrPos(window));
 
@@ -133,8 +137,6 @@ void RemoveTemposCurrPos(struct Tracker_Windows *window){
 #if !USE_OPENGL
 	DrawUpTempos(window,wblock);
 #endif
-
-	UpdateSTimes(wblock->block);
 
 #if !USE_OPENGL
 	WBLOCK_DrawTempoColor(window,wblock,0,wblock->num_reallines);

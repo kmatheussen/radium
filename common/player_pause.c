@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "playerclass.h"
 #include "player_proc.h"
 #include "OS_Player_proc.h"
+#include "threading.h"
 #include "PEQcommon_proc.h"
 #include "placement_proc.h"
 #include "PEQnotes_proc.h"
@@ -48,12 +49,25 @@ void PC_Pause(void){
 }
 */
 
+static int g_pausing_level = 0;
 static bool g_was_playing = false;
 static int g_playtype = 0;
 static bool g_was_playing_range = false;
   
 
+// Note that it's perfectly fine calling PlayStop() between calling PC_Pause and PC_StopPause. PC_StopPause will still work as it's supposed to.
 void PC_Pause(void){
+  R_ASSERT(THREADING_is_main_thread());
+
+  printf("   000 Enter pause %d\n", g_pausing_level);
+
+  g_pausing_level++;
+
+  printf("   Enter pause %d\n", g_pausing_level);
+  
+  if (g_pausing_level > 1)
+    return;
+  
   g_was_playing = false;
   g_playtype = 0;
   g_was_playing_range = false;
@@ -67,6 +81,23 @@ void PC_Pause(void){
 }
 
 void PC_StopPause(struct Tracker_Windows *window){
+  R_ASSERT(THREADING_is_main_thread());
+
+  g_pausing_level--;
+
+  if (g_pausing_level < 0){
+    R_ASSERT(g_pausing_level < 0);
+    g_pausing_level = 0;
+  }
+
+  printf("   Leaving pause %d\n", g_pausing_level);
+  
+  if (g_pausing_level>0)
+    return;
+
+  if (window==NULL)
+    window = root->song->tracker_windows;
+  
   if (g_was_playing) {
     if (g_was_playing_range)
       PlayRangeCurrPos(window);

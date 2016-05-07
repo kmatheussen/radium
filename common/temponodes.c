@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_temponodes_proc.h"
 #include "temponodes_legalize_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "undo.h"
 
 #include "temponodes_proc.h"
@@ -133,18 +134,24 @@ struct TempoNodes *AddTempoNode(
 
         ADD_UNDO(TempoNodes_CurrPos(window));
 
-	if(ListAddElement3_ns(&block->temponodes,&temponode->l)==-1) {
-          Undo_CancelLastUndo();
-          return NULL;
-        } else
-          return temponode;
+        struct TempoNodes *ret = NULL;
+        
+        PC_Pause();{
+          if(ListAddElement3_ns(&block->temponodes,&temponode->l)==-1) {
+            Undo_CancelLastUndo();
+          } else {
+            ret = temponode;
+            UpdateSTimes(block);
+          }  
+          
+        }PC_StopPause(window);
+
+        return ret;
 }
 
 
 void AddTempoNodeCurrPos(struct Tracker_Windows *window,float reltempo){
 	struct WBlocks *wblock=window->wblock;
-
-	PlayStop();
 
 	AddTempoNode(
 		window,wblock,

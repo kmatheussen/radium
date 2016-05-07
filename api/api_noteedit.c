@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/time_proc.h"
 #include "../advanced/ad_noteadd_proc.h"
 #include "../common/player_proc.h"
+#include "../common/player_pause_proc.h"
 #include "../common/undo_maintempos_proc.h"
 #include "../common/Beats_proc.h"
 #include "../common/wblocks_proc.h"
@@ -310,15 +311,15 @@ void setMainSignature(int numerator, int denominator){
   if (numerator==root->signature.numerator && denominator==root->signature.denominator)
     return;
   
-  PlayStop();
-
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblock;
 
   ADD_UNDO(MainTempo(window,wblock));
-  
-  root->signature = ratio(numerator, denominator);
-  UpdateAllBeats();
+
+  PC_Pause();{
+    root->signature = ratio(numerator, denominator);
+    UpdateAllBeats();
+  }PC_StopPause(window);
   
   window->must_redraw = true;
 }
@@ -385,17 +386,17 @@ void setMainLPB(int lpb_value){
   if (lpb_value == root->lpb)
     return;
   
-  PlayStop();
-
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblock;
 
   printf("Undo MainTempo lpb: %d\n",lpb_value);
   ADD_UNDO(MainTempo(window,wblock));
-  
-  root->lpb=lpb_value;
-  UpdateAllSTimes();
-  UpdateAllBeats();
+
+  PC_Pause();{
+    root->lpb=lpb_value;
+    UpdateAllSTimes();
+    UpdateAllBeats();
+  }PC_StopPause(window);
   
   //UpdateAllWLPBs(window);
   window->must_redraw = true;
@@ -463,15 +464,15 @@ void setMainBPM(int bpm_value){
   if (bpm_value == root->tempo)
     return;
 
-  PlayStop();
-
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblock;
   
   ADD_UNDO(MainTempo(window,wblock));
-  
-  root->tempo=bpm_value;
-  UpdateAllSTimes();
+
+  PC_Pause();{
+    root->tempo=bpm_value;
+    UpdateAllSTimes();
+  }PC_StopPause(window);
 }
 
 int getMainBPM(void){

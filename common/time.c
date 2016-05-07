@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 #include "nsmtracker.h"
 #include "playerclass.h"
+#include "player_pause_proc.h"
 #include "placement_proc.h"
 #include "list_proc.h"
 #include "reltempo_proc.h"
@@ -832,9 +833,12 @@ void UpdateSTimes(struct Blocks *block){
 		STP_fillinSTimeTempos(&stp);
 	}while(STP_getNextTimePlace(&stp));
 
-        block->times = (const struct STimes*)stp.times;
+        PC_Pause();{
+          block->times = (const struct STimes*)stp.times;        
+        }PC_StopPause(NULL);
 
-	STP_fillinLastSTimeTempos(&stp);
+        STP_fillinLastSTimeTempos(&stp);
+
 
         //update_is_beat(block, stp.times);
 

@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "placement_proc.h"
 #include "time_proc.h"
 #include "reallines_proc.h"
@@ -156,12 +157,12 @@ void EXPAND_Block(struct Tracker_Windows *window, struct WBlocks *wblock, int st
 }
 
 void EXPAND_Block_full_control_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, int start_line, int end_line, int num_lines){
-  PlayStop();
 
-  ADD_UNDO(Block_CurrPos(window));
-
-  EXPAND_Block(window, wblock, start_line, end_line, num_lines);
-
+  PC_Pause();{
+    ADD_UNDO(Block_CurrPos(window));
+    EXPAND_Block(window, wblock, start_line, end_line, num_lines);
+  }PC_StopPause(NULL);
+  
   window->must_redraw = true;
   wblock->block->is_dirty = true;
 }

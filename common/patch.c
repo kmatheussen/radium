@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_wtrackheaders_proc.h"
 #include "fxlines_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "scheduler_proc.h"
 
 #include "undo.h"
@@ -285,14 +286,15 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
       struct Tracks *track = wtrack->track;
       if(track->patch==old_patch){
 
-        PlayStop();
+        PC_Pause();{
+          ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
 
-        ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
-
-        PLAYER_lock();{
-          handle_fx_when_theres_a_new_patch_for_track(track,track->patch,new_patch);
-          track->patch = new_patch;
-        }PLAYER_unlock();
+          PLAYER_lock();{
+            handle_fx_when_theres_a_new_patch_for_track(track,track->patch,new_patch);
+            track->patch = new_patch;
+          }PLAYER_unlock();
+          
+        }PC_StopPause(window);
         
       }
       wtrack = NextWTrack(wtrack);

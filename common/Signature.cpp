@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Rational.h"
 #include "vector_proc.h"
 #include "Beats_proc.h"
+#include "player_pause_proc.h"
 
 #include "Signature_proc.h"
 
@@ -145,12 +146,12 @@ void SetSignatureCurrPos(struct Tracker_Windows *window){
         if (rational.is_valid()==false || rational.numerator<=0 || rational.denominator<=0)
           return;
         
-	PlayStop();
-
 	ADD_UNDO(Signatures_CurrPos(window));
 
-	SetSignature(wblock->block,place,rational.get_ratio());
-
+        PC_Pause();{
+          SetSignature(wblock->block,place,rational.get_ratio());
+        }PC_StopPause(window);
+        
         UpdateWBlockCoordinates(window, wblock);
           
         //UpdateWBlockWidths(window, wblock);
@@ -164,8 +165,10 @@ void SetSignatureCurrPos(struct Tracker_Windows *window){
 }
 
 static void RemoveSignatures(struct Blocks *block,Place *p1,Place *p2){
-	ListRemoveElements3(&block->signatures,p1,p2);
-        UpdateBeats(block);
+  PC_Pause();{
+    ListRemoveElements3(&block->signatures,p1,p2);
+    UpdateBeats(block);
+  }PC_StopPause(NULL);
 }
 
 void RemoveSignaturesCurrPos(struct Tracker_Windows *window){
@@ -173,8 +176,6 @@ void RemoveSignaturesCurrPos(struct Tracker_Windows *window){
 	int curr_realline=wblock->curr_realline;
 
 	Place p1,p2;
-
-	PlayStop();
 
 	ADD_UNDO(Signatures_CurrPos(window));
 

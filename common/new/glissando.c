@@ -22,8 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../wtracks_proc.h"
 #include "../undo_notes_proc.h"
 #include "../player_proc.h"
+#include "../player_pause_proc.h"
 
 #include "glissando_proc.h"
+
 
 void Glissando(
 	struct WBlocks *wblock,
@@ -79,24 +81,26 @@ void Glissando_CurrPos(struct Tracker_Windows *window){
 	struct Notes *nextnote;
 	Place *p=&wblock->reallines[wblock->curr_realline]->l.p;
 
-	while(note!=NULL){
-		nextnote=NextNote(note);
-		if(nextnote==NULL) return;
+        while(note!=NULL){
+          nextnote=NextNote(note);
+          if(nextnote==NULL) return;
+          
+          if(PlaceIsBetween2(p,&note->l.p,&nextnote->l.p)){
+            PC_Pause();{
+              ADD_UNDO(Notes_CurrPos(window));
+              Glissando(wblock,wtrack,note);
+            }PC_StopPause(window);
+            UpdateAndClearSomeTrackReallinesAndGfxWTracks(
+                                                          window,
+                                                          wblock,
+                                                          wtrack->l.num,
+                                                          wtrack->l.num
+                                                          );
+            return;
+          }
+          note=nextnote;
+        }
 
-		if(PlaceIsBetween2(p,&note->l.p,&nextnote->l.p)){
-			PlayStop();
-			ADD_UNDO(Notes_CurrPos(window));
-			Glissando(wblock,wtrack,note);
-			UpdateAndClearSomeTrackReallinesAndGfxWTracks(
-				window,
-				wblock,
-				wtrack->l.num,
-				wtrack->l.num
-			);
-			return;
-		}
-		note=nextnote;
-	}
 }
 
 

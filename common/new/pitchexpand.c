@@ -173,10 +173,10 @@ static float GetScaleFactor(struct Tracker_Windows *window){
   ReqType reqtype;
   float ret;
 
-  PlayStop();
   reqtype=GFX_OpenReq(window,33,5,"Pitch scale factor");
   ret=GFX_GetFloat(window,reqtype,"Pitch scale factor: ",0.0f,10.0f);
   GFX_CloseReq(window,reqtype);
+  
   return ret;
 }
 
@@ -190,22 +190,25 @@ void PExpandRange_CurrPos(
 	while(scalefactor<0)
 	  scalefactor=GetScaleFactor(window);
 
-	ADD_UNDO(Range(
-		window,
-		window->wblock,
-		window->wblock->rangex1,
-		window->wblock->rangex2,
-		window->wblock->curr_realline
-                       ));
+        PC_Pause();{
+          ADD_UNDO(Range(
+                         window,
+                         window->wblock,
+                         window->wblock->rangex1,
+                         window->wblock->rangex2,
+                         window->wblock->curr_realline
+                         ));
+          
+          PExpandRange(window->wblock,scalefactor);
+          
+        }PC_StopPause(window);
 
-	PExpandRange(window->wblock,scalefactor);
-
-	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
-		window,
-		window->wblock,
-		window->wblock->rangex1,
-		window->wblock->rangex2
-	);
+        UpdateAndClearSomeTrackReallinesAndGfxWTracks(
+                                                      window,
+                                                      window->wblock,
+                                                      window->wblock->rangex1,
+                                                      window->wblock->rangex2
+                                                      );
 
 }
 
@@ -217,10 +220,13 @@ void PExpandTrack_CurrPos(
 	while(scalefactor<0)
 	  scalefactor=GetScaleFactor(window);
 
-	ADD_UNDO(Notes_CurrPos(window));
+        PC_Pause();{
+          ADD_UNDO(Notes_CurrPos(window));
+          
+          PExpandTrack(window->wblock->block,window->wblock->wtrack->track,scalefactor);
 
-	PExpandTrack(window->wblock->block,window->wblock->wtrack->track,scalefactor);
-
+        }PC_StopPause(window);
+        
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
 		window->wblock,
@@ -239,15 +245,19 @@ void PExpandBlock_CurrPos(
 	while(scalefactor<0)
 	  scalefactor=GetScaleFactor(window);
 
-	ADD_UNDO(Range(
-		window,
-		window->wblock,
-		0,window->wblock->block->num_tracks-1,
-		window->wblock->curr_realline
-                       ));
-
-	PExpandBlock(window->wblock->block,scalefactor);
-
+        PC_Pause();{
+          
+          ADD_UNDO(Range(
+                         window,
+                         window->wblock,
+                         0,window->wblock->block->num_tracks-1,
+                         window->wblock->curr_realline
+                         ));
+          
+          PExpandBlock(window->wblock->block,scalefactor);
+          
+        }PC_StopPause(window);
+        
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
 		window->wblock,

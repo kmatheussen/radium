@@ -531,8 +531,6 @@ static void insertOrDeleteTrack(int tracknum, int blocknum, int windownum, int n
   struct Tracker_Windows *window=NULL;
   struct WBlocks *wblock;
 
-  PlayStop();
-  
   wblock=getWBlockFromNumA(
                            windownum,
                            &window,
@@ -545,7 +543,7 @@ static void insertOrDeleteTrack(int tracknum, int blocknum, int windownum, int n
     tracknum = wblock->wtrack->l.num;
 
   ADD_UNDO(Block_CurrPos(window));
-  
+
   InsertTracks(window,
                wblock,
                tracknum,

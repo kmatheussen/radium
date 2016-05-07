@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "realline_calc_proc.h"
 #include "undo_fxs_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "OS_visual_input.h"
 #include "instruments_proc.h"
 #include "wblocks_proc.h"
@@ -468,8 +469,6 @@ void AddFXNodeLineCurrMousePos(struct Tracker_Windows *window){
                            NULL
                            );
 
-  PlayStop();
-  
   struct FX *fx=selectFX(window,wblock,wtrack);
   if(fx==NULL)
     return;
@@ -482,16 +481,19 @@ void AddFXNodeLineCurrMousePos(struct Tracker_Windows *window){
   if (use_mouse_pos){
     float val = scale(x, wtrack->fxarea.x, wtrack->fxarea.x2, 0, 1);
     ADD_UNDO(FXs_CurrPos(window));
-    AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, val);
+    PC_Pause();{
+      AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, val);
+    }PC_StopPause(NULL);
   } else {
     int val = fx->defaultFXValue(fx);
     ADD_UNDO(FXs_CurrPos(window));
-    AddFXNodeLineCurrPosInternal(window, wblock, wtrack, fx, &place, val);
+    PC_Pause();{
+      AddFXNodeLineCurrPosInternal(window, wblock, wtrack, fx, &place, val);
+    }PC_StopPause(NULL);
   }
 }
 
 void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
-  PlayStop();
   
   struct FX *fx=selectFX(window,wblock,wtrack);
   if(fx==NULL) return;
@@ -501,7 +503,9 @@ void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
 
   ADD_UNDO(FXs_CurrPos(window));
 
-  AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, 0.5);
+  PC_Pause();{
+    AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, 0.5);
+  }PC_StopPause(NULL);
 }
 
 
@@ -523,18 +527,20 @@ void DeleteFxNodeLine(struct Tracker_Windows *window, struct WTracks *wtrack, st
     
   } else {
     
-    PlayStop();
-
-    ListRemoveElement3(&fxs->fxnodelines,&fxnodeline->l);
-          
-    struct FX *fx = fxs->fx;
-    struct Tracks *track = wtrack->track;
+    PC_Pause();{
     
-    //OS_SLIDER_release_automation_pointers(track->patch,fx->effect_num);
-    (*fx->closeFX)(fx,track);
-    ListRemoveElement1(&track->fxs,&fxs->l);
-
-    UpdateAllWBlockCoordinates(window);
+      ListRemoveElement3(&fxs->fxnodelines,&fxnodeline->l);
+      
+      struct FX *fx = fxs->fx;
+      struct Tracks *track = wtrack->track;
+      
+      //OS_SLIDER_release_automation_pointers(track->patch,fx->effect_num);
+      (*fx->closeFX)(fx,track);
+      ListRemoveElement1(&track->fxs,&fxs->l);
+      
+    }PC_StopPause(NULL);
+    
+      UpdateAllWBlockCoordinates(window);
     window->must_redraw = true;
   }
 }

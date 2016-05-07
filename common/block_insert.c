@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "undo_block_insertdelete_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 
 #include "block_insert_proc.h"
 
@@ -89,15 +90,16 @@ void InsertBlock_CurrPos(
 	struct WBlocks *wblock=window->wblock;
 	NInt blockpos=wblock->l.num;
 
-	PlayStop();
-
 	ADD_UNDO(Block_Insert(blockpos));
 
-	InsertBlock(blockpos,wblock->block->num_tracks,wblock->block->num_lines,"NN");
+        PC_Pause();{
+          InsertBlock(blockpos,wblock->block->num_tracks,wblock->block->num_lines,"NN");
 
-	SelectWBlock(window,(struct WBlocks *)ListFindElement1(&window->wblocks->l,blockpos));
+          SelectWBlock(window,(struct WBlocks *)ListFindElement1(&window->wblocks->l,blockpos));
 
-	BS_UpdateBlockList();
-	BS_UpdatePlayList();
+          BS_UpdateBlockList();
+          BS_UpdatePlayList();
+
+        }PC_StopPause(window);
 }
 

@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "cursor_proc.h"
 #include "visual_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "wblocks_proc.h"
 #include "Beats_proc.h"
@@ -206,6 +207,8 @@ void Block_Properties(
 	NInt num_tracks,
 	int num_lines
 ){
+    PC_Pause();{
+      
 	if(num_tracks!=block->num_tracks){
 		struct Tracker_Windows *window=root->song->tracker_windows;
 		while(window!=NULL){
@@ -230,6 +233,8 @@ void Block_Properties(
 		UpdateReallinesDependens(window,wblock);
 		window=NextWindow(window);
 	}
+
+    }PC_StopPause(NULL);
 }
 
 
@@ -244,8 +249,6 @@ void Block_Properties_CurrPos(
 
 	struct WBlocks *wblock=window->wblock;
 	struct Blocks *block=wblock->block;
-
-	PlayStop();
 
 	reqtype=GFX_OpenReq(window,33,5,"Block Properties");
 

@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "time_proc.h"
 #include "undo_lpbs_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "Beats_proc.h"
 
 #include "LPB_proc.h"
@@ -84,18 +85,22 @@ struct LPBs *SetLPB(
 	struct LPBs *lpb;
 	lpb=ListFindElement3(&block->lpbs->l,place);
 
-	if(lpb!=NULL && PlaceEqual(&lpb->l.p,place)){
-		lpb->lpb=newlpb;
-	}else{
-		lpb=talloc(sizeof(struct LPBs));
-		PlaceCopy(&lpb->l.p,place);
-		lpb->lpb=newlpb;
-		ListAddElement3(&block->lpbs,&lpb->l);
-	}
-
-	UpdateSTimes(block);
-        UpdateBeats(block);
-
+        PC_Pause();{
+          
+          if(lpb!=NULL && PlaceEqual(&lpb->l.p,place)){
+            lpb->lpb=newlpb;
+          }else{
+            lpb=talloc(sizeof(struct LPBs));
+            PlaceCopy(&lpb->l.p,place);
+            lpb->lpb=newlpb;
+            ListAddElement3(&block->lpbs,&lpb->l);
+          }
+          
+          UpdateSTimes(block);
+          UpdateBeats(block);
+          
+        }PC_StopPause(NULL);
+        
         return lpb;
 }
 
@@ -107,12 +112,10 @@ void SetLPBCurrPos(struct Tracker_Windows *window){
 	int newlpb=GFX_GetInteger(window,NULL,"New LPB: >",1,99);
 	if(newlpb==-1) return;
 
-	PlayStop();
-
 	ADD_UNDO(LPBs_CurrPos(window));
 
 	SetLPB(wblock->block,place,newlpb);
-
+        
 	//UpdateWLPBs(window,wblock);
 	//DrawLPBs(window,wblock,curr_realline,curr_realline);
 
@@ -122,7 +125,11 @@ void SetLPBCurrPos(struct Tracker_Windows *window){
 }
 
 void RemoveLPBs(struct Blocks *block,Place *p1,Place *p2){
-	ListRemoveElements3(&block->lpbs,p1,p2);
+  PC_Pause();{
+    ListRemoveElements3(&block->lpbs,p1,p2);
+    UpdateSTimes(block);
+    UpdateBeats(block);
+  }PC_StopPause(NULL);
 }
 
 void RemoveLPBsCurrPos(struct Tracker_Windows *window){
@@ -130,8 +137,6 @@ void RemoveLPBsCurrPos(struct Tracker_Windows *window){
 	int curr_realline=wblock->curr_realline;
 
 	Place p1,p2;
-
-	PlayStop();
 
 	ADD_UNDO(LPBs_CurrPos(window));
 
@@ -141,8 +146,6 @@ void RemoveLPBsCurrPos(struct Tracker_Windows *window){
 	RemoveLPBs(wblock->block,&p1,&p2);
 
 	//UpdateWLPBs(window,wblock);
-	UpdateSTimes(wblock->block);
-        UpdateBeats(wblock->block);
 
         wblock->block->is_dirty = true;
 }

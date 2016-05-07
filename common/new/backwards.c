@@ -131,8 +131,6 @@ void BackWardsRange_CurrPos(
 ){
 	if(!window->wblock->isranged) return;
 
-	PlayStop();
-
 	ADD_UNDO(Range(
 		window,
 		window->wblock,
@@ -140,8 +138,10 @@ void BackWardsRange_CurrPos(
 		window->wblock->curr_realline
                        ));
 
-	BackWardsRange(window,window->wblock);
-
+        PC_Pause();{
+          BackWardsRange(window,window->wblock);
+        }PC_StopPause(window);
+        
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
 		window->wblock,
@@ -155,12 +155,12 @@ void BackWardsTrack_CurrPos(
 	struct Tracker_Windows *window
 ){
 
-	PlayStop();
+        PC_Pause();{
+          ADD_UNDO(Notes_CurrPos(window));
 
-	ADD_UNDO(Notes_CurrPos(window));
-
-	BackWardsTrack(window,window->wblock,window->wblock->wtrack);
-
+          BackWardsTrack(window,window->wblock,window->wblock->wtrack);
+        }PC_StopPause(window);
+        
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
 		window->wblock,
@@ -175,17 +175,18 @@ void BackWardsBlock_CurrPos(
 	struct Tracker_Windows *window
 ){
 
-	PlayStop();
-
-	ADD_UNDO(Range(
-		window,
-		window->wblock,
-		0,window->wblock->block->num_tracks-1,
-		window->wblock->curr_realline
-                       ));
-
-	BackWardsBlock(window,window->wblock);
-
+        PC_Pause();{
+          
+          ADD_UNDO(Range(
+                         window,
+                         window->wblock,
+                         0,window->wblock->block->num_tracks-1,
+                         window->wblock->curr_realline
+                         ));
+          
+          BackWardsBlock(window,window->wblock);
+        }PC_StopPause(window);
+        
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
 		window->wblock,

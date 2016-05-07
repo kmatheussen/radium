@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_track_copy_proc.h"
 #include "cursor_proc.h"
 #include "player_proc.h"
+#include "player_pause_proc.h"
 #include "visual_proc.h"
 #include "wblocks_proc.h"
 #include "temponodes_proc.h"
@@ -621,43 +622,45 @@ void SwapTrack_CurrPos(
 	struct WTracks *next=NextWTrack(wtrack);
 	struct WTracks *temp;
 
-	PlayStop();
+        PC_Pause();{
+            
+          if(next==NULL){
+            next=wblock->wtracks;
+          }
 
-	if(next==NULL){
-		next=wblock->wtracks;
-	}
+          ADD_UNDO(Block_CurrPos(window));
 
-	ADD_UNDO(Block_CurrPos(window));
-
-	temp=CB_CopyTrack(wblock,wtrack);
-
-	mo_CB_PasteTrack(wblock,next,wtrack);
-	mo_CB_PasteTrack(wblock,temp,next);
-
+          temp=CB_CopyTrack(wblock,wtrack);
+          
+          mo_CB_PasteTrack(wblock,next,wtrack);
+          mo_CB_PasteTrack(wblock,temp,next);
+          
 #if !USE_OPENGL       
-	UpdateFXNodeLines(window,wblock,wtrack);
+          UpdateFXNodeLines(window,wblock,wtrack);
 #endif
-
+          
 #if !USE_OPENGL
-	UpdateFXNodeLines(window,wblock,next);
+          UpdateFXNodeLines(window,wblock,next);
 #endif
 
-	window->must_redraw = true;
+        }PC_StopPause(NULL);
 
-	CursorNextTrack_CurrPos(window);
+        window->must_redraw = true;
+
+        CursorNextTrack_CurrPos(window);
 }
 
 
 void AppendWTrack_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock){
 
-	PlayStop();
-
 	ADD_UNDO(Block_CurrPos(window));
         printf("appending tracks. Before: %d\n",wblock->block->num_tracks);
 
-	AppendTrack(wblock->block);
-        wblock->block->num_tracks++;
-
+        PC_Pause();{
+          AppendTrack(wblock->block);
+          wblock->block->num_tracks++;
+        }PC_StopPause(NULL);
+        
         UpdateWTracks(window,wblock);
 
         printf("appending tracks. After: %d\n",wblock->block->num_tracks);

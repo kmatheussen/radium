@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/blocklist_proc.h"
 #include "../api/api_common_proc.h"
 #include "../common/player_proc.h"
+#include "../common/player_pause_proc.h"
 #include "../common/wblocks_proc.h"
 #include "../common/gfx_proc.h"
 #include "../common/settings_proc.h"
@@ -432,22 +433,19 @@ private slots:
       return;
 
     printf("block high num: %d\n",num);
-    
-    bool wasplaying = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
 
-    PlayStop();
+    PC_Pause();{
+      
+      struct Tracker_Windows *window=getWindowFromNum(-1);
+      struct WBlocks *wblock=getWBlockFromNum(-1,num);
+      if(wblock->curr_realline == wblock->num_reallines-1)
+        wblock->curr_realline = 0;
+      
+      DO_GFX(SelectWBlock(window,wblock));
+      EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+      editor->updateEditor();
 
-    struct Tracker_Windows *window=getWindowFromNum(-1);
-    struct WBlocks *wblock=getWBlockFromNum(-1,num);
-    if(wblock->curr_realline == wblock->num_reallines-1)
-      wblock->curr_realline = 0;
-
-    DO_GFX(SelectWBlock(window,wblock));
-    EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-    editor->updateEditor();
-
-    if(wasplaying)
-      PlayBlockFromStart(window,true);
+    }PC_StopPause(NULL);
   }
 
   void blocklist_doubleclicked(QListWidgetItem *item){
@@ -478,17 +476,13 @@ private slots:
     if(num_visitors>0) // event created internally
       return;
 
-    bool wasplaying = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
-        
-    PlayStop();
-    root->curr_playlist = num;
+    PC_Pause();{
 
-    blocklist_highlighted(BL_GetBlockFromPos(num)->l.num);
+      root->curr_playlist = num;
+
+      blocklist_highlighted(BL_GetBlockFromPos(num)->l.num);
                             
-    struct Tracker_Windows *window=getWindowFromNum(-1);
-
-    if(wasplaying)
-      PlaySongCurrPos(window);
+    }PC_StopPause(NULL);
   }
 
   void playlist_itemPressed(QListWidgetItem * item){

@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "placement_proc.h"
 #include "list_proc.h"
+#include "player_pause_proc.h"
 
 #include "Beats_proc.h"
 
@@ -133,7 +134,9 @@ static struct Beats *Beats_get(struct Blocks *block){
 }
 
 void UpdateBeats(struct Blocks *block){
-  block->beats = Beats_get(block);
+  PC_Pause();{
+    block->beats = Beats_get(block);
+  }PC_StopPause(NULL);
 }
 
 void UpdateAllBeats(void){

@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/wblocks_proc.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/player_proc.h"
+#include "../common/player_pause_proc.h"
 #include "../common/undo_trackheader_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/nodelines_proc.h"
@@ -838,8 +839,6 @@ void setIndicatorTemponode(int num, int blocknum){
 
 void setTemponode(int num, float value, Place place, int blocknum, int windownum){
 
-  PlayStop();
-
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL) {
@@ -878,10 +877,11 @@ void setTemponode(int num, float value, Place place, int blocknum, int windownum
     wblock->reltempomax = -1*(value -1);
   }
 
-  temponode->reltempo = value;
-
-  UpdateSTimes(wblock->block);    
-
+  PC_Pause();{
+    temponode->reltempo = value;
+    UpdateSTimes(wblock->block);    
+  }PC_StopPause(window);
+  
   //printf("before: %f, now: %f\n",floatplace, GetfloatFromPlace(&temponode->l.p));
 
   window->must_redraw_editor = true;
@@ -898,8 +898,6 @@ int getNumTemponodes(int blocknum, int windownum){
 }
 
 void deleteTemponode(int num, int blocknum){
-  PlayStop();
-
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(-1, &window, blocknum);
   if (wblock==NULL)
@@ -912,23 +910,23 @@ void deleteTemponode(int num, int blocknum){
     return;
   }
 
-  if (num==0){
-    wblock->block->temponodes->reltempo = 0.0f;
-  } else if (num==tempo_nodes->num_elements-1) {
-    struct TempoNodes *last = ListLast3(&wblock->block->temponodes->l);
-    last->reltempo = 0.0f;
-  } else {
-    ListRemoveElement3_fromNum(&wblock->block->temponodes,num);
-  }
+  PC_Pause();{
+    if (num==0){
+      wblock->block->temponodes->reltempo = 0.0f;
+    } else if (num==tempo_nodes->num_elements-1) {
+      struct TempoNodes *last = ListLast3(&wblock->block->temponodes->l);
+      last->reltempo = 0.0f;
+    } else {
+      ListRemoveElement3_fromNum(&wblock->block->temponodes,num);
+    }
 
-  UpdateSTimes(wblock->block);    
-
+    UpdateSTimes(wblock->block);    
+  }PC_StopPause(window);
+  
   window->must_redraw_editor = true;
 }
 
 int createTemponode(float value, Place place, int blocknum, int windownum){
-  PlayStop();
-
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL) {
@@ -950,7 +948,7 @@ int createTemponode(float value, Place place, int blocknum, int windownum){
     wblock->reltempomax = -1*(value -1);
   }
 
-  struct TempoNodes *temponode = AddTempoNode(window,wblock,&place,value);
+  struct TempoNodes *temponode = AddTempoNode(window,wblock,&place,value); // addtemponode pauses player
 
   if (temponode==NULL)
     return -1;
@@ -958,8 +956,6 @@ int createTemponode(float value, Place place, int blocknum, int windownum){
   //GFX_SetChangeFloat(window,wblock,"Reltempo",RelTempo2RealRelTempo(Gfx2RelTempo(wblock,dx)));
   //UpdateSTimes(wblock->block);
   //GFX_DrawStatusBar(window,wblock);
-
-  UpdateSTimes(block);
 
   window->must_redraw_editor = true;
 
