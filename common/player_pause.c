@@ -73,11 +73,18 @@ void PC_Pause(void){
   g_was_playing_range = false;
   
   if (is_playing()){
+
+    if(ATOMIC_GET(is_starting_up)==false){
+      struct Tracker_Windows *window = root->song->tracker_windows;
+      window->message = "Temporarily stopping player";
+      window->message_duration_left = 100;
+    }
+
     g_playtype = pc->playtype;
     g_was_playing_range = pc->is_playing_range;
     PlayStop();
     g_was_playing = true;
-  }
+  }  
 }
 
 void PC_StopPause(struct Tracker_Windows *window){

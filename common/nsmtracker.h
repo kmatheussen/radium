@@ -1472,7 +1472,8 @@ struct Tracker_Windows{
 
 	bool playalong;					/* If true, this window allso shows whats being played
 											   if any other window is playing. default=true. */
-
+  
+        int message_duration_left;             // in ms. If not set, message is not automatically removed. (note that if program is buzy, the message may stay longer)
         const char *message;
   
 	struct WBlocks *wblock;			/* Current wblock. Only referenced. */

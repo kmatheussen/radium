@@ -720,6 +720,16 @@ protected:
     PATCH_call_very_often();
     BACKUP_call_very_often();
 
+    if (window->message_duration_left > 0){
+      //printf("message dur: %d\n",window->message_duration_left);
+      window->message_duration_left -= interval;
+      if (window->message_duration_left <= 0){
+        window->message_duration_left = 0;
+        window->message = NULL;
+        GL_create(window, window->wblock);
+      }
+    }
+    
     if ( (num_calls % (5*1000/interval)) == 0) { // Ask for gl.make_current each 5 seconds.
       GL_lock();{
         GL_EnsureMakeCurrentIsCalled();

@@ -2244,7 +2244,7 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
 
 void GL_create_all(const struct Tracker_Windows *window){
   struct WBlocks *wblock = window->wblocks;
-  
+
   if (NextWBlock(wblock) != NULL){
     while(wblock!=NULL){
       GL_create(window, wblock);
