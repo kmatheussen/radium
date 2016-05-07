@@ -55,7 +55,7 @@ void ADD_UNDO_FUNC(Block(
   
   //printf("last: %d, now: %d, diff: %d\n",(int)last_undo_block_time,(int)time_now,(int)(time_now-last_undo_block_time));
 
-  if( (time_now-last_undo_block_time) > 1000*3 // more than 3 seconds.
+  if( (time_now-last_undo_block_time) > 500 // more than 1/2 seconds.
       || wblock!=last_wblock
       || wtrack!=last_wtrack
       || realline!=last_realline
