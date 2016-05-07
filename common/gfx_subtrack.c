@@ -185,7 +185,13 @@ int GetXSubTrack_B1(
 	NInt track,
 	int subtrack
 ){
-	if(track>=0) return GetXSubTrack1(ListFindElement1(&wblock->wtracks->l,track),subtrack);
+  if(track>=0){
+    struct WTracks *wtrack = ListFindElement1(&wblock->wtracks->l,track);
+    if (wtrack==NULL)
+      wtrack->wblock->wtracks; // error is shown in ListFindElement1.
+    
+    return GetXSubTrack1(wtrack,subtrack);
+  }
 	switch(track){
 		case SIGNATURETRACK:
 			return wblock->signaturearea.x;
@@ -209,7 +215,14 @@ int GetXSubTrack_B2(
 	NInt track,
 	int subtrack
 ){
-	if(track>=0) return GetXSubTrack2(ListFindElement1(&wblock->wtracks->l,track),subtrack);
+  if(track>=0){
+    struct WTracks *wtrack = ListFindElement1(&wblock->wtracks->l,track);
+    if (wtrack==NULL)
+      wtrack->wblock->wtracks; // error is shown in ListFindElement1.
+
+    return GetXSubTrack2(wtrack,subtrack);
+  }
+
 	switch(track){
 		case SIGNATURETRACK:
 			return wblock->signaturearea.x2;
