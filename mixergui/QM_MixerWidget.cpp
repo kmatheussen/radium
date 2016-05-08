@@ -791,7 +791,7 @@ static bool mousepress_delete_connection(MyScene *scene, QGraphicsSceneMouseEven
 static bool mousepress_select_chip(MyScene *scene, QGraphicsSceneMouseEvent * event, QGraphicsItem *item, float mouse_x, float mouse_y, bool ctrl_pressed){
   Chip *chip = dynamic_cast<Chip*>(item);
 
-  if(chip!=NULL){
+  if(chip!=NULL && chip->positionedAtSlider(QPointF(mouse_x-chip->scenePos().x(),mouse_y-chip->scenePos().y()))==false){
     SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
     volatile struct Patch *patch = plugin->patch;
     R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);

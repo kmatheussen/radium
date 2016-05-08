@@ -1273,6 +1273,32 @@ void Chip::mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event ){
   //QGraphicsItem::mouseDoubleClickEvent(event);
 }
 
+bool Chip::positionedAtSlider(QPointF pos){
+  SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+
+  for(int i=0;i<2;i++){
+    int x1,y1,x2,y2;
+    if(i==0)
+      get_slider1_coordinates(x1,y1,x2,y2);      
+    else
+      get_slider2_coordinates(x1,y1,x2,y2);      
+
+    //printf("%d - %f - %d,    %d - %f - %d\n",x1,pos.x(),x2,y1,pos.y(),y2);
+
+    if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
+
+      if(i==0 && plugin->type->num_inputs==0)
+        continue;
+      if(i==1 && plugin->type->num_outputs==0)
+        continue;
+
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
 
@@ -1356,13 +1382,16 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
         ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
 
+        _slider_start_value = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_PLUGIN);
+        _slider_start_pos = pos.x();
+        /*
         float value = ::scale(pos.x(),x1,x2,0,1.0);
         PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 
         CHIP_update(plugin);
 
         GFX_update_instrument_widget((struct Patch*)patch);
-
+        */
         _slider_being_edited = i+1;
       }
     }
@@ -1407,12 +1436,21 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     else
       effect_num = num_effects+EFFNUM_VOLUME;
 
-    float value = ::scale(pos.x(),x1,x2,0,1.0);
+    bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
+    
+    float delta = pos.x() - _slider_start_pos;
+    if (ctrl_pressed)
+      delta /= 10.0;
+    
+    float value = _slider_start_value + ::scale(delta,0,x2-x1,0,1.0);
     if(value>1.0)
       value=1.0;
     if(value<0.0)
       value=0.0;
 
+    _slider_start_value = value;
+    _slider_start_pos = pos.x();
+    
     PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 
     CHIP_update(plugin);

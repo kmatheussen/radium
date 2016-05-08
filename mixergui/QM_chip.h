@@ -281,6 +281,8 @@ public:
   QPainterPath shape() const;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *item, QWidget *widget);
 
+  bool positionedAtSlider(QPointF pos);
+    
 protected:
     void mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event );
     void mousePressEvent(QGraphicsSceneMouseEvent *event);
@@ -307,6 +309,8 @@ public:
   SliderPainter *_input_slider;
   SliderPainter *_output_slider;
 
+  float _slider_start_value;
+  float _slider_start_pos;
   int _slider_being_edited;
 
   float _moving_x_offset;

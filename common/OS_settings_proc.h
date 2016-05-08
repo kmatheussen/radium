@@ -50,11 +50,11 @@ extern LANGSPEC char *OS_get_conf_filename2(const char *filename);
 #include <QString>
 QString OS_get_keybindings_conf_filename(void);
 QString OS_get_menues_conf_filename(void);
+extern LANGSPEC QString OS_get_custom_keybindings_conf_filename(void);
 #endif
 extern LANGSPEC char *OS_get_keybindings_conf_filename2(void);
 extern LANGSPEC char *OS_get_menues_conf_filename2(void);
 
-extern LANGSPEC QString OS_get_custom_keybindings_conf_filename(void);
 extern LANGSPEC char *OS_get_custom_keybindings_conf_filename2(void);
 
 extern LANGSPEC void OS_make_config_file_expired(const char *key);
