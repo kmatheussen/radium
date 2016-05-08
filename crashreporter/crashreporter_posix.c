@@ -17,8 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if defined(FOR_LINUX)
 // || defined(FOR_MACOSX)
 
-#define PACKAGE 1 // workaround for bug in libbfd
-#define PACKAGE_VERSION 1 // workaround for bug in libbfd
+//#define PACKAGE 1 // workaround for bug in libbfd
+//#define PACKAGE_VERSION 1 // workaround for bug in libbfd
 #include "backtrace-symbols.c"
 
 #include <pthread.h>
@@ -63,13 +63,13 @@ void run_main_loop(void);
 
 void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, enum Crash_Type crash_type){
 #define NUM_LINES 100
-      
+
   void *buffer[NUM_LINES];
   char **strings;
   int nptrs = backtrace(buffer, NUM_LINES);
   
   strings = backtrace_symbols(buffer, nptrs);
-  
+
   if (strings != NULL) {
     CRASHREPORTER_send_message(additional_information, (const char**)strings,nptrs,crash_type);
   } else {
@@ -83,6 +83,7 @@ static void crash(int sig, siginfo_t *siginfo, void *secret) {
 
   //fprintf(stderr,"\n\nCrashreporter got signal %d. genpid: %d, this pid: %d. Sending message to external process\n\n",sig,(int)siginfo->si_pid,(int)getpid());
 
+  
   static int num_crash_reports=0;
 
   static double start_time = -1.0;
@@ -101,6 +102,10 @@ static void crash(int sig, siginfo_t *siginfo, void *secret) {
     }
   }
 
+  usleep(1000*1000*3);
+  CRASHREPORTER_close();
+  abort();
+  
   if((now_time-start_time) > 3000 || num_crash_reports>3){
     CRASHREPORTER_close();
     abort();

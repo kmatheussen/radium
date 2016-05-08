@@ -14,12 +14,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
 #include <time.h>
 #include <errno.h>
+
+#include <sys/time.h>
 
 #if defined(FOR_LINUX)
 #  include <sys/types.h>
@@ -30,7 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMessageBox>
 #include <QFile>
 #include <QTextStream>
-#include <QTime>
 #include <QTextEdit>
 #include <QLabel>
 #include <QLayout>
@@ -306,7 +306,16 @@ static DEFINE_ATOMIC(int, g_plugin_name_pos) = 0;
 static DEFINE_ATOMIC(const char *, g_plugin_names)[MAX_NUM_PLUGIN_NAMES]={g_no_plugin_name};
 //static QString g_plugin_name=g_no_plugin_name;
 
-static QTime running_time;
+static double start_time;
+
+static int get_s(void) {
+    struct timeval now;
+    
+    if (gettimeofday(&now, NULL) != 0)
+      return 0.0;
+
+    return now.tv_sec + now.tv_usec*1000.0;
+}
 
 
 int CRASHREPORTER_set_plugin_name(const char *plugin_name){
@@ -346,15 +355,15 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
 
 #if defined(FOR_WINDOWS)
 
-  char *p = V_strdup(program.toAscii());
-  char *a1 = V_strdup(arg1.toAscii());
-  char *a2 = V_strdup(arg2.toAscii());
-  char *a3 = V_strdup(arg3.toAscii());
-  char *a4 = V_strdup(arg4.toAscii());
+  char *p = strdup(program.toAscii());
+  char *a1 = strdup(arg1.toAscii());
+  char *a2 = strdup(arg2.toAscii());
+  char *a3 = strdup(arg3.toAscii());
+  char *a4 = strdup(arg4.toAscii());
 
   if(_spawnl(wait_until_finished ? _P_WAIT :  _P_DETACH, p, p, a1, a2, a3, a4, NULL)==-1){
     fprintf(stderr,"Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1);
-    SYSTEM_show_message(V_strdup(talloc_format("Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1)));
+    SYSTEM_show_message(strdup(talloc_format("Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1)));
     Sleep(3000);
   }
 
@@ -368,9 +377,9 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
     full_command += "&";
 
   fprintf(stderr, "Executing -%s-\n",full_command.toUtf8().constData());
-
-  if(system(V_strdup(full_command.toUtf8().constData()))==-1) {
-    SYSTEM_show_message(V_strdup(talloc_format("Couldn't start crashreporter. command: -%s-\n",full_command.toUtf8().constData())));
+  const char *command = strdup(full_command.toUtf8().constData());
+  if(system(command)==-1) {
+    SYSTEM_show_message(strdup(talloc_format("Couldn't start crashreporter. command: -%s-\n",command)));
   }
 
 #else
@@ -439,7 +448,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   QString plugin_names = get_plugin_names();
   
   QString tosend = QString(additional_information) + "\n\n";
-
+  
   tosend += VERSION "\n\n";
 
   tosend += "OpenGL vendor: " + QString((ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_vendor_string) )) + "\n";
@@ -448,12 +457,10 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   tosend += QString("OpenGL flags: %1").arg(ATOMIC_GET(GE_opengl_version_flags), 0, 16) + "\n\n";
 
   tosend += "Running plugins: " + plugin_names + "\n\n";
-
-  tosend += "Running time: " + QString::number(running_time.elapsed()) + "\n\n";
-
+  tosend += "Running time: " + QString::number(get_s() - start_time) + "\n\n";
   tosend += "\n\n";
 
-    
+
   for(int i=0;i<num_messages;i++)
     tosend += QString::number(i) + ": "+messages[i] + "\n";
 
@@ -569,7 +576,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
     if (dosave)
       Save_Clean(STRING_create(emergency_save_file.fileName()),root,false);
   }
-  
+
 }
 
 #ifdef FOR_MACOSX
@@ -652,7 +659,7 @@ void CRASHREPORTER_close(void){
 
 
 void CRASHREPORTER_init(void){
-  running_time.start();
+  start_time = get_s();
   
 #if defined(FOR_WINDOWS)
   CRASHREPORTER_windows_init();
