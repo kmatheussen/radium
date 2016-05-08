@@ -314,7 +314,9 @@ class Parser:
                         if(key!=-1):
                             key+=tuple_has_key(keysub,"CTRL_L")
                     if key==-1:
-                        print "Unknown key \""+keys[lokke] +"\" in line %d in keyconfig file." % self.linenum
+                        message = "Unknown key \""+keys[lokke] +"\" in line %d in keyconfig file." % self.linenum
+                        print message
+                        radium.showMessage(message)
                         del keys[lokke]
                         self.linetype="ERROR"
                         return "OK"
@@ -379,8 +381,10 @@ def putCode(keyhandles,parser,codestring):
     #print "adding \"%s\", line: %d, firstkey: %d, keys: %s" % (codestring,parser.getCurrLineNum(),firstkey,keys)
 
     if keyhandles[firstkey].addHandle(keys,compile(codestring,'<string>','single'))==false:
-        print "Keybindings for command \"%s\" in line %d is already used" % (codestring , parser.getCurrLineNum())
-        return false
+        message = "Keybindings for command \"%s\" in line %d is already used" % (codestring , parser.getCurrLineNum())
+        print message
+        radium.showMessage(message)
+        return False
     else:
         print "%s compiled." % codestring
 
@@ -417,13 +421,13 @@ def start(keyhandles,filehandle,filehandle2,outfilehandle):
             if parser.getLineType()=="INSERTCODELAST":
                 outfilehandle.write("\treturn\n")
                 if putCode(keyhandles,parser,"eventreceiverparser_generated.keycodedef%d()" % defnum)==false:
-                    return false
+                    return False
                 defnum+=1
             if parser.getLineType()=="INSERTCLEANCODE":
                 outfilehandle.write(parser.getCurrLine()+"\n")
 
         if parser.getLineType()=="ERROR":
-            return false
+            return False
 
         if parser.getLineType()=="NORMAL":
             commands=parser.getCommands()
@@ -478,16 +482,17 @@ def start(keyhandles,filehandle,filehandle2,outfilehandle):
             else:
                 success,intercommands2=reader.getUnfoldedCall(dascommand[3:],ercommands)
                 if not success:
-                    print "Error at line %d: \"%s\"" % (parser.getCurrLineNum(),parser.getCurrLine())
-                    print "-------------> "+command
-                    print "------> "+str(intercommands2[0])
-                    return false
+                    message = "Error at line %d: \"%s\"" % (parser.getCurrLineNum(),parser.getCurrLine())+"\n"+command+"\n"+str(intercommands2[0])
+                    print message
+                    radium.showMessage(message)
+                    return False
                 else:
                     retstring=radium.ER_keyAdd(firstkey,dascommand[3:],keys,intercommands2);
                     if retstring!="OK":
-                        print "Error at line %d: \"%s\"" % (parser.getCurrLineNum(),parser.getCurrLine())
-                        print "------> "+str(intercommands2[0])
-                        return false
+                        message = "Error at line %d: \"%s\"" % (parser.getCurrLineNum(),parser.getCurrLine())+"\n"+str(intercommands2[0])
+                        print message
+                        radium.showMessage(message)
+                        return False
 
 
     import cPickle
