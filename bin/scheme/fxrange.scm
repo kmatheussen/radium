@@ -824,7 +824,7 @@
 (define (paste-track-fxs! blocknum tracknum fxs)
   (define instrument (<ra> :get-instrument-for-track tracknum blocknum))
   (c-display "blocknum/tracknum/fxs/instrument" blocknum tracknum fxs instrument)
-  (if (= -1 instrument)
+  (if (< instrument 0)
       #t
       (let ((effect-names  (get-fxnames instrument)))  
         (<ra> :clear-track-fx tracknum blocknum)

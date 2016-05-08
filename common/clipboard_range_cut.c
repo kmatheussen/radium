@@ -93,6 +93,10 @@ void CutRange(
 	struct Tracks *track;
 	int lokke;
 
+        endtrack = R_MIN(block->num_tracks-1, endtrack);
+        if (endtrack < starttrack)
+          return;
+        
 	track=ListFindElement1(&block->tracks->l,starttrack);
 
         PC_Pause();{
@@ -101,11 +105,12 @@ void CutRange(
             CutRange_notes(&track->notes,track->notes,p1,p2);
             CutRange_stops(&track->stops,track->stops,p1,p2);
             track=NextTrack(track);
+            if(track==NULL) break;
           }
           
           Place *startplace = p1;
           Place *endplace = p2;
-          
+
           SCHEME_eval(
                       talloc_format("(cut-fx-range! %d %d %d (+ %d (/ %d %d)) (+ %d (/ %d %d)))",
                                     block->l.num,

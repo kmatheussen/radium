@@ -35,11 +35,13 @@ Place *getRangeStartPlace(
 		wblock->rangey1>=wblock->num_reallines ||
 		wblock->rangey1<0
 	){
+          /*
 		RError(
 			"Error. First rangeline is not legal.\n"
 			"wblock->raggey1: %d, wblock->num_reallines: %d\n",
 			wblock->rangey1,wblock->num_reallines
 		);
+          */
 		wblock->rangey1=0;
 	}
 	return &reallines[wblock->rangey1]->l.p;
@@ -58,12 +60,14 @@ Place *getRangeEndPlace(
 		wblock->rangey2>wblock->num_reallines ||
 		wblock->rangey2<0
 	){
+          /*
 		RError(
 			"Error. Last rangeline is not legal.\n"
 			"wblock->rangey2: %d, block->num_reallines: %d\n",
 			wblock->rangey2,wblock->num_reallines
 		);
-		wblock->rangey2=wblock->num_reallines;
+          */
+          wblock->rangey2=wblock->num_reallines;
 	}
 	if(wblock->rangey2==wblock->num_reallines){
 		place=talloc_atomic(sizeof(Place));

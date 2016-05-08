@@ -252,8 +252,13 @@ void CopyRange(
 
 	if( ! wblock->isranged) return;
 
+        int starttrack = wblock->rangex1;
+        int endtrack = R_MIN(wblock->block->num_tracks-1, wblock->rangex2);
+        if (endtrack < starttrack)
+          return;
+
 	range=talloc(sizeof(struct Range));
-	range->num_tracks=num_tracks=wblock->rangex2-wblock->rangex1+1;
+	range->num_tracks = num_tracks = wblock->rangex2-wblock->rangex1+1;
 
 	range->notes=talloc((size_t)(sizeof(struct Notes *)*num_tracks));
 	range->stops=talloc((size_t)(sizeof(struct Stops *)*num_tracks));
@@ -274,11 +279,10 @@ void CopyRange(
 		CopyRange_fxs(&range->fxs[lokke],track->fxs,p1,p2);
 
 		track=NextTrack(track);
-
+                if (track==NULL)
+                  break;
 	}
 
-        int starttrack = wblock->rangex1;
-        int endtrack = wblock->rangex2;
         
         Place *startplace = p1;
         Place *endplace = p2;

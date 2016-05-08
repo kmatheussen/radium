@@ -174,21 +174,22 @@ void PasteRange(
 	NInt tracknum,
 	Place *place
 ){
-	struct Tracks *track;
 	NInt lokke;
 	Place p2;
 
 	if(range==NULL) return;
 
+        struct Tracks *track=ListFindElement1(&block->tracks->l,tracknum);
+        if (track==NULL)
+            return;
+        
 	PlaceCopy(&p2,place);
 	PlaceAdd(&p2,&range->length);
 	CutRange(block,tracknum,tracknum+range->num_tracks-1,place,&p2);
 
-	track=ListFindElement1(&block->tracks->l,tracknum);
-	if(track==NULL) return;
-
         {
-          for(lokke=0;lokke<range->num_tracks;lokke++){
+          
+          for(lokke=0;lokke<range->num_tracks;lokke++){            
             if (doRangePasteCut())
               StopAllNotesAtPlace(block,track,place);
 
@@ -202,8 +203,9 @@ void PasteRange(
                 StopAllNotesAtPlace(block,track,&note->l.p);
             }
 
-            track=NextTrack(track);
-            if(track==NULL) break;
+            track = NextTrack(track);
+            if (track==NULL)
+              break;
           }
         }
         
