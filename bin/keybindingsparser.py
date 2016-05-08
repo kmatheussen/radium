@@ -166,9 +166,10 @@ class LineParser:
         return line
 
 class Parser:
-    def __init__(self,filehandle):
+    def __init__(self,filehandle, filehandle2 = None):
         self.linetype="NORMAL"
         self.ih=filehandle
+        self.filehandle2=filehandle2
         self.linenum=0
         self.keys=[]
         self.defines={}
@@ -192,7 +193,16 @@ class Parser:
 
         if self.currline=='':
             self.ih.close()
-            return false
+            
+            if self.ih == self.filehandle2:
+                return False
+
+            if self.filehandle2 is None:
+                return False
+
+            self.ih = self.filehandle2
+            self.linenum = 0
+            return self.readNextLine()
 
         self.currline=string.rstrip(self.currline)
 
@@ -390,10 +400,10 @@ def printsak(file,keyhandles,parser,codestring):
     print
 
     
-def start(keyhandles,filehandle,outfilehandle):
+def start(keyhandles,filehandle,filehandle2,outfilehandle):
     keybindingsdict={} # Note: Latest E-radium version has just removed everything related to keybindingsdict from this function. Could be unnecessary.
     
-    parser=Parser(filehandle)
+    parser=Parser(filehandle,filehandle2)
     defnum=0
     reader=protoconfparser.Read()
     

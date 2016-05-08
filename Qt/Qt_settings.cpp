@@ -208,6 +208,20 @@ bool OS_has_conf_filename(QString filename){
   return true;
 }
 
+static QString get_custom_conf_filename(QString filename){
+  int error;
+  QDir dir = get_dot_radium_dir(&error);
+  if (error != 0)
+    return "";
+  
+  QFileInfo info(dir, filename);
+
+  if(info.exists()==false)
+    return "";
+
+  return info.absoluteFilePath();
+}
+  
 QString OS_get_conf_filename(QString filename){
   QString path;
 
@@ -234,11 +248,20 @@ bool OS_has_conf_filename2(const char *filename){
 }
 
 QString OS_get_keybindings_conf_filename(void){
-  return OS_get_conf_filename("keybindings.conf");
+  return OS_get_full_program_file_path("keybindings.conf");
+  //return OS_get_conf_filename("keybindings.conf");
 }
 
 char *OS_get_keybindings_conf_filename2(void){
   return talloc_strdup(OS_get_keybindings_conf_filename().toUtf8().constData());
+}
+
+QString OS_get_custom_keybindings_conf_filename(void){
+  return QDesktopServices::storageLocation(QDesktopServices::HomeLocation) + QDir::separator() + ".radium" + QDir::separator() + "keybindings.conf";
+}
+
+char *OS_get_custom_keybindings_conf_filename2(void){
+  return talloc_strdup(OS_get_custom_keybindings_conf_filename().toUtf8().constData());
 }
 
 QString OS_get_menues_conf_filename(void){
