@@ -452,6 +452,8 @@ currently_undoing = true;
 
         struct Patch *current_patch = NULL;
 
+        EVENTLOG_add_event("     Undoing Start");
+                
        {
           int i;
           for(i=undo->entries.num_elements-1 ; i>=0 ; i--){
@@ -459,6 +461,8 @@ currently_undoing = true;
 
             struct UndoEntry *entry=undo->entries.elements[i];
 
+            EVENTLOG_add_event(talloc_format("        Undoing %s",get_entry_string(entry)));
+                    
             if(entry->stop_playing)
               PlayStop();
  
@@ -503,6 +507,8 @@ currently_undoing = true;
           }
        }
 
+       EVENTLOG_add_event("     Undoing Finished");
+               
        VECTOR_reverse(&undo->entries);
 
        CurrUndo=undo->prev;
@@ -556,10 +562,14 @@ void Redo(void){
 
 	if(CurrUndo->next==NULL) return;
 
+        EVENTLOG_add_event("   Redoing Start");
+                           
 	CurrUndo=CurrUndo->next;
 	Undo();
 	CurrUndo=CurrUndo->next;
 
+        EVENTLOG_add_event("   Redoing Finished");
+                
 	num_undos+=2;
 
         update_gfx();
