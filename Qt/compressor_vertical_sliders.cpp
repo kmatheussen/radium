@@ -715,7 +715,12 @@ struct Comp
   void handle_mouse_event (int x, int y){
     //printf("Got mouse press event %d / %d\n",(int)event->x(),(int)event->y());
 
-    double new_val = p_startpos + scale(y-y_startpos,0,height(),0,1);
+    double delta = scale(y-y_startpos,0,height(),0,1);
+
+    if (ctrlPressed())
+      delta = delta/10.0;
+    
+    double new_val = p_startpos + delta;
     //printf("p_startpos: %f\n",p_startpos);
 
     switch(curr_slider){
@@ -734,6 +739,9 @@ struct Comp
 
     background_image_must_be_updated=true;
     update();
+
+    y_startpos = y;
+    p_startpos = new_val;
   }
 
   bool mousePress(int x, int y){

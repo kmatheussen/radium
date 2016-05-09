@@ -273,6 +273,10 @@ namespace cvs{
       return w->isEnabled();
     }
 
+    bool ctrlPressed(void){
+      return QApplication::keyboardModifiers() & Qt::ControlModifier;
+    }
+    
     virtual void resized() = 0;
 
     //virtual void repaint(MyPainter *p){}
