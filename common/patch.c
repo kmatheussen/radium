@@ -296,7 +296,28 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
           
         }PC_StopPause(window);
         
+      } else if (new_patch == NULL){
+        
+        struct FXs *fxs = track->fxs;
+        while(fxs!=NULL){
+          struct FXs *next = NextFX(fxs);
+          
+          if (fxs->fx->patch==old_patch){
+            
+            ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
+            
+            PLAYER_lock();{
+              
+              ListRemoveElement1(&track->fxs, &fxs->l);
+              
+            }PLAYER_unlock();
+            
+          }
+          
+          fxs = next;
+        }
       }
+      
       wtrack = NextWTrack(wtrack);
     }
     wblock = NextWBlock(wblock);

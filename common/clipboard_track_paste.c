@@ -82,7 +82,6 @@ static bool co_CB_PasteTrackFX(
         if (track->patch != NULL) {
           if (!track->patch->is_usable) {
             track->patch = PATCH_create_audio(NULL, NULL, track->patch->name, track->patch->state);
-            //track->patch = InstrumentWidget_new_from_preset(track->patch->state, NULL, -100000,-100000,true);
           }
           totrack->patch = track->patch;
           R_ASSERT(totrack->patch->patchdata != NULL);

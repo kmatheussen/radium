@@ -96,13 +96,13 @@ static void scheduled_fx_change(int64_t time, const union SuperType *args){
 
 static void fxhandle(int x, struct PEventQueue *peq, int skip, FX_when when){
   struct FX *fx = peq->fxs->fx;
-  struct Patch *patch = peq->track->patch;
+  //struct Patch *patch = peq->track->patch;
 
   if (fx==NULL)
     return;
   
-  if (patch != fx->patch) // This can happen if changing patch for a track while playing.
-    return;
+  //if (patch != fx->patch) // This can happen if changing patch for a track while playing. (not a big problem if it happened, but it is not supposed to happen either because player lock is held when changing patch for track). In addition, patch->patchdata is NULL for removed patch, and the instrument does nothing if patchdata is NULL.
+  //  return;
   
   if (peq->track->onoff==0)
     return;

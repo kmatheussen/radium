@@ -368,43 +368,111 @@ static struct FX *AUDIO_createFX(const struct Tracks *track, int effect_num){
   return fx;
 }
 
-static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx){
-  struct Patch *patch = track->patch; // patch can not be NULL (we got instrument through track-patch)
+typedef struct{
+  struct Patch *patch;
+  int effect_num;
+} PatchEffect;
+
+static PatchEffect *create_patch_effect(struct Patch *patch, int effect_num){
+  PatchEffect *pe=talloc(sizeof(PatchEffect));
+  pe->patch = patch;
+  pe->effect_num = effect_num;
+  return pe;
+}
+
+
+static void add_patch_effects_to_menu(vector_t *menu, vector_t *patch_effects, struct Patch *patch){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   const SoundPluginType *plugin_type = plugin->type;
-
-  const char *menutitle="Select FX";
-  
   int num_effects = plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
-  vector_t v={0};
-
-  if(num_effects==0){
-    VECTOR_push_back(&v,"No effects available");
-    GFX_Menu(window,NULL,"No FX available",&v);
-    return FX_FAILED;
-  }
-
-  int num=0;
-  int nums[num_effects];
-
+    
   int i;
   for(i=0;i<num_effects;i++) {
     const char *name = PLUGIN_get_effect_name(plugin, i);
     if (strncmp(name, "NOTUSED", strlen("NOTUSED"))) {
-      VECTOR_push_back(&v,name);
-      nums[num++] = i;
+      VECTOR_push_back(menu,name);
+      VECTOR_push_back(patch_effects, create_patch_effect(patch, i));
     }
   }
+}
+
+static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx){
+  const char *menutitle="Select FX";
+
+  vector_t v = {0};
+  vector_t patch_effects = {0};
+  
+
+#if 0   // Disable for now, since some work is needed on cut/copy/paste fx
+
+  vector_t all_patches = get_audio_instrument()->patches;
+
+  if (all_patches.num_elements > 1){
+    
+    VECTOR_push_back(&v, "[submenu start]Other instruments");
+    VECTOR_push_back(&patch_effects, NULL);
+    
+    VECTOR_FOR_EACH(struct Patch *patch,&all_patches){
+
+      if (patch != track->patch){
+        
+        VECTOR_push_back(&v, talloc_format("[submenu start]%s",patch->name));
+        VECTOR_push_back(&patch_effects, NULL);
+        
+        add_patch_effects_to_menu(&v, &patch_effects, patch);
+
+        VECTOR_push_back(&v, "[submenu end]");
+        VECTOR_push_back(&patch_effects, NULL);
+      }
+
+    }END_VECTOR_FOR_EACH;
+    
+    VECTOR_push_back(&v, "[submenu end]");
+    VECTOR_push_back(&patch_effects, NULL);
+  }
+
+  VECTOR_push_back(&v, "---------");
+  VECTOR_push_back(&patch_effects, NULL);
+
+#else
+
+  {
+    SoundPlugin *plugin = (SoundPlugin*) track->patch->patchdata;
+    const SoundPluginType *plugin_type = plugin->type;
+    int num_effects = plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
+
+    if(num_effects==0){
+      VECTOR_push_back(&v,"No effects available");
+      GFX_Menu(window,NULL,"No FX available",&v);
+      return FX_FAILED;
+    }
+  }
+
+#endif
+  
+  add_patch_effects_to_menu(&v, &patch_effects, track->patch);
   
   int selection=GFX_Menu(window,NULL,menutitle,&v);
   if(-1==selection)
     return FX_FAILED;
 
-  int effect_num = nums[selection];
+  PatchEffect *pe = patch_effects.elements[selection];
+  R_ASSERT(pe!=NULL);
 
-  init_fx(fx,effect_num,(const char*)v.elements[selection], plugin);
+  if (pe!=NULL){
+    
+    fx->patch = pe->patch;
 
-  return FX_SUCCESS;
+    char *name = v.elements[selection];
+    if (pe->patch != track->patch)
+      name = talloc_format("%s (%s)",name, pe->patch->name);
+    
+    init_fx(fx,pe->effect_num, name, (struct SoundPlugin*)(pe->patch->patchdata));
+
+    return FX_SUCCESS;
+    
+  } else
+    return FX_FAILED;
 }
 
 static void AUDIO_save_FX(struct FX *fx,const struct Tracks *track){
@@ -532,8 +600,12 @@ static void *AUDIO_CopyInstrumentData(const struct Tracks *track){
 static void AUDIO_PlayFromStartHook(struct Instruments *instrument){
 }
 
+
 static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
   R_ASSERT(PLAYER_current_thread_has_lock());
+
+  R_ASSERT_RETURN_IF_FALSE(old_patch != NULL);
+  R_ASSERT_RETURN_IF_FALSE(new_patch != NULL);
     
   SoundPlugin *old_plugin = (SoundPlugin*) old_patch->patchdata;
   R_ASSERT_RETURN_IF_FALSE(old_plugin!=NULL);
@@ -545,25 +617,41 @@ static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *tra
   const SoundPluginType *new_type = new_plugin->type;
   int num_new_effects = new_type->num_effects;
 
+  bool same_instrument_type = false;
+  
   if(true
      && !strcmp(old_type->type_name, new_type->type_name)
      && !strcmp(old_type->name,      new_type->name)
      )
-    return;
+    same_instrument_type = true;
+  
 
   struct FXs *fxs = track->fxs;
   while(fxs!=NULL){
     struct FXs *next = NextFX(fxs);
     {
       struct FX *fx = fxs->fx;
-      if(fx->effect_num >= num_old_effects){
-        fx->effect_num = num_new_effects + (fx->effect_num - num_old_effects);
-        fx->num = fx->effect_num;
-        fxs->l.num = fx->effect_num; // TODO: Merge these three variables into one. I don't think the values of them should ever be different.
-        fx->color = get_effect_color(new_plugin, fx->effect_num);
-        fx->patch = new_patch;
-      }else{
-        ListRemoveElement1(&track->fxs, &fxs->l);
+
+      if (fx->patch == old_patch) {
+
+        if (same_instrument_type) {
+          
+          fx->patch = new_patch;
+
+        } else {
+          
+          if(fx->effect_num >= num_old_effects){
+            fx->effect_num = num_new_effects + (fx->effect_num - num_old_effects);
+            fx->num = fx->effect_num;
+            fxs->l.num = fx->effect_num; // TODO: Merge these three variables into one. I don't think the values of them should ever be different.
+            fx->color = get_effect_color(new_plugin, fx->effect_num);
+            fx->patch = new_patch;
+          }else{
+            ListRemoveElement1(&track->fxs, &fxs->l);
+          }
+          
+        }
+        
       }
     }
     fxs = next;
