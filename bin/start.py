@@ -92,7 +92,6 @@ try:
     infilehandle2=open(sys.argv[2],'r')
 except:
     print "Cant open %s" % sys.argv[2]
-    sys.exit(-1)
     infilehandle2 = None
 
     #print "Cant open %s" % sys.argv[2], infilehandle2
