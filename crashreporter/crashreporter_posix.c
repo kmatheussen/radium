@@ -17,9 +17,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if defined(FOR_LINUX)
 // || defined(FOR_MACOSX)
 
+
+
+#define _GNU_SOURCE         /* See feature_test_macros(7) */
+#include <link.h>
+#include <stdio.h>
+
 //#define PACKAGE 1 // workaround for bug in libbfd
 //#define PACKAGE_VERSION 1 // workaround for bug in libbfd
 #include "backtrace-symbols.c"
+
+
+
 
 #include <pthread.h>
 #include <sys/types.h>
@@ -27,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <signal.h>
 #include <time.h>
 #include <stdbool.h>
+
 
 #include "../common/nsmtracker.h"
 #include "../common/threading.h"
