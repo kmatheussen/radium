@@ -28,14 +28,20 @@ enum SchedulerPriority{
   SCHEDULER_NOTE_OFF_PRIORITY       = 1,
   SCHEDULER_NOTE_ON_PRIORITY        = 2,
   SCHEDULER_VELOCITY_PRIORITY       = 3, // Note that the end velocity is never sent out at note_end time. If it had, those velocities must have been scheduled with priorith 0.
-  SCHEDULER_PITCH_PRIORITY          = 3 // Same here, I think.
+  SCHEDULER_PITCH_PRIORITY          = 3, // Same here, I think.
+
+  SCHEDULER_LOWEST_NOTE_PRIORITY    = 4
+
+  // priority 5,6,7 are free
+
+  
   /*
   SCHEDULER_ADDORDER_DOESNT_MATTER = 1,
   SCHEDULER_ADD_BEFORE_SAME_TIME   = 1,
   SCHEDULER_ADD_AFTER_SAME_TIME    = 2,
   */
 };
-#define SCHEDULER_NUM_PRIORITY_BITS 2
+#define SCHEDULER_NUM_PRIORITY_BITS 3
 
 
 extern LANGSPEC void SCHEDULER_add_event(int64_t time_into_the_future, SchedulerCallback callback, const union SuperType *args, int num_args, enum SchedulerPriority priority);

@@ -540,7 +540,7 @@ static void RT_scheduled_play_voice(int64_t time, const union SuperType *args){
 static void RT_scheduled_stop_voice(int64_t time_into_the_future, const union SuperType *args);
 
 void RT_PATCH_play_note(struct Patch *patch, float notenum, int64_t note_id, float velocity, float pan, STime time){
-  //printf("\n\n___Starting note %d, time: %d\n\n",notenum,(int)time);
+  //printf("\n\nRT_PATCH_PLAY_NOTE. ___Starting note %f, time: %d, id: %d\n\n",notenum,(int)time,(int)note_id);
 
   if(time==-1)
     time = patch->last_time;
@@ -643,7 +643,7 @@ static void RT_scheduled_stop_voice(int64_t time, const union SuperType *args){
 }
 
 void RT_PATCH_stop_note(struct Patch *patch,float notenum,int64_t note_id,STime time){
-  //printf("\n\nRT_PATCH_STOP_NOTE. ___Stopping note %d, time: %d\n\n",notenum,(int)time);
+  //printf("\n\nRT_PATCH_STOP_NOTE. ___Stopping note %f, time: %d, id: %d\n\n",notenum,(int)time,(int)note_id);
 
   if(time==-1)
     time = patch->last_time;
@@ -691,6 +691,8 @@ void PATCH_stop_note(struct Patch *patch,float notenum,int64_t note_id){
 // Change velocity
 
 void RT_PATCH_send_change_velocity_to_receivers(struct Patch *patch, float notenum, int64_t note_id, float velocity, STime time){
+  //printf("\n\nRT_PATCH_VELOCITY. ___velocity for note %f, time: %d, id: %d (vel: %f)\n\n",notenum,(int)time,(int)note_id,velocity);
+    
   int i;
 
   if(note_id==-1)
