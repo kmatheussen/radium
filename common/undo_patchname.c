@@ -104,9 +104,13 @@ static void *Undo_Do_PatchName(
   patch->name_is_edited = undo_ae->name_is_edited;
   patch->forward_events = undo_ae->forward_events;
 
+  GFX_update_instrument_widget(patch);
+
   if (patch->instrument == get_audio_instrument()) {
-    GFX_update_instrument_widget(patch);
-    CHIP_update(patch->patchdata);
+    struct SoundPlugin *plugin = patch->patchdata;
+    R_ASSERT(plugin != NULL);
+    if (plugin!=NULL)
+      CHIP_update(patch->patchdata);
   }
 
   undo_ae->name = new_name;
