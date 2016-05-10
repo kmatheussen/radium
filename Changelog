@@ -1,3 +1,21 @@
+Changes 3.8.3 -> 3.8.4:
+* Play note when creating / moving note in pianoroll
+* api: playNote/stopNote, and replaced playRange
+  with playRangeFromStart/playRangeFromCurrent
+* Make sure note stop event is sent out after note start event
+  when the note is started and stopped at the same time
+* Always scroll down after editing if playing and using the play cursor
+* Restart player after doing undo/redo, if we were playing.
+* Ctrl key slows down slider movement whn moving the vertical compressor sliders
+* Fix fx when cloning instrument
+* Ctrl key slows down slider movement when moving volume sliders in the mixer
+* Show error message window if keybindings.conf has syntax error
+* Always read bin/keybindings.conf, then read ~/.radium/keybindings.conf if it exists
+* Add more undo information to crash log
+* Fix crashreporter on linux
+* Fix some range cut/copy/paste things
+
+
 Changes 3.8.2 -> 3.8.3:
 * Show message in editor when temporarily stopping player
 * In general, start player again if player had to be stopped before doing an operation.
