@@ -651,7 +651,7 @@
                                        :value Value
                                        :y Y)))))
 
-  (define (move-or-release Button Dx Dy Node ismoving)
+  (define (move-or-release Button Dx Dy Node)
     (define node-info (Node :node-info))
     (define min (Get-min-value node-info))
     (define max (Get-max-value node-info))
@@ -673,25 +673,25 @@
                          (between (1- (<ra> :get-top-visible-y))
                                   try-it
                                   (+ 2 (<ra> :get-bot-visible-y))))))
-    
-    (define func (if ismoving Move-node Release-node))
-                                   
-    (let ((node-info (func node-info new-value
-                           (and new-y
-                                (get-place-from-y Button new-y)))))
+
+    (let ((node-info (Move-node node-info new-value
+                                (and new-y
+                                     (get-place-from-y Button new-y)))))
       (Publicize node-info)
       (make-node :node-info node-info
                  :value new-value
                  :y (or new-y (Node :y)))))
     
   (define (move-and-release Button Dx Dy Node)
-    (move-or-release Button Dx Dy Node #t))
+    (move-or-release Button Dx Dy Node))
   
   (define (release Button Dx Dy Node)
     (define node-info (Node :node-info))
-    (<ra> :move-mouse-pointer (Get-x node-info)
-                           (Get-y node-info))
-    )
+    (if Release-node
+        (Release-node node-info))
+    (<ra> :move-mouse-pointer
+          (Get-x node-info)
+          (Get-y node-info)))
 
   (define move-existing-node-mouse-cycle (make-node-mouse-cycle :press press-existing-node
                                                                 :move-and-release move-and-release
@@ -1430,6 +1430,7 @@
   :pianonotenum
   :move-type     ;; A "*pianonote-move-<...>*" value
   :mouse-delta
+  :note-id
   )
 
 
@@ -1481,6 +1482,7 @@
                               :pianonotenum $pianonotenum
                               :move-type move-type
                               :mouse-delta (- $y (get-pianonote-y $pianonotenum $notenum $tracknum move-type))
+                              :note-id -1
                               ))))
   
 (define-match get-pianonote-info3
@@ -1552,7 +1554,21 @@
                                      (info :notenum)
                                      (info :tracknum)))))
   
-   
+
+(define (create-play-pianonote note-id pianonote-id)
+  (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
+    (if (>= instrument-id 0)
+        (<ra> :play-note
+              (<ra> :get-pianonote-value pianonote-id note-id *current-track-num*)
+              (if (<ra> :get-track-volume-on-off *current-track-num*)
+                  (<ra> :get-track-volume *current-track-num*)
+                  1.0)
+              (if (<ra> :get-track-pan-on-off *current-track-num*)
+                  (<ra> :get-track-pan *current-track-num*)
+                  0.0)
+              instrument-id)
+        -1)))
+  
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-track-num*
                                              (<ra> :pianoroll-visible *current-track-num*)
@@ -1566,7 +1582,10 @@
                                                          ;;(and info
                                                          ;;     (c-display "        NUM " (info :pianonotenum) " type: " (info :move-type)))
                                                          (and info
-                                                              (call-get-existing-node-info-callbacks callback info)))))
+                                                              (let ((info (copy-pianonote-info info
+                                                                                               :note-id (create-play-pianonote (info :notenum)
+                                                                                                                               (info :pianonotenum)))))
+                                                                (call-get-existing-node-info-callbacks callback info))))))
                         :Get-min-value (lambda (_) 1)
                         :Get-max-value (lambda (_) 127)
                         :Get-x (lambda (info) (/ (+ (<ra> :get-pianonote-x1 (info :pianonotenum)
@@ -1599,7 +1618,7 @@
                                                                               :pianonotenum 0
                                                                               :move-type *pianonote-move-end*
                                                                               :mouse-delta 0
-                                                                              )
+                                                                              :note-id (create-play-pianonote Num 0))
                                                          Value)))
                         :Publicize (lambda (pianonote-info)
                                      (set-current-pianonote (pianonote-info :pianonotenum)
@@ -1632,12 +1651,29 @@
                                              (or Place -1)
                                              (pianonote-info :notenum)
                                              (pianonote-info :tracknum)))
+
+                                     (if (not (= -1 (pianonote-info :note-id)))
+                                         (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
+                                           (if (>= instrument-id 0)
+                                               (<ra> :change-note-pitch
+                                                     (<ra> :get-pianonote-value (pianonote-info :pianonotenum) new-notenum *current-track-num*)
+                                                     (pianonote-info :note-id)
+                                                     instrument-id))))
+                                           
                                      (make-pianonote-info :tracknum (pianonote-info :tracknum)
                                                           :notenum new-notenum
                                                           :pianonotenum (pianonote-info :pianonotenum)
                                                           :move-type (pianonote-info :move-type)
                                                           :mouse-delta (pianonote-info :mouse-delta)
+                                                          :note-id (pianonote-info :note-id)
                                                           ))
+
+                        :Release-node (lambda (pianonote-info)
+                                        (if (not (= -1 (pianonote-info :note-id)))
+                                            (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
+                                              (if (>= instrument-id 0)
+                                                  (<ra> :stop-note (pianonote-info :note-id) instrument-id)))))
+                                     
                         :Get-pixels-per-value-unit (lambda (_)
                                                      (<ra> :get-pianoroll-low-key *current-track-num*)
                                                      (<ra> :get-pianoroll-high-key *current-track-num*)
@@ -1656,7 +1692,8 @@
                 '(c-display $x $y pianonote-info
                             (box-to-string (get-pianonote-box 0 1 0)))
                 (if (and pianonote-info
-                         (begin
+                         (let ((pianonote-info pianonote-info)) ;;;(copy-pianonote-info :note-id (create-play-pianonote (pianonote-info :notenum)
+                                                                ;;;                                    (pianonote-info :pianonotenum)))))
                            ;;(c-display "type: " (pianonote-info :move-type))
                            (set-current-pianonote (pianonote-info :pianonotenum)
                                                   (pianonote-info :notenum)

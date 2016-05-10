@@ -56,6 +56,7 @@ extern LANGSPEC void PATCH_change_velocity(struct Patch *patch,float notenum, in
 extern LANGSPEC void PATCH_stop_all_notes(struct Patch *patch);
 extern LANGSPEC void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id);
 extern LANGSPEC void PATCH_stopNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id);
+extern LANGSPEC void PATCH_change_pitch(struct Patch *patch,float notenum,int64_t note_id, float pitch);
 
 extern LANGSPEC void RT_FX_treat_fx(struct FX *fx,int val,STime time,int skip, FX_when when);
 extern LANGSPEC void FX_treat_fx(struct FX *fx,int val,int skip);
