@@ -1,3 +1,7 @@
+Changes 3.8.4 -> 3.8.5:
+Fix crash during midi instrument patchname undo. (Tito Latini)
+
+
 Changes 3.8.3 -> 3.8.4:
 * Play note when creating / moving note in pianoroll
 * api: playNote/stopNote, and replaced playRange
