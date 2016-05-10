@@ -55,7 +55,14 @@ void playSongFromCurrent(int windownum){
   PlaySongCurrPos(window);
 }
 
-void playRange(int windownum){
+void playRangeFromStart(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL) return;
+
+  PlayRangeFromStart(window);
+}
+
+void playRangeFromCurrent(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
 
