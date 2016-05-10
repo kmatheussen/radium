@@ -225,34 +225,58 @@ void PlayBlockCurrPos(struct Tracker_Windows *window){
 	PlayBlock(wblock->block,place,true);
 }
 
+static void PlayRange(struct Tracker_Windows *window, Place *place){
+  struct WBlocks *wblock = window->wblock;
+  
+  ATOMIC_SET(pc->seqtime, -Place2STime(wblock->block,place));
 
-void PlayRangeCurrPos(struct Tracker_Windows *window){
-	struct WBlocks *wblock;
-	Place *place;
+  //	printf("playrange, time: %d\n",pc->seqtime);
+  
+  //Place *place_start = getRangeStartPlace(wblock);
+  Place *place_end   = getRangeEndPlace(wblock);
+  pc->range_duration = Place2STime(wblock->block, place_end) - Place2STime(wblock->block, place);
+  pc->is_playing_range = true;
+  
+  PlayBlock(wblock->block,place,true);
+}
 
-	PlayStopReally(false);
 
-	wblock=window->wblock;
+void PlayRangeFromStart(struct Tracker_Windows *window){
+	struct WBlocks *wblock = window->wblock;
 
 	if( ! wblock->isranged) return;
+
+	PlayStopReally(false);
 
 	ATOMIC_SET(root->setfirstpos, false);
 
 	if(wblock->rangey1==0)
           ATOMIC_SET(root->setfirstpos, true);
 
-	place=getRangeStartPlace(wblock);
-	ATOMIC_SET(pc->seqtime, -Place2STime(wblock->block,place));
-
-//	printf("playrange, time: %d\n",pc->seqtime);
-
-        Place *place_start = getRangeStartPlace(wblock);
-        Place *place_end   = getRangeEndPlace(wblock);
-        pc->range_duration = Place2STime(wblock->block, place_end) - Place2STime(wblock->block, place_start);
-        pc->is_playing_range = true;
+        Place *place = getRangeStartPlace(wblock);
         
-	PlayBlock(wblock->block,place,true);
+
+        PlayRange(window, place);
 }
+
+
+void PlayRangeCurrPos(struct Tracker_Windows *window){
+  struct WBlocks *wblock = window->wblock;
+
+  if( ! wblock->isranged) return;
+        
+  PlayStopReally(false);
+        
+  Place *cursor_place = &wblock->reallines[wblock->curr_realline]->l.p;
+
+  /*
+  Place *start_place=getRangeStartPlace(wblock);
+  Place *end_place=getRangeEndPlace(wblock);
+  */
+  
+  PlayRange(window, cursor_place);        
+}
+
 
 static int g_playing_realline = 0;
 static int g_playing_blocknum = 0;
@@ -306,7 +330,7 @@ static void PlayHandleRangeLoop(void){
   STime start_therealtime = ATOMIC_GET(pc->therealtime);
 
   if (start_therealtime >= pc->range_duration/block->reltempo) {
-    PlayRangeCurrPos(root->song->tracker_windows);
+    PlayRangeFromStart(root->song->tracker_windows);
     int counter = 0;
     while (ATOMIC_GET(pc->therealtime) == start_therealtime && counter < 50){ // Wait for the player to start up.
       OS_WaitForAShortTime(20);

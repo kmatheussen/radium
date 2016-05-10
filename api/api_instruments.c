@@ -628,3 +628,36 @@ void midi_alwaysRecordVelocity(bool doit){
 void midi_setInputPort(void){
   MIDISetInputPort();
 }
+
+#define NUM_IDS 2048
+static int note_ids_pos = 0;
+static int64_t note_ids[NUM_IDS] = {0}; // TODO: Change int to int64_t everywhere in the api.
+
+int playNote(int instrument_id, float pitch, float velocity){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return -1;
+
+  int ret = note_ids_pos;
+
+  note_ids[ret] = PATCH_play_note(patch, pitch, -1, velocity, -1);
+
+  note_ids_pos++;
+  if (note_ids_pos==NUM_IDS)
+    note_ids_pos = 0;
+  
+  return ret;
+}
+
+void stopNote(int instrument_id, int note_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  if (note_id < 0 || note_id >= NUM_IDS) {
+    GFX_Message(NULL, "note_id %d not found", note_id);
+    return;
+  }
+  
+  PATCH_stop_note(patch, 0, note_ids[note_id]);
+}

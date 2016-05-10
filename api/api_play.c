@@ -55,7 +55,14 @@ void playSongFromCurrent(int windownum){
   PlaySongCurrPos(window);
 }
 
-void playRange(int windownum){
+void playRangeFromStart(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL) return;
+
+  PlayRangeFromStart(window);
+}
+
+void playRangeFromCurrent(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
 
@@ -110,3 +117,4 @@ float lineDuration(int line, int tracknum, int blocknum, int windownum){
 
   return (double)(s2-s1) / (double)MIXER_get_sample_rate();
 }
+

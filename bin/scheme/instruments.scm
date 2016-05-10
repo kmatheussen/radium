@@ -112,7 +112,7 @@
 
 #!!
 (<ra> :get-num-audio-instruments)
-(define id (<ra> :get-audio-instrument-id 5))
+(define id (<ra> :get-audio-instrument-id 7))
 (<ra> :get-instrument-x 17)
 (<ra> :get-instrument-y 17)
 

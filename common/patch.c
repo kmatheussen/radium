@@ -539,7 +539,7 @@ static void RT_scheduled_play_voice(int64_t time, const union SuperType *args){
 
 static void RT_scheduled_stop_voice(int64_t time_into_the_future, const union SuperType *args);
 
-void RT_PATCH_play_note(struct Patch *patch, float notenum, int64_t note_id, float velocity, float pan, STime time){
+int64_t RT_PATCH_play_note(struct Patch *patch, float notenum, int64_t note_id, float velocity, float pan, STime time){
   //printf("\n\nRT_PATCH_PLAY_NOTE. ___Starting note %f, time: %d, id: %d\n\n",notenum,(int)time,(int)note_id);
 
   if(time==-1)
@@ -578,15 +578,21 @@ void RT_PATCH_play_note(struct Patch *patch, float notenum, int64_t note_id, flo
         SCHEDULER_add_event(time + (voice->start+voice->length)*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 3, SCHEDULER_NOTE_OFF_PRIORITY);
     }
   }
+
+  return note_id;
 }
 
 //extern const char *NotesTexts3[131];
 
-void PATCH_play_note(struct Patch *patch,float notenum,int64_t note_id,float velocity,float pan){
+int64_t PATCH_play_note(struct Patch *patch,float notenum,int64_t note_id,float velocity,float pan){
   //printf("** playing note %s\n",NotesTexts3[notenum]);
+  int64_t ret;
+  
   PLAYER_lock();{
-    RT_PATCH_play_note(patch,notenum,note_id,velocity,pan,-1);
+    ret = RT_PATCH_play_note(patch,notenum,note_id,velocity,pan,-1);
   }PLAYER_unlock();
+
+  return ret;
 }
 
 
