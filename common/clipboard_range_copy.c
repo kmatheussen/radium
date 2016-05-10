@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_range.h"
 #include "wtracks_proc.h"
 #include "notes_proc.h"
+#include "patch_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
 
 #include "clipboard_range_copy_proc.h"
@@ -227,12 +228,21 @@ void CopyRange_fxs(
 
 	if(fromfxs==NULL) return;
 
+#if 0
+        // This thing should perhaps be moved into co_CB_PasteTrack.
+        if (!fromfxs->fx->patch->is_usable) {
+          fromfxs->fx->patch = PATCH_create_audio(NULL, NULL, fromfxs->fx->patch->name, fromfxs->fx->patch->state);
+          R_ASSERT_RETURN_IF_FALSE(fromfxs->fx->patch->patchdata != NULL);
+        }
+#endif
+        
 	fxs=talloc(sizeof(struct FXs));
 
 	fxs->fx=talloc(sizeof(struct FX));
         memcpy(fxs->fx, fromfxs->fx, sizeof(struct FX));
 
 	fxs->l.num=fromfxs->l.num;
+        
 
 	ListAddElement1(tofxs,&fxs->l);
 

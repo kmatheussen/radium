@@ -112,10 +112,10 @@
 
 #!!
 (<ra> :get-num-audio-instruments)
-(define id (<ra> :get-audio-instrument-id 5))
+(define id (<ra> :get-audio-instrument-id 7))
 (<ra> :get-instrument-x 17)
 (<ra> :get-instrument-y 17)
-
+ 
 (<ra> :set-instrument-position -80 106 17)
 (<ra> :connect-audio-instrument-to-main-pipe 17)
 (<ra> :delete-instrument 22)

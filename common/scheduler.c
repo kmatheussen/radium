@@ -135,7 +135,7 @@ void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const uni
   int i = g_queue_size;
   int new_i = i >> 1;
 
-  while(g_queue[new_i]->time > time){
+  while(time <= g_queue[new_i]->time){ // '<=' (instead of '<') means that the event will be inserted after events with the same time.
     g_queue[i] = g_queue[new_i];
     i = new_i;
     new_i = new_i >> 1;

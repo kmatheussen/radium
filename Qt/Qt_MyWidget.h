@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "MyLineMyRect.h"
 
+#include <QApplication>
 #include <QPainter>
 #include <QMouseEvent>
 #include <QTimer>
@@ -273,6 +274,10 @@ namespace cvs{
       return w->isEnabled();
     }
 
+    bool ctrlPressed(void){
+      return QApplication::keyboardModifiers() & Qt::ControlModifier;
+    }
+    
     virtual void resized() = 0;
 
     //virtual void repaint(MyPainter *p){}

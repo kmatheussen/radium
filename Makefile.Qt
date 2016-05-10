@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 3.8.3
+VERSION = 3.8.5
 
 #----------------USER SETTINGS-------------------------------
 
@@ -116,7 +116,7 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 FULL_VERSION ?= 1
 
 # Note that "make clean" must be run for DEBUG_BUILD_OPTS to take effect
-DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -DDISABLE_BDWGC -fsanitize=address
+DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -Og # -DDISABLE_BDWGC -fsanitize=address
 # -Og -Og -fsanitize=address
 #-Og 
 #  -fsanitize=thread 
@@ -1733,7 +1733,10 @@ crashreporter.o: crashreporter/crashreporter.cpp
 	$(CCC) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DVERSION=\"$(VERSION)\"
 
 crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/backtrace-symbols.c
-	$(CC) crashreporter/crashreporter_posix.c $(OPT) $(CRASHREPORTER_POSIX_OPTS)
+	if ! $(CC) crashreporter/crashreporter_posix.c $(OPT) $(CRASHREPORTER_POSIX_OPTS) ; then \
+		printf '   \n\n\n    ** Note: You might need to uncomment the  PACKAGE AND PACKAGE_VERSION definitions in crashreporter/crashreporter_posix.c ** \n\n\n\n' ; \
+		exit -1 ; \
+	fi
 
 crashreporter_windows.o: crashreporter/crashreporter_windows.c
 	$(CC) crashreporter/crashreporter_windows.c $(OPT) -O0 -DPACKAGE

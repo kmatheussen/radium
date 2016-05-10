@@ -108,11 +108,11 @@ void InitPEQnote(
 
 	PC_InsertElement2_a(peq,playlistaddpos,&note->l.p);
 
-        InitPEQendnote(block,track,note,playlistaddpos);
-        
         InitPEQvelocities(block,track,note,playlistaddpos);
 
         InitPEQpitches(block,track,note,playlistaddpos);
+
+        InitPEQendnote(block,track,note,playlistaddpos);
 }
 
 static void InitPEQnotesBlock(
@@ -266,12 +266,19 @@ static void PE_StopNote(struct PEventQueue *peq,int doit){
 
 	if(doit && peq->track->onoff==1 && peq->track->patch!=NULL){
 //		Pdebug("Stop note: %d, vel: %d\n",peq->note->note,peq->note->velocity_end);
-          union SuperType args[3];
+          union SuperType args[2];
           args[0].const_pointer = peq->track;
           args[1].const_pointer = peq->note;
 
           //printf("__PE_StopNote. Scheduling stop for %d at %d\n",peq->note->note,(int)peq->l.time);
-          SCHEDULER_add_event(peq->l.time, scheduled_stop_note, &args[0], 2, SCHEDULER_NOTE_OFF_PRIORITY);
+
+          int priority = SCHEDULER_NOTE_OFF_PRIORITY;
+          
+          STime start_note_time = Place2STime(peq->block, &peq->note->l.p);
+          if (start_note_time == peq->l.time)
+            priority = SCHEDULER_LOWEST_NOTE_PRIORITY; // Make sure note is stopped after all other events, in case the note is stopped at the same time as it was started. (very corner case situtation)
+          
+          SCHEDULER_add_event(peq->l.time, scheduled_stop_note, &args[0], 2, priority);
           /*
           RT_PATCH_stop_note(peq->track->patch,
                              peq->note->note,

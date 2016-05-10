@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern LANGSPEC void PlayerTask(STime stime);
 extern LANGSPEC void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop);
 extern LANGSPEC void PlayBlockCurrPos(struct Tracker_Windows *window);
+extern LANGSPEC void PlayRangeFromStart(struct Tracker_Windows *window);
 extern LANGSPEC void PlayRangeCurrPos(struct Tracker_Windows *window);
 extern LANGSPEC void Play_set_curr_playing_realline(int realline, int blocknum);
 extern LANGSPEC void PlayCallVeryOften(void);

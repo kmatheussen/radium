@@ -280,7 +280,8 @@ void setRangePasteScrollDown(bool doit){
 
 
 
-extern int g_downscroll;
+int g_downscroll = 1;
+
 void setNoteScrollLength(int l){
   R_ASSERT_RETURN_IF_FALSE(l>=0);
 

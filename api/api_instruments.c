@@ -628,3 +628,51 @@ void midi_alwaysRecordVelocity(bool doit){
 void midi_setInputPort(void){
   MIDISetInputPort();
 }
+
+#define NUM_IDS 2048
+static int note_ids_pos = 0;
+static int64_t note_ids[NUM_IDS] = {0}; // TODO: Change int to int64_t everywhere in the api.
+
+int playNote(float pitch, float velocity, float pan, int instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return -1;
+
+  int ret = note_ids_pos;
+
+  note_ids[ret] = PATCH_play_note(patch, pitch, -1, velocity, pan);
+
+  note_ids_pos++;
+  if (note_ids_pos==NUM_IDS)
+    note_ids_pos = 0;
+  
+  return ret;
+}
+
+void changeNotePitch(float pitch, int note_id, int instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  if (note_id < 0 || note_id >= NUM_IDS) {
+    GFX_Message(NULL, "note_id %d not found", note_id);
+    return;
+  }
+
+  //printf("change pitch %f %d %d\n",pitch,note_id,instrument_id);
+  PATCH_change_pitch(patch, pitch, note_ids[note_id], pitch);
+}
+
+void stopNote(int note_id, int instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  if (note_id < 0 || note_id >= NUM_IDS) {
+    GFX_Message(NULL, "note_id %d not found", note_id);
+    return;
+  }
+
+  //printf("stop note %d %d\n",note_id,instrument_id);
+  PATCH_stop_note(patch, 0, note_ids[note_id]);
+}

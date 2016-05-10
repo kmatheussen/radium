@@ -117,12 +117,14 @@ int GFX_Menu2(
             action = new CheckableAction(text.right(text.size() - 11), false, curr_menu, i, callback);
         } else if (text.startsWith("[submenu start]")){
           curr_menu = curr_menu->addMenu(text.right(text.size() - 15));
+          n_submenues = 0;
         } else if (text.startsWith("[submenu end]")){
           QMenu *parent = dynamic_cast<QMenu*>(curr_menu->parent());
           if (parent==NULL)
             RError("parent of [submenu end] is not a QMenu");
           else
             curr_menu = parent;
+          n_submenues = 0;
         } else
           action = new QAction(text, curr_menu);
         

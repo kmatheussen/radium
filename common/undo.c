@@ -455,6 +455,8 @@ currently_undoing = true;
         EVENTLOG_add_event("     Undoing Start");
                 
        {
+         bool has_paused = false;
+         
           int i;
           for(i=undo->entries.num_elements-1 ; i>=0 ; i--){
             //for(i=0 ; i < undo->entries.num_elements; i++){
@@ -463,8 +465,10 @@ currently_undoing = true;
 
             EVENTLOG_add_event(talloc_format("        Undoing %s",get_entry_string(entry)));
                     
-            if(entry->stop_playing)
-              PlayStop();
+            if(entry->stop_playing) {
+              PC_Pause();
+              has_paused = true;
+            }
  
             struct Tracker_Windows *window=ListFindElement1(&root->song->tracker_windows->l,entry->windownum);
             struct WBlocks *wblock=ListFindElement1_r0(&window->wblocks->l,entry->blocknum);
@@ -505,6 +509,9 @@ currently_undoing = true;
             wblock->curr_realline = R_BOUNDARIES(0, entry->realline, wblock->num_reallines-1);
             window->curr_track=entry->tracknum;
           }
+
+          if (has_paused)
+            PC_StopPause(NULL);
        }
 
        EVENTLOG_add_event("     Undoing Finished");
@@ -515,7 +522,9 @@ currently_undoing = true;
 
        num_undos--;
 
+       //if (!is_playing())  // <- Not sure if this is safe.
        {
+
          struct Tracker_Windows *window=ListFindElement1(&root->song->tracker_windows->l,undo->windownum);
          struct WBlocks *wblock=ListFindElement1_r0(&window->wblocks->l,undo->blocknum);
          struct WTracks *wtrack;
@@ -548,7 +557,9 @@ currently_undoing = true;
          }
 
          GE_set_curr_realline(wblock->curr_realline);
+         
        }
+       
 currently_undoing = false;
 
  update_gfx();

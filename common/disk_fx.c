@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "disk.h"
+#include "patch_proc.h"
 
 #include "disk_fx_proc.h"
 
@@ -35,6 +36,7 @@ DC_start("FX");
 	DC_SSI("min",fx->min);
 	DC_SSI("max",fx->max);
 	DC_SSI("effect_num",fx->effect_num);
+        DC_SSN("patchnum",fx->patch->id);
 
 	(*fx->SaveFX)(fx,track);
 
@@ -48,17 +50,21 @@ struct FX *LoadFX(struct Tracks *track){
 	static char *objs[1]={
 		"FXDATA"
 	};
-	static char *vars[5]={
+	static char *vars[6]={
 		"name",
 		"color",
 		"min",
 		"max",
-                "effect_num"
+                "effect_num",
+                "patchnum"
 	};
 	struct FX *fx=DC_alloc(sizeof(struct FX));
-	DC_LoadN(); 
-        fx->patch = track->patch;
-	GENERAL_LOAD(0,5)
+	DC_LoadN();
+        
+        fx->patch = DC_alloc(sizeof(struct Patch)); // temporary object used during loading.
+        fx->patch->id = -1; // for loading older songs.
+        
+	GENERAL_LOAD(0,6)
 
 
 var0:
@@ -85,12 +91,15 @@ var4:
         fx->num = fx->effect_num; // Fix bugs in previous versions. Sometimes fx->effect_num is the only one containing the right value.
 	goto start;
 
+var5:
+        fx->patch->id = DC_LoadN();
+        goto start;
+        
 obj0:
 	fx->fxdata=(*track->patch->instrument->LoadFX)(fx,track);
 	goto start;
 
 
-var5:
 var6:
 var7:
 var8:
@@ -122,6 +131,11 @@ end:
 
 
 void DLoadFX(struct Root *newroot,struct Tracks *track, struct FXs *fxs, struct FX *fx){
-  fx->patch = track->patch;
+  NInt id = fx->patch->id;
+  
+  if (id==-1)
+    fx->patch = track->patch;
+  else
+    fx->patch = PATCH_get_from_id(fx->patch->id);
 }
 
