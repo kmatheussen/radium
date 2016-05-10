@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "cursor_updown_proc.h"
 
 extern int g_downscroll;
+
 int getScrollMultiplication(void){
   if (doScrollEditLines())
     return R_MAX(1, g_downscroll);
@@ -133,6 +134,11 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 #endif
 }
 
+
+extern LANGSPEC void MaybeScrollEditorDownAfterEditing(struct Tracker_Windows *window){
+  if(!is_playing() || ATOMIC_GET(root->play_cursor_onoff)==true)
+    ScrollEditorDown(window,g_downscroll);
+}
 
 void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 	struct WBlocks *wblock;

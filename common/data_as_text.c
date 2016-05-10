@@ -28,8 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "data_as_text_proc.h"
 
 
-extern int g_downscroll;
-
 static int get_val_from_key(int key){
   int val = -1;
   
@@ -195,9 +193,8 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
   
   window->must_redraw_editor = true;
 
-  if(!is_playing())
-    ScrollEditorDown(window,g_downscroll);
+  MaybeScrollEditorDownAfterEditing(window);
 
-  return true;  
+  return true;
 }
 

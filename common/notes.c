@@ -474,13 +474,9 @@ int NOTE_get_velocity(struct Tracks *track){
 }
 
 
-int g_downscroll = 1;
-
-static void MaybeScrollEditorDown(struct Tracker_Windows *window){
-  if(window->curr_track_sub==-1) {
-    if (!is_playing() || ATOMIC_GET(root->play_cursor_onoff)==true)
-      ScrollEditorDown(window,g_downscroll);
-  }
+static void maybe_scroll_down(struct Tracker_Windows *window){
+  if(window->curr_track_sub==-1) 
+    MaybeScrollEditorDownAfterEditing(window);
 }
 
 
@@ -501,7 +497,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
 
     if (tr2->pitch != NULL) {
       tr2->pitch->note = notenum; // lock not necessary
-      MaybeScrollEditorDown(window);
+      maybe_scroll_down(window);
       return;
     }
 
@@ -514,7 +510,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
       else
         tr2->note->note = notenum;
       
-      MaybeScrollEditorDown(window);
+      maybe_scroll_down(window);
       return;
     }
 
@@ -536,7 +532,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
     UpdateAllWTracksCoordinates(window,wblock);
 
   if (!polyphonic)
-    MaybeScrollEditorDown(window);
+    maybe_scroll_down(window);
 }
 
 static void InsertStop(
@@ -622,7 +618,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
 
   if (tr->num_elements==0) {
     InsertStop(window,wblock,wtrack,&realline->l.p);
-    MaybeScrollEditorDown(window);
+    maybe_scroll_down(window);
     return;
   }
 
@@ -632,7 +628,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   if (tr2->pitch != NULL) {
     DeletePitch(track, tr2->note, tr2->pitch);
     if (tr->num_elements==1)
-      MaybeScrollEditorDown(window);
+      maybe_scroll_down(window);
     return;
   }
 
@@ -653,7 +649,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
     SetNotePolyphonyAttributes(wtrack->track);
     ValidateCursorPos(window);
     if (tr->num_elements==1)
-      MaybeScrollEditorDown(window);
+      maybe_scroll_down(window);
     return;
   }
 
@@ -664,7 +660,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   }PLAYER_unlock();
   
   if (tr->num_elements==1)
-    MaybeScrollEditorDown(window);
+    maybe_scroll_down(window);
 }
 
 struct Notes *FindPrevNoteOnSameSubTrack(struct Tracks *track, struct Notes *note){
