@@ -54,6 +54,8 @@ static void AUDIO_playnote(struct Patch *patch,float notenum,int64_t note_id, fl
   if(plugin==NULL)
     return;
 
+  //printf("playing audio note %f, id: %d\n",notenum,(int)note_id);
+    
   if(plugin->type->play_note != NULL)
     plugin->type->play_note(plugin, PLAYER_get_block_delta_time(time), notenum, note_id, velocity, pan);
 
@@ -102,7 +104,7 @@ static void AUDIO_stopnote(struct Patch *patch,float notenum,int64_t note_id,STi
   if(plugin==NULL)
     return;
 
-  //printf("stopping audio note %d\n",notenum);
+  //printf("stopping audio note %f, id: %d\n",notenum,(int)note_id);
 
   if(plugin->type->stop_note != NULL)
     plugin->type->stop_note(plugin, PLAYER_get_block_delta_time(time), notenum, note_id);

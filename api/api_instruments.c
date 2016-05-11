@@ -632,16 +632,18 @@ void midi_setInputPort(void){
 #define NUM_IDS 2048
 static int note_ids_pos = 0;
 static int64_t note_ids[NUM_IDS] = {0}; // TODO: Change int to int64_t everywhere in the api.
+static float initial_pitches[NUM_IDS] = {0}; // TODO: Change int to int64_t everywhere in the api.
 
 int playNote(float pitch, float velocity, float pan, int instrument_id){
-  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;
 
   int ret = note_ids_pos;
 
   note_ids[ret] = PATCH_play_note(patch, pitch, -1, velocity, pan);
-
+  initial_pitches[ret] = pitch;
+    
   note_ids_pos++;
   if (note_ids_pos==NUM_IDS)
     note_ids_pos = 0;
@@ -650,7 +652,7 @@ int playNote(float pitch, float velocity, float pan, int instrument_id){
 }
 
 void changeNotePitch(float pitch, int note_id, int instrument_id){
-  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
 
@@ -664,7 +666,7 @@ void changeNotePitch(float pitch, int note_id, int instrument_id){
 }
 
 void stopNote(int note_id, int instrument_id){
-  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
 
@@ -674,5 +676,5 @@ void stopNote(int note_id, int instrument_id){
   }
 
   //printf("stop note %d %d\n",note_id,instrument_id);
-  PATCH_stop_note(patch, 0, note_ids[note_id]);
+  PATCH_stop_note(patch, initial_pitches[note_id], note_ids[note_id]);
 }
