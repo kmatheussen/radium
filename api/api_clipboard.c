@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/clipboard_track_cut_proc.h"
 #include "../common/clipboard_block_copy_proc.h"
 #include "../common/clipboard_block_paste_proc.h"
+#include "../common/undo_tracks_proc.h"
 
 #include "api_common_proc.h"
 
@@ -111,6 +112,7 @@ void pasteTrack(int tracknum, int blocknum, int windownum){
   if (tracknum==-1 && blocknum==-1){
     struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
     CB_PasteTrack_CurrPos(window);
+    return;
   }
 
   struct Tracker_Windows *window=NULL;
@@ -127,9 +129,13 @@ void pasteTrack(int tracknum, int blocknum, int windownum){
 
   if(wtrack==NULL) return;
 
-  if (cb_wtrack != NULL)
-    co_CB_PasteTrack(wblock, cb_wtrack, wtrack);
-
+  if (cb_wtrack != NULL) {
+    Undo_Open_rec();{
+      ADD_UNDO(Track(window, wblock, wtrack, wblock->curr_realline));
+      co_CB_PasteTrack(wblock, cb_wtrack, wtrack);
+    }Undo_Close();
+  }
+    
   window->must_redraw = true;
 }
 

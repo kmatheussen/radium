@@ -228,6 +228,8 @@ void CopyRange_fxs(
 
 	if(fromfxs==NULL) return;
 
+        R_ASSERT_RETURN_IF_FALSE(fromfxs->fx->patch->is_usable);
+        
 #if 0
         // This thing should perhaps be moved into co_CB_PasteTrack.
         if (!fromfxs->fx->patch->is_usable) {

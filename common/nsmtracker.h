@@ -607,6 +607,7 @@ struct Patch{
   
   struct Instruments *instrument;
 
+  int permanent_id;             // Free use by the instrument plug-in.
   void *patchdata;		// Free use by the instrument plug-in.
 
   void (*changeTrackPan)(int newpan,const struct Tracks *track);

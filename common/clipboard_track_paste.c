@@ -17,8 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-
 #include "nsmtracker.h"
 
 #include "clipboard_range_copy_proc.h"
@@ -53,7 +51,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Beats_proc.h"
 #include "clipboard_track_copy_proc.h"
 #include "patch_proc.h"
+#include "instruments_proc.h"
 #include "../api/api_proc.h"
+#include "../audio/audio_instrument_proc.h"
 
 #include "clipboard_track_paste_proc.h"
 
@@ -64,6 +64,50 @@ extern struct Tempos *cb_tempo;
 extern struct TempoNodes *cb_temponode;
 
 
+static void make_patches_usable(struct Tracks *track){
+  struct Patch *old_patch = track->patch;
+  
+  if (old_patch != NULL) {
+    
+    struct Patch *new_patch = old_patch;
+    
+    if (!old_patch->is_usable) {
+      R_ASSERT(old_patch->instrument == get_audio_instrument()); // Only audio instruments may not be usable.
+
+      printf("PERMANENT_ID for %s: %d\n",old_patch->name,old_patch->permanent_id);
+      
+      if (old_patch->permanent_id != 0)
+        new_patch = AUDIO_get_the_replacement_for_old_permanent_patch(old_patch);
+      else {
+        new_patch = PATCH_create_audio(NULL, NULL, old_patch->name, old_patch->state);
+        connectAudioInstrumentToMainPipe(new_patch->id);
+      }
+      
+      track->patch = new_patch;
+    }
+    
+    R_ASSERT(track->patch->patchdata != NULL);
+    
+    struct FXs *fxs = track->fxs;
+    while(fxs!=NULL){
+      struct FX *fx = fxs->fx;
+      
+      if (fx->patch == old_patch)
+        fx->patch = new_patch;
+      else if (!fx->patch->is_usable){
+        R_ASSERT(old_patch->instrument == get_audio_instrument()); // Only audio instruments may not be usable.
+        
+        if (fx->patch->permanent_id != 0)
+          fx->patch = AUDIO_get_the_replacement_for_old_permanent_patch(fx->patch);
+        else
+          fx->patch = PATCH_create_audio(NULL, NULL, fx->patch->name, fx->patch->state);
+      }
+      
+      fxs = NextFX(fxs);
+    }
+    
+  }
+}
 
 static bool co_CB_PasteTrackFX(
 	struct WBlocks *wblock,
@@ -79,15 +123,11 @@ static bool co_CB_PasteTrackFX(
 	totrack=towtrack->track;
 	track=wtrack->track;
 
-        if (track->patch != NULL) {
-          if (!track->patch->is_usable) {
-            track->patch = PATCH_create_audio(NULL, NULL, track->patch->name, track->patch->state);
-          }
+        make_patches_usable(track);
+
+        if (totrack->patch == NULL)
           totrack->patch = track->patch;
-          R_ASSERT(totrack->patch->patchdata != NULL);
-        } else
-          totrack->patch = NULL;
-        
+                      
 	if(track->midi_instrumentdata!=NULL){
           totrack->midi_instrumentdata=MIDI_CopyInstrumentData(track);
 	}
@@ -184,26 +224,10 @@ bool co_CB_PasteTrack(
 
         struct Tracks *totrack = towtrack->track;
 	struct Tracks *track = wtrack->track;
-
-        if (track->patch != NULL && !track->patch->is_usable) {          
-          struct Patch *new_patch = PATCH_create_audio(NULL, NULL, track->patch->name, track->patch->state);
-          connectAudioInstrumentToMainPipe(new_patch->id);
-
-          ADD_UNDO(Track(root->song->tracker_windows,wblock,wtrack,wblock->curr_realline)); // undo_track adds undo for patch as well.
-          track->patch = new_patch;
-
-          struct FXs *fxs = track->fxs;
-          while(fxs!=NULL){
-            struct FX *fx = fxs->fx;
-            fx->patch = new_patch;
-            fxs = NextFX(fxs);
-          }
-
-          totrack->patch = track->patch;
-
-          R_ASSERT(totrack->patch->patchdata != NULL);
-        } else
-          totrack->patch = track->patch;
+        
+        make_patches_usable(track);
+        
+        totrack->patch = track->patch;
 
         return paste_track(wblock, wtrack, towtrack);
 }
@@ -268,9 +292,10 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			if(cb_wtrack==NULL) goto exit;
 
                         Undo_Open_rec();{
-                            
+                          printf("curr_track_sub: %d\n",window->curr_track_sub);
                           ADD_UNDO(Track_CurrPos(window));
                           if(window->curr_track_sub==-1){
+                            printf("aaa\n");
                             if(co_CB_PasteTrack(wblock,cb_wtrack,wtrack)){
 #if !USE_OPENGL
                               UpdateFXNodeLines(window,wblock,wtrack);
@@ -287,6 +312,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 #endif
                             }
                           }else{
+                            printf("bbb\n");
                             if(co_CB_PasteTrackFX(wblock,cb_wtrack,wtrack)){
 #if !USE_OPENGL
                               UpdateFXNodeLines(window,wblock,wtrack);

@@ -1156,12 +1156,16 @@ void GFX_showHideMixerWidget(void){
   }GL_unlock();
 }
 
-static int g_main_pipe_patch_id = 0;
+static const int g_main_pipe_patch_id = 0;
 
 SoundPlugin *get_main_pipe(void){
   struct Patch *patch = PATCH_get_from_id(g_main_pipe_patch_id);
+  if (patch==NULL)
+    return NULL;
+  
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-
+  return plugin;
+  /*
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
   for (int i = 0; i < das_items.size(); ++i){
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
@@ -1171,8 +1175,9 @@ SoundPlugin *get_main_pipe(void){
     }
   }
 
-  RError("no system bus");
+  RError("no main pipe");
   return NULL;
+  */
 }
 
 
@@ -1649,6 +1654,8 @@ void MW_create_from_state(hash_t *state){
   MW_create_sound_objects_from_state(HASH_get_hash(state, "chips"), new_buses);
   MW_create_connections_from_state_internal(HASH_get_hash(state, "connections"), -1, -1);
 
+  AUDIO_update_all_permanent_ids();
+  
   GFX_update_all_instrument_widgets();
 }
 

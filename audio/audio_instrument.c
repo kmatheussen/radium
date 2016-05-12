@@ -45,7 +45,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define MAX_FX_VAL (1<<16)
 //(1<<30)
 
+enum{
+  PERMANENT_PATCH_ID_BUS1 = 1,
+  PERMANENT_PATCH_ID_BUS2 = 2,
+  PERMANENT_PATCH_ID_MAIN_PIPE = 3
+};
 
+    
 /* Audio Patch */
 
 static void AUDIO_playnote(struct Patch *patch,float notenum,int64_t note_id, float velocity,STime time,float pan){
@@ -164,6 +170,25 @@ void AUDIO_set_patch_attributes(struct Patch *patch, void *patchdata) {
   patch->instrument=get_audio_instrument();
 }
 
+void AUDIO_set_permanent_id(struct Patch *patch, struct SoundPlugin *plugin){
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+  
+  if (plugin == get_main_pipe())
+    patch->permanent_id = PERMANENT_PATCH_ID_MAIN_PIPE;
+  else if (MIXER_get_buses().bus1 != NULL && plugin == SP_get_plugin(MIXER_get_buses().bus1))
+    patch->permanent_id = PERMANENT_PATCH_ID_BUS1;
+  else if (MIXER_get_buses().bus2 != NULL && plugin == SP_get_plugin(MIXER_get_buses().bus2))
+    patch->permanent_id = PERMANENT_PATCH_ID_BUS2;
+  else
+    patch->permanent_id = 0;
+}
+
+void AUDIO_update_all_permanent_ids(void){
+  VECTOR_FOR_EACH(struct Patch *patch, &get_audio_instrument()->patches){
+    AUDIO_set_permanent_id(patch, patch->patchdata);
+  }END_VECTOR_FOR_EACH;
+}
+
 // this is quite flaky.
 static bool state_only_contains_plugin(hash_t *state){
   if (HASH_get_num_elements(state) != 4)
@@ -231,7 +256,8 @@ bool AUDIO_InitPatch2(struct Patch *patch, char *type_name, char *plugin_name, h
   plugin->patch = patch;
 
   AUDIO_set_patch_attributes(patch, plugin);
-  
+  AUDIO_set_permanent_id(patch, plugin);
+
   struct SoundProducer *sound_producer = SP_create(plugin, MIXER_get_buses());
   R_ASSERT_RETURN_IF_FALSE2(sound_producer!=NULL, false);
 
@@ -405,7 +431,7 @@ static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track
   vector_t patch_effects = {0};
   
 
-#if 0   // Disable for now, since some work is needed on cut/copy/paste fx
+#if 1 // Enable selecting fx from other instruments
 
   vector_t all_patches = get_audio_instrument()->patches;
 
@@ -715,24 +741,40 @@ bool AUDIO_is_permanent_patch(struct Patch *patch){
   R_ASSERT_RETURN_IF_FALSE2(patch->patchdata!=NULL, true);
   
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
-  if(plugin==get_main_pipe() ||
-     //(!strcmp(plugin->type->type_name,"Sample Player") && !strcmp(plugin->type->name, "Click")) ||
-     !strcmp(plugin->type->type_name,"Bus"))
+  if(plugin==get_main_pipe())
+    return true;
+  else if (!strcmp(plugin->type->type_name,"Bus"))
     return true;
   else
     return false;
 }
 
-#if 0
-// I Don't trust this one. The patch is not always created when this function is called, and is patch->patchdata always cleared when a plugin is not used anymore? In case not, this function could return the wrong patch instead of returning NULL.
-struct Patch *AUDIO_get_patch_for_plugin(SoundPlugin *plugin){
+static struct Patch *get_patch_for_plugin(SoundPlugin *plugin){
   VECTOR_FOR_EACH(struct Patch *patch,&get_audio_instrument()->patches){
     if(patch->patchdata==plugin)
       return patch;
   }END_VECTOR_FOR_EACH;
   return NULL;
 }
-#endif
+
+struct Patch *AUDIO_get_the_replacement_for_old_permanent_patch(struct Patch *old_patch){
+  R_ASSERT(old_patch->permanent_id != 0);
+
+  if (old_patch->permanent_id==PERMANENT_PATCH_ID_BUS1)
+    return get_patch_for_plugin(SP_get_plugin(MIXER_get_buses().bus1));
+    
+  else if (old_patch->permanent_id==PERMANENT_PATCH_ID_BUS2)
+    return get_patch_for_plugin(SP_get_plugin(MIXER_get_buses().bus2));
+
+  else if (old_patch->permanent_id==PERMANENT_PATCH_ID_MAIN_PIPE)
+    return get_patch_for_plugin(get_main_pipe());
+
+  else
+    RError("Unknown permanent_id: %d", old_patch->permanent_id);
+  
+  return NULL;
+}
+
 
 int AUDIO_initInstrumentPlugIn(struct Instruments *instrument){
   instrument->instrumentname = "Audio instrument";

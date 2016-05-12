@@ -27,7 +27,11 @@ extern LANGSPEC int AUDIO_initInstrumentPlugIn(struct Instruments *instrument);
   
 extern LANGSPEC void DLoadAudioInstrument(void);
 
-extern LANGSPEC bool AUDIO_is_permanent_patch(struct Patch *patch);
 //extern LANGSPEC struct Patch *AUDIO_get_patch_for_plugin(struct SoundPlugin *plugin);
 
+extern LANGSPEC void AUDIO_update_all_permanent_ids(void);
+  
+extern LANGSPEC bool AUDIO_is_permanent_patch(struct Patch *patch);
+extern LANGSPEC struct Patch *AUDIO_get_the_replacement_for_old_permanent_patch(struct Patch *old_patch);
+  
 #endif

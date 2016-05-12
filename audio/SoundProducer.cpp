@@ -1127,7 +1127,16 @@ void SP_print_tree(void){
   radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
   
   for (SoundProducer *sp : *sp_all){
-    fprintf(stderr,"%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,sp->num_dependencies,ATOMIC_GET(sp->num_dependencies_left), sp->_output_links.size(), sp->_bus_descendant_type==IS_BUS_PROVIDER);
+    fprintf(stderr,"%d (%d): sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",
+            num++,
+            sp->_plugin->patch==NULL?-1:sp->_plugin->patch->id,
+            sp,
+            sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,
+            sp->num_dependencies,
+            ATOMIC_GET(sp->num_dependencies_left),
+            sp->_output_links.size(),
+            sp->_bus_descendant_type==IS_BUS_PROVIDER
+            );
     /*
     fprintf(stderr,"  inputs:\n");
     for (SoundProducerLink *link : sp->_input_links){
