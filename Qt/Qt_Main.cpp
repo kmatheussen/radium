@@ -1459,7 +1459,11 @@ int main(int argc, char **argv){
     //PyRun_SimpleString("sys.path = [sys.g_program_path]");
     
     // Set sys.argv[0]
-    sprintf(temp,"sys.argv=[\"%s\",\"%s\", \"%s\"]", argv[0], OS_get_keybindings_conf_filename2(),OS_get_custom_keybindings_conf_filename2());
+    sprintf(temp,"sys.argv=[\"%s\",\"%s\", \"%s\"]",
+            argv[0],
+            OS_get_keybindings_conf_filename().replace("\\","\\\\").toUtf8().constData(),
+            OS_get_custom_keybindings_conf_filename().replace("\\","\\\\").toUtf8().constData()
+            );
     PyRun_SimpleString(temp);
     
     printf("argv[0]: %s\n",argv[0]);
