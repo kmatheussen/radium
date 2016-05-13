@@ -32,16 +32,22 @@ void VECTOR_reverse(vector_t *v){
   }
 }
 
+void VECTOR_clean(vector_t *v){
+  memset(v->elements,0,v->num_elements*sizeof(void*)); // cleaned since we use a GC
+  v->num_elements = 0;
+}
+
 vector_t *VECTOR_move(vector_t *from){
   vector_t *to = talloc(sizeof(vector_t));
 
-  to->elements = talloc(from->num_elements_allocated*sizeof(void*));
-  memcpy(to->elements, from->elements, from->num_elements*sizeof(void*));
+  to->elements               = from->elements;
   to->num_elements_allocated = from->num_elements_allocated;
   to->num_elements           = from->num_elements;
 
-  VECTOR_clean(from);
-
+  from->elements               = NULL;
+  from->num_elements_allocated = 0;
+  from->num_elements           = 0;
+  
   return to;
 }
 
@@ -70,11 +76,6 @@ void VECTOR_copy_elements(vector_t *from, int from_pos, int num_elements_to_copy
   to->num_elements = num_elements_to_copy;
 
   memcpy(to->elements, &from->elements[from_pos], sizeof(void*)*num_elements_to_copy);
-}
-
-void VECTOR_clean(vector_t *v){
-  memset(v->elements,0,v->num_elements*sizeof(void*)); // cleaned since we use a GC
-  v->num_elements = 0;
 }
 
 vector_t *VECTOR_append(vector_t *v1, vector_t *v2){
