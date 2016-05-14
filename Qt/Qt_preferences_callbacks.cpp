@@ -450,7 +450,7 @@ public slots:
     if (val)
       GC_enable();
     else
-      GC_enable();
+      GC_disable();
   }
 
   void on_incrementalGcNextTime_toggled(bool val){
