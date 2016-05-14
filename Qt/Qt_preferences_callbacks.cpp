@@ -421,17 +421,21 @@ public slots:
   }
 
   void on_vsyncOnoff_toggled(bool val){
-    if (!_is_updating_widgets)
-      GL_erase_estimated_vblank(); // makes sense
-    GL_set_vsync(val);
+    if (_initing==false){
+      if (!_is_updating_widgets)
+        GL_erase_estimated_vblank(); // makes sense
+      GL_set_vsync(val);
+    }
   }
 
   void on_safeModeOnoff_toggled(bool val){
-    GL_set_safe_mode(val);
+    if (_initing==false)
+      GL_set_safe_mode(val);
   }
 
   void on_pauseRenderingOnoff_toggled(bool val){
-    GL_set_pause_rendering_on_off(val);
+    if (_initing==false)
+      GL_set_pause_rendering_on_off(val);
   }
 
   void on_showKeyCodesOnoff_toggled(bool val){
@@ -443,59 +447,74 @@ public slots:
   }
 
   void on_colorTracksOnoff_toggled(bool val){
-    GL_set_colored_tracks(val);
+    if (_initing==false)
+      GL_set_colored_tracks(val);
   }
 
   void on_gcOnOff_toggled(bool val){
-    if (val)
-      GC_enable();
-    else
-      GC_disable();
+    if (_initing==false){
+      if (val) {
+        printf("   setting ON\n");
+        GC_enable();
+      } else {
+        printf("   setting OFF\n");
+        GC_disable();      
+      }
+    }
   }
 
   void on_incrementalGcNextTime_toggled(bool val){
-    SETTINGS_write_bool("try_incremental_gc",val);
+    if (_initing==false)
+      SETTINGS_write_bool("try_incremental_gc",val);
   }
 
   void on_incrementalGc_toggled(bool val){
-    SETTINGS_write_bool("incremental_gc",val);
+    if (_initing==false)
+      SETTINGS_write_bool("incremental_gc",val);
   }
 
   void on_mma1_toggled(bool val){
-    if (val)
-      GL_set_multisample(1);
+    if (_initing==false)
+      if (val)
+        GL_set_multisample(1);
   }
 
   void on_mma2_toggled(bool val){
-    if (val)
-      GL_set_multisample(2);
+    if (_initing==false)
+      if (val)
+        GL_set_multisample(2);
   }
 
   void on_mma4_toggled(bool val){
-    if (val)
-      GL_set_multisample(4);
+    if (_initing==false)
+      if (val)
+        GL_set_multisample(4);
   }
 
   void on_mma8_toggled(bool val){
-    if (val)
-      GL_set_multisample(8);
+    if (_initing==false)
+      if (val)
+        GL_set_multisample(8);
   }
 
   void on_mma16_toggled(bool val){
-    if (val)
-      GL_set_multisample(16);
+    if (_initing==false)
+      if (val)
+        GL_set_multisample(16);
   }
 
   void on_mma32_toggled(bool val){
-    if (val)
-      GL_set_multisample(32);
+    if (_initing==false)
+      if (val)
+        GL_set_multisample(32);
   }
 
   // cpu
 
   void on_numCPUs_valueChanged(int val){
     printf("cpus: %d\n",val);
-    MULTICORE_set_num_threads(val);
+    if (_initing==false)
+      MULTICORE_set_num_threads(val);
     
     //set_editor_focus();
     //numCPUs->setFocusPolicy(Qt::NoFocus);
@@ -514,31 +533,39 @@ public slots:
   // edit
 
   void on_scrollplay_onoff_toggled(bool val){
-    setScrollPlay(val);
+    if (_initing==false)
+      setScrollPlay(val);
   }
   void on_multiplyscrollbutton_toggled(bool val){
-    setScrollEditLines(val);
+    if (_initing==false)
+      setScrollEditLines(val);
   }
   void on_autorepeatbutton_toggled(bool val){
-    setAutoRepeat(val);
+    if (_initing==false)
+      setAutoRepeat(val);
   }
   void on_range_paste_cut_button_toggled(bool val){
-    setRangePasteCut(val);
+    if (_initing==false)
+      setRangePasteCut(val);
   }
   void on_range_paste_scroll_down_button_toggled(bool val){
-    setRangePasteScrollDown(val);
+    if (_initing==false)
+      setRangePasteScrollDown(val);
   }
   void on_showLineNumbers_toggled(bool val){
-    setLinenumbersVisible(val);
+    if (_initing==false)
+      setLinenumbersVisible(val);
   }
 
   void on_autobackup_onoff_toggled(bool val){
-    setDoAutoBackups(val);
+    if (_initing==false)
+      setDoAutoBackups(val);
   }
 
   void on_autobackup_interval_valueChanged(int val){
     printf("val: %d\n",val);
-    setAutobackupIntervalInMinutes(val);
+    if (_initing==false)
+      setAutobackupIntervalInMinutes(val);
   }
   void on_autobackup_interval_editingFinished(){
     set_editor_focus();
@@ -599,11 +626,13 @@ public slots:
   // windows
 
   void on_modal_windows_toggled(bool val){
-    setModalWindows(val);
+    if (_initing==false)
+      setModalWindows(val);
   }
 
   void on_native_file_requesters_toggled(bool val){
-    setUseNativeFileRequesters(val);
+    if (_initing==false)
+      setUseNativeFileRequesters(val);
   }
 
   // MIDI
@@ -613,15 +642,18 @@ public slots:
   }
 
   void on_use0x90_toggled(bool val){
-    MIDI_set_use_0x90_for_note_off(val);
+    if (_initing==false)
+      MIDI_set_use_0x90_for_note_off(val);
   }
 
   void on_record_sequencer_style_toggled(bool val){
-    MIDI_set_record_accurately(val);
+    if (_initing==false)
+      MIDI_set_record_accurately(val);
   }
 
   void on_record_velocity_on_toggled(bool val){
-    MIDI_set_record_velocity(val);
+    if (_initing==false)
+      MIDI_set_record_velocity(val);
   }
 };
 }
