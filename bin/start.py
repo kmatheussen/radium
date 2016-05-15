@@ -86,6 +86,7 @@ try:
     infilehandle=open(sys.argv[1],'r')
 except:
     print "Cant open %s" % sys.argv[1]
+    radium.showMessage("Cant open %s" % sys.argv[1])
     sys.exit(1)
 
 try:

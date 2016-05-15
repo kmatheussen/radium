@@ -85,6 +85,8 @@ static int find_next_used_trackrealline(const struct WBlocks *wblock, vector_t *
   return realline;
 }
 
+// 'tr' contains more than one element per line, so we spread it to several reallines. (point is to try to avoid 'MUL' notes)
+// Before calling, we found that all lines between realline1 and realline2 are free.
 static void distribute_trackreallines(const struct WBlocks *wblock, vector_t *tr, vector_t *trs, int realline1, int realline2){  
   int num_elements      = tr->num_elements;
   int num_lines         = realline2 - realline1;

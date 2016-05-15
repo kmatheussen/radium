@@ -16,6 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if USE_QT_MENU
 
+#include <QStack>
 #include <QAction>
 #include <QWidgetAction>
 #include <QCheckBox>
@@ -87,6 +88,8 @@ int GFX_Menu2(
     QMenu menu(0);
     QMenu *curr_menu = &menu;
 
+    QStack<QMenu*> parents;
+    QStack<int> n_submenuess;
     int n_submenues=0;
 
     for(int i=0;i<v->num_elements;i++) {
@@ -111,26 +114,37 @@ int GFX_Menu2(
         }
         
         if (text.startsWith("[check ")){
+          
           if (text.startsWith("[check on]"))
             action = new CheckableAction(text.right(text.size() - 10), true, curr_menu, i, callback);
           else
             action = new CheckableAction(text.right(text.size() - 11), false, curr_menu, i, callback);
+          
         } else if (text.startsWith("[submenu start]")){
-          curr_menu = curr_menu->addMenu(text.right(text.size() - 15));
+          
+          n_submenuess.push(n_submenues);
           n_submenues = 0;
+          parents.push(curr_menu);
+          curr_menu = curr_menu->addMenu(text.right(text.size() - 15));
+          
         } else if (text.startsWith("[submenu end]")){
-          QMenu *parent = dynamic_cast<QMenu*>(curr_menu->parent());
+          
+          QMenu *parent = parents.pop();
           if (parent==NULL)
             RError("parent of [submenu end] is not a QMenu");
           else
             curr_menu = parent;
-          n_submenues = 0;
-        } else
+          n_submenues = n_submenuess.pop();
+          
+        } else {
+          
           action = new QAction(text, curr_menu);
+
+        }
         
         if (action != NULL){
           action->setData(i);
-          curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu?
+          curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu? (yes, seems so)
         }
         
         if (disabled)

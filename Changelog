@@ -1,5 +1,14 @@
+Changes 3.8.5 -> 3.8.6:
+* Allow fx from other patches than the track patch
+* Fix windows startup.
+* Fix playing note when editing in the piano roll for a MIDI instrument,
+  and similarly, fix playing note when editing in the piano roll for
+  an audio instruments that uses pitch instead of note id to identify
+  which sound to turn off (e.g. fluid synth and VST instruments).
+
+
 Changes 3.8.4 -> 3.8.5:
-Fix crash during midi instrument patchname undo. (Tito Latini)
+* Fix crash during midi instrument patchname undo. (Tito Latini)
 
 
 Changes 3.8.3 -> 3.8.4:

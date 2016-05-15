@@ -75,7 +75,6 @@ void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool p
 void SP_RT_clean_output(SoundProducer *producer, int num_frames);
 void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_num, bool process_plugins);
 void SP_RT_set_bus_descendant_type_for_plugin(SoundProducer *producer);
-struct SoundPlugin *SP_get_plugin(SoundProducer *producer);
 int SP_get_bus_num(SoundProducer *sp);
 enum BusDescendantType SP_get_bus_descendant_type(SoundProducer *sp);
 float SP_get_input_peak(SoundProducer *producer, int ch);
@@ -94,6 +93,8 @@ void SP_write_mixer_tree_to_disk(QFile *file);
 #ifndef AUDIO_SOUNDPLUGIN_H
 struct SoundPlugin;
 #endif
+
+extern LANGSPEC struct SoundPlugin *SP_get_plugin(struct SoundProducer *producer);
 
 extern LANGSPEC struct SoundProducer *SP_create(struct SoundPlugin *plugin, Buses buses);
 extern LANGSPEC void SP_delete(struct SoundProducer *producer);

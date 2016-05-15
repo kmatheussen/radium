@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <signal.h>
 #include <unistd.h>
 
+#include <gc.h>
+
+
 #include <qapplication.h>
 #include <qsplashscreen.h>
 #include <qmainwindow.h>
@@ -729,6 +732,21 @@ protected:
         GL_create(window, window->wblock);
       }
     }
+
+    const char *gc_warning_message = "Warning: Garbage collector is turned off";
+    
+    if (window->message==NULL && GC_dont_gc > 0) {
+      
+      root->song->tracker_windows->message = gc_warning_message;
+      GL_create(window, window->wblock);
+      
+    } else if (window->message==gc_warning_message && GC_dont_gc <= 0){
+      
+      root->song->tracker_windows->message=NULL;
+      GL_create(window, window->wblock);
+      
+      R_ASSERT(GC_dont_gc == 0);
+    }
     
     if ( (num_calls % (5*1000/interval)) == 0) { // Ask for gl.make_current each 5 seconds.
       GL_lock();{
@@ -899,8 +917,6 @@ void assertRadiumInHomeDirectory(void){
 #include "qwidget.h"
 #include "qlistbox.h"
 #endif
-
-#include <gc.h>
 
 //#include "google/profiler.h"
 
@@ -1459,7 +1475,11 @@ int main(int argc, char **argv){
     //PyRun_SimpleString("sys.path = [sys.g_program_path]");
     
     // Set sys.argv[0]
-    sprintf(temp,"sys.argv=[\"%s\",\"%s\", \"%s\"]", argv[0], OS_get_keybindings_conf_filename2(),OS_get_custom_keybindings_conf_filename2());
+    sprintf(temp,"sys.argv=[\"%s\",\"%s\", \"%s\"]",
+            argv[0],
+            OS_get_keybindings_conf_filename().replace("\\","\\\\").toUtf8().constData(),
+            OS_get_custom_keybindings_conf_filename().replace("\\","\\\\").toUtf8().constData()
+            );
     PyRun_SimpleString(temp);
     
     printf("argv[0]: %s\n",argv[0]);

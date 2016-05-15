@@ -1067,10 +1067,9 @@ aasS'ra.playSongFromStart()'
 p630
 (lp631
 (lp632
-g237
+S'7'
 aa(lp633
-g108
-aasS'ra.cursorDown(1)'
+asS'ra.cursorDown(1)'
 p634
 (lp635
 (lp636

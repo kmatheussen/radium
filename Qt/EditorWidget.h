@@ -189,7 +189,9 @@ public:
         gl_widget->move(0,window->wblock->t.y1);
         int height = 1 + window->wblock->t.y2 - window->wblock->t.y1 -1;
         //fprintf(stderr,"height: %d, width: %d\n",height,width());
-        gl_widget->resize(width(), height);
+        GL_lock();{
+          gl_widget->resize(width(), height);
+        }GL_unlock();
         GE_set_height(height);
         //printf("a2\n");
         GL_create(window, window->wblock);

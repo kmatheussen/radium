@@ -59,8 +59,8 @@ void OS_set_argv0(char *argv0){
 }
 
 bool OS_has_full_program_file_path(QString filename){
-  QString full_path = QCoreApplication::applicationDirPath() + "/" + filename;
-  QFileInfo info(full_path);
+  QDir dir(QCoreApplication::applicationDirPath());
+  QFileInfo info(dir, filename);
 
   if (!info.exists()){
     return false;
@@ -70,18 +70,18 @@ bool OS_has_full_program_file_path(QString filename){
 }
 
 QString OS_get_full_program_file_path(QString filename){
-  QString full_path = QCoreApplication::applicationDirPath() + "/" + filename;
-  QFileInfo info(full_path);
+  QDir dir(QCoreApplication::applicationDirPath());
+  QFileInfo info(dir, filename);
 
   if (!info.exists()){
     QMessageBox msgBox;
-    msgBox.setText("The file " + full_path + " does not exist. Make sure all files in the zip file are unpacked before starting the program. Exiting program.");
+    msgBox.setText("The file " + info.absoluteFilePath() + " does not exist. Make sure all files in the zip file are unpacked before starting the program. Exiting program.");
     msgBox.exec();
     exit(-1);
     abort();
   }
 
-  return QDir::toNativeSeparators(full_path);
+  return QDir::toNativeSeparators(info.absoluteFilePath());
 }
 
 wchar_t *OS_get_full_program_file_path(const wchar_t *filename){
@@ -257,7 +257,14 @@ char *OS_get_keybindings_conf_filename2(void){
 }
 
 QString OS_get_custom_keybindings_conf_filename(void){
-  return QDesktopServices::storageLocation(QDesktopServices::HomeLocation) + QDir::separator() + ".radium" + QDir::separator() + "keybindings.conf";
+  int error;
+  QDir dir = get_dot_radium_dir(&error);
+  if(error!=0)
+    return NULL;
+
+  QFileInfo config_info(dir, "keybindings.conf");
+
+  return config_info.absoluteFilePath();
 }
 
 char *OS_get_custom_keybindings_conf_filename2(void){
