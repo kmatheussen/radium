@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 3.8.6
+VERSION = 3.8.7
 
 #----------------USER SETTINGS-------------------------------
 
@@ -116,7 +116,7 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 FULL_VERSION ?= 1
 
 # Note that "make clean" must be run for DEBUG_BUILD_OPTS to take effect
-DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -Og # -DDISABLE_BDWGC -fsanitize=address
+DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls #-Og -DDISABLE_BDWGC #-fsanitize=address
 # -Og -Og -fsanitize=address
 #-Og 
 #  -fsanitize=thread 
@@ -1760,11 +1760,12 @@ do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 
 bin/packages/s7/s7_$(TARGET_OS).o: bin/packages/s7/s7.c
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_C_LOADER=0 -DWITH_HISTORY=1  -DDEBUGGING=1 ; \
+		$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_C_LOADER=0 -DWITH_HISTORY=1  ; \
 	else \
 		$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_C_LOADER=0 -DWITH_HISTORY=1 ; \
 	fi
 # -Wno-absolute-value
+#-DDEBUGGING=1
 
 s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp
 	$(CCC) -c bin/s7webserver/s7webserver.cpp $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function

@@ -1,3 +1,21 @@
+Changes 3.8.6 -> 3.8.7:
+* Clean up instruments when loading new song. Can significantly
+  reduce memory usage. (Tito Latini)
+* Don't disable garbage collector when loading song. Can significantly
+  reduce memory usage.
+* Improve mouse performance significantly. This may reduce general stutter
+  when doing operations with the mouse, especially on Windows. More work
+  is possible here though.
+* Fix fx popup menu when there are many instrument with many effects.
+* Show a message in the editor when the garbage collector is turned off.
+* Actually turn off the garbage collector when unselecting
+  "Enable Garbage Collector" in the preferences.
+* Try to fix window reconfiguration crash on OSX.
+* Update s7 scheme interpreter
+* Fix VECTOR_clean and VECTOR_move. (Tito Latini)
+
+
+
 Changes 3.8.5 -> 3.8.6:
 * Allow fx from other patches than the track patch
 * Fix windows startup.
