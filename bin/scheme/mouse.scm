@@ -2561,70 +2561,70 @@
            (and *current-track-num*
                 (inside-box-forgiving (<ra> :get-box track *current-track-num*) X Y)
                 (lazy
-                 (define-lazy velocity-info (get-velocity-info X Y *current-track-num*))
-                 (define-lazy fxnode-info (get-fxnode-info X Y *current-track-num*))
-
-                (define-lazy velocity-dist (get-shortest-velocity-distance X Y))
-                (define-lazy fx-dist (get-closest-fx X Y))
-
-                (define-lazy is-in-fx-area (inside-box (<ra> :get-box track-fx *current-track-num*) X Y))
+                  (define-lazy velocity-info (get-velocity-info X Y *current-track-num*))
+                  (define-lazy fxnode-info (get-fxnode-info X Y *current-track-num*))
                   
-                (define-lazy velocity-dist-is-shortest
-                  (cond ((not velocity-dist)
-                         #f)
-                        ((not fx-dist)
-                         #t)
-                        (else
-                         ;;(c-display "dist:" fx-dist) ;; :distance))
-                         (<= velocity-dist
-                             (fx-dist :distance)))))
-
-                (define-lazy fx-dist-is-shortest
-                  (cond ((not fx-dist)
-                         #f)
-                        ((not velocity-dist)
-                         #t)
-                        (else
-                         (<= (fx-dist :distance)
-                             velocity-dist))))
-
-
-                (define-lazy trackwidth-info (get-trackwidth-info X Y))
-                (set! *current-fx/distance* #f)
-                
-                (cond (velocity-info
-                       (set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
-                       ;;(c-display "setting current to " (velocity-info :velocitynum) (velocity-info :dir))
-                       (set-indicator-velocity-node (velocity-info :velocitynum)
-                                                    (velocity-info :notenum)
-                                                    (velocity-info :tracknum))
-                       (set-current-velocity-node (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
+                  (define-lazy velocity-dist (get-shortest-velocity-distance X Y))
+                  (define-lazy fx-dist (get-closest-fx X Y))
+                  
+                  (define-lazy is-in-fx-area (inside-box (<ra> :get-box track-fx *current-track-num*) X Y))
+                  
+                  (define-lazy velocity-dist-is-shortest
+                    (cond ((not velocity-dist)
+                           #f)
+                          ((not fx-dist)
+                           #t)
+                          (else
+                           ;;(c-display "dist:" fx-dist) ;; :distance))
+                           (<= velocity-dist
+                               (fx-dist :distance)))))
+                  
+                  (define-lazy fx-dist-is-shortest
+                    (cond ((not fx-dist)
+                           #f)
+                          ((not velocity-dist)
+                           #t)
+                          (else
+                           (<= (fx-dist :distance)
+                               velocity-dist))))
+                  
+                  
+                  (define-lazy trackwidth-info (get-trackwidth-info X Y))
+                  (set! *current-fx/distance* #f)
+                  
+                  (cond (velocity-info
+                         (set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
+                         ;;(c-display "setting current to " (velocity-info :velocitynum) (velocity-info :dir))
+                         (set-indicator-velocity-node (velocity-info :velocitynum)
+                                                      (velocity-info :notenum)
+                                                      (velocity-info :tracknum))
+                         (set-current-velocity-node (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
+                        
+                        (fxnode-info
+                         (set-mouse-fx (fxnode-info :fxnum) (fxnode-info :tracknum))
+                         (set-indicator-fxnode (fxnode-info :fxnodenum)
+                                               (fxnode-info :fxnum)
+                                               (fxnode-info :tracknum))
+                         (set-current-fxnode  (fxnode-info :fxnodenum)
+                                              (fxnode-info :fxnum)
+                                              (fxnode-info :tracknum))
+                         )
+                        
+                        (trackwidth-info
+                         (set! resize-mouse-pointer-is-set #t)
+                         (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer))
+                        
+                        ((and is-in-fx-area velocity-dist-is-shortest)
+                         (set-mouse-note *current-note-num* *current-track-num*))
+                        
+                        ((and is-in-fx-area fx-dist-is-shortest)
+                         (set! *current-fx/distance* fx-dist)
+                         (<ra> :set-statusbar-text (<ra> :get-fx-name (fx-dist :fx) *current-track-num*)) ;; TODO: Also write fx value at mouse position.
+                         (set-mouse-fx (fx-dist :fx) *current-track-num*)
+                         )
                       
-                      (fxnode-info
-                       (set-mouse-fx (fxnode-info :fxnum) (fxnode-info :tracknum))
-                       (set-indicator-fxnode (fxnode-info :fxnodenum)
-                                             (fxnode-info :fxnum)
-                                             (fxnode-info :tracknum))
-                       (set-current-fxnode  (fxnode-info :fxnodenum)
-                                            (fxnode-info :fxnum)
-                                            (fxnode-info :tracknum))
-                       )
-
-                      (trackwidth-info
-                       (set! resize-mouse-pointer-is-set #t)
-                       (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer))
-
-                      ((and is-in-fx-area velocity-dist-is-shortest)
-                       (set-mouse-note *current-note-num* *current-track-num*))
-
-                      ((and is-in-fx-area fx-dist-is-shortest)
-                       (set! *current-fx/distance* fx-dist)
-                       (<ra> :set-statusbar-text (<ra> :get-fx-name (fx-dist :fx) *current-track-num*)) ;; TODO: Also write fx value at mouse position.
-                       (set-mouse-fx (fx-dist :fx) *current-track-num*)
-                       )
-                      
-                      (else
-                       #f)))))
+                        (else
+                         #f)))))
          (if (or (not result)
                  (not resize-mouse-pointer-is-set))
              (if (and (> Y (<ra> :get-block-header-y2))
