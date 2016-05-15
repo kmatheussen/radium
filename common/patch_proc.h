@@ -15,8 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
-extern LANGSPEC void PATCH_remove_from_instrument(struct Patch *patch);
+extern LANGSPEC void PATCH_remove_from_instrument(struct Patch *patch, bool remove_completely);
 extern LANGSPEC struct Patch *PATCH_get_from_id(int id);
 extern LANGSPEC int PATCH_get_new_id(void);
 extern LANGSPEC void PATCH_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch);
