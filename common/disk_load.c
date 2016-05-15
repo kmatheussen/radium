@@ -197,7 +197,7 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
         // and PatchData objects. The instrument widget is updated after setting a new root, so it may access
         // that memory while a new song is loaded (since we don't have control over what Qt may do while we
         // access it). Not unlikely to be other similar situations.
-        {
+        if(0){
           GC_disable();
         }
 
@@ -246,7 +246,7 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
 
  exit:
 
-        {
+        if(0){
           GC_enable();
         }
 
