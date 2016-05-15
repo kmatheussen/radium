@@ -2,7 +2,7 @@
 
 (load "define-match-bootstrapped.scm")
 
-(define-expansion (define-match funcname . matchers)
+(define-macro (define-match funcname . matchers)
   (create-matcher-func funcname matchers))
 
 #!
