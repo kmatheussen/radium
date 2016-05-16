@@ -3,9 +3,9 @@ Changes 3.8.6 -> 3.8.7:
   reduce memory usage. (Tito Latini)
 * Don't disable garbage collector when loading song. Can significantly
   reduce memory usage.
-* Improve mouse performance significantly. This may reduce general stutter
-  when doing operations with the mouse, especially on Windows. More work
-  is possible here though.
+* Improve mouse performance significantly. This may reduce overall
+  gfx stutter when doing operations with the mouse, or just moving the pointer,
+  especially on Windows. More work is possible here though.
 * Fix fx popup menu when there are many instrument with many effects.
 * Show a message in the editor when the garbage collector is turned off.
 * Actually turn off the garbage collector when unselecting

@@ -425,14 +425,18 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
   OS_SYSTEM_init_keyboard();
 
   //printf("Got event. type: %u\n",(unsigned int)type);
-  
+
   static void *oldHotKeyMode = NULL;
   if(type==NSAppKitDefined || type==NSSystemDefined || type==NSApplicationDefined){ // These three events are received when losing focus. Haven't found a better time to clear modifiers.
+    //printf("      DAS EVENT: %x\n",(unsigned int)type);
     clear_modifiers();
     if(oldHotKeyMode!=NULL){
       PushSymbolicHotKeyMode(kHIHotKeyModeAllEnabled);
       oldHotKeyMode = NULL;
     }
+
+    call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_events();
+    
     return;
   }else{
     if(oldHotKeyMode==NULL)

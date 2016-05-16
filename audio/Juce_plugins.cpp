@@ -202,8 +202,8 @@ namespace{
         this->centreWithSize (getWidth(), getHeight());
       } else {
         this->setTopLeftPosition(data->x, data->y);
-      }      
-        
+      }
+
       this->setVisible(true);
     }
 
@@ -211,6 +211,29 @@ namespace{
       data->window = NULL;
       V_free((void*)title);
     }
+
+    /*
+    void focusOfChildComponentChanged(FocusChangeType cause) override
+    {
+      printf("\n\n      child focus %s\n\n", hasKeyboardFocus(true) ? "obtained" : "lost");
+      if (hasKeyboardFocus(true))
+        obtain_keyboard_focus();
+      else
+        release_keyboard_focus();
+    }
+
+    void focusGained(FocusChangeType cause) override
+    {
+      printf("\n\n    focusGained\n\n");
+      //obtain_keyboard_focus();
+    }
+    
+    void focusLost(FocusChangeType cause) override
+    {
+      printf("\n\n    focusLost\n\n");
+      //release_keyboard_focus();
+    }
+    */
     
     void closeButtonPressed() override
     {

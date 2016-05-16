@@ -142,6 +142,15 @@ bool editor_has_keyboard_focus(void){
   return editor_has_keyboard;
 }
 
+static bool another_window_has_focus = false;
+
+// OSX needs to call this function since sub windows (created by for instance VST plugins) use our key events, and then we can not eat them.
+void call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_events(void){
+  if (main_window_has_focus())
+    another_window_has_focus = false;
+  else
+    another_window_has_focus = true;
+}
 
 
 DEFINE_ATOMIC(bool, is_starting_up) = true;
@@ -309,7 +318,6 @@ public:
 protected:
 
   bool last_key_was_lalt;
-
   
   bool SystemEventFilter(void *event){
 
@@ -317,6 +325,9 @@ protected:
       return false;
 
     OS_SYSTEM_EventPreHandler(event);
+
+    if (another_window_has_focus)
+      return false;
     
     struct Tracker_Windows *window = root->song->tracker_windows;
 
@@ -510,6 +521,12 @@ protected:
     return SystemEventFilter(event);
   }
 #endif
+
+  /*
+  bool event(QEvent *event){
+    return QApplication::event(event);
+  }
+  */
 };
 
 MyApplication::MyApplication(int &argc,char **argv)
@@ -520,11 +537,16 @@ MyApplication::MyApplication(int &argc,char **argv)
 }
 
 
-
   //QApplication *qapplication;
 MyApplication *qapplication = NULL;
 QApplication *g_qapplication = NULL;
 static QSplashScreen *g_splashscreen;
+
+
+bool main_window_has_focus(void){
+  return g_qapplication->activeWindow() != NULL;
+}
+
 
 extern "C" void run_main_loop(void);
 void run_main_loop(void){
@@ -700,6 +722,9 @@ protected:
         });
     }
 
+    //if (qapplication->activeWindow() != NULL)
+    //  printf("   active window\n");
+    
     // Check if player has shut down
     if (PLAYER_is_running()==false)
       PlayStop();
@@ -920,14 +945,10 @@ void assertRadiumInHomeDirectory(void){
 
 //#include "google/profiler.h"
 
-void start_blockselector();
-
 //extern LANGSPEC int dasmain(int argc,char **argv);
 extern LANGSPEC int radium_main(char *arg);
 extern LANGSPEC int GC_dont_gc;
 //int radium_main(int argc,char **argv){
-
-QString default_style_name;
 
 // Called from gtk main loop
 void Qt_EventHandler(void){
@@ -955,8 +976,6 @@ extern void UPDATECHECKER_doit(void);
 int radium_main(char *arg){
 
   TIME_init();
-
-  default_style_name = QApplication::style()->objectName();
 
 #if 0
   QApplication::setStyle( new QPlatinumStyle() );
