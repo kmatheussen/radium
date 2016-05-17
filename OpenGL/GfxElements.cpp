@@ -664,11 +664,17 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
            
           setColorBegin(vg, c);
 
-          if(c->textbitmaps.points.size() > 0)
-            c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform));
+          if(c->textbitmaps.points.size() > 0) {
+            GL_lock();{
+              c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform));
+            }GL_unlock();
+          }
         
-          if(c->textbitmaps_halfsize.points.size() > 0)
-            c->textbitmaps_halfsize.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform));
+          if(c->textbitmaps_halfsize.points.size() > 0) {
+            GL_lock();{
+              c->textbitmaps_halfsize.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform));
+            }GL_unlock();
+          }
 
           setColorEnd(vg, c);
         }
