@@ -17,8 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef COMMON_PLACEMENT_PROC_H
 #define COMMON_PLACEMENT_PROC_H
 
-
-static inline Place place(int line, int counter, int dividor) {
+static inline Place p_Create(int line, int counter, int dividor) {
   // Uncomment here. place() is used more for calculation
   /*
   R_ASSERT(line >= 0);
@@ -33,6 +32,11 @@ static inline Place place(int line, int counter, int dividor) {
   place.counter = counter;
   place.dividor = dividor;
   return place;
+}
+
+// todo: Delete this function. 'place' is usually used as a variable name.
+static inline Place place(int line, int counter, int dividor) {
+  return p_Create(line, counter, dividor);
 }
 
 static inline void ValidatePlace(const Place *place){
@@ -127,6 +131,11 @@ static inline Place *PlaceCreate2(float f){
   return place;
 }
 
+static inline Place p_FromFloat(float f){
+  Place place;
+  Float2Placement(f, &place);
+  return place;
+}
 
 /*************************************************************
   FUNCTION
@@ -197,7 +206,7 @@ static inline Place *PlaceMin(  Place *p1,  Place *p2){
 extern LANGSPEC void PlaceHandleOverflow(Place *p);
 
 // These functions are implmentented in embedded_scheme/scheme.cpp (rationals are much simpler to programme in scheme (it's just like any other number))
-extern LANGSPEC Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2);
+extern LANGSPEC Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2); // TODO: Create p_Scale
 extern LANGSPEC void PlaceAdd(Place *p1,  const Place *p2);
 extern LANGSPEC void PlaceSub(Place *p1,  const Place *p2);
 extern LANGSPEC void PlaceMul(Place *p1,  const Place *p2);

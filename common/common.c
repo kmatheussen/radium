@@ -219,7 +219,6 @@ int GetReallineAndPlaceFromY(
 	Place *minplace,
 	Place *maxplace
 ){
-	Place temp;
 	int top_realline     = wblock->top_realline;
 	int bot_realline     = wblock->bot_realline;
 	int num_reallines    = wblock->num_reallines;
@@ -241,10 +240,7 @@ int GetReallineAndPlaceFromY(
 		at_bottom = true;
 	}
 
-
-	temp.line    = wblock->reallines[realline]->Tline;
-	temp.counter = wblock->reallines[realline]->Tcounter;
-	temp.dividor = wblock->reallines[realline]->Tdividor;
+        Place temp = wblock->reallines[realline]->l.p;
 
 	if(ret>=0){
                 float dy = (y - Common_oldGetReallineY1Pos(window,wblock,realline) ) / (float)window->fontheight;
@@ -254,18 +250,18 @@ int GetReallineAndPlaceFromY(
                   dy = 0.9999999f;
                 //printf("dy: %f\n",dy);
                 
-                Place *x = PlaceCreate2(dy);
+                Place x = p_FromFloat(dy);
                 Place x1 = {0,0,1};
                 Place x2 = {1,0,1};
-                Place *y1 = &wblock->reallines[realline]->l.p;
-                Place *y2;
+                Place y1 = wblock->reallines[realline]->l.p;
+                Place y2;
 
                 if (realline+1 < wblock->num_reallines)
-                  y2 = &wblock->reallines[realline+1]->l.p;
+                  y2 = wblock->reallines[realline+1]->l.p;
                 else
-                  y2 = PlaceCreate(wblock->block->num_lines, 0, MAX_UINT32);
+                  y2 = p_Create(wblock->block->num_lines, 0, MAX_UINT32);
 
-                Place *p = PlaceScale(x, &x1, &x2, y1, y2);
+                Place *p = PlaceScale(&x, &x1, &x2, &y1, &y2);
 
                 PlaceCopy(&temp, p);
                 /*
@@ -292,7 +288,7 @@ int GetReallineAndPlaceFromY(
           minplace = PlaceGetFirstPos();
         
         if(maxplace==NULL)
-          maxplace = PlaceCreate(num_reallines,0,1);
+          maxplace = PlaceCreate(wblock->block->num_lines,0,1);
         
 	if(PlaceLessOrEqual(&temp,minplace)){
 		if(ret>=0) ret=window->fontheight*(ret-FindRealLineFor(wblock,0,minplace));

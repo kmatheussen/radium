@@ -499,6 +499,8 @@ static void send_raw_midi_message(struct SoundPlugin *plugin, int64_t block_delt
   data[1] = MIDI_msg_byte2(msg);
   data[2] = MIDI_msg_byte3(msg);
 
+  //printf("   Data: %x %x %x (%x)\n",(int)data[0],(int)data[1],(int)data[2], msg);
+  
   int num_bytes_used;
   MidiMessage message(data, 3, num_bytes_used, 0);
   
