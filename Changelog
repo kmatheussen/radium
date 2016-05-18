@@ -1,3 +1,21 @@
+Changes 3.8.7 -> 3.8.8:
+* api: currentLine / setCurrentLine
+* Make scroll wheel behave as pressing up / down arrow key
+  instead of scrolling up / down
+* Paint current connections in more distinct colors
+* Fix 1L1 key on apple keyboards. On ISO keyboards the 1L1 key
+  has moved down to the ZL1 key. Dont know how to detect whether
+  we are using an apple or iso keyboard, but mac users probably
+  usually use apple keyboards.
+* OSX: Enable and fix crashreporter
+* Wait until opengl widget has updated before returning
+  from gl_create_window
+* mouse: Fix editing lines below LZ * number of lines in block.
+* Another attempt to fix window reconfiguration crash on osx.
+* OSX: Fix keyboard focus in native VST GUIs
+
+
+
 Changes 3.8.6 -> 3.8.7:
 * Clean up instruments when loading new song. Can significantly
   reduce memory usage. (Tito Latini)
