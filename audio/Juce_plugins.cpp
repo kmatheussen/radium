@@ -1022,6 +1022,13 @@ void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, c
 }
 
 
+static String g_backtrace;
+
+const char *JUCE_get_backtrace(void){
+  g_backtrace = SystemStats::getStackBacktrace();
+  return g_backtrace.toUTF8();
+}
+
 float JUCE_get_max_val(const float *array, const int num_elements){
   auto both = FloatVectorOperations::findMinAndMax(array,num_elements);
   float a = -both.getStart();

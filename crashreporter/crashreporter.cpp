@@ -14,6 +14,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+
+// Blog post from another guy doing backtraces and catching exceptions in lin/mingw/osx: https://spin.atomicobject.com/2013/01/13/exceptions-stack-traces-c/
+
+
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
@@ -42,6 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QNetworkRequest>
 #include <QNetworkAccessManager>
+#include <QNetworkReply>
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
@@ -94,7 +99,7 @@ static QString file_to_string(QString filename){
       QString content = stream.readAll();
       return content;
     }
-  return "(unable to open file)";
+  return "(unable to open file -"+filename+"-)";
 }
 
 static void delete_file(QString filename){
@@ -127,8 +132,22 @@ void EVENTLOG_add_event(const char *log_entry){
 #endif
 
 
+#if defined(FOR_MACOSX)
+#include "get_osx_diagnostic_reports.cpp"
+#endif
+
 
 static void send_crash_message_to_server(QString message, QString plugin_names, QString emergency_save_filename, Crash_Type crash_type){
+
+#if FULL_VERSION==0
+  message = "DEMO VERSION " + message;
+#else
+  message = "FULL VERSION " + message; 
+#endif
+  
+#if defined(FOR_MACOSX)
+  message = message + "\n\n" + get_latest_diagnostic_report();
+#endif
 
   fprintf(stderr,"Got message:\n%s\n",message.toUtf8().constData());
 
@@ -174,8 +193,9 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
                            + (dosave ? "\nAn emergency version of your song has been saved as \""+emergency_save_filename+"\". However, this file should not be trusted. It could be malformed. (it is most likely okay though)" : "")
                            + "\n"
                            );
-    box.setDetailedText(message);
 
+    box.setDetailedText(message);
+                        
     QLabel space(" ");
     box.layout()->addWidget(&space);
 
@@ -238,8 +258,8 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
       QByteArray data;
       QUrl params;
-      params.addQueryItem("data", message);
-      data.append(params.toString().toAscii(),params.toString().length()-1);
+      params.addQueryItem("data", message.replace("&", "_amp_")); // replace all '&' with _amp_ since we don't receive anything after '&'.
+      data.append(params.toString().toUtf8().constData(), params.toString().length()-1);
       data.remove(0,1);
       data.append("\n");
       data.append(text_edit.toPlainText());
@@ -248,8 +268,13 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       QNetworkRequest request(QUrl("http://users.notam02.no/~kjetism/radium/crashreport.php"));
       request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded" );
 
-      nam.post(request,data);
+      QNetworkReply *reply = nam.post(request,data);
 
+      while(reply->isFinished()==false) {
+        QCoreApplication::processEvents();
+        usleep(1000*50);
+      }
+      
 #if 1
       {
         QMessageBox box;
@@ -579,11 +604,13 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
 }
 
+#if 0
 #ifdef FOR_MACOSX
 #include "../common/visual_proc.h"
 void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, Crash_Type crash_type){
   GFX_Message(NULL, additional_information);
 }
+#endif
 #endif
 
 void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,...){
@@ -664,13 +691,12 @@ void CRASHREPORTER_init(void){
 #if defined(FOR_WINDOWS)
   CRASHREPORTER_windows_init();
 
-#elif defined(FOR_LINUX)
+#elif defined(FOR_LINUX) || defined(FOR_MACOSX)
       
   CRASHREPORTER_posix_init();
 
-#elif defined(FOR_MACOSX)
-
 #else
+  
 # error "Unknown machine"
 
 #endif

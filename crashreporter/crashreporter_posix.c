@@ -14,22 +14,33 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#if defined(FOR_LINUX)
-// || defined(FOR_MACOSX)
 
+
+#if defined(FOR_LINUX) || defined(FOR_MACOSX)
+
+
+
+#if defined(FOR_LINUX)
 
 
 #define _GNU_SOURCE         /* See feature_test_macros(7) */
 #include <link.h>
 #include <stdio.h>
 
+
 //#define PACKAGE 1 // workaround for bug in libbfd
 //#define PACKAGE_VERSION 1 // workaround for bug in libbfd
 #include "backtrace-symbols.c"
 
+#elif defined(FOR_MACOSX)
 
+#  include <execinfo.h> // haven't got backtrace-symbols.c to compile on OSX, so we use the original versions of backtrace() instead, which doesn't include line numbers.
 
+#endif
 
+#include <time.h>
+
+#include <sys/time.h>
 #include <pthread.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -41,13 +52,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/threading.h"
 
+#include "../audio/Juce_plugins_proc.h"
+
 #include "crashreporter_proc.h"
 
 
-static double get_ms(void){
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return ts.tv_sec * 1000.0 + ((double)ts.tv_nsec) / 1000000.0;
+static int get_ms(void) {
+    struct timeval now;
+    
+    if (gettimeofday(&now, NULL) != 0)
+      return 0.0;
+
+    return now.tv_sec*1000 + now.tv_usec / 1000.0;
 }
 
 
@@ -71,15 +87,27 @@ static bool crash_already_reported(void){
 
 void run_main_loop(void);
 
+
 void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, enum Crash_Type crash_type){
 #define NUM_LINES 100
 
-  void *buffer[NUM_LINES];
   char **strings;
+
+#if 1 //defined(FOR_LINUX)
+  void *buffer[NUM_LINES];
   int nptrs = backtrace(buffer, NUM_LINES);
   
   strings = backtrace_symbols(buffer, nptrs);
+  
+#elif 0 //defined(FOR_MACOSX)
+  int nptrs = 1;
+  strings = calloc(2,sizeof(char*));
+  strings[0]=(char*)JUCE_get_backtrace(); // No point. Same as calling backtrace_symbols. I had hoped that it contained line numbers. Can not get the 'atos' program to work either.
+  strings[1]=NULL;
+#endif
 
+  
+  
   if (strings != NULL) {
     CRASHREPORTER_send_message(additional_information, (const char**)strings,nptrs,crash_type);
   } else {
@@ -112,15 +140,28 @@ static void crash(int sig, siginfo_t *siginfo, void *secret) {
     }
   }
 
+#if defined(FOR_LINUX)
   usleep(1000*1000*3);
+#else
+  usleep(1000*500); // Just wait half second on mac.
+#endif
+  
   CRASHREPORTER_close();
+
+#if defined(FOR_LINUX)
+  
+  _Exit(1); // We don't get system crashlog on OSX when doing this.
+
+#else
+  
   abort();
   
   if((now_time-start_time) > 3000 || num_crash_reports>3){
     CRASHREPORTER_close();
     abort();
   }
-
+#endif
+  
   /*
   if(num_crash_reports>10)
     pthread_exit(NULL);
@@ -139,6 +180,14 @@ static void setup_callstack_signal_handler(int signal) {
 void CRASHREPORTER_posix_init(void){
   setup_callstack_signal_handler(SIGSEGV);
   setup_callstack_signal_handler(SIGFPE);
+
+  setup_callstack_signal_handler(SIGINT);
+  setup_callstack_signal_handler(SIGILL);
+  setup_callstack_signal_handler(SIGTERM);
+
+#if !defined(FOR_MACOSX) // Need to call abort() in order to create system crash log.
+  setup_callstack_signal_handler(SIGABRT);
+#endif
   
   //signal(SIGSEGV,crash);
   //signal(SIGFPE,crash);
