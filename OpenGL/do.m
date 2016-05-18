@@ -1,3 +1,5 @@
+#if 0
+
 #if defined(FOR_MACOSX)
 
 #import <Cocoa/Cocoa.h>
@@ -12,5 +14,7 @@ void cocoa_set_best_resolution(void *view){
 #endif
  [[[[NSApplication sharedApplication] mainWindow] contentView] setWantsBestResolutionOpenGLSurface:YES];
 }
+
+#endif
 
 #endif
