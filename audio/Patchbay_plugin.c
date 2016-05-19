@@ -75,10 +75,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 static void set_effect_value(SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
-  if(value_format==PLUGIN_FORMAT_SCALED)
-    data->routes[effect_num] = value > 0.5f;
-  else
-    data->routes[effect_num] = value;
+  data->routes[effect_num] = value > 0.5f;
 }
 
 static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
