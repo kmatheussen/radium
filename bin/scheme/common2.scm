@@ -1,13 +1,26 @@
 (provide 'common2.scm)
 
-(define-macro (match args . matchers)
+#!!
+(define-expansion (match-old args . matchers)
   (define matcher-func (gensym "matcher-func"))
-  `(let ()
-     (define-match ,matcher-func
-       ,@matchers)
-     (apply ,matcher-func ,args)))
+  (eval
+   `(let ()
+      (define-match ,matcher-func
+        ,@matchers)
+      (apply ,matcher-func ,args))))
+!!#
 
-#||  
+(define-expansion (match args . matchers)
+  `(begin
+     (eval (create-matcher-func 'matcher-func-temp-name ',matchers))
+     (apply matcher-func-temp-name ,args)))
+
+
+#!!
+(pretty-print (macroexpand   (define-match is-define-lazy
+                               (define-lazy _ _ ) :> #t
+                               __________________ :> #f)))
+
 (test (match (list 'a 'b)
              a b :> 5
              _ _ :> #f)
@@ -15,8 +28,17 @@
 (match (list 'a 'b)
        a b :> 5
        _ :> 9)
-||#
 
+(let-ref (rootlet) 'aiai2)
+(defined? 'aiai (rootlet))
+
+(procedure-source setaiai!)
+
+(define (setaiai! val)
+  (varlet (rootlet) 'aiai val))
+
+
+!!#
 
 (define (keep func list)
   (if (null? list)
@@ -36,10 +58,10 @@
           (cons (car list)
                 (remove func (cdr list))))))
 
-(define-macro (push! list el)
+(define-expansion (push! list el)
   `(set! ,list (cons ,el ,list)))
 
-(define-macro (push-back! list el)
+(define-expansion (push-back! list el)
   `(set! ,list (append ,list (list ,el))))
 
 
@@ -135,7 +157,7 @@
 
 
 ;; force and delay are missing from s7. Simple implementation below.
-(define-macro (delay . body)
+(define-expansion (delay . body)
   `(vector #f
            #f
            (lambda ()
@@ -212,7 +234,7 @@
   new-table)
 
 
-(define-macro (define-struct name . args)
+(define-expansion (define-struct name . args)
   (define define-args (keyvalues-to-define-args args))
   (define keys (map car define-args))
   (define must-be-defined (keep (lambda (arg)
@@ -346,7 +368,7 @@
   (Key Value . Rest) :> (cons (list (keyword->symbol Key) Value)
                               (delafina-args-to-define*-args Rest)))
 
-(define-macro (delafina def . body)
+(define-expansion (delafina def . body)
   `(define* (,(car def) ,@(delafina-args-to-define*-args (cdr def)))
      ,@body))
 
@@ -391,11 +413,12 @@
             :width (- $x2 $x1)
             :height (- $y2 $y1)))
   
-(define-macro (ra:get-box prefix . rest)
-  `(make-box2 ( ,(<_> 'ra:get- prefix '-x1) ,@rest)
-              ( ,(<_> 'ra:get- prefix '-y1) ,@rest)
-              ( ,(<_> 'ra:get- prefix '-x2) ,@rest)
-              ( ,(<_> 'ra:get- prefix '-y2) ,@rest)))
+(define-expansion (ra:get-box prefix . rest)
+  (eval `(make-box2 ( ,(<_> 'ra:get- prefix '-x1) ,@rest)
+                    ( ,(<_> 'ra:get- prefix '-y1) ,@rest)
+                    ( ,(<_> 'ra:get- prefix '-x2) ,@rest)
+                    ( ,(<_> 'ra:get- prefix '-y2) ,@rest)))
+  )
 
 
 (define (box-to-string box)
@@ -423,6 +446,7 @@
 ||#
 
 (define (inside-box box x y)
+  ;;(c-display "Whtas the box:" box)
   (and (>= x (box :x1))
        (<  x (box :x2))
        (>= y (box :y1))
@@ -499,19 +523,21 @@ for .emacs:
        nil t))))
 ||#
 
-(define-macro (lazy . body)
-  
-  (define-match is-define-lazy
-    (define-lazy _ _ ) :> #t
-    __________________ :> #f)
+(define-match is-define-lazy  
+  (define-lazy _ _ ) :> #t
+  __________________ :> #f)
 
-  (define-match get-lazy-replacement
-    (define-lazy Name _____) :> `(,Name (force ,Name))
-    ________________________ :> (throw 'something-went-wrong-in-get-lazy-replacement-in-lazy))
+(define-match get-lazy-replacement
+  (define-lazy Name _____) :> `(,Name (force ,Name))
+  ________________________ :> (throw 'something-went-wrong-in-get-lazy-replacement-in-lazy))
   
-  (define-match transform-lazy-code
-    Replacements (define-lazy Name Value) :> `(define ,Name (delay ,(deep-list-replace-several Replacements Value)))
-    ____________ _________________________ :> #f)
+(define-match transform-lazy-code
+  Replacements (define-lazy Name Value) :> `(define ,Name (delay ,(deep-list-replace-several Replacements Value)))
+  ____________ _________________________ :> #f)
+  
+
+(define-expansion (lazy . body)
+  ;;(c-display "EXPSNDFING lazy macro")
   
   (define lazy-vals (keep is-define-lazy body))
   (define lazy-replacements (map get-lazy-replacement lazy-vals))
@@ -532,6 +558,25 @@ for .emacs:
        (define-lazy b 60)
        (+ a b))
       110)
+
+(define-expansion (lazy2 . body)
+  (define-match hepp
+    _ :> "hepp")
+
+  `(begin
+     (c-display ,(hepp #t))
+     ,@body))
+
+(define (hepp)
+  (lazy2
+    ;;(define-lazy a 50)
+    60))
+
+(hepp)
+
+(lazy2 5)
+
+(macroexpand (lazy 60))
 
 (test (let ((val 0))
         (lazy
@@ -565,7 +610,7 @@ for .emacs:
 ||#
 
 
-(define-macro (<ra> command . args)
+(define-expansion (<ra> command . args)
   `( ,(<_> 'ra: (keyword->symbol command)) ,@args))
 
 

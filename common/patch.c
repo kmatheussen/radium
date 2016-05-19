@@ -61,9 +61,11 @@ struct Patch *g_currpatch=NULL;
 
 static vector_t unused_patches; // <-- patches are never deleted, but they are removed from the instruments. In order for the gc to find the removed patches (when stored some place where the gc can't find them, for instance in a C++ object), we put them here. (There shouldn't be any situation where this might happen, but we do it anyway, just in case, because GC bugs are so hard to find.)
 
-void PATCH_remove_from_instrument(struct Patch *patch){
+void PATCH_remove_from_instrument(struct Patch *patch, bool remove_completely){
+  //R_ASSERT(patch->patchdata == NULL); (not true for MIDI)
   VECTOR_remove(&patch->instrument->patches, patch);
-  VECTOR_push_back(&unused_patches, patch);
+  if (remove_completely==false)
+    VECTOR_push_back(&unused_patches, patch);
 }
 
 static void PATCH_add_to_instrument(struct Patch *patch){
@@ -358,7 +360,7 @@ static void make_inactive(struct Patch *patch, bool force_removal){
 
   //Undo_Patchlist_CurrPos(LOC());
   //VECTOR_remove(&patch->instrument->patches, patch);
-  PATCH_remove_from_instrument(patch);
+  PATCH_remove_from_instrument(patch, false);
 }
 
 void PATCH_make_inactive(struct Patch *patch){

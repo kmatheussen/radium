@@ -243,7 +243,9 @@ void GFX_ScheduleRedrawEditor(void){
   }
 }
   */
-  
+
+struct TEvent tevent={}; // c++ way of zero-initialization without getting missing-field-initializers warning.
+
 void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
   if(ATOMIC_GET(is_starting_up)==true)
       return;
@@ -251,13 +253,24 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
     struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
 
     int num_lines = R_ABS(qwheelevent->delta()/120);    
-
+            
     DO_GFX(
            {
+             /*
              if(qwheelevent->delta()<0)
                ScrollEditorDown(window,num_lines * getScrollMultiplication());
              else
                ScrollEditorUp(window,num_lines * getScrollMultiplication());
+             */
+             tevent.ID=TR_KEYBOARD;
+             if(qwheelevent->delta()<0)
+               tevent.SubID=EVENT_DOWNARROW;
+             else
+               tevent.SubID=EVENT_UPARROW;
+
+             for(int i=0;i<num_lines;i++)
+               EventReciever(&tevent,window);
+
            });
 
 #if USE_QT_VISUAL
@@ -265,7 +278,6 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
 #endif
 }
 
-struct TEvent tevent={}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
 #if 0
 

@@ -213,7 +213,7 @@ static void init_keymaps(void){
   keymap_qwerty[kVK_ANSI_Backslash] = EVENT_LR3;
 
   // row 5
-  keymap_qwerty[kVK_ANSI_Grave]    = EVENT_ZL1;
+  //keymap_qwerty[kVK_ANSI_Grave]    = EVENT_ZL1; // Correct if using an iso keyboard, but ovverrides the 11L1 key if using an apple keyboard. Most likely, the user is using an apple keyboard.
   keymap_qwerty[kVK_ANSI_Comma]  = EVENT_MR1;
   keymap_qwerty[kVK_ANSI_Period] = EVENT_MR2;
   keymap_qwerty[kVK_ANSI_Slash]      = EVENT_MR3;
@@ -425,14 +425,18 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
   OS_SYSTEM_init_keyboard();
 
   //printf("Got event. type: %u\n",(unsigned int)type);
-  
+
   static void *oldHotKeyMode = NULL;
   if(type==NSAppKitDefined || type==NSSystemDefined || type==NSApplicationDefined){ // These three events are received when losing focus. Haven't found a better time to clear modifiers.
+    //printf("      DAS EVENT: %x\n",(unsigned int)type);
     clear_modifiers();
     if(oldHotKeyMode!=NULL){
       PushSymbolicHotKeyMode(kHIHotKeyModeAllEnabled);
       oldHotKeyMode = NULL;
     }
+
+    call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_events();
+    
     return;
   }else{
     if(oldHotKeyMode==NULL)

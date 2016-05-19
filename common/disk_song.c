@@ -93,10 +93,10 @@ struct Song *LoadSong(void){
         }END_VECTOR_FOR_EACH;
         
         while(get_MIDI_instrument()->patches.num_elements > 0)
-          PATCH_remove_from_instrument(get_MIDI_instrument()->patches.elements[0]);
+          PATCH_remove_from_instrument(get_MIDI_instrument()->patches.elements[0], true);
         
         while(get_audio_instrument()->patches.num_elements > 0)
-          PATCH_remove_from_instrument(get_audio_instrument()->patches.elements[0]);
+          PATCH_remove_from_instrument(get_audio_instrument()->patches.elements[0], true);
 
         COMMENT_reset();
 

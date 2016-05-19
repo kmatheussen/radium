@@ -280,3 +280,16 @@ int currentTrack(int windownum){
         return window->curr_track;
 }
 
+int currentLine(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL) return 0;
+
+  return window->wblock->curr_realline;
+}
+
+void setCurrentLine(int linenum, int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL) return;
+
+  ScrollEditorToRealLine(window, window->wblock, linenum);
+}

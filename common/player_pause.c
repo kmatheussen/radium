@@ -59,11 +59,11 @@ static bool g_was_playing_range = false;
 void PC_Pause(void){
   R_ASSERT(THREADING_is_main_thread());
 
-  printf("   000 Enter pause %d\n", g_pausing_level);
+  //printf("   000 Enter pause %d\n", g_pausing_level);
 
   g_pausing_level++;
 
-  printf("   Enter pause %d\n", g_pausing_level);
+  //printf("   Enter pause %d\n", g_pausing_level);
   
   if (g_pausing_level > 1)
     return;
@@ -97,7 +97,7 @@ void PC_StopPause(struct Tracker_Windows *window){
     g_pausing_level = 0;
   }
 
-  printf("   Leaving pause %d\n", g_pausing_level);
+  //printf("   Leaving pause %d\n", g_pausing_level);
   
   if (g_pausing_level>0)
     return;

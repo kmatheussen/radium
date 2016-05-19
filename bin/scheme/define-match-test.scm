@@ -8,7 +8,7 @@
 (load "define-match.scm")
 
 
-(define-macro (define-match funcname . matchers)
+(define-expansion (define-match funcname . matchers)
   (let ((ret (create-matcher-func funcname matchers)))
     (pretty-print ret)
     ret))

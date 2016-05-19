@@ -412,11 +412,13 @@ extern "C"{
   }
 
   void GFX_OS_UpdateKeyOctave(void){
-    g_bottom_bar_widget->octave_label->setText(QString("Oct.: ")+QString::number(root->keyoct/12,16));
+    if(ATOMIC_GET(is_starting_up)==false)
+      g_bottom_bar_widget->octave_label->setText(QString("Oct.: ")+QString::number(root->keyoct/12,16));
   }
 
   void GFX_OS_update_bottombar(void){
-    g_bottom_bar_widget->updateWidgets();
+    if(ATOMIC_GET(is_starting_up)==false)
+      g_bottom_bar_widget->updateWidgets();
   } 
  
   void OS_GFX_NumUndosHaveChanged(int num_undos, bool redos_are_available, bool has_unsaved_undos){

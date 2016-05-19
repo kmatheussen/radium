@@ -202,8 +202,8 @@ namespace{
         this->centreWithSize (getWidth(), getHeight());
       } else {
         this->setTopLeftPosition(data->x, data->y);
-      }      
-        
+      }
+
       this->setVisible(true);
     }
 
@@ -211,6 +211,29 @@ namespace{
       data->window = NULL;
       V_free((void*)title);
     }
+
+    /*
+    void focusOfChildComponentChanged(FocusChangeType cause) override
+    {
+      printf("\n\n      child focus %s\n\n", hasKeyboardFocus(true) ? "obtained" : "lost");
+      if (hasKeyboardFocus(true))
+        obtain_keyboard_focus();
+      else
+        release_keyboard_focus();
+    }
+
+    void focusGained(FocusChangeType cause) override
+    {
+      printf("\n\n    focusGained\n\n");
+      //obtain_keyboard_focus();
+    }
+    
+    void focusLost(FocusChangeType cause) override
+    {
+      printf("\n\n    focusLost\n\n");
+      //release_keyboard_focus();
+    }
+    */
     
     void closeButtonPressed() override
     {
@@ -476,6 +499,8 @@ static void send_raw_midi_message(struct SoundPlugin *plugin, int64_t block_delt
   data[1] = MIDI_msg_byte2(msg);
   data[2] = MIDI_msg_byte3(msg);
 
+  //printf("   Data: %x %x %x (%x)\n",(int)data[0],(int)data[1],(int)data[2], msg);
+  
   int num_bytes_used;
   MidiMessage message(data, 3, num_bytes_used, 0);
   
@@ -996,6 +1021,13 @@ void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, c
   PR_add_plugin_container(container);
 }
 
+
+static String g_backtrace;
+
+const char *JUCE_get_backtrace(void){
+  g_backtrace = SystemStats::getStackBacktrace();
+  return g_backtrace.toUTF8();
+}
 
 float JUCE_get_max_val(const float *array, const int num_elements){
   auto both = FloatVectorOperations::findMinAndMax(array,num_elements);

@@ -85,32 +85,42 @@ class SuperConnection  : public QGraphicsLineItem {
 
 public:
 
+  bool is_selected; // for some reason isSelected() doesn't work.
   bool is_event_connection;
   enum ColorNums color_num;
   
   QColor getColor(void) {
-    return get_qcolor(color_num);
+    if (is_selected)
+      return get_qcolor(color_num).lighter(198);
+    else
+      return get_qcolor(color_num);
   }
   
   QPen getPen(){
     QPen pen(Qt::gray, 50);
-    pen.setWidthF(1.2);
+    if (is_selected)
+      pen.setWidthF(2.2);
+    else
+      pen.setWidthF(1.2);
     pen.setJoinStyle(Qt::RoundJoin);
     pen.setCapStyle(Qt::RoundCap);
     //pen.setColor(QColor(30,25,70,6));
     QColor c = getColor();
-    c.setAlpha(140);
+    if(is_selected)
+      c.setAlpha(250);
+    else
+      c.setAlpha(140);
     pen.setColor(c);
     return pen;
   }
 
   SuperConnection(QGraphicsScene *parent, bool is_event_connection, enum ColorNums color_num)
     : QGraphicsLineItem()
+    , is_selected(false)
     , is_event_connection(is_event_connection)
     , color_num(color_num)
     , from(NULL)
     , to(NULL)
-    , is_selected(false)
     , visible_line(this)
     , arrow_line1(this)
   {
@@ -148,7 +158,6 @@ public:
 
   Chip *from;
   Chip *to;
-  bool is_selected;
 
   QGraphicsLineItem visible_line;
   QGraphicsLineItem arrow_line1;
@@ -244,6 +253,15 @@ public:
       setPen(pen);
     }
   }
+
+  void setSelected(bool selected){
+    if (is_selected != selected){
+      update_colors();
+      is_selected = selected;
+    }
+    QGraphicsLineItem::setSelected(selected);    
+  }
+
 };
 
 class AudioConnection : public SuperConnection {
@@ -303,8 +321,8 @@ public:
   int _num_inputs;
   int _num_outputs;
   QColor _color;
-  radium::Vector<AudioConnection*> audio_connections;   // TODO: use radium::Vector instead. TODO2: Use different types for econnections and connections, it's FAR to easy to mix them up.
-  radium::Vector<EventConnection*> event_connections;  // TODO: use radium::Vector instead
+  radium::Vector<AudioConnection*> audio_connections;
+  radium::Vector<EventConnection*> event_connections;
 
   SliderPainter *_input_slider;
   SliderPainter *_output_slider;
@@ -315,6 +333,16 @@ public:
 
   float _moving_x_offset;
   float _moving_y_offset;
+
+  void setSelected(bool selected){
+    for(auto audio_connection : audio_connections)
+      audio_connection->setSelected(selected);
+    
+    for(auto event_connection : event_connections)
+      event_connection->setSelected(selected);
+    
+    QGraphicsItem::setSelected(selected);    
+  }
 };
 
 extern void CHIP_get_name_coordinates(int &x1, int &y1, int &x2, int &y2);

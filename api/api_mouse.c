@@ -172,7 +172,7 @@ Place getPlaceFromY(float y, int blocknum, int windownum) {
                            NULL
                            );
 
-  //printf("Got place %s\n",PlaceToString(&place));
+  //printf("Got place %s for %f\n",PlaceToString(&place),y);
   return place;
 }
 

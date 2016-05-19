@@ -1,3 +1,39 @@
+Changes 3.8.7 -> 3.8.8:
+* api: currentLine / setCurrentLine
+* Make scroll wheel behave as pressing up / down arrow key
+  instead of scrolling up / down
+* Paint current connections in more distinct colors
+* Fix 1L1 key on apple keyboards. On ISO keyboards the 1L1 key
+  has moved down to the ZL1 key. Dont know how to detect whether
+  we are using an apple or iso keyboard, but mac users probably
+  usually use apple keyboards.
+* OSX: Enable and fix crashreporter
+* Wait until opengl widget has updated before returning
+  from gl_create_window
+* mouse: Fix editing lines below LZ * number of lines in block.
+* Another attempt to fix window reconfiguration crash on osx.
+* OSX: Fix keyboard focus in native VST GUIs
+
+
+
+Changes 3.8.6 -> 3.8.7:
+* Clean up instruments when loading new song. Can significantly
+  reduce memory usage. (Tito Latini)
+* Don't disable garbage collector when loading song. Can significantly
+  reduce memory usage.
+* Improve mouse performance significantly. This may reduce overall
+  gfx stutter when doing operations with the mouse, or just moving the pointer,
+  especially on Windows. More work is possible here though.
+* Fix fx popup menu when there are many instrument with many effects.
+* Show a message in the editor when the garbage collector is turned off.
+* Actually turn off the garbage collector when unselecting
+  "Enable Garbage Collector" in the preferences.
+* Try to fix window reconfiguration crash on OSX.
+* Update s7 scheme interpreter
+* Fix VECTOR_clean and VECTOR_move. (Tito Latini)
+
+
+
 Changes 3.8.5 -> 3.8.6:
 * Allow fx from other patches than the track patch
 * Fix windows startup.

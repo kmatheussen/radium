@@ -59,6 +59,7 @@ static void set_realtime(int type, int priority){
 }
 #endif
 
+static DEFINE_ATOMIC(bool, g_has_updated_at_least_once) = false;
 
 DEFINE_ATOMIC(char *, GE_vendor_string) = NULL;
 DEFINE_ATOMIC(char *, GE_renderer_string) = NULL;
@@ -691,6 +692,7 @@ private:
     // Swap to the newly rendered buffer
     if ( openglContext()->hasDoubleBuffer() )
       openglContext()->swapBuffers();
+
   }
 
 public:
@@ -774,6 +776,7 @@ public:
       }
     }
 
+    ATOMIC_SET(g_has_updated_at_least_once, true);
   }
 
   // Main thread
@@ -1318,6 +1321,9 @@ QWidget *GL_create_widget(QWidget *parent){
                   );
 
   }  
+
+  while(ATOMIC_GET(g_has_updated_at_least_once)==false)
+    usleep(5*1000);
 
   g_gl_widget_started = true;
   

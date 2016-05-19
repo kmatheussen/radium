@@ -289,8 +289,7 @@ void setNoteScrollLength(int l){
   
     g_downscroll = l;
 
-    if(ATOMIC_GET(is_starting_up)==false)
-      GFX_OS_update_bottombar();
+    GFX_OS_update_bottombar();
   }
 }
 

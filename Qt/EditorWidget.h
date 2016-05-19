@@ -185,11 +185,13 @@ public:
 
 #if USE_OPENGL
     void position_gl_widget(struct Tracker_Windows *window){
-      if (gl_widget != NULL) {
-        gl_widget->move(0,window->wblock->t.y1);
-        int height = 1 + window->wblock->t.y2 - window->wblock->t.y1 -1;
-        //fprintf(stderr,"height: %d, width: %d\n",height,width());
+      if (gl_widget != NULL && window!=NULL && window->wblock!=NULL) {
+        int height;
+
         GL_lock();{
+          gl_widget->move(0,window->wblock->t.y1);
+          height = 1 + window->wblock->t.y2 - window->wblock->t.y1 -1;
+          //fprintf(stderr,"height: %d, width: %d\n",height,width());
           gl_widget->resize(width(), height);
         }GL_unlock();
         GE_set_height(height);

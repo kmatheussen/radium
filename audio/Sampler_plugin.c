@@ -417,6 +417,43 @@ static long RT_src_callback_nolooping(Voice *voice, const Sample *sample, Data *
   return sample->num_frames - start_pos;
 }
 
+static long RT_src_callback_reverse_nolooping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
+  *out_data = &voice->crossfade_buffer[0];
+  
+  if(start_pos==sample->num_frames)
+    return 0;
+
+  int samples_left = sample->num_frames - start_pos;
+
+  int num_samples_to_return = R_MIN(samples_left, CROSSFADE_BUFFER_LENGTH);
+
+  float *source_sound = sample->sound;
+  float *dest_sound = &voice->crossfade_buffer[0];
+  int sample_pos = sample->num_frames-1 - start_pos;
+  
+  for(int i=0 ; i< num_samples_to_return ; i++)
+    dest_sound[i] = source_sound[sample_pos--];
+
+  
+  voice->pos = start_pos + num_samples_to_return; // next
+
+  return num_samples_to_return;
+}
+
+static long RT_src_callback_ping_pong_looping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
+  R_ASSERT(start_pos <= sample->num_frames*2);
+  
+  if (start_pos>=sample->num_frames*2)
+    start_pos = 0;
+
+  if (start_pos >= sample->num_frames) {
+    int ret = RT_src_callback_reverse_nolooping(voice, sample, data, start_pos - sample->num_frames, out_data);
+    voice->pos += sample->num_frames;
+    return ret;
+  } else
+    return RT_src_callback_nolooping(voice, sample, data, start_pos, out_data);
+}
+
 
 
 static long RT_src_callback(void *cb_data, float **out_data){
@@ -425,7 +462,13 @@ static long RT_src_callback(void *cb_data, float **out_data){
   int start_pos        = voice->pos;
   Data  *data          = sample->data;
 
-  if(ATOMIC_GET(sample->data->p.loop_onoff)==false || sample->loop_end <= sample->loop_start)
+  if (false)
+    return RT_src_callback_ping_pong_looping(voice, sample, data, start_pos, out_data);
+  
+  else if (false)
+    return RT_src_callback_reverse_nolooping(voice, sample, data, start_pos, out_data);
+  
+  else if(ATOMIC_GET(sample->data->p.loop_onoff)==false || sample->loop_end <= sample->loop_start)
     return RT_src_callback_nolooping(voice, sample, data, start_pos, out_data);
 
   else if(data->p.crossfade_length > 0)
@@ -435,34 +478,8 @@ static long RT_src_callback(void *cb_data, float **out_data){
     return RT_src_callback_with_normal_looping(voice, sample, data, start_pos, out_data);
 }
 
-#if 0
-static long RT_src_callback(void *cb_data, float **data){
-  Voice        *voice  = cb_data;
-  const Sample *sample = voice->sample;
-  int           pos    = voice->pos;
 
-  *data = &voice->sample->sound[pos];
 
-  //printf("Supplying from sample %p. offset: %d. loop start: %d, loop end: %d\n",voice->sample->interleaved_samples,voice->pos,sample->loop_start,sample->loop_end);
-
-  if(sample->data->loop_onoff==true && sample->loop_end > sample->loop_start){
-    voice->pos = sample->loop_start;
-
-    if(pos >= sample->loop_end) // just in case. not sure if this can happen
-      return 0;
-
-    return sample->loop_end - pos;
-
-  }else{
-
-    if(pos==sample->num_frames)
-      return 0;
-
-    voice->pos=sample->num_frames;
-    return sample->num_frames - pos;
-  }
-}
-#endif
 
 static double RT_get_src_ratio3(Data *data, const Sample *sample, float pitch){    
   if(pitch<=0.0)
