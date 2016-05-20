@@ -603,6 +603,7 @@ void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int n
     wblock->num_expand_lines = num_lines;
     UpdateRealLines(window,wblock);
     GFX_UpdateUpperLeft(window, wblock);
+    set_curr_realline(wblock, wblock->curr_realline); // legalize curr realline
     return;
   }
 
