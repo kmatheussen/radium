@@ -29,12 +29,6 @@ extern LANGSPEC void StopAllNotesAtPlace(
 
 extern LANGSPEC struct Notes *GetCurrNote(struct Tracker_Windows *window);
 
-#define NOTE_ID_RESOLUTION 256 // i.e. 256 id's per note.
-static inline int64_t NotenumId(float notenum){
-  int64_t n = notenum*NOTE_ID_RESOLUTION;
-  return n*NUM_PATCH_VOICES;
-}
-
 extern LANGSPEC void NOTE_init(struct Notes *note);
 extern LANGSPEC struct Notes *NewNote(void);
 struct Notes *CopyNote(const struct Notes *old_note);

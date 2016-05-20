@@ -225,12 +225,14 @@ static void scheduled_play_note(int64_t time, const union SuperType *args){
   struct Tracks *track = args[0].pointer;
   struct Notes *note = args[1].pointer;
 
-  RT_PATCH_play_note(track->patch,
-                     note->note,
-                     note->id,
-                     TRACK_get_velocity(track,note->velocity),
-                     TRACK_get_pan(track),
-                     time);
+  note_t note2 = create_note_t(note->id,
+                               note->note,
+                               TRACK_get_velocity(track,note->velocity),
+                               TRACK_get_pan(track),
+                               0
+                               );
+
+  RT_PATCH_play_note(track->patch,note2,time);
 }
 
 static void PE_StartNote(struct PEventQueue *peq,int doit){
@@ -256,10 +258,11 @@ static void scheduled_stop_note(int64_t time, const union SuperType *args){
   struct Tracks *track = args[0].pointer;
   struct Notes *note = args[1].pointer;
   
-  RT_PATCH_stop_note(track->patch,
-                     note->note,
-                     note->id,
-                     time);
+  note_t note2 = create_note_t2(note->id,
+                                note->note
+                                );
+
+  RT_PATCH_stop_note(track->patch,note2,time);
 }
 
 static void PE_StopNote(struct PEventQueue *peq,int doit){

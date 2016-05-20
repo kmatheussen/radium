@@ -45,8 +45,7 @@ static void stop_note(int64_t time, int note_num){
   int i;
   for (i=0 ; i<num_patches ; i++){
     RT_PATCH_stop_note(patches[i],
-                       g_last_played_note_num,
-                       -1,
+                       create_note_t2(-1, g_last_played_note_num),
                        time);
   }
 }
@@ -64,10 +63,11 @@ static void play_note(int64_t time, int note_num){
   int i;
   for (i=0 ; i<num_patches ; i++){
     RT_PATCH_play_note(patches[i],
-                       note_num,
-                       -1,
-                       1.0,
-                       0.0,
+                       create_note_t(-1,
+                                     note_num,
+                                     1.0,
+                                     0.0,
+                                     0),
                        time);
   }
   g_last_played_note_num = note_num;

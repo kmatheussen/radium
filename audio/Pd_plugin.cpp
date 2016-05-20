@@ -378,36 +378,36 @@ static void RT_process(SoundPlugin *plugin, int64_t block_delta_time, int num_fr
 }
 
 // called from radium
-static void RT_play_note(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float volume, float pan){
+static void RT_play_note(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note){
 
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   //printf("RT_play_note. %f %d (%f)\n",note_num,(int)(volume*127),volume);
-  libpds_noteon(pd, 0, note_num, volume*127);
+  libpds_noteon(pd, note.midi_channel, note.pitch, note.velocity*127);
   
   {
     t_atom v[5];
     
-    SETFLOAT(v + 0, RT_add_note_id_pos(data, note_id));
-    SETFLOAT(v + 1, note_num);
-    SETFLOAT(v + 2, volume);
-    SETFLOAT(v + 3, pan);
+    SETFLOAT(v + 0, RT_add_note_id_pos(data, note.id));
+    SETFLOAT(v + 1, note.pitch);
+    SETFLOAT(v + 2, note.velocity);
+    SETFLOAT(v + 3, note.pan);
     SETFLOAT(v + 4, block_delta_time);
     
     libpds_list(pd, "radium_receive_note_on", 5, v);
   }
 }
 
-static void RT_stop_note(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id){
+static void RT_stop_note(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
-  libpds_noteon(pd, 0, note_num, 0);
+  libpds_noteon(pd, note.midi_channel, note.pitch, 0);
   
   {
     t_atom v[3];
     
-    SETFLOAT(v + 0, RT_get_note_id_pos(data, note_id));
-    SETFLOAT(v + 1, note_num);
+    SETFLOAT(v + 0, RT_get_note_id_pos(data, note.id));
+    SETFLOAT(v + 1, note.pitch);
     SETFLOAT(v + 2, block_delta_time);
     
     libpds_list(pd, "radium_receive_note_off", 3, v);
@@ -415,17 +415,17 @@ static void RT_stop_note(struct SoundPlugin *plugin, int64_t block_delta_time, f
 }
 
 // called from radium
-static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float volume){
+static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
-  libpds_polyaftertouch(pd, 0, note_num, volume*127);
+  libpds_polyaftertouch(pd, note.midi_channel, note.pitch, note.velocity*127);
 
   {
     t_atom v[4];
 
-    SETFLOAT(v + 0, RT_get_note_id_pos(data, note_id));
-    SETFLOAT(v + 1, note_num);
-    SETFLOAT(v + 2, volume);
+    SETFLOAT(v + 0, RT_get_note_id_pos(data, note.id));
+    SETFLOAT(v + 1, note.pitch);
+    SETFLOAT(v + 2, note.velocity);
     SETFLOAT(v + 3, block_delta_time);
     
     libpds_list(pd, "radium_receive_velocity", 4, v);
@@ -433,16 +433,16 @@ static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t block_delta_t
 }
 
 // called from radium
-static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float pitch){
+static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
 
   {
     t_atom v[4]; 
 
-    SETFLOAT(v + 0, RT_get_note_id_pos(data, note_id));
-    SETFLOAT(v + 1, note_num);
-    SETFLOAT(v + 2, pitch);
+    SETFLOAT(v + 0, RT_get_note_id_pos(data, note.id));
+    SETFLOAT(v + 1, note.pitch);
+    SETFLOAT(v + 2, note.pitch);
     SETFLOAT(v + 3, block_delta_time);
     
     libpds_list(pd, "radium_receive_pitch", 4, v);
@@ -760,7 +760,7 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         
         if (patch!=NULL) {
           RT_PLAYER_runner_lock();{
-            RT_PATCH_send_play_note_to_receivers(patch, pitch, note_id, velocity, pan, time);
+            RT_PATCH_send_play_note_to_receivers(patch, create_note_t(note_id, pitch, velocity, pan, 0), time);
           }RT_PLAYER_runner_unlock();
         }
       }
@@ -781,7 +781,7 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         int64_t time    = seconds*sample_rate + frames;
         if (patch!=NULL) {
           RT_PLAYER_runner_lock();{
-            RT_PATCH_send_stop_note_to_receivers(patch, pitch, note_id, time);
+            RT_PATCH_send_stop_note_to_receivers(patch, create_note_t2(note_id, pitch), time);
           }RT_PLAYER_runner_unlock();
         }
       }
@@ -805,7 +805,7 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         //printf("send_velocity. id: %d, argv[0]: %f, notenum: %f, velocity: %f, seconds: %f, frames: %d\n",(int)note_id,libpd_get_float(argv[0]),notenum,velocity,seconds,frames);
         if (patch!=NULL) {
           RT_PLAYER_runner_lock();{
-            RT_PATCH_send_change_velocity_to_receivers(patch, notenum, note_id, velocity, time);
+            RT_PATCH_send_change_velocity_to_receivers(patch, create_note_t(note_id, notenum, velocity, 0, 0), time);
           }RT_PLAYER_runner_unlock();
         }
       }
@@ -828,7 +828,7 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         int64_t time    = seconds*sample_rate + frames;
         if (patch!=NULL) {
           RT_PLAYER_runner_lock();{
-            RT_PATCH_send_change_pitch_to_receivers(patch, notenum, note_id, pitch, time);
+            RT_PATCH_send_change_pitch_to_receivers(patch, create_note_t(note_id, notenum, 0, pitch, 0), time);
           }RT_PLAYER_runner_unlock();
         }
       }
@@ -877,9 +877,9 @@ static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
   
   RT_PLAYER_runner_lock();{
     if(velocity>0)
-      RT_PATCH_send_play_note_to_receivers((struct Patch*)patch, pitch, -1, (float)velocity / 127.0f, 0.0f, -1);
+      RT_PATCH_send_play_note_to_receivers((struct Patch*)patch, create_note_t(-1, pitch, (float)velocity / 127.0f, 0.0f, channel), -1);
     else
-      RT_PATCH_send_stop_note_to_receivers((struct Patch*)patch, pitch, -1, -1);
+      RT_PATCH_send_stop_note_to_receivers((struct Patch*)patch, create_note_t(-1, pitch, 0, 0, channel), -1);
   }RT_PLAYER_runner_unlock();
 
   //  printf("Got note on %d %d %d (%p) %f\n",channel,pitch,velocity,d,(float)velocity / 127.0f);
@@ -894,7 +894,7 @@ static void RT_polyaftertouchhook(void *d, int channel, int pitch, int velocity)
     return;
 
   RT_PLAYER_runner_lock();{
-    RT_PATCH_send_change_velocity_to_receivers((struct Patch*)patch, pitch, -1, (float)velocity / 127.0f, -1);
+    RT_PATCH_send_change_velocity_to_receivers((struct Patch*)patch, create_note_t(-1, pitch, (float)velocity / 127.0f, 0, channel), -1);
   }RT_PLAYER_runner_unlock();
   
   //printf("Got poly aftertouch %d %d %d (%p)\n",channel,pitch,velocity,d);

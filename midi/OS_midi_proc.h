@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 // OS_midi_spesific.h contains the definition of MidiPortOs
-#include <OS_midi_spesific.h>
+#include "rtmidi/OS_midi_spesific.h"
 
 
 extern LANGSPEC char **MIDI_getOutputPortOsNames(int *retsize);

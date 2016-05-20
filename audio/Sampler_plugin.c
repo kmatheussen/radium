@@ -430,8 +430,9 @@ static long RT_src_callback_reverse_nolooping(Voice *voice, const Sample *sample
   float *source_sound = sample->sound;
   float *dest_sound = &voice->crossfade_buffer[0];
   int sample_pos = sample->num_frames-1 - start_pos;
-  
-  for(int i=0 ; i< num_samples_to_return ; i++)
+ 
+  int i;
+  for(i=0 ; i< num_samples_to_return ; i++)
     dest_sound[i] = source_sound[sample_pos--];
 
   
@@ -696,12 +697,12 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 }
 
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume, float pan){
+static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note2){
   Data *data = (Data*)plugin->data;
 
   //fprintf(stderr,"playing note %d. Pitch: %d, time: %d\n",(int)note_id,(int)note_num,(int)time);
 
-  const Note *note = &data->notes[(int)note_num];
+  const Note *note = &data->notes[(int)note2.pitch];
 
   int i;
   for(i=0;i<note->num_samples;i++){
@@ -718,15 +719,15 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
     
     voice->last_finetune_value = data->p.finetune;
     
-    voice->note_num = note_num;
-    voice->note_id = note_id;
+    voice->note_num = note2.pitch;
+    voice->note_id = note2.id;
 
-    voice->start_volume = velocity2gain(volume);
+    voice->start_volume = velocity2gain(note2.velocity);
     voice->end_volume = voice->start_volume;
 
-    voice->pitch       = note_num;
-    voice->start_pitch = note_num;
-    voice->end_pitch   = note_num;
+    voice->pitch       = note2.pitch;
+    voice->start_pitch = note2.pitch;
+    voice->end_pitch   = note2.pitch;
 
     const Sample *sample = note->samples[i];
     
@@ -741,7 +742,7 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
                        0,1,
                        0,sample->num_frames);
 
-    voice->pan = get_pan_vals_vector(pan,voice->sample->ch==-1?1:2);
+    voice->pan = get_pan_vals_vector(note2.pan,voice->sample->ch==-1?1:2);
         
     RESAMPLER_reset(voice->resampler);
     ADSR_reset(voice->adsr);
@@ -754,7 +755,7 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
 }
 
 
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
+static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t note){
   Data *data = (Data*)plugin->data;
 
   Voice *voice = data->voices_playing;
@@ -762,14 +763,14 @@ static void set_note_volume(struct SoundPlugin *plugin, int64_t time, float note
   while(voice!=NULL){
     //printf("Setting volume to %f. note_num: %d. voice: %d\n",volume,note_num,voice->note_num);
 
-    if(voice->note_id==note_id)
-      voice->end_volume = velocity2gain(volume);
+    if(voice->note_id==note.id)
+      voice->end_volume = velocity2gain(note.velocity);
 
     voice = voice->next;
   }
 }
 
-static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float pitch){
+static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, note_t note){
   Data *data = (Data*)plugin->data;
 
   Voice *voice = data->voices_playing;
@@ -778,8 +779,8 @@ static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_
 
   while(voice!=NULL){
 
-    if(voice->note_id==note_id){
-      voice->end_pitch = pitch;
+    if(voice->note_id==note.id){
+      voice->end_pitch = note.pitch;
       //printf("Got it\n");
     }
 
@@ -787,7 +788,7 @@ static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_
   }
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id){
+static void stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
   Data *data = (Data*)plugin->data;
 
   Voice *voice = data->voices_playing;
@@ -798,7 +799,7 @@ static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
   }
 
   while(voice!=NULL){
-    if(voice->note_id==note_id){
+    if(voice->note_id==note.id){
       if(voice->delta_pos_at_end == -1)
         voice->delta_pos_at_end = time;
       //voice->end_volume = velocity2gain(volume); // no no no. end_volume is for change velocity only. If volume==0, note ends here, not when release is finished. (the volume argument for stop_note is probably completely useless)

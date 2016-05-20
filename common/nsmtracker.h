@@ -532,6 +532,7 @@ struct Notes{
 
 
 
+
 /*********************************************************************
 	patch.h
 *********************************************************************/
@@ -569,6 +570,7 @@ struct PatchVoice{
 
 #define MAX_PLAYING_PATCH_NOTES (1024*32)
 
+/*
 typedef struct{
   float note_num;
   int64_t note_id;
@@ -582,7 +584,61 @@ static inline PatchPlayingNote NewPatchPlayingNote(float note_num, int64_t note_
   ret.pan=pan;
   return ret;
 }
+*/
 
+// Used by the player when playing/changing/stopping note
+typedef struct {
+  int64_t id;
+  float pitch;
+  float velocity;
+  float pan;
+  int midi_channel;
+} note_t;
+
+#define NOTE_ID_RESOLUTION 256 // i.e. 256 id's per note.
+static inline int64_t NotenumId(float notenum){
+  int64_t n = notenum*NOTE_ID_RESOLUTION;
+  return n*NUM_PATCH_VOICES;
+}
+
+
+static inline note_t create_note_t(int64_t note_id,
+                                   float pitch,
+                                   float velocity,
+                                   float pan,
+                                   int midi_channel
+                                   )
+{
+#if !defined(RELEASE)
+  R_ASSERT(midi_channel>=0 && midi_channel <= 15);
+  R_ASSERT(note_id >= -1);
+  
+  {
+#if defined(RELEASE)
+    R_ASSERT(false);
+#endif
+    R_ASSERT(pitch < 150); // approx. This assert might give false positives.
+  }
+
+  R_ASSERT(pitch >= 0);
+  R_ASSERT(pan >= -1);
+  R_ASSERT(pan <= 1);
+#endif
+
+  if(note_id==-1)
+    note_id = NotenumId(pitch);
+
+  note_t note = {note_id, pitch, velocity, pan, midi_channel};
+  
+  return note;
+}
+
+static inline note_t create_note_t2(int64_t note_id,
+                                    float pitch
+                                    )
+{
+  return create_note_t(note_id, pitch, 0, 0, 0);
+}
 
 // Note that Patch objects are stored directly in undo/redo (not copied), so it must not be freed, reused for other purposes, or othervice manipulated when not available.
 struct Patch{
@@ -598,11 +654,11 @@ struct Patch{
 
   STime last_time; // player lock must be held when setting this value.
 
-  void (*playnote)(struct Patch *patch,float notenum,int64_t note_id,float velocity,STime time,float pan);
-  void (*changevelocity)(struct Patch *patch,float notenum,int64_t note_id,float velocity,STime time);
-  void (*changepitch)(struct Patch *patch,float notenum,int64_t note_id,float pitch,STime time);
+  void (*playnote)(struct Patch *patch,note_t note,STime time);
+  void (*changevelocity)(struct Patch *patch,note_t note,STime time);
+  void (*changepitch)(struct Patch *patch,note_t note,STime time);
   void (*sendrawmidimessage)(struct Patch *patch,uint32_t msg,STime time); // note on, note off, and polyphonic aftertouch are/should not be sent using sendmidimessage. sysex is not supported either.
-  void (*stopnote)(struct Patch *patch,float notenum,int64_t note_id,STime time);
+  void (*stopnote)(struct Patch *patch,note_t note,STime time);
   void (*closePatch)(struct Patch *patch);
   
   struct Instruments *instrument;
@@ -615,10 +671,10 @@ struct Patch{
   struct PatchVoice voices[NUM_PATCH_VOICES];
 
   int num_currently_playing_voices; // Access protected by PLAYER_lock
-  PatchPlayingNote playing_voices[MAX_PLAYING_PATCH_NOTES];      /* To keep track of how many times a voice has to be turned off. */
+  note_t playing_voices[MAX_PLAYING_PATCH_NOTES];      /* To keep track of how many times a voice has to be turned off. */
 
   int num_currently_playing_notes;
-  PatchPlayingNote playing_notes[MAX_PLAYING_PATCH_NOTES];  /* To keep track of which notes are playing. (Useful to avoid hanging notes when turning on and off voices)*/
+  note_t playing_notes[MAX_PLAYING_PATCH_NOTES];  /* To keep track of which notes are playing. (Useful to avoid hanging notes when turning on and off voices)*/
 
   bool peaks_are_dirty; /* Can be set to true by any thread. */
 
@@ -646,7 +702,7 @@ static inline void Patch_copyAttributesFromAnotherPatch(struct Patch *dest, stru
 }
 #endif
 
-static inline void Patch_addPlayingVoice(struct Patch *patch, float note_num, int64_t note_id, float pan){
+static inline void Patch_addPlayingVoice(struct Patch *patch, note_t note){
 #if 0
   printf("Adding note with id %d\n",(int)note_id);
   if(note_id==52428)
@@ -658,7 +714,7 @@ static inline void Patch_addPlayingVoice(struct Patch *patch, float note_num, in
   if(patch->num_currently_playing_voices==MAX_PLAYING_PATCH_NOTES)
     printf("Error. Reached max number of voices there's room for in a patch. Hanging notes are likely to happen.\n");
   else    
-    patch->playing_voices[patch->num_currently_playing_voices++] = NewPatchPlayingNote(note_num, note_id, pan);
+    patch->playing_voices[patch->num_currently_playing_voices++] = note;
 }
 
 
@@ -667,7 +723,7 @@ static inline void Patch_removePlayingVoice(struct Patch *patch, int64_t note_id
   
   int i;
   for(i=0;i<patch->num_currently_playing_voices;i++){
-    if(patch->playing_voices[i].note_id==note_id){
+    if(patch->playing_voices[i].id==note_id){
       patch->playing_voices[i] = patch->playing_voices[patch->num_currently_playing_voices-1];
       patch->num_currently_playing_voices--;
       return;
@@ -685,17 +741,17 @@ static inline void Patch_removePlayingVoice(struct Patch *patch, int64_t note_id
 #endif
 }
 
-static inline void Patch_addPlayingNote(struct Patch *patch, float note_num, int64_t note_id, float pan){
+static inline void Patch_addPlayingNote(struct Patch *patch, note_t note){
   if(patch->num_currently_playing_notes==MAX_PLAYING_PATCH_NOTES)
     printf("Error. Reached max number of notes there's room for in a patch. Hanging notes are likely to happen.\n");
   else    
-    patch->playing_notes[patch->num_currently_playing_notes++] = NewPatchPlayingNote(note_num, note_id, pan);
+    patch->playing_notes[patch->num_currently_playing_notes++] = note;
 }
 
 static inline void Patch_removePlayingNote(struct Patch *patch, int64_t note_id){
   int i;
   for(i=0;i<patch->num_currently_playing_notes;i++){
-    if(patch->playing_notes[i].note_id==note_id){
+    if(patch->playing_notes[i].id==note_id){
       patch->playing_notes[i] = patch->playing_notes[patch->num_currently_playing_notes-1];
       patch->num_currently_playing_notes--;
       return;

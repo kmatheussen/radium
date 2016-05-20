@@ -188,11 +188,11 @@ typedef struct SoundPluginType{
   */
 
   // These three functions are not used if SoundPluginType->note_handling_is_RT is true
-  void (*play_note)(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float volume, float pan);
-  void (*set_note_volume)(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float volume);
-  void (*set_note_pitch)(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float pitch);
+  void (*play_note)(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note);
+  void (*set_note_volume)(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note);
+  void (*set_note_pitch)(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note);
   void (*send_raw_midi_message)(struct SoundPlugin *plugin, int64_t block_delta_time, uint32_t msg);
-  void (*stop_note)(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id);
+  void (*stop_note)(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note);
   
   // Returns the number of channels it can provide peaks for. (calling this function with ch=-1 is considered a dummy operation, except that the return value is correct)
   int (*get_peaks)(struct SoundPlugin *plugin, float note_num, int ch, float pan, int64_t start_time, int64_t end_time, float *min_value, float *max_value);

@@ -54,7 +54,7 @@ enum{
     
 /* Audio Patch */
 
-static void AUDIO_playnote(struct Patch *patch,float notenum,int64_t note_id, float velocity,STime time,float pan){
+static void AUDIO_playnote(struct Patch *patch,note_t note,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL)
@@ -63,12 +63,12 @@ static void AUDIO_playnote(struct Patch *patch,float notenum,int64_t note_id, fl
   //printf("playing audio note %f, id: %d\n",notenum,(int)note_id);
     
   if(plugin->type->play_note != NULL)
-    plugin->type->play_note(plugin, PLAYER_get_block_delta_time(time), notenum, note_id, velocity, pan);
+    plugin->type->play_note(plugin, PLAYER_get_block_delta_time(time), note);
 
   //printf("playing audio note %d, player delta time: %d, mixer delta time: %d. Absolute time: %d\n",(int)notenum,(int)PLAYER_get_delta_time(time),(int)MIXER_get_block_delta_time(time),(int)time);
 }
 
-static void AUDIO_changevelocity(struct Patch *patch,float notenum,int64_t note_id, float velocity,STime time){
+static void AUDIO_changevelocity(struct Patch *patch,note_t note,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL)
@@ -77,19 +77,18 @@ static void AUDIO_changevelocity(struct Patch *patch,float notenum,int64_t note_
   //printf("audio velocity changed: %d. Time: %d\n",velocity,(int)MIXER_get_block_delta_time(time));
 
   if(plugin->type->set_note_volume != NULL)
-    plugin->type->set_note_volume(plugin, PLAYER_get_block_delta_time(time), notenum, note_id, velocity);
+    plugin->type->set_note_volume(plugin, PLAYER_get_block_delta_time(time), note);
  
 }
 
-static void AUDIO_changepitch(struct Patch *patch,float notenum,int64_t note_id, float pitch,STime time){
+static void AUDIO_changepitch(struct Patch *patch,note_t note,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL)
     return;
 
   if(plugin->type->set_note_pitch != NULL)
-    plugin->type->set_note_pitch(plugin, PLAYER_get_block_delta_time(time), notenum, note_id, pitch);
- 
+    plugin->type->set_note_pitch(plugin, PLAYER_get_block_delta_time(time), note); 
 }
 
 static void AUDIO_sendrawmidimessage(struct Patch *patch,uint32_t msg,STime time){
@@ -104,7 +103,7 @@ static void AUDIO_sendrawmidimessage(struct Patch *patch,uint32_t msg,STime time
     plugin->type->send_raw_midi_message(plugin, PLAYER_get_block_delta_time(time), msg); 
 }
 
-static void AUDIO_stopnote(struct Patch *patch,float notenum,int64_t note_id,STime time){
+static void AUDIO_stopnote(struct Patch *patch,note_t note,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL)
@@ -113,7 +112,7 @@ static void AUDIO_stopnote(struct Patch *patch,float notenum,int64_t note_id,STi
   //printf("stopping audio note %f, id: %d\n",notenum,(int)note_id);
 
   if(plugin->type->stop_note != NULL)
-    plugin->type->stop_note(plugin, PLAYER_get_block_delta_time(time), notenum, note_id);
+    plugin->type->stop_note(plugin, PLAYER_get_block_delta_time(time), note);
 }
 
 static void AUDIO_closePatch(struct Patch *patch){

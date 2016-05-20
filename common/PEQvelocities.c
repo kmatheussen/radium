@@ -141,9 +141,11 @@ static void scheduled_change_velocity(int64_t time, const union SuperType *args)
   //printf("Change velocity to %d\n",x);
 
   RT_PATCH_change_velocity(track->patch,
-                           note->note,
-                           note->id,
-                           TRACK_get_velocity(track,x),
+                           create_note_t(note->id,
+                                         note->note,
+                                         TRACK_get_velocity(track,x),
+                                         0,
+                                         0),
                            time
                            );
 }

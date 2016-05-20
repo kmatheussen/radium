@@ -21,6 +21,7 @@
 #include "../common/OS_Player_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
 #include "../OpenGL/Widget_proc.h"
+#include "../midi/midi_i_plugin_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -290,17 +291,32 @@ int MIDI_msg_len(uint32_t msg){
 }
 
 
-static void RT_MIDI_send_msg_to_patch_receivers(struct Patch *patch, MidiMessage message, int64_t seq_time){       
+static void RT_MIDI_send_msg_to_patch_receivers2(struct Patch *patch, MidiMessage message, int64_t seq_time){       
   if (message.isNoteOn()) {
     //printf("Out. Sending note ON %d\n",  message.getNoteNumber());
-    RT_PATCH_send_play_note_to_receivers(patch, message.getNoteNumber(), -1, message.getVelocity() / 127.0f, 0.0f, seq_time);
+    note_t note = create_note_t(-1,
+                                message.getNoteNumber(),
+                                message.getVelocity() / 127.0f,
+                                0.0f,
+                                message.getChannel()-1);
+    RT_PATCH_send_play_note_to_receivers(patch, note, seq_time);
     
   } else if (message.isNoteOff()) {
     //printf("Out. Sending note OFF %d\n",  message.getNoteNumber());
-    RT_PATCH_send_stop_note_to_receivers(patch, message.getNoteNumber(), -1, seq_time);
+    note_t note = create_note_t(-1,
+                                message.getNoteNumber(),
+                                0,
+                                0.0f,
+                                message.getChannel()-1);
+    RT_PATCH_send_stop_note_to_receivers(patch, note, seq_time);
   
   } else if (message.isAftertouch()) {
-    RT_PATCH_send_change_velocity_to_receivers(patch, message.getNoteNumber(), -1, message.getAfterTouchValue() / 127.0f, seq_time);
+    note_t note = create_note_t(-1,
+                                message.getNoteNumber(),
+                                message.getAfterTouchValue() / 127.0f,                                
+                                0.0f,
+                                message.getChannel()-1);
+    RT_PATCH_send_change_velocity_to_receivers(patch, note, seq_time);
 
   } else {
     
@@ -339,22 +355,38 @@ int RT_MIDI_send_msg_to_patch_receivers(struct Patch *patch, void *data, int dat
   
   MidiMessage message(data, data_size, num_bytes_used, 0);
   
-  RT_MIDI_send_msg_to_patch_receivers(patch, message, seq_time);
+  RT_MIDI_send_msg_to_patch_receivers2(patch, message, seq_time);
 
   return num_bytes_used;
 }
 
-static void RT_MIDI_send_msg_to_patch(struct Patch *patch, MidiMessage message, int64_t seq_time){       
-  if (message.isNoteOn())
-    RT_PATCH_play_note(patch, message.getNoteNumber(), -1, message.getVelocity() / 127.0f, 0.0f, seq_time);
-  
-  else if (message.isNoteOff())
-    RT_PATCH_stop_note(patch, message.getNoteNumber(), -1, seq_time);
-  
-  else if (message.isAftertouch())
-    RT_PATCH_change_velocity(patch, message.getNoteNumber(), -1, message.getChannelPressureValue() / 127.0f, seq_time);
+static void RT_MIDI_send_msg_to_patch2(struct Patch *patch, MidiMessage message, int64_t seq_time){       
+  if (message.isNoteOn()) {
+    note_t note = create_note_t(-1,
+                                message.getNoteNumber(),
+                                message.getVelocity() / 127.0f,
+                                0.0f,
+                                message.getChannel()-1);
 
-  else {
+    RT_PATCH_play_note(patch, note, seq_time);
+  
+  } else if (message.isNoteOff()) {
+    note_t note = create_note_t(-1,
+                                message.getNoteNumber(),
+                                0,
+                                0.0f,
+                                message.getChannel()-1);
+    RT_PATCH_stop_note(patch, note, seq_time);
+  
+  } else if (message.isAftertouch()) {
+    note_t note = create_note_t(-1,
+                                message.getNoteNumber(),
+                                message.getAfterTouchValue() / 127.0f,                                
+                                0.0f,
+                                message.getChannel()-1);
+    RT_PATCH_change_velocity(patch, note, seq_time);
+
+  } else {
     
     const uint8_t *raw_data = message.getRawData();
     int len = message.getRawDataSize();
@@ -391,7 +423,7 @@ int RT_MIDI_send_msg_to_patch(struct Patch *patch, void *data, int data_size, in
   
   MidiMessage message(data, data_size, num_bytes_used, 0);
   
-  RT_MIDI_send_msg_to_patch(patch, message, seq_time);
+  RT_MIDI_send_msg_to_patch2(patch, message, seq_time);
 
   return num_bytes_used;
 }
@@ -456,7 +488,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
         int64_t radium_time = pc->start_time + delta_time;
 
         if (patch != NULL) {          
-          RT_MIDI_send_msg_to_patch_receivers((struct Patch*)patch, message, radium_time);
+          RT_MIDI_send_msg_to_patch_receivers2((struct Patch*)patch, message, radium_time);
         }        
       }
 
@@ -467,29 +499,32 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume,float pan){
+static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note){
   Data *data = (Data*)plugin->data;
   MidiBuffer &buffer = data->midi_buffer;
 
   //printf("In. Play note %d %d\n",(int)note_num,(int)time);
-  MidiMessage message(0x90, (int)note_num, (int)(volume*127), 0.0);
+  MidiMessage message(0x90 | note.midi_channel, (int)note.pitch, R_BOUNDARIES(0, (int)(note.velocity*127), 127));
   buffer.addEvent(message, time);
 }
 
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
+static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t note){
   Data *data = (Data*)plugin->data;
   MidiBuffer &buffer = data->midi_buffer;
 
-  MidiMessage message(0xa0, (int)note_num, (int)(volume*127), 0.0);
+  int velocity = R_BOUNDARIES(0,note.velocity,127);
+  MidiMessage message(0xa0 | note.midi_channel, (int)note.pitch, velocity, 0.0);
   buffer.addEvent(message, time);
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id){
+static void stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
   Data *data = (Data*)plugin->data;
   MidiBuffer &buffer = data->midi_buffer;
+
+  int ox90 = MIDI_get_use_0x90_for_note_off() ? 0x90 : 0x80;
 
   //printf("In. Stop note %d %d\n",(int)note_num,(int)time);
-  MidiMessage message(0x90, (int)note_num, 0, 0.0);
+  MidiMessage message(ox90 | note.midi_channel, (int)note.pitch, 0, 0.0);
   buffer.addEvent(message, time);
 }
 

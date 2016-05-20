@@ -120,9 +120,8 @@ static void scheduled_change_pitch(int64_t time, const union SuperType *args){
   //printf("Sending pitch change %f\n",x);
 
   RT_PATCH_change_pitch(track->patch,
-                        note->note,
-                        note->id,
-                        x,
+                        create_note_t2(note->id,
+                                       x),
                         time
                         );
 }

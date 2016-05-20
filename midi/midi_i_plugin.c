@@ -115,11 +115,8 @@ void MyPutMidi(
 /******************** notes **************************/
 
 static void MIDIplaynote(struct Patch *patch,
-                         float das_notenum,
-                         int64_t note_id,
-                         float das_velocity,
-                         STime time,
-                         float pan
+                         note_t note,
+                         STime time
 ){
 	const struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
 
@@ -127,17 +124,17 @@ static void MIDIplaynote(struct Patch *patch,
           return;
 
         struct MidiPort *midi_port = patchdata->midi_port;
-	const int channel=patchdata->channel;
+	const int channel=patchdata->channel; // We don't use note.midi_channel here.
 	int maxbuf=70;
 
-        int notenum = das_notenum;
+        int notenum = note.pitch;
 
         if(notenum>127)
           notenum=127;
         if(notenum<0)
           notenum=0;
 
-        int velocity = scale(das_velocity,0,1,0,127);
+        int velocity = scale(note.velocity,0,1,0,127);
 
         if(velocity>127)
           velocity=127;
@@ -228,8 +225,7 @@ void MIDI_set_use_0x90_for_note_off(bool doit){
 
 
 static void MIDIstopnote(struct Patch *patch,
-                         float das_notenum,
-                         int64_t note_id,
+                         note_t note,
                          STime time
 ){
   struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
@@ -237,7 +233,7 @@ static void MIDIstopnote(struct Patch *patch,
   if(patchdata==NULL)
     return;
 
-  int notenum = das_notenum;
+  int notenum = note.pitch;
 
   if(notenum>127)
     notenum=127;
@@ -265,20 +261,20 @@ static void MIDIstopnote(struct Patch *patch,
 
 /******************* Velocity *************************/
 
-static void MIDIchangevelocity(struct Patch *patch,float das_notenum, int64_t id, float das_velocity,STime time){
+static void MIDIchangevelocity(struct Patch *patch,note_t note,STime time){
 	struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
 
         if(patchdata==NULL)
           return;
 
-        int notenum = das_notenum;
+        int notenum = note.pitch;
 
         if(notenum>127)
           notenum=127;
         if(notenum<0)
           notenum=0;
 
-        int velocity = scale(das_velocity,0,1,0,127);
+        int velocity = scale(note.velocity,0,1,0,127);
 
         if(velocity>127)
           velocity=127;
@@ -298,7 +294,7 @@ static void MIDIchangevelocity(struct Patch *patch,float das_notenum, int64_t id
 }
 
 
-static void MIDIchangepitch(struct Patch *patch,float notenum, int64_t note_id, float pitch,STime time){ // never called
+static void MIDIchangepitch(struct Patch *patch,note_t note,STime time){ // never called
 }
 
 static void MIDIsendrawmidimessage(struct Patch *patch,uint32_t msg,STime time){ // never called
