@@ -218,8 +218,10 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   
   const LADSPA_Descriptor *descriptor = type_data->descriptor;
   if (type_data->descriptor==NULL){
+    Library *library = type_data->library;
+    R_ASSERT_RETURN_IF_FALSE2(library!=NULL, NULL);
     RError("type_data->descriptor==NULL. num_references: %d, num_times_loaded: %d, filename: \"%s\"",library->num_references,library->num_times_loaded,library->filename);
-    return false;
+    return NULL;
   }
   
   data->control_values = (float*)V_calloc(sizeof(float),descriptor->PortCount);
