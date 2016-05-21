@@ -16,11 +16,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-// Huge amount of ladspa plugins for windows:
-// http://opensourcepack.blogspot.se/2012/03/ported-ladspa-plugins-collection.html
-//
-// ladspa for osx might be included with ardour. Got it. (http://ardour.org/files/Plugins.tar.bz2)
-
 #include <algorithm>
 #include <vector>
 
@@ -76,6 +71,7 @@ struct Library{ // Used to avoid having lots of unused dynamic libraries loaded 
   QLibrary *library;
   LADSPA_Descriptor_Function get_descriptor_func;
   int num_references; // library is unloaded when this value decreases from 1 to 0, and loaded when increasing from 0 to 1.
+  int num_times_loaded; // for debugging
 };
 
 struct TypeData{
@@ -189,8 +185,13 @@ static bool add_library_reference(TypeData *type_data){
     }
   }
 
+  if (type_data->descriptor==NULL){
+    RError("type_data->descriptor==NULL. num_references: %d, num_times_loaded: %d, filename: \"%s\"",library->num_references,library->num_times_loaded,library->filename);
+    return false;
+  }
 
   library->num_references++;
+  library->num_times_loaded++;
   
   return true;
 }
@@ -216,7 +217,11 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
     return NULL;
   
   const LADSPA_Descriptor *descriptor = type_data->descriptor;
-
+  if (type_data->descriptor==NULL){
+    RError("type_data->descriptor==NULL. num_references: %d, num_times_loaded: %d, filename: \"%s\"",library->num_references,library->num_times_loaded,library->filename);
+    return false;
+  }
+  
   data->control_values = (float*)V_calloc(sizeof(float),descriptor->PortCount);
 
   data->handles[0] = descriptor->instantiate(descriptor,sample_rate);
