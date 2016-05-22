@@ -262,10 +262,8 @@ void create_bus_plugins(void){
   PR_add_plugin_type(&bus_type2);
   PR_add_plugin_type(&pipe_type);
 
-  /*
-  PR_add_plugin_type(&left_in_type);
-  PR_add_plugin_type(&right_in_type);
-  PR_add_plugin_type(&left_out_type);
-  PR_add_plugin_type(&right_out_type);
-  */
+  PR_add_plugin_type_no_menu(&left_in_type);
+  PR_add_plugin_type_no_menu(&right_in_type);
+  PR_add_plugin_type_no_menu(&left_out_type);
+  PR_add_plugin_type_no_menu(&right_out_type);
 }
