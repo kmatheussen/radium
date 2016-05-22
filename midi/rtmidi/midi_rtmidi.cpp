@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../../common/nsmtracker.h"
 #include "../../common/playerclass.h"
+#include "../../common/Vector.hpp"
 #include "../../common/vector_proc.h"
 #include "../../common/memory_proc.h"
 #include "../../common/OS_visual_input.h"
@@ -76,6 +77,7 @@ static int midi_msg_len(int m1){
   return 3;
 }
 
+#if 0
 #ifdef __linux__
 static RtMidiIn *inport_jack;
 static RtMidiIn *inport_alsa;
@@ -89,6 +91,9 @@ static RtMidiIn *inport_winmm;
 #ifdef FOR_MACOSX
 static RtMidiIn *inport_coremidi;
 #endif
+#endif
+
+static radium::Vector<RtMidiIn*> g_inports;
 
 static std::vector<unsigned char> message1;
 static std::vector<unsigned char> message2;
@@ -400,6 +405,75 @@ static int get_portnum(const char *portname){
   return -1;
 }
 
+/*
+static bool input_port_exists(const char *portname){
+  return get_portnum(portname) >= 0;
+}
+*/
+
+void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *portname){
+  for (auto port : g_inports)
+    if (port->getPortName() == std::string(portname))
+      return;
+
+#ifdef FOR_LINUX
+  enum RtMidi::Api api = RtMidi::LINUX_ALSA;
+#elif FOR_WINDOWS
+  enum RtMidi::Api api = RtMidi::WINDOWS_MM;
+#elif FOR_MACOSX
+  enum RtMidi::Api api = RtMidi::MACOSX_CORE;
+#elif
+# errror "unknwond archihtilher"
+#endif
+    
+  int portnum = get_portnum(portname);
+  bool exists = portnum >= 0;
+
+#ifdef FOR_WINDOWS // No virtual ports in windows
+  if (!exists){
+    GFX_Message(NULL,"Unknown port %s",portname);
+    return;
+  }
+#endif
+
+  RtMidiIn *inport = new RtMidiIn(api,std::string("Radium"));
+
+  try{
+    if(exists)
+      inport->openPort(portnum,portname);
+    else
+      inport->openVirtualPort(portname);
+
+    inport->setCallback(mycallback,NULL);
+
+  }catch ( RtError &error ) {
+    GFX_Message(NULL, "Couldn't open %s. (%s)", portname, error.what());
+    // delete inport; // <-- Don't bother. Need to catch errors, but it's too messy to do that here, or on the outside, to be worth it.
+    return;
+  }
+
+  g_inports.add(inport);
+}
+
+
+void MIDI_OS_RemoveInputPort(const char *portname){
+  for (auto port : g_inports)
+    if (port->getPortName() == std::string(portname)) {
+      try{
+        delete port;
+      }catch ( RtError &error ) {
+        GFX_Message(NULL, "Unable to delete MIDI port %s (%s)", portname, error.what());
+        return;
+      }
+      g_inports.remove(port);
+      return;
+    }
+
+  GFX_Message(NULL, "No MIDI port \"%s\" found", portname);
+}
+
+
+#if 0
 void MIDI_OS_SetInputPort(const char *portname){
   int portnum = get_portnum(portname);
 
@@ -505,6 +579,8 @@ void MIDI_OS_SetInputPort(const char *portname){
 #endif
 
 }
+#endif
+
 
 bool MIDI_New(struct Instruments *instrument){
   static bool globals_are_initialized = false;
@@ -537,7 +613,7 @@ bool MIDI_New(struct Instruments *instrument){
 
       const char *inport = MIDI_get_input_port();
       if(inport!=NULL)
-        MIDI_OS_SetInputPort(inport);
+        MIDI_OS_AddInputPortIfNotAlreadyAdded(inport);
 
 
     globals_are_initialized = true;
@@ -550,6 +626,11 @@ bool MIDI_New(struct Instruments *instrument){
 void MIDI_Delete(void){
   printf("Ending MIDI instrument\n");
 
+  while(g_inports.size() > 0)
+    MIDI_OS_RemoveInputPort(g_inports[0]->getPortName().c_str());
+    
+  
+#if 0
 #ifdef __linux__
   delete inport_jack;
   delete inport_alsa;
@@ -561,6 +642,6 @@ void MIDI_Delete(void){
   delete inport_winks;
 #endif
 #endif
-
+#endif
 }
 

@@ -167,7 +167,7 @@ const char *MIDI_get_input_port(void){
 int MIDISetInputPort(void){
   char *portname = MIDIrequestPortName(root->song->tracker_windows,NULL,true);
   if(portname!=NULL){
-    MIDI_OS_SetInputPort(portname);
+    MIDI_OS_AddInputPortIfNotAlreadyAdded(portname);
     SETTINGS_write_string("midi_input_port",portname);
     g_input_port_name = portname;
     PREFERENCES_update();

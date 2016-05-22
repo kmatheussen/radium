@@ -22,7 +22,7 @@ int MIDILocalKeyboardOn( void );
 int MIDILocalKeyboardOff( void );
 int MIDIAllNotesOff( void );
 int MIDIAllSoundsOff( void );
-extern LANGSPEC const char *MIDI_get_input_port(void);
+extern LANGSPEC vector_t *MIDI_get_input_ports(void);
 extern LANGSPEC int MIDISetInputPort( void );
 
 #endif
