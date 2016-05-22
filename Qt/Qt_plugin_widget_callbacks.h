@@ -360,12 +360,14 @@ public slots:
       InstrumentWidget_save_preset(_patch);      
     }
 
-    void on_load_button_clicked(){
+    void on_load_button_clicked(){      
       loadInstrumentPreset(_patch->id, "");
+      // Warning. 'this' might not be here anymore when returning.
     }
 
     void on_replace_button_clicked(){
       replaceInstrument(_patch->id, "");
+      // Warning. 'this' might not be here anymore when returning.
     }
     
     void on_reset_button_clicked(){

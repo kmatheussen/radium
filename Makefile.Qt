@@ -1422,14 +1422,14 @@ $(QM)QM_MixerWidget.cpp: $(QM)mQM_MixerWidget.cpp
 $(QM)mQM_view.cpp: $(QM)QM_view.h 
 	cd $(QM) && $(MOC) QM_view.h >mQM_view.cpp
 
-$(QM)mQM_MixerWidget.cpp: $(QM)QM_MixerWidget.h $(P)Qt_MyQButton.h
+$(QM)mQM_MixerWidget.cpp: $(QM)QM_MixerWidget.h $(P)Qt_MyQButton.h 
 	cd $(QM) && $(MOC) QM_MixerWidget.h >mQM_MixerWidget.cpp
 
 #images.o: $(QM)images.qrc
 #	$(RCC) $(QM)images.qrc -name images -o $(QM)images.cpp
 #	$(CCC) $(QM)images.cpp  `$(PKG) --libs --cflags QtGui` -c
 
-QM_MixerWidget.o: $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h
+QM_MixerWidget.o: $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h audio/SoundPluginRegistry_proc.h
 	$(CCC) $(QM)QM_MixerWidget.cpp $(QTOPT)
 
 QM_view.o: $(QM)QM_view.cpp $(QM)QM_chip.h $(QM)mQM_view.cpp $(QM)QM_MixerWidget.h
@@ -1676,7 +1676,7 @@ MultiCore.o: audio/MultiCore.cpp audio/fade_envelopes.h
 	$(CCC) audio/MultiCore.cpp $(QTOPT)
 
 
-SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp
+SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegistry_proc.h
 	$(CCC) audio/SoundPluginRegistry.cpp  $(QTOPT)
 
 SoundPlugin.o: audio/SoundPlugin.c audio/SoundPlugin.h audio/SoundPlugin_proc.h
@@ -1700,7 +1700,7 @@ SoundFonts.o: audio/SoundFonts.cpp
 	$(CCC) audio/SoundFonts.cpp $(QTOPT) -Ibin/packages/libgig/src/
 # `$(PKG) --cflags glib-2.0`
 
-audio_instrument.o: audio/audio_instrument.c $(CD)disk.h
+audio_instrument.o: audio/audio_instrument.c $(CD)disk.h audio/SoundPluginRegistry_proc.h
 	$(CC) audio/audio_instrument.c $(OPT)
 
 Smooth.o: audio/Smooth.c audio/Smooth_proc.h

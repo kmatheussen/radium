@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_visual_input.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/fxlines_proc.h"
+#include "../common/settings_proc.h"
 
 #include "SoundPlugin.h"
 #include "Mixer_proc.h"
@@ -214,7 +215,7 @@ bool AUDIO_InitPatch2(struct Patch *patch, char *type_name, char *plugin_name, h
   struct SoundPlugin *plugin;
 
   bool state_only_has_plugin = audio_state!=NULL && state_only_contains_plugin(audio_state);
-  
+
   if (audio_state!=NULL){
     
     R_ASSERT(type_name==NULL);

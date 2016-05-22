@@ -152,6 +152,11 @@ int createAudioInstrument(char *type_name, char *plugin_name, char *name) {
   if (patch==NULL)
     return -1;
 
+  {
+    struct SoundPlugin *plugin = patch->patchdata;
+    inc_plugin_usage_number(plugin->type);
+  }
+
   return patch->id;
 }
 
@@ -177,7 +182,7 @@ static hash_t *get_preset_state_from_filename(const wchar_t *filename){
   return state;
 }
 
-static int createAudioInstrumentFromPreset2(const wchar_t *filename, char *name) {
+static int createAudioInstrumentFromPreset2(const wchar_t *filename, char *name, bool inc_usage_number) {
   if (name!=NULL && strlen(name)==0)
     name = NULL;
 
@@ -189,11 +194,17 @@ static int createAudioInstrumentFromPreset2(const wchar_t *filename, char *name)
   if (patch==NULL)
     return -1;
 
+  if (inc_usage_number){
+    struct SoundPlugin *plugin = patch->patchdata;
+    inc_plugin_usage_number(plugin->type);
+  }
+  
+
   return patch->id;
 }
 
 int createAudioInstrumentFromPreset(const char *filename, char *name) {
-  return createAudioInstrumentFromPreset2(STRING_create(filename), name);
+  return createAudioInstrumentFromPreset2(STRING_create(filename), name, false);
 }
 
 int createAudioInstrumentFromDescription(const char *instrument_description, char *name){
@@ -223,7 +234,7 @@ int createAudioInstrumentFromDescription(const char *instrument_description, cha
     wchar_t *filename = STRING_fromBase64(STRING_create(&instrument_description[1]));
     //printf("filename: %s\n",filename);
 
-    return createAudioInstrumentFromPreset2(filename, name);
+    return createAudioInstrumentFromPreset2(filename, name, true);
   }
 
   GFX_Message(NULL, "Illegal instrument_description: %s (string doesn't start with '1' or '2')",instrument_description);

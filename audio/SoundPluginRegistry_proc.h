@@ -23,22 +23,37 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  define LANGSPEC
 #endif
 
-#ifdef __cplusplus
+#ifdef USE_QT4
 
-#include <string.h>
+#include <QString>
+#include <QVector>
 
+#include "../common/Vector.hpp"
 
+struct NumUsedPluginEntry{
+  QString menu_text;
+  QString container_name;
+  QString type_name;
+  QString name;
+  int num_uses;    
+};
+
+// This struct is used a lot of places, so easiest thing is to do a "make clean" after changing it.
 struct PluginMenuEntry{
   SoundPluginType *plugin_type;
   SoundPluginTypeContainer *plugin_type_container;
-  const char *level_up_name;
+  QString level_up_name;
+
+  NumUsedPluginEntry hepp;
+
   enum{
     IS_NORMAL = 0,
     IS_CONTAINER,
     IS_SEPARATOR,
     IS_LEVEL_UP,
     IS_LEVEL_DOWN,
-    IS_LOAD_PRESET
+    IS_LOAD_PRESET,
+    IS_NUM_USED_PLUGIN
   } type;
   static PluginMenuEntry separator(){
     PluginMenuEntry entry;
@@ -50,10 +65,16 @@ struct PluginMenuEntry{
     entry.type=IS_LOAD_PRESET;
     return entry;
   }
-  static PluginMenuEntry level_up(const char *name){
+  static PluginMenuEntry num_used_plugin(NumUsedPluginEntry hepp){
+    PluginMenuEntry entry;
+    entry.type=IS_NUM_USED_PLUGIN;
+    entry.hepp = hepp;
+    return entry;
+  }  
+  static PluginMenuEntry level_up(QString name){
     PluginMenuEntry entry;
     entry.type=IS_LEVEL_UP;
-    entry.level_up_name=V_strdup(name);
+    entry.level_up_name=name;
     return entry;
   }
   static PluginMenuEntry level_down(){
@@ -75,13 +96,12 @@ struct PluginMenuEntry{
   }
 };
 
-#ifdef USE_QT4
-#include "../common/Vector.hpp"
-const radium::Vector<PluginMenuEntry> &PR_get_menu_entries(void);
-#endif
+const QVector<PluginMenuEntry> PR_get_menu_entries(void); // Can not use radium::Vector if the contents requires copy constructor
 
 void PR_add_menu_entry(PluginMenuEntry entry);
-#endif
+
+#endif // USE_QT4
+
 
 extern LANGSPEC void PR_set_init_vst_first(void);
 extern LANGSPEC void PR_set_init_ladspa_first(void);

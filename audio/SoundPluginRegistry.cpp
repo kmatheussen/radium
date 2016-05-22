@@ -134,14 +134,141 @@ SoundPluginType *PR_get_plugin_type(int num){
   return g_plugin_types[num];
 }
 
-static radium::Vector<PluginMenuEntry> g_plugin_menu_entries;
+static QVector<PluginMenuEntry> g_plugin_menu_entries;
 
-const radium::Vector<PluginMenuEntry> &PR_get_menu_entries(void){
-  return g_plugin_menu_entries;
+
+static bool get_hepp_from_config_line(const char *line_c, NumUsedPluginEntry &hepp){
+
+  // Example input: "plugin_usage_Sample Player_-_Click = 0"
+
+  QString line = line_c;
+  
+  line = line.trimmed();
+  
+  line = line.right(line.size() - QString("plugin_usage_(").size() + 1);
+
+
+
+  //////////
+  
+  int pos = line.lastIndexOf("=");
+  if (pos==-1)
+    return false;
+  
+  QString numstring = line.right(line.size() - pos - 1);
+  hepp.num_uses = atoll(numstring.trimmed().toUtf8().constData());
+  if (hepp.num_uses == 0)
+    return false;
+  
+  line = line.left(pos-1);
+  
+
+
+  
+  ///////////
+  
+  pos = line.indexOf("_-_");
+  if (pos==-1)
+    return false;
+  
+  hepp.type_name = line.left(pos);
+  line = line.right(line.size() - pos - 3);
+  
+  
+  ///////////
+  
+  pos = line.indexOf("_-_");
+  if (pos==-1)
+    return false;
+  
+  hepp.container_name = line.left(pos);
+  line = line.right(line.size() - pos - 3);
+
+  
+  //////////
+  
+  hepp.name = line.toUtf8().constData();
+
+
+  if (hepp.name.startsWith("STK "))
+    hepp.menu_text = "STK:" + hepp.name.right(hepp.name.size()-3);
+  else
+    hepp.menu_text = hepp.type_name + ": " + hepp.name;
+  
+  hepp.menu_text += " (" + QString::number(hepp.num_uses) + ")";
+
+  printf("hepp. %d: -%s- / -%s- / -%s- (%s)\n",hepp.num_uses, hepp.container_name.toUtf8().constData(), hepp.type_name.toUtf8().constData(), hepp.name.toUtf8().constData(),hepp.menu_text.toUtf8().constData());
+  
+
+  
+  return true;
+}
+
+static int compare_hepps(const void *vsp1, const void *vsp2){
+  const NumUsedPluginEntry *h1 = (const NumUsedPluginEntry*)vsp1;
+  const NumUsedPluginEntry *h2 = (const NumUsedPluginEntry*)vsp2;
+  
+  if (h1->num_uses < h2->num_uses)
+    return 1;
+  else if (h1->num_uses > h2->num_uses)
+    return -1;
+  else
+    return 0;
+}
+    
+const QVector<PluginMenuEntry> PR_get_menu_entries(void){
+  printf("start. PR_get_menu_entries called\n");
+  QVector<PluginMenuEntry> ret(g_plugin_menu_entries);
+  printf("end. PR_get_menu_entries called\n");
+  
+  vector_t *lines = SETTINGS_get_all_lines_starting_with("plugin_usage_");
+  NumUsedPluginEntry hepps[lines->num_elements];
+  int num_hepps=0;
+  
+  VECTOR_FOR_EACH(const char *, line_c, lines){
+    if (get_hepp_from_config_line(line_c, hepps[num_hepps]))
+      num_hepps++;
+  }END_VECTOR_FOR_EACH;
+
+  if (num_hepps > 0) {
+    ret.push_back(PluginMenuEntry::separator());
+
+    qsort(&hepps[0], num_hepps, sizeof(NumUsedPluginEntry), compare_hepps);
+
+    bool has_next = false;
+    
+    int num_added = 0;
+    for(int i = 0 ; i < num_hepps ; i++){
+      if (hepps[i].type_name == "VST" ||
+          hepps[i].type_name == "Ladspa" ||
+          hepps[i].type_name == "Pd" ||
+          hepps[i].name.startsWith("STK ")
+          )
+        {
+          if (hepps[i].name != "Calf MultiChorus LADSPA" &&
+              hepps[i].name.trimmed() != "" // <-- TODO. Custom pd patches doesn't seem to have name.
+              )
+            {
+              if (num_added == 10){
+                ret.push_back(PluginMenuEntry::level_up("next"));
+                has_next=true;
+              }
+
+              ret.push_back(PluginMenuEntry::num_used_plugin(hepps[i]));
+              num_added++;
+            }
+        }
+    }
+    
+    if (has_next)
+      ret.push_back(PluginMenuEntry::level_down());
+  }
+  
+  return ret;
 }
 
 void PR_add_menu_entry(PluginMenuEntry entry){
-  g_plugin_menu_entries.add(entry);
+  g_plugin_menu_entries.push_back(entry);
 }
 
 void PR_add_plugin_type_no_menu(SoundPluginType *type){

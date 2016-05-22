@@ -1254,27 +1254,28 @@ void MW_set_autopos(double *x, double *y){
 
 namespace{
   struct MyQAction : public QAction{
-    MyQAction(const char* name, QMenu *menu, PluginMenuEntry entry)
+    MyQAction(const char* name, QMenu *menu, const PluginMenuEntry entry)
       : QAction(name,menu)
       , entry(entry)
     {}
-    PluginMenuEntry entry;
+    const PluginMenuEntry entry;
   };
 }
 
-static int menu_up(QMenu *menu, const radium::Vector<PluginMenuEntry> &entries, int i, bool include_load_preset){
+static int menu_up(QMenu *menu, const QVector<PluginMenuEntry> &entries, int i, bool include_load_preset){
   while(i < entries.size()){
-    PluginMenuEntry entry = entries[i];
+    //printf("%d\n",i);
+    const PluginMenuEntry &entry = entries[i];
     i++;
 
     if(entry.type==PluginMenuEntry::IS_SEPARATOR){
       menu->addSeparator();
 
     }else if(entry.type==PluginMenuEntry::IS_LEVEL_UP){
-      const char *name = entry.level_up_name;
+      QString name = entry.level_up_name;
       QMenu *new_menu = new QMenu(name,menu);
       menu->addMenu(new_menu);
-      i = menu_up(new_menu,entries, i, include_load_preset);
+      i = menu_up(new_menu, entries, i, include_load_preset);
 
     }else if(entry.type==PluginMenuEntry::IS_LEVEL_DOWN){
       return i;
@@ -1300,6 +1301,11 @@ static int menu_up(QMenu *menu, const radium::Vector<PluginMenuEntry> &entries, 
       menu->addSeparator();
       if (include_load_preset==false)
         action->setEnabled(false);
+
+    }else if(entry.type==PluginMenuEntry::IS_NUM_USED_PLUGIN){
+
+      MyQAction *action = new MyQAction(entry.hepp.menu_text.toUtf8().constData(), menu, entry);
+      menu->addAction(action);
 
     }else{
       const char *name = entry.plugin_type->name;
@@ -1327,14 +1333,21 @@ char *MW_request_load_preset_instrument_description(void){
   return talloc_format("2%s",encoded_filename); // Converting to base64 to avoid having to worry about utf8 conversion problems in filenames.
 }
 
+void inc_plugin_usage_number(SoundPluginType *type){
+  char *settings_name = talloc_format("plugin_usage_%s_-_%s_-_%s", type->type_name, type->container==NULL ? "" : type->container->name, type->name);
+  int num_uses = SETTINGS_read_int(settings_name, 0);
+  SETTINGS_write_int(settings_name, num_uses+1);
+}
+
 static char *popup_plugin_selector(SoundPluginType **type){
   QMenu menu(0);
 
   if (type!=NULL)
     *type = NULL;
-  
-  menu_up(&menu, PR_get_menu_entries(), 0, type==NULL);
 
+  menu_up(&menu, PR_get_menu_entries(), 0, type==NULL);
+  printf("Menu created\n");
+  
   MyQAction *action;
 
   if (doModalWindows()) {
@@ -1372,6 +1385,7 @@ static char *popup_plugin_selector(SoundPluginType **type){
     if (plugin_type_container->num_types==1) {
       if (type!=NULL)
         *type = plugin_type_container->plugin_types[0];
+
       return create_selector_text(plugin_type_container->plugin_types[0]);
     }
     
@@ -1384,18 +1398,31 @@ static char *popup_plugin_selector(SoundPluginType **type){
     
     if (selection==-1)
       return NULL;
-    else
+    else {
+      if (type!=NULL)
+        *type = plugin_type_container->plugin_types[selection];
       return create_selector_text(plugin_type_container->plugin_types[selection]);
-
-   }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
+    }
+    
+  }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
     
     return MW_request_load_preset_instrument_description();
-      
+
+  }else if(entry.type==PluginMenuEntry::IS_NUM_USED_PLUGIN){
+
+    SoundPluginType *type2 = PR_get_plugin_type_by_name(entry.hepp.container_name.toUtf8().constData(), entry.hepp.type_name.toUtf8().constData(), entry.hepp.name.toUtf8().constData());
+    if (type2 != NULL){
+      if (type!=NULL)
+        *type = type2;
+      return create_selector_text(type2);
+    }else
+      return NULL;
+
   } else {
 
     if (type!=NULL)
       *type = entry.plugin_type;
-    
+
     return create_selector_text(entry.plugin_type);
 
   }
@@ -1408,6 +1435,10 @@ char *MW_popup_plugin_selector2(void){
 SoundPluginType *MW_popup_plugin_type_selector(void){
   SoundPluginType *type;
   popup_plugin_selector(&type);
+
+  if (type != NULL)
+    inc_plugin_usage_number(type);
+
   return type;
 }
 

@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTemporaryFile>
 
 #include "nsmtracker.h"
+#include "vector_proc.h"
 #include "visual_proc.h"
 #include "OS_settings_proc.h"
 #include "threading.h"
@@ -310,6 +311,19 @@ QString SETTINGS_read_qstring(const char* key, QString def){
 
 QString SETTINGS_read_qstring(QString key, QString def){
   return SETTINGS_read_qstring(key.toUtf8().constData(), def);
+}
+
+vector_t *SETTINGS_get_all_lines_starting_with(const char *prefix){
+  vector_t *ret = (vector_t*)talloc(sizeof(vector_t));
+  auto lines = get_lines(prefix);
+
+  for(int linenum = 0 ; linenum < lines.size() ; linenum++) {
+    QString line = lines[linenum].trimmed();
+    if (line.startsWith(prefix))
+      VECTOR_push_back(ret, talloc_strdup(line.toUtf8().constData()));
+  }
+
+  return ret;
 }
 
 void SETTINGS_write_bool(const char* key, bool val){

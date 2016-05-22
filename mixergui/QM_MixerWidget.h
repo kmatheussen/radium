@@ -143,6 +143,8 @@ void MW_set_selected_chip(Chip *chip);
 
 #endif // __cplusplus
 
+extern LANGSPEC void inc_plugin_usage_number(SoundPluginType *type);
+
 extern LANGSPEC char *MW_request_load_preset_instrument_description(void);
 extern LANGSPEC char *MW_popup_plugin_selector2(void);
 extern LANGSPEC SoundPluginType *MW_popup_plugin_type_selector(void);

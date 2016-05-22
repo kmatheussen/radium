@@ -7,8 +7,10 @@
 #include "LockAsserter.hpp"
 
 
-namespace radium{
+// NOTE: Can not use radium::Vector if any of the fields in T uses a custom copy constructor (is there any way to detect that before getting a random crash?)
+  
 
+namespace radium{
 
 template <typename T> struct Vector{
   
