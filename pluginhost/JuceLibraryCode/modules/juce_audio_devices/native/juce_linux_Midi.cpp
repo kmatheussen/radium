@@ -387,19 +387,6 @@ static AlsaPort iterateMidiDevices (const bool forInput,
     return port;
 }
 
-AlsaPort createMidiDevice (const bool forInput, const String& deviceNameToOpen)
-{
-    AlsaPort port;
-    AlsaClient::Ptr client (new AlsaClient (forInput));
-
-    if (client->get())
-    {
-        client->setName (deviceNameToOpen + (forInput ? " Input" : " Output"));
-        port.createPort (client, forInput ? "in" : "out", forInput);
-    }
-
-    return port;
-}
 
 //==============================================================================
 class MidiOutputDevice
@@ -450,7 +437,7 @@ public:
             numBytes -= numSent;
             data += numSent;
 
-            snd_seq_ev_set_source (&event, 0);
+            snd_seq_ev_set_source (&event, port.portId);
             snd_seq_ev_set_subs (&event);
             snd_seq_ev_set_direct (&event);
 
@@ -507,8 +494,11 @@ MidiOutput* MidiOutput::openDevice (int deviceIndex)
 MidiOutput* MidiOutput::createNewDevice (const String& deviceName)
 {
     MidiOutput* newDevice = nullptr;
+    AlsaPort port;
 
-    AlsaPort port (createMidiDevice (false, deviceName));
+    const AlsaClient::Ptr client (globalAlsaSequencer (false));
+
+    port.createPort (client, deviceName, false);
 
     if (port.isValid())
     {
@@ -584,8 +574,11 @@ MidiInput* MidiInput::openDevice (int deviceIndex, MidiInputCallback* callback)
 MidiInput* MidiInput::createNewDevice (const String& deviceName, MidiInputCallback* callback)
 {
     MidiInput* newDevice = nullptr;
+    AlsaPort port;
 
-    AlsaPort port (createMidiDevice (true, deviceName));
+    const AlsaClient::Ptr client (globalAlsaSequencer (true));
+
+    port.createPort (client, deviceName, true);
 
     if (port.isValid())
     {
