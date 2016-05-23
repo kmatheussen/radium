@@ -75,20 +75,22 @@ static inline bool atomic_compare_and_set_uint32(uint32_t *variable, uint32_t ol
   return __atomic_compare_exchange_n (variable, &old_value, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
+#define ATOMIC_NAME(name) (name##_atomic)
+
 #define ATOMIC_COMPARE_AND_SET_BOOL(name, old_value, new_value) \
-  atomic_compare_and_set_bool(&(name##_atomic), old_value, new_value)
+  atomic_compare_and_set_bool(&ATOMIC_NAME(name), old_value, new_value)
 
 #define ATOMIC_COMPARE_AND_SET_INT(name, old_value, new_value) \
-  atomic_compare_and_set_int(&(name##_atomic), old_value, new_value)
+  atomic_compare_and_set_int(&ATOMIC_NAME(name), old_value, new_value)
 
 #define ATOMIC_COMPARE_AND_SET_UINT32(name, old_value, new_value) \
-  atomic_compare_and_set_uint32(&(name##_atomic), old_value, new_value)
+  atomic_compare_and_set_uint32(&ATOMIC_NAME(name), old_value, new_value)
 
 #define ATOMIC_SET_RETURN_OLD(name, val) \
-  __atomic_exchange_n (&(name##_atomic), val, __ATOMIC_SEQ_CST)
+  __atomic_exchange_n (&ATOMIC_NAME(name), val, __ATOMIC_SEQ_CST)
 
 #define ATOMIC_ADD_RETURN_OLD(name, how_much)                           \
-  __atomic_fetch_add (&(name##_atomic), how_much, __ATOMIC_SEQ_CST)
+  __atomic_fetch_add (&ATOMIC_NAME(name), how_much, __ATOMIC_SEQ_CST)
 
 #define ATOMIC_ADD(name, how_much) ATOMIC_ADD_RETURN_OLD(name, how_much)
 
@@ -99,7 +101,7 @@ static inline bool atomic_compare_and_set_uint32(uint32_t *variable, uint32_t ol
 
 // doesn't work with bool!
 #define ATOMIC_ADD_RETURN_NEW(name, how_much)                           \
-  (__atomic_fetch_add (&(name##_atomic), how_much, __ATOMIC_SEQ_CST) + how_much)
+  (__atomic_fetch_add (&ATOMIC_NAME(name), how_much, __ATOMIC_SEQ_CST) + how_much)
 
 #define DEFINE_SPINLOCK_NOINIT(name) \
   DEFINE_ATOMIC(bool, name)
@@ -111,7 +113,7 @@ static inline bool atomic_compare_and_set_uint32(uint32_t *variable, uint32_t ol
   DEFINE_SPINLOCK_NOINIT(name) = false
 
 #define SPINLOCK_OBTAIN(name)                                           \
-  while(atomic_compare_and_set_bool(&(name##_atomic), false, true)==false)
+  while(atomic_compare_and_set_bool(&ATOMIC_NAME(name), false, true)==false)
 
 #define SPINLOCK_RELEASE(name) \
   ATOMIC_SET(name, false)
@@ -173,13 +175,13 @@ typedef double atomic_double_t;
 
 #define ATOMIC_DOUBLE_GET(name) ({                                      \
       double result;                                                    \
-      __atomic_load (&(name##_atomic), &result, __ATOMIC_SEQ_CST);      \
+      __atomic_load (&ATOMIC_NAME(name), &result, __ATOMIC_SEQ_CST);      \
       result;                                                           \
     })
 
 #define ATOMIC_DOUBLE_SET(name,new_value) ({                            \
       double new_value_variable = new_value;                            \
-      __atomic_store (&(name##_atomic), &new_value_variable, __ATOMIC_SEQ_CST); \
+      __atomic_store (&ATOMIC_NAME(name), &new_value_variable, __ATOMIC_SEQ_CST); \
     })
 
 

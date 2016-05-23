@@ -637,6 +637,7 @@ extern LANGSPEC void P2MUpdateSongPosCallBack(void);
 
 enum RT_MESSAGE_STATUS {
   RT_MESSAGE_READY,
+  RT_MESSAGE_FILLING_UP,
   RT_MESSAGE_READY_FOR_SHOWING,
   RT_MESSAGE_SHOWING
 };
@@ -792,7 +793,7 @@ protected:
 void RT_message(const char *fmt,...){
   va_list argp;
 
-  if(ATOMIC_GET(rt_message_status) != RT_MESSAGE_READY)
+  if (!atomic_compare_and_set_int((int*)&ATOMIC_NAME(rt_message_status), RT_MESSAGE_READY, RT_MESSAGE_FILLING_UP))
     return;
   
   va_start(argp,fmt);
