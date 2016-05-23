@@ -154,16 +154,6 @@ extern struct Root *root;
 
 const char *g_input_port_name = NULL;
 
-const char *MIDI_get_input_port(void){
-  static bool has_inited = false;
-  if (has_inited==false){
-    g_input_port_name = SETTINGS_read_string("midi_input_port",NULL);
-    has_inited = true;
-  }
-  
-  return g_input_port_name;
-}
-
 int MIDISetInputPort(void){
   char *portname = MIDIrequestPortName(root->song->tracker_windows,NULL,true);
   if(portname!=NULL){

@@ -33,7 +33,7 @@ int main()
   try {
 
     // RtMidiIn constructor ... exception possible
-    midiin = new RtMidiIn(RtMidi::UNIX_JACK);
+    midiin = new RtMidiIn(RtMidi::LINUX_ALSA);
 
     std::cout << "\nCurrent input API: " << apiMap[ midiin->getCurrentApi() ] << std::endl;
 
@@ -47,7 +47,7 @@ int main()
     }
 
     // RtMidiOut constructor ... exception possible
-    midiout = new RtMidiOut(RtMidi::UNIX_JACK);
+    midiout = new RtMidiOut(RtMidi::LINUX_ALSA);
 
     std::cout << "\nCurrent output API: " << apiMap[ midiout->getCurrentApi() ] << std::endl;
 

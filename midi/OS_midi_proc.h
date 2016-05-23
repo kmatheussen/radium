@@ -42,7 +42,8 @@ extern LANGSPEC MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, Re
 
 extern LANGSPEC void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *portname);
 extern LANGSPEC void MIDI_OS_RemoveInputPort(const char *portname);
-extern LANGSPEC void MIDI_OS_SetInputPort(const char *portname);
+
+extern LANGSPEC vector_t *MIDI_OS_get_input_ports(void);
 
 extern LANGSPEC void OS_GoodPutMidi(MidiPortOs port,
                                     int cc,

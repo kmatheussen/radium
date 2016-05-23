@@ -1185,7 +1185,7 @@ extern "C" void *alsaMidiHandler( void *ptr )
       continue;
     }      
     else if ( result <= 0 ) {
-      std::cerr << "MidiInAlsa::alsaMidiHandler: unknown MIDI input error!\n";
+      std::cerr << "MidiInAlsa::alsaMidiHandler: unknown MIDI input error! " << snd_strerror (result) << ".\n";
       continue;
     }
 

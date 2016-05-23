@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../midi/midi_i_input_proc.h"
 #include "../midi/midi_i_plugin_proc.h"
 #include "../midi/midi_menues_proc.h"
+#include "../midi/OS_midi_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -195,6 +196,43 @@ public:
     printf("Color %d toggled to %d %d\n",colornum,is_current,checked);
   }
 
+};
+
+struct MidiInput : public QWidget{
+  Q_OBJECT
+
+public:
+
+  QString name;
+  QHBoxLayout layout;
+
+  MidiInput(QWidget *parent, QString name)
+    : QWidget(parent)
+    , name(name)
+    , layout(this)
+  {
+    layout.setSpacing(1);
+
+    QLabel *label = new QLabel(name, this);
+    label->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    label->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    layout.addWidget(label);
+
+    QPushButton *button = new QPushButton("Delete", this);
+    button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+    layout.addWidget(button);
+
+    connect(button, SIGNAL(released()), this, SLOT(delete_released()));
+
+  }
+    
+
+  public slots:
+
+  void delete_released(){
+    printf("%s deleted\n",name.toUtf8().constData());
+    PREFERENCES_update();
+  }
 };
   
 class Preferences : public QDialog, public Ui::Preferences {
@@ -386,9 +424,6 @@ class Preferences : public QDialog, public Ui::Preferences {
     
     // MIDI
     {
-      const char *name = MIDI_get_input_port();
-      input_port_name->setText(name==NULL ? "" : name);
-        
       use0x90->setChecked(MIDI_get_use_0x90_for_note_off());
       
       if (MIDI_get_record_accurately())
@@ -400,6 +435,29 @@ class Preferences : public QDialog, public Ui::Preferences {
         record_velocity_on->setChecked(true);
       else
         record_velocity_off->setChecked(true);
+
+      while(midi_input_layout->count() > 0)
+        delete midi_input_layout->itemAt(0)->widget();
+
+      vector_t *input_port_names = MIDI_OS_get_input_ports();
+      VECTOR_FOR_EACH(const char *, name, input_port_names){
+        MidiInput *l = new MidiInput(this, name);
+        midi_input_layout->addWidget(l);
+      }END_VECTOR_FOR_EACH;
+      /*
+      {
+        static int a = 0;
+        a++;
+        MidiInput *l = new MidiInput(this, "hello1 "+QString::number(a));
+        midi_input_layout->addWidget(l);
+        
+        MidiInput *l2 = new MidiInput(this, "hello2");
+        midi_input_layout->addWidget(l2);
+        
+        MidiInput *l3 = new MidiInput(this, "hello3");
+        midi_input_layout->addWidget(l3);
+      }
+      */
     }
 
     _is_updating_widgets = false;

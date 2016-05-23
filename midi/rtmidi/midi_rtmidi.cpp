@@ -386,6 +386,8 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
 }
 
 static void mycallback( double deltatime, unsigned int length, unsigned char *message, void *userData ){
+  printf("mycallback %s %d\n",(char*)userData,(int)pthread_self());
+  
   //printf("Got data: %d (%x). time: %f\n",length,message[0],deltatime);
   if(length==1)
     MIDI_InputMessageHasBeenReceived(message[0],0,0);
@@ -422,8 +424,8 @@ void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *portname){
   enum RtMidi::Api api = RtMidi::WINDOWS_MM;
 #elif FOR_MACOSX
   enum RtMidi::Api api = RtMidi::MACOSX_CORE;
-#elif
-# errror "unknwond archihtilher"
+#else
+# error "unknwond archihtilher"
 #endif
     
   int portnum = get_portnum(portname);
@@ -436,7 +438,8 @@ void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *portname){
   }
 #endif
 
-  RtMidiIn *inport = new RtMidiIn(api,std::string("Radium"));
+  static int num = 0;
+  RtMidiIn *inport = new RtMidiIn(api,std::string(talloc_format("Radium%d",num++)));
 
   try{
     if(exists)
@@ -444,7 +447,7 @@ void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *portname){
     else
       inport->openVirtualPort(portname);
 
-    inport->setCallback(mycallback,NULL);
+    inport->setCallback(mycallback,talloc_strdup(portname));
 
   }catch ( RtError &error ) {
     GFX_Message(NULL, "Couldn't open %s. (%s)", portname, error.what());
@@ -472,6 +475,20 @@ void MIDI_OS_RemoveInputPort(const char *portname){
   GFX_Message(NULL, "No MIDI port \"%s\" found", portname);
 }
 
+vector_t *MIDI_OS_get_input_ports(void){
+  vector_t *ret = (vector_t*)talloc(sizeof(vector_t));
+
+  for (auto port : g_inports) {
+    int num_ports = port->getPortCount();
+    for(int portnum=0;portnum<num_ports;portnum++){
+      const char *portname = talloc_strdup(port->getPortName(portnum).c_str());
+      printf("AIAI. %d/%d: %s\n",portnum,num_ports,portname);
+      VECTOR_push_back(ret, portname);
+    }
+  }
+
+  return ret;
+}
 
 #if 0
 void MIDI_OS_SetInputPort(const char *portname){
@@ -611,7 +628,7 @@ bool MIDI_New(struct Instruments *instrument){
 #endif
 #endif
 
-      const char *inport = MIDI_get_input_port();
+      const char *inport = SETTINGS_read_string("midi_input_port",NULL); //MIDI_get_input_port();
       if(inport!=NULL)
         MIDI_OS_AddInputPortIfNotAlreadyAdded(inport);
 
