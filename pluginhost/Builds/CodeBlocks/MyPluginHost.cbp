@@ -349,6 +349,314 @@
       <Option compile="0"/>
       <Option link="0"/>
     </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/audio_io/juce_AudioDeviceManager.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/audio_io/juce_AudioDeviceManager.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/audio_io/juce_AudioIODevice.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/audio_io/juce_AudioIODevice.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/audio_io/juce_AudioIODeviceType.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/audio_io/juce_AudioIODeviceType.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/audio_io/juce_SystemAudioVolume.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/midi_io/juce_MidiInput.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/midi_io/juce_MidiMessageCollector.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/midi_io/juce_MidiMessageCollector.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/midi_io/juce_MidiOutput.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/midi_io/juce_MidiOutput.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/sources/juce_AudioSourcePlayer.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/sources/juce_AudioSourcePlayer.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/sources/juce_AudioTransportSource.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/sources/juce_AudioTransportSource.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/audio_cd/juce_AudioCDBurner.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/audio_cd/juce_AudioCDReader.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/audio_cd/juce_AudioCDReader.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_android_Audio.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_android_Midi.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_android_OpenSL.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_ios_Audio.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_ALSA.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_AudioCDReader.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_JackAudio.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_Midi.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_mac_AudioCDBurner.mm">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_mac_AudioCDReader.mm">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_mac_CoreAudio.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_mac_CoreMidi.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_MidiDataConcatenator.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_win32_ASIO.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_win32_AudioCDBurner.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_win32_AudioCDReader.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_win32_DirectSound.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_win32_Midi.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/native/juce_win32_WASAPI.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/juce_module_info">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/juce_audio_devices.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/format/juce_AudioFormat.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/format/juce_AudioFormat.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/format/juce_AudioFormatManager.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/format/juce_AudioFormatManager.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/format/juce_AudioFormatReader.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/format/juce_AudioFormatReader.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/format/juce_AudioFormatReaderSource.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/format/juce_AudioFormatReaderSource.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/format/juce_AudioFormatWriter.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/format/juce_AudioFormatWriter.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/format/juce_AudioSubsectionReader.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/format/juce_AudioSubsectionReader.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/format/juce_BufferingAudioFormatReader.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/format/juce_BufferingAudioFormatReader.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/format/juce_MemoryMappedAudioFormatReader.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_AiffAudioFormat.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_AiffAudioFormat.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_CoreAudioFormat.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_CoreAudioFormat.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_FlacAudioFormat.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_FlacAudioFormat.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_LAMEEncoderAudioFormat.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_LAMEEncoderAudioFormat.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_MP3AudioFormat.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_MP3AudioFormat.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_OggVorbisAudioFormat.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_OggVorbisAudioFormat.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_QuickTimeAudioFormat.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_QuickTimeAudioFormat.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_WavAudioFormat.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_WavAudioFormat.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_WindowsMediaAudioFormat.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/codecs/juce_WindowsMediaAudioFormat.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/sampler/juce_Sampler.cpp">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/sampler/juce_Sampler.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/juce_module_info">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/juce_audio_formats.h">
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
     <Unit filename="../../JuceLibraryCode/modules/juce_audio_processors/processors/juce_AudioChannelSet.cpp">
       <Option compile="0"/>
       <Option link="0"/>
@@ -3090,6 +3398,8 @@
       <Option link="0"/>
     </Unit>
     <Unit filename="../../JuceLibraryCode/modules/juce_audio_basics/juce_audio_basics.cpp"/>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_devices/juce_audio_devices.cpp"/>
+    <Unit filename="../../JuceLibraryCode/modules/juce_audio_formats/juce_audio_formats.cpp"/>
     <Unit filename="../../JuceLibraryCode/modules/juce_audio_processors/juce_audio_processors.cpp"/>
     <Unit filename="../../JuceLibraryCode/modules/juce_core/juce_core.cpp"/>
     <Unit filename="../../JuceLibraryCode/modules/juce_data_structures/juce_data_structures.cpp"/>

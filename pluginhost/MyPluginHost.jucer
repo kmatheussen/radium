@@ -28,6 +28,8 @@
         <MODULEPATH id="juce_graphics" path="JuceLibraryCode/modules"/>
         <MODULEPATH id="juce_events" path="JuceLibraryCode/modules"/>
         <MODULEPATH id="juce_audio_basics" path="JuceLibraryCode/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="JuceLibraryCode/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="JuceLibraryCode/modules"/>
       </MODULEPATHS>
     </LINUX_MAKE>
     <XCODE_MAC targetFolder="Builds/MacOSX" vstFolder="" extraCompilerFlags="-I../../../Qt &#96;cat ../../../flagopts.opt&#96;">
@@ -47,6 +49,8 @@
         <MODULEPATH id="juce_core" path="../../juce"/>
         <MODULEPATH id="juce_audio_processors" path="../../juce"/>
         <MODULEPATH id="juce_audio_basics" path="../../juce"/>
+        <MODULEPATH id="juce_audio_devices" path="../../juce"/>
+        <MODULEPATH id="juce_audio_formats" path="../../juce"/>
       </MODULEPATHS>
     </XCODE_MAC>
     <CODEBLOCKS targetFolder="Builds/CodeBlocks" vstFolder="">
@@ -63,11 +67,15 @@
         <MODULEPATH id="juce_core" path="../../juce"/>
         <MODULEPATH id="juce_audio_processors" path="../../juce"/>
         <MODULEPATH id="juce_audio_basics" path="../../juce"/>
+        <MODULEPATH id="juce_audio_devices" path="../../juce"/>
+        <MODULEPATH id="juce_audio_formats" path="../../juce"/>
       </MODULEPATHS>
     </CODEBLOCKS>
   </EXPORTFORMATS>
   <MODULES>
     <MODULES id="juce_audio_basics" showAllCode="1" useLocalCopy="1"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="1"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="1"/>
     <MODULES id="juce_audio_processors" showAllCode="1" useLocalCopy="1"/>
     <MODULES id="juce_core" showAllCode="1" useLocalCopy="1"/>
     <MODULES id="juce_data_structures" showAllCode="1" useLocalCopy="1"/>

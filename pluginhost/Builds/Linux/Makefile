@@ -21,7 +21,7 @@ ifeq ($(CONFIG),Debug)
   CPPFLAGS := $(DEPFLAGS) -D "LINUX=1" -D "DEBUG=1" -D "_DEBUG=1" -D "JUCE_CHECK_MEMORY_LEAKS=0" -D "JUCER_LINUX_MAKE_7346DA2A=1" -D "JUCE_APP_VERSION=1.0.0" -D "JUCE_APP_VERSION_HEX=0x10000" -I /usr/include -I /usr/include/freetype2 -I ~/SDKs/VST3\ SDK -I ../../JuceLibraryCode -I ../../JuceLibraryCode/modules -I ~/SDKs/vstsdk2.4
   CFLAGS += $(CPPFLAGS) $(TARGET_ARCH) -g -ggdb -O0 -I../../../Qt `cat ../../../flagopts.opt`
   CXXFLAGS += $(CFLAGS) -std=c++11
-  LDFLAGS += $(TARGET_ARCH) -L$(BINDIR) -L$(LIBDIR) -L/usr/X11R6/lib/ -lX11 -lXext -lXinerama -ldl -lfreetype -lpthread -lrt 
+  LDFLAGS += $(TARGET_ARCH) -L$(BINDIR) -L$(LIBDIR) -L/usr/X11R6/lib/ -lX11 -lXext -lXinerama -lasound -ldl -lfreetype -lpthread -lrt 
 
   TARGET := libMyPluginHost.a
   BLDCMD = ar -rcs $(OUTDIR)/$(TARGET) $(OBJECTS)
@@ -41,7 +41,7 @@ ifeq ($(CONFIG),Release)
   CPPFLAGS := $(DEPFLAGS) -D "LINUX=1" -D "DEBUG=1" -D "_DEBUG=1" -D "JUCE_CHECK_MEMORY_LEAKS=0" -D "JUCER_LINUX_MAKE_7346DA2A=1" -D "JUCE_APP_VERSION=1.0.0" -D "JUCE_APP_VERSION_HEX=0x10000" -I /usr/include -I /usr/include/freetype2 -I ~/SDKs/VST3\ SDK -I ../../JuceLibraryCode -I ../../JuceLibraryCode/modules -I ~/SDKs/vstsdk2.4
   CFLAGS += $(CPPFLAGS) $(TARGET_ARCH) -g -ggdb -O3 -I../../../Qt `cat ../../../flagopts.opt`
   CXXFLAGS += $(CFLAGS) -std=c++11
-  LDFLAGS += $(TARGET_ARCH) -L$(BINDIR) -L$(LIBDIR) -L/usr/X11R6/lib/ -lX11 -lXext -lXinerama -ldl -lfreetype -lpthread -lrt 
+  LDFLAGS += $(TARGET_ARCH) -L$(BINDIR) -L$(LIBDIR) -L/usr/X11R6/lib/ -lX11 -lXext -lXinerama -lasound -ldl -lfreetype -lpthread -lrt 
 
   TARGET := libMyPluginHost.a
   BLDCMD = ar -rcs $(OUTDIR)/$(TARGET) $(OBJECTS)
@@ -51,6 +51,8 @@ endif
 OBJECTS := \
   $(OBJDIR)/Juce_plugins_6c083ccb.o \
   $(OBJDIR)/juce_audio_basics_2442e4ea.o \
+  $(OBJDIR)/juce_audio_devices_a4c8a728.o \
+  $(OBJDIR)/juce_audio_formats_d349f0c8.o \
   $(OBJDIR)/juce_audio_processors_44a134a2.o \
   $(OBJDIR)/juce_core_aff681cc.o \
   $(OBJDIR)/juce_data_structures_bdd6d488.o \
@@ -84,6 +86,16 @@ $(OBJDIR)/Juce_plugins_6c083ccb.o: ../../../audio/Juce_plugins.cpp
 $(OBJDIR)/juce_audio_basics_2442e4ea.o: ../../JuceLibraryCode/modules/juce_audio_basics/juce_audio_basics.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling juce_audio_basics.cpp"
+	@$(CXX) $(CXXFLAGS) -o "$@" -c "$<"
+
+$(OBJDIR)/juce_audio_devices_a4c8a728.o: ../../JuceLibraryCode/modules/juce_audio_devices/juce_audio_devices.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling juce_audio_devices.cpp"
+	@$(CXX) $(CXXFLAGS) -o "$@" -c "$<"
+
+$(OBJDIR)/juce_audio_formats_d349f0c8.o: ../../JuceLibraryCode/modules/juce_audio_formats/juce_audio_formats.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling juce_audio_formats.cpp"
 	@$(CXX) $(CXXFLAGS) -o "$@" -c "$<"
 
 $(OBJDIR)/juce_audio_processors_44a134a2.o: ../../JuceLibraryCode/modules/juce_audio_processors/juce_audio_processors.cpp
