@@ -32,10 +32,10 @@
 
 #include "VST_plugins_proc.h"
 
+#include "../pluginhost/JuceLibraryCode/AppConfig.h"
 
 #include "../pluginhost/JuceLibraryCode/JuceHeader.h"
 
-#include "../pluginhost/JuceLibraryCode/AppConfig.h"
 
 
 #  include "vestige/aeffectx.h"  // It should not be a problem to use VESTIGE in this case. It's just used for getting vendor string and product string.
@@ -717,8 +717,8 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
     plugin_type->hide_gui = NULL;
   }
   
-  plugin_type->num_inputs = audio_instance->getNumInputChannels();
-  plugin_type->num_outputs = audio_instance->getNumOutputChannels();
+  plugin_type->num_inputs = audio_instance->getTotalNumInputChannels();
+  plugin_type->num_outputs = audio_instance->getTotalNumOutputChannels();
     
   plugin_type->plugin_takes_care_of_savable_values = true;
   plugin_type->dont_send_effect_values_from_state_into_plugin = true; // Don't need to. Juce takes care of saving and loading all effect parameters (General optimization plus crash fix for buggy CM 505 plugin)
@@ -813,7 +813,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
   //plugin->name = talloc_strdup(description.name.toUTF8());
 
-  Data *data = new Data(audio_instance, plugin, audio_instance->getNumInputChannels(), audio_instance->getNumOutputChannels());
+  Data *data = new Data(audio_instance, plugin, audio_instance->getTotalNumInputChannels(), audio_instance->getTotalNumOutputChannels());
   plugin->data = data;
     
   if(type_data->effect_names==NULL)
