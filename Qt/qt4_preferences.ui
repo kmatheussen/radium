@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1022</width>
-    <height>553</height>
+    <height>580</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -2473,8 +2473,8 @@ This option should be considered as a lightweight version of  &quot;Only show mo
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>725</width>
-            <height>455</height>
+            <width>723</width>
+            <height>477</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -2535,26 +2535,6 @@ This option should be considered as a lightweight version of  &quot;Only show mo
        <string>MIDI</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_7">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_4">
-         <item>
-          <widget class="QLabel" name="input_port_name">
-           <property name="frameShape">
-            <enum>QFrame::StyledPanel</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Sunken</enum>
-           </property>
-           <property name="text">
-            <string>Alsa::System in 0</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
        <item>
         <widget class="QCheckBox" name="use0x90">
          <property name="sizePolicy">
@@ -4082,7 +4062,38 @@ This option should be considered as a lightweight version of  &quot;Only show mo
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_8">
           <item>
-           <layout class="QVBoxLayout" name="midi_input_layout"/>
+           <widget class="QScrollArea" name="scrollArea_2">
+            <property name="frameShape">
+             <enum>QFrame::NoFrame</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Plain</enum>
+            </property>
+            <property name="lineWidth">
+             <number>0</number>
+            </property>
+            <property name="widgetResizable">
+             <bool>true</bool>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+            </property>
+            <widget class="QWidget" name="scrollAreaWidgetContents">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>879</width>
+               <height>277</height>
+              </rect>
+             </property>
+             <layout class="QVBoxLayout" name="midi_input_layout">
+              <property name="margin">
+               <number>1</number>
+              </property>
+             </layout>
+            </widget>
+           </widget>
           </item>
           <item>
            <widget class="QPushButton" name="set_input_port">
@@ -4102,7 +4113,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
              <string/>
             </property>
             <property name="text">
-             <string>Add input port</string>
+             <string>Add</string>
             </property>
            </widget>
           </item>

@@ -621,8 +621,8 @@ static inline note_t create_note_t(int64_t note_id,
   }
 
   R_ASSERT(pitch >= 0);
-  R_ASSERT(pan >= -1);
-  R_ASSERT(pan <= 1);
+  //R_ASSERT(pan >= -1); // Pans have different range in midi
+  //R_ASSERT(pan <= 1);
 #endif
 
   if(note_id==-1)

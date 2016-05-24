@@ -293,7 +293,7 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   //static int num=0;
   //num++;
 
-  if(cc>=0xf0) // Too much drama
+  if(cc==0xf0 || cc==0xf7) // sysex not supported
     return;
 
   bool isplaying = is_playing();

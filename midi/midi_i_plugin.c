@@ -343,6 +343,7 @@ void MIDISetPatchData(struct Patch *patch, char *key, char *value){
 
   }else if(!strcasecmp(key,"port")){
     getPatchData(patch)->midi_port = MIDIgetPort(NULL, NULL, value==NULL ? NULL : !strcmp("",value) ? NULL : value);
+    printf("Sat patchdata(%s)->midi_port to %s\n",patch->name,value);
 
   }else if(!strcasecmp(key,"channel")){
     getPatchData(patch)->channel = atoi(value);
@@ -525,8 +526,10 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char
   struct MidiPort *midi_port = g_midi_ports;
 
   while (midi_port != NULL) {
-    if(!strcmp(midi_port->name,name))
+    if(!strcmp(midi_port->name,name)) {
+      printf("Found existing midi_port for %s\n",name);
       return midi_port;
+    }
     midi_port = midi_port->next;
   }
 

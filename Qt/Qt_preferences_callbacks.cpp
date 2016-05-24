@@ -212,16 +212,21 @@ public:
     , layout(this)
   {
     layout.setSpacing(1);
-
+    layout.setContentsMargins(1,1,1,1);
+                       
     QLabel *label = new QLabel(name, this);
     label->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
     label->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
     layout.addWidget(label);
 
+    layout.addSpacing(10);
+    
     QPushButton *button = new QPushButton("Delete", this);
     button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
     layout.addWidget(button);
 
+    layout.addSpacing(10);
+        
     connect(button, SIGNAL(released()), this, SLOT(delete_released()));
 
   }
@@ -231,6 +236,7 @@ public:
 
   void delete_released(){
     printf("%s deleted\n",name.toUtf8().constData());
+    MIDI_OS_RemoveInputPort(name.toUtf8().constData());
     PREFERENCES_update();
   }
 };
@@ -439,11 +445,13 @@ class Preferences : public QDialog, public Ui::Preferences {
       while(midi_input_layout->count() > 0)
         delete midi_input_layout->itemAt(0)->widget();
 
-      vector_t *input_port_names = MIDI_OS_get_input_ports();
-      VECTOR_FOR_EACH(const char *, name, input_port_names){
-        MidiInput *l = new MidiInput(this, name);
+      int num_input_ports;
+      char **input_port_names = MIDI_OS_get_connected_input_ports(&num_input_ports);
+      for(int i=0;i<num_input_ports;i++){
+        MidiInput *l = new MidiInput(this, input_port_names[i]);
         midi_input_layout->addWidget(l);
-      }END_VECTOR_FOR_EACH;
+      }
+              
       /*
       {
         static int a = 0;

@@ -33,8 +33,6 @@ struct MyMidiPortOs{
 };
 
 
-static radium::Vector<MidiInput*> g_inports;
-
 static radium::Mutex g_midi_out_mutex;
 
 
@@ -54,6 +52,38 @@ int MIDI_msg_len(uint32_t msg){
 }
 
 
+namespace{
+  struct MyMidiInputCallback : MidiInputCallback{
+    MidiInput *midi_input;
+
+    void handleIncomingMidiMessage(MidiInput *source,
+                                   const MidiMessage &message 
+                                   )
+      override
+    {
+
+      /*
+      int64_t message_ms = message.timeStamp;
+      int64_t now_ms = Time::getMillisecondCounter();
+      */
+
+      const uint8* raw = message.getRawData();
+      int length = message.getRawDataSize();
+      
+      if(length==1)
+        MIDI_InputMessageHasBeenReceived(raw[0],0,0);
+      else if(length==2)
+        MIDI_InputMessageHasBeenReceived(raw[0],raw[1],0);
+      else if(length==3)
+        MIDI_InputMessageHasBeenReceived(raw[0],raw[1],raw[2]);
+
+      //printf("got message to %s (%d %d %d)\n",(const char*)midi_input->getName().toUTF8(),(int)raw[0],(int)raw[1],(int)raw[2]);
+    }
+  };
+}
+
+static radium::Vector<MyMidiInputCallback*> g_inports;
+
 
 void OS_PlayFromStart(MidiPortOs port){
 }
@@ -70,7 +100,15 @@ void OS_PutMidi(MidiPortOs port,
                 STime time
                 )
 {
-  int len = MIDI_msg_len(MIDI_msg_pack1(cc));
+  int len = MidiMessage::getMessageLengthFromFirstByte(cc);
+
+  /*
+  {
+    MyMidiPortOs *myport = static_cast<MyMidiPortOs*>(port);
+    printf("Sending to %s. len: %d, (%d %d %d)\n",port==NULL?"Null":strdup(myport->midiout->getName().toUTF8()), len, cc, data1, data2);
+  }
+  */
+  
   if(len==0)
     return;
 
@@ -88,15 +126,18 @@ void OS_PutMidi(MidiPortOs port,
 #endif
 
   MidiOutput *output = myport->midiout;
-  
-  if (output==NULL)
+
+  if (output==NULL) // I.e. the "dummy" driver. (necessary on windows)
     return;
+
+
   
   //printf("current time: %f\n",(float)RtMidiOut::getCurrentTime(myport->midiout->getCurrentApi()));
 
   {
     radium::ScopedMutex lock(&g_midi_out_mutex); // Sometimes, the GUI wants to send midi signals, and that's why we need a lock here.
-    //                                                Don't think any effect caused by priority inheritance should be an issue when the user drags sliders, etc.
+    //                                              Don't think priority inheritance should be a big issue when the user drags sliders, etc. (why not use the player lock?)
+
 
     //printf("got midi: %x,%x,%x at time %f (rtmidi_time: %f) (current_time: %f)\n",cc,data1,data2,(float)time/(double)PFREQ,rtmidi_time,(float)RtMidiOut::getCurrentTime(midiout->getCurrentApi()));
 
@@ -134,13 +175,24 @@ static char** string_array_to_char_array(const StringArray &devices, int *retsiz
   return ret;
 }
 
-char **MIDI_getInputPortOsNames(int *retsize){
+char **MIDI_OS_get_connected_input_ports(int *retsize){ // returns ports we are connected to
+  *retsize = g_inports.size();
+  
+  char **ret = (char**)talloc(sizeof(char*)*g_inports.size());
+
+  for (int i = 0 ; i < g_inports.size() ; i++)
+    ret[i] = talloc_strdup(g_inports[i]->midi_input->getName().toUTF8());
+
+  return ret;
+}
+
+char **MIDI_getInputPortOsNames(int *retsize){ // returns all ports that's possible to connect to (whether we are connected or not)
   StringArray devices = MidiInput::getDevices();
   return string_array_to_char_array(devices, retsize);
 }
 
 
-char **MIDI_getOutputPortOsNames(int *retsize){
+char **MIDI_getOutputPortOsNames(int *retsize){ // returns all ports that's possible to connect to (whether we are connected or not)
   StringArray devices = MidiOutput::getDevices();
   return string_array_to_char_array(devices, retsize);
 }
@@ -152,67 +204,119 @@ void MIDI_closeMidiPortOs(MidiPortOs port){
   free(myport);
 }
 
-MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,char *name){
+MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,char *name_c){
 
   MyMidiPortOs *ret = (MyMidiPortOs*)calloc(1, sizeof(MyMidiPortOs));
     
-  String string(name);
+  String name(name_c);
 
   StringArray devices = MidiOutput::getDevices();
 
-  int device_id = devices.indexOf(string);
+  int device_id = devices.indexOf(name);
 
+  for(int i=0;i<devices.size();i++){
+    printf("%d: %s (%d: %s)\n", i, talloc_strdup(devices[i].toUTF8()), device_id,name);
+  }
+    
 
-  if (device_id == -1 ){
 #if defined(FOR_WINDOWS)
+  if (device_id == -1 ){
     if (devices.size() > 0) {
-      RT_Message(NULL, "MIDI output device %s not found, replacing with device %s", name, devices[0].toUtf8());
+      RT_message(NULL, "MIDI output device %s not found, replacing with device %s", name, devices[0].toUTF8());
       device_id = 0;
     } else {
-      RT_Message(NULL, "MIDI output device %s not found, replacing with dummy device", name);
+      RT_message(NULL, "MIDI output device %s not found. No other devices found either.\nUsing dummy device.\nYou need to restart Radium after connecting the device in order to use it.", name);
+      return ret;
     }
-#else
-    ret->midiout = MidiOutput::createNewDevice(string);
+  }
 #endif
-  } else {
-    ret->midiout = MidiOutput::openDevice(device_id);
-  }
 
-  if (ret->midiout == NULL){
-    GFX_Message(NULL, "Unable to open MIDI output device %s", name);
-    free(ret);
-    return NULL;
-  }
+  if (device_id == -1 )
+    ret->midiout = MidiOutput::createNewDevice(name);
+  else
+    ret->midiout = MidiOutput::openDevice(device_id);
+  
+  if (ret->midiout == NULL)
+    RT_message(NULL, "Error. Unable to open MIDI output device %s.\nUsing dummy device.\nYou need to restart Radium after making the device work in order to use it.", name);
 
   printf("midi output device opened. name: %s, device id: %d\n",name, device_id);
 
   return ret;
 }
 
-/*
-static void mycallback( double deltatime, unsigned int length, unsigned char *message, void *userData ){
-  printf("mycallback %s %d\n",(char*)userData,(int)pthread_self());
+
+static bool is_connected_to_input_port(String name){
+
+  for (auto port : g_inports)
+    if (port->midi_input->getName() == name)
+      return true;
+
+  return false;
+}
+
+void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *name_c){
+  String name(name_c);
+
+  if (is_connected_to_input_port(name_c))
+    return;
+
+  StringArray devices = MidiInput::getDevices();
+
+  int device_id = devices.indexOf(name);
+
+#ifdef FOR_WINDOWS
+  if (device_id==-1){
+    RError("Device %s not found", name_c);
+    return;
+  }
+#endif
+
+  /*
+  for(int i=0;i<devices.size();i++){
+    printf("%d: -%s- (%d: -%s- -%s-)\n", i, talloc_strdup(devices[i].toUTF8()), device_id, name_c, talloc_strdup(name.toUTF8()));
+  }
+  */
   
-  //printf("Got data: %d (%x). time: %f\n",length,message[0],deltatime);
-  if(length==1)
-    MIDI_InputMessageHasBeenReceived(message[0],0,0);
-  else if(length==2)
-    MIDI_InputMessageHasBeenReceived(message[0],message[1],0);
-  else if(length==3)
-    MIDI_InputMessageHasBeenReceived(message[0],message[1],message[2]);
+  auto *midi_input_callback = new MyMidiInputCallback();
+
+  MidiInput *midi_input;
+
+  if (device_id>=0)
+    midi_input = MidiInput::openDevice(device_id, midi_input_callback);
+  else
+    midi_input = MidiInput::createNewDevice(name, midi_input_callback);
+
+  if (midi_input==NULL){
+    GFX_Message(NULL, "Error. Unable to open MIDI output device %s.\n", name);
+    delete midi_input_callback;
+    return;
+  }
+
+  midi_input_callback->midi_input = midi_input;
+  
+  g_inports.add(midi_input_callback);
+
+  midi_input->start();
 }
-*/
 
 
-void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *portname){
+static void remove_input_port(String name){
+
+  for (auto port : g_inports)
+    if (port->midi_input->getName() == name) {
+      port->midi_input->stop();
+      g_inports.remove(port);
+      delete port->midi_input;
+      delete port;
+      return;
+    }
+
+  GFX_Message(NULL, "%s does not seem to be used",(const char*)name.toUTF8());
 }
-
 
 void MIDI_OS_RemoveInputPort(const char *portname){
-  //GFX_Message(NULL, "No MIDI port \"%s\" found", portname);
+  remove_input_port(String(portname));
 }
-
-
 
 
 bool MIDI_New(struct Instruments *instrument){
@@ -234,10 +338,6 @@ bool MIDI_New(struct Instruments *instrument){
 void MIDI_Delete(void){
   printf("Ending MIDI instrument\n");
 
-  while(g_inports.size() > 0){
-    MidiInput *inport = g_inports[0];
-    g_inports.remove(inport);
-    delete inport;
-  }
+  while(g_inports.size() > 0)
+    remove_input_port(g_inports[0]->midi_input->getName());
 }
-

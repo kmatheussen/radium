@@ -45,7 +45,8 @@
 #include "Juce_plugins_proc.h"
 
 
-extern struct Root *root;
+#include "../midi/midi_juce.cpp"
+
 
 
 namespace{
@@ -272,22 +273,6 @@ namespace{
 static void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_size){
   Data *data = (Data*)plugin->data;
   data->buffer.setSize(data->buffer.getNumChannels(), new_buffer_size);
-}
-
-
-int MIDI_msg_len(uint32_t msg){
-
-  int byte1 = MIDI_msg_byte1(msg);
-  
-  R_ASSERT(byte1!=0xf0);
-  R_ASSERT(byte1!=0xf7);
-  
-  if (byte1<0x80 || byte1>0xff){
-    RT_message("Illegal msg: %x",msg);
-    return 0;
-  }
-  
-  return MidiMessage::getMessageLengthFromFirstByte(byte1);
 }
 
 

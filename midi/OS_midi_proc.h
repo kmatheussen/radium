@@ -21,12 +21,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-// OS_midi_spesific.h contains the definition of MidiPortOs
-#include "rtmidi/OS_midi_spesific.h"
+typedef void* MidiPortOs;
 
 
-extern LANGSPEC char **MIDI_getOutputPortOsNames(int *retsize);
-extern LANGSPEC char **MIDI_getInputPortOsNames(int *retsize);
+extern LANGSPEC void OS_InitMidiTiming(void);
+
+
+extern LANGSPEC char **MIDI_OS_get_connected_input_ports(int *retsize); // returns ports we are connected to
+
+extern LANGSPEC char **MIDI_getOutputPortOsNames(int *retsize); // returns all ports that's possible to connect to (whether we are connected or not)
+extern LANGSPEC char **MIDI_getInputPortOsNames(int *retsize); // returns all ports that's possible to connect to (whether we are connected or not)
 
 
 // DeleteMidi(midinode);
@@ -42,8 +46,6 @@ extern LANGSPEC MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, Re
 
 extern LANGSPEC void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *portname);
 extern LANGSPEC void MIDI_OS_RemoveInputPort(const char *portname);
-
-extern LANGSPEC vector_t *MIDI_OS_get_input_ports(void);
 
 extern LANGSPEC void OS_GoodPutMidi(MidiPortOs port,
                                     int cc,
