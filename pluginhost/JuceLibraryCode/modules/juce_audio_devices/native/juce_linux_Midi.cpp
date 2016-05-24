@@ -50,6 +50,11 @@ public:
     {
         snd_seq_open (&handle, "default", forInput ? SND_SEQ_OPEN_INPUT
                                                    : SND_SEQ_OPEN_OUTPUT, 0);
+
+        const String name (forInput ? JUCE_ALSA_MIDI_INPUT_NAME
+                                    : JUCE_ALSA_MIDI_OUTPUT_NAME);
+
+        setName(name);
     }
 
     ~AlsaClient()
@@ -299,7 +304,9 @@ void AlsaClient::handleIncomingMidiMessage (const MidiMessage& message, int port
         cb->handleIncomingMidiMessage (message);
 }
 
-//==============================================================================
+//===============================================================================
+// Both used when getting list of port names, and when opening or creating a port.
+// 'deviceIndexToOpen' has the value -1 when used for getting list of port names.
 static AlsaPort iterateMidiClient (const AlsaClient::Ptr& seq,
                                    snd_seq_client_info_t* clientInfo,
                                    const bool forInput,
@@ -330,14 +337,13 @@ static AlsaPort iterateMidiClient (const AlsaClient::Ptr& seq,
                 if (deviceNamesFound.size() == deviceIndexToOpen + 1)
                 {
                     const int sourcePort   = snd_seq_port_info_get_port (portInfo);
-                    const int sourceClient = snd_seq_client_info_get_client (clientInfo);
 
                     if (sourcePort != -1)
                     {
-                        const String name (forInput ? JUCE_ALSA_MIDI_INPUT_NAME
-                                                    : JUCE_ALSA_MIDI_OUTPUT_NAME);
-                        seq->setName (name);
-                        port.createPort (seq, name, forInput);
+                        const String portName = snd_seq_port_info_get_name(portInfo);
+                        const int sourceClient = snd_seq_client_info_get_client (clientInfo);
+
+                        port.createPort (seq, portName, forInput);
                         port.connectWith (sourceClient, sourcePort);
                     }
                 }
@@ -350,6 +356,8 @@ static AlsaPort iterateMidiClient (const AlsaClient::Ptr& seq,
     return port;
 }
 
+// Both used when getting list of port names, and when opening or creating a port.
+// 'deviceIndexToOpen' has the value -1 when used for getting list of port names.
 static AlsaPort iterateMidiDevices (const bool forInput,
                                     StringArray& deviceNamesFound,
                                     const int deviceIndexToOpen)
