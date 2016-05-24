@@ -51,10 +51,8 @@ public:
         snd_seq_open (&handle, "default", forInput ? SND_SEQ_OPEN_INPUT
                                                    : SND_SEQ_OPEN_OUTPUT, 0);
 
-        const String name (forInput ? JUCE_ALSA_MIDI_INPUT_NAME
-                                    : JUCE_ALSA_MIDI_OUTPUT_NAME);
-
-        setName(name);
+        snd_seq_set_client_name (handle, forInput ? JUCE_ALSA_MIDI_INPUT_NAME
+                                                  : JUCE_ALSA_MIDI_OUTPUT_NAME);
     }
 
     ~AlsaClient()
@@ -75,11 +73,6 @@ public:
     }
 
     bool isInput() const noexcept    { return input; }
-
-    void setName (const String& name)
-    {
-        snd_seq_set_client_name (handle, name.toUTF8());
-    }
 
     void registerCallback (AlsaPortAndCallback* cb)
     {
