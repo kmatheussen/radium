@@ -244,6 +244,12 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
   return ret;
 }
 
+static void update_settings(void){
+  SETTINGS_write_int("midi_num_inports", g_inports.size());
+  
+  for(int i = 0 ; i < g_inports.size() ; i++)
+    SETTINGS_write_string(talloc_format("midi_input_port_%d",i), g_inports[i]->midi_input->getName().toUTF8());
+}
 
 static bool is_connected_to_input_port(String name){
 
@@ -254,10 +260,9 @@ static bool is_connected_to_input_port(String name){
   return false;
 }
 
-void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *name_c){
-  String name(name_c);
-
-  if (is_connected_to_input_port(name_c))
+static void add_input_port(String name, bool do_update_settings){
+  
+  if (is_connected_to_input_port(name))
     return;
 
   StringArray devices = MidiInput::getDevices();
@@ -295,17 +300,27 @@ void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *name_c){
   midi_input_callback->midi_input = midi_input;
   
   g_inports.add(midi_input_callback);
-
+  
+  if (do_update_settings)
+    update_settings();
+  
   midi_input->start();
 }
 
+void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *name_c){
+  String name(name_c);
+  add_input_port(name, true);
+}
 
-static void remove_input_port(String name){
+
+static void remove_input_port(String name, bool do_update_settings){
 
   for (auto port : g_inports)
     if (port->midi_input->getName() == name) {
       port->midi_input->stop();
       g_inports.remove(port);
+      if (do_update_settings)
+        update_settings();
       delete port->midi_input;
       delete port;
       return;
@@ -315,7 +330,7 @@ static void remove_input_port(String name){
 }
 
 void MIDI_OS_RemoveInputPort(const char *portname){
-  remove_input_port(String(portname));
+  remove_input_port(String(portname), true);
 }
 
 
@@ -324,10 +339,13 @@ bool MIDI_New(struct Instruments *instrument){
 
   if(globals_are_initialized==false){
 
-    const char *inport = SETTINGS_read_string("midi_input_port",NULL); //MIDI_get_input_port();
-    if(inport!=NULL)
-      MIDI_OS_AddInputPortIfNotAlreadyAdded(inport);
-
+    int num_inports = SETTINGS_read_int("midi_num_inports",0);
+    for(int i = 0 ; i < num_inports ; i++){
+      const char *inport = SETTINGS_read_string(talloc_format("midi_input_port_%d",i),NULL);
+      if(inport!=NULL)
+        add_input_port(inport, false);
+    }
+    
     globals_are_initialized = true;
   }
 
@@ -339,5 +357,5 @@ void MIDI_Delete(void){
   printf("Ending MIDI instrument\n");
 
   while(g_inports.size() > 0)
-    remove_input_port(g_inports[0]->midi_input->getName());
+    remove_input_port(g_inports[0]->midi_input->getName(), false);
 }
