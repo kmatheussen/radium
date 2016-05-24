@@ -73,7 +73,7 @@ public:
     return get_withoutWaiting();
   }
 
-  // Sae as get, but instead of calling semaphore.wait, we as seamphore.tryWait again and again until it's there. (i.e. we are spinning)
+  // Same as get, but instead of calling semaphore.wait, we as seamphore.tryWait again and again until it's there. (i.e. we are spinning)
   T buzyGet(void){
     for(;;){
       bool gotit;

@@ -15,8 +15,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#include <boost/version.hpp>
+#if (BOOST_VERSION < 100000) || ((BOOST_VERSION / 100 % 1000) < 58)
+  #error "Boost too old. Need at least 1.58.\n Quick fix: cd $HOME ; wget http://downloads.sourceforge.net/project/boost/boost/1.60.0/boost_1_60_0.tar.bz2 ; tar xvjf boost_1_60_0.tar.bz2 (that's it!)"
+#endif
+#include <boost/lockfree/queue.hpp>
 
-#include "../weakjack/weak_libjack.h"
+
 
 #include "nsmtracker.h"
 
@@ -90,7 +95,7 @@ static midi_event_t *get_midi_event(void){
 
 static void record_midi_event(uint32_t msg){
 
-  radium::ScopedMutex lock(&g_midi_event_mutex);  // Having to wait for this one would be extremely rare (will probably never happen)
+  radium::ScopedMutex lock(&g_midi_event_mutex);
   
   if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL)
     return;
@@ -235,7 +240,7 @@ typedef struct {
   uint32_t msg;
 } play_buffer_event_t;
 
-static jack_ringbuffer_t *g_play_buffer;
+static boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000> > g_play_buffer;
 
 static void add_event_to_play_buffer(int cc,int data1,int data2){
   play_buffer_event_t event;
@@ -243,24 +248,24 @@ static void add_event_to_play_buffer(int cc,int data1,int data2){
   event.deltatime = 0;
   event.msg = PACK_MIDI_MSG(cc,data1,data2);
 
-  jack_ringbuffer_write(g_play_buffer, (char*)&event, sizeof(play_buffer_event_t));
+  while (!g_play_buffer.bounded_push(event));
 }
 
 void RT_MIDI_handle_play_buffer(void){
   struct Patch *patch = ATOMIC_GET(g_through_patch);
   
-  while (jack_ringbuffer_read_space(g_play_buffer) >= sizeof(play_buffer_event_t)) {
+  while (!g_play_buffer.empty()) {
     play_buffer_event_t event;
-    jack_ringbuffer_read(g_play_buffer, (char*)&event, sizeof(play_buffer_event_t));
+    g_play_buffer.pop(event);
 
-      if(patch!=NULL){
-
-        uint32_t msg = event.msg;
-        
-        uint8_t data[3] = {(uint8_t)MIDI_msg_byte1(msg), (uint8_t)MIDI_msg_byte2(msg), (uint8_t)MIDI_msg_byte3(msg)};
-          
-        RT_MIDI_send_msg_to_patch((struct Patch*)patch, data, 3, -1);
-      }
+    if(patch!=NULL){
+      
+      uint32_t msg = event.msg;
+      
+      uint8_t data[3] = {(uint8_t)MIDI_msg_byte1(msg), (uint8_t)MIDI_msg_byte2(msg), (uint8_t)MIDI_msg_byte3(msg)};
+      
+      RT_MIDI_send_msg_to_patch((struct Patch*)patch, data, 3, -1);
+    }
   }
 }
 
@@ -361,6 +366,4 @@ void MIDI_input_init(void){
   midi_event->next = g_midi_events;
   
   g_midi_events = midi_event;
-  
-  g_play_buffer = jack_ringbuffer_create(8000*sizeof(play_buffer_event_t));
 }
