@@ -253,10 +253,10 @@ static void add_event_to_play_buffer(int cc,int data1,int data2){
 
 void RT_MIDI_handle_play_buffer(void){
   struct Patch *patch = ATOMIC_GET(g_through_patch);
-  
-  while (!g_play_buffer.empty()) {
-    play_buffer_event_t event;
-    g_play_buffer.pop(event);
+
+  play_buffer_event_t event;
+
+  while(g_play_buffer.pop(event)==true){
 
     if(patch!=NULL){
       
@@ -266,6 +266,7 @@ void RT_MIDI_handle_play_buffer(void){
       
       RT_MIDI_send_msg_to_patch((struct Patch*)patch, data, 3, -1);
     }
+    
   }
 }
 
