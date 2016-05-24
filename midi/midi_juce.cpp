@@ -214,10 +214,11 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
 
   int device_id = devices.indexOf(name);
 
+  /*
   for(int i=0;i<devices.size();i++){
     printf("%d: %s (%d: %s)\n", i, talloc_strdup(devices[i].toUTF8()), device_id,name);
   }
-    
+  */
 
 #if defined(FOR_WINDOWS)
   if (device_id == -1 ){
@@ -225,7 +226,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
       RT_message(NULL, "MIDI output device %s not found, replacing with device %s", name, devices[0].toUTF8());
       device_id = 0;
     } else {
-      RT_message(NULL, "MIDI output device %s not found. No other devices found either.\nUsing dummy device.\nYou need to restart Radium after connecting the device in order to use it.", name);
+      RT_message(NULL, "MIDI output device %s not found. No other devices found either.\nUsing dummy device.\nYou need to restart Radium after connecting the device in order to use it.", name_c);
       return ret;
     }
   }
@@ -237,9 +238,9 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
     ret->midiout = MidiOutput::openDevice(device_id);
   
   if (ret->midiout == NULL)
-    RT_message(NULL, "Error. Unable to open MIDI output device %s.\nUsing dummy device.\nYou need to restart Radium after making the device work in order to use it.", name);
+    RT_message(NULL, "Error. Unable to open MIDI output device %s.\nUsing dummy device.\nYou need to restart Radium after making the device work in order to use it.", name_c);
 
-  printf("midi output device opened. name: %s, device id: %d\n",name, device_id);
+  printf("midi output device opened. name: %s, device id: %d\n",name_c, device_id);
 
   return ret;
 }
@@ -292,7 +293,7 @@ static void add_input_port(String name, bool do_update_settings){
     midi_input = MidiInput::createNewDevice(name, midi_input_callback);
 
   if (midi_input==NULL){
-    GFX_Message(NULL, "Error. Unable to open MIDI output device %s.\n", name);
+    GFX_Message(NULL, "Error. Unable to open MIDI output device %s.\n", (const char*)name.toUTF8());
     delete midi_input_callback;
     return;
   }
