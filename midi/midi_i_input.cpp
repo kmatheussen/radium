@@ -106,6 +106,7 @@ typedef struct _midi_event_t{
   uint32_t msg;
 } midi_event_t;
 
+
 static radium::Mutex g_midi_event_mutex;
 static midi_event_t *g_midi_events = NULL;
 static midi_event_t *g_recorded_midi_events = NULL;
@@ -133,6 +134,7 @@ static midi_event_t *get_midi_event(void){
   }
 }
 
+// Called from a MIDI input thread
 static void record_midi_event(uint32_t msg){
 
   radium::ScopedMutex lock(&g_midi_event_mutex);
@@ -192,6 +194,7 @@ static midi_event_t *find_midievent_end_note(midi_event_t *midi_event, int noten
 }
 
 
+// Called from the main thread after the player has stopped
 void MIDI_insert_recorded_midi_events(void){
   radium::ScopedMutex lock(&g_midi_event_mutex); // Will wait here in case record_midi_event is not finished. Probably a very rare situation.
   
@@ -276,6 +279,9 @@ void MIDI_insert_recorded_midi_events(void){
 }
 
 
+// Called from the main thread, very often
+static void check_recording_queue(void){
+}
 
 
 /*********************************************************
@@ -291,15 +297,18 @@ typedef struct {
 
 static boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000> > g_play_buffer;
 
+// Called from a MIDI input thread
 static void add_event_to_play_buffer(int cc,int data1,int data2){
   play_buffer_event_t event;
 
   event.deltatime = 0;
   event.msg = PACK_MIDI_MSG(cc,data1,data2);
 
-  while (!g_play_buffer.bounded_push(event));
+  if (!g_play_buffer.bounded_push(event))
+    RT_message("Midi recording buffer full.\nMost likely the player can not keep up because it uses too much CPU.\nIf that is not the case, please report this incident.");
 }
 
+// Called from the player thread
 void RT_MIDI_handle_play_buffer(void){
   struct Patch *patch = ATOMIC_GET(g_through_patch);
 
@@ -384,6 +393,8 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
 void MIDI_HandleInputMessage(void){
   // should be a memory barrier here somewhere.
 
+  check_recording_queue();
+  
   uint32_t msg = ATOMIC_GET(g_msg); // Hmm, should have an ATOMIC_COMPAREFALSE_AND_SET function. (doesn't matter though, it would just look better)
   
   if (msg!=0) {
