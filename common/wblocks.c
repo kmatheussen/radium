@@ -416,7 +416,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 		      );
 */
 
-	window->wblock=wblock;
+	ATOMIC_WRITE(window->wblock, wblock);
 	if( ! wblock->isgfxdatahere){
 #if !USE_OPENGL
 		UpdateWTempoNodes(window,wblock);

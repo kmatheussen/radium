@@ -63,7 +63,7 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 				return 0;
 			}else{
 				window->curr_track_sub= -1;
-				wblock->wtrack=NextWTrack(wtrack);
+				ATOMIC_WRITE(wblock->wtrack, NextWTrack(wtrack));
 			}
 		}
 
@@ -182,7 +182,7 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
 		window->curr_track_sub--;
 
 		if(window->curr_track_sub==-2){
-			wblock->wtrack=ListFindElement1(&wblock->wtracks->l,wtrack->l.num-1);
+                        ATOMIC_WRITE(wblock->wtrack, ListFindElement1(&wblock->wtracks->l,wtrack->l.num-1));
                         int num_subtracks = GetNumSubtracks(wblock->wtrack);
 			window->curr_track_sub=num_subtracks-1;
 			window->curr_track--;

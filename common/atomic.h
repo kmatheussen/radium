@@ -154,6 +154,12 @@ static inline int safe_int_read(int *pos){
   return *pos;
 }
 
+//#define ATOMIC_RELAXED_WRITE(var, value) __atomic_store_n (&var,value,  __ATOMIC_RELAXED) // careful. Probably never any point using.
+//#define ATOMIC_RELAXED_READ(var) __atomic_load_n (&var, __ATOMIC_RELAXED) // careful. Probably never any point using.
+
+#define ATOMIC_WRITE(var, value) __atomic_store_n (&var,value,  __ATOMIC_SEQ_CST)
+#define ATOMIC_READ(var) __atomic_load_n (&var,  __ATOMIC_SEQ_CST)
+
 
 /************** pointers ******************/
 

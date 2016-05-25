@@ -672,9 +672,9 @@ struct Mixer{
       RT_lock_player();
 
       jackblock_variables_protector.write_start();{
-        jackblock_size = num_frames;
-        jackblock_cycle_start_stime = pc->end_time;
-        jackblock_last_frame_stime = jack_last_frame_time(_rjack_client);
+        ATOMIC_WRITE(jackblock_size, num_frames);
+        ATOMIC_WRITE(jackblock_cycle_start_stime, pc->end_time);
+        ATOMIC_WRITE(jackblock_last_frame_stime, jack_last_frame_time(_rjack_client));
       }jackblock_variables_protector.write_end();
       
       if(g_test_crashreporter_in_audio_thread){
@@ -975,9 +975,9 @@ STime MIXER_get_accurate_radium_time(void){
   do{
     generation = jackblock_variables_protector.read_start();
     
-    jackblock_cycle_start_stime2 = jackblock_cycle_start_stime;
-    jackblock_last_frame_stime2 = jackblock_last_frame_stime;
-    jackblock_size2 = jackblock_size;
+    jackblock_cycle_start_stime2 = ATOMIC_READ(jackblock_cycle_start_stime);
+    jackblock_last_frame_stime2 = ATOMIC_READ(jackblock_last_frame_stime);
+    jackblock_size2 = ATOMIC_READ(jackblock_size);
     
   } while(jackblock_variables_protector.read_end(generation)==false);
   
