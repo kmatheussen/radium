@@ -2,6 +2,10 @@
 #ifndef RADIUM_COMMON_ATOMIC_H
 #define RADIUM_COMMON_ATOMIC_H
 
+#include <stdbool.h>
+#include <stdint.h>
+
+
 #define DEFINE_ATOMIC(type, name) \
   type name##_atomic
 

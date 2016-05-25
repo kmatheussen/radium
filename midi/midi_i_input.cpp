@@ -51,9 +51,49 @@ static DEFINE_ATOMIC(uint32_t, g_msg) = 0;
 
 static DEFINE_ATOMIC(struct Patch *, g_through_patch) = NULL;
 
-// TODO: This isn't always working properly. Going to change rtmidi API.
-
 extern const char *NotesTexts3[131];
+
+
+
+
+/*********************************************************
+ *********************************************************
+ **          Configuration                              **
+ *********************************************************
+ *********************************************************/
+
+static bool g_record_accurately_while_playing = true;
+
+bool MIDI_get_record_accurately(void){
+  return g_record_accurately_while_playing;
+}
+
+void MIDI_set_record_accurately(bool accurately){
+  SETTINGS_write_bool("record_midi_accurately", accurately);
+  g_record_accurately_while_playing = accurately;
+}
+
+static bool g_record_velocity = true;
+
+bool MIDI_get_record_velocity(void){
+  return g_record_velocity;
+}
+
+void MIDI_set_record_velocity(bool doit){
+  printf("doit: %d\n",doit);
+  SETTINGS_write_bool("always_record_midi_velocity", doit);
+  g_record_velocity = doit;
+}
+
+
+
+
+
+/*********************************************************
+ *********************************************************
+ **          Record MIDI                                **
+ *********************************************************
+ *********************************************************/
 
 
 #define PACK_MIDI_MSG(a,b,c) ( (a&0xf0)<<16 | b<<8 | c)
@@ -235,6 +275,15 @@ void MIDI_insert_recorded_midi_events(void){
   g_last_recorded_midi_event = NULL;
 }
 
+
+
+
+/*********************************************************
+ *********************************************************
+ **          Send MIDI input to current patch           **
+ *********************************************************
+ *********************************************************/
+
 typedef struct {
   int32_t deltatime;
   uint32_t msg;
@@ -271,28 +320,23 @@ void RT_MIDI_handle_play_buffer(void){
 }
 
 
-static bool g_record_accurately_while_playing = true;
-
-bool MIDI_get_record_accurately(void){
-  return g_record_accurately_while_playing;
+// This is safe. A patch is never deleted.
+void MIDI_SetThroughPatch(struct Patch *patch){
+  //printf("Sat new patch %p\n",patch);
+  if(patch!=NULL)
+    ATOMIC_SET(g_through_patch, patch);
 }
 
-void MIDI_set_record_accurately(bool accurately){
-  SETTINGS_write_bool("record_midi_accurately", accurately);
-  g_record_accurately_while_playing = accurately;
-}
 
-static bool g_record_velocity = true;
 
-bool MIDI_get_record_velocity(void){
-  return g_record_velocity;
-}
 
-void MIDI_set_record_velocity(bool doit){
-  printf("doit: %d\n",doit);
-  SETTINGS_write_bool("always_record_midi_velocity", doit);
-  g_record_velocity = doit;
-}
+
+/*********************************************************
+ *********************************************************
+ **       Got MIDI from the outside. Entry point.       **
+ *********************************************************
+ *********************************************************/
+
 
 void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   //printf("got new message. on/off:%d. Message: %x,%x,%x\n",(int)root->editonoff,cc,data1,data2);
@@ -327,19 +371,20 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   }
 }
 
-// This is safe. A patch is never deleted.
-void MIDI_SetThroughPatch(struct Patch *patch){
-  //printf("Sat new patch %p\n",patch);
-  if(patch!=NULL)
-    ATOMIC_SET(g_through_patch, patch);
-}
+
+
+/*************************************************************
+**************************************************************
+ **  Insert MIDI received from the outside into the editor  **
+ *************************************************************
+ *************************************************************/
 
 
 // called very often
 void MIDI_HandleInputMessage(void){
   // should be a memory barrier here somewhere.
 
-  uint32_t msg = ATOMIC_GET(g_msg); // Hmm, should have an ATOMIC_COMPAREFALSE_AND_SET function.
+  uint32_t msg = ATOMIC_GET(g_msg); // Hmm, should have an ATOMIC_COMPAREFALSE_AND_SET function. (doesn't matter though, it would just look better)
   
   if (msg!=0) {
 
@@ -355,6 +400,14 @@ void MIDI_HandleInputMessage(void){
     }
   }
 }
+
+
+
+/*************************************************************
+**************************************************************
+ **                     Initialization                      **
+ *************************************************************
+ *************************************************************/
 
 void MIDI_input_init(void){
   radium::ScopedMutex lock(&g_midi_event_mutex);
