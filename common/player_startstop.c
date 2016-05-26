@@ -130,7 +130,7 @@ void PlayStop(void){
 
 static void start_player(int playtype, int playpos, bool set_curr_playlist, Place *place, struct Blocks *block){
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
-  
+
   // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
   //while(GC_is_disabled()==false){
   //printf("Calling gc_disable: %d\n",GC_dont_gc);
@@ -140,13 +140,15 @@ static void start_player(int playtype, int playpos, bool set_curr_playlist, Plac
   }
 #endif
 
+  ATOMIC_SET(root->song_state_is_locked, true);
+  
   PLAYER_lock();{
     
     pc->playpos=playpos;
     ATOMIC_ADD(pc->play_id, 1);
 
     if (set_curr_playlist)
-      root->curr_playlist=playpos;
+      ATOMIC_SET(root->curr_playlist, playpos);
     
     pc->playtype = playtype;
     
@@ -393,7 +395,7 @@ void PlaySongCurrPos(struct Tracker_Windows *window){
 
 	ATOMIC_SET(root->setfirstpos, false);
 
-	playpos=root->curr_playlist;
+	playpos = ATOMIC_GET(root->curr_playlist);
                 
 	block=BL_GetBlockFromPos(playpos);
 	if(block==NULL) return;

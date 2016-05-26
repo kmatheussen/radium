@@ -24,7 +24,7 @@ extern void CursorLeft_CurrPos(struct Tracker_Windows *window);
 extern void CursorNextTrack_CurrPos(struct Tracker_Windows *window);
 extern void CursorPrevTrack_CurrPos(struct Tracker_Windows *window);
 
-extern int SetCursorPosConcrete(
+extern bool SetCursorPosConcrete(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	NInt tracknum,

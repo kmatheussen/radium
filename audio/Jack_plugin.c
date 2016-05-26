@@ -118,7 +118,7 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
   return data;
 }
 
-extern int jackblock_size;
+extern DEFINE_ATOMIC(int, jackblock_size);
 extern jack_time_t jackblock_delta_time;
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
@@ -141,6 +141,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   {
     int ch;
+    int jackblock_size = ATOMIC_GET(jackblock_size);
     
     for(ch=0;ch<type->num_inputs;ch++)
       if (data->output_ports[ch]!=NULL)

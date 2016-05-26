@@ -106,4 +106,24 @@ extern LANGSPEC void SetMaxUndos(struct Tracker_Windows *window);
 
 extern uint64_t g_curr_undo_generation;
 
+
+#ifdef __cplusplus
+
+namespace radium{
+  
+  struct ScopedUndo{
+  
+    ScopedUndo(){
+      Undo_Open_rec();
+    }
+    
+    ~ScopedUndo(){
+      Undo_Close();
+    }
+  };
+
+}
+
+#endif
+
 #endif

@@ -126,19 +126,19 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 		}
 	
 	}else{
-		window->curr_track++;
+                ATOMIC_INC(window->curr_track, 1);
 
                 if (window->curr_track==LPBTRACK && window->show_lpb_track==false)
-                  window->curr_track++;
+                  ATOMIC_INC(window->curr_track, 1);
 
                 if (window->curr_track==SIGNATURETRACK && window->show_signature_track==false)
-                  window->curr_track++;
+                  ATOMIC_INC(window->curr_track, 1);
                 
                 if (window->curr_track==LINENUMBTRACK)
-                  window->curr_track++;
+                  ATOMIC_INC(window->curr_track, 1);
 
                 if (window->curr_track==TEMPONODETRACK && window->show_reltempo_track==false)
-                  window->curr_track++;
+                  ATOMIC_INC(window->curr_track, 1);
 
 		if (0==window->curr_track)
                   window->curr_track_sub= -1;
@@ -157,19 +157,19 @@ static void set_curr_track_to_leftmost_legal_track(struct Tracker_Windows *windo
     printf("what?\n");
   
   else if (window->show_bpm_track==true)
-    window->curr_track=TEMPOTRACK;
+    ATOMIC_WRITE(window->curr_track, TEMPOTRACK);
   
   else if (window->show_lpb_track==true)
-    window->curr_track=LPBTRACK;
+    ATOMIC_WRITE(window->curr_track, LPBTRACK);
   
   else if (window->show_signature_track==true)
-    window->curr_track=SIGNATURETRACK;
+    ATOMIC_WRITE(window->curr_track, SIGNATURETRACK);
   
   else if (window->show_reltempo_track==true)
-    window->curr_track=TEMPONODETRACK;
+    ATOMIC_WRITE(window->curr_track, TEMPONODETRACK);
   
   else {
-    window->curr_track = window->wblock->left_track;
+    ATOMIC_WRITE(window->curr_track, window->wblock->left_track);
     window->curr_track_sub = -1;
   }
 }
@@ -207,19 +207,19 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
                 if (window->curr_track==TEMPOTRACK)
                   return 0;
                 
-		window->curr_track--;
+		ATOMIC_INC(window->curr_track, -1);
 
                 if (window->curr_track==TEMPONODETRACK && window->show_reltempo_track==false)
-                  window->curr_track--;
+                  ATOMIC_INC(window->curr_track, -1);
 
                 if (window->curr_track==LINENUMBTRACK)
-                  window->curr_track--;
+                  ATOMIC_INC(window->curr_track, -1);
 
                 if (window->curr_track==SIGNATURETRACK && window->show_signature_track==false)
-                  window->curr_track--;
+                  ATOMIC_INC(window->curr_track, -1);
                 
                 if (window->curr_track==LPBTRACK && window->show_lpb_track==false)
-                  window->curr_track--;
+                  ATOMIC_INC(window->curr_track, -1);
                 
                 if (window->curr_track==TEMPOTRACK && window->show_bpm_track==false)
                   set_curr_track_to_leftmost_legal_track(window);
@@ -228,34 +228,7 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
 	}
 }
 
-void TrackSelectUpdate(struct Tracker_Windows *window,struct WBlocks *wblock,int ret){
-
-	switch(ret){
-		case 0:
-			return;
-		case 1:
-			R_SetCursorPos(window);
-			break;
-		case 2:
-                  window->must_redraw = true;
-#if 0
-		  UpdateWBlockCoordinates(window,wblock);
-		  DrawUpAllWTracks(window,wblock,NULL);
-		  DrawAllWTrackHeaders(window,wblock);
-
-                  {
-                    struct WTracks *wtrack2=ListLast1(&wblock->wtracks->l);
-                    if(wtrack2->fxarea.x2<wblock->a.x2){
-                      GFX_FilledBox(window,0,wtrack2->fxarea.x2+2,wblock->t.y1,wblock->a.x2,wblock->t.y2,PAINT_BUFFER);
-                      GFX_FilledBox(window,0,wtrack2->fxarea.x2+2,0,wblock->a.x2,wblock->t.y1,PAINT_DIRECTLY);
-                    }
-                  }
-
-		  DrawBottomSlider(window);
-                  DrawUpTrackerWindow(window);
-#endif
-                  break;
-	}
+static void TrackSelectUpdate(struct Tracker_Windows *window,struct WBlocks *wblock, int unused){
 
         GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
         DrawAllWTrackHeaders(window,wblock);
@@ -288,19 +261,19 @@ int CursorNextTrack(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 
 
-int SetCursorPosConcrete(
+bool SetCursorPosConcrete(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	NInt tracknum,
 	int subtrack
 ){
-	struct WTracks *wtrack;
+        struct WTracks *wtrack;
 	int ret=0,tempret;
 
-	if(tracknum>=wblock->block->num_tracks || tracknum<TEMPOTRACK) return 0;
+	if(tracknum>=wblock->block->num_tracks || tracknum<TEMPOTRACK) return false;
 
 	if(tracknum<0){
-		if(tracknum==window->curr_track) return 0;
+		if(tracknum==window->curr_track) return true;
 
 		if(tracknum>window->curr_track){
 			while(window->curr_track!=tracknum){
@@ -334,7 +307,7 @@ int SetCursorPosConcrete(
 		}
 	}
 
-	return ret;
+	return true;
 }
 
 void SetCursorPosConcrete_CurrPos(
@@ -342,18 +315,18 @@ void SetCursorPosConcrete_CurrPos(
 	NInt tracknum
 ){
 	struct WBlocks *wblock=window->wblock;
-	int ret;
+	//int ret;
 
 	if(tracknum>=wblock->block->num_tracks) return;
 
-	ret=SetCursorPosConcrete(
-		window,
-		wblock,
-		tracknum,
-		-1
-	);
-
-	TrackSelectUpdate(window,wblock,ret);
+	SetCursorPosConcrete(
+                             window,
+                             wblock,
+                             tracknum,
+                             -1
+                             );
+        
+	TrackSelectUpdate(window,wblock,-1);
 }
 
 
@@ -404,9 +377,9 @@ void CursorPrevTrack_CurrPos(struct Tracker_Windows *window){
         if (new_track==curr_track) // can happen.
           return;
         
-        int ret = SetCursorPosConcrete(window,wblock,new_track,-1);
+        SetCursorPosConcrete(window,wblock,new_track,-1);
         
-	TrackSelectUpdate(window,wblock,ret);
+	TrackSelectUpdate(window,wblock,0);
 }
 
 

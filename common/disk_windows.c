@@ -241,7 +241,7 @@ if(window==NULL) return;
 		exit(2);
 	}
 
-	window->curr_track=0;
+	ATOMIC_WRITE(window->curr_track, 0);
 	window->curr_track_sub=-1;
 
         InitSliderValues(window);

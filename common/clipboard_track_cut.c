@@ -75,12 +75,14 @@ struct WTracks *CB_CutTrack(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
+
+  struct WTracks *ret;
   
   PC_Pause();{
             
 	struct FXs *fxs=wtrack->track->fxs;
 
-	struct WTracks *ret=CB_CopyTrack(wblock,wtrack);
+	ret=CB_CopyTrack(wblock,wtrack);
 
         //	if(window->curr_track_sub<0){
 		wtrack->track->notes=NULL;

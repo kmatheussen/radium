@@ -32,6 +32,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include "pa_memorybarrier.h"
 
 #include "../common/nsmtracker.h"
+#include "../common/time_proc.h"
+#include "../common/blocklist_proc.h"
 #include "../common/Mutex.hpp"
 #include "../common/visual_proc.h"
 #include "../common/player_proc.h"
@@ -336,10 +338,14 @@ static void init_player_lock(void){
 #endif
 }
 
-int jackblock_size = 0;
 jack_time_t jackblock_delta_time = 0;
-static STime jackblock_cycle_start_stime = 0;
-static STime jackblock_last_frame_stime = 0;
+
+DEFINE_ATOMIC(int, jackblock_size) = 0;
+static DEFINE_ATOMIC(STime, jackblock_cycle_start_stime) = 0;
+static DEFINE_ATOMIC(STime, jackblock_last_frame_stime) = 0;
+static DEFINE_ATOMIC(Blocks *, jackblock_block) = NULL;
+static DEFINE_ATOMIC(STime, jackblock_seqtime) = 0;
+static DEFINE_ATOMIC(int, jackblock_playlistpos) = 0;
 
 //static DEFINE_SPINLOCK(jackblock_spinlock); // used by two realtime threads (midi input and audio thread)
 static SetSeveralAtomicVariables jackblock_variables_protector;
@@ -672,9 +678,14 @@ struct Mixer{
       RT_lock_player();
 
       jackblock_variables_protector.write_start();{
-        ATOMIC_WRITE(jackblock_size, num_frames);
-        ATOMIC_WRITE(jackblock_cycle_start_stime, pc->end_time);
-        ATOMIC_WRITE(jackblock_last_frame_stime, jack_last_frame_time(_rjack_client));
+        
+        ATOMIC_SET(jackblock_size, num_frames);
+        ATOMIC_SET(jackblock_cycle_start_stime, pc->end_time);
+        ATOMIC_SET(jackblock_last_frame_stime, jack_last_frame_time(_rjack_client));
+        ATOMIC_SET(jackblock_block, pc->block);
+        ATOMIC_SET(jackblock_seqtime, ATOMIC_GET(pc->seqtime));
+        ATOMIC_SET(jackblock_playlistpos, ATOMIC_GET(root->curr_playlist));
+        
       }jackblock_variables_protector.write_end();
       
       if(g_test_crashreporter_in_audio_thread){
@@ -960,35 +971,77 @@ static STime get_audioblock_time(STime jack_block_start_time){
   return abs_jack_time - jack_block_start_time;
 }
 
-// Like pc->start_time, but sub-block accurately
-STime MIXER_get_accurate_radium_time(void){
-  struct Blocks *block = (struct Blocks*)atomic_pointer_read((void**)&pc->block);
-
-  if (block==NULL)
-    return pc->start_time;
-
+// Like pc->start_time, but sub-block accurately. Can be called from any thread.
+//
+// I understand the function quite well when writing this comment, but I might not next time reading this code.
+// Should probably think about how to abstract all this stuff.
+static bool fill_in_time_position2(time_position_t *time_position){
   STime jackblock_cycle_start_stime2;
   STime jackblock_last_frame_stime2;
   STime jackblock_size2;
+  STime seqtime;
+  struct Blocks *block;
+  int playlistpos;
+  int playlistpos_numfromcurrent = 0;
 
   int generation;
   do{
     generation = jackblock_variables_protector.read_start();
     
-    jackblock_cycle_start_stime2 = ATOMIC_READ(jackblock_cycle_start_stime);
-    jackblock_last_frame_stime2 = ATOMIC_READ(jackblock_last_frame_stime);
-    jackblock_size2 = ATOMIC_READ(jackblock_size);
+    jackblock_cycle_start_stime2 = ATOMIC_GET(jackblock_cycle_start_stime);
+    jackblock_last_frame_stime2  = ATOMIC_GET(jackblock_last_frame_stime);
+    jackblock_size2              = ATOMIC_GET(jackblock_size);
+    block                        = ATOMIC_GET(jackblock_block);
+    seqtime                      = ATOMIC_GET(jackblock_seqtime);
+    playlistpos                  = ATOMIC_GET(jackblock_playlistpos);
     
-  } while(jackblock_variables_protector.read_end(generation)==false);
+  } while(jackblock_variables_protector.read_end(generation)==false); // ensure that the variables inside this loop are read atomically.
+
+  R_ASSERT_RETURN_IF_FALSE2(block!=NULL, false);
   
   int deltatime = get_audioblock_time(jackblock_last_frame_stime2);
-  
-  return
+
+  STime accurate_radium_time =
     jackblock_cycle_start_stime2 +
     scale(deltatime,
           0, jackblock_size2,
           0, jackblock_size2 * safe_volatile_float_read(&block->reltempo)
           );
+  
+  STime accurate_block_time = accurate_radium_time - seqtime;
+
+  while (accurate_block_time >= getBlockSTimeLength(block)){
+    if(pc->playtype==PLAYSONG) {
+      playlistpos_numfromcurrent++;
+      block = BL_GetBlockFromPos(playlistpos + playlistpos_numfromcurrent);
+      if (block==NULL)
+        return false; // end of song
+    }
+    accurate_block_time -= getBlockSTimeLength(block);
+  }
+
+  R_ASSERT_RETURN_IF_FALSE2(accurate_block_time >= 0, false);
+  
+  time_position->blocknum = block->l.num;
+  time_position->blocktime = accurate_block_time;
+  
+  return true;
+}
+
+// Can be called from any thread
+bool MIXER_fill_in_time_position(time_position_t *time_position){
+  if (root==NULL || root->song==NULL)
+    return false;
+
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  if (window==NULL)
+    return false;
+  
+  R_ASSERT_RETURN_IF_FALSE2(ATOMIC_GET(root->song_state_is_locked), false);
+
+  time_position->tracknum = ATOMIC_READ(window->curr_track);
+
+  return fill_in_time_position2(time_position);
 }
 
 #if 0

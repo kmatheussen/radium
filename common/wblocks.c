@@ -432,13 +432,14 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 		wblock->curr_realline=wblock->num_reallines-1;
 	}
 
-	wblock->wtrack=wblock->wtracks;
+	ATOMIC_WRITE(wblock->wtrack, wblock->wtracks);
 
 	newcurrtracksub=-1;
-	window->curr_track=0;
+	//ATOMIC_WRITE(window->curr_track, 0);
 	window->curr_track_sub=-1;
 
-        SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub);
+        if (SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub)==false)
+          ATOMIC_WRITE(window->curr_track, 0);
 
 	window->curr_block=wblock->l.num;
         ATOMIC_SET(g_curr_block, wblock->block);
@@ -476,28 +477,28 @@ void SelectNextWBlock(struct Tracker_Windows *window){
 }
 
 void SelectPrevPlaylistWBlock(struct Tracker_Windows *window){
-	struct Blocks *block=BL_GetBlockFromPos(root->curr_playlist-1);
+        struct Blocks *block=BL_GetBlockFromPos(ATOMIC_GET(root->curr_playlist)-1);
 	if(block==NULL) return;
 
         PC_Pause();{
-          root->curr_playlist-=1;
+          ATOMIC_ADD(root->curr_playlist, -1);
 
           SelectWBlock(window,ListFindElement1(&window->wblocks->l,block->l.num));
 
-          BS_SelectPlaylistPos(root->curr_playlist);
+          BS_SelectPlaylistPos(ATOMIC_GET(root->curr_playlist));
         }PC_StopPause(NULL);
 }
 
 void SelectNextPlaylistWBlock(struct Tracker_Windows *window){
-	struct Blocks *block=BL_GetBlockFromPos(root->curr_playlist+1);
+        struct Blocks *block=BL_GetBlockFromPos(ATOMIC_GET(root->curr_playlist)+1);
 	if(block==NULL) return;
 
         PC_Pause();{
-          root->curr_playlist+=1;
+          ATOMIC_ADD(root->curr_playlist, 1);
 
           SelectWBlock(window,ListFindElement1(&window->wblocks->l,block->l.num));
 
-          BS_SelectPlaylistPos(root->curr_playlist);
+          BS_SelectPlaylistPos(ATOMIC_GET(root->curr_playlist));
         }PC_StopPause(NULL);
 }
 

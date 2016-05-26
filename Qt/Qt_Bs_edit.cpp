@@ -390,7 +390,7 @@ private slots:
 
     playlist.setSelected(pos+1, true);
     if(pos<(int)playlist.count()-1)
-      root->curr_playlist = pos;
+      ATOMIC_SET(root->curr_playlist, pos);
   }
 
   void remove_from_playlist(void){
@@ -478,7 +478,7 @@ private slots:
 
     PC_Pause();{
 
-      root->curr_playlist = num;
+      ATOMIC_SET(root->curr_playlist, num);
 
       blocklist_highlighted(BL_GetBlockFromPos(num)->l.num);
                             

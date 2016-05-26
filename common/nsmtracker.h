@@ -939,6 +939,19 @@ static inline float TRACK_get_velocity(const struct Tracks *track, int velocity)
 }
 
 
+
+/*********************************************************************
+	time_position.h
+*********************************************************************/
+
+typedef struct{
+  int16_t blocknum;
+  int16_t tracknum;
+  STime blocktime;
+} time_position_t;
+
+
+
 /*********************************************************************
 	area.h
 *********************************************************************/
@@ -1615,7 +1628,7 @@ struct Song{
 struct Root{
 	struct Song *song;
 
-        int curr_playlist;
+        DEFINE_ATOMIC(int, curr_playlist);
         DEFINE_ATOMIC(NInt, curr_blocknum); // Currently playing blocknum
 
         DEFINE_ATOMIC(bool, setfirstpos);
@@ -1637,6 +1650,8 @@ struct Root{
         DEFINE_ATOMIC(bool, play_cursor_onoff);
         DEFINE_ATOMIC(bool, editor_follows_play_cursor_onoff);
         DEFINE_ATOMIC(bool, clickonoff);
+
+        DEFINE_ATOMIC(bool, song_state_is_locked); // 'song state' means song->blocks, block->times, and song->playlist. The player is always stopped when changing any of these variables.
 };
 
 extern struct Root *root;

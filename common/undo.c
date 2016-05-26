@@ -486,7 +486,7 @@ currently_undoing = true;
                 wblock->wtrack=wtrack;
               }
               wblock->curr_realline = R_BOUNDARIES(0, entry->realline, wblock->num_reallines-1);
-              window->curr_track=entry->tracknum;
+              ATOMIC_WRITE(window->curr_track, entry->tracknum);
             }
 
             entry->pointer = entry->function(window,wblock,wtrack,entry->realline,entry->pointer);
@@ -507,7 +507,7 @@ currently_undoing = true;
             }
             wblock->wtrack=wtrack;
             wblock->curr_realline = R_BOUNDARIES(0, entry->realline, wblock->num_reallines-1);
-            window->curr_track=entry->tracknum;
+            ATOMIC_WRITE(window->curr_track, entry->tracknum);
           }
 
           if (has_paused)
@@ -544,7 +544,7 @@ currently_undoing = true;
          wblock->wtrack=wtrack;
          
          wblock->curr_realline = R_BOUNDARIES(0, undo->realline, wblock->num_reallines-1);         
-         window->curr_track=undo->tracknum;
+         ATOMIC_WRITE(window->curr_track, undo->tracknum);
 
          SelectWBlock(
                       window,

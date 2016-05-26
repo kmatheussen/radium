@@ -1108,7 +1108,7 @@ void showHideSignatureTrack(int windownum){
   window->show_signature_track = !window->show_signature_track;
 
   if (!window->show_signature_track && window->curr_track==SIGNATURETRACK)
-    window->curr_track = 0;
+    ATOMIC_WRITE(window->curr_track, 0);
 
   UpdateAllWBlockCoordinates(window);
   window->must_redraw = true;
@@ -1120,7 +1120,7 @@ void showHideLPBTrack(int windownum){
   window->show_lpb_track = !window->show_lpb_track;
 
   if (!window->show_lpb_track && window->curr_track==LPBTRACK)
-    window->curr_track = 0;
+    ATOMIC_WRITE(window->curr_track, 0);
 
   UpdateAllWBlockCoordinates(window);
   window->must_redraw = true;
@@ -1132,7 +1132,7 @@ void showHideBPMTrack(int windownum){
   window->show_bpm_track = !window->show_bpm_track;
 
   if (!window->show_bpm_track && window->curr_track==TEMPOTRACK)
-    window->curr_track = 0;
+    ATOMIC_WRITE(window->curr_track, 0);
 
   UpdateAllWBlockCoordinates(window);
 }
@@ -1143,7 +1143,7 @@ void showHideReltempoTrack(int windownum){
   window->show_reltempo_track = !window->show_reltempo_track;
 
   if (!window->show_reltempo_track && window->curr_track==TEMPONODETRACK)
-    window->curr_track = 0;
+    ATOMIC_WRITE(window->curr_track, 0);
 
   UpdateAllWBlockCoordinates(window);
 }

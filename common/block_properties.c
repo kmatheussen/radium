@@ -173,7 +173,7 @@ void Block_Set_num_tracks(
 
           if (window->curr_track >= num_tracks){
             //RError("window->curr_track >= num_tracks: %d >= %d",window->curr_track, num_tracks);
-            //window->curr_track = num_tracks - 1;
+            //ATOMIC_WRITE(window->curr_track, num_tracks - 1);
             wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,block->l.num);
 
             SetCursorPosConcrete(

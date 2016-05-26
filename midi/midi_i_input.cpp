@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "midi_i_plugin_proc.h"
 #include "midi_proc.h"
 
+#include "../common/list_proc.h"
 #include "../common/notes_proc.h"
 #include "../common/blts_proc.h"
 #include "../common/OS_Ptask2Mtask_proc.h"
@@ -45,6 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/Mutex.hpp"
 #include "../common/Queue.hpp"
+#include "../common/Vector.hpp"
 
 #include "midi_i_input_proc.h"
 
@@ -100,102 +102,54 @@ void MIDI_set_record_velocity(bool doit){
 #define PACK_MIDI_MSG(a,b,c) ( (a&0xf0)<<16 | b<<8 | c)
 
 typedef struct _midi_event_t{
-  struct _midi_event_t *next;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack;
-  STime blocktime;
+  time_position_t timepos;
   uint32_t msg;
 } midi_event_t;
 
 
 static radium::Mutex g_midi_event_mutex;
-static midi_event_t *g_midi_events = NULL;
-static midi_event_t *g_recorded_midi_events = NULL;
-static midi_event_t *g_last_recorded_midi_event = NULL;
+static radium::Vector<midi_event_t> g_recorded_midi_events;
 
 static radium::Queue<midi_event_t, 8000> g_midi_event_queue;
-
-static midi_event_t *get_midi_event(void){
-
-  if (g_midi_events==NULL) {
-    
-    midi_event_t *midi_events = (midi_event_t*)V_calloc(1024, sizeof(midi_event_t));
-    int i;
-    for(i=1;i<1023;i++)
-      midi_events[i].next = &midi_events[i+1];
-    
-    g_midi_events = &midi_events[1];
-    
-    return &midi_events[0];
-    
-  }else {
-
-    midi_event_t *ret = g_midi_events;
-    g_midi_events = ret->next;
-    return ret;
-
-  }
-}
 
   
 // Called from a MIDI input thread. Only called if playing
 static void record_midi_event(uint32_t msg){
-  if (root==NULL || root->song==NULL)
-    return;
-
-  struct Tracker_Windows *window = root->song->tracker_windows;
-  if (window==NULL)
-    return;
-  
-  struct WBlocks *wblock = ATOMIC_READ(window->wblock);
-  if (wblock==NULL)
-    return;
-  
-  struct WTracks *wtrack = ATOMIC_READ(wblock->wtrack);
-  if (wtrack==NULL)
-    return;
-  
-  struct Tracks *track = wtrack->track;
-  if (track==NULL)
-    return;
-  
   midi_event_t midi_event;
-  
-  midi_event.wblock    = wblock;
-  midi_event.wtrack    = wtrack;
-  midi_event.blocktime = R_MAX(0, MIXER_get_accurate_radium_time() - ATOMIC_GET(pc->seqtime)); // TODO/FIX: This can fail if pc->seqtime is not updated at the same time as 'jackblock_cycle_start_stime' in Mixer.cpp.
-  midi_event.msg       = msg;
 
-  if (ATOMIC_GET(track->is_recording) == false){
-    GFX_ScheduleEditorRedraw();
-    ATOMIC_SET(track->is_recording, true);
+  if (MIXER_fill_in_time_position(&midi_event.timepos) == true){ // <-- MIXER_fill_in_time_position returns false if the event was recorded after song end, or program is initializing, or there was an error.
+    
+    midi_event.msg       = msg;
+
+    if (!g_midi_event_queue.tryPut(midi_event))
+      RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, please report this incident.");
+
   }
-
-  if (!g_midi_event_queue.tryPut(midi_event))
-    RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, please report this incident.");
 }
 
 // Runs in its own thread
 static void *recording_queue_pull_thread(void*){
   while(true){
     
-    midi_event_t event_from_midi = g_midi_event_queue.get();
-
+    midi_event_t event = g_midi_event_queue.get();
+    
     {
       radium::ScopedMutex lock(&g_midi_event_mutex);
-      
-      midi_event_t *event_to_main_thread = get_midi_event();
-      
-      memcpy(event_to_main_thread, &event_from_midi, sizeof(midi_event_t));
-      
-      event_to_main_thread->next = NULL;
-      
-      if (g_recorded_midi_events==NULL)
-        g_recorded_midi_events = event_to_main_thread;
-      else
-        g_last_recorded_midi_event->next = event_to_main_thread;
-      
-      g_last_recorded_midi_event = event_to_main_thread;
+
+      if (ATOMIC_GET(root->song_state_is_locked) == true){ // not totally tsan proof
+        struct Blocks *block = (struct Blocks*)ListFindElement1_r0(&root->song->blocks->l, event.timepos.blocknum);
+        if (block != NULL){          
+          struct Tracks *track = (struct Tracks*)ListFindElement1_r0(&block->tracks->l, event.timepos.tracknum);
+          if (track != NULL){
+            if (ATOMIC_GET(track->is_recording) == false){
+              GFX_ScheduleEditorRedraw();
+              ATOMIC_SET(track->is_recording, true);
+            }
+          }
+        }
+      }
+
+      g_recorded_midi_events.add(event);
     }
     
   }
@@ -204,25 +158,28 @@ static void *recording_queue_pull_thread(void*){
 }
 
 
-static midi_event_t *find_midievent_end_note(midi_event_t *midi_event, int notenum_to_find, STime starttime_of_note){
-  while(midi_event!=NULL){
-    if (midi_event->wblock!=NULL) {
-      
-      uint32_t msg = midi_event->msg;
-      int cc = msg>>16;
-      int notenum = (msg>>8)&0xff;
-      int volume = msg&0xff;
-      
-      if (cc==0x80 || volume==0){
-        if (notenum==notenum_to_find && midi_event->blocktime > starttime_of_note)
-          return midi_event;
+static bool find_and_remove_midievent_end_note(int blocknum, int pos, int notenum_to_find, STime starttime_of_note, midi_event_t &midi_event){
+  for(int i = pos ; i < g_recorded_midi_events.size(); i++) {
+
+    midi_event = g_recorded_midi_events[i];
+    
+    if (midi_event.timepos.blocknum != blocknum)
+      return false;
+
+    uint32_t msg     = midi_event.msg;
+    int      cc      = MIDI_msg_byte1(msg);
+    int      notenum = MIDI_msg_byte2(msg);
+    int      volume  = MIDI_msg_byte3(msg);
+    
+    if (cc==0x80 || volume==0){
+      if (notenum==notenum_to_find && midi_event.timepos.blocktime > starttime_of_note) {
+        g_recorded_midi_events.remove_pos(i, true);
+        return true;
       }
     }
-    
-    midi_event = midi_event->next;
   }
 
-  return NULL;
+  return false;
 }
 
 
@@ -231,94 +188,111 @@ void MIDI_insert_recorded_midi_events(void){
   while(g_midi_event_queue.size() > 0) // Wait til the recording_queue_pull_thread is finished draining the queue.
     usleep(1000*5);
 
+  ATOMIC_SET(root->song_state_is_locked, false);
+
+  printf("MIDI_insert_recorded_midi_events called %d\n", g_recorded_midi_events.size());
+         
   {
     radium::ScopedMutex lock(&g_midi_event_mutex);
-    if (g_recorded_midi_events == NULL)
+    if (g_recorded_midi_events.size() == 0)
       return;
   }
 
-  usleep(1000*20); // Wait a little bit more for the last event to be transfered into g_recorded_midi_events. (no big deal if we lose it though, CPU is probably so buzy if that happens that the user should expect not everything working as it should. It's also only in theory that we could lose the last event. It's extremely unlikely since the transfer only takes some nanoseconds, while here we wait 20 milliseconds.)
+  
+  usleep(1000*20); // Wait a little bit more for the last event to be transfered into g_recorded_midi_events. (no big deal if we lose it though, CPU is probably so buzy if that happens that the user should expect not everything working as it should. It's also only in theory that we could lose the last event since the transfer only takes some nanoseconds, while here we wait 20 milliseconds.)
+
 
   {
     radium::ScopedMutex lock(&g_midi_event_mutex);
-  
-    midi_event_t *midi_event = g_recorded_midi_events;
-
-    hash_t *track_set = HASH_create(8);
-  
-    Undo_Open();{
-
-      while(midi_event != NULL){
-        midi_event_t *next = midi_event->next;
-
-        if (midi_event->wblock!=NULL) {
-
-          struct Blocks *block = midi_event->wblock->block;
-          struct Tracks *track = midi_event->wtrack->track;
-          ATOMIC_SET(track->is_recording, false);
-        
-          char *key = (char*)talloc_format("%x",midi_event->wtrack);
-          if (HASH_has_key(track_set, key)==false){
-
-            ADD_UNDO(Notes(root->song->tracker_windows,
-                           block,
-                           track,
-                           midi_event->wblock->curr_realline
-                           ));
-            HASH_put_int(track_set, key, 1);
-          }
-        
-
-          STime time = midi_event->blocktime;
-          uint32_t msg = midi_event->msg;
-            
-          int cc = (msg>>16)&0xf0; // remove channel
-          int notenum = (msg>>8)&0xff;
-          int volume = msg&0xff;
-
-          // add note
-          if (cc==0x90 && volume>0) {
-        
-            Place place = STime2Place(block,time);
-            Place endplace;
-            Place *endplace_p;
-        
-            midi_event_t *midi_event_endnote = find_midievent_end_note(next,notenum,time);
-            if (midi_event_endnote!=NULL){
-              midi_event_endnote->wblock = NULL; // only use it once
-              endplace = STime2Place(block,midi_event_endnote->blocktime);
-              endplace_p = &endplace;
-            }else
-              endplace_p = NULL;
-        
-            InsertNote(midi_event->wblock,
-                       midi_event->wtrack,
-                       &place,
-                       endplace_p,
-                       notenum,
-                       (float)volume * MAX_VELOCITY / 127.0f,
-                       true
-                       );
-          }
-      
-        }
-      
-        // remove event
-        midi_event->next = g_midi_events;
-        g_midi_events = midi_event;
-      
-      
-        // iterate next
-        midi_event = next;
-      }
+    radium::ScopedUndo scoped_undo;
     
-    }Undo_Close();
+    hash_t *track_set = HASH_create(8);
 
-  
-    g_recorded_midi_events = NULL;
-    g_last_recorded_midi_event = NULL;
+    for(int i = 0 ; i < g_recorded_midi_events.size(); i++) { // events can be removed from g_recorded_midi_events inside this loop
+      
+      auto midi_event = g_recorded_midi_events[i];
 
-  } // end mutex scope
+      //printf("%d / %d: %x\n",midi_event.timepos.blocknum, midi_event.timepos.tracknum, midi_event.msg);
+        
+      if (midi_event.timepos.tracknum >= 0) {
+          
+        struct WBlocks *wblock = (struct WBlocks*)ListFindElement1(&root->song->tracker_windows->wblocks->l, midi_event.timepos.blocknum);
+        R_ASSERT_RETURN_IF_FALSE(wblock!=NULL);
+          
+        struct WTracks *wtrack = (struct WTracks*)ListFindElement1(&wblock->wtracks->l, midi_event.timepos.tracknum);
+        R_ASSERT_RETURN_IF_FALSE(wtrack!=NULL);
+                    
+        struct Blocks *block = wblock->block;
+        struct Tracks *track = wtrack->track;
+
+        // GFX
+        
+        ATOMIC_SET(track->is_recording, false);
+
+
+        // UNDO
+        
+        char *key = (char*)talloc_format("%x",track);
+        if (HASH_has_key(track_set, key)==false){
+
+          ADD_UNDO(Notes(root->song->tracker_windows,
+                         block,
+                         track,
+                         wblock->curr_realline
+                         ));
+          HASH_put_int(track_set, key, 1);
+        }
+
+
+        // ADD NOTE / STOP
+
+        STime time = midi_event.timepos.blocktime;
+        uint32_t msg = midi_event.msg;
+        
+        Place place = STime2Place(block,time);
+        
+        int cc      = MIDI_msg_byte1_remove_channel(msg);
+        int notenum = MIDI_msg_byte2(msg);
+        int volume  = MIDI_msg_byte3(msg);
+        
+        // add note
+        if (cc==0x90 && volume>0) {
+          
+          Place endplace;
+          Place *endplace_p = NULL;
+          
+          midi_event_t midi_event_endnote;
+          if (find_and_remove_midievent_end_note(midi_event.timepos.blocknum, i, notenum, time, midi_event_endnote) == true){
+            endplace = STime2Place(block,midi_event_endnote.timepos.blocktime);
+            endplace_p = &endplace;
+          }
+          
+          InsertNote(wblock,
+                     wtrack,
+                     &place,
+                     endplace_p,
+                     notenum,
+                     (float)volume * MAX_VELOCITY / 127.0f,
+                     true
+                     );
+          }
+        
+        // add stp. (happens if note was started in block a, and stopped in block b)
+        if (cc==0x80 || (cc==0x90 && volume==0)){
+          
+          struct Stops *stop=(struct Stops*)talloc(sizeof(struct Stops));
+          PlaceCopy(&stop->l.p,&place);
+          
+          ListAddElement3(&track->stops,&stop->l);
+        }
+      }
+      
+    }
+
+    g_recorded_midi_events.clear();
+
+  } // end mutex and undo scope
+
 }
 
 
@@ -462,12 +436,6 @@ void MIDI_input_init(void){
   MIDI_set_record_accurately(SETTINGS_read_bool("record_midi_accurately", true));
   MIDI_set_record_velocity(SETTINGS_read_bool("always_record_midi_velocity", false));
   
-  midi_event_t *midi_event = get_midi_event();
-  
-  midi_event->next = g_midi_events;
-  
-  g_midi_events = midi_event;
-
   static pthread_t recording_pull_thread;
   pthread_create(&recording_pull_thread, NULL, recording_queue_pull_thread, NULL);
 }

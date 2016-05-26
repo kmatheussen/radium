@@ -88,7 +88,7 @@ void P2MUpdateSongPosCallBack(void){
   }
   
   if(pc->playtype==PLAYSONG)
-    BS_SelectPlaylistPos(ATOMIC_GET2(root->curr_playlist));
+    BS_SelectPlaylistPos(ATOMIC_GET(root->curr_playlist));
   
   if(window->curr_block!=curr_block_num){
 

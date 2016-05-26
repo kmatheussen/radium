@@ -213,7 +213,7 @@ public:
   // RT safe (except for the O(n) performance)
   //
   // This function can NOT be called in parallell with other functions
-  void remove(T t){
+  void remove(T t, bool keep_order = false){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
     
     R_ASSERT(next_elements == NULL);
@@ -224,20 +224,35 @@ public:
     for(pos=0 ; pos<num_elements ; pos++)
       if (elements[pos]==t)
         break;
-    
-    R_ASSERT(pos < num_elements);
 
-    if (num_elements==1){
-      R_ASSERT(pos==0);
-    } else {
-      elements[pos] = elements[num_elements-1];
-    }
-
-    elements[num_elements-1] = (T)NULL; // for debugging
-
-    num_elements--;
+    remove_pos(pos, keep_order);
   }
 
+  void remove_pos(int pos, bool keep_order = false){
+    R_ASSERT_RETURN_IF_FALSE(pos < num_elements);
+
+    if (keep_order) {
+      
+      int i;
+      this->num_elements--;
+      
+      for(i=pos;i<this->num_elements;i++)
+        this->elements[i]=this->elements[i+1];
+      
+    } else {
+
+      if (num_elements==1){
+        R_ASSERT(pos==0);
+      } else {
+        elements[pos] = elements[num_elements-1];
+      }
+      
+      num_elements--;
+    }
+
+    elements[num_elements] = {0}; // for debugging
+  }
+  
   // RT safe
   //
   // This function can NOT be called in parallell with other functions

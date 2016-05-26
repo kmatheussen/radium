@@ -51,7 +51,7 @@ struct Blocks *PC_GetPlayBlock(int numfromcurrent){
           return pc->block;
 	}
 
-	return BL_GetBlockFromPos(root->curr_playlist+numfromcurrent);
+	return BL_GetBlockFromPos(ATOMIC_GET(root->curr_playlist)+numfromcurrent);
 }
 
 bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct Notes **note, struct Tracks **track, const struct Blocks **block){
@@ -83,16 +83,17 @@ static void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, ST
 		if(pc->playtype==PLAYBLOCK || pc->playtype==PLAYBLOCK_NONLOOP){
 			time+=getBlockSTimeLength(pc->block);	// When playblock, addplaypos can't be bigger than one.
 		}else{
-			for(
-				playpos=root->curr_playlist;
-				playpos<root->curr_playlist+addplaypos;
-				playpos++
-			){
-				time+=
-					getBlockSTimeLength(
-						BL_GetBlockFromPos(playpos)
-					);
-			}
+                  int curr_playlistpos = ATOMIC_GET(root->curr_playlist);
+                  for(
+                      playpos=curr_playlistpos;
+                      playpos<curr_playlistpos+addplaypos;
+                      playpos++
+                      ){
+                    time+=
+                      getBlockSTimeLength(
+                                          BL_GetBlockFromPos(playpos)
+                                          );
+                  }
 		}
 	}
 
@@ -242,7 +243,7 @@ void PC_GoNextBlock(void){
 
 	pc->playpos++;
 	if(pc->playtype==PLAYSONG)
-          ATOMIC_ADD2(root->curr_playlist, 1);
+          ATOMIC_ADD(root->curr_playlist, 1);
 }
 
 
