@@ -54,6 +54,11 @@ static SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const 
 }
 
 SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const char *type_name, const char *plugin_name){
+
+  // Compatibility with older songs
+  if (!strcmp(type_name, "Patchbay") && !strcmp(plugin_name, "Patchbay"))
+    plugin_name = "Patchbay 8x8";
+  
   for(SoundPluginType *plugin_type : g_plugin_types)
     if(!strcmp(plugin_type->type_name,type_name))
       if(!strcmp(plugin_type->name,plugin_name))
