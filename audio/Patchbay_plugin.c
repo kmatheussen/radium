@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 typedef struct{
   int routes[MAX_NUM_CHANNELS*MAX_NUM_CHANNELS];
-  bool output_is_nulled[MAX_NUM_CHANNELS]; // optimization to avoid cleaning clean memory. Works since SoundProducer supplies the same output buffers every time. 
 } Data;
 
 
@@ -67,16 +66,12 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
           for(i=0;i<num_frames;i++)
             out[i] += in[i];
         }
-
-        data->output_is_nulled[out_ch] = false;
       }
       
     }
     
-    if(touched==false && data->output_is_nulled[out_ch]==false) {
+    if(touched==false)
       memset(out,0,sizeof(float)*num_frames);
-      data->output_is_nulled[out_ch] = true;
-    }
   }
 }
 
@@ -95,9 +90,6 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   Data *data = V_calloc(1,sizeof(Data));
   data->routes[0]=1;
   data->routes[plugin_type->num_outputs+1]=1;
-  for(int ch = 0 ; ch < MAX_NUM_CHANNELS ; ch++){
-    data->output_is_nulled[ch] = true;
-  }
   return data;
 }
 
