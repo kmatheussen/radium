@@ -333,13 +333,13 @@ static DEFINE_ATOMIC(const char *, g_plugin_names)[MAX_NUM_PLUGIN_NAMES]={g_no_p
 
 static double start_time;
 
-static int get_s(void) {
+static double get_s(void) {
     struct timeval now;
     
     if (gettimeofday(&now, NULL) != 0)
       return 0.0;
 
-    return now.tv_sec + now.tv_usec*1000.0;
+    return now.tv_sec + now.tv_usec/(1000.0*1000.0);
 }
 
 

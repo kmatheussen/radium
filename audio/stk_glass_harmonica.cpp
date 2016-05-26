@@ -285,10 +285,10 @@ class Glass_Harmonica_dsp : public dsp {
 		m->declare("math.lib/copyright", "GRAME");
 		m->declare("math.lib/version", "1.0");
 		m->declare("math.lib/license", "LGPL with exception");
-		m->declare("instrument.lib/version", "1.0");
-		m->declare("instrument.lib/copyright", "Romain Michon");
 		m->declare("instrument.lib/name", "Faust-STK Tools Library");
 		m->declare("instrument.lib/author", "Romain Michon (rmichon@ccrma.stanford.edu)");
+		m->declare("instrument.lib/copyright", "Romain Michon");
+		m->declare("instrument.lib/version", "1.0");
 		m->declare("instrument.lib/licence", "STK-4.3");
 		m->declare("filter.lib/name", "Faust Filter Library");
 		m->declare("filter.lib/author", "Julius O. Smith (jos at ccrma.stanford.edu)");

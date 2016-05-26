@@ -16,6 +16,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 /* This file is #include-d from ../audio/Juce_plugins.cpp */
+//
+// Note that compilation settings are a bit different here. FOR_LINUX/etc. are not defined, etc. */
+
 
 
 #include "midi_i_input_proc.h"
@@ -207,7 +210,7 @@ void MIDI_closeMidiPortOs(MidiPortOs port){
 MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,char *name_c){
 
   MyMidiPortOs *ret = (MyMidiPortOs*)calloc(1, sizeof(MyMidiPortOs));
-    
+  
   String name(name_c);
 
   StringArray devices = MidiOutput::getDevices();
@@ -220,25 +223,28 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
   }
   */
 
-#if defined(FOR_WINDOWS)
-  if (device_id == -1 ){
+  //RT_message(NULL); // <-- No backtrace in windows32
+      
+  if (device_id == -1 ) {
+
+#if JUCE_WINDOWS
     if (devices.size() > 0) {
-      RT_message(NULL, "MIDI output device %s not found, replacing with device %s", name, devices[0].toUTF8());
+      GFX_Message(NULL, "MIDI output device \"%s\" not found.\n\nAs a workaround, all usage of this device is replaced with the device \"%s\".", name_c, devices[0].toRawUTF8());
       device_id = 0;
-    } else {
-      RT_message(NULL, "MIDI output device %s not found. No other devices found either.\nUsing dummy device.\nYou need to restart Radium after connecting the device in order to use it.", name_c);
-      return ret;
+      ret->midiout = MidiOutput::openDevice(device_id);
     }
-  }
+#else
+    ret->midiout = MidiOutput::createNewDevice(name);
 #endif
 
-  if (device_id == -1 )
-    ret->midiout = MidiOutput::createNewDevice(name);
-  else
+  } else {
+
     ret->midiout = MidiOutput::openDevice(device_id);
-  
+
+  }
+
   if (ret->midiout == NULL)
-    RT_message(NULL, "Error. Unable to open MIDI output device %s.\nUsing dummy device.\nYou need to restart Radium after making the device work in order to use it.", name_c);
+    RT_message("Error. Unable to open MIDI output device %s.\nUsing dummy device.\nYou need to restart Radium after making the device work in order to use it again.", name_c);
 
   printf("midi output device opened. name: %s, device id: %d\n",name_c, device_id);
 
@@ -270,9 +276,9 @@ static void add_input_port(String name, bool do_update_settings){
 
   int device_id = devices.indexOf(name);
 
-#ifdef FOR_WINDOWS
+#if JUCE_WINDOWS
   if (device_id==-1){
-    RError("Device %s not found", name_c);
+    RError("Device %s not found", name.toRawUTF8());
     return;
   }
 #endif
@@ -285,13 +291,15 @@ static void add_input_port(String name, bool do_update_settings){
   
   auto *midi_input_callback = new MyMidiInputCallback();
 
-  MidiInput *midi_input;
+  MidiInput *midi_input = NULL;
 
   if (device_id>=0)
     midi_input = MidiInput::openDevice(device_id, midi_input_callback);
+#if !JUCE_WINDOWS
   else
     midi_input = MidiInput::createNewDevice(name, midi_input_callback);
-
+#endif
+  
   if (midi_input==NULL){
     GFX_Message(NULL, "Error. Unable to open MIDI output device %s.\n", (const char*)name.toUTF8());
     delete midi_input_callback;

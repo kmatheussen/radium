@@ -32,9 +32,9 @@
 
 #include "VST_plugins_proc.h"
 
-#include "../pluginhost/JuceLibraryCode/AppConfig.h"
-
 #include "../pluginhost/JuceLibraryCode/JuceHeader.h"
+
+#include "../pluginhost/JuceLibraryCode/AppConfig.h"
 
 
 

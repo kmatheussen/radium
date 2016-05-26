@@ -293,8 +293,8 @@ class Blow_Hole_dsp : public dsp {
 		m->declare("filter.lib/version", "1.29");
 		m->declare("filter.lib/license", "STK-4.3");
 		m->declare("filter.lib/reference", "https://ccrma.stanford.edu/~jos/filters/");
-		m->declare("effect.lib/name", "Faust Audio Effect Library");
 		m->declare("effect.lib/author", "Julius O. Smith (jos at ccrma.stanford.edu)");
+		m->declare("effect.lib/name", "Faust Audio Effect Library");
 		m->declare("effect.lib/copyright", "Julius O. Smith III");
 		m->declare("effect.lib/version", "1.33");
 		m->declare("effect.lib/license", "STK-4.3");

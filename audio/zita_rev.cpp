@@ -269,8 +269,8 @@ class Zita_dsp : public dsp {
 		m->declare("filter.lib/version", "1.29");
 		m->declare("filter.lib/license", "STK-4.3");
 		m->declare("filter.lib/reference", "https://ccrma.stanford.edu/~jos/filters/");
-		m->declare("music.lib/name", "Music Library");
 		m->declare("music.lib/author", "GRAME");
+		m->declare("music.lib/name", "Music Library");
 		m->declare("music.lib/copyright", "GRAME");
 		m->declare("music.lib/version", "1.0");
 		m->declare("music.lib/license", "LGPL with exception");
@@ -552,7 +552,7 @@ class Zita_dsp : public dsp {
 			fVec9[IOTA&16383] = (1e-20f + (0.35355339059327373f * fRec26[0]));
 			fVec10[IOTA&8191] = (float)input1[i];
 			float fTemp7 = (0.3f * fVec10[(IOTA-iSlow16)&8191]);
-			float fTemp8 = (fTemp7 + (fVec9[(IOTA-iConst27)&16383] + (0.6f * fRec24[1])));
+			float fTemp8 = (fTemp7 + ((0.6f * fRec24[1]) + fVec9[(IOTA-iConst27)&16383]));
 			fVec11[IOTA&2047] = fTemp8;
 			fRec24[0] = fVec11[(IOTA-iConst28)&2047];
 			float 	fRec25 = (0 - (0.6f * fVec11[IOTA&2047]));

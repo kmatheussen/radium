@@ -235,6 +235,7 @@ class Uni_Bar_dsp : public dsp {
 		m->declare("math.lib/copyright", "GRAME");
 		m->declare("math.lib/version", "1.0");
 		m->declare("math.lib/license", "LGPL with exception");
+		m->declare("effect.lib/name", "Faust Audio Effect Library");
 		m->declare("instrument.lib/name", "Faust-STK Tools Library");
 		m->declare("instrument.lib/author", "Romain Michon (rmichon@ccrma.stanford.edu)");
 		m->declare("instrument.lib/copyright", "Romain Michon");
@@ -246,7 +247,6 @@ class Uni_Bar_dsp : public dsp {
 		m->declare("filter.lib/version", "1.29");
 		m->declare("filter.lib/license", "STK-4.3");
 		m->declare("filter.lib/reference", "https://ccrma.stanford.edu/~jos/filters/");
-		m->declare("effect.lib/name", "Faust Audio Effect Library");
 		m->declare("effect.lib/author", "Julius O. Smith (jos at ccrma.stanford.edu)");
 		m->declare("effect.lib/copyright", "Julius O. Smith III");
 		m->declare("effect.lib/version", "1.33");
