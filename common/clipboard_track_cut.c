@@ -75,6 +75,9 @@ struct WTracks *CB_CutTrack(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
+  
+  PC_Pause();{
+            
 	struct FXs *fxs=wtrack->track->fxs;
 
 	struct WTracks *ret=CB_CopyTrack(wblock,wtrack);
@@ -91,7 +94,9 @@ struct WTracks *CB_CutTrack(
 
 	wtrack->track->fxs=NULL;
 
-        return ret;
+  }PC_StopPause(window);
+  
+  return ret;
 }
 
 void CB_CutTrack_CurrPos(
