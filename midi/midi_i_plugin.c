@@ -428,11 +428,9 @@ static struct PatchData *createPatchData(void) {
   }
 
   {
-    int num_ports;
-    char *portname = "default";
-    char **portnames=MIDI_getPortNames(&num_ports,false);
-    if(num_ports>0)
-      portname=portnames[0];
+    char *portname = MIDI_getDefaultOutputPort();
+    if (portname==NULL)
+      portname = "default";
     patchdata->midi_port = MIDIgetPort(NULL,NULL,portname);
   }
 

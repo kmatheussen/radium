@@ -125,7 +125,7 @@ static void record_midi_event(uint32_t msg){
     midi_event.msg       = msg;
 
     if (!g_midi_event_queue.tryPut(midi_event))
-      RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, please report this incident.");
+      RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, or your your MIDI input and output ports are connected recursively, please report this incident.");
 
   }
 }

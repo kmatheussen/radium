@@ -200,6 +200,13 @@ char **MIDI_getOutputPortOsNames(int *retsize){ // returns all ports that's poss
   return string_array_to_char_array(devices, retsize);
 }
 
+char *MIDI_getDefaultOutputPort(void){
+  StringArray devices = MidiOutput::getDevices();
+  if (devices.size()==0)
+    return NULL;
+  
+  return talloc_strdup(devices[MidiOutput::getDefaultDeviceIndex()].toUTF8());
+}
 
 void MIDI_closeMidiPortOs(MidiPortOs port){
   MyMidiPortOs *myport = static_cast<MyMidiPortOs*>(port);
