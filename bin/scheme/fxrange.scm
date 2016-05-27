@@ -517,7 +517,7 @@
 ;; Used when track fx was stored in C
 (define (get-range-fxs rangetracknum startplace endplace)
   (map (lambda (fxnum)
-         (define fxname (string->symbol (<ra> :get-fxrange-name fxnum rangetracknum)))
+         (define fxname (<_> (<ra> :get-fxrange-name fxnum rangetracknum)))
          (define num-fxnodes (<ra> :get-num-fxrangenodes fxnum rangetracknum))
          (define fxnodes (let loop ((fxnodenum 0)
                                     (last-fxnode #f))
@@ -559,7 +559,7 @@
 
 (define (get-track-fxs blocknum tracknum)
   (map (lambda (fxnum)
-         (define fxname (string->symbol (<ra> :get-fx-name fxnum tracknum blocknum)))
+         (define fxname (<_> (<ra> :get-fx-name fxnum tracknum blocknum)))
          (define num-fxnodes (<ra> :get-num-fxnodes fxnum tracknum blocknum))
          (define fxnodes (map (lambda (fxnodenum)
                                 (define place (<ra> :get-fxnode-place fxnodenum fxnum tracknum blocknum))
@@ -567,8 +567,8 @@
                                 (define logtype (<ra> :get-fxnode-logtype fxnodenum fxnum tracknum blocknum))
                                 (list place value logtype))
                               (iota num-fxnodes)))
-         (list fxname
-               fxnodes))
+         (create-fx fxname
+                    fxnodes))
        (iota (<ra> :get-num-fxs tracknum blocknum))))
 
 #||
@@ -818,7 +818,7 @@
 
 (define (get-fxnames instrument)
   (map (lambda (effect-num)
-         (string->symbol (<ra> :get-instrument-effect-name effect-num instrument)))
+         (<_> (<ra> :get-instrument-effect-name effect-num instrument)))
        (iota (<ra> :get-num-instrument-effects instrument))))
   
 (define (paste-track-fxs! blocknum tracknum fxs)

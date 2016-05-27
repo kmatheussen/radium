@@ -168,10 +168,13 @@
 
 ||#
 
+(define *empty-symbol* '___empty_symbol) ;; s7 doesn't allow converting empty string to symbol
 
 (define (to-string a)
   (cond ((symbol? a)
-         (symbol->string a))
+         (if (eq? *empty-symbol* a)
+             ""
+             (symbol->string a)))
         ((string? a)
          a)
         ((number? a)
@@ -194,7 +197,11 @@
              (display a))))))
 
 (define (<-> . args) (apply string-append (map to-string args)))
-(define (<_> . args) (string->symbol (apply <-> args)))
+(define (<_> . args)
+  (let ((s (apply <-> args)))
+    (if (string=? "" s)
+        *empty-symbol*
+        (string->symbol s))))
 
 (define (<-displayable-> . args) (apply string-append (map to-displayable-string args)))
 
