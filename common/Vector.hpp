@@ -152,6 +152,44 @@ private:
       elements[num_elements-1] = t;
     }
 
+  void remove_pos_internal(int pos, bool keep_order){
+    R_ASSERT_RETURN_IF_FALSE(pos < num_elements);
+
+    if (keep_order) {
+      
+      int i;
+      this->num_elements--;
+      
+      for(i=pos;i<this->num_elements;i++)
+        this->elements[i]=this->elements[i+1];
+      
+    } else {
+
+      if (num_elements==1){
+        R_ASSERT(pos==0);
+      } else {
+        elements[pos] = elements[num_elements-1];
+      }
+      
+      num_elements--;
+    }
+
+    memset(&elements[num_elements], 0, sizeof(T)); // for debugging
+  }
+
+  int find_pos_internal(T t){
+    int pos;
+    
+    for(pos=0 ; pos<num_elements ; pos++)
+      if (elements[pos]==t)
+        break;
+
+    if (pos<num_elements)
+      return pos;
+    else
+      return -1;
+  }
+
 public:
   
   // Only RT safe if ensure_there_is_room_for_one_more_without_having_to_allocate_memory is called first AND post_add is called afterwards.
@@ -209,6 +247,13 @@ public:
     for (T t : ts)
       basic_add(t);
   }
+
+  // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
+  int find_pos(T t){
+    LOCKASSERTER_SHARED(&lockAsserter);
+
+    return find_pos_internal(t);
+  }
   
   // RT safe (except for the O(n) performance)
   //
@@ -219,38 +264,19 @@ public:
     R_ASSERT(next_elements == NULL);
     R_ASSERT(elements_ready_for_freeing == NULL);
     
-    int pos;
+    int pos = find_pos_internal(t);
+    R_ASSERT_RETURN_IF_FALSE(pos>=0);
     
-    for(pos=0 ; pos<num_elements ; pos++)
-      if (elements[pos]==t)
-        break;
-
-    remove_pos(pos, keep_order);
+    remove_pos_internal(pos, keep_order);
   }
 
+  // RT safe (except for the O(n) performance)
+  //
+  // This function can NOT be called in parallell with other functions
   void remove_pos(int pos, bool keep_order = false){
-    R_ASSERT_RETURN_IF_FALSE(pos < num_elements);
+    LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
-    if (keep_order) {
-      
-      int i;
-      this->num_elements--;
-      
-      for(i=pos;i<this->num_elements;i++)
-        this->elements[i]=this->elements[i+1];
-      
-    } else {
-
-      if (num_elements==1){
-        R_ASSERT(pos==0);
-      } else {
-        elements[pos] = elements[num_elements-1];
-      }
-      
-      num_elements--;
-    }
-
-    elements[num_elements] = {0}; // for debugging
+    remove_pos_internal(pos, keep_order);
   }
   
   // RT safe

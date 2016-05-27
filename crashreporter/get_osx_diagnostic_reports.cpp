@@ -28,7 +28,7 @@ todo, also check here:
 /Libraries/Logs/CrashReporter
 */
 
-QString get_latest_diagnostic_report(void){
+static QString get_latest_diagnostic_report(void){
 
   QDir dir(g_diagnostic_reports_path);
   dir.setSorting(QDir::Time);
