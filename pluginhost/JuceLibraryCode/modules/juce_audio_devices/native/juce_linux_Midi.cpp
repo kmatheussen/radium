@@ -325,7 +325,13 @@ static AlsaPort iterateMidiClient (const AlsaClient::Ptr& seq,
                 && (snd_seq_port_info_get_capability (portInfo) & (forInput ? SND_SEQ_PORT_CAP_READ
                                                                             : SND_SEQ_PORT_CAP_WRITE)) != 0)
             {
-                deviceNamesFound.add (snd_seq_client_info_get_name (clientInfo));
+                const String clientName = snd_seq_client_info_get_name (clientInfo);
+                const String portName = snd_seq_port_info_get_name(portInfo);
+
+                if (clientName == portName)
+                  deviceNamesFound.add (clientName);
+                else
+                  deviceNamesFound.add (clientName + ": " + portName);
 
                 if (deviceNamesFound.size() == deviceIndexToOpen + 1)
                 {
@@ -333,7 +339,6 @@ static AlsaPort iterateMidiClient (const AlsaClient::Ptr& seq,
 
                     if (sourcePort != -1)
                     {
-                        const String portName = snd_seq_port_info_get_name(portInfo);
                         const int sourceClient = snd_seq_client_info_get_client (clientInfo);
 
                         port.createPort (seq, portName, forInput);
