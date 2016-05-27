@@ -64,7 +64,7 @@ void CB_CutTrack_Force(
 
 	while(fxs!=NULL){
 		(*fxs->fx->closeFX)(fxs->fx,wtrack->track);
-		fxs=NextFX(fxs);
+		fxs=NextFXs(fxs);
 	}
 
 	wtrack->track->fxs=NULL;
@@ -91,7 +91,7 @@ struct WTracks *CB_CutTrack(
 
 	while(fxs!=NULL){
 		(*fxs->fx->closeFX)(fxs->fx,wtrack->track);
-		fxs=NextFX(fxs);
+		fxs=NextFXs(fxs);
 	}
 
 	wtrack->track->fxs=NULL;

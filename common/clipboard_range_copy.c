@@ -250,7 +250,7 @@ void CopyRange_fxs(
 
 	CopyRange_fxnodelines(&fxs->fxnodelines,fromfxs->fxnodelines,NULL,*p1,*p2);
 
-	CopyRange_fxs(tofxs,NextFX(fromfxs),p1,p2);
+	CopyRange_fxs(tofxs,NextFXs(fromfxs),p1,p2);
 }
 
 

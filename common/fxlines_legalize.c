@@ -49,7 +49,7 @@ void LegalizeFXlines(struct Blocks *block, struct Tracks *track){
 	PlaceSetLastPos(block,&p2);
 
 	while(fxs!=NULL){
-		temp=NextFX(fxs);
+		temp=NextFXs(fxs);
 
 		fxnodeline=fxs->fxnodelines;
 		p1=PlaceGetFirstPos();

@@ -93,7 +93,7 @@ void InsertPlace_fxs(
 			toplace,
 			NULL
 		);
-		fxs=NextFX(fxs);
+		fxs=NextFXs(fxs);
 	}
 	LegalizeFXlines(block,track);
 }

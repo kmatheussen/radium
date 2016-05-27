@@ -166,7 +166,7 @@ void UpdateFXNodeLines(
 			prev=fxnode;
 			fxnode=NextFXNodeLine(fxnode);
 		}
-		fx=NextFX(fx);
+		fx=NextFXs(fx);
 	}
 
 }
@@ -223,7 +223,7 @@ struct FX *getTrackFX(struct Tracks *track,int num){
 			return fxs->fx;
 		}
 		nnum++;
-		fxs=NextFX(fxs);
+		fxs=NextFXs(fxs);
 	}
 
 	RError("Error at function getTrackFX in file fxlines.c\n");
@@ -260,7 +260,7 @@ void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float ol
             block->is_dirty=true;
           }
 
-          fxs = NextFX(fxs);
+          fxs = NextFXs(fxs);
         }
       }
       track = NextTrack(track);
@@ -366,7 +366,7 @@ int AddFXNodeLine(
                   int val,
                   const Place *p1
 ){
-	struct FXs *fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fxnum);
+        struct FXs *fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fxnum); // FIX. fxnum is not a unique identifier anymore. But maybe it should be.
 	struct FXNodeLines *fxnodeline=talloc(sizeof(struct FXNodeLines));
 
         int ret;
@@ -397,12 +397,23 @@ static void AddNewTypeOfFxNodeLine(struct Tracker_Windows *window, const struct 
   window->must_redraw = true;
 }
 
+static struct FXs *get_fxs_for_fx(struct Tracks *track, struct FX *fx){
+  struct FXs *fxs = track->fxs;
+  while(fxs != NULL){
+    if (fxs->l.num == fx->num && fxs->fx->patch == fx->patch)
+      return fxs;
+    fxs = NextFXs(fxs);
+  }
+
+  return NULL;
+}
+
 static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FX *fx, const Place *place, int val){
 
   Place p1;
   PlaceCopy(&p1, place);
   
-        struct FXs *fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fx->num);
+        struct FXs *fxs=get_fxs_for_fx(wtrack->track, fx);
         if (fxs==NULL){
           Place p2;
 

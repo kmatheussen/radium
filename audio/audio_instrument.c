@@ -593,7 +593,7 @@ void DLoadAudioInstrument(void){
                           
           }
           
-          fxs = NextFX(fxs);
+          fxs = NextFXs(fxs);
         }
       }
       
@@ -656,7 +656,7 @@ static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *tra
 
   struct FXs *fxs = track->fxs;
   while(fxs!=NULL){
-    struct FXs *next = NextFX(fxs);
+    struct FXs *next = NextFXs(fxs);
     {
       struct FX *fx = fxs->fx;
 

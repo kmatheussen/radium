@@ -68,7 +68,7 @@ void InitPEQBlockfxs(
 
 		while(fxs!=NULL){
 			InitPEQfxs(block,track,fxs);
-			fxs=NextFX(fxs);
+			fxs=NextFXs(fxs);
 		}
 		track=NextTrack(track);
 	}

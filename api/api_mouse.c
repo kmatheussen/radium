@@ -2736,7 +2736,7 @@ int createFx(float value, Place place, const char* fx_name, int tracknum, int bl
         return num;
 
       num++;
-      fxs = NextFX(fxs);
+      fxs = NextFXs(fxs);
     }
 
     RError("Internal error: Newly created FX not found, even though it was just created");

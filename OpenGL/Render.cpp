@@ -985,7 +985,7 @@ void create_track_borders(const struct Tracker_Windows *window, const struct WBl
                            wtrack->fxtextarea.x + (1+column)*WTRACK_fxtrack_width(window->fontwidth) - 1,
                            y1,
                            y2);
-      fxs = NextFX(fxs);
+      fxs = NextFXs(fxs);
       column++;
     }
 
@@ -2031,7 +2031,7 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
       vector_t *fxtexts = FXTEXTS_get(wblock, wtrack, fxs);
       for(int realline = 0 ; realline<wblock->num_reallines ; realline++)
         create_track_fxtext(window, wblock, wtrack, &fxtexts[realline], realline, column);
-      fxs = NextFX(fxs);
+      fxs = NextFXs(fxs);
       column++;
     }
 
@@ -2042,7 +2042,7 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
     const struct FXs *fxs=wtrack->track->fxs;
     while(fxs != NULL){
       create_track_fxs(window, wblock, wtrack, fxs);
-      fxs = NextFX(fxs);
+      fxs = NextFXs(fxs);
     }
   }
 

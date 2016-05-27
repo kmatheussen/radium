@@ -94,7 +94,7 @@ void Block_Set_num_lines(
 			fxs=track->fxs;
 			while(fxs!=NULL){
 				CutListAt_a(&fxs->fxnodelines,&lastplace);
-				fxs=NextFX(fxs);
+				fxs=NextFXs(fxs);
 			}
 			LegalizeFXlines(block,track);
 			track=NextTrack(track);

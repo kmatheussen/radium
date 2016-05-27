@@ -43,7 +43,7 @@ DC_start("FXS");
 
 
 DC_end();
-SaveFXs(NextFX(fxs),track);
+SaveFXs(NextFXs(fxs),track);
 }
 
 struct FXs *LoadFXs(struct Tracks *track){
@@ -111,7 +111,7 @@ if(fxs==NULL) return;
 
    DLoadFX(newroot, track, fxs, fxs->fx);
         
-DLoadFXs(newroot,track, NextFX(fxs));
+DLoadFXs(newroot,track, NextFXs(fxs));
 }
 
 

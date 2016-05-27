@@ -885,7 +885,7 @@ struct FXs{
 	struct FX *fx;
 	struct FXNodeLines *fxnodelines;
 };
-#define NextFX(a) ((struct FXs *)((a)->l.next))
+#define NextFXs(a) ((struct FXs *)((a)->l.next))
 
 
 

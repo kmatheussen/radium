@@ -302,7 +302,7 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
         
         struct FXs *fxs = track->fxs;
         while(fxs!=NULL){
-          struct FXs *next = NextFX(fxs);
+          struct FXs *next = NextFXs(fxs);
           
           if (fxs->fx->patch==old_patch){
             

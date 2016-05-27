@@ -632,7 +632,7 @@ static void MIDI_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *trac
   while(fxs!=NULL){
     struct FX *fx = fxs->fx;
     fx->patch = new_patch; // Only need to change patch. All patches use the same fx system.
-    fxs = NextFX(fxs);
+    fxs = NextFXs(fxs);
   }
 
   return;

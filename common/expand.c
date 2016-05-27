@@ -77,7 +77,7 @@ static void expand_track(struct Tracks *track, int start, int end, int num_lines
   struct FXs *fxs = track->fxs;
   while(fxs!=NULL){
     expand_list3(&fxs->fxnodelines->l, start, end, num_lines);
-    fxs = NextFX(fxs);
+    fxs = NextFXs(fxs);
   }
 }
 

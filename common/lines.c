@@ -153,7 +153,7 @@ void InsertLines(
             fxs=track->fxs;
             while(fxs!=NULL){
               List_InsertLines3(&fxs->fxnodelines,&fxs->fxnodelines->l,line,toinsert,NULL);
-              fxs=NextFX(fxs);
+              fxs=NextFXs(fxs);
             }
             LegalizeFXlines(block,track);
             track=NextTrack(track);

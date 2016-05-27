@@ -87,7 +87,7 @@ int FXTEXT_subsubtrack(const struct Tracker_Windows *window, struct WTracks *wtr
     }
     
     subsubtrack -= 3;
-    fxs = NextFX(fxs);
+    fxs = NextFXs(fxs);
   }
   
   return -1;

@@ -103,7 +103,7 @@ static void make_patches_usable(struct Tracks *track){
           fx->patch = PATCH_create_audio(NULL, NULL, fx->patch->name, fx->patch->state);
       }
       
-      fxs = NextFX(fxs);
+      fxs = NextFXs(fxs);
     }
     
   }
