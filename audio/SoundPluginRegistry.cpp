@@ -209,16 +209,11 @@ static bool get_hepp_from_config_line(const char *line_c, NumUsedPluginEntry &he
   return true;
 }
 
-static int compare_hepps(const void *vsp1, const void *vsp2){
-  const NumUsedPluginEntry *h1 = (const NumUsedPluginEntry*)vsp1;
-  const NumUsedPluginEntry *h2 = (const NumUsedPluginEntry*)vsp2;
-  
-  if (h1->num_uses < h2->num_uses)
-    return 1;
-  else if (h1->num_uses > h2->num_uses)
-    return -1;
+static bool compare_hepps(const NumUsedPluginEntry &h1, const NumUsedPluginEntry &h2){
+  if (h1.num_uses > h2.num_uses)
+    return true;
   else
-    return 0;
+    return false;
 }
     
 const QVector<PluginMenuEntry> PR_get_menu_entries(void){
@@ -227,31 +222,34 @@ const QVector<PluginMenuEntry> PR_get_menu_entries(void){
   printf("end. PR_get_menu_entries called\n");
   
   vector_t *lines = SETTINGS_get_all_lines_starting_with("plugin_usage_");
-  NumUsedPluginEntry hepps[lines->num_elements];
-  int num_hepps=0;
+
+  QList<NumUsedPluginEntry> hepps;
   
   VECTOR_FOR_EACH(const char *, line_c, lines){
-    if (get_hepp_from_config_line(line_c, hepps[num_hepps]))
-      num_hepps++;
+    NumUsedPluginEntry hepp;
+    if (get_hepp_from_config_line(line_c, hepp))
+      hepps.push_back(hepp);
   }END_VECTOR_FOR_EACH;
-
-  if (num_hepps > 0) {
+  
+  if (hepps.size() > 0) {
     ret.push_back(PluginMenuEntry::separator());
-
-    qsort(&hepps[0], num_hepps, sizeof(NumUsedPluginEntry), compare_hepps);
-
+    
+    qSort(hepps.begin(), hepps.end(), compare_hepps);
+    
     bool has_next = false;
     
     int num_added = 0;
-    for(int i = 0 ; i < num_hepps ; i++){
-      if (hepps[i].type_name == "VST" ||
-          hepps[i].type_name == "Ladspa" ||
-          hepps[i].type_name == "Pd" ||
-          hepps[i].name.startsWith("STK ")
+    
+    for (auto hepp : hepps){
+      
+      if (hepp.type_name == "VST" ||
+          hepp.type_name == "Ladspa" ||
+          hepp.type_name == "Pd" ||
+          hepp.name.startsWith("STK ")
           )
         {
-          if (hepps[i].name != "Calf MultiChorus LADSPA" &&
-              hepps[i].name.trimmed() != "" // <-- TODO. Custom pd patches doesn't seem to have name.
+          if (hepp.name != "Calf MultiChorus LADSPA" &&
+              hepp.name.trimmed() != "" // <-- TODO. Custom pd patches doesn't seem to have name.
               )
             {
               if (num_added == 10){
@@ -259,16 +257,17 @@ const QVector<PluginMenuEntry> PR_get_menu_entries(void){
                 has_next=true;
               }
 
-              ret.push_back(PluginMenuEntry::num_used_plugin(hepps[i]));
+              ret.push_back(PluginMenuEntry::num_used_plugin(hepp));
               num_added++;
             }
         }
+      
     }
     
     if (has_next)
       ret.push_back(PluginMenuEntry::level_down());
   }
-  
+
   return ret;
 }
 
