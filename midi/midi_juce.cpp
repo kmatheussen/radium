@@ -229,8 +229,8 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
 
 #if JUCE_WINDOWS
     if (devices.size() > 0) {
-      GFX_Message(NULL, "MIDI output device \"%s\" not found.\n\nAs a workaround, all usage of this device is replaced with the device \"%s\".", name_c, devices[0].toRawUTF8());
-      device_id = 0;
+      device_id = MidiOutput::getDefaultDeviceIndex();
+      GFX_Message(NULL, "MIDI output device \"%s\" not found.\n\nAs a workaround, all usage of this device is replaced with the device \"%s\".", name_c, devices[device_id].toRawUTF8());
       ret->midiout = MidiOutput::openDevice(device_id);
     }
 #else
