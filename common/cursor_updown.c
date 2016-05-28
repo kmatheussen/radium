@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "vector_proc.h"
 #include "gfx_wblocks_proc.h"
 #include "windows_proc.h"
 #include "sliders_proc.h"
@@ -254,11 +255,39 @@ void ScrollEditorNextNote(struct Tracker_Windows *window, struct WBlocks *wblock
         scroll_next(window, wblock, wtrack, trs);
 }
 
-
 void ScrollEditorPrevNote(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
         vector_t *trs = TRS_get(wblock, wtrack);
 
         scroll_prev(window, wblock, wtrack, trs);
+}
+
+static vector_t *get_waveform_trs(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int polyphony_num){
+  vector_t *trs = talloc(sizeof(vector_t) * wblock->num_reallines);
+  
+  struct Notes *note = wtrack->track->notes;
+  
+  while(note != NULL){
+    if (note->polyphony_num == polyphony_num) {
+      int realline = FindRealLineForNote(wblock, 0, note);
+      VECTOR_push_back(&trs[realline], note);
+      int realline2 = FindRealLineForEndNote(wblock, 0, note);
+      VECTOR_push_back(&trs[realline2], note);
+    }
+    note = NextNote(note);
+  }
+
+  return trs;
+}
+
+
+void ScrollEditorNextWaveform(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int polyphony_num){
+  vector_t *trs = get_waveform_trs(window, wblock, wtrack, polyphony_num);
+  scroll_next(window, wblock, wtrack, trs);
+}
+
+void ScrollEditorPrevWaveform(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int polyphony_num){
+  vector_t *trs = get_waveform_trs(window, wblock, wtrack, polyphony_num);
+  scroll_prev(window, wblock, wtrack, trs);
 }
 
 void ScrollEditorNextVelocity(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
@@ -291,6 +320,13 @@ void ScrollEditorNextSomething(struct Tracker_Windows *window, struct WBlocks *w
     return;
   }
 
+  int curr_polyphony_num = window->curr_track_sub - WTRACK_num_non_polyphonic_subtracks(wtrack);
+
+  if (curr_polyphony_num >= 0){
+    ScrollEditorNextWaveform(window, wblock, wtrack, curr_polyphony_num);
+    return;
+  }
+
   if (VELTEXT_subsubtrack(window, wtrack) != -1){
     ScrollEditorNextVelocity(window, wblock, wtrack);
     return;
@@ -301,6 +337,7 @@ void ScrollEditorNextSomething(struct Tracker_Windows *window, struct WBlocks *w
     ScrollEditorNextFx(window, wblock, wtrack, fxs);
     return;
   }
+
 }
 
 void ScrollEditorPrevSomething(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
@@ -309,6 +346,13 @@ void ScrollEditorPrevSomething(struct Tracker_Windows *window, struct WBlocks *w
     return;
   }
 
+  int curr_polyphony_num = window->curr_track_sub - WTRACK_num_non_polyphonic_subtracks(wtrack);
+
+  if (curr_polyphony_num >= 0){
+    ScrollEditorPrevWaveform(window, wblock, wtrack, curr_polyphony_num);
+    return;
+  }
+  
   if (VELTEXT_subsubtrack(window, wtrack) != -1){
     ScrollEditorPrevVelocity(window, wblock, wtrack);
     return;

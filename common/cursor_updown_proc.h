@@ -24,6 +24,8 @@ extern LANGSPEC void ScrollEditorUp(struct Tracker_Windows *window,int num_lines
 
 extern LANGSPEC void ScrollEditorNextNote(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
 extern LANGSPEC void ScrollEditorPrevNote(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
+extern LANGSPEC void ScrollEditorNextWaveform(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int polyphony_num);
+extern LANGSPEC void ScrollEditorPrevWaveform(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int polyphony_num);
 extern LANGSPEC void ScrollEditorNextVelocity(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
 extern LANGSPEC void ScrollEditorPrevVelocity(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
 extern LANGSPEC void ScrollEditorNextFx(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FXs *fxs);

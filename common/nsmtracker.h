@@ -1127,7 +1127,7 @@ struct WTracks{
         int pianoroll_width; // not necessary
         Area pianoroll_area;
   
-  //int num_vel;						/* Max number of velocity lines showed simultaniously. (I.e the number of subtracks)*/
+        //int num_vel;						/* Max number of velocity lines showed simultaniously. (I.e the number of subtracks)*/
 
 	struct Tracks *track;			/* Only referenced. wtracknum=track->tracknum */
 

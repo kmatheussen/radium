@@ -85,6 +85,7 @@ vector_t *VECTOR_append(vector_t *v1, vector_t *v2){
   return v1;
 }
 
+// must keep order
 void VECTOR_delete(vector_t *v, int pos){
   int i;
   v->num_elements--;
@@ -107,6 +108,7 @@ bool VECTOR_is_in_vector(vector_t *v, const void *element){
   return VECTOR_find_pos(v,element)>=0;
 }
 
+// must keep order
 void VECTOR_remove(vector_t *v, const void *element){
   int pos=VECTOR_find_pos(v,element);
   if(pos==-1){

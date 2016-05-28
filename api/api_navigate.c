@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/cursor_proc.h"
 #include "../common/cursor_updown_proc.h"
 #include "../common/wblocks_proc.h"
+#include "../common/wtracks_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../common/realline_calc_proc.h"
 #include "../Qt/Rational.h"
@@ -76,6 +77,36 @@ void cursorPrevNote(int tracknum, int blocknum, int windownum){
   window->must_redraw = false;
 
   ScrollEditorPrevNote(window, wblock, wtrack);
+}
+
+void cursorNextWaveform(int polyphony_num, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  if (polyphony_num==-1)
+    polyphony_num = R_MAX(0, window->curr_track_sub - WTRACK_num_non_polyphonic_subtracks(wtrack));
+      
+  window->must_redraw = false;
+
+  ScrollEditorNextWaveform(window, wblock, wtrack, polyphony_num);
+}
+
+void cursorPrevWaveform(int polyphony_num, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  if (polyphony_num==-1)
+    polyphony_num = R_MAX(0, window->curr_track_sub - WTRACK_num_non_polyphonic_subtracks(wtrack));
+      
+  window->must_redraw = false;
+
+  ScrollEditorPrevWaveform(window, wblock, wtrack, polyphony_num);
 }
 
 void cursorNextVelocity(int tracknum, int blocknum, int windownum){
