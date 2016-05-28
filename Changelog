@@ -1,3 +1,28 @@
+Changes 3.8.8 -> 3.8.9:
+* Check for for note name(s) under cursor first when finding note(s) to increase/decrease velocity of
+  when pressing AltGr+left/right
+* pressing AltGtr+down/up jumps to next waveform start/end position when cursor is in the automation area.
+* api: cursorNextWaveform/cursorPrevWaveform
+* FX range: Fix copying automation for instruments with empty effect names
+* Fix adding new fx from another instrument when the track already has an fx with the same number
+* MIDI: Ask system to open default device when creating new midi instrument, instead of using the first one available
+* windows/midi: Use default device (instead of the first device) for output if the requested device could not be found
+* 32x32 patchbay instrument
+* Clean up MIDI recording code. More stable and accurately, and recording over several blocks should work better.
+* Fix potential undefined behavior when cutting track
+* Use JUCE instead of RtMidi for sending and receiving MIDI
+* More than one MIDI input port simultaneously.
+* Show most used plugins in the bottom of the pluginmenu.
+  (All previously used plugins are shown in the "next" sub menues.)
+* Remove "keep left input", etc. instruments from the plugin menu
+  (they take up space and the patchbay is better anyway)
+* Some assertions to try to hunt down ladspa initialization crash on osx
+* Ensure current line is legal when changing the LZ value
+* Send around midi channels in the note event system
+* patchbay plugin: Fix situation that theoretically could silence all
+  channels when loading song or preset
+
+
 Changes 3.8.7 -> 3.8.8:
 * api: currentLine / setCurrentLine
 * Make scroll wheel behave as pressing up / down arrow key
