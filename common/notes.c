@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "list_proc.h"
+#include "vector_proc.h"
 #include "placement_proc.h"
 #include "wtracks_proc.h"
 #include "realline_calc_proc.h"
@@ -757,7 +758,8 @@ static bool is_at_last_line_of_note(const struct WBlocks *wblock, const struct N
 
 struct Notes *FindNoteCurrPos(struct Tracker_Windows *window){
   struct WBlocks    *wblock   = window->wblock;
-  struct Tracks     *track    = wblock->wtrack->track;
+  struct WTracks    *wtrack   = wblock->wtrack;
+  struct Tracks     *track    = wtrack->track;
   struct LocalZooms *realline = wblock->reallines[wblock->curr_realline];
 
   return FindNote(track, &realline->l.p);

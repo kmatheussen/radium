@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_pause_proc.h"
 #include "player_proc.h"
 #include "range_proc.h"
+#include "trackreallines2_proc.h"
 #include "windows_proc.h"
 #include "OS_Player_proc.h"
 
@@ -224,10 +225,24 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
           ADD_UNDO(Notes_CurrPos(window));
 
-          struct Notes *note = FindNoteCurrPos(window);
+          bool has_increased = false;
+          
+          vector_t *trs = TRS_get(wblock, wtrack);
+          vector_t *tr = &trs[wblock->curr_realline];
+          VECTOR_FOR_EACH(TrackRealline2 *tr2, tr){
+            if (tr2->note != NULL) {
+              increase_note_velocity(tr2->note, inc);
+              has_increased = true;
+            }
+          }END_VECTOR_FOR_EACH;
 
-          if (note != NULL) {
-            increase_note_velocity(note, inc);
+          if (has_increased == false){
+            struct Notes *note = FindNoteCurrPos(window);
+            
+            if (note != NULL)
+              increase_note_velocity(note, inc);
+            else
+              Undo_CancelLastUndo();
           }
         }
 
