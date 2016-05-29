@@ -406,6 +406,8 @@ void SetupMainWindow(void){
   editor->setAttribute(Qt::WA_PaintOnScreen);
 #endif
 
+  editor->setAcceptDrops(true);
+                 
   //#if USE_OPENGL
     // editor->setAttribute(Qt::WA_PaintOnScreen);
   //#endif

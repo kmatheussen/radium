@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "EditorWidget.h"
 
 #include <qpainter.h>
+#include <QUrl>
 
 #ifdef USE_QT4
 //Added by qt3to4:
@@ -34,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/list_proc.h"
 #include "../common/blts_proc.h"
+#include "../common/disk_load_proc.h"
+#include "../common/OS_string_proc.h"
 #include "../common/eventreciever_proc.h"
 #include "../common/PEQ_clock_proc.h"
 #include "../common/gfx_proc.h"
@@ -572,3 +575,22 @@ void EditorWidget::closeEvent(QCloseEvent *ce){
   printf("Close event\n");
   //  ce->accept();
 }
+
+void EditorWidget::dragEnterEvent(QDragEnterEvent *e){
+  e->acceptProposedAction();
+}
+
+
+void EditorWidget::dropEvent(QDropEvent *event){
+  printf("Got drop event\n");
+  if (event->mimeData()->hasUrls())
+    {
+      foreach (QUrl url, event->mimeData()->urls())
+        {
+          printf(" Filepath: -%s-\n",url.toLocalFile().toUtf8().constData());
+          struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
+          LoadSong_CurrPos(window, STRING_create(url.toLocalFile()));
+        }
+    }
+}
+

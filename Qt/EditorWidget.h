@@ -47,6 +47,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  include <QKeyEvent>
 #endif
 #endif
+#include <QDragEnterEvent>
+#include <QDropEvent>
 
 #ifdef USE_QT3
 # define Q3PointArray QPointArray
@@ -151,7 +153,7 @@ public:
 #endif
     
     void wheelEvent(QWheelEvent *qwheelevent);
-
+    
 #if USE_QT_VISUAL && USE_QIMAGE_BUFFER
     void init_buffers(){
        const QImage::Format image_format = QImage::Format_RGB32;
@@ -252,6 +254,8 @@ protected:
 #endif
     void        resizeEvent( QResizeEvent *);
     void        closeEvent(QCloseEvent *);
+    void        dragEnterEvent(QDragEnterEvent * event);
+    void        dropEvent(QDropEvent * event);
 #if 0
     void        customEvent(QEvent *);
 #endif
