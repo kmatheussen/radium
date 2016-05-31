@@ -395,8 +395,6 @@ void UpdateWBlocks(struct Tracker_Windows *window){
 
 
 void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
-	NInt newcurrtrack=window->curr_track;
-	int newcurrtracksub=window->curr_track_sub;
 
 	if(wblock==NULL) return;
 
@@ -425,21 +423,22 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 		wblock->isgfxdatahere=true;
 	}
 
-	if(window->curr_track>=wblock->block->num_tracks){
-		newcurrtrack=wblock->block->num_tracks-1;
-	}
 	if(wblock->curr_realline>=wblock->num_reallines){
 		wblock->curr_realline=wblock->num_reallines-1;
 	}
 
-	ATOMIC_WRITE(wblock->wtrack, wblock->wtracks);
+        if (window->curr_track < 0){
+          ATOMIC_WRITE(wblock->wtrack, wblock->wtracks);
+        } else {
+          if (window->curr_track >= ListFindNumElements1(&wblock->wtracks->l))
+            ATOMIC_WRITE(window->curr_track, ListFindNumElements1(&wblock->wtracks->l)-1);
+          ATOMIC_WRITE(wblock->wtrack, ListFindElement1(&wblock->wtracks->l,window->curr_track));
+        }
 
-	newcurrtracksub=-1;
-	//ATOMIC_WRITE(window->curr_track, 0);
 	window->curr_track_sub=-1;
 
-        if (SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub)==false)
-          ATOMIC_WRITE(window->curr_track, 0);
+        //if (SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub)==false)
+        //  ATOMIC_WRITE(window->curr_track, 0);
 
 	window->curr_block=wblock->l.num;
         ATOMIC_SET(g_curr_block, wblock->block);
