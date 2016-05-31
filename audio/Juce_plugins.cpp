@@ -468,13 +468,21 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
         if (samplePosition < 0)
           samplePosition = 0;
 
-        int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+samplePosition);
-
-        int64_t radium_time = pc->start_time + delta_time;
-
-        if (patch != NULL) {          
-          RT_MIDI_send_msg_to_patch_receivers2((struct Patch*)patch, message, radium_time);
-        }        
+        int len = message.getRawDataSize();
+        
+#ifndef RELEASE
+        R_ASSERT(len > 0);
+#endif
+        
+        if (len>=1 && len<=3) { // Filter out sysex messages.
+          if (patch != NULL) {          
+            int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+samplePosition);
+            
+            int64_t radium_time = pc->start_time + delta_time;
+            
+            RT_MIDI_send_msg_to_patch_receivers2((struct Patch*)patch, message, radium_time);
+          }
+        }
       }
 
     }RT_PLAYER_runner_unlock();
