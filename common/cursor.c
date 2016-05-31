@@ -293,11 +293,13 @@ bool SetCursorPosConcrete(
 
 		subtrack=R_MIN(num_subtracks-1,subtrack);
 
-		if(tracknum==window->curr_track && subtrack==window->curr_track_sub) return 0;
+		if(tracknum==window->curr_track && subtrack==window->curr_track_sub)
+                  return 0;
 
 		if(tracknum>window->curr_track || (tracknum==window->curr_track && subtrack>window->curr_track_sub)){
 			while(window->curr_track!=tracknum || window->curr_track_sub!=subtrack){
 				tempret=CursorRight(window,wblock);
+                                //printf("wtrack->num: %d, curr_track: %d, num_tracks: %d\n",wtrack->l.num, window->curr_track,wblock->block->num_tracks);
 				ret=R_MAX(tempret,ret);
 			}
 		}else{

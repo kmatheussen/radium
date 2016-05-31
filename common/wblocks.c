@@ -191,7 +191,8 @@ void UpdateWBlockCoordinates(
                              struct Tracker_Windows *window,
                              struct WBlocks *wblock
 ){
-  //  printf("****** UpdateWblockCoordinates called\n");
+  //    printf("   UpdateWblockCoordinates   curr_track: %d,   wtrack->l.num: %d.  Left: %d\n",window->curr_track,wblock->wtrack==NULL?-1000:wblock->wtrack->l.num,wblock->left_track);
+          
   	wblock->signaturearea.width = window->fontwidth*GetMaxSignatureWidth(wblock->block);
     
 	wblock->a.x1  = window->leftslider.width; //R_MAX(window->fontwidth+3,window->leftslider.width+1);
@@ -395,7 +396,7 @@ void UpdateWBlocks(struct Tracker_Windows *window){
 
 
 void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
-
+        
 	if(wblock==NULL) return;
 
 
@@ -427,6 +428,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 		wblock->curr_realline=wblock->num_reallines-1;
 	}
 
+        /*
         if (window->curr_track < 0){
           ATOMIC_WRITE(wblock->wtrack, wblock->wtracks);
         } else {
@@ -434,14 +436,23 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
             ATOMIC_WRITE(window->curr_track, ListFindNumElements1(&wblock->wtracks->l)-1);
           ATOMIC_WRITE(wblock->wtrack, ListFindElement1(&wblock->wtracks->l,window->curr_track));
         }
+        */
+
+        NInt newcurrtrack=wblock->wtrack->l.num;
+	int newcurrtracksub=window->curr_track_sub;
 
 	window->curr_track_sub=-1;
+        ATOMIC_WRITE(window->curr_track, newcurrtrack);
 
+        SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub);
+        
         //if (SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub)==false)
         //  ATOMIC_WRITE(window->curr_track, 0);
 
 	window->curr_block=wblock->l.num;
         ATOMIC_SET(g_curr_block, wblock->block);
+
+        printf("   curr_track: %d,   wtrack->l.num: %d\n",window->curr_track,wblock->wtrack->l.num);
         
         //MinimizeBlock_CurrPos(window);
         //window->must_redraw = false;
