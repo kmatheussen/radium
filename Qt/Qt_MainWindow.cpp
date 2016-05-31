@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QStatusBar>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QUrl>
 
 #include <QFileDialog>
 
@@ -68,6 +69,7 @@ static HWND gtk_hwnd = NULL;
 #include "../common/gfx_proc.h"
 #include "../common/cursor_updown_proc.h"
 #include "../common/OS_string_proc.h"
+#include "../common/disk_load_proc.h"
 
 #include "Qt_colors_proc.h"
 #include "Qt_Menues_proc.h"
@@ -335,12 +337,14 @@ void GFX_showHideEditor(void){
 }
 
 
-
+namespace{
 class MyQMainWindow : public QMainWindow{
   //Q_OBJECT;
 
 public:
-  MyQMainWindow() : QMainWindow(NULL) {}
+  MyQMainWindow() : QMainWindow(NULL) {
+    setAcceptDrops(true);
+  }
 
   void closeEvent(QCloseEvent *ce){
     ce->ignore();
@@ -363,7 +367,27 @@ public:
     g_editor->wheelEvent(qwheelevent);
   }
 #endif
+
+  void dragEnterEvent(QDragEnterEvent *e){
+    e->acceptProposedAction();
+  }
+
+  void dropEvent(QDropEvent *event){
+    printf("Got drop event\n");
+    if (event->mimeData()->hasUrls())
+      {
+        foreach (QUrl url, event->mimeData()->urls())
+          {
+            printf(" Filepath: -%s-\n",url.toLocalFile().toUtf8().constData());
+            struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
+            LoadSong_CurrPos(window, STRING_create(url.toLocalFile()));
+          }
+      }
+  }
+
 };
+}
+
 
 QMainWindow *g_main_window = NULL;
 

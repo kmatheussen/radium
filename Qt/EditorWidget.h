@@ -254,8 +254,6 @@ protected:
 #endif
     void        resizeEvent( QResizeEvent *);
     void        closeEvent(QCloseEvent *);
-    void        dragEnterEvent(QDragEnterEvent * event);
-    void        dropEvent(QDropEvent * event);
 #if 0
     void        customEvent(QEvent *);
 #endif

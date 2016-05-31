@@ -62,10 +62,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define QM_MIXERWIDGET_H
 
 #include "../audio/SoundPlugin.h"
+#include "../common/disk_load_proc.h"
 
 #ifdef __cplusplus
 
 #include <QGraphicsSceneMouseEvent>
+#include <QUrl>
+#include <QMimeData>
 
 //#include <QtGui/qwidget.h>
 #include <QGraphicsScene>
@@ -94,6 +97,32 @@ class MyScene : public QGraphicsScene{
   void 	mousePressEvent ( QGraphicsSceneMouseEvent * event );
   void 	mouseReleaseEvent ( QGraphicsSceneMouseEvent * event );
 
+
+  /*
+  void dragEnterEvent(QGraphicsSceneDragDropEvent *e){
+    printf("               GOT DRAG\n");
+    //e->acceptProposedAction();
+  }
+  */
+  
+  void dragMoveEvent(QGraphicsSceneDragDropEvent *e){
+    printf("               GOT MOVE\n");
+    e->acceptProposedAction();
+  }
+  
+  void dropEvent(QGraphicsSceneDragDropEvent *event){
+    printf("               GOT DOP\n");
+    if (event->mimeData()->hasUrls())
+      {
+        foreach (QUrl url, event->mimeData()->urls())
+          {
+            printf(" Filepath: -%s-\n",url.toLocalFile().toUtf8().constData());
+            struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
+            LoadSong_CurrPos(window, STRING_create(url.toLocalFile()));
+          }
+      }
+  }
+  
  public:
   QWidget *_parent;
 
