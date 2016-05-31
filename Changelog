@@ -5,7 +5,7 @@ Changes 3.8.9 -> 3.9.0:
 * Accept drag-and-dropped radium songs into the editor
 
 
-Changes 3.8.8 -> 3.8.9:
+Changes 3.8.8 -> 3.8.9: (removed, unstable)
 * Check for for note name(s) under cursor first when finding note(s) to increase/decrease velocity of
   when pressing AltGr+left/right
 * pressing AltGtr+down/up jumps to next waveform start/end position when cursor is in the automation area.
