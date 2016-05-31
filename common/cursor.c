@@ -175,17 +175,18 @@ static void set_curr_track_to_leftmost_legal_track(struct Tracker_Windows *windo
 }
 
 int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
-	struct WTracks *wtrack=wblock->wtrack;
-
 	if(window->curr_track>0 || (0==window->curr_track && window->curr_track_sub>=0)){
 
 		window->curr_track_sub--;
 
 		if(window->curr_track_sub==-2){
-                        ATOMIC_WRITE(wblock->wtrack, ListFindElement1(&wblock->wtracks->l,wtrack->l.num-1));
-                        int num_subtracks = GetNumSubtracks(wblock->wtrack);
-			window->curr_track_sub=num_subtracks-1;
-			window->curr_track--;
+                  do{
+                    window->curr_track--;
+                    R_ASSERT_RETURN_IF_FALSE2(window->curr_track>0, 0);
+                    ATOMIC_WRITE(wblock->wtrack, ListFindElement1(&wblock->wtracks->l,window->curr_track));
+                  }while(wblock->wtrack==NULL);
+                  int num_subtracks = GetNumSubtracks(wblock->wtrack);
+                  window->curr_track_sub=num_subtracks-1;
 		}
 
 		if(
