@@ -49,7 +49,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     int in_ch;
     float *out=outputs[out_ch];
     
-    for(in_ch=0 ; in_ch<type->num_outputs ; in_ch++){
+    for(in_ch=0 ; in_ch<type->num_inputs ; in_ch++){
 
       int array_pos = in_ch*type->num_inputs + out_ch;
       
