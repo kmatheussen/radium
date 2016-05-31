@@ -1,3 +1,10 @@
+Changes 3.8.9 -> 3.9.0:
+* Make sure cursor is placed correctly when switching blocks
+* Dont show warning window when a vst plugin sends a MIDI sysex message
+* Fix block switch crash introduced in 3.8.9
+* Accept drag-and-dropped radium songs into the editor
+
+
 Changes 3.8.8 -> 3.8.9:
 * Check for for note name(s) under cursor first when finding note(s) to increase/decrease velocity of
   when pressing AltGr+left/right
@@ -21,6 +28,7 @@ Changes 3.8.8 -> 3.8.9:
 * Send around midi channels in the note event system
 * patchbay plugin: Fix situation that theoretically could silence all
   channels when loading song or preset
+
 
 
 Changes 3.8.7 -> 3.8.8:
