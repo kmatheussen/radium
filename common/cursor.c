@@ -181,8 +181,8 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 		if(window->curr_track_sub==-2){
                   do{
-                    window->curr_track--;
-                    R_ASSERT_RETURN_IF_FALSE2(window->curr_track>0, 0);
+                    ATOMIC_INC(window->curr_track, -1);
+                    R_ASSERT_RETURN_IF_FALSE2(window->curr_track >= 0, 0);
                     ATOMIC_WRITE(wblock->wtrack, ListFindElement1(&wblock->wtracks->l,window->curr_track));
                   }while(wblock->wtrack==NULL);
                   int num_subtracks = GetNumSubtracks(wblock->wtrack);
