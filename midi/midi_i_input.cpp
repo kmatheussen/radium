@@ -124,6 +124,7 @@ static void record_midi_event(uint32_t msg){
     
     midi_event.msg       = msg;
 
+    // Send event to the pull thread
     if (!g_midi_event_queue.tryPut(midi_event))
       RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, or your your MIDI input and output ports are connected recursively, please report this incident.");
 
@@ -139,6 +140,7 @@ static void *recording_queue_pull_thread(void*){
     {
       radium::ScopedMutex lock(&g_midi_event_mutex);
 
+      // Schedule "Seq" painting
       if (ATOMIC_GET(root->song_state_is_locked) == true){ // not totally tsan proof
         struct Blocks *block = (struct Blocks*)ListFindElement1_r0(&root->song->blocks->l, event.timepos.blocknum);
         if (block != NULL){          
@@ -152,6 +154,7 @@ static void *recording_queue_pull_thread(void*){
         }
       }
 
+      // Send event to the main thread
       g_recorded_midi_events.add(event);
     }
     
@@ -211,7 +214,7 @@ void MIDI_insert_recorded_midi_events(void){
     
     hash_t *track_set = HASH_create(8);
 
-    for(int i = 0 ; i < g_recorded_midi_events.size(); i++) { // events can be removed from g_recorded_midi_events inside this loop
+    for(int i = 0 ; i < g_recorded_midi_events.size(); i++) { // end note events can be removed from g_recorded_midi_events inside this loop
       
       auto midi_event = g_recorded_midi_events[i];
 
@@ -221,9 +224,17 @@ void MIDI_insert_recorded_midi_events(void){
           
         struct WBlocks *wblock = (struct WBlocks*)ListFindElement1(&root->song->tracker_windows->wblocks->l, midi_event.timepos.blocknum);
         R_ASSERT_RETURN_IF_FALSE(wblock!=NULL);
-          
-        struct WTracks *wtrack = (struct WTracks*)ListFindElement1(&wblock->wtracks->l, midi_event.timepos.tracknum);
-        R_ASSERT_RETURN_IF_FALSE(wtrack!=NULL);
+
+        struct WTracks *wtrack;
+
+        if (midi_event.timepos.tracknum < 0)
+          wtrack = wblock->wtracks;
+        if (midi_event.timepos.tracknum >= wblock->block->num_tracks)
+          wtrack = (struct WTracks*)ListLast1(&wblock->wtracks->l);
+        else {
+          wtrack = (struct WTracks*)ListFindElement1(&wblock->wtracks->l, midi_event.timepos.tracknum);
+          R_ASSERT_RETURN_IF_FALSE(wtrack!=NULL);
+        }
                     
         struct Blocks *block = wblock->block;
         struct Tracks *track = wtrack->track;
