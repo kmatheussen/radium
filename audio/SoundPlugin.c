@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
 
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
@@ -462,6 +463,70 @@ int PLUGIN_get_effect_format(struct SoundPlugin *plugin, int effect_num){
     return EFFECT_FORMAT_FLOAT;
 }
 
+/*
+static char *substring(char *s,int start,int end){
+  char *ret       = talloc_atomic(1,end-start+1);
+  int   read_pos  = start;
+  int   write_pos = 0;
+
+  while(read_pos<end)
+    ret[write_pos++] = s[read_pos++];
+
+  return ret;
+}
+*/
+
+static int num_digits_in_the_beginning_of_string(const char *string){
+  if (string==NULL)
+    return 0;
+  if (string[0]==0)
+    return 0;
+  if (isdigit(string[0]))
+    return 1 + num_digits_in_the_beginning_of_string(string+1);
+  else
+    return 0;
+}
+
+static const char *get_effect_name_without_digit_prefix(const char *name){
+  int len = strlen(name);
+  int num_digits = num_digits_in_the_beginning_of_string(name);
+  //printf("   num_digits: %d, len: %d, name[num_digits]: -%c-, -%s- -%s-\n",num_digits,len,name[num_digits],name+num_digits+2, effect_name);
+  if (num_digits>0 && len>num_digits+1)
+    if (name[num_digits]==':')
+      return name+num_digits+2;
+  
+  return NULL;
+}
+
+// General function which must be called after loading an effect. Returns the new name if the name has changed name.
+const char *PLUGIN_get_new_name_if_name_has_changed(struct SoundPlugin *plugin, const char *effect_name){
+  const struct SoundPluginType *plugin_type = plugin->type;
+  
+  int i;
+  for(i=0;i<NUM_SYSTEM_EFFECTS;i++)
+    if(!strcmp(system_effect_names[i],effect_name))
+      return effect_name;
+
+  for(i=0;i<plugin_type->num_effects;i++)
+    if(!strcmp(effect_name,plugin_type->get_effect_name(plugin,i)))
+      return effect_name;
+
+
+  // See if this is a vst or ladspa effect that was saved before the <n>: prefix was added.
+  for(i=0;i<plugin_type->num_effects;i++) {
+    const char *name = plugin_type->get_effect_name(plugin,i);
+    const char *name_without = get_effect_name_without_digit_prefix(name);
+    if (name_without!=NULL && !strcmp(name_without, effect_name))
+      return name;
+  }
+
+#ifndef RELEASE
+  RWarning("\n\n\n   1. ************ WARNING! Effect \"%s\" not found in plugin %s/%s ************\n\n\n",effect_name,plugin_type->type_name,plugin_type->name);
+#endif
+  
+  return effect_name;
+}
+
 int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name){
   const struct SoundPluginType *plugin_type = plugin->type;
 
@@ -474,7 +539,9 @@ int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name){
     if(!strcmp(effect_name,plugin_type->get_effect_name(plugin,i)))
       return i;
 
-  fprintf(stderr,"\n\n\n   ************ WARNING! Effect \"%s\" not found in plugin %s/%s ************\n\n\n",effect_name,plugin_type->type_name,plugin_type->name);
+#ifndef RELEASE
+  RWarning("\n\n\n   2. ************ WARNING! Effect \"%s\" not found in plugin %s/%s ************\n\n\n",effect_name,plugin_type->type_name,plugin_type->name);
+#endif
   
   return -1;
 }
@@ -1165,6 +1232,15 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++) {
     const char *effect_name = PLUGIN_get_effect_name(plugin,i);
     has_value[i] = HASH_has_key(effects, effect_name);
+
+    if (!has_value[i]) {
+      const char *name = get_effect_name_without_digit_prefix(effect_name);
+      if (name!=NULL){
+        effect_name = name;
+        has_value[i] = HASH_has_key(effects, effect_name);
+      }
+    }
+    
     if (has_value[i])
       values[i] = HASH_get_float(effects, effect_name);
   }    

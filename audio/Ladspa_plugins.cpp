@@ -88,6 +88,8 @@ struct TypeData{
   float *default_values;
   float *max_values;
   bool uses_two_handles;
+
+  const char **effect_names;
 };
 }
 
@@ -429,21 +431,8 @@ static float get_effect_value(SoundPlugin *plugin, int effect_num, enum ValueFor
 
 
 static const char *get_effect_name(SoundPlugin *plugin, int effect_num){
-  const struct SoundPluginType *plugin_type = plugin->type;
-  TypeData *type_data = (TypeData*)plugin_type->data;
-  const LADSPA_Descriptor *descriptor = type_data->descriptor;
-
-  int effect_num2 = 0;
-  for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
-    const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
-    if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
-      if(effect_num2==effect_num)
-        return descriptor->PortNames[portnum];
-      else
-        effect_num2++;
-    }
-  }
-  return NULL;
+  TypeData *type_data = (struct TypeData*)plugin->type->data;
+  return type_data->effect_names[effect_num];
 }
 
 static int get_effect_format(SoundPlugin *plugin, int effect_num){
@@ -602,6 +591,8 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
 
     {
       int effect_num = 0;
+      type_data->effect_names = (const char**)V_calloc(sizeof(char*),plugin_type->num_effects);
+      
       for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
         const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
         if(!strcmp(plugin_type->type_name,"Simple Low Pass Filter"))
@@ -695,6 +686,8 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
 
           if(!strcmp(plugin_type->type_name,"Simple Low Pass Filter"))
             printf("After hints. min/max/default: %f/%f/%f\n",min_value,max_value,default_value);
+
+          type_data->effect_names[effect_num] = V_strdup(talloc_format("%d: %s", effect_num, descriptor->PortNames[portnum]));
           
           effect_num++;
         }

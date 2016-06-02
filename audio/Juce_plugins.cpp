@@ -739,7 +739,8 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
 
   type_data->effect_names = (const char**)V_calloc(sizeof(char*),plugin_type->num_effects);
   for(int i = 0 ; i < plugin_type->num_effects ; i++)
-    type_data->effect_names[i] = V_strdup(audio_instance->getParameterName(i).toRawUTF8());
+    //  type_data->effect_names[i] = V_strdup(audio_instance->getParameterName(i).toRawUTF8());
+    type_data->effect_names[i] = V_strdup(talloc_format("%d: %s",i,audio_instance->getParameterName(i).toRawUTF8()));
 }
 
 

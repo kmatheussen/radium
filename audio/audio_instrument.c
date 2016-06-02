@@ -579,10 +579,8 @@ void DLoadAudioInstrument(void){
           struct FX *fx = fxs->fx;
           
           SoundPlugin *plugin = patch->patchdata;
-          //R_ASSERT(plugin!=NULL);
           if(plugin!=NULL){
-            //R_ASSERT(plugin->type->get_effect_num != NULL);
-            //if(plugin->type->get_effect_num!=NULL){
+            fx->name = PLUGIN_get_new_name_if_name_has_changed(plugin, fx->name);
             int effect_num = PLUGIN_get_effect_num(plugin, fx->name);
             if (effect_num >= 0) {
               fx->effect_num = effect_num;

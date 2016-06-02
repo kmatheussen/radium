@@ -46,6 +46,7 @@ extern LANGSPEC void PLUGIN_update_smooth_values(SoundPlugin *plugin);
 extern LANGSPEC int PLUGIN_get_num_visible_effects(SoundPlugin *plugin);
 
 extern LANGSPEC int PLUGIN_get_effect_format(struct SoundPlugin *plugin, int effect_num);
+extern LANGSPEC const char *PLUGIN_get_new_name_if_name_has_changed(struct SoundPlugin *plugin, const char *effect_name);
 extern LANGSPEC int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name);
 extern LANGSPEC const char *PLUGIN_get_effect_name(struct SoundPlugin *plugin, int effect_num);
 extern LANGSPEC const char *PLUGIN_get_effect_description(const struct SoundPluginType *plugin_type, int effect_num);
