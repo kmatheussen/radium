@@ -122,11 +122,10 @@ void TRACK_OF_switch_spesified_CurrPos(
 	struct Tracker_Windows *window,
 	NInt tracknum
 ){
-	struct WTracks *wtrack;
-
 	if(tracknum>=window->wblock->block->num_tracks) return;
 
-	wtrack=(struct WTracks*)ListFindElement1(&window->wblock->wtracks->l,tracknum);
+        struct WTracks *wtrack = (struct WTracks*)ListFindElement1(&window->wblock->wtracks->l,tracknum);
+        
 	SwitchTrackOnOff(wtrack->track);
 	DrawAllWTrackHeaders(window,window->wblock);
 }
@@ -144,14 +143,17 @@ void TRACK_OF_solo_spesified_CurrPos(
 
 void TRACK_OF_switch_solo_spesified_CurrPos(
 	struct Tracker_Windows *window,
-        struct Blocks *block,
-        struct Tracks *track
+        NInt tracknum
 ){
-  NInt tracknum=track->l.num;
-
   if(tracknum>=window->wblock->block->num_tracks)
     return;
 
+  struct WBlocks *wblock = window->wblock;
+  struct Blocks *block = wblock->block;
+  
+  struct WTracks *wtrack = (struct WTracks*)ListFindElement1(&wblock->wtracks->l,tracknum);
+  struct Tracks *track = wtrack->track;
+  
   bool set_solo = true;
 
   if(track->onoff==true){
@@ -168,7 +170,7 @@ void TRACK_OF_switch_solo_spesified_CurrPos(
   else
     AllTracksOn(tracknum);
 
-  DrawAllWTrackHeaders(window,window->wblock);
+  DrawAllWTrackHeaders(window,wblock);
 }
 
 

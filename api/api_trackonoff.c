@@ -32,6 +32,8 @@ void allTracksOn(void){
 }
 
 void switchTrackOn(int tracknum,int windownum){
+        printf("Switch track %d\n",tracknum);
+                
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
@@ -46,6 +48,8 @@ bool trackOn(int tracknum,int blocknum,int windownum){
 }
 
 void soloTrack(int tracknum,int windownum){
+        printf("Solo track %d\n",tracknum);
+        
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
@@ -53,13 +57,11 @@ void soloTrack(int tracknum,int windownum){
 }
 
 void switchSoloTrack(int tracknum,int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);
-  struct WBlocks *wblock=getWBlockFromNum(windownum,-1);
-  struct WTracks *wtrack=getWTrackFromNum(windownum,-1,tracknum);
+        printf("Switch solo %d\n",tracknum);
+        
+	struct Tracker_Windows *window=getWindowFromNum(windownum);
+	if(window==NULL) return;
 
-  if(window==NULL || wblock==NULL || wtrack==NULL)
-    return;
-
-  TRACK_OF_switch_solo_spesified_CurrPos(window,wblock->block,wtrack->track);
+        TRACK_OF_switch_solo_spesified_CurrPos(window,tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum);
 }
 

@@ -38,6 +38,5 @@ void TRACK_OF_solo_spesified_CurrPos(
 
 void TRACK_OF_switch_solo_spesified_CurrPos(
                                             struct Tracker_Windows *window,
-                                            struct Blocks *block,
-                                            struct Tracks *track
+                                            NInt tracknum
                                             );
