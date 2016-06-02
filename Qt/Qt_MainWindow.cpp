@@ -426,8 +426,8 @@ void SetupMainWindow(void){
 #if USE_GTK_VISUAL
   editor->setAttribute(Qt::WA_PaintOnScreen);
 #endif
-#if USE_QT_VISUAL && !defined(__linux__)  // double buffer actually improves performance on linux. Still not as good as gtk though.
-  editor->setAttribute(Qt::WA_PaintOnScreen);
+#if USE_QT_VISUAL //&& !defined(__linux__)  // double buffer actually improves performance on linux. Still not as good as gtk though.
+  //editor->setAttribute(Qt::WA_PaintOnScreen);
 #endif
 
   editor->setAcceptDrops(true);
