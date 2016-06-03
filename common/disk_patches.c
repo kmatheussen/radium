@@ -124,8 +124,11 @@ static void LoadPatchVoices(struct Patch *patch){
   GENERAL_LOAD(1,1);
 
  var0:
-  if(DC_LoadI()!=NUM_PATCH_VOICES)
-    RError("wrong number of voices in file");
+  {
+    int i = DC_LoadI();    
+    if(i!=6 && i!=NUM_PATCH_VOICES)
+      RError("wrong number of voices in file: %d",i);
+  }
   goto start;
 
  obj0:

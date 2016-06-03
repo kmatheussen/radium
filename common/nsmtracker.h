@@ -565,7 +565,7 @@ struct PatchVoice{
   float chance;
 };
 
-#define NUM_PATCH_VOICES 6
+#define NUM_PATCH_VOICES 7
 #define MAX_NUM_EVENT_RECEIVERS 64
 #define MAX_NOTE_INTENCITY 20
 

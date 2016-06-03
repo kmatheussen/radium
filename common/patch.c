@@ -142,6 +142,7 @@ void PATCH_init_voices(struct Patch *patch){
   patch->voices[3].transpose=24;
   patch->voices[4].transpose=-12;
   patch->voices[5].transpose=-24;
+  patch->voices[6].transpose=0.25;
 
   patch->voices[0].time_format = TIME_IN_MS;
   patch->voices[1].time_format = TIME_IN_MS;
@@ -149,6 +150,7 @@ void PATCH_init_voices(struct Patch *patch){
   patch->voices[3].time_format = TIME_IN_MS;
   patch->voices[4].time_format = TIME_IN_MS;
   patch->voices[5].time_format = TIME_IN_MS;
+  patch->voices[6].time_format = TIME_IN_MS;
   
   patch->voices[0].chance = 256;
   patch->voices[1].chance = 256;
@@ -156,6 +158,7 @@ void PATCH_init_voices(struct Patch *patch){
   patch->voices[3].chance = 256;
   patch->voices[4].chance = 256;
   patch->voices[5].chance = 256;
+  patch->voices[6].chance = 256;
 }
 
 static struct Patch *create_new_patch(const char *name){

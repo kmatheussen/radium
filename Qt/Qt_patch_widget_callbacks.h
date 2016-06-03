@@ -46,7 +46,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     */
     setupUi(this);
 
-    for(int i=0;i<6;i++){
+    for(int i=0;i<NUM_PATCH_VOICES;i++){
 
       get_t(i)->setStyle(&_cleanlooksStyle);
       get_v(i)->setStyle(&_cleanlooksStyle);
@@ -73,44 +73,44 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
 
   MyQCheckBox *get_o(int i){
-    MyQCheckBox *o[6]={o1,o2,o3,o4,o5,o6};
+    MyQCheckBox *o[NUM_PATCH_VOICES]={o1,o2,o3,o4,o5,o6,o7};
     return o[i];
   }
 
 #if 0
   MyQSpinBox *get_t(int i){
-    MyQSpinBox *t[6]={t1,t2,t3,t4,t5,t6};
+    MyQSpinBox *t[NUM_PATCH_VOICES]={t1,t2,t3,t4,t5,t6,t7};
     return t[i];
   }
 #else
   FocusSnifferQDoubleSpinBox *get_t(int i){
-    FocusSnifferQDoubleSpinBox *t[6]={t1,t2,t3,t4,t5,t6};
+    FocusSnifferQDoubleSpinBox *t[NUM_PATCH_VOICES]={t1,t2,t3,t4,t5,t6,t7};
     return t[i];
   }
 #endif
   
   MyQSpinBox *get_v(int i){
-    MyQSpinBox *v[6]={v1,v2,v3,v4,v5,v6};
+    MyQSpinBox *v[NUM_PATCH_VOICES]={v1,v2,v3,v4,v5,v6,v7};
     return v[i];
   }
 
   FocusSnifferQDoubleSpinBox *get_s(int i){
-    FocusSnifferQDoubleSpinBox *s[6]={s1,s2,s3,s4,s5,s6};
+    FocusSnifferQDoubleSpinBox *s[NUM_PATCH_VOICES]={s1,s2,s3,s4,s5,s6,s7};
     return s[i];
   }
 
   FocusSnifferQDoubleSpinBox *get_l(int i){
-    FocusSnifferQDoubleSpinBox *l[6]={l1,l2,l3,l4,l5,l6};
+    FocusSnifferQDoubleSpinBox *l[NUM_PATCH_VOICES]={l1,l2,l3,l4,l5,l6,l7};
     return l[i];
   }
 
   MyQCheckBox *get_f(int i){
-    MyQCheckBox *f[6]={f1,f2,f3,f4,f5,f6};
+    MyQCheckBox *f[NUM_PATCH_VOICES]={f1,f2,f3,f4,f5,f6,f7};
     return f[i];
   }
 
   MyQSpinBox *get_c(int i){
-    MyQSpinBox *c[6]={c1,c2,c3,c4,c5,c6};
+    MyQSpinBox *c[NUM_PATCH_VOICES]={c1,c2,c3,c4,c5,c6,c7};
     return c[i];
   }
 
@@ -122,7 +122,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   
   void updateWidgets(){
 
-    for(int i=0;i<6;i++){
+    for(int i=0;i<NUM_PATCH_VOICES;i++){
       PatchVoice *voice=&_voices[i];
 
       get_o(i)->setChecked(voice->is_on);
@@ -229,6 +229,7 @@ public slots:
   void on_o4_toggled(bool val){onoff_toggled(3,val);}
   void on_o5_toggled(bool val){onoff_toggled(4,val);}
   void on_o6_toggled(bool val){onoff_toggled(5,val);}
+  void on_o7_toggled(bool val){onoff_toggled(6,val);}
 
 #if 0
   void on_t1_valueChanged(int val){printf("t1 value changed\n");set_transpose(0,val);}
@@ -237,6 +238,7 @@ public slots:
   void on_t4_valueChanged(int val){set_transpose(3,val);}
   void on_t5_valueChanged(int val){set_transpose(4,val);}
   void on_t6_valueChanged(int val){set_transpose(5,val);}
+  void on_t7_valueChanged(int val){set_transpose(6,val);}
 #endif
 
   void on_t1_editingFinished(){set_transpose(0);}
@@ -245,6 +247,7 @@ public slots:
   void on_t4_editingFinished(){set_transpose(3);}
   void on_t5_editingFinished(){set_transpose(4);}
   void on_t6_editingFinished(){set_transpose(5);}
+  void on_t7_editingFinished(){set_transpose(6);}
 
 #if 0
   void on_v1_valueChanged(int val){set_volume(0,val);}
@@ -253,6 +256,7 @@ public slots:
   void on_v4_valueChanged(int val){set_volume(3,val);}
   void on_v5_valueChanged(int val){set_volume(4,val);}
   void on_v6_valueChanged(int val){set_volume(5,val);}
+  void on_v7_valueChanged(int val){set_volume(6,val);}
 #endif
 
   void on_v1_editingFinished(){set_volume(0);}
@@ -261,6 +265,7 @@ public slots:
   void on_v4_editingFinished(){set_volume(3);}
   void on_v5_editingFinished(){set_volume(4);}
   void on_v6_editingFinished(){set_volume(5);}
+  void on_v7_editingFinished(){set_volume(6);}
 
 #if 0
   void on_s1_valueChanged(double val){set_start(0,val);}
@@ -269,6 +274,7 @@ public slots:
   void on_s4_valueChanged(double val){set_start(3,val);}
   void on_s5_valueChanged(double val){set_start(4,val);}
   void on_s6_valueChanged(double val){set_start(5,val);}
+  void on_s7_valueChanged(double val){set_start(6,val);}
 #endif
 
   void on_s1_editingFinished(){set_start(0);}
@@ -277,6 +283,7 @@ public slots:
   void on_s4_editingFinished(){set_start(3);}
   void on_s5_editingFinished(){set_start(4);}
   void on_s6_editingFinished(){set_start(5);}
+  void on_s7_editingFinished(){set_start(6);}
 
 #if 0
   void on_l1_valueChanged(double val){set_length(0,val);}
@@ -285,6 +292,7 @@ public slots:
   void on_l4_valueChanged(double val){set_length(3,val);}
   void on_l5_valueChanged(double val){set_length(4,val);}
   void on_l6_valueChanged(double val){set_length(5,val);}
+  void on_l7_valueChanged(double val){set_length(6,val);}
 #endif
 
   void on_l1_editingFinished(){set_length(0);}
@@ -293,6 +301,7 @@ public slots:
   void on_l4_editingFinished(){set_length(3);}
   void on_l5_editingFinished(){set_length(4);}
   void on_l6_editingFinished(){set_length(5);}
+  void on_l7_editingFinished(){set_length(6);}
 
   void on_c1_editingFinished(){set_chance(0);}
   void on_c2_editingFinished(){set_chance(1);}
@@ -300,6 +309,7 @@ public slots:
   void on_c4_editingFinished(){set_chance(3);}
   void on_c5_editingFinished(){set_chance(4);}
   void on_c6_editingFinished(){set_chance(5);}
+  void on_c7_editingFinished(){set_chance(6);}
 
 
   void on_name_widget_editingFinished()
