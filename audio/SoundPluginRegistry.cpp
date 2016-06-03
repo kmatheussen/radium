@@ -335,6 +335,8 @@ void PR_add_plugin_type(SoundPluginType *type){
       return;
     if(!strcmp(type->name,"System Lowpass"))
       return;
+    if(!strcmp(type->name,"System Highpass"))
+      return;
     if(!strcmp(type->name,"System Lowshelf"))
       return;
     if(!strcmp(type->name,"System Highshelf"))
@@ -375,6 +377,7 @@ extern void create_faust_multibandcomp_plugin(void);
 extern void create_faust_system_eq_plugin(void);
 extern void create_faust_system_tremolo_plugin(void);
 extern void create_faust_system_lowpass_plugin(void);
+extern void create_faust_system_highpass_plugin(void);
 extern void create_faust_system_lowshelf_plugin(void);
 extern void create_faust_system_highshelf_plugin(void);
 extern void create_faust_system_delay_plugin(void);
@@ -499,6 +502,7 @@ void PR_init_plugin_types(void){
   create_faust_system_eq_plugin();
   create_faust_system_tremolo_plugin();
   create_faust_system_lowpass_plugin();
+  create_faust_system_highpass_plugin();
   create_faust_system_lowshelf_plugin();
   create_faust_system_highshelf_plugin();
   create_faust_system_delay_plugin();

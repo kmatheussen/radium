@@ -207,6 +207,7 @@ public:
       //QRect r =fm.boundingRect(SLIDERPAINTER_get_string(_painter));
       int width = fm.width("Dry: 100% Wet: 0% Gak") + 10;
       lowpass_freq_slider->setMinimumWidth(width);
+      highpass_freq_slider->setMinimumWidth(width);
       drywet_slider->setMinimumWidth(width);
     }
 
@@ -260,6 +261,9 @@ public:
     case EFFNUM_LOWPASS_FREQ:
       return lowpass_freq_slider; 
 
+    case EFFNUM_HIGHPASS_FREQ:
+      return highpass_freq_slider; 
+
     case EFFNUM_EQ1_FREQ:
       return eq1_freq_slider; 
     case EFFNUM_EQ1_GAIN:
@@ -306,6 +310,8 @@ public:
       return effects_onoff;
     case EFFNUM_LOWPASS_ONOFF:
       return lowpass_onoff;
+    case EFFNUM_HIGHPASS_ONOFF:
+      return highpass_onoff;
 
     case EFFNUM_EQ1_ONOFF:
       return eq1_onoff;
@@ -387,6 +393,8 @@ public:
 
     if(system_effect==EFFNUM_LOWPASS_ONOFF)
       lowpass_freq_slider->setEnabled(val);
+    if(system_effect==EFFNUM_HIGHPASS_ONOFF)
+      highpass_freq_slider->setEnabled(val);
     if(system_effect==EFFNUM_EQ1_ONOFF){
       eq1_freq_slider->setEnabled(val);
       eq1_gain_slider->setEnabled(val);
@@ -590,6 +598,7 @@ public:
     updateSlider(EFFNUM_PAN);
 
     updateSlider(EFFNUM_LOWPASS_FREQ);
+    updateSlider(EFFNUM_HIGHPASS_FREQ);
     updateSlider(EFFNUM_EQ1_FREQ);
     updateSlider(EFFNUM_EQ1_GAIN);
     updateSlider(EFFNUM_EQ2_FREQ);
@@ -610,6 +619,7 @@ public:
     updateChecked(effects_onoff, EFFNUM_EFFECTS_ONOFF);
 
     updateChecked(lowpass_onoff, EFFNUM_LOWPASS_ONOFF);
+    updateChecked(highpass_onoff, EFFNUM_HIGHPASS_ONOFF);
     updateChecked(eq1_onoff, EFFNUM_EQ1_ONOFF);
     updateChecked(eq2_onoff, EFFNUM_EQ2_ONOFF);
     updateChecked(lowshelf_onoff, EFFNUM_LOWSHELF_ONOFF);
@@ -804,6 +814,16 @@ public slots:
 
   void on_lowpass_freq_slider_valueChanged(int val){
     set_plugin_value(val, EFFNUM_LOWPASS_FREQ);
+  }
+
+  // highpass 
+  void on_highpass_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_HIGHPASS_ONOFF);
+    highpass_freq_slider->setEnabled(val);
+  }
+
+  void on_highpass_freq_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_HIGHPASS_FREQ);
   }
 
   // eq1

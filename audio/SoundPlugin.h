@@ -74,6 +74,9 @@ enum{
   EFFNUM_HIGHSHELF_GAIN,
   EFFNUM_HIGHSHELF_ONOFF,
 
+  EFFNUM_HIGHPASS_FREQ,
+  EFFNUM_HIGHPASS_ONOFF,
+
   EFFNUM_EQ_SHOW_GUI,
 
   EFFNUM_COMP_RATIO, // Note that the order for the compressor parameters must be the same as the compressor parameters in system_compresssor_wrapper_proc.h
@@ -301,6 +304,9 @@ typedef struct SoundPlugin{
 
   SystemFilter lowpass;
   float lowpass_freq;
+
+  SystemFilter highpass;
+  float highpass_freq;
 
   SystemFilter eq1;
   float eq1_freq;

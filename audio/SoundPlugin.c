@@ -216,6 +216,9 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
   "System Hs L.",
   "System Hs On/Off",
 
+  "System Hp F.",
+  "System Highpass On/Off",
+
   "System Show Equalizer GUI",
 
   "System Compression Ratio",
@@ -309,6 +312,9 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state){
     init_system_filter(&plugin->lowpass, num_outputs, "System Lowpass");
     plugin->lowpass_freq = 5000.0f;
 
+    init_system_filter(&plugin->highpass, num_outputs, "System Highpass");
+    plugin->highpass_freq = 200.0f;
+
     init_system_filter(&plugin->eq1, num_outputs, "System Eq");
     plugin->eq1_freq = 400.0f;
     plugin->eq1_db = 0.0f;
@@ -394,6 +400,8 @@ void PLUGIN_delete(SoundPlugin *plugin){
   
   release_system_filter(&plugin->lowpass, plugin_type->num_outputs);
   
+  release_system_filter(&plugin->highpass, plugin_type->num_outputs);
+  
   release_system_filter(&plugin->eq1, plugin_type->num_outputs);
   
   release_system_filter(&plugin->eq2, plugin_type->num_outputs);
@@ -457,7 +465,7 @@ int PLUGIN_get_effect_format(struct SoundPlugin *plugin, int effect_num){
 
   RError("The program isn't supposed to be here");
 
-  if(system_effect==EFFNUM_PAN_ONOFF || system_effect==EFFNUM_EFFECTS_ONOFF || system_effect==EFFNUM_LOWPASS_ONOFF || system_effect==EFFNUM_EQ1_ONOFF || system_effect==EFFNUM_EQ2_ONOFF)
+  if(system_effect==EFFNUM_PAN_ONOFF || system_effect==EFFNUM_EFFECTS_ONOFF || system_effect==EFFNUM_LOWPASS_ONOFF || system_effect==EFFNUM_HIGHPASS_ONOFF || system_effect==EFFNUM_EQ1_ONOFF || system_effect==EFFNUM_EQ2_ONOFF)
     return EFFECT_FORMAT_BOOL;
   else
     return EFFECT_FORMAT_FLOAT;
@@ -628,6 +636,10 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
 
   case EFFNUM_LOWPASS_FREQ:
     snprintf(buffer,buffersize-1,"%.1f Hz",plugin->lowpass_freq);
+    break;
+
+  case EFFNUM_HIGHPASS_FREQ:
+    snprintf(buffer,buffersize-1,"%.1f Hz",plugin->highpass_freq);
     break;
 
   case EFFNUM_EQ1_FREQ:
@@ -859,6 +871,16 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
       ATOMIC_SET(plugin->lowpass.is_on, value > 0.5f);
       break;
 
+    case EFFNUM_HIGHPASS_FREQ:
+      store_value = get_freq_store_value(value, value_type);
+      plugin->highpass_freq = store_value;
+      for(ch=0;ch<plugin->type->num_outputs;ch++)
+        plugin->highpass.plugins[ch]->type->set_effect_value(plugin->highpass.plugins[ch], time, 0, store_value, PLUGIN_FORMAT_NATIVE, when);
+      break;
+    case EFFNUM_HIGHPASS_ONOFF:
+      ATOMIC_SET(plugin->highpass.is_on, value > 0.5f);
+      break;
+
     case EFFNUM_EQ1_FREQ:
       store_value = get_freq_store_value(value, value_type);
       plugin->eq1_freq = store_value;
@@ -987,7 +1009,7 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
   }
 
   float store_value = safe_float_read(&plugin->savable_effect_values[effect_num]);
-
+  
   if(effect_num < plugin->type->num_effects) {
 
     if(where==VALUE_FROM_PLUGIN || plugin->type->plugin_takes_care_of_savable_values==true)
@@ -1009,6 +1031,7 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
                            MIN_DB, MAX_DB);
       
     case EFFNUM_LOWPASS_FREQ:
+    case EFFNUM_HIGHPASS_FREQ:
     case EFFNUM_EQ1_FREQ:
     case EFFNUM_EQ2_FREQ:
     case EFFNUM_LOWSHELF_FREQ:
@@ -1075,6 +1098,11 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
     return frequency_2_slider(plugin->lowpass_freq,MIN_FREQ,MAX_FREQ);
   case EFFNUM_LOWPASS_ONOFF:
     return ATOMIC_GET(plugin->lowpass.is_on)==true ? 1.0 : 0.0f;
+
+  case EFFNUM_HIGHPASS_FREQ:
+    return frequency_2_slider(plugin->highpass_freq,MIN_FREQ,MAX_FREQ);
+  case EFFNUM_HIGHPASS_ONOFF:
+    return ATOMIC_GET(plugin->highpass.is_on)==true ? 1.0 : 0.0f;
 
   case EFFNUM_EQ1_FREQ:
     return frequency_2_slider(plugin->eq1_freq,MIN_FREQ,MAX_FREQ);
@@ -1251,7 +1279,9 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
     if(has_value[i]){
       float val = values[i];
       PLUGIN_set_native_effect_value(plugin, -1, i, val, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-    }else
+    }else if (i-type->num_effects==EFFNUM_HIGHPASS_FREQ)
+      plugin->savable_effect_values[i] = 200; // Old songs didn't have this slider
+    else
       plugin->savable_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN);
   }
 
