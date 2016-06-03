@@ -49,7 +49,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 enum{
   PERMANENT_PATCH_ID_BUS1 = 1,
   PERMANENT_PATCH_ID_BUS2 = 2,
-  PERMANENT_PATCH_ID_MAIN_PIPE = 3
+  PERMANENT_PATCH_ID_MAIN_PIPE = 3,
+  
+  PERMANENT_PATCH_ID_BUS3 = 4,
+  PERMANENT_PATCH_ID_BUS4 = 5,
+  PERMANENT_PATCH_ID_BUS5 = 6,
 };
 
     
@@ -178,6 +182,12 @@ void AUDIO_set_permanent_id(struct Patch *patch, struct SoundPlugin *plugin){
   else if (MIXER_get_buses().bus1 != NULL && plugin == SP_get_plugin(MIXER_get_buses().bus1))
     patch->permanent_id = PERMANENT_PATCH_ID_BUS1;
   else if (MIXER_get_buses().bus2 != NULL && plugin == SP_get_plugin(MIXER_get_buses().bus2))
+    patch->permanent_id = PERMANENT_PATCH_ID_BUS2;
+  else if (MIXER_get_buses().bus3 != NULL && plugin == SP_get_plugin(MIXER_get_buses().bus3))
+    patch->permanent_id = PERMANENT_PATCH_ID_BUS2;
+  else if (MIXER_get_buses().bus4 != NULL && plugin == SP_get_plugin(MIXER_get_buses().bus4))
+    patch->permanent_id = PERMANENT_PATCH_ID_BUS2;
+  else if (MIXER_get_buses().bus5 != NULL && plugin == SP_get_plugin(MIXER_get_buses().bus5))
     patch->permanent_id = PERMANENT_PATCH_ID_BUS2;
   else
     patch->permanent_id = 0;
@@ -763,6 +773,15 @@ struct Patch *AUDIO_get_the_replacement_for_old_permanent_patch(struct Patch *ol
     
   else if (old_patch->permanent_id==PERMANENT_PATCH_ID_BUS2)
     return get_patch_for_plugin(SP_get_plugin(MIXER_get_buses().bus2));
+
+  else if (old_patch->permanent_id==PERMANENT_PATCH_ID_BUS3)
+    return get_patch_for_plugin(SP_get_plugin(MIXER_get_buses().bus3));
+
+  else if (old_patch->permanent_id==PERMANENT_PATCH_ID_BUS4)
+    return get_patch_for_plugin(SP_get_plugin(MIXER_get_buses().bus4));
+
+  else if (old_patch->permanent_id==PERMANENT_PATCH_ID_BUS5)
+    return get_patch_for_plugin(SP_get_plugin(MIXER_get_buses().bus5));
 
   else if (old_patch->permanent_id==PERMANENT_PATCH_ID_MAIN_PIPE)
     return get_patch_for_plugin(get_main_pipe());

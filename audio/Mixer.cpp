@@ -377,8 +377,7 @@ extern "C" {
 
 
 struct Mixer{
-  SoundProducer *_bus1;
-  SoundProducer *_bus2;
+  SoundProducer *_bus[NUM_BUSES];
 
   radium::Vector<SoundProducer*> _sound_producers;
   
@@ -392,13 +391,12 @@ struct Mixer{
   bool _is_freewheeling;
 
   Mixer()
-    : _bus1(NULL)
-    , _bus2(NULL)
-    , _rjack_client(NULL)
+    : _rjack_client(NULL)
     , _last_time(0)
     , _time(0)
     , _is_freewheeling(false)
   {
+    memset(_bus, 0, sizeof(SoundProducer*)*NUM_BUSES);
   }
 
   void add_SoundProducer(SoundProducer *sound_producer){
@@ -426,10 +424,8 @@ struct Mixer{
     
     PLAYER_lock();{
 
-      if(bus_num==0)
-        _bus1 = sound_producer;
-      if(bus_num==1)
-        _bus2 = sound_producer;
+      if (bus_num>=0)
+        _bus[bus_num] = sound_producer;
 
       if (is_click_patch) {
         if (new_g_click_plugins != NULL) {
@@ -485,10 +481,9 @@ struct Mixer{
         R_ASSERT(i<g_num_allocated_click_plugins);
       }
 
-      if (sound_producer==_bus1)
-        _bus1=NULL;
-      if (sound_producer==_bus2)
-        _bus2=NULL;
+      for(int busnum=0;busnum<NUM_BUSES;busnum++)
+        if (sound_producer==_bus[busnum])
+          _bus[busnum]=NULL;
       
     }PLAYER_unlock();
   }
@@ -1052,7 +1047,13 @@ void MIXER_get_buses(SoundProducer* &bus1, SoundProducer* &bus2){
 #endif
 
 Buses MIXER_get_buses(void){
-  Buses ret = {g_mixer->_bus1, g_mixer->_bus2};
+  Buses ret = {
+    g_mixer->_bus[0],
+    g_mixer->_bus[1],
+    g_mixer->_bus[2],
+    g_mixer->_bus[3],
+    g_mixer->_bus[4]
+  };
   return ret;
 }
 

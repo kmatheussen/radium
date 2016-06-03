@@ -44,10 +44,16 @@ enum{
   EFFNUM_OUTPUT_VOLUME_ONOFF,
 
   EFFNUM_BUS1,
-  EFFNUM_BUS1_ONOFF,
-
   EFFNUM_BUS2,
+  EFFNUM_BUS3,
+  EFFNUM_BUS4,
+  EFFNUM_BUS5,
+
+  EFFNUM_BUS1_ONOFF,
   EFFNUM_BUS2_ONOFF,
+  EFFNUM_BUS3_ONOFF,
+  EFFNUM_BUS4_ONOFF,
+  EFFNUM_BUS5_ONOFF,
 
   EFFNUM_PAN,
   EFFNUM_PAN_ONOFF,
@@ -97,6 +103,7 @@ enum{
   NUM_SYSTEM_EFFECTS
 };
 
+#define NUM_BUSES (EFFNUM_BUS1_ONOFF - EFFNUM_BUS1)
 
 
 enum{
@@ -293,8 +300,8 @@ typedef struct SoundPlugin{
   float output_volume;
   DEFINE_ATOMIC(bool, output_volume_is_on);
 
-  float bus_volume[2];
-  DEFINE_ATOMIC(bool, bus_volume_is_on)[2];
+  float bus_volume[NUM_BUSES];
+  DEFINE_ATOMIC(bool, bus_volume_is_on)[NUM_BUSES];
 
   Smooth pan; // between 0 and 1
   DEFINE_ATOMIC(bool, pan_is_on);
@@ -350,6 +357,9 @@ typedef struct SoundPlugin{
   
   float *bus_volume_peak_values0;
   float *bus_volume_peak_values1;
+  float *bus_volume_peak_values2;
+  float *bus_volume_peak_values3;
+  float *bus_volume_peak_values4;
 } SoundPlugin;
 
 

@@ -108,6 +108,9 @@ public:
     SLIDERPAINTER_set_string(drywet_slider->_painter, "Dry/Wet");
     SLIDERPAINTER_set_string(bus1_slider->_painter, "Reverb");
     SLIDERPAINTER_set_string(bus2_slider->_painter, "Chorus");
+    SLIDERPAINTER_set_string(bus3_slider->_painter, "Aux 1");
+    SLIDERPAINTER_set_string(bus4_slider->_painter, "Aux 2");
+    SLIDERPAINTER_set_string(bus5_slider->_painter, "Aux 3");
 
     /*
     if(!strcmp(plugin->type->type_name,"Jack") && !strcmp(plugin->type->name,"System Out")){
@@ -251,6 +254,12 @@ public:
       return bus1_slider; 
     case EFFNUM_BUS2:
       return bus2_slider; 
+    case EFFNUM_BUS3:
+      return bus3_slider; 
+    case EFFNUM_BUS4:
+      return bus4_slider; 
+    case EFFNUM_BUS5:
+      return bus5_slider; 
 
     case EFFNUM_DRYWET:
       return drywet_slider; 
@@ -304,6 +313,12 @@ public:
       return bus1_onoff;
     case EFFNUM_BUS2_ONOFF:
       return bus2_onoff;
+    case EFFNUM_BUS3_ONOFF:
+      return bus3_onoff;
+    case EFFNUM_BUS4_ONOFF:
+      return bus4_onoff;
+    case EFFNUM_BUS5_ONOFF:
+      return bus5_onoff;
     case EFFNUM_PAN_ONOFF:
       return panning_onoff;
     case EFFNUM_EFFECTS_ONOFF:
@@ -347,6 +362,12 @@ public:
       SLIDERPAINTER_set_string(slider->_painter, QString(BUS_get_bus_name(0)) + ": " + QString(buf));
     else if(system_effect==EFFNUM_BUS2)
       SLIDERPAINTER_set_string(slider->_painter, QString(BUS_get_bus_name(1)) + ": " + QString(buf));
+    else if(system_effect==EFFNUM_BUS3)
+      SLIDERPAINTER_set_string(slider->_painter, QString(BUS_get_bus_name(2)) + ": " + QString(buf));
+    else if(system_effect==EFFNUM_BUS4)
+      SLIDERPAINTER_set_string(slider->_painter, QString(BUS_get_bus_name(3)) + ": " + QString(buf));
+    else if(system_effect==EFFNUM_BUS5)
+      SLIDERPAINTER_set_string(slider->_painter, QString(BUS_get_bus_name(4)) + ": " + QString(buf));
     else
       SLIDERPAINTER_set_string(slider->_painter, QString(PLUGIN_get_effect_name(plugin, effect_num)+strlen("System ")) + ": " + QString(buf));
       
@@ -390,6 +411,12 @@ public:
       bus1_slider->setEnabled(val);
     if(system_effect==EFFNUM_BUS2_ONOFF)
       bus2_slider->setEnabled(val);
+    if(system_effect==EFFNUM_BUS3_ONOFF)
+      bus3_slider->setEnabled(val);
+    if(system_effect==EFFNUM_BUS4_ONOFF)
+      bus4_slider->setEnabled(val);
+    if(system_effect==EFFNUM_BUS5_ONOFF)
+      bus5_slider->setEnabled(val);
 
     if(system_effect==EFFNUM_LOWPASS_ONOFF)
       lowpass_freq_slider->setEnabled(val);
@@ -530,8 +557,10 @@ public:
       SLIDERPAINTER_set_peak_value_pointers(output_volume_slider->_painter, num_outputs, plugin->output_volume_peak_values);
 
       SLIDERPAINTER_set_peak_value_pointers(bus1_slider->_painter,2, plugin->bus_volume_peak_values0);
-
       SLIDERPAINTER_set_peak_value_pointers(bus2_slider->_painter,2, plugin->bus_volume_peak_values1);
+      SLIDERPAINTER_set_peak_value_pointers(bus3_slider->_painter,2, plugin->bus_volume_peak_values2);
+      SLIDERPAINTER_set_peak_value_pointers(bus4_slider->_painter,2, plugin->bus_volume_peak_values3);
+      SLIDERPAINTER_set_peak_value_pointers(bus5_slider->_painter,2, plugin->bus_volume_peak_values4);
     }
 
     if(num_inputs>0 || num_outputs>0){//plugin->input_volume_peak_values==NULL){
@@ -584,6 +613,9 @@ public:
     set_arrow_style(arrow4);
     set_arrow_style(arrow5);
     set_arrow_style(arrow6);
+    set_arrow_style(arrow8);
+    set_arrow_style(arrow9);
+    set_arrow_style(arrow10);
     set_arrow_style(arrow7, false);
     set_arrow_style(browserArrow, false);
     if(pipe_label!=NULL)
@@ -591,6 +623,9 @@ public:
 
     updateSlider(EFFNUM_BUS1);
     updateSlider(EFFNUM_BUS2);
+    updateSlider(EFFNUM_BUS3);
+    updateSlider(EFFNUM_BUS4);
+    updateSlider(EFFNUM_BUS5);
     updateSlider(EFFNUM_DRYWET);
     updateSlider(EFFNUM_INPUT_VOLUME);
     updateSlider(EFFNUM_VOLUME);
@@ -614,6 +649,9 @@ public:
     updateChecked(output_volume_onoff, EFFNUM_OUTPUT_VOLUME_ONOFF);
     updateChecked(bus1_onoff, EFFNUM_BUS1_ONOFF);
     updateChecked(bus2_onoff, EFFNUM_BUS2_ONOFF);
+    updateChecked(bus3_onoff, EFFNUM_BUS3_ONOFF);
+    updateChecked(bus4_onoff, EFFNUM_BUS4_ONOFF);
+    updateChecked(bus5_onoff, EFFNUM_BUS5_ONOFF);
 
     updateChecked(panning_onoff, EFFNUM_PAN_ONOFF);
     updateChecked(effects_onoff, EFFNUM_EFFECTS_ONOFF);
@@ -651,6 +689,9 @@ public:
 
     bus1_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
     bus2_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
+    bus3_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
+    bus4_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
+    bus5_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
 
     //int num_inputs = type->num_inputs;
     int num_outputs = type->num_outputs;
@@ -759,18 +800,37 @@ public slots:
     set_plugin_value(val==true ? 10000 : 0, EFFNUM_BUS1_ONOFF);
     bus1_slider->setEnabled(val);
   }
-
   void on_bus2_onoff_toggled(bool val){
     set_plugin_value(val==true ? 10000 : 0, EFFNUM_BUS2_ONOFF);
     bus2_slider->setEnabled(val);
+  }
+  void on_bus3_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_BUS3_ONOFF);
+    bus3_slider->setEnabled(val);
+  }
+  void on_bus4_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_BUS4_ONOFF);
+    bus4_slider->setEnabled(val);
+  }
+  void on_bus5_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_BUS5_ONOFF);
+    bus5_slider->setEnabled(val);
   }
 
   void on_bus1_slider_valueChanged(int val){
     set_plugin_value(val, EFFNUM_BUS1);
   }
-
   void on_bus2_slider_valueChanged(int val){
     set_plugin_value(val, EFFNUM_BUS2);
+  }
+  void on_bus3_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_BUS3);
+  }
+  void on_bus4_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_BUS4);
+  }
+  void on_bus5_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_BUS5);
   }
 
   // effects onoff / dry_wet

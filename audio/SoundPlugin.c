@@ -187,9 +187,16 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
   "System Out On/Off",
 
   "System Reverb",
-  "System Reverb On/Off",
   "System Chorus",
+  "System Aux 1",
+  "System Aux 2",
+  "System Aux 3",
+  
+  "System Reverb On/Off",
   "System Chorus On/Off",
+  "System Aux 1 On/Off",
+  "System Aux 2 On/Off",
+  "System Aux 3 On/Off",
 
   "System Pan",
   "System Pan On/Off",
@@ -285,6 +292,9 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state){
   
   plugin->bus_volume_peak_values0 = V_calloc(sizeof(float),2);
   plugin->bus_volume_peak_values1 = V_calloc(sizeof(float),2);
+  plugin->bus_volume_peak_values2 = V_calloc(sizeof(float),2);
+  plugin->bus_volume_peak_values3 = V_calloc(sizeof(float),2);
+  plugin->bus_volume_peak_values4 = V_calloc(sizeof(float),2);
 
   plugin->automation_values = V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
   for(int e = 0 ; e<plugin_type->num_effects+NUM_SYSTEM_EFFECTS ; e++)
@@ -422,6 +432,9 @@ void PLUGIN_delete(SoundPlugin *plugin){
   
   V_free(plugin->bus_volume_peak_values0);
   V_free(plugin->bus_volume_peak_values1);
+  V_free(plugin->bus_volume_peak_values2);
+  V_free(plugin->bus_volume_peak_values3);
+  V_free(plugin->bus_volume_peak_values4);
 
   V_free(plugin->automation_values);
 
@@ -626,6 +639,27 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
     else
       snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
     break;
+  case EFFNUM_BUS3:
+    val = gain_2_db(plugin->bus_volume[2]/plugin->volume,MIN_DB,MAX_DB);
+    if(val==MIN_DB)
+      snprintf(buffer,buffersize-1,"-inf dB");
+    else
+      snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
+    break;
+  case EFFNUM_BUS4:
+    val = gain_2_db(plugin->bus_volume[3]/plugin->volume,MIN_DB,MAX_DB);
+    if(val==MIN_DB)
+      snprintf(buffer,buffersize-1,"-inf dB");
+    else
+      snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
+    break;
+  case EFFNUM_BUS5:
+    val = gain_2_db(plugin->bus_volume[4]/plugin->volume,MIN_DB,MAX_DB);
+    if(val==MIN_DB)
+      snprintf(buffer,buffersize-1,"-inf dB");
+    else
+      snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
+    break;
 
   case EFFNUM_PAN:
     snprintf(buffer,buffersize-1,"%d %s",(int)scale(SMOOTH_get_target_value(&plugin->pan),0,1,-90,90),"\u00B0");
@@ -802,22 +836,52 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
       store_value = get_gain_store_value(value,value_type);
       safe_float_write(&plugin->bus_volume[0], store_value);
       break;
+    case EFFNUM_BUS2:
+      store_value = get_gain_store_value(value,value_type);
+      safe_float_write(&plugin->bus_volume[1], store_value);
+      break;
+    case EFFNUM_BUS3:
+      store_value = get_gain_store_value(value,value_type);
+      safe_float_write(&plugin->bus_volume[2], store_value);
+      break;
+    case EFFNUM_BUS4:
+      store_value = get_gain_store_value(value,value_type);
+      safe_float_write(&plugin->bus_volume[3], store_value);
+      break;
+    case EFFNUM_BUS5:
+      store_value = get_gain_store_value(value,value_type);
+      safe_float_write(&plugin->bus_volume[4], store_value);
+      break;
+      
     case EFFNUM_BUS1_ONOFF:
       if (value > 0.5f)
         ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 0, true);
       else
         ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 0, false);
       break;
-
-    case EFFNUM_BUS2:
-      store_value = get_gain_store_value(value,value_type);
-      safe_float_write(&plugin->bus_volume[1], store_value);
-      break;
     case EFFNUM_BUS2_ONOFF:
       if (value > 0.5f)
         ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 1, true);
       else
         ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 1, false);
+      break;
+    case EFFNUM_BUS3_ONOFF:
+      if (value > 0.5f)
+        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 2, true);
+      else
+        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 2, false);
+      break;
+    case EFFNUM_BUS4_ONOFF:
+      if (value > 0.5f)
+        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 3, true);
+      else
+        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 3, false);
+      break;
+    case EFFNUM_BUS5_ONOFF:
+      if (value > 0.5f)
+        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 4, true);
+      else
+        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 4, false);
       break;
 
     case EFFNUM_PAN:
@@ -1025,8 +1089,12 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
     case EFFNUM_INPUT_VOLUME:
     case EFFNUM_VOLUME:
     case EFFNUM_OUTPUT_VOLUME:
+      
     case EFFNUM_BUS1:
     case EFFNUM_BUS2:
+    case EFFNUM_BUS3:
+    case EFFNUM_BUS4:
+    case EFFNUM_BUS5:
       return gain_2_slider(store_value,
                            MIN_DB, MAX_DB);
       
@@ -1076,13 +1144,25 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
 
   case EFFNUM_BUS1:
     return gain_2_slider(plugin->bus_volume[0], MIN_DB, MAX_DB);
-  case EFFNUM_BUS1_ONOFF:
-    return ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, 0)==true ? 1.0 : 0.0f;
-
   case EFFNUM_BUS2:
     return gain_2_slider(plugin->bus_volume[1], MIN_DB, MAX_DB);
+  case EFFNUM_BUS3:
+    return gain_2_slider(plugin->bus_volume[2], MIN_DB, MAX_DB);
+  case EFFNUM_BUS4:
+    return gain_2_slider(plugin->bus_volume[3], MIN_DB, MAX_DB);
+  case EFFNUM_BUS5:
+    return gain_2_slider(plugin->bus_volume[4], MIN_DB, MAX_DB);
+    
+  case EFFNUM_BUS1_ONOFF:
+    return ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, 0)==true ? 1.0 : 0.0f;
   case EFFNUM_BUS2_ONOFF:
     return ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, 1)==true ? 1.0 : 0.0f;
+  case EFFNUM_BUS3_ONOFF:
+    return ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, 2)==true ? 1.0 : 0.0f;
+  case EFFNUM_BUS4_ONOFF:
+    return ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, 3)==true ? 1.0 : 0.0f;
+  case EFFNUM_BUS5_ONOFF:
+    return ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, 4)==true ? 1.0 : 0.0f;
 
   case EFFNUM_PAN:
     return SMOOTH_get_target_value(&plugin->pan);

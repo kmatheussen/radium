@@ -26,7 +26,7 @@ extern void MIXER_add_SoundProducer(SoundProducer *sound_producer);
 
 extern void MIXER_remove_SoundProducer(SoundProducer *sound_producer);
 
-extern void MIXER_get_buses(SoundProducer* &bus1, SoundProducer* &bus2);
+//extern void MIXER_get_buses(SoundProducer* &bus1, SoundProducer* &bus2);
   
 #ifdef USE_QT4
 #include "../common/Vector.hpp"

@@ -1455,6 +1455,9 @@ struct SoundProducer;
 typedef struct {
   struct SoundProducer *bus1;
   struct SoundProducer *bus2;
+  struct SoundProducer *bus3;
+  struct SoundProducer *bus4;
+  struct SoundProducer *bus5;
 } Buses;
 
 

@@ -1625,7 +1625,7 @@ static hash_t *convert_state_to_new_type(hash_t *state){
   int num_old_chips = HASH_get_int(old_chips, "num_chips");
   
   hash_t *new_chips = HASH_create(17);
-  hash_t *buses = HASH_create(2);
+  hash_t *buses = HASH_create(5);
 
   int num_buses = 0;
   int num_chips = 0;
@@ -1641,7 +1641,7 @@ static hash_t *convert_state_to_new_type(hash_t *state){
       HASH_put_hash_at(new_chips, "", num_chips++, chip);
   }
 
-  R_ASSERT(num_buses==2);
+  R_ASSERT(num_buses==2 || num_buses==5);
   R_ASSERT(num_buses+num_chips == num_old_chips);
   
   HASH_put_int(new_chips, "num_chips", num_chips);
@@ -1656,6 +1656,34 @@ static hash_t *convert_state_to_new_type(hash_t *state){
   return ret;
 }
 
+// compatibility with old songs
+static void create_missing_busses(hash_t *bus_chips_state){
+  int num_chips = HASH_get_int(bus_chips_state, "num_chips");
+  printf("num_chips: %d\n",num_chips);
+  for(int busnum=num_chips;busnum<NUM_BUSES;busnum++) {
+    createAudioInstrument(talloc_strdup("Bus"), talloc_format("Bus %d", busnum+1), talloc_format("Aux %d Bus", busnum+1));
+  }
+}
+
+static void autoposition_missing_bus_chips(hash_t *bus_chips_state){
+  int num_chips = HASH_get_int(bus_chips_state, "num_chips");
+  Buses buses = MIXER_get_buses();
+  for(int busnum=num_chips;busnum<NUM_BUSES;busnum++) {
+    SoundProducer *sp =
+      busnum==0 ? buses.bus1 :
+      busnum==1 ? buses.bus2 :
+      busnum==2 ? buses.bus3 :
+      busnum==3 ? buses.bus4 :
+      buses.bus5;
+      
+    Chip *chip = CHIP_get(&g_mixer_widget->scene, (struct Patch*)SP_get_plugin(sp)->patch);
+    double x,y;
+    MW_set_autopos(&x, &y);
+    MW_move_chip_to_slot(chip, x, y);
+
+  }
+}
+
 // Patches must be created before calling this one.
 // However, patch->patchdata are created here.
 void MW_create_from_state(hash_t *state){
@@ -1665,14 +1693,20 @@ void MW_create_from_state(hash_t *state){
   if (!HASH_has_key(state, "bus_chips"))
     state = convert_state_to_new_type(state);
 
+  hash_t *bus_chips_state = HASH_get_hash(state, "bus_chips");
+    
   Buses old_buses = MIXER_get_buses();
 
-  Buses no_buses = {NULL, NULL};
-  MW_create_sound_objects_from_state(HASH_get_hash(state, "bus_chips"), no_buses);
+  Buses no_buses = {};
+  MW_create_sound_objects_from_state(bus_chips_state, no_buses);
 
   Buses new_buses = MIXER_get_buses();
 
-  
+  printf("name1: %s, name2: %s\n",
+         old_buses.bus1==NULL?"null":SP_get_plugin(old_buses.bus1)->type->name,
+         new_buses.bus1==NULL?"null":SP_get_plugin(new_buses.bus1)->type->name
+         );
+         
   if (old_buses.bus1!=NULL && new_buses.bus1!=NULL)
     R_ASSERT(SP_get_id(old_buses.bus1) != SP_get_id(new_buses.bus1));
   else  
@@ -1682,7 +1716,8 @@ void MW_create_from_state(hash_t *state){
     R_ASSERT(SP_get_id(old_buses.bus2) != SP_get_id(new_buses.bus2));
   else  
     R_ASSERT(old_buses.bus2 != new_buses.bus2);
-  
+
+  create_missing_busses(bus_chips_state); // compatibility with old songs
 
   MW_create_sound_objects_from_state(HASH_get_hash(state, "chips"), new_buses);
   MW_create_connections_from_state_internal(HASH_get_hash(state, "connections"), -1, -1);
@@ -1690,6 +1725,8 @@ void MW_create_from_state(hash_t *state){
   AUDIO_update_all_permanent_ids();
   
   GFX_update_all_instrument_widgets();
+
+  autoposition_missing_bus_chips(bus_chips_state);
 }
 
 // This function is called when loading a song saved with a version of radium made before the audio system was added.

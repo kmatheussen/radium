@@ -406,15 +406,22 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
 }
 
 static int get_bus_num(SoundPlugin *plugin){
-  int is_bus = !strcmp(plugin->type->type_name,"Bus");
-
-  if(is_bus){
-    if(!strcmp(plugin->type->name,"Bus 1"))
-      return 0;
-    else
-      return 1;
-  } else
+  if (strcmp(plugin->type->type_name,"Bus"))
     return -1;
+
+  if(!strcmp(plugin->type->name,"Bus 1"))
+    return 0;
+  else if(!strcmp(plugin->type->name,"Bus 2"))
+    return 1;
+  else if(!strcmp(plugin->type->name,"Bus 3"))
+    return 2;
+  else if(!strcmp(plugin->type->name,"Bus 4"))
+    return 3;
+  else if(!strcmp(plugin->type->name,"Bus 5"))
+    return 4;
+
+  RError("Unknown bus: -%s-", plugin->type->name);
+  return 0;
 }
 
 static int id_counter = 0;
@@ -484,9 +491,18 @@ public:
         R_ASSERT(buses.bus1==NULL);
       if (_bus_num == 1)
         R_ASSERT(buses.bus2==NULL);
+      if (_bus_num == 2)
+        R_ASSERT(buses.bus3==NULL);
+      if (_bus_num == 3)
+        R_ASSERT(buses.bus4==NULL);
+      if (_bus_num == 4)
+        R_ASSERT(buses.bus5==NULL);
     }else{
       R_ASSERT(buses.bus1!=NULL);
       R_ASSERT(buses.bus2!=NULL);
+      R_ASSERT(buses.bus3!=NULL);
+      R_ASSERT(buses.bus4!=NULL);
+      R_ASSERT(buses.bus5!=NULL);
     }
 
     if(_is_bus)
@@ -512,39 +528,78 @@ public:
       SoundProducerLink *linkbus1b = new SoundProducerLink(this, buses.bus1, false);
       SoundProducerLink *linkbus2a = new SoundProducerLink(this, buses.bus2, false);
       SoundProducerLink *linkbus2b = new SoundProducerLink(this, buses.bus2, false);
+      SoundProducerLink *linkbus3a = new SoundProducerLink(this, buses.bus3, false);
+      SoundProducerLink *linkbus3b = new SoundProducerLink(this, buses.bus3, false);
+      SoundProducerLink *linkbus4a = new SoundProducerLink(this, buses.bus4, false);
+      SoundProducerLink *linkbus4b = new SoundProducerLink(this, buses.bus4, false);
+      SoundProducerLink *linkbus5a = new SoundProducerLink(this, buses.bus5, false);
+      SoundProducerLink *linkbus5b = new SoundProducerLink(this, buses.bus5, false);
 
       linkbus1a->is_bus_link = true;
       linkbus1b->is_bus_link = true;
       linkbus2a->is_bus_link = true;
       linkbus2b->is_bus_link = true;
+      linkbus3a->is_bus_link = true;
+      linkbus3b->is_bus_link = true;
+      linkbus4a->is_bus_link = true;
+      linkbus4b->is_bus_link = true;
+      linkbus5a->is_bus_link = true;
+      linkbus5b->is_bus_link = true;
 
       // ch 1
       linkbus1a->source_ch = 0;
       linkbus1a->target_ch = 0;
       linkbus2a->source_ch = 0;
       linkbus2a->target_ch = 0;
+      linkbus3a->source_ch = 0;
+      linkbus3a->target_ch = 0;
+      linkbus4a->source_ch = 0;
+      linkbus4a->target_ch = 0;
+      linkbus5a->source_ch = 0;
+      linkbus5a->target_ch = 0;
 
       // ch 2
       if (_num_outputs==1) {
         linkbus1b->source_ch = 0;
         linkbus2b->source_ch = 0;
+        linkbus3b->source_ch = 0;
+        linkbus4b->source_ch = 0;
+        linkbus5b->source_ch = 0;
       } else {
         linkbus1b->source_ch = 1;
         linkbus2b->source_ch = 1;
+        linkbus3b->source_ch = 1;
+        linkbus4b->source_ch = 1;
+        linkbus5b->source_ch = 1;
       }
       
       linkbus1b->target_ch = 1;
       linkbus2b->target_ch = 1;
+      linkbus3b->target_ch = 1;
+      linkbus4b->target_ch = 1;
+      linkbus5b->target_ch = 1;
 
       SoundProducer::add_link(linkbus1a);
       SoundProducer::add_link(linkbus1b);
       SoundProducer::add_link(linkbus2a);
       SoundProducer::add_link(linkbus2b);
+      SoundProducer::add_link(linkbus3a);
+      SoundProducer::add_link(linkbus3b);
+      SoundProducer::add_link(linkbus4a);
+      SoundProducer::add_link(linkbus4b);
+      SoundProducer::add_link(linkbus5a);
+      SoundProducer::add_link(linkbus5b);
 
       _linkbuses.add(linkbus1a);
       _linkbuses.add(linkbus1b);
       _linkbuses.add(linkbus2a);
       _linkbuses.add(linkbus2b);
+      _linkbuses.add(linkbus3a);
+      _linkbuses.add(linkbus3b);
+      _linkbuses.add(linkbus4a);
+      _linkbuses.add(linkbus4b);
+      _linkbuses.add(linkbus5a);
+      _linkbuses.add(linkbus5b);
     }    
 
     printf("*** Finished... New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
@@ -1019,6 +1074,9 @@ public:
         if (ch < 2) { // buses only have two channels
           safe_float_write(&_plugin->bus_volume_peak_values0[ch], volume_peak * _plugin->bus_volume[0]);
           safe_float_write(&_plugin->bus_volume_peak_values1[ch], volume_peak * _plugin->bus_volume[1]);
+          safe_float_write(&_plugin->bus_volume_peak_values2[ch], volume_peak * _plugin->bus_volume[2]);
+          safe_float_write(&_plugin->bus_volume_peak_values3[ch], volume_peak * _plugin->bus_volume[3]);
+          safe_float_write(&_plugin->bus_volume_peak_values4[ch], volume_peak * _plugin->bus_volume[4]);
         }
         
         // "Out" and Chip volume  (same value)
