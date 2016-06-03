@@ -87,7 +87,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 }
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
-  Data *data = V_calloc(1,sizeof(Data));
+  Data *data = (Data*)V_calloc(1,sizeof(Data));
   data->routes[0]=1;
   data->routes[plugin_type->num_outputs+1]=1;
   return data;
@@ -110,53 +110,49 @@ static int get_effect_format(SoundPlugin *plugin, int effect_num){
   return EFFECT_FORMAT_BOOL;
 }
 
-static SoundPluginType plugin_type8 = {
- type_name                : "Patchbay",
- name                     : "Patchbay 8x8",
- info                     : "Sends any input channel to any output channel",
- num_inputs               : 8,
- num_outputs              : 8,
- is_instrument            : false,
- note_handling_is_RT      : false,
- num_effects              : 8*8,
- get_effect_format        : get_effect_format,
- get_effect_name          : get_effect_name,
- effect_is_RT             : NULL,
- create_plugin_data       : create_plugin_data,
- cleanup_plugin_data      : cleanup_plugin_data,
-
- RT_process       : RT_process,
- set_effect_value : set_effect_value,
- get_effect_value : get_effect_value,
- get_display_value_string : NULL,
-
- data                     : NULL
+static void init_type(struct SoundPluginType *type, int num){
+  type->type_name                = "Patchbay";
+  type->name                     = V_strdup(talloc_format("Patchbay %dx%d", num, num));
+  type->info                     = "Sends any input channel to any output channel";
+  type->num_inputs               = num;
+  type->num_outputs              = num;
+  type->is_instrument            = false;
+  type->note_handling_is_RT      = false;
+  type->num_effects              = num*num;
+  type->get_effect_format        = get_effect_format;
+  type->get_effect_name          = get_effect_name;
+  type->effect_is_RT             = NULL;
+  type->create_plugin_data       = create_plugin_data;
+  type->cleanup_plugin_data      = cleanup_plugin_data;
+  
+  type->RT_process       = RT_process;
+  type->set_effect_value = set_effect_value;
+  type->get_effect_value = get_effect_value;
+  type->get_display_value_string = NULL;
+  
+  type->data                     = NULL;
 };
-
-static SoundPluginType plugin_type32 = {
- type_name                : "Patchbay",
- name                     : "Patchbay 32x32",
- info                     : "Sends any input channel to any output channel",
- num_inputs               : 32,
- num_outputs              : 32,
- is_instrument            : false,
- note_handling_is_RT      : false,
- num_effects              : 32*32,
- get_effect_format        : get_effect_format,
- get_effect_name          : get_effect_name,
- effect_is_RT             : NULL,
- create_plugin_data       : create_plugin_data,
- cleanup_plugin_data      : cleanup_plugin_data,
-
- RT_process       : RT_process,
- set_effect_value : set_effect_value,
- get_effect_value : get_effect_value,
- get_display_value_string : NULL,
-
- data                     : NULL
-};
+  
+//static SoundPluginType plugin_type4 = {};
+static SoundPluginType plugin_type8 = {};
+static SoundPluginType plugin_type16 = {};
+static SoundPluginType plugin_type24 = {};
+static SoundPluginType plugin_type32 = {};
 
 void create_patchbay_plugin(void){
-  PR_add_plugin_type(&plugin_type8);
-  PR_add_plugin_type(&plugin_type32);
+  //init_type(&plugin_type4, 4);
+  init_type(&plugin_type8, 8);
+  init_type(&plugin_type16, 16);
+  init_type(&plugin_type24, 24);
+  init_type(&plugin_type32, 32);
+  
+  PR_add_menu_entry(PluginMenuEntry::level_up("Patchbays"));
+  {
+    //PR_add_plugin_type(&plugin_type4);
+    PR_add_plugin_type(&plugin_type8);
+    PR_add_plugin_type(&plugin_type16);
+    PR_add_plugin_type(&plugin_type24);
+    PR_add_plugin_type(&plugin_type32);
+  }
+  PR_add_menu_entry(PluginMenuEntry::level_down());
 }

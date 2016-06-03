@@ -1447,8 +1447,8 @@ Sine_plugin.o: audio/Sine_plugin.c
 Bus_plugins.o: audio/Bus_plugins.cpp
 	$(CCC) audio/Bus_plugins.cpp $(QTOPT)
 
-Patchbay_plugin.o: audio/Patchbay_plugin.c
-	$(CC) audio/Patchbay_plugin.c $(OPT)
+Patchbay_plugin.o: audio/Patchbay_plugin.cpp
+	$(CCC) audio/Patchbay_plugin.cpp $(QTOPT)
 
 MidiMessages_plugin.o: audio/MidiMessages_plugin.c
 	$(CC) audio/MidiMessages_plugin.c $(OPT) -std=c99

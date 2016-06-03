@@ -358,7 +358,7 @@ void PR_add_plugin_container(SoundPluginTypeContainer *container){
 
 //extern "C" void create_sine_plugin(void);
 extern void create_bus_plugins(void);
-extern "C" void create_patchbay_plugin(void);
+extern void create_patchbay_plugin(void);
 #include "VST_plugins_proc.h"
 extern void create_juce_plugins(void);
 extern void create_ladspa_plugins(void);
