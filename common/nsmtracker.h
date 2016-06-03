@@ -562,6 +562,7 @@ struct PatchVoice{
   float start;
   float length;
   enum TimeFormat time_format;
+  float chance;
 };
 
 #define NUM_PATCH_VOICES 6
@@ -690,6 +691,7 @@ struct Patch{
 #define PATCH_SUCCESS 1
 #define NextPatch(a) ((struct Patch *)((a)->l.next))
 
+
 #if 0
 // Not necessary. Just create state from 'source' and apply it to 'dest'.
 static inline void Patch_copyAttributesFromAnotherPatch(struct Patch *dest, struct Patch *source){
@@ -702,64 +704,6 @@ static inline void Patch_copyAttributesFromAnotherPatch(struct Patch *dest, stru
 }
 #endif
 
-static inline void Patch_addPlayingVoice(struct Patch *patch, note_t note){
-#if 0
-  printf("Adding note with id %d\n",(int)note_id);
-  if(note_id==52428)
-    abort();
-#endif
-
-  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
-  
-  if(patch->num_currently_playing_voices==MAX_PLAYING_PATCH_NOTES)
-    printf("Error. Reached max number of voices there's room for in a patch. Hanging notes are likely to happen.\n");
-  else    
-    patch->playing_voices[patch->num_currently_playing_voices++] = note;
-}
-
-
-static inline void Patch_removePlayingVoice(struct Patch *patch, int64_t note_id){
-  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
-  
-  int i;
-  for(i=0;i<patch->num_currently_playing_voices;i++){
-    if(patch->playing_voices[i].id==note_id){
-      patch->playing_voices[i] = patch->playing_voices[patch->num_currently_playing_voices-1];
-      patch->num_currently_playing_voices--;
-      return;
-    }
-  }
-  if (is_playing()){
-    printf("Warning. Unable to find voice with note_id %d when removing playing note. Num playing: %d\n",(int)note_id,patch->num_currently_playing_voices);
-    //abort();
-  }
-#if 0
-  for(i=0;i<patch->num_currently_playing_voices;i++)
-    printf("id: %d\n",(int)patch->playing_voices[i].note_id);
-  if(patch->num_currently_playing_voices > 3)
-    abort();
-#endif
-}
-
-static inline void Patch_addPlayingNote(struct Patch *patch, note_t note){
-  if(patch->num_currently_playing_notes==MAX_PLAYING_PATCH_NOTES)
-    printf("Error. Reached max number of notes there's room for in a patch. Hanging notes are likely to happen.\n");
-  else    
-    patch->playing_notes[patch->num_currently_playing_notes++] = note;
-}
-
-static inline void Patch_removePlayingNote(struct Patch *patch, int64_t note_id){
-  int i;
-  for(i=0;i<patch->num_currently_playing_notes;i++){
-    if(patch->playing_notes[i].id==note_id){
-      patch->playing_notes[i] = patch->playing_notes[patch->num_currently_playing_notes-1];
-      patch->num_currently_playing_notes--;
-      return;
-    }
-  }
-  if (is_playing())
-    printf("Warning. Unable to find note with note_id %d when removing playing note\n",(int)note_id);
-}
 
 
 /*********************************************************************

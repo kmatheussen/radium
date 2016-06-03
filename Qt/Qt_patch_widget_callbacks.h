@@ -52,6 +52,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       get_v(i)->setStyle(&_cleanlooksStyle);
       get_s(i)->setStyle(&_cleanlooksStyle);
       get_l(i)->setStyle(&_cleanlooksStyle);
+      get_c(i)->setStyle(&_cleanlooksStyle);
 
       get_o(i)->setToolTip("Whether to play this voice. At least one voice must be selected in order for any notes to be played.");
       get_t(i)->setToolTip("How much to transpose this voice");
@@ -62,6 +63,8 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
                            "The unit is milliseconds.");//by default Beats, unless \"ms.\" is selected");
 
       get_f(i)->hide();
+      get_c(i)->setToolTip("The chance of this voice to play. A value of 256 means that there is 100% chance of this voice plaing.\n"
+                           "A value of 128 means that there is a 50% chance of this voice playing.");
       timeformat_label->hide();
     }
     
@@ -106,6 +109,11 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     return f[i];
   }
 
+  MyQSpinBox *get_c(int i){
+    MyQSpinBox *c[6]={c1,c2,c3,c4,c5,c6};
+    return c[i];
+  }
+
   void update_label_color(QLabel *l){
     QString text = l->text();
     int pos = text.indexOf("#");
@@ -126,6 +134,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       get_v(i)->setValue(voice->volume);
       get_s(i)->setValue(voice->start);
       get_l(i)->setValue(voice->length);
+      get_c(i)->setValue(voice->chance);
     }
 
     // bad 1
@@ -137,6 +146,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     update_label_color(nd_label2);
     update_label_color(nd_label3);
     update_label_color(nd_label4);
+    update_label_color(nd_label5);
   }
 
   void update_peaks(){
@@ -201,6 +211,16 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     update_peaks();
   }
 
+  void set_chance(int voicenum){
+    int chance=get_c(voicenum)->value();
+    if(_voices[voicenum].chance != chance){
+      ADD_UNDO(PatchVoice_CurrPos(_patch,voicenum));
+      _voices[voicenum].chance = chance;
+    }
+    set_editor_focus();
+    update_peaks();
+  }
+  
 public slots:
 
   void on_o1_toggled(bool val){onoff_toggled(0,val);}
@@ -273,6 +293,14 @@ public slots:
   void on_l4_editingFinished(){set_length(3);}
   void on_l5_editingFinished(){set_length(4);}
   void on_l6_editingFinished(){set_length(5);}
+
+  void on_c1_editingFinished(){set_chance(0);}
+  void on_c2_editingFinished(){set_chance(1);}
+  void on_c3_editingFinished(){set_chance(2);}
+  void on_c4_editingFinished(){set_chance(3);}
+  void on_c5_editingFinished(){set_chance(4);}
+  void on_c6_editingFinished(){set_chance(5);}
+
 
   void on_name_widget_editingFinished()
   {

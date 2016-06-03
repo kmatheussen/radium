@@ -149,6 +149,13 @@ void PATCH_init_voices(struct Patch *patch){
   patch->voices[3].time_format = TIME_IN_MS;
   patch->voices[4].time_format = TIME_IN_MS;
   patch->voices[5].time_format = TIME_IN_MS;
+  
+  patch->voices[0].chance = 256;
+  patch->voices[1].chance = 256;
+  patch->voices[2].chance = 256;
+  patch->voices[3].chance = 256;
+  patch->voices[4].chance = 256;
+  patch->voices[5].chance = 256;
 }
 
 static struct Patch *create_new_patch(const char *name){
@@ -472,6 +479,79 @@ void PATCH_init(void){
 ////////////////////////////////////
 // Play note
 
+
+static bool Patch_is_voice_playing_questionmark(struct Patch *patch, int64_t voice_id){
+  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
+  
+  int i;
+  for(i=0;i<patch->num_currently_playing_voices;i++){
+    if(patch->playing_voices[i].id==voice_id)
+      return true;
+  }
+
+  return false;
+}
+
+
+static void Patch_addPlayingVoice(struct Patch *patch, note_t note){
+#if 0
+  printf("Adding note with id %d\n",(int)note_id);
+  if(note_id==52428)
+    abort();
+#endif
+
+  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
+  
+  if(patch->num_currently_playing_voices==MAX_PLAYING_PATCH_NOTES)
+    printf("Error. Reached max number of voices there's room for in a patch. Hanging notes are likely to happen.\n");
+  else    
+    patch->playing_voices[patch->num_currently_playing_voices++] = note;
+}
+
+
+static void Patch_removePlayingVoice(struct Patch *patch, int64_t note_id){
+  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
+  
+  int i;
+  for(i=0;i<patch->num_currently_playing_voices;i++){
+    if(patch->playing_voices[i].id==note_id){
+      patch->playing_voices[i] = patch->playing_voices[patch->num_currently_playing_voices-1];
+      patch->num_currently_playing_voices--;
+      return;
+    }
+  }
+  if (is_playing()){
+    printf("Warning. Unable to find voice with note_id %d when removing playing note. Num playing: %d\n",(int)note_id,patch->num_currently_playing_voices);
+    //abort();
+  }
+#if 0
+  for(i=0;i<patch->num_currently_playing_voices;i++)
+    printf("id: %d\n",(int)patch->playing_voices[i].note_id);
+  if(patch->num_currently_playing_voices > 3)
+    abort();
+#endif
+}
+
+static void Patch_addPlayingNote(struct Patch *patch, note_t note){
+  if(patch->num_currently_playing_notes==MAX_PLAYING_PATCH_NOTES)
+    printf("Error. Reached max number of notes there's room for in a patch. Hanging notes are likely to happen.\n");
+  else    
+    patch->playing_notes[patch->num_currently_playing_notes++] = note;
+}
+
+static void Patch_removePlayingNote(struct Patch *patch, int64_t note_id){
+  int i;
+  for(i=0;i<patch->num_currently_playing_notes;i++){
+    if(patch->playing_notes[i].id==note_id){
+      patch->playing_notes[i] = patch->playing_notes[patch->num_currently_playing_notes-1];
+      patch->num_currently_playing_notes--;
+      return;
+    }
+  }
+  if (is_playing())
+    printf("Warning. Unable to find note with note_id %d when removing playing note\n",(int)note_id);
+}
+
 static float get_voice_velocity(struct PatchVoice *voice){
   if(voice->volume<=35)
     return scale(voice->volume,-35,35,0,2);
@@ -509,7 +589,7 @@ static void RT_play_voice(struct Patch *patch, note_t note, STime time){
     RT_PATCH_send_play_note_to_receivers(patch, note, time);
 }
 
-static inline void put_note_into_args(union SuperType *args, note_t note){
+static void put_note_into_args(union SuperType *args, note_t note){
   args[0].float_num = note.pitch;
   args[1].int_num = note.id;
   args[2].float_num = note.velocity;
@@ -517,7 +597,7 @@ static inline void put_note_into_args(union SuperType *args, note_t note){
   args[4].int_num = note.midi_channel;
 }
 
-static inline note_t create_note_from_args(const union SuperType *args){
+static note_t create_note_from_args(const union SuperType *args){
   float   notenum      = args[0].float_num;
   int64_t note_id      = args[1].int_num;
   float   velocity     = args[2].float_num;
@@ -543,6 +623,10 @@ static void RT_scheduled_play_voice(int64_t time, const union SuperType *args){
 
 static void RT_scheduled_stop_voice(int64_t time_into_the_future, const union SuperType *args);
 
+static int rnd(int max){
+  return rand() % max;
+}
+
 int64_t RT_PATCH_play_note(struct Patch *patch, note_t note, STime time){
   //printf("\n\nRT_PATCH_PLAY_NOTE. ___Starting note %f, time: %d, id: %d\n\n",notenum,(int)time,(int)note_id);
 
@@ -561,7 +645,7 @@ int64_t RT_PATCH_play_note(struct Patch *patch, note_t note, STime time){
   for(i=0;i<NUM_PATCH_VOICES;i++){
     struct PatchVoice *voice = &patch->voices[i];
 
-    if(voice->is_on==true){
+    if(voice->is_on==true && (voice->chance==256 || voice->chance > rnd(256))){
 
       float voice_notenum = note.pitch + voice->transpose;
       float voice_velocity = note.velocity * get_voice_velocity(voice);
@@ -667,10 +751,13 @@ void RT_PATCH_stop_note(struct Patch *patch,note_t note,STime time){
         float voice_notenum = note.pitch + voice->transpose;
         int64_t voice_id = note.id + i;
 
-        args[1].float_num = voice_notenum;
-        args[2].int_num = voice_id;
+        if (Patch_is_voice_playing_questionmark(patch, voice_id)) {
+        
+          args[1].float_num = voice_notenum;
+          args[2].int_num = voice_id;
 
-        SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 6, SCHEDULER_NOTE_OFF_PRIORITY);
+          SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 6, SCHEDULER_NOTE_OFF_PRIORITY);
+        }
       }
     }
   }
@@ -753,13 +840,14 @@ void RT_PATCH_change_velocity(struct Patch *patch,note_t note,STime time){
       int64_t voice_id = note.id + i;
       float voice_velocity = note.velocity * get_voice_velocity(voice);
 
-      // Should improve this. It might not play anymore. (???)
+      if (Patch_is_voice_playing_questionmark(patch, voice_id)) {
+        
+        args[1].float_num = voice_notenum;
+        args[2].int_num = voice_id;
+        args[3].float_num = voice_velocity;
       
-      args[1].float_num = voice_notenum;
-      args[2].int_num = voice_id;
-      args[3].float_num = voice_velocity;
-      
-      SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 6, SCHEDULER_VELOCITY_PRIORITY);
+        SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 6, SCHEDULER_VELOCITY_PRIORITY);
+      }
     }
   }
 }
@@ -829,10 +917,13 @@ void RT_PATCH_change_pitch(struct Patch *patch,note_t note,STime time){
       float voice_notenum = note.pitch + voice->transpose;
       int64_t voice_id = note.id + i;
 
-      args[1].float_num = voice_notenum;
-      args[2].int_num = voice_id;
+      if (Patch_is_voice_playing_questionmark(patch, voice_id)) {
+        
+        args[1].float_num = voice_notenum;
+        args[2].int_num = voice_id;
 
-      SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 6, SCHEDULER_PITCH_PRIORITY);
+        SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 6, SCHEDULER_PITCH_PRIORITY);
+      }
     }
   }
 }
