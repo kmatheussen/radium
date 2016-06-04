@@ -758,7 +758,7 @@ void GFX_showChanceHelpWidget(void){
         
     msgBox->setText("Chance text");
     msgBox->setInformativeText(
-                               "<pre>"
+                               QString(talloc_format("<pre><span class=\"inner-pre\" style=\"font-size: %dpx\">", QApplication::font().pointSize()*3/2)) +
                                "Chance text lets you set the probability for this note or pitch to play.\n"
                                "\n"
                                "Chance text format: \"xx\", where\n"
@@ -779,7 +779,7 @@ void GFX_showChanceHelpWidget(void){
                                "of individual voices in the note duplicator so you don't have to worry about\n"
                                "the voices not always playing.)\n"
                                "\n"                               
-                               "</pre>"
+                               "</scan></pre>"                               
                                );
     msgBox->setStandardButtons(QMessageBox::Ok);
 
@@ -795,7 +795,7 @@ void GFX_showVelocityHelpWidget(void){
         
     msgBox->setText("Velocity text");
     msgBox->setInformativeText(
-                               "<pre>"
+                               QString(talloc_format("<pre><span class=\"inner-pre\" style=\"font-size: %dpx\">", QApplication::font().pointSize()*3/2)) +
                                "Velocity text is an alternative way to edit the velocities of a note.\n"
                                "Editing text is often quicker than editing velocities graphically.\n"
                                "\n"
@@ -812,7 +812,7 @@ void GFX_showVelocityHelpWidget(void){
                                "  Tips: -To quickly add an \"ff\" velocity, press 'G'.\n"
                                "        -To switch glide mode, press 'T'.\n"
                                "\n"                               
-                               "</pre>"
+                               "</scan></pre>"                               
                                );
     msgBox->setStandardButtons(QMessageBox::Ok);
 
@@ -828,7 +828,7 @@ void GFX_showFXHelpWidget(void){
         
     msgBox->setText("FX text");
     msgBox->setInformativeText(
-                               "<pre>"
+                               QString(talloc_format("<pre><span class=\"inner-pre\" style=\"font-size: %dpx\">", QApplication::font().pointSize()*3/2)) +
                                "FX text is an alternative way to edit effects.\n"
                                "Editing text is often quicker than editing effects graphically.\n"
                                "\n"
@@ -848,7 +848,7 @@ void GFX_showFXHelpWidget(void){
                                "  -To quickly add an \"ff\" velocity, press 'G'.\n"
                                "  -To switch glide mode, press 'T'.\n"
                                "\n"                               
-                               "</pre>"
+                               "</scan></pre>"                               
                                );
     msgBox->setStandardButtons(QMessageBox::Ok);
 
@@ -862,6 +862,7 @@ void GFX_showMixerHelpWindow(void){
         
     msgBox->setText("Mixer Interface");
     msgBox->setInformativeText(
+                               QString(talloc_format("<pre><span class=\"inner-pre\" style=\"font-size: %dpx\">", QApplication::font().pointSize()*3/2)) +
                               "* Move objects with right mouse button.\n"
                               "\n"
                               "* Double-click the name of an object to open GUI.\n"
@@ -879,6 +880,7 @@ void GFX_showMixerHelpWindow(void){
                               "   top of another object.\n"
                               "\n"
                               "* Zoom in and out by pressing CTRL and using the scroll wheel.\n"
+                               "</scan></pre>"                               
                               );
     msgBox->setStandardButtons(QMessageBox::Ok);
     msgBox->setModal(false);
