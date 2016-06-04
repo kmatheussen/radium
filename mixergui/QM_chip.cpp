@@ -956,13 +956,16 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
    printf("New Chip. Inputs: %d, Ouptuts: %d\n",_num_inputs,_num_outputs);
 }
 
+void CHIP_autopos(Chip *chip){
+  double x,y;
+  MW_set_autopos(&x, &y);
+  MW_move_chip_to_slot(chip, x, y);
+}
+
 void CHIP_create(SoundProducer *sound_producer, bool is_loading_song){
   Chip *chip = new Chip(&g_mixer_widget->scene, sound_producer, -100000, -100000);
-  if (is_loading_song==false){
-    double x,y;
-    MW_set_autopos(&x, &y);
-    MW_move_chip_to_slot(chip, x, y);
-  }
+  if (is_loading_song==false)
+    CHIP_autopos(chip);
 }
 
 Chip::~Chip(){

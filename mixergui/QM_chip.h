@@ -379,6 +379,7 @@ int CHIP_get_eport_x(Chip *chip);
 bool CHIP_is_at_input_eport(Chip *chip, int x, int y);
 bool CHIP_is_at_output_eport(Chip *chip, int x, int y);
 
+void CHIP_autopos(Chip *chip);
 Chip *CHIP_get(QGraphicsScene *scene, const Patch *patch);
 
 struct Patch *CHIP_get_patch(Chip *chip);

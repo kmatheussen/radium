@@ -1661,7 +1661,7 @@ static void create_missing_busses(hash_t *bus_chips_state){
   int num_chips = HASH_get_int(bus_chips_state, "num_chips");
   printf("num_chips: %d\n",num_chips);
   for(int busnum=num_chips;busnum<NUM_BUSES;busnum++) {
-    createAudioInstrument(talloc_strdup("Bus"), talloc_format("Bus %d", busnum+1), talloc_format("Aux %d Bus", busnum+1));
+    createAudioInstrument(talloc_strdup("Bus"), talloc_format("Bus %d", busnum+1), talloc_format("Aux %d Bus", busnum-num_chips+1));
   }
 }
 
@@ -1677,10 +1677,7 @@ static void autoposition_missing_bus_chips(hash_t *bus_chips_state){
       buses.bus5;
       
     Chip *chip = CHIP_get(&g_mixer_widget->scene, (struct Patch*)SP_get_plugin(sp)->patch);
-    double x,y;
-    MW_set_autopos(&x, &y);
-    MW_move_chip_to_slot(chip, x, y);
-
+    CHIP_autopos(chip);
   }
 }
 
