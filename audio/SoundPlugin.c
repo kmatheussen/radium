@@ -532,7 +532,10 @@ const char *PLUGIN_get_new_name_if_name_has_changed(struct SoundPlugin *plugin, 
     if(!strcmp(effect_name,plugin_type->get_effect_name(plugin,i)))
       return effect_name;
 
-
+  // System effects that have changed name.
+  if (!strcmp(effect_name, "Gain (dB)"))
+    return system_effect_names[EFFNUM_VOLUME];
+      
   // See if this is a vst or ladspa effect that was saved before the <n>: prefix was added.
   for(i=0;i<plugin_type->num_effects;i++) {
     const char *name = plugin_type->get_effect_name(plugin,i);
