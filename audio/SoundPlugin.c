@@ -764,10 +764,16 @@ static float get_freq_store_value(float value, enum ValueType value_type){
     return slider_2_frequency(value,MIN_FREQ,MAX_FREQ);
 }
 
+static void update_instrument_gui(struct SoundPlugin *plugin){
+  if (plugin->patch != NULL) {
+    GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
+  }
+}
+
 static void set_chance(struct SoundPlugin *plugin, int num, float value){
   if (plugin->patch != NULL) {
     plugin->patch->voices[num].chance = value==1 ? 256 : round(scale_double(value, 0, 1, 0, 255)); // 0xff corresponds to 256, while 0xfe corresponds to 254. 255 can not be set.
-    GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
+    update_instrument_gui(plugin);
   }
 }
                       
@@ -1036,14 +1042,17 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
 
     case EFFNUM_EQ_SHOW_GUI:
       plugin->show_equalizer_gui = store_value > 0.5f;
+      update_instrument_gui(plugin);
       break;
 
     case EFFNUM_BROWSER_SHOW_GUI:
       plugin->show_browser_gui = store_value > 0.5f;
+      update_instrument_gui(plugin);
       break;
 
     case EFFNUM_CONTROLS_SHOW_GUI:
       plugin->show_controls_gui = store_value > 0.5f;
+      update_instrument_gui(plugin);
       break;
       
     case EFFNUM_CHANCE1:
@@ -1092,6 +1101,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
 
     case EFFNUM_COMP_SHOW_GUI:
       plugin->show_compressor_gui = store_value > 0.5f;
+      update_instrument_gui(plugin);
       break;
 
     case EFFNUM_DELAY_TIME:
