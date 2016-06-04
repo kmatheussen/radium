@@ -205,6 +205,7 @@ void NOTE_init(struct Notes *note){
 struct Notes *NewNote(void){
   struct Notes *note=talloc(sizeof(struct Notes));
   NOTE_init(note);
+  note->chance = 0x100;
 
   return note;
 }

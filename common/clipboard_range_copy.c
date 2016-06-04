@@ -68,8 +68,7 @@ void CopyRange_pitches(
 
 	if(PlaceGreaterOrEqual(&frompitch->l.p,p2)) return;
 
-	pitch=talloc(sizeof(struct Pitches));
-        memcpy(pitch, frompitch, sizeof(struct Pitches));
+	pitch=tcopy(frompitch, sizeof(struct Pitches));
 
 	PlaceSub(&pitch->l.p,p1);
 
@@ -100,8 +99,7 @@ void CopyRange_notes(
 		return;
 	}
 
-	note=talloc(sizeof(struct Notes));
-        memcpy(note, fromnote, sizeof(struct Notes));
+	note=CopyNote(fromnote);
         note->pitches = NULL;
         note->velocities = NULL;
         NOTE_init(note);

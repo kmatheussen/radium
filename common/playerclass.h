@@ -41,7 +41,7 @@ struct PEventQueue{
         struct WBlocks *wblock; // not const.
 	const struct Blocks *block;
 	const struct Tracks *track;
-	const struct Notes *note;
+	struct Notes *note;
 
 // Used by PEQrealline
 	int realline;
@@ -55,8 +55,8 @@ struct PEventQueue{
 	const struct Velocities *nextvelocity;
 
 // Used by PEQpitches
-	const struct Pitches *pitch;
-	const struct Pitches *nextpitch;
+	struct Pitches *pitch;
+	struct Pitches *nextpitch;
 
 
 // Used by PEQfxs

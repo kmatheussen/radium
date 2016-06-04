@@ -753,6 +753,43 @@ const char *GFX_qVersion(void){
 
 
   
+void GFX_showChanceHelpWidget(void){
+    static QMessageBox *msgBox = new QMessageBox;
+        
+    msgBox->setText("Chance text");
+    msgBox->setInformativeText(
+                               "<pre>"
+                               "Chance text lets you set the probability for this note or pitch to play.\n"
+                               "\n"
+                               "Chance text format: \"xx\", where\n"
+                               "\n"
+                               "  0 = lowest chance, ff = highest chance. (hex format)\n"
+                               "\n"
+                               "Examples:\n"
+                               "\n"
+                               "  xx = 80: 50% chance of this note playing\n"
+                               "  xx =  0: 0% chance of this note playing\n"
+                               "  xx = ff: 255/256 chance of this note playing\n"
+                               "\n"
+                               "To remove a chance text (to make sure the note is always played), press DEL.\n"
+                               "\n"
+                               "To control the chance of individual voices in the note duplicator,\n"
+                               "you can automate the \"System Chance 1\", \"System Chance 2\", etc. effects instead.\n"
+                               "(Note that the value \"ff\" is interpreted as 256 when automating the chance\n"
+                               "of individual voices in the note duplicator so you don't have to worry about\n"
+                               "the voices not always playing.)\n"
+                               "\n"                               
+                               "</pre>"
+                               );
+    msgBox->setStandardButtons(QMessageBox::Ok);
+
+    msgBox->setModal(false);
+     
+    safeShowOrExec(msgBox);
+}
+
+  
+
 void GFX_showVelocityHelpWidget(void){
     static QMessageBox *msgBox = new QMessageBox;
         

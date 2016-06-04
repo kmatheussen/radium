@@ -40,7 +40,7 @@ DC_start("NOTE");
 	DC_SaveF(note->note);
         SaveLogType(note->pitch_first_logtype);
         
-	DC_SaveI(0); // cents (never used)
+	DC_SaveI(0); // cents (never used, inserted into pitch instead)
         
 	DC_SaveI(note->velocity);
         SaveLogType(note->velocity_first_logtype);
@@ -50,6 +50,8 @@ DC_start("NOTE");
         DC_SaveF(note->pitch_end);
 	DC_SaveI(note->noend);
 
+        DC_SaveI(note->chance);
+        
 	SaveVelocities(note->velocities);
 	SavePitches(note->pitches);
 
@@ -59,7 +61,6 @@ SaveNotes(NextNote(note));
 
 
 struct Notes *LoadNote(void){
-        //struct Notes *note=DC_alloc(sizeof(struct Notes));
         struct Notes *note = NewNote(); // DC_alloc just checks if there is enough memory, and handle failure gracefully.
 
 	LoadPlace(&note->l.p);
@@ -78,6 +79,11 @@ struct Notes *LoadNote(void){
           note->pitch_end = DC_LoadF();
 	note->noend=DC_LoadI();
 
+        if (disk_load_version > 0.835)
+          note->chance = DC_LoadI();
+        else
+          note->chance = 0x100;
+        
         if(disk_load_version<0.69) {
 
           if(DC_Next()==LS_OBJECT){

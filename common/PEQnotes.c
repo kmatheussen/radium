@@ -41,10 +41,10 @@ static void PE_StartNote(struct PEventQueue *peq,int doit);
 static void PE_StopNote(struct PEventQueue *peq,int doit);
 
 
-void InitPEQendnote(
+static void InitPEQendnote(
 	const struct Blocks *block,
 	const struct Tracks *track,
-	const struct Notes *note,
+	struct Notes *note,
 	int playlistaddpos
 ){
 	NInt tracknum=track->l.num;
@@ -93,11 +93,14 @@ void InitPEQendnote(
 	peq->playpos=orgplaylistaddpos;
 }
 
+static int rnd(int max){
+  return rand() % max;
+}
 
 void InitPEQnote(
 	const struct Blocks *block,
 	const struct Tracks *track,
-	const struct Notes *note,
+	struct Notes *note,
 	int playlistaddpos
 ){
 	struct PEventQueue *peq=GetPEQelement();
@@ -105,13 +108,16 @@ void InitPEQnote(
 	peq->block=block;
 	peq->track=track;
 	peq->note=note;
-
+        note->doit = note->chance==0x100 || note->chance > rnd(0x100);
+        
 	PC_InsertElement2_a(peq,playlistaddpos,&note->l.p);
 
-        InitPEQvelocities(block,track,note,playlistaddpos);
+        if (note->doit) {
+          InitPEQvelocities(block,track,note,playlistaddpos);
 
-        InitPEQpitches(block,track,note,playlistaddpos);
-
+          InitPEQpitches(block,track,note,playlistaddpos);
+        }
+        
         InitPEQendnote(block,track,note,playlistaddpos);
 }
 
@@ -196,12 +202,16 @@ static void PEQ_FindNextNoteAddPlayPos(struct PEventQueue *peq){
   peq->block=block;
   peq->track=track;
   peq->note=note;
-
+  note->doit = note->chance==0x100 || note->chance > rnd(0x100);
+        
   PC_InsertElement2_a(peq,playlistaddpos,&note->l.p);
 
   InitPEQendnote(block,track,note,playlistaddpos);
-  InitPEQvelocities(block,track,note,playlistaddpos);
-  InitPEQpitches(block,track,note,playlistaddpos);
+
+  if (note->doit){
+    InitPEQvelocities(block,track,note,playlistaddpos);
+    InitPEQpitches(block,track,note,playlistaddpos);
+  }
 
 }
 
@@ -212,10 +222,13 @@ void PEQ_FindNextNote(struct PEventQueue *peq){
 
 	if(note!=NULL){
 		peq->note=note;
+                note->doit = note->chance==0x100 || peq->note->chance > rnd(0x100);
 		PC_InsertElement2_a(peq,0,&note->l.p);
                 InitPEQendnote(peq->block,peq->track,note,0);
-                InitPEQvelocities(peq->block,peq->track,note,0);
-                InitPEQpitches(peq->block,peq->track,note,0);
+                if (peq->note->doit){
+                  InitPEQvelocities(peq->block,peq->track,note,0);
+                  InitPEQpitches(peq->block,peq->track,note,0);
+                }
 	}else{
 		PEQ_FindNextNoteAddPlayPos(peq);
 	}
@@ -237,7 +250,7 @@ static void scheduled_play_note(int64_t time, const union SuperType *args){
 
 static void PE_StartNote(struct PEventQueue *peq,int doit){
 
-	if(doit && peq->track->onoff==1 && peq->track->patch!=NULL){
+	if(doit && peq->note->doit && peq->track->onoff==1 && peq->track->patch!=NULL){
           union SuperType args[2];
           args[0].const_pointer = peq->track;
           args[1].const_pointer = peq->note;
@@ -267,8 +280,9 @@ static void scheduled_stop_note(int64_t time, const union SuperType *args){
 
 static void PE_StopNote(struct PEventQueue *peq,int doit){
 
-	if(doit && peq->track->onoff==1 && peq->track->patch!=NULL){
-//		Pdebug("Stop note: %d, vel: %d\n",peq->note->note,peq->note->velocity_end);
+	if(doit && peq->note->doit && peq->track->onoff==1 && peq->track->patch!=NULL){
+          
+          //  Pdebug("Stop note: %d, vel: %d\n",peq->note->note,peq->note->velocity_end);
           union SuperType args[2];
           args[0].const_pointer = peq->track;
           args[1].const_pointer = peq->note;

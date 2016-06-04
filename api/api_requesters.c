@@ -190,6 +190,9 @@ void showMixerHelpWindow(void){
   GFX_showMixerHelpWindow();
 }
 
+void showChanceHelpWindow(void){
+  GFX_showChanceHelpWidget();
+}
 void showVelocityHelpWindow(void){
   GFX_showVelocityHelpWidget();
 }

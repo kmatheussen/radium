@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "veltext_proc.h"
 #include "fxtext_proc.h"
 #include "centtext_proc.h"
+#include "chancetext_proc.h"
 #include "cursor_updown_proc.h"
 #include "wtracks_proc.h"
 
@@ -185,8 +186,10 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
 
   if (VELTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
     if (FXTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
-      if (CENTTEXT_keypress(window, wblock, wtrack, realline, place,key) == false) {
-        return false;
+      if (CHANCETEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
+        if (CENTTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
+          return false;
+        }
       }
     }
   }

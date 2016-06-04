@@ -45,6 +45,9 @@ int WTRACK_num_non_polyphonic_subtracks(const struct WTracks *wtrack){
   if (wtrack->centtext_on)
     ret+=2;
       
+  if (wtrack->chancetext_on)
+    ret+=2;
+      
   if (wtrack->veltext_on)
     ret+=3;
 
@@ -139,6 +142,9 @@ static int WTRACKS_get_non_polyphonic_subtracks_width(const struct Tracker_Windo
   if (wtrack->centtext_on)
     ret += (2 * window->fontwidth) + 2;
   
+  if (wtrack->chancetext_on)
+    ret += (2 * window->fontwidth) + 2;
+  
   if (wtrack->veltext_on)
     ret += (3 * window->fontwidth) + 2;
 
@@ -187,38 +193,51 @@ void UpdateWTrackCoordinates(
 
         int x = wtrack_x;
 
+        // pianoroll
         if (wtrack->pianoroll_on) {
           wtrack->pianoroll_width = WTRACK_get_pianoroll_width(window, wtrack);
           wtrack->pianoroll_area.x = x;
           x = x + wtrack->pianoroll_width;
           wtrack->pianoroll_area.x2 = x;
         }
-  
+
+        // note area
 	wtrack->notearea.x  = x;
 	wtrack->notearea.x2 = wtrack->notearea.x  + wtrack->notesonoff*(wtrack->notewidth+(window->fontwidth*(0+wtrack->notelength)));
         if(wtrack->is_wide)
           wtrack->notearea.x2 += 100;
 
         x = wtrack->notearea.x2 + 2;
-        
+
+        // centtext
         wtrack->centtextarea.x = x;
         wtrack->centtextarea.x2 = wtrack->centtextarea.x + (window->fontwidth * 2);
 
         if (wtrack->centtext_on==true)
           x = wtrack->centtextarea.x2 + 2;
-            
+
+        // chancetext
+        wtrack->chancetextarea.x = x;
+        wtrack->chancetextarea.x2 = wtrack->chancetextarea.x + (window->fontwidth * 2);
+
+        if (wtrack->chancetext_on==true)
+          x = wtrack->chancetextarea.x2 + 2;
+
+        // veltext
         wtrack->veltextarea.x  = x;
 	wtrack->veltextarea.x2 = wtrack->veltextarea.x + (window->fontwidth * 3);
 
         if (wtrack->veltext_on==true)
           x = wtrack->veltextarea.x2 + 2;
-        
+
+        // fxtext
         wtrack->fxtextarea.x = x;
         wtrack->fxtextarea.x2 = wtrack->fxtextarea.x + get_fxtextarea_width(window, wtrack);
 
         if (wtrack->fxtext_on)
           x = wtrack->fxtextarea.x2 + 2;
-        
+
+        // fx area
         wtrack->fxarea.x  = x;
 	wtrack->fxarea.x2 = wtrack->fxarea.x    + wtrack->fxonoff*wtrack->fxwidth;
 

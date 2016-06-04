@@ -66,6 +66,15 @@ int GetXSubTrack1(
     sn += 2;
   }
   
+  if (wtrack->chancetext_on){
+    if (subtrack == sn)
+      return wtrack->chancetextarea.x;
+    if (subtrack == sn+1)
+      return wtrack->chancetextarea.x + fontwidth;
+
+    sn += 2;
+  }
+  
   if (wtrack->veltext_on){
     if (subtrack == sn)
       return wtrack->veltextarea.x;
@@ -137,6 +146,15 @@ int GetXSubTrack2(
         return wtrack->centtextarea.x + fontwidth;
       if (subtrack == sn+1)
         return wtrack->centtextarea.x + (fontwidth*2);
+      
+      sn += 2;
+    }
+    
+    if (wtrack->chancetext_on){
+      if (subtrack == sn)
+        return wtrack->chancetextarea.x + fontwidth;
+      if (subtrack == sn+1)
+        return wtrack->chancetextarea.x + (fontwidth*2);
       
       sn += 2;
     }

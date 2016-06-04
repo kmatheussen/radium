@@ -73,7 +73,7 @@ static void PE_ChangeVelocityFromStartToEnd(struct PEventQueue *peq,int doit);
 void InitPEQvelocities(
 	const struct Blocks *block,
 	const struct Tracks *track,
-	const struct Notes *note,
+	struct Notes *note,
 	int playlistaddpos
 ){
 	int x;

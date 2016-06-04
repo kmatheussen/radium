@@ -480,6 +480,9 @@ struct Pitches{
   
 	float note;
 	int logtype;
+
+        int chance;
+        bool doit; // Only used in the player thread. Set to false if chance failed. Set to true othervice.
 };
 #define NextPitch(a) ((struct Pitches *)((a)->l.next))
 
@@ -512,7 +515,10 @@ struct Notes{
 	int velocity_first_logtype;
   
 	Place end;
-	
+
+        int chance;
+        bool doit; // Only used in the player thread. Set to false if chance failed. Set to true othervice.
+  
 	struct Velocities *velocities;
 	int velocity_end;
   
@@ -1051,6 +1057,9 @@ struct WTracks{
 
         bool centtext_on;
         Area centtextarea;
+  
+        bool chancetext_on;
+        Area chancetextarea;
   
         bool veltext_on;
         Area veltextarea;

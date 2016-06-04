@@ -52,6 +52,8 @@ struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock,
   pitch->note = notenum;
   //pitch->note_note = note;
 
+  pitch->chance = 0x100;
+    
   int pos;
   pos=ListAddElement3_ns(&note->pitches, &pitch->l);
   if (pos >= 0){

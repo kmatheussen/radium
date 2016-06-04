@@ -104,6 +104,9 @@ int VELTEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrack){
   if (wtrack->centtext_on)
     curr_track_sub -= 2;
   
+  if (wtrack->chancetext_on)
+    curr_track_sub -= 2;
+  
   if (curr_track_sub < 0)
     return -1;
 

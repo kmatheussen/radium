@@ -77,6 +77,7 @@ DC_start("PITCHES");
 		SavePlace(&pitch->l.p);
 		DC_SaveF(pitch->note);
                 SaveLogType(pitch->logtype);
+                DC_SaveI(pitch->chance);
 		pitch=NextPitch(pitch);
 	}
 
@@ -101,6 +102,11 @@ void LoadPitches(struct Pitches **to){
                 if (disk_load_version >= 0.775)
                   pitch->logtype = LoadLogType();
 
+                if (disk_load_version > 0.835)
+                  pitch->chance = DC_LoadI();
+                else
+                  pitch->chance = 0x100;
+                
 		ListAddElement3(to,&pitch->l);
 	}
 

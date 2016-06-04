@@ -71,6 +71,9 @@ int FXTEXT_subsubtrack(const struct Tracker_Windows *window, struct WTracks *wtr
   if (wtrack->centtext_on == true)
     subsubtrack -= 2;
   
+  if (wtrack->chancetext_on == true)
+    subsubtrack -= 2;
+  
   if (wtrack->veltext_on == true)
     subsubtrack -= 3;
 

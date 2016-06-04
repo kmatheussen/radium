@@ -742,6 +742,8 @@ void switchBlockNoteShowType(int blocknum,int windownum){
   setBlockNoteShowType(type, blocknum, windownum);
 }
 
+// centtext
+
 bool centtextCanBeTurnedOff(int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
@@ -844,6 +846,72 @@ void showHideCenttextInBlock(int blocknum,int windownum){
   UpdateAllWBlockCoordinates(window);
   window->must_redraw = true;
 }
+
+// chancetext
+
+void showChancetext(bool showit, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+                           windownum,
+                           &window,
+                           blocknum,
+                           &wblock,
+                           tracknum
+                           );
+
+  if(wtrack==NULL) return;
+
+  wtrack->chancetext_on = showit;
+
+  UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
+}
+
+bool chancetextVisible(int tracknum,int blocknum,int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
+
+  if (wtrack==NULL)
+    return false;
+
+  return wtrack->chancetext_on;
+}
+
+void showHideChancetext(int tracknum,int blocknum,int windownum){
+  showChancetext(!chancetextVisible(tracknum, blocknum, windownum),
+              tracknum, blocknum, windownum);
+}
+
+void showHideChancetextInBlock(int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	-1
+	);
+
+  if(wtrack==NULL) return;
+
+  bool on = !wtrack->chancetext_on;
+
+  wtrack = wblock->wtracks;
+  while(wtrack!=NULL){
+    wtrack->chancetext_on = on;
+    wtrack = NextWTrack(wtrack);
+  }
+  
+  UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
+}
+
+// veltext
 
 void showVeltext(bool showit, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;

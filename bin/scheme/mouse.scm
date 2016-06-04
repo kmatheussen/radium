@@ -960,6 +960,8 @@
                     :enabled (<ra> :centtext-can-be-turned-off *current-track-num*)
                     (lambda (onoff)
                       (<ra> :show-centtext  onoff *current-track-num*)))
+              "Chance text" :check (<ra> :chancetext-visible *current-track-num*) (lambda (onoff)
+                                                                                    (<ra> :show-chancetext onoff *current-track-num*))
               "Velocity text (left alt + y)" :check (<ra> :veltext-visible *current-track-num*) (lambda (onoff)
                                                                                                   (<ra> :show-veltext onoff *current-track-num*))
               "FX text"                      :check (<ra> :fxtext-visible *current-track-num*)   (lambda (onoff)
@@ -982,6 +984,8 @@
               "Set Instrument     (F12)" (lambda ()
                                            (select-track-instrument *current-track-num*))
               "-------"
+              "Help Chance text" (lambda ()
+                                   (<ra> :show-chance-help-window))
               "Help Velocity text" (lambda ()
                                      (<ra> :show-velocity-help-window))
               "Help FX text" (lambda ()

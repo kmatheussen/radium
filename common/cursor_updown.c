@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "trackreallines2_proc.h"
 #include "centtext_proc.h"
+#include "chancetext_proc.h"
 #include "veltext_proc.h"
 #include "fxtext_proc.h"
 #include "realline_calc_proc.h"
@@ -315,7 +316,7 @@ void ScrollEditorPrevFx(struct Tracker_Windows *window, struct WBlocks *wblock, 
 }
 
 void ScrollEditorNextSomething(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
-  if (window->curr_track < 0 || window->curr_track_sub==-1 || CENTTEXT_subsubtrack(window, wtrack)!=-1){
+  if (window->curr_track < 0 || window->curr_track_sub==-1 || CENTTEXT_subsubtrack(window, wtrack)!=-1 || CHANCETEXT_subsubtrack(window, wtrack)!=-1){
     ScrollEditorNextNote(window, wblock, wtrack);
     return;
   }
@@ -341,7 +342,7 @@ void ScrollEditorNextSomething(struct Tracker_Windows *window, struct WBlocks *w
 }
 
 void ScrollEditorPrevSomething(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
-  if (window->curr_track < 0 || window->curr_track_sub==-1 || CENTTEXT_subsubtrack(window, wtrack)!=-1){
+  if (window->curr_track < 0 || window->curr_track_sub==-1 || CENTTEXT_subsubtrack(window, wtrack)!=-1 || CHANCETEXT_subsubtrack(window, wtrack)!=-1){
     ScrollEditorPrevNote(window, wblock, wtrack);
     return;
   }

@@ -964,9 +964,17 @@ void create_track_borders(const struct Tracker_Windows *window, const struct WBl
   const struct FXs *fxs=wtrack->track->fxs;
 
   if (wtrack->centtext_on){
-    if (wtrack->veltext_on || (wtrack->fxtext_on && fxs != NULL))
+    if (wtrack->veltext_on || wtrack->chancetext_on || (wtrack->fxtext_on && fxs != NULL))
       create_single_border(
                            wtrack->centtextarea.x2+1,
+                           y1,
+                           y2);
+  }
+  
+  if (wtrack->chancetext_on){
+    if (wtrack->veltext_on || (wtrack->fxtext_on && fxs != NULL))
+      create_single_border(
+                           wtrack->chancetextarea.x2+1,
                            y1,
                            y2);
   }
@@ -1062,6 +1070,32 @@ static float get_notenum(vector_t *trs){
   return get_notenum(tr2);
 }
 
+static int get_chance(TrackRealline2 *tr2){
+  if (tr2->is_end_pitch)
+    return -1;
+  
+  else if (tr2->pitch != NULL)
+    return tr2->pitch->chance;
+
+  else if (tr2->note != NULL)
+    return tr2->note->chance;
+
+  else
+    return -1;
+}
+
+static float get_chance(vector_t *trs){
+  if (trs->num_elements==0)
+    return -1;
+
+  if (trs->num_elements>1)
+    return -2;
+
+  TrackRealline2 *tr2 = (TrackRealline2*)trs->elements[0];
+
+  return get_chance(tr2);
+}
+
 static ColorNums get_colnum(TrackRealline2 *tr2){
   if (tr2!=NULL && tr2->pitch != NULL)
     return PORTAMENTO_NOTE_TEXT_COLOR_NUM;
@@ -1119,7 +1153,7 @@ static void paint_multinotes(const struct WTracks *wtrack, vector_t *tr, char **
 static void create_track_text(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, vector_t *tr, int realline, bool show_notes){
   char **NotesTexts = wtrack->notelength==3?NotesTexts3:NotesTexts2;
   float  notenum    = get_notenum(tr); //trackrealline->note;
-
+  
   int y1 = get_realline_y1(window, realline);
   int y2 = get_realline_y2(window, realline);
 
@@ -1197,9 +1231,27 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
     }
 
     if (wtrack->centtext_on==false && cents_d != 0.0 && WTRACK_num_non_polyphonic_subtracks(wtrack)>0 && wtrack->notesonoff==1){
-      printf("     %d: cents_d: %f\n",wtrack->l.num, cents_d);
+      //printf("     %d: cents_d: %f\n",wtrack->l.num, cents_d);
       wtrack->centtext_on = true;
       GFX_ScheduleCalculateCoordinates();
+    }
+
+    if (wtrack->chancetext_on) {
+
+      int chance  = get_chance(tr);
+      
+      
+      if (chance!=-1 && chance != 0x100){
+        GE_Context *foreground = GE_textcolor_z(AUTOMATION2_COLOR_NUM,Z_ABOVE(Z_ZERO));
+
+        char chancetext[16];
+        if (chance==-2)
+          sprintf(chancetext, "xx");
+        else
+          sprintf(chancetext,"%s%x",chance<0x10?" ":"",chance); // Never remembers the short syntax for this.
+        
+        GE_text(foreground, chancetext, wtrack->chancetextarea.x, y1);
+      }
     }
 
   }
