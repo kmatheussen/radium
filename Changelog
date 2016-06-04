@@ -1,3 +1,25 @@
+Changes 3.9.0 -> 3.9.1:
+* Added "chance text", similar to velocity text, fx text, etc.
+  Specify the chance of whether to play a note or a pitch.
+* Don't crash if trying to set centtext value on an end note
+* Fix the various show gui automations.
+* Fix old songs that was saved with "Gain (dB)" as volume effect name
+  instead of "System Volume".
+* Add another voice to the note duplicator
+* Added three extra buses
+* Add highpass filter to equalizer
+* Add "chance" column to note duplicator. This can also be automated.
+* Add 16x16 and 24x24 patchbays
+* Change editor redraw mode on Windows and OSX to be similar to Linux.
+  Might make a difference.
+* Don't show warning window if trying to switch solo mode
+  on non-existing track
+* Fix keybindings in the menu for switching track on/off and track solo.
+* Prefix LADSPA and VST effect names with effect number to ensure
+  effect names are always unique.
+* Some midi recording fixes. Might fix rare crashes.
+
+
 Changes 3.8.9 -> 3.9.0:
 * Make sure cursor is placed correctly when switching blocks
 * Dont show warning window when a vst plugin sends a MIDI sysex message
