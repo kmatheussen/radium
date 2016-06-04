@@ -66,7 +66,7 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
         struct Pitches *pitch = tr2->pitch;
         if (pitch!=NULL)
           safe_float_write(&pitch->note, floorf(pitch->note));
-        else
+        else if (note!=NULL)
           safe_float_write(&note->note, floorf(note->note));
       }END_VECTOR_FOR_EACH;
       
@@ -94,8 +94,10 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
 
       if (pitch!=NULL)
         safe_float_write(&pitch->note, floorf(pitch->note));
-      else
+      else if (dasnote!=NULL)
         safe_float_write(&dasnote->note, floorf(dasnote->note));
+      else
+        return false;
       
     } else {
 
@@ -103,9 +105,11 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
       
       if (pitch!=NULL)
         note = pitch->note;
-      else
+      else if (dasnote!=NULL)
         note = dasnote->note;
-
+      else
+        return false;
+      
       int cents = round((note - floor(note)) * 100);
         
       data_as_text_t dat = DAT_get_overwrite(cents, 0, subsubtrack, key, 0, 99, false);
