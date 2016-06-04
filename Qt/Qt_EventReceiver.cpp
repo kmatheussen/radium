@@ -79,6 +79,7 @@ extern PlayerClass *pc;
 
 DEFINE_ATOMIC(bool, atomic_must_redraw) = false;
 DEFINE_ATOMIC(bool, atomic_must_redraw_editor) = false;
+DEFINE_ATOMIC(struct Patch*, atomic_must_redraw_instrument) = NULL;
 DEFINE_ATOMIC(bool, atomic_must_calculate_coordinates) = false;
 
 static void transfer_atomic_must_redraws(struct Tracker_Windows *window)
@@ -157,6 +158,15 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 void EditorWidget::updateEditor(){
   if(ATOMIC_GET(is_starting_up)==true)
     return;
+
+  {
+    struct Patch *patch = ATOMIC_GET(atomic_must_redraw_instrument);
+    if (patch!=NULL){
+      ATOMIC_SET(atomic_must_redraw_instrument, NULL);
+      GFX_update_instrument_patch_gui(patch);
+    }
+  }
+  
 
   transfer_atomic_must_redraws(window);
 

@@ -98,6 +98,7 @@ extern LANGSPEC void GFX_ScheduleEditorRedraw(void);
 
 extern DEFINE_ATOMIC(bool, atomic_must_redraw);
 extern DEFINE_ATOMIC(bool, atomic_must_redraw_editor);
+extern DEFINE_ATOMIC(struct Patch*, atomic_must_redraw_instrument);
 extern DEFINE_ATOMIC(bool, atomic_must_calculate_coordinates);
 
 static inline void GFX_ScheduleRedraw(void){
@@ -106,6 +107,13 @@ static inline void GFX_ScheduleRedraw(void){
 
 static inline void GFX_ScheduleEditorRedraw(void){
   ATOMIC_SET(atomic_must_redraw_editor, true);
+}
+
+extern struct Patch *g_currpatch;
+
+static inline void GFX_ScheduleInstrumentRedraw(struct Patch *patch){
+  if (patch==g_currpatch)
+    ATOMIC_SET(atomic_must_redraw_instrument, patch);
 }
 
 static inline void GFX_ScheduleCalculateCoordinates(void){

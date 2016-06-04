@@ -241,7 +241,15 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
   "System Width On/Off",
 
   "System Sample Browser On/Off",
-  "System Controls On/Off"
+  "System Controls On/Off",
+
+  "System Chance Voice 1",
+  "System Chance Voice 2",
+  "System Chance Voice 3",
+  "System Chance Voice 4",
+  "System Chance Voice 5",
+  "System Chance Voice 6",
+  "System Chance Voice 7"  
 };
 
 static void init_system_filter(SystemFilter *filter, int num_channels, const char *name){
@@ -756,6 +764,20 @@ static float get_freq_store_value(float value, enum ValueType value_type){
     return slider_2_frequency(value,MIN_FREQ,MAX_FREQ);
 }
 
+static void set_chance(struct SoundPlugin *plugin, int num, float value){
+  if (plugin->patch != NULL) {
+    plugin->patch->voices[num].chance = value==1 ? 256 : round(scale_double(value, 0, 1, 0, 255)); // 0xff corresponds to 256, while 0xfe corresponds to 254. 255 can not be set.
+    GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
+  }
+}
+                      
+static float get_chance(struct SoundPlugin *plugin, int num){
+  if (plugin->patch != NULL)
+    return plugin->patch->voices[num].chance==256 ? 1.0 : round(scale_double(plugin->patch->voices[num].chance, 0, 255, 0, 1));
+  else
+    return 1;
+}
+                      
 #define SET_SMOOTH_ON_OFF(smooth, on_off, value, set_value) {   \
     if(value>0.5f){                                             \
       SMOOTH_set_target_value(smooth, set_value);               \
@@ -1023,7 +1045,29 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
     case EFFNUM_CONTROLS_SHOW_GUI:
       plugin->show_controls_gui = store_value > 0.5f;
       break;
-
+      
+    case EFFNUM_CHANCE1:
+      set_chance(plugin, 0, store_value);
+      break;
+    case EFFNUM_CHANCE2:
+      set_chance(plugin, 1, store_value);
+      break;
+    case EFFNUM_CHANCE3:
+      set_chance(plugin, 2, store_value);
+      break;
+    case EFFNUM_CHANCE4:
+      set_chance(plugin, 3, store_value);
+      break;
+    case EFFNUM_CHANCE5:
+      set_chance(plugin, 4, store_value);
+      break;
+    case EFFNUM_CHANCE6:
+      set_chance(plugin, 5, store_value);
+      break;
+    case EFFNUM_CHANCE7:
+      set_chance(plugin, 6, store_value);
+      break;
+      
       // fix. Must call GUI function, and then the GUI function calls COMPRESSOR_set_parameter.
     case EFFNUM_COMP_RATIO:
       //printf("Setting ratio to %f\n",store_value);
@@ -1222,6 +1266,21 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
   case EFFNUM_CONTROLS_SHOW_GUI:
     return plugin->show_controls_gui==true ? 1.0 : 0.0f;
 
+  case EFFNUM_CHANCE1:
+    return get_chance(plugin, 0);
+  case EFFNUM_CHANCE2:
+    return get_chance(plugin, 1);
+  case EFFNUM_CHANCE3:
+    return get_chance(plugin, 2);
+  case EFFNUM_CHANCE4:
+    return get_chance(plugin, 3);
+  case EFFNUM_CHANCE5:
+    return get_chance(plugin, 4);
+  case EFFNUM_CHANCE6:
+    return get_chance(plugin, 5);
+  case EFFNUM_CHANCE7:
+    return get_chance(plugin, 6);
+    
   case EFFNUM_COMP_RATIO:
     return COMPRESSOR_get_parameter(plugin->compressor, COMP_EFF_RATIO);
   case EFFNUM_COMP_THRESHOLD:
