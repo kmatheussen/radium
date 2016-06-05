@@ -884,7 +884,7 @@ void InstrumentWidget_delete(struct Patch *patch){
 }
 
 void GFX_update_instrument_patch_gui(struct Patch *patch){
-  printf("Called GFX_update_instrument_patch_gui for patch \"%s\"\n",patch==NULL?"<>":patch->name);
+  //printf("Called GFX_update_instrument_patch_gui for patch \"%s\"\n",patch==NULL?"<>":patch->name);
   if(patch!=NULL && patch->patchdata!=NULL && patch->instrument->PP_Update!=NULL)
     patch->instrument->PP_Update(patch->instrument,
                                  patch);

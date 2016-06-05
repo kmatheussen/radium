@@ -41,7 +41,9 @@ static void add_fxtext(const struct WBlocks *wblock, vector_t *fxtexts, const st
   fxtext->fx = fx;
   fxtext->fxnodeline = fxnodeline;
   
-  fxtext->value = round(scale_double(fxnodeline->val, fx->min, fx->max, 0, 0xff));
+  fxtext->value = round(scale_double(fxnodeline->val, fx->min, fx->max, 0, 0x100));
+  if (fxtext->value==0x100)
+    fxtext->value=0xff;
   fxtext->logtype = fxnodeline->logtype;
   
   VECTOR_insert_place(v, &fxtext->p);
@@ -143,7 +145,9 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
       
     } else {
 
-      data_as_text_t dat = DAT_get_newvalue(subsubtrack, key, round(scale_double(0x80, 0, 0xff, fx->min, fx->max)), fx->min, fx->max);
+      data_as_text_t dat = DAT_get_newvalue(subsubtrack, key, round(scale_double(0x80, 0, 0x100, fx->min, fx->max)), fx->min, fx->max, true);
+      if (dat.value > fx->max)
+        dat.value = fx->max;
       
       if (dat.is_valid==false)
         return false;
@@ -170,7 +174,8 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
       
     } else {
 
-      data_as_text_t dat = DAT_get_overwrite(vt->value, vt->logtype, subsubtrack, key, fx->min, fx->max, true);
+      data_as_text_t dat = DAT_get_overwrite(vt->value, vt->logtype, subsubtrack, key, fx->min, fx->max, true, true);
+      printf("fx->min: %x, fx->max: %x, vt->value: %x, dat.value: %x\n",fx->min,fx->max,vt->value,dat.value);
 
       if (dat.is_valid==false)
         return false;

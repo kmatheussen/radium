@@ -112,7 +112,7 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
       
       int cents = round((note - floor(note)) * 100);
         
-      data_as_text_t dat = DAT_get_overwrite(cents, 0, subsubtrack, key, 0, 99, false);
+      data_as_text_t dat = DAT_get_overwrite(cents, 0, subsubtrack, key, 0, 99, false, false);
 
       if (dat.is_valid==false)
         return false;

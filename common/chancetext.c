@@ -113,7 +113,7 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
       else
         return false;
       
-      data_as_text_t dat = DAT_get_overwrite(chance, 0, subsubtrack, key, 0, 0xff, true);
+      data_as_text_t dat = DAT_get_overwrite(chance, 0, subsubtrack, key, 0, 0xff, true, false);
 
       if (dat.is_valid==false)
         return false;

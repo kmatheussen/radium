@@ -36,7 +36,10 @@ static void add_veltext(const struct WBlocks *wblock, vector_t *veltexts, VelTex
   int realline = FindRealLineFor(wblock, 0, &veltext->p);      
   vector_t *v = &veltexts[realline];
   
-  veltext->value = round(scale_double(velocity, 0, MAX_VELOCITY, 0, 0xff));
+  veltext->value = round(scale_double(velocity, 0, MAX_VELOCITY, 0, 0x100));
+  if (veltext->value >= 0x100)
+    veltext->value = 0xff;
+  
   veltext->note = note;
   
   VECTOR_insert_place(v, &veltext->p);
@@ -165,7 +168,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
       
     } else {
 
-      data_as_text_t dat = DAT_get_newvalue(subsubtrack, key, NOTE_get_velocity(wtrack->track), 0, MAX_VELOCITY);
+      data_as_text_t dat = DAT_get_newvalue(subsubtrack, key, NOTE_get_velocity(wtrack->track), 0, MAX_VELOCITY, true);
 
       if (dat.is_valid==false)
         return false;
@@ -194,7 +197,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
       
     } else {
 
-      data_as_text_t dat = DAT_get_overwrite(vt->value, vt->logtype, subsubtrack, key, 0, MAX_VELOCITY, true);
+      data_as_text_t dat = DAT_get_overwrite(vt->value, vt->logtype, subsubtrack, key, 0, MAX_VELOCITY, true, true);
 
       if (dat.is_valid==false)
         return false;

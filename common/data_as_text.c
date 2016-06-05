@@ -60,7 +60,7 @@ static int get_val_from_key(int key){
   return val;
 }
 
-data_as_text_t DAT_get_newvalue(int subsubtrack, int key, int default_value, int min_value, int max_value){
+data_as_text_t DAT_get_newvalue(int subsubtrack, int key, int default_value, int min_value, int max_value, bool highest_value_is_one_more){
   data_as_text_t dat;
   dat.is_valid = false;
   
@@ -70,6 +70,10 @@ data_as_text_t DAT_get_newvalue(int subsubtrack, int key, int default_value, int
   if (val==-1)
     return dat;
 
+  int highest_value = 0xff;
+  if (highest_value_is_one_more)
+    highest_value++;
+  
   int value = 0;
   
   if (key==EVENT_G){
@@ -80,10 +84,10 @@ data_as_text_t DAT_get_newvalue(int subsubtrack, int key, int default_value, int
     logtype = LOGTYPE_HOLD;
   
   }else if (subsubtrack == 0) {
-    value = round(scale_double(val * 0x10, 0, 0xff, min_value, max_value));
+    value = round(scale_double(val * 0x10, 0, highest_value, min_value, max_value));
     
   } else if (subsubtrack == 1) {
-    value = round(scale_double(val, 0, 0xff, min_value, max_value));
+    value = round(scale_double(val, 0, highest_value, min_value, max_value));
     
   } else if (subsubtrack == 2) {
     value = default_value;
@@ -93,6 +97,9 @@ data_as_text_t DAT_get_newvalue(int subsubtrack, int key, int default_value, int
     RError("Unknown subsubtrack: %d",subsubtrack);
     return dat;
   }
+
+  if (value > max_value)
+    value = max_value;
   
   dat.value = value;
   dat.logtype = logtype;
@@ -101,7 +108,7 @@ data_as_text_t DAT_get_newvalue(int subsubtrack, int key, int default_value, int
   return dat;
 }
 
-data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, int key, int min_value, int max_value, bool is_hex){
+data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, int key, int min_value, int max_value, bool is_hex, bool highest_value_is_one_more){
 
   data_as_text_t dat;
   dat.is_valid = false;
@@ -140,10 +147,17 @@ data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, in
       logtype=LOGTYPE_HOLD;
   } else
     RError("Unknown subsubtrack: %d",subsubtrack);
-      
-  int v = v1 * base + v2;
-  int scaled = round(scale_double(v, 0, base*base - 1, min_value, max_value));
 
+  int highest_value = base*base - 1;
+  if (highest_value_is_one_more)
+    highest_value++;
+    
+  int v = v1 * base + v2;
+
+  int scaled = round(scale_double(v, 0, highest_value, min_value, max_value));
+  if (scaled > max_value)
+    scaled = max_value;
+  
   if (v1==0 && v2==0)
     scaled = min_value;
   if (v1==base-1 && v2==base-1)
