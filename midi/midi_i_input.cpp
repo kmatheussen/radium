@@ -365,6 +365,37 @@ void MIDI_SetThroughPatch(struct Patch *patch){
 
 
 
+/*********************************************************
+ *********************************************************
+ **                  MIDI Learn                         **
+ *********************************************************
+ *********************************************************/
+
+#if 0
+struct MidiLearn{
+  void *data;
+  int to_use; // <- Set here. May be set to a cc value or a pitch bend.
+  void callback(void *data);
+};
+
+static radium::Vector<MidiLearn> g_midi_learns;
+
+void MIDI_add_midi_learn(MidiLearn midi_learn){
+  g_midi_learns.add(midi_learn);
+}
+
+void MIDI_remove_midi_learn(MidiLearn midi_learn){
+  for(midi_learn2 : g_midi_learns)
+    if (midi_learn.data==midi_learn2.data && midi_learn.callback==midi_learn2.callback) {
+      g_midi_learns.remove(midi_learn2);
+      return;
+    }
+
+  RError("MIDI_remove_midi_learn: midi_learn not found");
+}
+#endif
+
+
 
 /*********************************************************
  *********************************************************
@@ -372,7 +403,7 @@ void MIDI_SetThroughPatch(struct Patch *patch){
  *********************************************************
  *********************************************************/
 
-
+// Can be called from any thread
 void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   //printf("got new message. on/off:%d. Message: %x,%x,%x\n",(int)root->editonoff,cc,data1,data2);
   //static int num=0;
