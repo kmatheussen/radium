@@ -228,7 +228,7 @@ static void apply_patch_state(struct Patch *patch, hash_t *state){
   R_ASSERT(state!=NULL && HASH_has_key(state, "___radium_patch_state_v3"));
   patch->forward_events = HASH_get_int(state, "forward_events")==1 ? true : false;
   int i;
-  for (i=0;i<NUM_PATCH_VOICES; i++)
+  for (i=0;i<HASH_get_array_size(state); i++)
     apply_patchvoice_state(&patch->voices[i], HASH_get_hash_at(state, "patchvoice", i));
 }
 
