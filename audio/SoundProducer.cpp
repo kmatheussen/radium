@@ -1240,10 +1240,14 @@ int SP_get_bus_num(SoundProducer *sp){
 }
 
 enum BusDescendantType SP_get_bus_descendant_type(SoundProducer *sp){
+  if(sp==NULL){
+    RError("SP_get_bus_descendant_type: sp==NULL\n");
+    return IS_BUS_PROVIDER;
+  }
   return sp->_bus_descendant_type;
 }
 
-SoundProducer *SP_get_SoundProducer(SoundPlugin *plugin){
+static SoundProducer *get_SoundProducer_r0(SoundPlugin *plugin){
   radium::Vector<SoundProducer*> *all_sp = MIXER_get_all_SoundProducers();
 
   for (SoundProducer *sp : *all_sp)
@@ -1251,6 +1255,16 @@ SoundProducer *SP_get_SoundProducer(SoundPlugin *plugin){
       return sp;
   
   return NULL;
+}
+
+SoundProducer *SP_get_SoundProducer(SoundPlugin *plugin){
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, NULL);
+  
+  SoundProducer *sp = get_SoundProducer_r0(plugin);
+  if(sp==NULL)
+    RError("SP_get_SoundProducer. sp==NULL. plugin->type: %s / %s, plugin->patch: %s\n",plugin->type->type_name,plugin->type->name,plugin->patch==NULL?"(null)":plugin->patch->name);
+
+  return sp;
 }
 
 bool SP_replace_plugin(SoundPlugin *old_plugin, SoundPlugin *new_plugin){
@@ -1270,7 +1284,7 @@ bool SP_replace_plugin(SoundPlugin *old_plugin, SoundPlugin *new_plugin){
 }
 
 bool SP_is_plugin_running(SoundPlugin *plugin){
-  return SP_get_SoundProducer(plugin)!=NULL;
+  return get_SoundProducer_r0(plugin)!=NULL;
 }
 
 void SP_set_buffer_size(SoundProducer *producer,int buffer_size){
