@@ -18,120 +18,7 @@ template <> 	 inline int faustpower<0>(int x)            { return 1; }
 template <> 	 inline int faustpower<1>(int x)            { return x; }
 template <> 	 inline int faustpower<2>(int x)            { return x*x; }
 #endif
-#include <math.h>
-#include <string>
-
-#include <vector>
-
-/*
-#include "/usr/share/faust/audio/dsp.h"
-#include "/usr/share/faust/gui/UI.h"
-*/
-
-#include "faudiostream/architecture/faust/audio/dsp.h"
-#include "faudiostream/architecture/faust/gui/UI.h"
-
-#include "../common/nsmtracker.h"
-
-struct Meta
-{
-    void declare (const char* key, const char* value) { }
-};
-
-static void RT_fade_out(float *sound, int num_frames){
-  float num_frames_plus_1 = num_frames+1.0f;
-  for(int i=0;i<num_frames;i++)
-    sound[i] *= (num_frames-i)/num_frames_plus_1;
-}
-
-
-#if 0
-static float linear2db(float val){
-  if(val<=0.0f)
-    return 0.0f;
-
-  float db = 20*log10(val);
-  if(db<-70)
-    return 0.0f;
-  else if(db>40)
-    return 1.0f;
-  else
-    return scale(db,-70,40,0,1);
-}
-#endif
-
-// input is between 0 and 1.
-// output is between 0 and 1.
-static float velocity2gain(float val){
-  if(val<=0.0f)
-    return 0.0f;
-  else if(val>=1.0f)
-    return 1.0f;
-  else
-    return powf(10, scale(val,0.0, 1.0 ,-40, 20) / 20.0f) / 10.0f;
-}
-
-
-static double midi_to_hz(float midi){
-  if(midi<=0)
-    return 0;
-  else
-    //  return 1;
-  return 8.17579891564*(expf(.0577622650*midi));
-}
-
-#if 0
-// For some reason, it won't compile with the usual min/max macros.
-template<typename T> static inline T min(T a,T b){return a<b ? a : b;}
-template<typename T> static inline T max(T a,T b){return a>b ? a : b;}
-static inline float min(float a,int b){return a<b ? a : b;}
-static inline float max(float a,int b){return a>b ? a : b;}
-static inline float min(int a,float b){return a<b ? a : b;}
-static inline float max(int a,float b){return a>b ? a : b;}
-#endif
-
-inline int 	max (unsigned int a, unsigned int b) { return (a>b) ? a : b; }
-inline int 	max (int a, int b)		{ return (a>b) ? a : b; }
-
-inline long 	max (long a, long b) 		{ return (a>b) ? a : b; }
-inline long 	max (int a, long b) 		{ return (a>b) ? a : b; }
-inline long 	max (long a, int b) 		{ return (a>b) ? a : b; }
-
-inline float 	max (float a, float b) 		{ return (a>b) ? a : b; }
-inline float 	max (int a, float b) 		{ return (a>b) ? a : b; }
-inline float 	max (float a, int b) 		{ return (a>b) ? a : b; }
-inline float 	max (long a, float b) 		{ return (a>b) ? a : b; }
-inline float 	max (float a, long b) 		{ return (a>b) ? a : b; }
-
-inline double 	max (double a, double b) 	{ return (a>b) ? a : b; }
-inline double 	max (int a, double b) 		{ return (a>b) ? a : b; }
-inline double 	max (double a, int b) 		{ return (a>b) ? a : b; }
-inline double 	max (long a, double b) 		{ return (a>b) ? a : b; }
-inline double 	max (double a, long b) 		{ return (a>b) ? a : b; }
-inline double 	max (float a, double b) 	{ return (a>b) ? a : b; }
-inline double 	max (double a, float b) 	{ return (a>b) ? a : b; }
-
-
-inline int	min (int a, int b)		{ return (a<b) ? a : b; }
-
-inline long 	min (long a, long b) 		{ return (a<b) ? a : b; }
-inline long 	min (int a, long b) 		{ return (a<b) ? a : b; }
-inline long 	min (long a, int b) 		{ return (a<b) ? a : b; }
-
-inline float 	min (float a, float b) 		{ return (a<b) ? a : b; }
-inline float 	min (int a, float b) 		{ return (a<b) ? a : b; }
-inline float 	min (float a, int b) 		{ return (a<b) ? a : b; }
-inline float 	min (long a, float b) 		{ return (a<b) ? a : b; }
-inline float 	min (float a, long b) 		{ return (a<b) ? a : b; }
-
-inline double 	min (double a, double b) 	{ return (a<b) ? a : b; }
-inline double 	min (int a, double b) 		{ return (a<b) ? a : b; }
-inline double 	min (double a, int b) 		{ return (a<b) ? a : b; }
-inline double 	min (long a, double b) 		{ return (a<b) ? a : b; }
-inline double 	min (double a, long b) 		{ return (a<b) ? a : b; }
-inline double 	min (float a, double b) 	{ return (a<b) ? a : b; }
-inline double 	min (double a, float b) 	{ return (a<b) ? a : b; }
-
+#include "Faust_plugins_template1.cpp"
 
 /******************************************************************************
 *******************************************************************************
@@ -361,87 +248,87 @@ class Blow_Bottle_dsp : public dsp {
 		classInit(samplingFreq);
 		instanceInit(samplingFreq);
 	}
-	virtual void buildUserInterface(UI* interface) {
-		interface->openVerticalBox("0x00");
-		interface->openHorizontalBox("Basic_Parameters");
-		interface->declare(&fentry2, "1", "");
-		interface->declare(&fentry2, "tooltip", "Tone frequency");
-		interface->declare(&fentry2, "unit", "Hz");
-		interface->addNumEntry("freq", &fentry2, 4.4e+02f, 2e+01f, 2e+04f, 1.0f);
-		interface->declare(&fentry0, "1", "");
-		interface->declare(&fentry0, "tooltip", "Gain (value between 0 and 1)");
-		interface->addNumEntry("gain", &fentry0, 1.0f, 0.0f, 1.0f, 0.01f);
-		interface->declare(&fbutton0, "1", "");
-		interface->declare(&fbutton0, "tooltip", "noteOn = 1, noteOff = 0");
-		interface->addButton("gate", &fbutton0);
-		interface->closeBox();
-		interface->openHorizontalBox("Envelopes_and_Vibrato");
-		interface->openVerticalBox("Envelope_Parameters");
-		interface->declare(&fslider2, "5", "");
-		interface->declare(&fslider2, "tooltip", "Envelope attack duration");
-		interface->declare(&fslider2, "unit", "s");
-		interface->addHorizontalSlider("Envelope_Attack", &fslider2, 0.01f, 0.0f, 2.0f, 0.01f);
-		interface->declare(&fslider1, "5", "");
-		interface->declare(&fslider1, "tooltip", "Envelope decay duration");
-		interface->declare(&fslider1, "unit", "s");
-		interface->addHorizontalSlider("Envelope_Decay", &fslider1, 0.01f, 0.0f, 2.0f, 0.01f);
-		interface->declare(&fslider0, "5", "");
-		interface->declare(&fslider0, "tooltip", "Envelope release duration");
-		interface->declare(&fslider0, "unit", "s");
-		interface->addHorizontalSlider("Envelope_Release", &fslider0, 0.5f, 0.0f, 2.0f, 0.01f);
-		interface->closeBox();
-		interface->openVerticalBox("Vibrato_Parameters");
-		interface->declare(&fslider9, "4", "");
-		interface->declare(&fslider9, "tooltip", "Vibrato attack duration");
-		interface->declare(&fslider9, "unit", "s");
-		interface->addHorizontalSlider("Vibrato_Attack", &fslider9, 0.5f, 0.0f, 2.0f, 0.01f);
-		interface->declare(&fslider8, "4", "");
-		interface->declare(&fslider8, "tooltip", "Vibrato silence duration before attack");
-		interface->declare(&fslider8, "unit", "s");
-		interface->addHorizontalSlider("Vibrato_Begin", &fslider8, 0.05f, 0.0f, 2.0f, 0.01f);
-		interface->declare(&fslider6, "4", "");
-		interface->declare(&fslider6, "unit", "Hz");
-		interface->addHorizontalSlider("Vibrato_Freq", &fslider6, 5.0f, 1.0f, 15.0f, 0.1f);
-		interface->declare(&fslider10, "4", "");
-		interface->declare(&fslider10, "tooltip", "A value between 0 and 1");
-		interface->addHorizontalSlider("Vibrato_Gain", &fslider10, 0.1f, 0.0f, 1.0f, 0.01f);
-		interface->declare(&fslider7, "4", "");
-		interface->declare(&fslider7, "tooltip", "Vibrato release duration");
-		interface->declare(&fslider7, "unit", "s");
-		interface->addHorizontalSlider("Vibrato_Release", &fslider7, 0.01f, 0.0f, 2.0f, 0.01f);
-		interface->closeBox();
-		interface->closeBox();
-		interface->openHorizontalBox("Physical_and_Nonlinearity");
-		interface->openVerticalBox("Nonlinear_Filter_Parameters");
-		interface->declare(&fslider5, "3", "");
-		interface->declare(&fslider5, "tooltip", "Frequency of the sine wave for the modulation of theta (works if Modulation Type=3)");
-		interface->declare(&fslider5, "unit", "Hz");
-		interface->addHorizontalSlider("Modulation_Frequency", &fslider5, 2.2e+02f, 2e+01f, 1e+03f, 0.1f);
-		interface->declare(&fentry1, "3", "");
-		interface->declare(&fentry1, "tooltip", "0=theta is modulated by the incoming signal; 1=theta is modulated by the averaged incoming signal; 2=theta is modulated by the squared incoming signal; 3=theta is modulated by a sine wave of frequency freqMod; 4=theta is modulated by a sine wave of frequency freq;");
-		interface->addNumEntry("Modulation_Type", &fentry1, 0.0f, 0.0f, 4.0f, 1.0f);
-		interface->declare(&fslider3, "3", "");
-		interface->declare(&fslider3, "tooltip", "Nonlinearity factor (value between 0 and 1)");
-		interface->addHorizontalSlider("Nonlinearity", &fslider3, 0.0f, 0.0f, 1.0f, 0.01f);
-		interface->declare(&fslider4, "3", "");
-		interface->declare(&fslider4, "Attack duration of the nonlinearity", "");
-		interface->declare(&fslider4, "unit", "s");
-		interface->addHorizontalSlider("Nonlinearity_Attack", &fslider4, 0.1f, 0.0f, 2.0f, 0.01f);
-		interface->closeBox();
-		interface->openVerticalBox("Physical_Parameters");
-		interface->declare(&fslider12, "2", "");
-		interface->declare(&fslider12, "tooltip", "Breath noise gain (value between 0 and 1)");
-		interface->addHorizontalSlider("Noise_Gain", &fslider12, 0.5f, 0.0f, 1.0f, 0.01f);
-		interface->declare(&fslider11, "2", "");
-		interface->declare(&fslider11, "tooltip", "Breath pressure (value bewteen 0 and 1)");
-		interface->addHorizontalSlider("Pressure", &fslider11, 1.0f, 0.0f, 1.0f, 0.01f);
-		interface->closeBox();
-		interface->closeBox();
-		interface->openVerticalBox("Spat");
-		interface->addHorizontalSlider("pan angle", &fslider13, 0.6f, 0.0f, 1.0f, 0.01f);
-		interface->addHorizontalSlider("spatial width", &fslider14, 0.5f, 0.0f, 1.0f, 0.01f);
-		interface->closeBox();
-		interface->closeBox();
+	virtual void buildUserInterface(UI* faust_interface) {
+		faust_interface->openVerticalBox("0x00");
+		faust_interface->openHorizontalBox("Basic_Parameters");
+		faust_interface->declare(&fentry2, "1", "");
+		faust_interface->declare(&fentry2, "tooltip", "Tone frequency");
+		faust_interface->declare(&fentry2, "unit", "Hz");
+		faust_interface->addNumEntry("freq", &fentry2, 4.4e+02f, 2e+01f, 2e+04f, 1.0f);
+		faust_interface->declare(&fentry0, "1", "");
+		faust_interface->declare(&fentry0, "tooltip", "Gain (value between 0 and 1)");
+		faust_interface->addNumEntry("gain", &fentry0, 1.0f, 0.0f, 1.0f, 0.01f);
+		faust_interface->declare(&fbutton0, "1", "");
+		faust_interface->declare(&fbutton0, "tooltip", "noteOn = 1, noteOff = 0");
+		faust_interface->addButton("gate", &fbutton0);
+		faust_interface->closeBox();
+		faust_interface->openHorizontalBox("Envelopes_and_Vibrato");
+		faust_interface->openVerticalBox("Envelope_Parameters");
+		faust_interface->declare(&fslider2, "5", "");
+		faust_interface->declare(&fslider2, "tooltip", "Envelope attack duration");
+		faust_interface->declare(&fslider2, "unit", "s");
+		faust_interface->addHorizontalSlider("Envelope_Attack", &fslider2, 0.01f, 0.0f, 2.0f, 0.01f);
+		faust_interface->declare(&fslider1, "5", "");
+		faust_interface->declare(&fslider1, "tooltip", "Envelope decay duration");
+		faust_interface->declare(&fslider1, "unit", "s");
+		faust_interface->addHorizontalSlider("Envelope_Decay", &fslider1, 0.01f, 0.0f, 2.0f, 0.01f);
+		faust_interface->declare(&fslider0, "5", "");
+		faust_interface->declare(&fslider0, "tooltip", "Envelope release duration");
+		faust_interface->declare(&fslider0, "unit", "s");
+		faust_interface->addHorizontalSlider("Envelope_Release", &fslider0, 0.5f, 0.0f, 2.0f, 0.01f);
+		faust_interface->closeBox();
+		faust_interface->openVerticalBox("Vibrato_Parameters");
+		faust_interface->declare(&fslider9, "4", "");
+		faust_interface->declare(&fslider9, "tooltip", "Vibrato attack duration");
+		faust_interface->declare(&fslider9, "unit", "s");
+		faust_interface->addHorizontalSlider("Vibrato_Attack", &fslider9, 0.5f, 0.0f, 2.0f, 0.01f);
+		faust_interface->declare(&fslider8, "4", "");
+		faust_interface->declare(&fslider8, "tooltip", "Vibrato silence duration before attack");
+		faust_interface->declare(&fslider8, "unit", "s");
+		faust_interface->addHorizontalSlider("Vibrato_Begin", &fslider8, 0.05f, 0.0f, 2.0f, 0.01f);
+		faust_interface->declare(&fslider6, "4", "");
+		faust_interface->declare(&fslider6, "unit", "Hz");
+		faust_interface->addHorizontalSlider("Vibrato_Freq", &fslider6, 5.0f, 1.0f, 15.0f, 0.1f);
+		faust_interface->declare(&fslider10, "4", "");
+		faust_interface->declare(&fslider10, "tooltip", "A value between 0 and 1");
+		faust_interface->addHorizontalSlider("Vibrato_Gain", &fslider10, 0.1f, 0.0f, 1.0f, 0.01f);
+		faust_interface->declare(&fslider7, "4", "");
+		faust_interface->declare(&fslider7, "tooltip", "Vibrato release duration");
+		faust_interface->declare(&fslider7, "unit", "s");
+		faust_interface->addHorizontalSlider("Vibrato_Release", &fslider7, 0.01f, 0.0f, 2.0f, 0.01f);
+		faust_interface->closeBox();
+		faust_interface->closeBox();
+		faust_interface->openHorizontalBox("Physical_and_Nonlinearity");
+		faust_interface->openVerticalBox("Nonlinear_Filter_Parameters");
+		faust_interface->declare(&fslider5, "3", "");
+		faust_interface->declare(&fslider5, "tooltip", "Frequency of the sine wave for the modulation of theta (works if Modulation Type=3)");
+		faust_interface->declare(&fslider5, "unit", "Hz");
+		faust_interface->addHorizontalSlider("Modulation_Frequency", &fslider5, 2.2e+02f, 2e+01f, 1e+03f, 0.1f);
+		faust_interface->declare(&fentry1, "3", "");
+		faust_interface->declare(&fentry1, "tooltip", "0=theta is modulated by the incoming signal; 1=theta is modulated by the averaged incoming signal; 2=theta is modulated by the squared incoming signal; 3=theta is modulated by a sine wave of frequency freqMod; 4=theta is modulated by a sine wave of frequency freq;");
+		faust_interface->addNumEntry("Modulation_Type", &fentry1, 0.0f, 0.0f, 4.0f, 1.0f);
+		faust_interface->declare(&fslider3, "3", "");
+		faust_interface->declare(&fslider3, "tooltip", "Nonlinearity factor (value between 0 and 1)");
+		faust_interface->addHorizontalSlider("Nonlinearity", &fslider3, 0.0f, 0.0f, 1.0f, 0.01f);
+		faust_interface->declare(&fslider4, "3", "");
+		faust_interface->declare(&fslider4, "Attack duration of the nonlinearity", "");
+		faust_interface->declare(&fslider4, "unit", "s");
+		faust_interface->addHorizontalSlider("Nonlinearity_Attack", &fslider4, 0.1f, 0.0f, 2.0f, 0.01f);
+		faust_interface->closeBox();
+		faust_interface->openVerticalBox("Physical_Parameters");
+		faust_interface->declare(&fslider12, "2", "");
+		faust_interface->declare(&fslider12, "tooltip", "Breath noise gain (value between 0 and 1)");
+		faust_interface->addHorizontalSlider("Noise_Gain", &fslider12, 0.5f, 0.0f, 1.0f, 0.01f);
+		faust_interface->declare(&fslider11, "2", "");
+		faust_interface->declare(&fslider11, "tooltip", "Breath pressure (value bewteen 0 and 1)");
+		faust_interface->addHorizontalSlider("Pressure", &fslider11, 1.0f, 0.0f, 1.0f, 0.01f);
+		faust_interface->closeBox();
+		faust_interface->closeBox();
+		faust_interface->openVerticalBox("Spat");
+		faust_interface->addHorizontalSlider("pan angle", &fslider13, 0.6f, 0.0f, 1.0f, 0.01f);
+		faust_interface->addHorizontalSlider("spatial width", &fslider14, 0.5f, 0.0f, 1.0f, 0.01f);
+		faust_interface->closeBox();
+		faust_interface->closeBox();
 	}
 	virtual void compute (int count, FAUSTFLOAT** input, FAUSTFLOAT** output) {
 		float 	fSlow0 = float(fbutton0);
@@ -594,654 +481,5 @@ class Blow_Bottle_dsp : public dsp {
 float 	Blow_Bottle_dsp::ftbl0[65536];
 
 
+#include "Faust_plugins_template2.cpp"
 
-#include "SoundPlugin.h"
-#include "SoundPlugin_proc.h"
-
-#include "Mixer_proc.h"
-#include "SoundPluginRegistry_proc.h"
-
-#include "Faust_plugins_proc.h"
-
-
-namespace{
-
-class MyUI : public UI
-{
-
- public:
-
-  MyUI() 
-    : next_peak(NULL)
-    , _gate_control(NULL)
-    , _freq_control(NULL)
-    , _gain_control(NULL)
-    , _num_effects(0)
-    , _effect_tooltip("")
-    , _curr_box_name(NULL)
-  { }
-
-  ~MyUI() {	}
-
-  float *next_peak;
-
-  float *_gate_control;
-  float *_freq_control;
-  float *_gain_control;
-
-  struct Controller{
-    float* control_port;
-
-    float *peak_port;
-
-    float min_value;
-    float default_value;
-    float max_value;
-
-    std::string name;
-    int type;
-
-    const char *tooltip;
-    const char *unit;
-
-    Controller(float *control_port)
-      : control_port(control_port)
-      , peak_port(NULL)
-      , min_value(0.0f)
-      , default_value(0.5f)
-      , max_value(1.0f)
-      , name("<no name>")
-      , type(EFFECT_FORMAT_FLOAT)
-      , tooltip("")
-      , unit("")
-    { }
-  };
-
-  std::vector<Controller> _controllers;
-
-  int get_controller_num(float *control_port){
-    for(unsigned int i=0;i<_controllers.size();i++){
-      if(control_port == _controllers.at(i).control_port)
-        return i;
-    }
-
-    Controller controller(control_port);
-
-    _controllers.push_back(controller);
-    _num_effects++;
-
-    return _controllers.size()-1;
-  }
-
-  bool is_instrument(){
-    if(_gate_control!=NULL && _freq_control!=NULL && _gain_control!=NULL)
-      return true;
-    else
-      return false;
-  }
-
-  // Remove gain/gate/freq sliders for instruments.
-  void remove_instrument_notecontrol_effects(){
-    if(is_instrument()){
-      _controllers.erase(_controllers.begin() + get_controller_num(_gate_control));
-      _controllers.erase(_controllers.begin() + get_controller_num(_freq_control));
-      _controllers.erase(_controllers.begin() + get_controller_num(_gain_control));
-      _num_effects -= 3;
-    }
-  }
-
-  // We don't use passive items. (it would have been nice to have a passive effect telling when an instrument is finished playing)
-  void remove_last_item(){
-    _controllers.pop_back();
-    _num_effects--;
-  }
-  
-
-  int _num_effects;
-
-  const char *_effect_tooltip;
-
-  const char* _curr_box_name;
-
-  // -- widget's layouts
-  
-  void openFrameBox(const char* label) {_curr_box_name = label;}
-  void openTabBox(const char* label) {_curr_box_name = label;}
-  void openHorizontalBox(const char* label) {_curr_box_name = label;}
-  void openVerticalBox(const char* label) {_curr_box_name = label;}
-  void closeBox() {_curr_box_name = NULL;}
-  
-  // -- active widgets
-
-  void addEffect(const char *name, float* control_port, int type, float min_value, float default_value, float max_value){
-    int effect_num = get_controller_num(control_port);
-
-    Controller *controller = &_controllers.at(effect_num);
-
-    if(_curr_box_name != NULL && strlen(_curr_box_name) < 10 && strcmp(_curr_box_name, "0x00")){
-      controller->name = std::string(_curr_box_name) + ": " + name;
-    }else{
-      controller->name = name;
-    }
-    //printf("Controller name: \"%s\"\n",controller->name.c_str());
-    controller->type = type;
-    controller->min_value = min_value;
-    controller->default_value = default_value;
-    controller->max_value = max_value;
-
-    if(next_peak != NULL){
-      controller->peak_port = next_peak;
-      next_peak = NULL;
-    }
-
-    if(!strcmp(name,"gate"))
-      _gate_control = control_port;
-
-    if(!strcmp(name,"freq"))
-      _freq_control = control_port;
-
-    if(!strcmp(name,"gain"))
-      _gain_control = control_port;
-  }
-
-  void addButton(const char* label, float* zone) {
-    addEffect(label, zone, EFFECT_FORMAT_BOOL, 0, 0, 1);
-  }
-  void addToggleButton(const char* label, float* zone) {
-    addEffect(label, zone, EFFECT_FORMAT_BOOL, 0, 0, 1);
-  }
-  void addCheckButton(const char* label, float* zone) {
-    addEffect(label, zone, EFFECT_FORMAT_BOOL, 0, 0, 1);
-  }
-  void addVerticalSlider(const char* label, float* zone, float init, float min, float max, float step) {
-    addEffect(label, zone,  step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max);
-  }
-  void addHorizontalSlider(const char* label, float* zone, float init, float min, float max, float step) {
-    addEffect(label, zone,  step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max);
-  }
-  void addNumEntry(const char* label, float* zone, float init, float min, float max, float step) {
-    addEffect(label, zone, step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max); // The INT effect format might not work. Need to go through the code first.
-  }
-  
-  // -- passive widgets
-
-  void addNumDisplay(const char* label, float* zone, int precision) {remove_last_item();}
-  void addTextDisplay(const char* label, float* zone, const char* names[], float min, float max) {remove_last_item();}
-  void addHorizontalBargraph(const char* label, float* zone, float min, float max) {
-    remove_last_item(); // remove metadata
-    next_peak = zone;
-  }
-  void addVerticalBargraph(const char* label, float* zone, float min, float max) {
-    remove_last_item(); // remove metadata
-    next_peak = zone;
-  }
-  
-  // -- metadata declarations
-  
-  void declare(float* control_port, const char* key, const char* value) {
-    if(control_port==NULL){
-      if(!strcmp(key,"tooltip"))
-        _effect_tooltip = value;
-    } else {
-      int effect_num = get_controller_num(control_port);
-      Controller *controller = &_controllers.at(effect_num);
-      if(!strcmp(key,"tooltip"))
-        controller->tooltip = value;
-      else if(!strcmp(key,"unit"))
-        controller->unit = value;
-    }
-  }
-};
-
-
-#define MAX_POLYPHONY 32
-
-struct Voice{
-  struct Voice *prev;
-  struct Voice *next;
-  CLASSNAME *dsp_instance;
-  MyUI myUI;
-  float note_num;
-  int64_t note_id;
-
-  int frames_since_stop;
-
-  int delta_pos_at_start; // Within the current block. Set when starting a note.
-  int delta_pos_at_end; // Within the current block. Set when stopping a note.
-
-  Voice()
-    : prev(NULL)
-    , next(NULL)
-    , dsp_instance(NULL)
-    , note_num(0)
-    , note_id(-1)
-    , delta_pos_at_start(0)
-    , delta_pos_at_end(-1)
-  { }
-};
-
-struct Data{
-  Voice *voices_playing; // not used by effects
-  Voice *voices_not_playing; // not used by effects
-  Voice voices[MAX_POLYPHONY];   // Only voices[0] is used by effects.
-  float samplerate;
-  Data()
-    : voices_playing(NULL)
-    , voices_not_playing(NULL)
-  {}
-};
-
-} // end anonymous namespace
-
-static void RT_add_voice(Voice **root, Voice *voice){
-  voice->next = *root;
-  if(*root!=NULL)
-    (*root)->prev = voice;
-  *root = voice;
-  voice->prev = NULL;
-}
-
-static void RT_remove_voice(Voice **root, Voice *voice){
-  if(voice->prev!=NULL)
-    voice->prev->next = voice->next;
-  else
-    *root=voice->next;
-
-  if(voice->next!=NULL)
-    voice->next->prev = voice->prev;
-}
-
-static bool RT_is_silent(float *sound, int num_frames){
-  for(int i=0;i<num_frames;i++)
-    if(sound[i]>0.05f)
-      return false;
-  return true;
-}
-
-enum VoiceOp{
-  VOICE_KEEP,
-  VOICE_REMOVE
-};
-
-static void RT_process_between(Voice *voice, float **inputs, float **outputs, int start, int end){
-  if(end==start)
-    return;
-
-  int num_inputs = voice->dsp_instance->getNumInputs();
-  float *offsetted_inputs[num_inputs];
-  for(int ch=0;ch<num_inputs; ch++)
-    offsetted_inputs[ch] = &inputs[ch][start];
-
-  int num_outputs = voice->dsp_instance->getNumOutputs();
-  float *offsetted_outputs[num_outputs];
-  for(int ch=0;ch<num_outputs; ch++)
-    offsetted_outputs[ch] = &outputs[ch][start];
-
-  //printf("Computing Delta start / end: %d / %d\n",start,end);
-
-  voice->dsp_instance->compute(end-start, offsetted_inputs, offsetted_outputs);
-}
-
-static VoiceOp RT_play_voice(Data *data, Voice *voice, int num_frames, float **inputs, float **outputs, int *start_process){
-
-  int delta_pos_at_start = voice->delta_pos_at_start;
-  int delta_pos_at_end = voice->delta_pos_at_end;
-
-  if(delta_pos_at_start==0 && delta_pos_at_end==-1){
-
-    voice->dsp_instance->compute(num_frames, inputs, outputs);
-
-    *start_process = 0;
-
-    if( *(voice->myUI._gate_control)==0.0f){
-      if(false
-         || RT_is_silent(outputs[0],num_frames)
-         || voice->frames_since_stop > data->samplerate) // Safety mechanism. Force voice to stop after about 1 second.
-        return VOICE_REMOVE;
-
-      voice->frames_since_stop += num_frames;
-    }
-
-  }else if(delta_pos_at_start>0 && delta_pos_at_end==-1){
-
-    RT_process_between(voice, inputs, outputs, delta_pos_at_start, num_frames);
-
-    *start_process = delta_pos_at_start;
-    voice->delta_pos_at_start = 0;
-
-  }else{
-    //printf("Delta start / end: %d / %d\n",delta_pos_at_start,delta_pos_at_end);
-
-    RT_process_between(voice, inputs, outputs, delta_pos_at_start, delta_pos_at_end);
-    {
-      *(voice->myUI._gate_control)=0.0f;
-    }
-    RT_process_between(voice, inputs, outputs, delta_pos_at_end, num_frames);
-
-    voice->frames_since_stop = num_frames-delta_pos_at_end;
-
-    *start_process = delta_pos_at_start;
-    voice->delta_pos_at_start = 0;
-    voice->delta_pos_at_end = -1;
-
-  }
-
-  return VOICE_KEEP;
-}
-
-static void RT_process_instrument(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  Data *data = (Data*)plugin->data;
-  int num_outputs = plugin->type->num_outputs;
-
-  for(int i=0;i<num_outputs;i++)
-    memset(outputs[i],0,num_frames*sizeof(float));
-
-  float *tempsounds[num_outputs];
-  float tempdata[num_outputs][num_frames];
-  for(int i=0;i<num_outputs;i++)
-    tempsounds[i] = &tempdata[i][0];
-
-  Voice *voice = data->voices_playing;
-  //printf("Voices? %s\n",voice==NULL?"No":"Yes");
-
-  while(voice!=NULL){
-    Voice *next = voice->next;
-    int start_process;
-
-    if(RT_play_voice(data,voice,num_frames,inputs,tempsounds,&start_process)==VOICE_REMOVE){
-      RT_remove_voice(&data->voices_playing, voice);
-      RT_add_voice(&data->voices_not_playing, voice);
-
-      for(int ch=0;ch<num_outputs;ch++)
-        RT_fade_out(tempsounds[ch], num_frames-start_process);
-    }
-
-    for(int ch=0;ch<num_outputs;ch++){
-      float *source = tempsounds[ch];
-      float *target = outputs[ch];
-      for(int i=start_process;i<num_frames;i++)
-        target[i] += source[i];
-    }
-
-    voice=next;
-  }
-}
-
-static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note){
-  Data *data = (Data*)plugin->data;
-
-  //printf("Playing %d\n",note_num);
-
-  Voice *voice = data->voices_not_playing;
-
-  if(voice==NULL){
-    printf("no more free voices\n");
-    return;
-  }
-
-  RT_remove_voice(&data->voices_not_playing, voice);
-  RT_add_voice(&data->voices_playing, voice);
-
-  //voice->dsp_instance->init((int)data->samplerate);
-
-  *(voice->myUI._gate_control) = 1.0f;
-  *(voice->myUI._freq_control) = midi_to_hz(note.pitch);
-  *(voice->myUI._gain_control) = velocity2gain(note.velocity);
-
-  voice->note_num = note.pitch;
-  voice->note_id = note.id;
-
-  voice->frames_since_stop = 0;
-  voice->delta_pos_at_start = time;
-  voice->delta_pos_at_end = -1;
-}
-
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t note){
-  Data *data = (Data*)plugin->data;
-  Voice *voice = data->voices_playing;
-  //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
-  while(voice!=NULL){
-    if(voice->note_id==note.id)
-      *(voice->myUI._gain_control) = velocity2gain(note.velocity);
-    voice=voice->next;
-  }
-}
-
-static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, note_t note){
-  Data *data = (Data*)plugin->data;
-  Voice *voice = data->voices_playing;
-  //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
-  while(voice!=NULL){
-    if(voice->note_id==note.id)
-      *(voice->myUI._freq_control) = midi_to_hz(note.pitch);
-    voice=voice->next;
-  }
-}
-
-static void stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
-  Data *data = (Data*)plugin->data;
-  Voice *voice = data->voices_playing;
-  while(voice!=NULL){
-    if(voice->note_id==note.id)
-      voice->delta_pos_at_end = time;
-    voice=voice->next;
-  }
-}
-
-static void RT_process_effect(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  //SoundPluginType *type = plugin->type;
-  Data *data = (Data*)plugin->data;
-
-  data->voices[0].dsp_instance->compute(num_frames, inputs, outputs);
-  //printf("in00: %f, in10: %f\n",inputs[0][0],inputs[1][0]);
-  //printf("out00: %f, out10: %f\n",outputs[0][0],outputs[1][0]);
-}
-
-static void *create_effect_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int blocksize){
-  Data *data = new Data;
-  data->samplerate = samplerate;
-
-  Voice *voice = &data->voices[0];
-  voice->dsp_instance = new CLASSNAME;
-  //printf("Creating %s / %s. samplerate: %d\n",plugin_type->type_name,plugin_type->name,(int)samplerate);
-  voice->dsp_instance->instanceInit(samplerate);
-  voice->dsp_instance->buildUserInterface(&voice->myUI);
-  return data;
-}
-
-static void *create_instrument_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int blocksize){
-  Data *data = new Data;
-  data->samplerate = samplerate;
-
-  for(int i=0;i<MAX_POLYPHONY;i++){
-    Voice *voice = &data->voices[i];
-    voice->dsp_instance = new CLASSNAME;
-    voice->dsp_instance->init(samplerate);
-    voice->dsp_instance->buildUserInterface(&voice->myUI);
-    voice->myUI.remove_instrument_notecontrol_effects();
-
-    RT_add_voice(&data->voices_not_playing, voice);
-  }
-
-
-  return data;
-}
-
-static void cleanup_plugin_data(SoundPlugin *plugin){
-  Data *data = (Data*)plugin->data;
-
-  for(int i=0;i<MAX_POLYPHONY;i++){
-    Voice *voice = &data->voices[i];
-    if(voice->dsp_instance==NULL) // an effect
-      break;
-    else
-      delete voice->dsp_instance;
-  }
-
-  delete data;
-}
-
-#ifdef FAUST_THAT_ONE
-float *FAUST_get_peak_value_pointer(SoundPlugin *plugin, int effect_num){
-  Data *data = (Data*)plugin->data;
-  MyUI::Controller *controller = &data->voices[0].myUI._controllers.at(effect_num);
-  if(controller->peak_port!=NULL)
-    return controller->peak_port;
-  else
-    return NULL;
-}
-#endif
-
-static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
-  const struct SoundPluginType *plugin_type = plugin->type;
-  Data *data = (Data*)plugin_type->data;
-  Voice *voice = &data->voices[0];
-  MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-  return controller->type;
-}
-
-static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
-  const struct SoundPluginType *plugin_type = plugin->type;
-  Data *data = (Data*)plugin_type->data;
-  Voice *voice = &data->voices[0];
-  MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-  return controller->name.c_str();
-}
-
-static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
-  Data *data = (Data*)plugin->data;
-  float scaled_value;
-
-  if(value_format==PLUGIN_FORMAT_SCALED){
-#ifdef DONT_NORMALIZE_EFFECT_VALUES
-    scaled_value = value;
-#else
-    MyUI::Controller *controller = &data->voices[0].myUI._controllers.at(effect_num);
-    float min = controller->min_value;
-    float max = controller->max_value;
-    scaled_value = scale(value,0,1,min,max);
-#endif
-  }else{
-    scaled_value = value;
-  }
-
-  //printf("Setting effect %d to %f. input: %f\n",effect_num,scaled_value,value);
-
-  for(int i=0;i<MAX_POLYPHONY;i++){
-    Voice *voice = &data->voices[i];
-    if(voice->dsp_instance==NULL) // an effect
-      break;
-    MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-    safe_float_write(controller->control_port, scaled_value);
-  }
-}
-
-static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
-  Data *data = (Data*)plugin->data;
-  Voice *voice = &data->voices[0];
-  MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-
-  if(value_format==PLUGIN_FORMAT_SCALED){
-#ifdef DONT_NORMALIZE_EFFECT_VALUES
-    return safe_float_read(controller->control_port);
-#else
-    float min = controller->min_value;
-    float max = controller->max_value;
-    return scale(safe_float_read(controller->control_port),min,max,0.0f,1.0f);
-#endif
-  }else{
-    return safe_float_read(controller->control_port);
-  }
-}
-
-static void get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
-  Data *data = (Data*)plugin->data;
-  Voice *voice = &data->voices[0];
-  MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-
-  if(controller->type==EFFECT_FORMAT_INT)
-    snprintf(buffer,buffersize-1,"%d %s",(int)safe_float_read(controller->control_port), controller->unit);
-  else
-    snprintf(buffer,buffersize-1,"%.2f %s",safe_float_read(controller->control_port), controller->unit);
-}
-
-static const char *get_effect_description(const struct SoundPluginType *plugin_type, int effect_num){
-  Data *data = (Data*)plugin_type->data;
-  Voice *voice = &data->voices[0];
-  MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-
-  return controller->tooltip;
-}
-
-static void fill_type(SoundPluginType *type){
- type->type_name                = "Faust";
- type->note_handling_is_RT      = false;
- type->get_effect_format        = get_effect_format;
- type->get_effect_name          = get_effect_name;
- type->effect_is_RT             = NULL;
- type->cleanup_plugin_data      = cleanup_plugin_data;
-
- type->play_note       = play_note;
- type->set_note_volume = set_note_volume;
- type->set_note_pitch  = set_note_pitch;
-
- type->stop_note       = stop_note;
-
- type->set_effect_value         = set_effect_value;
- type->get_effect_value         = get_effect_value;
- type->get_display_value_string = get_display_value_string;
- type->get_effect_description   = get_effect_description;
-
- type->data                     = NULL;
-};
-
-static SoundPluginType faust_type = {};  // c++ way of zero-initialization without getting missing-field-initializers warning.
-
-void CREATE_NAME (void){
-  static bool has_inited = false;
-
-  if (has_inited==false) {
-    
-    fill_type(&faust_type);
-  
-    CLASSNAME::classInit(MIXER_get_sample_rate());
-  
-    Data *data = (Data*)create_effect_plugin_data(&faust_type, NULL, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
-    faust_type.data = data;
-
-  
-    faust_type.name = DSP_NAME;
-
-    faust_type.num_inputs = data->voices[0].dsp_instance->getNumInputs();
-    faust_type.num_outputs = data->voices[0].dsp_instance->getNumOutputs();
-
-    if(data->voices[0].myUI.is_instrument()){
-
-      faust_type.is_instrument      = true;
-      
-      faust_type.RT_process         = RT_process_instrument;
-      faust_type.create_plugin_data = create_instrument_plugin_data;
-
-      data->voices[0].myUI.remove_instrument_notecontrol_effects();
-      
-    }else{
-
-      faust_type.is_instrument      = false;
-      
-      faust_type.RT_process         = RT_process_effect;
-      faust_type.create_plugin_data = create_effect_plugin_data;
-      
-      faust_type.play_note          = NULL;
-      faust_type.set_note_volume    = NULL;
-      faust_type.stop_note          = NULL;
-      
-    }
-    
-    faust_type.num_effects = data->voices[0].myUI._num_effects;
-
-    has_inited = true;
-
-  }
-  
-  PR_add_plugin_type(&faust_type);
-}

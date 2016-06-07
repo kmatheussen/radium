@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_plugin_widget.h"
 
 #include "mQt_pd_plugin_widget_callbacks.h"
+#include "mQt_faust_plugin_widget_callbacks.h"
 #include "mQt_jack_plugin_widget_callbacks.h"
 
 
@@ -43,6 +44,7 @@ public:
   struct Patch *_patch;
   Pd_Plugin_widget *_pd_plugin_widget;
   Jack_Plugin_widget *_jack_plugin_widget;
+  Faust_Plugin_widget *_faust_plugin_widget;
   bool _ignore_show_gui_checkbox_stateChanged;
 
   QMessageBox infoBox;
@@ -56,6 +58,7 @@ public:
     , _patch(patch)
     , _pd_plugin_widget(NULL)
     , _jack_plugin_widget(NULL)
+    , _faust_plugin_widget(NULL)
     , _ignore_show_gui_checkbox_stateChanged(false)
     , _plugin_widget(NULL)
     {
@@ -131,10 +134,16 @@ public:
     if(!strcmp(plugin->type->type_name, "Pd")) {
       _pd_plugin_widget = new Pd_Plugin_widget(this,_patch);
       vertical_layout->insertWidget(1,_pd_plugin_widget);
+      faust_load_button->hide();
+      faust_save_button->hide();
+      faust_compile_button->hide();
 
       // Jack:
     }else if(!strcmp(plugin->type->type_name, "Jack")) {
       new_pd_controller_button->hide();
+      faust_load_button->hide();
+      faust_save_button->hide();
+      faust_compile_button->hide();
       load_button->hide();
       save_button->hide();
       reset_button->hide();
@@ -142,9 +151,17 @@ public:
       _jack_plugin_widget = new Jack_Plugin_widget(this,_patch);
       vertical_layout->insertWidget(1,_jack_plugin_widget);
 
+    }else if(!strcmp(plugin->type->type_name, "Bus")) {
+      new_pd_controller_button->hide();
+      _faust_plugin_widget = new Faust_Plugin_widget(this,_patch);
+      vertical_layout->insertWidget(1,_faust_plugin_widget);
+
       // Others:
     } else {
       new_pd_controller_button->hide();
+      faust_load_button->hide();
+      faust_save_button->hide();
+      faust_compile_button->hide();
       _plugin_widget=PluginWidget_create(this, _patch);
       vertical_layout->insertWidget(1,_plugin_widget);
     }
