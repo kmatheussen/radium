@@ -274,7 +274,7 @@ static bool is_connected_to_input_port(String name){
   return false;
 }
 
-static void add_input_port(String name, bool do_update_settings){
+static void add_input_port(String name, bool do_update_settings, bool should_be_there){
   
   if (is_connected_to_input_port(name))
     return;
@@ -285,7 +285,10 @@ static void add_input_port(String name, bool do_update_settings){
 
 #if JUCE_WINDOWS
   if (device_id==-1){
-    RError("Device %s not found", name.toRawUTF8());
+    if (should_be_there)
+      RError("Device %s not found", name.toRawUTF8());
+    else
+      GFX_Message(NULL, "Device %s not found", name.toRawUTF8());
     return;
   }
 #endif
@@ -325,7 +328,7 @@ static void add_input_port(String name, bool do_update_settings){
 
 void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *name_c){
   String name(name_c);
-  add_input_port(name, true);
+  add_input_port(name, true, true);
 }
 
 
@@ -359,7 +362,7 @@ bool MIDI_New(struct Instruments *instrument){
     for(int i = 0 ; i < num_inports ; i++){
       const char *inport = SETTINGS_read_string(talloc_format("midi_input_port_%d",i),NULL);
       if(inport!=NULL)
-        add_input_port(inport, false);
+        add_input_port(inport, false, false);
     }
     
     globals_are_initialized = true;
