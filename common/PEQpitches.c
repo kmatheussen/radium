@@ -83,7 +83,6 @@ void InitPEQpitches(
 	peq->track=track;
 	peq->note=note;
         peq->pitch=pitch;
-        pitch->doit = pitch->chance==0x100 || pitch->chance > rnd(0x100);
 	peq->time1=Place2STime(block,&note->l.p);
 
         if (pitch==NULL) {
@@ -93,7 +92,9 @@ void InitPEQpitches(
           peq->TreatMe=PE_ChangePitchToEnd;
           
         } else {
-        
+
+          pitch->doit = pitch->chance==0x100 || pitch->chance > rnd(0x100);
+
           peq->nextpitch = pitch;
           peq->time2=Place2STime(block,&pitch->l.p);
           peq->TreatMe=PE_ChangePitch;
@@ -131,7 +132,10 @@ static void scheduled_change_pitch(int64_t time, const union SuperType *args){
 }
 
 static void SendPitchChange(float x,struct PEventQueue *peq){
-  if(peq->pitch->doit && peq->track->patch!=NULL && peq->track->onoff==1){
+  if (peq->pitch!=NULL && peq->pitch->doit==false)
+    return;
+  
+  if(peq->track->patch!=NULL && peq->track->onoff==1){
 
     union SuperType args[3];
     args[0].const_pointer = peq->track;
