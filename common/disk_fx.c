@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 void SaveFX(struct FX *fx,struct Tracks *track){
 if(fx==NULL) return;
 DC_start("FX");
-	DC_SaveN(fx->num);
+        DC_SaveN(fx->effect_num); // Not used, but we save effect_num to be compatible with earlier versions of radium.
 	DC_SSS("name",fx->name);
 	DC_SSI("color",fx->color);
 	DC_SSI("min",fx->min);
@@ -60,7 +60,7 @@ struct FX *LoadFX(struct Tracks *track){
                 "patchnum"
 	};
 	struct FX *fx=DC_alloc(sizeof(struct FX));
-	fx->num = DC_LoadN();
+	DC_LoadN(); // ignore. Earlier, there was a field called fx->num, which was just a number containing fx->effect_num.
         
         fx->patch = DC_alloc(sizeof(struct Patch)); // temporary object used during loading.
         fx->patch->id = -1; // for loading older songs.
@@ -87,12 +87,8 @@ var2:
 var3:
 	fx->max=DC_LoadI();
 	goto start;
-var4:        
-	fx->effect_num=DC_LoadI();
-        if (DISKVERSION > 0.835)
-          R_ASSERT(fx->num == fx->effect_num);
-
-        fx->num = fx->effect_num; // Fix bugs in previous versions. Sometimes fx->effect_num is the only one containing the right value.
+var4:
+        fx->effect_num=DC_LoadI();
 	goto start;
 
 var5:

@@ -405,7 +405,7 @@ static void AddNewTypeOfFxNodeLine(struct Tracker_Windows *window, const struct 
 
 static struct FXs *get_fxs_for_fx(struct Tracks *track, struct FX *fx){
   VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
-    if (fxs->fx->effect_num == fx->num && fxs->fx->patch == fx->patch)
+    if (fxs->fx->effect_num == fx->effect_num && fxs->fx->patch == fx->patch)
       return fxs;
   }END_VECTOR_FOR_EACH;
   
@@ -444,7 +444,7 @@ static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct 
 
 	AddFXNodeLine(
                       window,wblock,wtrack,
-                      fx->num,
+                      fx->effect_num,
                       val,
                       &p1
                       );

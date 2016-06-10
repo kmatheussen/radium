@@ -360,7 +360,6 @@ static void init_fx(struct FX *fx, int effect_num, const char *name, struct Soun
   fx->effect_num      = effect_num;
   //fx->fxdata          = fxdata;
 
-  fx->num     = effect_num;
   fx->name    = talloc_strdup(name);
   fx->min     = 0;
   fx->max     = MAX_FX_VAL;
@@ -534,7 +533,6 @@ static void *AUDIO_LoadFX(struct FX *fx,const struct Tracks *track){
 
 var0:
 	fx->effect_num = DC_LoadI(); // the effect num may change later, if the plugin has implemented get_effect_num, and it returns a different value.
-        fx->num = fx->effect_num;
 	goto start;
 
 var1:
@@ -591,10 +589,8 @@ void DLoadAudioInstrument(void){
           if(plugin!=NULL){
             fx->name = PLUGIN_get_new_name_if_name_has_changed(plugin, fx->name);
             int effect_num = PLUGIN_get_effect_num(plugin, fx->name);
-            if (effect_num >= 0) {
+            if (effect_num >= 0)
               fx->effect_num = effect_num;
-              fx->num = fx->effect_num;
-            }
             
             fx->color = get_effect_color(plugin, fx->effect_num);
                           
@@ -677,7 +673,6 @@ static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *tra
         
         if(fx->effect_num >= num_old_effects){
           fx->effect_num = num_new_effects + (fx->effect_num - num_old_effects);
-          fx->num = fx->effect_num;
           fx->color = get_effect_color(new_plugin, fx->effect_num);
           fx->patch = new_patch;
         }else{

@@ -401,7 +401,6 @@ static int init_fx(const struct Tracks *track,struct FX *fx, struct MIDI_FX *mid
 
 	fx->fxdata=midi_fx;
 
-	fx->num   = (NInt)fx->effect_num;
 	fx->name    = midi_fx->name;
 	fx->min     = midi_fx->min;
 	fx->max     = midi_fx->max;

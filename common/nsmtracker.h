@@ -732,8 +732,6 @@ typedef enum {
 } FX_when;
 
 struct FX{
-  //	struct ListHeader1 l; // The next field in 'l' is not used. FX objects are stored one by one in the FXs object.
-        int num; // No no no. 'num' and 'effect_num' is the same.
 	const char *name;
 	enum ColorNums color;
 	void (*configureFX)(struct FX *fx,struct Tracks *track);
@@ -742,7 +740,7 @@ struct FX{
 
         struct Patch *patch;
   
-  	int effect_num; // Set by the instrument plugin.
+  	int effect_num; // Set by the instrument plugin. For audio, this is the effect num, while for midi, this is cc (plus some special rules for 14 bit cc and pitch change).
 
 	// Having pointers to variables in sliders is a bit strange, but letting sliders reference FX instead would cause bookkeeping of live and not alive FX objects.
 	// Not getting that bookkeeping correct would mean crashes that could be difficult to track.
