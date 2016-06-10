@@ -80,7 +80,7 @@ void set_editor_focus(void){
     editor->setFocus();
   }GL_unlock();
 
-#ifdef USE_GTK_VISUAL
+#if USE_GTK_VISUAL
   //GTK_SetFocus();
 #endif
 }

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "windows_proc.h"
 #include "list_proc.h"
+#include "vector_proc.h"
 #include "reallines_proc.h"
 #include "notes_proc.h"
 #include "placement_proc.h"
@@ -113,7 +114,6 @@ void InsertLines(
 	struct Tracker_Windows *window=root->song->tracker_windows;
 	struct WBlocks *wblock;
 	struct Tracks *track=block->tracks;
-	struct FXs *fxs;
 
 	int num_lines=block->num_lines;
 
@@ -150,11 +150,9 @@ void InsertLines(
             List_InsertLines3(&track->notes,&track->notes->l,line,toinsert,InsertLines_notes);
             LegalizeNotes(block,track);
             List_InsertLines3(&track->stops,&track->stops->l,line,toinsert,NULL);
-            fxs=track->fxs;
-            while(fxs!=NULL){
+            VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
               List_InsertLines3(&fxs->fxnodelines,&fxs->fxnodelines->l,line,toinsert,NULL);
-              fxs=NextFXs(fxs);
-            }
+            }END_VECTOR_FOR_EACH;
             LegalizeFXlines(block,track);
             track=NextTrack(track);
           }

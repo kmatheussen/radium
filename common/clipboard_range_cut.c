@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "placement_proc.h"
 #include "list_proc.h"
+#include "vector_proc.h"
 #include "clipboard_range_copy_proc.h"
 #include "clipboard_range_calc_proc.h"
 #include "wtracks_proc.h"

@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "vector_proc.h"
 #include "playerclass.h"
 #include "PEQcommon_proc.h"
 #include "PEQmempool_proc.h"
@@ -61,16 +62,12 @@ void InitPEQBlockfxs(
 	const Place *p
 ){
 	struct Tracks *track=block->tracks;
-	struct FXs *fxs;
-
+	
 	while(track!=NULL){
-		fxs=track->fxs;
-
-		while(fxs!=NULL){
-			InitPEQfxs(block,track,fxs);
-			fxs=NextFXs(fxs);
-		}
-		track=NextTrack(track);
+          VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+            InitPEQfxs(block,track,fxs);
+          }END_VECTOR_FOR_EACH;
+          track=NextTrack(track);
 	}
 }
 

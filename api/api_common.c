@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/list_proc.h"
+#include "../common/vector_proc.h"
 #include "../common/placement_proc.h"
 #include "../common/notes_proc.h"
 #include "../common/instruments_proc.h"
@@ -263,7 +264,7 @@ struct FXs *getFXsFromNumA(int windownum,struct Tracker_Windows **window, int bl
     return NULL;
 
   struct Tracks *track = (*wtrack)->track;
-  struct FXs *ret = ListFindElement1_num(&track->fxs->l,fxnum);
+  struct FXs *ret = VECTOR_get_r0(&track->fxs,fxnum,"fxs");
   if (ret==NULL)
     RError("FX #%d in track #%d in block #%d does not exist",fxnum,tracknum,blocknum);
   

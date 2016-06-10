@@ -361,7 +361,7 @@ static void init_fx(struct FX *fx, int effect_num, const char *name, struct Soun
   //fx->fxdata          = fxdata;
 
   fx->num     = effect_num;
-  fx->name    = name;
+  fx->name    = talloc_strdup(name);
   fx->min     = 0;
   fx->max     = MAX_FX_VAL;
   fx->closeFX = AUDIO_close_FX;
@@ -579,13 +579,12 @@ extern struct Root *root;
 void DLoadAudioInstrument(void){
   struct Blocks *block = root->song->blocks;
   while(block!=NULL){
-    const struct Tracks *track = block->tracks;
+    struct Tracks *track = block->tracks;
     while(track!=NULL){
       struct Patch *patch = track->patch;
 
       if (patch!=NULL && patch->instrument == get_audio_instrument()) {
-        struct FXs *fxs=track->fxs;
-        while(fxs!=NULL){
+        VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
           struct FX *fx = fxs->fx;
           
           SoundPlugin *plugin = patch->patchdata;
@@ -601,8 +600,7 @@ void DLoadAudioInstrument(void){
                           
           }
           
-          fxs = NextFXs(fxs);
-        }
+        }END_VECTOR_FOR_EACH;
       }
       
       track = NextTrack(track);
@@ -662,35 +660,35 @@ static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *tra
     same_instrument_type = true;
   
 
-  struct FXs *fxs = track->fxs;
-  while(fxs!=NULL){
-    struct FXs *next = NextFXs(fxs);
-    {
-      struct FX *fx = fxs->fx;
+ again:
+  {
+  int i;
+  for(i=0 ; i < track->fxs.num_elements ; i++){
+    struct FXs *fxs = track->fxs.elements[i];
+    struct FX *fx = fxs->fx;
 
-      if (fx->patch == old_patch) {
-
-        if (same_instrument_type) {
-          
+    if (fx->patch == old_patch) {
+      
+      if (same_instrument_type) {
+        
+        fx->patch = new_patch;
+        
+      } else {
+        
+        if(fx->effect_num >= num_old_effects){
+          fx->effect_num = num_new_effects + (fx->effect_num - num_old_effects);
+          fx->num = fx->effect_num;
+          fx->color = get_effect_color(new_plugin, fx->effect_num);
           fx->patch = new_patch;
-
-        } else {
-          
-          if(fx->effect_num >= num_old_effects){
-            fx->effect_num = num_new_effects + (fx->effect_num - num_old_effects);
-            fx->num = fx->effect_num;
-            fxs->l.num = fx->effect_num; // TODO: Merge these three variables into one. I don't think the values of them should ever be different.
-            fx->color = get_effect_color(new_plugin, fx->effect_num);
-            fx->patch = new_patch;
-          }else{
-            ListRemoveElement1(&track->fxs, &fxs->l);
-          }
-          
+        }else{
+          VECTOR_remove(&track->fxs, fxs);
+          goto again;
         }
         
       }
+      
     }
-    fxs = next;
+  }
   }
 }
 

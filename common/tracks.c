@@ -312,7 +312,7 @@ void TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct W
   track->notes = NULL;
 
   struct WTracks *wtrack_copy = CB_CopyTrack(wblock,wtrack);
-  wtrack_copy->track->fxs = NULL;
+  VECTOR_clean(&wtrack_copy->track->fxs);
 
   InsertTracks(window, wblock, wtrack->l.num+1, num_tracks-1);
 

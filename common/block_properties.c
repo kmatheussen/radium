@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "placement_proc.h"
 #include "list_proc.h"
+#include "vector_proc.h"
 #include "windows_proc.h"
 #include "notes_legalize_proc.h"
 #include "fxlines_legalize_proc.h"
@@ -55,7 +56,6 @@ void Block_Set_num_lines(
 	struct LocalZooms *localzoom;
 	struct Tracks *track=block->tracks;
 	struct Notes *note;
-	struct FXs *fxs;
 	int org_num_lines=block->num_lines;
 	int lokke;
 
@@ -91,11 +91,9 @@ void Block_Set_num_lines(
 
 			CutListAt_a(&track->stops,&lastplace);
 
-			fxs=track->fxs;
-			while(fxs!=NULL){
-				CutListAt_a(&fxs->fxnodelines,&lastplace);
-				fxs=NextFXs(fxs);
-			}
+                        VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+                          CutListAt_a(&fxs->fxnodelines,&lastplace);
+                        }END_VECTOR_FOR_EACH;
 			LegalizeFXlines(block,track);
 			track=NextTrack(track);
 		}

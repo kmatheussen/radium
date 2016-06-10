@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "clipboard_range_copy_proc.h"
 #include "list_proc.h"
+#include "vector_proc.h"
 #include "fxlines_proc.h"
 #include "../midi/midi_fx_proc.h"
 
@@ -32,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 struct Undo_NotesAndFXs{
 	struct Notes *notes;
 	struct Stops *stops;
-	struct FXs *fxs;
+        vector_t fxss;
 	void *midi_instrumentdata;
 };
 
@@ -62,7 +63,7 @@ void ADD_UNDO_FUNC(
 
 	CopyRange_stops(&undo_notesandfxs->stops,track->stops,p1,&p2);
 	CopyRange_notes(&undo_notesandfxs->notes,track->notes,p1,&p2);
-	CopyRange_fxs(&undo_notesandfxs->fxs,track->fxs,p1,&p2);
+	CopyRange_fxs(&undo_notesandfxs->fxss,&track->fxs,p1,&p2);
 	if(track->midi_instrumentdata!=NULL){
           undo_notesandfxs->midi_instrumentdata=MIDI_CopyInstrumentData(track);
 	}
@@ -99,24 +100,23 @@ static void *Undo_Do_NotesAndFXs(
 	struct Notes *ntemp;
 	struct Stops *stemp;
 
-	struct FXs *temp;
 	void *midi_instrumentdata;
 
 	struct Tracks *track=wtrack->track;
 
 	ntemp=track->notes;
 	stemp=track->stops;
-	temp=track->fxs;
+	vector_t *temp=VECTOR_copy(&track->fxs);
 	midi_instrumentdata=track->midi_instrumentdata;
 
 	track->stops=undo_notesandfxs->stops;
 	track->notes=undo_notesandfxs->notes;
-	track->fxs=undo_notesandfxs->fxs;
+	track->fxs=*(VECTOR_copy(&undo_notesandfxs->fxss));
 	track->midi_instrumentdata=undo_notesandfxs->midi_instrumentdata;
 
 	undo_notesandfxs->stops=stemp;
 	undo_notesandfxs->notes=ntemp;
-	undo_notesandfxs->fxs=temp;
+	undo_notesandfxs->fxss=*temp;
 	undo_notesandfxs->midi_instrumentdata=midi_instrumentdata;
 
 #if !USE_OPENGL

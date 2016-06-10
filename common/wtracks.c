@@ -52,7 +52,7 @@ int WTRACK_num_non_polyphonic_subtracks(const struct WTracks *wtrack){
     ret+=3;
 
   if (wtrack->fxtext_on)
-    ret += ListFindNumElements1(&wtrack->track->fxs->l) * 3;
+    ret += wtrack->track->fxs.num_elements * 3;
   
   return ret;
 }
@@ -132,7 +132,7 @@ void UpdateWTracks(struct Tracker_Windows *window, struct WBlocks *wblock){
 }
 
 static int get_fxtextarea_width(const struct Tracker_Windows *window, const struct WTracks *wtrack){
-  int num_fxs = ListFindNumElements1(&wtrack->track->fxs->l);
+  int num_fxs = wtrack->track->fxs.num_elements;
   return num_fxs * WTRACK_fxtrack_width(window->fontwidth);
 }
 

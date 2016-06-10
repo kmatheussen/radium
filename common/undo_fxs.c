@@ -16,24 +16,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-
-
+#include <string.h>
 
 #include "nsmtracker.h"
+#include "vector_proc.h"
 #include "undo.h"
 #include "clipboard_range_copy_proc.h"
 #include "fxlines_proc.h"
 #include "placement_proc.h"
 #include "../midi/midi_fx_proc.h"
 
-#include <string.h>
-
 #include "undo_fxs_proc.h"
 
+
 struct Undo_FXs{
-	struct FXs *fxs;
-	void *midi_instrumentdata;
+  vector_t fxss;
+  void *midi_instrumentdata;
 };
 
 static void *Undo_Do_FXs(
@@ -60,7 +58,7 @@ void ADD_UNDO_FUNC(
 
 	PlaceSetLastPos(block,&p2);
 
-	CopyRange_fxs(&undo_fxs->fxs,track->fxs,p1,&p2);
+	CopyRange_fxs(&undo_fxs->fxss,&track->fxs,p1,&p2);
 	if(track->midi_instrumentdata!=NULL){
 		undo_fxs->midi_instrumentdata=MIDI_CopyInstrumentData(track);
 	}
@@ -93,19 +91,18 @@ static void *Undo_Do_FXs(
 	void *pointer
 ){
 	struct Undo_FXs *undo_fxs=(struct Undo_FXs *)pointer;
-	struct FXs *temp;
 
 	struct Tracks *track=wtrack->track;
 
-	temp=track->fxs;
+	vector_t *temp = VECTOR_copy(&track->fxs);
 	void *midi_instrumentdata=track->midi_instrumentdata;
 
-	track->fxs=undo_fxs->fxs;
+	track->fxs = *(VECTOR_copy(&undo_fxs->fxss));
 	track->midi_instrumentdata=undo_fxs->midi_instrumentdata;
 #if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,wtrack);
 #endif
-	undo_fxs->fxs=temp;
+	undo_fxs->fxss = *temp;
 	undo_fxs->midi_instrumentdata=midi_instrumentdata;
 
 	return undo_fxs;

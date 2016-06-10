@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "windows_proc.h"
 #include "clipboard_tempos_copy_proc.h"
 #include "list_proc.h"
+#include "vector_proc.h"
 #include "time_proc.h"
 #include "Signature_proc.h"
 #include "LPB_proc.h"
@@ -87,9 +88,8 @@ static void make_patches_usable(struct Tracks *track){
     }
     
     R_ASSERT(track->patch->patchdata != NULL);
-    
-    struct FXs *fxs = track->fxs;
-    while(fxs!=NULL){
+
+    VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
       struct FX *fx = fxs->fx;
       
       if (fx->patch == old_patch)
@@ -102,9 +102,7 @@ static void make_patches_usable(struct Tracks *track){
         else
           fx->patch = PATCH_create_audio(NULL, NULL, fx->patch->name, fx->patch->state);
       }
-      
-      fxs = NextFXs(fxs);
-    }
+    }END_VECTOR_FOR_EACH;
     
   }
 }
@@ -132,12 +130,12 @@ static bool co_CB_PasteTrackFX(
           totrack->midi_instrumentdata=MIDI_CopyInstrumentData(track);
 	}
 
-	totrack->fxs=NULL;
+	VECTOR_clean(&totrack->fxs);
 
 	p1=PlaceGetFirstPos();
 	PlaceSetLastPos(wblock->block,&p2);
 
-	CopyRange_fxs(&totrack->fxs,track->fxs,p1,&p2);
+	CopyRange_fxs(&totrack->fxs,&track->fxs,p1,&p2);
 
 	LegalizeFXlines(wblock->block,totrack);
 
@@ -171,7 +169,7 @@ static bool paste_track(
 
 	totrack->notes=NULL;
 	totrack->stops=NULL;
-	totrack->fxs=NULL;
+	VECTOR_clean(&totrack->fxs);
 
 	p1=PlaceGetFirstPos();
 	PlaceSetLastPos(wblock->block,&p2);
@@ -180,7 +178,7 @@ static bool paste_track(
 	CopyRange_stops(&totrack->stops,track->stops,p1,&p2);
 
         if (totrack->patch != NULL)
-          CopyRange_fxs(&totrack->fxs,track->fxs,p1,&p2);
+          CopyRange_fxs(&totrack->fxs,&track->fxs,p1,&p2);
 
 	LegalizeFXlines(wblock->block,totrack);
 	LegalizeNotes(wblock->block,totrack);

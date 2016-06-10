@@ -136,6 +136,11 @@ extern LANGSPEC bool isInList1(
 	struct ListHeader1 *element
 );
 
+extern LANGSPEC bool isInList0(
+	struct ListHeader0 *liststart,
+	struct ListHeader0 *element
+);
+
 extern LANGSPEC bool isInList3_m(struct ListHeader3 *liststart,struct ListHeader3 *element,...);
 extern LANGSPEC bool isInList1_m(struct ListHeader1 *liststart,struct ListHeader1 *element,...);
 
@@ -166,6 +171,10 @@ extern LANGSPEC int ForAllListElements3(
 	void *voidlistroot,
 	int (*function)(struct ListHeader3 *list)
 );
+
+extern LANGSPEC NInt ListFindNumElements0(
+                                          struct ListHeader0 *list
+                                          );
 
 extern LANGSPEC NInt ListFindNumElements1(
 	struct ListHeader1 *list

@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_track_paste_proc.h"
 #include "fxlines_proc.h"
 #include "list_proc.h"
+#include "vector_proc.h"
 #include "windows_proc.h"
 #include "cursor_proc.h"
 #include "player_proc.h"
@@ -128,7 +129,7 @@ void InsertTracks(
             
             track->notes=NULL;
             track->stops=NULL;
-            track->fxs=NULL;
+            VECTOR_clean(&track->fxs);
             track->patch=NULL;
           }
         }PC_StopPause(NULL);

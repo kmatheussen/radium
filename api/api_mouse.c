@@ -2729,15 +2729,13 @@ int createFx(float value, Place place, const char* fx_name, int tracknum, int bl
     //printf("  2. p.line: %d, p.c: %d, p.d: %d\n",place.line,place.counter,place.dividor);
         
     int num = 0;
-    
-    struct FXs *fxs = wtrack->track->fxs;
-    while(fxs!=NULL){
-      if (fxs->l.num == fx->num)
+
+    VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
+      if (fxs->fx == fx)
         return num;
 
       num++;
-      fxs = NextFXs(fxs);
-    }
+    }END_VECTOR_FOR_EACH;
 
     RError("Internal error: Newly created FX not found, even though it was just created");
     
@@ -2880,7 +2878,7 @@ int getNumFxs(int tracknum, int blocknum, int windownum){
   if (wtrack == NULL)
     return 0;
 
-  return ListFindNumElements1(&wtrack->track->fxs->l);
+  return wtrack->track->fxs.num_elements;
 }
 
 int getNumFxnodes(int fxnum, int tracknum, int blocknum, int windownum){
@@ -2926,8 +2924,8 @@ int createFxnode(float value, Place place, int fxnum, int tracknum, int blocknum
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct FXs *fx = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
-  if (fx==NULL)
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
     return -1;
 
   R_ASSERT(value >= 0.0f);
@@ -2948,14 +2946,14 @@ int createFxnode(float value, Place place, int fxnum, int tracknum, int blocknum
 
   ADD_UNDO(FXs(window, wblock->block, wtrack->track, wblock->curr_realline));
 
-  int max = fx->fx->max;
-  int min = fx->fx->min;
+  int max = fxs->fx->max;
+  int min = fxs->fx->min;
 
   int ret = AddFXNodeLine(
                           window,
                           wblock,
                           wtrack,
-                          fx->l.num,
+                          fxs->fx->effect_num,
                           scale(value, 0,1, min, max),
                           &place
                           );
@@ -3173,7 +3171,7 @@ Place getFxrangenodePlace(int fxnodenum, int fxnum, int rangetracknum){
     return place(0,0,1);
   }
   
-  struct FXs *fxs = ListFindElement1_num_r0(&range->fxs[rangetracknum]->l, fxnum);
+  struct FXs *fxs = VECTOR_get_r0(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
     RWarning("fxnum > num_fxs: %d",fxnum);
     return place(0,0,1);
@@ -3199,7 +3197,7 @@ float getFxrangenodeValue(int fxnodenum, int fxnum, int rangetracknum){
     return 0;
   }
   
-  struct FXs *fxs = ListFindElement1_num_r0(&range->fxs[rangetracknum]->l, fxnum);
+  struct FXs *fxs = VECTOR_get_r0(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
     RWarning("fxnum > num_fxs: %d",fxnum);
     return 0;
@@ -3227,7 +3225,7 @@ int getFxrangenodeLogtype(int fxnodenum, int fxnum, int rangetracknum){
     return 0;
   }
   
-  struct FXs *fxs = ListFindElement1_num_r0(&range->fxs[rangetracknum]->l, fxnum);
+  struct FXs *fxs = VECTOR_get_r0(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
     RWarning("fxnum > num_fxs: %d",fxnum);
     return 0;
@@ -3252,7 +3250,7 @@ const char* getFxrangeName(int fxnum, int rangetracknum){
     return 0;
   }
 
-  struct FXs *fxs = ListFindElement1_num_r0(&range->fxs[rangetracknum]->l, fxnum);
+  struct FXs *fxs = VECTOR_get_r0(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
     RWarning("fxnum > num_fxs: %d",fxnum);
     return "";
@@ -3270,7 +3268,7 @@ int getNumFxrangenodes(int fxnum, int rangetracknum){
     return 0;
   }
 
-  struct FXs *fxs = ListFindElement1_num_r0(&range->fxs[rangetracknum]->l, fxnum);
+  struct FXs *fxs = VECTOR_get_r0(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
     RWarning("fxnum > num_fxs: %d",fxnum);
     return 0;
@@ -3288,9 +3286,7 @@ int getNumFxsInRange(int rangetracknum){
     return 0;
   }
 
-  struct FXs *firstfxs = range->fxs[rangetracknum];
-  
-  return ListFindNumElements1(&firstfxs->l);
+  return range->fxs[rangetracknum].num_elements;
 }
 
 void clearTrackFX(int tracknum, int blocknum, int windownum){
@@ -3302,7 +3298,9 @@ void clearTrackFX(int tracknum, int blocknum, int windownum){
 
   struct Tracks *track = wtrack->track;
 
-  track->fxs = NULL;
+  PC_Pause();{
+    VECTOR_clean(&track->fxs);
+  }PC_StopPause(window);
 }
 
 

@@ -82,9 +82,7 @@ int FXTEXT_subsubtrack(const struct Tracker_Windows *window, struct WTracks *wtr
   if (subsubtrack < 0)
     return -1;
 
-  struct FXs *fxs = wtrack->track->fxs;
-  while(fxs!=NULL){
-    
+  VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
     if (subsubtrack == 0 || subsubtrack == 1 || subsubtrack == 2){
       if (to_fxs!=NULL)
         *to_fxs = fxs;
@@ -92,8 +90,7 @@ int FXTEXT_subsubtrack(const struct Tracker_Windows *window, struct WTracks *wtr
     }
     
     subsubtrack -= 3;
-    fxs = NextFXs(fxs);
-  }
+  }END_VECTOR_FOR_EACH;
   
   return -1;
 }
@@ -124,7 +121,7 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
     if (key == EVENT_DEL){
       
       VECTOR_FOR_EACH(FXText *vt, fxtext){
-        if (isInList1(&wtrack->track->fxs->l, &fxs->l) && isInList3(&fxs->fxnodelines->l, &vt->fxnodeline->l)) // We might have removed all nodes already (see line below)
+        if (VECTOR_is_in_vector(&wtrack->track->fxs, fxs) && isInList3(&fxs->fxnodelines->l, &vt->fxnodeline->l)) // We might have removed all nodes already (see line below)
           DeleteFxNodeLine(window, wtrack, fxs, vt->fxnodeline); // In this line, two nodes are removed if there's only two left.
       }END_VECTOR_FOR_EACH;
       
@@ -152,7 +149,7 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
       if (dat.is_valid==false)
         return false;
 
-      int pos = AddFXNodeLine(window, wblock, wtrack, fxs->l.num, dat.value, place);
+      int pos = AddFXNodeLine(window, wblock, wtrack, fx->effect_num, dat.value, place);
             
       struct FXNodeLines *fxnodeline = ListFindElement1_num(&fxs->fxnodelines->l, pos);
       fxnodeline->logtype = dat.logtype;      

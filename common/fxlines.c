@@ -204,7 +204,7 @@ void UpdateAllFXNodeLines(
 
 int getNumUsedFX(struct Tracks *track){
 	int ret;
-	ret=ListFindNumElements1(&track->fxs->l);
+	ret=track->fxs.num_elements;
 
 	return ret;
 }
@@ -215,19 +215,12 @@ int getNumUsedFX(struct Tracks *track){
     Just a way to get the same fx corresponding to 'num'.
 ******************************************************************/
 struct FX *getTrackFX(struct Tracks *track,int num){
-	struct FXs *fxs=track->fxs;
-	int nnum=0;
+  if (num >= track->fxs.num_elements){
+    RError("Error at function getTrackFX in file fxlines.c\n");
+    return NULL;
+  }
 
-	while(fxs!=NULL){
-		if(nnum==num){
-			return fxs->fx;
-		}
-		nnum++;
-		fxs=NextFXs(fxs);
-	}
-
-	RError("Error at function getTrackFX in file fxlines.c\n");
-	return NULL;
+  return ((struct FXs*)track->fxs.elements[num])->fx;
 }
 
 
@@ -240,10 +233,12 @@ void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float ol
     while(track!=NULL){
 
       if (track->patch == patch) {
-        struct FXs *fxs=track->fxs;
-        while(fxs!=NULL){
-          if (fxs->l.num == fxnum) {
-            struct FX *fx = fxs->fx;
+
+        VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+
+          struct FX *fx = fxs->fx;
+
+          if (fx->effect_num == fxnum) {
             int fx_min = fx->min;
             int fx_max = fx->max;
 
@@ -260,8 +255,8 @@ void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float ol
             block->is_dirty=true;
           }
 
-          fxs = NextFXs(fxs);
-        }
+        }END_VECTOR_FOR_EACH;
+          
       }
       track = NextTrack(track);
     }
@@ -358,6 +353,18 @@ static struct FX *selectFX(
 	return fx;
 }
 
+// TODO: Replace all (i.e. "the") use of find_fxs with get_fxs_for_fx. Need patch as well to identifiy fxs.
+static inline struct FXs *find_fxs(vector_t *fxss, int fxnum){
+  VECTOR_FOR_EACH(struct FXs *fxs, fxss){
+    if (fxs->fx->effect_num==fxnum)
+      return fxs;
+  }END_VECTOR_FOR_EACH;
+
+  RError("Unable to find fxnum %d", fxnum);
+  return fxss->elements[0];
+}
+
+
 int AddFXNodeLine(
                   struct Tracker_Windows *window,
                   struct WBlocks *wblock,
@@ -366,7 +373,7 @@ int AddFXNodeLine(
                   int val,
                   const Place *p1
 ){
-        struct FXs *fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fxnum); // FIX. fxnum is not a unique identifier anymore. But maybe it should be.
+        struct FXs *fxs=find_fxs(&wtrack->track->fxs, fxnum);
 	struct FXNodeLines *fxnodeline=talloc(sizeof(struct FXNodeLines));
 
         int ret;
@@ -381,12 +388,11 @@ int AddFXNodeLine(
 }
 
 static void AddNewTypeOfFxNodeLine(struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, struct FX *fx, const Place *p2, int val){
-  printf("new, fxnum: %d, wtrack->fxs->l.num:%d\n",fx->num,wtrack->track->fxs==NULL?-1000:wtrack->track->fxs->l.num);
+  //printf("new, fxnum: %d, wtrack->fx->fx->effect_num:%d\n",fx->num,wtrack->track->fxs==NULL?-1000:wtrack->track->fx->effect_num);
   
   struct FXs *fxs=talloc(sizeof(struct FXs));
-  fxs->l.num=fx->num;
   fxs->fx=fx;
-  ListAddElement1(&wtrack->track->fxs,&fxs->l);
+  VECTOR_push_back(&wtrack->track->fxs, fxs);
   
   struct FXNodeLines *fxnodeline=talloc(sizeof(struct FXNodeLines));
   fxnodeline->val=val;
@@ -398,13 +404,11 @@ static void AddNewTypeOfFxNodeLine(struct Tracker_Windows *window, const struct 
 }
 
 static struct FXs *get_fxs_for_fx(struct Tracks *track, struct FX *fx){
-  struct FXs *fxs = track->fxs;
-  while(fxs != NULL){
-    if (fxs->l.num == fx->num && fxs->fx->patch == fx->patch)
+  VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+    if (fxs->fx->effect_num == fx->num && fxs->fx->patch == fx->patch)
       return fxs;
-    fxs = NextFXs(fxs);
-  }
-
+  }END_VECTOR_FOR_EACH;
+  
   return NULL;
 }
 
@@ -547,11 +551,11 @@ void DeleteFxNodeLine(struct Tracker_Windows *window, struct WTracks *wtrack, st
       
       //OS_SLIDER_release_automation_pointers(track->patch,fx->effect_num);
       (*fx->closeFX)(fx,track);
-      ListRemoveElement1(&track->fxs,&fxs->l);
+      VECTOR_remove(&track->fxs, fxs);
       
     }PC_StopPause(NULL);
     
-      UpdateAllWBlockCoordinates(window);
+    UpdateAllWBlockCoordinates(window);
     window->must_redraw = true;
   }
 }

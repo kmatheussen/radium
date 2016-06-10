@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "placement_proc.h"
 #include "list_proc.h"
+#include "vector_proc.h"
 
 #include "fxlines_legalize_proc.h"
 
@@ -40,28 +41,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 ****************************************************/
 
 void LegalizeFXlines(struct Blocks *block, struct Tracks *track){
-	Place *p1,*p,p2;
-	struct FXs *fxs=track->fxs;
-	struct FXs *temp;
-	struct FXNodeLines *fxnodeline;
-	struct FXNodeLines *temp2;
+	Place p2;
 
 	PlaceSetLastPos(block,&p2);
 
-	while(fxs!=NULL){
-		temp=NextFXs(fxs);
-
-		fxnodeline=fxs->fxnodelines;
-		p1=PlaceGetFirstPos();
+ again:
+        VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+                struct FXNodeLines *fxnodeline=fxs->fxnodelines;
+		Place *p1=PlaceGetFirstPos();
 
  		while(fxnodeline!=NULL){
-			p=&fxnodeline->l.p;
+			Place *p=&fxnodeline->l.p;
 			if(
 				PlaceLessThan(p,p1)
 				|| PlaceGreaterThan(p,&p2)
 				|| (p1 != PlaceGetFirstPos() && PlaceEqual(p,p1))
 			){
-				temp2=NextFXNodeLine(fxnodeline);
+				struct FXNodeLines *temp2=NextFXNodeLine(fxnodeline);
 				ListRemoveElement3(&fxs->fxnodelines,&fxnodeline->l);
 				fxnodeline=temp2;
 				continue;
@@ -72,11 +68,11 @@ void LegalizeFXlines(struct Blocks *block, struct Tracks *track){
 
 		fxnodeline=fxs->fxnodelines;
 		if(fxnodeline==NULL || fxnodeline->l.next==NULL){
-			ListRemoveElement1(&track->fxs,&fxs->l);
+                  VECTOR_remove(&track->fxs, fxs);
+                  goto again;
 		}
 
-		fxs=temp;
-	}
+	}END_VECTOR_FOR_EACH;
 
 }
 

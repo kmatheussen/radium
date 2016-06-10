@@ -628,12 +628,10 @@ void MIDIStopPlaying(struct Instruments *instrument){
 static void MIDI_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
   R_ASSERT(PLAYER_current_thread_has_lock());
 
-  struct FXs *fxs = track->fxs;
-  while(fxs!=NULL){
+  VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
     struct FX *fx = fxs->fx;
     fx->patch = new_patch; // Only need to change patch. All patches use the same fx system.
-    fxs = NextFXs(fxs);
-  }
+  }END_VECTOR_FOR_EACH;
 
   return;
 }

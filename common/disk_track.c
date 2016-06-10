@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "vector_proc.h"
 #include "tracks_proc.h"
 #include "instruments_proc.h"
 #include "patch_proc.h"
@@ -62,7 +63,7 @@ DC_start("TRACK");
 
 	SaveNotes(track->notes);
 	SaveStops(track->stops);
-	SaveFXs(track->fxs,track);
+	SaveFXs(&track->fxs,track);
 
 
 DC_end();
@@ -125,7 +126,7 @@ var7:
 
 var8:
         if(track->patch==NULL)
-          track->patch=DC_alloc(sizeof(struct Patch)); // Reason for atomic alloc: only id and instrument is used during loading.
+          track->patch=DC_alloc(sizeof(struct Patch)); // Reason for atomic alloc: only patch.id and instrument.id is used during loading.
         track->patch->instrument = get_instrument_from_type(DC_LoadI());
         goto start;
 
@@ -136,7 +137,7 @@ obj1:
 	LoadStops(&track->stops);
 	goto start;
 obj2:
-	DC_ListAdd1(&track->fxs,LoadFXs(track));
+        VECTOR_push_back(&track->fxs, LoadFXs(track));
 	goto start;
 
 var9:
@@ -176,7 +177,7 @@ if(track==NULL) return;
 
         DLoadNotes(newroot, track, track->notes);
         
-        DLoadFXs(newroot, track, track->fxs);
+        DLoadFXs(newroot, track, &track->fxs);
         
 DLoadTracks(newroot,NextTrack(track));
 }

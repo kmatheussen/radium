@@ -285,7 +285,7 @@ all:
 	@echo
 
 
-radium: $(BUILD_DEPENDENCIES) $(PROGRAM_MODULES)
+radium: $(BUILD_DEPENDENCIES) $(PROGRAM_MODULES) Makefile.Qt
 	@echo
 	@echo "Compilation OK."
 	@echo

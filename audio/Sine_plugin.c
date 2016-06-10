@@ -79,7 +79,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
   data->volume = value;
 }
 
-float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
+static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
   Data *data = (Data*)plugin->data;
   return data->volume;
 }

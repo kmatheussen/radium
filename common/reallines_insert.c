@@ -15,10 +15,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#include "nsmtracker.h"
 #include <math.h>
+
+
+#include "nsmtracker.h"
 #include "placement_proc.h"
 #include "list_proc.h"
+#include "vector_proc.h"
 #include "notes_legalize_proc.h"
 #include "fxlines_proc.h"
 #include "fxlines_legalize_proc.h"
@@ -82,20 +85,19 @@ void InsertPlace_fxs(
 	float place,
 	float toplace
 ){
-	struct FXs *fxs=track->fxs;
 
-	while(fxs!=NULL){
-		List_InsertPlaceLen3(
-			block,
-			&fxs->fxnodelines,
-			&fxs->fxnodelines->l,
-			place,
-			toplace,
-			NULL
-		);
-		fxs=NextFXs(fxs);
-	}
-	LegalizeFXlines(block,track);
+  VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+    List_InsertPlaceLen3(
+                         block,
+                         &fxs->fxnodelines,
+                         &fxs->fxnodelines->l,
+                         place,
+                         toplace,
+                         NULL
+                         );
+  }END_VECTOR_FOR_EACH;
+  
+  LegalizeFXlines(block,track);
 }
 
 void InsertPlace_temponodes(

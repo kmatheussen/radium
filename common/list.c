@@ -33,6 +33,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 /* Next two structs.. It only looks a bit nicer using them I think. */
 
+struct ListHeaderPointer0{
+	struct ListHeader0 *root;
+};
+
 struct ListHeaderPointer1{
 	struct ListHeader1 *root;
 };
@@ -153,6 +157,20 @@ void ListAddElement3_a(
         before before that in the list.
 
 ******************************************************************************/
+
+void ListAddElement0(
+                     void *voidlistroot,
+                     struct ListHeader0 *element
+){
+  R_ASSERT_RETURN_IF_FALSE(voidlistroot!=NULL);
+  R_ASSERT_RETURN_IF_FALSE(element!=NULL);
+  
+  struct ListHeaderPointer0 *listroot=voidlistroot;
+  struct ListHeader0 *old_first=listroot->root;
+
+  listroot->root = element;
+  element->next = old_first;
+}
 
 void ListAddElement1(
 	void *voidlistroot,
@@ -617,6 +635,13 @@ bool isInList1(
 	return isInList3((struct ListHeader3 *)liststart,(struct ListHeader3 *)element);
 }
 
+bool isInList0(
+	struct ListHeader0 *liststart,
+	struct ListHeader0 *element
+){
+	return isInList3((struct ListHeader3 *)liststart,(struct ListHeader3 *)element);
+}
+
 extern struct Root *root;
 
 /* Do a check on an array of liststart/elements, ended with the root-pointer. */
@@ -851,8 +876,8 @@ int ForAllListElements3(
     Returns the number of elements in a list.
 ******************************************************************************/
 
-NInt ListFindNumElements1(
-	struct ListHeader1 *list
+NInt ListFindNumElements0(
+	struct ListHeader0 *list
 ){
 	NInt ret=0;
 	while(list!=NULL){
@@ -860,6 +885,12 @@ NInt ListFindNumElements1(
 		ret++;
 	}
 	return ret;
+}
+
+NInt ListFindNumElements1(
+	struct ListHeader1 *list
+){
+  	return ListFindNumElements0((struct ListHeader0 *)list);
 }
 
 NInt ListFindNumElements3(

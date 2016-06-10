@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "../config/config.h"
 #include "disk.h"
 #include "patch_proc.h"
 
@@ -59,7 +60,7 @@ struct FX *LoadFX(struct Tracks *track){
                 "patchnum"
 	};
 	struct FX *fx=DC_alloc(sizeof(struct FX));
-	DC_LoadN();
+	fx->num = DC_LoadN();
         
         fx->patch = DC_alloc(sizeof(struct Patch)); // temporary object used during loading.
         fx->patch->id = -1; // for loading older songs.
@@ -88,6 +89,9 @@ var3:
 	goto start;
 var4:        
 	fx->effect_num=DC_LoadI();
+        if (DISKVERSION > 0.835)
+          R_ASSERT(fx->num == fx->effect_num);
+
         fx->num = fx->effect_num; // Fix bugs in previous versions. Sometimes fx->effect_num is the only one containing the right value.
 	goto start;
 

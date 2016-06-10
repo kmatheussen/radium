@@ -20,11 +20,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
-extern void SaveFXs(struct FXs *fxs,struct Tracks *track);
+extern void SaveFXs(vector_t *fxss,struct Tracks *track);
 
 extern struct FXs *LoadFXs(struct Tracks *track);
 
-extern void DLoadFXs(struct Root *newroot,struct Tracks *track, struct FXs *fxs);
+extern void DLoadFXs(struct Root *newroot,struct Tracks *track, vector_t *fxss);
 
 #endif
 

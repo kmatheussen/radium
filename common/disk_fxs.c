@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "../config/config.h"
+#include "vector_proc.h"
 #include "disk.h"
 #include "disk_fx_proc.h"
 #include "disk_fxnodelines_proc.h"
@@ -32,18 +34,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void SaveFXs(struct FXs *fxs,struct Tracks *track){
-if(fxs==NULL) return;
-DC_start("FXS");
+void SaveFXs(vector_t *fxss,struct Tracks *track){
+  VECTOR_FOR_EACH(struct FXs *fxs, fxss){
 
-	DC_SaveN(fxs->l.num);
+    DC_start("FXS"); {
 
+        DC_SaveN(fxs->fx->effect_num); // Not used. It's only used for validation now, and perhaps for newer songs to be less incompatible with older versions of radium.
+        
 	SaveFX(fxs->fx,track);
 	SaveFXNodeLines(fxs->fxnodelines);
 
 
-DC_end();
-SaveFXs(NextFXs(fxs),track);
+    }DC_end();
+
+  }END_VECTOR_FOR_EACH;
 }
 
 struct FXs *LoadFXs(struct Tracks *track){
@@ -56,13 +60,15 @@ struct FXs *LoadFXs(struct Tracks *track){
 	struct FXs *fxs=DC_alloc(sizeof(struct FXs));
 
 	printf("\tLoadFXs_start\n");
-	fxs->l.num=DC_LoadN();
+	int effect_num = DC_LoadN();
 
 	GENERAL_LOAD(2,0)
 
 obj0:
 	fxs->fx=LoadFX(track);
-        fxs->l.num = fxs->fx->effect_num; // Sometimes fx->effect_num is the only one containing the right value. (bug in previous version)
+        if (DISKVERSION > 0.835)
+          R_ASSERT(effect_num == fxs->fx->effect_num);
+        //fxs->l.num = fxs->fx->effect_num; // Sometimes fx->effect_num is the only one containing the right value. (bug in previous version) (fxs->l.num doesn't exist anymore.)
 	goto start;
 obj1:
 	LoadFXNodeLines(&fxs->fxnodelines);
@@ -106,12 +112,10 @@ end:
 }
 
 
-void DLoadFXs(struct Root *newroot,struct Tracks *track, struct FXs *fxs){
-if(fxs==NULL) return;
-
+void DLoadFXs(struct Root *newroot,struct Tracks *track, vector_t *fxss){
+  VECTOR_FOR_EACH(struct FXs *fxs, fxss){
    DLoadFX(newroot, track, fxs, fxs->fx);
-        
-DLoadFXs(newroot,track, NextFXs(fxs));
+  }END_VECTOR_FOR_EACH;
 }
 
 

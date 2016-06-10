@@ -121,12 +121,12 @@ void handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Pa
   R_ASSERT(PLAYER_current_thread_has_lock());
   
   if(old_patch==NULL || new_patch==NULL) {
-    track->fxs = NULL;
+    VECTOR_clean(&track->fxs);
     return;
   }
 
   if (old_patch->instrument != new_patch->instrument) {
-    track->fxs = NULL;
+    VECTOR_clean(&track->fxs);
     return;
   }
   
@@ -292,9 +292,10 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
   struct WBlocks *wblock = window->wblocks;
     
   while(wblock!=NULL){
-    
     struct WTracks *wtrack = wblock->wtracks;
     while(wtrack!=NULL){
+      bool has_added_undo = false;
+      
       struct Tracks *track = wtrack->track;
       if(track->patch==old_patch){
 
@@ -309,25 +310,26 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
         }PC_StopPause(window);
         
       } else if (new_patch == NULL){
-        
-        struct FXs *fxs = track->fxs;
-        while(fxs!=NULL){
-          struct FXs *next = NextFXs(fxs);
-          
+
+      again:
+        VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){          
           if (fxs->fx->patch==old_patch){
-            
-            ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
+
+            if (has_added_undo==false){
+              ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
+              has_added_undo=true;
+            }
             
             PLAYER_lock();{
-              
-              ListRemoveElement1(&track->fxs, &fxs->l);
+
+              VECTOR_remove(&track->fxs, fxs);
+              goto again;
               
             }PLAYER_unlock();
             
           }
-          
-          fxs = next;
-        }
+        }END_VECTOR_FOR_EACH;
+        
       }
       
       wtrack = NextWTrack(wtrack);

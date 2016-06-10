@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_range_calc_proc.h"
 #include "placement_proc.h"
 #include "list_proc.h"
+#include "vector_proc.h"
 #include "clipboard_range.h"
 #include "wtracks_proc.h"
 #include "notes_proc.h"
@@ -217,14 +218,13 @@ static void CopyRange_fxnodelines(
 
 
 void CopyRange_fxs(
-	struct FXs **tofxs,
-	struct FXs *fromfxs,
-	Place *p1,
-	Place *p2
-){
-	struct FXs *fxs;
-
-	if(fromfxs==NULL) return;
+                   vector_t *tofxs,
+                   vector_t *das_fromfxs,
+                   Place *p1,
+                   Place *p2
+                   )
+{
+  VECTOR_FOR_EACH(struct FXs *fromfxs, das_fromfxs){
 
         R_ASSERT_RETURN_IF_FALSE(fromfxs->fx->patch->is_usable);
         
@@ -236,19 +236,15 @@ void CopyRange_fxs(
         }
 #endif
         
-	fxs=talloc(sizeof(struct FXs));
+	struct FXs *fxs=talloc(sizeof(struct FXs));
 
-	fxs->fx=talloc(sizeof(struct FX));
-        memcpy(fxs->fx, fromfxs->fx, sizeof(struct FX));
+	fxs->fx=tcopy(fromfxs->fx, sizeof(struct FX)); // Why not just reference the existing fx? (fx is modified)
 
-	fxs->l.num=fromfxs->l.num;
-        
-
-	ListAddElement1(tofxs,&fxs->l);
+	VECTOR_push_back(tofxs,fxs);
 
 	CopyRange_fxnodelines(&fxs->fxnodelines,fromfxs->fxnodelines,NULL,*p1,*p2);
 
-	CopyRange_fxs(tofxs,NextFXs(fromfxs),p1,p2);
+  }END_VECTOR_FOR_EACH;
 }
 
 
@@ -273,7 +269,7 @@ void CopyRange(
 	range->notes=talloc((size_t)(sizeof(struct Notes *)*num_tracks));
 	range->stops=talloc((size_t)(sizeof(struct Stops *)*num_tracks));
 	//range->instruments=talloc((size_t)(sizeof(struct Instruments *)*num_tracks));
-	range->fxs=talloc((size_t)(sizeof(struct Fxs *)*num_tracks));
+	range->fxs=talloc((size_t)(sizeof(vector_t)*num_tracks));
 
 	p1=getRangeStartPlace(wblock);
 	p2=getRangeEndPlace(wblock);
@@ -286,7 +282,7 @@ void CopyRange(
           //range->instruments[lokke]=track->instrument;
 		CopyRange_notes(&range->notes[lokke],track->notes,p1,p2);
 		CopyRange_stops(&range->stops[lokke],track->stops,p1,p2);
-		CopyRange_fxs(&range->fxs[lokke],track->fxs,p1,p2);
+		CopyRange_fxs(&range->fxs[lokke],&track->fxs,p1,p2);
 
 		track=NextTrack(track);
                 if (track==NULL)

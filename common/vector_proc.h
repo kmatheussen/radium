@@ -20,6 +20,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 
 static inline int VECTOR_push_back(vector_t *v, const void *element){
+#if 0 //ifndef RELEASE
+  R_ASSERT(element!=NULL);
+#endif
+  
   const int num_elements = v->num_elements;
 
   if(num_elements==v->num_elements_allocated){
@@ -80,11 +84,25 @@ static inline void VECTOR_insert(vector_t *v, const void *element, int pos){
   }
 }
 
+static inline void *VECTOR_get_r0(const vector_t *v, int num, const char *type){
+  if (num < 0){
+    RError("Can not have negative index for VECTOR_get. name: %s index: %d (size: %d)",type,num,v->num_elements);
+    return NULL;
+  }
+  if (num>=v->num_elements)
+    return NULL;
+  
+  return v->elements[num];
+}
+                         
 static inline void *VECTOR_get(const vector_t *v, int num, const char *type){
-  if (num < 0 || num>=v->num_elements) {
+  void *ret = VECTOR_get_r0(v, num, type);
+
+  if (ret==NULL && num>=0){
     RError("There is no %s %d (size: %d)",type,num,v->num_elements);
     return NULL;
   }
+  
   return v->elements[num];
 }
                          

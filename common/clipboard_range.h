@@ -23,7 +23,7 @@ struct Range{
 	struct Notes **notes;
 	struct Stops **stops;
   //struct Instruments **instruments;
-	struct FXs **fxs;
+        vector_t *fxs;
 	Place length;
         int num_lines;
 };

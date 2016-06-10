@@ -14,8 +14,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
-
 extern void CopyRange_notes(
 	struct Notes **tonote,
 	struct Notes *fromnote,
@@ -31,8 +29,8 @@ extern void CopyRange_stops(
 );
 
 extern void CopyRange_fxs(
-	struct FXs **tofxs,
-	struct FXs *fromfxs,
+	vector_t *tofxs,
+	vector_t *fromfxs,
 	Place *p1,
 	Place *p2
 );

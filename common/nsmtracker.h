@@ -83,6 +83,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 #endif
 
+#if USE_GTK_VISUAL
+#error "oops"
+#endif
+
 
 /******************************************************************
   Main header file for the tracker. Each struct often has a source-
@@ -348,6 +352,10 @@ enum ColorNums {
 /*********************************************************************
 	list.h
 *********************************************************************/
+
+struct ListHeader0{
+	struct ListHeader0 *next;
+};
 
 struct ListHeader1{
 	struct ListHeader1 *next;
@@ -725,7 +733,7 @@ typedef enum {
 
 struct FX{
   //	struct ListHeader1 l; // The next field in 'l' is not used. FX objects are stored one by one in the FXs object.
-	int num;
+        int num; // No no no. 'num' and 'effect_num' is the same.
 	const char *name;
 	enum ColorNums color;
 	void (*configureFX)(struct FX *fx,struct Tracks *track);
@@ -831,12 +839,9 @@ struct FXNodeLines{
 
 
 struct FXs{
-	struct ListHeader1 l;	/* l.num=fxnum */
 	struct FX *fx;
 	struct FXNodeLines *fxnodelines;
 };
-#define NextFXs(a) ((struct FXs *)((a)->l.next))
-
 
 
 /*********************************************************************
@@ -853,7 +858,7 @@ struct Tracks{
   
 	const char *trackname;
 	struct Patch *patch;
-	struct FXs *fxs;
+        vector_t fxs; // Contains struct FXs* elements
 
         void *midi_instrumentdata;			/* Used by the midi instrument. */
 

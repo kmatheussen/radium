@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "time_proc.h"
 #include "reallines_proc.h"
 #include "list_proc.h"
+#include "vector_proc.h"
 #include "undo_blocks_proc.h"
 #include "temponodes_legalize_proc.h"
 #include "visual_proc.h"
@@ -73,12 +74,10 @@ static void expand_track(struct Tracks *track, int start, int end, int num_lines
   }
   
   expand_list3(&track->stops->l, start, end, num_lines);
-  
-  struct FXs *fxs = track->fxs;
-  while(fxs!=NULL){
+
+  VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
     expand_list3(&fxs->fxnodelines->l, start, end, num_lines);
-    fxs = NextFXs(fxs);
-  }
+  }END_VECTOR_FOR_EACH;
 }
 
 static void expand_block(struct Blocks *block, int start, int end, int num_lines){

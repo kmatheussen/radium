@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "vector_proc.h"
 #include "clipboard_range_copy_proc.h"
 #include "clipboard_range_calc_proc.h"
 #include "placement_proc.h"
@@ -69,11 +70,11 @@ struct WTracks *CB_CopyTrack(
 
 	totrack->notes=NULL;
 	totrack->stops=NULL;
-	totrack->fxs=NULL;
+        memset(&totrack->fxs, 0, sizeof(vector_t));
 
 	CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
 	CopyRange_stops(&totrack->stops,track->stops,p1,&p2);
-	CopyRange_fxs(&totrack->fxs,track->fxs,p1,&p2);
+	CopyRange_fxs(&totrack->fxs,&track->fxs,p1,&p2);
 
 	return towtrack;
 }

@@ -87,7 +87,7 @@ int GetXSubTrack1(
   }
 
   if (wtrack->fxtext_on){
-    int numfxs = ListFindNumElements1(&wtrack->track->fxs->l);
+    int numfxs = wtrack->track->fxs.num_elements;
     int fxnum;
     for(fxnum=0 ; fxnum < numfxs ; fxnum++){
       
@@ -171,7 +171,7 @@ int GetXSubTrack2(
     }
 
     if (wtrack->fxtext_on){
-      int numfxs = ListFindNumElements1(&wtrack->track->fxs->l);
+      int numfxs = wtrack->track->fxs.num_elements;
       int fxnum;
       for(fxnum=0 ; fxnum < numfxs ; fxnum++){
         

@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "vector_proc.h"
 #include "clipboard_track_copy_proc.h"
 #include "wtracks_proc.h"
 #include "clipboard_tempos_copy_proc.h"
@@ -56,18 +57,15 @@ void CB_CutTrack_Force(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
-	struct FXs *fxs=wtrack->track->fxs;
-
 	cb_wtrack=CB_CopyTrack(wblock,wtrack);
 	wtrack->track->notes=NULL;
 	wtrack->track->stops=NULL;
 
-	while(fxs!=NULL){
-		(*fxs->fx->closeFX)(fxs->fx,wtrack->track);
-		fxs=NextFXs(fxs);
-	}
+        VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
+          (*fxs->fx->closeFX)(fxs->fx,wtrack->track);
+        }END_VECTOR_FOR_EACH;
 
-	wtrack->track->fxs=NULL;
+	VECTOR_clean(&wtrack->track->fxs);
 }
 
 struct WTracks *CB_CutTrack(
@@ -80,21 +78,18 @@ struct WTracks *CB_CutTrack(
   
   PC_Pause();{
             
-	struct FXs *fxs=wtrack->track->fxs;
-
 	ret=CB_CopyTrack(wblock,wtrack);
 
         //	if(window->curr_track_sub<0){
-		wtrack->track->notes=NULL;
-		wtrack->track->stops=NULL;
-                //	}
+        wtrack->track->notes=NULL;
+        wtrack->track->stops=NULL;
+        //	}
 
-	while(fxs!=NULL){
-		(*fxs->fx->closeFX)(fxs->fx,wtrack->track);
-		fxs=NextFXs(fxs);
-	}
+        VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
+          (*fxs->fx->closeFX)(fxs->fx,wtrack->track);
+        }END_VECTOR_FOR_EACH;
 
-	wtrack->track->fxs=NULL;
+	VECTOR_clean(&wtrack->track->fxs);
 
   }PC_StopPause(window);
   
