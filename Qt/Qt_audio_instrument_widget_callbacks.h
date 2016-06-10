@@ -480,6 +480,7 @@ public:
       else
         can_shrink = true;
       setMinimumHeight(height()+1);
+      GFX_ScheduleRedraw();
       //printf(" adjust 1\n");
       shrinking = false;
     } else if (is_visible==false && num_times_horizontal_is_not_visible>50 && can_shrink==true){
@@ -491,6 +492,7 @@ public:
       int new_size = old_size-1;
       if(new_size > 50){
         setMinimumHeight(new_size);
+        GFX_ScheduleRedraw();
         //printf(" adjust 2\n");
       }
       last_time_shrank = true;
