@@ -1,4 +1,7 @@
-
+#include <QList>
+#include <QMap>
+#include <QString>
+#include <QWidget>
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -108,6 +111,35 @@ class MyUI : public UI
 
   const char* _curr_box_name;
 
+  /**
+     volume, volume, delay, volume
+     ->
+     volume (1), volume (2), delay, volume (3)
+   */
+  void uniqifyEffectNames(void){
+    QList<QString> names;
+    QMap<QString, int> counters;
+    
+    for(int i=0;i<_num_effects;i++)
+      names.push_back(_controllers[i].name.c_str());
+
+    for(int i=0;i<_num_effects;i++) {
+      QString name = names[i];
+      if (counters.contains(name)){
+        int counter = counters[name] + 1;
+        names[i] = name + " (" + QString::number(counter) + ")";
+        counters[name] = counter;
+      } else if (i<_num_effects-1 && names.indexOf(name,i+1)>0){ // I.e. are there more names with the same name later in the list
+        names[i] = name + " (1)";
+        counters[name] = 1;
+      }
+    }
+
+    for(int i=0;i<_num_effects;i++)
+      if (names[i] != _controllers[i].name.c_str())
+        _controllers[i].name = names[i].toUtf8().constData();
+  }
+  
   // -- widget's layouts
   
   void openFrameBox(const char* label) {_curr_box_name = label;}
@@ -334,10 +366,7 @@ static VoiceOp RT_play_voice(Data *data, Voice *voice, int num_frames, float **i
   return VOICE_KEEP;
 }
 
-static void RT_process_instrument(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  Data *data = (Data*)plugin->data;
-  int num_outputs = plugin->type->num_outputs;
-
+static void RT_process_instrument2(int num_outputs, Data *data, int64_t time, int num_frames, float **inputs, float **outputs){
   for(int i=0;i<num_outputs;i++)
     memset(outputs[i],0,num_frames*sizeof(float));
 
@@ -372,10 +401,14 @@ static void RT_process_instrument(SoundPlugin *plugin, int64_t time, int num_fra
   }
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void RT_process_instrument(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
+  int num_outputs = plugin->type->num_outputs;
+  RT_process_instrument2(num_outputs, data, time, num_frames, inputs, outputs);
+}
 
-  //printf("Playing %d\n",note_num);
+static void play_note2(Data *data, int64_t time, note_t note){
+  printf("Playing %f\n",note.pitch);
 
   Voice *voice = data->voices_not_playing;
 
@@ -386,8 +419,6 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note){
 
   RT_remove_voice(&data->voices_not_playing, voice);
   RT_add_voice(&data->voices_playing, voice);
-
-  //voice->dsp_instance->init((int)data->samplerate);
 
   *(voice->myUI._gate_control) = 1.0f;
   *(voice->myUI._freq_control) = midi_to_hz(note.pitch);
@@ -401,8 +432,12 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note){
   voice->delta_pos_at_end = -1;
 }
 
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note){
   Data *data = (Data*)plugin->data;
+  play_note2(data, time, note);
+}
+
+static void set_note_volume2(Data *data, int64_t time, note_t note){
   Voice *voice = data->voices_playing;
   //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
   while(voice!=NULL){
@@ -412,8 +447,12 @@ static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t not
   }
 }
 
-static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t note){
   Data *data = (Data*)plugin->data;
+  set_note_volume2(data, time, note);
+}
+
+static void set_note_pitch2(Data *data, int64_t time, note_t note){
   Voice *voice = data->voices_playing;
   //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
   while(voice!=NULL){
@@ -422,9 +461,12 @@ static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, note_t note
     voice=voice->next;
   }
 }
-
-static void stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, note_t note){
   Data *data = (Data*)plugin->data;
+  set_note_pitch2(data, time, note);
+}
+
+static void stop_note2(Data *data, int64_t time, note_t note){
   Voice *voice = data->voices_playing;
   while(voice!=NULL){
     if(voice->note_id==note.id)
@@ -432,48 +474,77 @@ static void stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
     voice=voice->next;
   }
 }
-
-static void RT_process_effect(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  //SoundPluginType *type = plugin->type;
+static void stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
   Data *data = (Data*)plugin->data;
+  stop_note2(data, time, note);
+}
 
+static void RT_process_effect2(Data *data, int64_t time, int num_frames, float **inputs, float **outputs){
   data->voices[0].dsp_instance->compute(num_frames, inputs, outputs);
   //printf("in00: %f, in10: %f\n",inputs[0][0],inputs[1][0]);
   //printf("out00: %f, out10: %f\n",outputs[0][0],outputs[1][0]);
 }
 
-static void *create_effect_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int blocksize){
+static void RT_process_effect(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
+  //SoundPluginType *type = plugin->type;
+  Data *data = (Data*)plugin->data;
+  RT_process_effect2(data, time, num_frames, inputs, outputs);
+}
+
+static Data *create_effect_plugin_data2(float samplerate, dsp *initialized_dsp){
   Data *data = new Data;
   data->samplerate = samplerate;
 
   Voice *voice = &data->voices[0];
-  voice->dsp_instance = new CLASSNAME;
+  voice->dsp_instance = initialized_dsp;
   //printf("Creating %s / %s. samplerate: %d\n",plugin_type->type_name,plugin_type->name,(int)samplerate);
-  voice->dsp_instance->instanceInit(samplerate);
   voice->dsp_instance->buildUserInterface(&voice->myUI);
+  voice->myUI.uniqifyEffectNames();
   return data;
 }
 
-static void *create_instrument_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int blocksize){
+#if defined(CLASSNAME)
+static void *create_effect_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int blocksize){
+  dsp *dsp = new CLASSNAME;
+  dsp->instanceInit(samplerate);
+  return create_effect_plugin_data2(samplerate, dsp);
+}
+#endif
+
+static void convert_effect_data_to_instrument_data(Data *data, dsp *initialized_dsps[MAX_POLYPHONY]){
+  for(int i=0;i<MAX_POLYPHONY;i++){
+    Voice *voice = &data->voices[i];
+    voice->dsp_instance = initialized_dsps[i];
+    voice->dsp_instance->buildUserInterface(&voice->myUI);
+    voice->myUI.remove_instrument_notecontrol_effects();
+    voice->myUI.uniqifyEffectNames();
+    
+    RT_add_voice(&data->voices_not_playing, voice);
+  }  
+}
+
+static Data *create_instrument_plugin_data2(float samplerate, dsp *initialized_dsps[MAX_POLYPHONY]){
   Data *data = new Data;
   data->samplerate = samplerate;
 
-  for(int i=0;i<MAX_POLYPHONY;i++){
-    Voice *voice = &data->voices[i];
-    voice->dsp_instance = new CLASSNAME;
-    voice->dsp_instance->init(samplerate);
-    voice->dsp_instance->buildUserInterface(&voice->myUI);
-    voice->myUI.remove_instrument_notecontrol_effects();
-
-    RT_add_voice(&data->voices_not_playing, voice);
-  }
-
-
+  convert_effect_data_to_instrument_data(data, initialized_dsps);
+  
   return data;
 }
 
-static void cleanup_plugin_data(SoundPlugin *plugin){
-  Data *data = (Data*)plugin->data;
+#if defined(CLASSNAME)
+static void *create_instrument_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int blocksize){
+  dsp *dsps[MAX_POLYPHONY];
+  for(int i=0;i<MAX_POLYPHONY;i++){
+    dsps[i] = new CLASSNAME;
+    dsps[i]->instanceInit(samplerate);
+  }
+  
+  return create_instrument_plugin_data2(samplerate, dsps);
+}
+#endif
+
+static void delete_dsps_and_data(Data *data){
 
   for(int i=0;i<MAX_POLYPHONY;i++){
     Voice *voice = &data->voices[i];
@@ -484,6 +555,11 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   }
 
   delete data;
+}
+
+static void cleanup_plugin_data(SoundPlugin *plugin){
+  Data *data = (Data*)plugin->data;
+  delete_dsps_and_data(data);
 }
 
 #ifdef FAUST_THAT_ONE
@@ -505,16 +581,18 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
   return controller->type;
 }
 
-static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
-  const struct SoundPluginType *plugin_type = plugin->type;
-  Data *data = (Data*)plugin_type->data;
+static const char *get_effect_name2(Data *data, int effect_num){
   Voice *voice = &data->voices[0];
   MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
   return controller->name.c_str();
 }
+static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
+  const struct SoundPluginType *plugin_type = plugin->type;
+  Data *data = (Data*)plugin_type->data;
+  return get_effect_name2(data, effect_num);
+}
 
-static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
-  Data *data = (Data*)plugin->data;
+static void set_effect_value2(Data *data, int effect_num, float value, enum ValueFormat value_format){
   float scaled_value;
 
   if(value_format==PLUGIN_FORMAT_SCALED){
@@ -541,8 +619,12 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
   }
 }
 
-static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
+static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
+  set_effect_value2(data, effect_num, value, value_format);
+}
+
+static float get_effect_value2(Data *data, int effect_num, enum ValueFormat value_format){
   Voice *voice = &data->voices[0];
   MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
 
@@ -558,9 +640,12 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
     return safe_float_read(controller->control_port);
   }
 }
-
-static void get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
+static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
   Data *data = (Data*)plugin->data;
+  return get_effect_value2(data, effect_num, value_format);
+}
+
+static void get_display_value_string2(Data *data, int effect_num, char *buffer, int buffersize){
   Voice *voice = &data->voices[0];
   MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
 
@@ -570,6 +655,11 @@ static void get_display_value_string(struct SoundPlugin *plugin, int effect_num,
     snprintf(buffer,buffersize-1,"%.2f %s",safe_float_read(controller->control_port), controller->unit);
 }
 
+static void get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
+  Data *data = (Data*)plugin->data;
+  get_display_value_string2(data, effect_num, buffer, buffersize);
+}
+
 static const char *get_effect_description(const struct SoundPluginType *plugin_type, int effect_num){
   Data *data = (Data*)plugin_type->data;
   Voice *voice = &data->voices[0];
@@ -577,6 +667,8 @@ static const char *get_effect_description(const struct SoundPluginType *plugin_t
 
   return controller->tooltip;
 }
+
+#if defined(CLASSNAME)
 
 static void fill_type(SoundPluginType *type){
  type->type_name                = "Faust";
@@ -650,3 +742,5 @@ void CREATE_NAME (void){
   
   PR_add_plugin_type(&faust_type);
 }
+
+#endif

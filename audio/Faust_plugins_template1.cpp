@@ -3,20 +3,7 @@
 
 #include <vector>
 
-/*
-#include "/usr/share/faust/audio/dsp.h"
-#include "/usr/share/faust/gui/UI.h"
-*/
-
-#include "faudiostream/architecture/faust/audio/dsp.h"
-#include "faudiostream/architecture/faust/gui/UI.h"
-
 #include "../common/nsmtracker.h"
-
-struct Meta
-{
-    void declare (const char* key, const char* value) { }
-};
 
 static void RT_fade_out(float *sound, int num_frames){
   float num_frames_plus_1 = num_frames+1.0f;

@@ -20,6 +20,23 @@ template <> 	 inline int faustpower<0>(int x)            { return 1; }
 template <> 	 inline int faustpower<1>(int x)            { return x; }
 template <> 	 inline int faustpower<2>(int x)            { return x*x; }
 #endif
+
+/*
+#include "/usr/share/faust/audio/dsp.h"
+#include "/usr/share/faust/gui/UI.h"
+*/
+
+// We use faust1 here.
+
+struct Meta
+{
+    void declare (const char* key, const char* value) { }
+};
+
+#include "faudiostream/architecture/faust/audio/dsp.h"
+#include "faudiostream/architecture/faust/gui/UI.h"
+
+
 #include "Faust_plugins_template1.cpp"
 
 /******************************************************************************

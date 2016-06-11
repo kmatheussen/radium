@@ -1,3 +1,20 @@
+
+/*
+#include "/usr/share/faust/audio/dsp.h"
+#include "/usr/share/faust/gui/UI.h"
+*/
+
+// We use faust1 here.
+
+struct Meta
+{
+    void declare (const char* key, const char* value) { }
+};
+
+#include "faudiostream/architecture/faust/audio/dsp.h"
+#include "faudiostream/architecture/faust/gui/UI.h"
+
+
 #include "Faust_plugins_template1.cpp"
 
 /******************************************************************************

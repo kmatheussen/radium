@@ -18,6 +18,23 @@ template <> 	 inline int faustpower<0>(int x)            { return 1; }
 template <> 	 inline int faustpower<1>(int x)            { return x; }
 template <> 	 inline int faustpower<2>(int x)            { return x*x; }
 #endif
+
+/*
+#include "/usr/share/faust/audio/dsp.h"
+#include "/usr/share/faust/gui/UI.h"
+*/
+
+// We use faust1 here.
+
+struct Meta
+{
+    void declare (const char* key, const char* value) { }
+};
+
+#include "faudiostream/architecture/faust/audio/dsp.h"
+#include "faudiostream/architecture/faust/gui/UI.h"
+
+
 #include "Faust_plugins_template1.cpp"
 
 /******************************************************************************
@@ -279,12 +296,12 @@ class Bowed_dsp : public dsp {
 		faust_interface->declare(&fslider9, "tooltip", "Vibrato silence duration before attack");
 		faust_interface->declare(&fslider9, "unit", "s");
 		faust_interface->addHorizontalSlider("Vibrato_Begin", &fslider9, 0.05f, 0.0f, 2.0f, 0.01f);
-		faust_interface->declare(&fslider7, "4", "");
-		faust_interface->declare(&fslider7, "unit", "Hz");
-		faust_interface->addHorizontalSlider("Vibrato_Freq", &fslider7, 6.0f, 1.0f, 15.0f, 0.1f);
 		faust_interface->declare(&fslider11, "4", "");
 		faust_interface->declare(&fslider11, "tooltip", "A value between 0 and 1");
 		faust_interface->addHorizontalSlider("Vibrato_Gain", &fslider11, 0.01f, 0.0f, 1.0f, 0.01f);
+		faust_interface->declare(&fslider7, "4", "");
+		faust_interface->declare(&fslider7, "unit", "Hz");
+		faust_interface->addHorizontalSlider("Vibrato_Gain", &fslider7, 6.0f, 1.0f, 15.0f, 0.1f);
 		faust_interface->declare(&fslider8, "4", "");
 		faust_interface->declare(&fslider8, "tooltip", "Vibrato release duration");
 		faust_interface->declare(&fslider8, "unit", "s");
@@ -311,7 +328,7 @@ class Bowed_dsp : public dsp {
 		faust_interface->openVerticalBox("Physical_Parameters");
 		faust_interface->declare(&fslider0, "2", "");
 		faust_interface->declare(&fslider0, "tooltip", "Bow position along the string (value between 0 and 1)");
-		faust_interface->addHorizontalSlider("Bow_Position", &fslider0, 0.7f, 0.01f, 1.0f, 0.01f);
+		faust_interface->addHorizontalSlider("Bow_Pressure", &fslider0, 0.7f, 0.01f, 1.0f, 0.01f);
 		faust_interface->declare(&fslider12, "2", "");
 		faust_interface->declare(&fslider12, "tooltip", "Bow pressure on the string (value between 0 and 1)");
 		faust_interface->addHorizontalSlider("Bow_Pressure", &fslider12, 0.75f, 0.0f, 1.0f, 0.01f);
