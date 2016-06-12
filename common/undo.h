@@ -85,6 +85,7 @@ extern LANGSPEC void Undo_Add_dont_stop_playing(
 
 extern LANGSPEC void Undo_start_ignoring_undo_operations(void);
 extern LANGSPEC void Undo_stop_ignoring_undo_operations(void);
+extern LANGSPEC bool Undo_Is_Currently_Ignoring(void);
 
 
 #if 0

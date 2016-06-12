@@ -75,7 +75,7 @@ static void PATCH_add_to_instrument(struct Patch *patch){
 }
 
 static vector_t *get_all_patches(void){
-  vector_t *v=talloc(sizeof(vector_t));
+  vector_t *v=(vector_t*)talloc(sizeof(vector_t));
   struct Instruments *instrument = get_all_instruments();
   while(instrument!=NULL){
     VECTOR_append(v,&instrument->patches);
@@ -92,7 +92,7 @@ int PATCH_get_new_id(void){
   vector_t *v=get_all_patches();
   int i;
   for(i=0;i<v->num_elements;i++){
-    struct Patch *patch=v->elements[i];
+    struct Patch *patch=(struct Patch*)v->elements[i];
     if(patch->id>=id)
       id=patch->id+1;
   }
@@ -104,7 +104,7 @@ struct Patch *PATCH_get_from_id(int id){
   vector_t *v=get_all_patches();
   int i;
   for(i=0;i<v->num_elements;i++){
-    struct Patch *patch=v->elements[i];
+    struct Patch *patch=(struct Patch*)v->elements[i];
     if(patch->id==id)
       return patch;
   }
@@ -112,7 +112,7 @@ struct Patch *PATCH_get_from_id(int id){
 }
 
 void PATCH_reset_time(void){
-  VECTOR_FOR_EACH(struct Patch *patch,get_all_patches()){
+  VECTOR_FOR_EACH(struct Patch *, patch,get_all_patches()){
     patch->last_time = 0;
   }END_VECTOR_FOR_EACH;
 }
@@ -162,7 +162,7 @@ void PATCH_init_voices(struct Patch *patch){
 }
 
 static struct Patch *create_new_patch(const char *name){
-  struct Patch *patch = talloc(sizeof(struct Patch));
+  struct Patch *patch = (struct Patch*)talloc(sizeof(struct Patch));
   patch->id = PATCH_get_new_id();
   patch->forward_events = true;
 
@@ -193,7 +193,7 @@ static void apply_patchvoice_state(struct PatchVoice *voice, hash_t *state){
   voice->volume = HASH_get_float(state, "volume");
   voice->start = HASH_get_float(state, "start");
   voice->length = HASH_get_float(state, "length");
-  voice->time_format = HASH_get_int(state, "time_format");
+  voice->time_format = (TimeFormat)HASH_get_int(state, "time_format");
 }
                                                 
 hash_t *PATCH_get_state(struct Patch *patch){
@@ -208,10 +208,10 @@ hash_t *PATCH_get_state(struct Patch *patch){
     HASH_put_hash_at(state, "patchvoice", i, PATCHVOICE_get_state(patch->voices[i]));
 
   if (patch->instrument==get_audio_instrument()) {
-    struct SoundPlugin *plugin = patch->patchdata;
+    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
     R_ASSERT(plugin!=NULL);
     if (plugin!=NULL)
-      HASH_put_hash(state, "audio", PLUGIN_get_state(patch->patchdata));
+      HASH_put_hash(state, "audio", PLUGIN_get_state(plugin));
   }
 
   // We add some more info, for future compatibility. We're not currently using any of these, but perhaps it is used later.

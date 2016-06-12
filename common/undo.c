@@ -138,6 +138,10 @@ bool Undo_Is_Currently_Undoing(void){
   return currently_undoing;
 }
 
+bool Undo_Is_Currently_Ignoring(void){
+  return ignore();
+}
+
 void ResetUndo(void){
   if (ignore()) {
     R_ASSERT(ignore()==false);

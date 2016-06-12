@@ -1279,8 +1279,10 @@ int radium_main(char *arg){
   }
 #endif
 
-  MW_cleanup(); // Stop all sound properly. Don't want clicks when exiting.
-
+  Undo_start_ignoring_undo_operations();{
+    MW_cleanup(); // Stop all sound properly. Don't want clicks when exiting.
+  }Undo_stop_ignoring_undo_operations();
+  
   ATOMIC_SET(is_starting_up, true); // Tell the mixer that program is not running
   usleep(3000); // wait a little bit so the player gets back to the main loop
   
