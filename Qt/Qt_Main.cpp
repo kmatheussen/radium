@@ -399,14 +399,16 @@ protected:
       } else {
         
         // key release:
-        
-        if( (time_now - last_pressed_key_time) < 1000/4){ // i.e. only play if holding the key less than 0.25 seconds.
-          if(modifier==last_pressed_key && modifier==EVENT_ALT_R) {
-            PlayBlockFromStart(window,true); // true == do_loop
-          }
-          
-          if(modifier==last_pressed_key && modifier==EVENT_SHIFT_R) {
-            PlayBlockFromStart(window,true); // true == do_loop
+
+        if (editor_has_keyboard==true) {
+          if( (time_now - last_pressed_key_time) < 1000/4){ // i.e. only play if holding the key less than 0.25 seconds.
+            if(modifier==last_pressed_key && modifier==EVENT_ALT_R) {
+              PlayBlockFromStart(window,true); // true == do_loop
+            }
+            
+            if(modifier==last_pressed_key && modifier==EVENT_SHIFT_R) {
+              PlayBlockFromStart(window,true); // true == do_loop
+            }
           }
         }
       }
