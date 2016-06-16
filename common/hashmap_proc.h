@@ -57,6 +57,9 @@ extern LANGSPEC hash_t *HASH_get_hash(const hash_t *hash, const char *key);
 
 extern LANGSPEC int HASH_get_array_size(const hash_t *hash); // This function probably only makes sense if there is only ONE array type in the hash map. (it returns the highest of all array types)
 
+extern LANGSPEC bool HASH_remove_at(hash_t *hash, const char *raw_key, int i);
+extern LANGSPEC bool HASH_remove(hash_t *hash, const char *raw_key);
+
 extern LANGSPEC void HASH_put_string_at(hash_t *hash, const char *key, int i, const wchar_t *val);
 extern LANGSPEC void HASH_put_chars_at(hash_t *hash, const char *key, int i, const char *val);
 extern LANGSPEC void HASH_put_int_at(hash_t *hash, const char *key, int i, int64_t val);
@@ -70,7 +73,7 @@ extern LANGSPEC double HASH_get_float_at(const hash_t *hash, const char *key, in
 extern LANGSPEC hash_t *HASH_get_hash_at(const hash_t *hash, const char *key, int i);
 
 
-// Loading and saving (serializing and deserializing to string. (The 'file' argument can be stdout for debugging))
+// Loading and saving (serializing and deserializing to string. (Tip: The 'file' argument can be stdout or stdout (useful for debugging))
 
 extern LANGSPEC void HASH_save(hash_t *hash, disk_t *file);
 extern LANGSPEC hash_t *HASH_load(disk_t *file);

@@ -159,6 +159,37 @@ vector_t *HASH_get_values(const hash_t *hash){
   return vector; 
 }
 
+bool HASH_remove_at(hash_t *hash, const char *raw_key, int i){
+  const char *key = STRING_get_utf8_chars(raw_key);
+  unsigned int index = oat_hash(key,i) % hash->elements_size;
+  hash_element_t *element=hash->elements[index];
+
+  hash_element_t *prev = NULL;
+  
+  while(element!=NULL && (element->i!=i || strcmp(key,element->key))) {
+    prev=element;
+    element=element->next;
+  }
+
+  if (element==NULL)
+    return false;
+
+  hash->num_elements--;
+  
+  if (prev==NULL)
+    hash->elements[index] = element->next;
+  else
+    prev->next = element->next;
+
+  return true;
+}
+
+bool HASH_remove(hash_t *hash, const char *raw_key){
+  return HASH_remove_at(hash, raw_key, 0);
+}
+
+
+  
 static void put(hash_t *hash, const char *raw_key, int i, hash_element_t *element){
   const char *key = STRING_get_utf8_chars(raw_key);
   
