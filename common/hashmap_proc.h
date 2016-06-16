@@ -28,7 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC hash_t *HASH_create(int approx_size);
 
-extern LANGSPEC const char *HASH_get_key(const hash_t *hash, const char *key);
+extern LANGSPEC hash_t *HASH_copy(const hash_t *hash);
+
+extern LANGSPEC const char *HASH_get_key(const hash_t *hash, const char *key); // Returns the stored pointed, if it needs to be reused.
 extern LANGSPEC bool HASH_has_key(const hash_t *hash, const char *key);
 extern LANGSPEC bool HASH_has_key_at(const hash_t *hash, const char *key, int i);
 

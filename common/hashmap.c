@@ -105,7 +105,19 @@ typedef struct _hash_element_t{
     hash_t *hash;
   };
 } hash_element_t;
+
+static hash_element_t *copy_element(hash_element_t *element){
+  hash_element_t *element_copy = tcopy(element, sizeof(hash_element_t));
+  element_copy->key = talloc_strdup(element->key);
   
+  if (element->type==HASH_TYPE)
+    element_copy->hash = HASH_copy(element->hash);
+  else if (element->type==STRING_TYPE)
+    element_copy->string = STRING_copy(element->string);
+
+  return element_copy;
+}
+
 struct _hash_t{
   int num_array_elements;
   int num_elements;
@@ -122,6 +134,26 @@ hash_t *HASH_create(int approx_size){
   hash->elements_size = elements_size;
 
   return hash;
+}
+
+static void put2(hash_t *hash, const char *key, int i, hash_element_t *element);
+
+hash_t *HASH_copy(const hash_t *hash){
+  hash_t *ret = HASH_create(hash->elements_size / 2);
+
+  int i;
+  for(i=0;i<hash->elements_size;i++){
+    hash_element_t *element = hash->elements[i];
+    while(element!=NULL){
+      hash_element_t *element_copy = copy_element(element);
+
+      put2(ret, element->key, element->i, element_copy);
+        
+      element=element->next;
+    }
+  }
+
+  return ret;
 }
 
 int HASH_get_array_size(const hash_t *hash){
@@ -159,6 +191,7 @@ vector_t *HASH_get_values(const hash_t *hash){
   return vector; 
 }
 
+
 bool HASH_remove_at(hash_t *hash, const char *raw_key, int i){
   const char *key = STRING_get_utf8_chars(raw_key);
   unsigned int index = oat_hash(key,i) % hash->elements_size;
@@ -188,11 +221,8 @@ bool HASH_remove(hash_t *hash, const char *raw_key){
   return HASH_remove_at(hash, raw_key, 0);
 }
 
-
   
-static void put(hash_t *hash, const char *raw_key, int i, hash_element_t *element){
-  const char *key = STRING_get_utf8_chars(raw_key);
-  
+static void put2(hash_t *hash, const char *key, int i, hash_element_t *element){
   unsigned int index = oat_hash(key,i) % hash->elements_size;
   //fprintf(stderr,"put %p. index: %u\n",hash,index);
 
@@ -203,6 +233,11 @@ static void put(hash_t *hash, const char *raw_key, int i, hash_element_t *elemen
 
   element->next = hash->elements[index];
   hash->elements[index] = element;
+}
+
+static void put(hash_t *hash, const char *raw_key, int i, hash_element_t *element){
+  const char *key = STRING_get_utf8_chars(raw_key);
+  put2(hash, key, i, element);
 }
 
 static void put_string(hash_t *hash, const char *key, int i, const wchar_t *val){
