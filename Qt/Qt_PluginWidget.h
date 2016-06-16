@@ -184,6 +184,7 @@ class ParamWidget : public QWidget{
     //printf("Update GUI called. _slider: %p. _Check_button: %p\n",_slider,_check_button);
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
     float value;
 
     PLAYER_lock();{
@@ -236,8 +237,11 @@ class ParamWidget : public QWidget{
 struct PluginWidget : public QWidget{
   radium::Vector<ParamWidget*> _param_widgets;
 
+  int _num_rows;
+  
   PluginWidget(QWidget *parent)
     : QWidget(parent)
+    , _num_rows(0)
   {}
 
   void prepare_for_deletion(void){

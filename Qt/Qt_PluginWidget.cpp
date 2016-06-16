@@ -116,7 +116,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
   if (pTabWidget) {	
     pPageWidget = new QWidget();
     pPageWidget->setLayout(pGridLayout);
-    pTabWidget->addTab(pPageWidget, sPage.arg(++iPage));
+    pTabWidget->addTab(pPageWidget, sPage.arg(iPage++));
   }
 
 
@@ -150,12 +150,14 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
           pGridLayout->setSpacing(0);
           pPageWidget = new QWidget();
           pPageWidget->setLayout(pGridLayout);
-          pTabWidget->addTab(pPageWidget, sPage.arg(++iPage));
+          pTabWidget->addTab(pPageWidget, sPage.arg(iPage++));
         }
       }
     }
   }
 
+  widget->_num_rows = iY;
+  
   if (pVBoxLayout && pTabWidget) {
     pVBoxLayout->addWidget(pTabWidget);
     widget->setLayout(pVBoxLayout);
