@@ -571,9 +571,7 @@ int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name){
     if(!strcmp(effect_name,plugin_type->get_effect_name(plugin,i)))
       return i;
 
-#ifndef RELEASE
-  RWarning("\n\n\n   2. ************ WARNING! Effect \"%s\" not found in plugin %s/%s ************\n\n\n",effect_name,plugin_type->type_name,plugin_type->name);
-#endif
+  GFX_Message(NULL, "The effect names of %s / %s has changed.\n\"%s\" will be ignored.\n\nIf you know the new name of the effect, you can edit the song manually in a text editor.", plugin_type->type_name, plugin_type->name, effect_name);
   
   return -1;
 }
@@ -588,12 +586,14 @@ const char *PLUGIN_get_effect_name(struct SoundPlugin *plugin, int effect_num){
   return system_effect_names[system_effect];
 }
 
+/*
 const char *PLUGIN_get_effect_description(const struct SoundPluginType *plugin_type, int effect_num){
   if(effect_num<plugin_type->num_effects)
     return plugin_type->get_effect_description(plugin_type, effect_num);
 
   return "System effects have no description yet.";
 }
+*/
 
 static void set_db_display(char *buffer, int buffersize, float value){
   float db = gain_2_db(value,MIN_DB,MAX_DB);
@@ -1327,7 +1327,6 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
 
 }
 
-
 hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin){
   const SoundPluginType *type=plugin->type;
   hash_t *effects=HASH_create(type->num_effects);
@@ -1407,8 +1406,10 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
         PLUGIN_set_effect_value(plugin, -1, i, val, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
     }else
       plugin->savable_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN); // state didn't have it. Store default value.
+  }
 #endif
 
+  hash_t *copy = HASH_copy(effects);
     
   bool has_value[type->num_effects+NUM_SYSTEM_EFFECTS];
   float values[type->num_effects+NUM_SYSTEM_EFFECTS];
@@ -1425,10 +1426,22 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
       }
     }
     
-    if (has_value[i])
+    if (has_value[i]) {
       values[i] = HASH_get_float(effects, effect_name);
+      HASH_remove(copy, effect_name);
+    }
+      
   }    
 
+  if (HASH_get_num_elements(copy) > 0){
+    char *effect_names = talloc_strdup("");
+    hash_t *keys = HASH_get_keys(copy);
+    for(int i = 0 ; i < HASH_get_array_size(keys); i++){
+      effect_names = talloc_format("%s\n* %s", effect_names, HASH_get_chars_at(keys, "key", i));
+    }
+
+    GFX_Message(NULL, "The effect names of %s / %s has changed.\nThe following effects can not be loaded: %s\n\nIf you know the new name of the effect, you can edit the song manually in a text editor.", type->type_name, type->name, effect_names);
+  }
   
   // 2. Store system effects
   for(i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
