@@ -425,8 +425,12 @@ static void add_patch_effects_to_menu(vector_t *menu, vector_t *patch_effects, s
     
   int i;
   for(i=0;i<num_effects;i++) {
+    if (i>0 && i==plugin_type->num_effects){
+      VECTOR_push_back(menu, "----------");
+      VECTOR_push_back(patch_effects, NULL);
+    }
     const char *name = PLUGIN_get_effect_name(plugin, i);
-    if (strncmp(name, "NOTUSED", strlen("NOTUSED"))) {
+    if (strncmp(name, NOTUSED_EFFECT_NAME, strlen(NOTUSED_EFFECT_NAME))) {
       VECTOR_push_back(menu,name);
       VECTOR_push_back(patch_effects, create_patch_effect(patch, i));
     }
