@@ -59,21 +59,23 @@ void ADD_UNDO_FUNC(Block(
       || wblock!=last_wblock
       || wtrack!=last_wtrack
       || realline!=last_realline
-      || Undo_get_last_function()!=Undo_Do_Block)
-    Undo_Add(
-             window->l.num,
-             wblock->l.num,
-             wtrack->l.num,
-             realline,
-             CB_CopyBlock(wblock),
-             Undo_Do_Block,
-             "Block"
-             );
-
-  last_undo_block_time = time_now;
-  last_wblock=wblock;
-  last_wtrack=wtrack;
-  last_realline=realline;
+      || Undo_get_last_function()!=Undo_Do_Block
+      )
+    {
+      Undo_Add(
+               window->l.num,
+               wblock->l.num,
+               wtrack->l.num,
+               realline,
+               CB_CopyBlock(wblock),
+               Undo_Do_Block,
+               "Block"
+               );
+      last_undo_block_time = time_now;
+      last_wblock=wblock;
+      last_wtrack=wtrack;
+      last_realline=realline;
+    }
 }
 
 void ADD_UNDO_FUNC(Block_CurrPos(

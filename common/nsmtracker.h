@@ -725,9 +725,9 @@ static inline void Patch_copyAttributesFromAnotherPatch(struct Patch *dest, stru
 *********************************************************************/
 
 typedef enum {
-  FX_start = 0,
-  FX_middle = 1,
-  FX_end = 2,
+  FX_start = 0,   // Exclusively used for automation
+  FX_middle = 1,  // Exclusively used for automation
+  FX_end = 2,     // Exclusively used for automation
   FX_single = 3
 } FX_when;
 

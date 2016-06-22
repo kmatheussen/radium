@@ -74,6 +74,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "QM_view.h"
 #include "QM_chip.h"
 
+#include "../Qt/helpers.h"
+
 #include "../Qt/Qt_MyQButton.h"
 #include "../Qt/Qt_MyQSlider.h"
 #include "../Qt/mQt_mixer_widget_callbacks.h"
@@ -1352,20 +1354,7 @@ static char *popup_plugin_selector(SoundPluginType **type){
   
   MyQAction *action;
 
-  if (doModalWindows()) {
-    
-    GL_lock();{
-      action = dynamic_cast<MyQAction*>(menu.exec(QCursor::pos()));
-    }GL_unlock();
-    
-  } else {
-    
-    GL_lock();{
-      GL_pause_gl_thread_a_short_while();
-    }GL_unlock();    
-    action = dynamic_cast<MyQAction*>(menu.exec(QCursor::pos()));
-    
-  }
+  action = dynamic_cast<MyQAction*>(safeExec(&menu));
   
   if (action==NULL)
     return NULL;

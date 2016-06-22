@@ -166,7 +166,9 @@ static bool Load(const wchar_t *filename){
           //}PLAYER_unlock();
         }GL_draw_unlock();
 
-        DLoadRoot(newroot);
+        Undo_start_ignoring_undo_operations();{
+          DLoadRoot(newroot);
+        }Undo_stop_ignoring_undo_operations();
 
         GL_create_all(root->song->tracker_windows);
         

@@ -54,6 +54,7 @@ extern LANGSPEC bool Undo_Close(void);
 extern LANGSPEC bool Undo_Is_Currently_Undoing(void);
 extern LANGSPEC bool Undo_Is_Open(void);
 extern LANGSPEC void Undo_CancelLastUndo(void);
+extern LANGSPEC void Undo_ReopenLast(void);
 extern LANGSPEC UndoFunction Undo_get_last_function(void);
 
 extern LANGSPEC bool Undo_Currently_Adding_Undo(void);

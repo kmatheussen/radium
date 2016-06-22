@@ -306,6 +306,23 @@ bool Undo_Close(void){
     return false;
 }
 
+void Undo_ReopenLast(void){
+  if (ignore())
+    return;
+  
+  R_ASSERT_RETURN_IF_FALSE(Undo_Is_Open()==false);
+  R_ASSERT_RETURN_IF_FALSE(currently_undoing==false);
+  R_ASSERT_RETURN_IF_FALSE(CurrUndo->entries.num_elements > 0);
+
+  curr_open_undo = CurrUndo;
+  
+  CurrUndo=CurrUndo->prev;
+  CurrUndo->next=NULL;
+
+  undo_is_open++;
+  num_undos--;
+}
+
 void Undo_CancelLastUndo(void){
   if (ignore()) return;
 

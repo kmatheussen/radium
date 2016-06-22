@@ -87,7 +87,7 @@ struct Song *LoadSong(void){
 	struct Song *song=DC_alloc(sizeof(struct Song));
 
         MW_cleanup();
-
+          
         VECTOR_FOR_EACH(struct Patch *patch, &get_MIDI_instrument()->patches){
           InstrumentWidget_delete(patch);
         }END_VECTOR_FOR_EACH;
@@ -97,10 +97,10 @@ struct Song *LoadSong(void){
         
         while(get_audio_instrument()->patches.num_elements > 0)
           PATCH_remove_from_instrument(get_audio_instrument()->patches.elements[0], true);
-
+        
         COMMENT_reset();
-
-	GENERAL_LOAD(6,4)
+        
+        GENERAL_LOAD(6,4)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());

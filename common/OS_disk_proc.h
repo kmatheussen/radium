@@ -48,7 +48,21 @@ extern disk_t *DISK_open_for_reading(QString filename);
 
 extern QString g_file_at_end;
 QString DISK_read_qstring_line(disk_t *disk); // returns g_file_at_end if end of file
- 
+int DISK_write_qstring(disk_t *disk, QString s);
+
+static inline QString DISK_read_qstring_file(disk_t *disk){
+  QString res;
+    
+  for(;;){
+    QString line = DISK_read_qstring_line(disk);
+    if (line == g_file_at_end)
+      break;
+    else
+      res += line + "\n";      
+  }
+
+  return res;
+}
 #endif
 
 

@@ -285,8 +285,79 @@ struct Patch *PATCH_create_midi(const char *name){
   return patch;
 }
 
+
+static QList<QString> get_plugin_effect_names(SoundPlugin *plugin){
+  QList<QString> ret;
+  for(int i=0;i<plugin->type->num_effects;i++)
+    ret.push_back(plugin->type->get_effect_name(plugin, i));
+  return ret;
+}
+
+void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *patch){
+  R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Undoing() || Undo_Is_Currently_Ignoring());
+
+  if(patch->instrument != get_audio_instrument())
+    return;
+
+  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  QList<QString> effect_names = get_plugin_effect_names(plugin);
+  
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblocks;
+    
+  while(wblock!=NULL){
+    struct WTracks *wtrack = wblock->wtracks;
+    while(wtrack!=NULL){
+      bool has_added_undo = false;
+      
+      struct Tracks *track = wtrack->track;
+      
+      VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
+        struct FX *fx = fxs->fx;
+                   
+        if (fx->patch==patch){
+
+          int index = effect_names.indexOf(fx->name);
+          
+          if (index==-1) {
+            
+            if (has_added_undo==false){
+              ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
+              has_added_undo = true;
+            }
+            
+            PLAYER_lock();{
+              VECTOR_remove(&track->fxs, fxs);
+            }PLAYER_unlock();
+
+            window->must_redraw = true;
+            
+          } else if (index != fx->effect_num) {
+            if (has_added_undo==false){
+              ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
+              has_added_undo = true;
+            }
+
+            PLAYER_lock();{            
+              fx->effect_num = index;
+            }PLAYER_unlock();
+            
+          }
+          
+        }
+        
+      }END_VECTOR_FOR_EACH;
+      
+      wtrack = NextWTrack(wtrack);
+    }
+    wblock = NextWBlock(wblock);
+  }    
+  
+}
+
+
 void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patch){
-  R_ASSERT_RETURN_IF_FALSE(Undo_Is_Open() || Undo_Is_Currently_Undoing());
+  R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Undoing() || Undo_Is_Currently_Ignoring());
 
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblocks;
@@ -312,7 +383,7 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
       } else if (new_patch == NULL){
 
       again:
-        VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){          
+        VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){          
           if (fxs->fx->patch==old_patch){
 
             if (has_added_undo==false){
@@ -345,7 +416,7 @@ static void remove_patch_from_song(struct Patch *patch){
 
 static void make_inactive(struct Patch *patch, bool force_removal){
 
-  R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Undoing());
+  R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Undoing() || Undo_Is_Currently_Ignoring());
   
   if (!VECTOR_is_in_vector(&patch->instrument->patches,patch)){
     RError("Patch %s is already inactive",patch->name);
@@ -465,7 +536,7 @@ void PATCH_call_very_often(void){
 
   while(instrument!=NULL){
 
-    VECTOR_FOR_EACH(struct Patch *patch, &instrument->patches){
+    VECTOR_FOR_EACH(struct Patch *, patch, &instrument->patches){
       if (ATOMIC_COMPARE_AND_SET_BOOL(patch->widget_needs_to_be_updated, true, false))
         GFX_update_instrument_widget(patch);
     }END_VECTOR_FOR_EACH;
@@ -613,7 +684,7 @@ static note_t create_note_from_args(const union SuperType *args){
 }
 
 static void RT_scheduled_play_voice(int64_t time, const union SuperType *args){
-  struct Patch *patch = args[0].pointer;
+  struct Patch *patch = (struct Patch*)args[0].pointer;
 
   note_t note = create_note_from_args(&args[1]);
 
@@ -721,7 +792,7 @@ static void RT_stop_voice(struct Patch *patch, note_t note, STime time){
 }
 
 static void RT_scheduled_stop_voice(int64_t time, const union SuperType *args){
-  struct Patch *patch = args[0].pointer;
+  struct Patch *patch = (struct Patch*)args[0].pointer;
 
   note_t note = create_note_from_args(&args[1]);
 
@@ -814,7 +885,7 @@ static void RT_change_voice_velocity(struct Patch *patch, note_t note, STime tim
 }
 
 static void RT_scheduled_change_voice_velocity(int64_t time, const union SuperType *args){
-  struct Patch *patch = args[0].pointer;
+  struct Patch *patch = (struct Patch*)args[0].pointer;
 
   note_t note = create_note_from_args(&args[1]);
 
@@ -894,7 +965,7 @@ static void RT_change_voice_pitch(struct Patch *patch, note_t note, STime time){
 }
 
 static void RT_scheduled_change_voice_pitch(int64_t time, const union SuperType *args){
-  struct Patch *patch = args[0].pointer;
+  struct Patch *patch = (struct Patch*)args[0].pointer;
 
   note_t note = create_note_from_args(&args[1]);
 
@@ -961,7 +1032,7 @@ static void RT_send_raw_midi_message(struct Patch *patch, uint32_t msg, STime ti
 }
 
 static void RT_scheduled_send_raw_midi_message(int64_t time, const union SuperType *args){
-  struct Patch *patch = args[0].pointer;
+  struct Patch *patch = (struct Patch*)args[0].pointer;
 
   uint32_t msg = args[1].uint32_num;
 
@@ -1156,7 +1227,7 @@ int PATCH_get_peaks(struct Patch *patch,
                     )
 {
   int ret = 0;
-  SoundPlugin *plugin=patch->patchdata;
+  SoundPlugin *plugin=(SoundPlugin*)patch->patchdata;
 
   if(ch==-1) {
 
