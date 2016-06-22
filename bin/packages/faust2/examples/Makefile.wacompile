@@ -1,0 +1,14 @@
+dspsrc  := $(wildcard *.dsp)
+cppsrc  := $(addprefix $(DEST), $(dspsrc:.dsp=.cpp))
+appl 	:= $(addprefix $(DEST), $(dspsrc:.dsp=$(EXT)))
+
+all :  $(appl)
+
+$(DEST)%.html : %.dsp 
+	faust -lang js -cn $(<:.dsp=) -a $(ARCH) $< -o $@
+
+$(DEST)%.js : %.dsp 
+	faust -lang js -cn $(<:.dsp=) -a $(ARCH) $< -o $@
+
+clean :
+	rm -f $(DEST)

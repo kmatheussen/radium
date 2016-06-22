@@ -1,0 +1,15 @@
+#! /bin/bash -e
+if [[ $(uname) == Darwin ]]; then
+	APPL='open -a Safari'
+else
+	APPL=xdg-open
+fi
+
+faust2svg $@ || exit
+$APPL ${1%.dsp}-svg/process.svg&
+shift
+for f in $@; do
+    sleep 1
+    $APPL ${f%.dsp}-svg/process.svg&
+done
+

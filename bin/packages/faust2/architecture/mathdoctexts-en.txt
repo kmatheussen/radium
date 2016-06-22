@@ -1,0 +1,111 @@
+// Default texts for the math documentator of the Faust compiler.
+// Copyright (C) 2009 GRAME, Centre National de Creation Musicale
+// Karim Barkati
+
+// Remark: 
+// double quotes are useful to visualize spaces and tabulations
+// at the beginning or at the end of strings.
+
+
+
+// Metadatas section.
+
+:name		"name"
+:author		"author"
+:copyright	"copyright"
+:license	"license"
+:version	"version"
+
+
+// Notice section.
+
+:faustapply		"The value of a Faust program is the result of applying the signal transformer denoted by the expression to which the \texttt{process} identifier is bound to input signals, running at the $f_S$ sampling frequency."
+
+:faustpresentation "Faust (\emph{Functional Audio Stream}) is a functional programming language designed for synchronous real-time signal processing and synthesis applications. A Faust program is a set of bindings of identifiers to expressions that denote signal transformers. A signal $s$ in $S$ is a function mapping\footnote{Faust assumes that $\forall \, s \in S, \forall \, t \in \mathbb{Z}, s(t) = 0 \mathrm{\ when\ } t < 0$.} times $t \in \mathbb{Z}$ to values $s(t) \in \mathbb{R}$, while a signal transformer is a function from $S^n$ to $S^m$, where $n,m\in \mathbb{N}$. See the Faust manual for additional information (\textsf{http://faust.grame.fr})."
+
+:causality		"Every mathematical formula derived from a Faust expression is assumed, in this document, to having been normalized (in an implementation-depen\-dent manner) by the Faust compiler."
+
+:blockdiagrams "A block diagram is a graphical representation of the Faust binding of an identifier I to an expression E; each graph is put in a box labeled by I. Subexpressions of E are recursively displayed as long as the whole picture fits in one page."
+
+:faustdocdir	"The \texttt{\faustdocdir/} directory may also include the following subdirectories:"
+"\begin{itemize}"
+"	\item	\texttt{cpp/} for Faust compiled code; "
+"	\item	\texttt{pdf/} which contains this document; "
+"	\item	\texttt{src/} for all Faust sources used (even libraries); "
+"	\item	\texttt{svg/} for block diagrams, encoded using the Scalable Vector Graphics format (\textsf{http://www.w3.org/Graphics/SVG/});"
+"	\item	\texttt{tex/} for the \LaTeX\ source of this document."
+"\end{itemize}"
+
+:foreignfun		""ff" prefix in some function name stands for C++ "foreign function"."
+
+:intcast
+"$\forall \, x \in \mathbb{R}$, "
+"	\begin{displaymath}"
+"		\mathrm{int}(x) ="
+"		\left\{\begin{array}{cl}"
+"			\lfloor x \rfloor & \mbox{if \,} x > 0 \\"
+"			\lceil x \rceil & \mbox{if \,} x < 0 \\"
+"			0 & \mbox{if \,} x = 0 \\"
+"		\end{array}\right.."
+"	\end{displaymath}"
+
+:operators		"This document uses the following integer operations:"
+:optabtitle		"\emph{operation} & \emph{name} & \emph{semantics} \\"
+:intplus		"$i \oplus j$ & integer addition & $\mathrm{normalize}(i+j), \mathrm{~in~} \mathbb{Z}$ \\"
+:intminus		"$i \ominus j$ & integer substraction & $\mathrm{normalize}(i-j), \mathrm{~in~} \mathbb{Z}$ \\"
+:intmult		"$i \odot j$ & integer multiplication & $\mathrm{normalize}(i \cdot j), \mathrm{~in~} \mathbb{Z}$ \\"
+:intdiv			"$i \oslash j$ & integer division & $\mathrm{normalize}(\mathrm{int}(i/j)), \mathrm{~in~} \mathbb{Q}$ \\"
+
+:integerops		"Integer operations in Faust are inspired by the semantics of operations on the n-bit two's complement representation of integer numbers; they are internal composition laws on the subset $[\,-2^{n-1}, 2^{n-1}\!-\!1\,]$ of $\mathbb{Z}$, with $n = 32$. For any integer binary operation $\times$ on $\mathbb{Z}$, the $\otimes$ operation is defined as: $i \otimes j = \mathrm{normalize}(i \times j)$, with "
+"$$\mathrm{normalize}(i) = i - N\cdot\mathrm{sign}(i) \cdot \left\lfloor \frac{|i|+N/2+(\mathrm{sign}(i)\!-\!1)/2}{N} \right\rfloor , $$"
+" where $N = 2^n$ and $\mathrm{sign}(i) = 0 \mathrm{\ if\ } i=0 \mathrm{\ and\ } i / |i| \mathrm{\ otherwise}.$"
+"Unary integer operations are defined likewise."
+
+
+// Auto-documentation section.
+
+:thisdoc		"This document provides a mathematical description of the Faust program text stored in the \texttt{\faustfilename} file. See the notice in Section\,\ref{notice} (page\,\pageref{notice}) for details."
+
+:autoeqntitle	"\section{Mathematical definition of \texttt{process}}"
+"\label{equation}"
+:autoeqntext	"The \emph{\faustprogname} program evaluates the signal transformer denoted by \texttt{process}, which is mathematically defined as follows:"
+
+:autodgmtitle	"\section{Block diagram of \texttt{process}}"
+"\label{diagram}"
+:autodgmtext	"The block diagram of \texttt{process} is shown on Figure\,\ref{figure1} (page\,\pageref{figure1})."
+
+:autontctitle	"\section{Notice}"
+"\label{notice}"
+:autontctext	"This document was generated using Faust version \faustversion\ on \faustdocdate."
+
+:autolsttitle1	"\section{Faust code listing}"
+"\label{listing}"
+:autolsttext1	"This section provides the listing of the Faust code used to generate this document."
+
+:autolsttitle2	"\section{Faust code listings}"
+"\label{listing}"
+:autolsttext2	"This section provides the listings of the Faust code used to generate this document, including dependencies."
+
+
+// Titles for each type of formulas.
+
+:inputsigtitle1		"Input signal"
+:inputsigtitle2		"Input signals"
+:outputsigtitle1	"Output signal"
+:outputsigtitle2	"Output signals"
+:constsigtitle1		"Constant"
+:constsigtitle2		"Constants"
+:uisigtitle1		"User-interface input signal"
+:uisigtitle2		"User-interface input signals"
+:intermedsigtitle1	"Intermediate signal"
+:intermedsigtitle2	"Intermediate signals"
+
+:lateqcomment		"% Set of Faust formulas (corresponding to an <equation> tag)."
+:emptyformulafield	"none"
+:defaultvalue		"default value"
+:suchthat			"such that"
+:and				"and"
+:for				"for"
+:rootlevel			"(at root level)"
+
+:dgmcaption			"Block diagram of"

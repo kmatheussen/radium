@@ -1,0 +1,459 @@
+
+/* faustxml.pure: Parse a Faust XML or JSON file. */
+
+/* Copyright (c) 2009-2014 by Albert Graef.
+
+   This is free software; you can redistribute it and/or modify it under the
+   terms of the GNU General Public License as published by the Free Software
+   Foundation; either version 3, or (at your option) any later version.
+
+   This software is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+   more details.
+
+   You should have received a copy of the GNU General Public License along
+   with this program. If not, see <http://www.gnu.org/licenses/>. */
+
+using dict, regex, system, xml;
+namespace faustxml;
+
+/* .. default-domain:: pure
+   .. module:: faustxml
+   .. namespace:: faustxml
+
+   Appendix: faustxml
+   ==================
+
+   The faustxml module is provided along with faust2pd to retrieve the
+   description of a Faust DSP from its XML or JSON file as a data structure
+   which is ready to be processed by Pure programs. It may also be useful in
+   other Pure applications which need to inspect descriptions of Faust DSPs.
+
+   The main entry point is the :func:`info` function which takes the name of a
+   Faust-generated XML or JSON file as argument and returns a tuple ``(name,
+   descr, version, in, out, controls, options)`` with the name, description,
+   version, number of inputs and outputs, control descriptions and faust2pd
+   options (from the global meta data of the dsp module). A couple of other
+   convenience functions are provided to deal with the control descriptions.
+
+   Usage
+   -----
+
+   Use the following declaration to import this module in your programs::
+
+     using faustxml;
+
+   For convenience, you can also use the following to get access to the
+   module's namespace::
+
+     using namespace faustxml;
+
+   Data Structure
+   --------------
+
+   The following constructors are used to represent the UI controls of Faust
+   DSPs:
+
+   .. constructor:: button label
+      		    checkbox label
+
+      A button or checkbox with the given label.
+
+   .. constructor:: nentry (label,init,min,max,step)
+      		    vslider (label,init,min,max,step)
+		    hslider (label,init,min,max,step)
+
+      A numeric input control with the given label, initial value, range and
+      stepwidth.
+
+   .. constructor:: vbargraph (label,min,max)
+      		    hbargraph (label,min,max)
+
+      A numeric output control with the given label and range.
+
+   .. constructor:: vgroup (label,controls)
+      		    hgroup (label,controls)
+		    tgroup (label,controls)
+
+      A group with the given label and list of controls in the group. */
+
+nonfix button checkbox nentry vslider hslider vbargraph hbargraph
+  vgroup hgroup tgroup;
+
+public controlp;
+
+/* ..
+
+   Operations
+   ----------
+
+   .. function:: controlp x
+
+      Check for control description values. */
+
+controlp x
+= case x of
+    button _ | checkbox _ | nentry _ | vslider _ | hslider _ |
+    vbargraph _ | hbargraph _ | vgroup _ | hgroup _ | tgroup _ = true;
+    _ = false;
+  end;
+
+/* .. function:: control_type x
+      		 control_label x
+		 control_args x
+
+      Access functions for the various components of a control description. */
+
+public control_type control_label control_args;
+
+control_type x@(f@_ _) = f if controlp x;
+
+control_label x@(_ label::string) |
+control_label x@(_ (label,_)) = label if controlp x;
+
+control_args x@(_ _::string) = () if controlp x;
+control_args x@(_ (_,args)) = args if controlp x;
+
+/* .. function:: controls x
+ 
+      This function returns a flat representation of a control group ``x`` as
+      a list of basic control descriptions, which provides a quick way to
+      access all the control values of a Faust DSP. The grouping controls
+      themselves are omitted. You can pass the last component of the return
+      value of the :func:`info` function to this function. */
+
+public controls;
+
+controls x@(_ args)
+= case args of
+    _,ctrls = catmap controls ctrls if listp ctrls;
+    _ = [x] otherwise;
+  end if controlp x;
+
+/* .. function:: pcontrols x
+ 
+      Works like the :func:`controls` function above, but also replaces the label of
+      each basic control with a fully qualified path consisting of all control
+      labels leading up to the given control. Thus, e.g., the label of a
+      slider ``"gain"`` inside a group ``"voice#0"`` inside the main
+      ``"faust"`` group will be denoted by the label
+      ``"faust/voice#0/gain"``. */
+
+public pcontrols;
+
+pcontrols x = controls "" x with
+  controls path (f@_ (label::string,args))
+			= catmap (controls (join path label)) args
+			    if listp args;
+			= [f (join path label,args)];
+  controls path (f@_ label::string)
+			= [f (join path label)];
+  join "" s		|
+  join s ""		= s;
+  join s t		= s+"/"+t otherwise;
+end if controlp x;
+
+/* .. function:: info fname
+ 
+      Extract the description of a Faust DSP from its XML or JSON file. This
+      is the main entry point. Returns a tuple with the name, description and
+      version of the DSP, as well as the number of inputs and outputs, the
+      toplevel group with all the control descriptions, and additional
+      faust2pd-specific options specified in the global meta data. Raises an
+      exception if the XML/JSON file doesn't exist or contains invalid
+      contents.
+
+   Example::
+
+     > using faustxml;
+     > let name,descr,version,in,out,group,opts =
+     >   faustxml::info "examples/basic/freeverb.dsp.xml";
+     > name,descr,version,in,out;
+     "freeverb","freeverb -- a Schroeder reverb","1.0",2,2
+     > using system;
+     > do (puts.str) $ faustxml::pcontrols group;
+     faustxml::hslider ("freeverb/damp",0.5,0.0,1.0,0.025)
+     faustxml::hslider ("freeverb/roomsize",0.5,0.0,1.0,0.025)
+     faustxml::hslider ("freeverb/wet",0.3333,0.0,1.0,0.025)
+
+   Note: As of faust2pd 2.11, the :func:`info` function can also process
+   descriptions in JSON format (as obtained with ``faust -json`` in recent
+   Faust versions). Moreover, instead of a JSON file you may also specify the
+   URL of a running Faust dsp instance (typically something like
+   ``http://localhost:5510``). This works with stand-alone Faust applications
+   which have httpd support enabled (created with, e.g., ``faust2jaqt
+   -httpd``), as well as dsp instances running in Grame's FaustLive
+   application. You also need to have the ``curl`` program installed to make
+   this work.
+
+   The latter currently has some minor limitations. Specifically, the
+   httpd/JSON interface only provides the name of a running dsp; the
+   description, version and other global meta data is not available. In the
+   current implementation, we therefore set the description to the name of the
+   dsp, and the version and auxiliary faust2pd options to empty strings in
+   this case.
+
+   Furthermore, the :func:`info` function can also be invoked with a special
+   URL of the form ``http://localhost:7777/availableInterfaces`` to retrieve
+   the list of dsp instances running in a (local or remote) FaustLive
+   instance. (Replace ``localhost`` with the hostname or IP address and
+   ``7777`` with the actual port number as necessary. FaustLive's default port
+   is usually ``7777``, but you should check the actual IP address with
+   FaustLive's ``Window / View QRcode`` option.) The result is a list of hash
+   pairs of names and URLs of dsp instances which can be queried for their
+   JSON data.
+
+*/
+
+public info;
+
+private pathname basename extension trim str_val tree node;
+private parse_json parse parse_doc parse_node parse_prop parse_type
+  parse_control make_control parse_group make_group;
+
+info fname::string
+= case regex "^([a-z]+)://(.*)$" REG_EXTENDED fname 0 of
+  // Check for JSON URL, retrieve with curl.
+  1,_,url,_,ty,_,path = case fget (popen ("curl -s "+url) "r") of
+    // list of available dsps in a FaustLive instance
+    s::string = res when
+      data = check s;
+      url = pathname fname;
+      // sort by port numbers
+      res = sort cmp [name=>port | name=>(port:_) = data] with
+	cmp (_=>p1) (_=>p2)
+	= v1 < v2 if intp v1 && intp v2 when
+	  v1 = val p1; v2 = val p2;
+	end;
+	// Presumably the port numbers are integers, but if they aren't then
+	// we can still compare them lexicographically as strings instead.
+	= p1 < p2 otherwise;
+      end;
+      // add URL prefix
+      res = [name=>url+"/"+port | name=>port = res];
+    end if lst == "availableInterfaces";
+    // ordinary JSON data with dsp description
+    s::string = name,parse_json data when
+      data = check s;
+      name = catch (cst "") (data!"name");
+    end;
+    _ = throw ("could not retrieve "+url) otherwise;
+  end when
+    ty == "http" || throw "unkown URL type (must be http)";
+    lst = if null path then "" else last (split "/" path);
+    url = if lst == "JSON" then url else url+"/JSON";
+  end;
+  // Check for JSON file.
+  _ = case fget (fopen fname "r") of
+    s::string = basename fname,parse_json (check s);
+    _ = throw "could not open JSON file" otherwise;
+  end if extension fname == "json";
+  // Check for XML file.
+  _ = case xml::load_file fname 0 of
+    doc = name,descr,info,opts when
+      name = basename fname; descr,info = parse name doc;
+      descr = if null descr then name else descr;
+      // Custom global meta data is not available in the XML file.
+      opts = [];
+    end if xml::docp doc;
+    _ = throw "could not open XML file" otherwise;
+  end if extension fname == "xml";
+  _ = throw ("unkown file type '"+extension fname+"' (must be json or xml)");
+end with
+  // Trivial JSON parser. Since JSON syntax is valid Pure syntax, we can just
+  // let 'val' do the job, and then convert JSON dictionaries to Pure records
+  // for easier access.
+  check s = case json (val s) of
+    data::smatrix = data;
+    _ = throw "invalid JSON data" otherwise;
+  end;
+  json x::smatrix = record {key=>json val | key:val = x};
+  json x::list = map json x;
+  json x = x otherwise;
+end;
+
+/* Private operations. *******************************************************/
+
+/* Determine the pathname of a file (strip off filename and extension). */
+
+pathname s::string
+= s when
+  s::string = join "/" (if null s then [] else init $ split "/" s);
+end;
+
+/* Determine the basename of a file (strip off path and extension). */
+
+basename s::string
+= s when
+  s::string = if null s then "" else last $ split "/" s;
+  s::string = if null s then "" else head $ split "." s;
+end;
+
+/* Determine the extension of a file (strip off path and filename). */
+
+extension s::string
+= s when
+  s::string = if null s then "" else last $ split "/" s;
+  s::string = if null s || index s "." < 0 then "" else last $ split "." s;
+end;
+
+/* Remove leading and trailing whitespace. */
+
+trim s::string = regex "^[ \t\n]*((.|\n)*[^ \t\n])[ \t\n]*$" REG_EXTENDED
+		 s 0!4;
+
+/* Parse a string value. */
+
+str_val s::string
+= case eval (sprintf "quote (%s)" s) of
+    s::string = s;
+    _ = s otherwise;
+  end;
+
+/* Helper function to parse the contents of a Faust JSON file. */
+
+parse_json data::smatrix = name,version,in,out,
+  catch (\_ -> throw "invalid JSON data") (parse (data!"ui"!0)), opts
+with
+  parse x = case ty of
+    "vgroup" | "hgroup" | "tgroup" = (tyval ty) (label,map parse (x!"items"));
+    "button" | "checkbox" = (tyval ty) label;
+    "nentry" | "vslider" | "hslider" = (tyval ty) (label,args) when
+      args = tuple (map (double.val) (x!!["init","min","max","step"]));
+    end;
+    "vbargraph" | "hbargraph" = (tyval ty) (label,args) when
+      args = tuple (map (double.val) (x!!["min","max"]));
+    end;
+  end when
+    ty = x!"type";
+    label = x!"label";
+  end;
+  tyval ty = val ("faustxml::"+ty);
+end when
+  name = catch (cst "") (data!"name");
+  meta = catch (cst {}) (data!"meta");
+  // At present, the global meta data is encoded as a list of dictionaries,
+  // turn it into a single dictionary for convenience.
+  meta = if recordp meta then meta else colcat meta;
+  recordp meta || throw "invalid JSON data";
+  version = catch (cst "") (meta!"version");
+  // As of faust2pd 2.11, we allow faust2pd options to be specified in the
+  // Faust source in one chunk using the global 'faust2pd' meta data key.
+  opts = catch (cst [])
+    (regsplit "[[:space:]]+" REG_EXTENDED (meta!"faust2pd") 0);
+  // For compatibility with pd-faust and older faust2pd versions, we also
+  // still allow options to be specified using 'pd' meta data on the toplevel
+  // group.
+  meta_ui = catch (cst {}) (data!"ui"!0!"meta");
+  opts_ui = map ("--"+) (cat (map (list.(!!["pd"])) meta_ui));
+  opts = opts+opts_ui;
+  in = catch (cst 0) (val (data!"inputs"));
+  out = catch (cst 0) (val (data!"outputs"));
+end;
+
+/* Generate a tree representation of an entire XML document, or the subtree of
+   an XML document rooted at a given node. */
+
+tree doc::pointer = tree (xml::root doc) if xml::docp doc;
+tree n::pointer = node (xml::node_info n) 
+		  [tree m | m = xml::children n; ~xml::is_blank_node m]
+		    if xml::nodep n;
+
+/* Helper functions to parse the contents of a Faust XML file. */
+
+parse nm doc
+= case map (map tree . xml::select doc)
+       ["/faust/name","/faust/version",
+	"/faust/inputs","/faust/outputs",
+	"/faust/ui/activewidgets/widget",
+	"/faust/ui/passivewidgets/widget",
+	"/faust/ui/layout/group"] of
+    [[name],[version],[in],[out],active,passive,layout] =
+      parse_doc nm (name,version,in,out,active+passive,layout);
+    _ = throw "invalid XML data" otherwise;
+  end;
+
+private extern int atoi(char*);
+private extern double atof(char*);
+
+parse_doc nm (node (xml::element "name" _ _) name,
+	      node (xml::element "version" _ _) version,
+	      node (xml::element "inputs" _ _) in,
+	      node (xml::element "outputs" _ _) out,
+	      controls,layout)
+= case map (parse_group 0 nm (dict controls)) layout of
+    [controls] = (name,version,in,out,controls);
+    _ = throw "invalid XML data" otherwise;
+  end when
+    [name,version,in,out] = map parse_node [name,version,in,out];
+    [name,version] = map (parse_prop.trim) [name,version];
+    [in,out] = map atoi [in,out];
+    controls = map (parse_control nm) controls;
+  end;
+parse_doc _ _ = throw "invalid XML data" otherwise;
+
+parse_node [node (xml::text s::string) _] = s;
+parse_node [] = "";
+parse_node _ = throw "invalid XML data" otherwise;
+
+parse_prop s
+= case s of
+    "Unknow" = ""; // sic! (old Faust versions)
+    "Unknown" = "";
+    _::string = str_val s;
+    _ = "" otherwise;
+  end;
+
+parse_type s::string = eval $ "faustxml::"+s;
+
+using system;
+check_label 0 nm "0x00" = nm;
+check_label 0 nm "" = nm;
+check_label _ _ "" = "";
+check_label _ _ s = s otherwise;
+
+parse_control nm (node (xml::element "widget" _ attrs) params)
+= case attrs!!["type","id"]+params!!["label"] of
+    [ty,id,label] =
+      make_control (atoi id) ty (check_label 1 nm (str_val label)) params;
+    _ = throw "invalid XML data" otherwise;
+  end when
+    attrs = dict attrs; params = dict $ map param params with
+      param (node (xml::element name::string _ _) val)
+      = name=>val if stringp val when val = parse_node val end;
+      param _ = throw "invalid XML data" otherwise;
+    end;
+  end;
+parse_control _ _ = throw "invalid XML data" otherwise;
+
+make_control id ty label params
+= id => parse_type ty label if any ((==)ty) ["button","checkbox"];
+= case params!!["init","min","max","step"] of
+    res@[init,min,max,step] =
+      id => parse_type ty (label,tuple (map atof res));
+    _ = throw "invalid XML data" otherwise;
+  end if any ((==)ty) ["vslider","hslider","nentry"];
+= case params!!["min","max"] of
+    res@[min,max] =
+      id => parse_type ty (label,tuple (map atof res));
+    _ = throw "invalid XML data" otherwise;
+  end if any ((==)ty) ["vbargraph","hbargraph"];
+make_control _ _ _ _ = throw "invalid XML data" otherwise;
+
+parse_group lev nm cdict (node (xml::element "group" _ attrs) params)
+= case attrs!!["type"] of
+    [ty] = make_group lev nm cdict ty params;
+    _ = throw "invalid XML data" otherwise;
+  end when attrs = dict attrs end;
+parse_group lev nm cdict (node (xml::element "widgetref" _ ["id"=>id::string]) [])
+= case cdict!![atoi id] of [c] = c; _ = throw "invalid XML data"; end;
+parse_group _ _ _ _ = throw "invalid XML data" otherwise;
+
+make_group lev nm cdict ty (node (xml::element "label" _ _) label:params)
+= case parse_type ty (check_label lev nm (str_val label),
+		      map (parse_group (lev+1) nm cdict) params) of
+    c = c if stringp label && controlp c;
+    _ = throw "invalid XML data" otherwise;
+  end when label = parse_node label end;
+make_group _ _ _ _ _ = throw "invalid XML data" otherwise;

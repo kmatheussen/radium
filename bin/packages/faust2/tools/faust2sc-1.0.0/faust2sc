@@ -1,0 +1,629 @@
+#!/usr/bin/env ruby
+# ======================================================================
+# faust2sc - Generate language modules from Faust XML.
+# Copyright (C) 2005-2008 Stefan Kersten
+# ======================================================================
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+# USA
+# ======================================================================
+
+# TODO:
+#  rexml is dog slow, maybe use libxml?
+
+require 'getoptlong'
+require 'rexml/document'
+
+PROGRAM         = File.basename($0)
+PROGRAM_VERSION = "1.1.0"
+
+class Array
+  def flatten1
+    res = []
+    self.each { |l|
+      res += l
+    }
+    res
+  end
+end
+
+module REXML
+  class Element
+    def to_i
+      self.text.to_i
+    end
+    def to_f
+      self.text.to_f
+    end
+  end
+end
+
+class String
+  def encapitalize
+    self[0..0].upcase + self[1..-1]
+  end
+  def decapitalize(greedy=false)
+    unless greedy
+      self[0..0].downcase + self[1..-1]
+    else
+      res = self.clone
+      (0..res.size-1).each { |i|
+        c = res[i]
+        if 65 <= c && c <= 90
+          res[i] = c + 32
+        else
+          break
+        end
+      }
+      res
+    end
+  end
+end
+
+def print_error(str)
+  $stderr.print("#{PROGRAM}[ERROR] #{str}")
+end
+
+def print_info(str)
+  $stderr.print("#{PROGRAM}[INFO]  #{str}")
+end
+
+module Faust
+  class Widget
+    attr_reader :type, :id, :label, :init, :min, :max, :step
+    def initialize(node)
+      @type = node.attributes["type"]
+      @id   = node.attributes["id"]
+      if (node.elements["label"].text)
+        @label = node.elements["label"].text
+      else
+        print_info("No label for widget ID #{id} - calling it widget#{id}\n")
+        @label = "widget#{id}"
+      end
+      if (@label =~ /^[0-9]/)
+        plabel = @label
+        @label = @type + "_" + @label
+        print_info("Widget label `#{plabel}' prefixed to become `#{@label}'\n")
+      end
+      dict = node.elements
+      @init = dict["init"].to_f
+      @min  = dict["min"].to_f
+      @max  = dict["max"].to_f
+      @step = dict["step"].to_f
+      if (@type == "button")
+        @max  = 1 # no metadata other than name for buttons
+        @step = 1
+      end
+    end
+  end
+
+  class UI
+    attr_reader :active_widgets, :passive_widgets
+    def initialize(node)
+      @active_widgets  = node.get_elements("//activewidgets/widget").collect  { |x| Widget.new(x) }
+      @passive_widgets = node.get_elements("//passivewidgets/widget").collect { |x| Widget.new(x) }
+    end
+  end
+
+  class Plugin
+    attr_reader :path, :name, :author, :copyright, :license, :inputs, :outputs, :ui
+    def initialize(path, node)
+      @path = path
+      %w(name author copyright license).each { |name|
+        instance_variable_set("@#{name}", node.elements["/faust/#{name}"].text)
+      }
+      %w(inputs outputs).each { |name|
+        instance_variable_set("@#{name}", node.elements["/faust/#{name}"].text.to_i)
+      }
+      @ui = UI.new(node.elements["/faust/ui"])
+    end
+    def total_inputs
+      inputs + ui.active_widgets.size
+    end
+    def Plugin::from_file(path)
+      self.new(path, REXML::Document.new(File.open(path) { |io| io.read }))
+    end
+  end
+
+  class Generator
+    attr_reader :plugins, :options
+    def initialize(plugins, options)
+      @plugins = plugins
+      @options = options
+    end
+    def lang
+      "unknown"
+    end
+    def generate(io)
+      generate_header(io)
+      generate_body(io)
+      generate_footer(io)
+    end
+    def generate_header(io)
+    end
+    def generate_footer(io)
+    end
+    def generate_body(io)
+      plugins.each_with_index { |plugin,i|
+        if plugin
+          begin
+            print_info("Generating #{lang} code for #{plugin.name} ...\n")
+            generate_plugin(io, plugin)
+            if i < (plugins.size - 1)
+              io.print("\n")
+            end
+          rescue
+            print_error("#{$!}\n")
+            $!.backtrace.each { |l| print_error(l + "\n") }
+            print_error("Omitting #{plugin.path}\n")
+          end
+        end
+      }
+      io.print("\n")
+    end
+    def generate_plugin(io, plugin)
+      raise "#{self.class}::generate_plugin() missing!"
+    end
+  end
+  
+  module Language
+    IDENTIFIER_REGEXP = /^[a-z][a-zA-Z0-9_]*[a-zA-Z0-9]?$/
+    def make_identifier(name)
+      # gentle identifier massage
+      # remove quotes
+      name = name.sub(/^"([^"]*)"/, "\\1")
+      # replace invalid chars with underscores
+      name = name.downcase.gsub(/[^a-zA-Z0-9_]/, "_")
+      # reduce multiple underscores to one
+      name = name.gsub(/__+/, "_")
+      # remove leading/terminating underscores
+      name = name.sub(/(^_|_$)/, "")
+      # move leading digits to the end
+      name = name.sub(/^([0-9]+)_/, "") + ("_#{$1}" if $1).to_s
+      # if digit(s) only, prepend alpha prefix
+      if (name[0..0] =~ /^[0-9]/)
+        pname = name
+        name = "w" + name
+        print_info("Widget label `#{pname}' prefixed to become `#{name}'\n")
+      end
+      unless name =~ IDENTIFIER_REGEXP
+        raise "invalid identifier: \"#{name}\""
+      end
+      name
+    end
+    def make_unique(list)
+      # bad, bad, bad
+      list = list.clone
+      res = []
+      ids = {}
+      while hd = list.shift
+        if ids.has_key?(hd)
+          ids[hd] = id = ids[hd] + 1
+        else
+          if list.include?(hd)
+            ids[hd] = id = 0
+          end
+        end
+        res << (id ? "#{hd}_#{id}" : hd)
+      end
+      res
+    end
+    module_function :make_identifier, :make_unique
+  end
+  
+  module Haskell
+    INDENT = " " * 4
+    
+    def mk_function_names(plugin)
+      fname = plugin.name.decapitalize(true)
+      lname = fname + "'"
+      [lname, fname]
+    end
+    module_function :mk_function_names
+    
+    class PluginGenerator
+      attr_reader :plugin
+      def initialize(plugin)
+        @plugin = plugin
+      end
+      def generate(io)
+        lname, fname = Haskell.mk_function_names(plugin)
+        gen_curry_func(io, lname, fname)
+        io << "\n"
+        gen_list_func(io, lname)
+      end
+      def gen_ugen(io, name, rate, inputs, num_outputs)
+        io << "UGen.mkUGen #{rate} \"#{name}\" #{inputs} (replicate #{num_outputs} #{rate}) (UGen.Special 0) Nothing"
+        io << "\n"
+      end
+      def gen_curry_func(io, lname, fname)
+        args = mk_args(plugin.total_inputs)
+        decs = args.collect { "UGen" } + ["UGen"] # add result type
+        io << "#{fname} :: #{decs.join(" -> ")}\n"
+        io << "#{fname} #{args.join(" ")} = #{lname} [#{args.join(',')}]\n"
+      end
+      def gen_list_func(io, fname)
+        io << "#{fname} :: [UGen] -> UGen\n"
+        io << "#{fname} args = "
+        gen_ugen(io, plugin.name, "UGen.AR", "args", plugin.outputs)
+      end
+      
+      protected
+      def mk_args(n, x="x")
+        (1..n).collect { |i| "#{x}#{i}" }
+      end
+    end # PluginGenerator
+    
+    class Generator < Faust::Generator
+      def initialize(plugins, options)
+        super(plugins, options)
+        @module = options["prefix"]
+      end
+      def lang
+        "haskell"
+      end
+      def generate_header(io)
+        gen_module(io, plugins.collect { |p| Haskell.mk_function_names(p) }.flatten1)
+        io << "\n"
+        gen_imports(io)
+        io << "\n"
+      end
+      def generate_plugin(io, plugin)
+        PluginGenerator.new(plugin).generate(io)
+      end
+      def gen_module(io, exports)
+        #m = @module.empty? ? "" : @module + "."
+        #io << "module #{m}#{plugin.name.encapitalize} (\n"
+        io << "module #{@module.empty? ? "Main" : @module} (\n"
+        io << exports.collect { |x| (INDENT * 1) + x }.join(",\n") << "\n"
+        io << ") where\n"
+      end
+      def gen_imports(io)
+        io << "import Sound.SC3.UGen (UGen)\n"
+        io << "import qualified Sound.SC3.UGen as UGen\n"
+      end
+    end
+  end
+  
+  module SC3
+    include Language
+    
+    CLASS_REGEXP = /^[A-Z][a-zA-Z0-9_]*[a-zA-Z0-9]?$/
+
+    def path_to_unitname(path)
+      name = File.basename(path)
+      if ext_index = name.index(".")
+        name = name[0..ext_index-1]
+      end
+      name
+    end
+    def make_class_name(unit_name, prefix)
+      # The SuperCollider UGen class name generated here must match 
+      # that generated in the Faust architecture file supercollider.cpp
+      if prefix == ""
+        prefix = "Faust"
+      end
+      class_name = unit_name
+      class_name = class_name.sub(/^#{prefix}/i, '')
+      class_name = prefix + '_' + class_name
+      cna = class_name.split(/[^0-9a-z]/i)
+      cna.each_index { |i| cna[i] = cna[i].encapitalize } # SC name convention
+      class_name = cna.join
+      print_info(unit_name + " -> " + class_name + "\n")
+      if class_name.length > 31 # maximum SC Node ID length is 31 (hashed)
+        print_info("Class name `#{class_name}' truncated to 1st 31 chars\n")
+        class_name = class_name[0,30]
+      end
+      unless class_name =~ CLASS_REGEXP
+        raise "invalid class name: \"#{class_name}\""
+      end
+      class_name
+    end
+    module_function :path_to_unitname, :make_class_name
+
+    class Faust::Widget
+      def sc3_identifier
+        l = self.label
+        l = l.gsub(/\([^\)]*\)/, '')
+        l = Language.make_identifier(l)
+        if l.length > 30 # maximum SC ParamSpec length is 31 (hashed)
+          lt = l[0,29]   # leave a final char for make_unique
+          print_info("Label `#{l}' for #{self.type} #{self.id} truncated to " +
+                     "`#{lt}' (30 chars)\n")
+          l = lt
+        end
+        l
+      end
+      def sc3_arg_string
+        "#{self.sc3_identifier}(#{self.init})"
+      end
+      def sc3_default
+        "(#{self.init})"
+      end
+      def sc3_default2
+        "=(#{self.init})" # Parens make unary minus work in SC
+      end
+    end
+
+    class PluginGenerator
+      attr_reader :unit_name, :class_name
+      def initialize(plugin, options)
+        @plugin     = plugin
+        @options    = options
+        @unit_name  = plugin.name || SC3::path_to_unitname(plugin.path)
+        @class_name = SC3::make_class_name(@unit_name, options["prefix"])
+      end
+      def inputs
+        @plugin.inputs
+      end
+      def outputs
+        @plugin.outputs
+      end
+      def superclass_name
+        @plugin.outputs > 1 ? "MultiOutUGen" : "UGen"
+      end
+      def input_names
+        (1..self.inputs).collect { |i| "in#{i}" }
+      end
+      def control_names
+        Language::make_unique(@plugin.ui.active_widgets.collect { |x| x.sc3_identifier })
+      end
+      def decl_args # "name(default)"
+        cnames = self.control_names
+        cdefaults = @plugin.ui.active_widgets.collect { |x| x.sc3_default }
+        args = self.input_names + cnames.zip(cdefaults).collect { |ary| ary[0] + ary[1] }
+        args.empty? ? "" : " | " + args.join(", ") + " |"
+      end
+      def decl_args2 # "name=default"
+        cnames = self.control_names
+        cdefaults = @plugin.ui.active_widgets.collect { |x| x.sc3_default2 }
+        args = self.input_names + cnames.zip(cdefaults).collect { |ary| ary[0] + ary[1] }
+        args.empty? ? "" : args.join(", ") + ";"
+      end
+      def decl_args3 # args for SynthDef
+        cnames = self.control_names
+        cdefaults = @plugin.ui.active_widgets.collect { |x| x.sc3_default }
+        args = self.input_names.collect { |x| "\\#{x}.ar(0)" } \
+        + cnames.zip(cdefaults).collect { |x| "\\#{x[0]}.kr#{x[1]}" }
+        args.empty? ? "" : args.join(", ")
+      end
+      def decl_buses # declare input buses for Synth
+        args = self.input_names.collect { |x| \
+          "  #{x}Bus = Bus.audio(s,1);\n"};
+      end
+      def decl_args4 # args for Synth
+        cnames = self.control_names
+        cdefaults = @plugin.ui.active_widgets.collect { |x| x.sc3_default }
+        args = self.input_names.collect { |x| "#{x}:#{x}Bus.asMap"} \
+        + cnames.collect { |x| "#{x}:#{x}Var" }
+        args.empty? ? "" : "\n\t[\t" + args.join(",\n\t\t") + "\n\t]"
+      end
+      def decl_metadata
+        cnames = self.control_names
+        cnames.collect! {|x| "    \\"+x+":"}
+        warp = 0
+        cmeta = @plugin.ui.active_widgets.collect \
+          { |x| "[#{x.min}, #{x.max}, #{warp}, #{x.step}, #{x.init}].asSpec" }
+          # \\name1: [minval, maxval, warp, step, default, units].asSpec,
+          # Note: could append x.units as well
+        args = cnames.zip(cmeta).collect { |ary| ary[0] + ary[1] }
+        args.empty? ? "" : args.join(",\n      ")
+      end
+      def new_args(rate)
+        ["'%s'" % rate] + self.input_names + self.control_names
+      end
+      def validate
+        args = self.input_names + self.control_names
+        unless args.uniq == args
+          raise "argument list not unique"
+        end
+        self
+      end
+      def generate(io)
+        self.validate
+        generate_decl(io)
+        generate_body(io)
+      end
+      def generate_decl(io)
+        io.print("#{@class_name} : #{self.superclass_name}\n")
+        print_info("UGen: #{@class_name}\n")
+      end
+      def generate_body(io)
+        io.print("{\n")
+        body = <<EOF
+  *ar {#{self.decl_args}
+      ^this.multiNew(#{self.new_args(:audio).join(", ")})
+  }
+
+  *kr {#{self.decl_args}
+      ^this.multiNew(#{self.new_args(:control).join(", ")})
+  } 
+EOF
+        if self.inputs > 0
+          body = body + <<EOF
+
+  checkInputs {
+    if (rate == 'audio', {
+      #{self.inputs}.do({|i|
+        if (inputs.at(i).rate != 'audio', {
+          ^(" input at index " + i + "(" + inputs.at(i) + 
+            ") is not audio rate");
+        });
+      });
+    });
+    ^this.checkValidInputs
+  }
+EOF
+        end
+        io.print(body)
+        generate_outputs(io)
+        if @options["synthdef"]
+          generate_synthdef(io)
+        end
+        io.print("\n  name { ^\"#{@class_name}\" }\n")
+        io.print("}\n")
+      end
+      def generate_outputs(io)
+        if self.outputs > 1  # add initOutputs to overridden init:
+          io.print <<EOF
+
+  init { | ... theInputs |
+      inputs = theInputs
+      ^this.initOutputs(#{self.outputs}, rate)
+  }
+EOF
+        end
+      end
+      def generate_synthdef(io)
+        s = @class_name
+        sdname = s[0,1].downcase + s[1 .. s.length]
+        print_info("SynthDef: \\#{sdname}\n")
+# if \arg.ar(0) form not used, add after out=0: ,#{self.decl_args2}
+        io.print <<EOF
+  
+/*
+  SynthDef - Typical usage in SuperCollider:
+
+EOF
+        print_info("SynthDef: have #{self.input_names.size} inputs\n")
+        if self.input_names.size>0
+          io.print "#{decl_buses}\n";
+        end
+        io.print <<EOF
+  ~synth = Synth(\\#{sdname}, #{self.decl_args4});
+ */
+
+  *initClass {
+    StartUp.add {
+      SynthDesc.mdPlugin = TextArchiveMDPlugin;
+// When SynthDef.writeOnce writes metadata:
+//    SynthDef.writeOnce(\\#{sdname},
+      SynthDef(\\#{sdname},
+        { |out=0|
+          Out.ar(out, 
+            #{@class_name}.ar(
+              #{self.decl_args3}
+            )
+          )
+        }, metadata: (specs:( 
+        //\\controlName:[min, max, warp, step, default, units].asSpec,
+      #{self.decl_metadata}
+  ) ) ).store } }
+// When SynthDef.writeOnce writes metadata:
+//) ) ) } }
+EOF
+      end
+    end
+    
+    class Generator < Faust::Generator
+      def lang
+        "sclang"
+      end
+      def generate_plugin(io, plugin)
+        PluginGenerator.new(plugin, options).generate(io)
+      end
+    end
+  end # module SC3
+end # module Faust
+
+def usage
+  $stdout.print <<EOF
+Usage: #{File.basename($0)} [OPTION]... INPUT_FILE...
+
+Generate a language module file from FAUST generated XML.
+Currently supported languages are Haskell and SuperCollider.
+
+Options:
+ -h, --help     Display this help
+ -l, --lang     Set output language (haskell, sclang)
+ -o, --output   Set output file name
+ -p, --prefix   Set class or module prefix
+ -s, --synthdef Emit SynthDef including metadata (sclang)
+ -V, --version  Display version information
+EOF
+end
+
+opts = GetoptLong.new(
+  [ "--help",     "-h",  GetoptLong::NO_ARGUMENT ],
+  [ "--lang",     "-l",  GetoptLong::REQUIRED_ARGUMENT ],
+  [ "--output",   "-o",  GetoptLong::REQUIRED_ARGUMENT ],
+  [ "--prefix",   "-p",  GetoptLong::REQUIRED_ARGUMENT ],
+  [ "--synthdef", "-s",  GetoptLong::NO_ARGUMENT ],
+  [ "--version",  "-V",  GetoptLong::NO_ARGUMENT ]
+)
+
+LANG_MAP = {
+  "sclang"  => Faust::SC3::Generator,
+  "haskell" => Faust::Haskell::Generator
+}
+
+lang = "sclang"
+generator = nil
+output_file = nil
+
+options = {
+  "prefix" => "",
+  "synthdef" => false
+}
+
+opts.each { | opt, arg |
+  case opt
+  when "--help"
+    usage
+    exit(0)
+  when "--lang"
+    lang = arg
+  when "--output"
+    output_file = arg
+  when "--prefix"
+    options["prefix"] = arg
+    options["module"] = arg
+  when "--synthdef"
+    options["synthdef"] = true
+  when "--version"
+    puts "#{PROGRAM} #{PROGRAM_VERSION}"
+    exit(0)
+  end
+}
+
+if LANG_MAP.key?(lang)
+  generator = LANG_MAP[lang]
+else
+  print_error("unknown output language #{lang}\n")
+  exit(1)
+end
+
+if output_file
+  output = File.open(output_file, "w")
+else
+  output = $stdout
+end
+
+plugins = ARGV.collect { |file|
+  begin
+    print_info("Parsing #{file} ...\n")
+    Faust::Plugin.from_file(file)
+  rescue
+    print_error("#{$!}\n")
+    print_error("Omitting #{file}\n")
+  end
+}
+
+begin
+  generator.new(plugins, options).generate(output)
+ensure
+  output.close unless output === $stdout
+end
+
+# EOF
