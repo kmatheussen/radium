@@ -131,6 +131,39 @@ CFLAGS="-O3" CPPFLAGS="-O3" CXXFLAGS="-O3" ./configure
 make -j3
 cd ..
 
+
+# faust, debug
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g"
+export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g"
+export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g"
+export LDFLAGS="-fsanitize=address"
+cd faust2
+make -j8
+mv compiler/libfaust.a libfaust_debug.a
+make clean
+cd ..
+
+#faust, release
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g"
+export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g"
+export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g"
+export LDFLAGS=""
+cd faust2
+make -j8
+mv libfaust_debug.a compiler/
+cd ..
+
+# QScintilla
+rm -fr QScintilla_gpl-2.9.2
+tar xvzf QScintilla_gpl-2.9.2.tar.gz
+cd QScintilla_gpl-2.9.2/Qt4Qt5/
+echo "CONFIG += staticlib" >> qscintilla.pro
+qmake-qt4
+patch -p0 <../../qscintilla.patch
+make -j8
+cd ../..
+
+
 touch deletemetorebuild
 
 
