@@ -132,8 +132,16 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
   //for ( ; param != params.constEnd(); ++param) {
   for(int effect_num=0;effect_num<type->num_effects;effect_num++){
 
-    if(is_multiband && !strcmp(PLUGIN_get_effect_name(plugin,effect_num),"Limiter Bypass"))
+    const char *effect_name = PLUGIN_get_effect_name(plugin,effect_num);
+    
+    if(is_multiband && !strcmp(effect_name, "Limiter Bypass"))
       continue;
+
+    if (type->effect_is_visible!=NULL && !type->effect_is_visible(plugin, effect_num))
+      continue;
+
+    widget->_num_rows = R_MAX(widget->_num_rows, iY + 1);
+  
 
     //PluginParam *pParam = param.value();
     //PluginParamWidget *pParamWidget = new PluginParamWidget(pParam, this);
@@ -156,8 +164,6 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
     }
   }
 
-  widget->_num_rows = iY;
-  
   if (pVBoxLayout && pTabWidget) {
     pVBoxLayout->addWidget(pTabWidget);
     widget->setLayout(pVBoxLayout);

@@ -26,6 +26,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qtimer.h>
 #include <qfile.h>
 
+#include <Qsci/qsciscintilla.h>
+#include <faust/gui/faustqt.h>
+
 #ifdef USE_QT3
 #include <qobjectlist.h>
 #endif
@@ -520,6 +523,7 @@ QColor get_qcolor(enum ColorNums colornum){
 }
 
 static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pal){
+  
   if(system_color==NULL){
     system_color=new QColor(SETTINGS_read_string("system_color","#d2d0d5"));
     SETTINGS_write_string("system_color",system_color->name());
@@ -626,6 +630,7 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
 static QPalette sys_palette;
 
 static void updateWidget(EditorWidget *my_widget,QWidget *widget){
+
   QPalette pal(widget->palette());
 
   updatePalette(my_widget,widget,pal);
@@ -648,6 +653,12 @@ static void updateApplication(EditorWidget *my_widget,QApplication *app){
 }
 
 static void updateAll(EditorWidget *my_widget, QWidget *widget){
+  if (dynamic_cast<QsciScintilla*>(widget) != NULL)
+    return;
+
+  if (dynamic_cast<QTGUI*>(widget) != NULL)
+    return;
+
   configure_note_colors();
 
   updateWidget(my_widget, widget);

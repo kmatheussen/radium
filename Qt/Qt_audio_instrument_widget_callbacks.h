@@ -51,6 +51,10 @@ public:
   Sample_requester_widget *_sample_requester_widget;
   Compressor_widget *_comp_widget;
 
+  bool _is_large;
+  bool _was_large_before_hidden;
+  
+  
   static void set_arrow_style(QWidget *arrow, bool set_size_policy=true){
     QPalette palette2;
 
@@ -89,6 +93,8 @@ public:
     , _patch(patch)
     , _plugin_widget(NULL)
     , _sample_requester_widget(NULL)
+    , _is_large(false)
+    , _was_large_before_hidden(false)
   {
     setupUi(this);    
 
@@ -452,7 +458,7 @@ public:
     if (_plugin_widget->isVisible())
       _plugin_widget->calledRegularlyByParent();
     
-    callSliderpainterUpdateCallbacks();
+    callSystemSliderpainterUpdateCallbacks();
     
     if (_comp_widget->isVisible())
       _comp_widget->calledRegularlyByParent();
@@ -467,6 +473,9 @@ public:
     static bool can_shrink = true;
     static bool last_time_shrank = false;
 
+    if (_is_large)
+      return;
+          
     bool is_visible = scrollArea->verticalScrollBar()->isVisible();
     
     if (scrollArea->horizontalScrollBar()->isVisible())
@@ -501,7 +510,7 @@ public:
     
   }
                                       
-  void callSliderpainterUpdateCallbacks(void){
+  void callSystemSliderpainterUpdateCallbacks(void){
     
     for(int system_effect=0 ; system_effect<NUM_SYSTEM_EFFECTS ; system_effect++){
       MyQSlider *slider = get_system_slider(system_effect);
@@ -509,39 +518,6 @@ public:
         SLIDERPAINTER_call_regularly(slider->_painter);
     }
 
-    if (_plugin_widget->_plugin_widget != NULL){
-
-      bool has_been_visible = false;
-      
-      for(ParamWidget *paramWidget : _plugin_widget->_plugin_widget->_param_widgets){
-        MyQSlider *slider = paramWidget->_slider;
-        if (slider != NULL){
-          bool is_visible = slider->isVisible();
-          if (is_visible==true)
-            has_been_visible = true;
-          
-          if (is_visible==false && has_been_visible ==true) // Optimize a bit. some vst plugins have thousands of parameters.
-            break;
-
-          if (is_visible) {
-            //printf(" redraing effect %d\n", paramWidget->_effect_num);
-            SLIDERPAINTER_call_regularly(slider->_painter);
-          }
-        }
-      }
-    }
-    
-    if (_plugin_widget->_pd_plugin_widget != NULL){
-      
-      for(unsigned int i=0; i<_plugin_widget->_pd_plugin_widget->_controllers.size(); i++) {
-        Pd_Controller_widget *c = _plugin_widget->_pd_plugin_widget->_controllers[i];
-        
-        MyQSlider *slider = c->value_slider;
-        if (slider != NULL){
-          SLIDERPAINTER_call_regularly(slider->_painter);
-        }
-      }
-    }
   }
 
   void setupPeakAndAutomationStuff(void){
@@ -582,17 +558,18 @@ public:
         SLIDERPAINTER_set_automation_value_pointer(slider->_painter, get_effect_color(plugin, effect_num), &plugin->automation_values[effect_num]);
     }
 
-    if (_plugin_widget->_plugin_widget != NULL){
-    
-      for(ParamWidget *paramWidget : _plugin_widget->_plugin_widget->_param_widgets){
-        int effect_num = paramWidget->_effect_num;
-        
-        MyQSlider *slider = paramWidget->_slider;
-        if (slider != NULL){
-          SLIDERPAINTER_set_automation_value_pointer(slider->_painter, get_effect_color(plugin, effect_num), &plugin->automation_values[effect_num]);
-        }
-      }
-    }
+    PluginWidget *plugin_widget = NULL;
+
+    if (_plugin_widget->_plugin_widget != NULL)
+      plugin_widget = _plugin_widget->_plugin_widget;
+
+#ifdef WITH_FAUST_DEV
+    else if (_plugin_widget->_faust_plugin_widget != NULL)
+      plugin_widget = _plugin_widget->_faust_plugin_widget->_plugin_widget;
+#endif
+
+    if (plugin_widget != NULL)
+      plugin_widget->set_automation_value_pointers(plugin);
     
     if (_plugin_widget->_pd_plugin_widget != NULL){
 
@@ -726,13 +703,64 @@ public:
     int effect_num = type->num_effects + system_effect;
 
     if (is_starting==false)
-      PLUGIN_set_effect_value(plugin, -1, effect_num, sliderval/10000.0f, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single); // Don't need to lock player for setting system effects, I think.
+      PLUGIN_set_effect_value(plugin, -1, effect_num, sliderval/10000.0f, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single); // Don't need to lock player for setting system effects, I think. (it's probably better to let the plugins themselves decide whether to lock or not...)
 
     updateSliderString(system_effect);
   }
 
+  QVector<QWidget*> hidden_widgets;
+  int height_before_large;
+  
+  // enable for faust and multiband
+  void show_large(void){
+    printf("show_large\n");
+    hidden_widgets.clear();
+
+    _is_large = true;
+    height_before_large = height();
+    setMinimumHeight(g_main_window->height() / 2);
+    setMaximumHeight(g_main_window->height() / 2);
+  
+    for (int i = 0; i < effects_layout->count(); ++i){
+      QWidget *widget = effects_layout->itemAt(i)->widget();
+      if (widget != NULL){
+        if (widget != _plugin_widget && widget != _sample_requester_widget && widget->isVisible()){
+          widget->hide();
+          hidden_widgets.push_back(widget);
+        }
+      }
+    }
+  }
+
+  void show_small(void){
+    printf("show_small\n");
+
+    _is_large = false;
+    setMinimumHeight(10);
+    setMaximumHeight(16777214);
+    resize(width(), height_before_large);
+    
+    for (auto *widget : hidden_widgets)
+      widget->show();
+    
+    hidden_widgets.clear();
+  }
+
+
 public slots:
 
+  void hideEvent(QHideEvent * event){
+    _was_large_before_hidden = _is_large;
+    
+    if(_is_large)
+      show_small();  // If not, all instrument widgets will have large height.
+  }
+  
+  void showEvent(QShowEvent * event){
+    if (_was_large_before_hidden)
+      show_large();
+  }
+  
 #if 0
   void on_arrow1_toggled(bool val){
     _plugin_widget->setVisible(val);
@@ -1014,3 +1042,17 @@ static Pd_Plugin_widget *AUDIOWIDGET_get_pd_plugin_widget(Audio_instrument_widge
   return audio_instrument_widget->_plugin_widget->_pd_plugin_widget;
 }
 */
+
+#ifdef WITH_FAUST_DEV
+static Faust_Plugin_widget *AUDIOWIDGET_get_faust_plugin_widget(Audio_instrument_widget *audio_instrument_widget){
+  return audio_instrument_widget->_plugin_widget->_faust_plugin_widget;
+}
+#endif
+
+void AUDIOWIDGET_show_large(struct Patch *patch){
+  get_audio_instrument_widget(patch)->show_large();
+}
+
+void AUDIOWIDGET_show_small(struct Patch *patch){
+  get_audio_instrument_widget(patch)->show_small();
+}

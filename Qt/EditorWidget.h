@@ -259,5 +259,6 @@ protected:
 #endif
 };
 
+extern QMainWindow *g_main_window;
 #endif
 

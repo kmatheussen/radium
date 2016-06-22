@@ -22,9 +22,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMessageBox>
 #include <QTimer>
 #include <QFileDialog>
-#include <FocusSniffers.h>
 
 #include "../common/nsmtracker.h"
+
+#include <FocusSniffers.h>
+
+
 #include "../common/cursor_updown_proc.h"
 #include "../common/windows_proc.h"
 #include "../common/visual_proc.h"

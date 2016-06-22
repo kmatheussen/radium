@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCoreApplication>
 #include <QMessageBox>
 
+#include "helpers.h"
+
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 
@@ -76,7 +78,7 @@ QString OS_get_full_program_file_path(QString filename){
   if (!info.exists()){
     QMessageBox msgBox;
     msgBox.setText("The file " + info.absoluteFilePath() + " does not exist. Make sure all files in the zip file are unpacked before starting the program. Exiting program.");
-    msgBox.exec();
+    safeExec(&msgBox);
     exit(-1);
     abort();
   }

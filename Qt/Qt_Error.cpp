@@ -7,6 +7,8 @@
 #include <QProcess>
 #include <QDir>
 
+#include "helpers.h"
+
 #ifndef TEST_MAIN
 
 #define LANGSPEC "C"  // LANGSPEC doesn't work in OS_error_proc.h, so can't include nsmtracker.h. Haven't found out why this happens.
@@ -48,7 +50,7 @@ static int show_message(const char *message){
   msgBox.raise();
   msgBox.activateWindow();
   
-  printf("hepp: %d\n",msgBox.exec());
+  printf("hepp: %d\n",msgBox.exec()); // safeExec(&msgBox)); <-- We are not inside the radium executable here.
 
   QAbstractButton *clicked_button = msgBox.clickedButton();
 

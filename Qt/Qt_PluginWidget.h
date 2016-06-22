@@ -56,10 +56,8 @@ class ParamWidget : public QWidget{
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       const SoundPluginType *type  = plugin->type;
       _type = type;
-      _name = type->get_effect_name(plugin, effect_num);
-      if(_name.size()>25)
-        _name = _name.left(25);
-
+      reload_name();
+      
       int format = type->get_effect_format!=NULL ? type->get_effect_format(plugin, effect_num) : EFFECT_FORMAT_FLOAT;
 
       QGridLayout *grid_layout = new QGridLayout();
@@ -95,9 +93,12 @@ class ParamWidget : public QWidget{
         _check_button->setSizePolicy(sizePolicy5);
 
         _check_button->setText(_name);
-        if(type->get_effect_description!=NULL)
-          _check_button->setToolTip(type->get_effect_description(type,effect_num));
-
+        if(type->get_effect_description!=NULL){
+          QString description = type->get_effect_description(plugin,effect_num);
+          if (description != "")
+            _check_button->setToolTip(description);
+        }
+        
         grid_layout->addWidget(_check_button, 1,1,1,1);
       } else {
         _slider = new MyQSlider();
@@ -119,8 +120,11 @@ class ParamWidget : public QWidget{
         sizePolicy5.setHeightForWidth(_slider->sizePolicy().hasHeightForWidth());
         _slider->setSizePolicy(sizePolicy5);
 
-        if(type->get_effect_description!=NULL)
-          _slider->setToolTip(type->get_effect_description(type,effect_num));
+        if(type->get_effect_description!=NULL){
+          QString description = type->get_effect_description(plugin,effect_num);
+          if (description != "")
+            _slider->setToolTip(description);
+        }
 
         grid_layout->addWidget(_slider, 1, 1, 1, 1);
       }
@@ -203,16 +207,31 @@ class ParamWidget : public QWidget{
     }_can_update_effect_value = true;
   }
 
+  void reload_name(void){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    QString name = _type->get_effect_name(plugin, _effect_num);
+    if(name.size()>25)
+      name = name.left(25);
+    _name = name;
+
+    //    if (name == "<unused>")
+    //  hide();
+  }
+
+  void set_slider_string(void){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    char buf[64]={0};
+    PLUGIN_get_display_value_string(plugin, _effect_num, buf, 64);
+    SLIDERPAINTER_set_string(_slider->_painter, _name + ": " + QString::fromUtf8(buf));
+  }
+  
   public slots:
 
     void sliderValueChanged (int value){
       //printf("got something %d\n",value);
       if(_slider!=NULL){
         set_effect_value(value/10000.0f);
-        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-        char buf[64]={0};
-        PLUGIN_get_display_value_string(plugin, _effect_num, buf, 64);
-        SLIDERPAINTER_set_string(_slider->_painter, _name + ": " + QString::fromUtf8(buf));
+        set_slider_string();
         //_slider->display_string.sprintf("%s: %s",_name.toUtf8().constData(),
         //printf("Has set value to %s\n",_slider->_painter->display_string.toUtf8().constData());
       }
@@ -244,6 +263,17 @@ struct PluginWidget : public QWidget{
     , _num_rows(0)
   {}
 
+  void set_automation_value_pointers(SoundPlugin *plugin){
+    for(ParamWidget *paramWidget : _param_widgets){
+      int effect_num = paramWidget->_effect_num;
+      
+      MyQSlider *slider = paramWidget->_slider;
+      if (slider != NULL){
+        SLIDERPAINTER_set_automation_value_pointer(slider->_painter, get_effect_color(plugin, effect_num), &plugin->automation_values[effect_num]);
+      }
+    }
+  }
+  
   void prepare_for_deletion(void){
     for (auto *param_widget : _param_widgets)
       param_widget->prepare_for_deletion();

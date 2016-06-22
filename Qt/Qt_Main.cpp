@@ -83,6 +83,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Juce_plugins_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../audio/MultiCore_proc.h"
+#include "../audio/Faust_plugins_proc.h"
 
 
 #ifdef __linux__
@@ -127,6 +128,7 @@ extern struct Root *root;
 extern bool g_show_key_codes;
 
 static bool editor_has_keyboard = true;
+bool radium_runs_custom_exec = false;
 
 bool g_gc_is_incremental = false;
 
@@ -141,6 +143,7 @@ void release_keyboard_focus(void){
 bool editor_has_keyboard_focus(void){
   return editor_has_keyboard;
 }
+
 
 static bool another_window_has_focus = false;
 
@@ -765,12 +768,12 @@ protected:
     
     if (window->message==NULL && GC_dont_gc > 0) {
       
-      root->song->tracker_windows->message = gc_warning_message;
+      window->message = gc_warning_message;
       GL_create(window, window->wblock);
       
     } else if (window->message==gc_warning_message && GC_dont_gc <= 0){
       
-      root->song->tracker_windows->message=NULL;
+      window->message=NULL;
       GL_create(window, window->wblock);
       
       R_ASSERT(GC_dont_gc == 0);
@@ -1296,6 +1299,10 @@ int radium_main(char *arg){
 
   MULTICORE_shut_down();
 
+#ifdef WITH_FAUST_DEV
+  FFF_shut_down();
+#endif
+  
   //V_shutdown();
   
   //CRASHREPORTER_close();

@@ -246,7 +246,7 @@ disk_t *DISK_open_binary_for_reading(const wchar_t *wfilename){
   return disk;
 }
 
-static int write_qstring(disk_t *disk, QString s){
+int DISK_write_qstring(disk_t *disk, QString s){
   R_ASSERT(disk->is_binary==false);
   R_ASSERT(disk->type==disk_t::WRITE);
 
@@ -258,12 +258,12 @@ static int write_qstring(disk_t *disk, QString s){
 
 int DISK_write_wchar(disk_t *disk, const wchar_t *wdata){
   QString data = STRING_get_qstring(wdata);
-  return write_qstring(disk, data);
+  return DISK_write_qstring(disk, data);
 }
 
 int DISK_write(disk_t *disk, const char *cdata){
   QString data = QString::fromUtf8(cdata);
-  return write_qstring(disk, data);
+  return DISK_write_qstring(disk, data);
 }
 
 

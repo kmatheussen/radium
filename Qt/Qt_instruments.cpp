@@ -105,6 +105,9 @@ static void updateMidiPortsWidget(MIDI_instrument_widget *instrument);
 static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch);
 static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch);
 
+class Faust_Plugin_widget;
+static Faust_Plugin_widget *AUDIOWIDGET_get_faust_plugin_widget(Audio_instrument_widget *audio_instrument_widget);
+
 
 const char **get_ccnames(void){
   static bool is_inited = false;
@@ -565,7 +568,7 @@ static Audio_instrument_widget *get_audio_instrument_widget_from_patchdata(void 
 }
 */
 
-static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch){
+Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch){
   QStackedWidget* tabs = instruments_widget->tabs;
 
   for(int i=0;i<tabs->count();i++){

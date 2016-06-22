@@ -5,9 +5,11 @@
 #include <unistd.h>
 
 #include <QMessageBox>
-#include <FocusSniffers.h>
 
 #include "../common/nsmtracker.h"
+
+#include <FocusSniffers.h>
+
 #include "../common/OS_visual_input.h"
 #include "../OpenGL/Widget_proc.h"
 

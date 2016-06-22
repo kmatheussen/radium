@@ -42,6 +42,14 @@ extern LANGSPEC void InstrumentWidget_prepare_for_deletion(struct Patch *patch);
 extern LANGSPEC void GFX_update_instrument_widget(struct Patch *patch);
 extern LANGSPEC void GFX_update_current_instrument_widget(void);
 
+#ifdef USE_QT4
+//static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch);
+
+#endif
+
+extern LANGSPEC void AUDIOWIDGET_show_large(struct Patch *patch);
+extern LANGSPEC void AUDIOWIDGET_show_small(struct Patch *patch);
+
 struct SoundPlugin;
 struct SoundPluginType;
 struct SoundProducer;

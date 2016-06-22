@@ -30,7 +30,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_plugin_widget.h"
 
 #include "mQt_pd_plugin_widget_callbacks.h"
-//#include "mQt_faust_plugin_widget_callbacks.h"
+#ifdef WITH_FAUST_DEV
+#include "mQt_faust_plugin_widget_callbacks.h"
+#endif
 #include "mQt_jack_plugin_widget_callbacks.h"
 
 
@@ -44,13 +46,18 @@ public:
   struct Patch *_patch;
   Pd_Plugin_widget *_pd_plugin_widget;
   Jack_Plugin_widget *_jack_plugin_widget;
-  //Faust_Plugin_widget *_faust_plugin_widget;
+#ifdef WITH_FAUST_DEV
+  Faust_Plugin_widget *_faust_plugin_widget;
+#endif
   bool _ignore_show_gui_checkbox_stateChanged;
 
   QMessageBox infoBox;
 
   PluginWidget *_plugin_widget;
 
+  bool _is_large;
+  int _last_height;
+  
 public:
 
   Plugin_widget(QWidget *parent, struct Patch *patch)
@@ -58,9 +65,13 @@ public:
     , _patch(patch)
     , _pd_plugin_widget(NULL)
     , _jack_plugin_widget(NULL)
-    //, _faust_plugin_widget(NULL)
+#ifdef WITH_FAUST_DEV
+    , _faust_plugin_widget(NULL)
+#endif
     , _ignore_show_gui_checkbox_stateChanged(false)
     , _plugin_widget(NULL)
+    , _is_large(false)
+    , _last_height(10)
     {
       R_ASSERT(_patch!=NULL);
         
@@ -136,14 +147,20 @@ public:
       vertical_layout->insertWidget(1,_pd_plugin_widget);
       faust_load_button->hide();
       faust_save_button->hide();
-      faust_compile_button->hide();
-
+      faust_compilation_status->hide();
+      faust_revert_button->hide();
+      faust_show_button->hide();
+      faust_options_button->hide();
+      
       // Jack:
     }else if(!strcmp(plugin->type->type_name, "Jack")) {
       new_pd_controller_button->hide();
       faust_load_button->hide();
       faust_save_button->hide();
-      faust_compile_button->hide();
+      faust_compilation_status->hide();
+      faust_revert_button->hide();
+      faust_show_button->hide();
+      faust_options_button->hide();
       load_button->hide();
       save_button->hide();
       reset_button->hide();
@@ -151,19 +168,24 @@ public:
       _jack_plugin_widget = new Jack_Plugin_widget(this,_patch);
       vertical_layout->insertWidget(1,_jack_plugin_widget);
 
-#if 0
-    }else if(!strcmp(plugin->type->type_name, "Bus")) {
+#ifdef WITH_FAUST_DEV
+      // Faust:
+    }else if(!strcmp(plugin->type->type_name, "Faust Dev")) {
       new_pd_controller_button->hide();
-      _faust_plugin_widget = new Faust_Plugin_widget(this,_patch);
+      _faust_plugin_widget = new Faust_Plugin_widget(this, faust_compilation_status, _patch);
       vertical_layout->insertWidget(1,_faust_plugin_widget);
+      //_plugin_widget=PluginWidget_create(this, _patch);
 #endif
-      
+
       // Others:
     } else {
       new_pd_controller_button->hide();
       faust_load_button->hide();
       faust_save_button->hide();
-      faust_compile_button->hide();
+      faust_compilation_status->hide();
+      faust_revert_button->hide();
+      faust_show_button->hide();
+      faust_options_button->hide();
       _plugin_widget=PluginWidget_create(this, _patch);
       vertical_layout->insertWidget(1,_plugin_widget);
     }
@@ -190,6 +212,11 @@ public:
 
   // only called when visible
   void calledRegularlyByParent(void){
+#ifdef WITH_FAUST_DEV
+    if (_faust_plugin_widget!=NULL)
+      _faust_plugin_widget->calledRegularlyByParent();
+#endif
+
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
     if (plugin != NULL) {
@@ -205,7 +232,63 @@ public:
       }
       
       update_preset_widgets();
+
+      callSliderpainterUpdateCallbacks();
     }
+  }
+
+  void callSliderpainterUpdateCallbacks(void){
+    PluginWidget *plugin_widget = NULL;
+
+    if (_plugin_widget != NULL)
+      plugin_widget = _plugin_widget;
+
+#ifdef WITH_FAUST_DEV
+    else if (_faust_plugin_widget != NULL)
+      plugin_widget = _faust_plugin_widget->_plugin_widget;
+#endif
+    
+    if (plugin_widget != NULL){
+
+      bool has_been_visible = false;
+      
+      for(ParamWidget *paramWidget : plugin_widget->_param_widgets){
+        MyQSlider *slider = paramWidget->_slider;
+        if (slider != NULL){
+          bool is_visible = slider->isVisible();
+          if (is_visible==true)
+            has_been_visible = true;
+          
+          if (is_visible==false && has_been_visible==true) // Optimize a bit. some vst plugins have thousands of parameters.
+            break;
+
+          if (is_visible) {
+            //printf(" drawing effect %d\n", paramWidget->_effect_num);
+            SLIDERPAINTER_call_regularly(slider->_painter);
+          }
+        }
+      }
+    }
+    
+    if (_pd_plugin_widget != NULL){
+      
+      for(unsigned int i=0; i<_pd_plugin_widget->_controllers.size(); i++) {
+        Pd_Controller_widget *c = _pd_plugin_widget->_controllers[i];
+        
+        MyQSlider *slider = c->value_slider;
+        if (slider != NULL){
+          SLIDERPAINTER_call_regularly(slider->_painter);
+        }
+      }
+    }
+#if 0
+    int height = g_main_window->height();
+    if (height!=_last_height && _is_large && editor_has_keyboard_focus()){
+      on_large_checkbox_toggled(false);
+      on_large_checkbox_toggled(true);
+    }
+    _last_height = height;
+#endif
   }
   
   void prepare_for_deletion(void){
@@ -228,6 +311,11 @@ public:
     if(_jack_plugin_widget != NULL)
       _jack_plugin_widget->update_gui();
 
+#ifdef WITH_FAUST_DEV
+    if(_faust_plugin_widget != NULL)
+      _faust_plugin_widget->update_gui();
+#endif
+    
     update_preset_widgets();
   }
 
@@ -244,7 +332,6 @@ public:
       const char *preset_name = type->get_preset_name(plugin, preset_num);
       if (strcmp(preset_name, preset_button->text().toUtf8().constData()))
         preset_button->setText(preset_name);
-
     }
   }
   
@@ -319,15 +406,127 @@ private:
     GFX_update_instrument_widget((struct Patch*)_patch);
   }
 
-
   
 public slots:
 
+  // faust
+  //
+#if 0
+  void on_faust_compile_button_released() {
+    printf("Got it\n");
+#ifdef WITH_FAUST_DEV // <-- #ifdef must be on the inside of the function in order for moc to produce correct code.
+    if (_faust_plugin_widget != NULL)
+      _faust_plugin_widget->start_compilation();
+#endif
+  }
+#endif
+
+  void on_faust_revert_button_released(){
+#ifdef WITH_FAUST_DEV
+    if (_faust_plugin_widget != NULL)
+      _faust_plugin_widget->revert_to_latest_working_version();
+#endif
+  }
+
+  void on_faust_load_button_released(){
+#ifdef WITH_FAUST_DEV
+    if (_faust_plugin_widget != NULL){
+
+      QString filename;
+
+      obtain_keyboard_focus();
+
+      GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+        
+        filename = QFileDialog::getOpenFileName(this,
+                                                "Load Faust source code",
+                                                "",
+                                                "*.dsp ;; All files (*)",
+                                                0,
+                                                useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
+                                                );
+        
+      }GL_unlock();
+      
+      release_keyboard_focus();
+
+      if(filename != "")
+        _faust_plugin_widget->load_source(filename);
+    }
+#endif
+  }
+    
+  void on_faust_save_button_released(){
+#ifdef WITH_FAUST_DEV
+    if (_faust_plugin_widget != NULL){
+
+      QString filename;
+
+      obtain_keyboard_focus();
+
+      GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+        
+        filename = QFileDialog::getSaveFileName(this,
+                                                "Save Faust source code",
+                                                "",
+                                                "*.dsp ;; All files (*)",
+                                                0,
+                                                useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
+                                                );
+        
+      }GL_unlock();
+      
+      release_keyboard_focus();
+
+      if(filename != "")
+        _faust_plugin_widget->save_source(filename);      
+    }
+#endif
+  }
+
+  void on_faust_show_button_released(){
+#ifdef WITH_FAUST_DEV
+    if (_faust_plugin_widget != NULL)
+      _faust_plugin_widget->show_cpp_source();
+#endif
+  }
+
+  void on_faust_options_button_released(){
+#ifdef WITH_FAUST_DEV
+    if (_faust_plugin_widget != NULL)
+      _faust_plugin_widget->edit_options();
+#endif
+  }
+
+  void on_large_checkbox_toggled(bool val){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin!=NULL){
+      if (val){
+        _is_large = true;
+        AUDIOWIDGET_show_large(_patch);
+#ifdef WITH_FAUST_DEV
+        if (_faust_plugin_widget != NULL)
+          _faust_plugin_widget->set_large(header->height());
+#endif        
+      }else{
+        _is_large = false;
+        AUDIOWIDGET_show_small(_patch);
+#ifdef WITH_FAUST_DEV
+        if (_faust_plugin_widget != NULL)
+          _faust_plugin_widget->set_small();
+#endif
+      }
+    }
+  }
+  
+  // pd
+  //
   void on_new_pd_controller_button_released() {
     ADD_UNDO(PdControllers_CurrPos(_patch));
     _pd_plugin_widget->new_controller();  
   }
 
+  // general
   void on_show_gui_checkbox_stateChanged(int val){
     if (_ignore_show_gui_checkbox_stateChanged==false) {
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
