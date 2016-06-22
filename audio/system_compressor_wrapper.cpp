@@ -24,8 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  include <QDateTime>
 #endif
 
-#include "faudiostream/architecture/faust/gui/UI.h"
-#include "faudiostream/architecture/faust/audio/dsp.h"
+#include <faust/gui/UI.h>
+#include <faust/dsp/dsp.h>
 #ifdef COMPILING_STANDALONE
 #include "myjack-dsp.h"
 #endif

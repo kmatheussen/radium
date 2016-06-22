@@ -876,14 +876,15 @@ static void add_midi_event(struct SoundPlugin *plugin,int time,int val1, int val
   static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
     const struct SoundPluginType *plugin_type = plugin->type;
     TypeData *type_data = (TypeData*)plugin_type->data;
-    printf("type_data: %p, num: %d, Effect name: \"%s\"\n",type_data, effect_num,type_data->params[effect_num].label);
+    //printf("type_data: %p, num: %d, Effect name: \"%s\"\n",type_data, effect_num,type_data->params[effect_num].label);
     return type_data->params[effect_num].name;
   }
+  /*
   static const char *get_effect_description(const struct SoundPluginType *plugin_type, int effect_num){
     TypeData *type_data = (TypeData*)plugin_type->data;
     return type_data->params[effect_num].name;
   }
-
+  */
 
 
 static void set_plugin_type_data(AEffect *aeffect, SoundPluginType *plugin_type){
@@ -933,7 +934,7 @@ static void set_plugin_type_data(AEffect *aeffect, SoundPluginType *plugin_type)
 
 static int num_running_plugins = 0;
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){ // Returns plugin->data.
+static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){ // Returns plugin->data.
   TypeData *type_data = (TypeData*)plugin_type->data;
 
 #if FULL_VERSION==0
@@ -1307,7 +1308,7 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
 
     plugin_type->get_display_value_string=get_display_value_string;
     plugin_type->get_effect_name=get_effect_name;
-    plugin_type->get_effect_description=get_effect_description;
+    //plugin_type->get_effect_description=get_effect_description;
 
     PR_add_plugin_type(plugin_type);
   }

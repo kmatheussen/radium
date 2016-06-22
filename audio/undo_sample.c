@@ -90,7 +90,7 @@ static void *Undo_Do_Sample(
 
   //printf("Calling Undo_do for %d. Current value: %f. Now setting it back to %f\n",undo_ae->effect_num,new_value,undo_ae->value);
 
-  plugin->type->recreate_from_state(plugin, undo_ae->state);
+  plugin->type->recreate_from_state(plugin, undo_ae->state, false);
 
   GFX_update_instrument_widget(undo_ae->patch);
 

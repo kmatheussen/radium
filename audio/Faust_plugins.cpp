@@ -1,791 +1,507 @@
+
+
 #include <math.h>
-#include <string>
 
-#include <vector>
+#include <unistd.h>
 
-/*
-#include "/usr/share/faust/audio/dsp.h"
-#include "/usr/share/faust/gui/UI.h"
-*/
+// We use faust2 here.
+//#define QTGUI FAUST2_QTGUI
 
-#include "faudiostream/architecture/faust/audio/dsp.h"
-#include "faudiostream/architecture/faust/gui/UI.h"
+#include "../bin/packages/faust2/compiler/generator/llvm/llvm-dsp.h"
+#include "../bin/packages/faust2/compiler/libfaust.h"
+
+#include "../bin/packages/faust2/architecture/faust/dsp/dsp.h"
+#include "../bin/packages/faust2/architecture/faust/gui/UI.h"
+#include "../bin/packages/faust2/architecture/faust/gui/GUI.h"
+#include "../bin/packages/faust2/architecture/faust/gui/faustqt.h"
+//}
+
+#include "mfaustqt2.cpp"
+
+std::list<GUI*>  GUI::fGuiList;
+
+
+
+
+#ifdef WITH_FAUST_DEV
+
+
+
 
 #include "../common/nsmtracker.h"
+#include "../common/visual_proc.h"
+#include "../common/patch_proc.h"
 
-struct Meta
-{
-    void declare (const char* key, const char* value) { }
-};
-
-static void RT_fade_out(float *sound, int num_frames){
-  float num_frames_plus_1 = num_frames+1.0f;
-  for(int i=0;i<num_frames;i++)
-    sound[i] *= (num_frames-i)/num_frames_plus_1;
-}
-
-
-#if 0
-static float linear2db(float val){
-  if(val<=0.0f)
-    return 0.0f;
-
-  float db = 20*log10(val);
-  if(db<-70)
-    return 0.0f;
-  else if(db>40)
-    return 1.0f;
-  else
-    return scale(db,-70,40,0,1);
-}
-#endif
-
-// input is between 0 and 1.
-// output is between 0 and 1.
-static float velocity2gain(float val){
-  if(val<=0.0f)
-    return 0.0f;
-  else if(val>=1.0f)
-    return 1.0f;
-  else
-    return powf(10, scale(val,0.0, 1.0 ,-40, 20) / 20.0f) / 10.0f;
-}
-
-
-static double midi_to_hz(float midi){
-  if(midi<=0)
-    return 0;
-  else
-    //  return 1;
-  return 8.17579891564*(expf(.0577622650*midi));
-}
-
-#if 0
-// For some reason, it won't compile with the usual min/max macros.
-template<typename T> static inline T min(T a,T b){return a<b ? a : b;}
-template<typename T> static inline T max(T a,T b){return a>b ? a : b;}
-static inline float min(float a,int b){return a<b ? a : b;}
-static inline float max(float a,int b){return a>b ? a : b;}
-static inline float min(int a,float b){return a<b ? a : b;}
-static inline float max(int a,float b){return a>b ? a : b;}
-#endif
-
-inline int 	max (unsigned int a, unsigned int b) { return (a>b) ? a : b; }
-inline int 	max (int a, int b)		{ return (a>b) ? a : b; }
-
-inline long 	max (long a, long b) 		{ return (a>b) ? a : b; }
-inline long 	max (int a, long b) 		{ return (a>b) ? a : b; }
-inline long 	max (long a, int b) 		{ return (a>b) ? a : b; }
-
-inline float 	max (float a, float b) 		{ return (a>b) ? a : b; }
-inline float 	max (int a, float b) 		{ return (a>b) ? a : b; }
-inline float 	max (float a, int b) 		{ return (a>b) ? a : b; }
-inline float 	max (long a, float b) 		{ return (a>b) ? a : b; }
-inline float 	max (float a, long b) 		{ return (a>b) ? a : b; }
-
-inline double 	max (double a, double b) 	{ return (a>b) ? a : b; }
-inline double 	max (int a, double b) 		{ return (a>b) ? a : b; }
-inline double 	max (double a, int b) 		{ return (a>b) ? a : b; }
-inline double 	max (long a, double b) 		{ return (a>b) ? a : b; }
-inline double 	max (double a, long b) 		{ return (a>b) ? a : b; }
-inline double 	max (float a, double b) 	{ return (a>b) ? a : b; }
-inline double 	max (double a, float b) 	{ return (a>b) ? a : b; }
-
-
-inline int	min (int a, int b)		{ return (a<b) ? a : b; }
-
-inline long 	min (long a, long b) 		{ return (a<b) ? a : b; }
-inline long 	min (int a, long b) 		{ return (a<b) ? a : b; }
-inline long 	min (long a, int b) 		{ return (a<b) ? a : b; }
-
-inline float 	min (float a, float b) 		{ return (a<b) ? a : b; }
-inline float 	min (int a, float b) 		{ return (a<b) ? a : b; }
-inline float 	min (float a, int b) 		{ return (a<b) ? a : b; }
-inline float 	min (long a, float b) 		{ return (a<b) ? a : b; }
-inline float 	min (float a, long b) 		{ return (a<b) ? a : b; }
-
-inline double 	min (double a, double b) 	{ return (a<b) ? a : b; }
-inline double 	min (int a, double b) 		{ return (a<b) ? a : b; }
-inline double 	min (double a, int b) 		{ return (a<b) ? a : b; }
-inline double 	min (long a, double b) 		{ return (a<b) ? a : b; }
-inline double 	min (double a, long b) 		{ return (a<b) ? a : b; }
-inline double 	min (float a, double b) 	{ return (a<b) ? a : b; }
-inline double 	min (double a, float b) 	{ return (a<b) ? a : b; }
-
-
-/******************************************************************************
-*******************************************************************************
-
-							       VECTOR INTRINSICS
-
-*******************************************************************************
-*******************************************************************************/
-
-<<includeIntrinsic>>
-
-/******************************************************************************
-*******************************************************************************
-
-			ABSTRACT USER INTERFACE
-
-*******************************************************************************
-*******************************************************************************/
-
-//----------------------------------------------------------------------------
-//  FAUST generated signal processor
-//----------------------------------------------------------------------------
-
-<<includeclass>>
-
-
+#include "../Qt/Qt_instruments_proc.h"
+#include "../Qt/EditorWidget.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 
-#include "Mixer_proc.h"
 #include "SoundPluginRegistry_proc.h"
+
+namespace{
+struct Data;
+}
+
+static Data *GET_DATA_FROM_PLUGIN(SoundPlugin *plugin);
+#include "Faust_plugins_template1.cpp"
+#include "Faust_plugins_template2.cpp"
 
 #include "Faust_plugins_proc.h"
 
 
-namespace{
+#define MAX_CHANNELS 16
+#define MAX_EFFECTS 1024
 
-class MyUI : public UI
-{
+#include "Faust_factory_factory.cpp"
 
- public:
 
-  MyUI() 
-    : next_peak(NULL)
-    , _gate_control(NULL)
-    , _freq_control(NULL)
-    , _gain_control(NULL)
-    , _num_effects(0)
-    , _effect_tooltip("")
-    , _curr_box_name(NULL)
-  { }
+static int64_t g_id = 0;
 
-  ~MyUI() {	}
+struct Devdata{
+  int64_t id;
+  
+  QString code;
+  QString options;
+  
+  FFF_Reply reply;
 
-  float *next_peak;
+  bool is_compiling; // <-- Can only be trusted if sending one request at a time. (used by the Faust_Plugin_widget constructor)
 
-  float *_gate_control;
-  float *_freq_control;
-  float *_gain_control;
+  QDialog *qtgui_parent;
+  
+  Devdata()
+    : id(g_id++)
+    , options("-I\n%radium_path%/packages/faust2/architecture")
+    , reply(fff_empty_reply)
+    , is_compiling(false)
+    , qtgui_parent(NULL)
+  {
+  }
+};
 
-  struct Controller{
-    float* control_port;
+static Data *GET_DATA_FROM_PLUGIN(SoundPlugin *plugin){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
+  return data;
+}
 
-    float *peak_port;
+static void dev_RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
 
-    float min_value;
-    float default_value;
-    float max_value;
+  int num_inputs = 0;
+  int num_outputs = 0;
 
-    std::string name;
-    int type;
-
-    const char *tooltip;
-    const char *unit;
-
-    Controller(float *control_port)
-      : control_port(control_port)
-      , peak_port(NULL)
-      , min_value(0.0f)
-      , default_value(0.5f)
-      , max_value(1.0f)
-      , name("<no name>")
-      , type(EFFECT_FORMAT_FLOAT)
-      , tooltip("")
-      , unit("")
-    { }
-  };
-
-  std::vector<Controller> _controllers;
-
-  int get_controller_num(float *control_port){
-    for(unsigned int i=0;i<_controllers.size();i++){
-      if(control_port == _controllers.at(i).control_port)
-        return i;
+  if (data != NULL) {
+    num_inputs = data->voices[0].dsp_instance->getNumInputs();
+    num_outputs = data->voices[0].dsp_instance->getNumOutputs();
+    
+    if (num_inputs > MAX_CHANNELS || num_outputs > MAX_CHANNELS){
+      for(int ch = 0 ; ch < MAX_CHANNELS ; ch++)
+        memset(outputs[ch], 0, num_frames*sizeof(float));
+      return;
     }
 
-    Controller controller(control_port);
-
-    _controllers.push_back(controller);
-    _num_effects++;
-
-    return _controllers.size()-1;
-  }
-
-  bool is_instrument(){
-    if(_gate_control!=NULL && _freq_control!=NULL && _gain_control!=NULL)
-      return true;
+    if (devdata->reply.is_instrument)
+      RT_process_instrument2(num_outputs, data, time, num_frames, inputs, outputs);
     else
-      return false;
-  }
-
-  // Remove gain/gate/freq sliders for instruments.
-  void remove_instrument_notecontrol_effects(){
-    if(is_instrument()){
-      _controllers.erase(_controllers.begin() + get_controller_num(_gate_control));
-      _controllers.erase(_controllers.begin() + get_controller_num(_freq_control));
-      _controllers.erase(_controllers.begin() + get_controller_num(_gain_control));
-      _num_effects -= 3;
-    }
-  }
-
-  // We don't use passive items. (it would have been nice to have a passive effect telling when an instrument is finished playing)
-  void remove_last_item(){
-    _controllers.pop_back();
-    _num_effects--;
+      RT_process_effect2(data, time, num_frames, inputs, outputs);
   }
   
-
-  int _num_effects;
-
-  const char *_effect_tooltip;
-
-  const char* _curr_box_name;
-
-  // -- widget's layouts
-  
-  void openFrameBox(const char* label) {_curr_box_name = label;}
-  void openTabBox(const char* label) {_curr_box_name = label;}
-  void openHorizontalBox(const char* label) {_curr_box_name = label;}
-  void openVerticalBox(const char* label) {_curr_box_name = label;}
-  void closeBox() {_curr_box_name = NULL;}
-  
-  // -- active widgets
-
-  void addEffect(const char *name, float* control_port, int type, float min_value, float default_value, float max_value){
-    int effect_num = get_controller_num(control_port);
-
-    Controller *controller = &_controllers.at(effect_num);
-
-    if(_curr_box_name != NULL && strlen(_curr_box_name) < 10 && strcmp(_curr_box_name, "0x00")){
-      controller->name = std::string(_curr_box_name) + ": " + name;
-    }else{
-      controller->name = name;
-    }
-    //printf("Controller name: \"%s\"\n",controller->name.c_str());
-    controller->type = type;
-    controller->min_value = min_value;
-    controller->default_value = default_value;
-    controller->max_value = max_value;
-
-    if(next_peak != NULL){
-      controller->peak_port = next_peak;
-      next_peak = NULL;
-    }
-
-    if(!strcmp(name,"gate"))
-      _gate_control = control_port;
-
-    if(!strcmp(name,"freq"))
-      _freq_control = control_port;
-
-    if(!strcmp(name,"gain"))
-      _gain_control = control_port;
-  }
-
-  void addButton(const char* label, float* zone) {
-    addEffect(label, zone, EFFECT_FORMAT_BOOL, 0, 0, 1);
-  }
-  void addToggleButton(const char* label, float* zone) {
-    addEffect(label, zone, EFFECT_FORMAT_BOOL, 0, 0, 1);
-  }
-  void addCheckButton(const char* label, float* zone) {
-    addEffect(label, zone, EFFECT_FORMAT_BOOL, 0, 0, 1);
-  }
-  void addVerticalSlider(const char* label, float* zone, float init, float min, float max, float step) {
-    addEffect(label, zone,  step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max);
-  }
-  void addHorizontalSlider(const char* label, float* zone, float init, float min, float max, float step) {
-    addEffect(label, zone,  step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max);
-  }
-  void addNumEntry(const char* label, float* zone, float init, float min, float max, float step) {
-    addEffect(label, zone, step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max); // The INT effect format might not work. Need to go through the code first.
-  }
-  
-  // -- passive widgets
-
-  void addNumDisplay(const char* label, float* zone, int precision) {remove_last_item();}
-  void addTextDisplay(const char* label, float* zone, const char* names[], float min, float max) {remove_last_item();}
-  void addHorizontalBargraph(const char* label, float* zone, float min, float max) {
-    remove_last_item(); // remove metadata
-    next_peak = zone;
-  }
-  void addVerticalBargraph(const char* label, float* zone, float min, float max) {
-    remove_last_item(); // remove metadata
-    next_peak = zone;
-  }
-  
-  // -- metadata declarations
-  
-  void declare(float* control_port, const char* key, const char* value) {
-    if(control_port==NULL){
-      if(!strcmp(key,"tooltip"))
-        _effect_tooltip = value;
-    } else {
-      int effect_num = get_controller_num(control_port);
-      Controller *controller = &_controllers.at(effect_num);
-      if(!strcmp(key,"tooltip"))
-        controller->tooltip = value;
-      else if(!strcmp(key,"unit"))
-        controller->unit = value;
-    }
-  }
-};
-
-
-#define MAX_POLYPHONY 32
-
-struct Voice{
-  struct Voice *prev;
-  struct Voice *next;
-  CLASSNAME *dsp_instance;
-  MyUI myUI;
-  float note_num;
-  int64_t note_id;
-
-  int frames_since_stop;
-
-  int delta_pos_at_start; // Within the current block. Set when starting a note.
-  int delta_pos_at_end; // Within the current block. Set when stopping a note.
-
-  Voice()
-    : prev(NULL)
-    , next(NULL)
-    , dsp_instance(NULL)
-    , note_num(0)
-    , note_id(-1)
-    , delta_pos_at_start(0)
-    , delta_pos_at_end(-1)
-  { }
-};
-
-struct Data{
-  Voice *voices_playing; // not used by effects
-  Voice *voices_not_playing; // not used by effects
-  Voice voices[MAX_POLYPHONY];   // Only voices[0] is used by effects.
-  float samplerate;
-  Data()
-    : voices_playing(NULL)
-    , voices_not_playing(NULL)
-  {}
-};
-
-} // end anonymous namespace
-
-static void RT_add_voice(Voice **root, Voice *voice){
-  voice->next = *root;
-  if(*root!=NULL)
-    (*root)->prev = voice;
-  *root = voice;
-  voice->prev = NULL;
+  // clear unused channels
+  for(int ch = num_outputs ; ch < MAX_CHANNELS ; ch++)
+    memset(outputs[ch], 0, num_frames*sizeof(float));
 }
 
-static void RT_remove_voice(Voice **root, Voice *voice){
-  if(voice->prev!=NULL)
-    voice->prev->next = voice->next;
+static void dev_play_note(struct SoundPlugin *plugin, int64_t time, note_t note){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
+  
+  if (data != NULL)
+    if (devdata->reply.is_instrument)
+      play_note2(data, time, note);
+}
+
+static void dev_set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t note){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
+  
+  if (data != NULL)
+    if (devdata->reply.is_instrument)
+      set_note_volume2(data, time, note);
+}
+
+static void dev_set_note_pitch(struct SoundPlugin *plugin, int64_t time, note_t note){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
+  
+  if (data != NULL)
+    if (devdata->reply.is_instrument)
+      set_note_pitch2(data, time, note);
+}
+
+static void dev_stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
+  
+  if (data != NULL)
+    if (devdata->reply.is_instrument)
+      stop_note2(data, time, note);
+} 
+
+static int get_num_effects(const Data *data) {
+  return data->voices[0].myUI._num_effects;
+}
+
+static void dev_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
+  
+  if (data != NULL)
+    if (effect_num < get_num_effects(data))
+      set_effect_value2(data, effect_num, value, value_format, when);
+}
+
+static float dev_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
+  
+  if (data==NULL || effect_num >= get_num_effects(data))
+    return 0.5;
+  
+  return get_effect_value2(data, effect_num, value_format);
+}
+
+static void dev_get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
+  
+  if (data==NULL || effect_num >= get_num_effects(data)){
+    snprintf(buffer,buffersize," ");
+    return;
+  }
+
+  get_display_value_string2(data, effect_num, buffer, buffersize);
+}
+
+static void create_state(struct SoundPlugin *plugin, hash_t *state){
+  printf("\n\n\n ********** CREATE_STATE ************* \n\n\n");
+  Devdata *devdata = (Devdata*)plugin->data;
+
+  HASH_put_string(state, "code", STRING_toBase64(STRING_create(devdata->code)));
+  HASH_put_string(state, "options", STRING_toBase64(STRING_create(devdata->options)));
+}
+
+static void *dev_create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
+  Devdata *devdata = new Devdata;
+
+  plugin->data = devdata;
+
+  if (state!=NULL) {
+    devdata->code = STRING_get_qstring(STRING_fromBase64(HASH_get_string(state, "code")));
+    devdata->options = STRING_get_qstring(STRING_fromBase64(HASH_get_string(state, "options")));
+  } else
+    devdata->code = DEFAULT_FAUST_DEV_PROGRAM;
+
+
+  if (is_loading==false) {
+    
+    FAUST_start_compilation(plugin);
+  
+  } else {
+  
+    if (FAUST_compile_now(plugin, is_loading)==false){
+      GFX_Message(NULL, "Something went wrong when compiling: %s", devdata->reply.error_message.toUtf8().constData());
+      plugin->data = NULL;
+      delete devdata;
+      return NULL;
+    }
+    
+  }
+  
+  return devdata;
+}
+
+static void dev_cleanup_plugin_data(SoundPlugin *plugin){
+  fprintf(stderr,">>>>>>>>>>>>>> Cleanup_plugin_devdata called for %p\n",plugin);
+
+  Devdata *devdata = (Devdata*)plugin->data;
+
+  FFF_free_now(devdata->reply);
+
+  delete devdata->qtgui_parent;
+  
+  // We can lose memory by not receiving replies in the queue, but that won't crash the program or make it unstable.
+  // This should be so rare though, plus that the only consequency is to waste a little bit of memory, that it's probably not worth fixing.
+  delete devdata;
+}
+
+static int dev_get_effect_format(struct SoundPlugin *plugin, int effect_num){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
+  
+  if (data == NULL || effect_num >= get_num_effects(data))
+    return EFFECT_FORMAT_FLOAT;
+  
+  return get_effect_format2(data, effect_num);
+}
+
+static const char *dev_get_effect_name(struct SoundPlugin *plugin, int effect_num){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
+  
+  if (data==NULL || effect_num >= get_num_effects(data))
+    return NOTUSED_EFFECT_NAME;
+  
+  return get_effect_name2(data, effect_num);
+}
+
+static const char *dev_get_effect_description(struct SoundPlugin *plugin, int effect_num){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
+  
+  if (data==NULL || effect_num >= get_num_effects(data))
+    return "";
+  
+  return get_effect_description2(data, effect_num);
+}
+
+
+static bool dev_effect_is_visible(struct SoundPlugin *plugin, int effect_num){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
+  
+  if (data==NULL || effect_num >= get_num_effects(data))
+    return false;
   else
-    *root=voice->next;
-
-  if(voice->next!=NULL)
-    voice->next->prev = voice->prev;
+    return true;
 }
 
-static bool RT_is_silent(float *sound, int num_frames){
-  for(int i=0;i<num_frames;i++)
-    if(sound[i]>0.05f)
-      return false;
+static void dev_show_gui(struct SoundPlugin *plugin){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
+
+  if (data!=NULL) {
+
+    if (devdata->qtgui_parent == NULL)
+      devdata->qtgui_parent = new QDialog(g_main_window);
+
+    if (data->qtgui==NULL)
+      create_gui(devdata->qtgui_parent, data, plugin);
+
+    safeShow(devdata->qtgui_parent);
+    data->qtgui->run();
+  }
+}
+
+static void dev_hide_gui(struct SoundPlugin *plugin){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
+
+  if (devdata->qtgui_parent != NULL)
+    devdata->qtgui_parent->hide();
+  
+  if (data!=NULL)
+    data->qtgui->stop();
+}
+
+static bool dev_gui_is_visible(struct SoundPlugin *plugin){
+  Devdata *devdata = (Devdata*)plugin->data;
+  if (devdata->qtgui_parent==NULL)
+    return false;
+  else
+    return devdata->qtgui_parent->isVisible();
+}
+
+void create_faust_plugin(void){
+  SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
+
+  plugin_type->type_name                = "Faust Dev";
+  plugin_type->name                     = "Faust Dev";
+  plugin_type->num_inputs               = MAX_CHANNELS;
+  plugin_type->num_outputs              = MAX_CHANNELS;
+  plugin_type->is_instrument            = true;
+  plugin_type->note_handling_is_RT      = false;
+  plugin_type->num_effects              = MAX_EFFECTS;
+  plugin_type->get_effect_format        = dev_get_effect_format;
+  plugin_type->get_effect_name          = dev_get_effect_name;
+  plugin_type->effect_is_RT             = NULL;
+  plugin_type->create_state             = create_state;
+  plugin_type->create_plugin_data       = dev_create_plugin_data;
+  plugin_type->cleanup_plugin_data      = dev_cleanup_plugin_data;
+
+  plugin_type->RT_process       = dev_RT_process;
+  plugin_type->play_note        = dev_play_note;
+  plugin_type->set_note_volume  = dev_set_note_volume;
+  plugin_type->set_note_pitch   = dev_set_note_pitch;
+  plugin_type->stop_note        = dev_stop_note;
+  plugin_type->set_effect_value = dev_set_effect_value;
+  plugin_type->get_effect_value = dev_get_effect_value;
+  plugin_type->get_display_value_string = dev_get_display_value_string;
+  plugin_type->get_effect_description   = dev_get_effect_description;
+  plugin_type->effect_is_visible = dev_effect_is_visible;
+
+  plugin_type->show_gui = dev_show_gui;
+  plugin_type->hide_gui = dev_hide_gui;
+  plugin_type->gui_is_visible = dev_gui_is_visible;
+
+  //plugin_type->plugin_takes_care_of_savable_values = true;
+    
+  plugin_type->info =
+    "FAUST (Functional Audio Stream) is a functional programming language specifically designed for real-time signal processing and synthesis. FAUST targets high-performance signal processing applications and audio plug-ins for a variety of platforms and standards. More info <A href=\"http://faust.grame.fr\">here</a>.\n"
+    "\n"
+    "Hints:\n"
+    "* To zoom in either in the editor or in a diagram, press CTRL while using the mouse scroll wheel.\n"
+    "* Pressing the \"Maximize\" button can be very convenient when using this instrument"
+    ;
+
+  PR_add_plugin_type(plugin_type);
+}
+
+/*
+void FAUST_inform_about_instrument_gui(SoundPlugin *plugin, QWidget *instrument_gui){
+  Devdata *devdata = (Devdata*)plugin->data;
+  devdata->instrument_gui = instrument_gui;
+}
+*/
+
+void FAUST_set_code(SoundPlugin *plugin, QString code){
+  Devdata *devdata = (Devdata*)plugin->data;  
+  devdata->code = code;
+}
+
+void FAUST_set_options(SoundPlugin *plugin, QString options){
+  Devdata *devdata = (Devdata*)plugin->data;  
+  devdata->options = options;
+}
+
+
+// Can only be trusted if sending one request at a time.
+bool FAUST_is_compiling(const struct SoundPlugin *plugin){
+  Devdata *devdata = (Devdata*)plugin->data;
+  return devdata->is_compiling;
+}
+  
+QString FAUST_get_code(const struct SoundPlugin *plugin){
+  Devdata *devdata = (Devdata*)plugin->data;
+  return devdata->code;
+}
+
+QString FAUST_get_options(const struct SoundPlugin *plugin){
+  Devdata *devdata = (Devdata*)plugin->data;
+  return devdata->options;
+}
+
+QString FAUST_get_cpp_code(const struct SoundPlugin *plugin){
+  Devdata *devdata = (Devdata*)plugin->data;
+  if (devdata->reply.svg_dir==NULL || devdata->reply.svg_dir->isValid()==false)
+    return "";
+
+  QString filename = devdata->reply.svg_dir->path() + QDir::separator() + "cppsource.cpp";
+  disk_t *disk = DISK_open_for_reading(filename);
+
+  if (disk==NULL){
+    GFX_Message(NULL, "File not found (%s)", filename.toUtf8().constData());
+    return "";
+  }
+
+  QString cpp_code = DISK_read_qstring_file(disk);
+      
+  if (DISK_close_and_delete(disk)==false) {
+    GFX_Message(NULL, "Unable to read from %s", filename.toUtf8().constData());
+    return "";
+  }
+
+  return cpp_code;
+}
+
+QString FAUST_get_error_message(const struct SoundPlugin *plugin){
+  Devdata *devdata = (Devdata*)plugin->data;
+  return devdata->reply.error_message;
+}
+
+QString FAUST_get_svg_path(const struct SoundPlugin *plugin){
+  Devdata *devdata = (Devdata*)plugin->data;
+  if (devdata->reply.svg_dir==NULL || devdata->reply.svg_dir->isValid()==false)
+    return "";
+  else
+    return devdata->reply.svg_dir->path() + QDir::separator() + "FaustDev-svg" + QDir::separator() + "process.svg";
+}
+
+
+
+
+static bool FAUST_handle_fff_reply(struct SoundPlugin *plugin, const FFF_Reply &reply, bool is_initializing){
+  struct Patch *patch = (struct Patch*)plugin->patch;
+  Devdata *devdata = (Devdata*)plugin->data;
+  
+  if (reply.data==NULL){    
+    fprintf(stderr,"Error-message: -%s-\n", devdata->reply.error_message.toUtf8().constData());
+    devdata->reply.error_message = reply.error_message;
+    return false;
+  }
+
+  FFF_Reply old_reply = devdata->reply;
+
+  hash_t *effects_state = is_initializing ? NULL : PLUGIN_get_effects_state(plugin);
+
+  PLAYER_lock();{
+    devdata->reply = reply;
+  }PLAYER_unlock();
+
+  if (effects_state != NULL)
+    PLUGIN_set_effects_from_state(plugin, effects_state);
+
+  if (old_reply.data != NULL)
+    PATCH_handle_fxs_when_fx_names_have_changed(patch);
+
+  if (old_reply.data != NULL && old_reply.data->qtgui!=NULL){
+    printf("          Removing data->qtgui %p\n", old_reply.data->qtgui);
+    old_reply.data->qtgui->stop();
+    devdata->qtgui_parent->layout()->removeWidget(old_reply.data->qtgui);
+    create_gui(devdata->qtgui_parent, reply.data, plugin);
+    if (devdata->qtgui_parent->isVisible())
+      reply.data->qtgui->run();
+  }
+  
+  FFF_request_free(devdata->id, old_reply);
+
   return true;
 }
 
-enum VoiceOp{
-  VOICE_KEEP,
-  VOICE_REMOVE
-};
+FAUST_calledRegularlyByParentReply FAUST_calledRegularlyByParent(struct SoundPlugin *plugin){
+  Devdata *devdata = (Devdata*)plugin->data;
+  
+  FFF_Reply reply = FFF_get_reply(devdata->id);
+  
+  if (reply.is_empty())
+    return Faust_No_New_Reply;
 
-static void RT_process_between(Voice *voice, float **inputs, float **outputs, int start, int end){
-  if(end==start)
-    return;
-
-  int num_inputs = voice->dsp_instance->getNumInputs();
-  float *offsetted_inputs[num_inputs];
-  for(int ch=0;ch<num_inputs; ch++)
-    offsetted_inputs[ch] = &inputs[ch][start];
-
-  int num_outputs = voice->dsp_instance->getNumOutputs();
-  float *offsetted_outputs[num_outputs];
-  for(int ch=0;ch<num_outputs; ch++)
-    offsetted_outputs[ch] = &outputs[ch][start];
-
-  //printf("Computing Delta start / end: %d / %d\n",start,end);
-
-  voice->dsp_instance->compute(end-start, offsetted_inputs, offsetted_outputs);
-}
-
-static VoiceOp RT_play_voice(Data *data, Voice *voice, int num_frames, float **inputs, float **outputs, int *start_process){
-
-  int delta_pos_at_start = voice->delta_pos_at_start;
-  int delta_pos_at_end = voice->delta_pos_at_end;
-
-  if(delta_pos_at_start==0 && delta_pos_at_end==-1){
-
-    voice->dsp_instance->compute(num_frames, inputs, outputs);
-
-    *start_process = 0;
-
-    if( *(voice->myUI._gate_control)==0.0f){
-      if(false
-         || RT_is_silent(outputs[0],num_frames)
-         || voice->frames_since_stop > data->samplerate) // Safety mechanism. Force voice to stop after about 1 second.
-        return VOICE_REMOVE;
-
-      voice->frames_since_stop += num_frames;
-    }
-
-  }else if(delta_pos_at_start>0 && delta_pos_at_end==-1){
-
-    RT_process_between(voice, inputs, outputs, delta_pos_at_start, num_frames);
-
-    *start_process = delta_pos_at_start;
-    voice->delta_pos_at_start = 0;
-
-  }else{
-    //printf("Delta start / end: %d / %d\n",delta_pos_at_start,delta_pos_at_end);
-
-    RT_process_between(voice, inputs, outputs, delta_pos_at_start, delta_pos_at_end);
-    {
-      *(voice->myUI._gate_control)=0.0f;
-    }
-    RT_process_between(voice, inputs, outputs, delta_pos_at_end, num_frames);
-
-    voice->frames_since_stop = num_frames-delta_pos_at_end;
-
-    *start_process = delta_pos_at_start;
-    voice->delta_pos_at_start = 0;
-    voice->delta_pos_at_end = -1;
-
-  }
-
-  return VOICE_KEEP;
-}
-
-static void RT_process_instrument(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  Data *data = (Data*)plugin->data;
-  int num_outputs = plugin->type->num_outputs;
-
-  for(int i=0;i<num_outputs;i++)
-    memset(outputs[i],0,num_frames*sizeof(float));
-
-  float *tempsounds[num_outputs];
-  float tempdata[num_outputs][num_frames];
-  for(int i=0;i<num_outputs;i++)
-    tempsounds[i] = &tempdata[i][0];
-
-  Voice *voice = data->voices_playing;
-  //printf("Voices? %s\n",voice==NULL?"No":"Yes");
-
-  while(voice!=NULL){
-    Voice *next = voice->next;
-    int start_process;
-
-    if(RT_play_voice(data,voice,num_frames,inputs,tempsounds,&start_process)==VOICE_REMOVE){
-      RT_remove_voice(&data->voices_playing, voice);
-      RT_add_voice(&data->voices_not_playing, voice);
-
-      for(int ch=0;ch<num_outputs;ch++)
-        RT_fade_out(tempsounds[ch], num_frames-start_process);
-    }
-
-    for(int ch=0;ch<num_outputs;ch++){
-      float *source = tempsounds[ch];
-      float *target = outputs[ch];
-      for(int i=start_process;i<num_frames;i++)
-        target[i] += source[i];
-    }
-
-    voice=next;
-  }
-}
-
-static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note){
-  Data *data = (Data*)plugin->data;
-
-  //printf("Playing %d\n",note_num);
-
-  Voice *voice = data->voices_not_playing;
-
-  if(voice==NULL){
-    printf("no more free voices\n");
-    return;
-  }
-
-  RT_remove_voice(&data->voices_not_playing, voice);
-  RT_add_voice(&data->voices_playing, voice);
-
-  //voice->dsp_instance->init((int)data->samplerate);
-
-  *(voice->myUI._gate_control) = 1.0f;
-  *(voice->myUI._freq_control) = midi_to_hz(note.pitch);
-  *(voice->myUI._gain_control) = velocity2gain(note.velocity);
-
-  voice->note_num = note.pitch;
-  voice->note_id = note.id;
-
-  voice->frames_since_stop = 0;
-  voice->delta_pos_at_start = time;
-  voice->delta_pos_at_end = -1;
-}
-
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t note){
-  Data *data = (Data*)plugin->data;
-  Voice *voice = data->voices_playing;
-  //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
-  while(voice!=NULL){
-    if(voice->note_id==note.id)
-      *(voice->myUI._gain_control) = velocity2gain(note.velocity);
-    voice=voice->next;
-  }
-}
-
-static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, note_t note){
-  Data *data = (Data*)plugin->data;
-  Voice *voice = data->voices_playing;
-  //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
-  while(voice!=NULL){
-    if(voice->note_id==note.id)
-      *(voice->myUI._freq_control) = midi_to_hz(note.pitch);
-    voice=voice->next;
-  }
-}
-
-static void stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
-  Data *data = (Data*)plugin->data;
-  Voice *voice = data->voices_playing;
-  while(voice!=NULL){
-    if(voice->note_id==note.id)
-      voice->delta_pos_at_end = time;
-    voice=voice->next;
-  }
-}
-
-static void RT_process_effect(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  //SoundPluginType *type = plugin->type;
-  Data *data = (Data*)plugin->data;
-
-  data->voices[0].dsp_instance->compute(num_frames, inputs, outputs);
-  //printf("in00: %f, in10: %f\n",inputs[0][0],inputs[1][0]);
-  //printf("out00: %f, out10: %f\n",outputs[0][0],outputs[1][0]);
-}
-
-static void *create_effect_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int blocksize){
-  Data *data = new Data;
-  data->samplerate = samplerate;
-
-  Voice *voice = &data->voices[0];
-  voice->dsp_instance = new CLASSNAME;
-  //printf("Creating %s / %s. samplerate: %d\n",plugin_type->type_name,plugin_type->name,(int)samplerate);
-  voice->dsp_instance->instanceInit(samplerate);
-  voice->dsp_instance->buildUserInterface(&voice->myUI);
-  return data;
-}
-
-static void *create_instrument_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int blocksize){
-  Data *data = new Data;
-  data->samplerate = samplerate;
-
-  for(int i=0;i<MAX_POLYPHONY;i++){
-    Voice *voice = &data->voices[i];
-    voice->dsp_instance = new CLASSNAME;
-    voice->dsp_instance->init(samplerate);
-    voice->dsp_instance->buildUserInterface(&voice->myUI);
-    voice->myUI.remove_instrument_notecontrol_effects();
-
-    RT_add_voice(&data->voices_not_playing, voice);
-  }
-
-
-  return data;
-}
-
-static void cleanup_plugin_data(SoundPlugin *plugin){
-  Data *data = (Data*)plugin->data;
-
-  for(int i=0;i<MAX_POLYPHONY;i++){
-    Voice *voice = &data->voices[i];
-    if(voice->dsp_instance==NULL) // an effect
-      break;
-    else
-      delete voice->dsp_instance;
-  }
-
-  delete data;
-}
-
-#ifdef FAUST_THAT_ONE
-float *FAUST_get_peak_value_pointer(SoundPlugin *plugin, int effect_num){
-  Data *data = (Data*)plugin->data;
-  MyUI::Controller *controller = &data->voices[0].myUI._controllers.at(effect_num);
-  if(controller->peak_port!=NULL)
-    return controller->peak_port;
+  devdata->is_compiling = false;
+  
+  if (FAUST_handle_fff_reply(plugin, reply, false))
+    return Faust_Success;
   else
-    return NULL;
+    return Faust_Failed;
 }
+
+
+
+void FAUST_start_compilation(struct SoundPlugin *plugin){
+  Devdata *devdata = (Devdata*)plugin->data;
+
+  devdata->is_compiling = true;
+  FFF_request_reply(devdata->id, devdata->code, devdata->options); 
+}
+
+
+bool FAUST_compile_now(struct SoundPlugin *plugin, bool is_initializing){
+  Devdata *devdata = (Devdata*)plugin->data;
+
+  return FAUST_handle_fff_reply(plugin, FFF_get_reply_now(devdata->code, devdata->options), is_initializing);
+}
+
+
 #endif
-
-static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
-  const struct SoundPluginType *plugin_type = plugin->type;
-  Data *data = (Data*)plugin_type->data;
-  Voice *voice = &data->voices[0];
-  MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-  return controller->type;
-}
-
-static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
-  const struct SoundPluginType *plugin_type = plugin->type;
-  Data *data = (Data*)plugin_type->data;
-  Voice *voice = &data->voices[0];
-  MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-  return controller->name.c_str();
-}
-
-static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
-  Data *data = (Data*)plugin->data;
-  float scaled_value;
-
-  if(value_format==PLUGIN_FORMAT_SCALED){
-#ifdef DONT_NORMALIZE_EFFECT_VALUES
-    scaled_value = value;
-#else
-    MyUI::Controller *controller = &data->voices[0].myUI._controllers.at(effect_num);
-    float min = controller->min_value;
-    float max = controller->max_value;
-    scaled_value = scale(value,0,1,min,max);
-#endif
-  }else{
-    scaled_value = value;
-  }
-
-  //printf("Setting effect %d to %f. input: %f\n",effect_num,scaled_value,value);
-
-  for(int i=0;i<MAX_POLYPHONY;i++){
-    Voice *voice = &data->voices[i];
-    if(voice->dsp_instance==NULL) // an effect
-      break;
-    MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-    safe_float_write(controller->control_port, scaled_value);
-  }
-}
-
-static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
-  Data *data = (Data*)plugin->data;
-  Voice *voice = &data->voices[0];
-  MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-
-  if(value_format==PLUGIN_FORMAT_SCALED){
-#ifdef DONT_NORMALIZE_EFFECT_VALUES
-    return safe_float_read(controller->control_port);
-#else
-    float min = controller->min_value;
-    float max = controller->max_value;
-    return scale(safe_float_read(controller->control_port),min,max,0.0f,1.0f);
-#endif
-  }else{
-    return safe_float_read(controller->control_port);
-  }
-}
-
-static void get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
-  Data *data = (Data*)plugin->data;
-  Voice *voice = &data->voices[0];
-  MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-
-  if(controller->type==EFFECT_FORMAT_INT)
-    snprintf(buffer,buffersize-1,"%d %s",(int)safe_float_read(controller->control_port), controller->unit);
-  else
-    snprintf(buffer,buffersize-1,"%.2f %s",safe_float_read(controller->control_port), controller->unit);
-}
-
-static const char *get_effect_description(const struct SoundPluginType *plugin_type, int effect_num){
-  Data *data = (Data*)plugin_type->data;
-  Voice *voice = &data->voices[0];
-  MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-
-  return controller->tooltip;
-}
-
-static void fill_type(SoundPluginType *type){
- type->type_name                = "Faust";
- type->note_handling_is_RT      = false;
- type->get_effect_format        = get_effect_format;
- type->get_effect_name          = get_effect_name;
- type->effect_is_RT             = NULL;
- type->cleanup_plugin_data      = cleanup_plugin_data;
-
- type->play_note       = play_note;
- type->set_note_volume = set_note_volume;
- type->set_note_pitch  = set_note_pitch;
-
- type->stop_note       = stop_note;
-
- type->set_effect_value         = set_effect_value;
- type->get_effect_value         = get_effect_value;
- type->get_display_value_string = get_display_value_string;
- type->get_effect_description   = get_effect_description;
-
- type->data                     = NULL;
-};
-
-static SoundPluginType faust_type = {};  // c++ way of zero-initialization without getting missing-field-initializers warning.
-
-void CREATE_NAME (void){
-  static bool has_inited = false;
-
-  if (has_inited==false) {
-    
-    fill_type(&faust_type);
-  
-    CLASSNAME::classInit(MIXER_get_sample_rate());
-  
-    Data *data = (Data*)create_effect_plugin_data(&faust_type, NULL, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
-    faust_type.data = data;
-
-  
-    faust_type.name = DSP_NAME;
-
-    faust_type.num_inputs = data->voices[0].dsp_instance->getNumInputs();
-    faust_type.num_outputs = data->voices[0].dsp_instance->getNumOutputs();
-
-    if(data->voices[0].myUI.is_instrument()){
-
-      faust_type.is_instrument      = true;
-      
-      faust_type.RT_process         = RT_process_instrument;
-      faust_type.create_plugin_data = create_instrument_plugin_data;
-
-      data->voices[0].myUI.remove_instrument_notecontrol_effects();
-      
-    }else{
-
-      faust_type.is_instrument      = false;
-      
-      faust_type.RT_process         = RT_process_effect;
-      faust_type.create_plugin_data = create_effect_plugin_data;
-      
-      faust_type.play_note          = NULL;
-      faust_type.set_note_volume    = NULL;
-      faust_type.stop_note          = NULL;
-      
-    }
-    
-    faust_type.num_effects = data->voices[0].myUI._num_effects;
-
-    has_inited = true;
-
-  }
-  
-  PR_add_plugin_type(&faust_type);
-}

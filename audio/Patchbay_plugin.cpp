@@ -86,7 +86,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
   return data->routes[effect_num];
 }
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
+static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
   Data *data = (Data*)V_calloc(1,sizeof(Data));
   data->routes[0]=1;
   data->routes[plugin_type->num_outputs+1]=1;

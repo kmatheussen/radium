@@ -1,23 +1,13 @@
-//-----------------------------------------------------
-// name: "Clarinet"
-// author: "Romain Michon"
-// copyright: "Romain Michon (rmichon@ccrma.stanford.edu)"
-// version: "1.0"
-//
-// Code generated with Faust 0.9.73 (http://faust.grame.fr)
-//-----------------------------------------------------
-/* link with  */
-#include <math.h>
-#ifndef FAUSTPOWER
-#define FAUSTPOWER
-#include <cmath>
-template <int N> inline float faustpower(float x)          { return powf(x,N); } 
-template <int N> inline double faustpower(double x)        { return pow(x,N); }
-template <int N> inline int faustpower(int x)              { return faustpower<N/2>(x) * faustpower<N-N/2>(x); } 
-template <> 	 inline int faustpower<0>(int x)            { return 1; }
-template <> 	 inline int faustpower<1>(int x)            { return x; }
-template <> 	 inline int faustpower<2>(int x)            { return x*x; }
-#endif
+/* ------------------------------------------------------------
+author: "Romain Michon"
+copyright: "Romain Michon (rmichon@ccrma.stanford.edu)"
+name: "Clarinet"
+version: "1.0"
+Code generated with Faust 2.0.a43 (http://faust.grame.fr)
+------------------------------------------------------------ */
+
+#ifndef  __Clarinet_dsp_H__
+#define  __Clarinet_dsp_H__
 
 /*
 #include "/usr/share/faust/audio/dsp.h"
@@ -31,8 +21,20 @@ struct Meta
     void declare (const char* key, const char* value) { }
 };
 
-#include "faudiostream/architecture/faust/audio/dsp.h"
-#include "faudiostream/architecture/faust/gui/UI.h"
+
+#include <faust/dsp/dsp.h>
+
+
+#if 0 //CREATE_NAME==create_zita_rev_plugin
+
+  #include "mfaustqt1.cpp"
+
+#else
+
+  #include <faust/gui/faustqt.h>
+
+#endif
+
 
 
 #include "Faust_plugins_template1.cpp"
@@ -62,429 +64,623 @@ struct Meta
 #define FAUSTFLOAT float
 #endif  
 
+#include <math.h>
+
+
+class Clarinet_dspSIG0 {
+	
+  private:
+	
+	int iRec7[2];
+	
+  public:
+	
+	int getNumInputsClarinet_dspSIG0() {
+		return 0;
+		
+	}
+	int getNumOutputsClarinet_dspSIG0() {
+		return 1;
+		
+	}
+	int getInputRateClarinet_dspSIG0(int channel) {
+		int rate;
+		switch (channel) {
+			default: {
+				rate = -1;
+				break;
+			}
+			
+		}
+		return rate;
+		
+	}
+	int getOutputRateClarinet_dspSIG0(int channel) {
+		int rate;
+		switch (channel) {
+			case 0: {
+				rate = 0;
+				break;
+			}
+			default: {
+				rate = -1;
+				break;
+			}
+			
+		}
+		return rate;
+		
+	}
+	
+	void instanceInitClarinet_dspSIG0(int samplingFreq) {
+		for (int i6 = 0; (i6 < 2); i6 = (i6 + 1)) {
+			iRec7[i6] = 0;
+			
+		}
+		
+	}
+	
+	void fillClarinet_dspSIG0(int count, float* output) {
+		for (int i = 0; (i < count); i = (i + 1)) {
+			iRec7[0] = (1 + iRec7[1]);
+			output[i] = sinf((9.58738e-05f * float((iRec7[0] - 1))));
+			iRec7[1] = iRec7[0];
+			
+		}
+		
+	}
+};
+
+Clarinet_dspSIG0* newClarinet_dspSIG0() { return (Clarinet_dspSIG0*)new Clarinet_dspSIG0(); }
+void deleteClarinet_dspSIG0(Clarinet_dspSIG0* dsp) { delete dsp; }
+
+static float ftbl0Clarinet_dspSIG0[65536];
+static float faustpower2_f(float value) {
+	return (value * value);
+	
+}
 
 #ifndef FAUSTCLASS 
 #define FAUSTCLASS Clarinet_dsp
 #endif
 
 class Clarinet_dsp : public dsp {
+	
   private:
-	class SIG0 {
-	  private:
-		int 	fSamplingFreq;
-		int 	iRec2[2];
-	  public:
-		int getNumInputs() 	{ return 0; }
-		int getNumOutputs() 	{ return 1; }
-		void init(int samplingFreq) {
-			fSamplingFreq = samplingFreq;
-			for (int i=0; i<2; i++) iRec2[i] = 0;
-		}
-		void fill (int count, float output[]) {
-			for (int i=0; i<count; i++) {
-				iRec2[0] = (1 + iRec2[1]);
-				output[i] = sinf((9.587379924285257e-05f * float((iRec2[0] - 1))));
-				// post processing
-				iRec2[1] = iRec2[0];
-			}
-		}
-	};
-
-
-	FAUSTFLOAT 	fentry0;
-	float 	fRec0[2];
-	static float 	ftbl0[65536];
-	FAUSTFLOAT 	fslider0;
-	int 	iConst0;
-	float 	fConst1;
-	float 	fRec3[2];
-	FAUSTFLOAT 	fbutton0;
-	int 	iRec4[2];
-	int 	iRec5[2];
-	FAUSTFLOAT 	fslider1;
-	FAUSTFLOAT 	fslider2;
-	float 	fConst2;
-	float 	fConst3;
-	float 	fRec6[2];
-	FAUSTFLOAT 	fslider3;
-	int 	iRec7[2];
-	FAUSTFLOAT 	fslider4;
-	int 	iRec8[2];
-	FAUSTFLOAT 	fslider5;
-	FAUSTFLOAT 	fslider6;
-	FAUSTFLOAT 	fslider7;
-	float 	fRec9[2];
-	FAUSTFLOAT 	fslider8;
-	FAUSTFLOAT 	fentry1;
-	FAUSTFLOAT 	fslider9;
-	FAUSTFLOAT 	fentry2;
-	float 	fConst4;
-	float 	fVec0[2];
-	float 	fRec11[2];
-	int 	iRec12[2];
-	FAUSTFLOAT 	fslider10;
-	float 	fRec13[2];
-	float 	fRec19[2];
-	float 	fRec18[2];
-	float 	fRec17[2];
-	float 	fRec16[2];
-	float 	fRec15[2];
-	float 	fRec14[2];
-	FAUSTFLOAT 	fslider11;
-	float 	fRec21[2];
-	float 	fRec20[2];
-	float 	fRec27[2];
-	float 	fRec26[2];
-	float 	fRec25[2];
-	float 	fRec24[2];
-	float 	fRec23[2];
-	float 	fRec22[2];
-	float 	fRec10[2];
-	FAUSTFLOAT 	fslider12;
-	int 	IOTA;
-	float 	fRec1[8192];
-	float 	fVec1[4096];
-	FAUSTFLOAT 	fslider13;
-	FAUSTFLOAT 	fslider14;
+	
+	float fRec0[8192];
+	float fVec1[4096];
+	int iRec1[2];
+	float fRec2[2];
+	int iRec3[2];
+	int iRec4[2];
+	int iRec5[2];
+	float fRec6[2];
+	float fRec8[2];
+	float fVec0[2];
+	float fRec10[2];
+	int iRec11[2];
+	float fRec12[2];
+	float fRec14[2];
+	float fRec13[2];
+	float fRec20[2];
+	float fRec19[2];
+	float fRec18[2];
+	float fRec17[2];
+	float fRec16[2];
+	float fRec15[2];
+	float fRec26[2];
+	float fRec25[2];
+	float fRec24[2];
+	float fRec23[2];
+	float fRec22[2];
+	float fRec21[2];
+	float fRec9[2];
+	float fRec27[2];
+	FAUSTFLOAT fHslider0;
+	FAUSTFLOAT fHslider1;
+	FAUSTFLOAT fButton0;
+	FAUSTFLOAT fHslider2;
+	int fSamplingFreq;
+	float fConst0;
+	FAUSTFLOAT fHslider3;
+	FAUSTFLOAT fHslider4;
+	FAUSTFLOAT fHslider5;
+	FAUSTFLOAT fHslider6;
+	float fConst1;
+	FAUSTFLOAT fHslider7;
+	float fConst2;
+	FAUSTFLOAT fHslider8;
+	float fConst3;
+	FAUSTFLOAT fHslider9;
+	FAUSTFLOAT fEntry0;
+	FAUSTFLOAT fHslider10;
+	float fConst4;
+	FAUSTFLOAT fEntry1;
+	FAUSTFLOAT fHslider11;
+	FAUSTFLOAT fHslider12;
+	FAUSTFLOAT fHslider13;
+	int IOTA;
+	FAUSTFLOAT fEntry2;
+	FAUSTFLOAT fHslider14;
+	
   public:
-	static void metadata(Meta* m) 	{ 
-		m->declare("name", "Clarinet");
-		m->declare("description", "Nonlinear WaveGuide Clarinet");
+	
+	void static metadata(Meta* m) { 
 		m->declare("author", "Romain Michon");
 		m->declare("copyright", "Romain Michon (rmichon@ccrma.stanford.edu)");
-		m->declare("version", "1.0");
-		m->declare("licence", "STK-4.3");
-		m->declare("reference", "https://ccrma.stanford.edu/~jos/pasp/Woodwinds.html");
-		m->declare("music.lib/name", "Music Library");
-		m->declare("music.lib/author", "GRAME");
-		m->declare("music.lib/copyright", "GRAME");
-		m->declare("music.lib/version", "1.0");
-		m->declare("music.lib/license", "LGPL with exception");
-		m->declare("math.lib/name", "Math Library");
-		m->declare("math.lib/author", "GRAME");
-		m->declare("math.lib/copyright", "GRAME");
-		m->declare("math.lib/version", "1.0");
-		m->declare("math.lib/license", "LGPL with exception");
-		m->declare("instrument.lib/name", "Faust-STK Tools Library");
-		m->declare("instrument.lib/author", "Romain Michon (rmichon@ccrma.stanford.edu)");
-		m->declare("instrument.lib/copyright", "Romain Michon");
-		m->declare("instrument.lib/version", "1.0");
-		m->declare("instrument.lib/licence", "STK-4.3");
-		m->declare("filter.lib/name", "Faust Filter Library");
-		m->declare("filter.lib/author", "Julius O. Smith (jos at ccrma.stanford.edu)");
-		m->declare("filter.lib/copyright", "Julius O. Smith III");
-		m->declare("filter.lib/version", "1.29");
-		m->declare("filter.lib/license", "STK-4.3");
-		m->declare("filter.lib/reference", "https://ccrma.stanford.edu/~jos/filters/");
-		m->declare("effect.lib/name", "Faust Audio Effect Library");
+		m->declare("description", "Nonlinear WaveGuide Clarinet");
 		m->declare("effect.lib/author", "Julius O. Smith (jos at ccrma.stanford.edu)");
 		m->declare("effect.lib/copyright", "Julius O. Smith III");
-		m->declare("effect.lib/version", "1.33");
-		m->declare("effect.lib/license", "STK-4.3");
-		m->declare("effect.lib/exciter_name", "Harmonic Exciter");
 		m->declare("effect.lib/exciter_author", "Priyanka Shekar (pshekar@ccrma.stanford.edu)");
 		m->declare("effect.lib/exciter_copyright", "Copyright (c) 2013 Priyanka Shekar");
-		m->declare("effect.lib/exciter_version", "1.0");
 		m->declare("effect.lib/exciter_license", "MIT License (MIT)");
+		m->declare("effect.lib/exciter_name", "Harmonic Exciter");
+		m->declare("effect.lib/exciter_version", "1.0");
+		m->declare("effect.lib/license", "STK-4.3");
+		m->declare("effect.lib/name", "Faust Audio Effect Library");
+		m->declare("effect.lib/version", "1.33");
+		m->declare("filter.lib/author", "Julius O. Smith (jos at ccrma.stanford.edu)");
+		m->declare("filter.lib/copyright", "Julius O. Smith III");
+		m->declare("filter.lib/license", "STK-4.3");
+		m->declare("filter.lib/name", "Faust Filter Library");
+		m->declare("filter.lib/reference", "https://ccrma.stanford.edu/~jos/filters/");
+		m->declare("filter.lib/version", "1.29");
+		m->declare("instrument.lib/author", "Romain Michon (rmichon@ccrma.stanford.edu)");
+		m->declare("instrument.lib/copyright", "Romain Michon");
+		m->declare("instrument.lib/licence", "STK-4.3");
+		m->declare("instrument.lib/name", "Faust-STK Tools Library");
+		m->declare("instrument.lib/version", "1.0");
+		m->declare("licence", "STK-4.3");
+		m->declare("math.lib/author", "GRAME");
+		m->declare("math.lib/copyright", "GRAME");
+		m->declare("math.lib/license", "LGPL with exception");
+		m->declare("math.lib/name", "Math Library");
+		m->declare("math.lib/version", "1.0");
+		m->declare("music.lib/author", "GRAME");
+		m->declare("music.lib/copyright", "GRAME");
+		m->declare("music.lib/license", "LGPL with exception");
+		m->declare("music.lib/name", "Music Library");
+		m->declare("music.lib/version", "1.0");
+		m->declare("name", "Clarinet");
+		m->declare("reference", "https://ccrma.stanford.edu/~jos/pasp/Woodwinds.html");
+		m->declare("version", "1.0");
 	}
 
-	virtual int getNumInputs() 	{ return 0; }
-	virtual int getNumOutputs() 	{ return 2; }
-	static void classInit(int samplingFreq) {
-		SIG0 sig0;
-		sig0.init(samplingFreq);
-		sig0.fill(65536,ftbl0);
+	virtual int getNumInputs() {
+		return 0;
+		
 	}
+	virtual int getNumOutputs() {
+		return 2;
+		
+	}
+	virtual int getInputRate(int channel) {
+		int rate;
+		switch (channel) {
+			default: {
+				rate = -1;
+				break;
+			}
+			
+		}
+		return rate;
+		
+	}
+	virtual int getOutputRate(int channel) {
+		int rate;
+		switch (channel) {
+			case 0: {
+				rate = 1;
+				break;
+			}
+			case 1: {
+				rate = 1;
+				break;
+			}
+			default: {
+				rate = -1;
+				break;
+			}
+			
+		}
+		return rate;
+		
+	}
+	
+	static void classInit(int samplingFreq) {
+		Clarinet_dspSIG0* sig0 = newClarinet_dspSIG0();
+		sig0->instanceInitClarinet_dspSIG0(samplingFreq);
+		sig0->fillClarinet_dspSIG0(65536, ftbl0Clarinet_dspSIG0);
+		deleteClarinet_dspSIG0(sig0);
+		
+	}
+	
 	virtual void instanceInit(int samplingFreq) {
 		fSamplingFreq = samplingFreq;
-		fentry0 = 1.0f;
-		for (int i=0; i<2; i++) fRec0[i] = 0;
-		fslider0 = 5.0f;
-		iConst0 = min(192000, max(1, fSamplingFreq));
-		fConst1 = (1.0f / float(iConst0));
-		for (int i=0; i<2; i++) fRec3[i] = 0;
-		fbutton0 = 0.0;
-		for (int i=0; i<2; i++) iRec4[i] = 0;
-		for (int i=0; i<2; i++) iRec5[i] = 0;
-		fslider1 = 0.01f;
-		fslider2 = 0.5f;
-		fConst2 = (0.2f * iConst0);
-		fConst3 = (1.8f * iConst0);
-		for (int i=0; i<2; i++) fRec6[i] = 0;
-		fslider3 = 0.1f;
-		for (int i=0; i<2; i++) iRec7[i] = 0;
-		fslider4 = 0.0f;
-		for (int i=0; i<2; i++) iRec8[i] = 0;
-		fslider5 = 0.1f;
-		fslider6 = 0.05f;
-		fslider7 = 0.01f;
-		for (int i=0; i<2; i++) fRec9[i] = 0;
-		fslider8 = 1.0f;
-		fentry1 = 0.0f;
-		fslider9 = 0.0f;
-		fentry2 = 4.4e+02f;
-		fConst4 = (0.5f * iConst0);
-		for (int i=0; i<2; i++) fVec0[i] = 0;
-		for (int i=0; i<2; i++) fRec11[i] = 0;
-		for (int i=0; i<2; i++) iRec12[i] = 0;
-		fslider10 = 0.1f;
-		for (int i=0; i<2; i++) fRec13[i] = 0;
-		for (int i=0; i<2; i++) fRec19[i] = 0;
-		for (int i=0; i<2; i++) fRec18[i] = 0;
-		for (int i=0; i<2; i++) fRec17[i] = 0;
-		for (int i=0; i<2; i++) fRec16[i] = 0;
-		for (int i=0; i<2; i++) fRec15[i] = 0;
-		for (int i=0; i<2; i++) fRec14[i] = 0;
-		fslider11 = 2.2e+02f;
-		for (int i=0; i<2; i++) fRec21[i] = 0;
-		for (int i=0; i<2; i++) fRec20[i] = 0;
-		for (int i=0; i<2; i++) fRec27[i] = 0;
-		for (int i=0; i<2; i++) fRec26[i] = 0;
-		for (int i=0; i<2; i++) fRec25[i] = 0;
-		for (int i=0; i<2; i++) fRec24[i] = 0;
-		for (int i=0; i<2; i++) fRec23[i] = 0;
-		for (int i=0; i<2; i++) fRec22[i] = 0;
-		for (int i=0; i<2; i++) fRec10[i] = 0;
-		fslider12 = 0.5f;
+		fHslider0 = FAUSTFLOAT(0.6f);
+		fHslider1 = FAUSTFLOAT(1.0f);
+		fButton0 = FAUSTFLOAT(0.0f);
+		for (int i0 = 0; (i0 < 2); i0 = (i0 + 1)) {
+			iRec1[i0] = 0;
+			
+		}
+		fHslider2 = FAUSTFLOAT(0.01f);
+		fConst0 = min(1.92e+05f, max(1.0f, float(fSamplingFreq)));
+		fHslider3 = FAUSTFLOAT(0.05f);
+		fHslider4 = FAUSTFLOAT(0.1f);
+		for (int i1 = 0; (i1 < 2); i1 = (i1 + 1)) {
+			fRec2[i1] = 0.0f;
+			
+		}
+		fHslider5 = FAUSTFLOAT(0.0f);
+		for (int i2 = 0; (i2 < 2); i2 = (i2 + 1)) {
+			iRec3[i2] = 0;
+			
+		}
+		fHslider6 = FAUSTFLOAT(0.1f);
+		for (int i3 = 0; (i3 < 2); i3 = (i3 + 1)) {
+			iRec4[i3] = 0;
+			
+		}
+		for (int i4 = 0; (i4 < 2); i4 = (i4 + 1)) {
+			iRec5[i4] = 0;
+			
+		}
+		fConst1 = (1.8f * fConst0);
+		fHslider7 = FAUSTFLOAT(0.5f);
+		fConst2 = (0.2f * fConst0);
+		fHslider8 = FAUSTFLOAT(0.01f);
+		for (int i5 = 0; (i5 < 2); i5 = (i5 + 1)) {
+			fRec6[i5] = 0.0f;
+			
+		}
+		fConst3 = (1.0f / fConst0);
+		fHslider9 = FAUSTFLOAT(5.0f);
+		for (int i7 = 0; (i7 < 2); i7 = (i7 + 1)) {
+			fRec8[i7] = 0.0f;
+			
+		}
+		fEntry0 = FAUSTFLOAT(0.0f);
+		fHslider10 = FAUSTFLOAT(0.0f);
+		fConst4 = (0.5f * fConst0);
+		fEntry1 = FAUSTFLOAT(4.4e+02f);
+		for (int i8 = 0; (i8 < 2); i8 = (i8 + 1)) {
+			fVec0[i8] = 0.0f;
+			
+		}
+		for (int i9 = 0; (i9 < 2); i9 = (i9 + 1)) {
+			fRec10[i9] = 0.0f;
+			
+		}
+		for (int i10 = 0; (i10 < 2); i10 = (i10 + 1)) {
+			iRec11[i10] = 0;
+			
+		}
+		fHslider11 = FAUSTFLOAT(0.1f);
+		for (int i11 = 0; (i11 < 2); i11 = (i11 + 1)) {
+			fRec12[i11] = 0.0f;
+			
+		}
+		fHslider12 = FAUSTFLOAT(2.2e+02f);
+		for (int i12 = 0; (i12 < 2); i12 = (i12 + 1)) {
+			fRec14[i12] = 0.0f;
+			
+		}
+		for (int i13 = 0; (i13 < 2); i13 = (i13 + 1)) {
+			fRec13[i13] = 0.0f;
+			
+		}
+		for (int i14 = 0; (i14 < 2); i14 = (i14 + 1)) {
+			fRec20[i14] = 0.0f;
+			
+		}
+		for (int i15 = 0; (i15 < 2); i15 = (i15 + 1)) {
+			fRec19[i15] = 0.0f;
+			
+		}
+		for (int i16 = 0; (i16 < 2); i16 = (i16 + 1)) {
+			fRec18[i16] = 0.0f;
+			
+		}
+		for (int i17 = 0; (i17 < 2); i17 = (i17 + 1)) {
+			fRec17[i17] = 0.0f;
+			
+		}
+		for (int i18 = 0; (i18 < 2); i18 = (i18 + 1)) {
+			fRec16[i18] = 0.0f;
+			
+		}
+		for (int i19 = 0; (i19 < 2); i19 = (i19 + 1)) {
+			fRec15[i19] = 0.0f;
+			
+		}
+		for (int i20 = 0; (i20 < 2); i20 = (i20 + 1)) {
+			fRec26[i20] = 0.0f;
+			
+		}
+		for (int i21 = 0; (i21 < 2); i21 = (i21 + 1)) {
+			fRec25[i21] = 0.0f;
+			
+		}
+		for (int i22 = 0; (i22 < 2); i22 = (i22 + 1)) {
+			fRec24[i22] = 0.0f;
+			
+		}
+		for (int i23 = 0; (i23 < 2); i23 = (i23 + 1)) {
+			fRec23[i23] = 0.0f;
+			
+		}
+		for (int i24 = 0; (i24 < 2); i24 = (i24 + 1)) {
+			fRec22[i24] = 0.0f;
+			
+		}
+		for (int i25 = 0; (i25 < 2); i25 = (i25 + 1)) {
+			fRec21[i25] = 0.0f;
+			
+		}
+		for (int i26 = 0; (i26 < 2); i26 = (i26 + 1)) {
+			fRec9[i26] = 0.0f;
+			
+		}
+		fHslider13 = FAUSTFLOAT(0.5f);
 		IOTA = 0;
-		for (int i=0; i<8192; i++) fRec1[i] = 0;
-		for (int i=0; i<4096; i++) fVec1[i] = 0;
-		fslider13 = 0.6f;
-		fslider14 = 0.5f;
+		for (int i27 = 0; (i27 < 8192); i27 = (i27 + 1)) {
+			fRec0[i27] = 0.0f;
+			
+		}
+		fEntry2 = FAUSTFLOAT(1.0f);
+		for (int i28 = 0; (i28 < 2); i28 = (i28 + 1)) {
+			fRec27[i28] = 0.0f;
+			
+		}
+		for (int i29 = 0; (i29 < 4096); i29 = (i29 + 1)) {
+			fVec1[i29] = 0.0f;
+			
+		}
+		fHslider14 = FAUSTFLOAT(0.5f);
+		
 	}
+	
 	virtual void init(int samplingFreq) {
 		classInit(samplingFreq);
 		instanceInit(samplingFreq);
 	}
-	virtual void buildUserInterface(UI* faust_interface) {
-		faust_interface->openVerticalBox("0x00");
-		faust_interface->openHorizontalBox("Basic_Parameters");
-		faust_interface->declare(&fentry2, "1", "");
-		faust_interface->declare(&fentry2, "tooltip", "Tone frequency");
-		faust_interface->declare(&fentry2, "unit", "Hz");
-		faust_interface->addNumEntry("freq", &fentry2, 4.4e+02f, 2e+01f, 2e+04f, 1.0f);
-		faust_interface->declare(&fentry0, "1", "");
-		faust_interface->declare(&fentry0, "tooltip", "Gain (value between 0 and 1)");
-		faust_interface->addNumEntry("gain", &fentry0, 1.0f, 0.0f, 1.0f, 0.01f);
-		faust_interface->declare(&fbutton0, "1", "");
-		faust_interface->declare(&fbutton0, "tooltip", "noteOn = 1, noteOff = 0");
-		faust_interface->addButton("gate", &fbutton0);
-		faust_interface->closeBox();
-		faust_interface->openHorizontalBox("Envelopes_and_Vibrato");
-		faust_interface->openVerticalBox("Envelope_Parameters");
-		faust_interface->declare(&fslider7, "5", "");
-		faust_interface->declare(&fslider7, "tooltip", "Envelope attack duration");
-		faust_interface->declare(&fslider7, "unit", "s");
-		faust_interface->addHorizontalSlider("Envelope_Attack", &fslider7, 0.01f, 0.0f, 2.0f, 0.01f);
-		faust_interface->declare(&fslider6, "5", "");
-		faust_interface->declare(&fslider6, "tooltip", "Envelope decay duration");
-		faust_interface->declare(&fslider6, "unit", "s");
-		faust_interface->addHorizontalSlider("Envelope_Decay", &fslider6, 0.05f, 0.0f, 2.0f, 0.01f);
-		faust_interface->declare(&fslider5, "5", "");
-		faust_interface->declare(&fslider5, "tooltip", "Envelope release duration");
-		faust_interface->declare(&fslider5, "unit", "s");
-		faust_interface->addHorizontalSlider("Envelope_Release", &fslider5, 0.1f, 0.0f, 2.0f, 0.01f);
-		faust_interface->closeBox();
-		faust_interface->openVerticalBox("Vibrato_Parameters");
-		faust_interface->declare(&fslider2, "4", "");
-		faust_interface->declare(&fslider2, "tooltip", "Vibrato attack duration");
-		faust_interface->declare(&fslider2, "unit", "s");
-		faust_interface->addHorizontalSlider("Vibrato_Attack", &fslider2, 0.5f, 0.0f, 2.0f, 0.01f);
-		faust_interface->declare(&fslider0, "4", "");
-		faust_interface->declare(&fslider0, "unit", "Hz");
-		faust_interface->addHorizontalSlider("Vibrato_Freq", &fslider0, 5.0f, 1.0f, 15.0f, 0.1f);
-		faust_interface->declare(&fslider3, "4", "");
-		faust_interface->declare(&fslider3, "tooltip", "A value between 0 and 1");
-		faust_interface->addHorizontalSlider("Vibrato_Gain", &fslider3, 0.1f, 0.0f, 1.0f, 0.01f);
-		faust_interface->declare(&fslider1, "4", "");
-		faust_interface->declare(&fslider1, "tooltip", "Vibrato release duration");
-		faust_interface->declare(&fslider1, "unit", "s");
-		faust_interface->addHorizontalSlider("Vibrato_Release", &fslider1, 0.01f, 0.0f, 2.0f, 0.01f);
-		faust_interface->closeBox();
-		faust_interface->closeBox();
-		faust_interface->openHorizontalBox("Physical_and_Nonlinearity");
-		faust_interface->openVerticalBox("Nonlinear_Filter_Parameters");
-		faust_interface->declare(&fslider11, "3", "");
-		faust_interface->declare(&fslider11, "tooltip", "Frequency of the sine wave for the modulation of theta (works if Modulation Type=3)");
-		faust_interface->declare(&fslider11, "unit", "Hz");
-		faust_interface->addHorizontalSlider("Modulation_Frequency", &fslider11, 2.2e+02f, 2e+01f, 1e+03f, 0.1f);
-		faust_interface->declare(&fentry1, "3", "");
-		faust_interface->declare(&fentry1, "tooltip", "0=theta is modulated by the incoming signal; 1=theta is modulated by the averaged incoming signal; 2=theta is modulated by the squared incoming signal; 3=theta is modulated by a sine wave of frequency freqMod; 4=theta is modulated by a sine wave of frequency freq;");
-		faust_interface->addNumEntry("Modulation_Type", &fentry1, 0.0f, 0.0f, 4.0f, 1.0f);
-		faust_interface->declare(&fslider9, "3", "");
-		faust_interface->declare(&fslider9, "tooltip", "Nonlinearity factor (value between 0 and 1)");
-		faust_interface->addHorizontalSlider("Nonlinearity", &fslider9, 0.0f, 0.0f, 1.0f, 0.01f);
-		faust_interface->declare(&fslider10, "3", "");
-		faust_interface->declare(&fslider10, "Attack duration of the nonlinearity", "");
-		faust_interface->declare(&fslider10, "unit", "s");
-		faust_interface->addHorizontalSlider("Nonlinearity_Attack", &fslider10, 0.1f, 0.0f, 2.0f, 0.01f);
-		faust_interface->closeBox();
-		faust_interface->openVerticalBox("Physical_Parameters");
-		faust_interface->declare(&fslider4, "2", "");
-		faust_interface->declare(&fslider4, "tooltip", "Breath noise gain (value between 0 and 1)");
-		faust_interface->addHorizontalSlider("Noise_Gain", &fslider4, 0.0f, 0.0f, 1.0f, 0.01f);
-		faust_interface->declare(&fslider8, "2", "");
-		faust_interface->declare(&fslider8, "tooltip", "Breath pressure (value bewteen 0 and 1)");
-		faust_interface->addHorizontalSlider("Pressure", &fslider8, 1.0f, 0.0f, 1.0f, 0.01f);
-		faust_interface->declare(&fslider12, "2", "");
-		faust_interface->declare(&fslider12, "tooltip", "Reed stiffness (value between 0 and 1)");
-		faust_interface->addHorizontalSlider("Reed_Stiffness", &fslider12, 0.5f, 0.0f, 1.0f, 0.01f);
-		faust_interface->closeBox();
-		faust_interface->closeBox();
-		faust_interface->openVerticalBox("Spat");
-		faust_interface->addHorizontalSlider("pan angle", &fslider13, 0.6f, 0.0f, 1.0f, 0.01f);
-		faust_interface->addHorizontalSlider("spatial width", &fslider14, 0.5f, 0.0f, 1.0f, 0.01f);
-		faust_interface->closeBox();
-		faust_interface->closeBox();
+	
+	virtual void buildUserInterface(UI* interface) {
+		interface->openVerticalBox("0x00");
+		interface->openHorizontalBox("Basic_Parameters");
+		interface->declare(&fEntry1, "1", "");
+		interface->declare(&fEntry1, "tooltip", "Tone frequency");
+		interface->declare(&fEntry1, "unit", "Hz");
+		interface->addNumEntry("freq", &fEntry1, 4.4e+02f, 2e+01f, 2e+04f, 1.0f);
+		interface->declare(&fEntry2, "1", "");
+		interface->declare(&fEntry2, "tooltip", "Gain (value between 0 and 1)");
+		interface->addNumEntry("gain", &fEntry2, 1.0f, 0.0f, 1.0f, 0.01f);
+		interface->declare(&fButton0, "1", "");
+		interface->declare(&fButton0, "tooltip", "noteOn = 1, noteOff = 0");
+		interface->addButton("gate",&fButton0);
+		interface->closeBox();
+		interface->openHorizontalBox("Envelopes_and_Vibrato");
+		interface->openVerticalBox("Envelope_Parameters");
+		interface->declare(&fHslider2, "5", "");
+		interface->declare(&fHslider2, "tooltip", "Envelope attack duration");
+		interface->declare(&fHslider2, "unit", "s");
+		interface->addHorizontalSlider("Envelope_Attack", &fHslider2, 0.01f, 0.0f, 2.0f, 0.01f);
+		interface->declare(&fHslider3, "5", "");
+		interface->declare(&fHslider3, "tooltip", "Envelope decay duration");
+		interface->declare(&fHslider3, "unit", "s");
+		interface->addHorizontalSlider("Envelope_Decay", &fHslider3, 0.05f, 0.0f, 2.0f, 0.01f);
+		interface->declare(&fHslider4, "5", "");
+		interface->declare(&fHslider4, "tooltip", "Envelope release duration");
+		interface->declare(&fHslider4, "unit", "s");
+		interface->addHorizontalSlider("Envelope_Release", &fHslider4, 0.1f, 0.0f, 2.0f, 0.01f);
+		interface->closeBox();
+		interface->openVerticalBox("Vibrato_Parameters");
+		interface->declare(&fHslider7, "4", "");
+		interface->declare(&fHslider7, "tooltip", "Vibrato attack duration");
+		interface->declare(&fHslider7, "unit", "s");
+		interface->addHorizontalSlider("Vibrato_Attack", &fHslider7, 0.5f, 0.0f, 2.0f, 0.01f);
+		interface->declare(&fHslider9, "4", "");
+		interface->declare(&fHslider9, "unit", "Hz");
+		interface->addHorizontalSlider("Vibrato_Freq", &fHslider9, 5.0f, 1.0f, 15.0f, 0.1f);
+		interface->declare(&fHslider6, "4", "");
+		interface->declare(&fHslider6, "tooltip", "A value between 0 and 1");
+		interface->addHorizontalSlider("Vibrato_Gain", &fHslider6, 0.1f, 0.0f, 1.0f, 0.01f);
+		interface->declare(&fHslider8, "4", "");
+		interface->declare(&fHslider8, "tooltip", "Vibrato release duration");
+		interface->declare(&fHslider8, "unit", "s");
+		interface->addHorizontalSlider("Vibrato_Release", &fHslider8, 0.01f, 0.0f, 2.0f, 0.01f);
+		interface->closeBox();
+		interface->closeBox();
+		interface->openHorizontalBox("Physical_and_Nonlinearity");
+		interface->openVerticalBox("Nonlinear_Filter_Parameters");
+		interface->declare(&fHslider12, "3", "");
+		interface->declare(&fHslider12, "tooltip", "Frequency of the sine wave for the modulation of theta (works if Modulation Type=3)");
+		interface->declare(&fHslider12, "unit", "Hz");
+		interface->addHorizontalSlider("Modulation_Frequency", &fHslider12, 2.2e+02f, 2e+01f, 1e+03f, 0.1f);
+		interface->declare(&fEntry0, "3", "");
+		interface->declare(&fEntry0, "tooltip", "0=theta is modulated by the incoming signal; 1=theta is modulated by the averaged incoming signal; 2=theta is modulated by the squared incoming signal; 3=theta is modulated by a sine wave of frequency freqMod; 4=theta is modulated by a sine wave of frequency freq;");
+		interface->addNumEntry("Modulation_Type", &fEntry0, 0.0f, 0.0f, 4.0f, 1.0f);
+		interface->declare(&fHslider10, "3", "");
+		interface->declare(&fHslider10, "tooltip", "Nonlinearity factor (value between 0 and 1)");
+		interface->addHorizontalSlider("Nonlinearity", &fHslider10, 0.0f, 0.0f, 1.0f, 0.01f);
+		interface->declare(&fHslider11, "3", "");
+		interface->declare(&fHslider11, "Attack duration of the nonlinearity", "");
+		interface->declare(&fHslider11, "unit", "s");
+		interface->addHorizontalSlider("Nonlinearity_Attack", &fHslider11, 0.1f, 0.0f, 2.0f, 0.01f);
+		interface->closeBox();
+		interface->openVerticalBox("Physical_Parameters");
+		interface->declare(&fHslider5, "2", "");
+		interface->declare(&fHslider5, "tooltip", "Breath noise gain (value between 0 and 1)");
+		interface->addHorizontalSlider("Noise_Gain", &fHslider5, 0.0f, 0.0f, 1.0f, 0.01f);
+		interface->declare(&fHslider1, "2", "");
+		interface->declare(&fHslider1, "tooltip", "Breath pressure (value bewteen 0 and 1)");
+		interface->addHorizontalSlider("Pressure", &fHslider1, 1.0f, 0.0f, 1.0f, 0.01f);
+		interface->declare(&fHslider13, "2", "");
+		interface->declare(&fHslider13, "tooltip", "Reed stiffness (value between 0 and 1)");
+		interface->addHorizontalSlider("Reed_Stiffness", &fHslider13, 0.5f, 0.0f, 1.0f, 0.01f);
+		interface->closeBox();
+		interface->closeBox();
+		interface->openVerticalBox("Spat");
+		interface->addHorizontalSlider("pan angle", &fHslider0, 0.6f, 0.0f, 1.0f, 0.01f);
+		interface->addHorizontalSlider("spatial width", &fHslider14, 0.5f, 0.0f, 1.0f, 0.01f);
+		interface->closeBox();
+		interface->closeBox();
+		
 	}
-	virtual void compute (int count, FAUSTFLOAT** input, FAUSTFLOAT** output) {
-		float 	fSlow0 = (0.0010000000000000009f * float(fentry0));
-		float 	fSlow1 = (fConst1 * float(fslider0));
-		float 	fSlow2 = float(fbutton0);
-		int 	iSlow3 = (fSlow2 > 0);
-		int 	iSlow4 = (fSlow2 <= 0);
-		float 	fSlow5 = float(fslider1);
-		float 	fSlow6 = (1 - (1.0f / powf(1e+05f,(1.0f / ((fSlow5 == 0.0f) + (iConst0 * fSlow5))))));
-		float 	fSlow7 = float(fslider2);
-		float 	fSlow8 = (fConst2 * fSlow7);
-		float 	fSlow9 = (fSlow8 + ((0.2f * fSlow7) == 0.0f));
-		float 	fSlow10 = (1.0f / ((fConst3 * fSlow7) + ((1.8f * fSlow7) == 0.0f)));
-		float 	fSlow11 = float(fslider3);
-		float 	fSlow12 = (4.1909515877212175e-10f * float(fslider4));
-		float 	fSlow13 = float(fslider5);
-		float 	fSlow14 = (1 - (1.0f / powf(1e+05f,(1.0f / ((fSlow13 == 0.0f) + (iConst0 * fSlow13))))));
-		float 	fSlow15 = float(fslider6);
-		float 	fSlow16 = (1 - powf(1e+02f,(1.0f / ((fSlow15 == 0.0f) + (iConst0 * fSlow15)))));
-		float 	fSlow17 = float(fslider7);
-		float 	fSlow18 = (1.0f / ((fSlow17 == 0.0f) + (iConst0 * fSlow17)));
-		float 	fSlow19 = float(fslider8);
-		float 	fSlow20 = float(fentry1);
-		float 	fSlow21 = float(fslider9);
-		float 	fSlow22 = (6 * (fSlow21 * (fSlow20 < 2)));
-		float 	fSlow23 = float(fentry2);
-		float 	fSlow24 = (fConst4 / fSlow23);
-		int 	iSlow25 = int((fSlow24 - (1.5f + fSlow22)));
-		int 	iSlow26 = int((1 + int((int((1 + iSlow25)) & 4095))));
-		float 	fSlow27 = (fSlow22 + iSlow25);
-		float 	fSlow28 = (fSlow24 - (1.5f + fSlow27));
-		int 	iSlow29 = int((1 + int((iSlow25 & 4095))));
-		float 	fSlow30 = ((fSlow27 + 2.5f) - fSlow24);
-		float 	fSlow31 = (0.0010000000000000009f * fSlow21);
-		float 	fSlow32 = (3.141592653589793f * (fSlow20 == 2));
-		float 	fSlow33 = (1.5707963267948966f * (fSlow20 == 1));
-		float 	fSlow34 = (3.141592653589793f * (fSlow20 == 0));
-		float 	fSlow35 = float(fslider10);
-		float 	fSlow36 = (1.0f / ((fSlow35 == 0.0f) + (iConst0 * fSlow35)));
-		int 	iSlow37 = (fSlow20 < 3);
-		float 	fSlow38 = (0.0010000000000000009f * float(fslider11));
-		int 	iSlow39 = (fSlow20 != 4);
-		float 	fSlow40 = (fSlow23 * (fSlow20 == 4));
-		int 	iSlow41 = (fSlow20 >= 3);
-		float 	fSlow42 = ((0.26f * float(fslider12)) - 0.44f);
-		float 	fSlow43 = float(fslider13);
-		float 	fSlow44 = (1.5f * (1.0f - fSlow43));
-		int 	iSlow45 = int((int((fConst4 * (float(fslider14) / fSlow23))) & 4095));
-		float 	fSlow46 = (1.5f * fSlow43);
-		FAUSTFLOAT* output0 = output[0];
-		FAUSTFLOAT* output1 = output[1];
-		for (int i=0; i<count; i++) {
-			fRec0[0] = ((0.999f * fRec0[1]) + fSlow0);
-			float fTemp0 = (fRec3[1] + fSlow1);
-			fRec3[0] = (fTemp0 - floorf(fTemp0));
-			iRec4[0] = (iSlow3 & (iRec4[1] | (fRec6[1] >= 1)));
-			iRec5[0] = (iSlow3 * (1 + iRec5[1]));
-			int iTemp1 = (iSlow4 & (fRec6[1] > 0));
-			fRec6[0] = (((fSlow10 * (((((iRec4[1] == 0) & iSlow3) & (fRec6[1] < 1)) & (iRec5[1] > fSlow8)) * (1 - (iRec5[1] < fSlow9)))) + (fRec6[1] * (1 - (fSlow6 * iTemp1)))) * ((iTemp1 == 0) | (fRec6[1] >= 1e-06f)));
-			iRec7[0] = (12345 + (1103515245 * iRec7[1]));
-			iRec8[0] = (iSlow3 & (iRec8[1] | (fRec9[1] >= 1)));
-			int iTemp2 = (iSlow4 & (fRec9[1] > 0));
-			fRec9[0] = (((fSlow18 * (((iRec8[1] == 0) & iSlow3) & (fRec9[1] < 1))) + (fRec9[1] * ((1 - (fSlow16 * (iRec8[1] & (fRec9[1] > 100)))) - (fSlow14 * iTemp2)))) * ((iTemp2 == 0) | (fRec9[1] >= 1e-06f)));
-			float fTemp3 = (fSlow19 * ((fRec9[0] * (0.9f + (fSlow12 * iRec7[0]))) * (1 + (fSlow11 * (fRec6[0] * ftbl0[int((65536.0f * fRec3[0]))])))));
-			float fTemp4 = ((fSlow30 * fRec1[(IOTA-iSlow29)&8191]) + (fSlow28 * fRec1[(IOTA-iSlow26)&8191]));
+	
+	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
+		FAUSTFLOAT* output0 = outputs[0];
+		FAUSTFLOAT* output1 = outputs[1];
+		float fSlow0 = float(fHslider0);
+		float fSlow1 = (1.5f * (1.0f - fSlow0));
+		float fSlow2 = float(fHslider1);
+		float fSlow3 = float(fButton0);
+		int iSlow4 = (fSlow3 > 0.0f);
+		float fSlow5 = float(fHslider2);
+		float fSlow6 = (1.0f / (float((fSlow5 == 0.0f)) + (fConst0 * fSlow5)));
+		float fSlow7 = float(fHslider3);
+		float fSlow8 = (1.0f - powf(1e+02f, (1.0f / (float((fSlow7 == 0.0f)) + (fConst0 * fSlow7)))));
+		float fSlow9 = float(fHslider4);
+		float fSlow10 = (1.0f - (1.0f / powf(1e+05f, (1.0f / (float((fSlow9 == 0.0f)) + (fConst0 * fSlow9))))));
+		int iSlow11 = (fSlow3 <= 0.0f);
+		float fSlow12 = (4.1909515e-10f * float(fHslider5));
+		float fSlow13 = float(fHslider6);
+		float fSlow14 = float(fHslider7);
+		float fSlow15 = (1.0f / ((fConst1 * fSlow14) + float(((1.8f * fSlow14) == 0.0f))));
+		float fSlow16 = (fConst2 * fSlow14);
+		float fSlow17 = (fSlow16 + float(((0.2f * fSlow14) == 0.0f)));
+		float fSlow18 = float(fHslider8);
+		float fSlow19 = (1.0f - (1.0f / powf(1e+05f, (1.0f / (float((fSlow18 == 0.0f)) + (fConst0 * fSlow18))))));
+		float fSlow20 = (fConst3 * float(fHslider9));
+		float fSlow21 = float(fEntry0);
+		int iSlow22 = (fSlow21 >= 3.0f);
+		float fSlow23 = float(fHslider10);
+		float fSlow24 = (6.0f * (fSlow23 * float((fSlow21 < 2.0f))));
+		float fSlow25 = float(fEntry1);
+		float fSlow26 = (fConst4 / fSlow25);
+		int iSlow27 = int((fSlow26 - (1.5f + fSlow24)));
+		float fSlow28 = (fSlow24 + float(iSlow27));
+		float fSlow29 = ((fSlow28 + 2.5f) - fSlow26);
+		int iSlow30 = (1 + (iSlow27 & 4095));
+		float fSlow31 = (fSlow26 - (1.5f + fSlow28));
+		int iSlow32 = (1 + ((1 + iSlow27) & 4095));
+		float fSlow33 = (0.001f * fSlow23);
+		float fSlow34 = float(fHslider11);
+		float fSlow35 = (1.0f / (float((fSlow34 == 0.0f)) + (fConst0 * fSlow34)));
+		int iSlow36 = (fSlow21 != 4.0f);
+		float fSlow37 = (0.001f * float(fHslider12));
+		float fSlow38 = (fSlow25 * float((fSlow21 == 4.0f)));
+		int iSlow39 = (fSlow21 < 3.0f);
+		float fSlow40 = (3.1415927f * float((fSlow21 == 0.0f)));
+		float fSlow41 = (1.5707964f * float((fSlow21 == 1.0f)));
+		float fSlow42 = (3.1415927f * float((fSlow21 == 2.0f)));
+		float fSlow43 = ((0.26f * float(fHslider13)) - 0.44f);
+		float fSlow44 = (0.001f * float(fEntry2));
+		float fSlow45 = (1.5f * fSlow0);
+		int iSlow46 = (int((fConst4 * (float(fHslider14) / fSlow25))) & 4095);
+		for (int i = 0; (i < count); i = (i + 1)) {
+			iRec1[0] = (iSlow4 & (iRec1[1] | (fRec2[1] >= 1.0f)));
+			int iTemp0 = (iSlow11 & (fRec2[1] > 0.0f));
+			fRec2[0] = (((fSlow6 * float((((iRec1[1] == 0) & iSlow4) & (fRec2[1] < 1.0f)))) + (fRec2[1] * ((1.0f - (fSlow8 * float((iRec1[1] & (fRec2[1] > 1e+02f))))) - (fSlow10 * float(iTemp0))))) * float(((iTemp0 == 0) | (fRec2[1] >= 1e-06f))));
+			iRec3[0] = (12345 + (1103515245 * iRec3[1]));
+			iRec4[0] = (iSlow4 & (iRec4[1] | (fRec6[1] >= 1.0f)));
+			iRec5[0] = (iSlow4 * (1 + iRec5[1]));
+			int iTemp1 = (iSlow11 & (fRec6[1] > 0.0f));
+			fRec6[0] = (((fSlow15 * float((((((iRec4[1] == 0) & iSlow4) & (fRec6[1] < 1.0f)) & (float(iRec5[1]) > fSlow16)) * (1 - (float(iRec5[1]) < fSlow17))))) + (fRec6[1] * (1.0f - (fSlow19 * float(iTemp1))))) * float(((iTemp1 == 0) | (fRec6[1] >= 1e-06f))));
+			float fTemp2 = (fRec8[1] + fSlow20);
+			fRec8[0] = (fTemp2 - floorf(fTemp2));
+			float fTemp3 = (fSlow2 * ((fRec2[0] * (0.9f + (fSlow12 * float(iRec3[0])))) * (1.0f + (fSlow13 * (fRec6[0] * ftbl0Clarinet_dspSIG0[int((65536.0f * fRec8[0]))])))));
+			float fTemp4 = ((fSlow29 * fRec0[((IOTA - iSlow30) & 8191)]) + (fSlow31 * fRec0[((IOTA - iSlow32) & 8191)]));
 			fVec0[0] = fTemp4;
-			fRec11[0] = (fSlow31 + (0.999f * fRec11[1]));
-			iRec12[0] = (iSlow3 & (iRec12[1] | (fRec13[1] >= 1)));
-			int iTemp5 = (iSlow4 & (fRec13[1] > 0));
-			fRec13[0] = (((fSlow36 * (((iRec12[1] == 0) & iSlow3) & (fRec13[1] < 1))) + (fRec13[1] * (1 - (fSlow14 * iTemp5)))) * ((iTemp5 == 0) | (fRec13[1] >= 1e-06f)));
-			float fTemp6 = (fRec11[0] * fRec13[0]);
-			float fTemp7 = (fTemp6 * (((fSlow34 * fVec0[0]) + (fSlow33 * (fVec0[0] + fVec0[1]))) + (fSlow32 * faustpower<2>(fVec0[0]))));
-			float fTemp8 = cosf(fTemp7);
-			float fTemp9 = sinf(fTemp7);
-			float fTemp10 = (0 - fTemp9);
-			float fTemp11 = ((fRec14[1] * fTemp10) + (fVec0[0] * fTemp8));
-			float fTemp12 = ((fTemp10 * fRec15[1]) + (fTemp8 * fTemp11));
-			float fTemp13 = ((fTemp10 * fRec16[1]) + (fTemp8 * fTemp12));
-			float fTemp14 = ((fTemp10 * fRec17[1]) + (fTemp8 * fTemp13));
-			float fTemp15 = ((fTemp10 * fRec18[1]) + (fTemp8 * fTemp14));
-			fRec19[0] = ((fTemp10 * fRec19[1]) + (fTemp8 * fTemp15));
-			fRec18[0] = ((fTemp9 * fTemp15) + (fTemp8 * fRec19[1]));
-			fRec17[0] = ((fTemp9 * fTemp14) + (fTemp8 * fRec18[1]));
-			fRec16[0] = ((fTemp9 * fTemp13) + (fTemp8 * fRec17[1]));
-			fRec15[0] = ((fTemp9 * fTemp12) + (fTemp8 * fRec16[1]));
-			fRec14[0] = ((fTemp9 * fTemp11) + (fTemp8 * fRec15[1]));
-			fRec21[0] = (fSlow38 + (0.999f * fRec21[1]));
-			float fTemp16 = (fRec20[1] + (fConst1 * (fSlow40 + (iSlow39 * fRec21[0]))));
-			fRec20[0] = (fTemp16 - floorf(fTemp16));
-			float fTemp17 = (3.141592653589793f * (fTemp6 * ftbl0[int((65536.0f * fRec20[0]))]));
-			float fTemp18 = cosf(fTemp17);
-			float fTemp19 = sinf(fTemp17);
-			float fTemp20 = (0 - fTemp19);
-			float fTemp21 = ((fRec22[1] * fTemp20) + (fVec0[0] * fTemp18));
-			float fTemp22 = ((fTemp20 * fRec23[1]) + (fTemp18 * fTemp21));
-			float fTemp23 = ((fTemp20 * fRec24[1]) + (fTemp18 * fTemp22));
-			float fTemp24 = ((fTemp20 * fRec25[1]) + (fTemp18 * fTemp23));
-			float fTemp25 = ((fTemp20 * fRec26[1]) + (fTemp18 * fTemp24));
-			fRec27[0] = ((fTemp20 * fRec27[1]) + (fTemp18 * fTemp25));
-			fRec26[0] = ((fTemp19 * fTemp25) + (fTemp18 * fRec27[1]));
-			fRec25[0] = ((fTemp19 * fTemp24) + (fTemp18 * fRec26[1]));
-			fRec24[0] = ((fTemp19 * fTemp23) + (fTemp18 * fRec25[1]));
-			fRec23[0] = ((fTemp19 * fTemp22) + (fTemp18 * fRec24[1]));
-			fRec22[0] = ((fTemp19 * fTemp21) + (fTemp18 * fRec23[1]));
-			fRec10[0] = (0.5f * (fRec10[1] + ((iSlow41 * ((fVec0[0] * fTemp19) + (fRec22[1] * fTemp18))) + (iSlow37 * ((fRec11[0] * ((fVec0[0] * fTemp9) + (fRec14[1] * fTemp8))) + ((1 - fRec11[0]) * fVec0[0]))))));
-			float fTemp26 = (0 - ((0.95f * fRec10[0]) + fTemp3));
-			float fTemp27 = (0.7f + (fSlow42 * fTemp26));
-			float fTemp28 = ((fTemp27 > 1) + (fTemp27 * (fTemp27 <= 1)));
-			fRec1[IOTA&8191] = (fTemp3 + (fTemp26 * ((fTemp28 * (fTemp28 >= -1)) - (fTemp28 < -1))));
-			float fTemp29 = (fRec1[(IOTA-0)&8191] * fRec0[0]);
-			fVec1[IOTA&4095] = fTemp29;
-			output0[i] = (FAUSTFLOAT)(fSlow44 * fVec1[IOTA&4095]);
-			output1[i] = (FAUSTFLOAT)(fSlow46 * fVec1[(IOTA-iSlow45)&4095]);
-			// post processing
-			IOTA = IOTA+1;
-			fRec10[1] = fRec10[0];
-			fRec22[1] = fRec22[0];
-			fRec23[1] = fRec23[0];
-			fRec24[1] = fRec24[0];
-			fRec25[1] = fRec25[0];
-			fRec26[1] = fRec26[0];
-			fRec27[1] = fRec27[0];
-			fRec20[1] = fRec20[0];
-			fRec21[1] = fRec21[0];
-			fRec14[1] = fRec14[0];
-			fRec15[1] = fRec15[0];
-			fRec16[1] = fRec16[0];
-			fRec17[1] = fRec17[0];
-			fRec18[1] = fRec18[0];
-			fRec19[1] = fRec19[0];
-			fRec13[1] = fRec13[0];
-			iRec12[1] = iRec12[0];
-			fRec11[1] = fRec11[0];
-			fVec0[1] = fVec0[0];
-			fRec9[1] = fRec9[0];
-			iRec8[1] = iRec8[0];
-			iRec7[1] = iRec7[0];
-			fRec6[1] = fRec6[0];
-			iRec5[1] = iRec5[0];
+			fRec10[0] = ((0.999f * fRec10[1]) + fSlow33);
+			iRec11[0] = (iSlow4 & (iRec11[1] | (fRec12[1] >= 1.0f)));
+			int iTemp5 = (iSlow11 & (fRec12[1] > 0.0f));
+			fRec12[0] = (((fSlow35 * float((((iRec11[1] == 0) & iSlow4) & (fRec12[1] < 1.0f)))) + (fRec12[1] * (1.0f - (fSlow10 * float(iTemp5))))) * float(((iTemp5 == 0) | (fRec12[1] >= 1e-06f))));
+			float fTemp6 = (fRec10[0] * fRec12[0]);
+			fRec14[0] = ((0.999f * fRec14[1]) + fSlow37);
+			float fTemp7 = (fRec13[1] + (fConst3 * ((float(iSlow36) * fRec14[0]) + fSlow38)));
+			fRec13[0] = (fTemp7 - floorf(fTemp7));
+			float fTemp8 = (3.1415927f * (fTemp6 * ftbl0Clarinet_dspSIG0[int((65536.0f * fRec13[0]))]));
+			float fTemp9 = sinf(fTemp8);
+			float fTemp10 = (0.0f - fTemp9);
+			float fTemp11 = cosf(fTemp8);
+			float fTemp12 = ((fRec15[1] * fTemp10) + (fTemp4 * fTemp11));
+			float fTemp13 = ((fTemp10 * fRec16[1]) + (fTemp11 * fTemp12));
+			float fTemp14 = ((fTemp10 * fRec17[1]) + (fTemp11 * fTemp13));
+			float fTemp15 = ((fTemp10 * fRec18[1]) + (fTemp11 * fTemp14));
+			float fTemp16 = ((fTemp10 * fRec19[1]) + (fTemp11 * fTemp15));
+			fRec20[0] = ((fTemp10 * fRec20[1]) + (fTemp11 * fTemp16));
+			fRec19[0] = ((fTemp9 * fTemp16) + (fTemp11 * fRec20[1]));
+			fRec18[0] = ((fTemp9 * fTemp15) + (fTemp11 * fRec19[1]));
+			fRec17[0] = ((fTemp9 * fTemp14) + (fTemp11 * fRec18[1]));
+			fRec16[0] = ((fTemp9 * fTemp13) + (fTemp11 * fRec17[1]));
+			fRec15[0] = ((fTemp9 * fTemp12) + (fTemp11 * fRec16[1]));
+			float fTemp17 = (fTemp6 * (((fSlow40 * fTemp4) + (fSlow41 * (fTemp4 + fVec0[1]))) + (fSlow42 * faustpower2_f(fTemp4))));
+			float fTemp18 = sinf(fTemp17);
+			float fTemp19 = (0.0f - fTemp18);
+			float fTemp20 = cosf(fTemp17);
+			float fTemp21 = ((fRec21[1] * fTemp19) + (fTemp4 * fTemp20));
+			float fTemp22 = ((fTemp19 * fRec22[1]) + (fTemp20 * fTemp21));
+			float fTemp23 = ((fTemp19 * fRec23[1]) + (fTemp20 * fTemp22));
+			float fTemp24 = ((fTemp19 * fRec24[1]) + (fTemp20 * fTemp23));
+			float fTemp25 = ((fTemp19 * fRec25[1]) + (fTemp20 * fTemp24));
+			fRec26[0] = ((fTemp19 * fRec26[1]) + (fTemp20 * fTemp25));
+			fRec25[0] = ((fTemp18 * fTemp25) + (fTemp20 * fRec26[1]));
+			fRec24[0] = ((fTemp18 * fTemp24) + (fTemp20 * fRec25[1]));
+			fRec23[0] = ((fTemp18 * fTemp23) + (fTemp20 * fRec24[1]));
+			fRec22[0] = ((fTemp18 * fTemp22) + (fTemp20 * fRec23[1]));
+			fRec21[0] = ((fTemp18 * fTemp21) + (fTemp20 * fRec22[1]));
+			fRec9[0] = (0.5f * (fRec9[1] + ((float(iSlow22) * ((fTemp4 * fTemp9) + (fRec15[1] * fTemp11))) + (float(iSlow39) * ((fRec10[0] * ((fTemp4 * fTemp18) + (fRec21[1] * fTemp20))) + ((1.0f - fRec10[0]) * fTemp4))))));
+			float fTemp26 = (0.0f - ((0.95f * fRec9[0]) + fTemp3));
+			float fTemp27 = (0.7f + (fSlow43 * fTemp26));
+			float fTemp28 = (float((fTemp27 > 1.0f)) + (fTemp27 * float((fTemp27 <= 1.0f))));
+			fRec0[(IOTA & 8191)] = (fTemp3 + (fTemp26 * ((fTemp28 * float((fTemp28 >= -1.0f))) - float((fTemp28 < -1.0f)))));
+			fRec27[0] = ((0.999f * fRec27[1]) + fSlow44);
+			float fTemp29 = (fRec0[((IOTA - 0) & 8191)] * fRec27[0]);
+			fVec1[(IOTA & 4095)] = fTemp29;
+			output0[i] = FAUSTFLOAT((fSlow1 * fTemp29));
+			output1[i] = FAUSTFLOAT((fSlow45 * fVec1[((IOTA - iSlow46) & 4095)]));
+			iRec1[1] = iRec1[0];
+			fRec2[1] = fRec2[0];
+			iRec3[1] = iRec3[0];
 			iRec4[1] = iRec4[0];
-			fRec3[1] = fRec3[0];
-			fRec0[1] = fRec0[0];
+			iRec5[1] = iRec5[0];
+			fRec6[1] = fRec6[0];
+			fRec8[1] = fRec8[0];
+			fVec0[1] = fVec0[0];
+			fRec10[1] = fRec10[0];
+			iRec11[1] = iRec11[0];
+			fRec12[1] = fRec12[0];
+			fRec14[1] = fRec14[0];
+			fRec13[1] = fRec13[0];
+			fRec20[1] = fRec20[0];
+			fRec19[1] = fRec19[0];
+			fRec18[1] = fRec18[0];
+			fRec17[1] = fRec17[0];
+			fRec16[1] = fRec16[0];
+			fRec15[1] = fRec15[0];
+			fRec26[1] = fRec26[0];
+			fRec25[1] = fRec25[0];
+			fRec24[1] = fRec24[0];
+			fRec23[1] = fRec23[0];
+			fRec22[1] = fRec22[0];
+			fRec21[1] = fRec21[0];
+			fRec9[1] = fRec9[0];
+			IOTA = (IOTA + 1);
+			fRec27[1] = fRec27[0];
+			
 		}
+		
 	}
+
+	
 };
 
-
-float 	Clarinet_dsp::ftbl0[65536];
 
 
 #include "Faust_plugins_template2.cpp"
 
+
+#endif

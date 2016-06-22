@@ -82,7 +82,7 @@ static SoundPlugin *bus3 = NULL;
 static SoundPlugin *bus4 = NULL;
 static SoundPlugin *bus5 = NULL;
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
+static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
   if(plugin_type==&bus_type1)
     bus1 = plugin;
   if(plugin_type==&bus_type2)

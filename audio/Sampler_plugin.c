@@ -1594,11 +1594,11 @@ static bool load_sample(Data *data, const wchar_t *filename, int instrument_numb
   return true;
 }
 
-static SoundPlugin *create_tremolo(void){
+static SoundPlugin *create_tremolo(bool is_loading){
   SoundPlugin *ret = V_calloc(1, sizeof(SoundPlugin));
   
   ret->type = PR_get_plugin_type_by_name(NULL, "Faust", "System Tremolo");
-  ret->data = ret->type->create_plugin_data(ret->type, ret, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
+  ret->data = ret->type->create_plugin_data(ret->type, ret, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size(), is_loading);
   
   return ret;
 }
@@ -1608,12 +1608,12 @@ static void free_tremolo(SoundPlugin *tremolo){
   V_free(tremolo);
 }
 
-static Data *create_data(float samplerate, Data *old_data, const wchar_t *filename, int instrument_number, int resampler_type){
+static Data *create_data(float samplerate, Data *old_data, const wchar_t *filename, int instrument_number, int resampler_type, bool is_loading){
   Data *data = V_calloc(1,sizeof(Data));
 
   data->signal_from_RT = RSEMAPHORE_create(0);
 
-  data->tremolo = create_tremolo();
+  data->tremolo = create_tremolo(is_loading);
       
   if(old_data==NULL){
     
@@ -1652,7 +1652,7 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
   return data;
 }
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int block_size){
+static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int block_size, bool is_loading){
 
   //const char *filename="/home/kjetil/brenn/downloaded/temp/CATEGORY/SYNTH/PAD/NAMED1/etrnpadl.xi"; // one sample
   //const char *filename="/home/kjetil/brenn/downloaded/temp/CATEGORY/SYNTH/PAD/NAMED1/elecpad.xi"; // multile samples
@@ -1673,7 +1673,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
                                                   ? STRING_create("243749__unfa__metronome-1khz-weak-pulse.flac")
                                                   : STRING_create("016.WAV")))));
     
-  Data *data = create_data(samplerate,NULL,default_sound_filename,0,RESAMPLER_CUBIC); // cubic is the default
+  Data *data = create_data(samplerate,NULL,default_sound_filename,0,RESAMPLER_CUBIC, is_loading); // cubic is the default
   
   if(load_sample(data,default_sound_filename,0, true)==false){
     V_free(data);
@@ -1757,7 +1757,7 @@ void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start, int length){
   }PLAYER_unlock();
 }
 
-static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number, int resampler_type, int loop_start, int loop_end){
+static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number, int resampler_type, int loop_start, int loop_end, bool is_loading){
   bool success=false;
 
   Data *data = NULL;
@@ -1767,7 +1767,7 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
   if (filename==NULL)
     goto exit;
 
-  data = create_data(old_data->samplerate, old_data, filename, instrument_number, resampler_type);
+  data = create_data(old_data->samplerate, old_data, filename, instrument_number, resampler_type, is_loading);
 
   if(load_sample(data,filename,instrument_number, false)==false)
     goto exit;
@@ -1816,12 +1816,12 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
 
 bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number){
   Data *data=plugin->data;
-  return set_new_sample(plugin,filename,instrument_number,data->resampler_type,data->loop_start,data->loop_length);
+  return set_new_sample(plugin,filename,instrument_number,data->resampler_type,data->loop_start,data->loop_length, false);
 }
 
 bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, int resampler_type){
   Data *data=plugin->data;
-  return set_new_sample(plugin,data->filename,data->instrument_number,resampler_type,data->loop_start,data->loop_length);
+  return set_new_sample(plugin,data->filename,data->instrument_number,resampler_type,data->loop_start,data->loop_length, false);
 }
 
 int SAMPLER_get_resampler_type(struct SoundPlugin *plugin){
@@ -1914,7 +1914,7 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
     return EFFECT_FORMAT_FLOAT;
 }
 
-static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
+static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
   const wchar_t *filename          = HASH_get_string(state, "filename");
   int            instrument_number = HASH_get_int(state, "instrument_number");
   int            resampler_type    = HASH_get_int(state, "resampler_type");
@@ -1926,7 +1926,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
     return;
   }
 
-  if(set_new_sample(plugin,filename,instrument_number,resampler_type,loop_start,loop_length)==false)
+  if(set_new_sample(plugin,filename,instrument_number,resampler_type,loop_start,loop_length, is_loading)==false)
     GFX_Message(NULL, "Could not load soundfile \"%s\". (instrument number: %d)\n",STRING_get_chars(filename),instrument_number);
 }
 
@@ -1957,7 +1957,7 @@ const wchar_t *SAMPLER_get_filename_display(struct SoundPlugin *plugin){
 static SoundPluginType plugin_type = {
  type_name                : "Sample Player",
  name                     : "Sample Player",
- info                     : "Sample Player can load XI intruments, Soundfonts, and all types of sample formats supported by libsndfile. WAV files are looped if they have loops defined in the \"sampl\" chunk, or they have \"Loop Start\" and \"Loop End\" cue id's.\n\nSoundFonts often sound better when played with FluidSynth instead of the Sample Player. The Soundfont handling in Sample Player needs more care. However, the Sample Player uses less memory, are faster to create, has sample-accurate note scheduling, supports polyphonic aftertouch (velocity can be changed while a note is playing), and has configurable options such as attack, decay, sustain, and release.",
+ info                     : "Sample Player can load XI intruments, Soundfonts, and all types of sample formats supported by libsndfile. WAV files are looped if they have loops defined in the \"sampl\" chunk, or they have \"Loop Start\" and \"Loop End\" cue id's.\n\nSoundFonts often sound better when played with FluidSynth instead of the Sample Player. The Soundfont handling in Sample Player needs more care. However, the Sample Player uses less memory, are faster to create, has sample-accurate note scheduling, supports pitch changes and polyphonic aftertouch (velocity can be changed while a note is playing), and has configurable options such as attack, decay, sustain, and release.",
  num_inputs               : 0,
  num_outputs              : 2,
  is_instrument            : true,

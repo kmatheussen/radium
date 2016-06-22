@@ -252,13 +252,13 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
   "System Chance Voice 7"  
 };
 
-static void init_system_filter(SystemFilter *filter, int num_channels, const char *name){
+static void init_system_filter(SystemFilter *filter, int num_channels, const char *name, bool is_loading){
   int ch;
   filter->plugins=V_calloc(sizeof(SoundPlugin*),num_channels);
   for(ch=0;ch<num_channels;ch++){
     filter->plugins[ch] = V_calloc(1, sizeof(SoundPlugin));
     filter->plugins[ch]->type = PR_get_plugin_type_by_name(NULL, "Faust",name);
-    filter->plugins[ch]->data = filter->plugins[ch]->type->create_plugin_data(filter->plugins[ch]->type, filter->plugins[ch], NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
+    filter->plugins[ch]->data = filter->plugins[ch]->type->create_plugin_data(filter->plugins[ch]->type, filter->plugins[ch], NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size(), is_loading);
     filter->was_off = true;
     filter->was_on = false;
   }
@@ -273,14 +273,14 @@ static void release_system_filter(SystemFilter *filter, int num_channels){
   V_free(filter->plugins);
 }
 
-SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state){
+SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading){
   SoundPlugin *plugin = V_calloc(1,sizeof(SoundPlugin));
   plugin->type = plugin_type;
 
   int buffer_size = MIXER_get_buffer_size();
   
   // TODO: Don't do this. Check if all plugins can be initialized later.
-  plugin->data = plugin_type->create_plugin_data(plugin_type, plugin, plugin_state, MIXER_get_sample_rate(), buffer_size);
+  plugin->data = plugin_type->create_plugin_data(plugin_type, plugin, plugin_state, MIXER_get_sample_rate(), buffer_size, is_loading);
   if(plugin->data==NULL){
     V_free(plugin);
     return NULL;
@@ -327,29 +327,29 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state){
   {
     int num_outputs=plugin_type->num_outputs;
 
-    init_system_filter(&plugin->lowpass, num_outputs, "System Lowpass");
+    init_system_filter(&plugin->lowpass, num_outputs, "System Lowpass", is_loading);
     plugin->lowpass_freq = 5000.0f;
 
-    init_system_filter(&plugin->highpass, num_outputs, "System Highpass");
+    init_system_filter(&plugin->highpass, num_outputs, "System Highpass", is_loading);
     plugin->highpass_freq = 200.0f;
 
-    init_system_filter(&plugin->eq1, num_outputs, "System Eq");
+    init_system_filter(&plugin->eq1, num_outputs, "System Eq", is_loading);
     plugin->eq1_freq = 400.0f;
     plugin->eq1_db = 0.0f;
 
-    init_system_filter(&plugin->eq2, num_outputs, "System Eq");
+    init_system_filter(&plugin->eq2, num_outputs, "System Eq", is_loading);
     plugin->eq2_freq = 1000.0f;
     plugin->eq2_db = 0.0f;
 
-    init_system_filter(&plugin->lowshelf, num_outputs, "System Lowshelf");
+    init_system_filter(&plugin->lowshelf, num_outputs, "System Lowshelf", is_loading);
     plugin->lowshelf_freq = 400.0f;
     plugin->lowshelf_db = 0.0f;
 
-    init_system_filter(&plugin->highshelf, num_outputs, "System Highshelf");
+    init_system_filter(&plugin->highshelf, num_outputs, "System Highshelf", is_loading);
     plugin->highshelf_freq = 1500.0f;
     plugin->highshelf_db = 0.0f;
 
-    init_system_filter(&plugin->delay, num_outputs, "System Delay");
+    init_system_filter(&plugin->delay, num_outputs, "System Delay", is_loading);
     plugin->delay_time = 0.0f;
   }
 
@@ -466,14 +466,15 @@ int PLUGIN_get_num_visible_effects(SoundPlugin *plugin){
   if(plugin_type->effect_is_visible != NULL) {
 
     for(i=0;i<plugin_type->num_effects;i++)
-      result += plugin_type->effect_is_visible ? 1 : 0;
-    return result;
+      result += plugin_type->effect_is_visible(plugin, i) ? 1 : 0;
 
   }else{
 
     return plugin_type->num_effects;
-
+    
   }
+  
+  return result;
 }
 
 int PLUGIN_get_effect_format(struct SoundPlugin *plugin, int effect_num){
@@ -1410,7 +1411,7 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
 #endif
 
   hash_t *copy = HASH_copy(effects);
-    
+      
   bool has_value[type->num_effects+NUM_SYSTEM_EFFECTS];
   float values[type->num_effects+NUM_SYSTEM_EFFECTS];
     
@@ -1436,11 +1437,16 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   if (HASH_get_num_elements(copy) > 0){
     char *effect_names = talloc_strdup("");
     hash_t *keys = HASH_get_keys(copy);
+    int num_added=0;
+    
     for(int i = 0 ; i < HASH_get_array_size(keys); i++){
-      effect_names = talloc_format("%s\n* %s", effect_names, HASH_get_chars_at(keys, "key", i));
+      const char *effect_name = HASH_get_chars_at(keys, "key", i);
+      if (strncmp(effect_name, NOTUSED_EFFECT_NAME, strlen(NOTUSED_EFFECT_NAME)))
+        effect_names = talloc_format("%s\n* %s", effect_names, effect_name);
     }
 
-    GFX_Message(NULL, "The effect names of %s / %s has changed.\nThe following effects can not be loaded: %s\n\nIf you know the new name of the effect, you can edit the song manually in a text editor.", type->type_name, type->name, effect_names);
+    if (num_added > 0)
+      GFX_Message(NULL, "The effect names of %s / %s has changed.\nThe following effects can not be loaded: %s\n\nIf you know the new name of the effect, you can edit the song manually in a text editor.", type->type_name, type->name, effect_names);
   }
   
   // 2. Store system effects
@@ -1469,7 +1475,7 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   }
 }
 
-SoundPlugin *PLUGIN_create_from_state(hash_t *state){
+SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   const char *container_name = HASH_has_key(state, "container_name") ? HASH_get_chars(state, "container_name") : NULL;
   const char *type_name = HASH_get_chars(state, "type_name");
   const char *name = HASH_get_chars(state, "name");
@@ -1492,7 +1498,7 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state){
   else
     plugin_state=NULL;
   
-  SoundPlugin *plugin = PLUGIN_create(type, plugin_state);
+  SoundPlugin *plugin = PLUGIN_create(type, plugin_state, is_loading);
 
   if(plugin==NULL)
     return NULL;
@@ -1501,7 +1507,7 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state){
   PLUGIN_set_effects_from_state(plugin, effects);
 
   if(plugin_state!=NULL && type->recreate_from_state!=NULL)
-    type->recreate_from_state(plugin, plugin_state);
+    type->recreate_from_state(plugin, plugin_state, is_loading);
   
   return plugin;
 }

@@ -11,8 +11,20 @@ struct Meta
     void declare (const char* key, const char* value) { }
 };
 
-#include "faudiostream/architecture/faust/audio/dsp.h"
-#include "faudiostream/architecture/faust/gui/UI.h"
+
+#include <faust/dsp/dsp.h>
+
+
+#if 0 //CREATE_NAME==create_zita_rev_plugin
+
+  #include "mfaustqt1.cpp"
+
+#else
+
+  #include <faust/gui/faustqt.h>
+
+#endif
+
 
 
 #include "Faust_plugins_template1.cpp"

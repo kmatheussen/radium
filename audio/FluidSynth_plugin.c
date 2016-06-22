@@ -458,7 +458,7 @@ static void *create_data(const wchar_t *filename, float samplerate){
   return data;
 }
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int block_size){
+static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int block_size, bool is_loading){
   //Data *data = create_data("/home/kjetil/SGM-V2.01.sf2",samplerate);
   wchar_t *default_sound_filename = OS_get_full_program_file_path(STRING_create("sounds/Orgue.sf2"));
   
@@ -520,7 +520,7 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const wchar_t *sf2_file, int
   return true;
 }
 
-static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
+static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
   const wchar_t *filename = HASH_get_string(state, "filename");
   int         bank_num    = HASH_get_int(state, "bank_num");
   int         preset_num  = HASH_get_int(state, "preset_num");

@@ -33,6 +33,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern "C"{
 #endif
 
+#define NOTUSED_EFFECT_NAME "NOTUSED"
+  
 enum{
   EFFNUM_INPUT_VOLUME = 0,  // This one must be first.
   EFFNUM_INPUT_VOLUME_ONOFF,
@@ -177,7 +179,7 @@ typedef struct SoundPluginType{
   
   bool dont_send_effect_values_from_state_into_plugin; // Can be set to true if all effects are stored in type->create_state. type->effect_value will not be called for all effects then. All effect values are still stored in the state though.
 
-  const char *(*get_effect_description)(const struct SoundPluginType *plugin_type, int effect_num);
+  const char *(*get_effect_description)(struct SoundPlugin *plugin, int effect_num);
 
   void (*get_display_value_string)(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
 
@@ -187,7 +189,7 @@ typedef struct SoundPluginType{
   // If not, set_effect_value will be called instead.
   bool (*effect_is_RT)(const struct SoundPluginType *plugin_type, int effect_num);
 
-  void *(*create_plugin_data)(const struct SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size); // Called by Radium during the instantiation of a plugin. The function returns plugin->data. Note that "state" is the same variable that is sent to "recreate_from_state", but this function is called BEFORE the effect values are set. "state" is NULL when the instance is created from nothing, i.e. not loaded from file or undo information.
+  void *(*create_plugin_data)(const struct SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading); // Called by Radium during the instantiation of a plugin. The function returns plugin->data. Note that "state" is the same variable that is sent to "recreate_from_state", but this function is called BEFORE the effect values are set. "state" is NULL when the instance is created from nothing, i.e. not loaded from file or undo information.
   void (*cleanup_plugin_data)(struct SoundPlugin *plugin);
 
   void (*called_after_plugin_has_been_created)(const struct SoundPluginType *plugin_type, struct SoundPlugin *plugin); // May be NULL
@@ -228,7 +230,7 @@ typedef struct SoundPluginType{
   void (*show_gui)(struct SoundPlugin *plugin); // If NULL, the "GUI" button will not show.
   void (*hide_gui)(struct SoundPlugin *plugin);
 
-  void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state); // Optional function. Called after plugin has been created. Note that "state" is the same variable that is sent to "recreate_from_state", but this function is called AFTER the effect values have been set.
+  void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state, bool is_loading); // Optional function. Called after plugin has been created. Note that "state" is the same variable that is sent to "recreate_from_state", but this function is called AFTER the effect values have been set.
   void (*create_state)(struct SoundPlugin *plugin, hash_t *state);
 
   // Presets (optional)

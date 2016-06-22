@@ -374,6 +374,10 @@ extern void create_zita_rev_plugin(void);
 extern void create_faust_tapiir_plugin(void);
 extern void create_faust_multibandcomp_plugin(void);
 
+#ifdef WITH_FAUST_DEV
+extern void create_faust_plugin(void);
+#endif
+
 extern void create_faust_system_eq_plugin(void);
 extern void create_faust_system_tremolo_plugin(void);
 extern void create_faust_system_lowpass_plugin(void);
@@ -499,6 +503,10 @@ void PR_init_plugin_types(void){
   create_faust_tapiir_plugin();
   create_faust_multibandcomp_plugin();
 
+#ifdef WITH_FAUST_DEV
+  create_faust_plugin();
+#endif
+  
   create_faust_system_eq_plugin();
   create_faust_system_tremolo_plugin();
   create_faust_system_lowpass_plugin();

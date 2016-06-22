@@ -171,7 +171,7 @@ void PLAYER_mute(void){
   OS_GFX_SetVolume(0);
 }
 
-void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
+void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
   const char *input_portnames[plugin_type->num_outputs];
   const char *output_portnames[plugin_type->num_inputs];
   int i;

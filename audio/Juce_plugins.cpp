@@ -744,7 +744,7 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
 }
 
 
-static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
+static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
 #if JUCE_LINUX
   const MessageManagerLock mmLock;
 #endif
@@ -784,7 +784,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
 
 static int num_running_plugins = 0;
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
+static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
 #if JUCE_LINUX
   const MessageManagerLock mmLock;
 #endif
@@ -814,7 +814,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
     set_plugin_type_data(audio_instance,(SoundPluginType*)plugin_type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
   
   if (state!=NULL)
-    recreate_from_state(plugin, state);
+    recreate_from_state(plugin, state, is_loading);
 
   num_running_plugins++;
 
@@ -881,10 +881,12 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
   return type_data->effect_names[effect_num];
 }
 
+/*
 static const char *get_effect_description(const struct SoundPluginType *plugin_type, int effect_num){
   TypeData *type_data = (struct TypeData*)plugin_type->data;
   return type_data->effect_names[effect_num];
 }
+*/
 
 static int get_num_presets(struct SoundPlugin *plugin){
 #if JUCE_LINUX
@@ -986,7 +988,7 @@ static SoundPluginType *create_plugin_type(const char *name, int uid, const wcha
   
   plugin_type->get_display_value_string=get_display_value_string;
   plugin_type->get_effect_name=get_effect_name;
-  plugin_type->get_effect_description=get_effect_description;
+  //plugin_type->get_effect_description=get_effect_description;
 
   plugin_type->create_state = create_state;
   plugin_type->recreate_from_state = recreate_from_state;

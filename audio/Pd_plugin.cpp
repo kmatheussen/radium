@@ -1051,7 +1051,7 @@ static QTemporaryFile *create_new_tempfile(QString *fileName){
   return pdfile;
 }
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
+static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
   QTemporaryFile *pdfile;
 
   if (state==NULL)
@@ -1121,7 +1121,7 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
   if(inited==false){
     int i;
     for(i=0;i<NUM_PD_CONTROLLERS;i++)
-      sprintf(notused_names[i],"NOTUSED %d",i);
+      sprintf(notused_names[i],NOTUSED_EFFECT_NAME " %d",i);
     inited=true;
   }
 

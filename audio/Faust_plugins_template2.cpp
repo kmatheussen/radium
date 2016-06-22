@@ -2,6 +2,10 @@
 #include <QMap>
 #include <QString>
 #include <QWidget>
+#include <QDialog>
+
+#include "../Qt/EditorWidget.h"
+#include "../Qt/helpers.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -19,7 +23,7 @@ class MyUI : public UI
 
  public:
 
-  MyUI() 
+  MyUI()
     : next_peak(NULL)
     , _gate_control(NULL)
     , _freq_control(NULL)
@@ -38,6 +42,9 @@ class MyUI : public UI
   float *_gain_control;
 
   struct Controller{
+    struct SoundPlugin *plugin;
+    int effect_num;
+    
     float* control_port;
 
     float *peak_port;
@@ -53,7 +60,9 @@ class MyUI : public UI
     const char *unit;
 
     Controller(float *control_port)
-      : control_port(control_port)
+      : plugin(NULL)
+      , effect_num(-1)
+      , control_port(control_port)
       , peak_port(NULL)
       , min_value(0.0f)
       , default_value(0.5f)
@@ -262,13 +271,34 @@ struct Data{
   Voice *voices_not_playing; // not used by effects
   Voice voices[MAX_POLYPHONY];   // Only voices[0] is used by effects.
   float samplerate;
+
+  QTGUI *qtgui;
+  QDialog *qtgui_parent;
+
+  float *automation_values;
+  
   Data()
     : voices_playing(NULL)
     , voices_not_playing(NULL)
-  {}
+    , qtgui(NULL)
+    , qtgui_parent(NULL)
+    , automation_values(NULL)
+  {
+  }
+
+  ~Data(){
+    free(automation_values);
+  }
 };
 
 } // end anonymous namespace
+
+#if defined(CLASSNAME)
+static Data *GET_DATA_FROM_PLUGIN(SoundPlugin *plugin){
+  return (Data*)plugin->data;
+}
+#endif
+
 
 static void RT_add_voice(Voice **root, Voice *voice){
   voice->next = *root;
@@ -408,7 +438,7 @@ static void RT_process_instrument(SoundPlugin *plugin, int64_t time, int num_fra
 }
 
 static void play_note2(Data *data, int64_t time, note_t note){
-  printf("Playing %f\n",note.pitch);
+  //printf("Playing %f\n",note.pitch);
 
   Voice *voice = data->voices_not_playing;
 
@@ -486,11 +516,111 @@ static void RT_process_effect2(Data *data, int64_t time, int num_frames, float *
 }
 
 static void RT_process_effect(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  //SoundPluginType *type = plugin->type;
   Data *data = (Data*)plugin->data;
   RT_process_effect2(data, time, num_frames, inputs, outputs);
 }
 
+#if 1
+static void faust_gui_zone_callback(float val, void* arg){
+  MyUI::Controller *controller = (MyUI::Controller*)arg;
+
+  float min = controller->min_value;
+  float max = controller->max_value;
+
+  SoundPlugin *plugin = controller->plugin;
+  int effect_num = controller->effect_num;
+  
+  Data *data = GET_DATA_FROM_PLUGIN(plugin);
+  if (fabs(val-data->automation_values[effect_num]) < fabs((max-min)/100.0)) // approx.
+    return;
+
+  //printf("  Callback called %f. controller: %p\n      val/auto: %f %f", val, controller, val, data->automation_values[effect_num]);
+
+  float stored_value;
+  //PLAYER_lock();{  // Don't need lock when getting from storage. (not always true, but it's true now)
+    stored_value = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE);
+    //}PLAYER_unlock();
+
+  if (val==stored_value)
+    return;
+
+  // We are now pretty certain that this update was caused by a user interaction in the faust gui, and not a roundtrip from radium.
+  
+  PLAYER_lock();{
+    PLUGIN_set_native_effect_value(plugin, -1, effect_num, val, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  }PLAYER_unlock();
+  
+  volatile struct Patch *patch = plugin->patch;
+  ATOMIC_SET(patch->widget_needs_to_be_updated, true);
+}
+#endif
+
+//#include <QGtkStyle>
+static void create_gui(QDialog *parent, Data *data, SoundPlugin *plugin){
+
+  dsp *dsp = data->voices[0].dsp_instance;
+
+  data->qtgui = new QTGUI(parent);
+  printf("     Created new QtGui %p\n", data->qtgui);
+
+  static QString stylesheet;
+
+  if (stylesheet==""){
+
+    stylesheet = " ";
+
+    //QString filename = OS_get_full_program_file_path("faust_plugins_style.css");
+    QString filename = OS_get_full_program_file_path("packages/faust2/architecture/faust/gui/Styles/Blue.qss");
+    disk_t *disk = DISK_open_for_reading(filename);
+    if (disk==NULL){
+      
+      GFX_Message(NULL, "File not found (%s)", filename.toUtf8().constData());
+      
+    } else {
+      
+      stylesheet = DISK_read_qstring_file(disk);
+      if (DISK_close_and_delete(disk)==false) {
+        GFX_Message(NULL, "Unable to read from %s", filename.toUtf8().constData());
+        stylesheet = " ";
+      }
+      
+    }
+    
+    //parent->setStyle( new QGtkStyle );
+  }
+
+  if (stylesheet != " ")
+    parent->setStyleSheet(stylesheet);
+  
+  dsp->buildUserInterface(data->qtgui);
+
+  #if 1
+  int num_effects = data->voices[0].myUI._num_effects;
+  for(int i=0 ; i < num_effects ; i++){
+    MyUI::Controller *controller = &data->voices[0].myUI._controllers.at(i);
+    controller->effect_num = i;
+    controller->plugin = plugin;
+    data->qtgui->addCallback(controller->control_port, faust_gui_zone_callback, controller);
+  }
+ #endif
+  
+  if (parent->layout()==NULL){
+    QLayout *layout = new QGridLayout(parent);
+    parent->setLayout(layout);
+  }
+  
+  parent->layout()->addWidget(data->qtgui);
+}
+
+static void create_automation_values(Data *data){
+  int num_effects = data->voices[0].myUI._num_effects;
+  data->automation_values = (float*)V_malloc(sizeof(float) * num_effects);
+  for(int i=0;i<num_effects;i++){
+    data->automation_values[i] = -100000;
+  }
+}
+
+// May be called from any thread
 static Data *create_effect_plugin_data2(float samplerate, dsp *initialized_dsp){
   Data *data = new Data;
   data->samplerate = samplerate;
@@ -500,17 +630,21 @@ static Data *create_effect_plugin_data2(float samplerate, dsp *initialized_dsp){
   //printf("Creating %s / %s. samplerate: %d\n",plugin_type->type_name,plugin_type->name,(int)samplerate);
   voice->dsp_instance->buildUserInterface(&voice->myUI);
   voice->myUI.uniqifyEffectNames();
+
+  create_automation_values(data);
+  
   return data;
 }
 
 #if defined(CLASSNAME)
-static void *create_effect_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int blocksize){
+static void *create_effect_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int blocksize, bool is_loading){
   dsp *dsp = new CLASSNAME;
   dsp->instanceInit(samplerate);
   return create_effect_plugin_data2(samplerate, dsp);
 }
 #endif
 
+// May be called from any thread
 static void convert_effect_data_to_instrument_data(Data *data, dsp *initialized_dsps[MAX_POLYPHONY]){
   for(int i=0;i<MAX_POLYPHONY;i++){
     Voice *voice = &data->voices[i];
@@ -523,6 +657,7 @@ static void convert_effect_data_to_instrument_data(Data *data, dsp *initialized_
   }  
 }
 
+// May be called from any thread
 static Data *create_instrument_plugin_data2(float samplerate, dsp *initialized_dsps[MAX_POLYPHONY]){
   Data *data = new Data;
   data->samplerate = samplerate;
@@ -533,18 +668,30 @@ static Data *create_instrument_plugin_data2(float samplerate, dsp *initialized_d
 }
 
 #if defined(CLASSNAME)
-static void *create_instrument_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int blocksize){
+static void *create_instrument_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int blocksize, bool is_loading){
   dsp *dsps[MAX_POLYPHONY];
   for(int i=0;i<MAX_POLYPHONY;i++){
     dsps[i] = new CLASSNAME;
     dsps[i]->instanceInit(samplerate);
   }
+
+  Data *data = create_instrument_plugin_data2(samplerate, dsps);
+
+  create_automation_values(data);
   
-  return create_instrument_plugin_data2(samplerate, dsps);
+  return data;
 }
 #endif
 
-static void delete_dsps_and_data(Data *data){
+// must be called from main thread
+static void delete_dsps_and_data1(Data *data){
+  printf("          Deleting data->qtgui %p\n", data->qtgui);
+  delete data->qtgui;
+  delete data->qtgui_parent;
+}
+
+// May be called from any thread
+static void delete_dsps_and_data2(Data *data){
 
   for(int i=0;i<MAX_POLYPHONY;i++){
     Voice *voice = &data->voices[i];
@@ -553,8 +700,14 @@ static void delete_dsps_and_data(Data *data){
     else
       delete voice->dsp_instance;
   }
-
+  
   delete data;
+}
+
+// must be called from main thread
+static void delete_dsps_and_data(Data *data){
+  delete_dsps_and_data1(data);
+  delete_dsps_and_data2(data);
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
@@ -573,12 +726,15 @@ float *FAUST_get_peak_value_pointer(SoundPlugin *plugin, int effect_num){
 }
 #endif
 
-static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
-  const struct SoundPluginType *plugin_type = plugin->type;
-  Data *data = (Data*)plugin_type->data;
-  Voice *voice = &data->voices[0];
-  MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
+static int get_effect_format2(const Data *data, int effect_num){
+  const Voice *voice = &data->voices[0];
+  const MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
   return controller->type;
+}
+
+static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
+  Data *data = (Data*)plugin->data;
+  return get_effect_format2(data, effect_num);
 }
 
 static const char *get_effect_name2(Data *data, int effect_num){
@@ -586,13 +742,13 @@ static const char *get_effect_name2(Data *data, int effect_num){
   MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
   return controller->name.c_str();
 }
+
 static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
-  const struct SoundPluginType *plugin_type = plugin->type;
-  Data *data = (Data*)plugin_type->data;
+  Data *data = (Data*)plugin->data;
   return get_effect_name2(data, effect_num);
 }
 
-static void set_effect_value2(Data *data, int effect_num, float value, enum ValueFormat value_format){
+static void set_effect_value2(Data *data, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   float scaled_value;
 
   if(value_format==PLUGIN_FORMAT_SCALED){
@@ -608,26 +764,33 @@ static void set_effect_value2(Data *data, int effect_num, float value, enum Valu
     scaled_value = value;
   }
 
-  //printf("Setting effect %d to %f. input: %f\n",effect_num,scaled_value,value);
+  if (when==FX_start || when==FX_middle || when==FX_end)
+    data->automation_values[effect_num] = scaled_value;
+      
 
+  //printf("Setting effect %d to %f. input: %f\n",effect_num,scaled_value,value);
+  
   for(int i=0;i<MAX_POLYPHONY;i++){
     Voice *voice = &data->voices[i];
     if(voice->dsp_instance==NULL) // an effect
       break;
-    MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-    safe_float_write(controller->control_port, scaled_value);
+      MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
+      safe_float_write(controller->control_port, scaled_value);
   }
+  
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
-  set_effect_value2(data, effect_num, value, value_format);
+  set_effect_value2(data, effect_num, value, value_format, when);
 }
 
 static float get_effect_value2(Data *data, int effect_num, enum ValueFormat value_format){
   Voice *voice = &data->voices[0];
   MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
 
+  //printf("   Getting effect from controller %p\n", controller);
+  
   if(value_format==PLUGIN_FORMAT_SCALED){
 #ifdef DONT_NORMALIZE_EFFECT_VALUES
     return safe_float_read(controller->control_port);
@@ -660,12 +823,54 @@ static void get_display_value_string(struct SoundPlugin *plugin, int effect_num,
   get_display_value_string2(data, effect_num, buffer, buffersize);
 }
 
-static const char *get_effect_description(const struct SoundPluginType *plugin_type, int effect_num){
-  Data *data = (Data*)plugin_type->data;
-  Voice *voice = &data->voices[0];
-  MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
+static const char *get_effect_description2(const Data *data, int effect_num){
+  const Voice *voice = &data->voices[0];
+  const MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
 
   return controller->tooltip;
+}
+
+static const char *get_effect_description(struct SoundPlugin *plugin, int effect_num){
+  Data *data = (Data*)plugin->data;
+  return get_effect_description2(data, effect_num);
+}
+
+
+static void show_gui2(Data* data, SoundPlugin *plugin){
+  if(data->qtgui_parent==NULL){
+    data->qtgui_parent = new QDialog(g_main_window);
+    create_gui(data->qtgui_parent, data, plugin);
+  }
+
+  printf("   Showing gui %p\n",data->qtgui);
+  safeShow(data->qtgui_parent);
+  data->qtgui->run();
+}
+
+static void show_gui(struct SoundPlugin *plugin){
+  Data *data = (Data*)plugin->data;
+  show_gui2(data, plugin);
+}
+
+static void hide_gui2(Data *data){
+  printf("   Hiding gui %p\n",data->qtgui);
+  if (data->qtgui != NULL){
+    data->qtgui_parent->hide();
+    data->qtgui->stop();
+  }
+}
+
+static void hide_gui(struct SoundPlugin *plugin){
+  Data *data = (Data*)plugin->data;
+  hide_gui2(data);
+}
+
+static bool gui_is_visible(struct SoundPlugin *plugin){
+  Data *data = (Data*)plugin->data;
+  if (data->qtgui_parent==NULL)
+    return false;
+  else
+    return data->qtgui_parent->isVisible();
 }
 
 #if defined(CLASSNAME)
@@ -688,6 +893,12 @@ static void fill_type(SoundPluginType *type){
  type->get_effect_value         = get_effect_value;
  type->get_display_value_string = get_display_value_string;
  type->get_effect_description   = get_effect_description;
+ 
+ if (strcmp(DSP_NAME, "Multiband Compressor")){
+   type->show_gui = show_gui;
+   type->hide_gui = hide_gui; 
+   type->gui_is_visible = gui_is_visible;    
+ }
 
  type->data                     = NULL;
 };
@@ -703,9 +914,7 @@ void CREATE_NAME (void){
   
     CLASSNAME::classInit(MIXER_get_sample_rate());
   
-    Data *data = (Data*)create_effect_plugin_data(&faust_type, NULL, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
-    faust_type.data = data;
-
+    Data *data = (Data*)create_effect_plugin_data(&faust_type, NULL, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size(), false);
   
     faust_type.name = DSP_NAME;
 

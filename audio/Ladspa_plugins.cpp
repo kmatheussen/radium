@@ -211,7 +211,7 @@ static void remove_library_reference(TypeData *type_data){
 }
 
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
+static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
   Data *data = (Data*)V_calloc(1, sizeof(Data));
   TypeData *type_data = (TypeData*)plugin_type->data;
 

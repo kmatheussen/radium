@@ -372,7 +372,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 }
 
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
+static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
   Data *data = (Data*)V_calloc(1,sizeof(Data));
   int i;
   for(i=1;i<NUM_EFFECTS;i++){
