@@ -784,6 +784,17 @@ protected:
         GL_EnsureMakeCurrentIsCalled();
       }GL_unlock();
     }
+
+    // Ensure editor is redrawn after resizing. For some reason, it doesn't always work to set must_redraw=true in the resize event virtual method.
+    {
+      static int last_height = -1;
+      QMainWindow *main_window = (QMainWindow *)window->os_visual.main_window;
+      int new_height = main_window->height();
+      if (main_window!=NULL && new_height != last_height){
+        window->must_redraw = true;
+        last_height = new_height;
+      }
+    }
     
 #if 0
     // Update graphics when playing
