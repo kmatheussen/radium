@@ -1487,7 +1487,7 @@ Pd_plugin.o: audio/Pd_plugin.cpp
 FAUST_DEPENDENCIES = $(WHICHFAUST) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
 FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture #audio/faudiostream/architecture
 
-Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES) bin/llvm_math.ll
+Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES)
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
 	$(CCC) $(FAUST_OPTS) $(LLVM_OPTS) audio/Faust_plugins.cpp
 
