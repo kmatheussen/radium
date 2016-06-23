@@ -120,7 +120,7 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 FULL_VERSION ?= 1
 
 # Note that "make clean" must be run for DEBUG_BUILD_OPTS to take effect
-DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -DDISABLE_BDWGC # -fsanitize=address #-Og -
+DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -DDISABLE_BDWGC -fsanitize=address #-Og -
 # -Og -Og -fsanitize=address
 #-Og 
 #  -fsanitize=thread 
@@ -1717,7 +1717,7 @@ audio/faust_multibandcomp.cpp: audio/faust_multibandcomp.dsp $(FAUST_DEPENDENCIE
 
 
 faust_system_eq.o: audio/faust_system_eq.cpp
-	$(CCC) audio/faust_system_eq.cpp $(FAUST_OPTS) -DCLASSNAME=System_Eq_dsp -DDSP_NAME=\"System\ Eq\" -DCREATE_NAME=create_faust_system_eq_plugin -DDONT_NORMALIZE_EFFECT_VALUES
+	$(CCC) audio/faust_system_eq.cpp $(FAUST_OPTS) -DCLASSNAME=System_Eq_dsp -DDSP_NAME=\"System\ Eq\" -DCREATE_NAME=create_faust_system_eq_plugin -DFAUST_SYSTEM_EFFECT
 
 audio/faust_system_eq.cpp: audio/system_eq.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -cn System_Eq_dsp -a Faust_plugins_template.cpp system_eq.dsp -o faust_system_eq.cpp
@@ -1727,7 +1727,7 @@ audio/faust_system_eq.cpp: audio/system_eq.dsp $(FAUST_DEPENDENCIES) audio/filte
 
 
 faust_system_tremolo.o: audio/faust_system_tremolo.cpp
-	$(CCC) audio/faust_system_tremolo.cpp $(FAUST_OPTS) -DCLASSNAME=System_Tremolo_dsp -DDSP_NAME=\"System\ Tremolo\" -DCREATE_NAME=create_faust_system_tremolo_plugin -DDONT_NORMALIZE_EFFECT_VALUES
+	$(CCC) audio/faust_system_tremolo.cpp $(FAUST_OPTS) -DCLASSNAME=System_Tremolo_dsp -DDSP_NAME=\"System\ Tremolo\" -DCREATE_NAME=create_faust_system_tremolo_plugin -DFAUST_SYSTEM_EFFECT
 
 audio/faust_system_tremolo.cpp: audio/system_tremolo.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -cn System_Tremolo_dsp -a Faust_plugins_template.cpp system_tremolo.dsp -o faust_system_tremolo.cpp
@@ -1737,7 +1737,7 @@ audio/faust_system_tremolo.cpp: audio/system_tremolo.dsp $(FAUST_DEPENDENCIES) a
 
 
 faust_system_lowpass.o: audio/faust_system_lowpass.cpp
-	$(CCC) audio/faust_system_lowpass.cpp $(FAUST_OPTS) -DCLASSNAME=System_Lowpass_dsp -DDSP_NAME=\"System\ Lowpass\" -DCREATE_NAME=create_faust_system_lowpass_plugin -DDONT_NORMALIZE_EFFECT_VALUES
+	$(CCC) audio/faust_system_lowpass.cpp $(FAUST_OPTS) -DCLASSNAME=System_Lowpass_dsp -DDSP_NAME=\"System\ Lowpass\" -DCREATE_NAME=create_faust_system_lowpass_plugin -DFAUST_SYSTEM_EFFECT
 
 audio/faust_system_lowpass.cpp: audio/system_lowpass.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -cn System_Lowpass_dsp -a Faust_plugins_template.cpp system_lowpass.dsp -o faust_system_lowpass.cpp
@@ -1747,7 +1747,7 @@ audio/faust_system_lowpass.cpp: audio/system_lowpass.dsp $(FAUST_DEPENDENCIES) a
 
 
 faust_system_highpass.o: audio/faust_system_highpass.cpp
-	$(CCC) audio/faust_system_highpass.cpp $(FAUST_OPTS) -DCLASSNAME=System_Highpass_dsp -DDSP_NAME=\"System\ Highpass\" -DCREATE_NAME=create_faust_system_highpass_plugin -DDONT_NORMALIZE_EFFECT_VALUES
+	$(CCC) audio/faust_system_highpass.cpp $(FAUST_OPTS) -DCLASSNAME=System_Highpass_dsp -DDSP_NAME=\"System\ Highpass\" -DCREATE_NAME=create_faust_system_highpass_plugin -DFAUST_SYSTEM_EFFECT
 
 audio/faust_system_highpass.cpp: audio/system_highpass.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -cn System_Highpass_dsp -a Faust_plugins_template.cpp system_highpass.dsp -o faust_system_highpass.cpp
@@ -1757,7 +1757,7 @@ audio/faust_system_highpass.cpp: audio/system_highpass.dsp $(FAUST_DEPENDENCIES)
 
 
 faust_system_lowshelf.o: audio/faust_system_lowshelf.cpp
-	$(CCC) audio/faust_system_lowshelf.cpp $(FAUST_OPTS) -DCLASSNAME=System_Lowshelf_dsp -DDSP_NAME=\"System\ Lowshelf\" -DCREATE_NAME=create_faust_system_lowshelf_plugin -DDONT_NORMALIZE_EFFECT_VALUES
+	$(CCC) audio/faust_system_lowshelf.cpp $(FAUST_OPTS) -DCLASSNAME=System_Lowshelf_dsp -DDSP_NAME=\"System\ Lowshelf\" -DCREATE_NAME=create_faust_system_lowshelf_plugin -DFAUST_SYSTEM_EFFECT
 
 audio/faust_system_lowshelf.cpp: audio/system_lowshelf.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -cn System_Lowshelf_dsp -a Faust_plugins_template.cpp system_lowshelf.dsp -o faust_system_lowshelf.cpp
@@ -1767,7 +1767,7 @@ audio/faust_system_lowshelf.cpp: audio/system_lowshelf.dsp $(FAUST_DEPENDENCIES)
 
 
 faust_system_highshelf.o: audio/faust_system_highshelf.cpp
-	$(CCC) audio/faust_system_highshelf.cpp $(FAUST_OPTS) -DCLASSNAME=System_Highshelf_dsp -DDSP_NAME=\"System\ Highshelf\" -DCREATE_NAME=create_faust_system_highshelf_plugin -DDONT_NORMALIZE_EFFECT_VALUES
+	$(CCC) audio/faust_system_highshelf.cpp $(FAUST_OPTS) -DCLASSNAME=System_Highshelf_dsp -DDSP_NAME=\"System\ Highshelf\" -DCREATE_NAME=create_faust_system_highshelf_plugin -DFAUST_SYSTEM_EFFECT
 
 audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -cn System_Highshelf_dsp -a Faust_plugins_template.cpp system_highshelf.dsp -o faust_system_highshelf.cpp
@@ -1777,7 +1777,7 @@ audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIE
 
 
 faust_system_delay.o: audio/faust_system_delay.cpp
-	$(CCC) audio/faust_system_delay.cpp $(FAUST_OPTS) -DCLASSNAME=System_Delay_dsp -DDSP_NAME=\"System\ Delay\" -DCREATE_NAME=create_faust_system_delay_plugin -DDONT_NORMALIZE_EFFECT_VALUES
+	$(CCC) audio/faust_system_delay.cpp $(FAUST_OPTS) -DCLASSNAME=System_Delay_dsp -DDSP_NAME=\"System\ Delay\" -DCREATE_NAME=create_faust_system_delay_plugin -DFAUST_SYSTEM_EFFECT
 
 audio/faust_system_delay.cpp: audio/system_delay.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -cn System_Delay_dsp -a Faust_plugins_template.cpp system_delay.dsp -o faust_system_delay.cpp

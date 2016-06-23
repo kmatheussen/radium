@@ -531,7 +531,7 @@ static void faust_gui_zone_callback(float val, void* arg){
   int effect_num = controller->effect_num;
   
   Data *data = GET_DATA_FROM_PLUGIN(plugin);
-  if (fabs(val-data->automation_values[effect_num]) < fabs((max-min)/100.0)) // approx.
+  if (fabs(val - data->automation_values[effect_num]) < fabs((max-min)/100.0)) // approx.
     return;
 
   //printf("  Callback called %f. controller: %p\n      val/auto: %f %f", val, controller, val, data->automation_values[effect_num]);
@@ -558,7 +558,9 @@ static void faust_gui_zone_callback(float val, void* arg){
 //#include <QGtkStyle>
 static void create_gui(QDialog *parent, Data *data, SoundPlugin *plugin){
 
-  dsp *dsp = data->voices[0].dsp_instance;
+  Voice &voice = data->voices[0];
+  
+  dsp *dsp = voice.dsp_instance;
 
   data->qtgui = new QTGUI(parent);
   printf("     Created new QtGui %p\n", data->qtgui);
@@ -594,10 +596,10 @@ static void create_gui(QDialog *parent, Data *data, SoundPlugin *plugin){
   
   dsp->buildUserInterface(data->qtgui);
 
-  #if 1
-  int num_effects = data->voices[0].myUI._num_effects;
+#if 1
+  int num_effects = voice.myUI._num_effects;
   for(int i=0 ; i < num_effects ; i++){
-    MyUI::Controller *controller = &data->voices[0].myUI._controllers.at(i);
+    MyUI::Controller *controller = &voice.myUI._controllers.at(i);
     controller->effect_num = i;
     controller->plugin = plugin;
     data->qtgui->addCallback(controller->control_port, faust_gui_zone_callback, controller);
@@ -640,7 +642,16 @@ static Data *create_effect_plugin_data2(float samplerate, dsp *initialized_dsp){
 static void *create_effect_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int blocksize, bool is_loading){
   dsp *dsp = new CLASSNAME;
   dsp->instanceInit(samplerate);
-  return create_effect_plugin_data2(samplerate, dsp);
+  Data *data = create_effect_plugin_data2(samplerate, dsp);
+
+#ifndef FAUST_SYSTEM_EFFECT
+  if (plugin != NULL) { // plugin==NULL during instrument type initialization, when we create test data. (took a long time to hunt down this bug)
+    data->qtgui_parent = new QDialog(g_main_window);
+    create_gui(data->qtgui_parent, data, plugin);
+  }
+#endif
+  
+  return data;
 }
 #endif
 
@@ -678,10 +689,15 @@ static void *create_instrument_plugin_data(const SoundPluginType *plugin_type, s
   Data *data = create_instrument_plugin_data2(samplerate, dsps);
 
   create_automation_values(data);
-  
+
+  data->qtgui_parent = new QDialog(g_main_window);
+  create_gui(data->qtgui_parent, data, plugin);
+
   return data;
 }
 #endif
+
+// need to add include path of loaded faust source
 
 // must be called from main thread
 static void delete_dsps_and_data1(Data *data){
@@ -752,7 +768,7 @@ static void set_effect_value2(Data *data, int effect_num, float value, enum Valu
   float scaled_value;
 
   if(value_format==PLUGIN_FORMAT_SCALED){
-#ifdef DONT_NORMALIZE_EFFECT_VALUES
+#ifdef FAUST_SYSTEM_EFFECT
     scaled_value = value;
 #else
     MyUI::Controller *controller = &data->voices[0].myUI._controllers.at(effect_num);
@@ -792,7 +808,7 @@ static float get_effect_value2(Data *data, int effect_num, enum ValueFormat valu
   //printf("   Getting effect from controller %p\n", controller);
   
   if(value_format==PLUGIN_FORMAT_SCALED){
-#ifdef DONT_NORMALIZE_EFFECT_VALUES
+#ifdef FAUST_SYSTEM_EFFECT
     return safe_float_read(controller->control_port);
 #else
     float min = controller->min_value;
@@ -837,11 +853,6 @@ static const char *get_effect_description(struct SoundPlugin *plugin, int effect
 
 
 static void show_gui2(Data* data, SoundPlugin *plugin){
-  if(data->qtgui_parent==NULL){
-    data->qtgui_parent = new QDialog(g_main_window);
-    create_gui(data->qtgui_parent, data, plugin);
-  }
-
   printf("   Showing gui %p\n",data->qtgui);
   safeShow(data->qtgui_parent);
   data->qtgui->run();
@@ -854,10 +865,8 @@ static void show_gui(struct SoundPlugin *plugin){
 
 static void hide_gui2(Data *data){
   printf("   Hiding gui %p\n",data->qtgui);
-  if (data->qtgui != NULL){
-    data->qtgui_parent->hide();
-    data->qtgui->stop();
-  }
+  data->qtgui_parent->hide();
+  data->qtgui->stop();
 }
 
 static void hide_gui(struct SoundPlugin *plugin){
@@ -893,13 +902,15 @@ static void fill_type(SoundPluginType *type){
  type->get_effect_value         = get_effect_value;
  type->get_display_value_string = get_display_value_string;
  type->get_effect_description   = get_effect_description;
- 
- if (strcmp(DSP_NAME, "Multiband Compressor")){
+
+#ifndef FAUST_SYSTEM_EFFECT
+ if (strcmp(DSP_NAME, "Multiband Compressor")){   
    type->show_gui = show_gui;
    type->hide_gui = hide_gui; 
    type->gui_is_visible = gui_is_visible;    
  }
-
+#endif
+ 
  type->data                     = NULL;
 };
 
@@ -913,7 +924,9 @@ void CREATE_NAME (void){
     fill_type(&faust_type);
   
     CLASSNAME::classInit(MIXER_get_sample_rate());
-  
+
+    // TODO: Don't do this. Just dispatch during runtime which rt_process to call.
+    //
     Data *data = (Data*)create_effect_plugin_data(&faust_type, NULL, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size(), false);
   
     faust_type.name = DSP_NAME;

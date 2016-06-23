@@ -285,13 +285,6 @@ static void dev_show_gui(struct SoundPlugin *plugin){
   Data *data = devdata->reply.data;
 
   if (data!=NULL) {
-
-    if (devdata->qtgui_parent == NULL)
-      devdata->qtgui_parent = new QDialog(g_main_window);
-
-    if (data->qtgui==NULL)
-      create_gui(devdata->qtgui_parent, data, plugin);
-
     safeShow(devdata->qtgui_parent);
     data->qtgui->run();
   }
@@ -355,7 +348,7 @@ void create_faust_plugin(void){
     "<p>"
     "Hints:\n"
     "<UL>"
-    "<LI> To zoom, either in the editor or in a diagram, press CTRL while scrolling the mouse wheel."
+    "<LI> To zoom, either the editor or a diagram, press CTRL while scrolling the mouse wheel."
     "<LI> Running maximized (by pressing the \"Maximize\" button) can be very convenient when developing."
     "</UL"
     ;
@@ -448,6 +441,22 @@ static bool FAUST_handle_fff_reply(struct SoundPlugin *plugin, const FFF_Reply &
 
   FFF_Reply old_reply = devdata->reply;
 
+  // handle gui
+  {
+    if (devdata->qtgui_parent == NULL)
+      devdata->qtgui_parent = new QDialog(g_main_window);
+
+    if (old_reply.data != NULL && old_reply.data->qtgui!=NULL){
+      old_reply.data->qtgui->stop();
+      devdata->qtgui_parent->layout()->removeWidget(old_reply.data->qtgui);
+    }
+
+    create_gui(devdata->qtgui_parent, reply.data, plugin);
+
+    if (devdata->qtgui_parent->isVisible())
+      reply.data->qtgui->run();    
+  }
+  
   hash_t *effects_state = is_initializing ? NULL : PLUGIN_get_effects_state(plugin);
 
   PLAYER_lock();{
@@ -459,15 +468,6 @@ static bool FAUST_handle_fff_reply(struct SoundPlugin *plugin, const FFF_Reply &
 
   if (old_reply.data != NULL)
     PATCH_handle_fxs_when_fx_names_have_changed(patch);
-
-  if (old_reply.data != NULL && old_reply.data->qtgui!=NULL){
-    printf("          Removing data->qtgui %p\n", old_reply.data->qtgui);
-    old_reply.data->qtgui->stop();
-    devdata->qtgui_parent->layout()->removeWidget(old_reply.data->qtgui);
-    create_gui(devdata->qtgui_parent, reply.data, plugin);
-    if (devdata->qtgui_parent->isVisible())
-      reply.data->qtgui->run();
-  }
   
   FFF_request_free(devdata->id, old_reply);
 
