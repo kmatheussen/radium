@@ -1344,7 +1344,14 @@ protected:
         //		updateAllZones();
 		updateAllGuis();
 	}
-    
+
+  void safeSetFocus(){
+    printf("   \n\n\n    Faust GUI safe set focus    \n\n\n\n\n");
+    GL_lock();{
+      setFocus();
+    }GL_unlock();    
+  }
+
 public:
     
     QTGUI(QWidget* parent) : QWidget(parent)
@@ -1619,11 +1626,12 @@ public:
         }
         //insert(label, new QDoubleSpinBox());
         if (label && label[0]) openVerticalBox(label);
-        QDoubleSpinBox*     w = new QDoubleSpinBox();
+        QDoubleSpinBox*     w = new FocusSnifferQDoubleSpinBox(NULL); //QDoubleSpinBox();
         uiNumEntry*         c = new uiNumEntry(this, zone, w, init, min, max, step);
         insert(label, w);
         w->setSuffix(fUnit[zone].c_str());
         QObject::connect(w, SIGNAL(valueChanged(double)), c, SLOT(setValue(double)));
+        QObject::connect(w, SIGNAL(editingFinished()), this, SLOT(safeSetFocus()));
         if (label && label[0]) closeBox();
         checkForTooltip(zone, w);
         clearMetadata();
@@ -1634,7 +1642,7 @@ public:
     {
         //insert(label, new QDoubleSpinBox());
         if (label && label[0]) openVerticalBox(label);
-        QDoubleSpinBox*     w = new QDoubleSpinBox();
+        QDoubleSpinBox*     w = new FocusSnifferQDoubleSpinBox(NULL); //QDoubleSpinBox();
         w->setAlignment(Qt::AlignHCenter);
 #if 1
         w->setStyleSheet(
@@ -1650,6 +1658,7 @@ public:
         w->setButtonSymbols(QAbstractSpinBox::NoButtons);
         w->setSuffix(fUnit[zone].c_str());
         QObject::connect(w, SIGNAL(valueChanged(double)), c, SLOT(setValue(double)));
+        QObject::connect(w, SIGNAL(editingFinished()), this, SLOT(safeSetFocus()));
         if (label && label[0]) closeBox();
         checkForTooltip(zone, w);
         clearMetadata();
