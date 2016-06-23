@@ -21,6 +21,8 @@ struct Meta
 
 #else
 
+  #include "../common/nsmtracker.h"
+  #include "../Qt/FocusSniffers.h"
   #include <faust/gui/faustqt.h>
 
 #endif

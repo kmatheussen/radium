@@ -13,6 +13,10 @@
 #include "../bin/packages/faust2/architecture/faust/dsp/dsp.h"
 #include "../bin/packages/faust2/architecture/faust/gui/UI.h"
 #include "../bin/packages/faust2/architecture/faust/gui/GUI.h"
+
+#include "../common/nsmtracker.h"
+
+#include "../Qt/FocusSniffers.h"
 #include "../bin/packages/faust2/architecture/faust/gui/faustqt.h"
 //}
 
@@ -28,7 +32,6 @@ std::list<GUI*>  GUI::fGuiList;
 
 
 
-#include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 #include "../common/patch_proc.h"
 
