@@ -220,6 +220,18 @@ public:
 
   QString small_number(int n){
     const QString a[10] = {
+#ifdef FOR_WINDOWS
+      QString("0"),
+      QString("1"),
+      QString("2"),
+      QString("3"),
+      QString("4"),
+      QString("5"),
+      QString("6"),
+      QString("7"),
+      QString("8"),
+      QString("9")
+#else
       QString("\u2080"),
       QString("\u2081"),
       QString("\u2082"),
@@ -230,6 +242,7 @@ public:
       QString("\u2087"),
       QString("\u2088"),
       QString("\u2089")
+#endif
     };
 
     QString source = QString::number(n);

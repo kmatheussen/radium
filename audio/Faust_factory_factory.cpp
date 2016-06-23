@@ -247,7 +247,7 @@ namespace{
         reply.error_message = svg_dir->errorString();
         if (reply.error_message==""){
           R_ASSERT(false);
-          reply.error_message=="Unable to create temporary directory";
+          reply.error_message="Unable to create temporary directory";
         }
         delete svg_dir;
         return false;
