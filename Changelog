@@ -1,3 +1,24 @@
+Changes 3.9.3 -> 3.9.4:
+* Show min/avg/max CPU usage for each individual instrument.
+* Fix rare divide by zero bug when displaying CPU usage.
+* 2Bar Demo Track by Tobias Lutzenkirchen included in the Project menu.
+* FaustDev instrument. Develop faust instruments inside Radium.
+* Instrument maximimize button.
+* Faust instruments GUI button. Only the blue style available for now.
+* Add separator between plugin and system effects in the effect popup menu.
+* Start counting tab pages from 0 (not 1) in the plugin effect widgets.
+* Don't play if pressing shift or altgr when the cursor is placed in a text field.
+* Load song: Inform user when the effect names of a plugin has changed and
+  will be ignored.
+* LADSPA/Linux: Search for plugins in LADSPA_PATH (and bin/ladspa) before
+  searching in the default locations.
+* Don't create undo data when loading song, and when exiting.
+* Ensure faust effect names are unique. Important when saving and
+  loading songs since effects values are stored by name, not by index.
+* Make sure editor is updated when the instrument widget automatically
+  adjusts its height.
+
+
 Changes 3.9.2 -> 3.9.3:
 * Fix crash when changing the pitch of a note
 * Don't show assertion window when a midi device
