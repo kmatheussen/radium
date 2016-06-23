@@ -85,11 +85,7 @@ DEFINE_ATOMIC(bool, g_currently_processing_dsp) = false;
 
 jack_client_t *g_jack_client;
 static int g_jack_client_priority;
-DEFINE_ATOMIC(int, g_max_cpu_usage) = 0.0f;
-DEFINE_ATOMIC(int, g_min_cpu_usage) = 0.0f;
-DEFINE_ATOMIC(int, g_num_cpu_usage) = 0;
-DEFINE_ATOMIC(int, g_avg_cpu_usage) = 0.0f;
-static float g_total_cpu_usage = 0;
+struct CpuUsage g_cpu_usage;
 
 static DEFINE_ATOMIC(bool, g_jack_is_running) = true;
 
@@ -711,35 +707,12 @@ struct Mixer{
       jack_cycle_signal(_rjack_client, 0);
 
 
-      // Calculate CPU usage
+      // CPU usage
 
       float new_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
-      int i_new_cpu_usage = 1000.0 * new_cpu_usage;
 
-      int num_cpu_usage = ATOMIC_GET(g_num_cpu_usage);
-
-      if (num_cpu_usage==0) {
-        
-        g_total_cpu_usage = i_new_cpu_usage;
-        ATOMIC_SET(g_max_cpu_usage, i_new_cpu_usage);
-        ATOMIC_SET(g_min_cpu_usage, i_new_cpu_usage);
-        
-      } else {
-        g_total_cpu_usage += i_new_cpu_usage;
-        
-        if (i_new_cpu_usage > ATOMIC_GET(g_max_cpu_usage))
-          ATOMIC_SET(g_max_cpu_usage, i_new_cpu_usage);
-      
-        if (i_new_cpu_usage < ATOMIC_GET(g_min_cpu_usage))
-          ATOMIC_SET(g_min_cpu_usage, i_new_cpu_usage);
-      }
-
-      num_cpu_usage++;
-      
-      ATOMIC_SET(g_num_cpu_usage, num_cpu_usage);
-
-      ATOMIC_SET(g_avg_cpu_usage, g_total_cpu_usage / num_cpu_usage);
-      
+      g_cpu_usage.addUsage(new_cpu_usage);
+                           
       if (new_cpu_usage < 98)
         excessive_time.restart();
 

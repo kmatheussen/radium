@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
+#include "../audio/CpuUsage.hpp"
 
 #include "../Qt/Qt_MyQButton.h"
 #include "../Qt/Qt_MyQSpinBox.h"
@@ -45,10 +46,7 @@ struct Patch *g_system_out_patch = NULL;
 struct SoundPlugin *g_system_out_plugin = NULL;
 
 extern bool drunk_velocity;
-extern DEFINE_ATOMIC(int, g_max_cpu_usage);
-extern DEFINE_ATOMIC(int, g_min_cpu_usage);
-extern DEFINE_ATOMIC(int, g_num_cpu_usage);
-extern DEFINE_ATOMIC(int, g_avg_cpu_usage);
+extern CpuUsage g_cpu_usage;
 
 extern int scrolls_per_second;
 extern int default_scrolls_per_second;
@@ -60,21 +58,18 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     Bottom_bar_widget *bottom_bar_widget;
     void timerEvent(QTimerEvent * e){
       QString usage;
-      
-      float mincpu = ATOMIC_GET(g_min_cpu_usage) / 1000.0;
-      float avgcpu = ATOMIC_GET(g_avg_cpu_usage) / 1000.0;
-      float maxcpu = ATOMIC_GET(g_max_cpu_usage) / 1000.0;
+
+      float mincpu = g_cpu_usage.min();
+      float maxcpu = g_cpu_usage.max();
+      float avgcpu = g_cpu_usage.avg();
       
       usage.sprintf("%s%.1f / %s%.1f / %s%.1f",
                     mincpu < 10 ? " " : "", mincpu,
                     avgcpu<10?" ":"", avgcpu,
                     maxcpu < 10?" ":"", maxcpu
                     );
-      //printf("Usage: %f\n",g_cpu_usage);
-      ATOMIC_SET(g_max_cpu_usage, 0);
-      ATOMIC_SET(g_min_cpu_usage, 10000000);
-      ATOMIC_SET(g_avg_cpu_usage, 0);
-      ATOMIC_SET(g_num_cpu_usage, 0);
+
+      g_cpu_usage.reset();
 
       bottom_bar_widget->cpu_label->setText(usage);
     }
