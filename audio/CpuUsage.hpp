@@ -60,6 +60,11 @@ struct CpuUsage{
 };
 
 #if USE_QT4
+
+#include <QFont>
+#include <QWidget>
+#include <QApplication>
+
 static inline void set_cpu_usage_font_and_width(QWidget *widget, bool shows_integers){
   QFont sansFont;
       

@@ -454,8 +454,15 @@ public:
   void calledRegularlyByParent(void){
     
     //printf("hello %p\n", this);
+    
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
-    if (_plugin_widget->isVisible())
+    bool is_visible = _plugin_widget->isVisible();
+
+    if (plugin != NULL)
+      ATOMIC_SET(plugin->is_visible, is_visible);
+
+    if (is_visible)
       _plugin_widget->calledRegularlyByParent();
     
     callSystemSliderpainterUpdateCallbacks();

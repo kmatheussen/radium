@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include <math.h>
 
+#include "../weakjack/weak_libjack.h"
 
 static inline int myisnormal(float val){
   return isnormal(val);
@@ -63,6 +64,7 @@ static inline int myisinf(float val){
 #include "SoundProducer_proc.h"
 #include "Mixer_proc.h"
 #include "MultiCore_proc.h"
+#include "CpuUsage.hpp"
 
 #include "fade_envelopes.h"
 
@@ -954,6 +956,7 @@ public:
   }
 
   void RT_process(int64_t time, int num_frames, bool process_plugins){
+    
     R_ASSERT(has_run(time)==false);
 
     _last_time = time;
@@ -1151,11 +1154,38 @@ void SP_remove_all_links(radium::Vector<SoundProducer*> &soundproducers){
 void SP_RT_called_for_each_soundcard_block(SoundProducer *producer){
   producer->RT_called_for_each_soundcard_block();
 }
-    
-void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins){
-  producer->RT_process(time, num_frames, process_plugins);
+
+void CpuUsage_delete(void *cpu_usage){
+  delete (CpuUsage*)cpu_usage;
 }
 
+void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins){
+  SoundPlugin *plugin = producer->_plugin;
+  
+  bool is_visible = ATOMIC_GET(plugin->is_visible);
+  CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET(plugin->cpu_usage);
+  
+  bool add_cpu_data = is_visible && cpu_usage!=NULL;
+
+  //double start_time;
+  jack_time_t start_time;
+  
+  if (add_cpu_data)
+    start_time = jack_get_time();
+  //start_time = monotonic_seconds(); // Checking if max time would fluctuate less with this timer. Didn't make a difference though. Both are probably using CLOCK_MONOTONIC.
+  
+  producer->RT_process(time, num_frames, process_plugins);
+
+  if (add_cpu_data){
+    jack_time_t end_time = jack_get_time();
+    //double end_time = monotonic_seconds();
+    
+    //float new_cpu_usage = (end_time-start_time) * 100.0 * MIXER_get_sample_rate() / (double)num_frames;
+    float new_cpu_usage = (double)(end_time-start_time) * 0.0001 * MIXER_get_sample_rate() / num_frames;
+      
+    cpu_usage->addUsage(new_cpu_usage);
+  }
+}
 
 void SP_write_mixer_tree_to_disk(QFile *file){
   radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();

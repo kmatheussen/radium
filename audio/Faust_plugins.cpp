@@ -97,7 +97,7 @@ static void dev_RT_process(SoundPlugin *plugin, int64_t time, int num_frames, fl
   if (data != NULL) {
     num_inputs = data->voices[0].dsp_instance->getNumInputs();
     num_outputs = data->voices[0].dsp_instance->getNumOutputs();
-    
+
     if (num_inputs > MAX_CHANNELS || num_outputs > MAX_CHANNELS){
       for(int ch = 0 ; ch < MAX_CHANNELS ; ch++)
         memset(outputs[ch], 0, num_frames*sizeof(float));
@@ -109,10 +109,11 @@ static void dev_RT_process(SoundPlugin *plugin, int64_t time, int num_frames, fl
     else
       RT_process_effect2(data, time, num_frames, inputs, outputs);
   }
-  
+
   // clear unused channels
   for(int ch = num_outputs ; ch < MAX_CHANNELS ; ch++)
     memset(outputs[ch], 0, num_frames*sizeof(float));
+
 }
 
 static void dev_play_note(struct SoundPlugin *plugin, int64_t time, note_t note){
@@ -350,11 +351,13 @@ void create_faust_plugin(void){
   //plugin_type->plugin_takes_care_of_savable_values = true;
     
   plugin_type->info =
-    "FAUST (Functional Audio Stream) is a functional programming language specifically designed for real-time signal processing and synthesis. FAUST targets high-performance signal processing applications and audio plug-ins for a variety of platforms and standards. More info <A href=\"http://faust.grame.fr\">here</a>.\n"
-    "\n"
+    "FAUST (Functional Audio Stream) is a functional programming language specifically designed for real-time signal processing and synthesis. FAUST targets high-performance signal processing applications and audio plug-ins for a variety of platforms and standards. More info <A href=\"http://faust.grame.fr\">here</a>."
+    "<p>"
     "Hints:\n"
-    "* To zoom in either in the editor or in a diagram, press CTRL while using the mouse scroll wheel.\n"
-    "* Pressing the \"Maximize\" button can be very convenient when using this instrument"
+    "<UL>"
+    "<LI> To zoom, either in the editor or in a diagram, press CTRL while scrolling the mouse wheel."
+    "<LI> Running maximized (by pressing the \"Maximize\" button) can be very convenient when developing."
+    "</UL"
     ;
 
   PR_add_plugin_type(plugin_type);

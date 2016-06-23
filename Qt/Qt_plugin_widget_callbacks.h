@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Sampler_plugin_proc.h"
 #include "../audio/undo_pd_controllers_proc.h"
 #include "../audio/Juce_plugins_proc.h"
+#include "../audio/CpuUsage.hpp"
 
 #include "Qt_plugin_widget_callbacks_proc.h"
 
@@ -57,6 +58,8 @@ public:
 
   bool _is_large;
   int _last_height;
+
+  int64_t _last_cpu_update_time;
   
 public:
 
@@ -72,11 +75,14 @@ public:
     , _plugin_widget(NULL)
     , _is_large(false)
     , _last_height(10)
+    , _last_cpu_update_time(0)
     {
       R_ASSERT(_patch!=NULL);
         
       setupUi(this);
 
+      set_cpu_usage_font_and_width(plugin_info, true);
+      
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
 
@@ -110,7 +116,9 @@ public:
         info = type->type_name;
       else
         info = QString(type->type_name) + ": " + type->name;
-      
+
+      info = info + "  " + small_number(type->num_inputs) + " \u208b " + small_number(type->num_outputs);
+    
       //info = info.sprintf(". Inputs: %d. Output: %d",type->num_inputs,type->num_outputs);
       
       info_button->setText(info);
@@ -210,6 +218,67 @@ public:
     update_widget();
   }
 
+  QString small_number(int n){
+    const QString a[10] = {
+      QString("\u2080"),
+      QString("\u2081"),
+      QString("\u2082"),
+      QString("\u2083"),
+      QString("\u2084"),
+      QString("\u2085"),
+      QString("\u2086"),
+      QString("\u2087"),
+      QString("\u2088"),
+      QString("\u2089")
+    };
+
+    QString source = QString::number(n);
+    QString ret = "";
+
+    for(int i = 0 ; i < source.size(); i++)
+      ret += a[QString(source[i]).toInt()];
+
+    return ret;
+  }
+
+  void update_cpu_usage(bool force){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    
+    if (plugin != NULL) {
+
+      CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET(plugin->cpu_usage);
+      
+      if (cpu_usage==NULL){
+        
+        ATOMIC_SET(plugin->cpu_usage, new CpuUsage);
+        
+      } else {
+        
+        int64_t time = TIME_get_ms();
+        
+        if (force || time > _last_cpu_update_time + 1000){
+          QString usage;
+          
+          int mincpu = cpu_usage->min();
+          int maxcpu = cpu_usage->max();
+          int avgcpu = cpu_usage->avg();
+          
+          usage.sprintf("%s%d / %s%d / %s%d",
+                        mincpu < 10 ? " " : "", mincpu,
+                        avgcpu < 10 ? " " : "", avgcpu,
+                        maxcpu < 10 ? " " : "", maxcpu
+                        );
+          
+          cpu_usage->reset();
+          
+          plugin_info->setText(usage);
+          
+          _last_cpu_update_time = time;
+        }
+      }
+    }
+  }
+  
   // only called when visible
   void calledRegularlyByParent(void){
 #ifdef WITH_FAUST_DEV
@@ -218,7 +287,7 @@ public:
 #endif
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
+    
     if (plugin != NULL) {
       const SoundPluginType *type = plugin->type;
       
@@ -234,6 +303,9 @@ public:
       update_preset_widgets();
 
       callSliderpainterUpdateCallbacks();
+
+      update_cpu_usage(false);
+
     }
   }
 
@@ -317,6 +389,8 @@ public:
 #endif
     
     update_preset_widgets();
+
+    //update_cpu_usage(true);
   }
 
   void update_preset_widgets(){

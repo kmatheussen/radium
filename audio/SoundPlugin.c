@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_audio_effect_proc.h"
 #include "system_compressor_wrapper_proc.h"
 #include "audio_instrument_proc.h"
+#include "CpuUsage.hpp"
 
 #include "SoundPlugin_proc.h"
 
@@ -446,6 +447,7 @@ void PLUGIN_delete(SoundPlugin *plugin){
 
   V_free(plugin->automation_values);
 
+  CpuUsage_delete(ATOMIC_GET(plugin->cpu_usage));
   
   memset(plugin,-1,sizeof(SoundPlugin)); // for debugging. Crashes faster if something is wrong.
   V_free(plugin);

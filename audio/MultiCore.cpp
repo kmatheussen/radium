@@ -61,7 +61,7 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
   
   double start_time = monotonic_seconds();
   {
-    sp->RT_process(time, num_frames, process_plugins);
+    SP_RT_process(sp, time, num_frames, process_plugins);
   }
   double duration = monotonic_seconds() - start_time;
   if (duration > sp->running_time)

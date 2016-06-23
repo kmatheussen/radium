@@ -1491,10 +1491,6 @@ Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
 	$(CCC) $(FAUST_OPTS) $(LLVM_OPTS) audio/Faust_plugins.cpp
 
-# llvm_math.h was found here: https://sourceforge.net/p/faudiostream/faustlive/ci/f5790abf39a40cc31af40bae6f1ca2815d486165/tree/src/Utilities/llvm_math.c (after googling)
-#bin/llvm_math.ll: audio/llvm_math.c
-#	/home/kjetil/.wine/drive_c/Program\ Files/LLVM/bin/clang.exe -m64 -emit-llvm -O3 audio/llvm_math.c -c -S -o bin/llvm_math.ll
-
 audio/mfaustqt2.cpp: bin/packages/faust2/architecture/faust/gui/faustqt.h
 	cd audio && $(MOC) ../bin/packages/faust2/architecture/faust/gui/faustqt.h >mfaustqt2.cpp
 
@@ -1801,7 +1797,7 @@ audio/faust_system_delay.cpp: audio/system_delay.dsp $(FAUST_DEPENDENCIES) audio
 
 SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/Queue.hpp
 	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
-	$(CCC) audio/SoundProducer.cpp $(QTOPT)  # $(CPUOPT)
+	$(CCC) audio/SoundProducer.cpp $(JACKOPT) $(QTOPT) # $(CPUOPT)
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
 
 #-finline-functions -funswitch-loops -fvect-cost-model -fipa-cp-clone  -fpredictive-commoning -fgcse-after-reload

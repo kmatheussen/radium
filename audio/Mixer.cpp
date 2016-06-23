@@ -51,8 +51,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundProducer_proc.h"
 #include "SoundPluginRegistry_proc.h"
 #include "MultiCore_proc.h"
+#include "CpuUsage.hpp"
 
 #include "Mixer_proc.h"
+
 
 volatile bool g_test_crashreporter_in_audio_thread = false;
 

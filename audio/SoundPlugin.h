@@ -370,6 +370,9 @@ typedef struct SoundPlugin{
   float *bus_volume_peak_values2;
   float *bus_volume_peak_values3;
   float *bus_volume_peak_values4;
+
+  DEFINE_ATOMIC(bool, is_visible);
+  DEFINE_ATOMIC(void *, cpu_usage);
 } SoundPlugin;
 
 

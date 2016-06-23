@@ -144,21 +144,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     sps_line->hide();
 
     // Adjust cpu label width
-    {
-      QFont sansFont;
-      
-      sansFont.setFamily("Bitstream Vera Sans Mono");
-      sansFont.setStyleName("Bold");
-      sansFont.setPointSize(QApplication::font().pointSize()-1.0);
-
-      cpu_label->setFont(sansFont);
-
-      QFontMetrics fm(sansFont); //QApplication::font());
-      //QRect r =fm.boundingRect(SLIDERPAINTER_get_string(_painter));
-      int width = fm.width("50.0 / 90.5 / 00.5");// + 5;
-      cpu_label->setMinimumWidth(width);
-      cpu_label->setMaximumWidth(width);
-    }
+    set_cpu_usage_font_and_width(cpu_label, false);
 
     // Adjust velocity slider widths
     {
