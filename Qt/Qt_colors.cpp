@@ -27,7 +27,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qfile.h>
 
 #include <Qsci/qsciscintilla.h>
+
+#include "../common/nsmtracker.h"
+#include "FocusSniffers.h"
 #include <faust/gui/faustqt.h>
+
 
 #ifdef USE_QT3
 #include <qobjectlist.h>
