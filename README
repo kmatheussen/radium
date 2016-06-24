@@ -11,7 +11,7 @@ HOW TO MAKE IT RUN
           touch audio/*.cpp common/gfx_op_queue_generated.c common/visual_op_queue_proc.h
           make packages
           BUILDTYPE=RELEASE ./build_linux.sh -j7
-          ./start.sh
+          bin/radium
           "
 
 
