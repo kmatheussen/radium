@@ -77,7 +77,9 @@ static bool Load(const wchar_t *filename){
 	}
 
 	DC_fgets();
-
+        if (dc.success==false)
+          return false;
+        
 	if(strcmp("RADIUM SONG",dc.ls)){
           GFX_Message(NULL,"First line in song was not 'RADIUM SONG', but '%s'. Last: %d\n",dc.ls,dc.ls[strlen(dc.ls)-1]);
           DISK_close_and_delete(dc.file);
@@ -85,6 +87,8 @@ static bool Load(const wchar_t *filename){
 	}
 
 	disk_load_version=DC_LoadF();
+        if (dc.success==false)
+          return false;
 
 	if(disk_load_version>0.4201 && disk_load_version<0.50){
 		disk_load_version=0.51;
@@ -123,6 +127,9 @@ static bool Load(const wchar_t *filename){
 	dc.success=true;
 
 	DC_Next();
+        if (dc.success==false)
+          return false;
+        
 	if(strcmp(dc.ls,"OSSTUFF")){
           GFX_Message(NULL, "OSSTUFF not found, but: '%s'. File: '%s'\n",dc.ls,STRING_get_chars(filename));
           DISK_close_and_delete(dc.file);
