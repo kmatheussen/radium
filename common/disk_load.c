@@ -68,6 +68,8 @@ float disk_load_version;
 static bool Load(const wchar_t *filename){
 	struct Root *newroot;
 
+        dc.success=true;
+
         curr_disk_line = 0;
 
 	dc.file=DISK_open_for_reading(filename);
@@ -124,7 +126,6 @@ static bool Load(const wchar_t *filename){
 	dc.filename=filename;
 
 	dc.playlist=NULL;
-	dc.success=true;
 
 	DC_Next();
         if (dc.success==false)
@@ -282,7 +283,10 @@ void NewSong_CurrPos(struct Tracker_Windows *window){
   //char temp[4098];
   //sprintf(temp,"%s%s%s",OS_get_program_path(), OS_get_directory_separator(), "new_song.rad");
   //Load_CurrPos_org(window,talloc_strdup(temp));
-  Load_CurrPos_org(window, STRING_create("new_song.rad"));
+
+  Load_CurrPos_org(window, OS_get_full_program_file_path(STRING_create("new_song.rad")));
+
+  
   GFX_SetWindowTitle(root->song->tracker_windows, STRING_create("Radium - New song."));
   dc.filename=NULL;
 }

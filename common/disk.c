@@ -149,7 +149,7 @@ static void DC_fgetsNoMatterWhat(void){
 	char *ret = dc.ls = DISK_read_trimmed_line(dc.file);
 
 	if(ret==NULL){
-          GFX_Message(NULL, "Unable to load string. Line %d",curr_disk_line);
+          GFX_Message(NULL, "Unable to read string from file \"%s\". Line: %d.",curr_disk_line,STRING_get_chars(DISK_get_filename(dc.file)));
           dc.success=false;
           return;
 	}

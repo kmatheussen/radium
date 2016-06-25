@@ -39,9 +39,10 @@ struct _radium_os_disk {
     WRITE
   };
 
+  QString filename;
+
 private:
   
-  QString filename;
   QFile *read_file;
   QTemporaryFile *temporary_write_file;
 
@@ -246,6 +247,10 @@ disk_t *DISK_open_binary_for_reading(const wchar_t *wfilename){
   return disk;
 }
 
+wchar_t *DISK_get_filename(disk_t *disk){
+  return STRING_create(disk->filename);
+}
+
 int DISK_write_qstring(disk_t *disk, QString s){
   R_ASSERT(disk->is_binary==false);
   R_ASSERT(disk->type==disk_t::WRITE);
@@ -265,7 +270,6 @@ int DISK_write(disk_t *disk, const char *cdata){
   QString data = QString::fromUtf8(cdata);
   return DISK_write_qstring(disk, data);
 }
-
 
 QString g_file_at_end("_________FILE_AT_END");
 
