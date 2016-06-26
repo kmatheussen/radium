@@ -53,7 +53,7 @@ extern LANGSPEC void GFX_update_current_instrument_widget(void);
 
 #endif
 
-extern LANGSPEC void AUDIOWIDGET_change_height(struct Patch *patch, SizeType type);
+extern LANGSPEC void AUDIOWIDGET_change_height(struct Patch *patch, enum SizeType type);
 #if 0
 extern LANGSPEC void AUDIOWIDGET_show_large(struct Patch *patch);
 extern LANGSPEC void AUDIOWIDGET_show_small(struct Patch *patch);

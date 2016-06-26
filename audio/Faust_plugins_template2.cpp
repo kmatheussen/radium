@@ -575,7 +575,7 @@ static void create_gui(QDialog *parent, Data *data, SoundPlugin *plugin){
     stylesheet = " ";
 
     //QString filename = OS_get_full_program_file_path("faust_plugins_style.css");
-    QString filename = OS_get_full_program_file_path("packages/faust2/architecture/faust/gui/Styles/Blue.qss");
+    QString filename = OS_get_full_program_file_path("packages/faust2/architecture/faust/gui/Styles/" + QString(getFaustGuiStyle()) + ".qss");
     disk_t *disk = DISK_open_for_reading(filename);
     if (disk==NULL){
       

@@ -1380,7 +1380,7 @@ static bool g_native_file_requesters;
 bool useNativeFileRequesters(void){
 #if FOR_WINDOWS
 
-  return true;  // Workaround. QFileDialog has lots bugs on windows, both native and non-native. I have not found anything in Qt that works.
+  return true;  // Workaround. non-native QFileDialog freezes on windows.
 
 #else
 
@@ -1419,6 +1419,48 @@ void testCrashreporterInAudioThread(void){
 void testErrorMessage(void){
   SYSTEM_show_message("Error message seems to work");
 }
+
+// FAUST
+
+static int g_faust_optimization_level;
+
+int getFaustOptimizationLevel(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    int default_value = 4;
+    g_faust_optimization_level = SETTINGS_read_int("faust_optimization_level", default_value);
+    has_inited = true;
+  }
+
+  return g_faust_optimization_level;
+}
+
+void setFaustOptimizationLevel(int level){
+  g_faust_optimization_level = level;
+  SETTINGS_write_int("faust_optimization_level", level);
+}
+
+
+static const char *g_faust_gui_style;
+
+const char *getFaustGuiStyle(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    const char *default_value = "Blue";
+    g_faust_gui_style = SETTINGS_read_string("faust_gui_style", default_value);
+    has_inited = true;
+  }
+
+  return g_faust_gui_style;
+}
+
+void setFaustGuiStyle(const char *style){
+  g_faust_gui_style = talloc_strdup(style);
+  SETTINGS_write_string("faust_gui_style", style);
+}
+
 
 // PLAYLIST
 

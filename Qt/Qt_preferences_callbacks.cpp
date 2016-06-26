@@ -264,7 +264,7 @@ class Preferences : public QDialog, public Ui::Preferences {
       Vst_paths_widget *vst_widget = new Vst_paths_widget;
       vst_widget->buttonBox->hide();
       
-      tabWidget->addTab(vst_widget, "VST");
+      tabWidget->insertTab(tabWidget->count()-2, vst_widget, "VST");
     }
 
     // Colors
@@ -468,6 +468,21 @@ class Preferences : public QDialog, public Ui::Preferences {
       */
     }
 
+    // Faust
+    {
+#ifdef WITH_FAUST_DEV
+      const char *style = getFaustGuiStyle();
+      faust_blue_button->setChecked(!strcmp(style, "Blue"));
+      faust_salmon_button->setChecked(!strcmp(style, "Salmon"));
+      faust_grey_button->setChecked(!strcmp(style, "Grey"));
+      faust_default_button->setChecked(!strcmp(style, "Default"));
+
+      faust_optimization_level->setValue(getFaustOptimizationLevel());
+#else
+      tabWidget->removeTab(tabWidget->indexOf(faust_tab));
+#endif
+    }
+    
     _is_updating_widgets = false;
   }
 
@@ -701,6 +716,7 @@ public slots:
       setUseNativeFileRequesters(val);
   }
 
+  
   // MIDI
 
   void on_set_input_port_clicked(){
@@ -721,6 +737,40 @@ public slots:
     if (_initing==false)
       MIDI_set_record_velocity(val);
   }
+
+  
+  // Faust
+
+  void on_faust_blue_button_toggled(bool val){
+    if (_initing==false && val)
+      setFaustGuiStyle("Blue");
+  }
+  void on_faust_salmon_button_toggled(bool val){
+    if (_initing==false && val)
+      setFaustGuiStyle("Salmon");
+  }
+  void on_faust_grey_button_toggled(bool val){
+    if (_initing==false && val)
+      setFaustGuiStyle("Grey");
+  }
+  void on_faust_default_button_toggled(bool val){
+    if (_initing==false && val)
+      setFaustGuiStyle("Default");
+  }
+  
+  void on_faust_optimization_level_valueChanged(int val){
+    if (_initing==false)
+      setFaustOptimizationLevel(val);
+  }
+  
+  void on_faust_optimization_level_editingFinished(){
+    set_editor_focus();
+
+    GL_lock();{
+      faust_optimization_level->clearFocus();
+    }GL_unlock();
+  }
+  
 };
 }
 

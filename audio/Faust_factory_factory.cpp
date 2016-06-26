@@ -3,8 +3,6 @@
 #include <QThread>
 #include <QPair>
 
-#define OPT_LEVEL 4 // 4 is the highest level without enabling the bb vectorizer, which can be extremely slow.
-
 #if USE_QT5 || USE_QT6 || USE_QT7
 #include <QTemporaryDir>
 #else
@@ -159,6 +157,7 @@ namespace{
     int64_t id;
     QString code;
     QString options;
+    int optlevel;
     FFF_Reply reply;
     bool please_stop;
     
@@ -340,7 +339,7 @@ namespace{
     
   public:
 
-    bool create_reply(QString code, QString options, FFF_Reply &reply){
+    bool create_reply(QString code, QString options, int optlevel, FFF_Reply &reply){
 
       ArgsCreator args;
       args.push_back(options.split("\n", QString::SkipEmptyParts));
@@ -353,7 +352,7 @@ namespace{
 
       //R_ASSERT(OPT_LEVEL==0);
       
-      printf("\n\n   Starting to create factory %s\n",code.toUtf8().constData());
+      printf("\n\n   Starting to create factory %s.  \n\n Optlevel: %d\n\n",code.toUtf8().constData(),optlevel);
       double time = TIME_get_ms();
       reply.factory = createDSPFactoryFromString(
                                                  //"/home/kjetil/radium/bin/packages/faust2/examples/graphic_eq.dsp",
@@ -363,7 +362,7 @@ namespace{
                                                  args.get_argv(),
                                                  "",
                                                  error_message,
-                                                 OPT_LEVEL);
+                                                 optlevel);
       printf("   Factory created %f\n\n\n\n", (TIME_get_ms() - time) / 1000.0);
             
       if (reply.factory==NULL) {
@@ -398,7 +397,7 @@ namespace{
       
       while(true){
 
-        QMap<int64_t, QPair<QString, QString> > code_requests;
+        QMap<int64_t, QPair<QString, QPair<QString, int> > > code_requests;
 
         // 1. First handle delete requests and collect compilation requests. Here we only keep the newest compilation requests for each plugin.
         do{
@@ -409,15 +408,15 @@ namespace{
           if (request->reply.data != NULL) {
             free_reply_data(request->reply);
           } else
-            code_requests[request->id] = qMakePair(request->code, request->options);
-
+            code_requests[request->id] = qMakePair(request->code, qMakePair(request->options, request->optlevel));
+          
           delete request;
         }while(g_queue.size() > 0);
 
         
         // 2. Then do the compilation
         
-        QMapIterator<int64_t, QPair<QString, QString> > iterator(code_requests);
+        QMapIterator<int64_t, QPair<QString, QPair<QString, int> > > iterator(code_requests);
         
         while (iterator.hasNext()) {
           
@@ -425,10 +424,11 @@ namespace{
 
           int64_t id = iterator.key();
           QString code    = iterator.value().first;
-          QString options = iterator.value().second;
+          QString options = iterator.value().second.first;
+          int optlevel    = iterator.value().second.second;
 
           FFF_Reply reply;
-          create_reply(code, options, reply);
+          create_reply(code, options, optlevel, reply);
           
           {
             radium::ScopedMutex lock(&g_reply_mutex);
@@ -471,7 +471,7 @@ FFF_Reply FFF_get_reply_now(QString code, QString options){
   init_fff();
 
   FFF_Reply reply;
-  g_fff_thread.create_reply(code, options, reply);
+  g_fff_thread.create_reply(code, options, getFaustOptimizationLevel(), reply);
   
   return reply;
 }
@@ -489,7 +489,8 @@ void FFF_request_reply(int64_t id, QString code, QString options){
   Request *request = new Request(id);
   request->code = code;
   request->options = options;
-  
+  request->optlevel = getFaustOptimizationLevel(); // getFaustOptimizationLevel is not thread safe, and it's simpler to just send it over rather than making getFaustOpimizationLevel thread safe.
+    
   g_queue.put(request);
 }
 
