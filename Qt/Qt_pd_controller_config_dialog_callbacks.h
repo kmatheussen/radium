@@ -29,7 +29,7 @@ static const int k_timer_interval_here4 = 50;
 extern LANGSPEC void QT_UpdateEditor(struct Tracker_Windows *window);
 extern LANGSPEC void QT_RepaintEditor(struct Tracker_Windows *window);
 
-class Pd_Controller_Config_dialog : public QDialog, public Ui::Pd_Controller_Config_dialog {
+class Pd_Controller_Config_dialog : public RememberGeometryQDialog, public Ui::Pd_Controller_Config_dialog {
   Q_OBJECT;
 
 public:
@@ -52,7 +52,7 @@ public:
   Timer _timer;
 
  Pd_Controller_Config_dialog(QWidget *parent, struct Patch *patch, int controller_num)
-    : QDialog(parent)
+    : RememberGeometryQDialog(parent)
     , _patch(patch)
     , _controller_num(controller_num)
     , _is_updating_gui(true)

@@ -64,10 +64,11 @@ namespace{
   static radium::Vector<QDialog*> g_faustqdialogs;
   static QString g_qtgui_stylesheet;
 
-  class FaustQDialog : public QDialog{
+  class FaustQDialog : public RememberGeometryQDialog{
+
   public:
     FaustQDialog(QWidget *parent)
-      :QDialog(parent)
+      : RememberGeometryQDialog(parent)
     {
       if(g_qtgui_stylesheet=="")
         FAUST_change_qtguistyle(getFaustGuiStyle());
@@ -80,7 +81,7 @@ namespace{
 
     ~FaustQDialog(){
       g_faustqdialogs.remove(this);
-    }    
+    }
   };
 }
 
@@ -139,8 +140,6 @@ struct Devdata{
   bool is_compiling; // <-- Can only be trusted if sending one request at a time. (used by the Faust_Plugin_widget constructor)
 
   QDialog *qtgui_parent;
-  QByteArray qtgui_geometry;
-  bool qtgui_has_stored_geometry;
   
   Devdata()
     : id(g_id++)
@@ -148,7 +147,6 @@ struct Devdata{
     , reply(fff_empty_reply)
     , is_compiling(false)
     , qtgui_parent(NULL)
-    , qtgui_has_stored_geometry(false)
   {
   }
 
@@ -361,8 +359,6 @@ static void dev_show_gui(struct SoundPlugin *plugin){
 
   if (data!=NULL) {
     safeShow(devdata->qtgui_parent);
-    if (devdata->qtgui_has_stored_geometry)
-      devdata->qtgui_parent->restoreGeometry(devdata->qtgui_geometry);
     data->qtgui->run();
   }
 }
@@ -372,8 +368,6 @@ static void dev_hide_gui(struct SoundPlugin *plugin){
   Data *data = devdata->reply.data;
 
   if (devdata->qtgui_parent != NULL){
-    devdata->qtgui_geometry = devdata->qtgui_parent->saveGeometry();
-    devdata->qtgui_has_stored_geometry = true;
     devdata->qtgui_parent->hide();
   }
   

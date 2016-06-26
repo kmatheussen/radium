@@ -21,14 +21,14 @@
 
 namespace{
 
-class Tools : public QDialog, public Ui::Tools {
+class Tools : public RememberGeometryQDialog, public Ui::Tools {
   Q_OBJECT
 
  public:
   bool _initing;
 
   Tools(QWidget *parent=NULL)
-   : QDialog(parent)
+   : RememberGeometryQDialog(parent)
   {
     _initing = true;
 

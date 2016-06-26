@@ -241,7 +241,7 @@ public:
   }
 };
   
-class Preferences : public QDialog, public Ui::Preferences {
+class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
   Q_OBJECT
 
  public:
@@ -250,7 +250,7 @@ class Preferences : public QDialog, public Ui::Preferences {
   MyColorDialog _color_dialog;
 
  Preferences(QWidget *parent=NULL)
-   : QDialog(parent)
+   : RememberGeometryQDialog(parent)
    , _is_updating_widgets(false)
   {
     _initing = true;

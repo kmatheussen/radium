@@ -794,7 +794,7 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin!=NULL) {
       if (_cpp_dialog==NULL) {
-        _cpp_dialog = new QDialog(this);
+        _cpp_dialog = new RememberGeometryQDialog(this);
         QHBoxLayout *mainLayout = new QHBoxLayout;
       
         _cpp_dialog->setLayout(mainLayout);
@@ -817,7 +817,7 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin!=NULL) {
       if (_options_dialog==NULL){
-        _options_dialog = new QDialog(this);
+        _options_dialog = new RememberGeometryQDialog(this);
         QHBoxLayout *mainLayout = new QHBoxLayout;
       
         _options_dialog->setLayout(mainLayout);

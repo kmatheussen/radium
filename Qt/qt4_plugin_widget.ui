@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1692</width>
+    <width>1703</width>
     <height>193</height>
    </rect>
   </property>
@@ -698,7 +698,7 @@ Revert source code to last version that compiled successfully.
        </widget>
       </item>
       <item>
-       <widget class="QToolButton" name="faust_show_button">
+       <widget class="QCheckBox" name="faust_show_button">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
           <horstretch>0</horstretch>
@@ -718,7 +718,7 @@ Show generated C++ source code for the last version that compiled successfully.
        </widget>
       </item>
       <item>
-       <widget class="QToolButton" name="faust_options_button">
+       <widget class="QCheckBox" name="faust_options_button">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
           <horstretch>0</horstretch>

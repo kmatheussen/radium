@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_soundfilesaver_widget.h"
 
 
-class Soundfilesaver_widget : public QDialog, public Ui::Soundfilesaver_widget {
+class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfilesaver_widget {
   Q_OBJECT
 
  public:
@@ -79,7 +79,7 @@ class Soundfilesaver_widget : public QDialog, public Ui::Soundfilesaver_widget {
   Timer _timer;
 
  Soundfilesaver_widget(QWidget *parent=NULL)
-    : QDialog(parent)
+    : RememberGeometryQDialog(parent)
   {
     _initing = true;
 

@@ -320,6 +320,18 @@ public:
       update_cpu_usage(false);
 
     }
+
+#ifdef WITH_FAUST_DEV
+    if (_faust_plugin_widget != NULL){
+      
+      if (faust_show_button->isChecked() && !_faust_plugin_widget->_cpp_dialog->isVisible())
+        faust_show_button->setChecked(false);
+      
+      if (faust_options_button->isChecked() && !_faust_plugin_widget->_options_dialog->isVisible())
+        faust_options_button->setChecked(false);
+      
+    }
+#endif
   }
 
   void callSliderpainterUpdateCallbacks(void){
@@ -590,17 +602,25 @@ public slots:
 #endif
   }
 
-  void on_faust_show_button_released(){
+  void on_faust_show_button_toggled(bool val){
 #ifdef WITH_FAUST_DEV
-    if (_faust_plugin_widget != NULL)
-      _faust_plugin_widget->show_cpp_source();
+    if (_faust_plugin_widget != NULL){
+      if (val)
+        _faust_plugin_widget->show_cpp_source();
+      else
+        _faust_plugin_widget->_cpp_dialog->hide();
+    }
 #endif
   }
 
-  void on_faust_options_button_released(){
+  void on_faust_options_button_toggled(bool val){
 #ifdef WITH_FAUST_DEV
-    if (_faust_plugin_widget != NULL)
-      _faust_plugin_widget->edit_options();
+    if (_faust_plugin_widget != NULL){
+      if (val)
+        _faust_plugin_widget->edit_options();
+      else
+        _faust_plugin_widget->_options_dialog->hide();
+    }
 #endif
   }
 

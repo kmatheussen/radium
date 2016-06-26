@@ -11,6 +11,38 @@
 
 extern bool radium_runs_custom_exec;
 
+class RememberGeometryQDialog : public QDialog{
+
+  QByteArray geometry;
+  bool has_stored_geometry;
+
+public:
+  RememberGeometryQDialog(QWidget *parent)
+    : QDialog(parent)
+    , has_stored_geometry(false)
+  {
+  }
+
+  void setVisible(bool visible) override {      
+    //printf("   Set visible %d\n",visible);
+    
+    if (!visible){
+      
+      geometry = saveGeometry();
+      has_stored_geometry = true;
+      
+    } else {
+      
+      if (has_stored_geometry)
+        restoreGeometry(geometry);
+
+    }
+    
+    QDialog::setVisible(visible);    
+  }
+
+};
+
 struct GL_PauseCaller{
   GL_PauseCaller(){
     bool locked = GL_maybeLock();

@@ -34,14 +34,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_comment_dialog.h"
 
 
-class comment_dialog : public QDialog, public Ui::Comment_dialog {
+class comment_dialog : public RememberGeometryQDialog, public Ui::Comment_dialog {
   Q_OBJECT
 
  public:
   bool _initing;
 
  comment_dialog(QWidget *parent=NULL)
-    : QDialog(parent)
+    : RememberGeometryQDialog(parent)
   {
     _initing = true;
 
