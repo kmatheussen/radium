@@ -496,7 +496,12 @@ private:
   void change_height(SizeType type){
     if (_size_type==type)
       return;
-    
+
+    if (_plugin_widget != NULL){
+      for(ParamWidget *paramWidget : _plugin_widget->_param_widgets)
+        paramWidget->_size_type = type;
+    }
+
     _size_type=type;
 
     AUDIOWIDGET_change_height(_patch, type);
@@ -505,6 +510,7 @@ private:
     if (_faust_plugin_widget != NULL)
       _faust_plugin_widget->change_height(type, header->height());
 #endif
+
   }
   
 public slots:

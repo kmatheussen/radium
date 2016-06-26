@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 // Widget generation code is based on / copied from qtractor, written by Rui Nuno Capela.
 
-
 class ParamWidget : public QWidget{
   Q_OBJECT;
  public:
@@ -44,7 +43,8 @@ class ParamWidget : public QWidget{
   MyQCheckBox *_check_button;
   bool _can_update_effect_value;
   QString _name;
-    
+  SizeType _size_type;
+  
  ParamWidget(QWidget *parent, struct Patch *patch, int effect_num)
    : QWidget(parent)
     , _patch(patch)
@@ -52,6 +52,7 @@ class ParamWidget : public QWidget{
     , _slider(NULL)
     , _check_button(NULL)
     , _can_update_effect_value(false)
+    , _size_type(SIZETYPE_NORMAL)
     {
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       const SoundPluginType *type  = plugin->type;
@@ -172,7 +173,66 @@ class ParamWidget : public QWidget{
     prepare_for_deletion();
     printf("           Deleting ParamWidget %d\n",_effect_num);
   }
-     
+
+
+  // TODO: Optimize with binary search.
+  //
+  void adjustFontSize(void){
+    
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    
+    if (plugin != NULL) {
+
+      int last_size = -1;
+
+      QWidget *w;
+      if (_slider!=NULL)
+        w = _slider;
+      else
+        w = _check_button;
+      
+      if (w != NULL){
+
+        if (_size_type==SIZETYPE_NORMAL){
+          w->setFont(font());
+          return;
+        }
+
+        char buf[64]={0};
+        PLUGIN_get_display_value_string(plugin, _effect_num, buf, 64);
+        QString text = _name + ": " + buf + "513451";
+
+        int newsize = 100;
+        QFont the_font(w->font().family(), newsize);
+      
+        for(;;){
+          QFontMetrics fm(the_font);
+          
+          if (fm.height() <= height() && fm.width(text) < width())
+            break;
+          
+          int size = the_font.pointSize();
+          if (size==last_size)
+            break;
+          
+          newsize = size - 2;
+          if (newsize < 10)
+            break;
+          
+          //printf("Setting font size to %d (%d - %d)  (%s)\n",newsize,fm.width(text),width(),text.toUtf8().constData());
+          the_font = QFont(the_font.family(), newsize);
+        }
+
+        w->setFont(QFont(the_font.family(), newsize - 6));
+      }
+    }
+  }
+
+  void resizeEvent(QResizeEvent * event) override{
+    adjustFontSize();
+    QWidget::resizeEvent(event);
+  }
+  
   void set_effect_value(float value){
     if (_can_update_effect_value) {
 
@@ -218,11 +278,15 @@ class ParamWidget : public QWidget{
     //  hide();
   }
 
-  void set_slider_string(void){
+  QString get_slider_string(void){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     char buf[64]={0};
     PLUGIN_get_display_value_string(plugin, _effect_num, buf, 64);
-    SLIDERPAINTER_set_string(_slider->_painter, _name + ": " + QString::fromUtf8(buf));
+    return _name + ": " + QString::fromUtf8(buf);
+  }
+  
+  void set_slider_string(void){
+    SLIDERPAINTER_set_string(_slider->_painter, get_slider_string());
   }
   
   public slots:
