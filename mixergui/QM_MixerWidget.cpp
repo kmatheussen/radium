@@ -1630,7 +1630,7 @@ static hash_t *convert_state_to_new_type(hash_t *state){
       HASH_put_hash_at(new_chips, "", num_chips++, chip);
   }
 
-  if (num_buses != 2 && num_buses != 5){
+  if (num_buses != 2 && num_buses != 5)
     RError("num_buses should be 2 or 5, not %d. num_chips: %d", num_buses, num_chips);
     
   R_ASSERT(num_buses+num_chips == num_old_chips);

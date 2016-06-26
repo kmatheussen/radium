@@ -51,6 +51,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_settings_proc.h"
 #include "../common/vector_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/threading.h"
+
 #include "../crashreporter/crashreporter_proc.h"
 
 #include "SoundPlugin.h"
@@ -70,7 +72,7 @@ struct Library{ // Used to avoid having lots of unused dynamic libraries loaded 
   const char *filename; // used for error messages
   QLibrary *library;
   LADSPA_Descriptor_Function get_descriptor_func;
-  int num_references; // library is unloaded when this value decreases from 1 to 0, and loaded when increasing from 0 to 1.
+  int num_library_references; // library is unloaded when this value decreases from 1 to 0, and loaded when increasing from 0 to 1.
   int num_times_loaded; // for debugging
 };
 
@@ -78,6 +80,8 @@ struct TypeData{
   Library *library; // Referenced from here.
   
   const LADSPA_Descriptor *descriptor;
+  int num_typedata_references; // descriptor is initialized when library->num_library_references changes value from 0 to 1, and deleted when changed from 1 to 0.
+  
   int index; // index in this file
 
   unsigned int UniqueID; // same value as descriptor->UniqueID, but copied here to avoid loading the library to get the value.
@@ -164,10 +168,9 @@ static void setup_audio_ports(const SoundPluginType *type, Data *data, int block
   }
 }
 
-static bool add_library_reference(TypeData *type_data){
-  Library *library = type_data->library;
+static bool add_library_reference(Library *library){
   
-  if (library->num_references==0){
+  if (library->num_library_references==0){
     printf("**** Loading %s\n",library->filename);
         
     LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) library->library->resolve("ladspa_descriptor");
@@ -178,51 +181,68 @@ static bool add_library_reference(TypeData *type_data){
     }
 
     library->get_descriptor_func = get_descriptor_func;
-
-    type_data->descriptor = library->get_descriptor_func(type_data->index);
-  
-    if (type_data->descriptor==NULL) {
-      GFX_Message(NULL, "Unable to load plugin #%d in file \"%s\". That is not supposed to happen since it was possible to load the plugin when the program was initializing.", type_data->index, library->filename);
-      return false;
-    }
   }
 
-  if (type_data->descriptor==NULL){
-    RError("type_data->descriptor==NULL. num_references: %d, num_times_loaded: %d, filename: \"%s\"",library->num_references,library->num_times_loaded,library->filename);
-    return false;
-  }
-
-  library->num_references++;
+  library->num_library_references++;
   library->num_times_loaded++;
   
   return true;
 }
 
-static void remove_library_reference(TypeData *type_data){
-  Library *library = type_data->library;
-    
-  library->num_references--;
+static void remove_library_reference(Library *library){    
+  library->num_library_references--;
 
-  if (library->num_references==0) {
+  if (library->num_library_references==0) {
     printf("**** Unloading %s\n",library->filename);
     library->library->unload();
-    type_data->descriptor = NULL; // although library->num_references==0, setting descriptor to NULL makes it easier to discover if plugin is used after beeing freed.
   }
 }
 
+static bool add_type_data_reference(TypeData *type_data){
+
+  if (type_data->num_typedata_references==0){
+
+    R_ASSERT(type_data->descriptor==NULL);
+
+    if (add_library_reference(type_data->library)==false)
+      return false;
+    
+    type_data->descriptor = type_data->library->get_descriptor_func(type_data->index);
+  
+    if (type_data->descriptor==NULL) {
+      GFX_Message(NULL, "Unable to load plugin #%d in file \"%s\". That is not supposed to happen since it was possible to load the plugin when the program was initializing.", type_data->index, type_data->library->filename);
+      remove_library_reference(type_data->library);
+      return false;
+    }
+  }
+
+  type_data->num_typedata_references++;
+  return true;
+}
+  
+static void remove_type_data_reference(TypeData *type_data){
+  type_data->num_typedata_references--;
+
+  if (type_data->num_typedata_references==0){
+    remove_library_reference(type_data->library);
+    type_data->descriptor = NULL;
+  }
+}
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
+  R_ASSERT(THREADING_is_main_thread());
+    
   Data *data = (Data*)V_calloc(1, sizeof(Data));
   TypeData *type_data = (TypeData*)plugin_type->data;
 
-  if (add_library_reference(type_data)==false)
+  if (add_type_data_reference(type_data)==false)
     return NULL;
   
   const LADSPA_Descriptor *descriptor = type_data->descriptor;
   if (type_data->descriptor==NULL){
     Library *library = type_data->library;
     R_ASSERT_RETURN_IF_FALSE2(library!=NULL, NULL);
-    RError("type_data->descriptor==NULL. num_references: %d, num_times_loaded: %d, filename: \"%s\"",library->num_references,library->num_times_loaded,library->filename);
+    RError("2. type_data->descriptor==NULL. num_references: %d, num_times_loaded: %d, filename: \"%s\"",library->num_library_references,library->num_times_loaded,library->filename);
     return NULL;
   }
   
@@ -279,6 +299,8 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
+  R_ASSERT(THREADING_is_main_thread());  
+
   const SoundPluginType *type=plugin->type;
   TypeData *type_data = (TypeData*)type->data;
 
@@ -300,7 +322,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   V_free(data->control_values);
   V_free(data);
   
-  remove_library_reference(type_data);
+  remove_type_data_reference(type_data);
 }
 
 static void buffer_size_is_changed(SoundPlugin *plugin, int new_buffer_size){
