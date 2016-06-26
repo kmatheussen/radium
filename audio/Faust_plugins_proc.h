@@ -1,7 +1,10 @@
 #ifndef _RADIUM_AUDIO_FAUST_PLUGINS_PROC_H
 #define _RADIUM_AUDIO_FAUST_PLUGINS_PROC_H
 
-extern LANGSPEC float *FAUST_get_peak_value_pointer(SoundPlugin *plugin, int effect_num);
+struct SoundPlugin;
+
+extern LANGSPEC float *FAUST_get_peak_value_pointer(struct SoundPlugin *plugin, int effect_num);
+extern LANGSPEC void FAUST_change_qtguistyle(const char *style_name);
 
 #if USE_QT4
 enum FAUST_calledRegularlyByParentReply{
@@ -9,7 +12,10 @@ enum FAUST_calledRegularlyByParentReply{
   Faust_Failed,
   Faust_Success
 };
-  
+
+QDialog *FAUST_create_qdialog(void);
+void FAUST_set_qtguistyle(QDialog *gui);
+
 void FFF_shut_down(void);
 //void FAUST_inform_about_instrument_gui(SoundPlugin *plugin, QWidget *instrument_gui);
 void FAUST_set_code(SoundPlugin *plugin, QString code);

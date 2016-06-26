@@ -290,6 +290,8 @@ struct Data{
   }
 
   ~Data(){
+    delete qtgui_parent;
+
     free(automation_values);
   }
 };
@@ -568,34 +570,7 @@ static void create_gui(QDialog *parent, Data *data, SoundPlugin *plugin){
   data->qtgui = new QTGUI(parent);
   printf("     Created new QtGui %p\n", data->qtgui);
 
-  static QString stylesheet;
-
-  if (stylesheet==""){
-
-    stylesheet = " ";
-
-    //QString filename = OS_get_full_program_file_path("faust_plugins_style.css");
-    QString filename = OS_get_full_program_file_path("packages/faust2/architecture/faust/gui/Styles/" + QString(getFaustGuiStyle()) + ".qss");
-    disk_t *disk = DISK_open_for_reading(filename);
-    if (disk==NULL){
-      
-      GFX_Message(NULL, "File not found (%s)", filename.toUtf8().constData());
-      
-    } else {
-      
-      stylesheet = DISK_read_qstring_file(disk);
-      if (DISK_close_and_delete(disk)==false) {
-        GFX_Message(NULL, "Unable to read from %s", filename.toUtf8().constData());
-        stylesheet = " ";
-      }
-      
-    }
-    
-    //parent->setStyle( new QGtkStyle );
-  }
-
-  if (stylesheet != " ")
-    parent->setStyleSheet(stylesheet);
+  FAUST_set_qtguistyle(parent);
   
   dsp->buildUserInterface(data->qtgui);
 
@@ -649,7 +624,7 @@ static void *create_effect_plugin_data(const SoundPluginType *plugin_type, struc
 
 #ifndef FAUST_SYSTEM_EFFECT
   if (plugin != NULL) { // plugin==NULL during instrument type initialization, when we create test data. (took a long time to hunt down this bug)
-    data->qtgui_parent = new QDialog(g_main_window);
+    data->qtgui_parent = FAUST_create_qdialog();
     create_gui(data->qtgui_parent, data, plugin);
   }
 #endif
@@ -693,7 +668,8 @@ static void *create_instrument_plugin_data(const SoundPluginType *plugin_type, s
 
   create_automation_values(data);
 
-  data->qtgui_parent = new QDialog(g_main_window);
+  data->qtgui_parent = FAUST_create_qdialog();
+
   create_gui(data->qtgui_parent, data, plugin);
 
   return data;
@@ -706,7 +682,6 @@ static void *create_instrument_plugin_data(const SoundPluginType *plugin_type, s
 static void delete_dsps_and_data1(Data *data){
   printf("          Deleting data->qtgui %p\n", data->qtgui);
   delete data->qtgui;
-  delete data->qtgui_parent;
 }
 
 // May be called from any thread

@@ -59,9 +59,75 @@ static Data *GET_DATA_FROM_PLUGIN(SoundPlugin *plugin);
 
 #include "Faust_factory_factory.cpp"
 
+namespace{
+
+  static radium::Vector<QDialog*> g_faustqdialogs;
+  static QString g_qtgui_stylesheet;
+
+  class FaustQDialog : public QDialog{
+  public:
+    FaustQDialog(QWidget *parent)
+      :QDialog(parent)
+    {
+      if(g_qtgui_stylesheet=="")
+        FAUST_change_qtguistyle(getFaustGuiStyle());
+
+      if (g_qtgui_stylesheet != "")
+        setStyleSheet(g_qtgui_stylesheet);
+      
+      g_faustqdialogs.add(this);
+    }
+
+    ~FaustQDialog(){
+      g_faustqdialogs.remove(this);
+    }    
+  };
+}
+
+QDialog *FAUST_create_qdialog(void){
+  return new FaustQDialog(g_main_window);
+}
+
+void FAUST_change_qtguistyle(const char *style_name){
+
+  QString filename = OS_get_full_program_file_path("packages/faust2/architecture/faust/gui/Styles/" + QString(getFaustGuiStyle()) + ".qss");
+  disk_t *disk = DISK_open_for_reading(filename);
+  if (disk==NULL){
+      
+    GFX_Message(NULL, "File not found (%s)", filename.toUtf8().constData());
+    
+  } else {
+    
+    QString stylesheet = DISK_read_qstring_file(disk);
+    if (DISK_close_and_delete(disk)==false) {
+      GFX_Message(NULL, "Unable to read from %s", filename.toUtf8().constData());
+      stylesheet = "";
+    }
+
+    if (stylesheet!="")
+      g_qtgui_stylesheet = stylesheet;
+  }
+
+  if (g_qtgui_stylesheet != "")
+    for(auto faustqdialog : g_faustqdialogs)
+      faustqdialog->setStyleSheet(g_qtgui_stylesheet);
+  
+}
+
+void FAUST_set_qtguistyle(QDialog *gui){
+  /*
+  if(g_qtgui_stylesheet=="")
+    FAUST_change_qtguistyle(getFaustGuiStyle());
+
+  if (g_qtgui_stylesheet != "")
+    gui->setStyleSheet(g_qtgui_stylesheet);  
+  */
+}
+
 
 static int64_t g_id = 0;
 
+namespace{
 struct Devdata{
   int64_t id;
   
@@ -85,7 +151,12 @@ struct Devdata{
     , qtgui_has_stored_geometry(false)
   {
   }
+
+  ~Devdata(){
+    delete qtgui_parent;
+  }
 };
+}
 
 static Data *GET_DATA_FROM_PLUGIN(SoundPlugin *plugin){
   Devdata *devdata = (Devdata*)plugin->data;
@@ -238,8 +309,6 @@ static void dev_cleanup_plugin_data(SoundPlugin *plugin){
 
   FFF_free_now(devdata->reply);
 
-  delete devdata->qtgui_parent;
-  
   // We can lose memory by not receiving replies in the queue, but that won't crash the program or make it unstable.
   // This should be so rare though, plus that the only consequency is to waste a little bit of memory, that it's probably not worth fixing.
   delete devdata;
@@ -455,7 +524,7 @@ static bool FAUST_handle_fff_reply(struct SoundPlugin *plugin, const FFF_Reply &
   // handle gui
   {
     if (devdata->qtgui_parent == NULL)
-      devdata->qtgui_parent = new QDialog(g_main_window);
+      devdata->qtgui_parent = FAUST_create_qdialog();
     
     if (old_reply.data != NULL && old_reply.data->qtgui!=NULL){
       old_reply.data->qtgui->stop();

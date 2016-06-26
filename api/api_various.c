@@ -57,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_string_proc.h"
 #include "../audio/SoundProducer_proc.h"
 #include "../audio/Mixer_proc.h"
+#include "../audio/Faust_plugins_proc.h"
 
 
 #ifdef _AMIGA
@@ -1459,6 +1460,7 @@ const char *getFaustGuiStyle(void){
 void setFaustGuiStyle(const char *style){
   g_faust_gui_style = talloc_strdup(style);
   SETTINGS_write_string("faust_gui_style", style);
+  FAUST_change_qtguistyle(style);
 }
 
 
