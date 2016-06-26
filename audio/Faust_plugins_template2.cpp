@@ -274,6 +274,8 @@ struct Data{
 
   QTGUI *qtgui;
   QDialog *qtgui_parent;
+  QByteArray qtgui_geometry;
+  bool qtgui_has_stored_geometry;
 
   float *automation_values;
   
@@ -282,6 +284,7 @@ struct Data{
     , voices_not_playing(NULL)
     , qtgui(NULL)
     , qtgui_parent(NULL)
+    , qtgui_has_stored_geometry(false)
     , automation_values(NULL)
   {
   }
@@ -854,7 +857,12 @@ static const char *get_effect_description(struct SoundPlugin *plugin, int effect
 
 static void show_gui2(Data* data, SoundPlugin *plugin){
   printf("   Showing gui %p\n",data->qtgui);
+  
   safeShow(data->qtgui_parent);
+
+  if (data->qtgui_has_stored_geometry)
+    data->qtgui_parent->restoreGeometry(data->qtgui_geometry);
+
   data->qtgui->run();
 }
 
@@ -865,6 +873,10 @@ static void show_gui(struct SoundPlugin *plugin){
 
 static void hide_gui2(Data *data){
   printf("   Hiding gui %p\n",data->qtgui);
+
+  data->qtgui_geometry = data->qtgui_parent->saveGeometry();
+  data->qtgui_has_stored_geometry = true;
+
   data->qtgui_parent->hide();
   data->qtgui->stop();
 }

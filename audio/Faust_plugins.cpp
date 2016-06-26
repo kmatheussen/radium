@@ -73,6 +73,8 @@ struct Devdata{
   bool is_compiling; // <-- Can only be trusted if sending one request at a time. (used by the Faust_Plugin_widget constructor)
 
   QDialog *qtgui_parent;
+  QByteArray qtgui_geometry;
+  bool qtgui_has_stored_geometry;
   
   Devdata()
     : id(g_id++)
@@ -80,6 +82,7 @@ struct Devdata{
     , reply(fff_empty_reply)
     , is_compiling(false)
     , qtgui_parent(NULL)
+    , qtgui_has_stored_geometry(false)
   {
   }
 };
@@ -289,6 +292,8 @@ static void dev_show_gui(struct SoundPlugin *plugin){
 
   if (data!=NULL) {
     safeShow(devdata->qtgui_parent);
+    if (devdata->qtgui_has_stored_geometry)
+      devdata->qtgui_parent->restoreGeometry(devdata->qtgui_geometry);
     data->qtgui->run();
   }
 }
@@ -297,8 +302,11 @@ static void dev_hide_gui(struct SoundPlugin *plugin){
   Devdata *devdata = (Devdata*)plugin->data;
   Data *data = devdata->reply.data;
 
-  if (devdata->qtgui_parent != NULL)
+  if (devdata->qtgui_parent != NULL){
+    devdata->qtgui_geometry = devdata->qtgui_parent->saveGeometry();
+    devdata->qtgui_has_stored_geometry = true;
     devdata->qtgui_parent->hide();
+  }
   
   if (data!=NULL)
     data->qtgui->stop();
@@ -448,7 +456,7 @@ static bool FAUST_handle_fff_reply(struct SoundPlugin *plugin, const FFF_Reply &
   {
     if (devdata->qtgui_parent == NULL)
       devdata->qtgui_parent = new QDialog(g_main_window);
-
+    
     if (old_reply.data != NULL && old_reply.data->qtgui!=NULL){
       old_reply.data->qtgui->stop();
       devdata->qtgui_parent->layout()->removeWidget(old_reply.data->qtgui);

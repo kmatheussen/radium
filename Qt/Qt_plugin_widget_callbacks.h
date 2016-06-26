@@ -664,22 +664,17 @@ public slots:
   }
 
   // general
-  void on_show_gui_checkbox_stateChanged(int val){
+  void on_show_gui_checkbox_toggled(bool val){
     if (_ignore_show_gui_checkbox_stateChanged==false) {
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      if (val==Qt::Checked){
+      if (val){
         plugin->type->show_gui(plugin);
-      }else if(val==Qt::Unchecked){
+      }else{
         plugin->type->hide_gui(plugin);
       }
     }
   }
-
-  void on_show_gui_button_released(){
-    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    plugin->type->show_gui(plugin);
-  }
-
+  
     void on_limiter_bypass_button_toggled(bool val){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       int effect_num = PLUGIN_get_effect_num(plugin, "Limiter Bypass");
