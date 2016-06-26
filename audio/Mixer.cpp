@@ -326,6 +326,10 @@ static void init_player_lock(void){
 #endif
 }
 
+
+static void MIXER_check_if_someone_has_solo(void);
+
+
 jack_time_t jackblock_delta_time = 0;
 
 DEFINE_ATOMIC(int, jackblock_size) = 0;
@@ -649,7 +653,8 @@ struct Mixer{
         excessive_time.restart();
       }
             
-
+      MIXER_check_if_someone_has_solo();
+      
       RT_lock_player();
 
       jackblock_variables_protector.write_start();{
@@ -1085,4 +1090,22 @@ struct SoundPlugin *MIXER_get_soundplugin(const char *type_name, const char *nam
   }
 
   return NULL;
+}
+
+
+static bool g_someone_has_solo = false;
+
+// May be called from any thread. And in realtime.
+bool MIXER_someone_has_solo(void){
+  return g_someone_has_solo;
+}
+
+static void MIXER_check_if_someone_has_solo(void){
+  for (SoundProducer *sp : g_mixer->_sound_producers)
+    if (ATOMIC_GET(SP_get_plugin(sp)->solo_is_on)){
+      g_someone_has_solo = true;
+      return;
+    }
+
+  g_someone_has_solo = false;
 }

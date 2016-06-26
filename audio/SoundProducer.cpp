@@ -160,9 +160,33 @@ struct SoundProducerLink {
     ATOMIC_SET(should_be_turned_off, true);
   }
 
-  float get_total_link_volume(void){
+  bool turn_off_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(void){
+    if (MIXER_someone_has_solo()){
+      
+      SoundPlugin *plugin = SP_get_plugin(source);
+
+      if (ATOMIC_GET(plugin->solo_is_on) == false) {
+        
+        if (SP_has_input_links(source)==false) {
+
+          if (SP_get_bus_num(source) == -1) {
+            
+            return true;
+            
+          }          
+        }
+      }      
+    }
+
+    return false;
+  }
+  
+  float get_total_link_volume(void){    
     SoundPlugin *source_plugin = SP_get_plugin(source);
     float plugin_volume = source_plugin->volume;  // (Note that plugin->volume==0 when plugin->volume_onoff==false, so we don't need to test for that)
+
+    if (turn_off_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis())
+      return 0.0f;
 
     if (ATOMIC_GET_RELAXED(should_be_turned_off))
       return 0.0f;
@@ -1331,4 +1355,8 @@ double SP_get_running_time(const SoundProducer *sp){
 
 void SP_RT_reset_running_time(SoundProducer *sp){
   sp->running_time = 0.0;
+}
+
+bool SP_has_input_links(SoundProducer *sp){
+  return sp->_input_links.size() > 0;
 }

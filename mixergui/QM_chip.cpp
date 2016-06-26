@@ -175,6 +175,15 @@ static void get_slider2_coordinates(int &x1, int &y1, int &x2, int &y2){
 }
 
 
+static void get_solo_onoff_coordinates(int &x1, int &y1, int &x2, int &y2){
+  get_coordinates(x1,y1,x2,y2);
+
+  x1 = x2 - button_width*2 - 1;
+  x2 = x2 - button_width - 1;
+  //y1 = 0;
+  y2 = y1 + button_width-3;
+}
+
 static void get_volume_onoff_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_coordinates(x1,y1,x2,y2);
 
@@ -1184,6 +1193,9 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     // checbuttons.
     {
       int x1,y1,x2,y2;
+      get_solo_onoff_coordinates(x1,y1,x2,y2);
+      paint_checkbutton(painter, x1,y1,x2,y2, !ATOMIC_GET(plugin->solo_is_on));
+
       get_volume_onoff_coordinates(x1,y1,x2,y2);
       paint_checkbutton(painter, x1,y1,x2,y2, ATOMIC_GET(plugin->volume_is_on));
 
@@ -1323,6 +1335,25 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       setSelected(true);
     else
       MW_set_selected_chip(this); //i.e. only set this one as the selected.
+
+    // solo onoff
+    {
+      int x1,y1,x2,y2;
+      get_solo_onoff_coordinates(x1,y1,x2,y2);
+      if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
+        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
+
+        //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
+        float new_value = ATOMIC_GET(plugin->solo_is_on)?0.0f:1.0f;
+
+        PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+        CHIP_update(plugin);
+        GFX_update_instrument_widget((struct Patch*)patch);
+
+        event->accept();
+        return;
+      }
+    }
 
     // volume onoff
     {

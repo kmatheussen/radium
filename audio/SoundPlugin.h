@@ -39,6 +39,8 @@ enum{
   EFFNUM_INPUT_VOLUME = 0,  // This one must be first.
   EFFNUM_INPUT_VOLUME_ONOFF,
 
+  EFFNUM_SOLO_ONOFF,
+  
   EFFNUM_VOLUME,
   EFFNUM_VOLUME_ONOFF,
 
@@ -300,9 +302,7 @@ typedef struct SoundPlugin{
   
   bool editor_is_on;
 
-  DEFINE_ATOMIC(bool, sound_is_on); // <-- Calculated value, based on 'is_solo' value of all sound objects in the mixer, and this plugins 'volume_is_on' value.
-
-  DEFINE_ATOMIC(bool, is_solo); // <- Is only used if this plugin is output-connected to the main pipe.
+  DEFINE_ATOMIC(bool, solo_is_on);
   
   // Data used by SoundProducer
   Smooth input_volume;

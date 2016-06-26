@@ -105,4 +105,6 @@ extern LANGSPEC bool SP_replace_plugin(struct SoundPlugin *old_plugin, struct So
 extern LANGSPEC bool SP_is_plugin_running(struct SoundPlugin *plugin);
 extern LANGSPEC void SP_print_tree(void);
 
+extern LANGSPEC bool SP_has_input_links(struct SoundProducer *sp);
+  
 #endif // SOUNDPRODUCER_PROC_H

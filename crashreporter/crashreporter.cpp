@@ -184,7 +184,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
                                    "\n"
                                    "Only the information in \"Show details...\" is sent.\n"
                                    "\n"
-                                   "Please don't report the same %0 more than two or three times.\n"
+                                   "Please don't report the same %0 more than two or three times for the same version of Radium.\n"
                                    ).arg(crash_type==CT_CRASH ? "crash" : crash_type==CT_ERROR ? "error" : "warning")
                            + ( (is_crash && plugin_names != NOPLUGINNAMES)
                                ? QString("\nPlease note that the following third party plugins: \"" + plugin_names + "\" was/were currently processing audio. It/they might be responsible for the crash.\n")

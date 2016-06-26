@@ -45,3 +45,5 @@ extern LANGSPEC float MIXER_get_sample_rate(void);
 extern LANGSPEC int MIXER_get_buffer_size(void);
 
 extern LANGSPEC struct SoundPlugin *MIXER_get_soundplugin(const char *type_name, const char *name);
+
+extern LANGSPEC bool MIXER_someone_has_solo(void);

@@ -181,6 +181,8 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
   "System In",
   "System In On/Off",
 
+  "System Solo On/Off",
+  
   "System Volume",
   "System Volume On/Off",
 
@@ -843,6 +845,15 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
     case EFFNUM_INPUT_VOLUME_ONOFF:
       SET_SMOOTH_ON_OFF(&plugin->input_volume, plugin->input_volume_is_on, store_value, plugin->savable_effect_values[num_effects+EFFNUM_INPUT_VOLUME]);
       break;
+
+    case EFFNUM_SOLO_ONOFF:
+      if(value>0.5f) {
+        ATOMIC_SET(plugin->solo_is_on, true);
+      }else {
+        ATOMIC_SET(plugin->solo_is_on, false);
+      }
+      break;
+
     case EFFNUM_VOLUME:
       store_value = get_gain_store_value(value,value_type);
       plugin->volume = store_value;
@@ -1190,6 +1201,9 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
                          MIN_DB, MAX_DB);
   case EFFNUM_INPUT_VOLUME_ONOFF:
     return ATOMIC_GET(plugin->input_volume_is_on)==true ? 1.0 : 0.0f;
+
+  case EFFNUM_SOLO_ONOFF:
+    return ATOMIC_GET(plugin->solo_is_on)==true ? 1.0 : 0.0f;
 
   case EFFNUM_VOLUME:
     return gain_2_slider(plugin->volume, MIN_DB, MAX_DB);
