@@ -160,9 +160,9 @@ void showMenuBar(int windownum){
 // 2. Editor + instrument
 // 3. Mixer + instruments
 void switchWindowConfiguration(void){
-  // From 1 to 2
   printf("editor: %d\ninstrument: %d\nmixer: %d\n",GFX_EditorIsVisible(), GFX_InstrumentWindowIsVisible(), GFX_MixerIsVisible());
 
+  // From 1 to 2
   if(GFX_EditorIsVisible()==true && GFX_InstrumentWindowIsVisible()==false && GFX_MixerIsVisible()==false){
     GFX_InstrumentWindowToFront();
     //GFX_SetMinimalInstrumentWindow();

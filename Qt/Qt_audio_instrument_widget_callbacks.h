@@ -51,8 +51,9 @@ public:
   Sample_requester_widget *_sample_requester_widget;
   Compressor_widget *_comp_widget;
 
-  bool _is_large;
-  bool _was_large_before_hidden;
+  SizeType _size_type;
+  SizeType _size_type_before_hidden;
+  //bool _was_large_before_hidden;
   
   
   static void set_arrow_style(QWidget *arrow, bool set_size_policy=true){
@@ -93,8 +94,9 @@ public:
     , _patch(patch)
     , _plugin_widget(NULL)
     , _sample_requester_widget(NULL)
-    , _is_large(false)
-    , _was_large_before_hidden(false)
+      //, _is_large(false)
+    , _size_type(SIZETYPE_NORMAL)
+    , _size_type_before_hidden(SIZETYPE_NORMAL)
   {
     setupUi(this);    
 
@@ -480,7 +482,7 @@ public:
     static bool can_shrink = true;
     static bool last_time_shrank = false;
 
-    if (_is_large)
+    if (_size_type != SIZETYPE_NORMAL)
       return;
           
     bool is_visible = scrollArea->verticalScrollBar()->isVisible();
@@ -715,34 +717,53 @@ public:
     updateSliderString(system_effect);
   }
 
+  
+private:
+  
   QVector<QWidget*> hidden_widgets;
   int height_before_large;
-  
-  // enable for faust and multiband
-  void show_large(void){
-    printf("show_large\n");
-    hidden_widgets.clear();
 
-    _is_large = true;
-    height_before_large = height();
-    setMinimumHeight(g_main_window->height() / 2);
-    setMaximumHeight(g_main_window->height() / 2);
-  
-    for (int i = 0; i < effects_layout->count(); ++i){
-      QWidget *widget = effects_layout->itemAt(i)->widget();
-      if (widget != NULL){
-        if (widget != _plugin_widget && widget != _sample_requester_widget && widget->isVisible()){
-          widget->hide();
-          hidden_widgets.push_back(widget);
+  // enable for faust and multiband
+  void show_large(SizeType new_size_type){
+    printf("show_large\n");
+
+    R_ASSERT_RETURN_IF_FALSE(new_size_type!=_size_type);
+    R_ASSERT_RETURN_IF_FALSE(new_size_type!=SIZETYPE_NORMAL);
+
+    if (_size_type==SIZETYPE_NORMAL){
+      hidden_widgets.clear();
+
+      height_before_large = height();
+      
+      for (int i = 0; i < effects_layout->count(); ++i){
+        QWidget *widget = effects_layout->itemAt(i)->widget();
+        if (widget != NULL){
+          if (widget != _plugin_widget && widget != _sample_requester_widget && widget->isVisible()){
+            widget->hide();
+            hidden_widgets.push_back(widget);
+        }
         }
       }
     }
+
+    if (new_size_type==SIZETYPE_HALF) {
+      setMinimumHeight(g_main_window->height() / 2);
+      setMaximumHeight(g_main_window->height() / 2);
+    } else {
+      setMinimumHeight(0);
+      setMaximumHeight(g_main_window->height());
+    }
+
+    _size_type = new_size_type;
   }
 
   void show_small(void){
     printf("show_small\n");
 
-    _is_large = false;
+    R_ASSERT_RETURN_IF_FALSE(_size_type!=SIZETYPE_NORMAL);
+    
+    _size_type=SIZETYPE_NORMAL;
+    
     setMinimumHeight(10);
     setMaximumHeight(16777214);
     resize(width(), height_before_large);
@@ -753,19 +774,51 @@ public:
     hidden_widgets.clear();
   }
 
+  void hide_non_instrument_widgets(void){
+    GFX_HideEditor();
+    GFX_HideMixer();
+    GFX_PlayListWindowToBack();
+  }
+
+  void show_non_instrument_widgets(void){
+    GFX_ShowEditor();
+    GFX_ShowMixer();
+    GFX_PlayListWindowToFront();
+  }
+
+  
+public:
+  
+  void change_height(SizeType new_size_type){
+    if (new_size_type==_size_type)
+      return;
+    
+    if (new_size_type==SIZETYPE_FULL)
+      hide_non_instrument_widgets();    
+    else if (_size_type == SIZETYPE_FULL)
+      show_non_instrument_widgets();
+
+    if (new_size_type==SIZETYPE_NORMAL)
+      show_small();
+    else
+      show_large(new_size_type);
+  }
+
 
 public slots:
 
   void hideEvent(QHideEvent * event){
-    _was_large_before_hidden = _is_large;
+    _size_type_before_hidden = _size_type;
     
-    if(_is_large)
-      show_small();  // If not, all instrument widgets will have large height.
+    if(_size_type != SIZETYPE_NORMAL)
+      change_height(SIZETYPE_NORMAL);
+      //show_small();  // If not, all instrument widgets will have large height.
   }
   
   void showEvent(QShowEvent * event){
-    if (_was_large_before_hidden)
-      show_large();
+    if (_size_type_before_hidden != SIZETYPE_NORMAL)
+      change_height(_size_type_before_hidden);
+    //      show_large();
   }
   
 #if 0
@@ -1056,6 +1109,11 @@ static Faust_Plugin_widget *AUDIOWIDGET_get_faust_plugin_widget(Audio_instrument
 }
 #endif
 
+void AUDIOWIDGET_change_height(struct Patch *patch, SizeType type){
+  get_audio_instrument_widget(patch)->change_height(type);
+}
+
+#if 0
 void AUDIOWIDGET_show_large(struct Patch *patch){
   get_audio_instrument_widget(patch)->show_large();
 }
@@ -1063,3 +1121,5 @@ void AUDIOWIDGET_show_large(struct Patch *patch){
 void AUDIOWIDGET_show_small(struct Patch *patch){
   get_audio_instrument_widget(patch)->show_small();
 }
+#endif
+

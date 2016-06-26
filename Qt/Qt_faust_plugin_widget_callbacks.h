@@ -334,8 +334,8 @@ public:
   
   bool _initing;
 
-  bool _is_large;
-  bool _was_large_before_hidden;
+  SizeType _size_type;
+  SizeType _size_type_before_hidden;
   int _header_height;
   
   int _last_height;
@@ -364,8 +364,8 @@ public:
     , _last_web_frame(NULL)
     , _svg_zoom_factor(1.0)
     , _error_zoom_factor(1.0)
-    , _is_large(false)
-    , _was_large_before_hidden(false)
+    , _size_type(SIZETYPE_NORMAL)
+    , _size_type_before_hidden(SIZETYPE_NORMAL)
     , _header_height(40)
     , _last_height(10)
     , _update_count_down(0)
@@ -574,7 +574,7 @@ public:
         PluginWidget *old = _plugin_widget;
         _plugin_widget=PluginWidget_create(this, _patch);
 
-        if (_is_large){
+        if (_size_type != SIZETYPE_NORMAL){
           faust_webview_widget->setUpdatesEnabled(false);
           _update_count_down = 3; // Hack to avoid flicker in qt (not working perfectly though, this is a design issue in qt where the widget configuration updates are spread over several events)
           
@@ -611,15 +611,15 @@ public:
     }
   }
 
-  void set_max_heights(int height, bool set_web_height = true){
-    _faust_editor->setMinimumHeight(height);
+  void set_max_heights(int height, bool set_web_height = true, bool set_min = true){
+    _faust_editor->setMinimumHeight(set_min ? height : 0);
     _faust_editor->setMaximumHeight(height);
-    
-    faust_webview_widget->setMinimumHeight(height);
+
+    faust_webview_widget->setMinimumHeight(set_min ? height : 0);
     faust_webview_widget->setMaximumHeight(height);
 
     if (set_web_height){
-      web->setMinimumHeight(height);
+      web->setMinimumHeight(set_min ? height : 0);
       web->setMaximumHeight(height);
     }
   }
@@ -633,14 +633,19 @@ public:
   }
   
   void calculate_large_web_heights(void){
-    int height = g_main_window->height();
+    int height = g_main_window->height() - 50;
 
-    int full_height = (height / 2) - _header_height - 8;
+    int full_height;
 
+    if (_size_type==SIZETYPE_HALF)
+      full_height = height/2 - _header_height - 8;
+    else
+      full_height = height - _header_height - 8;
+    
     int plugin_widget_height =
       _plugin_widget->_num_rows==0
       ? 0
-      : (1+_plugin_widget->_num_rows) * (QApplication::font().pointSize() + 5) + 20;
+      : (1+_plugin_widget->_num_rows) * (root->song->tracker_windows->systemfontheight) + 20;
     
     if (plugin_widget_height > full_height/2)
       plugin_widget_height = full_height/2;
@@ -650,14 +655,18 @@ public:
     
     web->setMaximumWidth(g_main_window->width()); // To ensure we don't see a small web browser in the left part of the widget with a lot of empty space to the right of it.
 
-    set_max_heights(full_height, false);
-    web->setMinimumHeight(max_web_height);
+    set_max_heights(full_height, false, _size_type==SIZETYPE_HALF);
+
+    if (_size_type==SIZETYPE_FULL)
+      web->setMinimumHeight(max_web_height);
+    else
+      web->setMinimumHeight(max_web_height);
+    
     web->setMaximumHeight(max_web_height);
   }
   
-  
-  void set_large(int header_height = 0){
-    _is_large = true;
+  void set_large(SizeType new_size_type, int header_height = 0){
+    _size_type = new_size_type;
 
     if (header_height > 0)
       _header_height = header_height;
@@ -688,7 +697,8 @@ public:
   }
 
   void set_small(void){
-    _is_large = false;
+    _size_type = SIZETYPE_NORMAL;
+    //_is_large = false;
 
     _last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOn);
     
@@ -707,6 +717,24 @@ public:
     calculate_widths();
   }
 
+  void change_height(SizeType type, int header_height = 0){
+    QSizePolicy fixedPolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    QSizePolicy expandingPolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    if (type==SIZETYPE_FULL){
+      faust_webview_widget->setSizePolicy(expandingPolicy);
+      _faust_editor->setSizePolicy(expandingPolicy);
+    } else {
+      faust_webview_widget->setSizePolicy(fixedPolicy);
+      _faust_editor->setSizePolicy(fixedPolicy);
+    }
+    
+    if (type==SIZETYPE_NORMAL)
+      set_small();
+    else
+      set_large(type, header_height);
+  }
+  
   void start_compilation(QString code){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin!=NULL){
@@ -809,21 +837,21 @@ public:
   }
 
   void hideEvent(QHideEvent * event){
-    _was_large_before_hidden = _is_large;
+    _size_type_before_hidden = _size_type;
     
-    if(_is_large)
+    if(_size_type!=SIZETYPE_NORMAL)
       set_small(); // If not, all instrument widgets will have large height (due to the call to web->setMaximumHeight(window_height/2) in set_large()).
   }
 
   void showEvent(QShowEvent * event){
-    if (_was_large_before_hidden)
-      set_large();
+    if (_size_type_before_hidden != SIZETYPE_NORMAL)
+      set_large(_size_type_before_hidden);
   }
 
   void calculate_widths(void){
     int the_width;
 
-    if (_is_large) {
+    if (_size_type != SIZETYPE_NORMAL){
       the_width = width() - 1;
     } else {
       the_width = tab_code_widget->width();

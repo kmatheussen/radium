@@ -19,6 +19,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Patch *g_currpatch;
 
+enum SizeType{
+  SIZETYPE_NORMAL,
+  SIZETYPE_HALF,
+  SIZETYPE_FULL
+};
+
 extern LANGSPEC const char **get_ccnames(void);
   
 extern LANGSPEC hash_t *create_instrument_widget_order_state(void);
@@ -47,8 +53,11 @@ extern LANGSPEC void GFX_update_current_instrument_widget(void);
 
 #endif
 
+extern LANGSPEC void AUDIOWIDGET_change_height(struct Patch *patch, SizeType type);
+#if 0
 extern LANGSPEC void AUDIOWIDGET_show_large(struct Patch *patch);
 extern LANGSPEC void AUDIOWIDGET_show_small(struct Patch *patch);
+#endif
 
 struct SoundPlugin;
 struct SoundPluginType;

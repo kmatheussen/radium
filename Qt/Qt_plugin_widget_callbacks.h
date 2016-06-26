@@ -56,8 +56,8 @@ public:
 
   PluginWidget *_plugin_widget;
 
-  bool _is_large;
-  int _last_height;
+  SizeType _size_type;
+  //int _last_height;
 
   int64_t _last_cpu_update_time;
   
@@ -73,8 +73,8 @@ public:
 #endif
     , _ignore_show_gui_checkbox_stateChanged(false)
     , _plugin_widget(NULL)
-    , _is_large(false)
-    , _last_height(10)
+    , _size_type(SIZETYPE_NORMAL)
+      //, _last_height(10)
     , _last_cpu_update_time(0)
     {
       R_ASSERT(_patch!=NULL);
@@ -493,6 +493,19 @@ private:
     GFX_update_instrument_widget((struct Patch*)_patch);
   }
 
+  void change_height(SizeType type){
+    if (_size_type==type)
+      return;
+    
+    _size_type=type;
+
+    AUDIOWIDGET_change_height(_patch, type);
+    
+#ifdef WITH_FAUST_DEV
+    if (_faust_plugin_widget != NULL)
+      _faust_plugin_widget->change_height(type, header->height());
+#endif
+  }
   
 public slots:
 
@@ -585,12 +598,42 @@ public slots:
 #endif
   }
 
+  void on_half_checkbox_toggled(bool val){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL)
+      return;
+    
+    if (max_checkbox->isChecked())
+      return;
+
+    if (val)
+      change_height(SIZETYPE_HALF);
+    else
+      change_height(SIZETYPE_NORMAL);
+  }
+    
+  void on_max_checkbox_toggled(bool val){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL)
+      return;
+    
+    if (val){
+      change_height(SIZETYPE_FULL);
+    }else{
+      if (half_checkbox->isChecked())
+        change_height(SIZETYPE_HALF);
+      else
+        change_height(SIZETYPE_NORMAL);
+    }
+  }
+    
+#if 0
   void on_large_checkbox_toggled(bool val){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin!=NULL){
       if (val){
         _is_large = true;
-        AUDIOWIDGET_show_large(_patch);
+        AUDIOWIDGET_change_height(_patch, SizeType type);
 #ifdef WITH_FAUST_DEV
         if (_faust_plugin_widget != NULL)
           _faust_plugin_widget->set_large(header->height());
@@ -605,6 +648,7 @@ public slots:
       }
     }
   }
+#endif
   
   // pd
   //

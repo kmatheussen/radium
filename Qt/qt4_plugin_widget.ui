@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1634</width>
+    <width>1692</width>
     <height>193</height>
    </rect>
   </property>
@@ -796,7 +796,7 @@ Example:
        </spacer>
       </item>
       <item>
-       <widget class="QCheckBox" name="large_checkbox">
+       <widget class="QCheckBox" name="half_checkbox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
           <horstretch>0</horstretch>
@@ -807,7 +807,23 @@ Example:
          <string>Load Faust source code</string>
         </property>
         <property name="text">
-         <string>Maximize</string>
+         <string>Half</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="max_checkbox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>Load Faust source code</string>
+        </property>
+        <property name="text">
+         <string>Full</string>
         </property>
        </widget>
       </item>
