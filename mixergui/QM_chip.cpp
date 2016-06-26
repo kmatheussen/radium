@@ -1279,13 +1279,24 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
   }
 }
 
-void Chip::mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event ){
-  printf("I'm double clicked!\n");
-  if(SP_get_plugin(_sound_producer)->type->show_gui != NULL)
-    SP_get_plugin(_sound_producer)->type->show_gui(SP_get_plugin(_sound_producer));
+bool Chip::myMouseDoubleClickEvent (float x, float y) {
 
-  event->accept();
+  if(SP_get_plugin(_sound_producer)->type->show_gui != NULL) {
+    
+    int x1,y1,x2,y2;
+    get_name_coordinates(x1,y1,x2,y2);
+
+    printf("I'm double clicked! %f,%f (%d,%d -> %d, %d)\n",x,y,x1,y1,x2,y2);
+
+    if(x>x1 && x<x2 && y>y1 && y<y2){
+      SP_get_plugin(_sound_producer)->type->show_gui(SP_get_plugin(_sound_producer));
+      return true;
+    }
+
+  }
   //QGraphicsItem::mouseDoubleClickEvent(event);
+
+  return false;
 }
 
 bool Chip::positionedAtSlider(QPointF pos){

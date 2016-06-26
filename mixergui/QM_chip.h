@@ -300,9 +300,10 @@ public:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *item, QWidget *widget);
 
   bool positionedAtSlider(QPointF pos);
-    
+
+  bool myMouseDoubleClickEvent (float x, float y);
+
 protected:
-    void mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event );
     void mousePressEvent(QGraphicsSceneMouseEvent *event);
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);

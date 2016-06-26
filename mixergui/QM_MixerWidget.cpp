@@ -887,9 +887,23 @@ void MyScene::mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event ){
 
   Chip *chip = MW_get_chip_at(pos.x(), pos.y(), NULL);
   if(chip!=NULL){
-    if(SP_get_plugin(chip->_sound_producer)->type->show_gui != NULL)
-      SP_get_plugin(chip->_sound_producer)->type->show_gui(SP_get_plugin(chip->_sound_producer));
-    event->accept();
+    if (chip->myMouseDoubleClickEvent(pos.x()-chip->x(), pos.y()-chip->y()))
+      event->accept();
+    /*
+    if(SP_get_plugin(chip->_sound_producer)->type->show_gui != NULL) {
+      
+      int x1,y1,x2,y2;
+      chip->get_name_coordinates(x1,y1,x2,y2);
+
+      QPointF pos = event->pos();
+
+      if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
+
+        SP_get_plugin(chip->_sound_producer)->type->show_gui(SP_get_plugin(chip->_sound_producer));
+        event->accept();
+      }
+    }
+    */
   }
 }
 
