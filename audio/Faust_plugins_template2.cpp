@@ -292,7 +292,7 @@ struct Data{
 
   ~Data(){
     delete qtgui_parent;
-    free(automation_values);
+    V_free(automation_values);
   }
 };
 
