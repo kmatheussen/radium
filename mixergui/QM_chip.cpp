@@ -1087,8 +1087,8 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
   bool is_current_patch = get_current_instruments_gui_patch()==patch;
 
   QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
-  if(is_current_patch==false)
-    text_color.setAlpha(160);
+  //if(is_current_patch==false)
+  text_color.setAlpha(160);
   
 
   QColor border_color = get_qcolor(MIXER_BORDER_COLOR_NUM);
@@ -1140,7 +1140,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     QColor patchcolor(custom_colors[colornum]);
 
     QColor c = 
-      is_selected
+      (false && is_selected)
       ? mix_colors(QColor(30,25,70,60), patchcolor, 0.45)
       : mix_colors(QColor(30,65,70,35), patchcolor, 0.05);
 
@@ -1218,9 +1218,15 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     //    if(is_current_patch==true){
       //}
-    painter->setPen(QPen(border_color, 1));
-    
-    painter->drawRect(x1,y1,x2-x1,y2-y1);
+    if (is_current_patch) {
+      QColor c = get_qcolor(CURSOR_EDIT_ON_COLOR_NUM);
+      c.setAlpha(150);
+      painter->setPen(QPen(c, 3));
+      painter->drawRoundedRect(x1-1,y1-1,x2-x1+1,y2-y1+1,10,10);
+    } else {
+      painter->setPen(QPen(border_color, 1));
+      painter->drawRect(x1,y1,x2-x1,y2-y1);
+    }
     //painter->fillRect(x1,y1,x2-x1,y2-y1);
 
     
