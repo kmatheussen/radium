@@ -570,7 +570,7 @@ static void create_gui(QDialog *parent, Data *data, SoundPlugin *plugin){
   data->qtgui = new QTGUI(parent);
   printf("     Created new QtGui %p\n", data->qtgui);
 
-  FAUST_set_qtguistyle(parent);
+  //FAUST_set_qtguistyle(parent);
   
   dsp->buildUserInterface(data->qtgui);
 

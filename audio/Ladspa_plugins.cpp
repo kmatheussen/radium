@@ -1008,7 +1008,8 @@ static void init_menues(){
 void create_ladspa_plugins(void){
   char ladspa_path[1024];
 
-#if __linux__
+#if FOR_LINUX && !defined(IS_LINUX_BINARY)  // We don't use system ladspa plugins in the binaries because they might use incompatible libraries with the ones included with radium. (happens with guitarix, which links in glib, preventing radium from even starting.)
+  
   if(getenv("LADSPA_PATH")==NULL){
     //QMessageBox::information(NULL, "LADSPA_PATH is not set.", "LADSPA_PATH is not set.");
     //return;
@@ -1021,10 +1022,11 @@ void create_ladspa_plugins(void){
             );
   } else 
     sprintf(ladspa_path,"%s",getenv("LADSPA_PATH"));
-#endif
 
-#if defined(FOR_WINDOWS) || defined(FOR_MACOSX)
+#else
+  
   sprintf(ladspa_path,"%s",QString(QString(OS_get_program_path()) + OS_get_directory_separator() + "ladspa").toUtf8().constData());
+  
 #endif
 
   char *dirname = strtok (ladspa_path, ":");

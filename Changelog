@@ -1,3 +1,28 @@
+Changes 3.9.4 -> 3.9.5:
+* Fix Linux binary
+* Draw a rounded rectangle around the current sound object in
+  the mixer.
+* Various mixer graphics improvements.
+* Various thread sanitizer fixes
+* Finally fixed an old pesky race condition bug.
+* Updated package list for debian/ubuntu and fedora.
+* Remove xmessage, pygtk and libglade from bin/packages.
+* Mixer: Only open GUI if double clicking on the instrument name.
+* Mixer: double clicking is normally handled as two single clicks.
+* Add solo buttons to the sound objects in the mixer and the
+  instrument window.
+* Change the Faust "Show C++" and "Options" buttons into checkboxes.
+* Make sure all dialogs remember geometry when they are reopened.
+* Fix loading LADSPA plugins.
+* Add options for LLVM optimization level and Faust GUI style
+  in the preferences dialog.
+* Automatically increase slider font size when the instrument
+  window is full size
+* Replaced the "maximum" checkbox with "half" and "full" checkboxes.
+* Don't crash if we can't read a song file.
+
+
+
 Changes 3.9.3 -> 3.9.4:
 * Show min/avg/max CPU usage for each individual instrument.
 * Fix rare divide by zero bug when displaying CPU usage.

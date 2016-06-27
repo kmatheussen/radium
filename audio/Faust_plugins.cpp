@@ -27,11 +27,6 @@ std::list<GUI*>  GUI::fGuiList;
 
 
 
-#ifdef WITH_FAUST_DEV
-
-
-
-
 #include "../common/visual_proc.h"
 #include "../common/patch_proc.h"
 
@@ -56,8 +51,6 @@ static Data *GET_DATA_FROM_PLUGIN(SoundPlugin *plugin);
 
 #define MAX_CHANNELS 16
 #define MAX_EFFECTS 1024
-
-#include "Faust_factory_factory.cpp"
 
 namespace{
 
@@ -115,6 +108,7 @@ void FAUST_change_qtguistyle(const char *style_name){
   
 }
 
+#if 0
 void FAUST_set_qtguistyle(QDialog *gui){
   /*
   if(g_qtgui_stylesheet=="")
@@ -124,6 +118,16 @@ void FAUST_set_qtguistyle(QDialog *gui){
     gui->setStyleSheet(g_qtgui_stylesheet);  
   */
 }
+#endif
+
+
+
+#ifdef WITH_FAUST_DEV
+
+
+
+
+#include "Faust_factory_factory.cpp"
 
 
 static int64_t g_id = 0;
