@@ -1132,7 +1132,8 @@ QWidget *GL_create_widget(QWidget *parent){
     if (ret==1)
       return NULL;
 
-    QThread::currentThread()->wait(1000*10);
+    usleep(10*1000);
+    //QThread::currentThread()->wait(1000*10);
   }
 
 

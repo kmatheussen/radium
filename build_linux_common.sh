@@ -77,7 +77,7 @@ fi
 FAUSTLDFLAGS="bin/packages/faust2/compiler/libfaust.a `pkg-config --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
 # _debug
 
-export OS_LDFLAGS="bin/packages/QScintilla_gpl-2.9.2/Qt4Qt5/libqscintilla2.a -lasound -ljack -llrdf -pthread -lrt -lX11 bin/packages/gc-7.2/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` $FAUSTLDFLAGS bin/packages/libpd-master/libs/libpds.a pluginhost/Builds/Linux/build/libMyPluginHost.a -lXext `$PKG --libs glib-2.0` -Wl,-Bstatic -lbfd -Wl,-Bdynamic -lz -liberty -lutil -ldl"
+export OS_LDFLAGS="bin/packages/QScintilla_gpl-2.9.2/Qt4Qt5/libqscintilla2.a $FAUSTLDFLAGS bin/packages/libpd-master/libs/libpds.a pluginhost/Builds/Linux/build/libMyPluginHost.a -lasound -ljack -llrdf -pthread -lrt -lX11 bin/packages/gc-7.2/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` -lXext `$PKG --libs glib-2.0` -Wl,-Bstatic -lbfd -Wl,-Bdynamic -lz -liberty -lutil -ldl"
 
 # 
 
