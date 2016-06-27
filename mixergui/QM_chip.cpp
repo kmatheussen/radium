@@ -352,11 +352,15 @@ static void paint_checkbutton(QPainter *painter, const QString &name, const QCol
     painter->setPen(QPen(c, 0.5));
   
     //painter->drawRect(x1, y1, x2-x1, y2-y1);
-    if (name=="M")
-      painter->drawLine(x1, y1+1, x1, y2-0.5);
-
-    if (name!="B")
-      painter->drawLine(x2, y1+1, x2, y2-0.5);
+    if (name=="M"){
+      QLineF line(x1-0.25, y1+0.5, x1-0.25, y2-0.25);
+      painter->drawLine(line);
+    }
+    
+    if (name!="B"){
+      QLineF line(x2-0.25, y1+0.5, x2-0.25, y2-0.25);
+      painter->drawLine(line);
+    }
   }
 
   
@@ -373,7 +377,8 @@ static void paint_checkbutton(QPainter *painter, const QString &name, const QCol
     //QColor c(10,12,30,65);
     //painter->setPen(QPen(c, 2));
     c.setAlpha(200);
-    painter->fillRect(x1, y1, x2-x1-1, y2-y1, c);
+    QRectF rect(x1+0.25, y1+0.75, x2-x1-1, y2-y1-1.25);
+    painter->fillRect(rect, c);
     //#endif
 
     /*
@@ -1081,18 +1086,18 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
   bool is_current_patch = get_current_instruments_gui_patch()==patch;
 
+  QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
+  if(is_current_patch==false)
+    text_color.setAlpha(160);
+  
+
   QColor border_color = get_qcolor(MIXER_BORDER_COLOR_NUM);
   if(is_current_patch==false)
     border_color.setAlpha(160);
 
   painter->setPen(QPen(border_color, 2));
 
-  QFont font = g_editor->main_window->font();
-  font.setPointSize(12);
-  font.setPixelSize(12);
-
-  painter->setFont(font);
-
+  // slider
   {
     int x1,y1,x2,y2;
     get_slider2_coordinates(x1,y1,x2,y2);      
@@ -1104,19 +1109,12 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       painter->fillRect(x1,y1,x2-x1,y2-y1, c);
     }
 
-    if(0){
-      QColor c = get_qcolor(WHITE_COLOR_NUM);
-      c.setAlpha(60);
-      painter->setBrush(QBrush(c,Qt::SolidPattern));
-    }
-    
     // input slider
     if(plugin->type->num_outputs==0 && plugin->type->num_inputs>0){
       painter->translate(x1,y1);
       SLIDERPAINTER_paint(_input_slider, painter);
       painter->translate(-x1,-y1);
     }
-
 
     // output slider (not painted if input slider is painted)
     if(plugin->type->num_outputs>0){
@@ -1126,6 +1124,12 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }
   }
 
+
+  QFont font = g_editor->main_window->font();
+  font.setPointSize(12);
+  font.setPixelSize(12);
+
+  painter->setFont(font);
 
   // Draw text
   {
@@ -1149,10 +1153,6 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     float textlen = get_text_width(painter->font(),text);       
     float width = x2-x1;
 
-    QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
-    if(is_current_patch==false)
-      text_color.setAlpha(160);
-      
     //printf("updating %d\n",(int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 150, 100));
     painter->setPen(QPen(text_color, 2));
 
@@ -1185,6 +1185,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       paint_checkbutton(painter, "B", text_color, get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), x1,y1,x2,y2, ATOMIC_GET(plugin->effects_are_on));
     }
   }
+
 
   // Draw note indicator
   {
