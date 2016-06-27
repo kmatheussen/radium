@@ -109,7 +109,7 @@ static const int top_border    = 2;
 //static const int slider_height = 15;
 
 static const int name_height = 14;
-static const int button_width = 13;//name_height/2;
+static const int button_width = 15;//name_height/2;
 //static const int button_height = 13;//name_height/2;
 
 
@@ -132,9 +132,8 @@ static void get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_coordinates(x1,y1,x2,y2);
   //get_slider2_coordinates(x1,y1,x2,y2);
 
-  x1 += 2;
-  x2 = x2-button_width-3;
-  y1 = y2-name_height;
+  x1 = x1 + name_height;
+  y1 = y2 - name_height;
 
   //  y1+=slider_height;
   //  y2+=name_height;
@@ -143,9 +142,10 @@ static void get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
 static void get_note_indicator_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_name_coordinates(x1,y1,x2,y2);
 
-  x2 = x1 + 5;
-  y1 += 4;
-  y2 -= 4;
+  x2 = x1 - 3; 
+  x1 = chip_box_x1 + 3;
+  y1 += 3;
+  y2 -= 3;
 }
 
 static int get_note_indicator_x2(void){
@@ -155,16 +155,20 @@ static int get_note_indicator_x2(void){
 }
 
 void CHIP_get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
+  get_name_coordinates(x1,y1,x2,y2);
+}
+
+void CHIP_get_note_indicator_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_note_indicator_coordinates(x1,y1,x2,y2);
 }
 
 static void get_slider1_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_name_coordinates(x1,y1,x2,y2);
 
-  x1 = chip_box_x1 + left_border;
-  x2 = chip_box_x2 - right_border;
+  x1 = chip_box_x1;// + left_border;
+  x2 = chip_box_x2;// - right_border;
   y2 = y1;
-  y1 = chip_box_y1 + top_border;
+  y1 = chip_box_y1; // + top_border;
 }
 
 
@@ -175,28 +179,30 @@ static void get_slider2_coordinates(int &x1, int &y1, int &x2, int &y2){
 }
 
 
-static void get_solo_onoff_coordinates(int &x1, int &y1, int &x2, int &y2){
-  get_coordinates(x1,y1,x2,y2);
-
-  x1 = x2 - button_width*2 - 1;
-  x2 = x2 - button_width - 1;
-  //y1 = 0;
-  y2 = y1 + button_width-3;
-}
-
 static void get_volume_onoff_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_coordinates(x1,y1,x2,y2);
 
-  x1 = x2-button_width-1;
-  //y1 = 0;
-  y2 = y1 + button_width-3;
+  x1 = x2 - button_width*3;
+  x2 = x2 - button_width*2;
+
+  y2 = y1 + button_width - 1;
+}
+
+static void get_solo_onoff_coordinates(int &x1, int &y1, int &x2, int &y2){
+  get_coordinates(x1,y1,x2,y2);
+
+  x1 = x2 - button_width*2;
+  x2 = x2 - button_width;
+
+  y2 = y1 + button_width - 1;
 }
 
 static void get_effects_onoff_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_coordinates(x1,y1,x2,y2);
 
-  x1 = x2-button_width-1;
-  y1 = y2-button_width+2;
+  x1 = x2 - button_width;
+
+  y2 = y1 + button_width - 1;
 }
 
 
@@ -282,14 +288,12 @@ static int get_eport_x2(Chip *chip){
 
 int CHIP_get_output_eport_y(Chip *chip){
   int x1,y1,x2,y2;
-  //get_name_coordinates(x1,y1,x2,y2);
   get_note_indicator_coordinates(x1,y1,x2,y2);
   return chip->y() + y2;
 }
 
 int CHIP_get_input_eport_y(Chip *chip){
   int x1,y1,x2,y2;
-  //get_name_coordinates(x1,y1,x2,y2);
   get_note_indicator_coordinates(x1,y1,x2,y2);
   return chip->y()+y1;
 }
@@ -339,34 +343,45 @@ bool CHIP_is_at_output_eport(Chip *chip, int x, int y){
 // stuff 
 
 
-static void paint_checkbutton(QPainter *painter, int x1, int y1, int x2, int y2, bool is_on){
-  QColor c = get_qcolor(MIXER_BORDER_COLOR_NUM);
-  painter->setPen(QPen(c, 2));
+static void paint_checkbutton(QPainter *painter, QString name, QColor background_color, int x1, int y1, int x2, int y2, bool is_on){
+
+  {
+    QColor c = get_qcolor(MIXER_BORDER_COLOR_NUM);
+    painter->setPen(QPen(c, 0.5));
   
-  painter->drawRect(x1, y1, x2-x1, y2-y1);
+    painter->drawRect(x1, y1, x2-x1, y2-y1);
+  }
+
+  
   if(!is_on){
-    //#if 0
 
-    QColor c = get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1);
+    QColor c = background_color;
 
-#if 0
-    
-    painter->setPen(c);
-    painter->drawEllipse((x1+x2)/2.0f, (y1+y2)/2.0f, x2-x1, y2-y1);
-#else
+    /*
     painter->drawLine(x1, y1, x2, y2);
     painter->drawLine(x2, y1, x1, y2);
+    */
+    
     //#else
     //QColor c(10,12,30,65);
     //painter->setPen(QPen(c, 2));
-    c.setAlpha(100);
+    c.setAlpha(200);
     painter->fillRect(x1, y1, x2-x1-1, y2-y1, c);
     //#endif
 
+    /*
     c.setAlpha(255);
     painter->drawLine(x1, y1, x2, y2);
     painter->drawLine(x2, y1, x1, y2);
-#endif
+    */
+  }
+
+  {
+    QColor c = get_qcolor(MIXER_TEXT_COLOR_NUM);
+
+    painter->setPen(QPen(c, 2));
+
+    painter->drawText(x1+1, y1+1, x2-x1-1, y2-y1-1, Qt::AlignCenter, name);
   }
 }
 
@@ -1073,26 +1088,9 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
   painter->setFont(font);
 
-  // main box
-  {
-    int x1,y1,x2,y2;
-    get_coordinates(x1,y1,x2,y2);
-
-    //    if(is_current_patch==true){
-      //}
-    painter->setPen(QPen(border_color, 2));
-    
-    painter->drawRect(x1,y1,x2-x1,y2-y1);
-    //painter->fillRect(x1,y1,x2-x1,y2-y1);
-  }
-
-  int button_x2;
-
   {
     int x1,y1,x2,y2;
     get_slider2_coordinates(x1,y1,x2,y2);      
-
-    button_x2 = x2;
 
     {
       QColor c = get_qcolor(MIXER_BORDER_COLOR_NUM);
@@ -1123,49 +1121,25 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }
   }
 
-#if 0
-  if(1){
-  // makesound button
-  {
-    int x1,y1,x2,y2;
-    get_volume_onoff_coordinates(x1,y1,x2,y2);
-    //get_makesound_button_coordinates(x1,y1,x2,y2);
-    painter->translate(x1,y1);
-    CHECKBOX_paint_arc(painter, ATOMIC_GET(plugin->volume_is_on), true, x2-x1, y2-y1);
-    painter->translate(-x1,-y1);
-  }
-
-  // wet button
-  {
-    int x1,y1,x2,y2;
-    //get_dontbypass_button_coordinates(x1,y1,x2,y2);
-    get_effects_onoff_coordinates(x1,y1,x2,y2);
-    painter->translate(x1,y1);
-    CHECKBOX_paint_arc(painter, !ATOMIC_GET(plugin->effects_are_on), true, x2-x1, y2-y1);
-    painter->translate(-x1,-y1);
-  }
-  }
-#endif
 
   // Draw text
   {
     int x1,y1,x2,y2;
     get_name_coordinates(x1,y1,x2,y2);
-    x1 = get_note_indicator_x2() + 2;
 
     int colornum = patch->colornum;
     QColor patchcolor(custom_colors[colornum]);
 
-    if(is_selected){
-      QColor c = mix_colors(QColor(30,25,70,60), patchcolor, 0.45);      
-      //painter->fillRect(x1-1,y1+1,x2-x1+2,y2-y1-2, g_editor->colors[9].light(86));
-      painter->fillRect(x1-1,y1+1,button_x2-x1+2,y2-y1-2, c);
-    }else{
-      QColor c = mix_colors(QColor(30,65,70,35), patchcolor, 0.05);
-      painter->fillRect(x1-1,y1+1,button_x2-x1+2,y2-y1-2, c);
-    }
+    QColor c = 
+      is_selected
+      ? mix_colors(QColor(30,25,70,60), patchcolor, 0.45)
+      : mix_colors(QColor(30,65,70,35), patchcolor, 0.05);
 
+    painter->fillRect(x1, y1, x2-x1, y2-y1, c);
 
+    x1 += 2;    
+    x2 -= 1;
+    
     QString text = patch->name;
     float textlen = get_text_width(painter->font(),text);       
     float width = x2-x1;
@@ -1189,41 +1163,24 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       painter->drawText(x1, y1, width, y2-y1, Qt::AlignLeft, text);
     }
 
-#if 1
     // checbuttons.
     {
-      int x1,y1,x2,y2;
-      get_solo_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, x1,y1,x2,y2, !ATOMIC_GET(plugin->solo_is_on));
 
+      font.setPointSize(10);
+      font.setPixelSize(10);
+
+      painter->setFont(font);
+
+      int x1,y1,x2,y2;
       get_volume_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, x1,y1,x2,y2, ATOMIC_GET(plugin->volume_is_on));
+      paint_checkbutton(painter, "M", Qt::green, x1,y1,x2,y2, ATOMIC_GET(plugin->volume_is_on));
+
+      get_solo_onoff_coordinates(x1,y1,x2,y2);
+      paint_checkbutton(painter, "S", Qt::yellow, x1,y1,x2,y2, !ATOMIC_GET(plugin->solo_is_on));
 
       get_effects_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, x1,y1,x2,y2, ATOMIC_GET(plugin->effects_are_on));
+      paint_checkbutton(painter, "B", get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), x1,y1,x2,y2, ATOMIC_GET(plugin->effects_are_on));
     }
-#endif
-    
-#if 0
-    {
-      painter->setPen(QPen(Qt::black, 2));
-     
-      int x1,y1,x2,y2;
-      get_coordinates(x1,y1,x2,y2);
- 
-      painter->drawRect(x2-button_width, 0, button_width, button_width-2);
-      painter->drawRect(x2-button_width, y2-button_width+1, button_width, button_width-2);
-
-      QColor c(10,12,30,65);
-      painter->setPen(QPen(c, 2));
-
-      painter->fillRect(x2-button_width, y2-button_width, button_width, button_width, c);
-#if 0
-      painter->drawLine(x2-button_width, y2-button_width, x2, y2);
-      painter->drawLine(x2, y2-button_width, x2-button_width, y2);
-#endif
-    }
-#endif
   }
 
   // Draw note indicator
@@ -1248,6 +1205,27 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->setPen(border_color);
     painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,0.05,0.05);
   }
+
+
+  // main box
+  {
+    int x1,y1,x2,y2;
+    get_coordinates(x1,y1,x2,y2);
+
+    //    if(is_current_patch==true){
+      //}
+    painter->setPen(QPen(border_color, 1));
+    
+    painter->drawRect(x1,y1,x2-x1,y2-y1);
+    //painter->fillRect(x1,y1,x2-x1,y2-y1);
+
+    
+    // Line between slider/buttons and name.
+    
+    painter->setPen(QPen(border_color, 0.5));
+    painter->drawLine(x1, y2-name_height, x2, y2-name_height);
+  }
+
 
   //printf("Paint Chip. Inputs: %d, Ouptuts: %d\n",_num_inputs,_num_outputs);
 

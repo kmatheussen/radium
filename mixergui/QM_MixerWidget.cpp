@@ -1069,7 +1069,7 @@ namespace{
                   ATOMIC_ADD_RETURN_OLD(patch->visual_note_intencity, -1);
                   //printf("intencity: %d\n",intencity);
                   int x1,y1,x2,y2;
-                  CHIP_get_name_coordinates(x1,y1,x2,y2);
+                  CHIP_get_note_indicator_coordinates(x1,y1,x2,y2);
                   chip->update(x1,y1,x2-x1,y2-y1);
                 }
                 
