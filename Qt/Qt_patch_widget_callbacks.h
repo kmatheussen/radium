@@ -215,7 +215,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     int chance=get_c(voicenum)->value();
     if(_voices[voicenum].chance != chance){
       ADD_UNDO(PatchVoice_CurrPos(_patch,voicenum));
-      _voices[voicenum].chance = chance;
+      safe_float_write(&_voices[voicenum].chance, chance);
     }
     set_editor_focus();
     update_peaks();

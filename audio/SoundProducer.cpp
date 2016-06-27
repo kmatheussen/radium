@@ -690,7 +690,7 @@ public:
   }
 
   static void RT_set_bus_descendant_types(void){
-    radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
+    const radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
   
     // First set all descendant types to MAYBE.
     for (SoundProducer *sp : *sp_all)
@@ -1192,7 +1192,7 @@ void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool p
   bool add_cpu_data = is_visible && cpu_usage!=NULL;
 
   //double start_time;
-  jack_time_t start_time;
+  jack_time_t start_time = 0;
   
   if (add_cpu_data)
     start_time = jack_get_time();
@@ -1212,7 +1212,7 @@ void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool p
 }
 
 void SP_write_mixer_tree_to_disk(QFile *file){
-  radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
+  const radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
   if (sp_all==NULL)
     return;
   
@@ -1237,7 +1237,7 @@ void SP_write_mixer_tree_to_disk(QFile *file){
 void SP_print_tree(void){
   int num=0;
 
-  radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
+  const radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
   
   for (SoundProducer *sp : *sp_all){
     fprintf(stderr,"%d (%d): sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",
@@ -1302,7 +1302,7 @@ enum BusDescendantType SP_get_bus_descendant_type(SoundProducer *sp){
 }
 
 static SoundProducer *get_SoundProducer_r0(SoundPlugin *plugin){
-  radium::Vector<SoundProducer*> *all_sp = MIXER_get_all_SoundProducers();
+  const radium::Vector<SoundProducer*> *all_sp = MIXER_get_all_SoundProducers();
 
   for (SoundProducer *sp : *all_sp)
     if(SP_get_plugin(sp)==plugin)

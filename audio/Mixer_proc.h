@@ -30,7 +30,7 @@ extern void MIXER_remove_SoundProducer(SoundProducer *sound_producer);
   
 #ifdef USE_QT4
 #include "../common/Vector.hpp"
-extern radium::Vector<SoundProducer*> *MIXER_get_all_SoundProducers(void);
+extern const radium::Vector<SoundProducer*> *MIXER_get_all_SoundProducers(void);
 #endif
 
 #endif // __cplusplus

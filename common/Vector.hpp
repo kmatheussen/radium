@@ -58,6 +58,10 @@ public:
 
   // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
   T operator[](int i) const {
+    return at(i);
+  }
+
+  T at(int i) const {
     LOCKASSERTER_SHARED(&lockAsserter);
 
     R_ASSERT(i>=0);
@@ -65,6 +69,7 @@ public:
     
     return elements[i];
   }
+
 
   // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
   const T* begin() const {
@@ -155,6 +160,7 @@ private:
   void remove_pos_internal(int pos, bool keep_order){
     R_ASSERT_RETURN_IF_FALSE(pos < num_elements);
 
+
     if (keep_order) {
       
       int i;
@@ -224,6 +230,10 @@ public:
     }
   }
 
+  void push_back(T t){
+    add(t);
+  }
+  
   // NOT RT safe
   //
   // This function can NOT be called in parallell with other functions
@@ -263,7 +273,7 @@ public:
     
     R_ASSERT(next_elements == NULL);
     R_ASSERT(elements_ready_for_freeing == NULL);
-    
+
     int pos = find_pos_internal(t);
     R_ASSERT_RETURN_IF_FALSE(pos>=0);
     
@@ -284,13 +294,15 @@ public:
   // This function can NOT be called in parallell with other functions
   void clear(void) {
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
-    
+
     R_ASSERT(next_elements == NULL);
     num_elements = 0;
   }
 
 
 };
+
+
 }
 
 

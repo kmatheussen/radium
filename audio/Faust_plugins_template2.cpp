@@ -266,6 +266,7 @@ struct Voice{
   { }
 };
 
+
 struct Data{
   Voice *voices_playing; // not used by effects
   Voice *voices_not_playing; // not used by effects
@@ -291,7 +292,6 @@ struct Data{
 
   ~Data(){
     delete qtgui_parent;
-
     free(automation_values);
   }
 };

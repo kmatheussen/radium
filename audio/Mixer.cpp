@@ -442,7 +442,7 @@ struct Mixer{
       }
 
       //MULTICORE_ensure_capacity(_sound_producers.num_elements);
-      _sound_producers.add(sound_producer);
+      _sound_producers.push_back(sound_producer);
       
     }PLAYER_unlock();
   }
@@ -458,6 +458,7 @@ struct Mixer{
 
     
     PLAYER_lock();{
+      //_sound_producers.remove(_sound_producers.indexOf(sound_producer));
       _sound_producers.remove(sound_producer);
       
       if (is_click_patch) {
@@ -652,10 +653,10 @@ struct Mixer{
         pause_time.restart();
         excessive_time.restart();
       }
-            
-      MIXER_check_if_someone_has_solo();
-      
+                  
       RT_lock_player();
+      
+      MIXER_check_if_someone_has_solo();
 
       jackblock_variables_protector.write_start();{
         
@@ -1042,7 +1043,7 @@ void MIXER_remove_SoundProducer(SoundProducer *sound_producer){
   g_mixer->remove_SoundProducer(sound_producer);
 }
 
-radium::Vector<SoundProducer*> *MIXER_get_all_SoundProducers(void){
+const radium::Vector<SoundProducer*> *MIXER_get_all_SoundProducers(void){
   if (g_mixer==NULL)
     return NULL;
   else

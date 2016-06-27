@@ -674,13 +674,52 @@ public:
         RError("weird");
     }
 
+    bool is_bus_provider = SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER;
+    
+    bus1_widget->setEnabled(is_bus_provider);
+    bus2_widget->setEnabled(is_bus_provider);
+    bus3_widget->setEnabled(is_bus_provider);
+    bus4_widget->setEnabled(is_bus_provider);
+    bus5_widget->setEnabled(is_bus_provider);
 
-    bus1_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
-    bus2_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
-    bus3_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
-    bus4_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
-    bus5_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
+#if 0 //ndef RELEASE
+    static int checknum;
+    //    PLAYER_lock();
+    fprintf(stderr,"\n\n     STARTING CHECK %d\n",checknum);
+        
+    const radium::Vector2<SoundProducer*> *org_all_sp = MIXER_get_all_SoundProducers();
+    //void *elements1=org_all_sp->elements;
+    int size = org_all_sp->size();
+    QVector<SoundProducer*> sps;
 
+    for(int n=0;n<size;n++)
+      //    for (auto *sp : *all_sp)
+      sps.push_back(org_all_sp->at(n));//[n]);//->elements[n]);
+
+    for(int i = 0 ; i < 50000 ; i ++){
+      const radium::Vector2<SoundProducer*> *all_sp = MIXER_get_all_SoundProducers();
+      //void *elements2=all_sp->elements;
+      R_ASSERT(all_sp->size() == size);
+      
+      for(int n=0;n<size;n++){
+        SoundProducer *sp1 = sps[n];
+        //SoundProducer *sp2 = all_sp->at(n);//[n];//((SoundProducer**)elements1)[n];//org_all_sp->elements[n];
+        SoundProducer *sp2 = all_sp->elements[n];//at(n);//[n];//((SoundProducer**)elements1)[n];//org_all_sp->elements[n];
+        if (sp1 != sp2){
+          SoundPlugin *p1 = SP_get_plugin(sp1);
+          SoundPlugin *p2 = SP_get_plugin(sp2);
+          fprintf(stderr,"org_all_sp: %p, all_sp: %p, sp1: %p, sp2: %p. plug1: %s, plug2: %s\n",sp1,sp2,sp1,sp2,p1==NULL?"(null)":p1->patch->name,p2==NULL?"(null)":p2->patch->name);
+          abort();
+        }
+        R_ASSERT(sps[n]==all_sp->at(n));//elements[n]);
+      }
+      
+      SP_get_SoundProducer(plugin);
+    }
+    fprintf(stderr,"\n\n     FINISHING CHECK %d\n",checknum++);
+    //    PLAYER_unlock();
+#endif
+    
     //int num_inputs = type->num_inputs;
     int num_outputs = type->num_outputs;
 
