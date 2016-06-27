@@ -150,9 +150,11 @@ if(block==NULL) return;
 
 	DLoadTracks(newroot,block->tracks);
 
-
-        PLAYER_lock();{
+        GL_lock();{
           GL_pause_gl_thread_a_short_while();
+        }GL_unlock();
+        
+        PLAYER_lock();{
           //GL_draw_lock();{
           temp=root;
           root=newroot;
