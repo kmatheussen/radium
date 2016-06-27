@@ -775,15 +775,25 @@ private:
   }
 
   void hide_non_instrument_widgets(void){
+    /*
     GFX_HideEditor();
     GFX_HideMixer();
     GFX_PlayListWindowToBack();
+    */
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+    editor->xsplitter->hide();
   }
 
   void show_non_instrument_widgets(void){
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+    editor->xsplitter->show();
+    /*
     GFX_ShowEditor();
     GFX_ShowMixer();
     GFX_PlayListWindowToFront();
+    */
   }
 
   
