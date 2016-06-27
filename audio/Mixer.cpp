@@ -578,8 +578,8 @@ struct Mixer{
   
   // Start the most cpu intensive soundproducers first
   void RT_sort_sound_producers_by_running_time(void){
-    qsort(_sound_producers.elements, _sound_producers.size(), sizeof(SoundProducer*), compare_sound_producers);
 #if 0    
+    qsort(_sound_producers.elements, _sound_producers.size(), sizeof(SoundProducer*), compare_sound_producers); NO no no. Cant change the vector in this thread.
     printf("\n\n\n****************** START\n");
     for(int i=0;i<_num_sound_producers;i++){
       printf("%.4f\n", 1000.0*SP_get_running_time(_sound_producers[i]));
