@@ -168,10 +168,10 @@ static bool Load(const wchar_t *filename){
 #endif
 	CloseAllTrackerWindows();
 
-        GL_pause_gl_thread_a_short_while();
         //GL_draw_lock();{
         PLAYER_lock();{ //<-- Locks within locks are dangerous. But it doesn't matter since the player isn't playing now anyway.
-            root=newroot;		//BANG!
+          GL_pause_gl_thread_a_short_while();
+          root=newroot;		//BANG!
         }PLAYER_unlock();
         //}GL_draw_unlock();
 
