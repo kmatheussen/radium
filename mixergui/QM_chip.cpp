@@ -100,10 +100,12 @@ static int get_text_width(const QFont &font, const QString &text){
   return fn.width(text);
 }
 
+#if 0
 static const int left_border   = 2;
 static const int right_border  = 2;
 static const int top_border    = 2;
 //static const int bottom_border = 2;
+#endif
 
 //static const int chip_width = 120;
 //static const int slider_height = 15;
