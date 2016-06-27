@@ -470,16 +470,16 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
     // Faust
     {
-#ifdef WITH_FAUST_DEV
       const char *style = getFaustGuiStyle();
       faust_blue_button->setChecked(!strcmp(style, "Blue"));
       faust_salmon_button->setChecked(!strcmp(style, "Salmon"));
       faust_grey_button->setChecked(!strcmp(style, "Grey"));
       faust_default_button->setChecked(!strcmp(style, "Default"));
 
+#ifdef WITH_FAUST_DEV
       faust_optimization_level->setValue(getFaustOptimizationLevel());
 #else
-      tabWidget->removeTab(tabWidget->indexOf(faust_tab));
+      faust_llvm_opt_level_box->hide();
 #endif
     }
     

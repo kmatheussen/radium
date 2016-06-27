@@ -423,7 +423,7 @@ void create_faust_plugin(void){
     "Hints:\n"
     "<UL>"
     "<LI> To zoom, either the editor or a diagram, press CTRL while scrolling the mouse wheel."
-    "<LI> Running maximized (by pressing the \"Maximize\" button) can be very convenient when developing."
+    "<LI> Running full size window (by pressing the \"Full\" button) can be very convenient when developing."
     "</UL"
     ;
 

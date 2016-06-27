@@ -2473,8 +2473,8 @@ This option should be considered as a lightweight version of  &quot;Only show mo
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>794</width>
-            <height>468</height>
+            <width>396</width>
+            <height>26</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -4083,8 +4083,8 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>915</width>
-               <height>278</height>
+               <width>100</width>
+               <height>30</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -4196,7 +4196,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
         </item>
        </layout>
       </widget>
-      <widget class="QGroupBox" name="groupBox_3">
+      <widget class="QGroupBox" name="faust_llvm_opt_level_box">
        <property name="geometry">
         <rect>
          <x>30</x>
