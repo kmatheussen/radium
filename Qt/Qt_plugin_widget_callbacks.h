@@ -415,7 +415,14 @@ public:
     
     update_preset_widgets();
 
-    //update_cpu_usage(true);
+    {
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      if (plugin != NULL){
+        bool is_solo = ATOMIC_GET(plugin->solo_is_on);
+        if (solo_checkbox->isChecked() != is_solo)
+          solo_checkbox->setChecked(is_solo);
+      }
+    }
   }
 
   void update_preset_widgets(){
@@ -805,6 +812,14 @@ public slots:
       
       set_editor_focus();
     }
+
+  void on_solo_checkbox_toggled(bool val){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin != NULL){
+      ATOMIC_SET(plugin->solo_is_on, val);
+      CHIP_update(plugin);
+    }
+  }
 };
 
 void PLUGINWIDGET_gui_is_hidden(void *w){
