@@ -343,13 +343,18 @@ bool CHIP_is_at_output_eport(Chip *chip, int x, int y){
 // stuff 
 
 
-static void paint_checkbutton(QPainter *painter, QString name, QColor background_color, int x1, int y1, int x2, int y2, bool is_on){
+static void paint_checkbutton(QPainter *painter, const QString &name, const QColor &text_color, const QColor &background_color, int x1, int y1, int x2, int y2, bool is_on){
 
   {
     QColor c = get_qcolor(MIXER_BORDER_COLOR_NUM);
     painter->setPen(QPen(c, 0.5));
   
-    painter->drawRect(x1, y1, x2-x1, y2-y1);
+    //painter->drawRect(x1, y1, x2-x1, y2-y1);
+    if (name=="M")
+      painter->drawLine(x1, y1+1, x1, y2-0.5);
+
+    if (name!="B")
+      painter->drawLine(x2, y1+1, x2, y2-0.5);
   }
 
   
@@ -377,9 +382,7 @@ static void paint_checkbutton(QPainter *painter, QString name, QColor background
   }
 
   {
-    QColor c = get_qcolor(MIXER_TEXT_COLOR_NUM);
-
-    painter->setPen(QPen(c, 2));
+    painter->setPen(QPen(text_color, 2));
 
     painter->drawText(x1+1, y1+1, x2-x1-1, y2-y1-1, Qt::AlignCenter, name);
   }
@@ -1144,14 +1147,12 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     float textlen = get_text_width(painter->font(),text);       
     float width = x2-x1;
 
-    {
-      QColor c = get_qcolor(MIXER_TEXT_COLOR_NUM);
-      if(is_current_patch==false)
-        c.setAlpha(160);
-
-      //printf("updating %d\n",(int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 150, 100));
-      painter->setPen(QPen(c, 2));
-    }
+    QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
+    if(is_current_patch==false)
+      text_color.setAlpha(160);
+      
+    //printf("updating %d\n",(int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 150, 100));
+    painter->setPen(QPen(text_color, 2));
 
     if(textlen>=width){
       float s = width/textlen;
@@ -1173,13 +1174,13 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
       int x1,y1,x2,y2;
       get_volume_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, "M", Qt::green, x1,y1,x2,y2, ATOMIC_GET(plugin->volume_is_on));
+      paint_checkbutton(painter, "M", text_color, Qt::green, x1,y1,x2,y2, ATOMIC_GET(plugin->volume_is_on));
 
       get_solo_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, "S", Qt::yellow, x1,y1,x2,y2, !ATOMIC_GET(plugin->solo_is_on));
+      paint_checkbutton(painter, "S", text_color, Qt::yellow, x1,y1,x2,y2, !ATOMIC_GET(plugin->solo_is_on));
 
       get_effects_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, "B", get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), x1,y1,x2,y2, ATOMIC_GET(plugin->effects_are_on));
+      paint_checkbutton(painter, "B", text_color, get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), x1,y1,x2,y2, ATOMIC_GET(plugin->effects_are_on));
     }
   }
 
