@@ -887,8 +887,10 @@ void MyScene::mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event ){
 
   Chip *chip = MW_get_chip_at(pos.x(), pos.y(), NULL);
   if(chip!=NULL){
-    if (chip->myMouseDoubleClickEvent(pos.x()-chip->x(), pos.y()-chip->y()))
+    if (chip->myMouseDoubleClickEvent(pos.x()-chip->x(), pos.y()-chip->y())){
       event->accept();
+      return;
+    }
     /*
     if(SP_get_plugin(chip->_sound_producer)->type->show_gui != NULL) {
       
@@ -905,6 +907,7 @@ void MyScene::mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event ){
     }
     */
   }
+  QGraphicsScene::mouseDoubleClickEvent(event);
 }
 
 void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
