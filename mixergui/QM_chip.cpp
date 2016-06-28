@@ -1218,11 +1218,11 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     //    if(is_current_patch==true){
       //}
-    if (is_current_patch) {
+    if (is_current_patch) { ///is_current_patch) {
       QColor c = get_qcolor(CURSOR_EDIT_ON_COLOR_NUM);
       c.setAlpha(150);
       painter->setPen(QPen(c, 3));
-      painter->drawRoundedRect(x1-1,y1-1,x2-x1+1,y2-y1+1,10,10);
+      painter->drawRoundedRect(x1-1,y1-1,x2-x1+1,y2-y1+1,7,7);
     } else {
       painter->setPen(QPen(border_color, 1));
       painter->drawRect(x1,y1,x2-x1,y2-y1);
@@ -1231,10 +1231,18 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     
     // Line between slider/buttons and name.
-    
-    painter->setPen(QPen(border_color, 0.5));
-    painter->drawLine(x1, y2-name_height, x2, y2-name_height);
+    {
+      painter->setPen(QPen(border_color, 0.5));
+      painter->drawLine(x1, y2-name_height, x2, y2-name_height);
+    }
+
+    // Greying if selected
+    if (is_selected && !is_current_patch){
+      QColor c(40,40,40,100);
+      painter->fillRect(x1,y1,x2-x1,y2-y1,c);
+    }
   }
+
 
 
   //printf("Paint Chip. Inputs: %d, Ouptuts: %d\n",_num_inputs,_num_outputs);
