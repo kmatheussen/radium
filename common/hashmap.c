@@ -553,6 +553,8 @@ hash_t *HASH_load(disk_t *file){
   bool new_format = false;
 
   wchar_t *line = read_line(file);
+  if (line==NULL) return NULL;
+  
   if(!STRING_equals(line,">> HASH MAP BEGIN")){
     if(!STRING_equals(line,">> HASH MAP V2 BEGIN")){
       GFX_Message(NULL, "Trying to load something which is not a hash map. First line: \"%s\"",line);
@@ -568,13 +570,17 @@ hash_t *HASH_load(disk_t *file){
   hash_t *hash=HASH_create(elements_size);
 
   line = read_line(file);
-
+  if (line==NULL)
+    return NULL;
+  
   while(!STRING_equals(line,"<< HASH MAP END") && !STRING_equals(line,"<< HASH MAP V2 END")){
     const char *key = STRING_get_chars(line);
     int i = 0;
 
     if(new_format==true){
       line = read_line(file);
+      if (line==NULL) return NULL;
+      
       i = STRING_get_int(line);
       int new_size = i+1;
       if(new_size>hash->num_array_elements)
@@ -586,6 +592,8 @@ hash_t *HASH_load(disk_t *file){
     }
 
     line = read_line(file);
+    if (line==NULL) return NULL;
+    
     int type = typename_to_type(line);
 
     switch(type){

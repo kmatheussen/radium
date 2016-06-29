@@ -170,7 +170,8 @@ static hash_t *get_preset_state_from_filename(const wchar_t *filename){
   }
 
   hash_t *state = HASH_load(file);
-  DISK_close_and_delete(file);
+  if (DISK_close_and_delete(file)==false)
+    return NULL;
 
   if(state==NULL){
     GFX_Message(NULL, "File does not appear to be a valid effects settings file");

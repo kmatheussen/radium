@@ -779,7 +779,8 @@ static hash_t *get_preset_state_from_filename(QString filename){
   }
 
   hash_t *state = HASH_load(file);
-  DISK_close_and_delete(file);
+  if (DISK_close_and_delete(file)==false)
+    return NULL;
 
   if(state==NULL){
     QMessageBox msgBox;

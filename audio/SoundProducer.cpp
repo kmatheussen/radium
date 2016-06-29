@@ -389,46 +389,57 @@ static void RT_fade_out2(float *sound, int pos, int num_frames){
 }
 
 
-
-static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs, bool process_plugins){
-
-  if (process_plugins == false){
-    for(int ch=0;ch<plugin->type->num_outputs;ch++)
-      memset(outputs[ch], 0, sizeof(float)*num_frames);
-    return;
-  }
-  
-  plugin->type->RT_process(plugin, time, num_frames, inputs, outputs);
-
+static const char *RT_check_abnormal_signal(SoundPlugin *plugin, int num_frames, float **outputs){
   float sum=0.0f;
 
   for(int ch=0;ch<plugin->type->num_outputs;ch++)
     for(int i=0;i<num_frames;i++)
       sum += outputs[ch][i];
 
-  if(sum!=0.0f && !myisnormal(sum) ){
-    for(int ch=0;ch<plugin->type->num_outputs;ch++)
-      for(int i=0;i<num_frames;i++)
-        outputs[ch][i] = 0.0f;
+  if(sum!=0.0f && !myisnormal(sum) )
+    return myisnan(sum)?"nan":myisinf(sum)?"inf":myfpclassify(sum)==FP_SUBNORMAL?"denormal":"<something else\?\?\?>";
+  else
+    return NULL;
+}
 
-    volatile struct Patch *patch = plugin->patch;
-    const char *sigtype = myisnan(sum)?"nan":myisinf(sum)?"inf":myfpclassify(sum)==FP_SUBNORMAL?"denormal":"<something else\?\?\?>";
-    RT_message("Error!\n"
-               "\n"
-               "The instrument named \"%s\" of type %s/%s\n"
-               "generated one or more signals of type \"%s\".\n"
-               "\n"
-               "These signals have now been replaced with silence.\n"
-               "\n"
-               "This warning will pop up as long as the instrument misbehaves.\n"
-               "\n"
-               "If the instrument is a third party instrument, for instance a\n"
-               "VST plugin, a LADSPA plugin, or a Pd patch, please contact the\n"
-               "third party to fix the bug.\n",
-               patch==NULL?"<no name>":patch->name,
-               plugin->type->type_name, plugin->type->name,
-               sigtype);
+static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs, bool process_plugins){
+
+  if (process_plugins == false){
+    
+    for(int ch=0;ch<plugin->type->num_outputs;ch++)
+      memset(outputs[ch], 0, sizeof(float)*num_frames);
+    
+  } else {
+  
+    plugin->type->RT_process(plugin, time, num_frames, inputs, outputs);
+
+    const char *abnormal_signal_type = RT_check_abnormal_signal(plugin, num_frames, outputs);
+
+    if (abnormal_signal_type != NULL){
+      for(int ch=0;ch<plugin->type->num_outputs;ch++)
+        memset(outputs[ch], 0, sizeof(float)*num_frames);
+      
+      volatile struct Patch *patch = plugin->patch;
+      RT_message("Error!\n"
+                 "\n"
+                 "The instrument named \"%s\" of type %s/%s\n"
+                 "generated one or more signals of type \"%s\".\n"
+                 "\n"
+                 "These signals have now been replaced with silence.\n"
+                 "\n"
+                 "This warning will pop up as long as the instrument misbehaves.\n"
+                 "\n"
+                 "If the instrument is a third party instrument, for instance a\n"
+                 "VST plugin, a LADSPA plugin, or a Pd patch, please contact the\n"
+                 "third party to fix the bug.\n",
+                 patch==NULL?"<no name>":patch->name,
+                 plugin->type->type_name, plugin->type->name,
+                 abnormal_signal_type
+                 );
+    }
+    
   }
+
 }
 
 static int get_bus_num(SoundPlugin *plugin){
@@ -1195,15 +1206,17 @@ void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool p
   jack_time_t start_time = 0;
   
   if (add_cpu_data)
+    //start_time = monotonic_rdtsc_seconds();
     start_time = jack_get_time();
-  //start_time = monotonic_seconds(); // Checking if max time would fluctuate less with this timer. Didn't make a difference though. Both are probably using CLOCK_MONOTONIC.
+    //start_time = monotonic_seconds(); // Checking if max time would fluctuate less with this timer. Didn't make a difference though. Both are probably using CLOCK_MONOTONIC.
   
   producer->RT_process(time, num_frames, process_plugins);
 
   if (add_cpu_data){
+    //double end_time = monotonic_rdtsc_seconds();
     jack_time_t end_time = jack_get_time();
     //double end_time = monotonic_seconds();
-    
+          
     //float new_cpu_usage = (end_time-start_time) * 100.0 * MIXER_get_sample_rate() / (double)num_frames;
     float new_cpu_usage = (double)(end_time-start_time) * 0.0001 * MIXER_get_sample_rate() / num_frames;
       
