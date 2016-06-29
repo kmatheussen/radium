@@ -683,13 +683,13 @@ struct Patch{
 
   void (*changeTrackPan)(int newpan,const struct Tracks *track);
 
-  struct PatchVoice voices[NUM_PATCH_VOICES];
+  struct PatchVoice *voices; // num=NUM_PATCH_VOICES
 
   int num_currently_playing_voices; // Access protected by PLAYER_lock
-  note_t playing_voices[MAX_PLAYING_PATCH_NOTES];      /* To keep track of how many times a voice has to be turned off. */
+  note_t *playing_voices; // num=MAX_PLAYING_PATCH_NOTES      /* To keep track of how many times a voice has to be turned off. */
 
   int num_currently_playing_notes;
-  note_t playing_notes[MAX_PLAYING_PATCH_NOTES];  /* To keep track of which notes are playing. (Useful to avoid hanging notes when turning on and off voices)*/
+  note_t *playing_notes; // num=MAX_PLAYING_PATCH_NOTES  /* To keep track of which notes are playing. (Useful to avoid hanging notes when turning on and off voices)*/
 
   bool peaks_are_dirty; /* Can be set to true by any thread. */
 

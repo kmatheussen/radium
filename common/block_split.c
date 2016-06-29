@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wblocks_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "lines_proc.h"
+#include "player_pause_proc.h"
 #include "undo_block_mergesplit_proc.h"
 
 #include "block_split_proc.h"
@@ -36,6 +37,8 @@ void BLOCK_Split(
 	struct Blocks *block,
 	int splitline
 ){
+        R_ASSERT(is_playing()==false);
+          
 	struct Tracker_Windows *window=root->song->tracker_windows;
 
 	struct WBlocks *wblock,*nwblock;
@@ -66,18 +69,22 @@ void BLOCK_Split_CurrPos(
 ){
 	struct WBlocks *wblock=window->wblock;
 
-	int splitline=wblock->reallines[wblock->curr_realline]->l.p.line;
+        int splitline=wblock->reallines[wblock->curr_realline]->l.p.line;
+          
+        if(splitline<3) return;
+        if(splitline>wblock->block->num_lines-3) return;
 
-	if(splitline<3) return;
-	if(splitline>wblock->block->num_lines-3) return;
-
-	ADD_UNDO(Block_Split_CurrPos());
-
-	BLOCK_Split(wblock->block,splitline);
-
-	SelectWBlock(window,window->wblock);
-	BS_UpdateBlockList();
-	BS_UpdatePlayList();
+        PC_Pause();{
+          
+          ADD_UNDO(Block_Split_CurrPos());
+          
+          BLOCK_Split(wblock->block,splitline);
+          
+          SelectWBlock(window,window->wblock);
+          BS_UpdateBlockList();
+          BS_UpdatePlayList();
+          
+        }PC_StopPause(NULL);
 }
 
 

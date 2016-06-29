@@ -12,7 +12,6 @@
 
 #include "stacktoucher_proc.h"
 
-
 void touch_stack(void){
   int stack_size = 1024*64;
   
@@ -24,6 +23,8 @@ void touch_stack(void){
     hepp[i] = rand() % 128;
     //usleep(2);
   }
+
+  // TODO: I guess some compilers still might optimize away touching the stack. To be safe, we should have another source file with a function that takes an array as argument. Then this function can't ignore 'hepp'.
   
   int ret = 0;
   

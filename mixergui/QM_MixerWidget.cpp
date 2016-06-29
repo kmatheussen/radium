@@ -1275,7 +1275,7 @@ void MW_set_autopos(double *x, double *y){
 
 namespace{
   struct MyQAction : public QAction{
-    MyQAction(const char* name, QMenu *menu, const PluginMenuEntry entry)
+    MyQAction(QString name, QMenu *menu, const PluginMenuEntry entry)
       : QAction(name,menu)
       , entry(entry)
     {}
@@ -1325,7 +1325,7 @@ static int menu_up(QMenu *menu, const QVector<PluginMenuEntry> &entries, int i, 
 
     }else if(entry.type==PluginMenuEntry::IS_NUM_USED_PLUGIN){
 
-      MyQAction *action = new MyQAction(entry.hepp.menu_text.toUtf8().constData(), menu, entry);
+      MyQAction *action = new MyQAction(entry.hepp.menu_text, menu, entry);
       menu->addAction(action);
 
     }else{

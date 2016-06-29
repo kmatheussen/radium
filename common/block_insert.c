@@ -60,27 +60,29 @@ void InsertBlock(
 	int num_lines,
 	char *name
 ){
+        R_ASSERT(is_playing()==false);
+
 	struct Tracker_Windows *window=root->song->tracker_windows;
 	struct WBlocks *wblock;
 
 	struct Blocks *block;
+          
+        InsertBlock_IncBlockNums(blockpos);
 
-	InsertBlock_IncBlockNums(blockpos);
-
-	block=talloc(sizeof(struct Blocks));
-
-	block->l.num=blockpos;
-	NewBlock(block,num_tracks,num_lines,name);
-
-	while(window!=NULL){
-		wblock=talloc(sizeof(struct WBlocks));
-		wblock->l.num=blockpos;
-
-		NewWBlock(window,wblock,block);
-
-		window=NextWindow(window);
-	}
-
+        block=talloc(sizeof(struct Blocks));
+          
+        block->l.num=blockpos;
+        NewBlock(block,num_tracks,num_lines,name);
+        
+        while(window!=NULL){
+          wblock=talloc(sizeof(struct WBlocks));
+            wblock->l.num=blockpos;
+            
+            NewWBlock(window,wblock,block);
+            
+            window=NextWindow(window);
+        }
+        
 }
 
 

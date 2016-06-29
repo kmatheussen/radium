@@ -161,8 +161,19 @@ void PATCH_init_voices(struct Patch *patch){
   patch->voices[6].chance = 256;
 }
 
-static struct Patch *create_new_patch(const char *name){
+struct Patch *PATCH_alloc(void){
   struct Patch *patch = (struct Patch*)talloc(sizeof(struct Patch));
+
+  // lots of atomic data
+  patch->voices = (struct PatchVoice*)talloc_atomic_clean(sizeof(struct PatchVoice) * NUM_PATCH_VOICES);
+  patch->playing_voices = (note_t*)talloc_atomic_clean(sizeof(note_t) * MAX_PLAYING_PATCH_NOTES);
+  patch->playing_notes = (note_t*)talloc_atomic_clean(sizeof(note_t) * MAX_PLAYING_PATCH_NOTES);
+  
+  return patch;
+}
+
+static struct Patch *create_new_patch(const char *name){
+  struct Patch *patch = PATCH_alloc();
   patch->id = PATCH_get_new_id();
   patch->forward_events = true;
 

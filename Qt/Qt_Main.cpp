@@ -1469,15 +1469,15 @@ int main(int argc, char **argv){
   setenv("PYTHONPATH","temp/dist",1);
 #else
   QString pythonlibpath = OS_get_full_program_file_path(QString("python2.7/lib"));
-  setenv("PYTHONHOME",pythonlibpath.toUtf8().constData(),1);
-  setenv("PYTHONPATH",pythonlibpath.toUtf8().constData(),1);
+  setenv("PYTHONHOME",V_strdup(pythonlibpath.toUtf8().constData()),1);
+  setenv("PYTHONPATH",V_strdup(pythonlibpath.toUtf8().constData()),1);
 #endif
 #endif
 
 #if defined(FOR_MACOSX)
   QString pythonlibpath = OS_get_full_program_file_path(QString("python2.7/lib"));
-  setenv("PYTHONHOME",pythonlibpath.toUtf8().constData(),1);
-  setenv("PYTHONPATH",pythonlibpath.toUtf8().constData(),1);
+  setenv("PYTHONHOME",V_strdup(pythonlibpath.toUtf8().constData()),1);
+  setenv("PYTHONPATH",V_strdup(pythonlibpath.toUtf8().constData()),1);
 #endif
   
 #if defined(FOR_WINDOWS)

@@ -116,7 +116,7 @@ void *tracker_alloc__(size_t size,void *(*AllocFunction)(size_t size2), const ch
 #if defined(RELEASE)
                 #error "oh no"
 #endif
-                GC_register_finalizer(actual_mem_start, gcfinalizer, NULL, NULL, NULL);
+                GC_register_finalizer_ignore_self(actual_mem_start, gcfinalizer, NULL, NULL, NULL);
 #          endif
 #	endif
 

@@ -259,7 +259,9 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       QByteArray data;
       QUrl params;
       params.addQueryItem("data", message.replace("&", "_amp_")); // replace all '&' with _amp_ since we don't receive anything after '&'.
-      data.append(params.toString().toUtf8().constData(), params.toString().length()-1);
+      const char *s = strdup(params.toString().toUtf8().constData());
+      data.append(s, strlen(s)-1);
+      //free(s);
       data.remove(0,1);
       data.append("\n");
       data.append(text_edit.toPlainText());

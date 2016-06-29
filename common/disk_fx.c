@@ -62,7 +62,7 @@ struct FX *LoadFX(struct Tracks *track){
 	struct FX *fx=DC_alloc(sizeof(struct FX));
 	DC_LoadN(); // ignore. Earlier, there was a field called fx->num, which was just a number containing fx->effect_num.
         
-        fx->patch = DC_alloc(sizeof(struct Patch)); // temporary object used during loading.
+        fx->patch = PATCH_alloc(); // temporary object used during loading.
         fx->patch->id = -1; // for loading older songs.
         
 	GENERAL_LOAD(0,6)

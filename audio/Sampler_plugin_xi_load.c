@@ -268,7 +268,8 @@ bool load_xi_instrument(Data *data,const wchar_t *filename, bool set_loop_on_off
   
  exit:
 
-  DISK_close_and_delete(file);
+  if (DISK_close_and_delete(file)==false)
+    return false;
 
   return ret;
 }

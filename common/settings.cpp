@@ -60,9 +60,8 @@ static QString get_value(QString line){
 
 }
 
-static bool line_has_key(const char* c_key, const char* c_string){
-  QString key(c_key);
-  QString string = QString(c_string).trimmed();
+static bool line_has_key(QString key, QString das_string){
+  QString string = das_string.trimmed();
 
   if (!string.startsWith(key))
     return false;
@@ -72,9 +71,9 @@ static bool line_has_key(const char* c_key, const char* c_string){
   return string.startsWith("=");
 }
 
-static int find_linenum(const char* key, QVector<QString> lines){
+static int find_linenum(QString key, QVector<QString> lines){
   for(int linenum = 0 ; linenum < lines.size() ; linenum++)
-    if(line_has_key(key,lines[linenum].toUtf8().constData()))
+    if(line_has_key(key,lines[linenum]))
       return linenum;
   return -1;
 }

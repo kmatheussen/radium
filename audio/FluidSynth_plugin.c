@@ -248,7 +248,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       sendcontrolchange(data,0,64,data->sustain_on,time);
       break;
     default:
-      RError("Unknown effect number %d\n",effect_num);
+      RError("F1. Unknown effect number %d\n",effect_num);
     }
   }else{
     switch(effect_num){
@@ -269,7 +269,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       sendcontrolchange(data,0,64,value,time);
       break;
     default:
-      RError("Unknown effect number %d\n",effect_num);
+      RError("F2. Unknown effect number %d\n",effect_num);
     }
   }
 }
@@ -293,7 +293,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       //fluid_synth_get_cc(data->synth,0,64,&val);
       return data->sustain_on / 127.0;
     default:
-      RError("Unknown effect number %d\n",effect_num);
+      RError("F3. Unknown effect number %d\n",effect_num);
     }
   }else{
     switch(effect_num){
@@ -310,7 +310,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       //fluid_synth_get_cc(data->synth,0,64,&val);
       return data->sustain_on;
     default:
-      RError("Unknown effect number %d\n",effect_num);
+      RError("F4. Unknown effect number %d\n",effect_num);
     }
   }
 
@@ -334,8 +334,12 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     //fluid_synth_get_cc(data->synth,0,1,&val);
     snprintf(buffer,buffersize-1,"%d",(int)data->modulation);
     break;
+  case EFF_SUSTAIN_PEDAL:
+    //fluid_synth_get_cc(data->synth,0,1,&val);
+    snprintf(buffer,buffersize-1,"%d",(int)data->sustain_on);
+    break;
   default:
-    RError("Unknown effect number %d\n",effect_num);
+    RError("F5. Unknown effect number %d\n",effect_num);
   }
 }
 
@@ -567,7 +571,7 @@ static const char *get_effect_name(struct SoundPlugin *plugin_type, int effect_n
   case EFF_SUSTAIN_PEDAL:
     return "Sustain Pedal";
   default:
-    RError("Unknown effect number %d\n",effect_num);
+    RError("F6. Unknown effect number %d\n",effect_num);
     return "";
   }
 }

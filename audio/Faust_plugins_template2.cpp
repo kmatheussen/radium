@@ -146,7 +146,7 @@ class MyUI : public UI
 
     for(int i=0;i<_num_effects;i++)
       if (names[i] != _controllers[i].name.c_str())
-        _controllers[i].name = names[i].toUtf8().constData();
+        _controllers[i].name = names[i].toUtf8().constData(); // <-- Note that '_controllers[i].name' is a std::string, not a char*.
   }
   
   // -- widget's layouts

@@ -219,7 +219,7 @@ struct Patch *LoadPatch(void){
                 "name_is_edited"
 	};
 
-	struct Patch *patch=DC_alloc(sizeof(struct Patch));
+	struct Patch *patch=PATCH_alloc();
 	patch->id=DC_LoadN();
         patch->is_usable = true;
         patch->forward_events = true; // default value

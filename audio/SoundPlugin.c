@@ -741,7 +741,7 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
     break;
 
   default:
-    RError("Unknown effect number: %d",effect_num);
+    RError("1. Unknown effect number: %d (%d). %s / %s",effect_num,system_effect,plugin->type->type_name,plugin->type->name);
   }
 }
 
@@ -810,8 +810,8 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
 
   if(value_format==PLUGIN_FORMAT_SCALED) {
 #if !defined(RELEASE)
-    R_ASSERT(value >= -0.0001f); // don't report floating point rounding errors
-    R_ASSERT(value <= 1.0001f); // don't report floating point rounding errors
+    if (value < -0.01f || value > 1.01f)// don't report floating point rounding errors
+      RWarning("value: %f", value);
 #endif
     value = R_BOUNDARIES(0.0f, value, 1.0f);
   }      
@@ -1133,7 +1133,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
       break;
       
     default:
-      RError("Unknown effect number: %d",effect_num);
+      RError("2. Unknown effect number: %d (%d). %s / %s",effect_num,system_effect,plugin->type->type_name,plugin->type->name);
     }  
   }
 
@@ -1338,7 +1338,7 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
 #endif
 
   default:
-    RError("Unknown effect number: %d",effect_num);
+    RError("3. Unknown effect number: %d (%d). %s / %s",effect_num,system_effect,plugin->type->type_name,plugin->type->name);
     return 0.0f;
   }  
 

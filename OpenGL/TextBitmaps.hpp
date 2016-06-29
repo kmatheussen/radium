@@ -89,7 +89,8 @@ static inline void GE_add_imageholder(QFont qfont, QHash<char,ImageHolder> *imag
   p.setFont(qfont);
 
 #if USE_FREETYPE
-  FreeType freeType(OS_get_full_program_file_path("fonts/Cousine-Bold.ttf").toUtf8().constData(), qfont.pointSize());
+  char *font_path = strdup(OS_get_full_program_file_path("fonts/Cousine-Bold.ttf").toUtf8().constData());
+  FreeType freeType(font_path, qfont.pointSize());
 #endif
   
   for(int i=0;i<(int)strlen(chars);i++){
@@ -134,10 +135,14 @@ static inline void GE_add_imageholder(QFont qfont, QHash<char,ImageHolder> *imag
     imageholders->insert(c, holder);
     //printf("Added '%c' (%d) to g_imageholders. image: %p\n",c,c,vl_image);
   }
+
+#if USE_FREETYPE
+  free(font_path);
+#endif
 }
   
 static const QString qfont_key(const QFont &font){ // From the qt documentation, it seems like it should work using a qfont as key, but I wasn't able to make it compile then.
-  return font.toString()+"#"+font.styleName().toUtf8().constData();
+  return font.toString()+"#"+font.styleName();
 }
 
 static inline QHash<char,ImageHolder> *add_new_font(const QFont &font){
