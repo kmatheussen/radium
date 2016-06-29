@@ -966,6 +966,9 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
   , _color("white")
   , _input_slider(NULL)
   , _output_slider(NULL)
+  , _last_updated_mute(false)
+  , _last_updated_solo(false)
+  , _last_updated_bypass(false)
   , _slider_being_edited(0)
 {
 

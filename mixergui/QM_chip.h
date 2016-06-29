@@ -328,6 +328,10 @@ public:
   SliderPainter *_input_slider;
   SliderPainter *_output_slider;
 
+  bool _last_updated_mute;
+  bool _last_updated_solo;
+  bool _last_updated_bypass;
+  
   float _slider_start_value;
   float _slider_start_pos;
   int _slider_being_edited;

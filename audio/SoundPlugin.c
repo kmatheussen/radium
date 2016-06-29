@@ -852,6 +852,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
       }else {
         ATOMIC_SET(plugin->solo_is_on, false);
       }
+      update_instrument_gui(plugin);
       break;
 
     case EFFNUM_VOLUME:
@@ -866,6 +867,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
         ATOMIC_SET(plugin->volume_is_on, false);
         plugin->volume = 0.0f;
       }
+      //update_instrument_gui(plugin);
       break;
 
     case EFFNUM_OUTPUT_VOLUME:
@@ -972,6 +974,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
         ATOMIC_SET(plugin->effects_are_on, false);
         SMOOTH_set_target_value(&plugin->drywet, 0.0f);
       }
+      //update_instrument_gui(plugin);
       break;
       
     case EFFNUM_LOWPASS_FREQ:

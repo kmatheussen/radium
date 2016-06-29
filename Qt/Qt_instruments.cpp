@@ -618,7 +618,7 @@ static void update_midi_instrument_widget(MIDI_instrument_widget *instrument, st
 }
 
 void update_audio_instrument_widget(Audio_instrument_widget *instrument, struct Patch *patch){
-  
+
   instrument->updateWidgets();
 
   instrument->_plugin_widget->update_widget();

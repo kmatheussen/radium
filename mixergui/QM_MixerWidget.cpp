@@ -1072,6 +1072,26 @@ namespace{
                   CHIP_get_note_indicator_coordinates(x1,y1,x2,y2);
                   chip->update(x1,y1,x2-x1,y2-y1);
                 }
+
+                bool is_muted = !ATOMIC_GET(plugin->volume_is_on);
+                bool is_solo = ATOMIC_GET(plugin->solo_is_on);
+                bool is_bypass = !ATOMIC_GET(plugin->effects_are_on);
+
+                if (chip->_last_updated_mute != is_muted){
+                  chip->update();
+                  chip->_last_updated_mute = is_muted;
+                }
+                
+                if (chip->_last_updated_solo != is_solo){
+                  chip->update();
+                  chip->_last_updated_solo = is_solo;
+                }
+                
+                if (chip->_last_updated_bypass != is_bypass){
+                  chip->update();
+                  chip->_last_updated_bypass = is_bypass;
+                }
+                
                 
                 if (chip->_input_slider != NULL)
                   SLIDERPAINTER_call_regularly(chip->_input_slider);
