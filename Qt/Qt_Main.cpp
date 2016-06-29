@@ -766,17 +766,16 @@ protected:
 
     const char *gc_warning_message = "Warning: Garbage collector is turned off";
     
-    if (window->message==NULL && GC_dont_gc > 0) {
+    if (window->message==NULL && GC_is_disabled()) {
       
       window->message = gc_warning_message;
       GL_create(window, window->wblock);
       
-    } else if (window->message==gc_warning_message && GC_dont_gc <= 0){
+    } else if (window->message==gc_warning_message && GC_is_disabled()==false){
       
       window->message=NULL;
       GL_create(window, window->wblock);
       
-      R_ASSERT(GC_dont_gc == 0);
     }
     
     if ( (num_calls % (5*1000/interval)) == 0) { // Ask for gl.make_current each 5 seconds.
@@ -964,7 +963,7 @@ void assertRadiumInHomeDirectory(void){
 
 //extern LANGSPEC int dasmain(int argc,char **argv);
 extern LANGSPEC int radium_main(char *arg);
-extern LANGSPEC int GC_dont_gc;
+//extern LANGSPEC int GC_dont_gc;
 //int radium_main(int argc,char **argv){
 
 // Called from gtk main loop
