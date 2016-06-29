@@ -192,8 +192,7 @@ static bool get_hepp_from_config_line(const char *line_c, NumUsedPluginEntry &he
   
   //////////
   
-  hepp.name = line.toUtf8().constData();
-
+  hepp.name = QString(line);
 
   if (hepp.name.startsWith("STK "))
     hepp.menu_text = "STK:" + hepp.name.right(hepp.name.size()-3);

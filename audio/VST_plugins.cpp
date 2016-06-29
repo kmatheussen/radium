@@ -1089,7 +1089,7 @@ static vector_t *VST_get_uids2(const wchar_t *w_filename, QString &resolve_error
         PR_set_init_vst_first();
 
     } else {
-      resolve_error_message = myLib.errorString().toUtf8().constData();
+      resolve_error_message = myLib.errorString();
       if (resolve_error_message.contains("no matching architecture"))
         resolve_error_message = "Architecture mismatch. Most likely this is a 32 bit plugin. Radium can only load 64 bit plugins.\n\nSystem message:\n\n"+resolve_error_message;
       else
@@ -1349,7 +1349,7 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
 #endif
       
     if (file_info.isDir()) {
-      PR_add_menu_entry(PluginMenuEntry::level_up(file_info.baseName().toUtf8().constData()));
+      PR_add_menu_entry(PluginMenuEntry::level_up(file_info.baseName()));
       bool continuing = create_vst_plugins_recursively(file_path, time, is_juce_plugin);
       PR_add_menu_entry(PluginMenuEntry::level_down());
 

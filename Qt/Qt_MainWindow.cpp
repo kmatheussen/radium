@@ -527,7 +527,7 @@ void SetupMainWindow(void){
 
     const char *fontstring = SETTINGS_read_string("font",NULL);
     if(fontstring==NULL) {
-      SETTINGS_set_custom_configfile(OS_get_full_program_file_path("config").toUtf8().constData());
+      SETTINGS_set_custom_configfile(OS_get_full_program_file_path("config"));
       fontstring = SETTINGS_read_string("font",NULL);
       R_ASSERT(fontstring != NULL);
       custom_config_set = true;
