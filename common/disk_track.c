@@ -103,7 +103,7 @@ var1:
 	goto start;
 var2:
         if(track->patch==NULL){
-          track->patch=DC_alloc(sizeof(struct Patch)); // temporary object used during loading.
+          track->patch=PATCH_alloc(); // temporary object used during loading.
           track->patch->instrument = get_instrument_from_type(MIDI_INSTRUMENT_TYPE); // To support songs without instrument_type. (old songs)
         }
 	track->patch->id=DC_LoadN();
@@ -126,7 +126,7 @@ var7:
 
 var8:
         if(track->patch==NULL)
-          track->patch=DC_alloc(sizeof(struct Patch)); // Reason for atomic alloc: only patch.id and instrument.id is used during loading.
+          track->patch=PATCH_alloc(); // Reason for atomic alloc: only patch.id and instrument.id is used during loading.
         track->patch->instrument = get_instrument_from_type(DC_LoadI());
         goto start;
 

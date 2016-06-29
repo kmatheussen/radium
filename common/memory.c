@@ -113,7 +113,7 @@ void *tracker_alloc__(size_t size,void *(*AllocFunction)(size_t size2), const ch
 #          else                
 		void *ret = V_alloc(AllocFunction,size,filename,linenumber);
                 void *actual_mem_start = V_allocated_mem_real_start(ret);
-                GC_register_finalizer(actual_mem_start, gcfinalizer, NULL, NULL, NULL);
+                GC_register_finalizer_ignore_self(actual_mem_start, gcfinalizer, NULL, NULL, NULL);
 #          endif
 #	endif
 
