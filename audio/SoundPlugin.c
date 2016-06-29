@@ -810,8 +810,8 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
 
   if(value_format==PLUGIN_FORMAT_SCALED) {
 #if !defined(RELEASE)
-    if (value < 0.01f || value > 1.01f)// don't report floating point rounding errors
-      RWarning("value: %f", value)
+    if (value < -0.01f || value > 1.01f)// don't report floating point rounding errors
+      RWarning("value: %f", value);
 #endif
     value = R_BOUNDARIES(0.0f, value, 1.0f);
   }      

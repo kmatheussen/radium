@@ -952,7 +952,7 @@ QString FAUSTGUI_get_code(QWidget *widget){
 namespace{
   struct Undo_FaustDev{
     struct Patch *patch;
-    QString *code; // this is clumsy. Should investigate the time finding out if there are the quirks using bdw-gc with c++.
+    wchar_t *code; // this is clumsy. Should investigate the time finding out if there are the quirks using bdw-gc with c++.
     int cursor_line;
     int cursor_index;
   };
@@ -984,7 +984,7 @@ static void ADD_UNDO_FUNC(FaustDev_CurrPos(struct Patch *patch, const QString &c
     {
       Undo_FaustDev *undo_fd = (Undo_FaustDev*)talloc(sizeof(Undo_FaustDev));
       undo_fd->patch = patch;
-      undo_fd->code = new QString(code);
+      undo_fd->code = STRING_create(code);
       undo_fd->cursor_line = cursor_line;
       undo_fd->cursor_index = cursor_index;
 
@@ -1021,25 +1021,25 @@ static void *Undo_Do_FaustDev(
   Faust_Plugin_widget *faust_plugin_widget = AUDIOWIDGET_get_faust_plugin_widget(audio_instrument_widget);
   R_ASSERT_RETURN_IF_FALSE2(faust_plugin_widget!=NULL, undo_fd);
 
-  QString *new_code = new QString(FAUST_get_code(plugin));
+  wchar_t *new_code = STRING_create(FAUST_get_code(plugin));
 
   int new_cursor_line, new_cursor_index;
   faust_plugin_widget->_faust_editor->getCursorPosition(&new_cursor_line, &new_cursor_index);
   
   
   faust_plugin_widget->_initing = true;{
+
+    QString undo_code = STRING_get_qstring(undo_fd->code);
     
-    faust_plugin_widget->set_text_in__faust_editor_widget(*undo_fd->code);
+    faust_plugin_widget->set_text_in__faust_editor_widget(undo_code);
 
     //  Chaos trying to set cursor in qscisintella. :-(
     //faust_plugin_widget->_faust_editor->setCursorPosition(undo_fd->cursor_line, undo_fd->cursor_index);
     
-    faust_plugin_widget->start_compilation(*undo_fd->code);
+    faust_plugin_widget->start_compilation(undo_code);
     
   }faust_plugin_widget->_initing = false;
 
-  
-  delete undo_fd->code;
   
   undo_fd->code = new_code;
   undo_fd->cursor_line = new_cursor_line;
