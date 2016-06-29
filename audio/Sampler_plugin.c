@@ -1131,7 +1131,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       break;
       
     default:
-      RError("Unknown effect number %d\n",effect_num);
+      RError("S1. Unknown effect number %d\n",effect_num);
     }
   }else{
     switch(effect_num){
@@ -1198,7 +1198,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       break;
 
     default:
-      RError("Unknown effect number %d\n",effect_num);
+      RError("S2. Unknown effect number %d\n",effect_num);
     }
   }
 }
@@ -1271,7 +1271,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       break;
 
     default:
-      RError("Unknown effect number %d\n",effect_num);
+      RError("S3. Unknown effect number %d\n",effect_num);
       return 0.5f;
     }
   }else{
@@ -1311,7 +1311,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return data->p.crossfade_length;
 
     default:
-      RError("Unknown effect number %d\n",effect_num);
+      RError("S4. Unknown effect number %d\n",effect_num);
       return 0.5f;
     }
   }
@@ -1376,7 +1376,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     break;
 
   default:
-    RError("Unknown effect number %d\n",effect_num);
+    RError("S5. Unknown effect number %d\n",effect_num);
   }
 }
              
@@ -1900,7 +1900,7 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
     return "Crossfade";
 
   default:
-    RError("Unknown effect number %d\n",effect_num);
+    RError("S6. Unknown effect number %d\n",effect_num);
     return NULL;
   }
 }
