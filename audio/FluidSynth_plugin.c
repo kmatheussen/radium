@@ -334,6 +334,10 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     //fluid_synth_get_cc(data->synth,0,1,&val);
     snprintf(buffer,buffersize-1,"%d",(int)data->modulation);
     break;
+  case EFF_SUSTAIN_PEDAL:
+    //fluid_synth_get_cc(data->synth,0,1,&val);
+    snprintf(buffer,buffersize-1,"%d",(int)data->sustain_on);
+    break;
   default:
     RError("Unknown effect number %d\n",effect_num);
   }
