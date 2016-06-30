@@ -1219,7 +1219,8 @@ void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool p
           
     //float new_cpu_usage = (end_time-start_time) * 100.0 * MIXER_get_sample_rate() / (double)num_frames;
     float new_cpu_usage = (double)(end_time-start_time) * 0.0001 * MIXER_get_sample_rate() / num_frames;
-      
+
+    //printf("Adding cpu usage for %s\n",plugin->patch->name);
     cpu_usage->addUsage(new_cpu_usage);
   }
 }

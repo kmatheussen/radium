@@ -457,14 +457,9 @@ public:
     
     //printf("hello %p\n", this);
     
-    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    //SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
-    bool is_visible = _plugin_widget->isVisible();
-
-    if (plugin != NULL)
-      ATOMIC_SET(plugin->is_visible, is_visible);
-
-    if (is_visible)
+    if (_plugin_widget->isVisible())
       _plugin_widget->calledRegularlyByParent();
     
     callSystemSliderpainterUpdateCallbacks();
@@ -474,7 +469,7 @@ public:
 
     adjustWidgetHeight();
   }
-
+  
   // horror
   void adjustWidgetHeight(void){
     static bool shrinking = false;
@@ -854,9 +849,11 @@ public:
   }
 
 
-public slots:
-
   void hideEvent(QHideEvent * event){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin != NULL)
+      ATOMIC_SET(plugin->is_visible, false);
+    
     _size_type_before_hidden = _size_type;
     
     if(_size_type != SIZETYPE_NORMAL)
@@ -865,11 +862,18 @@ public slots:
   }
   
   void showEvent(QShowEvent * event){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin != NULL)
+      ATOMIC_SET(plugin->is_visible, true);
+    
     if (_size_type_before_hidden != SIZETYPE_NORMAL)
       change_height(_size_type_before_hidden);
     //      show_large();
   }
   
+
+public slots:
+
 #if 0
   void on_arrow1_toggled(bool val){
     _plugin_widget->setVisible(val);

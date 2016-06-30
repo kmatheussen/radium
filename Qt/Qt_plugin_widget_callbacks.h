@@ -422,7 +422,14 @@ public:
         if (solo_checkbox->isChecked() != is_solo)
           solo_checkbox->setChecked(is_solo);
       }
+
+      #if 0
+      CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET(plugin->cpu_usage);
+      if (cpu_usage != NULL)
+        cpu_usage->reset(); // If not, max value has an unusually high value during the first second. I don't know why that is.
+      #endif
     }
+    
   }
 
   void update_preset_widgets(){
