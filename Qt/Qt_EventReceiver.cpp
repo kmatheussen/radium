@@ -275,15 +275,36 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
              else
                ScrollEditorUp(window,num_lines * getScrollMultiplication());
              */
-             tevent.ID=TR_KEYBOARD;
-             if(qwheelevent->delta()<0)
-               tevent.SubID=EVENT_DOWNARROW;
-             else
-               tevent.SubID=EVENT_UPARROW;
 
-             for(int i=0;i<num_lines;i++)
-               EventReciever(&tevent,window);
+             if (qwheelevent->modifiers() & Qt::ControlModifier) {
+               if (qwheelevent->delta() > 0)
+                 zoom(1,window->l.num);
+               else
+                 zoom(-1,window->l.num);
 
+             } else if (qwheelevent->modifiers() & Qt::ShiftModifier) {
+
+               tevent.ID=TR_KEYBOARD;
+               if(qwheelevent->delta()<0)
+                 tevent.SubID=EVENT_LEFTARROW;
+               else
+                 tevent.SubID=EVENT_RIGHTARROW;
+               
+               for(int i=0;i<num_lines;i++)
+                 EventReciever(&tevent,window);
+
+             } else {
+
+               tevent.ID=TR_KEYBOARD;
+               if(qwheelevent->delta()<0)
+                 tevent.SubID=EVENT_DOWNARROW;
+               else
+                 tevent.SubID=EVENT_UPARROW;
+               
+               for(int i=0;i<num_lines;i++)
+                 EventReciever(&tevent,window);
+             }
+             
            });
 
 #if USE_QT_VISUAL

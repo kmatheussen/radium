@@ -58,6 +58,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 **
 ****************************************************************************/
 
+// See ../Qt/Qt_mixer_widget_callbacks.h !
 
 #if 0
 #ifndef QT_NO_OPENGL
@@ -78,7 +79,7 @@ extern EditorWidget *g_editor;
 
 void GraphicsView::wheelEvent(QWheelEvent *e)
 {
-  printf("HEPP Q#$\n");
+  printf("HEPP\n");
     if (e->modifiers() & Qt::ControlModifier) {
         if (e->delta() > 0)
             view->zoomIn(6);

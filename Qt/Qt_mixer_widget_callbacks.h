@@ -46,6 +46,14 @@ public:
           g_zoom_slider->setValue(g_zoom_slider->value() + 6);
         else
           g_zoom_slider->setValue(g_zoom_slider->value() - 6);
+      } else if (e->modifiers() & Qt::ShiftModifier) {
+        QScrollBar *scrollbar = horizontalScrollBar();
+        if(scrollbar!=NULL){
+          if (e->delta() > 0)
+            scrollbar->setValue(scrollbar->value()-70);
+          else
+            scrollbar->setValue(scrollbar->value()+70);
+        }
       } else {
         QScrollBar *scrollbar = verticalScrollBar();
         if(scrollbar!=NULL){
