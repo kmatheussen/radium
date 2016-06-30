@@ -52,9 +52,7 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
   if (subsubtrack==-1)
     return false;
   
-  vector_t *trs = TRS_get(wblock, wtrack);
-
-  vector_t *tr = &trs[realline];
+  vector_t *tr = TR_get(wblock, wtrack, realline);
 
   ADD_UNDO(Notes_CurrPos(window));  
 

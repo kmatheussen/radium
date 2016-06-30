@@ -227,8 +227,7 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
           bool has_increased = false;
           
-          vector_t *trs = TRS_get(wblock, wtrack);
-          vector_t *tr = &trs[wblock->curr_realline];
+          vector_t *tr = TR_get(wblock, wtrack, wblock->curr_realline);
           VECTOR_FOR_EACH(TrackRealline2 *tr2, tr){
             if (tr2->note != NULL) {
               increase_note_velocity(tr2->note, inc);
