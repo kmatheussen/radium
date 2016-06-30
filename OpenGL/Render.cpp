@@ -302,28 +302,40 @@ static GE_Context *drawNodeLines(const struct NodeLine *nodelines, enum ColorNum
   float width = get_nodeline_width(is_selected);
   GE_Context *c = GE_color_alpha_z(colnum, is_selected ? alpha_selected : alpha, Z_ABOVE(Z_ABOVE(Z_ZERO)));
   
-  for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next)
-    if (hide_vertical && is_selected==false && ns->x1 == ns->x2 && (ns->y2 - ns->y1) > cut_size1*2) {
+  for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next) {
+    int logtype = ns->logtype;
+    float x1 = ns->x1;
+    float x2 = logtype==LOGTYPE_HOLD ? ns->x1 : ns->x2;
+    float y1 = ns->y1;
+    float y2 = ns->y2;
+    
+    bool paint_stipled = hide_vertical && is_selected==false && x1 == x2 && (y2 - y1) > cut_size1*2;
+    
+    if (paint_stipled) {
 #if 1
-      GE_line(c, ns->x1, ns->y1, ns->x2, ns->y1 + cut_size1, width);
-      GE_line(c, ns->x1, ns->y2 - cut_size1, ns->x2, ns->y2, width);
+      GE_line(c, x1, y1, x2, y1 + cut_size1, width);
+      GE_line(c, x1, y2 - cut_size1, x2, y2, width);
       
-      stipled_vertical_line(c, ns->x1, ns->y1+cut_size1, ns->y2-cut_size1);
+      stipled_vertical_line(c, x1, y1+cut_size1, y2-cut_size1);
 #else
-      GE_line(c, ns->x1, ns->y1, ns->x2, ns->y1 + cut_size1, width);
+      GE_line(c, x1, y1, x2, y1 + cut_size1, width);
       // arrow
-      GE_line(c, ns->x2-3, ns->y1+cut_size1-5, ns->x2, ns->y1 + cut_size1, width);
-      GE_line(c, ns->x2+3, ns->y1+cut_size1-5, ns->x2, ns->y1 + cut_size1, width);
+      GE_line(c, x2-3, y1+cut_size1-5, x2, y1 + cut_size1, width);
+      GE_line(c, x2+3, y1+cut_size1-5, x2, y1 + cut_size1, width);
               
-      GE_line(c, ns->x1, ns->y2 - cut_size2, ns->x2, ns->y2, width);
+      GE_line(c, x1, y2 - cut_size2, x2, y2, width);
       // arrow
-      GE_line(c, ns->x2-3, ns->y2-cut_size2-5, ns->x2, ns->y2 - cut_size2, width);
-      GE_line(c, ns->x2+3, ns->y2-cut_size2-5, ns->x2, ns->y2 - cut_size2, width);
+      GE_line(c, x2-3, y2-cut_size2-5, x2, y2 - cut_size2, width);
+      GE_line(c, x2+3, y2-cut_size2-5, x2, y2 - cut_size2, width);
 #endif
     } else {
-      GE_line(c, ns->x1, ns->y1, ns->x2, ns->y2, width);
+      GE_line(c, x1, y1, x2, y2, width);
     }
 
+    if (logtype==LOGTYPE_HOLD)
+      GE_line(c, x2, y2, ns->x2, y2, width);
+  }
+  
   return c;
 }
 
@@ -1268,7 +1280,15 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
   // lines
   for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
     if(show_read_lines || nodeline->x1!=nodeline->x2) {
-      GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, get_pitchline_width());
+      int logtype = nodeline->logtype;
+      float x1 = nodeline->x1;
+      float x2 = logtype==LOGTYPE_HOLD ? nodeline->x1 : nodeline->x2;
+      
+      GE_line(line_color, x1, nodeline->y1, x2, nodeline->y2, get_pitchline_width());
+
+      if (logtype==LOGTYPE_HOLD)
+        GE_line(line_color, x2, nodeline->y2, nodeline->x2, nodeline->y2, get_pitchline_width());
+
       if (nodeline->next==NULL){
         if (note_continues_next_block(wblock->block, note)){
           float y1 = nodeline->y2;
@@ -1433,9 +1453,15 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
         GE_unset_x_scissor();
       }
 
+      int logtype = nodeline->logtype;
+      float x1 = nodeline->x1;
+      float x2 = logtype==LOGTYPE_HOLD ? nodeline->x1 : nodeline->x2;
+      float y1 = nodeline->y1;
+      float y2 = nodeline->y2;
+
       GE_line(c,
-              nodeline->x1, nodeline->y1,
-              nodeline->x2, nodeline->y2,
+              x1, y1,
+              x2, y2,
               note_width
               );
 
@@ -1620,14 +1646,19 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
     GE_trianglestrip_start();
 
     for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
+      int logtype = ns->logtype;
+      float x1 = ns->x1;
+      float x2 = logtype==LOGTYPE_HOLD ? ns->x1 : ns->x2;
+      float y1 = ns->y1;
+      float y2 = ns->y2;
 
       float time1 = Place2STime(wblock->block, &ns->element1->p) - note_time;
       float time2 = Place2STime(wblock->block, &ns->element2->p) - note_time;
       
-      float velocity1 = scale(ns->x1, subtrack_x1, subtrack_x2, 0, 1);
-      float velocity2 = scale(ns->x2, subtrack_x1, subtrack_x2, 0, 1);
+      float velocity1 = scale(x1, subtrack_x1, subtrack_x2, 0, 1);
+      float velocity2 = scale(x2, subtrack_x1, subtrack_x2, 0, 1);
       
-      int num_peaks = (ns->y2-ns->y1) / NUM_LINES_PER_PEAK;
+      int num_peaks = (y2-y1) / NUM_LINES_PER_PEAK;
       
       if(num_peaks<0){
         
@@ -1672,7 +1703,7 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
         float x1 = scale(min*track_volume, -1,1, bound_x1, bound_x2);
         float x2 = scale(max*track_volume, -1,1, bound_x1, bound_x2);
           
-        float y = ns->y1 + n*NUM_LINES_PER_PEAK;
+        float y = y1 + n*NUM_LINES_PER_PEAK;
 
 #if 0
         printf("Adding %f,%f at %f. min/max: %f/%f. vel1/vel2: %f/%f. time1/time2: %f/%f\n",x1,x2,y,min,max,
@@ -1729,17 +1760,21 @@ static void create_velocity_gradient_background(
 
     if (is_inside){
 
+      int logtype = nodeline->logtype;
+      float x1 = nodeline->x1;
+      float x2 = logtype==LOGTYPE_HOLD ? nodeline->x1 : nodeline->x2;
+          
       float y1 = R_BOUNDARIES(area_y1, nodeline->y1, area_y2);
       float y2 = R_BOUNDARIES(area_y1, nodeline->y2, area_y2);
 
-      float x1 = scale(y1, nodeline->y1, nodeline->y2, nodeline->x1, nodeline->x2);
-      float x2 = scale(y2, nodeline->y1, nodeline->y2, nodeline->x1, nodeline->x2);
+      float x1b = scale(y1, nodeline->y1, nodeline->y2, x1, x2);
+      float x2b = scale(y2, nodeline->y1, nodeline->y2, x1, x2);
                    
 
       GE_gradient_triangle_add(c, subtrack_x1, y1);
-      GE_gradient_triangle_add(c, x1,          y1);
+      GE_gradient_triangle_add(c, x1b,         y1);
       GE_gradient_triangle_add(c, subtrack_x1, y2);
-      GE_gradient_triangle_add(c, x2,          y2);
+      GE_gradient_triangle_add(c, x2b,         y2);
     }
     
     nodeline = nodeline->next;
@@ -1761,8 +1796,9 @@ static void create_velocities_gradient_background(
   const struct NodeLine *nodeline = pitch_nodelines;
 
   while(nodeline != NULL){
+    int logtype = nodeline->logtype;
     float x1 = nodeline->x1;
-    float x2 = nodeline->x2;
+    float x2 = logtype==LOGTYPE_HOLD ? nodeline->x1 : nodeline->x2;
 
     float y1 = nodeline->y1;
     float y2 = nodeline->y2;
@@ -1843,10 +1879,14 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
       GE_trianglestrip_start();
       
       for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
+        int logtype = ns->logtype;
+        float x1 = ns->x1;
+        float x2 = logtype==LOGTYPE_HOLD ? ns->x1 : ns->x2;
+        
         GE_trianglestrip_add(c, subtrack_x1, ns->y1);
-        GE_trianglestrip_add(c, ns->x1, ns->y1);
+        GE_trianglestrip_add(c, x1, ns->y1);
         GE_trianglestrip_add(c, subtrack_x1, ns->y2);
-        GE_trianglestrip_add(c, ns->x2, ns->y2);
+        GE_trianglestrip_add(c, x2, ns->y2);
       }
       
       GE_trianglestrip_end(c);
