@@ -113,12 +113,12 @@ extern LANGSPEC void *ListFindElement3(
 	const Place *placement
 );
 
-void *ListFindElement3_num(
+extern LANGSPEC void *ListFindElement3_num(
 	struct ListHeader3 *element,
 	NInt num
 );
 
-void *ListFindElement3_num_r0(
+extern LANGSPEC void *ListFindElement3_num_r0(
                               struct ListHeader3 *element,
                               NInt num
                               );

@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern LANGSPEC int getScrollMultiplication(void);
 
 extern LANGSPEC void ScrollEditorDown(struct Tracker_Windows *window,int num_lines);
-void MaybeScrollEditorDownAfterEditing(struct Tracker_Windows *window);
+extern LANGSPEC void MaybeScrollEditorDownAfterEditing(struct Tracker_Windows *window);
 
 extern LANGSPEC void ScrollEditorUp(struct Tracker_Windows *window,int num_lines);
 

@@ -965,7 +965,6 @@ typedef struct{
   bool is_end_pitch;
 } TrackRealline2;
 
-
 typedef struct{
   Place p;
   struct Notes *note;
@@ -984,6 +983,37 @@ typedef struct{
   int value;
   int logtype;
 } FXText;
+
+
+#if USE_QT4
+#include <QVector>
+
+typedef QVector<TrackRealline2> Trs;
+typedef QVector<Trs> Trss;
+
+typedef QVector<struct Notes*> Waveform_trs;
+typedef QVector<Waveform_trs> Waveform_trss;
+
+typedef QVector<VelText> VelText_trs;
+typedef QVector<VelText_trs> VelText_trss;
+
+typedef QVector<FXText> FXText_trs;
+typedef QVector<FXText_trs> FXText_trss;
+
+#define TRS_INSERT_PLACE(trs, tr) do{                                   \
+    bool inserted=false;                                                \
+    for(int i=0 ; i<trs.size() ; i++){                                  \
+      if (PlaceLessThan(&tr.p, &trs.at(i).p)) {                         \
+        trs.insert(i, tr);                                              \
+        break;                                                          \
+      }                                                                 \
+    }                                                                   \
+    if (inserted==false)                                                \
+      trs.push_back(tr);                                                \
+  }while(0)
+
+#endif
+
 
 
 /*********************************************************************

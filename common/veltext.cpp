@@ -32,37 +32,37 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "veltext_proc.h"
 
 
-static void add_veltext(const struct WBlocks *wblock, vector_t *veltexts, VelText *veltext, struct Notes *note, int velocity){
-  int realline = FindRealLineFor(wblock, 0, &veltext->p);      
-  vector_t *v = &veltexts[realline];
+static void add_veltext(const struct WBlocks *wblock, VelText_trss &veltexts, VelText &veltext, struct Notes *note, int velocity){
+  int realline = FindRealLineFor(wblock, 0, &veltext.p);
+  VelText_trs &trs = veltexts[realline];
   
-  veltext->value = round(scale_double(velocity, 0, MAX_VELOCITY, 0, 0x100));
-  if (veltext->value >= 0x100)
-    veltext->value = 0xff;
+  veltext.value = round(scale_double(velocity, 0, MAX_VELOCITY, 0, 0x100));
+  if (veltext.value >= 0x100)
+    veltext.value = 0xff;
   
-  veltext->note = note;
-  
-  VECTOR_insert_place(v, &veltext->p);
+  veltext.note = note;
+
+  TRS_INSERT_PLACE(trs, veltext);
 }
                    
 
-static void add_velocity(const struct WBlocks *wblock, vector_t *veltexts, struct Notes *note, struct Velocities *velocity){
-  VelText *tr = talloc(sizeof(VelText));
-  tr->p = velocity->l.p;
-  tr->velocity = velocity;
-  tr->logtype = velocity->logtype;
+static void add_velocity(const struct WBlocks *wblock, VelText_trss &veltexts, struct Notes *note, struct Velocities *velocity){
+  VelText tr = {0};
+  tr.p = velocity->l.p;
+  tr.velocity = velocity;
+  tr.logtype = velocity->logtype;
   add_veltext(wblock, veltexts, tr, note, velocity->velocity);
 }
 
-static void add_note(const struct WBlocks *wblock, vector_t *veltexts, struct Notes *note){
+static void add_note(const struct WBlocks *wblock, VelText_trss &veltexts, struct Notes *note){
 
   int last_velocity = note->velocity;
 
   {
-    VelText *tr = talloc(sizeof(VelText));
-    tr->p = note->l.p;
-    tr->logtype = note->velocity_first_logtype;
-    tr->is_first_velocity = true;
+    VelText tr = {0};
+    tr.p = note->l.p;
+    tr.logtype = note->velocity_first_logtype;
+    tr.is_first_velocity = true;
     
     add_veltext(wblock, veltexts, tr, note, note->velocity);
   }
@@ -75,19 +75,19 @@ static void add_note(const struct WBlocks *wblock, vector_t *veltexts, struct No
   }
 
   if (last_velocity != note->velocity_end)  {
-    VelText *tr = talloc(sizeof(VelText));
-    tr->p = note->end;
-    tr->logtype = LOGTYPE_IRRELEVANT;
-    tr->is_last_velocity = true;
+    VelText tr = {0};
+    tr.p = note->end;
+    tr.logtype = LOGTYPE_IRRELEVANT;
+    tr.is_last_velocity = true;
     add_veltext(wblock, veltexts, tr, note, note->velocity_end);
   }
 }
 
 
 // Returns a pointer to AN ARRAY of vectors (one vector for each realline), not a pointer to a vector (as one would think).
-vector_t *VELTEXTS_get(const struct WBlocks *wblock, const struct WTracks *wtrack){
+const VelText_trss VELTEXTS_get(const struct WBlocks *wblock, const struct WTracks *wtrack){
   int num_reallines = wblock->num_reallines;
-  vector_t *veltexts = talloc(sizeof(vector_t) * num_reallines);
+  VelText_trss veltexts(num_reallines);
 
   struct Notes *note = wtrack->track->notes;
   while(note!=NULL){
@@ -127,27 +127,27 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
   if (subsubtrack==-1)
     return false;
   
-  vector_t *veltexts = VELTEXTS_get(wblock, wtrack);
+  const VelText_trss &veltexts = VELTEXTS_get(wblock, wtrack);
 
-  vector_t *veltext = &veltexts[realline];
+  const VelText_trs &veltext = veltexts.at(realline);
 
   //  if (veltext->num_elements == 0 && val==0)
   //   return true;
   
   ADD_UNDO(Notes_CurrPos(window));  
 
-  if (veltext->num_elements > 1) {
+  if (veltext.size() > 1) {
 
     // MORE THAN ONE ELEMENT
     
     if (key == EVENT_DEL){
 
       PLAYER_lock();{
-        VECTOR_FOR_EACH(VelText *vt, veltext){
-          struct Notes *note = vt->note;
-          if (vt->velocity != NULL)
-            ListRemoveElement3(&note->velocities, &vt->velocity->l);
-        }END_VECTOR_FOR_EACH;
+        for (auto vt : veltext){
+          struct Notes *note = vt.note;
+          if (vt.velocity != NULL)
+            ListRemoveElement3(&note->velocities, &vt.velocity->l);
+        }
       }PLAYER_unlock();
       
     } else {
@@ -156,7 +156,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
       
     }
     
-  } else if (veltext->num_elements == 0){
+  } else if (veltext.size() == 0) {
 
     // NO ELEMENTS
     
@@ -182,9 +182,9 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
 
     // ONE ELEMENT
     
-    VelText *vt = veltext->elements[0];
-    struct Notes *note = vt->note;
-    struct Velocities *velocity = vt->velocity;
+    const VelText &vt = veltext.at(0);
+    struct Notes *note = vt.note;
+    struct Velocities *velocity = vt.velocity;
   
     if (key == EVENT_DEL && velocity != NULL) {
 
@@ -197,17 +197,17 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
       
     } else {
 
-      data_as_text_t dat = DAT_get_overwrite(vt->value, vt->logtype, subsubtrack, key, 0, MAX_VELOCITY, true, true);
+      data_as_text_t dat = DAT_get_overwrite(vt.value, vt.logtype, subsubtrack, key, 0, MAX_VELOCITY, true, true);
 
       if (dat.is_valid==false)
         return false;
 
-      if (vt->is_first_velocity){
+      if (vt.is_first_velocity){
         
         safe_int_write(&note->velocity, dat.value);
         safe_int_write(&note->velocity_first_logtype, dat.logtype);
         
-      } else if (vt->is_last_velocity){
+      } else if (vt.is_last_velocity){
         
         safe_int_write(&note->velocity_end, dat.value);
         

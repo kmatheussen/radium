@@ -27,15 +27,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "data_as_text_proc.h"
 #include "atomic.h"
 
-#include "chancetext_proc.h"
+#include "centtext_proc.h"
 
-int CHANCETEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrack){
+int CENTTEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrack){
   int curr_track_sub = window->curr_track_sub;
-  if (wtrack->chancetext_on == false)
+  if (wtrack->centtext_on == false)
     return -1;
-
-  if (wtrack->centtext_on)
-    curr_track_sub -= 2;
 
   if (curr_track_sub < 0)
     return -1;
@@ -46,30 +43,30 @@ int CHANCETEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrac
   return curr_track_sub;
 }
 
-bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, Place *place, int key){
-  int subsubtrack = CHANCETEXT_subsubtrack(window, wtrack);
+bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, Place *place, int key){
+  int subsubtrack = CENTTEXT_subsubtrack(window, wtrack);
 
   if (subsubtrack==-1)
     return false;
   
-  vector_t *tr = TR_get(wblock, wtrack, realline);
+  const Trs &trs = TRS_get(wblock, wtrack, realline);
 
   ADD_UNDO(Notes_CurrPos(window));  
 
-  if (tr->num_elements > 1) {
+  if (trs.size()  > 1) {
 
     // MORE THAN ONE ELEMENT
     
     if (key == EVENT_DEL){
 
-      VECTOR_FOR_EACH(TrackRealline2 *tr2, tr){
-        struct Notes *note = tr2->note;
-        struct Pitches *pitch = tr2->pitch;
+      for(const TrackRealline2 &tr2 : trs){
+        struct Notes *note = tr2.note;
+        struct Pitches *pitch = tr2.pitch;
         if (pitch!=NULL)
-          safe_int_write(&pitch->chance, 0x100);
+          safe_float_write(&pitch->note, floorf(pitch->note));
         else if (note!=NULL)
-          safe_int_write(&note->chance, 0x100);
-      }END_VECTOR_FOR_EACH;
+          safe_float_write(&note->note, floorf(note->note));
+      }
       
     } else {
       
@@ -77,7 +74,7 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
       
     }
     
-  } else if (tr->num_elements == 0){
+  } else if (trs.size() == 0) {
 
     // NO ELEMENTS
     
@@ -87,42 +84,44 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
 
     // ONE ELEMENT
     
-    TrackRealline2 *tr2 = tr->elements[0];
-    struct Notes *dasnote = tr2->note;
-    struct Pitches *pitch = tr2->pitch;
+    const TrackRealline2 &tr2 = trs[0];
+    struct Notes *dasnote = tr2.note;
+    struct Pitches *pitch = tr2.pitch;
   
     if (key == EVENT_DEL) {
 
       if (pitch!=NULL)
-        safe_int_write(&pitch->chance, 0x100);
-      else if (pitch!=NULL)
-        safe_int_write(&dasnote->chance, 0x100);
+        safe_float_write(&pitch->note, floorf(pitch->note));
+      else if (dasnote!=NULL)
+        safe_float_write(&dasnote->note, floorf(dasnote->note));
       else
         return false;
       
     } else {
 
-      int chance;
+      double note;
       
       if (pitch!=NULL)
-        chance = pitch->chance;
+        note = pitch->note;
       else if (dasnote!=NULL)
-        chance = dasnote->chance;
+        note = dasnote->note;
       else
         return false;
       
-      data_as_text_t dat = DAT_get_overwrite(chance, 0, subsubtrack, key, 0, 0xff, true, false);
+      int cents = round((note - floor(note)) * 100);
+        
+      data_as_text_t dat = DAT_get_overwrite(cents, 0, subsubtrack, key, 0, 99, false, false);
 
       if (dat.is_valid==false)
         return false;
 
-      //double new_note = floor(note) + ((double)dat.value / 100.0);
-      printf("new_chance: %d\n",dat.value);
+      double new_note = floor(note) + ((double)dat.value / 100.0);
+      printf("new_note: %f, dat.value: %d / %f\n",new_note,dat.value,((float)dat.value / 100.0f));
       
       if (pitch!=NULL)
-        safe_int_write(&pitch->chance, dat.value);
+        safe_float_write(&pitch->note, new_note);
       else
-        safe_int_write(&dasnote->chance, dat.value);
+        safe_float_write(&dasnote->note, new_note);
       
     }    
   }

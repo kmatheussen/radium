@@ -112,7 +112,7 @@ static struct Velocities *add_velocity(
   
   if(PlaceLessOrEqual(placement, &note->l.p)) return NULL;
   if(PlaceGreaterOrEqual(placement, &note->end)) return NULL;
-  struct Velocities *velocity=talloc(sizeof(struct Velocities));
+  struct Velocities *velocity=(struct Velocities*)talloc(sizeof(struct Velocities));
   PlaceCopy(&velocity->l.p,placement);
   velocity->velocity=R_BOUNDARIES(0,velocityvelocity,MAX_VELOCITY);
   
@@ -215,7 +215,7 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
           ADD_UNDO(Block_CurrPos(window));
 
-          VECTOR_FOR_EACH(struct Notes *note,notes){
+          VECTOR_FOR_EACH(struct Notes *, note, notes){
             increase_note_velocity(note, inc);
           }END_VECTOR_FOR_EACH;
 
@@ -227,13 +227,13 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
           bool has_increased = false;
           
-          vector_t *tr = TR_get(wblock, wtrack, wblock->curr_realline);
-          VECTOR_FOR_EACH(TrackRealline2 *tr2, tr){
-            if (tr2->note != NULL) {
-              increase_note_velocity(tr2->note, inc);
+          const Trs &trs = TRS_get(wblock, wtrack, wblock->curr_realline);
+          for (const TrackRealline2 &tr2 : trs){
+            if (tr2.note != NULL) {
+              increase_note_velocity(tr2.note, inc);
               has_increased = true;
             }
-          }END_VECTOR_FOR_EACH;
+          }
 
           if (has_increased == false){
             struct Notes *note = FindNoteCurrPos(window);

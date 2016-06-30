@@ -56,7 +56,7 @@ extern struct WTracks *UpdateWTrackCoordinates(
 );
 */
 
-extern void UpdateAllWTracksCoordinates(
+extern LANGSPEC void UpdateAllWTracksCoordinates(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );

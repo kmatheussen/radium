@@ -21,8 +21,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern LANGSPEC int find_realline_for_end_pitch(const struct WBlocks *wblock, const Place *p);
 
 // Returns a pointer to an array of vectors (one vector for each realline), not a pointer to a vector.
-extern LANGSPEC vector_t *TRS_get(const struct WBlocks *wblock, const struct WTracks *wtrack);
-extern LANGSPEC vector_t *TR_get(const struct WBlocks *wblock, const struct WTracks *wtrack, int realline);
+//extern LANGSPEC vector_t *TRS_get(const struct WBlocks *wblock, const struct WTracks *wtrack);
+//extern LANGSPEC vector_t *TR_get(const struct WBlocks *wblock, const struct WTracks *wtrack, int realline);
+
+#if USE_QT4
+const Trss TRSS_get(const struct WBlocks *wblock, const struct WTracks *wtrack);
+const Trs TRS_get(const struct WBlocks *wblock, const struct WTracks *wtrack, int realline);
+#endif
 
 #endif
 

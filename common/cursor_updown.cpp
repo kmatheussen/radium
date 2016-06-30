@@ -137,7 +137,7 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 }
 
 
-extern LANGSPEC void MaybeScrollEditorDownAfterEditing(struct Tracker_Windows *window){
+void MaybeScrollEditorDownAfterEditing(struct Tracker_Windows *window){
   if(!is_playing() || ATOMIC_GET(root->play_cursor_onoff)==true)
     ScrollEditorDown(window,g_downscroll);
 }
@@ -211,8 +211,8 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 #endif
 }
 
-
-static void scroll_next(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, vector_t *trs){
+template <class T>
+static void scroll_next(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const QVector<QVector<T>> &trss){
 	int curr_realline=wblock->curr_realline;
 
         if(curr_realline==wblock->num_reallines-1){ // last line
@@ -223,15 +223,16 @@ static void scroll_next(struct Tracker_Windows *window, struct WBlocks *wblock, 
 	int new_realline;
 
         for(new_realline=curr_realline+1 ; new_realline < wblock->num_reallines-1 ; new_realline++){
-          vector_t *tr = &trs[new_realline];                  
-          if (tr->num_elements>0)
+          const auto &trs = trss.at(new_realline);
+          if (trs.size() > 0)
             break;
         }
 
 	ScrollEditorDown(window,new_realline-curr_realline);
 }
 
-static void scroll_prev(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, vector_t *trs){
+template <class T>
+static void scroll_prev(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const QVector<QVector<T>> &trss){
 	int curr_realline=wblock->curr_realline;
 
         if (curr_realline==0){
@@ -242,8 +243,8 @@ static void scroll_prev(struct Tracker_Windows *window, struct WBlocks *wblock, 
         int new_realline;
 
         for(new_realline=curr_realline-1 ; new_realline > 0 ; new_realline--){
-          vector_t *tr = &trs[new_realline];                  
-          if (tr->num_elements>0)
+          const auto &trs = trss.at(new_realline);
+          if (trs.size() > 0)
             break;
         }
 
@@ -251,68 +252,63 @@ static void scroll_prev(struct Tracker_Windows *window, struct WBlocks *wblock, 
 }
 
 void ScrollEditorNextNote(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
-        vector_t *trs = TRS_get(wblock, wtrack);
+        const Trss &trss = TRSS_get(wblock, wtrack);
 
-        scroll_next(window, wblock, wtrack, trs);
+        scroll_next(window, wblock, wtrack, trss);
 }
 
 void ScrollEditorPrevNote(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
-        vector_t *trs = TRS_get(wblock, wtrack);
-
-        scroll_prev(window, wblock, wtrack, trs);
+        const Trss &trss = TRSS_get(wblock, wtrack);
+        scroll_prev(window, wblock, wtrack, trss);
 }
 
-static vector_t *get_waveform_trs(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int polyphony_num){
-  vector_t *trs = talloc(sizeof(vector_t) * wblock->num_reallines);
+static Waveform_trss get_waveform_trss(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int polyphony_num){
+  Waveform_trss trss(wblock->num_reallines);
   
   struct Notes *note = wtrack->track->notes;
   
   while(note != NULL){
     if (note->polyphony_num == polyphony_num) {
       int realline = FindRealLineForNote(wblock, 0, note);
-      VECTOR_push_back(&trs[realline], note);
+      trss[realline].push_back(note);
       int realline2 = FindRealLineForEndNote(wblock, 0, note);
-      VECTOR_push_back(&trs[realline2], note);
+      trss[realline2].push_back(note);
     }
     note = NextNote(note);
   }
 
-  return trs;
+  return trss;
 }
 
 
 void ScrollEditorNextWaveform(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int polyphony_num){
-  vector_t *trs = get_waveform_trs(window, wblock, wtrack, polyphony_num);
-  scroll_next(window, wblock, wtrack, trs);
+  const Waveform_trss &trss = get_waveform_trss(window, wblock, wtrack, polyphony_num);
+  scroll_next(window, wblock, wtrack, trss);
 }
 
 void ScrollEditorPrevWaveform(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int polyphony_num){
-  vector_t *trs = get_waveform_trs(window, wblock, wtrack, polyphony_num);
-  scroll_prev(window, wblock, wtrack, trs);
+  const Waveform_trss &trss = get_waveform_trss(window, wblock, wtrack, polyphony_num);
+  scroll_prev(window, wblock, wtrack, trss);
 }
 
 void ScrollEditorNextVelocity(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
-        vector_t *trs = VELTEXTS_get(wblock, wtrack);
-
-        scroll_next(window, wblock, wtrack, trs);
+  const VelText_trss &trss = VELTEXTS_get(wblock, wtrack);
+  scroll_next(window, wblock, wtrack, trss);
 }
 
 void ScrollEditorPrevVelocity(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
-        vector_t *trs = VELTEXTS_get(wblock, wtrack);
-
-        scroll_prev(window, wblock, wtrack, trs);
+  const VelText_trss &trss = VELTEXTS_get(wblock, wtrack);
+  scroll_prev(window, wblock, wtrack, trss);
 }
 
 void ScrollEditorNextFx(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FXs *fxs){
-        vector_t *trs = FXTEXTS_get(wblock, wtrack, fxs);
-
-        scroll_next(window, wblock, wtrack, trs);
+  const FXText_trss &trss = FXTEXTS_get(wblock, wtrack, fxs);
+  scroll_next(window, wblock, wtrack, trss);
 }
 
 void ScrollEditorPrevFx(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FXs *fxs){
-        vector_t *trs = FXTEXTS_get(wblock, wtrack, fxs);
-
-        scroll_prev(window, wblock, wtrack, trs);
+  const FXText_trss &trss = FXTEXTS_get(wblock, wtrack, fxs);
+  scroll_prev(window, wblock, wtrack, trss);
 }
 
 void ScrollEditorNextSomething(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){

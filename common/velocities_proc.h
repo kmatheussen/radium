@@ -17,19 +17,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 //extern void SetNum_Vel(struct WTracks *wtrack);
 
-struct Velocities *AddVelocity2(
+extern LANGSPEC struct Velocities *AddVelocity2(
+                                                int velocityvelocity,
+                                                const Place *placement,
+                                                struct Notes *note
+                                                );
+
+extern LANGSPEC int AddVelocity(
                                 int velocityvelocity,
                                 const Place *placement,
                                 struct Notes *note
                                 );
 
-extern int AddVelocity(
-                       int velocityvelocity,
-                       const Place *placement,
-                       struct Notes *note
-                       );
+extern LANGSPEC void AddVelocityCurrPos(struct Tracker_Windows *window);
 
-extern void AddVelocityCurrPos(struct Tracker_Windows *window);
-
-extern void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc);
+extern LANGSPEC void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc);
 

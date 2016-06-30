@@ -30,30 +30,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "fxtext_proc.h"
 
 
-static void add_fxtext(const struct WBlocks *wblock, vector_t *fxtexts, const struct FX *fx, struct FXNodeLines *fxnodeline){
+static void add_fxtext(const struct WBlocks *wblock, FXText_trss &fxtexts, const struct FX *fx, struct FXNodeLines *fxnodeline){
 
   int realline = FindRealLineFor(wblock, 0, &fxnodeline->l.p);      
-  vector_t *v = &fxtexts[realline];
+  FXText_trs &v = fxtexts[realline];
 
-  FXText *fxtext = talloc(sizeof(VelText));
+  FXText fxtext = {0};
 
-  fxtext->p = fxnodeline->l.p;
-  fxtext->fx = fx;
-  fxtext->fxnodeline = fxnodeline;
+  fxtext.p = fxnodeline->l.p;
+  fxtext.fx = fx;
+  fxtext.fxnodeline = fxnodeline;
   
-  fxtext->value = round(scale_double(fxnodeline->val, fx->min, fx->max, 0, 0x100));
-  if (fxtext->value==0x100)
-    fxtext->value=0xff;
-  fxtext->logtype = fxnodeline->logtype;
-  
-  VECTOR_insert_place(v, &fxtext->p);
+  fxtext.value = round(scale_double(fxnodeline->val, fx->min, fx->max, 0, 0x100));
+  if (fxtext.value==0x100)
+    fxtext.value=0xff;
+  fxtext.logtype = fxnodeline->logtype;
+
+  TRS_INSERT_PLACE(v, fxtext);
 }
 
 
 // Returns a pointer to AN ARRAY of vectors (one vector for each realline), not a pointer to a vector (as one would think).
-vector_t *FXTEXTS_get(const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs){
+const FXText_trss FXTEXTS_get(const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs){
   int num_reallines = wblock->num_reallines;
-  vector_t *fxtexts = talloc(sizeof(vector_t) * num_reallines);
+  FXText_trss fxtexts(num_reallines);
 
   struct FXNodeLines *fxnodeline = fxs->fxnodelines;
   while(fxnodeline!=NULL){
@@ -82,7 +82,7 @@ int FXTEXT_subsubtrack(const struct Tracker_Windows *window, struct WTracks *wtr
   if (subsubtrack < 0)
     return -1;
 
-  VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
+  VECTOR_FOR_EACH(struct FXs *, fxs, &wtrack->track->fxs){
     if (subsubtrack == 0 || subsubtrack == 1 || subsubtrack == 2){
       if (to_fxs!=NULL)
         *to_fxs = fxs;
@@ -105,25 +105,25 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
   struct FX *fx = fxs->fx;
   //printf("FXmin: %d, fxmax: %d\n",fx->min, fx->max);
   
-  vector_t *fxtexts = FXTEXTS_get(wblock, wtrack, fxs);
+  const FXText_trss &fxtexts = FXTEXTS_get(wblock, wtrack, fxs);
 
-  vector_t *fxtext = &fxtexts[realline];
+  const FXText_trs &fxtext = fxtexts.at(realline);
 
   //  if (fxtext->num_elements == 0 && val==0)
   //   return true;
 
   ADD_UNDO(FXs(window, wblock->block, wtrack->track, wblock->curr_realline));
 
-  if (fxtext->num_elements > 1) {
+  if (fxtext.size() > 1){
 
     // MORE THAN ONE ELEMENT
     
     if (key == EVENT_DEL){
       
-      VECTOR_FOR_EACH(FXText *vt, fxtext){
-        if (VECTOR_is_in_vector(&wtrack->track->fxs, fxs) && isInList3(&fxs->fxnodelines->l, &vt->fxnodeline->l)) // We might have removed all nodes already (see line below)
-          DeleteFxNodeLine(window, wtrack, fxs, vt->fxnodeline); // In this line, two nodes are removed if there's only two left.
-      }END_VECTOR_FOR_EACH;
+      for (auto vt : fxtext) {
+        if (VECTOR_is_in_vector(&wtrack->track->fxs, fxs) && isInList3(&fxs->fxnodelines->l, &vt.fxnodeline->l)) // We might have removed all nodes already (see line below)
+          DeleteFxNodeLine(window, wtrack, fxs, vt.fxnodeline); // In this line, two nodes are removed if there's only two left.
+      }
       
     } else {
       
@@ -131,7 +131,7 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
       
     }
     
-  } else if (fxtext->num_elements == 0){
+  } else if (fxtext.size() == 0){
 
     // NO ELEMENTS
 
@@ -151,7 +151,7 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
 
       int pos = AddFXNodeLine(window, wblock, wtrack, fx->effect_num, dat.value, place);
             
-      struct FXNodeLines *fxnodeline = ListFindElement1_num(&fxs->fxnodelines->l, pos);
+      struct FXNodeLines *fxnodeline = (struct FXNodeLines*)ListFindElement1_num(&fxs->fxnodelines->l, pos);
       fxnodeline->logtype = dat.logtype;      
     }
 
@@ -159,8 +159,8 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
 
     // ONE ELEMENT
     
-    FXText *vt = fxtext->elements[0];
-    struct FXNodeLines *fxnodeline = vt->fxnodeline;
+    const FXText &vt = fxtext.at(0);
+    struct FXNodeLines *fxnodeline = vt.fxnodeline;
   
     if (key == EVENT_DEL) {
 
@@ -171,8 +171,8 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
       
     } else {
 
-      data_as_text_t dat = DAT_get_overwrite(vt->value, vt->logtype, subsubtrack, key, fx->min, fx->max, true, true);
-      printf("fx->min: %x, fx->max: %x, vt->value: %x, dat.value: %x\n",fx->min,fx->max,vt->value,dat.value);
+      data_as_text_t dat = DAT_get_overwrite(vt.value, vt.logtype, subsubtrack, key, fx->min, fx->max, true, true);
+      printf("fx->min: %x, fx->max: %x, vt.value: %x, dat.value: %x\n",fx->min,fx->max,vt.value,dat.value);
 
       if (dat.is_valid==false)
         return false;

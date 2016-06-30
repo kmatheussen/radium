@@ -70,7 +70,7 @@ void SetNotePolyphonyAttributes(struct Tracks *track){
   last_free_polyphony_num = 0; // reset
   
   if (end_places==NULL)
-    end_places = V_calloc(end_places_size,sizeof(Place*)); // Using calloc since this memory is only used temporarily in here, so it's not necessary for the GC to know about it in any way.
+    end_places = (Place**)V_calloc(end_places_size,sizeof(Place*)); // Using calloc since this memory is only used temporarily in here, so it's not necessary for the GC to know about it in any way.
 
   track->polyphony = 1;
   
@@ -105,14 +105,14 @@ struct Notes *GetCurrNote(struct Tracker_Windows *window){
 	struct WBlocks       *wblock        = window->wblock;
 	struct WTracks       *wtrack        = wblock->wtrack;
 
-        vector_t *tr = TR_get(wblock, wtrack, wblock->curr_realline);
+        Trs trs = TRS_get(wblock, wtrack, wblock->curr_realline);
         
-        if (tr->num_elements==0)
+        if (trs.size()==0)
           return NULL;
 
-        TrackRealline2 *tr2 = tr->elements[0];
+        const TrackRealline2 &tr2 = trs[0];
 
-        return (struct Notes*)tr2->note;
+        return tr2.note;
 }
 
 
@@ -203,7 +203,7 @@ void NOTE_init(struct Notes *note){
 }
 
 struct Notes *NewNote(void){
-  struct Notes *note=talloc(sizeof(struct Notes));
+  struct Notes *note=(struct Notes*)talloc(sizeof(struct Notes));
   NOTE_init(note);
   note->chance = 0x100;
 
@@ -211,7 +211,7 @@ struct Notes *NewNote(void){
 }
 
 struct Notes *CopyNote(const struct Notes *old_note){
-  struct Notes *note=tcopy(old_note, sizeof(struct Notes));
+  struct Notes *note = (struct Notes*)tcopy(old_note, sizeof(struct Notes));
   note->l.next = NULL;
   note->velocities = NULL;
   note->pitches = NULL;
@@ -492,31 +492,31 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
   struct Tracks  *track         = wtrack->track;
   int             curr_realline = wblock->curr_realline;
 
-  vector_t *tr = TR_get(wblock, wtrack, curr_realline);
+  const Trs &trs = TRS_get(wblock, wtrack, curr_realline);
 
-  if (polyphonic==false && tr->num_elements > 0) {
-    TrackRealline2 *tr2 = tr->elements[0];
+  if (polyphonic==false && trs.size() > 0) {
+    const TrackRealline2 &tr2 = trs[0];
 
-    if (tr2->pitch != NULL) {
-      tr2->pitch->note = notenum; // lock not necessary
+    if (tr2.pitch != NULL) {
+      tr2.pitch->note = notenum; // lock not necessary
       maybe_scroll_down(window);
       return;
     }
 
 
-    if (tr2->note != NULL) {
+    if (tr2.note != NULL) {
 
       // lock not necessary
-      if (tr2->is_end_pitch)
-        tr2->note->pitch_end = notenum;
+      if (tr2.is_end_pitch)
+        tr2.note->pitch_end = notenum;
       else
-        tr2->note->note = notenum;
+        tr2.note->note = notenum;
       
       maybe_scroll_down(window);
       return;
     }
 
-    const struct Stops *stop = tr2->stop;
+    const struct Stops *stop = tr2.stop;
     PLAYER_lock();{
       ListRemoveElement3(&track->stops, &stop->l);
     }PLAYER_unlock();
@@ -545,7 +545,7 @@ static void InsertStop(
 ){
 	struct Stops *stop;
 
-        stop=talloc(sizeof(struct Stops));
+        stop = (struct Stops*)talloc(sizeof(struct Stops));
 	PlaceCopy(&stop->l.p,placement);
 
         PLAYER_lock();{
@@ -614,54 +614,54 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   struct LocalZooms    *realline      = wblock->reallines[wblock->curr_realline];
   int                   curr_realline = wblock->curr_realline;
   
-  vector_t *tr = TR_get(wblock, wtrack, curr_realline);
+  const Trs &trs = TRS_get(wblock, wtrack, curr_realline);
 
   ADD_UNDO(Notes_CurrPos(window));
 
-  if (tr->num_elements==0) {
+  if (trs.size()==0) {
     InsertStop(window,wblock,wtrack,&realline->l.p);
     maybe_scroll_down(window);
     return;
   }
 
   
-  TrackRealline2 *tr2 = tr->elements[0];
+  const TrackRealline2 &tr2 = trs[0];
 
-  if (tr2->pitch != NULL) {
-    DeletePitch(track, tr2->note, tr2->pitch);
-    if (tr->num_elements==1)
+  if (tr2.pitch != NULL) {
+    DeletePitch(track, tr2.note, tr2.pitch);
+    if (trs.size()==1)
       maybe_scroll_down(window);
     return;
   }
 
-  if (tr2->is_end_pitch) {
-    struct Pitches *pitch = ListLast3(&tr2->note->pitches->l);
+  if (tr2.is_end_pitch) {
+    struct Pitches *pitch = (struct Pitches*)ListLast3(&tr2.note->pitches->l);
     if (pitch!=NULL)
-      tr2->note->pitch_end = pitch->note;
+      tr2.note->pitch_end = pitch->note;
     else
-      tr2->note->pitch_end = 0;
+      tr2.note->pitch_end = 0;
     return;
   }
                               
-  if (tr2->note != NULL) {
+  if (tr2.note != NULL) {
     PLAYER_lock();{
-      ListRemoveElement3(&track->notes,&tr2->note->l);
+      ListRemoveElement3(&track->notes,&tr2.note->l);
       LengthenNotesTo(wblock->block,track,&realline->l.p);
     }PLAYER_unlock();
     SetNotePolyphonyAttributes(wtrack->track);
     ValidateCursorPos(window);
-    if (tr->num_elements==1)
+    if (trs.size()==1)
       maybe_scroll_down(window);
     return;
   }
 
-  const struct Stops *stop = tr2->stop;
+  const struct Stops *stop = tr2.stop;
   PLAYER_lock();{
     ListRemoveElement3(&track->stops, &stop->l);
     LengthenNotesTo(wblock->block,track,&realline->l.p);
   }PLAYER_unlock();
   
-  if (tr->num_elements==1)
+  if (trs.size()==1)
     maybe_scroll_down(window);
 }
 
@@ -798,7 +798,7 @@ static int get_chroma(char chromachar){
   }
 }
 
-static char *chroma_to_string(int chroma){
+static const char *chroma_to_string(int chroma){
   switch(chroma){
   case 0:
     return "c";
@@ -865,7 +865,7 @@ static int get_octave(char octavechar){
   }
 }
 
-static char *octave_to_string(int octave){
+static const char *octave_to_string(int octave){
   switch(octave){
   case 0:
     return "0";
@@ -913,7 +913,7 @@ static int get_sharp(char sharptext){
 }
 
 static char *substring(char *s,int start,int end){
-  char *ret       = talloc(end-start+1);
+  char *ret       = (char*)talloc(end-start+1);
   int   read_pos  = start;
   int   write_pos = 0;
 
@@ -1030,7 +1030,7 @@ char *notetext_from_notenum(float notenumf){
 
 #ifndef TEST_NOTES
 
-static float request_notenum(struct Tracker_Windows *window, char *title, float old_notenum){
+static float request_notenum(struct Tracker_Windows *window, const char *title, float old_notenum){
   float notenum = -1;
   
   ReqType reqtype=GFX_OpenReq(window,30,12,"Set Pitch");
@@ -1104,10 +1104,11 @@ static void r_edit_note(struct Tracker_Windows *window, struct WBlocks *wblock, 
 void EditNoteCurrPos(struct Tracker_Windows *window){
   struct WBlocks       *wblock        = window->wblock;
   struct WTracks       *wtrack        = wblock->wtrack;    
-  int                   curr_realline = wblock->curr_realline;  
-  vector_t             *tr            = TR_get(wblock, wtrack,curr_realline);
+  int                   curr_realline = wblock->curr_realline;
+  
+  const Trs &trs = TRS_get(wblock, wtrack,curr_realline);
 
-  if (tr->num_elements==0) {
+  if (trs.size()==0) {
 
     struct LocalZooms *realline = wblock->reallines[curr_realline];
     Place             *p        = &realline->l.p;
@@ -1123,17 +1124,17 @@ void EditNoteCurrPos(struct Tracker_Windows *window){
       
   } else {
 
-    TrackRealline2 *tr2 = tr->elements[0];
+    const TrackRealline2 &tr2 = trs[0];
 
-    if (tr2->pitch != NULL)
-      r_edit_pitch(window, wblock, wtrack, tr2->pitch);
+    if (tr2.pitch != NULL)
+      r_edit_pitch(window, wblock, wtrack, tr2.pitch);
 
-    else if (tr2->is_end_pitch)
-      r_edit_end_pitch(window, wblock, wtrack, tr2->note);
+    else if (tr2.is_end_pitch)
+      r_edit_end_pitch(window, wblock, wtrack, tr2.note);
       
-    else if(tr2->note != NULL)
+    else if(tr2.note != NULL)
       
-      r_edit_note(window, wblock, wtrack, tr2->note);
+      r_edit_note(window, wblock, wtrack, tr2.note);
     
   }
   
