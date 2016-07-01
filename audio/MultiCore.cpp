@@ -182,10 +182,9 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
 
   if (sp_all.size() >= MAX_NUM_SP){
     // Not doing anything in the audio thread might cause a deadlock, so the message window might now show if using RT_Message here.
-    GFX_Message(NULL,
-                "Maximum number of sound objects reached. Tried to play %d sound objects, but only %d sound objects are supported. Radium must be recompiled to increase this number.",
-                sp_all.size(),
-                MAX_NUM_SP);
+    RT_message("Maximum number of sound objects reached. Tried to play %d sound objects, but only %d sound objects are supported. Radium must be recompiled to increase this number.",
+               sp_all.size(),
+               MAX_NUM_SP);
     return;
   }
 
