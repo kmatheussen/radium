@@ -86,8 +86,7 @@ static void add_note(const struct WBlocks *wblock, VelText_trss &veltexts, struc
 
 // Returns a pointer to AN ARRAY of vectors (one vector for each realline), not a pointer to a vector (as one would think).
 const VelText_trss VELTEXTS_get(const struct WBlocks *wblock, const struct WTracks *wtrack){
-  int num_reallines = wblock->num_reallines;
-  VelText_trss veltexts(num_reallines);
+  VelText_trss veltexts;
 
   struct Notes *note = wtrack->track->notes;
   while(note!=NULL){
@@ -129,7 +128,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
   
   const VelText_trss &veltexts = VELTEXTS_get(wblock, wtrack);
 
-  const VelText_trs &veltext = veltexts.at(realline);
+  const VelText_trs &veltext = veltexts[realline];
 
   //  if (veltext->num_elements == 0 && val==0)
   //   return true;

@@ -986,19 +986,20 @@ typedef struct{
 
 
 #if USE_QT4
-#include <QVector>
+#include <QList>
+#include <QMap>
 
-typedef QVector<TrackRealline2> Trs;
-typedef QVector<Trs> Trss;
+typedef QList<TrackRealline2> Trs;
+typedef QMap<int, Trs> Trss;
 
-typedef QVector<struct Notes*> Waveform_trs;
-typedef QVector<Waveform_trs> Waveform_trss;
+//typedef QList<struct Notes*> Waveform_trs;
+typedef QMap<int, bool> Waveform_trss;
 
-typedef QVector<VelText> VelText_trs;
-typedef QVector<VelText_trs> VelText_trss;
+typedef QList<VelText> VelText_trs;
+typedef QMap<int, VelText_trs> VelText_trss;
 
-typedef QVector<FXText> FXText_trs;
-typedef QVector<FXText_trs> FXText_trss;
+typedef QList<FXText> FXText_trs;
+typedef QMap<int, FXText_trs> FXText_trss;
 
 #define TRS_INSERT_PLACE(trs, tr)                                       \
   do{                                                                   \

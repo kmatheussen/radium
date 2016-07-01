@@ -221,8 +221,6 @@ struct LatencyCompensatorDelay {
 
   ~LatencyCompensatorDelay(){
     free(_output_sound);
-    delete _delay_old;
-    delete ATOMIC_GET(_delay_new);
     delete _delay;
   }
 

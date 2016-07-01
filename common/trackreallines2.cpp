@@ -31,7 +31,7 @@ int find_realline_for_end_pitch(const struct WBlocks *wblock, const Place *p){
   return realline;
 }
 
-static void insert_place(QVector<TrackRealline2> &trs, const TrackRealline2 &tr){
+static void insert_place(Trs &trs, const TrackRealline2 &tr){
   for(int i=0 ; i<trs.size() ; i++){ // could be optimized by using binary search, but binary search is hard to get correct. That speedup is not needed for now anyway.
     const TrackRealline2 &tr2 = trs.at(i);
     
@@ -92,14 +92,14 @@ static void add_stop(const struct WBlocks *wblock, Trss &trss, struct Stops *sto
 }
 
 static int find_next_used_trackrealline(const struct WBlocks *wblock, Trss &trss, int realline){
-  while(realline < wblock->num_reallines && trss.at(realline).size()==0)
+  while(realline < wblock->num_reallines && trss.contains(realline)==false)
     realline++;
   return realline;
 }
 
 // 'tr' contains more than one element per line, so we spread it to several reallines. (point is to try to avoid 'MUL' notes)
 // Before calling, we found that all lines between realline1 and realline2 are free.
-static void distribute_trackreallines(const struct WBlocks *wblock, QVector<TrackRealline2> trs, Trss &trss, int realline1, int realline2){  
+static void distribute_trackreallines(const struct WBlocks *wblock, Trs trs, Trss &trss, int realline1, int realline2){  
   int num_elements      = trs.size();
   int num_lines         = realline2 - realline1;
   //int elements_per_line = R_MAX(1, num_elements / num_lines);
@@ -128,13 +128,13 @@ static void distribute_trackreallines(const struct WBlocks *wblock, QVector<Trac
 static void spread_trackreallines(const struct WBlocks *wblock, Trss &trss){
   int realline1 = 0;
   while(realline1 < wblock->num_reallines){
-    if (trss.at(realline1).size() > 1) {
+    if (trss.contains(realline1) > 1) {
 
       int realline2 = find_next_used_trackrealline(wblock, trss, realline1+1);
       //printf("next realline: %d -> %d\n",realline1,realline2);
       if (realline2 > realline1+1) {
-        QVector<TrackRealline2> trs = trss.at(realline1);
-        trss[realline1].clear();
+        Trs trs = trss.value(realline1);
+        trss.remove(realline1);
         distribute_trackreallines(wblock, trs, trss, realline1, realline2);
       }
 
@@ -180,9 +180,7 @@ static void TRSS_print(const struct WBlocks *wblock, Trss &trss){
 
 // Returns a pointer to AN ARRAY of vectors (one vector for each realline), not a pointer to a vector.
 const Trss TRSS_get(const struct WBlocks *wblock, const struct WTracks *wtrack){
-  int num_reallines = wblock->num_reallines;
-
-  Trss trss(num_reallines);
+  Trss trss;
   
   struct Notes *note = wtrack->track->notes;
   while(note!=NULL){
@@ -206,5 +204,5 @@ const Trss TRSS_get(const struct WBlocks *wblock, const struct WTracks *wtrack){
 
 const Trs TRS_get(const struct WBlocks *wblock, const struct WTracks *wtrack, int realline){
   Trss trss = TRSS_get(wblock, wtrack);
-  return trss.at(realline);
+  return trss[realline];
 }
