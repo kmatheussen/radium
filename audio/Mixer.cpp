@@ -1110,3 +1110,9 @@ static void MIXER_check_if_someone_has_solo(void){
 
   g_someone_has_solo = false;
 }
+
+void MIXER_called_regularly_by_main_thread(void){
+  if (g_mixer != NULL)
+    for (SoundProducer *sp : g_mixer->_sound_producers)
+      SP_called_regularly_by_main_thread(sp);
+}

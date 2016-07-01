@@ -66,6 +66,7 @@ struct Data{
   float *control_values;  
   float **inputs;
   float **outputs;
+  float latency_output_control_port;
 };
 
 struct Library{ // Used to avoid having lots of unused dynamic libraries loaded into memory at all time (and sometimes using up TLS)
@@ -86,7 +87,7 @@ struct TypeData{
 
   unsigned int UniqueID; // same value as descriptor->UniqueID, but copied here to avoid loading the library to get the value.
   const char *Name; // same here
-  
+
   float output_control_port_value;
   float *min_values;
   float *default_values;
@@ -116,6 +117,20 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   }
   for(int ch=0;ch<type->num_outputs;ch++)
     memcpy(outputs[ch],data->outputs[ch],sizeof(float)*num_frames);
+}
+
+static int RT_get_latency(struct SoundPlugin *plugin){
+  Data *data = (Data*)plugin->data;
+
+  int latency = data->latency_output_control_port;
+  
+  //if (latency != 0)
+  //  printf("plugin %s has latency %d\n",plugin->patch->name, latency);
+  
+  if (latency < 0)
+    latency = 0;
+  
+  return latency;
 }
 
 static void delete_audio_ports(const SoundPluginType *type, Data *data){
@@ -282,7 +297,12 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
       }
       
       if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_OUTPUT(portdescriptor)){
-        descriptor->connect_port(data->handles[0], portnum, &type_data->output_control_port_value);
+        
+        if (!strcmp("latency", descriptor->PortNames[portnum]))
+          descriptor->connect_port(data->handles[0], portnum, &data->latency_output_control_port);
+        else
+          descriptor->connect_port(data->handles[0], portnum, &type_data->output_control_port_value);
+        
         if(type_data->uses_two_handles==true)
           descriptor->connect_port(data->handles[1], portnum, &type_data->output_control_port_value);
       }
@@ -719,6 +739,8 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
     plugin_type->buffer_size_is_changed = buffer_size_is_changed;
 
     plugin_type->RT_process = RT_process;
+    plugin_type->RT_get_latency = RT_get_latency;
+    
     plugin_type->create_plugin_data = create_plugin_data;
     plugin_type->cleanup_plugin_data = cleanup_plugin_data;
 

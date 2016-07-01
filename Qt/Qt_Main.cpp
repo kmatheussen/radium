@@ -794,6 +794,8 @@ protected:
         last_height = new_height;
       }
     }
+
+    MIXER_called_regularly_by_main_thread();
     
 #if 0
     // Update graphics when playing

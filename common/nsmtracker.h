@@ -1000,7 +1000,8 @@ typedef QVector<VelText_trs> VelText_trss;
 typedef QVector<FXText> FXText_trs;
 typedef QVector<FXText_trs> FXText_trss;
 
-#define TRS_INSERT_PLACE(trs, tr) do{                                   \
+#define TRS_INSERT_PLACE(trs, tr)                                       \
+  do{                                                                   \
     bool inserted=false;                                                \
     for(int i=0 ; i<trs.size() ; i++){                                  \
       if (PlaceLessThan(&tr.p, &trs.at(i).p)) {                         \

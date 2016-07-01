@@ -542,6 +542,14 @@ static void send_raw_midi_message(struct SoundPlugin *plugin, int64_t block_delt
   //  RError("Illegal midi msg: %x",msg); // Well, the illegal message could have been created by a third party plugin.
 }
 
+static int RT_get_latency(struct SoundPlugin *plugin){
+  Data *data = (Data*)plugin->data;
+  AudioPluginInstance *instance = data->audio_instance;
+  int latency = instance->getLatencySamples();
+  //printf("\n\n\n    Created new latency %d\n\n\n", latency);
+  return latency;
+}
+
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
@@ -982,6 +990,8 @@ static SoundPluginType *create_plugin_type(const char *name, int uid, const wcha
   plugin_type->set_note_volume = set_note_volume;
   plugin_type->stop_note       = stop_note;
   plugin_type->send_raw_midi_message = send_raw_midi_message;
+
+  plugin_type->RT_get_latency = RT_get_latency;
   
   plugin_type->get_effect_value = get_effect_value;
   plugin_type->set_effect_value = set_effect_value;

@@ -215,6 +215,8 @@ typedef struct SoundPluginType{
   void (*set_note_pitch)(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note);
   void (*send_raw_midi_message)(struct SoundPlugin *plugin, int64_t block_delta_time, uint32_t msg);
   void (*stop_note)(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note);
+
+  int (*RT_get_latency)(struct SoundPlugin *plugin);
   
   // Returns the number of channels it can provide peaks for. (calling this function with ch=-1 is considered a dummy operation, except that the return value is correct)
   int (*get_peaks)(struct SoundPlugin *plugin, float note_num, int ch, float pan, int64_t start_time, int64_t end_time, float *min_value, float *max_value);
@@ -374,7 +376,7 @@ typedef struct SoundPlugin{
   float *bus_volume_peak_values2;
   float *bus_volume_peak_values3;
   float *bus_volume_peak_values4;
-
+  
   DEFINE_ATOMIC(bool, is_visible);
   DEFINE_ATOMIC(void *, cpu_usage);
 } SoundPlugin;
