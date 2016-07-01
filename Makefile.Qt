@@ -482,7 +482,7 @@ tracks.o:  $(BUILD_DEPENDENCIES) $(CD)tracks.c
 localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)localzooms.c 
 	$(CC) $(CD)localzooms.c $(OPT)
 
-notes.o:  $(BUILD_DEPENDENCIES) $(CD)notes.c common/nsmtracker.h
+notes.o:  $(BUILD_DEPENDENCIES) $(CD)notes.cpp common/nsmtracker.h
 	$(CCC) $(CD)notes.cpp $(QTOPT)
 
 pitches.o:  $(BUILD_DEPENDENCIES) $(CD)pitches.c 
@@ -536,19 +536,19 @@ reallines.o:  $(BUILD_DEPENDENCIES) $(CD)reallines.c
 notestext.o:  $(BUILD_DEPENDENCIES) $(CD)notestext.c
 	$(CC) $(CD)notestext.c $(OPT)
 
-trackreallines2.o:  $(BUILD_DEPENDENCIES) $(CD)trackreallines2.c
+trackreallines2.o:  $(BUILD_DEPENDENCIES) $(CD)trackreallines2.cpp
 	$(CCC) $(CD)trackreallines2.cpp  $(QTOPT) #$(OPT)
 
-centtext.o:  $(BUILD_DEPENDENCIES) $(CD)centtext.c
+centtext.o:  $(BUILD_DEPENDENCIES) $(CD)centtext.cpp
 	$(CCC) $(CD)centtext.cpp $(QTOPT)
 
-chancetext.o:  $(BUILD_DEPENDENCIES) $(CD)chancetext.c
+chancetext.o:  $(BUILD_DEPENDENCIES) $(CD)chancetext.cpp
 	$(CCC) $(CD)chancetext.cpp $(QTOPT)
 
-veltext.o:  $(BUILD_DEPENDENCIES) $(CD)veltext.c
+veltext.o:  $(BUILD_DEPENDENCIES) $(CD)veltext.cpp
 	$(CCC) $(CD)veltext.cpp $(QTOPT)
 
-fxtext.o:  $(BUILD_DEPENDENCIES) $(CD)fxtext.c
+fxtext.o:  $(BUILD_DEPENDENCIES) $(CD)fxtext.cpp
 	$(CCC) $(CD)fxtext.cpp $(QTOPT)
 
 data_as_text.o:  $(BUILD_DEPENDENCIES) $(CD)data_as_text.c
@@ -572,10 +572,10 @@ t_gc.o:  $(BUILD_DEPENDENCIES) $(CD)t_gc.c
 cursor.o:  $(BUILD_DEPENDENCIES) $(CD)cursor.c
 	$(CC) $(CD)cursor.c $(OPT)
 
-cursor_updown.o:  $(BUILD_DEPENDENCIES) $(CD)cursor_updown.c
+cursor_updown.o:  $(BUILD_DEPENDENCIES) $(CD)cursor_updown.cpp
 	$(CCC) $(CD)cursor_updown.cpp $(QTOPT)
 
-velocities.o:  $(BUILD_DEPENDENCIES) $(CD)velocities.c
+velocities.o:  $(BUILD_DEPENDENCIES) $(CD)velocities.cpp
 	$(CCC) $(CD)velocities.cpp $(QTOPT)
 
 realline_calc.o:  $(BUILD_DEPENDENCIES) $(CD)realline_calc.c
