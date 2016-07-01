@@ -229,17 +229,21 @@ struct LatencyCompensatorDelay {
   void set_delay(int preferred_delay){
     ATOMIC_SET(_preferred_delay, preferred_delay);
   }
+
+  // Should be called instead of RT_process if we don't need any sound.
+  void RT_call_instead_of_process(void){
+    if (ATOMIC_GET(_delay_new) != NULL) {
+      _delay_old = _delay;
+      _delay = ATOMIC_GET(_delay_new);
+      ATOMIC_SET(_delay_new, NULL); // Should be set after finish using delay_old. (to avoid failed=true in 'called_regularly_by_main_thread')
+    }
+  }
   
   // May return 'input_sound'. 'input_sound' is never modified.
   float *RT_process(float *input_sound, int num_frames){
     
     if (ATOMIC_GET(_delay_new) != NULL) {
 
-      // TODO: Wonder if there might be some left-over sound if latency has changed, and we later turn on a bus. The latency has to be really big for the buffer to still contain something though. Bigger than the fade-out time when turning off a bus. Plus that the volume must be insanely high, since what we might hear is the end of a fade out. Probably nothing to worry about.
-      //
-      // An okay solution would be to clean the _delay buffer when the bus has turned off its sound. However, then we have to remember if the bus was ON last time.
-      
-      
       float buf_old[num_frames];
       float buf_new[num_frames];
 
@@ -1234,12 +1238,17 @@ public:
       int latency = max_input_link_latency - source->_latency;
       link->_delay.set_delay(latency);
         
-      if (false==link->is_active)
+      if (false==link->is_active) {
+        
+        if (!link->is_event_link)
+          link->_delay.RT_call_instead_of_process();
+        
         continue;
+      }
 
       R_ASSERT(source->has_run(time));
       
-      if (!link->is_event_link) {
+      if (false==link->is_event_link) {
 
         SMOOTH_called_per_block(&link->volume);
 
