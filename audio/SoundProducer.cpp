@@ -183,7 +183,7 @@ namespace{
     }
     
     void RT_process(float *input, float *output, int num_samples){
-      int andval = _buffer_size = 1;
+      int andval = _buffer_size - 1;
       int size = _size;
       int iota = IOTA;
       float *buffer = _buffer;
@@ -1209,14 +1209,14 @@ public:
     }
 
     
-    // 2. Ensure RT_called_for_each_soundcard_block2 is called for all soundobjects sending sound here. (since we read the _latency variable from those)
+    // 2. Ensure RT_called_for_each_soundcard_block2 is called for all soundobjects sending sound here. (since we read the _latency variable from those a little bit further down in this function)
     //
     for (SoundProducerLink *link : _input_links)
       if (!link->is_event_link)
         link->source->RT_called_for_each_soundcard_block2();
 
     
-    // 3. Find and set _latency and _max_input_link_latency
+    // 3. Find and set _latency and _highest_input_link_latency
     //
     _highest_input_link_latency = 0;
     
