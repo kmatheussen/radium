@@ -394,10 +394,11 @@ struct SoundProducerLink {
     }
   }
 
+
   // Called by main mixer thread before starting multicore.
   bool RT_called_for_each_soundcard_block(void){
-    R_ASSERT(THREADING_is_player_thread());
-    
+    //R_ASSERT(THREADING_is_player_thread());
+
     if (is_event_link) {
 
       R_ASSERT(is_active==true);
@@ -421,6 +422,8 @@ struct SoundProducerLink {
       
       return new_is_active;
     }
+
+    
   }
 
   bool can_be_removed(void){
@@ -653,6 +656,7 @@ struct SoundProducer {
   
   SoundPlugin *_plugin;
   int _latency;
+  int _highest_input_link_latency;
   
   DEFINE_ATOMIC(bool, is_processed);
 
@@ -663,7 +667,8 @@ struct SoundProducer {
   int64_t _last_time;
 
   double running_time;
-
+  bool has_run_for_each_block2;
+  
   bool _is_bus;
   int _bus_num;
   enum BusDescendantType _bus_descendant_type; // Is 'IS_BUS_DESCENDANT' for all descendants of bus plugins. To prevent accidental feedback loops.
@@ -693,6 +698,7 @@ public:
     : _id(id_counter++)
     , _plugin(plugin)
     , _latency(0)
+    , _highest_input_link_latency(0)
     , _num_inputs(plugin->type->num_inputs)
     , _num_outputs(plugin->type->num_outputs)
     , _last_time(-1)
@@ -944,7 +950,7 @@ public:
 
     return true;
   }
-  
+
   bool add_eventSoundProducerInput(SoundProducer *source){
     if (PLAYER_is_running()==false)
       return false;
@@ -1160,9 +1166,40 @@ public:
     }
   }
 
+  bool should_consider_latency(SoundProducerLink *input_audio_link){
+    if (input_audio_link->is_active==false) {
+          
+      if (input_audio_link->is_bus_link){
+
+        SoundProducer *source = input_audio_link->source;
+
+        bool legal_bus_provider = source->_bus_descendant_type==IS_BUS_PROVIDER;
+        
+        if (!legal_bus_provider) // We could also ignore all non-active links, but then latencies would be recalculated when turning on/off buses.
+          return false;
+        
+      }
+      
+    }
+
+    return true;
+  }
+  
+  void RT_called_for_each_soundcard_block1(void){
+    running_time = 0.0;
+    has_run_for_each_block2 = false;
+  }
 
   // Called by main mixer thread before starting multicore.
-  void RT_called_for_each_soundcard_block(void){
+  void RT_called_for_each_soundcard_block2(void){
+    if (has_run_for_each_block2 == true)
+      return;
+
+    has_run_for_each_block2 = true;
+
+    
+    // 1. Find num_dependencies
+    //
     num_dependencies = 0;
 
     for (SoundProducerLink *link : _input_links) {
@@ -1170,6 +1207,40 @@ public:
       if (link->RT_called_for_each_soundcard_block())
         num_dependencies++;
     }
+
+    
+    // 2. Ensure RT_called_for_each_soundcard_block2 is called for all soundobjects sending sound here. (since we read the _latency variable from those)
+    //
+    for (SoundProducerLink *link : _input_links)
+      if (!link->is_event_link)
+        link->source->RT_called_for_each_soundcard_block2();
+
+    
+    // 3. Find and set _latency and _max_input_link_latency
+    //
+    _highest_input_link_latency = 0;
+    
+    {
+      for (SoundProducerLink *link : _input_links) {
+
+        if (link->is_event_link)
+          continue;
+
+        if (!should_consider_latency(link))
+          continue;
+        
+        SoundProducer *source = link->source;
+
+        int source_latency = source->_latency;
+        if (source_latency > _highest_input_link_latency)
+          _highest_input_link_latency = source_latency;
+      }
+      
+      int my_latency = _plugin->type->RT_get_latency!=NULL ? _plugin->type->RT_get_latency(_plugin) : 0;
+    
+      _latency = _highest_input_link_latency + my_latency;
+    }
+
   }
   
   bool has_run(int64_t time){
@@ -1192,55 +1263,22 @@ public:
       memset(_dry_sound[ch], 0, sizeof(float)*num_frames);
 
     
-    int max_input_link_latency = 0;
-
-    
-    // find max_latency and _latency
-    {
-      for (SoundProducerLink *link : _input_links) {
-
-        if (link->is_event_link)
-          continue;
-
-        SoundProducer *source = link->source;
-
-        if (link->is_active==false) {
-          
-          if (link->is_bus_link){
-            
-            bool legal_bus_provider = source->_bus_descendant_type==IS_BUS_PROVIDER;
-            
-            if (!legal_bus_provider) // We could also ignore all non-active links, but then latencies would be recalculated when turning on/off buses.
-              continue;
-            
-          }
-          
-        }
-        
-        int source_latency = source->_latency;
-        if (source_latency > max_input_link_latency)
-          max_input_link_latency = source_latency;
-      }
-      
-      int my_latency = _plugin->type->RT_get_latency!=NULL ? _plugin->type->RT_get_latency(_plugin) : 0;
-    
-      _latency = max_input_link_latency + my_latency;
-    }
-
-    
     // Fill inn target channels    
     for (SoundProducerLink *link : _input_links) {
 
+      if (link->is_event_link)
+        continue;
+      
+      if (!should_consider_latency(link))
+        continue;
+      
       SoundProducer *source = link->source;
 
-      int latency = max_input_link_latency - source->_latency;
+      int latency = _highest_input_link_latency - source->_latency;
       link->_delay.set_delay(latency);
         
-      if (false==link->is_active) {
-        
-        if (!link->is_event_link)
-          link->_delay.RT_call_instead_of_process();
-        
+      if (false==link->is_active) {        
+        link->_delay.RT_call_instead_of_process();        
         continue;
       }
 
@@ -1426,8 +1464,12 @@ void SP_remove_all_links(radium::Vector<SoundProducer*> &soundproducers){
 
 
 // Called by main mixer thread before starting multicore.
-void SP_RT_called_for_each_soundcard_block(SoundProducer *producer){
-  producer->RT_called_for_each_soundcard_block();
+void SP_RT_called_for_each_soundcard_block1(SoundProducer *producer){
+  producer->RT_called_for_each_soundcard_block1();
+}
+
+void SP_RT_called_for_each_soundcard_block2(SoundProducer *producer){
+  producer->RT_called_for_each_soundcard_block2();
 }
 
 void CpuUsage_delete(void *cpu_usage){
@@ -1606,10 +1648,6 @@ void SP_set_buffer_size(SoundProducer *producer,int buffer_size){
 
 double SP_get_running_time(const SoundProducer *sp){
   return sp->running_time;
-}
-
-void SP_RT_reset_running_time(SoundProducer *sp){
-  sp->running_time = 0.0;
 }
 
 bool SP_has_input_links(SoundProducer *sp){
