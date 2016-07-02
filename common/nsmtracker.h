@@ -1323,8 +1323,9 @@ struct Blocks{
 	struct Tempos *tempos;
 	struct TempoNodes *temponodes;
 	struct TempoNodes *lasttemponode;
-  
-	const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. */
+
+        int num_time_lines; // Contains number of lines in 'times' minus one (same as num_lines, normally). Only for validation.
+        const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. */
 
 	volatile float reltempo;					/* factor that the tempo is multiplied with when playing this block. */
 

@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/settings_proc.h"
 #include "../common/player_proc.h"
 #include "../common/undo_blocks_proc.h"
+#include "../common/time_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
 #include "../OpenGL/Widget_proc.h"
 #include "../OpenGL/Render_proc.h"
@@ -1479,7 +1480,7 @@ void setPlaylistBlock(int pos, int blocknum){
 }
 
 static double get_block_length(struct Blocks *block){
-  double time = block->times[block->num_lines].time;
+  double time = getBlockSTimeLength(block);
 
   time /= (double)block->reltempo;
 
