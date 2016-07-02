@@ -405,10 +405,11 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
             PLAYER_lock();{
 
               VECTOR_remove(&track->fxs, fxs);
-              goto again;
               
             }PLAYER_unlock();
-            
+
+            goto again;
+
           }
         }END_VECTOR_FOR_EACH;
         
