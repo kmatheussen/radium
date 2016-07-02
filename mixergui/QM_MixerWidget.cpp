@@ -1435,7 +1435,7 @@ static char *popup_plugin_selector(SoundPluginType **type){
   }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
     
     return MW_request_load_preset_instrument_description();
-
+ 
   }else if(entry.type==PluginMenuEntry::IS_NUM_USED_PLUGIN){
 
     SoundPluginType *type2 = PR_get_plugin_type_by_name(entry.hepp.container_name.toUtf8().constData(), entry.hepp.type_name.toUtf8().constData(), entry.hepp.name.toUtf8().constData());

@@ -378,7 +378,8 @@ public:
       SLIDERPAINTER_set_string(slider->_painter, QString(BUS_get_bus_name(4)) + ": " + QString(buf));
     else
       SLIDERPAINTER_set_string(slider->_painter, QString(PLUGIN_get_effect_name(plugin, effect_num)+strlen("System ")) + ": " + QString(buf));
-      
+
+    slider->update();
   }
 
   void updateSlider(int system_effect){
@@ -737,7 +738,6 @@ public:
     if(_sample_requester_widget != NULL){
       _sample_requester_widget->updateWidgets();
     }
-
   }
 
   void set_plugin_value(int sliderval, int system_effect){

@@ -471,7 +471,7 @@ void SLIDERPAINTER_set_alternative_color(SliderPainter *painter){
   painter->_alternative_color = true;
 }
 
-void SLIDERPAINTER_set_string(SliderPainter *painter,QString string){
+void SLIDERPAINTER_set_string(SliderPainter *painter,QString string){  
   painter->_display_string = string;
 }
 
