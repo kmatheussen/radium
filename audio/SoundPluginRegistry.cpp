@@ -359,6 +359,7 @@ void PR_add_plugin_container(SoundPluginTypeContainer *container){
 
 //extern "C" void create_sine_plugin(void);
 extern void create_bus_plugins(void);
+extern void create_timeskew_plugin(void);
 extern void create_patchbay_plugin(void);
 #include "VST_plugins_proc.h"
 extern void create_juce_plugins(void);
@@ -383,7 +384,7 @@ extern void create_faust_system_lowpass_plugin(void);
 extern void create_faust_system_highpass_plugin(void);
 extern void create_faust_system_lowshelf_plugin(void);
 extern void create_faust_system_highshelf_plugin(void);
-extern void create_faust_system_delay_plugin(void);
+//extern void create_faust_system_delay_plugin(void);
 
 extern void create_stk_bass_plugin(void);
 extern void create_stk_bowed_plugin(void);
@@ -490,6 +491,7 @@ void PR_init_plugin_types(void){
   PR_add_menu_entry(PluginMenuEntry::separator());
 
   create_bus_plugins();
+  create_timeskew_plugin();
   create_patchbay_plugin();
   create_midimessages_plugin();
   PR_add_menu_entry(PluginMenuEntry::separator());
@@ -512,6 +514,6 @@ void PR_init_plugin_types(void){
   create_faust_system_highpass_plugin();
   create_faust_system_lowshelf_plugin();
   create_faust_system_highshelf_plugin();
-  create_faust_system_delay_plugin();
+  //create_faust_system_delay_plugin();
 }
 

@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "system_compressor_wrapper_proc.h"
 #include "audio_instrument_proc.h"
 #include "CpuUsage.hpp"
+#include "SmoothDelay.hpp"
 
 #include "SoundPlugin_proc.h"
 
@@ -257,9 +258,9 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
 
 static void init_system_filter(SystemFilter *filter, int num_channels, const char *name, bool is_loading){
   int ch;
-  filter->plugins=V_calloc(sizeof(SoundPlugin*),num_channels);
+  filter->plugins=(SoundPlugin**)V_calloc(sizeof(SoundPlugin*),num_channels);
   for(ch=0;ch<num_channels;ch++){
-    filter->plugins[ch] = V_calloc(1, sizeof(SoundPlugin));
+    filter->plugins[ch] = (SoundPlugin*)V_calloc(1, sizeof(SoundPlugin));
     filter->plugins[ch]->type = PR_get_plugin_type_by_name(NULL, "Faust",name);
     filter->plugins[ch]->data = filter->plugins[ch]->type->create_plugin_data(filter->plugins[ch]->type, filter->plugins[ch], NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size(), is_loading);
     filter->was_off = true;
@@ -277,7 +278,7 @@ static void release_system_filter(SystemFilter *filter, int num_channels){
 }
 
 SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading){
-  SoundPlugin *plugin = V_calloc(1,sizeof(SoundPlugin));
+  SoundPlugin *plugin = (SoundPlugin*)V_calloc(1,sizeof(SoundPlugin));
   plugin->type = plugin_type;
 
   int buffer_size = MIXER_get_buffer_size();
@@ -291,23 +292,23 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
 
 
   // peak and automation pointers (for displaying in the sliders)
-  plugin->volume_peak_values = V_calloc(sizeof(float),plugin_type->num_outputs);
+  plugin->volume_peak_values = (float*)V_calloc(sizeof(float),plugin_type->num_outputs);
 
-  plugin->output_volume_peak_values = V_calloc(sizeof(float),plugin_type->num_outputs);
-  plugin->output_volume_peak_values_for_chip = V_calloc(sizeof(float),plugin_type->num_outputs);
+  plugin->output_volume_peak_values = (float*)V_calloc(sizeof(float),plugin_type->num_outputs);
+  plugin->output_volume_peak_values_for_chip = (float*)V_calloc(sizeof(float),plugin_type->num_outputs);
 
   if (plugin_type->num_inputs==0)
-    plugin->input_volume_peak_values = V_calloc(sizeof(float),plugin_type->num_outputs);
+    plugin->input_volume_peak_values = (float*)V_calloc(sizeof(float),plugin_type->num_outputs);
   else
-    plugin->input_volume_peak_values = V_calloc(sizeof(float),plugin_type->num_inputs);
+    plugin->input_volume_peak_values = (float*)V_calloc(sizeof(float),plugin_type->num_inputs);
   
-  plugin->bus_volume_peak_values0 = V_calloc(sizeof(float),2);
-  plugin->bus_volume_peak_values1 = V_calloc(sizeof(float),2);
-  plugin->bus_volume_peak_values2 = V_calloc(sizeof(float),2);
-  plugin->bus_volume_peak_values3 = V_calloc(sizeof(float),2);
-  plugin->bus_volume_peak_values4 = V_calloc(sizeof(float),2);
+  plugin->bus_volume_peak_values0 = (float*)V_calloc(sizeof(float),2);
+  plugin->bus_volume_peak_values1 = (float*)V_calloc(sizeof(float),2);
+  plugin->bus_volume_peak_values2 = (float*)V_calloc(sizeof(float),2);
+  plugin->bus_volume_peak_values3 = (float*)V_calloc(sizeof(float),2);
+  plugin->bus_volume_peak_values4 = (float*)V_calloc(sizeof(float),2);
 
-  plugin->automation_values = V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+  plugin->automation_values = (float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
   for(int e = 0 ; e<plugin_type->num_effects+NUM_SYSTEM_EFFECTS ; e++)
     plugin->automation_values[e] = -10;
 
@@ -352,7 +353,9 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
     plugin->highshelf_freq = 1500.0f;
     plugin->highshelf_db = 0.0f;
 
-    init_system_filter(&plugin->delay, num_outputs, "System Delay", is_loading);
+    if (num_outputs > 0)
+      plugin->delay = new radium::SmoothDelay(DELAY_MAX * MIXER_get_sample_rate() / 1000);
+    //init_system_filter(&plugin->delay, num_outputs, "System Delay", is_loading);
     plugin->delay_time = 0.0f;
   }
 
@@ -370,7 +373,7 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
 
   {
     int i;
-    plugin->savable_effect_values=V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+    plugin->savable_effect_values=(float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
 
 #if 0
     for(i=0;i<plugin_type->num_effects+NUM_SYSTEM_EFFECTS;i++)
@@ -389,7 +392,7 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   }
 
   {
-    plugin->initial_effect_values=V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+    plugin->initial_effect_values=(float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
     memcpy(plugin->initial_effect_values, plugin->savable_effect_values, sizeof(float) * (plugin_type->num_effects+NUM_SYSTEM_EFFECTS));
   }
 
@@ -430,8 +433,9 @@ void PLUGIN_delete(SoundPlugin *plugin){
   release_system_filter(&plugin->lowshelf, plugin_type->num_outputs);
     
   release_system_filter(&plugin->highshelf, plugin_type->num_outputs);
-  
-  release_system_filter(&plugin->delay, plugin_type->num_outputs);
+
+  delete static_cast<radium::SmoothDelay*>(plugin->delay);
+  //release_system_filter(&plugin->delay, plugin_type->num_outputs);
 
   // peak and automation pointers (for displaying in the sliders)
   V_free(plugin->volume_peak_values);
@@ -1128,11 +1132,21 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
     case EFFNUM_DELAY_TIME:
       store_value = value_type==PLUGIN_STORED_TYPE ? value : scale(value, 0, 1, DELAY_MIN, DELAY_MAX);
       plugin->delay_time = store_value;
-      for(ch=0;ch<plugin->type->num_outputs;ch++)
-        plugin->delay.plugins[ch]->type->set_effect_value(plugin->delay.plugins[ch], time, 0, store_value, PLUGIN_FORMAT_NATIVE, when);
+      if (plugin->delay != NULL){
+        int val = 0;
+        if (ATOMIC_GET(plugin->delay_is_on))
+          val = plugin->delay_time*MIXER_get_sample_rate()/1000;
+        static_cast<radium::SmoothDelay*>(plugin->delay)->setSize(val);
+      }
       break;
     case EFFNUM_DELAY_ONOFF:
-      ATOMIC_SET(plugin->delay.is_on, store_value > 0.5f);
+      ATOMIC_SET(plugin->delay_is_on, store_value > 0.5f);
+      if (plugin->delay != NULL){
+        int val = 0;
+        if (ATOMIC_GET(plugin->delay_is_on))
+          val = plugin->delay_time*MIXER_get_sample_rate()/1000;
+        static_cast<radium::SmoothDelay*>(plugin->delay)->setSize(val);
+      }
       break;
       
     default:
@@ -1334,7 +1348,7 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
   case EFFNUM_DELAY_TIME:
     return scale(plugin->highshelf_db,DELAY_MIN,DELAY_MAX,0,1);
   case EFFNUM_DELAY_ONOFF:
-    return ATOMIC_GET(plugin->delay.is_on)==true ? 1.0 : 0.0f;
+    return ATOMIC_GET(plugin->delay_is_on)==true ? 1.0 : 0.0f;
 #if 0    
   case EFFNUM_EDITOR_ONOFF:
     return ATOMIC_GET(plugin->editor_is_on)==true ? 1.0 : 0.0f;
