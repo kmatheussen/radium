@@ -986,19 +986,20 @@ typedef struct{
 
 
 #if USE_QT4
-#include <QVector>
+#include <QList>
+#include <QMap>
 
-typedef QVector<TrackRealline2> Trs;
-typedef QVector<Trs> Trss;
+typedef QList<TrackRealline2> Trs;
+typedef QMap<int, Trs> Trss;
 
-typedef QVector<struct Notes*> Waveform_trs;
-typedef QVector<Waveform_trs> Waveform_trss;
+//typedef QList<struct Notes*> Waveform_trs;
+typedef QMap<int, bool> Waveform_trss;
 
-typedef QVector<VelText> VelText_trs;
-typedef QVector<VelText_trs> VelText_trss;
+typedef QList<VelText> VelText_trs;
+typedef QMap<int, VelText_trs> VelText_trss;
 
-typedef QVector<FXText> FXText_trs;
-typedef QVector<FXText_trs> FXText_trss;
+typedef QList<FXText> FXText_trs;
+typedef QMap<int, FXText_trs> FXText_trss;
 
 #define TRS_INSERT_PLACE(trs, tr)                                       \
   do{                                                                   \
@@ -1322,8 +1323,9 @@ struct Blocks{
 	struct Tempos *tempos;
 	struct TempoNodes *temponodes;
 	struct TempoNodes *lasttemponode;
-  
-	const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. */
+
+        int num_time_lines; // Contains number of lines in 'times' minus one (same as num_lines, normally). Only for validation.
+        const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. */
 
 	volatile float reltempo;					/* factor that the tempo is multiplied with when playing this block. */
 

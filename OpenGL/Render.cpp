@@ -1158,10 +1158,9 @@ static void paint_multinotes(const struct WTracks *wtrack, const Trs &trs, char 
   }
 }
 
-static void create_track_text(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, Trs trs, int realline, bool show_notes){
+static void create_track_text(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const Trs &trs, int realline, bool show_notes){
 
-  if (trs.empty())
-    return;
+  R_ASSERT_RETURN_IF_FALSE(!trs.empty());
   
   char **NotesTexts = wtrack->notelength==3?NotesTexts3:NotesTexts2;
   float  notenum    = get_notenum(trs); //trackrealline->note;
@@ -2096,17 +2095,24 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
     bool show_notes = (left_subtrack==-1 && wtrack->notesonoff==1);
     
     const Trss &trss = TRSS_get(wblock, wtrack);
-      
-    for(int realline = 0 ; realline<wblock->num_reallines ; realline++)
-      create_track_text(window, wblock, wtrack, trss[realline], realline, show_notes);
+
+    auto i = trss.constBegin();
+    while (i != trss.constEnd()) {
+      create_track_text(window, wblock, wtrack, i.value(), i.key(), show_notes);
+      ++i;
+    }
   }
 
   // velocity text
   if (wtrack->veltext_on){
     const VelText_trss &veltexts = VELTEXTS_get(wblock, wtrack);
 
-    for(int realline = 0 ; realline<wblock->num_reallines ; realline++)
-      create_track_veltext(window, wblock, wtrack, veltexts[realline], realline);
+    auto i = veltexts.constBegin();
+    while (i != veltexts.constEnd()){
+      create_track_veltext(window, wblock, wtrack, i.value(), i.key());
+      ++i;
+    }
+
   }
 
   // fx text
@@ -2114,8 +2120,11 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
     int column = 0;
     VECTOR_FOR_EACH(const struct FXs *, fxs, &wtrack->track->fxs){
       const FXText_trss &fxtexts = FXTEXTS_get(wblock, wtrack, fxs);
-      for(int realline = 0 ; realline<wblock->num_reallines ; realline++)
-        create_track_fxtext(window, wblock, wtrack, fxtexts[realline], realline, column);
+      auto i = fxtexts.constBegin();
+      while (i != fxtexts.constEnd()){
+        create_track_fxtext(window, wblock, wtrack, i.value(), i.key(), column);
+        ++i;
+      }
       column++;
     }END_VECTOR_FOR_EACH;
 

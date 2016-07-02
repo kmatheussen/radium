@@ -110,6 +110,10 @@ void CB_PasteBlock(
 	toblock->temponodes=CB_CopyTempoNodes(block->temponodes);
 	toblock->lasttemponode=(struct TempoNodes *)ListLast3(&toblock->temponodes->l);
 
+        UpdateSTimes(towblock->block);
+	UpdateReallinesDependens(window,towblock);
+        UpdateBeats(block);
+
 	wtrack=wblock->wtracks;
 	towtrack=towblock->wtracks;
 	while(wtrack!=NULL){
@@ -131,13 +135,8 @@ void CB_PasteBlock(
 		RError("Error in funtion CB_PasteBlock in file clipboard_block_paste.c; towtrack!=NULL when wtrack==NULL\n");
 	}
 
-	UpdateSTimes(towblock->block);
-	UpdateReallinesDependens(window,towblock);
-        UpdateBeats(block);
-
 	BS_UpdateBlockList();
 	BS_UpdatePlayList();
-
 }
 	
 

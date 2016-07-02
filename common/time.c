@@ -301,13 +301,19 @@ Place STime2Place(
   return place;
 }
 
-bool isSTimeInBlock(const struct Blocks *block,STime time){
-	if(time > block->times[block->num_lines].time) return false;
-	return true;
+STime getBlockSTimeLength(const struct Blocks *block){
+  if (block->num_lines != block->num_time_lines)
+    RWarning("block->num_lines != block->num_time_lines: %d != %d",block->num_lines, block->num_time_lines);
+    
+  return block->times[block->num_time_lines].time;
 }
 
-STime getBlockSTimeLength(const struct Blocks *block){
-	return block->times[block->num_lines].time;
+bool isSTimeInBlock(const struct Blocks *block,STime time){
+  STime block_length = getBlockSTimeLength(block);
+  if(time > block_length)
+    return false;
+  else
+    return true;
 }
 
 
@@ -834,7 +840,8 @@ void UpdateSTimes(struct Blocks *block){
 	}while(STP_getNextTimePlace(&stp));
 
         PC_Pause();{
-          block->times = (const struct STimes*)stp.times;        
+          block->times = (const struct STimes*)stp.times;
+          block->num_time_lines = block->num_lines;
         }PC_StopPause(NULL);
 
         STP_fillinLastSTimeTempos(&stp);

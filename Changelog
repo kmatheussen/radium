@@ -1,3 +1,31 @@
+Changes 3.9.5 -> 3.9.6:
+* Update bus slider strings immediately when changing a bus instrument name
+* Fix freeze that could happen when pasting tracks and other situations
+* Fix crash when pasting block using a sampler instrument pointing
+  to a directory with lots of samples.
+* Timeskew plugin. Like a delay, except that you can set negative
+  values as well.
+* Plugin delay compensation.
+* Optimize rendering performance. Should especially be noticable
+  on Windows 32 computers with slow disk.
+* Apply faust scroll wheel behavior to the mixer and editor as well,
+  and document this behavior in the help menu.
+* Don't record CPU usage data for plugins that are not visible.
+* Draw missing horizontal lines to connect nodes where glide is set to OFF.
+  This is not only visually better, but also necessary in order
+  to show the last values without enabling text.
+* Update mute/solo/bypass buttons when automated
+* Upgrade BDW garbage collector to 7.4.4
+* More detailed information when getting "unknown effect number" error.
+* Add missing sustain pedal effect name handling in
+  the Fluidsynth instrument.
+* Fix memory leak in FaustDev undo.
+* Fix splitting block while playing
+* Check errors when reading file from disk
+* Gray out selected objects in the mixer again.
+
+
+
 Changes 3.9.4 -> 3.9.5:
 * Fix Linux binary
 * Draw a rounded rectangle around the current sound object in

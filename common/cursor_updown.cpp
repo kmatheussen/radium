@@ -212,7 +212,7 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 }
 
 template <class T>
-static void scroll_next(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const QVector<QVector<T>> &trss){
+static void scroll_next(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const QMap<int, T> &trss){
 	int curr_realline=wblock->curr_realline;
 
         if(curr_realline==wblock->num_reallines-1){ // last line
@@ -222,17 +222,15 @@ static void scroll_next(struct Tracker_Windows *window, struct WBlocks *wblock, 
 
 	int new_realline;
 
-        for(new_realline=curr_realline+1 ; new_realline < wblock->num_reallines-1 ; new_realline++){
-          const auto &trs = trss.at(new_realline);
-          if (trs.size() > 0)
+        for(new_realline=curr_realline+1 ; new_realline < wblock->num_reallines-1 ; new_realline++)
+          if (trss.contains(new_realline))
             break;
-        }
 
 	ScrollEditorDown(window,new_realline-curr_realline);
 }
 
 template <class T>
-static void scroll_prev(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const QVector<QVector<T>> &trss){
+static void scroll_prev(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const QMap<int, T> &trss){
 	int curr_realline=wblock->curr_realline;
 
         if (curr_realline==0){
@@ -242,11 +240,9 @@ static void scroll_prev(struct Tracker_Windows *window, struct WBlocks *wblock, 
 
         int new_realline;
 
-        for(new_realline=curr_realline-1 ; new_realline > 0 ; new_realline--){
-          const auto &trs = trss.at(new_realline);
-          if (trs.size() > 0)
+        for(new_realline=curr_realline-1 ; new_realline > 0 ; new_realline--)
+          if (trss.contains(new_realline))
             break;
-        }
 
 	ScrollEditorUp(window,curr_realline-new_realline);
 }
@@ -263,16 +259,16 @@ void ScrollEditorPrevNote(struct Tracker_Windows *window, struct WBlocks *wblock
 }
 
 static Waveform_trss get_waveform_trss(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int polyphony_num){
-  Waveform_trss trss(wblock->num_reallines);
+  Waveform_trss trss;
   
   struct Notes *note = wtrack->track->notes;
   
   while(note != NULL){
     if (note->polyphony_num == polyphony_num) {
       int realline = FindRealLineForNote(wblock, 0, note);
-      trss[realline].push_back(note);
+      trss[realline] = true;
       int realline2 = FindRealLineForEndNote(wblock, 0, note);
-      trss[realline2].push_back(note);
+      trss[realline2] = true;
     }
     note = NextNote(note);
   }

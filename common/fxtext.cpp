@@ -52,8 +52,7 @@ static void add_fxtext(const struct WBlocks *wblock, FXText_trss &fxtexts, const
 
 // Returns a pointer to AN ARRAY of vectors (one vector for each realline), not a pointer to a vector (as one would think).
 const FXText_trss FXTEXTS_get(const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs){
-  int num_reallines = wblock->num_reallines;
-  FXText_trss fxtexts(num_reallines);
+  FXText_trss fxtexts;
 
   struct FXNodeLines *fxnodeline = fxs->fxnodelines;
   while(fxnodeline!=NULL){
@@ -107,7 +106,7 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
   
   const FXText_trss &fxtexts = FXTEXTS_get(wblock, wtrack, fxs);
 
-  const FXText_trs &fxtext = fxtexts.at(realline);
+  const FXText_trs &fxtext = fxtexts[realline];
 
   //  if (fxtext->num_elements == 0 && val==0)
   //   return true;

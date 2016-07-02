@@ -682,11 +682,14 @@ struct Mixer{
 
       if (MULTICORE_get_num_threads() > 1)
         RT_sort_sound_producers_by_running_time();
+
+      //printf("\n\nNew:\n");
       
-      for (SoundProducer *sp : _sound_producers) {
-        SP_RT_reset_running_time(sp);
-        SP_RT_called_for_each_soundcard_block(sp);
-      }
+      for (SoundProducer *sp : _sound_producers)
+        SP_RT_called_for_each_soundcard_block1(sp);
+
+      for (SoundProducer *sp : _sound_producers)
+        SP_RT_called_for_each_soundcard_block2(sp);
 
       ATOMIC_SET(g_currently_processing_dsp, true);
         
@@ -1112,6 +1115,7 @@ static void MIXER_check_if_someone_has_solo(void){
 }
 
 void MIXER_called_regularly_by_main_thread(void){
+  // Not enabled. Enable in Qt_Main.cpp.
   if (g_mixer != NULL)
     for (SoundProducer *sp : g_mixer->_sound_producers)
       SP_called_regularly_by_main_thread(sp);

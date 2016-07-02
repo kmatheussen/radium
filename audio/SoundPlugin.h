@@ -347,9 +347,10 @@ typedef struct SoundPlugin{
   float highshelf_freq;
   float highshelf_db;
 
-  SystemFilter delay;
+  void *delay; // a SmoothDelay instance
   float delay_time;
-
+  DEFINE_ATOMIC(bool, delay_is_on);
+  
   bool show_browser_gui;
   bool show_controls_gui;
 

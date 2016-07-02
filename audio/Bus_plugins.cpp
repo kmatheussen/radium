@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Bus_plugins_proc.h"
 
-
 static SoundPluginType bus_type1 = {};
 static SoundPluginType bus_type2 = {};
 static SoundPluginType bus_type3 = {};
@@ -96,7 +95,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   return (void*)plugin_type;
 }
 
-static void cleanup_plugin_data(SoundPlugin *plugin_type){
+static void cleanup_plugin_data(SoundPlugin *plugin){
 }
 
 const char *BUS_get_bus_name(int bus_num){
@@ -160,6 +159,7 @@ static SoundPluginType pipe_type = {
 
  data                     : NULL
 };
+
 
 
 #endif
