@@ -1,3 +1,20 @@
+/* Copyright 2014-2016 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+
 #include <math.h>
 
 
@@ -294,8 +311,8 @@ static void stipled_vertical_line(GE_Context *c, float x, float y1, float y2){
 }
 
 
-static GE_Context *drawNodeLines(const struct NodeLine *nodelines, enum ColorNums colnum, bool is_selected, float alpha, float alpha_selected, bool hide_vertical){
-  const float cut_size1 = 20;
+static GE_Context *drawNodeLines(const struct Tracker_Windows *window, const struct NodeLine *nodelines, enum ColorNums colnum, bool is_selected, float alpha, float alpha_selected, bool hide_vertical){
+  const float cut_size1 = window->fontheight*2;
   //const float cut_size2 = 10;
 
   
@@ -309,7 +326,7 @@ static GE_Context *drawNodeLines(const struct NodeLine *nodelines, enum ColorNum
     float y1 = ns->y1;
     float y2 = ns->y2;
     
-    bool paint_stipled = hide_vertical && is_selected==false && x1 == x2 && (y2 - y1) > cut_size1*2;
+    bool paint_stipled = hide_vertical && is_selected==false && x1 == x2 && (y2 - y1) > cut_size1*3.5;
     
     if (paint_stipled) {
 #if 1
@@ -867,7 +884,7 @@ static void create_reltempotrack(const struct Tracker_Windows *window, struct WB
   
   bool is_current = wblock->mouse_track==TEMPONODETRACK;
 
-  drawNodeLines(nodelines, AUTOMATION2_COLOR_NUM, is_current, 0.6, 0.9, false);
+  drawNodeLines(window, nodelines, AUTOMATION2_COLOR_NUM, is_current, 0.6, 0.9, false);
   
   if (indicator_node != NULL || is_current) {
     const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
@@ -1910,7 +1927,7 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
 
   // border
   {
-    GE_Context *c = drawNodeLines(nodelines, BLACK_COLOR_NUM, is_current, 0.3, 0.6, false);
+    GE_Context *c = drawNodeLines(window, nodelines, BLACK_COLOR_NUM, is_current, 0.3, 0.6, false);
 
     // draw horizontal line where note starts, if it doesn't start on the start of a realline.
     int realline = FindRealLineForNote(wblock, 0, note);
@@ -1945,7 +1962,7 @@ static void create_track_fxs(const struct Tracker_Windows *window, const struct 
 
   bool is_current = wblock->mouse_track==wtrack->l.num && wblock->mouse_fxs==fxs;
 
-  drawNodeLines(nodelines, fxs->fx->color, is_current, 0.6, 1.0, true);
+  drawNodeLines(window, nodelines, fxs->fx->color, is_current, 0.6, 1.0, true);
   
   if (indicator_node != NULL || is_current) {
     const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
