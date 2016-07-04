@@ -391,8 +391,11 @@ static vector_t *AUDIO_getFxNames(const struct Patch *patch){
   return v;
 }
 
-static struct FX *AUDIO_createFX(const struct Tracks *track, int effect_num){
-  struct Patch *patch = track->patch; // patch can not be NULL (we got instrument through track-patch)
+static struct FX *AUDIO_createFX(const struct Tracks *track, struct Patch *patch, int effect_num){
+#ifndef RELEASE
+  R_ASSERT(track->patch != NULL);
+#endif
+  
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
     
   struct FX *fx=talloc(sizeof(struct FX));
@@ -505,8 +508,8 @@ static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track
     fx->patch = pe->patch;
 
     char *name = v.elements[selection];
-    if (pe->patch != track->patch)
-      name = talloc_format("%s (%s)",name, pe->patch->name);
+    //if (pe->patch != track->patch)
+    //  name = talloc_format("%s (%s)",name, pe->patch->name);
     
     init_fx(fx,pe->effect_num, name, (struct SoundPlugin*)(pe->patch->patchdata));
 
@@ -588,8 +591,9 @@ void DLoadAudioInstrument(void){
       if (patch!=NULL && patch->instrument == get_audio_instrument()) {
         VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
           struct FX *fx = fxs->fx;
+          struct Patch *fx_patch = fx->patch;
           
-          SoundPlugin *plugin = patch->patchdata;
+          SoundPlugin *plugin = fx_patch->patchdata;
           if(plugin!=NULL){
             fx->name = PLUGIN_get_new_name_if_name_has_changed(plugin, fx->name);
             int effect_num = PLUGIN_get_effect_num(plugin, fx->name);

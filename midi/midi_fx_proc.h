@@ -28,7 +28,7 @@ extern void MIDI_closeFX(struct FX *fx,const struct Tracks *track);
 
 extern bool MIDISetTreatFX(struct FX *fx,struct MIDI_FX *midi_fx);
 
-struct FX *MIDI_createFX(const struct Tracks *track, int effect_num);
+struct FX *MIDI_createFX(const struct Tracks *track, struct Patch *patch, int effect_num);
 vector_t *MIDI_getFxNames(const struct Patch *patch);
 
 extern int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx);

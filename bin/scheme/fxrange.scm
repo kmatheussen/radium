@@ -16,14 +16,17 @@
       y1
       (scale x x1 x2 y1 y2)))
 
-(define (create-fx fxname fxnodes)
-  (list fxname fxnodes))
+(define (create-fx fxname instrument fxnodes) ;; by default, instrument==-1. If instrument >=0 then the fx instrument was different from the track instrument.
+  (list fxname instrument fxnodes))
 
 (define (fx-name fx)
   (car fx))
 
-(define (fx-nodes fx)
+(define (fx-instrument fx)
   (cadr fx))
+
+(define (fx-nodes fx)
+  (caddr fx))
 
 (define (create-fxnode place value logtype)
   (list place value logtype))
@@ -44,8 +47,8 @@
                  (fxnode-value fxnode)
                  new-logtype))
   
-(define (find-fx fxs name)
-  (assq name fxs))
+(define (find-fx fxs fxname)
+  (assq fxname fxs))
 
 (define (remove-fx fxs name)
   (if (null? fxs)
@@ -298,6 +301,7 @@
 (define (scissor-fxs-keep-outside fxs startplace endplace)
   (map (lambda (fx)
          (create-fx (fx-name fx)
+                    (fx-instrument fx)
                     (scissor-fxnodes-keep-outside (fx-nodes fx)
                                                   startplace
                                                   endplace)))
@@ -506,6 +510,7 @@
 (define (scissor-fxs-keep-inside fxs startplace endplace)
   (map (lambda (fx)
          (create-fx (fx-name fx)
+                    (fx-instrument fx)
                     (scissor-fxnodes-keep-inside (fx-nodes fx)
                                                  startplace
                                                  endplace)))
@@ -559,7 +564,12 @@
 
 (define (get-track-fxs blocknum tracknum)
   (map (lambda (fxnum)
+         (define track-instrument-id (<ra> :get-instrument-for-track tracknum))
          (define fxname (<_> (<ra> :get-fx-name fxnum tracknum blocknum)))
+         (define fxinstrument (let ((fx-instrument-id (<ra> :get-fx-instrument fxnum tracknum blocknum)))
+                                (if (= fx-instrument-id track-instrument-id)
+                                    -1 ;; We want to copy effect from other instruments with the same type without modifying the other instrument. (maybe not though)
+                                    fx-instrument-id)))
          (define num-fxnodes (<ra> :get-num-fxnodes fxnum tracknum blocknum))
          (define fxnodes (map (lambda (fxnodenum)
                                 (define place (<ra> :get-fxnode-place fxnodenum fxnum tracknum blocknum))
@@ -568,6 +578,7 @@
                                 (list place value logtype))
                               (iota num-fxnodes)))
          (create-fx fxname
+                    fxinstrument
                     fxnodes))
        (iota (<ra> :get-num-fxs tracknum blocknum))))
 
@@ -788,13 +799,15 @@
          track-fxs)
         (else
          (let* ((range-fx (car range-fxs))
-                (name (fx-name range-fx))
-                (track-fx (find-fx track-fxs name)))
+                (fxname (fx-name range-fx))
+                (fxinstrument (fx-instrument range-fx))
+                (track-fx (find-fx track-fxs fxname)))
            ;;(c-display "track-fx" track-fx)
            (if track-fx
-               (cons (create-fx name
-                                (merge-fx-nodes (cadr track-fx) (cadr range-fx)))
-                     (merge-fxs (remove-fx track-fxs name)
+               (cons (create-fx fxname
+                                fxinstrument
+                                (merge-fx-nodes (fx-nodes track-fx) (fx-nodes range-fx)))
+                     (merge-fxs (remove-fx track-fxs fxname)
                                 (cdr range-fxs)))
                (cons range-fx
                      (merge-fxs track-fxs
@@ -811,6 +824,7 @@
       '()
       (let ((fx (car fxs)))
         (cons (create-fx (fx-name fx)
+                         (fx-instrument fx)
                          (skew-fxnodes (fx-nodes fx) how-much))
               (skew-fxs (cdr fxs)
                         how-much)))))
@@ -836,14 +850,17 @@
               pos ;; No, those should have been removed before calling paste-track-fxs. TODO: Add assertion.
               (min (-line num-lines)
                    pos)))
-
+        
         (for-each (lambda (fx)
                     (define name (fx-name fx))
+                    (define is-legal-effect (or (not (= (fx-instrument fx)
+                                                        instrument))
+                                                (memq name effect-names)))
                     (define fx-nodes (fx-nodes fx))
                     (c-display "got" name "? "
-                               (and (memq name effect-names) #t)
+                               is-legal-effect
                                (>= (length fx-nodes) 2))
-                    (when (and (memq name effect-names)
+                    (when (and is-legal-effect
                                (>= (length fx-nodes) 2))
                           (define fx-node (car fx-nodes))
                           (define fxnum (<ra> :create-fx
@@ -851,6 +868,7 @@
                                               (legal-place (fxnode-place fx-node))
                                               (<-> name)
                                               tracknum
+                                              (fx-instrument fx)
                                               blocknum))
                           (c-display "fxnum" fxnum (fxnode-place fx-node))
                           (when (>= fxnum 0)

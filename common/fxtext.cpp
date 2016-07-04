@@ -148,7 +148,7 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
       if (dat.is_valid==false)
         return false;
 
-      int pos = AddFXNodeLine(window, wblock, wtrack, fx->effect_num, dat.value, place);
+      int pos = AddFXNodeLine(window, wblock, wtrack, fxs, dat.value, place);
             
       struct FXNodeLines *fxnodeline = (struct FXNodeLines*)ListFindElement1_num(&fxs->fxnodelines->l, pos);
       fxnodeline->logtype = dat.logtype;      

@@ -174,7 +174,13 @@ enum{
 #define R_MAX(a,b) (((a)>(b))?(a):(b))
 #define R_MIN(a,b) (((a)<(b))?(a):(b))
 #define R_ABS(a) ((a)<0?(-(a)):(a))
-#define R_BOUNDARIES(a,b,c) (R_MIN(R_MAX((a),(b)),(c)))
+#define R_BOUNDARIES(min,b,max) (R_MIN(R_MAX((min),(b)),(max)))
+
+#define R_ASSERT_MESSAGE(a)                                             \
+  do{                                                                   \
+    if(!(a))                                                            \
+      GFX_Message(NULL, "Warning: \"" # a "\" is not true");            \
+  }while(0)
 
 #define R_ASSERT(a)                                                     \
   do{                                                                   \
@@ -785,7 +791,7 @@ struct Instruments{
         //int (*getMaxVelocity)(const struct Patch *patch);
 
         vector_t *(*getFxNames)(const struct Patch *patch);
-        struct FX *(*createFX)(const struct Tracks *track, int effect_num);
+        struct FX *(*createFX)(const struct Tracks *track, struct Patch *patch, int effect_num);
   
 	int (*getFX)(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx);
 	int (*getPatch)(struct Tracker_Windows *window,ReqType reqtype,const struct Tracks *track,struct Patch *patch);

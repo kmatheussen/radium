@@ -40,10 +40,10 @@ extern LANGSPEC int AddFXNodeLine(
                                   struct Tracker_Windows *window,
                                   struct WBlocks *wblock,
                                   struct WTracks *wtrack,
-                                  int fxnum,
+                                  struct FXs *fxs,
                                   int val,
                                   const Place *p1
-);
+                                  );
 
 extern LANGSPEC void AddFXNodeLineCustomFxAndPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FX *fx, const Place *p, float val);
   
