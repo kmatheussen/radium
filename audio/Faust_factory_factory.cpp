@@ -3,7 +3,7 @@
 #include <QThread>
 #include <QPair>
 
-#if USE_QT5 || USE_QT6 || USE_QT7
+#if QT_VERSION >= 0x050600
 #include <QTemporaryDir>
 #else
 namespace{

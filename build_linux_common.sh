@@ -53,7 +53,9 @@ export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.
 VL_PATH="bin/packages/Visualization-Library-master"
 VL_LIB="$VL_PATH/src/vlQt$RADIUM_QT_VERSION/lib/libVLQt$RADIUM_QT_VERSION.a"
 export VL_CFLAGS="-DVL_STATIC_LINKING -Wall -I$VL_PATH/src -I$VL_PATH/src/3rdparty/Khronos -I$VL_PATH/src/examples"
-export VL_LIBS="$VL_LIB $VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a $VL_PATH/src/vlGraphics/plugins/freetype/lib/libFreeType.a -lGL -lGLU "
+export VL_LIBS="$VL_LIB $VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a -lGL -lGLU `pkg-config --libs freetype2`"
+
+#$VL_PATH/src/vlGraphics/plugins/freetype/lib/libFreeType.a 
 
 export GCDIR="bin/packages/gc-7.4.4"
 
