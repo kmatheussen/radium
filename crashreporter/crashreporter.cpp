@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  include <sys/types.h>
 #endif
 
+#include <QWidget>
 #include <QString>
 #include <QApplication>
 #include <QMessageBox>
@@ -36,6 +37,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTextEdit>
 #include <QLabel>
 #include <QLayout>
+
+#if USE_QT5
+#include <QUrlQuery>
+#endif
 
 #include <QTemporaryFile>
 #include <QDir>
@@ -71,6 +76,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if !defined(CRASHREPORTER_BIN)
 static const char *g_no_plugin_name = "<noplugin>";
+static DEFINE_ATOMIC(bool, g_dont_report_more) = false;
 #endif
 
 #define NOPLUGINNAMES "<nopluginnames>"
@@ -256,7 +262,15 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
       QByteArray data;
       QUrl params;
+      
+#if USE_QT5
+      QUrlQuery query;
+      query.addQueryItem("data", message.replace("&", "_amp_")); // replace all '&' with _amp_ since we don't receive anything after '&'.
+      params.setQuery(query);
+#else
       params.addQueryItem("data", message.replace("&", "_amp_")); // replace all '&' with _amp_ since we don't receive anything after '&'.
+#endif
+      
       const char *s = strdup(params.toString().toUtf8().constData());
       data.append(s, strlen(s)-1);
       //free(s);
@@ -470,6 +484,9 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 */
 
 void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, Crash_Type crash_type){
+  if (ATOMIC_GET(g_dont_report_more))
+    return;
+  
   QString plugin_names = get_plugin_names();
   
   QString tosend = QString(additional_information) + "\n\n";
@@ -672,6 +689,11 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
   
  exit:
   ATOMIC_SET(is_currently_sending, false);
+}
+
+// We don't want the crashreporter to pop up when program exits.
+void CRASHREPORTER_dont_report_more(void){
+  ATOMIC_SET(g_dont_report_more, true);
 }
 
 void CRASHREPORTER_close(void){

@@ -10,7 +10,7 @@ HOW TO MAKE IT RUN
           "
           touch audio/*.cpp common/gfx_op_queue_generated.c common/visual_op_queue_proc.h
           make packages
-          BUILDTYPE=RELEASE ./build_linux.sh -j7
+          BUILDTYPE=RELEASE RADIUM_QT_VERSION=4 ./build_linux.sh -j7
           bin/radium
           "
 
@@ -32,6 +32,7 @@ IF YOU GOT THE SOURCE FROM GIT
 
 
 IF YOU ARE DEVELOPING RADIUM
+         export RADIUM_QT_VERSION=5
          ./make_and_run_linux.sh
 
 

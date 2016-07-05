@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QUrl>
-
+#include <QMimeData>
 #include <QFileDialog>
 
 extern bool g_qt_is_running;
@@ -606,7 +606,7 @@ const wchar_t *GFX_GetLoadFileName(
   QString filename;
   
   GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-
+  
     QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
     filename = QFileDialog::getOpenFileName(editor,
                                             seltext,

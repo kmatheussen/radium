@@ -238,7 +238,7 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
     //GTK_HandleEvents();
     if(text!=edit->text()){
       text = edit->text();
-      printf("text: \"%s\"\n",text.toAscii().constData());
+      printf("text: \"%s\"\n",text.toUtf8().constData());
     }
     usleep(100);
   }
@@ -249,7 +249,7 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   reqtype->label_text = "";
   reqtype->y = reqtype->y + edit->height() + 10;
 
-  snprintf(buffer,bufferlength-1,"%s",edit->text().toAscii().constData());
+  snprintf(buffer,bufferlength-1,"%s",edit->text().toUtf8().constData());
   printf("Got: \"%s\"\n",buffer);
 }
 

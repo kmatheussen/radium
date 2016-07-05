@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+#include <QWidget>
+
 #include <qapplication.h>
 #include <qmainwindow.h>
 #include <QMessageBox>

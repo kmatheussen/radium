@@ -13,9 +13,13 @@ export UIC="`./find_moc_and_uic_paths.sh uic`"
 
 export JACKOPT="-DNO_JACK_METADATA"
 
+if ! env |grep RADIUM_QT_VERSION ; then
+    echo "Must define RADIUM_QT_VERSION to either 4 or 5. For instance: \"BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 ./build_linux.sh -j7\""
+    exit -1
+fi
 
 if ! env |grep BUILDTYPE ; then
-    echo "Must define BUILDTYPE to DEBUG or RELEASE. For instance: \"BUILDTYPE=RELEASE ./build_linux.sh -j7\""
+    echo "Must define BUILDTYPE to DEBUG or RELEASE. For instance: \"BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 ./build_linux.sh -j7\""
     exit -1
 fi
 
@@ -45,9 +49,11 @@ export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.
 #export QT_CFLAGS="-DQT_STATIC -DQT3_SUPPORT -I$RQTDIR/include/Qt3Support -I$RQTDIR/include/QtCore -I$RQTDIR/include/QtGui -I$RQTDIR/include/QtNetwork -I$RQTDIR/include/QtSql -I$RQTDIR/include/QtOpenGL -Ibin/packages/qhttpserver-master/src"
 #export QT_LDFLAGS="$RQTDIR/lib/libQt3Support.a $RQTDIR/lib/libQtSql.a $RQTDIR/lib/libQtOpenGL.a $RQTDIR/lib/libQtGui.a $RQTDIR/lib/libQtNetwork.a $RQTDIR/lib/libQtCore.a -lSM -lICE -lfreetype -lfontconfig -lXrender -lpng -lglib-2.0 -lgobject-2.0"
 
+
 VL_PATH="bin/packages/Visualization-Library-master"
+VL_LIB="$VL_PATH/src/vlQt$RADIUM_QT_VERSION/lib/libVLQt$RADIUM_QT_VERSION.a"
 export VL_CFLAGS="-DVL_STATIC_LINKING -Wall -I$VL_PATH/src -I$VL_PATH/src/3rdparty/Khronos -I$VL_PATH/src/examples"
-export VL_LIBS="$VL_PATH/src/vlQt4/lib/libVLQt4.a  $VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a $VL_PATH/src/vlGraphics/plugins/freetype/lib/libFreeType.a -lGL -lGLU "
+export VL_LIBS="$VL_LIB $VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a $VL_PATH/src/vlGraphics/plugins/freetype/lib/libFreeType.a -lGL -lGLU "
 
 export GCDIR="bin/packages/gc-7.4.4"
 
@@ -57,7 +63,7 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds -msse2 -DFOR_LINUX -DWITH_PD -DWITH_FAUST_DEV"
+export OS_OPTS="-Werror=array-bounds -msse2 -fno-omit-frame-pointer -DFOR_LINUX -DWITH_PD -DWITH_FAUST_DEV"
 #export OS_OPTS="-Werror=array-bounds -march=native"
 
 
@@ -96,10 +102,10 @@ export OBJ_MACOSX=""
 
 mkdir -p linux_objs
 
-if ! file mmd2load.o |grep Linux ; then
-    rm -f *.o
-    cp -p linux_objs/*.o . 2>/dev/null | true
-fi
+#if ! file mmd2load.o |grep Linux ; then
+#    rm -f *.o
+#    cp -p linux_objs/*.o . 2>/dev/null | true
+#fi
 
 if ! file bin/radium |grep Linux ; then
     rm -f bin/radium

@@ -20,7 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_patch_widget.h"
 
+#ifndef USE_QT5
 #include <QCleanlooksStyle>
+#endif
 
 class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_widget{
   Q_OBJECT;
@@ -31,7 +33,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   struct Patch *_patch;
   struct PatchVoice *_voices;
 
+#ifndef USE_QT5
   QCleanlooksStyle _cleanlooksStyle;
+#endif
   
   Patch_widget(QWidget *parent, struct Patch *patch)
     : QWidget(parent)
@@ -47,13 +51,22 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     setupUi(this);
 
     for(int i=0;i<NUM_PATCH_VOICES;i++){
-
+      
+#ifndef USE_QT5
       get_t(i)->setStyle(&_cleanlooksStyle);
       get_v(i)->setStyle(&_cleanlooksStyle);
       get_s(i)->setStyle(&_cleanlooksStyle);
       get_l(i)->setStyle(&_cleanlooksStyle);
       get_c(i)->setStyle(&_cleanlooksStyle);
+#endif
 
+      set_fixed_widget_width(get_o(i), "xx");    // onoff
+      set_fixed_widget_width(get_t(i), "-24.00 "); // transpose
+      set_fixed_widget_width(get_v(i), "-35 "); // volume
+      set_fixed_widget_width(get_s(i), "999.9 "); // start
+      set_fixed_widget_width(get_l(i), "999.9 "); //length
+      set_fixed_widget_width(get_c(i), "256 "); // chance
+      
       get_o(i)->setToolTip("Whether to play this voice. At least one voice must be selected in order for any notes to be played.");
       get_t(i)->setToolTip("How much to transpose this voice");
       get_v(i)->setToolTip("Volume (in dB) for this voice. MIDI and FluidSynth does not support higher values than 0 dB.");
@@ -72,6 +85,14 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     initing = false;
   }
 
+  void set_fixed_widget_width(QWidget *widget, QString text){
+    QFontMetrics fm(font());
+    int width = fm.width(text);
+    widget->setFixedWidth(width);
+    widget->setMinimumWidth(width);
+    widget->setMaximumWidth(width);
+  }
+  
   MyQCheckBox *get_o(int i){
     MyQCheckBox *o[NUM_PATCH_VOICES]={o1,o2,o3,o4,o5,o6,o7};
     return o[i];

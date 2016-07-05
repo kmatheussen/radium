@@ -26,7 +26,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 struct MyQButton : public QToolButton{
 
   MyQButton ( QWidget * parent = 0 ) : QToolButton(parent) {}
-  //MyQButton ( const QString & text, QWidget * parent = 0) : QToolButton(text,parent) {}
+  MyQButton ( const QString & text, QWidget * parent = 0)
+    : QToolButton(parent)
+  {
+    setText(text);
+  }
 
 
   void paintEvent ( QPaintEvent * ev ){

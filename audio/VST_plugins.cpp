@@ -161,6 +161,7 @@ namespace{ // Use namespace since we already have a widget called EditorWidget. 
 // (written by Rui Nuno Capela), and then modified.
 
 
+#if 0
 static bool g_bXError = false;
 
 static int tempXErrorHandler ( Display *, XErrorEvent * )
@@ -197,7 +198,7 @@ static Window getXChildWindow ( Display *pDisplay, Window w )
 
 	return (iChildren > 0 ? pwChildren[0] : 0);
 }
-
+#endif
 #endif // __linux__
 
 
@@ -273,7 +274,8 @@ public:
                 
 #endif // defined(FOR_MACOSX)
 
-
+#if 0
+                
 #if defined(Q_WS_X11)
 		void *ptr = (void *) winId();
                 long value = (long) m_pDisplay;
@@ -300,6 +302,8 @@ public:
 #endif
 
                 _is_open=true;
+
+#endif
 
 	}
 

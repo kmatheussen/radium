@@ -36,6 +36,7 @@ extern "C"{
   void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, enum Crash_Type crash_type);
   void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, enum Crash_Type crash_type);
   void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...);
+  void CRASHREPORTER_dont_report_more(void);
   void CRASHREPORTER_close(void);
 
   void CRASHREPORTER_posix_init(void);

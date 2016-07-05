@@ -27,7 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_MyQButton.h"
 #include "../Qt/Qt_MyQSpinBox.h"
 #include <QTimer>
+
+#ifndef USE_QT5
 #include <QCleanlooksStyle>
+#endif
 
 #include "FocusSniffers.h"
 
@@ -118,8 +121,10 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   {
     _initing = true;
     setupUi(this);
+#ifndef USE_QT5
     setStyle(new QCleanlooksStyle());
- 
+#endif
+    
     if(g_bottom_bar_widget != NULL)
       RError("g_bottom_bar_widget!=NULL");
 

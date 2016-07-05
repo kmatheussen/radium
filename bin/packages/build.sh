@@ -14,6 +14,12 @@ export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse"
 export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse"
 
 
+if ! env |grep RADIUM_QT_VERSION ; then
+    echo "Must define RADIUM_QT_VERSION to either 4 or 5. For instance: \"RADIUM_QT_VERSION=5 make packages\""
+    exit -1
+fi
+
+
 
 #rm -f /tmp/radium
 #ln -s `pwd` /tmp/radium
@@ -78,18 +84,27 @@ fi
 rm -fr Visualization-Library-master
 tar xvzf Visualization-Library-master.tar.gz 
 cd Visualization-Library-master/
-cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DVL_GUI_QT4_SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
-make -j8
+export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC"
+MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC"
+echo 'set(CMAKE_CXX_FLAGS "$MYFLAGS")' >>CMakeLists.txt
+if [[ $RADIUM_QT_VERSION == 4 ]]
+then
+    CFLAGS="$MYFLAGS" CPPFLAGS="$MYFLAGS" CXX="g++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="g++ $MYFLAGS" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DVL_GUI_QT4_SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
+else
+    CFLAGS="$MYFLAGS" CPPFLAGS="$MYFLAGS" CXX="g++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="g++ $MYFLAGS" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DVL_GUI_QT5_SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
+fi
+VERBOSE=1 make -j8
 cd ..
 
 
+rm -fr libpd-master
 tar xvzf libpd-master.tar.gz
 cd libpd-master/
 make clean
 make -j7
 cd ..
 
-
+rm -fr qhttpserver-master
 tar xvzf qhttpserver-master.tar.gz
 cd qhttpserver-master/
 echo "CONFIG += staticlib" >> src/src.pro
@@ -98,10 +113,12 @@ make
 cd ..
 
 
+rm -fr s7
 tar xvzf s7.tar.gz
 
 
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
+rm -fr gc-7.4.4 libatomic_ops-7.4.4
 tar xvzf gc-7.4.4.tar.gz
 tar xvzf libatomic_ops-7.4.4.tar.gz
 cd gc-7.4.4
@@ -115,7 +132,7 @@ CFLAGS="-mtune=generic -msse2 -mfpmath=sse -g -O2" ./configure --enable-static -
 CFLAGS="-mtune=generic -msse2 -mfpmath=sse -g -O2" make -j3
 cd ..
 
-
+rm -fr fluidsynth-1.1.6
 tar xvzf fluidsynth-1.1.6.tar.gz
 cd fluidsynth-1.1.6
 make clean
@@ -124,6 +141,7 @@ CFLAGS="-O3" CPPFLAGS="-O3" CXXFLAGS="-O3" ./configure --enable-static --disable
 make -j3
 cd ..
 
+rm -fr libgig
 tar xvzf libgig.tar.gz
 cd libgig
 make clean
@@ -158,13 +176,10 @@ rm -fr QScintilla_gpl-2.9.2
 tar xvzf QScintilla_gpl-2.9.2.tar.gz
 cd QScintilla_gpl-2.9.2/Qt4Qt5/
 echo "CONFIG += staticlib" >> qscintilla.pro
-qmake-qt4
+`../../../../find_moc_and_uic_paths.sh qmake`
 patch -p0 <../../qscintilla.patch
 make -j8
 cd ../..
 
 
 touch deletemetorebuild
-
-
-

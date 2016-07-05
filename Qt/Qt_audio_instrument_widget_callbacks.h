@@ -232,7 +232,10 @@ public:
 
     // set the scroll bar itself to size 10.
     scrollArea->horizontalScrollBar()->setFixedHeight(10);
-
+#ifdef USE_QT5
+    //scrollArea->verticalScrollBar()->hide();
+#endif
+    
     updateWidgets();
     setupPeakAndAutomationStuff();
 
@@ -468,9 +471,16 @@ public:
     if (_comp_widget->isVisible())
       _comp_widget->calledRegularlyByParent();
 
+#ifdef USE_QT5
+    bool is_visible = scrollArea->verticalScrollBar()->isVisible();
+    if (is_visible)
+      setMinimumHeight(height()+5);
+#else
     adjustWidgetHeight();
+#endif
   }
-  
+
+#ifndef USE_QT5
   // horror
   void adjustWidgetHeight(void){
     static bool shrinking = false;
@@ -514,7 +524,8 @@ public:
       last_time_shrank = false;
     
   }
-                                      
+#endif
+  
   void callSystemSliderpainterUpdateCallbacks(void){
     
     for(int system_effect=0 ; system_effect<NUM_SYSTEM_EFFECTS ; system_effect++){
