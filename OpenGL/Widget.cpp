@@ -859,12 +859,13 @@ public:
 
 
     ATOMIC_SET(g_has_updated_at_least_once, true);
-        
+
+#if USE_QT5
     if (ATOMIC_GET(_main_window_is_exposed)==false){
       OS_WaitAtLeast(200);
       return;
     }
-
+#endif
     
     double overridden_vblank_value = ATOMIC_DOUBLE_GET(override_vblank_value);
     

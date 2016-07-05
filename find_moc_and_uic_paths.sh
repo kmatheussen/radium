@@ -10,6 +10,10 @@ if which $1 >/dev/null 2>/dev/null ; then
     fi
 fi
 
+if which $1-qt$RADIUM_QT_VERSION >/dev/null 2>/dev/null ; then
+    echo `which $1-qt$RADIUM_QT_VERSION`
+    exit 0
+fi
 
 if [ -f /etc/fedora-release ] ; then
     if uname -a |grep x86_64 >/dev/null ; then
