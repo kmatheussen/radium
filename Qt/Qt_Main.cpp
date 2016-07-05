@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <gc.h>
 
-
 #include <qapplication.h>
 #include <qsplashscreen.h>
 #include <qmainwindow.h>
@@ -38,7 +37,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTextCodec>
 
 #ifdef __linux__
-#include <QX11Info>
+#ifndef USE_QT5
+#  include <QX11Info>
+#endif
 #endif
 
 #ifdef USE_QT4
@@ -46,7 +47,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 //Added by qt3to4:
 #include <QEvent>
-#include <QCustomEvent>
+#ifndef USE_QT5
+#  include <QCustomEvent>
+#endif
 #endif
 
 #include "../common/nsmtracker.h"
@@ -795,6 +798,20 @@ protected:
       }
     }
 
+    GL_notify_that_main_window_is_exposed();
+    #if 0
+    static bool main_window_is_exposed = false;
+    if (main_window_is_exposed==false){
+      QMainWindow *main_window = (QMainWindow *)window->os_visual.main_window;
+      if (main_window != NULL){
+        if (main_window->isExposed()) {
+
+          main_window_is_exposed = true;
+        }
+      }
+    }
+    #endif
+    
     //MIXER_called_regularly_by_main_thread();
     
 #if 0
@@ -891,7 +908,9 @@ void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
   main_window->raise();
 
 #ifdef __linux__
-  XSetInputFocus(QX11Info::display(),(Window)QX11Info::appRootWindow(),RevertToNone,CurrentTime);
+  #ifndef USE_QT5
+    XSetInputFocus(QX11Info::display(),(Window)QX11Info::appRootWindow(),RevertToNone,CurrentTime);
+  #endif
 #endif
 
   OS_SYSTEM_ResetKeysUpDowns();
@@ -940,7 +959,7 @@ void assertRadiumInHomeDirectory(void){
 
 
 
-#include <qwindowsstyle.h>
+//#include <qwindowsstyle.h>
 //#include <qmacstyle_mac.h>
 #if 0
 #include <qplatinumstyle.h>
@@ -953,7 +972,9 @@ void assertRadiumInHomeDirectory(void){
 #if USE_QT4
 //#include <QCleanlooksStyle>
 //#include <QOxygenStyle>
-#include <QPlastiqueStyle>
+#ifndef USE_QT5
+#  include <QPlastiqueStyle>
+#endif
 #endif
 
 #ifdef USE_QT3
@@ -1008,8 +1029,10 @@ int radium_main(char *arg){
 #if 1
     if(override_default_qt_style){
       //QApplication::setStyle( new QOxygenStyle());
-      
-      QApplication::setStyle( new QPlastiqueStyle());
+
+      #ifndef USE_QT5
+        QApplication::setStyle( new QPlastiqueStyle());
+      #endif
       //QApplication::setStyle( new QMacStyle());
     
     //QApplication::setStyle( new QCleanlooksStyle() );
@@ -1280,12 +1303,19 @@ int radium_main(char *arg){
   GTK_MainLoop();
 #endif
       
+  // We don't want the crashreporter to pop up when program exits.
+  CRASHREPORTER_dont_report_more();
 
+    
+  fprintf(stderr,"          ENDING 1\n");
+  
   g_qt_is_running = false;
 
   if (editor->gl_widget != NULL)
     GL_stop_widget(editor->gl_widget);
 
+  fprintf(stderr,"          ENDING 2\n");
+  
 #if 0
   while(doquit==false){
     while(GTK_HasPendingEvents() || qapplication->hasPendingEvents()){
@@ -1299,21 +1329,34 @@ int radium_main(char *arg){
   Undo_start_ignoring_undo_operations();{
     MW_cleanup(); // Stop all sound properly. Don't want clicks when exiting.
   }Undo_stop_ignoring_undo_operations();
-  
+
+  fprintf(stderr,"          ENDING 3\n");
+    
   ATOMIC_SET(is_starting_up, true); // Tell the mixer that program is not running
   usleep(3000); // wait a little bit so the player gets back to the main loop
   
   EndProgram(); // shut down most of the program, except audio
+
+  fprintf(stderr,"          ENDING 4\n");
+    
   posix_EndPlayer();
   //EndGuiThread();
 
+  fprintf(stderr,"          ENDING 5\n");
+  
   MIXER_stop();
 
+  fprintf(stderr,"          ENDING 6\n");
+    
   MULTICORE_shut_down();
 
+  fprintf(stderr,"          ENDING 7\n");
+  
 #ifdef WITH_FAUST_DEV
   FFF_shut_down();
 #endif
+
+  fprintf(stderr,"          ENDING 8\n");
   
   //V_shutdown();
   
@@ -1322,6 +1365,8 @@ int radium_main(char *arg){
   // Give various stuff some time to exit
   OS_WaitForAShortTime(100);
 
+  fprintf(stderr,"          ENDING 9\n");
+  
   return 0;
 
 }
@@ -1342,6 +1387,8 @@ extern "C" {
 
 
 // based on qglobal::qunsetenv from the qt 5 source
+#ifndef USE_QT5
+
 static void qunsetenv(const char *varName)
 {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -1373,6 +1420,8 @@ static void qunsetenv(const char *varName)
 #endif
 }
 
+#endif
+
 
 void MONOTONIC_TIMER_init(void);
 
@@ -1383,8 +1432,10 @@ int main(int argc, char **argv){
   QCoreApplication::setLibraryPaths(QStringList());
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 
+#ifndef USE_QT5
   QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
-
+#endif
+  
   MONOTONIC_TIMER_init();
   
   PLUGINHOST_init();

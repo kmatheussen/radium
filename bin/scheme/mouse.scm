@@ -2553,6 +2553,13 @@
                      #t))))
 
 
+(define (get-full-fx-name fxnum tracknum)
+  (define fxname (<ra> :get-fx-name fxnum tracknum))
+  (define trackinstrument_id (<ra> :get-instrument-for-track tracknum))
+  (define fxinstrument_id (<ra> :get-fx-instrument fxnum tracknum))
+  (if (= trackinstrument_id fxinstrument_id)
+      fxname
+      (<-> fxname " (" (<ra> :get-instrument-name fxinstrument_id) ")")))
 
 ;; Show and set:
 ;;  1. current fx or current note, depending on which nodeline is closest to the mouse pointer
@@ -2623,7 +2630,7 @@
                         
                         ((and is-in-fx-area fx-dist-is-shortest)
                          (set! *current-fx/distance* fx-dist)
-                         (<ra> :set-statusbar-text (<ra> :get-fx-name (fx-dist :fx) *current-track-num*)) ;; TODO: Also write fx value at mouse position.
+                         (<ra> :set-statusbar-text (get-full-fx-name (fx-dist :fx) *current-track-num*)) ;; TODO: Also write fx value at mouse position.
                          (set-mouse-fx (fx-dist :fx) *current-track-num*)
                          )
                       

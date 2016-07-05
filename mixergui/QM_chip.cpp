@@ -985,7 +985,11 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
  #endif
 
    setFlags(ItemIsSelectable | ItemIsMovable | ItemSendsGeometryChanges);
+#ifdef USE_QT5
+   setAcceptHoverEvents(true);
+#else
    setAcceptsHoverEvents(true);
+#endif
    setZValue(10);
    
    init_new_plugin();

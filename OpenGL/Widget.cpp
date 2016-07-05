@@ -1,13 +1,38 @@
+/* Copyright 2014-2016 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+#include <QWidget>
+
+#if USE_QT5
+#include <QWindow>
+#endif
+
 #include <math.h>
 #include <stdio.h>
 
 #include <vlVG/VectorGraphics.hpp>
 #include <vlGraphics/Rendering.hpp>
+#if USE_QT5
+#include <vlQt5/Qt5ThreadedWidget.hpp>
+#else
 #include <vlQt4/Qt4ThreadedWidget.hpp>
+#endif
 #include <vlGraphics/SceneManagerActorTree.hpp>
 #include <vlVG/SceneManagerVectorGraphics.hpp>
 
-#include <QWidget>
 #include <QGLWidget>
 #include <QTextEdit>
 #include <QMessageBox>
@@ -38,6 +63,102 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
+
+/*
+=================================================================
+==9461==ERROR: AddressSanitizer: new-delete-type-mismatch on 0x614001109440 in thread T0 (radium):
+  object passed to delete has wrong type:
+  size of the allocated type:   400 bytes;
+  size of the deallocated type: 16 bytes.
+    #0 0x7ffff7126812 in operator delete(void*, unsigned long) ../../.././libsanitizer/asan/asan_new_delete.cc:108
+    #1 0x7ffff1107b0e in QOpenGLVersionFunctionsStorage::~QOpenGLVersionFunctionsStorage() opengl/qopenglversionfunctions.cpp:81
+    #2 0x7ffff0e2eda4 in QOpenGLContextPrivate::~QOpenGLContextPrivate() kernel/qopenglcontext_p.h:219
+    #3 0x7ffff0e2eda4 in QOpenGLContextPrivate::~QOpenGLContextPrivate() kernel/qopenglcontext_p.h:222
+    #4 0x7ffff04e674b in QScopedPointerDeleter<QObjectData>::cleanup(QObjectData*) ../../include/QtCore/../../src/corelib/tools/qscopedpointer.h:60
+    #5 0x7ffff04e674b in QScopedPointer<QObjectData, QScopedPointerDeleter<QObjectData> >::~QScopedPointer() ../../include/QtCore/../../src/corelib/tools/qscopedpointer.h:107
+    #6 0x7ffff04e674b in QObject::~QObject() kernel/qobject.cpp:900
+    #7 0x7ffff0e2e798 in QOpenGLContext::~QOpenGLContext() kernel/qopenglcontext.cpp:696
+    #8 0x7ffff18cbeeb in QOpenGLWidgetPrivate::reset() kernel/qopenglwidget.cpp:678
+    #9 0x7ffff18cc762 in QOpenGLWidgetPrivate::~QOpenGLWidgetPrivate() kernel/qopenglwidget.cpp:576
+    #10 0x7ffff18cc762 in QOpenGLWidgetPrivate::~QOpenGLWidgetPrivate() kernel/qopenglwidget.cpp:577
+    #11 0x7ffff04e674b in QScopedPointerDeleter<QObjectData>::cleanup(QObjectData*) ../../include/QtCore/../../src/corelib/tools/qscopedpointer.h:60
+    #12 0x7ffff04e674b in QScopedPointer<QObjectData, QScopedPointerDeleter<QObjectData> >::~QScopedPointer() ../../include/QtCore/../../src/corelib/tools/qscopedpointer.h:107
+    #13 0x7ffff04e674b in QObject::~QObject() kernel/qobject.cpp:900
+    #14 0x7ffff18a91fb in QWidget::~QWidget() kernel/qwidget.cpp:1548
+    #15 0x7ffff6fe3ca9 in QtWebEngineCore::RenderWidgetHostViewQtDelegateWidget::~RenderWidgetHostViewQtDelegateWidget() .moc/../render_widget_host_view_qt_delegate_widget.h:58
+    #16 0x7ffff6fe3ca9 in QtWebEngineCore::RenderWidgetHostViewQtDelegateWidget::~RenderWidgetHostViewQtDelegateWidget() .moc/../render_widget_host_view_qt_delegate_widget.h:58
+    #17 0x7ffff23e605e in std::default_delete<QtWebEngineCore::RenderWidgetHostViewQtDelegate>::operator()(QtWebEngineCore::RenderWidgetHostViewQtDelegate*) const /home/kjetil/site_gcc/include/c++/5.3.0/bits/unique_ptr.h:76
+    #18 0x7ffff23e605e in base::internal::scoped_ptr_impl<QtWebEngineCore::RenderWidgetHostViewQtDelegate, std::default_delete<QtWebEngineCore::RenderWidgetHostViewQtDelegate> >::reset(QtWebEngineCore::RenderWidgetHostViewQtDelegate*) /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/base/memory/scoped_ptr.h:177
+    #19 0x7ffff23e605e in base::internal::scoped_ptr_impl<QtWebEngineCore::RenderWidgetHostViewQtDelegate, std::default_delete<QtWebEngineCore::RenderWidgetHostViewQtDelegate> >::~scoped_ptr_impl() /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/base/memory/scoped_ptr.h:166
+    #20 0x7ffff23e605e in scoped_ptr<QtWebEngineCore::RenderWidgetHostViewQtDelegate, std::default_delete<QtWebEngineCore::RenderWidgetHostViewQtDelegate> >::~scoped_ptr() /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/base/memory/scoped_ptr.h:240
+    #21 0x7ffff23e605e in QtWebEngineCore::RenderWidgetHostViewQt::~RenderWidgetHostViewQt() /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/core/render_widget_host_view_qt.cpp:250
+    #22 0x7ffff23e61f8 in QtWebEngineCore::RenderWidgetHostViewQt::~RenderWidgetHostViewQt() /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/core/render_widget_host_view_qt.cpp:255
+    #23 0x7ffff3051080 in content::RenderWidgetHostImpl::Destroy(bool) /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/content/browser/renderer_host/render_widget_host_impl.cc:1460
+    #24 0x7ffff3041e7e in content::RenderViewHostImpl::ShutdownAndDestroy() /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/content/browser/renderer_host/render_view_host_impl.cc:958
+    #25 0x7ffff31aa364 in content::FrameTree::ReleaseRenderViewHostRef(content::RenderViewHostImpl*) /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/content/browser/frame_host/frame_tree.cc:382
+    #26 0x7ffff2fb6d9c in content::RenderFrameHostImpl::~RenderFrameHostImpl() /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/content/browser/frame_host/render_frame_host_impl.cc:294
+    #27 0x7ffff2fb72b8 in content::RenderFrameHostImpl::~RenderFrameHostImpl() /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/content/browser/frame_host/render_frame_host_impl.cc:295
+    #28 0x7ffff2fbb952 in linked_ptr<content::RenderFrameHostImpl>::depart() /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/base/memory/linked_ptr.h:144
+    #29 0x7ffff2fbb952 in linked_ptr<content::RenderFrameHostImpl>::~linked_ptr() /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/base/memory/linked_ptr.h:82
+    #30 0x7ffff2fbb952 in std::_List_node<linked_ptr<content::RenderFrameHostImpl> >::~_List_node() /home/kjetil/site_gcc/include/c++/5.3.0/bits/stl_list.h:106
+    #31 0x7ffff2fbb952 in void __gnu_cxx::new_allocator<std::_List_node<linked_ptr<content::RenderFrameHostImpl> > >::destroy<std::_List_node<linked_ptr<content::RenderFrameHostImpl> > >(std::_List_node<linked_ptr<content::RenderFrameHostImpl> >*) /home/kjetil/site_gcc/include/c++/5.3.0/ext/new_allocator.h:124
+    #32 0x7ffff2fbb952 in std::__cxx11::list<linked_ptr<content::RenderFrameHostImpl>, std::allocator<linked_ptr<content::RenderFrameHostImpl> > >::_M_erase(std::_List_iterator<linked_ptr<content::RenderFrameHostImpl> >) /home/kjetil/site_gcc/include/c++/5.3.0/bits/stl_list.h:1777
+    #33 0x7ffff2fbb952 in std::__cxx11::list<linked_ptr<content::RenderFrameHostImpl>, std::allocator<linked_ptr<content::RenderFrameHostImpl> > >::erase(std::_List_const_iterator<linked_ptr<content::RenderFrameHostImpl> >) /home/kjetil/site_gcc/include/c++/5.3.0/bits/list.tcc:156
+    #34 0x7ffff2fbb952 in content::RenderFrameHostManager::DeleteFromPendingList(content::RenderFrameHostImpl*) /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/content/browser/frame_host/render_frame_host_manager.cc:797
+    #35 0x7ffff2fb0521 in content::RenderFrameHostImpl::OnSwappedOut() /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/content/browser/frame_host/render_frame_host_impl.cc:1295
+    #36 0x7ffff2fba62a in bool IPC::Message::Dispatch<content::RenderFrameHostImpl, content::RenderFrameHostImpl, void>(IPC::Message const*, content::RenderFrameHostImpl*, content::RenderFrameHostImpl*, void*, void (content::RenderFrameHostImpl::*)()) /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/ipc/ipc_message.h:158
+    #37 0x7ffff2fba62a in content::RenderFrameHostImpl::OnMessageReceived(IPC::Message const&) /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/content/browser/frame_host/render_frame_host_impl.cc:522
+    #38 0x7ffff3038b05 in content::RenderProcessHostImpl::OnMessageReceived(IPC::Message const&) /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/content/browser/renderer_host/render_process_host_impl.cc:1723
+    #39 0x7ffff39bdc7f in IPC::ChannelProxy::Context::OnDispatchMessage(IPC::Message const&) /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/ipc/ipc_channel_proxy.cc:293
+    #40 0x7ffff3d78e88 in base::Callback<void ()>::Run() const /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/base/callback.h:394
+    #41 0x7ffff3d78e88 in base::debug::TaskAnnotator::RunTask(char const*, base::PendingTask const&) /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/base/debug/task_annotator.cc:51
+    #42 0x7ffff3d25788 in base::MessageLoop::RunTask(base::PendingTask const&) /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/base/message_loop/message_loop.cc:486
+    #43 0x7ffff3d26388 in base::MessageLoop::DeferOrRunPendingTask(base::PendingTask const&) /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/base/message_loop/message_loop.cc:495
+    #44 0x7ffff3d2684c in base::MessageLoop::DoWork() /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/3rdparty/chromium/base/message_loop/message_loop.cc:607
+    #45 0x7ffff23c0b84 in handleScheduledWork /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/core/content_browser_client_qt.cpp:193
+    #46 0x7ffff23c0b84 in customEvent /newhd/fedora19stuff/qt-everywhere-opensource-src-5.7.0/qtwebengine/src/core/content_browser_client_qt.cpp:175
+    #47 0x7ffff04dfbda in QObject::event(QEvent*) kernel/qobject.cpp:1285
+    #48 0x7ffff186989b in QApplicationPrivate::notify_helper(QObject*, QEvent*) kernel/qapplication.cpp:3799
+    #49 0x7ffff1870cb5 in QApplication::notify(QObject*, QEvent*) kernel/qapplication.cpp:3556
+    #50 0x7ffff04b5c97 in QCoreApplication::notifyInternal2(QObject*, QEvent*) kernel/qcoreapplication.cpp:988
+    #51 0x7ffff04b828a in QCoreApplication::sendEvent(QObject*, QEvent*) ../../include/QtCore/../../src/corelib/kernel/qcoreapplication.h:231
+    #52 0x7ffff04b828a in QCoreApplicationPrivate::sendPostedEvents(QObject*, int, QThreadData*) kernel/qcoreapplication.cpp:1649
+    #53 0x7ffff0506182 in postEventSourceDispatch kernel/qeventdispatcher_glib.cpp:276
+    #54 0x3b4b047824 in g_main_context_dispatch (/lib64/libglib-2.0.so.0+0x3b4b047824)
+    #55 0x3b4b047b57  (/lib64/libglib-2.0.so.0+0x3b4b047b57)
+    #56 0x3b4b047c13 in g_main_context_iteration (/lib64/libglib-2.0.so.0+0x3b4b047c13)
+    #57 0x7ffff050658e in QEventDispatcherGlib::processEvents(QFlags<QEventLoop::ProcessEventsFlag>) kernel/qeventdispatcher_glib.cpp:423
+    #58 0x7ffff04b4209 in QEventLoop::exec(QFlags<QEventLoop::ProcessEventsFlag>) kernel/qeventloop.cpp:210
+    #59 0x7ffff04bc23c in QCoreApplication::exec() kernel/qcoreapplication.cpp:1261
+    #60 0x6f18d9 in radium_main Qt/Qt_Main.cpp:1287
+    #61 0x820fae in init_radium api/api_common.c:63
+    #62 0x8205c6 in _wrap_init_radium api/radium_wrap.c:577
+    #63 0x3b5d4dd0e0 in PyEval_EvalFrameEx (/lib64/libpython2.7.so.1.0+0x3b5d4dd0e0)
+    #64 0x3b5d4ddb1e in PyEval_EvalCodeEx (/lib64/libpython2.7.so.1.0+0x3b5d4ddb1e)
+    #65 0x3b5d4ddbf1 in PyEval_EvalCode (/lib64/libpython2.7.so.1.0+0x3b5d4ddbf1)
+    #66 0x3b5d4f6b99  (/lib64/libpython2.7.so.1.0+0x3b5d4f6b99)
+    #67 0x3b5d4f7991 in PyRun_FileExFlags (/lib64/libpython2.7.so.1.0+0x3b5d4f7991)
+    #68 0x3b5d4d4b75  (/lib64/libpython2.7.so.1.0+0x3b5d4d4b75)
+    #69 0x3b5d4dd0e0 in PyEval_EvalFrameEx (/lib64/libpython2.7.so.1.0+0x3b5d4dd0e0)
+    #70 0x3b5d4ddb1e in PyEval_EvalCodeEx (/lib64/libpython2.7.so.1.0+0x3b5d4ddb1e)
+    #71 0x3b5d4ddbf1 in PyEval_EvalCode (/lib64/libpython2.7.so.1.0+0x3b5d4ddbf1)
+    #72 0x3b5d4f6b99  (/lib64/libpython2.7.so.1.0+0x3b5d4f6b99)
+    #73 0x3b5d4f7767 in PyRun_StringFlags (/lib64/libpython2.7.so.1.0+0x3b5d4f7767)
+    #74 0x3b5d4f827a in PyRun_SimpleStringFlags (/lib64/libpython2.7.so.1.0+0x3b5d4f827a)
+    #75 0x6f28c2 in main Qt/Qt_Main.cpp:1618
+    #76 0x3b49421734 in __libc_start_main (/lib64/libc.so.6+0x3b49421734)
+    #77 0x4e7860  (/home/kjetil/radium/bin/radium+0x4e7860)
+
+0x614001109440 is located 0 bytes inside of 400-byte region [0x614001109440,0x6140011095d0)
+allocated by thread T0 (radium) here:
+    #0 0x7ffff7125d8a in operator new(unsigned long) ../../.././libsanitizer/asan/asan_new_delete.cc:60
+    #1 0x7ffff1107d11 in QOpenGLVersionFunctionsStorage::backend(QOpenGLContext*, QOpenGLVersionFunctionsBackend::Version) opengl/qopenglversionfunctions.cpp:108
+
+SUMMARY: AddressSanitizer: new-delete-type-mismatch ../../.././libsanitizer/asan/asan_new_delete.cc:108 operator delete(void*, unsigned long)
+==9461==HINT: if you don't care about these warnings you may set ASAN_OPTIONS=new_delete_type_mismatch=0
+==9461==ABORTING
+
+*/
 
 #if FOR_LINUX
 static int set_pthread_priority(pthread_t pthread,int policy,int priority,const char *message,const char *name){
@@ -343,9 +464,15 @@ static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
                      );
 }
 
-
-class MyQt4ThreadedWidget : public vlQt4::Qt4ThreadedWidget, public vl::UIEventListener {
-
+class MyQtThreadedWidget
+#if USE_QT5
+  : public vlQt5::Qt5ThreadedWidget
+#else
+  : public vlQt4::Qt4ThreadedWidget
+#endif
+  , public vl::UIEventListener
+{
+    
 public:
 
   int current_width;
@@ -376,9 +503,15 @@ public:
   
   bool sleep_when_not_painting;
 
+  DEFINE_ATOMIC(bool, _main_window_is_exposed);
+
   // Main thread
-  MyQt4ThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
+  MyQtThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
+#if USE_QT5
+    : Qt5ThreadedWidget(vlFormat, parent)
+#else
     : Qt4ThreadedWidget(vlFormat, parent)
+#endif
     , current_width(-1)
     , current_height(-1)
     , new_width(500)
@@ -390,6 +523,7 @@ public:
     , last_curr_realline(-1)
     , sleep_when_not_painting(true) //SETTINGS_read_bool("opengl_sleep_when_not_painting", false))
   {
+    ATOMIC_SET(_main_window_is_exposed, false);
     ATOMIC_DOUBLE_SET(override_vblank_value, -1.0);
     ATOMIC_SET(is_training_vblank_estimator, true);
     setMouseTracking(true);
@@ -397,8 +531,8 @@ public:
   }
 
   // Main thread
-  ~MyQt4ThreadedWidget(){
-    fprintf(stderr,"Exit myqt4threaderwidget\n");
+  ~MyQtThreadedWidget(){
+    fprintf(stderr,"Exit myqtthreaderwidget\n");
   }
 
   // OpenGL thread
@@ -688,11 +822,10 @@ private:
   // OpenGL thread
   void swap(void){
     radium::ScopedMutex lock(&mutex);
-    
-    // Swap to the newly rendered buffer
-    if ( openglContext()->hasDoubleBuffer() )
-      openglContext()->swapBuffers();
 
+    // Swap to the newly rendered buffer
+    if ( openglContext()->hasDoubleBuffer())
+      openglContext()->swapBuffers();
   }
 
 public:
@@ -724,6 +857,15 @@ public:
       //abort();
     }
 
+
+    ATOMIC_SET(g_has_updated_at_least_once, true);
+        
+    if (ATOMIC_GET(_main_window_is_exposed)==false){
+      OS_WaitAtLeast(200);
+      return;
+    }
+
+    
     double overridden_vblank_value = ATOMIC_DOUBLE_GET(override_vblank_value);
     
     if (has_overridden_vblank_value==false && overridden_vblank_value > 0.0) {
@@ -786,7 +928,11 @@ public:
 
   // Necessary to avoid error with clang++.
   virtual void resizeEvent(QResizeEvent *qresizeevent) {
+#if USE_QT5
+    vlQt5::Qt5ThreadedWidget::resizeEvent(qresizeevent);
+#else
     vlQt4::Qt4ThreadedWidget::resizeEvent(qresizeevent);
+#endif
   }
 
   /** Event generated when the bound OpenGLContext is resized. */
@@ -870,7 +1016,11 @@ public:
 
   // Necessary to avoid error with clang++.
   virtual void keyPressEvent(QKeyEvent *event){
+#if USE_QT5
+    vlQt5::Qt5ThreadedWidget::keyPressEvent(event);
+#else
     vlQt4::Qt4ThreadedWidget::keyPressEvent(event);
+#endif
   }
 
   /** Event generated when a key is pressed. */
@@ -884,7 +1034,11 @@ public:
 
   // Necessary to avoid error with clang++.
   virtual void keyReleaseEvent(QKeyEvent *event){
+#if USE_QT5
+    vlQt5::Qt5ThreadedWidget::keyReleaseEvent(event);
+#else
     vlQt4::Qt4ThreadedWidget::keyReleaseEvent(event);
+#endif
   }
 
 
@@ -903,7 +1057,7 @@ public:
 };
 
 
-static vl::ref<MyQt4ThreadedWidget> widget;
+static vl::ref<MyQtThreadedWidget> widget;
 
 static bool do_estimate_questionmark(){
   return SETTINGS_read_bool("use_estimated_vblank", false);
@@ -917,6 +1071,27 @@ static bool have_earlier_estimated_value(){
   return SETTINGS_read_double("vblank", -1.0) > 0.0;
 }
 
+bool GL_notify_that_main_window_is_exposed(void){
+  static bool gotit=false;
+
+#if USE_QT5
+  if (gotit==false){
+    QWindow *window = widget->windowHandle();
+    if (window != NULL){
+      if (window->isExposed()) {
+        ATOMIC_SET(widget->_main_window_is_exposed, true);
+        gotit = true;
+      }
+    }
+  }
+#else
+  ATOMIC_SET(widget->_main_window_is_exposed, true);
+  gotit = true;
+#endif
+  
+  return gotit;
+}
+            
 void GL_pause_gl_thread_a_short_while(void){
 
   if (GL_get_pause_rendering_on_off()==false)
@@ -1082,7 +1257,7 @@ static void setup_widget(QWidget *parent){
   vlFormat.setVSync(GL_get_vsync());
   //vlFormat.setVSync(false);
 
-  widget = new MyQt4ThreadedWidget(vlFormat, parent);
+  widget = new MyQtThreadedWidget(vlFormat, parent);
   widget->resize(1000,1000);
   widget->show();
 
@@ -1333,7 +1508,7 @@ QWidget *GL_create_widget(QWidget *parent){
 
 
 void GL_stop_widget(QWidget *widget){
-  MyQt4ThreadedWidget *mywidget = static_cast<MyQt4ThreadedWidget*>(widget);
+  MyQtThreadedWidget *mywidget = static_cast<MyQtThreadedWidget*>(widget);
 
   mywidget->stop();
   //delete mywidget;

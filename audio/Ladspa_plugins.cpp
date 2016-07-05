@@ -1035,7 +1035,12 @@ void create_ladspa_plugins(void){
   if(getenv("LADSPA_PATH")==NULL){
     //QMessageBox::information(NULL, "LADSPA_PATH is not set.", "LADSPA_PATH is not set.");
     //return;
+#ifdef USE_QT5
+    QString home_ladspa_path = QDir::homePath() + "/.ladspa";
+#else
     QString home_ladspa_path = QDesktopServices::storageLocation(QDesktopServices::HomeLocation) + "/.ladspa";
+#endif
+    
     sprintf(ladspa_path,
             "%s:%s:%s",
             QString(QString(OS_get_program_path()) + OS_get_directory_separator() + "ladspa").toUtf8().constData(),

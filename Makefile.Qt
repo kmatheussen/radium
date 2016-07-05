@@ -19,6 +19,8 @@ MOC ?= moc
 UIC ?= uic
 RCC ?= rcc
 
+
+
 # 4. Release buid or Debug build
 #
 BUILDTYPE ?= DEBUG
@@ -91,8 +93,29 @@ GLIBOPT ?= `$(PKG) --cflags glib-2.0`
 
 PYPATH ?=
 QT_SYSTEM_CFLAGS ?=
-QT_CFLAGS ?= `$(PKGqt) --cflags QtGui --cflags QtNetwork --cflags QtOpenGL --cflags QtWebKit` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.9.2/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS)
-QT_LDFLAGS ?= `$(PKGqt) --libs QtGui --libs QtOpenGL --libs QtNetwork --libs QtWebKit`
+
+# qt4
+ifeq ($(RADIUM_QT_VERSION),4)
+	QT_GUI_CFLAGS ?=`$(PKGqt) --cflags QtGui`
+	QT_GUI_LDFLAGS ?= `$(PKGqt) --libs QtGui`
+	QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags QtNetwork`
+	QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs QtNetwork`
+	QT_CFLAGS ?= `$(PKGqt) --cflags QtGui --cflags QtNetwork --cflags QtOpenGL --cflags QtWebKit` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.9.2/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS)
+	QT_LDFLAGS ?= `$(PKGqt) --libs QtGui --libs QtOpenGL --libs QtNetwork --libs QtWebKit`
+endif
+
+
+# qt5
+ifeq ($(RADIUM_QT_VERSION),5)
+	QT_GUI_CFLAGS ?=`$(PKGqt) --cflags Qt5Gui --cflags Qt5Widgets` -DUSE_QT5
+	QT_GUI_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5Widgets`
+	QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags Qt5Network` -DUSE_QT5
+	QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs Qt5Network`
+	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebEngineWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.9.2/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT5
+	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebEngineWidgets`
+endif
+
+
 GTK_CFLAGS ?= `$(PKG) --cflags gtk+-2.0`
 GTK_LDFLAGS ?= `$(PKG) --libs gtk+-2.0`
 
@@ -337,7 +360,10 @@ uninstall:
 	rm -f $(DESTDIR)$(bindir)/radium
 
 run-gdb:
-	./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals QT_FATAL_WARNINGS=1 gdb ./radium
+#	./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals QT_FATAL_WARNINGS=1 gdb ./radium
+#	./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals gdb ./radium # QT_FATAL_WARNINGS=1 doesn't work so well with qt5 for now.
+	./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals gdb QT_DEBUG_PLUGINS=1 QT_FATAL_WARNINGS=1 ./radium
+
 #./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals QT_FATAL_WARNINGS=1 gdb -e ./radium -x ../gakk
 #	make -j3 && cd bin && G_DEBUG=fatal-criticals QT_FATAL_WARNINGS=1 gdb --args $(PYTHONEXE) start.py keybindings.conf && cd ..          
 
@@ -1159,7 +1185,7 @@ Qt_soundfilesaver_widget_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_soundfilesave
 	$(CCC) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(QTOPT)
 
 $(P)Qt_soundfilesaver_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_soundfilesaver_widget.ui $(P)Qt_soundfilesaver_widget_callbacks.cpp
-	cd $(P) && $(UIC) qt4_soundfilesaver_widget.ui | sed s/protected/public/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: > Qt_soundfilesaver_widget.h
+	cd $(P) && $(UIC) qt4_soundfilesaver_widget.ui | sed s/protected/public/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: > Qt_soundfilesaver_widget.h
 	cd $(P) && $(MOC) Qt_soundfilesaver_widget_callbacks.cpp >mQt_soundfilesaver_widget_callbacks.cpp
 
 
@@ -1180,7 +1206,7 @@ Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.c
 	$(CCC) $(P)Qt_preferences_callbacks.cpp $(QTOPT)
 
 $(P)Qt_preferences.h: $(BUILD_DEPENDENCIES) $(P)qt4_preferences.ui $(P)Qt_preferences_callbacks.cpp
-	cd $(P) && $(UIC) qt4_preferences.ui | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: > Qt_preferences.h
+	cd $(P) && $(UIC) qt4_preferences.ui | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/MyQSpinBox\>://\ \ qspingox.h: > Qt_preferences.h
 	cd $(P) && $(MOC) Qt_preferences_callbacks.cpp >mQt_preferences_callbacks.cpp
 
 Qt_tools_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_tools_callbacks.cpp $(P)Qt_tools_callbacks.h $(P)Qt_tools.h
@@ -1220,8 +1246,8 @@ Qt_Error.o: $(BUILD_DEPENDENCIES) $(P)Qt_Error.cpp
 	$(CCC) $(P)Qt_Error.cpp $(QTOPT)
 
 bin/radium_error_message: $(P)Qt_Error.cpp $(P)EditorWidget.h
-	$(CCC) -Wall -Werror $(P)Qt_Error.cpp $(CPPOPT) -DCOMPILE_EXECUTABLE `$(PKG) --cflags QtGui` -o errormessagebin.o
-	$(LINKER) `cat buildtype.opt` errormessagebin.o -o bin/radium_error_message `$(PKG) --libs QtGui`
+	$(CCC) -Wall -Werror $(P)Qt_Error.cpp $(CPPOPT) $(QT_CFLAGS) -DCOMPILE_EXECUTABLE $(QT_GUI_CFLAGS) -o errormessagebin.o
+	$(LINKER) `cat buildtype.opt` errormessagebin.o -o bin/radium_error_message $(QT_GUI_LDFLAGS)
 	rm errormessagebin.o
 
 Rational.o: $(BUILD_DEPENDENCIES) $(P)Rational.cpp
@@ -1859,8 +1885,8 @@ audio/system_compressor.cpp: audio/system_compressor.dsp
 	$(FAUST) -vec -cn Faust_system_compressor audio/system_compressor.dsp -o audio/system_compressor.cpp
 
 bin/crashreporter: crashreporter/crashreporter.cpp $(API)radium_proc.h
-	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" `$(PKG) --cflags QtGui` `$(PKG) --cflags QtNetwork` -o crashbin.o
-	$(LINKER) `cat buildtype.opt` crashbin.o -o bin/crashreporter `$(PKG) --libs QtGui` `$(PKG) --libs QtNetwork`
+	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) -o crashbin.o
+	$(LINKER) `cat buildtype.opt` crashbin.o -o bin/crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
 	rm crashbin.o
 
 crashreporter.o: crashreporter/crashreporter.cpp
@@ -1902,7 +1928,7 @@ bin/packages/s7/s7_$(TARGET_OS).o: bin/packages/s7/s7.c
 #-DDEBUGGING=1
 
 s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp
-	$(CCC) -c bin/s7webserver/s7webserver.cpp $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function
+	$(CCC) -c bin/s7webserver/s7webserver.cpp $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function -std=gnu++11
 
 bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 	$(MOC) -DCOMPILING_S7WEBSERVER bin/s7webserver/s7webserver.h -o bin/s7webserver/moc_s7webserver.cpp

@@ -21,7 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Rational.h"
 
+#ifndef USE_QT4
 #include <QCleanlooksStyle>
+#endif
 
 
 extern EditorWidget *g_editor;
@@ -38,8 +40,11 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     : QWidget(parent)
   {
     setupUi(this);
+    
+#ifndef USE_QT4
     setStyle(new QCleanlooksStyle);
-
+#endif
+    
     // Set up custom popup menues for the time widgets
     {
       bpm->setContextMenuPolicy(Qt::CustomContextMenu);

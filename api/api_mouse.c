@@ -2685,25 +2685,46 @@ void addFXMousePos(int windownum){
   AddFXNodeLineCurrMousePos(window);
 }
 
-int createFx(float value, Place place, const char* fx_name, int tracknum, int blocknum, int windownum){
+int createFx(float value, Place place, const char* fx_name, int tracknum, int instrument_id, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
   if (wtrack==NULL)
     return -1;
 
-  R_ASSERT(value >= 0.0f);
-  R_ASSERT(value <= 1.0f);
+#ifdef RELEASE
+  R_ASSERT_MESSAGE(value >= 0);
+  R_ASSERT_MESSAGE(value <= 1);
+#else
+  R_ASSERT(value >= 0);
+  R_ASSERT(value <= 1);
+#endif
+  
+  value = R_BOUNDARIES(0, value, 1);
 
+  printf("\n\n    createFX: %s\n\n", fx_name);
+
+  
   struct Tracks *track = wtrack->track;
 
   struct Patch *patch = track->patch;
 
   if(patch==NULL){
-    RWarning("Track %d has no assigned instrument",tracknum);
+    GFX_Message(NULL, "Track %d has no assigned instrument",tracknum);
     return -1;
   }
 
+  if (instrument_id >= 0){
+    if (track->patch->instrument != get_audio_instrument()){
+      RError("track->patch->instrument != get_audio_instrument()");
+    } else {
+      patch = getPatchFromNum(instrument_id);
+    }
+  }
+  
+  if (patch==NULL)
+    return -1;
+  
   int effect_num = 0;
   VECTOR_FOR_EACH(const char *name,patch->instrument->getFxNames(patch)){
     if (!strcmp(name, fx_name))
@@ -2712,21 +2733,23 @@ int createFx(float value, Place place, const char* fx_name, int tracknum, int bl
       effect_num++;
   }END_VECTOR_FOR_EACH;
 
-  RWarning("createFx: No effect \"%s\" in this track.", fx_name);
+  GFX_Message(NULL, "No effect \"%s\" for the instrument %s.", fx_name, patch->name);
   return -1;
 
  gotit:
   {
-    struct FX *fx = patch->instrument->createFX(track, effect_num);
+    struct FX *fx = patch->instrument->createFX(track, patch, effect_num);
 
-    if (fx==NULL)
+    if (fx==NULL){
+      printf("   FX returned NULL\n");
       return -1;
+    }
 
-    //printf("  1. p.line: %d, p.c: %d, p.d: %d\n",place.line,place.counter,place.dividor);
+    printf("  1. p.line: %d, p.c: %d, p.d: %d\n",place.line,place.counter,place.dividor);
 
     AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, value);
 
-    //printf("  2. p.line: %d, p.c: %d, p.d: %d\n",place.line,place.counter,place.dividor);
+    printf("  2. p.line: %d, p.c: %d, p.d: %d\n",place.line,place.counter,place.dividor);
         
     int num = 0;
 
@@ -2743,11 +2766,11 @@ int createFx(float value, Place place, const char* fx_name, int tracknum, int bl
   }
 }
 
-int createFxF(float value, float floatplace, const char* fx_name, int tracknum, int blocknum, int windownum){
+int createFxF(float value, float floatplace, const char* fx_name, int tracknum, int instrument_id, int blocknum, int windownum){
   Place place;
   Float2Placement(floatplace, &place);
 
-  return createFx(value, place, fx_name, tracknum, blocknum, windownum);
+  return createFx(value, place, fx_name, tracknum, instrument_id, blocknum, windownum);
 }
 
 static struct Node *get_fxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
@@ -2841,6 +2864,25 @@ const char* getFxName(int fxnum, int tracknum, int blocknum, int windownum){
   return fxs->fx->name;
 }
   
+int getFxInstrument(int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return -1;
+
+  if (wtrack->track->patch==NULL){
+    R_ASSERT("wtrack->track->patch==NULL");
+    return -1;
+  }
+
+  //if (wtrack->track->patch == fxs->fx->patch)
+  //  return -1;
+  
+  return fxs->fx->patch->id;
+}
+  
 char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){   
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -2867,9 +2909,11 @@ char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
 
   if (wtrack->track->patch->instrument==get_MIDI_instrument())
     snprintf(ret, 511, "%s: %d", fx->name, (int)val);
-  else
+  else if (fx->patch==wtrack->track->patch)
     snprintf(ret, 511, "%s: %.01f%%", fx->name, scale(val, fx->min, fx->max, 0, 100));
-
+  else
+    snprintf(ret, 511, "%s (%s): %.01f%%", fx->name, fx->patch->name, scale(val, fx->min, fx->max, 0, 100));
+  
   return ret;
 }
 
@@ -2953,7 +2997,7 @@ int createFxnode(float value, Place place, int fxnum, int tracknum, int blocknum
                           window,
                           wblock,
                           wtrack,
-                          fxs->fx->effect_num,
+                          fxs,
                           scale(value, 0,1, min, max),
                           &place
                           );

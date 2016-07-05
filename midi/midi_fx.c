@@ -420,10 +420,15 @@ static int init_fx(const struct Tracks *track,struct FX *fx, struct MIDI_FX *mid
 	return FX_SUCCESS;
 }
 
-struct FX *MIDI_createFX(const struct Tracks *track, int effect_num){
+struct FX *MIDI_createFX(const struct Tracks *track, struct Patch *patch, int effect_num){
   //RError("MIDI_getFxNames is not implemented. Expect the unexpected.");
 
-  struct Patch *patch = track->patch; // patch can not be NULL (we got instrument through track-patch)
+  R_ASSERT(track->patch==patch);
+
+  if (track->patch != patch)
+    patch = track->patch;
+  
+  //struct Patch *patch = track->patch; // patch can not be NULL (we got instrument through track-patch)
 
   struct MIDI_FX *midi_fx = &MIDI_fxs[effect_num];
         

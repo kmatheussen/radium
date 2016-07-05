@@ -144,7 +144,8 @@ bool Undo_Is_Currently_Ignoring(void){
 
 void ResetUndo(void){
   if (ignore()) {
-    R_ASSERT(ignore()==false);
+    if (ignore()==false)
+      RError("ignore_undo_operations_level < 0: %d",ignore_undo_operations_level);
     ignore_undo_operations_level = 0;
   }
 

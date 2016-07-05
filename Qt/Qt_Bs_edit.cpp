@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "EditorWidget.h"
 #include "Qt_colors_proc.h"
 
+#include "Qt_MyQButton.h"
+
 #include <qpushbutton.h>
 #include <qsplitter.h>
 #include <qapplication.h>
@@ -300,6 +302,24 @@ public:
     , blocklist(this, true)
     , last_shown_width(0) // frustrating: SETTINGS_read_int((char*)"blocklist_width",0))
   {
+    
+    QFont sansFont;
+
+    sansFont.fromString("Cousine,11,-1,5,75,0,0,0,0,0");
+    sansFont.setStyleName("Bold");
+    sansFont.setPointSize(QApplication::font().pointSize());
+        
+    blocklist.setFont(sansFont);
+    playlist.setFont(sansFont);
+
+    add_button.setFont(sansFont);
+    remove_button.setFont(sansFont);
+    move_down_button.setFont(sansFont);
+    move_up_button.setFont(sansFont);
+
+    add_button.setMaximumHeight(sansFont.pointSize()+5);
+    remove_button.setMaximumHeight(sansFont.pointSize()+5);
+
     button_width = add_button.width();
     button_height = add_button.height();
 
@@ -340,10 +360,17 @@ public:
     setWidgetColors(this);
 
     {
-      QFontMetrics fm(QApplication::font());
+      QFontMetrics fm(sansFont); //QApplication::font());
       int width = fm.width("0: 0/Pretty long name");
       setFixedWidth(width);
+
+      add_button.setMaximumWidth(width/2);
+      remove_button.setMaximumWidth(width/2);
+      move_down_button.setMaximumWidth(width/2);
+      move_up_button.setMaximumWidth(width/2);
     }
+
+    button_width = add_button.width();
   }
 
   void resizeEvent(QResizeEvent *qresizeevent){
@@ -365,11 +392,17 @@ public:
     MOVE_WIDGET(move_down_button);
     MOVE_WIDGET(move_up_button);
   }
-
+#if 0
   QPushButton add_button;
   QPushButton remove_button;
   QPushButton move_down_button;
   QPushButton move_up_button;
+#else
+  MyQButton add_button;
+  MyQButton remove_button;
+  MyQButton move_down_button;
+  MyQButton move_up_button;
+#endif
   QListBox playlist;
   QListBox blocklist;
 
@@ -526,9 +559,12 @@ void BS_UpdateBlockList(void){
   while(bs->blocklist.count()>0)
     bs->blocklist.removeItem(0);
 
+  int justify = log10(root->song->num_blocks) + 1;
+  printf("justify: %d\n", justify);
+  
   struct Blocks *block=root->song->blocks;
   while(block!=NULL){
-    bs->blocklist.insertItem(QString::number(block->l.num)+": "+QString(block->name));
+    bs->blocklist.insertItem(QString::number(block->l.num).rightJustified(justify, ' ')+": "+QString(block->name));
     block=NextBlock(block);
   }
 
@@ -548,8 +584,11 @@ void BS_UpdatePlayList(void){
   int lokke=0;
   struct Blocks *block=BL_GetBlockFromPos(lokke);
 
-  while(block!=NULL){
-    bs->playlist.insertItem(QString::number(lokke)+": "+QString::number(block->l.num)+"/"+QString(block->name));
+  int justify_playlist = log10(root->song->length) + 1;
+  int justify_blocklist = log10(root->song->num_blocks) + 1;
+    
+  while(block!=NULL){    
+    bs->playlist.insertItem(QString::number(lokke).rightJustified(justify_playlist, ' ')+": "+QString::number(block->l.num).rightJustified(justify_blocklist, ' ')+"/"+QString(block->name));
 
     lokke++;
     block=BL_GetBlockFromPos(lokke);

@@ -179,10 +179,11 @@ struct LatencyCompensatorDelay {
     for(int i=0 ; i<MIXER_get_buffer_size() ; i++)
       _output_sound[i] = 0.0f;
     
-    if (g_empty_sound==NULL)
+    if (g_empty_sound==NULL) {
       g_empty_sound = (float*)malloc(sizeof(float)*MIXER_get_buffer_size());
-    for(int i=0 ; i<MIXER_get_buffer_size() ; i++)
-      g_empty_sound[i] = 0.0f;
+      for(int i=0 ; i<MIXER_get_buffer_size() ; i++)
+        g_empty_sound[i] = 0.0f;
+    }
   }
   
   ~LatencyCompensatorDelay(){

@@ -1,5 +1,14 @@
 #ifdef FOR_WINDOWS
 
+/*
+Links to check out:
+https://bitbucket.org/edd/dbg/commits/all
+https://github.com/rainers/cv2pdb
+https://github.com/jrfonseca/drmingw
+
+Blog post from another guy doing backtraces and catching exceptions in lin/mingw/osx: https://spin.atomicobject.com/2013/01/13/exceptions-stack-traces-c/
+*/
+
 #include <windows.h>
 #include <excpt.h>
 #include <imagehlp.h>

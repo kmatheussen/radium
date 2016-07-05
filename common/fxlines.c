@@ -304,6 +304,13 @@ enum ColorNums newFXColor(void){
 }
 #endif
 
+static const char *get_track_fx_display_name(struct Tracks *track, struct FX *fx){
+  if (track->patch==fx->patch)
+    return fx->name;
+  else
+    return talloc_format("%s (%s)", fx->name, fx->patch->name);
+}
+
 static struct FX *selectFX(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -325,7 +332,7 @@ static struct FX *selectFX(
           int lokke;
           vector_t v={0};
           for(lokke=0;lokke<num_usedFX;lokke++)
-            VECTOR_push_back(&v,getTrackFX(track,lokke)->name);
+            VECTOR_push_back(&v,get_track_fx_display_name(wtrack->track, getTrackFX(track,lokke)));
 
 #if 0
           for(lokke=0;lokke<10000;lokke++)
@@ -353,27 +360,15 @@ static struct FX *selectFX(
 	return fx;
 }
 
-// TODO: Replace all (i.e. "the") use of find_fxs with get_fxs_for_fx. Need patch as well to identifiy fxs.
-static inline struct FXs *find_fxs(vector_t *fxss, int fxnum){
-  VECTOR_FOR_EACH(struct FXs *fxs, fxss){
-    if (fxs->fx->effect_num==fxnum)
-      return fxs;
-  }END_VECTOR_FOR_EACH;
-
-  RError("Unable to find fxnum %d", fxnum);
-  return fxss->elements[0];
-}
-
 
 int AddFXNodeLine(
                   struct Tracker_Windows *window,
                   struct WBlocks *wblock,
                   struct WTracks *wtrack,
-                  int fxnum,
+                  struct FXs *fxs,
                   int val,
                   const Place *p1
 ){
-        struct FXs *fxs=find_fxs(&wtrack->track->fxs, fxnum);
 	struct FXNodeLines *fxnodeline=talloc(sizeof(struct FXNodeLines));
 
         int ret;
@@ -440,11 +435,15 @@ static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct 
           }
 
           AddNewTypeOfFxNodeLine(window, wblock, wtrack, fx, &p2, val);
+
+          fxs=get_fxs_for_fx(wtrack->track, fx);
+
+          R_ASSERT_RETURN_IF_FALSE(fxs!=NULL);
         }
 
 	AddFXNodeLine(
                       window,wblock,wtrack,
-                      fx->effect_num,
+                      fxs,
                       val,
                       &p1
                       );

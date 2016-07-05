@@ -38,7 +38,7 @@ const char *OS_get_directory_separator(void){
   static bool is_inited = false;
 
   if(is_inited==false){
-    ret[0] = QDir::separator().toAscii();
+    ret[0] = QString(QDir::separator()).toUtf8()[0];
     is_inited=true;
   }
 
@@ -172,13 +172,24 @@ bool OS_config_key_is_color(const char *key){
 static QDir get_dot_radium_dir(int *error){
   *error = 0;
 
+#ifdef USE_QT5
+  QString home_path = QDir::homePath();
+#else
   QString home_path = QDesktopServices::storageLocation(QDesktopServices::HomeLocation);
+#endif
 
-  QFileInfo info(home_path);
+  {
+    QFileInfo info(home_path);
 
-  if(info.exists()==false)
-    home_path = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
-
+    if(info.exists()==false){
+#ifdef USE_QT5
+      home_path = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+#else
+      home_path = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+#endif
+    }
+  }
+  
   QDir dir(home_path);
 
   if(dir.mkpath(".radium")==false){

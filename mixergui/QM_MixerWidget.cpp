@@ -917,7 +917,7 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
   float mouse_x = pos.x();
   float mouse_y = pos.y();
 
-  QGraphicsItem *item = itemAt(event->scenePos());
+  QGraphicsItem *item = itemAt(event->scenePos(), QTransform());
 
   printf("mouse button: %d %d\n",event->button(),Qt::MiddleButton);
 

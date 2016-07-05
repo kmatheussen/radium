@@ -14,9 +14,17 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+//#include <QtWebKitWidgets/QWebView>
+
 #include <QScrollArea>
+
+#if USE_QT5
+#include <QWebEngineView>
+#include <QWebEnginePage>
+#else
 #include <QWebView>
 #include <QWebFrame>
+#endif
 
 #include <Qsci/qscilexerjava.h>
 #include <Qsci/qscilexercpp.h>
@@ -49,15 +57,23 @@ public:
 
 #include "Qt_faust_plugin_widget.h"
 
-struct FaustResultWebView : public QWebView{
+struct FaustResultWebView
+#ifdef USE_QT5
+  : public QWebEngineView
+#else
+  : public QWebView
+#endif
+{
 
-  int org_height, org_width;
   bool is_dragging;
   bool was_dragging;
   
   FaustResultWebView(QWidget *parent)
+#ifdef USE_QT5
+    : QWebEngineView(parent)
+#else
     : QWebView(parent)
-    , org_height(-10000)
+#endif
     , is_dragging(false)
   {}
 
@@ -65,50 +81,66 @@ struct FaustResultWebView : public QWebView{
   QPoint start_scrollPos;
 
   void setPointer(QMouseEvent * event) {
+#ifndef USE_QT5
     QWebFrame *frame = page()->mainFrame();
-      
+    
     bool is_in_scrollbar = frame->scrollBarGeometry(Qt::Vertical).contains(event->pos());
 
     is_in_scrollbar = is_in_scrollbar || frame->scrollBarGeometry(Qt::Horizontal).contains(event->pos());
     
     if (!is_in_scrollbar)
+#endif
       setCursor(Qt::OpenHandCursor);
   }
   
   void mouseMoveEvent(QMouseEvent * event) override {
     if (is_dragging){
+#ifndef USE_QT5
       QPoint pos = event->pos();
 
       QPoint delta = start - pos;
-
       page()->mainFrame()->setScrollPosition(start_scrollPos + delta);
-
+#endif
       was_dragging = true;
 
       event->accept();
 
     } else {
 
+#ifdef USE_QT5
+      QWebEngineView::mouseMoveEvent(event);
+#else
       QWebView::mouseMoveEvent(event);
-
+#endif
+      
       if (cursor().shape() == Qt::ArrowCursor)
         setPointer(event);      
     }
   }
   
   void mousePressEvent(QMouseEvent * event) override {
+#ifndef USE_QT5
     QWebFrame *frame = page()->mainFrame();
 
-    printf("mouse: %d,%d. geo: %d,%d -> %d, %d\n", start.x(), start.y(), frame->scrollBarGeometry(Qt::Vertical).x(), frame->scrollBarGeometry(Qt::Vertical).y(), frame->scrollBarGeometry(Qt::Vertical).width(), frame->scrollBarGeometry(Qt::Vertical).height());
+    printf("mouse: %d,%d. geo: %d,%d -> %d, %d\n",
+           start.x(), start.y(),
+           frame->scrollBarGeometry(Qt::Vertical).x(), frame->scrollBarGeometry(Qt::Vertical).y(),
+           frame->scrollBarGeometry(Qt::Vertical).width(), frame->scrollBarGeometry(Qt::Vertical).height()
+           );
 
     bool is_in_scrollbar = frame->scrollBarGeometry(Qt::Vertical).contains(event->pos());
-
+    
     is_in_scrollbar = is_in_scrollbar || frame->scrollBarGeometry(Qt::Horizontal).contains(event->pos());
+#else
+    bool is_in_scrollbar = false;
+#endif
     
     if (!is_in_scrollbar){
       
       start = event->pos();
+#ifndef USE_QT5
       start_scrollPos = frame->scrollPosition();
+#endif
       is_dragging = true;
       was_dragging = false;
 
@@ -120,8 +152,12 @@ struct FaustResultWebView : public QWebView{
       is_dragging = false;
       was_dragging = false;
     }
-    
+
+#ifdef USE_QT5
+    QWebEngineView::mousePressEvent(event);
+#else
     QWebView::mousePressEvent(event);
+#endif
   }
 
   void mouseReleaseEvent(QMouseEvent * event) override {
@@ -130,18 +166,17 @@ struct FaustResultWebView : public QWebView{
     if (was_dragging) {
       event->accept();
     } else {
+#ifdef USE_QT5
+      QWebEngineView::mouseReleaseEvent(event);
+#else
       QWebView::mouseReleaseEvent(event);
+#endif
     }
 
     setPointer(event);
   }
 
   void wheelEvent(QWheelEvent *qwheelevent) override {
-    if (org_height==-10000){
-      org_height = page()->viewportSize().height();
-      org_width = page()->viewportSize().width();
-    }
-    
     if (qwheelevent->modifiers() & Qt::ControlModifier){
       float zoom = zoomFactor();      
       float newzoom;
@@ -154,25 +189,24 @@ struct FaustResultWebView : public QWebView{
         newzoom = 1.0;
 
       if (newzoom > 0.05) {
-        /*
-        QSize size(org_width, org_height);
-        size.scale(org_width*newzoom, org_height*newzoom,  Qt::IgnoreAspectRatio);
-        resize(size);
-        page()->setViewportSize(size);
-        scroll_area->widget()->resize(size.width(), scroll_area->widget()->height());
-        */
+#ifdef USE_QT5
+        page()->setZoomFactor(newzoom);
+#else
         page()->mainFrame()->setZoomFactor(newzoom);
+#endif
       }
     } else {
+#ifndef USE_QT5
       Qt::Orientation orientation;
       
       if (qwheelevent->modifiers() & Qt::ShiftModifier)
         orientation = Qt::Horizontal;
       else
         orientation = Qt::Vertical;
-          
+
       page()->mainFrame()->setScrollBarValue(orientation, page()->mainFrame()->scrollBarValue(orientation) - qwheelevent->delta()/5);
       //scroll_area->wheelEvent(qwheelevent);
+#endif
     }
   }
 };
@@ -324,7 +358,9 @@ public:
   QLabel *_faust_compilation_status;
   struct Patch *_patch;
   FaustResultWebView *web;
+#ifndef USE_QT5
   QWebFrame *_last_web_frame;
+#endif
   QString _web_text;
   float _svg_zoom_factor;
   float _error_zoom_factor;
@@ -361,7 +397,9 @@ public:
     , parent(parent)
     , _faust_compilation_status(faust_compilation_status)
     , _patch(patch)
+#ifndef USE_QT5
     , _last_web_frame(NULL)
+#endif
     , _svg_zoom_factor(1.0)
     , _error_zoom_factor(1.0)
     , _size_type(SIZETYPE_NORMAL)
@@ -428,10 +466,14 @@ public:
     web->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(FAUST_get_svg_path(plugin))));
     printf("    URL: -%s-. native: -%s-, org: -%s-\n",web->url().toString().toUtf8().constData(), QDir::fromNativeSeparators(FAUST_get_svg_path(plugin)).toUtf8().constData(), FAUST_get_svg_path(plugin).toUtf8().constData());
 
+#ifndef USE_QT5
     _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
     _last_web_frame->setZoomFactor(0.5);
     _last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOn); // The faust editor always has a scroll bar, so it looks strange without it here as well.
-
+#else
+    web->page()->setZoomFactor(0.5);
+#endif
+    
     //_faust_editor->setText(FAUST_get_code(plugin));
     //_faust_editor->zoomIn(10);
 
@@ -550,8 +592,9 @@ public:
         
         web->setHtml(_web_text);
         web->setZoomFactor(_error_zoom_factor);
-        
+#ifndef USE_QT5
         _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
+#endif
         
       } else if (status==Faust_Success){
         _faust_compilation_status->setText("Ready ");
@@ -569,8 +612,9 @@ public:
         web->setZoomFactor(_svg_zoom_factor);
                 
         printf("    URL: -%s-. native: -%s-, org: -%s-\n",web->url().toString().toUtf8().constData(), QDir::fromNativeSeparators(FAUST_get_svg_path(plugin)).toUtf8().constData(), FAUST_get_svg_path(plugin).toUtf8().constData());
+#ifndef USE_QT5
         _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
-        
+#endif
         PluginWidget *old = _plugin_widget;
         _plugin_widget=PluginWidget_create(this, _patch);
 
@@ -673,15 +717,17 @@ public:
     
     // Change vertical scroll bar policy (not easy...)
     {
+#ifndef USE_QT5
       _last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOff);
-      
+#endif
       if (showing_svg())
         web->reload();
       else
         web->setHtml(_web_text);
-      
+#ifndef USE_QT5
       _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
       _last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAsNeeded);
+#endif
     }
     
     faust_webview_widget->setUpdatesEnabled(false);
@@ -699,9 +745,9 @@ public:
   void set_small(void){
     _size_type = SIZETYPE_NORMAL;
     //_is_large = false;
-
+#ifndef USE_QT5
     _last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOn);
-    
+#endif
     set_max_heights(_initial_height);
 
     faust_interface_layout_radium->insertWidget(0, _plugin_widget);

@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifdef USE_QT4
 //Added by qt3to4:
-#include <QCustomEvent>
+//#include <QCustomEvent>
 #include <QCloseEvent>
 #include <QWheelEvent>
 #include <QPaintEvent>
@@ -477,14 +477,18 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
     return;
 
   tevent.ID = getMouseButtonEventID(qmouseevent);
-  tevent.x  = qmouseevent->posF().x();//-XOFFSET;
-  tevent.y  = qmouseevent->posF().y();//-YOFFSET;
-
+#if USE_QT5
+  tevent.x  = qmouseevent->localPos().x();
+  tevent.y  = qmouseevent->localPos().y();
+#else
+  tevent.x  = qmouseevent->posF().x();
+  tevent.y  = qmouseevent->posF().y();
+#endif
   currentButton = tevent.ID;
 
   //printf("> Got mouse press %d %d\n",tevent.x,tevent.y);
 
-  if (SCHEME_mousepress(currentButton, qmouseevent->posF().x(), qmouseevent->posF().y())==false) {
+  if (SCHEME_mousepress(currentButton, tevent.x, tevent.y)==false) {
 
     EventReciever(&tevent,this->window);
 
@@ -506,13 +510,18 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
     return;
 
   tevent.ID=TR_MOUSEMOVE;
-  tevent.x=qmouseevent->posF().x();//-XOFFSET;
-  tevent.y=qmouseevent->posF().y();//-YOFFSET;
+#if USE_QT5
+  tevent.x  = qmouseevent->localPos().x();
+  tevent.y  = qmouseevent->localPos().y();
+#else
+  tevent.x  = qmouseevent->posF().x();
+  tevent.y  = qmouseevent->posF().y();
+#endif
 
   //Qt::ButtonState buttonstate=qmouseevent->state();
   //printf("************** buttonstate: %d, %d, %d\n",getMouseButtonEventID(qmouseevent),buttonstate,tevent.keyswitch);
 
-  if (SCHEME_mousemove(currentButton, qmouseevent->posF().x(), qmouseevent->posF().y())==false)
+  if (SCHEME_mousemove(currentButton, tevent.x, tevent.y)==false)
     EventReciever(&tevent,this->window);
 
   //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
@@ -535,11 +544,16 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
       tevent.ID=TR_MIDDLEMOUSEUP;
     }
   }
-  tevent.x=qmouseevent->posF().x();//-XOFFSET;
-  tevent.y=qmouseevent->posF().y();//-YOFFSET;
+#if USE_QT5
+  tevent.x  = qmouseevent->localPos().x();
+  tevent.y  = qmouseevent->localPos().y();
+#else
+  tevent.x  = qmouseevent->posF().x();
+  tevent.y  = qmouseevent->posF().y();
+#endif
 
   //printf("< Got mouse release %d %d\n",tevent.x,tevent.y);
-  if (SCHEME_mouserelease(currentButton, qmouseevent->posF().x(), qmouseevent->posF().y())==false)
+  if (SCHEME_mouserelease(currentButton, tevent.x, tevent.y)==false)
     EventReciever(&tevent,this->window);
 
   currentButton = 0;

@@ -536,8 +536,7 @@ static const char *get_effect_name_without_digit_prefix(const char *name){
   return NULL;
 }
 
-// General function which must be called after loading an effect. Returns the new name if the name has changed name.
-const char *PLUGIN_get_new_name_if_name_has_changed(struct SoundPlugin *plugin, const char *effect_name){
+static const char *get_new_name_if_name_has_changed2(struct SoundPlugin *plugin, const char *effect_name){
   const struct SoundPluginType *plugin_type = plugin->type;
   
   int i;
@@ -561,8 +560,35 @@ const char *PLUGIN_get_new_name_if_name_has_changed(struct SoundPlugin *plugin, 
       return name;
   }
 
+  return NULL;
+}
+  
+// General function that must be called after loading an effect. Returns the new name if the name has changed since the song was saved.
+const char *PLUGIN_get_new_name_if_name_has_changed(struct SoundPlugin *plugin, const char *effect_name){
+
+  {
+    const char *name = get_new_name_if_name_has_changed2(plugin, effect_name);
+    if (name!=NULL)
+      return name;
+  }
+      
+  // Check if this is a foreign effect that was saved with the instrument name appended inside paranthesis, e.g. "Pitch (Goat sound 5)". (we don't do that anymore)
+  QString name = effect_name;
+  if (name.endsWith(")")){
+    int index = name.lastIndexOf("(");
+    if (index > 0){
+      name = name.left(index-1);
+      printf("\n\n\n   Cut name: -%s-\n\n",name.toUtf8().constData());
+      const char *name2 = get_new_name_if_name_has_changed2(plugin, talloc_strdup(name.toUtf8().constData()));
+      if (name2!=NULL)
+        return strdup(name2); // Guess we could use talloc_strdup here, but I'm not sure, and the memory leak doesn't matter.
+    }
+  }
+  
+  
+  
 #ifndef RELEASE
-  RWarning("\n\n\n   1. ************ WARNING! Effect \"%s\" not found in plugin %s/%s ************\n\n\n",effect_name,plugin_type->type_name,plugin_type->name);
+  RWarning("\n\n\n   1. ************ WARNING! Effect \"%s\" not found in plugin %s/%s ************\n\n\n",effect_name,plugin->type->type_name,plugin->type->name);
 #endif
   
   return effect_name;
