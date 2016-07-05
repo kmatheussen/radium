@@ -93,7 +93,7 @@ then
 else
     CFLAGS="$MYFLAGS" CPPFLAGS="$MYFLAGS" CXX="g++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="g++ $MYFLAGS" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DVL_GUI_QT5_SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
 fi
-VERBOSE=1 make -j2
+VERBOSE=1 make -j `nproc`
 cd ..
 
 
@@ -156,7 +156,7 @@ export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g"
 export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g"
 export LDFLAGS="-fsanitize=address"
 cd faust2
-make -j8
+make -j `nproc`
 mv compiler/libfaust.a libfaust_debug.a
 make clean
 cd ..
@@ -167,7 +167,7 @@ export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g"
 export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g"
 export LDFLAGS=""
 cd faust2
-make -j8
+make -j `nproc`
 mv libfaust_debug.a compiler/
 cd ..
 
@@ -178,7 +178,7 @@ cd QScintilla_gpl-2.9.2/Qt4Qt5/
 echo "CONFIG += staticlib" >> qscintilla.pro
 `../../../../find_moc_and_uic_paths.sh qmake`
 patch -p0 <../../qscintilla.patch
-make -j8
+make -j `nproc`
 cd ../..
 
 
