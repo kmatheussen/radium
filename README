@@ -8,9 +8,9 @@ HOW TO MAKE IT RUN
           2. Do this:
 
           "
-          touch audio/*.cpp common/gfx_op_queue_generated.c common/visual_op_queue_proc.h
+          export RADIUM_QT_VERSION=4 
           make packages
-          BUILDTYPE=RELEASE RADIUM_QT_VERSION=4 ./build_linux.sh -j7
+          BUILDTYPE=RELEASE ./build_linux.sh -j7
           bin/radium
           "
 
@@ -19,11 +19,7 @@ HOW TO MAKE IT RUN
 
 IF YOU GOT THE SOURCE FROM GIT
 
-   In general, after a git clone, you must also do:
-
-          touch audio/*.cpp common/gfx_op_queue_generated.c common/visual_op_queue_proc.h
-
-   And after a git pull, you must (i.e. sometimes have to) do:
+     After a git pull, you sometime have to do:
           make very_clean
 
      (since not all dependencies are tracked in the makefile)
