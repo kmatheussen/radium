@@ -150,23 +150,8 @@ if(block==NULL) return;
 
 	DLoadTracks(newroot,block->tracks);
 
-        GL_lock();{
-          GL_pause_gl_thread_a_short_while();
-        }GL_unlock();
-        
-        PLAYER_lock();{
-          //GL_draw_lock();{
-          temp=root;
-          root=newroot;
-        }PLAYER_unlock();
-        GL_draw_lock();{
-          UpdateSTimes(block);
-          UpdateBeats(block);
-        }GL_draw_unlock();
-        PLAYER_lock();{
-          root=temp;
-          //}GL_draw_unlock();
-        }PLAYER_unlock();
+        UpdateSTimes2(block, newroot->tempo, newroot->lpb);
+        UpdateBeats2(block, newroot->signature, newroot->lpb);
         
 DLoadBlocks(newroot,NextBlock(block));
 }

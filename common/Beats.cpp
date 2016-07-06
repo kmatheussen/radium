@@ -29,10 +29,10 @@ namespace{
   struct LPBHolder{
     LPBs root_lpb;
     LPBs *lpb;
-    LPBHolder(Blocks *block) {
+    LPBHolder(Blocks *block, int default_lpb) {
       root_lpb.l.next = (ListHeader3*)block->lpbs;
       root_lpb.l.p = place(0,0,1);
-      root_lpb.lpb = root->lpb;
+      root_lpb.lpb = default_lpb;
       lpb = &root_lpb;
     }
 
@@ -65,16 +65,16 @@ static Place get_beat_length_in_measurement(Ratio signature, int lpb){
 }
 
 
-static struct Beats *Beats_get(struct Blocks *block){
+static struct Beats *Beats_get(struct Blocks *block, Ratio default_signature, int default_lpb){
   Beats *beats = NULL;
 
   int bar_num = 1;
   
   Signatures first;
   first.l.p = place(0,0,1);
-  first.signature = root->signature;
+  first.signature = default_signature;
 
-  LPBHolder lpb_holder(block);
+  LPBHolder lpb_holder(block, default_lpb);
   
   Signatures *signature = &first;
   
@@ -133,10 +133,14 @@ static struct Beats *Beats_get(struct Blocks *block){
   return beats;
 }
 
-void UpdateBeats(struct Blocks *block){
+void UpdateBeats2(struct Blocks *block, Ratio default_signature, int default_lpb){
   PC_Pause();{
-    block->beats = Beats_get(block);
+    block->beats = Beats_get(block, default_signature, default_lpb);
   }PC_StopPause(NULL);
+}
+
+void UpdateBeats(struct Blocks *block){
+  UpdateBeats2(block, root->signature, root->lpb);
 }
 
 void UpdateAllBeats(void){
