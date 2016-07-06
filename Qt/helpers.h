@@ -3,6 +3,7 @@
 
 #include <QMessageBox>
 #include <QMenu>
+#include <QTimer>
 
 #include "../OpenGL/Widget_proc.h"
 #include "../common/keyboard_focus_proc.h"
@@ -11,16 +12,37 @@
 
 extern bool radium_runs_custom_exec;
 
-class RememberGeometryQDialog : public QDialog{
+class RememberGeometryQDialog : public QDialog {
 
   QByteArray geometry;
   bool has_stored_geometry;
 
+  
+  struct Timer : public QTimer {
+    QWidget *parent;
+    Timer(QWidget *parent)
+      :parent(parent)
+    {
+      setInterval(200);
+      start();      
+    }
+    void timerEvent ( QTimerEvent * e ){
+      //printf("Raising parent\n");
+      if (parent->isVisible())
+        parent->raise();
+    }
+  };
+  
+
+  Timer timer;
+  
 public:
   RememberGeometryQDialog(QWidget *parent)
     : QDialog(parent)
     , has_stored_geometry(false)
+    , timer(this)
   {
+    setWindowFlags(Qt::WindowStaysOnTopHint);
   }
 
   void setVisible(bool visible) override {      
@@ -40,7 +62,6 @@ public:
     
     QDialog::setVisible(visible);    
   }
-
 };
 
 struct GL_PauseCaller{

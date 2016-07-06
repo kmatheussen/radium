@@ -498,8 +498,10 @@ public slots:
   }
 
   void on_eraseEstimatedVBlankInterval_clicked(){
-    printf("erasing\n");
-    GL_erase_estimated_vblank();
+    if (_initing==false){
+      printf("erasing\n");
+      GL_erase_estimated_vblank();
+    }
   }
 
   void on_vsyncOnoff_toggled(bool val){

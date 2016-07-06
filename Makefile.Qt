@@ -365,8 +365,13 @@ uninstall:
 
 run-gdb:
 #	./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals QT_FATAL_WARNINGS=1 gdb ./radium
-#	./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals gdb ./radium # QT_FATAL_WARNINGS=1 doesn't work so well with qt5 for now.
-	./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals gdb QT_DEBUG_PLUGINS=1 QT_FATAL_WARNINGS=1 ./radium
+	./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals gdb ./radium # [1]
+#	./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals gdb QT_DEBUG_PLUGINS=1 QT_FATAL_WARNINGS=1 ./radium
+
+# [1]
+# QT_FATAL_WARNINGS=1 doesn't work so well with qt5/linux right now. Getting
+# "QXcbConnection: XCB error: 3 (BadWindow), sequence: 14219, resource id: 8795562, major code: 40 (TranslateCoords), minor code: 0"
+# when closing dialogs. (In qt4 it can crash when we open dialogs, now it's when closing dialogs. However, in qt4 it was known why this happened (opengl race condition in qt).)
 
 #./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals QT_FATAL_WARNINGS=1 gdb -e ./radium -x ../gakk
 #	make -j3 && cd bin && G_DEBUG=fatal-criticals QT_FATAL_WARNINGS=1 gdb --args $(PYTHONEXE) start.py keybindings.conf && cd ..          
@@ -1206,7 +1211,7 @@ Qt_comment_dialog.o: $(BUILD_DEPENDENCIES) $(P)Qt_comment_dialog_callbacks.h $(P
 
 
 
-Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h $(API)radium_proc.h common/visual_proc.h Qt/Qt_vst_paths_widget_callbacks.h
+Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h $(API)radium_proc.h common/visual_proc.h Qt/Qt_vst_paths_widget_callbacks.h Qt/helpers.h
 	$(CCC) $(P)Qt_preferences_callbacks.cpp $(QTOPT)
 
 $(P)Qt_preferences.h: $(BUILD_DEPENDENCIES) $(P)qt4_preferences.ui $(P)Qt_preferences_callbacks.cpp

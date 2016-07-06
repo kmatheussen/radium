@@ -14,11 +14,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-//#include <QtWebKitWidgets/QWebView>
-
 #include <QScrollArea>
 
-#define USE_QWEBENGINE 0
+#if USE_QT5
+  #define USE_QWEBENGINE 1
+#else
+  #define USE_QWEBENGINE 0 // Can not be 1.
+#endif
+
 
 #if USE_QWEBENGINE
 
