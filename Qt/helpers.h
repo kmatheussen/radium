@@ -17,8 +17,11 @@ class RememberGeometryQDialog : public QDialog {
   QByteArray geometry;
   bool has_stored_geometry;
 
+  static int num_open_dialogs;
   
   struct Timer : public QTimer {
+    bool was_visible = false;
+    
     QWidget *parent;
     Timer(QWidget *parent)
       :parent(parent)
@@ -26,9 +29,28 @@ class RememberGeometryQDialog : public QDialog {
       setInterval(200);
       start();      
     }
+
+    ~Timer(){
+      if (was_visible)
+        RememberGeometryQDialog::num_open_dialogs--;
+    }
+      
+
     void timerEvent ( QTimerEvent * e ){
       //printf("Raising parent\n");
-      if (parent->isVisible())
+      bool is_visible = parent->isVisible();
+      
+      if(is_visible && !was_visible) {
+        was_visible = true;
+        RememberGeometryQDialog::num_open_dialogs++;
+      }
+          
+      if(!is_visible && was_visible) {
+        was_visible = false;
+        RememberGeometryQDialog::num_open_dialogs--;
+      }
+          
+      if (is_visible && RememberGeometryQDialog::num_open_dialogs==1)
         parent->raise();
     }
   };
