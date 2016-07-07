@@ -199,7 +199,8 @@ namespace cvs{
       }
 
       p->drawText(rect.x1,rect.y1,rect.width(),rect.height(),
-                  Qt::AlignTop|Qt::AlignLeft,
+                  //Qt::AlignTop
+                  Qt::AlignVCenter|Qt::AlignLeft,
                   QString::fromStdString(text));
     }
 
