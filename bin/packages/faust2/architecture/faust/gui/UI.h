@@ -31,6 +31,15 @@
 #define FAUSTFLOAT float
 #endif
 
+
+#if defined(_WIN32)
+  // Windows often have some variation of this line in the include files: "#define interface struct".
+  #ifdef interface 
+    #undef interface 
+  #endif
+#endif
+
+
 /*******************************************************************************
  * UI : Faust User Interface
  * This abstract class contains only the method that the faust compiler can

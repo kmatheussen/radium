@@ -21,7 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Rational.h"
 
-#ifndef USE_QT4
+#ifdef USE_QT5
+#include <QStyleFactory>
+#else
 #include <QCleanlooksStyle>
 #endif
 
@@ -41,8 +43,12 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
   {
     setupUi(this);
     
-#ifndef USE_QT4
-    setStyle(new QCleanlooksStyle);
+#ifdef USE_QT5
+    QStyle *style = QStyleFactory::create("fusion");
+    if (style!=NULL)
+      setStyle(style);
+#else
+      setStyle(new QCleanlooksStyle);
 #endif
     
     // Set up custom popup menues for the time widgets

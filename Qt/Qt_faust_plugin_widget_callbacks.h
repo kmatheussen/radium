@@ -17,7 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QScrollArea>
 
 #if USE_QT5
-  #define USE_QWEBENGINE 1
+  #define USE_QWEBENGINE 0
 #else
   #define USE_QWEBENGINE 0 // Can not be 1.
 #endif

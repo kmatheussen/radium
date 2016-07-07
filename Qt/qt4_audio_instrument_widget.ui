@@ -110,7 +110,7 @@
         <number>0</number>
        </property>
        <item row="0" column="0">
-        <layout class="QHBoxLayout" name="effects_layout">
+        <layout class="QHBoxLayout" name="effects_layout" stretch="2,1,1,1,1,1,2,2">
          <property name="spacing">
           <number>6</number>
          </property>
@@ -522,7 +522,7 @@
           <widget class="QLabel" name="pipe_label">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-             <horstretch>1</horstretch>
+             <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
@@ -795,7 +795,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QWidget" name="widget" native="true">
+          <widget class="QWidget" name="varioussliderswidget" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
              <horstretch>0</horstretch>

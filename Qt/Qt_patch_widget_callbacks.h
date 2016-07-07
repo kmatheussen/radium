@@ -20,7 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_patch_widget.h"
 
-#ifndef USE_QT5
+#ifdef USE_QT5
+#include <QStyleFactory>
+#else
 #include <QCleanlooksStyle>
 #endif
 
@@ -36,6 +38,27 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 #ifndef USE_QT5
   QCleanlooksStyle _cleanlooksStyle;
 #endif
+
+  void setStyleRec(QWidget *widget, QStyle *style){
+    widget->setStyle(style);
+    
+    const QList<QObject*> list = widget->children();
+
+    for(auto *element : list){
+
+#if USE_QT5
+#if FOR_WINDOWS // Why can't qt make widgets look the same on all platform?
+      QHBoxLayout *h = dynamic_cast<QHBoxLayout*>(element);
+      if (h != NULL)
+        h->setSpacing(0);
+#endif
+#endif
+      
+      QWidget *widget = dynamic_cast<QWidget*>(element);
+      if(widget!=NULL)
+        setStyleRec(widget, style);
+    }
+  }
   
   Patch_widget(QWidget *parent, struct Patch *patch)
     : QWidget(parent)
@@ -48,18 +71,45 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       GL_pause_gl_thread_a_short_while(); // might fix [1] crash
     }GL_unlock();
     */
+
     setupUi(this);
+
+#ifdef USE_QT5
+#if FOR_WINDOWS // %!$%!#$
+    main_vertical_layout->setSpacing(3);
+#endif
+#endif
+    
+#ifdef USE_QT5
+    static bool have_failed = false;
+    static QStyle *style = QStyleFactory::create("cleanlooks");
+
+    //GFX_Message(NULL, QStyleFactory::keys().join(", ").toUtf8().constData());
+    
+    if (have_failed == false){
+      if (style==NULL){
+        GFX_Message(NULL, "Unable to load cleanlooks style");
+        have_failed = true;
+      }else
+        setStyle(style);
+    }
+#else
+    QStyle *style = &_cleanlooksStyle;
+#endif
+    
+    if (style != NULL){
+      setStyleRec(this, style);
+#if 0
+      get_t(i)->setStyle(style);
+      get_v(i)->setStyle(style);
+      get_s(i)->setStyle(style);
+      get_l(i)->setStyle(style);
+      get_c(i)->setStyle(style);
+#endif
+    }
 
     for(int i=0;i<NUM_PATCH_VOICES;i++){
       
-#ifndef USE_QT5
-      get_t(i)->setStyle(&_cleanlooksStyle);
-      get_v(i)->setStyle(&_cleanlooksStyle);
-      get_s(i)->setStyle(&_cleanlooksStyle);
-      get_l(i)->setStyle(&_cleanlooksStyle);
-      get_c(i)->setStyle(&_cleanlooksStyle);
-#endif
-
       set_fixed_widget_width(get_o(i), "xx");    // onoff
       set_fixed_widget_width(get_t(i), "-24.00 "); // transpose
       set_fixed_widget_width(get_v(i), "-35 "); // volume
@@ -87,7 +137,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 
   void set_fixed_widget_width(QWidget *widget, QString text){
     QFontMetrics fm(font());
-    int width = fm.width(text);
+    int width = fm.width(text) + 2;
     widget->setFixedWidth(width);
     widget->setMinimumWidth(width);
     widget->setMaximumWidth(width);

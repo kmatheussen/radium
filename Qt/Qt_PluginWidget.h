@@ -17,6 +17,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QToolButton>
 #include <QString>
+#ifdef USE_QT5
+#include <QStyleFactory>
+#endif
 
 #include "../common/OS_Player_proc.h"
 #include "../common/Vector.hpp"
@@ -54,6 +57,7 @@ class ParamWidget : public QWidget{
     , _can_update_effect_value(false)
     , _size_type(SIZETYPE_NORMAL)
     {
+      
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       const SoundPluginType *type  = plugin->type;
       _type = type;
@@ -330,7 +334,14 @@ struct PluginWidget : public QWidget{
   PluginWidget(QWidget *parent)
     : QWidget(parent)
     , _num_rows(0)
-  {}
+  {
+#ifdef USE_QT5
+    static QStyle *style_ = QStyleFactory::create("fusion");
+    if (style_!=NULL)
+      setStyle(style_);
+#endif
+  }
+
 
   void set_automation_value_pointers(SoundPlugin *plugin){
     for(ParamWidget *paramWidget : _param_widgets){

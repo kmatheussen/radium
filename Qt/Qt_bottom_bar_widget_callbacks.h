@@ -28,7 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_MyQSpinBox.h"
 #include <QTimer>
 
-#ifndef USE_QT5
+#ifdef USE_QT5
+#include <QStyleFactory>
+#else
 #include <QCleanlooksStyle>
 #endif
 
@@ -121,7 +123,11 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   {
     _initing = true;
     setupUi(this);
-#ifndef USE_QT5
+#ifdef USE_QT5
+    QStyle *style = QStyleFactory::create("fusion");
+    if (style!=NULL)
+      setStyle(style);
+#else
     setStyle(new QCleanlooksStyle());
 #endif
     

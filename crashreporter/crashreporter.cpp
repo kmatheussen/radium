@@ -251,7 +251,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     box.setWindowModality(Qt::ApplicationModal);
 
 #ifdef FOR_WINDOWS
-    HWND wnd=box.winId();
+    HWND wnd=(HWND)box.winId();
     SetFocus(wnd);
     SetWindowPos(wnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
 #endif
@@ -394,11 +394,11 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
 
 #if defined(FOR_WINDOWS)
 
-  char *p = strdup(program.toAscii());
-  char *a1 = strdup(arg1.toAscii());
-  char *a2 = strdup(arg2.toAscii());
-  char *a3 = strdup(arg3.toAscii());
-  char *a4 = strdup(arg4.toAscii());
+  char *p = strdup(program.toUtf8().constData());
+  char *a1 = strdup(arg1.toUtf8().constData());
+  char *a2 = strdup(arg2.toUtf8().constData());
+  char *a3 = strdup(arg3.toUtf8().constData());
+  char *a4 = strdup(arg4.toUtf8().constData());
 
   if(_spawnl(wait_until_finished ? _P_WAIT :  _P_DETACH, p, p, a1, a2, a3, a4, NULL)==-1){
     fprintf(stderr,"Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1);

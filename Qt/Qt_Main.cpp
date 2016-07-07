@@ -21,6 +21,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <gc.h>
 
+#if USE_QT5
+#include <QPluginLoader>
+#endif
+
+
 #include <qapplication.h>
 #include <qsplashscreen.h>
 #include <qmainwindow.h>
@@ -35,6 +40,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLayout>
 #include <QDesktopServices>
 #include <QTextCodec>
+
+#include <QStyleFactory>
+
 
 #ifdef __linux__
 #ifndef USE_QT5
@@ -316,7 +324,16 @@ static bool handle_qt_keyboard(QKeyEvent *event, bool is_key_down){
 
 extern EditorWidget *g_editor;
 
-class MyApplication : public QApplication{
+#if USE_QT5
+#include <QAbstractNativeEventFilter>
+#endif
+
+class MyApplication
+  : public QApplication
+#if USE_QT5
+  , public QAbstractNativeEventFilter
+#endif
+{
 public:
 
   MyApplication(int &argc,char **argv);
@@ -509,9 +526,19 @@ protected:
     
     return true;
   }
+
+#ifdef USE_QT5
+
+  virtual bool nativeEventFilter(const QByteArray &eventType, void *message, long *) Q_DECL_OVERRIDE
+  {
+    printf("NAtive event filter!\n");
+    return SystemEventFilter(message);
+  }
+
+#else // USE_QT5
   
 #ifdef __linux__
-  bool x11EventFilter(XEvent *event){
+  bool x11EventFilter(XEvent *event) override {
     bool ret = SystemEventFilter(event);
     //printf("         eventfilter ret: %d\n",ret);
     return ret;
@@ -519,16 +546,18 @@ protected:
 #endif
 
 #ifdef FOR_WINDOWS
-  bool 	winEventFilter ( MSG * msg, long * result ){
+  bool 	winEventFilter ( MSG * msg, long * result ) override {
     return SystemEventFilter(msg);
   }
 #endif
 
 #ifdef FOR_MACOSX
-  bool macEventFilter ( EventHandlerCallRef caller, EventRef event ){
+  bool macEventFilter ( EventHandlerCallRef caller, EventRef event ) override {
     return SystemEventFilter(event);
   }
 #endif
+
+#endif // !USE_QT5
 
   /*
   bool event(QEvent *event){
@@ -542,6 +571,9 @@ MyApplication::MyApplication(int &argc,char **argv)
   , last_key_was_lalt(false)
 {
   //setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
+#if USE_QT5
+  installNativeEventFilter(this);
+#endif
 }
 
 
@@ -1030,8 +1062,42 @@ int radium_main(char *arg){
     if(override_default_qt_style){
       //QApplication::setStyle( new QOxygenStyle());
 
-      #ifndef USE_QT5
+      #ifdef USE_QT5
+
+#if 0
+        QString styles_path = QCoreApplication::applicationDirPath() + QDir::separator()
+          + "packages" + QDir::separator()
+          + "qtstyleplugins-src-5.0.0" + QDir::separator()
+          + "plugins" + QDir::separator()
+          + "styles";
+
+        // Did not work. (???) Created a symbolic link to the plugin file instead.
+        QCoreApplication::addLibraryPath(styles_path);
+
+        // Did not work either. (???) Created a symbolic link to the plugin file instead.   
+        QPluginLoader *gakk = new QPluginLoader(styles_path + QDir::separator()
+#ifdef FOR_WINDOWS
+                                                + "qplastiquestyle.dll"
+#else
+                                                + "libqplastiquestyle"
+#endif
+                                                );
+
+        // This call succeeds, but the call to QStyleFactory::create("plastique") fails no matter what I do, except putting libqplastiquestyle.so directly into bin/styles/
+        if (gakk->load()==false)
+          GFX_Message(NULL, "Unable to load style library. Ensure Radium is installed properly.");
+#endif
+        
+        QStyle *style = QStyleFactory::create("plastique");
+        if (style==NULL)
+          GFX_Message(NULL, "Unable to load plastique style");
+        else
+          QApplication::setStyle(style);
+        
+      #else
+        
         QApplication::setStyle( new QPlastiqueStyle());
+        
       #endif
       //QApplication::setStyle( new QMacStyle());
     
@@ -1425,11 +1491,12 @@ static void qunsetenv(const char *varName)
 
 void MONOTONIC_TIMER_init(void);
 
-int main(int argc, char **argv){
+int main(int argc, char **argv){  
 
   THREADING_init_main_thread_type();
   
   QCoreApplication::setLibraryPaths(QStringList());
+
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 
 #ifndef USE_QT5
@@ -1467,13 +1534,17 @@ int main(int argc, char **argv){
 
   // Create application here in order to get default style. (not recommended, but can't find another way)
   qapplication=new MyApplication(argc,argv);
- 
+#if 0
+ #if defined(IS_LINUX_BINARY) || defined(FOR_WINDOWS) || defined(FOR_MACOSX)
+    QApplication::addLibraryPath(QCoreApplication::applicationDirPath() + QDir::separator() + "qt5_plugins");
+  #endif
+#endif
+  
   g_qapplication = qapplication;
 
   OS_set_argv0(argv[0]);
 
   R_ASSERT(THREADING_is_main_thread());
-  
 
   CRASHREPORTER_init();
 
