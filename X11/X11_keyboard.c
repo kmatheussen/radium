@@ -22,7 +22,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "X11.h"
+
+#if USE_QT4
 #include <X11/Xlib.h>
+#endif
+
+#if USE_QT5
+#include <xcb/xcb.h>
+#include <xcb/xcb_keysyms.h>
+#endif
 
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
@@ -32,12 +40,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/hashmap_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../common/scancodes_proc.h"
+#include "../common/visual_proc.h"
 
 #include "../common/OS_system_proc.h"
 
 
+#if USE_QT4
 static int keycode_to_keynum[256]; // "A KeyCode represents a physical (or logical) key. KeyCodes lie in the inclusive range [8,255]" (keyboard-encoding.html)
-
+#endif
 
 void OS_SYSTEM_init_keyboard(void) {
   OS_SYSTEM_ResetKeysUpDowns();
@@ -180,7 +190,7 @@ static int keysym_to_keynum(KeySym keysym) {
 # undef S
 }
 
-
+#if USE_QT4
 static void init_keynums(XEvent *event){
   static bool inited_keynums = false;
 
@@ -196,7 +206,7 @@ static void init_keynums(XEvent *event){
     }
   }
 }
-
+#endif
 
 static int get_modifier(KeySym keysym){
 # define S(X11_VAL, EVENT_VAL) case XK_##X11_VAL: return EVENT_##EVENT_VAL;
@@ -218,43 +228,114 @@ static int get_modifier(KeySym keysym){
   return EVENT_NO;
 }
 
-int OS_SYSTEM_get_modifier(void *void_event){
-  XKeyEvent *event = void_event;
 
-  KeySym keysym = XkbKeycodeToKeysym(event->display, event->keycode, 0, 0);
+
+#if USE_QT5
+static xcb_keysym_t get_sym(xcb_key_press_event_t *event){
+    static xcb_connection_t *connection = NULL;
     
+    static xcb_key_symbols_t *key_symbols = NULL;
+
+    if (connection==NULL){
+      connection = xcb_connect (NULL, NULL);
+      if (xcb_connection_has_error(connection) > 0)
+        GFX_Message(NULL, "Error. Keyboard will not work.\nUnable to open xcb connection. Error code %d.", xcb_connection_has_error(connection));
+      else
+        key_symbols = xcb_key_symbols_alloc(connection);
+    }
+
+    if (key_symbols==NULL)
+      return XK_space;
+    
+    xcb_keysym_t sym = xcb_key_release_lookup_keysym (key_symbols,
+                                                      event,
+                                                      0);
+
+    return sym;
+}
+#endif
+
+
+int OS_SYSTEM_get_modifier(void *void_event){
+#if USE_QT5
+  xcb_key_press_event_t *event = void_event;
+  KeySym keysym = get_sym(event);
+#else
+  XKeyEvent *event = void_event;
+  KeySym keysym = XkbKeycodeToKeysym(event->display, event->keycode, 0, 0);
+#endif
+  
   //KeySym keysym = (KeySym)virtualkey;
 
   int ret = get_modifier(keysym);
 
-  if (ret==EVENT_NO && get_subID_from_scancode(OS_SYSTEM_get_keycode(void_event))==EVENT_CAPS) // caps lock key doesn't map to XK_Caps_Lock on my keyboard.
+  if (ret==EVENT_NO && get_subID_from_scancode(OS_SYSTEM_get_scancode(void_event))==EVENT_CAPS) // caps lock key doesn't map to XK_Caps_Lock on my keyboard.
     return EVENT_CAPS;
 
   return ret;
 }
 
-int OS_SYSTEM_get_keynum(void *event){
-  XKeyEvent *key_event = event;
+int OS_SYSTEM_get_keynum(void *void_event){
+#if USE_QT5
+  xcb_key_press_event_t *event = void_event;
+  KeySym keysym = get_sym(event);
+  return keysym_to_keynum(keysym);
+#else
+  XKeyEvent *key_event = void_event;
   init_keynums((XEvent*)key_event);
   return keycode_to_keynum[key_event->keycode];
+#endif
 }
 
-int OS_SYSTEM_get_qwerty_keynum(void *event){
-  XKeyEvent *key_event = event;
+int OS_SYSTEM_get_qwerty_keynum(void *void_event){
+#if USE_QT5
+  xcb_key_press_event_t *event = void_event;
+  return get_subID_from_scancode(event->detail-8);
+#else
+  XKeyEvent *key_event = void_event;
   
   return get_subID_from_scancode(key_event->keycode-8);
+#endif
 }
 
-int OS_SYSTEM_get_keycode(void *event){
-  XKeyEvent *key_event = event;
+int OS_SYSTEM_get_scancode(void *void_event){
+#if USE_QT5
+  xcb_key_press_event_t *event = void_event;
+  return event->detail-8;
+#else
+  XKeyEvent *key_event = void_event;
   
   return key_event->keycode-8;
+#endif
 }
 
 
 
 
+#if USE_QT5
+void OS_SYSTEM_EventPreHandler(void *void_event){
+  xcb_generic_event_t *event = void_event;
+  
+  //init_keynums(NULL, event);
 
+  //printf("Response type: %x (%x / %x)\n", event->response_type, XCB_ENTER_NOTIFY, XCB_LEAVE_NOTIFY);
+  
+  switch (event->response_type & ~0x80) {
+    case XCB_ENTER_NOTIFY:
+      {
+  //printf("got enter notify\n");
+        OS_SYSTEM_ResetKeysUpDowns();
+      }
+    break;
+    case XCB_LEAVE_NOTIFY:
+      {
+  //printf("got leave notify.\n");
+        OS_SYSTEM_ResetKeysUpDowns();
+      }
+      break;
+  }
+}
+#else
 void OS_SYSTEM_EventPreHandler(void *void_event){
   XEvent *event = void_event;
   
@@ -279,12 +360,57 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
     break;
   }
 }
+#endif
 
-static bool event_is_arrow(XKeyEvent *event){
-  KeySym keysym = XkbKeycodeToKeysym(event->display, event->keycode, 0, 0);
-
+static bool event_is_arrow2(KeySym keysym){
   return keysym==XK_Down || keysym==XK_Up || keysym==XK_Right || keysym==XK_Left || keysym==XK_Page_Up || keysym==XK_Page_Down;
 }
+
+#ifdef USE_QT4
+static bool event_is_arrow(XKeyEvent *event){
+  KeySym keysym = XkbKeycodeToKeysym(event->display, event->keycode, 0, 0);
+  return event_is_arrow2(keysym);
+}
+#endif
+
+
+#if USE_QT5
+int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
+  xcb_generic_event_t *event = void_event;
+
+  static xcb_key_press_event_t key_press = {0};
+
+  if ( (event->response_type & ~0x80) == XCB_KEY_PRESS){
+  //printf(">>> Keypress\n");
+    xcb_key_press_event_t *key_event = void_event;
+    key_press = *key_event;
+    return TR_KEYBOARD;
+  }
+  
+  else if ( (event->response_type & ~0x80) == XCB_KEY_RELEASE){
+    
+    xcb_key_press_event_t *key_release = void_event;
+
+    //printf(">>> Keyrelease %d/%d   -  %d/%d\n",key_release->time, key_press.time, key_release->detail, key_press.detail);
+
+    
+    if (abs(key_release->time - key_press.time) < 40 && // less than 40ms means autorepat
+        key_release->detail == key_press.detail)
+      {
+        if (ignore_autorepeat && !event_is_arrow2(get_sym(key_release))){
+  //printf("     Autorepeat!\n");
+          return TR_AUTOREPEAT;
+        }
+      }
+    
+    return TR_KEYBOARDUP;
+  }
+  
+  else
+    return -1;
+}
+
+#else
 
 int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   XEvent *event = void_event;
@@ -303,16 +429,16 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
       Display *dis = event->xkey.display;
     
       if (XEventsQueued(dis, QueuedAfterReading)) {
-        XEvent nev;
-        XPeekEvent(dis, &nev);
+        XEvent next_event;
+        XPeekEvent(dis, &next_event);
         
-        if (nev.type == KeyPress &&
-            nev.xkey.time == event->xkey.time &&
-            nev.xkey.keycode == event->xkey.keycode
+        if (next_event.type == KeyPress &&
+            next_event.xkey.time == event->xkey.time &&
+            next_event.xkey.keycode == event->xkey.keycode
             )
           {
             //fprintf (stdout, "key #%ld was retriggered.\n",
-            //         (long) XLookupKeysym (&nev.xkey, 0));
+            //         (long) XLookupKeysym (&next_event.xkey, 0));
             
             // delete retriggered KeyPress event
             XNextEvent (dis, event);
@@ -333,6 +459,8 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   else
     return -1;
 }
+
+#endif
 
 
 #endif // __linux__

@@ -48,6 +48,18 @@ static void init_scancodes(void){
   s(20,         QWERTY_D);    s(40,    F6);
 
   s(56,         ZL1);
+
+  // Extra:
+  /*
+  s(69, LEFTARROW);
+  s(6A, LEFTARROW);
+  s(67, UPARROW);
+  s(6c, DOWNARROW);
+
+  s(68, PAGE_UP);
+  s(6d, PAGE_DOWN);
+  */
+  
 #undef s
 }
   

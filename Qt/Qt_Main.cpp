@@ -364,13 +364,17 @@ protected:
     if (type!=TR_KEYBOARD && type!=TR_KEYBOARDUP)
       return false;
     
+#if 0 //FOR_LINUX
+    return true;
+#endif
+    
     bool is_key_press = type==TR_KEYBOARD;
     
     int modifier = OS_SYSTEM_get_modifier(event); // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event on windows. Not too sure about EVENT_EXTRA_R either (VK_APPS key) (doesn't matter, EVENT_EXTRA_R is abandoned, and the key is just used to configure block). In addition, the release value order might be wrong if pressing several modifier keys, still windows only.
 
     //printf("modifier: %d\n",modifier);
     if (g_show_key_codes){
-      char *message = talloc_format("%d - %d - %d", is_key_press ? 1 : 0, modifier, OS_SYSTEM_get_keycode(event));
+      char *message = talloc_format("%d - %d - %d", is_key_press ? 1 : 0, modifier, OS_SYSTEM_get_scancode(event));
       printf("  Got key: %s\n",message);
       window->message=message;
       
@@ -531,7 +535,7 @@ protected:
 
   virtual bool nativeEventFilter(const QByteArray &eventType, void *message, long *) Q_DECL_OVERRIDE
   {
-    printf("NAtive event filter!\n");
+    //printf("NAtive event filter!\n");
     return SystemEventFilter(message);
   }
 
