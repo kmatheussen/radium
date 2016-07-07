@@ -41,7 +41,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-extern struct Root *root;
 extern PlayerClass *pc;
 
 
@@ -648,7 +647,7 @@ static bool STP_getNextTimePlace(STimePlace *stp){
 
 
 
-static void STP_Constructor(STimePlace *stp,struct Blocks *block){
+static void STP_Constructor(STimePlace *stp,struct Blocks *block, int default_bpm, int default_lpb){
 
 	/* Misc */
 	PlaceSetFirstPos(&stp->firstplace);
@@ -662,7 +661,7 @@ static void STP_Constructor(STimePlace *stp,struct Blocks *block){
 
 
 	/* Tempos */
-	stp->tempo=root->tempo;
+	stp->tempo=default_bpm;
 	stp->stempo= block->tempos;
 	if(stp->stempo!=NULL && PlaceEqual(&stp->firstplace,&stp->stempo->l.p)){
 		stp->tempo=stp->stempo->tempo;
@@ -670,7 +669,7 @@ static void STP_Constructor(STimePlace *stp,struct Blocks *block){
 	}
 
 	/* LBPs */
-	stp->lpb=root->lpb;
+	stp->lpb=default_lpb;
 	stp->slpb=block->lpbs;
 	if(stp->slpb!=NULL && PlaceEqual(&stp->firstplace,&stp->slpb->l.p)){
 		stp->lpb=stp->slpb->lpb;
@@ -830,10 +829,10 @@ static void update_is_beat(struct Blocks *block, struct STimes *times){
     Placements to STimes for a block.
 ********************************************************/
 
-void UpdateSTimes(struct Blocks *block){
+void UpdateSTimes2(struct Blocks *block, int default_bpm, int default_lpb){
 	STimePlace stp;
 
-	STP_Constructor(&stp,block);
+	STP_Constructor(&stp, block, default_bpm, default_lpb);
 
 	do{
 		STP_fillinSTimeTempos(&stp);
@@ -853,6 +852,10 @@ void UpdateSTimes(struct Blocks *block){
 	PrintSTimes(block);
 #endif
 
+}
+
+void UpdateSTimes(struct Blocks *block){
+  UpdateSTimes2(block, root->tempo, root->lpb);
 }
 
 

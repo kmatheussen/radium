@@ -40,6 +40,7 @@ extern LANGSPEC Place STime2Place(
 extern LANGSPEC bool isSTimeInBlock(const struct Blocks *block,STime time);
 extern LANGSPEC STime getBlockSTimeLength(const struct Blocks *block);
 
+extern LANGSPEC void UpdateSTimes2(struct Blocks *block, int default_bpm, int default_lpb);
 extern LANGSPEC void UpdateSTimes(struct Blocks *block);
 
 extern LANGSPEC void UpdateAllSTimes(void);
