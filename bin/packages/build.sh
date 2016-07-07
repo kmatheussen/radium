@@ -87,14 +87,7 @@ cd Visualization-Library-master/
 export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC"
 MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC"
 echo 'set(CMAKE_CXX_FLAGS "$MYFLAGS")' >>CMakeLists.txt
-if [[ $RADIUM_QT_VERSION == 4 ]]
-then
-    # only make v4
-    CFLAGS="$MYFLAGS" CPPFLAGS="$MYFLAGS" CXX="g++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="g++ $MYFLAGS" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DVL_GUI_QT${RADIUM_QT_VERSION}_SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
-else
-    # make both (qt5 is in development mode for now, and then it's convenient to quickly switch between qt4 and qt5)
-    CFLAGS="$MYFLAGS" CPPFLAGS="$MYFLAGS" CXX="g++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="g++ $MYFLAGS" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DVL_GUI_QT4_SUPPORT=ON -DVL_GUI_QT5_SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
-fi
+CFLAGS="$MYFLAGS" CPPFLAGS="$MYFLAGS" CXX="g++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="g++ $MYFLAGS" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DVL_GUI_QT${RADIUM_QT_VERSION}_SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
 VERBOSE=1 make -j `nproc`
 cd ..
 
@@ -103,7 +96,7 @@ rm -fr libpd-master
 tar xvzf libpd-master.tar.gz
 cd libpd-master/
 make clean
-make -j7
+make -j  `nproc`
 cd ..
 
 rm -fr qhttpserver-master
@@ -111,7 +104,7 @@ tar xvzf qhttpserver-master.tar.gz
 cd qhttpserver-master/
 echo "CONFIG += staticlib" >> src/src.pro
 `../../../find_moc_and_uic_paths.sh qmake`
-make
+make -j3 # necessary to create the moc files.
 cd ..
 
 
@@ -190,7 +183,7 @@ then
     tar xvzf qtstyleplugins-src-5.0.0.tar.gz
     cd qtstyleplugins-src-5.0.0/
     `../../../find_moc_and_uic_paths.sh qmake`
-    make -j8
+    make -j3
     cd ../
 fi
 

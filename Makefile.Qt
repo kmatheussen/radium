@@ -305,7 +305,7 @@ OBJ = $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) 
 
 BUILD_DEPENDENCIES =  buildtype.opt flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
 
-PROGRAM_MODULES = bin/radium bin/crashreporter bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py bin/radium_error_message
+PROGRAM_MODULES = bin/radium bin/crashreporter bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py bin/radium_error_message bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
 
 all:
@@ -425,6 +425,20 @@ bin/packages/deletemetorebuild: bin/packages/build.sh
 	bash makescript.sh
 	@echo
 	@echo "packages successfully built. Now run ./build_linux.sh -j7"
+
+bin/styles/libqcleanlooksstyle.so: bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqcleanlooksstyle.so
+	cp bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqcleanlooksstyle.so bin/styles/
+
+
+bin/styles/libqplastiquestyle.so: bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqplastiquestyle.so
+	cp bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqplastiquestyle.so bin/styles/
+
+bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqcleanlooksstyle.so:
+	@echo "packages not built"
+
+bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqplastiquestyle.so:
+	@echo "packages not built"
+
 
 start_bin.sh:
 	echo "#!/bin/sh" >start_bin.sh

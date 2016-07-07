@@ -140,10 +140,7 @@ end:
 
 }
 
-extern struct Root *root;
-
 void DLoadBlocks(struct Root *newroot,struct Blocks *block){
-	struct Root *temp;
 if(block==NULL) return;
 
 	block->lasttemponode=(struct TempoNodes *)ListLast3(&block->temponodes->l);
