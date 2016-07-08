@@ -128,7 +128,7 @@ static void distribute_trackreallines(const struct WBlocks *wblock, Trs trs, Trs
 static void spread_trackreallines(const struct WBlocks *wblock, Trss &trss){
   int realline1 = 0;
   while(realline1 < wblock->num_reallines){
-    if (trss.contains(realline1) > 1) {
+    if (trss.contains(realline1) && trss[realline1].count() > 1) {
 
       int realline2 = find_next_used_trackrealline(wblock, trss, realline1+1);
       //printf("next realline: %d -> %d\n",realline1,realline2);
