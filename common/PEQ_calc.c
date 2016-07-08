@@ -47,25 +47,38 @@ STime PEQ_CalcNextEvent(
         int logtype
 ){
 
+  STime ret_time;
+  
+#ifndef RELEASE
+  R_ASSERT(time2>time1);
+  R_ASSERT(time>=time1);
+  R_ASSERT(time2>=time);
+#endif
+  
   if (time==time2){
     *x=x2;
-    return time2+1;
+    ret_time = time2+1;
+    goto exit;
   }
 
   if (logtype == LOGTYPE_HOLD){
     *x = x1;
-    return time2-1;
+    ret_time = time2-1;
+    
+    if (ret_time==time)
+      ret_time = time2;
+    
+    goto exit;
   }
 
   if(x1==x2){
     *x=x2;
-    return time2;
+    ret_time = time2;
+    goto exit;
   }
 
   int new_x = scale_int64(time,time1,time2,x1,x2);
   *x = new_x;
-
-  STime ret_time;
 
   if (x2<x1)
     ret_time = scale_int64(new_x-1, x1, x2, time1, time2);
@@ -76,6 +89,17 @@ STime PEQ_CalcNextEvent(
     //RError("Error in file PEQ_calc.c. ret: %d, time: %d\n",(int)ret_time,(int)time); // this doesn't look like an error. It's just telling us that the x resolution is bigger than the time resolution.
     ret_time = time+1;
   }
+
+ exit:
+  
+#ifndef RELEASE
+  R_ASSERT(ret_time >= time1);
+  R_ASSERT(ret_time > time);
+#endif
+
+  // Ensurance. Not supposed to happen.
+  if (ret_time==time)
+    ret_time = time2;
 
   return ret_time;
 }

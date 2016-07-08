@@ -203,11 +203,13 @@ static void PE_ChangePitch(struct PEventQueue *peq,int doit){
                 logtype
 	);
 
+#if 0
 	if(btime==ntime){
 		Pdebug("Samme, stopper, x: %d\n",x);
 		return;
 	}
-
+#endif
+        
 	if(ntime>peq->time2)
           ntime=peq->time2;
 
