@@ -21,8 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include <math.h>
 
-#include "../weakjack/weak_libjack.h"
-
 static inline int myisnormal(float val){
   return isnormal(val);
 }
@@ -40,9 +38,13 @@ static inline int myisinf(float val){
 }
 
 
+#include "../weakjack/weak_libjack.h"
+
+
 #include <QFile>
 
-#include "pa_memorybarrier.h"
+
+//#include "pa_memorybarrier.h"
 
 
 #include "monotonic_timer.c"

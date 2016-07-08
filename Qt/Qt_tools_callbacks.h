@@ -1,7 +1,6 @@
 #include "../common/includepython.h"
 
 #include <stdio.h>
-#include <sndfile.h>
 #include <unistd.h>
 
 #include <QMessageBox>

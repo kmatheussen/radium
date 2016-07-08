@@ -21,7 +21,7 @@
 extern struct Root *root;
 
 
-static QTime g_backuptime;
+//static QTime g_backuptime;
 
 static uint64_t g_undo_generation_for_last_backup = -1;
 

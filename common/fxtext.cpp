@@ -35,7 +35,7 @@ static void add_fxtext(const struct WBlocks *wblock, FXText_trss &fxtexts, const
   int realline = FindRealLineFor(wblock, 0, &fxnodeline->l.p);      
   FXText_trs &v = fxtexts[realline];
 
-  FXText fxtext = {0};
+  FXText fxtext = {};
 
   fxtext.p = fxnodeline->l.p;
   fxtext.fx = fx;

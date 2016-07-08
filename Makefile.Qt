@@ -1139,7 +1139,7 @@ INSTRUMENTS_DEPENDENCIES = $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_wi
 
 # $(P)midi_instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
 Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS_DEPENDENCIES)
-	$(CCC) $(P)Qt_instruments.cpp $(QTOPT)
+	$(CCC) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT)
 #	$(CLANGCC) $(P)Qt_instruments.cpp $(QTOPT)
 # clang++ $(P)Qt_instruments.cpp $(QTOPT)
 
@@ -1206,7 +1206,7 @@ $(P)Qt_mixer_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_widget.ui $(P)create_
 
 
 Qt_soundfilesaver_widget_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(P)Qt_soundfilesaver_widget.h
-	$(CCC) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(QTOPT)
+	$(CCC) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(QTOPT)  $(SNDFILEOPT)
 
 $(P)Qt_soundfilesaver_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_soundfilesaver_widget.ui $(P)Qt_soundfilesaver_widget_callbacks.cpp
 	cd $(P) && $(UIC) qt4_soundfilesaver_widget.ui | sed s/protected/public/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: > Qt_soundfilesaver_widget.h
@@ -1850,14 +1850,14 @@ audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIE
 
 SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/Queue.hpp audio/SmoothDelay.hpp
 	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
-	$(CCC) audio/SoundProducer.cpp $(JACKOPT) $(QTOPT) # -O3 # $(CPUOPT)
+	$(CCC) audio/SoundProducer.cpp $(QTOPT) $(JACKOPT)  # -O3 # $(CPUOPT)
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
 
 #-finline-functions -funswitch-loops -fvect-cost-model -fipa-cp-clone  -fpredictive-commoning -fgcse-after-reload
 #-ftree-vectorize
 
-MultiCore.o: audio/MultiCore.cpp audio/fade_envelopes.h
-	$(CCC) audio/MultiCore.cpp $(QTOPT)
+#MultiCore.o: audio/MultiCore.cpp audio/fade_envelopes.h
+#	$(CCC) audio/MultiCore.cpp $(QTOPT)
 
 
 SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegistry_proc.h
@@ -1868,7 +1868,7 @@ SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.
 ### $(CPUOPT)
 
 Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h
-	$(CCC) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUOPT)
+	$(CCC) audio/Mixer.cpp $(QTOPT) $(JACKOPT)  $(CPUOPT)
 
 get_windows_commandlines.o: audio/get_windows_commandlines.c
 	$(CC) audio/get_windows_commandlines.c $(OPT)

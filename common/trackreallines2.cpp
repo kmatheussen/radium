@@ -56,7 +56,7 @@ static void add_tr(const struct WBlocks *wblock, Trss &trss, const TrackRealline
 }
                    
 static void add_pitch(const struct WBlocks *wblock, Trss &trss, struct Notes *note, struct Pitches *pitch){
-  TrackRealline2 tr = {0};
+  TrackRealline2 tr = {};
   tr.p = pitch->l.p;
   tr.note = note;
   tr.pitch = pitch;
@@ -64,7 +64,7 @@ static void add_pitch(const struct WBlocks *wblock, Trss &trss, struct Notes *no
 }
 
 static void add_note(const struct WBlocks *wblock, Trss &trss, struct Notes *note){
-  TrackRealline2 tr = {0};
+  TrackRealline2 tr = {};
   tr.p = note->l.p;
   tr.note = note;
   add_tr(wblock, trss, tr);
@@ -76,7 +76,7 @@ static void add_note(const struct WBlocks *wblock, Trss &trss, struct Notes *not
   }
 
   if (note->pitch_end > 0) {
-    TrackRealline2 tr = {0};
+    TrackRealline2 tr = {};
     tr.p = note->end;
     tr.note = note;
     tr.is_end_pitch = true;
@@ -85,7 +85,7 @@ static void add_note(const struct WBlocks *wblock, Trss &trss, struct Notes *not
 }
 
 static void add_stop(const struct WBlocks *wblock, Trss &trss, struct Stops *stop){
-  TrackRealline2 tr = {0};
+  TrackRealline2 tr = {};
   tr.p = stop->l.p;
   tr.stop = stop;
   add_tr(wblock, trss, tr);
