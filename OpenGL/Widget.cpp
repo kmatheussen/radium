@@ -835,13 +835,19 @@ public:
   // OpenGL thread
   virtual void updateEvent() {
 
+    bool handle_current = true; // I don't know if there's any point setting this to true.
+
+    if (handle_current)
+      QGLWidget::makeCurrent();
+      
     if (g_order_pause_gl_thread.tryWait()) {
       g_ack_pause_gl_thread.notify_one();
       OS_WaitAtLeast(200);
     }
     
     if (g_order_make_current.tryWait()) {
-      QGLWidget::makeCurrent();
+      if (!handle_current)
+        QGLWidget::makeCurrent();
       g_ack_make_current.notify_one();
     }
 
@@ -863,6 +869,8 @@ public:
 #if USE_QT5
     if (ATOMIC_GET(_main_window_is_exposed)==false){
       OS_WaitAtLeast(200);
+      if (handle_current)
+        QGLWidget::doneCurrent();
       return;
     }
 #endif
@@ -920,6 +928,9 @@ public:
     }
 
     ATOMIC_SET(g_has_updated_at_least_once, true);
+
+    if (handle_current)
+      QGLWidget::doneCurrent();
   }
 
   // Main thread

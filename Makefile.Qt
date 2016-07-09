@@ -366,10 +366,11 @@ uninstall:
 
 run-gdb:
 #	./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals QT_FATAL_WARNINGS=1 gdb ./radium
-	./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals gdb ./radium # [1]
+	./build_linux.sh -j7 && cd bin && gdb ./radium # [1]
 #	./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals gdb QT_DEBUG_PLUGINS=1 QT_FATAL_WARNINGS=1 ./radium
 
 # [1]
+# G_DEBUG=fatal-criticals
 # QT_FATAL_WARNINGS=1 doesn't work so well with qt5/linux right now. Getting
 # "QXcbConnection: XCB error: 3 (BadWindow), sequence: 14219, resource id: 8795562, major code: 40 (TranslateCoords), minor code: 0"
 # when closing dialogs. (In qt4 it can crash when we open dialogs, now it's when closing dialogs. However, in qt4 it was known why this happened (opengl race condition in qt).)
