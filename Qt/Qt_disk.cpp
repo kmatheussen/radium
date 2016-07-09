@@ -129,12 +129,22 @@ public:
     R_ASSERT(type==WRITE);
     R_ASSERT(temporary_write_file != NULL);
 
+    bool exists = QFile::exists(filename);
     // Maybe take backup of the existing file here.
-    if (QFile::exists(filename))
+    if (exists)
       QFile::remove(filename);
 
     // And if this fails, use the backup (but still return false, of course)
-    return QFile::copy(temporary_write_file->fileName(), filename);
+    bool ret = QFile::copy(temporary_write_file->fileName(), filename);
+    if (ret==false){
+      if (exists)
+        GFX_Message(NULL, "Error. Unable to save file \"%s\". In addition the already existing file \"%s\" was deleted.\n",
+                    filename.toUtf8().constData(), filename.toUtf8().constData());
+      else
+        GFX_Message(NULL, "Error. Unable to save file \"%s\"", filename.toUtf8().constData());
+    }
+    
+    return ret;
   }
 
   QString error_to_string(QFile::FileError error){
