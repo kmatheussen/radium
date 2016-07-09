@@ -207,8 +207,6 @@ if(wblock==NULL) return;
 
 	window->wblock=wblock;
 
-	wblock->title=talloc_atomic(128);
-
 	wblock->block=(struct Blocks *)ListFindElement1(&newroot->song->blocks->l,wblock->l.num);
 	wblock->wtrack=(struct WTracks *)ListFindElement1(&wblock->wtracks->l,window->curr_track);
 
@@ -225,11 +223,3 @@ if(wblock==NULL) return;
 
 DLoadWBlocks(newroot,window,NextWBlock(wblock));
 }
-
-
-
-
-
-
-
-

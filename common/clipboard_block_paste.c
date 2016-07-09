@@ -89,9 +89,6 @@ void CB_PasteBlock(
 
 	Block_Set_num_tracks(toblock,block->num_tracks);
 
-//	towblock->title=talloc(strlen(wblock->title));
-//	memcpy(towblock->title,wblock->title,strlen(wblock->title));
-
 	toblock->name=talloc_atomic(strlen(block->name)+1);
 	memcpy(toblock->name,block->name,strlen(block->name)+1);
 

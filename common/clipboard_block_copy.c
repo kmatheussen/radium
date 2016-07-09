@@ -55,13 +55,9 @@ struct WBlocks *CB_CopyBlock(
 
 	towblock->localzooms=CB_CopyLocalZooms(wblock);
 	towblock->reallines=NULL;
-//	towblock->title=talloc(strlen(wblock->title)+1);
-//	memcpy(towblock->title,wblock->title,strlen(wblock->title)+1);
 
-        // Null out some data we don't need so it can be GC-ed.
-	//towblock->wtempos=NULL;
-	//towblock->wlpbs=NULL;
-
+        // block
+        
 	toblock->l.next=NULL;
 
 	toblock->name=talloc_atomic(strlen(block->name)+1);
@@ -69,6 +65,8 @@ struct WBlocks *CB_CopyBlock(
 
 	toblock->times=NULL;
 
+        // wtracks / tracks
+        
 	towblock->wtracks=NULL;
 
         {
@@ -93,7 +91,6 @@ struct WBlocks *CB_CopyBlock(
 	toblock->temponodes=CB_CopyTempoNodes(block->temponodes);
 
 	return towblock;
-
 }
 
 

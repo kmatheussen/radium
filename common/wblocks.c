@@ -330,8 +330,6 @@ void NewWBlock(
 	wblock->block=block;
 	wblock->l.num=block->l.num;
 
-	wblock->title=talloc_atomic(128);
-
 	wblock->num_reallines=wblock->block->num_lines;
         wblock->num_expand_lines = 1;
 

@@ -45,10 +45,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo.h"
 #include "player_proc.h"
 
-#ifdef _AMIGa
-#include "mmd2loader/mmd2load_proc.h"
-#endif
-
 #include "../config/config.h"
 
 #include "disk_load_proc.h"

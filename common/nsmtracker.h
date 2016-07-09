@@ -1436,8 +1436,6 @@ struct WBlocks{
 	struct WTracks *wtracks;
 	struct WTracks *wtrack;			/* Current track. Only referenced. */
 
-	char *title;						/* Window title. */
-
 	NInt left_track;					/* The leftmost visible track. */
 	int left_subtrack;
 	NInt right_track;					/* The rightmost visible track. */
