@@ -1492,12 +1492,57 @@ static void qunsetenv(const char *varName)
 
 #endif
 
+#ifdef USE_QT5
+void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg){
+    QByteArray localMsg = msg.toLocal8Bit();
+#else
+    void myMessageOutput(QtMsgType type, const char *localMsg){
+#endif
 
+    g_qt_is_running=false;
+
+    switch (type) {
+      case QtDebugMsg:
+        fprintf(stderr, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+        break;
+      case QtInfoMsg:
+        fprintf(stderr, "Info: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+        break;
+      case QtWarningMsg:
+        fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+#ifndef RELEASE
+        GFX_Message(NULL, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+#endif
+        break;
+      case QtCriticalMsg:
+        fprintf(stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+#ifndef RELEASE
+        GFX_Message(NULL, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+#endif
+        break;
+      case QtFatalMsg:
+        fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+#ifndef RELEASE
+        GFX_Message(NULL, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+#endif        
+        break;
+        //abort();
+    }
+
+    g_qt_is_running=true;
+}
+ 
 void MONOTONIC_TIMER_init(void);
 
 int main(int argc, char **argv){  
 
   THREADING_init_main_thread_type();
+
+#ifdef USE_QT5
+  qInstallMessageHandler(myMessageOutput);
+#else
+  qInstallMsgHandler(myMessageOutput);
+#endif
   
   QCoreApplication::setLibraryPaths(QStringList());
 
