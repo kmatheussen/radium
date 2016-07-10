@@ -232,16 +232,23 @@ static int get_modifier(KeySym keysym){
 
 #if USE_QT5
 static xcb_keysym_t get_sym(xcb_key_press_event_t *event){
-    static xcb_connection_t *connection = NULL;
-    
+    static bool failed = false;
+  
     static xcb_key_symbols_t *key_symbols = NULL;
 
-    if (connection==NULL){
-      connection = xcb_connect (NULL, NULL);
-      if (xcb_connection_has_error(connection) > 0)
+    if (key_symbols==NULL && failed==false){
+      xcb_connection_t *connection = xcb_connect (NULL, NULL);
+      
+      if (xcb_connection_has_error(connection) > 0) {
         GFX_Message(NULL, "Error. Keyboard will not work.\nUnable to open xcb connection. Error code %d.", xcb_connection_has_error(connection));
-      else
+        failed = true;
+        
+      } else {
         key_symbols = xcb_key_symbols_alloc(connection);
+      }
+
+      // Seems like the connection has to be open when calling xcb_key_release_lookup_keysym. (bad api, xcb_key_release_lookup_keysym should have taken connection as one of the arguments)
+      //xcb_disconnect(connection);
     }
 
     if (key_symbols==NULL)
@@ -378,32 +385,55 @@ static bool event_is_arrow(XKeyEvent *event){
 int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   xcb_generic_event_t *event = void_event;
 
-  static xcb_key_press_event_t key_press = {0};
+  static bool last_event_was_key_press = false;
+  static bool last_event_was_key_release = false;
+  static xcb_key_press_event_t last_key_press = {0};
+  static xcb_key_release_event_t last_key_release = {0};
 
   if ( (event->response_type & ~0x80) == XCB_KEY_PRESS){
-  //printf(">>> Keypress\n");
+    
     xcb_key_press_event_t *key_event = void_event;
-    key_press = *key_event;
-    return TR_KEYBOARD;
+    int ret = TR_KEYBOARD;
+    
+    //printf(">>> Keypress %d\n",last_key_press.detail);
+
+    if (last_event_was_key_release &&
+        last_key_release.time == key_event->time &&
+        last_key_release.detail == key_event->detail)
+      {
+        if (ignore_autorepeat && !event_is_arrow2(get_sym(key_event))) {
+          //printf("   Autorepeat 1\n");
+          ret = TR_AUTOREPEAT;
+        }
+      }
+        
+    last_key_press = *key_event;
+    last_event_was_key_press = true;
+    last_event_was_key_release = false;
+    
+    return ret;
   }
   
   else if ( (event->response_type & ~0x80) == XCB_KEY_RELEASE){
     
-    xcb_key_press_event_t *key_release = void_event;
+    xcb_key_release_event_t *key_event = void_event;
+    int ret = TR_KEYBOARDUP;
 
-    //printf(">>> Keyrelease %d/%d   -  %d/%d\n",key_release->time, key_press.time, key_release->detail, key_press.detail);
+    //printf(">>> Keyrelease %d/%d   -  %d/%d    (%d)\n",key_event->time, last_key_press.time, key_event->detail, last_key_press.detail, last_event_was_key_press);
 
+    if (last_event_was_key_release && last_key_release.detail==key_event->detail){ // sometimes happens when autorepeating (why didn't xcb add autorepeat flag? It's a very new api.)
+      if (ignore_autorepeat)
+        ret = TR_AUTOREPEAT;
+      else
+        ret = TR_KEYBOARD;
+    }
+      
     
-    if (abs(key_release->time - key_press.time) < 40 && // less than 40ms means autorepat
-        key_release->detail == key_press.detail)
-      {
-        if (ignore_autorepeat && !event_is_arrow2(get_sym(key_release))){
-  //printf("     Autorepeat!\n");
-          return TR_AUTOREPEAT;
-        }
-      }
+    last_key_release = *key_event;
+    last_event_was_key_press = false;
+    last_event_was_key_release = true;
     
-    return TR_KEYBOARDUP;
+    return ret;
   }
   
   else
