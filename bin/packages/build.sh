@@ -9,9 +9,9 @@ unset CPPFLAGS
 unset LDFLAGS
 unset CXXFLAGS
 
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse"
-export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse"
-export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse"
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC"
+export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC"
+export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC"
 
 
 if ! env |grep RADIUM_QT_VERSION ; then
@@ -146,9 +146,9 @@ cd ..
 
 
 # faust, debug
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g"
-export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g"
-export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g"
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC"
+export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC"
+export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC"
 export LDFLAGS="-fsanitize=address"
 cd faust2
 make -j `nproc`
@@ -157,9 +157,9 @@ make clean
 cd ..
 
 #faust, release
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g"
-export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g"
-export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g"
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC"
+export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC"
+export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC"
 export LDFLAGS=""
 cd faust2
 make -j `nproc`

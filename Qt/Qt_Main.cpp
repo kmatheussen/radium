@@ -1505,9 +1505,11 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
       case QtDebugMsg:
         fprintf(stderr, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
         break;
+#if QT_VERSION >= 0x050500
       case QtInfoMsg:
         fprintf(stderr, "Info: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
         break;
+#endif
       case QtWarningMsg:
         fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
 #ifndef RELEASE
@@ -1527,6 +1529,8 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
 #endif        
         break;
         //abort();
+      default:
+        fprintf(stderr, "Unkwon qt: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
     }
 
     g_qt_is_running=true;

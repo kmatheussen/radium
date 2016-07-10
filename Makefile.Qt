@@ -100,16 +100,16 @@ ifeq ($(RADIUM_QT_VERSION),4)
 	QT_GUI_LDFLAGS ?= `$(PKGqt) --libs QtGui`
 	QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags QtNetwork`
 	QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs QtNetwork`
-	QT_CFLAGS ?= `$(PKGqt) --cflags QtGui --cflags QtNetwork --cflags QtOpenGL --cflags QtWebKit` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.9.2/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS)
+	QT_CFLAGS ?= `$(PKGqt) --cflags QtGui --cflags QtNetwork --cflags QtOpenGL --cflags QtWebKit` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.9.2/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) 
 	QT_LDFLAGS ?= `$(PKGqt) --libs QtGui --libs QtOpenGL --libs QtNetwork --libs QtWebKit`
 endif
 
 
 # qt5
 ifeq ($(RADIUM_QT_VERSION),5)
-	QT_GUI_CFLAGS ?=`$(PKGqt) --cflags Qt5Gui --cflags Qt5Widgets` -DUSE_QT5
+	QT_GUI_CFLAGS ?=`$(PKGqt) --cflags Qt5Gui --cflags Qt5Widgets` -DUSE_QT5 -fPIC
 	QT_GUI_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5Widgets` -fPIC
-	QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags Qt5Network` -DUSE_QT5
+	QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags Qt5Network` -DUSE_QT5 -fPIC
 	QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs Qt5Network` -fPIC
 
 #	If using QtWebEngine: (Not recommended, dragging doesn't work using it)
@@ -117,7 +117,7 @@ ifeq ($(RADIUM_QT_VERSION),5)
 #	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebEngineWidgets`
 
 #	If using QtWebKit:
-	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.9.2/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT5
+	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.9.2/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT5 -fPIC
 	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebKitWidgets` -fPIC
 endif
 
@@ -328,7 +328,7 @@ very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean:
-	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt flagopts.opt bin/crashreporter bin/crashreporter.exe bin/radium_error_message bin/radium_error_message.exe bin/radium.bin.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp
+	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt flagopts.opt bin/crashreporter bin/crashreporter.exe bin/radium_error_message bin/radium_error_message.exe bin/radium.bin.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
 
 dependencies_ok: check_dependencies.sh #Makefile
@@ -429,12 +429,15 @@ bin/packages/deletemetorebuild: bin/packages/build.sh
 	@echo
 	@echo "packages successfully built. Now run ./build_linux.sh -j7"
 
-bin/styles/libqcleanlooksstyle.so: bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqcleanlooksstyle.so
+bin/styles/libqcleanlooksstyle.so: bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqcleanlooksstyle.so bin/styles
 	cp bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqcleanlooksstyle.so bin/styles/
 
 
-bin/styles/libqplastiquestyle.so: bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqplastiquestyle.so
+bin/styles/libqplastiquestyle.so: bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqplastiquestyle.so bin/styles
 	cp bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqplastiquestyle.so bin/styles/
+
+bin/styles:
+	mkdir bin/styles
 
 bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqcleanlooksstyle.so:
 	@echo "packages not built"
