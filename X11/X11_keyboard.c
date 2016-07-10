@@ -323,20 +323,18 @@ int OS_SYSTEM_get_scancode(void *void_event){
 void OS_SYSTEM_EventPreHandler(void *void_event){
   xcb_generic_event_t *event = void_event;
   
-  //init_keynums(NULL, event);
-
   //printf("Response type: %x (%x / %x)\n", event->response_type, XCB_ENTER_NOTIFY, XCB_LEAVE_NOTIFY);
   
   switch (event->response_type & ~0x80) {
     case XCB_ENTER_NOTIFY:
       {
-  //printf("got enter notify\n");
+        //printf("got enter notify\n");
         OS_SYSTEM_ResetKeysUpDowns();
       }
     break;
     case XCB_LEAVE_NOTIFY:
       {
-  //printf("got leave notify.\n");
+        //printf("got leave notify.\n");
         OS_SYSTEM_ResetKeysUpDowns();
       }
       break;
@@ -346,8 +344,6 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
 void OS_SYSTEM_EventPreHandler(void *void_event){
   XEvent *event = void_event;
   
-  //init_keynums(NULL, event);
-
   switch(event->type){
   case EnterNotify:
     {
@@ -390,6 +386,9 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   static xcb_key_press_event_t last_key_press = {0};
   static xcb_key_release_event_t last_key_release = {0};
 
+  if(0)
+    printf("last_key_press_not_used %p %d\n", &last_key_press, last_event_was_key_press);
+  
   if ( (event->response_type & ~0x80) == XCB_KEY_PRESS){
     
     xcb_key_press_event_t *key_event = void_event;
