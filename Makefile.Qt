@@ -293,7 +293,7 @@ OBJ_MIXER=QM_view.o QM_chip.o QM_MixerWidget.o undo_mixer.o undo_mixer_connectio
 #undo_chip_addremove.o
 
 #OpenGL
-OBJ_VL=GfxElements.o Render.o Widget.o Qt5Widget.o moc_Qt5Widget.o
+OBJ_VL=GfxElements.o Render.o Widget.o Qt${RADIUM_QT_VERSION}Widget.o moc_Qt${RADIUM_QT_VERSION}Widget.o
 
 #Embedded scheme
 OBJ_ES=scheme.o bin/packages/s7/s7_$(TARGET_OS).o s7webserver.o radium_s7_wrap.o qhttpconnection.o moc_qhttpconnection.o qhttprequest.o moc_qhttprequest.o qhttpresponse.o moc_qhttpresponse.o qhttpserver.o moc_qhttpserver.o http_parser.o
@@ -1942,12 +1942,12 @@ Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/T
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 	$(CC) OpenGL/do.m $(OPT)
 
-Qt5Widget.o: bin/packages/Visualization-Library-master/src/vlQt5/Qt5Widget.cpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5Widget.hpp
-	$(CCC) bin/packages/Visualization-Library-master/src/vlQt5/Qt5Widget.cpp $(VL_CFLAGS) $(QTOPT)
+Qt${RADIUM_QT_VERSION}Widget.o: bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.cpp bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.hpp
+	$(CCC) bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.cpp $(VL_CFLAGS) $(QTOPT)
 
-moc_Qt5Widget.o: bin/packages/Visualization-Library-master/src/vlQt5/Qt5Widget.hpp
-	$(MOC) bin/packages/Visualization-Library-master/src/vlQt5/Qt5Widget.hpp >moc_Qt5Widget.cpp
-	$(CCC) moc_Qt5Widget.cpp $(VL_CFLAGS) $(QTOPT)
+moc_Qt${RADIUM_QT_VERSION}Widget.o: bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.hpp
+	$(MOC) bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.hpp >moc_Qt${RADIUM_QT_VERSION}Widget.cpp
+	$(CCC) moc_Qt${RADIUM_QT_VERSION}Widget.cpp $(VL_CFLAGS) $(QTOPT)
 
 # embedded scheme
 
