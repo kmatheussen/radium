@@ -392,6 +392,9 @@ static QString get_plugin_names(void){
 
 static void run_program(QString program, QString arg1, QString arg2, QString arg3, QString arg4, bool wait_until_finished){
 
+  if (ATOMIC_GET(g_dont_report_more))
+    return;
+
 #if defined(FOR_WINDOWS)
 
   char *p = strdup(program.toUtf8().constData());
@@ -486,7 +489,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, Crash_Type crash_type){
   if (ATOMIC_GET(g_dont_report_more))
     return;
-  
+
   QString plugin_names = get_plugin_names();
   
   QString tosend = QString(additional_information) + "\n\n";
@@ -637,7 +640,10 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
     // already sending
     return;
   }
-  
+
+  if (ATOMIC_GET(g_dont_report_more))
+    return;
+
 #if 0
   static int last_time = -10000;
   

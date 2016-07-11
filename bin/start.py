@@ -125,7 +125,8 @@ import eventreceiverparser_generated
 
 pid = os.getpid()
 
-if hasattr(os,'fork') and os.fork()==0:
+# Seems like Ctrl+C is handled properly without this code now. This block is also disabled now since it sometimes caused the main process hang if program crashed, and you had to run "killall -9 radium" or similar.
+if False: #hasattr(os,'fork') and os.fork()==0:
     import signal,time
     def signal_handler(signalnum, frame):
         print "You pressed Ctrl+C. Sending SIGINT signal to radium."
@@ -136,7 +137,7 @@ if hasattr(os,'fork') and os.fork()==0:
         #print os.getppid(),pid,"hmm"
         #sys.stdout.flush()
         if os.getppid() != pid:
-            #print "Seems like parent process died. Exiting Ctrl+C process"
+            print "Seems like parent process died. Exiting Ctrl+C process"
             sys.exit(0)
         time.sleep(1)
     #signal.pause()

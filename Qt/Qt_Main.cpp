@@ -1789,9 +1789,20 @@ int main(int argc, char **argv){
   
   PyRun_SimpleString("execfile(os.path.join(sys.g_program_path,\"start.py\"))");
 
-  
+  fprintf(stderr,"          ENDING B 1\n");
+    
   Py_Finalize();
 
+  fprintf(stderr,"          ENDING B 2\n");
+
+  //abort();
+  fprintf(stderr, "My pid: %d\n",(int)getpid());
+
+  // Make it quit faster. Qt 5.7.0 crashes during shut down on linux.
+#if defined(FOR_LINUX) && defined(RELEASE) && QT_VERSION==0x050700
+  kill(getpid(), SIGKILL);
+#endif
+  
   //RError("hepp");
   return 0;
 }
