@@ -130,7 +130,7 @@ end:
 }
 
 
-void DLoadFX(struct Root *newroot,struct Tracks *track, struct FXs *fxs, struct FX *fx){
+void DLoadFX(const struct Root *newroot,struct Tracks *track, struct FXs *fxs, struct FX *fx){
   NInt id = fx->patch->id;
   
   if (id==-1)

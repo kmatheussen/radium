@@ -61,9 +61,8 @@ extern NInt currpatch;
 
 float disk_load_version;
 
-static bool Load(const wchar_t *filename){
-	struct Root *newroot;
-
+bool Load_Initialize(const wchar_t *filename, const char *type){
+  
         dc.success=true;
 
         curr_disk_line = 0;
@@ -75,18 +74,22 @@ static bool Load(const wchar_t *filename){
 	}
 
 	DC_fgets();
-        if (dc.success==false)
+        if (dc.success==false) {
+          GFX_Message(NULL,"Loading failed. File too short. (1)\n");
           return false;
+        }
         
-	if(strcmp("RADIUM SONG",dc.ls)){
-          GFX_Message(NULL,"First line in song was not 'RADIUM SONG', but '%s'. Last: %d\n",dc.ls,dc.ls[strlen(dc.ls)-1]);
+	if(strcmp(type,dc.ls)){
+          GFX_Message(NULL,"First line in song was not '%s', but '%s'. Last: %d\n",type,dc.ls,dc.ls[strlen(dc.ls)-1]);
           DISK_close_and_delete(dc.file);
           return false;
 	}
 
 	disk_load_version=DC_LoadF();
-        if (dc.success==false)
+        if (dc.success==false){
+          GFX_Message(NULL,"Loading failed. File too short. (2)\n");
           return false;
+        }
 
 	if(disk_load_version>0.4201 && disk_load_version<0.50){
 		disk_load_version=0.51;
@@ -113,7 +116,7 @@ static bool Load(const wchar_t *filename){
 #endif
 
         if(disk_load_version>DISKVERSION+0.0001){
-          GFX_Message(NULL,"Need a newer version of Radium to load this song. The song version is %f, while this program only supports %f.\n",disk_load_version,DISKVERSION);
+          GFX_Message(NULL,"Need a newer version of Radium to load this file. The file version is %f, while this program only supports %f.\n",disk_load_version,DISKVERSION);
           return false;
         }else{
           printf("Song diskVersion: %f\n",disk_load_version);
@@ -124,7 +127,18 @@ static bool Load(const wchar_t *filename){
 	dc.playlist=NULL;
 
 	DC_Next();
-        if (dc.success==false)
+        if (dc.success==false){
+          GFX_Message(NULL,"Loading failed. File too short. (3)\n");
+          return false;
+        }
+        
+        return true;
+}
+  
+static bool Load(const wchar_t *filename){
+	struct Root *newroot;
+
+        if (Load_Initialize(filename, "RADIUM SONG")==false)
           return false;
         
 	if(strcmp(dc.ls,"OSSTUFF")){

@@ -25,9 +25,9 @@ extern void SaveLocalZooms(struct LocalZooms *localzoom,int num_lines);
 extern void LoadLocalZooms(struct LocalZooms **to);
 
 extern void DLoadLocalZooms(
-	struct Root *newroot,
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
+                            const struct Root *newroot,
+                            struct Tracker_Windows *window,
+                            struct WBlocks *wblock
 );
 
 #endif

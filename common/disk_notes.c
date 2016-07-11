@@ -109,7 +109,7 @@ error:
 }
 
 
-void DLoadNotes(struct Root *newroot,struct Tracks *track, struct Notes *notes){
+void DLoadNotes(const struct Root *newroot,struct Tracks *track, struct Notes *notes){
   if(notes==NULL) return;
 
   // Fix pitch_end for older songs.

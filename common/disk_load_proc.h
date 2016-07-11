@@ -1,6 +1,7 @@
 
 
 
+extern LANGSPEC bool Load_Initialize(const wchar_t *filename, const char *type);
 
 //bool Load(const char *filename);
 extern LANGSPEC bool Load_CurrPos(struct Tracker_Windows *window);

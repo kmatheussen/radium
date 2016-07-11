@@ -158,9 +158,9 @@ error:
 
 
 void DLoadLocalZooms(
-	struct Root *newroot,
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
+                     const struct Root *newroot,
+                     struct Tracker_Windows *window,
+                     struct WBlocks *wblock
 ){
 	UpdateRealLines(window,wblock);
 	UpdateReallinesDependens(window,wblock);

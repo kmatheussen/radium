@@ -24,9 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern void SaveWBlock(struct WBlocks *wblock);
 extern struct WBlocks *LoadWBlock(void);
 extern void DLoadWBlocks(
-	struct Root *newroot,
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
+                         const struct Root *newroot,
+                         struct Tracker_Windows *window,
+                         struct WBlocks *wblock
 );
 
 

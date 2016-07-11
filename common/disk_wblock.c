@@ -199,7 +199,7 @@ end:
 }
 
 void DLoadWBlocks(
-	struct Root *newroot,
+	const struct Root *newroot,
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
@@ -207,7 +207,8 @@ if(wblock==NULL) return;
 
 	window->wblock=wblock;
 
-	wblock->block=(struct Blocks *)ListFindElement1(&newroot->song->blocks->l,wblock->l.num);
+        wblock->block=(struct Blocks *)ListFindElement1(&newroot->song->blocks->l,wblock->l.num);
+        
 	wblock->wtrack=(struct WTracks *)ListFindElement1(&wblock->wtracks->l,window->curr_track);
 
 	wblock->left_subtrack=-1;

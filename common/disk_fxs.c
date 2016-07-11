@@ -112,7 +112,7 @@ end:
 }
 
 
-void DLoadFXs(struct Root *newroot,struct Tracks *track, vector_t *fxss){
+void DLoadFXs(const struct Root *newroot,struct Tracks *track, vector_t *fxss){
   VECTOR_FOR_EACH(struct FXs *fxs, fxss){
    DLoadFX(newroot, track, fxs, fxs->fx);
   }END_VECTOR_FOR_EACH;

@@ -15,6 +15,12 @@
 # it:
 # http://schismtracker.org/wiki/ITTECH.TXT
 
+#
+#https://modarchive.org/index.php?request=view_by_moduleid&query=178536
+#https://modarchive.org/index.php?request=view_by_moduleid&query=178535
+#https://modarchive.org/index.php?request=view_by_moduleid&query=37485
+#https://modarchive.org/index.php?request=view_chart&query=featured
+
 
 # (easier to forget) todo's:
 # * get max velocity for sample instrument

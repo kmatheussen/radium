@@ -126,7 +126,7 @@ var7:
 
 var8:
         if(track->patch==NULL)
-          track->patch=PATCH_alloc(); // Reason for atomic alloc: only patch.id and instrument.id is used during loading.
+          track->patch=PATCH_alloc(); // track->patch is replaced later. Only patch.id and instrument.id is used during loading.
         track->patch->instrument = get_instrument_from_type(DC_LoadI());
         goto start;
 
@@ -166,14 +166,14 @@ end:
 
 extern void DLoadInstrumentData(struct Root *newroot,struct Tracks *track);
 
-void DLoadTracks(struct Root *newroot,struct Tracks *track){
+void DLoadTracks(const struct Root *newroot,struct Tracks *track){
 if(track==NULL) return;
 
-	if(track->patch->id==-1){
-          track->patch=NULL;
-	}else{
-          track->patch=PATCH_get_from_id(track->patch->id);
-	}
+         if(track->patch->id==-1){
+           track->patch=NULL;
+         }else{
+           track->patch=PATCH_get_from_id(track->patch->id);
+         }
 
         DLoadNotes(newroot, track, track->notes);
         

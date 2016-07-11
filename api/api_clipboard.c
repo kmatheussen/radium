@@ -170,3 +170,118 @@ Place getRangeLength(void){
 
   return range->length;
 }
+
+
+#if 0
+// nah
+
+#include "../common/disk.h"
+#include "../common/disk_save_proc.h"
+#include "../common/disk_load_proc.h"
+#include "../common/disk_wblock_proc.h"
+#include "../common/disk_block_proc.h"
+#include "../common/undo_block_insertdelete_proc.h"
+#include "../common/undo.h"
+#include "../OpenGL/Widget_proc.h"
+
+void saveBlock(const char *filename, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+
+  wblock=getWBlockFromNumA(
+                           windownum,
+                           &window,
+                           blocknum
+                           );
+
+  if(wblock==NULL)
+    return;
+
+  if (filename==NULL || !strcmp(filename, ""))
+    filename = "/tmp/block.block";
+
+  if (Save_Initialize(STRING_create(filename), "RADIUM BLOCK")==false)
+    return;
+
+  SaveWBlock(wblock);
+  SaveBlock(wblock->block);
+
+  if( ! dc.success){
+    GFX_Message(NULL, "Problems writing to file.\n");
+  }
+  
+  DISK_close_and_delete(dc.file);
+}
+
+void loadBlock(const char *filename_c){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+    
+  bool success = false;
+  bool have_made_undo = false;
+  
+  if (filename_c==NULL || !strcmp(filename_c, ""))
+    filename_c = "/tmp/block.block";
+
+  const wchar_t *filename = STRING_create(filename_c);
+  
+  int num_blocks = root->song->num_blocks;
+    
+  if (Load_Initialize(filename, "RADIUM BLOCK")==false) {
+    goto exit;
+    return;
+  }
+        
+  if(strcmp(dc.ls,"WBLOCK")){
+    GFX_Message(NULL, "Loading failed.\nExpected \"WBLOCK\", but found instead: '%s'.\nFile: '%s'\n",dc.ls,STRING_get_chars(filename));
+    DISK_close_and_delete(dc.file);
+    goto exit;
+    return;
+  }
+
+  struct WBlocks *wblock = LoadWBlock();
+  wblock->l.num = num_blocks;
+
+  DC_Next();
+  if(strcmp(dc.ls,"BLOCK")){
+    GFX_Message(NULL, "Loading failed.\nExpected \"BLOCK\", but found instead: '%s'.\nFile: '%s'\n",dc.ls,STRING_get_chars(filename));
+    DISK_close_and_delete(dc.file);
+    goto exit;
+  }
+
+  struct Blocks *block = LoadBlock();
+  block->l.num = num_blocks;
+  
+  DISK_close_and_delete(dc.file);
+
+  if(!dc.success){
+    GFX_Message(NULL, "Loading failed.\n");
+    goto exit;
+  }
+  
+  printf("Got it: %p / %p\n",wblock,block);
+
+
+  ADD_UNDO(Block_Insert(num_blocks));
+  have_made_undo = true;
+
+  /*
+  DC_ListAdd1(&root->song->blocks,block);
+  DC_ListAdd1(&root->song->tracker_windows->wblocks, wblock);
+  */
+
+  wblock->block = block;
+  window->curr_track = 0;
+
+  DLoadBlocks(root, block);
+  DLoadWBlocks(window, window, wblock);  
+
+  CB_PasteBlock(window, wblock, window->wblock);
+
+  success = true;
+  
+ exit:
+  if (success==false)
+    if (have_made_undo)
+      Undo_CancelLastUndo();
+}
+#endif

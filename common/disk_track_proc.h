@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern void SaveTrack(struct Tracks *track);
 extern struct Tracks *LoadTrack(void);
-extern void DLoadTracks(struct Root *newroot,struct Tracks *track);
+extern void DLoadTracks(const struct Root *newroot,struct Tracks *track);
 
 
 #endif

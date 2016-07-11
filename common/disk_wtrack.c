@@ -143,11 +143,12 @@ end:
 
 
 void DLoadWTracks(
-	struct Root *newroot,
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack
-){
+                  const struct Root *newroot,
+                  const struct Tracker_Windows *window,
+                  const struct WBlocks *wblock,
+                  struct WTracks *wtrack
+                  )
+{
 if(wtrack==NULL) return;
 
 	wtrack->fxonoff=1;

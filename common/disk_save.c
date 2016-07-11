@@ -33,29 +33,35 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../config/config.h"
 
-
-void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
-	int length1,length2;
-
-	dc.success=true;
+bool Save_Initialize(const wchar_t *filename, const char *type){
+  	dc.success=true;
 
         dc.file=DISK_open_for_writing(filename);
 	if(dc.file==NULL){
           GFX_Message(NULL, "Could not open file for writing.\n");
-          return;
+          return false;
 	}
 
         OS_set_saving_path(filename);
         
-	length1=DISK_write(dc.file,"RADIUM SONG\n");
-	length2=DISK_printf(dc.file,"%s\n",OS_get_string_from_double(DISKVERSION));
+	int length1=DISK_write(dc.file,type);
+        int length2=DISK_write(dc.file,"\n");
+	int length3=DISK_printf(dc.file,"%s\n",OS_get_string_from_double(DISKVERSION));
 
-	if(length1<0 || length2<0){
+	if(length1<0 || length2<0 || length3<0){
           GFX_Message(NULL, "Could not write to file.\n");
           DISK_close_and_delete(dc.file);
-          return;
+          return false;
 	}
 
+        return true;
+}
+
+void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
+
+        if (Save_Initialize(filename, "RADIUM SONG")==false)
+          return;
+        
 	DC_start("OSSTUFF");
 		SaveOsStuff();
 	DC_end();

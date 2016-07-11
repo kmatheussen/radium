@@ -24,10 +24,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern void SaveWTrack(struct WTracks *wtrack);
 extern struct WTracks *LoadWTrack(void);
 extern void DLoadWTracks(
-	struct Root *newroot,
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack
+                         const struct Root *newroot,
+                         const struct Tracker_Windows *window,
+                         const struct WBlocks *wblock,
+                         struct WTracks *wtrack
 );
 
 

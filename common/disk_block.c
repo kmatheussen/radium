@@ -140,7 +140,7 @@ end:
 
 }
 
-void DLoadBlocks(struct Root *newroot,struct Blocks *block){
+void DLoadBlocks(const struct Root *newroot,struct Blocks *block){
 if(block==NULL) return;
 
 	block->lasttemponode=(struct TempoNodes *)ListLast3(&block->temponodes->l);
