@@ -107,18 +107,18 @@ endif
 
 # qt5
 ifeq ($(RADIUM_QT_VERSION),5)
-	QT_GUI_CFLAGS ?=`$(PKGqt) --cflags Qt5Gui --cflags Qt5Widgets` -DUSE_QT5 -fPIC
-	QT_GUI_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5Widgets` -fPIC
-	QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags Qt5Network` -DUSE_QT5 -fPIC
-	QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs Qt5Network` -fPIC
+	QT_GUI_CFLAGS ?=`$(PKGqt) --cflags Qt5Gui --cflags Qt5Widgets` -DUSE_QT5 -fpic
+	QT_GUI_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5Widgets` -fpic
+	QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags Qt5Network` -DUSE_QT5 -fpic
+	QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs Qt5Network` -fpic
 
 #	If using QtWebEngine: (Not recommended, dragging doesn't work using it)
 #	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebEngineWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.9.2/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT5
 #	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebEngineWidgets`
 
 #	If using QtWebKit:
-	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.9.2/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT5 -fPIC
-	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebKitWidgets` -fPIC
+	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.9.2/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT5 -fpic
+	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebKitWidgets` -fpic
 endif
 
 
@@ -149,7 +149,7 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 FULL_VERSION ?= 1
 
 # Note that "make clean" must be run for DEBUG_BUILD_OPTS to take effect
-DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls #-Og # -DDISABLE_BDWGC -fsanitize=address #-Og -
+DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -Og # -DDISABLE_BDWGC -fsanitize=address #-Og -
 # -Og -Og -fsanitize=address
 #-Og 
 #  -fsanitize=thread 
@@ -459,7 +459,7 @@ bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluids
 #$(LDFLAGS)
 
 # `$(PKG) --libs fluidsynth`
-#	$(LINKER) $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radium -g -lm -lpython2.6 -lpthread $(QTLINKFLAGS) $(LDFLAGS) -fPIC
+#	$(LINKER) $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radium -g -lm -lpython2.6 -lpthread $(QTLINKFLAGS) $(LDFLAGS) -fpic
 
 #	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm -lasound -L/home/kjetil/site/lib `pkg-config --libs Qt3Support` -lprofiler
 # -pg 
@@ -2000,7 +2000,7 @@ api/radium_s7_wrap.c: api/protoconfparser.py api/protos.conf
 
 #bin/zita_rev_ladspa.so: audio/zita_rev.dsp
 #	cd audio && $(FAUST) -a ladspa.cpp -cn zita_rev_radium zita_rev.dsp >zita_rev_ladspa.cpp
-#	$(CCC) -I /usr/share/faust/ audio/zita_rev_ladspa.cpp -shared -o bin/zita_rev_ladspa.so -fPIC 
+#	$(CCC) -I /usr/share/faust/ audio/zita_rev_ladspa.cpp -shared -o bin/zita_rev_ladspa.so -fpic 
 
 
 
