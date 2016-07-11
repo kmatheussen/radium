@@ -140,6 +140,12 @@ void EVENTLOG_add_event(const char *log_entry){
 #include "get_osx_diagnostic_reports.cpp"
 #endif
 
+#include <QHBoxLayout>
+#include <QPushButton>
+#include <QButtonGroup>
+#include <QGroupBox>
+#include <QStyle>
+
 
 static void send_crash_message_to_server(QString message, QString plugin_names, QString emergency_save_filename, Crash_Type crash_type){
 
@@ -158,23 +164,37 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
   bool is_crash = crash_type==CT_CRASH;
 
   {
-    QMessageBox box;
-    
-    box.setIcon(QMessageBox::Critical);
-    box.addButton("SEND", QMessageBox::AcceptRole);
-    box.addButton("DON'T SEND", QMessageBox::RejectRole);
+    QDialog box;
+
+    QVBoxLayout layout;
+
+    //box.setIcon(QMessageBox::Critical);
+
+    QLabel iconlabel;
+    QIcon icon = box.style()->standardIcon(QStyle::SP_MessageBoxWarning);
+    iconlabel.setPixmap(icon.pixmap(icon.availableSizes()[0]));
+    layout.addWidget(&iconlabel);
+      
+    QLabel space0(" ");
+    layout.addWidget(&space0);
+
+    QLabel text1;
     
     if (crash_type==CT_CRASH)
-      box.setText("Radium Crashed. :((");
+      text1.setText("Radium Crashed. :((");
     else if (crash_type==CT_ERROR)
-      box.setText("Error! Radium is in a state it should not be in.\n(Note that Radium has NOT crashed)\n");
+      text1.setText("Error! Radium is in a state it should not be in.\n(Note that Radium has NOT crashed)\n");
     else
-      box.setText("Warning! Radium is in a state it should not be in.\n(Note that Radium has NOT crashed, you can continue working)\n");
+      text1.setText("Warning! Radium is in a state it should not be in.\n(Note that Radium has NOT crashed, you can continue working)\n");
 
+    layout.addWidget(&text1);
+    
 
+    QLabel text2;
+    
     bool dosave = emergency_save_filename!=QString(NOEMERGENCYSAVE);
     
-    box.setInformativeText(QString(
+    text2.setText(QString(
                                    #if FOR_LINUX
                                    "Linux users: Please don't report bugs caused by a non-properly compiled version of Radium. "
                                    "If you have compiled Radium yourself, or are using a version of Radium "
@@ -188,20 +208,62 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
                                    "\n"
                                    "Only the information in \"Show details...\" is sent.\n"
                                    "\n"
-                                   "Please don't report the same %0 more than two or three times for the same version of Radium.\n"
+                                   "Please don't report the same %0 more than two or three times\n"
+                                   "for the same version of Radium.\n"
                                    ).arg(crash_type==CT_CRASH ? "crash" : crash_type==CT_ERROR ? "error" : "warning")
                            + ( (is_crash && plugin_names != NOPLUGINNAMES)
                                ? QString("\nPlease note that the following third party plugins: \"" + plugin_names + "\" was/were currently processing audio. It/they might be responsible for the crash.\n")
                                : QString())
                            + (crash_type==CT_ERROR ? "\nAfterwards, you should save your work and start the program again.\n\nIf this window just pops up again immediately after closing it, just hide it instead." : "")
-                           + (dosave ? "\nAn emergency version of your song has been saved as \""+emergency_save_filename+"\". However, this file should not be trusted. It could be malformed. (it is most likely okay though)" : "")
+                           + (dosave ? "\nAn emergency version of your song has been saved as\n\""+emergency_save_filename+"\".\nHowever, this file should not be trusted. It could be malformed.\n(The file is most likely okay though)" : "")
                            + "\n"
                            );
+    
+    text2.setWordWrap(true);
+    //text2.setMaximumWidth(600);
+        
+    //box.setDetailedText(message);
+    layout.addWidget(&text2);
+    text2.adjustSize();
 
-    box.setDetailedText(message);
-                        
+    /*
+    QButtonGroup buttons;
+    buttons.addButton(new QPushButton("Show Details"), 0);
+    buttons.addButton(new QPushButton("SEND"), 1);
+    buttons.addButton(new QPushButton("DON'T SEND"), 2);
+
+    layout.addWidget(&buttons);
+    */
+
+    QTextEdit details("<pre>"+message+"</pre>");
+    layout.addWidget(&details);
+    details.hide();
+    
+    QHBoxLayout button_layout;
+    auto *b1 = new QPushButton("Show details");
+    auto *b2 = new QPushButton("SEND");
+    auto *b3 = new QPushButton("DON'T SEND");
+    
+    button_layout.addWidget(b1);
+    button_layout.addWidget(b2);
+    button_layout.addWidget(b3);
+
+    layout.addLayout(&button_layout);
+
+    b1->setCheckable(true);
+    b1->connect(b1, SIGNAL(toggled(bool)), &details, SLOT(setVisible(bool)));
+    
+    QButtonGroup buttons;
+    //buttons.addButton(b1, 1);
+    buttons.addButton(b2, 2);
+    buttons.addButton(b3, 3);
+    
+    box.connect(&buttons, SIGNAL(buttonClicked(int)), &box, SLOT(done(int)));
+
+    
+
     QLabel space(" ");
-    box.layout()->addWidget(&space);
+    layout.addWidget(&space);
 
     QLabel text_edit_label("<br><br>"
                            "Please also include additional information below.<br>"
@@ -224,16 +286,16 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
     //text_edit.setMinimumWidth(1000000);
     //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
-    box.layout()->addWidget(&text_edit_label);
+    layout.addWidget(&text_edit_label);
 
     QLabel space2(" ");
-    box.layout()->addWidget(&space2);
+    layout.addWidget(&space2);
 
     QTextEdit text_edit;
     text_edit.setText("<Please add recipe and/or email address here>");
     //text_edit.setMinimumWidth(1000000);
     //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
-    box.layout()->addWidget(&text_edit);
+    layout.addWidget(&text_edit);
 
     if (crash_type==CT_CRASH)
       box.setWindowTitle("Report crash");
@@ -242,13 +304,21 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     else
       box.setWindowTitle("Report warning");
 
-    box.show();
-    box.activateWindow();
-    box.raise();
     
+    layout.setSizeConstraint(QLayout::SetFixedSize);
+    box.setLayout(&layout);
+
+
     //box.stackUnder(box.parentWidget());
     box.setWindowFlags(Qt::WindowStaysOnTopHint);
     box.setWindowModality(Qt::ApplicationModal);
+
+    //box.setMaximumWidth(600);
+    
+    box.setVisible(true);
+    box.show();
+    box.activateWindow();
+    box.raise();
 
 #ifdef FOR_WINDOWS
     HWND wnd=(HWND)box.winId();
@@ -256,9 +326,11 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     SetWindowPos(wnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
 #endif
 
+    box.adjustSize();
+
     int ret = box.exec();
 
-    if(ret==QMessageBox::AcceptRole){
+    if(ret==2){ //QMessageBox::AcceptRole){
 
       QByteArray data;
       QUrl params;
