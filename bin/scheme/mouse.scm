@@ -195,8 +195,24 @@
   (define prev-x #f)
   (define prev-y #f)
   (define value #f)
-
+  
+  (define next-mouse-x #f)
+  (define next-mouse-y #f)
+  
   (define (call-move-and-release $button $x $y)
+
+    ;; Ignore all $x and $y values that was already queued when we sat a new mouse pointer position. (needed in qt5)
+    (when next-mouse-x
+      (if (and (< (abs (- $x next-mouse-x)) 10)  ;; It seems to work just doing (= $x next-mouse-x) as well, but we add a buffer just in case.
+               (< (abs (- $y next-mouse-y)) 10)) ;; same here.
+          (begin
+            (set! prev-x next-mouse-x)
+            (set! prev-y next-mouse-y)
+            (set! next-mouse-x #f))
+          (begin
+            (set! $x prev-x)
+            (set! $y prev-y))))
+            
     (if (and (morally-equal? $x prev-x)
              (morally-equal? $y prev-y)
              (not value))
@@ -222,16 +238,19 @@
           
           ;; dirty trick to avoid the screen edges
           ;;
-          (when mouse-pointer-is-hidden  ;; <- this line can cause mouse pointer to be stuck between 16,16 and 500,500 if something goes wrong.
+          (when mouse-pointer-is-hidden  ;; <- this line can cause mouse pointer to be stuck between 100,100 and 500,500 if something goes wrong.
           ;;(when mouse-pointer-has-been-set ;; <- Workaround. Hopefully there's no problem doing it like this.
-            (when (or (< (<ra> :get-mouse-pointer-x) 16)
-                      (< (<ra> :get-mouse-pointer-y) 16)
+            (when (or (< (<ra> :get-mouse-pointer-x) 100)
+                      (< (<ra> :get-mouse-pointer-y) 100)
                       (> (<ra> :get-mouse-pointer-x) 500)
                       (> (<ra> :get-mouse-pointer-y) 500))
-              (<ra> :move-mouse-pointer 100 100)
+              (<ra> :move-mouse-pointer 300 300)
               ;;(c-display "x/y" (<ra> :get-mouse-pointer-x) (<ra> :get-mouse-pointer-y))
-              (set! prev-x 100)
-              (set! prev-y 100)))
+              ;;(set! prev-x 300)
+              ;;(set! prev-y 300)
+              (set! next-mouse-x 300)
+              (set! next-mouse-y 300)
+              ))
           
           (set! value (move-and-release $button
                                         dx
