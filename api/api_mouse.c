@@ -3417,11 +3417,11 @@ void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){
 extern struct TEvent tevent;
 
 bool ctrlPressed(void){
-  return AnyCtrl(tevent.keyswitch);
+  return CtrlPressed(); //AnyCtrl(tevent.keyswitch);
 }
 
 bool shiftPressed(void){
-  return AnyShift(tevent.keyswitch);
+  return ShiftPressed(); //AnyShift(tevent.keyswitch);
 }
 
 /*
@@ -3436,7 +3436,7 @@ bool leftExtraPressed(void){
 }
 
 bool altPressed(void){
-  return AnyAlt(tevent.keyswitch);
+  return AltPressed(); //AnyAlt(tevent.keyswitch);
 }
 
 

@@ -45,6 +45,8 @@ struct WBlocks *CB_CopyBlock(
 	struct Blocks *toblock;
 	struct Blocks *block=wblock->block;
 
+        // wblock
+        
 	towblock=talloc(sizeof(struct WBlocks));
 	memcpy(towblock,wblock,sizeof(struct WBlocks));
 

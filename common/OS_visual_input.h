@@ -30,6 +30,11 @@ extern LANGSPEC void RT_message(const char *fmt,...);
 extern LANGSPEC void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title);
 extern LANGSPEC void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const wchar_t *title);
 
+// Better to use these functions than to check tevent.keyswitch, since tevent.keyswitch is resetted when the mouse enters and leaves the window.
+extern LANGSPEC bool CtrlPressed(void);
+extern LANGSPEC bool ShiftPressed(void);
+extern LANGSPEC bool AltPressed(void);
+
 extern LANGSPEC void SetNormalPointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetPointingPointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetBlankPointer(struct Tracker_Windows *tvisual);

@@ -156,7 +156,7 @@ struct MyQSlider : public QSlider {
 
     //printf("***** last_pos: %d, new_pos: %d, dx: %d\n",(int)last_pos,(int)new_pos,(int)dx);
     
-    if (AnyCtrl(tevent.keyswitch))
+    if ((event->modifiers() & Qt::ControlModifier))
       per_pixel /= 10.0f;
 
     last_pos = new_pos;

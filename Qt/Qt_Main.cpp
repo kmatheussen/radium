@@ -883,6 +883,18 @@ void RT_request_to_stop_playing(void){
 
 int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y){return 0;}
 
+bool CtrlPressed(void){
+  return QApplication::keyboardModifiers() & Qt::ControlModifier;
+}
+
+bool ShiftPressed(void){
+  return QApplication::keyboardModifiers() & Qt::ShiftModifier;
+}
+
+bool AltPressed(void){
+  return QApplication::keyboardModifiers() & Qt::AltModifier;
+}
+
 void SetNormalPointer(struct Tracker_Windows *tvisual){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::ArrowCursor);
