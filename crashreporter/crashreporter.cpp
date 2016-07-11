@@ -142,6 +142,7 @@ void EVENTLOG_add_event(const char *log_entry){
 
 #include <QHBoxLayout>
 #include <QPushButton>
+#include <QCheckBox>
 #include <QButtonGroup>
 #include <QGroupBox>
 #include <QStyle>
@@ -240,7 +241,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     details.hide();
     
     QHBoxLayout button_layout;
-    auto *b1 = new QPushButton("Show details");
+    auto *b1 = new QCheckBox("Show details");
     auto *b2 = new QPushButton("SEND");
     auto *b3 = new QPushButton("DON'T SEND");
     
@@ -305,7 +306,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       box.setWindowTitle("Report warning");
 
     
-    layout.setSizeConstraint(QLayout::SetFixedSize);
+    //layout.setSizeConstraint(QLayout::SetFixedSize);
     box.setLayout(&layout);
 
 
@@ -314,6 +315,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     box.setWindowModality(Qt::ApplicationModal);
 
     //box.setMaximumWidth(600);
+    box.adjustSize();
     
     box.setVisible(true);
     box.show();
@@ -325,8 +327,6 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     SetFocus(wnd);
     SetWindowPos(wnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
 #endif
-
-    box.adjustSize();
 
     int ret = box.exec();
 
