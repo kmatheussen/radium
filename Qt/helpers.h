@@ -64,12 +64,12 @@ public:
     , has_stored_geometry(false)
     , timer(this)
   {
-    setWindowFlags(Qt::WindowStaysOnTopHint);
+    //setWindowFlags(Qt::WindowStaysOnTopHint);
   }
 
   void setVisible(bool visible) override {      
     //printf("   Set visible %d\n",visible);
-    
+
     if (!visible){
       
       geometry = saveGeometry();
@@ -81,7 +81,7 @@ public:
         restoreGeometry(geometry);
 
     }
-    
+
     QDialog::setVisible(visible);    
   }
 };

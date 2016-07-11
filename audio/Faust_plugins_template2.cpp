@@ -560,7 +560,6 @@ static void faust_gui_zone_callback(float val, void* arg){
 }
 #endif
 
-//#include <QGtkStyle>
 static void create_gui(QDialog *parent, Data *data, SoundPlugin *plugin){
 
   Voice &voice = data->voices[0];
@@ -570,6 +569,12 @@ static void create_gui(QDialog *parent, Data *data, SoundPlugin *plugin){
   data->qtgui = new QTGUI(parent);
   printf("     Created new QtGui %p\n", data->qtgui);
 
+  /*
+  QStyle *style = QStyleFactory::create("plastique");
+  if (style!=NULL)
+    data->qtgui->setStyle(style);
+  */
+  
   //FAUST_set_qtguistyle(parent);
   
   dsp->buildUserInterface(data->qtgui);
