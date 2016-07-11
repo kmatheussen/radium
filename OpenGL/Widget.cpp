@@ -190,6 +190,12 @@ DEFINE_ATOMIC(uint32_t, GE_opengl_version_flags) = 0;
 
 static bool g_safe_mode = false;
 
+#if USE_QT5
+static const bool USE_GL_LOCK = false; // Seems like this is safe... (the lock is used to avoid simultaneous access to openglcontext, but in qt5 we specifically tell qt that we use opengl from another thread, so I guess/hope qt is not accessing the openglcontext in qt5 when we do that. (this was also the main reason for switching to qt5, since the gl_lock doesn't always work perfectly in qt4.))
+#else
+static const bool USE_GL_LOCK = true;
+#endif
+
 static radium::Mutex mutex;
 static radium::Mutex draw_mutex(true); // recursive mutex
 
@@ -197,11 +203,13 @@ static __thread int g_gl_lock_visits = 0; // simulate a recursive mutex this way
 
 
 void GL_lock(void){
+
   g_gl_lock_visits++;  
   if (g_gl_lock_visits>1)
     return;
 
-  mutex.lock();
+  if (USE_GL_LOCK)
+    mutex.lock();
 
 #if 0
   if (g_safe_mode)
@@ -216,18 +224,22 @@ void GL_unlock(void){
   if (g_gl_lock_visits>0)
     return;
 
+  return;
+
 #if 0
   if (g_safe_mode)
     GL_draw_unlock();
 #endif
-  
-  mutex.unlock();
+
+  if (USE_GL_LOCK)
+    mutex.unlock();
 }
 
 bool GL_maybeLock(void){
+  
   if (g_gl_lock_visits>1)
     return false;
-  
+
   GL_lock();
   return true;
 }
@@ -821,7 +833,8 @@ private:
 
   // OpenGL thread
   void swap(void){
-    radium::ScopedMutex lock(&mutex);
+    if (USE_GL_LOCK)
+      radium::ScopedMutex lock(&mutex);
 
     // Swap to the newly rendered buffer
     if ( openglContext()->hasDoubleBuffer())
@@ -1106,6 +1119,9 @@ bool GL_notify_that_main_window_is_exposed(void){
             
 void GL_pause_gl_thread_a_short_while(void){
 
+  if (!USE_GL_LOCK)
+    return;
+  
   if (GL_get_pause_rendering_on_off()==false)
     return;
   
@@ -1136,10 +1152,13 @@ void GL_pause_gl_thread_a_short_while(void){
 void GL_EnsureMakeCurrentIsCalled(void){
   //printf("  Ensure make current\n");
   
+  if (!USE_GL_LOCK)
+    return;
+
   R_ASSERT_RETURN_IF_FALSE(g_gl_lock_visits>=1); 
   if (g_gl_lock_visits>=2) // If this happens we are probably called from inside a widget/dialog->exec() call. Better not wake up the gl thread.
     return;
- 
+
   g_order_make_current.signal();
 
   if (g_ack_make_current.wait(&mutex, 4000)==false){  // Have a timeout in case the opengl thread is stuck
