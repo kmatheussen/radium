@@ -525,23 +525,42 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const wchar_t *sf2_file, int
 }
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
-  const wchar_t *filename = HASH_get_string(state, "filename");
+  const wchar_t *filename;
   int         bank_num    = HASH_get_int(state, "bank_num");
   int         preset_num  = HASH_get_int(state, "preset_num");
 
+  bool audiodata_is_included = HASH_has_key(state, "audiofile");
+  
+  if (audiodata_is_included)
+    filename = DISK_base64_to_file(NULL, HASH_get_chars(state, "audiofile"));
+  else
+    filename = HASH_get_string(state, "filename");
+  
   if(filename==NULL)
     return;
 
   if(FLUIDSYNTH_set_new_preset(plugin, filename, bank_num, preset_num)==false)
     GFX_Message(NULL, "Could not load soundfont \"%s\", bank %d, preset %d",filename,bank_num,preset_num);
+
+  // Can not delete now. file is still used when creating/recreating states. Deleting at program end.
+  //if (audiodata_is_included)
+  //  DISK_delete_base64_file(filename);
 }
 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
   Data *data=(Data*)plugin->data;
 
-  HASH_put_string(state, "filename", OS_saving_get_relative_path_if_possible(data->filename));
+  const wchar_t *maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename);
+    
+  HASH_put_string(state, "filename", maybe_relative_filename);
   HASH_put_int(state, "bank_num", data->bank_num);
   HASH_put_int(state, "preset_num", data->preset_num);
+
+  if (g_embed_samples){
+    const char *audiofile = DISK_file_to_base64(maybe_relative_filename);
+    if (audiofile != NULL)
+      HASH_put_chars(state, "audiofile", audiofile);
+  }
 }
 
 const wchar_t *FLUIDSYNTH_get_filename(struct SoundPlugin *plugin, bool *is_default_sound){

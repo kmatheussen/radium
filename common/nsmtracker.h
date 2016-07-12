@@ -1652,7 +1652,7 @@ struct Root{
 
 extern struct Root *root;
 extern DEFINE_ATOMIC(bool, is_starting_up);
-
+extern bool g_embed_samples;
 
 
 

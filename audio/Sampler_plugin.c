@@ -1993,11 +1993,18 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
 }
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
-  const wchar_t *filename          = HASH_get_string(state, "filename");
+  const wchar_t *filename;
   int            instrument_number = HASH_get_int(state, "instrument_number");
   int            resampler_type    = HASH_get_int(state, "resampler_type");
   int            loop_start        = 0; if (HASH_has_key(state, "loop_start"))  loop_start  = HASH_get_int(state, "loop_start");
   int            loop_length       = 0; if (HASH_has_key(state, "loop_length")) loop_length = HASH_get_int(state, "loop_length");
+
+  bool audiodata_is_included = HASH_has_key(state, "audiofile");
+  
+  if (audiodata_is_included)
+    filename = DISK_base64_to_file(NULL, HASH_get_chars(state, "audiofile"));
+  else
+    filename = HASH_get_string(state, "filename");
   
   if(filename==NULL){
     RError("filename==NULL");
@@ -2006,6 +2013,10 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
 
   if(set_new_sample(plugin,filename,instrument_number,resampler_type,loop_start,loop_length, is_loading)==false)
     GFX_Message(NULL, "Could not load soundfile \"%s\". (instrument number: %d)\n",STRING_get_chars(filename),instrument_number);
+
+  // Can not delete now. file is still used when creating/recreating states. Deleting at program end.
+  //if (audiodata_is_included)
+  //  DISK_delete_base64_file(filename);
 }
 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
@@ -2013,12 +2024,19 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 
   const wchar_t *maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename);
   //printf("maybe: -%s- -%s-\n", data->filename, maybe_relative_filename);
+  
   HASH_put_string(state, "filename", maybe_relative_filename);
   HASH_put_int(state, "instrument_number",data->instrument_number);
   HASH_put_int(state, "resampler_type",data->resampler_type);
 
   HASH_put_int(state, "loop_start",data->loop_start);
   HASH_put_int(state, "loop_length",data->loop_length);
+
+  if (g_embed_samples){
+    const char *audiofile = DISK_file_to_base64(maybe_relative_filename);
+    if (audiofile != NULL)
+      HASH_put_chars(state, "audiofile", audiofile);
+  }
 }
 
 const wchar_t *SAMPLER_get_filename(struct SoundPlugin *plugin, bool *is_default_sound){

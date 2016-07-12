@@ -1389,7 +1389,8 @@ int radium_main(char *arg){
   // We don't want the crashreporter to pop up when program exits.
   CRASHREPORTER_dont_report_more();
 
-    
+  DISK_cleanup();
+      
   fprintf(stderr,"          ENDING 1\n");
   
   g_qt_is_running = false;
@@ -1440,7 +1441,7 @@ int radium_main(char *arg){
 #endif
 
   fprintf(stderr,"          ENDING 8\n");
-  
+
   //V_shutdown();
   
   //CRASHREPORTER_close();

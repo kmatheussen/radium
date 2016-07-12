@@ -40,7 +40,12 @@ extern LANGSPEC int DISK_read_binary(disk_t *disk, void *destination, int num_by
 // CLOSE
 extern LANGSPEC bool DISK_close_and_delete(disk_t *disk);
 
-
+// READ AND WRITE FILES TO/FROM BASE64 STRINGS
+extern LANGSPEC const char *DISK_file_to_base64(const wchar_t *wfilename); // Returns NULL if error.
+extern LANGSPEC const wchar_t *DISK_base64_to_file(const wchar_t *wfilename, const char *chars); // If wfilename==NULL, the name of a temporary file is returned. Returns NULL if error.
+extern LANGSPEC void DISK_delete_base64_file(const wchar_t *wfilename); // Deletes temporary file created by a successfull call to DISK_base64_to_file(NULL,...).
+extern LANGSPEC void DISK_cleanup(void);
+    
 #ifdef USE_QT4
 
 #include <QString>

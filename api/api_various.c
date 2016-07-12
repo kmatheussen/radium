@@ -465,14 +465,18 @@ char *getMenuesConfPath(void){
   return (char*)OS_get_menues_conf_filename2();
 }
 
+void save(void){
+  Save(root);
+}
+
 void saveAs(void){
   SaveAs(root);
 }
 
-
-void save(void){
-  Save(root);
+void saveWithEmbeddedSamples(void){
+  SaveWithEmbeddedSamples(root);
 }
+
 
 extern bool isloaded;
 

@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
+#include "../common/Mutex.hpp"
 
 #include "../common/OS_disk_proc.h"
 
@@ -346,3 +347,85 @@ bool DISK_close_and_delete(disk_t *disk){
   return ret;
 }
 
+// Only used for audio files, so we don't bother with compression.
+const char *DISK_file_to_base64(const wchar_t *wfilename){
+  disk_t *disk = DISK_open_binary_for_reading(wfilename);
+
+  if (disk==NULL)
+    return NULL;
+
+  QByteArray data = disk->file()->readAll();
+
+  DISK_close_and_delete(disk);
+
+  return talloc_strdup(data.toBase64().constData());
+}
+
+static QMap<QString, QTemporaryFile*> g_temporary_files;
+static radium::Mutex g_mutex;
+
+// Only used for audio files, so we don't bother with decompression.
+const wchar_t *DISK_base64_to_file(const wchar_t *wfilename, const char *chars){
+  QFile *file;
+  
+  QTemporaryFile *temporary_write_file = NULL;
+    
+  QFile outfile;
+
+  QByteArray data = QByteArray::fromBase64(chars);
+  
+  if (wfilename==NULL) {
+
+    temporary_write_file = new QTemporaryFile;
+    
+    file = temporary_write_file;
+    
+  } else {
+    
+    outfile.setFileName(STRING_get_qstring(wfilename));
+  
+    file = &outfile;
+  }
+
+  if (file->open(QIODevice::WriteOnly)==false){
+    GFX_Message(NULL, "Unable to open file \"%s\" (%s)", file->fileName().toUtf8().constData(), file->errorString().toUtf8().constData());
+    return NULL;
+  }
+
+  if (file->write(data) != data.size()){
+    GFX_Message(NULL, "Unable to write to file \"%s\" (%s)", file->fileName().toUtf8().constData(), file->errorString().toUtf8().constData());
+    file->close();
+    return NULL;
+  }
+
+  file->close();
+
+  if (wfilename==NULL){
+    radium::ScopedMutex lock(&g_mutex);
+    g_temporary_files[temporary_write_file->fileName()] = temporary_write_file;
+  }
+  
+  return STRING_create(file->fileName());
+}
+
+void DISK_delete_base64_file(const wchar_t *wfilename){
+  radium::ScopedMutex lock(&g_mutex);
+  
+  QString key = STRING_get_qstring(wfilename);
+  QTemporaryFile *file = g_temporary_files[key];
+
+  R_ASSERT_RETURN_IF_FALSE(file!=NULL);
+
+  g_temporary_files.remove(key);
+  
+  delete file;
+}
+
+void DISK_cleanup(void){
+  radium::ScopedMutex lock(&g_mutex);
+  
+  for(auto *file : g_temporary_files.values())
+    delete file;
+
+  g_temporary_files.clear();
+}

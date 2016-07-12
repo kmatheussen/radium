@@ -117,6 +117,13 @@ void SaveAs(struct Root *theroot){
           GFX_SetWindowTitle(theroot->song->tracker_windows,filename);
 }
 
+bool g_embed_samples = false;
+void SaveWithEmbeddedSamples(struct Root *theroot){
+  g_embed_samples=true;
+  SaveAs(theroot);
+  g_embed_samples=false;
+}
+
 void Save(struct Root *theroot){
 
 	PlayStop();

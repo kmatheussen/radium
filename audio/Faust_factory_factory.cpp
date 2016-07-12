@@ -4,7 +4,7 @@
 #include <QPair>
 
 #if 0 //QT_VERSION >= 0x050600
-#include <QTemporaryDir> // seems crappy. Slow and give error messages about not being able to delete files. Files which are placed in a 777 directory.
+#include <QTemporaryDir> // Spends too much time deleting files, and gives error messages as well.
 #else
 namespace{
 
