@@ -39,6 +39,8 @@ export GCC="gcc -mfpmath=sse -msse2"
 export CLANGCC="clang++ -mfpmath=sse -msse2"
 export LINKER=g++
 
+export FPIC="-fPIC"
+
 export TARGET_OS=linux
 
 export PKG=pkg-config
