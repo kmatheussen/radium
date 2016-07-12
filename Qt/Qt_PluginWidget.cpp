@@ -74,12 +74,19 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
   int iXsPerPage = 1;
 
   bool is_multiband = !strcmp(type->type_name,"Faust") && !strcmp(type->name,"Multiband Compressor");
+  bool is_tapiir = !strcmp(type->type_name,"Faust") && !strcmp(type->name,"Tapiir");
 
   if(is_multiband){
 
     iYsPerPage = 8;
     iXsPerPage = 4;
 
+  } else if(is_tapiir){
+    
+    iYsPerPage = 10;
+    iXsPerPage = 8;
+    //iPages = 2;
+    
   } else {
 
     if (iYsPerPage > MaxYsPerPage) {
@@ -104,6 +111,11 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
     pVBoxLayout = new QVBoxLayout();
     pVBoxLayout->setMargin(0);
     pVBoxLayout->setSpacing(0);
+#if USE_QT5
+    static QStyle *style = QStyleFactory::create("plastique");
+    if (style!=NULL)
+      pTabWidget->setStyle(style);
+#endif
   }
 
   QGridLayout *pGridLayout = new QGridLayout();
