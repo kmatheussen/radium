@@ -5737,7 +5737,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
       (assert #f))
   
   (<ra> :reset-undo)
-  (<ra> :load-song "mod_song_template.rad")
+  (<ra> :load-song "sounds/mod_song_template.rad")
 
   (<ra> :start-ignoring-undo)
   (<ra> :open-progress-window (<-> "Please wait, loading " filename))
