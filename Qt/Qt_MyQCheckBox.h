@@ -100,7 +100,7 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
         button_text_color.setAlpha(120);
       painter->setPen(button_text_color);
 
-      if(text=="Loop")
+      if(text.endsWith("Loop"))
         text = text + " " + QChar(8634);
 
       if(height>width){

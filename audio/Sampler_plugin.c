@@ -95,6 +95,8 @@ enum{
   EFF_TREMOLO_DEPTH,
   EFF_LOOP_ONOFF,
   EFF_CROSSFADE_LENGTH,
+  EFF_REVERSE,
+  EFF_PINGPONG,
   EFF_NUM_EFFECTS
   };
 
@@ -179,6 +181,9 @@ typedef struct{
   DEFINE_ATOMIC(bool, loop_onoff);
   int crossfade_length;
 
+  DEFINE_ATOMIC(bool, reverse);
+  DEFINE_ATOMIC(bool, pingpong);
+  
   double vibrato_depth;
   double vibrato_speed;
   double vibrato_phase_add;
@@ -417,11 +422,15 @@ static long RT_src_callback_nolooping(Voice *voice, const Sample *sample, Data *
   return sample->num_frames - start_pos;
 }
 
-static long RT_src_callback_reverse_nolooping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
+static long RT_src_callback_reverse(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data, bool do_looping){
   *out_data = &voice->crossfade_buffer[0];
-  
-  if(start_pos==sample->num_frames)
-    return 0;
+
+  if(start_pos==sample->num_frames) {
+    if (do_looping)
+      start_pos = 0;
+    else
+      return 0;
+  }
 
   int samples_left = sample->num_frames - start_pos;
 
@@ -436,20 +445,22 @@ static long RT_src_callback_reverse_nolooping(Voice *voice, const Sample *sample
     dest_sound[i] = source_sound[sample_pos--];
 
   
-  voice->pos = start_pos + num_samples_to_return; // next
+  voice->pos = start_pos + num_samples_to_return; // i.e. next pos
 
   return num_samples_to_return;
 }
 
 static long RT_src_callback_ping_pong_looping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
-  R_ASSERT(start_pos <= sample->num_frames*2);
+  const int num_sample_frames = sample->num_frames;
   
-  if (start_pos>=sample->num_frames*2)
+  R_ASSERT(start_pos <= num_sample_frames*2);
+  
+  if (start_pos >= num_sample_frames*2)
     start_pos = 0;
 
-  if (start_pos >= sample->num_frames) {
-    int ret = RT_src_callback_reverse_nolooping(voice, sample, data, start_pos - sample->num_frames, out_data);
-    voice->pos += sample->num_frames;
+  if (start_pos >= num_sample_frames) {
+    int ret = RT_src_callback_reverse(voice, sample, data, start_pos - num_sample_frames, out_data, false);
+    voice->pos += num_sample_frames;
     return ret;
   } else
     return RT_src_callback_nolooping(voice, sample, data, start_pos, out_data);
@@ -463,13 +474,19 @@ static long RT_src_callback(void *cb_data, float **out_data){
   int start_pos        = voice->pos;
   Data  *data          = sample->data;
 
-  if (false)
-    return RT_src_callback_ping_pong_looping(voice, sample, data, start_pos, out_data);
+  bool reverse = ATOMIC_GET(sample->data->p.reverse);
+  bool loop = ATOMIC_GET(sample->data->p.loop_onoff);
   
-  else if (false)
-    return RT_src_callback_reverse_nolooping(voice, sample, data, start_pos, out_data);
+  if (ATOMIC_GET(sample->data->p.pingpong))
+    return RT_src_callback_ping_pong_looping(voice, sample, data, start_pos, out_data); // ping pong looping
   
-  else if(ATOMIC_GET(sample->data->p.loop_onoff)==false || sample->loop_end <= sample->loop_start)
+  else if (reverse && loop)
+    return RT_src_callback_reverse(voice, sample, data, start_pos, out_data, true); //loop reverse
+  
+  else if (reverse && !loop)
+    return RT_src_callback_reverse(voice, sample, data, start_pos, out_data, false); //only reverse, no looping
+  
+  else if(!loop || sample->loop_end <= sample->loop_start)
     return RT_src_callback_nolooping(voice, sample, data, start_pos, out_data);
 
   else if(data->p.crossfade_length > 0)
@@ -1027,6 +1044,10 @@ static bool get_loop_onoff(Data *data){
   return ATOMIC_GET(data->p.loop_onoff);
 }
 
+static bool can_crossfade(Data *data){
+  return ATOMIC_GET(data->p.reverse)==false && ATOMIC_GET(data->p.pingpong)==false;
+}
+
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
@@ -1124,10 +1145,40 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       break;
       
     case EFF_CROSSFADE_LENGTH:
-      data->p.crossfade_length = scale(value,
-                                       0.0, 1.0,
-                                       0, MAX_CROSSFADE_LENGTH
-                                       );
+      if (can_crossfade(data))
+        data->p.crossfade_length = scale(value,
+                                         0.0, 1.0,
+                                         0, MAX_CROSSFADE_LENGTH
+                                         );
+      else
+        data->p.crossfade_length = 0;
+      
+      break;
+      
+    case EFF_REVERSE:      
+      ATOMIC_SET(data->p.reverse, value>=0.5f);
+      if (!can_crossfade(data)){
+        //printf("Doing it %p\n",plugin->patch);
+        if (when==FX_single)
+          PLUGIN_set_effect_value(plugin, time, EFF_CROSSFADE_LENGTH, 0, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, when); // i.e. not automation
+        else
+          data->p.crossfade_length = 0; // i.e. automation
+        if (plugin->patch != NULL)
+          GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
+      }
+                                 
+      break;
+      
+    case EFF_PINGPONG:
+      ATOMIC_SET(data->p.pingpong, value>=0.5f);
+      if (!can_crossfade(data)){
+        if (when==FX_single)
+          PLUGIN_set_effect_value(plugin, time, EFF_CROSSFADE_LENGTH, 0, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, when); // i.e. not automation
+        else
+          data->p.crossfade_length = 0; // i.e. automation
+        if (plugin->patch != NULL)
+          GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
+      }
       break;
       
     default:
@@ -1197,6 +1248,14 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       data->p.crossfade_length = value;
       break;
 
+    case EFF_REVERSE:
+      ATOMIC_SET(data->p.reverse, value>=0.5f);
+      break;
+      
+    case EFF_PINGPONG:
+      ATOMIC_SET(data->p.pingpong, value>=0.5f);
+      break;
+      
     default:
       RError("S2. Unknown effect number %d\n",effect_num);
     }
@@ -1270,6 +1329,14 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return scale(data->p.crossfade_length,0,MAX_CROSSFADE_LENGTH,0,1);
       break;
 
+    case EFF_REVERSE:
+      return ATOMIC_GET(data->p.reverse)==true?1.0f:0.0f;
+      break;
+
+    case EFF_PINGPONG:
+      return ATOMIC_GET(data->p.pingpong)==true?1.0f:0.0f;
+      break;
+
     default:
       RError("S3. Unknown effect number %d\n",effect_num);
       return 0.5f;
@@ -1309,6 +1376,14 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 
     case EFF_CROSSFADE_LENGTH:
       return data->p.crossfade_length;
+
+    case EFF_REVERSE:
+      return ATOMIC_GET(data->p.reverse)==true?1.0f:0.0f;
+      break;
+
+    case EFF_PINGPONG:
+      return ATOMIC_GET(data->p.pingpong)==true?1.0f:0.0f;
+      break;
 
     default:
       RError("S4. Unknown effect number %d\n",effect_num);
@@ -1898,7 +1973,10 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
     return "Loop";
   case EFF_CROSSFADE_LENGTH:
     return "Crossfade";
-
+  case EFF_REVERSE:
+    return "Reverse";
+  case EFF_PINGPONG:
+    return "Ping-pong Loop";
   default:
     RError("S6. Unknown effect number %d\n",effect_num);
     return NULL;
@@ -1906,7 +1984,7 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
 }
 
 static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
-  if(effect_num==EFF_LOOP_ONOFF)
+  if(effect_num==EFF_LOOP_ONOFF || effect_num==EFF_REVERSE || effect_num==EFF_PINGPONG)
     return EFFECT_FORMAT_BOOL;
   else if (effect_num==EFF_CROSSFADE_LENGTH)
     return EFFECT_FORMAT_INT;
