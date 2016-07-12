@@ -108,6 +108,12 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 #endif
     }
 
+#ifdef USE_QT5
+    static QStyle *fusion_style = QStyleFactory::create("fusion");
+    if (fusion_style != NULL)
+      name_widget->setStyle(fusion_style);
+#endif
+    
     for(int i=0;i<NUM_PATCH_VOICES;i++){
       
       set_fixed_widget_width(get_o(i), "xx");    // onoff
