@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>7</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -1100,7 +1100,7 @@
           <widget class="QLabel" name="label_6">
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Enable this option to show key codes in the editor. 
-This option is only useful&lt;br&gt;for debugging Radium. If a key doesn'twork, report which key&lt;br&gt;and what numbers is shown in the editor.
+This option is only useful&lt;br&gt;for debugging Radium. If a key doesn'twork, report which key&lt;br&gt;and what numbers are shown in the editor.
 &lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
@@ -2473,8 +2473,8 @@ This option should be considered as a lightweight version of  &quot;Only show mo
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>396</width>
-            <height>26</height>
+            <width>718</width>
+            <height>486</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -4083,12 +4083,21 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>100</width>
-               <height>30</height>
+               <width>872</width>
+               <height>290</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
-              <property name="margin">
+              <property name="leftMargin">
+               <number>1</number>
+              </property>
+              <property name="topMargin">
+               <number>1</number>
+              </property>
+              <property name="rightMargin">
+               <number>1</number>
+              </property>
+              <property name="bottomMargin">
                <number>1</number>
               </property>
              </layout>
