@@ -1205,6 +1205,7 @@ void showHideBPMTrack(int windownum){
     ATOMIC_WRITE(window->curr_track, 0);
 
   UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
 }
 
 void showHideReltempoTrack(int windownum){
@@ -1216,6 +1217,7 @@ void showHideReltempoTrack(int windownum){
     ATOMIC_WRITE(window->curr_track, 0);
 
   UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
 }
 
 bool signatureTrackVisible(int windownum){

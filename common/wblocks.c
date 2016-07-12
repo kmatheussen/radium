@@ -268,7 +268,7 @@ void UpdateWBlockCoordinates(
 
 	wblock->reltempo.x1=0;
 	wblock->reltempo.y1=wblock->bottombar.y1+3;
-	wblock->reltempo.x2=wblock->temponodearea.x2-3;
+	wblock->reltempo.x2=wblock->t.x1 - 3;
 	wblock->reltempo.y2=wblock->bottombar.y2-1;
 
 	wblock->num_visiblelines=(wblock->t.y2-wblock->t.y1)/window->fontheight;
