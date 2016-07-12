@@ -1976,7 +1976,7 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
   case EFF_REVERSE:
     return "Reverse";
   case EFF_PINGPONG:
-    return "Ping-pong Loop";
+    return "Ping-Pong Loop";
   default:
     RError("S6. Unknown effect number %d\n",effect_num);
     return NULL;

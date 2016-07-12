@@ -254,7 +254,7 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
           {
 
             mmp2filename=filename;
-            ret = Load(STRING_create("new_song.rad"));
+            ret = Load(STRING_create("sounds/new_song.rad"));
 
           } else {
 
@@ -306,7 +306,7 @@ void NewSong_CurrPos(struct Tracker_Windows *window){
   //sprintf(temp,"%s%s%s",OS_get_program_path(), OS_get_directory_separator(), "new_song.rad");
   //Load_CurrPos_org(window,talloc_strdup(temp));
 
-  Load_CurrPos_org(window, OS_get_full_program_file_path(STRING_create("new_song.rad")));
+  Load_CurrPos_org(window, OS_get_full_program_file_path(STRING_create("sounds/new_song.rad")));
 
   
   GFX_SetWindowTitle(root->song->tracker_windows, STRING_create("Radium - New song."));
