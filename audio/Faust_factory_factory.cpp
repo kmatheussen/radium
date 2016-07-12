@@ -3,8 +3,8 @@
 #include <QThread>
 #include <QPair>
 
-#if QT_VERSION >= 0x050600
-#include <QTemporaryDir>
+#if 0 //QT_VERSION >= 0x050600
+#include <QTemporaryDir> // seems crappy. Slow and give error messages about not being able to delete files. Files which are placed in a 777 directory.
 #else
 namespace{
 

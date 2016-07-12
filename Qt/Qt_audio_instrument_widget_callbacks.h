@@ -101,13 +101,6 @@ public:
 
     setupUi(this);    
 
-#if USE_QT5
-    static QStyle *style = QStyleFactory::create("Fusion");
-    if (style!=NULL)
-      scrollArea->setStyle(style); // sliders look better with fusion.
-#endif
-
-
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
     _patch_widget = new Patch_widget(this,patch);

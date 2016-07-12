@@ -634,7 +634,7 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
 static QPalette sys_palette;
 
 static void updateWidget(EditorWidget *my_widget,QWidget *widget){
-
+  
   QPalette pal(widget->palette());
 
   updatePalette(my_widget,widget,pal);

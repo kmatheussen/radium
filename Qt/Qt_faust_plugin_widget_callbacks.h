@@ -89,7 +89,8 @@ struct FaustResultWebView
     : QWebView(parent)
 #endif
     , is_dragging(false)
-  {}
+  {
+  }
 
   QPoint start;
   QPoint start_scrollPos;
@@ -236,6 +237,9 @@ class Editor : public FocusSnifferQsciScintilla{
     : FocusSnifferQsciScintilla(parent)
   {
     minimizeMargins(this);
+    static QStyle *style = QStyleFactory::create("fusion"); // parent is platique
+    if (style!=NULL)
+      setStyle(style);
   }
 
 
@@ -439,6 +443,14 @@ public:
 
     setupUi(this);
 
+    {
+      static QStyle *style = QStyleFactory::create("plastique");
+      if (style!=NULL)
+        setStyle(style);
+    }
+    {
+    }
+    
     _initial_height = height();
     _initial_width = width();
     
@@ -621,8 +633,9 @@ public:
           _error_zoom_factor = web->zoomFactor();
 
         _web_text = "";
-        
+
         web->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(FAUST_get_svg_path(plugin))));
+        
         web->setZoomFactor(_svg_zoom_factor);
                 
         printf("    URL: -%s-. native: -%s-, org: -%s-\n",web->url().toString().toUtf8().constData(), QDir::fromNativeSeparators(FAUST_get_svg_path(plugin)).toUtf8().constData(), FAUST_get_svg_path(plugin).toUtf8().constData());

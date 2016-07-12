@@ -318,7 +318,7 @@ int OS_SYSTEM_get_qwerty_keynum(void *void_event) {
   return EVENT_NO;
 }
 
-int OS_SYSTEM_get_keycode(void *void_event) {
+int OS_SYSTEM_get_scancode(void *void_event) {
   MSG *msg = (MSG*)void_event;
   
   int scancode = MapVirtualKey(msg->wParam, MAPVK_VK_TO_VSC);

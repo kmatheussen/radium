@@ -1111,6 +1111,7 @@ MixerWidget::MixerWidget(QWidget *parent)
     : QWidget(parent)
     , scene(this)
 {
+
   if(g_mixer_widget!=NULL){
     fprintf(stderr,"Error. More than one MixerWidget created.\n");
     abort();

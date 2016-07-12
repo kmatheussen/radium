@@ -121,7 +121,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
 #if USE_QT5
     static QStyle *style = QStyleFactory::create("plastique");
     if (style!=NULL)
-      pTabWidget->setStyle(style);
+      pTabWidget->setStyle(style); // fusion have too much grey border around tabs
 #endif
   }
 

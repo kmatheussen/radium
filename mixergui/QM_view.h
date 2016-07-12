@@ -72,7 +72,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qlabel.h>
 #include <qboxlayout.h>
 
-
 //QT_FORWARD_DECLARE_CLASS(QLabel)
 //QT_FORWARD_DECLARE_CLASS(QSlider)
 //QT_FORWARD_DECLARE_CLASS(QToolButton)
@@ -83,9 +82,9 @@ class GraphicsView : public QGraphicsView
 {
   Q_OBJECT
 public:
-    GraphicsView(View *v) : QGraphicsView(), view(v) {
+  GraphicsView(View *v) : QGraphicsView(), view(v) {
     //qRegisterMetaType<GraphicsView>("GraphicsView");
-    }
+  }
 
 protected:
     void wheelEvent(QWheelEvent *);

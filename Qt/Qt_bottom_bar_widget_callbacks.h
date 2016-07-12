@@ -124,9 +124,6 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     _initing = true;
     setupUi(this);
 #ifdef USE_QT5
-    QStyle *style = QStyleFactory::create("fusion");
-    if (style!=NULL)
-      setStyle(style);
 #else
     setStyle(new QCleanlooksStyle());
 #endif

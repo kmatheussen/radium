@@ -1078,7 +1078,7 @@ int radium_main(char *arg){
     if(override_default_qt_style){
       //QApplication::setStyle( new QOxygenStyle());
 
-      #ifdef USE_QT5
+#ifdef USE_QT5
 
 #if 0
         QString styles_path = QCoreApplication::applicationDirPath() + QDir::separator()
@@ -1102,19 +1102,20 @@ int radium_main(char *arg){
         // This call succeeds, but the call to QStyleFactory::create("plastique") fails no matter what I do, except putting libqplastiquestyle.so directly into bin/styles/
         if (gakk->load()==false)
           GFX_Message(NULL, "Unable to load style library. Ensure Radium is installed properly.");
-#endif
-        
-        QStyle *style = QStyleFactory::create("plastique");
+#endif // 0
+
+        //QStyle *style = QStyleFactory::create("plastique");
+        QStyle *style = QStyleFactory::create("fusion");
         if (style==NULL)
-          GFX_Message(NULL, "Unable to load plastique style");
+          GFX_Message(NULL, "Unable to load fusion style");
         else
           QApplication::setStyle(style);
         
-      #else
+#else // USE_QT5
         
         QApplication::setStyle( new QPlastiqueStyle());
         
-      #endif
+#endif
       //QApplication::setStyle( new QMacStyle());
     
     //QApplication::setStyle( new QCleanlooksStyle() );

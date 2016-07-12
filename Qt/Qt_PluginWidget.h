@@ -335,11 +335,6 @@ struct PluginWidget : public QWidget{
     : QWidget(parent)
     , _num_rows(0)
   {
-#ifdef USE_QT5
-    static QStyle *style_ = QStyleFactory::create("fusion");
-    if (style_!=NULL)
-      setStyle(style_);
-#endif
   }
 
 
