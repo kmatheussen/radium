@@ -47,14 +47,21 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
 
   //PluginType *pType = m_pPlugin->type();
 
+  bool is_patchbay = !strcmp("Patchbay",plugin->type->type_name);
+  
   int MaxYsPerPage     = 8;
-  const int MaxXsPerPage     = 4;
+  int MaxXsPerPage     = 8;
+  if (is_patchbay){
+    MaxYsPerPage = 7;
+    MaxXsPerPage = 18;
+  }
   int MaxParamsPerPage = MaxYsPerPage * MaxXsPerPage;
+
 
   //const Plugin::Params& params = m_pPlugin->params();
   int iParams = PLUGIN_get_num_visible_effects(plugin);
 
-  if (iParams > MaxParamsPerPage && strcmp("Patchbay",plugin->type->type_name)){
+  if (iParams > MaxParamsPerPage && !is_patchbay){
     MaxYsPerPage     = 6;
     MaxParamsPerPage = MaxYsPerPage * MaxXsPerPage;
   }
@@ -76,7 +83,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
   bool is_multiband = !strcmp(type->type_name,"Faust") && !strcmp(type->name,"Multiband Compressor");
   bool is_tapiir = !strcmp(type->type_name,"Faust") && !strcmp(type->name,"Tapiir");
 
-  if(is_multiband){
+  if (is_multiband){
 
     iYsPerPage = 8;
     iXsPerPage = 4;
@@ -86,7 +93,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
     iYsPerPage = 10;
     iXsPerPage = 8;
     //iPages = 2;
-    
+
   } else {
 
     if (iYsPerPage > MaxYsPerPage) {
