@@ -1317,7 +1317,7 @@ HASH_TYPE
 filename
 0
 STRING_TYPE
-sounds/243749__unfa__metronome-1khz-weak-pulse.flac
+243749__unfa__metronome-1khz-weak-pulse.flac
 instrument_number
 0
 INT_TYPE
