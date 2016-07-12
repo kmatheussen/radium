@@ -48,6 +48,11 @@
 #include "../midi/midi_juce.cpp"
 
 
+#if FOR_LINUX
+#define CUSTOM_MM_THREAD 1
+#else
+#define CUSTOM_MM_THREAD 0
+#endif
 
 namespace{
 
@@ -249,8 +254,7 @@ namespace{
 
   };
 
-  
-#if JUCE_LINUX
+#if CUSTOM_MM_THREAD
   struct JuceThread : public Thread {
     Atomic<int> isInited;
 
@@ -586,7 +590,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
   
-#if JUCE_LINUX
+#if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
 #endif
   
@@ -616,7 +620,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 }
 
 static bool gui_is_visible(struct SoundPlugin *plugin){
-#if JUCE_LINUX
+#if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
 #endif
 
@@ -629,7 +633,7 @@ static bool gui_is_visible(struct SoundPlugin *plugin){
 }
 
 static void show_gui(struct SoundPlugin *plugin){
-#if JUCE_LINUX
+#if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
 #endif
 
@@ -655,7 +659,7 @@ static void show_gui(struct SoundPlugin *plugin){
 
 
 static void hide_gui(struct SoundPlugin *plugin){
-#if JUCE_LINUX
+#if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
 #endif
   
@@ -753,7 +757,7 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
 
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
-#if JUCE_LINUX
+#if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
 #endif
 
@@ -793,7 +797,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
 static int num_running_plugins = 0;
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
-#if JUCE_LINUX
+#if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
 #endif
 
@@ -831,7 +835,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
-#if JUCE_LINUX
+#if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
 #endif
   
@@ -868,7 +872,7 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
-#if JUCE_LINUX
+#if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
 #endif
 
@@ -897,7 +901,7 @@ static const char *get_effect_description(const struct SoundPluginType *plugin_t
 */
 
 static int get_num_presets(struct SoundPlugin *plugin){
-#if JUCE_LINUX
+#if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
 #endif
 
@@ -908,7 +912,7 @@ static int get_num_presets(struct SoundPlugin *plugin){
 }
 
 static int get_current_preset(struct SoundPlugin *plugin){
-#if JUCE_LINUX
+#if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
 #endif
 
@@ -919,7 +923,7 @@ static int get_current_preset(struct SoundPlugin *plugin){
 }
 
 static void set_current_preset(struct SoundPlugin *plugin, int num){
-#if JUCE_LINUX
+#if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
 #endif
 
@@ -930,7 +934,7 @@ static void set_current_preset(struct SoundPlugin *plugin, int num){
 }
 
 static const char *get_preset_name(struct SoundPlugin *plugin, int num){
-#if JUCE_LINUX
+#if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
 #endif
 
@@ -941,7 +945,7 @@ static const char *get_preset_name(struct SoundPlugin *plugin, int num){
 }
 
 static void set_preset_name(struct SoundPlugin *plugin, int num, const char* new_name){
-#if JUCE_LINUX
+#if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
 #endif
 
@@ -1061,6 +1065,83 @@ void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, c
   
   PR_add_plugin_container(container);
 }
+
+
+#if 0 // Only works in linux.
+
+namespace{
+  struct ProgressWindow  : public DocumentWindow {
+    ThreadWithProgressWindow *progress_bar = NULL;
+    //ProgressBar *progress_bar = NULL;
+    double progress_progress = 0.0;
+    
+    ProgressWindow(const char *title)
+      : DocumentWindow (title,
+                        Colours::lightgrey,
+                        DocumentWindow::allButtons,
+                        true)
+    {      
+      progress_bar = new ThreadWithProgressWindow(title, true, false);
+      //progress_bar = new ProgressBar(progress_progress);
+      progress_bar->setSize(600,20);
+
+      //progress_bar->setLookAndFeel(new LookAndFeel_V2);
+        
+      //addAndMakeVisible(progress_bar);
+        
+      this->setAlwaysOnTop(true);
+      //this->setSize (600, 20);
+      this->setUsingNativeTitleBar(true);
+      
+      this->setContentOwned(progress_bar, true);
+
+      this->centreWithSize (getWidth(), getHeight());
+      
+      this->setVisible(true);
+
+      progress_bar->runThread();
+    }
+  };
+}
+
+static ProgressWindow *g_progress_window;
+
+void GFX_OpenProgress(const char *message){
+#if CUSTOM_MM_THREAD
+  const MessageManagerLock mmLock;
+#endif
+
+  delete g_progress_window;
+
+  g_progress_window = new ProgressWindow(message);
+}
+
+void GFX_ShowProgressMessage(const char *message){
+  if (g_progress_window == NULL)
+    GFX_OpenProgress("...");
+
+  {
+#if CUSTOM_MM_THREAD
+    const MessageManagerLock mmLock;
+#endif
+    //g_progress_window->progress_bar->setTextToDisplay(message);
+    g_progress_window->progress_bar->setStatusMessage(message);
+    g_progress_window->progress_bar->setProgress(g_progress_window->progress_progress);
+    g_progress_window->progress_progress += 0.1;
+    //if(g_progress_progress > 1.0)
+    //  g_progress_progress = 0.0;
+  }
+}
+
+void GFX_CloseProgress(void){
+#if CUSTOM_MM_THREAD
+    const MessageManagerLock mmLock;
+#endif
+  delete g_progress_window;
+  g_progress_window = NULL;
+}
+
+#endif
 
 
 static String g_backtrace;
@@ -1319,7 +1400,7 @@ void PLUGINHOST_init(void){
   
 #endif
   
-#if JUCE_LINUX // Seems like a separate thread is only necessary on linux.
+#if CUSTOM_MM_THREAD // Seems like a separate thread is only necessary on linux.
 
   JuceThread *juce_thread = new JuceThread;
   juce_thread->startThread();
@@ -1330,6 +1411,9 @@ void PLUGINHOST_init(void){
 #else
 
   initialiseJuce_GUI();
+
+  //Font::setDefaultSansSerifFont 
+
 
 #endif
 }

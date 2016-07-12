@@ -1507,11 +1507,14 @@ static bool delete_a_connection(){
 }
 #endif
 
-static void MW_cleanup_connections(void){
+static void MW_cleanup_connections(bool is_loading){
   radium::Vector<SoundProducer*> producers;
   radium::Vector<AudioConnection*> audio_connections;
   radium::Vector<EventConnection*> event_connections;
-  
+
+  if (is_loading)
+    GFX_ShowProgressMessage("Deleting all connection between instruments");
+
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
@@ -1537,16 +1540,25 @@ static void MW_cleanup_connections(void){
       PATCH_remove_all_event_receivers((struct Patch*)patch);
   }
 
-  for(auto audio_connection : audio_connections)
+  for(auto audio_connection : audio_connections) {
+    //if (is_loading)
+    //  GFX_ShowProgressMessage(talloc_format("Deleting audio connection between %s and %s", CHIP_get_patch(audio_connection->from)->name, CHIP_get_patch(audio_connection->to)->name));
+
     CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(audio_connection);
+  }
   
-  for(auto event_connection : event_connections)
+  for(auto event_connection : event_connections) {
+    //if (is_loading)
+    //  GFX_ShowProgressMessage(talloc_format("Deleting event connection between %s and %s", CHIP_get_patch(event_connection->from)->name, CHIP_get_patch(event_connection->to)->name));
+
     CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(event_connection);
+  }
+    
 }
 
 
 
-static bool delete_a_chip(){
+static bool delete_a_chip(bool is_loading){
   bool ret = false;
   
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
@@ -1557,6 +1569,10 @@ static bool delete_a_chip(){
       Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
       if(chip!=NULL){
         printf("  MAKING %p inactive (%s), by force\n",chip,CHIP_get_patch(chip)->name);
+
+        if (is_loading)
+          GFX_ShowProgressMessage(talloc_format("Deleting instrument %s", CHIP_get_patch(chip)->name));
+
         PATCH_force_make_inactive(CHIP_get_patch(chip));
         //MW_delete_plugin(SP_get_plugin(chip->_sound_producer));
         ret = true;
@@ -1569,9 +1585,10 @@ static bool delete_a_chip(){
   return ret;
 }
 
-void MW_cleanup(void){
-  MW_cleanup_connections(); // All connecting connections are deleted when deleting a chip as well, but it's a lot faster to delete all connections in one go than deleting them one by one since we only have to wait for the audio thread one time.
-  while(delete_a_chip()); // remove all chips. All connections are removed as well when removing all chips.
+void MW_cleanup(bool is_loading){
+  
+  MW_cleanup_connections(is_loading); // All connecting connections are deleted when deleting a chip as well, but it's a lot faster to delete all connections in one go than deleting them one by one since we only have to wait for the audio thread one time.
+  while(delete_a_chip(is_loading)); // remove all chips. All connections are removed as well when removing all chips.
 }
 
 static hash_t *MW_get_audio_patches_state(void){
@@ -1622,11 +1639,15 @@ hash_t *MW_get_state(void){
   return state;
 }
 
-static void MW_create_sound_objects_from_state(hash_t *chips, Buses buses){
-  fprintf(stderr,"number of chips: %d\n",(int)HASH_get_int(chips, "num_chips"));
-  for(int i=0;i<HASH_get_int(chips, "num_chips");i++) {
+static void MW_create_sound_objects_from_state(hash_t *chips, Buses buses, bool is_loading){
+  int num_chips = (int)HASH_get_int(chips, "num_chips");
+  fprintf(stderr,"number of chips: %d\n",num_chips);
+  for(int i=0;i<num_chips;i++) {
     hash_t *state = HASH_get_hash_at(chips, "", i);
     struct Patch *patch = PATCH_get_from_id(HASH_get_int(state, "patch"));
+    if (is_loading)
+      GFX_ShowProgressMessage(talloc_format("Creating instrument %d / %d: %s", i, num_chips, patch->name));
+
     PATCH_init_audio_when_loading_song(patch, state);
   }
 }
@@ -1637,7 +1658,7 @@ static void MW_create_connections_from_state_internal(hash_t *connections, int p
 }
 
 void MW_create_connections_from_state_and_replace_patch(hash_t *connections, int patch_id_old, int patch_id_new){
-  MW_cleanup_connections();
+  MW_cleanup_connections(false);
   MW_create_connections_from_state_internal(connections, patch_id_old, patch_id_new);
 }
 
@@ -1712,7 +1733,7 @@ static void autoposition_missing_bus_chips(hash_t *bus_chips_state){
 
 // Patches must be created before calling this one.
 // However, patch->patchdata are created here.
-void MW_create_from_state(hash_t *state){
+void MW_create_from_state(hash_t *state, bool is_loading){
 
   //MW_cleanup();
 
@@ -1724,7 +1745,7 @@ void MW_create_from_state(hash_t *state){
   Buses old_buses = MIXER_get_buses();
 
   Buses no_buses = {};
-  MW_create_sound_objects_from_state(bus_chips_state, no_buses);
+  MW_create_sound_objects_from_state(bus_chips_state, no_buses, is_loading);
 
   Buses new_buses = MIXER_get_buses();
 
@@ -1745,7 +1766,14 @@ void MW_create_from_state(hash_t *state){
 
   create_missing_busses(bus_chips_state); // compatibility with old songs
 
-  MW_create_sound_objects_from_state(HASH_get_hash(state, "chips"), new_buses);
+  if (is_loading)
+    GFX_ShowProgressMessage("Creating instruments");
+  
+  MW_create_sound_objects_from_state(HASH_get_hash(state, "chips"), new_buses, is_loading);
+
+  if (is_loading)
+    GFX_ShowProgressMessage("Creating connections between sound objects");
+
   MW_create_connections_from_state_internal(HASH_get_hash(state, "connections"), -1, -1);
 
   AUDIO_update_all_permanent_ids();

@@ -746,6 +746,8 @@ Missing separate debuginfos, use: debuginfo-install cyrus-sasl-lib-2.1.23-31.fc1
 #19 0x00000000007086cd in openProgressWindow (message=message@entry=0xb523d30 "Please wait, loading /home/kjetil/Downloads/estrayk_-_horizon.mod") at api/api_requesters.c:180
 #20 0x00000000005f5b46 in radium_s7_openProgressWindow (radiums7_sc=0x5fe9770, radiums7_args=<optimized out>) at api/radium_s7_wrap.c:11671
  */
+
+/*
 static QMessageBox *progressBox = NULL;
 
 void GFX_OpenProgress(const char *message){
@@ -755,10 +757,10 @@ void GFX_OpenProgress(const char *message){
   progressBox->setStandardButtons(0);
   progressBox->setText(QString(message) + "             \n            \n              \n                \n               \n");
   safeShow(progressBox);
-  for(int i=0; i < 100 ; i++){
+  for(int i=0; i < 1000 ; i++){
     progressBox->repaint();
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-    usleep(100);
+    usleep(10);
   }
 }
 
@@ -768,13 +770,14 @@ void GFX_ShowProgressMessage(const char *message){
 
   progressBox->setInformativeText(message);
   progressBox->repaint();
-  QCoreApplication::processEvents();
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
 void GFX_CloseProgress(void){
   delete progressBox;
   progressBox = NULL;
 }
+*/
 
 const char *GFX_qVersion(void){
   return qVersion();

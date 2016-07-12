@@ -158,6 +158,8 @@ static bool Load(const wchar_t *filename){
           exit(5);
 	}
 
+        GFX_OpenProgress("Loading song");
+  
 	newroot=LoadRoot();
         
         DISK_close_and_delete(dc.file);
@@ -188,13 +190,18 @@ static bool Load(const wchar_t *filename){
         }PLAYER_unlock();
         //}GL_draw_unlock();
 
+        GFX_ShowProgressMessage("Preparing");
+        
         Undo_start_ignoring_undo_operations();{
           DLoadRoot(newroot);
         }Undo_stop_ignoring_undo_operations();
 
+        GFX_ShowProgressMessage("Loading all graphical data into memory");
         GL_create_all(root->song->tracker_windows);
         
 
+        GFX_CloseProgress();
+          
         if(COMMENT_show_after_loading())
           COMMENTDIALOG_open();
 
@@ -203,14 +210,15 @@ static bool Load(const wchar_t *filename){
 #endif
 
         ResetUndo();
-                
-	return true;
 
+        return true;
 }
+
 
 //#ifdef _AMIGA
 static const wchar_t *mmp2filename;
 //#endif
+
 
 static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *filename){
 	bool ret = false;

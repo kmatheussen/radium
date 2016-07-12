@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "hashmap_proc.h"
 #include "fxlines_proc.h"
 #include "patch_proc.h"
+#include "visual_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
@@ -86,7 +87,7 @@ struct Song *LoadSong(void){
 	};
 	struct Song *song=DC_alloc(sizeof(struct Song));
 
-        MW_cleanup();
+        MW_cleanup(true);
           
         VECTOR_FOR_EACH(struct Patch *patch, &get_MIDI_instrument()->patches){
           InstrumentWidget_delete(patch);
@@ -178,8 +179,10 @@ void DLoadSong(struct Root *newroot,struct Song *song){
 
 	DLoadWindows(newroot,song->tracker_windows);
 
+        GFX_ShowProgressMessage("Creating instruments");
+        
         if(song->mixerwidget_state!=NULL)
-          MW_create_from_state(song->mixerwidget_state); // In addition, all audio plugins are created here and put into the patch->patchdata field.
+          MW_create_from_state(song->mixerwidget_state, true); // In addition, all audio plugins are created here and put into the patch->patchdata field.
         else
           MW_create_plain(); // older song.
 

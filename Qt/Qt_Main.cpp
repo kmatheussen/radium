@@ -1411,7 +1411,7 @@ int radium_main(char *arg){
 #endif
 
   Undo_start_ignoring_undo_operations();{
-    MW_cleanup(); // Stop all sound properly. Don't want clicks when exiting.
+    MW_cleanup(false); // Stop all sound properly. Don't want clicks when exiting.
   }Undo_stop_ignoring_undo_operations();
 
   fprintf(stderr,"          ENDING 3\n");
