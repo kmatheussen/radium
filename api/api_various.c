@@ -465,6 +465,19 @@ char *getMenuesConfPath(void){
   return (char*)OS_get_menues_conf_filename2();
 }
 
+static const char *g_embedded_audio_files_path = NULL;
+const char *getEmbeddedAudioFilesPath(void){
+  if (g_embedded_audio_files_path==NULL)
+    g_embedded_audio_files_path = SETTINGS_read_string("embedded_audio_files_path", "%home%/.radium/embedded_audio_files");
+  
+  return g_embedded_audio_files_path;
+}
+
+void setEmbeddedAudioFilesPath(const char *new_path){
+  g_embedded_audio_files_path = talloc_strdup(new_path);
+  SETTINGS_write_string("embedded_audio_files_path", new_path);
+}
+
 void save(void){
   Save(root);
 }

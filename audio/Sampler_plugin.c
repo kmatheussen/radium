@@ -1992,6 +1992,11 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
     return EFFECT_FORMAT_FLOAT;
 }
 
+/*
+static QString get_final_embedded_filename(QString org_filename, QString new_filename){
+}
+*/
+
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
   const wchar_t *filename;
   int            instrument_number = HASH_get_int(state, "instrument_number");

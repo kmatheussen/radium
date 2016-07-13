@@ -398,6 +398,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       numCPUs->setValue(MULTICORE_get_num_threads());
     }
 
+    {
+      embedded_audio_files->setText(getEmbeddedAudioFilesPath());
+      embedded_audio_group->hide(); // not used yet.
+    }
+          
     // Edit
     {
       scrollplay_onoff->setChecked(doScrollPlay());
@@ -614,6 +619,16 @@ public slots:
     //numCPUs->setFocusPolicy(Qt::NoFocus);
   }
 
+  // embedded audio file paths
+  void on_embedded_audio_files_editingFinished(){
+    setEmbeddedAudioFilesPath(embedded_audio_files->text().toUtf8().constData());
+    set_editor_focus();
+    
+    GL_lock();{
+      embedded_audio_files->clearFocus();
+    }GL_unlock();
+  }
+      
   // edit
 
   void on_scrollplay_onoff_toggled(bool val){
