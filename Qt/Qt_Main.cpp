@@ -1282,7 +1282,7 @@ int radium_main(char *arg){
   //updateAllFonts(QApplication::mainWidget());
 
   main_window->repaint();
-  DrawUpTrackerWindow(window);
+  //DrawUpTrackerWindow(window);
   
 
   EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);

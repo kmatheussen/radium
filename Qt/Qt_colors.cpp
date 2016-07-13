@@ -644,6 +644,7 @@ static void updateWidget(EditorWidget *my_widget,QWidget *widget){
   else
     widget->setPalette(sys_palette);
 
+  //printf("Calling update() 3\n");
   widget->update();
   
   //QFont font=QFont("Bitstream Vera Sans Mono",4);

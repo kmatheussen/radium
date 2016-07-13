@@ -633,8 +633,9 @@ void GFX_update_instrument_widget(struct Patch *patch){
     if(instrument==NULL){
       return;
     }
-    
-    update_midi_instrument_widget(instrument,patch);
+
+    if (instrument->isVisible())
+      update_midi_instrument_widget(instrument,patch);
 
   }else if(patch->instrument==get_audio_instrument()){
     Audio_instrument_widget *instrument = get_audio_instrument_widget(patch);
@@ -642,8 +643,9 @@ void GFX_update_instrument_widget(struct Patch *patch){
       printf("GFX_update_instrument_widget. instrument==NULL\n");
       return;
     }
-      
-    update_audio_instrument_widget(instrument,patch);
+
+    if (instrument->isVisible())
+      update_audio_instrument_widget(instrument,patch);
   }
 }
 
@@ -677,6 +679,8 @@ void GFX_update_all_instrument_widgets(void){
 static bool called_from_pp_update = false;
 
 void GFX_PP_Update(struct Patch *patch){
+  printf("GFX_PP_Update %s\n", patch==NULL?"(null)":patch->name);
+  
   called_from_pp_update = true;{
     //if(g_currpatch==patch)
     //  goto exit;
@@ -697,7 +701,7 @@ void GFX_PP_Update(struct Patch *patch){
       
       instruments_widget->tabs->setCurrentWidget(instrument);
       MW_update_all_chips();
-      DrawAllWTrackHeaders(root->song->tracker_windows, root->song->tracker_windows->wblock);
+      root->song->tracker_windows->must_redraw = true;
 
       MIDI_SetThroughPatch(patch);
 
@@ -712,7 +716,7 @@ void GFX_PP_Update(struct Patch *patch){
       update_audio_instrument_widget(instrument,patch);
       instruments_widget->tabs->setCurrentWidget(instrument);
       MW_update_all_chips();
-      DrawAllWTrackHeaders(root->song->tracker_windows, root->song->tracker_windows->wblock);
+      root->song->tracker_windows->must_redraw = true;
 
       MIDI_SetThroughPatch(patch);
 

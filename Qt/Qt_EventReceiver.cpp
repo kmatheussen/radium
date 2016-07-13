@@ -33,6 +33,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QKeyEvent>
 #endif
 
+#include "Qt_instruments_proc.h"
+
 #include "../common/list_proc.h"
 #include "../common/blts_proc.h"
 #include "../common/disk_load_proc.h"
@@ -40,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/eventreciever_proc.h"
 #include "../common/PEQ_clock_proc.h"
 #include "../common/gfx_proc.h"
+#include "../common/gfx_wtrackheaders_proc.h"
 #include "../midi/midi_i_input_proc.h"
 
 #include "../common/player_proc.h"
@@ -104,41 +107,21 @@ static void transfer_atomic_must_redraws(struct Tracker_Windows *window)
 }
 
 
+bool g_allowed_to_grow_queue = false;
+
 #if USE_QT_VISUAL
 void EditorWidget::paintEvent( QPaintEvent *e ){
   if(ATOMIC_GET(is_starting_up)==true)
     return;
 
-  //printf("    UPDATE called\n");
+  //static int n=0;  printf("** Drawing up everything! %d\n",n++);
   
-  transfer_atomic_must_redraws(window);
+  GFX_clear_op_queue(this->window);
+
+  g_allowed_to_grow_queue = true;
+  DO_GFX(DrawUpTrackerWindow(this->window));
+  g_allowed_to_grow_queue = false;
   
-  window->redraw_has_been_scheduled=false;
-
-  if(window->must_redraw==true){
-    //printf("** Drawing up everything!\n");
-    window->must_redraw=false;
-    GFX_clear_op_queue(this->window);
-    DO_GFX(DrawUpTrackerWindow(this->window));
-    window->must_redraw_editor=true;
-  }
-
-#if 1
-  if (window->must_redraw_editor==true){
-    window->must_redraw_editor=false;
-    //printf("calling gl_create\n");
-    GL_create(window, window->wblock);
-  }
-#endif
-  
-  //printf("height: %d, width: %d\n",e->rect().height(),e->rect().width());
-  //printf("update editor\n");
-  //GL_create(window, window->wblock);
-
-
-  //printf("paintEvent called. queue size: %d\n",GFX_get_op_queue_size(this->window));
-  //printf("paintevent. width: %d, height: %d\n",this->width(),this->height());
-
   if(GFX_get_op_queue_size(this->window) > 0){
     QPainter paint(this);
 
@@ -147,8 +130,9 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     
     {
       GFX_play_op_queue(this->window);
+      //GFX_clear_op_queue(this->window);
     }
-
+    
     this->painter = NULL;
   }
 }
@@ -164,49 +148,46 @@ void EditorWidget::updateEditor(){
     struct Patch *patch = ATOMIC_GET(atomic_must_redraw_instrument);
     if (patch!=NULL){
       ATOMIC_SET(atomic_must_redraw_instrument, NULL);
-      GFX_update_instrument_patch_gui(patch);
+      GFX_update_instrument_widget(patch);//GFX_update_instrument_patch_gui(patch);
     }
   }
   
 
   transfer_atomic_must_redraws(window);
-
-  //if (this->window->must_redraw) printf(" MUST REDRAW == TRUE (has_beenscheduled: %d)\n",this->window->redraw_has_been_scheduled);
-
+#if !defined(RELEASE)
+  {
+    int queue_size = GFX_get_op_queue_size(this->window);
+    if (queue_size > 0 || this->window->must_calculate_coordinates==true || this->window->must_redraw==true || this->window->must_redraw_editor)
+      printf("..Updating. Queue: %d. Update coordinates: %d. Redraw editor: %d. Redraw: %d\n",
+             queue_size, this->window->must_calculate_coordinates, this->window->must_redraw_editor, this->window->must_redraw
+             );
+  }
+#endif
+  
+  if (GFX_get_op_queue_size(this->window)>0)
+    this->window->must_redraw = true;
+    
   if (this->window->must_calculate_coordinates==true){
-    window->must_calculate_coordinates=false;
+    this->window->must_redraw = true;
+    this->window->must_calculate_coordinates=false;
+  }
+
+  if (this->window->must_redraw) {
+    UpdateTrackerWindowCoordinates(window);
     UpdateWBlockCoordinates(this->window, this->window->wblock);
+    GFX_UpdateUpperLeft(window, window->wblock);
+    UpdateAllPianoRollHeaders(window, window->wblock);
+
+    
+    update();
+
+    this->window->must_redraw_editor=true;
+    this->window->must_redraw=false;
   }
 
-#if 1
   if (this->window->must_redraw_editor==true){
-    this->window->must_redraw_editor=false;
-    //printf("a3\n");
     GL_create(this->window, this->window->wblock);
-  }
-#else
-  // This version is probably not faster, since update() will call paintEvent immedately (?).
-  // It also complicates things since the call to GL_create in paintEvent() should be removed to avoid calling GL_create twice. But it cannot always be removed.
-  if (this->window->must_redraw_editor==true || this->window->must_redraw==true){
     this->window->must_redraw_editor=false;
-    //printf("a3\n");
-    GL_create(this->window, this->window->wblock);
-  }
-#endif
-
-#if 0
-  if (is_playing()){
-    if(this->window->must_redraw==true) {
-      GL_create(this->window, this->window->wblock);
-      this->window->must_redraw=false;
-    }
-  } else
-#endif
-  if (this->window->redraw_has_been_scheduled==false) {    
-    if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0) {
-      this->window->redraw_has_been_scheduled=true;
-      update();
-    }
   }
 }
 
@@ -595,21 +576,17 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
   if(ATOMIC_GET(is_starting_up)==true)
     return;
 
-  UpdateWBlockCoordinates(window, window->wblock);
+  //UpdateWBlockCoordinates(window, window->wblock);
 
 #if 0
   printf("width: %d/%d, height: %d/%d\n",this->width(),qresizeevent->size().width(),
          this->height(),qresizeevent->size().height());
 #endif
 
-#if 1
-  DO_GFX(DrawUpTrackerWindow(window));
+  window->must_redraw = true;
   updateEditor();
-#else
-  update();
-#endif
 
-  UpdateWBlockCoordinates(window, window->wblock);
+  //UpdateWBlockCoordinates(window, window->wblock);
 
 #if USE_OPENGL
   printf("********* height: %d\n",qresizeevent->size().height());

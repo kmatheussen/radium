@@ -136,7 +136,14 @@ static void grow_queue(queue_t *queue){
   }
 }
 
+extern bool g_allowed_to_grow_queue;
+
 static queue_element_t *get_next_element(queue_t *queue){
+#if !defined(RELEASE)
+  if (g_allowed_to_grow_queue==false)
+    abort();
+#endif
+  
   if(queue->pos==queue->size)
     grow_queue(queue);
   return &queue->elements[queue->pos++];

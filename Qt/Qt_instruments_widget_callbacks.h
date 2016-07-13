@@ -25,7 +25,7 @@ public:
     
     Timer(Instruments_widget *instruments_widget){
       this->instruments_widget = instruments_widget;
-      setInterval(50); // 3 * 16.666 (each third frame on a 60hz screen)
+      setInterval(50); // 50 = 3 * 16.666 (each third frame on a 60hz screen)
     }
   };
 

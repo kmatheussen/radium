@@ -201,7 +201,8 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
 }
 #endif
 
-#define UPDATECOORDINATES_WHEN_DRAWING 1
+// Can not do that since it moves qt widgets. Probably better to do it in the main timer instead before calling update().
+#define UPDATECOORDINATES_WHEN_DRAWING 0
 
 /**************************************************************************
   FUNCTION
@@ -234,11 +235,13 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
         GFX_BouncePoints(window); // To clear point buffer. (TODO: Implement a clear point buffer function.)
 #endif
 
-	UpdateTrackerWindowCoordinates(window);
 #if UPDATECOORDINATES_WHEN_DRAWING
+	UpdateTrackerWindowCoordinates(window);
+
 	UpdateWBlockCoordinates(window,wblock);
 #endif
-        
+
+
 #if !USE_OPENGL
 	PixMap_reset(window);
 #endif
@@ -310,7 +313,7 @@ int OpenTrackerWindow(int x, int y, int width,int height){
 	twindow->wblock=twindow->wblocks;
 
 	//UpdateTrackerWindow(twindow);
-        DrawUpTrackerWindow(twindow);
+        //DrawUpTrackerWindow(twindow);
 
 	ListAddElement1(&root->song->tracker_windows,&twindow->l);
 

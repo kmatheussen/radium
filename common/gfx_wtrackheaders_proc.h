@@ -16,6 +16,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC void INIT_Pianoroll_headers(void);
 
+extern LANGSPEC void UpdateAllPianoRollHeaders(
+                                               struct Tracker_Windows *window,
+                                               struct WBlocks *wblock
+                                               );
+
 extern LANGSPEC void DrawAllWTrackHeaders(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock

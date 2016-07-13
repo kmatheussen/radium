@@ -176,6 +176,7 @@ void Instrument_widget::name_widget_returnPressed()
              DrawWTrackHeader(window,wblock,wtrack);
              );
       EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+      printf("Calling update() 6\n");
       editor->update();
     }
 

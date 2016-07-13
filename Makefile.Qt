@@ -1072,7 +1072,7 @@ X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.c
 $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
 Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h
-	$(GPLUSPLUS) $(P)Qt_Main.cpp $(QTOPT) $(IS_LINUX_BINARY)
+	$(GPLUSPLUS) $(P)Qt_Main.cpp $(QTOPT) $(IS_LINUX_BINARY) -Wno-deprecated-declarations
 
 Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h
 	$(CCC) $(P)Qt_visual.cpp $(QTOPT)

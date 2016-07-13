@@ -182,6 +182,7 @@ void DrawBottomSlider(struct Tracker_Windows *window){
                 PAINT_DIRECTLY
                 );
 
+  
   // slider
   GFX_FilledBox(
                 window,TRACK_SLIDER_COLOR_NUM,
@@ -189,7 +190,6 @@ void DrawBottomSlider(struct Tracker_Windows *window){
                 inner_x2,y2,
                 PAINT_DIRECTLY
                 );
-  
   // border
   GFX_Box(
           window,TRACK_SLIDER_COLOR_NUM,

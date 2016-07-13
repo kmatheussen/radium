@@ -133,11 +133,14 @@ void QT_UpdateEditor(struct Tracker_Windows *window){
   editor->updateEditor();
 }
 
+#if 0
 extern LANGSPEC void QT_RepaintEditor(struct Tracker_Windows *window);
 void QT_RepaintEditor(struct Tracker_Windows *window){
   EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
+  printf("  repaint() called 1\n");
   editor->repaint();
 }
+#endif
 
 
 

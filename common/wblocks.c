@@ -450,7 +450,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 	window->curr_block=wblock->l.num;
         ATOMIC_SET(g_curr_block, wblock->block);
 
-        printf("   curr_track: %d,   wtrack->l.num: %d\n",window->curr_track,wblock->wtrack->l.num);
+        //printf("   curr_track: %d,   wtrack->l.num: %d\n",window->curr_track,wblock->wtrack->l.num);
         
         //MinimizeBlock_CurrPos(window);
         //window->must_redraw = false;

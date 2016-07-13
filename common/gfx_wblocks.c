@@ -561,9 +561,11 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
                       PAINT_DIRECTLY
                       );
 
+        
 	DrawBottomSlider(window);
 
-        GFX_UpdateUpperLeft(window, wblock);
+        // Definitely not. This function can not be called from inside QWidget->paintEvent()
+        //GFX_UpdateUpperLeft(window, wblock);
 
 	DrawAllWTrackHeaders(window,wblock);
 

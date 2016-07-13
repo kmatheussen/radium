@@ -251,12 +251,11 @@ void INIT_Pianoroll_headers(void){
 }
 
 
-static void UpdateAllPianoRollHeaders(
-                                      struct Tracker_Windows *window,
-                                      struct WBlocks *wblock
-                                      )
+void UpdateAllPianoRollHeaders(
+                               struct Tracker_Windows *window,
+                               struct WBlocks *wblock
+                               )
 {
-
   struct WTracks *wtrack=wblock->wtracks;
 
   int tracknum = 0;
@@ -299,7 +298,6 @@ static void UpdateAllPianoRollHeaders(
     PIANOROLLHEADER_hide(pianorollheader);
     tracknum++;
   }
-    
 }
 
 
@@ -320,7 +318,7 @@ void DrawAllWTrackHeaders(
 
         DrawAllWTrackSliders(window, wblock);
 
-        UpdateAllPianoRollHeaders(window, wblock);
+        //UpdateAllPianoRollHeaders(window, wblock);
 
         DrawAllWTrackOnOffs(window, wblock);
 

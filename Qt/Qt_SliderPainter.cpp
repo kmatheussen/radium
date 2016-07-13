@@ -209,6 +209,8 @@ struct SliderPainter{
     if(y<0)
       y=0;
 
+    //printf("Calling update() 5\n");
+    
     //fprintf(stderr,"y: %d. _qslider: %p\n",y,_qslider);
     if(_qslider!=NULL){
       return _qslider->update(x,y,width,height);
