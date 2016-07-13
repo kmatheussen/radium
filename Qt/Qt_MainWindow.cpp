@@ -680,8 +680,10 @@ static int GFX_Message(vector_t *buttons, QString message){
 
   }
 
+  RememberGeometryQDialog::num_open_dialogs++;
   safeExec(msgBox);
-
+  RememberGeometryQDialog::num_open_dialogs--;
+  
   QAbstractButton *clicked_button = msgBox.clickedButton();
 
   if (buttons != NULL) {

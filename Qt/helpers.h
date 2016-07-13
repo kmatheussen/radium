@@ -12,7 +12,7 @@
 
 extern bool radium_runs_custom_exec;
 
-class RememberGeometryQDialog : public QDialog {
+struct RememberGeometryQDialog : public QDialog {
 
   QByteArray geometry;
   bool has_stored_geometry;
@@ -51,7 +51,7 @@ class RememberGeometryQDialog : public QDialog {
       }
           
       if (is_visible && RememberGeometryQDialog::num_open_dialogs==1)
-        parent->raise();
+        parent->raise(); // This is probably a bad idea.
     }
   };
   
