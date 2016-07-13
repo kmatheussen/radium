@@ -8,7 +8,7 @@ HOW TO MAKE IT RUN
           2. Do this:
 
           "
-          export RADIUM_QT_VERSION=4 
+          export RADIUM_QT_VERSION=5
           make packages
           BUILDTYPE=RELEASE ./build_linux.sh -j7
           QT_QPA_PLATFORM_PLUGIN_PATH=/usr/lib64/qt5/plugins/ bin/radium
