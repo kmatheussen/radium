@@ -1,5 +1,7 @@
 // operating system system
 
+extern LANGSPEC void OS_OSX_show_icon_in_dock(void);
+
 extern LANGSPEC void OS_SYSTEM_init_keyboard(void);
 extern LANGSPEC void OS_SYSTEM_EventPreHandler(void *event);
 extern LANGSPEC int OS_SYSTEM_get_event_type(void *event, bool ignore_autorepeat);

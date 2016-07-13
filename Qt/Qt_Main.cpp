@@ -1556,8 +1556,15 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
  
 void MONOTONIC_TIMER_init(void);
 
+ 
 int main(int argc, char **argv){  
+  
+  GC_INIT();
 
+#ifdef FOR_MACOSX
+  OS_OSX_show_icon_in_dock();
+#endif
+  
   THREADING_init_main_thread_type();
 
 #ifdef USE_QT5
@@ -1631,7 +1638,7 @@ int main(int argc, char **argv){
     g_gc_is_incremental = true;
   }
   
-  GC_INIT(); // mingw/wine crashes immediately if not doing this when compiling without --enable-threads=no. (wine doesn't work very well with libgc. Should perhaps file a report.)
+  
   //GC_disable();
   
   QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));
