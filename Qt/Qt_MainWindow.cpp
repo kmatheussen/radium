@@ -505,7 +505,6 @@ void SetupMainWindow(void){
 
 
   QApplication::instance()->setAttribute(Qt::AA_DontUseNativeMenuBar);
-  QApplication::instance()->setAttribute(Qt::AA_MacDontSwapCtrlAndMeta);
   
 #if FOR_MACOSX
   //qt_mac_set_native_menubar(false);

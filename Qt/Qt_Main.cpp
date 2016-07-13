@@ -1612,6 +1612,8 @@ int main(int argc, char **argv){
 
   // Create application here in order to get default style. (not recommended, but can't find another way)
   qapplication=new MyApplication(argc,argv);
+  qapplication->setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, true);
+
 #if 0
  #if defined(IS_LINUX_BINARY) || defined(FOR_WINDOWS) || defined(FOR_MACOSX)
     QApplication::addLibraryPath(QCoreApplication::applicationDirPath() + QDir::separator() + "qt5_plugins");
