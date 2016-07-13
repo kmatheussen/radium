@@ -537,7 +537,7 @@ public:
   {
     ATOMIC_SET(_main_window_is_exposed, false);
     ATOMIC_DOUBLE_SET(override_vblank_value, -1.0);
-    ATOMIC_SET(is_training_vblank_estimator, true);
+    ATOMIC_SET(is_training_vblank_estimator, false);
     setMouseTracking(true);
     //setAttribute(Qt::WA_PaintOnScreen);
   }
@@ -887,6 +887,7 @@ public:
       return;
     }
 #endif
+
     
     double overridden_vblank_value = ATOMIC_DOUBLE_GET(override_vblank_value);
     
@@ -1084,7 +1085,7 @@ public:
 
 static vl::ref<MyQtThreadedWidget> widget;
 
-static bool do_estimate_questionmark(){
+static bool use_estimated_vblank_questionmark(){
   return SETTINGS_read_bool("use_estimated_vblank", false);
 }
 
@@ -1225,34 +1226,6 @@ bool GL_get_pause_rendering_on_off(void){
   return g_pause_rendering_on_off;
 }
 
-static void show_message_box(QMessageBox *box){
-  box->setText("Please wait, estimating vblank refresh rate. This takes 3 - 10 seconds");
-  box->setInformativeText("!!! Don't move the mouse or press any key !!!");
-
-  if(have_earlier_estimated_value()){
-
-    QString message = QString("Don't estimate again. Use last estimated value instead (")+QString::number(1000.0/GL_get_estimated_vblank())+" Hz).";
-#if 1
-    box->addButton(message,QMessageBox::ApplyRole);
-#else
-    QAbstractButton *msgBox_useStoredValue = (QAbstractButton*)box->addButton(message,QMessageBox::ApplyRole);
-    printf((char*)msgBox_useStoredValue);
-#endif
-
-    safeShow(box);
-    //box->show();
-
-  } else {
-
-    safeShow(box);//->show();
-    box->button(QMessageBox::Ok)->hide();
-
-  }
-
-  qApp->processEvents();
-}
-
-
 #if defined(FOR_MACOSX)
 extern "C" void cocoa_set_best_resolution(void *view);
 #endif
@@ -1342,43 +1315,10 @@ QWidget *GL_create_widget(QWidget *parent){
     //QThread::currentThread()->wait(1000*10);
   }
 
-
-  if (do_estimate_questionmark() == true) {
-
-    setup_widget(parent);
-    widget->set_vblank(GL_get_estimated_vblank()); // hmm.
-
-  } else {
-
-    QMessageBox box;
-
-    bool have_earlier = have_earlier_estimated_value();
-
-    setup_widget(parent);    
-    show_message_box(&box);
-    
-    while(ATOMIC_GET(widget->is_training_vblank_estimator)==true) {
-      if(box.clickedButton()!=NULL){
-        widget->set_vblank(GL_get_estimated_vblank());
-        store_use_estimated_vblank(true);
-        break;
-      }
-      if (have_earlier)
-        qApp->processEvents();
-      else
-        qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-      
-      qApp->flush();
-      
-      usleep(5*1000);
-    }
-
-    if (box.clickedButton()==NULL)
-      store_estimated_value(time_estimator.get_vblank());
-
-    box.close();
-  }
-
+  setup_widget(parent);
+  //widget->set_vblank(GL_get_estimated_vblank());
+  
+  
   while(ATOMIC_GET(GE_vendor_string)==NULL || ATOMIC_GET(GE_renderer_string)==NULL || ATOMIC_GET(GE_version_string)==NULL)
     usleep(5*1000);
   
@@ -1544,3 +1484,88 @@ void GL_stop_widget(QWidget *widget){
   mywidget->stop();
   //delete mywidget;
 }
+
+
+static void show_message_box(QMessageBox *box){
+  //box->setWindowFlags(Qt::WindowStaysOnTopHint);//Qt::WindowStaysOnTopHint|Qt::SplashScreen|Qt::Window | Qt::FramelessWindowHint|Qt::Popup);
+  box->setWindowFlags(Qt::WindowStaysOnTopHint); //Qt::Popup);
+  
+    
+  box->setText("Please wait, estimating vblank refresh rate. This takes 3 - 10 seconds");
+  box->setInformativeText("!!! Don't move the mouse or press any key !!!");
+
+  if(have_earlier_estimated_value()){
+
+    QString message = QString("Don't estimate again. Use last estimated value instead (")+QString::number(1000.0/GL_get_estimated_vblank())+" Hz).";
+#if 1
+    box->addButton(message,QMessageBox::ApplyRole);
+#else
+    QAbstractButton *msgBox_useStoredValue = (QAbstractButton*)box->addButton(message,QMessageBox::ApplyRole);
+    printf((char*)msgBox_useStoredValue);
+#endif
+
+    //safeShow(box);
+    box->show();
+
+  } else {
+
+    //safeShow(box);//->show();
+    box->show();
+
+    box->button(QMessageBox::Ok)->hide();
+
+  }
+  
+  qApp->processEvents();
+}
+
+
+void GL_maybe_estimate_vblank(QWidget *qwidget){
+  static bool been_here = false;
+  
+  MyQtThreadedWidget *widget = static_cast<MyQtThreadedWidget*>(qwidget);
+
+  if (been_here==true)
+    return;
+  else
+    been_here = true;
+  
+  if (use_estimated_vblank_questionmark() == true) {
+    widget->set_vblank(GL_get_estimated_vblank());
+    return;
+  }
+  
+
+  QMessageBox box;
+
+  bool have_earlier = have_earlier_estimated_value();
+
+  show_message_box(&box);
+
+  ATOMIC_SET(widget->is_training_vblank_estimator, true);
+      
+  while(ATOMIC_GET(widget->is_training_vblank_estimator)==true) {
+    if(box.clickedButton()!=NULL){
+      widget->set_vblank(GL_get_estimated_vblank());
+      store_use_estimated_vblank(true);
+      break;
+    }
+    if (have_earlier)
+      qApp->processEvents();
+    else
+      qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+    
+    qApp->flush();
+    
+    usleep(5*1000);
+  }
+  
+  if (box.clickedButton()==NULL)
+    store_estimated_value(time_estimator.get_vblank());
+  
+
+  printf("\n\n\n Closing box\n\n\n");
+  box.close();
+
+}
+

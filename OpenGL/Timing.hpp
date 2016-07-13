@@ -149,7 +149,10 @@ struct TimeEstimator{
   }
 
   double get_vblank(){
-    return _vblank_estimator.base_interval;
+    if (_vblank_estimator.i_trainings==0)
+      return 16.66; // 60hz
+    else
+      return _vblank_estimator.base_interval;
   }
 
   void set_time(double correct){

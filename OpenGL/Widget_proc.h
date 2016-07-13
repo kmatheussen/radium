@@ -8,6 +8,7 @@ class QWidget;
 
   extern QWidget *GL_create_widget(QWidget *parent);
   extern void GL_stop_widget(QWidget *widget);
+  extern void GL_maybe_estimate_vblank(QWidget *widget);
 
   extern "C" {
 #endif

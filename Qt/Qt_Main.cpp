@@ -804,7 +804,7 @@ protected:
     }
 
     const char *gc_warning_message = "Warning: Garbage collector is turned off";
-    
+
     if (window->message==NULL && GC_is_disabled()) {
       
       window->message = gc_warning_message;
@@ -834,7 +834,9 @@ protected:
       }
     }
 
-    GL_notify_that_main_window_is_exposed();
+    if (GL_notify_that_main_window_is_exposed()==true)
+      GL_maybe_estimate_vblank(static_cast<EditorWidget*>(window->os_visual.widget)->gl_widget);
+    
     #if 0
     static bool main_window_is_exposed = false;
     if (main_window_is_exposed==false){
@@ -847,7 +849,9 @@ protected:
       }
     }
     #endif
+
     
+        
     //MIXER_called_regularly_by_main_thread();
     
 #if 0
