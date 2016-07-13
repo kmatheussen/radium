@@ -24,6 +24,8 @@ void process_OpenProgress(QString message){
   delete progressBox;
 
   progressBox = new QMessageBox;
+  progressBox->setWindowFlags(Qt::Popup);//Qt::WindowStaysOnTopHint|Qt::SplashScreen|Qt::Window | Qt::FramelessWindowHint|Qt::Popup);
+  
   progressBox->setMinimumWidth(600);
   progressBox->setMinimumHeight(300);
   
@@ -42,7 +44,7 @@ void process_ShowProgressMessage(QString message){
   if (progressBox == NULL)
     process_OpenProgress("...");
 
-  // Some ridiculous code to try to work around QMessageBox window jumping size
+  // Some ridiculous code to try to work around QMessageBox window size jumping
   {
     int len1 = longest_line(progressBox->informativeText());
     int len2 = longest_line(message);
