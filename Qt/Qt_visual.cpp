@@ -141,7 +141,6 @@ void QT_RepaintEditor(struct Tracker_Windows *window){
 
 
 
-
 #if USE_QT_VISUAL
 
 
@@ -167,7 +166,7 @@ void OS_GFX_C2V_bitBlt(
 		    ){
 #if USE_OPENGL
   RWarning("\"%s\" not supposed to be called when using OpenGL",__FUNCTION__ );
-#endif
+#else
 
   EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
 
@@ -184,6 +183,8 @@ void OS_GFX_C2V_bitBlt(
                         from_x2-from_x1+1,window->fontheight
 	 );
 #endif
+  
+#endif
 }
 
 #include "../common/playerclass.h"
@@ -198,8 +199,10 @@ void OS_GFX_C_DrawCursor(
 				      ){
 
 #if USE_OPENGL
+  
   RWarning("\"%s\" not supposed to be called when using OpenGL",__FUNCTION__ );
-#endif
+
+#else
 
   EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
 
@@ -276,6 +279,8 @@ void OS_GFX_C_DrawCursor(
          ,Qt::XorROP
          );
 #endif
+
+#endif
 }
 
 
@@ -288,8 +293,10 @@ void OS_GFX_P2V_bitBlt(
 		    int width,int height
 		    ){
 #if USE_OPENGL
+  
   RWarning("\"%s\" not supposed to be called when using OpenGL",__FUNCTION__ );
-#endif
+
+#else
   
   EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
 
@@ -313,6 +320,8 @@ void OS_GFX_P2V_bitBlt(
 		 (window->wblock->curr_realline-window->wblock->top_realline)*window->fontheight+window->wblock->t.y1
 		 );
   */
+
+#endif
 }
 
 
@@ -322,6 +331,12 @@ void OS_GFX_BitBlt(
 	int x,int y,
 	int x2,int y2
 ){
+#if USE_OPENGL
+  
+  RWarning("\"%s\" not supposed to be called when using OpenGL",__FUNCTION__ );
+
+#else
+  
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   //printf("pixmap on pixmap. dx: %d. dy: %d\n",dx,dy);
 #ifdef USE_QT3
@@ -364,10 +379,17 @@ void OS_GFX_BitBlt(
 #    endif // FOR_MACOSX
 #  endif  // USE_QIMAGE_BUFFER
 #endif // USE_QT4
+
+#endif // OPENGL
 }
 
 
+#if USE_OPENGL
+#define GET_QPAINTER(editor,where) editor->painter
+#else
 #define GET_QPAINTER(editor,where) (where==PAINT_DIRECTLY ? editor->painter : editor->paintbuffer_painter)
+#endif
+
 
 #if 0
 static void setColor(QPainter *painter, enum ColorNums colornum, int where){

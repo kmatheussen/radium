@@ -76,8 +76,8 @@ void process_CloseProgress(void){
   progressBox = NULL;
 }
 
-
 int main(int argc, char **argv){
+  
   QApplication app(argc, argv);
 
   QString header = QByteArray::fromBase64(argv[1]).constData();

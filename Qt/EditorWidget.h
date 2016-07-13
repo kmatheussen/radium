@@ -98,12 +98,14 @@ public:
 
   //QColor     colors[END_CONFIG_COLOR_NUM];				// color array
 
+#if !USE_OPENGL
 #if USE_QT_VISUAL
     PaintBuffer *paintbuffer;
 
     PaintBuffer *cursorbuffer;
 #endif
-
+#endif
+    
     //void timerEvent(QTimerEvent *);
 
     struct Tracker_Windows *window; // Not sure if this one is used.
@@ -113,10 +115,13 @@ public:
     Upperleft_widget *upperleft_widget;
 
 #if USE_QT_VISUAL
+
     QPainter *painter; // Set in paintEvent    
+#if !USE_OPENGL    
     QPainter *paintbuffer_painter; // Set in paintEvent
     QPainter *cursorbuffer_painter; // Set in paintEvent
-
+#endif
+    
     QFont font;
 #endif
 
@@ -153,8 +158,9 @@ public:
 #endif
     
     void wheelEvent(QWheelEvent *qwheelevent);
-    
+
 #if USE_QT_VISUAL && USE_QIMAGE_BUFFER
+#if !USE_OPENGL
     void init_buffers(){
        const QImage::Format image_format = QImage::Format_RGB32;
 
@@ -184,7 +190,8 @@ public:
 #endif
 #endif
     }
-
+#endif
+    
 #if USE_OPENGL
     void position_gl_widget(struct Tracker_Windows *window){
       if (gl_widget != NULL && window!=NULL && window->wblock!=NULL) {
@@ -204,6 +211,7 @@ public:
 #endif
 
 #else
+#if !USE_OPENGL
     void init_buffers(){
 #if USE_QT_VISUAL
        if(this->paintbuffer==NULL || this->cursorbuffer==NULL){
@@ -219,6 +227,7 @@ public:
        }
 #endif
     }
+#endif
 #endif
 
 protected:

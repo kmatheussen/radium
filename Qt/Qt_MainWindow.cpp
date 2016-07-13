@@ -152,7 +152,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
   : QWidget( parent)
     //: QWidget( parent, name) //, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
     //: EditorWidgetParent( parent, name) //, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
-#if USE_QT_VISUAL
+#if USE_QT_VISUAL && !USE_OPENGL
   , paintbuffer(NULL)
   , cursorbuffer(NULL)
   , paintbuffer_painter(NULL)
@@ -165,7 +165,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
   , qpa(256)
 #endif
 {
-#if USE_QT_VISUAL
+#if USE_QT_VISUAL && !USE_OPENGL
   this->paintbuffer=NULL;
 #endif
 
@@ -555,8 +555,10 @@ void SetupMainWindow(void){
   }
 
 
+#if !USE_OPENGL
   editor->init_buffers();
-
+#endif
+  
 #endif // USE_QT_VISUAL
 
   g_editor = editor;

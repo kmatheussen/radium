@@ -1562,7 +1562,7 @@ int main(int argc, char **argv){
   qInstallMsgHandler(myMessageOutput);
 #endif
   
-  QCoreApplication::setLibraryPaths(QStringList());
+  QCoreApplication::setLibraryPaths(QStringList());  
 
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 

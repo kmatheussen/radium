@@ -36,9 +36,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 void setFontValues(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
+#if !USE_OPENGL    
   editor->cursorbuffer_painter->setFont(editor->font);
   //editor->paintbuffer_painter->setFont(editor->font);
-
+#endif
+  
   GE_set_font(editor->font);
 
   const QFont &font=editor->font;

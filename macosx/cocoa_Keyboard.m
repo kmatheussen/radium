@@ -43,7 +43,6 @@ static void clear_modifiers(void){
   OS_SYSTEM_ResetKeysUpDowns(); // Sync
 }
 
-
 // https://developer.apple.com/library/mac/documentation/Cocoa/Reference/ApplicationKit/Classes/NSEvent_Class
 
 int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){

@@ -141,9 +141,10 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 
   if(GFX_get_op_queue_size(this->window) > 0){
     QPainter paint(this);
+
     this->painter = &paint;
     //this->painter->setFont(this->font);
-
+    
     {
       GFX_play_op_queue(this->window);
     }
@@ -584,8 +585,10 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
 
 #if USE_QT_VISUAL
 void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
+#if !USE_OPENGL
   this->init_buffers();
-
+#endif
+  
   this->window->width=qresizeevent->size().width(); //this->get_editor_width();
   this->window->height=qresizeevent->size().height(); //this->get_editor_height();
 
