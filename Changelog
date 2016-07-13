@@ -1,3 +1,38 @@
+Changes 3.9.6 -> 3.9.7:
+* Fixed mod/xm import on OSX.
+* OSX: dont show dock icons for the helper programs
+* Clean up gfx update handling a bit. Should improve graphical performance.
+* Remove some pre-opengl gfx buffers that were not used. Using less memory now,
+  and resizing might be noticable faster.
+* macosx: Enable full screen. Doesn't crash now, probably because of using Qt5 instead of Qt4.
+* Progress dialog when opening songs.
+* Option to save song with audio samples embedded. Works for the Sampler and
+  Fluidsynth instruments. Could be useful when sending songs to other people
+  or transfer songs between computers.
+* Add Reverse and Ping-Pong loop to the sampler instrument
+* Fix graphics for show/hide bpm track and tempo multiplier track
+* Double the number of effect columns before using tabs.
+* Tweak Patchbay gui a bit.
+* Adjusted tapiir gui.
+* Removed the custom Ctrl+C handler. Ctrl+C seems to work properly now without it.
+* OpenGL: Call glMakeCurrent / glDoneCurrent before and after rendering each frame.
+  Before we only called glMakeCurrent during program startup.
+  Don't know if it makes a difference.
+* disk: Give error message if the last step when saving
+  a file (i.e. copying new file over the old file) failed.
+* Fix bug that could cause non-glide automation not to be played.
+* Force additional windows, such as the preferences window,
+  to always display in front of the main window.
+* Upgrade to Qt5. It seems like the seemingly
+  random OpenGL related crashes are gone now.
+* Some blocklist/playlist gfx tweaks
+* Don't ask for effect display value string when
+  the effect is an on/off button (crash fix)
+* Fix pasting effects from other instruments
+* Tweak when to paint stipled automation node lines
+
+
+
 Changes 3.9.5 -> 3.9.6:
 * Update bus slider strings immediately when changing a bus instrument name
 * Fix freeze that could happen when pasting tracks and other situations
