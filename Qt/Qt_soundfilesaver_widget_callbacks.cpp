@@ -59,8 +59,8 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
         //usleep(1000*100); // Wait a bit for saving to stop;
 
         ScrollEditorToRealLine_CurrPos(root->song->tracker_windows, root->song->tracker_windows->wblock->bot_realline);
-        DrawUpTrackerWindow(root->song->tracker_windows);
-
+        root->song->tracker_windows->must_redraw = true;
+        
         QMessageBox msgBox;
         
         msgBox.setText(QString(message));

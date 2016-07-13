@@ -120,7 +120,7 @@ static char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
 void GFX_ConfigFonts(struct Tracker_Windows *tvisual){
   char *font = GFX_SelectEditFont(tvisual);
   UpdateAllWBlockWidths(tvisual);
-  DrawUpTrackerWindow(tvisual);
+  tvisual->must_redraw = true;
   SETTINGS_write_string("font",font);
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   SETTINGS_write_string("font_style",editor->font.styleName()); // toString doesn't seem to cover this.
@@ -139,7 +139,7 @@ void GFX_ResetFontSize(struct Tracker_Windows *tvisual){
 
   setFontValues(tvisual);
   UpdateAllWBlockWidths(tvisual);
-  DrawUpTrackerWindow(tvisual);
+  tvisual->must_redraw = true;
 
 #if USE_OPENGL
   editor->position_gl_widget(tvisual);
@@ -171,8 +171,8 @@ void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
   setFontValues(tvisual);
 
   UpdateAllWBlockWidths(tvisual);
-  DrawUpTrackerWindow(tvisual);
-
+  tvisual->must_redraw = true;
+  
 #if USE_OPENGL
   editor->position_gl_widget(tvisual);
 #endif
@@ -206,7 +206,7 @@ void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
   setFontValues(tvisual);
 
   UpdateAllWBlockWidths(tvisual);
-  DrawUpTrackerWindow(tvisual);
+  tvisual->must_redraw = true;
 }
 
 void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual){

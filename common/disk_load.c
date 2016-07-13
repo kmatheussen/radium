@@ -270,8 +270,8 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
             
             struct WBlocks *wblock = root->song->tracker_windows->wblock;
             GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
-            
-            DrawUpTrackerWindow(root->song->tracker_windows);
+
+            root->song->tracker_windows->must_redraw = true;
             
             fprintf(stderr,"Got here (loading finished)\n");
         }

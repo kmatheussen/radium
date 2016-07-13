@@ -327,8 +327,6 @@ int OpenTrackerWindow(int x, int y, int width,int height){
 
 
 
-
-
 static void handleDirtyBlock(int blocknum){
   struct Tracker_Windows *window = root->song->tracker_windows;
 
@@ -369,11 +367,13 @@ void checkIfWBlocksAreDirty(void) {
   if(is_dirty==true){
     struct Tracker_Windows *window=root->song->tracker_windows;
     while(window!=NULL){
-      DrawUpTrackerWindow(window);
+      //DrawUpTrackerWindow(window);
+      window->must_redraw = true;
       window=NextWindow(window);
     }
   }
 }
+
 
 void ValidateCursorPos(struct Tracker_Windows *window){
   struct WBlocks *wblock = window->wblock;

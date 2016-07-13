@@ -841,21 +841,9 @@ void testColorInRealtime(enum ColorNums num, QColor color){
   setColor(num,color.rgb());
   updateAll(my_widget);
 
-  if(false && num==0)
-    my_widget->repaint(); // todo: fix flicker.
-  else{
-    // Doesn't draw everything.
-    DO_GFX({
-        DrawUpTrackerWindow(window);
-      });
-    //GL_create(window, window->wblock);
-    my_widget->updateEditor();
-  }
-
   GFX_update_current_instrument_widget();
 
   window->must_redraw = true;
-  //window->wblock->block->is_dirty = true;
 }
 
 #include "Qt_Main_proc.h"
@@ -935,8 +923,9 @@ static void setDefaultColors(struct Tracker_Windows *tvisual, QString configfile
   //setEditorColors(editorwidget); // read back from file.
   system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());
   button_color->setRgb(QColor(SETTINGS_read_qstring("button_color","#c1f1e3")).rgb());
-  DrawUpTrackerWindow(tvisual);
+
   updateAll(editorwidget);
+  tvisual->must_redraw = true;
 }
 
 
