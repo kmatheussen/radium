@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if USE_QT5
 #include <QWindow>
+#include <QScreen>
 #endif
 
 #include <math.h>
@@ -1106,10 +1107,34 @@ bool GL_notify_that_main_window_is_exposed(void){
     if (window != NULL){
       if (window->isExposed()) {
         ATOMIC_SET(widget->_main_window_is_exposed, true);
+
+        QWindow *qwindow = widget->windowHandle();
+        if (qwindow==NULL){
+          abort();
+        }
+        QScreen *qscreen = qwindow->screen();
+        if (qscreen==NULL){
+          abort();
+        }
+        widget->set_vblank(qscreen->refreshRate());
+        //GFX_Message(NULL, "refresh rate: %d\n", qscreen->refreshRate());
+
         gotit = true;
       }
     }
+  }else{
+        QWindow *qwindow = widget->windowHandle();
+        if (qwindow==NULL){
+          abort();
+        }
+        QScreen *qscreen = qwindow->screen();
+        if (qscreen==NULL){
+          abort();
+        }
+        widget->set_vblank(qscreen->refreshRate());
+        //printf("refresh rate: %f\n", qscreen->refreshRate());
   }
+
 #else
   ATOMIC_SET(widget->_main_window_is_exposed, true);
   gotit = true;
@@ -1316,7 +1341,7 @@ QWidget *GL_create_widget(QWidget *parent){
   }
 
   setup_widget(parent);
-  //widget->set_vblank(GL_get_estimated_vblank());
+  widget->set_vblank(GL_get_estimated_vblank());
   
   
   while(ATOMIC_GET(GE_vendor_string)==NULL || ATOMIC_GET(GE_renderer_string)==NULL || ATOMIC_GET(GE_version_string)==NULL)
@@ -1521,6 +1546,8 @@ static void show_message_box(QMessageBox *box){
 
 
 void GL_maybe_estimate_vblank(QWidget *qwidget){
+  return;
+
   static bool been_here = false;
   
   MyQtThreadedWidget *widget = static_cast<MyQtThreadedWidget*>(qwidget);
