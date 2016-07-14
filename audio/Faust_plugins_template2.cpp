@@ -542,9 +542,7 @@ static void faust_gui_zone_callback(float val, void* arg){
   //printf("  Callback called %f. controller: %p\n      val/auto: %f %f", val, controller, val, data->automation_values[effect_num]);
 
   float stored_value;
-  //PLAYER_lock();{  // Don't need lock when getting from storage. (not always true, but it's true now)
-    stored_value = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE);
-    //}PLAYER_unlock();
+  stored_value = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE);
 
   if (val==stored_value)
     return;
