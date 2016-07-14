@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_patchlist_proc.h"
 #include "../common/player_proc.h"
 #include "../common/patch_proc.h"
+#include "../common/threading.h"
 
 #include "../mixergui/QM_chip.h"
 #include "../mixergui/QM_MixerWidget.h"
@@ -1185,6 +1186,14 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
 }
 
 float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum WhereToGetValue where){
+
+#if !defined(RELEASE)
+  if (where==VALUE_FROM_STORAGE)
+    if (!THREADING_is_player_thread())
+      if (PLAYER_current_thread_has_lock())
+        abort();
+#endif
+
   if(effect_num >= plugin->type->num_effects + NUM_SYSTEM_EFFECTS){
     RError("Illegal effect_num %d",effect_num);
     return 0.0f;

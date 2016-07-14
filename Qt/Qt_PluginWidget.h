@@ -260,9 +260,7 @@ class ParamWidget : public QWidget{
 
     float value;
 
-    PLAYER_lock();{
-      value = PLUGIN_get_effect_value(plugin, _effect_num, VALUE_FROM_STORAGE);
-    }PLAYER_unlock();
+    value = PLUGIN_get_effect_value(plugin, _effect_num, VALUE_FROM_STORAGE);
 
     //printf("UPDATE GUI ELEMENT %d for %s (%p / %p). Value: %f\n",_effect_num,plugin->type->name,_slider,_check_button,value);
 
