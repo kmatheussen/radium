@@ -236,13 +236,20 @@ static void RT_unlock_player(){
 }
 
 #ifndef FOR_LINUX
-static priority_t g_priority_used_inside_PLAYER_lock;
+static priority_t g_priority_used_before_obtaining_PLAYER_lock; // This variable can only be read/written while holding the player lock.
 #endif
 
 void PLAYER_lock(void){
   
   R_ASSERT(!THREADING_is_player_thread());
 
+#if !defined(RELEASE)
+  /*
+  printf("   >> Obtaining player lock\n");
+  if (is_playing())
+    abort();
+  */
+#endif
   
 #ifdef FOR_LINUX // we use mutex with the PTHREAD_PRIO_INHERIT on linux
   
@@ -255,7 +262,7 @@ void PLAYER_lock(void){
   PLAYER_acquire_same_priority();
   lock_player();
 
-  g_priority_used_inside_PLAYER_lock = priority;
+  g_priority_used_before_obtaining_PLAYER_lock = priority;
 #else
   #error "undknown architehercu"
 #endif
@@ -264,12 +271,16 @@ void PLAYER_lock(void){
 void PLAYER_unlock(void){
   R_ASSERT(!THREADING_is_player_thread());
 
+#if !defined(RELEASE)
+  //printf("   << Releasing player lock\n");
+#endif
+
 #ifdef FOR_LINUX // we use mutex with the PTHREAD_PRIO_INHERIT on linux
   
-    unlock_player();
+  unlock_player();
     
 #elif defined(FOR_WINDOWS) || defined(FOR_MACOSX)
-  priority_t priority = g_priority_used_inside_PLAYER_lock;
+  priority_t priority = g_priority_used_before_obtaining_PLAYER_lock; // 
   
   unlock_player();
 
