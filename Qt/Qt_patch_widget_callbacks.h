@@ -407,27 +407,15 @@ public slots:
 
     ADD_UNDO(PatchName_CurrPos(_patch));
 
-    //QTabBar *tab_bar = instruments_widget->tabs->tabBar();
-    //tab_bar->tab(tab_bar->currentTab())->setText(name_widget->text());
-    //instruments_widget->tabs->setTabLabel((QWidget*)this->parent(), new_name);
-
-    // removed
-    //instruments_widget->tabs->setTabText(instruments_widget->tabs->currentIndex(), new_name);
-
-    //instruments_widget->tabs->setTabTextLabel(this, new_name);
-
     {
+      _patch->name = talloc_strdup((char*)new_name.toUtf8().constData());
+      g_currpatch->name_is_edited = true;
+
       struct Tracker_Windows *window = root->song->tracker_windows;
-      struct WBlocks *wblock = window->wblock;
-      DO_GFX(
-             _patch->name = talloc_strdup((char*)new_name.toUtf8().constData());
-             g_currpatch->name_is_edited = true;
-             DrawAllWTrackHeaders(window,wblock);
-             );
-      EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
-      editor->updateEditor();
+      window->must_redraw = true; // update track headers to the new name
     }
 
+    
     if(_patch->instrument==get_audio_instrument()){
       CHIP_update((SoundPlugin*)_patch->patchdata);
       GFX_update_instrument_widget(_patch);

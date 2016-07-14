@@ -913,19 +913,11 @@ static void tab_name_has_changed(QWidget *tab, QString new_name) {
     new_name = "pip";
   }
 
-  //QTabBar *tab_bar = instruments_widget->tabs->tabBar();
-  //tab_bar->tab(tab_bar->currentTab())->setText(name_widget->text());
-  //instruments_widget->tabs->setTabLabel(tab, new_name);
-  
   {
+    g_currpatch->name = talloc_strdup((char*)new_name.toUtf8().constData());
+
     struct Tracker_Windows *window = root->song->tracker_windows;
-    struct WBlocks *wblock = window->wblock;
-    DO_GFX(
-           g_currpatch->name = talloc_strdup((char*)new_name.toUtf8().constData());
-           DrawAllWTrackHeaders(window,wblock);
-           );
-    EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
-    editor->updateEditor();
+    window->must_redraw = true; // update track headers to the new name
   }
 }
 

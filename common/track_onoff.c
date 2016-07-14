@@ -55,7 +55,7 @@ void SwitchTrackOnOff_CurrPos(
 
 	SwitchAllTracksOnOff(window->curr_track);
 
-	DrawAllWTrackHeaders(window,window->wblock);
+        window->must_redraw = true;
 }
 
 static void SoloTrack(
@@ -85,8 +85,7 @@ void SoloTrack_CurrPos(
 
 	SoloTrack(window->curr_track);
 
-//	DrawUpTrackerWindow(window);
-	DrawAllWTrackHeaders(window,window->wblock);
+        window->must_redraw = true;
 }
 
 void AllTracksOn(
@@ -113,8 +112,7 @@ void AllTracksOn_CurrPos(
 
 	AllTracksOn(window->curr_track);
 
-//	DrawUpTrackerWindow(window);
-	DrawAllWTrackHeaders(window,window->wblock);
+        window->must_redraw = true;
 }
 
 
@@ -127,7 +125,8 @@ void TRACK_OF_switch_spesified_CurrPos(
         struct WTracks *wtrack = (struct WTracks*)ListFindElement1(&window->wblock->wtracks->l,tracknum);
         
 	SwitchTrackOnOff(wtrack->track);
-	DrawAllWTrackHeaders(window,window->wblock);
+
+        window->must_redraw = true;
 }
 
 void TRACK_OF_solo_spesified_CurrPos(
@@ -137,7 +136,7 @@ void TRACK_OF_solo_spesified_CurrPos(
 	if(tracknum>=window->wblock->block->num_tracks) return;
 
 	SoloTrack(tracknum);
-	DrawAllWTrackHeaders(window,window->wblock);
+        window->must_redraw = true;
 }
 
 
@@ -170,7 +169,7 @@ void TRACK_OF_switch_solo_spesified_CurrPos(
   else
     AllTracksOn(tracknum);
 
-  DrawAllWTrackHeaders(window,wblock);
+  window->must_redraw = true;
 }
 
 
