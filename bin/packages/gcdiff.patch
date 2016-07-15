@@ -1,0 +1,40 @@
+commit ba209da99d503180bd6ca53b62ee25959c5f7ebc
+Author: Kjetil Matheussen <k.s.matheussen@notam02.no>
+Date:   Fri Jul 15 14:00:26 2016 +0200
+
+    PT_GNU_RELRO: Don't warn about not finding PT_GNU_RELRO segment when we have defined a GC_has_static_roots_func callback.
+    It's most likely not found just because the segment had been excluded.
+    
+    Alternatively, we could have registered all segments, and checked the callback afterwards, but then we could break
+    programs that rely on GC_has_static_roots_func to avoid overflowing the maximum number of roots. In addition,
+    it would make the logic slightly more complicated, probably without a very good reason since the chance of this warning
+    to show without the segment being excluded is likely to be none.
+
+diff --git a/dyn_load.c b/dyn_load.c
+index 0afdb86..8430e8e 100644
+--- a/dyn_load.c
++++ b/dyn_load.c
+@@ -490,8 +490,11 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
+         {
+             int j;
+ 
++            GC_has_static_roots_func callback = GC_has_static_roots;
++
+             start = ((ptr_t)(p->p_vaddr)) + info->dlpi_addr;
+             end = start + p->p_memsz;
++
+             for (j = n_load_segs; --j >= 0; ) {
+               if ((word)start >= (word)load_segs[j].start
+                   && (word)start < (word)load_segs[j].end) {
+@@ -506,8 +509,9 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
+                 }
+                 break;
+               }
+-              if (j == 0) WARN("Failed to find PT_GNU_RELRO segment"
+-                               " inside PT_LOAD region", 0);
++              if (j == 0 && callback == 0 )
++                WARN("Failed to find PT_GNU_RELRO segment"
++                     " inside PT_LOAD region", 0);
+             }
+         }
+ 

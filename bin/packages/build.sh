@@ -123,6 +123,7 @@ echo 'void RADIUM_ensure_bin_packages_gc_is_used(void){}' >>malloc.c
 echo '#if defined(GC_ASSERTIONS) || !defined(NO_DEBUGGING)' >>malloc.c
 echo "#error "nope"" >>malloc.c
 echo "#endif" >>malloc.c
+patch -p1 <../gcdiff.patch
 CFLAGS="-mtune=generic -msse2 -mfpmath=sse -g -O2" ./configure --enable-static --disable-shared --disable-gc-debug --disable-gc-assertions
 CFLAGS="-mtune=generic -msse2 -mfpmath=sse -g -O2" make -j3
 cd ..
