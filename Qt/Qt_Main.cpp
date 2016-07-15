@@ -1556,8 +1556,90 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
  
 void MONOTONIC_TIMER_init(void);
 
- 
+
+#if FOR_MACOSX
+#include <mach-o/dyld.h> 
+static char *get_executable_path(void){
+  uint32_t size = 1024;
+  
+  static char *ret = (char*)malloc(size);
+  
+  if (_NSGetExecutablePath(ret, &size) == -1) {
+    size++;
+    free(ret);
+    ret = (char*)malloc(size);
+    R_ASSERT(_NSGetExecutablePath(ret, &size) != -1);
+  }
+  
+  return ret;
+}
+#endif
+
+
+static char g_static_char;
+
+
+// only works for linux and osx I think. Doesn't seem like the has_static_roots callback is used in windows.
+static int gc_has_static_roots_func(
+                                     const char * dlpi_name,
+                                     void * p,
+                                     size_t size
+                                     )
+{
+  bool is_main_root = false;
+
+  char *start = (char*)p;
+  char *end = start + size;
+
+#if FOR_MACOSX
+  static char *executable_path = get_executable_path();
+#endif
+  
+
+  if (&g_static_char >= start && &g_static_char < end)
+    is_main_root = true;
+  else if (!strcmp("", dlpi_name))
+    is_main_root = true;
+#if FOR_MACOSX 
+  else if (!strcmp(executable_path, dlpi_name))
+    is_main_root = true;
+#endif
+    
+#if !defined(RELEASE)
+  static int total = 0;
+
+#if FOR_LINUX
+  if (&g_static_char >= start && &g_static_char < end && dlpi_name[0] != 0){
+    fprintf(stderr, "start: %p, static: %p, end: %p, size: %d\n",start,&g_static_char,end,(int)size);
+    abort();
+  }
+#endif
+  
+  if (is_main_root)
+    total = size;
+  else
+    total += size;
+
+#ifndef FOR_MACOSX
+  char *executable_path = "";
+#endif
+  printf("   ===== has_static_roots: -%s-, %fMB (%f). is_main: %d.  (%p). argv0: -%s-\n", dlpi_name, (double)total / (1024*1024.0), (double)size / (1024*1024.0), is_main_root, p, executable_path);
+  //getchar();
+  //abort();
+#endif
+  
+  if (is_main_root)
+    return 1;
+  else
+    return 0;
+}
+
+
 int main(int argc, char **argv){  
+
+  //GC_set_no_dls(1);
+
+  GC_register_has_static_roots_callback(gc_has_static_roots_func);
   
   GC_INIT();
 

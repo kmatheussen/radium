@@ -52,8 +52,6 @@ static event_t *g_free_events = NULL;
 static event_t *g_queue[QUEUE_SIZE];
 static int g_queue_size = 0;
 
-
-
 static event_t *get_free_event(void){
   event_t *ret = g_free_events;
   g_free_events = g_free_events->next;

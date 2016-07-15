@@ -1116,7 +1116,7 @@ bool GL_notify_that_main_window_is_exposed(void){
         if (qscreen==NULL){
           abort();
         }
-        widget->set_vblank(qscreen->refreshRate());
+        widget->set_vblank(1000.0 / qscreen->refreshRate());
         //GFX_Message(NULL, "refresh rate: %d\n", qscreen->refreshRate());
 
         gotit = true;
@@ -1131,7 +1131,7 @@ bool GL_notify_that_main_window_is_exposed(void){
         if (qscreen==NULL){
           abort();
         }
-        widget->set_vblank(qscreen->refreshRate());
+        widget->set_vblank(1000.0 /  qscreen->refreshRate());
         //printf("refresh rate: %f\n", qscreen->refreshRate());
   }
 
