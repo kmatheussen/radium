@@ -1618,13 +1618,11 @@ static void add_windows_gc_roots(void){
   
   for ( int i = 0 ; i < image_nt_header->FileHeader.NumberOfSections ; i++) {
 
-    IMAGE_SECTION_HEADER *image_section_header = &image_section_headers[i];
-      
     char name[16] = {};
-    strncpy(name, (char*)image_section_header->Name, 8);
+    strncpy(name, (char*)image_section_headers[i].Name, 8);
     
-    char *start = image_base + image_section_header->VirtualAddress;
-    int size = image_section_header->Misc.VirtualSize;
+    char *start = image_base + image_section_headers[i].VirtualAddress;
+    int size = image_section_headers[i].Misc.VirtualSize;
     char *end = start + size;
 
     bool in1 = char_inside(start,&g_static_char,end);
@@ -1635,7 +1633,7 @@ static void add_windows_gc_roots(void){
     bool in6 = char_inside(start,&l_static_char2,end);
     bool is_inside = in1 || in2 || in3 || in4 || in5 || in6;
 
-    bool writable = image_section_header->Characteristics & IMAGE_SCN_MEM_WRITE;
+    bool writable = image_section_headers[i].Characteristics & IMAGE_SCN_MEM_WRITE;
     
     if (writable || is_inside) {
       GC_add_roots(start, end);
