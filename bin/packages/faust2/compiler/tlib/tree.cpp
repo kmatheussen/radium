@@ -86,7 +86,7 @@ storage of trees.
 
 #define ERROR(s,t) { throw faustexception(s); }
 
-Tree CTree::gHashTable[kHashTableSize];
+Tree *CTree::gHashTable = NULL;
 bool CTree::gDetails = false;
 unsigned int CTree::gVisitTime = 0;
 
@@ -209,7 +209,10 @@ void CTree::control ()
 
 void CTree::init ()
 {
-    memset(gHashTable, 0, sizeof(Tree) * kHashTableSize);
+	if (gHashTable == NULL)
+		gHashTable = (Tree*)malloc(sizeof(Tree) * kHashTableSize);
+  
+	memset(gHashTable, 0, sizeof(Tree) * kHashTableSize);
 }
 
 // if t has a node of type int, return it otherwise error

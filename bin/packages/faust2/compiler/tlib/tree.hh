@@ -110,7 +110,7 @@ class CTree : public virtual Garbageable
 {
  private:
 	static const int 	kHashTableSize = 2000000; //510511;	///< size of the hash table used for "hash consing"
-	static Tree			gHashTable[kHashTableSize];	///< hash table used for "hash consing"
+	static Tree			*gHashTable;	///< hash table used for "hash consing"
 
  public:
 	static bool			gDetails;					///< Ctree::print() print with more details when true

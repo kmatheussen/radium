@@ -34,7 +34,7 @@ using namespace std;
  * Hash table used to store the symbols
  */
  
-Symbol*	Symbol::gSymbolTable[kHashTableSize];
+Symbol* *Symbol::gSymbolTable = NULL;
 
 map<const char*, unsigned int> Symbol::gPrefixCounters;
 
@@ -173,5 +173,9 @@ ostream& Symbol::print (ostream& fout) const 					///< print a symbol on a strea
 void Symbol::init ()
 {
     gPrefixCounters.clear();
+
+    if (gSymbolTable == NULL)
+      gSymbolTable = (Symbol**)malloc(sizeof(Symbol*) * kHashTableSize);
+
     memset(gSymbolTable, 0, sizeof(Symbol*) * kHashTableSize);
 }
