@@ -1567,7 +1567,7 @@ void MONOTONIC_TIMER_init(void);
 static char *get_macosx_executable_path(void){
   uint32_t size = 1024;
   
-  static char *ret = (char*)malloc(size);
+  char *ret = (char*)malloc(size);
   
   if (_NSGetExecutablePath(ret, &size) == -1) {
     size++;
@@ -1642,8 +1642,8 @@ static void add_windows_gc_roots(void){
       total_bytes += size;
     }
 #if !defined(RELEASE)
-    if (!writiable && inside)
-      abort();
+    if (is_inside)
+      R_ASSERT(writable);
 #endif
     
     printf("\"%s\". Writable: %d. Size: %d, start: %p, inside: %d %d %d %d %d %d\n", name, writable, size, start, in1,in2,in3,in4,in5,in6);
