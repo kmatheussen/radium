@@ -658,9 +658,11 @@ static void updateApplication(EditorWidget *my_widget,QApplication *app){
 }
 
 static void updateAll(EditorWidget *my_widget, QWidget *widget){
+#if defined(WITH_FAUST)
   if (dynamic_cast<QsciScintilla*>(widget) != NULL)
     return;
-
+#endif
+  
   if (dynamic_cast<QTGUI*>(widget) != NULL)
     return;
 
