@@ -1626,19 +1626,25 @@ static void add_windows_gc_roots(void){
     char *start = image_base + image_section_header->VirtualAddress;
     int size = image_section_header->Misc.VirtualSize;
     char *end = start + size;
-    
-    bool writable = image_section_header->Characteristics & IMAGE_SCN_MEM_WRITE;
-    if (writable) {
-      GC_add_roots(start, end);
-      total_bytes += size;
-    }
-       
+
     bool in1 = char_inside(start,&g_static_char,end);
     bool in2 = char_inside(start,&g_static_char2,end);
     bool in3 = char_inside(start,&g_char,end);
     bool in4 = char_inside(start,&g_char2,end);
     bool in5 = char_inside(start,&l_static_char,end);
     bool in6 = char_inside(start,&l_static_char2,end);
+    bool is_inside = in1 || in2 || in3 || in4 || in5 || in6;
+
+    bool writable = image_section_header->Characteristics & IMAGE_SCN_MEM_WRITE;
+    
+    if (writable || is_inside) {
+      GC_add_roots(start, end);
+      total_bytes += size;
+    }
+#if !defined(RELEASE)
+    if (!writiable && inside)
+      abort();
+#endif
     
     printf("\"%s\". Writable: %d. Size: %d, start: %p, inside: %d %d %d %d %d %d\n", name, writable, size, start, in1,in2,in3,in4,in5,in6);
   }
