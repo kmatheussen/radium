@@ -1564,7 +1564,7 @@ void MONOTONIC_TIMER_init(void);
 
 #if FOR_MACOSX
 #include <mach-o/dyld.h> 
-static char *get_executable_path(void){
+static char *get_macosx_executable_path(void){
   uint32_t size = 1024;
   
   static char *ret = (char*)malloc(size);
@@ -1582,71 +1582,166 @@ static char *get_executable_path(void){
 
 
 static char g_static_char;
+static char g_static_char2 = 5;
+
+char g_char;
+char g_char2 = 6;
+
+static bool char_inside(char *a, char *b, char*c){
+  if (b >= a && b < c)
+    return true;
+  else
+    return false;
+}
 
 
-// only works for linux and osx I think. Doesn't seem like the has_static_roots callback is used in windows.
+#if defined(FOR_WINDOWS)
+
+#include <dbghelp.h>
+
+// https://msdn.microsoft.com/en-us/library/windows/desktop/ms680341(v=vs.85).aspx
+// http://www.csn.ul.ie/~caolan/pub/winresdump/winresdump/doc/pefile2.html
+static void add_windows_gc_roots(void){
+
+  static char l_static_char;
+  static char l_static_char2 = 7;
+  
+  HMODULE module_handle = GetModuleHandle(NULL);
+  
+  char *image_base = (char*)module_handle;
+  
+  IMAGE_NT_HEADERS *image_nt_header = ImageNtHeader(module_handle);
+  
+  IMAGE_SECTION_HEADER *image_section_headers = (IMAGE_SECTION_HEADER *) (image_nt_header + 1);
+  
+  int total_bytes = 0;
+  
+  for ( int i = 0 ; i < image_nt_header->FileHeader.NumberOfSections ; i++) {
+
+    IMAGE_SECTION_HEADER *image_section_header = &image_section_headers[i];
+      
+    char name[16] = {};
+    strncpy(name, (char*)image_section_header->Name, 8);
+    
+    char *start = image_base + image_section_header->VirtualAddress;
+    int size = image_section_header->Misc.VirtualSize;
+    char *end = start + size;
+    
+    bool writable = image_section_header->Characteristics & IMAGE_SCN_MEM_WRITE;
+    if (writable) {
+      GC_add_roots(start, end);
+      total_bytes += size;
+    }
+       
+    bool in1 = char_inside(start,&g_static_char,end);
+    bool in2 = char_inside(start,&g_static_char2,end);
+    bool in3 = char_inside(start,&g_char,end);
+    bool in4 = char_inside(start,&g_char2,end);
+    bool in5 = char_inside(start,&l_static_char,end);
+    bool in6 = char_inside(start,&l_static_char2,end);
+    
+    printf("\"%s\". Writable: %d. Size: %d, start: %p, inside: %d %d %d %d %d %d\n", name, writable, size, start, in1,in2,in3,in4,in5,in6);
+  }
+    
+  printf("finished. Total roots added: %fMb\n", (double)total_bytes / (1024*1024.0));
+  //getchar();
+}
+
+#endif // defined(FOR_WINDOWS)
+
+
+#if defined(FOR_MACOSX) || defined(FOR_LINUX) // Doesn't seem like the GC_has_static_roots callback is used in windows.
 static int gc_has_static_roots_func(
                                      const char * dlpi_name,
                                      void * p,
                                      size_t size
                                      )
 {
-  bool is_main_root = false;
-
+  static char l_static_char;
+  static char l_static_char2 = 7;
+  
   char *start = (char*)p;
   char *end = start + size;
 
 #if FOR_MACOSX
-  static char *executable_path = get_executable_path();
+  static char *executable_path = get_macosx_executable_path();
 #endif
-  
 
-  if (&g_static_char >= start && &g_static_char < end)
+  bool in1 = char_inside(start,&g_static_char,end);
+  bool in2 = char_inside(start,&g_static_char2,end);
+  bool in3 = char_inside(start,&g_char,end);
+  bool in4 = char_inside(start,&g_char2,end);
+  bool in5 = char_inside(start,&l_static_char,end);
+  bool in6 = char_inside(start,&l_static_char2,end);
+  bool is_inside = in1 || in2 || in3 || in4 || in5 || in6;
+  
+  bool is_main_root;
+
+  if (is_inside) // Normally, this should(?) be good enough. But we have extra checks below as well.
     is_main_root = true;
-  else if (!strcmp("", dlpi_name))
+#if defined(FOR_LINUX)
+  else if (!strcmp("", dlpi_name)) // This is a bit flaky. Haven't found any way any other way to identify the main name on linux. Note that there are two assertion in !RELEASE mode for this check below.
     is_main_root = true;
-#if FOR_MACOSX 
-  else if (!strcmp(executable_path, dlpi_name))
+#elif defined(FOR_MACOSX)
+  else if (!strcmp(executable_path, dlpi_name)) // This should not be flaky
     is_main_root = true;
 #endif
-    
+  else
+    is_main_root = false;
+  
 #if !defined(RELEASE)
   static int total = 0;
 
-#if FOR_LINUX
-  if (&g_static_char >= start && &g_static_char < end && dlpi_name[0] != 0){
-    fprintf(stderr, "start: %p, static: %p, end: %p, size: %d\n",start,&g_static_char,end,(int)size);
-    abort();
-  }
-#endif
+  #if FOR_LINUX
+    if (is_inside && strcmp("", dlpi_name)){
+      fprintf(stderr, "1. start: %p, static: %p, end: %p, size: %d\n",start,&g_static_char,end,(int)size);
+      abort();
+    }
+    if (!is_inside && !strcmp("", dlpi_name)){
+      fprintf(stderr, "2. start: %p, static: %p, end: %p, size: %d\n",start,&g_static_char,end,(int)size);
+      abort();
+    }
+  #endif
   
   if (is_main_root)
     total = size;
   else
     total += size;
 
-#ifndef FOR_MACOSX
-  char *executable_path = "";
-#endif
+  #if !defined(FOR_MACOSX)
+    const char *executable_path = "";
+  #endif
+  
   printf("   ===== has_static_roots: -%s-, %fMB (%f). is_main: %d.  (%p). argv0: -%s-\n", dlpi_name, (double)total / (1024*1024.0), (double)size / (1024*1024.0), is_main_root, p, executable_path);
   //getchar();
   //abort();
-#endif
+  
+#endif // !defined(RELEASE)
   
   if (is_main_root)
     return 1;
   else
     return 0;
 }
+#endif // defined(FOR_MACOSX) || defined(FOR_LINUX)
 
 
 int main(int argc, char **argv){  
 
-  //GC_set_no_dls(1);
-
+#if defined(FOR_WINDOWS)
+  GC_set_no_dls(1);
+#endif
+  
+#if defined(FOR_MACOSX) || defined(FOR_LINUX)
   GC_register_has_static_roots_callback(gc_has_static_roots_func);
+#endif
   
   GC_INIT();
+
+#if defined(FOR_WINDOWS)
+  add_windows_gc_roots();
+#endif
+  
 
 #ifdef FOR_MACOSX
   OS_OSX_show_icon_in_dock();
