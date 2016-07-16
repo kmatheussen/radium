@@ -1511,47 +1511,52 @@ static void qunsetenv(const char *varName)
 #endif
 
 #ifdef USE_QT5
-void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg){
-    QByteArray localMsg = msg.toLocal8Bit();
+void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 #else
-    void myMessageOutput(QtMsgType type, const char *localMsg){
+  void myMessageOutput(QtMsgType type, const char *localMsg)
 #endif
 
-    g_qt_is_running=false;
+{
 
-    switch (type) {
-      case QtDebugMsg:
-        fprintf(stderr, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
-        break;
+#ifdef USE_QT5
+  QByteArray localMsg = msg.toLocal8Bit();
+#endif
+  
+  g_qt_is_running=false;
+    
+  switch (type) {
+    case QtDebugMsg:
+      fprintf(stderr, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      break;
 #if QT_VERSION >= 0x050500
-      case QtInfoMsg:
-        fprintf(stderr, "Info: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
-        break;
+    case QtInfoMsg:
+      fprintf(stderr, "Info: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      break;
 #endif
-      case QtWarningMsg:
-        fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+    case QtWarningMsg:
+      fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
 #ifndef RELEASE
-        GFX_Message(NULL, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      GFX_Message(NULL, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
 #endif
-        break;
-      case QtCriticalMsg:
-        fprintf(stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      break;
+    case QtCriticalMsg:
+      fprintf(stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
 #ifndef RELEASE
-        GFX_Message(NULL, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      GFX_Message(NULL, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
 #endif
-        break;
-      case QtFatalMsg:
-        fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      break;
+    case QtFatalMsg:
+      fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
 #ifndef RELEASE
-        GFX_Message(NULL, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      GFX_Message(NULL, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
 #endif        
-        break;
-        //abort();
-      default:
-        fprintf(stderr, "Unkwon qt: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
-    }
+      break;
+      //abort();
+    default:
+      fprintf(stderr, "Unkwon qt: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+  }
 
-    g_qt_is_running=true;
+  g_qt_is_running=true;
 }
  
 void MONOTONIC_TIMER_init(void);
