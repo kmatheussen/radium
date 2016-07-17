@@ -425,6 +425,11 @@ void OS_SYSTEM_init_keyboard(void){
 }
 
 
+bool OS_OSX_is_key_window(void *void_nsview){
+  NSView *view = (NSView*)void_nsview;
+  return [[view window] isKeyWindow];
+}
+
 void OS_SYSTEM_EventPreHandler(void *void_event){
   NSEvent *event = (NSEvent *)void_event;
   NSEventType type = [event type];

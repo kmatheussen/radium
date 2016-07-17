@@ -346,11 +346,21 @@ protected:
   
   bool SystemEventFilter(void *event){
 
-    if(ATOMIC_GET(is_starting_up)==true)// || return_false_now)
+    if(ATOMIC_GET(is_starting_up)==true)
       return false;
 
     OS_SYSTEM_EventPreHandler(event);
 
+    /*
+    QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+
+    printf("   focus: %d,   active: %d.  key: %d\n",
+           QApplication::focusWidget() != NULL,
+           QApplication::activeWindow() != NULL,
+           OS_OSX_is_key_window((void*)main_window->winId())
+           );
+    */
+    
     if (another_window_has_focus)
       return false;
     
@@ -590,8 +600,13 @@ static QSplashScreen *g_splashscreen;
 
 
 bool main_window_has_focus(void){
-  //return g_qapplication->focusWidget() != NULL;
+#if FOR_MACOSX
+  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  return OS_OSX_is_key_window((void*)main_window->winId());
+#else
+  //return g_qapplication->focusWidget() != NULL;  
   return g_qapplication->activeWindow() != NULL;
+#endif
 }
 
 

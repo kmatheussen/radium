@@ -224,7 +224,7 @@ namespace{
     {
       printf("\n\n      child focus %s\n\n", hasKeyboardFocus(true) ? "obtained" : "lost");
       
-      if (hasKeyboardFocus(true))
+      if (hasKeyboardFocus(true)) // hasKeyboardFocus doesn't always work for sub windows.
         obtain_keyboard_focus();
       else
         release_keyboard_focus();
