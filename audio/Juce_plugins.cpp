@@ -48,7 +48,7 @@
 #include "../midi/midi_juce.cpp"
 
 
-#if FOR_LINUX
+#if JUCE_LINUX
 #define CUSTOM_MM_THREAD 1
 #else
 #define CUSTOM_MM_THREAD 0
