@@ -34,11 +34,13 @@ struct VBlankEstimator{
   {
     R_ASSERT(num_trainings>=60);
   }
-
+  
   void set_vblank(double period){
-    base_interval = period;
-    time.start();
-    printf("\n\n\n\n ************* Setting vblank to %f ************\n\n\n",period);
+    if (period != base_interval){
+      base_interval = period;
+      time.start();
+      printf("\n\n\n\n ************* Setting vblank to %f ************\n\n\n",period);
+    }
   }
 
   bool train(){
@@ -73,7 +75,10 @@ struct VBlankEstimator{
     double interval = (time_now - last_time)*1000.0;
     int num_periods = (interval+(base_interval/2.0)) / base_interval;
     last_time = time_now;
-    //printf("interval: %f, num_periods: %d, base_interval: %f\n",interval,num_periods,base_interval);
+#if !defined(RELEASE)
+    if (num_periods != 1)
+      printf("interval: %f, num_periods: %d, base_interval: %f\n",interval,num_periods,base_interval);
+#endif
     return Result(base_interval, num_periods); //16.6666666666666666666666666666666666666666666666666666666667, 1);
   }
 };
@@ -149,8 +154,8 @@ struct TimeEstimator{
   }
 
   double get_vblank(){
-    if (_vblank_estimator.i_trainings==0)
-      return 16.66; // 60hz
+    if (_vblank_estimator.base_interval<=0.1)
+      return 1000.0 / 60.0; // 60hz
     else
       return _vblank_estimator.base_interval;
   }
@@ -176,7 +181,7 @@ struct TimeEstimator{
 
     if (a_num_periods_wrong > (period_multiplier*k_num_periods_to_correct)) {
       #if !defined(RELEASE)
-      //printf("NOT RETURNING NEW_VALUE. New_Value (calculated): %f. Returning instead (approx correct): %f\n",(float)new_value,(float)approx_correct);
+      printf("NOT RETURNING NEW_VALUE. New_Value (calculated): %f. Returning instead (approx correct): %f\n",(float)new_value,(float)approx_correct);
       #endif
       
       set_time(approx_correct);

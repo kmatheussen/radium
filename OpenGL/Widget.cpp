@@ -291,6 +291,12 @@ extern struct Root *root;
 extern int scrolls_per_second;
 extern int default_scrolls_per_second;
 
+// The time_estimator is used to estimate the screen refresh rate according to the soundcard clock.
+// I.e. 60.0 hz when using the gfx card clock is unlikely to be 60.0 hz when using the soundcard clock.
+//
+// However, since we put a high pass filter on the scroll position, it doesn't really matter, so
+// we only estimate using QT4. In Qt5, we just use the widget->windowHandle()->screen()->refreshRate() value instead.
+//
 TimeEstimator time_estimator;
 
 
@@ -506,9 +512,12 @@ public:
 
   PaintingData *painting_data;
 
+#if !USE_QT5
   DEFINE_ATOMIC(bool, is_training_vblank_estimator);
-  DEFINE_ATOMIC(double, override_vblank_value);
   bool has_overridden_vblank_value;
+#endif
+  
+  DEFINE_ATOMIC(double, override_vblank_value);
 
   float last_scroll_pos;
   double last_current_realline_while_playing;
@@ -530,15 +539,23 @@ public:
     , new_width(500)
     , new_height(500)
     , painting_data(NULL)
+#if !USE_QT5
     , has_overridden_vblank_value(false)
+#endif
     , last_scroll_pos(-1.0f)
     , last_current_realline_while_playing(-1.0f)
     , last_curr_realline(-1)
     , sleep_when_not_painting(true) //SETTINGS_read_bool("opengl_sleep_when_not_painting", false))
   {
     ATOMIC_SET(_main_window_is_exposed, false);
+    
+#if USE_QT5
+    ATOMIC_DOUBLE_SET(override_vblank_value, 1000.0 / 60.0);
+#else
     ATOMIC_DOUBLE_SET(override_vblank_value, -1.0);
     ATOMIC_SET(is_training_vblank_estimator, false);
+#endif
+    
     setMouseTracking(true);
     //setAttribute(Qt::WA_PaintOnScreen);
   }
@@ -889,9 +906,11 @@ public:
     }
 #endif
 
-    
     double overridden_vblank_value = ATOMIC_DOUBLE_GET(override_vblank_value);
     
+#if USE_QT5
+    time_estimator.set_vblank(overridden_vblank_value);    
+#else
     if (has_overridden_vblank_value==false && overridden_vblank_value > 0.0) {
 
       time_estimator.set_vblank(overridden_vblank_value);
@@ -904,42 +923,46 @@ public:
         ATOMIC_SET(is_training_vblank_estimator, time_estimator.train());
 
     }
-    
+#endif
 
     // This is the only place the opengl thread waits. When swap()/usleep() returns, updateEvent is called again immediately.
 
     {
+#if !USE_QT5
       if (ATOMIC_GET(is_training_vblank_estimator)==true) {
 
         swap();
 
-      } else {
-
-        bool must_swap;
-
+      } else
+#endif
         {
-          radium::ScopedMutex lock(&draw_mutex);
 
-          if (canDraw()) {
-            must_swap = draw();
-          } else {
-            must_swap = true;
+          bool must_swap;
+          
+          {
+            radium::ScopedMutex lock(&draw_mutex);
+            
+            if (canDraw()) {
+              must_swap = draw();
+            } else {
+              must_swap = true;
+            }
           }
+          
+          if (must_swap)
+            swap();
+          
+          else if (g_safe_mode || !sleep_when_not_painting) // probably doesn't make any sense setting sleep_when_not_painting to false. Besides, setting it to false may cause 100% CPU usage (intel gfx) or very long calls to GL_lock() (nvidia gfx).
+            swap();
+          
+          else
+            //usleep(20); // Don't want to buzy-loop
+            usleep(1000 * time_estimator.get_vblank());
+          
+          if (g_safe_mode)
+            GL_unlock();
         }
-
-        if (must_swap)
-          swap();
-        
-        else if (g_safe_mode || !sleep_when_not_painting) // probably doesn't make any sense setting sleep_when_not_painting to false. Besides, setting it to false may cause 100% CPU usage (intel gfx) or very long calls to GL_lock() (nvidia gfx).
-          swap();
-
-        else
-          //usleep(20); // Don't want to buzy-loop
-          usleep(1000 * time_estimator.get_vblank());
-                 
-        if (g_safe_mode)
-          GL_unlock();
-      }
+      
     }
 
     ATOMIC_SET(g_has_updated_at_least_once, true);
@@ -952,7 +975,7 @@ public:
   void set_vblank(double value){
     ATOMIC_DOUBLE_SET(override_vblank_value, value);
   }
-
+  
   // Necessary to avoid error with clang++.
   virtual void resizeEvent(QResizeEvent *qresizeevent) {
 #if USE_QT5
@@ -1086,6 +1109,7 @@ public:
 
 static vl::ref<MyQtThreadedWidget> widget;
 
+#if !USE_QT5
 static bool use_estimated_vblank_questionmark(){
   return SETTINGS_read_bool("use_estimated_vblank", false);
 }
@@ -1097,47 +1121,53 @@ static void store_use_estimated_vblank(bool value){
 static bool have_earlier_estimated_value(){
   return SETTINGS_read_double("vblank", -1.0) > 0.0;
 }
+#endif
 
-bool GL_notify_that_main_window_is_exposed(void){
+static double get_refresh_rate(void){
+  QWindow *qwindow = widget->windowHandle();
+  if (qwindow!=NULL){
+    QScreen *qscreen = qwindow->screen();
+    if (qscreen!=NULL) {
+      return qscreen->refreshRate();
+    }
+  }
+
+  return -1;
+}
+
+bool GL_maybe_notify_that_main_window_is_exposed(int interval){
   static bool gotit=false;
 
 #if USE_QT5
+  
   if (gotit==false){
     QWindow *window = widget->windowHandle();
     if (window != NULL){
       if (window->isExposed()) {
         ATOMIC_SET(widget->_main_window_is_exposed, true);
-
-        QWindow *qwindow = widget->windowHandle();
-        if (qwindow==NULL){
-          abort();
-        }
-        QScreen *qscreen = qwindow->screen();
-        if (qscreen==NULL){
-          abort();
-        }
-        widget->set_vblank(1000.0 / qscreen->refreshRate());
-        //GFX_Message(NULL, "refresh rate: %d\n", qscreen->refreshRate());
-
         gotit = true;
       }
     }
   }else{
-        QWindow *qwindow = widget->windowHandle();
-        if (qwindow==NULL){
-          abort();
-        }
-        QScreen *qscreen = qwindow->screen();
-        if (qscreen==NULL){
-          abort();
-        }
-        widget->set_vblank(1000.0 /  qscreen->refreshRate());
-        //printf("refresh rate: %f\n", qscreen->refreshRate());
+    static int downcounter = 0;
+    if (downcounter==0) {
+      double refresh_rate = get_refresh_rate();
+      if (refresh_rate >= 0.5)
+        widget->set_vblank(1000.0 / refresh_rate);
+      else
+        printf("Warning: Unable to find screen refresh rate\n");
+      downcounter = 2 * 1000 / interval; // Check refresh rate every 2 seconds.
+    }else
+      downcounter--;
   }
 
 #else
-  ATOMIC_SET(widget->_main_window_is_exposed, true);
-  gotit = true;
+  
+  if (gotit==false){
+    ATOMIC_SET(widget->_main_window_is_exposed, true);
+    gotit = true;
+  }
+  
 #endif
   
   return gotit;
@@ -1196,6 +1226,7 @@ void GL_EnsureMakeCurrentIsCalled(void){
   }
 }
 
+#if !USE_QT5
 double GL_get_estimated_vblank(){
   return 1000.0 / SETTINGS_read_double("vblank", 60.0);
 }
@@ -1210,6 +1241,7 @@ void GL_erase_estimated_vblank(void){
   store_use_estimated_vblank(false);
   GFX_Message(NULL, "Stored vblank value erased. Restart Radium to estimate a new vblank value.");
 }
+#endif
 
 void GL_set_vsync(bool onoff){
   SETTINGS_write_bool("vsync", onoff);
@@ -1341,8 +1373,9 @@ QWidget *GL_create_widget(QWidget *parent){
   }
 
   setup_widget(parent);
+#if !USE_QT5
   widget->set_vblank(GL_get_estimated_vblank());
-  
+#endif
   
   while(ATOMIC_GET(GE_vendor_string)==NULL || ATOMIC_GET(GE_renderer_string)==NULL || ATOMIC_GET(GE_version_string)==NULL)
     usleep(5*1000);
@@ -1510,7 +1543,7 @@ void GL_stop_widget(QWidget *widget){
   //delete mywidget;
 }
 
-
+#if !USE_QT5
 static void show_message_box(QMessageBox *box){
   //box->setWindowFlags(Qt::WindowStaysOnTopHint);//Qt::WindowStaysOnTopHint|Qt::SplashScreen|Qt::Window | Qt::FramelessWindowHint|Qt::Popup);
   box->setWindowFlags(Qt::WindowStaysOnTopHint); //Qt::Popup);
@@ -1543,11 +1576,10 @@ static void show_message_box(QMessageBox *box){
   
   qApp->processEvents();
 }
-
+#endif
 
 void GL_maybe_estimate_vblank(QWidget *qwidget){
-  return;
-
+#if !USE_QT5
   static bool been_here = false;
   
   MyQtThreadedWidget *widget = static_cast<MyQtThreadedWidget*>(qwidget);
@@ -1593,6 +1625,6 @@ void GL_maybe_estimate_vblank(QWidget *qwidget){
 
   printf("\n\n\n Closing box\n\n\n");
   box.close();
-
+#endif
 }
 

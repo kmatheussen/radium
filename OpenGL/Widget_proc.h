@@ -15,7 +15,7 @@ class QWidget;
 
 extern bool GL_should_do_modal_windows(void);
 
-extern bool GL_notify_that_main_window_is_exposed(void);
+extern bool GL_maybe_notify_that_main_window_is_exposed(int interval);
     
 extern void GL_pause_gl_thread_a_short_while(void);
 extern void GL_EnsureMakeCurrentIsCalled(void);

@@ -1361,7 +1361,11 @@ int getWebserverPort(void){
 }
 
 void eraseEstimatedVblank(void){
+#if USE_QT5
+  printf("eraseEstimatedVblank() is not used in Qt5\n");
+#else
   GL_erase_estimated_vblank();
+#endif
 }
 
 void evalScheme(char *code){

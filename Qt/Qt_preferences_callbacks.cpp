@@ -368,10 +368,14 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         break;
       }
       
-      
+
+#if USE_QT5
+      eraseEstimatedVBlankInterval->hide();
+#else
       QString vblankbuttontext = QString("Erase Estimated Vertical Blank (")+QString::number(1000.0/GL_get_estimated_vblank())+" Hz)";
       eraseEstimatedVBlankInterval->setText(vblankbuttontext);
-
+#endif
+      
       safeModeOnoff->setChecked(GL_get_safe_mode());
       pauseRenderingOnoff->setChecked(GL_get_pause_rendering_on_off());
       showKeyCodesOnoff->setChecked(false);
@@ -503,16 +507,20 @@ public slots:
   }
 
   void on_eraseEstimatedVBlankInterval_clicked(){
+#if !USE_QT5
     if (_initing==false){
       printf("erasing\n");
       GL_erase_estimated_vblank();
     }
+#endif
   }
-
+  
   void on_vsyncOnoff_toggled(bool val){
     if (_initing==false){
+#if !USE_QT5
       if (!_is_updating_widgets)
         GL_erase_estimated_vblank(); // makes sense
+#endif
       GL_set_vsync(val);
     }
   }

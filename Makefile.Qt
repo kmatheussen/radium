@@ -107,9 +107,9 @@ endif
 
 # qt5
 ifeq ($(RADIUM_QT_VERSION),5)
-	QT_GUI_CFLAGS ?=`$(PKGqt) --cflags Qt5Gui --cflags Qt5Widgets` -DUSE_QT5 $(FPIC)
+	QT_GUI_CFLAGS ?=`$(PKGqt) --cflags Qt5Gui --cflags Qt5Widgets` $(FPIC)
 	QT_GUI_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5Widgets` $(FPIC)
-	QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags Qt5Network` -DUSE_QT5 $(FPIC)
+	QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags Qt5Network` $(FPIC)
 	QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs Qt5Network` $(FPIC)
 
 #	If using QtWebEngine: (Not recommended, dragging doesn't work using it)
@@ -117,7 +117,7 @@ ifeq ($(RADIUM_QT_VERSION),5)
 #	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebEngineWidgets`
 
 #	If using QtWebKit:
-	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.9.2/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT5 $(FPIC)
+	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.9.2/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
 	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebKitWidgets` $(FPIC)
 endif
 
@@ -173,6 +173,11 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 FLAGOPTS = $(DEFINES) -DGUIISQT -DUSE_GFX_OP_QUEUE -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
 COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_60_0 -I${HOME}/SDKs -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
+
+ifeq ($(RADIUM_QT_VERSION),5)
+	COMMONOPT += -DUSE_QT5
+endif
+
 #$(CFLAGS)
 # -Wunused-parameter
 

@@ -834,7 +834,7 @@ protected:
       }
     }
 
-    if (GL_notify_that_main_window_is_exposed()==true)
+    if (GL_maybe_notify_that_main_window_is_exposed(interval)==true)
       GL_maybe_estimate_vblank(static_cast<EditorWidget*>(window->os_visual.widget)->gl_widget);
     
     #if 0
