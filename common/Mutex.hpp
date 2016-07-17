@@ -59,10 +59,19 @@ public:
   */
   
 struct Mutex {
+  friend struct CondWait;
+  
+private:
 
   pthread_mutex_t mutex;
+  bool is_recursive;
+  int num_locks;
 
+public:
+  
   Mutex(bool is_recursive = false)
+    :is_recursive(is_recursive)
+    ,num_locks(0)
   {
     if (is_recursive){
       pthread_mutexattr_t attr;
@@ -78,12 +87,26 @@ struct Mutex {
     pthread_mutex_destroy(&mutex);
   }
 
-  void lock(void){
+  void lock(void){    
     pthread_mutex_lock(&mutex);
+
+    // ehm.
+    if (!is_recursive)
+      R_ASSERT_RETURN_IF_FALSE(num_locks==0);
+
+    num_locks++;
   }
 
   void unlock(void){
+    R_ASSERT_RETURN_IF_FALSE(num_locks>0);
+    
+    num_locks--;
+    
     pthread_mutex_unlock(&mutex);
+  }
+
+  bool is_locked(void){
+    return num_locks>0;
   }
 };
 

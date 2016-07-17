@@ -165,6 +165,8 @@ static void *recording_queue_pull_thread(void*){
 
 
 static bool find_and_remove_midievent_end_note(int blocknum, int pos, int notenum_to_find, STime starttime_of_note, midi_event_t &midi_event){
+  R_ASSERT(g_midi_event_mutex.is_locked());
+  
   for(int i = pos ; i < g_recorded_midi_events.size(); i++) {
 
     midi_event = g_recorded_midi_events[i];
@@ -195,11 +197,10 @@ void MIDI_insert_recorded_midi_events(void){
     usleep(1000*5);
 
   ATOMIC_SET(root->song_state_is_locked, false);
-
-  printf("MIDI_insert_recorded_midi_events called %d\n", g_recorded_midi_events.size());
          
   {
     radium::ScopedMutex lock(&g_midi_event_mutex);
+    printf("MIDI_insert_recorded_midi_events called %d\n", g_recorded_midi_events.size());
     if (g_recorded_midi_events.size() == 0)
       return;
   }
