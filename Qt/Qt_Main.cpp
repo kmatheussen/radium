@@ -164,6 +164,8 @@ void call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_event
     another_window_has_focus = false;
   else
     another_window_has_focus = true;
+
+  //printf("main_window_has_focus(): %d\n", main_window_has_focus());
 }
 
 
@@ -588,6 +590,7 @@ static QSplashScreen *g_splashscreen;
 
 
 bool main_window_has_focus(void){
+  //return g_qapplication->focusWidget() != NULL;
   return g_qapplication->activeWindow() != NULL;
 }
 
@@ -1684,7 +1687,11 @@ static int gc_has_static_roots_func(
   if (is_inside) // Normally, this should(?) be good enough. But we have extra checks below as well.
     is_main_root = true;
 #if defined(FOR_LINUX)
+  else if (!strcmp("PT_GNU_RELRO", dlpi_name))
+    is_main_root = false;
   else if (!strcmp("", dlpi_name)) // This is a bit flaky. Haven't found any way any other way to identify the main name on linux. Note that there are two assertion in !RELEASE mode for this check below.
+    is_main_root = true;
+  else if (dlpi_name[0] != '/') // Add this check as well, might be a useless check.
     is_main_root = true;
 #elif defined(FOR_MACOSX)
   else if (!strcmp(executable_path, dlpi_name)) // This should not be flaky
@@ -1709,8 +1716,13 @@ static int gc_has_static_roots_func(
   
   if (is_main_root)
     total = size;
+  else if (!strcmp("PT_GNU_RELRO", dlpi_name))
+    total -= size;
   else
     total += size;
+
+  
+  
 
   #if !defined(FOR_MACOSX)
     const char *executable_path = "";

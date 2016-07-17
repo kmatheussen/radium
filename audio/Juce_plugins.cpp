@@ -223,6 +223,7 @@ namespace{
     void focusOfChildComponentChanged(FocusChangeType cause) override
     {
       printf("\n\n      child focus %s\n\n", hasKeyboardFocus(true) ? "obtained" : "lost");
+      
       if (hasKeyboardFocus(true))
         obtain_keyboard_focus();
       else

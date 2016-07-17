@@ -68,7 +68,7 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds -msse2 -fno-omit-frame-pointer -DFOR_LINUX -DWITH_PD -DWITH_FAUST_DEV"
+export OS_OPTS="-Werror=array-bounds -msse2 -fno-omit-frame-pointer -DFOR_LINUX -DWITH_PD -DWITH_FAUST_DEV" #    
 #export OS_OPTS="-Werror=array-bounds -march=native"
 
 
@@ -91,6 +91,8 @@ FAUSTLDFLAGS="bin/packages/faust2/compiler/libfaust.a `pkg-config --libs uuid` `
 # _debug
 
 export OS_LDFLAGS="bin/packages/QScintilla_gpl-2.9.2/Qt4Qt5/libqscintilla2.a $FAUSTLDFLAGS bin/packages/libpd-master/libs/libpds.a pluginhost/Builds/Linux/build/libMyPluginHost.a -lasound -ljack -llrdf -pthread -lrt -lX11 $GCDIR/.libs/libgc.a  $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` -lXext `$PKG --libs glib-2.0` -lxcb -lxcb-keysyms -Wl,-Bstatic -lbfd -Wl,-Bdynamic -lz -liberty -lutil -ldl"
+
+# 
 
 # 
 
