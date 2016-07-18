@@ -100,6 +100,7 @@ int GFX_Menu2(
         
         if (n_submenues==max_submenues){
           curr_menu = curr_menu->addMenu("Next");
+          //curr_menu->setStyleSheet("QMenu { menu-scrollable: 1; }");
           n_submenues=0;
         }
 
@@ -126,7 +127,8 @@ int GFX_Menu2(
           n_submenues = 0;
           parents.push(curr_menu);
           curr_menu = curr_menu->addMenu(text.right(text.size() - 15));
-          
+          //curr_menu->setStyleSheet("QMenu { menu-scrollable: 1; }");
+                    
         } else if (text.startsWith("[submenu end]")){
           
           QMenu *parent = parents.pop();

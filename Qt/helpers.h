@@ -10,6 +10,8 @@
 
 #include "../api/api_proc.h"
 
+#define PUT_ON_TOP 1
+
 extern bool radium_runs_custom_exec;
 
 struct RememberGeometryQDialog : public QDialog {
@@ -18,7 +20,9 @@ struct RememberGeometryQDialog : public QDialog {
   bool has_stored_geometry;
 
   static int num_open_dialogs;
-  
+
+#if PUT_ON_TOP
+
   struct Timer : public QTimer {
     bool was_visible = false;
     
@@ -57,14 +61,17 @@ struct RememberGeometryQDialog : public QDialog {
   
 
   Timer timer;
+#endif
   
 public:
   RememberGeometryQDialog(QWidget *parent)
     : QDialog(parent)
     , has_stored_geometry(false)
+#if PUT_ON_TOP
     , timer(this)
+#endif
   {
-    //setWindowFlags(Qt::WindowStaysOnTopHint);
+    setWindowFlags(Qt::WindowStaysOnTopHint);
   }
 
   void setVisible(bool visible) override {      

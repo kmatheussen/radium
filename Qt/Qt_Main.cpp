@@ -1390,16 +1390,19 @@ int radium_main(char *arg){
   GFX_Message(&v, "hepp hepp");
 #endif
 
+  //abort();
+
   //RWarning("warning!");
   //g_splashscreen->finish(main_window);
   delete g_splashscreen;
 
-  //abort();
-
   assertRadiumInHomeDirectory();
 
-  UPDATECHECKER_doit();
 
+  UPDATECHECKER_doit();
+  
+  //QApplication::processEvents(); // Windows spends some time to initialize proxy, or something like that (there are numerous QTBUG entries on this). We trigger that work here while the splash screen is still open. If not it seems like the program have hanged right after startup. (No, it didnt make a difference. Qt has screwed up network initialization on windows since it blocks the main thread for a few seconds when doing the first request. Qt should have done this in a separate thread. Seems like the simplest solution is to use libcurl.)
+    
   
        
 #if USE_QT_VISUAL
@@ -1408,7 +1411,7 @@ int radium_main(char *arg){
   GTK_MainLoop();
 #endif
       
-  // We don't want the crashreporter to pop up when program exits.
+  // We don't want the crashreporter to pop up if there is something wrong when program exits. Not so important, and it looks unprofessional.
   CRASHREPORTER_dont_report_more();
 
   DISK_cleanup();
@@ -1858,7 +1861,7 @@ int main(int argc, char **argv){
   
   QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));
   g_splashscreen = new QSplashScreen(pixmap);
-#ifdef RELEASE
+#if 1 //def RELEASE
   g_splashscreen->show();
   g_splashscreen->raise();
   g_splashscreen->showMessage("Starting up");
