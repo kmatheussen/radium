@@ -207,21 +207,6 @@ void TRACK_make_monophonic_destructively(struct Tracks *track){
 
     if (PlaceGreaterThan(&note->end, &next->l.p)){
 
-      PLAYER_lock();{
-
-        if (PlaceEqual(&note->l.p, &next->l.p)) {
-
-          ListRemoveElement3(&track->notes, &next->l);                           
-
-        } else {
-
-          PlaceCopy(&note->end, &next->l.p);
-          note = next;
-
-        }
-
-      }PLAYER_unlock();
-
       if (have_made_undo==false){      
         ADD_UNDO(Notes(window,
                        wblock->block,
@@ -232,6 +217,21 @@ void TRACK_make_monophonic_destructively(struct Tracks *track){
 
         have_made_undo = true;
       }
+
+      PLAYER_lock();{
+
+        if (PlaceEqual(&note->l.p, &next->l.p)) {
+
+          ListRemoveElement3(&track->notes, &next->l);                           
+
+        } else {
+
+          CutNoteAt(wblock->block, track, note, &next->l.p);
+          note = next;
+
+        }
+
+      }PLAYER_unlock();
 
     } else {
 

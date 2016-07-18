@@ -120,6 +120,7 @@ struct Notes *GetCurrNote(struct Tracker_Windows *window){
 /**************************************************************
   FUNCTION
     Set the _end attributes for note 'note'.
+    Finds next note to stop at, or block length.
 **************************************************************/
 void SetEndAttributes(
 	const struct Blocks *block,
@@ -1147,6 +1148,8 @@ void EditNoteCurrPos(struct Tracker_Windows *window){
 
 void CutNoteAt(struct Blocks *block, struct Tracks *track,struct Notes *note, Place *place){
 
+  R_ASSERT(PLAYER_current_thread_has_lock() || is_playing()==false);
+          
   if (PlaceGreaterOrEqual(place, &note->end)){
     RError("Illegal argument for CutNoteAt 1. %f >= %f\n",GetfloatFromPlacement(place),GetfloatFromPlacement(&note->end));
     return;
@@ -1157,13 +1160,9 @@ void CutNoteAt(struct Blocks *block, struct Tracks *track,struct Notes *note, Pl
     return;
   }
   
-  PLAYER_lock();{
-
-        CutListAt(&note->velocities,place);
-        CutListAt(&note->pitches,place);
-        PlaceCopy(&note->end,place);
-
-  }PLAYER_unlock();
+  CutListAt(&note->velocities,place);
+  CutListAt(&note->pitches,place);
+  PlaceCopy(&note->end,place);
 
 }
 
@@ -1186,19 +1185,19 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
           return;
 
         ADD_UNDO(Notes_CurrPos(window));
-        
-        if(PlaceGreaterOrEqual(&note->l.p,&realline->l.p)){
-          PLAYER_lock();{
+
+        PLAYER_lock();{
+
+          if(PlaceGreaterOrEqual(&note->l.p,&realline->l.p)){
             RemoveNote(wblock->block,wtrack->track,note);
             SetNotePolyphonyAttributes(wtrack->track);
             ValidateCursorPos(window);
-          }PLAYER_unlock();
-	}else{
-          CutNoteAt(wblock->block, wtrack->track, note, &realline->l.p);
-        }
+          }else{
+            CutNoteAt(wblock->block, wtrack->track, note, &realline->l.p);
+          }
 
-        PLAYER_lock();{
           note->noend=noend;
+          
         }PLAYER_unlock();
         
         window->must_redraw=true;

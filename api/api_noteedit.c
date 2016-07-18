@@ -698,7 +698,10 @@ void cutNote(float floatplace, int notenum, int tracknum, int blocknum, int wind
   if (PlaceLessOrEqual(&place, &note->l.p))
     return;
 
-  CutNoteAt(wblock->block, wtrack->track, note, &place);
+  PLAYER_lock();{
+    CutNoteAt(wblock->block, wtrack->track, note, &place);
+  }PLAYER_unlock();
+  
 }
 
 void addNoteAdds(
