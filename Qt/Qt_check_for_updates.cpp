@@ -79,7 +79,7 @@ static void set_last_informed_version(QString version){}
 static void maybeInformAboutNewVersion(QString newestversion = "3.5.1"){
   fprintf(stderr,"newestversion: -%s-, VERSION: -%s-, last_informed: -%s-\n",newestversion.toUtf8().constData(), VERSION, last_informed_version().toUtf8().constData());
   //abort();
-  if (hasNewer(newestversion, VERSION) && last_informed_version()!=newestversion) {
+  if (false || (hasNewer(newestversion, VERSION) && last_informed_version()!=newestversion)) {
     printf("Version %s of Radium is available for download at http://users.notam02.no/~kjetism/radium (%s)\n", newestversion.toUtf8().constData(), VERSION);
     GL_lock();{
       QMessageBox::information(NULL,
@@ -95,76 +95,65 @@ static void maybeInformAboutNewVersion(QString newestversion = "3.5.1"){
 
 
 
+#include <QThread>
+#include <QTimer>
+#include "../audio/Juce_plugins_proc.h"
+
 namespace{
+  struct MyThread : public QThread , public QTimer {
+    DEFINE_ATOMIC(char *, gakk);
 
-// Based on this example: http://www.codeprogress.com/cpp/libraries/qt/showQtExample.php?index=581&key=QNetworkAccessManagerDownloadFileHTTP
-class MyNetworkAccessManager : public QNetworkAccessManager
-{
-  Q_OBJECT
-  
-public:
-  MyNetworkAccessManager()
-  {
-    m_pBuffer = new QByteArray();
-    QUrl url = QUrl("http://users.notam02.no/~kjetism/radium/demos/windows64/?C=M;O=D");
-    QNetworkRequest req(url);
-    reply = get(req);
-    
-    connect(reply,SIGNAL(readyRead()),this,SLOT(slotReadData()));
-    connect(reply,SIGNAL(finished()), this,SLOT(slotFinished()));    
-  }
-  ~MyNetworkAccessManager()
-  {
-    //R_ASSERT("We are not supposed to be here");
-    delete m_pBuffer;
-    delete reply;
-  }
-  
-private slots:
-
-  void slotFinished()
-  {
-    QString all = m_pBuffer->constData(); //reply->readAll().constData();
-
-    //printf("got %d: -%s-\n", (int)reply->bytesAvailable(), all.conreply->readAll().constData());
-    QString searchString = "radium_64bit_windows-";
-    int startPos = all.indexOf(searchString);
-
-    if (startPos > 0) {
-      QString versionString = all.remove(0, startPos+searchString.length());
-      int endPos = versionString.indexOf("-demo");
-      if (endPos > 0) {
-        versionString = versionString.left(endPos);
-        printf("versionString: _%s_\n",versionString.toUtf8().constData());
-        maybeInformAboutNewVersion(versionString);
-      }
+    MyThread(){
+      ATOMIC_SET(gakk, NULL);
+      QTimer::setInterval(1000);
+      QTimer::start();
+      QThread::start();
     }
 
-    //reply->deleteLater();
-    //m_pBuffer->deleteLater();
-    this->deleteLater();
-  }
+    void run() override {
+      ATOMIC_SET(gakk, JUCE_download("http://users.notam02.no/~kjetism/radium/demos/windows64/"));
+    }
 
-  void slotReadData()
-  {
-    //append data to QByteArray buffer
-    *m_pBuffer += reply->readAll();
-  }
+    void timerEvent(QTimerEvent * e) override {
+      //printf("Timerthread called %s\n", ATOMIC_GET(gakk));
 
+      const char* text = ATOMIC_GET(gakk);
 
-private:
-  QByteArray* m_pBuffer;
-  QNetworkReply* reply; 
-};
+      if(text != NULL){
 
+        QString all(text);
+        
+        //printf("got %d: -%s-\n", (int)reply->bytesAvailable(), all.conreply->readAll().constData());
+        QString searchString = "radium_64bit_windows-";
+        int startPos = all.indexOf(searchString);
+        
+        if (startPos > 0) {
+          QString versionString = all.remove(0, startPos+searchString.length());
+          int endPos = versionString.indexOf("-demo");
+          if (endPos > 0) {
+            versionString = versionString.left(endPos);
+            printf("versionString: _%s_\n",versionString.toUtf8().constData());
+            maybeInformAboutNewVersion(versionString);
+          }
+        }
+        
+        QThread::wait();
+
+        free((void*)text);
+        
+        delete this;
+      }
+    }
+  };
 }
 
 
-
-static MyNetworkAccessManager *nam;
+//static MyNetworkAccessManager *nam;
 
 void UPDATECHECKER_doit(void){
-  nam = new MyNetworkAccessManager;
+  //MyThread *thread =
+  new MyThread;
+  //nam = new MyNetworkAccessManager;
 }
 
 

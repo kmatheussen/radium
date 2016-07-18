@@ -118,7 +118,7 @@ public:
     start(QThread::NormalPriority); //QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
   }
 
-  void run(){
+  void run() override {
     AVOIDDENORMALS;
 
     touch_stack();

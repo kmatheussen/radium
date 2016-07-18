@@ -4,6 +4,7 @@
 
 struct SoundPlugin;
 
+extern LANGSPEC char *JUCE_download(const char *url_url); // the returned pointer must be freed manually using free().
 extern LANGSPEC const char *JUCE_get_backtrace(void);
 
 float JUCE_get_max_val(const float *array, const int num_elements);

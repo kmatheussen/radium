@@ -1144,6 +1144,17 @@ void GFX_CloseProgress(void){
 
 #endif
 
+char *JUCE_download(const char *url_url){
+  URL url(url_url);
+  
+  String text =
+    url
+    .withParameter("C", "M")
+    .withParameter("O", "D")
+    .readEntireTextStream();
+
+  return strdup(text.toRawUTF8());
+}
 
 static String g_backtrace;
 
