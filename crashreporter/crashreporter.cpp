@@ -311,7 +311,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
 
     //box.stackUnder(box.parentWidget());
-    box.setWindowFlags(Qt::WindowStaysOnTopHint);
+    box.setWindowFlags(box.windowFlags() | Qt::WindowStaysOnTopHint);
     box.setWindowModality(Qt::ApplicationModal);
 
     //box.setMaximumWidth(600);

@@ -276,7 +276,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       //_color_dialog.hide();
       _color_dialog.setOption(QColorDialog::DontUseNativeDialog, true);
 #if 0
-      _color_dialog.setWindowFlags(Qt::Widget);
+      _color_dialog.setWindowFlags(_color_dialog.windowFlags() | Qt::Widget);
       _color_dialog.setParent(this);
       colorlayout_right->insertWidget(0, &_color_dialog);
 #endif

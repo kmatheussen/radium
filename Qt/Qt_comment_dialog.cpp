@@ -12,7 +12,7 @@ static comment_dialog *widget=NULL;
 static void ensure_widget_is_created(void){
   if(widget==NULL){
     widget = new comment_dialog(NULL);
-    widget->setWindowFlags(Qt::WindowStaysOnTopHint);
+    widget->setWindowFlags(widget->windowFlags() | Qt::WindowStaysOnTopHint);
     widget->setWindowModality(Qt::ApplicationModal);
   }
 }

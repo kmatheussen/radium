@@ -25,9 +25,9 @@ void process_OpenProgress(QString message){
 
   progressBox = new QMessageBox;
 #if 1 // defined(FOR_LINUX) // popup locks up X on my computer if radium crashes while the progress window is open.
-  progressBox->setWindowFlags(Qt::FramelessWindowHint);
+  progressBox->setWindowFlags(progressBox->windowFlags() | Qt::FramelessWindowHint);
 #else
-  progressBox->setWindowFlags(Qt::Popup);//Qt::WindowStaysOnTopHint|Qt::SplashScreen|Qt::Window | Qt::FramelessWindowHint|Qt::Popup);
+  progressBox->setWindowFlags(progressBox->windowFlags() | Qt::Popup);//Qt::WindowStaysOnTopHint|Qt::SplashScreen|Qt::Window | Qt::FramelessWindowHint|Qt::Popup);
 #endif
   
   progressBox->setMinimumWidth(600);

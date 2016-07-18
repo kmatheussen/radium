@@ -10,7 +10,7 @@
 
 #include "../api/api_proc.h"
 
-#define PUT_ON_TOP 1
+#define PUT_ON_TOP 0
 
 extern bool radium_runs_custom_exec;
 
@@ -70,10 +70,9 @@ public:
 #if PUT_ON_TOP
     , timer(this)
 #endif
-  {
-    setWindowFlags(Qt::WindowStaysOnTopHint);
+  {    
+    setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
   }
-
   void setVisible(bool visible) override {      
     //printf("   Set visible %d\n",visible);
 

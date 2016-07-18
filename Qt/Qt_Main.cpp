@@ -1312,8 +1312,6 @@ int radium_main(char *arg){
 #endif
 
 
-  show_nag_window("");
-
   //QApplication::quit();
 
 #if !GTK_IS_USED
@@ -1395,6 +1393,10 @@ int radium_main(char *arg){
   //RWarning("warning!");
   //g_splashscreen->finish(main_window);
   delete g_splashscreen;
+
+  
+  show_nag_window("");
+
 
   assertRadiumInHomeDirectory();
 
