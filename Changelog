@@ -1,3 +1,25 @@
+Changes 3.9.7 -> 3.9.8:
+* Turn off custom put-dialog-in-front system. Using the Qt::WindowStaysOnTopHint flag instead.
+  (Less weird behavior when raising windows in front of others.)
+* Fix "Make track monophonic". It didn't handle velocities and pitch changes,
+  and it didn't create undo data at the correct time.
+* Fix race condition when recording MIDI (fix rare crash).
+* OSX: Fix VST plugin keyboard focus for qt5.
+* Don't estimate monitor refresh rate when using qt5. The estimation is technically
+  necessary since we need to know the refresh rate according to the sound card
+  clock, and not the gfx card clock. But in practice it makes no difference since
+  we interpolate the screen position anyway to avoid jumps. In qt5 there is a
+  single function call to get the refresh rate without having to measure
+  or dive into the OS APIs.
+* Faust: Allocate hash tables with malloc to avoid large .bss sections
+  (This causes shorter garbage collector pause times.)
+* BDW-GC: Don't include data segments for dynamically loaded libraries.
+  (This causes shorter garbage collector pause times.)
+* Use Qt::FramelessWindowHint instead of Qt::Popup for the progress window,
+  to avoid locking up the X server on Linux.
+* Removed some unnecessary paint calls
+
+
 Changes 3.9.6 -> 3.9.7:
 * Fixed mod/xm import on OSX.
 * OSX: dont show dock icons for the helper programs
