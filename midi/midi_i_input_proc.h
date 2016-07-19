@@ -60,10 +60,13 @@ public:
   {
   }
 
-  ~MidiLearn(){
-    MIDI_remove_midi_learn(this, true);
+  virtual ~MidiLearn(){
+    printf("  MidiLearn destructor called\n");
   }
-
+    
+  hash_t *create_state(void);
+  void init_from_state(hash_t *hash);
+  
   bool RT_maybe_use(uint32_t msg);
   
   virtual void RT_callback(float val){

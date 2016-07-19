@@ -64,6 +64,50 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define DELAY_MAX 50.0f
 
 
+namespace{
+  
+  struct SoundPluginEffectMidiLearn : public MidiLearn {
+    
+    SoundPlugin *plugin;
+    int effect_num;
+    
+    SoundPluginEffectMidiLearn(SoundPlugin *plugin, int effect_num)
+      : plugin(plugin)
+      , effect_num(effect_num)
+    {}
+
+    SoundPluginEffectMidiLearn(SoundPlugin *plugin, hash_t *state)
+      :plugin(plugin)
+    {
+      init_from_state(state);
+    }
+
+    virtual ~SoundPluginEffectMidiLearn(){
+      printf("  SoundPluginEffectMidiLearn destructor called\n");
+    }
+          
+    hash_t *create_state(void){
+      hash_t *state = MidiLearn::create_state();
+      HASH_put_int(state, "SoundPluginEffectMidiLearn::effect_num", effect_num);
+      return state;
+    }
+
+    void init_from_state(hash_t *state){
+      MidiLearn::init_from_state(state);
+      effect_num = HASH_get_int(state, "SoundPluginEffectMidiLearn::effect_num");
+    }
+    
+    virtual void RT_callback(float val) override;
+  };
+
+  static void add_midi_learn(SoundPluginEffectMidiLearn *midi_learn){
+    VECTOR_push_back(&midi_learn->plugin->midi_learns, midi_learn);
+    MIDI_add_midi_learn(midi_learn);
+  }  
+
+}
+
+
 /*
 (define (slider_2_gain val db_min db_max)
   (let* ((threshold_val  0.05)
@@ -1421,14 +1465,25 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
 
   hash_t *state=HASH_create(5);
 
-  HASH_put_chars(state, "type_name", type->type_name);
-  HASH_put_chars(state, "name", type->name);
+  // type name / name / container name
+  {
+    HASH_put_chars(state, "type_name", type->type_name);
+    HASH_put_chars(state, "name", type->name);
+    
+    if (type->container!=NULL)
+      HASH_put_chars(state, "container_name", type->container->name);
+  }
+  
+  // midi learns
+  for(int i = 0 ; i < plugin->midi_learns.num_elements ; i++){
+    auto *midi_learn = (SoundPluginEffectMidiLearn*)plugin->midi_learns.elements[i];
+    HASH_put_hash_at(state, "midi_learns", i, midi_learn->create_state());
+  }
 
-  if (type->container!=NULL)
-    HASH_put_chars(state, "container_name", type->container->name);
-
+  // effects
   HASH_put_hash(state,"effects",PLUGIN_get_effects_state(plugin));
 
+  // plugin state
   if(type->create_state != NULL){
     hash_t *plugin_state = HASH_create(10);
     HASH_put_hash(state, "plugin_state", plugin_state);
@@ -1562,6 +1617,8 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
 
   hash_t *plugin_state;
 
+  // plugin state
+  //
   if (strcmp(type->type_name, type_name) || strcmp(type->name, name))
     plugin_state=NULL; //i.e. selected a different plugin.
   
@@ -1576,11 +1633,22 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   if(plugin==NULL)
     return NULL;
 
+  // effects state
   hash_t *effects = HASH_get_hash(state, "effects");
   PLUGIN_set_effects_from_state(plugin, effects);
 
   if(plugin_state!=NULL && type->recreate_from_state!=NULL)
     type->recreate_from_state(plugin, plugin_state, is_loading);
+
+  // midi learns state
+  {
+    for(int i = 0 ; i < HASH_get_array_size(state) ; i++){
+      if (HASH_has_key_at(state, "midi_learns", i)){ // In case array is used for something else as well. TODO: Create a HASH_get_array_size function that takes key as argument.
+        auto *midi_learn = new SoundPluginEffectMidiLearn(plugin, HASH_get_hash_at(state, "midi_learns", i));
+        add_midi_learn(midi_learn);
+      }
+    }
+  }
   
   return plugin;
 }
@@ -1590,33 +1658,18 @@ char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type){
   return talloc_format("%s %d",plugin_type->name,++plugin_type->instance_num);    
 }
 
-namespace{
-  
-  struct SoundPluginEffectMidiLearn : public MidiLearn {
-    
-    SoundPlugin *plugin;
-    int effect_num;
-    
-    SoundPluginEffectMidiLearn(SoundPlugin *plugin, int effect_num)
-      : plugin(plugin)
-      , effect_num(effect_num)
-    {}
-    
-    virtual void RT_callback(float val) override {
-      printf("soundpluginmidilearn %s got %f\n", plugin->patch->name, val);
-      PLUGIN_set_effect_value(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-      volatile struct Patch *patch = plugin->patch;
-      if (patch != NULL)
-        ATOMIC_SET(patch->widget_needs_to_be_updated, true);
-    }    
 
-  };
+void SoundPluginEffectMidiLearn::RT_callback(float val) {
+  printf("soundpluginmidilearn %s got %f\n", plugin->patch->name, val);
+  PLUGIN_set_effect_value(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  volatile struct Patch *patch = plugin->patch;
+  if (patch != NULL)
+    ATOMIC_SET(patch->widget_needs_to_be_updated, true);
 }
 
 void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num){
   auto *midi_learn = new SoundPluginEffectMidiLearn(plugin, effect_num);
-  VECTOR_push_back(&plugin->midi_learns, midi_learn);
-  MIDI_add_midi_learn(midi_learn);
+  add_midi_learn(midi_learn);
 }
 
 bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_error_if_not_here){
@@ -1637,6 +1690,8 @@ bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_err
   
   VECTOR_remove(&plugin->midi_learns, midi_learn);
   MIDI_remove_midi_learn(midi_learn, false);
+
+  delete midi_learn;
   
   return true;
 }

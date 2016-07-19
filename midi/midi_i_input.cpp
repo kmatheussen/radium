@@ -28,11 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 
-#include "midi_i_plugin.h"
-#include "midi_i_plugin_proc.h"
-#include "midi_proc.h"
-
 #include "../common/list_proc.h"
+#include "../common/hashmap_proc.h"
 #include "../common/notes_proc.h"
 #include "../common/blts_proc.h"
 #include "../common/OS_Ptask2Mtask_proc.h"
@@ -51,7 +48,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/Queue.hpp"
 #include "../common/Vector.hpp"
 
+#include "midi_i_plugin.h"
+#include "midi_i_plugin_proc.h"
+#include "midi_proc.h"
+
 #include "midi_i_input_proc.h"
+
 
 static DEFINE_ATOMIC(uint32_t, g_msg) = 0;
 
@@ -345,6 +347,20 @@ void MIDI_remove_midi_learn(MidiLearn *midi_learn, bool show_error_if_not_here){
  **          Send MIDI input to midi learn patch / current patch           **
  ****************************************************************************
  ****************************************************************************/
+
+hash_t *MidiLearn::create_state(void){
+  hash_t *state = HASH_create(3);
+  HASH_put_bool(state, "is_learning", is_learning);
+  HASH_put_int(state, "data1", data1);
+  HASH_put_int(state, "data2", data2);
+  return state;
+}
+
+void MidiLearn::init_from_state(hash_t *state){
+  is_learning = HASH_get_bool(state, "is_learning");
+  data1 = HASH_get_int(state, "data1");
+  data2 = HASH_get_int(state, "data2");
+}
 
 bool MidiLearn::RT_maybe_use(uint32_t msg){
   int d1 = MIDI_msg_byte1(msg);

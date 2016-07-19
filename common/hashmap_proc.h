@@ -47,12 +47,18 @@ extern LANGSPEC void HASH_put_chars(hash_t *hash, const char *key, const char *v
 extern LANGSPEC void HASH_put_int(hash_t *hash, const char *key, int64_t val);
 extern LANGSPEC void HASH_put_float(hash_t *hash, const char *key, double val);
 extern LANGSPEC void HASH_put_hash(hash_t *hash, const char *key, hash_t *val);
+static inline void HASH_put_bool(hash_t *hash, const char *key, bool val){
+  HASH_put_int(hash, key, val ? 1 : 0);
+}
 
 extern LANGSPEC const wchar_t *HASH_get_string(const hash_t *hash, const char *key);
 extern LANGSPEC const char *HASH_get_chars(const hash_t *hash, const char *key);
 extern LANGSPEC int64_t HASH_get_int(const hash_t *hash, const char *key);
 extern LANGSPEC double HASH_get_float(const hash_t *hash, const char *key);
 extern LANGSPEC hash_t *HASH_get_hash(const hash_t *hash, const char *key);
+static inline bool HASH_get_bool(hash_t *hash, const char *key){
+  return HASH_get_int(hash, key)==1 ? true : 0;
+}
 
 
 // Array interface
