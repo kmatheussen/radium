@@ -324,17 +324,6 @@ typedef struct {
 
 static boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000> > g_play_buffer;
 
-// Called from a MIDI input thread
-static void add_event_to_play_buffer(int cc,int data1,int data2){
-  play_buffer_event_t event;
-
-  event.deltatime = 0;
-  event.msg = PACK_MIDI_MSG(cc,data1,data2);
-
-  if (!g_play_buffer.bounded_push(event))
-    RT_message("Midi play buffer full.\nMost likely the player can not keep up because it uses too much CPU.\nIf that is not the case, please report this incident.");
-}
-
 // Called from the player thread
 void RT_MIDI_handle_play_buffer(void){
   struct Patch *patch = ATOMIC_GET(g_through_patch);
@@ -353,6 +342,17 @@ void RT_MIDI_handle_play_buffer(void){
     }
     
   }
+}
+
+// Called from a MIDI input thread
+static void add_event_to_play_buffer(int cc,int data1,int data2){
+  play_buffer_event_t event;
+
+  event.deltatime = 0;
+  event.msg = PACK_MIDI_MSG(cc,data1,data2);
+
+  if (!g_play_buffer.bounded_push(event))
+    RT_message("Midi play buffer full.\nMost likely the player can not keep up because it uses too much CPU.\nIf that is not the case, please report this incident.");
 }
 
 
