@@ -377,6 +377,8 @@ typedef struct SoundPlugin{
   float *bus_volume_peak_values2;
   float *bus_volume_peak_values3;
   float *bus_volume_peak_values4;
+
+  vector_t midi_learns;
   
   DEFINE_ATOMIC(bool, is_visible);
   DEFINE_ATOMIC(void *, cpu_usage);

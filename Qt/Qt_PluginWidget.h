@@ -26,13 +26,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/undo_audio_effect_proc.h"
 #include "../audio/Faust_plugins_proc.h"
+#include "../midi/midi_i_input_proc.h"
 
 #include "Qt_MyQCheckBox.h"
 
 
 // Widget generation code is based on / copied from qtractor, written by Rui Nuno Capela.
 
-class ParamWidget : public QWidget{
+class ParamWidget : public QWidget {
   Q_OBJECT;
  public:
 
@@ -178,7 +179,6 @@ class ParamWidget : public QWidget{
     printf("           Deleting ParamWidget %d\n",_effect_num);
   }
 
-
   // TODO: Optimize with binary search.
   //
   void adjustFontSize(void){
@@ -289,7 +289,10 @@ class ParamWidget : public QWidget{
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     char buf[64]={0};
     PLUGIN_get_display_value_string(plugin, _effect_num, buf, 64);
-    return _name + ": " + QString::fromUtf8(buf);
+    if (PLUGIN_has_midi_learn(plugin, _effect_num))
+      return "*" + _name + ": " + QString::fromUtf8(buf);
+    else
+      return _name + ": " + QString::fromUtf8(buf);
   }
   
   void set_slider_string(void){

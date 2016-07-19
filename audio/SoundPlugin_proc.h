@@ -64,6 +64,10 @@ extern LANGSPEC void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char
 extern LANGSPEC SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading);
 extern LANGSPEC char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type);
 
+extern LANGSPEC void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num);
+extern LANGSPEC bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_error_if_not_here);
+extern LANGSPEC bool PLUGIN_has_midi_learn(SoundPlugin *plugin, int _effect_num);
+
 extern LANGSPEC void PLUGIN_reset(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num);
 

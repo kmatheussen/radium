@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
+#include "../common/vector_proc.h"
 #include "../common/undo.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/visual_proc.h"
@@ -29,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/threading.h"
+
+#include "../midi/midi_i_input_proc.h"
 
 #include "../mixergui/QM_chip.h"
 #include "../mixergui/QM_MixerWidget.h"
@@ -406,6 +409,8 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
 void PLUGIN_delete(SoundPlugin *plugin){
   const SoundPluginType *plugin_type = plugin->type;
 
+  while(PLUGIN_remove_midi_learn(plugin, -1, false)==true);
+  
   if(!strcmp(plugin_type->type_name,"Bus")) // RT_process needs buses to always be alive.
     return;
 
@@ -1585,7 +1590,69 @@ char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type){
   return talloc_format("%s %d",plugin_type->name,++plugin_type->instance_num);    
 }
 
- 
+namespace{
+  
+  struct SoundPluginEffectMidiLearn : public MidiLearn {
+    
+    SoundPlugin *plugin;
+    int effect_num;
+    
+    SoundPluginEffectMidiLearn(SoundPlugin *plugin, int effect_num)
+      : plugin(plugin)
+      , effect_num(effect_num)
+    {}
+    
+    virtual void RT_callback(float val) override {
+      printf("soundpluginmidilearn %s got %f\n", plugin->patch->name, val);
+      PLUGIN_set_effect_value(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      volatile struct Patch *patch = plugin->patch;
+      if (patch != NULL)
+        ATOMIC_SET(patch->widget_needs_to_be_updated, true);
+    }    
+
+  };
+}
+
+void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num){
+  auto *midi_learn = new SoundPluginEffectMidiLearn(plugin, effect_num);
+  VECTOR_push_back(&plugin->midi_learns, midi_learn);
+  MIDI_add_midi_learn(midi_learn);
+}
+
+bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_error_if_not_here){
+  SoundPluginEffectMidiLearn *midi_learn=NULL;
+  
+  VECTOR_FOR_EACH(SoundPluginEffectMidiLearn *, maybe_this_midi_learn, &plugin->midi_learns){
+    if (effect_num==-1 || maybe_this_midi_learn->effect_num == effect_num){
+      midi_learn = maybe_this_midi_learn;
+      break;
+    }
+  }END_VECTOR_FOR_EACH;
+
+  if (midi_learn==NULL){
+    if (show_error_if_not_here)
+      RError("No midi learn for %s / %d\n", plugin->patch->name, effect_num);
+    return false;
+  }
+  
+  VECTOR_remove(&plugin->midi_learns, midi_learn);
+  MIDI_remove_midi_learn(midi_learn, false);
+  
+  return true;
+}
+
+bool PLUGIN_has_midi_learn(SoundPlugin *plugin, int effect_num){
+  VECTOR_FOR_EACH(SoundPluginEffectMidiLearn *, maybe_this_midi_learn, &plugin->midi_learns){
+    if (effect_num==-1 || maybe_this_midi_learn->effect_num == effect_num){
+      return true;
+    }
+  }END_VECTOR_FOR_EACH;
+
+  return false;
+}
+
+
+
 
 void PLUGIN_reset(SoundPlugin *plugin){
   const SoundPluginType *type = plugin->type;

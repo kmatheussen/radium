@@ -317,37 +317,55 @@ void MIDI_insert_recorded_midi_events(void){
  *********************************************************
  *********************************************************/
 
-#if 0
-struct MidiLearn{
-  void *data;
-  int to_use; // <- Set here. May be set to a cc value or a pitch bend.
-  void callback(void *data);
-};
+static radium::Vector<MidiLearn*> g_midi_learns;
 
-static radium::Vector<MidiLearn> g_midi_learns;
-
-void MIDI_add_midi_learn(MidiLearn midi_learn){
-  g_midi_learns.add(midi_learn);
+void MIDI_add_midi_learn(MidiLearn *midi_learn){  
+  PLAYER_lock();{
+    g_midi_learns.add(midi_learn);
+  }PLAYER_unlock();
 }
 
-void MIDI_remove_midi_learn(MidiLearn midi_learn){
-  for(midi_learn2 : g_midi_learns)
-    if (midi_learn.data==midi_learn2.data && midi_learn.callback==midi_learn2.callback) {
-      g_midi_learns.remove(midi_learn2);
+void MIDI_remove_midi_learn(MidiLearn *midi_learn, bool show_error_if_not_here){
+  for(auto midi_learn2 : g_midi_learns)
+    if (midi_learn == midi_learn2) {
+      PLAYER_lock();{
+        g_midi_learns.remove(midi_learn2);
+      }PLAYER_unlock();
       return;
     }
 
-  RError("MIDI_remove_midi_learn: midi_learn not found");
+  if (show_error_if_not_here==false)
+    RError("MIDI_remove_midi_learn: midi_learn not found");
 }
-#endif
 
 
 
-/*********************************************************
- *********************************************************
- **          Send MIDI input to current patch           **
- *********************************************************
- *********************************************************/
+/****************************************************************************
+*****************************************************************************
+ **          Send MIDI input to midi learn patch / current patch           **
+ ****************************************************************************
+ ****************************************************************************/
+
+bool MidiLearn::RT_maybe_use(uint32_t msg){
+  int d1 = MIDI_msg_byte1(msg);
+  int d2 = MIDI_msg_byte2(msg);
+  int d3 = MIDI_msg_byte3(msg);
+  
+  if (is_learning) {
+    data1 = d1;
+    data2 = d2;
+    is_learning = false;
+  }
+  
+  printf("Got msg %x. data1: %x, data2: %x\n", msg, data1, data2);
+  
+  if(d1==data1 && d2==data2){
+    RT_callback(d3 / 127.0);
+    return true;
+  }
+
+  return false;
+}
 
 typedef struct {
   int32_t deltatime;
@@ -364,12 +382,16 @@ void RT_MIDI_handle_play_buffer(void){
 
   while(g_play_buffer.pop(event)==true){
 
+    uint32_t msg = event.msg;
+    
+    for (auto midi_learn : g_midi_learns) {
+      midi_learn->RT_maybe_use(msg);
+    }
+    
     if(through_patch!=NULL){
-      
-      uint32_t msg = event.msg;
-      
+
       uint8_t data[3] = {(uint8_t)MIDI_msg_byte1(msg), (uint8_t)MIDI_msg_byte2(msg), (uint8_t)MIDI_msg_byte3(msg)};
-      
+
       RT_MIDI_send_msg_to_patch((struct Patch*)through_patch, data, 3, -1);
     }
     

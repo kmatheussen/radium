@@ -32,13 +32,13 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
   bool _has_mouse;
   struct Patch *_patch;
   int _effect_num;
-  bool _undo_patchvoice;
+  bool _is_patchvoice_spinbox;
 
   void init(){
     _has_mouse=false;
     _patch = NULL;
     _effect_num = 0;
-    _undo_patchvoice = false;
+    _is_patchvoice_spinbox = false;
   }
 
   MyQSpinBox ( QWidget * parent = 0 ) : QSpinBox(parent) {init();}
@@ -73,7 +73,7 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
   {
     if (event->button() == Qt::LeftButton){      
       //setSliderDown(true);    
-      if(_undo_patchvoice==true)
+      if(_is_patchvoice_spinbox==true)
         ADD_UNDO(PatchVoice_CurrPos(_patch,_effect_num));
 
       printf("Got it %p %d\n",_patch,_effect_num);

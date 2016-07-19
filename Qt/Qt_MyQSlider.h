@@ -179,7 +179,7 @@ struct MyQSlider : public QSlider {
   {
     if(_patch!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
       return;
-
+    
     //printf("Got mouse pres event %d / %d\n",(int)event->x(),(int)event->y());
     if (event->button() == Qt::LeftButton){
 
@@ -200,9 +200,17 @@ struct MyQSlider : public QSlider {
 
     }else{
 
+      if(_patch==NULL || _patch->instrument!=get_audio_instrument() || _patch->patchdata == NULL)
+        return;
+      
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
+
 #ifdef COMPILING_RADIUM
       vector_t options = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
+      bool has_midi_learn = PLUGIN_has_midi_learn(plugin, _effect_num);
+      
       if(_is_a_pd_slider){
         /*
         VECTOR_push_back(&options, "Set Symbol Name");
@@ -212,9 +220,19 @@ struct MyQSlider : public QSlider {
         */
         VECTOR_push_back(&options, "Delete");
       } else {
+
         VECTOR_push_back(&options, "Reset");
+
         //VECTOR_push_back(&options, "Set Value");
       }
+
+      if (has_midi_learn){
+        VECTOR_push_back(&options, "Remove MIDI Learn");
+        VECTOR_push_back(&options, "MIDI Relearn");
+      }else{
+        VECTOR_push_back(&options, "MIDI Learn");
+      }
+        
 
       //VECTOR_push_back(&options, "");
       
@@ -224,8 +242,7 @@ struct MyQSlider : public QSlider {
 
       //printf("command: %d, _patch: %p, is_audio: %d\n",command, _patch, _patch!=NULL && _patch->instrument==get_audio_instrument());
 
-      if(command==0 && _patch!=NULL && _patch->instrument==get_audio_instrument()){
-        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      if(command==0){
         if(_is_a_pd_slider) {
           //printf("Calling delete controller for %p / %d\n",plugin,_effect_num);
           PD_delete_controller(plugin, _effect_num);
@@ -234,7 +251,18 @@ struct MyQSlider : public QSlider {
           GFX_update_instrument_widget(_patch);
         }
       }
-
+      else if(command==1 && has_midi_learn==false){
+        PLUGIN_add_midi_learn(plugin, _effect_num);
+      }
+      else if(command==1){
+        PLUGIN_remove_midi_learn(plugin, _effect_num, true);
+        GFX_update_instrument_widget(_patch);
+      }
+      else if(command==2){
+        PLUGIN_remove_midi_learn(plugin, _effect_num, true);
+        PLUGIN_add_midi_learn(plugin, _effect_num);
+      }
+        
 #if 0
       else if(command==1){
         char *s = GFX_GetString(root->song->tracker_windows,NULL, (char*)"new value");

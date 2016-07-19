@@ -123,7 +123,7 @@ struct MyQCheckBox : public QCheckBox{
   bool _has_mouse;
   struct Patch *_patch;
   int _effect_num;
-  bool _undo_patchvoice;
+  bool _is_patchvoice_onoff_button;
 
   bool _is_a_pd_slider;
 
@@ -133,7 +133,7 @@ struct MyQCheckBox : public QCheckBox{
     _has_mouse=false;
     _patch = NULL;
     _effect_num = 0;
-    _undo_patchvoice = false;
+    _is_patchvoice_onoff_button = false;
     _is_a_pd_slider = false;
   }
 
@@ -142,10 +142,13 @@ struct MyQCheckBox : public QCheckBox{
 
   void mousePressEvent ( QMouseEvent * event )
   {
+    if(_patch!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
+      return;
+
     if (event->button() == Qt::LeftButton){      
       //setSliderDown(true);    
 #ifdef COMPILING_RADIUM
-      if(_undo_patchvoice==true)
+      if(_is_patchvoice_onoff_button==true)
         ADD_UNDO(PatchVoice_CurrPos(_patch,_effect_num));
       else if(_patch!=NULL  && _patch->instrument==get_audio_instrument())
         ADD_UNDO(AudioEffect_CurrPos(_patch, _effect_num));
@@ -156,10 +159,20 @@ struct MyQCheckBox : public QCheckBox{
       setChecked(!isChecked());
 
     }else{
+      
+      if (_is_patchvoice_onoff_button==true)
+        return;
+
+      if(_patch==NULL || _patch->instrument!=get_audio_instrument() || _patch->patchdata == NULL)
+        return;
+      
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
 #ifdef COMPILING_RADIUM
       vector_t options = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
+      bool has_midi_learn = PLUGIN_has_midi_learn(plugin, _effect_num);
+            
       if(_is_a_pd_slider){
         /*
         VECTOR_push_back(&options, "Set Symbol Name");
@@ -173,13 +186,19 @@ struct MyQCheckBox : public QCheckBox{
         //VECTOR_push_back(&options, "Set Value");
       }
 
+      if (has_midi_learn){
+        VECTOR_push_back(&options, "Remove MIDI Learn");
+        VECTOR_push_back(&options, "MIDI Relearn");
+      }else{
+        VECTOR_push_back(&options, "MIDI Learn");
+      }      
 
+      
       int command = GFX_Menu(root->song->tracker_windows, NULL, "", &options);
 
       //printf("command: %d, _patch: %p, is_audio: %d\n",command, _patch, _patch!=NULL && _patch->instrument==get_audio_instrument());
 
-      if(command==0 && _patch!=NULL && _patch->instrument==get_audio_instrument()){
-        struct SoundPlugin *plugin = (struct SoundPlugin*)_patch->patchdata;
+      if(command==0){
         if(_is_a_pd_slider) {
           //printf("Calling delete controller for %p / %d\n",plugin,_effect_num);
           PD_delete_controller(plugin, _effect_num);
@@ -189,6 +208,21 @@ struct MyQCheckBox : public QCheckBox{
         }
       }
 
+      else if(command==1 && has_midi_learn==false){
+        PLUGIN_add_midi_learn(plugin, _effect_num);
+      }
+      
+      else if(command==1){
+        PLUGIN_remove_midi_learn(plugin, _effect_num, true);
+        GFX_update_instrument_widget(_patch);
+      }
+      
+      else if(command==2){
+        PLUGIN_remove_midi_learn(plugin, _effect_num, true);
+        PLUGIN_add_midi_learn(plugin, _effect_num);
+      }
+
+      
 #endif // COMPILING_RADIUM
 
       event->accept();
@@ -204,7 +238,15 @@ struct MyQCheckBox : public QCheckBox{
       setText("");
     }
 
-    CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), vertical_text!="" ? vertical_text : text());
+    QString text2 = vertical_text!="" ? vertical_text : text();
+
+    if(_patch!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata != NULL){
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      if (PLUGIN_has_midi_learn(plugin, _effect_num))
+        text2 = "*" + text2;
+    }
+    
+    CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text2);
   }
 };
 

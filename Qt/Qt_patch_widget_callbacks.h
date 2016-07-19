@@ -205,7 +205,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       get_o(i)->setChecked(voice->is_on);
       get_o(i)->_patch = _patch;
       get_o(i)->_effect_num = i;
-      get_o(i)->_undo_patchvoice = true;
+      get_o(i)->_is_patchvoice_onoff_button = true;
 
       get_t(i)->setValue(voice->transpose);
       get_v(i)->setValue(voice->volume);

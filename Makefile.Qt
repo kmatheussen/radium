@@ -1253,7 +1253,7 @@ Qt_pianorollheader_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_pianorollheader_cal
 $(P)Qt_pianorollheader.h: $(BUILD_DEPENDENCIES) $(P)qt4_pianorollheader.ui $(P)Qt_pianorollheader_callbacks.h $(P)lzqlineedit.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) pianorollheader
 
-Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)mQt_PluginWidget.cpp $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h
+Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h
 	$(CCC) $(P)Qt_PluginWidget.cpp $(QTOPT)
 
 $(P)mQt_PluginWidget.cpp: $(P)Qt_PluginWidget.h
@@ -1437,7 +1437,7 @@ midi_playfromstart.o:  $(BUILD_DEPENDENCIES)  midi/midi_playfromstart.c
 	$(CC)  midi/midi_playfromstart.c $(OPT) 
 midi_i_plugin.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_plugin.c
 	$(CC)  midi/midi_i_plugin.c $(OPT) 
-midi_i_input.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_input.cpp
+midi_i_input.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_input.cpp  midi/midi_i_input_proc.h
 	$(CCC)  midi/midi_i_input.cpp $(CPPOPT) $(JACKOPT)
 midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/midi_fx.c
 	$(CC)  midi/midi_fx.c $(OPT) 
@@ -1879,7 +1879,7 @@ SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_e
 SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegistry_proc.h
 	$(CCC) audio/SoundPluginRegistry.cpp  $(QTOPT)
 
-SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp
+SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp midi/midi_i_input_proc.h
 	$(CCC) audio/SoundPlugin.cpp $(QTOPT)
 ### $(CPUOPT)
 
