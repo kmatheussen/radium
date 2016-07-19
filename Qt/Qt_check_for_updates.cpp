@@ -111,7 +111,7 @@ namespace{
     }
 
     void run() override {
-      ATOMIC_SET(gakk, JUCE_download("http://users.notam02.no/~kjetism/radium/demos/windows64/"));
+      ATOMIC_SET(gakk, JUCE_download("http://users.notam02.no/~kjetism/radium/demos/windows64/?C=M&O=D"));
     }
 
     void timerEvent(QTimerEvent * e) override {
