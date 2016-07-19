@@ -313,61 +313,6 @@ void MIDI_insert_recorded_midi_events(void){
 
 /*********************************************************
  *********************************************************
- **          Send MIDI input to current patch           **
- *********************************************************
- *********************************************************/
-
-typedef struct {
-  int32_t deltatime;
-  uint32_t msg;
-} play_buffer_event_t;
-
-static boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000> > g_play_buffer;
-
-// Called from the player thread
-void RT_MIDI_handle_play_buffer(void){
-  struct Patch *patch = ATOMIC_GET(g_through_patch);
-
-  play_buffer_event_t event;
-
-  while(g_play_buffer.pop(event)==true){
-
-    if(patch!=NULL){
-      
-      uint32_t msg = event.msg;
-      
-      uint8_t data[3] = {(uint8_t)MIDI_msg_byte1(msg), (uint8_t)MIDI_msg_byte2(msg), (uint8_t)MIDI_msg_byte3(msg)};
-      
-      RT_MIDI_send_msg_to_patch((struct Patch*)patch, data, 3, -1);
-    }
-    
-  }
-}
-
-// Called from a MIDI input thread
-static void add_event_to_play_buffer(int cc,int data1,int data2){
-  play_buffer_event_t event;
-
-  event.deltatime = 0;
-  event.msg = PACK_MIDI_MSG(cc,data1,data2);
-
-  if (!g_play_buffer.bounded_push(event))
-    RT_message("Midi play buffer full.\nMost likely the player can not keep up because it uses too much CPU.\nIf that is not the case, please report this incident.");
-}
-
-
-// This is safe. A patch is never deleted.
-void MIDI_SetThroughPatch(struct Patch *patch){
-  //printf("Sat new patch %p\n",patch);
-  if(patch!=NULL)
-    ATOMIC_SET(g_through_patch, patch);
-}
-
-
-
-
-/*********************************************************
- *********************************************************
  **                  MIDI Learn                         **
  *********************************************************
  *********************************************************/
@@ -400,6 +345,61 @@ void MIDI_remove_midi_learn(MidiLearn midi_learn){
 
 /*********************************************************
  *********************************************************
+ **          Send MIDI input to current patch           **
+ *********************************************************
+ *********************************************************/
+
+typedef struct {
+  int32_t deltatime;
+  uint32_t msg;
+} play_buffer_event_t;
+
+static boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000> > g_play_buffer;
+
+// Called from the player thread
+void RT_MIDI_handle_play_buffer(void){
+  struct Patch *through_patch = ATOMIC_GET(g_through_patch);
+
+  play_buffer_event_t event;
+
+  while(g_play_buffer.pop(event)==true){
+
+    if(through_patch!=NULL){
+      
+      uint32_t msg = event.msg;
+      
+      uint8_t data[3] = {(uint8_t)MIDI_msg_byte1(msg), (uint8_t)MIDI_msg_byte2(msg), (uint8_t)MIDI_msg_byte3(msg)};
+      
+      RT_MIDI_send_msg_to_patch((struct Patch*)through_patch, data, 3, -1);
+    }
+    
+  }
+}
+
+// Called from a MIDI input thread
+static void add_event_to_play_buffer(int cc,int data1,int data2){
+  play_buffer_event_t event;
+
+  event.deltatime = 0;
+  event.msg = PACK_MIDI_MSG(cc,data1,data2);
+
+  if (!g_play_buffer.bounded_push(event))
+    RT_message("Midi play buffer full.\nMost likely the player can not keep up because it uses too much CPU.\nIf that is not the case, please report this incident.");
+}
+
+
+// This is safe. A patch is never deleted.
+void MIDI_SetThroughPatch(struct Patch *patch){
+  //printf("Sat new patch %p\n",patch);
+  if(patch!=NULL)
+    ATOMIC_SET(g_through_patch, patch);
+}
+
+
+
+
+/*********************************************************
+ *********************************************************
  **       Got MIDI from the outside. Entry point.       **
  *********************************************************
  *********************************************************/
@@ -420,8 +420,7 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   if (len<1 || len>3)
     return;
   
-  if(ATOMIC_GET(g_through_patch)!=NULL)
-    add_event_to_play_buffer(cc, data1, data2);
+  add_event_to_play_buffer(cc, data1, data2);
   
   if (g_record_accurately_while_playing && isplaying) {
     
