@@ -253,6 +253,7 @@ struct MyQSlider : public QSlider {
       }
       else if(command==1 && has_midi_learn==false){
         PLUGIN_add_midi_learn(plugin, _effect_num);
+        GFX_update_instrument_widget(_patch);
       }
       else if(command==1){
         PLUGIN_remove_midi_learn(plugin, _effect_num, true);
@@ -261,6 +262,7 @@ struct MyQSlider : public QSlider {
       else if(command==2){
         PLUGIN_remove_midi_learn(plugin, _effect_num, true);
         PLUGIN_add_midi_learn(plugin, _effect_num);
+        GFX_update_instrument_widget(_patch);
       }
         
 #if 0

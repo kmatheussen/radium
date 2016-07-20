@@ -1241,7 +1241,7 @@ $(P)Qt_preferences.h: $(BUILD_DEPENDENCIES) $(P)qt4_preferences.ui $(P)Qt_prefer
 	cd $(P) && $(UIC) qt4_preferences.ui | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/MyQSpinBox\>://\ \ qspingox.h: | sed s/QLineEdit/FocusSnifferQLineEdit/ | sed s:\#include\ \<QtWidgets/FocusSnifferQLineEdit\>://\ \ qlineedit.h: > Qt_preferences.h
 	cd $(P) && $(MOC) Qt_preferences_callbacks.cpp >mQt_preferences_callbacks.cpp
 
-Qt_tools_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_tools_callbacks.cpp $(P)Qt_tools_callbacks.h $(P)Qt_tools.h Qt/helpers.h
+Qt_tools_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_tools_callbacks.cpp $(P)Qt_tools_callbacks.h $(P)Qt_tools.h Qt/helpers.h midi/midi_i_input_proc.h
 	$(CCC) $(P)Qt_tools_callbacks.cpp $(QTOPT)
 
 $(P)Qt_tools.h: $(BUILD_DEPENDENCIES) $(P)qt4_tools.ui $(P)Qt_tools_callbacks.h $(P)lzqlineedit.h
@@ -1438,7 +1438,7 @@ midi_playfromstart.o:  $(BUILD_DEPENDENCIES)  midi/midi_playfromstart.c
 midi_i_plugin.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_plugin.c
 	$(CC)  midi/midi_i_plugin.c $(OPT) 
 midi_i_input.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_input.cpp  midi/midi_i_input_proc.h
-	$(CCC)  midi/midi_i_input.cpp $(CPPOPT) $(JACKOPT)
+	$(CCC)  midi/midi_i_input.cpp $(QTOPT) $(JACKOPT)
 midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/midi_fx.c
 	$(CC)  midi/midi_fx.c $(OPT) 
 

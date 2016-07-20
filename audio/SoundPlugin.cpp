@@ -74,7 +74,8 @@ namespace{
     SoundPluginEffectMidiLearn(SoundPlugin *plugin, int effect_num)
       : plugin(plugin)
       , effect_num(effect_num)
-    {}
+    {
+    }
 
     SoundPluginEffectMidiLearn(SoundPlugin *plugin, hash_t *state)
       :plugin(plugin)
@@ -96,7 +97,9 @@ namespace{
       MidiLearn::init_from_state(state);
       effect_num = HASH_get_int(state, "SoundPluginEffectMidiLearn::effect_num");
     }
-    
+
+    virtual QString get_dest_info(void) override;
+    virtual void delete_me(void) override;
     virtual void RT_callback(float val) override;
   };
 
@@ -1658,10 +1661,30 @@ char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type){
   return talloc_format("%s %d",plugin_type->name,++plugin_type->instance_num);    
 }
 
+QString SoundPluginEffectMidiLearn::get_dest_info(void){
+  QString a = plugin->patch==NULL ? plugin->type->name : plugin->patch->name;
+
+  return a + " / " + PLUGIN_get_effect_name(plugin, effect_num);
+}
+
+void SoundPluginEffectMidiLearn::delete_me(void){
+  PLUGIN_remove_midi_learn(plugin, effect_num, true);
+}
 
 void SoundPluginEffectMidiLearn::RT_callback(float val) {
-  printf("soundpluginmidilearn %s got %f\n", plugin->patch->name, val);
-  PLUGIN_set_effect_value(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  //printf("soundpluginmidilearn %s got %f\n", plugin->patch->name, val);
+
+  int num_effects = plugin->type->num_effects;
+  int system_effect = effect_num - num_effects;
+
+  //printf("effect_num: %d. system_effect: %d, comp_eff_attack: %d\n", effect_num, effect_num - num_effects, COMP_EFF_ATTACK);
+
+  if(system_effect==EFFNUM_COMP_ATTACK || system_effect==EFFNUM_COMP_RELEASE) {
+    val = scale(val, 0, 1, 0, 500);
+    PLUGIN_set_native_effect_value(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  } else
+    PLUGIN_set_effect_value(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  
   volatile struct Patch *patch = plugin->patch;
   if (patch != NULL)
     ATOMIC_SET(patch->widget_needs_to_be_updated, true);
@@ -1692,14 +1715,17 @@ bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_err
   MIDI_remove_midi_learn(midi_learn, false);
 
   delete midi_learn;
-  
+
+  update_instrument_gui(plugin);
+
   return true;
 }
 
 bool PLUGIN_has_midi_learn(SoundPlugin *plugin, int effect_num){
   VECTOR_FOR_EACH(SoundPluginEffectMidiLearn *, maybe_this_midi_learn, &plugin->midi_learns){
     if (effect_num==-1 || maybe_this_midi_learn->effect_num == effect_num){
-      return true;
+      if (ATOMIC_GET(maybe_this_midi_learn->is_enabled))
+        return true;
     }
   }END_VECTOR_FOR_EACH;
 

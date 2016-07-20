@@ -117,6 +117,11 @@ extern LANGSPEC void GFX_PP_Update(struct Patch *patch);
 
 extern LANGSPEC void OS_VST_config(struct Tracker_Windows *window);
 
+extern LANGSPEC void MIDILEARN_PREFS_open(void);
+struct MidiLearn;
+extern void MIDILEARN_PREFS_add(struct MidiLearn *midi_learn);
+extern void MIDILEARN_PREFS_remove(struct MidiLearn *midi_learn);
+
 extern LANGSPEC void TOOLS_open(void);
 
 extern LANGSPEC void *PIANOROLLHEADER_create(void);

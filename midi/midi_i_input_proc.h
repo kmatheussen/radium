@@ -40,24 +40,33 @@ struct MidiLearn;
 extern LANGSPEC void MIDI_add_midi_learn(struct MidiLearn *midi_learn);
 extern LANGSPEC void MIDI_remove_midi_learn(struct MidiLearn *midi_learn, bool show_error_if_not_here);
     
-#ifdef __cplusplus
+#ifdef USE_QT4
+
+#include <QString>
 
 #include "midi_proc.h"
 
 struct MidiLearn{
-  
+
+  DEFINE_ATOMIC(bool, is_enabled);
+
 private:
-  bool is_learning;
-  int data1;
-  int data2;
+  
+  DEFINE_ATOMIC(bool, is_learning);
+  DEFINE_ATOMIC(int, data1);
+  DEFINE_ATOMIC(int, data2);
+  Patch *patch;
   
 public:
-  
+
   MidiLearn()
-    : is_learning(true)
-    , data1(0)
-    , data2(0)
+    : patch(NULL)
   {
+    ATOMIC_SET(is_enabled, true);
+    
+    ATOMIC_SET(is_learning, true);
+    ATOMIC_SET(data1, 0);
+    ATOMIC_SET(data2, 0);
   }
 
   virtual ~MidiLearn(){
@@ -68,6 +77,23 @@ public:
   void init_from_state(hash_t *hash);
   
   bool RT_maybe_use(uint32_t msg);
+
+  QString get_source_info(void){
+    if (ATOMIC_GET(is_learning))
+      return talloc_format("MIDI: .. / ..", ATOMIC_GET(data1), ATOMIC_GET(data2));
+    else if (ATOMIC_GET(data1)>=0xe0)
+      return talloc_format("MIDI: %2X        ",ATOMIC_GET(data1));
+    else
+      return talloc_format("MIDI: %2X / %2X", ATOMIC_GET(data1), ATOMIC_GET(data2));
+  }
+
+  virtual QString get_dest_info(void){
+    return QString("MidiLearn::get_dest_info. Error: This method is supposed to be overridden.");
+  }
+  
+  virtual void delete_me(void){
+    printf("MidiLearn::delete_me. Error: This method is supposed to be overridden.\n");
+  }
   
   virtual void RT_callback(float val){
     printf("MidiLearn::callback got %f. Error: This method is supposed to be overridden.\n", val);

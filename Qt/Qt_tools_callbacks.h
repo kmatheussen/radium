@@ -4,13 +4,18 @@
 #include <unistd.h>
 
 #include <QMessageBox>
+#include <QScrollArea>
+#include <QCheckBox>
+#include <QTimer>
 
 #include "../common/nsmtracker.h"
 
 #include <FocusSniffers.h>
 
 #include "../common/OS_visual_input.h"
+#include "../common/Vector.hpp"
 #include "../OpenGL/Widget_proc.h"
+#include "../midi/midi_i_input_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -20,6 +25,145 @@
 
 namespace{
 
+class MyVerticalScroll : public QScrollArea {
+  Q_OBJECT;
+
+  QVBoxLayout *layout;
+
+public:
+
+  MyVerticalScroll(QWidget *parent)
+    :QScrollArea(parent)
+  {
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    setWidgetResizable(true);
+
+    QWidget *contents = new QWidget(this);
+
+    layout = new QVBoxLayout(contents);
+    layout->setSpacing(1);
+
+    contents->setLayout(layout);
+    
+    setWidget(contents);    
+  }
+
+  void addWidget(QWidget *widget){
+    layout->addWidget(widget);
+  }
+
+  void removeWidget(QWidget *widget){
+    layout->removeWidget(widget);
+  }
+};
+
+struct MidiLearnItem : public QWidget {
+  Q_OBJECT;
+  
+  QCheckBox *enabled;
+  QPushButton *delete_button;
+
+public:
+
+  MidiLearn *midi_learn;
+
+  QLabel *source,*dest;
+  
+  MidiLearnItem(MidiLearn *midi_learn)
+    : midi_learn(midi_learn)
+  {
+    auto *layout = new QHBoxLayout(this);
+
+    enabled = new QCheckBox("Enabled", this);
+    enabled->setChecked(true);
+    layout->addWidget(enabled, 0);
+    connect(enabled, SIGNAL(toggled(bool)), this, SLOT(enabled_toggled(bool)));
+    
+    delete_button = new QPushButton("Delete", this);
+    layout->addWidget(delete_button, 0);
+    connect(delete_button, SIGNAL(released()), this, SLOT(delete_released()));
+
+    source = new QLabel("", this);
+    dest = new QLabel("", this);
+    
+    layout->addWidget(source, 0);
+    layout->addWidget(dest, 1);
+
+    update_gui();
+    
+    setLayout(layout);  
+  }
+
+  void update_gui(){
+    source->setText(midi_learn->get_source_info() + "   - ");
+    dest->setText(midi_learn->get_dest_info());
+  }
+
+public slots:
+
+  void enabled_toggled(bool val){
+    ATOMIC_SET(midi_learn->is_enabled, val);
+    if (g_currpatch != NULL)
+      ATOMIC_SET(g_currpatch->widget_needs_to_be_updated, true);
+  }
+  
+  void delete_released(){
+    midi_learn->delete_me();
+  }
+};
+ 
+class MidiLearnPrefs : public RememberGeometryQDialog , public QTimer {
+  
+  QLayout *main_layout;
+
+  MyVerticalScroll *vertical_scroll;
+
+  radium::Vector<MidiLearnItem*> items;
+  
+public:
+  MidiLearnPrefs(QWidget *parent=NULL)
+    : RememberGeometryQDialog(parent)
+  {
+    main_layout = new QGridLayout(this);
+    setLayout(main_layout);
+
+    vertical_scroll = new MyVerticalScroll(this);
+    main_layout->addWidget(vertical_scroll);
+
+    setInterval(100);
+    start();
+  }
+
+  void timerEvent(QTimerEvent * e){
+    if (isVisible()){
+      for(auto *item : items)
+        item->update_gui();
+    }
+  }
+  
+  void add(MidiLearn *midi_learn){
+    auto *gakk = new MidiLearnItem(midi_learn);
+    items.push_back(gakk);
+    vertical_scroll->addWidget(gakk);
+  }
+  
+  void remove(MidiLearn *midi_learn){
+    MidiLearnItem *item=NULL;
+    for (auto item2 : items)
+      if (item2->midi_learn==midi_learn){
+        item = item2;
+        break;
+      }
+    
+    R_ASSERT_RETURN_IF_FALSE(item!=NULL);
+
+    vertical_scroll->removeWidget(item);
+    items.remove(item);
+
+    delete item;
+  }
+};
+  
 class Tools : public RememberGeometryQDialog, public Ui::Tools {
   Q_OBJECT
 

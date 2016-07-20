@@ -266,12 +266,15 @@ class ParamWidget : public QWidget {
 
     _can_update_effect_value = false; {
       
-      if(_slider!=NULL)
+      if(_slider!=NULL) {
+        set_slider_string(); // maybe fix: set_slider_string will be called twice if the value has changed.
         _slider->setValue(value * 10000.0f);
-      else if(_check_button!=NULL)
+      } else if(_check_button!=NULL)
         _check_button->setChecked(value>0.5f);
       
     }_can_update_effect_value = true;
+
+    update();
   }
 
   void reload_name(void){

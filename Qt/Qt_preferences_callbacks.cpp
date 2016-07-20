@@ -295,9 +295,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
       scrollArea->setWidgetResizable(true);
 
-      QWidget *contents = scrollArea->widget();
+      QWidget *contents = scrollArea->widget();      
       QVBoxLayout *layout = new QVBoxLayout(contents);
       layout->setSpacing(1);
+
+      contents->setLayout(layout);
       
       for(int i=START_CONFIG_COLOR_NUM;i<END_CONFIG_COLOR_NUM;i++) {
         ColorButton *l = new ColorButton(get_color_display_name((enum ColorNums)i), (enum ColorNums)i, &_color_dialog);

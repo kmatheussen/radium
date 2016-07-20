@@ -23,8 +23,28 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 struct Root;
 extern struct Root *root;
 
+static MidiLearnPrefs *midilearn_prefs_widget = NULL;
 
+static void ensure_open(void){
+  if (midilearn_prefs_widget == NULL){
+    midilearn_prefs_widget = new MidiLearnPrefs(NULL);
+  }
+}
 
+void MIDILEARN_PREFS_open(void){
+  ensure_open();
+  safeShowOrExec(midilearn_prefs_widget);
+}
+
+void MIDILEARN_PREFS_add(MidiLearn *midi_learn){
+  ensure_open();
+  midilearn_prefs_widget->add(midi_learn);
+}
+
+void MIDILEARN_PREFS_remove(MidiLearn *midi_learn){
+  ensure_open();
+  midilearn_prefs_widget->remove(midi_learn);
+}
 
 void TOOLS_open(void){
   static Tools *widget=NULL;

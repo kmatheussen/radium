@@ -419,6 +419,10 @@ void openToolsDialog(void){
   TOOLS_open();
 }
 
+void openMidiLearnPreferencesDialog(void){
+  MIDILEARN_PREFS_open();
+}
+
 void openAboutWindow(void){
   float length = getSongLength();
   int minutes = length / 60;

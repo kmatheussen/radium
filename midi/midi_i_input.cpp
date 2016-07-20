@@ -325,9 +325,15 @@ void MIDI_add_midi_learn(MidiLearn *midi_learn){
   PLAYER_lock();{
     g_midi_learns.add(midi_learn);
   }PLAYER_unlock();
+
+  MIDILEARN_PREFS_add(midi_learn);
 }
 
 void MIDI_remove_midi_learn(MidiLearn *midi_learn, bool show_error_if_not_here){
+  R_ASSERT(show_error_if_not_here==false);
+  
+  MIDILEARN_PREFS_remove(midi_learn);
+  
   for(auto midi_learn2 : g_midi_learns)
     if (midi_learn == midi_learn2) {
       PLAYER_lock();{
@@ -348,37 +354,79 @@ void MIDI_remove_midi_learn(MidiLearn *midi_learn, bool show_error_if_not_here){
  ****************************************************************************
  ****************************************************************************/
 
-hash_t *MidiLearn::create_state(void){
+hash_t* MidiLearn::create_state(void){
   hash_t *state = HASH_create(3);
-  HASH_put_bool(state, "is_learning", is_learning);
-  HASH_put_int(state, "data1", data1);
-  HASH_put_int(state, "data2", data2);
+  HASH_put_bool(state, "is_enabled", ATOMIC_GET(is_enabled));
+  HASH_put_bool(state, "is_learning", ATOMIC_GET(is_learning));
+  HASH_put_int(state, "data1", ATOMIC_GET(data1));
+  HASH_put_int(state, "data2", ATOMIC_GET(data2));
   return state;
 }
 
 void MidiLearn::init_from_state(hash_t *state){
-  is_learning = HASH_get_bool(state, "is_learning");
-  data1 = HASH_get_int(state, "data1");
-  data2 = HASH_get_int(state, "data2");
+  ATOMIC_SET(is_enabled, HASH_get_bool(state, "is_enabled"));
+  ATOMIC_SET(is_learning, HASH_get_bool(state, "is_learning"));
+  ATOMIC_SET(data1, HASH_get_int(state, "data1"));
+  ATOMIC_SET(data2, HASH_get_int(state, "data2"));
 }
 
 bool MidiLearn::RT_maybe_use(uint32_t msg){
   int d1 = MIDI_msg_byte1(msg);
   int d2 = MIDI_msg_byte2(msg);
   int d3 = MIDI_msg_byte3(msg);
-  
-  if (is_learning) {
-    data1 = d1;
-    data2 = d2;
-    is_learning = false;
+
+  if (d1 < 0xb0)
+    return false;
+
+  if (d1 >= 0xc0 && d1 < 0xe0)
+    return false;
+
+  if (d1 >= 0xf0)
+    return false;
+
+  if (ATOMIC_GET(is_learning)){
+    ATOMIC_SET(data1, d1);
+    ATOMIC_SET(data2, d2);
+    ATOMIC_SET(is_learning, false);
   }
   
-  printf("Got msg %x. data1: %x, data2: %x\n", msg, data1, data2);
-  
-  if(d1==data1 && d2==data2){
-    RT_callback(d3 / 127.0);
-    return true;
+  //printf("Got msg %x. data1: %x, data2: %x\n", msg, data1, data2);
+
+  if (d1 < 0xc0) {
+
+    // cc
+    
+    if(d1==ATOMIC_GET(data1) && d2==ATOMIC_GET(data2)){
+
+      if (ATOMIC_GET(is_enabled))
+        RT_callback(d3 / 127.0);
+      
+      return true;
+    }
+    
+  } else {
+
+    // pitch bend
+
+    if (d1==ATOMIC_GET(data1)) {
+      int val = d3<<7 | d2;
+      //printf("     d2: %x, d3: %x, %x\n", d2,d3, d3<<7 | d2);
+      if (ATOMIC_GET(is_enabled)){
+        if (val < 0x2000)
+          RT_callback(scale(val,
+                            0, 0x2000,
+                            0, 0.5)
+                      );
+        else
+          RT_callback(scale(val,
+                            0x2000,   0x3fff,
+                            0.5,      1.0)
+                      );
+      }
+    }
+    
   }
+  
 
   return false;
 }
