@@ -722,7 +722,7 @@ class CalledPeriodically : public QTimer {
   
 public:
   CalledPeriodically()
-    : interval(10)
+    : interval(5)
     , num_calls(0)
   {
     msgBox.setModal(false);
@@ -802,7 +802,7 @@ protected:
       PlayCallVeryOften();
     }
 
-    if (num_calls % 5 == 0)
+    if (num_calls % (50/interval) == 0) // 50ms = 3*1000ms/60 (each third frame)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function    
 
     if(doquit==true) {
