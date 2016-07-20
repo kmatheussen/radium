@@ -872,6 +872,28 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   HASH_put_int(state, "y_pos", data->y);
 }
 
+
+namespace{
+  // Some plugins require that it takes some time between deleting the window and deleting the instance. If we don't do this, some plugins will crash. Only seen it on OSX though, but it doesn't hurt to do it on all platforms.
+  struct DelayDeleteData : public Timer {
+    Data *data;
+    
+    DelayDeleteData(Data *data)
+      :data(data)
+    {
+      startTimer(5000); // wait at least 5 seconds (jules recommends 1-2 seconds (https://forum.juce.com/t/crashes-when-close-app-mac-once-in-a-while/12902))
+    }
+
+    void timerCallback() override {
+      fprintf(stderr, "    DelayDeleteData: Deleting.\n");
+      delete data->audio_instance;
+      delete data;
+      delete this;
+    }
+  };
+}
+
+
 static void cleanup_plugin_data(SoundPlugin *plugin){
 #if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
@@ -882,11 +904,14 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
   Data *data = (Data*)plugin->data;
 
+  data->audio_instance->removeListener(&data->listener);
+  
   if (data->window != NULL)
     delete data->window;
 
-  delete data->audio_instance;
-  delete data;
+  new DelayDeleteData(data);
+  //  delete data->audio_instance;
+  //  delete data;
 }
 
 static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
@@ -1393,7 +1418,7 @@ void PLUGINHOST_save_fxb(SoundPlugin *plugin, wchar_t *filename){
 void PLUGINHOST_save_fxp(SoundPlugin *plugin, wchar_t *filename){
   save_fxbp(plugin, filename, false);
 }
-  
+
 void PLUGINHOST_init(void){
 #if TEST_GET_MAX_VAL
   testing();
