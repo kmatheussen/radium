@@ -71,7 +71,7 @@ struct MyColorDialog : public QColorDialog {
 
 public: 
     
-#if FOR_MACOSX
+#if FOR_MACOSX && !USE_QT5
   void closeEvent(QCloseEvent *event) {
     hide();
     event->ignore(); // Only hide the window, dont close it.
@@ -173,7 +173,7 @@ public:
 
     g_current_colornum = colornum;
     color_dialog->setCurrentColor(get_qcolor(colornum));
-#if FOR_MACOSX
+#if FOR_MACOSX && !USE_QT5
     color_dialog->myshow();
 #endif
     
@@ -272,7 +272,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     {
       _color_dialog.setOption(QColorDialog::NoButtons, true);
       
-#if FOR_MACOSX
+#if FOR_MACOSX && !USE_QT5
       //_color_dialog.hide();
       _color_dialog.setOption(QColorDialog::DontUseNativeDialog, true);
 #if 0
@@ -318,7 +318,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     _initing = false;
   }
 
-#if FOR_MACOSX
+#if FOR_MACOSX && !USE_QT5
   void hideEvent(QHideEvent *event) {
     _color_dialog.close();
     event->accept();
@@ -696,7 +696,7 @@ public slots:
   }
 
   void current_tab_changed(int tabnum){
-#if FOR_MACOSX
+#if FOR_MACOSX && !USE_QT5
     printf("   CHangeEvent called %d\n",tabnum);
     if (tabWidget->currentWidget() != colors)
       _color_dialog.close();

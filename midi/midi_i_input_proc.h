@@ -56,12 +56,10 @@ private:
   DEFINE_ATOMIC(const char*, port_name);
   DEFINE_ATOMIC(int, data1);
   DEFINE_ATOMIC(int, data2);
-  Patch *patch;
   
 public:
 
   MidiLearn()
-    : patch(NULL)
   {
     ATOMIC_SET(is_enabled, true);
     
