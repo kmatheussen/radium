@@ -59,6 +59,9 @@ private:
   
 public:
 
+  MidiLearn(const MidiLearn&) = delete;
+  MidiLearn& operator=(const MidiLearn&) = delete;
+
   MidiLearn()
   {
     ATOMIC_SET(is_enabled, true);
@@ -69,10 +72,8 @@ public:
     ATOMIC_SET(data2, 0);
   }
 
-  virtual ~MidiLearn(){
-    printf("  MidiLearn destructor called\n");
-  }
-    
+  virtual ~MidiLearn() = default; // Crazy c++ stuff. https://www.securecoding.cert.org/confluence/display/cplusplus/OOP52-CPP.+Do+not+delete+a+polymorphic+object+without+a+virtual+destructor
+
   hash_t *create_state(void);
   void init_from_state(hash_t *hash);
   

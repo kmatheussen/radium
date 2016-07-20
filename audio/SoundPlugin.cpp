@@ -66,10 +66,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 namespace{
   
-  struct SoundPluginEffectMidiLearn : public MidiLearn {
+  struct SoundPluginEffectMidiLearn final : public MidiLearn {
     
     SoundPlugin *plugin;
     int effect_num;
+
+    SoundPluginEffectMidiLearn(const SoundPluginEffectMidiLearn&) = delete;
+    SoundPluginEffectMidiLearn& operator=(const SoundPluginEffectMidiLearn&) = delete;
     
     SoundPluginEffectMidiLearn(SoundPlugin *plugin, int effect_num)
       : plugin(plugin)
@@ -83,10 +86,12 @@ namespace{
       init_from_state(state);
     }
 
+    /*
     virtual ~SoundPluginEffectMidiLearn(){
       printf("  SoundPluginEffectMidiLearn destructor called\n");
     }
-          
+    */
+    
     hash_t *create_state(void){
       hash_t *state = MidiLearn::create_state();
       HASH_put_int(state, "SoundPluginEffectMidiLearn::effect_num", effect_num);
