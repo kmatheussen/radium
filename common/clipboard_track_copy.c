@@ -54,8 +54,7 @@ struct WTracks *CB_CopyTrack(
 	towtrack=WTRACK_new();
 	memcpy(towtrack,wtrack,sizeof(struct WTracks));
 
-	towtrack->track=totrack=talloc(sizeof(struct Tracks));
-	memcpy(totrack,track,sizeof(struct Tracks));
+	towtrack->track = totrack = tcopy(track, sizeof(struct Tracks));
 
         // Null out some data we don't need so it can be GC-ed.
 #if !USE_OPENGL

@@ -49,25 +49,26 @@ void cutTrack(int tracknum, int blocknum, int windownum){
   if (tracknum==-1 && blocknum==-1){
     struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
     CB_CutTrack_CurrPos(window);
+  } else {
+
+    struct Tracker_Windows *window=NULL;
+    struct WTracks *wtrack;
+    struct WBlocks *wblock;
+    
+    wtrack=getWTrackFromNumA(
+                             windownum,
+                             &window,
+                             blocknum,
+                             &wblock,
+                             tracknum
+                             );
+
+    if(wtrack==NULL) return;
+
+    cb_wtrack = CB_CutTrack(window, wblock, wtrack);
+
+    window->must_redraw = true;
   }
-
-  struct Tracker_Windows *window=NULL;
-  struct WTracks *wtrack;
-  struct WBlocks *wblock;
-
-  wtrack=getWTrackFromNumA(
-                           windownum,
-                           &window,
-                           blocknum,
-                           &wblock,
-                           tracknum
-                           );
-
-  if(wtrack==NULL) return;
-
-  cb_wtrack = CB_CutTrack(window, wblock, wtrack);
-
-  window->must_redraw = true;
 }
 
 void copyRange(int windownum){
