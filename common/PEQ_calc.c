@@ -50,7 +50,7 @@ STime PEQ_CalcNextEvent(
   STime ret_time;
   
 #ifndef RELEASE
-  R_ASSERT(time2>time1);
+  //R_ASSERT(time2>time1);
   R_ASSERT(time>=time1);
   R_ASSERT(time2>=time);
 #endif
