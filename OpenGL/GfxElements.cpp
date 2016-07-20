@@ -121,6 +121,7 @@ static vl::GLSLVertexShader *get_gradient_vertex_shader(void){
 }
 #endif
 
+
 struct GradientTriangles : public vl::Effect {
   GradientTriangles *next;
   
@@ -137,10 +138,13 @@ struct GradientTriangles : public vl::Effect {
   vl::ref<vl::GLSLProgram> glsl; // seems like reference must be stored here to avoid memory problems.
   vl::Uniform *uniform_y;
 
+  MyMutex ref_mutex;
+
   GradientTriangles(GradientType::Type type)
     : next(NULL)
     , type(type)
   {
+    setRefCountMutex(&ref_mutex);
     setAutomaticDelete(false);
   }
 
@@ -216,25 +220,38 @@ struct GradientTrianglesCollection {
     
     GradientTriangles *gradient = used_gradient_triangles;
 
+    int numa=0,numb=0;
     //printf("    Collecting gradient garbage\n");
-    GL_draw_lock();{
+    //    GL_draw_lock();{
       while(gradient!=NULL){
         GradientTriangles *next = gradient->next;
-        
-        if(gradient->referenceCount()==0) {
-          gradient->clean();
+
+        gradient->ref_mutex.lock();
+        bool is_free = gradient->referenceCount()==0;
+        gradient->ref_mutex.unlock();
+          
+        if(is_free) {
+          //gradient->clean(); // TODO: Check if this operation frees memory. If it does, it might improve performance to call clean() outside of the lock.
           gradient->next = new_free;
           new_free = gradient;
+          numa++;
         } else {
           gradient->next = new_used;
           new_used = gradient;
         }
-        
+        numb++;
         gradient = next;
       }
-    }GL_draw_unlock();
-    //printf("    Collecting gradient garbage finished\n");
-    
+      //    }GL_draw_unlock();
+
+    gradient = new_free;
+    while(gradient != NULL){
+      gradient->clean();
+      gradient = gradient->next;
+    }
+
+    //printf("    Collecting gradient garbage finished %d / %d\n",numa,numb);
+
     used_gradient_triangles = new_used;
     free_gradient_triangles = new_free;
   }
@@ -256,7 +273,9 @@ struct GradientTrianglesCollection {
       collect_gradient_triangles_garbage();
     
     if (free_gradient_triangles==NULL) {
+#if !defined(RELEASE)
       printf("1111. Allocating new gradient triangles\n");
+#endif
       add_gradient_triangles();
     } else {
       //printf("2222. Using recycled gradient triangles\n");
@@ -544,11 +563,9 @@ void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_of
       
     for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {      
       vl::ref<GE_Context> c = iterator->second;
-      
-      for (std::vector< vl::ref<GradientTriangles> >::iterator it = c->gradient_triangles.begin(); it != c->gradient_triangles.end(); ++it) {
-        vl::ref<GradientTriangles> gradient_triangles = *it;
+
+      for (vl::ref<GradientTriangles> gradient_triangles : c->gradient_triangles)
         gradient_triangles->set_y_offset(y_offset);
-      }
     }
   }
 }
@@ -613,10 +630,8 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
         }
         // note: missing gradient triangles for USE_TRIANGLE_STRIPS.
 #else
-        for (std::vector< vl::ref<GradientTriangles> >::iterator it = c->gradient_triangles.begin(); it != c->gradient_triangles.end(); ++it) {
-          vl::ref<GradientTriangles> gradient_triangles = *it;
+        for (vl::ref<GradientTriangles> gradient_triangles : c->gradient_triangles)
           setScrollTransform(c, gradient_triangles->render(vg.get()), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
-        }
 
         if(c->triangles.size() > 0) {
           setColorBegin(vg, c);

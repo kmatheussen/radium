@@ -1761,6 +1761,9 @@ static int gc_has_static_roots_func(
 }
 #endif // defined(FOR_MACOSX) || defined(FOR_LINUX)
 
+void processEventsALittleBit(void){
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents, 1);
+}
 
 int main(int argc, char **argv){  
 

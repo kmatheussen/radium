@@ -2317,7 +2317,9 @@ static void show_message(const struct Tracker_Windows *window){
    block
  ************************************/
 
-void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
+#include <thread>
+
+static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wblock){
 
   set_g_colored_tracks();
   
@@ -2349,6 +2351,79 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
     
   } GE_end_writing(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM));
 }
+
+
+#define RENDER_IN_SEPARATE_THREAD 0
+
+
+#if !RENDER_IN_SEPARATE_THREAD
+
+void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
+  GL_create2(window, wblock);
+}
+
+#else
+
+#include "../common/Semaphores.hpp"
+#include "../common/threading.h"
+
+radium::Semaphore sem_req;
+radium::Semaphore sem_finished;
+
+const struct Tracker_Windows *g_window;
+static struct WBlocks *g_wblock;
+
+
+
+static void gl_create_thread(){
+  THREADING_init_main_thread_type(); // Can do this since the main thread is waiting for sem_finished while this thread does it's work.
+    
+  while(true){
+    sem_req.wait();
+    {
+      GL_create2(g_window, g_wblock);
+    }
+    sem_finished.signal();
+  }
+}
+
+#include <gc.h>
+
+extern void processEventsALittleBit(void);
+extern bool g_qt_is_running;
+
+void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
+  static std::thread t1(gl_create_thread);
+
+  if (g_qt_is_running==false)
+    return;
+
+  GC_disable(); // Could also turn on thread support in gc for the worker thread, but this is simpler, and perhaps faster too.
+  {
+    g_window = window;
+    g_wblock = wblock;
+
+    double start = TIME_get_ms();
+    sem_req.signal();
+
+    sem_finished.wait();
+
+    printf("   dur: %f\n", TIME_get_ms() - start);
+    /*
+    do{
+      processEventsALittleBit();
+    }while(sem_finished.tryWait()==false);
+    */
+    
+    //sem_finished.wait();
+  }
+  GC_enable();
+
+  //t1.join();
+}
+
+#endif
+
 
 void GL_create_all(const struct Tracker_Windows *window){
   struct WBlocks *wblock = window->wblocks;

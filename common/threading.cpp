@@ -43,7 +43,6 @@ enum ThreadType{
 static __thread ThreadType thread_type = OTHER_THREAD;
 
 
-
 void THREADING_init_main_thread_type(void) {
   thread_type = MAIN_THREAD;
 }
