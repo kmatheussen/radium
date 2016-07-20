@@ -28,7 +28,7 @@ extern LANGSPEC void MIDI_set_record_accurately(bool accurately);
 extern LANGSPEC bool MIDI_get_record_velocity(void);
 extern LANGSPEC void MIDI_set_record_velocity(bool doit);
 
-extern LANGSPEC void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2);
+extern LANGSPEC void MIDI_InputMessageHasBeenReceived(const char *port_name, int cc,int data1,int data2);
 
 extern LANGSPEC void MIDI_SetThroughPatch(struct Patch *patch);
 
@@ -53,6 +53,7 @@ struct MidiLearn{
 private:
   
   DEFINE_ATOMIC(bool, is_learning);
+  DEFINE_ATOMIC(const char*, port_name);
   DEFINE_ATOMIC(int, data1);
   DEFINE_ATOMIC(int, data2);
   Patch *patch;
@@ -65,6 +66,7 @@ public:
     ATOMIC_SET(is_enabled, true);
     
     ATOMIC_SET(is_learning, true);
+    ATOMIC_SET(port_name, NULL);
     ATOMIC_SET(data1, 0);
     ATOMIC_SET(data2, 0);
   }
@@ -76,15 +78,15 @@ public:
   hash_t *create_state(void);
   void init_from_state(hash_t *hash);
   
-  bool RT_maybe_use(uint32_t msg);
+  bool RT_maybe_use(const char *port_name, uint32_t msg);
 
   QString get_source_info(void){
     if (ATOMIC_GET(is_learning))
-      return talloc_format("MIDI: .. / ..", ATOMIC_GET(data1), ATOMIC_GET(data2));
+      return talloc_format("Learning...", ATOMIC_GET(data1), ATOMIC_GET(data2));
     else if (ATOMIC_GET(data1)>=0xe0)
-      return talloc_format("MIDI: %2X        ",ATOMIC_GET(data1));
+      return talloc_format("%s: %2X", ATOMIC_GET(port_name), ATOMIC_GET(data1));
     else
-      return talloc_format("MIDI: %2X / %2X", ATOMIC_GET(data1), ATOMIC_GET(data2));
+      return talloc_format("%s: %2X / %2X", ATOMIC_GET(port_name), ATOMIC_GET(data1), ATOMIC_GET(data2));
   }
 
   virtual QString get_dest_info(void){

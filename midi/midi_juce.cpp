@@ -58,7 +58,17 @@ int MIDI_msg_len(uint32_t msg){
 namespace{
   struct MyMidiInputCallback : MidiInputCallback{
     MidiInput *midi_input;
+    const char *port_name;
 
+    MyMidiInputCallback()
+      : midi_input(NULL)
+      , port_name(NULL)
+    {}
+
+    ~MyMidiInputCallback(){  // todo: check if this function is ever called.
+      // free(port_name); // <- The string is used in queues in midi_i_input, so we get memory corruption if the port is deleted while the name lives in one of the buffers. The memory leak caused by not freing here doesn't really matter. The string is also used in midi_learn, where it can be kept for the remaining time of the program.
+    }
+      
     void handleIncomingMidiMessage(MidiInput *source,
                                    const MidiMessage &message 
                                    )
@@ -74,11 +84,11 @@ namespace{
       int length = message.getRawDataSize();
       
       if(length==1)
-        MIDI_InputMessageHasBeenReceived(raw[0],0,0);
+        MIDI_InputMessageHasBeenReceived(port_name, raw[0],0,0);
       else if(length==2)
-        MIDI_InputMessageHasBeenReceived(raw[0],raw[1],0);
+        MIDI_InputMessageHasBeenReceived(port_name, raw[0],raw[1],0);
       else if(length==3)
-        MIDI_InputMessageHasBeenReceived(raw[0],raw[1],raw[2]);
+        MIDI_InputMessageHasBeenReceived(port_name, raw[0],raw[1],raw[2]);
 
       //printf("got message to %s (%d %d %d)\n",(const char*)midi_input->getName().toUTF8(),(int)raw[0],(int)raw[1],(int)raw[2]);
     }
@@ -317,6 +327,7 @@ static void add_input_port(String name, bool do_update_settings, bool should_be_
   }
 
   midi_input_callback->midi_input = midi_input;
+  midi_input_callback->port_name = strdup(midi_input->getName().toUTF8());
   
   g_inports.add(midi_input_callback);
   

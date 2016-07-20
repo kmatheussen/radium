@@ -95,7 +95,7 @@ public:
   }
 
   void update_gui(){
-    source->setText(midi_learn->get_source_info() + "   - ");
+    source->setText(midi_learn->get_source_info() + " => ");
     dest->setText(midi_learn->get_dest_info());
   }
 
