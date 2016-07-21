@@ -30,6 +30,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #ifdef __cplusplus
+#  include "../common/Vector.hpp"
+  struct SoundPluginEffectMidiLearn;
+#endif
+  
+
+#ifdef __cplusplus
 extern "C"{
 #endif
 
@@ -378,7 +384,11 @@ typedef struct SoundPlugin{
   float *bus_volume_peak_values3;
   float *bus_volume_peak_values4;
 
-  vector_t midi_learns;
+#ifdef __cplusplus
+  radium::Vector<SoundPluginEffectMidiLearn*> *midi_learns;
+#else
+  void *midi_learns;
+#endif
   
   DEFINE_ATOMIC(bool, is_visible);
   DEFINE_ATOMIC(void *, cpu_usage);

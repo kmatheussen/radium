@@ -64,56 +64,53 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define DELAY_MAX 50.0f
 
 
-namespace{
-  
-  struct SoundPluginEffectMidiLearn final : public MidiLearn {
+struct SoundPluginEffectMidiLearn final : public MidiLearn {
     
-    SoundPlugin *plugin;
-    int effect_num;
+  SoundPlugin *plugin;
+  int effect_num;
 
-    SoundPluginEffectMidiLearn(const SoundPluginEffectMidiLearn&) = delete;
-    SoundPluginEffectMidiLearn& operator=(const SoundPluginEffectMidiLearn&) = delete;
+  SoundPluginEffectMidiLearn(const SoundPluginEffectMidiLearn&) = delete;
+  SoundPluginEffectMidiLearn& operator=(const SoundPluginEffectMidiLearn&) = delete;
     
-    SoundPluginEffectMidiLearn(SoundPlugin *plugin, int effect_num)
-      : plugin(plugin)
-      , effect_num(effect_num)
-    {
-    }
+  SoundPluginEffectMidiLearn(SoundPlugin *plugin, int effect_num)
+    : plugin(plugin)
+    , effect_num(effect_num)
+  {
+  }
 
-    SoundPluginEffectMidiLearn(SoundPlugin *plugin, hash_t *state)
-      :plugin(plugin)
+  SoundPluginEffectMidiLearn(SoundPlugin *plugin, hash_t *state)
+    :plugin(plugin)
     {
       init_from_state(state);
     }
 
-    /*
+  /*
     virtual ~SoundPluginEffectMidiLearn(){
-      printf("  SoundPluginEffectMidiLearn destructor called\n");
+    printf("  SoundPluginEffectMidiLearn destructor called\n");
     }
-    */
+  */
     
-    hash_t *create_state(void){
-      hash_t *state = MidiLearn::create_state();
-      HASH_put_int(state, "SoundPluginEffectMidiLearn::effect_num", effect_num);
-      return state;
-    }
+  hash_t *create_state(void){
+    hash_t *state = MidiLearn::create_state();
+    HASH_put_int(state, "SoundPluginEffectMidiLearn::effect_num", effect_num);
+    return state;
+  }
 
-    void init_from_state(hash_t *state){
-      MidiLearn::init_from_state(state);
-      effect_num = HASH_get_int(state, "SoundPluginEffectMidiLearn::effect_num");
-    }
+  void init_from_state(hash_t *state){
+    MidiLearn::init_from_state(state);
+    effect_num = HASH_get_int(state, "SoundPluginEffectMidiLearn::effect_num");
+  }
 
-    virtual QString get_dest_info(void) override;
-    virtual void delete_me(void) override;
-    virtual void RT_callback(float val) override;
-  };
+  virtual QString get_dest_info(void) override;
+  virtual void delete_me(void) override;
+  virtual void RT_callback(float val) override;
+};
 
-  static void add_midi_learn(SoundPluginEffectMidiLearn *midi_learn){
-    VECTOR_push_back(&midi_learn->plugin->midi_learns, midi_learn);
-    MIDI_add_midi_learn(midi_learn);
-  }  
+static void add_midi_learn(SoundPluginEffectMidiLearn *midi_learn){
+  midi_learn->plugin->midi_learns->push_back(midi_learn);
+  MIDI_add_midi_learn(midi_learn);
+}  
 
-}
 
 
 /*
@@ -346,6 +343,7 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
     return NULL;
   }
 
+  plugin->midi_learns = new radium::Vector<SoundPluginEffectMidiLearn*>;
 
   // peak and automation pointers (for displaying in the sliders)
   plugin->volume_peak_values = (float*)V_calloc(sizeof(float),plugin_type->num_outputs);
@@ -462,7 +460,8 @@ void PLUGIN_delete(SoundPlugin *plugin){
   const SoundPluginType *plugin_type = plugin->type;
 
   while(PLUGIN_remove_midi_learn(plugin, -1, false)==true);
-  
+  delete plugin->midi_learns;
+    
   if(!strcmp(plugin_type->type_name,"Bus")) // RT_process needs buses to always be alive.
     return;
 
@@ -1483,8 +1482,8 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
   }
   
   // midi learns
-  for(int i = 0 ; i < plugin->midi_learns.num_elements ; i++){
-    auto *midi_learn = (SoundPluginEffectMidiLearn*)plugin->midi_learns.elements[i];
+  for(int i = 0 ; i < plugin->midi_learns->size() ; i++){
+    auto *midi_learn = plugin->midi_learns->at(i);
     HASH_put_hash_at(state, "midi_learns", i, midi_learn->create_state());
   }
 
@@ -1702,21 +1701,20 @@ void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num){
 
 bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_error_if_not_here){
   SoundPluginEffectMidiLearn *midi_learn=NULL;
-  
-  VECTOR_FOR_EACH(SoundPluginEffectMidiLearn *, maybe_this_midi_learn, &plugin->midi_learns){
+
+  for(auto *maybe_this_midi_learn : *plugin->midi_learns)
     if (effect_num==-1 || maybe_this_midi_learn->effect_num == effect_num){
       midi_learn = maybe_this_midi_learn;
       break;
     }
-  }END_VECTOR_FOR_EACH;
 
   if (midi_learn==NULL){
     if (show_error_if_not_here)
       RError("No midi learn for %s / %d\n", plugin->patch->name, effect_num);
     return false;
   }
-  
-  VECTOR_remove(&plugin->midi_learns, midi_learn);
+
+  plugin->midi_learns->remove(midi_learn);
   MIDI_remove_midi_learn(midi_learn, false);
 
   delete midi_learn;
@@ -1727,12 +1725,11 @@ bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_err
 }
 
 bool PLUGIN_has_midi_learn(SoundPlugin *plugin, int effect_num){
-  VECTOR_FOR_EACH(SoundPluginEffectMidiLearn *, maybe_this_midi_learn, &plugin->midi_learns){
+  for(auto *maybe_this_midi_learn : *plugin->midi_learns)
     if (effect_num==-1 || maybe_this_midi_learn->effect_num == effect_num){
       if (ATOMIC_GET(maybe_this_midi_learn->is_enabled))
         return true;
     }
-  }END_VECTOR_FOR_EACH;
 
   return false;
 }
