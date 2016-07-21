@@ -6,9 +6,15 @@
 
 #include "LockAsserter.hpp"
 
+/**
+ *
+ * radium::Vector validates multithreaded access and have special support for adding elements when called from a realtime thread.
+ *
+ **/
+
 
 // NOTE: Can not use radium::Vector if any of the fields in T uses a custom copy constructor (is there any way to detect that before getting a random crash?)
-  
+
 
 namespace radium{
 
@@ -202,8 +208,7 @@ public:
   //
   // This function can NOT be called in parallell with other functions
   //
-  // Note: Maybe rename it to push_back instead. It's a more common name, and more descriptive as well.
-  void add(T t){
+  void push_back(T t){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
     R_ASSERT(elements_ready_for_freeing == NULL);
@@ -230,10 +235,6 @@ public:
     }
   }
 
-  void push_back(T t){
-    add(t);
-  }
-  
   // NOT RT safe
   //
   // This function can NOT be called in parallell with other functions

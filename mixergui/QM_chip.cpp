@@ -623,8 +623,8 @@ void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   connection->from = from;
   connection->to = to;
   
-  from->audio_connections.add(connection);
-  to->audio_connections.add(connection);
+  from->audio_connections.push_back(connection);
+  to->audio_connections.push_back(connection);
   
   connection->update_position();
   scene->addItem(connection);
@@ -647,8 +647,8 @@ void CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   econnection->from = from;
   econnection->to = to;
   
-  from->event_connections.add(econnection);
-  to->event_connections.add(econnection);
+  from->event_connections.push_back(econnection);
+  to->event_connections.push_back(econnection);
   
   econnection->update_position();
   scene->addItem(econnection);

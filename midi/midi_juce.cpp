@@ -329,7 +329,7 @@ static void add_input_port(String name, bool do_update_settings, bool should_be_
   midi_input_callback->midi_input = midi_input;
   midi_input_callback->port_name = strdup(midi_input->getName().toUTF8());
   
-  g_inports.add(midi_input_callback);
+  g_inports.push_back(midi_input_callback);
   
   if (do_update_settings)
     update_settings();

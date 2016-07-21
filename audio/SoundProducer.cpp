@@ -716,16 +716,16 @@ public:
       SoundProducer::add_link(linkbus5a);
       SoundProducer::add_link(linkbus5b);
 
-      _linkbuses.add(linkbus1a);
-      _linkbuses.add(linkbus1b);
-      _linkbuses.add(linkbus2a);
-      _linkbuses.add(linkbus2b);
-      _linkbuses.add(linkbus3a);
-      _linkbuses.add(linkbus3b);
-      _linkbuses.add(linkbus4a);
-      _linkbuses.add(linkbus4b);
-      _linkbuses.add(linkbus5a);
-      _linkbuses.add(linkbus5b);
+      _linkbuses.push_back(linkbus1a);
+      _linkbuses.push_back(linkbus1b);
+      _linkbuses.push_back(linkbus2a);
+      _linkbuses.push_back(linkbus2b);
+      _linkbuses.push_back(linkbus3a);
+      _linkbuses.push_back(linkbus3b);
+      _linkbuses.push_back(linkbus4a);
+      _linkbuses.push_back(linkbus4b);
+      _linkbuses.push_back(linkbus5a);
+      _linkbuses.push_back(linkbus5b);
     }    
 
     printf("*** Finished... New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
@@ -835,9 +835,9 @@ public:
 
     PLAYER_lock();{
 
-      link->source->_output_links.add(link);
+      link->source->_output_links.push_back(link);
       
-      link->target->_input_links.add(link);
+      link->target->_input_links.push_back(link);
       
       SoundProducer::RT_set_bus_descendant_types();
     }PLAYER_unlock();
@@ -1367,7 +1367,7 @@ void SP_remove_all_links(radium::Vector<SoundProducer*> &soundproducers){
   for(auto soundproducer : soundproducers)
     for(auto link : soundproducer->_input_links)
       if (link->is_bus_link==false)
-        links_to_delete.add(link);
+        links_to_delete.push_back(link);
 
   SoundProducer::remove_links(links_to_delete);
 }

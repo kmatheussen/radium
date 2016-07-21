@@ -115,7 +115,7 @@ typedef struct _midi_event_t{
 static radium::Mutex g_midi_event_mutex;
 static radium::Vector<midi_event_t> g_recorded_midi_events;
 
-static radium::Queue<midi_event_t, 8000> g_midi_event_queue;
+static radium::Queue<midi_event_t, 8000> g_midi_event_queue; // 8000 is not the maximum size that can be recorded totally, but the maximum size that can be recorded until the recording queue pull thread has a chance to pick it up. In other words: 8000 should be plenty enough as long as the CPU is not too busy.
 
   
 // Called from a MIDI input thread. Only called if playing
@@ -128,7 +128,7 @@ static void record_midi_event(uint32_t msg){
 
     // Send event to the pull thread
     if (!g_midi_event_queue.tryPut(midi_event))
-      RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, or your your MIDI input and output ports are connected recursively, please report this incident.");
+      RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, or your MIDI input and output ports are connected recursively, please report this incident.");
 
   }
 }
@@ -157,7 +157,7 @@ static void *recording_queue_pull_thread(void*){
       }
 
       // Send event to the main thread
-      g_recorded_midi_events.add(event);
+      g_recorded_midi_events.push_back(event);
     }
     
   }
@@ -323,7 +323,7 @@ static radium::Vector<MidiLearn*> g_midi_learns;
 
 void MIDI_add_midi_learn(MidiLearn *midi_learn){  
   PLAYER_lock();{
-    g_midi_learns.add(midi_learn);
+    g_midi_learns.push_back(midi_learn);
   }PLAYER_unlock();
 
   MIDILEARN_PREFS_add(midi_learn);

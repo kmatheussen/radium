@@ -1520,14 +1520,14 @@ static void MW_cleanup_connections(bool is_loading){
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
     if(chip!=NULL)
-      producers.add(chip->_sound_producer);
+      producers.push_back(chip->_sound_producer);
     else{
       AudioConnection *audio_connection = dynamic_cast<AudioConnection*>(das_items.at(i));
       if(audio_connection!=NULL)
-        audio_connections.add(audio_connection);
+        audio_connections.push_back(audio_connection);
       EventConnection *event_connection = dynamic_cast<EventConnection*>(das_items.at(i));
       if(event_connection!=NULL)
-        event_connections.add(event_connection);
+        event_connections.push_back(event_connection);
     }
   }
 

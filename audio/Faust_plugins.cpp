@@ -73,7 +73,7 @@ namespace{
       if (g_qtgui_stylesheet != "")
         setStyleSheet(g_qtgui_stylesheet);
       
-      g_faustqdialogs.add(this);
+      g_faustqdialogs.push_back(this);
     }
 
     ~FaustQDialog(){

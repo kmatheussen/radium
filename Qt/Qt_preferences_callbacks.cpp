@@ -102,7 +102,7 @@ public:
   {
     setCheckable(true);
 
-    all_buttons.add(this);
+    all_buttons.push_back(this);
     
     connect(this, SIGNAL(pressed()), this, SLOT(color_pressed()));
     //connect(this, SIGNAL(released()), this, SLOT(color_released()));
