@@ -193,6 +193,44 @@ static bool find_and_remove_midievent_end_note(int blocknum, int pos, int notenu
 }
 
 
+// Happens if note was started in block a, and stopped in block b.
+static void add_recorded_stp(struct Blocks *block, struct Tracks *track, STime time){
+        
+  Place place = STime2Place(block,time);
+        
+  struct Stops *stop=(struct Stops*)talloc(sizeof(struct Stops));
+  PlaceCopy(&stop->l.p,&place);
+          
+  ListAddElement3(&track->stops,&stop->l);
+}
+
+
+static void add_recorded_note(struct WBlocks *wblock, struct Blocks *block, struct WTracks *wtrack, int recorded_midi_events_pos, STime time, uint32_t msg){
+        
+  Place place = STime2Place(block,time);
+  int notenum = MIDI_msg_byte2(msg);
+  int volume  = MIDI_msg_byte3(msg);
+        
+  Place endplace;
+  Place *endplace_p = NULL; // if NULL, the note doesn't stop in this block.
+          
+  midi_event_t midi_event_endnote;
+  if (find_and_remove_midievent_end_note(block->l.num, recorded_midi_events_pos, notenum, time, midi_event_endnote) == true){
+    endplace = STime2Place(block,midi_event_endnote.timepos.blocktime);
+    endplace_p = &endplace;
+  }
+  
+  InsertNote(wblock,
+             wtrack,
+             &place,
+             endplace_p,
+             notenum,
+             (float)volume * MAX_VELOCITY / 127.0f,
+             true
+             );
+}
+        
+
 // Called from the main thread after the player has stopped
 void MIDI_insert_recorded_midi_events(void){
   while(g_midi_event_queue.size() > 0) // Wait til the recording_queue_pull_thread is finished draining the queue.
@@ -248,7 +286,7 @@ void MIDI_insert_recorded_midi_events(void){
 
 
         // UNDO
-        
+
         char *key = (char*)talloc_format("%x",track);
         if (HASH_has_key(track_set, key)==false){
 
@@ -257,51 +295,20 @@ void MIDI_insert_recorded_midi_events(void){
                          track,
                          wblock->curr_realline
                          ));
+          
           HASH_put_int(track_set, key, 1);
         }
 
-
-        // ADD NOTE / STOP
-
-        STime time = midi_event.timepos.blocktime;
         uint32_t msg = midi_event.msg;
+        int cc = MIDI_msg_byte1_remove_channel(msg);
+        int data1 = MIDI_msg_byte2(msg);
+        STime time = midi_event.timepos.blocktime;
+
+        if (cc==0x80 || (cc==0x90 && data1==0))
+          add_recorded_stp(block, track, time);
         
-        Place place = STime2Place(block,time);
-        
-        int cc      = MIDI_msg_byte1_remove_channel(msg);
-        int notenum = MIDI_msg_byte2(msg);
-        int volume  = MIDI_msg_byte3(msg);
-        
-        // add note
-        if (cc==0x90 && volume>0) {
-          
-          Place endplace;
-          Place *endplace_p = NULL;
-          
-          midi_event_t midi_event_endnote;
-          if (find_and_remove_midievent_end_note(midi_event.timepos.blocknum, i, notenum, time, midi_event_endnote) == true){
-            endplace = STime2Place(block,midi_event_endnote.timepos.blocktime);
-            endplace_p = &endplace;
-          }
-          
-          InsertNote(wblock,
-                     wtrack,
-                     &place,
-                     endplace_p,
-                     notenum,
-                     (float)volume * MAX_VELOCITY / 127.0f,
-                     true
-                     );
-          }
-        
-        // add stp. (happens if note was started in block a, and stopped in block b)
-        if (cc==0x80 || (cc==0x90 && volume==0)){
-          
-          struct Stops *stop=(struct Stops*)talloc(sizeof(struct Stops));
-          PlaceCopy(&stop->l.p,&place);
-          
-          ListAddElement3(&track->stops,&stop->l);
-        }
+        else if (cc==0x90)
+          add_recorded_note(wblock, block, wtrack, i, time, msg);
       }
       
     }
