@@ -66,7 +66,7 @@ struct FXs *LoadFXs(struct Tracks *track){
 
 obj0:
 	fxs->fx=LoadFX(track);
-        if (disk_load_Version > 0.835)
+        if (disk_load_version > 0.835)
           R_ASSERT(effect_num == fxs->fx->effect_num);
         //fxs->l.num = fxs->fx->effect_num; // Sometimes fx->effect_num is the only one containing the right value. (bug in previous version) (fxs->l.num doesn't exist anymore.)
 	goto start;
