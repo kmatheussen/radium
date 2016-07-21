@@ -81,6 +81,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   };
 
   struct Timer2 : public QTimer{
+    bool has_midi_learn;
     
     Bottom_bar_widget *bottom_bar_widget;
     
@@ -105,10 +106,29 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
         g_bottom_bar_widget->system_volume_slider->_patch = g_system_out_patch;
                 
         g_system_audio_instrument_widget = InstrumentWidget_get_audio_instrument_widget(g_system_out_patch);
-        if (g_system_audio_instrument_widget != NULL)
-          bottom_bar_widget->system_volume_slider->setValue(g_system_audio_instrument_widget->input_volume_slider->value());
+
+        // Commented out. We poll the plugin instead. (see below)
+        //if (g_system_audio_instrument_widget != NULL)
+        //  bottom_bar_widget->system_volume_slider->setValue(g_system_audio_instrument_widget->input_volume_slider->value());
       }
 
+      if (g_system_out_plugin != NULL){
+        const SoundPluginType *type = g_system_out_plugin->type;
+        int effect_num = type->num_effects+EFFNUM_INPUT_VOLUME;
+        float val = PLUGIN_get_effect_value(g_system_out_plugin, effect_num, VALUE_FROM_STORAGE);
+        bottom_bar_widget->_triggered_by_user = false;
+        bottom_bar_widget->system_volume_slider->setValue(val * 10000);
+        bottom_bar_widget->_triggered_by_user = true;
+
+        bool has_midi_learn_now = PLUGIN_has_midi_learn(g_system_out_plugin, effect_num);
+        if (has_midi_learn_now != has_midi_learn){
+          //printf("hepp %d\n",has_midi_learn_now);
+          has_midi_learn = has_midi_learn_now;
+          bottom_bar_widget->set_volume_slider_string();
+          bottom_bar_widget->system_volume_slider->update();
+        }
+      }
+      
       SLIDERPAINTER_call_regularly(bottom_bar_widget->system_volume_slider->_painter);
     }
   };
@@ -118,8 +138,11 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   Timer _timer;
   Timer2 _timer2;
 
+  bool _triggered_by_user;
+  
  Bottom_bar_widget(QWidget *parent=NULL)
     : QWidget(parent)
+    , _triggered_by_user(true)
   {
     _initing = true;
     setupUi(this);
@@ -172,6 +195,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
       _timer.start();
       
       _timer2.bottom_bar_widget = this;
+      _timer2.has_midi_learn = false;
       _timer2.setInterval(50);
       _timer2.start();
     }
@@ -236,6 +260,18 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
       velocity_slider->setMinimum(0);
   }
 
+  void set_volume_slider_string(void){
+    const SoundPluginType *type = g_system_out_plugin->type;
+    
+    int effect_num = type->num_effects+EFFNUM_INPUT_VOLUME;
+    
+    char buf[64]={0};
+    PLUGIN_get_display_value_string(g_system_out_plugin, effect_num, buf, 64);
+    
+    QString p = PLUGIN_has_midi_learn(g_system_out_plugin, effect_num) ? "*" : "";
+    
+    SLIDERPAINTER_set_string(system_volume_slider->_painter, p + buf);
+  }
 
 public slots:
   
@@ -283,24 +319,14 @@ public slots:
   }
   
   void on_system_volume_slider_valueChanged(int val){
-    //printf("val: %d %p / %p / %p\n",val,g_system_audio_instrument_widget,g_system_out_patch,g_system_out_plugin);
-    GFX_SetBrightness(root->song->tracker_windows, scale(val,0,10000,0,1));
+    //printf("%d val: %d %p / %p / %p\n",_triggered_by_user,val,g_system_audio_instrument_widget,g_system_out_patch,g_system_out_plugin);
+    //GFX_SetBrightness(root->song->tracker_windows, scale(val,0,10000,0,1));
 
-    if (g_system_audio_instrument_widget != NULL)
+    if (_triggered_by_user == true && g_system_audio_instrument_widget != NULL)
       g_system_audio_instrument_widget->input_volume_slider->setValue(val);
     
-    if (g_system_out_plugin != NULL) {
-      const SoundPluginType *type = g_system_out_plugin->type;
-
-      int effect_num = type->num_effects+EFFNUM_INPUT_VOLUME;
-      
-      char buf[64]={0};
-      PLUGIN_get_display_value_string(g_system_out_plugin, effect_num, buf, 64);
-
-      QString p = PLUGIN_has_midi_learn(g_system_out_plugin, effect_num) ? "*" : "";
-      
-      SLIDERPAINTER_set_string(system_volume_slider->_painter, p + buf);
-    }
+    if (g_system_out_plugin != NULL)
+      set_volume_slider_string();
   }
 
   void on_octave_up_button_clicked(){
@@ -421,8 +447,11 @@ extern "C"{
     g_bottom_bar_widget->redo_button->setEnabled(redos_are_available);
   }
 
+  // This function could be deleted since the timer polls the system out plugin now. But it's a little bit smoother to call this function directly, and it probably doesn't hurt to keep it.
   void OS_GFX_SetVolume(int value){
+    g_bottom_bar_widget->_triggered_by_user=false;
     g_bottom_bar_widget->system_volume_slider->setValue(value);
+    g_bottom_bar_widget->_triggered_by_user=true;
   }
 
   void OS_GFX_IncVolume(int how_much){
