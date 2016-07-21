@@ -58,7 +58,7 @@ int MIDI_msg_len(uint32_t msg){
 namespace{
   struct MyMidiInputCallback : MidiInputCallback{
     MidiInput *midi_input;
-    const char *port_name;
+    const symbol_t *port_name;
 
     MyMidiInputCallback()
       : midi_input(NULL)
@@ -327,7 +327,7 @@ static void add_input_port(String name, bool do_update_settings, bool should_be_
   }
 
   midi_input_callback->midi_input = midi_input;
-  midi_input_callback->port_name = strdup(midi_input->getName().toUTF8());
+  midi_input_callback->port_name = get_symbol(midi_input->getName().toUTF8());
   
   g_inports.push_back(midi_input_callback);
   

@@ -415,6 +415,34 @@ typedef struct{
   void **elements;
 } vector_t;
 
+#include "vector_proc.h"
+
+
+/*********************************************************************
+	symbol.h
+*********************************************************************/
+
+extern vector_t g_symbols;
+
+typedef struct{
+  const char *name;
+} symbol_t;
+
+static inline const symbol_t *get_symbol(const char *name){
+  int i;
+  for(i=0;i<g_symbols.num_elements;i++){
+    symbol_t *symbol = (symbol_t*)g_symbols.elements[i];
+    if (!strcmp(name, symbol->name))
+      return symbol;
+  }
+
+  symbol_t *symbol = (symbol_t*)malloc(sizeof(symbol_t));
+  symbol->name = strdup(name);
+  VECTOR_push_back(&g_symbols, symbol);
+
+  return (const symbol_t*)symbol;
+}
+
 
 /*********************************************************************
 	ratio.h
