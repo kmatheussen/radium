@@ -366,22 +366,24 @@ public:
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + system_effect;
 
+    QString p = PLUGIN_has_midi_learn(plugin, effect_num) ? "*" : "";
+          
     char buf[64]={0};
     PLUGIN_get_display_value_string(plugin, effect_num, buf, 64);
     if(system_effect==EFFNUM_DRYWET)
-      SLIDERPAINTER_set_string(slider->_painter, QString(buf));
+      SLIDERPAINTER_set_string(slider->_painter, p + QString(buf));
     else if(system_effect==EFFNUM_BUS1)
-      SLIDERPAINTER_set_string(slider->_painter, QString(BUS_get_bus_name(0)) + ": " + QString(buf));
+      SLIDERPAINTER_set_string(slider->_painter, p + QString(BUS_get_bus_name(0)) + ": " + QString(buf));
     else if(system_effect==EFFNUM_BUS2)
-      SLIDERPAINTER_set_string(slider->_painter, QString(BUS_get_bus_name(1)) + ": " + QString(buf));
+      SLIDERPAINTER_set_string(slider->_painter, p + QString(BUS_get_bus_name(1)) + ": " + QString(buf));
     else if(system_effect==EFFNUM_BUS3)
-      SLIDERPAINTER_set_string(slider->_painter, QString(BUS_get_bus_name(2)) + ": " + QString(buf));
+      SLIDERPAINTER_set_string(slider->_painter, p + QString(BUS_get_bus_name(2)) + ": " + QString(buf));
     else if(system_effect==EFFNUM_BUS4)
-      SLIDERPAINTER_set_string(slider->_painter, QString(BUS_get_bus_name(3)) + ": " + QString(buf));
+      SLIDERPAINTER_set_string(slider->_painter, p + QString(BUS_get_bus_name(3)) + ": " + QString(buf));
     else if(system_effect==EFFNUM_BUS5)
-      SLIDERPAINTER_set_string(slider->_painter, QString(BUS_get_bus_name(4)) + ": " + QString(buf));
+      SLIDERPAINTER_set_string(slider->_painter, p + QString(BUS_get_bus_name(4)) + ": " + QString(buf));
     else
-      SLIDERPAINTER_set_string(slider->_painter, QString(PLUGIN_get_effect_name(plugin, effect_num)+strlen("System ")) + ": " + QString(buf));
+      SLIDERPAINTER_set_string(slider->_painter, p + QString(PLUGIN_get_effect_name(plugin, effect_num)+strlen("System ")) + ": " + QString(buf));
 
     slider->update();
   }

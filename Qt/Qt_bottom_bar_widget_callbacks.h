@@ -291,11 +291,15 @@ public slots:
     
     if (g_system_out_plugin != NULL) {
       const SoundPluginType *type = g_system_out_plugin->type;
-        
-      char buf[64]={0};
-      PLUGIN_get_display_value_string(g_system_out_plugin, type->num_effects+EFFNUM_INPUT_VOLUME, buf, 64);
 
-      SLIDERPAINTER_set_string(system_volume_slider->_painter, buf);
+      int effect_num = type->num_effects+EFFNUM_INPUT_VOLUME;
+      
+      char buf[64]={0};
+      PLUGIN_get_display_value_string(g_system_out_plugin, effect_num, buf, 64);
+
+      QString p = PLUGIN_has_midi_learn(g_system_out_plugin, effect_num) ? "*" : "";
+      
+      SLIDERPAINTER_set_string(system_volume_slider->_painter, p + buf);
     }
   }
 
