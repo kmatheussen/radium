@@ -1714,7 +1714,7 @@ bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_err
     return false;
   }
 
-  plugin->midi_learns->remove(midi_learn);
+  plugin->midi_learns->remove(midi_learn, true);
   MIDI_remove_midi_learn(midi_learn, false);
 
   delete midi_learn;
