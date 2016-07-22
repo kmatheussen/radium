@@ -76,8 +76,14 @@ public:
 
   hash_t *create_state(void);
   void init_from_state(hash_t *hash);
-  
+
+  bool RT_matching(const symbol_t *port_name, uint32_t msg);
   bool RT_maybe_use(const symbol_t *port_name, uint32_t msg);
+
+  virtual bool RT_get_automation_recording_data(struct Patch **patch, int *fxnum){
+    printf("MidiLearn::RT_get_patch_and_fxnum. Error: This method is supposed to be overridden.\n");
+    return false;
+  }
 
   QString get_source_info(void){
     if (ATOMIC_GET(is_learning))

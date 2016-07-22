@@ -104,6 +104,17 @@ struct SoundPluginEffectMidiLearn final : public MidiLearn {
   virtual QString get_dest_info(void) override;
   virtual void delete_me(void) override;
   virtual void RT_callback(float val) override;
+  
+  virtual bool RT_get_automation_recording_data(struct Patch **patch, int *fxnum) override{
+
+    *patch = (struct Patch*)plugin->patch;
+    if (patch==NULL)
+      return false;
+    
+    *fxnum = effect_num;
+
+    return true;
+  }
 };
 
 static void add_midi_learn(SoundPluginEffectMidiLearn *midi_learn){

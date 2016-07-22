@@ -61,8 +61,43 @@ static DEFINE_ATOMIC(struct Patch *, g_through_patch) = NULL;
 
 extern const char *NotesTexts3[131];
 
+static radium::Mutex g_midi_learns_mutex;
+static radium::Vector<MidiLearn*> g_midi_learns;
 
+static bool msg_is_fx(const uint32_t msg){
+  int cc0 = MIDI_msg_byte1_remove_channel(msg);
+  if (cc0==0xb0 || cc0==0xe0)
+    return true;
+  else
+    return false;
+}
 
+static bool msg_is_note(const uint32_t msg){
+  int cc0 = MIDI_msg_byte1_remove_channel(msg);
+  if (cc0 == 0x80 || cc0==0x90)
+    return true;
+  else
+    return false;
+}
+
+static bool msg_is_note_on(const uint32_t msg){
+  int cc0 = MIDI_msg_byte1_remove_channel(msg);
+  int data2 = MIDI_msg_byte2(msg);
+  if (cc0 == 0x90 && data2>0)
+    return true;
+  else
+    return false;
+}
+
+static bool msg_is_note_off(const uint32_t msg){
+  int      cc0     = MIDI_msg_byte1_remove_channel(msg);
+  int      volume  = MIDI_msg_byte3(msg);
+
+  if (cc0==0x80 || (cc0=0x90 && volume==0))
+    return true;
+  else
+    return false;
+}
 
 /*********************************************************
  *********************************************************
@@ -107,6 +142,8 @@ void MIDI_set_record_velocity(bool doit){
 typedef struct _midi_event_t{
   time_position_t timepos;
   uint32_t msg;
+  struct Patch *patch;
+  int fxnum;
 } midi_event_t;
 
 
@@ -117,16 +154,46 @@ static radium::Queue<midi_event_t, 8000> g_midi_event_queue; // 8000 is not the 
 
   
 // Called from a MIDI input thread. Only called if playing
-static void record_midi_event(uint32_t msg){
-  midi_event_t midi_event;
+static void record_midi_event(const symbol_t *port_name, const uint32_t msg){
+  
+  time_position_t timepos;
+  
+  if (MIXER_fill_in_time_position(&timepos) == true){ // <-- MIXER_fill_in_time_position returns false if the event was recorded after song end, or program is initializing, or there was an error.
 
-  if (MIXER_fill_in_time_position(&midi_event.timepos) == true){ // <-- MIXER_fill_in_time_position returns false if the event was recorded after song end, or program is initializing, or there was an error.
+    if (msg_is_fx(msg)){
+      
+      radium::ScopedMutex lock(&g_midi_learns_mutex); // <- Fix. Timing can be slightly inaccurate if adding/removing midi learn while recording, since MIDI_add/remove_midi_learn obtains the player lock while holding the g_midi_learns_mutex.
     
-    midi_event.msg       = msg;
+      for (auto midi_learn : g_midi_learns) {
+        
+        if (midi_learn->RT_matching(port_name, msg)){
 
-    // Send event to the pull thread
-    if (!g_midi_event_queue.tryPut(midi_event))
-      RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, or your MIDI input and output ports are connected recursively, please report this incident.");
+          midi_event_t midi_event;
+          midi_event.timepos = timepos;
+          midi_event.msg = msg;
+          
+          if (midi_learn->RT_get_automation_recording_data(&midi_event.patch, &midi_event.fxnum)){
+
+            // Send event to the pull thread
+            if (!g_midi_event_queue.tryPut(midi_event))
+              RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, "
+                         "or your MIDI input and output ports are connected recursively, please report this incident.");
+          }
+          
+        }
+      }
+      
+    } else if (msg_is_note(msg)){
+      
+      midi_event_t midi_event;
+      midi_event.timepos = timepos;
+      midi_event.msg       = msg;
+
+      // Send event to the pull thread
+      if (!g_midi_event_queue.tryPut(midi_event))
+        RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, "
+                   "or your MIDI input and output ports are connected recursively, please report this incident.");
+    }
 
   }
 }
@@ -175,11 +242,9 @@ static bool find_midievent_end_note(int blocknum, int pos, int notenum_to_find, 
       return false;
 
     uint32_t msg     = midi_event.msg;
-    int      cc0     = MIDI_msg_byte1_remove_channel(msg);
     int      notenum = MIDI_msg_byte2(msg);
-    int      volume  = MIDI_msg_byte3(msg);
     
-    if (cc0==0x80 || (cc0=0x90 && volume==0)){
+    if (msg_is_note_off(msg)){
       if (notenum==notenum_to_find && midi_event.timepos.blocktime > starttime_of_note)
         return true;
     }
@@ -190,7 +255,7 @@ static bool find_midievent_end_note(int blocknum, int pos, int notenum_to_find, 
 
 
 // Happens if note was started in block a, and stopped in block b.
-static void add_recorded_stp(struct Blocks *block, struct Tracks *track, STime time){
+static void add_recorded_stp(struct Blocks *block, struct Tracks *track, const STime time){
         
   Place place = STime2Place(block,time);
         
@@ -201,7 +266,7 @@ static void add_recorded_stp(struct Blocks *block, struct Tracks *track, STime t
 }
 
 
-static void add_recorded_note(struct WBlocks *wblock, struct Blocks *block, struct WTracks *wtrack, int recorded_midi_events_pos, STime time, uint32_t msg){
+static void add_recorded_note(struct WBlocks *wblock, struct Blocks *block, struct WTracks *wtrack, const int recorded_midi_events_pos, const STime time, const uint32_t msg){
         
   Place place = STime2Place(block,time);
   int notenum = MIDI_msg_byte2(msg);
@@ -227,12 +292,47 @@ static void add_recorded_note(struct WBlocks *wblock, struct Blocks *block, stru
              );
 }
 
-static void add_recorded_fx(struct WBlocks *wblock, struct Blocks *block, struct WTracks *wtrack, int recorded_midi_events_pos, STime time, uint32_t msg){
-        
+
+static void add_recorded_fx(struct WBlocks *wblock, struct Blocks *block, struct WTracks *wtrack, const int recorded_midi_events_pos, const STime time, const uint32_t msg){
+
+  int i = recorded_midi_events_pos;
+  printf("Add recorded fx %s / %d. %x\n",g_recorded_midi_events[i].patch->name, g_recorded_midi_events[i].fxnum, msg);
+         
+  /*
+  struct Tracks *track = wtrack->track;
+  struct Patch *patch = track->patch;
+  
+  if (track->patch==NULL)
+    return;
+
+  int      cc0_a   = MIDI_msg_byte1_remove_channel(msg);
+  int      data1_a = MIDI_msg_byte2(msg);
+
+  int fxnum = 1;
+
+  Place place = STime2Place(block,time);
+  float value = scale(MIDI_msg_byte3(msg), 0, 127, 0, 1);
+
+  for(int i = recorded_midi_events_pos ; i < g_recorded_midi_events.size(); i++) {
+    midi_event_t midi_event = g_recorded_midi_events[i];
+    if (midi_event.timepos.blocknum != wblock->l.num)
+      break;
+    if (midi_event.timepos.tracknum != wtrack->l.num)
+      continue;
+
+    int      cc0   = MIDI_msg_byte1_remove_channel(midi_event.msg);
+    int      data1 = MIDI_msg_byte2(midi_event.msg);
+
+    if (cc0_a != cc0 || data1_a!= data1)
+      continue;
+
+    
+  }
+  
   //Place place = STime2Place(block,time);
   //int notenum = MIDI_msg_byte2(msg);
   //int volume  = MIDI_msg_byte3(msg);
-  
+  */  
 }
 
 // Called from the main thread after the player has stopped
@@ -307,10 +407,10 @@ void MIDI_insert_recorded_midi_events(void){
 
         // Add Data
         //
-        uint32_t msg = midi_event.msg;
-        int cc0 = MIDI_msg_byte1_remove_channel(msg);
-        int data1 = MIDI_msg_byte2(msg);
-        STime time = midi_event.timepos.blocktime;
+        const uint32_t msg = midi_event.msg;
+        const int cc0 = MIDI_msg_byte1_remove_channel(msg);
+        const int data1 = MIDI_msg_byte2(msg);
+        const STime time = midi_event.timepos.blocktime;
 
         if (cc0==0x80 || (cc0==0x90 && data1==0))
           add_recorded_stp(block, track, time);
@@ -318,7 +418,7 @@ void MIDI_insert_recorded_midi_events(void){
         else if (cc0==0x90)
           add_recorded_note(wblock, block, wtrack, i, time, msg);
 
-        else if (cc0==0xb0 || cc0==0xe0)
+        else if (msg_is_fx(msg))
           add_recorded_fx(wblock, block, wtrack, i, time, msg);
       }
       
@@ -337,13 +437,14 @@ void MIDI_insert_recorded_midi_events(void){
  *********************************************************
  *********************************************************/
 
-static radium::Vector<MidiLearn*> g_midi_learns;
-
-void MIDI_add_midi_learn(MidiLearn *midi_learn){  
-  PLAYER_lock();{
-    g_midi_learns.push_back(midi_learn);
-  }PLAYER_unlock();
-
+void MIDI_add_midi_learn(MidiLearn *midi_learn){
+  {
+    radium::ScopedMutex lock(&g_midi_learns_mutex); // obtain this lock first to avoid priority inversion
+    PLAYER_lock();{
+      g_midi_learns.push_back(midi_learn);
+    }PLAYER_unlock();
+  }
+  
   MIDILEARN_PREFS_add(midi_learn);
 }
 
@@ -354,6 +455,7 @@ void MIDI_remove_midi_learn(MidiLearn *midi_learn, bool show_error_if_not_here){
   
   for(auto midi_learn2 : g_midi_learns)
     if (midi_learn == midi_learn2) {
+      radium::ScopedMutex lock(&g_midi_learns_mutex); // obtain this lock first to avoid priority inversion
       PLAYER_lock();{
         g_midi_learns.remove(midi_learn2);
       }PLAYER_unlock();
@@ -390,10 +492,13 @@ void MidiLearn::init_from_state(hash_t *state){
   ATOMIC_SET(is_enabled, HASH_get_bool(state, "is_enabled"));
 }
 
-bool MidiLearn::RT_maybe_use(const symbol_t *port_name, uint32_t msg){
+bool MidiLearn::RT_matching(const symbol_t *port_name, uint32_t msg){
+
+  if (ATOMIC_GET(is_enabled)==false)
+    return false;
+  
   int d1 = MIDI_msg_byte1(msg);
   int d2 = MIDI_msg_byte2(msg);
-  int d3 = MIDI_msg_byte3(msg);
 
   if (d1 < 0xb0)
     return false;
@@ -420,39 +525,55 @@ bool MidiLearn::RT_maybe_use(const symbol_t *port_name, uint32_t msg){
 
     // cc
     
-    if(d1==ATOMIC_GET(byte1) && d2==ATOMIC_GET(byte2)){
-
-      if (ATOMIC_GET(is_enabled))
-        RT_callback(d3 / 127.0);
-      
+    if(d1==ATOMIC_GET(byte1) && d2==ATOMIC_GET(byte2))
       return true;
-    }
+
+  } else {
+    
+    // pitch bend
+
+    if (d1==ATOMIC_GET(byte1))
+      return true;
+  }
+
+  return false;
+}
+
+bool MidiLearn::RT_maybe_use(const symbol_t *port_name, uint32_t msg){  
+  if (RT_matching(port_name, msg)==false)
+    return false;
+
+  int d1 = MIDI_msg_byte1(msg);
+  int d2 = MIDI_msg_byte2(msg);
+  int d3 = MIDI_msg_byte3(msg);
+
+  if (d1 < 0xc0) {
+
+    // cc
+    
+    RT_callback(d3 / 127.0);
+      
     
   } else {
 
     // pitch bend
 
-    if (d1==ATOMIC_GET(byte1)) {
       int val = d3<<7 | d2;
       //printf("     d2: %x, d3: %x, %x\n", d2,d3, d3<<7 | d2);
-      if (ATOMIC_GET(is_enabled)){
-        if (val < 0x2000)
-          RT_callback(scale(val,
-                            0, 0x2000,
-                            0, 0.5)
-                      );
-        else
-          RT_callback(scale(val,
-                            0x2000,   0x3fff,
-                            0.5,      1.0)
-                      );
-      }
-    }
-    
+      
+      if (val < 0x2000)
+        RT_callback(scale(val,
+                          0, 0x2000,
+                          0, 0.5)
+                    );
+      else
+        RT_callback(scale(val,
+                          0x2000,   0x3fff,
+                          0.5,      1.0)
+                    );  
   }
   
-
-  return false;
+  return true;
 }
 
 typedef struct {
@@ -534,17 +655,14 @@ void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data
   
   add_event_to_play_buffer(port_name, msg);
 
-  int cc0 = MIDI_msg_byte1_remove_channel(msg);
-  
   if (g_record_accurately_while_playing && isplaying) {
     
-    if(cc0 == 0x80 || cc0==0x90 || cc0==0xb0 || cc0==0xe0)
-      if (ATOMIC_GET(root->editonoff))
-        record_midi_event(msg);
+    if (ATOMIC_GET(root->editonoff))
+      record_midi_event(port_name, msg);
 
   } else {
 
-    if(cc0==0x90 && data2!=0)
+    if(msg_is_note_on(msg))
       if (ATOMIC_COMPARE_AND_SET_UINT32(g_msg, 0, msg)==false) {
         // printf("Playing to fast. Skipping note %u from MIDI input.\n",msg); // don't want to print in realtime thread
       }
