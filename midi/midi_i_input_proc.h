@@ -54,8 +54,8 @@ private:
   
   DEFINE_ATOMIC(bool, is_learning);
   DEFINE_ATOMIC(const symbol_t*, port_name);
-  DEFINE_ATOMIC(int, data1);
-  DEFINE_ATOMIC(int, data2);
+  DEFINE_ATOMIC(int, byte1);
+  DEFINE_ATOMIC(int, byte2);
   
 public:
 
@@ -68,8 +68,8 @@ public:
     
     ATOMIC_SET(is_learning, true);
     ATOMIC_SET(port_name, NULL);
-    ATOMIC_SET(data1, 0);
-    ATOMIC_SET(data2, 0);
+    ATOMIC_SET(byte1, 0);
+    ATOMIC_SET(byte2, 0);
   }
 
   virtual ~MidiLearn() = default; // Crazy c++ stuff. https://www.securecoding.cert.org/confluence/display/cplusplus/OOP52-CPP.+Do+not+delete+a+polymorphic+object+without+a+virtual+destructor
@@ -81,11 +81,11 @@ public:
 
   QString get_source_info(void){
     if (ATOMIC_GET(is_learning))
-      return talloc_format("Learning...", ATOMIC_GET(data1), ATOMIC_GET(data2));
-    else if (ATOMIC_GET(data1)>=0xe0)
-      return talloc_format("%s: %2X", ATOMIC_GET(port_name), ATOMIC_GET(data1));
+      return talloc_format("Learning...", ATOMIC_GET(byte1), ATOMIC_GET(byte2));
+    else if (ATOMIC_GET(byte1)>=0xe0)
+      return talloc_format("%s: %2X", ATOMIC_GET(port_name), ATOMIC_GET(byte1));
     else
-      return talloc_format("%s: %2X / %2X", ATOMIC_GET(port_name), ATOMIC_GET(data1), ATOMIC_GET(data2));
+      return talloc_format("%s: %2X / %2X", ATOMIC_GET(port_name), ATOMIC_GET(byte1), ATOMIC_GET(byte2));
   }
 
   virtual QString get_dest_info(void){
