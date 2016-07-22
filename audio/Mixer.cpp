@@ -425,6 +425,8 @@ struct Mixer{
       }
     }
     
+    _sound_producers.ensure_there_is_room_for_one_more_without_having_to_allocate_memory();
+
     PLAYER_lock();{
 
       if (bus_num>=0)
@@ -456,6 +458,8 @@ struct Mixer{
       _sound_producers.push_back(sound_producer);
       
     }PLAYER_unlock();
+
+    _sound_producers.post_add();
   }
     
   void remove_SoundProducer(SoundProducer *sound_producer){

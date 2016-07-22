@@ -113,12 +113,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "debug_proc.h"
 #include "atomic.h"
-#include "validatemem_proc.h"
+#include "OS_Player_proc.h"
 #include "memory_proc.h"
 #include "nsmtracker_events.h"
 #include "OS_error_proc.h"
 #include "OS_Semaphores.h"
-#include "OS_Player_proc.h"
 #include "keyboard_focus_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
 
@@ -205,6 +204,9 @@ enum{
   #define R_ASSERT_NON_RELEASE(a) R_ASSERT(a)
   #define R_ASSERT_NON_RELEASE2(a, returnvalue) R_ASSERT_RETURN_IF_FALSE2(a, returnvalue)
 #endif
+
+
+#include "validatemem_proc.h"
 
 
 static inline int64_t scale_int64(int64_t x, int64_t x1, int64_t x2, int64_t y1, int64_t y2){

@@ -56,32 +56,58 @@ extern "C" {
 }
 #endif
 
+
+
+
 #if !defined(VALIDATE_MEM)
 
-#define V_malloc(size) malloc(size)
-#define V_strdup(s) strdup(s)
-#define V_calloc(n, size) calloc(n, size)
-#define V_free(ptr) free((void*)ptr)
-#define V_realloc(ptr, size) realloc(ptr, size);
+#  if defined(RELEASE)
+#    define V_malloc(size) malloc(size)
+#    define V_strdup(s) strdup(s)
+#    define V_calloc(n, size) calloc(n, size)
+#    define V_free(ptr) free((void*)ptr)
+#    define V_realloc(ptr, size) realloc(ptr, size);
+#  else
+static inline void *V_malloc(size_t size){
+  R_ASSERT(!PLAYER_current_thread_has_lock());
+  return malloc(size);
+}
+static inline char *V_strdup(const char *s){
+  R_ASSERT(!PLAYER_current_thread_has_lock());
+  return strdup(s);
+}
+static inline void *V_calloc(size_t n, size_t size){
+  R_ASSERT(!PLAYER_current_thread_has_lock());
+  return calloc(n,size);
+}
+static inline void V_free(void *ptr){
+  R_ASSERT(!PLAYER_current_thread_has_lock());
+  free(ptr);
+}
+static inline void *V_realloc(void *ptr, size_t size){
+  R_ASSERT(!PLAYER_current_thread_has_lock());
+  return realloc(ptr, size);
+}
+#  endif
 
 static inline void V_shutdown(void){
 }
   
-#else // RELEASE -> !RELEASE
+#else
 
-#define V_malloc(size) V_malloc__(size, __FILE__, __LINE__)
-#define V_strdup(s) V_strdup__(s, __FILE__, __LINE__)
-#define V_calloc(n, size) V_calloc__(n, size, __FILE__, __LINE__)
-#define V_free(ptr) V_free__((void*)(ptr))
-#define V_realloc(ptr, size) V_realloc__((void*)ptr, size, __FILE__, __LINE__)
+#  define V_malloc(size) V_malloc__(size, __FILE__, __LINE__)
+#  define V_strdup(s) V_strdup__(s, __FILE__, __LINE__)
+#  define V_calloc(n, size) V_calloc__(n, size, __FILE__, __LINE__)
+#  define V_free(ptr) V_free__((void*)(ptr))
+#  define V_realloc(ptr, size) V_realloc__((void*)ptr, size, __FILE__, __LINE__)
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 extern "C" {
-#endif
+#  endif
   void V_shutdown(void);
-#ifdef __cplusplus
+#  ifdef __cplusplus
 }
-#endif
+#  endif
 
 #endif // !RELEASE
 
