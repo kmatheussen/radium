@@ -262,7 +262,9 @@ void MIDI_insert_recorded_midi_events(void){
       //printf("%d / %d: %x\n",midi_event.timepos.blocknum, midi_event.timepos.tracknum, midi_event.msg);
         
       if (midi_event.timepos.tracknum >= 0) {
-          
+
+        // Find block and track
+        //
         struct WBlocks *wblock = (struct WBlocks*)ListFindElement1(&root->song->tracker_windows->wblocks->l, midi_event.timepos.blocknum);
         R_ASSERT_RETURN_IF_FALSE(wblock!=NULL);
 
@@ -280,13 +282,13 @@ void MIDI_insert_recorded_midi_events(void){
         struct Blocks *block = wblock->block;
         struct Tracks *track = wtrack->track;
 
-        // GFX
-        
+        // Update GFX
+        //
         ATOMIC_SET(track->is_recording, false);
 
 
         // UNDO
-
+        //
         char *key = (char*)talloc_format("%x",track);
         if (HASH_has_key(track_set, key)==false){
 
@@ -299,6 +301,8 @@ void MIDI_insert_recorded_midi_events(void){
           HASH_put_int(track_set, key, 1);
         }
 
+        // Add Data
+        //
         uint32_t msg = midi_event.msg;
         int cc = MIDI_msg_byte1_remove_channel(msg);
         int data1 = MIDI_msg_byte2(msg);
