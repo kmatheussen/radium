@@ -45,6 +45,8 @@ struct Root *root=NULL;
 
 extern PlayerClass *pc;
 
+vector_t g_symbols = {0};
+
 extern void RADIUM_ensure_bin_packages_gc_is_used(void);
 
 bool InitProgram(void){

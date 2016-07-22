@@ -28,7 +28,7 @@ extern LANGSPEC void MIDI_set_record_accurately(bool accurately);
 extern LANGSPEC bool MIDI_get_record_velocity(void);
 extern LANGSPEC void MIDI_set_record_velocity(bool doit);
 
-extern LANGSPEC void MIDI_InputMessageHasBeenReceived(const char *port_name, int cc,int data1,int data2);
+extern LANGSPEC void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data1,int data2);
 
 extern LANGSPEC void MIDI_SetThroughPatch(struct Patch *patch);
 
@@ -53,7 +53,7 @@ struct MidiLearn{
 private:
   
   DEFINE_ATOMIC(bool, is_learning);
-  DEFINE_ATOMIC(const char*, port_name);
+  DEFINE_ATOMIC(const symbol_t*, port_name);
   DEFINE_ATOMIC(int, data1);
   DEFINE_ATOMIC(int, data2);
   
@@ -77,7 +77,7 @@ public:
   hash_t *create_state(void);
   void init_from_state(hash_t *hash);
   
-  bool RT_maybe_use(const char *port_name, uint32_t msg);
+  bool RT_maybe_use(const symbol_t *port_name, uint32_t msg);
 
   QString get_source_info(void){
     if (ATOMIC_GET(is_learning))

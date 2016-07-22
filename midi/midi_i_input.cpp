@@ -369,7 +369,7 @@ hash_t* MidiLearn::create_state(void){
   hash_t *state = HASH_create(3);
   HASH_put_bool(state, "is_enabled", ATOMIC_GET(is_enabled));
   HASH_put_bool(state, "is_learning", ATOMIC_GET(is_learning));
-  HASH_put_chars(state, "port_name", ATOMIC_GET(port_name)==NULL ? "" : ATOMIC_GET(port_name));
+  HASH_put_chars(state, "port_name", ATOMIC_GET(port_name)==NULL ? "" : ATOMIC_GET(port_name)->name);
   HASH_put_int(state, "data1", ATOMIC_GET(data1));
   HASH_put_int(state, "data2", ATOMIC_GET(data2));
   return state;
@@ -378,12 +378,12 @@ hash_t* MidiLearn::create_state(void){
 void MidiLearn::init_from_state(hash_t *state){
   ATOMIC_SET(data2, HASH_get_int(state, "data2"));
   ATOMIC_SET(data1, HASH_get_int(state, "data1"));
-  ATOMIC_SET(port_name, strdup(HASH_get_chars(state, "port_name"))); // A small memory leak here. Fixing this leak will probably generate some ugly code.
+  ATOMIC_SET(port_name, get_symbol(HASH_get_chars(state, "port_name")));
   ATOMIC_SET(is_learning, HASH_get_bool(state, "is_learning"));
   ATOMIC_SET(is_enabled, HASH_get_bool(state, "is_enabled"));
 }
 
-bool MidiLearn::RT_maybe_use(const char *port_name, uint32_t msg){
+bool MidiLearn::RT_maybe_use(const symbol_t *port_name, uint32_t msg){
   int d1 = MIDI_msg_byte1(msg);
   int d2 = MIDI_msg_byte2(msg);
   int d3 = MIDI_msg_byte3(msg);
@@ -406,7 +406,7 @@ bool MidiLearn::RT_maybe_use(const char *port_name, uint32_t msg){
 
   //printf("Got msg %x. data1: %x, data2: %x\n", msg, data1, data2);
 
-  if(strcmp(ATOMIC_GET(this->port_name), port_name)) // Can not just do this->port_name!=port_name since this->port_name may have been created from a state.
+  if(ATOMIC_GET(this->port_name) != port_name)
     return false;
 
   if (d1 < 0xc0) {
@@ -449,7 +449,7 @@ bool MidiLearn::RT_maybe_use(const char *port_name, uint32_t msg){
 }
 
 typedef struct {
-  const char *port_name;
+  const symbol_t *port_name;
   int32_t deltatime;
   uint32_t msg;
 } play_buffer_event_t;
@@ -481,7 +481,7 @@ void RT_MIDI_handle_play_buffer(void){
 }
 
 // Called from a MIDI input thread
-static void add_event_to_play_buffer(const char *port_name, int cc,int data1,int data2){
+static void add_event_to_play_buffer(const symbol_t *port_name, int cc,int data1,int data2){
   play_buffer_event_t event;
 
   event.port_name = port_name;
@@ -510,7 +510,7 @@ void MIDI_SetThroughPatch(struct Patch *patch){
  *********************************************************/
 
 // Can be called from any thread
-void MIDI_InputMessageHasBeenReceived(const char *port_name, int cc,int data1,int data2){
+void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data1,int data2){
   //printf("got new message. on/off:%d. Message: %x,%x,%x\n",(int)root->editonoff,cc,data1,data2);
   //static int num=0;
   //num++;
