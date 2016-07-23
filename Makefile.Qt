@@ -1535,7 +1535,7 @@ Patchbay_plugin.o: audio/Patchbay_plugin.cpp
 	$(CCC) audio/Patchbay_plugin.cpp $(QTOPT)
 
 MidiMessages_plugin.o: audio/MidiMessages_plugin.c
-	$(CC) audio/MidiMessages_plugin.c $(OPT) -std=c99
+	$(CC) audio/MidiMessages_plugin.c $(OPT)
 
 VST_plugins.o: audio/VST_plugins.cpp $(P)Qt_vst_paths_widget.h
 	$(CCC) audio/VST_plugins.cpp $(QTOPT) -Wno-error # uses some Qt stuff to open GUI window

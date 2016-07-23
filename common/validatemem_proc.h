@@ -68,6 +68,7 @@ extern "C" {
 #    define V_free(ptr) free((void*)ptr)
 #    define V_realloc(ptr, size) realloc(ptr, size);
 #  else
+
 static inline void *V_malloc(size_t size){
   R_ASSERT(!PLAYER_current_thread_has_lock());
   return malloc(size);
@@ -88,6 +89,7 @@ static inline void *V_realloc(void *ptr, size_t size){
   R_ASSERT(!PLAYER_current_thread_has_lock());
   return realloc(ptr, size);
 }
+
 #  endif
 
 static inline void V_shutdown(void){
