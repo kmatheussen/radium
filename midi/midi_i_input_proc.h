@@ -18,7 +18,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef _RADIUM_MIDI_MIDI_I_INPUT_PROC_H
 #define _RADIUM_MIDI_MIDI_I_INPUT_PROC_H
 
-extern LANGSPEC void MIDI_add_automation_recording_event(SoundPlugin *plugin, int effect_num, float value);
+struct SoundPlugin;
+
+extern LANGSPEC void MIDI_add_automation_recording_event(struct SoundPlugin *plugin, int effect_num, float value);
 
 extern LANGSPEC void MIDI_insert_recorded_midi_events(void);
 
@@ -46,8 +48,6 @@ extern LANGSPEC void MIDI_remove_midi_learn(struct MidiLearn *midi_learn, bool s
 #include <QString>
 
 #include "midi_proc.h"
-
-struct SoundPlugin;
 
 struct MidiLearn{
 
