@@ -1,3 +1,23 @@
+Changes 3.9.8 -> 3.9.9:
+* Don't let shift + mouse scroll wheel move editor cursor left/right.
+* Cut/copy/paste individual fx-es in tracks.
+* Record automation. (right-click a slider)
+* Changed default play cursor color to black, and increased width to 4 pixels.
+* Ensure the bottom bar volume slider is always updated.
+* Don't show assertion window when loading older song with fxs->effectnum != fxs->fx->effect_num
+* Fix track cut
+* Fix copying/pasting/cutting tempo tracks
+* More accurate play range looping.
+* More time set off for for graphical updates.
+   Should be noticable if using VST plugins on Windows or OSX.
+* Workaround for OSX crash when deleting some VST plugins with open native GUI.
+* Use non-native color selector on OSX (i.e. no separate window).
+* MIDI learn. (right-click a slider or right-click a check box)
+* Fix MIDI instrument widget stretch
+* No 2-3 seconds freeze on Windows after starting up.
+
+
+
 Changes 3.9.7 -> 3.9.8:
 * Turn off custom put-dialog-in-front system. Using the Qt::WindowStaysOnTopHint flag instead.
   (Less weird behavior when raising windows in front of others.)
@@ -18,6 +38,7 @@ Changes 3.9.7 -> 3.9.8:
 * Use Qt::FramelessWindowHint instead of Qt::Popup for the progress window,
   to avoid locking up the X server on Linux.
 * Removed some unnecessary paint calls
+
 
 
 Changes 3.9.6 -> 3.9.7:
