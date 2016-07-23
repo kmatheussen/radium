@@ -53,11 +53,12 @@ extern struct TempoNodes *cb_temponode;
 
 extern struct WTracks *cb_wtrack;
 
+// called from mmd2load
 void CB_CutTrack_Force(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
-	cb_wtrack=CB_CopyTrack(wblock,wtrack);
+        cb_wtrack=CB_CopyTrack(wblock,wtrack);
 	wtrack->track->notes=NULL;
 	wtrack->track->stops=NULL;
 
@@ -68,32 +69,59 @@ void CB_CutTrack_Force(
 	VECTOR_clean(&wtrack->track->fxs);
 }
 
+static struct WTracks *cut_track(
+                                 struct Tracker_Windows *window,
+                                 struct WBlocks *wblock,
+                                 struct WTracks *wtrack,
+                                 bool always_cut_all_fxs,
+                                 bool *only_one_fxs_was_cut
+){
+
+  if (!always_cut_all_fxs)
+    R_ASSERT(only_one_fxs_was_cut!=NULL);
+  
+  struct WTracks *ret;
+  
+  PC_Pause();{
+            
+    ret = internal_copy_track(wblock, wtrack, always_cut_all_fxs, only_one_fxs_was_cut);
+
+    if (always_cut_all_fxs || (*only_one_fxs_was_cut)==false) {
+
+      wtrack->track->notes=NULL;
+      wtrack->track->stops=NULL;
+
+      VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
+        (*fxs->fx->closeFX)(fxs->fx,wtrack->track);
+      }END_VECTOR_FOR_EACH;
+    
+      VECTOR_clean(&wtrack->track->fxs);
+      
+    } else {
+
+      struct FXs *fxs = ret->track->fxs.elements[0];
+      
+      VECTOR_FOR_EACH(struct FXs *maybe, &wtrack->track->fxs){
+        if (maybe->fx->patch==fxs->fx->patch && maybe->fx->effect_num==fxs->fx->effect_num){
+          (*maybe->fx->closeFX)(maybe->fx,wtrack->track);
+          VECTOR_remove(&wtrack->track->fxs, maybe);
+          break;
+        }
+      }END_VECTOR_FOR_EACH;
+      
+    }
+
+  }PC_StopPause(window);
+  
+  return ret;
+}
+
 struct WTracks *CB_CutTrack(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
-
-  struct WTracks *ret;
-  
-  PC_Pause();{
-            
-	ret=CB_CopyTrack(wblock,wtrack);
-
-        //	if(window->curr_track_sub<0){
-        wtrack->track->notes=NULL;
-        wtrack->track->stops=NULL;
-        //	}
-
-        VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
-          (*fxs->fx->closeFX)(fxs->fx,wtrack->track);
-        }END_VECTOR_FOR_EACH;
-
-	VECTOR_clean(&wtrack->track->fxs);
-
-  }PC_StopPause(window);
-  
-  return ret;
+  return cut_track(window, wblock, wtrack, true, NULL);
 }
 
 void CB_CutTrack_CurrPos(
@@ -138,7 +166,7 @@ void CB_CutTrack_CurrPos(
 			break;
 		default:
                   ADD_UNDO(Track_CurrPos(window));
-			cb_wtrack = CB_CutTrack(window,wblock,wtrack);
+			cb_wtrack = cut_track(window, wblock, wtrack, false, &cb_wtrack_only_contains_one_fxs);
                         //#if !USE_OPENGL
 			UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 				window,

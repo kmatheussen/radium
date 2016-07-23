@@ -19,6 +19,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_WINDOW
 
+struct WTracks *internal_copy_track(
+                                    struct WBlocks *wblock,
+                                    struct WTracks *wtrack,
+                                    bool always_copy_all_fxs,
+                                    bool *only_one_fxs_was_copied
+                                    );
+
 extern struct WTracks *CB_CopyTrack(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
@@ -29,7 +36,7 @@ extern void CB_CopyTrack_CurrPos(
 );
 
 extern struct WTracks *cb_wtrack;
-
+extern bool cb_wtrack_only_contains_one_fxs;
 #endif
 
 

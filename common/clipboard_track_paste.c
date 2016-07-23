@@ -230,6 +230,15 @@ bool co_CB_PasteTrack(
         return paste_track(wblock, wtrack, towtrack);
 }
 
+static void remove_fxs_from_fxss(vector_t *fxss, struct FXs *fxs){
+  VECTOR_FOR_EACH(struct FXs *maybe, fxss){
+    if (maybe->fx->patch==fxs->fx->patch && maybe->fx->effect_num==fxs->fx->effect_num){
+      VECTOR_remove(fxss, maybe);
+      return;
+    }
+  }END_VECTOR_FOR_EACH;
+}
+
 void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 	struct Blocks *block=wblock->block;
@@ -292,7 +301,11 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
                         Undo_Open_rec();{
                           printf("curr_track_sub: %d\n",window->curr_track_sub);
                           ADD_UNDO(Track_CurrPos(window));
-                          if(window->curr_track_sub==-1){
+                          
+                          if(window->curr_track_sub==-1 && cb_wtrack_only_contains_one_fxs==false){
+
+                            // copy all
+                            
                             printf("aaa\n");
                             if(co_CB_PasteTrack(wblock,cb_wtrack,wtrack)){
 #if !USE_OPENGL
@@ -311,7 +324,29 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
                             }
                           }else{
                             printf("bbb\n");
-                            if(co_CB_PasteTrackFX(wblock,cb_wtrack,wtrack)){
+
+                            // only copy fx
+                            
+                            struct WTracks *fromwtrack = cb_wtrack;
+                                                                                    
+                            if (cb_wtrack_only_contains_one_fxs==true){
+
+                              // only copy one fx
+                              
+                              R_ASSERT(cb_wtrack->track->fxs.num_elements==1);
+
+                              struct FXs *fxs = cb_wtrack->track->fxs.elements[0];
+                              
+                              vector_t *fxss = VECTOR_copy(&wtrack->track->fxs);
+                              remove_fxs_from_fxss(fxss, fxs);
+                              
+                              VECTOR_push_back(fxss, fxs);
+                              
+                              fromwtrack = CB_CopyTrack(wblock, cb_wtrack);
+                              fromwtrack->track->fxs = *VECTOR_copy(fxss);
+                            }
+                            
+                            if(co_CB_PasteTrackFX(wblock,fromwtrack,wtrack)){
 #if !USE_OPENGL
                               UpdateFXNodeLines(window,wblock,wtrack);
 #endif

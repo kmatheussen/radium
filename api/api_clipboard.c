@@ -77,27 +77,32 @@ void copyRange(int windownum){
 }
 
 void copyTrack(int tracknum, int blocknum, int windownum){
-  if (tracknum==-1 && blocknum==-1){
-    struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-    CB_CopyTrack_CurrPos(window);
-  }
-
-  struct Tracker_Windows *window=NULL;
-  struct WTracks *wtrack;
-  struct WBlocks *wblock;
-
-  wtrack=getWTrackFromNumA(
-                           windownum,
-                           &window,
-                           blocknum,
-                           &wblock,
-                           tracknum
-                           );
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   
-  if(wtrack==NULL) return;
-
-  cb_wtrack = CB_CopyTrack(wblock, wtrack);
-
+  if (tracknum==-1 && blocknum==-1){
+    
+    CB_CopyTrack_CurrPos(window);
+    
+  } else {
+    
+    struct Tracker_Windows *window=NULL;
+    struct WTracks *wtrack;
+    struct WBlocks *wblock;
+    
+    wtrack=getWTrackFromNumA(
+                             windownum,
+                             &window,
+                             blocknum,
+                             &wblock,
+                             tracknum
+                             );
+    
+    if(wtrack==NULL) return;
+    
+    cb_wtrack = CB_CopyTrack(wblock, wtrack);
+    
+  }
+  
   window->must_redraw = true;
 }
 

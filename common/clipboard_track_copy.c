@@ -27,12 +27,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "clipboard_tempos_copy_proc.h"
 #include "wtracks_proc.h"
+#include "fxtext_proc.h"
 
 #include "clipboard_track_copy_proc.h"
 
 
 
-
+bool cb_wtrack_only_contains_one_fxs = false;
 struct WTracks *cb_wtrack=NULL;
 
 extern struct Signatures *cb_signature;
@@ -40,11 +41,25 @@ extern struct LPBs *cb_lpb;
 extern struct Tempos *cb_tempo;
 extern struct TempoNodes *cb_temponode;
 
+/*
+struct FXs *cb_fxs=NULL;
+struct FXs *CB_CopyFX(
+                      struct WTracks *wtrack
+                      )
+{
+}
+*/
 
-struct WTracks *CB_CopyTrack(
+
+struct WTracks *internal_copy_track(
 	struct WBlocks *wblock,
-	struct WTracks *wtrack
+	struct WTracks *wtrack,
+        bool always_copy_all_fxs,
+        bool *only_one_fxs_was_copied
 ){
+  if (!always_copy_all_fxs)
+    R_ASSERT(only_one_fxs_was_copied!=NULL);
+  
 	Place *p1,p2;
 
 	struct WTracks *towtrack;
@@ -71,13 +86,34 @@ struct WTracks *CB_CopyTrack(
 	totrack->stops=NULL;
         memset(&totrack->fxs, 0, sizeof(vector_t));
 
-	CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
-	CopyRange_stops(&totrack->stops,track->stops,p1,&p2);
-	CopyRange_fxs(&totrack->fxs,&track->fxs,p1,&p2);
+        struct FXs *fxs;
+        int subsubtrack = FXTEXT_subsubtrack(root->song->tracker_windows, wtrack, &fxs);
 
+        if (always_copy_all_fxs || subsubtrack==-1) {
+          
+          CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
+          CopyRange_stops(&totrack->stops,track->stops,p1,&p2);
+          CopyRange_fxs(&totrack->fxs,&track->fxs,p1,&p2);
+          if (only_one_fxs_was_copied != NULL)
+            *only_one_fxs_was_copied = false;
+          
+        } else{
+          vector_t fxss = {0};
+          VECTOR_push_back(&fxss, fxs);
+          CopyRange_fxs(&totrack->fxs,&fxss,p1,&p2);
+          *only_one_fxs_was_copied = true;
+        }
+        
 	return towtrack;
 }
 
+struct WTracks *CB_CopyTrack(
+                             struct WBlocks *wblock,
+                             struct WTracks *wtrack
+                             )
+{
+  return internal_copy_track(wblock, wtrack, true, NULL);
+}
 
 void CB_CopyTrack_CurrPos(
 	struct Tracker_Windows *window
@@ -100,7 +136,7 @@ void CB_CopyTrack_CurrPos(
 			cb_temponode=CB_CopyTempoNodes(block->temponodes);
 			break;
 		default:
-			cb_wtrack=CB_CopyTrack(wblock,wtrack);
+                        cb_wtrack=internal_copy_track(wblock, wtrack, false, &cb_wtrack_only_contains_one_fxs);
 			break;
 	}
 }
