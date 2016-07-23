@@ -263,7 +263,7 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
                  zoom(1,window->l.num);
                else
                  zoom(-1,window->l.num);
-
+#if 0
              } else if (qwheelevent->modifiers() & Qt::ShiftModifier) {
 
                tevent.ID=TR_KEYBOARD;
@@ -274,7 +274,7 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
                
                for(int i=0;i<num_lines;i++)
                  EventReciever(&tevent,window);
-
+#endif
              } else {
 
                tevent.ID=TR_KEYBOARD;
