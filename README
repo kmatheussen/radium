@@ -2,8 +2,7 @@
 
 HOW TO MAKE IT RUN
 
-          1. If you have a Fedora or Ubuntu/Debian-based distribution, first install dependencies.
-             Required packages are listed below in this README.
+          1. Install dependencies. See "BUILD DEPENDENCIES, *" below in this file.
 
           2. Do this:
 
@@ -28,6 +27,7 @@ IF YOU GOT THE SOURCE FROM GIT
 
 
 IF YOU ARE DEVELOPING RADIUM
+         # Debug build. Lots of assertions. Very slow. Don't build this version if you are just testing the program.
          export RADIUM_QT_VERSION=5
          export QT_QPA_PLATFORM_PLUGIN_PATH=/usr/lib64/qt5/plugins/
          ./make_and_run_linux.sh
@@ -51,7 +51,7 @@ BUILD DEPENDENCIES, all platforms:
 
 
 
-BUILD DEPENDENCIES FEDORA:
+BUILD DEPENDENCIES, fedora:
 
         In addition to OpenGL, you also need:
 
@@ -94,7 +94,7 @@ BUILD DEPENDENCIES FEDORA:
 
 
 
-BUILD DEPENDENCIES UBUNTU 12 (plus Debian):
+BUILD DEPENDENCIES, ubuntu/debian/etc.:
       * Main packages, Ubuntu 12:
 
       In addition to OpenGL, you also need:
