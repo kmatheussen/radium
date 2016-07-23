@@ -2276,7 +2276,7 @@ static void create_playcursor(const struct Tracker_Windows *window, const struct
     GE_line(c,
             x1, y,
             x2, y,
-            2.0
+            4.0
             );
   }
 }
