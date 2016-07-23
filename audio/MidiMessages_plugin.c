@@ -113,7 +113,8 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     data->has_sent_initial_values=true;
 
     RT_PLAYER_runner_lock();{
-      for(int effect_num = PROGRAM_CHANGE ; effect_num < NUM_EFFECTS ; effect_num++) {
+      int effect_num;
+      for(effect_num = PROGRAM_CHANGE ; effect_num < NUM_EFFECTS ; effect_num++) {
         int value = data->values[effect_num];
         if (value != -1)
           RT_set_effect_value(plugin, 0, effect_num, value, PLUGIN_FORMAT_NATIVE, FX_single);
