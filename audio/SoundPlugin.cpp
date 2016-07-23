@@ -105,13 +105,13 @@ struct SoundPluginEffectMidiLearn final : public MidiLearn {
   virtual void delete_me(void) override;
   virtual void RT_callback(float val) override;
   
-  virtual bool RT_get_automation_recording_data(struct Patch **patch, int *fxnum) override{
+  virtual bool RT_get_automation_recording_data(SoundPlugin **plugin, int *effect_num) override{
 
-    *patch = (struct Patch*)plugin->patch;
-    if (patch==NULL)
+    if (PLUGIN_is_recording_automation(this->plugin, this->effect_num)==false)
       return false;
-    
-    *fxnum = effect_num;
+                   
+    *plugin = this->plugin;
+    *effect_num = this->effect_num;
 
     return true;
   }
@@ -346,15 +346,16 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   plugin->type = plugin_type;
 
   int buffer_size = MIXER_get_buffer_size();
-  
+
+  plugin->midi_learns = new radium::Vector<SoundPluginEffectMidiLearn*>;
+  ATOMIC_NAME(plugin->is_recording_automation) = (bool*) V_calloc(sizeof(bool), plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+
   // TODO: Don't do this. Check if all plugins can be initialized later.
   plugin->data = plugin_type->create_plugin_data(plugin_type, plugin, plugin_state, MIXER_get_sample_rate(), buffer_size, is_loading);
   if(plugin->data==NULL){
     V_free(plugin);
     return NULL;
   }
-
-  plugin->midi_learns = new radium::Vector<SoundPluginEffectMidiLearn*>;
 
   // peak and automation pointers (for displaying in the sliders)
   plugin->volume_peak_values = (float*)V_calloc(sizeof(float),plugin_type->num_outputs);
@@ -471,8 +472,7 @@ void PLUGIN_delete(SoundPlugin *plugin){
   const SoundPluginType *plugin_type = plugin->type;
 
   while(PLUGIN_remove_midi_learn(plugin, -1, false)==true);
-  delete plugin->midi_learns;
-    
+       
   if(!strcmp(plugin_type->type_name,"Bus")) // RT_process needs buses to always be alive.
     return;
 
@@ -522,7 +522,10 @@ void PLUGIN_delete(SoundPlugin *plugin){
   V_free(plugin->automation_values);
 
   CpuUsage_delete(ATOMIC_GET(plugin->cpu_usage));
-  
+
+  V_free(ATOMIC_NAME(plugin->is_recording_automation));
+  delete plugin->midi_learns;
+    
   memset(plugin,-1,sizeof(SoundPlugin)); // for debugging. Crashes faster if something is wrong.
   V_free(plugin);
 }
@@ -902,7 +905,7 @@ static float get_chance(struct SoundPlugin *plugin, int num){
   }
 
 
-void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum PlayerLockRequired player_lock_required, enum ValueFormat value_format){
+void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum PlayerLockRequired player_lock_required, enum ValueFormat value_format, bool sent_from_midi_learn){
   float store_value = value;
   //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
 
@@ -927,8 +930,14 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
 
     if (value_format==PLUGIN_FORMAT_NATIVE)
       store_value = plugin->type->get_effect_value(plugin, effect_num, PLUGIN_FORMAT_SCALED);
+
+    if (PLUGIN_is_recording_automation(plugin, effect_num) && sent_from_midi_learn==false && when==FX_single)
+      MIDI_add_automation_recording_event(plugin, effect_num, store_value);
     
   }else{
+
+    if (PLUGIN_is_recording_automation(plugin, effect_num) && sent_from_midi_learn==false && when==FX_single)
+      MIDI_add_automation_recording_event(plugin, effect_num, value);
 
     int num_effects = plugin->type->num_effects;
     int system_effect = effect_num - num_effects;
@@ -1686,6 +1695,7 @@ void SoundPluginEffectMidiLearn::delete_me(void){
   PLUGIN_remove_midi_learn(plugin, effect_num, true);
 }
 
+// called from player thread
 void SoundPluginEffectMidiLearn::RT_callback(float val) {
   //printf("soundpluginmidilearn %s got %f\n", plugin->patch->name, val);
 
@@ -1696,9 +1706,9 @@ void SoundPluginEffectMidiLearn::RT_callback(float val) {
 
   if(system_effect==EFFNUM_COMP_ATTACK || system_effect==EFFNUM_COMP_RELEASE) {
     val = scale(val, 0, 1, 0, 500);
-    PLUGIN_set_native_effect_value(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    PLUGIN_set_effect_value2(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLAYERLOCK_NOT_REQUIRED, PLUGIN_FORMAT_NATIVE, true);
   } else
-    PLUGIN_set_effect_value(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    PLUGIN_set_effect_value2(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLAYERLOCK_NOT_REQUIRED, PLUGIN_FORMAT_SCALED, true);
   
   volatile struct Patch *patch = plugin->patch;
   if (patch != NULL)
@@ -1745,8 +1755,18 @@ bool PLUGIN_has_midi_learn(SoundPlugin *plugin, int effect_num){
   return false;
 }
 
+bool PLUGIN_is_recording_automation(const SoundPlugin *plugin, const int effect_num){
+  return ATOMIC_GET_ARRAY(plugin->is_recording_automation, effect_num);
+}
 
+void PLUGIN_set_recording_automation(SoundPlugin *plugin, const int effect_num, const bool is_recording){
+  ATOMIC_SET_ARRAY(plugin->is_recording_automation, effect_num, is_recording);
+}
 
+void PLUGIN_set_all_effects_to_not_recording(SoundPlugin *plugin){
+  for(int e = 0 ; e<plugin->type->num_effects+NUM_SYSTEM_EFFECTS ; e++)
+    PLUGIN_set_recording_automation(plugin, e, false);
+}
 
 void PLUGIN_reset(SoundPlugin *plugin){
   const SoundPluginType *type = plugin->type;

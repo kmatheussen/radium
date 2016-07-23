@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#include "../api/api_proc.h"
+
 #include "nsmtracker.h"
 
 #include "../common/list_proc.h"
@@ -35,18 +37,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Ptask2Mtask_proc.h"
 #include "../common/player_proc.h"
 #include "../common/patch_proc.h"
+#include "../common/instruments_proc.h"
 #include "../common/placement_proc.h"
 #include "../common/time_proc.h"
 #include "../common/hashmap_proc.h"
 #include "../common/undo.h"
 #include "../common/undo_notes_proc.h"
+#include "../common/undo_fxs_proc.h"
 #include "../common/settings_proc.h"
-#include "../audio/Mixer_proc.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/Mutex.hpp"
 #include "../common/Queue.hpp"
 #include "../common/Vector.hpp"
+
+#include "../audio/Mixer_proc.h"
+#include "../audio/SoundPlugin.h"
+#include "../audio/SoundPlugin_proc.h"
 
 #include "midi_i_plugin.h"
 #include "midi_i_plugin_proc.h"
@@ -99,6 +106,40 @@ static bool msg_is_note_off(const uint32_t msg){
     return false;
 }
 
+static float get_msg_fx_value(uint32_t msg){
+  int d1 = MIDI_msg_byte1(msg);
+  int d2 = MIDI_msg_byte2(msg);
+  int d3 = MIDI_msg_byte3(msg);
+
+  if (d1 < 0xc0) {
+
+    // cc
+    
+    return d3 / 127.0;
+      
+    
+  } else {
+
+    // pitch bend
+
+      int val = d3<<7 | d2;
+      //printf("     d2: %x, d3: %x, %x\n", d2,d3, d3<<7 | d2);
+      
+      if (val < 0x2000)
+        return scale(val,
+                     0, 0x2000,
+                     0, 0.5
+                     );
+      else
+        return scale(val,
+                     0x2000,   0x3fff,
+                     0.5,      1.0
+                     );
+  }
+}
+
+
+
 /*********************************************************
  *********************************************************
  **          Configuration                              **
@@ -142,8 +183,8 @@ void MIDI_set_record_velocity(bool doit){
 typedef struct _midi_event_t{
   time_position_t timepos;
   uint32_t msg;
-  struct Patch *patch;
-  int fxnum;
+  SoundPlugin *plugin;
+  int effect_num;
 } midi_event_t;
 
 
@@ -172,7 +213,7 @@ static void record_midi_event(const symbol_t *port_name, const uint32_t msg){
           midi_event.timepos = timepos;
           midi_event.msg = msg;
           
-          if (midi_learn->RT_get_automation_recording_data(&midi_event.patch, &midi_event.fxnum)){
+          if (midi_learn->RT_get_automation_recording_data(&midi_event.plugin, &midi_event.effect_num)){
 
             // Send event to the pull thread
             if (!g_midi_event_queue.tryPut(midi_event))
@@ -198,6 +239,46 @@ static void record_midi_event(const symbol_t *port_name, const uint32_t msg){
   }
 }
 
+// A minor hack. The sliders just add pitch wheel midi events to the g_midi_event_queue queue when dragging a recording slider.
+void MIDI_add_automation_recording_event(SoundPlugin *plugin, int effect_num, float value){
+  midi_event_t midi_event;
+
+  if (is_playing()==false)
+    return;
+
+  if (value < 0){
+    printf("   Warning: value < 0: %f\n",value);
+    value = 0;
+  }else if (value > 1.0){
+    printf("   Warning: value > 1: %f\n",value);
+    value = 1;
+  }
+  
+  if (MIXER_fill_in_time_position(&midi_event.timepos) == true){ // <-- MIXER_fill_in_time_position returns false if the event was recorded after song end, or program is initializing, or there was an error.
+    int val;
+
+    if (value < 0.5)
+      val = scale(value, 0, 0.5, 0, 0x2000);
+    else
+      val = scale(value, 0.0, 1.0, 0x2000, 0x3fff);
+
+    // not sure if this is necessary.
+    if (val < 0)
+      val = 0;
+    else if (val > 0x3fff)
+      val = 0x3fff;
+
+    midi_event.msg = (0xe0 << 16) | ((val&127) << 8) | (val >> 7);
+
+    midi_event.plugin = plugin;
+    midi_event.effect_num = effect_num;
+    
+    if (!g_midi_event_queue.tryPut(midi_event))
+      RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, "
+                 "or your MIDI input and output ports are connected recursively, please report this incident.");
+  }
+}
+                                         
 // Runs in its own thread
 static void *recording_queue_pull_thread(void*){
   while(true){
@@ -231,26 +312,26 @@ static void *recording_queue_pull_thread(void*){
 }
 
 
-static bool find_midievent_end_note(int blocknum, int pos, int notenum_to_find, STime starttime_of_note, midi_event_t &midi_event){
+static midi_event_t *find_midievent_end_note(int blocknum, int pos, int notenum_to_find, STime starttime_of_note){
   R_ASSERT(g_midi_event_mutex.is_locked());
   
   for(int i = pos ; i < g_recorded_midi_events.size(); i++) {
 
-    midi_event = g_recorded_midi_events[i];
+    midi_event_t *midi_event = g_recorded_midi_events.ref(i);
     
-    if (midi_event.timepos.blocknum != blocknum)
-      return false;
+    if (midi_event->timepos.blocknum != blocknum)
+      return NULL;
 
-    uint32_t msg     = midi_event.msg;
+    uint32_t msg     = midi_event->msg;
     int      notenum = MIDI_msg_byte2(msg);
     
     if (msg_is_note_off(msg)){
-      if (notenum==notenum_to_find && midi_event.timepos.blocktime > starttime_of_note)
-        return true;
+      if (notenum==notenum_to_find && midi_event->timepos.blocktime > starttime_of_note)
+        return midi_event;
     }
   }
 
-  return false;
+  return NULL;
 }
 
 
@@ -275,11 +356,11 @@ static void add_recorded_note(struct WBlocks *wblock, struct Blocks *block, stru
   Place endplace;
   Place *endplace_p = NULL; // if NULL, the note doesn't stop in this block.
           
-  midi_event_t midi_event_endnote;
-  if (find_midievent_end_note(block->l.num, recorded_midi_events_pos, notenum, time, midi_event_endnote) == true){
-    endplace = STime2Place(block,midi_event_endnote.timepos.blocktime);
+  midi_event_t *midi_event_endnote = find_midievent_end_note(block->l.num, recorded_midi_events_pos+1, notenum, time);
+  if (midi_event_endnote != NULL) {
+    endplace = STime2Place(block,midi_event_endnote->timepos.blocktime);
     endplace_p = &endplace;
-    midi_event_endnote.msg = 0; // don't use this event again later.
+    midi_event_endnote->msg = 0; // don't use this event again later.
   }
   
   InsertNote(wblock,
@@ -293,46 +374,92 @@ static void add_recorded_note(struct WBlocks *wblock, struct Blocks *block, stru
 }
 
 
-static void add_recorded_fx(struct WBlocks *wblock, struct Blocks *block, struct WTracks *wtrack, const int recorded_midi_events_pos, const STime time, const uint32_t msg){
+static void add_recorded_fx(struct Tracker_Windows *window, struct WBlocks *wblock, struct Blocks *block, struct WTracks *wtrack, const int recorded_midi_events_pos, const midi_event_t &first_event){
 
-  int i = recorded_midi_events_pos;
-  printf("Add recorded fx %s / %d. %x\n",g_recorded_midi_events[i].patch->name, g_recorded_midi_events[i].fxnum, msg);
-         
-  /*
+  printf("Add recorded fx %s / %d. %x\n",first_event.plugin->patch->name, first_event.effect_num, first_event.msg);
+
+  int blocknum = wblock->l.num;
+  int tracknum = wtrack->l.num;
+
   struct Tracks *track = wtrack->track;
-  struct Patch *patch = track->patch;
-  
-  if (track->patch==NULL)
+  const struct Patch *track_patch = track->patch;
+
+  SoundPlugin *plugin = first_event.plugin;
+  const int effect_num = first_event.effect_num;
+  struct Patch *patch = (struct Patch*)plugin->patch;
+
+  if (patch==NULL)
     return;
 
-  int      cc0_a   = MIDI_msg_byte1_remove_channel(msg);
-  int      data1_a = MIDI_msg_byte2(msg);
-
-  int fxnum = 1;
-
-  Place place = STime2Place(block,time);
-  float value = scale(MIDI_msg_byte3(msg), 0, 127, 0, 1);
-
-  for(int i = recorded_midi_events_pos ; i < g_recorded_midi_events.size(); i++) {
-    midi_event_t midi_event = g_recorded_midi_events[i];
-    if (midi_event.timepos.blocknum != wblock->l.num)
-      break;
-    if (midi_event.timepos.tracknum != wtrack->l.num)
-      continue;
-
-    int      cc0   = MIDI_msg_byte1_remove_channel(midi_event.msg);
-    int      data1 = MIDI_msg_byte2(midi_event.msg);
-
-    if (cc0_a != cc0 || data1_a!= data1)
-      continue;
-
-    
+  if (track_patch==NULL) {
+    setInstrumentForTrack(patch->id, tracknum, blocknum, -1);
+    track_patch = patch;
   }
   
-  //Place place = STime2Place(block,time);
-  //int notenum = MIDI_msg_byte2(msg);
-  //int volume  = MIDI_msg_byte3(msg);
-  */  
+  if (track_patch->instrument != get_audio_instrument())
+    return;
+
+  Place place = STime2Place(block,first_event.timepos.blocktime);
+  float value = get_msg_fx_value(first_event.msg);
+  const char *effect_name = PLUGIN_get_effect_name(plugin, effect_num);
+
+  bool next_node_must_be_set = false;
+  
+  int fxnum = getFx(effect_name, tracknum, patch->id, blocknum, -1);
+  if (fxnum==-1)
+    return;
+
+  ADD_UNDO(FXs(window, block, track, wblock->curr_realline));
+
+  Undo_start_ignoring_undo_operations();
+  
+  if (fxnum==-2){
+    fxnum = createFx(value, place, effect_name, tracknum, patch->id, blocknum, -1);
+    setFxnodeLogtype(LOGTYPE_HOLD, 0, fxnum, tracknum, blocknum, -1);
+    next_node_must_be_set = true;
+  }else{
+    int nodenum = createFxnode(value, place, fxnum, tracknum, blocknum, -1);
+    setFxnodeLogtype(LOGTYPE_HOLD, nodenum, fxnum, tracknum, blocknum, -1);
+  }
+  
+  for(int i = recorded_midi_events_pos+1 ; i < g_recorded_midi_events.size(); i++) {
+    
+    midi_event_t *midi_event = g_recorded_midi_events.ref(i);
+
+    if (midi_event->timepos.blocknum != blocknum)
+      break;
+    
+    if (midi_event->timepos.tracknum != tracknum)
+      continue;
+
+    if (!msg_is_fx(midi_event->msg))
+      continue;
+    
+    if (midi_event->plugin != plugin)
+      continue;
+
+    if (midi_event->effect_num != effect_num)
+      continue;
+
+    Place place = STime2Place(block,midi_event->timepos.blocktime);
+    float value = get_msg_fx_value(midi_event->msg);
+
+    int nodenum;
+
+    if (next_node_must_be_set){
+      nodenum = 1;
+      setFxnode(nodenum, value, place, fxnum, tracknum, blocknum, -1);
+      next_node_must_be_set = false;
+    } else {
+      nodenum = createFxnode(value, place, fxnum, tracknum, blocknum, -1);
+    }
+    
+    setFxnodeLogtype(LOGTYPE_HOLD, nodenum, fxnum, tracknum, blocknum, -1);
+          
+    midi_event->msg = 0; // don't use again later.
+  }
+
+  Undo_stop_ignoring_undo_operations();
 }
 
 // Called from the main thread after the player has stopped
@@ -346,7 +473,7 @@ void MIDI_insert_recorded_midi_events(void){
     radium::ScopedMutex lock(&g_midi_event_mutex);
     printf("MIDI_insert_recorded_midi_events called %d\n", g_recorded_midi_events.size());
     if (g_recorded_midi_events.size() == 0)
-      return;
+      goto exit;
   }
 
   
@@ -356,6 +483,8 @@ void MIDI_insert_recorded_midi_events(void){
   {
     radium::ScopedMutex lock(&g_midi_event_mutex);
     radium::ScopedUndo scoped_undo;
+
+    struct Tracker_Windows *window = root->song->tracker_windows;
     
     hash_t *track_set = HASH_create(8);
 
@@ -369,7 +498,7 @@ void MIDI_insert_recorded_midi_events(void){
 
         // Find block and track
         //
-        struct WBlocks *wblock = (struct WBlocks*)ListFindElement1(&root->song->tracker_windows->wblocks->l, midi_event.timepos.blocknum);
+        struct WBlocks *wblock = (struct WBlocks*)ListFindElement1(&window->wblocks->l, midi_event.timepos.blocknum);
         R_ASSERT_RETURN_IF_FALSE(wblock!=NULL);
 
         struct WTracks *wtrack;
@@ -396,7 +525,7 @@ void MIDI_insert_recorded_midi_events(void){
         char *key = (char*)talloc_format("%x",track);
         if (HASH_has_key(track_set, key)==false){
 
-          ADD_UNDO(Notes(root->song->tracker_windows,
+          ADD_UNDO(Notes(window,
                          block,
                          track,
                          wblock->curr_realline
@@ -419,7 +548,7 @@ void MIDI_insert_recorded_midi_events(void){
           add_recorded_note(wblock, block, wtrack, i, time, msg);
 
         else if (msg_is_fx(msg))
-          add_recorded_fx(wblock, block, wtrack, i, time, msg);
+          add_recorded_fx(window, wblock, block, wtrack, i, midi_event);
       }
       
     }
@@ -428,6 +557,8 @@ void MIDI_insert_recorded_midi_events(void){
 
   } // end mutex and undo scope
 
+ exit:
+  MIXER_set_all_plugins_to_not_recording();
 }
 
 
@@ -547,35 +678,9 @@ bool MidiLearn::RT_maybe_use(const symbol_t *port_name, uint32_t msg){
   if (RT_matching(port_name, msg)==false)
     return false;
 
-  int d1 = MIDI_msg_byte1(msg);
-  int d2 = MIDI_msg_byte2(msg);
-  int d3 = MIDI_msg_byte3(msg);
+  float value = get_msg_fx_value(msg);
 
-  if (d1 < 0xc0) {
-
-    // cc
-    
-    RT_callback(d3 / 127.0);
-      
-    
-  } else {
-
-    // pitch bend
-
-      int val = d3<<7 | d2;
-      //printf("     d2: %x, d3: %x, %x\n", d2,d3, d3<<7 | d2);
-      
-      if (val < 0x2000)
-        RT_callback(scale(val,
-                          0, 0x2000,
-                          0, 0.5)
-                    );
-      else
-        RT_callback(scale(val,
-                          0x2000,   0x3fff,
-                          0.5,      1.0)
-                    );  
-  }
+  RT_callback(value);
   
   return true;
 }

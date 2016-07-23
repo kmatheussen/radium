@@ -99,6 +99,7 @@ static const ColorConfig g_colorconfig[] = {
   {SLIDER2_COLOR_NUM,           "slider2",            "Slider 2"},
   {SLIDER_DISABLED_COLOR_NUM,   "slider_disabled",    "Slider disabled"},
   {SLIDER_TEXT_COLOR_NUM,       "slider_text",        "Slider Text"},
+  {SLIDER_RECORDING_COLOR_NUM,  "slider_recording",   "Slider recording"},
    
   {PEAKS_COLOR_NUM,             "peaks",                    "Peaks < 0dB"},
   {PEAKS_0DB_COLOR_NUM,         "peaks0db",                 "Peaks 0dB - 4dB"},
@@ -204,6 +205,7 @@ static ReplacementColorNum g_replacement_color_num[] = {
 static ReplacementColor g_replacement_color[] = {
   {SLIDER1_COLOR_NUM, QColor(108,65,36)},
   {SLIDER_TEXT_COLOR_NUM, QColor(0,0,0)},
+  {SLIDER_RECORDING_COLOR_NUM, QColor(197,0,3)},
   {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor(1,1,1)},
   {PLAY_CURSOR_COLOR_NUM, QColor(255, 0, 0)},
   {BUTTONS_ON_OFF_COLOR_NUM, QColor(40, 40, 40)},

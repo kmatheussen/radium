@@ -345,27 +345,8 @@ public:
       plugin_widget = _faust_plugin_widget->_plugin_widget;
 #endif
     
-    if (plugin_widget != NULL){
-
-      bool has_been_visible = false;
-      
-      for(ParamWidget *paramWidget : plugin_widget->_param_widgets){
-        MyQSlider *slider = paramWidget->_slider;
-        if (slider != NULL){
-          bool is_visible = slider->isVisible();
-          if (is_visible==true)
-            has_been_visible = true;
-          
-          if (is_visible==false && has_been_visible==true) // Optimize a bit. some vst plugins have thousands of parameters.
-            break;
-
-          if (is_visible) {
-            //printf(" drawing effect %d\n", paramWidget->_effect_num);
-            SLIDERPAINTER_call_regularly(slider->_painter);
-          }
-        }
-      }
-    }
+    if (plugin_widget != NULL)
+      plugin_widget->calledRegularlyByParent();
     
     if (_pd_plugin_widget != NULL){
       

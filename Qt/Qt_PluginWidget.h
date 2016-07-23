@@ -179,6 +179,12 @@ class ParamWidget : public QWidget {
     printf("           Deleting ParamWidget %d\n",_effect_num);
   }
 
+  void calledRegularlyByParent(void){        
+    //printf(" drawing effect %d\n", paramWidget->_effect_num);
+    if (_slider != NULL)
+      _slider->calledRegularlyByParent();
+  }
+  
   // TODO: Optimize with binary search.
   //
   void adjustFontSize(void){
@@ -351,7 +357,26 @@ struct PluginWidget : public QWidget{
       }
     }
   }
-  
+
+  void calledRegularlyByParent(void){
+    bool has_been_visible = false;
+    
+    for(ParamWidget *paramWidget : _param_widgets){
+      MyQSlider *slider = paramWidget->_slider;
+      if (slider != NULL){
+        bool is_visible = slider->isVisible();
+        if (is_visible==true)
+          has_been_visible = true;
+        
+        if (is_visible==false && has_been_visible==true) // Optimize a bit. some vst plugins have thousands of parameters.
+          break;
+        
+        if (is_visible)
+          paramWidget->calledRegularlyByParent();
+      }
+    }
+  }
+      
   void prepare_for_deletion(void){
     for (auto *param_widget : _param_widgets)
       param_widget->prepare_for_deletion();

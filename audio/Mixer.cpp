@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "SoundProducer_proc.h"
 #include "SoundPluginRegistry_proc.h"
+#include "SoundPlugin_proc.h"
 #include "MultiCore_proc.h"
 #include "CpuUsage.hpp"
 
@@ -1135,3 +1136,9 @@ void MIXER_called_regularly_by_main_thread(void){
     for (SoundProducer *sp : g_mixer->_sound_producers)
       SP_called_regularly_by_main_thread(sp);
 }
+
+void MIXER_set_all_plugins_to_not_recording(void){
+  for (SoundProducer *sp : g_mixer->_sound_producers)
+    PLUGIN_set_all_effects_to_not_recording(SP_get_plugin(sp));
+}
+

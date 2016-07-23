@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef _RADIUM_MIDI_MIDI_I_INPUT_PROC_H
 #define _RADIUM_MIDI_MIDI_I_INPUT_PROC_H
 
+extern LANGSPEC void MIDI_add_automation_recording_event(SoundPlugin *plugin, int effect_num, float value);
 
 extern LANGSPEC void MIDI_insert_recorded_midi_events(void);
 
@@ -45,6 +46,8 @@ extern LANGSPEC void MIDI_remove_midi_learn(struct MidiLearn *midi_learn, bool s
 #include <QString>
 
 #include "midi_proc.h"
+
+struct SoundPlugin;
 
 struct MidiLearn{
 
@@ -80,8 +83,8 @@ public:
   bool RT_matching(const symbol_t *port_name, uint32_t msg);
   bool RT_maybe_use(const symbol_t *port_name, uint32_t msg);
 
-  virtual bool RT_get_automation_recording_data(struct Patch **patch, int *fxnum){
-    printf("MidiLearn::RT_get_patch_and_fxnum. Error: This method is supposed to be overridden.\n");
+  virtual bool RT_get_automation_recording_data(struct SoundPlugin **plugin, int *effect_num){
+    printf("MidiLearn::RT_get_automation_recording_data. Error: This method is supposed to be overridden.\n");
     return false;
   }
 

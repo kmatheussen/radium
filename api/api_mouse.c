@@ -2685,6 +2685,62 @@ void addFXMousePos(int windownum){
   AddFXNodeLineCurrMousePos(window);
 }
 
+static int get_effect_num(struct Patch *patch, const char *fx_name){
+  int effect_num = 0;
+  VECTOR_FOR_EACH(const char *name,patch->instrument->getFxNames(patch)){
+    if (!strcmp(name, fx_name))
+      return effect_num;
+    else
+      effect_num++;
+  }END_VECTOR_FOR_EACH;
+
+  return -1;
+}
+
+int getFx(const char* fx_name, int tracknum, int instrument_id, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return -1;
+
+  struct Tracks *track = wtrack->track;
+
+  struct Patch *patch = track->patch;
+
+  if(patch==NULL){
+    GFX_Message(NULL, "Track %d has no assigned instrument",tracknum);
+    return -1;
+  }
+
+  if (instrument_id >= 0){
+    if (track->patch->instrument != get_audio_instrument()){
+      RError("track->patch->instrument != get_audio_instrument()");
+    } else {
+      patch = getPatchFromNum(instrument_id);
+    }
+  }
+  
+  if (patch==NULL)
+    return -1;
+
+  int effect_num = get_effect_num(patch, fx_name);
+  if (effect_num==-1){
+    GFX_Message(NULL, "No effect \"%s\" for the instrument %s.", fx_name, patch->name);
+    return -1;
+  }
+
+  int num = 0;
+
+  VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
+    if (fxs->fx->effect_num == effect_num && fxs->fx->patch==patch)
+      return num;    
+    num++;
+  }END_VECTOR_FOR_EACH;
+
+  return -2;
+}
+
 int createFx(float value, Place place, const char* fx_name, int tracknum, int instrument_id, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -2724,19 +2780,13 @@ int createFx(float value, Place place, const char* fx_name, int tracknum, int in
   
   if (patch==NULL)
     return -1;
-  
-  int effect_num = 0;
-  VECTOR_FOR_EACH(const char *name,patch->instrument->getFxNames(patch)){
-    if (!strcmp(name, fx_name))
-      goto gotit;
-    else
-      effect_num++;
-  }END_VECTOR_FOR_EACH;
 
-  GFX_Message(NULL, "No effect \"%s\" for the instrument %s.", fx_name, patch->name);
-  return -1;
+  int effect_num = get_effect_num(patch, fx_name);
+  if (effect_num==-1){
+    GFX_Message(NULL, "No effect \"%s\" for the instrument %s.", fx_name, patch->name);
+    return -1;
+  }
 
- gotit:
   {
     struct FX *fx = patch->instrument->createFX(track, patch, effect_num);
 

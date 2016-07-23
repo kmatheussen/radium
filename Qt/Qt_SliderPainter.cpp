@@ -150,6 +150,7 @@ struct SliderPainter{
   enum ColorNums _peak_color;
 
   bool _alternative_color;
+  bool _recording_color;
   
   int _value;
 
@@ -240,6 +241,7 @@ struct SliderPainter{
     _automation_color = AUTOMATION1_COLOR_NUM;
     _peak_color = PEAKS_COLOR_NUM;
     _alternative_color = false;
+    _recording_color = false;
     _auto_updater_has_started = false;
     _automation_value = 0.0f;
   }
@@ -371,13 +373,19 @@ struct SliderPainter{
     QColor *colors = g_colors;
 #endif
 
+    if (_recording_color){
+      QColor c = get_qcolor(SLIDER_RECORDING_COLOR_NUM);
+      p->fillRect(0,0,width(),height(),c);
+    }
+
     cvs::MyPainter mp(p);
 
     SLIDERPAINTERPAINTER_paint(&mp,0,0,width(),height(),
                                isEnabled(), 
                                scale(value(),minimum(),maximum(),0.0f,1.0f),
                                _display_string.toStdString(),
-                               _alternative_color);
+                               _alternative_color
+                               );
 
     for(int i=0;i<(int)_data.size();i++){
       AutomationOrPeakData *data = _data.at(i);
@@ -469,8 +477,12 @@ void SLIDERPAINTER_call_regularly(SliderPainter *painter){
 }
 
 // Used for chips where the slider controls input volume instead of output volume.
-void SLIDERPAINTER_set_alternative_color(SliderPainter *painter){
-  painter->_alternative_color = true;
+void SLIDERPAINTER_set_alternative_color(SliderPainter *painter, bool setit){
+  painter->_alternative_color = setit;
+}
+
+void SLIDERPAINTER_set_recording_color(SliderPainter *painter, bool setit){
+  painter->_recording_color = setit;
 }
 
 void SLIDERPAINTER_set_string(SliderPainter *painter,QString string){  

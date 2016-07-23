@@ -64,6 +64,7 @@ struct MyQSlider : public QSlider {
  public:
   struct Patch *_patch;
   int _effect_num;
+  bool _is_recording;
   
   SliderPainter *_painter;
 
@@ -76,7 +77,8 @@ struct MyQSlider : public QSlider {
 
     _patch = NULL;
     _effect_num = 0;
-
+    _is_recording = false;
+    
     _is_a_pd_slider = false;
 
     if(g_minimum_height==0){
@@ -111,6 +113,21 @@ struct MyQSlider : public QSlider {
     _patch = NULL;
   }
 
+  void calledRegularlyByParent(void){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
+    if (plugin != NULL) {
+        bool is_recording_now = PLUGIN_is_recording_automation(plugin, _effect_num);
+        if (is_recording_now != _is_recording){
+          SLIDERPAINTER_set_recording_color(_painter, is_recording_now);
+          update();
+          _is_recording = is_recording_now;
+        }
+    }
+
+    SLIDERPAINTER_call_regularly(_painter);
+  }
+  
   void hideEvent ( QHideEvent * event ) {
     SLIDERPAINTER_became_invisible(_painter);
   }
@@ -210,6 +227,14 @@ struct MyQSlider : public QSlider {
       vector_t options = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
       bool has_midi_learn = PLUGIN_has_midi_learn(plugin, _effect_num);
+      bool is_recording_automation = PLUGIN_is_recording_automation(plugin, _effect_num);
+
+      int pd_delete=-10;
+      int reset=-10;
+      int remove_midi_learn=-10;
+      int midi_relearn=-10;
+      int midi_learn=-10;
+      int record=-10;
       
       if(_is_a_pd_slider){
         /*
@@ -218,21 +243,23 @@ struct MyQSlider : public QSlider {
         VECTOR_push_back(&options, "Set Minimum Value");
         VECTOR_push_back(&options, "Set Maximum Value");
         */
-        VECTOR_push_back(&options, "Delete");
+        pd_delete = VECTOR_push_back(&options, "Delete");
       } else {
 
-        VECTOR_push_back(&options, "Reset");
+        reset=VECTOR_push_back(&options, "Reset");
 
         //VECTOR_push_back(&options, "Set Value");
       }
 
       if (has_midi_learn){
-        VECTOR_push_back(&options, "Remove MIDI Learn");
-        VECTOR_push_back(&options, "MIDI Relearn");
+        remove_midi_learn = VECTOR_push_back(&options, "Remove MIDI Learn");
+        midi_relearn = VECTOR_push_back(&options, "MIDI Relearn");
       }else{
-        VECTOR_push_back(&options, "MIDI Learn");
+        midi_learn = VECTOR_push_back(&options, "MIDI Learn");
       }
-        
+
+      if (!is_recording_automation)
+        record = VECTOR_push_back(&options, "Record");
 
       //VECTOR_push_back(&options, "");
       
@@ -242,28 +269,28 @@ struct MyQSlider : public QSlider {
 
       //printf("command: %d, _patch: %p, is_audio: %d\n",command, _patch, _patch!=NULL && _patch->instrument==get_audio_instrument());
 
-      if(command==0){
-        if(_is_a_pd_slider) {
-          //printf("Calling delete controller for %p / %d\n",plugin,_effect_num);
-          PD_delete_controller(plugin, _effect_num);
-        } else {
-          PLUGIN_reset_one_effect(plugin,_effect_num);
-          GFX_update_instrument_widget(_patch);
+      if (command==pd_delete)
+        PD_delete_controller(plugin, _effect_num);
+
+      else if (command==reset)
+        PLUGIN_add_midi_learn(plugin, _effect_num);
+
+      else if (command==remove_midi_learn)
+        PLUGIN_remove_midi_learn(plugin, _effect_num, true);
+
+      else if (command==midi_relearn)
+        {
+          PLUGIN_remove_midi_learn(plugin, _effect_num, true);
+          PLUGIN_add_midi_learn(plugin, _effect_num);
         }
-      }
-      else if(command==1 && has_midi_learn==false){
+
+      else if (command==midi_learn)
         PLUGIN_add_midi_learn(plugin, _effect_num);
-        GFX_update_instrument_widget(_patch);
-      }
-      else if(command==1){
-        PLUGIN_remove_midi_learn(plugin, _effect_num, true);
-        GFX_update_instrument_widget(_patch);
-      }
-      else if(command==2){
-        PLUGIN_remove_midi_learn(plugin, _effect_num, true);
-        PLUGIN_add_midi_learn(plugin, _effect_num);
-        GFX_update_instrument_widget(_patch);
-      }
+
+      else if (command==record)
+        PLUGIN_set_recording_automation(plugin, _effect_num, true);
+      
+      GFX_update_instrument_widget(_patch);
         
 #if 0
       else if(command==1){

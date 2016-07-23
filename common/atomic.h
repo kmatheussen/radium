@@ -6,17 +6,20 @@
 #include <stdint.h>
 
 
+#define ATOMIC_NAME(name) \
+  name##_atomic
+
 #define DEFINE_ATOMIC(type, name) \
-  type name##_atomic
+  type ATOMIC_NAME(name)
 
 #define ATOMIC_SET(name, val) \
-  __atomic_store_n (&(name##_atomic), (val), __ATOMIC_SEQ_CST)
+  __atomic_store_n (&(ATOMIC_NAME(name)), (val), __ATOMIC_SEQ_CST)
                    
 #define ATOMIC_SET_RELAXED(name, val) \
-  __atomic_store_n (&(name##_atomic), (val), __ATOMIC_RELAXED)
+  __atomic_store_n (&(ATOMIC_NAME(name)), (val), __ATOMIC_RELAXED)
                    
 #define ATOMIC_GET(name) \
-  __atomic_load_n (&(name##_atomic), __ATOMIC_SEQ_CST)
+  __atomic_load_n (&(ATOMIC_NAME(name)), __ATOMIC_SEQ_CST)
 
 /*
 #define ATOMIC_GET2(name) \
@@ -24,14 +27,14 @@
 */
 
 #define ATOMIC_GET_ARRAY(name,pos)                         \
-  __atomic_load_n (&(name##_atomic[pos]), __ATOMIC_SEQ_CST)
+  __atomic_load_n (&(ATOMIC_NAME(name)[pos]), __ATOMIC_SEQ_CST)
 
 #define ATOMIC_GET_RELAXED(name) \
-  __atomic_load_n (&(name##_atomic), __ATOMIC_RELAXED)
+  __atomic_load_n (&(ATOMIC_NAME(name)), __ATOMIC_RELAXED)
 
 
 #define ATOMIC_SET_ARRAY(name, pos, val)                            \
-  __atomic_store_n (&(name##_atomic[pos]), (val), __ATOMIC_SEQ_CST)
+  __atomic_store_n (&(ATOMIC_NAME(name)[pos]), (val), __ATOMIC_SEQ_CST)
 
 
 /*
@@ -80,8 +83,6 @@ static inline bool atomic_compare_and_set_int(int *variable, int old_value, int 
 static inline bool atomic_compare_and_set_uint32(uint32_t *variable, uint32_t old_value, uint32_t new_value){
   return __atomic_compare_exchange_n (variable, &old_value, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
-
-#define ATOMIC_NAME(name) (name##_atomic)
 
 #define ATOMIC_COMPARE_AND_SET_BOOL(name, old_value, new_value) \
   atomic_compare_and_set_bool(&ATOMIC_NAME(name), old_value, new_value)

@@ -51,9 +51,9 @@ extern LANGSPEC int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char
 extern LANGSPEC const char *PLUGIN_get_effect_name(struct SoundPlugin *plugin, int effect_num);
 extern LANGSPEC const char *PLUGIN_get_effect_description(const struct SoundPluginType *plugin_type, int effect_num);
 extern LANGSPEC void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
-extern LANGSPEC void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum PlayerLockRequired, enum ValueFormat value_format);
-#define PLUGIN_set_effect_value(a,b,c,d,e,f,g) PLUGIN_set_effect_value2(a,b,c,d,e,f,g,PLAYERLOCK_MAYBE_REQUIRED, PLUGIN_FORMAT_SCALED)
-#define PLUGIN_set_native_effect_value(a,b,c,d,e,f,g) PLUGIN_set_effect_value2(a,b,c,d,e,f,g,PLAYERLOCK_MAYBE_REQUIRED, PLUGIN_FORMAT_NATIVE)
+extern LANGSPEC void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum PlayerLockRequired, enum ValueFormat value_format, bool sent_from_midi_learn);
+#define PLUGIN_set_effect_value(a,b,c,d,e,f,g) PLUGIN_set_effect_value2(a,b,c,d,e,f,g,PLAYERLOCK_MAYBE_REQUIRED, PLUGIN_FORMAT_SCALED, false)
+#define PLUGIN_set_native_effect_value(a,b,c,d,e,f,g) PLUGIN_set_effect_value2(a,b,c,d,e,f,g,PLAYERLOCK_MAYBE_REQUIRED, PLUGIN_FORMAT_NATIVE, false)
 extern LANGSPEC float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum WhereToGetValue where);
 
 extern LANGSPEC hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin);
@@ -67,6 +67,10 @@ extern LANGSPEC char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type
 extern LANGSPEC void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num);
 extern LANGSPEC bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_error_if_not_here);
 extern LANGSPEC bool PLUGIN_has_midi_learn(SoundPlugin *plugin, int _effect_num);
+
+extern LANGSPEC bool PLUGIN_is_recording_automation(const SoundPlugin *plugin, const int effect_num);
+extern LANGSPEC void PLUGIN_set_recording_automation(SoundPlugin *plugin, int effect_num, bool is_recording);
+extern LANGSPEC void PLUGIN_set_all_effects_to_not_recording(SoundPlugin *plugin);
 
 extern LANGSPEC void PLUGIN_reset(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num);

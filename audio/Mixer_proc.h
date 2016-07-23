@@ -49,3 +49,5 @@ extern LANGSPEC struct SoundPlugin *MIXER_get_soundplugin(const char *type_name,
 extern LANGSPEC bool MIXER_someone_has_solo(void);
 
 extern LANGSPEC void MIXER_called_regularly_by_main_thread(void);
+
+extern LANGSPEC void MIXER_set_all_plugins_to_not_recording(void);

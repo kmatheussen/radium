@@ -76,6 +76,14 @@ public:
     return elements[i];
   }
 
+  T* ref(int i) const {
+    LOCKASSERTER_SHARED(&lockAsserter);
+
+    R_ASSERT(i>=0);
+    R_ASSERT(i<num_elements);
+    
+    return &elements[i];
+  }
 
   // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
   const T* begin() const {

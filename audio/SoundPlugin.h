@@ -389,6 +389,8 @@ typedef struct SoundPlugin{
 #else
   void *midi_learns;
 #endif
+
+  DEFINE_ATOMIC(bool *, is_recording_automation);
   
   DEFINE_ATOMIC(bool, is_visible);
   DEFINE_ATOMIC(void *, cpu_usage);

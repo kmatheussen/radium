@@ -366,6 +366,8 @@ public:
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + system_effect;
 
+    SLIDERPAINTER_set_recording_color(slider->_painter, PLUGIN_is_recording_automation(plugin, effect_num));
+    
     QString p = PLUGIN_has_midi_learn(plugin, effect_num) ? "*" : "";
           
     char buf[64]={0};
@@ -534,7 +536,7 @@ public:
     for(int system_effect=0 ; system_effect<NUM_SYSTEM_EFFECTS ; system_effect++){
       MyQSlider *slider = get_system_slider(system_effect);
       if (slider != NULL) // effect can be a checkbox.
-        SLIDERPAINTER_call_regularly(slider->_painter);
+        slider->calledRegularlyByParent();
     }
 
   }

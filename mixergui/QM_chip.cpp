@@ -939,7 +939,7 @@ void Chip::init_new_plugin(void){
     int x1,x2,y1,y2;
     get_slider1_coordinates(x1,x2,y1,y2);
     _input_slider = SLIDERPAINTER_create(this,x1,x2,y1,y2);
-    SLIDERPAINTER_set_alternative_color(_input_slider);
+    SLIDERPAINTER_set_alternative_color(_input_slider, true);
     SLIDERPAINTER_set_num_channels(_input_slider, _num_inputs);
   }
   
