@@ -997,7 +997,12 @@ static bool fill_in_time_position2(time_position_t *time_position){
     accurate_block_time -= getBlockSTimeLength(block);
   }
 
+#if defined(RELEASE)
   R_ASSERT_RETURN_IF_FALSE2(accurate_block_time >= 0, false);
+#else
+  if (accurate_block_time < 0) // Something went wrong, but there's probably not much to learn in a crash report.
+    return false;
+#endif
   
   time_position->blocknum = block->l.num;
   time_position->blocktime = accurate_block_time;

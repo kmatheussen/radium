@@ -196,12 +196,20 @@ static radium::Queue<midi_event_t, 8000> g_midi_event_queue; // 8000 is not the 
   
 // Called from a MIDI input thread. Only called if playing
 static void record_midi_event(const symbol_t *port_name, const uint32_t msg){
+
+  bool is_fx = msg_is_fx(msg);
+  bool is_note = msg_is_note(msg);
+
+#if defined(RELEASE)
+  if (!is_fx && !is_note)
+    return;
+#endif
   
   time_position_t timepos;
   
   if (MIXER_fill_in_time_position(&timepos) == true){ // <-- MIXER_fill_in_time_position returns false if the event was recorded after song end, or program is initializing, or there was an error.
 
-    if (msg_is_fx(msg)){
+    if (is_fx){
       
       radium::ScopedMutex lock(&g_midi_learns_mutex); // <- Fix. Timing can be slightly inaccurate if adding/removing midi learn while recording, since MIDI_add/remove_midi_learn obtains the player lock while holding the g_midi_learns_mutex.
     
@@ -224,7 +232,7 @@ static void record_midi_event(const symbol_t *port_name, const uint32_t msg){
         }
       }
       
-    } else if (msg_is_note(msg)){
+    } else if (is_note){
       
       midi_event_t midi_event;
       midi_event.timepos = timepos;
