@@ -988,16 +988,16 @@ static bool fill_in_time_position2(time_position_t *time_position){
   STime accurate_block_time = accurate_radium_time - seqtime;
 
   while (accurate_block_time >= getBlockSTimeLength(block)){
+    accurate_block_time -= getBlockSTimeLength(block);
     if(pc->playtype==PLAYSONG) {
       playlistpos_numfromcurrent++;
       block = BL_GetBlockFromPos(playlistpos + playlistpos_numfromcurrent);
       if (block==NULL)
         return false; // end of song
     }
-    accurate_block_time -= getBlockSTimeLength(block);
   }
 
-#if defined(RELEASE)
+#if !defined(RELEASE)
   R_ASSERT_RETURN_IF_FALSE2(accurate_block_time >= 0, false);
 #else
   if (accurate_block_time < 0) // Something went wrong, but there's probably not much to learn in a crash report.
