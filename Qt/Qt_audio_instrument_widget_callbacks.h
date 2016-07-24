@@ -104,7 +104,7 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
     _patch_widget = new Patch_widget(this,patch);
-    voiceBox_layout->insertWidget(0,_patch_widget);
+    voiceBox_layout->insertWidget(0,_patch_widget, 1);
     //if(false && plugin->type->play_note==NULL)
     //  _patch_widget->voices_widget->setDisabled(true);
 
