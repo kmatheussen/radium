@@ -103,6 +103,7 @@ private:
       return total_num_frames_produced;
 
     R_ASSERT_NON_RELEASE(m_num_in_frames_left >= 0);
+    //printf("m_num_in_frames_left: %d, actual_ratio: %f\n",m_num_in_frames_left,actual_ratio);
     
     if (m_num_in_frames_left <= 0)
       m_num_in_frames_left = m_callback(m_callback_arg, &m_in);

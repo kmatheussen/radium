@@ -419,7 +419,19 @@ static long RT_src_callback_nolooping(Voice *voice, const Sample *sample, Data *
     return 0;
 
   voice->pos=sample->num_frames; // next
-  return sample->num_frames - start_pos;
+
+  long ret = sample->num_frames - start_pos;
+
+  if (ret < 0){
+#if defined(RELEASE)
+    ret = 0;
+#else
+    fprintf(stderr, "num_frames: %d, start_pos: %d\n",sample->num_frames, start_pos);
+    abort();
+#endif
+  }
+
+  return ret;
 }
 
 static long RT_src_callback_reverse(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data, bool do_looping){
@@ -474,26 +486,35 @@ static long RT_src_callback(void *cb_data, float **out_data){
   int start_pos        = voice->pos;
   Data  *data          = sample->data;
 
+  bool pingpong = ATOMIC_GET(sample->data->p.pingpong);
   bool reverse = ATOMIC_GET(sample->data->p.reverse);
   bool loop = ATOMIC_GET(sample->data->p.loop_onoff);
   
-  if (ATOMIC_GET(sample->data->p.pingpong))
+  if (pingpong) {
+    
     return RT_src_callback_ping_pong_looping(voice, sample, data, start_pos, out_data); // ping pong looping
-  
-  else if (reverse && loop)
-    return RT_src_callback_reverse(voice, sample, data, start_pos, out_data, true); //loop reverse
-  
-  else if (reverse && !loop)
-    return RT_src_callback_reverse(voice, sample, data, start_pos, out_data, false); //only reverse, no looping
-  
-  else if(!loop || sample->loop_end <= sample->loop_start)
-    return RT_src_callback_nolooping(voice, sample, data, start_pos, out_data);
 
-  else if(data->p.crossfade_length > 0)
-    return RT_src_callback_with_crossfade_looping(voice, sample, data, start_pos, out_data);
+  } else {
 
-  else
-    return RT_src_callback_with_normal_looping(voice, sample, data, start_pos, out_data);
+    if (start_pos >= sample->num_frames) // Happens when switching from ping-pong to non-ping-pong while playing.
+      start_pos = sample->num_frames - (start_pos - sample->num_frames); // Keep same sample position.
+    
+    if (reverse && loop)
+      return RT_src_callback_reverse(voice, sample, data, start_pos, out_data, true); //loop reverse
+    
+    else if (reverse && !loop)
+      return RT_src_callback_reverse(voice, sample, data, start_pos, out_data, false); //only reverse, no looping
+    
+    else if(!loop || sample->loop_end <= sample->loop_start)
+      return RT_src_callback_nolooping(voice, sample, data, start_pos, out_data);
+    
+    else if(data->p.crossfade_length > 0)
+      return RT_src_callback_with_crossfade_looping(voice, sample, data, start_pos, out_data);
+    
+    else
+      return RT_src_callback_with_normal_looping(voice, sample, data, start_pos, out_data);
+
+  }
 }
 
 
