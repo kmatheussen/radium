@@ -149,7 +149,8 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
           
         }
 
-        Play_set_curr_playing_realline(realline, peq->wblock->l.num);        
+        // Do this from the opengl thread instead. It's not always working here when the number of realline changes while playing.
+        //Play_set_curr_playing_realline(realline, peq->wblock->l.num);        
         
 	if(doit){
 		Ptask2Mtask();

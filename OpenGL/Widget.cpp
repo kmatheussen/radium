@@ -53,6 +53,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Player_proc.h"
 #include "../common/Semaphores.hpp"
 #include "../common/Mutex.hpp"
+#include "../common/player_proc.h"
 
 #define GE_DRAW_VL
 #include "GfxElements.h"
@@ -703,10 +704,15 @@ private:
     //  printf("   Needs repaint %d\n",sv->block->l.num);
     
     double blocktime = 0.0;
+
+    int playing_blocknum = -1;
     
     if (is_playing){
       
       const struct Blocks *block = (const struct Blocks*)atomic_pointer_read((void**)&pc->block);
+      if (block != NULL)
+        playing_blocknum = block->l.num;
+        
 #if 1    
       if (sv->block!=block) { // Check that our blocktime belongs to the block that is rendered.
         #if 1
@@ -780,15 +786,21 @@ private:
     }
     
     R_ASSERT_NON_RELEASE(current_realline_while_playing >= 0);
+
+    int current_realline_while_not_playing = ATOMIC_GET(g_curr_realline);
     
     double till_realline;
     if (ATOMIC_GET_RELAXED(root->play_cursor_onoff))
-      till_realline = ATOMIC_GET(g_curr_realline);
+      till_realline = current_realline_while_not_playing;
     else if (is_playing)
       till_realline = current_realline_while_playing;
     else
-      till_realline = ATOMIC_GET(g_curr_realline);
+      till_realline = current_realline_while_not_playing;
 
+    Play_set_curr_playing_realline(
+                                   is_playing ? (int)current_realline_while_playing : current_realline_while_not_playing,
+                                   playing_blocknum
+                                   );
     
     float scroll_pos = GE_scroll_pos(sv, till_realline);
 

@@ -303,7 +303,7 @@ static void EditorFollowsPlayCursorLoop(void){
 
   //printf("%d %d\n",g_playing_realline,wblock->bot_realline);
 
-  if (wblock->l.num != g_playing_blocknum)
+  if (g_playing_blocknum != -1 && wblock->l.num != g_playing_blocknum)
     return;
 
   bool scrollit = false;
@@ -314,9 +314,15 @@ static void EditorFollowsPlayCursorLoop(void){
   if (g_playing_realline < wblock->top_realline)
     scrollit = true;
 
-  if (scrollit) {      
+  //printf("%3d -- %3d -- %3d\n", wblock->top_realline, g_playing_realline, wblock->bot_realline);
+  
+  if (scrollit) {
     int diff = wblock->top_realline - wblock->curr_realline;
-    ScrollEditorToRealLine(window,wblock,g_playing_realline - diff - 1);
+    int goal = g_playing_realline - diff - 1;
+    if (goal >= wblock->num_reallines)
+      goal = wblock->num_reallines-1;
+    //printf("SCROLLING. now: %d. Goal: %d\n", wblock->curr_realline, goal);
+    ScrollEditorToRealLine(window,wblock,goal);
   }
 
 }

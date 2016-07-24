@@ -722,7 +722,7 @@ class CalledPeriodically : public QTimer {
   
 public:
   CalledPeriodically()
-    : interval(5)
+    : interval(5) // can be set to 1, 2, 5, 10, 25, or 50.
     , num_calls(0)
   {
     msgBox.setModal(false);
@@ -731,6 +731,8 @@ public:
     msgBox_ok = (QAbstractButton*)msgBox.addButton("Ok",QMessageBox::AcceptRole);
     msgBox.open();
     msgBox.hide();
+
+    R_ASSERT( (50 % interval) == 0);
     
     setInterval(interval);
     start();
@@ -771,11 +773,13 @@ protected:
     num_calls++;
 
     struct Tracker_Windows *window=root->song->tracker_windows;
-    
+
+    /*
     if(num_calls<1000/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
       window->must_redraw = true;
     }
-      
+    */
+    
     {
       DO_GFX({
           MIDI_HandleInputMessage();
