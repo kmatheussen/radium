@@ -131,7 +131,8 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
         //SLIDERPAINTER_set_recording_color(bottom_bar_widget->system_volume_slider->_painter, PLUGIN_is_recording_automation(g_system_out_plugin, effect_num));
       }
 
-      bottom_bar_widget->system_volume_slider->calledRegularlyByParent();
+      if (bottom_bar_widget->system_volume_slider->_patch != NULL)
+        bottom_bar_widget->system_volume_slider->calledRegularlyByParent();
     
       //SLIDERPAINTER_call_regularly(bottom_bar_widget->system_volume_slider->_painter);
     }

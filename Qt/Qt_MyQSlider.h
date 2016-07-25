@@ -114,6 +114,8 @@ struct MyQSlider : public QSlider {
   }
 
   void calledRegularlyByParent(void){
+    R_ASSERT_RETURN_IF_FALSE(_patch != NULL);
+      
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
     if (plugin != NULL) {
