@@ -1,3 +1,27 @@
+Changes 3.9.9 -> 4.0.0:
+* Automation record: Don't show assertion warning when trying (and failing)
+  to add a new fx automation point at the same time position as an already
+  existing fx automation point.
+* Thicker non-line-aligned beat lines. (0.6 pixels -> 2.3 pixels)
+* Fix memory corruption when rendering block with non-line-aligned
+  beat lines.
+* Option to render multiple sound files, one for each instrument.
+* Fix memory corruption when using VST plugins. (bug introduced in 3.9.9)
+* Fix rare startup crash. (bug introduced in 3.9.9)
+* Fix crash when removing the system out instrument or loading
+  a song where the system out instrument has been removed.
+  (bug introduced in 3.9.9)
+* Reorganize project menu a little bit.
+* Fix note duplicator horizontal gui stretch.
+* Fix play cursor following. It didn't always follow.
+* Keep sample read position when switching from ping-pong
+  to non-ping-pong while playing.
+* Fix a MIDI record position inaccuracy which could happen
+  when switching to a block with a different length than the
+  previous one.
+
+
+
 Changes 3.9.8 -> 3.9.9:
 * Don't let shift + mouse scroll wheel move editor cursor left/right.
 * Cut/copy/paste individual fx-es in tracks.
