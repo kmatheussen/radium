@@ -237,18 +237,22 @@ public slots:
 
 #else // FULL_VERSION==0
 
+      bool save_multi = many_soundfiles->isChecked();
 
       if(filename_edit->text()==QString("")){
         GFX_Message(NULL,
-                    "Filename was not specified.");
+                    QString(save_multi ? "Directory" : "Filename") +
+                    " was not specified.");
         return;
       }
+
+      delete parent->msgBox;
+      parent->msgBox = new MyQMessageBox;  // ensure clickedButton()==NULL.
+
 
       msgBox->setStandardButtons(QMessageBox::Cancel);
             
       ATOMIC_SET(_timer.async_message, NULL);
-
-      bool save_multi = many_soundfiles->isChecked();
 
       if (save_multi){
 
