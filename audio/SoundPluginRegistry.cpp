@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <vector>
 
-#include <QMessageBox>
 #include <QString>
 #include <QFileDialog>
 
@@ -123,7 +122,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
 
   }else{
 
-    QMessageBox msgBox;
+    MyQMessageBox msgBox;
     msgBox.setText("Plugin " + QString(type_name) + " / " + QString(plugin_name) + " not found. Replacing with a Pipe.");
     if(!strcmp(type_name,"Ladspa") && getenv("LADSPA_PATH")==NULL)
       msgBox.setInformativeText("(LADSPA_PATH is not set)");

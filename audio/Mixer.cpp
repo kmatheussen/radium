@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../weakjack/weak_libjack.h"
 
-#include <QMessageBox>
 #include <QString>
 #include <QStringList>
 #include <QTime>
@@ -158,7 +157,7 @@ static void check_jackd_arguments(void){
 
   if(found_jack==false){
 
-    QMessageBox msgBox;
+    MyQMessageBox msgBox;
     msgBox.setIcon(QMessageBox::Warning);
     msgBox.setText("Unable to find jack process command line arguments.");
     msgBox.setInformativeText("Please make sure the -S flag was added to the jackd argument line. If not, glitches in sound will occur.\n ");
@@ -168,7 +167,7 @@ static void check_jackd_arguments(void){
 
   } else if(found_sync_flag==false){
 
-    QMessageBox msgBox;
+    MyQMessageBox msgBox;
     msgBox.setIcon(QMessageBox::Critical);
     msgBox.setText("The -S parameter was not set for Jack.");
     msgBox.setInformativeText(mandatory);
@@ -509,7 +508,7 @@ struct Mixer{
 	fprintf (stderr, "Unable to connect to JACK server\n");
       }
 
-      QMessageBox msgBox;
+      MyQMessageBox msgBox;
       msgBox.setIcon(QMessageBox::Critical);
       msgBox.setText("Unable to connect to Jack.");
       msgBox.setInformativeText("The Jack Audio Connection Kit server must be started before running Radium. "
@@ -556,7 +555,7 @@ struct Mixer{
     if (jack_activate (_rjack_client)){
       fprintf (stderr, "Error. Cannot activate jack client.\n");
 
-      QMessageBox msgBox;
+      MyQMessageBox msgBox;
       msgBox.setIcon(QMessageBox::Critical);
       msgBox.setText("Unable to activate Jack client.");
       msgBox.setInformativeText("This is very unusual. Try restarting Jack.");

@@ -686,7 +686,6 @@ void Ptask2Mtask(void){
 #if !GTK_IS_USED
 
 #include <QTimer>
-#include <QMessageBox>
 #include "../midi/midi_i_input_proc.h"
 #include "../common/gfx_proc.h"
 #include "../common/gfx_op_queue_proc.h"
@@ -714,7 +713,7 @@ static DEFINE_ATOMIC(bool, request_to_stop_playing) = false;
 
 class CalledPeriodically : public QTimer {
 
-  QMessageBox msgBox;
+  MyQMessageBox msgBox;
   QAbstractButton *msgBox_ok;
   QAbstractButton *msgBox_stop_playing;
   QAbstractButton *msgBox_dontshowagain;

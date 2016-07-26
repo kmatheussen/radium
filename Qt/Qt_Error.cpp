@@ -4,7 +4,6 @@
 
 #include <qapplication.h>
 #include <qmainwindow.h>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QProcess>
 #include <QDir>
@@ -28,18 +27,9 @@
 
 #ifdef COMPILE_EXECUTABLE
 
-namespace{
-  struct MyQMessageBox : public QMessageBox {
-  };
-}
-  
 static int show_message(const char *message){
 
   MyQMessageBox msgBox;
-
-#ifdef RELEASE
-  msgBox.setWindowFlags(msgBox.windowFlags() | Qt::WindowStaysOnTopHint);
-#endif
 
   msgBox.setText(QString(message));
 

@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileInfo>
 #include <QLocale>
 #include <QCoreApplication>
-#include <QMessageBox>
 
 #include "helpers.h"
 
@@ -76,7 +75,7 @@ QString OS_get_full_program_file_path(QString filename){
   QFileInfo info(dir, filename);
 
   if (!info.exists()){
-    QMessageBox msgBox;
+    MyQMessageBox msgBox;
     msgBox.setText("The file " + info.absoluteFilePath() + " does not exist. Make sure all files in the zip file are unpacked before starting the program. Exiting program.");
     safeExec(&msgBox);
     exit(-1);

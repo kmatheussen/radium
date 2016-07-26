@@ -774,7 +774,7 @@ static hash_t *get_preset_state_from_filename(QString filename){
   
   disk_t *file = DISK_open_for_reading(filename);
   if(file==NULL){
-    QMessageBox msgBox;
+    MyQMessageBox msgBox;
     msgBox.setText("Could not open file.");
     msgBox.setStandardButtons(QMessageBox::Ok);
     msgBox.setDefaultButton(QMessageBox::Ok);
@@ -787,7 +787,7 @@ static hash_t *get_preset_state_from_filename(QString filename){
     return NULL;
 
   if(state==NULL){
-    QMessageBox msgBox;
+    MyQMessageBox msgBox;
     msgBox.setText("File does not appear to be a valid effects settings file");
     msgBox.setStandardButtons(QMessageBox::Ok);
     msgBox.setDefaultButton(QMessageBox::Ok);
@@ -845,7 +845,7 @@ void InstrumentWidget_save_preset(struct Patch *patch){
   disk_t *file = DISK_open_for_writing(filename);
   
   if(file==NULL){
-    QMessageBox msgBox;
+    MyQMessageBox msgBox;
     msgBox.setText("Could not save file.");
     msgBox.setStandardButtons(QMessageBox::Ok);
     msgBox.setDefaultButton(QMessageBox::Ok);

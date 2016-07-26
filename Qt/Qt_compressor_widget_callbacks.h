@@ -183,7 +183,7 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
     FILE *file = fopen(filename.toUtf8().constData(),"r");
 
     if(file==NULL){
-      QMessageBox msgBox;
+      MyQMessageBox msgBox;
       msgBox.setText("Could not open file \""+filename+"\".");
       msgBox.setStandardButtons(QMessageBox::Ok);
       msgBox.setDefaultButton(QMessageBox::Ok);
@@ -269,7 +269,7 @@ void on_enable_checkbox_toggled(bool val){
     FILE *file = fopen(filename.toUtf8().constData(),"w");
 
     if(file==NULL){
-      QMessageBox msgBox;
+      MyQMessageBox msgBox;
       msgBox.setText("Could not save file.");
       msgBox.setStandardButtons(QMessageBox::Ok);
       msgBox.setDefaultButton(QMessageBox::Ok);

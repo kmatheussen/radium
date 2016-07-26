@@ -20,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <sndfile.h>
 
-#include <QMessageBox>
 #include <QTimer>
 #include <QFileDialog>
 
@@ -52,7 +51,16 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
   SoundPlugin *currently_saving_plugin;
   radium::Vector<SoundPlugin*> plugins_to_save;
 
-  QMessageBox *msgBox;
+  MyQMessageBox *msgBox;
+
+  QString get_suffix(void){
+    if(format_wav->isChecked())
+      return "wav";
+    else if(format_aiff->isChecked())
+      return "aiff";
+    else
+      return "flac";
+  }
   
   void save(QString filename){
 
@@ -128,7 +136,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
     QDir dir(filename_edit->text());
     QString dirname = dir.absolutePath();
 
-    save(dirname + QDir::separator() + currently_saving_plugin->patch->name + ".wav");
+    save(dirname + QDir::separator() + currently_saving_plugin->patch->name + "." + get_suffix());
   }
   
   public:
@@ -146,7 +154,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
 
         // Reset clickedButton().
         delete parent->msgBox;
-        parent->msgBox = new QMessageBox;
+        parent->msgBox = new MyQMessageBox;
       }
       
       const char *message = ATOMIC_GET(async_message);
@@ -161,7 +169,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
         ScrollEditorToRealLine_CurrPos(root->song->tracker_windows, root->song->tracker_windows->wblock->bot_realline);
         root->song->tracker_windows->must_redraw = true;
 #if 0        
-        QMessageBox msgBox;
+        MyQMessageBox msgBox;
         
         msgBox->setText(QString(message));
         //msgBox->setInformativeText(message);
@@ -195,7 +203,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
   {
     _initing = true;
 
-    msgBox = new QMessageBox;
+    msgBox = new MyQMessageBox;
     
     setupUi(this);
 

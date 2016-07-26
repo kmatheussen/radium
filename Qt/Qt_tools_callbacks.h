@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <QMessageBox>
 #include <QScrollArea>
 #include <QCheckBox>
 #include <QTimer>

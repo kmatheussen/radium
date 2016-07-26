@@ -3,7 +3,6 @@
 
 #include <QTime>
 #include <QTimer>
-#include <QMessageBox>
 #include <QMainWindow>
 #include <QApplication>
 

@@ -1607,7 +1607,7 @@ void GL_maybe_estimate_vblank(QWidget *qwidget){
   }
   
 
-  QMessageBox box;
+  MyQMessageBox box;
 
   bool have_earlier = have_earlier_estimated_value();
 

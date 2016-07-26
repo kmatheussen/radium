@@ -268,7 +268,6 @@ $1 = (SoundPlugin *) 0x0
 #include <QFileInfo>
 #include <QDir>
 #include <QTextStream>
-#include <QMessageBox>
 #include <QVector>
 #include <QCoreApplication>
 
@@ -972,7 +971,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   snprintf(puredatapath,1023,"%s/packages/libpd-master/pure-data",OS_get_program_path());
   pd = libpds_create(true, puredatapath);
   if(pd==NULL) {
-    QMessageBox msgBox;
+    MyQMessageBox msgBox;
     msgBox.setText(QString(libpds_strerror()));
     msgBox.setStandardButtons(QMessageBox::Ok);
     safeExec(msgBox);

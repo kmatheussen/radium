@@ -14,6 +14,14 @@
 
 extern bool radium_runs_custom_exec;
 
+struct MyQMessageBox : public QMessageBox {
+  MyQMessageBox(QWidget *parent = NULL)
+    : QMessageBox(parent)
+  {
+    setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+  }
+};
+  
 struct RememberGeometryQDialog : public QDialog {
 
   QByteArray geometry;

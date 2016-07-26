@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileInfo>
 #include <QLibrary>
 #include <QDir>
-#include <QMessageBox>
 #include <QHash>
 
 #if defined(__linux__)
@@ -1033,7 +1032,7 @@ void create_ladspa_plugins(void){
 #if FOR_LINUX && !defined(IS_LINUX_BINARY)  // We don't use system ladspa plugins in the binaries because they might use incompatible libraries with the ones included with radium. (happens with guitarix, which links in glib, preventing radium from even starting.)
   
   if(getenv("LADSPA_PATH")==NULL){
-    //QMessageBox::information(NULL, "LADSPA_PATH is not set.", "LADSPA_PATH is not set.");
+    //MyQMessageBox::information(NULL, "LADSPA_PATH is not set.", "LADSPA_PATH is not set.");
     //return;
 #ifdef USE_QT5
     QString home_ladspa_path = QDir::homePath() + "/.ladspa";

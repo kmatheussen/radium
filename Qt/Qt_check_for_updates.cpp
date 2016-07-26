@@ -2,8 +2,8 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QFile>
-#include <QMessageBox>
 #include <QApplication>
+#include <QMessageBox>
 
 #ifndef TEST_MAIN
 

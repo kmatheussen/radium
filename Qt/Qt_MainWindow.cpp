@@ -25,7 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCloseEvent>
 #include <QStatusBar>
 #include <QMenuBar>
-#include <QMessageBox>
 #include <QUrl>
 #include <QMimeData>
 #include <QFileDialog>
@@ -665,7 +664,8 @@ const wchar_t *GFX_GetSaveFileName(
 static int GFX_Message(vector_t *buttons, QString message){
   R_ASSERT(THREADING_is_main_thread());
 
-  QMessageBox msgBox(g_editor);
+  MyQMessageBox msgBox(g_editor);
+  
   msgBox.setText(message);
 
   if(buttons==NULL){
@@ -790,7 +790,7 @@ const char *GFX_qVersion(void){
 
   
 void GFX_showChanceHelpWidget(void){
-    static QMessageBox *msgBox = new QMessageBox;
+    static MyQMessageBox *msgBox = new MyQMessageBox;
         
     msgBox->setText("Chance text");
     msgBox->setInformativeText(
@@ -827,7 +827,7 @@ void GFX_showChanceHelpWidget(void){
   
 
 void GFX_showVelocityHelpWidget(void){
-    static QMessageBox *msgBox = new QMessageBox;
+    static MyQMessageBox *msgBox = new MyQMessageBox;
         
     msgBox->setText("Velocity text");
     msgBox->setInformativeText(
@@ -860,7 +860,7 @@ void GFX_showVelocityHelpWidget(void){
   
 
 void GFX_showFXHelpWidget(void){
-    static QMessageBox *msgBox = new QMessageBox;
+    static MyQMessageBox *msgBox = new MyQMessageBox;
         
     msgBox->setText("FX text");
     msgBox->setInformativeText(
@@ -894,7 +894,7 @@ void GFX_showFXHelpWidget(void){
 }
 
 void GFX_showMixerHelpWindow(void){
-    static QMessageBox *msgBox = new QMessageBox;
+    static MyQMessageBox *msgBox = new MyQMessageBox;
         
     msgBox->setText("Mixer Interface");
     msgBox->setInformativeText(

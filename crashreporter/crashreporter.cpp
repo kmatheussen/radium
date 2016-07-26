@@ -31,7 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QWidget>
 #include <QString>
 #include <QApplication>
-#include <QMessageBox>
 #include <QFile>
 #include <QTextStream>
 #include <QTextEdit>
@@ -166,7 +165,8 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
   {
     QDialog box;
-
+    box.setWindowFlags(box.windowFlags() | Qt::WindowStaysOnTopHint);
+    
     QVBoxLayout layout;
 
     //box.setIcon(QMessageBox::Critical);
@@ -363,7 +363,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       
 #if 1
       {
-        QMessageBox box;
+        MyQMessageBox box;
         box.setText("Thanks for reporting the bug!");
         
         box.setInformativeText("The bug will hopefully be fixed in the next version of Radium.");
