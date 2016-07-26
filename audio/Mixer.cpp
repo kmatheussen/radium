@@ -214,7 +214,7 @@ static void print_backtrace(void){
 
 static void lock_player(void){
   R_ASSERT(!PLAYER_current_thread_has_lock()); // the player lock is reentrant, just in case, but reentrancy is not supposed to be used.
-  
+
   LOCK_LOCK(player_lock);
   g_current_thread_has_player_lock = true;
 }

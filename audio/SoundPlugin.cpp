@@ -348,7 +348,6 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   int buffer_size = MIXER_get_buffer_size();
 
   plugin->midi_learns = new radium::Vector<SoundPluginEffectMidiLearn*>;
-  ATOMIC_NAME(plugin->is_recording_automation) = (bool*) V_calloc(sizeof(bool), plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
 
   // TODO: Don't do this. Check if all plugins can be initialized later.
   plugin->data = plugin_type->create_plugin_data(plugin_type, plugin, plugin_state, MIXER_get_sample_rate(), buffer_size, is_loading);
@@ -356,6 +355,8 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
     V_free(plugin);
     return NULL;
   }
+
+  ATOMIC_NAME(plugin->is_recording_automation) = (bool*) V_calloc(sizeof(bool), plugin_type->num_effects+NUM_SYSTEM_EFFECTS); // plugin_type->num_effects might be set after calling create_plugin_data.
 
   // peak and automation pointers (for displaying in the sliders)
   plugin->volume_peak_values = (float*)V_calloc(sizeof(float),plugin_type->num_outputs);
@@ -524,6 +525,8 @@ void PLUGIN_delete(SoundPlugin *plugin){
   CpuUsage_delete(ATOMIC_GET(plugin->cpu_usage));
 
   V_free(ATOMIC_NAME(plugin->is_recording_automation));
+  ATOMIC_SET(plugin->is_recording_automation, NULL);
+  
   delete plugin->midi_learns;
     
   memset(plugin,-1,sizeof(SoundPlugin)); // for debugging. Crashes faster if something is wrong.
