@@ -917,6 +917,9 @@ void OS_InitAudioTiming(void){
 }
 
 bool MIXER_is_saving(void){
+  if (g_mixer==NULL)
+    return false;
+  
   return g_mixer->_is_freewheeling;
 }
 
@@ -986,6 +989,12 @@ static bool fill_in_time_position2(time_position_t *time_position){
           );
   
   STime accurate_block_time = accurate_radium_time - seqtime;
+#if !defined(RELEASE)
+  if (accurate_block_time < 0){
+    fprintf(stderr, "accurate_block_time: %d, accurate_radium_time: %d, seqtime: %d\n", (int)accurate_block_time, (int)accurate_radium_time, (int)seqtime);
+    R_ASSERT(false);
+  }
+#endif
 
   while (accurate_block_time >= getBlockSTimeLength(block)){
     accurate_block_time -= getBlockSTimeLength(block);

@@ -32,10 +32,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/cursor_updown_proc.h"
 #include "../common/windows_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/player_proc.h"
 
 #include "../audio/Mixer_proc.h"
+#include "../audio/SoundProducer_proc.h"
 #include "../audio/SoundfileSaver_proc.h"
 
+#include "../mixergui/QM_chip.h"
+
+#include "Qt_instruments_proc.h"
 #include "helpers.h"
 
 #include "Qt_soundfilesaver_widget.h"
@@ -44,15 +49,110 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfilesaver_widget {
   Q_OBJECT
 
- public:
+  SoundPlugin *currently_saving_plugin;
+  radium::Vector<SoundPlugin*> plugins_to_save;
+
+  QMessageBox *msgBox;
+  
+  void save(QString filename){
+
+    const char *error_string;
+
+    int format;
+    
+    if(format_wav->isChecked())
+      format = SF_FORMAT_WAV;
+    else if(format_aiff->isChecked())
+      format = SF_FORMAT_AIFF;
+    else
+      format = SF_FORMAT_FLAC;
+    
+    if(format_16->isChecked())
+      format |= SF_FORMAT_PCM_16;
+    else if(format_24->isChecked())
+      format |= SF_FORMAT_PCM_24;
+    else if(format_32->isChecked())
+      format |= SF_FORMAT_PCM_32;
+    else
+      format |= SF_FORMAT_FLOAT;
+    
+    enum SOUNDFILESAVER_what what_to_save = save_block_button->isChecked()==true ? SAVE_BLOCK : SAVE_SONG;
+    
+    if(SOUNDFILESAVER_save(filename.toUtf8().constData(), what_to_save, MIXER_get_sample_rate(), format, post_silence_spin->value(), &error_string)==false){
+
+      //QMessageBox msgBox;
+      
+      msgBox->setText("Unable to save file:");
+      msgBox->setInformativeText(error_string);
+      msgBox->setStandardButtons(QMessageBox::Ok);
+      
+      //safeExec(msgBox);
+      return;
+      
+    } else {
+
+      msgBox->setText("Please wait, saving "+filename);
+      _timer.start();
+      
+    }
+  }
+
+  void clean_prev(void){
+    if (currently_saving_plugin != NULL) {
+      ATOMIC_SET(currently_saving_plugin->solo_is_on, false);
+      currently_saving_plugin = NULL;
+    }
+  }
+  
+  void save_next(void){
+
+    clean_prev();
+    
+    if (plugins_to_save.is_empty()){
+      //QMessageBox msgBox;
+        
+      msgBox->setText("All files saved");
+      //msgBox->setInformativeText(message);
+      msgBox->setStandardButtons(QMessageBox::Ok);
+
+      safeExec(msgBox); 
+      return;
+    }
+
+    currently_saving_plugin = plugins_to_save.pop(0);
+
+    ATOMIC_SET(currently_saving_plugin->solo_is_on, true);
+    CHIP_update(currently_saving_plugin);
+    GFX_update_instrument_widget((struct Patch*)currently_saving_plugin->patch);
+
+    QDir dir(filename_edit->text());
+    QString dirname = dir.absolutePath();
+
+    save(dirname + QDir::separator() + currently_saving_plugin->patch->name + ".wav");
+  }
+  
+  public:
 
   struct Timer : public QTimer{
-    const char *async_message;
+    Soundfilesaver_widget *parent;
+    
+    DEFINE_ATOMIC(const char *, async_message);
 
     void timerEvent(QTimerEvent * e){
-      const char *message = async_message;
+      printf("clicked: %p\n", parent->msgBox->clickedButton());
+
+      if (parent->msgBox->clickedButton()!=NULL){
+        SOUNDFILESAVER_request_stop();
+
+        // Reset clickedButton().
+        delete parent->msgBox;
+        parent->msgBox = new QMessageBox;
+      }
+      
+      const char *message = ATOMIC_GET(async_message);
       if(message != NULL){
-        async_message = NULL;
+        
+        ATOMIC_SET(async_message, NULL);
 
         MIXER_request_stop_saving_soundfile(); // This is very messy. The code would be far simpler if jack_set_freewheel could be called from any thread.
 
@@ -60,18 +160,28 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
 
         ScrollEditorToRealLine_CurrPos(root->song->tracker_windows, root->song->tracker_windows->wblock->bot_realline);
         root->song->tracker_windows->must_redraw = true;
-        
+#if 0        
         QMessageBox msgBox;
         
-        msgBox.setText(QString(message));
-        //msgBox.setInformativeText(message);
-        msgBox.setStandardButtons(QMessageBox::Ok);
+        msgBox->setText(QString(message));
+        //msgBox->setInformativeText(message);
+        msgBox->setStandardButtons(QMessageBox::Ok);
 
         safeExec(msgBox);
+#endif
 
+        bool was_cancelled = !strcmp(message, "Cancelled");
+        
         V_free((void*)message);
 
         stop();
+
+        parent->clean_prev();
+        
+        if (was_cancelled)
+          PlayStop(); // Sometimes it continues playing after pressing "cancel".
+        else
+          parent->save_next();
       }
     }
   };
@@ -81,15 +191,28 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
 
  Soundfilesaver_widget(QWidget *parent=NULL)
     : RememberGeometryQDialog(parent)
+    , currently_saving_plugin(NULL)
   {
     _initing = true;
 
+    msgBox = new QMessageBox;
+    
     setupUi(this);
 
     _initing = false;
 
-    _timer.async_message = NULL;
+    _timer.parent = this;
+    ATOMIC_SET(_timer.async_message, NULL);
     _timer.setInterval(100);
+  }
+
+  // Don't want return to close the dialog
+  void keyPressEvent(QKeyEvent *evt)
+  {
+    if(evt->key() == Qt::Key_Enter || evt->key() == Qt::Key_Return)
+      evt->accept();
+    else
+      QDialog::keyPressEvent(evt);
   }
 
 public slots:
@@ -112,45 +235,68 @@ public slots:
                     "Filename was not specified.");
         return;
       }
-      
-      const char *error_string;
 
-      int format;
+      msgBox->setStandardButtons(QMessageBox::Cancel);
+            
+      ATOMIC_SET(_timer.async_message, NULL);
 
-      if(format_wav->isChecked())
-        format = SF_FORMAT_WAV;
-      else if(format_aiff->isChecked())
-        format = SF_FORMAT_AIFF;
-      else
-        format = SF_FORMAT_FLAC;
+      bool save_multi = many_soundfiles->isChecked();
 
-      if(format_16->isChecked())
-        format |= SF_FORMAT_PCM_16;
-      else if(format_24->isChecked())
-        format |= SF_FORMAT_PCM_24;
-      else if(format_32->isChecked())
-        format |= SF_FORMAT_PCM_32;
-      else
-        format |= SF_FORMAT_FLOAT;
+      if (save_multi){
 
-      enum SOUNDFILESAVER_what what_to_save = save_block_button->isChecked()==true ? SAVE_BLOCK : SAVE_SONG;
+        QFileInfo info(filename_edit->text());
 
-      if(SOUNDFILESAVER_save(filename_edit->text().toUtf8().constData(), what_to_save, MIXER_get_sample_rate(), format, post_silence_spin->value(), &error_string)==false){
+        if (info.isFile()){
+          GFX_Message(NULL,
+                      "Can not save. \"%s\" is a file, and not a directory", filename_edit->text().toUtf8().constData()
+                      );
+          return;
+        }
 
-        QMessageBox msgBox;
+        QDir dir(filename_edit->text());
+        QString dirname = dir.absolutePath();
         
-        msgBox.setText("Unable to save file:");
-        msgBox.setInformativeText(error_string);
-        msgBox.setStandardButtons(QMessageBox::Ok);
+        if (dir.exists()){
+          vector_t options = {};
+          VECTOR_push_back(&options, "Yes");
+          VECTOR_push_back(&options, "No");
+          
+          if (GFX_Message(&options,
+                          "Directory \%s\" already exists. Overwrite files in that directory?",
+                          dirname.toUtf8().constData()
+                          )
+              ==1)
+            return;
+        } else {
 
-        safeExec(msgBox);
-        return;
+          if(QDir::root().mkpath(dirname)==false){ // why on earth isn't mkpath a static function?
+            GFX_Message(NULL, "Unable to create directory \"%s\".", dirname.toUtf8().constData());
+            return;
+          }
+          
+        }
+        
+        plugins_to_save.clear(); // In case we were interrupted earlier.
+
+        const radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
+        for (auto sp : *sp_all){
+          if (!SP_has_input_links(sp)){
+            plugins_to_save.push_back(SP_get_plugin(sp));
+          }
+        }
+
+        safeShow(msgBox);
+
+        save_next();
 
       } else {
 
-        _timer.start();
+        safeShow(msgBox);
+
+        save(filename_edit->text());
 
       }
+      
 #endif //FULL_VERSION==0
     }
   }
@@ -159,15 +305,42 @@ public slots:
     set_editor_focus();
   }
 
+  void on_filename_edit_returnPressed(){
+    printf("return pressed\n");
+    filename_edit->clearFocus();
+  }
+  
   void on_filename_button_clicked(){
-    QString filename = QFileDialog::getSaveFileName(this, 
-                                                    QString("Select file"),
-                                                    QString(),
-                                                    QString(),
-                                                    0,
-                                                    useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
-                                                    );
-    filename_edit->setText(filename);
+    QFileDialog::Options options = useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog;
+    if (many_soundfiles->isChecked()) {
+      
+      QFileDialog dialog(this, 
+                         QString("Select directory")
+                         );
+      dialog.setOptions(options | QFileDialog::ShowDirsOnly);
+      dialog.setFileMode(QFileDialog::Directory);
+      //dialog.setFileMode(QFileDialog::AnyFile);
+
+      auto state = safeExec(&dialog);
+
+      if(state == QDialog::Accepted){
+        QString dirname = dialog.directory().absolutePath();
+
+        printf("dir: %s\n",dirname.toUtf8().constData());
+  
+        filename_edit->setText(dirname);
+      }
+        
+    } else {
+      QString filename = QFileDialog::getSaveFileName(this, 
+                                                      QString("Select file"),
+                                                      QString(),
+                                                      QString(),
+                                                      0,
+                                                      options
+                                                      );
+      filename_edit->setText(filename);
+    }
   }
 
 };
@@ -189,7 +362,7 @@ extern "C"{
   }
 
   void SOUNDFILESAVERGUI_stop(const char *message){
-    widget->_timer.async_message = V_strdup(message);
+    ATOMIC_SET(widget->_timer.async_message, V_strdup(message));
   }
 }
 

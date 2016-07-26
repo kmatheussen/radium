@@ -74,7 +74,7 @@ static inline void *V_malloc(size_t size){
   return malloc(size);
 }
 static inline char *V_strdup(const char *s){
-  R_ASSERT(!PLAYER_current_thread_has_lock());
+  R_ASSERT(MIXER_is_saving() || !PLAYER_current_thread_has_lock());
   return strdup(s);
 }
 static inline void *V_calloc(size_t n, size_t size){

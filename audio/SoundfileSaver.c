@@ -52,7 +52,9 @@ enum SaveState{
 
 static volatile enum SaveState g_save_state;
 
-static bool stop_writing(void){
+static DEFINE_ATOMIC(bool, stop_requested) = false;
+
+static bool stop_writing(bool is_cancelled){
   char temp[1024];
   bool ret;
   int close_result = sf_close(g_sndfile);
@@ -62,24 +64,40 @@ static bool stop_writing(void){
   else
     ret= false;
 
-  if(ret==false)
+  if (is_cancelled)
+    sprintf(temp,"Cancelled");
+  
+  else if(ret==false)
     sprintf(temp,"Unable to save \"%s\": \"%s\".", g_filename, sf_error_number(close_result));
 
   else if(g_saving_was_successful==false)
     sprintf(temp,"\"%s\" was saved, but with errors.", g_filename);
 
   else
-    sprintf(temp,"\"%s\" successfully saved.", g_filename);
+    sprintf(temp,"\"%s\" saved successfully.", g_filename);
     
 
   SOUNDFILESAVERGUI_stop(temp);
 
+  g_save_state=AFTER_WRITING;
+
   return ret;
+}
+
+void SOUNDFILESAVER_request_stop(void){
+  printf("  REQUESTING STOP\n");
+  ATOMIC_SET(stop_requested, true);
 }
 
 bool SOUNDFILESAVER_write(float **outputs, int num_frames){
  PaUtil_FullMemoryBarrier();
 
+ if (ATOMIC_GET(stop_requested)){
+   ATOMIC_SET(stop_requested, false);
+   stop_writing(true);
+   return false;
+ }
+   
   if(g_save_state==BEFORE_WRITING && is_playing()==false)
     return true;
 
@@ -112,8 +130,7 @@ bool SOUNDFILESAVER_write(float **outputs, int num_frames){
   if(g_save_state==POST_WRITING){
     g_post_writing_left -= (float)num_frames/MIXER_get_sample_rate();
     if(g_post_writing_left <= 0.0f){
-      stop_writing();
-      g_save_state=AFTER_WRITING;
+      stop_writing(false);
     }
   }
 

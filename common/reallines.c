@@ -319,10 +319,12 @@ void UpdateRealLines(struct Tracker_Windows *window,struct WBlocks *wblock){
     PLAYER_lock();{
       wblock->reallines = reallines;
       wblock->num_reallines = num_reallines;
-    }PLAYER_unlock();
 
-    if(wblock->curr_realline >= wblock->num_reallines)
-      wblock->curr_realline = wblock->num_reallines-1;
+      // don't think mutation of curr_realline needs to be locked, but it doesn't really hurt either.
+      if(wblock->curr_realline >= wblock->num_reallines)        
+        wblock->curr_realline = wblock->num_reallines-1;
+
+    }PLAYER_unlock();
   }
   
   set_curr_realline_from_place(window, wblock, curr_place);

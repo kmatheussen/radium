@@ -207,7 +207,7 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
 	peq->realline=realline;
 
         PC_InsertElement2_latencycompencated(
-                                             peq, addplaypos ,&peq->wblock->reallines[realline]->l.p // Race condition? Can the reallines change between the above check and here?
+                                             peq, addplaypos ,&peq->wblock->reallines[realline]->l.p // Note that the player is locked when changing wblock->reallines and wblock->num_reallines, so there shouldn't be a race condition here.
                                              );
 
 #ifdef WITH_PD

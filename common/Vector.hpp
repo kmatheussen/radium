@@ -297,6 +297,12 @@ public:
 
     remove_pos_internal(pos, keep_order);
   }
+
+  T pop(int pos, bool keep_order = false){
+    T ret = at(pos);
+    remove_pos(pos, keep_order);
+    return ret;
+  }
   
   // RT safe
   //

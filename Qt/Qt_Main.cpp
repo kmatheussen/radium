@@ -363,7 +363,10 @@ protected:
     
     if (another_window_has_focus)
       return false;
-    
+
+    if (MIXER_is_saving())
+      return false;
+      
     struct Tracker_Windows *window = root->song->tracker_windows;
 
     bool ignore_autorepeat = !doAutoRepeat() && editor_has_keyboard == true;
@@ -902,6 +905,7 @@ void RT_message(const char *fmt,...){
 }
 
 void RT_request_to_stop_playing(void){
+  //abort();
   ATOMIC_SET(request_to_stop_playing, true);
 }
 

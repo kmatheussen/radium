@@ -762,7 +762,10 @@ void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data
 
   if(cc==0xf0 || cc==0xf7) // sysex not supported
     return;
-
+  
+  if (MIXER_is_saving())
+    return;
+  
   bool isplaying = is_playing();
 
   uint32_t msg = MIDI_msg_pack3(cc, data1, data2);

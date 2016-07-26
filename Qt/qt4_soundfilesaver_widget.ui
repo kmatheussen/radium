@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>568</width>
-    <height>357</height>
+    <width>784</width>
+    <height>342</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -28,7 +28,7 @@
      <item>
       <widget class="QGroupBox" name="groupBox_2">
        <property name="title">
-        <string>Filename</string>
+        <string>Filename or Directory</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="0" column="0">
@@ -70,23 +70,54 @@
        <property name="title">
         <string>Save</string>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
         <item>
-         <widget class="QRadioButton" name="save_block_button">
-          <property name="text">
-           <string>Current Block</string>
-          </property>
-         </widget>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <widget class="QRadioButton" name="save_block_button">
+            <property name="text">
+             <string>Current Block</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="save_song_button">
+            <property name="text">
+             <string>Song</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item>
-         <widget class="QRadioButton" name="save_song_button">
-          <property name="text">
-           <string>Song</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <widget class="QRadioButton" name="one_soundfile">
+            <property name="text">
+             <string>One sound file with the full mix</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">buttonGroup_3</string>
+            </attribute>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="many_soundfiles">
+            <property name="text">
+             <string>Multiple sound files, one for each instrument</string>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">buttonGroup_3</string>
+            </attribute>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
@@ -248,5 +279,6 @@
  <buttongroups>
   <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_3"/>
  </buttongroups>
 </ui>

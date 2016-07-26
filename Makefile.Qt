@@ -149,7 +149,7 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 FULL_VERSION ?= 1
 
 # Note that "make clean" must be run for DEBUG_BUILD_OPTS to take effect
-DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -O1 #-DDISABLE_BDWGC # -Og # -DDISABLE_BDWGC -fsanitize=address #-Og -
+DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -Og  -DDISABLE_BDWGC -fsanitize=address #-Og -
 # -Og -Og -fsanitize=address
 #-Og 
 #  -fsanitize=thread 
@@ -1217,7 +1217,7 @@ Qt_soundfilesaver_widget_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_soundfilesave
 	$(CCC) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(QTOPT)  $(SNDFILEOPT)
 
 $(P)Qt_soundfilesaver_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_soundfilesaver_widget.ui $(P)Qt_soundfilesaver_widget_callbacks.cpp
-	cd $(P) && $(UIC) qt4_soundfilesaver_widget.ui | sed s/protected/public/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: > Qt_soundfilesaver_widget.h
+	cd $(P) && $(UIC) qt4_soundfilesaver_widget.ui | sed s/protected/public/ | sed s/QLineEdit/FocusSnifferQLineEdit/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/FocusSnifferQLineEdit\>://\ \ qlineedit.h: > Qt_soundfilesaver_widget.h
 	cd $(P) && $(MOC) Qt_soundfilesaver_widget_callbacks.cpp >mQt_soundfilesaver_widget_callbacks.cpp
 
 

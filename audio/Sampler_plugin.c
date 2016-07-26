@@ -2121,6 +2121,6 @@ void create_sample_plugin(void){
 
     has_inited = true;
   }
-  
+
   PR_add_plugin_type(&click_type);
 }
