@@ -1223,24 +1223,42 @@ struct Signatures{
 };
 #define NextSignature(a) (struct Signatures *)((a)->l.next)
 
-struct WSignatures{
-  Ratio signature;
-  int bar_num;
-  int beat_num;   // In a 4/4 measure, this value is either 0, 1, 2 or 3, or 4. (0 means that there is no beat placed on this realline)
-  int type;	  /* 0=normal, 1=below positioned, 2=mul. */
-  vector_t how_much_below;  /* If type is 1 or 2, these values contains how much below (between 0 and 1) */
-};
+#if USE_QT4
+
+#include <QVector>
+
 #define SIGNATURE_NORMAL 0
 #define SIGNATURE_BELOW 1
 #define SIGNATURE_MUL 2
 
-static inline bool WSIGNATURE_is_measure_change(const struct WSignatures *signature){
-  return signature->signature.numerator != 0 && signature->beat_num==1;
+struct WSignature{
+  Ratio signature;
+  int bar_num;
+  int beat_num;   // In a 4/4 measure, this value is either 0, 1, 2 or 3, or 4. (0 means that there is no beat placed on this realline)
+  int type;	  /* 0=normal, 1=below positioned, 2=mul. */
+  QVector<float> how_much_below;  /* If type is 1 or 2, these values contains how much below (between 0 and 1) */
+  //vector_t how_much_below;
+
+  WSignature()
+    : signature(ratio(0,0))
+    , bar_num(0)
+    , beat_num(0)
+    , type(SIGNATURE_NORMAL)
+  {}
+};
+
+typedef QVector<WSignature> WSignature_trss;
+
+static inline bool WSIGNATURE_is_measure_change(const WSignature &signature){
+  return signature.signature.numerator != 0 && signature.beat_num==1;
 }
 
-static inline bool WSIGNATURE_is_first_beat(const struct WSignatures *signature){
-  return signature->beat_num==1;
+static inline bool WSIGNATURE_is_first_beat(const WSignature &signature){
+  return signature.beat_num==1;
 }
+
+#endif
+
 
 
 

@@ -126,6 +126,24 @@ static int num_characters_in_num(int num){
     return ((int)log10(num)) + 1;
 }
 
+static void get_highest_bars_and_beats(struct Blocks *block, int *highest_bar, int *highest_beat){
+  struct Beats *beat = block->beats;
+  
+  int bar_num=0,beat_num=0;
+  
+  while(beat!=NULL){
+    if (beat->bar_num > bar_num)
+      bar_num = beat->bar_num;
+    if (beat->beat_num > beat_num)
+      beat_num = beat->beat_num;
+    
+    beat = NextBeat(beat);
+  }
+
+  *highest_bar = bar_num;
+  *highest_beat = beat_num;
+}
+
 static void SetLineNumAreaCoordinates(
                                       struct Tracker_Windows *window,
                                       struct WBlocks *wblock,
@@ -145,17 +163,11 @@ static void SetLineNumAreaCoordinates(
     highest_zoomline_num = 0;
     
   } else {
-  
-    struct WSignatures *wsignatures = WSignatures_get(window, wblock);
+
+    get_highest_bars_and_beats(wblock->block, &highest_bar_num, &highest_beat_num);
 
     int realline;
     for(realline=0 ; realline < wblock->num_reallines ; realline++){
-      struct WSignatures *wsignature = &wsignatures[realline];
-      if (wsignature->bar_num > highest_bar_num)
-        highest_bar_num = wsignature->bar_num;
-      if (wsignature->beat_num > highest_beat_num)
-        highest_beat_num = wsignature->beat_num;
-
       const struct LocalZooms *localzoom = wblock->reallines[realline];
       
       if (localzoom->l.p.line > highest_linenum)

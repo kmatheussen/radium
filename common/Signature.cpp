@@ -43,13 +43,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-struct WSignatures *WSignatures_get(
-                                    const struct Tracker_Windows *window,
-                                    const struct WBlocks *wblock
-                                    )
+const WSignature_trss WSignatures_get(
+                                      const struct Tracker_Windows *window,
+                                      const struct WBlocks *wblock
+                                      )
 {
-        struct WSignatures *wsignatures = (struct WSignatures *)talloc_atomic_clean(sizeof(struct WSignatures)*wblock->num_reallines);
-
+        WSignature_trss wsignature_trss(wblock->num_reallines);
+        //struct WSignatures *wsignatures = (struct WSignatures *)talloc_atomic_clean(sizeof(struct WSignatures)*wblock->num_reallines);
+        WSignature *wsignatures = wsignature_trss.data();
+        
 	int realline=0;
         int last_written_realline = -1;
         int last_written_new_bar_realline = -1;
@@ -60,16 +62,17 @@ struct WSignatures *WSignatures_get(
 
 		realline=FindRealLineFor(wblock,realline,&beat->l.p);
                 bool is_new_bar = beat->beat_num==1;
-                
+
+                WSignature *wsignature = &wsignatures[realline];
+
                 if(PlaceNotEqual(&wblock->reallines[realline]->l.p,&beat->l.p)) {
-                  wsignatures[realline].type=SIGNATURE_BELOW;
-                  float *f = (float*)talloc_atomic(sizeof(float));
+                  wsignature->type=SIGNATURE_BELOW;
                   float y1 = p_float(wblock->reallines[realline]->l.p);
                   float y2 = realline==wblock->num_reallines-1 ? wblock->num_reallines : p_float(wblock->reallines[realline+1]->l.p);
-                  *f = scale( p_float(beat->l.p),
-                              y1, y2,
-                              0,1);
-                  VECTOR_push_back(&wsignatures[realline].how_much_below, f);
+                  float  f = scale( p_float(beat->l.p),
+                                    y1, y2,
+                                    0,1);
+                  wsignature->how_much_below.push_back(f);
                 }
 
                 /*
@@ -85,19 +88,19 @@ struct WSignatures *WSignatures_get(
                 
                 if (is_new_bar && realline != last_written_new_bar_realline) {  // Unlike the multi-behavior for other wxxx-types, we show the first element, and not the last.
                   
-                  wsignatures[realline].signature = beat->signature;
-                  wsignatures[realline].bar_num  = beat->bar_num;
-                  wsignatures[realline].beat_num  = beat->beat_num;
+                  wsignature->signature = beat->signature;
+                  wsignature->bar_num  = beat->bar_num;
+                  wsignature->beat_num  = beat->beat_num;
                   
                 } else if (realline != last_written_realline) {
                   
-                  wsignatures[realline].signature = beat->signature;
-                  wsignatures[realline].bar_num  = beat->bar_num;
-                  wsignatures[realline].beat_num  = beat->beat_num;
+                  wsignature->signature = beat->signature;
+                  wsignature->bar_num  = beat->bar_num;
+                  wsignature->beat_num  = beat->beat_num;
                   
                 } else {
                   
-                  wsignatures[realline].type=SIGNATURE_MUL;
+                  wsignature->type=SIGNATURE_MUL;
                   
 		}
         
@@ -105,10 +108,11 @@ struct WSignatures *WSignatures_get(
                 last_written_realline = realline;
                 if (is_new_bar)
                   last_written_new_bar_realline = realline;
+                
 		beat = NextBeat(beat);
 	}
 
-        return wsignatures;
+        return wsignature_trss;
 }
 
 

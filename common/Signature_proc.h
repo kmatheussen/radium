@@ -14,11 +14,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
-extern LANGSPEC struct WSignatures *WSignatures_get(
-                                        const struct Tracker_Windows *window,
-                                        const struct WBlocks *wblock
-                                        );
+#if USE_QT4
+const WSignature_trss WSignatures_get(
+                                      const struct Tracker_Windows *window,
+                                      const struct WBlocks *wblock
+                                      );
+#endif
 
 extern LANGSPEC struct Signatures *SetSignature(
                                                 struct Blocks *block,
