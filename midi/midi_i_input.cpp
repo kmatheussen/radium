@@ -461,8 +461,9 @@ static void add_recorded_fx(struct Tracker_Windows *window, struct WBlocks *wblo
     } else {
       nodenum = createFxnode(value, place, fxnum, tracknum, blocknum, -1);
     }
-    
-    setFxnodeLogtype(LOGTYPE_HOLD, nodenum, fxnum, tracknum, blocknum, -1);
+
+    if (nodenum != -1)
+      setFxnodeLogtype(LOGTYPE_HOLD, nodenum, fxnum, tracknum, blocknum, -1);
           
     midi_event->msg = 0; // don't use again later.
   }
