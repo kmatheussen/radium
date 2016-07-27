@@ -976,7 +976,12 @@ static bool fill_in_time_position2(time_position_t *time_position){
     
   } while(jackblock_variables_protector.read_end(generation)==false); // ensure that the variables inside this loop are read atomically.
 
+#if defined(RELEASE)
+  if (block==NULL) // I think this might be valid in some situations.
+    return false;
+#else
   R_ASSERT_RETURN_IF_FALSE2(block!=NULL, false);
+#endif
   
   int deltatime = get_audioblock_time(jackblock_last_frame_stime2);
 
