@@ -14,16 +14,21 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#include <QTime>
+//#include <QTime>
 
 #include "../common/nsmtracker.h"
 
-static QTime time234;
+//static QTime time234;
+static double g_start_time;
+
+extern double monotonic_seconds();
 
 double TIME_get_ms(void){
-  return time234.elapsed();
+  return (monotonic_seconds() - g_start_time) * 1000.0;
+  //return time234.elapsed();
 }
 
 void TIME_init(void){
-  time234.start();
+  g_start_time = monotonic_seconds();
+  //time234.start();
 }

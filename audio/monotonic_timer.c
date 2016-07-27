@@ -2,6 +2,9 @@
 //
 // A cross platform monotonic timer.
 
+// Note that this filed is compiled with g++.
+
+
 #include <unistd.h>
 
 #define NANOS_PER_SECF 1000000000.0
