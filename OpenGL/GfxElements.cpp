@@ -138,7 +138,7 @@ struct GradientTriangles : public vl::Effect {
   vl::ref<vl::GLSLProgram> glsl; // seems like reference must be stored here to avoid memory problems.
   vl::Uniform *uniform_y;
 
-  MyMutex ref_mutex;
+  SpinlockIMutex ref_mutex;
 
   GradientTriangles(GradientType::Type type)
     : next(NULL)

@@ -25,28 +25,25 @@
 
 namespace{
 
-struct MyMutex : public vl::IMutex{
-  radium::Mutex mutex;
-  int num_visitors;
+struct SpinlockIMutex : public vl::IMutex{
+  DEFINE_SPINLOCK_NOINIT(spinlock);
   
-  MyMutex() 
-    : mutex(true)
-    , num_visitors(0) 
-  {}
+  SpinlockIMutex() 
+  {
+    INIT_SPINLOCK(spinlock);
+  }
   
   virtual void 	lock () {
-    mutex.lock();
-    num_visitors++;
+    SPINLOCK_OBTAIN(spinlock);
   }
   
   virtual void 	unlock () {
-    num_visitors--;
-    mutex.unlock();
+    SPINLOCK_RELEASE(spinlock);
   }
   
   virtual int isLocked () const {
     //Returns 1 if locked, 0 if non locked, -1 if unknown. 
-    return num_visitors>0;
+    return SPINLOCK_IS_OBTAINED(spinlock);
   }
   
 };
@@ -67,7 +64,7 @@ static QHash<QString, QHash<char,ImageHolder>* > g_imageholderss;
 static QSet<QString> g_imageholder_fonts;
    
 
-static MyMutex image_mutex;
+static SpinlockIMutex image_mutex;
 
 static inline void GE_add_imageholder(QFont qfont, QHash<char,ImageHolder> *imageholders, const char *chars){
   QFontMetrics metrics(qfont);

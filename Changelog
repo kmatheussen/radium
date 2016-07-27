@@ -33,7 +33,7 @@ Changes 3.9.8 -> 3.9.9:
 * Fix copying/pasting/cutting tempo tracks
 * More accurate play range looping.
 * More time set off for for graphical updates.
-   Should be noticable if using VST plugins on Windows or OSX.
+* Should be noticable if using VST plugins on Windows or OSX.
 * Workaround for OSX crash when deleting some VST plugins with open native GUI.
 * Use non-native color selector on OSX (i.e. no separate window).
 * MIDI learn. (right-click a slider or right-click a check box)

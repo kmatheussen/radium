@@ -200,6 +200,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
  Soundfilesaver_widget(QWidget *parent=NULL)
     : RememberGeometryQDialog(parent)
     , currently_saving_plugin(NULL)
+    , msgBox(NULL)
   {
     _initing = true;
 
@@ -241,13 +242,14 @@ public slots:
 
       if(filename_edit->text()==QString("")){
         GFX_Message(NULL,
-                    QString(save_multi ? "Directory" : "Filename") +
-                    " was not specified.");
+                    "%s was not specified.",
+                    save_multi ? "Directory" : "Filename"
+                    );
         return;
       }
 
-      delete parent->msgBox;
-      parent->msgBox = new MyQMessageBox;  // ensure clickedButton()==NULL.
+      delete msgBox;
+      msgBox = new MyQMessageBox;  // ensure clickedButton()==NULL.
 
 
       msgBox->setStandardButtons(QMessageBox::Cancel);
