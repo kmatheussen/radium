@@ -17,6 +17,7 @@
 #define USE_FREETYPE 0
 #define RADIUM_DRAW_FONTS_DIRECTLY 0
 
+static void setActorEnableMask(vl::Actor *actor);
 #include "TextBitmaps.hpp"
 
 #include "../common/nsmtracker.h"
@@ -31,8 +32,6 @@
 
 #define USE_TRIANGLE_STRIPS 0
 #define NUM_PREDEFINED_COLORS 16
-
-
 
 
 static volatile float g_height = 512;
@@ -343,7 +342,8 @@ struct _GE_Context : public vl::Object{
   } color;
 
   int _z;
-
+  int _slice;
+  
   std::vector< vl::ref<GradientTriangles> > gradient_triangles;
   
   //private:
@@ -361,12 +361,13 @@ public:
   }
   */
 
-  _GE_Context(const Color _color, int z)
+  _GE_Context(const Color _color, int z, int slice)
     : textbitmaps(false)
     , textbitmaps_halfsize(true)
       //, has_scissor(false)
     , color(_color)
     , _z(z)
+    , _slice(slice)
       //, gradient(NULL)
       //, is_gradient(false)
   {
@@ -387,7 +388,7 @@ public:
                  );
   }
 
-  vl::Transform *get_transform(vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform){
+  vl::Transform *get_transform(vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform) const {
     if (Z_IS_STATIC_X(_z))
       return static_x_transform.get();
     else if (_z == Z_PLAYCURSOR)
@@ -402,7 +403,6 @@ public:
 
 };
 
-    
 void GE_set_z(GE_Context *c, int new_z) {
   c->_z = new_z;
 }
@@ -411,12 +411,31 @@ int GE_get_z(GE_Context *c){
   return c->_z;
 }
 
+GE_Rgb GE_get_rgb(GE_Context *c){
+  return c->color.c;
+}
+
 /* Drawing */
 
+static void setActorEnableMask(vl::Actor *actor){
+  int height = safe_volatile_float_read(&g_height);
+  int y1 = scale(actor->boundingBox().maxCorner().y(), height, 0, 0, height);
+  int y2 = scale(actor->boundingBox().minCorner().y(), height, 0, 0, height);
+
+  //printf("  y1: %d, y2: %d. mask: %x\n",y1,y2,getMask(y1,y2));
+  actor->setEnableMask(getMask(y1,y2));
+}
+
 static void setScrollTransform(vl::ref<GE_Context> c, vl::Actor *actor, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform){
+  
+  actor->computeBounds();
+  
   vl::Transform *transform = c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
-  if (transform != NULL)
-    actor->setTransform(transform);
+
+  if (transform==scroll_transform || transform==static_x_transform)
+    setActorEnableMask(actor);
+
+  actor->setTransform(transform);
 
 #if 0
   if (transform==scroll_transform)
@@ -442,17 +461,17 @@ static radium::Mutex mutex;
 
 static GE_Rgb background_color;
 
-typedef QMap<int, std::map<uint64_t, vl::ref<GE_Context> > > Contexts;
-//                         ^             ^
-//                         |             |
-//                         z             color
+typedef QMap<int, QHash<int, QHash<uint64_t, vl::ref<GE_Context> > > >Contexts;
+//            ^          ^            ^
+//            |          |            |
+//            z     block slice      color
 
 
 // Contains all data necessary to paint the editor.
 // Created in the main thread, and then transfered to the OpenGL thread.
 struct PaintingData{
   Contexts contexts;
-  std::vector< vl::ref<GradientTriangles> > gradient_triangles;
+  //std::vector< vl::ref<GradientTriangles> > gradient_triangles;
   SharedVariables shared_variables;
 };
 
@@ -559,19 +578,23 @@ static void setColorEnd(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c){
 // figured out how to get it yet.
 void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset){
   for (Contexts::Iterator it = painting_data->contexts.begin(); it != painting_data->contexts.end(); ++it) {
-    std::map<uint64_t, vl::ref<GE_Context> > contexts = it.value();
+    const auto hepp = it.value();
       
-    for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {      
-      vl::ref<GE_Context> c = iterator->second;
-
-      for (vl::ref<GradientTriangles> gradient_triangles : c->gradient_triangles)
-        gradient_triangles->set_y_offset(y_offset);
+    for (auto it = hepp.begin(); it != hepp.end(); ++it) {
+      const auto contexts = it.value();
+      
+      for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {      
+        const vl::ref<GE_Context> c = iterator.value();
+        
+        for (vl::ref<GradientTriangles> gradient_triangles : c->gradient_triangles)
+          gradient_triangles->set_y_offset(y_offset);
+      }
     }
   }
 }
 
 
-void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform){
+void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::VectorGraphics *vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform){
 
   GE_Rgb new_background_color;
 
@@ -596,105 +619,111 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
     //vg->setTextureMode(vl::TextureMode_Repeat 	); // Note: MAY FIX gradient triangle non-overlaps.
 
     for (Contexts::Iterator it = painting_data->contexts.begin(); it != painting_data->contexts.end(); ++it) {
+      const auto hepp = it.value();
 
-      //int z = it.key();
-      std::map<uint64_t, vl::ref<GE_Context> > contexts = it.value();
+      for (auto it = hepp.begin(); it != hepp.end(); ++it) {
+
+        //int z = it.key();
+        const auto contexts = it.value();
       
 
-      // 1. Filled boxes
-      for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
+        // 1. Filled boxes
+        for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
         
-        vl::ref<GE_Context> c = iterator->second;
+          const vl::ref<GE_Context> c = iterator.value();
         
-        if(c->boxes.size() > 0) {
-          setColorBegin(vg, c);
+          if(c->boxes.size() > 0) {
+            setColorBegin(vg, c);
           
-          setScrollTransform(c, vg->fillQuads(c->boxes), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
+            setScrollTransform(c, vg->fillQuads(c->boxes), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
           
-          setColorEnd(vg, c);
+            setColorEnd(vg, c);
+          }
         }
-      }
       
-      // 2. triangle strips
-      for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
+        // 2. triangle strips
+        for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
 
-        vl::ref<GE_Context> c = iterator->second;
+          const vl::ref<GE_Context> c = iterator.value();
         
 #if USE_TRIANGLE_STRIPS
-        if(c->trianglestrips.size() > 0) {
-          setColorBegin(vg, c);
-          setScrollTransform(c, vg->fillTriangleStrips(c->trianglestrips), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
-          //vg->fillPolygons(c->trianglestrips);
+          if(c->trianglestrips.size() > 0) {
+            setColorBegin(vg, c);
+            setScrollTransform(c, vg->fillTriangleStrips(c->trianglestrips), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
+            //vg->fillPolygons(c->trianglestrips);
           
-          setColorEnd(vg, c);
-        }
-        // note: missing gradient triangles for USE_TRIANGLE_STRIPS.
+            setColorEnd(vg, c);
+          }
+          // note: missing gradient triangles for USE_TRIANGLE_STRIPS.
 #else
-        for (vl::ref<GradientTriangles> gradient_triangles : c->gradient_triangles)
-          setScrollTransform(c, gradient_triangles->render(vg.get()), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
+          for (vl::ref<GradientTriangles> gradient_triangles : c->gradient_triangles)
+            setScrollTransform(c, gradient_triangles->render(vg), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
 
-        if(c->triangles.size() > 0) {
-          setColorBegin(vg, c);
+          if(c->triangles.size() > 0) {
+            setColorBegin(vg, c);
           
-          setScrollTransform(c, vg->fillTriangles(c->triangles), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
-          //printf("triangles size: %d\n",(int)c->triangles.size());
+            setScrollTransform(c, vg->fillTriangles(c->triangles), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
+            //printf("triangles size: %d\n",(int)c->triangles.size());
           
-          setColorEnd(vg, c);
-        }
+            setColorEnd(vg, c);
+          }
 
 #endif
-      }
+        }
 
       
-      // 3. Polylines
-      // 4. Boxes
-      // 5. Lines
-      for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
+        // 3. Polylines
+        // 4. Boxes
+        // 5. Lines
+        for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
         
-        vl::ref<GE_Context> c = iterator->second;
+          const vl::ref<GE_Context> c = iterator.value();
         
-        bool has_set_color = false;
+          bool has_set_color = false;
         
-        for(std::map< int, std::vector<vl::dvec2> >::iterator iterator = c->lines.begin(); iterator != c->lines.end(); ++iterator) {
-          if(has_set_color==false)
-            setColorBegin(vg, c);
-          has_set_color=true;
+          for(auto iterator = c->lines.begin(); iterator != c->lines.end(); ++iterator) {
+            if(has_set_color==false)
+              setColorBegin(vg, c);
+            has_set_color=true;
           
-          vg->setLineWidth(get_pen_width_from_key(iterator->first));
-          setScrollTransform(c, vg->drawLines(iterator->second), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
-          //if(c->triangles.size()>0)
-          //  setScrollTransform(c, vg->drawLines(c->triangles), scroll_transform, static_x_transform, scrollbar_transform);
+            vg->setLineWidth(get_pen_width_from_key(iterator->first));
+            setScrollTransform(c, vg->drawLines(iterator->second), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
+            //if(c->triangles.size()>0)
+            //  setScrollTransform(c, vg->drawLines(c->triangles), scroll_transform, static_x_transform, scrollbar_transform);
+          }
+        
+          if(has_set_color==true)
+            setColorEnd(vg, c);
         }
-        
-        if(has_set_color==true)
-          setColorEnd(vg, c);
-      }
 
-      // 6. Text
-      for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
+        // 6. Text
+        for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
         
-        vl::ref<GE_Context> c = iterator->second;
+          const vl::ref<GE_Context> c = iterator.value();
 
-        if(c->textbitmaps.points.size() != 0 || c->textbitmaps_halfsize.points.size() != 0) {
+          if(c->textbitmaps.points.size() != 0 || c->textbitmaps_halfsize.points.size() != 0) {
            
-          setColorBegin(vg, c);
+            setColorBegin(vg, c);
 
-          if(c->textbitmaps.points.size() > 0)
-            c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform));
+            vl::Transform *transform = c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
+            bool set_mask = transform==scroll_transform || transform==static_x_transform;
+              
+            if(c->textbitmaps.points.size() > 0)
+              c->textbitmaps.drawAllCharBoxes(vg, transform, set_mask);
         
-          if(c->textbitmaps_halfsize.points.size() > 0)
-            c->textbitmaps_halfsize.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform));
+            if(c->textbitmaps_halfsize.points.size() > 0)
+              c->textbitmaps_halfsize.drawAllCharBoxes(vg, transform, set_mask);
 
-          setColorEnd(vg, c);
+            setColorEnd(vg, c);
+          }
         }
-      }
 
 
-      //printf("************ z: %d, NUM contexts: %d\n",z, (int)g_contexts.size());
+        //printf("************ z: %d, NUM contexts: %d\n",z, (int)g_contexts.size());
 
       
+      }
     }
-
     
   }vg->endDrawing();
 }
@@ -708,23 +737,39 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
 /* Creating painting_data.  Called from main thread. */
 /***********************************************/
 
-static GE_Context *get_context(const GE_Context::Color color, int z){
-  if(g_painting_data->contexts[z].count(color.key)>0)
-    return g_painting_data->contexts[z][color.key].get();
+static int get_slice_from_y(const int y){
+  return y/SLICE_SIZE;
+}
 
-  GE_Context *c = new GE_Context(color, z);
+static GE_Context *get_context(const GE_Context::Color color, int z, int y){
+  const int slice = get_slice_from_y(y);
+  
+  if(g_painting_data->contexts[z][slice].contains(color.key)>0)
+    return g_painting_data->contexts[z][slice][color.key].get();
 
-  g_painting_data->contexts[z][color.key] = c;
+  GE_Context *c = new GE_Context(color, z, slice);
+
+  g_painting_data->contexts[z][slice][color.key] = c;
   return c;
 }
 
-GE_Context *GE_z(const GE_Rgb rgb, int z){
+GE_Context *GE_y(GE_Context *c, int y){
+  const int slice = get_slice_from_y(y);
+
+  if (slice==c->_slice)
+    return c;
+  else
+    return get_context(c->color, c->_z, y);
+}
+
+
+GE_Context *GE_z(const GE_Rgb rgb, int z, int y){
   GE_Context::Color color;
 
   color.key = 0;
   color.c = rgb;
 
-  return get_context(color, z);
+  return get_context(color, z, y);
 }
 
 static GE_Rgb rgb_from_qcolor(const QColor &color){
@@ -732,28 +777,28 @@ static GE_Rgb rgb_from_qcolor(const QColor &color){
   return rgb;
 }
 
-GE_Context *GE_color_z(const QColor &color, int z){
-  return GE_z(rgb_from_qcolor(color), z);
+GE_Context *GE_color_z(const QColor &color, int z, int y){
+  return GE_z(rgb_from_qcolor(color), z, y);
 }
 
-GE_Context *GE_color_z(enum ColorNums colornum, int z){
+GE_Context *GE_color_z(enum ColorNums colornum, int z, int y){
   //const QColor c = get_qcolor(window, colornum);
-  return GE_z(GE_get_rgb(colornum), z);
+  return GE_z(GE_get_rgb(colornum), z, y);
 }
 
-GE_Context *GE_color_alpha_z(enum ColorNums colornum, float alpha, int z){
+GE_Context *GE_color_alpha_z(enum ColorNums colornum, float alpha, int z, int y){
   GE_Rgb rgb = GE_get_rgb(colornum);
   rgb.a = alpha * 255;
-  return GE_z(rgb, z);
+  return GE_z(rgb, z, y);
 }
 
-GE_Context *GE_textcolor_z(enum ColorNums colornum, int z){
+GE_Context *GE_textcolor_z(enum ColorNums colornum, int z, int y){
   GE_Rgb rgb = GE_get_rgb(colornum);
   rgb.a=230;
-  return GE_z(rgb, z);
+  return GE_z(rgb, z, y);
 }
 
-GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int z){
+GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int z, int y){
 #if 1
   // Reduce number of contexts. May also reduce cpu usage significantly.
   r |= 15;
@@ -764,11 +809,11 @@ GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, u
 
   GE_Rgb rgb = {r,g,b,a};
 
-  return GE_z(rgb, z);
+  return GE_z(rgb, z, y);
 }
 
-GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, int z){
-  return GE_rgba_color_z(r,g,b,255, z);
+GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, int z, int y){
+  return GE_rgba_color_z(r,g,b,255, z, y);
 }
 
 GE_Rgb GE_mix(const GE_Rgb c1, const GE_Rgb c2, float how_much){
@@ -793,25 +838,25 @@ GE_Rgb GE_mix(const GE_Rgb c1, const GE_Rgb c2, float how_much){
   return rgb;
 }
 
-GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int z){
-  return GE_z(GE_mix(c1, c2, how_much), z);
+GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int z, int y){
+  return GE_z(GE_mix(c1, c2, how_much), z, y);
 }
 
-GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z){
+GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z, int y){
   GE_Context::Color color;
 
   color.c=c1;
   color.c_gradient=c2;
 
-  GE_Context *c = get_context(color, z);
+  GE_Context *c = get_context(color, z, y);
 
   //c->is_gradient = true;
 
   return c;
 }
 
-GE_Context *GE_gradient_z(const QColor &c1, const QColor &c2, int z){
-  return GE_gradient_z(rgb_from_qcolor(c1), rgb_from_qcolor(c2), z);
+GE_Context *GE_gradient_z(const QColor &c1, const QColor &c2, int z, int y){
+  return GE_gradient_z(rgb_from_qcolor(c1), rgb_from_qcolor(c2), z, y);
 }
 
 

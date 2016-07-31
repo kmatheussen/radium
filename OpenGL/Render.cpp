@@ -129,7 +129,7 @@ static void draw_bordered_text(
   // 2. Line (the gradient one)
   QColor qc1 = GE_qcolor(LOW_BACKGROUND_COLOR_NUM).darker(96);
   QColor qc2 = GE_qcolor(LOW_BACKGROUND_COLOR_NUM).darker(113);
-  GE_Context *c2 = GE_gradient_z(qc1, qc2, z); //GE_get_rgb(9), GE_get_rgb(11), z);
+  GE_Context *c2 = GE_gradient_z(qc1, qc2, z, y); //GE_get_rgb(9), GE_get_rgb(11), z);
 
 #if 0  
   GE_line(c2,
@@ -190,7 +190,7 @@ static void draw_text_num(
 static void draw_node_indicator(float x,
                                 float y)
 {  
-  GE_Context *c = GE_color_alpha_z(AUTOMATION_INDICATOR_COLOR_NUM, 0.6, Z_MAX_SCROLLTRANSFORM);
+  GE_Context *c = GE_color_alpha_z(AUTOMATION_INDICATOR_COLOR_NUM, 0.6, Z_MAX_SCROLLTRANSFORM, NOMASK_Y);
   
   float away1 = 1024;
   float away2 = 5;
@@ -243,32 +243,32 @@ static void draw_skewed_box(const struct Tracker_Windows *window,
   int z = Z_ABOVE(Z_ZERO);
 
   if (node == current_node) {
-    GE_filledBox(GE_mix_alpha_z(GE_get_rgb(color), White_rgb(), 300, 0.3, z),
+    GE_filledBox(GE_mix_alpha_z(GE_get_rgb(color), White_rgb(), 300, 0.3, z, y),
                  x1,y1,
                  x2-1,y2
                  );
   }
 
   // vertical left
-  GE_line(GE_mix_alpha_z(GE_get_rgb(color), White_rgb(), 100, 0.3, z),
+  GE_line(GE_mix_alpha_z(GE_get_rgb(color), White_rgb(), 100, 0.3, z, y1+1),
           x1+1, y1+1,
           x1+2,y2-1,
           width);
 
   // horizontal bottom
-  GE_line(GE_mix_alpha_z(GE_get_rgb(color), Black_rgb(), 300, 0.3, z),
+  GE_line(GE_mix_alpha_z(GE_get_rgb(color), Black_rgb(), 300, 0.3, z, y2-1),
           x1+2,y2-1,
           x2-1,y2-2,
           width);
 
   // vertical right
-  GE_line(GE_mix_alpha_z(GE_get_rgb(color), Black_rgb(), 400, 0.3, z),
+  GE_line(GE_mix_alpha_z(GE_get_rgb(color), Black_rgb(), 400, 0.3, z, y1+2),
           x2-1,y2-2,
           x2-2,y1+2,
           width);
 
   // horizontal top
-  GE_line(GE_mix_alpha_z(GE_get_rgb(color), White_rgb(), 300, 0.3, z),
+  GE_line(GE_mix_alpha_z(GE_get_rgb(color), White_rgb(), 300, 0.3, z, y1+1),
           x2-2,y1+2,
           x1+1,y1+1,
           width);
@@ -279,15 +279,15 @@ void create_double_border(
                           int x, int y, int y2
                           )
 {
-  GE_line(Black_color(),x,y,x,y2,0.5);
-  GE_line(GE_color(TRACK_SEPARATOR2_COLOR_NUM),x+1,y,x+1,y2,0.5);
+  GE_line(Black_color(y),x,y,x,y2,0.5);
+  GE_line(GE_color(TRACK_SEPARATOR2_COLOR_NUM,NOMASK_Y),x+1,y,x+1,y2,0.5);
 }
 
 void create_single_border(
                           int x, int y, int y2
                           )
 {
-  GE_line(GE_color(TRACK_SEPARATOR1_COLOR_NUM),x,y,x,y2,0.5);
+  GE_line(GE_color(TRACK_SEPARATOR1_COLOR_NUM,NOMASK_Y),x,y,x,y2,0.5);
 }
 
 
@@ -295,7 +295,7 @@ void create_single_linenum_border(
                                   int x, int y, int y2
                                   )
 {
-  GE_line(GE_color_alpha(TRACK_SEPARATOR1_COLOR_NUM,0.5),x,y,x,y2,0.5);
+  GE_line(GE_color_alpha(TRACK_SEPARATOR1_COLOR_NUM,0.5,NOMASK_Y),x,y,x,y2,0.5);
 }
 
 
@@ -315,9 +315,9 @@ static GE_Context *drawNodeLines(const struct Tracker_Windows *window, const str
   const float cut_size1 = window->fontheight*2;
   //const float cut_size2 = 10;
 
+  GE_Context *c = NULL;
   
   float width = get_nodeline_width(is_selected);
-  GE_Context *c = GE_color_alpha_z(colnum, is_selected ? alpha_selected : alpha, Z_ABOVE(Z_ABOVE(Z_ZERO)));
   
   for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next) {
     int logtype = ns->logtype;
@@ -325,7 +325,9 @@ static GE_Context *drawNodeLines(const struct Tracker_Windows *window, const str
     float x2 = logtype==LOGTYPE_HOLD ? ns->x1 : ns->x2;
     float y1 = ns->y1;
     float y2 = ns->y2;
-    
+
+    c = c!=NULL ? GE_y(c, y1) : GE_color_alpha_z(colnum, is_selected ? alpha_selected : alpha, Z_ABOVE(Z_ABOVE(Z_ZERO)), 0);
+
     bool paint_stipled = hide_vertical && is_selected==false && x1 == x2 && (y2 - y1) > cut_size1*3.5;
     
     if (paint_stipled) {
@@ -364,7 +366,7 @@ static GE_Context *drawNodeLines(const struct Tracker_Windows *window, const str
  ************************************/
 
 static void create_left_slider(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  GE_Context *border = GE_color_z(LINE_SLIDER_COLOR_NUM, Z_STATIC);
+  GE_Context *border = GE_color_z(LINE_SLIDER_COLOR_NUM, Z_STATIC, NOMASK_Y);
 
   GE_box(border,
          0,                        get_scrollbar_y1(window, wblock),
@@ -373,7 +375,7 @@ static void create_left_slider(const struct Tracker_Windows *window, const struc
 
 
   //GE_Context *scrollbar = GE_mix_color_z(Black_rgb(), GE_get_rgb(0), 900, Z_SCROLLBAR);
-  GE_Context *scrollbar = GE_color_z(LINE_SLIDER_COLOR_NUM, Z_SCROLLBAR);
+  GE_Context *scrollbar = GE_color_z(LINE_SLIDER_COLOR_NUM, Z_SCROLLBAR, NOMASK_Y);
 
   GE_filledBox(scrollbar,
                2,                            0,
@@ -444,7 +446,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
     struct WTracks *wtrack=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,wblock->left_track);
     
     {
-      GE_Context *c = GE_z(shade_realline(GE_get_rgb(c15), false, wsignature, localzoom), Z_BACKGROUND | Z_STATIC_X);
+      GE_Context *c = GE_z(shade_realline(GE_get_rgb(c15), false, wsignature, localzoom), Z_BACKGROUND | Z_STATIC_X, y1);
       
       if (g_colored_tracks)
         GE_filledBox(c,x1,y1,wtrack->x,y2);
@@ -476,7 +478,8 @@ static void create_background_realline(const struct Tracker_Windows *window, con
                                               localzoom
                                               )
                                ,
-                               Z_BACKGROUND | Z_STATIC_X
+                               Z_BACKGROUND | Z_STATIC_X,
+                               y1
                                );
           
           GE_filledBox(c,x1,y1,x2,y2);
@@ -501,11 +504,11 @@ static void create_background_realline(const struct Tracker_Windows *window, con
       GE_Context *c;
 
       if (WSIGNATURE_is_first_beat(wsignature))
-        c = GE_mix_color_z(GE_get_rgb(c15), Black_rgb(), first_beat_opacity-250, Z_ABOVE(Z_BACKGROUND) | Z_STATIC_X);
+        c = GE_mix_color_z(GE_get_rgb(c15), Black_rgb(), first_beat_opacity-250, Z_ABOVE(Z_BACKGROUND) | Z_STATIC_X, y1);
       else if (wsignature.beat_num>0)
-        c = GE_mix_color_z(GE_get_rgb(c15), Black_rgb(), beat_opacity-250, Z_ABOVE(Z_BACKGROUND) | Z_STATIC_X);
+        c = GE_mix_color_z(GE_get_rgb(c15), Black_rgb(), beat_opacity-250, Z_ABOVE(Z_BACKGROUND) | Z_STATIC_X, y1);
       else
-        c = GE_mix_color_z(GE_get_rgb(c15), Black_rgb(), line_opacity, Z_ABOVE(Z_BACKGROUND) | Z_STATIC_X);
+        c = GE_mix_color_z(GE_get_rgb(c15), Black_rgb(), line_opacity, Z_ABOVE(Z_BACKGROUND) | Z_STATIC_X, y1);
 
       if (true) {
         GE_line(c,x1,y1,x2,y1,line_width);
@@ -553,15 +556,17 @@ static void draw_linenumber(const struct Tracker_Windows *window, const struct W
 
   const int z = Z_LINENUMBERS | Z_STATIC_X;
 
+  float y1 = get_realline_y1(window, realline);
+  
   if (linenumbersVisible() && localzoom->l.p.counter==0) {
 
     draw_text_num(
                   window,
-                  GE_textcolor_z(TEXT_COLOR_NUM, z),
+                  GE_textcolor_z(TEXT_COLOR_NUM, z, y1),
                   localzoom->l.p.line,
                   wblock->linenumbers_max_num_characters,
                   wblock->linenumarea.x,
-                  get_realline_y1(window, realline)
+                  y1
                   );
     
 
@@ -569,22 +574,22 @@ static void draw_linenumber(const struct Tracker_Windows *window, const struct W
     
     draw_text_num(
                   window,
-                  GE_textcolor_z(BAR_TEXT_COLOR_NUM, z),
+                  GE_textcolor_z(BAR_TEXT_COLOR_NUM, z, y1),
                   wsignature.bar_num,
                   wblock->bars_max_num_characters,
                   wblock->linenumarea.x,
-                  get_realline_y1(window, realline)
+                  y1
                   );
 
   } else if (is_beatnum) {
 
     draw_text_num(
                   window,
-                  GE_color_alpha_z(TEXT_COLOR_NUM, 0.45, Z_ZERO),
+                  GE_color_alpha_z(TEXT_COLOR_NUM, 0.45, Z_ZERO, y1),
                   wsignature.beat_num,
                   wblock->beats_max_num_characters,
                   wblock->beats_x,
-                  get_realline_y1(window, realline)
+                  y1
                   );
 
   } else if (is_zoomline) {
@@ -617,11 +622,11 @@ static void draw_linenumber(const struct Tracker_Windows *window, const struct W
     
     draw_text_num(
                   window,
-                  GE_textcolor_z(colornum, z),
+                  GE_textcolor_z(colornum, z, y1),
                   localzoom->zoomline + 1,
                   wblock->zoomlines_max_num_characters,
                   wblock->zoomlines_x,
-                  get_realline_y1(window, realline)
+                  y1
                   );
     
   }
@@ -709,21 +714,27 @@ static void create_tempograph(const struct Tracker_Windows *window, const struct
   struct TempoGraph *tg = create_TempoGraph(window,wblock);
 
   float width = 1.3;
-  GE_Context *c = GE_color(TEMPOGRAPH_COLOR_NUM);
 
   //printf("min/max: %d, %d\n",(int)min,(int)max);
 
+  GE_Context *c = NULL;
+    
   if(fabs(tg->min - tg->max)<20) {
     float middle = (wblock->tempocolorarea.x+wblock->tempocolorarea.x2) / 2.0f;
+    float y1 = get_realline_y1(window, 0);
+    c = c!=NULL ? GE_y(c, y1) : GE_color(TEMPOGRAPH_COLOR_NUM, y1);
     GE_line(c,
-            middle, get_realline_y1(window, 0),
+            middle, y1,
             middle, get_realline_y2(window, wblock->num_reallines-1),
             width);
   }else{
     for(int n=0;n<tg->num_points-1;n++){
+      float y1 = n * tg->line_period;
+      float y2 = (n+1) * tg->line_period;
+      c = c!=NULL ? GE_y(c, y1) : GE_color(TEMPOGRAPH_COLOR_NUM, y1);
       GE_line(c, 
-              scale(tg->times[n],tg->min,tg->max,wblock->tempocolorarea.x,wblock->tempocolorarea.x2), n * tg->line_period,
-              scale(tg->times[n+1],tg->min,tg->max,wblock->tempocolorarea.x,wblock->tempocolorarea.x2), (n+1) * tg->line_period,
+              scale(tg->times[n],tg->min,tg->max,wblock->tempocolorarea.x,wblock->tempocolorarea.x2), y1,
+              scale(tg->times[n+1],tg->min,tg->max,wblock->tempocolorarea.x,wblock->tempocolorarea.x2), y2,
               width);
     }
   }
@@ -748,7 +759,7 @@ static void create_signature(const struct Tracker_Windows *window, const struct 
     char temp[50];
     sprintf(temp, "%d/%d", signature.numerator, signature.denominator);
     
-    GE_text(GE_textcolor_z(TEXT_COLOR_NUM, Z_ZERO),
+    GE_text(GE_textcolor_z(TEXT_COLOR_NUM, Z_ZERO, y),
             temp,
             x,
             y
@@ -783,7 +794,7 @@ static void create_lpb(const struct Tracker_Windows *window, const struct WBlock
   if(lpb!=0){
     draw_text_num(
                   window,
-                  GE_textcolor_z(TEXT_COLOR_NUM, Z_ZERO),
+                  GE_textcolor_z(TEXT_COLOR_NUM, Z_ZERO, y),
                   lpb,
                   wblock->lpbarea.width/window->fontwidth,
                   wblock->lpbarea.x,
@@ -805,7 +816,7 @@ static void create_lpb(const struct Tracker_Windows *window, const struct WBlock
       RError("something is wrong");
     };
     
-    GE_text(GE_color_alpha_z(TEXT_COLOR_NUM, 0.3, Z_ZERO), typetext, wblock->lpbTypearea.x, y);
+    GE_text(GE_color_alpha_z(TEXT_COLOR_NUM, 0.3, Z_ZERO, y), typetext, wblock->lpbTypearea.x, y);
   }
 }
 
@@ -835,7 +846,7 @@ static void create_bpm(const struct Tracker_Windows *window, const struct WBlock
   if(tempo!=0){
     draw_text_num(
                   window,
-                  GE_textcolor_z(TEXT_COLOR_NUM, Z_ZERO),
+                  GE_textcolor_z(TEXT_COLOR_NUM, Z_ZERO, y),
                   tempo,
                   wblock->tempoarea.width/window->fontwidth,
                   wblock->tempoarea.x,
@@ -855,7 +866,7 @@ static void create_bpm(const struct Tracker_Windows *window, const struct WBlock
       abort();
     };
 
-    GE_text(GE_color_alpha_z(TEXT_COLOR_NUM, 0.3, Z_ZERO), typetext, wblock->tempoTypearea.x, y);
+    GE_text(GE_color_alpha_z(TEXT_COLOR_NUM, 0.3, Z_ZERO, y), typetext, wblock->tempoTypearea.x, y);
   }
 }
 
@@ -1055,14 +1066,14 @@ static GE_Rgb get_note_color(float notenum){
   return rgb;
 }
 
-static GE_Context *get_note_background(float notenum, bool highlight){
+static GE_Context *get_note_background(float notenum, bool highlight, int y){
 
   GE_Rgb rgb = get_note_color(notenum);
     
   if (highlight)
     rgb = GE_mix(rgb, GE_get_rgb(WAVEFORM_COLOR_NUM), 650);
 
-  return GE(rgb);
+  return GE(rgb, y);
   //return GE_gradient(rgb, GE_get_rgb(0));
 }
 
@@ -1138,7 +1149,7 @@ static void paint_halfsize_note(GE_Context *c, int num, const char *notetext, in
 }
 
 static void paint_tr2(const TrackRealline2 &tr2, char **NotesTexts, int num, int x, int y){
-  GE_Context *c = GE_textcolor(get_colnum(tr2));
+  GE_Context *c = GE_textcolor(get_colnum(tr2), y);
   float notenum = get_notenum(tr2);
   paint_halfsize_note(c, num, NotesTexts[(int)notenum], x, y);
   //GE_text_halfsize(foreground, NotesTexts[(int)notenum1], x, y);
@@ -1165,7 +1176,7 @@ static void paint_multinotes(const struct WTracks *wtrack, const Trs &trs, char 
     return;
 
   if (num_elements>4){
-    GE_Context *c = GE_textcolor(TEXT_COLOR_NUM);
+    GE_Context *c = GE_textcolor(TEXT_COLOR_NUM, y1);
     paint_halfsize_note(c, 4, NotesTexts[NOTE_MUL], x_middle, y_middle);
   } else {
     paint_tr2(trs[3], NotesTexts, 4, x_middle, y_middle);
@@ -1197,7 +1208,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
       float y = (y1+y2) / 2.0f;
       float x1 = wtrack->notearea.x2;
       float x2 = (GetNoteX1(wtrack,tr2.note) + GetNoteX2(wtrack,tr2.note)) / 2.0f;
-      GE_line(GE_color(TEXT_COLOR_NUM),
+      GE_line(GE_color(TEXT_COLOR_NUM,y1),
               x1, y,
               x2, y,
               0.8);
@@ -1217,13 +1228,13 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
       
 
     if(notenum>0 && notenum<128)
-      GE_filledBox(get_note_background(notenum, highlight), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
+      GE_filledBox(get_note_background(notenum, highlight, y1), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
       
     if (trs.size() > 1)
       paint_multinotes(wtrack, trs, NotesTexts, y1, y2);
 
     else if (wblock->mouse_track == wtrack->l.num || cents!=0 || wtrack->is_wide==true) {
-      GE_Context *foreground = GE_textcolor_z(colnum,Z_ABOVE(Z_ZERO));
+      GE_Context *foreground = GE_textcolor_z(colnum,Z_ABOVE(Z_ZERO), y1);
 
       if (cents==0 || wtrack->centtext_on==true)
         GE_text(foreground, NotesTexts[(int)notenum], wtrack->notearea.x, y1); 
@@ -1239,12 +1250,12 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
       //GE_text(foreground, NotesTexts[(int)notenum], wtrack->notearea.x, y1);
         
     }else
-      draw_bordered_text(window, GE_textcolor_z(colnum, Z_ZERO), NotesTexts[(int)notenum], wtrack->notearea.x, y1);
+      draw_bordered_text(window, GE_textcolor_z(colnum, Z_ZERO, y1), NotesTexts[(int)notenum], wtrack->notearea.x, y1);
   }
 
   if (wtrack->centtext_on) {
 
-    GE_Context *foreground = GE_textcolor_z(colnum,Z_ABOVE(Z_ZERO));
+    GE_Context *foreground = GE_textcolor_z(colnum,Z_ABOVE(Z_ZERO),y1);
 
     if (cents != 0){
       char centtext[16];
@@ -1264,7 +1275,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
     int chance  = get_chance(trs);
             
     if (chance!=-1 && chance != 0x100){
-      GE_Context *foreground = GE_textcolor_z(AUTOMATION2_COLOR_NUM,Z_ABOVE(Z_ZERO));
+      GE_Context *foreground = GE_textcolor_z(AUTOMATION2_COLOR_NUM,Z_ABOVE(Z_ZERO),y1);
 
       char chancetext[16];
       if (chance==-2)
@@ -1281,22 +1292,24 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
 static void create_pitches(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
   const bool show_read_lines = true; //wtrack->noteshowtype==GFXTYPE1 || wblock->mouse_track==wtrack->l.num;
 
-  GE_Context *line_color = GE_color_alpha(PITCH_LINE_COLOR_NUM, 0.5);
-  
   const struct NodeLine *nodelines = GetPitchNodeLines(window,
                                                        wblock,
                                                        wtrack,
                                                        note
                                                        );
 
-  
+  GE_Context *line_color = NULL;
+        
   // lines
   for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
     if(show_read_lines || nodeline->x1!=nodeline->x2) {
       int logtype = nodeline->logtype;
+      
       float x1 = nodeline->x1;
       float x2 = logtype==LOGTYPE_HOLD ? nodeline->x1 : nodeline->x2;
-      
+
+      line_color = line_color!=NULL ? GE_y(line_color, nodeline->y1) : GE_color_alpha(PITCH_LINE_COLOR_NUM, 0.5, nodeline->y1);  
+
       GE_line(line_color, x1, nodeline->y1, x2, nodeline->y2, get_pitchline_width());
 
       if (logtype==LOGTYPE_HOLD)
@@ -1334,11 +1347,11 @@ static void create_pianoroll_grid(const struct Tracker_Windows *window, const st
   int y1=get_realline_y1(window, 0);
   int y2=get_realline_y2(window, wblock->num_reallines-1);
 
-  GE_Context *octave_color = GE_color_alpha(PIANOROLL_OCTAVE_COLOR_NUM, 0.25);
+  GE_Context *octave_color = GE_color_alpha(PIANOROLL_OCTAVE_COLOR_NUM, 0.25, NOMASK_Y);
   //GE_Context *note_color = GE_color_alpha(8, 0.5);
 
-  GE_Context *white_key_color = GE_color_alpha(WHITE_COLOR_NUM, 0.1);
-  GE_Context *black_key_color = GE_color_alpha(BLACK_COLOR_NUM, 0.1);
+  GE_Context *white_key_color = GE_color_alpha(WHITE_COLOR_NUM, 0.1, NOMASK_Y);
+  GE_Context *black_key_color = GE_color_alpha(BLACK_COLOR_NUM, 0.1, NOMASK_Y);
 
   float gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
   float notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
@@ -1389,9 +1402,9 @@ static void draw_pianonote_text(const struct Tracker_Windows *window, float note
   float textgfxlength = strlen(text) * (is_current ? window->fontwidth : window->fontwidth/2);
   float x = midpos - (textgfxlength / 2.0);
   
-  GE_Context *c = GE_color_alpha_z(PIANOROLL_NOTE_NAME_COLOR_NUM, 0.7, Z_ABOVE(Z_ZERO));
-  
   y -= (is_current ? window->fontheight : window->fontheight/2) + 2;
+  
+  GE_Context *c = GE_color_alpha_z(PIANOROLL_NOTE_NAME_COLOR_NUM, 0.7, Z_ABOVE(Z_ZERO), y);
   
   if (is_current)
     GE_text(c,text,x,y);
@@ -1418,22 +1431,15 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
 
   create_pianoroll_grid(window, wblock, wtrack);
 
-  GE_Context *note_color;
-
   enum ColorNums colornum = PIANONOTE_COLOR_NUM;
   
-  if (wtrack->track->patch==NULL)
-    note_color = GE_color_alpha(colornum, 0.4);
-  else
-    note_color = GE_mix_color(GE_get_custom_rgb(wtrack->track->patch->colornum), GE_get_rgb(colornum), 400);
-
-  GE_Context *current_note_color = GE_mix_color(GE_get_rgb(colornum), White_rgb(), 500);
-  
-  GE_Context *border_color = GE_color_alpha_z(PIANOROLL_NOTE_BORDER_COLOR_NUM, 0.7, Z_ABOVE(Z_ZERO));
-
   GE_set_x_scissor(wtrack->pianoroll_area.x,
                    wtrack->pianoroll_area.x2+1);
 
+  GE_Context *border_color = NULL;
+  GE_Context *current_note_color = NULL;
+  GE_Context *note_color = NULL;
+  
   int notenum = 0;
   const struct Notes *note=wtrack->track->notes;
   while(note != NULL){
@@ -1446,7 +1452,6 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
     int pianonotenum = -1;
     
     for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next) {
-      GE_Context *c = note_color;
 
       bool is_continuing = false;
       
@@ -1456,21 +1461,39 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
 
       if (nodeline->is_node)
         pianonotenum++;      
-
-      bool is_current = wtrack->l.num==current_piano_note.tracknum && notenum==current_piano_note.notenum && pianonotenum==current_piano_note.pianonotenum;
-
-      //printf("pianonotenum: %d, curr.pianonotenum: %d, is_current: %s\n",pianonotenum,current_piano_note.pianonotenum,is_current?"true":"false");
-      
-      if (is_current) {
-        c = current_note_color;
-        GE_unset_x_scissor();
-      }
-
+ 
       int logtype = nodeline->logtype;
       float x1 = nodeline->x1;
       float x2 = logtype==LOGTYPE_HOLD ? nodeline->x1 : nodeline->x2;
       float y1 = nodeline->y1;
       float y2 = nodeline->y2;
+ 
+      border_color = border_color!=NULL ? GE_y(border_color, y1) : GE_color_alpha_z(PIANOROLL_NOTE_BORDER_COLOR_NUM, 0.7, Z_ABOVE(Z_ZERO), y1);
+ 
+
+      bool is_current = wtrack->l.num==current_piano_note.tracknum && notenum==current_piano_note.notenum && pianonotenum==current_piano_note.pianonotenum;
+
+      //printf("pianonotenum: %d, curr.pianonotenum: %d, is_current: %s\n",pianonotenum,current_piano_note.pianonotenum,is_current?"true":"false");
+
+      GE_Context *c;
+
+      if (is_current) {
+        
+        current_note_color = current_note_color != NULL ? GE_y(current_note_color, y1) : GE_mix_color(GE_get_rgb(colornum), White_rgb(), 500, y1);
+        c = current_note_color;
+        GE_unset_x_scissor();
+        
+      } else {
+        if (note_color != NULL) {
+          note_color = GE_y(note_color, y1);
+        } else {
+          if (wtrack->track->patch==NULL)
+            note_color = GE_color_alpha(colornum, 0.4, y1);
+          else
+            note_color = GE_mix_color(GE_get_custom_rgb(wtrack->track->patch->colornum), GE_get_rgb(colornum), 400, y1);
+        }
+        c = note_color;
+      }
 
       GE_line(c,
               x1, y1,
@@ -1648,14 +1671,17 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
                                          );
     
 
+  GE_Context *c = NULL;
+  
   //GE_Context *c = Black_color(); //GE_mix_alpha_z(GE_get_rgb(0), Black_rgb(), 100, 0.7, Z_ZERO);
   //GE_Context *c = GE_mix_alpha_z(GE_get_rgb(0), GE_get_rgb(2), 250, 0.9, Z_ZERO);
-  GE_Context *c = GE_mix_color_z(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM), GE_get_rgb(WAVEFORM_COLOR_NUM), 100, Z_ZERO);
 
 #define NUM_LINES_PER_PEAK 2
 
   for(int ch=0;ch<num_channels;ch++){
 
+    GE_Context *last_c = NULL;
+    
     GE_trianglestrip_start();
 
     for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
@@ -1665,6 +1691,17 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
       float y1 = ns->y1;
       float y2 = ns->y2;
 
+      c = c!=NULL ? GE_y(c, y1) : GE_mix_color_z(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM), GE_get_rgb(WAVEFORM_COLOR_NUM), 100, Z_ABOVE(Z_ZERO), y1);
+
+      if (c != last_c){
+        if (last_c != NULL) 
+          GE_trianglestrip_end(last_c);
+
+        GE_trianglestrip_start();
+
+        last_c = c;
+      }
+      
       float time1 = Place2STime(wblock->block, &ns->element1->p) - note_time;
       float time2 = Place2STime(wblock->block, &ns->element2->p) - note_time;
       
@@ -1740,7 +1777,8 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
 
     } // end node iteration
 
-    GE_trianglestrip_end(c);
+    if (last_c != NULL)
+      GE_trianglestrip_end(last_c);
 
   } // end ch iteration
 }
@@ -1757,9 +1795,7 @@ static void create_velocity_gradient_background(
   GE_Rgb rgb1 = get_note_color(start_note);
   GE_Rgb rgb2 = get_note_color(end_note);
 
-  GE_Context *c = GE_gradient_z(rgb1, rgb2, Z_BELOW(Z_ZERO));
-
-  GE_gradient_triangle_start(GradientType::VELOCITY);
+  GE_Context *c = NULL;
 
   const struct NodeLine *nodeline = velocity_nodelines;
   while (nodeline != NULL){
@@ -1782,8 +1818,14 @@ static void create_velocity_gradient_background(
 
       float x1b = scale(y1, nodeline->y1, nodeline->y2, x1, x2);
       float x2b = scale(y2, nodeline->y1, nodeline->y2, x1, x2);
-                   
 
+      if (c!=NULL)
+        c = GE_y(c, y1);
+      else {
+        c = GE_gradient_z(rgb1, rgb2, Z_BELOW(Z_ZERO), y1);
+        GE_gradient_triangle_start(GradientType::VELOCITY);
+      }
+      
       GE_gradient_triangle_add(c, subtrack_x1, y1);
       GE_gradient_triangle_add(c, x1b,         y1);
       GE_gradient_triangle_add(c, subtrack_x1, y2);
@@ -1793,7 +1835,8 @@ static void create_velocity_gradient_background(
     nodeline = nodeline->next;
   }
 
-  GE_gradient_triangle_end(c, subtrack_x1, subtrack_x2);
+  if (c != NULL)
+    GE_gradient_triangle_end(c, subtrack_x1, subtrack_x2);
 }
 
 
@@ -1886,23 +1929,34 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
     //const bool paint_vertical_velocity_gradient = true;
 
     if(paint_vertical_velocity_gradient==false && note->pitches==NULL){
-      
-      GE_Context *c = get_note_background(note->note, false);
 
-      GE_trianglestrip_start();
+      GE_Context *last_c = NULL;      
       
       for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
         int logtype = ns->logtype;
         float x1 = ns->x1;
         float x2 = logtype==LOGTYPE_HOLD ? ns->x1 : ns->x2;
+
+        GE_Context *c = get_note_background(note->note, false, ns->y1);
+
+        if (c != last_c) {
+          if (last_c != NULL){
+            GE_trianglestrip_end(last_c);
+          }
+          
+          GE_trianglestrip_start();
+
+          last_c = c;
+        }
         
         GE_trianglestrip_add(c, subtrack_x1, ns->y1);
         GE_trianglestrip_add(c, x1, ns->y1);
         GE_trianglestrip_add(c, subtrack_x1, ns->y2);
         GE_trianglestrip_add(c, x2, ns->y2);
       }
-      
-      GE_trianglestrip_end(c);
+
+      if (last_c != NULL)
+        GE_trianglestrip_end(last_c);
 
     }else{
 
@@ -1924,12 +1978,15 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
 
   // border
   {
-    GE_Context *c = drawNodeLines(window, nodelines, BLACK_COLOR_NUM, is_current, 0.3, 0.6, false);
+
+    GE_Context *c2 = drawNodeLines(window, nodelines, BLACK_COLOR_NUM, is_current, 0.3, 0.6, false);
 
     // draw horizontal line where note starts, if it doesn't start on the start of a realline.
     int realline = FindRealLineForNote(wblock, 0, note);
-    if (PlaceNotEqual(&wblock->reallines[realline]->l.p, &note->l.p))
+    if (PlaceNotEqual(&wblock->reallines[realline]->l.p, &note->l.p)) {
+      GE_Context *c = GE_y(c2, nodelines->y1);
       GE_line(c, subtrack_x1, nodelines->y1, nodelines->x1, nodelines->y1, get_nodeline_width(is_current));
+    }
   }
 
   // peaks
@@ -1978,11 +2035,11 @@ static void create_track_stops(const struct Tracker_Windows *window, const struc
   struct Stops *stops = wtrack->track->stops;
 
   float reallineF = 0.0f;
-  GE_Context *c = GE_color_alpha(TEXT_COLOR_NUM, 0.19);
 
   while(stops != NULL){
     reallineF = FindReallineForF(wblock, reallineF, &stops->l.p);
-    float y = get_realline_y(window, reallineF);
+    float y = get_realline_y(window, reallineF); 
+    GE_Context *c = GE_color_alpha(TEXT_COLOR_NUM, 0.19, y);
     GE_line(c,
             wtrack->notearea.x, y,
             wtrack->x2, y,
@@ -1993,7 +2050,7 @@ static void create_track_stops(const struct Tracker_Windows *window, const struc
 }
 
 static void create_track_is_recording(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
-  GE_Context *c = GE_z(GE_alpha(GE_get_rgb(RED_COLOR_NUM), 0.7), Z_STATIC);
+  GE_Context *c = GE_z(GE_alpha(GE_get_rgb(RED_COLOR_NUM), 0.7), Z_STATIC, NOMASK_Y);
 
   GE_text(c, "Rec", wtrack->x, 0);
 }
@@ -2006,7 +2063,7 @@ static void create_track_veltext2(const struct Tracker_Windows *window, const st
   float x = wtrack->veltextarea.x;
   int y1 = get_realline_y1(window, realline);
 
-  GE_Context *c = GE_textcolor(VELOCITY_TEXT_COLOR_NUM);
+  GE_Context *c = GE_textcolor(VELOCITY_TEXT_COLOR_NUM, y1);
   
   GE_text(c, text, x, y1);
 }
@@ -2049,7 +2106,7 @@ static void create_track_fxtext2(const struct Tracker_Windows *window, const str
   float x = wtrack->fxtextarea.x + (column * WTRACK_fxtrack_width(window->fontwidth));
   int y1 = get_realline_y1(window, realline);
 
-  GE_Context *c = GE_textcolor(colornum);
+  GE_Context *c = GE_textcolor(colornum, y1);
   
   GE_text(c, text, x, y1);
 }
@@ -2197,7 +2254,7 @@ static void create_range(const struct Tracker_Windows *window, const struct WBlo
   int y2 = get_realline_y2(window, realline2-1);
 
 
-  GE_Context *c = GE_color_alpha_z(RANGE_COLOR_NUM, 0.6, Z_MAX_SCROLLTRANSFORM);
+  GE_Context *c = GE_color_alpha_z(RANGE_COLOR_NUM, 0.6, Z_MAX_SCROLLTRANSFORM, y1);
 
   GE_filledBox(c, //GE_mix_alpha_z(GE_get_rgb(color), White_rgb(), 300, 0.3, z),
                x1,y1,
@@ -2207,7 +2264,7 @@ static void create_range(const struct Tracker_Windows *window, const struct WBlo
 
 static void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   
-  GE_Context *c = GE_z(GE_alpha(GE_get_rgb(ATOMIC_GET(root->editonoff)?CURSOR_EDIT_ON_COLOR_NUM:CURSOR_EDIT_OFF_COLOR_NUM), 0.2), Z_STATIC);
+  GE_Context *c = GE_z(GE_alpha(GE_get_rgb(ATOMIC_GET(root->editonoff)?CURSOR_EDIT_ON_COLOR_NUM:CURSOR_EDIT_OFF_COLOR_NUM), 0.2), Z_STATIC, NOMASK_Y);
   
   NInt track    = window->curr_track;
   int  subtrack = window->curr_track_sub;
@@ -2235,7 +2292,7 @@ static void create_cursor(const struct Tracker_Windows *window, const struct WBl
                );
 
 
-  c = GE_z(GE_alpha(Black_rgb(), 0.75), Z_STATIC);
+  c = GE_z(GE_alpha(Black_rgb(), 0.75), Z_STATIC, y1);
 
   float width = 0.8f;
   GE_box(c,
@@ -2244,7 +2301,7 @@ static void create_cursor(const struct Tracker_Windows *window, const struct WBl
          width
          );
 
-  c = GE_z(GE_alpha(White_rgb(), 0.05), Z_STATIC);
+  c = GE_z(GE_alpha(White_rgb(), 0.05), Z_STATIC, y1);
   GE_filledBox(c, 
                x2, y1,
                x3, y2-1
@@ -2262,7 +2319,7 @@ static void create_cursor(const struct Tracker_Windows *window, const struct WBl
 static void create_playcursor(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   if (ATOMIC_GET(root->play_cursor_onoff)) {
     
-    GE_Context *c = GE_z(GE_alpha(GE_get_rgb(PLAY_CURSOR_COLOR_NUM), 0.3), Z_PLAYCURSOR);
+    GE_Context *c = GE_z(GE_alpha(GE_get_rgb(PLAY_CURSOR_COLOR_NUM), 0.3), Z_PLAYCURSOR, NOMASK_Y);
     
     int x1 = window->leftslider.width;
     int x2 = window->width;
@@ -2278,7 +2335,7 @@ static void create_playcursor(const struct Tracker_Windows *window, const struct
   }
 }
 
-static void show_message(const struct Tracker_Windows *window){
+static void create_message(const struct Tracker_Windows *window){
   const char *message = window->message;
 
   if (message==NULL)
@@ -2296,18 +2353,17 @@ static void show_message(const struct Tracker_Windows *window){
   int y1 = middle_y - height;
   int y2 = middle_y + height;
   
-  GE_Context *background = GE_z(Black_rgb(), Z_STATIC);
+  GE_Context *background = GE_z(Black_rgb(), Z_STATIC, NOMASK_Y);
   GE_filledBox(background, x1, y1, x2, y2);
 
-  GE_Context *border = GE_z(White_rgb(), Z_STATIC);
+  GE_Context *border = GE_z(White_rgb(), Z_STATIC, NOMASK_Y);
   GE_box(border, x1, y1, x2, y2, 1.0);
 
   int x = middle_x - width/2;
   int y = middle_y - height/2;
   
-  GE_Context *text_color = GE_z(White_rgb(), Z_STATIC);
+  GE_Context *text_color = GE_z(White_rgb(), Z_STATIC, NOMASK_Y);
   GE_text(text_color, message, x, y);
-    
 }
 
 /************************************
@@ -2344,7 +2400,7 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
     create_cursor(window, wblock);
     create_playcursor(window, wblock);
 
-    show_message(window);
+    create_message(window);
     
   } GE_end_writing(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM));
 }
@@ -2356,9 +2412,13 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
 #if !RENDER_IN_SEPARATE_THREAD
 
 void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
-  //double start = TIME_get_ms();
+#if defined(RELEASE)
   GL_create2(window, wblock);
-  //printf("   dur: %f\n", TIME_get_ms() - start);
+#else
+  double start = TIME_get_ms();
+  GL_create2(window, wblock);
+  printf("   GL_create. dur: %f\n", TIME_get_ms() - start);
+#endif
 }
 
 #else

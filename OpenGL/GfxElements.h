@@ -48,9 +48,38 @@ struct PaintingData;
 void GE_set_height(int height);
 int GE_get_height(void);
 
+#define SLICE_SIZE 512
+#define NOMASK_Y (-SLICE_SIZE*20)
+
+static inline uint32_t getMask(int a_y1, int a_y2){
+  uint32_t mask = 0;
+
+  a_y1--; // floating point rounding fix
+  a_y2++; // floating point rounding fix
+  
+  int b_y1 = 0;
+  int b_y2 = SLICE_SIZE;
+  int i=0;
+  for(i=0 ; i<32 ; i++, b_y1+=SLICE_SIZE, b_y2+=SLICE_SIZE){
+
+    if (i < 31) { // The last bit includes everyting below
+
+      if (b_y2 < a_y1)
+        continue;
+
+      if (b_y1 > a_y2)
+        break;
+    }
+
+    mask |= ( 1<<i );
+  }
+
+  return mask;
+}
+
 #if defined(GE_DRAW_VL)
 void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset);
-void GE_draw_vl(PaintingData *das_painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform);
+void GE_draw_vl(PaintingData *das_painting_data, vl::Viewport *viewport, vl::VectorGraphics *vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform);
 #endif
 
 #define Z_ABOVE(z) ((z)+2)
@@ -79,6 +108,7 @@ GE_Context *GE_set_static_x(GE_Context *c);
 
 void GE_set_z(GE_Context *c, int new_z); // 'c' should not be used before calling this function.
 int GE_get_z(GE_Context *c);
+GE_Rgb GE_get_rgb(GE_Context *c);
 
 #ifdef __cplusplus
 SharedVariables *GE_get_shared_variables(PaintingData *painting_data);
@@ -89,28 +119,29 @@ void GE_start_writing(void);
 void GE_end_writing(GE_Rgb new_background_color);
 void GE_wait_until_block_is_rendered(void);
 
-GE_Context *GE_z(const GE_Rgb rgb, int z);
-static inline GE_Context *GE(const GE_Rgb rgb){
-  return GE_z(rgb, Z_ZERO);
+GE_Context *GE_z(const GE_Rgb rgb, int z, int y);
+static inline GE_Context *GE(const GE_Rgb rgb, int y){
+  return GE_z(rgb, Z_ZERO, y);
 }
-GE_Context *GE_color_z(enum ColorNums colornum, int z);
-GE_Context *GE_textcolor_z(enum ColorNums colornum, int z);
-GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, int z);
-GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int z);
-GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int z);
-GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z);
+GE_Context *GE_y(GE_Context *c, int y);
+GE_Context *GE_color_z(enum ColorNums colornum, int z, int y);
+GE_Context *GE_textcolor_z(enum ColorNums colornum, int z, int y);
+GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, int z, int y);
+GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int z, int y);
+GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int z, int y);
+GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z, int y);
 
 #ifdef __cplusplus
-GE_Context *GE_color_z(const QColor &color, int z);
-static inline GE_Context *GE_color(const QColor &color) {
-  return GE_color_z(color, Z_ZERO);
+GE_Context *GE_color_z(const QColor &color, int z, int y);
+static inline GE_Context *GE_color(const QColor &color, int y) {
+  return GE_color_z(color, Z_ZERO, y);
 }
-GE_Context *GE_gradient_z(const QColor &c1, const QColor &c2, int z);
-static inline GE_Context *GE_mix_alpha(const GE_Rgb c1, const GE_Rgb c2, float how_much, float alpha){
-  return GE(GE_alpha(GE_mix(c1, c2, how_much), alpha));
+GE_Context *GE_gradient_z(const QColor &c1, const QColor &c2, int z, int y);
+static inline GE_Context *GE_mix_alpha(const GE_Rgb c1, const GE_Rgb c2, float how_much, float alpha, int y){
+  return GE(GE_alpha(GE_mix(c1, c2, how_much), alpha), y);
 }
-static inline GE_Context *GE_mix_alpha_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, float alpha, int z){
-  return GE_z(GE_alpha(GE_mix(c1, c2, how_much), alpha), z);
+static inline GE_Context *GE_mix_alpha_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, float alpha, int z, int y){
+  return GE_z(GE_alpha(GE_mix(c1, c2, how_much), alpha), z, y);
 }
 
 #ifndef EDITOR_WIDGET_H
@@ -123,34 +154,34 @@ static inline QColor GE_qcolor(enum ColorNums colornum){
 
 #endif
 
-static inline GE_Context *GE_color(enum ColorNums colornum) {
-  return GE_color_z(colornum, Z_ZERO);
+static inline GE_Context *GE_color(enum ColorNums colornum, int y) {
+  return GE_color_z(colornum, Z_ZERO, y);
 }
 
-GE_Context *GE_color_alpha_z(enum ColorNums colornum, float alpha, int z);
-static inline GE_Context *GE_color_alpha(enum ColorNums colornum, float alpha) {
-  return GE_color_alpha_z(colornum, alpha, Z_ZERO);
+GE_Context *GE_color_alpha_z(enum ColorNums colornum, float alpha, int z, int y);
+static inline GE_Context *GE_color_alpha(enum ColorNums colornum, float alpha, int y) {
+  return GE_color_alpha_z(colornum, alpha, Z_ZERO, y);
 }
 
-static inline GE_Context *GE_textcolor(enum ColorNums colornum) {
-  return GE_textcolor_z(colornum, Z_ZERO);
+static inline GE_Context *GE_textcolor(enum ColorNums colornum, int y) {
+  return GE_textcolor_z(colornum, Z_ZERO, y);
 }
-static inline GE_Context *GE_rgb_color(unsigned char r, unsigned char g, unsigned char b) {
-  return GE_rgb_color_z(r,g,b, Z_ZERO);
+static inline GE_Context *GE_rgb_color(unsigned char r, unsigned char g, unsigned char b, int y) {
+  return GE_rgb_color_z(r,g,b, Z_ZERO, y);
 }
 
-#define Black_color() GE_rgb_color(0,0,0)
-#define White_coolor() GE_rgb_color(0,0,0)
+#define Black_color(y) GE_rgb_color(0,0,0,y)
+#define White_color(y) GE_rgb_color(0,0,0,y)
 
 
-static inline GE_Context *GE_rgba_color(unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
-  return GE_rgba_color_z(r,g,b,a, Z_ZERO);
+static inline GE_Context *GE_rgba_color(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int y) {
+  return GE_rgba_color_z(r,g,b,a, Z_ZERO,y);
 }
-static inline GE_Context *GE_mix_color(const GE_Rgb c1, const GE_Rgb c2, float how_much) {
-  return GE_mix_color_z(c1,c2,how_much, Z_ZERO);
+static inline GE_Context *GE_mix_color(const GE_Rgb c1, const GE_Rgb c2, float how_much, int y) {
+  return GE_mix_color_z(c1,c2,how_much, Z_ZERO,y);
 }
-static inline GE_Context *GE_gradient(const GE_Rgb c1, const GE_Rgb c2) {
-  return GE_gradient_z(c1,c2, Z_ZERO);
+static inline GE_Context *GE_gradient(const GE_Rgb c1, const GE_Rgb c2, int y) {
+  return GE_gradient_z(c1,c2, Z_ZERO,y);
 }
 
 #ifdef __cplusplus

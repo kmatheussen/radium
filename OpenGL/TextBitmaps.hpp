@@ -258,7 +258,8 @@ struct TextBitmaps{
 
   // Called from OpenGL thread.
   // This one looks slightly better than the "ImageHolder" version below, and the code is a billion times simpler too (approx.), but it uses too much CPU. (needs more work though, can't just be enabled. By far, the biggest problem is to get a font file name from a QFont.)
-  void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform){
+  void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform, bool set_mask) const {
+      
     QHash<char, std::vector<vl::dvec2> >::iterator i;
     for (i = points.begin(); i != points.end(); ++i) {
       char c = i.key();
@@ -270,11 +271,13 @@ struct TextBitmaps{
         //printf("drawing %c at %f,%f\n",c,points.x(),points.y());
         //vl::ref<vl::Text> text = new vl::Text();
         //text->setClampY(false);
+
+        Actor *actor = vg->drawText(points.x()-5, points.y()-5, vl::String(c));
+        actor->computeBounds();
+        if (set_mask)
+          setActorEnableMask(actor);
         
-        if(transform)
-          vg->drawText(points.x()-5, points.y()-5, vl::String(c))->setTransform(transform);
-        else
-          vg->drawText(points.x()-5, points.y()-5, vl::String(c));
+        actor->setTransform(transform);
       }
     }
   }
@@ -282,9 +285,10 @@ struct TextBitmaps{
 #else
   
   // Called from OpenGL thread
-  void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform){
-    QHash<char, std::vector<vl::dvec2> >::iterator i;
-    for (i = points.begin(); i != points.end(); ++i) {
+  void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform, bool set_mask) const {
+    
+    //QHash<char, std::vector<vl::dvec2> >::iterator i;
+    for (auto i = points.begin(); i != points.end(); ++i) {
       char c = i.key();
       std::vector<vl::dvec2> pointspoints = i.value();
       ImageHolder holder = (*imageholders)[c];
@@ -295,10 +299,14 @@ struct TextBitmaps{
         //vg->setPoint(holder.image.get());
         vg->setPoint(holder.image);
         //vg->setColor(vl::fvec4(0.1,0.05,0.1,0.8));
-        if(transform)
-          vg->drawPoints(pointspoints)->setTransform(transform);
-        else
-          vg->drawPoints(pointspoints);
+        
+        vl::Actor *actor = vg->drawPoints(pointspoints);
+        actor->computeBounds();
+
+        if (set_mask)
+          setActorEnableMask(actor);
+        
+        actor->setTransform(transform);
       }
     }
 

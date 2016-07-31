@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include <bitset>
+
 #include <QWidget>
 
 #if USE_QT5
@@ -33,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 #include <vlGraphics/SceneManagerActorTree.hpp>
 #include <vlVG/SceneManagerVectorGraphics.hpp>
+#include <vlGraphics/OcclusionCullRenderer.hpp>
+#include <vlGraphics/Actor.hpp>
 
 #include <QGLWidget>
 #include <QTextEdit>
@@ -484,6 +488,8 @@ static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
                      );
 }
 
+#define TEST_TIME 0
+
 class MyQtThreadedWidget
 #if USE_QT5
   : public vlQt5::Qt5ThreadedWidget
@@ -506,7 +512,7 @@ public:
   vl::ref<vl::Transform> _linenumbers_transform;
   vl::ref<vl::Transform> _scrollbar_transform;
   vl::ref<vl::Transform> _playcursor_transform;
-  vl::ref<vl::SceneManagerActorTree> _sceneManager;
+  //vl::ref<vl::SceneManagerActorTree> _sceneManager;
 
   vl::ref<vl::VectorGraphics> vg;
   vl::ref<vl::SceneManagerVectorGraphics> vgscene;
@@ -566,12 +572,16 @@ public:
     fprintf(stderr,"Exit myqtthreaderwidget\n");
   }
 
+  vl::ref<vl::OcclusionCullRenderer> mOcclusionRenderer;
+  vl::ref<vl::Scissor> _scissor;
+  
   // OpenGL thread
   virtual void init_vl(vl::OpenGLContext *glContext) {
 
     printf("init_vl\n");
 
     _rendering = new vl::Rendering;
+        
     _rendering->renderer()->setFramebuffer(glContext->framebuffer() );
     //_rendering->camera()->viewport()->setClearColor( vl::green );
 
@@ -587,11 +597,10 @@ public:
     _playcursor_transform = new vl::Transform;
     _rendering->transform()->addChild(_playcursor_transform.get());
 
-
     // installs a SceneManagerActorTree as the default scene manager
     
-    _sceneManager = new vl::SceneManagerActorTree;
-    _rendering->sceneManagers()->push_back(_sceneManager.get());
+    //_sceneManager = new vl::SceneManagerActorTree;
+    //_rendering->sceneManagers()->push_back(_sceneManager.get());
 
 #if 0
     vl::mat4 mat = vl::mat4::getTranslation(0,0,0);
@@ -599,6 +608,21 @@ public:
     _rendering->camera()->setViewMatrix( mat );
 #endif
 
+    //_scissor = new vl::Scissor(50,50, 500, 500);
+
+    // A gigantic speedup, but rendering isn't right.
+    if(0){
+      vl::Renderer* regular_renderer = _rendering->renderer();
+      // creates our occlusion renderer
+      mOcclusionRenderer = new vl::OcclusionCullRenderer;
+      mOcclusionRenderer->setWrappedRenderer( regular_renderer );
+      // installs the occlusion renderer in place of the regular one
+      _rendering->setRenderer( mOcclusionRenderer.get() );
+    }
+    
+    //_rendering->setCullingEnabled(true); // What does this method do? It seems to make no difference whether we use the OcclusionCullRenderer or not.
+
+    
     glContext->initGLContext();
     glContext->addEventListener(this);
 
@@ -611,6 +635,7 @@ public:
 #endif
   }
 
+  
   /** Event generated when the bound OpenGLContext bocomes initialized or when the event listener is bound to an initialized OpenGLContext. */
   // OpenGL thread
   virtual void initEvent() {
@@ -619,7 +644,8 @@ public:
     _rendering->sceneManagers()->clear();
     
     vg = new vl::VectorGraphics;
-    
+    //vg->setScissor(150,150,100,100);
+
     vgscene = new vl::SceneManagerVectorGraphics;
     vgscene->vectorGraphicObjects()->push_back(vg.get());
     _rendering->sceneManagers()->push_back(vgscene.get());
@@ -681,22 +707,24 @@ private:
 
   // OpenGL thread
   bool draw(bool force_repaint = false){
-    static bool needs_repaint2 = false; // TODO: Clean up this.
-    
-    bool needs_repaint;
+    static bool needs_repaint_from_last_time = false;
 
+#if TEST_TIME
+    double start1 = TIME_get_ms();
+    double draw_dur = 0.0;
+#endif
+    
     int player_id = ATOMIC_GET(pc->play_id);
     bool is_playing = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
-    
+
+    bool needs_repaint;
     painting_data = GE_get_painting_data(painting_data, &needs_repaint);
     //printf("needs_repaint: %d, painting_data: %p\n",(int)needs_repaint,painting_data);
     
-    if (painting_data==NULL){
+    if (painting_data==NULL)
       return false;
-    }
     
-    
-    needs_repaint2 = needs_repaint2 || needs_repaint;
+    needs_repaint_from_last_time |= needs_repaint;
     
     SharedVariables *sv = GE_get_shared_variables(painting_data);
     
@@ -710,11 +738,9 @@ private:
     if (is_playing){
       
       const struct Blocks *block = (const struct Blocks*)atomic_pointer_read((void**)&pc->block);
-      if (block != NULL)
-        playing_blocknum = block->l.num;
         
 #if 1    
-      if (sv->block!=block) { // Check that our blocktime belongs to the block that is rendered.
+      if (block==NULL || sv->block!=block) { // Check that our blocktime belongs to the block that is rendered.
         #if 1
           //printf("Waiting...\n");
           _rendering->render();
@@ -724,6 +750,9 @@ private:
         #endif
       }
 #endif
+
+      playing_blocknum = block->l.num;
+        
       blocktime = ATOMIC_DOUBLE_GET(block->player_time);
 
       R_ASSERT_NON_RELEASE(blocktime==-100 || blocktime>=0.0);
@@ -761,15 +790,25 @@ private:
         current_width = new_width;
 
       } else {
-        vg->clear();
-        //printf("   Clearing\n");
+        //vg->clear(); // vg->clear is called in vg->startDrawing
       }
       
       //GE_set_curr_realline(sv->curr_realline);
 
-      GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform, _playcursor_transform);
+#if TEST_TIME
+      double draw_start = TIME_get_ms();
+#endif
+      
+      GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg.get(), _scroll_transform, _linenumbers_transform, _scrollbar_transform, _playcursor_transform);
+      //_sceneManager->computeBounds();
+      vgscene->computeBounds();
 
-      needs_repaint2 = false;
+#if TEST_TIME
+      draw_dur = TIME_get_ms() - draw_start;
+      printf("   Draw dur: %f\n", draw_dur);
+#endif
+      
+      needs_repaint_from_last_time = false;
     }
 
     double current_realline_while_playing;
@@ -813,6 +852,24 @@ private:
 
     //printf("scrolling\n");
 
+    //_scissor->enable(_rendering->camera()->viewport());
+
+    // Set render mask
+    {
+#if 1
+      float upper = scroll_pos;
+      float lower = scroll_pos + current_height;
+#else
+      // testing
+      float middle = scroll_pos + current_height/2;
+      float upper = middle - 100;
+      float lower = middle + 100;
+#endif
+
+      _rendering->setEnableMask(getMask(upper,lower));
+    }
+    
+
     // scroll
     {
       vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
@@ -849,9 +906,29 @@ private:
       _playcursor_transform->setLocalAndWorldMatrix(mat);
     }
 
+#if TEST_TIME
+    double start2 = TIME_get_ms();
+#endif
+    
     GE_update_triangle_gradient_shaders(painting_data, scroll_pos);
+
+#if TEST_TIME
+    double start3 = TIME_get_ms();
+#endif
     
     _rendering->render();
+
+#if TEST_TIME
+    double start4 = TIME_get_ms();
+    
+    printf("%f: mask: %s  Render dur: %f (%f). Total: %f (%f). Num actors: %d\n",
+           scroll_pos,
+           std::bitset<32>(_rendering->enableMask()).to_string().c_str(),
+           start4 - start3, start3-start2,
+           start4-start1, (start4-start1) - draw_dur - (start4-start2),
+           vg->actors()->size());
+#endif
+    
     safe_volatile_float_write(&g_scroll_pos, scroll_pos);
     
     last_scroll_pos = scroll_pos;

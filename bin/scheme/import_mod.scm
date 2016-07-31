@@ -2919,7 +2919,8 @@ The behavior for these three tests are not needed since break events are always 
                                                       :type :velocity
                                                       :value (get-mem :volume)))
                           (offset-value (get-mem :sample-offset))
-                          (offset-event (if (or (= 0 offset-value)
+                          (offset-event (if (or (not offset-value)
+                                                (= 0 offset-value)
                                                 (have-sample-offset-event-in-this-cell? (event :linenum) (event :channel) (event :patternnum) events))
                                             #f
                                             (copy-event event
