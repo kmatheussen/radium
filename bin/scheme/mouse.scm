@@ -200,11 +200,11 @@
   (define next-mouse-y #f)
   
   (define (call-move-and-release $button $x $y)
-
+    ;;(c-display "call-move-and-release" $x $y)
     ;; Ignore all $x and $y values that was already queued when we sat a new mouse pointer position. (needed in qt5)
     (when next-mouse-x
-      (if (and (< (abs (- $x next-mouse-x)) 10)  ;; It seems to work just doing (= $x next-mouse-x) as well, but we add a buffer just in case.
-               (< (abs (- $y next-mouse-y)) 10)) ;; same here.
+      (if (and (< (abs (- $x next-mouse-x)) 100)  ;; Need some buffer, unfortunately we don't always get the same mouse event back when calling (<ra> :move-mouse-pointer).
+               (< (abs (- $y next-mouse-y)) 100)) ;; same here.
           (begin
             (set! prev-x next-mouse-x)
             (set! prev-y next-mouse-y)
