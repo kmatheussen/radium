@@ -103,6 +103,14 @@ void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const uni
       
   int64_t time = seq_to_scheduler_time(seq_time);
 
+  if(time < 0){
+#if !defined(RELEASE)
+    fprintf(stderr,"time<0: %d. seq_time: %d\n",(int)time,(int)seq_time);
+    abort();
+#endif
+    return;
+  }
+  
   //args=NULL; // test crashreporter
   
 #if 0
