@@ -101,7 +101,8 @@ static void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, ST
 	//peq->l.time=addtime + time + (add_latency ? LATENCY : 0); // This didn't work properly I don't quite understand the code.
 	peq->l.time=addtime + time;
 
-        if(peq->l.time < 0){
+#if 0
+        if(peq->l.time < 0){ // This happens when playing from the middle of a block.
 #if !defined(RELEASE)
           fprintf(stderr,"peq->l.time<0: %d. addtime: %d, time: %d\n",(int)peq->l.time,(int)addtime,(int)time);
           abort();
@@ -109,6 +110,7 @@ static void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, ST
           ReturnPEQelement(peq);
           return;
         }
+#endif
         
         // (time can be negative when starting to play.)
         // R_ASSERT_RETURN_IF_FALSE(peq->l.time >= 0);
