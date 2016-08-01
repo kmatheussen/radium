@@ -451,6 +451,11 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
         NInt newcurrtrack=wblock->wtrack->l.num;
 	int newcurrtracksub=window->curr_track_sub;
 
+<<<<<<< Updated upstream
+=======
+	newcurrtracksub=-1;
+	ATOMIC_WRITE(window->curr_track, 0);
+>>>>>>> Stashed changes
 	window->curr_track_sub=-1;
         ATOMIC_WRITE(window->curr_track, newcurrtrack);
 
