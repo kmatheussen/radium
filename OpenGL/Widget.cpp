@@ -849,7 +849,7 @@ private:
       float upper = middle - 100;
       float lower = middle + 100;
 #endif
-      _rendering->setEnableMask(getMask(upper,lower));
+      _rendering->setEnableMask(getMask(upper,lower,GE_get_slice_size(t2_data->painting_data)));
     }
     
 

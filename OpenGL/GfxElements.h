@@ -54,19 +54,19 @@ struct PaintingData;
 void GE_set_height(int height);
 int GE_get_height(void);
 
-#define SLICE_SIZE 1024
-#define NOMASK_Y (-SLICE_SIZE*20)
+#define MIN_SLICE_SIZE 1024
+#define NOMASK_Y (-MIN_SLICE_SIZE*20)
 
-static inline uint32_t getMask(int a_y1, int a_y2){
+static inline uint32_t getMask(int a_y1, int a_y2, int slice_size){
   uint32_t mask = 0;
 
   a_y1--; // floating point rounding fix
   a_y2++; // floating point rounding fix
   
   int b_y1 = 0;
-  int b_y2 = SLICE_SIZE;
+  int b_y2 = slice_size;
   int i=0;
-  for(i=0 ; i<32 ; i++, b_y1+=SLICE_SIZE, b_y2+=SLICE_SIZE){
+  for(i=0 ; i<32 ; i++, b_y1+=slice_size, b_y2+=slice_size){
 
     if (i < 31) { // The last bit includes everyting below
 
@@ -110,17 +110,17 @@ enum{
   Z_PLAYCURSOR = 600, // The play cursor is drawn on top of everything else.
 };
 
-GE_Context *GE_set_static_x(GE_Context *c);
+GE_Context *GE_set_static_x(const GE_Context *c);
 
 void GE_set_z(GE_Context *c, int new_z); // 'c' should not be used before calling this function.
-int GE_get_z(GE_Context *c);
-GE_Rgb GE_get_rgb(GE_Context *c);
+int GE_get_z(const GE_Context *c);
+GE_Rgb GE_get_rgb(const GE_Context *c);
 
 
 #if defined(VectorGraphics_INCLUDE_ONCE) // i.e. when <vlVG/VectorGraphics.hpp> has been #included
 
 SharedVariables *GE_get_shared_variables(PaintingData *painting_data);
-PaintingData *GE_get_painting_data(PaintingData *current_painting_data, bool *needs_repaint);  // returns NULL if nothing was written since last call to the function.
+int GE_get_slice_size(const PaintingData *painting_data);
 
 struct T2_data{
   PaintingData *painting_data;
@@ -142,7 +142,7 @@ T2_data *T3_maybe_get_t2_data(void);
 void T3_send_back_old_t2_data(T2_data *t2_data);
 #endif
 
-void GE_start_writing(void);
+void GE_start_writing(int full_height);
 void GE_end_writing(GE_Rgb new_background_color);
 void GE_wait_until_block_is_rendered(void);
 

@@ -258,7 +258,7 @@ struct TextBitmaps{
 
   // Called from OpenGL thread.
   // This one looks slightly better than the "ImageHolder" version below, and the code is a billion times simpler too (approx.), but it uses too much CPU. (needs more work though, can't just be enabled. By far, the biggest problem is to get a font file name from a QFont.)
-  void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform, bool set_mask) const {
+  void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform, bool set_mask, PaintingData *painting_data) const {
       
     QHash<char, std::vector<vl::dvec2> >::iterator i;
     for (i = points.begin(); i != points.end(); ++i) {
@@ -275,7 +275,7 @@ struct TextBitmaps{
         Actor *actor = vg->drawText(points.x()-5, points.y()-5, vl::String(c));
         actor->computeBounds();
         if (set_mask)
-          setActorEnableMask(actor);
+          setActorEnableMask(actor,painting_data);
         
         actor->setTransform(transform);
       }
@@ -285,7 +285,7 @@ struct TextBitmaps{
 #else
   
   // Called from OpenGL thread
-  void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform, bool set_mask) const {
+  void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform, bool set_mask, PaintingData *painting_data) const {
     
     //QHash<char, std::vector<vl::dvec2> >::iterator i;
     for (auto i = points.begin(); i != points.end(); ++i) {
@@ -304,7 +304,7 @@ struct TextBitmaps{
         actor->computeBounds();
 
         if (set_mask)
-          setActorEnableMask(actor);
+          setActorEnableMask(actor,painting_data);
         
         actor->setTransform(transform);
       }

@@ -18,7 +18,8 @@
 #define USE_FREETYPE 0
 #define RADIUM_DRAW_FONTS_DIRECTLY 0
 
-static void setActorEnableMask(vl::Actor *actor);
+struct PaintingData;
+static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_data);
 #include "TextBitmaps.hpp"
 
 #include "../common/nsmtracker.h"
@@ -405,33 +406,33 @@ void GE_set_z(GE_Context *c, int new_z) {
   c->_z = new_z;
 }
 
-int GE_get_z(GE_Context *c){
+int GE_get_z(const GE_Context *c){
   return c->_z;
 }
 
-GE_Rgb GE_get_rgb(GE_Context *c){
+GE_Rgb GE_get_rgb(const GE_Context *c){
   return c->color.c;
 }
 
 /* Drawing */
 
-static void setActorEnableMask(vl::Actor *actor){
+static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_data){
   int height = safe_volatile_float_read(&g_height);
   int y1 = scale(actor->boundingBox().maxCorner().y(), height, 0, 0, height);
   int y2 = scale(actor->boundingBox().minCorner().y(), height, 0, 0, height);
 
   //printf("  y1: %d, y2: %d. mask: %x\n",y1,y2,getMask(y1,y2));
-  actor->setEnableMask(getMask(y1,y2));
+  actor->setEnableMask(getMask(y1, y2, GE_get_slice_size(painting_data)));
 }
 
-static void setScrollTransform(const GE_Context *c, vl::Actor *actor, vl::Transform *scroll_transform, vl::Transform *static_x_transform, vl::Transform *scrollbar_transform, vl::Transform *playcursor_transform){
+static void setScrollTransform(const GE_Context *c, vl::Actor *actor, vl::Transform *scroll_transform, vl::Transform *static_x_transform, vl::Transform *scrollbar_transform, vl::Transform *playcursor_transform, const PaintingData *painting_data){
   
   actor->computeBounds();
   
   vl::Transform *transform = c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
 
   if (transform==scroll_transform || transform==static_x_transform)
-    setActorEnableMask(actor);
+    setActorEnableMask(actor, painting_data);
 
   actor->setTransform(transform);
 
@@ -467,6 +468,14 @@ struct PaintingData{
   Contexts contexts;
   //std::vector< vl::ref<GradientTriangles> > gradient_triangles;
   SharedVariables shared_variables;
+
+  int slice_size;
+  
+  PaintingData(int full_height){
+    slice_size = full_height / 32;
+    if (slice_size < MIN_SLICE_SIZE)
+      slice_size = MIN_SLICE_SIZE;
+  }
 };
 
 
@@ -482,6 +491,10 @@ static PaintingData *g_painting_data = NULL;
 // Called from the OpenGL thread
 SharedVariables *GE_get_shared_variables(PaintingData *painting_data){
   return &painting_data->shared_variables;
+}
+
+int GE_get_slice_size(const PaintingData *painting_data){
+  return painting_data->slice_size;
 }
 
 struct T1_data{
@@ -634,10 +647,10 @@ namespace{
 static T2_Thread t2_thread;
 
 // Called from the main thread
-void GE_start_writing(void){
+void GE_start_writing(int full_height){
   R_ASSERT(g_painting_data==NULL);
   
-  g_painting_data = new PaintingData();
+  g_painting_data = new PaintingData(full_height);
   GE_fill_in_shared_variables(&g_painting_data->shared_variables);
 }
 
@@ -747,7 +760,7 @@ static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::
           if(c->boxes.size() > 0) {
             setColorBegin(vg, c);
           
-            setScrollTransform(c, vg->fillQuads(c->boxes), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
+            setScrollTransform(c, vg->fillQuads(c->boxes), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform, painting_data);
           
             setColorEnd(vg, c);
           }
@@ -761,7 +774,7 @@ static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::
 #if USE_TRIANGLE_STRIPS
           if(c->trianglestrips.size() > 0) {
             setColorBegin(vg, c);
-            setScrollTransform(c, vg->fillTriangleStrips(c->trianglestrips), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
+            setScrollTransform(c, vg->fillTriangleStrips(c->trianglestrips), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform, painting_data);
             //vg->fillPolygons(c->trianglestrips);
           
             setColorEnd(vg, c);
@@ -769,12 +782,12 @@ static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::
           // note: missing gradient triangles for USE_TRIANGLE_STRIPS.
 #else
           for (vl::ref<GradientTriangles> gradient_triangles : c->gradient_triangles)
-            setScrollTransform(c, gradient_triangles->render(vg), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
+            setScrollTransform(c, gradient_triangles->render(vg), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform, painting_data);
 
           if(c->triangles.size() > 0) {
             setColorBegin(vg, c);
           
-            setScrollTransform(c, vg->fillTriangles(c->triangles), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
+            setScrollTransform(c, vg->fillTriangles(c->triangles), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform, painting_data);
             //printf("triangles size: %d\n",(int)c->triangles.size());
           
             setColorEnd(vg, c);
@@ -799,7 +812,7 @@ static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::
             has_set_color=true;
           
             vg->setLineWidth(get_pen_width_from_key(iterator->first));
-            setScrollTransform(c, vg->drawLines(iterator->second), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
+            setScrollTransform(c, vg->drawLines(iterator->second), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform, painting_data);
             //if(c->triangles.size()>0)
             //  setScrollTransform(c, vg->drawLines(c->triangles), scroll_transform, static_x_transform, scrollbar_transform);
           }
@@ -821,10 +834,10 @@ static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::
             bool set_mask = transform==scroll_transform || transform==static_x_transform;
               
             if(c->textbitmaps.points.size() > 0)
-              c->textbitmaps.drawAllCharBoxes(vg, transform, set_mask);
+              c->textbitmaps.drawAllCharBoxes(vg, transform, set_mask, painting_data);
         
             if(c->textbitmaps_halfsize.points.size() > 0)
-              c->textbitmaps_halfsize.drawAllCharBoxes(vg, transform, set_mask);
+              c->textbitmaps_halfsize.drawAllCharBoxes(vg, transform, set_mask, painting_data);
 
             setColorEnd(vg, c);
           }
@@ -850,7 +863,7 @@ static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::
 /***********************************************/
 
 static int get_slice_from_y(const int y){
-  return y/SLICE_SIZE;
+  return y/g_painting_data->slice_size;
 }
 
 static GE_Context *get_context(const GE_Context::Color color, int z, int y){
