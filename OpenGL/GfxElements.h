@@ -85,7 +85,7 @@ static inline uint32_t getMask(int a_y1, int a_y2){
 
 #if defined(GE_DRAW_VL)
 void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset);
-static void GE_draw_vl(PaintingData *das_painting_data, vl::VectorGraphics *vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform);
+static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::Transform *scroll_transform, vl::Transform *static_x_transform, vl::Transform *scrollbar_transform, vl::Transform *playcursor_transform);
 #endif
 
 #define Z_ABOVE(z) ((z)+2)

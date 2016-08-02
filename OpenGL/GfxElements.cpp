@@ -386,15 +386,15 @@ public:
                  );
   }
 
-  vl::Transform *get_transform(vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform) const {
+  vl::Transform *get_transform(vl::Transform *scroll_transform, vl::Transform *static_x_transform, vl::Transform *scrollbar_transform, vl::Transform *playcursor_transform) const {
     if (Z_IS_STATIC_X(_z))
-      return static_x_transform.get();
+      return static_x_transform;
     else if (_z == Z_PLAYCURSOR)
-      return playcursor_transform.get();
+      return playcursor_transform;
     else if (_z <= Z_MAX_SCROLLTRANSFORM)
-      return scroll_transform.get();
+      return scroll_transform;
     else if (_z < Z_MIN_STATIC)
-      return scrollbar_transform.get();
+      return scrollbar_transform;
     else
       return NULL;
   }
@@ -424,7 +424,7 @@ static void setActorEnableMask(vl::Actor *actor){
   actor->setEnableMask(getMask(y1,y2));
 }
 
-static void setScrollTransform(vl::ref<GE_Context> c, vl::Actor *actor, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform){
+static void setScrollTransform(const GE_Context *c, vl::Actor *actor, vl::Transform *scroll_transform, vl::Transform *static_x_transform, vl::Transform *scrollbar_transform, vl::Transform *playcursor_transform){
   
   actor->computeBounds();
   
@@ -579,10 +579,10 @@ static void T2_thread_func(){
       
       GE_draw_vl(t2_data->painting_data,
                  t2_data->vg.get(),
-                 t2_data->scroll_transform,
-                 t2_data->linenumbers_transform,
-                 t2_data->scrollbar_transform,
-                 t2_data->playcursor_transform
+                 t2_data->scroll_transform.get(),
+                 t2_data->linenumbers_transform.get(),
+                 t2_data->scrollbar_transform.get(),
+                 t2_data->playcursor_transform.get()
                  );
       
 #if TEST_TIME
@@ -676,7 +676,7 @@ void GE_wait_until_block_is_rendered(void){
 /****************************************/
 
 
-static void setColorBegin(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c){
+static void setColorBegin(vl::VectorGraphics *vg, const GE_Context *c){
 #if 0
   if(false && c->is_gradient){
     vg->setImage(c->get_gradient().get());
@@ -686,7 +686,7 @@ static void setColorBegin(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c)
     vg->setColor(get_vec4(c->color.c));
 }
 
-static void setColorEnd(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c){
+static void setColorEnd(vl::VectorGraphics *vg, const GE_Context *c){
 #if 0
   if(c->is_gradient)
     vg->setImage(NULL);
@@ -714,7 +714,7 @@ void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_of
 }
 
 
-static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform){
+static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::Transform *scroll_transform, vl::Transform *static_x_transform, vl::Transform *scrollbar_transform, vl::Transform *playcursor_transform){
 
   vg->startDrawing(); {
 
@@ -741,7 +741,7 @@ static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::
         // 1. Filled boxes
         for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
         
-          const vl::ref<GE_Context> c = iterator.value();
+          const GE_Context *c = iterator.value().get();
         
           if(c->boxes.size() > 0) {
             setColorBegin(vg, c);
@@ -755,7 +755,7 @@ static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::
         // 2. triangle strips
         for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
 
-          const vl::ref<GE_Context> c = iterator.value();
+          const GE_Context *c = iterator.value().get();
         
 #if USE_TRIANGLE_STRIPS
           if(c->trianglestrips.size() > 0) {
@@ -788,7 +788,7 @@ static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::
         // 5. Lines
         for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
         
-          const vl::ref<GE_Context> c = iterator.value();
+          const GE_Context *c = iterator.value().get();
         
           bool has_set_color = false;
         
@@ -810,7 +810,7 @@ static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::
         // 6. Text
         for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
         
-          const vl::ref<GE_Context> c = iterator.value();
+          const GE_Context *c = iterator.value().get();
 
           if(c->textbitmaps.points.size() != 0 || c->textbitmaps_halfsize.points.size() != 0) {
            
