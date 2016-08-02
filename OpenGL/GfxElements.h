@@ -130,7 +130,7 @@ struct T2_data{
   vl::ref<vl::VectorGraphics> vg;
 
   vl::ref<vl::Transform> scroll_transform;
-  vl::ref<vl::Transform> linenumbers_transform;
+  //vl::ref<vl::Transform> linenumbers_transform;
   vl::ref<vl::Transform> scrollbar_transform;
   vl::ref<vl::Transform> playcursor_transform;
 

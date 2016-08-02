@@ -716,7 +716,7 @@ private:
       _rendering->transform()->eraseAllChildren();
       
       _rendering->transform()->addChild(t2_data->scroll_transform.get());
-      _rendering->transform()->addChild(t2_data->linenumbers_transform.get());
+      //_rendering->transform()->addChild(t2_data->linenumbers_transform.get());
       _rendering->transform()->addChild(t2_data->scrollbar_transform.get());
       _rendering->transform()->addChild(t2_data->playcursor_transform.get());
 
@@ -859,13 +859,15 @@ private:
       mat.translate(0,scroll_pos,0);
       t2_data->scroll_transform->setLocalAndWorldMatrix(mat);
     }
-    
+
+#if 0
     // linenumbers
     {
       vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
       mat.translate(0,scroll_pos,0);
       t2_data->linenumbers_transform->setLocalAndWorldMatrix(mat);
     }
+#endif
     
     // scrollbar
     {

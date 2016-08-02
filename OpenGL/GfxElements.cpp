@@ -515,7 +515,7 @@ T2_data::T2_data(PaintingData *painting_data, GE_Rgb background_color)
   , background_color(background_color)
 {
   scroll_transform = new vl::Transform;
-  linenumbers_transform = new vl::Transform;
+  //linenumbers_transform = new vl::Transform;
   scrollbar_transform = new vl::Transform;
   playcursor_transform = new vl::Transform;
 
@@ -580,7 +580,8 @@ static void T2_thread_func(){
       GE_draw_vl(t2_data->painting_data,
                  t2_data->vg.get(),
                  t2_data->scroll_transform.get(),
-                 t2_data->linenumbers_transform.get(),
+                 t2_data->scroll_transform.get(),
+                 //t2_data->linenumbers_transform.get(), // Put linenumber actors into the scroll_transform instead.
                  t2_data->scrollbar_transform.get(),
                  t2_data->playcursor_transform.get()
                  );
