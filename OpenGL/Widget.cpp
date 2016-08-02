@@ -57,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Player_proc.h"
 #include "../common/Semaphores.hpp"
 #include "../common/Mutex.hpp"
+#include "../common/Vector.hpp"
 #include "../common/player_proc.h"
 
 #define GE_DRAW_VL
@@ -507,6 +508,7 @@ public:
 
   T2_data *t2_data;
   bool t2_data_can_be_used;
+  radium::Vector<T2_data*> old_t2_datas;
   
   vl::ref<vl::SceneManagerVectorGraphics> vgscene;
 
@@ -669,10 +671,12 @@ public:
   
 private:
 
-
+  int64_t draw_counter = 0;
+  
   // OpenGL thread
   bool draw(void){
-
+  
+    
 #if TEST_TIME
     double start1 = TIME_get_ms();
     //double draw_dur = 0.0;
@@ -682,7 +686,13 @@ private:
     int player_id = ATOMIC_GET(pc->play_id);
     bool is_playing = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
 
-    T2_data *new_t2_data = T3_maybe_get_t2_data();
+    T2_data *new_t2_data = NULL;
+
+    //if (!is_playing || (draw_counter % 6 == 0))
+    new_t2_data = T3_maybe_get_t2_data();
+
+    draw_counter++;
+    
     if (new_t2_data != NULL){
 
       t2_data_can_be_used = false;
@@ -725,8 +735,12 @@ private:
       dur25 = TIME_get_ms();
 #endif
 
-      T3_send_back_old_t2_data(old_t2_data);
-
+#if 1 // whether to delete in the t2 thread.
+      old_t2_datas.push_back(old_t2_data);
+#else
+      delete old_t2_data;
+#endif
+      
 #if TEST_TIME
       dur3 = TIME_get_ms();
 #endif
@@ -746,6 +760,8 @@ private:
       const struct Blocks *block = (const struct Blocks*)atomic_pointer_read((void**)&pc->block);
         
       if ((block==NULL || sv->block!=block)) { // Check that our blocktime belongs to the block that is rendered.
+        if (new_t2_data!=NULL)
+          T3_send_back_old_t2_data(NULL);
         if (t2_data_can_be_used){
           //printf("Waiting...\n");
           _rendering->render();
@@ -765,6 +781,8 @@ private:
       
       if (is_playing){
         if (blocktime < -10.0) {  // I.e. we just switched block, but the blocktime has not been calculated yet.
+          if (new_t2_data!=NULL)
+            T3_send_back_old_t2_data(NULL);
           if (t2_data_can_be_used){
             _rendering->render();
             return true;
@@ -801,8 +819,11 @@ private:
     float scroll_pos = GE_scroll_pos(sv, till_realline);
 
     
-    if (player_id != ATOMIC_GET(pc->play_id)) // In the very weird and unlikely case that the player has stopped and started since the top of this function (the computer is really struggling), we return false
+    if (player_id != ATOMIC_GET(pc->play_id)) {// In the very weird and unlikely case that the player has stopped and started since the top of this function (the computer is really struggling), we return false
+      if (new_t2_data!=NULL)
+        T3_send_back_old_t2_data(NULL);
       return false;
+    }
 
     if (!is_playing && scroll_pos == last_scroll_pos && new_t2_data==NULL) {
       if (t2_data_can_be_used){
@@ -882,11 +903,22 @@ private:
     t2_data_can_be_used = true;
     _rendering->render();
 
+    // Must do this after calling render() (and possibly after transform->setLocalAndWorldMatrix() is called)
+    // Could seem like some objects are cached and not removed until render() is called.
+    //
+    // If we don't do it here, we get tsan hits when vl::Object->decReferences() is called,
+    // and the objects may also be freed here instead of in the T2 thread.
+    while(old_t2_datas.size() > 0){
+      T2_data *old_t2_data = old_t2_datas.pop(0, true);
+      T3_send_back_old_t2_data(old_t2_data);
+    }
+    
+    
 #if TEST_TIME
     double dur6 = TIME_get_ms();
     double total = dur6-start1;
 
-    if (true || total>16 || new_t2_data != NULL)
+    if (total>15)// || new_t2_data != NULL)
       printf("%f: mask: %s  Total: %f. s-1: %f, 1-2: %f, 2-3: %f - %f, 3-4: %f, 4-5: %f, 5-6: %f. Num actors: %d\n",
              scroll_pos,
              std::bitset<32>(_rendering->enableMask()).to_string().c_str(),
@@ -1207,6 +1239,11 @@ static double get_refresh_rate(void){
   return -1;
 }
 
+static double g_vblank = 1000 / 60.0;
+double GL_get_vblank(void){
+  return g_vblank;
+}
+
 bool GL_maybe_notify_that_main_window_is_exposed(int interval){
   static bool gotit=false;
 
@@ -1224,9 +1261,10 @@ bool GL_maybe_notify_that_main_window_is_exposed(int interval){
     static int downcounter = 0;
     if (downcounter==0) {
       double refresh_rate = get_refresh_rate();
-      if (refresh_rate >= 0.5)
+      if (refresh_rate >= 0.5) {
         widget->set_vblank(1000.0 / refresh_rate);
-      else
+        g_vblank = 1000.0 / refresh_rate;
+      }else
         printf("Warning: Unable to find screen refresh rate\n");
       downcounter = 2 * 1000 / interval; // Check refresh rate every 2 seconds.
     }else
@@ -1313,6 +1351,7 @@ void GL_erase_estimated_vblank(void){
   store_use_estimated_vblank(false);
   GFX_Message(NULL, "Stored vblank value erased. Restart Radium to estimate a new vblank value.");
 }
+
 #endif
 
 void GL_set_vsync(bool onoff){

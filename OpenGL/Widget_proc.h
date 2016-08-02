@@ -18,6 +18,8 @@ extern QGLContext *GL_get_context(void);
   extern "C" {
 #endif
 
+extern double GL_get_vblank(void);
+
 extern bool GL_should_do_modal_windows(void);
 
 extern bool GL_maybe_notify_that_main_window_is_exposed(int interval);

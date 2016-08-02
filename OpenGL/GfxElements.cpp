@@ -490,14 +490,14 @@ struct T1_data{
 };
 
 static radium::Queue<T1_data*, 1>  t1_to_t2_queue;
-static radium::Queue<T2_data*, 1>  t2_to_t3_queue;
+static radium::SyncQueue<T2_data*> t2_to_t3_queue;
 static radium::Queue<T2_data*, 1>  t3_to_t2_queue;
 
 
 T2_data *T3_maybe_get_t2_data(void){
   bool got_new_t2_data;
 
-  T2_data *t2_data = t2_to_t3_queue.tryGet(got_new_t2_data);
+  T2_data *t2_data = t2_to_t3_queue.T2_tryGet(got_new_t2_data);
   
   if (!got_new_t2_data)
     return NULL;
@@ -506,7 +506,7 @@ T2_data *T3_maybe_get_t2_data(void){
 }
 
 void T3_send_back_old_t2_data(T2_data *t2_data){
-  R_ASSERT(t3_to_t2_queue.size()<=0);
+  //R_ASSERT(t3_to_t2_queue.size()<=0);
   t3_to_t2_queue.put(t2_data);
 }
 
@@ -531,7 +531,7 @@ T2_data::~T2_data(){
 #include <QOpenGLContext>
 #include <QWindow>
 
-#define TEST_TIME 1
+#define TEST_TIME 0
 
 static void T2_thread_func(){
   QOpenGLContext *offscreen_context = NULL;
@@ -565,6 +565,11 @@ static void T2_thread_func(){
     T2_data *t2_data;
 
     offscreen_context->makeCurrent(editor_qsurface);{
+
+      while(t3_to_t2_queue.size() > 0){
+        T2_data *old_t2_data = t3_to_t2_queue.get();
+        delete old_t2_data;
+      }
       
       t2_data = new T2_data(t1_data->painting_data, t1_data->background_color);
 
@@ -590,17 +595,22 @@ static void T2_thread_func(){
 
     R_ASSERT(t2_data->painting_data != NULL);
 
-    R_ASSERT(t2_to_t3_queue.size()<=0);
+    //R_ASSERT(t2_to_t3_queue.size()<=0);
 
-    t2_to_t3_queue.put(t2_data);
+    t2_to_t3_queue.T1_put(t2_data);
+    t2_to_t3_queue.T1_wait_for_T2_to_pick_up();    
 
-    {
-      T2_data *old_t2_data = t3_to_t2_queue.get();
-    
+    T2_data *old_t2_data = t3_to_t2_queue.get();
+
+    if (old_t2_data != NULL){
       offscreen_context->makeCurrent(editor_qsurface);{      
         delete old_t2_data;
       }offscreen_context->doneCurrent();
     }
+    //printf("gl: %f\n",GL_get_vblank());
+    
+    //    if (is_playing())
+    //  usleep(GL_get_vblank() * 10 * 1000); // Sleep a little bit to avoid putting too much pressure on the gfx card this frame.
   }
 }
 

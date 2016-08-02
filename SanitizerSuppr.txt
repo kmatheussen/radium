@@ -14,6 +14,7 @@ race:safe_int_write
 race:safe_int_read
 race:Compressor_wrapper::get_graph_value
 race:Compressor_wrapper::set_parameter
+race:QCoreApplication::postEvent
 
 # Calling 3rd party code:
 race:call_ladspa_get_descriptor_func
