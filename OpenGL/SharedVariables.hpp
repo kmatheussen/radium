@@ -1,8 +1,11 @@
 
+#include <gc.h>
+
 #include "Widget_proc.h"
 
 #include "../common/time_proc.h"
 #include "../common/vector_proc.h"
+#include "../common/threading.h"
 
 
 extern struct Root *root;
@@ -53,15 +56,22 @@ static inline float get_scrollbar_scroller_height(const struct Tracker_Windows *
 #ifdef OPENGL_GFXELEMENTS_CPP
 
 static radium::Mutex vector_mutex;
-static vector_t g_shared_variables_gc_storage; // Here we store stuff in used SharedVariables that should not be garbage collected
+static vector_t g_shared_variables_gc_storage = {}; // Here we store stuff used in SharedVariables that should not be garbage collected
 
-// Called from OpenGL thread
+// Called from T2 or main thread
 SharedVariables::~SharedVariables(){
   V_free(realline_places);
   {
     radium::ScopedMutex locker(&vector_mutex);
-    VECTOR_remove(&g_shared_variables_gc_storage, this->times);
-    VECTOR_remove(&g_shared_variables_gc_storage, this->block);
+
+    bool is_main_thread = THREADING_is_main_thread();
+    
+    if(!is_main_thread)Threadsafe_GC_disable();{ // Disable garbage collector since we modify gc memory from another thread. (I wouldn't be surprised if turning off the GC here would only be useful once in a million years, or never.)
+      
+      VECTOR_remove(&g_shared_variables_gc_storage, this->times);
+      VECTOR_remove(&g_shared_variables_gc_storage, this->block);
+      
+    }if(!is_main_thread)Threadsafe_GC_enable();
   }
 }
 

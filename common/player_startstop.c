@@ -114,9 +114,10 @@ static void PlayStopReally(bool doit){
         PATCH_reset_time();
         
 #if STOP_GC_WHILE_PLAYING
+#error "must make gc_dont_gc thread safe"
         //while(GC_is_disabled())
         while(GC_dont_gc>0)
-          GC_enable();
+          Threadsafe_GC_enable();
 #endif
         
         MIDI_insert_recorded_midi_events();
@@ -138,8 +139,9 @@ static void start_player(int playtype, int playpos, bool set_curr_playlist, Plac
   //while(GC_is_disabled()==false){
   //printf("Calling gc_disable: %d\n",GC_dont_gc);
 #if STOP_GC_WHILE_PLAYING
+#error "must make gc_dont_gc thread safe"
   while(GC_dont_gc<=0){
-    GC_disable();
+    Threadsafe_GC_disable();
   }
 #endif
 
@@ -369,8 +371,9 @@ static void PlaySong(
 
   // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
 #if STOP_GC_WHILE_PLAYING
+#error "must make gc_dont_gc thread safe"
   while(GC_is_disabled()==false)
-    GC_disable();
+    Threadsafe_GC_disable();
 #endif
 }
 

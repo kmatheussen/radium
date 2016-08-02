@@ -10,6 +10,11 @@ class QWidget;
   extern void GL_stop_widget(QWidget *widget);
   extern void GL_maybe_estimate_vblank(QWidget *widget);
 
+class QWindow;
+class QGLContext;
+extern QWindow *GL_get_editor_qwindow(void);
+extern QGLContext *GL_get_context(void);
+    
   extern "C" {
 #endif
 

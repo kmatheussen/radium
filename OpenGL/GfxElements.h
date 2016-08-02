@@ -37,6 +37,12 @@ static inline GE_Rgb GE_alpha(const GE_Rgb c, float alpha){
   return ret;
 }
 
+#ifdef Object_INCLUDE_ONCE
+static inline vl::vec4 get_vec4(GE_Rgb rgb){
+  return vl::vec4(rgb.r/255.0f, rgb.g/255.0f, rgb.b/255.0f, rgb.a/255.0f);
+}
+#endif
+
 typedef struct _GE_Context GE_Context;
 
 #ifdef __cplusplus
@@ -48,7 +54,7 @@ struct PaintingData;
 void GE_set_height(int height);
 int GE_get_height(void);
 
-#define SLICE_SIZE 512
+#define SLICE_SIZE 1024
 #define NOMASK_Y (-SLICE_SIZE*20)
 
 static inline uint32_t getMask(int a_y1, int a_y2){
@@ -79,7 +85,7 @@ static inline uint32_t getMask(int a_y1, int a_y2){
 
 #if defined(GE_DRAW_VL)
 void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset);
-void GE_draw_vl(PaintingData *das_painting_data, vl::Viewport *viewport, vl::VectorGraphics *vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform);
+static void GE_draw_vl(PaintingData *das_painting_data, vl::VectorGraphics *vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform);
 #endif
 
 #define Z_ABOVE(z) ((z)+2)
@@ -110,9 +116,30 @@ void GE_set_z(GE_Context *c, int new_z); // 'c' should not be used before callin
 int GE_get_z(GE_Context *c);
 GE_Rgb GE_get_rgb(GE_Context *c);
 
-#ifdef __cplusplus
+
+#if defined(VectorGraphics_INCLUDE_ONCE) // i.e. when <vlVG/VectorGraphics.hpp> has been #included
+
 SharedVariables *GE_get_shared_variables(PaintingData *painting_data);
 PaintingData *GE_get_painting_data(PaintingData *current_painting_data, bool *needs_repaint);  // returns NULL if nothing was written since last call to the function.
+
+struct T2_data{
+  PaintingData *painting_data;
+
+  GE_Rgb background_color;
+  
+  vl::ref<vl::VectorGraphics> vg;
+
+  vl::ref<vl::Transform> scroll_transform;
+  vl::ref<vl::Transform> linenumbers_transform;
+  vl::ref<vl::Transform> scrollbar_transform;
+  vl::ref<vl::Transform> playcursor_transform;
+
+  T2_data(PaintingData *painting_data, GE_Rgb background_color);
+  ~T2_data();
+};
+
+T2_data *T3_maybe_get_t2_data(void);
+void T3_send_back_old_t2_data(T2_data *t2_data);
 #endif
 
 void GE_start_writing(void);

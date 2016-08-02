@@ -259,7 +259,7 @@ void GL_draw_unlock(void){
 }
 
 
-static bool g_gl_widget_started = false;
+bool g_gl_widget_started = false;
 
 static bool g_should_do_modal_windows = false;
 
@@ -474,7 +474,6 @@ static EditorWidget *get_editorwidget(void){
 
 volatile float g_scroll_pos = 0.0f;
 
-
 // Main thread
 static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
   const QPoint p = qmouseevent->pos();
@@ -504,20 +503,12 @@ public:
   int current_width;
   int current_height;
   
-  int new_width;
-  int new_height;
-    
   vl::ref<vl::Rendering> _rendering;
-  vl::ref<vl::Transform> _scroll_transform;
-  vl::ref<vl::Transform> _linenumbers_transform;
-  vl::ref<vl::Transform> _scrollbar_transform;
-  vl::ref<vl::Transform> _playcursor_transform;
-  //vl::ref<vl::SceneManagerActorTree> _sceneManager;
 
-  vl::ref<vl::VectorGraphics> vg;
+  T2_data *t2_data;
+  bool t2_data_can_be_used;
+  
   vl::ref<vl::SceneManagerVectorGraphics> vgscene;
-
-  PaintingData *painting_data;
 
 #if !USE_QT5
   DEFINE_ATOMIC(bool, is_training_vblank_estimator);
@@ -541,14 +532,14 @@ public:
 #else
     : Qt4ThreadedWidget(vlFormat, parent)
 #endif
-    , current_width(-1)
-    , current_height(-1)
-    , new_width(500)
-    , new_height(500)
-    , painting_data(NULL)
+    , current_width(500)
+    , current_height(500)
+    , t2_data(NULL)
+    , t2_data_can_be_used(false)
 #if !USE_QT5
     , has_overridden_vblank_value(false)
 #endif
+      //, painting_data(NULL)
     , last_scroll_pos(-1.0f)
     , last_current_realline_while_playing(-1.0f)
     , last_curr_realline(-1)
@@ -580,36 +571,12 @@ public:
 
     printf("init_vl\n");
 
+    QThread::currentThread()->setPriority(QThread::HighPriority);
+    
     _rendering = new vl::Rendering;
         
     _rendering->renderer()->setFramebuffer(glContext->framebuffer() );
-    //_rendering->camera()->viewport()->setClearColor( vl::green );
-
-    _scroll_transform = new vl::Transform;
-    _rendering->transform()->addChild(_scroll_transform.get());
-
-    _linenumbers_transform = new vl::Transform;
-    _rendering->transform()->addChild(_linenumbers_transform.get());
-
-    _scrollbar_transform = new vl::Transform;
-    _rendering->transform()->addChild(_scrollbar_transform.get());
-
-    _playcursor_transform = new vl::Transform;
-    _rendering->transform()->addChild(_playcursor_transform.get());
-
-    // installs a SceneManagerActorTree as the default scene manager
     
-    //_sceneManager = new vl::SceneManagerActorTree;
-    //_rendering->sceneManagers()->push_back(_sceneManager.get());
-
-#if 0
-    vl::mat4 mat = vl::mat4::getTranslation(0,0,0);
-    mat = vl::mat4::getTranslation(0,0,0) * mat;
-    _rendering->camera()->setViewMatrix( mat );
-#endif
-
-    //_scissor = new vl::Scissor(50,50, 500, 500);
-
     // A gigantic speedup, but rendering isn't right.
     if(0){
       vl::Renderer* regular_renderer = _rendering->renderer();
@@ -642,23 +609,19 @@ public:
     printf("initEvent\n");
     
     _rendering->sceneManagers()->clear();
-    
-    vg = new vl::VectorGraphics;
-    //vg->setScissor(150,150,100,100);
 
     vgscene = new vl::SceneManagerVectorGraphics;
-    vgscene->vectorGraphicObjects()->push_back(vg.get());
     _rendering->sceneManagers()->push_back(vgscene.get());
   }
 
+  
 private:
+  
   // OpenGL thread
   bool canDraw(){
-    if (vg.get()==NULL)
-      return false;
-    else
-      return true;
+    return vgscene.get() != NULL;    
   }
+  
 public:
 
   // Main thread
@@ -703,53 +666,94 @@ public:
     GL_create(get_window(), get_window()->wblock);
   }
 
+  
 private:
 
+
   // OpenGL thread
-  bool draw(bool force_repaint = false){
-    static bool needs_repaint_from_last_time = false;
+  bool draw(void){
 
 #if TEST_TIME
     double start1 = TIME_get_ms();
-    double draw_dur = 0.0;
+    //double draw_dur = 0.0;
+    double dur1=0,dur2=0,dur25=0,dur3=0;
 #endif
-    
+
     int player_id = ATOMIC_GET(pc->play_id);
     bool is_playing = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
 
-    bool needs_repaint;
-    painting_data = GE_get_painting_data(painting_data, &needs_repaint);
-    //printf("needs_repaint: %d, painting_data: %p\n",(int)needs_repaint,painting_data);
-    
-    if (painting_data==NULL)
+    T2_data *new_t2_data = T3_maybe_get_t2_data();
+    if (new_t2_data != NULL){
+
+      t2_data_can_be_used = false;
+      
+      T2_data *old_t2_data = t2_data;
+      t2_data = new_t2_data;
+
+      //_rendering = new vl::Rendering;  
+      //_rendering->renderer()->setFramebuffer(openglContext()->framebuffer() );
+
+      _rendering->camera()->viewport()->setWidth(current_width);
+      _rendering->camera()->viewport()->setHeight(current_height);
+      _rendering->camera()->setProjectionOrtho(-0.5f);
+      
+      _rendering->camera()->viewport()->setClearColor(get_vec4(t2_data->background_color));
+
+#if TEST_TIME
+      dur1 = TIME_get_ms();
+#endif
+      
+      _rendering->transform()->eraseAllChildren();
+      
+      _rendering->transform()->addChild(t2_data->scroll_transform.get());
+      _rendering->transform()->addChild(t2_data->linenumbers_transform.get());
+      _rendering->transform()->addChild(t2_data->scrollbar_transform.get());
+      _rendering->transform()->addChild(t2_data->playcursor_transform.get());
+
+      //vgscene = new vl::SceneManagerVectorGraphics;
+          
+      vgscene->vectorGraphicObjects()->clear();
+      vgscene->vectorGraphicObjects()->push_back(t2_data->vg.get());
+
+#if TEST_TIME
+      dur2 = TIME_get_ms();
+#endif
+      
+      vgscene->computeBounds(); // This should always be a no-op. If not, we could create a new vgscene in T2 each time.
+
+#if TEST_TIME
+      dur25 = TIME_get_ms();
+#endif
+
+      T3_send_back_old_t2_data(old_t2_data);
+
+#if TEST_TIME
+      dur3 = TIME_get_ms();
+#endif
+    }
+        
+    if (t2_data==NULL)
       return false;
-    
-    needs_repaint_from_last_time |= needs_repaint;
-    
-    SharedVariables *sv = GE_get_shared_variables(painting_data);
-    
-    //if (needs_repaint)
-    //  printf("   Needs repaint %d\n",sv->block->l.num);
+
+    SharedVariables *sv = GE_get_shared_variables(t2_data->painting_data);
     
     double blocktime = 0.0;
 
     int playing_blocknum = -1;
-    
+
     if (is_playing){
       
       const struct Blocks *block = (const struct Blocks*)atomic_pointer_read((void**)&pc->block);
         
-#if 1    
-      if (block==NULL || sv->block!=block) { // Check that our blocktime belongs to the block that is rendered.
-        #if 1
+      if ((block==NULL || sv->block!=block)) { // Check that our blocktime belongs to the block that is rendered.
+        if (t2_data_can_be_used){
           //printf("Waiting...\n");
           _rendering->render();
           return true;
-        #else
-          return false; // Returning false uses more CPU on Intel gfx, and generally seems to may cause jumpy graphics, but here we are just waiting for the block to be rendered.
-        #endif
+        }else{
+          return false; // Returning false uses 100% CPU on Intel gfx / Linux, and possibley may cause jumpy graphics, but here we are just waiting for the block to be rendered.
+        }
       }
-#endif
 
       playing_blocknum = block->l.num;
         
@@ -761,80 +765,33 @@ private:
       
       if (is_playing){
         if (blocktime < -10.0) {  // I.e. we just switched block, but the blocktime has not been calculated yet.
-          //return false;
-          _rendering->render();
-          return true;      
+          if (t2_data_can_be_used){
+            _rendering->render();
+            return true;
+          } else {
+            return false;
+          }
         }
       }
 
     }
     
-    
-    if (force_repaint || needs_repaint || current_height != new_height || current_width != new_width) {
 
-      if (current_height != new_height || current_width != new_width){
-
-        printf("Changing height\n");
-        
-        //_rendering->sceneManagers()->clear();
-        _rendering->camera()->viewport()->setWidth(new_width);
-        _rendering->camera()->viewport()->setHeight(new_height);
-        _rendering->camera()->setProjectionOrtho(-0.5f);
-   
-        GE_set_height(new_height);
-        //create_block(_rendering->camera()->viewport()->width(), _rendering->camera()->viewport()->height());
-        
-        //initEvent();
-        
-        current_height = new_height;
-        current_width = new_width;
-
-      } else {
-        //vg->clear(); // vg->clear is called in vg->startDrawing
-      }
-      
-      //GE_set_curr_realline(sv->curr_realline);
-
-#if TEST_TIME
-      double draw_start = TIME_get_ms();
-#endif
-      
-      GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg.get(), _scroll_transform, _linenumbers_transform, _scrollbar_transform, _playcursor_transform);
-      //_sceneManager->computeBounds();
-      vgscene->computeBounds();
-
-#if TEST_TIME
-      draw_dur = TIME_get_ms() - draw_start;
-      printf("   Draw dur: %f\n", draw_dur);
-#endif
-      
-      needs_repaint_from_last_time = false;
-    }
-
-    double current_realline_while_playing;
-    
-    if (is_playing) {
-      
-      
-      current_realline_while_playing = find_current_realline_while_playing(sv, blocktime);
-      
-    } else {
-      
-      current_realline_while_playing = 0.0;
-      
-    }
+    double current_realline_while_playing =
+      is_playing
+      ? find_current_realline_while_playing(sv, blocktime)
+      : 0.0;
     
     R_ASSERT_NON_RELEASE(current_realline_while_playing >= 0);
 
     int current_realline_while_not_playing = ATOMIC_GET(g_curr_realline);
     
-    double till_realline;
-    if (ATOMIC_GET_RELAXED(root->play_cursor_onoff))
-      till_realline = current_realline_while_not_playing;
-    else if (is_playing)
-      till_realline = current_realline_while_playing;
-    else
-      till_realline = current_realline_while_not_playing;
+    double till_realline =
+      ATOMIC_GET_RELAXED(root->play_cursor_onoff)
+      ? current_realline_while_not_playing
+      : is_playing
+        ? current_realline_while_playing
+        : current_realline_while_not_playing;
 
     Play_set_curr_playing_realline(
                                    is_playing ? (int)current_realline_while_playing : current_realline_while_not_playing,
@@ -847,15 +804,21 @@ private:
     if (player_id != ATOMIC_GET(pc->play_id)) // In the very weird and unlikely case that the player has stopped and started since the top of this function (the computer is really struggling), we return false
       return false;
 
-    if (!is_playing && scroll_pos == last_scroll_pos && !needs_repaint)
-      return false; // Use less cpu.
-
+    if (!is_playing && scroll_pos == last_scroll_pos && new_t2_data==NULL) {
+      if (t2_data_can_be_used){
+        _rendering->render();
+        return true;
+      }else{
+        return false; // TODO: Check if this still uses 100% cpu on Intel/linux. It's a little bit wasteful to render the same frame again and again while not playing just because of one driver on one platform.
+      }
+    }
+    
     //printf("scrolling\n");
 
     //_scissor->enable(_rendering->camera()->viewport());
 
     // Set render mask
-    {
+    if(1){
 #if 1
       float upper = scroll_pos;
       float lower = scroll_pos + current_height;
@@ -865,7 +828,6 @@ private:
       float upper = middle - 100;
       float lower = middle + 100;
 #endif
-
       _rendering->setEnableMask(getMask(upper,lower));
     }
     
@@ -874,14 +836,14 @@ private:
     {
       vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
       mat.translate(0,scroll_pos,0);
-      _scroll_transform->setLocalAndWorldMatrix(mat);
+      t2_data->scroll_transform->setLocalAndWorldMatrix(mat);
     }
     
     // linenumbers
     {
       vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
       mat.translate(0,scroll_pos,0);
-      _linenumbers_transform->setLocalAndWorldMatrix(mat);
+      t2_data->linenumbers_transform->setLocalAndWorldMatrix(mat);
     }
     
     // scrollbar
@@ -893,7 +855,7 @@ private:
                                  );
       //printf("bar_length: %f, till_realline: %f. scrollpos: %f, pos: %f, max: %d\n",bar_length,till_realline, scrollpos, pos, window->leftslider.x2);
       mat.translate(0,scrollbarpos,0);
-      _scrollbar_transform->setLocalAndWorldMatrix(mat);
+      t2_data->scrollbar_transform->setLocalAndWorldMatrix(mat);
     }
     
     // playcursor (i.e. the red horizontal line which is moving down when playing and the "PC" button is pressed)
@@ -903,30 +865,40 @@ private:
       float playcursorpos = scroll_pos - GE_scroll_pos(sv, current_realline_while_playing);
 
       mat.translate(0,playcursorpos,0);
-      _playcursor_transform->setLocalAndWorldMatrix(mat);
+      t2_data->playcursor_transform->setLocalAndWorldMatrix(mat);
     }
 
+          
 #if TEST_TIME
-    double start2 = TIME_get_ms();
+    double dur4 = TIME_get_ms();
 #endif
     
-    GE_update_triangle_gradient_shaders(painting_data, scroll_pos);
+    GE_update_triangle_gradient_shaders(t2_data->painting_data, scroll_pos);
 
 #if TEST_TIME
-    double start3 = TIME_get_ms();
+    double dur5 = TIME_get_ms();
 #endif
-    
+
+    t2_data_can_be_used = true;
     _rendering->render();
 
 #if TEST_TIME
-    double start4 = TIME_get_ms();
-    
-    printf("%f: mask: %s  Render dur: %f (%f). Total: %f (%f). Num actors: %d\n",
-           scroll_pos,
-           std::bitset<32>(_rendering->enableMask()).to_string().c_str(),
-           start4 - start3, start3-start2,
-           start4-start1, (start4-start1) - draw_dur - (start4-start2),
-           vg->actors()->size());
+    double dur6 = TIME_get_ms();
+    double total = dur6-start1;
+
+    if (true || total>16 || new_t2_data != NULL)
+      printf("%f: mask: %s  Total: %f. s-1: %f, 1-2: %f, 2-3: %f - %f, 3-4: %f, 4-5: %f, 5-6: %f. Num actors: %d\n",
+             scroll_pos,
+             std::bitset<32>(_rendering->enableMask()).to_string().c_str(),
+             total,
+             dur1-start1,
+             dur2-dur1,
+             dur25-dur2,
+             dur3-dur25,
+             dur4-dur3,
+             dur5-dur4,
+             dur6-dur5,
+             t2_data->vg->actors()->size());
 #endif
     
     safe_volatile_float_write(&g_scroll_pos, scroll_pos);
@@ -938,14 +910,18 @@ private:
     return true;
   }
 
+
   // OpenGL thread
   void swap(void){
     if (USE_GL_LOCK)
-      radium::ScopedMutex lock(&mutex);
+      mutex.lock();
 
     // Swap to the newly rendered buffer
     if ( openglContext()->hasDoubleBuffer())
       openglContext()->swapBuffers();
+
+    if (USE_GL_LOCK)
+      mutex.unlock();
   }
 
 public:
@@ -1079,34 +1055,21 @@ public:
   virtual void resizeEvent(int w, int h) {
     printf("resisizing %d %d\n",w,h);
 
-    new_width = w;
-    new_height = h;
-
-
-#if 1
-
-    /*
-    _rendering->sceneManagers()->clear();
-
-    _rendering->camera()->viewport()->setWidth(w);
-    _rendering->camera()->viewport()->setHeight(h);
-    _rendering->camera()->setProjectionOrtho(-0.5f);
-    */
+    if (w<32)
+      w = 32;
+    if (h<32)
+      h = 32;
+    
+    current_width = w;
+    current_height = h;
     
     initEvent();
     
-    ////create_block(_rendering->camera()->viewport()->width(), _rendering->camera()->viewport()->height());
-#endif
-
     GE_set_height(h);
 
-    //for(int i = 0; i < 100 ; i ++){
     GFX_ScheduleEditorRedraw();
-    //draw(true);
-    updateEvent();
-    //usleep(5000);
-    //    }
   }
+  
   // The rest of the methods in this class are virtual methods required by the vl::UIEventListener class. Not used.
 
   /** Event generated whenever setEnabled() is called. */
@@ -1198,6 +1161,24 @@ public:
 
 static vl::ref<MyQtThreadedWidget> widget;
 
+QSurfaceFormat GL_get_qsurface_format(void){
+  return QGLFormat::toSurfaceFormat(widget->format());
+}
+
+#include <QOffscreenSurface>
+#include <QOpenGLContext>
+
+static DEFINE_ATOMIC(QWindow *, g_qwindow) = NULL;
+static DEFINE_ATOMIC(QGLContext *, g_context) = NULL;
+
+QWindow *GL_get_editor_qwindow(void){
+  return ATOMIC_GET(g_qwindow);
+}
+
+QGLContext *GL_get_context(void){
+  return ATOMIC_GET(g_context);
+}
+
 #if !USE_QT5
 static bool use_estimated_vblank_questionmark(){
   return SETTINGS_read_bool("use_estimated_vblank", false);
@@ -1217,6 +1198,8 @@ static double get_refresh_rate(void){
   if (qwindow!=NULL){
     QScreen *qscreen = qwindow->screen();
     if (qscreen!=NULL) {
+      ATOMIC_SET(g_qwindow, qwindow);
+      ATOMIC_SET(g_context, widget->context());
       return qscreen->refreshRate();
     }
   }

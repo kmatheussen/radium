@@ -84,6 +84,7 @@ fi
 rm -fr Visualization-Library-master
 tar xvzf Visualization-Library-master.tar.gz 
 cd Visualization-Library-master/
+#sed -i s/"VL_ACTOR_USER_DATA 0"/"VL_ACTOR_USER_DATA 1"/ src/vlCore/config.hpp
 export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC"
 MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC"
 echo 'set(CMAKE_CXX_FLAGS "$MYFLAGS")' >>CMakeLists.txt

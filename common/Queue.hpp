@@ -113,6 +113,90 @@ public:
   }
 };
 
+template <typename T>
+struct DispatchQueueElement{
+  int type;
+  T *data;
+};
+
+template <typename T, int SIZE>
+struct DispatchQueue : public Queue<DispatchQueueElement<T>, SIZE> {
+  
+};
+
+
+template <typename T>
+struct SyncQueue{
+
+private:
+  Semaphore T1_ready;
+  Semaphore T2_ready;
+  bool has_data;
+  T data;
+
+  void T2_wait(void){
+    T2_ready.wait();
+  }
+
+  void T2_has_picked_up_data(void){
+    data = 0;
+    has_data = false;
+    T1_ready.signal();
+  }
+  
+  T T2_get_withoutWaiting(){
+    R_ASSERT(has_data);
+    
+    T ret = data;
+    T2_has_picked_up_data();
+    
+    return ret;
+  }
+
+
+public:
+
+  SyncQueue()
+    :has_data(false)
+  {
+  }
+  
+  T T2_tryGet(bool &gotit){
+    if (T2_ready.tryWait()) {
+      gotit = true;
+      
+      return T2_get_withoutWaiting();
+            
+    } else {
+
+      gotit = false;
+
+      return 0;
+    }
+  }
+  
+  void T2_get(T t){
+    T2_wait();
+    return T2_get_withoutWaiting();
+  }
+
+  void T1_put(T t){
+    R_ASSERT(!has_data);
+
+    data = t;
+    has_data = true;
+
+    T2_ready.signal();
+  }
+
+  void T1_wait_for_T2_to_pick_up(void){
+    T1_ready.wait();
+    R_ASSERT(!has_data);
+  }
+  
+};
+
+  
 }
 
   

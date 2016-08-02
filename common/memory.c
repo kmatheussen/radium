@@ -34,13 +34,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-size_t tmemorysize=32000;		/* Hardcoded, must be unhardcoded later. */
-int tmemoryisused=1;
+#if 0
+static size_t tmemorysize=32000;		/* Hardcoded, must be unhardcoded later. */
+static int tmemoryisused=1;
 
-void *tmemory;
+static void *tmemory;
+#endif
 
+static LockType ts_gc_lock;
+
+void Threadsafe_GC_disable(void){
+  LOCK_LOCK(ts_gc_lock);
+  GC_disable();
+  LOCK_UNLOCK(ts_gc_lock);
+}
+
+void Threadsafe_GC_enable(void){
+  LOCK_LOCK(ts_gc_lock);
+  GC_enable();
+  LOCK_UNLOCK(ts_gc_lock);
+}
 
 void init_memory(void){
+  LOCK_INITIALIZE(ts_gc_lock);
+  
 #ifndef DISABLE_BDWGC
   //	tmemory=GC_malloc_atomic(tmemorysize);
   //	tmemoryisused=0;

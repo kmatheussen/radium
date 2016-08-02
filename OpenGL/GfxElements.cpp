@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <QMap>
+#include <QThread>
 
 #include <vlVG/VectorGraphics.hpp>
 #include <vlGraphics/Rendering.hpp>
@@ -23,10 +24,12 @@ static void setActorEnableMask(vl::Actor *actor);
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/Mutex.hpp"
+#include "../common/Queue.hpp"
 
 #include "../Qt/Qt_colors_proc.h"
 
 #define OPENGL_GFXELEMENTS_CPP
+#define GE_DRAW_VL
 #include "GfxElements.h"
 
 
@@ -63,11 +66,6 @@ GE_Rgb GE_get_custom_rgb(int custom_colornum){
   GE_Rgb ret = {(unsigned char)c.red(), (unsigned char)c.green(), (unsigned char)c.blue(), (unsigned char)c.alpha()};
   return ret;
 }
-
-static vl::vec4 get_vec4(GE_Rgb rgb){
-  return vl::vec4(rgb.r/255.0f, rgb.g/255.0f, rgb.b/255.0f, rgb.a/255.0f);
-}
-
 
 static vl::GLSLFragmentShader *get_gradient_fragment_shader(GradientType::Type type){
   static vl::ref<vl::GLSLFragmentShader> gradient_velocity_shader = NULL;
@@ -456,10 +454,6 @@ static float get_pen_width_from_key(int key){
 }
 
 
-static radium::Mutex mutex;
-
-
-static GE_Rgb background_color;
 
 typedef QMap<int, QHash<int, QHash<uint64_t, vl::ref<GE_Context> > > >Contexts;
 //            ^          ^            ^
@@ -478,13 +472,11 @@ struct PaintingData{
 
 
 
-// Accessed by both the main thread and the OpenGL thread. Access to this variable is protected by the mutex.
-static PaintingData *g_last_written_painting_data = NULL;
-
-
 // This variable is only accessed by the main thread while building up a new PaintingData.
 // It is not necessary for this variable to be global, and the code is more confusing because of that.
 // However, by letting it be global, we don't have to send it around everywhere.
+//
+// In short: It can only be used by the main thread while while GL_create is called.
 static PaintingData *g_painting_data = NULL;
 
 // Called from the OpenGL thread
@@ -492,64 +484,182 @@ SharedVariables *GE_get_shared_variables(PaintingData *painting_data){
   return &painting_data->shared_variables;
 }
 
-// Called from the OpenGL thread
-PaintingData *GE_get_painting_data(PaintingData *current_painting_data, bool *needs_repaint){
-  PaintingData *ret;
+struct T1_data{
+  PaintingData *painting_data;
+  GE_Rgb background_color;
+};
 
-  {
-    radium::ScopedMutex locker(&mutex);
+static radium::Queue<T1_data*, 1>  t1_to_t2_queue;
+static radium::Queue<T2_data*, 1>  t2_to_t3_queue;
+static radium::Queue<T2_data*, 1>  t3_to_t2_queue;
+
+
+T2_data *T3_maybe_get_t2_data(void){
+  bool got_new_t2_data;
+
+  T2_data *t2_data = t2_to_t3_queue.tryGet(got_new_t2_data);
   
-    if(g_last_written_painting_data==NULL) {
-      *needs_repaint = false;
-      return current_painting_data;
-    } else {
-      *needs_repaint = true;
-      ret = g_last_written_painting_data;
-      g_last_written_painting_data = NULL;
+  if (!got_new_t2_data)
+    return NULL;
+
+  return t2_data;
+}
+
+void T3_send_back_old_t2_data(T2_data *t2_data){
+  R_ASSERT(t3_to_t2_queue.size()<=0);
+  t3_to_t2_queue.put(t2_data);
+}
+
+T2_data::T2_data(PaintingData *painting_data, GE_Rgb background_color)
+  : painting_data(painting_data)
+  , background_color(background_color)
+{
+  scroll_transform = new vl::Transform;
+  linenumbers_transform = new vl::Transform;
+  scrollbar_transform = new vl::Transform;
+  playcursor_transform = new vl::Transform;
+
+  vg = new vl::VectorGraphics;
+}
+
+T2_data::~T2_data(){
+  delete painting_data;
+}
+
+//#include <vlGraphics/OpenGLContext.hpp>
+#include <QOffscreenSurface>
+#include <QOpenGLContext>
+#include <QWindow>
+
+#define TEST_TIME 1
+
+static void T2_thread_func(){
+  QOpenGLContext *offscreen_context = NULL;
+
+  QWindow *editor_qwindow = NULL;
+  QGLContext *editor_context;
+
+  // wait until opengl widget has started
+  do{
+    usleep(1000*1000);
+    editor_qwindow = GL_get_editor_qwindow();
+    editor_context = GL_get_context();    
+  }while(editor_qwindow==NULL || editor_context==NULL || editor_qwindow->isVisible()==false || editor_context->isValid()==false);
+
+  QSurface *editor_qsurface = editor_qwindow;
+
+  offscreen_context = new QOpenGLContext;
+  offscreen_context->setFormat(editor_context->contextHandle()->format());//GL_get_editor_qsurface()->format());
+  offscreen_context->setShareContext(editor_context->contextHandle());
+  offscreen_context->create();
+
+  if (offscreen_context->isValid()==false){
+    GFX_Message(NULL, "Invalid offscreen OpenGL Context. Unable to paint.\n");
+    return;
+  }
+  
+  while(true){
+
+    T1_data *t1_data = t1_to_t2_queue.get();
+    
+    T2_data *t2_data;
+
+    offscreen_context->makeCurrent(editor_qsurface);{
+      
+      t2_data = new T2_data(t1_data->painting_data, t1_data->background_color);
+
+#if TEST_TIME
+      double start = TIME_get_ms();
+#endif
+      
+      GE_draw_vl(t2_data->painting_data,
+                 t2_data->vg.get(),
+                 t2_data->scroll_transform,
+                 t2_data->linenumbers_transform,
+                 t2_data->scrollbar_transform,
+                 t2_data->playcursor_transform
+                 );
+      
+#if TEST_TIME
+      printf("      GE_draw: %f\n", TIME_get_ms() - start);
+#endif
+      
+    }offscreen_context->doneCurrent();
+    
+    delete t1_data; // delete it before putting to the t2_to_t3 queue to avoid race condition on refs. (don't think there are any though)
+
+    R_ASSERT(t2_data->painting_data != NULL);
+
+    R_ASSERT(t2_to_t3_queue.size()<=0);
+
+    t2_to_t3_queue.put(t2_data);
+
+    {
+      T2_data *old_t2_data = t3_to_t2_queue.get();
+    
+      offscreen_context->makeCurrent(editor_qsurface);{      
+        delete old_t2_data;
+      }offscreen_context->doneCurrent();
     }
   }
-
-  if(current_painting_data != NULL)
-    delete current_painting_data;
-  
-  return ret;
 }
 
 
+// Using some qt stuff in this thread, so we use a QThread isntead.
+//static std::thread t1(T2_thread_func);
+
+namespace{
+  struct T2_Thread : public QThread{
+    T2_Thread(){
+      start();
+    }
+    
+    void run() override {
+      T2_thread_func();
+    }
+  };
+}
+
+static T2_Thread t2_thread;
+
 // Called from the main thread
 void GE_start_writing(void){
+  R_ASSERT(g_painting_data==NULL);
+  
   g_painting_data = new PaintingData();
   GE_fill_in_shared_variables(&g_painting_data->shared_variables);
 }
 
 // Called from the main thread
 void GE_end_writing(GE_Rgb new_background_color){
-  PaintingData *to_delete;
-  
-  {
-    radium::ScopedMutex locker(&mutex);
+  T1_data *t1_data = new T1_data;
 
-    to_delete = g_last_written_painting_data;
-    
-    g_last_written_painting_data = g_painting_data;
-    
-    background_color = new_background_color;
-  }
+  t1_data->painting_data = g_painting_data;
+  t1_data->background_color = new_background_color;
 
-  if (to_delete != NULL) // Unnecessary check, but the code is clearer this way. It shows that the variable might be NULL.
-    delete to_delete;
-}
+  g_painting_data = NULL;
 
-void GE_wait_until_block_is_rendered(void){
-  for(int i = 0; i < 50; i++){
-    {
-      radium::ScopedMutex locker(&mutex);
-      if (g_last_written_painting_data==NULL)
-        return;
+  // Drain queue first. Overflowing the queue is not good for interactivity.  In addition, we don't want a situation where the queue grows faster than t2 is able to handle.
+  // And, we also want to avoid waiting for space to be available in the queue. (radium::Queue->put() buzy loops while waiting for space to be availabe in the queue)
+  while(t1_to_t2_queue.size() > 0){
+    bool gotit;
+    T1_data *old = t1_to_t2_queue.tryGet(gotit);
+    if(gotit){
+      delete old->painting_data;
+      delete old;
     }
-    usleep(1000*20);
   }
+
+  t1_to_t2_queue.put(t1_data);
 }
+
+// Called from the main thread. Only used when loading song to ensure all gradients are created before starting to play.
+void GE_wait_until_block_is_rendered(void){
+  while(t1_to_t2_queue.size() > 0)
+    usleep(1000*20);
+}
+
+
 
 /*****************************************/
 /* Drawing.  Called from OpenGL thread. */
@@ -594,16 +704,7 @@ void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_of
 }
 
 
-void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::VectorGraphics *vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform){
-
-  GE_Rgb new_background_color;
-
-  {
-    radium::ScopedMutex locker(&mutex);
-    new_background_color = background_color;
-  }
-
-  viewport->setClearColor(get_vec4(new_background_color));
+static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform){
 
   vg->startDrawing(); {
 

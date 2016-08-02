@@ -74,10 +74,16 @@ int main(int argc, char **argv){
 
 #include "../OpenGL/Widget_proc.h"
 
+extern bool g_qt_is_running;
 
 extern "C" {
 int SYSTEM_show_message(const char *message){
 
+  if (g_qt_is_running==false){
+    fprintf(stderr,"\n\n\n   === %s ===\n\n\n", message);
+    return 0;
+  }
+    
 #if FOR_WINDOWS
   QString program = OS_get_full_program_file_path("radium_error_message.exe");
 #else

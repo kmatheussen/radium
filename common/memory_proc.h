@@ -20,9 +20,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
-extern void init_memory(void);
+extern LANGSPEC void Threadsafe_GC_disable(void);
+extern LANGSPEC void Threadsafe_GC_enable(void);
 
-extern void tfree(void *element);
+extern LANGSPEC void init_memory(void);
+
+extern LANGSPEC void tfree(void *element);
 
 //extern LANGSPEC void *tracker_alloc_clean(size_t size,void *(*AllocFunction)(size_t size2));
 

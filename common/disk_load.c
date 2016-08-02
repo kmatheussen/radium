@@ -230,7 +230,7 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
         // that memory while a new song is loaded (since we don't have control over what Qt may do while we
         // access it). Not unlikely to be other similar situations.
         if(0){
-          GC_disable();
+          Threadsafe_GC_disable();
         }
 
 
@@ -279,7 +279,7 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
  exit:
 
         if(0){
-          GC_enable();
+          Threadsafe_GC_enable();
         }
 
 	if(mmp2filename!=NULL) {

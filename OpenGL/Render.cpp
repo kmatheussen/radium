@@ -2372,8 +2372,13 @@ static void create_message(const struct Tracker_Windows *window){
 
 #include <thread>
 
+extern bool g_gl_widget_started;
+
 static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wblock){
 
+  if (g_gl_widget_started==false) // This check is probably not necessary
+    return;
+  
   set_g_colored_tracks();
   
   //static int n=0; printf("GL_create called %d\n",n++);
@@ -2412,7 +2417,7 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
 #if !RENDER_IN_SEPARATE_THREAD
 
 void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
-#if defined(RELEASE)
+#if 1 //defined(RELEASE)
   GL_create2(window, wblock);
 #else
   double start = TIME_get_ms();
@@ -2457,7 +2462,7 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
   if (g_qt_is_running==false)
     return;
 
-  GC_disable(); // Could also turn on thread support in gc for the worker thread, but this is simpler, and perhaps faster too.
+  Threadsafe_GC_disable(); // Could also turn on thread support in gc for the worker thread, but this is simpler, and perhaps faster too.
   {
     g_window = window;
     g_wblock = wblock;
@@ -2476,7 +2481,7 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
     
     //sem_finished.wait();
   }
-  GC_enable();
+  Threadsafe_GC_enable();
 
   //t1.join();
 }

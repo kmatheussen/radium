@@ -553,10 +553,10 @@ public slots:
     if (_initing==false){
       if (val) {
         printf("   setting ON\n");
-        GC_enable();
+        Threadsafe_GC_enable();
       } else {
         printf("   setting OFF\n");
-        GC_disable();      
+        Threadsafe_GC_disable();      
       }
     }
   }
