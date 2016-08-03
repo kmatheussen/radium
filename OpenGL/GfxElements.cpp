@@ -562,10 +562,21 @@ static void T2_thread_func(){
     editor_context = GL_get_context();    
   }while(editor_qwindow==NULL || editor_context==NULL || editor_qwindow->isVisible()==false || editor_context->isValid()==false);
 
-  QSurface *editor_qsurface = editor_qwindow;
-
+#if !CREATE_OFFSCREEN_SURFACE
+  QSurface *qsurface = editor_qwindow;
+#else
+  QOffscreenSurface *offscreen = new QOffscreenSurface(editor_qwindow->screen());
+  offscreen->setFormat(editor_context->contextHandle()->format());
+  offscreen->create();
+  if (offscreen->isValid()==false){
+    GFX_Message(NULL, "Invalid offscreen surface. Unable to paint.\n");
+    return;
+  }
+  QSurface *qsurface = offscreen;
+#endif
+  
   offscreen_context = new QOpenGLContext;
-  offscreen_context->setFormat(editor_context->contextHandle()->format());//GL_get_editor_qsurface()->format());
+  offscreen_context->setFormat(editor_context->contextHandle()->format());//GL_get_qsurface()->format());
   offscreen_context->setShareContext(editor_context->contextHandle());
   offscreen_context->create();
 
@@ -580,7 +591,7 @@ static void T2_thread_func(){
     
     T2_data *t2_data;
 
-    offscreen_context->makeCurrent(editor_qsurface);{
+    offscreen_context->makeCurrent(qsurface);{
 
       while(t3_to_t2_queue.size() > 0){
         T2_data *old_t2_data = t3_to_t2_queue.get();
@@ -608,11 +619,7 @@ static void T2_thread_func(){
       
     }offscreen_context->doneCurrent();
     
-    delete t1_data; // delete it before putting to the t2_to_t3 queue to avoid race condition on refs. (don't think there are any though)
-
-    R_ASSERT(t2_data->painting_data != NULL);
-
-    //R_ASSERT(t2_to_t3_queue.size()<=0);
+    delete t1_data;
 
     t2_to_t3_queue.T1_put(t2_data);
     t2_to_t3_queue.T1_wait_for_T2_to_pick_up();    
@@ -620,7 +627,7 @@ static void T2_thread_func(){
     T2_data *old_t2_data = t3_to_t2_queue.get();
 
     if (old_t2_data != NULL){
-      offscreen_context->makeCurrent(editor_qsurface);{      
+      offscreen_context->makeCurrent(qsurface);{      
         delete old_t2_data;
       }offscreen_context->doneCurrent();
     }

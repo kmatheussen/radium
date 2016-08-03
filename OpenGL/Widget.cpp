@@ -1223,7 +1223,7 @@ static void store_use_estimated_vblank(bool value){
 }
 
 static bool have_earlier_estimated_value(){
-  return SETTINGS_read_double("vblank", -1.0) > 0.0;
+return SETTINGS_read_double("vblank", -1.0) > 0.0;
 }
 #endif
 
