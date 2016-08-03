@@ -188,7 +188,9 @@ static int createAudioInstrumentFromPreset2(const wchar_t *filename, char *name,
     name = NULL;
 
   hash_t *state = get_preset_state_from_filename(filename);
-
+  if (state==NULL)
+    return -1;
+  
   InstrumentWidget_set_last_used_preset_filename(filename);
   
   struct Patch *patch = PATCH_create_audio(NULL, NULL, name, state);
