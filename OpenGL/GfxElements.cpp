@@ -504,7 +504,7 @@ struct T1_data{
 
 static radium::Queue<T1_data*, 1>  t1_to_t2_queue;
 static radium::SyncQueue<T2_data*> t2_to_t3_queue;
-static radium::Queue<T2_data*, 1>  t3_to_t2_queue;
+static radium::Queue<T2_data*, 8>  t3_to_t2_queue;
 
 
 T2_data *T3_maybe_get_t2_data(void){
@@ -539,18 +539,21 @@ T2_data::~T2_data(){
   delete painting_data;
 }
 
-//#include <vlGraphics/OpenGLContext.hpp>
+
+#define CREATE_OFFSCREEN_SURFACE 1
+
 #include <QOffscreenSurface>
 #include <QOpenGLContext>
 #include <QWindow>
 
 #define TEST_TIME 0
 
+
 static void T2_thread_func(){
   QOpenGLContext *offscreen_context = NULL;
 
   QWindow *editor_qwindow = NULL;
-  QGLContext *editor_context;
+  QGLContext *editor_context = NULL;
 
   // wait until opengl widget has started
   do{
