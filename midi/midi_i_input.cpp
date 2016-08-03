@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 #include <boost/lockfree/queue.hpp>
 
+#include <QThread>
 
 
 #include "../api/api_proc.h"
@@ -286,16 +287,38 @@ void MIDI_add_automation_recording_event(SoundPlugin *plugin, int effect_num, fl
                  "or your MIDI input and output ports are connected recursively, please report this incident.");
   }
 }
-                                         
-// Runs in its own thread
-static void *recording_queue_pull_thread(void*){
-  while(true){
-    
-    midi_event_t event = g_midi_event_queue.get();
-    
-    {
-      radium::ScopedMutex lock(&g_midi_event_mutex);
 
+namespace{
+struct RecordingQueuePullThread : public QThread {
+
+  RecordingQueuePullThread(const RecordingQueuePullThread&) = delete;
+  RecordingQueuePullThread& operator=(const RecordingQueuePullThread&) = delete;
+
+  DEFINE_ATOMIC(bool, is_running) = true;
+  
+public:
+
+  RecordingQueuePullThread(){
+  }
+  
+  ~RecordingQueuePullThread(){
+    ATOMIC_SET(is_running, false);
+    midi_event_t event = {};
+    g_midi_event_queue.put(event);
+    wait(5000);
+  }
+  
+  void run() override {
+
+    while(true){
+    
+      midi_event_t event = g_midi_event_queue.get();
+      if(ATOMIC_GET(is_running)==false)
+        return;
+            
+      {
+        radium::ScopedMutex lock(&g_midi_event_mutex);
+        
       // Schedule "Seq" painting
       if (ATOMIC_GET(root->song_state_is_locked) == true){ // not totally tsan proof, but we use the _r0 versions of ListFindElement below, so it's pretty safe.
         struct Blocks *block = (struct Blocks*)ListFindElement1_r0(&root->song->blocks->l, event.timepos.blocknum);
@@ -312,12 +335,18 @@ static void *recording_queue_pull_thread(void*){
 
       // Send event to the main thread
       g_recorded_midi_events.push_back(event);
-    }
+      }
     
+    }
   }
 
-  return NULL;
+  //  return NULL;
+};
+
 }
+
+static RecordingQueuePullThread g_recording_queue_pull_thread; // Must be placed below the definition of 'g_midi_learns' since the destructor of 'g_recording_queue_pull_thread' must be called before the destructor of 'g_midi_learns'.
+
 
 
 static midi_event_t *find_midievent_end_note(int blocknum, int pos, int notenum_to_find, STime starttime_of_note){
@@ -833,7 +862,6 @@ void MIDI_input_init(void){
     
   MIDI_set_record_accurately(SETTINGS_read_bool("record_midi_accurately", true));
   MIDI_set_record_velocity(SETTINGS_read_bool("always_record_midi_velocity", false));
-  
-  static pthread_t recording_pull_thread;
-  pthread_create(&recording_pull_thread, NULL, recording_queue_pull_thread, NULL);
+
+  g_recording_queue_pull_thread.start();
 }
