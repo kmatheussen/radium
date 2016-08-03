@@ -610,6 +610,22 @@ void undoTrackVolume(int tracknum, int blocknum, int windownum){
 
 
 
+// editor positions
+///////////////////////////////////////////////////
+
+float getEditorX1(int windownum){
+  return 0;
+}
+
+float getEditorX2(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL)
+    return -1;
+
+  return window->width;
+}
+
+
 // block positions
 ///////////////////////////////////////////////////
 

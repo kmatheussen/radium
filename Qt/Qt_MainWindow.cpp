@@ -339,21 +339,50 @@ void GFX_showHideEditor(void){
   }GL_unlock();
 }
 
-void handleDropEvent(QString filename){
-  struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
-  
-  if (filename.endsWith(".rad"))
-    LoadSong_CurrPos(window, STRING_create(filename));
-  
-  else if (filename.endsWith(".rec"))
-    createAudioInstrumentFromPreset(filename.toUtf8().constData(), NULL);
-  
-  else if (file_could_be_a_sample(filename)){
-    struct Patch *patch = PATCH_create_audio("Sample Player", "Sample Player", NULL, NULL);
-    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-    SAMPLER_set_new_sample(plugin, STRING_create(filename), 0);
-    connectAudioInstrumentToMainPipe(patch->id);
+static int get_track_from_x(float x){
+  if (x < 0 || x < getEditorX1(-1) || x>=getEditorX2(-1))
+    return -1;
+
+  int num_tracks = getNumTracks(-1);
+  for(int i=0;i<num_tracks;i++){
+    if( x >= getTrackX1(i,-1,-1) && x < getTrackX2(i,-1,-1))
+      return i;
   }
+
+  return -1;
+}
+
+void handleDropEvent(QString filename, float x){
+  struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
+
+  int tracknum = get_track_from_x(x);
+  int64_t instrument_id = -1;
+
+  Undo_Open();{
+    
+    if (filename.endsWith(".rad"))
+      LoadSong_CurrPos(window, STRING_create(filename));
+    
+    else if (filename.endsWith(".rec"))
+      instrument_id = createAudioInstrumentFromPreset(filename.toUtf8().constData(), NULL);
+    
+    else if (file_could_be_a_sample(filename) || filename.endsWith(".sf2")){
+      struct Patch *patch = PATCH_create_audio("Sample Player", "Sample Player", NULL, NULL);
+      instrument_id = patch->id;
+      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      SAMPLER_set_new_sample(plugin, STRING_create(filename), 0);
+    }
+    
+    if (instrument_id != -1) {
+      connectAudioInstrumentToMainPipe(instrument_id);
+      
+      if (tracknum != -1)
+        setInstrumentForTrack(instrument_id, tracknum, -1, -1);
+
+      GFX_update_instrument_patch_gui(PATCH_get_from_id(instrument_id));
+    }
+
+  }Undo_Close();
 }
 
 
@@ -400,7 +429,7 @@ public:
         {
           printf(" Filepath: -%s-\n",url.toLocalFile().toUtf8().constData());          
           QString filename = url.toLocalFile();
-          handleDropEvent(filename);
+          handleDropEvent(filename, event->pos().x());
         }
     }
   }

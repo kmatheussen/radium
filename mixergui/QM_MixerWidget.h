@@ -116,7 +116,7 @@ class MyScene : public QGraphicsScene{
       {
         foreach (QUrl url, event->mimeData()->urls())
           {
-            handleDropEvent(url.toLocalFile());
+            handleDropEvent(url.toLocalFile(), -100);
           }
       }
   }

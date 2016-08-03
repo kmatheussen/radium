@@ -37,7 +37,7 @@ extern LANGSPEC bool AltPressed(void);
 
 #ifdef USE_QT4
 class QDropEvent;
-void handleDropEvent(QString filename);
+void handleDropEvent(QString filename, float x);
 #endif
 
 extern LANGSPEC void SetNormalPointer(struct Tracker_Windows *tvisual);
