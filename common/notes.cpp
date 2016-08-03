@@ -175,7 +175,9 @@ void StopAllNotesAtPlace(
                          struct Tracks *track,
                          Place *placement
 ){
-        R_ASSERT(PLAYER_current_thread_has_lock() || is_playing()==false);
+  if (PLAYER_current_thread_has_lock()==false && is_playing()==true){
+    RError("StopAllNotesAtPlace. PLAYER_current_thread_has_lock(): %d, is_playing(): %d", PLAYER_current_thread_has_lock()==false, is_playing()==true);
+  }
           
 	struct Notes *temp;
 

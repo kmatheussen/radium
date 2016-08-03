@@ -90,8 +90,12 @@ static void PlayStopReally(bool doit){
           while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED)
             OS_WaitForAShortTime(5);
 
+        R_ASSERT(is_playing()==false);
+
 	StopAllInstruments();
 
+        R_ASSERT(is_playing()==false);
+                
 #if !USE_OPENGL
 	if(doit) (*Ptask2MtaskCallBack)();
 #endif
@@ -103,6 +107,8 @@ static void PlayStopReally(bool doit){
 
         ScrollEditorToRealLine(window,wblock,wblock->curr_realline);
 
+        R_ASSERT(is_playing()==false);
+                
 #if !USE_OPENGL
         DrawWBlockSpesific(window,wblock,wblock->curr_realline,wblock->curr_realline); // clear cursor shade.
         UpdateAllWTracks(window,wblock,wblock->curr_realline,wblock->curr_realline); // same here.
@@ -112,7 +118,9 @@ static void PlayStopReally(bool doit){
         printf("[hb gakkgakk: %d\n",GC_dont_gc);
 #endif
         PATCH_reset_time();
-        
+
+        R_ASSERT(is_playing()==false);
+                
 #if STOP_GC_WHILE_PLAYING
 #error "must make gc_dont_gc thread safe"
         //while(GC_is_disabled())
@@ -122,12 +130,18 @@ static void PlayStopReally(bool doit){
         
         MIDI_insert_recorded_midi_events();
 
+        R_ASSERT(is_playing()==false);
+        
         InitPEQmempool(); // Clean memory used by player so it can be freed by the garbage collector.
+
+        R_ASSERT(is_playing()==false);
 }
 
 void PlayStop(void){
-  if(!is_playing())
+  if(!is_playing()){
     StopAllInstruments();
+    R_ASSERT(is_playing()==false);
+  }
   else
     PlayStopReally(true);
 }
