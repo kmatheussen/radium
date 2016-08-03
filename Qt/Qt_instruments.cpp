@@ -733,32 +733,75 @@ void GFX_PP_Update(struct Patch *patch){
 }
 
 
+static QVector<QString> get_all_presets_in_path(QString path){
+  QVector<QString> ret;
+  
+  QDir dir(path);
+  dir.setSorting(QDir::Name);
+  QFileInfoList list = dir.entryInfoList();
+  for (int i = 0; i < list.size(); ++i) {
+    QFileInfo file_info = list.at(i);
+    QString filename = file_info.fileName();
+    if (filename.endsWith(".rec"))
+      ret.push_back(filename);
+  }
+
+  return ret;
+}
+
 static QString last_filename;
 static QString last_preset_path = "";
+
+static QString request_load_preset_filename_from_requester(void){
+  QString filename;
+  
+  obtain_keyboard_focus();{
+
+    GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+      filename = QFileDialog::getOpenFileName(
+                                              g_mixer_widget,
+                                              "Load Effect configuration",
+                                              last_preset_path,
+#if FOR_WINDOWS
+                                              "*.rec ;; All files (*)",
+#else
+                                              "Radium Effect Configuration (*.rec) ;; All files (*)",
+#endif
+                                              0,
+                                              useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
+                                              );
+    }GL_unlock();
+    
+  }release_keyboard_focus();
+
+  return filename;
+}
 
 QString request_load_preset_filename(void){
   QString filename;
 
-  obtain_keyboard_focus();
+  QVector<QString> existing_presets = get_all_presets_in_path(last_preset_path);
+  if (existing_presets.size()==0)
+    return request_load_preset_filename_from_requester();
 
-  GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-    filename = QFileDialog::getOpenFileName(
-                                            g_mixer_widget,
-                                            "Load Effect configuration",
-                                            last_preset_path,
-#if FOR_WINDOWS
-                                            "*.rec ;; All files (*)",
-#else
-                                            "Radium Effect Configuration (*.rec) ;; All files (*)",
-#endif
-                                            0,
-                                            useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
-                                            );
-  }GL_unlock();
+  vector_t v = {};
+  
+  int request_from_requester = VECTOR_push_back(&v, "Select preset from a different directory");
+  VECTOR_push_back(&v, "------------");
 
-  release_keyboard_focus();
+  int start = v.num_elements;
+  
+  for(QString filename : existing_presets)
+    VECTOR_push_back(&v, talloc_strdup(filename.toUtf8().constData()));
 
-  return filename;
+  int sel = GFX_Menu(NULL, NULL, "", &v);
+
+  if (sel==-1)
+    return "";
+  else if (sel==request_from_requester)
+    return request_load_preset_filename_from_requester();
+  else
+    return existing_presets[sel-start];
 }
 
 const char *request_load_preset_encoded_filename(void){
