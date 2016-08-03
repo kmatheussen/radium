@@ -1432,7 +1432,13 @@ static void setup_widget(QWidget *parent){
   //vlFormat.setVSync(false);
 
   widget = new MyQtThreadedWidget(vlFormat, parent);
+#ifdef FOR_MACOSX
+  usleep(1000); // testing
+#endif
   widget->resize(1000,1000);
+#ifdef FOR_MACOSX
+  usleep(1000); // testing
+#endif
   widget->show();
 
   widget->setAutomaticDelete(false);  // dont want auto-desctruction at program exit.
