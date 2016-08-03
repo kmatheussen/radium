@@ -511,7 +511,7 @@ static radium::Queue<T1_data*, 1>  t1_to_t2_queue;
 static radium::SyncQueue<T2_data*> t2_to_t3_queue;
 static radium::Queue<T2_data*, 8>  t3_to_t2_queue;
 
-enum class Use_T2_Thread{
+enum Use_T2_Thread{
   UNINITIALIZED,
   YES,
   NO
