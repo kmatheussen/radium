@@ -335,6 +335,16 @@ void GFX_showHideEditor(void){
   }GL_unlock();
 }
 
+void handleDropEvent(QString filename){
+  struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
+  
+  if (filename.endsWith(".rad"))
+    LoadSong_CurrPos(window, STRING_create(filename));
+  else if (filename.endsWith(".rec"))
+    createAudioInstrumentFromPreset(filename.toUtf8().constData(), NULL);
+  //else if (file_could_be_a_sample(filename))
+}
+
 
 namespace{
 class MyQMainWindow : public QMainWindow{
@@ -372,16 +382,16 @@ public:
   }
 
   void dropEvent(QDropEvent *event){
-    printf("Got drop event\n");
-    if (event->mimeData()->hasUrls())
-      {
-        foreach (QUrl url, event->mimeData()->urls())
-          {
-            printf(" Filepath: -%s-\n",url.toLocalFile().toUtf8().constData());
-            struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
-            LoadSong_CurrPos(window, STRING_create(url.toLocalFile()));
-          }
-      }
+      printf("Got drop event\n");
+  if (event->mimeData()->hasUrls())
+    {
+      foreach (QUrl url, event->mimeData()->urls())
+        {
+          printf(" Filepath: -%s-\n",url.toLocalFile().toUtf8().constData());          
+          QString filename = url.toLocalFile();
+          handleDropEvent(filename);
+        }
+    }
   }
 
 };

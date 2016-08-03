@@ -116,9 +116,7 @@ class MyScene : public QGraphicsScene{
       {
         foreach (QUrl url, event->mimeData()->urls())
           {
-            printf(" Filepath: -%s-\n",url.toLocalFile().toUtf8().constData());
-            struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
-            LoadSong_CurrPos(window, STRING_create(url.toLocalFile()));
+            handleDropEvent(url.toLocalFile());
           }
       }
   }

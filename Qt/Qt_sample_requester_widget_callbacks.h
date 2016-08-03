@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern PlayerClass *pc;
 extern QApplication *g_qapplication;
 
-static bool file_could_be_a_sample(QString filename){
+bool file_could_be_a_sample(QString filename){
   return false
     || filename.endsWith(".xi",Qt::CaseInsensitive)
     || filename.endsWith(".wav",Qt::CaseInsensitive) 

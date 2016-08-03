@@ -35,6 +35,11 @@ extern LANGSPEC bool CtrlPressed(void);
 extern LANGSPEC bool ShiftPressed(void);
 extern LANGSPEC bool AltPressed(void);
 
+#ifdef USE_QT4
+class QDropEvent;
+void handleDropEvent(QString filename);
+#endif
+
 extern LANGSPEC void SetNormalPointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetPointingPointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetBlankPointer(struct Tracker_Windows *tvisual);

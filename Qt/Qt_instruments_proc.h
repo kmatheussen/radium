@@ -33,6 +33,7 @@ extern LANGSPEC void recreate_instrument_widget_order_from_state(hash_t *state);
 #ifdef USE_QT4
 #include <QString>
 extern QString request_load_preset_filename(void);
+extern bool file_could_be_a_sample(QString filename);
 #endif
 
 extern LANGSPEC const char *request_load_preset_encoded_filename(void);
