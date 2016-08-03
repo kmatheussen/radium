@@ -149,6 +149,9 @@ void EVENTLOG_add_event(const char *log_entry){
 
 static void send_crash_message_to_server(QString message, QString plugin_names, QString emergency_save_filename, Crash_Type crash_type){
 
+  bool is_crash = crash_type==CT_CRASH;
+
+
 #if FULL_VERSION==0
   message = "DEMO VERSION " + message;
 #else
@@ -156,12 +159,11 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 #endif
   
 #if defined(FOR_MACOSX)
-  message = message + "\n\n" + get_latest_diagnostic_report();
+  if (is_crash)
+    message = message + "\n\n" + get_latest_diagnostic_report();
 #endif
 
   fprintf(stderr,"Got message:\n%s\n",message.toUtf8().constData());
-
-  bool is_crash = crash_type==CT_CRASH;
 
   {
     QDialog box;
