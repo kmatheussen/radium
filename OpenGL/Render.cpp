@@ -2366,6 +2366,13 @@ static void create_message(const struct Tracker_Windows *window){
   GE_text(text_color, message, x, y);
 }
 
+static void create_lacking_keyboard_focus_greyed_out(const struct Tracker_Windows *window){
+  if (!editor_has_keyboard_focus()){
+    GE_Context *grey = GE_z(GE_rgba(100,100,100,120), Z_STATIC, NOMASK_Y);
+    GE_filledBox(grey, 0, 0, window->width, window->height);
+  }
+}
+
 /************************************
    block
  ************************************/
@@ -2408,6 +2415,8 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
     create_playcursor(window, wblock);
 
     create_message(window);
+
+    create_lacking_keyboard_focus_greyed_out(window);
     
   } GE_end_writing(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM));
 }

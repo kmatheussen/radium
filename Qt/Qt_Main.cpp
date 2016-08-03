@@ -84,6 +84,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/eventreciever_proc.h"
 #include "../common/control_proc.h"
 #include "../common/settings_proc.h"
+#include "../common/visual_proc.h"
 
 #include "../common/OS_settings_proc.h"
 #include "../common/OS_Player_proc.h"
@@ -145,10 +146,12 @@ bool g_gc_is_incremental = false;
 
 void obtain_keyboard_focus(void){
   editor_has_keyboard = false;
+  GFX_ScheduleEditorRedraw();
 }
 
 void release_keyboard_focus(void){
   editor_has_keyboard = true;
+  GFX_ScheduleEditorRedraw();
 }
 
 bool editor_has_keyboard_focus(void){
