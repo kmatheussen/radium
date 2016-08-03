@@ -231,7 +231,7 @@ struct Patch *LoadPatch(void){
 
 
 var0:
-	patch->name=DC_LoadS();
+        PATCH_set_name(patch, DC_LoadS());
 	goto start;
 var1:
 	//patch->minvel=

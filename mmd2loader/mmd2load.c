@@ -432,7 +432,7 @@ static void MMD_LoadInstruments(disk_t *file,ULONG mmd0song){
 			VECTOR_push_back(&instrument->patches,patch);
 		}
 
-		patch->name=MMD_GetInstrumentName(file,lokke);
+		PATCH_set_name(patch, MMD_GetInstrumentName(file,lokke));
                 /*
                   // FIX
 		patch->minvel=0;

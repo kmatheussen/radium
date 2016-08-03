@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/vector_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/instruments_proc.h"
+#include "../common/patch_proc.h"
 #include "../common/player_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../common/OS_Player_proc.h"
@@ -256,7 +257,7 @@ bool AUDIO_InitPatch2(struct Patch *patch, char *type_name, char *plugin_name, h
   }
 
   if (patch->name==NULL || strlen(patch->name)==0)
-    patch->name = PLUGIN_generate_new_patchname(type);  
+    PATCH_set_name(patch, PLUGIN_generate_new_patchname(type));
 
   if(plugin==NULL) {
     GFX_Message(NULL, "Failed to create plugin %s: %s",type_name,plugin_name);

@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "instruments_proc.h"
+#include "patch_proc.h"
 #include "undo.h"
 #include "OS_Player_proc.h"
 
@@ -100,7 +101,7 @@ static void *Undo_Do_PatchName(
   //if(new_patch_voice.is_on==undo_ae->voice.is_on)
   //  abort();
 
-  patch->name = undo_ae->name;
+  PATCH_set_name(patch, undo_ae->name);
   patch->name_is_edited = undo_ae->name_is_edited;
   patch->forward_events = undo_ae->forward_events;
 

@@ -26,6 +26,7 @@ extern LANGSPEC hash_t *PATCH_get_state(struct Patch *patch);
 extern LANGSPEC bool PATCH_make_active_audio(struct Patch *patch, char *type_name, char *plugin_name, hash_t *state);
 extern LANGSPEC void PATCH_init_audio_when_loading_song(struct Patch *patch, hash_t *state);
 extern LANGSPEC struct Patch *PATCH_alloc(void);
+extern LANGSPEC void PATCH_set_name(struct Patch *patch, const char *name);
 extern LANGSPEC struct Patch *PATCH_create_audio(char *type_name, char *plugin_name, const char *name, hash_t *state);
 extern LANGSPEC struct Patch *PATCH_create_midi(const char *name);
 extern LANGSPEC void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *patch);

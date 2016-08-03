@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "notes_proc.h"
 #include "../api/api_common_proc.h"
 #include "../midi/midi_i_plugin_proc.h"
+#include "../midi/midi_i_input_proc.h"
 #include "../audio/audio_instrument_proc.h"
 
 //#include "../mixergui/undo_chip_addremove_proc.h"
@@ -58,6 +59,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 
 struct Patch *g_currpatch=NULL;
+
+//const symbol_t *g_raw_midi_message_port_name = NULL;
 
 static vector_t unused_patches; // <-- patches are never deleted, but they are removed from the instruments. In order for the gc to find the removed patches (when stored some place where the gc can't find them, for instance in a C++ object), we put them here. (There shouldn't be any situation where this might happen, but we do it anyway, just in case, because GC bugs are so hard to find.)
 
@@ -172,12 +175,24 @@ struct Patch *PATCH_alloc(void){
   return patch;
 }
 
+void PATCH_set_name(struct Patch *patch, const char *name){
+  patch->name = name==NULL ? "" : talloc_strdup(name);
+  
+  const char *new_name = talloc_format("Event connection from %s", patch->name);
+  
+  if (patch->midi_learn_port_name == NULL)
+    patch->midi_learn_port_name = get_symbol(new_name);
+  else
+    set_symbol_name(patch->midi_learn_port_name, new_name);
+}
+
 static struct Patch *create_new_patch(const char *name){
   struct Patch *patch = PATCH_alloc();
   patch->id = PATCH_get_new_id();
   patch->forward_events = true;
 
-  patch->name = name==NULL ? "" : talloc_strdup(name);
+  PATCH_set_name(patch, name);
+  
   patch->colornum = GFX_MakeRandomCustomColor(-1);
 
   PATCH_init_voices(patch);
@@ -560,6 +575,7 @@ void PATCH_call_very_often(void){
 
 
 void PATCH_init(void){
+  //g_raw_midi_message_port_name = get_symbol("Radium: Event connection");
   //MUTEX_INITIALIZE();
 }
 
@@ -1027,11 +1043,14 @@ void PATCH_change_pitch(struct Patch *patch, note_t note){
 ////////////////////////////////////
 // Raw midi messages
 
+extern void aiai(int64_t id, const symbol_t *port_name, uint32_t msg);
+
 void RT_PATCH_send_raw_midi_message_to_receivers(struct Patch *patch, uint32_t msg, STime time){
   int i;
 
   for(i = 0; i<patch->num_event_receivers; i++) {
-    struct Patch *receiver = patch->event_receivers[i];
+    struct Patch *receiver = patch->event_receivers[i];    
+    MidiLearn::RT_maybe_use_forall(receiver->id, patch->midi_learn_port_name, msg);
     RT_PATCH_send_raw_midi_message(receiver, msg, time);
   }
 }

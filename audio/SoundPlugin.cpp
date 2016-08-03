@@ -101,6 +101,14 @@ struct SoundPluginEffectMidiLearn final : public MidiLearn {
     effect_num = HASH_get_int(state, "SoundPluginEffectMidiLearn::effect_num");
   }
 
+  virtual int RT_get_instrument_id(void) override {
+    volatile struct Patch *patch = plugin->patch;
+    if (patch==NULL)
+      return -2;
+    else
+      return patch->id;
+  }
+  
   virtual QString get_dest_info(void) override;
   virtual void delete_me(void) override;
   virtual void RT_callback(float val) override;

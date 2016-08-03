@@ -408,7 +408,7 @@ public slots:
     ADD_UNDO(PatchName_CurrPos(_patch));
 
     {
-      _patch->name = talloc_strdup((char*)new_name.toUtf8().constData());
+      PATCH_set_name(_patch, new_name.toUtf8().constData());
       g_currpatch->name_is_edited = true;
 
       struct Tracker_Windows *window = root->song->tracker_windows;

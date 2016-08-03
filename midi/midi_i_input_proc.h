@@ -113,6 +113,8 @@ public:
   virtual void RT_callback(float val){
     printf("MidiLearn::callback got %f. Error: This method is supposed to be overridden.\n", val);
   }
+
+  static void RT_maybe_use_forall(int64_t instrument_id, const symbol_t *port_name, uint32_t msg);
 };
 
 #endif

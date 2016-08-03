@@ -354,7 +354,7 @@ void setInstrumentName(char *name, int instrument_id) {
   if(patch==NULL)
     return;
 
-  patch->name = talloc_strdup(name);
+  PATCH_set_name(patch, name);
   patch->name_is_edited = true;
   
   (*patch->instrument->PP_Update)(patch->instrument,patch);

@@ -914,7 +914,7 @@ static void tab_name_has_changed(QWidget *tab, QString new_name) {
   }
 
   {
-    g_currpatch->name = talloc_strdup((char*)new_name.toUtf8().constData());
+    PATCH_set_name(g_currpatch, new_name.toUtf8().constData());
 
     struct Tracker_Windows *window = root->song->tracker_windows;
     window->must_redraw = true; // update track headers to the new name

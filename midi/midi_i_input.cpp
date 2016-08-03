@@ -731,6 +731,23 @@ typedef struct {
 
 static boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000> > g_play_buffer;
 
+void MidiLearn::RT_maybe_use_forall(int64_t instrument_id, const symbol_t *port_name, uint32_t msg){
+  for (auto midi_learn : g_midi_learns) {
+    bool may_use = false;
+
+    if (instrument_id == -1)
+      may_use = true;
+    else {
+      int64_t id2 = midi_learn->RT_get_instrument_id();
+      if (id2==-1 || id2==instrument_id)
+        may_use = true;
+    }
+
+    if (may_use)
+      midi_learn->RT_maybe_use(port_name, msg);
+  }
+}
+
 // Called from the player thread
 void RT_MIDI_handle_play_buffer(void){
   struct Patch *through_patch = ATOMIC_GET(g_through_patch);
@@ -740,10 +757,8 @@ void RT_MIDI_handle_play_buffer(void){
   while(g_play_buffer.pop(event)==true){
 
     uint32_t msg = event.msg;
-    
-    for (auto midi_learn : g_midi_learns) {
-      midi_learn->RT_maybe_use(event.port_name, msg);
-    }
+
+    MidiLearn::RT_maybe_use_forall(-1, event.port_name, msg);
     
     if(through_patch!=NULL){
 
