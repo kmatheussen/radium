@@ -251,8 +251,10 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
       
     struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
 
-    int num_lines = R_ABS(qwheelevent->delta()/120);    
-            
+    int num_lines = R_ABS(qwheelevent->delta()/120);
+
+    //printf("   Got wheel event %d\n",qwheelevent->delta()/120);
+    
     DO_GFX(
            {
              /*
@@ -296,6 +298,8 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
 #if USE_QT_VISUAL
     updateEditor();
 #endif
+
+    qwheelevent->accept();
 }
 
 
@@ -488,6 +492,8 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
   }GL_unlock();
 
   updateEditor();
+
+  qmouseevent->accept();
 }
 
 
@@ -514,6 +520,8 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
 //  printf("----Got mouse move %d %d %f %f\n",tevent.x,tevent.y,qmouseevent->posF().x(),qmouseevent->posF().y());
 
   updateEditor();
+
+  qmouseevent->accept();
 }
 
 
@@ -545,6 +553,8 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
   currentButton = 0;
 
   updateEditor();
+
+  qmouseevent->accept();
 }
 
 #endif // USE_QT_VISUAL
