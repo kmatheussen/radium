@@ -84,8 +84,9 @@ static inline uint32_t getMask(int a_y1, int a_y2, int slice_size){
 }
 
 #if defined(GE_DRAW_VL)
+struct T2_data;
 void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset);
-static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::Transform *scroll_transform, vl::Transform *static_x_transform, vl::Transform *scrollbar_transform, vl::Transform *playcursor_transform);
+static void GE_draw_vl(T2_data *t2_data);
 #endif
 
 #define Z_ABOVE(z) ((z)+2)
@@ -140,6 +141,7 @@ struct T2_data{
 
 T2_data *T3_maybe_get_t2_data(void);
 void T3_send_back_old_t2_data(T2_data *t2_data);
+bool T3_delete_t2_data_directly_questionmark(void);
 #endif
 
 void GE_start_writing(int full_height);

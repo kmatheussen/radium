@@ -735,11 +735,10 @@ private:
       dur25 = TIME_get_ms();
 #endif
 
-#if 1 // whether to delete in the t2 thread.
-      old_t2_datas.push_back(old_t2_data);
-#else
-      delete old_t2_data;
-#endif
+      if (T3_delete_t2_data_directly_questionmark())
+        delete old_t2_data;
+      else
+        old_t2_datas.push_back(old_t2_data);
       
 #if TEST_TIME
       dur3 = TIME_get_ms();

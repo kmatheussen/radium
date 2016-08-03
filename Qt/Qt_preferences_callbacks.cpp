@@ -377,7 +377,16 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       eraseEstimatedVBlankInterval->setText(vblankbuttontext);
 #endif
       
+      bool draw_in_separate_process = SETTINGS_read_bool("opengl_draw_in_separate_process",false);
+      draw_in_separate_process_onoff->setChecked(draw_in_separate_process);
+      
       safeModeOnoff->setChecked(GL_get_safe_mode());
+    }
+
+    
+    // Various
+    {
+            
       pauseRenderingOnoff->setChecked(GL_get_pause_rendering_on_off());
       showKeyCodesOnoff->setChecked(false);
 
@@ -526,6 +535,11 @@ public slots:
     }
   }
 
+  void on_draw_in_separate_process_onoff_toggled(bool val){
+    if (_initing==false)
+      SETTINGS_write_bool("opengl_draw_in_separate_process",val);
+  }
+  
   void on_safeModeOnoff_toggled(bool val){
     if (_initing==false)
       GL_set_safe_mode(val);

@@ -23,6 +23,7 @@ static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_da
 #include "TextBitmaps.hpp"
 
 #include "../common/nsmtracker.h"
+#include "../common/settings_proc.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/Mutex.hpp"
 #include "../common/Queue.hpp"
@@ -387,15 +388,18 @@ public:
                  );
   }
 
-  vl::Transform *get_transform(vl::Transform *scroll_transform, vl::Transform *static_x_transform, vl::Transform *scrollbar_transform, vl::Transform *playcursor_transform) const {
-    if (Z_IS_STATIC_X(_z))
-      return static_x_transform;
-    else if (_z == Z_PLAYCURSOR)
-      return playcursor_transform;
-    else if (_z <= Z_MAX_SCROLLTRANSFORM)
-      return scroll_transform;
-    else if (_z < Z_MIN_STATIC)
-      return scrollbar_transform;
+  vl::Transform *get_transform(T2_data *t2_data, bool &is_scroll_transform) const {
+    is_scroll_transform = false;
+    if (Z_IS_STATIC_X(_z)){
+      is_scroll_transform = true;
+      return t2_data->scroll_transform.get();
+    }else if (_z == Z_PLAYCURSOR)
+      return t2_data->playcursor_transform.get();
+    else if (_z <= Z_MAX_SCROLLTRANSFORM){
+      is_scroll_transform = true;
+      return t2_data->scroll_transform.get();
+    }else if (_z < Z_MIN_STATIC)
+      return t2_data->scrollbar_transform.get();
     else
       return NULL;
   }
@@ -425,14 +429,15 @@ static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_da
   actor->setEnableMask(getMask(y1, y2, GE_get_slice_size(painting_data)));
 }
 
-static void setScrollTransform(const GE_Context *c, vl::Actor *actor, vl::Transform *scroll_transform, vl::Transform *static_x_transform, vl::Transform *scrollbar_transform, vl::Transform *playcursor_transform, const PaintingData *painting_data){
+static void setScrollTransform(const GE_Context *c, vl::Actor *actor, T2_data *t2_data){
   
   actor->computeBounds();
-  
-  vl::Transform *transform = c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
 
-  if (transform==scroll_transform || transform==static_x_transform)
-    setActorEnableMask(actor, painting_data);
+  bool set_mask;
+  vl::Transform *transform = c->get_transform(t2_data, set_mask);
+
+  if (set_mask)
+    setActorEnableMask(actor, t2_data->painting_data);
 
   actor->setTransform(transform);
 
@@ -506,20 +511,60 @@ static radium::Queue<T1_data*, 1>  t1_to_t2_queue;
 static radium::SyncQueue<T2_data*> t2_to_t3_queue;
 static radium::Queue<T2_data*, 8>  t3_to_t2_queue;
 
+enum class Use_T2_Thread{
+  UNINITIALIZED,
+  YES,
+  NO
+};
+
+static DEFINE_ATOMIC(Use_T2_Thread, g_use_t2_thread) = Use_T2_Thread::UNINITIALIZED;
+
 
 T2_data *T3_maybe_get_t2_data(void){
-  bool got_new_t2_data;
+  if (ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::YES){
+    
+    bool got_new_t2_data;
+    
+    T2_data *t2_data = t2_to_t3_queue.T2_tryGet(got_new_t2_data);
+    
+    if (!got_new_t2_data)
+      return NULL;
 
-  T2_data *t2_data = t2_to_t3_queue.T2_tryGet(got_new_t2_data);
-  
-  if (!got_new_t2_data)
+    return t2_data;
+
+  } else if (ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::NO){
+
+    bool got_new_t1_data;
+    
+    T1_data *t1_data = t1_to_t2_queue.tryGet(got_new_t1_data);
+
+    if (!got_new_t1_data)
+      return NULL;
+
+    T2_data *t2_data = new T2_data(t1_data->painting_data, t1_data->background_color);
+
+    GE_draw_vl(t2_data);
+
+    delete t1_data;
+
+    return t2_data;
+
+  } else {
+
     return NULL;
+    
+  }
+}
 
-  return t2_data;
+bool T3_delete_t2_data_directly_questionmark(void){
+  R_ASSERT(ATOMIC_GET(g_use_t2_thread) != Use_T2_Thread::UNINITIALIZED);
+  
+  return ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::NO;
 }
 
 void T3_send_back_old_t2_data(T2_data *t2_data){
-  //R_ASSERT(t3_to_t2_queue.size()<=0);
+  R_ASSERT(ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::YES);
+  
   t3_to_t2_queue.put(t2_data);
 }
 
@@ -604,14 +649,7 @@ static void T2_thread_func(){
       double start = TIME_get_ms();
 #endif
       
-      GE_draw_vl(t2_data->painting_data,
-                 t2_data->vg.get(),
-                 t2_data->scroll_transform.get(),
-                 t2_data->scroll_transform.get(),
-                 //t2_data->linenumbers_transform.get(), // Put linenumber actors into the scroll_transform instead.
-                 t2_data->scrollbar_transform.get(),
-                 t2_data->playcursor_transform.get()
-                 );
+      GE_draw_vl(t2_data);
       
 #if TEST_TIME
       printf("      GE_draw: %f\n", TIME_get_ms() - start);
@@ -649,6 +687,12 @@ namespace{
     }
     
     void run() override {
+      while(ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::UNINITIALIZED)
+        usleep(1000*500);
+      
+      if (ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::NO)
+        return;
+
       T2_thread_func();
     }
   };
@@ -659,6 +703,13 @@ static T2_Thread t2_thread;
 // Called from the main thread
 void GE_start_writing(int full_height){
   R_ASSERT(g_painting_data==NULL);
+
+  if (ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::UNINITIALIZED){    
+    if(SETTINGS_read_bool("opengl_draw_in_separate_process",false))
+      ATOMIC_SET(g_use_t2_thread, Use_T2_Thread::YES);
+    else
+      ATOMIC_SET(g_use_t2_thread, Use_T2_Thread::NO);
+  }
   
   g_painting_data = new PaintingData(full_height);
   GE_fill_in_shared_variables(&g_painting_data->shared_variables);
@@ -738,7 +789,10 @@ void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_of
 }
 
 
-static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::Transform *scroll_transform, vl::Transform *static_x_transform, vl::Transform *scrollbar_transform, vl::Transform *playcursor_transform){
+static void GE_draw_vl(T2_data *t2_data){
+
+  PaintingData *painting_data = t2_data->painting_data;
+  vl::VectorGraphics *vg = t2_data->vg.get();
 
   vg->startDrawing(); {
 
@@ -770,7 +824,7 @@ static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::
           if(c->boxes.size() > 0) {
             setColorBegin(vg, c);
           
-            setScrollTransform(c, vg->fillQuads(c->boxes), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform, painting_data);
+            setScrollTransform(c, vg->fillQuads(c->boxes), t2_data);
           
             setColorEnd(vg, c);
           }
@@ -784,7 +838,7 @@ static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::
 #if USE_TRIANGLE_STRIPS
           if(c->trianglestrips.size() > 0) {
             setColorBegin(vg, c);
-            setScrollTransform(c, vg->fillTriangleStrips(c->trianglestrips), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform, painting_data);
+            setScrollTransform(c, vg->fillTriangleStrips(c->trianglestrips), t2_data);
             //vg->fillPolygons(c->trianglestrips);
           
             setColorEnd(vg, c);
@@ -792,12 +846,12 @@ static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::
           // note: missing gradient triangles for USE_TRIANGLE_STRIPS.
 #else
           for (vl::ref<GradientTriangles> gradient_triangles : c->gradient_triangles)
-            setScrollTransform(c, gradient_triangles->render(vg), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform, painting_data);
+            setScrollTransform(c, gradient_triangles->render(vg), t2_data);
 
           if(c->triangles.size() > 0) {
             setColorBegin(vg, c);
           
-            setScrollTransform(c, vg->fillTriangles(c->triangles), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform, painting_data);
+            setScrollTransform(c, vg->fillTriangles(c->triangles), t2_data);
             //printf("triangles size: %d\n",(int)c->triangles.size());
           
             setColorEnd(vg, c);
@@ -822,7 +876,7 @@ static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::
             has_set_color=true;
           
             vg->setLineWidth(get_pen_width_from_key(iterator->first));
-            setScrollTransform(c, vg->drawLines(iterator->second), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform, painting_data);
+            setScrollTransform(c, vg->drawLines(iterator->second), t2_data);
             //if(c->triangles.size()>0)
             //  setScrollTransform(c, vg->drawLines(c->triangles), scroll_transform, static_x_transform, scrollbar_transform);
           }
@@ -840,8 +894,8 @@ static void GE_draw_vl(PaintingData *painting_data, vl::VectorGraphics *vg, vl::
            
             setColorBegin(vg, c);
 
-            vl::Transform *transform = c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
-            bool set_mask = transform==scroll_transform || transform==static_x_transform;
+            bool set_mask;
+            vl::Transform *transform = c->get_transform(t2_data, set_mask);
               
             if(c->textbitmaps.points.size() > 0)
               c->textbitmaps.drawAllCharBoxes(vg, transform, set_mask, painting_data);
