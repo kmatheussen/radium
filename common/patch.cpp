@@ -260,7 +260,7 @@ static void apply_patch_state(struct Patch *patch, hash_t *state){
 
 
 // Only called from PATCH_create_audio and undo create patch.
-bool PATCH_make_active_audio(struct Patch *patch, char *type_name, char *plugin_name, hash_t *state) {
+bool PATCH_make_active_audio(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *state) {
   R_ASSERT_RETURN_IF_FALSE2(patch->instrument==get_audio_instrument(),false);
 
   if (VECTOR_is_in_vector(&patch->instrument->patches,patch)){
@@ -290,7 +290,7 @@ void PATCH_init_audio_when_loading_song(struct Patch *patch, hash_t *state) {
 }
 
 // Either type_name and plugin_name is NULL, or state==NULL
-struct Patch *PATCH_create_audio(char *type_name, char *plugin_name, const char *name, hash_t *state) {
+struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state) {
   struct Patch *patch = create_new_patch(name);
 
   patch->instrument=get_audio_instrument();

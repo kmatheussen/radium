@@ -220,7 +220,7 @@ static bool state_only_contains_plugin(hash_t *state){
   return false;
 }
 
-bool AUDIO_InitPatch2(struct Patch *patch, char *type_name, char *plugin_name, hash_t *audio_state, bool is_loading_song) {
+bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *audio_state, bool is_loading_song) {
 
   SoundPluginType *type;
   struct SoundPlugin *plugin;

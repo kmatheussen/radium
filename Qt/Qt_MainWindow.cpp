@@ -82,6 +82,10 @@ static HWND gtk_hwnd = NULL;
 #include "../common/eventreciever_proc.h"
 #include "../common/OS_settings_proc.h"
 
+#include "../audio/SoundPlugin.h"
+#include "../audio/SoundPluginRegistry_proc.h"
+#include "../audio/Sampler_plugin_proc.h"
+
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQCheckBox.h"
 
@@ -340,9 +344,16 @@ void handleDropEvent(QString filename){
   
   if (filename.endsWith(".rad"))
     LoadSong_CurrPos(window, STRING_create(filename));
+  
   else if (filename.endsWith(".rec"))
     createAudioInstrumentFromPreset(filename.toUtf8().constData(), NULL);
-  //else if (file_could_be_a_sample(filename))
+  
+  else if (file_could_be_a_sample(filename)){
+    struct Patch *patch = PATCH_create_audio("Sample Player", "Sample Player", NULL, NULL);
+    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    SAMPLER_set_new_sample(plugin, STRING_create(filename), 0);
+    connectAudioInstrumentToMainPipe(patch->id);
+  }
 }
 
 
