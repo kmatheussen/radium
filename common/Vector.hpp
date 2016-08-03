@@ -13,6 +13,9 @@
  **/
 
 
+extern bool g_qt_is_running;
+
+
 // NOTE: Can not use radium::Vector if any of the fields in T uses a custom copy constructor (is there any way to detect that before getting a random crash?)
 
 
@@ -57,9 +60,12 @@ public:
 
   ~Vector(){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
-    
-    V_free(elements);
-    elements = NULL; // For debugging
+
+    // Don't want to free static global memory during shut down since it may be used by threads which are not shut down.
+    if (g_qt_is_running) {
+      V_free(elements);      
+      elements = NULL; // For debugging
+    }
   }
 
   // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
