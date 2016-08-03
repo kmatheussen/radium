@@ -68,8 +68,8 @@ public:
   MidiLearn()
   {
     ATOMIC_SET(is_enabled, true);
-    
     ATOMIC_SET(is_learning, true);
+
     ATOMIC_SET(port_name, NULL);
     ATOMIC_SET(byte1, 0);
     ATOMIC_SET(byte2, 0);
@@ -92,11 +92,16 @@ public:
     if (ATOMIC_GET(is_learning))
       return talloc_format("Learning...", ATOMIC_GET(byte1), ATOMIC_GET(byte2));
     else if (ATOMIC_GET(byte1)>=0xe0)
-      return talloc_format("%s: %2X", ATOMIC_GET(port_name), ATOMIC_GET(byte1));
+      return talloc_format("%s: %2X", ATOMIC_GET(port_name)->name, ATOMIC_GET(byte1));
     else
-      return talloc_format("%s: %2X / %2X", ATOMIC_GET(port_name), ATOMIC_GET(byte1), ATOMIC_GET(byte2));
+      return talloc_format("%s: %2X / %2X", ATOMIC_GET(port_name)->name, ATOMIC_GET(byte1), ATOMIC_GET(byte2));
   }
 
+  // may be overridden. Returns -2 if no instrument should match, or -1 if all instruments should match.
+  virtual int RT_get_instrument_id(void){
+    return -1;
+  }
+  
   virtual QString get_dest_info(void){
     return QString("MidiLearn::get_dest_info. Error: This method is supposed to be overridden.");
   }
