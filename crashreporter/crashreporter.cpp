@@ -427,7 +427,7 @@ static double get_s(void) {
     if (gettimeofday(&now, NULL) != 0)
       return 0.0;
 
-    return now.tv_sec + now.tv_usec/(1000.0*1000.0);
+    return now.tv_sec + (double)now.tv_usec/(1000.0*1000.0);
 }
 
 
