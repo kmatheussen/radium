@@ -196,6 +196,20 @@ DEFINE_ATOMIC(char *, GE_version_string) =NULL;
 DEFINE_ATOMIC(uint32_t, GE_opengl_version_flags) = 0;
 
 
+bool GL_using_nvidia_card(void){
+  const char *c1 = ATOMIC_GET(GE_vendor_string);
+  const char *c2 = ATOMIC_GET(GE_renderer_string);
+  const char *c3 = ATOMIC_GET(GE_version_string);
+  
+  bool a = c1!=NULL && QString(c1).contains("nvidia", Qt::CaseInsensitive);
+  bool b = c2!=NULL && QString(c2).contains("nvidia", Qt::CaseInsensitive);
+  bool c = c3!=NULL && QString(c3).contains("nvidia", Qt::CaseInsensitive);
+  
+  return a || b || c;
+}
+
+
+
 static bool g_safe_mode = false;
 
 #if USE_QT5

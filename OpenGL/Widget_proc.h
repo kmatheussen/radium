@@ -57,6 +57,7 @@ extern DEFINE_ATOMIC(char *, GE_renderer_string);
 extern DEFINE_ATOMIC(char *, GE_version_string);
 extern DEFINE_ATOMIC(uint32_t, GE_opengl_version_flags);
 
+extern bool GL_using_nvidia_card(void);
 
 extern void GE_set_curr_realline(int curr_realline);
 
