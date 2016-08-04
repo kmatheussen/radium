@@ -505,6 +505,10 @@ static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
 
 #define TEST_TIME 0
 
+#if defined(RELEASE) && TEST_TIME==1
+#error "oops"
+#endif
+
 class MyQtThreadedWidget
 #if USE_QT5
   : public vlQt5::Qt5ThreadedWidget

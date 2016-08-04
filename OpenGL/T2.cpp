@@ -141,6 +141,11 @@ T2_data::~T2_data(){
 #define TEST_TIME 0
 
 
+#if defined(RELEASE) && TEST_TIME==1
+#error "oops"
+#endif
+
+
 static void T2_thread_func(){
   QOpenGLContext *offscreen_context = NULL;
 
