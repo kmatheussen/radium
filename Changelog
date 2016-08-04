@@ -1,30 +1,32 @@
 Changes 4.0.0 -> 4.0.1:
-* Support dropping audio files in the editor
-* Support droping preset files
+* Ignore keyboard when the mixer has focus
+* Ignore keyboard when the blocklist or playlist has focus
+* Support drag-dropping audio files
+* Support drag-droping preset files
 * When selecting "Load preset" in the mixer, or "Load" in the instrument widget,
-  a popup menu with the existing presets in the current preset directory is shown.
-* MIDI learn, also from input event connections
+  a popup menu is show with the existing presets in the last used preset directory,
+  plus an option to load a preset from a different directory.
+* MIDI learn can also lear from input event connections.
 * MIDI Messages instrument: Fix CC values for the general purpose controllers.
   The instrument sent out 16/17/18/19 instead of 80/81/82/83.
-* Fix MIDI port name display in the MIDI learn configuration window
-* Grey out editor when editor doesn;t have keyboard focus
-* Desparate workaround for trying to fix rare OSX startup crash
+* Fix MIDI port name display in the MIDI learn configuration window.
+* Grey out editor when editor doesn't have keyboard focus.
+* Desparate attempt to find a workaround for rare OSX startup crash.
+  (Please report if OSX still sometimes crashes on startup.)
 * Fix crash during startup on OSX when jack is not running.
 * Don't show assertion window when trying to load non-working preset file.
-* OSX: Don't wait for diagnotic report in crashreporter when we dont crash.
-  Before, the crashreporter window popped up at least 20 seconds after the assertion
-  happened, and therefore a provided user description about
-  what happened could be quite useless.
-* Fix double scroll wheel events, and possibly double other types
-  of mouse events as well. (Qt5 fix)
-* Option to prepare opengl data in separate thread. This helps making
-  rendering smooth when there's lots of graphical data. Turned off by default
-  since it was unstable on older intel/linux. It seems stable when using
-  NVIDIA card though.
+* OSX: Don't wait for diagnotic report in the crashreporter when we show assertion
+  instead of crash. Before this fix, the crashreporter window popped up at least
+  20 seconds after the assertion happened, and therefore a provided user
+  description about what happened could be quite useless.
+* Fix double scroll wheel events, and possibly other types
+  of doubly reported mouse events as well. (Qt5 fix)
+* Experimental option to prepare opengl data in separate thread. This helps making
+  rendering smooth when there's lots of graphical data. Turned off by default.
 * Fix mouse drag not always working when dragging too fast
   or gfx is slow because of much graphical data. (Qt5 fix)
 * Increase rendering performance for blocks with many lines.
-  Changeing the LZ value shouldn't change performance that much anymore.
+  Changing the LZ value shouldn't change performance that much anymore.
 
 
 
