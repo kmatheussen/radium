@@ -15,6 +15,16 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+/**
+   T1: Main thread
+   T2: Drawer thread
+   T3: Rendering thread
+
+   If opengl_draw_in_separate_process is set to false, the T2 tasks are performed by T3 instead.
+*/
+
+#include <unistd.h>
+
 #include <QThread>
 #include <QGLContext>
 
@@ -239,7 +249,7 @@ static T2_Thread t2_thread;
 
 void T1_ensure_t2_is_initialized(void){
   if (ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::UNINITIALIZED){
-    if(SETTINGS_read_bool("opengl_draw_in_separate_process",GL_using_nvidia_card()))
+    if(SETTINGS_read_bool("opengl_draw_in_separate_process",false)) //GL_using_nvidia_card()))
       ATOMIC_SET(g_use_t2_thread, Use_T2_Thread::YES);
     else
       ATOMIC_SET(g_use_t2_thread, Use_T2_Thread::NO);

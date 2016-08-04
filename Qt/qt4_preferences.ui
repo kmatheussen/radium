@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1145</width>
-    <height>562</height>
+    <height>616</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,7 +29,7 @@
       <attribute name="title">
        <string>OpenGL</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,1,1,1">
+      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,1">
        <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
@@ -67,139 +67,104 @@
         </spacer>
        </item>
        <item>
-        <widget class="QGroupBox" name="horizontalGroupBox">
-         <property name="title">
-          <string>Vertical Blank</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_5">
-          <item row="0" column="3">
-           <spacer name="horizontalSpacer_11">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="4">
-           <spacer name="horizontalSpacer_13">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="1" column="0">
-           <widget class="QPushButton" name="eraseEstimatedVBlankInterval">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If you change the refresh rate of your monitor (for instance from 60 hz from 120 hz), you need to erase the estimated value to avoid somewhat jumpy scrolling.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This value does not have to be 100% accurate. If your monitor has a refresh rate of 60 hz, and the estimated refresh rate is 59.9 hz, that's perfectly fine. The usage of the value is interpolated, so it's not possible to notice minor inaccuracies. In addition, the estimated value is timed using the audio clock and not the graphics clock, and therefore the estimated value could theoretically be 100% correct, even though it doesn't say 60 hz)&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>Erase Estimated Vertical Blank</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QCheckBox" name="vsyncOnoff">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Whether to synchronize on Vertibal Blank&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Normally, it doesn't make sense to turn off this option.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;However, if using Linux with an Intel or AMD GFX chip, the &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;performance can be increased significantly by unchecking&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;this option. If using an AMD Chip on Linux, it could also seem&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;like the driver becomes more stable if vsync is turned OFF.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="statusTip">
-             <string/>
-            </property>
-            <property name="text">
-             <string>VSync</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QLabel" name="label_11">
-            <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Disabling VSync is only useful the system adds extra buffering&lt;br&gt; if VSync is both enabled globally and in the program.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <spacer name="horizontalSpacer_12">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="mmagroup">
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Warning: Selecting a value of 16X or 32X is likely to run MSAA off.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="title">
-          <string>Multisample Anti-Aliasing (MSAA)</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_5">
-          <item>
-           <widget class="QRadioButton" name="mma1">
-            <property name="text">
-             <string>Off</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="mma2">
-            <property name="text">
-             <string>2X</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="mma4">
-            <property name="text">
-             <string>4X</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="mma8">
-            <property name="text">
-             <string>8X</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="mma16">
-            <property name="text">
-             <string>16X</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="mma32">
-            <property name="text">
-             <string>32X</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QGroupBox" name="mmagroup">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Warning: Selecting a value of 16X or 32X is likely to run MSAA off.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="title">
+            <string>Multisample Anti-Aliasing (MSAA)</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <item>
+             <widget class="QRadioButton" name="mma1">
+              <property name="text">
+               <string>Off</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="mma2">
+              <property name="text">
+               <string>2X</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="mma4">
+              <property name="text">
+               <string>4X</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="mma8">
+              <property name="text">
+               <string>8X</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="mma16">
+              <property name="text">
+               <string>16X</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="mma32">
+              <property name="text">
+               <string>32X</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="horizontalGroupBox">
+           <property name="title">
+            <string>Vertical Blank</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_5">
+            <item row="1" column="0">
+             <widget class="QPushButton" name="eraseEstimatedVBlankInterval">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If you change the refresh rate of your monitor (for instance from 60 hz from 120 hz), you need to erase the estimated value to avoid somewhat jumpy scrolling.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This value does not have to be 100% accurate. If your monitor has a refresh rate of 60 hz, and the estimated refresh rate is 59.9 hz, that's perfectly fine. The usage of the value is interpolated, so it's not possible to notice minor inaccuracies. In addition, the estimated value is timed using the audio clock and not the graphics clock, and therefore the estimated value could theoretically be 100% correct, even though it doesn't say 60 hz)&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Erase Estimated Vertical Blank</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QCheckBox" name="vsyncOnoff">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Whether to synchronize on Vertibal Blank&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Normally, it doesn't make sense to turn off this option.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;However, if using Linux with an Intel or AMD GFX chip, the &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;performance can be increased significantly by unchecking&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;this option. If using an AMD Chip on Linux, it could also seem&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;like the driver becomes more stable if vsync is turned OFF.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="statusTip">
+               <string/>
+              </property>
+              <property name="text">
+               <string>VSync</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLabel" name="label_11">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Disabling VSync is only useful the system adds extra buffering&lt;br&gt; if VSync is both enabled globally and in the program.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <widget class="QGroupBox" name="horizontalGroupBox_2">
@@ -304,7 +269,7 @@
           <item row="0" column="2">
            <widget class="QLabel" name="label_10">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Improves graphical performance by drawing in a separate process.&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note that this mode might make the program crash, depending on&lt;br&gt; which GFX driver you are using. If you are using an NVIDIA card, or if you&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot; color:#000000;&quot;&gt;are creating a video, it could be a good idea to enable this option.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;This is currently an experimental feature. Strange behavor has been observed.&lt;br&gt; The feature improves graphical performance by drawing in a separate process.&lt;br&gt;Note that this mode might make the program crash, depending on&lt;br&gt; which GFX driver you are using. If you are using an NVIDIA card, or if you&lt;br&gt;are creating a video, it could be a good idea to enable this option.&lt;/p&gt;Also note that unless you have at least three CPU cores, enabling the&lt;br&gt;&quot;Draw in separate process&quot; option could lower graphical performance&lt;br&gt; instead of improving it.&lt;p&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -2590,7 +2555,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
             <x>0</x>
             <y>0</y>
             <width>841</width>
-            <height>468</height>
+            <height>522</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -4200,7 +4165,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
                <x>0</x>
                <y>0</y>
                <width>995</width>
-               <height>272</height>
+               <height>326</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">

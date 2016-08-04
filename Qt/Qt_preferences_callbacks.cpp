@@ -377,7 +377,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       eraseEstimatedVBlankInterval->setText(vblankbuttontext);
 #endif
       
-      bool draw_in_separate_process = SETTINGS_read_bool("opengl_draw_in_separate_process",GL_using_nvidia_card());
+      bool draw_in_separate_process = SETTINGS_read_bool("opengl_draw_in_separate_process",false);//GL_using_nvidia_card());
       draw_in_separate_process_onoff->setChecked(draw_in_separate_process);
       
       safeModeOnoff->setChecked(GL_get_safe_mode());
