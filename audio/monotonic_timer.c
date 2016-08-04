@@ -95,7 +95,7 @@
     fflush(stdout);
 
     if (has_qpc) {
-      PCFreq = ((double) li.QuadPart) / 1000.0;
+      PCFreq = (double) li.QuadPart;
     } else {
       fprintf(stderr, "Warning: OS doesnt support the QueryPerformanceCounter function. Using tsc instead for timing.\n");
     }
