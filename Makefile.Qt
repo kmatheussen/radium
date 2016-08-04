@@ -297,7 +297,7 @@ OBJ_MIXER=QM_view.o QM_chip.o QM_MixerWidget.o undo_mixer.o undo_mixer_connectio
 #undo_chip_addremove.o
 
 #OpenGL
-OBJ_VL=GfxElements.o Render.o Widget.o Qt${RADIUM_QT_VERSION}Widget.o moc_Qt${RADIUM_QT_VERSION}Widget.o
+OBJ_VL=GfxElements.o T2.o Render.o Widget.o Qt${RADIUM_QT_VERSION}Widget.o moc_Qt${RADIUM_QT_VERSION}Widget.o
 
 #Embedded scheme
 OBJ_ES=scheme.o bin/packages/s7/s7_$(TARGET_OS).o s7webserver.o radium_s7_wrap.o qhttpconnection.o moc_qhttpconnection.o qhttprequest.o moc_qhttprequest.o qhttpresponse.o moc_qhttpresponse.o qhttpserver.o moc_qhttpserver.o http_parser.o
@@ -1942,13 +1942,16 @@ crashreporter_windows.o: crashreporter/crashreporter_windows.c
 	$(CC_STATIC) crashreporter/crashreporter_windows.c $(OPT) -O0 -DPACKAGE
 #	$(CC) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
-GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp
+GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp
 	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS) #-Wno-error=unused-variable
+
+T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/Queue.hpp OpenGL/GfxElements.h 
+	$(CCC) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS) #-Wno-error=unused-variable
 
 Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp
 	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT)
 
-Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp
+Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp
 	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT) #-Wno-error=unused-variable
 
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m

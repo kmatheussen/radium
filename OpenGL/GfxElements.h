@@ -1,3 +1,20 @@
+/* Copyright 2014-2016 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+
 #ifndef OPENGL_GFXELEMENTS_H
 #define OPENGL_GFXELEMENTS_H
 
@@ -86,7 +103,7 @@ static inline uint32_t getMask(int a_y1, int a_y2, int slice_size){
 #if defined(GE_DRAW_VL)
 struct T2_data;
 void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset);
-static void GE_draw_vl(T2_data *t2_data);
+void GE_draw_vl(T2_data *t2_data);
 #endif
 
 #define Z_ABOVE(z) ((z)+2)
@@ -123,27 +140,10 @@ GE_Rgb GE_get_rgb(const GE_Context *c);
 SharedVariables *GE_get_shared_variables(PaintingData *painting_data);
 int GE_get_slice_size(const PaintingData *painting_data);
 
-struct T2_data{
-  PaintingData *painting_data;
 
-  GE_Rgb background_color;
-  
-  vl::ref<vl::VectorGraphics> vg;
-
-  vl::ref<vl::Transform> scroll_transform;
-  //vl::ref<vl::Transform> linenumbers_transform;
-  vl::ref<vl::Transform> scrollbar_transform;
-  vl::ref<vl::Transform> playcursor_transform;
-
-  T2_data(PaintingData *painting_data, GE_Rgb background_color);
-  ~T2_data();
-};
-
-T2_data *T3_maybe_get_t2_data(void);
-bool T3_use_t2_thread(void);
-void T3_t2_data_picked_up_but_old_data_will_be_sent_back_later();
-void T3_send_back_old_t2_data(T2_data *t2_data);
 #endif
+
+void GE_delete_painting_data(PaintingData *painting_data);
 
 void GE_start_writing(int full_height);
 void GE_end_writing(GE_Rgb new_background_color);

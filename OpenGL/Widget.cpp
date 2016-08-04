@@ -62,6 +62,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define GE_DRAW_VL
 #include "GfxElements.h"
+#include "T2.hpp"
 #include "Timing.hpp"
 #include "Render_proc.h"
 

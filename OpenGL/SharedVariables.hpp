@@ -1,6 +1,4 @@
 
-#include <gc.h>
-
 #include "Widget_proc.h"
 
 #include "../common/time_proc.h"
