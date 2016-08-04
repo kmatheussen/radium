@@ -686,6 +686,8 @@ private:
     int player_id = ATOMIC_GET(pc->play_id);
     bool is_playing = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
 
+    bool use_t2_thread = T3_use_t2_thread();
+    
     T2_data *new_t2_data = NULL;
 
     //if (!is_playing || (draw_counter % 6 == 0))
@@ -735,10 +737,10 @@ private:
       dur25 = TIME_get_ms();
 #endif
 
-      if (T3_delete_t2_data_directly_questionmark())
-        delete old_t2_data;
-      else
+      if (use_t2_thread)
         old_t2_datas.push_back(old_t2_data);
+      else
+        delete old_t2_data;
       
 #if TEST_TIME
       dur3 = TIME_get_ms();
@@ -759,8 +761,10 @@ private:
       const struct Blocks *block = (const struct Blocks*)atomic_pointer_read((void**)&pc->block);
         
       if ((block==NULL || sv->block!=block)) { // Check that our blocktime belongs to the block that is rendered.
-        if (new_t2_data!=NULL)
-          T3_send_back_old_t2_data(NULL);
+        
+        if (new_t2_data!=NULL && use_t2_thread)
+          T3_t2_data_picked_up_but_old_data_will_be_sent_back_later();
+        
         if (t2_data_can_be_used){
           //printf("Waiting...\n");
           _rendering->render();
@@ -780,8 +784,10 @@ private:
       
       if (is_playing){
         if (blocktime < -10.0) {  // I.e. we just switched block, but the blocktime has not been calculated yet.
-          if (new_t2_data!=NULL)
-            T3_send_back_old_t2_data(NULL);
+          
+          if (new_t2_data!=NULL && use_t2_thread)
+            T3_t2_data_picked_up_but_old_data_will_be_sent_back_later();
+          
           if (t2_data_can_be_used){
             _rendering->render();
             return true;
@@ -819,8 +825,10 @@ private:
 
     
     if (player_id != ATOMIC_GET(pc->play_id)) {// In the very weird and unlikely case that the player has stopped and started since the top of this function (the computer is really struggling), we return false
-      if (new_t2_data!=NULL)
-        T3_send_back_old_t2_data(NULL);
+      
+      if (new_t2_data!=NULL && use_t2_thread)
+        T3_t2_data_picked_up_but_old_data_will_be_sent_back_later();
+      
       return false;
     }
 

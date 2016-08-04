@@ -556,16 +556,22 @@ T2_data *T3_maybe_get_t2_data(void){
   }
 }
 
-bool T3_delete_t2_data_directly_questionmark(void){
+bool T3_use_t2_thread(void){
   R_ASSERT(ATOMIC_GET(g_use_t2_thread) != Use_T2_Thread::UNINITIALIZED);
   
-  return ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::NO;
+  return ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::YES;
 }
 
-void T3_send_back_old_t2_data(T2_data *t2_data){
+void T3_send_back_old_t2_data(T2_data *t2_data){  
   R_ASSERT(ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::YES);
   
   t3_to_t2_queue.put(t2_data);
+}
+
+void T3_t2_data_picked_up_but_old_data_will_be_sent_back_later(void){
+  R_ASSERT(ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::YES);
+    
+  t3_to_t2_queue.put(NULL);
 }
 
 T2_data::T2_data(PaintingData *painting_data, GE_Rgb background_color)
