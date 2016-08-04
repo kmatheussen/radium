@@ -52,7 +52,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QListWidget>
 #include <QListWidgetItem>
 
+
 namespace{
+
 class QListBox : public QListWidget{
 public:
   bool is_blocklist;
@@ -78,6 +80,10 @@ public:
     QListWidget::takeItem(pos);
   }
 
+  void keyPressEvent ( QKeyEvent * event ) override {
+    event->ignore();
+  }
+  
   // popup menu
   void mousePressEvent(QMouseEvent *event){
     QListWidgetItem *item = itemAt(event->pos());
