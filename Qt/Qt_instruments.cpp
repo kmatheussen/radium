@@ -801,7 +801,7 @@ QString request_load_preset_filename(void){
   else if (sel==request_from_requester)
     return request_load_preset_filename_from_requester();
   else
-    return existing_presets[sel-start];
+    return last_preset_path + QDir::separator() + existing_presets[sel-start];
 }
 
 const char *request_load_preset_encoded_filename(void){
