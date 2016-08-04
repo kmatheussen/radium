@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef _RADIUM_OPENGL_T2_HPP
 #define _RADIUM_OPENGL_T2_HPP
 
+#include <vlCore/VisualizationLibrary.hpp>
 #include <vlVG/VectorGraphics.hpp>
 
 #include "GfxElements.h"

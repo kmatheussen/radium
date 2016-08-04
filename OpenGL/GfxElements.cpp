@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QMap>
 
+#include <vlCore/VisualizationLibrary.hpp>
+#include <vlGraphics/OpenGLContext.hpp>
 #include <vlVG/VectorGraphics.hpp>
 #include <vlGraphics/Rendering.hpp>
 #include <vlVG/SceneManagerVectorGraphics.hpp>

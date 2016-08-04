@@ -1946,7 +1946,7 @@ GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.
 	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS) #-Wno-error=unused-variable
 
 T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/Queue.hpp OpenGL/GfxElements.h 
-	$(CCC) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS) #-Wno-error=unused-variable
+	$(CCC) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) #-Wno-error=unused-variable
 
 Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp
 	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT)
