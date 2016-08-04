@@ -37,7 +37,11 @@ public:
     return QRectF( A, B );
   }
 
-  void wheelEvent(QWheelEvent *e)
+  void keyPressEvent ( QKeyEvent * event ) override {
+    event->ignore();
+  }
+  
+  void wheelEvent(QWheelEvent *e) override
   {
     if(g_zoom_slider!=NULL){
       if (e->modifiers() & Qt::ControlModifier) {
