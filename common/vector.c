@@ -182,6 +182,22 @@ void RError(const char *fmt,...){
   fprintf(stderr,"error: %s\n",message);
 }
 
+void RWarning(const char *fmt,...){
+  abort();
+}
+
+bool PLAYER_current_thread_has_lock(void){
+  return false;
+}
+
+bool THREADING_is_main_thread(void){
+  return true;
+}
+
+void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...){
+  abort();
+}
+
 #define TESTCODE(MAKE,GET) {                    \
   vector_t v = {0};                             \
                                                 \
@@ -211,6 +227,32 @@ void RError(const char *fmt,...){
   assert(GET(2)==1);                                            \
   assert(GET(3)==2);                                            \
   assert(GET(4)==3);                                            \
+  assert(v.elements[5]==NULL);                                  \
+                                                                \
+  VECTOR_delete(&v, 0);                                         \
+  assert(GET(0)==0);                                            \
+  assert(GET(1)==1);                                            \
+  assert(GET(2)==2);                                            \
+  assert(GET(3)==3);                                            \
+  assert(v.elements[4]==NULL);                                  \
+                                                                \
+  VECTOR_delete(&v, 3);                                         \
+  assert(GET(0)==0);                                            \
+  assert(GET(1)==1);                                            \
+  assert(GET(2)==2);                                            \
+  assert(v.elements[3]==NULL);                                  \
+                                                                \
+  VECTOR_remove(&v, v.elements[1]);                             \
+  assert(GET(0)==0);                                            \
+  assert(GET(1)==2);                                            \
+  assert(v.elements[2]==NULL);                                  \
+                                                                \
+  VECTOR_remove(&v, v.elements[0]);                             \
+  VECTOR_remove(&v, v.elements[0]);                             \
+  assert(v.elements[0]==NULL);                                  \
+  assert(v.elements[1]==NULL);                                  \
+  assert(v.elements[2]==NULL);                                  \
+                                                                \
   }                                                             
 
 
@@ -245,7 +287,7 @@ static void test_insert_list3(void) TESTCODE(MAKE_L3, GET_L3)
 
 
 int main(void){
-
+  
   test_insert();
   test_insert_list3();
 
