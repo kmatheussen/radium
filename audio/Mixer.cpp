@@ -818,8 +818,8 @@ struct Mixer{
       if( (mixer->_buffer_size % RADIUM_BLOCKSIZE) != 0)
         GFX_Message(NULL, "Jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", mixer->_buffer_size, RADIUM_BLOCKSIZE);
 
-      for (SoundProducer *sp : mixer->_sound_producers)
-        SP_set_buffer_size(sp, mixer->_buffer_size);
+      //for (SoundProducer *sp : mixer->_sound_producers)
+      //  SP_set_buffer_size(sp, mixer->_buffer_size);
       
     }unlock_player();
 
