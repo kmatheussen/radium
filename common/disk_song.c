@@ -92,13 +92,20 @@ struct Song *LoadSong(void){
         VECTOR_FOR_EACH(struct Patch *patch, &get_MIDI_instrument()->patches){
           InstrumentWidget_delete(patch);
         }END_VECTOR_FOR_EACH;
-        
+
         while(get_MIDI_instrument()->patches.num_elements > 0)
-          PATCH_remove_from_instrument(get_MIDI_instrument()->patches.elements[0], true);
-        
-        while(get_audio_instrument()->patches.num_elements > 0)
-          PATCH_remove_from_instrument(get_audio_instrument()->patches.elements[0], true);
-        
+          PATCH_remove_from_instrument(get_MIDI_instrument()->patches.elements[0]);
+
+        // Commented out since MW_cleanup() above calls PATCH_remove_from_instrument for all audio patches.
+        //
+        //while(get_audio_instrument()->patches.num_elements > 0)
+        //  PATCH_remove_from_instrument(get_audio_instrument()->patches.elements[0]);
+
+        R_ASSERT(get_MIDI_instrument()->patches.num_elements==0);
+        R_ASSERT(get_audio_instrument()->patches.num_elements==0);
+
+        PATCH_clean_unused_patches();
+
         COMMENT_reset();
         
         GENERAL_LOAD(6,4)

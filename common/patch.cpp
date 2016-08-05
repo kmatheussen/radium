@@ -62,18 +62,22 @@ struct Patch *g_currpatch=NULL;
 
 //const symbol_t *g_raw_midi_message_port_name = NULL;
 
-static vector_t unused_patches; // <-- patches are never deleted, but they are removed from the instruments. In order for the gc to find the removed patches (when stored some place where the gc can't find them, for instance in a C++ object), we put them here. (There shouldn't be any situation where this might happen, but we do it anyway, just in case, because GC bugs are so hard to find.)
+static vector_t g_unused_patches; // <-- patches are never deleted, but they are removed from the instruments. In order for the gc to find the removed patches (when stored some place where the gc can't find them, for instance in a C++ object), we put them here. (There shouldn't be any situation where this might happen, but we do it anyway, just in case, because GC bugs are so hard to find.)
 
-void PATCH_remove_from_instrument(struct Patch *patch, bool remove_completely){
+// Called when loading new song
+void PATCH_clean_unused_patches(void){
+  VECTOR_clean(&g_unused_patches);
+}
+
+void PATCH_remove_from_instrument(struct Patch *patch){
   //R_ASSERT(patch->patchdata == NULL); (not true for MIDI)
   VECTOR_remove(&patch->instrument->patches, patch);
-  if (remove_completely==false)
-    VECTOR_push_back(&unused_patches, patch);
+  VECTOR_push_back(&g_unused_patches, patch);
 }
 
 static void PATCH_add_to_instrument(struct Patch *patch){
-  if (VECTOR_is_in_vector(&unused_patches, patch))
-    VECTOR_remove(&unused_patches, patch);
+  if (VECTOR_is_in_vector(&g_unused_patches, patch))
+    VECTOR_remove(&g_unused_patches, patch);
   VECTOR_push_back(&patch->instrument->patches, patch);
 }
 
@@ -470,7 +474,7 @@ static void make_inactive(struct Patch *patch, bool force_removal){
 
   //Undo_Patchlist_CurrPos(LOC());
   //VECTOR_remove(&patch->instrument->patches, patch);
-  PATCH_remove_from_instrument(patch, false);
+  PATCH_remove_from_instrument(patch);
 }
 
 void PATCH_make_inactive(struct Patch *patch){
