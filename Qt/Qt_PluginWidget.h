@@ -66,7 +66,7 @@ class ParamWidget : public QWidget {
       
       int format = type->get_effect_format!=NULL ? type->get_effect_format(plugin, effect_num) : EFFECT_FORMAT_FLOAT;
 
-      QGridLayout *grid_layout = new QGridLayout();
+      QGridLayout *grid_layout = new QGridLayout(this);
       grid_layout->setMargin(0);
       grid_layout->setSpacing(0);
 
@@ -107,7 +107,7 @@ class ParamWidget : public QWidget {
         
         grid_layout->addWidget(_check_button, 1,1,1,1);
       } else {
-        _slider = new MyQSlider();
+        _slider = new MyQSlider(this);
         _slider->_patch = patch;
         _slider->_effect_num = effect_num;
 

@@ -114,8 +114,8 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
   QVBoxLayout *pVBoxLayout = NULL;
 
   if (iPages > 1) {
-    pTabWidget  = new QTabWidget();
-    pVBoxLayout = new QVBoxLayout();
+    pTabWidget  = new QTabWidget(widget);
+    pVBoxLayout = new QVBoxLayout(widget);
     pVBoxLayout->setMargin(0);
     pVBoxLayout->setSpacing(0);
 #if USE_QT5
@@ -125,7 +125,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
 #endif
   }
 
-  QGridLayout *pGridLayout = new QGridLayout();
+  QGridLayout *pGridLayout = new QGridLayout(widget);
   pGridLayout->setMargin(0);
   pGridLayout->setSpacing(0);
 
@@ -133,7 +133,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
   const QString sPage = "Page %1";
   QWidget *pPageWidget = NULL;
   if (pTabWidget) {	
-    pPageWidget = new QWidget();
+    pPageWidget = new QWidget(widget);
     pPageWidget->setLayout(pGridLayout);
     pTabWidget->addTab(pPageWidget, sPage.arg(iPage++));
   }
@@ -172,10 +172,10 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
       if (++iX >= iXsPerPage) {
         iX = 0;
         if (pTabWidget && iPage < iPages) {
-          pGridLayout = new QGridLayout();
+          pGridLayout = new QGridLayout(widget);
           pGridLayout->setMargin(0);
           pGridLayout->setSpacing(0);
-          pPageWidget = new QWidget();
+          pPageWidget = new QWidget(widget);
           pPageWidget->setLayout(pGridLayout);
           pTabWidget->addTab(pPageWidget, sPage.arg(iPage++));
         }

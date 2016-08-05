@@ -627,7 +627,7 @@ struct PatchVoice{
 #define MAX_NUM_EVENT_RECEIVERS 64
 #define MAX_NOTE_INTENCITY 20
 
-#define MAX_PLAYING_PATCH_NOTES (1024*32)
+#define MAX_PLAYING_PATCH_NOTES (1024*32) // Why is this number so high? When is an instrument playing 1024*32 simultaneously voices?
 
 /*
 typedef struct{

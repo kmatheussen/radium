@@ -417,7 +417,7 @@ static void Undo_Add_internal(
     VECTOR_push_back(&curr_open_undo->entries,entry);
 
     EVENTLOG_add_event(get_entry_string(entry));
-      
+
   }Undo_Close();
 
   g_curr_undo_generation++;

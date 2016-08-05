@@ -144,7 +144,7 @@ struct SliderPainter{
   int _y2;
 
   float *_peak_values;
-  bool _local_peak_values;
+  bool _local_peak_values; // TODO: Remove this one. Seems like it is always false.
   float _automation_value;
   enum ColorNums _automation_color;
   enum ColorNums _peak_color;

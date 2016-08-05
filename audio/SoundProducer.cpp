@@ -584,7 +584,7 @@ struct SoundProducer {
   radium::Vector<SoundProducerLink*> _input_links;
   radium::Vector<SoundProducerLink*> _output_links; // Used by MultiCore.
 
-  radium::Vector<SoundProducerLink*> _linkbuses; // These are all ouput links. Don't remember the point of this field. Seems like it can be removed actually. TODO: Try to remove and see if everything works as normal afterwards.
+  radium::Vector<SoundProducerLink*> _linkbuses; // These are all ouput links.
 
   SoundProducer(const SoundProducer&) = delete;
   SoundProducer& operator=(const SoundProducer&) = delete;

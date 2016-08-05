@@ -497,8 +497,6 @@ void PLUGIN_delete(SoundPlugin *plugin){
   
   SMOOTH_release(&plugin->drywet);
   
-  COMPRESSOR_delete(plugin->compressor);
-  
   release_system_filter(&plugin->lowpass, plugin_type->num_outputs);
   
   release_system_filter(&plugin->highpass, plugin_type->num_outputs);
@@ -514,7 +512,11 @@ void PLUGIN_delete(SoundPlugin *plugin){
   delete static_cast<radium::SmoothDelay*>(plugin->delay);
   //release_system_filter(&plugin->delay, plugin_type->num_outputs);
 
+  COMPRESSOR_delete(plugin->compressor);
+  
   // peak and automation pointers (for displaying in the sliders)
+  V_free(plugin->automation_values);
+
   V_free(plugin->volume_peak_values);
 
   V_free(plugin->output_volume_peak_values);
@@ -528,13 +530,12 @@ void PLUGIN_delete(SoundPlugin *plugin){
   V_free(plugin->bus_volume_peak_values3);
   V_free(plugin->bus_volume_peak_values4);
 
-  V_free(plugin->automation_values);
-
   CpuUsage_delete(ATOMIC_GET(plugin->cpu_usage));
 
   V_free(ATOMIC_NAME(plugin->is_recording_automation));
   ATOMIC_SET(plugin->is_recording_automation, NULL);
-  
+
+  R_ASSERT(plugin->midi_learns->size()==0);
   delete plugin->midi_learns;
     
   memset(plugin,-1,sizeof(SoundPlugin)); // for debugging. Crashes faster if something is wrong.

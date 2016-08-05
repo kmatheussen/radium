@@ -57,11 +57,14 @@ struct SmoothDelay {
 
     fVec0 = (float*)malloc(sizeof(float)*buffer_size);
     for (int i4 = 0; (i4 < buffer_size); i4 = (i4 + 1)) {
-			fVec0[i4] = 0.0f;
-                        
+      fVec0[i4] = 0.0f;
     }
   }
 
+  ~SmoothDelay(){
+    free(fVec0);
+  }
+  
   void setSize(int size){
     size = R_MAX(0, R_MIN(buffer_size-1, size));
     if (size != iHslider0) {
