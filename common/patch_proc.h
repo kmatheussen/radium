@@ -15,7 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-extern LANGSPEC void PATCH_clean_unused_patches(void);
 extern LANGSPEC void PATCH_remove_from_instrument(struct Patch *patch);
 extern LANGSPEC struct Patch *PATCH_get_from_id(int id);
 extern LANGSPEC int PATCH_get_new_id(void);
@@ -35,31 +34,32 @@ extern LANGSPEC void PATCH_replace_patch_in_song(struct Patch *old_patch, struct
 extern LANGSPEC void PATCH_make_inactive(struct Patch *patch);
 extern LANGSPEC void PATCH_force_make_inactive(struct Patch *patch);
 extern LANGSPEC void PATCH_call_very_often(void);
+extern LANGSPEC void PATCH_reset(void);
 extern LANGSPEC void PATCH_init(void);
 
 extern LANGSPEC bool PATCH_add_event_receiver(struct Patch *source, struct Patch *destination);
 extern LANGSPEC void PATCH_remove_event_receiver(struct Patch *source, struct Patch *destination);
 extern LANGSPEC void PATCH_remove_all_event_receivers(struct Patch *patch);
 
-extern LANGSPEC void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, note_t note,STime time);
-extern LANGSPEC void RT_PATCH_send_stop_note_to_receivers(struct Patch *patch, note_t note,STime time);
-extern LANGSPEC void RT_PATCH_send_change_velocity_to_receivers(struct Patch *patch, note_t note,STime time);
-extern LANGSPEC void RT_PATCH_send_change_pitch_to_receivers(struct Patch *patch, note_t note,STime time);
+extern LANGSPEC void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, const note_t note,STime time);
+extern LANGSPEC void RT_PATCH_send_stop_note_to_receivers(struct Patch *patch, const note_t note,STime time);
+extern LANGSPEC void RT_PATCH_send_change_velocity_to_receivers(struct Patch *patch, const note_t note,STime time);
+extern LANGSPEC void RT_PATCH_send_change_pitch_to_receivers(struct Patch *patch, const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_send_raw_midi_message_to_receivers(struct Patch *patch, uint32_t msg, STime time);
 
-extern LANGSPEC int64_t RT_PATCH_play_note(struct Patch *patch,note_t note,STime time);
-extern LANGSPEC void RT_PATCH_stop_note(struct Patch *patch,note_t note,STime time);
-extern LANGSPEC void RT_PATCH_change_velocity(struct Patch *patch,note_t note,STime time);
-extern LANGSPEC void RT_PATCH_change_pitch(struct Patch *patch,note_t note,STime time);
+extern LANGSPEC int64_t RT_PATCH_play_note(struct Patch *patch, const note_t note,STime time);
+extern LANGSPEC void RT_PATCH_stop_note(struct Patch *patch, const note_t note,STime time);
+extern LANGSPEC void RT_PATCH_change_velocity(struct Patch *patch,const note_t note,STime time);
+extern LANGSPEC void RT_PATCH_change_pitch(struct Patch *patch,const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg, STime time);
 
-extern LANGSPEC int64_t PATCH_play_note(struct Patch *patch,note_t note);
-extern LANGSPEC void PATCH_stop_note(struct Patch *patch,note_t note);
-extern LANGSPEC void PATCH_change_velocity(struct Patch *patch,note_t note);
+extern LANGSPEC int64_t PATCH_play_note(struct Patch *patch,const note_t note);
+extern LANGSPEC void PATCH_stop_note(struct Patch *patch,const note_t note);
+extern LANGSPEC void PATCH_change_velocity(struct Patch *patch,const note_t note);
 extern LANGSPEC void PATCH_stop_all_notes(struct Patch *patch);
 extern LANGSPEC void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id);
 extern LANGSPEC void PATCH_stopNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id);
-extern LANGSPEC void PATCH_change_pitch(struct Patch *patch,note_t note);
+extern LANGSPEC void PATCH_change_pitch(struct Patch *patch,const note_t note);
 
 extern LANGSPEC void RT_FX_treat_fx(struct FX *fx,int val,STime time,int skip, FX_when when);
 extern LANGSPEC void FX_treat_fx(struct FX *fx,int val,int skip);

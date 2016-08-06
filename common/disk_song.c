@@ -104,7 +104,7 @@ struct Song *LoadSong(void){
         R_ASSERT(get_MIDI_instrument()->patches.num_elements==0);
         R_ASSERT(get_audio_instrument()->patches.num_elements==0);
 
-        PATCH_clean_unused_patches();
+        PATCH_reset();
 
         COMMENT_reset();
         

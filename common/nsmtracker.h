@@ -627,8 +627,6 @@ struct PatchVoice{
 #define MAX_NUM_EVENT_RECEIVERS 64
 #define MAX_NOTE_INTENCITY 20
 
-#define MAX_PLAYING_PATCH_NOTES (1024*32) // Why is this number so high? When is an instrument playing 1024*32 simultaneously voices?
-
 /*
 typedef struct{
   float note_num;
@@ -699,6 +697,14 @@ static inline note_t create_note_t2(int64_t note_id,
   return create_note_t(note_id, pitch, 0, 0, 0);
 }
 
+
+typedef struct _linked_note_t{
+  struct _linked_note_t *next;
+  struct _linked_note_t *prev;
+  note_t note;
+} linked_note_t;
+
+
 // Note that Patch objects are stored directly in undo/redo (not copied), so it must not be freed, reused for other purposes, or othervice manipulated when not available.
 struct Patch{
   int id;
@@ -730,11 +736,8 @@ struct Patch{
 
   struct PatchVoice *voices; // num=NUM_PATCH_VOICES
 
-  int num_currently_playing_voices; // Access protected by PLAYER_lock
-  note_t *playing_voices; // num=MAX_PLAYING_PATCH_NOTES      /* To keep track of how many times a voice has to be turned off. */
-
-  int num_currently_playing_notes;
-  note_t *playing_notes; // num=MAX_PLAYING_PATCH_NOTES  /* To keep track of which notes are playing. (Useful to avoid hanging notes when turning on and off voices)*/
+  linked_note_t *playing_voices; /* To keep track of how many times a voice has to be turned off. */
+  linked_note_t *playing_notes;  /* To keep track of which notes are playing. (Useful to avoid hanging notes when turning on and off voices) */
 
   bool peaks_are_dirty; /* Can be set to true by any thread. */
 
