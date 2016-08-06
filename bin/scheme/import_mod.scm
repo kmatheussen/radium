@@ -5740,11 +5740,12 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (<ra> :reset-undo)
   (<ra> :load-song "sounds/mod_song_template.rad")
 
-  (<ra> :start-ignoring-undo)
   (<ra> :open-progress-window (<-> "Please wait, loading " filename))
 
   (catch #t
          (lambda ()
+           (<ra> :start-ignoring-undo)
+
            (<ra> :eval-python "import import_mod2")
            (<ra> :eval-python "import_mod2=reload(import_mod2)")
            
@@ -5769,12 +5770,13 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
              (<ra> :close-progress-window)
              #t))
          (lambda args
+           (<ra> :stop-ignoring-undo)
+  
            (<ra> :close-progress-window)
            (<ra> :show-message (<-> "Something went wrong: " args))
            (c-display (ow!))
            ))
 
-  (<ra> :stop-ignoring-undo)
   (<ra> :reset-undo)
   )
                  
