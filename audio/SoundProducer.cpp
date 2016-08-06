@@ -177,19 +177,14 @@ struct LatencyCompensatorDelay {
   LatencyCompensatorDelay()
     :_delay(MAX_COMPENSATED_LATENCY*MIXER_get_sample_rate()/1000)
   {
-    _output_sound = (float*)malloc(sizeof(float)*MIXER_get_buffer_size());
-    for(int i=0 ; i<MIXER_get_buffer_size() ; i++)
-      _output_sound[i] = 0.0f;
+    _output_sound = (float*)V_calloc(sizeof(float), MIXER_get_buffer_size());
     
-    if (g_empty_sound==NULL) {
-      g_empty_sound = (float*)malloc(sizeof(float)*MIXER_get_buffer_size());
-      for(int i=0 ; i<MIXER_get_buffer_size() ; i++)
-        g_empty_sound[i] = 0.0f;
-    }
+    if (g_empty_sound==NULL)
+      g_empty_sound = (float*)V_calloc(sizeof(float), MIXER_get_buffer_size());
   }
   
   ~LatencyCompensatorDelay(){
-    free(_output_sound);
+    V_free(_output_sound);
   }
 
   void RT_set_preferred_delay(int preferred_delay){

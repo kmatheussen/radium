@@ -69,6 +69,18 @@ extern "C" {
 #    define V_realloc(ptr, size) realloc(ptr, size);
 #  else
 
+static void* my_calloc(size_t size1,size_t size2){
+  size_t size = size1*size2;
+
+  char*  ret  = (char*)malloc(size);
+  
+  // Ensure the memory is physically available.
+  for(unsigned int i=0;i<size;i++)
+    ret[i] = 0;
+  
+  return ret;
+}
+
 static inline void *V_malloc(size_t size){
   R_ASSERT(!PLAYER_current_thread_has_lock());
   return malloc(size);
@@ -79,7 +91,7 @@ static inline char *V_strdup(const char *s){
 }
 static inline void *V_calloc(size_t n, size_t size){
   R_ASSERT(!PLAYER_current_thread_has_lock());
-  return calloc(n,size);
+  return my_calloc(n,size);
 }
 static inline void V_free(void *ptr){
   R_ASSERT(!PLAYER_current_thread_has_lock());

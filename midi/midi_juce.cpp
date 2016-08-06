@@ -221,12 +221,12 @@ char *MIDI_getDefaultOutputPort(void){
 void MIDI_closeMidiPortOs(MidiPortOs port){
   MyMidiPortOs *myport = static_cast<MyMidiPortOs*>(port);
   delete myport->midiout;
-  free(myport);
+  V_free(myport);
 }
 
 MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,char *name_c){
 
-  MyMidiPortOs *ret = (MyMidiPortOs*)calloc(1, sizeof(MyMidiPortOs));
+  MyMidiPortOs *ret = (MyMidiPortOs*)V_calloc(1, sizeof(MyMidiPortOs));
   
   String name(name_c);
 
