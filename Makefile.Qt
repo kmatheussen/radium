@@ -300,7 +300,7 @@ OBJ_MIXER=QM_view.o QM_chip.o QM_MixerWidget.o undo_mixer.o undo_mixer_connectio
 OBJ_VL=GfxElements.o T2.o Render.o Widget.o Qt${RADIUM_QT_VERSION}Widget.o moc_Qt${RADIUM_QT_VERSION}Widget.o
 
 #Embedded scheme
-OBJ_ES=scheme.o bin/packages/s7/s7_$(TARGET_OS).o s7webserver.o radium_s7_wrap.o qhttpconnection.o moc_qhttpconnection.o qhttprequest.o moc_qhttprequest.o qhttpresponse.o moc_qhttpresponse.o qhttpserver.o moc_qhttpserver.o http_parser.o
+OBJ_ES=scheme.o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o s7webserver.o radium_s7_wrap.o qhttpconnection.o moc_qhttpconnection.o qhttprequest.o moc_qhttprequest.o qhttpresponse.o moc_qhttpresponse.o qhttpserver.o moc_qhttpserver.o http_parser.o
 
 OBJ = $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ_POSIX) $(OBJ_X11) $(OBJ_WIN) $(OBJ_MACOSX) $(OBJ14) $(OBJ_FAUST) $(OBJ_AUDIO) $(OBJ_MIXER) $(OBJ_VL)
 
@@ -1968,11 +1968,11 @@ moc_Qt${RADIUM_QT_VERSION}Widget.o: bin/packages/Visualization-Library-master/sr
 
 # embedded scheme
 
-bin/packages/s7/s7_$(TARGET_OS).o: bin/packages/s7/s7.c
+bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_C_LOADER=0 -DWITH_HISTORY=1  ; \
+		$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_C_LOADER=0 -DWITH_HISTORY=1  ; \
 	else \
-		$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_C_LOADER=0 -DWITH_HISTORY=1 ; \
+		$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_C_LOADER=0 -DWITH_HISTORY=1 ; \
 	fi
 # -Wno-absolute-value
 #-DDEBUGGING=1
