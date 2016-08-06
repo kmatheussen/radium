@@ -715,11 +715,15 @@ const char *PLUGIN_get_effect_description(const struct SoundPluginType *plugin_t
 
 static void set_db_display(char *buffer, int buffersize, float value){
   float db = gain_2_db(value,MIN_DB,MAX_DB);
-  //snprintf(buffer,buffersize-1,"%s%s%.2f dB", db<0.0f?"":"+", db>-10.0f && db<10.0f ? "  ":"", db);
+  
   if(db==MIN_DB)
     snprintf(buffer,buffersize-1,"-inf dB");
   else
     snprintf(buffer,buffersize-1,"%s%.2f dB", db<0.0f?"":"+", db);
+}
+
+static void set_freq_display(char *buffer, int buffersize, float freq){
+  snprintf(buffer,buffersize-1,"%.1f Hz",freq);
 }
 
 // It's not necessary to implement for all EFFNUM_* values. Can probably remove some code.
@@ -728,133 +732,64 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
   if(effect_num<plugin->type->num_effects)
     return plugin->type->get_display_value_string(plugin, effect_num, buffer, buffersize);
 
-  float val;
-
+  float store_value = safe_float_read(&plugin->savable_effect_values[effect_num]);
+    
   int system_effect = effect_num - plugin->type->num_effects;
 
   switch(system_effect){
-  case EFFNUM_INPUT_VOLUME:
-    set_db_display(buffer,buffersize,SMOOTH_get_target_value(&plugin->input_volume));
-    //val = gain_2_db(plugin->input_volume.target_value,MIN_DB,MAX_DB);
-    //snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
-    break;
-  case EFFNUM_VOLUME:
-    val = gain_2_db(plugin->volume,MIN_DB,MAX_DB);
-    if(val==MIN_DB)
-      snprintf(buffer,buffersize-1,"-inf dB");
-    else
-      snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
-    break;
-    
-  case EFFNUM_OUTPUT_VOLUME:
-    val = gain_2_db(plugin->output_volume,MIN_DB,MAX_DB);
-    if(val==MIN_DB)
-      snprintf(buffer,buffersize-1,"-inf dB");
-    else
-      snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
-    break;
-    
-  case EFFNUM_BUS1:
-    val = gain_2_db(plugin->bus_volume[0]/plugin->volume,MIN_DB,MAX_DB);
-    if(val==MIN_DB)
-      snprintf(buffer,buffersize-1,"-inf dB");
-    else
-      snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
-    break;
-  case EFFNUM_BUS2:
-    val = gain_2_db(plugin->bus_volume[1]/plugin->volume,MIN_DB,MAX_DB);
-    if(val==MIN_DB)
-      snprintf(buffer,buffersize-1,"-inf dB");
-    else
-      snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
-    break;
-  case EFFNUM_BUS3:
-    val = gain_2_db(plugin->bus_volume[2]/plugin->volume,MIN_DB,MAX_DB);
-    if(val==MIN_DB)
-      snprintf(buffer,buffersize-1,"-inf dB");
-    else
-      snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
-    break;
-  case EFFNUM_BUS4:
-    val = gain_2_db(plugin->bus_volume[3]/plugin->volume,MIN_DB,MAX_DB);
-    if(val==MIN_DB)
-      snprintf(buffer,buffersize-1,"-inf dB");
-    else
-      snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
-    break;
-  case EFFNUM_BUS5:
-    val = gain_2_db(plugin->bus_volume[4]/plugin->volume,MIN_DB,MAX_DB);
-    if(val==MIN_DB)
-      snprintf(buffer,buffersize-1,"-inf dB");
-    else
-      snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
-    break;
+    case EFFNUM_INPUT_VOLUME:
+    case EFFNUM_VOLUME:
+    case EFFNUM_OUTPUT_VOLUME:
+      
+    case EFFNUM_BUS1:
+    case EFFNUM_BUS2:
+    case EFFNUM_BUS3:
+    case EFFNUM_BUS4:
+    case EFFNUM_BUS5:
+      set_db_display(buffer,buffersize,store_value);
+      break;
+      
+    case EFFNUM_EQ1_GAIN:
+    case EFFNUM_EQ2_GAIN:
+    case EFFNUM_LOWSHELF_GAIN:
+    case EFFNUM_HIGHSHELF_GAIN:
+      snprintf(buffer,buffersize-1,"%s%.2f dB",store_value<0.0f?"":"+",store_value);
+      break;
 
-  case EFFNUM_PAN:
-    snprintf(buffer,buffersize-1,"%d %s",(int)scale(SMOOTH_get_target_value(&plugin->pan),0,1,-90,90),"\u00B0");
-    break;
-  case EFFNUM_PAN_ONOFF:
-    snprintf(buffer,buffersize-1,"%s",ATOMIC_GET(plugin->pan_is_on)==true?"ON":"OFF");
-    break;
+    case EFFNUM_PAN:
+      snprintf(buffer,buffersize-1,"%d %s",(int)scale(store_value,0,1,-90,90),"\u00B0");
+      break;
+    case EFFNUM_PAN_ONOFF:
+      snprintf(buffer,buffersize-1,"%s",ATOMIC_GET(plugin->pan_is_on)==true?"ON":"OFF");
+      break;
+      
+    case EFFNUM_LOWPASS_FREQ:
+    case EFFNUM_HIGHPASS_FREQ:
+    case EFFNUM_EQ1_FREQ:
+    case EFFNUM_EQ2_FREQ:
+    case EFFNUM_LOWSHELF_FREQ:
+    case EFFNUM_HIGHSHELF_FREQ:
+      set_freq_display(buffer, buffersize, store_value);
+      break;
 
-  case EFFNUM_LOWPASS_FREQ:
-    snprintf(buffer,buffersize-1,"%.1f Hz",plugin->lowpass_freq);
-    break;
+    case EFFNUM_DELAY_TIME:
+      snprintf(buffer,buffersize-1,"%.2f ms",store_value);
+      break;
 
-  case EFFNUM_HIGHPASS_FREQ:
-    snprintf(buffer,buffersize-1,"%.1f Hz",plugin->highpass_freq);
-    break;
+    case EFFNUM_DRYWET:
+      {
+        int wet = store_value*100;
+        int dry = 100-wet;
+        snprintf(buffer,buffersize-1,"Dry: %d%%. Wet: %d%%",dry,wet);
+      }
+      break;
+      
+    case EFFNUM_EFFECTS_ONOFF:
+      snprintf(buffer,buffersize-1,"%s",store_value >= 0.5 ?"ON":"OFF");
+      break;
 
-  case EFFNUM_EQ1_FREQ:
-    snprintf(buffer,buffersize-1,"%.1f Hz",plugin->eq1_freq);
-    break;
-  case EFFNUM_EQ1_GAIN:
-    val = plugin->eq1_db;
-    snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
-    break;
-
-  case EFFNUM_EQ2_FREQ:
-    snprintf(buffer,buffersize-1,"%.1f Hz",plugin->eq2_freq);
-    break;
-  case EFFNUM_EQ2_GAIN:
-    val = plugin->eq2_db;
-    snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
-    break;
-
-  case EFFNUM_LOWSHELF_FREQ:
-    snprintf(buffer,buffersize-1,"%.1f Hz",plugin->lowshelf_freq);
-    break;
-  case EFFNUM_LOWSHELF_GAIN:
-    val = plugin->lowshelf_db;
-    snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
-    break;
-
-  case EFFNUM_HIGHSHELF_FREQ:
-    snprintf(buffer,buffersize-1,"%.1f Hz",plugin->highshelf_freq);
-    break;
-  case EFFNUM_HIGHSHELF_GAIN:
-    val = plugin->highshelf_db;
-    snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
-    break;
-    
-  case EFFNUM_DELAY_TIME:
-    val = plugin->delay_time;
-    snprintf(buffer,buffersize-1,"%.2f ms",val);
-    break;
-
-  case EFFNUM_DRYWET:
-    {
-      int wet = SMOOTH_get_target_value(&plugin->drywet) * 100;
-      int dry = 100-wet;
-      snprintf(buffer,buffersize-1,"Dry: %d%%. Wet: %d%%",dry,wet);
-    }
-    break;
-  case EFFNUM_EFFECTS_ONOFF:
-    snprintf(buffer,buffersize-1,"%s",ATOMIC_GET(plugin->effects_are_on)==true?"ON":"OFF");
-    break;
-
-  default:
-    RError("1. Unknown effect number: %d (%d). %s / %s",effect_num,system_effect,plugin->type->type_name,plugin->type->name);
+    default:
+      RError("1. Unknown effect number: %d (%d). %s / %s",effect_num,system_effect,plugin->type->type_name,plugin->type->name);
   }
 }
 
