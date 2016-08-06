@@ -1,3 +1,13 @@
+Changes 4.0.1 -> 4.0.2:
+* Slider text: show value set by the user, not the current
+  value. (The current value can be also be set automation).
+* Reduced instrument memory usage significantly.
+* Reduce crackling when playing an instrument for the first time
+  if using very low jack buffer size, or the CPU is very busy.
+* Fix quick-selecting preset.
+
+
+
 Changes 4.0.0 -> 4.0.1:
 * Ignore keyboard when the mixer has focus
 * Ignore keyboard when the blocklist or playlist has focus

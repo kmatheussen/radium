@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 4.0.1
+VERSION = 4.0.2
 
 #----------------USER SETTINGS-------------------------------
 
@@ -148,8 +148,8 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 
 FULL_VERSION ?= 1
 
-# Note that "make clean" must be run for DEBUG_BUILD_OPTS to take effect
-DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -Og  -DDISABLE_BDWGC -fsanitize=address #-Og -
+# Note that "make clean" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
+DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -Og #-fsanitize=address # -DDISABLE_BDWGC -Og -
 # -Og -Og -fsanitize=address
 #-Og 
 #  -fsanitize=thread 
