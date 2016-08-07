@@ -182,7 +182,7 @@ endif
 # -Wunused-parameter
 
 # OPT is C flags
-OPT=$(COMMONOPT) -Wstrict-prototypes
+OPT=$(COMMONOPT) -Wstrict-prototypes -std=gnu99
 # -D_FORTIFY_SOURCE=2 -O2
 
 CPUOPT ?=
