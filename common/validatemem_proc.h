@@ -61,14 +61,6 @@ extern "C" {
 
 #if !defined(VALIDATE_MEM)
 
-#  if defined(RELEASE)
-#    define V_malloc(size) malloc(size)
-#    define V_strdup(s) strdup(s)
-#    define V_calloc(n, size) calloc(n, size)
-#    define V_free(ptr) free((void*)ptr)
-#    define V_realloc(ptr, size) realloc(ptr, size);
-#  else
-
 static void* my_calloc(size_t size1,size_t size2){
   int size = size1*size2;
 
@@ -92,6 +84,14 @@ static void* my_calloc(size_t size1,size_t size2){
   
   return ret;
 }
+
+#  if defined(RELEASE)
+#    define V_malloc(size) malloc(size)
+#    define V_strdup(s) strdup(s)
+#    define V_calloc(n, size) my_calloc(n, size)
+#    define V_free(ptr) free((void*)ptr)
+#    define V_realloc(ptr, size) realloc(ptr, size);
+#  else
 
 static inline void *V_malloc(size_t size){
   R_ASSERT(!PLAYER_current_thread_has_lock());
