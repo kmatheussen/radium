@@ -87,7 +87,7 @@ static void* my_calloc(size_t size1,size_t size2){
   for(int i=0;i<s2;i++)
     ret64[i]=0;
 
-  for(int i=s2;i<size;i++)
+  for(int i=s2*sizeof(int64_t);i<size;i++)
     ret[i] = 0;
   
   return ret;
