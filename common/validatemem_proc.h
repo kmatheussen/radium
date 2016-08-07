@@ -70,12 +70,24 @@ extern "C" {
 #  else
 
 static void* my_calloc(size_t size1,size_t size2){
-  size_t size = size1*size2;
+  int size = size1*size2;
+
+  // 1. allocate
+  //
 
   char*  ret  = (char*)malloc(size);
+
   
-  // Ensure the memory is physically available.
-  for(unsigned int i=0;i<size;i++)
+  // 2. Ensure the memory is physically available.
+  //
+
+  int64_t *ret64 = (int64_t*)ret;
+  int s2=size/sizeof(int64_t);
+
+  for(int i=0;i<s2;i++)
+    ret64[i]=0;
+
+  for(int i=s2;i<size;i++)
     ret[i] = 0;
   
   return ret;
