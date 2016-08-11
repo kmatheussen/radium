@@ -445,13 +445,24 @@ static LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM l
     if(wParam==WM_KEYDOWN || wParam==WM_KEYUP){
       //printf("^^^^^^^^^^^^^^^^^^ p: %p\n",p);
       //printf("^^^^^^^^^^^^^^^^^^^^^ vkCode: %x\n",(int)p->vkCode);
+
+      printf("  %s: vkCode: %x\n",wParam==WM_KEYDOWN ? "Down":"Up", (int)p->vkCode);
       
-      if(p->vkCode==VK_LWIN || p->vkCode==VK_RWIN){
+      if(p->vkCode==VK_LWIN || p->vkCode==VK_RWIN){// || p->vkCode==VK_RMENU){
 
         if(p->vkCode==VK_LWIN)
           ATOMIC_SET(left_windows_down, wParam==WM_KEYDOWN);
         else
           ATOMIC_SET(right_windows_down, wParam==WM_KEYDOWN);
+
+        if(p->vkCode==VK_LWIN && wParam==WM_KEYDOWN)
+          printf("   1. Left down\n");
+        else if (p->vkCode==VK_LWIN && wParam==WM_KEYUP)
+          printf("   1. Left up\n");
+        else if (p->vkCode==VK_RMENU && wParam==WM_KEYDOWN)
+          printf("   2. Right down\n");
+        else if (p->vkCode==VK_RMENU)
+          printf("   2. Right up\n");
 
         #if 0
         // Don't think this is any point.

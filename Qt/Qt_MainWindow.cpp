@@ -421,6 +421,16 @@ public:
     e->acceptProposedAction();
   }
 
+  /*
+  void keyPressEvent(QKeyEvent *event) override{
+    printf("Press. Auto: %d. %d %d\n", event->isAutoRepeat(),event->nativeScanCode(), event->nativeVirtualKey() );
+  }
+  
+  void keyReleaseEvent(QKeyEvent *event) override{
+    printf("Release. Auto: %d. %d %d\n", event->isAutoRepeat(),event->nativeScanCode(), event->nativeVirtualKey() );
+  }
+  */
+  
   void dropEvent(QDropEvent *event){
       printf("Got drop event\n");
   if (event->mimeData()->hasUrls())
@@ -445,6 +455,8 @@ void SetupMainWindow(void){
   //QMainWindow *main_window = new QMainWindow(NULL, "Radium", Qt::WStyle_Customize | Qt::WStyle_NoBorder);// | Qt::WStyle_Dialog);
   QMainWindow *main_window = new MyQMainWindow();//NULL, "Radium");
   g_main_window = main_window;
+
+  //main_window->installEventFilter(main_window);
   
 #ifdef USE_QT4
   //main_window->setAttribute(Qt::WA_PaintOnScreen);

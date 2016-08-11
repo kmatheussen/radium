@@ -294,6 +294,21 @@ int OS_SYSTEM_get_keynum(void *void_event){
 #endif
 }
 
+int OS_SYSTEM_get_keynum2(uint32_t uint32_keysym){
+#if USE_QT5
+  KeySym keysym = (KeySym)uint32_keysym;
+  return keysym_to_keynum(keysym);
+#else
+  XKeyEvent *key_event = void_event;
+  init_keynums((XEvent*)key_event);
+  return keycode_to_keynum[key_event->keycode];
+#endif
+}
+
+int OS_SYSTEM_get_qwerty_keynum2(uint32_t scancode){
+  return get_subID_from_scancode(scancode-8);
+}
+ 
 int OS_SYSTEM_get_qwerty_keynum(void *void_event){
 #if USE_QT5
   xcb_key_press_event_t *event = void_event;
@@ -365,9 +380,9 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
 }
 #endif
 
-static bool event_is_arrow2(KeySym keysym){
-  return keysym==XK_Down || keysym==XK_Up || keysym==XK_Right || keysym==XK_Left || keysym==XK_Page_Up || keysym==XK_Page_Down;
-}
+//static bool event_is_arrow2(KeySym keysym){
+//  return keysym==XK_Down || keysym==XK_Up || keysym==XK_Right || keysym==XK_Left || keysym==XK_Page_Up || keysym==XK_Page_Down;
+//}
 
 #ifdef USE_QT4
 static bool event_is_arrow(XKeyEvent *event){
@@ -379,7 +394,7 @@ static bool event_is_arrow(XKeyEvent *event){
 
 #if USE_QT5
 int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
-  xcb_generic_event_t *event = void_event;
+   xcb_generic_event_t *event = void_event;
 
   static bool last_event_was_key_press = false;
   static bool last_event_was_key_release = false;
@@ -395,15 +410,16 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
     int ret = TR_KEYBOARD;
     
     //printf(">>> Keypress %d\n",last_key_press.detail);
-
+    //printf("     down: keynum: %d. Time: %d\n", key_event->detail, key_event->time);
+    
     if (last_event_was_key_release &&
         last_key_release.time == key_event->time &&
         last_key_release.detail == key_event->detail)
       {
-        if (ignore_autorepeat && !event_is_arrow2(get_sym(key_event))) {
+        //        if (ignore_autorepeat){// && !event_is_arrow2(get_sym(key_event))) {
           //printf("   Autorepeat 1\n");
           ret = TR_AUTOREPEAT;
-        }
+          //        }
       }
         
     last_key_press = *key_event;
@@ -418,20 +434,20 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
     xcb_key_release_event_t *key_event = void_event;
     int ret = TR_KEYBOARDUP;
 
+    //printf("       up: keynum: %d. Time: %d\n", key_event->detail, key_event->time);
     //printf(">>> Keyrelease %d/%d   -  %d/%d    (%d)\n",key_event->time, last_key_press.time, key_event->detail, last_key_press.detail, last_event_was_key_press);
 
     if (last_event_was_key_release && last_key_release.detail==key_event->detail){ // sometimes happens when autorepeating (why didn't xcb add autorepeat flag? It's a very new api.)
-      if (ignore_autorepeat)
+      //if (ignore_autorepeat)
         ret = TR_AUTOREPEAT;
-      else
-        ret = TR_KEYBOARD;
+        //else
+        //  ret = TR_KEYBOARD;
+    } else {
+      last_key_release = *key_event;
+      last_event_was_key_press = false;
+      last_event_was_key_release = true;
     }
-      
-    
-    last_key_release = *key_event;
-    last_event_was_key_press = false;
-    last_event_was_key_release = true;
-    
+          
     return ret;
   }
   

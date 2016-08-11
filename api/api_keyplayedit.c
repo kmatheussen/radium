@@ -28,8 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "api_common_proc.h"
 
 
-extern struct Root *root;
-
+extern struct TEvent tevent;
+extern bool tevent_autorepeat;
 
 
 /*******************************************
@@ -37,6 +37,11 @@ extern struct Root *root;
 *******************************************/
 
 void keyDownPlay(int notenum,int windownum){
+  //printf("DOWN: doautorepeat: %d, autorepeat: %d\n", doAutoRepeat(), AutoRepeat(tevent.keyswitch));
+  
+  if (!doAutoRepeat() && tevent_autorepeat)
+    return;
+    
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 
 	notenum+=root->keyoct;
@@ -50,6 +55,7 @@ void keyDownPlay(int notenum,int windownum){
 }
 
 void polyKeyDownPlay(int notenum,int windownum){
+  //printf("POLY: doautorepeat: %d, autorepeat: %d\n", doAutoRepeat(), AutoRepeat(tevent.keyswitch));
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 
 	notenum+=root->keyoct;
@@ -63,6 +69,7 @@ void polyKeyDownPlay(int notenum,int windownum){
 }
 
 void keyUpPlay(int notenum,int windownum){
+  //printf("UP: doautorepeat: %d, autorepeat: %d\n", doAutoRepeat(), AutoRepeat(tevent.keyswitch));
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 
 	notenum+=root->keyoct;

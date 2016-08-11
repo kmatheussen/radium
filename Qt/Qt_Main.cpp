@@ -180,6 +180,7 @@ extern void set_editor_focus(void);
 
 
 extern struct TEvent tevent;
+bool tevent_autorepeat = false;
 
 static bool g_up_downs[EVENT_DASMAX];
 
@@ -214,7 +215,7 @@ static void set_keyswitch(void){
       tevent.keyswitch |= radiumswitch[lokke];
     }
   }
-  
+
   //printf("keyswtich: %x\n",tevent.keyswitch);
 }
 #endif
@@ -346,6 +347,130 @@ public:
 protected:
 
   bool last_key_was_lalt;
+
+  virtual bool eventFilter(QObject *obj, QEvent *event) override {
+    //printf("Got event. type: %d (%d)\n", event->type(), 6);
+
+    if(ATOMIC_GET(is_starting_up)==true)
+      return false;
+
+    if (another_window_has_focus)
+      return false;
+
+    if (MIXER_is_saving())
+      return false;
+      
+    if (editor_has_keyboard==false)
+      return false;
+
+    static bool last_autorepeat = false;
+    static QEvent::Type last_event_type = (QEvent::Type)0;
+    static ulong last_timestamp = -1;
+
+    const QEvent::Type key_press_type = (QEvent::Type)6; //QEvent::KeyPress;
+    const QEvent::Type key_release_type = (QEvent::Type)7;
+
+    QKeyEvent *key_event = dynamic_cast<QKeyEvent*>(event);
+    if (key_event==NULL)
+      return false;
+
+    if (key_event->type() != key_press_type && key_event->type() != key_release_type)
+      return false;
+    
+    ulong timestamp = key_event->timestamp();      
+
+    //printf("Got event. timestamp: %d, last: %d, scancode: %x, symkey: %x, modifiers: %x\n", (int)timestamp, (int)last_timestamp, key_event->nativeScanCode(), key_event->nativeVirtualKey(), key_event->nativeModifiers());
+        
+    if (timestamp==last_timestamp && last_event_type==key_event->type() && last_autorepeat==tevent_autorepeat)
+      return false;
+    else {
+      last_timestamp = timestamp;
+      last_autorepeat = tevent_autorepeat;
+      last_event_type = key_event->type();
+    }
+      
+    
+    //QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+    //QObject *main_obj = dynamic_cast<QObject*>(main_window);
+    //printf("Got event. timestamp: %d, last: %d, scancode: %x, symkey: %x, modifiers: %x\n", (int)timestamp, (int)last_timestamp, key_event->nativeScanCode(), key_event->nativeVirtualKey(), key_event->nativeModifiers());
+
+    
+    int keynum = OS_SYSTEM_get_keynum2(key_event->nativeVirtualKey());
+
+    switch(keynum){
+      case EVENT_ESC:
+      case EVENT_UPARROW:
+      case EVENT_DOWNARROW:
+      case EVENT_LEFTARROW:
+      case EVENT_RIGHTARROW:
+      case EVENT_RETURN:
+      case EVENT_KP_ENTER: {
+        if(GFX_MenuActive()==true)
+          return false;
+        break;
+      }
+    }
+
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    
+    window->must_redraw = true;
+
+    tevent_autorepeat = key_event->isAutoRepeat();
+    bool is_key_press = (key_event->type() == key_press_type) || tevent_autorepeat;
+
+    if (is_key_press)
+      tevent.ID=TR_KEYBOARD;
+    else
+      tevent.ID=TR_KEYBOARDUP;
+    
+    tevent.SubID=keynum;  
+        
+    if (tevent_autorepeat)
+      R_ASSERT(tevent.ID=TR_KEYBOARD);
+
+    //printf("   %s: keynum1: %d. switch: %d. Type: %d, auto: %d\n",is_key_press?"DOWN":"UP", keynum, tevent.keyswitch,(int)key_event->type(), tevent_autorepeat);
+
+
+    bool ret;
+
+    bool dat_used_key = DAT_keypress(window, tevent.SubID, is_key_press);
+
+    if (dat_used_key) {
+      
+      ret = true;
+
+    } else {
+      
+      if (keynum==EVENT_NO)
+        ret = false;
+      else
+        ret = EventReciever(&tevent,window);
+      
+      if (ret==false) {
+        keynum = OS_SYSTEM_get_qwerty_keynum2(key_event->nativeScanCode());
+        
+        //printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
+        
+        if (keynum==EVENT_NO){
+          //printf("Unknown key for n%p\n",event);//virtual_key);
+          return false;
+        }
+        
+        tevent.SubID=keynum;
+        
+        ret = EventReciever(&tevent,window);
+      }
+    }
+
+    //printf("ret2: %d\n",ret);
+    
+    if(ret==true)
+      static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
+
+    
+    return QApplication::eventFilter(obj, event);
+  }
+
   
   bool SystemEventFilter(void *event){
 
@@ -372,13 +497,34 @@ protected:
       
     struct Tracker_Windows *window = root->song->tracker_windows;
 
-    bool ignore_autorepeat = !doAutoRepeat() && editor_has_keyboard == true;
-    
-    int type = OS_SYSTEM_get_event_type(event, ignore_autorepeat);
+    //bool ignore_autorepeat = !doAutoRepeat() && editor_has_keyboard == true;
 
-    if (type==TR_AUTOREPEAT)
-      return true;
+    //bool tevent_autorepeat = false;
     
+    int type = OS_SYSTEM_get_event_type(event, false);//ignore_autorepeat);
+    if (type==TR_AUTOREPEAT)
+      return false;
+          
+    /*
+    switch(type){
+    case TR_KEYBOARD:
+      printf("** Down\n");
+      break;
+    case TR_KEYBOARDUP:
+      printf("** Up\n");
+      break;
+    case TR_AUTOREPEAT:
+      printf("** Autorepeat\n");
+      break;
+    }
+    */
+    if (type==TR_AUTOREPEAT){
+      //return true;
+      //printf("            OS_SYSTEM_get_event_type return AUOTREOEPETAT\n");
+      tevent_autorepeat = true;
+      type=TR_KEYBOARD;
+    }
+
     if (type!=TR_KEYBOARD && type!=TR_KEYBOARDUP)
       return false;
     
@@ -466,8 +612,14 @@ protected:
         return true; // If not, Qt starts to navigate the menues.
 
       return false;
+      
     }
-
+    /*
+    if (tevent_autorepeat)
+      tevent.keyswitch |= EVENT_AUTOREPEAT2;
+    else
+      tevent.keyswitch &= (~EVENT_AUTOREPEAT2);
+    */
     last_key_was_lalt = false;
 
 #if 0
@@ -480,6 +632,9 @@ protected:
     if (editor_has_keyboard==false)
       return false;
 
+    return false;
+
+    /*
     int keynum = OS_SYSTEM_get_keynum(event);
 
     last_pressed_key = keynum;
@@ -487,19 +642,20 @@ protected:
     //printf("keynum1: %d. switch: %d\n",keynum,tevent.keyswitch);
     
     switch(keynum){
-    case EVENT_ESC:
-    case EVENT_UPARROW:
-    case EVENT_DOWNARROW:
-    case EVENT_LEFTARROW:
-    case EVENT_RIGHTARROW:
-    case EVENT_RETURN:
-    case EVENT_KP_ENTER: {
-      if(GFX_MenuActive()==true)
-        return false;
-      break;
-    }
+      case EVENT_ESC:
+      case EVENT_UPARROW:
+      case EVENT_DOWNARROW:
+      case EVENT_LEFTARROW:
+      case EVENT_RIGHTARROW:
+      case EVENT_RETURN:
+      case EVENT_KP_ENTER: {
+        if(GFX_MenuActive()==true)
+          return false;
+        break;
+      }
     }
 
+    
     window->must_redraw = true;
 
     if (is_key_press)
@@ -509,6 +665,8 @@ protected:
     
     tevent.SubID=keynum;  
         
+    if (tevent_autorepeat)
+      R_ASSERT(tevent.ID=TR_KEYBOARD);
     
     bool ret;
 
@@ -547,6 +705,8 @@ protected:
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
     
     return true;
+    */
+
   }
 
 #ifdef USE_QT5
@@ -580,7 +740,7 @@ protected:
 #endif
 
 #endif // !USE_QT5
-
+    
   /*
   bool event(QEvent *event){
     return QApplication::event(event);
@@ -595,6 +755,7 @@ MyApplication::MyApplication(int &argc,char **argv)
   //setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
 #if USE_QT5
   installNativeEventFilter(this);
+  installEventFilter(this);
 #endif
 }
 

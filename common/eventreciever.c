@@ -258,6 +258,10 @@ static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window
 				places[len]=EVENT_EXTRA_R;
 				len++;
 			}
+			//if(a&EVENT_AUTOREPEAT2){
+			//	places[len]=EVENT_AUTOREPEAT;
+			//	len++;
+			//}
 			if(in_tevent->ID==TR_KEYBOARDUP){
 				places[len]=EVENT_UP;
 				len++;

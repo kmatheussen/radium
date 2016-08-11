@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "api_common_proc.h"
 
 
-extern struct Root *root;
+extern struct TEvent tevent;
 
 
 /*******************************************
@@ -38,6 +38,8 @@ extern struct Root *root;
 *******************************************/
 
 void cursorDown(int numlines,int windownum){
+  //  printf("cursorDOWN: doautorepeat: %d, autorepeat: %d\n", doAutoRepeat(), AutoRepeat(tevent.keyswitch));
+        
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
