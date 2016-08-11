@@ -311,6 +311,97 @@ static char get_char_from_keycode(int keyCode){
   return -1;
 }
 
+int OS_SYSTEM_get_keynum2(uint32_t keycode){
+  if(keycode >= 0x100)
+    return EVENT_NO;
+
+  int ret = keymap[keycode];
+  if (ret != EVENT_NO)
+    return ret;
+
+  char c = toupper(get_char_from_keycode(keycode));
+
+  switch(c){
+    case 'A':
+      return EVENT_A;
+    case 'B':
+      return EVENT_B;
+    case 'C':
+      return EVENT_C;
+    case 'D':
+      return EVENT_D;
+    case 'E':
+      return EVENT_E;
+    case 'F':
+      return EVENT_F;
+    case 'G':
+      return EVENT_G;
+    case 'H':
+      return EVENT_H;
+    case 'I':
+      return EVENT_I;
+    case 'J':
+      return EVENT_J;
+    case 'K':
+      return EVENT_K;
+    case 'L':
+      return EVENT_L;
+    case 'M':
+      return EVENT_M;
+    case 'N':
+      return EVENT_N;
+    case 'O':
+      return EVENT_O;
+    case 'P':
+      return EVENT_P;
+    case 'Q':
+      return EVENT_Q;
+    case 'R':
+      return EVENT_R;
+    case 'S':
+      return EVENT_S;
+    case 'T':
+      return EVENT_T;
+    case 'U':
+      return EVENT_U;
+    case 'V':
+      return EVENT_V;
+    case 'W':
+      return EVENT_W;
+    case 'X':
+      return EVENT_X;
+    case 'Y':
+      return EVENT_Y;
+    case 'Z':
+      return EVENT_Z;
+
+
+    case '0':
+      return EVENT_0;
+    case '1':
+      return EVENT_1;
+    case '2':
+      return EVENT_2;
+    case '3':
+      return EVENT_3;
+    case '4':
+      return EVENT_4;
+    case '5':
+      return EVENT_5;
+    case '6':
+      return EVENT_6;
+    case '7':
+      return EVENT_7;
+    case '8':
+      return EVENT_8;
+    case '9':
+      return EVENT_9;
+      
+    default:
+      return EVENT_NO;
+  }
+}
+
 int OS_SYSTEM_get_keynum(void *void_event){
   NSEvent *event = (NSEvent *)void_event;
 
@@ -406,11 +497,7 @@ int OS_SYSTEM_get_keynum(void *void_event){
   }
 }
 
-int OS_SYSTEM_get_qwerty_keynum(void *void_event){
-  NSEvent *event = (NSEvent *)void_event;
-
-  int keycode = [event keyCode];
-
+int OS_SYSTEM_get_qwerty_keynum2(uint32_t keycode){
   return keymap_qwerty[keycode];
 }
 

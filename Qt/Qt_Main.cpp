@@ -394,9 +394,8 @@ protected:
     //QObject *main_obj = dynamic_cast<QObject*>(main_window);
     //printf("Got event. timestamp: %d, last: %d, scancode: %x, symkey: %x, modifiers: %x\n", (int)timestamp, (int)last_timestamp, key_event->nativeScanCode(), key_event->nativeVirtualKey(), key_event->nativeModifiers());
 
-    
     int keynum = OS_SYSTEM_get_keynum2(key_event->nativeVirtualKey());
-
+    
     switch(keynum){
       case EVENT_ESC:
       case EVENT_UPARROW:
@@ -447,7 +446,11 @@ protected:
         ret = EventReciever(&tevent,window);
       
       if (ret==false) {
+#if FOR_MACOSX
+        keynum = OS_SYSTEM_get_qwerty_keynum2(key_event->nativeVirtualKey());
+#else
         keynum = OS_SYSTEM_get_qwerty_keynum2(key_event->nativeScanCode());
+#endif
         
         //printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
         
