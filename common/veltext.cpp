@@ -57,7 +57,8 @@ static void add_velocity(const struct WBlocks *wblock, VelText_trss &veltexts, s
 static void add_note(const struct WBlocks *wblock, VelText_trss &veltexts, struct Notes *note){
 
   int last_velocity = note->velocity;
-
+  int last_logtype = note->velocity_first_logtype;
+  
   {
     VelText tr = {};
     tr.p = note->l.p;
@@ -71,10 +72,11 @@ static void add_note(const struct WBlocks *wblock, VelText_trss &veltexts, struc
   while(velocity != NULL){
     add_velocity(wblock, veltexts, note, velocity);
     last_velocity = velocity->velocity;
+    last_logtype = velocity->logtype;
     velocity = NextVelocity(velocity);
   }
 
-  if (last_velocity != note->velocity_end)  {
+  if (last_velocity != note->velocity_end && last_logtype!=LOGTYPE_HOLD)  {
     VelText tr = {};
     tr.p = note->end;
     tr.logtype = LOGTYPE_IRRELEVANT;
