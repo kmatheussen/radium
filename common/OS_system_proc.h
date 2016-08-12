@@ -12,7 +12,7 @@ extern LANGSPEC int OS_SYSTEM_get_modifier(void *void_event);
 extern LANGSPEC int OS_SYSTEM_get_keynum(void *void_event);
 extern LANGSPEC int OS_SYSTEM_get_qwerty_keynum(void *void_event); // e.g. using scancode.
 
-extern LANGSPEC int OS_SYSTEM_get_keynum2(uint32_t ulong_keysum);
+extern LANGSPEC int OS_SYSTEM_get_keynum2(uint32_t ulong_keysum, bool keypad_pressed);
 extern LANGSPEC int OS_SYSTEM_get_qwerty_keynum2(uint32_t scancode);
 
 extern LANGSPEC bool OS_OSX_is_key_window(void *void_nsview);

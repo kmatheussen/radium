@@ -249,6 +249,45 @@ static int get_keypad_subID(MSG *msg){
 }
 #endif
 
+static int get_keypad_subID2(uint32_t wParam){
+  if(wParam==VK_RETURN)
+    return EVENT_KP_ENTER;
+  if(wParam==VK_DIVIDE)
+    return EVENT_KP_DIV;
+
+  switch(wParam){
+  case VK_MULTIPLY:
+    return EVENT_KP_MUL;
+  case 0x6d:
+    return EVENT_KP_SUB;
+  case 0x24:
+    return EVENT_KP_7;
+  case 0x26:
+    return EVENT_KP_8;
+  case 0x21:
+    return EVENT_KP_9;
+  case 0x25:
+    return EVENT_KP_4;
+  case 0x0c:
+    return EVENT_KP_5;
+  case 0x27:
+    return EVENT_KP_6;
+  case 0x23:
+    return EVENT_KP_1;
+  case 0x28:
+    return EVENT_KP_2;
+  case 0x22:
+    return EVENT_KP_3;
+  case 0x2d:
+    return EVENT_KP_0;
+  case 0x2e:
+    return EVENT_KP_DOT;
+  case 0x6b:
+    return EVENT_KP_ADD;
+  }
+  return EVENT_NO;
+}
+
 static int get_keypad_subID(MSG *msg){
   if(0x1000000 & msg->lParam){ // i.e. insert/home/pageup/delete/end/pagedown, an arrow key, KP_DIV or KP_ENTER. (strange flag)
     if(msg->wParam==VK_RETURN)
@@ -291,6 +330,18 @@ static int get_keypad_subID(MSG *msg){
   return EVENT_NO;
 }
 
+int OS_SYSTEM_get_keynum2(uint32_t wParam, bool keypad_pressed){
+  if(wParam >= 0x100)
+    return EVENT_NO;
+
+  if (keypad_pressed){
+    int subID = get_keypad_subID2(wParam);
+    if(subID!=EVENT_NO)
+      return subID;
+  }
+
+  return keymap[wParam];
+}
 
 int OS_SYSTEM_get_keynum(void *void_event){
   MSG *msg = (MSG*)void_event;
@@ -303,6 +354,16 @@ int OS_SYSTEM_get_keynum(void *void_event){
     return subID;
 
   return keymap[msg->wParam];
+}
+
+int OS_SYSTEM_get_qwerty_keynum2(uint32_t scancode){
+  if (scancode!=0){
+    int subID = get_subID_from_scancode(scancode);
+    if (subID!=EVENT_NO)
+      return subID;
+  }
+
+  return EVENT_NO;
 }
 
 int OS_SYSTEM_get_qwerty_keynum(void *void_event) {
@@ -446,7 +507,9 @@ static LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM l
       //printf("^^^^^^^^^^^^^^^^^^ p: %p\n",p);
       //printf("^^^^^^^^^^^^^^^^^^^^^ vkCode: %x\n",(int)p->vkCode);
 
+#if 0
       printf("  %s: vkCode: %x\n",wParam==WM_KEYDOWN ? "Down":"Up", (int)p->vkCode);
+#endif
       
       if(p->vkCode==VK_LWIN || p->vkCode==VK_RWIN){// || p->vkCode==VK_RMENU){
 
@@ -455,6 +518,7 @@ static LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM l
         else
           ATOMIC_SET(right_windows_down, wParam==WM_KEYDOWN);
 
+#if 0
         if(p->vkCode==VK_LWIN && wParam==WM_KEYDOWN)
           printf("   1. Left down\n");
         else if (p->vkCode==VK_LWIN && wParam==WM_KEYUP)
@@ -463,7 +527,8 @@ static LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM l
           printf("   2. Right down\n");
         else if (p->vkCode==VK_RMENU)
           printf("   2. Right up\n");
-
+#endif
+        
         #if 0
         // Don't think this is any point.
         if (left_windows_down)

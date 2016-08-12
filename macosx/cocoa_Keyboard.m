@@ -311,7 +311,7 @@ static char get_char_from_keycode(int keyCode){
   return -1;
 }
 
-int OS_SYSTEM_get_keynum2(uint32_t keycode){
+int OS_SYSTEM_get_keynum2(uint32_t keycode, bool keypad_pressed){
   if(keycode >= 0x100)
     return EVENT_NO;
 

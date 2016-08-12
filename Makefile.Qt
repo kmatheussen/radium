@@ -149,7 +149,8 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 FULL_VERSION ?= 1
 
 # Note that "make clean" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
-DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -Og #-fsanitize=address # -DDISABLE_BDWGC -Og -
+OS_DEBUG_BUILD_OPTS ?= -fsanitize=address -Og  #-Og -fsanitize=address # -DDISABLE_BDWGC -Og -
+DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
 # -Og -Og -fsanitize=address
 #-Og 
 #  -fsanitize=thread 

@@ -294,7 +294,7 @@ int OS_SYSTEM_get_keynum(void *void_event){
 #endif
 }
 
-int OS_SYSTEM_get_keynum2(uint32_t uint32_keysym){
+int OS_SYSTEM_get_keynum2(uint32_t uint32_keysym, bool keypad_pressed){
 #if USE_QT5
   KeySym keysym = (KeySym)uint32_keysym;
   return keysym_to_keynum(keysym);

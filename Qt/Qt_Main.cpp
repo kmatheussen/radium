@@ -394,7 +394,10 @@ protected:
     //QObject *main_obj = dynamic_cast<QObject*>(main_window);
     //printf("Got event. timestamp: %d, last: %d, scancode: %x, symkey: %x, modifiers: %x\n", (int)timestamp, (int)last_timestamp, key_event->nativeScanCode(), key_event->nativeVirtualKey(), key_event->nativeModifiers());
 
-    int keynum = OS_SYSTEM_get_keynum2(key_event->nativeVirtualKey());
+    //printf("key: %x. mod: %x. keypad? %s\n",key_event->nativeVirtualKey(),key_event->nativeModifiers(), (key_event->modifiers() & Qt::KeypadModifier) ? "Yes" : "No");
+    // ^
+    // windows: Seems like key_event->nativeVirtualKey() return wParam, while key_event->nativeModifiers() returns lParam.
+    int keynum = OS_SYSTEM_get_keynum2(key_event->nativeVirtualKey(), key_event->modifiers() & Qt::KeypadModifier);
     
     switch(keynum){
       case EVENT_ESC:
