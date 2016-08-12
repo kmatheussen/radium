@@ -492,7 +492,7 @@ static int get_effect_format(SoundPlugin *plugin, int effect_num){
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
   Data *data = (Data*)plugin->data;
-  float value = data->control_values[effect_num];
+  float value = safe_float_read(&data->control_values[effect_num]);
 
   switch(get_effect_format(plugin,effect_num)){
   case EFFECT_FORMAT_FLOAT:
@@ -571,9 +571,15 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
       }
     }
 
+    QString error_string = qlibrary->errorString();
+    
     delete qlibrary;
-    fprintf(stderr,"(failed) ");
+    fprintf(stderr,"(failed: \"%s\") ", error_string.toUtf8().constData());
     fflush(stderr);
+
+#if !defined(RELEASE)
+    abort();
+#endif
     return;
   }
 
