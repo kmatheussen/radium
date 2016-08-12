@@ -30,8 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Widget_proc.h"
 
 
-extern void set_editor_focus(void);
-
 #define MakeFocusSnifferClass(Class)                                    \
   class FocusSniffer##Class : public GL_PauseCaller, public Class {      \
   public:                                                               \

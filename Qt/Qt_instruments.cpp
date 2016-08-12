@@ -514,11 +514,15 @@ void GFX_InstrumentWindowToFront(void){
   GL_lock(); {
     instruments_widget->show();
   }GL_unlock();
+
+  set_editor_focus();
 }
 
 void GFX_InstrumentWindowToBack(void){
   instruments_widget->hide();
   //set_widget_height(0);
+
+  set_editor_focus();
 }
 
 
@@ -527,6 +531,8 @@ void GFX_showHideInstrumentWidget(struct Tracker_Windows *window){
     GFX_InstrumentWindowToFront();
   else
     GFX_InstrumentWindowToBack();
+
+  set_editor_focus();
 }
 
 // These functions (MIDIGFX_*) seems to be only used by the GTK1 instrument window when the wrong value

@@ -14,6 +14,9 @@
 
 extern bool radium_runs_custom_exec;
 
+extern void set_editor_focus(void);
+
+
 struct MyQMessageBox : public QMessageBox {
   MyQMessageBox(QWidget *parent = NULL)
     : QMessageBox(parent)

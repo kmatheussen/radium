@@ -1187,6 +1187,7 @@ void GFX_ShowMixer(void){
 }
 void GFX_HideMixer(void){
   g_mixer_widget->hide();
+  set_editor_focus();
 }
 
 void GFX_showHideMixerWidget(void){
@@ -1196,6 +1197,7 @@ void GFX_showHideMixerWidget(void){
     else
       g_mixer_widget->hide();
   }GL_unlock();
+  set_editor_focus();
 }
 
 static const int g_main_pipe_patch_id = 0;

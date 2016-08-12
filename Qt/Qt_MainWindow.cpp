@@ -324,10 +324,14 @@ void GFX_ShowEditor(void){
   GL_lock();{
     g_editor->show();
   }GL_unlock();
+
+  set_editor_focus();
 }
 
 void GFX_HideEditor(void){
   g_editor->hide();
+
+  set_editor_focus();
 }
 
 void GFX_showHideEditor(void){
@@ -337,6 +341,8 @@ void GFX_showHideEditor(void){
     else
       g_editor->hide();
   }GL_unlock();
+
+  set_editor_focus();
 }
 
 static int get_track_from_x(float x){

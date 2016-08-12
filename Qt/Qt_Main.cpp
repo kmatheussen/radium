@@ -473,8 +473,8 @@ protected:
     if(ret==true)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
 
-    
-    return QApplication::eventFilter(obj, event);
+    return true;
+    //return QApplication::eventFilter(obj, event);
   }
 
   
