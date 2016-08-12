@@ -306,11 +306,32 @@ void cursorPrevTrack(int windownum){
 	CursorPrevTrack_CurrPos(window);
 }
 
-int currentTrack(int windownum){
-	struct Tracker_Windows *window=getWindowFromNum(windownum);
-	if(window==NULL) return 0;
+int currentBlock(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL)
+    return 0;
+  else
+    return window->wblock->l.num;
+}
 
-        return window->curr_track;
+int currentTrack(int blocknum, int windownum){
+  if (blocknum==-1){
+    
+    struct Tracker_Windows *window=getWindowFromNum(windownum);
+    if(window==NULL)
+      return 0;
+    else
+      return window->curr_track;
+    
+  } else {
+    
+    struct Tracker_Windows *window;
+    struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+    if(wblock==NULL)
+      return 0;
+    else
+      return wblock->wtrack->l.num;
+  }
 }
 
 int currentLine(int windownum){
