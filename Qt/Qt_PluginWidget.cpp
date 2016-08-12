@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
   const SoundPluginType *type = plugin->type;
-  PluginWidget *widget = new PluginWidget(parent);
+  PluginWidget *widget = new PluginWidget(parent, patch);
 
   //PluginType *pType = m_pPlugin->type();
 
@@ -110,18 +110,17 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
   }
 
   // Maybe we need a tabbed widget...
-  QTabWidget  *pTabWidget = NULL;
   QVBoxLayout *pVBoxLayout = NULL;
 
   if (iPages > 1) {
-    pTabWidget  = new QTabWidget(widget);
+    widget->pTabWidget  = new QTabWidget(widget);
     pVBoxLayout = new QVBoxLayout(widget);
     pVBoxLayout->setMargin(0);
     pVBoxLayout->setSpacing(0);
 #if USE_QT5
     static QStyle *style = QStyleFactory::create("plastique");
     if (style!=NULL)
-      pTabWidget->setStyle(style); // fusion have too much grey border around tabs
+      widget->pTabWidget->setStyle(style); // fusion have too much grey border around tabs
 #endif
   }
 
@@ -132,10 +131,10 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
   int iPage = 0;
   const QString sPage = "Page %1";
   QWidget *pPageWidget = NULL;
-  if (pTabWidget) {	
+  if (widget->pTabWidget) {	
     pPageWidget = new QWidget(widget);
     pPageWidget->setLayout(pGridLayout);
-    pTabWidget->addTab(pPageWidget, sPage.arg(iPage++));
+    widget->pTabWidget->addTab(pPageWidget, sPage.arg(iPage++));
   }
 
 
@@ -164,27 +163,27 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
 
     //PluginParam *pParam = param.value();
     //PluginParamWidget *pParamWidget = new PluginParamWidget(pParam, this);
-    ParamWidget *param_widget = new ParamWidget(widget, patch, effect_num);
+    ParamWidget *param_widget = new ParamWidget(widget, patch, effect_num, iPage-1);
     widget->_param_widgets.push_back(param_widget);
     pGridLayout->addWidget(param_widget, iY, iX);
     if (++iY >= iYsPerPage) {
       iY = 0;
       if (++iX >= iXsPerPage) {
         iX = 0;
-        if (pTabWidget && iPage < iPages) {
+        if (widget->pTabWidget && iPage < iPages) {
           pGridLayout = new QGridLayout(widget);
           pGridLayout->setMargin(0);
           pGridLayout->setSpacing(0);
           pPageWidget = new QWidget(widget);
           pPageWidget->setLayout(pGridLayout);
-          pTabWidget->addTab(pPageWidget, sPage.arg(iPage++));
+          widget->pTabWidget->addTab(pPageWidget, sPage.arg(iPage++));
         }
       }
     }
   }
 
-  if (pVBoxLayout && pTabWidget) {
-    pVBoxLayout->addWidget(pTabWidget);
+  if (pVBoxLayout && widget->pTabWidget) {
+    pVBoxLayout->addWidget(widget->pTabWidget);
     widget->setLayout(pVBoxLayout);
   } else {
     widget->setLayout(pGridLayout);

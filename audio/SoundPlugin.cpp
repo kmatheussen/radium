@@ -353,6 +353,8 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   SoundPlugin *plugin = (SoundPlugin*)V_calloc(1,sizeof(SoundPlugin));
   plugin->type = plugin_type;
 
+  ATOMIC_SET(plugin->effect_num_to_show_because_it_was_used_externally, -1);
+  
   int buffer_size = MIXER_get_buffer_size();
 
   plugin->midi_learns = new radium::Vector<SoundPluginEffectMidiLearn*>;

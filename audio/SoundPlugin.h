@@ -395,6 +395,8 @@ typedef struct SoundPlugin{
 #endif
 
   DEFINE_ATOMIC(bool, is_visible);
+
+  DEFINE_ATOMIC(int, effect_num_to_show_because_it_was_used_externally);
 } SoundPlugin;
 
 

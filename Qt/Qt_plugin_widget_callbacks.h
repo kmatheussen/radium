@@ -377,10 +377,9 @@ public:
     prepare_for_deletion();
   }
       
-  void update_widget() {
+  void update_widget(void) {
     if(_plugin_widget != NULL)
-      for(ParamWidget *param_widget : _plugin_widget->_param_widgets)
-        param_widget->update_gui_element();
+      _plugin_widget->update_gui();
     
     if(_pd_plugin_widget != NULL)
       _pd_plugin_widget->update_gui();

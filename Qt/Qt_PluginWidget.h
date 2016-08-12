@@ -48,16 +48,18 @@ class ParamWidget : public QWidget {
   bool _can_update_effect_value;
   QString _name;
   SizeType _size_type;
+  int _tab_page_num;
   
- ParamWidget(QWidget *parent, struct Patch *patch, int effect_num)
-   : QWidget(parent)
+  ParamWidget(QWidget *parent, struct Patch *patch, int effect_num, int tab_page_num)
+    : QWidget(parent)
     , _patch(patch)
     , _effect_num(effect_num)
     , _slider(NULL)
     , _check_button(NULL)
     , _can_update_effect_value(false)
     , _size_type(SIZETYPE_NORMAL)
-    {
+    , _tab_page_num(tab_page_num)
+  {
       
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       const SoundPluginType *type  = plugin->type;
@@ -336,16 +338,38 @@ class ParamWidget : public QWidget {
 
 
 struct PluginWidget : public QWidget{
+  struct Patch *_patch;
+  QTabWidget  *pTabWidget = NULL;
+  
   radium::Vector<ParamWidget*> _param_widgets;
 
   int _num_rows;
   
-  PluginWidget(QWidget *parent)
+ PluginWidget(QWidget *parent, struct Patch *patch)
     : QWidget(parent)
+    , _patch(patch)
     , _num_rows(0)
   {
   }
 
+  void update_gui(void){
+    for(ParamWidget *param_widget : _param_widgets)
+      param_widget->update_gui_element();
+
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
+    if (plugin != NULL){
+      if (ATOMIC_GET(plugin->effect_num_to_show_because_it_was_used_externally) >= 0){
+        int effect_num_to_show = ATOMIC_SET_RETURN_OLD(plugin->effect_num_to_show_because_it_was_used_externally, -1);
+        R_ASSERT_RETURN_IF_FALSE(effect_num_to_show >= 0);
+        R_ASSERT_RETURN_IF_FALSE(effect_num_to_show < _param_widgets.size());
+        if (pTabWidget != NULL)
+          pTabWidget->setCurrentIndex(_param_widgets[effect_num_to_show]->_tab_page_num);
+      }
+    }
+
+  }
+  
 
   void set_automation_value_pointers(SoundPlugin *plugin){
     for(ParamWidget *paramWidget : _param_widgets){

@@ -71,6 +71,8 @@ namespace{
       volatile struct Patch *patch = plugin->patch;
       if (patch != NULL)
         ATOMIC_SET(patch->widget_needs_to_be_updated, true);
+
+      ATOMIC_SET(plugin->effect_num_to_show_because_it_was_used_externally, parameterIndex);
     }
  
     // Called to indicate that something else in the plugin has changed, like its program, number of parameters, etc.
