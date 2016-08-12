@@ -456,6 +456,13 @@ bool instrumentIsPermanent(int instrument_id){
     return true; // Can not delete midi instruments.
 }
 
+bool instrumentIsAudio(int instrument_id){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  return patch->instrument == get_audio_instrument();
+}
 
 // Mixer GUI
 float getInstrumentX(int instrument_id){
