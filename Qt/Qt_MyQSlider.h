@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/instruments_proc.h"
 #include "../common/vector_proc.h"
 #include "../common/settings_proc.h"
+#include "../common/placement_proc.h"
 
 #include "../audio/undo_audio_effect_proc.h"
 #include "../audio/SoundPlugin.h"
@@ -237,6 +238,7 @@ struct MyQSlider : public QSlider {
       int midi_relearn=-10;
       int midi_learn=-10;
       int record=-10;
+      int add_automation_to_current_track=-10;
       
       if(_is_a_pd_slider){
         /*
@@ -263,6 +265,8 @@ struct MyQSlider : public QSlider {
       if (!is_recording_automation)
         record = VECTOR_push_back(&options, "Record");
 
+      add_automation_to_current_track = VECTOR_push_back(&options, "Add automation to current track");
+            
       //VECTOR_push_back(&options, "");
       
       //VECTOR_push_back(&options, "Set Value");
@@ -291,7 +295,52 @@ struct MyQSlider : public QSlider {
 
       else if (command==record)
         PLUGIN_set_recording_automation(plugin, _effect_num, true);
-      
+
+      else if (command==add_automation_to_current_track) {
+
+        int blocknum = currentBlock(-1);
+        int tracknum = R_MAX(0, currentTrack(blocknum, -1));
+        int current_instrument_id = getInstrumentForTrack(tracknum, blocknum, -1);
+        if (current_instrument_id < 0) {
+          current_instrument_id = _patch->id;
+          setInstrumentForTrack(_patch->id, tracknum, blocknum, -1);
+        }
+        
+        if (!instrumentIsAudio(current_instrument_id)){
+          
+          GFX_Message(NULL, "The instrument for the current track is not an audio instrument");
+          
+        } else {
+
+          const char *fxname = PLUGIN_get_effect_name(plugin, _effect_num);
+          float value = PLUGIN_get_effect_value(plugin, _effect_num, VALUE_FROM_STORAGE);
+
+          int fxnum = getFx(fxname, tracknum, _patch->id, blocknum, -1);
+
+          if (fxnum >= 0){
+
+            createFxnode(value,
+                         p_Create(currentLine(blocknum, -1), 0, 1),
+                         fxnum,
+                         tracknum,
+                         blocknum,
+                         -1);
+            
+            
+          } else {
+                            
+            createFx(value,
+                     p_Create(currentLine(blocknum, -1), 0, 1),
+                     fxname,
+                     tracknum,
+                     _patch->id,
+                     blocknum,
+                     -1);
+          }
+        }
+      }
+        
+        
       GFX_update_instrument_widget(_patch);
         
 #if 0
