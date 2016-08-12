@@ -334,11 +334,13 @@ int currentTrack(int blocknum, int windownum){
   }
 }
 
-int currentLine(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);
-  if(window==NULL) return 0;
-
-  return window->wblock->curr_realline;
+int currentLine(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+  else
+    return wblock->curr_realline;
 }
 
 void setCurrentLine(int linenum, int windownum){
