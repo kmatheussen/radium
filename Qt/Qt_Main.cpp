@@ -350,6 +350,7 @@ protected:
   bool last_key_was_lalt;
 
   int _last_keynum = EVENT_NO;
+  int _last_qwerty_keynum = EVENT_NO;
   
   virtual bool eventFilter(QObject *obj, QEvent *event) override {
     //printf("Got event. type: %d (%d)\n", event->type(), 6);
@@ -452,12 +453,14 @@ protected:
         ret = EventReciever(&tevent,window);
       
       if (ret==false) {
+        keynum = _last_qwerty_keynum;
+#if 0
 #if FOR_MACOSX
         keynum = OS_SYSTEM_get_qwerty_keynum2(_last_keynum);
 #else
         keynum = OS_SYSTEM_get_qwerty_keynum2(key_event->nativeScanCode());
 #endif
-        
+#endif       
         //printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
         
         if (keynum==EVENT_NO){
@@ -466,7 +469,7 @@ protected:
         }
         
         tevent.SubID=keynum;
-        
+
         ret = EventReciever(&tevent,window);
       }
     }
@@ -483,6 +486,9 @@ protected:
   
   bool SystemEventFilter(void *event){
 
+    _last_keynum = EVENT_NO;
+    _last_qwerty_keynum = EVENT_NO;
+    
     if(ATOMIC_GET(is_starting_up)==true)
       return false;
 
@@ -547,6 +553,7 @@ protected:
 
     _last_keynum = modifier;
     
+
     //printf("modifier: %d\n",modifier);
     if (g_show_key_codes){
       char *message = talloc_format("%d - %d - %d", is_key_press ? 1 : 0, modifier, OS_SYSTEM_get_scancode(event));
@@ -644,8 +651,11 @@ protected:
       return false;
 
     _last_keynum = OS_SYSTEM_get_keynum(event);
-    last_pressed_key = _last_keynum;
     
+    last_pressed_key = _last_keynum;
+
+    _last_qwerty_keynum = OS_SYSTEM_get_qwerty_keynum(event);
+      
     return false;
 
     /*
