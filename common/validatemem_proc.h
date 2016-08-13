@@ -61,7 +61,7 @@ extern "C" {
 
 #if !defined(VALIDATE_MEM)
 
-static void* my_calloc(size_t size1,size_t size2){
+static inline void* my_calloc(size_t size1,size_t size2){
   int size = size1*size2;
 
   // 1. allocate

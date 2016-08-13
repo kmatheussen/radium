@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/transpose_proc.h"
 #include "../common/quantitize_proc.h"
+#include "../common/fxtext_proc.h"
 #include "../common/new/backwards_proc.h"
 #include "../common/new/invert_proc.h"
 #include "../common/new/pitchexpand_proc.h"
@@ -137,12 +138,32 @@ void backwardsRange(int windownum){
 
 /************** Quantitize ******************/
 
+// quantitize notes only
 void quantitizeTrack(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
 
   Quantitize_track_CurrPos(window);
   window->must_redraw = true;
+}
+
+// quantitize notes if placed in the notes subtrack, fxs if placed in fx subtrack. (cents and velocities not supported yet)
+void generalTrackQuantitize(int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, -1, &wblock, -1);
+  if (wtrack==NULL)
+    return;
+
+  struct FXs *to_fxs;
+  int subtrack = FXTEXT_subsubtrack(window, wtrack, &to_fxs);
+
+  if (subtrack < 0)
+    quantitizeTrack(windownum);
+  else {
+    Quantitize_fxs(window, wblock, wtrack, to_fxs);
+    window->must_redraw = true;
+  }
 }
 
 void quantitizeBlock(int windownum){

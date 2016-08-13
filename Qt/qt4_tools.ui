@@ -67,7 +67,7 @@
          </sizepolicy>
         </property>
         <property name="title">
-         <string>Quantization</string>
+         <string>Note quantization</string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0">
          <item>
@@ -158,7 +158,16 @@
               <property name="sizeConstraint">
                <enum>QLayout::SetDefaultConstraint</enum>
               </property>
-              <property name="margin">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
                <number>0</number>
               </property>
               <item>

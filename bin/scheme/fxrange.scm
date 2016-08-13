@@ -63,7 +63,7 @@
 ;; A list of fxs, one fxs for each track
 (define *clipboard-fxs* '())
 
-
+      
 
 (define (scissor-fxnodes-keep-outside fxnodes startplace endplace)
   (assert (> endplace startplace))
@@ -946,3 +946,95 @@
 (paste-fx-range! -1 2 14)
 ||#
   
+
+(define (quantitize-down-place place quant)
+  (* quant (floor (/ place quant))))
+
+(***assert*** (quantitize-down-place 5 2)
+              4)
+(***assert*** (quantitize-down-place 4 2)
+              4)
+
+
+(define (simple-quantitize-fxnodes fxnodes quant)
+  (let loop ((fxnodes fxnodes)
+             (curr-place 0)
+             (last-val #f)
+             (last-logtype #f))
+    (if (null? fxnodes)
+        (if (not last-val)
+            '()
+            (list (create-fxnode curr-place last-val last-logtype)))
+        (let* ((fxnode (car fxnodes))
+               (place (quantitize-down-place (fxnode-place fxnode) quant))
+               (rest (loop (cdr fxnodes)
+                           place
+                           (fxnode-value fxnode)
+                           (fxnode-logtype fxnode))))
+          (if (and (> place curr-place)
+                   last-val)
+              (cons (create-fxnode curr-place
+                                   last-val
+                                   last-logtype)
+                    rest)
+              rest)))))
+
+(***assert*** (simple-quantitize-fxnodes (list) 1)
+              '())
+
+(***assert*** (simple-quantitize-fxnodes (list
+                                          (create-fxnode 8.2 9 'a))
+                                         1)
+              (list (create-fxnode 8 9 'a)))
+
+(***assert*** (simple-quantitize-fxnodes (list
+                                          (create-fxnode 5   1 'a)
+                                          (create-fxnode 5.2 2 'b)
+                                          (create-fxnode 6   3 'c)
+                                          (create-fxnode 7.6 4 'd)
+                                          (create-fxnode 8   5 'e))
+                                         1)
+              (list (create-fxnode 5 2 'b)
+                    (create-fxnode 6 3 'c)
+                    (create-fxnode 7 4 'd)
+                    (create-fxnode 8 5 'e)))
+                                           
+(***assert*** (simple-quantitize-fxnodes (list
+                                          (create-fxnode 5   1 'a)
+                                          (create-fxnode 5.2 2 'b)
+                                          (create-fxnode 6   3 'c)
+                                          (create-fxnode 7.6 4 'd)
+                                          (create-fxnode 8   5 'e))
+                                         1/2)
+              (list (create-fxnode 5 2 'b)
+                    (create-fxnode 6 3 'c)
+                    (create-fxnode 7.5 4 'd)
+                    (create-fxnode 8 5 'e)))
+                                           
+
+(define (simple-quantitize-fxs-internal fxs)
+  (map (lambda (fx)
+         (create-fx (fx-name fx)
+                    (fx-instrument fx)
+                    (simple-quantitize-fxnodes (fx-nodes fx))))
+       fxs))
+
+
+(define (simple-quantitize-fxs! blocknum tracknum fxnum quant)
+  (define old-fxs (get-track-fxs blocknum tracknum))
+  (define new-fxs (map (lambda (fx fxnum2)
+                         (if (= fxnum fxnum2)
+                             (create-fx (fx-name fx)
+                                        (fx-instrument fx)
+                                        (simple-quantitize-fxnodes (fx-nodes fx) quant))
+                             fx))
+                       old-fxs
+                       (iota (length old-fxs))))
+  (paste-track-fxs! blocknum
+                    tracknum
+                    new-fxs))
+
+
+#||
+(simple-quantitize-fxs! 0 1 0 1)
+||#

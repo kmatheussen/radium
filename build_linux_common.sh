@@ -71,7 +71,7 @@ export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 export OS_OPTS="-Werror=array-bounds -msse2 -fno-omit-frame-pointer -DFOR_LINUX -DWITH_PD"
 #export OS_OPTS="-Werror=array-bounds -march=native"
 
-if [ ! -z IS_LINUX_BINARY ] ; then
+if ! env |grep IS_LINUX_BINARY ; then
     export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV"
 fi
 
@@ -90,7 +90,11 @@ else
     LLVMLIBS=`llvm-config --libs`
 fi
 
-FAUSTLDFLAGS="bin/packages/faust2/compiler/libfaust.a `pkg-config --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
+if env |grep IS_LINUX_BINARY ; then
+    FAUSTLDFLAGS=""
+else    
+    FAUSTLDFLAGS="bin/packages/faust2/compiler/libfaust.a `pkg-config --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
+fi
 # _debug
 
 export OS_LDFLAGS="bin/packages/QScintilla_gpl-2.9.2/Qt4Qt5/libqscintilla2.a $FAUSTLDFLAGS bin/packages/libpd-master/libs/libpds.a pluginhost/Builds/Linux/build/libMyPluginHost.a -lasound -ljack -llrdf -pthread -lrt -lX11 $GCDIR/.libs/libgc.a  $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` -lXext `$PKG --libs glib-2.0` -lxcb -lxcb-keysyms -Wl,-Bstatic -lbfd -Wl,-Bdynamic -lz -liberty -lutil -ldl"

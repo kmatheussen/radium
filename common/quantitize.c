@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_tracks_proc.h"
 #include "undo_range_proc.h"
 #include "undo_maintempos_proc.h"
+#include "undo_fxs_proc.h"
 #include "wtracks_proc.h"
 #include "notes_legalize_proc.h"
 #include "clipboard_range_copy_proc.h"
@@ -40,6 +41,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Rational.h"
 #include "../embedded_scheme/scheme_proc.h"
 #include "settings_proc.h"
+
+#include "../api/api_proc.h"
 
 #include "quantitize_proc.h"
 
@@ -63,6 +66,28 @@ void Quantitize_set_quant_type(int type){
   SETTINGS_write_int("quantization_type", type);
 }
 */
+
+void Quantitize_fxs(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FXs *fxs){
+
+  ADD_UNDO(FXs(window, wblock->block, wtrack->track, wblock->curr_realline));
+
+  Undo_start_ignoring_undo_operations();{
+
+    int fxnum = getFx(fxs->fx->name, wtrack->l.num, wtrack->track->patch->id, wblock->l.num, window->l.num);
+                   
+    SCHEME_eval(
+                talloc_format("(simple-quantitize-fxs! %d %d %d %d/%d)",
+                              wblock->block->l.num,
+                              wtrack->track->l.num,
+                              fxnum,
+                              root->quantitize_options.quant.numerator, root->quantitize_options.quant.denominator
+                              )
+                );
+
+  }Undo_stop_ignoring_undo_operations();
+
+}
+
 
 quantitize_options_t Quantitize_get_default_options(void){
   quantitize_options_t options;
