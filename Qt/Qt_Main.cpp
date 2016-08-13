@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+
 #include "../common/includepython.h"
 
 #include <signal.h>
@@ -348,6 +349,8 @@ protected:
 
   bool last_key_was_lalt;
 
+  int _last_keynum = EVENT_NO;
+  
   virtual bool eventFilter(QObject *obj, QEvent *event) override {
     //printf("Got event. type: %d (%d)\n", event->type(), 6);
 
@@ -397,7 +400,7 @@ protected:
     //printf("key: %x. mod: %x. keypad? %s\n",key_event->nativeVirtualKey(),key_event->nativeModifiers(), (key_event->modifiers() & Qt::KeypadModifier) ? "Yes" : "No");
     // ^
     // windows: Seems like key_event->nativeVirtualKey() return wParam, while key_event->nativeModifiers() returns lParam.
-    int keynum = OS_SYSTEM_get_keynum2(key_event->nativeVirtualKey(), key_event->modifiers() & Qt::KeypadModifier);
+    int keynum = _last_keynum; //OS_SYSTEM_get_keynum2(key_event->nativeVirtualKey(), key_event->modifiers() & Qt::KeypadModifier);
     
     switch(keynum){
       case EVENT_ESC:
@@ -430,7 +433,7 @@ protected:
     if (tevent_autorepeat)
       R_ASSERT(tevent.ID=TR_KEYBOARD);
 
-    //printf("   %s: keynum1: %d. switch: %d. Type: %d, auto: %d\n",is_key_press?"DOWN":"UP", keynum, tevent.keyswitch,(int)key_event->type(), tevent_autorepeat);
+    //printf("   %s: keynum1: %d. (native: %d). switch: %d. Type: %d, auto: %d\n",is_key_press?"DOWN":"UP", keynum, key_event->nativeVirtualKey(), tevent.keyswitch,(int)key_event->type(), tevent_autorepeat);
 
 
     bool ret;
@@ -450,7 +453,7 @@ protected:
       
       if (ret==false) {
 #if FOR_MACOSX
-        keynum = OS_SYSTEM_get_qwerty_keynum2(key_event->nativeVirtualKey());
+        keynum = OS_SYSTEM_get_qwerty_keynum2(_last_keynum);
 #else
         keynum = OS_SYSTEM_get_qwerty_keynum2(key_event->nativeScanCode());
 #endif
@@ -542,6 +545,8 @@ protected:
     
     int modifier = OS_SYSTEM_get_modifier(event); // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event on windows. Not too sure about EVENT_EXTRA_R either (VK_APPS key) (doesn't matter, EVENT_EXTRA_R is abandoned, and the key is just used to configure block). In addition, the release value order might be wrong if pressing several modifier keys, still windows only.
 
+    _last_keynum = modifier;
+    
     //printf("modifier: %d\n",modifier);
     if (g_show_key_codes){
       char *message = talloc_format("%d - %d - %d", is_key_press ? 1 : 0, modifier, OS_SYSTEM_get_scancode(event));
@@ -638,6 +643,8 @@ protected:
     if (editor_has_keyboard==false)
       return false;
 
+    _last_keynum = OS_SYSTEM_get_keynum(event);
+        
     return false;
 
     /*

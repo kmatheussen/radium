@@ -68,9 +68,12 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds -msse2 -fno-omit-frame-pointer -DFOR_LINUX -DWITH_PD -DWITH_FAUST_DEV" #    
+export OS_OPTS="-Werror=array-bounds -msse2 -fno-omit-frame-pointer -DFOR_LINUX -DWITH_PD"
 #export OS_OPTS="-Werror=array-bounds -march=native"
 
+if [ ! -z IS_LINUX_BINARY ] ; then
+    export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV"
+fi
 
 export VST_OPTS="-DUSE_VESTIGE=1"
 
