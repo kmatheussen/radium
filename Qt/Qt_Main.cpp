@@ -993,8 +993,9 @@ protected:
     
     if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING){
       P2MUpdateSongPosCallBack();
-      PlayCallVeryOften();
     }
+
+    PlayCallVeryOften();
 
     if (num_calls % (50/interval) == 0) // 50ms = 3*1000ms/60 (each third frame)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function    

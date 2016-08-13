@@ -61,11 +61,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 *********************************************************/
 
 extern PlayerClass *pc;
-extern struct Root *root;
+
+static bool g_player_was_stopped_manually = true;
+
 
 extern void (*Ptask2MtaskCallBack)(void);
 
-static void PlayStopReally(bool doit){ 
+static void PlayStopReally(bool doit){
+    g_player_was_stopped_manually = true;
+    
         //ATOMIC_SET(pc->isplaying, false);
 	//ATOMIC_SET(pc->initplaying, false);
         //ATOMIC_SET(pc->playertask_has_been_called, false);
@@ -77,7 +81,6 @@ static void PlayStopReally(bool doit){
           return;
         
         ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
-        pc->is_playing_range = false;
         
         printf("PlayStopReally called: %s\n",doit==true?"true":"false");
 
@@ -137,7 +140,10 @@ static void PlayStopReally(bool doit){
         R_ASSERT(is_playing()==false);
 }
 
+
 void PlayStop(void){
+  g_player_was_stopped_manually = true;
+  
   if(!is_playing()){
     StopAllInstruments();
     R_ASSERT(is_playing()==false);
@@ -149,6 +155,8 @@ void PlayStop(void){
 static void start_player(int playtype, int playpos, bool set_curr_playlist, Place *place, struct Blocks *block){
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
 
+  g_player_was_stopped_manually = false;
+    
   // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
   //while(GC_is_disabled()==false){
   //printf("Calling gc_disable: %d\n",GC_dont_gc);
@@ -192,12 +200,13 @@ static void start_player(int playtype, int playpos, bool set_curr_playlist, Plac
   InitPEQline(block,place);
   InitPEQblock(block,place);
   InitAllPEQnotes(block,place);
-  
+
   ATOMIC_SET(pc->player_state, PLAYER_STATE_STARTING_TO_PLAY);
-  while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_PLAYING)
-    OS_WaitForAShortTime(5);
+  while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_PLAYING && ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED)
+    OS_WaitForAShortTime(2);
 }
 
+// pc->is_playing_range must be set before calling this function
 static void PlayBlock(
 	struct Blocks *block,
 	Place *place,
@@ -208,7 +217,7 @@ static void PlayBlock(
     playtype=PLAYBLOCK;
   else
     playtype=PLAYBLOCK_NONLOOP;
-  
+
   start_player(playtype, 0, false, place, block);
 }
 
@@ -217,11 +226,12 @@ void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
 
 	ATOMIC_SET(root->setfirstpos, true);
 	ATOMIC_SET(pc->seqtime, 0);
-
+        
         {
           struct WBlocks *wblock=window->wblock;
           Place place;
           PlaceSetFirstPos(&place);
+          pc->is_playing_range = false;
           PlayBlock(wblock->block,&place,do_loop);
         }
 }
@@ -243,6 +253,7 @@ void PlayBlockCurrPos(struct Tracker_Windows *window){
 
 //	printf("contblock, time: %d\n",pc->seqtime);
 
+        pc->is_playing_range = false;
 	PlayBlock(wblock->block,place,true);
 }
 
@@ -256,8 +267,8 @@ static void PlayRange(struct Tracker_Windows *window, Place *place){
   //Place *place_start = getRangeStartPlace(wblock);
   Place *place_end   = getRangeEndPlace(wblock);
   pc->range_duration = Place2STime(wblock->block, place_end) - Place2STime(wblock->block, place);
-  pc->is_playing_range = true;
   
+  pc->is_playing_range = true;
   PlayBlock(wblock->block,place,true);
 }
 
@@ -345,30 +356,22 @@ static void EditorFollowsPlayCursorLoop(void){
 
 // called very often
 static void PlayHandleRangeLoop(void){
-
-  struct Blocks *block = atomic_pointer_read((void**)&pc->block);
+  //printf("is_range: %d, is_playing: %d, stopped_manually: %d\n",pc->is_playing_range, is_playing(), g_player_was_stopped_manually);
   
-  if (pc->is_playing_range == false || block==NULL)
+  if (pc->is_playing_range == false)
     return;
 
-  //printf("duration: %d\nrealtime: %d\n\n", (int)duration, (int)pc->therealtime);
-
-  
-  STime start_therealtime = ATOMIC_GET(pc->therealtime);
-
-  if (start_therealtime >= pc->range_duration/block->reltempo) {
+  if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED && g_player_was_stopped_manually==false) {
+    StopAllInstruments();
     PlayRangeFromStart(root->song->tracker_windows);
-    int counter = 0;
-    while (ATOMIC_GET(pc->therealtime) == start_therealtime && counter < 50){ // Wait for the player to start up.
-      OS_WaitForAShortTime(20);
-      counter++;
-    }
   }
 }
 
 // called very often
 void PlayCallVeryOften(void){
-  EditorFollowsPlayCursorLoop();    
+  if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING)
+    EditorFollowsPlayCursorLoop();
+  
   PlayHandleRangeLoop();
 }
 
@@ -380,6 +383,8 @@ static void PlaySong(
   struct Blocks *block=BL_GetBlockFromPos(playpos);
 
   printf("Play song. blocknum:%d. Block: %p\n",block->l.num, block);
+
+  pc->is_playing_range = false;
 
   start_player(PLAYSONG, playpos, set_curr_playlist, place, block);
 

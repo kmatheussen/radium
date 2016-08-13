@@ -264,7 +264,7 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o Qt_Bs_edit.o Qt_instruments.o Qt_PluginWidget.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_disk.o Qt_MainWindow.o Qt_Time.o GTK_ReqType.o GTK_PopupMenu.o Qt_soundfilesaver_widget_callbacks.o Qt_comment_dialog.o Qt_preferences_callbacks.o Qt_tools_callbacks.o Qt_pianorollheader_callbacks.o Qt_Error.o Qt_progresswindow.o Qt_check_for_updates.o Rational.o Qt_AutoBackups.o
+OBJ12= Qt_instruments.o Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o Qt_Bs_edit.o Qt_PluginWidget.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_disk.o Qt_MainWindow.o Qt_Time.o GTK_ReqType.o GTK_PopupMenu.o Qt_soundfilesaver_widget_callbacks.o Qt_comment_dialog.o Qt_preferences_callbacks.o Qt_tools_callbacks.o Qt_pianorollheader_callbacks.o Qt_Error.o Qt_progresswindow.o Qt_check_for_updates.o Rational.o Qt_AutoBackups.o
 
 #X11_MidiProperties.o  X11_ClientMessages.o 
 #Qt_Bs_edit.o 
@@ -303,7 +303,7 @@ OBJ_VL=GfxElements.o T2.o Render.o Widget.o Qt${RADIUM_QT_VERSION}Widget.o moc_Q
 #Embedded scheme
 OBJ_ES=scheme.o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o s7webserver.o radium_s7_wrap.o qhttpconnection.o moc_qhttpconnection.o qhttprequest.o moc_qhttprequest.o qhttpresponse.o moc_qhttpresponse.o qhttpserver.o moc_qhttpserver.o http_parser.o
 
-OBJ = $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ_POSIX) $(OBJ_X11) $(OBJ_WIN) $(OBJ_MACOSX) $(OBJ14) $(OBJ_FAUST) $(OBJ_AUDIO) $(OBJ_MIXER) $(OBJ_VL)
+OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ13) $(OBJ_POSIX) $(OBJ_X11) $(OBJ_WIN) $(OBJ_MACOSX) $(OBJ14) $(OBJ_FAUST) $(OBJ_AUDIO) $(OBJ_MIXER) $(OBJ_VL)
 
 
 

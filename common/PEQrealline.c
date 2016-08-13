@@ -129,6 +129,8 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
 	int realline=peq->realline;
 	//int orgrealline=realline;
 
+        //printf("realline: %d\n",realline);
+        
 #ifdef WITH_PD
         bool inserted_pd_realline = false;
         int64_t org_time = peq->l.time;
@@ -157,7 +159,7 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
 	}
 
 	realline++;
-	if(pc->playtype==PLAYRANGE){
+	if(pc->playtype==PLAYRANGE){ // This never happens. Instead playtype is PLAYBLOCK, and pc->is_playing_range is true;
 		if(realline>=peq->wblock->rangey2){
 			realline=peq->wblock->rangey1;
 		}
@@ -169,7 +171,22 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
                 if (realline>=peq->wblock->num_reallines) // that didnt work, set realline to 0
                   realline = 0;
 
-	}else{
+        } else if (pc->playtype==PLAYBLOCK && pc->is_playing_range == true){
+
+          int end_range = peq->wblock->rangey2;
+          if (realline > end_range || realline>=peq->wblock->num_reallines){
+
+            ReturnPEQelement(peq);
+            
+            ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
+
+            PC_ReturnElements();
+
+            return;
+          }
+          
+	}else{          
+
 		if(realline>=peq->wblock->num_reallines){
 		        const struct Blocks *nextblock=PC_GetPlayBlock(1);
 			if(nextblock==NULL){
