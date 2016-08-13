@@ -644,7 +644,8 @@ protected:
       return false;
 
     _last_keynum = OS_SYSTEM_get_keynum(event);
-        
+    last_pressed_key = _last_keynum;
+    
     return false;
 
     /*
