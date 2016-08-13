@@ -486,8 +486,8 @@ protected:
   
   bool SystemEventFilter(void *event){
 
-    _last_keynum = EVENT_NO;
-    _last_qwerty_keynum = EVENT_NO;
+    //_last_keynum = EVENT_NO;
+    //_last_qwerty_keynum = EVENT_NO;
     
     if(ATOMIC_GET(is_starting_up)==true)
       return false;
