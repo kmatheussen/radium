@@ -552,7 +552,7 @@ protected:
     int modifier = OS_SYSTEM_get_modifier(event); // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event on windows. Not too sure about EVENT_EXTRA_R either (VK_APPS key) (doesn't matter, EVENT_EXTRA_R is abandoned, and the key is just used to configure block). In addition, the release value order might be wrong if pressing several modifier keys, still windows only.
 
     _last_keynum = modifier;
-    
+    _last_qwerty_keynum = modifier;
 
     //printf("modifier: %d\n",modifier);
     if (g_show_key_codes){
