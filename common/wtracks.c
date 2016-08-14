@@ -240,7 +240,7 @@ void UpdateWTrackCoordinates(
         // fx area
         wtrack->fxarea.x  = x;
 	wtrack->fxarea.x2 = wtrack->fxarea.x    + wtrack->fxonoff*wtrack->fxwidth;
-
+        
 	wtrack->x  = wtrack_x;
 	wtrack->y  = wblock->a.y1;
 	wtrack->y2 = wblock->a.y2;

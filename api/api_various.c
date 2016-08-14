@@ -370,7 +370,18 @@ void changeTrackNoteAreaWidth(int tracknum, int blocknum, int windownum){
                                            );
   if(wtrack==NULL) return;
 
+  if (wtrack->is_wide){
+    wtrack->fxwidth = wtrack->non_wide_fx_width;
+  } else {
+    wtrack->non_wide_fx_width = wtrack->fxwidth;
+    wtrack->fxwidth *= 2;
+    if (wtrack->fxwidth < 100)
+      wtrack->fxwidth = 100;
+  }
+  
   wtrack->is_wide = !wtrack->is_wide;
+  
+    
   window->must_redraw = true;
 }
 

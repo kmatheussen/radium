@@ -1040,7 +1040,6 @@ struct MyQLibrary : public QLibrary {
 
 static vector_t VST_get_uids2(const wchar_t *w_filename, QString &resolve_error_message){
   vector_t uids = {};
-  
   bool effect_opened = false;
 
   QString filename = STRING_get_qstring(w_filename);
@@ -1186,7 +1185,7 @@ vector_t VST_get_uids(const wchar_t *w_filename){
       resolve_error_message = resolve_error_message + "\n\n" + error;
   }
 
-  if (ret->num_elements==0 && resolve_error_message!="")
+  if (ret.num_elements==0 && resolve_error_message!="")
     GFX_Message(NULL, resolve_error_message.toUtf8().constData());
   
   return ret;

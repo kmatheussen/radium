@@ -1153,6 +1153,7 @@ struct WTracks{
 	int fxwidth;						/* is fxarea.x2-fxarea.x */
 	Area fxarea;
 
+        int non_wide_fx_width;
         bool is_wide;
 
         bool pianoroll_on;
