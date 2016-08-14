@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>784</width>
-    <height>342</height>
+    <width>816</width>
+    <height>309</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -74,6 +74,13 @@
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_5">
           <item>
+           <widget class="QRadioButton" name="save_range_button">
+            <property name="text">
+             <string>Current Range</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QRadioButton" name="save_block_button">
             <property name="text">
              <string>Current Block</string>
@@ -93,31 +100,7 @@
          </layout>
         </item>
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_3">
-          <item>
-           <widget class="QRadioButton" name="one_soundfile">
-            <property name="text">
-             <string>One sound file with the full mix</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-            <attribute name="buttonGroup">
-             <string notr="true">buttonGroup_3</string>
-            </attribute>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="many_soundfiles">
-            <property name="text">
-             <string>Multiple sound files, one for each instrument</string>
-            </property>
-            <attribute name="buttonGroup">
-             <string notr="true">buttonGroup_3</string>
-            </attribute>
-           </widget>
-          </item>
-         </layout>
+         <layout class="QVBoxLayout" name="verticalLayout_3"/>
         </item>
        </layout>
       </widget>
@@ -216,6 +199,32 @@
       </widget>
      </item>
      <item>
+      <widget class="QGroupBox" name="groupBox_3">
+       <property name="title">
+        <string>File(s)</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_7">
+        <item>
+         <widget class="QRadioButton" name="many_soundfiles">
+          <property name="text">
+           <string>Multiple files, one for each instrument</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="one_soundfile">
+          <property name="text">
+           <string>One file containing the full mix</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
       <widget class="QGroupBox" name="asdfasdf">
        <property name="title">
         <string>Post recording</string>
@@ -277,8 +286,7 @@
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup"/>
-  <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>

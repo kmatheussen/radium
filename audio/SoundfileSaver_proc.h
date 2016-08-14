@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 enum SOUNDFILESAVER_what{
   SAVE_SONG,
   SAVE_BLOCK,
+  SAVE_RANGE
 };
 
 extern LANGSPEC bool SOUNDFILESAVER_write(float **outputs, int num_frames);

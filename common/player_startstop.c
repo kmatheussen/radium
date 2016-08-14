@@ -363,7 +363,10 @@ static void PlayHandleRangeLoop(void){
 
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED && g_player_was_stopped_manually==false) {
     StopAllInstruments();
-    PlayRangeFromStart(root->song->tracker_windows);
+    if (MIXER_is_saving())
+      PlayStopReally(true);
+    else
+      PlayRangeFromStart(root->song->tracker_windows);
   }
 }
 

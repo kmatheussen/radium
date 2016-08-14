@@ -168,8 +168,10 @@ bool SOUNDFILESAVER_save(const char *filename, enum SOUNDFILESAVER_what what_to_
     MIXER_start_saving_soundfile();
     if(what_to_save==SAVE_SONG)
       PlaySongFromStart(root->song->tracker_windows);
-    else
+    else if(what_to_save==SAVE_BLOCK)
       PlayBlockFromStart(root->song->tracker_windows,false);
+    else
+      PlayRangeFromStart(root->song->tracker_windows);
   }
   PaUtil_FullMemoryBarrier(); g_save_state=IS_WRITING;
 

@@ -84,7 +84,10 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
     else
       format |= SF_FORMAT_FLOAT;
     
-    enum SOUNDFILESAVER_what what_to_save = save_block_button->isChecked()==true ? SAVE_BLOCK : SAVE_SONG;
+    enum SOUNDFILESAVER_what what_to_save
+      = save_range_button->isChecked()==true ? SAVE_RANGE
+      : save_block_button->isChecked()==true ? SAVE_BLOCK
+      : SAVE_SONG;
     
     if(SOUNDFILESAVER_save(filename.toUtf8().constData(), what_to_save, MIXER_get_sample_rate(), format, post_silence_spin->value(), &error_string)==false){
 
