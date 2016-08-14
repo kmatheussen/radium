@@ -1054,9 +1054,9 @@ static void populate(SoundPluginTypeContainer *container){
 
   ContainerData *data = (ContainerData*)container->data;
 
-  vector_t *uids = VST_get_uids(data->library_file_full_path);
+  vector_t uids = VST_get_uids(data->library_file_full_path);
 
-  int size = uids->num_elements;
+  int size = uids.num_elements;
 
   if (size==0)
     return;
@@ -1065,7 +1065,7 @@ static void populate(SoundPluginTypeContainer *container){
   container->plugin_types = (SoundPluginType**)V_calloc(size, sizeof(SoundPluginType));
 
   for(int i = 0 ; i < size ; i++){
-    radium_vst_uids_t *element = (radium_vst_uids_t*)uids->elements[i];
+    radium_vst_uids_t *element = (radium_vst_uids_t*)uids.elements[i];
     const char *name = element->name;
     if (name==NULL)
       name = container->name;

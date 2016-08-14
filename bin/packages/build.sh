@@ -85,10 +85,11 @@ rm -fr Visualization-Library-master
 tar xvzf Visualization-Library-master.tar.gz 
 cd Visualization-Library-master/
 #sed -i s/"VL_ACTOR_USER_DATA 0"/"VL_ACTOR_USER_DATA 1"/ src/vlCore/config.hpp
-export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC"
-MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC"
+export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g"
+MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g"
 echo 'set(CMAKE_CXX_FLAGS "$MYFLAGS")' >>CMakeLists.txt
-CFLAGS="$MYFLAGS" CPPFLAGS="$MYFLAGS" CXX="g++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="g++ $MYFLAGS" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
+# previously used build type: RelWithDebInfo. Unfortunately, this one enable _DEBUG and various runtime checks.
+CFLAGS="$MYFLAGS" CPPFLAGS="$MYFLAGS" CXX="g++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="g++ $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
 VERBOSE=1 make -j `nproc`
 cd ..
 

@@ -1038,8 +1038,8 @@ struct MyQLibrary : public QLibrary {
 };
 }
 
-static vector_t *VST_get_uids2(const wchar_t *w_filename, QString &resolve_error_message){
-  vector_t *uids = (vector_t*)talloc(sizeof(vector_t));
+static vector_t VST_get_uids2(const wchar_t *w_filename, QString &resolve_error_message){
+  vector_t uids = {};
   
   bool effect_opened = false;
 
@@ -1137,10 +1137,10 @@ static vector_t *VST_get_uids2(const wchar_t *w_filename, QString &resolve_error
       ruid->name = talloc_strdup(buf);
       ruid->uid = uid;
 
-      VECTOR_push_back(uids, ruid);
+      VECTOR_push_back(&uids, ruid);
     }
 
-    if (uids->num_elements==0) {
+    if (uids.num_elements==0) {
       GFX_Message(NULL, "Shell plugin %s does not seem to contain any plugins\n", plugin_name);
       goto exit;
     }
@@ -1151,7 +1151,7 @@ static vector_t *VST_get_uids2(const wchar_t *w_filename, QString &resolve_error
     ruid->name = NULL; //talloc_strdup(plugin_name);
     ruid->uid = 0;
     
-    VECTOR_push_back(uids, ruid);
+    VECTOR_push_back(&uids, ruid);
 
   }
 
@@ -1164,10 +1164,10 @@ static vector_t *VST_get_uids2(const wchar_t *w_filename, QString &resolve_error
 }
 
 
-vector_t *VST_get_uids(const wchar_t *w_filename){
+vector_t VST_get_uids(const wchar_t *w_filename){
 #if defined(FOR_MACOSX)
   
-  vector_t *ret = (vector_t*)talloc(sizeof(vector_t));
+  vector_t ret = {};
   QString resolve_error_message = "";
   
   QDir dir(STRING_get_qstring(w_filename));
@@ -1180,8 +1180,8 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
     QString file_path = file_info.absoluteFilePath();
 
     QString error = "";
-    vector_t *uids = VST_get_uids2(STRING_create(file_path), error);
-    VECTOR_append(ret, uids);
+    vector_t uids = VST_get_uids2(STRING_create(file_path), error);
+    VECTOR_append(&ret, &uids);
     if (error != "")
       resolve_error_message = resolve_error_message + "\n\n" + error;
   }
@@ -1194,7 +1194,7 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
 #else
 
   QString resolve_error_message = "";
-  vector_t *ret = VST_get_uids2(w_filename, resolve_error_message);
+  vector_t ret = VST_get_uids2(w_filename, resolve_error_message);
   if (resolve_error_message != "")
     GFX_Message(NULL, resolve_error_message.toUtf8().constData());
 

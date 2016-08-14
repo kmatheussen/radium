@@ -39,7 +39,7 @@ struct radium_vst_uids_t{
   int uid;
 };
 
-extern vector_t *VST_get_uids(const wchar_t *w_filename);
+extern vector_t VST_get_uids(const wchar_t *w_filename);
 extern int VST_get_uid(const wchar_t *w_filename);
 class QString;
 

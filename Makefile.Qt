@@ -192,7 +192,7 @@ CPUOPT ?=
 # -pg
 
 # CPPOPT is CPP flags
-CPPOPT = $(COMMONOPT) -Wno-unused-function -std=gnu++11
+CPPOPT = $(COMMONOPT) -Wno-unused-function -std=gnu++11 -DNDEBUG # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
 
 # Common QT opts (both 3 and 4)
 COMMON_QTOPTS =
