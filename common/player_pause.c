@@ -53,7 +53,13 @@ static int g_pausing_level = 0;
 static bool g_was_playing = false;
 static int g_playtype = 0;
 static bool g_was_playing_range = false;
-  
+static DEFINE_ATOMIC(int, g_pause_realline) = 0;
+static DEFINE_ATOMIC(int, g_pause_blocknum) = 0;
+
+void PC_Pause_set_pos(int blocknum, int realline){
+  ATOMIC_SET(g_pause_realline, realline);
+  ATOMIC_SET(g_pause_blocknum, blocknum);
+}
 
 // Note that it's perfectly fine calling PlayStop() between calling PC_Pause and PC_StopPause. PC_StopPause will still work as it's supposed to.
 void PC_Pause(void){
@@ -76,10 +82,13 @@ void PC_Pause(void){
 
     if(ATOMIC_GET(is_starting_up)==false){
       struct Tracker_Windows *window = root->song->tracker_windows;
+      //g_pause_realline = ATOMIC_GET(window->wblock->till_curr_realline);
       window->message = "Temporarily stopping player";
       window->message_duration_left = 100;
     }
 
+    //Play_get_curr_playing_realline(&g_pause_realline, &g_pause_blocknum);
+    
     g_playtype = pc->playtype;
     g_was_playing_range = pc->is_playing_range;
     PlayStop();
@@ -97,21 +106,32 @@ void PC_StopPause(struct Tracker_Windows *window){
     g_pausing_level = 0;
   }
 
-  //printf("   Leaving pause %d\n", g_pausing_level);
+  printf("   Leaving pause %d. relaline: %d\n", g_pausing_level, ATOMIC_GET(g_pause_realline));
   
   if (g_pausing_level>0)
     return;
 
   if (window==NULL)
     window = root->song->tracker_windows;
+
+  if (window==NULL)
+    return;
   
+  struct WBlocks *wblock = window->wblock;
+
+  if (wblock==NULL)
+    return;
+  
+  int realline = R_BOUNDARIES(0, ATOMIC_GET(g_pause_realline), wblock->num_reallines-1);
+  Place *place = &wblock->reallines[realline]->l.p;
+    
   if (g_was_playing) {
     if (g_was_playing_range)
-      PlayRangeCurrPos(window);
+      PlayRangeCurrPos2(window, place);
     else if (g_playtype==PLAYSONG)
-      PlaySongCurrPos(window);
+      PlaySongCurrPos2(window, place);
     else if (g_playtype==PLAYBLOCK)
-      PlayBlockCurrPos(window);
+      PlayBlockCurrPos2(window, place);
   }
 }
 

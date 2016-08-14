@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_Ptask2Mtask_proc.h"
 #include "PEQcommon_proc.h"
 #include "realline_calc_proc.h"
+#include "player_pause_proc.h"
 #include "list_proc.h"
 #include "placement_proc.h"
 #include "../OpenGL/Widget_proc.h"
@@ -151,6 +152,8 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
           
         }
 
+        PC_Pause_set_pos(peq->wblock->l.num, realline);
+        
         // Do this from the opengl thread instead. It's not always working here when the number of realline changes while playing.
         //Play_set_curr_playing_realline(realline, peq->wblock->l.num);        
         
