@@ -1,3 +1,37 @@
+Changes 4.0.2 -> 4.0.3:
+* Fix player pausing when using play cursor (noticable for instance
+  when changing tempo while playing)
+* Option to render range to soundfile
+* Only show .rad files in file requester when saving song
+* Make alt+w/ctrl+w widen automation area(s) as well,
+  not just the note area.
+* Attempts to fix reported startup crash using debian + OpenGL 2.0.
+* play range: Ensure nothing is played below the range. (It could
+  sometimes happen before). There is still a little delay right
+  before starting to play the range again (when looping),
+  but this delay has been reduced significantly.
+* Fix program freeze that could happen if trying to play a very
+  small range, block or song. (range/block/song length must probably
+  be less than 5 milliseconds)
+* Very simple fx quantization. (Keep last value only)
+* Add "Add automation to current track" slider option
+* VST: Automatically switch tab when changing parameter in external GUI
+* Only disable keyboard autorepeat when playing samples.
+* velocity text: Dont show last velocity value if the previous node was non-glide.
+  (to avoid unnecessary "xxx" values)
+* Windows: Remove "AltGr -> play block" from the menues since it often doesn't work.
+* The FaustDev instrument has been removed from the Linux binaries for now.
+  Hopefully this makes the Linux binaries run on Ubuntu 16.
+* Workarounds to avoid crashes in the TAP reflector plugin, and possibly
+  other TAP plugins.
+* Actually reduce crackling when playing an instrument for the first time
+  if using very low jack buffer size, or the CPU is very busy.
+  (It was only applied in the debug builds in 4.0.2.)
+* Include fftw3 libraries in the Windows and OSX releases.
+  Many additional LADSPA plugins are loading now. Pitch shifters, etc.
+
+
+
 Changes 4.0.1 -> 4.0.2:
 * Slider text: show value set by the user, not the current
   value. (The current value can be also be set automation).
