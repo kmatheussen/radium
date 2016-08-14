@@ -501,6 +501,14 @@ int OS_SYSTEM_get_qwerty_keynum2(uint32_t keycode){
   return keymap_qwerty[keycode];
 }
 
+int OS_SYSTEM_get_qwerty_keynum(void *void_event){
+  NSEvent *event = (NSEvent *)void_event;
+
+  int keycode = [event keyCode];
+
+  return keymap_qwerty[keycode];
+}
+
 
 void OS_SYSTEM_init_keyboard(void){
   static bool has_inited = false;
