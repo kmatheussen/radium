@@ -167,7 +167,7 @@ namespace{
 
 #define MAX_COMPENSATED_LATENCY 1000
 
-  static float *g_empty_sound = NULL;
+static float *g_empty_sound = NULL;
   
 struct LatencyCompensatorDelay {
   radium::SmoothDelay _delay;
@@ -185,6 +185,7 @@ struct LatencyCompensatorDelay {
   
   ~LatencyCompensatorDelay(){
     V_free(_output_sound);
+    _output_sound = NULL;
   }
 
   void RT_set_preferred_delay(int preferred_delay){
@@ -199,6 +200,11 @@ struct LatencyCompensatorDelay {
   // May return 'input_sound'. Also, 'input_sound' is never modified.
   float *RT_process(float *input_sound, int num_frames){
 
+    R_ASSERT_RETURN_IF_FALSE2(input_sound!=NULL, g_empty_sound);
+    R_ASSERT_RETURN_IF_FALSE2(_output_sound!=NULL, g_empty_sound);
+    R_ASSERT_RETURN_IF_FALSE2(_delay.fVec0!=NULL, g_empty_sound);
+    R_ASSERT_RETURN_IF_FALSE2(num_frames==MIXER_get_buffer_size(), g_empty_sound);
+    
     _delay.RT_process(num_frames, input_sound, _output_sound);
     
     return _output_sound;

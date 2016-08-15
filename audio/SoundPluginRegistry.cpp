@@ -127,6 +127,8 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
     if(!strcmp(type_name,"Ladspa") && getenv("LADSPA_PATH")==NULL)
       msgBox.setInformativeText("(LADSPA_PATH is not set)");
 
+    EVENTLOG_add_event(strdup(msgBox.text().toUtf8().constData()));
+                       
     msgBox.setDefaultButton(QMessageBox::Ok);
     safeExec(msgBox);
   }

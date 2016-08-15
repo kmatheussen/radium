@@ -63,6 +63,7 @@ struct SmoothDelay {
 
   ~SmoothDelay(){
     free(fVec0);
+    fVec0 = NULL;
   }
   
   void setSize(int size){
