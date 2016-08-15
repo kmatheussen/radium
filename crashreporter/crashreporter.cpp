@@ -122,6 +122,7 @@ static void clear_file(QString filename){
 #define NUM_EVENTS 100
 
 static const char *g_event_log[NUM_EVENTS] = {""};
+static double g_time_log[NUM_EVENTS] = {0.0};
 static DEFINE_ATOMIC(int, g_event_pos) = 0;
 
 void EVENTLOG_add_event(const char *log_entry){
@@ -130,6 +131,11 @@ void EVENTLOG_add_event(const char *log_entry){
  int pos = ATOMIC_ADD_RETURN_OLD(g_event_pos, 1) % NUM_EVENTS;
  
  g_event_log[pos] = log_entry;
+ g_time_log[pos] = TIME_get_ms();
+}
+
+QString get_event_string(int pos, double time_now){
+  return QString(QString::number(time_now - g_time_log[pos], 'f', 2) + ": " + g_event_log[pos]) + "\n";
 }
 
 #endif
@@ -419,18 +425,6 @@ static DEFINE_ATOMIC(int, g_plugin_name_pos) = 0;
 static DEFINE_ATOMIC(const char *, g_plugin_names)[MAX_NUM_PLUGIN_NAMES]={g_no_plugin_name};
 //static QString g_plugin_name=g_no_plugin_name;
 
-static double start_time;
-
-static double get_s(void) {
-    struct timeval now;
-    
-    if (gettimeofday(&now, NULL) != 0)
-      return 0.0;
-
-    return now.tv_sec + (double)now.tv_usec/(1000.0*1000.0);
-}
-
-
 int CRASHREPORTER_set_plugin_name(const char *plugin_name){
   //fprintf(stderr,"plugin_name: -%s-\n",plugin_name);
 
@@ -560,7 +554,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 }
 */
 
-void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, Crash_Type crash_type){
+void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, Crash_Type crash_type, double time){
   if (ATOMIC_GET(g_dont_report_more))
     return;
 
@@ -576,7 +570,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   tosend += QString("OpenGL flags: %1").arg(ATOMIC_GET(GE_opengl_version_flags), 0, 16) + "\n\n";
 
   tosend += "Running plugins: " + plugin_names + "\n\n";
-  tosend += "Running time: " + QString::number(get_s() - start_time) + "\n\n";
+  tosend += "Running time: " + QString::number(time/1000.0) + " seconds.\n\n";
   tosend += "\n\n";
 
 
@@ -590,10 +584,10 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   tosend += "start event_pos: " + QString::number(event_pos) + "\n";
 
   for(int i=event_pos-1; i>=0 ; i--)
-    tosend += QString(g_event_log[i]) + "\n";
+    tosend += get_event_string(i, time);
 
   for(int i=NUM_EVENTS-1; i>=event_pos ; i--)
-    tosend += QString(g_event_log[i]) + "\n";
+    tosend += get_event_string(i, time);
 
   tosend += "end event_pos: " + QString::number(ATOMIC_GET(g_event_pos) % NUM_EVENTS) + "\n";
   
@@ -727,6 +721,7 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
   last_time = running_time.elapsed();
 #endif
 
+  double time = TIME_get_ms();
 
   char message[1000];
   va_list argp;
@@ -756,7 +751,7 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
   RT_pause_plugins();
 
 
-  CRASHREPORTER_send_message_with_backtrace(message, crash_type);
+  CRASHREPORTER_send_message_with_backtrace(message, crash_type, time);
 
 #if 0
   if (may_do_blocking && THREADING_is_main_thread())
@@ -788,7 +783,6 @@ void CRASHREPORTER_close(void){
 
 
 void CRASHREPORTER_init(void){
-  start_time = get_s();
   
 #if defined(FOR_WINDOWS)
   CRASHREPORTER_windows_init();

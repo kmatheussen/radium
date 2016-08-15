@@ -653,7 +653,7 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 
 static char *crash_buffer = NULL;
 
-static void send_message_with_backtrace(LPCONTEXT c, const char *additional_information, enum Crash_Type crash_type){
+static void send_message_with_backtrace(LPCONTEXT c, const char *additional_information, enum Crash_Type crash_type, double time){
   struct output_buffer ob;
   ob.buf = crash_type==CT_CRASH ? crash_buffer : calloc(1, BUFFER_MAX);
 
@@ -679,7 +679,7 @@ static void send_message_with_backtrace(LPCONTEXT c, const char *additional_info
   print_osinfo(&ob);
   
   const char *messages[1] = {ob.buf};
-  CRASHREPORTER_send_message(additional_information, messages, 1, crash_type);
+  CRASHREPORTER_send_message(additional_information, messages, 1, crash_type, time);
 
   fputs(ob.buf , stderr);
 
@@ -687,7 +687,7 @@ static void send_message_with_backtrace(LPCONTEXT c, const char *additional_info
     free(ob.buf);
 }
 
-void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, enum Crash_Type crash_type){
+void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, enum Crash_Type crash_type, double time){
   CONTEXT context; 
   LPCONTEXT c = &context;
 
@@ -741,13 +741,14 @@ L2:
   
 #endif
   
-  send_message_with_backtrace(c, additional_information, crash_type);  
+  send_message_with_backtrace(c, additional_information, crash_type, time);  
 }
 
 
 static LONG WINAPI 
 exception_filter(LPEXCEPTION_POINTERS info)
 {
+        double time = TIME_get_ms();
   
         CONTEXT c_holder;
 
@@ -758,7 +759,7 @@ exception_filter(LPEXCEPTION_POINTERS info)
         //c->ContextFlags = CONTEXT_FULL;
 
         Sleep(5);
-        send_message_with_backtrace(c, "", true);
+        send_message_with_backtrace(c, "", true, time);
         fprintf(stderr, "E 5\n");fflush(stderr);
 	//exit(1);
 

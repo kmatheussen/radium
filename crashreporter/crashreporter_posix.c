@@ -57,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "crashreporter_proc.h"
 
 
+#if 0
 static int get_ms(void) {
     struct timeval now;
     
@@ -65,6 +66,7 @@ static int get_ms(void) {
 
     return now.tv_sec*1000 + now.tv_usec / 1000.0;
 }
+#endif
 
 
 static bool crash_already_reported(void){
@@ -88,7 +90,7 @@ static bool crash_already_reported(void){
 void run_main_loop(void);
 
 
-void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, enum Crash_Type crash_type){
+void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, enum Crash_Type crash_type, double time){
 #define NUM_LINES 100
 
   char **strings;
@@ -109,10 +111,10 @@ void CRASHREPORTER_send_message_with_backtrace(const char *additional_informatio
   
   
   if (strings != NULL) {
-    CRASHREPORTER_send_message(additional_information, (const char**)strings,nptrs,crash_type);
+    CRASHREPORTER_send_message(additional_information, (const char**)strings,nptrs,crash_type,time);
   } else {
     const char *message="no backtrace availabe\n";
-    CRASHREPORTER_send_message(additional_information, &message,1,crash_type);
+    CRASHREPORTER_send_message(additional_information, &message,1,crash_type,time);
   }
 }
 
@@ -125,7 +127,7 @@ static void crash(int sig, siginfo_t *siginfo, void *secret) {
   static int num_crash_reports=0;
 
   static double start_time = -1.0;
-  double now_time = get_ms();
+  double now_time = TIME_get_ms();
 
   if(start_time<=0.0)
     start_time=now_time;
@@ -133,7 +135,7 @@ static void crash(int sig, siginfo_t *siginfo, void *secret) {
   if(crash_already_reported()==false){
 
     if(fork()==0){
-      CRASHREPORTER_send_message_with_backtrace("", CT_CRASH);
+      CRASHREPORTER_send_message_with_backtrace("", CT_CRASH,now_time);
       num_crash_reports++;
 
       abort();
