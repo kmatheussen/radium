@@ -30,6 +30,8 @@ Blog post from another guy doing backtraces and catching exceptions in lin/mingw
 
 
 #include "crashreporter_proc.h"
+#include "../common/nsmtracker_time.h"
+
 
 #define NUM_BACKTRACE 62 // More than 63, and capturestackbacktrace won't work on xp and 2003.
 
