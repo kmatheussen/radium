@@ -2026,7 +2026,6 @@ void SAMPLER_start_recording(struct SoundPlugin *plugin, const wchar_t *pathdir,
   if (ATOMIC_GET(data->recording_status) != NOT_RECORDING)
     return;
 
-  free(ATOMIC_GET(data->recording_path));
   ATOMIC_SET(data->recording_path,
              wcsdup(STRING_append(pathdir,
                                   STRING_append(STRING_create(OS_get_directory_separator()),

@@ -63,7 +63,7 @@ struct RecordingSlice{
   // if command==START_Recording
   struct StartRecording{
     int num_channels;
-    const wchar_t *path;
+    wchar_t *path;
     float middle_note;
   };
 
@@ -237,7 +237,7 @@ public:
     return NULL;
   }
   
-  void start_recording(struct Patch *patch, const wchar_t *path, int num_channels, float middle_note){    
+  void start_recording(struct Patch *patch, wchar_t *path, int num_channels, float middle_note){    
     recording_files.push_back(new RecordingFile(patch, path, num_channels, middle_note));
   }
   
@@ -274,6 +274,7 @@ public:
         
         case RecordingSlice::Start_Recording:
           start_recording(slice->patch, slice->start_recording.path, slice->start_recording.num_channels, slice->start_recording.middle_note);
+          free(slice->start_recording.path);
           g_free_slices->bounded_push(slice);
           break;
           
@@ -319,7 +320,7 @@ void SampleRecorder_called_regularly(void){
 }
 
 
-void RT_SampleRecorder_start_recording(struct Patch *patch, const wchar_t *path, int num_channels, float middle_note){
+void RT_SampleRecorder_start_recording(struct Patch *patch, wchar_t *path, int num_channels, float middle_note){
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
   R_ASSERT_RETURN_IF_FALSE(path!=NULL);
   R_ASSERT_RETURN_IF_FALSE(num_channels>0);
