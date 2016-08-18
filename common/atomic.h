@@ -84,6 +84,10 @@ static inline bool atomic_compare_and_set_uint32(uint32_t *variable, uint32_t ol
   return __atomic_compare_exchange_n (variable, &old_value, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
+static inline bool atomic_compare_and_set_pointer(void **variable, void *old_value, void *new_value){
+  return __atomic_compare_exchange_n (variable, &old_value, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+}
+
 #define ATOMIC_COMPARE_AND_SET_BOOL(name, old_value, new_value) \
   atomic_compare_and_set_bool(&ATOMIC_NAME(name), old_value, new_value)
 
@@ -92,6 +96,12 @@ static inline bool atomic_compare_and_set_uint32(uint32_t *variable, uint32_t ol
 
 #define ATOMIC_COMPARE_AND_SET_UINT32(name, old_value, new_value) \
   atomic_compare_and_set_uint32(&ATOMIC_NAME(name), old_value, new_value)
+
+#define ATOMIC_COMPARE_AND_SET_POINTER(name, old_value, new_value) \
+  atomic_compare_and_set_pointer(&ATOMIC_NAME(name), old_value, new_value)
+
+#define ATOMIC_COMPARE_AND_SET_POINTER_ARRAY(name, pos, old_value, new_value) \
+  atomic_compare_and_set_pointer(&ATOMIC_NAME(name)[pos], old_value, new_value)
 
 #define ATOMIC_SET_RETURN_OLD(name, val) \
   __atomic_exchange_n (&ATOMIC_NAME(name), val, __ATOMIC_SEQ_CST)

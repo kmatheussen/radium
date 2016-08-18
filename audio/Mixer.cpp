@@ -52,6 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundPlugin_proc.h"
 #include "MultiCore_proc.h"
 #include "CpuUsage.hpp"
+#include "SampleRecorder_proc.h"
 
 #include "Mixer_proc.h"
 
@@ -391,6 +392,8 @@ struct Mixer{
   float _sample_rate;
   int _buffer_size;
 
+  jack_port_t *_main_inputs[2];
+  
   bool _is_freewheeling;
 
   Mixer()
@@ -571,6 +574,23 @@ struct Mixer{
 #if FOR_WINDOWS // Noise from jack on windows when changing thread priority
     jack_set_info_function(my_silent_jack_error_callback);
 #endif
+
+    {
+      _main_inputs[0] = jack_port_register(_rjack_client, "main_input_1", JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+      _main_inputs[1] = jack_port_register(_rjack_client, "main_input_2", JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+      
+      const char **outportnames=jack_get_ports(_rjack_client,NULL,NULL,JackPortIsPhysical|JackPortIsOutput);
+      if (outportnames[0] != NULL){
+        jack_connect(_rjack_client, outportnames[0],
+                     jack_port_name(_main_inputs[0])
+                     );
+        if (outportnames[1] != NULL )
+          jack_connect(_rjack_client, outportnames[1],
+                       jack_port_name(_main_inputs[1])
+                       );
+      }
+      jack_free(outportnames);
+    }
     
     g_jack_client = _rjack_client;
     //create_jack_plugins(_rjack_client);
@@ -873,6 +893,8 @@ bool MIXER_start(void){
   
   R_ASSERT(THREADING_is_main_thread());
 
+  SampleRecorder_Init();
+    
   init_player_lock();
   g_freewheeling_has_started = RSEMAPHORE_create(0);
 
@@ -936,6 +958,11 @@ void MIXER_request_stop_saving_soundfile(void){
 // dont work.
 STime MIXER_get_block_delta_time(STime time){
   return (time+g_startup_time) - g_mixer->_time;
+}
+
+void MIXER_get_main_inputs(float **audio){
+  audio[0] = ((float*)jack_port_get_buffer(g_mixer->_main_inputs[0],ATOMIC_GET(jackblock_size))) + jackblock_delta_time;
+  audio[1] = ((float*)jack_port_get_buffer(g_mixer->_main_inputs[1],ATOMIC_GET(jackblock_size))) + jackblock_delta_time;
 }
 
 /*

@@ -1233,7 +1233,7 @@ static DEFINE_ATOMIC(QWindow *, g_qwindow) = NULL; // Can only be set after g_qw
 static DEFINE_ATOMIC(QGLContext *, g_context) = NULL;
 
 QWindow *GL_get_editor_qwindow(void){
-  R_ASSERT_NON_RELEASE(ATOMIC_GET(g_qwindow)->screen() != NULL);
+  //R_ASSERT_NON_RELEASE(ATOMIC_GET(g_qwindow)->screen() != NULL);
   return ATOMIC_GET(g_qwindow);
 }
 

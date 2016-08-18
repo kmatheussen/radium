@@ -97,6 +97,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 #include "../audio/MultiCore_proc.h"
 #include "../audio/Faust_plugins_proc.h"
+#include "../audio/SampleRecorder_proc.h"
 
 
 #ifdef __linux__
@@ -997,6 +998,8 @@ protected:
 
     PlayCallVeryOften();
 
+    SampleRecorder_called_regularly();
+    
     if (num_calls % (50/interval) == 0) // 50ms = 3*1000ms/60 (each third frame)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function    
 

@@ -331,6 +331,7 @@ public:
   bool _last_updated_mute;
   bool _last_updated_solo;
   bool _last_updated_bypass;
+  bool _last_updated_recording;
   
   float _slider_start_value;
   float _slider_start_pos;

@@ -320,7 +320,6 @@ public:
     num_elements = 0;
   }
 
-
 };
 
 

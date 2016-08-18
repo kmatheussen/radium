@@ -20,6 +20,8 @@ extern LANGSPEC void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start
 extern LANGSPEC bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, int resampler_type);
 extern LANGSPEC int SAMPLER_get_resampler_type(struct SoundPlugin *plugin);
 extern LANGSPEC void SAMPLER_save_sample(struct SoundPlugin *plugin, const wchar_t *filename, int sample_number);
+extern LANGSPEC void SAMPLER_start_recording(struct SoundPlugin *plugin, const wchar_t *pathdir, int num_channels, bool recording_from_main_input);
+extern LANGSPEC const char *SAMPLER_get_recording_status(struct SoundPlugin *plugin);
 extern LANGSPEC const wchar_t *SAMPLER_get_filename(struct SoundPlugin *plugin, bool *is_default_sound);
 extern LANGSPEC const wchar_t *SAMPLER_get_filename_display(struct SoundPlugin *plugin);
 

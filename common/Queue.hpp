@@ -1,3 +1,20 @@
+/* Copyright 2015-2016 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+
 #ifndef _RADIUM_COMMON_QUEUES_HPP
 #define _RADIUM_COMMON_QUEUES_HPP
 
@@ -20,10 +37,13 @@ template <typename T, int SIZE> struct Queue{
 private:
   
   Semaphore ready;
-  boost::lockfree::queue< T , boost::lockfree::capacity<SIZE> > queue;
-
-public:
+  typedef boost::lockfree::queue< T , boost::lockfree::capacity<SIZE> > queuetype;
+  queuetype queue;
   
+  //boost::lockfree::queue< T > queue2;
+  
+public:
+
   // sets success to false if failed, true if succeeded. Return value is undefined if "success" is false.
   T tryGet(bool &success){
     T ret = 0;
@@ -112,7 +132,62 @@ public:
     return ready.numSignallers();
   }
 };
+ 
+#if 0
+// This buffer does not keep order.
+template <typename T> struct ExpandableBuffer{
+  const int MAX_QUEUE_SIZE = (65536-2);       // boost::lockfree::queue limit
+  const int max_queues = 1024;
+  
+  typedef boost::lockfree::queue< T , boost::lockfree::capacity<MAX_QUEUE_SIZE> > queuetype;
 
+  
+  DEFINE_ATOMIC(int, num_queues) = 0;
+  DEFINE_ATOMIC(queuetype*, queues);
+
+  ExpandableBuffer(){
+    queues = calloc(max_queues, sizeof(queuetype*));
+    add_queue();
+  }
+
+  ~ExpandableBuffer(){
+    for(int i = 0 ; i < max_queues ; i++)
+      free(ATOMIC_ARRAY_GET(queues, i));
+    
+    free(queues);
+  }
+  
+  bool push(T &t){
+    for(int i = 0 ; i < max_queues ; i++){
+      queuetype *queue = ATOMIC_ARRAY_GET(queues, i);
+      if (queue==NULL)
+        return false;
+
+      if (queue.bounded_push(t))
+        return true;
+    }
+
+    return false;
+  }
+
+private:
+  
+  void add_queue(void){
+    queuetype *queue = new queuetype;
+    
+    int queue_num = ATOMIC_GET(num_queues); //ATOMIC_INC_RETURN_OLD(num_queues);
+
+    for(int i=0;i<max_queues;i++){
+      bool did_set = ATOMIC_COMPARE_AND_SET_POINTER_ARRAY(queues, i, NULL, queue);
+      if (did_set)
+        break;
+    }
+  }
+  
+};
+#endif
+  
+  
 template <typename T>
 struct DispatchQueueElement{
   int type;

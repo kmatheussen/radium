@@ -51,6 +51,8 @@ extern LANGSPEC void GFX_update_current_instrument_widget(void);
 
 #ifdef USE_QT4
 //static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch);
+class Sample_requester_widget;
+extern Sample_requester_widget *AUDIOWIDGET_get_sample_requester_widget(struct Patch *patch);
 
 #endif
 

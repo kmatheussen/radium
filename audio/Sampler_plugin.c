@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundPlugin_proc.h"
 #include "SoundProducer_proc.h"
 #include "Mixer_proc.h"
+#include "SampleRecorder_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"
 
@@ -195,6 +196,12 @@ typedef struct{
 
 } CopyData;
 
+enum{
+  NOT_RECORDING = 0,
+  BEFORE_RECORDING,
+  IS_RECORDING
+};
+
 struct _Data{
 
   CopyData p;
@@ -228,6 +235,11 @@ struct _Data{
   struct _Data *new_data;
   RSemaphore *signal_from_RT;
 
+  DEFINE_ATOMIC(wchar_t*, recording_path);
+  DEFINE_ATOMIC(int, num_recording_channels);
+  DEFINE_ATOMIC(int, recording_status);
+  DEFINE_ATOMIC(bool, recording_from_main_input);
+  int64_t recording_note_id;
 };
 
 
@@ -698,10 +710,24 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
-  
+
   memset(outputs[0],0,num_frames*sizeof(float));
   memset(outputs[1],0,num_frames*sizeof(float));
 
+  if (ATOMIC_GET(data->recording_status)==IS_RECORDING){
+    float *audio_[2];
+    float **audio;
+    
+    if (ATOMIC_GET(data->recording_from_main_input)){
+      audio = audio_;
+      MIXER_get_main_inputs(audio);
+    }else
+      audio = inputs;
+    
+    RT_SampleRecorder_add_audio((struct Patch*)plugin->patch, audio, ATOMIC_GET(data->num_recording_channels));
+    return;
+  }
+  
   if (data->p.vibrato_phase_add > 0.0) {
     data->p.vibrato_value = data->p.vibrato_depth * sin(data->p.vibrato_phase);
     data->p.vibrato_phase += data->p.vibrato_phase_add*(double)num_frames;
@@ -740,6 +766,25 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note2){
 
   //fprintf(stderr,"playing note %d. Pitch: %d, time: %d\n",(int)note_id,(int)note_num,(int)time);
 
+  if (ATOMIC_GET(data->recording_status)==BEFORE_RECORDING){
+
+    struct Patch *patch = (struct Patch*)plugin->patch;
+    RT_SampleRecorder_start_recording(patch,
+                                      ATOMIC_GET(data->recording_path),
+                                      ATOMIC_GET(data->num_recording_channels),
+                                      note2.pitch);
+    
+    data->recording_note_id = note2.id;
+
+    ATOMIC_SET(data->recording_status, IS_RECORDING);
+    ATOMIC_SET(patch->is_recording, true);
+    
+    return;
+  }
+
+  if (ATOMIC_GET(data->recording_status)==IS_RECORDING)
+    return;
+  
   const Note *note = &data->notes[(int)note2.pitch];
 
   int i;
@@ -796,6 +841,9 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note2){
 static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t note){
   Data *data = (Data*)plugin->data;
 
+  if (ATOMIC_GET(data->recording_status)==IS_RECORDING)
+    return;
+
   Voice *voice = data->voices_playing;
 
   while(voice!=NULL){
@@ -810,6 +858,9 @@ static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t not
 
 static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, note_t note){
   Data *data = (Data*)plugin->data;
+
+  if (ATOMIC_GET(data->recording_status)==IS_RECORDING)
+    return;
 
   Voice *voice = data->voices_playing;
 
@@ -829,6 +880,20 @@ static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, note_t note
 static void stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
   Data *data = (Data*)plugin->data;
 
+  if (ATOMIC_GET(data->recording_status)==IS_RECORDING){
+    if (note.id==data->recording_note_id){
+      
+      struct Patch *patch = (struct Patch*)plugin->patch;
+      
+      RT_SampleRecorder_stop_recording(patch);
+      
+      ATOMIC_SET(data->recording_status, NOT_RECORDING);
+      ATOMIC_SET(patch->is_recording, false);
+      
+      return;
+    }
+  }
+  
   Voice *voice = data->voices_playing;
 
   if(time==-1){
@@ -1953,6 +2018,44 @@ void SAMPLER_save_sample(struct SoundPlugin *plugin, const wchar_t *filename, in
   sf_close(sndfile);
 }
 
+void SAMPLER_start_recording(struct SoundPlugin *plugin, const wchar_t *pathdir, int num_channels, bool recording_from_main_input){
+  R_ASSERT_RETURN_IF_FALSE(num_channels > 0);
+  
+  Data *data = (Data*)plugin->data;
+
+  if (ATOMIC_GET(data->recording_status) != NOT_RECORDING)
+    return;
+
+  free(ATOMIC_GET(data->recording_path));
+  ATOMIC_SET(data->recording_path,
+             wcsdup(STRING_append(pathdir,
+                                  STRING_append(STRING_create(OS_get_directory_separator()),
+                                                STRING_replace(STRING_replace(STRING_create(plugin->patch->name),
+                                                                              "/",
+                                                                              "_slash_"),
+                                                               "\\",
+                                                               "_backslash_"))))
+             );
+  
+  ATOMIC_SET(data->num_recording_channels, num_channels);
+  ATOMIC_SET(data->recording_from_main_input, recording_from_main_input);
+  ATOMIC_SET(data->recording_status, BEFORE_RECORDING);
+}
+
+const char *SAMPLER_get_recording_status(struct SoundPlugin *plugin){
+  Data *data = (Data*)plugin->data;
+    
+  int status = ATOMIC_GET(data->recording_status);
+  
+  switch(status){
+    case NOT_RECORDING: return "Record";
+    case BEFORE_RECORDING: return "Waiting for note...";
+    case IS_RECORDING: return "Recording";
+  }
+  
+  return "(Error)"; // not supposed to happen
+}
+
 static void cleanup_plugin_data(SoundPlugin *plugin){
   printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
   Data *data=(Data*)plugin->data;
@@ -2080,7 +2183,7 @@ static SoundPluginType plugin_type = {
  type_name                : "Sample Player",
  name                     : "Sample Player",
  info                     : "Sample Player can load XI intruments, Soundfonts, and all types of sample formats supported by libsndfile. WAV files are looped if they have loops defined in the \"sampl\" chunk, or they have \"Loop Start\" and \"Loop End\" cue id's.\n\nSoundFonts often sound better when played with FluidSynth instead of the Sample Player. The Soundfont handling in Sample Player needs more care. However, the Sample Player uses less memory, are faster to create, has sample-accurate note scheduling, supports pitch changes and polyphonic aftertouch (velocity can be changed while a note is playing), and has configurable options such as attack, decay, sustain, and release.",
- num_inputs               : 0,
+ num_inputs               : 2,
  num_outputs              : 2,
  is_instrument            : true,
  note_handling_is_RT      : false,

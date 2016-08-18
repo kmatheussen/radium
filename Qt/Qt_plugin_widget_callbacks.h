@@ -197,6 +197,11 @@ public:
       vertical_layout->insertWidget(1,_plugin_widget);
     }
 
+    
+    if(plugin->type!=PR_get_plugin_type_by_name(NULL, "Sample Player","Sample Player") && plugin->type!=PR_get_plugin_type_by_name(NULL, "Sample Player","Click"))
+      record_button->hide();
+
+    
     if(plugin->type->show_gui==NULL || plugin->type->hide_gui==NULL)
       show_gui_checkbox->hide();
 
@@ -302,6 +307,12 @@ public:
     
     if (plugin != NULL) {
       const SoundPluginType *type = plugin->type;
+
+      if (!strcmp("Sample Player", type->type_name)){
+        QString recording_status = SAMPLER_get_recording_status(plugin);
+        if (recording_status != record_button->text())
+          record_button->setText(recording_status);
+      }
       
       if(type->gui_is_visible!=NULL){
         bool checkbox = show_gui_checkbox->isChecked();
@@ -717,6 +728,35 @@ public slots:
     case 2: SaveFXBP(false); break;
     default: break;
     }
+  }
+
+  void on_record_button_clicked(){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
+    vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
+
+    int mono_main   = VECTOR_push_back(&v, "Mono from main input");
+    int stereo_main = VECTOR_push_back(&v, "Stereo from main inputs");
+
+    VECTOR_push_back(&v, "--------------");
+    
+    int mono   = VECTOR_push_back(&v, "Mono from input connection");
+    int stereo = VECTOR_push_back(&v, "Stereo from input connections");
+
+    auto *sample_requester_widget = AUDIOWIDGET_get_sample_requester_widget(_patch);
+    printf("dir: %p\n", sample_requester_widget->_dir);
+    wchar_t *pathdir = STRING_create(sample_requester_widget->_dir.absolutePath());
+  
+    int sel = GFX_Menu(root->song->tracker_windows, NULL, "", &v);
+    
+    if (sel==mono_main)
+      SAMPLER_start_recording(plugin, pathdir, 1, true);
+    else if (sel==stereo_main)
+      SAMPLER_start_recording(plugin, pathdir, 2, true);
+    else if (sel==mono)
+      SAMPLER_start_recording(plugin, pathdir, 1, false);
+    else if (sel==stereo)
+      SAMPLER_start_recording(plugin, pathdir, 2, false);
   }
   
     void on_save_button_clicked(){

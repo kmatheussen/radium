@@ -75,7 +75,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //MakeFocusSnifferClass(QDoubleSpinBox);
 MakeFocusSnifferClass(QLineEdit);
 //MakeFocusSnifferClass(QTextEdit);
-MakeFocusSnifferClass(QListWidget);
+//MakeFocusSnifferClass(QListWidget);
 
 #include <Qsci/qscilexer.h>
 #include <Qsci/qsciscintilla.h>  // <--- Much trouble. Any qt4 alternatives?
@@ -284,6 +284,47 @@ class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
     QDoubleSpinBox::wheelEvent(event);
     set_editor_focus(); 
   }
+};
+
+class FocusSnifferQListWidget : public GL_PauseCaller, public QListWidget{
+ public:                                                               
+  bool dontsniff;                                                       
+ FocusSnifferQListWidget(QWidget *parent, const char *name = "gakk")  
+   : QListWidget(parent),dontsniff(false)                                     
+    {                                                                   
+    }                                                                   
+  void focusInEvent ( QFocusEvent *e ){                                 
+    printf("Got focusInEvent\n");
+    if(dontsniff==false)
+      obtain_keyboard_focus();
+    GL_lock();
+    QListWidget::focusInEvent(e);                                             
+    GL_unlock();
+  }                                                                     
+  void focusOutEvent ( QFocusEvent *e ){                                
+    printf("Got focusOutEvent\n");
+    if(dontsniff==false) {
+      release_keyboard_focus();
+    }                                                                   
+    GL_lock();
+    QListWidget::focusOutEvent(e);                                            
+    GL_unlock();
+  }                                                                     
+  void hideEvent ( QHideEvent *e ){                                
+    //printf("Got hideEvent\n");
+    if(dontsniff==false) {
+      release_keyboard_focus();
+    }                                                                   
+    QListWidget::hideEvent(e);                                            
+  }                                                                     
+  void keyPressEvent ( QKeyEvent * event ){                             
+    if(event->key()==Qt::Key_Escape){                                   
+      GL_lock();                                                        
+      clearFocus();                                                     
+      GL_unlock();                                                      
+    }                                                                   
+    QListWidget::keyPressEvent(event);                                        
+  }                                                                     
 };
 
 

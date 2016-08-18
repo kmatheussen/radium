@@ -136,6 +136,11 @@ bool STRING_equals(const wchar_t *string, const char *s2){
   return s == QString(s2);
 }
 
+wchar_t *STRING_replace(const wchar_t *string, const char *a, const char *b){
+  QString s = STRING_get_qstring(string);
+  return STRING_create(s.replace(a,b));
+}
+
 wchar_t *STRING_append(const wchar_t *s1, const wchar_t *s2){
   return STRING_create(STRING_get_qstring(s1) + STRING_get_qstring(s2));
 }

@@ -1076,6 +1076,7 @@ namespace{
                 bool is_muted = !ATOMIC_GET(plugin->volume_is_on);
                 bool is_solo = ATOMIC_GET(plugin->solo_is_on);
                 bool is_bypass = !ATOMIC_GET(plugin->effects_are_on);
+                bool is_recording = ATOMIC_GET(patch->is_recording);
 
                 if (chip->_last_updated_mute != is_muted){
                   chip->update();
@@ -1090,6 +1091,11 @@ namespace{
                 if (chip->_last_updated_bypass != is_bypass){
                   chip->update();
                   chip->_last_updated_bypass = is_bypass;
+                }
+                
+                if (chip->_last_updated_recording != is_recording){
+                  chip->update();
+                  chip->_last_updated_recording = is_recording;
                 }
                 
                 

@@ -210,6 +210,7 @@ public:
       }GL_unlock();
     }
 
+    
     filters_widget->setVisible(plugin->show_equalizer_gui);
 
 
@@ -1177,6 +1178,10 @@ static Faust_Plugin_widget *AUDIOWIDGET_get_faust_plugin_widget(Audio_instrument
   return audio_instrument_widget->_plugin_widget->_faust_plugin_widget;
 }
 #endif
+
+Sample_requester_widget *AUDIOWIDGET_get_sample_requester_widget(struct Patch *patch){
+  return get_audio_instrument_widget(patch)->_sample_requester_widget;
+}
 
 void AUDIOWIDGET_change_height(struct Patch *patch, SizeType type){
   get_audio_instrument_widget(patch)->change_height(type);

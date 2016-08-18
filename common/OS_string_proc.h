@@ -17,6 +17,8 @@ extern LANGSPEC char* STRING_get_utf8_chars(const char* s);
 extern LANGSPEC bool STRING_ends_with(const wchar_t *string, const char *s);
 extern LANGSPEC bool STRING_equals(const wchar_t *string, const char *s2);
 extern LANGSPEC bool STRING_equals2(const wchar_t *string, const wchar_t *s2);
+extern LANGSPEC wchar_t *STRING_replace(const wchar_t *string, const char *a, const char *b);
+
 static inline int STRING_get_int(const wchar_t *string){
   return atoi(STRING_get_chars(string));
 }

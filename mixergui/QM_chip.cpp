@@ -969,6 +969,7 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
   , _last_updated_mute(false)
   , _last_updated_solo(false)
   , _last_updated_bypass(false)
+  , _last_updated_recording(false)
   , _slider_being_edited(0)
 {
 
@@ -1146,11 +1147,14 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     int colornum = patch->colornum;
     QColor patchcolor(custom_colors[colornum]);
 
-    QColor c = 
+    QColor c =
       (false && is_selected)
       ? mix_colors(QColor(30,25,70,60), patchcolor, 0.45)
       : mix_colors(QColor(30,65,70,35), patchcolor, 0.05);
 
+    if (ATOMIC_GET(patch->is_recording))
+      c = mix_colors(c, QColor(255,0,0), 0.1);
+      
     painter->fillRect(x1, y1, x2-x1, y2-y1, c);
 
     x1 += 2;    

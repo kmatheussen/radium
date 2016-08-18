@@ -58,6 +58,14 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
 
     if(text!=""){
       col = get_qcolor(BUTTONS_COLOR_NUM);
+
+      if (text=="Record")
+        col = mix_colors(col, QColor(255,0,0), 0.9);
+      else if (text=="Waiting for note...")
+        col = mix_colors(col, QColor(255,0,0), 0.6);
+      else if (text=="Recording")
+        col = mix_colors(col, QColor(255,0,0), 0.1);
+      
 #if 0
       col = mix_colors(col.light(70),QColor(98,59,33),0.55);//editor->colors[colnum].light(52);
       col.setAlpha(76);
