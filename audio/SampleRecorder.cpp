@@ -164,6 +164,7 @@ struct RecordingFile{
   }
 
   bool close(void){
+    R_ASSERT_RETURN_IF_FALSE2(sndfile!=NULL, false);
     R_ASSERT(non_written_slices.is_empty());
     
     int close_result = sf_close(sndfile);
@@ -222,7 +223,7 @@ struct SampleRecorderThread : public QThread {
   SampleRecorderThread(const SampleRecorderThread&) = delete;
   SampleRecorderThread& operator=(const SampleRecorderThread&) = delete;
 
-  radium::Queue<RecordingFile*, 128> recorded_files;
+  radium::Queue<RecordingFile*, 128> recorded_files; // 128 is not the limit on the number of files that can be recorded simultaneously. It's just the queue size. The recording thread will wait until there's more space available if it is full when adding new entry.
   radium::Vector<RecordingFile*>     recording_files;
   
 public:
@@ -308,7 +309,7 @@ void SampleRecorder_called_regularly(void){
     if(!gotit)
       break;
 
-    if (recorded_file->sndfile != NULL){
+    if (recorded_file->sndfile != NULL && recorded_file->patch->patchdata != NULL){
       ADD_UNDO(Sample_CurrPos(recorded_file->patch));
     
       SAMPLER_set_new_sample((SoundPlugin*)recorded_file->patch->patchdata,
