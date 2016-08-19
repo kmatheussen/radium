@@ -67,9 +67,6 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
       printf("type: %d. keycode: %d. modifiers: %d. autorepeat: %d\n",(int)type, [event keyCode], (int)[event modifierFlags], [event isARepeat]);
 #endif
 
-    if([event isARepeat])
-      return TR_AUTOREPEAT;
-    
     if(type==NSFlagsChanged){
       int keycode = [event keyCode];
       
@@ -87,6 +84,10 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
     
     else if (type==NSKeyUp)
       ret = TR_KEYBOARDUP;
+
+    if (type==NSKeyDown || type==NSKeyUp)
+      if([event isARepeat])
+        ret = TR_AUTOREPEAT;
 
     
     // Probably not necessary, but just in case, in case things get out sync (see above)
