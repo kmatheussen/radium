@@ -66,6 +66,7 @@ struct RecordingSlice{
   // if command==Sample_Data
   struct Slice{
     int ch;
+    int num_frames;
     float samples[RADIUM_BLOCKSIZE];
   };
     
@@ -195,19 +196,23 @@ private:
     R_ASSERT_RETURN_IF_FALSE(!non_written_slices.is_empty());
     
     float *channels[num_channels];
-    
-    for(auto *slice : non_written_slices)
-      channels[slice->slice.ch] = &slice->slice.samples[0];
 
-    float interleaved_data[RADIUM_BLOCKSIZE*num_channels];
+    int num_frames = RADIUM_BLOCKSIZE;
+    
+    for(auto *slice : non_written_slices) {
+      channels[slice->slice.ch] = &slice->slice.samples[0];
+      num_frames = R_MIN(num_frames, slice->slice.num_frames);
+    }
+    
+    float interleaved_data[num_frames*num_channels];
 
     int pos=0;
-    for(int i=0;i<RADIUM_BLOCKSIZE;i++)
+    for(int i=0;i<num_frames;i++)
       for(int ch=0;ch<num_channels;ch++)
         interleaved_data[pos++] = channels[ch]==NULL ? 0.0f : channels[ch][i]; // channels[ch]==NULL is not supposed to happen, but things are semi-messy, so we add the check just in case. (assertion window is shown in RT_put_slice if buffer couldn't be written to the queue.
 
-    int num_written_frames = sf_writef_float(sndfile, interleaved_data, RADIUM_BLOCKSIZE);
-    if(num_written_frames != RADIUM_BLOCKSIZE)
+    int num_written_frames = sf_writef_float(sndfile, interleaved_data, num_frames);
+    if(num_written_frames != num_frames)
       RT_message("Unable to write all data to file \"%s\": %d - %s",filename.toUtf8().constData(), num_written_frames, sf_strerror(sndfile));
 
     for(auto *slice : non_written_slices)
@@ -385,7 +390,9 @@ void RT_SampleRecorder_stop_recording(struct Patch *patch){
   put_slice(slice);
 }
 
-void RT_SampleRecorder_add_audio(struct Patch *patch, float **audio, int num_channels){
+void RT_SampleRecorder_add_audio(struct Patch *patch, float **audio, int num_frames, int num_channels){
+  R_ASSERT_NON_RELEASE(num_frames <= RADIUM_BLOCKSIZE);
+  
   RecordingSlice *slices[num_channels];
 
   for(int ch=0;ch<num_channels;ch++){
@@ -407,14 +414,15 @@ void RT_SampleRecorder_add_audio(struct Patch *patch, float **audio, int num_cha
       slice->patch = patch;
       slice->command = RecordingSlice::Sample_Data;
       slice->slice.ch = ch;
-      memcpy(slice->slice.samples, audio[ch], sizeof(float)*RADIUM_BLOCKSIZE);
+      slice->slice.num_frames = num_frames;
+      memcpy(slice->slice.samples, audio[ch], sizeof(float)*num_frames);
 
       put_slice(slice);
     }
 
     {
       float min_peak,max_peak;
-      JUCE_get_min_max_val(audio[ch], RADIUM_BLOCKSIZE, &min_peak, &max_peak);
+      JUCE_get_min_max_val(audio[ch], num_frames, &min_peak, &max_peak);
       
       PeakSlice peak_slice;
       peak_slice.patch = patch;

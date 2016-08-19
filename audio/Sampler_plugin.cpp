@@ -237,6 +237,7 @@ struct Data{
   DEFINE_ATOMIC(wchar_t*, recording_path);
   DEFINE_ATOMIC(int, num_recording_channels);
   DEFINE_ATOMIC(int, recording_status);
+  int recording_start_frame;
   DEFINE_ATOMIC(bool, recording_from_main_input);
   DEFINE_ATOMIC(int, recording_note);
   int64_t recording_note_id;
@@ -744,15 +745,22 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   if (ATOMIC_GET(data->recording_status)==IS_RECORDING){
     float *audio_[2];
-    float **audio;
+    float **audio = audio_;
     
-    if (ATOMIC_GET(data->recording_from_main_input)){
-      audio = audio_;
+    if (ATOMIC_GET(data->recording_from_main_input)) {
       MIXER_get_main_inputs(audio);
-    }else
-      audio = inputs;
-    
-    RT_SampleRecorder_add_audio((struct Patch*)plugin->patch, audio, ATOMIC_GET(data->num_recording_channels));
+    } else {
+      audio_[0] = inputs[0];
+      audio_[1] = inputs[1];
+    }
+
+    audio_[0] = &audio_[0][data->recording_start_frame];
+    audio_[1] = &audio_[1][data->recording_start_frame];
+
+    RT_SampleRecorder_add_audio((struct Patch*)plugin->patch,
+                                audio,
+                                RADIUM_BLOCKSIZE - data->recording_start_frame,
+                                ATOMIC_GET(data->num_recording_channels));
     return;
   }
   
@@ -792,6 +800,9 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note2){
   Data *data = (Data*)plugin->data;
 
+  R_ASSERT_NON_RELEASE(time >= 0);
+  R_ASSERT_NON_RELEASE(time < RADIUM_BLOCKSIZE);
+  
   //fprintf(stderr,"playing note %d. Pitch: %d, time: %d\n",(int)note_id,(int)note_num,(int)time);
 
   if (ATOMIC_GET(data->recording_status)==BEFORE_RECORDING){
@@ -803,7 +814,8 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note2){
                                       note2.pitch);
     
     data->recording_note_id = note2.id;
-
+    data->recording_start_frame = time;
+    
     ATOMIC_SET(data->recording_note, note2.pitch * 10000);
     ATOMIC_SET(data->recording_status, IS_RECORDING);
     ATOMIC_SET(patch->is_recording, true);
