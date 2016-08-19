@@ -754,8 +754,10 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
       audio_[1] = inputs[1];
     }
 
-    audio_[0] = &audio_[0][data->recording_start_frame];
-    audio_[1] = &audio_[1][data->recording_start_frame];
+    audio_[0] += data->recording_start_frame;
+    audio_[1] += data->recording_start_frame;
+
+    data->recording_start_frame = 0;
 
     RT_SampleRecorder_add_audio((struct Patch*)plugin->patch,
                                 audio,
