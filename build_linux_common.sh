@@ -55,7 +55,7 @@ export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.
 VL_PATH="bin/packages/Visualization-Library-master"
 #VL_QTLIB="$VL_PATH/src/vlQt$RADIUM_QT_VERSION/lib/libVLQt$RADIUM_QT_VERSION.a"
 export VL_CFLAGS="-DVL_STATIC_LINKING -Wall -I$VL_PATH/src -I$VL_PATH/src/3rdparty/Khronos -I$VL_PATH/src/examples"
-export VL_LIBS="$VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a -lGL -lGLU `pkg-config --libs freetype2`"
+export VL_LIBS="$VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a `$PKG --libs freetype2` -lGL -lGLU"
 # $VL_QTLIB
 
 #$VL_PATH/src/vlGraphics/plugins/freetype/lib/libFreeType.a 
@@ -68,7 +68,7 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds -msse2 -fno-omit-frame-pointer -DFOR_LINUX -DWITH_PD"
+export OS_OPTS="-Werror=array-bounds -msse2 -fno-omit-frame-pointer -DFOR_LINUX -DWITH_PD `$PKG --cflags Qt5X11Extras`"
 #export OS_OPTS="-Werror=array-bounds -march=native"
 
 if ! env |grep IS_LINUX_BINARY ; then
@@ -93,11 +93,11 @@ fi
 if env |grep IS_LINUX_BINARY ; then
     FAUSTLDFLAGS=""
 else    
-    FAUSTLDFLAGS="bin/packages/faust2/compiler/libfaust.a `pkg-config --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
+    FAUSTLDFLAGS="bin/packages/faust2/compiler/libfaust.a `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
 fi
 # _debug
 
-export OS_LDFLAGS="bin/packages/QScintilla_gpl-2.9.2/Qt4Qt5/libqscintilla2.a $FAUSTLDFLAGS bin/packages/libpd-master/libs/libpds.a pluginhost/Builds/Linux/build/libMyPluginHost.a -lasound -ljack -llrdf -pthread -lrt -lX11 $GCDIR/.libs/libgc.a  $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` -lXext `$PKG --libs glib-2.0` -lxcb -lxcb-keysyms -Wl,-Bstatic -lbfd -Wl,-Bdynamic -lz -liberty -lutil -ldl"
+export OS_LDFLAGS="bin/packages/QScintilla_gpl-2.9.2/Qt4Qt5/libqscintilla2.a $FAUSTLDFLAGS bin/packages/libpd-master/libs/libpds.a pluginhost/Builds/Linux/build/libMyPluginHost.a -lasound -ljack -llrdf -pthread -lrt -lX11 $GCDIR/.libs/libgc.a  $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs Qt5X11Extras` -lXext `$PKG --libs glib-2.0` -lxcb -lxcb-keysyms -Wl,-Bstatic -lbfd -Wl,-Bdynamic -lz -liberty -lutil -ldl"
 
 # 
 

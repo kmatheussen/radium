@@ -154,7 +154,7 @@ void EditorWidget::updateEditor(){
   
 
   transfer_atomic_must_redraws(window);
-#if !defined(RELEASE)
+#if 0 //!defined(RELEASE)
   {
     int queue_size = GFX_get_op_queue_size(this->window);
     if (queue_size > 0 || this->window->must_calculate_coordinates==true || this->window->must_redraw==true || this->window->must_redraw_editor)

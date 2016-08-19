@@ -18,8 +18,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifdef __linux__
 
-#include "Python.h"
+#include "../common/includepython.h"
 
+#include <QX11Info>
 
 #include "X11.h"
 
@@ -232,23 +233,18 @@ static int get_modifier(KeySym keysym){
 
 #if USE_QT5
 static xcb_keysym_t get_sym(xcb_key_press_event_t *event){
-    static bool failed = false;
+    static bool inited = false;
   
     static xcb_key_symbols_t *key_symbols = NULL;
 
-    if (key_symbols==NULL && failed==false){
-      xcb_connection_t *connection = xcb_connect (NULL, NULL);
+    if (inited==false){
+      xcb_connection_t *connection = QX11Info::connection();
       
-      if (xcb_connection_has_error(connection) > 0) {
-        GFX_Message(NULL, "Error. Keyboard will not work.\nUnable to open xcb connection. Error code %d.", xcb_connection_has_error(connection));
-        failed = true;
-        
-      } else {
-        key_symbols = xcb_key_symbols_alloc(connection);
-      }
-
-      // Seems like the connection has to be open when calling xcb_key_release_lookup_keysym. (bad api, xcb_key_release_lookup_keysym should have taken connection as one of the arguments)
-      //xcb_disconnect(connection);
+      if (xcb_connection_has_error(connection) > 0)
+        GFX_Message(NULL, "Seems like the xcb connection has an error. Keyboard might not work. Error code %d.", xcb_connection_has_error(connection));
+      
+      key_symbols = xcb_key_symbols_alloc(connection);
+      inited = true;
     }
 
     if (key_symbols==NULL)
@@ -265,7 +261,7 @@ static xcb_keysym_t get_sym(xcb_key_press_event_t *event){
 
 int OS_SYSTEM_get_modifier(void *void_event){
 #if USE_QT5
-  xcb_key_press_event_t *event = void_event;
+  xcb_key_press_event_t *event = (xcb_key_press_event_t *)void_event;
   KeySym keysym = get_sym(event);
 #else
   XKeyEvent *event = void_event;
@@ -284,7 +280,7 @@ int OS_SYSTEM_get_modifier(void *void_event){
 
 int OS_SYSTEM_get_keynum(void *void_event){
 #if USE_QT5
-  xcb_key_press_event_t *event = void_event;
+  xcb_key_press_event_t *event = (xcb_key_press_event_t *)void_event;
   KeySym keysym = get_sym(event);
   return keysym_to_keynum(keysym);
 #else
@@ -311,7 +307,7 @@ int OS_SYSTEM_get_qwerty_keynum2(uint32_t scancode){
  
 int OS_SYSTEM_get_qwerty_keynum(void *void_event){
 #if USE_QT5
-  xcb_key_press_event_t *event = void_event;
+  xcb_key_press_event_t *event = (xcb_key_press_event_t *)void_event;
   return get_subID_from_scancode(event->detail-8);
 #else
   XKeyEvent *key_event = void_event;
@@ -322,7 +318,7 @@ int OS_SYSTEM_get_qwerty_keynum(void *void_event){
 
 int OS_SYSTEM_get_scancode(void *void_event){
 #if USE_QT5
-  xcb_key_press_event_t *event = void_event;
+  xcb_key_press_event_t *event = (xcb_key_press_event_t *)void_event;
   return event->detail-8;
 #else
   XKeyEvent *key_event = void_event;
@@ -336,7 +332,7 @@ int OS_SYSTEM_get_scancode(void *void_event){
 
 #if USE_QT5
 void OS_SYSTEM_EventPreHandler(void *void_event){
-  xcb_generic_event_t *event = void_event;
+  xcb_generic_event_t *event = (xcb_generic_event_t *)void_event;
   
   //printf("Response type: %x (%x / %x)\n", event->response_type, XCB_ENTER_NOTIFY, XCB_LEAVE_NOTIFY);
   
@@ -380,9 +376,9 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
 }
 #endif
 
-//static bool event_is_arrow2(KeySym keysym){
-//  return keysym==XK_Down || keysym==XK_Up || keysym==XK_Right || keysym==XK_Left || keysym==XK_Page_Up || keysym==XK_Page_Down;
-//}
+static bool event_is_arrow2(KeySym keysym){
+  return keysym==XK_Down || keysym==XK_Up || keysym==XK_Right || keysym==XK_Left || keysym==XK_Page_Up || keysym==XK_Page_Down;
+}
 
 #ifdef USE_QT4
 static bool event_is_arrow(XKeyEvent *event){
@@ -394,7 +390,7 @@ static bool event_is_arrow(XKeyEvent *event){
 
 #if USE_QT5
 int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
-   xcb_generic_event_t *event = void_event;
+   xcb_generic_event_t *event = (xcb_generic_event_t *)void_event;
 
   static bool last_event_was_key_press = false;
   static bool last_event_was_key_release = false;
@@ -406,7 +402,7 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   
   if ( (event->response_type & ~0x80) == XCB_KEY_PRESS){
     
-    xcb_key_press_event_t *key_event = void_event;
+    xcb_key_press_event_t *key_event = (xcb_key_press_event_t *)void_event;
     int ret = TR_KEYBOARD;
     
     //printf(">>> Keypress %d\n",last_key_press.detail);
@@ -431,7 +427,7 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   
   else if ( (event->response_type & ~0x80) == XCB_KEY_RELEASE){
     
-    xcb_key_release_event_t *key_event = void_event;
+    xcb_key_release_event_t *key_event = (xcb_key_release_event_t *)void_event;
     int ret = TR_KEYBOARDUP;
 
     //printf("       up: keynum: %d. Time: %d\n", key_event->detail, key_event->time);

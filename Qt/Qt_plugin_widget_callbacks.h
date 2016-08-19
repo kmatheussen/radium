@@ -744,7 +744,7 @@ public slots:
     int stereo = VECTOR_push_back(&v, "Stereo from input connections");
 
     auto *sample_requester_widget = AUDIOWIDGET_get_sample_requester_widget(_patch);
-    printf("dir: %p\n", sample_requester_widget->_dir);
+    //printf("dir: %p\n", sample_requester_widget->_dir);
     wchar_t *pathdir = STRING_create(sample_requester_widget->_dir.absolutePath());
   
     int sel = GFX_Menu(root->song->tracker_windows, NULL, "", &v);

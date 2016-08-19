@@ -66,6 +66,9 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
     else
       printf("type: %d. keycode: %d. modifiers: %d. autorepeat: %d\n",(int)type, [event keyCode], (int)[event modifierFlags], [event isARepeat]);
 #endif
+
+    if([event isARepeat])
+      return TR_AUTOREPEAT;
     
     if(type==NSFlagsChanged){
       int keycode = [event keyCode];

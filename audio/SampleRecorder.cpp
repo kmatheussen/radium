@@ -16,6 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#include <math.h>
 
 #include <boost/version.hpp>
 #if (BOOST_VERSION < 100000) || ((BOOST_VERSION / 100 % 1000) < 58)

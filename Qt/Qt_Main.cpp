@@ -350,9 +350,221 @@ protected:
 
   bool last_key_was_lalt;
 
+   bool SystemEventFilter(void *event){
+
+    if(ATOMIC_GET(is_starting_up)==true)
+      return false;
+
+    OS_SYSTEM_EventPreHandler(event);
+
+    /*
+    QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+    printf("   focus: %d,   active: %d.  key: %d\n",
+           QApplication::focusWidget() != NULL,
+           QApplication::activeWindow() != NULL,
+           OS_OSX_is_key_window((void*)main_window->winId())
+           );
+    */
+    
+    if (another_window_has_focus)
+      return false;
+
+    if (MIXER_is_saving())
+      return false;
+      
+    struct Tracker_Windows *window = root->song->tracker_windows;
+
+    bool ignore_autorepeat = !doAutoRepeat() && editor_has_keyboard == true;
+    
+    int type = OS_SYSTEM_get_event_type(event, ignore_autorepeat);
+
+#if 0
+    switch(type){
+      case TR_KEYBOARD: printf("  Down\n");break;
+      case TR_KEYBOARDUP: printf("  Up\n");break;
+      case TR_AUTOREPEAT: printf("  Autorepeat\n");break;
+    }
+#endif
+    
+    tevent_autorepeat = (type==TR_AUTOREPEAT);
+
+    if (type==TR_AUTOREPEAT)
+      type = TR_KEYBOARD;
+    
+    if (type!=TR_KEYBOARD && type!=TR_KEYBOARDUP)
+      return false;
+    
+#if 0 //FOR_LINUX
+    return true;
+#endif
+    
+    bool is_key_press = type==TR_KEYBOARD;
+    
+    int modifier = OS_SYSTEM_get_modifier(event); // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event on windows. Not too sure about EVENT_EXTRA_R either (VK_APPS key) (doesn't matter, EVENT_EXTRA_R is abandoned, and the key is just used to configure block). In addition, the release value order might be wrong if pressing several modifier keys, still windows only.
+
+    //printf("modifier: %d\n",modifier);
+    if (g_show_key_codes){
+      char *message = talloc_format("%d - %d - %d", is_key_press ? 1 : 0, modifier, OS_SYSTEM_get_scancode(event));
+      printf("  Got key: %s\n",message);
+      window->message=message;
+      
+      GL_create(window,window->wblock);
+    }
+              
+    static int last_pressed_key = EVENT_NO;
+
+    if (modifier != EVENT_NO) {
+
+      bool must_return_true = false;
+      
+      if (modifier==EVENT_ALT_L){
+        if (is_key_press){
+          last_key_was_lalt = true;
+        }else {
+
+          // release
+          
+          must_return_true = true;
+          
+          if(last_key_was_lalt==true){
+            
+            if (GFX_MenuVisible(window) && GFX_MenuActive()==true) {
+              GFX_HideMenu(window);
+              set_editor_focus();
+            } else if (!GFX_MenuVisible(window)) {
+              GFX_ShowMenu(window);
+            }
+              
+            must_return_true = false; // pass the EVENT_ALT_L event to qt so that we can navigate the menues.
+            
+            last_key_was_lalt = false;                      
+          }
+
+        }
+      }else
+        last_key_was_lalt = false;
+
+      static double last_pressed_key_time = 0;
+
+      double time_now = TIME_get_ms();
+
+      if (is_key_press) {
+        
+        last_pressed_key_time = time_now;
+        last_pressed_key = modifier;
+               
+      } else {
+        
+        // key release:
+
+        if (editor_has_keyboard==true) {
+          if( (time_now - last_pressed_key_time) < 1000/4){ // i.e. only play if holding the key less than 0.25 seconds.
+            if(modifier==last_pressed_key && modifier==EVENT_ALT_R) {
+              PlayBlockFromStart(window,true); // true == do_loop
+            }
+            
+            if(modifier==last_pressed_key && modifier==EVENT_SHIFT_R) {
+              PlayBlockFromStart(window,true); // true == do_loop
+            }
+          }
+        }
+      }
+
+      g_up_downs[modifier] = is_key_press;
+      set_keyswitch();
+      //printf("__________________________ Got modifier %s. Returning false\n",is_key_press ? "down" : "up");
+
+      if (modifier==EVENT_ALT_R || must_return_true)
+        return true; // If not, Qt starts to navigate the menues.
+
+      return false;
+    }
+
+    last_key_was_lalt = false;
+
+#if 0
+    printf("is_key_press: %d, keynum: %d, EVENT_MENU: %d\n",is_key_press,keynum,EVENT_MENU);
+    if (is_key_press==false && keynum==EVENT_MENU)
+      return true; // swallow the general qt menu popup menu. Sometimes it pops up when configuring block. If you need it, just press right mouse button.
+#endif
+    
+    if (editor_has_keyboard==false)
+      return false;
+
+    int keynum = OS_SYSTEM_get_keynum(event);
+
+    last_pressed_key = keynum;
+            
+    //printf("keynum1: %d. switch: %d\n",keynum,tevent.keyswitch);
+    
+    switch(keynum){
+    case EVENT_ESC:
+    case EVENT_UPARROW:
+    case EVENT_DOWNARROW:
+    case EVENT_LEFTARROW:
+    case EVENT_RIGHTARROW:
+    case EVENT_RETURN:
+    case EVENT_KP_ENTER: {
+      if(GFX_MenuActive()==true)
+        return false;
+      break;
+    }
+    }
+
+    window->must_redraw = true;
+
+    if (is_key_press)
+      tevent.ID=TR_KEYBOARD;
+    else
+      tevent.ID=TR_KEYBOARDUP;
+    
+    tevent.SubID=keynum;  
+        
+    
+    bool ret;
+
+    bool dat_used_key = DAT_keypress(window, tevent.SubID, is_key_press);
+
+    if (dat_used_key) {
+      
+      ret = true;
+
+    } else {
+      
+      if (keynum==EVENT_NO)
+        ret = false;
+      else
+        ret = EventReciever(&tevent,window);
+      
+      if (ret==false) {
+        keynum = OS_SYSTEM_get_qwerty_keynum(event); // e.g. using scancode.
+        
+        //printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
+        
+        if (keynum==EVENT_NO){
+          //printf("Unknown key for n%p\n",event);//virtual_key);
+          return false;
+        }
+        
+        tevent.SubID=keynum;
+        
+        ret = EventReciever(&tevent,window);
+      }
+    }
+
+    //printf("ret2: %d\n",ret);
+    
+    if(ret==true)
+      static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
+    
+    return true;
+   }
+  
+  
+  /*
   int _last_keynum = EVENT_NO;
   int _last_qwerty_keynum = EVENT_NO;
-  
+
   virtual bool eventFilter(QObject *obj, QEvent *event) override {
     //printf("Got event. type: %d (%d)\n", event->type(), 6);
 
@@ -375,18 +587,18 @@ protected:
     const QEvent::Type key_press_type = (QEvent::Type)6; //QEvent::KeyPress;
     const QEvent::Type key_release_type = (QEvent::Type)7;
 
+    if (event->type() != key_press_type && event->type() != key_release_type)
+      return false;
+    
     QKeyEvent *key_event = dynamic_cast<QKeyEvent*>(event);
     if (key_event==NULL)
       return false;
 
-    if (key_event->type() != key_press_type && key_event->type() != key_release_type)
-      return false;
-    
     ulong timestamp = key_event->timestamp();      
 
     //printf("Got event. timestamp: %d, last: %d, scancode: %x, symkey: %x, modifiers: %x\n", (int)timestamp, (int)last_timestamp, key_event->nativeScanCode(), key_event->nativeVirtualKey(), key_event->nativeModifiers());
         
-    if (timestamp==last_timestamp && last_event_type==key_event->type() && last_autorepeat==tevent_autorepeat)
+    if (timestamp==last_timestamp && last_autorepeat==tevent_autorepeat) // last_event_type==key_event->type() && 
       return false;
     else {
       last_timestamp = timestamp;
@@ -462,7 +674,7 @@ protected:
         keynum = OS_SYSTEM_get_qwerty_keynum2(key_event->nativeScanCode());
 #endif
 #endif       
-        //printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
+        //        printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
         
         if (keynum==EVENT_NO){
           //printf("Unknown key for n%p\n",event);//virtual_key);
@@ -495,7 +707,7 @@ protected:
 
     OS_SYSTEM_EventPreHandler(event);
 
-    /*
+#if 0
     QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
 
     printf("   focus: %d,   active: %d.  key: %d\n",
@@ -503,7 +715,7 @@ protected:
            QApplication::activeWindow() != NULL,
            OS_OSX_is_key_window((void*)main_window->winId())
            );
-    */
+#endif
     
     if (another_window_has_focus)
       return false;
@@ -521,7 +733,7 @@ protected:
     if (type==TR_AUTOREPEAT)
       return false;
           
-    /*
+#if 0
     switch(type){
     case TR_KEYBOARD:
       printf("** Down\n");
@@ -533,7 +745,8 @@ protected:
       printf("** Autorepeat\n");
       break;
     }
-    */
+#endif
+
     if (type==TR_AUTOREPEAT){
       //return true;
       //printf("            OS_SYSTEM_get_event_type return AUOTREOEPETAT\n");
@@ -541,8 +754,9 @@ protected:
       type=TR_KEYBOARD;
     }
 
-    if (type!=TR_KEYBOARD && type!=TR_KEYBOARDUP)
+    if (type!=TR_KEYBOARD && type!=TR_KEYBOARDUP){
       return false;
+    }
     
 #if 0 //FOR_LINUX
     return true;
@@ -633,12 +847,12 @@ protected:
       return false;
       
     }
-    /*
+#if 0
     if (tevent_autorepeat)
       tevent.keyswitch |= EVENT_AUTOREPEAT2;
     else
       tevent.keyswitch &= (~EVENT_AUTOREPEAT2);
-    */
+#endif
     last_key_was_lalt = false;
 
 #if 0
@@ -659,7 +873,7 @@ protected:
       
     return false;
 
-    /*
+#if 0
     int keynum = OS_SYSTEM_get_keynum(event);
 
     last_pressed_key = keynum;
@@ -730,10 +944,12 @@ protected:
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
     
     return true;
-    */
+#endif
 
   }
+*/
 
+  
 #ifdef USE_QT5
 
   virtual bool nativeEventFilter(const QByteArray &eventType, void *message, long *) Q_DECL_OVERRIDE
@@ -780,7 +996,7 @@ MyApplication::MyApplication(int &argc,char **argv)
   //setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
 #if USE_QT5
   installNativeEventFilter(this);
-  installEventFilter(this);
+  //installEventFilter(this);
 #endif
 }
 
