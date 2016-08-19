@@ -365,7 +365,7 @@ extern void create_patchbay_plugin(void);
 #include "VST_plugins_proc.h"
 extern void create_juce_plugins(void);
 extern void create_ladspa_plugins(void);
-extern "C" void create_sample_plugin(void);
+extern void create_sample_plugin(void);
 extern "C" void create_fluidsynth_plugin(void);
 extern void create_pd_plugin(void);
 

@@ -16,7 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 static char *get_current_wav_chunk_id(disk_t *file){
-  char *val=talloc(5);
+  char *val=(char*)talloc(5);
   
   if(DISK_read_binary(file, val, 4) != 4)
     fprintf(stderr,"Reading file failed\n");
@@ -49,7 +49,7 @@ static bool spool_to_next_wav_chunk(disk_t *file, int endpos){
   return true;
 }
 
-static bool spool_to_wav_chunk(disk_t *file, char *chunk_id, int num){ // chunk_id is a 4 byte string
+static bool spool_to_wav_chunk(disk_t *file, const char *chunk_id, int num){ // chunk_id is a 4 byte string
   DISK_set_pos(file,0);
 
   if(strcmp(get_current_wav_chunk_id(file),"RIFF"))
@@ -105,7 +105,7 @@ static int find_loop_cue_pos(disk_t *file, int cue_id, int num_cues){
   return ret;
 }
 
-static int find_cue_id_for_label2(disk_t *file, char *label){
+static int find_cue_id_for_label2(disk_t *file, const char *label){
 
   int startpos=DISK_pos(file);
 
@@ -134,7 +134,7 @@ static int find_cue_id_for_label2(disk_t *file, char *label){
 
       int id=read_le32int(file);
 
-      char *name=talloc(size);
+      char *name=(char*)talloc(size);
       if(DISK_read_binary(file, name, size-4) != (size-4)){
         fprintf(stderr,"Reading file failed\n");
         return -1;
@@ -156,7 +156,7 @@ static int find_cue_id_for_label2(disk_t *file, char *label){
   return -1;
 }
 
-static int find_cue_id_for_label(disk_t *file, char *label){
+static int find_cue_id_for_label(disk_t *file, const char *label){
   int i=0;
   while(true){
     if(spool_to_wav_chunk(file, "LIST", i)==false)

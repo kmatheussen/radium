@@ -240,6 +240,9 @@ struct _Data{
   DEFINE_ATOMIC(int, recording_status);
   DEFINE_ATOMIC(bool, recording_from_main_input);
   int64_t recording_note_id;
+
+  //radium::Vector<float> min_recording_peaks;
+  //radium::Vector<float> max_recording_peaks;
 };
 
 
@@ -493,7 +496,7 @@ static long RT_src_callback_ping_pong_looping(Voice *voice, const Sample *sample
 
 
 static long RT_src_callback(void *cb_data, float **out_data){
-  Voice *voice         = cb_data;
+  Voice *voice         = (Voice*)cb_data;
   const Sample *sample = voice->sample;
   int start_pos        = voice->pos;
   Data  *data          = sample->data;
@@ -1583,16 +1586,18 @@ static void set_legal_loop_points(Sample *sample, int start, int end, bool set_l
   }
 }
 
+
 #include "Sampler_plugin_wav_parse.c"
 #include "Sampler_plugin_xi_load.c"
 #include "Sampler_plugin_sf2_load.c"
+
 
 static float *load_interleaved_samples(const wchar_t *filename, SF_INFO *sf_info){
   SNDFILE *sndfile          = sf_open(STRING_get_chars(filename),SFM_READ,sf_info);
   if(sndfile==NULL)
     return NULL;
 
-  float   *ret              = talloc_atomic(sizeof(float) * sf_info->channels * sf_info->frames);
+  float   *ret              = (float*)talloc_atomic(sizeof(float) * sf_info->channels * sf_info->frames);
   int      allocated_frames = sf_info->frames;
 
   int total_read_frames     = sf_readf_float(sndfile, ret, sf_info->frames);
@@ -1608,7 +1613,7 @@ static float *load_interleaved_samples(const wchar_t *filename, SF_INFO *sf_info
 
     if(total_read_frames + read_now > allocated_frames){
       allocated_frames = (total_read_frames+read_now) * 2;
-      ret = talloc_realloc(ret, allocated_frames * sizeof(float) * sf_info->channels);
+      ret = (float*)talloc_realloc(ret, allocated_frames * sizeof(float) * sf_info->channels);
     }
 
     memcpy(ret + (total_read_frames*sf_info->channels), samples, sizeof(float)*1024*sf_info->channels);
@@ -1646,7 +1651,7 @@ static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename, boo
     for(ch=0;ch<num_channels;ch++){
       Sample *sample     = (Sample*)&data->samples[ch];
       sample->num_frames = sf_info.frames;
-      sample->sound       = V_malloc(sizeof(float)*sample->num_frames);
+      sample->sound       = (float*)V_malloc(sizeof(float)*sample->num_frames);
     }
 
     int interleaved_pos=0;
@@ -1706,8 +1711,8 @@ static void generate_peaks(Data *data){
       float *samples = sample->sound;
 
       int num_peaks = (sample->num_frames / SAMPLES_PER_PEAK)+10;
-      sample->min_peaks = V_malloc(sizeof(float)*num_peaks);
-      sample->max_peaks = V_malloc(sizeof(float)*num_peaks);
+      sample->min_peaks = (float*)V_malloc(sizeof(float)*num_peaks);
+      sample->max_peaks = (float*)V_malloc(sizeof(float)*num_peaks);
       
       int i;
       int peaknum=0;
@@ -1756,7 +1761,7 @@ static bool load_sample(Data *data, const wchar_t *filename, int instrument_numb
 }
 
 static SoundPlugin *create_tremolo(bool is_loading){
-  SoundPlugin *ret = V_calloc(1, sizeof(SoundPlugin));
+  SoundPlugin *ret = (SoundPlugin*)V_calloc(1, sizeof(SoundPlugin));
   
   ret->type = PR_get_plugin_type_by_name(NULL, "Faust", "System Tremolo");
   ret->data = ret->type->create_plugin_data(ret->type, ret, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size(), is_loading);
@@ -1770,7 +1775,7 @@ static void free_tremolo(SoundPlugin *tremolo){
 }
 
 static Data *create_data(float samplerate, Data *old_data, const wchar_t *filename, int instrument_number, int resampler_type, bool is_loading){
-  Data *data = V_calloc(1,sizeof(Data));
+  Data *data = (Data*)V_calloc(1,sizeof(Data));
 
   data->signal_from_RT = RSEMAPHORE_create(0);
 
@@ -1910,7 +1915,7 @@ static void set_loop_data(Data *data, int start, int length, bool set_loop_on_of
 }
 
 void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start, int length){
-  Data *data=plugin->data;
+  Data *data=(Data*)plugin->data;
 
   PLAYER_lock();{  
     set_loop_data(data, start, length, true);
@@ -1922,7 +1927,7 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
   bool success=false;
 
   Data *data = NULL;
-  Data *old_data = plugin->data;
+  Data *old_data = (Data*)plugin->data;
 
   filename = OS_loading_get_resolved_file_path(filename);
   if (filename==NULL)
@@ -1961,10 +1966,12 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
 
   update_peaks(plugin);
 
-  volatile struct Patch *patch = plugin->patch;
-  if(patch!=NULL)
-    GFX_update_instrument_widget((struct Patch*)patch); // Update "loop" button.
-
+  {
+    volatile struct Patch *patch = plugin->patch;
+    if(patch!=NULL)
+      GFX_update_instrument_widget((struct Patch*)patch); // Update "loop" button.
+  }
+  
   success = true;
 
  exit:
@@ -1976,17 +1983,17 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
 
 
 bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number){
-  Data *data=plugin->data;
+  Data *data=(Data*)plugin->data;
   return set_new_sample(plugin,filename,instrument_number,data->resampler_type,data->loop_start,data->loop_length, false);
 }
 
 bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, int resampler_type){
-  Data *data=plugin->data;
+  Data *data=(Data*)plugin->data;
   return set_new_sample(plugin,data->filename,data->instrument_number,resampler_type,data->loop_start,data->loop_length, false);
 }
 
 int SAMPLER_get_resampler_type(struct SoundPlugin *plugin){
-  Data *data=plugin->data;
+  Data *data=(Data*)plugin->data;
   return data->resampler_type;
 }
 
@@ -2178,51 +2185,58 @@ const wchar_t *SAMPLER_get_filename_display(struct SoundPlugin *plugin){
   return data->filename;
 }
 
-static SoundPluginType plugin_type = {
- type_name                : "Sample Player",
- name                     : "Sample Player",
- info                     : "Sample Player can load XI intruments, Soundfonts, and all types of sample formats supported by libsndfile. WAV files are looped if they have loops defined in the \"sampl\" chunk, or they have \"Loop Start\" and \"Loop End\" cue id's.\n\nSoundFonts often sound better when played with FluidSynth instead of the Sample Player. The Soundfont handling in Sample Player needs more care. However, the Sample Player uses less memory, are faster to create, has sample-accurate note scheduling, supports pitch changes and polyphonic aftertouch (velocity can be changed while a note is playing), and has configurable options such as attack, decay, sustain, and release.",
- num_inputs               : 2,
- num_outputs              : 2,
- is_instrument            : true,
- note_handling_is_RT      : false,
- num_effects              : EFF_NUM_EFFECTS,
- get_effect_format        : get_effect_format,
- get_effect_name          : get_effect_name,
- effect_is_RT             : NULL,
- create_plugin_data       : create_plugin_data,
- cleanup_plugin_data      : cleanup_plugin_data,
+static SoundPluginType plugin_type = {0};
 
- RT_process       : RT_process,
- play_note        : play_note,
- set_note_volume  : set_note_volume,
- set_note_pitch   : set_note_pitch,
- stop_note        : stop_note,
- get_peaks        : get_peaks,
- set_effect_value : set_effect_value,
- get_effect_value : get_effect_value,
- get_display_value_string : get_display_value_string,
+static void init_plugin_type(void){
 
- recreate_from_state : recreate_from_state,
- create_state        : create_state,
+ plugin_type.type_name                = "Sample Player";
+ plugin_type.name                     = "Sample Player";
+ plugin_type.info                     = "Sample Player can load XI intruments; Soundfonts, and all types of sample formats supported by libsndfile. WAV files are looped if they have loops defined in the \"sampl\" chunk, or they have \"Loop Start\" and \"Loop End\" cue id's.\n\nSoundFonts often sound better when played with FluidSynth instead of the Sample Player. The Soundfont handling in Sample Player needs more care. However, the Sample Player uses less memory, are faster to create, has sample-accurate note scheduling, supports pitch changes and polyphonic aftertouch (velocity can be changed while a note is playing), and has configurable options such as attack, decay, sustain, and release.";
+ plugin_type.num_inputs               = 2;
+ plugin_type.num_outputs              = 2;
+ plugin_type.is_instrument            = true;
+ plugin_type.note_handling_is_RT      = false;
+ plugin_type.num_effects              = EFF_NUM_EFFECTS;
+ plugin_type.get_effect_format        = get_effect_format;
+ plugin_type.get_effect_name          = get_effect_name;
+ plugin_type.effect_is_RT             = NULL;
+ plugin_type.create_plugin_data       = create_plugin_data;
+ plugin_type.cleanup_plugin_data      = cleanup_plugin_data;
 
- data                     : NULL
+ plugin_type.RT_process       = RT_process;
+ plugin_type.play_note        = play_note;
+ plugin_type.set_note_volume  = set_note_volume;
+ plugin_type.set_note_pitch   = set_note_pitch;
+ plugin_type.stop_note        = stop_note;
+ plugin_type.get_peaks        = get_peaks;
+ plugin_type.set_effect_value = set_effect_value;
+ plugin_type.get_effect_value = get_effect_value;
+ plugin_type.get_display_value_string = get_display_value_string;
+
+ plugin_type.recreate_from_state = recreate_from_state;
+ plugin_type.create_state        = create_state;
+
+ plugin_type.data                     = NULL;
 };
 
 static SoundPluginType click_type;
 
 void create_sample_plugin(void){
-  PR_add_plugin_type(&plugin_type);
 
   static bool has_inited = false;
 
   if (has_inited==false) {
+    
+    init_plugin_type();
+    
     memcpy((void*)&click_type, (void*)&plugin_type, sizeof(SoundPluginType));
 
     click_type.name = g_click_name;
 
     has_inited = true;
   }
+
+  PR_add_plugin_type(&plugin_type);
 
   PR_add_plugin_type(&click_type);
 }

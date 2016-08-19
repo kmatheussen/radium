@@ -125,7 +125,7 @@ static float xi_read_next_sample(xi_sample_reader_t *sample_reader){
 
 static float *xi_get_sample(disk_t *file, int sample_num){
   int    num_frames     = xi_get_num_frames(file,sample_num);
-  float *sample         = V_calloc(sizeof(float),num_frames);
+  float *sample         = (float*)V_calloc(sizeof(float),num_frames);
   int    bits_per_frame = xi_get_bits_per_frame(file,sample_num);
 
   if(sample==NULL){
@@ -136,7 +136,7 @@ static float *xi_get_sample(disk_t *file, int sample_num){
   xi_seek_to_sample(file, sample_num);
 
   if(bits_per_frame==16){
-    int16_t *s16=V_calloc(sizeof(int16_t),num_frames);
+    int16_t *s16=(int16_t*)V_calloc(sizeof(int16_t),num_frames);
     if(s16==NULL){
       GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames*2);
       return sample;
@@ -153,7 +153,7 @@ static float *xi_get_sample(disk_t *file, int sample_num){
     }
     V_free(s16);
   }else{
-    int8_t *s8=V_calloc(sizeof(int8_t),num_frames);
+    int8_t *s8=(int8_t*)V_calloc(sizeof(int8_t),num_frames);
     if(s8==NULL){
       GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames);
       return sample;
@@ -221,47 +221,53 @@ bool load_xi_instrument(Data *data,const wchar_t *filename, bool set_loop_on_off
     }
   }
 
-  int num_samples = xi_get_num_samples(file);
+  {
+    int num_samples = xi_get_num_samples(file);
 
-  data->num_different_samples = R_MIN(num_samples,MAX_NUM_SAMPLES);
+    data->num_different_samples = R_MIN(num_samples,MAX_NUM_SAMPLES);
+  }
 
-  int sample_num;
+  {
+    int sample_num;
 
-  for(sample_num=0;sample_num<data->num_different_samples;sample_num++){
-    Sample *sample = (Sample *)&data->samples[sample_num];
+    for(sample_num=0;sample_num<data->num_different_samples;sample_num++){
+      Sample *sample = (Sample *)&data->samples[sample_num];
 
-    sample->ch = -1;
-    sample->volume = xi_get_sample_volume(file,sample_num);
+      sample->ch = -1;
+      sample->volume = xi_get_sample_volume(file,sample_num);
 
-    sample->num_frames   = xi_get_num_frames(file,sample_num);
+      sample->num_frames   = xi_get_num_frames(file,sample_num);
 
-    set_legal_loop_points(sample,-1,-1, set_loop_on_off); // By default, loop all.
+      set_legal_loop_points(sample,-1,-1, set_loop_on_off); // By default, loop all.
 
-    if(xi_get_loop_type(file,sample_num)!=0){ // TODO: Implement those other types of loops.
-      set_legal_loop_points(sample,
-                            xi_get_loop_start(file,sample_num),
-                            xi_get_loop_end(file,sample_num),
-                            set_loop_on_off
-                            );
-    }
+      if(xi_get_loop_type(file,sample_num)!=0){ // TODO: Implement those other types of loops.
+        set_legal_loop_points(sample,
+                              xi_get_loop_start(file,sample_num),
+                              xi_get_loop_end(file,sample_num),
+                              set_loop_on_off
+                              );
+      }
 
-    sample->sound = xi_get_sample(file, sample_num);
-    if(sample->sound==NULL)
-      goto exit;
+      sample->sound = xi_get_sample(file, sample_num);
+      if(sample->sound==NULL)
+        goto exit;
 
-    int note;
-    for(note=0;note<128;note++){
-      sample->frequency_table[note] = xi_get_frequency(file, note, sample_num);
+      int note;
+      for(note=0;note<128;note++){
+        sample->frequency_table[note] = xi_get_frequency(file, note, sample_num);
+      }
     }
   }
 
-  int note_num;
-  for(note_num=0;note_num<128;note_num++){
-    int sample_num = xi_get_sample_number_for_note(file,note_num);
-    Note *note = (Note*)&data->notes[note_num];
-
-    note->num_samples = 1;
-    note->samples[0]  = &data->samples[sample_num];
+  {
+    int note_num;
+    for(note_num=0;note_num<128;note_num++){
+      int sample_num = xi_get_sample_number_for_note(file,note_num);
+      Note *note = (Note*)&data->notes[note_num];
+      
+      note->num_samples = 1;
+      note->samples[0]  = &data->samples[sample_num];
+    }
   }
 
   ret=true;
