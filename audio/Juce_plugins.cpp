@@ -1190,11 +1190,17 @@ const char *JUCE_get_backtrace(void){
   return g_backtrace.toUTF8();
 }
 
-float JUCE_get_max_val(const float *array, const int num_elements){
+void JUCE_get_min_max_val(const float *array, const int num_elements, float *min_val, float *max_val){
   auto both = FloatVectorOperations::findMinAndMax(array,num_elements);
-  float a = -both.getStart();
-  float b = both.getEnd();
-  return R_MAX(a,b);
+  *min_val = both.getStart();
+  *max_val = both.getEnd();
+}
+
+float JUCE_get_max_val(const float *array, const int num_elements){
+  float a;
+  float b;
+  JUCE_get_min_max_val(array, num_elements, &a, &b);
+  return R_MAX(-a,b);
 }
 
 

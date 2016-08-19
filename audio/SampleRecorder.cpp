@@ -40,12 +40,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Sampler_plugin_proc.h"
 #include "Mixer_proc.h"
 #include "undo_sample_proc.h"
+#include "Juce_plugins_proc.h"
 
 #include "SampleRecorder_proc.h"
 
 
 namespace{
 
+struct PeakSlice{
+  struct Patch *patch;
+  int ch;
+  float min;
+  float max;
+};
+  
 struct RecordingSlice{
   struct Patch *patch;
 
@@ -82,6 +90,9 @@ struct RecordingSlice{
 static radium::Queue<RecordingSlice*, MAX_QUEUE_SIZE> *g_recording_slice_queue;
 
 static boost::lockfree::queue<RecordingSlice*, boost::lockfree::capacity<MAX_QUEUE_SIZE> > *g_free_slices;
+
+static boost::lockfree::queue<PeakSlice, boost::lockfree::capacity<MAX_QUEUE_SIZE> > *g_peak_slice_queue;
+
 
 static RecordingSlice *RT_get_free_slice(void){
   RecordingSlice *slice;
@@ -303,6 +314,20 @@ void SampleRecorder_called_regularly(void){
   R_ASSERT(THREADING_is_main_thread());
 
   while(true){
+    PeakSlice peak_slice;
+
+    if (g_peak_slice_queue->pop(peak_slice)==false)
+      break;
+
+    if (peak_slice.patch->patchdata != NULL)
+      SAMPLER_add_recorded_peak((SoundPlugin*)peak_slice.patch->patchdata,
+                                peak_slice.ch,
+                                peak_slice.min,
+                                peak_slice.max
+                                );                       
+  }
+  
+  while(true){
     bool gotit;
     RecordingFile *recorded_file = g_sample_recorder_thread.recorded_files.tryGet(gotit);
 
@@ -352,7 +377,7 @@ void RT_SampleRecorder_stop_recording(struct Patch *patch){
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
   RecordingSlice *slice;
-  while(g_free_slices->pop(slice)==false); // buzy looping. Close message must be sent.
+  while(g_free_slices->pop(slice)==false); // buzy looping. The close message must be sent.
   
   slice->patch = patch;
   slice->command = RecordingSlice::Stop_Recording;
@@ -376,14 +401,29 @@ void RT_SampleRecorder_add_audio(struct Patch *patch, float **audio, int num_cha
   }
         
   for(int ch=0;ch<num_channels;ch++){
-    RecordingSlice *slice = slices[ch];
+    {
+      RecordingSlice *slice = slices[ch];
 
-    slice->patch = patch;
-    slice->command = RecordingSlice::Sample_Data;
-    slice->slice.ch = ch;
-    memcpy(slice->slice.samples, audio[ch], sizeof(float)*RADIUM_BLOCKSIZE);
+      slice->patch = patch;
+      slice->command = RecordingSlice::Sample_Data;
+      slice->slice.ch = ch;
+      memcpy(slice->slice.samples, audio[ch], sizeof(float)*RADIUM_BLOCKSIZE);
 
-    put_slice(slice);
+      put_slice(slice);
+    }
+
+    {
+      float min_peak,max_peak;
+      JUCE_get_min_max_val(audio[ch], RADIUM_BLOCKSIZE, &min_peak, &max_peak);
+      
+      PeakSlice peak_slice;
+      peak_slice.patch = patch;
+      peak_slice.ch = ch;
+      peak_slice.min = min_peak;
+      peak_slice.max = max_peak;
+      
+      g_peak_slice_queue->bounded_push(peak_slice);
+    }
   }
 }
 
@@ -396,6 +436,8 @@ void SampleRecorder_Init(void){
   for(int i=0;i<MAX_QUEUE_SIZE;i++)
     g_free_slices->push(&slices[i]);
 
+  g_peak_slice_queue = new boost::lockfree::queue<PeakSlice, boost::lockfree::capacity<MAX_QUEUE_SIZE> >;
+    
   g_sample_recorder_thread.start();
 }
 

@@ -14,7 +14,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
+extern LANGSPEC void SAMPLER_add_recorded_peak(SoundPlugin *plugin,
+                                               int ch,
+                                               float min,
+                                               float max
+                                               );
 extern LANGSPEC bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number);
 extern LANGSPEC void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start, int length);
 extern LANGSPEC bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, int resampler_type);

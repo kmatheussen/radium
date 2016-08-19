@@ -103,8 +103,7 @@ enum{
 
 #define SAMPLES_PER_PEAK 64
 
-struct _Data;
-typedef struct _Data Data;
+struct Data;
 
 typedef struct{
   float volume;
@@ -202,7 +201,7 @@ enum{
   IS_RECORDING
 };
 
-struct _Data{
+struct Data{
 
   CopyData p;
 
@@ -221,7 +220,7 @@ struct _Data{
   
   //int num_channels; // not used for anything, I think.
 
-  const Note notes[128];
+  const Note notes[128] = {};
 
   Voice *voices_playing;
   Voice *voices_not_playing;
@@ -229,21 +228,47 @@ struct _Data{
   int num_different_samples;  // not used for anything (important).
 
   Voice voices[POLYPHONY];
-  const Sample samples[MAX_NUM_SAMPLES];
+  const Sample samples[MAX_NUM_SAMPLES] = {};
 
   // These two are used when switching sound on the fly
-  struct _Data *new_data;
+  struct Data *new_data;
   RSemaphore *signal_from_RT;
 
   DEFINE_ATOMIC(wchar_t*, recording_path);
   DEFINE_ATOMIC(int, num_recording_channels);
   DEFINE_ATOMIC(int, recording_status);
   DEFINE_ATOMIC(bool, recording_from_main_input);
+  DEFINE_ATOMIC(int, recording_note);
   int64_t recording_note_id;
 
-  //radium::Vector<float> min_recording_peaks;
-  //radium::Vector<float> max_recording_peaks;
+  // No need to clear these two fields after usage (to save some memory) since plugin->data is reloaded after recording.
+  radium::Vector<float> min_recording_peaks[2];
+  radium::Vector<float> max_recording_peaks[2];
+
+  // There should be a compiler option in c++ to make this the default behavior. It would automatically eliminate a billion bugs in the world.
+  void *operator new(size_t size) {
+    void *mem = ::operator new(size);
+    memset(mem, 0, size);
+    return mem;
+  }
 };
+
+
+static double midi_to_hz(float midi){
+  if(midi<=0)
+    return 0;
+  else
+    //  return 1;
+  return 8.17579891564*(expf(.0577622650*midi));
+}
+
+#if 0
+static double get_ratio(int sample_note_num, int play_note_num){
+  return midi_to_hz(sample_note_num) / midi_to_hz(play_note_num);
+}
+#endif
+
+
 
 
 
@@ -779,6 +804,7 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note2){
     
     data->recording_note_id = note2.id;
 
+    ATOMIC_SET(data->recording_note, note2.pitch * 10000);
     ATOMIC_SET(data->recording_status, IS_RECORDING);
     ATOMIC_SET(patch->is_recording, true);
     
@@ -1041,8 +1067,11 @@ static int get_peaks(struct SoundPlugin *plugin,
                      )
 {
   Data *data = (Data*)plugin->data;
-
+  
   if(ch==-1){
+    if (ATOMIC_GET(data->recording_status) == IS_RECORDING)
+      return ATOMIC_GET(data->num_recording_channels);
+    
     int i;
     for(i=0;i<MAX_NUM_SAMPLES;i++){
       Sample *sample=(Sample*)&data->samples[i];
@@ -1056,6 +1085,71 @@ static int get_peaks(struct SoundPlugin *plugin,
 
   R_ASSERT_RETURN_IF_FALSE2(note_num >= 0.0f, 2);
 
+  if (data->min_recording_peaks[0].size() > 0) {
+
+    double recording_note = (float)ATOMIC_GET(data->recording_note) / 10000.0;
+
+    double ratio = (midi_to_hz(note_num) / midi_to_hz(recording_note));
+      
+    int start_index = ratio * (double)start_time / (double)RADIUM_BLOCKSIZE;
+    int end_index   = ratio * (double)end_time / (double)RADIUM_BLOCKSIZE;
+    
+    {
+      bool has_set_min = false;
+      float min=0.0f;
+
+      for(int i = start_index ; i < end_index ; i++) {
+        if (i >= data->min_recording_peaks[ch].size())
+          break;
+        
+        float val = data->min_recording_peaks[ch].at(i);
+        if (has_set_min){
+          if (val < min)
+            min = val;
+        } else {
+          min = val;
+          has_set_min = true;
+        }
+      }
+      
+      *min_value = min;
+    }
+
+    {
+      bool has_set_max = false;
+      float max=0.0f;
+      
+      for(int i = start_index ; i < end_index ; i++) {
+        if (i >= data->max_recording_peaks[ch].size())
+          break;
+        
+        float val = data->max_recording_peaks[ch].at(i);
+        if (has_set_max){
+          if (val > max)
+            max = val;
+        } else {
+          max = val;
+          has_set_max = true;
+        }
+      }
+
+      *max_value = max;
+    }
+
+    int num_channels = ATOMIC_GET(data->num_recording_channels);
+          
+    Panvals pan = get_pan_vals_vector(das_pan, num_channels);
+    float panval = pan.vals[ch][ch];
+
+    (*min_value) *= panval;
+    (*max_value) *= panval;
+
+    apply_adsr_to_peak(data, (start_time+end_time)/2, min_value, max_value);
+      
+    return 2;
+  }
+
+    
   const Note *note=&data->notes[(int)note_num];
 
   if (!note_has_sample(note)){   
@@ -1545,22 +1639,6 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 }
              
 
-static double midi_to_hz(float midi){
-  if(midi<=0)
-    return 0;
-  else
-    //  return 1;
-  return 8.17579891564*(expf(.0577622650*midi));
-}
-
-#if 0
-static double get_ratio(int sample_note_num, int play_note_num){
-  return midi_to_hz(sample_note_num) / midi_to_hz(play_note_num);
-}
-#endif
-
-
-
 // Note, if start==-1 and end==-1, loop_start is set to 0 and loop_end is set to sample->num_frames, and loop_onoff is not set.
 static void set_legal_loop_points(Sample *sample, int start, int end, bool set_loop_on_off){
   if(start==-1 && end==-1){ 
@@ -1775,7 +1853,7 @@ static void free_tremolo(SoundPlugin *tremolo){
 }
 
 static Data *create_data(float samplerate, Data *old_data, const wchar_t *filename, int instrument_number, int resampler_type, bool is_loading){
-  Data *data = (Data*)V_calloc(1,sizeof(Data));
+  Data *data = new Data;
 
   data->signal_from_RT = RSEMAPHORE_create(0);
 
@@ -1842,7 +1920,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   Data *data = create_data(samplerate,NULL,default_sound_filename,0,RESAMPLER_CUBIC, is_loading); // cubic is the default
   
   if(load_sample(data,default_sound_filename,0, true)==false){
-    V_free(data);
+    delete data;
     return NULL;
   }
 
@@ -1878,7 +1956,7 @@ static void delete_data(Data *data){
 
   free_tremolo(data->tremolo);
 
-  V_free(data);
+  delete data;
 }
 
 static void set_loop_data(Data *data, int start, int length, bool set_loop_on_off){
@@ -1921,6 +1999,25 @@ void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start, int length){
     set_loop_data(data, start, length, true);
     PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
   }PLAYER_unlock();
+}
+
+void SAMPLER_add_recorded_peak(SoundPlugin *plugin,
+                               int ch,
+                               float min,
+                               float max
+                               )
+{
+  Data *data=(Data*)plugin->data;
+
+  if (ATOMIC_GET(data->recording_status) != IS_RECORDING)
+    return;
+
+  R_ASSERT_RETURN_IF_FALSE(ch==0 || ch==1);
+  
+  data->min_recording_peaks[ch].push_back(min);
+  data->max_recording_peaks[ch].push_back(max);
+
+  update_peaks(plugin);
 }
 
 static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number, int resampler_type, int loop_start, int loop_end, bool is_loading){
@@ -1976,10 +2073,11 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
 
  exit:
   if(success==false)
-    V_free(data);
+    delete data;
 
   return success;
 }
+
 
 
 bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number){
