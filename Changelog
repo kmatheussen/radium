@@ -1,6 +1,6 @@
 Changes 4.0.4 -> 4.0.5:
-* Fix modifier keys on osx
-* Don't crash if deleting an instrument while recording
+* Fix modifier keys on OSX.
+* Don't crash if deleting the instrument while recording audio.
 
 
 
