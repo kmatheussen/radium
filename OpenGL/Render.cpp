@@ -1660,7 +1660,7 @@ static float subtrack_x1, subtrack_x2;
 
 static void create_track_peaks(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const struct NodeLine *nodelines){
   struct Patch *patch = wtrack->track->patch;
-  float note_time = Place2STime(wblock->block, &note->l.p);
+  STime note_time = Place2STime(wblock->block, &note->l.p);
 
   float track_volume =  wtrack->track->volumeonoff ? (float)wtrack->track->volume / MAXTRACKVOL : 1.0f;
   //float velocity = scale(n,0,num_peaks, velocity1->velocity, velocity2->velocity);
@@ -1704,8 +1704,8 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
         last_c = c;
       }
       
-      float time1 = Place2STime(wblock->block, &ns->element1->p) - note_time;
-      float time2 = Place2STime(wblock->block, &ns->element2->p) - note_time;
+      STime time1 = Place2STime(wblock->block, &ns->element1->p) - note_time;
+      STime time2 = Place2STime(wblock->block, &ns->element2->p) - note_time;
       
       float velocity1 = scale(x1, subtrack_x1, subtrack_x2, 0, 1);
       float velocity2 = scale(x2, subtrack_x1, subtrack_x2, 0, 1);

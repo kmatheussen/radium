@@ -205,6 +205,8 @@ struct Data{
 
   CopyData p;
 
+  bool use_sample_file_middle_note; // Set to true by default now, but not included (or set to false) in the state of older states. Without this flag, loading older sounds could sound wrong.
+
   // Should loop start/length be placed in CopyData?
   int loop_start;
   int loop_length;   // if 0, use loop data in sample file instead, if there is any. (loop_start has no meaning if loop_length is 0)
@@ -255,7 +257,7 @@ struct Data{
 };
 
 
-static double midi_to_hz(float midi){
+static double midi_to_hz(double midi){
   if(midi<=0)
     return 0;
   else
@@ -570,14 +572,15 @@ static double RT_get_src_ratio3(Data *data, const Sample *sample, float pitch){
   int notenum = (int)pitch;
   float finetune = pitch - notenum;
 
-  return data->samplerate / scale(finetune, 0, 1, sample->frequency_table[notenum], sample->frequency_table[notenum+1]);
+  //printf("finetune: %f, scale: %f. First: %f\n", finetune, scale(finetune, 0, 1, sample->frequency_table[notenum], sample->frequency_table[notenum+1]), sample->frequency_table[notenum]);
+  return data->samplerate / scale_double(finetune, 0, 1, sample->frequency_table[notenum], sample->frequency_table[notenum+1]);
 }
 
 // Note: Also called from get_peaks
 static double RT_get_src_ratio2(Data *data, const Sample *sample, float pitch){
 
   //printf("note_adjust: %d (%f)\n",(int)data->p.note_adjust,data->p.note_adjust);
-  double adjusted_pitch = pitch + scale(data->p.finetune, 0, 1, -1, 1) + (int)data->p.note_adjust;
+  double adjusted_pitch = pitch + scale_double(data->p.finetune, 0, 1, -1, 1) + (int)data->p.note_adjust;
   return RT_get_src_ratio3(data, sample, adjusted_pitch);
 }
 
@@ -607,7 +610,15 @@ static int RT_get_resampled_data(Data *data, Voice *voice, float *out, int num_f
          data->samplerate / voice->sample->frequency_table[voice->note_num]);
 #endif
 
-  return RESAMPLER_read(voice->resampler, RT_get_src_ratio(data,voice), num_frames, out);
+  double ratio = RT_get_src_ratio(data,voice);
+  
+#if 0
+  if (abs(ratio-1.0) < 1.01)
+    ratio = 1.0;
+  printf("  src ratio: %f\n", ratio);
+#endif
+  
+  return RESAMPLER_read(voice->resampler, ratio, num_frames, out);
 }
 
 #if 0
@@ -820,7 +831,7 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note2){
     
     ATOMIC_SET(data->recording_note, note2.pitch * 10000);
     ATOMIC_SET(data->recording_status, IS_RECORDING);
-    ATOMIC_SET(patch->is_recording, true);
+    ATOMIC_SET(patch->is_recording, true); // Used to determine whether to paint the chip background red.
     
     return;
   }
@@ -1104,7 +1115,9 @@ static int get_peaks(struct SoundPlugin *plugin,
     double recording_note = (float)ATOMIC_GET(data->recording_note) / 10000.0;
 
     double ratio = (midi_to_hz(note_num) / midi_to_hz(recording_note));
-      
+
+    //printf("  Peak ratio: %f  (%f, %f)\n", ratio,note_num,recording_note);
+    
     int start_index = ratio * (double)start_time / (double)RADIUM_BLOCKSIZE;
     int end_index   = ratio * (double)end_time / (double)RADIUM_BLOCKSIZE;
     
@@ -1761,13 +1774,17 @@ static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename, boo
     for(ch=0;ch<num_channels;ch++){     
       Sample *sample=(Sample*)&data->samples[ch];
 
+      double middle_note = 48;
+
       set_legal_loop_points(sample,-1,-1, set_loop_on_off); // By default, don't loop, but if set, loop all.
               
       if((sf_info.format&0xffff0000) == SF_FORMAT_WAV){
         printf("format: 0x%x. sections: %d, num_frames: %d. SF_FORMAT_WAV: 0x%x. og: 0x%x\n",sf_info.format,sf_info.sections,(int)sf_info.frames,SF_FORMAT_WAV,sf_info.format&SF_FORMAT_WAV);
         set_wav_loop_points(sample,filename,set_loop_on_off);
+        if (data->use_sample_file_middle_note)
+          middle_note = get_wav_middle_note(filename, middle_note);
       }
-
+      
       if(num_channels==1)
         sample->ch = -1; // i.e play the sample in both channels.
       else
@@ -1779,8 +1796,8 @@ static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename, boo
         
         note->num_samples = num_channels;
         note->samples[ch] = sample;
-          
-        sample->frequency_table[i] = sf_info.samplerate * midi_to_hz(i)/midi_to_hz(48);
+
+        sample->frequency_table[i] = sf_info.samplerate * midi_to_hz(i)/midi_to_hz(middle_note);
         
         //printf("%d: %f, data: %f, sample: %f, midifreq: %f\n",i,sample->samplerate,(float)data->samplerate,(float)sf_info.samplerate,midi_to_hz(i));
       }
@@ -1866,7 +1883,7 @@ static void free_tremolo(SoundPlugin *tremolo){
   V_free(tremolo);
 }
 
-static Data *create_data(float samplerate, Data *old_data, const wchar_t *filename, int instrument_number, int resampler_type, bool is_loading){
+static Data *create_data(float samplerate, Data *old_data, const wchar_t *filename, int instrument_number, int resampler_type, bool use_sample_file_middle_note, bool is_loading){
   Data *data = new Data;
 
   data->signal_from_RT = RSEMAPHORE_create(0);
@@ -1874,7 +1891,7 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
   data->tremolo = create_tremolo(is_loading);
       
   if(old_data==NULL){
-    
+
     data->p.finetune = 0.5f;
     
     data->p.a=DEFAULT_A;
@@ -1895,7 +1912,9 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
     data->tremolo->type->set_effect_value(data->tremolo, 0, 1, data->p.tremolo_depth, PLUGIN_FORMAT_NATIVE, FX_single);
     
   }
-  
+
+  data->use_sample_file_middle_note = use_sample_file_middle_note;
+
   data->samplerate = samplerate;
   data->resampler_type = resampler_type;
   data->filename = wcsdup(filename);
@@ -1910,6 +1929,7 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
   return data;
 }
 
+// State is not used here. We just create the default instrument. State is used in recreate_from_state instead.
 static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int block_size, bool is_loading){
 
   //const char *filename="/home/kjetil/brenn/downloaded/temp/CATEGORY/SYNTH/PAD/NAMED1/etrnpadl.xi"; // one sample
@@ -1931,7 +1951,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
                                                   ? STRING_create("243749__unfa__metronome-1khz-weak-pulse.flac")
                                                   : STRING_create("016.WAV")))));
     
-  Data *data = create_data(samplerate,NULL,default_sound_filename,0,RESAMPLER_CUBIC, is_loading); // cubic is the default
+  Data *data = create_data(samplerate,NULL,default_sound_filename,0,RESAMPLER_CUBIC, true, is_loading); // cubic is the default
   
   if(load_sample(data,default_sound_filename,0, true)==false){
     delete data;
@@ -2034,7 +2054,15 @@ void SAMPLER_add_recorded_peak(SoundPlugin *plugin,
   update_peaks(plugin);
 }
 
-static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number, int resampler_type, int loop_start, int loop_end, bool is_loading){
+static bool set_new_sample(struct SoundPlugin *plugin,
+                           const wchar_t *filename,
+                           int instrument_number,
+                           int resampler_type,
+                           int loop_start,
+                           int loop_end,
+                           bool use_sample_file_middle_note,
+                           bool is_loading)
+{
   bool success=false;
 
   Data *data = NULL;
@@ -2044,7 +2072,7 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
   if (filename==NULL)
     goto exit;
 
-  data = create_data(old_data->samplerate, old_data, filename, instrument_number, resampler_type, is_loading);
+  data = create_data(old_data->samplerate, old_data, filename, instrument_number, resampler_type, use_sample_file_middle_note, is_loading);
 
   if(load_sample(data,filename,instrument_number, false)==false)
     goto exit;
@@ -2096,12 +2124,12 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
 
 bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number){
   Data *data=(Data*)plugin->data;
-  return set_new_sample(plugin,filename,instrument_number,data->resampler_type,data->loop_start,data->loop_length, false);
+  return set_new_sample(plugin,filename,instrument_number,data->resampler_type,data->loop_start,data->loop_length, true, false);
 }
 
 bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, int resampler_type){
   Data *data=(Data*)plugin->data;
-  return set_new_sample(plugin,data->filename,data->instrument_number,resampler_type,data->loop_start,data->loop_length, false);
+  return set_new_sample(plugin,data->filename,data->instrument_number,resampler_type,data->loop_start,data->loop_length, data->use_sample_file_middle_note, false);
 }
 
 int SAMPLER_get_resampler_type(struct SoundPlugin *plugin){
@@ -2241,6 +2269,7 @@ static QString get_final_embedded_filename(QString org_filename, QString new_fil
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
   const wchar_t *filename;
+  bool           use_sample_file_middle_note = true ; if (HASH_has_key(state, "use_sample_file_middle_note")) use_sample_file_middle_note = HASH_get_bool(state, "use_sample_file_middle_note");
   int            instrument_number = HASH_get_int(state, "instrument_number");
   int            resampler_type    = HASH_get_int(state, "resampler_type");
   int            loop_start        = 0; if (HASH_has_key(state, "loop_start"))  loop_start  = HASH_get_int(state, "loop_start");
@@ -2258,7 +2287,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
     return;
   }
 
-  if(set_new_sample(plugin,filename,instrument_number,resampler_type,loop_start,loop_length, is_loading)==false)
+  if(set_new_sample(plugin,filename,instrument_number,resampler_type,loop_start,loop_length, use_sample_file_middle_note, is_loading)==false)
     GFX_Message(NULL, "Could not load soundfile \"%s\". (instrument number: %d)\n",STRING_get_chars(filename),instrument_number);
 
   // Can not delete now. file is still used when creating/recreating states. Deleting at program end.
@@ -2271,8 +2300,10 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 
   const wchar_t *maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename);
   //printf("maybe: -%s- -%s-\n", data->filename, maybe_relative_filename);
-  
   HASH_put_string(state, "filename", maybe_relative_filename);
+
+  HASH_put_bool(state, "use_sample_file_middle_note", data->use_sample_file_middle_note);
+
   HASH_put_int(state, "instrument_number",data->instrument_number);
   HASH_put_int(state, "resampler_type",data->resampler_type);
 

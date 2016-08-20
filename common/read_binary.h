@@ -35,11 +35,27 @@ static inline int32_t get_le_32 (char *src)
 #endif
 }
 
-static inline int read_le32int(disk_t *file){
-  char size_chars[4] = {0}; // {0} is here to keep valgrind quiet.
+static inline uint32_t get_le_u32 (char *src)
+{
+#if IS_LITTLE_ENDIAN
+    return *(int32_t*)src;
+#else
+    return (src[0] << 0) + (src[1] << 8) + (src[2] << 16) + (src[3] << 24);
+#endif
+}
+
+static inline int32_t read_le32int(disk_t *file){
+  char size_chars[4] = {0};
   if(DISK_read_binary(file, size_chars, 4) != 4)
     fprintf(stderr,"Reading file failed\n");
   return get_le_32(size_chars);
+}
+
+static inline uint32_t read_le32uint(disk_t *file){
+  char size_chars[4] = {0};
+  if(DISK_read_binary(file, size_chars, 4) != 4)
+    fprintf(stderr,"Reading file failed\n");
+  return get_le_u32(size_chars);
 }
 
 static inline uint32_t get_be_u32 (unsigned char *src)
