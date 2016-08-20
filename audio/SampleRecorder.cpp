@@ -116,7 +116,7 @@ static void put_slice(RecordingSlice *slice){
 
 namespace{
 
-static double midi_to_hz(float midi){
+static double midi_to_hz(double midi){
   if(midi<=0)
     return 0;
   else
@@ -207,7 +207,7 @@ struct RecordingFile{
     // Append a smpl chunk
     QFile f(filename);
     if (f.open(QIODevice::WriteOnly | QIODevice::Append)==false){
-      RT_message("Unable to append smpl chunk to \"%s\". That is strange.",filename.toUtf8().constData(), sf_error_number(close_result));
+      RT_message("Unable to append smpl chunk to \"%s\". That is strange.",filename.toUtf8().constData());
       return true;
     }
 
