@@ -263,6 +263,54 @@ static void set_wav_loop_points(Sample *sample, const wchar_t *filename, bool se
   DISK_close_and_delete(file);
 }
 
+static double get_wav_middle_note_from_sampl_chunk(disk_t *file){
+  
+  if(spool_to_wav_chunk(file, "smpl", 0)==false)
+    return -1;
+  
+  DISK_spool(file, 20);
+  uint32_t midi_unity_note = read_le32uint(file);
+  uint32_t midi_pitch_fraction = read_le32uint(file);
+  int64_t u32maxplusone = 1L<<32;
+  double fraction = scale_double(midi_pitch_fraction, 0, u32maxplusone, 0, 1);
+    
+  double middle_note = midi_unity_note + fraction - 12;
+
+  if (middle_note <= 0)
+    middle_note += 12;
+    
+
+  if (middle_note < 0 || middle_note > 127)
+    return -1;
+  
+  // ody-ld1.wav
+  
+  printf("       UNITY: %u (%x)\n", midi_unity_note, midi_unity_note);
+  printf("       FRACT: %u (%x) (%f)\n", midi_pitch_fraction, midi_pitch_fraction, fraction);
+  //getchar();
+
+  return middle_note;
+}
+
+static double get_wav_middle_note_from_instr_chunk(disk_t *file){
+  
+  if(spool_to_wav_chunk(file, "instr", 0)==false)
+    return -1;
+
+  int unshifted_note = read_8int(file);
+  int finetune = read_8int_signed(file);
+
+  double middle_note = (double)(unshifted_note - 12) + scale_double(finetune, -50, 50, -0.5, 0.5);
+
+  if (middle_note <= 0)
+    middle_note += 12;
+
+  if (middle_note <= 0 || middle_note > 127)
+    return -1;
+
+  return middle_note;
+}
+
 static double get_wav_middle_note(const wchar_t *filename, double default_middle_note){
   disk_t *file = DISK_open_binary_for_reading(filename);
   
@@ -271,26 +319,14 @@ static double get_wav_middle_note(const wchar_t *filename, double default_middle
     return default_middle_note;
   }
 
-  double middle_note = default_middle_note;
-  
-  if(spool_to_wav_chunk(file, "smpl", 0)==false)
-    return default_middle_note;
-  
-  DISK_spool(file, 4 + 16);
-  uint32_t midi_unity_note = read_le32uint(file);
-  uint32_t midi_pitch_fraction = read_le32uint(file);
-  int64_t u32maxplusone = 1L<<32;
-  double fraction = scale_double(midi_pitch_fraction, 0, u32maxplusone, 0, 1);
-    
-  middle_note = midi_unity_note + fraction - 12;
-  if(middle_note <= 0)
-    middle_note += 12;
+  double middle_note = get_wav_middle_note_from_sampl_chunk(file);
 
-  // ody-ld1.wav
+  if (middle_note < 0)
+    middle_note = get_wav_middle_note_from_instr_chunk(file);
+
+  if (middle_note < 0)
+    middle_note = default_middle_note;
   
-  printf("       UNITY: %u (%x)\n", midi_unity_note, midi_unity_note);
-  printf("       FRACT: %u (%x) (%f)\n", midi_pitch_fraction, midi_pitch_fraction, fraction);
-  //getchar();
   
   DISK_close_and_delete(file);
   

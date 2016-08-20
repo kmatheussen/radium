@@ -114,7 +114,7 @@ static inline void convert_16_bit_little_endian_to_native(int16_t *src, int num_
 }
 
 static inline int read_le16int(disk_t *file){
-  char size_chars[2];
+  char size_chars[2] = {};
   if(DISK_read_binary(file, size_chars, 2) != 2)
     fprintf(stderr,"Reading file failed\n");
   return get_le_16(size_chars);
@@ -122,14 +122,14 @@ static inline int read_le16int(disk_t *file){
 
 
 static inline unsigned int read_8int(disk_t *file){
-  unsigned char size_chars[1];
+  unsigned char size_chars[1] = {};
   if(DISK_read_binary(file, size_chars, 1) != 1)
     fprintf(stderr,"Reading file failed\n");
   return size_chars[0];
 }
 
 static inline int read_8int_signed(disk_t *file){
-  int8_t size_chars[1];
+  int8_t size_chars[1] = {};
   if(DISK_read_binary(file, size_chars, 1) !=1 )
     fprintf(stderr,"Reading file failed\n");
   return size_chars[0];
