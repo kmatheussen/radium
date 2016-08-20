@@ -157,7 +157,7 @@ struct RecordingFile{
     SF_INFO sf_info = {};
     if (middle_note < 0.01)
       middle_note = 0.01;
-    sf_info.samplerate = MIXER_get_sample_rate() * midi_to_hz(48)/midi_to_hz(middle_note);
+    sf_info.samplerate = MIXER_get_sample_rate();
     sf_info.channels = num_channels;
     sf_info.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 
@@ -168,13 +168,31 @@ struct RecordingFile{
       RT_message("Unable to create new file in \"%s\".\nPerhaps you have more than 100 takes there?",STRING_get_qstring(path).toUtf8().constData());
       return;
     }
-    
+
     sndfile = sf_open(filename.toUtf8().constData(), SFM_WRITE, &sf_info);
 
     if(sndfile==NULL)
       RT_message("Unable to create file \"%s\": %s",filename.toUtf8().constData(), sf_strerror(NULL));
   }
 
+  void write_uint32(QFile &f, uint32_t i, bool &success){
+    char temp[4];
+#if IS_LITTLE_ENDIAN
+    temp[3] = (i >> 24) & 0xff;
+    temp[2] = (i >> 16) & 0xff;
+    temp[1] = (i >> 8) & 0xff;
+    temp[0] = i & 0xff;
+#else
+#error "really?" // Most likely, it's a build error if we get this one.
+    temp[0] = (i >> 24) & 0xff;
+    temp[1] = (i >> 16) & 0xff;
+    temp[2] = (i >> 8) & 0xff;
+    temp[3] = i & 0xff;
+#endif
+    if (f.write(temp, 4) != 4)
+      success=false;
+  }
+    
   bool close(void){
     R_ASSERT_RETURN_IF_FALSE2(sndfile!=NULL, false);
     R_ASSERT(non_written_slices.is_empty());
@@ -186,6 +204,58 @@ struct RecordingFile{
       return false;
     }
 
+    // Append a smpl chunk
+    QFile f(filename);
+    if (f.open(QIODevice::WriteOnly | QIODevice::Append)==false){
+      RT_message("Unable to append smpl chunk to \"%s\". That is strange.",filename.toUtf8().constData(), sf_error_number(close_result));
+      return true;
+    }
+
+    if (f.seek(f.size())==false) {
+      RT_message("Unable to seek to end of \"%s\" in order to write smpl chunk. That is strange.",filename.toUtf8().constData(), sf_error_number(close_result));
+      return true;
+    }
+  
+    bool s = true;
+
+    // append chunk
+    {
+      f.write("smpl");
+      
+      write_uint32(f, 36, s); // chunk length
+      
+      write_uint32(f, 0, s); // manufacturer
+      write_uint32(f, 0, s); // product
+      
+      write_uint32(f, 1000000000 / MIXER_get_sample_rate(), s); // sample period
+
+      double middle_note = this->middle_note + 12.0; // for some reason, radium's middle note is 48. It should have been 60.
+        
+      int unity_note = int(middle_note);
+      double fraction = middle_note - unity_note;
+      write_uint32(f, unity_note, s); // unity note
+      write_uint32(f, scale_double(fraction,0,1,0,1L<<32), s); // pitch fraction
+      
+      write_uint32(f, 0, s); // smpte format
+      write_uint32(f, 0, s); // smpte offset
+      
+      write_uint32(f, 0, s); // number of loops
+      write_uint32(f, 0, s); // cbSamplerData. sampler specific data
+    }
+    
+    // set new WAVE length
+    {
+      if (f.seek(4)==false)
+        s = false;
+      else
+        write_uint32(f, f.size()-8, s);
+    }
+    
+    f.close();
+
+    if(!s)
+      RT_message("Unable to write smpl chunk properly to \"%s\". That is strange.",filename.toUtf8().constData(), sf_error_number(close_result));
+    
     return true;
   }
 
