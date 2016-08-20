@@ -211,11 +211,6 @@ struct RecordingFile{
       return true;
     }
 
-    if (f.seek(f.size())==false) {
-      RT_message("Unable to seek to end of \"%s\" in order to write smpl chunk. That is strange.",filename.toUtf8().constData(), sf_error_number(close_result));
-      return true;
-    }
-  
     bool s = true;
 
     // append chunk
