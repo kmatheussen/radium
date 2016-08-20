@@ -294,7 +294,7 @@ static double get_wav_middle_note_from_sampl_chunk(disk_t *file){
 
 static double get_wav_middle_note_from_instr_chunk(disk_t *file){
   
-  if(spool_to_wav_chunk(file, "instr", 0)==false)
+  if(spool_to_wav_chunk(file, "inst", 0)==false)
     return -1;
 
   int unshifted_note = read_8int(file);
