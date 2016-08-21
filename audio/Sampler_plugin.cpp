@@ -768,12 +768,13 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     audio_[0] += data->recording_start_frame;
     audio_[1] += data->recording_start_frame;
 
-    data->recording_start_frame = 0;
-
     RT_SampleRecorder_add_audio((struct Patch*)plugin->patch,
                                 audio,
                                 RADIUM_BLOCKSIZE - data->recording_start_frame,
                                 ATOMIC_GET(data->num_recording_channels));
+    
+    data->recording_start_frame = 0;
+
     return;
   }
   
