@@ -19,6 +19,8 @@ extern LANGSPEC void SAMPLER_add_recorded_peak(SoundPlugin *plugin,
                                                float min,
                                                float max
                                                );
+extern LANGSPEC void SAMPLER_erase_recorded_peaks(SoundPlugin *plugin);
+
 extern LANGSPEC bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number);
 extern LANGSPEC void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start, int length);
 extern LANGSPEC bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, int resampler_type);

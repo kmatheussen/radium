@@ -2057,6 +2057,18 @@ void SAMPLER_add_recorded_peak(SoundPlugin *plugin,
   update_peaks(plugin);
 }
 
+void SAMPLER_erase_recorded_peaks(SoundPlugin *plugin){
+  Data *data=(Data*)plugin->data;
+
+  data->min_recording_peaks[0].clear();
+  data->max_recording_peaks[0].clear();
+  
+  data->min_recording_peaks[1].clear();
+  data->max_recording_peaks[1].clear();
+
+  update_peaks(plugin);
+}
+
 static bool set_new_sample(struct SoundPlugin *plugin,
                            const wchar_t *filename,
                            int instrument_number,

@@ -192,12 +192,14 @@ struct RecordingFile{
     if (f.write(temp, 4) != 4)
       success=false;
   }
-    
+
   bool close(void){
-    R_ASSERT_RETURN_IF_FALSE2(sndfile!=NULL, false);
     R_ASSERT(non_written_slices.is_empty());
-    
-    int close_result = sf_close(sndfile);
+
+    if (sndfile==NULL)
+      return false;
+
+    int close_result = sf_close(sndfile); // Note, sndfile must NOT be set to NULL here. We use sndfile==NULL to identify whether to load new data in the main thread.
 
     if(close_result!=0){
       RT_message("Unable to close sound file \"%s\": %s",filename.toUtf8().constData(), sf_error_number(close_result));
@@ -332,10 +334,8 @@ public:
 
     recording_files.remove(recording_file);
 
-    if (recording_file->close())
-      recorded_files.put(recording_file);    
-    else
-      delete recording_file;
+    recording_file->close();
+    recorded_files.put(recording_file);    
   }
   
   void treat_slice(struct Patch *patch, struct RecordingSlice *slice){
@@ -389,8 +389,10 @@ void SampleRecorder_called_regularly(void){
     if (g_peak_slice_queue->pop(peak_slice)==false)
       break;
 
-    if (peak_slice.patch->patchdata != NULL)
-      SAMPLER_add_recorded_peak((SoundPlugin*)peak_slice.patch->patchdata,
+    SoundPlugin *plugin = (SoundPlugin*)peak_slice.patch->patchdata;
+    
+    if (plugin != NULL)
+      SAMPLER_add_recorded_peak(plugin,
                                 peak_slice.ch,
                                 peak_slice.min,
                                 peak_slice.max
@@ -404,12 +406,19 @@ void SampleRecorder_called_regularly(void){
     if(!gotit)
       break;
 
-    if (recorded_file->sndfile != NULL && recorded_file->patch->patchdata != NULL){
-      ADD_UNDO(Sample_CurrPos(recorded_file->patch));
+    SoundPlugin *plugin = (SoundPlugin*)recorded_file->patch->patchdata;
     
-      SAMPLER_set_new_sample((SoundPlugin*)recorded_file->patch->patchdata,
-                             STRING_create(recorded_file->filename),
-                             0);
+    if (plugin != NULL){
+
+      SAMPLER_erase_recorded_peaks(plugin);
+      
+      if (recorded_file->sndfile != NULL) {
+        ADD_UNDO(Sample_CurrPos(recorded_file->patch));
+    
+        SAMPLER_set_new_sample(plugin,
+                               STRING_create(recorded_file->filename),
+                               0);
+      }
     }
     
     delete recorded_file;
