@@ -279,7 +279,7 @@ struct MyQSlider : public QSlider {
         PD_delete_controller(plugin, _effect_num);
 
       else if (command==reset)
-        PLUGIN_add_midi_learn(plugin, _effect_num);
+        PLUGIN_reset_one_effect(plugin,_effect_num);
 
       else if (command==remove_midi_learn)
         PLUGIN_remove_midi_learn(plugin, _effect_num, true);
