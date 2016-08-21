@@ -1112,10 +1112,10 @@ static int get_peaks(struct SoundPlugin *plugin,
   R_ASSERT_RETURN_IF_FALSE2(note_num >= 0.0f, 2);
 
   if (data->min_recording_peaks[0].size() > 0) {
-
+      
     double recording_note = (float)ATOMIC_GET(data->recording_note) / 10000.0;
 
-    double ratio = (midi_to_hz(note_num) / midi_to_hz(recording_note));
+    double ratio = midi_to_hz(note_num) / midi_to_hz(recording_note);
 
     //printf("  Peak ratio: %f  (%f, %f)\n", ratio,note_num,recording_note);
     
@@ -1164,8 +1164,9 @@ static int get_peaks(struct SoundPlugin *plugin,
       *max_value = max;
     }
 
+    /*
     int num_channels = ATOMIC_GET(data->num_recording_channels);
-          
+
     Panvals pan = get_pan_vals_vector(das_pan, num_channels);
     float panval = pan.vals[ch][ch];
 
@@ -1173,7 +1174,8 @@ static int get_peaks(struct SoundPlugin *plugin,
     (*max_value) *= panval;
 
     apply_adsr_to_peak(data, (start_time+end_time)/2, min_value, max_value);
-      
+    */
+    
     return 2;
   }
 

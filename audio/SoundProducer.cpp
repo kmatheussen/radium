@@ -803,6 +803,8 @@ public:
   }
 
   void allocate_sound_buffers(int num_frames){
+    R_ASSERT(num_frames==RADIUM_BLOCKSIZE);
+    
     _dry_sound = (float**)(V_calloc(sizeof(float*),_num_dry_sounds));
     for(int ch=0;ch<_num_dry_sounds;ch++)
       _dry_sound[ch] = (float*)V_calloc(sizeof(float),num_frames);
