@@ -141,6 +141,10 @@ T2_data::~T2_data(){
 #include <QOpenGLContext>
 #include <QWindow>
 
+#if FOR_WINDOWS
+#include <QtPlatformHeaders/QWGLNativeContext>
+#endif
+
 #define TEST_TIME 0
 
 
@@ -176,8 +180,23 @@ static void T2_thread_func(){
 #endif
   
   offscreen_context = new QOpenGLContext;
+
+#if 0 //FOR_WINDOWS
+  QVariant nativeHandle = editor_context->contextHandle()->nativeHandle();
+  if (!nativeHandle.isNull() && nativeHandle.canConvert<QWGLNativeContext>()) {
+    //QWGLNativeContext nativeContext = nativeHandle.value<QWGLNativeContext>();
+    //    HGLRC hglrc = nativeContext.context();
+    offscreen_context->setNativeHandle(nativeHandle);
+    offscreen_context->setFormat(editor_context->contextHandle()->format());//GL_get_qsurface()->format());
+  } else {
+    GFX_Message(NULL, "nativeHandlie is null");
+  }
+#else
   offscreen_context->setFormat(editor_context->contextHandle()->format());//GL_get_qsurface()->format());
+#endif
+  
   offscreen_context->setShareContext(editor_context->contextHandle());
+
   offscreen_context->create();
 
   if (offscreen_context->isValid()==false){
