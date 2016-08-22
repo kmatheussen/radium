@@ -1678,7 +1678,7 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
   //GE_Context *c = Black_color(); //GE_mix_alpha_z(GE_get_rgb(0), Black_rgb(), 100, 0.7, Z_ZERO);
   //GE_Context *c = GE_mix_alpha_z(GE_get_rgb(0), GE_get_rgb(2), 250, 0.9, Z_ZERO);
 
-#define NUM_LINES_PER_PEAK 2
+#define NUM_LINES_PER_PEAK 1
 
   for(int ch=0;ch<num_channels;ch++){
 
@@ -1719,20 +1719,26 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
         
       }
 
-
-      for(int n=0;n<num_peaks;n++){
+      for(int n=0;;n+=NUM_LINES_PER_PEAK){
 
         float min,max;
-        
+
         int64_t start_time = scale(n,
                                    0,num_peaks,
                                    time1,time2
                                    );
 
-        int64_t end_time   = scale(n+NUM_LINES_PER_PEAK,
+        int64_t end_time   = scale(R_MIN(num_peaks-1, n+NUM_LINES_PER_PEAK),
                                    0,num_peaks,
                                    time1,time2
                                    );
+
+        if (start_time>=end_time)
+          break;
+        
+        //if (n==0)
+        //printf("start_time: %d, time1: %d. end_time: %d, time2: %d\n",(int)start_time, (int)time1, (int)end_time, (int)time2);
+        
 
         PATCH_get_peaks(patch, 
                         note->note,

@@ -1402,7 +1402,7 @@ int PATCH_get_peaks(struct Patch *patch,
 
         int64_t voice_start_time = start_time - voice->start*sample_rate/1000;
 
-        if(voice_start_time > 0.0f){
+        if(voice_start_time >= 0.0f){
           float min2;
           float max2;
 

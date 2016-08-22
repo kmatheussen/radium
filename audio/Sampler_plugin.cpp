@@ -1093,6 +1093,8 @@ static int get_peaks(struct SoundPlugin *plugin,
                      )
 {
   Data *data = (Data*)plugin->data;
+
+  //printf("  get_peaks. Start_time: %d, end_time: %d\n\n",(int)start_time,(int)end_time);
   
   if(ch==-1){
     if (ATOMIC_GET(data->recording_status) == IS_RECORDING)
