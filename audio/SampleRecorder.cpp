@@ -60,7 +60,8 @@ struct RecordingSlice{
   enum {
     Start_Recording,
     Stop_Recording,
-    Sample_Data
+    Sample_Data,
+    Quit
   } command;
 
   // if command==Sample_Data
@@ -314,6 +315,17 @@ public:
   SampleRecorderThread(){
   }
 
+  ~SampleRecorderThread(){
+    RecordingSlice *slice;
+    while(g_free_slices->pop(slice)==false);
+  
+    slice->command = RecordingSlice::Quit;
+    
+    put_slice(slice);
+
+    wait(5000);
+  }
+  
   RecordingFile *get_recording_file(struct Patch *patch){
     for(auto *recording_file : recording_files)
       if (recording_file->patch==patch)
@@ -369,6 +381,9 @@ public:
         case RecordingSlice::Sample_Data:
           treat_slice(slice->patch, slice);
           break;
+
+        case RecordingSlice::Quit:
+          return;
       }
     }
   }
