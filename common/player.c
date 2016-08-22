@@ -74,7 +74,7 @@ void PlayerTask(STime reltime){
         R_ASSERT(player_state==PLAYER_STATE_STARTING_TO_PLAY || player_state==PLAYER_STATE_PLAYING || player_state==PLAYER_STATE_STOPPED);
         
         
-	static STime addreltime=0;
+	static double addreltime=0;
         //RError("hepp");
         pc->reltime     = reltime;
                    
@@ -87,7 +87,7 @@ void PlayerTask(STime reltime){
 	addreltime+=reltime;
 
         double tempoadjusted_reltime_f = (double)addreltime * reltempo;
-        STime tempoadjusted_reltime    = tempoadjusted_reltime_f;
+        double tempoadjusted_reltime    = tempoadjusted_reltime_f;
         
         if(tempoadjusted_reltime<1) {
           double old_start_time_f = ATOMIC_DOUBLE_GET(pc->start_time_f);          //
@@ -125,7 +125,7 @@ void PlayerTask(STime reltime){
         //printf("Setting new starttime to %f (%d)\n",pc->end_time_f,(int)pc->end_time);
         ATOMIC_DOUBLE_SET(pc->start_time_f, pc->end_time_f);
         
-        //  ATOMIC_DOUBLE_SET(pc->block->player_time, ATOMIC_DOUBLE_GET(pc->start_time_f) - (double)ATOMIC_GET(pc->seqtime)); // <-- This line is correct, but the player isn't doing the correct thing.
+        //ATOMIC_DOUBLE_SET(pc->block->player_time, ATOMIC_DOUBLE_GET(pc->start_time_f) - (double)ATOMIC_GET(pc->seqtime)); // <-- This line is correct, but the player isn't doing the correct thing.
         ATOMIC_DOUBLE_SET(pc->block->player_time, pc->end_time - (double)ATOMIC_GET(pc->seqtime)); // <-- This line is incorrect, but it reflects what we actually hear. (TODO: fix this. Use pc->end_time_f everywhere, and  delete pc->end_time)
         
         pc->end_time_f  += tempoadjusted_reltime_f;

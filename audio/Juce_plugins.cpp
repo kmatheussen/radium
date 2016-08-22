@@ -129,6 +129,9 @@ namespace{
   };
 
   struct MyAudioPlayHead : public AudioPlayHead{
+
+    // From JUCE documenation: You can ONLY call this from your processBlock() method!
+    // I.e. it will only be called from the player thread or a multicore thread.
     virtual bool getCurrentPosition (CurrentPositionInfo &result) {
       memset(&result, 0, sizeof(CurrentPositionInfo));
 
