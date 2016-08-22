@@ -197,6 +197,88 @@ static inline void atomic_pointer_write(void **p, void *v){
 
 /************** doubles ******************/
 
+// Is this really working? (Think I spent a long time investigating it, and found out that it was. Double is just 8 bytes, so it shouldn't be different to int64_t)
+
+/*
+double dasdouble;
+
+void set_das_double(void){
+  double new_value_variable = 5.0;
+  __atomic_store(&dasdouble, &new_value_variable, __ATOMIC_SEQ_CST);
+
+}
+
+=>
+
+64 bit
+======
+set_das_double:
+.LFB0:
+	.cfi_startproc
+	movabsq	$4617315517961601024, %rax
+	movq	%rax, dasdouble(%rip)
+	mfence
+	ret
+	.cfi_endproc
+
+32 bit
+======
+set_das_double:
+.LFB0:
+	.cfi_startproc
+	subl	$12, %esp
+	.cfi_def_cfa_offset 16
+	xorl	%eax, %eax
+	movl	$1075052544, %edx
+	movl	%eax, (%esp)
+	movl	%edx, 4(%esp)
+	movq	(%esp), %xmm0
+	movq	%xmm0, dasdouble
+	mfence
+	addl	$12, %esp
+	.cfi_def_cfa_offset 4
+	ret
+	.cfi_endproc
+
+----------------------------------------------------------
+
+double get_das_double(void){
+  double result;                                          
+  __atomic_load (&dasdouble, &result, __ATOMIC_SEQ_CST);
+  return result;
+}
+
+=>
+
+64 bit
+======
+get_das_double:
+.LFB1:
+	.cfi_startproc
+	movq	dasdouble(%rip), %rax
+	movq	%rax, -8(%rsp)
+	movsd	-8(%rsp), %xmm0
+	ret
+	.cfi_endproc
+
+32 bit
+======
+get_das_double:
+.LFB1:
+	.cfi_startproc
+	subl	$20, %esp
+	.cfi_def_cfa_offset 24
+	movq	dasdouble, %xmm0
+	movsd	%xmm0, (%esp)
+	fldl	(%esp)
+	addl	$20, %esp
+	.cfi_def_cfa_offset 4
+	ret
+	.cfi_endproc
+
+
+ */
+
 typedef double atomic_double_t;
 
 #define ATOMIC_DOUBLE_GET(name) ({                                      \
