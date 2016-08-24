@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 #include "../audio/Sampler_plugin_proc.h"
 #include "../audio/audio_instrument_proc.h"
+#include "../audio/Presets_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../mixergui/QM_chip.h"
@@ -184,7 +185,7 @@ static hash_t *get_preset_state_from_filename(const wchar_t *filename){
 }
 
 
-static int createAudioInstrumentFromPreset2(const wchar_t *filename, char *name, bool inc_usage_number) {
+static int64_t createAudioInstrumentFromPreset2(const wchar_t *filename, char *name, bool inc_usage_number) {
   if (name!=NULL && strlen(name)==0)
     name = NULL;
 
@@ -192,7 +193,7 @@ static int createAudioInstrumentFromPreset2(const wchar_t *filename, char *name,
   if (state==NULL)
     return -1;
   
-  InstrumentWidget_set_last_used_preset_filename(filename);
+  PRESET_set_last_used_filename(filename);
 
   vector_t patch_states = {0};
   
@@ -252,7 +253,7 @@ static int createAudioInstrumentFromPreset2(const wchar_t *filename, char *name,
   if (state==NULL)
     return -1;
   
-  InstrumentWidget_set_last_used_preset_filename(filename);
+  PRESET_set_last_used_filename(filename);
   
   struct Patch *patch = PATCH_create_audio(NULL, NULL, name, state);
   if (patch==NULL)
@@ -334,7 +335,7 @@ const_char* instrumentDescriptionPopupMenu(void){
 }
 
 const_char* requestLoadPresetInstrumentDescription(void){
-  return MW_request_load_preset_instrument_description();
+  return PRESET_request_load_instrument_description();
 }
 
 int getNumInstrumentEffects(int instrument_id){

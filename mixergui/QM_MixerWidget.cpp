@@ -99,6 +99,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPluginRegistry_proc.h"
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/audio_instrument_proc.h"
+#include "../audio/Presets_proc.h"
 
 
 extern EditorWidget *g_editor;
@@ -858,7 +859,7 @@ static bool mousepress_save_presets(MyScene *scene, QGraphicsSceneMouseEvent * e
     VECTOR_push_back(&patches, patch);
   }
 
-  InstrumentWidget_save_preset(&patches, false);
+  PRESET_save(&patches, false);
   
   return true;
 }
@@ -1412,14 +1413,6 @@ static char *create_selector_text(SoundPluginType *type){
                        );
 }
 
-char *MW_request_load_preset_instrument_description(void){
-  const char *encoded_filename = request_load_preset_encoded_filename();
-  if (encoded_filename==NULL)
-    return talloc_strdup("");
-
-  return talloc_format("2%s",encoded_filename); // Converting to base64 to avoid having to worry about utf8 conversion problems in filenames.
-}
-
 void inc_plugin_usage_number(SoundPluginType *type){
   char *settings_name = talloc_format("plugin_usage_%s_-_%s_-_%s", type->type_name, type->container==NULL ? "" : type->container->name, type->name);
   int num_uses = SETTINGS_read_int(settings_name, 0);
@@ -1480,7 +1473,7 @@ static char *popup_plugin_selector(SoundPluginType **type){
     
   }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
     
-    return MW_request_load_preset_instrument_description();
+    return PRESET_request_load_instrument_description();
  
   }else if(entry.type==PluginMenuEntry::IS_NUM_USED_PLUGIN){
 

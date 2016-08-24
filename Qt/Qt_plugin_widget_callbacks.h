@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/undo_pd_controllers_proc.h"
 #include "../audio/Juce_plugins_proc.h"
 #include "../audio/CpuUsage.hpp"
+#include "../audio/Presets_proc.h"
 
 #include "Qt_plugin_widget_callbacks_proc.h"
 
@@ -762,7 +763,7 @@ public slots:
     void on_save_button_clicked(){
       vector_t patches = {};
       VECTOR_push_back(&patches, _patch);
-      InstrumentWidget_save_preset(&patches, true);
+      PRESET_save(&patches, true);
     }
 
     void on_load_button_clicked(){      
