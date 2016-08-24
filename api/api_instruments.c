@@ -161,116 +161,8 @@ int createAudioInstrument(char *type_name, char *plugin_name, char *name) {
   return CAST_API_PATCH_ID(patch->id);
 }
 
-static hash_t *get_preset_state_from_filename(const wchar_t *filename){
-  //last_preset_path = QFileInfo(filename).absoluteDir().path();
-  
-  disk_t *file = DISK_open_for_reading(filename);
-  if(file==NULL){
-    GFX_Message(NULL, "Could not open file \"%s\".", STRING_get_chars(filename));
-    return NULL;
-  }
-
-  hash_t *state = HASH_load(file);
-  if (DISK_close_and_delete(file)==false)
-    return NULL;
-
-  if(state==NULL){
-    GFX_Message(NULL, "File does not appear to be a valid effects settings file");
-    return NULL;
-  }
-
-  //last_filename = QFileInfo(filename).baseName();
-
-  return state;
-}
-
-
-static int64_t createAudioInstrumentFromPreset2(const wchar_t *filename, char *name, bool inc_usage_number) {
-  if (name!=NULL && strlen(name)==0)
-    name = NULL;
-
-  hash_t *state = get_preset_state_from_filename(filename);
-  if (state==NULL)
-    return -1;
-  
-  PRESET_set_last_used_filename(filename);
-
-  vector_t patch_states = {0};
-  
-  if (HASH_has_key(state, "multipreset_presets")) {
-    
-    hash_t *patches_state = HASH_get_hash(state, "patches");
-      
-    int num_presets = HASH_get_array_size(patches_state);
-    for(int i = 0 ; i < num_presets ; i++)
-      VECTOR_push_back(&patch_states, HASH_get_hash_at(patches_state, "patch", i));
-    
-  }else{
-    VECTOR_push_back(&patch_states, state);
-  }
-
-  struct Patch *first_patch = NULL;
-  vector_t patches = {0};
-  
-  VECTOR_FOR_EACH(hash_t *patch_state, &patch_states){
-
-    struct Patch *patch = PATCH_create_audio(NULL, NULL, name, patch_state);
-    VECTOR_push_back(&patches, patch);
-    
-    if (patch!=NULL){
-
-      if (first_patch != NULL)
-        first_patch = patch;
-      
-      if (inc_usage_number){
-        struct SoundPlugin *plugin = patch->patchdata;
-        inc_plugin_usage_number(plugin->type);
-      }
-    }
-      
-  }END_VECTOR_FOR_EACH;
-
-  if (HASH_has_key(state, "mixer_state"))
-    MW_create_from_state(HASH_get_hash(state, "mixer_state"),
-                         &patches,
-                         200, 300);
-
-  if (first_patch==NULL)
-    return -1;
-  else
-    return first_patch->id;
-}
-
-#if 0
-
-// The version before adding support for multipresets:
-
-static int createAudioInstrumentFromPreset2(const wchar_t *filename, char *name, bool inc_usage_number) {
-  if (name!=NULL && strlen(name)==0)
-    name = NULL;
-
-  hash_t *state = get_preset_state_from_filename(filename);
-  if (state==NULL)
-    return -1;
-  
-  PRESET_set_last_used_filename(filename);
-  
-  struct Patch *patch = PATCH_create_audio(NULL, NULL, name, state);
-  if (patch==NULL)
-    return -1;
-
-  if (inc_usage_number){
-    struct SoundPlugin *plugin = patch->patchdata;
-    inc_plugin_usage_number(plugin->type);
-  }
-  
-
-  return patch->id;
-}
-#endif
-
 int createAudioInstrumentFromPreset(const char *filename, char *name) {
-  return CAST_API_PATCH_ID(createAudioInstrumentFromPreset2(STRING_create(filename), name, false));
+  return CAST_API_PATCH_ID(PRESET_load(STRING_create(filename), name, false));
 }
 
 int createAudioInstrumentFromDescription(const char *instrument_description, char *name){
@@ -281,6 +173,7 @@ int createAudioInstrumentFromDescription(const char *instrument_description, cha
     name = NULL;
 
   if (instrument_description[0]=='1'){
+    
     char *descr = talloc_strdup(instrument_description);
     int sep_pos = 1;
     while(descr[sep_pos]!=':'){
@@ -294,17 +187,20 @@ int createAudioInstrumentFromDescription(const char *instrument_description, cha
     char *type_name = STRING_get_chars(STRING_fromBase64(STRING_create(&descr[1])));
     char *plugin_name = STRING_get_chars(STRING_fromBase64(STRING_create(&descr[sep_pos+1])));
     return createAudioInstrument(type_name, plugin_name, name);
-  }
-
-  if (instrument_description[0]=='2'){
+    
+  } else if (instrument_description[0]=='2'){
+    
     wchar_t *filename = STRING_fromBase64(STRING_create(&instrument_description[1]));
     //printf("filename: %s\n",filename);
 
-    return CAST_API_PATCH_ID(createAudioInstrumentFromPreset2(filename, name, true));
-  }
+    return CAST_API_PATCH_ID(PRESET_load(filename, name, true));
+    
+  } else {
 
-  GFX_Message(NULL, "Illegal instrument_description: %s (string doesn't start with '1' or '2')",instrument_description);
-  return -1;  
+    GFX_Message(NULL, "Illegal instrument_description: %s (string doesn't start with '1' or '2')",instrument_description);
+    return -1;
+
+  }
 }
 
 int cloneAudioInstrument(int instrument_id){
