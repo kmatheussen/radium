@@ -150,7 +150,7 @@ FULL_VERSION ?= 1
 
 # Note that "make clean" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
 OS_DEBUG_BUILD_OPTS ?= -fsanitize=address -Og  #-Og -fsanitize=address # -DDISABLE_BDWGC -Og -
-DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
+DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
 # -Og -Og -fsanitize=address
 #-Og 
 #  -fsanitize=thread 
@@ -179,7 +179,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DUSE_GFX_OP_QUEUE -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_60_0 -I${HOME}/SDKs -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
+COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_60_0 -I${HOME}/SDKs -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fno-omit-frame-pointer 
 
 ifeq ($(RADIUM_QT_VERSION),5)
 	COMMONOPT += -DUSE_QT5
