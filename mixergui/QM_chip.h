@@ -391,8 +391,9 @@ Chip *CHIP_get(QGraphicsScene *scene, const Patch *patch);
 
 struct Patch *CHIP_get_patch(Chip *chip);
 
-hash_t *CONNECTION_get_state(SuperConnection *connection);
-void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int patch_id_old, int patch_id_new);
+hash_t *CONNECTION_get_state(SuperConnection *connection, vector_t *patches);
+void CONNECTION_create_from_state2(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new, int64_t patch_id_old2, int64_t patch_id_new2);
+void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new);
 
 #endif // __cplusplus
 

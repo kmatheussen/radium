@@ -15,6 +15,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+// NOTE. Not used anymore, but it might actually work. The usage of it was replaced with undo_connection other things since it was very slow.
+//
+
+#if 0
+
 
 #include "../common/nsmtracker.h"
 #include "../common/undo.h"
@@ -53,7 +58,7 @@ static void Undo_Mixer(
                  wblock->l.num,
                  wblock->wtrack->l.num,
                  wblock->curr_realline,
-                 MW_get_state(),
+                 MW_get_state(NULL),
                  Undo_Do_Mixer,
                  "Mixer"
 	);
@@ -73,10 +78,13 @@ static void *Undo_Do_Mixer(
 	void *pointer
 ){
 
-  hash_t *current_state = MW_get_state();
-  MW_create_from_state(pointer, false);
+  hash_t *current_state = MW_get_state(NULL);
+  MW_create_full_from_state(pointer, false);
 
   return current_state;
 }
 
+
+
+#endif
 

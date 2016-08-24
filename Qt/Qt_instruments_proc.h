@@ -40,8 +40,8 @@ extern LANGSPEC const char *request_load_preset_encoded_filename(void);
 
 extern LANGSPEC void InstrumentWidget_set_last_used_preset_filename(const wchar_t *wfilename);
   
-extern LANGSPEC void InstrumentWidget_save_preset(struct Patch *patch);
-
+extern LANGSPEC void InstrumentWidget_save_preset(vector_t *patches, bool is_single_preset);
+  
 extern LANGSPEC void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch);
 extern LANGSPEC void InstrumentWidget_delete(struct Patch *patch);
 

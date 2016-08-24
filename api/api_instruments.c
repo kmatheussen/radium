@@ -165,7 +165,7 @@ static hash_t *get_preset_state_from_filename(const wchar_t *filename){
   
   disk_t *file = DISK_open_for_reading(filename);
   if(file==NULL){
-    GFX_Message(NULL, "Could not open file.");
+    GFX_Message(NULL, "Could not open file \"%s\".", STRING_get_chars(filename));
     return NULL;
   }
 
@@ -182,6 +182,67 @@ static hash_t *get_preset_state_from_filename(const wchar_t *filename){
 
   return state;
 }
+
+
+static int createAudioInstrumentFromPreset2(const wchar_t *filename, char *name, bool inc_usage_number) {
+  if (name!=NULL && strlen(name)==0)
+    name = NULL;
+
+  hash_t *state = get_preset_state_from_filename(filename);
+  if (state==NULL)
+    return -1;
+  
+  InstrumentWidget_set_last_used_preset_filename(filename);
+
+  vector_t patch_states = {0};
+  
+  if (HASH_has_key(state, "multipreset_presets")) {
+    
+    hash_t *patches_state = HASH_get_hash(state, "patches");
+      
+    int num_presets = HASH_get_array_size(patches_state);
+    for(int i = 0 ; i < num_presets ; i++)
+      VECTOR_push_back(&patch_states, HASH_get_hash_at(patches_state, "patch", i));
+    
+  }else{
+    VECTOR_push_back(&patch_states, state);
+  }
+
+  struct Patch *first_patch = NULL;
+  vector_t patches = {0};
+  
+  VECTOR_FOR_EACH(hash_t *patch_state, &patch_states){
+
+    struct Patch *patch = PATCH_create_audio(NULL, NULL, name, patch_state);
+    VECTOR_push_back(&patches, patch);
+    
+    if (patch!=NULL){
+
+      if (first_patch != NULL)
+        first_patch = patch;
+      
+      if (inc_usage_number){
+        struct SoundPlugin *plugin = patch->patchdata;
+        inc_plugin_usage_number(plugin->type);
+      }
+    }
+      
+  }END_VECTOR_FOR_EACH;
+
+  if (HASH_has_key(state, "mixer_state"))
+    MW_create_from_state(HASH_get_hash(state, "mixer_state"),
+                         &patches,
+                         200, 300);
+
+  if (first_patch==NULL)
+    return -1;
+  else
+    return first_patch->id;
+}
+
+#if 0
+
+// The version before adding support for multipresets:
 
 static int createAudioInstrumentFromPreset2(const wchar_t *filename, char *name, bool inc_usage_number) {
   if (name!=NULL && strlen(name)==0)
@@ -205,6 +266,7 @@ static int createAudioInstrumentFromPreset2(const wchar_t *filename, char *name,
 
   return patch->id;
 }
+#endif
 
 int createAudioInstrumentFromPreset(const char *filename, char *name) {
   return createAudioInstrumentFromPreset2(STRING_create(filename), name, false);

@@ -786,6 +786,9 @@ static QString request_load_preset_filename_from_requester(void){
 QString request_load_preset_filename(void){
   QString filename;
 
+  if (last_preset_path=="")
+    last_preset_path = QCoreApplication::applicationDirPath();
+  
   QVector<QString> existing_presets = get_all_presets_in_path(last_preset_path);
   if (existing_presets.size()==0)
     return request_load_preset_filename_from_requester();
@@ -857,14 +860,28 @@ void InstrumentWidget_set_last_used_preset_filename(const wchar_t *wfilename){
 }
 
 
-void InstrumentWidget_save_preset(struct Patch *patch){
+void InstrumentWidget_save_preset(vector_t *patches, bool save_button_pressed){
 
-  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-  if (!strcmp(plugin->type->type_name,"Bus")){
-    GFX_Message(NULL, "Can not save state of Bus");
+  if(patches->num_elements==0){
+    GFX_Message(NULL, "No instruments selected");
     return;
   }
- 
+
+  {
+    VECTOR_FOR_EACH(struct Patch*, patch, patches){
+      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      if (!strcmp(plugin->type->type_name,"Bus")){
+        GFX_Message(NULL, "Can not save Bus preset");
+        return;
+      }
+      
+      if (AUDIO_is_permanent_patch(patch)){
+        GFX_Message(NULL, "Can not save Main Pipe preset");
+        return;
+      }
+    }END_VECTOR_FOR_EACH;
+  }
+  
   obtain_keyboard_focus();
 
   QString filename;
@@ -901,8 +918,33 @@ void InstrumentWidget_save_preset(struct Patch *patch){
     safeExec(msgBox);
     return;
   }
+
+  hash_t *state;
   
-  hash_t *state = PATCH_get_state(patch);
+  if (save_button_pressed) {
+    struct Patch *patch = (struct Patch*)patches->elements[0];
+    state = PATCH_get_state(patch);
+  } else {
+    state = HASH_create(5);
+    
+    HASH_put_bool(state, "multipreset_presets", true);
+
+    {
+      hash_t *patches_state = HASH_create(patches->num_elements);
+      for(int i = 0 ; i < patches->num_elements ; i++){
+        struct Patch *patch = (struct Patch*)patches->elements[i];
+        HASH_put_hash_at(patches_state, "patch", i, PATCH_get_state(patch));
+      }
+
+      HASH_put_hash(state, "patches", patches_state);
+    }
+
+    {
+      hash_t *mixer_state = MW_get_state(patches);
+
+      HASH_put_hash(state, "mixer_state", mixer_state);
+    }
+  }
   
   HASH_save(state, file);
   

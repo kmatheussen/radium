@@ -185,11 +185,12 @@ extern LANGSPEC void MW_update_all_chips(void);
 
 extern LANGSPEC void MW_cleanup(bool is_loading);
 
-extern LANGSPEC hash_t *MW_get_connections_state(void);
-extern LANGSPEC hash_t *MW_get_state(void);
+extern LANGSPEC hash_t *MW_get_connections_state(vector_t *patches);
+extern LANGSPEC hash_t *MW_get_state(vector_t *patches);
 extern LANGSPEC void MW_create_connections_from_state(hash_t *connections);
 extern LANGSPEC void MW_create_connections_from_state_and_replace_patch(hash_t *connections, int patch_id_old, int patch_id_new);
-extern LANGSPEC void MW_create_from_state(hash_t *state, bool is_loading);
+extern LANGSPEC void MW_create_from_state(hash_t *state, vector_t *patches, float x, float y);
+extern LANGSPEC void MW_create_full_from_state(hash_t *state, bool is_loading);
 
 extern LANGSPEC void MW_create_plain(void);
 

@@ -1555,28 +1555,44 @@ static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int patch_id){
 }
 
 
+static int64_t get_saving_patch_id(struct Patch *patch, vector_t *patches){
+  if (patches==NULL)
+    return patch->id;
 
-hash_t *CONNECTION_get_state(SuperConnection *connection){
+  for(int pos=0;pos<patches->num_elements;pos++)
+    if(patches->elements[pos]==patch)
+      return pos;
+
+  RError("get_saving_patch_id: patch \"%s\" not found. patches length: %d",patch->name, patches->num_elements);
+  
+  return -1;
+}
+                            
+hash_t *CONNECTION_get_state(SuperConnection *connection, vector_t *patches){
   hash_t *state=HASH_create(4);
 
-  //struct Patch *patch = get_patch_from_chip(chip);
-
-  HASH_put_int(state, "from_patch", CHIP_get_patch(connection->from)->id);
-  HASH_put_int(state, "to_patch", CHIP_get_patch(connection->to)->id);
-  HASH_put_int(state, "is_event_connection", connection->is_event_connection);
+  HASH_put_int(state, "from_patch", get_saving_patch_id(CHIP_get_patch(connection->from), patches));
+  HASH_put_int(state, "to_patch",   get_saving_patch_id(CHIP_get_patch(connection->to),   patches));
+  HASH_put_bool(state, "is_event_connection", connection->is_event_connection);
 
   return state;
 }
 
-void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int patch_id_old, int patch_id_new){
-  int id_from = HASH_get_int(state, "from_patch");
-  int id_to = HASH_get_int(state, "to_patch");
+void CONNECTION_create_from_state2(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new, int64_t patch_id_old2, int64_t patch_id_new2){
+  int64_t id_from = HASH_get_int(state, "from_patch");
+  int64_t id_to = HASH_get_int(state, "to_patch");
 
   if (id_from==patch_id_old)
     id_from = patch_id_new;
   
   if (id_to==patch_id_old)
     id_to = patch_id_new;
+  
+  if (id_from==patch_id_old2)
+    id_from = patch_id_new2;
+  
+  if (id_to==patch_id_old2)
+    id_to = patch_id_new2;
   
   Chip *from_chip = get_chip_from_patch_id(scene, id_from);
   Chip *to_chip   = get_chip_from_patch_id(scene, id_to);
@@ -1586,8 +1602,12 @@ void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int patc
     return;
   }
 
-  if(HASH_has_key(state, "is_event_connection") && HASH_get_int(state, "is_event_connection")==1) // .rad files before 1.9.31 did not have even connections.
+  if(HASH_has_key(state, "is_event_connection") && HASH_get_bool(state, "is_event_connection")) // .rad files before 1.9.31 did not have even connections.
     CHIP_econnect_chips(scene, from_chip, to_chip);
   else
     CHIP_connect_chips(scene, from_chip, to_chip);
+}
+
+void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new){
+  CONNECTION_create_from_state2(scene, state, patch_id_old, patch_id_new, -1, -1);
 }

@@ -60,7 +60,7 @@ DC_start("SONG");
 
         // Patchdata for audio patches are saved here, not in disk_patches.
         DC_start("MIXERWIDGET");{
-          HASH_save(MW_get_state(), dc.file);
+          HASH_save(MW_get_state(NULL), dc.file);
           //HASH_save(create_instrument_widget_order_state(),dc.file);
         }DC_end();
 
@@ -189,7 +189,7 @@ void DLoadSong(struct Root *newroot,struct Song *song){
         GFX_ShowProgressMessage("Creating instruments");
         
         if(song->mixerwidget_state!=NULL)
-          MW_create_from_state(song->mixerwidget_state, true); // In addition, all audio plugins are created here and put into the patch->patchdata field.
+          MW_create_full_from_state(song->mixerwidget_state, true); // In addition, all audio plugins are created here and put into the patch->patchdata field.
         else
           MW_create_plain(); // older song.
 

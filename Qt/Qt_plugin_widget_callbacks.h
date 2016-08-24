@@ -760,7 +760,9 @@ public slots:
   }
   
     void on_save_button_clicked(){
-      InstrumentWidget_save_preset(_patch);      
+      vector_t patches = {};
+      VECTOR_push_back(&patches, _patch);
+      InstrumentWidget_save_preset(&patches, true);
     }
 
     void on_load_button_clicked(){      
