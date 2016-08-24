@@ -89,8 +89,8 @@ void CB_PasteBlock(
 
 	Block_Set_num_tracks(toblock,block->num_tracks);
 
-	toblock->name=talloc_atomic(strlen(block->name)+1);
-	memcpy(toblock->name,block->name,strlen(block->name)+1);
+	toblock->name=talloc_atomic((int)strlen(block->name)+1);
+	memcpy(toblock->name,block->name,(int)strlen(block->name)+1);
 
 	towblock->localzooms=NULL;
 	CB_UnpackLocalZooms(&towblock->localzooms,wblock->localzooms,block->num_lines);

@@ -82,7 +82,7 @@ class Argument:
 
     def get_s7_get_type_function(self):
         if self.type_string=="int":
-            return "s7_integer("
+            return "(int)s7_integer("
         elif self.type_string=="float":
             return "s7_number_to_real(radiums7_sc, "
         elif self.type_string=="char*":

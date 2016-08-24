@@ -167,12 +167,12 @@ void PlayerTask(STime reltime){
           ATOMIC_SET(pc->player_state, PLAYER_STATE_PLAYING);
 }
 
-STime PLAYER_get_block_delta_time(STime time){
+int PLAYER_get_block_delta_time(STime time){
   if(time<pc->start_time || time>pc->end_time) // time may be screwed up if not coming from the player.
     return 0;
 
   if(is_playing()){
-    STime ret = ((time - pc->start_time) * pc->reltime / (pc->end_time - pc->start_time)); // i.e. "scale(time, pc->start_time, pc->end_time, 0, pc->reltime)"
+    int ret = ((time - pc->start_time) * pc->reltime / (pc->end_time - pc->start_time)); // i.e. "scale(time, pc->start_time, pc->end_time, 0, pc->reltime)"
     if(ret<0){
       RWarning("ret<0: %d",ret);
       return 0;

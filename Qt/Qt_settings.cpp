@@ -96,7 +96,7 @@ const char *OS_get_program_path(void){
 }
 
 wchar_t *STRING_create(const QString s){
-  size_t size = sizeof(wchar_t)*(s.length()+1);
+  int size = (int)sizeof(wchar_t)*(s.length()+1);
   wchar_t *array = (wchar_t*)talloc_atomic(size);
   memset(array, 0, size);
   s.toWCharArray(array);

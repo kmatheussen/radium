@@ -319,7 +319,7 @@ static int get_num_runners_from_config(void){
   if (default_num_runners<1 || default_num_runners>64) // ensure sane value
     default_num_runners = 4;
 
-  return SETTINGS_read_int(settings_key, default_num_runners);
+  return SETTINGS_read_int32(settings_key, default_num_runners);
 }
 
 void MULTICORE_set_num_threads(int num_new_runners){  

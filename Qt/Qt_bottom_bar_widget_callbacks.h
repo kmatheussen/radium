@@ -168,7 +168,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     drunk_velocity_onoff->setChecked(drunk_velocity);
 
     if(scrolls_per_second==-1)
-      scrolls_per_second = SETTINGS_read_int("scrolls_per_second", default_scrolls_per_second);
+      scrolls_per_second = SETTINGS_read_int32("scrolls_per_second", default_scrolls_per_second);
 
     editlines->setValue(1);
     

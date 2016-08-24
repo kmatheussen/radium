@@ -369,7 +369,7 @@ static int RT_get_legal_note_id_pos(Data *data, float ids_pos){
 }
 
 // called from radium
-static void RT_process(SoundPlugin *plugin, int64_t block_delta_time, int num_frames, float **inputs, float **outputs){
+static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
 
@@ -377,7 +377,7 @@ static void RT_process(SoundPlugin *plugin, int64_t block_delta_time, int num_fr
 }
 
 // called from radium
-static void RT_play_note(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note){
+static void RT_play_note(struct SoundPlugin *plugin, int block_delta_time, note_t note){
 
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
@@ -397,7 +397,7 @@ static void RT_play_note(struct SoundPlugin *plugin, int64_t block_delta_time, n
   }
 }
 
-static void RT_stop_note(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note){
+static void RT_stop_note(struct SoundPlugin *plugin, int block_delta_time, note_t note){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   libpds_noteon(pd, note.midi_channel, note.pitch, 0);
@@ -414,7 +414,7 @@ static void RT_stop_note(struct SoundPlugin *plugin, int64_t block_delta_time, n
 }
 
 // called from radium
-static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note){
+static void RT_set_note_volume(struct SoundPlugin *plugin, int block_delta_time, note_t note){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   libpds_polyaftertouch(pd, note.midi_channel, note.pitch, note.velocity*127);
@@ -432,7 +432,7 @@ static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t block_delta_t
 }
 
 // called from radium
-static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note){
+static void RT_set_note_pitch(struct SoundPlugin *plugin, int block_delta_time, note_t note){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
 
@@ -517,7 +517,7 @@ void RT_PD_set_line(int64_t time, int64_t time_nextline, int line){
 }
 
 // called from radium
-static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when) {
+static void RT_set_effect_value(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when) {
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   Pd_Controller *controller = &data->controllers[effect_num];

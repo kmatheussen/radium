@@ -97,8 +97,8 @@ static vector_t *get_all_patches(void){
   return v;
 }
 
-int PATCH_get_new_id(void){
-  static int id = 0;
+int64_t PATCH_get_new_id(void){
+  static int64_t id = 0;
   id++;
   
   // When we load a song, the songs also contains patch id number, so we need to check that the id is not already used.
@@ -113,7 +113,7 @@ int PATCH_get_new_id(void){
   return id;
 }
 
-struct Patch *PATCH_get_from_id(int id){
+struct Patch *PATCH_get_from_id(int64_t id){
   vector_t *v=get_all_patches();
   int i;
   for(i=0;i<v->num_elements;i++){
@@ -798,7 +798,7 @@ static note_t create_note_from_args(const union SuperType *args){
   int64_t note_id      = args[1].int_num;
   float   velocity     = args[2].float_num;
   float   pan          = args[3].float_num;
-  int     midi_channel = args[4].int_num;
+  int     midi_channel = (int)args[4].int_num;
 
   return create_note_t(note_id, notenum, velocity, pan, midi_channel);
 }

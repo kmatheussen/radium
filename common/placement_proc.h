@@ -52,7 +52,7 @@ static inline void ValidatePlace(const Place *place){
 static inline Place place_from_64(int64_t line, int64_t num, int64_t den){
 
   R_ASSERT(den > 0);
-  
+
   while(num > den) {
     line++;
     num -= den;
@@ -73,13 +73,15 @@ static inline Place place_from_64(int64_t line, int64_t num, int64_t den){
     int dividor = MAX_UINT32;
 
     if (counter >= dividor)
-      ret = place(line+1, 0, 1);
+      ret = place((int)line+1, 0, 1);
     else
-      ret = place(line, counter, dividor);
+      ret = place((int)line, counter, dividor);
     
   } else {
-    
-    ret = place(line, num, den);
+
+    R_ASSERT(num < INT_MAX);
+      
+    ret = place((int)line, (int)num, (int)den);
     
   }
 
@@ -338,7 +340,10 @@ static inline void TrustedPlaceSub(const Place *p1,  const Place *p2, Place *res
   int64_t counter1 = p1->counter * p2->dividor;
   int64_t counter2 = p2->counter * p1->dividor;
 
-  result->counter = counter1-counter2;
+  int64_t counter = counter1-counter2;
+  R_ASSERT(counter < INT_MAX);
+    
+  result->counter = (int)counter;
 
   // todo: 
 }

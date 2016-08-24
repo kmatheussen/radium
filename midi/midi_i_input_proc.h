@@ -98,7 +98,7 @@ public:
   }
 
   // may be overridden. Returns -2 if no instrument should match, or -1 if all instruments should match.
-  virtual int RT_get_instrument_id(void){
+  virtual int64_t RT_get_instrument_id(void){
     return -1;
   }
   

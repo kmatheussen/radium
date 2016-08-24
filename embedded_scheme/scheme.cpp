@@ -82,7 +82,7 @@ static Place number_to_place(s7_pointer number){
   }
 
   if (s7_is_integer(number))
-    return place(s7_integer(number), 0, 1);
+    return place((int)s7_integer(number), 0, 1);
   
   if (s7_is_real(number)) {
     Place place;
@@ -186,7 +186,7 @@ Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place 
   if (s7_is_ratio(result))
     return ratio_to_place(result);
   else if (s7_is_integer(result))
-    return PlaceCreate(s7_integer(result), 0, 1);
+    return PlaceCreate((int)s7_integer(result), 0, 1);
   else if (s7_is_real(result)) {
     RError("PlaceScale: result was a real (strange): %f (%s %s %s %s %s)",s7_real(result),PlaceToString(x),PlaceToString(x1),PlaceToString(x2),PlaceToString(y1),PlaceToString(y2));
     Place *ret = (Place*)talloc_atomic(sizeof(Place));
@@ -253,7 +253,7 @@ static void place_operation_void_p1_p2(s7_pointer scheme_func, Place *p1,  const
   if (s7_is_ratio(result))
     PlaceCopy(p1, ratio_to_place(result));
   else if (s7_is_integer(result))
-    PlaceCopy(p1, PlaceCreate(s7_integer(result), 0, 1));
+    PlaceCopy(p1, PlaceCreate((int)s7_integer(result), 0, 1));
   else if (s7_is_real(result)) {
     RError("result was a real (strange): %f (%s %s)",s7_real(result),PlaceToString(p1),PlaceToString(p2));
     Double2Placement(s7_real(result), p1);

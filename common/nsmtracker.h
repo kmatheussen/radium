@@ -704,9 +704,11 @@ typedef struct _linked_note_t{
 } linked_note_t;
 
 
+#define CAST_API_PATCH_ID(a) ((int)a) // When API is converted to 64 bit, this definition should be changed to just 'a'.
+
 // Note that Patch objects are stored directly in undo/redo (not copied), so it must not be freed, reused for other purposes, or othervice manipulated when not available.
 struct Patch{
-  int id;
+  int64_t id;
   
   bool is_usable; // If pasting a track with this patch, this flag tells whether the patch can be used on the new track.
   hash_t *state; // If is_usable==false, this field contains the plugin state.

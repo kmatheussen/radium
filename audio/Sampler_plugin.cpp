@@ -108,9 +108,9 @@ struct Data;
 typedef struct{
   float volume;
 
-  int num_frames;
-  int loop_start;
-  int loop_end;
+  int64_t num_frames;
+  int64_t loop_start;
+  int64_t loop_end;
 
   int ch;        // -1 means both channels.
   float *sound;
@@ -147,7 +147,7 @@ typedef struct _Voice{
 
   Panvals pan;
 
-  int pos;
+  int64_t pos;
 
   void *resampler;
   void *adsr;
@@ -208,8 +208,8 @@ struct Data{
   bool use_sample_file_middle_note; // Set to true by default now, but not included (or set to false) in the state of older states. Without this flag, loading older sounds could sound wrong.
 
   // Should loop start/length be placed in CopyData?
-  int loop_start;
-  int loop_length;   // if 0, use loop data in sample file instead, if there is any. (loop_start has no meaning if loop_length is 0)
+  int64_t loop_start;
+  int64_t loop_length;   // if 0, use loop data in sample file instead, if there is any. (loop_start has no meaning if loop_length is 0)
 
   struct SoundPlugin *tremolo;
   
@@ -344,18 +344,18 @@ static void RT_fade_add(float *dst, float *src, int num_frames, float start_val,
   }
 }
 
-static long RT_crossfade(int start_pos, int end_pos, int crossfade_start, int crossfade_end, float *out_data, float *in_data){
-  int num_frames = end_pos - start_pos;
+static int RT_crossfade(int64_t start_pos, int64_t end_pos, int64_t crossfade_start, int64_t crossfade_end, float *out_data, float *in_data){
+  int num_frames = (int)(end_pos - start_pos);
 
-  float start_fade_val = scale(start_pos,
-                               crossfade_start, crossfade_end,
-                               1.0f, 0.0f
-                               );
+  float start_fade_val = scale_double(start_pos,
+                                      crossfade_start, crossfade_end,
+                                      1.0f, 0.0f
+                                      );
 
-  float end_fade_val  = scale(end_pos,
-                              crossfade_start, crossfade_end,
-                              1.0f, 0.0f
-                              );
+  float end_fade_val  = scale_double(end_pos,
+                                     crossfade_start, crossfade_end,
+                                     1.0f, 0.0f
+                                     );
 
   //printf("fade out: %d -> %d\n",start_pos, start_pos+num_frames);
   //printf("fade in:  %d -> %d\n\n", start_pos2, start_pos2+num_frames);
@@ -380,16 +380,16 @@ static long RT_crossfade(int start_pos, int end_pos, int crossfade_start, int cr
 
 static int RT_legal_crossfade_length(const Sample *sample, Data *data){
   int crossfade_length = data->p.crossfade_length;
-  int loop_length = sample->loop_end - sample->loop_start;
+  int64_t loop_length = sample->loop_end - sample->loop_start;
 
-  return R_MIN(crossfade_length, loop_length/2);
+  return (int)R_MIN(crossfade_length, loop_length/2);
 }
 
-static long RT_src_callback_with_crossfade_do_looping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
+static int RT_src_callback_with_crossfade_do_looping(Voice *voice, const Sample *sample, Data *data, int64_t start_pos, float **out_data){
   *out_data = voice->crossfade_buffer;
   int len_out_data = CROSSFADE_BUFFER_LENGTH;
 
-  int end_pos = start_pos + len_out_data;
+  int64_t end_pos = start_pos + len_out_data;
   if (end_pos > sample->loop_end)
     end_pos = sample->loop_end;
 
@@ -410,20 +410,20 @@ static long RT_src_callback_with_crossfade_do_looping(Voice *voice, const Sample
                       );
 }
 
-static long RT_src_callback_with_crossfade_between_looping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
+static int64_t RT_src_callback_with_crossfade_between_looping(Voice *voice, const Sample *sample, Data *data, int64_t start_pos, float **out_data){
   *out_data = sample->sound + voice->pos;
-  int prev_voice_pos = voice->pos;
+  int64_t prev_voice_pos = voice->pos;
   voice->pos = sample->loop_end - RT_legal_crossfade_length(sample, data); // next
   return voice->pos - prev_voice_pos;
 }
 
-static long RT_src_callback_with_crossfade_before_looping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
+static int64_t RT_src_callback_with_crossfade_before_looping(Voice *voice, const Sample *sample, Data *data, int64_t start_pos, float **out_data){
   *out_data = sample->sound;
   voice->pos = sample->loop_end - RT_legal_crossfade_length(sample, data); // next
   return voice->pos; // start_pos==0 here.
 }
 
-static long RT_src_callback_with_crossfade_looping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
+static int64_t RT_src_callback_with_crossfade_looping(Voice *voice, const Sample *sample, Data *data, int64_t start_pos, float **out_data){
   //printf("crossfading %d -> %d -> %d (%d)\n",sample->loop_start,start_pos,sample->loop_end,voice->pos);
 
   if(start_pos==0 && sample->loop_start>0)
@@ -441,7 +441,7 @@ static long RT_src_callback_with_crossfade_looping(Voice *voice, const Sample *s
 
 
 
-static long RT_src_callback_with_normal_looping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
+static int64_t RT_src_callback_with_normal_looping(Voice *voice, const Sample *sample, Data *data, int64_t start_pos, float **out_data){
   *out_data = &sample->sound[start_pos];
 
   voice->pos = sample->loop_start; // next
@@ -455,7 +455,7 @@ static long RT_src_callback_with_normal_looping(Voice *voice, const Sample *samp
 
 
 
-static long RT_src_callback_nolooping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
+static int64_t RT_src_callback_nolooping(Voice *voice, const Sample *sample, Data *data, int64_t start_pos, float **out_data){
   *out_data = &sample->sound[start_pos];
 
   if(start_pos==sample->num_frames)
@@ -463,13 +463,13 @@ static long RT_src_callback_nolooping(Voice *voice, const Sample *sample, Data *
 
   voice->pos=sample->num_frames; // next
 
-  long ret = sample->num_frames - start_pos;
+  int64_t ret = sample->num_frames - start_pos;
 
   if (ret < 0){
 #if defined(RELEASE)
     ret = 0;
 #else
-    fprintf(stderr, "num_frames: %d, start_pos: %d\n",sample->num_frames, start_pos);
+    fprintf(stderr, "num_frames: %d, start_pos: %d\n",(int)sample->num_frames, (int)start_pos);
     abort();
 #endif
   }
@@ -477,7 +477,7 @@ static long RT_src_callback_nolooping(Voice *voice, const Sample *sample, Data *
   return ret;
 }
 
-static long RT_src_callback_reverse(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data, bool do_looping){
+static int64_t RT_src_callback_reverse(Voice *voice, const Sample *sample, Data *data, int64_t start_pos, float **out_data, bool do_looping){
   *out_data = &voice->crossfade_buffer[0];
 
   if(start_pos==sample->num_frames) {
@@ -487,15 +487,15 @@ static long RT_src_callback_reverse(Voice *voice, const Sample *sample, Data *da
       return 0;
   }
 
-  int samples_left = sample->num_frames - start_pos;
+  int64_t samples_left = sample->num_frames - start_pos;
 
-  int num_samples_to_return = R_MIN(samples_left, CROSSFADE_BUFFER_LENGTH);
+  int64_t num_samples_to_return = R_MIN(samples_left, CROSSFADE_BUFFER_LENGTH);
 
   float *source_sound = sample->sound;
   float *dest_sound = &voice->crossfade_buffer[0];
-  int sample_pos = sample->num_frames-1 - start_pos;
+  int64_t sample_pos = sample->num_frames-1 - start_pos;
  
-  int i;
+  int64_t i;
   for(i=0 ; i< num_samples_to_return ; i++)
     dest_sound[i] = source_sound[sample_pos--];
 
@@ -505,8 +505,8 @@ static long RT_src_callback_reverse(Voice *voice, const Sample *sample, Data *da
   return num_samples_to_return;
 }
 
-static long RT_src_callback_ping_pong_looping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
-  const int num_sample_frames = sample->num_frames;
+static int64_t RT_src_callback_ping_pong_looping(Voice *voice, const Sample *sample, Data *data, int64_t start_pos, float **out_data){
+  const int64_t num_sample_frames = sample->num_frames;
   
   R_ASSERT(start_pos <= num_sample_frames*2);
   
@@ -514,7 +514,7 @@ static long RT_src_callback_ping_pong_looping(Voice *voice, const Sample *sample
     start_pos = 0;
 
   if (start_pos >= num_sample_frames) {
-    int ret = RT_src_callback_reverse(voice, sample, data, start_pos - num_sample_frames, out_data, false);
+    int64_t ret = RT_src_callback_reverse(voice, sample, data, start_pos - num_sample_frames, out_data, false);
     voice->pos += num_sample_frames;
     return ret;
   } else
@@ -526,16 +526,18 @@ static long RT_src_callback_ping_pong_looping(Voice *voice, const Sample *sample
 static long RT_src_callback(void *cb_data, float **out_data){
   Voice *voice         = (Voice*)cb_data;
   const Sample *sample = voice->sample;
-  int start_pos        = voice->pos;
+  int64_t start_pos    = voice->pos;
   Data  *data          = sample->data;
 
   bool pingpong = ATOMIC_GET(sample->data->p.pingpong);
   bool reverse = ATOMIC_GET(sample->data->p.reverse);
   bool loop = ATOMIC_GET(sample->data->p.loop_onoff);
+
+  int64_t ret;
   
   if (pingpong) {
     
-    return RT_src_callback_ping_pong_looping(voice, sample, data, start_pos, out_data); // ping pong looping
+    ret = RT_src_callback_ping_pong_looping(voice, sample, data, start_pos, out_data); // ping pong looping
 
   } else {
 
@@ -543,21 +545,23 @@ static long RT_src_callback(void *cb_data, float **out_data){
       start_pos = sample->num_frames - (start_pos - sample->num_frames); // Keep same sample position.
     
     if (reverse && loop)
-      return RT_src_callback_reverse(voice, sample, data, start_pos, out_data, true); //loop reverse
+      ret = RT_src_callback_reverse(voice, sample, data, start_pos, out_data, true); //loop reverse
     
     else if (reverse && !loop)
-      return RT_src_callback_reverse(voice, sample, data, start_pos, out_data, false); //only reverse, no looping
+      ret = RT_src_callback_reverse(voice, sample, data, start_pos, out_data, false); //only reverse, no looping
     
     else if(!loop || sample->loop_end <= sample->loop_start)
-      return RT_src_callback_nolooping(voice, sample, data, start_pos, out_data);
+      ret = RT_src_callback_nolooping(voice, sample, data, start_pos, out_data);
     
     else if(data->p.crossfade_length > 0)
-      return RT_src_callback_with_crossfade_looping(voice, sample, data, start_pos, out_data);
+      ret = RT_src_callback_with_crossfade_looping(voice, sample, data, start_pos, out_data);
     
     else
-      return RT_src_callback_with_normal_looping(voice, sample, data, start_pos, out_data);
+      ret = RT_src_callback_with_normal_looping(voice, sample, data, start_pos, out_data);
 
   }
+
+  return (long)ret;
 }
 
 
@@ -811,7 +815,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 }
 
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note2){
+static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
   Data *data = (Data*)plugin->data;
 
   R_ASSERT_NON_RELEASE(time >= 0);
@@ -893,7 +897,7 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note2){
 }
 
 
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
 
   if (ATOMIC_GET(data->recording_status)==IS_RECORDING)
@@ -911,7 +915,7 @@ static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t not
   }
 }
 
-static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void set_note_pitch(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
 
   if (ATOMIC_GET(data->recording_status)==IS_RECORDING)
@@ -932,7 +936,7 @@ static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, note_t note
   }
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
 
   if (ATOMIC_GET(data->recording_status)==IS_RECORDING){
@@ -1040,8 +1044,8 @@ static bool get_peak_sample(const Sample *sample, int64_t framenum, float *min_v
 
     framenum -= sample->loop_end; // i.e. how far after loop end are we?
 
-    int loop_length = sample->loop_end - sample->loop_start;
-    int num_loops = framenum / loop_length;
+    int64_t loop_length = sample->loop_end - sample->loop_start;
+    int64_t num_loops = framenum / loop_length;
     framenum -= (num_loops*loop_length);
 
     framenum += sample->loop_start;
@@ -1051,7 +1055,7 @@ static bool get_peak_sample(const Sample *sample, int64_t framenum, float *min_v
   if(framenum >= sample->num_frames)
     return false;
 
-  int peak_pos = framenum/SAMPLES_PER_PEAK;
+  int64_t peak_pos = framenum/SAMPLES_PER_PEAK;
   *min_value = sample->min_peaks[peak_pos];
   *max_value = sample->max_peaks[peak_pos];
 
@@ -1062,12 +1066,11 @@ static void get_peaks_from_sample(const Sample *sample, int64_t start_frame, int
   float min=0.0f;
   float max=0.0f;
 
-  int interval = R_MAX(1, (end_frame-start_frame) / 5); //SAMPLES_PER_PEAK);
+  int interval = (int)R_MAX(1, (end_frame-start_frame) / 5); //SAMPLES_PER_PEAK);
   //  if (interval < SAMPLES_PER_PEAK / 2)
   //  interval = SAMPLES_PER_PEAK / 2;
   
-  int framenum;
-  for(framenum=start_frame ; framenum<end_frame ; framenum+=interval){ //SAMPLES_PER_PEAK){
+  for(int64_t framenum=start_frame ; framenum<end_frame ; framenum+=interval){ //SAMPLES_PER_PEAK){
     float min2;
     float max2;
 
@@ -1263,7 +1266,7 @@ static bool can_crossfade(Data *data){
   return ATOMIC_GET(data->p.reverse)==false && ATOMIC_GET(data->p.pingpong)==false;
 }
 
-static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
+static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
   if(value_format==PLUGIN_FORMAT_SCALED){
@@ -1672,7 +1675,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
              
 
 // Note, if start==-1 and end==-1, loop_start is set to 0 and loop_end is set to sample->num_frames, and loop_onoff is not set.
-static void set_legal_loop_points(Sample *sample, int start, int end, bool set_loop_on_off){
+static void set_legal_loop_points(Sample *sample, int64_t start, int64_t end, bool set_loop_on_off){
   if(start==-1 && end==-1){ 
     sample->loop_start=0;
     sample->loop_end=sample->num_frames;
@@ -1707,23 +1710,31 @@ static float *load_interleaved_samples(const wchar_t *filename, SF_INFO *sf_info
   if(sndfile==NULL)
     return NULL;
 
-  float   *ret              = (float*)talloc_atomic(sizeof(float) * sf_info->channels * sf_info->frames);
-  int      allocated_frames = sf_info->frames;
+  int64_t alloc_size = sizeof(float) * sf_info->channels * sf_info->frames;
 
-  int total_read_frames     = sf_readf_float(sndfile, ret, sf_info->frames);
+  if (alloc_size > INT32_MAX){
+    GFX_Message(NULL, "File too large");
+    return NULL;
+  }
+
+
+  float   *ret              = (float*)talloc_atomic((int)alloc_size);
+  int64_t  allocated_frames = sf_info->frames;
+
+  int64_t total_read_frames = sf_readf_float(sndfile, ret, sf_info->frames);
 
   if(total_read_frames==0)
     return NULL;
 
   while(true){
     float samples[1024*sf_info->channels];
-    int read_now = sf_readf_float(sndfile, samples, 1024);
+    int64_t read_now = sf_readf_float(sndfile, samples, 1024);
     if(read_now==0)
       break;
 
-    if(total_read_frames + read_now > allocated_frames){
+    if(total_read_frames + read_now > allocated_frames){ // what's happening here?
       allocated_frames = (total_read_frames+read_now) * 2;
-      ret = (float*)talloc_realloc(ret, allocated_frames * sizeof(float) * sf_info->channels);
+      ret = (float*)talloc_realloc(ret, (int)(allocated_frames * sizeof(float) * sf_info->channels));
     }
 
     memcpy(ret + (total_read_frames*sf_info->channels), samples, sizeof(float)*1024*sf_info->channels);
@@ -1824,9 +1835,9 @@ static void generate_peaks(Data *data){
 
       float *samples = sample->sound;
 
-      int num_peaks = (sample->num_frames / SAMPLES_PER_PEAK)+10;
-      sample->min_peaks = (float*)V_malloc(sizeof(float)*num_peaks);
-      sample->max_peaks = (float*)V_malloc(sizeof(float)*num_peaks);
+      int num_peaks = (int)((sample->num_frames / SAMPLES_PER_PEAK)+10);
+      sample->min_peaks = (float*)V_malloc((int)sizeof(float)*num_peaks);
+      sample->max_peaks = (float*)V_malloc((int)sizeof(float)*num_peaks);
       
       int i;
       int peaknum=0;
@@ -1998,7 +2009,7 @@ static void delete_data(Data *data){
   delete data;
 }
 
-static void set_loop_data(Data *data, int start, int length, bool set_loop_on_off){
+static void set_loop_data(Data *data, int64_t start, int64_t length, bool set_loop_on_off){
   
   if (set_loop_on_off) {
     if (length==0)
@@ -2021,7 +2032,7 @@ static void set_loop_data(Data *data, int start, int length, bool set_loop_on_of
         else
             sample->loop_start = sample->num_frames - 1;
         
-        int loop_end = sample->loop_start + length;
+        int64_t loop_end = sample->loop_start + length;
         if (loop_end <= sample->num_frames)
           sample->loop_end = loop_end;
         else
@@ -2075,8 +2086,8 @@ static bool set_new_sample(struct SoundPlugin *plugin,
                            const wchar_t *filename,
                            int instrument_number,
                            int resampler_type,
-                           int loop_start,
-                           int loop_end,
+                           int64_t loop_start,
+                           int64_t loop_end,
                            bool use_sample_file_middle_note,
                            bool is_loading)
 {
@@ -2287,10 +2298,10 @@ static QString get_final_embedded_filename(QString org_filename, QString new_fil
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
   const wchar_t *filename;
   bool           use_sample_file_middle_note = true ; if (HASH_has_key(state, "use_sample_file_middle_note")) use_sample_file_middle_note = HASH_get_bool(state, "use_sample_file_middle_note");
-  int            instrument_number = HASH_get_int(state, "instrument_number");
-  int            resampler_type    = HASH_get_int(state, "resampler_type");
-  int            loop_start        = 0; if (HASH_has_key(state, "loop_start"))  loop_start  = HASH_get_int(state, "loop_start");
-  int            loop_length       = 0; if (HASH_has_key(state, "loop_length")) loop_length = HASH_get_int(state, "loop_length");
+  int            instrument_number = HASH_get_int32(state, "instrument_number");
+  int            resampler_type    = HASH_get_int32(state, "resampler_type");
+  int64_t        loop_start        = 0; if (HASH_has_key(state, "loop_start"))  loop_start  = HASH_get_int(state, "loop_start");
+  int64_t        loop_length       = 0; if (HASH_has_key(state, "loop_length")) loop_length = HASH_get_int(state, "loop_length");
 
   bool audiodata_is_included = HASH_has_key(state, "audiofile");
   

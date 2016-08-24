@@ -281,6 +281,15 @@ int64_t SETTINGS_read_int(const char* key, int64_t def){
     return atoll(val);
 }
 
+int SETTINGS_read_int32(const char* key, int def){
+  const char* val = SETTINGS_get_chars(key);
+
+  if(val==NULL)
+    return def;
+  else
+    return atoi(val);
+}
+
 double SETTINGS_read_double(const char* key, double def){
   const char* val = SETTINGS_get_chars(key);
 

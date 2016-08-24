@@ -73,9 +73,9 @@ void InitPEQBlockfxs(
 
 static void scheduled_fx_change(int64_t time, const union SuperType *args){
   struct FX    *fx    = args[0].pointer;
-  int           x     = args[1].int_num;
-  int64_t       skip  = args[2].int_num;
-  FX_when       when  = args[3].int_num;
+  int           x     = (int)args[1].int_num;
+  int           skip  = (int)args[2].int_num;
+  FX_when       when  = (FX_when)args[3].int_num;
 
   //printf("Sending fx change %d\n",x);
 

@@ -59,6 +59,9 @@ extern LANGSPEC hash_t *HASH_get_hash(const hash_t *hash, const char *key);
 static inline bool HASH_get_bool(hash_t *hash, const char *key){
   return HASH_get_int(hash, key)==1 ? true : 0;
 }
+static inline int HASH_get_int32(hash_t *hash, const char *key){
+  return (int)HASH_get_int(hash, key);
+}
 
 
 // Array interface

@@ -822,16 +822,16 @@ static void add_midi_event(struct SoundPlugin *plugin,int time,int val1, int val
 }
 
 
-  static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note){
+  static void play_note(struct SoundPlugin *plugin, int time, note_t note){
     //printf("****************** play note at %d\n",(int)time);
     add_midi_event(plugin,time,0x90|note.midi_channel,note.pitch,note.velocity*127);
   }
   
-  static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t note){
+  static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
     add_midi_event(plugin,time,0xa0|note.midi_channel,note.pitch,note.velocity*127);
   }
 
-  static void stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
+  static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
     add_midi_event(plugin,time,0x90|note.midi_channel,note.pitch,0);
   }
 
@@ -841,7 +841,7 @@ static void add_midi_event(struct SoundPlugin *plugin,int time,int val1, int val
     return aeffect->getParameter(aeffect,effect_num);
   }
 
-  static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
+  static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
     Data *data = (Data*)plugin->data;
     AEffect *aeffect = data->aeffect;
     aeffect->setParameter(aeffect,effect_num,value);

@@ -266,10 +266,10 @@ void CopyRange(
 	range=talloc(sizeof(struct Range));
 	range->num_tracks = num_tracks = wblock->rangex2-wblock->rangex1+1;
 
-	range->notes=talloc((size_t)(sizeof(struct Notes *)*num_tracks));
-	range->stops=talloc((size_t)(sizeof(struct Stops *)*num_tracks));
+	range->notes=talloc((int)sizeof(struct Notes *)*num_tracks);
+        range->stops=talloc((int)sizeof(struct Stops *)*num_tracks);
 	//range->instruments=talloc((size_t)(sizeof(struct Instruments *)*num_tracks));
-	range->fxs=talloc((size_t)(sizeof(vector_t)*num_tracks));
+	range->fxs=talloc((int)sizeof(vector_t)*num_tracks);
 
 	p1=getRangeStartPlace(wblock);
 	p2=getRangeEndPlace(wblock);

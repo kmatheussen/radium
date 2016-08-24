@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <stdarg.h>
 #include <errno.h>
+#include <inttypes.h>
 
 
 #include "nsmtracker.h"
@@ -65,22 +66,22 @@ void DC_SaveUI(unsigned int integer){
 	if(DISK_printf(dc.file,"%u\n",integer)<0) dc.success=false;
 }
 
-void DC_SaveL(long integer){
-	if(DISK_printf(dc.file,"%ld\n",integer)<0) dc.success=false;
+void DC_SaveL(int64_t integer){
+       if(DISK_printf(dc.file,"%" PRId64 "\n",integer)<0) dc.success=false;
 }
 
-void DC_SaveN(long integer){
-	if(DISK_printf(dc.file,"%ld\n",integer)<0) dc.success=false;
+void DC_SaveN(int64_t integer){
+  DC_SaveL(integer);
 }
 
-void DC_SaveUL(unsigned long integer){
-	if(DISK_printf(dc.file,"%lu\n",integer)<0) dc.success=false;
+void DC_SaveUL(uint64_t integer){
+  if(DISK_printf(dc.file,"%" PRIu64 "\n",integer)<0) dc.success=false;
 }
 
 
 /******************** OS depended function. Must be removed later *************/
-void DC_SaveP(unsigned long integer){
-	if(DISK_printf(dc.file,"%lu\n",integer)<0) dc.success=false;
+void DC_SaveP(uint64_t integer){
+  DC_SaveUL(integer);
 }
 
 void DC_SaveF(float integer){
@@ -106,7 +107,7 @@ void DC_SSUI(const char *string,unsigned int integer){
 	DC_SaveUI(integer);
 }
 
-void DC_SSL(const char *string,long integer){
+void DC_SSL(const char *string,int64_t integer){
 	DC_SaveS(string);
 	DC_SaveL(integer);
 }
@@ -118,12 +119,12 @@ void DC_SSF(const char *string,float integer){
 
 
 /************ os spesific function, must be removed out later. ***********/
-void DC_SSN(const char *string,long integer){
+void DC_SSN(const char *string,int64_t integer){
 	DC_SaveS(string);
 	DC_SaveL(integer);
 }
 
-void DC_SSUL(const char *string,unsigned long integer){
+void DC_SSUL(const char *string,uint64_t integer){
 	DC_SaveS(string);
 	DC_SaveUL(integer);
 }
@@ -171,7 +172,7 @@ void DC_fgets(void){
 
 
 
-void *DC_doalloc(size_t size){
+void *DC_doalloc(int size){
 	void *ret=tralloc(size);
 	if(ret==NULL){
           GFX_Message(NULL, "Not enough memory.\n");
@@ -180,7 +181,7 @@ void *DC_doalloc(size_t size){
 	return ret;
 }
 
-void *DC_doalloc_atomic(size_t size){
+void *DC_doalloc_atomic(int size){
 	void *ret=tralloc_atomic(size);
 	if(ret==NULL){
           GFX_Message(NULL, "Not enough memory (atomic).\n");
@@ -199,14 +200,15 @@ unsigned int DC_LoadUI(void){
 	return (unsigned int)strtoul(dc.ret,NULL,10);
 }
 
-long DC_LoadL(void){
+int64_t DC_LoadL(void){
 	DC_fgets();
-	return atol(dc.ret);
+        R_ASSERT(sizeof(long long) >= 8);
+	return atoll(dc.ret);
 }
 
-unsigned long DC_LoadUL(void){
+uint64_t DC_LoadUL(void){
 	DC_fgets();
-	return (unsigned int)strtoul(dc.ret,NULL,10);
+	return (unsigned int)strtoull(dc.ret,NULL,10);
 }
 
 float DC_LoadF(void){
@@ -216,12 +218,12 @@ float DC_LoadF(void){
 
 /************** OS depended function. ****************/
 uint_32 DC_LoadU32(void){
-	return DC_LoadUL();
+  return (uint_32)DC_LoadUL();
 }
 
 /************** OS depended function. ****************/
 NInt DC_LoadN(void){
-	return DC_LoadL();
+  return (NInt)DC_LoadL();
 }
 
 char *DC_LoadS(void){
@@ -231,7 +233,7 @@ char *DC_LoadS(void){
           ret=DC_alloc_atomic(1);
           ret[0]='\0';
         }else{
-          ret=DC_alloc_atomic(strlen(dc.ret)+1);
+          ret=DC_alloc_atomic((int)strlen(dc.ret)+1);
           strcpy(ret,dc.ret);
         }
 error:
@@ -245,7 +247,7 @@ char *DC_LoadSNoMatterWhat(void){
           ret=DC_alloc_atomic(1);
           ret[0]='\0';
         }else{
-          ret=DC_alloc_atomic(strlen(dc.ret)+1);
+          ret=DC_alloc_atomic((int)strlen(dc.ret)+1);
           strcpy(ret,dc.ret);
         }
 error:

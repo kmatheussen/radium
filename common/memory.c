@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 
 #if 0
-static size_t tmemorysize=32000;		/* Hardcoded, must be unhardcoded later. */
+static int tmemorysize=32000;		/* Hardcoded, must be unhardcoded later. */
 static int tmemoryisused=1;
 
 static void *tmemory;
@@ -98,7 +98,7 @@ void ShutDownYepp(void){
 	exit(1);
 }
 
-size_t allocated=0;
+int allocated=0;
 
 
 #if defined(VALIDATE_MEM)
@@ -115,7 +115,7 @@ static void gcfinalizer(void *actual_mem_start, void *user_data){
 
 #endif
 
-void *tracker_alloc__(size_t size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber){
+void *tracker_alloc__(int size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber){
 	allocated+=size;
 
         R_ASSERT(THREADING_is_main_thread());
@@ -148,11 +148,11 @@ void *tracker_alloc__(size_t size,void *(*AllocFunction)(size_t size2), const ch
 
 }
 
-void *tralloc__(size_t size, const char *filename, int linenumber){
+void *tralloc__(int size, const char *filename, int linenumber){
   return tracker_alloc__(size,GC_malloc, filename, linenumber);
 }
 
-void *tralloc_atomic__(size_t size, const char *filename, int linenumber){
+void *tralloc_atomic__(int size, const char *filename, int linenumber){
   return tracker_alloc__(size,GC_malloc_atomic, filename, linenumber);
 }
 
@@ -162,7 +162,7 @@ void *tralloc_atomic__(size_t size, const char *filename, int linenumber){
      Does never return NULL.
      Clears memory.
 ************************************************************/
-void *talloc__(size_t size, const char *filename, int linenumber){ ///, const char *filename, int linenumber){
+void *talloc__(int size, const char *filename, int linenumber){ ///, const char *filename, int linenumber){
 	void *ret;
 
 	ret=tracker_alloc__(size,GC_malloc, filename, linenumber);
@@ -180,7 +180,7 @@ void *talloc__(size_t size, const char *filename, int linenumber){ ///, const ch
 	return NULL;
 }
 
-void *talloc_atomic__(size_t size, const char *filename, int linenumber){
+void *talloc_atomic__(int size, const char *filename, int linenumber){
 	void *ret;
 
         //return GC_malloc_atomic(size);
@@ -217,7 +217,7 @@ void *talloc_atomic__(size_t size, const char *filename, int linenumber){
 }
 
 
-void *talloc_atomic_uncollectable__(size_t size, const char *filename, int linenumber){
+void *talloc_atomic_uncollectable__(int size, const char *filename, int linenumber){
 	void *ret;
 
 	ret=tracker_alloc__(size,GC_malloc_atomic_uncollectable, filename, linenumber);
@@ -250,13 +250,13 @@ void *talloc_atomic_uncollectable__(size_t size, const char *filename, int linen
 	return NULL;
 }
 
-void *talloc_atomic_clean__(size_t size, const char *filename, int linenumber){
+void *talloc_atomic_clean__(int size, const char *filename, int linenumber){
   void *ret = talloc_atomic__(size, filename, linenumber);
   memset(ret, 0, size);
   return ret;
 }
 
-void *talloc_realloc__(void *v, size_t new_size, const char *filename, int linenumber){
+void *talloc_realloc__(void *v, int new_size, const char *filename, int linenumber){
 #ifdef DISABLE_BDWGC
   # if defined(VALIDATE_MEM)
     return V_realloc(v,new_size);
@@ -283,7 +283,7 @@ void *talloc_realloc__(void *v, size_t new_size, const char *filename, int linen
 char *talloc_strdup__(const char *input, const char *filename, int linenumber) {
   if(input==NULL)
     return NULL;
-  char *ret = talloc_atomic__(strlen(input) + 1, filename, linenumber);
+  char *ret = talloc_atomic__((int)strlen(input) + 1, filename, linenumber);
   sprintf(ret,"%s",input);
   return ret;
 }

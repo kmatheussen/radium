@@ -48,7 +48,7 @@ static int find_next_prime_number(int number){
 unsigned int oat_hash(const char *key, int i_i)
 {
   unsigned h = 0;
-  int len = strlen(key);
+  int len = (int)strlen(key);
   int i;
 
   const uint8_t *p = (const unsigned char*) key;

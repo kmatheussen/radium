@@ -2946,7 +2946,7 @@ int getFxInstrument(int fxnum, int tracknum, int blocknum, int windownum){
   //if (wtrack->track->patch == fxs->fx->patch)
   //  return -1;
   
-  return fxs->fx->patch->id;
+  return CAST_API_PATCH_ID(fxs->fx->patch->id);
 }
   
 char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){   

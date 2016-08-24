@@ -85,7 +85,7 @@ static QString get_sample_filename_display_string(QFileInfo file_info){
     sf_close(sndfile);
   }
 
-  int num_bytes = file_info.size();
+  int64_t num_bytes = file_info.size();
 
   QString ret =
     file_info.fileName().leftJustified(k_filename_len,'.')
@@ -406,9 +406,9 @@ class Sample_requester_widget : public QWidget
 
     hash_t *bank       = get_bank(STRING_create(_sf2_file),_sf2_bank);
     hash_t *preset     = HASH_get_hash(bank,item_text.toUtf8().constData());
-    int     bank_num   = HASH_get_int(preset,"bank");
-    int     preset_num = HASH_get_int(preset,"num");
-    int     preset_bag = HASH_get_int(preset,"bag");
+    int     bank_num   = HASH_get_int32(preset,"bank");
+    int     preset_num = HASH_get_int32(preset,"num");
+    int     preset_bag = HASH_get_int32(preset,"bag");
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 

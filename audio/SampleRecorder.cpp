@@ -246,7 +246,7 @@ struct RecordingFile{
       if (f.seek(4)==false)
         s = false;
       else
-        write_uint32(f, f.size()-8, s);
+        write_uint32(f, (int)f.size()-8, s);
     }
     
     f.close();
@@ -279,7 +279,7 @@ private:
       for(int ch=0;ch<num_channels;ch++)
         interleaved_data[pos++] = channels[ch]==NULL ? 0.0f : channels[ch][i]; // channels[ch]==NULL is not supposed to happen, but things are semi-messy, so we add the check just in case. (assertion window is shown in RT_put_slice if buffer couldn't be written to the queue.
 
-    int num_written_frames = sf_writef_float(sndfile, interleaved_data, num_frames);
+    int num_written_frames = (int)sf_writef_float(sndfile, interleaved_data, num_frames);
     if(num_written_frames != num_frames)
       RT_message("Unable to write all data to file \"%s\": %d - %s",filename.toUtf8().constData(), num_written_frames, sf_strerror(sndfile));
 

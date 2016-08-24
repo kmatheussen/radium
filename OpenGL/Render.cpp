@@ -119,7 +119,7 @@ static void draw_bordered_text(
 #if 1
   int z = GE_get_z(c);
     
-  int x2=x+(strlen(text)*window->fontwidth);
+  int x2=x+((int)strlen(text)*window->fontwidth);
 
 #if 0
   int y2=y+window->fontheight-1;
@@ -172,7 +172,7 @@ static void draw_text_num(
   
   sprintf(temp,"%d",num);
 
-  length2=length-strlen(temp);  
+  length2=length-(int)strlen(temp);  
   if(length2<0)
     length2=0;
   
@@ -439,10 +439,10 @@ static void create_background_realline(const struct Tracker_Windows *window, con
   // background
   {
     if(beat_opacity == -1)
-      beat_opacity = SETTINGS_read_int("beat_opacity", 950);
+      beat_opacity = SETTINGS_read_int32("beat_opacity", 950);
 
     if(first_beat_opacity == -1)
-      first_beat_opacity = SETTINGS_read_int("first_beat_opacity", 870);
+      first_beat_opacity = SETTINGS_read_int32("first_beat_opacity", 870);
     
 
     struct WTracks *wtrack=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,wblock->left_track);
@@ -2349,7 +2349,7 @@ static void create_message(const struct Tracker_Windows *window){
   if (message==NULL)
     return;
 
-  int width = strlen(message) * window->fontwidth;
+  int width = (int)strlen(message) * window->fontwidth;
   int height = window->fontheight;
   
   int middle_x = window->width / 2;

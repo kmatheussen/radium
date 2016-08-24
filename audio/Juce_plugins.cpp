@@ -502,7 +502,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void play_note(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
   MidiBuffer &buffer = data->midi_buffer;
 
@@ -511,7 +511,7 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note){
   buffer.addEvent(message, time);
 }
 
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
   MidiBuffer &buffer = data->midi_buffer;
 
@@ -520,7 +520,7 @@ static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t not
   buffer.addEvent(message, time);
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
   MidiBuffer &buffer = data->midi_buffer;
 
@@ -531,7 +531,7 @@ static void stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
   buffer.addEvent(message, time);
 }
 
-static void send_raw_midi_message(struct SoundPlugin *plugin, int64_t block_delta_time, uint32_t msg){
+static void send_raw_midi_message(struct SoundPlugin *plugin, int block_delta_time, uint32_t msg){
   uint8_t data[3];
   data[0] = MIDI_msg_byte1(msg);
   data[1] = MIDI_msg_byte2(msg);
@@ -560,7 +560,7 @@ static int RT_get_latency(struct SoundPlugin *plugin){
   return latency;
 }
 
-static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
+static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
   //if (effect_num==99)

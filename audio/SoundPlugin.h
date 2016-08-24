@@ -155,7 +155,7 @@ struct SoundPluginEffect{
   bool (*effect_is_RT)(const struct SoundPluginType *plugin_type);
 
   // This functions is called if SoundPluginType->effect_is_RT(effect_num) returns false
-  void (*set_effect_value)(struct SoundPlugin *plugin, int64_t block_delta_time, float value);
+  void (*set_effect_value)(struct SoundPlugin *plugin, int block_delta_time, float value);
 
   float (*get_effect_value)(struct SoundPlugin *plugin_type);
 };
@@ -207,20 +207,20 @@ typedef struct SoundPluginType{
 
   // The sound processing function. Note that the inputs and outputs arrays are likely to point to the same sound buffers.
   // For instance, if the plugin has one input and one output, inputs[0] and outputs[0] are very likely to be equal.
-  void (*RT_process)(struct SoundPlugin *plugin, int64_t block_delta_time, int num_frames, float **inputs, float **outputs);
+  void (*RT_process)(struct SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs);
 
   // These two functions are not used if SoundPluginType->note_handling_is_RT is false (currently, these two functions are note used at all)
   /*
-  void (*RT_play_note)(struct SoundPlugin *plugin, int64_t block_delta_time, int note_num, float volume, float pan);
-  void (*RT_stop_note)(struct SoundPlugin *plugin, int64_t block_delta_time, int note_num, float volume);
+  void (*RT_play_note)(struct SoundPlugin *plugin, int block_delta_time, int note_num, float volume, float pan);
+  void (*RT_stop_note)(struct SoundPlugin *plugin, int block_delta_time, int note_num, float volume);
   */
 
   // These three functions are not used if SoundPluginType->note_handling_is_RT is true
-  void (*play_note)(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note);
-  void (*set_note_volume)(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note);
-  void (*set_note_pitch)(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note);
-  void (*send_raw_midi_message)(struct SoundPlugin *plugin, int64_t block_delta_time, uint32_t msg);
-  void (*stop_note)(struct SoundPlugin *plugin, int64_t block_delta_time, note_t note);
+  void (*play_note)(struct SoundPlugin *plugin, int block_delta_time, note_t note);
+  void (*set_note_volume)(struct SoundPlugin *plugin, int block_delta_time, note_t note);
+  void (*set_note_pitch)(struct SoundPlugin *plugin, int block_delta_time, note_t note);
+  void (*send_raw_midi_message)(struct SoundPlugin *plugin, int block_delta_time, uint32_t msg);
+  void (*stop_note)(struct SoundPlugin *plugin, int block_delta_time, note_t note);
 
   int (*RT_get_latency)(struct SoundPlugin *plugin);
   
@@ -232,7 +232,7 @@ typedef struct SoundPluginType{
   const char *(*get_effect_name)(struct SoundPlugin *plugin, int effect_num); // The effect name is used as effect id. Two effects can not have the same name.
 
   // This functions is called if SoundPluginType->effect_is_RT(effect_num) returns false
-  void (*set_effect_value)(struct SoundPlugin *plugin, int64_t block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when);
+  void (*set_effect_value)(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when);
 
   float (*get_effect_value)(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format);
 

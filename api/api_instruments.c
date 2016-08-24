@@ -95,7 +95,7 @@ int getInstrumentForTrack(int tracknum, int blocknum, int windownum){
   if (patch==NULL)
     return -2;
 
-  return patch->id;
+  return CAST_API_PATCH_ID(patch->id);
 }
 
 void setInstrumentForTrack(int instrument_id, int tracknum, int blocknum, int windownum){
@@ -141,7 +141,7 @@ void setInstrumentForTrack(int instrument_id, int tracknum, int blocknum, int wi
 int createMIDIInstrument(char *name) {
   struct Patch *patch = PATCH_create_midi(name);
   GFX_PP_Update(patch);
-  return patch->id;
+  return CAST_API_PATCH_ID(patch->id);
 }
 
 // There was a good reason for the 'name' parameter. Think it had something to do with replace instrument, and whether to use old name or autogenerate new one.
@@ -158,7 +158,7 @@ int createAudioInstrument(char *type_name, char *plugin_name, char *name) {
     inc_plugin_usage_number(plugin->type);
   }
 
-  return patch->id;
+  return CAST_API_PATCH_ID(patch->id);
 }
 
 static hash_t *get_preset_state_from_filename(const wchar_t *filename){
@@ -270,7 +270,7 @@ static int createAudioInstrumentFromPreset2(const wchar_t *filename, char *name,
 #endif
 
 int createAudioInstrumentFromPreset(const char *filename, char *name) {
-  return createAudioInstrumentFromPreset2(STRING_create(filename), name, false);
+  return CAST_API_PATCH_ID(createAudioInstrumentFromPreset2(STRING_create(filename), name, false));
 }
 
 int createAudioInstrumentFromDescription(const char *instrument_description, char *name){
@@ -300,7 +300,7 @@ int createAudioInstrumentFromDescription(const char *instrument_description, cha
     wchar_t *filename = STRING_fromBase64(STRING_create(&instrument_description[1]));
     //printf("filename: %s\n",filename);
 
-    return createAudioInstrumentFromPreset2(filename, name, true);
+    return CAST_API_PATCH_ID(createAudioInstrumentFromPreset2(filename, name, true));
   }
 
   GFX_Message(NULL, "Illegal instrument_description: %s (string doesn't start with '1' or '2')",instrument_description);
@@ -318,7 +318,7 @@ int cloneAudioInstrument(int instrument_id){
   if (new_patch==NULL)
     return -1;
 
-  return new_patch->id;
+  return CAST_API_PATCH_ID(new_patch->id);
 }
 
 void connectAudioInstrumentToMainPipe(int instrument_id){
@@ -492,7 +492,7 @@ int getMIDIInstrumentId(int instrument_num){
     return -1;
   }
   struct Patch *patch = get_MIDI_instrument()->patches.elements[instrument_num];
-  return patch->id;
+  return CAST_API_PATCH_ID(patch->id);
 }
 
 int getNumAudioInstruments(void){
@@ -505,7 +505,7 @@ int getAudioInstrumentId(int instrument_num){
     return -1;
   }
   struct Patch *patch = get_audio_instrument()->patches.elements[instrument_num];
-  return patch->id;
+  return CAST_API_PATCH_ID(patch->id);
 }
 
 bool instrumentIsPermanent(int instrument_id){  
@@ -595,7 +595,7 @@ int getAudioConnectionSourceInstrument(int connectionnum, int instrument_id){
   if (source == NULL)
     return 0;
     
-  return source->id;
+  return CAST_API_PATCH_ID(source->id);
 }
 
 int getEventConnectionSourceInstrument(int connectionnum, int instrument_id){
@@ -607,7 +607,7 @@ int getEventConnectionSourceInstrument(int connectionnum, int instrument_id){
   if (source == NULL)
     return 0;
     
-  return source->id;
+  return CAST_API_PATCH_ID(source->id);
 }
 
 int getAudioConnectionDestInstrument(int connectionnum, int instrument_id){
@@ -619,7 +619,7 @@ int getAudioConnectionDestInstrument(int connectionnum, int instrument_id){
   if (dest == NULL)
     return 0;
   
-  return dest->id;
+  return CAST_API_PATCH_ID(dest->id);
 }
 
 int getEventConnectionDestInstrument(int connectionnum, int instrument_id){
@@ -631,7 +631,7 @@ int getEventConnectionDestInstrument(int connectionnum, int instrument_id){
   if (dest == NULL)
     return 0;
   
-  return dest->id;
+  return CAST_API_PATCH_ID(dest->id);
 }
 
 void createAudioConnection(int source_id, int dest_id){

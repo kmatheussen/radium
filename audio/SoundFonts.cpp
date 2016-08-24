@@ -314,8 +314,8 @@ static hash_t *get_menu(hash_t *info){
 
   for(int i=0;i<num_presets;i++){
     hash_t     *preset         = (hash_t*)presets->elements[i];
-    int         preset_num     = HASH_get_int(preset,"num");
-    int         bank_num       = HASH_get_int(preset,"bank");
+    int         preset_num     = HASH_get_int32(preset,"num");
+    int         bank_num       = HASH_get_int32(preset,"bank");
     const char *preset_name    = HASH_get_chars(preset,"name");
 
     char bank_display[512];
@@ -398,9 +398,9 @@ float *SF2_load_sample(const wchar_t *filename, int sample_num){
 
   int16_t *s16=(int16_t*)buffer.pStart;
 
-  int num_frames = buffer.Size / sizeof(int16_t);
+  int num_frames = int(buffer.Size / sizeof(int16_t));
 
-  float *ret=(float*)V_calloc(sizeof(float),num_frames);
+  float *ret=(float*)V_calloc((int)sizeof(float),num_frames);
   if(ret==NULL){
     GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames*4);
     return NULL;

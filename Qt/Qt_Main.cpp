@@ -2137,7 +2137,7 @@ static int gc_has_static_roots_func(
     is_main_root = false;
   
 #if !defined(RELEASE)
-  static int total = 0;
+  static int64_t total = 0;
 
   #if FOR_LINUX
     if (is_inside && strcmp("", dlpi_name)){

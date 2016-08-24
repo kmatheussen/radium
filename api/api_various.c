@@ -1316,7 +1316,7 @@ int autobackupIntervalInMinutes(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_autobackup_interval_minutes = SETTINGS_read_int("autobackup_interval_minutes", 1);
+    g_autobackup_interval_minutes = SETTINGS_read_int32("autobackup_interval_minutes", 1);
     has_inited = true;
   }
 
@@ -1469,7 +1469,7 @@ int getFaustOptimizationLevel(void){
 
   if (has_inited==false){
     int default_value = 4;
-    g_faust_optimization_level = SETTINGS_read_int("faust_optimization_level", default_value);
+    g_faust_optimization_level = SETTINGS_read_int32("faust_optimization_level", default_value);
     has_inited = true;
   }
 

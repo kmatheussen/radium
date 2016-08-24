@@ -84,7 +84,7 @@ struct TypeData{
   
   int index; // index in this file
 
-  unsigned int UniqueID; // same value as descriptor->UniqueID, but copied here to avoid loading the library to get the value.
+  unsigned long UniqueID; // same value as descriptor->UniqueID, but copied here to avoid loading the library to get the value.
   const char *Name; // same here
 
   float output_control_port_value;
@@ -401,7 +401,7 @@ static float slider_2_frequency(float slider, const float min_freq, const float 
                               min_output, 1));
 }
 
-static void set_effect_value(SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
+static void set_effect_value(SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   const SoundPluginType *type = plugin->type;
   TypeData *type_data = (TypeData*)type->data;
   Data *data = (Data*)plugin->data;

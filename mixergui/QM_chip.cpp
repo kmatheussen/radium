@@ -1548,7 +1548,7 @@ Chip *CHIP_get(QGraphicsScene *scene, const Patch *patch){
   return NULL;
 }
 
-static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int patch_id){
+static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int64_t patch_id){
   struct Patch *patch = PATCH_get_from_id(patch_id);
 
   return CHIP_get(scene, patch);

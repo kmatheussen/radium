@@ -156,6 +156,12 @@ DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-omit-frame-pointer -fno-optimize-siblin
 #  -fsanitize=thread 
 # -Og -fsanitize=address 
 
+ifneq (,$(findstring clang,$(CC)))
+	DEBUG_BUILD_OPTS += -Wshorten-64-to-32
+	S7OPTS += -Wno-shorten-64-to-32
+endif
+
+
 RELEASE_BUILD_OPTS_WITHOUT_NDEBUG = -DRELEASE -Wall -g $(OPTIMIZE)
 
 RELEASE_BUILD_OPTS = $(RELEASE_BUILD_OPTS_WITHOUT_NDEBUG) -DNDEBUG

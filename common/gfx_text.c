@@ -49,9 +49,9 @@ void PREOS_GFX_Text(
 
   // Fill background color
   if(flags & TEXT_INVERT){
-    OS_GFX_FilledBox(tvisual,color,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight,where);
+    OS_GFX_FilledBox(tvisual,color,x,y,x+(tvisual->fontwidth*(int)strlen(text)),y+tvisual->fontheight,where);
   }else if(flags & TEXT_CLEAR){
-    OS_GFX_FilledBox(tvisual,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight,where);
+    OS_GFX_FilledBox(tvisual,0,x,y,x+(tvisual->fontwidth*(int)strlen(text)),y+tvisual->fontheight,where);
   }
 
   // Draw text

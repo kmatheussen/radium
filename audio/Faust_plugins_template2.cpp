@@ -87,7 +87,7 @@ class MyUI : public UI
     _controllers.push_back(controller);
     _num_effects++;
 
-    return _controllers.size()-1;
+    return (int)_controllers.size()-1;
   }
 
   bool is_instrument(){
@@ -442,7 +442,7 @@ static void RT_process_instrument(SoundPlugin *plugin, int64_t time, int num_fra
   RT_process_instrument2(num_outputs, data, time, num_frames, inputs, outputs);
 }
 
-static void play_note2(Data *data, int64_t time, note_t note){
+static void play_note2(Data *data, int time, note_t note){
   //printf("Playing %f\n",note.pitch);
 
   Voice *voice = data->voices_not_playing;
@@ -467,12 +467,12 @@ static void play_note2(Data *data, int64_t time, note_t note){
   voice->delta_pos_at_end = -1;
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void play_note(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
   play_note2(data, time, note);
 }
 
-static void set_note_volume2(Data *data, int64_t time, note_t note){
+static void set_note_volume2(Data *data, int time, note_t note){
   Voice *voice = data->voices_playing;
   //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
   while(voice!=NULL){
@@ -482,12 +482,12 @@ static void set_note_volume2(Data *data, int64_t time, note_t note){
   }
 }
 
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
   set_note_volume2(data, time, note);
 }
 
-static void set_note_pitch2(Data *data, int64_t time, note_t note){
+static void set_note_pitch2(Data *data, int time, note_t note){
   Voice *voice = data->voices_playing;
   //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
   while(voice!=NULL){
@@ -496,12 +496,12 @@ static void set_note_pitch2(Data *data, int64_t time, note_t note){
     voice=voice->next;
   }
 }
-static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void set_note_pitch(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
   set_note_pitch2(data, time, note);
 }
 
-static void stop_note2(Data *data, int64_t time, note_t note){
+static void stop_note2(Data *data, int time, note_t note){
   Voice *voice = data->voices_playing;
   while(voice!=NULL){
     if(voice->note_id==note.id)
@@ -509,7 +509,7 @@ static void stop_note2(Data *data, int64_t time, note_t note){
     voice=voice->next;
   }
 }
-static void stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
   stop_note2(data, time, note);
 }
@@ -777,7 +777,7 @@ static void set_effect_value2(Data *data, int effect_num, float value, enum Valu
   
 }
 
-static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
+static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
   set_effect_value2(data, effect_num, value, value_format, when);
 }

@@ -30,7 +30,7 @@ static char *get_current_wav_chunk_id(disk_t *file){
   return val;
 }
 
-static bool spool_to_next_wav_chunk(disk_t *file, int endpos){
+static bool spool_to_next_wav_chunk(disk_t *file, int64_t endpos){
   if(DISK_spool(file,4)==false) // chunk id
     return false; // end of file
 
@@ -109,7 +109,7 @@ static int find_loop_cue_pos(disk_t *file, int cue_id, int num_cues){
 
 static int find_cue_id_for_label2(disk_t *file, const char *label){
 
-  int startpos=DISK_pos(file);
+  int64_t startpos=DISK_pos(file);
 
   DISK_spool(file,4); // "LIST"
 
@@ -119,10 +119,10 @@ static int find_cue_id_for_label2(disk_t *file, const char *label){
 
   DISK_spool(file,4); // "adtl"
 
-  int end_pos=startpos+list_size;
+  int64_t end_pos=startpos+list_size;
 
   while(true){
-    printf("ftell(file): %d. end_pos: %d. startpos: %d, list_size: %d\n",(int)DISK_pos(file), end_pos,startpos,list_size);
+    printf("ftell(file): %d. end_pos: %d. startpos: %d, list_size: %d\n",(int)DISK_pos(file), (int)end_pos, (int)startpos, list_size);
     if(DISK_pos(file)>=end_pos)
       return -1;
 
@@ -187,12 +187,12 @@ static bool set_wav_loop_points_using_cues(Sample *sample, disk_t *file, bool se
   DISK_spool(file,8);
   int num_cues = read_le32int(file);
 
-  int loop_start = find_loop_cue_pos(file,cue_id_loop_start,num_cues);
-  int loop_end = find_loop_cue_pos(file,cue_id_loop_end,num_cues);
+  int64_t loop_start = find_loop_cue_pos(file,cue_id_loop_start,num_cues);
+  int64_t loop_end = find_loop_cue_pos(file,cue_id_loop_end,num_cues);
 
   set_legal_loop_points(sample, loop_start, loop_end, set_loop_on_off);
 
-  printf("*************** num_cues: %d. loop_start: %d, loop_end: %d\n",num_cues,loop_start,loop_end);
+  printf("*************** num_cues: %d. loop_start: %d, loop_end: %d\n",num_cues,(int)loop_start,(int)loop_end);
   return true;
 }
 

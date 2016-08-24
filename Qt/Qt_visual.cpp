@@ -753,7 +753,7 @@ void OS_GFX_Text(
 
     }else if(true || (flags & TEXT_CENTER)){
 
-      QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->systemfontheight);
+      QRect rect(x,y,tvisual->fontwidth*(int)strlen(text),tvisual->systemfontheight);
       painter->drawText(rect, Qt::AlignVCenter, text);
 
     }else{

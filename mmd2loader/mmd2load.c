@@ -385,7 +385,7 @@ static char *MMD_GetInstrumentName(disk_t *file,NInt num){
 
 	if(strlen(temp)<2) return "NN";
 
-	name=talloc_atomic(strlen(temp)+1);
+	name=talloc_atomic((int)strlen(temp)+1);
 	sprintf(name,"%s",temp);
 
 	return name;
@@ -617,7 +617,7 @@ bool LoadMMP2(struct Tracker_Windows *window,const wchar_t *filename){
 			//fread(&cmdpagepointer,4,1,file);
 
 			if(blocknamelen>0 && blocknamepos>0){
-				blockname=talloc_atomic((size_t)(blocknamelen));
+                                blockname=talloc_atomic(blocknamelen);
 				DISK_set_pos(file,blocknamepos);
 				DISK_read_binary(file, blockname,(size_t)blocknamelen);
 			}else{

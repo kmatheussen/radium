@@ -34,7 +34,7 @@ extern PlayerClass *pc;
 
 static struct Beats *g_beat = NULL;
 
-static int64_t g_last_played_note_num = -1;
+static int g_last_played_note_num = -1;
 
 static const int bar_note_num = 55;
 static const int beat_note_num = 50;

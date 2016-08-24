@@ -80,7 +80,7 @@ static void cleanup_timeskew_plugin_data(SoundPlugin *plugin){
   delete data;
 }
 
-static void set_timeskew_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
+static void set_timeskew_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
   if(value_format==PLUGIN_FORMAT_SCALED)

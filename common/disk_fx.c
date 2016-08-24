@@ -131,7 +131,7 @@ end:
 
 
 void DLoadFX(const struct Root *newroot,struct Tracks *track, struct FXs *fxs, struct FX *fx){
-  NInt id = fx->patch->id;
+  int64_t id = fx->patch->id;
   
   if (id==-1)
     fx->patch = track->patch;

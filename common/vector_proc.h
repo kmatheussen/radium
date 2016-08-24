@@ -34,11 +34,11 @@ static inline int VECTOR_push_back(vector_t *v, const void *element){
       const int num_init = 8;
 #endif
       v->num_elements_allocated = num_init;
-      v->elements = (void**)talloc(num_init*sizeof(void*));
+      v->elements = (void**)talloc(num_init*(int)sizeof(void*));
     }else{
       const int num_elements_allocated = num_elements * 2;
       v->num_elements_allocated = num_elements_allocated;
-      v->elements = (void**)talloc_realloc(v->elements,num_elements_allocated*sizeof(void*));
+      v->elements = (void**)talloc_realloc(v->elements,num_elements_allocated*(int)sizeof(void*));
     }
   }
 
@@ -62,10 +62,10 @@ static inline void VECTOR_insert(vector_t *v, const void *element, int pos){
     const int num_elements_allocated = num_elements * 2;
     v->num_elements_allocated = num_elements_allocated;
     void **old_elements = v->elements;
-    v->elements = (void**)talloc(num_elements_allocated*sizeof(void*));
+    v->elements = (void**)talloc(num_elements_allocated*(int)sizeof(void*));
     
     if(pos>0)
-      memcpy(v->elements, old_elements, pos*sizeof(void*));
+      memcpy(v->elements, old_elements, pos*(int)sizeof(void*));
     
     v->elements[pos] = (void*)element;
     

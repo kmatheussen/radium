@@ -500,7 +500,7 @@ static bool stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
   float main_chip_x = main_chip->pos().x();
   float main_chip_y = main_chip->pos().y();
 
-  int size = myscene->_moving_chips.size();
+  int size = (int)myscene->_moving_chips.size();
   bool has_updated = false;
   
   for(int i=0;i<size;i++){
@@ -685,7 +685,7 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
       VECTOR_FOR_EACH(struct Patch *,patch,&instrument->patches){
         if(patch->patchdata==SP_get_plugin(chip->_sound_producer)){
           printf("Found patch\n");
-          deleteInstrument(patch->id);
+          deleteInstrument(CAST_API_PATCH_ID(patch->id));
           event->accept();
           break;
         }
@@ -822,7 +822,7 @@ static bool mouserelease_replace_patch(MyScene *scene, float mouse_x, float mous
       volatile struct Patch *patch = plugin->patch;
       R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
 
-      replaceInstrument(patch->id, "");
+      replaceInstrument(CAST_API_PATCH_ID(patch->id), "");
         
       return true;
     }
@@ -1415,7 +1415,7 @@ static char *create_selector_text(SoundPluginType *type){
 
 void inc_plugin_usage_number(SoundPluginType *type){
   char *settings_name = talloc_format("plugin_usage_%s_-_%s_-_%s", type->type_name, type->container==NULL ? "" : type->container->name, type->name);
-  int num_uses = SETTINGS_read_int(settings_name, 0);
+  int num_uses = SETTINGS_read_int32(settings_name, 0);
   SETTINGS_write_int(settings_name, num_uses+1);
 }
 
@@ -1863,7 +1863,7 @@ void MW_create_from_state(hash_t *state, vector_t *patches, float x, float y){
 
 static hash_t *convert_state_to_new_type(hash_t *state){
   hash_t *old_chips = HASH_get_hash(state, "chips");
-  int num_old_chips = HASH_get_int(old_chips, "num_chips");
+  int num_old_chips = HASH_get_int32(old_chips, "num_chips");
   
   hash_t *new_chips = HASH_create(17);
   hash_t *buses = HASH_create(5);
@@ -1901,7 +1901,7 @@ static hash_t *convert_state_to_new_type(hash_t *state){
 
 // compatibility with old songs
 static void create_missing_busses(hash_t *bus_chips_state){
-  int num_chips = HASH_get_int(bus_chips_state, "num_chips");
+  int num_chips = HASH_get_int32(bus_chips_state, "num_chips");
   printf("num_chips: %d\n",num_chips);
   for(int busnum=num_chips;busnum<NUM_BUSES;busnum++) {
     createAudioInstrument(talloc_strdup("Bus"), talloc_format("Bus %d", busnum+1), talloc_format("Aux %d Bus", busnum-num_chips+1));
@@ -1909,7 +1909,7 @@ static void create_missing_busses(hash_t *bus_chips_state){
 }
 
 static void autoposition_missing_bus_chips(hash_t *bus_chips_state){
-  int num_chips = HASH_get_int(bus_chips_state, "num_chips");
+  int num_chips = HASH_get_int32(bus_chips_state, "num_chips");
   Buses buses = MIXER_get_buses();
   for(int busnum=num_chips;busnum<NUM_BUSES;busnum++) {
     SoundProducer *sp =

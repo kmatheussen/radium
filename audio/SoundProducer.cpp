@@ -1451,7 +1451,7 @@ void SP_print_tree(void){
   for (SoundProducer *sp : *sp_all){
     fprintf(stderr,"%d (%d): sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d.\n",
             num++,
-            sp->_plugin->patch==NULL?-1:sp->_plugin->patch->id,
+            sp->_plugin->patch==NULL?-1:(int)sp->_plugin->patch->id,
             sp,
             sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,
             sp->num_dependencies,

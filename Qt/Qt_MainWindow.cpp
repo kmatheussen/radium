@@ -380,10 +380,10 @@ void handleDropEvent(QString filename, float x){
     }
     
     if (instrument_id != -1) {
-      connectAudioInstrumentToMainPipe(instrument_id);
+      connectAudioInstrumentToMainPipe(CAST_API_PATCH_ID(instrument_id));
       
       if (tracknum != -1)
-        setInstrumentForTrack(instrument_id, tracknum, -1, -1);
+        setInstrumentForTrack(CAST_API_PATCH_ID(instrument_id), tracknum, -1, -1);
 
       GFX_update_instrument_patch_gui(PATCH_get_from_id(instrument_id));
     }

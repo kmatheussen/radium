@@ -1397,7 +1397,7 @@ void GL_set_multisample(int size){
 }
 
 int GL_get_multisample(void){
-  return R_BOUNDARIES(1, SETTINGS_read_int("multisample", 4), 32);
+  return R_BOUNDARIES(1, SETTINGS_read_int32("multisample", 4), 32);
 }
 
 void GL_set_safe_mode(bool onoff){

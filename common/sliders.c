@@ -348,6 +348,6 @@ void InitSliderValues(struct Tracker_Windows *window){
   window->bottomslider.show=1;
 
   //	twindow->bottomslider.width=twindow->fontwidth;
-  window->bottomslider.width = SETTINGS_read_int("bottom_slider_height",window->fontheight*2/3);
-  window->leftslider.width   = SETTINGS_read_int("left_slider_width",8);
+  window->bottomslider.width = SETTINGS_read_int32("bottom_slider_height",window->fontheight*2/3);
+  window->leftslider.width   = SETTINGS_read_int32("left_slider_width",8);
 }

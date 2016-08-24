@@ -261,7 +261,7 @@ static int find_text_length(const QFontMetrics &fn, const QString &text, int max
 int GFX_get_num_characters(struct Tracker_Windows *tvisual, const char *text, int max_width){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   const QFontMetrics fn = QFontMetrics(editor->font);
-  int len = strlen(text);
+  int len = (int)strlen(text);
   QString string(text);
 
   //printf("width: %d / %d / %d\n",fn.width(string,len), fn.width(string,len/2), max_width);

@@ -103,7 +103,7 @@ typedef struct{
 
 
 
-static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t block_delta_time, int effect_num, float floatvalue, enum ValueFormat value_format, FX_when when);
+static void RT_set_effect_value(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float floatvalue, enum ValueFormat value_format, FX_when when);
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
@@ -173,7 +173,7 @@ static void get_minval_and_maxval(int effect_num, int *minval, int *maxval){
   }
 }
 
-static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t block_delta_time, int effect_num, float floatvalue, enum ValueFormat value_format, FX_when when){
+static void RT_set_effect_value(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float floatvalue, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
   int minval;

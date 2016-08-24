@@ -106,7 +106,7 @@ private:
     //printf("m_num_in_frames_left: %d, actual_ratio: %f\n",m_num_in_frames_left,actual_ratio);
     
     if (m_num_in_frames_left <= 0)
-      m_num_in_frames_left = m_callback(m_callback_arg, &m_in);
+      m_num_in_frames_left = (int)m_callback(m_callback_arg, &m_in);
      
     R_ASSERT_NON_RELEASE(m_num_in_frames_left >= 0);
         
@@ -176,7 +176,7 @@ struct SincResampler : public Resampler{
       _last_ratio = ratio;
     }
 
-    int ret = src_callback_read(_src_state, ratio, num_frames, out);
+    int ret = (int)src_callback_read(_src_state, ratio, num_frames, out);
 
     if(ret==0){
       if(src_error(_src_state)!=0)

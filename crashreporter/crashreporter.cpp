@@ -352,7 +352,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 #endif
       
       const char *s = strdup(params.toString().toUtf8().constData());
-      data.append(s, strlen(s)-1);
+      data.append(s, (int)strlen(s)-1);
       //free(s);
       data.remove(0,1);
       data.append("\n");
@@ -524,7 +524,7 @@ static bool string_to_file(QString s, QTemporaryFile *file, bool save_mixer_tree
   }
 
   const QByteArray data = s.toUtf8();
-  int bytesWritten = file->write(data);
+  int64_t bytesWritten = file->write(data);
     
   if (bytesWritten==0){
     SYSTEM_show_message("Unable to write to temporary file. Disk may be full");

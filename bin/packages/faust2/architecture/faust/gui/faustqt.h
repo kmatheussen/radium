@@ -449,7 +449,7 @@ protected:
         } else {
             
             // find the minimal level > value
-            int l = fLevel.size()-1; while (fValue < fLevel[l] && l > 0) l--;
+            int l = (int)fLevel.size()-1; while (fValue < fLevel[l] && l > 0) l--;
             painter.fillRect(rect(), fBrush[l]);
         }
     }
@@ -638,7 +638,7 @@ protected:
      */
     void paintContent(QPainter* painter) const
     {
-        int l = fLevel.size();
+        int l = (int)fLevel.size();
         
         FAUSTFLOAT p = -1;   // fake value indicates to start from border
         int n = 0;

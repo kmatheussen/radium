@@ -77,13 +77,13 @@ STime PEQ_CalcNextEvent(
     goto exit;
   }
 
-  int new_x = scale_int64(time,time1,time2,x1,x2);
+  int new_x = (int)scale_int64(time,time1,time2,x1,x2);
   *x = new_x;
 
   if (x2<x1)
-    ret_time = scale_int64(new_x-1, x1, x2, time1, time2);
+    ret_time = (int)scale_int64(new_x-1, x1, x2, time1, time2);
   else
-    ret_time = scale_int64(new_x+1, x1, x2, time1, time2);
+    ret_time = (int)scale_int64(new_x+1, x1, x2, time1, time2);
 
   if(ret_time <= time){
     //RError("Error in file PEQ_calc.c. ret: %d, time: %d\n",(int)ret_time,(int)time); // this doesn't look like an error. It's just telling us that the x resolution is bigger than the time resolution.

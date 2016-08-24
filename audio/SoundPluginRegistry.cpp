@@ -162,7 +162,7 @@ static bool get_hepp_from_config_line(const char *line_c, NumUsedPluginEntry &he
     return false;
   
   QString numstring = line.right(line.size() - pos - 1);
-  hepp.num_uses = atoll(numstring.trimmed().toUtf8().constData());
+  hepp.num_uses = (int)atoll(numstring.trimmed().toUtf8().constData());
   if (hepp.num_uses == 0)
     return false;
   

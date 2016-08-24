@@ -475,7 +475,7 @@ int NOTE_get_velocity(struct Tracks *track){
 
   //printf("returning %d\n",(int)new_velocity);
 
-  return new_velocity;
+  return (int)new_velocity;
 }
 
 
@@ -945,7 +945,7 @@ static char *strip_whitespace(char *s){
 
 
   // strip after
-  int pos=strlen(ret)-1;
+  int pos=(int)strlen(ret)-1;
   while(isspace(ret[pos])){
     ret[pos]=0;
     pos--;

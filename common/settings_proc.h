@@ -22,6 +22,7 @@ extern LANGSPEC bool SETTINGS_has_key(const char *key);
 
 extern LANGSPEC bool SETTINGS_read_bool(const char *key, bool def);
 extern LANGSPEC int64_t SETTINGS_read_int(const char *key, int64_t def);
+extern LANGSPEC int SETTINGS_read_int32(const char *key, int def);
 extern LANGSPEC double SETTINGS_read_double(const char *key, double def);
 extern LANGSPEC const char *SETTINGS_read_string(const char *key, const char *def);
 

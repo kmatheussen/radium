@@ -27,7 +27,7 @@ PyObject **PYR_getPYOArray(int *numargs,PyObject *pylist){
 	PyObject **ret=NULL;
 
 	if (PyList_Check(pylist)) {
-		*numargs = PyList_Size(pylist);
+               *numargs = (int)PyList_Size(pylist);
 		ret = talloc_atomic((*numargs)*sizeof(PyObject *));
 		for (lokke = 0; lokke < (*numargs); lokke++) {
 			ret[lokke] = PyList_GetItem(pylist,lokke);
@@ -56,8 +56,8 @@ int *PYR_getIntArray(int *numargs,PyObject *pylist){
 	ret = talloc_atomic((*numargs)*sizeof(int));
 	for (lokke = 0; lokke < (*numargs); lokke++) {
 		PyObject *o = poa[lokke];
-		if (PyInt_Check(o)){
-				ret[lokke] = PyInt_AsLong(o);
+   		if (PyInt_Check(o)){
+                        ret[lokke] = (int)PyInt_AsLong(o);
 		}else{
 			(*numargs)=-1;
 			return NULL;
@@ -99,7 +99,7 @@ void *PYR_getObjArray(
 	int lokke,lokke2;
 	int num_ints=0;
 	int num_floats=0;
-	size_t objsize;
+	int objsize;
 	char *ret;
 	char *set;
 
@@ -118,7 +118,7 @@ void *PYR_getObjArray(
 		}
 	}
 
-	objsize=sizeof(int)*num_ints+(sizeof(float)*num_floats);
+	objsize=(int)sizeof(int)*num_ints+((int)sizeof(float)*num_floats);
 
 
 	set=ret=talloc_atomic(objsize*(*numargs));
@@ -138,7 +138,7 @@ void *PYR_getObjArray(
 			if(attrformat[lokke2]==0){
 				if (PyInt_Check(o)){
 					is=(struct intstruct *)set;
-					is->a = PyInt_AsLong(o);
+					is->a = (int)PyInt_AsLong(o);
 				}else{
 					(*numargs)=-1;
 					return NULL;
@@ -158,15 +158,4 @@ void *PYR_getObjArray(
 	}
 	return ret;
 }
-
-
-
-
-
-
-
-
-
-
-
 

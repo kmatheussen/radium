@@ -27,23 +27,23 @@ extern LANGSPEC void init_memory(void);
 
 extern LANGSPEC void tfree(void *element);
 
-//extern LANGSPEC void *tracker_alloc_clean(size_t size,void *(*AllocFunction)(size_t size2));
+//extern LANGSPEC void *tracker_alloc_clean(int size,void *(*AllocFunction)(int size2));
 
-extern LANGSPEC void *tracker_alloc__(size_t size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber);
+extern LANGSPEC void *tracker_alloc__(int size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber);
 
-extern LANGSPEC void *tralloc__(size_t size, const char *filename, int linenumber);
+extern LANGSPEC void *tralloc__(int size, const char *filename, int linenumber);
 
-extern LANGSPEC void *tralloc_atomic__(size_t size, const char *filename, int linenumber);
+extern LANGSPEC void *tralloc_atomic__(int size, const char *filename, int linenumber);
 
-extern LANGSPEC void *talloc__(size_t size, const char *filename, int linenumber);
+extern LANGSPEC void *talloc__(int size, const char *filename, int linenumber);
 
-extern LANGSPEC void *talloc_atomic__(size_t size, const char *filename, int linenumber);
+extern LANGSPEC void *talloc_atomic__(int size, const char *filename, int linenumber);
 
-extern LANGSPEC void *talloc_atomic_uncollectable__(size_t size, const char *filename, int linenumber);
+extern LANGSPEC void *talloc_atomic_uncollectable__(int size, const char *filename, int linenumber);
 
-extern LANGSPEC void *talloc_realloc__(void *v, size_t new_size, const char *filename, int linenumber);
+extern LANGSPEC void *talloc_realloc__(void *v, int new_size, const char *filename, int linenumber);
 
-extern LANGSPEC void *talloc_atomic_clean__(size_t size, const char *filename, int linenumber);
+extern LANGSPEC void *talloc_atomic_clean__(int size, const char *filename, int linenumber);
 
 extern LANGSPEC char *talloc_strdup__(const char *input, const char *filename, int linenumber);
 

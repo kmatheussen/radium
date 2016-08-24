@@ -199,7 +199,7 @@ static void dev_RT_process(SoundPlugin *plugin, int64_t time, int num_frames, fl
 
 }
 
-static void dev_play_note(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void dev_play_note(struct SoundPlugin *plugin, int time, note_t note){
   Devdata *devdata = (Devdata*)plugin->data;
   Data *data = devdata->reply.data;
   
@@ -208,7 +208,7 @@ static void dev_play_note(struct SoundPlugin *plugin, int64_t time, note_t note)
       play_note2(data, time, note);
 }
 
-static void dev_set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void dev_set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
   Devdata *devdata = (Devdata*)plugin->data;
   Data *data = devdata->reply.data;
   
@@ -217,7 +217,7 @@ static void dev_set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t
       set_note_volume2(data, time, note);
 }
 
-static void dev_set_note_pitch(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void dev_set_note_pitch(struct SoundPlugin *plugin, int time, note_t note){
   Devdata *devdata = (Devdata*)plugin->data;
   Data *data = devdata->reply.data;
   
@@ -226,7 +226,7 @@ static void dev_set_note_pitch(struct SoundPlugin *plugin, int64_t time, note_t 
       set_note_pitch2(data, time, note);
 }
 
-static void dev_stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void dev_stop_note(struct SoundPlugin *plugin, int time, note_t note){
   Devdata *devdata = (Devdata*)plugin->data;
   Data *data = devdata->reply.data;
   
@@ -239,7 +239,7 @@ static int get_num_effects(const Data *data) {
   return data->voices[0].myUI._num_effects;
 }
 
-static void dev_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
+static void dev_set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Devdata *devdata = (Devdata*)plugin->data;
   Data *data = devdata->reply.data;
   

@@ -266,10 +266,10 @@ int DISK_write_qstring(disk_t *disk, QString s){
   R_ASSERT(disk->is_binary==false);
   R_ASSERT(disk->type==disk_t::WRITE);
 
-  int pos = disk->stream->pos();
+  int64_t pos = disk->stream->pos();
   *disk->stream << s;
   disk->stream->flush();
-  return disk->stream->pos() - pos;
+  return int(disk->stream->pos() - pos);
 }
 
 int DISK_write_wchar(disk_t *disk, const wchar_t *wdata){
@@ -333,7 +333,7 @@ int64_t DISK_pos(disk_t *disk){
   return disk->pos();
 }
 
-int DISK_read_binary(disk_t *disk, void *destination, int num_bytes){
+int64_t DISK_read_binary(disk_t *disk, void *destination, int64_t num_bytes){
   R_ASSERT(disk->is_binary==true);
   R_ASSERT(disk->type==disk_t::READ);
   return disk->file()->read((char*)destination, num_bytes);

@@ -90,8 +90,8 @@ static void RT_fade_out(float *sound, int num_frames){
 }
 
 
-static int64_t get_fluidsynth_time(Data *data, int64_t time){
-  return time * data->time_scale / data->samplerate;
+static int get_fluidsynth_time(Data *data, int64_t time){
+  return (int)(time * data->time_scale / data->samplerate);
 }
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
@@ -188,15 +188,15 @@ static void sendpitchbend(Data *data, int chan, int pitch, int time)
     printf("Unable to send pitchbend\n");
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void play_note(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
 
   //fluid_synth_noteon(data->synth, 0, note_num, volume*127);
-  sendnoteon(data, 0, (int)note.pitch, note.velocity*127, data->time + time);
+  sendnoteon(data, 0, (int)note.pitch, note.velocity*127, (unsigned int)(data->time + time));
   //printf("Sending out note at time %d. Time now: %d. Delta: %d\n",(int)get_fluidsynth_time(data,data->time+time),(int)get_fluidsynth_time(data,data->time),(int)get_fluidsynth_time(data,time));
 }
 
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
   // fluidsynth doesn't seem to support polyphonic aftertouch.
 #if 0
   Data *data = (Data*)plugin->data;
@@ -204,13 +204,13 @@ static void set_note_volume(struct SoundPlugin *plugin, int64_t time, note_t not
 #endif
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, note_t note){
+static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
   //fluid_synth_noteoff(data->synth, 0, note_num);
-  sendnoteoff(data, 0, note.pitch, 0, data->time + time);
+  sendnoteoff(data, 0, note.pitch, 0, (unsigned int)(data->time + time));
 }
 
-static void send_raw_midi_message(struct SoundPlugin *plugin, int64_t block_delta_time, uint32_t msg){
+static void send_raw_midi_message(struct SoundPlugin *plugin, int block_delta_time, uint32_t msg){
   Data *data = (Data*)plugin->data;
   
   int cc = MIDI_msg_byte1(msg);
@@ -219,13 +219,13 @@ static void send_raw_midi_message(struct SoundPlugin *plugin, int64_t block_delt
 
   if (cc>=0xe0 && cc<0xf0) {
     int pitch = (data2<<7) + data1;
-    sendpitchbend(plugin->data, 0, pitch, data->time + block_delta_time);
+    sendpitchbend(plugin->data, 0, pitch, (unsigned int)(data->time + block_delta_time));
 
   } else if (cc >= 0xb0 && cc <0xc0)
-    sendcontrolchange(data,0,data1,data2, data->time + block_delta_time);
+    sendcontrolchange(data,0,data1,data2, (unsigned int)(data->time + block_delta_time));
 }
 
-static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
+static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
   if(value_format==PLUGIN_FORMAT_SCALED){
@@ -526,8 +526,8 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const wchar_t *sf2_file, int
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
   const wchar_t *filename;
-  int         bank_num    = HASH_get_int(state, "bank_num");
-  int         preset_num  = HASH_get_int(state, "preset_num");
+  int         bank_num    = HASH_get_int32(state, "bank_num");
+  int         preset_num  = HASH_get_int32(state, "preset_num");
 
   bool audiodata_is_included = HASH_has_key(state, "audiofile");
   

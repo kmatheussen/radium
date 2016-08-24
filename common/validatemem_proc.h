@@ -62,7 +62,7 @@ extern "C" {
 #if !defined(VALIDATE_MEM)
 
 static inline void* my_calloc(size_t size1,size_t size2){
-  int size = size1*size2;
+  size_t size = size1*size2;
 
   // 1. allocate
   //
@@ -74,12 +74,12 @@ static inline void* my_calloc(size_t size1,size_t size2){
   //
 
   int64_t *ret64 = (int64_t*)ret;
-  int s2=size/sizeof(int64_t);
+  size_t s2=size/sizeof(int64_t);
 
-  for(int i=0;i<s2;i++)
+  for(size_t i=0;i<s2;i++)
     ret64[i]=0;
 
-  for(int i=s2*sizeof(int64_t);i<size;i++)
+  for(size_t i=s2*sizeof(int64_t);i<size;i++)
     ret[i] = 0;
   
   return ret;
