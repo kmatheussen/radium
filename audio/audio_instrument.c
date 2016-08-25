@@ -273,7 +273,7 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
   R_ASSERT_RETURN_IF_FALSE2(sound_producer!=NULL, false);
 
   // Create mixer object
-  CHIP_create(sound_producer, is_loading_song);
+  CHIP_create(sound_producer);
   if (audio_state != NULL && !state_only_has_plugin)
     CHIP_set_pos(patch, HASH_get_float(audio_state, "x"), HASH_get_float(audio_state, "y"));
   

@@ -370,7 +370,7 @@ void handleDropEvent(QString filename, float x){
       LoadSong_CurrPos(window, STRING_create(filename));
     
     else if (filename.endsWith(".rec"))
-      instrument_id = createAudioInstrumentFromPreset(filename.toUtf8().constData(), NULL);
+      instrument_id = createAudioInstrumentFromPreset(filename.toUtf8().constData(), NULL, 0, 0);
     
     else if (file_could_be_a_sample(filename) || filename.endsWith(".sf2")){
       struct Patch *patch = PATCH_create_audio("Sample Player", "Sample Player", NULL, NULL);

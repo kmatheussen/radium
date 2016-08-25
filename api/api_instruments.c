@@ -145,7 +145,7 @@ int createMIDIInstrument(char *name) {
 }
 
 // There was a good reason for the 'name' parameter. Think it had something to do with replace instrument, and whether to use old name or autogenerate new one.
-int createAudioInstrument(char *type_name, char *plugin_name, char *name) {
+int createAudioInstrument(char *type_name, char *plugin_name, char *name, float x, float y) {
   if (name!=NULL && strlen(name)==0)
     name = NULL;
 
@@ -153,6 +153,8 @@ int createAudioInstrument(char *type_name, char *plugin_name, char *name) {
   if (patch==NULL)
     return -1;
 
+  MW_move_chip_to_slot(patch, x, y);
+  
   {
     struct SoundPlugin *plugin = patch->patchdata;
     inc_plugin_usage_number(plugin->type);
@@ -161,11 +163,11 @@ int createAudioInstrument(char *type_name, char *plugin_name, char *name) {
   return CAST_API_PATCH_ID(patch->id);
 }
 
-int createAudioInstrumentFromPreset(const char *filename, char *name) {
-  return CAST_API_PATCH_ID(PRESET_load(STRING_create(filename), name, false));
+int createAudioInstrumentFromPreset(const char *filename, char *name, float x, float y) {
+  return CAST_API_PATCH_ID(PRESET_load(STRING_create(filename), name, false, x, y));
 }
 
-int createAudioInstrumentFromDescription(const char *instrument_description, char *name){
+int createAudioInstrumentFromDescription(const char *instrument_description, char *name, float x, float y){
   if (strlen(instrument_description)==0)
     return -1;
 
@@ -186,14 +188,14 @@ int createAudioInstrumentFromDescription(const char *instrument_description, cha
     descr[sep_pos] = 0;
     char *type_name = STRING_get_chars(STRING_fromBase64(STRING_create(&descr[1])));
     char *plugin_name = STRING_get_chars(STRING_fromBase64(STRING_create(&descr[sep_pos+1])));
-    return createAudioInstrument(type_name, plugin_name, name);
+    return createAudioInstrument(type_name, plugin_name, name, x, y);
     
   } else if (instrument_description[0]=='2'){
     
     wchar_t *filename = STRING_fromBase64(STRING_create(&instrument_description[1]));
     //printf("filename: %s\n",filename);
 
-    return CAST_API_PATCH_ID(PRESET_load(filename, name, true));
+    return CAST_API_PATCH_ID(PRESET_load(filename, name, true, x, y));
     
   } else {
 
@@ -448,6 +450,14 @@ void setInstrumentPosition(float x, float y, int instrument_id){
   ADD_UNDO(ChipPos_CurrPos(patch));
   
   CHIP_set_pos(patch,x,y);
+}
+
+void autopositionInstrument(int instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+  
+  CHIP_autopos(patch);
 }
 
 int getNumInAudioConnections(int instrument_id){

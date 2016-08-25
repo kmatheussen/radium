@@ -208,11 +208,17 @@
      (define (is-new-instrument? id-instrument)
        (and (not (member id-instrument instruments-before))
             (member id-instrument (get-all-audio-instruments))))
-     
+
+     (define (num-new-instruments)
+       (- (get-all-audio-instruments)
+          (length instruments-before)))
+       
      (when (and (integer? id-instrument) (not (= -1 id-instrument)))
        (<ra> :set-instrument-for-track id-instrument tracknum)
-       (if (is-new-instrument? id-instrument)
-           (<ra> :connect-audio-instrument-to-main-pipe id-instrument))))))
+       (when (and (is-new-instrument? id-instrument)
+                  (= 1 (num-new-instruments)))
+         (<ra> :autoposition-instrument id-instrument)
+         (<ra> :connect-audio-instrument-to-main-pipe id-instrument))))))
 #||
 (select-track-instrument 0)
 ||#

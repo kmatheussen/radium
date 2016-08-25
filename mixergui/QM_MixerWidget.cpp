@@ -421,14 +421,20 @@ bool MW_move_chip_to_slot(Chip *chip, float x, float y){
   return move_chip_to_slot(chip, x, y);
 }
   
+bool MW_move_chip_to_slot(struct Patch *patch, float x, float y){  
+  return move_chip_to_slot(CHIP_get(&g_mixer_widget->scene, patch),
+                           x, y);
+}
+  
 static AudioConnection *find_clean_connection_at(MyScene *scene, float x, float y);
 
 // Also kicks.
 static bool autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
-  bool do_autoconnect = chip->audio_connections.size()==0; // don't autoconnect if the chip already has connections.
-
+  bool do_autoconnect = chip->audio_connections.size()==0; // don't autoconnect if the chip already has connections.  
+  
   Chip *chip_under = MW_get_chip_at(x,y,chip);
-
+  printf("   do_autocnn: %d. chip_under: %p\n",do_autoconnect,chip_under);
+ 
   if(chip_under != NULL){
     if(x_is_placed_on_left_side(x)){
 
@@ -872,7 +878,6 @@ static bool mousepress_create_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
       return false;
   }
 
-  //scene->addItem(_slot_indicator);
   draw_slot(scene,mouse_x,mouse_y);
 
   const char *instrument_description = instrumentDescriptionPopupMenu();
@@ -880,22 +885,21 @@ static bool mousepress_create_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
 
     Undo_Open();{
 
-      int patch_id = createAudioInstrumentFromDescription(instrument_description, NULL);
+      int num_patches_before = get_audio_instrument()->patches.num_elements;
+      
+      int64_t patch_id = createAudioInstrumentFromDescription(instrument_description, NULL, mouse_x, mouse_y);
       //SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,mouse_x,mouse_y,false,NULL, MIXER_get_buses());
 
-      if(patch_id >= 0){ // Move it to mouse position.
+      //printf("           ID: %d\n",(int)patch_id);
 
-        struct Patch *patch = PATCH_get_from_id(patch_id);
-        
-        Chip *chip = CHIP_get(scene, patch);
-
-        ADD_UNDO(ChipPos_CurrPos(patch));
-        
-        MW_move_chip_to_slot(chip, mouse_x, mouse_y);
-        
-        autoconnect_chip(scene, chip, mouse_x, mouse_y);
-      }
+      int num_new_patches = get_audio_instrument()->patches.num_elements - num_patches_before;
       
+      if (patch_id >= 0 && num_new_patches==1){
+        struct Patch *patch = PATCH_get_from_id(patch_id);
+        Chip *chip = CHIP_get(scene, patch);
+        autoconnect_chip(scene, chip, mouse_x, mouse_y); // If we place a new chip on top of another chip, or on top of a connection, we autoconnect.
+      }
+        
     }Undo_Close();
 
   }
@@ -1797,16 +1801,14 @@ static void MW_position_chips_from_state(hash_t *chips, vector_t *patches, float
 
   R_ASSERT_RETURN_IF_FALSE(patches->num_elements==num_chips);
 
+  float min_x = HASH_get_float(chips, "min_x_pos");
+  float min_y = HASH_get_float(chips, "min_y_pos");
+  
   for(int i=0;i<num_chips;i++) {
     hash_t *state = HASH_get_hash_at(chips, "", i);
 
     struct Patch *patch = (struct Patch*)patches->elements[i];
-
-    CHIP_set_pos(patch, HASH_get_float(state, "x") + x, HASH_get_float(state, "y") + y);
-    
-    Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, (SoundPlugin*)patch->patchdata);
-    
-    move_chip_to_slot(chip, chip->x(), chip->y());
+    MW_move_chip_to_slot(patch, HASH_get_float(state, "x") + x - min_x, HASH_get_float(state, "y") + y - min_y);
   }
 }
 
@@ -1824,11 +1826,24 @@ void MW_create_connections_from_state(hash_t *connections){
   MW_create_connections_from_state_and_replace_patch(connections, -1, -1);
 }
 
+static void add_undo_for_all_chip_positions(void){
+  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+
+  for (int i = 0; i < das_items.size(); ++i) {
+    Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
+    if(chip!=NULL)
+      ADD_UNDO(ChipPos_CurrPos(CHIP_get_patch(chip)));
+  }
+}
 
 // Not used when loading song.
 void MW_create_from_state(hash_t *state, vector_t *patches, float x, float y){
   R_ASSERT(patches != NULL);
-
+  R_ASSERT(Undo_Is_Open());
+ 
+  ADD_UNDO(MixerConnections_CurrPos());
+  add_undo_for_all_chip_positions(); // We might kick any chip, so we need to add undo points for all chips
+          
   MW_position_chips_from_state(HASH_get_hash(state, "chips"), patches, x, y);
 
   hash_t *connections = HASH_get_hash(state, "connections");
@@ -1854,7 +1869,9 @@ void MW_create_from_state(hash_t *state, vector_t *patches, float x, float y){
     }
   }
 
-  cleanup_chip_positions(&g_mixer_widget->scene);
+  
+  if (patches->num_elements > 1)
+    cleanup_chip_positions(&g_mixer_widget->scene);
 }
 
 
@@ -1904,7 +1921,7 @@ static void create_missing_busses(hash_t *bus_chips_state){
   int num_chips = HASH_get_int32(bus_chips_state, "num_chips");
   printf("num_chips: %d\n",num_chips);
   for(int busnum=num_chips;busnum<NUM_BUSES;busnum++) {
-    createAudioInstrument(talloc_strdup("Bus"), talloc_format("Bus %d", busnum+1), talloc_format("Aux %d Bus", busnum-num_chips+1));
+    createAudioInstrument(talloc_strdup("Bus"), talloc_format("Bus %d", busnum+1), talloc_format("Aux %d Bus", busnum-num_chips+1), 0, 0);
   }
 }
 

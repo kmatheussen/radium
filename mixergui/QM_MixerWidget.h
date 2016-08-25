@@ -181,6 +181,8 @@ extern LANGSPEC void MW_autoconnect_plugin(SoundPlugin *plugin);
 extern LANGSPEC void MW_connect(struct Patch *source, struct Patch *dest);
 extern LANGSPEC void MW_econnect(struct Patch *source, struct Patch *dest);
 
+extern LANGSPEC bool MW_move_chip_to_slot(struct Patch *patch, float x, float y);
+
 extern LANGSPEC void MW_update_all_chips(void);
 
 extern LANGSPEC void MW_cleanup(bool is_loading);

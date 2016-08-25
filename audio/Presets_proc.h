@@ -4,7 +4,7 @@
 
 extern LANGSPEC char *PRESET_request_load_instrument_description(void);
 
-extern LANGSPEC int64_t PRESET_load(const wchar_t *filename, char *name, bool inc_usage_number);
+extern LANGSPEC int64_t PRESET_load(const wchar_t *filename, char *name, bool inc_usage_number, float x, float y);
 
 extern LANGSPEC void PRESET_set_last_used_filename(const wchar_t *wfilename);
 

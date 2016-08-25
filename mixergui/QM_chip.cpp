@@ -1004,10 +1004,12 @@ void CHIP_autopos(Chip *chip){
   MW_move_chip_to_slot(chip, x, y);
 }
 
-void CHIP_create(SoundProducer *sound_producer, bool is_loading_song){
-  Chip *chip = new Chip(&g_mixer_widget->scene, sound_producer, -100000, -100000);
-  if (is_loading_song==false)
-    CHIP_autopos(chip);
+void CHIP_autopos(struct Patch *patch){
+  CHIP_autopos(CHIP_get(&g_mixer_widget->scene, patch));
+}
+
+void CHIP_create(SoundProducer *sound_producer){
+  new Chip(&g_mixer_widget->scene, sound_producer, -100000, -100000);
 }
 
 Chip::~Chip(){

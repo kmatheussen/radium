@@ -163,8 +163,11 @@ static hash_t *get_preset_state_from_filename(QString filename){
   return state;
 }
 
-
-int64_t PRESET_load(const wchar_t *filename, char *name, bool inc_usage_number) {
+// Note that this is the general preset loading function, and not the one that is directly called when pressing the "Load" button. (there we also have to delete the old instrument and reconnect connections)
+//
+// A less confusing name could perhaps be PRESET_add_instrument
+//
+int64_t PRESET_load(const wchar_t *filename, char *name, bool inc_usage_number, float x, float y) {
   if (name!=NULL && strlen(name)==0)
     name = NULL;
 
@@ -212,7 +215,7 @@ int64_t PRESET_load(const wchar_t *filename, char *name, bool inc_usage_number) 
   if (HASH_has_key(state, "mixer_state"))
     MW_create_from_state(HASH_get_hash(state, "mixer_state"),
                          &patches,
-                         200, 300);
+                         x, y);
 
   if (first_patch==NULL)
     return -1;
