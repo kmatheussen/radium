@@ -241,6 +241,11 @@ public slots:
 
 #else // FULL_VERSION==0
 
+      if (MIXER_get_soundplugin("Jack", "System Out")==NULL) {
+        GFX_Message(NULL, "No \"System Out\" instrument found in the mixer.");
+        return;
+      }
+
       bool save_multi = many_soundfiles->isChecked();
 
       if(filename_edit->text()==QString("")){
