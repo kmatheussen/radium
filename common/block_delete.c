@@ -68,15 +68,15 @@ void DeleteBlock_CurrPos(
         PC_Pause();{
 
           DeleteBlock(blockpos);
-
+          
           wblock=ListFindElement1_r0(&window->wblocks->l,blockpos);
-
+          
           if(wblock==NULL){
             wblock=ListLast1(&window->wblocks->l);
           }
 
           SelectWBlock(window,wblock);
-
+          
           BS_UpdateBlockList();
           BS_UpdatePlayList();
           

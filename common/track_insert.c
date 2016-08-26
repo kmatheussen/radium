@@ -57,30 +57,33 @@ void DeleteTracks(
 	}
 
         PC_Pause();
+        {
           
-	if(block->num_tracks==1){
-          CB_CutTrack_CurrPos(window);
-          goto exit;
+          if(block->num_tracks==1){
+            CB_CutTrack_CurrPos(window);
+            goto exit;
+          }
+          
+          num_tracks=block->num_tracks-todelete;
+          
+          fprintf(stderr,"delete track. Curr: %d, num_tracks: %d, todelete: %d\n",tracknum,num_tracks,todelete);
+          
+          for(lokke=tracknum ; lokke<num_tracks-1+todelete;lokke++){
+            wtrack=CB_CopyTrack(
+                                wblock,
+                                ListFindElement1(&wblock->wtracks->l,lokke+todelete)
+                                );
+            co_CB_PasteTrack(
+                             wblock,
+                             wtrack,
+                             ListFindElement1(&wblock->wtracks->l,lokke)
+                             );
+          }
+	
+          Block_Set_num_tracks(block,num_tracks);
+          
         }
-
-	num_tracks=block->num_tracks-todelete;
-	
-	fprintf(stderr,"delete track. Curr: %d, num_tracks: %d, todelete: %d\n",tracknum,num_tracks,todelete);
-
-	for(lokke=tracknum ; lokke<num_tracks-1+todelete;lokke++){
-	  wtrack=CB_CopyTrack(
-			      wblock,
-			      ListFindElement1(&wblock->wtracks->l,lokke+todelete)
-			      );
-	  co_CB_PasteTrack(
-                           wblock,
-                           wtrack,
-                           ListFindElement1(&wblock->wtracks->l,lokke)
-                           );
-	}
-	
-	Block_Set_num_tracks(block,num_tracks);
-
+        
  exit:
         PC_StopPause(NULL);
 }

@@ -185,6 +185,7 @@ void BackWardsBlock_CurrPos(
                          ));
           
           BackWardsBlock(window,window->wblock);
+          
         }PC_StopPause(window);
         
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(

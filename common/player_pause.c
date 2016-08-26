@@ -102,7 +102,7 @@ void PC_StopPause(struct Tracker_Windows *window){
   g_pausing_level--;
 
   if (g_pausing_level < 0){
-    R_ASSERT(g_pausing_level < 0);
+    R_ASSERT(false);
     g_pausing_level = 0;
   }
 
