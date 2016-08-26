@@ -310,9 +310,29 @@ hash_t *get_preset_state(vector_t *patches){
   return state;
 }
 
+static bool valid_patches(vector_t *patches){
+  VECTOR_FOR_EACH(struct Patch*, patch, patches){
+    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    if (!strcmp(plugin->type->type_name,"Bus")){
+      GFX_Message(NULL, "Can not copy or save Bus preset");
+      return false;
+    }
+    
+    if (AUDIO_is_permanent_patch(patch)){
+      GFX_Message(NULL, "Can not copy or save Main Pipe preset");
+      return false;
+    }
+  }END_VECTOR_FOR_EACH;
+
+  return true;
+}
+
 void PRESET_copy(vector_t *patches){
   R_ASSERT_RETURN_IF_FALSE(patches->num_elements > 0);
-  
+
+  if (!valid_patches(patches))
+    return;
+
   g_preset_clipboard = get_preset_state(patches);
 }
   
@@ -323,23 +343,11 @@ void PRESET_save(vector_t *patches, bool save_button_pressed){  // "save_button_
     return;
   }
 
+  if (!valid_patches(patches))
+    return;
+  
   bool is_multipreset = patches->num_elements > 1;
-  
-  {
-    VECTOR_FOR_EACH(struct Patch*, patch, patches){
-      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-      if (!strcmp(plugin->type->type_name,"Bus")){
-        GFX_Message(NULL, "Can not save Bus preset");
-        return;
-      }
-      
-      if (AUDIO_is_permanent_patch(patch)){
-        GFX_Message(NULL, "Can not save Main Pipe preset");
-        return;
-      }
-    }END_VECTOR_FOR_EACH;
-  }
-  
+
   obtain_keyboard_focus();
 
   QString filename;
