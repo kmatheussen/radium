@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1145</width>
-    <height>616</height>
+    <width>1010</width>
+    <height>557</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -1164,20 +1164,7 @@
        </item>
        <item>
         <layout class="QGridLayout" name="gridLayout_2">
-         <item row="0" column="3">
-          <spacer name="horizontalSpacer_9">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>894</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="2">
+         <item row="0" column="1">
           <widget class="QLabel" name="label_6">
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Enable this option to show key codes in the editor. 
@@ -1185,19 +1172,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn'twork, 
 &lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
-         </item>
-         <item row="0" column="1">
-          <spacer name="horizontalSpacer_7">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>894</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
          </item>
          <item row="0" column="0">
           <widget class="QCheckBox" name="showKeyCodesOnoff">
@@ -1263,7 +1237,7 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn'twork, 
            </property>
           </widget>
          </item>
-         <item row="3" column="2">
+         <item row="3" column="1">
           <widget class="QLabel" name="lab">
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Disabling this mode should only be used to debug Radium.&lt;br&gt;
@@ -1278,7 +1252,7 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
            </property>
           </widget>
          </item>
-         <item row="2" column="0" colspan="4">
+         <item row="2" column="0" colspan="3">
           <widget class="Line" name="line_17">
            <property name="palette">
             <palette>
@@ -1779,7 +1753,7 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
            </property>
           </widget>
          </item>
-         <item row="4" column="2">
+         <item row="4" column="1">
           <widget class="QLabel" name="lab_2">
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Try to enable incremental garbage collection the next time Radium starts up.
@@ -1787,7 +1761,7 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
            </property>
           </widget>
          </item>
-         <item row="5" column="2">
+         <item row="5" column="1">
           <widget class="QLabel" name="lab_3">
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Enable incremental garbage collection.&lt;br&gt;
@@ -2284,32 +2258,44 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="autobackup_onoff">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Save backup of the current song at regular intervals</string>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
-         </property>
-         <property name="checked">
-          <bool>false</bool>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayout_9">
+         <item>
+          <widget class="QCheckBox" name="autobackup_onoff">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Save backup of the current song at regular intervals</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_12">
+           <property name="text">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note that Radium does not take backup while playing.
+&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -2554,8 +2540,8 @@ This option should be considered as a lightweight version of  &quot;Only show mo
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>841</width>
-            <height>522</height>
+            <width>706</width>
+            <height>463</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -4164,8 +4150,8 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>995</width>
-               <height>326</height>
+               <width>860</width>
+               <height>267</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
