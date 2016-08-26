@@ -275,7 +275,7 @@ extern void PlaceFromLimit(Place *p,  const Place *tp);
 #define PlaceNotEqual(a,b) (((a)->line!=(b)->line) || ((a)->counter*(b)->dividor!=(b)->counter*(a)->dividor))
 
 #define PlaceGreaterThan(a,b) (							\
-((a)->line>(b)->line)									\
+((a)->line > (b)->line)									\
 || 											\
 (((a)->line == (b)->line) && ((a)->counter*(b)->dividor > (b)->counter*(a)->dividor))	\
 )

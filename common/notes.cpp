@@ -319,7 +319,7 @@ static void set_legal_start_and_end_pos(const struct Blocks *block, struct Track
   }
   
   if(PlaceGreaterThan(end,&endplace)) {
-    RError("note end is placed after block end. start: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end));
+    RError("note end is placed after block end. start: %f, end: %f. block end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end), GetfloatFromPlace(&endplace));
     set_new_position(track, note, NULL, &endplace);
     end = &note->end;
   }

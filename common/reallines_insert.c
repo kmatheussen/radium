@@ -53,11 +53,14 @@ void InsertPlace_notes_extra(
 	float toplace
 ){
 	struct Notes *note=(struct Notes *)l;
-
-	if(GetfloatFromPlacement(&note->end)>=place){
-		PlaceAddfloat(&note->end,toplace);
-		List_InsertPlaceLen3(block,&note->velocities,&note->velocities->l,place,toplace,NULL);
-		List_InsertPlaceLen3(block,&note->pitches,&note->pitches->l,place,toplace,NULL);
+        float endplace = GetfloatFromPlacement(&note->end);
+        
+	if(endplace >= place){
+          if (endplace+toplace > 0){
+            PlaceAddfloat(&note->end,toplace);
+            List_InsertPlaceLen3(block,&note->velocities,&note->velocities->l,place,toplace,NULL);
+            List_InsertPlaceLen3(block,&note->pitches,&note->pitches->l,place,toplace,NULL);
+          }
 	}
 }
 
@@ -214,9 +217,9 @@ void InsertRealLines_CurrPos(
 		default:
 			if(window->curr_track_sub>=0){
                           ADD_UNDO(NotesAndFXs_CurrPos(window));
-				InsertPlace_fxs(block,wblock->wtrack->track,place,toplace);
+                          InsertPlace_fxs(block,wblock->wtrack->track,place,toplace);
 #if !USE_OPENGL
-				UpdateFXNodeLines(window,wblock,wblock->wtrack);
+                          UpdateFXNodeLines(window,wblock,wblock->wtrack);
 #endif
 			}else{
                           ADD_UNDO(Notes_CurrPos(window));
