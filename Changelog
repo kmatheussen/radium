@@ -1,3 +1,12 @@
+Changes 4.0.6 -> 4.0.7:
+* Show load/paste preset and VST plugins first in instrument popup menu.
+* Don't allow copying a permanent sound object to the clipboard.
+  (i.e. a bus or the main pipe.)
+* Fix autoconnect and auto position when creating new instrument
+  from track header.
+
+
+
 Changes 4.0.5 -> 4.0.6:
 * Show note about autobackup in the preferences window.
   Autopackup is not performed while playing.
