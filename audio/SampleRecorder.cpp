@@ -232,7 +232,9 @@ struct RecordingFile{
       int unity_note = int(middle_note);
       double fraction = middle_note - unity_note;
       write_uint32(f, unity_note, s); // unity note
-      write_uint32(f, scale_double(fraction,0,1,0,1L<<32), s); // pitch fraction
+      int64_t temp = 1;
+      temp = temp << 32;
+      write_uint32(f, scale_double(fraction,0,1,0,temp), s); // pitch fraction
       
       write_uint32(f, 0, s); // smpte format
       write_uint32(f, 0, s); // smpte offset

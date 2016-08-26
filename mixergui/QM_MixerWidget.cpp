@@ -405,15 +405,23 @@ static void start_moving_chips(MyScene *myscene, QGraphicsSceneMouseEvent * even
   draw_slot(myscene,mouse_x,mouse_y);
 }
 
-static bool move_chip_to_slot(Chip *chip, float x, float y){
+static void get_slotted_x_y(float from_x, float from_y, float &x, float &y){
   float x1,x2,y1,y2;
 
-  get_slot_coordinates(get_slot_x(x), get_slot_y(y), x1,y1,x2,y2);
+  get_slot_coordinates(get_slot_x(from_x), get_slot_y(from_y), x1,y1,x2,y2);
 
-  if (chip->pos().x()==x1 && chip->pos().y()==y1)
+  x = x1;
+  y = y1;
+}
+
+static bool move_chip_to_slot(Chip *chip, float from_x, float from_y){
+  float x,y;
+  get_slotted_x_y(from_x, from_y, x, y);
+
+  if (chip->pos().x()==x && chip->pos().y()==y)
     return false;
 
-  chip->setPos(x1,y1);
+  chip->setPos(x,y);
   return true;
 }
 
@@ -883,11 +891,14 @@ static bool mousepress_create_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
   const char *instrument_description = instrumentDescriptionPopupMenu();
   if (instrument_description != NULL){
 
+    float x, y;
+    get_slotted_x_y(mouse_x, mouse_y, x, y);
+    
     Undo_Open();{
 
       int num_patches_before = get_audio_instrument()->patches.num_elements;
       
-      int64_t patch_id = createAudioInstrumentFromDescription(instrument_description, NULL, mouse_x, mouse_y);
+      int64_t patch_id = createAudioInstrumentFromDescription(instrument_description, NULL, x, y);
       //SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,mouse_x,mouse_y,false,NULL, MIXER_get_buses());
 
       //printf("           ID: %d\n",(int)patch_id);
@@ -1808,7 +1819,7 @@ static void MW_position_chips_from_state(hash_t *chips, vector_t *patches, float
     hash_t *state = HASH_get_hash_at(chips, "", i);
 
     struct Patch *patch = (struct Patch*)patches->elements[i];
-    MW_move_chip_to_slot(patch, HASH_get_float(state, "x") + x - min_x, HASH_get_float(state, "y") + y - min_y);
+    CHIP_set_pos(patch, HASH_get_float(state, "x") + x - min_x, HASH_get_float(state, "y") + y - min_y);
   }
 }
 

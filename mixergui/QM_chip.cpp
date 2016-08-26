@@ -1008,8 +1008,8 @@ void CHIP_autopos(struct Patch *patch){
   CHIP_autopos(CHIP_get(&g_mixer_widget->scene, patch));
 }
 
-void CHIP_create(SoundProducer *sound_producer){
-  new Chip(&g_mixer_widget->scene, sound_producer, -100000, -100000);
+void CHIP_create(SoundProducer *sound_producer, float x, float y){
+  new Chip(&g_mixer_widget->scene, sound_producer, x, y);
 }
 
 Chip::~Chip(){

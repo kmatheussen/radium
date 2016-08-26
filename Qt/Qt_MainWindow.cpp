@@ -373,13 +373,14 @@ void handleDropEvent(QString filename, float x){
       instrument_id = createAudioInstrumentFromPreset(filename.toUtf8().constData(), NULL, 0, 0);
     
     else if (file_could_be_a_sample(filename) || filename.endsWith(".sf2")){
-      struct Patch *patch = PATCH_create_audio("Sample Player", "Sample Player", NULL, NULL);
+      struct Patch *patch = PATCH_create_audio("Sample Player", "Sample Player", NULL, NULL, 0, 0);
       instrument_id = patch->id;
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
       SAMPLER_set_new_sample(plugin, STRING_create(filename), 0);
     }
     
     if (instrument_id != -1) {
+      autopositionInstrument(CAST_API_PATCH_ID(instrument_id));
       connectAudioInstrumentToMainPipe(CAST_API_PATCH_ID(instrument_id));
       
       if (tracknum != -1)

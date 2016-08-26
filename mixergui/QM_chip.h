@@ -402,7 +402,7 @@ struct Patch;
 
 extern LANGSPEC void CHIP_autopos(struct Patch *patch);
 
-extern LANGSPEC void CHIP_create(struct SoundProducer *sound_producer);
+extern LANGSPEC void CHIP_create(struct SoundProducer *sound_producer, float x, float y);
 extern LANGSPEC void CHIP_delete(struct Patch *patch);
   
 //extern LANGSPEC void CHIP_init_because_it_has_new_plugin(struct SoundPlugin *plugin);

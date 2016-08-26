@@ -149,11 +149,11 @@ int createAudioInstrument(char *type_name, char *plugin_name, char *name, float 
   if (name!=NULL && strlen(name)==0)
     name = NULL;
 
-  struct Patch *patch = PATCH_create_audio(type_name, plugin_name, name, NULL);
+  struct Patch *patch = PATCH_create_audio(type_name, plugin_name, name, NULL, x, y);
   if (patch==NULL)
     return -1;
 
-  MW_move_chip_to_slot(patch, x, y);
+  //MW_move_chip_to_slot(patch, x, y); // Ensure it is placed in a slot. (x and y comes from mouse positions, which are not necessarily slotted). <--- Changed. x and y must be slotted before calling this function.
   
   {
     struct SoundPlugin *plugin = patch->patchdata;
@@ -205,14 +205,14 @@ int createAudioInstrumentFromDescription(const char *instrument_description, cha
   }
 }
 
-int cloneAudioInstrument(int instrument_id){
+int cloneAudioInstrument(int instrument_id, float x, float y){
   struct Patch *old_patch = getAudioPatchFromNum(instrument_id);
   if(old_patch==NULL)
     return -1;
   
   hash_t *state = PATCH_get_state(old_patch);
 
-  struct Patch *new_patch = PATCH_create_audio(NULL, NULL, talloc_format("Clone of %s",old_patch->name), state);
+  struct Patch *new_patch = PATCH_create_audio(NULL, NULL, talloc_format("Clone of %s",old_patch->name), state, x, y);
   if (new_patch==NULL)
     return -1;
 

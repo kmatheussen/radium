@@ -271,7 +271,8 @@ static double get_wav_middle_note_from_sampl_chunk(disk_t *file){
   DISK_spool(file, 20);
   uint32_t midi_unity_note = read_le32uint(file);
   uint32_t midi_pitch_fraction = read_le32uint(file);
-  int64_t u32maxplusone = 1L<<32;
+  int64_t u32maxplusone = 1;
+  u32maxplusone = u32maxplusone<<32;
   double fraction = scale_double(midi_pitch_fraction, 0, u32maxplusone, 0, 1);
     
   double middle_note = midi_unity_note + fraction - 12;

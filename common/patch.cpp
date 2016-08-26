@@ -217,7 +217,7 @@ static hash_t *PATCHVOICE_get_state(struct PatchVoice voice){
   HASH_put_float(state, "start", voice.start);
   HASH_put_float(state, "length", voice.length);
   HASH_put_int(state, "time_format", voice.time_format);
-
+  
   return state;
 }
 
@@ -264,11 +264,16 @@ static void apply_patch_state(struct Patch *patch, hash_t *state){
   int i;
   for (i=0;i<HASH_get_array_size(state); i++)
     apply_patchvoice_state(&patch->voices[i], HASH_get_hash_at(state, "patchvoice", i));
+
+  if (HASH_has_key(state, "name"))
+    patch->name = HASH_get_chars(state, "name");
 }
 
 
 // Only called from PATCH_create_audio and undo create patch.
-bool PATCH_make_active_audio(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *state) {
+//
+// x and y are ignored if audio_state!=NULL (since audio_state has its own "x" and "y")
+bool PATCH_make_active_audio(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *state, float x, float y) {
   R_ASSERT_RETURN_IF_FALSE2(patch->instrument==get_audio_instrument(),false);
 
   if (VECTOR_is_in_vector(&patch->instrument->patches,patch)){
@@ -283,7 +288,7 @@ bool PATCH_make_active_audio(struct Patch *patch, const char *type_name, const c
     apply_patch_state(patch, state);
   }
   
-  if (AUDIO_InitPatch2(patch, type_name, plugin_name, audio_state, false)==false)
+  if (AUDIO_InitPatch2(patch, type_name, plugin_name, audio_state, false, x, y)==false)
     return false;
 
   ADD_UNDO(Audio_Patch_Add_CurrPos(patch));
@@ -294,16 +299,16 @@ bool PATCH_make_active_audio(struct Patch *patch, const char *type_name, const c
 }
 
 void PATCH_init_audio_when_loading_song(struct Patch *patch, hash_t *state) {
-  AUDIO_InitPatch2(patch, NULL, NULL, state, true);
+  AUDIO_InitPatch2(patch, NULL, NULL, state, true, 0, 0);
 }
 
 // Either type_name and plugin_name is NULL, or state==NULL
-struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state) {
+struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state, float x, float y) {
   struct Patch *patch = create_new_patch(name);
 
   patch->instrument=get_audio_instrument();
 
-  if (PATCH_make_active_audio(patch, type_name, plugin_name, state)==false)
+  if (PATCH_make_active_audio(patch, type_name, plugin_name, state, x, y)==false)
     return NULL;
   
   return patch;

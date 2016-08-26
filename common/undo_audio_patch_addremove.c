@@ -105,7 +105,7 @@ static void *Undo_Do_Audio_Patch_AddRemove(
 
     fprintf(stderr,"         UNDO_DO_AUDIO_PATCH 3 %d\n",is_present);
     
-    if (PATCH_make_active_audio(u_rt->patch, NULL, NULL, u_rt->audio_patch_state)==false)
+    if (PATCH_make_active_audio(u_rt->patch, NULL, NULL, u_rt->audio_patch_state, 0, 0)==false)
       R_ASSERT(false);
 
     u_rt->is_present=true;

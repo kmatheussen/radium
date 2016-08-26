@@ -71,9 +71,9 @@ static QString request_load_preset_filename_from_requester(void){
                                               "Load Effect configuration",
                                               last_preset_path,
 #if FOR_WINDOWS
-                                              "*.rec ;; All files (*)",
+                                              "*.rec *.mrec ;; *.rec ;; *.mrec ;; All files (*)",
 #else
-                                              "Radium Effect Configuration (*.rec) ;; All files (*)",
+                                              "Radium Effect Configuration (*.rec *.mrec) ;; Radium Single Effect Configuration (*.rec) ;; Radium Multi Effect Configuration (*.mrec) ;; All files (*)",
 #endif
                                               0,
                                               useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
@@ -163,6 +163,58 @@ static hash_t *get_preset_state_from_filename(QString filename){
   return state;
 }
 
+static int64_t PRESET_load_multipreset(hash_t *state, char *name, bool inc_usage_number, float x, float y){
+
+  struct Patch *first_patch = NULL;
+  vector_t patches = {0};
+  
+  hash_t *patches_state = HASH_get_hash(state, "patches");
+  int num_presets = HASH_get_array_size(patches_state);
+  
+  for(int i = 0 ; i < num_presets ; i++) {
+    hash_t *patch_state = HASH_get_hash_at(patches_state, "patch", i);
+    struct Patch *patch = PATCH_create_audio(NULL, NULL, name, patch_state, 0, 0);
+    //printf("name1: -%s-, name2: -%s-, name3: %s\n",name,patch->name,HASH_get_chars(patch_state,"name"));
+    //getchar();
+    VECTOR_push_back(&patches, patch); // NULL values must be pushed as well.
+    
+    if (patch!=NULL){
+
+      if (first_patch == NULL)
+        first_patch = patch;
+      
+      if (inc_usage_number){
+        SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+        inc_plugin_usage_number(plugin->type);
+      }
+    }
+  }
+
+  MW_create_from_state(HASH_get_hash(state, "mixer_state"),
+                       &patches,
+                       x, y);
+
+  R_ASSERT(first_patch != NULL);
+  
+  if (first_patch==NULL)
+    return -1;
+  else
+    return first_patch->id;
+}
+
+static int64_t PRESET_load_singlepreset(hash_t *state, char *name, bool inc_usage_number, float x, float y){
+  struct Patch *patch = PATCH_create_audio(NULL, NULL, name, state, x, y);
+  if (patch==NULL)
+    return -1;
+
+  if (inc_usage_number){
+    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    inc_plugin_usage_number(plugin->type);
+  }
+
+  return patch->id;
+}
+
 // Note that this is the general preset loading function, and not the one that is directly called when pressing the "Load" button. (there we also have to delete the old instrument and reconnect connections)
 //
 // A less confusing name could perhaps be PRESET_add_instrument
@@ -177,50 +229,12 @@ int64_t PRESET_load(const wchar_t *filename, char *name, bool inc_usage_number, 
   
   PRESET_set_last_used_filename(filename);
 
-  vector_t patch_states = {0};
+  bool is_multipreset = HASH_has_key(state, "multipreset_presets") && HASH_get_bool(state, "multipreset_presets");
   
-  if (HASH_has_key(state, "multipreset_presets")) {
-    
-    hash_t *patches_state = HASH_get_hash(state, "patches");
-      
-    int num_presets = HASH_get_array_size(patches_state);
-    for(int i = 0 ; i < num_presets ; i++)
-      VECTOR_push_back(&patch_states, HASH_get_hash_at(patches_state, "patch", i));
-    
-  }else{
-    VECTOR_push_back(&patch_states, state);
-  }
-
-  struct Patch *first_patch = NULL;
-  vector_t patches = {0};
-  
-  VECTOR_FOR_EACH(hash_t *, patch_state, &patch_states){
-
-    struct Patch *patch = PATCH_create_audio(NULL, NULL, name, patch_state);
-    VECTOR_push_back(&patches, patch);
-    
-    if (patch!=NULL){
-
-      if (first_patch == NULL)
-        first_patch = patch;
-      
-      if (inc_usage_number){
-        SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-        inc_plugin_usage_number(plugin->type);
-      }
-    }
-      
-  }END_VECTOR_FOR_EACH;
-
-  if (HASH_has_key(state, "mixer_state"))
-    MW_create_from_state(HASH_get_hash(state, "mixer_state"),
-                         &patches,
-                         x, y);
-
-  if (first_patch==NULL)
-    return -1;
+  if (is_multipreset)
+    return PRESET_load_multipreset(state, name, inc_usage_number, x, y);
   else
-    return first_patch->id;
+    return PRESET_load_singlepreset(state, name, inc_usage_number, x, y);
 }
 
 
@@ -231,13 +245,15 @@ int64_t PRESET_load(const wchar_t *filename, char *name, bool inc_usage_number, 
 
 
 
-void PRESET_save(vector_t *patches, bool save_button_pressed){
+void PRESET_save(vector_t *patches, bool save_button_pressed){  // "save_button_pressed is the "Save" button in the instrument window.
 
   if(patches->num_elements==0){
     GFX_Message(NULL, "No instruments selected");
     return;
   }
 
+  bool is_multipreset = patches->num_elements > 1;
+  
   {
     VECTOR_FOR_EACH(struct Patch*, patch, patches){
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
@@ -263,9 +279,13 @@ void PRESET_save(vector_t *patches, bool save_button_pressed){
                                             "Save Effect configuration",
                                             last_preset_path,
 #if FOR_WINDOWS
-                                            "*.rec ;; All files (*)",
+                                            is_multipreset
+                                             ? "*.mrec ;; All files (*)"
+                                             : "*.rec ;; All files (*)",
 #else
-                                            "Radium Effect Configuration (*.rec) ;; All files (*)",
+                                            is_multipreset
+                                             ? "Radium Multi Effect Configuration (*.mrec) ;; All files (*)"
+                                             : "Radium Effect Configuration (*.rec) ;; All files (*)",
 #endif
                                             0,
                                             useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
@@ -292,10 +312,7 @@ void PRESET_save(vector_t *patches, bool save_button_pressed){
 
   hash_t *state;
   
-  if (save_button_pressed) {
-    struct Patch *patch = (struct Patch*)patches->elements[0];
-    state = PATCH_get_state(patch);
-  } else {
+  if (is_multipreset) {
     state = HASH_create(5);
     
     HASH_put_bool(state, "multipreset_presets", true);
@@ -315,6 +332,9 @@ void PRESET_save(vector_t *patches, bool save_button_pressed){
 
       HASH_put_hash(state, "mixer_state", mixer_state);
     }
+  } else {
+    struct Patch *patch = (struct Patch*)patches->elements[0];
+    state = PATCH_get_state(patch);
   }
   
   HASH_save(state, file);

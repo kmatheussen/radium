@@ -80,7 +80,7 @@ static void make_patches_usable(struct Tracks *track){
       if (old_patch->permanent_id != 0)
         new_patch = AUDIO_get_the_replacement_for_old_permanent_patch(old_patch);
       else {
-        new_patch = PATCH_create_audio(NULL, NULL, old_patch->name, old_patch->state);
+        new_patch = PATCH_create_audio(NULL, NULL, old_patch->name, old_patch->state, 0, 0);
         connectAudioInstrumentToMainPipe(CAST_API_PATCH_ID(new_patch->id));
       }
       
@@ -100,7 +100,7 @@ static void make_patches_usable(struct Tracks *track){
         if (fx->patch->permanent_id != 0)
           fx->patch = AUDIO_get_the_replacement_for_old_permanent_patch(fx->patch);
         else
-          fx->patch = PATCH_create_audio(NULL, NULL, fx->patch->name, fx->patch->state);
+          fx->patch = PATCH_create_audio(NULL, NULL, fx->patch->name, fx->patch->state, 0, 0);
       }
     }END_VECTOR_FOR_EACH;
     

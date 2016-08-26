@@ -220,7 +220,8 @@ static bool state_only_contains_plugin(hash_t *state){
   return false;
 }
 
-bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *audio_state, bool is_loading_song) {
+// x and y are ignored if audio_state!=NULL (since audio state has its own "x" and "y")
+bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *audio_state, bool is_loading_song, float x, float y) {
 
   SoundPluginType *type;
   struct SoundPlugin *plugin;
@@ -256,9 +257,11 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
     plugin = PLUGIN_create(type, NULL, is_loading_song);
   }
 
-  if (patch->name==NULL || strlen(patch->name)==0)
-    PATCH_set_name(patch, PLUGIN_generate_new_patchname(type));
-
+  if (patch->name==NULL || strlen(patch->name)==0) {
+    const char *name = PLUGIN_generate_new_patchname(type);
+    PATCH_set_name(patch, name);
+  }
+  
   if(plugin==NULL) {
     GFX_Message(NULL, "Failed to create plugin %s: %s",type_name,plugin_name);
     return false;
@@ -272,10 +275,16 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
   struct SoundProducer *sound_producer = SP_create(plugin, MIXER_get_buses());
   R_ASSERT_RETURN_IF_FALSE2(sound_producer!=NULL, false);
 
+  if (audio_state != NULL && !state_only_has_plugin) {
+    x = HASH_get_float(audio_state, "x");
+    y = HASH_get_float(audio_state, "y");
+  }
+
+  printf("x: %f, y: %f\n",x,y);
+  //getchar();
+
   // Create mixer object
-  CHIP_create(sound_producer);
-  if (audio_state != NULL && !state_only_has_plugin)
-    CHIP_set_pos(patch, HASH_get_float(audio_state, "x"), HASH_get_float(audio_state, "y"));
+  CHIP_create(sound_producer, x, y);
   
   // Create instrument widget
   InstrumentWidget_create_audio_instrument_widget(patch);
@@ -704,7 +713,17 @@ hash_t *AUDIO_get_audio_patch_state(struct Patch *patch){
   
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
 
-  // Note: If changing the state format, the 'state_only_contains_plugin' function above must be updated. (test by adding instrument and undo)
+  /**
+   *
+   * READ THIS!
+   *
+   * If changing the state format, the 'state_only_contains_plugin' function above must be updated. (test by adding instrument and undo + redo)
+   *
+  */
+#if !RELEASE
+  if (CHIP_get_pos_x(patch) < -2000 || CHIP_get_pos_y(patch) < -2000)
+    abort();
+#endif
   
   HASH_put_int(state, "patch", patch->id);
   HASH_put_float(state, "x", CHIP_get_pos_x(patch));
