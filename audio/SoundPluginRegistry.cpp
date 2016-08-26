@@ -427,7 +427,14 @@ void PR_init_plugin_types(void){
   g_plugin_types.clear();
   g_plugin_menu_entries.clear();
 
-  if (PR_is_initing_vst_first()){
+  PR_add_menu_entry(PluginMenuEntry::load_preset());
+  
+  PR_add_menu_entry(PluginMenuEntry::paste_preset());
+  
+  PR_add_menu_entry(PluginMenuEntry::separator());
+
+
+  if (true || PR_is_initing_vst_first()){
 
     PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{    
       create_vst_plugins(true);
@@ -456,12 +463,6 @@ void PR_init_plugin_types(void){
   
   PR_add_menu_entry(PluginMenuEntry::separator());
   
-  PR_add_menu_entry(PluginMenuEntry::load_preset());
-  
-  PR_add_menu_entry(PluginMenuEntry::paste_preset());
-  
-  PR_add_menu_entry(PluginMenuEntry::separator());
-
   PR_add_menu_entry(PluginMenuEntry::level_up("Physical Modelling"));
   {
     create_stk_bass_plugin();
