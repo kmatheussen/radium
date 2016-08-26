@@ -199,7 +199,7 @@ namespace{
     PluginWindow(const char *title, Data *data, AudioProcessorEditor* const editor)
       : DocumentWindow (title,
                         Colours::lightgrey,
-                        DocumentWindow::allButtons,
+                        DocumentWindow::closeButton, //allButtons,
                         true)
       , data(data)
       , title(title)
