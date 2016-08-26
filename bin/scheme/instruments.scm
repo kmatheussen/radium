@@ -210,9 +210,9 @@
             (member id-instrument (get-all-audio-instruments))))
 
      (define (num-new-instruments)
-       (- (get-all-audio-instruments)
+       (- (length (get-all-audio-instruments))
           (length instruments-before)))
-       
+     
      (when (and (integer? id-instrument) (not (= -1 id-instrument)))
        (<ra> :set-instrument-for-track id-instrument tracknum)
        (when (and (is-new-instrument? id-instrument)
