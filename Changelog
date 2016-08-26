@@ -1,3 +1,30 @@
+Changes 4.0.5 -> 4.0.6:
+* Show note about autobackup in the preferences window.
+  Autopackup is not performed while playing.
+* Fix bug when pressing backspace at line 0 and the end position
+  of a note was between line 0 and line 1.
+* Disable minimize and maximze buttons on the GUI of native VST plugins.
+  This fixes strange situation when putting VST plugin in full screen on OSX.
+* Only render soundfile if there is a "System Out" instrument in the mixer.
+* Cut/copy/paste sound objects
+* Load/save multiple presets
+* Fix very small timing error when block multiplier does not have
+  the value 1.0. This means that older songs with a block
+  multiplier != 1.0 will not play correctly, although it is
+  likely not noticable.
+* Don't show assertion reporter when recording failed.
+* Fix selecting "Reset" when right clicking on a slider.
+* sample recording: Set middle note in smpl chunk instead
+  of setting an uncommon sample rate.
+* Get middle note from the "instr" chunk, if it exists,
+  and there was no "sampl" chunk. Untested though, since I don't
+  have a sound file with "an nstr" chunk.
+* Get middle note from the "sampl" chunk in wav files, if present.
+* Start audio recording sample accurately.
+* Update peaks in realtime when recording audio.
+
+
+
 Changes 4.0.4 -> 4.0.5:
 * Fix modifier keys on OSX.
 * Don't crash if deleting the instrument while recording audio.
