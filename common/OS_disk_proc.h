@@ -14,6 +14,9 @@ extern LANGSPEC disk_t *DISK_open_for_writing(const wchar_t *filename);
 extern LANGSPEC disk_t *DISK_open_for_reading(const wchar_t *filename);
 extern LANGSPEC disk_t *DISK_open_binary_for_reading(const wchar_t *filename);
 
+extern LANGSPEC disk_t *DISK_open_temp_for_writing(void);
+extern LANGSPEC wchar_t *DISK_close_temp_for_writing(disk_t *disk);
+
 extern LANGSPEC wchar_t *DISK_get_filename(disk_t *disk);
   
 

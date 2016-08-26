@@ -53,6 +53,7 @@ struct PluginMenuEntry{
     IS_LEVEL_UP,
     IS_LEVEL_DOWN,
     IS_LOAD_PRESET,
+    IS_PASTE_PRESET,
     IS_NUM_USED_PLUGIN
   } type;
   static PluginMenuEntry separator(){
@@ -63,6 +64,11 @@ struct PluginMenuEntry{
   static PluginMenuEntry load_preset(){
     PluginMenuEntry entry;
     entry.type=IS_LOAD_PRESET;
+    return entry;
+  }
+  static PluginMenuEntry paste_preset(){
+    PluginMenuEntry entry;
+    entry.type=IS_PASTE_PRESET;
     return entry;
   }
   static PluginMenuEntry num_used_plugin(NumUsedPluginEntry hepp){

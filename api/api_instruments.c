@@ -197,9 +197,13 @@ int createAudioInstrumentFromDescription(const char *instrument_description, cha
 
     return CAST_API_PATCH_ID(PRESET_load(filename, name, true, x, y));
     
+  } else if (instrument_description[0]=='3'){
+
+    return CAST_API_PATCH_ID(PRESET_paste(x, y));
+        
   } else {
 
-    GFX_Message(NULL, "Illegal instrument_description: %s (string doesn't start with '1' or '2')",instrument_description);
+    GFX_Message(NULL, "Illegal instrument_description: %s (string doesn't start with '1', '2' or '3')",instrument_description);
     return -1;
 
   }

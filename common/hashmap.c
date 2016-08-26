@@ -498,6 +498,15 @@ static vector_t *get_sorted_elements(hash_t *hash){
   return elements;
 }
 
+#if 0
+wchar_t *HASH_to_string(hash_t *hash){
+  GFX_Message(NULL, "Warning, never tested");
+  disk_t *disk = DISK_open_temp_for_writing();
+  HASH_save(hash, file);
+  return DISK_close_temp_for_writing(disk);
+}
+#endif
+
 void HASH_save(hash_t *hash, disk_t *file){
   DISK_write(file, ">> HASH MAP V2 BEGIN\n");
 

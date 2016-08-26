@@ -28,6 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_disk_proc.h"
 
 
+#define SUPPORT_TEMP_WRITING_FUNCTIONS 0
+
+
 bool DISK_file_exists(const wchar_t *wfilename){
   QString filename = STRING_get_qstring(wfilename);
   return QFile::exists(filename);
@@ -130,6 +133,11 @@ public:
     R_ASSERT(type==WRITE);
     R_ASSERT(temporary_write_file != NULL);
 
+#if SUPPORT_TEMP_WRITING_FUNCTIONS
+    if (filename=="")
+      return true;
+#endif
+    
     bool exists = QFile::exists(filename);
     // Maybe take backup of the existing file here.
     if (exists)
@@ -228,6 +236,34 @@ disk_t *DISK_open_for_writing(const wchar_t *wfilename){
   return DISK_open_for_writing(filename);
 }
 
+#if SUPPORT_TEMP_WRITING_FUNCTIONS
+disk_t *DISK_open_temp_for_writing(void){
+  GFX_Message(NULL, "Warning, never tested");
+    
+  disk_t *disk = new disk_t("", disk_t::WRITE);
+  
+  if (disk->open()==false){
+    delete disk;
+    return NULL;
+  }
+  
+  return disk;
+}
+
+wchar_t *DISK_close_temp_for_writing(disk_t *disk){
+  GFX_Message(NULL, "Warning, never tested");
+  
+  disk->close();
+
+  QByteArray data = disk->temporary_write_file->readAll();
+
+  wchar_t *ret = STRING_create(data.toUtf8().constData());
+
+  delete disk;
+
+  return ret;
+}
+#endif
 
 disk_t *DISK_open_for_reading(QString filename){
   disk_t *disk = new disk_t(filename, disk_t::READ);

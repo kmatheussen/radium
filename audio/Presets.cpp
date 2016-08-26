@@ -24,16 +24,18 @@
 #include "Presets_proc.h"
 
 
+static hash_t *g_preset_clipboard = NULL;
 
-static QString last_filename;
-static QString last_preset_path = "";
+
+static QString g_last_filename;
+static QString g_last_preset_path = "";
 
 
 void PRESET_set_last_used_filename(const wchar_t *wfilename){
   QString filename = STRING_get_qstring(wfilename);
   
-  last_preset_path = QFileInfo(filename).absoluteDir().path();
-  last_filename = QFileInfo(filename).baseName();
+  g_last_preset_path = QFileInfo(filename).absoluteDir().path();
+  g_last_filename = QFileInfo(filename).baseName();
 }
 
 
@@ -84,7 +86,7 @@ static QString request_load_preset_filename_from_requester(void){
       filename = QFileDialog::getOpenFileName(
                                               g_main_window,
                                               "Load Effect configuration",
-                                              last_preset_path,
+                                              g_last_preset_path,
 #if FOR_WINDOWS
                                               "*.rec *.mrec ;; *.rec ;; *.mrec ;; All files (*)",
 #else
@@ -103,10 +105,10 @@ static QString request_load_preset_filename_from_requester(void){
 static QString request_load_preset_filename(void){
   QString filename;
 
-  if (last_preset_path=="")
-    last_preset_path = QCoreApplication::applicationDirPath();
+  if (g_last_preset_path=="")
+    g_last_preset_path = QCoreApplication::applicationDirPath();
   
-  QVector<QString> existing_presets = get_all_presets_in_path(last_preset_path);
+  QVector<QString> existing_presets = get_all_presets_in_path(g_last_preset_path);
   if (existing_presets.size()==0)
     return request_load_preset_filename_from_requester();
 
@@ -127,7 +129,7 @@ static QString request_load_preset_filename(void){
   else if (sel==request_from_requester)
     return request_load_preset_filename_from_requester();
   else
-    return last_preset_path + QDir::separator() + existing_presets[sel-start];
+    return g_last_preset_path + QDir::separator() + existing_presets[sel-start];
 }
 
 static const char *request_load_preset_encoded_filename(void){
@@ -146,9 +148,8 @@ char *PRESET_request_load_instrument_description(void){
   return talloc_format("2%s",encoded_filename);
 }
 
-
 static hash_t *get_preset_state_from_filename(QString filename){
-  last_preset_path = QFileInfo(filename).absoluteDir().path();
+  g_last_preset_path = QFileInfo(filename).absoluteDir().path();
   
   disk_t *file = DISK_open_for_reading(filename);
   if(file==NULL){
@@ -173,7 +174,7 @@ static hash_t *get_preset_state_from_filename(QString filename){
     return NULL;
   }
 
-  last_filename = QFileInfo(filename).baseName();
+  g_last_filename = QFileInfo(filename).baseName();
 
   return state;
 }
@@ -230,6 +231,15 @@ static int64_t PRESET_load_singlepreset(hash_t *state, char *name, bool inc_usag
   return patch->id;
 }
 
+static int64_t insert_preset_into_program(hash_t *state, char *name, bool inc_usage_number, float x, float y){
+  bool is_multipreset = HASH_has_key(state, "multipreset_presets") && HASH_get_bool(state, "multipreset_presets");
+  
+  if (is_multipreset)
+    return PRESET_load_multipreset(state, name, inc_usage_number, x, y);
+  else
+    return PRESET_load_singlepreset(state, name, inc_usage_number, x, y);
+}
+
 // Note that this is the general preset loading function, and not the one that is directly called when pressing the "Load" button. (there we also have to delete the old instrument and reconnect connections)
 //
 // A less confusing name could perhaps be PRESET_add_instrument
@@ -244,22 +254,68 @@ int64_t PRESET_load(const wchar_t *filename, char *name, bool inc_usage_number, 
   
   PRESET_set_last_used_filename(filename);
 
-  bool is_multipreset = HASH_has_key(state, "multipreset_presets") && HASH_get_bool(state, "multipreset_presets");
-  
-  if (is_multipreset)
-    return PRESET_load_multipreset(state, name, inc_usage_number, x, y);
-  else
-    return PRESET_load_singlepreset(state, name, inc_usage_number, x, y);
+  return insert_preset_into_program(state, name, inc_usage_number, x, y);
 }
 
+int64_t PRESET_paste(float x, float y){
+  if (g_preset_clipboard != NULL)
+    return insert_preset_into_program(g_preset_clipboard, NULL, true, x, y);
+  else
+    return -1;
+}
+
+bool PRESET_has_copy(void){
+  return g_preset_clipboard != NULL;
+}
 
 
 /****************************************/
 /************** SAVE ********************/
 /****************************************/
 
+hash_t *get_preset_state(vector_t *patches){
+  bool is_multipreset = patches->num_elements > 1;
 
+  hash_t *state;
+  
+  if (is_multipreset) {
+    
+    state = HASH_create(5);
+    
+    HASH_put_bool(state, "multipreset_presets", true);
+    
+    {
+      hash_t *patches_state = HASH_create(patches->num_elements);
+      for(int i = 0 ; i < patches->num_elements ; i++){
+        struct Patch *patch = (struct Patch*)patches->elements[i];
+        HASH_put_hash_at(patches_state, "patch", i, PATCH_get_state(patch));
+      }
 
+      HASH_put_hash(state, "patches", patches_state);
+    }
+
+    {
+      hash_t *mixer_state = MW_get_state(patches);
+      
+      HASH_put_hash(state, "mixer_state", mixer_state);
+    }
+    
+  } else {
+    
+    struct Patch *patch = (struct Patch*)patches->elements[0];
+    state = PATCH_get_state(patch);
+    
+  }
+
+  return state;
+}
+
+void PRESET_copy(vector_t *patches){
+  R_ASSERT_RETURN_IF_FALSE(patches->num_elements > 0);
+  
+  g_preset_clipboard = get_preset_state(patches);
+}
+  
 void PRESET_save(vector_t *patches, bool save_button_pressed){  // "save_button_pressed is the "Save" button in the instrument window.
 
   if(patches->num_elements==0){
@@ -292,7 +348,7 @@ void PRESET_save(vector_t *patches, bool save_button_pressed){  // "save_button_
     filename = QFileDialog::getSaveFileName(
                                             g_main_window,
                                             "Save Effect configuration",
-                                            last_preset_path,
+                                            g_last_preset_path,
 #if FOR_WINDOWS
                                             is_multipreset
                                              ? "*.mrec ;; All files (*)"
@@ -312,7 +368,7 @@ void PRESET_save(vector_t *patches, bool save_button_pressed){  // "save_button_
   if(filename=="")
     return;
 
-  last_preset_path = QFileInfo(filename).absoluteDir().path();
+  g_last_preset_path = QFileInfo(filename).absoluteDir().path();
     
   disk_t *file = DISK_open_for_writing(filename);
   
@@ -325,32 +381,7 @@ void PRESET_save(vector_t *patches, bool save_button_pressed){  // "save_button_
     return;
   }
 
-  hash_t *state;
-  
-  if (is_multipreset) {
-    state = HASH_create(5);
-    
-    HASH_put_bool(state, "multipreset_presets", true);
-
-    {
-      hash_t *patches_state = HASH_create(patches->num_elements);
-      for(int i = 0 ; i < patches->num_elements ; i++){
-        struct Patch *patch = (struct Patch*)patches->elements[i];
-        HASH_put_hash_at(patches_state, "patch", i, PATCH_get_state(patch));
-      }
-
-      HASH_put_hash(state, "patches", patches_state);
-    }
-
-    {
-      hash_t *mixer_state = MW_get_state(patches);
-
-      HASH_put_hash(state, "mixer_state", mixer_state);
-    }
-  } else {
-    struct Patch *patch = (struct Patch*)patches->elements[0];
-    state = PATCH_get_state(patch);
-  }
+  hash_t *state = get_preset_state(patches);
   
   HASH_save(state, file);
   

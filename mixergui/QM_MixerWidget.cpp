@@ -683,7 +683,7 @@ static bool get_before_and_after_chip(Chip *chip, Chip **before, Chip **after){
   return true;
 }
 
-static bool mousepress_delete_chip(MyScene *scene, QGraphicsSceneMouseEvent * event, QGraphicsItem *item, float mouse_x, float mouse_y){
+static bool mousepress_delete_chip(MyScene *scene, QGraphicsItem *item, float mouse_x, float mouse_y){
   printf("Going to delete\n");
   Chip *chip = dynamic_cast<Chip*>(item);
   if(chip!=NULL){
@@ -700,7 +700,6 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
         if(patch->patchdata==SP_get_plugin(chip->_sound_producer)){
           printf("Found patch\n");
           deleteInstrument(CAST_API_PATCH_ID(patch->id));
-          event->accept();
           break;
         }
       }END_VECTOR_FOR_EACH;
@@ -710,13 +709,19 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
       
     }Undo_Close();
     
-    event->accept();
     return true;
   }
 
   return false;
 }
 
+static void delete_several_chips(const vector_t &patches){
+  Undo_Open_rec();{
+    VECTOR_FOR_EACH(struct Patch *,patch,&patches){
+      deleteInstrument(CAST_API_PATCH_ID(patch->id));
+    }END_VECTOR_FOR_EACH;
+  }Undo_Close();
+}
 
 static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent * event, QGraphicsItem *item, float mouse_x, float mouse_y){
 
@@ -859,33 +864,9 @@ static QVector<Chip*> get_selected_chips(void){
   return ret;
 }
 
-static bool mousepress_save_presets(MyScene *scene, QGraphicsSceneMouseEvent * event, QGraphicsItem *item, float mouse_x, float mouse_y){
-  QVector<Chip*> chips = get_selected_chips();
-
-  if (chips.size()==0)
-    return false;
-
-  vector_t patches = {};
-
-  for(auto *chip : chips){
-    struct Patch *patch = CHIP_get_patch(chip);
-    R_ASSERT_RETURN_IF_FALSE2(!VECTOR_is_in_vector(&patches, patch), true);
-    VECTOR_push_back(&patches, patch);
-  }
-
-  PRESET_save(&patches, false);
+//static bool mousepress_create_chip(MyScene *scene, float mouse_x, float mouse_y){
+static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_y){
   
-  return true;
-}
-
-static bool mousepress_create_chip(MyScene *scene, QGraphicsSceneMouseEvent * event, QGraphicsItem *item, float mouse_x, float mouse_y){
-
-  Chip *chip_under = MW_get_chip_at(mouse_x,mouse_y,NULL);
-  if(chip_under!=NULL){
-    if(chip_body_is_placed_at(chip_under, mouse_x, mouse_y)==true)
-      return false;
-  }
-
   draw_slot(scene,mouse_x,mouse_y);
 
   const char *instrument_description = instrumentDescriptionPopupMenu();
@@ -915,8 +896,117 @@ static bool mousepress_create_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
 
   }
 
-  //scene->removeItem(_slot_indicator);
-  event->accept();
+  return true;
+}
+
+static vector_t get_selected_patches(void){
+  QVector<Chip*> chips = get_selected_chips();
+  
+  vector_t patches = {};
+
+  for(auto *chip : chips){
+    struct Patch *patch = CHIP_get_patch(chip);
+    R_ASSERT_RETURN_IF_FALSE2(!VECTOR_is_in_vector(&patches, patch), patches);
+    VECTOR_push_back(&patches, patch);
+  }
+
+  return patches;
+}
+  
+static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent * event, float mouse_x, float mouse_y){
+
+  Chip *chip_under = MW_get_chip_at(mouse_x,mouse_y,NULL);
+  if(chip_under==NULL)
+    return false;
+
+  QVector<Chip*> chips = get_selected_chips();
+
+  if (chips.size()==0)
+    return false;
+  
+  vector_t v = {};
+
+  int insert = -1;
+  int replace = -1;
+  int copy = -1;
+  int cut = -1;
+  int delete_ = -1;
+  int save = -1;
+  
+  if (chips.size() > 1) {
+    
+    copy = VECTOR_push_back(&v, "Copy sound objects");
+    cut = VECTOR_push_back(&v, "Cut sound objects");
+    delete_ = VECTOR_push_back(&v, "Delete sound objects");
+    VECTOR_push_back(&v, "--------");
+    save = VECTOR_push_back(&v, "Save multi preset file (.mrec)");
+    
+  } else if (chips.size() == 1){
+
+    insert = VECTOR_push_back(&v, "Insert sound object");
+    replace = VECTOR_push_back(&v, "Replace sound object");
+    VECTOR_push_back(&v, "--------");
+    copy = VECTOR_push_back(&v, "Copy sound object");
+    cut = VECTOR_push_back(&v, "Cut sound object");
+    delete_ = VECTOR_push_back(&v, "Delete sound object");
+    VECTOR_push_back(&v, "--------");
+    save = VECTOR_push_back(&v, "Save preset file (.rec)");
+    
+  }
+
+      
+  int sel = GFX_Menu(NULL, NULL, NULL, &v);
+
+  if (sel==-1) {
+    
+  } else if (sel==insert) {
+    
+    mouserelease_create_chip(scene, mouse_x, mouse_y);
+    
+  } else if (sel==replace) {
+
+    mouserelease_replace_patch(scene, mouse_x, mouse_y);
+    
+  } else if (sel==copy) {
+
+    vector_t patches = get_selected_patches();
+
+    PRESET_copy(&patches);
+    
+  } else if (sel==cut) {
+    
+    vector_t patches = get_selected_patches();
+
+    PRESET_copy(&patches);
+
+    if (patches.num_elements==1)
+      mousepress_delete_chip(scene, chips[0], mouse_x, mouse_y);
+    else {
+      delete_several_chips(patches);
+    }
+      
+  } else if (sel==delete_) {
+
+    vector_t patches = get_selected_patches();
+        
+    if (patches.num_elements==1)
+      mousepress_delete_chip(scene, chips[0], mouse_x, mouse_y);
+    else {
+      delete_several_chips(patches);
+    }
+    
+  } else if (sel==save) {
+    
+    vector_t patches = get_selected_patches();
+
+    PRESET_save(&patches, false);
+
+  } else {
+    
+    R_ASSERT(false);
+    
+  }
+
   return true;
 }
 
@@ -976,8 +1066,10 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
   bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
   
   if(event_can_delete(event))
-    if(mousepress_delete_chip(this,event,item,mouse_x,mouse_y)==true)
+    if(mousepress_delete_chip(this,item,mouse_x,mouse_y)==true) {
+      event->accept();
       return;
+    }
 
   if(event_can_delete(event))
     if(mousepress_delete_connection(this,event,item,mouse_x,mouse_y)==true)
@@ -991,13 +1083,15 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
       return;
 
   } if(event->button()==Qt::RightButton){
+
+    /*
+    if(ctrl_pressed==false && mousepress_create_chip(this,event,item,mouse_x,mouse_y)==true) { // create
+      _chip_was_created = true;
+      event->accept();
+      return;
+    }
+    */
     
-    if(ctrl_pressed==false && mousepress_save_presets(this,event,item,mouse_x,mouse_y)==true)
-      return;
-
-    if(ctrl_pressed==false && mousepress_create_chip(this,event,item,mouse_x,mouse_y)==true) // create
-      return;
-
     // start moving chip    
     Chip *chip = dynamic_cast<Chip*>(item);
       
@@ -1083,9 +1177,31 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
     bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
     bool shift_pressed = (event->modifiers() & Qt::ShiftModifier);
         
-    if (event->button()==Qt::RightButton && shift_pressed==false && ctrl_pressed==false && mouserelease_replace_patch(this,mouse_x,mouse_y)==true) {
+    if (event->button()==Qt::RightButton && shift_pressed==false && ctrl_pressed==false){
+
+      bool chip_is_under = false;
+      
+      Chip *chip_under = MW_get_chip_at(mouse_x,mouse_y,NULL);
+      if(chip_under!=NULL){
+        //        if(chip_body_is_placed_at(chip_under, mouse_x, mouse_y)==true)
+          chip_is_under = true;
+      }
+      
+      if(chip_is_under==false){
+        mouserelease_create_chip(this,mouse_x,mouse_y);
+        event->accept();
+        return;
+      }
+
+      if(mousepress_save_presets_etc(this,event,mouse_x,mouse_y)==true){
+        event->accept();
+        return;
+      }
+      /*
+      && mouserelease_replace_patch(this,mouse_x,mouse_y)==true) {
       event->accept();
       return;
+      */
     }
 
     QGraphicsScene::mouseReleaseEvent(event);
@@ -1399,10 +1515,17 @@ static int menu_up(QMenu *menu, const QVector<PluginMenuEntry> &entries, int i, 
 
     }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
 
-      MyQAction *action = new MyQAction("Load Preset", menu, entry);
+      MyQAction *action = new MyQAction("Load Preset(s)", menu, entry);
+      menu->addAction(action);
+      if (include_load_preset==false)
+        action->setEnabled(false);
+
+    }else if(entry.type==PluginMenuEntry::IS_PASTE_PRESET){
+
+      MyQAction *action = new MyQAction("Paste Preset(s)", menu, entry);
       menu->addAction(action);
       menu->addSeparator();
-      if (include_load_preset==false)
+      if (include_load_preset==false || PRESET_has_copy()==false)
         action->setEnabled(false);
 
     }else if(entry.type==PluginMenuEntry::IS_NUM_USED_PLUGIN){
@@ -1434,7 +1557,7 @@ void inc_plugin_usage_number(SoundPluginType *type){
   SETTINGS_write_int(settings_name, num_uses+1);
 }
 
-static char *popup_plugin_selector(SoundPluginType **type){
+static const char *popup_plugin_selector(SoundPluginType **type){
   QMenu menu(0);
 
   if (type!=NULL)
@@ -1490,6 +1613,10 @@ static char *popup_plugin_selector(SoundPluginType **type){
     
     return PRESET_request_load_instrument_description();
  
+  }else if(entry.type==PluginMenuEntry::IS_PASTE_PRESET){
+    
+    return "3";
+ 
   }else if(entry.type==PluginMenuEntry::IS_NUM_USED_PLUGIN){
 
     SoundPluginType *type2 = PR_get_plugin_type_by_name(entry.hepp.container_name.toUtf8().constData(), entry.hepp.type_name.toUtf8().constData(), entry.hepp.name.toUtf8().constData());
@@ -1510,7 +1637,7 @@ static char *popup_plugin_selector(SoundPluginType **type){
   }
 }
                                   
-char *MW_popup_plugin_selector2(void){
+const char *MW_popup_plugin_selector2(void){
   return popup_plugin_selector(NULL);
 }
 

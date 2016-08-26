@@ -458,6 +458,8 @@ void PR_init_plugin_types(void){
   
   PR_add_menu_entry(PluginMenuEntry::load_preset());
   
+  PR_add_menu_entry(PluginMenuEntry::paste_preset());
+  
   PR_add_menu_entry(PluginMenuEntry::separator());
 
   PR_add_menu_entry(PluginMenuEntry::level_up("Physical Modelling"));

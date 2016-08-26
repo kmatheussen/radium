@@ -1250,7 +1250,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }
 
     // Greying if selected
-    if (is_selected && !is_current_patch){
+    if (is_selected){// && !is_current_patch){
       QColor c(40,40,40,100);
       painter->fillRect(x1,y1,x2-x1,y2-y1,c);
     }
