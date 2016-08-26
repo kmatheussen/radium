@@ -1522,7 +1522,7 @@ static int menu_up(QMenu *menu, const QVector<PluginMenuEntry> &entries, int i, 
 
     }else if(entry.type==PluginMenuEntry::IS_PASTE_PRESET){
 
-      MyQAction *action = new MyQAction("Paste Preset(s)", menu, entry);
+      MyQAction *action = new MyQAction("Paste sound object(s)", menu, entry);
       menu->addAction(action);
       menu->addSeparator();
       if (include_load_preset==false || PRESET_has_copy()==false)
