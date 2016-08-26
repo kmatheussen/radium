@@ -56,6 +56,21 @@ static QVector<QString> get_all_presets_in_path(QString path){
       ret.push_back(filename);
   }
 
+  bool need_separator = ret.size() > 0;
+  bool pushed_separator=false;
+      
+  for (int i = 0; i < list.size(); ++i) {
+    QFileInfo file_info = list.at(i);
+    QString filename = file_info.fileName();
+    if (filename.endsWith(".mrec")) {
+      if (need_separator && pushed_separator==false) {
+        ret.push_back("-----");
+        pushed_separator = true;
+      }
+      ret.push_back(filename);
+    }
+  }
+
   return ret;
 }
 
