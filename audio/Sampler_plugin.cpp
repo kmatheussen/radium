@@ -1749,6 +1749,8 @@ static float *load_interleaved_samples(const wchar_t *filename, SF_INFO *sf_info
 }
 
 static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename, bool set_loop_on_off){
+  EVENTLOG_add_event(talloc_format("load_sample_with_libsndfile -%s-", STRING_get_chars(filename)));
+    
   SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
 
   data->num_different_samples = 1;

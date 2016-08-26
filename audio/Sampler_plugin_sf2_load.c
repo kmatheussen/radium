@@ -4,6 +4,8 @@
 #include "../common/hashmap_proc.h"
 
 static bool load_sf2_instrument(Data *data, const wchar_t *filename, int preset_bag_number, bool set_loop_on_off){
+  EVENTLOG_add_event(talloc_format("load_sf2_instrument -%s-", STRING_get_chars(filename)));
+    
   hash_t *info = SF2_get_info(filename);
   if(info==NULL)
     return false;
