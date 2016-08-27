@@ -359,6 +359,8 @@ protected:
 
     OS_SYSTEM_EventPreHandler(event);
 
+    //printf("Got event\n");
+    
     /*
     QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
     printf("   focus: %d,   active: %d.  key: %d\n",
@@ -370,7 +372,7 @@ protected:
 
     //printf("Got key. Another window has focus? %d\n",(int)another_window_has_focus);
     //return false;    
-    if (another_window_has_focus)
+    if (another_window_has_focus && JUCE_native_gui_grabs_keyboard())
       return false;
 
     if (MIXER_is_saving())

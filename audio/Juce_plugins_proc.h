@@ -4,6 +4,8 @@
 
 struct SoundPlugin;
 
+extern LANGSPEC bool JUCE_native_gui_grabs_keyboard(void);
+
 extern LANGSPEC char *JUCE_download(const char *url_url); // the returned pointer must be freed manually using free().
 extern LANGSPEC const char *JUCE_get_backtrace(void);
 

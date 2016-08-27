@@ -54,6 +54,8 @@
 #define CUSTOM_MM_THREAD 0
 #endif
 
+static bool g_vst_grab_keyboard = true;
+
 namespace{
 
   struct PluginWindow;
@@ -192,9 +194,35 @@ namespace{
     AudioProcessor::WrapperType wrapper_type;
   };
 
-  struct PluginWindow  : public DocumentWindow {
+  int button_height = 30;
+
+  struct PluginWindow;
+  std::vector<PluginWindow*> g_plugin_windows;
+  
+  struct PluginWindow  : public DocumentWindow, Button::Listener {
     Data *data;
     const char *title;
+    Component main_component;
+    ToggleButton button;
+    
+    AudioProcessorEditor* const editor;
+
+    virtual void 	buttonClicked (Button *) override {
+    }
+    
+    virtual void buttonStateChanged (Button *dasbutton) override {
+      bool new_state = button.getToggleState();
+
+      printf("ButtonStateChanged called for %p. %d %d. Size: %d\n", this, new_state, g_vst_grab_keyboard,g_plugin_windows.size());
+      
+      if (new_state != g_vst_grab_keyboard) {
+
+        g_vst_grab_keyboard = new_state;
+        
+        for (auto *plugin_window : g_plugin_windows)
+          plugin_window->button.setToggleState(g_vst_grab_keyboard, sendNotification);
+      }
+    }
     
     PluginWindow(const char *title, Data *data, AudioProcessorEditor* const editor)
       : DocumentWindow (title,
@@ -203,12 +231,41 @@ namespace{
                         true)
       , data(data)
       , title(title)
+      , editor(editor)
     {
       this->setAlwaysOnTop(true);
       this->setSize (400, 300);
       this->setUsingNativeTitleBar(true);
+
+#if defined(RELEASE) && JUCE_LINUX
       
-      this->setContentOwned(editor, true);
+      this->setContentNonOwned(editor, true);
+      
+#else
+      
+      main_component.setSize(R_MIN(100, editor->getWidth()), R_MIN(100, editor->getHeight()));
+      this->setContentNonOwned(&main_component, true);
+
+      // set up button
+#if JUCE_LINUX
+      button.setButtonText("Grab keyboard (not functional)");
+#else
+      button.setButtonText("Grab keyboard");
+#endif
+      button.setToggleState(g_vst_grab_keyboard, sendNotification);
+      button.setSize(400, button_height);
+      button.changeWidthToFitText();
+
+      button.addListener(this);
+      
+      // add button
+      main_component.addAndMakeVisible(&button);
+      button.setTopLeftPosition(0, 0);
+
+      // add vst gui
+      main_component.addChildComponent(editor);
+      editor->setTopLeftPosition(0, button_height);
+#endif
       
       if (data->x <= 0 || data->y <= 0) {
         this->centreWithSize (getWidth(), getHeight());
@@ -217,9 +274,19 @@ namespace{
       }
 
       this->setVisible(true);
+
+#if defined(RELEASE) && JUCE_LINUX
+#else
+      main_component.setSize(editor->getWidth(), editor->getHeight() + button_height);
+      button.setTopLeftPosition(main_component.getWidth()-button.getWidth(), 0);
+#endif
+      
+      g_plugin_windows.push_back(this);
     }
 
-    ~PluginWindow(){      
+    ~PluginWindow(){
+      g_plugin_windows.erase(std::remove(g_plugin_windows.begin(), g_plugin_windows.end(), this), g_plugin_windows.end()); // std::vector is not nice
+      delete editor;
       data->window = NULL;
       V_free((void*)title);
     }
@@ -1173,6 +1240,10 @@ void GFX_CloseProgress(void){
 }
 
 #endif
+
+bool JUCE_native_gui_grabs_keyboard(void){
+  return g_vst_grab_keyboard;
+}
 
 char *JUCE_download(const char *url_url){
   URL url(url_url);
