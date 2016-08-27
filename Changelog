@@ -1,3 +1,10 @@
+Changes 4.0.7 -> 4.0.8:
+* Add "Grab keyboard" checkbox to the VST GUI windows.
+* Windows: Fix keyboard focus in VST plugins.
+* Rename "Paste Preset(s)" to "Paste sound object(s)".
+
+
+
 Changes 4.0.6 -> 4.0.7:
 * Show load/paste preset and VST plugins first in instrument popup menu.
 * Don't allow copying a permanent sound object to the clipboard.
