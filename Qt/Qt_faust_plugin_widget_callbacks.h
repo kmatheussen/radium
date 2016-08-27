@@ -858,8 +858,9 @@ public:
       show_warning = true;
 
     if (DISK_close_and_delete(disk)==false)
-      GFX_Message(NULL, "Unable to write to %s", filename.toUtf8().constData());
-    else if (show_warning)
+      return;
+
+    if (show_warning)
       GFX_Message(NULL, "Warning: Wrote %d bytes. Expected %d", n, code.size());
   }
 

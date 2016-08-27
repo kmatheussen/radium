@@ -165,6 +165,8 @@ static bool another_window_has_focus = false;
 
 // OSX needs to call this function since sub windows (created by for instance VST plugins) use our key events, and then we can not eat them.
 void call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_events(void){
+  R_ASSERT(THREADING_is_main_thread());
+    
   if (main_window_has_focus())
     another_window_has_focus = false;
   else
@@ -365,7 +367,9 @@ protected:
            OS_OSX_is_key_window((void*)main_window->winId())
            );
     */
-    
+
+    //printf("Got key. Another window has focus? %d\n",(int)another_window_has_focus);
+    //return false;    
     if (another_window_has_focus)
       return false;
 
@@ -1011,8 +1015,13 @@ bool main_window_has_focus(void){
 #if FOR_MACOSX
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
   return OS_OSX_is_key_window((void*)main_window->winId());
+#elif FOR_WINDOWS
+  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  return OS_WINDOWS_is_key_window((void*)main_window->winId());
 #else
-  //return g_qapplication->focusWidget() != NULL;  
+  //printf("   focusWindow(): %p. object: %p\n",g_qapplication->focusWindow(), QGuiApplication::focusObject());
+  //return g_qapplication->focusWindow() != NULL;
+  //printf("   activeWindow(): %p\n",g_qapplication->activeWindow());
   return g_qapplication->activeWindow() != NULL;
 #endif
 }

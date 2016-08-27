@@ -391,25 +391,42 @@ static DEFINE_ATOMIC(bool, g_bWindowActive) = true;
 void OS_SYSTEM_EventPreHandler(void *void_event){
   MSG *msg = (MSG*)void_event;
 
+  // https://msdn.microsoft.com/en-us/library/windows/desktop/ff468922(v=vs.85).aspx
   switch(msg->message){
     
-  case WM_NCACTIVATE:
-    ATOMIC_SET(g_bWindowActive, msg->wParam ? true : false);
-    //printf("1. Got NC Activate. wParam: %d\n",(int)msg->wParam);
-    //fflush(stdout);
-    break;
-    
-  case WM_ACTIVATE:
-    ATOMIC_SET(g_bWindowActive, msg->wParam ? true : false);
-    //printf("2. Got Activate. wParam: %d\n",(int)msg->wParam);
-    //fflush(stdout);
-    break;
-    
-  case WM_ACTIVATEAPP:
-    ATOMIC_SET(g_bWindowActive, msg->wParam ? true : false);
-    //printf("3. Got Activate app. wParam: %d\n",(int)msg->wParam);
-    //fflush(stdout);
-    break;
+    case WM_NCACTIVATE:
+      ATOMIC_SET(g_bWindowActive, msg->wParam ? true : false);
+      //printf("1. Got NC Activate. wParam: %d. Active: %p\n",(int)msg->wParam,GetForegroundWindow());
+      //fflush(stdout);
+      //if (msg->wParam==0)
+      //call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_events();
+      break;
+      
+    case WM_ACTIVATE:
+      ATOMIC_SET(g_bWindowActive, msg->wParam ? true : false);
+      //printf("2. Got Activate. wParam: %d. Active: %p\n",(int)msg->wParam,GetForegroundWindow());
+      //fflush(stdout);
+      //if (msg->wParam==0)
+      //call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_events();
+      break;
+      
+    case WM_ACTIVATEAPP:
+      ATOMIC_SET(g_bWindowActive, msg->wParam ? true : false);
+      //printf("3. Got Activate app. wParam: %d. Active: %p\n",(int)msg->wParam,GetForegroundWindow());
+      //fflush(stdout);
+      //if (msg->wParam==0)
+      //call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_events();
+      break;
+
+    case WM_CHILDACTIVATE:
+      //printf("4. Child activate Active: %p\n",GetForegroundWindow());
+      break;
+    case WM_ENTERSIZEMOVE:
+      //printf("5. Enter/size/move Active: %p\n",GetForegroundWindow());
+      break;
+      
+      //default:
+      //printf("5. Unknown message.                      Active: %p\n",GetForegroundWindow());
   }
 
   int type = OS_SYSTEM_get_event_type(void_event, true);
@@ -491,7 +508,7 @@ int OS_SYSTEM_get_modifier(void *void_msg){
   return EVENT_NO;
 }
 
-
+static HWINEVENTHOOK g_system_foreground_hook = NULL;
 static HHOOK g_hKeyboardHook = NULL;
 
 // http://msdn.microsoft.com/en-us/library/windows/desktop/ee416808(v=vs.85).aspx
@@ -546,9 +563,8 @@ static LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM l
     return CallNextHookEx( g_hKeyboardHook, nCode, wParam, lParam );
 }
 
-
 // Code copied from here: https://social.msdn.microsoft.com/Forums/windowsdesktop/en-US/f6032ca1-31b8-4ad5-be39-f78dd29952da/hooking-problem-in-windows-7?forum=windowscompatibility
-static DWORD WINAPI mouseLLHookThreadProc(LPVOID lParam)
+static DWORD WINAPI hookThreadProc(LPVOID lParam)
 {
     MSG msg;
 
@@ -563,13 +579,34 @@ static DWORD WINAPI mouseLLHookThreadProc(LPVOID lParam)
     return 0;
 }
 
+bool OS_WINDOWS_is_key_window(void *maybewin){
+  //printf("a: %p, b: %p. %d\n",maybewin, GetForegroundWindow(), maybewin == GetForegroundWindow());
+  return maybewin == GetForegroundWindow();
+}
+
+static VOID CALLBACK WinEventProcCallback ( HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime)
+{
+  //fprintf(stderr, "\n\n  =======  WinEventHook.  Foreground window : %p     ========\n\n",GetForegroundWindow());
+  //fflush(stderr);
+  call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_events();
+}
+ 
+
 void OS_SYSTEM_init_keyboard(void) {
   init_keymap();  
+
+  g_system_foreground_hook = SetWinEventHook(EVENT_SYSTEM_FOREGROUND , 
+                                             EVENT_SYSTEM_FOREGROUND ,
+                                             NULL, 
+                                             WinEventProcCallback, 0, 0, 
+                                             WINEVENT_OUTOFCONTEXT //| WINEVENT_SKIPOWNPROCESS);
+                                             );
+
 
   CreateThread( 
                NULL,                   // default security attributes
                0,                      // use default stack size  
-               mouseLLHookThreadProc,       // thread function name
+               hookThreadProc,       // thread function name
                NULL,          // argument to thread function 
                0,                      // use default creation flags 
                NULL   // returns the thread identifier 
@@ -581,6 +618,9 @@ void OS_SYSTEM_init_keyboard(void) {
 void W_KeyboardHandlerShutDown(void){
   //if(g_hKeyboardHook!=NULL)
   //  UnhookWindowsHookEx(g_hKeyboardHook);
+
+  if(g_system_foreground_hook!=NULL)
+    UnhookWinEvent(g_system_foreground_hook);
 }
 
 #ifdef RUN_TEST

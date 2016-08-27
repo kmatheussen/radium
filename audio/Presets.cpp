@@ -376,8 +376,6 @@ void PRESET_save(vector_t *patches, bool save_button_pressed){  // "save_button_
   if(filename=="")
     return;
 
-  g_last_preset_path = QFileInfo(filename).absoluteDir().path();
-    
   disk_t *file = DISK_open_for_writing(filename);
   
   if(file==NULL){
@@ -388,6 +386,8 @@ void PRESET_save(vector_t *patches, bool save_button_pressed){  // "save_button_
     safeExec(msgBox);
     return;
   }
+
+  g_last_preset_path = QFileInfo(filename).absoluteDir().path();
 
   hash_t *state = get_preset_state(patches);
   

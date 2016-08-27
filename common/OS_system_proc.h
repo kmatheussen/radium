@@ -16,6 +16,7 @@ extern LANGSPEC int OS_SYSTEM_get_keynum2(uint32_t ulong_keysum, bool keypad_pre
 extern LANGSPEC int OS_SYSTEM_get_qwerty_keynum2(uint32_t scancode);
 
 extern LANGSPEC bool OS_OSX_is_key_window(void *void_nsview);
+extern LANGSPEC bool OS_WINDOWS_is_key_window(void *maybewin);
 
 //extern LANGSPEC bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *event);
 extern LANGSPEC void OS_SYSTEM_ResetKeysUpDowns(void);
