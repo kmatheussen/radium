@@ -194,7 +194,7 @@ namespace{
     AudioProcessor::WrapperType wrapper_type;
   };
 
-  int button_height = 30;
+  //int button_height = 10;
 
   struct PluginWindow;
   std::vector<PluginWindow*> g_plugin_windows;
@@ -252,6 +252,8 @@ namespace{
 #else
       button.setButtonText("Grab keyboard");
 #endif
+      int button_height = root->song->tracker_windows->fontheight * 3 / 2;
+        
       button.setToggleState(g_vst_grab_keyboard, sendNotification);
       button.setSize(400, button_height);
       button.changeWidthToFitText();
