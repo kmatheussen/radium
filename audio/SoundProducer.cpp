@@ -473,7 +473,7 @@ static void RT_fade_out2(float *sound, int pos, int num_frames){
     sound[i] *= fade_out_envelope[i+pos];
 }
 
-static const char *RT_check_abnormal_signal(const SoundPlugin *plugin, const int num_frames, const float **outputs){
+static const char *RT_check_abnormal_signal(const SoundPlugin *plugin, int num_frames, float **outputs){
   const int num_channels = plugin->type->num_outputs;
   float sum=0.0f;
   
@@ -482,7 +482,7 @@ static const char *RT_check_abnormal_signal(const SoundPlugin *plugin, const int
     float sum2 = 0.0f;
     
     for(int i=0;i<num_frames;i++)
-      sum2 += outp[i];
+      sum2 += out[i];
     
     sum += sum2;
   }
@@ -529,28 +529,28 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
                  );
     }
 
+    if (RT_message_will_be_sent()==false) // No point calculating peaks if the message won't be shown
+      return;
+    
     for(int ch=0;ch<plugin->type->num_outputs;ch++) {
-      float peak = RT_get_max_val(outputs[ch],num_frames);
+      float *out = outputs[ch];
+      float peak = RT_get_max_val(out,num_frames);
 
-#if !defined(RELEASE)
-      if (val > 50 || val < 50) {
-        fprintf(stderr, "   *** Very large number: %f\n", val);
-        abort();
-      }
-#endif
-      
-      if (peak > 1000) {
+      if (peak > 317) {
         volatile struct Patch *patch = plugin->patch;
         RT_message("Warning!\n"
                    "\n"
                    "The instrument named \"%s\" of type %s/%s\n"
-                   "has generated a signal of at least 60dB in channel %d.\n"
+                   "has generated a signal of at least 50dB in channel %d.\n"
+                   "Raw peak value: %f.\n"
+                   "10 first frames: %f %f %f %f %f %f %f %f %f %f."
                    "\n"
-                   "This warning will pop up as long as the instrument does so.\n"
+                   "This warning will pop up as long as the instrument does so.\n",
                    patch==NULL?"<no name>":patch->name,
                    plugin->type->type_name, plugin->type->name,
-                   ch;
-                   );
+                   ch,peak,
+                   out[0], out[1],out[2],out[2],out[3],out[4],out[5],out[6],out[7],out[8],out[9]
+                   );        
       }
     }
 
