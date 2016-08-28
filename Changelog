@@ -1,3 +1,12 @@
+Changes 4.0.8 -> 4.0.9:
+* Use system font size to determine the height of the "Grab keyboard" check box
+* Some ubsan fixes
+* Don't show those tiny pitch lines if a track plays the same pitch for all notes
+* Detect if instrument receives, generates, or sends out very powerful signals,
+  and show a warning if they do.
+
+
+
 Changes 4.0.7 -> 4.0.8:
 * Add "Grab keyboard" checkbox to the VST GUI windows.
 * Windows: Fix keyboard focus in VST plugins.
