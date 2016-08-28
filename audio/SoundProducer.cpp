@@ -473,14 +473,20 @@ static void RT_fade_out2(float *sound, int pos, int num_frames){
     sound[i] *= fade_out_envelope[i+pos];
 }
 
-
-static const char *RT_check_abnormal_signal(SoundPlugin *plugin, int num_frames, float **outputs){
+static const char *RT_check_abnormal_signal(const SoundPlugin *plugin, const int num_frames, const float **outputs){
+  const int num_channels = plugin->type->num_outputs;
   float sum=0.0f;
-
-  for(int ch=0;ch<plugin->type->num_outputs;ch++)
+  
+  for(int ch=0;ch<num_channels;ch++) {
+    const float *out = outputs[ch];
+    float sum2 = 0.0f;
+    
     for(int i=0;i<num_frames;i++)
-      sum += outputs[ch][i];
-
+      sum2 += outp[i];
+    
+    sum += sum2;
+  }
+  
   if(sum!=0.0f && !myisnormal(sum) )
     return myisnan(sum)?"nan":myisinf(sum)?"inf":myfpclassify(sum)==FP_SUBNORMAL?"denormal":"<something else\?\?\?>";
   else
@@ -522,7 +528,32 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
                  abnormal_signal_type
                  );
     }
-    
+
+    for(int ch=0;ch<plugin->type->num_outputs;ch++) {
+      float peak = RT_get_max_val(outputs[ch],num_frames);
+
+#if !defined(RELEASE)
+      if (val > 50 || val < 50) {
+        fprintf(stderr, "   *** Very large number: %f\n", val);
+        abort();
+      }
+#endif
+      
+      if (peak > 1000) {
+        volatile struct Patch *patch = plugin->patch;
+        RT_message("Warning!\n"
+                   "\n"
+                   "The instrument named \"%s\" of type %s/%s\n"
+                   "has generated a signal of at least 60dB in channel %d.\n"
+                   "\n"
+                   "This warning will pop up as long as the instrument does so.\n"
+                   patch==NULL?"<no name>":patch->name,
+                   plugin->type->type_name, plugin->type->name,
+                   ch;
+                   );
+      }
+    }
+
   }
 
 }
