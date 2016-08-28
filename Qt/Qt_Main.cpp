@@ -1308,6 +1308,10 @@ protected:
   }
 };
 
+bool RT_message_will_be_sent(void){
+  return ATOMIC_GET(rt_message_status)==RT_MESSAGE_READY;
+}
+
 void RT_message(const char *fmt,...){
   va_list argp;
 

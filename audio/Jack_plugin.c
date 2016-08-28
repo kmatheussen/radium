@@ -172,8 +172,8 @@ void PLAYER_mute(void){
 }
 
 void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
-  const char *input_portnames[plugin_type->num_outputs];
-  const char *output_portnames[plugin_type->num_inputs];
+  const char *input_portnames[R_MAX(1, plugin_type->num_outputs)]; // R_MAX is here to make the undefined sanitizer be quiet
+  const char *output_portnames[R_MAX(1, plugin_type->num_inputs)]; // R_MAX is here to make the undefined sanitizer be quiet
   int i;
   for(i=0;i<plugin_type->num_outputs;i++)
     input_portnames[i] = state==NULL ? NULL : HASH_get_chars_at(state, "input_portname",i);

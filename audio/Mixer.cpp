@@ -437,7 +437,8 @@ struct Mixer{
 
       if (is_click_patch) {
         if (new_g_click_plugins != NULL) {
-          memcpy(new_g_click_plugins, g_click_plugins, sizeof(SoundPlugin*)*g_num_allocated_click_plugins);
+          if (g_num_allocated_click_plugins > 0)
+            memcpy(new_g_click_plugins, g_click_plugins, sizeof(SoundPlugin*)*g_num_allocated_click_plugins);
           g_click_plugins = new_g_click_plugins;
           
           g_click_patches = new_g_click_patches;

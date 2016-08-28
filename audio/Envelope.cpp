@@ -98,22 +98,26 @@ struct Envelope{
       
       int loop_len = x1-_frame_pos;
 
-      if(i+loop_len > num_frames)
-        loop_len = num_frames - i;
+      if (loop_len > 0) {
+      
+        if(i+loop_len > num_frames)
+          loop_len = num_frames - i;
 
-      {
-        float val     = scale(_frame_pos, x0, x1, y0, y1);
-        float inc_val = scale(_frame_pos+1, x0, x1, y0, y1) - val;
-
-        for(int x=0;x<loop_len;x++){
-          data[x] = val;
-          val += inc_val;
+        {
+          float val     = scale(_frame_pos, x0, x1, y0, y1);
+          float inc_val = scale(_frame_pos+1, x0, x1, y0, y1) - val;
+          
+          for(int x=0;x<loop_len;x++){
+            data[x] = val;
+            val += inc_val;
+          }
         }
-      }
+        
+        i          += loop_len;
+        data       += loop_len;
+        _frame_pos += loop_len;
 
-      i          += loop_len;
-      data       += loop_len;
-      _frame_pos += loop_len;
+      }
       
       if(_frame_pos==x1)
         _break_pos++;
@@ -123,6 +127,14 @@ struct Envelope{
   }
 
   int RT_apply(float **buf,int num_channels, int num_frames){
+    if (num_frames==0){
+#if defined(RELEASE)
+      return 0;
+#else
+      abort();
+#endif
+    }
+    
     float env_data[num_frames];
 
     int len = get_data(env_data, num_frames);

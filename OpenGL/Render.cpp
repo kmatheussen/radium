@@ -1291,7 +1291,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
 
 }
 
-static void create_pitches(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
+static void create_pitches(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note, bool draw_pitches){
   const bool show_read_lines = true; //wtrack->noteshowtype==GFXTYPE1 || wblock->mouse_track==wtrack->l.num;
 
   const struct NodeLine *nodelines = GetPitchNodeLines(window,
@@ -1300,33 +1300,37 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
                                                        note
                                                        );
 
-  GE_Context *line_color = NULL;
-        
   // lines
-  for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
-    if(show_read_lines || nodeline->x1!=nodeline->x2) {
-      int logtype = nodeline->logtype;
-      
-      float x1 = nodeline->x1;
-      float x2 = logtype==LOGTYPE_HOLD ? nodeline->x1 : nodeline->x2;
+  if (draw_pitches && show_read_lines) {
 
-      line_color = line_color!=NULL ? GE_y(line_color, nodeline->y1) : GE_color_alpha(PITCH_LINE_COLOR_NUM, 0.5, nodeline->y1);  
+    GE_Context *line_color = NULL;
 
-      GE_line(line_color, x1, nodeline->y1, x2, nodeline->y2, get_pitchline_width());
-
-      if (logtype==LOGTYPE_HOLD)
-        GE_line(line_color, x2, nodeline->y2, nodeline->x2, nodeline->y2, get_pitchline_width());
-
-      if (nodeline->next==NULL){
-        if (note_continues_next_block(wblock->block, note)){
-          float y1 = nodeline->y2;
-          float y2 = nodeline->y2 + 25;
-          GE_line(line_color, nodeline->x2, y1, nodeline->x2, y2, get_pitchline_width());
-          GE_line(line_color, nodeline->x2 - 5, y2 - 8, nodeline->x2, y2, get_pitchline_width());
-          GE_line(line_color, nodeline->x2 + 5, y2 - 8, nodeline->x2, y2, get_pitchline_width());
+    for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
+      if(nodeline->x1!=nodeline->x2) {
+        int logtype = nodeline->logtype;
+        
+        float x1 = nodeline->x1;
+        float x2 = logtype==LOGTYPE_HOLD ? nodeline->x1 : nodeline->x2;
+        
+        line_color = line_color!=NULL ? GE_y(line_color, nodeline->y1) : GE_color_alpha(PITCH_LINE_COLOR_NUM, 0.5, nodeline->y1);  
+        
+        GE_line(line_color, x1, nodeline->y1, x2, nodeline->y2, get_pitchline_width());
+        
+        if (logtype==LOGTYPE_HOLD)
+          GE_line(line_color, x2, nodeline->y2, nodeline->x2, nodeline->y2, get_pitchline_width());
+        
+        if (nodeline->next==NULL){
+          if (note_continues_next_block(wblock->block, note)){
+            float y1 = nodeline->y2;
+            float y2 = nodeline->y2 + 25;
+            GE_line(line_color, nodeline->x2, y1, nodeline->x2, y2, get_pitchline_width());
+            GE_line(line_color, nodeline->x2 - 5, y2 - 8, nodeline->x2, y2, get_pitchline_width());
+            GE_line(line_color, nodeline->x2 + 5, y2 - 8, nodeline->x2, y2, get_pitchline_width());
+          }
         }
       }
-    }
+
+  }
   
   // indicator node
   if (indicator_node == &note->l && indicator_pitch_num!=-1) {
@@ -1710,7 +1714,7 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
       float velocity1 = scale(x1, subtrack_x1, subtrack_x2, 0, 1);
       float velocity2 = scale(x2, subtrack_x1, subtrack_x2, 0, 1);
       
-      int num_peaks = (y2-y1) / NUM_LINES_PER_PEAK;
+      int num_peaks = R_MAX(1, (y2-y1) / NUM_LINES_PER_PEAK);
       
       if(num_peaks<0){
         
@@ -1723,6 +1727,11 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
 
         float min,max;
 
+        if (time1==time2)
+          break;
+
+        R_ASSERT(time2 > time1);
+          
         int64_t start_time = scale(n,
                                    0,num_peaks,
                                    time1,time2
@@ -2154,14 +2163,18 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
   create_track_borders(window, wblock, wtrack, left_subtrack);
 
   SetNotePolyphonyAttributes(wtrack->track);
-   
+
+  float track_pitch_min;
+  float track_pitch_max;
+  TRACK_get_min_and_max_pitches(wtrack->track, &track_pitch_min, &track_pitch_max);
+    
   // velocities and pitches
   {  
     const struct Notes *note=wtrack->track->notes;
     while(note != NULL){
       if(NOTE_subtrack(wtrack, note) >= left_subtrack) {        
         if (left_subtrack==-1 && wtrack->notesonoff==1)
-          create_pitches(window, wblock, wtrack, note);
+          create_pitches(window, wblock, wtrack, note, track_pitch_min != track_pitch_max);
         create_track_velocities(window, wblock, wtrack, note);
       }
       note = NextNote(note);

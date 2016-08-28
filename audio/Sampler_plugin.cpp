@@ -686,6 +686,9 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
   //printf("Frames created by resampler: %d\n",frames_created_by_resampler);
   //printf("peak: %f\n",get_peak(resampled_data,frames_created_by_resampler));
 
+  if (frames_created_by_resampler==0)
+    return true;
+  
   int frames_created_by_envelope;
 
   float *adsr_sound_data[1]={&resampled_data[0]};
@@ -700,8 +703,12 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
       frames_created_by_envelope = ADSR_apply(voice->adsr, adsr_sound_data, 1, frames_created_by_resampler);
 
     }else{
-      frames_created_by_envelope = ADSR_apply(voice->adsr, adsr_sound_data, 1, pre_release_len);
 
+      if (pre_release_len > 0)
+        frames_created_by_envelope = ADSR_apply(voice->adsr, adsr_sound_data, 1, pre_release_len);
+      else
+        frames_created_by_envelope = 0;
+      
       //printf("************************ Calling adsr release\n");
       ADSR_release(voice->adsr);
 
@@ -718,6 +725,9 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
   }
 
   //float peak_in = get_peak(resampled_data,frames_created_by_envelope);
+
+  if (frames_created_by_envelope==0)
+    return true;
 
   const Sample *sample = voice->sample;
 
@@ -738,7 +748,9 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
     mix(sample->ch,0);
     mix(sample->ch,1);
   }
-
+  
+#undef mix
+  
   //printf("peak in/out: %.3f - %.3f\n",peak_in,get_peak(outputs[0], num_frames_to_produce));
 
   voice->start_volume = voice->end_volume;

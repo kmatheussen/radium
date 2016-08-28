@@ -210,12 +210,18 @@ struct Comp
       }
 
       if(y1 > box1.y2){
-        x1=scale(box1.y2, y1,y2, x1,x2);
+        if (y1==y2)
+          x1 = 10000; // I.e. not visible
+        else
+          x1=scale(box1.y2, y1,y2, x1,x2);
         y1=box1.y2 + 10;
       }
 
       if(y2 > box2.y2){
-        x2=scale(box2.y2, y1,y2, x1,x2);
+        if (y1==y2)
+          x1 = 10000; // I.e. not visible
+        else
+          x2=scale(box2.y2, y1,y2, x1,x2);
         y2=box2.y2 + 10;
       }
 
@@ -254,7 +260,9 @@ struct Comp
       if(x1==10000)
         return; // Line is not painted.
 
-
+      if (x1==x2) // I.e. nothing is visible (since it's a line from one box to another, a vertical line doesn't make sense)
+        return;
+      
       int h_square = y2 - y1;
       h_square *= h_square;
 
@@ -262,7 +270,16 @@ struct Comp
       w_square *= w_square;
 
       int h = ceil(4.0/2.0 * sqrt((double)h_square/(double)w_square + 1.0)); // "4.0" is the pen width.
-
+      
+      if (h < -2000 || h > 2000){
+        fprintf(stderr, "h: %d, y1: %d\n",h,y1);
+#if defined(RELEASE)
+        h = 10;
+#else
+        abort();
+#endif
+      }
+      
       int y1_1 = y1-h;
       int y1_2 = y1+h;
       int y2_1 = y2-h;

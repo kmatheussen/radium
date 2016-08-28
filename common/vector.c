@@ -33,7 +33,9 @@ void VECTOR_reverse(vector_t *v){
 }
 
 void VECTOR_clean(vector_t *v){
-  memset(v->elements,0,v->num_elements*sizeof(void*)); // cleaned since we use a GC
+  if (v->num_elements_allocated > 0)
+    memset(v->elements,0,v->num_elements*sizeof(void*)); // cleaned since we use a GC
+  
   v->num_elements = 0;
 }
 

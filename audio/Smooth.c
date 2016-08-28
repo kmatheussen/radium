@@ -148,6 +148,14 @@ void SMOOTH_apply_volume_using_inverted_values(Smooth *smooth, float *sound, int
 }
 
 void SMOOTH_mix_sounds_raw(float *target, float *source, int num_frames, float start_volume, float end_volume){
+
+  if (num_frames==0) {
+#if defined(RELEASE)
+    return;
+#else
+    abort();
+#endif
+  }
   
   int i;
   float diff = end_volume - start_volume;

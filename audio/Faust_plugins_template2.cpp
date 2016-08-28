@@ -340,12 +340,12 @@ static void RT_process_between(Voice *voice, float **inputs, float **outputs, in
     return;
 
   int num_inputs = voice->dsp_instance->getNumInputs();
-  float *offsetted_inputs[num_inputs];
+  float *offsetted_inputs[R_MAX(1, num_inputs)];
   for(int ch=0;ch<num_inputs; ch++)
     offsetted_inputs[ch] = &inputs[ch][start];
 
   int num_outputs = voice->dsp_instance->getNumOutputs();
-  float *offsetted_outputs[num_outputs];
+  float *offsetted_outputs[R_MAX(1, num_outputs)];
   for(int ch=0;ch<num_outputs; ch++)
     offsetted_outputs[ch] = &outputs[ch][start];
 

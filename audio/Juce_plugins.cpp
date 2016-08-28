@@ -213,7 +213,7 @@ namespace{
     virtual void buttonStateChanged (Button *dasbutton) override {
       bool new_state = button.getToggleState();
 
-      printf("ButtonStateChanged called for %p. %d %d. Size: %d\n", this, new_state, g_vst_grab_keyboard,g_plugin_windows.size());
+      printf("ButtonStateChanged called for %p. %d %d. Size: %d\n", this, new_state, g_vst_grab_keyboard,(int)g_plugin_windows.size());
       
       if (new_state != g_vst_grab_keyboard) {
 

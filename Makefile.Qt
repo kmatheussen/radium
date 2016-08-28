@@ -148,8 +148,15 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 
 FULL_VERSION ?= 1
 
+#UNDEFINED_SANITIZE_OPTS= -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=bounds -fsanitize=object-size -fsanitize=vptr -fno-sanitize-recover
+#  -fsanitize=alignment
+UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
+
+# clang:
+#UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined,integer -fno-sanitize-recover=undefined,integer
+
 # Note that "make clean" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
-OS_DEBUG_BUILD_OPTS ?= -fsanitize=address -Og  #-Og -fsanitize=address # -DDISABLE_BDWGC -Og -
+OS_DEBUG_BUILD_OPTS ?= -Og $(UNDEFINED_SANITIZE_OPTS) -fsanitize=address # -fsanitize=address  -Og -fcheck-pointer-bounds -mmpx  # -DDISABLE_BDWGC -Og -
 DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
 # -Og -Og -fsanitize=address
 #-Og 
@@ -179,7 +186,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DUSE_GFX_OP_QUEUE -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_60_0 -I${HOME}/SDKs -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fno-omit-frame-pointer 
+COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_61_0 -I${HOME}/SDKs -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fno-omit-frame-pointer 
 
 ifeq ($(RADIUM_QT_VERSION),5)
 	COMMONOPT += -DUSE_QT5
@@ -1154,9 +1161,17 @@ $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)
 
 INSTRUMENTS_DEPENDENCIES = $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)Qt_vst_paths_widget.h $(P)Qt_plugin_widget.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)Qt_compressor_widget.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h
 
+
+
 # $(P)midi_instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
 Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS_DEPENDENCIES)
-	$(CCC) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT)
+	if [ $(BUILDTYPE) = DEBUG ] ; then \
+		$(CCC) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -O0 ; \
+	else \
+		$(CCC) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) ; \
+	fi
+	 # ^ It takes forever to compile this file with -Og
+
 #	$(CLANGCC) $(P)Qt_instruments.cpp $(QTOPT)
 # clang++ $(P)Qt_instruments.cpp $(QTOPT)
 
@@ -1566,7 +1581,7 @@ Pd_plugin.o: audio/Pd_plugin.cpp
 	$(CCC) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
 FAUST_DEPENDENCIES = $(WHICHFAUST) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
-FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture #audio/faudiostream/architecture
+FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture  -fno-sanitize=signed-integer-overflow 
 
 Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES)
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
