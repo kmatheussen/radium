@@ -323,7 +323,7 @@ OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7)
 
 #-------------------KARSJK-------------------------------
 
-BUILD_DEPENDENCIES =  buildtype.opt flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
+BUILD_DEPENDENCIES = $(API)radium_proc.h buildtype.opt flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
 
 PROGRAM_MODULES = bin/radium bin/crashreporter bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py bin/radium_error_message bin/radium_progress_window bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
@@ -1159,7 +1159,7 @@ $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_Bs_edit.cpp >$(P)mQt_Bs_edit.cpp
 
 
-INSTRUMENTS_DEPENDENCIES = $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)Qt_vst_paths_widget.h $(P)Qt_plugin_widget.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)Qt_compressor_widget.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h
+INSTRUMENTS_DEPENDENCIES = $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)Qt_plugin_widget.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)Qt_compressor_widget.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h
 
 
 
@@ -1224,14 +1224,6 @@ $(P)Qt_upperleft_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_upperleft_widget.ui $(P
 
 
 
-$(P)Qt_vst_paths_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_vst_paths_widget.ui $(P)create_source_from_ui.sh $(P)Qt_vst_paths_widget_callbacks.h
-	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) vst_paths_widget
-#	cd $(P) && $(UIC) qt4_vst_paths_widget.ui > Qt_vst_paths_widget.h
-#	cd $(P) && $(MOC) Qt_vst_paths_widget_callbacks.h >mQt_vst_paths_widget_callbacks.h
-
-
-
-
 $(P)Qt_mixer_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_widget.ui $(P)create_source_from_ui.sh $(P)Qt_mixer_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) mixer_widget
 
@@ -1258,12 +1250,30 @@ Qt_comment_dialog.o: $(BUILD_DEPENDENCIES) $(P)Qt_comment_dialog_callbacks.h $(P
 
 
 
-Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h $(API)radium_proc.h common/visual_proc.h Qt/Qt_vst_paths_widget_callbacks.h Qt/helpers.h
-	$(CCC) $(P)Qt_preferences_callbacks.cpp $(QTOPT)
+Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h $(API)radium_proc.h common/visual_proc.h Qt/mQt_vst_paths_widget_callbacks.h $(P)Qt_vst_paths_widget.h Qt/helpers.h
+	if [ $(BUILDTYPE) = DEBUG ] ; then \
+		$(CCC) $(P)Qt_preferences_callbacks.cpp $(QTOPT) -O0 ; \
+	else \
+		$(CCC) $(P)Qt_preferences_callbacks.cpp $(QTOPT) ; \
+	fi
+	 # ^ It takes forever to compile this file with -Og
 
-$(P)Qt_preferences.h: $(BUILD_DEPENDENCIES) $(P)qt4_preferences.ui $(P)Qt_preferences_callbacks.cpp
+
+$(P)Qt_preferences.h: $(BUILD_DEPENDENCIES) $(P)qt4_preferences.ui $(P)Qt_preferences_callbacks.cpp $(P)mQt_vst_paths_widget_callbacks.h
 	cd $(P) && $(UIC) qt4_preferences.ui | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/MyQSpinBox\>://\ \ qspingox.h: | sed s/QLineEdit/FocusSnifferQLineEdit/ | sed s:\#include\ \<QtWidgets/FocusSnifferQLineEdit\>://\ \ qlineedit.h: > Qt_preferences.h
 	cd $(P) && $(MOC) Qt_preferences_callbacks.cpp >mQt_preferences_callbacks.cpp
+
+$(P)mQt_vst_paths_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_vst_paths_widget.ui $(P)create_source_from_ui.sh $(P)Qt_vst_paths_widget_callbacks.h
+	cd $(P) && $(MOC) Qt_vst_paths_widget_callbacks.h >mQt_vst_paths_widget_callbacks.h
+
+$(P)Qt_vst_paths_widget_callbacks.h:
+	cd $(P) && $(UIC) qt4_vst_paths_widget.ui | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/MyQSpinBox\>://\ \ qspingox.h: | sed s/QLineEdit/FocusSnifferQLineEdit/ | sed s:\#include\ \<QtWidgets/FocusSnifferQLineEdit\>://\ \ qlineedit.h: > Qt_vst_paths_widget_callbacks.h
+
+
+#	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) vst_paths_widget
+#	cd $(P) && $(UIC) qt4_vst_paths_widget.ui > Qt_vst_paths_widget.h
+#	cd $(P) && $(MOC) Qt_vst_paths_widget_callbacks.h >mQt_vst_paths_widget_callbacks.h
+
 
 Qt_tools_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_tools_callbacks.cpp $(P)Qt_tools_callbacks.h $(P)Qt_tools.h Qt/helpers.h midi/midi_i_input_proc.h
 	$(CCC) $(P)Qt_tools_callbacks.cpp $(QTOPT)
@@ -1996,13 +2006,11 @@ moc_Qt${RADIUM_QT_VERSION}Widget.o: bin/packages/Visualization-Library-master/sr
 
 # embedded scheme
 
-S7OPTS += -fno-sanitize=alignment
+ifeq ($(TARGET_OS),linux)
+	S7OPTS += -fno-sanitize=alignment
+endif
 bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c
-	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_C_LOADER=0 -DWITH_HISTORY=1  ; \
-	else \
-		$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_C_LOADER=0 -DWITH_HISTORY=1 ; \
-	fi
+	$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_C_LOADER=0 -DWITH_HISTORY=1
 # -Wno-absolute-value
 #-DDEBUGGING=1
 

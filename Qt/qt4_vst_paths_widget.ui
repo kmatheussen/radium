@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>477</width>
-    <height>377</height>
+    <width>557</width>
+    <height>416</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -20,16 +20,16 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
+   <item row="1" column="0">
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>VST Plugin Paths</string>
+      <string>Paths</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0">
         <property name="spacing">
-         <number>-1</number>
+         <number>6</number>
         </property>
         <item>
          <widget class="QLineEdit" name="path_edit"/>
@@ -90,6 +90,22 @@
          </widget>
         </item>
        </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="title">
+      <string>GUI</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QCheckBox" name="always_on_top">
+        <property name="text">
+         <string>Always on top</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

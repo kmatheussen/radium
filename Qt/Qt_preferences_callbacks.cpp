@@ -247,8 +247,10 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
  public:
   bool _initing;
   bool _is_updating_widgets;
+  bool _needs_to_update = false;
   MyColorDialog _color_dialog;
-
+  Vst_paths_widget *vst_widget = new Vst_paths_widget;
+  
  Preferences(QWidget *parent=NULL)
    : RememberGeometryQDialog(parent)
    , _is_updating_widgets(false)
@@ -261,7 +263,6 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
     // VST
     {    
-      Vst_paths_widget *vst_widget = new Vst_paths_widget;
       vst_widget->buttonBox->hide();
       
       tabWidget->insertTab(tabWidget->count()-2, vst_widget, "VST");
@@ -317,6 +318,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     _initing = false;
   }
 
+  void showEvent(QShowEvent *event){
+    if (_needs_to_update)
+      updateWidgets();
+  }
+  
 #if FOR_MACOSX && !USE_QT5
   void hideEvent(QHideEvent *event) {
     _color_dialog.close();
@@ -337,6 +343,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 #endif
   
   void updateWidgets(){
+    _needs_to_update = false;
+      
     _is_updating_widgets = true;
   
     // OpenGL
@@ -488,6 +496,9 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       */
     }
 
+    // VST
+    vst_widget->updateWidgets();
+    
     // Faust
     {
       const char *style = getFaustGuiStyle();
@@ -837,7 +848,12 @@ void PREFERENCES_open_MIDI(void){
 }
 
 void PREFERENCES_update(void){
-  g_preferences_widget->updateWidgets();
+  if (g_preferences_widget != NULL) {
+    g_preferences_widget->_needs_to_update = true;
+    
+    if (g_preferences_widget->isVisible())
+        g_preferences_widget->updateWidgets();
+  }
 }
 
 void OS_VST_config(struct Tracker_Windows *window){

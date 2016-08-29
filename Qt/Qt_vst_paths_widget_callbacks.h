@@ -21,9 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPluginRegistry_proc.h"
 
+#include "../api/api_proc.h"
+
 #include "Qt_MyQButton.h"
 
 #include "Qt_vst_paths_widget.h"
+
 
 namespace{
 class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
@@ -31,7 +34,8 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
 
  public:
   bool initing;
-
+  bool _is_updating_widgets = false;
+  
  Vst_paths_widget(QWidget *parent=NULL)
     : QWidget(parent)
   {
@@ -62,10 +66,18 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
     read_settings();
     
 #endif
+
+    updateWidgets();
     
     initing = false;
   }
 
+  void updateWidgets(void){
+    _is_updating_widgets = true;
+    always_on_top->setChecked(vstGuiIsAlwaysOnTop());
+    _is_updating_widgets = false;
+  }
+  
    bool is_in_list(QString string){
     for(int i=0;i<path_list->count();i++){
       QString vst_path = path_list->item(i)->text();
@@ -105,6 +117,12 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
 
  public slots:
 
+  void on_always_on_top_toggled(bool val){
+    if (_is_updating_widgets == false){
+      setVstGuiAlwaysOnTop(val);
+    }
+  }
+  
   void on_path_edit_editingFinished(){
     add_current_path();
     set_editor_focus();
@@ -140,4 +158,5 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
   }
 
 };
+
 }

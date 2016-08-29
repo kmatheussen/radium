@@ -1396,6 +1396,28 @@ bool isFullVersion(void){
 }
 
 
+static bool g_vst_gui_always_on_top;
+
+bool vstGuiIsAlwaysOnTop(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_vst_gui_always_on_top = SETTINGS_read_bool("vst_gui_always_on_top", true);
+    has_inited = true;
+  }
+
+  return g_vst_gui_always_on_top;
+}
+
+void setVstGuiAlwaysOnTop(bool doit){
+  if (doit != g_vst_gui_always_on_top) {
+    g_vst_gui_always_on_top = doit;
+    SETTINGS_write_bool("vst_gui_always_on_top", doit);
+    PREFERENCES_update();
+  }
+}
+
+
 static bool g_modal_windows;
 
 bool doModalWindows(void){

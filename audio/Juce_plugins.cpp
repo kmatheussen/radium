@@ -233,7 +233,9 @@ namespace{
       , title(title)
       , editor(editor)
     {
-      this->setAlwaysOnTop(true);
+      if(vstGuiIsAlwaysOnTop())
+        this->setAlwaysOnTop(true);
+      
       this->setSize (400, 300);
       this->setUsingNativeTitleBar(true);
 
