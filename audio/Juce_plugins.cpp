@@ -27,6 +27,7 @@
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
+#include "SoundProducer_proc.h"
 
 #include "SoundPluginRegistry_proc.h"
 
@@ -36,10 +37,13 @@
 
 #include "../pluginhost/JuceLibraryCode/AppConfig.h"
 
-
-
+#if 1 // no more vestige. why did I ever bother with it?
+#  undef PRAGMA_ALIGN_SUPPORTED
+#  define __cdecl
+#  include "pluginterfaces/vst2.x/aeffectx.h"
+#else
 #  include "vestige/aeffectx.h"  // It should not be a problem to use VESTIGE in this case. It's just used for getting vendor string and product string.
-
+#endif
 
 #include "../midi/midi_proc.h"
 #include "Juce_plugins_proc.h"
