@@ -209,13 +209,19 @@ enum{
 
 
 static inline int64_t scale_int64(int64_t x, int64_t x1, int64_t x2, int64_t y1, int64_t y2){
+  int64_t diff = x2-x1;
+  
 #if !defined(RELEASE)
-  R_ASSERT(x2!=x1);
+  R_ASSERT(diff!=0);
 #endif
-  return y1 + ( ((x-x1)*(y2-y1))
-                /
-                (x2-x1)
-                );
+  
+  if (diff==0) // this is never supposed to happen, but to avoid integer divide-by-zero, we sacrifice some cycles here.
+    return y1;
+  else
+    return y1 + ( ((x-x1)*(y2-y1))
+                  /
+                  (x2-x1)
+                  );
 }
 
 static inline double scale_double(double x, double x1, double x2, double y1, double y2){

@@ -75,9 +75,6 @@ if ! env |grep IS_LINUX_BINARY ; then
     export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV"
 fi
 
-export VST_OPTS="-DUSE_VESTIGE=1"
-
-
 PYTHONLIBPATH=`$PYTHONEXE -c "import sys;print '-L'+sys.prefix+'/lib'"`
 PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
 

@@ -105,8 +105,13 @@ namespace{
 
     SoundProducer *_sp = NULL;
     struct SoundPlugin *_plugin;
-    double positionOfLastLastBarStart = 0.0;
     
+    double positionOfLastLastBarStart = 0.0;
+    bool positionOfLastLastBarStart_is_valid = false;
+
+    double lastLastBarStart = 0.0; // only used for debugging.
+        
+
     MyAudioPlayHead(struct SoundPlugin *plugin)
       : _plugin(plugin)
     {}
@@ -139,26 +144,71 @@ namespace{
       if (_sp==NULL)
         _sp = SP_get_SoundProducer(_plugin); // <-- Cached since SP_get_SoundProducer iterates through all soundproducers in the mixer to find the right one.
       
-      int latency = RT_SP_get_input_latency(_sp);
+      const int latency = RT_SP_get_input_latency(_sp);
+
+      const double num_extra_beats = ((double)latency / (double)pc->pfreq) * result.bpm / 60.0;
+
+      if (!isplaying){
+              
+        result.timeInSamples = -latency;
+        result.timeInSeconds = (double)-latency / (double)pc->pfreq;
+
+        result.ppqPosition               = -num_extra_beats;
+        result.ppqPositionOfLastBarStart = -num_extra_beats;
+
+        positionOfLastLastBarStart_is_valid = false;      
+
+      } else {
+        
+        result.timeInSamples = pc->start_time - latency;
+        result.timeInSeconds = result.timeInSamples / (double)pc->pfreq;
+
+        result.ppqPosition               = RT_LPB_get_beat_position() - num_extra_beats;
+        result.ppqPositionOfLastBarStart = g_beat_position_of_last_bar_start;
+        
+        if (result.ppqPosition < result.ppqPositionOfLastBarStart) {
+
+          if (positionOfLastLastBarStart_is_valid)            
+            result.ppqPositionOfLastBarStart = positionOfLastLastBarStart;
+          else {
+
+            // I.e. when starting to play we don't have a previous last bar start value.
+            
+            double bar_length = 4.0 * (double)signature.numerator / (double)signature.denominator;
+
+            R_ASSERT_NON_RELEASE(bar_length!=0);
+#if 1
+
+            double num_bars_to_subtract = ceil( (result.ppqPositionOfLastBarStart - result.ppqPosition) /
+                                                bar_length
+                                                );
+            result.ppqPositionOfLastBarStart -= (bar_length * num_bars_to_subtract);
+              
+#else
+            // The above does the same as this, but this one can freeze the program if we have a value that is out of the ordinary.
+            do {
+              result.ppqPositionOfLastBarStart -= bar_length;
+            } while (result.ppqPosition < result.ppqPositionOfLastBarStart);
+#endif
+          }
+          
+        } else {
+          positionOfLastLastBarStart = result.ppqPositionOfLastBarStart;
+          positionOfLastLastBarStart_is_valid = true;
+        }
       
-      result.timeInSamples = isplaying ? 0 : pc->start_time-latency;
-      result.timeInSeconds = isplaying ? 0 : result.timeInSamples / (double)pc->pfreq;
+      }
+
 #if 0
       result.editOriginTime = 0; //result.timeInSeconds;
 #endif
 
-      double num_extra_beats = ((double)latency / 48000.0 ) * result.bpm / 60.0;
-      
-      result.ppqPosition = isplaying ? RT_LPB_get_beat_position()-num_extra_beats : 0;
-      result.ppqPositionOfLastBarStart = isplaying? g_beat_position_of_last_bar_start : 0;
-      
-      if (result.ppqPosition < result.ppqPositionOfLastBarStart)
-        result.ppqPositionOfLastBarStart = positionOfLastLastBarStart;
-      else
-        positionOfLastLastBarStart = result.ppqPositionOfLastBarStart;
-      
-      //printf("  ppq: %f,  ppqlast: %f, extra: %f. Latency: %d\n",result.ppqPosition,result.ppqPositionOfLastBarStart,num_extra_beats,latency);
-      
+      //if (result.ppqPositionOfLastBarStart != lastLastBarStart)
+      //  printf("  ppq: %f,  ppqlast: %f, extra: %f. Latency: %d\n",result.ppqPosition,result.ppqPositionOfLastBarStart,num_extra_beats,latency);
+
+      lastLastBarStart = result.ppqPositionOfLastBarStart;
+        
+
 #if 0
       printf("ppq: %f, ppqlast: %f. playing: %d. time: %f\n",
              result.ppqPosition,
@@ -180,7 +230,39 @@ namespace{
     }
   };
 
-  static MyAudioPlayHead myAudioPlayHead;
+  struct Data{
+    AudioPluginInstance *audio_instance;
+    
+    PluginWindow *window;
+
+    MyAudioPlayHead playHead;
+
+    MidiBuffer midi_buffer;
+    AudioSampleBuffer buffer;
+
+    Listener listener;
+
+    int num_input_channels;
+    int num_output_channels;
+
+    int x;
+    int y;
+    
+    Data(AudioPluginInstance *audio_instance, SoundPlugin *plugin, int num_input_channels, int num_output_channels)
+      : audio_instance(audio_instance)
+      , window(NULL)
+      , playHead(plugin)
+      , buffer(R_MAX(num_input_channels, num_output_channels), RADIUM_BLOCKSIZE)
+      , listener(plugin)
+      , num_input_channels(num_input_channels)
+      , num_output_channels(num_output_channels)
+      , x(-1)
+      , y(-1)
+    {
+      audio_instance->addListener(&listener);
+      midi_buffer.ensureSize(1024*16);
+    }
+  };
 
   struct TypeData{
     const wchar_t *file_or_identifier; // used by Juce
@@ -497,7 +579,7 @@ int RT_MIDI_send_msg_to_patch(struct Patch *patch, void *data, int data_size, in
 
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  
+
   Data *data = (Data*)plugin->data;
 
 #if 0
@@ -510,7 +592,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   AudioPluginInstance *instance = data->audio_instance;
   AudioSampleBuffer &buffer = data->buffer;
-
+  
   for(int ch=0; ch<data->num_input_channels ; ch++)
     memcpy(buffer.getWritePointer(ch), inputs[ch], sizeof(float)*num_frames);
     
@@ -752,7 +834,7 @@ static void hide_gui(struct SoundPlugin *plugin){
 }
 
 
-static AudioPluginInstance *get_audio_instance(const TypeData *type_data, float sample_rate, int block_size){
+static AudioPluginInstance *create_audio_instance(const TypeData *type_data, float sample_rate, int block_size){
   static bool inited=false;
 
   static AudioPluginFormatManager formatManager;
@@ -784,8 +866,6 @@ static AudioPluginInstance *get_audio_instance(const TypeData *type_data, float 
     GFX_Message(NULL, "Unable to open VST plugin %s: %s\n",description.fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
     return NULL;
   }
-
-  instance->setPlayHead(&myAudioPlayHead);
 
   instance->prepareToPlay(sample_rate, block_size);
 
@@ -888,7 +968,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
     return NULL;
   }
 
-  AudioPluginInstance *audio_instance = get_audio_instance(type_data, sample_rate, block_size);
+  AudioPluginInstance *audio_instance = create_audio_instance(type_data, sample_rate, block_size);
   if (audio_instance==NULL){
     return NULL;
   }
@@ -899,7 +979,9 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
   Data *data = new Data(audio_instance, plugin, audio_instance->getTotalNumInputChannels(), audio_instance->getTotalNumOutputChannels());
   plugin->data = data;
-    
+
+  audio_instance->setPlayHead(&data->playHead);
+
   if(type_data->effect_names==NULL)
     set_plugin_type_data(audio_instance,(SoundPluginType*)plugin_type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
   

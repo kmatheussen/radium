@@ -1631,6 +1631,10 @@ bool SP_is_plugin_running(SoundPlugin *plugin){
   return get_SoundProducer_r0(plugin)!=NULL;
 }
 
+int RT_SP_get_input_latency(SoundProducer *sp){
+  return sp->_highest_input_link_latency;
+}
+
 void SP_set_buffer_size(SoundProducer *producer,int buffer_size){
   if(producer->_plugin->type->buffer_size_is_changed != NULL)
     producer->_plugin->type->buffer_size_is_changed(producer->_plugin,buffer_size);
