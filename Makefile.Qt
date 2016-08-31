@@ -2023,7 +2023,7 @@ bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 scheme.o: embedded_scheme/scheme.cpp $(API)radium_proc.h
 	$(CCC) -c embedded_scheme/scheme.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src -Ibin/packages/s7
 
-QHTTPSERVERFLAGS = $(CPPOPT) $(QT_CFLAGS) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT
+QHTTPSERVERFLAGS = $(CPPOPT) $(QT_CFLAGS) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT -fno-sanitize=undefined
 
 qhttpconnection.o: bin/packages/qhttpserver-master/src/qhttpconnection.cpp
 	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpconnection.cpp $(QHTTPSERVERFLAGS)

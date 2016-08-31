@@ -60,10 +60,11 @@
 
 static bool g_vst_grab_keyboard = true;
 
+static int RT_get_latency(struct SoundPlugin *plugin);
+  
 namespace{
 
   struct PluginWindow;
-  struct MyAudioPlayHead;
 
   struct Listener : public AudioProcessorListener {
 
@@ -100,42 +101,16 @@ namespace{
   };
 
   
-
-  struct Data{
-    AudioPluginInstance *audio_instance;
-    
-    PluginWindow *window;
-
-    MyAudioPlayHead *playHead;
-
-    MidiBuffer midi_buffer;
-    AudioSampleBuffer buffer;
-
-    Listener listener;
-
-    int num_input_channels;
-    int num_output_channels;
-
-    int x;
-    int y;
-    
-    Data(AudioPluginInstance *audio_instance, SoundPlugin *plugin, int num_input_channels, int num_output_channels)
-      : audio_instance(audio_instance)
-      , window(NULL)
-      , buffer(R_MAX(num_input_channels, num_output_channels), RADIUM_BLOCKSIZE)
-      , listener(plugin)
-      , num_input_channels(num_input_channels)
-      , num_output_channels(num_output_channels)
-      , x(-1)
-      , y(-1)
-    {
-      audio_instance->addListener(&listener);
-      midi_buffer.ensureSize(1024*16);
-    }
-  };
-
   struct MyAudioPlayHead : public AudioPlayHead{
 
+    SoundProducer *_sp = NULL;
+    struct SoundPlugin *_plugin;
+    double positionOfLastLastBarStart = 0.0;
+    
+    MyAudioPlayHead(struct SoundPlugin *plugin)
+      : _plugin(plugin)
+    {}
+    
     // From JUCE documenation: You can ONLY call this from your processBlock() method!
     // I.e. it will only be called from the player thread or a multicore thread.
     virtual bool getCurrentPosition (CurrentPositionInfo &result) {
@@ -161,15 +136,37 @@ namespace{
       result.timeSigDenominator = signature.denominator;
       //printf("%d/%d\n",signature.numerator,signature.denominator);
 
-      result.timeInSamples = pc->start_time;
-      result.timeInSeconds = (double)pc->start_time / (double)pc->pfreq;
+      if (_sp==NULL)
+        _sp = SP_get_SoundProducer(_plugin); // <-- Cached since SP_get_SoundProducer iterates through all soundproducers in the mixer to find the right one.
+      
+      int latency = RT_SP_get_input_latency(_sp);
+      
+      result.timeInSamples = isplaying ? 0 : pc->start_time-latency;
+      result.timeInSeconds = isplaying ? 0 : result.timeInSamples / (double)pc->pfreq;
 #if 0
       result.editOriginTime = 0; //result.timeInSeconds;
 #endif
-      
-      result.ppqPosition = RT_LPB_get_beat_position();
-      result.ppqPositionOfLastBarStart = g_beat_position_of_last_bar_start;
 
+      double num_extra_beats = ((double)latency / 48000.0 ) * result.bpm / 60.0;
+      
+      result.ppqPosition = isplaying ? RT_LPB_get_beat_position()-num_extra_beats : 0;
+      result.ppqPositionOfLastBarStart = isplaying? g_beat_position_of_last_bar_start : 0;
+      
+      if (result.ppqPosition < result.ppqPositionOfLastBarStart)
+        result.ppqPositionOfLastBarStart = positionOfLastLastBarStart;
+      else
+        positionOfLastLastBarStart = result.ppqPositionOfLastBarStart;
+      
+      //printf("  ppq: %f,  ppqlast: %f, extra: %f. Latency: %d\n",result.ppqPosition,result.ppqPositionOfLastBarStart,num_extra_beats,latency);
+      
+#if 0
+      printf("ppq: %f, ppqlast: %f. playing: %d. time: %f\n",
+             result.ppqPosition,
+             result.ppqPositionOfLastBarStart,
+             isplaying,
+             result.timeInSeconds);
+#endif
+      
       result.isPlaying = isplaying;
 #if 0
       result.isRecording = false;
