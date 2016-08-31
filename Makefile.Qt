@@ -76,7 +76,7 @@ LINKER ?= g++
 
 TARGET_OS ?= any
 
-S7OPTS ?=
+S7OPTS ?= " "
 
 WHICHFAUST = $(shell pwd)/bin/packages/faust2/compiler/faust
 # The include files in audio/faudiostream are copied from Faust 0.9.55.
