@@ -1012,18 +1012,18 @@ MyApplication *qapplication = NULL;
 QApplication *g_qapplication = NULL;
 static QSplashScreen *g_splashscreen;
 
-
 bool main_window_has_focus(void){
-#if FOR_MACOSX
+  if(ATOMIC_GET(is_starting_up)==true)
+    return false;
+  
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  
+#if FOR_MACOSX
   return OS_OSX_is_key_window((void*)main_window->winId());
 #elif FOR_WINDOWS
-  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
   return OS_WINDOWS_is_key_window((void*)main_window->winId());
 #else
-  //printf("   focusWindow(): %p. object: %p\n",g_qapplication->focusWindow(), QGuiApplication::focusObject());
-  //return g_qapplication->focusWindow() != NULL;
-  //printf("   activeWindow(): %p\n",g_qapplication->activeWindow());
+  (void)main_window;
   return g_qapplication->activeWindow() != NULL;
 #endif
 }
