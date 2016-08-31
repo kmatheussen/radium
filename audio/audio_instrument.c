@@ -740,7 +740,7 @@ static void AUDIO_remove_patch(struct Patch *patch){
   InstrumentWidget_delete(patch);
     
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
-  struct SoundProducer *sound_producer = SP_get_SoundProducer(plugin);
+  struct SoundProducer *sound_producer = plugin->sp;
 
   hash_t *state = PLUGIN_get_state(plugin);
           

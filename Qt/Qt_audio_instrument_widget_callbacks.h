@@ -687,7 +687,7 @@ public:
         RError("weird");
     }
 
-    bool is_bus_provider = SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER;
+    bool is_bus_provider = SP_get_bus_descendant_type(plugin->sp)==IS_BUS_PROVIDER;
     
     bus1_widget->setEnabled(is_bus_provider);
     bus2_widget->setEnabled(is_bus_provider);
@@ -727,7 +727,7 @@ public:
         R_ASSERT(sps[n]==all_sp->at(n));//elements[n]);
       }
       
-      SP_get_SoundProducer(plugin);
+      //SP_get_SoundProducer(plugin);
     }
     fprintf(stderr,"\n\n     FINISHING CHECK %d\n",checknum++);
     //    PLAYER_unlock();

@@ -286,6 +286,8 @@ enum BusDescendantType{
   MAYBE_A_BUS_DESCENDANT,
 };
 
+struct SoundProducer;
+  
 typedef struct SoundPlugin{
 
 #ifdef __cplusplus
@@ -311,6 +313,8 @@ typedef struct SoundPlugin{
   bool editor_is_on;
 
   DEFINE_ATOMIC(bool, solo_is_on);
+
+  struct SoundProducer *sp; // SoundProducer is a helper object for the mixer. It's actually the soundproducer that holds the plugin, and not the other way, but the sp variable is referenced here since we need to access the soundproducer outside of the mixer to get input latency for a plugin and other things. This value is NULL if the plugin is not currently running in the mixer (but use the SP_is_plugin_running function to check for that).
   
   // Data used by SoundProducer
   Smooth input_volume;
@@ -367,7 +371,7 @@ typedef struct SoundPlugin{
 
   bool show_compressor_gui;
 
-  float *automation_values;
+  float *automation_values; // todo: add comment what the difference between this one and savable_effect_values is.
   
   // peaks
   //

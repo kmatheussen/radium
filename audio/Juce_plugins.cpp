@@ -103,7 +103,6 @@ namespace{
   
   struct MyAudioPlayHead : public AudioPlayHead{
 
-    SoundProducer *_sp = NULL;
     struct SoundPlugin *_plugin;
     
     double positionOfLastLastBarStart = 0.0;
@@ -141,10 +140,7 @@ namespace{
       result.timeSigDenominator = signature.denominator;
       //printf("%d/%d\n",signature.numerator,signature.denominator);
 
-      if (_sp==NULL)
-        _sp = SP_get_SoundProducer(_plugin); // <-- Cached since SP_get_SoundProducer iterates through all soundproducers in the mixer to find the right one.
-      
-      const int latency = RT_SP_get_input_latency(_sp);
+      const int latency = RT_SP_get_input_latency(_plugin->sp);
 
       const double num_extra_beats = ((double)latency / (double)pc->pfreq) * result.bpm / 60.0;
 
@@ -176,8 +172,8 @@ namespace{
             
             double bar_length = 4.0 * (double)signature.numerator / (double)signature.denominator;
 
-            R_ASSERT_NON_RELEASE(bar_length!=0);
 #if 1
+            R_ASSERT_NON_RELEASE(bar_length!=0);
 
             double num_bars_to_subtract = ceil( (result.ppqPositionOfLastBarStart - result.ppqPosition) /
                                                 bar_length
@@ -185,7 +181,7 @@ namespace{
             result.ppqPositionOfLastBarStart -= (bar_length * num_bars_to_subtract);
               
 #else
-            // The above does the same as this, but this one can freeze the program if we have a value that is out of the ordinary.
+            // This version is cleaner, but it can freeze the program if we have a value that is out of the ordinary.
             do {
               result.ppqPositionOfLastBarStart -= bar_length;
             } while (result.ppqPosition < result.ppqPositionOfLastBarStart);

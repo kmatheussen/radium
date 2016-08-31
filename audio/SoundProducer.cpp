@@ -636,6 +636,8 @@ public:
   {    
     printf("New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
 
+    plugin->sp = this;
+    
     ATOMIC_SET(is_processed, false);
     ATOMIC_SET(num_dependencies_left, 0);
     
@@ -777,6 +779,8 @@ public:
 
     MIXER_remove_SoundProducer(this);
 
+    _plugin->sp = NULL;
+    
     V_free(_input_peaks);
     V_free(_volume_peaks);
           
@@ -1591,33 +1595,13 @@ enum BusDescendantType SP_get_bus_descendant_type(SoundProducer *sp){
   return sp->_bus_descendant_type;
 }
 
-static SoundProducer *get_SoundProducer_r0(SoundPlugin *plugin){
-  const radium::Vector<SoundProducer*> *all_sp = MIXER_get_all_SoundProducers();
-
-  for (SoundProducer *sp : *all_sp)
-    if(SP_get_plugin(sp)==plugin)
-      return sp;
-  
-  return NULL;
-}
-
-SoundProducer *SP_get_SoundProducer(SoundPlugin *plugin){
-  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, NULL);
-  
-  SoundProducer *sp = get_SoundProducer_r0(plugin);
-  if(sp==NULL)
-    RError("SP_get_SoundProducer. sp==NULL. plugin->type: %s / %s, plugin->patch: %s\n",plugin->type->type_name,plugin->type->name,plugin->patch==NULL?"(null)":plugin->patch->name);
-
-  return sp;
-}
-
 bool SP_replace_plugin(SoundPlugin *old_plugin, SoundPlugin *new_plugin){
   if (!PLAYER_current_thread_has_lock()) {
     RError("Current thread is not holding player lock");
     return false;
   }
 
-  SoundProducer *sp = SP_get_SoundProducer(old_plugin);
+  SoundProducer *sp = old_plugin->sp;
   if (sp==NULL) {
     RError("Could not find soundproducer for plugin");
     return false;
@@ -1628,7 +1612,7 @@ bool SP_replace_plugin(SoundPlugin *old_plugin, SoundPlugin *new_plugin){
 }
 
 bool SP_is_plugin_running(SoundPlugin *plugin){
-  return get_SoundProducer_r0(plugin)!=NULL;
+  return plugin->sp != NULL;
 }
 
 int RT_SP_get_input_latency(SoundProducer *sp){

@@ -99,8 +99,7 @@ extern LANGSPEC struct SoundPlugin *SP_get_plugin(struct SoundProducer *producer
 extern LANGSPEC struct SoundProducer *SP_create(struct SoundPlugin *plugin, Buses buses);
 extern LANGSPEC void SP_delete(struct SoundProducer *producer);
 
-extern LANGSPEC struct SoundProducer *SP_get_SoundProducer(struct SoundPlugin *plugin);
-extern LANGSPEC int RT_SP_get_input_latency(SoundProducer *sp);
+extern LANGSPEC int RT_SP_get_input_latency(struct SoundProducer *sp);
 
 extern LANGSPEC bool SP_replace_plugin(struct SoundPlugin *old_plugin, struct SoundPlugin *new_plugin);
 extern LANGSPEC bool SP_is_plugin_running(struct SoundPlugin *plugin);

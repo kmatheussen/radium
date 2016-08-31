@@ -1677,6 +1677,7 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
                                          );
     
 
+  
   GE_Context *c = NULL;
   
   //GE_Context *c = Black_color(); //GE_mix_alpha_z(GE_get_rgb(0), Black_rgb(), 100, 0.7, Z_ZERO);
