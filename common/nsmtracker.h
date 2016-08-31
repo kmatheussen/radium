@@ -118,6 +118,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_error_proc.h"
 #include "OS_Semaphores.h"
 #include "keyboard_focus_proc.h"
+#include "threading.h"
 #include "../crashreporter/crashreporter_proc.h"
 
 
@@ -664,6 +665,7 @@ typedef struct {
   float velocity;
   float pan;
   int midi_channel;
+  float block_reltempo;
 } note_t;
 
 #define NOTE_ID_RESOLUTION 256 // i.e. 256 id's per note.
@@ -673,43 +675,6 @@ static inline int64_t NotenumId(float notenum){
 }
 
 
-static inline note_t create_note_t(int64_t note_id,
-                                   float pitch,
-                                   float velocity,
-                                   float pan,
-                                   int midi_channel
-                                   )
-{
-#if !defined(RELEASE)
-  R_ASSERT(midi_channel>=0 && midi_channel <= 15);
-  R_ASSERT(note_id >= -1);
-  
-  {
-#if defined(RELEASE)
-    R_ASSERT(false);
-#endif
-    R_ASSERT(pitch < 150); // approx. This assert might give false positives.
-  }
-
-  R_ASSERT(pitch >= 0);
-  //R_ASSERT(pan >= -1); // Pans have different range in midi
-  //R_ASSERT(pan <= 1);
-#endif
-
-  if(note_id==-1)
-    note_id = NotenumId(pitch);
-
-  note_t note = {note_id, pitch, velocity, pan, midi_channel};
-  
-  return note;
-}
-
-static inline note_t create_note_t2(int64_t note_id,
-                                    float pitch
-                                    )
-{
-  return create_note_t(note_id, pitch, 0, 0, 0);
-}
 
 
 typedef struct _linked_note_t{
@@ -739,7 +704,7 @@ struct Patch{
   void (*playnote)(struct Patch *patch,note_t note,STime time);
   void (*changevelocity)(struct Patch *patch,note_t note,STime time);
   void (*changepitch)(struct Patch *patch,note_t note,STime time);
-  void (*sendrawmidimessage)(struct Patch *patch,uint32_t msg,STime time); // note on, note off, and polyphonic aftertouch are/should not be sent using sendmidimessage. sysex is not supported either.
+  void (*sendrawmidimessage)(struct Patch *patch,uint32_t msg,STime time,float block_reltempo); // note on, note off, and polyphonic aftertouch are/should not be sent using sendmidimessage. sysex is not supported either.
   void (*stopnote)(struct Patch *patch,note_t note,STime time);
   void (*closePatch)(struct Patch *patch);
   
@@ -816,7 +781,7 @@ struct FX{
         DEFINE_ATOMIC(float *, slider_automation_value); // Pointer to the float value showing automation in slider. Value is scaled between 0-1. May be NULL.
         DEFINE_ATOMIC(enum ColorNums   *, slider_automation_color); // Pointer to the integer holding color number for showing automation in slider. May be NULL.
 
-        void (*treatFX)(struct FX *fx,int val,STime time,int skip, FX_when when);
+       void (*treatFX)(struct FX *fx,int val,STime time,int skip, FX_when when, float block_reltempo);
 
 	void (*closeFX)(struct FX *fx,const struct Tracks *track);
 	void *fxdata;	//Free use for the instrument plug-in.
@@ -1733,6 +1698,67 @@ extern struct Root *root;
 extern DEFINE_ATOMIC(bool, is_starting_up);
 extern bool g_embed_samples;
 
+static inline note_t create_note_t_plain(int64_t note_id,
+                                         float pitch,
+                                         float velocity,
+                                         float pan,
+                                         int midi_channel,
+                                         float block_reltempo
+                                         )
+{
+#if !defined(RELEASE)
+  R_ASSERT(midi_channel>=0 && midi_channel <= 15);
+  R_ASSERT(note_id >= -1);
+  
+  {
+#if defined(RELEASE)
+    R_ASSERT(false);
+#endif
+    R_ASSERT(pitch < 150); // approx. This assert might give false positives.
+  }
+
+  R_ASSERT(pitch >= 0);
+  //R_ASSERT(pan >= -1); // Pans have different range in midi
+  //R_ASSERT(pan <= 1);
+#endif
+
+  if(note_id==-1)
+    note_id = NotenumId(pitch);
+
+  note_t note = {note_id, pitch, velocity, pan, midi_channel, block_reltempo};
+  
+  return note;  
+}
+
+static inline float get_block_reltempo(void){
+  float reltempo = 1.0f;
+
+  if (THREADING_is_main_thread())
+    reltempo = root->song->tracker_windows->wblock->block->reltempo;
+  else if (THREADING_is_player_thread()) {
+    if (pc->block != NULL)
+      reltempo = pc->block->reltempo;
+  }
+
+  return reltempo;
+}
+
+static inline note_t create_note_t(int64_t note_id,
+                                   float pitch,
+                                   float velocity,
+                                   float pan,
+                                   int midi_channel
+                                   )
+{
+  return create_note_t_plain(note_id, pitch, velocity, pan, midi_channel, get_block_reltempo());
+}
+
+static inline note_t create_note_t2(int64_t note_id,
+                                    float pitch
+                                    )
+{
+  return create_note_t(note_id, pitch, 0, 0, 0);
+}
 
 
 

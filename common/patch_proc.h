@@ -47,6 +47,9 @@ extern LANGSPEC void RT_PATCH_send_change_velocity_to_receivers(struct Patch *pa
 extern LANGSPEC void RT_PATCH_send_change_pitch_to_receivers(struct Patch *patch, const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_send_raw_midi_message_to_receivers(struct Patch *patch, uint32_t msg, STime time);
 
+extern LANGSPEC void Patch_addPlayingVoice(linked_note_t **rootp, const note_t note);
+extern LANGSPEC void Patch_removePlayingVoice(linked_note_t **rootp, int64_t note_id);
+
 extern LANGSPEC int64_t RT_PATCH_play_note(struct Patch *patch, const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_stop_note(struct Patch *patch, const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_change_velocity(struct Patch *patch,const note_t note,STime time);

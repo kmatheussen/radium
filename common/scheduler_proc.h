@@ -50,6 +50,27 @@ extern LANGSPEC void SCHEDULER_called_per_block(int64_t reltime);
 extern LANGSPEC bool SCHEDULER_clear(void);
 extern LANGSPEC void SCHEDULER_init(void);
 
+static inline void put_note_into_args(union SuperType *args, const note_t note){
+  args[0].float_num = note.pitch;
+  args[1].int_num = note.id;
+  args[2].float_num = note.velocity;
+  args[3].float_num = note.pan;
+  args[4].int_num = note.midi_channel;
+  args[5].float_num = note.block_reltempo;
+}
+
+static inline note_t create_note_from_args(const union SuperType *args){
+  float   notenum      = args[0].float_num;
+  int64_t note_id      = args[1].int_num;
+  float   velocity     = args[2].float_num;
+  float   pan          = args[3].float_num;
+  int     midi_channel = (int)args[4].int_num;
+  float   block_reltempo = args[5].float_num;
+
+  return create_note_t_plain(note_id, notenum, velocity, pan, midi_channel, block_reltempo);
+}
+
+
 #endif // COMMON_SCHEDULER_PROC_H
 
 

@@ -830,6 +830,8 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
   Data *data = (Data*)plugin->data;
 
+  //printf("  Sampler_plugin.cpp: Request to play note %d\n", (int)note2.id);
+
   R_ASSERT_NON_RELEASE(time >= 0);
   R_ASSERT_NON_RELEASE(time < RADIUM_BLOCKSIZE);
   
@@ -951,6 +953,8 @@ static void set_note_pitch(struct SoundPlugin *plugin, int time, note_t note){
 static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
 
+  //printf("  Sampler_plugin.cpp: Request to stop note %d\n", (int)note.id);
+  
   if (ATOMIC_GET(data->recording_status)==IS_RECORDING){
     if (note.id==data->recording_note_id){
       

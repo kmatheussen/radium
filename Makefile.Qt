@@ -2007,10 +2007,12 @@ moc_Qt${RADIUM_QT_VERSION}Widget.o: bin/packages/Visualization-Library-master/sr
 # embedded scheme
 
 ifeq ($(TARGET_OS),linux)
-	S7OPTS += -fno-sanitize=alignment
+	S7AlignmentSanitize=-fno-sanitize=alignment
+else
+	S7AlignmentSanitize=
 endif
 bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c
-	$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) -DWITH_C_LOADER=0 -DWITH_HISTORY=1
+	$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1
 # -Wno-absolute-value
 #-DDEBUGGING=1
 

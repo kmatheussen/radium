@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>7</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -157,7 +157,7 @@
             <item row="0" column="1">
              <widget class="QLabel" name="label_11">
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Disabling VSync is only useful the system adds extra buffering&lt;br&gt; if VSync is both enabled globally and in the program.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Disabling VSync is only useful if the system adds extra buffering&lt;br&gt; when VSync is both enabled globally and in the program.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>

@@ -297,7 +297,7 @@ static void MIDIchangevelocity(struct Patch *patch,note_t note,STime time){
 static void MIDIchangepitch(struct Patch *patch,note_t note,STime time){ // never called
 }
 
-static void MIDIsendrawmidimessage(struct Patch *patch,uint32_t msg,STime time){ // never called
+static void MIDIsendrawmidimessage(struct Patch *patch,uint32_t msg,STime time, float block_reltempo){ // never called
 }
 
 /******************** patch **************************/

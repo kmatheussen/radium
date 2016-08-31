@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Player_proc.h"
 #include "../common/fxlines_proc.h"
 #include "../common/settings_proc.h"
+#include "../common/scheduler_proc.h"
 
 #include "SoundPlugin.h"
 #include "Mixer_proc.h"
@@ -60,66 +61,204 @@ enum{
     
 /* Audio Patch */
 
+static void RT_scheduled_send_play_note_to_plugin(int64_t time, const union SuperType *args){
+  struct Patch *patch = (struct Patch*)args[0].pointer;
+
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+
+  if(plugin==NULL || plugin->type->stop_note == NULL)
+    return;
+
+  const note_t note = create_note_from_args(&args[1]);
+
+  //printf("     Time: %d, Delta time: %d\n", (int)time, (int)PLAYER_get_block_delta_time(time));
+
+  Patch_addPlayingVoice(&plugin->playing_voices, note);
+  plugin->type->play_note(plugin, PLAYER_get_block_delta_time(time), note);
+}
+
 static void AUDIO_playnote(struct Patch *patch,note_t note,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
-  if(plugin==NULL)
+  if(plugin==NULL || plugin->type->play_note == NULL)
     return;
 
-  //printf("playing audio note %f, id: %d\n",notenum,(int)note_id);
-    
-  if(plugin->type->play_note != NULL)
-    plugin->type->play_note(plugin, PLAYER_get_block_delta_time(time), note);
+  const int latency = RT_SP_get_input_latency(plugin->sp);
 
-  //printf("playing audio note %d, player delta time: %d, mixer delta time: %d. Absolute time: %d\n",(int)notenum,(int)PLAYER_get_delta_time(time),(int)MIXER_get_block_delta_time(time),(int)time);
+  if (latency == 0) {
+    Patch_addPlayingVoice(&plugin->playing_voices, note);
+    plugin->type->play_note(plugin, PLAYER_get_block_delta_time(time), note);
+    return;
+  }
+
+  time += ((double)latency * note.block_reltempo);
+
+  union SuperType args[7];
+  args[0].pointer = patch;
+  put_note_into_args(&args[1], note);
+
+  //printf("   Scheduling %d (latency: %d). block_reltempo: %f\n", (int)time, latency, note.block_reltempo);
+  SCHEDULER_add_event(time, RT_scheduled_send_play_note_to_plugin, &args[0], 7, SCHEDULER_NOTE_ON_PRIORITY);
+}
+
+static void RT_scheduled_send_note_volume_to_plugin(int64_t time, const union SuperType *args){
+  struct Patch *patch = (struct Patch*)args[0].pointer;
+
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+
+  if(plugin==NULL || plugin->type->set_note_volume == NULL)
+    return;
+
+  const note_t note = create_note_from_args(&args[1]);
+
+  plugin->type->set_note_volume(plugin, PLAYER_get_block_delta_time(time), note);
 }
 
 static void AUDIO_changevelocity(struct Patch *patch,note_t note,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
-  if(plugin==NULL)
+  if(plugin==NULL || plugin->type->set_note_volume == NULL)
+    return;
+      
+  const int latency = RT_SP_get_input_latency(plugin->sp);
+
+  if (latency == 0) {
+    plugin->type->set_note_volume(plugin, PLAYER_get_block_delta_time(time), note);
+    return;
+  }
+
+  time += ((double)latency * note.block_reltempo);
+
+  union SuperType args[7];
+  args[0].pointer = patch;
+  put_note_into_args(&args[1], note);
+  
+  SCHEDULER_add_event(time, RT_scheduled_send_note_volume_to_plugin, &args[0], 7, SCHEDULER_VELOCITY_PRIORITY);
+}
+
+static void RT_scheduled_send_note_pitch_to_plugin(int64_t time, const union SuperType *args){
+  struct Patch *patch = (struct Patch*)args[0].pointer;
+
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+
+  if(plugin==NULL || plugin->type->set_note_volume == NULL)
     return;
 
-  //printf("audio velocity changed: %d. Time: %d\n",velocity,(int)MIXER_get_block_delta_time(time));
+  const note_t note = create_note_from_args(&args[1]);
 
-  if(plugin->type->set_note_volume != NULL)
-    plugin->type->set_note_volume(plugin, PLAYER_get_block_delta_time(time), note);
- 
+  plugin->type->set_note_pitch(plugin, PLAYER_get_block_delta_time(time), note); 
 }
 
 static void AUDIO_changepitch(struct Patch *patch,note_t note,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
-  if(plugin==NULL)
+  if(plugin==NULL || plugin->type->set_note_pitch == NULL)
     return;
+      
+  const int latency = RT_SP_get_input_latency(plugin->sp);
 
-  if(plugin->type->set_note_pitch != NULL)
+  if (latency == 0) {
     plugin->type->set_note_pitch(plugin, PLAYER_get_block_delta_time(time), note); 
+    return;
+  }
+
+  time += ((double)latency * note.block_reltempo);
+
+  union SuperType args[7];
+  args[0].pointer = patch;
+  put_note_into_args(&args[1], note);
+  
+  SCHEDULER_add_event(time, RT_scheduled_send_note_pitch_to_plugin, &args[0], 7, SCHEDULER_PITCH_PRIORITY);
 }
 
-static void AUDIO_sendrawmidimessage(struct Patch *patch,uint32_t msg,STime time){
+static void RT_scheduled_send_raw_midi_to_plugin(int64_t time, const union SuperType *args){
+  struct Patch *patch = (struct Patch*)args[0].pointer;
+  
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
-  if(plugin==NULL)
+  if(plugin==NULL || plugin->type->send_raw_midi_message == NULL)
     return;
 
-  //printf("audio velocity changed: %d. Time: %d\n",velocity,(int)MIXER_get_block_delta_time(time));
+  uint32_t msg = args[1].uint32_num;
+  
+  plugin->type->send_raw_midi_message(plugin, PLAYER_get_block_delta_time(time), msg); 
+}
 
-  if(plugin->type->send_raw_midi_message != NULL)
+static void AUDIO_sendrawmidimessage(struct Patch *patch, uint32_t msg, STime time, float block_reltempo){
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+
+  if(plugin==NULL || plugin->type->send_raw_midi_message == NULL)
+    return;
+      
+  const int latency = RT_SP_get_input_latency(plugin->sp);
+
+  if (latency == 0) {
     plugin->type->send_raw_midi_message(plugin, PLAYER_get_block_delta_time(time), msg); 
+    return;
+  }
+
+  time += ((double)latency * block_reltempo);
+
+  union SuperType args[2];
+  args[0].pointer = patch;
+  args[1].uint32_num = msg;
+  
+  SCHEDULER_add_event(time, RT_scheduled_send_raw_midi_to_plugin, &args[0], 2, SCHEDULER_RAWMIDIMESSAGE_PRIORITY);
+}
+
+static void RT_scheduled_send_stop_note_to_plugin(int64_t time, const union SuperType *args){
+  struct Patch *patch = (struct Patch*)args[0].pointer;
+
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+
+  if(plugin==NULL || plugin->type->stop_note == NULL)
+    return;
+
+  const note_t note = create_note_from_args(&args[1]);
+
+  Patch_removePlayingVoice(&plugin->playing_voices, note.id);
+  plugin->type->stop_note(plugin, PLAYER_get_block_delta_time(time), note);
 }
 
 static void AUDIO_stopnote(struct Patch *patch,note_t note,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
-  if(plugin==NULL)
+  if(plugin==NULL || plugin->type->stop_note == NULL)
     return;
 
-  //printf("stopping audio note %f, id: %d\n",notenum,(int)note_id);
+  const int latency = RT_SP_get_input_latency(plugin->sp);
 
-  if(plugin->type->stop_note != NULL)
+  //printf("  stopnote called. %d, time: %d\n",(int)note.id, (int)time);
+  if (latency == 0 || time==-1) {
+    Patch_removePlayingVoice(&plugin->playing_voices, note.id);
     plugin->type->stop_note(plugin, PLAYER_get_block_delta_time(time), note);
+    return;
+  }
+
+  time += ((double)latency * note.block_reltempo);
+
+  union SuperType args[7];
+  args[0].pointer = patch;
+  put_note_into_args(&args[1], note);
+  
+  SCHEDULER_add_event(time, RT_scheduled_send_stop_note_to_plugin, &args[0], 7, SCHEDULER_NOTE_OFF_PRIORITY);
 }
+
+void AUDIO_stop_all_notes(struct Patch *patch){
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+
+  if(plugin==NULL || plugin->type->stop_note == NULL)
+    return;
+
+  while(plugin->playing_voices != NULL) {
+    note_t note = plugin->playing_voices->note;
+    
+    Patch_removePlayingVoice(&plugin->playing_voices, note.id);
+    plugin->type->stop_note(plugin, 0, note);
+  }
+
+}
+
 
 static void AUDIO_closePatch(struct Patch *patch){
 }
@@ -319,7 +458,31 @@ static void AUDIO_close_FX(struct FX *fx,const struct Tracks *track){
   //OS_SLIDER_release_automation_pointers(patch,fx->effect_num);
 }
 
-static void AUDIO_treat_FX(struct FX *fx,int val,STime time,int skip, FX_when when){
+static void send_fx_to_plugin(SoundPlugin *plugin, STime time, FX_when when, int val, int effect_num){
+  float effect_val = val / (float)MAX_FX_VAL;
+
+  plugin->automation_values[effect_num] = effect_val;
+
+  PLUGIN_set_effect_value(plugin,PLAYER_get_block_delta_time(time),effect_num,effect_val, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, when);
+}
+
+static void RT_scheduled_send_fx_to_plugin(int64_t time, const union SuperType *args){
+  struct Patch *patch = (struct Patch*)args[0].pointer;
+
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+
+  if(plugin==NULL)
+    return;
+
+  FX_when when = args[1].int_num;
+  int val = args[2].int_num;
+  int effect_num = args[3].int_num;
+
+  send_fx_to_plugin(plugin, time, when, val, effect_num);
+}
+
+
+static void AUDIO_treat_FX(struct FX *fx,int val,STime time,int skip, FX_when when, float block_reltempo){
   struct Patch *patch = fx->patch;
   
   R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
@@ -328,12 +491,24 @@ static void AUDIO_treat_FX(struct FX *fx,int val,STime time,int skip, FX_when wh
   //AUDIO_FX_data_t *fxdata = (AUDIO_FX_data_t*)fx->fxdata;
   if (plugin==NULL) // i.e. plugin has been deleted and removed from the patch.
     return;
-  
-  float effect_val = val / (float)MAX_FX_VAL;
 
-  plugin->automation_values[fx->effect_num] = effect_val;
+  const int latency = RT_SP_get_input_latency(plugin->sp);
 
-  PLUGIN_set_effect_value(plugin,PLAYER_get_block_delta_time(time),fx->effect_num,effect_val, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, when);
+  if (latency == 0) {
+    send_fx_to_plugin(plugin, time, when, val, fx->effect_num);
+    return;
+  }
+
+  time += ((double)latency * block_reltempo);
+
+  union SuperType args[4];
+  args[0].pointer = patch;
+  args[1].int_num = when;
+  args[2].int_num = val;
+  args[3].int_num = fx->effect_num;
+
+  //printf("   Scheduling %d (latency: %d). block_reltempo: %f\n", (int)time, latency, note.block_reltempo);
+  SCHEDULER_add_event(time, RT_scheduled_send_fx_to_plugin, &args[0], 4, SCHEDULER_FX_PRIORITY);
 }
 
 // NOT called from RT thread

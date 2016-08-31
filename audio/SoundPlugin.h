@@ -309,7 +309,9 @@ typedef struct SoundPlugin{
 
   float *savable_effect_values; // When dragging a slider, we want to save that value. But we don't want to save the last sent out automation value. (saving to disk, that is)
   float *initial_effect_values; // Used when resetting.
-  
+
+  linked_note_t *playing_voices; // To keep track of voices scheduled into the future because of latency compensation
+
   bool editor_is_on;
 
   DEFINE_ATOMIC(bool, solo_is_on);

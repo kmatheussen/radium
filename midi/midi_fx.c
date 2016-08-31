@@ -134,7 +134,7 @@ static char *midi_fxs_fullnames[MIDI_NUM_FX]={
 /***************** FX **********************************/
 
 
-static void MIDI_treatFX_CC7(struct FX *fx,int val,STime time,int skip, FX_when when){
+static void MIDI_treatFX_CC7(struct FX *fx,int val,STime time,int skip, FX_when when, float block_reltempo){
     struct Patch *patch = fx->patch;
     R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
     
@@ -156,7 +156,7 @@ static void MIDI_treatFX_CC7(struct FX *fx,int val,STime time,int skip, FX_when 
 }
 
 
-static void MIDI_treatFX_CC14(struct FX *fx,int val,STime time,int skip, FX_when when){
+static void MIDI_treatFX_CC14(struct FX *fx,int val,STime time,int skip, FX_when when, float block_reltempo){
     struct Patch *patch = fx->patch;
     R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
@@ -178,7 +178,7 @@ static void MIDI_treatFX_CC14(struct FX *fx,int val,STime time,int skip, FX_when
 	PutMidi3_FX(midi_port,0xb0|channel,fx->effect_num-128+32,val&127,time,10,skip);
 }
 
-static void MIDI_treatFX_Pan7(struct FX *fx,int val,STime time,int skip, FX_when when){
+static void MIDI_treatFX_Pan7(struct FX *fx,int val,STime time,int skip, FX_when when, float block_reltempo){
   struct Patch *patch = fx->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
@@ -199,7 +199,7 @@ static void MIDI_treatFX_Pan7(struct FX *fx,int val,STime time,int skip, FX_when
 }
 
 
-static void MIDI_treatFX_Pan14(struct FX *fx,int val,STime time,int skip, FX_when when){
+static void MIDI_treatFX_Pan14(struct FX *fx,int val,STime time,int skip, FX_when when, float block_reltempo){
   struct Patch *patch = fx->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
@@ -222,7 +222,7 @@ static void MIDI_treatFX_Pan14(struct FX *fx,int val,STime time,int skip, FX_whe
 	PutMidi3_FX(midi_port,0xb0|channel,42,val&127,time,10,skip);
 }
 
-static void MIDI_treatFX_ProgramChange(struct FX *fx,int val,STime time,int skip, FX_when when){
+static void MIDI_treatFX_ProgramChange(struct FX *fx,int val,STime time,int skip, FX_when when, float block_reltempo){
   struct Patch *patch = fx->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
@@ -242,7 +242,7 @@ static void MIDI_treatFX_ProgramChange(struct FX *fx,int val,STime time,int skip
 	PutMidi2(midi_port,0xc0|channel,val,time,50);
 }
 
-static void MIDI_treatFX_ChannelPreassure(struct FX *fx,int val,STime time,int skip, FX_when when){
+static void MIDI_treatFX_ChannelPreassure(struct FX *fx,int val,STime time,int skip, FX_when when, float block_reltempo){
   struct Patch *patch = fx->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
@@ -262,7 +262,7 @@ static void MIDI_treatFX_ChannelPreassure(struct FX *fx,int val,STime time,int s
 	PutMidi2_FX(midi_port,0xd0|channel,val,time,10,skip);
 }
 
-static void MIDI_treatFX_Pitch7(struct FX *fx,int val,STime time,int skip, FX_when when){
+static void MIDI_treatFX_Pitch7(struct FX *fx,int val,STime time,int skip, FX_when when, float block_reltempo){
   struct Patch *patch = fx->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
@@ -282,7 +282,7 @@ static void MIDI_treatFX_Pitch7(struct FX *fx,int val,STime time,int skip, FX_wh
 	PutMidi3_FX(midi_port,0xe0|channel,0,val+0x40,time,10,skip);
 }
 
-static void MIDI_treatFX_Pitch14(struct FX *fx,int val,STime time,int skip, FX_when when){
+static void MIDI_treatFX_Pitch14(struct FX *fx,int val,STime time,int skip, FX_when when, float block_reltempo){
   struct Patch *patch = fx->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
