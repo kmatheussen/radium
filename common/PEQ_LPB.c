@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "time_proc.h"
 #include "PEQmempool_proc.h"
 #include "PEQcommon_proc.h"
+#include "PEQ_Beats_proc.h"
 #include "placement_proc.h"
 
 #include "PEQ_LPB_proc.h"
@@ -71,10 +72,16 @@ static double get_num_beats(LPB_iterator *iterator, int audioframes_to_add){
 static void set_new_g_num_beats_values(LPB_iterator *iterator, int audioblocksize){
   static int prev_play_id = -1;
 
-  if (prev_play_id != ATOMIC_GET(pc->play_id)) {
+  //double curr_num_before = iterator->num_beats_played_so_far;
+
+  bool just_started_playing = prev_play_id != ATOMIC_GET(pc->play_id);
+  
+  if (just_started_playing) {
 
     g_curr_num_beats = get_num_beats(iterator, 0);
     g_next_num_beats = get_num_beats(iterator, audioblocksize);
+
+    //printf("  PEQ_LPB: Set new g_curr_num_beats to %f (%f). Place: %f - %f\n", g_curr_num_beats,curr_num_before,iterator->place1_f, iterator->place2_f);
 
     prev_play_id = ATOMIC_GET(pc->play_id);
 
@@ -82,8 +89,10 @@ static void set_new_g_num_beats_values(LPB_iterator *iterator, int audioblocksiz
 
     g_curr_num_beats = g_next_num_beats; // Since the prev value might have been calculated using previous LPB values, this value sometimtes might not be 100% correct, but it should be good enough.
     g_next_num_beats = get_num_beats(iterator, audioblocksize);
-    
+
   }
+
+  RT_PEQ_Beats_set_new_last_bar_start_value(g_curr_num_beats, just_started_playing);
 }
 
 

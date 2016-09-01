@@ -1266,6 +1266,8 @@ struct Beats{
   Ratio signature; // Current signature for this beat.
   int bar_num;
   int beat_num;  // For instance, in a 4/4 measure, this value is either 1, 2 or 3, or 4.
+
+  Ratio valid_signature; // signature is 0/0 if there isn't a signature change at this beat.
 };
 #define NextBeat(a) (struct Beats *)((a)->l.next)
   

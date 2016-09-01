@@ -142,15 +142,15 @@ namespace{
 
       const int latency = RT_SP_get_input_latency(_plugin->sp);
 
-      const double num_extra_beats = ((double)latency / (double)pc->pfreq) * result.bpm / 60.0;
+      const double latency_beats = ((double)latency / (double)pc->pfreq) * result.bpm / 60.0;
 
       if (!isplaying){
               
         result.timeInSamples = -latency;
         result.timeInSeconds = (double)-latency / (double)pc->pfreq;
 
-        result.ppqPosition               = -num_extra_beats;
-        result.ppqPositionOfLastBarStart = -num_extra_beats;
+        result.ppqPosition               = -latency_beats;
+        result.ppqPositionOfLastBarStart = -latency_beats;
 
         positionOfLastLastBarStart_is_valid = false;      
 
@@ -159,7 +159,7 @@ namespace{
         result.timeInSamples = pc->start_time - latency;
         result.timeInSeconds = result.timeInSamples / (double)pc->pfreq;
 
-        result.ppqPosition               = RT_LPB_get_beat_position() - num_extra_beats;
+        result.ppqPosition               = RT_LPB_get_beat_position() - latency_beats;
         result.ppqPositionOfLastBarStart = g_beat_position_of_last_bar_start;
         
         if (result.ppqPosition < result.ppqPositionOfLastBarStart) {
@@ -200,7 +200,7 @@ namespace{
 #endif
 
       //if (result.ppqPositionOfLastBarStart != lastLastBarStart)
-      //  printf("  ppq: %f,  ppqlast: %f, extra: %f. Latency: %d\n",result.ppqPosition,result.ppqPositionOfLastBarStart,num_extra_beats,latency);
+      //  printf("  ppq: %f,  ppqlast: %f, extra: %f. Latency: %d\n",result.ppqPosition,result.ppqPositionOfLastBarStart,latency_beats,latency);
 
       lastLastBarStart = result.ppqPositionOfLastBarStart;
         

@@ -106,6 +106,9 @@ static struct Beats *Beats_get(struct Blocks *block, Ratio default_signature, in
           beat->signature = signature->signature;
           last_drawn_signature = signature;
         }
+
+        beat->valid_signature = signature->signature;
+        
         beat->bar_num = bar_num;
         beat->beat_num = beat_num;
         

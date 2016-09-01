@@ -10,13 +10,13 @@ X11
 ROOT
 
 ?curr_block
-1
+0
 
 ?tempo
 120
 
 ?lpb
-4
+5
 
 ?signature_numerator
 4
@@ -63,7 +63,7 @@ SONG
 \
 COMMENT
 >> HASH MAP V2 BEGIN
-72
+76
 author
 0
 STRING_TYPE
@@ -344,6 +344,22 @@ comment
 68
 STRING_TYPE
 
+comment
+69
+STRING_TYPE
+
+comment
+70
+STRING_TYPE
+
+comment
+71
+STRING_TYPE
+
+comment
+72
+STRING_TYPE
+
 show_after_loading
 0
 INT_TYPE
@@ -366,10 +382,10 @@ TRACKER_WINDOW
 0
 
 ?width
-896
+915
 
 ?height
-629
+551
 
 ?fontID
 0
@@ -387,7 +403,7 @@ TRACKER_WINDOW
 15
 
 ?curr_block
-1
+0
 
 ?maxwtracksize
 0
@@ -447,7 +463,7 @@ WBLOCK
 0
 
 ?curr_realline
-38
+63
 
 ?num_reallines
 64
@@ -1166,7 +1182,7 @@ First Block
 64
 
 ?reltempo
-1
+0.2600352466106415
 
 \
 TRACK
@@ -1179,7 +1195,7 @@ TRACK
 (click me)
 
 ?volume
-1000
+526
 
 ?pan
 0
@@ -2095,7 +2111,7 @@ TRACK
 2
 
 ?onoff
-0
+1
 
 ?trackname
 (click me)
@@ -5527,7 +5543,7 @@ FLOAT_TYPE
 Loop
 0
 FLOAT_TYPE
-0
+1
 Note adjustment
 0
 FLOAT_TYPE

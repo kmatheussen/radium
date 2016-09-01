@@ -15,6 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <string.h>
+#include <math.h>
 
 #include "nsmtracker.h"
 #include "playerclass.h"
@@ -89,15 +90,42 @@ static void scheduled_play_beat_note(int64_t time, const union SuperType *args){
 
 double g_beat_position_of_last_bar_start = 0.0;
 
+static bool new_beat_bar_set = false;
+
+// Called from RT_LPB_set_beat_position, which is called from Mixer.cpp after events are calculated, and before audio is created.
+void RT_PEQ_Beats_set_new_last_bar_start_value(double beat_position, bool just_started_playing){
+
+  if (just_started_playing) {
+    
+    R_ASSERT_RETURN_IF_FALSE(g_beat != NULL);
+
+    double num_beats_in_bar = 4 * (double)g_beat->valid_signature.numerator / (double) g_beat->valid_signature.denominator; // Convert to ppq
+
+    // If we start playing in the middle of a block, spool back to closest position that could have been the beat start.
+    beat_position = num_beats_in_bar * floor(beat_position/num_beats_in_bar);
+                        
+    g_beat_position_of_last_bar_start = beat_position;
+    //printf("   Setting new bar start to %f. num_beats: %f  (sign: %d/%d)\n", g_beat_position_of_last_bar_start, num_beats_in_bar, g_beat->valid_signature.numerator, g_beat->valid_signature.denominator);
+    
+  } else if (new_beat_bar_set) {
+    
+    g_beat_position_of_last_bar_start = beat_position;
+    
+  }
+  
+  new_beat_bar_set = false;
+}
+
 static void handle_new_beat(struct PEventQueue *peq, int doit, struct Beats *beat){
   if (doit==0) // Is doit used anymore?
     return;
 
-  //printf("%d %d\n", beat->bar_num, beat->beat_num);
-
   if (beat->beat_num==1)
-    g_beat_position_of_last_bar_start = RT_LPB_get_beat_position();
+    new_beat_bar_set = true;
+  //g_beat_position_of_last_bar_start = RT_LPB_get_beat_position();
   
+  //printf("%d %d. beat pos: %f\n", beat->bar_num, beat->beat_num, g_beat_position_of_last_bar_start);
+
   if (beat->beat_num==1)
     SCHEDULER_add_event(peq->l.time, scheduled_play_bar_note, NULL, 0, SCHEDULER_NOTE_ON_PRIORITY);
   else
@@ -147,6 +175,9 @@ static void InsertNextBeat_PEQ(struct PEventQueue *peq){
 
 void InitPEQ_Beat(struct Blocks *block,Place *place){
   g_last_played_note_num = -1;
+
+  g_beat_position_of_last_bar_start = 0.0; // doesn't matter.
+  
   
   // Here: Find all Sample Player / Click and store them globally.
   // (hmm, patches can be added/deleted while playing)
