@@ -1,3 +1,23 @@
+Changes 4.0.9 -> 4.1.0:
+* Add bypass button to native VST GUI windows
+* Windows: Fix always-on-top for VST GUIs (i.e. avoid
+  sub windows to appear behind the main VST GUI window).
+* Add option to the preferences to disable always-on-top
+  for VST GUIs.
+* Fix latency compensation when dry/wet value is less than
+  100%, or we are bypassing.
+* Timeskew: Optionally report latency for positive skew values.
+  (Practical when testing latency compensation)
+* VST timing info: Ensure bar start value is correct when
+  starting to play.
+* Add plugin latency compensation to editor events (e.g. note
+  on / note off, automation, pitch, etc.) when a plugin
+  with latency is input-connected.
+* Add latency compensation to VST timing data, if needed.
+* Fix semi-rare startup crash introduced in 4.0.8.
+
+
+
 Changes 4.0.8 -> 4.0.9:
 * Use system font size to determine the height of the "Grab keyboard" check box
 * Some ubsan fixes
