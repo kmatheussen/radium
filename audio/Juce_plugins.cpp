@@ -312,6 +312,7 @@ namespace{
     Component main_component;
     ToggleButton grab_keyboard_button;
     //ToggleButton always_on_top_button;
+    ToggleButton bypass_button;
     
     AudioProcessorEditor* const editor;
 
@@ -342,12 +343,43 @@ namespace{
           setVstGuiAlwaysOnTop(new_state);
       }
       */
+
+      else if (dasbutton == &bypass_button) {
+        bool new_state = bypass_button.getToggleState();
+
+        struct SoundPlugin *plugin = data->listener.plugin;
+        
+        bool is_bypass = !ATOMIC_GET(plugin->effects_are_on);
+        
+        //printf("ButtonStateChanged called for %p. %d %d. Size: %d\n", this, new_state, g_vst_grab_keyboard,(int)g_plugin_windows.size());
+        
+        if (new_state != is_bypass) {
+          int num_effects = plugin->type->num_effects;
+          PLAYER_lock();{  
+            PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, !new_state, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+          }PLAYER_unlock();
+          GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
+        }
+        
+      }
     }
     
     void timerCallback() override {
-      bool new_state = grab_keyboard_button.getToggleState();
-      if (new_state != g_vst_grab_keyboard)
-        grab_keyboard_button.setToggleState(g_vst_grab_keyboard, dontSendNotification);
+      // grab button
+      {
+        bool new_state = grab_keyboard_button.getToggleState();
+        if (new_state != g_vst_grab_keyboard)
+          grab_keyboard_button.setToggleState(g_vst_grab_keyboard, dontSendNotification);
+      }
+
+      // bypass button
+      {
+        bool new_state = bypass_button.getToggleState();
+        struct SoundPlugin *plugin = data->listener.plugin;
+        bool is_bypass = !ATOMIC_GET(plugin->effects_are_on);
+        if (new_state != is_bypass)
+          bypass_button.setToggleState(is_bypass, dontSendNotification);
+      }
       
       //if (isAlwaysOnTop() != vstGuiIsAlwaysOnTop())
       //  delete this;
@@ -403,7 +435,6 @@ namespace{
         grab_keyboard_button.setTopLeftPosition(0, 0);
       }
 
-      
       // always-on-top button
 #if 0
       {
@@ -420,7 +451,25 @@ namespace{
         always_on_top_button.setTopLeftPosition(0, 0);
       }
 #endif
+     
+      // bypass button
+#if 1
+      {
+        bypass_button.setButtonText("Bypass");
+        
+        bypass_button.setToggleState(vstGuiIsAlwaysOnTop(), dontSendNotification);
+        bypass_button.setSize(400, button_height);
+        bypass_button.changeWidthToFitText();
+        
+        bypass_button.addListener(this);
       
+        // add it
+        main_component.addAndMakeVisible(&bypass_button);
+        bypass_button.setTopLeftPosition(0, 0);
+      }
+#endif
+      
+
       // add vst gui
       main_component.addChildComponent(editor);
       editor->setTopLeftPosition(0, button_height);
@@ -434,13 +483,16 @@ namespace{
 
       this->setVisible(true);
 
-#if defined(RELEASE) && FOR_LINUX
-#else
       main_component.setSize(editor->getWidth(), editor->getHeight() + button_height);
+
+#if defined(RELEASE) && FOR_LINUX
+      bypass_button.setTopLeftPosition(main_component.getWidth()-bypass_button.getWidth(), 0);
+#else
       grab_keyboard_button.setTopLeftPosition(main_component.getWidth()-grab_keyboard_button.getWidth(), 0);
       //always_on_top_button.setTopLeftPosition(main_component.getWidth()-grab_keyboard_button.getWidth()-always_on_top_button.getWidth(), 0);
+      bypass_button.setTopLeftPosition(main_component.getWidth()-grab_keyboard_button.getWidth()-bypass_button.getWidth(), 0);
 #endif
-      
+
       startTimer(100);
 
 #if FOR_WINDOWS

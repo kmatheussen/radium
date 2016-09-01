@@ -1172,6 +1172,8 @@ public:
         updateHostDisplay();
     }
 
+  bool last_playing = false;
+  
     VstIntPtr handleCallback (VstInt32 opcode, VstInt32 index, VstIntPtr value, void* ptr, float opt)
     {
         switch (opcode)
