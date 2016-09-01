@@ -334,7 +334,7 @@ static double get_realline_stime(SharedVariables *sv, int realline){
 // OpenGL thread
 static bool need_to_reset_timing(SharedVariables *sv, double stime, int last_used_i_realline, const struct Blocks *last_used_block, double last_used_stime, double blocktime){
   if (stime < 0){
-    fprintf(stderr,"Error: stime: %f, pc->blocktime: %f",stime,blocktime);
+    fprintf(stderr,"Error: stime: %f, pc->blocktime: %f\n",stime,blocktime);
     #if 0
       #if !defined(RELEASE)
         abort();
@@ -818,7 +818,6 @@ private:
       }
 
     }
-    
 
     double current_realline_while_playing =
       is_playing

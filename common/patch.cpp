@@ -1165,7 +1165,7 @@ void RT_PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg, STime tim
 
     if(voice->is_on==true){
 
-      union SuperType args[2];
+      union SuperType args[3];
       
       args[0].pointer = patch;
       args[1].uint32_num = msg;
