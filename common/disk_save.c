@@ -85,8 +85,10 @@ void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
 void SaveAs(struct Root *theroot){
 	const wchar_t *filename;
 
+#if defined(RELEASE) // Testing whether it's safe to save song while playing.
 	PlayStop();
-
+#endif
+        
 	filename=GFX_GetSaveFileName(theroot->song->tracker_windows, NULL," Select file to save", NULL, "*.rad");
 
 	if(filename==NULL) return;
@@ -126,8 +128,10 @@ void SaveWithEmbeddedSamples(struct Root *theroot){
 
 void Save(struct Root *theroot){
 
-	PlayStop();
-
+#if defined(RELEASE) // Testing whether it's safe to save song while playing.
+  PlayStop();
+#endif
+  
 	if(dc.filename==NULL){
           SaveAs(theroot);
 	}else{
