@@ -44,7 +44,8 @@ namespace{
     float timeskew;
     radium::SmoothDelay delay1;
     radium::SmoothDelay delay2;
-
+    bool compensate_positive_delay = false;
+    
     Data()
       : timeskew(0)
       , delay1(TIMESKEW_MAX * MIXER_get_sample_rate() / 1000)
@@ -66,6 +67,8 @@ static int RT_get_timeskew_latency(struct SoundPlugin *plugin){
   
   if (data->timeskew < 0)
     return -1 * (data->timeskew * MIXER_get_sample_rate() / 1000);
+  else if(data->compensate_positive_delay)
+    return (data->timeskew * MIXER_get_sample_rate() / 1000);
   
   return 0;
 }
@@ -82,6 +85,11 @@ static void cleanup_timeskew_plugin_data(SoundPlugin *plugin){
 
 static void set_timeskew_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
+
+  if (effect_num==1) {
+    data->compensate_positive_delay = value >= 0.5;
+    return;
+  }
 
   if(value_format==PLUGIN_FORMAT_SCALED)
     data->timeskew = scale(value, 0, 1, TIMESKEW_MIN, TIMESKEW_MAX);
@@ -100,6 +108,9 @@ static void set_timeskew_effect_value(struct SoundPlugin *plugin, int time, int 
 static float get_timeskew_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
   Data *data = (Data*)plugin->data;
 
+  if (effect_num==1)
+    return data->compensate_positive_delay ? 1.0 : 0.0;
+  
   if(value_format==PLUGIN_FORMAT_SCALED)
     return scale(data->timeskew, TIMESKEW_MIN, TIMESKEW_MAX, 0, 1);
   else
@@ -107,16 +118,23 @@ static float get_timeskew_effect_value(struct SoundPlugin *plugin, int effect_nu
 }
 
 static const char *get_timeskew_effect_name(struct SoundPlugin *plugin, int effect_num){
-  return "Skew";
+  if (effect_num==0)
+    return "Skew";
+  else
+    return "Report latency, skew > 0";
 }
 
 static void get_timeskew_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
   Data *data = (Data*)plugin->data;
-  snprintf(buffer,buffersize-1,"%.2fms",data->timeskew);
+  if (effect_num==0)
+    snprintf(buffer,buffersize-1,"%.2fms",data->timeskew);
 }
 
 static int get_timeskew_effect_format(struct SoundPlugin *plugin, int effect_num){
-  return EFFECT_FORMAT_FLOAT;
+  if (effect_num==0)
+    return EFFECT_FORMAT_FLOAT;
+  else
+    return EFFECT_FORMAT_BOOL;
 }
 
 
@@ -131,7 +149,7 @@ void create_timeskew_plugin(void){
     timeskew_type.num_inputs               = 2;
     timeskew_type.num_outputs              = 2;
     timeskew_type.is_instrument            = false;
-    timeskew_type.num_effects              = 1;
+    timeskew_type.num_effects              = 2;
     timeskew_type.create_plugin_data       = create_timeskew_plugin_data;
     timeskew_type.cleanup_plugin_data      = cleanup_timeskew_plugin_data;
     
