@@ -405,17 +405,14 @@ namespace{
       this->setSize (400, 300);
       this->setUsingNativeTitleBar(true);
 
-#if defined(RELEASE) && FOR_LINUX
-      
-      this->setContentNonOwned(editor, true);
-      
-#else
-
       int button_height = root->song->tracker_windows->fontheight * 3 / 2;
 
+      
       main_component.setSize(R_MIN(100, editor->getWidth()), R_MIN(100, editor->getHeight()));
       this->setContentNonOwned(&main_component, true);
 
+#if defined(RELEASE) && FOR_LINUX
+#else
       // grab keyboard button
       {
 #if FOR_LINUX
@@ -434,7 +431,8 @@ namespace{
         main_component.addAndMakeVisible(&grab_keyboard_button);
         grab_keyboard_button.setTopLeftPosition(0, 0);
       }
-
+#endif
+      
       // always-on-top button
 #if 0
       {
@@ -473,7 +471,6 @@ namespace{
       // add vst gui
       main_component.addChildComponent(editor);
       editor->setTopLeftPosition(0, button_height);
-#endif
       
       if (data->x <= 0 || data->y <= 0) {
         this->centreWithSize (getWidth(), getHeight());
