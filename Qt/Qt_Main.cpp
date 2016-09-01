@@ -2058,6 +2058,7 @@ static bool char_inside(char *a, char *b, char*c){
 
 #if defined(FOR_WINDOWS)
 
+#include <windows.h>
 #include <dbghelp.h>
 
 // https://msdn.microsoft.com/en-us/library/windows/desktop/ms680341(v=vs.85).aspx
