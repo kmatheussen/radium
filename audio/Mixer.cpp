@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/Semaphores.hpp"
 #include "../common/stacktoucher_proc.h"
 #include "../common/OS_Player_proc.h"
-#include "../common/threading.h"
+#include "../common/threading_lowlevel.h"
 #include "../common/PEQ_LPB_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../midi/midi_i_input_proc.h"

@@ -1,9 +1,16 @@
 
+#include <unistd.h>
+#include <errno.h>
+#include <pthread.h>
+
+
 #ifndef TEST_THREADING
+
 
   #include "nsmtracker.h"
   #include "visual_proc.h"
   #include "threading.h"
+  #include "threading_lowlevel.h"
 
   #include "OS_Player_proc.h"
 
@@ -28,8 +35,6 @@ void OS_WaitAtLeast(int milliseconds){
 }
 
 #endif // !TEST_THREADING
-
-
 
 
 

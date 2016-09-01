@@ -1012,6 +1012,13 @@ MyApplication *qapplication = NULL;
 QApplication *g_qapplication = NULL;
 static QSplashScreen *g_splashscreen;
 
+void *OS_GFX_get_native_main_window(void){
+  R_ASSERT_RETURN_IF_FALSE2(ATOMIC_GET(is_starting_up)==false, NULL);
+      
+  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  return (void*)main_window->winId();
+}
+
 bool main_window_has_focus(void){
   if(ATOMIC_GET(is_starting_up)==true)
     return false;

@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/eventreciever_proc.h"
 #include "../common/player_proc.h"
 #include "../common/scancodes_proc.h"
+#include "../common/OS_visual_input.h"
 #include "../audio/Mixer_proc.h"
 
 #include "../common/OS_system_proc.h"
@@ -39,6 +40,17 @@ static DEFINE_ATOMIC(bool, right_windows_down) = false;
 
 static unsigned int g_last_keyswitch;
 
+void OS_WINDOWS_set_always_on_top(void *child_handle){
+#if 0
+  //SetWindowPos(main_handle, hwnd, 100, 100, 1000, 1000, SWP_SHOWWINDOW);
+  SetWindowPos(hwnd, HWND_TOP, 100, 100, 1000, 1000, SWP_SHOWWINDOW);
+#else
+  HWND child_hwnd = (HWND)child_handle;
+  HWND parent_hwnd = (HWND)OS_GFX_get_native_main_window();
+
+  SetWindowLongPtr(child_hwnd, -8, (LONG_PTR)parent_hwnd);
+#endif
+}
 
 static uint32_t get_keyswitch(void){
   uint32_t keyswitch=0;

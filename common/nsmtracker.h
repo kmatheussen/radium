@@ -87,6 +87,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 
+#if defined(FOR_LINUX)
+#elif defined(FOR_MACOSX)
+#elif defined(FOR_WINDOWS)
+#else
+#error "unknown architecture"
+#endif
+
 /******************************************************************
   Main header file for the tracker. Each struct often has a source-
   file with the same, or nearly the same, name.

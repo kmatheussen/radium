@@ -11,6 +11,33 @@
 #include <math.h>
 #include <string.h>
 
+#include "../pluginhost/JuceLibraryCode/JuceHeader.h"
+
+#include "../pluginhost/JuceLibraryCode/AppConfig.h"
+
+
+#if JUCE_LINUX
+  #define FOR_LINUX 1
+#endif
+
+#if JUCE_WINDOWS
+#define FOR_WINDOWS 1
+  #ifdef FOR_LINUX
+    #error "gakk"
+  #endif
+#endif
+
+#if JUCE_MAC
+#define FOR_MACOSX 1
+  #ifdef FOR_LINUX
+    #error "gakk"
+  #endif
+  #ifdef FOR_WINDOWS
+    #error "gakk2"
+  #endif
+#endif
+
+#define Slider Radium_Slider
 #include "../common/nsmtracker.h"
 #include "../common/patch_proc.h"
 #include "../common/PEQ_LPB_proc.h"
@@ -19,6 +46,7 @@
 #include "../common/visual_proc.h"
 #include "../common/player_proc.h"
 #include "../common/OS_Player_proc.h"
+#include "../common/OS_system_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
 #include "../OpenGL/Widget_proc.h"
 #include "../midi/midi_i_plugin_proc.h"
@@ -33,26 +61,27 @@
 
 #include "VST_plugins_proc.h"
 
-#include "../pluginhost/JuceLibraryCode/JuceHeader.h"
-
-#include "../pluginhost/JuceLibraryCode/AppConfig.h"
-
 #if 1 // no more vestige. why did I ever bother with it?
-#  undef PRAGMA_ALIGN_SUPPORTED
-#  define __cdecl
+#if FOR_LINUX
+  #  undef PRAGMA_ALIGN_SUPPORTED
+  #  define __cdecl
+#endif
 #  include "pluginterfaces/vst2.x/aeffectx.h"
 #else
 #  include "vestige/aeffectx.h"  // It should not be a problem to use VESTIGE in this case. It's just used for getting vendor string and product string.
 #endif
 
 #include "../midi/midi_proc.h"
-#include "Juce_plugins_proc.h"
 
 
 #include "../midi/midi_juce.cpp"
+#include "Juce_plugins_proc.h"
+
+#undef Slider
 
 
-#if JUCE_LINUX
+
+#if FOR_LINUX
 #define CUSTOM_MM_THREAD 1
 #else
 #define CUSTOM_MM_THREAD 0
@@ -276,31 +305,53 @@ namespace{
   //int button_height = 10;
 
   struct PluginWindow;
-  std::vector<PluginWindow*> g_plugin_windows;
   
-  struct PluginWindow  : public DocumentWindow, Button::Listener {
+  struct PluginWindow  : public DocumentWindow, Button::Listener, Timer {
     Data *data;
     const char *title;
     Component main_component;
-    ToggleButton button;
+    ToggleButton grab_keyboard_button;
+    //ToggleButton always_on_top_button;
     
     AudioProcessorEditor* const editor;
 
     virtual void 	buttonClicked (Button *) override {
     }
-    
+
     virtual void buttonStateChanged (Button *dasbutton) override {
-      bool new_state = button.getToggleState();
-
-      printf("ButtonStateChanged called for %p. %d %d. Size: %d\n", this, new_state, g_vst_grab_keyboard,(int)g_plugin_windows.size());
-      
-      if (new_state != g_vst_grab_keyboard) {
-
-        g_vst_grab_keyboard = new_state;
+      if (dasbutton == &grab_keyboard_button) {
         
-        for (auto *plugin_window : g_plugin_windows)
-          plugin_window->button.setToggleState(g_vst_grab_keyboard, sendNotification);
+        bool new_state = grab_keyboard_button.getToggleState();
+
+        //printf("ButtonStateChanged called for %p. %d %d. Size: %d\n", this, new_state, g_vst_grab_keyboard,(int)g_plugin_windows.size());
+        
+        if (new_state != g_vst_grab_keyboard) {
+          
+          g_vst_grab_keyboard = new_state;
+          
+          //for (auto *plugin_window : g_plugin_windows)
+          //  plugin_window->button.setToggleState(g_vst_grab_keyboard, sendNotification);
+        }
+        
       }
+      /*
+      else if (dasbutton == &always_on_top_button) {
+
+        bool new_state = always_on_top_button.getToggleState();
+        if (new_state != vstGuiIsAlwaysOnTop())
+          setVstGuiAlwaysOnTop(new_state);
+      }
+      */
+    }
+    
+    void timerCallback() override {
+      bool new_state = grab_keyboard_button.getToggleState();
+      if (new_state != g_vst_grab_keyboard)
+        grab_keyboard_button.setToggleState(g_vst_grab_keyboard, dontSendNotification);
+      
+      //if (isAlwaysOnTop() != vstGuiIsAlwaysOnTop())
+      //  delete this;
+      //this->setAlwaysOnTop(vstGuiIsAlwaysOnTop());
     }
     
     PluginWindow(const char *title, Data *data, AudioProcessorEditor* const editor)
@@ -312,39 +363,64 @@ namespace{
       , title(title)
       , editor(editor)
     {
-      if(vstGuiIsAlwaysOnTop())
+#if !FOR_WINDOWS
+      if(vstGuiIsAlwaysOnTop()) {
         this->setAlwaysOnTop(true);
+      }
+#endif
+      //this->setAlwaysOnTop(true);
       
       this->setSize (400, 300);
       this->setUsingNativeTitleBar(true);
 
-#if defined(RELEASE) && JUCE_LINUX
+#if defined(RELEASE) && FOR_LINUX
       
       this->setContentNonOwned(editor, true);
       
 #else
-      
+
+      int button_height = root->song->tracker_windows->fontheight * 3 / 2;
+
       main_component.setSize(R_MIN(100, editor->getWidth()), R_MIN(100, editor->getHeight()));
       this->setContentNonOwned(&main_component, true);
 
-      // set up button
-#if JUCE_LINUX
-      button.setButtonText("Grab keyboard (not functional)");
+      // grab keyboard button
+      {
+#if FOR_LINUX
+        grab_keyboard_button.setButtonText("Grab keyboard (not functional)");
 #else
-      button.setButtonText("Grab keyboard");
+        grab_keyboard_button.setButtonText("Grab keyboard");
 #endif
-      int button_height = root->song->tracker_windows->fontheight * 3 / 2;
         
-      button.setToggleState(g_vst_grab_keyboard, sendNotification);
-      button.setSize(400, button_height);
-      button.changeWidthToFitText();
-
-      button.addListener(this);
+        grab_keyboard_button.setToggleState(g_vst_grab_keyboard, dontSendNotification);
+        grab_keyboard_button.setSize(400, button_height);
+        grab_keyboard_button.changeWidthToFitText();
+        
+        grab_keyboard_button.addListener(this);
       
-      // add button
-      main_component.addAndMakeVisible(&button);
-      button.setTopLeftPosition(0, 0);
+        // add it
+        main_component.addAndMakeVisible(&grab_keyboard_button);
+        grab_keyboard_button.setTopLeftPosition(0, 0);
+      }
 
+      
+      // always-on-top button
+#if 0
+      {
+        always_on_top_button.setButtonText("Always on top");
+        
+        always_on_top_button.setToggleState(vstGuiIsAlwaysOnTop(), dontSendNotification);
+        always_on_top_button.setSize(400, button_height);
+        always_on_top_button.changeWidthToFitText();
+        
+        always_on_top_button.addListener(this);
+      
+        // add it
+        main_component.addAndMakeVisible(&always_on_top_button);
+        always_on_top_button.setTopLeftPosition(0, 0);
+      }
+#endif
+      
       // add vst gui
       main_component.addChildComponent(editor);
       editor->setTopLeftPosition(0, button_height);
@@ -358,17 +434,23 @@ namespace{
 
       this->setVisible(true);
 
-#if defined(RELEASE) && JUCE_LINUX
+#if defined(RELEASE) && FOR_LINUX
 #else
       main_component.setSize(editor->getWidth(), editor->getHeight() + button_height);
-      button.setTopLeftPosition(main_component.getWidth()-button.getWidth(), 0);
+      grab_keyboard_button.setTopLeftPosition(main_component.getWidth()-grab_keyboard_button.getWidth(), 0);
+      //always_on_top_button.setTopLeftPosition(main_component.getWidth()-grab_keyboard_button.getWidth()-always_on_top_button.getWidth(), 0);
 #endif
       
-      g_plugin_windows.push_back(this);
+      startTimer(100);
+
+#if FOR_WINDOWS
+      if(vstGuiIsAlwaysOnTop()) {
+        OS_WINDOWS_set_always_on_top(this->getWindowHandle());
+      }
+#endif
     }
 
     ~PluginWindow(){
-      g_plugin_windows.erase(std::remove(g_plugin_windows.begin(), g_plugin_windows.end(), this), g_plugin_windows.end()); // std::vector is not nice
       delete editor;
       data->window = NULL;
       V_free((void*)title);
@@ -409,6 +491,7 @@ namespace{
     }
 
   };
+
 
 #if CUSTOM_MM_THREAD
   struct JuceThread : public Thread {
@@ -1270,7 +1353,7 @@ namespace{
         
       //addAndMakeVisible(progress_bar);
         
-      this->setAlwaysOnTop(true);
+      //this->setAlwaysOnTop(true);
       //this->setSize (600, 20);
       this->setUsingNativeTitleBar(true);
       
