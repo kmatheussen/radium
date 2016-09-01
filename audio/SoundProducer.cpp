@@ -601,6 +601,8 @@ struct SoundProducer {
   bool _is_bus;
   int _bus_num;
   enum BusDescendantType _bus_descendant_type; // Is 'IS_BUS_DESCENDANT' for all descendants of bus plugins. To prevent accidental feedback loops.
+
+  LatencyCompensatorDelay *_dry_sound_latencycompensator_delays;
   
   float **_dry_sound;
   float **_input_sound; // I'm not sure if it's best to place this data on the heap or the stack. Currently the heap is used. Advantage of heap: Avoid (having to think about the possibility of) risking running out of stack. Advantage of stack: Fewer cache misses.
@@ -681,6 +683,8 @@ public:
     _input_peaks = (float*)V_calloc(sizeof(float),_num_dry_sounds);
     _volume_peaks = (float*)V_calloc(sizeof(float),_num_outputs);
 
+    _dry_sound_latencycompensator_delays = new LatencyCompensatorDelay[_num_dry_sounds];
+    
     MIXER_add_SoundProducer(this);
 
     if (!_is_bus && _num_outputs>0){
@@ -780,6 +784,8 @@ public:
     MIXER_remove_SoundProducer(this);
 
     _plugin->sp = NULL;
+
+    delete[] _dry_sound_latencycompensator_delays;
     
     V_free(_input_peaks);
     V_free(_volume_peaks);
@@ -1159,7 +1165,9 @@ public:
     // 3. Find and set _latency and _highest_input_link_latency
     //
     _highest_input_link_latency = 0;
-    
+
+    int my_latency = _plugin->type->RT_get_latency!=NULL ? _plugin->type->RT_get_latency(_plugin) : 0;
+
     {
       for (SoundProducerLink *link : _input_links) {
 
@@ -1176,14 +1184,15 @@ public:
           _highest_input_link_latency = source_latency;
       }
       
-      int my_latency = _plugin->type->RT_get_latency!=NULL ? _plugin->type->RT_get_latency(_plugin) : 0;
-
       //int prev=_latency;
       _latency = _highest_input_link_latency + my_latency;
       //if (prev != _latency)
       //  printf("    Set latency to %d. (%s). Highest: %d. My: %d, Prev: %d\n", _latency, _plugin->patch->name, _highest_input_link_latency, my_latency,prev);
+
     }
 
+    for(int ch = 0 ; ch < _num_dry_sounds ; ch++)
+      _dry_sound_latencycompensator_delays[ch].RT_set_preferred_delay(my_latency);
   }
   
   bool has_run(int64_t time){
@@ -1304,12 +1313,17 @@ public:
     }
 
 
+    float *_latency_dry_sound[_num_dry_sounds];
+    for(int ch=0;ch<_num_dry_sounds;ch++)        
+      _latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(_dry_sound[ch], num_frames);
+
     if(do_bypass){
 
       int num_channels = std::min(_num_dry_sounds,_num_outputs);
-      for(int ch=0;ch<num_channels;ch++){
-        memcpy(_output_sound[ch], _dry_sound[ch], num_frames*sizeof(float));
-      }
+      for(int ch=0;ch<num_channels;ch++)
+         memcpy(_output_sound[ch],
+                _latency_dry_sound[ch],
+                num_frames*sizeof(float));
 
     }else{ // do_bypass -> !do_bypass
 
@@ -1342,8 +1356,8 @@ public:
       RT_apply_system_filter(&_plugin->lowpass,   _output_sound, _num_outputs, num_frames, process_plugins);
       RT_apply_system_filter(&_plugin->highpass,  _output_sound, _num_outputs, num_frames, process_plugins);
   
-      // dry/wet
-      RT_apply_dry_wet(_dry_sound, _num_dry_sounds, _output_sound, _num_outputs, num_frames, &_plugin->drywet);
+      // dry/wet              
+      RT_apply_dry_wet(_latency_dry_sound, _num_dry_sounds, _output_sound, _num_outputs, num_frames, &_plugin->drywet);
 
     } // else !do_bypass
 
@@ -1353,7 +1367,7 @@ public:
 
     // Right channel delay ("width")
     if(_num_outputs>1)
-     static_cast<radium::SmoothDelay*>(_plugin->delay)->RT_process(num_frames, _output_sound[1], _output_sound[1]);
+      static_cast<radium::SmoothDelay*>(_plugin->delay)->RT_process(num_frames, _output_sound[1], _output_sound[1]);
     
     // Output peaks
     {

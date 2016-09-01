@@ -70,7 +70,7 @@ struct SmoothDelay {
     size = R_MAX(0, R_MIN(buffer_size-1, size));
     if (size != iHslider0) {
       iHslider0 = size;
-      if (can_pipe_instead == true)
+      if (can_pipe_instead == true && iHslider0 > 0)
         can_pipe_instead = false;
     }
   }
@@ -117,13 +117,15 @@ struct SmoothDelay {
     const int iSlow0 = iHslider0;
 
     const int anding = buffer_size-1;
-    
+
     if (can_pipe_instead){
+
+      // Must do this, even if there has been no delay earlier. If we don't do this, there will be clicks when turning on the delay.
       for(int i = 0 ; i < count ; i++){
         fVec0[(IOTA & anding)] = input0[i];
         IOTA++;
       }
-      
+
       if (input0 != output0)
         memcpy(output0, input0, sizeof(float)*count);
       
