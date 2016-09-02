@@ -1451,7 +1451,7 @@ public:
 
         float out_peak = RT_get_max_val(_output_sound[ch],num_frames);
         
-        if (fabsf(out_peak) > MIN_AUTOBYPASS_PEAK)
+        if (!is_touched && fabsf(out_peak) > MIN_AUTOBYPASS_PEAK)
           is_touched = true;
 
         volume_peaks[ch] = out_peak * _plugin->volume;

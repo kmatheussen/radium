@@ -1743,6 +1743,10 @@ bool RT_PLUGIN_can_autobypass(SoundPlugin *plugin, int64_t time){
   
   int delay = (double)ATOMIC_GET(g_autobypass_delay) * MIXER_get_sample_rate() / 1000.0;
 
+  int smooth_delay = plugin->delay_time * MIXER_get_sample_rate() / 1000;
+  if (smooth_delay > delay)
+    delay = smooth_delay;
+  
   int input_latency = RT_SP_get_input_latency(plugin->sp);
   if (input_latency > delay)
     delay = input_latency;
