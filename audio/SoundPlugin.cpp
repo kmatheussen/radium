@@ -1739,6 +1739,12 @@ bool RT_PLUGIN_can_autobypass(SoundPlugin *plugin, int64_t time){
   if (ATOMIC_GET(plugin->can_autobypass)==false)
     return false;
 
+  if (plugin->playing_voices != NULL)
+    return false;
+
+  if (plugin->patch->playing_voices != NULL)
+    return false;
+  
   int time_since_activity = time-ATOMIC_GET(plugin->time_of_last_activity);
   
   int delay = (double)ATOMIC_GET(g_autobypass_delay) * MIXER_get_sample_rate() / 1000.0;
