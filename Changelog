@@ -1,3 +1,20 @@
+Changes 4.1.0 -> 4.1.1:
+* Option to auto-bypass instruments. The feature turns off processsing for
+  an instrument when it has been inactive for a specified amount of time,
+  i.e. when it has not received or produced any audio or events.
+  This can save lots of CPU. Note that this bypass is not the same as
+  the mixer-bypass. The mixer-bypass only turns down the volume,
+  but it doesn't turn off processing.
+* Fix bug causing assertion reporter to pop up when changing tempo etc.
+  (bug introduced in 4.1.0)
+* Run plugins also when dry/wet value is 0% or bypassing. If not,
+  delaying plugins might cause old audio to suddenly kick in when
+  unbypassing. Other artifacts may have occured too because of this.
+* Upgraded s7 scheme interpreter to latest version.
+* Fix startup crash if startup is interrupted.
+
+
+
 Changes 4.0.9 -> 4.1.0:
 * Add bypass button to native VST GUI windows
 * Windows: Fix always-on-top for VST GUIs (i.e. avoid
