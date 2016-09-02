@@ -2007,6 +2007,7 @@ moc_Qt${RADIUM_QT_VERSION}Widget.o: bin/packages/Visualization-Library-master/sr
 # embedded scheme
 
 ifeq ($(TARGET_OS),linux)
+#S7AlignmentSanitize=
 S7AlignmentSanitize=-fno-sanitize=alignment
 else
 S7AlignmentSanitize=

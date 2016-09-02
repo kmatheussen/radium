@@ -1251,16 +1251,15 @@ public:
 
         SMOOTH_called_per_block(&link->volume);
 
-        float *channel_target = _dry_sound[link->target_ch];
-                
         float *input_producer_sound = link->source->_output_sound[link->source_ch];
 
         float *latency_compensated_input_producer_sound = link->_delay.RT_process(input_producer_sound, num_frames);
 
-        //if (!strcmp(_plugin->patch->name, "latencypipe"))
-        //  printf("latency: %d\n", latency);
-        
-        SMOOTH_mix_sounds(&link->volume, channel_target, latency_compensated_input_producer_sound, num_frames);
+        SMOOTH_mix_sounds(&link->volume,
+                          _dry_sound[link->target_ch],
+                          latency_compensated_input_producer_sound,
+                          num_frames
+                          );
 
       } // end !link->is_event_link
       
@@ -1317,49 +1316,37 @@ public:
     for(int ch=0;ch<_num_dry_sounds;ch++)        
       _latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(_dry_sound[ch], num_frames);
 
-    if(do_bypass){
+    
+    if(is_a_generator){
+      
+      // Apply input volume and fill output
+      for(int ch=0;ch<_num_outputs;ch++)
+        SMOOTH_copy_sound(&_plugin->input_volume, _output_sound[ch], _dry_sound[ch], num_frames);
+            
+    }else{
+      
+      // Apply input volume
+      for(int ch=0;ch<_num_inputs;ch++)
+        SMOOTH_copy_sound(&_plugin->input_volume, _input_sound[ch], _dry_sound[ch], num_frames);
+      
+      // Fill output
+      PLUGIN_RT_process(_plugin, time, num_frames, _input_sound, _output_sound, process_plugins);      
+    }
 
-      int num_channels = std::min(_num_dry_sounds,_num_outputs);
-      for(int ch=0;ch<num_channels;ch++)
-         memcpy(_output_sound[ch],
-                _latency_dry_sound[ch],
-                num_frames*sizeof(float));
-
-    }else{ // do_bypass -> !do_bypass
-
-      if(is_a_generator){
-
-        // Apply input volume and fill output
-        for(int ch=0;ch<_num_outputs;ch++)
-          SMOOTH_copy_sound(&_plugin->input_volume, _output_sound[ch], _dry_sound[ch], num_frames);
-
-
-      }else{
-
-        // Apply input volume
-        for(int ch=0;ch<_num_inputs;ch++)
-          SMOOTH_copy_sound(&_plugin->input_volume, _input_sound[ch], _dry_sound[ch], num_frames);
-        
-        // Fill output
-        PLUGIN_RT_process(_plugin, time, num_frames, _input_sound, _output_sound, process_plugins);
-
-      }
-
-      // compressor
-      RT_apply_system_filter(&_plugin->comp,      _output_sound, _num_outputs, num_frames, process_plugins);
-
-      // filters
-      RT_apply_system_filter(&_plugin->lowshelf,  _output_sound, _num_outputs, num_frames, process_plugins);
-      RT_apply_system_filter(&_plugin->eq1,       _output_sound, _num_outputs, num_frames, process_plugins);
-      RT_apply_system_filter(&_plugin->eq2,       _output_sound, _num_outputs, num_frames, process_plugins);
-      RT_apply_system_filter(&_plugin->highshelf, _output_sound, _num_outputs, num_frames, process_plugins);
-      RT_apply_system_filter(&_plugin->lowpass,   _output_sound, _num_outputs, num_frames, process_plugins);
-      RT_apply_system_filter(&_plugin->highpass,  _output_sound, _num_outputs, num_frames, process_plugins);
-  
-      // dry/wet              
-      RT_apply_dry_wet(_latency_dry_sound, _num_dry_sounds, _output_sound, _num_outputs, num_frames, &_plugin->drywet);
-
-    } // else !do_bypass
+    
+    // compressor
+    RT_apply_system_filter(&_plugin->comp,      _output_sound, _num_outputs, num_frames, process_plugins);
+    
+    // filters
+    RT_apply_system_filter(&_plugin->lowshelf,  _output_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->eq1,       _output_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->eq2,       _output_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->highshelf, _output_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->lowpass,   _output_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->highpass,  _output_sound, _num_outputs, num_frames, process_plugins);
+    
+    // dry/wet              
+    RT_apply_dry_wet(_latency_dry_sound, _num_dry_sounds, _output_sound, _num_outputs, num_frames, &_plugin->drywet);
 
     
     // Output pan
