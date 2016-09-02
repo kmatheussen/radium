@@ -90,6 +90,8 @@ jack_client_t *g_jack_client;
 static int g_jack_client_priority;
 struct CpuUsage g_cpu_usage;
 
+static DEFINE_ATOMIC(int64_t, g_last_mixer_time) = 0;
+
 static DEFINE_ATOMIC(bool, g_jack_is_running) = true;
 
 bool PLAYER_is_running(void){
@@ -722,10 +724,10 @@ struct Mixer{
       //printf("\n\nNew:\n");
       
       for (SoundProducer *sp : _sound_producers)
-        SP_RT_called_for_each_soundcard_block1(sp);
+        SP_RT_called_for_each_soundcard_block1(sp, _time);
 
       for (SoundProducer *sp : _sound_producers)
-        SP_RT_called_for_each_soundcard_block2(sp);
+        SP_RT_called_for_each_soundcard_block2(sp, _time);
 
       ATOMIC_SET(g_currently_processing_dsp, true);
         
@@ -744,6 +746,8 @@ struct Mixer{
         jackblock_delta_time += RADIUM_BLOCKSIZE;
       }
 
+      ATOMIC_SET(g_last_mixer_time, _time);
+      
       ATOMIC_SET(g_currently_processing_dsp, false);
       
       jack_time_t end_time = jack_get_time();
@@ -916,6 +920,10 @@ bool MIXER_start(void){
 
   // Multicore is initialized after starting jack, since the "runners" call THREADING_acquire_player_thread_priority in the constructor, which don't work before jack has started.
   MULTICORE_init();
+
+  // Read in autobypass configuration from settings file
+  autobypassEnabled();
+  getAutoBypassDelay();
   
   return true;
 }
@@ -971,6 +979,11 @@ int64_t MIXER_get_time(void){
   return g_mixer->_time;
 }
 */
+
+// Not quite accurate. Should not be called from the player thread or any other realtime thread.
+int64_t MIXER_get_last_used_time(void){
+  return ATOMIC_GET(g_last_mixer_time);
+}
 
 static int get_audioblock_time(STime jack_block_start_time){
   STime abs_jack_time = jack_frame_time(g_mixer->_rjack_client);

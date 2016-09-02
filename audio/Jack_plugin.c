@@ -180,6 +180,8 @@ void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin 
   for(i=0;i<plugin_type->num_inputs;i++)
     output_portnames[i] = state==NULL ? NULL : HASH_get_chars_at(state, "output_portname",i);
 
+  ATOMIC_SET(plugin->can_autobypass, false);
+  
   return create_data(plugin_type,
                      (jack_client_t*)plugin_type->data,
                      plugin_type->num_inputs,

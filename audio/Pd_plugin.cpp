@@ -1053,6 +1053,8 @@ static QTemporaryFile *create_new_tempfile(QString *fileName){
 static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
   QTemporaryFile *pdfile;
 
+  ATOMIC_SET(plugin->can_autobypass, false);
+    
   if (state==NULL)
     pdfile = create_new_tempfile((QString *)plugin_type->data);
   else

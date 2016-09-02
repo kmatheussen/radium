@@ -534,7 +534,10 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
       for(int ch=0;ch<plugin->type->num_outputs;ch++) {
         float *out = outputs[ch];
         float peak = RT_get_max_val(out,num_frames);
-        
+
+        if (fabsf(peak) > MIN_AUTOBYPASS_PEAK)
+          RT_PLUGIN_touch(plugin);
+
         if (peak > 317) {
           volatile struct Patch *patch = plugin->patch;
           RT_message("Warning! (1)\n"
@@ -597,6 +600,8 @@ struct SoundProducer {
 
   double running_time;
   bool has_run_for_each_block2;
+
+  bool _autobypassing_this_cycle;
   
   bool _is_bus;
   int _bus_num;
@@ -936,6 +941,8 @@ public:
       // Wait until all sound links can be removed
       for(auto link : links)
         while(link->can_be_removed()==false){
+          PLUGIN_touch(link->source->_plugin);
+          PLUGIN_touch(link->target->_plugin);
           PLAYER_memory_debug_wake_up();
           usleep(3000);
         }
@@ -961,6 +968,8 @@ public:
     link->turn_off();
 
     do{
+      PLUGIN_touch(link->source->_plugin);
+      PLUGIN_touch(link->target->_plugin);
       PLAYER_memory_debug_wake_up();
       usleep(1000);
     }while(link->can_be_removed()==false);
@@ -1126,18 +1135,21 @@ public:
     return true;
   }
   
-  void RT_called_for_each_soundcard_block1(void){
+  void RT_called_for_each_soundcard_block1(int64_t time){
     running_time = 0.0;
     has_run_for_each_block2 = false;
   }
 
   // Called by main mixer thread before starting multicore.
-  void RT_called_for_each_soundcard_block2(void){
+  void RT_called_for_each_soundcard_block2(int64_t time){
     if (has_run_for_each_block2 == true)
       return;
 
     has_run_for_each_block2 = true;
 
+    
+    _autobypassing_this_cycle = RT_PLUGIN_can_autobypass(_plugin, time);
+      
     
     // 1. Find num_dependencies
     //
@@ -1158,7 +1170,7 @@ public:
       if (!should_consider_latency(link))
         continue;
 
-      link->source->RT_called_for_each_soundcard_block2();
+      link->source->RT_called_for_each_soundcard_block2(time);
     }
 
     
@@ -1198,169 +1210,48 @@ public:
   bool has_run(int64_t time){
     return _last_time == time;
   }
-  
-  void RT_process(int64_t time, int num_frames, bool process_plugins){
-    
-    R_ASSERT(has_run(time)==false);
 
-    
-    _last_time = time;
-
-    
-    PLUGIN_update_smooth_values(_plugin);
-
-    
-    // null out target channels
-    for(int ch=0;ch<_num_inputs;ch++)
-      memset(_dry_sound[ch], 0, sizeof(float)*num_frames);
-
-    
-    // Fill inn target channels    
-    for (SoundProducerLink *link : _input_links) {
-
-      if (link->is_event_link)
-        continue;
+  void RT_set_input_peak_values(float *input_peaks){
+    for(int ch=0;ch<_num_dry_sounds;ch++){
+      float peak = input_peaks[ch];
       
-      if (!should_consider_latency(link))
-        continue;
-      
-      SoundProducer *source = link->source;
-
-      int latency = _highest_input_link_latency - source->_latency;
-      
-      if (latency >= link->_delay._delay.buffer_size) {
-        RT_message("%s -> %s: Compensating for a latency of more than %dms is not supported.\nNumber of frames: %d",  source->_plugin->patch->name, link->target->_plugin->patch->name, MAX_COMPENSATED_LATENCY, latency);
-        latency = link->_delay._delay.buffer_size-1;
-      }
-
-      if (latency != link->_delay._delay.getSize()) {
-        link->_delay.RT_set_preferred_delay(latency);
-#ifndef RELEASE
-        printf("    Set latency %d. (%s -> %s)\n", latency, source->_plugin->patch->name, link->target->_plugin->patch->name);
-#endif
-      }
-    
-      if (false==link->is_active) {        
-        link->_delay.RT_call_instead_of_process(num_frames);        
-        continue;
-      }
-
-      R_ASSERT(source->has_run(time));
-      
-      if (false==link->is_event_link) {
-
-        SMOOTH_called_per_block(&link->volume);
-
-        float *input_producer_sound = link->source->_output_sound[link->source_ch];
-
-        float *latency_compensated_input_producer_sound = link->_delay.RT_process(input_producer_sound, num_frames);
-
-        SMOOTH_mix_sounds(&link->volume,
-                          _dry_sound[link->target_ch],
-                          latency_compensated_input_producer_sound,
-                          num_frames
-                          );
-
-      } // end !link->is_event_link
-      
-    } // end for (SoundProducerLink *link : _input_links)
-
-    
-    bool is_a_generator = _num_inputs==0;
-    bool do_bypass      = _plugin->drywet.smoothing_is_necessary==false && _plugin->drywet.value==0.0f;
-
-  
-    if(is_a_generator)
-      PLUGIN_RT_process(_plugin, time, num_frames, _input_sound, _dry_sound, process_plugins);
-  
-
-    // Input peaks
-    {
-      for(int ch=0;ch<_num_dry_sounds;ch++){
-        float input_volume = SMOOTH_get_target_value(&_plugin->input_volume);
-        float peak = do_bypass ? 0.0f : RT_get_max_val(_dry_sound[ch],num_frames) *  input_volume;
-
-        if (RT_message_will_be_sent()==true) {
-          if (peak > 317) {
-            volatile struct Patch *patch = _plugin->patch;
-            
-            float *out = _dry_sound[ch];
-                    
-            RT_message("Warning! (2)\n"
-                       "\n"
-                       "The instrument named \"%s\" received\n"
-                       "a signal of at least 50dB in channel %d.\n"
-                       "Raw peak value: %f.\n"
-                       "10 first frames: %f %f %f %f %f %f %f %f %f %f."
-                       "Input volume: %f.\n"
-                       "\n"
-                       "This warning will pop up as long as the instrument does so.\n",
-                       patch==NULL?"<no name>":patch->name,
-                       _plugin->type->type_name, _plugin->type->name,
-                       ch,peak,
-                       out[0], out[1],out[2],out[2],out[3],out[4],out[5],out[6],out[7],out[8],out[9],
-                       input_volume
-                       );        
-          }
+      if (RT_message_will_be_sent()==true) {
+        if (peak > 317) {
+          volatile struct Patch *patch = _plugin->patch;
+          
+          float *out = _dry_sound[ch];
+          
+          RT_message("Warning! (2)\n"
+                     "\n"
+                     "The instrument named \"%s\" received\n"
+                     "a signal of at least 50dB in channel %d.\n"
+                     "Raw peak value: %f.\n"
+                     "10 first frames: %f %f %f %f %f %f %f %f %f %f."
+                     "Input volume: %f.\n"
+                     "\n"
+                     "This warning will pop up as long as the instrument does so.\n",
+                     patch==NULL?"<no name>":patch->name,
+                     _plugin->type->type_name, _plugin->type->name,
+                     ch,peak,
+                     out[0], out[1],out[2],out[2],out[3],out[4],out[5],out[6],out[7],out[8],out[9],
+                     SMOOTH_get_target_value(&_plugin->input_volume)
+                     );        
         }
-
-        safe_float_write(&_plugin->input_volume_peak_values[ch], peak);
-
-        //        if (ch<2)
-        //          safe_volatile_float_write(&_plugin->system_volume_peak_values[ch], peak); // Value only used by the slider at the bottom bar.
       }
+      
+      safe_float_write(&_plugin->input_volume_peak_values[ch], peak);
+      
+      //        if (ch<2)
+      //          safe_volatile_float_write(&_plugin->system_volume_peak_values[ch], peak); // Value only used by the slider at the bottom bar.
     }
-
-
-    float *_latency_dry_sound[_num_dry_sounds];
-    for(int ch=0;ch<_num_dry_sounds;ch++)        
-      _latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(_dry_sound[ch], num_frames);
-
+  }
     
-    if(is_a_generator){
-      
-      // Apply input volume and fill output
-      for(int ch=0;ch<_num_outputs;ch++)
-        SMOOTH_copy_sound(&_plugin->input_volume, _output_sound[ch], _dry_sound[ch], num_frames);
-            
-    }else{
-      
-      // Apply input volume
-      for(int ch=0;ch<_num_inputs;ch++)
-        SMOOTH_copy_sound(&_plugin->input_volume, _input_sound[ch], _dry_sound[ch], num_frames);
-      
-      // Fill output
-      PLUGIN_RT_process(_plugin, time, num_frames, _input_sound, _output_sound, process_plugins);      
-    }
-
-    
-    // compressor
-    RT_apply_system_filter(&_plugin->comp,      _output_sound, _num_outputs, num_frames, process_plugins);
-    
-    // filters
-    RT_apply_system_filter(&_plugin->lowshelf,  _output_sound, _num_outputs, num_frames, process_plugins);
-    RT_apply_system_filter(&_plugin->eq1,       _output_sound, _num_outputs, num_frames, process_plugins);
-    RT_apply_system_filter(&_plugin->eq2,       _output_sound, _num_outputs, num_frames, process_plugins);
-    RT_apply_system_filter(&_plugin->highshelf, _output_sound, _num_outputs, num_frames, process_plugins);
-    RT_apply_system_filter(&_plugin->lowpass,   _output_sound, _num_outputs, num_frames, process_plugins);
-    RT_apply_system_filter(&_plugin->highpass,  _output_sound, _num_outputs, num_frames, process_plugins);
-    
-    // dry/wet              
-    RT_apply_dry_wet(_latency_dry_sound, _num_dry_sounds, _output_sound, _num_outputs, num_frames, &_plugin->drywet);
-
-    
-    // Output pan
-    SMOOTH_apply_pan(&_plugin->pan, _output_sound, _num_outputs, num_frames);
-
-    // Right channel delay ("width")
-    if(_num_outputs>1)
-      static_cast<radium::SmoothDelay*>(_plugin->delay)->RT_process(num_frames, _output_sound[1], _output_sound[1]);
-    
+  void RT_set_output_peak_values(float *volume_peaks){
     // Output peaks
     {
       for(int ch=0;ch<_num_outputs;ch++){
-        float volume_peak = RT_get_max_val(_output_sound[ch],num_frames) * _plugin->volume;
-        
+        float volume_peak = volume_peaks[ch];
+
         if (RT_message_will_be_sent()==true) {
           if (volume_peak > 317) {
             volatile struct Patch *patch = _plugin->patch;
@@ -1411,6 +1302,171 @@ public:
       }
     }
   }
+  
+  void RT_process(int64_t time, int num_frames, bool process_plugins){
+    
+    R_ASSERT(has_run(time)==false);
+    _last_time = time;
+
+    
+    PLUGIN_update_smooth_values(_plugin);
+
+    
+    // null out target channels
+    for(int ch=0;ch<_num_inputs;ch++)
+      memset(_dry_sound[ch], 0, sizeof(float)*num_frames);
+
+    
+    // Fill inn target channels    
+    for (SoundProducerLink *link : _input_links) {
+
+      if (link->is_event_link)
+        continue;
+      
+      if (!should_consider_latency(link))
+        continue;
+      
+      SoundProducer *source = link->source;
+      
+      int latency = _highest_input_link_latency - source->_latency;
+      
+      if (latency >= link->_delay._delay.buffer_size) {
+        RT_message("%s -> %s: Compensating for a latency of more than %dms is not supported.\nNumber of frames: %d",  source->_plugin->patch->name, link->target->_plugin->patch->name, MAX_COMPENSATED_LATENCY, latency);
+        latency = link->_delay._delay.buffer_size-1;
+      }
+
+      if (latency != link->_delay._delay.getSize()) {
+        link->_delay.RT_set_preferred_delay(latency);
+#ifndef RELEASE
+        printf("    Set latency %d. (%s -> %s)\n", latency, source->_plugin->patch->name, link->target->_plugin->patch->name);
+#endif
+      }
+    
+      if (false==link->is_active) {        
+        link->_delay.RT_call_instead_of_process(num_frames);        
+        continue;
+      }
+
+      // fix: the result of RT_PLUGIN_can_autobypass must be determined before starting a new cycle
+      if (source->_autobypassing_this_cycle)
+        continue;
+      
+      R_ASSERT(source->has_run(time));
+      
+      if (false==link->is_event_link) {
+
+        SMOOTH_called_per_block(&link->volume);
+
+        float *input_producer_sound = link->source->_output_sound[link->source_ch];
+
+        float *latency_compensated_input_producer_sound = link->_delay.RT_process(input_producer_sound, num_frames);
+
+        SMOOTH_mix_sounds(&link->volume,
+                          _dry_sound[link->target_ch],
+                          latency_compensated_input_producer_sound,
+                          num_frames
+                          );
+
+      } // end !link->is_event_link
+      
+    } // end for (SoundProducerLink *link : _input_links)
+
+    
+    bool is_a_generator = _num_inputs==0;
+    bool do_bypass      = _plugin->drywet.smoothing_is_necessary==false && _plugin->drywet.value==0.0f;
+
+  
+    if(is_a_generator)
+      PLUGIN_RT_process(_plugin, time, num_frames, _input_sound, _dry_sound, process_plugins);
+  
+
+    // Input peaks
+    if (_num_dry_sounds > 0){
+      float input_peaks[_num_dry_sounds];
+      for(int ch=0;ch<_num_dry_sounds;ch++) {
+        
+        float dry_peak = RT_get_max_val(_dry_sound[ch],num_frames);
+        
+        if (fabsf(dry_peak) > MIN_AUTOBYPASS_PEAK)
+          RT_PLUGIN_touch(_plugin);
+        
+        float input_volume = SMOOTH_get_target_value(&_plugin->input_volume);
+
+        input_peaks[ch] = do_bypass ? 0.0f : dry_peak *  input_volume;
+      }
+      RT_set_input_peak_values(input_peaks);
+    }
+
+
+    float *_latency_dry_sound[_num_dry_sounds];
+    for(int ch=0;ch<_num_dry_sounds;ch++)        
+      _latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(_dry_sound[ch], num_frames);
+
+    
+    if(is_a_generator){
+      
+      // Apply input volume and fill output
+      for(int ch=0;ch<_num_outputs;ch++)
+        SMOOTH_copy_sound(&_plugin->input_volume, _output_sound[ch], _dry_sound[ch], num_frames);
+            
+    }else{
+      
+      // Apply input volume
+      for(int ch=0;ch<_num_inputs;ch++)
+        SMOOTH_copy_sound(&_plugin->input_volume, _input_sound[ch], _dry_sound[ch], num_frames);
+      
+      // Fill output
+      PLUGIN_RT_process(_plugin, time, num_frames, _input_sound, _output_sound, process_plugins);      
+    }
+
+    
+    // compressor
+    RT_apply_system_filter(&_plugin->comp,      _output_sound, _num_outputs, num_frames, process_plugins);
+    
+    // filters
+    RT_apply_system_filter(&_plugin->lowshelf,  _output_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->eq1,       _output_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->eq2,       _output_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->highshelf, _output_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->lowpass,   _output_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->highpass,  _output_sound, _num_outputs, num_frames, process_plugins);
+    
+    // dry/wet              
+    RT_apply_dry_wet(_latency_dry_sound, _num_dry_sounds, _output_sound, _num_outputs, num_frames, &_plugin->drywet);
+
+    
+    // Output pan
+    SMOOTH_apply_pan(&_plugin->pan, _output_sound, _num_outputs, num_frames);
+
+    // Right channel delay ("width")
+    if(_num_outputs>1)
+      static_cast<radium::SmoothDelay*>(_plugin->delay)->RT_process(num_frames, _output_sound[1], _output_sound[1]);
+    
+    // Output peaks
+    if (_num_outputs > 0) {
+      float volume_peaks[_num_outputs];
+      bool is_touched = false;
+      
+      for(int ch=0;ch<_num_outputs;ch++) {
+
+        float out_peak = RT_get_max_val(_output_sound[ch],num_frames);
+        
+        if (fabsf(out_peak) > MIN_AUTOBYPASS_PEAK)
+          is_touched = true;
+
+        volume_peaks[ch] = out_peak * _plugin->volume;
+      }
+
+      if(is_touched) {
+        RT_PLUGIN_touch(_plugin);
+        for(auto link : _output_links){
+          RT_PLUGIN_touch(link->target->_plugin);
+        }
+      }
+      
+      RT_set_output_peak_values(volume_peaks);
+    }
+  }
 };
 
 
@@ -1456,18 +1512,18 @@ void SP_remove_all_links(radium::Vector<SoundProducer*> &soundproducers){
     for(auto link : soundproducer->_input_links)
       if (link->is_bus_link==false)
         links_to_delete.push_back(link);
-
+  
   SoundProducer::remove_links(links_to_delete);
 }
 
 
 // Called by main mixer thread before starting multicore.
-void SP_RT_called_for_each_soundcard_block1(SoundProducer *producer){
-  producer->RT_called_for_each_soundcard_block1();
+void SP_RT_called_for_each_soundcard_block1(SoundProducer *producer, int64_t time){
+  producer->RT_called_for_each_soundcard_block1(time);
 }
 
-void SP_RT_called_for_each_soundcard_block2(SoundProducer *producer){
-  producer->RT_called_for_each_soundcard_block2();
+void SP_RT_called_for_each_soundcard_block2(SoundProducer *producer, int64_t time){
+  producer->RT_called_for_each_soundcard_block2(time);
 }
 
 void CpuUsage_delete(void *cpu_usage){

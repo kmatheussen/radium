@@ -805,6 +805,10 @@ struct FX{
 	instruments.h
 *********************************************************************/
 
+extern DEFINE_ATOMIC(bool, g_enable_autobypass);
+extern DEFINE_ATOMIC(int, g_autobypass_delay);
+
+
 // These constants are not only used internally, but they are also saved to disk.
 enum{
   NO_INSTRUMENT_TYPE = 0,

@@ -180,7 +180,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     sps_line->hide();
 
     // Adjust cpu label width
-    set_cpu_usage_font_and_width(cpu_label, false);
+    set_cpu_usage_font_and_width(cpu_label, false, false);
 
     // Adjust velocity slider widths
     {

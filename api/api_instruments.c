@@ -59,6 +59,52 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
+
+
+DEFINE_ATOMIC(bool, g_enable_autobypass) = false;
+DEFINE_ATOMIC(int, g_autobypass_delay) = 500;
+
+
+bool autobypassEnabled(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    ATOMIC_SET(g_enable_autobypass, SETTINGS_read_bool("enable_autobypass", false));
+    has_inited = true;
+  }
+
+  return ATOMIC_GET(g_enable_autobypass);
+}
+
+void setAutobypassEnabled(bool doit){
+  if (doit != ATOMIC_GET(g_enable_autobypass)) {
+    ATOMIC_SET(g_enable_autobypass, doit);
+    SETTINGS_write_bool("enable_autobypass", doit);
+    PREFERENCES_update();
+  }
+}
+
+int getAutoBypassDelay(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    ATOMIC_SET(g_autobypass_delay, SETTINGS_read_int("autobypass_delay", 500));
+    has_inited = true;
+  }
+
+  return ATOMIC_GET(g_autobypass_delay);
+}
+
+void setAutobypassDelay(int val){
+  if (val != ATOMIC_GET(g_autobypass_delay)) {
+    ATOMIC_SET(g_autobypass_delay, val);
+    SETTINGS_write_int("autobypass_delay", val);
+    PREFERENCES_update();
+  }
+}
+
+
+
 // Warning, All these functions (except selectPatchForTrack) must be called via python (does not update graphics, or handle undo/redo))
 // (TODO: detect this automatically.)
 

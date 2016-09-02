@@ -617,7 +617,7 @@ static int RT_get_resampled_data(Data *data, Voice *voice, float *out, int num_f
   double ratio = RT_get_src_ratio(data,voice);
   
 #if 0
-  if (abs(ratio-1.0) < 1.01)
+  if (fabs(ratio-1.0) < 1.01)
     ratio = 1.0;
   printf("  src ratio: %f\n", ratio);
 #endif

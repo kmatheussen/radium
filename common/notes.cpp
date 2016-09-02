@@ -1244,8 +1244,8 @@ static void cmp(char *text, float value){
           value
           );
   
-  assert(abs(from_text-value) < 0.001);
-  assert(abs(from_text_from_value-value) < 0.001);
+  assert(fabsf(from_text-value) < 0.001);
+  assert(fabsf(from_text_from_value-value) < 0.001);
 }
 
 int main(void){

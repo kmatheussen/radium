@@ -81,7 +81,7 @@ public:
         
       setupUi(this);
 
-      set_cpu_usage_font_and_width(plugin_info, true);
+      set_cpu_usage_font_and_width(plugin_info, true, true);
       
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
@@ -269,6 +269,10 @@ public:
       if (cpu_usage==NULL){
         
         ATOMIC_SET(plugin->cpu_usage, new CpuUsage);
+
+      } else if (PLUGIN_can_autobypass(plugin)) {
+        
+        plugin_info->setText(" Auto-bypassing"); // CpuUsage.hpp must also be updated if the string "Auto-bypassing" is changed.
         
       } else {
         

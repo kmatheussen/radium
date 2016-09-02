@@ -70,8 +70,8 @@ bool SP_add_link(SoundProducer *target, int target_ch, SoundProducer *source, in
 void SP_remove_elink(SoundProducer *target, SoundProducer *source);
 void SP_remove_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch);
 void SP_remove_all_links(radium::Vector<SoundProducer*> &soundproducers);
-void SP_RT_called_for_each_soundcard_block1(SoundProducer *producer);
-void SP_RT_called_for_each_soundcard_block2(SoundProducer *producer);
+void SP_RT_called_for_each_soundcard_block1(SoundProducer *producer, int64_t time);
+void SP_RT_called_for_each_soundcard_block2(SoundProducer *producer, int64_t time);
 void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins);
 void SP_RT_clean_output(SoundProducer *producer, int num_frames);
 void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_num, bool process_plugins);

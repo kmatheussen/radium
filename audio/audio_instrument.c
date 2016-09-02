@@ -83,6 +83,8 @@ static void AUDIO_playnote(struct Patch *patch,note_t note,STime time){
   if(plugin==NULL || plugin->type->play_note == NULL)
     return;
 
+  RT_PLUGIN_touch(plugin);
+    
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   if (latency == 0) {
@@ -119,7 +121,7 @@ static void AUDIO_changevelocity(struct Patch *patch,note_t note,STime time){
 
   if(plugin==NULL || plugin->type->set_note_volume == NULL)
     return;
-      
+  
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   if (latency == 0) {
@@ -155,6 +157,8 @@ static void AUDIO_changepitch(struct Patch *patch,note_t note,STime time){
   if(plugin==NULL || plugin->type->set_note_pitch == NULL)
     return;
       
+  RT_PLUGIN_touch(plugin);
+    
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   if (latency == 0) {
@@ -190,6 +194,8 @@ static void AUDIO_sendrawmidimessage(struct Patch *patch, uint32_t msg, STime ti
   if(plugin==NULL || plugin->type->send_raw_midi_message == NULL)
     return;
       
+  RT_PLUGIN_touch(plugin);
+    
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   if (latency == 0) {
@@ -226,6 +232,8 @@ static void AUDIO_stopnote(struct Patch *patch,note_t note,STime time){
   if(plugin==NULL || plugin->type->stop_note == NULL)
     return;
 
+  RT_PLUGIN_touch(plugin);
+    
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   //printf("  stopnote called. %d, time: %d\n",(int)note.id, (int)time);
@@ -250,11 +258,17 @@ void AUDIO_stop_all_notes(struct Patch *patch){
   if(plugin==NULL || plugin->type->stop_note == NULL)
     return;
 
-  while(plugin->playing_voices != NULL) {
-    note_t note = plugin->playing_voices->note;
+  if (plugin->playing_voices != NULL) {
     
-    Patch_removePlayingVoice(&plugin->playing_voices, note.id);
-    plugin->type->stop_note(plugin, 0, note);
+    PLUGIN_touch(plugin);
+    
+    while(plugin->playing_voices != NULL) {
+      note_t note = plugin->playing_voices->note;
+      
+      Patch_removePlayingVoice(&plugin->playing_voices, note.id);
+      plugin->type->stop_note(plugin, 0, note);
+    }
+
   }
 
 }
@@ -492,6 +506,8 @@ static void AUDIO_treat_FX(struct FX *fx,int val,STime time,int skip, FX_when wh
   if (plugin==NULL) // i.e. plugin has been deleted and removed from the patch.
     return;
 
+  RT_PLUGIN_touch(plugin);
+      
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   if (latency == 0) {
@@ -522,6 +538,8 @@ static int AUDIO_default_FX_value(const struct FX *fx){
   if (plugin==NULL) // i.e. plugin has been deleted and removed from the patch.
     return (fx->min+fx->max)/2;
 
+  PLUGIN_touch(plugin);
+      
   return PLUGIN_get_effect_value(plugin, fx->effect_num, VALUE_FROM_PLUGIN) * MAX_FX_VAL;
 }
 
@@ -564,6 +582,8 @@ static vector_t *AUDIO_getFxNames(const struct Patch *patch){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   const SoundPluginType *plugin_type = plugin->type;
 
+  PLUGIN_touch(plugin);
+  
   int num_effects = plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
   vector_t *v=talloc(sizeof(vector_t));
 
@@ -582,7 +602,9 @@ static struct FX *AUDIO_createFX(const struct Tracks *track, struct Patch *patch
 #endif
   
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
-    
+
+  PLUGIN_touch(plugin);
+  
   struct FX *fx=talloc(sizeof(struct FX));
   fx->patch = patch;
 
@@ -669,7 +691,9 @@ static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track
     SoundPlugin *plugin = (SoundPlugin*) track->patch->patchdata;
     const SoundPluginType *plugin_type = plugin->type;
     int num_effects = plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
-
+    
+    PLUGIN_touch(plugin);
+      
     if(num_effects==0){
       VECTOR_push_back(&v,"No effects available");
       GFX_Menu(window,NULL,"No FX available",&v);
@@ -832,7 +856,7 @@ static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *tra
     
   SoundPlugin *old_plugin = (SoundPlugin*) old_patch->patchdata;
   R_ASSERT_RETURN_IF_FALSE(old_plugin!=NULL);
-  
+
   const SoundPluginType *old_type = old_plugin->type;
   int num_old_effects = old_type->num_effects;
 

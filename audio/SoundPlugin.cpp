@@ -353,6 +353,9 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   SoundPlugin *plugin = (SoundPlugin*)V_calloc(1,sizeof(SoundPlugin));
   plugin->type = plugin_type;
 
+  ATOMIC_SET(plugin->can_autobypass, true);
+  PLUGIN_touch(plugin);
+    
   ATOMIC_SET(plugin->effect_num_to_show_because_it_was_used_externally, -1);
   
   int buffer_size = MIXER_get_buffer_size();
@@ -475,11 +478,15 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
 
   if (plugin_type->called_after_plugin_has_been_created != NULL)    
     plugin_type->called_after_plugin_has_been_created(plugin_type, plugin);
+
+  PLUGIN_touch(plugin);
   
   return plugin;
 }
 
 void PLUGIN_delete(SoundPlugin *plugin){
+  RT_PLUGIN_touch(plugin);
+  
   const SoundPluginType *plugin_type = plugin->type;
 
   while(PLUGIN_remove_midi_learn(plugin, -1, false)==true);
@@ -858,6 +865,8 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
   float store_value = value;
   //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
 
+  RT_PLUGIN_touch(plugin);
+        
   if(value_format==PLUGIN_FORMAT_SCALED) {
 #if !defined(RELEASE)
     if (value < -0.01f || value > 1.01f)// don't report floating point rounding errors
@@ -1212,6 +1221,8 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
 
 float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum WhereToGetValue where){
 
+  //RT_PLUGIN_touch(plugin);
+    
 #if !defined(RELEASE)
   if (where==VALUE_FROM_STORAGE)
     if (!THREADING_is_player_thread())
@@ -1665,11 +1676,15 @@ void SoundPluginEffectMidiLearn::RT_callback(float val) {
 }
 
 void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num){
+  RT_PLUGIN_touch(plugin);
+  
   auto *midi_learn = new SoundPluginEffectMidiLearn(plugin, effect_num);
   add_midi_learn(midi_learn);
 }
 
 bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_error_if_not_here){
+  RT_PLUGIN_touch(plugin);
+  
   SoundPluginEffectMidiLearn *midi_learn=NULL;
 
   for(auto *maybe_this_midi_learn : *plugin->midi_learns)
@@ -1715,6 +1730,37 @@ void PLUGIN_set_recording_automation(SoundPlugin *plugin, const int effect_num, 
 void PLUGIN_set_all_effects_to_not_recording(SoundPlugin *plugin){
   for(int e = 0 ; e<plugin->type->num_effects+NUM_SYSTEM_EFFECTS ; e++)
     PLUGIN_set_recording_automation(plugin, e, false);
+}
+
+bool RT_PLUGIN_can_autobypass(SoundPlugin *plugin, int64_t time){
+  if (ATOMIC_GET(g_enable_autobypass) == false)
+    return false;
+  
+  if (ATOMIC_GET(plugin->can_autobypass)==false)
+    return false;
+
+  int time_since_activity = time-ATOMIC_GET(plugin->time_of_last_activity);
+  
+  int delay = (double)ATOMIC_GET(g_autobypass_delay) * MIXER_get_sample_rate() / 1000.0;
+
+  int input_latency = RT_SP_get_input_latency(plugin->sp);
+  if (input_latency > delay)
+    delay = input_latency;
+
+  if (plugin->type->RT_get_latency != NULL){
+    int plugin_latency = plugin->type->RT_get_latency(plugin);
+    if (plugin_latency > delay)
+      delay = plugin_latency;
+  }
+ 
+  if (time_since_activity > delay)
+    return true;
+           
+  return false;
+}
+
+bool PLUGIN_can_autobypass(SoundPlugin *plugin){
+  return RT_PLUGIN_can_autobypass(plugin, MIXER_get_last_used_time());
 }
 
 void PLUGIN_reset(SoundPlugin *plugin){

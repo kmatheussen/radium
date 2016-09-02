@@ -415,9 +415,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         incrementalGcNextTime->setDisabled(true);
     }
 
-    // CPU
+    // Audio
     {
       numCPUs->setValue(MULTICORE_get_num_threads());
+      enable_autobypass->setChecked(autobypassEnabled());
+      autobypass_delay->setValue(getAutoBypassDelay());
     }
 
     {
@@ -653,6 +655,26 @@ public slots:
     //numCPUs->setFocusPolicy(Qt::NoFocus);
   }
 
+  // auto-bypass
+
+  void on_enable_autobypass_toggled(bool val){
+    if (_initing==false)
+      setAutobypassEnabled(val);
+  }
+
+  void on_autobypass_delay_valueChanged(int val){
+    if (_initing==false)
+      setAutobypassDelay(val);
+  }
+      
+  void on_autobypass_delay_editingFinished(){
+    set_editor_focus();
+    GL_lock();{
+      autobypass_delay->clearFocus();
+    }GL_unlock();
+  }
+
+  
   // embedded audio file paths
   void on_embedded_audio_files_editingFinished(){
     setEmbeddedAudioFilesPath(embedded_audio_files->text().toUtf8().constData());

@@ -39,6 +39,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern "C"{
 #endif
 
+#define MIN_AUTOBYPASS_PEAK 0.00001
+  
 #define NOTUSED_EFFECT_NAME "NOTUSED"
   
 enum{
@@ -255,7 +257,6 @@ typedef struct SoundPluginType{
 
   // Used by Radium
   int instance_num; // Only used to autocreate a name
-
 } SoundPluginType;
 
 typedef struct SoundPluginTypeContainer{
@@ -403,6 +404,9 @@ typedef struct SoundPlugin{
   DEFINE_ATOMIC(bool, is_visible);
 
   DEFINE_ATOMIC(int, effect_num_to_show_because_it_was_used_externally);
+
+  DEFINE_ATOMIC(bool, can_autobypass); // true by default. must be set to false explicitly by the plugin.
+  DEFINE_ATOMIC(int64_t, time_of_last_activity); // used when determining whether to auto-bypass  
 } SoundPlugin;
 
 
@@ -431,7 +435,19 @@ float *RT_get_effect_value_array(SoundPlugin *plugin, int effect_num);
 // The functions can only be called if SoundPluginType->note_handling_is_RT is true
 float *RT_get_note_volume_array(SoundPlugin *plugin, int note_num);
 
-
+extern int64_t MIXER_get_last_used_time(void);
+static inline void RT_PLUGIN_touch(SoundPlugin *plugin){
+  //  if (plugin->patch!=NULL && !strcmp(plugin->patch->name,"Test"))
+  //    printf("Touching %s\n",plugin->patch==NULL ? "(null)" : plugin->patch->name);
+  ATOMIC_SET(plugin->time_of_last_activity, MIXER_get_last_used_time());
+}
+static inline void PLUGIN_touch(SoundPlugin *plugin){
+  RT_PLUGIN_touch(plugin);
+}
+  
+extern LANGSPEC bool RT_PLUGIN_can_autobypass(SoundPlugin *plugin, int64_t time);
+extern LANGSPEC bool PLUGIN_can_autobypass(SoundPlugin *plugin);
+  
 #ifdef __cplusplus
 }
 #endif

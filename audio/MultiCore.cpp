@@ -58,15 +58,17 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
   
   bool old = ATOMIC_SET_RETURN_OLD(sp->is_processed, true);
   R_ASSERT(old==false);
-  
-  double start_time = monotonic_seconds();
-  {
-    SP_RT_process(sp, time, num_frames, process_plugins);
-  }
-  double duration = monotonic_seconds() - start_time;
-  if (duration > sp->running_time)
-    sp->running_time = duration;
 
+  if ( ! sp->_autobypassing_this_cycle){
+    double start_time = monotonic_seconds();
+    {
+      SP_RT_process(sp, time, num_frames, process_plugins);
+    }
+    double duration = monotonic_seconds() - start_time;
+    if (duration > sp->running_time)
+      sp->running_time = duration;
+  }
+  
   //int num_left = num_sp_left;
   //printf("num_left2: %d\n",num_left);
 

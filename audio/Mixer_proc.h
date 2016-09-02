@@ -18,6 +18,7 @@ extern LANGSPEC void OS_InitAudioTiming(void);
 extern LANGSPEC STime MIXER_get_block_delta_time(STime time);
 extern LANGSPEC void MIXER_get_main_inputs(float **audio);
 //extern LANGSPEC int64_t MIXER_get_time(void);
+extern LANGSPEC int64_t MIXER_get_last_used_time(void);
 extern LANGSPEC bool MIXER_fill_in_time_position(time_position_t *time_position);
 
 #ifdef __cplusplus

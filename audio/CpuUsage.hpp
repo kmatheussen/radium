@@ -65,7 +65,7 @@ struct CpuUsage{
 #include <QWidget>
 #include <QApplication>
 
-static inline void set_cpu_usage_font_and_width(QWidget *widget, bool shows_integers){
+static inline void set_cpu_usage_font_and_width(QWidget *widget, bool shows_integers, bool might_autobypass){
   QFont sansFont;
       
   sansFont.setFamily("Bitstream Vera Sans Mono");
@@ -82,7 +82,10 @@ static inline void set_cpu_usage_font_and_width(QWidget *widget, bool shows_inte
     width = fm.width("55 / 55 / 55");
   else
     width = fm.width("50.0 / 90.5 / 00.5");// + 5;
-  
+
+  if (might_autobypass)
+    width = R_MAX(fm.width(" Auto-bypassing"), width);
+    
   widget->setMinimumWidth(width);
   widget->setMaximumWidth(width);
 }

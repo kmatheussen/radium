@@ -151,7 +151,9 @@ namespace{
 
       if (ATOMIC_GET(is_starting_up))
         return false;
-      
+
+      RT_PLUGIN_touch(_plugin); // If the plugin needs timing data, it should probably not be autopaused.
+
       bool isplaying = is_playing();
 
 #if 0
@@ -395,6 +397,10 @@ namespace{
       , title(title)
       , editor(editor)
     {
+
+      struct SoundPlugin *plugin = data->listener.plugin;
+      ATOMIC_SET(plugin->can_autobypass, false);
+        
 #if !FOR_WINDOWS
       if(vstGuiIsAlwaysOnTop()) {
         this->setAlwaysOnTop(true);
@@ -503,6 +509,9 @@ namespace{
       delete editor;
       data->window = NULL;
       V_free((void*)title);
+
+      struct SoundPlugin *plugin = data->listener.plugin;
+      ATOMIC_SET(plugin->can_autobypass, true);
     }
 
     /*
@@ -772,7 +781,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
             
             int64_t radium_time = pc->start_time + delta_time;
             
-            RT_MIDI_send_msg_to_patch_receivers2((struct Patch*)patch, message, radium_time);
+            RT_MIDI_send_msg_to_patch_receivers2((struct Patch*)patch, message, radium_time);            
           }
         }
       }
