@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern PlayerClass *pc;
 
 static struct Beats *g_beat = NULL;
+static Ratio g_last_valid_signature = {4,4};
 
 static int g_last_played_note_num = -1;
 
@@ -96,10 +97,8 @@ static bool new_beat_bar_set = false;
 void RT_PEQ_Beats_set_new_last_bar_start_value(double beat_position, bool just_started_playing){
 
   if (just_started_playing) {
-    
-    R_ASSERT_RETURN_IF_FALSE(g_beat != NULL);
 
-    double num_beats_in_bar = 4 * (double)g_beat->valid_signature.numerator / (double) g_beat->valid_signature.denominator; // Convert to ppq
+    double num_beats_in_bar = 4 * (double)g_last_valid_signature.numerator / (double) g_last_valid_signature.denominator; // Convert to ppq
 
     // If we start playing in the middle of a block, spool back to closest position that could have been the beat start.
     beat_position = num_beats_in_bar * floor(beat_position/num_beats_in_bar);
@@ -120,11 +119,17 @@ static void handle_new_beat(struct PEventQueue *peq, int doit, struct Beats *bea
   if (doit==0) // Is doit used anymore?
     return;
 
+  g_last_valid_signature = beat->valid_signature;
+#if !defined(RELEASE)
+  if (g_last_valid_signature.denominator==0)
+    abort();
+#endif
+  
   if (beat->beat_num==1)
     new_beat_bar_set = true;
   //g_beat_position_of_last_bar_start = RT_LPB_get_beat_position();
   
-  //printf("%d %d. beat pos: %f\n", beat->bar_num, beat->beat_num, g_beat_position_of_last_bar_start);
+  //printf("%d %d. last bar: %f. signature: %d/%d\n", beat->bar_num, beat->beat_num, g_beat_position_of_last_bar_start,g_last_valid_signature.numerator, g_last_valid_signature.denominator);
 
   if (beat->beat_num==1)
     SCHEDULER_add_event(peq->l.time, scheduled_play_bar_note, NULL, 0, SCHEDULER_NOTE_ON_PRIORITY);
@@ -133,8 +138,9 @@ static void handle_new_beat(struct PEventQueue *peq, int doit, struct Beats *bea
 }
 
 static void InitPEQ_Beat_new_block(const struct Blocks *block){
+  R_ASSERT_RETURN_IF_FALSE(block->beats!=NULL);
   g_beat = block->beats;
-  //handle_new_beat(g_beat);
+  //handle_new_beat(g_beat); Not necessary. (and probably wrong too)
 }
 
 
@@ -204,8 +210,8 @@ static void PlayerNextBeat(struct PEventQueue *peq,int doit){
   
   handle_new_beat(peq, doit, g_beat);
   
-  g_beat = NextBeat(g_beat);
-
+  g_beat = NextBeat(g_beat);  
+  
   InsertNextBeat_PEQ(peq);
 }
 

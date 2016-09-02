@@ -472,6 +472,7 @@ void setMainBPM(int bpm_value){
   PC_Pause();{
     root->tempo=bpm_value;
     UpdateAllSTimes();
+    R_ASSERT(wblock->block->beats != NULL);
   }PC_StopPause(window);
 }
 
