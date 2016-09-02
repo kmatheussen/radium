@@ -318,6 +318,10 @@ public:
   }
 
   ~SampleRecorderThread(){
+
+    if (!isRunning())
+      return;
+    
     RecordingSlice *slice;
     while(g_free_slices->pop(slice)==false);
   
