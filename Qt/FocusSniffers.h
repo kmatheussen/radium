@@ -241,6 +241,14 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
     }                                 
     QSpinBox::hideEvent(event);          
   }                                   
+  void keyPressEvent ( QKeyEvent * event ){                             
+    if(event->key()==Qt::Key_Escape){                                   
+      GL_lock();                                                        
+      clearFocus();                                                     
+      GL_unlock();                                                      
+    }                                                                   
+    QSpinBox::keyPressEvent(event);                                        
+  }                                                                     
   void 	wheelEvent ( QWheelEvent * event ){
     printf("Got wheel event\n");
     QSpinBox::wheelEvent(event);
@@ -278,6 +286,14 @@ class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
       release_keyboard_focus();
     }                                                                   
     QDoubleSpinBox::hideEvent(e);                                            
+  }                                                                     
+  void keyPressEvent ( QKeyEvent * event ){                             
+    if(event->key()==Qt::Key_Escape){                                   
+      GL_lock();                                                        
+      clearFocus();                                                     
+      GL_unlock();                                                      
+    }                                                                   
+    QDoubleSpinBox::keyPressEvent(event);                                        
   }                                                                     
   void 	wheelEvent ( QWheelEvent * event ){
     printf("Got wheel event\n");
