@@ -83,6 +83,7 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
     if(tvisual==NULL){
 
       reqtype->frame = new QFrame();
+      reqtype->frame->move(QCursor::pos());
       reqtype->frame->show();
     
     }else {
