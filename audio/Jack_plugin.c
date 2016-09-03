@@ -180,8 +180,6 @@ void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin 
   for(i=0;i<plugin_type->num_inputs;i++)
     output_portnames[i] = state==NULL ? NULL : HASH_get_chars_at(state, "output_portname",i);
 
-  ATOMIC_SET(plugin->can_autobypass, false);
-  
   return create_data(plugin_type,
                      (jack_client_t*)plugin_type->data,
                      plugin_type->num_inputs,
@@ -239,6 +237,7 @@ static SoundPluginType stereo_in_type = {
  is_instrument            : false,
  note_handling_is_RT      : false,
  num_effects              : 0,
+ will_never_autosuspend   : true,
  get_effect_format        : NULL,
  get_effect_name          : NULL,
  get_display_value_string : NULL,
@@ -265,6 +264,7 @@ static SoundPluginType stereo_out_type = {
  is_instrument            : false,
  note_handling_is_RT      : false,
  num_effects              : 0,
+ will_never_autosuspend   : true,
  get_effect_format        : NULL,
  get_effect_name          : NULL,
  get_display_value_string : NULL,
@@ -291,6 +291,7 @@ static SoundPluginType system_in_type = {
  is_instrument            : false,
  note_handling_is_RT      : false,
  num_effects              : 0,
+ will_never_autosuspend   : true,
  get_effect_format        : NULL,
  get_effect_name          : NULL,
  get_display_value_string : NULL,
@@ -317,6 +318,7 @@ static SoundPluginType system_out_type = {
  is_instrument            : false,
  note_handling_is_RT      : false,
  num_effects              : 0,
+ will_never_autosuspend   : true,
  get_effect_format        : NULL,
  get_effect_name          : NULL,
  get_display_value_string : NULL,

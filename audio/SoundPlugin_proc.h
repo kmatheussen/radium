@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef AUDIO_SOUNDPLUGIN_PROC_H
 #define AUDIO_SOUNDPLUGIN_PROC_H
 
+#include "Mixer_proc.h"
+
 enum ValueType{
   PLUGIN_STORED_TYPE,
   PLUGIN_NONSTORED_TYPE
@@ -73,6 +75,27 @@ extern LANGSPEC bool PLUGIN_has_midi_learn(SoundPlugin *plugin, int _effect_num)
 extern LANGSPEC bool PLUGIN_is_recording_automation(const SoundPlugin *plugin, const int effect_num);
 extern LANGSPEC void PLUGIN_set_recording_automation(SoundPlugin *plugin, int effect_num, bool is_recording);
 extern LANGSPEC void PLUGIN_set_all_effects_to_not_recording(SoundPlugin *plugin);
+
+extern LANGSPEC void PLUGIN_set_autosuspend_behavior(SoundPlugin *plugin, enum AutoSuspendBehavior new_behavior);
+extern LANGSPEC enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(SoundPlugin *plugin);
+static inline void RT_PLUGIN_touch(SoundPlugin *plugin){
+  //  if (plugin->patch!=NULL && !strcmp(plugin->patch->name,"Test"))
+  //    printf("Touching %s\n",plugin->patch==NULL ? "(null)" : plugin->patch->name);
+
+  int64_t last_used_time = MIXER_get_last_used_time();
+  
+  if (ATOMIC_GET_RELAXED(plugin->time_of_last_activity)==last_used_time) // This function is called quite often
+    return;
+      
+  ATOMIC_SET(plugin->time_of_last_activity, last_used_time);
+}
+static inline void PLUGIN_touch(SoundPlugin *plugin){
+  RT_PLUGIN_touch(plugin);
+}
+  
+extern LANGSPEC bool RT_PLUGIN_can_autobypass(SoundPlugin *plugin, int64_t time);
+extern LANGSPEC bool PLUGIN_can_autobypass(SoundPlugin *plugin);
+  
 
 extern LANGSPEC void PLUGIN_reset(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num);

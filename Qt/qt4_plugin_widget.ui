@@ -101,8 +101,37 @@
         <property name="text">
          <string>Plugin Info</string>
         </property>
+        <property name="scaledContents">
+         <bool>false</bool>
+        </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>10</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QToolButton" name="auto_bypass_menu_button">
+        <property name="toolTip">
+         <string>Configure Auto-bypass</string>
+        </property>
+        <property name="text">
+         <string>D</string>
         </property>
        </widget>
       </item>
@@ -116,7 +145,7 @@
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>20</width>
+          <width>10</width>
           <height>20</height>
          </size>
         </property>

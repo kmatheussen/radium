@@ -1053,8 +1053,6 @@ static QTemporaryFile *create_new_tempfile(QString *fileName){
 static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
   QTemporaryFile *pdfile;
 
-  ATOMIC_SET(plugin->can_autobypass, false);
-    
   if (state==NULL)
     pdfile = create_new_tempfile((QString *)plugin_type->data);
   else
@@ -1281,6 +1279,7 @@ static void add_plugin(const wchar_t *name, QString filename) {
   plugin_type->is_instrument            = true;
   plugin_type->note_handling_is_RT      = false;
   plugin_type->num_effects              = NUM_PD_CONTROLLERS;
+  plugin_type->will_never_autosuspend   = true;
   plugin_type->get_effect_format        = get_effect_format;
   plugin_type->get_effect_name          = get_effect_name;
   plugin_type->effect_is_RT             = NULL;

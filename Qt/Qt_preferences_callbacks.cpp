@@ -316,6 +316,9 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     tabWidget->setCurrentIndex(0);
 
     _initing = false;
+
+    resize(10,10); // as small as possible
+    //adjustSize();
   }
 
   void showEvent(QShowEvent *event){

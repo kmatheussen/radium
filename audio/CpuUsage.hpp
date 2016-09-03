@@ -64,6 +64,7 @@ struct CpuUsage{
 #include <QFont>
 #include <QWidget>
 #include <QApplication>
+#define AUTO_BYPASSING_STRING " Auto-suspended"
 
 static inline void set_cpu_usage_font_and_width(QWidget *widget, bool shows_integers, bool might_autobypass){
   QFont sansFont;
@@ -84,7 +85,7 @@ static inline void set_cpu_usage_font_and_width(QWidget *widget, bool shows_inte
     width = fm.width("50.0 / 90.5 / 00.5");// + 5;
 
   if (might_autobypass)
-    width = R_MAX(fm.width(" Auto-bypassing"), width);
+    width = R_MAX(fm.width(AUTO_BYPASSING_STRING), width);
     
   widget->setMinimumWidth(width);
   widget->setMaximumWidth(width);

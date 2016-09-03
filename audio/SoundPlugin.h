@@ -189,6 +189,9 @@ typedef struct SoundPluginType{
   
   bool dont_send_effect_values_from_state_into_plugin; // Can be set to true if all effects are stored in type->create_state. type->effect_value will not be called for all effects then. All effect values are still stored in the state though.
 
+  bool will_always_autosuspend; // obviously, it doesn't make sense
+  bool will_never_autosuspend;  // if both of these are true
+  
   const char *(*get_effect_description)(struct SoundPlugin *plugin, int effect_num);
 
   void (*get_display_value_string)(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
@@ -285,6 +288,12 @@ enum BusDescendantType{
   IS_BUS_DESCENDANT,
   IS_BUS_PROVIDER,
   MAYBE_A_BUS_DESCENDANT,
+};
+
+enum AutoSuspendBehavior{ // The numbers below can not be changed since they are saved in state.
+  DEFAULT_AUTOSUSPEND_BEHAVIOR = 0,
+  AUTOSUSPEND_ENABLED = 1,
+  AUTOSUSPEND_DISABLED = 2
 };
 
 struct SoundProducer;
@@ -405,7 +414,10 @@ typedef struct SoundPlugin{
 
   DEFINE_ATOMIC(int, effect_num_to_show_because_it_was_used_externally);
 
-  DEFINE_ATOMIC(bool, can_autobypass); // true by default. must be set to false explicitly by the plugin.
+  DEFINE_ATOMIC(bool, auto_suspend_suspended); // Can be set temporarily by plugin
+  
+  DEFINE_ATOMIC(enum AutoSuspendBehavior, auto_suspend_behavior);
+  //DEFINE_ATOMIC(bool, can_autobypass); // true by default. must be set to false explicitly by the plugin.
   DEFINE_ATOMIC(int64_t, time_of_last_activity); // used when determining whether to auto-bypass  
 } SoundPlugin;
 
@@ -435,19 +447,6 @@ float *RT_get_effect_value_array(SoundPlugin *plugin, int effect_num);
 // The functions can only be called if SoundPluginType->note_handling_is_RT is true
 float *RT_get_note_volume_array(SoundPlugin *plugin, int note_num);
 
-extern int64_t MIXER_get_last_used_time(void);
-static inline void RT_PLUGIN_touch(SoundPlugin *plugin){
-  //  if (plugin->patch!=NULL && !strcmp(plugin->patch->name,"Test"))
-  //    printf("Touching %s\n",plugin->patch==NULL ? "(null)" : plugin->patch->name);
-  ATOMIC_SET(plugin->time_of_last_activity, MIXER_get_last_used_time());
-}
-static inline void PLUGIN_touch(SoundPlugin *plugin){
-  RT_PLUGIN_touch(plugin);
-}
-  
-extern LANGSPEC bool RT_PLUGIN_can_autobypass(SoundPlugin *plugin, int64_t time);
-extern LANGSPEC bool PLUGIN_can_autobypass(SoundPlugin *plugin);
-  
 #ifdef __cplusplus
 }
 #endif

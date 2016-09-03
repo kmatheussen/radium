@@ -353,7 +353,7 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   SoundPlugin *plugin = (SoundPlugin*)V_calloc(1,sizeof(SoundPlugin));
   plugin->type = plugin_type;
 
-  ATOMIC_SET(plugin->can_autobypass, true);
+  ATOMIC_SET(plugin->auto_suspend_behavior, DEFAULT_AUTOSUSPEND_BEHAVIOR);
   PLUGIN_touch(plugin);
     
   ATOMIC_SET(plugin->effect_num_to_show_because_it_was_used_externally, -1);
@@ -1732,44 +1732,71 @@ void PLUGIN_set_all_effects_to_not_recording(SoundPlugin *plugin){
     PLUGIN_set_recording_automation(plugin, e, false);
 }
 
+void PLUGIN_set_autosuspend_behavior(SoundPlugin *plugin, enum AutoSuspendBehavior new_behavior){
+  ATOMIC_SET(plugin->auto_suspend_behavior, new_behavior);
+}
+
+enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(SoundPlugin *plugin){
+  return ATOMIC_GET(plugin->auto_suspend_behavior);
+}
+  
 bool RT_PLUGIN_can_autobypass(SoundPlugin *plugin, int64_t time){
-  if (ATOMIC_GET(g_enable_autobypass) == false)
-    return false;
-  
-  if (ATOMIC_GET(plugin->can_autobypass)==false)
-    return false;
 
-  if (plugin->playing_voices != NULL)
-    return false;
+  {
+    struct SoundPluginType *type = plugin->type;
+    
+    if (type->will_never_autosuspend==true)
+      return false;
 
-  if (plugin->patch->playing_voices != NULL)
-    return false;
-  
-  int time_since_activity = time-ATOMIC_GET(plugin->time_of_last_activity);
-  
-  int delay = (double)ATOMIC_GET(g_autobypass_delay) * MIXER_get_sample_rate() / 1000.0;
-
-  int smooth_delay = plugin->delay_time * MIXER_get_sample_rate() / 1000;
-  if (smooth_delay > delay)
-    delay = smooth_delay;
-  
-  int input_latency = RT_SP_get_input_latency(plugin->sp);
-  if (input_latency > delay)
-    delay = input_latency;
-
-  if (plugin->type->RT_get_latency != NULL){
-    int plugin_latency = plugin->type->RT_get_latency(plugin);
-    if (plugin_latency > delay)
-      delay = plugin_latency;
+    if (type->will_always_autosuspend==false){
+      enum AutoSuspendBehavior auto_suspend_behavior = PLUGIN_get_autosuspend_behavior(plugin);
+      
+      if (auto_suspend_behavior==AUTOSUSPEND_DISABLED)
+        return false;
+      
+      if (auto_suspend_behavior==DEFAULT_AUTOSUSPEND_BEHAVIOR)
+        if (ATOMIC_GET(g_enable_autobypass) == false)
+          return false;
+    }
   }
 
-  int jack_block_size = MIXER_get_jack_block_size();
-  if (jack_block_size > delay)
-    delay = jack_block_size;
+  {
+    if (plugin->playing_voices != NULL || plugin->patch->playing_voices != NULL)
+      return false;
+  }
+
+  {
+    if (ATOMIC_GET(plugin->auto_suspend_suspended))
+      return false;
+  }
   
-  if (time_since_activity > delay)
-    return true;
-           
+  {
+    int time_since_activity = time-ATOMIC_GET(plugin->time_of_last_activity);
+    
+    int delay = (double)ATOMIC_GET(g_autobypass_delay) * MIXER_get_sample_rate() / 1000.0;
+    
+    int smooth_delay = plugin->delay_time * MIXER_get_sample_rate() / 1000;
+    if (smooth_delay > delay)
+      delay = smooth_delay;
+    
+    int input_latency = RT_SP_get_input_latency(plugin->sp);
+    if (input_latency > delay)
+      delay = input_latency;
+    
+    if (plugin->type->RT_get_latency != NULL){
+      int plugin_latency = plugin->type->RT_get_latency(plugin);
+      if (plugin_latency > delay)
+        delay = plugin_latency;
+    }
+    
+    int jack_block_size = MIXER_get_jack_block_size();
+    if (jack_block_size > delay)
+      delay = jack_block_size;
+    
+    if (time_since_activity > delay)
+      return true;
+  }
+  
   return false;
 }
 

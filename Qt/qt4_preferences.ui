@@ -288,10 +288,13 @@
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>40</height>
+           <height>20</height>
           </size>
          </property>
         </spacer>
@@ -384,13 +387,13 @@
           </sizepolicy>
          </property>
          <property name="title">
-          <string>Auto bypass</string>
+          <string>Auto-suspend</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_8">
           <item>
            <widget class="QLabel" name="label_13">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Auto bypass is an experimental feature.&lt;/p&gt;&lt;p&gt;Auto bypass automatically turns off processsing when an instrument has been inactive for a specified amount of time,&lt;/p&gt;&lt;p&gt;i.e. when it has not received or produced any audio or events.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Auto-suspend is an experimental feature.&lt;/p&gt;&lt;p&gt;Auto-suspend automatically turns off processsing when an instrument has been inactive for a while.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -450,7 +453,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Duration of inactivity to trigger autobypass (ms):&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Duration of inactivity to trigger auto-suspend (ms):&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
@@ -461,6 +464,9 @@
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="toolTip">
+               <string>The value should be higher than the longest delay line you have in the mixer</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

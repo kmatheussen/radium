@@ -60,6 +60,8 @@ public:
   //int _last_height;
 
   int64_t _last_cpu_update_time;
+
+  Auto_Suspend_Menu _auto_suspend_menu;
   
 public:
 
@@ -76,6 +78,7 @@ public:
     , _size_type(SIZETYPE_NORMAL)
       //, _last_height(10)
     , _last_cpu_update_time(0)
+    , _auto_suspend_menu(this, patch)
     {
       R_ASSERT(_patch!=NULL);
         
@@ -86,6 +89,9 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
 
+    if(type->will_always_autosuspend || type->will_never_autosuspend)
+      auto_bypass_menu_button->hide();
+      
     if(QString("Sample Player") != plugin->type->type_name)
       interpolation_type->hide();
     else{
@@ -272,7 +278,7 @@ public:
 
       } else if (PLUGIN_can_autobypass(plugin)) {
         
-        plugin_info->setText(" Auto-bypassing"); // CpuUsage.hpp must also be updated if the string "Auto-bypassing" is changed.
+        plugin_info->setText(AUTO_BYPASSING_STRING);
         
       } else {
         
@@ -413,16 +419,33 @@ public:
     {
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       if (plugin != NULL){
-        bool is_solo = ATOMIC_GET(plugin->solo_is_on);
-        if (solo_checkbox->isChecked() != is_solo)
-          solo_checkbox->setChecked(is_solo);
+
+        {
+          bool is_solo = ATOMIC_GET(plugin->solo_is_on);
+          if (solo_checkbox->isChecked() != is_solo)
+            solo_checkbox->setChecked(is_solo);
+        }
+        
+        {
+          enum AutoSuspendBehavior auto_suspend_behavior = PLUGIN_get_autosuspend_behavior(plugin);
+          
+          if (auto_suspend_behavior==DEFAULT_AUTOSUSPEND_BEHAVIOR)
+            auto_bypass_menu_button->setText(" ");
+          else if (auto_suspend_behavior==AUTOSUSPEND_ENABLED)
+            auto_bypass_menu_button->setText("✔");
+          else
+            auto_bypass_menu_button->setText("✘");
+        }
+        
+        #if 0
+        {
+          CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET(plugin->cpu_usage);
+          if (cpu_usage != NULL)
+            cpu_usage->reset(); // If not, max value has an unusually high value during the first second. I don't know why that is.
+        }
+        #endif
       }
 
-      #if 0
-      CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET(plugin->cpu_usage);
-      if (cpu_usage != NULL)
-        cpu_usage->reset(); // If not, max value has an unusually high value during the first second. I don't know why that is.
-      #endif
     }
     
   }
@@ -536,12 +559,19 @@ private:
   
 public slots:
 
+  // auto-bypass
+  //
+  void on_auto_bypass_menu_button_released() {
+    _auto_suspend_menu.myExec();
+    update_widget();
+  }
+  
   // faust
   //
 #if 0
   void on_faust_compile_button_released() {
     printf("Got it\n");
-#ifdef WITH_FAUST_DEV // <-- #ifdef must be on the inside of the function in order for moc to produce correct code.
+#ifdef WITH_FAUST_DEV // <-- #ifdef must be on the inside of the function for moc to produce code.
     if (_faust_plugin_widget != NULL)
       _faust_plugin_widget->start_compilation();
 #endif

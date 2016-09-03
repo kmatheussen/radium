@@ -1159,7 +1159,7 @@ $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_Bs_edit.cpp >$(P)mQt_Bs_edit.cpp
 
 
-INSTRUMENTS_DEPENDENCIES = $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)Qt_plugin_widget.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)Qt_compressor_widget.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h
+INSTRUMENTS_DEPENDENCIES = $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)Qt_plugin_widget.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)Qt_compressor_widget.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h
 
 
 
@@ -1196,6 +1196,9 @@ $(P)Qt_control_change_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_control_change_wid
 
 $(P)Qt_plugin_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_plugin_widget.ui $(P)create_source_from_ui.sh $(P)Qt_plugin_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) plugin_widget
+
+$(P)Qt_auto_suspend_menu.h:  $(BUILD_DEPENDENCIES) $(P)qt4_auto_suspend_menu.ui $(P)create_source_from_ui.sh  $(P)Qt_auto_suspend_menu_callbacks.h
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) auto_suspend_menu
 
 $(P)Qt_pd_plugin_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_pd_plugin_widget.ui $(P)create_source_from_ui.sh $(P)Qt_pd_plugin_widget_callbacks.h $(P)Qt_pd_controller_widget.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) pd_plugin_widget

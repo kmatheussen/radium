@@ -1156,6 +1156,10 @@ int MIXER_get_buffer_size(void){
   return RADIUM_BLOCKSIZE; //g_mixer->_buffer_size;
 }
 
+int MIXER_get_jack_block_size(void){
+  return ATOMIC_GET(jackblock_size);
+}
+
 // Returns first sound plugin in mixer that matches type_name and name. name can be NULL.
 struct SoundPlugin *MIXER_get_soundplugin(const char *type_name, const char *name){
   for (SoundProducer *sp : g_mixer->_sound_producers) {

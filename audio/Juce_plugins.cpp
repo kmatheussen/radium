@@ -152,7 +152,7 @@ namespace{
       if (ATOMIC_GET(is_starting_up))
         return false;
 
-      RT_PLUGIN_touch(_plugin); // If the plugin needs timing data, it should probably not be autopaused.
+      //RT_PLUGIN_touch(_plugin); // If the plugin needs timing data, it should probably not be autopaused.
 
       bool isplaying = is_playing();
 
@@ -399,7 +399,7 @@ namespace{
     {
 
       struct SoundPlugin *plugin = data->listener.plugin;
-      ATOMIC_SET(plugin->can_autobypass, false);
+      ATOMIC_SET(plugin->auto_suspend_suspended, true);
         
 #if !FOR_WINDOWS
       if(vstGuiIsAlwaysOnTop()) {
@@ -412,7 +412,6 @@ namespace{
       this->setUsingNativeTitleBar(true);
 
       int button_height = root->song->tracker_windows->fontheight * 3 / 2;
-
       
       main_component.setSize(R_MIN(100, editor->getWidth()), R_MIN(100, editor->getHeight()));
       this->setContentNonOwned(&main_component, true);
@@ -511,7 +510,7 @@ namespace{
       V_free((void*)title);
 
       struct SoundPlugin *plugin = data->listener.plugin;
-      ATOMIC_SET(plugin->can_autobypass, true);
+      ATOMIC_SET(plugin->auto_suspend_suspended, false);
     }
 
     /*
