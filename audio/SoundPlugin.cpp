@@ -1762,7 +1762,11 @@ bool RT_PLUGIN_can_autobypass(SoundPlugin *plugin, int64_t time){
     if (plugin_latency > delay)
       delay = plugin_latency;
   }
- 
+
+  int jack_block_size = MIXER_get_jack_block_size();
+  if (jack_block_size > delay)
+    delay = jack_block_size;
+  
   if (time_since_activity > delay)
     return true;
            
