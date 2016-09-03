@@ -236,12 +236,16 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
     GL_lock();{
       QCoreApplication::processEvents();
     }GL_unlock();
-    
+
     //GTK_HandleEvents();
     if(text!=edit->text()){
       text = edit->text();
       printf("text: \"%s\"\n",text.toUtf8().constData());
     }
+
+    if(reqtype->frame->isVisible()==false)
+      break;
+    
     usleep(100);
   }
 #endif
