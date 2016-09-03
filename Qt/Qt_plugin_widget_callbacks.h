@@ -30,16 +30,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_plugin_widget.h"
 
+#include "mQt_auto_suspend_menu_callbacks.h"
+
+
 #include "mQt_pd_plugin_widget_callbacks.h"
 #ifdef WITH_FAUST_DEV
 #include "mQt_faust_plugin_widget_callbacks.h"
 #endif
 #include "mQt_jack_plugin_widget_callbacks.h"
 
-
 static QString last_fxb_preset_path = "";
 
 
+ 
 class Plugin_widget : public QWidget, public Ui::Plugin_widget{
   Q_OBJECT;
 

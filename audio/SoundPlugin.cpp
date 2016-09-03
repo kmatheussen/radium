@@ -1470,6 +1470,9 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
   // effects
   HASH_put_hash(state,"effects",PLUGIN_get_effects_state(plugin));
 
+  // auto-suspend
+  HASH_put_int(state,"auto_suspend_behavior", PLUGIN_get_autosuspend_behavior(plugin));
+  
   // plugin state
   if(type->create_state != NULL){
     hash_t *plugin_state = HASH_create(10);
@@ -1626,6 +1629,10 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
 
   if(plugin_state!=NULL && type->recreate_from_state!=NULL)
     type->recreate_from_state(plugin, plugin_state, is_loading);
+
+  // auto-suspend
+  if (HASH_has_key(state, "auto_suspend_behavior"))
+    PLUGIN_set_autosuspend_behavior(plugin, (AutoSuspendBehavior)HASH_get_int(state, "auto_suspend_behavior"));
 
   // midi learns state
   {
