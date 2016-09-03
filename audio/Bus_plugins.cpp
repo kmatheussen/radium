@@ -175,6 +175,7 @@ void create_bus_plugins(void){
     bus_type1.num_outputs              = 2;
     bus_type1.is_instrument            = false;
     bus_type1.num_effects              = 0;
+    bus_type1.will_always_autosuspend  = true,
     bus_type1.create_plugin_data       = create_plugin_data;
     bus_type1.cleanup_plugin_data      = cleanup_plugin_data;
     
@@ -192,6 +193,7 @@ void create_bus_plugins(void){
     bus_type2.num_outputs              = 2;
     bus_type2.is_instrument            = false;
     bus_type2.num_effects              = 0;
+    bus_type2.will_always_autosuspend  = true,
     bus_type2.create_plugin_data       = create_plugin_data;
     bus_type2.cleanup_plugin_data      = cleanup_plugin_data;
     
@@ -209,6 +211,7 @@ void create_bus_plugins(void){
     bus_type3.num_outputs              = 2;
     bus_type3.is_instrument            = false;
     bus_type3.num_effects              = 0;
+    bus_type3.will_always_autosuspend  = true,
     bus_type3.create_plugin_data       = create_plugin_data;
     bus_type3.cleanup_plugin_data      = cleanup_plugin_data;
     
@@ -226,6 +229,7 @@ void create_bus_plugins(void){
     bus_type4.num_outputs              = 2;
     bus_type4.is_instrument            = false;
     bus_type4.num_effects              = 0;
+    bus_type4.will_always_autosuspend  = true,
     bus_type4.create_plugin_data       = create_plugin_data;
     bus_type4.cleanup_plugin_data      = cleanup_plugin_data;
     
@@ -243,6 +247,7 @@ void create_bus_plugins(void){
     bus_type5.num_outputs              = 2;
     bus_type5.is_instrument            = false;
     bus_type5.num_effects              = 0;
+    bus_type5.will_always_autosuspend  = true,
     bus_type5.create_plugin_data       = create_plugin_data;
     bus_type5.cleanup_plugin_data      = cleanup_plugin_data;
     
@@ -261,6 +266,7 @@ void create_bus_plugins(void){
     pipe_type.num_outputs              = 2;
     pipe_type.is_instrument            = false;
     pipe_type.num_effects              = 0;
+    pipe_type.will_always_autosuspend  = true,
     pipe_type.create_plugin_data       = create_plugin_data;
     pipe_type.cleanup_plugin_data      = cleanup_plugin_data;
     

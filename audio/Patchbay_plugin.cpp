@@ -119,6 +119,7 @@ static void init_type(struct SoundPluginType *type, int num){
   type->is_instrument            = false;
   type->note_handling_is_RT      = false;
   type->num_effects              = num*num;
+  type->will_always_autosuspend  = true,
   type->get_effect_format        = get_effect_format;
   type->get_effect_name          = get_effect_name;
   type->effect_is_RT             = NULL;
