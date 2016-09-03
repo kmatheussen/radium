@@ -505,12 +505,8 @@ char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype, bool 
   if(sel==-1)
     return NULL;
 
-  if(sel==num_ports){
-    char *ret=NULL;
-    while(ret==NULL)
-      ret = GFX_GetString(NULL,reqtype,"Name: ");
-    return ret;
-  }
+  if(sel==num_ports)
+    return GFX_GetString(NULL,reqtype,"Name: ");
 
   return portnames[sel];
 }
