@@ -5477,27 +5477,28 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 (define (send-instruments-to-radium instruments)
   (for-each (lambda (instrument)
               (when (> (instrument-num-samples instrument) 0)
-                    (define radium-instrument-num (<ra> :create-audio-instrument "Sample Player" "Sample Player" (instrument-sample-name instrument)))
-                    (<ra> :connect-audio-instrument-to-main-pipe radium-instrument-num)
-                    
-                    (set-instrument-radium-instrument-num! instrument radium-instrument-num)
-                    
-                    (<ra> :set-instrument-sample radium-instrument-num (instrument-sample-filename instrument))
-                    
-                    (let ((loop-length (instrument-loop-length instrument)))
-                      (if (> loop-length 0)
-                          (<ra> :set-instrument-loop-data radium-instrument-num
-                                                       (instrument-loop-start instrument)
-                                                       loop-length)))
-                    (let ((finetune (instrument-finetune instrument)))
-                      (if (not (= 0 finetune))
-                          (<ra> :set-instrument-effect radium-instrument-num "Finetune" (protracker-finetune-to-radium-finetune finetune))))
-                    
-                    ;; We don't hear clicks when modules are played in protracker, for some reason.
-                    ;; But in Radium the clicks are quite noticable.
-                    (<ra> :set-instrument-effect radium-instrument-num "Attack" 1)
-                    (<ra> :set-instrument-effect radium-instrument-num "Release" 1)
-                    ))
+                (define radium-instrument-num (<ra> :create-audio-instrument "Sample Player" "Sample Player" (instrument-sample-name instrument)))
+                (<ra> :autoposition-instrument radium-instrument-num)
+                (<ra> :connect-audio-instrument-to-main-pipe radium-instrument-num)
+                
+                (set-instrument-radium-instrument-num! instrument radium-instrument-num)
+                
+                (<ra> :set-instrument-sample radium-instrument-num (instrument-sample-filename instrument))
+                
+                (let ((loop-length (instrument-loop-length instrument)))
+                  (if (> loop-length 0)
+                      (<ra> :set-instrument-loop-data radium-instrument-num
+                            (instrument-loop-start instrument)
+                            loop-length)))
+                (let ((finetune (instrument-finetune instrument)))
+                  (if (not (= 0 finetune))
+                      (<ra> :set-instrument-effect radium-instrument-num "Finetune" (protracker-finetune-to-radium-finetune finetune))))
+                
+                ;; We don't hear clicks when modules are played in protracker, for some reason.
+                ;; But in Radium the clicks are quite noticable.
+                (<ra> :set-instrument-effect radium-instrument-num "Attack" 1)
+                (<ra> :set-instrument-effect radium-instrument-num "Release" 1)
+                ))
             
             (vector->list instruments)))
               
