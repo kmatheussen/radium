@@ -82,12 +82,14 @@ static inline void RT_PLUGIN_touch(SoundPlugin *plugin){
   //  if (plugin->patch!=NULL && !strcmp(plugin->patch->name,"Test"))
   //    printf("Touching %s\n",plugin->patch==NULL ? "(null)" : plugin->patch->name);
 
-  int64_t last_used_time = MIXER_get_last_used_time();
+  if (plugin != NULL) {
+    int64_t last_used_time = MIXER_get_last_used_time();
   
-  if (ATOMIC_GET_RELAXED(plugin->time_of_last_activity)==last_used_time) // This function is called quite often
-    return;
+    if (ATOMIC_GET_RELAXED(plugin->time_of_last_activity)==last_used_time) // This function is called quite often
+      return;
       
-  ATOMIC_SET(plugin->time_of_last_activity, last_used_time);
+    ATOMIC_SET(plugin->time_of_last_activity, last_used_time);
+  }
 }
 static inline void PLUGIN_touch(SoundPlugin *plugin){
   RT_PLUGIN_touch(plugin);
