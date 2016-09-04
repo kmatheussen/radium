@@ -283,7 +283,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       
 #else
       _color_dialog.setOption(QColorDialog::DontUseNativeDialog, true);
-      //_color_dialog.setOption(QColorDialog::ShowAlphaChannel, true);
+      _color_dialog.setOption(QColorDialog::ShowAlphaChannel, true);
 
       colorlayout_right->insertWidget(0, &_color_dialog);
 #endif
@@ -322,6 +322,9 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
   }
 
   void showEvent(QShowEvent *event){
+    if (tabWidget->currentWidget() == colors)
+      obtain_keyboard_focus();
+    
     if (_needs_to_update)
       updateWidgets();
   }
@@ -329,6 +332,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 #if FOR_MACOSX && !USE_QT5
   void hideEvent(QHideEvent *event) {
     _color_dialog.close();
+    release_keyboard_focus();
     event->accept();
   }
 
@@ -342,7 +346,12 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     event->accept();
   }
   #endif
-  
+
+#else
+  void hideEvent(QHideEvent *event) {
+    release_keyboard_focus();
+    event->accept();
+  }
 #endif
   
   void updateWidgets(){
@@ -738,7 +747,8 @@ public slots:
   void color_changed(const QColor &col){
     //printf("HAPP! %s\n",col.name().toUtf8().constData());
     testColorInRealtime(g_current_colornum, col);
-
+    printf("  alpha1: %d\n",col.alpha());
+    
     for(auto button : all_buttons){
       button->update();
     }
@@ -752,6 +762,10 @@ public slots:
     else
       _color_dialog.myshow();
 #endif
+    if (tabWidget->currentWidget() == colors)
+      obtain_keyboard_focus();
+    else
+      release_keyboard_focus();
   }
   
   void on_color_reset_button_clicked(){

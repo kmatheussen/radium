@@ -145,6 +145,7 @@ static const ColorConfig g_colorconfig[] = {
 
   {MIXER_EVENT_CONNECTION_COLOR_NUM, "mixer_event_connection_color", "Event connection color"},
   {MIXER_AUDIO_CONNECTION_COLOR_NUM, "mixer_audio_connection_color", "Audio connection color"},
+  {MIXER_AUTOSUSPENSION_COLOR_NUM, "mixer_autosuspension_color", "Auto-suspension sound object color"},
   
   {END_CONFIG_COLOR_NUM, NULL, NULL}
 };
@@ -218,6 +219,7 @@ static ReplacementColor g_replacement_color[] = {
 
   {MIXER_EVENT_CONNECTION_COLOR_NUM, QColor(30,95,70,140)},
   {MIXER_AUDIO_CONNECTION_COLOR_NUM, QColor(50,25,70,140)},
+  {MIXER_AUTOSUSPENSION_COLOR_NUM, QColor("#28a6a6a6")},
 
   {END_CONFIG_COLOR_NUM, QColor(1,2,3)}
 };
@@ -778,7 +780,7 @@ static void setColor(enum ColorNums num, const QRgb &rgb){
     if (g_config_colors[num]==NULL)
       get_config_qcolor(num);
 
-    g_config_colors[num]->setRgb(rgb);
+    g_config_colors[num]->setRgba(rgb);
     
     if(num==LOW_BACKGROUND_COLOR_NUM)
       system_color->setRgb(rgb);
@@ -808,7 +810,7 @@ void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much){
       color = color.darker(scale(how_much, 0, 1, 0, 200));
 
     if (i!=11)
-      setColor((enum ColorNums)i, color.rgb());
+      setColor((enum ColorNums)i, color.rgba());
     printf("value for %d: %f\n",i,value);
     //color.setLightntess(lightness
   }
@@ -826,7 +828,7 @@ void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much){
     color.setHsvF(h, s, value, a);
     
     //QColor color = editorwidget->colors[i];
-    setColor((enum ColorNums)i, color.rgb());
+    setColor((enum ColorNums)i, color.rgba());
     
     printf("value for %d: %f. s: %f, how_much: %f\n",i,value,s,how_much);
     //color.setLightntess(lightness
@@ -840,9 +842,11 @@ void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much){
 void testColorInRealtime(enum ColorNums num, QColor color){
   R_ASSERT_RETURN_IF_FALSE(num<END_CONFIG_COLOR_NUM);
 
+  printf("  alpha2: %d\n",color.alpha());
+  
   struct Tracker_Windows *window = root->song->tracker_windows;
   EditorWidget *my_widget=(EditorWidget *)window->os_visual.widget;
-  setColor(num,color.rgb());
+  setColor(num,color.rgba());
   updateAll(my_widget);
 
   GFX_update_current_instrument_widget();
@@ -910,7 +914,7 @@ void GFX_SaveColors(void){
     if (!QString(colorname).contains("color"))
       colorname = talloc_format("%s_color", colorname);
 
-    SETTINGS_write_string(colorname, get_qcolor((enum ColorNums)i).name());
+    SETTINGS_write_string(colorname, get_qcolor((enum ColorNums)i).name(QColor::HexArgb));
   }
 }
   

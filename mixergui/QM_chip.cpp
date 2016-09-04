@@ -970,6 +970,7 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
   , _last_updated_solo(false)
   , _last_updated_bypass(false)
   , _last_updated_recording(false)
+  , _last_updated_autosuspending(false)
   , _slider_being_edited(0)
 {
 
@@ -1252,6 +1253,14 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     // Greying if selected
     if (is_selected){// && !is_current_patch){
       QColor c(40,40,40,100);
+      painter->fillRect(x1,y1,x2-x1,y2-y1,c);
+    }
+    
+    // Bluing if autosuspending
+    if (SP_is_autosuspending(plugin->sp)){
+      //QColor c(0,0,60,80);
+      QColor c = get_qcolor(MIXER_AUTOSUSPENSION_COLOR_NUM);
+      //c.setAlpha(35);
       painter->fillRect(x1,y1,x2-x1,y2-y1,c);
     }
   }

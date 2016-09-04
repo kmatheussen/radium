@@ -1246,7 +1246,8 @@ namespace{
                 bool is_solo = ATOMIC_GET(plugin->solo_is_on);
                 bool is_bypass = !ATOMIC_GET(plugin->effects_are_on);
                 bool is_recording = ATOMIC_GET(patch->is_recording);
-
+                bool is_autosuspending = SP_is_autosuspending(plugin->sp);
+                  
                 if (chip->_last_updated_mute != is_muted){
                   chip->update();
                   chip->_last_updated_mute = is_muted;
@@ -1265,6 +1266,11 @@ namespace{
                 if (chip->_last_updated_recording != is_recording){
                   chip->update();
                   chip->_last_updated_recording = is_recording;
+                }
+                
+                if (chip->_last_updated_autosuspending != is_autosuspending){
+                  chip->update();
+                  chip->_last_updated_autosuspending = is_autosuspending;
                 }
                 
                 
