@@ -120,6 +120,11 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
 
   public slots:
 
+  void on_show_cpu_usage_toggled(bool val){
+    ATOMIC_SET(g_show_cpu_usage_in_mixer, val);
+    MW_update_all_chips();
+  }
+    
   void on_up_button_toggled(bool val){
     if(val==true){
       set_rotate(270);

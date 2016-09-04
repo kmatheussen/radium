@@ -80,6 +80,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundProducer_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../audio/undo_audio_effect_proc.h"
+#include "../audio/CpuUsage.hpp"
 #include "../Qt/EditorWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
 //#include "../Qt/Qt_MyQCheckBox.h"
@@ -1157,13 +1158,54 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     if (ATOMIC_GET(patch->is_recording))
       c = mix_colors(c, QColor(255,0,0), 0.1);
-      
-    painter->fillRect(x1, y1, x2-x1, y2-y1, c);
 
+    painter->fillRect(x1, y1, x2-x1, y2-y1, c);
+    
     x1 += 2;    
     x2 -= 1;
     
-    QString text = patch->name;
+    QString text;
+
+    if (ATOMIC_GET(g_show_cpu_usage_in_mixer)){
+      
+      int64_t time = TIME_get_ms();
+      
+      if (_last_cpu_text=="" || time > (_last_cpu_update_time + 1000)){
+        
+        CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET(plugin->cpu_usage);
+        
+        if (cpu_usage==NULL) {
+          
+          ATOMIC_SET(plugin->cpu_usage, new CpuUsage);
+
+        } else {
+          
+          int mincpu = cpu_usage->min();
+          int maxcpu = cpu_usage->max();
+          int avgcpu = cpu_usage->avg();
+          
+          _last_cpu_text.sprintf("%s%d / %s%d / %s%d",
+                                 mincpu < 10 ? " " : "", mincpu,
+                                 avgcpu < 10 ? " " : "", avgcpu,
+                                 maxcpu < 10 ? " " : "", maxcpu
+                                 );
+          
+          text = _last_cpu_text;
+          _last_cpu_update_time = time;
+          cpu_usage->reset();
+          
+        }
+        
+      } else {
+        text = _last_cpu_text;
+      }
+      
+    } else  {
+      
+      text = patch->name;
+      
+    }
+    
     float textlen = get_text_width(painter->font(),text);       
     float width = x2-x1;
 

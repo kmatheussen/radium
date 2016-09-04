@@ -170,6 +170,8 @@ void MW_set_selected_chip(Chip *chip);
 
 #endif // __cplusplus
 
+extern LANGSPEC DEFINE_ATOMIC(bool, g_show_cpu_usage_in_mixer);
+
 extern LANGSPEC void inc_plugin_usage_number(SoundPluginType *type);
 
 extern LANGSPEC char *MW_request_load_preset_instrument_description(void);

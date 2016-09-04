@@ -70,6 +70,8 @@ static inline int myisinf(float val){
 #include "CpuUsage.hpp"
 #include "SmoothDelay.hpp"
 
+#include "../mixergui/QM_MixerWidget.h"
+
 #include "fade_envelopes.h"
 
 
@@ -1533,7 +1535,7 @@ void CpuUsage_delete(void *cpu_usage){
 void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins){
   SoundPlugin *plugin = producer->_plugin;
   
-  bool is_visible = ATOMIC_GET(plugin->is_visible);
+  bool is_visible = ATOMIC_GET(g_show_cpu_usage_in_mixer) || ATOMIC_GET(plugin->is_visible);
   CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET(plugin->cpu_usage);
   
   bool add_cpu_data = is_visible && cpu_usage!=NULL;

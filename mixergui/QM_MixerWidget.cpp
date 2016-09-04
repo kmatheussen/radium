@@ -1209,10 +1209,13 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
   }
 }
 
+DEFINE_ATOMIC(bool, g_show_cpu_usage_in_mixer) = false;
+
 MixerWidget *g_mixer_widget = NULL;
 
 namespace{
   class MixerWidgetTimer : public QTimer{
+    
     void 	timerEvent ( QTimerEvent * e ){
       if (g_mixer_widget->isVisible()){
 
@@ -1229,7 +1232,15 @@ namespace{
             SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
             
             if(plugin != NULL){
-              
+
+              if (ATOMIC_GET(g_show_cpu_usage_in_mixer)){
+                int64_t time = TIME_get_ms();
+                if (time > (chip->_last_cpu_update_time + 1000)){
+                  chip->update();
+                  //printf("  Updating chip %s\n", plugin->patch == NULL ? "gakk" : plugin->patch->name);
+                }
+              }
+                                
               volatile struct Patch *patch = plugin->patch;
               
               if(patch!=NULL){
