@@ -1,3 +1,26 @@
+Changes 4.1.1. -> 4.1.2:
+* Rename auto-bypass to auto-suspend.
+* Optionally show CPU usage per instrument in the mixer.
+* Fix MIDI input-related crash when deleting instrument. Bug introduced
+  in 4.1.1
+* Let Notes added by MIDI input be polyphonic when shift is pressed.
+* Fix bug causing both note on and note off be registered as note on
+  when a note was added from MIDI input.
+* Add inputs/outputs/latency/tail/time of last last activity to the
+  instrument info box.
+* Grey out auto-suspending sound objects in the mixer, in realtime.
+* Various auto-suspend tweaks and bug fixes
+* By default, disable auto-suspend for zita reverb in new songs.
+* Instruments can optionally override default auto-suspend behavior.
+* Autoposition instruments in the mixer (again) when importing MOD.
+* Fix general buggy behavior when closing text line requesters.
+* Allow cancelling adding a new MIDI port.
+* Many bug fixes and tweaks for auto-suspend.
+* Show requester windows at mouse position.
+* Let Escape key exit editing number boxes
+
+
+
 Changes 4.1.0 -> 4.1.1:
 * Option to auto-bypass instruments. The feature turns off processsing for
   an instrument when it has been inactive for a specified amount of time,
