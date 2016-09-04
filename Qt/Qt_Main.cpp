@@ -1348,7 +1348,10 @@ bool CtrlPressed(void){
 }
 
 bool ShiftPressed(void){
-  return QApplication::keyboardModifiers() & Qt::ShiftModifier;
+  if (editor_has_keyboard==true && QGuiApplication::mouseButtons()==Qt::NoButton)
+    return AnyShift(tevent.keyswitch);
+  else
+    return QApplication::keyboardModifiers() & Qt::ShiftModifier;
 }
 
 bool AltPressed(void){
