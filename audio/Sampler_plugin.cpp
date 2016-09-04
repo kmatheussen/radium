@@ -987,6 +987,12 @@ static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
   }
 }
 
+// returns the attack+decay+release value (i.e. A+D+R in ADSR) as number of samples.
+static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
+  Data *data = (Data*)plugin->data;
+  return (data->p.a+data->p.d+data->p.r) * (double)MIXER_get_sample_rate() / 1000.0;
+}
+
 static bool note_has_sample(const Note *note){
   int samplenum;
   
@@ -1321,8 +1327,8 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       break;
     case EFF_R:
       data->p.r = scale(value,
-                      0.0,1.0,
-                      0,MAX_R);
+                        0.0,1.0,
+                        0,MAX_R);
       break;
     case EFF_VIBRATO_SPEED:
       data->p.vibrato_speed = scale(value,
@@ -2397,6 +2403,9 @@ static void init_plugin_type(void){
  plugin_type.set_note_volume  = set_note_volume;
  plugin_type.set_note_pitch   = set_note_pitch;
  plugin_type.stop_note        = stop_note;
+
+ plugin_type.RT_get_audio_tail_length = RT_get_audio_tail_length;
+   
  plugin_type.get_peaks        = get_peaks;
  plugin_type.set_effect_value = set_effect_value;
  plugin_type.get_effect_value = get_effect_value;

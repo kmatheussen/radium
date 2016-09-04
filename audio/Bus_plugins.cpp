@@ -74,6 +74,11 @@ static void RT_right_out_process(SoundPlugin *plugin, int64_t time, int num_fram
   memset(outputs[0],0,sizeof(float)*num_frames);
 }
 
+static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
+  return 0;
+}
+
+
 
 static SoundPlugin *bus1 = NULL;
 static SoundPlugin *bus2 = NULL;
@@ -142,7 +147,8 @@ static SoundPluginType bus_type = {
 
  //RT_process               : RT_bus_process,
  RT_process               : RT_pipe_process,
-
+ RT_get_audio_tail_length : RT_get_audio_tail_length,
+ 
  data                     : NULL
 };
 
@@ -156,7 +162,8 @@ static SoundPluginType pipe_type = {
  cleanup_plugin_data      : cleanup_plugin_data,
 
  RT_process               : RT_pipe_process,
-
+ RT_get_audio_tail_length : RT_get_audio_tail_length,
+ 
  data                     : NULL
 };
 
@@ -181,7 +188,8 @@ void create_bus_plugins(void){
     
     //bus_type1.RT_process               = RT_bus_process;
     bus_type1.RT_process               = RT_pipe_process;
-  
+    bus_type1.RT_get_audio_tail_length = RT_get_audio_tail_length;
+      
     bus_type1.data                     = NULL;
   }
 
@@ -199,7 +207,8 @@ void create_bus_plugins(void){
     
     //bus_type2.RT_process               = RT_bus_process;
     bus_type2.RT_process               = RT_pipe_process;
-  
+    bus_type2.RT_get_audio_tail_length = RT_get_audio_tail_length;
+    
     bus_type2.data                     = NULL;
   }
 
@@ -217,7 +226,8 @@ void create_bus_plugins(void){
     
     //bus_type2.RT_process               = RT_bus_process;
     bus_type3.RT_process               = RT_pipe_process;
-  
+    bus_type3.RT_get_audio_tail_length = RT_get_audio_tail_length;
+    
     bus_type3.data                     = NULL;
   }
 
@@ -235,7 +245,8 @@ void create_bus_plugins(void){
     
     //bus_type2.RT_process               = RT_bus_process;
     bus_type4.RT_process               = RT_pipe_process;
-  
+    bus_type4.RT_get_audio_tail_length = RT_get_audio_tail_length;
+    
     bus_type4.data                     = NULL;
   }
 
@@ -253,7 +264,8 @@ void create_bus_plugins(void){
     
     //bus_type2.RT_process               = RT_bus_process;
     bus_type5.RT_process               = RT_pipe_process;
-  
+    bus_type5.RT_get_audio_tail_length = RT_get_audio_tail_length;
+    
     bus_type5.data                     = NULL;
   }
 
@@ -271,6 +283,7 @@ void create_bus_plugins(void){
     pipe_type.cleanup_plugin_data      = cleanup_plugin_data;
     
     pipe_type.RT_process               = RT_pipe_process;
+    pipe_type.RT_get_audio_tail_length = RT_get_audio_tail_length;
     
     pipe_type.data                     = NULL;
   }

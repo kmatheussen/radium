@@ -453,7 +453,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Duration of inactivity to trigger auto-suspend (ms):&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Default duration of inactivity to trigger auto-suspend (ms):&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
@@ -466,7 +466,7 @@
                </sizepolicy>
               </property>
               <property name="toolTip">
-               <string>The value should be higher than the longest delay line you have in the mixer</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The value should be higher than the longest delay line you have in the mixer.&lt;/p&gt;&lt;p&gt;It might make sense to disable auto-suspend for all delay, reverb, echo, etc. instruments, and rather set this value low.&lt;/p&gt;&lt;p&gt;Note that many instruments are able to provide accurate auto-suspend values (Sampler, Pipe, some VST plugins, etc.). For those instruments, this value will not be used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -4456,8 +4456,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
+  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
-  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>

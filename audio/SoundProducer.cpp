@@ -535,7 +535,7 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
         float *out = outputs[ch];
         float peak = RT_get_max_val(out,num_frames);
 
-        if (fabsf(peak) > MIN_AUTOBYPASS_PEAK)
+        if (peak > MIN_AUTOSUSPEND_PEAK)
           RT_PLUGIN_touch(plugin);
 
         if (peak > 317) {
@@ -601,7 +601,8 @@ struct SoundProducer {
   double running_time;
   bool has_run_for_each_block2;
 
-  bool _autobypassing_this_cycle;
+  bool _autosuspending_this_cycle;
+  DEFINE_ATOMIC(bool, _is_autosuspending); // Relaxed version of _autosuspending_this_cycle. Can be accessed from any thread.
   
   bool _is_bus;
   int _bus_num;
@@ -1148,9 +1149,6 @@ public:
     has_run_for_each_block2 = true;
 
     
-    _autobypassing_this_cycle = RT_PLUGIN_can_autobypass(_plugin, time);
-      
-    
     // 1. Find num_dependencies
     //
     num_dependencies = 0;
@@ -1347,9 +1345,10 @@ public:
         continue;
       }
 
-      // fix: the result of RT_PLUGIN_can_autobypass must be determined before starting a new cycle
-      if (source->_autobypassing_this_cycle)
+      if (source->_autosuspending_this_cycle) {
+        link->_delay.RT_call_instead_of_process(num_frames);
         continue;
+      }
       
       R_ASSERT(source->has_run(time));
       
@@ -1387,7 +1386,7 @@ public:
         
         float dry_peak = RT_get_max_val(_dry_sound[ch],num_frames);
         
-        if (fabsf(dry_peak) > MIN_AUTOBYPASS_PEAK)
+        if (dry_peak > MIN_AUTOSUSPEND_PEAK)
           RT_PLUGIN_touch(_plugin);
         
         float input_volume = SMOOTH_get_target_value(&_plugin->input_volume);
@@ -1451,7 +1450,7 @@ public:
 
         float out_peak = RT_get_max_val(_output_sound[ch],num_frames);
         
-        if (!is_touched && fabsf(out_peak) > MIN_AUTOBYPASS_PEAK)
+        if (!is_touched && out_peak > MIN_AUTOSUSPEND_PEAK)
           is_touched = true;
 
         volume_peaks[ch] = out_peak * _plugin->volume;
@@ -1460,7 +1459,8 @@ public:
       if(is_touched) {
         RT_PLUGIN_touch(_plugin);
         for(auto link : _output_links){
-          RT_PLUGIN_touch(link->target->_plugin);
+          if (false==link->is_event_link && link->is_active)
+            RT_PLUGIN_touch(link->target->_plugin);
         }
       }
       
@@ -1674,6 +1674,10 @@ bool SP_is_plugin_running(SoundPlugin *plugin){
 
 int RT_SP_get_input_latency(SoundProducer *sp){
   return sp->_highest_input_link_latency;
+}
+
+bool SP_is_autosuspending(SoundProducer *sp){
+  return ATOMIC_GET_RELAXED(sp->_is_autosuspending);
 }
 
 void SP_set_buffer_size(SoundProducer *producer,int buffer_size){

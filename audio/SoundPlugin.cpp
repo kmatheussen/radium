@@ -1746,16 +1746,22 @@ void PLUGIN_set_autosuspend_behavior(SoundPlugin *plugin, enum AutoSuspendBehavi
 enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(SoundPlugin *plugin){
   return ATOMIC_GET(plugin->auto_suspend_behavior);
 }
-  
-bool RT_PLUGIN_can_autobypass(SoundPlugin *plugin, int64_t time){
 
-  {
-    struct SoundPluginType *type = plugin->type;
-    
+// only called from MultiCore.cpp, one time per audio block per instrument
+bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time){
+
+  struct SoundPluginType *type = plugin->type;
+
+  {  
     if (type->will_never_autosuspend==true)
       return false;
 
-    if (type->will_always_autosuspend==false){
+#if defined(RELEASE)
+    bool type_will_always_autosuspend = false;
+#else
+    bool type_will_always_autosuspend = type->will_always_autosuspend;
+#endif
+    if (type_will_always_autosuspend==false){
       enum AutoSuspendBehavior auto_suspend_behavior = PLUGIN_get_autosuspend_behavior(plugin);
       
       if (auto_suspend_behavior==AUTOSUSPEND_DISABLED)
@@ -1778,27 +1784,31 @@ bool RT_PLUGIN_can_autobypass(SoundPlugin *plugin, int64_t time){
   }
   
   {
+    int delay = -1;
+
+    if (type->RT_get_audio_tail_length != NULL)
+      delay = type->RT_get_audio_tail_length(plugin);
+
+    if (delay < 0)
+      delay = (double)ATOMIC_GET(g_autobypass_delay) * MIXER_get_sample_rate() / 1000.0;
+
+    // input latency
+    delay += RT_SP_get_input_latency(plugin->sp);
+
+    // plugin latency
+    if (plugin->type->RT_get_latency != NULL)
+      delay += plugin->type->RT_get_latency(plugin);
+
+    // smooth delay delay
+    delay += (plugin->delay_time * MIXER_get_sample_rate() / 1000);
+    
+    // The timing logic is a little bit uncertain, so we add one jack block just to be sure.
+    delay += MIXER_get_jack_block_size();
+
+    // ...and we add some frames to eliminate rounding errors and possibly other minor things (system filters, etc.). (important for instruments that implement RT_get_audio_tail_length)
+    delay += 64;
+
     int time_since_activity = time-ATOMIC_GET(plugin->time_of_last_activity);
-    
-    int delay = (double)ATOMIC_GET(g_autobypass_delay) * MIXER_get_sample_rate() / 1000.0;
-    
-    int smooth_delay = plugin->delay_time * MIXER_get_sample_rate() / 1000;
-    if (smooth_delay > delay)
-      delay = smooth_delay;
-    
-    int input_latency = RT_SP_get_input_latency(plugin->sp);
-    if (input_latency > delay)
-      delay = input_latency;
-    
-    if (plugin->type->RT_get_latency != NULL){
-      int plugin_latency = plugin->type->RT_get_latency(plugin);
-      if (plugin_latency > delay)
-        delay = plugin_latency;
-    }
-    
-    int jack_block_size = MIXER_get_jack_block_size();
-    if (jack_block_size > delay)
-      delay = jack_block_size;
     
     if (time_since_activity > delay)
       return true;
@@ -1807,9 +1817,11 @@ bool RT_PLUGIN_can_autobypass(SoundPlugin *plugin, int64_t time){
   return false;
 }
 
+/*
 bool PLUGIN_can_autobypass(SoundPlugin *plugin){
   return RT_PLUGIN_can_autobypass(plugin, MIXER_get_last_used_time());
 }
+*/
 
 void PLUGIN_reset(SoundPlugin *plugin){
   const SoundPluginType *type = plugin->type;

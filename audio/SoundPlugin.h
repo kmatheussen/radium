@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern "C"{
 #endif
 
-#define MIN_AUTOBYPASS_PEAK 0.00001
+#define MIN_AUTOSUSPEND_PEAK 0.00001
   
 #define NOTUSED_EFFECT_NAME "NOTUSED"
   
@@ -227,6 +227,12 @@ typedef struct SoundPluginType{
   void (*send_raw_midi_message)(struct SoundPlugin *plugin, int block_delta_time, uint32_t msg);
   void (*stop_note)(struct SoundPlugin *plugin, int block_delta_time, note_t note);
 
+  // Used by auto-suspend to determine how long time to wait until suspending. If NULL, the default value will be used instead.
+  // * The function can not return a lower value than the actual tail. That may cause an audio tail to suddenly kick in when instrument is brought back from suspension.
+  // * The function is allowed to return a higher value than the actual tail.
+  // * If the function returns a negative value, it means that it was unable to report audio tail lenght.
+  int (*RT_get_audio_tail_length)(struct SoundPlugin *plugin);
+  
   int (*RT_get_latency)(struct SoundPlugin *plugin);
   
   // Returns the number of channels it can provide peaks for. (calling this function with ch=-1 is considered a dummy operation, except that the return value is correct)

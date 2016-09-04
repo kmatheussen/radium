@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 static int ms_to_frames(float ms, float samplerate){
-  return ms * samplerate / 1000;
+  return ms * samplerate / 1000.0f;
 }
 
 namespace{

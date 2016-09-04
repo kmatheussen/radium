@@ -92,9 +92,15 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
 
-    if(type->will_always_autosuspend || type->will_never_autosuspend)
+#if defined(RELEASE)
+    bool will_always_autosuspend = false;
+#else
+    bool will_always_autosuspend = type->will_always_autosuspend;
+#endif
+
+    if(will_always_autosuspend || type->will_never_autosuspend)
       auto_bypass_menu_button->hide();
-      
+    
     if(QString("Sample Player") != plugin->type->type_name)
       interpolation_type->hide();
     else{
@@ -279,9 +285,9 @@ public:
         
         ATOMIC_SET(plugin->cpu_usage, new CpuUsage);
 
-      } else if (PLUGIN_can_autobypass(plugin)) {
+      } else if (SP_is_autosuspending(plugin->sp)) {
         
-        plugin_info->setText(AUTO_BYPASSING_STRING);
+        plugin_info->setText(AUTOSUSPENDING_STRING);
         
       } else {
         

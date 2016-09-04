@@ -93,8 +93,8 @@ static inline void PLUGIN_touch(SoundPlugin *plugin){
   RT_PLUGIN_touch(plugin);
 }
   
-extern LANGSPEC bool RT_PLUGIN_can_autobypass(SoundPlugin *plugin, int64_t time);
-extern LANGSPEC bool PLUGIN_can_autobypass(SoundPlugin *plugin);
+extern LANGSPEC bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time);
+//extern LANGSPEC bool PLUGIN_can_autosuspend(SoundPlugin *plugin);
   
 
 extern LANGSPEC void PLUGIN_reset(SoundPlugin *plugin);

@@ -59,7 +59,10 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
   bool old = ATOMIC_SET_RETURN_OLD(sp->is_processed, true);
   R_ASSERT(old==false);
 
-  if ( ! sp->_autobypassing_this_cycle){
+  sp->_autosuspending_this_cycle = RT_PLUGIN_can_autosuspend(sp->_plugin, time);
+  ATOMIC_SET_RELAXED(sp->_is_autosuspending, sp->_autosuspending_this_cycle);
+  
+  if ( ! sp->_autosuspending_this_cycle){
     double start_time = monotonic_seconds();
     {
       SP_RT_process(sp, time, num_frames, process_plugins);
