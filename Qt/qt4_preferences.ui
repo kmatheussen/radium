@@ -424,7 +424,7 @@
                <enum>Qt::LeftToRight</enum>
               </property>
               <property name="text">
-               <string>Enable</string>
+               <string>Enable by default</string>
               </property>
              </widget>
             </item>

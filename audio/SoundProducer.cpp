@@ -612,8 +612,6 @@ struct SoundProducer {
 
   LatencyCompensatorDelay *_dry_sound_latencycompensator_delays;
   
-  float **_dry_sound;
-  float **_input_sound; // I'm not sure if it's best to place this data on the heap or the stack. Currently the heap is used. Advantage of heap: Avoid (having to think about the possibility of) risking running out of stack. Advantage of stack: Fewer cache misses.
   float **_output_sound;
 
   float *_input_peaks;
@@ -802,17 +800,10 @@ public:
   }
   
   void free_sound_buffers(){
-    for(int ch=0;ch<_num_dry_sounds;ch++)
-      V_free(_dry_sound[ch]);
-
-    for(int ch=0;ch<_num_inputs;ch++)
-      V_free(_input_sound[ch]);
 
     for(int ch=0;ch<_num_outputs;ch++)
       V_free(_output_sound[ch]);
 
-    V_free(_dry_sound);
-    V_free(_input_sound);
     V_free(_output_sound);
   }
 
@@ -854,14 +845,6 @@ public:
   void allocate_sound_buffers(int num_frames){
     R_ASSERT(num_frames==RADIUM_BLOCKSIZE);
     
-    _dry_sound = (float**)(V_calloc(sizeof(float*),_num_dry_sounds));
-    for(int ch=0;ch<_num_dry_sounds;ch++)
-      _dry_sound[ch] = (float*)V_calloc(sizeof(float),num_frames);
-
-    _input_sound = (float**)(V_calloc(sizeof(float*),_num_inputs));
-    for(int ch=0;ch<_num_inputs;ch++)
-      _input_sound[ch] = (float*)V_calloc(sizeof(float),num_frames);
-
     _output_sound = (float**)(V_calloc(sizeof(float*),_num_outputs));
     for(int ch=0;ch<_num_outputs;ch++)
       _output_sound[ch] = (float*)V_calloc(sizeof(float),num_frames);
@@ -1211,7 +1194,7 @@ public:
     return _last_time == time;
   }
 
-  void RT_set_input_peak_values(float *input_peaks){
+  void RT_set_input_peak_values(float *input_peaks, float **dry_sound){
     for(int ch=0;ch<_num_dry_sounds;ch++){
       float peak = input_peaks[ch];
       
@@ -1219,7 +1202,7 @@ public:
         if (peak > 317) {
           volatile struct Patch *patch = _plugin->patch;
           
-          float *out = _dry_sound[ch];
+          const float *out = dry_sound[ch];
           
           RT_message("Warning! (2)\n"
                      "\n"
@@ -1304,19 +1287,22 @@ public:
   }
   
   void RT_process(int64_t time, int num_frames, bool process_plugins){
+
+    float dry_sound_sound[R_MAX(1,_num_dry_sounds)*num_frames] = {0};
+    float *dry_sound[R_MAX(1,_num_dry_sounds)];
+    for(int ch=0;ch<_num_dry_sounds;ch++)
+      dry_sound[ch] = &dry_sound_sound[ch*num_frames];
+
+    float input_sound_sound[R_MAX(1, _num_inputs)*num_frames] = {0};
+    float *input_sound[R_MAX(1, _num_inputs)];
+    for(int ch=0;ch<_num_inputs;ch++)
+      input_sound[ch] = &input_sound_sound[ch*num_frames];
     
     R_ASSERT(has_run(time)==false);
     _last_time = time;
-
     
     PLUGIN_update_smooth_values(_plugin);
 
-    
-    // null out target channels
-    for(int ch=0;ch<_num_inputs;ch++)
-      memset(_dry_sound[ch], 0, sizeof(float)*num_frames);
-
-    
     // Fill inn target channels    
     for (SoundProducerLink *link : _input_links) {
 
@@ -1363,7 +1349,7 @@ public:
         float *latency_compensated_input_producer_sound = link->_delay.RT_process(input_producer_sound, num_frames);
 
         SMOOTH_mix_sounds(&link->volume,
-                          _dry_sound[link->target_ch],
+                          dry_sound[link->target_ch],
                           latency_compensated_input_producer_sound,
                           num_frames
                           );
@@ -1378,7 +1364,7 @@ public:
 
   
     if(is_a_generator)
-      PLUGIN_RT_process(_plugin, time, num_frames, _input_sound, _dry_sound, process_plugins);
+      PLUGIN_RT_process(_plugin, time, num_frames, input_sound, dry_sound, process_plugins);
   
 
     // Input peaks
@@ -1386,7 +1372,7 @@ public:
       float input_peaks[_num_dry_sounds];
       for(int ch=0;ch<_num_dry_sounds;ch++) {
         
-        float dry_peak = RT_get_max_val(_dry_sound[ch],num_frames);
+        float dry_peak = RT_get_max_val(dry_sound[ch],num_frames);
         
         if (dry_peak > MIN_AUTOSUSPEND_PEAK)
           RT_PLUGIN_touch(_plugin);
@@ -1395,29 +1381,29 @@ public:
 
         input_peaks[ch] = do_bypass ? 0.0f : dry_peak *  input_volume;
       }
-      RT_set_input_peak_values(input_peaks);
+      RT_set_input_peak_values(input_peaks, dry_sound);
     }
 
 
     float *_latency_dry_sound[_num_dry_sounds];
     for(int ch=0;ch<_num_dry_sounds;ch++)        
-      _latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(_dry_sound[ch], num_frames);
+      _latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(dry_sound[ch], num_frames);
 
     
     if(is_a_generator){
       
       // Apply input volume and fill output
       for(int ch=0;ch<_num_outputs;ch++)
-        SMOOTH_copy_sound(&_plugin->input_volume, _output_sound[ch], _dry_sound[ch], num_frames);
+        SMOOTH_copy_sound(&_plugin->input_volume, _output_sound[ch], dry_sound[ch], num_frames);
             
     }else{
       
       // Apply input volume
       for(int ch=0;ch<_num_inputs;ch++)
-        SMOOTH_copy_sound(&_plugin->input_volume, _input_sound[ch], _dry_sound[ch], num_frames);
+        SMOOTH_copy_sound(&_plugin->input_volume, input_sound[ch], dry_sound[ch], num_frames);
       
       // Fill output
-      PLUGIN_RT_process(_plugin, time, num_frames, _input_sound, _output_sound, process_plugins);      
+      PLUGIN_RT_process(_plugin, time, num_frames, input_sound, _output_sound, process_plugins);      
     }
 
     
