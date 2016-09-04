@@ -138,8 +138,8 @@ public:
       
       info_button->setText(info);
 
-      if(type->info==NULL)
-        info_button->setEnabled(false);
+      //if(type->info==NULL)
+      //info_button->setEnabled(false);
     }
 
     {
@@ -836,11 +836,42 @@ public slots:
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       const SoundPluginType *type = plugin->type;
 
+      QString info;
+      
       if(type->info!=NULL)
-        infoBox.setText(type->info);
-      else
-        infoBox.setText("No information about this plugin."); // This message box should never show.
+        info = type->info;
+      else {
+        if(!strcmp(type->type_name,type->name))
+          info = type->type_name;
+        else
+          info = QString(type->type_name) + ": " + type->name;
+      }
+      
+      info += "\n\n";
+      
+      double latency = 0.0;
+      double tail = -1;
 
+      if (type->RT_get_latency != NULL || type->RT_get_audio_tail_length != NULL) {
+        PLAYER_lock();{
+          if (type->RT_get_latency != NULL)
+            latency = type->RT_get_latency(plugin);
+          
+          if (type->RT_get_audio_tail_length != NULL)
+            tail = type->RT_get_audio_tail_length(plugin);
+        }PLAYER_unlock();
+      }
+      
+      double time_since_last_activity = MIXER_get_last_used_time() - ATOMIC_GET(plugin->time_of_last_activity);
+      
+      info += "Inputs: " + QString::number(type->num_inputs) + "\n";
+      info += "Outputs: " + QString::number(type->num_outputs) + "\n";
+      info += "Latency: " + QString::number(latency*1000/MIXER_get_sample_rate()) + "ms\n";
+      info += "Audio tail: " + (tail < 0 ? "undefined" : QString::number(tail*1000.0/MIXER_get_sample_rate()) + "ms") + "\n";
+      info += "Last activity: " + QString::number(time_since_last_activity*1000.0/MIXER_get_sample_rate()) + "ms ago\n";
+      
+      infoBox.setText(info);
+        
       safeShowOrExec(&infoBox);
     }
 
