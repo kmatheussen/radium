@@ -857,8 +857,8 @@ void MIDI_HandleInputMessage(void){
       float velocity = -1.0f;
       if (g_record_velocity)
         velocity = (float)MIDI_msg_byte3(msg) / 127.0;
-      //printf("velocity: %f, byte3: %d\n",velocity,MIDI_msg_byte3(msg));
-      InsertNoteCurrPos(root->song->tracker_windows,MIDI_msg_byte2(msg), false, velocity);
+      //printf("velocity: %f, byte3: %d, shift: %d\n",velocity,MIDI_msg_byte3(msg),shiftPressed());
+      InsertNoteCurrPos(root->song->tracker_windows,MIDI_msg_byte2(msg), shiftPressed(), velocity);
       root->song->tracker_windows->must_redraw = true;
     }
   }
