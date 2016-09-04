@@ -390,6 +390,8 @@ static double find_current_realline_while_playing(SharedVariables *sv, double bl
     stime = time_in_ms * (double)pc->pfreq / 1000.0; // Convert the current block time into number of frames.
   }
 
+  //  stime -= 24000;
+      
   last_stime = stime;
   
   double stime2 = get_realline_stime(sv, i_realline);

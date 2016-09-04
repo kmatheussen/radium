@@ -90,8 +90,8 @@ static bool msg_is_note(const uint32_t msg){
 
 static bool msg_is_note_on(const uint32_t msg){
   int cc0 = MIDI_msg_byte1_remove_channel(msg);
-  int data2 = MIDI_msg_byte2(msg);
-  if (cc0 == 0x90 && data2>0)
+  int data3 = MIDI_msg_byte3(msg);
+  if (cc0 == 0x90 && data3>0)
     return true;
   else
     return false;
