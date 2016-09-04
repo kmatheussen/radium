@@ -70,8 +70,10 @@ const int kVstMaxParamStrLen = 8;
 
 #else //  USE_VESTIGE
 
-// If this fails, and you don't bother downloading and installing vstsdk from steinberg, set USE_VESTIGE to 1 in the Makefile!
-
+#if FOR_LINUX
+  #  undef PRAGMA_ALIGN_SUPPORTED
+  #  define __cdecl
+#endif
 #  define VST_FORCE_DEPRECATED 0
 #  include <pluginterfaces/vst2.x/aeffectx.h>
 
