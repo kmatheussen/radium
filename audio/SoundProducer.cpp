@@ -202,14 +202,17 @@ struct LatencyCompensatorDelay {
   // May return 'input_sound'. Also, 'input_sound' is never modified.
   float *RT_process(float *input_sound, int num_frames){
 
+#if !defined(RELEASE)
     R_ASSERT_RETURN_IF_FALSE2(input_sound!=NULL, g_empty_sound);
     R_ASSERT_RETURN_IF_FALSE2(_output_sound!=NULL, g_empty_sound);
     R_ASSERT_RETURN_IF_FALSE2(_delay.fVec0!=NULL, g_empty_sound);
     R_ASSERT_RETURN_IF_FALSE2(num_frames==MIXER_get_buffer_size(), g_empty_sound);
+#endif
     
-    _delay.RT_process(num_frames, input_sound, _output_sound);
-    
-    return _output_sound;
+    if(_delay.RT_process(num_frames, input_sound, _output_sound))
+      return _output_sound;
+    else
+      return input_sound;
   }
 };
   
@@ -1293,7 +1296,7 @@ public:
     for(int ch=0;ch<_num_dry_sounds;ch++)
       dry_sound[ch] = &dry_sound_sound[ch*num_frames];
 
-    float input_sound_sound[R_MAX(1, _num_inputs)*num_frames] = {0};
+    float input_sound_sound[R_MAX(1, _num_inputs)*num_frames];
     float *input_sound[R_MAX(1, _num_inputs)];
     for(int ch=0;ch<_num_inputs;ch++)
       input_sound[ch] = &input_sound_sound[ch*num_frames];
@@ -1309,7 +1312,7 @@ public:
       if (link->is_event_link)
         continue;
       
-      if (!should_consider_latency(link))
+      if (!should_consider_latency(link)) // <-- 'should_consider_latency' returns false if the link is inactive, a bus, and not a bus provider. I.e. a link that would never provide samples to us.
         continue;
       
       SoundProducer *source = link->source;
@@ -1526,22 +1529,23 @@ void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool p
   
   bool add_cpu_data = is_visible && cpu_usage!=NULL;
 
-  //double start_time;
+  //double start_time;  // <--- This one must be used when testing a time function that provides seconds.
   jack_time_t start_time = 0;
   
-  if (add_cpu_data)
+  if (add_cpu_data) {
+    //start_time = monotonic_seconds(); // Checking if max time would fluctuate less with this timer. Didn't make a difference though. Both are probably using CLOCK_MONOTONIC.
     //start_time = monotonic_rdtsc_seconds();
     start_time = jack_get_time();
-    //start_time = monotonic_seconds(); // Checking if max time would fluctuate less with this timer. Didn't make a difference though. Both are probably using CLOCK_MONOTONIC.
+  }
   
   producer->RT_process(time, num_frames, process_plugins);
 
   if (add_cpu_data){
     //double end_time = monotonic_rdtsc_seconds();
-    jack_time_t end_time = jack_get_time();
     //double end_time = monotonic_seconds();
-          
-    //float new_cpu_usage = (end_time-start_time) * 100.0 * MIXER_get_sample_rate() / (double)num_frames;
+    jack_time_t end_time = jack_get_time();
+    
+    //float new_cpu_usage = 100.0 * (end_time-start_time) / ((double)num_frames / MIXER_get_sample_rate());
     float new_cpu_usage = (double)(end_time-start_time) * 0.0001 * MIXER_get_sample_rate() / num_frames;
 
     //printf("Adding cpu usage for %s\n",plugin->patch->name);

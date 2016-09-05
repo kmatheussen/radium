@@ -113,7 +113,7 @@ struct SmoothDelay {
   }
   
   
-  void RT_process(int count, FAUSTFLOAT* input0, FAUSTFLOAT* output0) {
+  bool RT_process(int count, FAUSTFLOAT* input0, FAUSTFLOAT* output0) {
     const int iSlow0 = iHslider0;
 
     const int anding = buffer_size-1;
@@ -126,16 +126,16 @@ struct SmoothDelay {
         IOTA++;
       }
 
-      if (input0 != output0)
-        memcpy(output0, input0, sizeof(float)*count);
+      //   if (input0 != output0)
+      //  memcpy(output0, input0, sizeof(float)*count);
       
-      return;
+      return false;
     }
 
 #define M(N) } else if (buffer_size==N) { PROCESS((N-1))
 
     if (false) {
-      return;
+      return false;
     M(2);
     M(4);    
     M(8);
@@ -157,6 +157,8 @@ struct SmoothDelay {
     M(524288);
     } else
       PROCESS(anding);
+
+    return true;
   }
 
 };

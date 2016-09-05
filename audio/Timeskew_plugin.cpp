@@ -58,8 +58,14 @@ namespace{
 
 static void RT_pipeskew_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
-  data->delay1.RT_process(num_frames, inputs[0], outputs[0]);
-  data->delay2.RT_process(num_frames, inputs[1], outputs[1]);
+  
+  if (!data->delay1.RT_process(num_frames, inputs[0], outputs[0]))
+    if (outputs[0] != inputs[0])
+      memcpy(outputs[0], inputs[0], sizeof(float)*num_frames);
+  
+  if (!data->delay2.RT_process(num_frames, inputs[1], outputs[1]))
+    if (outputs[1] != inputs[1])
+      memcpy(outputs[1], inputs[1], sizeof(float)*num_frames);
 }
 
 static int RT_get_timeskew_latency(struct SoundPlugin *plugin){

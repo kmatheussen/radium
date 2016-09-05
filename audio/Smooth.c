@@ -195,9 +195,11 @@ void SMOOTH_mix_sounds(Smooth *smooth, float *target, float *source, int num_fra
   }else{
     //printf("%p smooth->get: %f, smooth->set: %f. start: %f, end: %f\n",smooth,smooth->get,smooth->set,smooth->start_value,smooth->end_value);
     float volume = smooth->value;
+    
     if(volume == 1.0f)
       for(i=0;i<num_frames;i++)
         target[i] += source[i];
+    
     else if(volume > 0.0f)
       for(i=0;i<num_frames;i++)
         target[i] += source[i] * volume;
