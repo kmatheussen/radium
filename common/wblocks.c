@@ -261,7 +261,7 @@ void UpdateWBlockCoordinates(
         
         // Temponode
         /////////////////////////
-        wblock->temponodearea.x = next_x2;
+        wblock->temponodearea.x = next_x2 + 2;
 	wblock->temponodearea.x2 = wblock->temponodearea.x   + wblock->temponodearea.width;
         if (window->show_reltempo_track)
           next_x2 = wblock->temponodearea.x2 + 2;

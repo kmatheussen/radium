@@ -281,7 +281,7 @@ void UpdateWTrackCoordinates(
 */
 
 	if(NextWTrack(wtrack)!=NULL)
-		UpdateWTrackCoordinates(window,wblock,NextWTrack(wtrack),wtrack->x2+3);
+		UpdateWTrackCoordinates(window,wblock,NextWTrack(wtrack),wtrack->x2+3+2);
 
 //	wblock->right_track=wtrack->l.num;
         

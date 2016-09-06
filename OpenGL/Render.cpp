@@ -278,11 +278,29 @@ static void draw_skewed_box(const struct Tracker_Windows *window,
 
 
 void create_double_border(
-                          int x, int y, int y2
+                          float x, int y, int y2
                           )
 {
-  GE_line(Black_color(y),x,y,x,y2,0.5);
-  GE_line(GE_color(TRACK_SEPARATOR2_COLOR_NUM,NOMASK_Y),x+1,y,x+1,y2,0.5);
+  if (false){ //ATOMIC_GET(root->editonoff)){
+    // old
+    GE_line(Black_color(y),x,y,x,y2,0.5);
+    GE_line(GE_color(TRACK_SEPARATOR2_COLOR_NUM,NOMASK_Y),x+1,y,x+1,y2,0.5);
+  } else {
+    float black_width = 1.5f;
+    float white_width = 1.0f;
+    float black_skew = black_width/2.0f;
+    float white_skew = black_skew + black_width + -white_width/2.0f;
+    GE_line(Black_color(y),
+            x+black_skew, y,
+            x+black_skew, y2,
+            black_width
+            );
+    GE_line(GE_color(TRACK_SEPARATOR2_COLOR_NUM,NOMASK_Y),
+            x+white_skew, y,
+            x+white_skew, y2,
+            white_width
+            );
+  }
 }
 
 void create_single_border(
