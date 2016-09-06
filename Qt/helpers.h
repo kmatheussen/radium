@@ -4,6 +4,7 @@
 #include <QMessageBox>
 #include <QMenu>
 #include <QTimer>
+#include <QMainWindow>
 
 #include "../OpenGL/Widget_proc.h"
 #include "../common/keyboard_focus_proc.h"
@@ -16,12 +17,15 @@ extern bool radium_runs_custom_exec;
 
 extern void set_editor_focus(void);
 
+extern QMainWindow *g_main_window;
+
 
 struct MyQMessageBox : public QMessageBox {
   MyQMessageBox(QWidget *parent = NULL)
-    : QMessageBox(parent)
+    : QMessageBox(parent!=NULL ? parent : g_main_window)
   {
-    setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+    setWindowModality(Qt::ApplicationModal);
+    setWindowFlags(Qt::Window | Qt::Tool);
   }
 };
   
@@ -76,13 +80,14 @@ struct RememberGeometryQDialog : public QDialog {
   
 public:
   RememberGeometryQDialog(QWidget *parent)
-    : QDialog(parent)
+    : QDialog(parent!=NULL ? parent : g_main_window, Qt::Window | Qt::Tool)
     , has_stored_geometry(false)
 #if PUT_ON_TOP
     , timer(this)
 #endif
   {    
-    setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+    QDialog::setWindowModality(Qt::ApplicationModal);
+    //setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
   }
   void setVisible(bool visible) override {      
     //printf("   Set visible %d\n",visible);

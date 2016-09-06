@@ -59,6 +59,8 @@ static int show_message(const char *message){
   return -1;
 }
 
+QMainWindow *g_main_window = NULL; // referenced by helpers.h
+
 int main(int argc, char **argv){
   QCoreApplication::setLibraryPaths(QStringList());
   
