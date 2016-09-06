@@ -867,7 +867,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
 
   RT_PLUGIN_touch(plugin);
         
-  if(value_format==PLUGIN_FORMAT_SCALED && value_type != PLUGIN_STORED_TYPE) { // Messy. I thiknk the thing is that PLUGIN_STORED_TYPE trumph PLUGIN_FORMAT_SCALED. I.e. value_format doesn't matter if value_type is PLUGIN_STORED_TYPE.
+  if(value_format==PLUGIN_FORMAT_SCALED && value_type != PLUGIN_STORED_TYPE) { // Messy. I think the thing is that PLUGIN_STORED_TYPE trump PLUGIN_FORMAT_SCALED. I.e. value_format doesn't matter if value_type is PLUGIN_STORED_TYPE.
 #if !defined(RELEASE)
     if (value < -0.01f || value > 1.01f)// don't report floating point rounding errors
       RWarning("value: %f", value);
