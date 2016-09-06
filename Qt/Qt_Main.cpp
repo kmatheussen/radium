@@ -1132,6 +1132,9 @@ enum RT_MESSAGE_STATUS {
 static DEFINE_ATOMIC(RT_MESSAGE_STATUS, rt_message_status) = RT_MESSAGE_READY;
 static const int rt_message_length = 1024;
 static char rt_message[rt_message_length];
+
+static DEFINE_ATOMIC(bool, request_to_start_playing) = false;
+static DEFINE_ATOMIC(bool, request_to_continue_playing) = false;
 static DEFINE_ATOMIC(bool, request_to_stop_playing) = false;
 
 class CalledPeriodically : public QTimer {
@@ -1221,6 +1224,16 @@ protected:
     if (PLAYER_is_running()==false)
       PlayStop();
 
+    if(ATOMIC_GET(request_to_start_playing) == true) {
+      PlayBlockFromStart(window, true);
+      ATOMIC_SET(request_to_start_playing, false);
+    }
+    
+    if(ATOMIC_GET(request_to_continue_playing) == true) {
+      PlayBlockCurrPos(window);
+      ATOMIC_SET(request_to_continue_playing, false);
+    }
+    
     if(ATOMIC_GET(request_to_stop_playing) == true) {
       PlayStop();
       ATOMIC_SET(request_to_stop_playing, false);
@@ -1331,6 +1344,16 @@ void RT_message(const char *fmt,...){
   va_end(argp);
 
   ATOMIC_SET(rt_message_status, RT_MESSAGE_READY_FOR_SHOWING);
+}
+
+void RT_request_to_start_playing(void){
+  //abort();
+  ATOMIC_SET(request_to_start_playing, true);
+}
+
+void RT_request_to_continue_playing(void){
+  //abort();
+  ATOMIC_SET(request_to_continue_playing, true);
 }
 
 void RT_request_to_stop_playing(void){

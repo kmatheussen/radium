@@ -813,6 +813,18 @@ void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data
   
   bool isplaying = is_playing();
 
+  switch(cc){
+    case 0xfa:
+      RT_request_to_start_playing();
+      return;
+    case 0xfb:
+      RT_request_to_continue_playing();
+      return;
+    case 0xfc:
+      RT_request_to_stop_playing();
+      return;
+  }
+  
   uint32_t msg = MIDI_msg_pack3(cc, data1, data2);
   int len = MIDI_msg_len(msg);
   if (len<1 || len>3)
@@ -843,7 +855,7 @@ void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data
  *************************************************************/
 
 
-// called very often
+// called very often from the main thread
 void MIDI_HandleInputMessage(void){
   // should be a memory barrier here somewhere.
 
