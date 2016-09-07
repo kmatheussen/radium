@@ -2328,11 +2328,13 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
   int64_t        loop_length       = 0; if (HASH_has_key(state, "loop_length")) loop_length = HASH_get_int(state, "loop_length");
 
   bool audiodata_is_included = HASH_has_key(state, "audiofile");
-  
+
+  const wchar_t *org_filename = HASH_get_string(state, "filename");
+
   if (audiodata_is_included)
     filename = DISK_base64_to_file(NULL, HASH_get_chars(state, "audiofile"));
   else
-    filename = HASH_get_string(state, "filename");
+    filename = org_filename;
   
   if(filename==NULL){
     RError("filename==NULL");
@@ -2342,6 +2344,12 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
   if(set_new_sample(plugin,filename,instrument_number,resampler_type,loop_start,loop_length, use_sample_file_middle_note, is_loading)==false)
     GFX_Message(NULL, "Could not load soundfile \"%s\". (instrument number: %d)\n",STRING_get_chars(filename),instrument_number);
 
+  if (audiodata_is_included) {    
+    Data *data=(Data*)plugin->data;
+    if (data!=NULL)
+      data->filename = wcsdup(org_filename);
+  }
+  
   // Can not delete now. file is still used when creating/recreating states. Deleting at program end.
   //if (audiodata_is_included)
   //  DISK_delete_base64_file(filename);
