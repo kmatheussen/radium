@@ -3465,7 +3465,7 @@ void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){
     struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
     if (wtrack==NULL)
       return;
-    printf("new width: %d, old: %d\n",(int)new_width,wtrack->fxwidth);
+    //printf("new width: %d, old: %d\n",(int)new_width,wtrack->fxwidth);
     wtrack->fxwidth = new_width;
   }
 

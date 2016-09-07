@@ -104,7 +104,21 @@ void THREADING_acquire_player_thread_priority(void){
   int err = jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(), g_jack_client_priority);
   if (err != 0 && has_shown_warning==false) {
     has_shown_warning=true;
-    RT_message("Unable to set real time priority. You might want to check your system configuration\n\nError code: %d.", err);
+    RT_message("Unable to set real time priority. Error code: %d.\n"
+               "\n"
+               "You should:\n"
+               "\n"
+               "1. Quit Radium\n"
+               "2. Stop Jack\n"
+               "3. Start Jack\n"
+               "4. Start Radium\n"
+#if defined(FOR_LINUX)
+               "\n"
+               "On Linux, you might also want to check your system configuration."
+#endif
+               "\n\n"
+               , err);
+    
   }
 }
 
@@ -536,8 +550,13 @@ struct Mixer{
       safeExec(&msgBox);
 
       return false;
+
     }
 
+    // Ensure we are not freewheeling. This happens when restarting after radium has died while saving soundfile.
+    // No, if that happens, jack should be resetted.
+    //jack_set_freewheel(_rjack_client, 0);
+  
     _sample_rate = jack_get_sample_rate(_rjack_client);
     _buffer_size = jack_get_buffer_size(_rjack_client);
     if(_buffer_size < RADIUM_BLOCKSIZE)
@@ -594,7 +613,7 @@ struct Mixer{
       }
       jack_free(outportnames);
     }
-    
+
     g_jack_client = _rjack_client;
     //create_jack_plugins(_rjack_client);
 
