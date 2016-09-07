@@ -2407,7 +2407,7 @@ static void create_message(const struct Tracker_Windows *window){
 }
 
 static void create_lacking_keyboard_focus_greyed_out(const struct Tracker_Windows *window){
-  if (!editor_has_keyboard_focus()){
+  if (g_do_grey_editor){
     GE_Context *grey = GE_z(GE_rgba(100,100,100,120), Z_STATIC, NOMASK_Y);
     GE_filledBox(grey, 0, 0, window->width, window->height);
   }

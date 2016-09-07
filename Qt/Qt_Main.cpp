@@ -141,18 +141,27 @@ extern struct Root *root;
 
 extern bool g_show_key_codes;
 
+bool g_do_grey_editor = false;
 static bool editor_has_keyboard = true;
 bool radium_runs_custom_exec = false;
 
 bool g_gc_is_incremental = false;
 
+void obtain_keyboard_focus_without_greying(void){
+  editor_has_keyboard = false;
+  g_do_grey_editor = false;
+  GFX_ScheduleEditorRedraw();
+}
+
 void obtain_keyboard_focus(void){
   editor_has_keyboard = false;
+  g_do_grey_editor = true;
   GFX_ScheduleEditorRedraw();
 }
 
 void release_keyboard_focus(void){
   editor_has_keyboard = true;
+  g_do_grey_editor = false;
   GFX_ScheduleEditorRedraw();
 }
 

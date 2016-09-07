@@ -4,7 +4,10 @@
 #  ifdef __cplusplus
 extern "C"{
 #endif
-  
+
+extern bool g_do_grey_editor;
+
+extern void obtain_keyboard_focus_without_greying(void);
 extern void obtain_keyboard_focus(void);
 extern void release_keyboard_focus(void);
 extern bool editor_has_keyboard_focus(void);

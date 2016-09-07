@@ -325,7 +325,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
   void showEvent(QShowEvent *event){
     if (tabWidget->currentWidget() == colors)
-      obtain_keyboard_focus();
+      obtain_keyboard_focus_without_greying();
     
     if (_needs_to_update)
       updateWidgets();
@@ -765,7 +765,7 @@ public slots:
       _color_dialog.myshow();
 #endif
     if (tabWidget->currentWidget() == colors)
-      obtain_keyboard_focus();
+      obtain_keyboard_focus_without_greying();
     else
       release_keyboard_focus();
   }
