@@ -1292,6 +1292,50 @@ void setLinenumbersVisible(bool doit){
   root->song->tracker_windows->must_redraw = true;
 }
 
+
+// Disk
+
+static bool g_stop_playing_when_saving_song = true;
+
+bool doStopPlayingWhenSavingSong(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_stop_playing_when_saving_song = SETTINGS_read_bool("stop_playing_when_saving_song", true);
+    has_inited = true;
+  }
+
+  return g_stop_playing_when_saving_song;
+}
+
+void setStopPlayingWhenSavingSong(bool val){
+  g_stop_playing_when_saving_song = val;
+  printf("Gakk!\n");
+  SETTINGS_write_bool("stop_playing_when_saving_song", val);
+}
+
+  
+// autobackup
+
+static bool g_save_backup_while_playing = true;
+
+bool doSaveBackupWhilePlaying(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_save_backup_while_playing = SETTINGS_read_bool("save_backup_while_playing", true);
+    has_inited = true;
+  }
+
+  return g_save_backup_while_playing;
+}
+
+void setSaveBackupWhilePlaying(bool val){
+  g_save_backup_while_playing = val;
+  SETTINGS_write_bool("save_backup_while_playing", val);
+}
+
+
 static bool g_do_autobackups = false;
 
 bool doAutoBackups(void){

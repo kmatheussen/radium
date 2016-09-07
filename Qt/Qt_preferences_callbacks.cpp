@@ -440,7 +440,16 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       embedded_audio_files->setText(getEmbeddedAudioFilesPath());
       embedded_audio_group->hide(); // not used yet.
     }
-          
+
+    // Disk
+    {
+      stop_playing_when_saving->setChecked(doStopPlayingWhenSavingSong());
+      
+      autobackup_onoff->setChecked(doAutoBackups());
+      save_backup_while_playing->setChecked(doSaveBackupWhilePlaying());
+      autobackup_interval->setValue(autobackupIntervalInMinutes());
+    }
+    
     // Edit
     {
       scrollplay_onoff->setChecked(doScrollPlay());
@@ -457,9 +466,6 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         showLineNumbers->setChecked(true);
       else
         showBarsAndBeats->setChecked(true);
-
-      autobackup_onoff->setChecked(doAutoBackups());
-      autobackup_interval->setValue(autobackupIntervalInMinutes());
     }
 
     // Windows
@@ -698,9 +704,45 @@ public slots:
       embedded_audio_files->clearFocus();
     }GL_unlock();
   }
-      
-  // edit
 
+  
+  // Disk
+  //
+  void on_stop_playing_when_saving_toggled(bool val){
+    printf("val: %d\n",val);
+    if (_initing==false)
+      setStopPlayingWhenSavingSong(val);
+  }
+  
+  void on_autobackup_onoff_toggled(bool val){
+    if (_initing==false)
+      setDoAutoBackups(val);
+  }
+
+  void on_save_backup_while_playing_toggled(bool val){
+    printf("val2: %d\n",val);
+    if (_initing==false)
+      setSaveBackupWhilePlaying(val);
+  }
+  
+  void on_autobackup_interval_valueChanged(int val){
+    printf("val: %d\n",val);
+    if (_initing==false)
+      setAutobackupIntervalInMinutes(val);
+  }
+  void on_autobackup_interval_editingFinished(){
+    set_editor_focus();
+
+    GL_lock();{
+      autobackup_interval->clearFocus();
+    }GL_unlock();
+  }
+
+
+  
+  // edit
+  //
+  
   void on_scrollplay_onoff_toggled(bool val){
     if (_initing==false)
       setScrollPlay(val);
@@ -726,25 +768,6 @@ public slots:
       setLinenumbersVisible(val);
   }
 
-  void on_autobackup_onoff_toggled(bool val){
-    if (_initing==false)
-      setDoAutoBackups(val);
-  }
-
-  void on_autobackup_interval_valueChanged(int val){
-    printf("val: %d\n",val);
-    if (_initing==false)
-      setAutobackupIntervalInMinutes(val);
-  }
-  void on_autobackup_interval_editingFinished(){
-    set_editor_focus();
-
-    GL_lock();{
-      autobackup_interval->clearFocus();
-    }GL_unlock();
-  }
-
-  
   // colors
   void color_changed(const QColor &col){
     //printf("HAPP! %s\n",col.name().toUtf8().constData());

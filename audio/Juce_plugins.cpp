@@ -230,13 +230,13 @@ namespace{
       result.editOriginTime = 0; //result.timeInSeconds;
 #endif
 
-      //if (result.ppqPositionOfLastBarStart != lastLastBarStart)
-      //  printf("  ppq: %f,  ppqlast: %f, extra: %f. Latency: %d\n",result.ppqPosition,result.ppqPositionOfLastBarStart,latency_beats,latency);
-
-      lastLastBarStart = result.ppqPositionOfLastBarStart;
-        
 
 #if 0
+      //if (result.ppqPositionOfLastBarStart != lastLastBarStart)
+      //  printf("  ppq: %f,  ppqlast: %f, extra: %f. Latency: %d\n",result.ppqPosition,result.ppqPositionOfLastBarStart,latency_beats,latency);
+      
+      lastLastBarStart = result.ppqPositionOfLastBarStart;
+        
       printf("ppq: %f, ppqlast: %f. playing: %d. time: %f\n",
              result.ppqPosition,
              result.ppqPositionOfLastBarStart,

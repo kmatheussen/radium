@@ -73,11 +73,10 @@ void RT_BACKUP_reset_timer(void){
 
 static double get_unbackuped_duration(void){
   double total = TIME_get_ms() - g_time;
-#if defined(RELEASE)
-  return total - g_curr_playing_duration;
-#else
-  return total;
-#endif
+  if (doSaveBackupWhilePlaying())
+      return total;
+  else
+    return total - g_curr_playing_duration;
 }
 
 void BACKUP_call_very_often(void){
@@ -102,10 +101,9 @@ void BACKUP_call_very_often(void){
     g_curr_playing_duration += added_playing_duration;
   }
 
-#if defined(RELEASE) // testing if it's safe to do autobackups while playiing
-  if (is_playing)
-    return;
-#endif
+  if (!doSaveBackupWhilePlaying())
+    if (is_playing)
+      return;
   
   //printf("duration: %f\n",get_unbackuped_duration() / 1000.0);
   

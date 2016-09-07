@@ -30,8 +30,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo.h"
 #include "nag.h"
 #include "OS_settings_proc.h"
+#include "../api/api_proc.h"
 
 #include "../config/config.h"
+
 
 bool Save_Initialize(const wchar_t *filename, const char *type){
   	dc.success=true;
@@ -85,9 +87,8 @@ void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
 void SaveAs(struct Root *theroot){
 	const wchar_t *filename;
 
-#if defined(RELEASE) // Testing whether it's safe to save song while playing.
-	PlayStop();
-#endif
+        if (doStopPlayingWhenSavingSong())
+          PlayStop();
         
 	filename=GFX_GetSaveFileName(theroot->song->tracker_windows, NULL," Select file to save", NULL, "*.rad");
 
@@ -128,9 +129,8 @@ void SaveWithEmbeddedSamples(struct Root *theroot){
 
 void Save(struct Root *theroot){
 
-#if defined(RELEASE) // Testing whether it's safe to save song while playing.
-  PlayStop();
-#endif
+  if (doStopPlayingWhenSavingSong())
+    PlayStop();
   
 	if(dc.filename==NULL){
           SaveAs(theroot);
