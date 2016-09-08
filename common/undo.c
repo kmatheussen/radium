@@ -72,7 +72,7 @@ static int undo_pos_at_last_saving=0;
 static int num_undos=0;
 static int max_num_undos=MAX_NUM_UNDOS;
 
-uint64_t g_curr_undo_generation = 0;  // used by autobackup
+int64_t g_curr_undo_generation = 0;  // used by autobackup
 
 static int undo_is_open=0;
 

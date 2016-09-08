@@ -22,7 +22,7 @@ extern struct Root *root;
 
 //static QTime g_backuptime;
 
-static uint64_t g_undo_generation_for_last_backup = -1;
+static int64_t g_undo_generation_for_last_backup = -1;
 
 static wchar_t *get_backup_filename(void){
   return STRING_append(dc.filename, STRING_create("_automatic_backup.rad"));
