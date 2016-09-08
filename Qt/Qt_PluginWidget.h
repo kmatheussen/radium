@@ -411,4 +411,4 @@ struct PluginWidget : public QWidget{
   }
 };
 
-PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch);
+PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch, SizeType size_type);

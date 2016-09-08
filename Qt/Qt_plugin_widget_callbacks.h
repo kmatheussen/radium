@@ -206,7 +206,7 @@ public:
       faust_revert_button->hide();
       faust_show_button->hide();
       faust_options_button->hide();
-      _plugin_widget=PluginWidget_create(this, _patch);
+      _plugin_widget=PluginWidget_create(this, _patch, SIZETYPE_NORMAL);
       vertical_layout->insertWidget(1,_plugin_widget);
     }
 
@@ -537,7 +537,7 @@ private:
     }
 
     _size_type=type;
-
+    
     AUDIOWIDGET_change_height(_patch, type);
     
 #ifdef WITH_FAUST_DEV
@@ -545,6 +545,9 @@ private:
       _faust_plugin_widget->change_height(type, header->height());
 #endif
 
+    delete _plugin_widget;
+    _plugin_widget=PluginWidget_create(this, _patch, type);
+    vertical_layout->insertWidget(1,_plugin_widget);
   }
   
 public slots:

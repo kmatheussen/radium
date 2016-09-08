@@ -515,7 +515,7 @@ public:
 
     faust_webview_layout->addWidget(web);
 
-    _plugin_widget = PluginWidget_create(this, patch);
+    _plugin_widget = PluginWidget_create(this, patch, SIZETYPE_NORMAL);
     faust_interface_layout_radium->insertWidget(0, _plugin_widget);
 
     update_gui(); // <--- Note, update_gui sets _initing to false.
@@ -643,7 +643,7 @@ public:
         _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
 #endif
         PluginWidget *old = _plugin_widget;
-        _plugin_widget=PluginWidget_create(this, _patch);
+        _plugin_widget=PluginWidget_create(this, _patch, SIZETYPE_NORMAL);
 
         if (_size_type != SIZETYPE_NORMAL){
           faust_webview_widget->setUpdatesEnabled(false);

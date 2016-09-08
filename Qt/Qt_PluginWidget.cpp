@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
+PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch, SizeType size_type){
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
   const SoundPluginType *type = plugin->type;
   PluginWidget *widget = new PluginWidget(parent, patch);
@@ -51,17 +51,42 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
   
   int MaxYsPerPage     = 8;
   int MaxXsPerPage     = 8;
-  if (is_patchbay){
-    MaxYsPerPage = 7;
-    MaxXsPerPage = 18;
+
+  switch(size_type){
+    case SIZETYPE_NORMAL:
+      if (is_patchbay){
+        MaxYsPerPage = 7;
+        MaxXsPerPage = 18;
+      }
+      break;
+    case SIZETYPE_HALF:
+      if (is_patchbay){
+        MaxYsPerPage = 15;
+        MaxXsPerPage = 36;
+      }else{
+        MaxYsPerPage *= 2;
+        MaxXsPerPage *= 2;
+      }
+      break;
+    case SIZETYPE_FULL:
+      if (is_patchbay){
+        MaxYsPerPage = 31;
+        MaxXsPerPage = 36;
+      }else{
+        MaxYsPerPage *= 4;
+        MaxXsPerPage *= 2;
+      }
+      break;
   }
+
+  
   int MaxParamsPerPage = MaxYsPerPage * MaxXsPerPage;
 
 
   //const Plugin::Params& params = m_pPlugin->params();
   int iParams = PLUGIN_get_num_visible_effects(plugin);
 
-  if (iParams > MaxParamsPerPage && !is_patchbay){
+  if (iParams > MaxParamsPerPage && !is_patchbay && size_type==SIZETYPE_NORMAL){
     MaxYsPerPage     = 6;
     MaxParamsPerPage = MaxYsPerPage * MaxXsPerPage;
   }
