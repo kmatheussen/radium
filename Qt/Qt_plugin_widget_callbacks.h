@@ -285,32 +285,36 @@ public:
         
         ATOMIC_SET(plugin->cpu_usage, new CpuUsage);
 
-      } else if (SP_is_autosuspending(plugin->sp)) {
-        
-        plugin_info->setText(AUTOSUSPENDING_STRING);
-        
       } else {
         
         int64_t time = TIME_get_ms();
         
         if (force || time > _last_cpu_update_time + 1000){
-          QString usage;
           
-          int mincpu = cpu_usage->min();
-          int maxcpu = cpu_usage->max();
-          int avgcpu = cpu_usage->avg();
+          if (SP_is_autosuspending(plugin->sp)) {
+            
+            plugin_info->setText(AUTOSUSPENDING_STRING);
+
+          } else {
+            
+            QString usage;
+        
+            int mincpu = cpu_usage->min();
+            int maxcpu = cpu_usage->max();
+            int avgcpu = cpu_usage->avg();
+            
+            usage.sprintf("%s%d / %s%d / %s%d",
+                          mincpu < 10 ? " " : "", mincpu,
+                          avgcpu < 10 ? " " : "", avgcpu,
+                          maxcpu < 10 ? " " : "", maxcpu
+                          );
+            
+            cpu_usage->reset();
+            
+            plugin_info->setText(usage);
           
-          usage.sprintf("%s%d / %s%d / %s%d",
-                        mincpu < 10 ? " " : "", mincpu,
-                        avgcpu < 10 ? " " : "", avgcpu,
-                        maxcpu < 10 ? " " : "", maxcpu
-                        );
-          
-          cpu_usage->reset();
-          
-          plugin_info->setText(usage);
-          
-          _last_cpu_update_time = time;
+            _last_cpu_update_time = time;
+          }
         }
       }
     }
