@@ -6,6 +6,7 @@
 #include <QScrollArea>
 #include <QCheckBox>
 #include <QTimer>
+#include <QDialogButtonBox>
 
 #include "../common/nsmtracker.h"
 
@@ -111,17 +112,36 @@ public slots:
   }
 };
  
-class MidiLearnPrefs : public RememberGeometryQDialog , public QTimer {
-  
+class MidiLearnPrefs : public RememberGeometryQDialog {
+  Q_OBJECT;
+
   QLayout *main_layout;
 
   MyVerticalScroll *vertical_scroll;
 
   radium::Vector<MidiLearnItem*> items;
+
+  struct MyTimer : public QTimer {
+    MidiLearnPrefs *parent;
+    MyTimer(MidiLearnPrefs *parent)
+      : parent(parent)
+    {      
+    }
+
+    void timerEvent(QTimerEvent * e){
+      if (parent->isVisible()){
+        for(auto *item : parent->items)
+          item->update_gui();
+      }
+    }
+  };
+
+  MyTimer timer;
   
 public:
   MidiLearnPrefs(QWidget *parent=NULL)
     : RememberGeometryQDialog(parent)
+    , timer(this)
   {
     main_layout = new QGridLayout(this);
     setLayout(main_layout);
@@ -129,17 +149,16 @@ public:
     vertical_scroll = new MyVerticalScroll(this);
     main_layout->addWidget(vertical_scroll);
 
-    setInterval(100);
-    start();
+    QDialogButtonBox *button_box = new QDialogButtonBox(this);
+    button_box->setStandardButtons(QDialogButtonBox::Close);
+    main_layout->addWidget(button_box);
+
+    connect(button_box, SIGNAL(clicked(QAbstractButton*)), this, SLOT(on_button_box_clicked(QAbstractButton*)));
+        
+    timer.setInterval(100);
+    timer.start();
   }
 
-  void timerEvent(QTimerEvent * e){
-    if (isVisible()){
-      for(auto *item : items)
-        item->update_gui();
-    }
-  }
-  
   void add(MidiLearn *midi_learn){
     auto *gakk = new MidiLearnItem(midi_learn);
     items.push_back(gakk);
@@ -161,8 +180,14 @@ public:
 
     delete item;
   }
+
+public slots:
+  void on_button_box_clicked(QAbstractButton *button){
+    hide();
+  }
 };
-  
+
+ 
 class Tools : public RememberGeometryQDialog, public Ui::Tools {
   Q_OBJECT
 
