@@ -1159,7 +1159,7 @@ $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_Bs_edit.cpp >$(P)mQt_Bs_edit.cpp
 
 
-INSTRUMENTS_DEPENDENCIES = $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)Qt_plugin_widget.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)Qt_compressor_widget.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h
+INSTRUMENTS_DEPENDENCIES = $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)Qt_plugin_widget.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)Qt_compressor_widget.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp
 
 
 
@@ -1534,13 +1534,13 @@ $(QM)mQM_MixerWidget.cpp: $(QM)QM_MixerWidget.h $(P)Qt_MyQButton.h
 #	$(RCC) $(QM)images.qrc -name images -o $(QM)images.cpp
 #	$(CCC) $(QM)images.cpp  `$(PKG) --libs --cflags QtGui` -c
 
-QM_MixerWidget.o: $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h audio/SoundPluginRegistry_proc.h
+QM_MixerWidget.o: $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h audio/SoundPluginRegistry_proc.h audio/CpuUsage.hpp
 	$(CCC) $(QM)QM_MixerWidget.cpp $(QTOPT)
 
 QM_view.o: $(QM)QM_view.cpp $(QM)QM_view.h $(QM)QM_chip.h $(QM)mQM_view.cpp $(QM)QM_MixerWidget.h
 	$(CCC) $(QM)QM_view.cpp $(QTOPT)
 
-QM_chip.o: $(QM)QM_chip.cpp $(QM)QM_chip.h $(P)Qt_MyQCheckBox.h $(QM)QM_MixerWidget.h
+QM_chip.o: $(QM)QM_chip.cpp $(QM)QM_chip.h $(P)Qt_MyQCheckBox.h $(QM)QM_MixerWidget.h audio/CpuUsage.hpp
 	$(CCC) $(QM)QM_chip.cpp $(QTOPT)
 
 undo_chip_position.o: $(QM)undo_chip_position.c $(QM)QM_chip.h

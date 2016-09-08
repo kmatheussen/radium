@@ -303,8 +303,7 @@ public:
 
   bool myMouseDoubleClickEvent (float x, float y);
 
-  int64_t _last_cpu_update_time = -1;
-  QString _last_cpu_text;
+  QString _name_text;
   
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event);

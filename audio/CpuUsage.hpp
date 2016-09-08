@@ -1,5 +1,12 @@
 
-#ifdef __cplusplus
+#if USE_QT4
+
+#include <QString>
+#include <QFont>
+#include <QWidget>
+#include <QApplication>
+#define AUTOSUSPENDING_STRING " Auto-suspended"
+
 
 struct CpuUsage{
   DEFINE_ATOMIC(int, max_cpu_usage);
@@ -7,6 +14,9 @@ struct CpuUsage{
   DEFINE_ATOMIC(int, num_cpu_usage);
   DEFINE_ATOMIC(int, total_cpu_usage);
 
+  int64_t _last_cpu_update_time = -1;
+  QString _last_cpu_text;
+  
   CpuUsage(){
     reset();
   }
@@ -57,14 +67,46 @@ struct CpuUsage{
   float max(void){
     return ATOMIC_GET(max_cpu_usage) / 1000.0;
   }
+
+  QString get_string(void){
+    int mincpu = min();
+    int maxcpu = max();
+    int avgcpu = avg();
+
+    QString ret;
+    
+    ret.sprintf("%s%d / %s%d / %s%d",
+                mincpu < 10 ? " " : "", mincpu,
+                avgcpu < 10 ? " " : "", avgcpu,
+                maxcpu < 10 ? " " : "", maxcpu
+                );
+
+    return ret;
+  }
+
+  bool should_update(int64_t time = TIME_get_ms()){
+    
+    if (_last_cpu_text=="" || time > (_last_cpu_update_time + 1000))
+      return true;
+    else
+      return false;
+  }
+  
+  QString update_and_get_string(void){
+    int64_t time = TIME_get_ms();
+    
+    if (should_update(time)){
+      
+      _last_cpu_text = get_string();
+          
+      _last_cpu_update_time = time;
+      reset();
+      
+    }
+      
+    return _last_cpu_text;
+  }
 };
-
-#if USE_QT4
-
-#include <QFont>
-#include <QWidget>
-#include <QApplication>
-#define AUTOSUSPENDING_STRING " Auto-suspended"
 
 static inline void set_cpu_usage_font_and_width(QWidget *widget, bool shows_integers, bool might_autosuspend){
   QFont sansFont;
@@ -90,8 +132,6 @@ static inline void set_cpu_usage_font_and_width(QWidget *widget, bool shows_inte
   widget->setMinimumWidth(width);
   widget->setMaximumWidth(width);
 }
-#endif
-
 #endif
 
 extern LANGSPEC void CpuUsage_delete(void *cpu_usage);

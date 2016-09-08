@@ -1164,49 +1164,22 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     x1 += 2;    
     x2 -= 1;
     
-    QString text;
-
     if (ATOMIC_GET(g_show_cpu_usage_in_mixer)){
       
-      int64_t time = TIME_get_ms();
-      
-      if (_last_cpu_text=="" || time > (_last_cpu_update_time + 1000)){
-        
-        CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET(plugin->cpu_usage);
-        
-        if (cpu_usage==NULL) {
-          
-          ATOMIC_SET(plugin->cpu_usage, new CpuUsage);
+      CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET(plugin->cpu_usage);
 
-        } else {
-          
-          int mincpu = cpu_usage->min();
-          int maxcpu = cpu_usage->max();
-          int avgcpu = cpu_usage->avg();
-          
-          _last_cpu_text.sprintf("%s%d / %s%d / %s%d",
-                                 mincpu < 10 ? " " : "", mincpu,
-                                 avgcpu < 10 ? " " : "", avgcpu,
-                                 maxcpu < 10 ? " " : "", maxcpu
-                                 );
-          
-          text = _last_cpu_text;
-          _last_cpu_update_time = time;
-          cpu_usage->reset();
-          
-        }
-        
-      } else {
-        text = _last_cpu_text;
-      }
+      if (cpu_usage==NULL)
+        ATOMIC_SET(plugin->cpu_usage, new CpuUsage);
+      else
+        _name_text = cpu_usage->update_and_get_string();
       
     } else  {
       
-      text = patch->name;
+      _name_text = patch->name;
       
     }
     
-    float textlen = get_text_width(painter->font(),text);       
+    float textlen = get_text_width(painter->font(),_name_text);       
     float width = x2-x1;
 
     //printf("updating %d\n",(int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 150, 100));
@@ -1216,10 +1189,10 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       float s = width/textlen;
       painter->save();
       painter->scale(s,1.0);
-      painter->drawText(x1/s, y1, width/s, y2-y1, Qt::AlignLeft, text);
+      painter->drawText(x1/s, y1, width/s, y2-y1, Qt::AlignLeft, _name_text);
       painter->restore();
     }else{
-      painter->drawText(x1, y1, width, y2-y1, Qt::AlignLeft, text);
+      painter->drawText(x1, y1, width, y2-y1, Qt::AlignLeft, _name_text);
     }
 
     // checbuttons.

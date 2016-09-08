@@ -62,8 +62,6 @@ public:
   SizeType _size_type;
   //int _last_height;
 
-  int64_t _last_cpu_update_time;
-
   Auto_Suspend_Menu _auto_suspend_menu;
   
 public:
@@ -80,7 +78,6 @@ public:
     , _plugin_widget(NULL)
     , _size_type(SIZETYPE_NORMAL)
       //, _last_height(10)
-    , _last_cpu_update_time(0)
     , _auto_suspend_menu(this, patch)
     {
       R_ASSERT(_patch!=NULL);
@@ -286,36 +283,16 @@ public:
         ATOMIC_SET(plugin->cpu_usage, new CpuUsage);
 
       } else {
-        
-        int64_t time = TIME_get_ms();
-        
-        if (force || time > _last_cpu_update_time + 1000){
-          
-          if (SP_is_autosuspending(plugin->sp)) {
-            
-            plugin_info->setText(AUTOSUSPENDING_STRING);
 
-          } else {
-            
-            QString usage;
-        
-            int mincpu = cpu_usage->min();
-            int maxcpu = cpu_usage->max();
-            int avgcpu = cpu_usage->avg();
-            
-            usage.sprintf("%s%d / %s%d / %s%d",
-                          mincpu < 10 ? " " : "", mincpu,
-                          avgcpu < 10 ? " " : "", avgcpu,
-                          maxcpu < 10 ? " " : "", maxcpu
-                          );
-            
-            cpu_usage->reset();
-            
-            plugin_info->setText(usage);
-          
-            _last_cpu_update_time = time;
-          }
+        if (SP_is_autosuspending(plugin->sp)) {
+          if (cpu_usage->should_update())
+            plugin_info->setText(AUTOSUSPENDING_STRING);
+        } else {
+          QString new_text = cpu_usage->update_and_get_string();
+          if (new_text != plugin_info->text())
+            plugin_info->setText(new_text);
         }
+        
       }
     }
   }
