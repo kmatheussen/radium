@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/wblocks_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
 #include "../common/cursor_updown_proc.h"
+#include "../common/player_pause_proc.h"
 
 #include "../embedded_scheme/scheme_proc.h"
 
@@ -484,6 +485,8 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
 
   }
 
+  R_ASSERT(g_pausing_level==0);
+
   release_keyboard_focus();
   
   // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
@@ -516,6 +519,8 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   if (SCHEME_mousemove(currentButton, tevent.x, tevent.y)==false)
     EventReciever(&tevent,this->window);
 
+  R_ASSERT(g_pausing_level==0);
+  
   //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
 //  printf("----Got mouse move %d %d %f %f\n",tevent.x,tevent.y,qmouseevent->posF().x(),qmouseevent->posF().y());
 
@@ -550,6 +555,8 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
   if (SCHEME_mouserelease(currentButton, tevent.x, tevent.y)==false)
     EventReciever(&tevent,this->window);
 
+  R_ASSERT(g_pausing_level==0);
+  
   currentButton = 0;
 
   updateEditor();

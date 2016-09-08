@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "../common/gfx_proc.h"
 #include "../common/player_proc.h"
+#include "../common/player_pause_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -327,10 +328,15 @@ uint32_t CanITreatThisEvent_questionmark(int ID,struct Tracker_Windows *window){
 */
 
 bool EventReciever(struct TEvent *in_tevent, struct Tracker_Windows *window){
+         R_ASSERT(g_pausing_level==0);
+  
         int ret;
         DO_GFX({
             ret=EventTreater(in_tevent,window);
           });
+
+        R_ASSERT(g_pausing_level==0);
+          
         return ret;
 }
 

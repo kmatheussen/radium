@@ -49,7 +49,7 @@ void PC_Pause(void){
 }
 */
 
-static int g_pausing_level = 0;
+int g_pausing_level = 0;
 static bool g_was_playing = false;
 static int g_playtype = 0;
 static bool g_was_playing_range = false;

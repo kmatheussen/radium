@@ -118,7 +118,10 @@ void Scroll_scroll(
                    struct Tracker_Windows *window,
                    int num_lines
 ){
-  if (ATOMIC_GET(root->play_cursor_onoff)==false)
+
+  bool dopause = (ATOMIC_GET(root->play_cursor_onoff)==false);
+  
+  if (dopause)
     PC_Pause();
   
 //  int lokke;
@@ -169,7 +172,7 @@ void Scroll_scroll(
 	}
 #endif
 
-        if (ATOMIC_GET(root->play_cursor_onoff)==false)
+        if (dopause)
           PC_StopPause(window);
 
         

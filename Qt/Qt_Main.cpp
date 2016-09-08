@@ -71,6 +71,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_visual_input.h"
 #include "../common/scancodes_proc.h"
 #include "../common/player_proc.h"
+#include "../common/player_pause_proc.h"
 #include "../common/gfx_wtrackheaders_proc.h"
 #include "../common/data_as_text_proc.h"
 
@@ -1326,6 +1327,8 @@ protected:
     
         
     //MIXER_called_regularly_by_main_thread();
+
+    R_ASSERT(g_pausing_level==0);
     
 #if 0
     // Update graphics when playing
