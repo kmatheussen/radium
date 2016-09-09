@@ -1291,9 +1291,9 @@ public:
   
   void RT_process(int64_t time, int num_frames, bool process_plugins){
 
-    int dry_sound_sound_size = R_MAX(1,_num_dry_sounds)*num_frames;
+    int dry_sound_sound_size = R_MAX(1,_num_dry_sounds)*num_frames*sizeof(float);
     
-    float *dry_sound_sound = (float*)alloca(dry_sound_sound_size);
+    float *dry_sound_sound = (float*)alloca(dry_sound_sound_size); // using alloca since clang didn't like dynamically sized array here, for some reason.
     memset(dry_sound_sound, 0, dry_sound_sound_size);
     
     float *dry_sound[R_MAX(1,_num_dry_sounds)];

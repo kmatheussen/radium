@@ -31,16 +31,25 @@ struct MyQMessageBox : public QMessageBox {
   {
     setWindowModality(Qt::ApplicationModal);
     setWindowFlags(Qt::Window | Qt::Tool);
-    
-    _splashscreen_visible = g_splashscreen!=NULL && g_splashscreen->isVisible();
-    
-    if (_splashscreen_visible)
-      g_splashscreen->hide();
   }
   
   ~MyQMessageBox(){
+  }
+  
+  void showEvent(QShowEvent *event){
+    _splashscreen_visible = g_splashscreen!=NULL && g_splashscreen->isVisible();
+
+    if (_splashscreen_visible)
+      g_splashscreen->hide();
+
+    QMessageBox::showEvent(event);
+  }
+  
+  void hideEvent(QHideEvent *event) {
     if (_splashscreen_visible)
       g_splashscreen->show();
+
+    QMessageBox::hideEvent(event);
   }
   
 };
