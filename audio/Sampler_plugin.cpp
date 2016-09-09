@@ -2400,6 +2400,7 @@ static void init_plugin_type(void){
  plugin_type.is_instrument            = true;
  plugin_type.note_handling_is_RT      = false;
  plugin_type.num_effects              = EFF_NUM_EFFECTS;
+ plugin_type.will_always_autosuspend  = true,
  plugin_type.get_effect_format        = get_effect_format;
  plugin_type.get_effect_name          = get_effect_name;
  plugin_type.effect_is_RT             = NULL;
