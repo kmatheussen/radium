@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef _RADIUM_MIDI_MIDI_I_INPUT_PROC_H
 #define _RADIUM_MIDI_MIDI_I_INPUT_PROC_H
 
+extern DEFINE_ATOMIC(struct Patch *, g_through_patch);
+
 struct SoundPlugin;
 
 extern LANGSPEC void MIDI_add_automation_recording_event(struct SoundPlugin *plugin, int effect_num, float value);

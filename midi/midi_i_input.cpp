@@ -65,7 +65,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static DEFINE_ATOMIC(uint32_t, g_msg) = 0;
 
-static DEFINE_ATOMIC(struct Patch *, g_through_patch) = NULL;
+DEFINE_ATOMIC(struct Patch *, g_through_patch) = NULL;
 
 extern const char *NotesTexts3[131];
 

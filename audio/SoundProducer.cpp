@@ -1388,7 +1388,7 @@ public:
     }
 
 
-    float *_latency_dry_sound[_num_dry_sounds];
+    float *_latency_dry_sound[R_MAX(1,_num_dry_sounds)];
     for(int ch=0;ch<_num_dry_sounds;ch++)        
       _latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(dry_sound[ch], num_frames);
 

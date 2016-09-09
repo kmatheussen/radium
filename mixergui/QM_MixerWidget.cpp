@@ -1234,7 +1234,9 @@ namespace{
             
             if(plugin != NULL){
 
-              if (ATOMIC_GET(g_show_cpu_usage_in_mixer)){
+              bool show_cpu_update = ATOMIC_GET(g_show_cpu_usage_in_mixer);
+              
+              if (show_cpu_update){
                 CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET(plugin->cpu_usage);
                 
                 if (cpu_usage==NULL || cpu_usage->should_update() || chip->_name_text!=cpu_usage->_last_cpu_text)
