@@ -86,7 +86,7 @@ public:
     , timer(this)
 #endif
   {    
-    QDialog::setWindowModality(Qt::ApplicationModal);
+    //QDialog::setWindowModality(Qt::ApplicationModal);
     //setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
   }
   void setVisible(bool visible) override {      
