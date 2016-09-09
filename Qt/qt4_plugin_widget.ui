@@ -1290,6 +1290,9 @@ Example:
           <height>16777215</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>Reset A/B testing</string>
+        </property>
         <property name="text">
          <string>↝</string>
         </property>
