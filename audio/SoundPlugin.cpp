@@ -369,6 +369,10 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
     return NULL;
   }
 
+  for(int i=0;i<NUM_AB;i++){
+    plugin->ab[i] = (float*) V_calloc(sizeof(float), plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+  }
+  
   ATOMIC_NAME(plugin->is_recording_automation) = (bool*) V_calloc(sizeof(bool), plugin_type->num_effects+NUM_SYSTEM_EFFECTS); // plugin_type->num_effects might be set after calling create_plugin_data.
 
   // peak and automation pointers (for displaying in the sliders)
@@ -544,6 +548,11 @@ void PLUGIN_delete(SoundPlugin *plugin){
   V_free(ATOMIC_NAME(plugin->is_recording_automation));
   ATOMIC_SET(plugin->is_recording_automation, NULL);
 
+  for(int i=0;i<NUM_AB;i++){
+    V_free(plugin->ab[i]);
+  }
+
+  
   R_ASSERT(plugin->midi_learns->size()==0);
   delete plugin->midi_learns;
     
@@ -1647,6 +1656,41 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   return plugin;
 }
 
+void PLUGIN_change_ab(SoundPlugin *plugin, int ab_num){
+  R_ASSERT_RETURN_IF_FALSE(ab_num>=0);
+  R_ASSERT_RETURN_IF_FALSE(ab_num<NUM_AB);
+
+  int old_ab_num = plugin->curr_ab_num;
+  int new_ab_num = ab_num;
+  
+  int num_effects = plugin->type->num_effects+NUM_SYSTEM_EFFECTS;
+    
+  memcpy(plugin->ab[old_ab_num], plugin->savable_effect_values, sizeof(float)*num_effects);
+  plugin->ab_is_valid[old_ab_num] = true;
+ 
+  if(plugin->ab_is_valid[new_ab_num]){
+    
+    float *new_abs = plugin->ab[new_ab_num];
+
+    Undo_Open();{
+      volatile struct Patch *patch = plugin->patch;
+      for(int i=0;i<num_effects;i++)
+        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, i));
+    }Undo_Close();
+
+    PLAYER_lock();{
+      for(int i=0;i<num_effects;i++)
+        PLUGIN_set_effect_value(plugin, 0, i, new_abs[i], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    }PLAYER_unlock();
+  }
+  
+  plugin->curr_ab_num = new_ab_num;
+}
+
+void PLUGIN_reset_ab(SoundPlugin *plugin){
+  for(int ab=0;ab<NUM_AB;ab++)
+    plugin->ab_is_valid[ab] = false;
+}
 
 char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type){
   return talloc_format("%s %d",plugin_type->name,++plugin_type->instance_num);    
@@ -1825,18 +1869,17 @@ bool PLUGIN_can_autobypass(SoundPlugin *plugin){
 
 void PLUGIN_reset(SoundPlugin *plugin){
   const SoundPluginType *type = plugin->type;
-  int i;
 
   volatile struct Patch *patch = plugin->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
   
   Undo_Open();{
-    for(i=0;i<type->num_effects;i++)
+    for(int i=0;i<type->num_effects;i++)
       ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, i));
   }Undo_Close();
 
   PLAYER_lock();{
-    for(i=0;i<type->num_effects;i++)
+    for(int i=0;i<type->num_effects;i++)
       PLUGIN_set_effect_value(plugin, 0, i, plugin->initial_effect_values[i], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
   }PLAYER_unlock();
 }

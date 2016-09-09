@@ -53,7 +53,7 @@ public:
 #ifdef WITH_FAUST_DEV
   Faust_Plugin_widget *_faust_plugin_widget;
 #endif
-  bool _ignore_show_gui_checkbox_stateChanged;
+  bool _ignore_checkbox_stateChanged;
 
   MyQMessageBox infoBox;
 
@@ -74,7 +74,7 @@ public:
 #ifdef WITH_FAUST_DEV
     , _faust_plugin_widget(NULL)
 #endif
-    , _ignore_show_gui_checkbox_stateChanged(false)
+    , _ignore_checkbox_stateChanged(false)
     , _plugin_widget(NULL)
     , _size_type(SIZETYPE_NORMAL)
       //, _last_height(10)
@@ -552,6 +552,22 @@ private:
   
 public slots:
 
+  // ab-testing
+  void on_ab_reset_clicked(){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    PLUGIN_reset_ab(plugin);
+  }
+
+  void on_ab_a_toggled(bool val){
+    if (val && _ignore_checkbox_stateChanged==false)
+      AUDIOWIDGET_set_ab(_patch, 0);
+  }
+
+  void on_ab_b_toggled(bool val){
+    if (val && _ignore_checkbox_stateChanged==false)
+      AUDIOWIDGET_set_ab(_patch, 1);
+  }
+
   // auto-bypass
   //
   void on_auto_bypass_menu_button_released() {
@@ -717,7 +733,7 @@ public slots:
 
   // general
   void on_show_gui_checkbox_toggled(bool val){
-    if (_ignore_show_gui_checkbox_stateChanged==false) {
+    if (_ignore_checkbox_stateChanged==false) {
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       if (val){
         plugin->type->show_gui(plugin);
@@ -911,15 +927,15 @@ public slots:
 
 void PLUGINWIDGET_gui_is_hidden(void *w){
   Plugin_widget *plugin_widget = static_cast<Plugin_widget*>(w);
-  plugin_widget->_ignore_show_gui_checkbox_stateChanged = true; {
+  plugin_widget->_ignore_checkbox_stateChanged = true; {
     plugin_widget->show_gui_checkbox->setChecked(false);
-  } plugin_widget->_ignore_show_gui_checkbox_stateChanged = false;
+  } plugin_widget->_ignore_checkbox_stateChanged = false;
 }
 
 void PLUGINWIDGET_gui_is_visible(void *w){
   Plugin_widget *plugin_widget = static_cast<Plugin_widget*>(w);
-  plugin_widget->_ignore_show_gui_checkbox_stateChanged = true; {
+  plugin_widget->_ignore_checkbox_stateChanged = true; {
     plugin_widget->show_gui_checkbox->setChecked(true);
-  } plugin_widget->_ignore_show_gui_checkbox_stateChanged = false;
+  } plugin_widget->_ignore_checkbox_stateChanged = false;
 }
 

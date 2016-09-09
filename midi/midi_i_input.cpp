@@ -648,10 +648,11 @@ void MIDI_remove_midi_learn(MidiLearn *midi_learn, bool show_error_if_not_here){
  ****************************************************************************/
 
 hash_t* MidiLearn::create_state(void){
-  hash_t *state = HASH_create(3);
+  hash_t *state = HASH_create(5);
   HASH_put_bool(state, "is_enabled", ATOMIC_GET(is_enabled));
   HASH_put_bool(state, "is_learning", ATOMIC_GET(is_learning));
-  HASH_put_chars(state, "port_name", ATOMIC_GET(port_name)==NULL ? "" : ATOMIC_GET(port_name)->name);
+  const symbol_t *port_name_symbol = ATOMIC_GET(port_name);
+  HASH_put_chars(state, "port_name", port_name_symbol==NULL ? "" : port_name_symbol->name);
   HASH_put_int(state, "byte1", ATOMIC_GET(byte1));
   HASH_put_int(state, "byte2", ATOMIC_GET(byte2));
   return state;
@@ -789,7 +790,6 @@ void MIDI_SetThroughPatch(struct Patch *patch){
   if(patch!=NULL)
     ATOMIC_SET(g_through_patch, patch);
 }
-
 
 
 

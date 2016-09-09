@@ -42,6 +42,8 @@ extern "C"{
 #define MIN_AUTOSUSPEND_PEAK 0.00001
   
 #define NOTUSED_EFFECT_NAME "NOTUSED"
+
+#define NUM_AB 8
   
 enum{
   EFFNUM_INPUT_VOLUME = 0,  // This one must be first.
@@ -423,8 +425,12 @@ typedef struct SoundPlugin{
   DEFINE_ATOMIC(bool, auto_suspend_suspended); // Can be set temporarily by plugin
   
   DEFINE_ATOMIC(enum AutoSuspendBehavior, auto_suspend_behavior);
-  //DEFINE_ATOMIC(bool, can_autobypass); // true by default. must be set to false explicitly by the plugin.
-  DEFINE_ATOMIC(int64_t, time_of_last_activity); // used when determining whether to auto-bypass  
+  DEFINE_ATOMIC(int64_t, time_of_last_activity); // used when determining whether to auto-bypass
+
+  int curr_ab_num;
+  float *ab[NUM_AB]; // each element points to an array of floats
+  bool ab_is_valid[NUM_AB];
+  
 } SoundPlugin;
 
 

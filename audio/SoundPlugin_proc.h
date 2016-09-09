@@ -66,6 +66,8 @@ extern LANGSPEC hash_t *PLUGIN_get_state(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects);
 extern LANGSPEC void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, float value);
 extern LANGSPEC SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading);
+extern LANGSPEC void PLUGIN_change_ab(SoundPlugin *plugin, int ab);
+extern LANGSPEC void PLUGIN_reset_ab(SoundPlugin *plugin);
 extern LANGSPEC char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type);
 
 extern LANGSPEC void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num);

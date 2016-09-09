@@ -887,10 +887,57 @@ public:
       change_height(_size_type_before_hidden);
     //      show_large();
   }
-  
+
+  void ab_pressed(int num){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    PLUGIN_change_ab(plugin, num);
+    if (_plugin_widget != NULL){
+      _plugin_widget->_ignore_checkbox_stateChanged = true; { // 'setChecked' should have an optional arguments whether to send signal to callbacks.
+        _plugin_widget->ab_a->setChecked(num==0);
+        _plugin_widget->ab_b->setChecked(num==1);        
+      }_plugin_widget->_ignore_checkbox_stateChanged = false;      
+    }
+  }
 
 public slots:
 
+  void on_ab_reset_button_clicked(){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    PLUGIN_reset_ab(plugin);
+  }
+
+  void on_ab0_toggled(bool val){
+    if (val) ab_pressed(0);
+  }
+  
+  void on_ab1_toggled(bool val){
+    if (val) ab_pressed(1);
+  }
+  
+  void on_ab2_toggled(bool val){
+    if (val) ab_pressed(2);
+  }
+  
+  void on_ab3_toggled(bool val){
+    if (val) ab_pressed(3);
+  }
+  
+  void on_ab4_toggled(bool val){
+    if (val) ab_pressed(4);
+  }
+  
+  void on_ab5_toggled(bool val){
+    if (val) ab_pressed(5);
+  }
+  
+  void on_ab6_toggled(bool val){
+    if (val) ab_pressed(6);
+  }
+  
+  void on_ab7_toggled(bool val){
+    if (val) ab_pressed(7);
+  }
+  
 #if 0
   void on_arrow1_toggled(bool val){
     _plugin_widget->setVisible(val);
@@ -1185,6 +1232,21 @@ Sample_requester_widget *AUDIOWIDGET_get_sample_requester_widget(struct Patch *p
 
 void AUDIOWIDGET_change_height(struct Patch *patch, SizeType type){
   get_audio_instrument_widget(patch)->change_height(type);
+}
+
+void AUDIOWIDGET_set_ab(struct Patch *patch, int ab_num){
+  auto *w = get_audio_instrument_widget(patch);
+
+  switch(ab_num){
+    case 0: w->ab0->setChecked(true); break;
+    case 1: w->ab1->setChecked(true); break;
+    case 2: w->ab2->setChecked(true); break;
+    case 3: w->ab3->setChecked(true); break;
+    case 4: w->ab4->setChecked(true); break;
+    case 5: w->ab5->setChecked(true); break;
+    case 6: w->ab6->setChecked(true); break;
+    case 7: w->ab7->setChecked(true); break;
+  }
 }
 
 #if 0

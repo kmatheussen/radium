@@ -471,9 +471,8 @@ static inline const symbol_t *get_symbol(const char *name){
 
 static inline void set_symbol_name(const symbol_t *symbol, const char *new_name){
   R_ASSERT_RETURN_IF_FALSE(new_name != NULL);
-  const char *old_name = symbol->name;
+  free((void*)symbol->name);
   ((symbol_t*)symbol)->name = strdup(new_name);
-  free((void*)old_name);
 }
                                    
 
