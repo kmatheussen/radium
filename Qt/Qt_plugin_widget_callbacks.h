@@ -91,11 +91,7 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
 
-#if defined(RELEASE)
-    bool will_always_autosuspend = false;
-#else
     bool will_always_autosuspend = type->will_always_autosuspend;
-#endif
 
     if(will_always_autosuspend || type->will_never_autosuspend)
       auto_bypass_menu_button->hide();

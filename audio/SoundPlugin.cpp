@@ -1869,11 +1869,8 @@ bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time){
     if (type->will_never_autosuspend==true)
       return false;
 
-#if defined(RELEASE)
-    bool type_will_always_autosuspend = false;
-#else
     bool type_will_always_autosuspend = type->will_always_autosuspend;
-#endif
+    
     if (type_will_always_autosuspend==false){
       enum AutoSuspendBehavior auto_suspend_behavior = PLUGIN_get_autosuspend_behavior(plugin);
       
