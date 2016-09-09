@@ -488,9 +488,9 @@ static void RT_scheduled_send_fx_to_plugin(int64_t time, const union SuperType *
   if(plugin==NULL)
     return;
 
-  FX_when when = args[1].int_num;
-  int val = args[2].int_num;
-  int effect_num = args[3].int_num;
+  FX_when when = (FX_when)args[1].int_num;
+  int val = (int)args[2].int_num;
+  int effect_num = (int)args[3].int_num;
 
   send_fx_to_plugin(plugin, time, when, val, effect_num);
 }

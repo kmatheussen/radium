@@ -88,7 +88,7 @@ int getAutoBypassDelay(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    ATOMIC_SET(g_autobypass_delay, SETTINGS_read_int("autobypass_delay", 500));
+    ATOMIC_SET(g_autobypass_delay, SETTINGS_read_int32("autobypass_delay", 500));
     has_inited = true;
   }
 

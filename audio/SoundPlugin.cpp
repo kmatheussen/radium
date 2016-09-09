@@ -1691,7 +1691,7 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
       int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
       
       hash_t *ab_state=HASH_get_hash(state, "ab");
-      plugin->curr_ab_num = HASH_get_int(ab_state, "curr_ab_num");
+      plugin->curr_ab_num = HASH_get_int32(ab_state, "curr_ab_num");
       
       for(int i=0;i<NUM_AB;i++){
         plugin->ab_is_valid[i] = HASH_get_bool_at(ab_state, "is_valid", i);
@@ -1918,7 +1918,7 @@ bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time){
     // ...and we add some frames to eliminate rounding errors and possibly other minor things (system filters, etc.). (important for instruments that implement RT_get_audio_tail_length)
     delay += 64;
 
-    int time_since_activity = time-ATOMIC_GET(plugin->time_of_last_activity);
+    int64_t time_since_activity = time-ATOMIC_GET(plugin->time_of_last_activity);
     
     if (time_since_activity > delay)
       return true;

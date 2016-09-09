@@ -1020,7 +1020,7 @@ MyApplication::MyApplication(int &argc,char **argv)
   //QApplication *qapplication;
 MyApplication *qapplication = NULL;
 QApplication *g_qapplication = NULL;
-static QSplashScreen *g_splashscreen;
+QSplashScreen *g_splashscreen = NULL;
 
 void *OS_GFX_get_native_main_window(void){
   R_ASSERT_RETURN_IF_FALSE2(ATOMIC_GET(is_starting_up)==false, NULL);
@@ -1869,7 +1869,7 @@ int radium_main(char *arg){
   //RWarning("warning!");
   //g_splashscreen->finish(main_window);
   delete g_splashscreen;
-
+  g_splashscreen = NULL;
   
   show_nag_window("");
 
@@ -2342,6 +2342,7 @@ int main(int argc, char **argv){
   //GC_disable();
   
   QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));
+  
   g_splashscreen = new QSplashScreen(pixmap);
 #if 1 //def RELEASE
   g_splashscreen->show();

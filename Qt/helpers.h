@@ -5,6 +5,8 @@
 #include <QMenu>
 #include <QTimer>
 #include <QMainWindow>
+#include <QSplashScreen>
+#include <QApplication>
 
 #include "../OpenGL/Widget_proc.h"
 #include "../common/keyboard_focus_proc.h"
@@ -18,15 +20,29 @@ extern bool radium_runs_custom_exec;
 extern void set_editor_focus(void);
 
 extern QMainWindow *g_main_window;
+extern QSplashScreen *g_splashscreen;
 
 
 struct MyQMessageBox : public QMessageBox {
+  bool _splashscreen_visible;
+  
   MyQMessageBox(QWidget *parent = NULL)
     : QMessageBox(parent!=NULL ? parent : g_main_window)
   {
     setWindowModality(Qt::ApplicationModal);
     setWindowFlags(Qt::Window | Qt::Tool);
+    
+    _splashscreen_visible = g_splashscreen!=NULL && g_splashscreen->isVisible();
+    
+    if (_splashscreen_visible)
+      g_splashscreen->hide();
   }
+  
+  ~MyQMessageBox(){
+    if (_splashscreen_visible)
+      g_splashscreen->show();
+  }
+  
 };
   
 struct RememberGeometryQDialog : public QDialog {

@@ -1291,7 +1291,11 @@ public:
   
   void RT_process(int64_t time, int num_frames, bool process_plugins){
 
-    float dry_sound_sound[R_MAX(1,_num_dry_sounds)*num_frames] = {0};
+    int dry_sound_sound_size = R_MAX(1,_num_dry_sounds)*num_frames;
+    
+    float *dry_sound_sound = (float*)alloca(dry_sound_sound_size);
+    memset(dry_sound_sound, 0, dry_sound_sound_size);
+    
     float *dry_sound[R_MAX(1,_num_dry_sounds)];
     for(int ch=0;ch<_num_dry_sounds;ch++)
       dry_sound[ch] = &dry_sound_sound[ch*num_frames];

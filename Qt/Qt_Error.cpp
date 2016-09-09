@@ -60,6 +60,7 @@ static int show_message(const char *message){
 }
 
 QMainWindow *g_main_window = NULL; // referenced by helpers.h
+QSplashScreen *g_splashscreen = NULL; // referenced by helpers.h
 
 int main(int argc, char **argv){
   QCoreApplication::setLibraryPaths(QStringList());

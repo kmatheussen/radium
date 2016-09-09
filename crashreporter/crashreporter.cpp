@@ -389,6 +389,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 #if defined(CRASHREPORTER_BIN)
 
 QMainWindow *g_main_window = NULL; // referenced by helpers.h
+QSplashScreen *g_splashscreen = NULL; // referenced by helpers.h
 
 int main(int argc, char **argv){
   
