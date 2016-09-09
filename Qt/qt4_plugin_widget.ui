@@ -41,7 +41,7 @@
    <item>
     <widget class="QWidget" name="header" native="true">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+      <sizepolicy hsizetype="Fixed" vsizetype="Maximum">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -1301,7 +1301,7 @@ Example:
       <item>
        <widget class="QCheckBox" name="ab_a">
         <property name="text">
-         <string>A</string>
+         <string>A*</string>
         </property>
         <property name="checked">
          <bool>true</bool>

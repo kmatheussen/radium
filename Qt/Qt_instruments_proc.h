@@ -51,6 +51,7 @@ extern Sample_requester_widget *AUDIOWIDGET_get_sample_requester_widget(struct P
 
 extern LANGSPEC void AUDIOWIDGET_change_height(struct Patch *patch, enum SizeType type);
 extern LANGSPEC void AUDIOWIDGET_set_ab(struct Patch *patch, int ab_num);
+extern LANGSPEC void AUDIOWIDGET_redraw_ab(struct Patch *patch);
 #if 0
 extern LANGSPEC void AUDIOWIDGET_show_large(struct Patch *patch);
 extern LANGSPEC void AUDIOWIDGET_show_small(struct Patch *patch);

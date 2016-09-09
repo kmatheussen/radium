@@ -28,6 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC hash_t *HASH_create(int approx_size);
 
+// Use these two if the hash is stored somewhere the GC doesn't reach it.
+extern LANGSPEC hash_t *HASH_create2(int approx_size);
+extern LANGSPEC void HASH_free2(hash_t *hash);
+
 extern LANGSPEC hash_t *HASH_copy(const hash_t *hash);
 
 extern LANGSPEC const char *HASH_get_key(const hash_t *hash, const char *key); // Returns the stored pointed, if it needs to be reused.
@@ -57,7 +61,7 @@ extern LANGSPEC int64_t HASH_get_int(const hash_t *hash, const char *key);
 extern LANGSPEC double HASH_get_float(const hash_t *hash, const char *key);
 extern LANGSPEC hash_t *HASH_get_hash(const hash_t *hash, const char *key);
 static inline bool HASH_get_bool(hash_t *hash, const char *key){
-  return HASH_get_int(hash, key)==1 ? true : 0;
+  return HASH_get_int(hash, key)==1 ? true : false;
 }
 static inline int HASH_get_int32(hash_t *hash, const char *key){
   return (int)HASH_get_int(hash, key);
@@ -74,12 +78,18 @@ extern LANGSPEC bool HASH_remove(hash_t *hash, const char *raw_key);
 extern LANGSPEC void HASH_put_string_at(hash_t *hash, const char *key, int i, const wchar_t *val);
 extern LANGSPEC void HASH_put_chars_at(hash_t *hash, const char *key, int i, const char *val);
 extern LANGSPEC void HASH_put_int_at(hash_t *hash, const char *key, int i, int64_t val);
+static inline void HASH_put_bool_at(hash_t *hash, const char *key, int i, bool val){
+  HASH_put_int_at(hash, key, i, val ? 1 : 0);
+}
 extern LANGSPEC void HASH_put_float_at(hash_t *hash, const char *key, int i, double val);
 extern LANGSPEC void HASH_put_hash_at(hash_t *hash, const char *key, int i, hash_t *val);
 
 extern LANGSPEC const wchar_t *HASH_get_string_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC const char *HASH_get_chars_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC int64_t HASH_get_int_at(const hash_t *hash, const char *key, int i);
+static inline bool HASH_get_bool_at(hash_t *hash, const char *key, int i){
+  return HASH_get_int_at(hash, key, i)==1 ? true : false;
+}
 extern LANGSPEC double HASH_get_float_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC hash_t *HASH_get_hash_at(const hash_t *hash, const char *key, int i);
 

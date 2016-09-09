@@ -54,8 +54,7 @@ public:
   SizeType _size_type;
   SizeType _size_type_before_hidden;
   //bool _was_large_before_hidden;
-  
-  
+
   static void set_arrow_style(QWidget *arrow, bool set_size_policy=true){
     QPalette palette2;
 
@@ -101,6 +100,15 @@ public:
 
     setupUi(this);    
 
+    /*
+    {
+      //QFontMetrics fm(font());
+      _ab_checkbox_width = ab_reset_button->width(); //fm.width("A") * 4;
+      ab_reset_button->setMinimumWidth(_ab_checkbox_width);
+      ab_reset_button->setMaximumWidth(_ab_checkbox_width);
+    }
+    */
+              
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
     _patch_widget = new Patch_widget(this,patch);
@@ -687,6 +695,8 @@ public:
         RError("weird");
     }
 
+    update_all_ab_buttons();
+    
     bool is_bus_provider = SP_get_bus_descendant_type(plugin->sp)==IS_BUS_PROVIDER;
     
     bus1_widget->setEnabled(is_bus_provider);
@@ -888,15 +898,83 @@ public:
     //      show_large();
   }
 
-  void ab_pressed(int num){
+
+  void update_all_ab_buttons(void){
+    update_ab_button(ab0, 0);
+    update_ab_button(ab1, 1);
+    update_ab_button(ab2, 2);
+    update_ab_button(ab3, 3);
+    update_ab_button(ab4, 4);
+    update_ab_button(ab5, 5);
+    update_ab_button(ab6, 6);
+    update_ab_button(ab7, 7);
+    
+    if(_plugin_widget != NULL)
+      _plugin_widget->update_ab_buttons();
+  }
+
+  int _ab_checkbox_width = -1;
+
+  void update_ab_button(QCheckBox *checkbox, int num){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    PLUGIN_change_ab(plugin, num);
-    if (_plugin_widget != NULL){
-      _plugin_widget->_ignore_checkbox_stateChanged = true; { // 'setChecked' should have an optional arguments whether to send signal to callbacks.
-        _plugin_widget->ab_a->setChecked(num==0);
-        _plugin_widget->ab_b->setChecked(num==1);        
-      }_plugin_widget->_ignore_checkbox_stateChanged = false;      
+
+    QString c = QString("ABCDEFGH"[num]);
+
+    bool is_selected=plugin->curr_ab_num==num || plugin->ab_is_valid[num];
+    
+    if (is_selected)
+      checkbox->setText(c+"*");
+    else
+      checkbox->setText(c);
+
+    if (!is_selected && _ab_checkbox_width==-1){
+      checkbox->adjustSize();
+      _ab_checkbox_width = checkbox->width();
     }
+
+    if (_ab_checkbox_width != -1){
+      checkbox->setMinimumWidth(_ab_checkbox_width);
+      checkbox->setMaximumWidth(_ab_checkbox_width);
+    }
+  }
+  
+  bool arrgh = false;
+  
+  void ab_pressed(QCheckBox *checkbox, int num, bool val){
+
+    if (arrgh==false) {
+
+      arrgh=true;
+      
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
+      if (val==true){
+        PLUGIN_change_ab(plugin, num);
+        if (_plugin_widget != NULL){
+          _plugin_widget->_ignore_checkbox_stateChanged = true; { // 'setChecked' should have an optional arguments whether to send signal to callbacks.
+            
+            _plugin_widget->ab_a->setChecked(num==0);
+            _plugin_widget->ab_b->setChecked(num==1);
+            /*          
+                        ab0->setChecked(num==0);
+                        ab1->setChecked(num==1);
+                        ab2->setChecked(num==2);
+                        ab3->setChecked(num==3);
+                        ab4->setChecked(num==4);
+                        ab5->setChecked(num==5);
+                        ab6->setChecked(num==6);
+                        ab7->setChecked(num==7);
+            */
+          }_plugin_widget->_ignore_checkbox_stateChanged = false;      
+        }
+        
+      }
+
+      update_ab_button(checkbox, num);
+
+      arrgh=false;
+    }
+    
   }
 
 public slots:
@@ -904,39 +982,19 @@ public slots:
   void on_ab_reset_button_clicked(){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     PLUGIN_reset_ab(plugin);
+    update_all_ab_buttons();
   }
 
-  void on_ab0_toggled(bool val){
-    if (val) ab_pressed(0);
-  }
+  void on_ab0_toggled(bool val){ab_pressed(ab0, 0, val);}
+  void on_ab1_toggled(bool val){ab_pressed(ab1, 1, val);}
+  void on_ab2_toggled(bool val){ab_pressed(ab2, 2, val);}
+  void on_ab3_toggled(bool val){ab_pressed(ab3, 3, val);}
+  void on_ab4_toggled(bool val){ab_pressed(ab4, 4, val);}
+  void on_ab5_toggled(bool val){ab_pressed(ab5, 5, val);}
+  void on_ab6_toggled(bool val){ab_pressed(ab6, 6, val);}
+  void on_ab7_toggled(bool val){ab_pressed(ab7, 7, val);}
   
-  void on_ab1_toggled(bool val){
-    if (val) ab_pressed(1);
-  }
   
-  void on_ab2_toggled(bool val){
-    if (val) ab_pressed(2);
-  }
-  
-  void on_ab3_toggled(bool val){
-    if (val) ab_pressed(3);
-  }
-  
-  void on_ab4_toggled(bool val){
-    if (val) ab_pressed(4);
-  }
-  
-  void on_ab5_toggled(bool val){
-    if (val) ab_pressed(5);
-  }
-  
-  void on_ab6_toggled(bool val){
-    if (val) ab_pressed(6);
-  }
-  
-  void on_ab7_toggled(bool val){
-    if (val) ab_pressed(7);
-  }
   
 #if 0
   void on_arrow1_toggled(bool val){
@@ -1249,6 +1307,10 @@ void AUDIOWIDGET_set_ab(struct Patch *patch, int ab_num){
   }
 }
 
+void AUDIOWIDGET_redraw_ab(struct Patch *patch){
+  get_audio_instrument_widget(patch)->update_all_ab_buttons();
+}
+  
 #if 0
 void AUDIOWIDGET_show_large(struct Patch *patch){
   get_audio_instrument_widget(patch)->show_large();

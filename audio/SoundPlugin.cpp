@@ -370,7 +370,8 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   }
 
   for(int i=0;i<NUM_AB;i++){
-    plugin->ab[i] = (float*) V_calloc(sizeof(float), plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+    plugin->ab_values[i] = (float*) V_calloc(sizeof(float), plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+    plugin->ab_states[i] = HASH_create2(5);
   }
   
   ATOMIC_NAME(plugin->is_recording_automation) = (bool*) V_calloc(sizeof(bool), plugin_type->num_effects+NUM_SYSTEM_EFFECTS); // plugin_type->num_effects might be set after calling create_plugin_data.
@@ -549,7 +550,8 @@ void PLUGIN_delete(SoundPlugin *plugin){
   ATOMIC_SET(plugin->is_recording_automation, NULL);
 
   for(int i=0;i<NUM_AB;i++){
-    V_free(plugin->ab[i]);
+    V_free(plugin->ab_values[i]);
+    HASH_free2(plugin->ab_states[i]);
   }
 
   
@@ -1489,6 +1491,35 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
     type->create_state(plugin, plugin_state);
   }
 
+  // A/B
+  {
+    int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
+    
+    hash_t *ab_state=HASH_create(NUM_AB);
+    
+    HASH_put_int(ab_state, "curr_ab_num", plugin->curr_ab_num);
+    
+    for(int i=0;i<NUM_AB;i++){
+      
+      bool is_valid = plugin->ab_is_valid[i];
+      
+      HASH_put_bool_at(ab_state,"is_valid",i,is_valid);
+      
+      if (is_valid){
+        HASH_put_hash_at(ab_state, "ab_state", i, plugin->ab_states[i]);
+        
+        hash_t *values_state = HASH_create(num_effects);
+        for(int n=0;n<num_effects;n++)
+          HASH_put_float_at(values_state,"value",n,plugin->ab_values[i][n]);
+        
+        HASH_put_hash_at(ab_state, "ab_values", i, values_state);
+      }
+      
+    }
+    
+    HASH_put_hash(state,"ab",ab_state);
+  }
+  
   HASH_put_int(state, "___radium_plugin_state_v3", 1);
       
   return state;
@@ -1652,6 +1683,30 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
       }
     }
   }
+
+  // A/B
+  {
+    if (HASH_has_key(state, "ab")){
+
+      int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
+      
+      hash_t *ab_state=HASH_get_hash(state, "ab");
+      plugin->curr_ab_num = HASH_get_int(ab_state, "curr_ab_num");
+      
+      for(int i=0;i<NUM_AB;i++){
+        plugin->ab_is_valid[i] = HASH_get_bool_at(ab_state, "is_valid", i);
+
+        if (plugin->ab_is_valid[i]){
+          plugin->ab_states[i] = HASH_get_hash_at(ab_state, "ab_state", i);
+          
+          hash_t *values_state = HASH_get_hash_at(ab_state, "ab_values", i);
+          for(int n=0;n<num_effects;n++)
+            plugin->ab_values[i][n] = HASH_get_float_at(values_state,"value",n);
+        }
+      }
+      
+    }
+  }
   
   return plugin;
 }
@@ -1660,17 +1715,28 @@ void PLUGIN_change_ab(SoundPlugin *plugin, int ab_num){
   R_ASSERT_RETURN_IF_FALSE(ab_num>=0);
   R_ASSERT_RETURN_IF_FALSE(ab_num<NUM_AB);
 
+  SoundPluginType *type = plugin->type;
+  
   int old_ab_num = plugin->curr_ab_num;
   int new_ab_num = ab_num;
   
-  int num_effects = plugin->type->num_effects+NUM_SYSTEM_EFFECTS;
+  int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
+
+  // Save old data
+  {
+    memcpy(plugin->ab_values[old_ab_num], plugin->savable_effect_values, sizeof(float)*num_effects);
     
-  memcpy(plugin->ab[old_ab_num], plugin->savable_effect_values, sizeof(float)*num_effects);
-  plugin->ab_is_valid[old_ab_num] = true;
- 
+    if(type->create_state!=NULL)
+      type->create_state(plugin, plugin->ab_states[old_ab_num]);
+    
+    plugin->ab_is_valid[old_ab_num] = true;
+  }
+
+  // Insert new data
+  //
   if(plugin->ab_is_valid[new_ab_num]){
     
-    float *new_abs = plugin->ab[new_ab_num];
+    float *new_ab_values = plugin->ab_values[new_ab_num];
 
     Undo_Open();{
       volatile struct Patch *patch = plugin->patch;
@@ -1680,8 +1746,11 @@ void PLUGIN_change_ab(SoundPlugin *plugin, int ab_num){
 
     PLAYER_lock();{
       for(int i=0;i<num_effects;i++)
-        PLUGIN_set_effect_value(plugin, 0, i, new_abs[i], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+        PLUGIN_set_effect_value(plugin, 0, i, new_ab_values[i], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
     }PLAYER_unlock();
+
+    if(type->recreate_from_state!=NULL)
+      type->recreate_from_state(plugin, plugin->ab_states[new_ab_num], false);
   }
   
   plugin->curr_ab_num = new_ab_num;

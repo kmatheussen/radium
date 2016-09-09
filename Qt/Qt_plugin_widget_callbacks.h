@@ -85,6 +85,8 @@ public:
       setupUi(this);
 
       set_cpu_usage_font_and_width(plugin_info, true, true);
+
+      ab_reset->hide(); // The exact same button is placed only a few hundred pixels to the left anyway.
       
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
@@ -434,6 +436,8 @@ public:
             cpu_usage->reset(); // If not, max value has an unusually high value during the first second. I don't know why that is.
         }
         #endif
+
+        update_ab_buttons();
       }
 
     }
@@ -549,23 +553,56 @@ private:
     _plugin_widget=PluginWidget_create(this, _patch, type);
     vertical_layout->insertWidget(1,_plugin_widget);
   }
+
+  int _ab_checkbox_width = -1;
+
+public:
   
+  void update_ab_buttons(void){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    int curr=plugin->curr_ab_num;
+
+    if (_ab_checkbox_width==-1){
+      ab_a->adjustSize();
+      _ab_checkbox_width = ab_a->width();
+    }
+
+    ab_a->setMinimumWidth(_ab_checkbox_width);
+    ab_a->setMaximumWidth(_ab_checkbox_width);
+    ab_b->setMinimumWidth(_ab_checkbox_width);
+    ab_b->setMaximumWidth(_ab_checkbox_width);
+
+    if (curr==0 || plugin->ab_is_valid[0])
+      ab_a->setText("A*");
+    else
+      ab_a->setText("A");
+    
+    if (curr==1 || plugin->ab_is_valid[1])
+      ab_b->setText("B*");
+    else
+      ab_b->setText("B");
+  }
+
 public slots:
 
   // ab-testing
   void on_ab_reset_clicked(){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     PLUGIN_reset_ab(plugin);
+    update_ab_buttons();
+    AUDIOWIDGET_redraw_ab(_patch);
   }
 
   void on_ab_a_toggled(bool val){
     if (val && _ignore_checkbox_stateChanged==false)
       AUDIOWIDGET_set_ab(_patch, 0);
+    update_ab_buttons();
   }
 
   void on_ab_b_toggled(bool val){
     if (val && _ignore_checkbox_stateChanged==false)
       AUDIOWIDGET_set_ab(_patch, 1);
+    update_ab_buttons();
   }
 
   // auto-bypass

@@ -428,9 +428,10 @@ typedef struct SoundPlugin{
   DEFINE_ATOMIC(int64_t, time_of_last_activity); // used when determining whether to auto-bypass
 
   int curr_ab_num;
-  float *ab[NUM_AB]; // each element points to an array of floats
+  float *ab_values[NUM_AB]; // each element points to an array of floats
+  hash_t *ab_states[NUM_AB];
   bool ab_is_valid[NUM_AB];
-  
+
 } SoundPlugin;
 
 
