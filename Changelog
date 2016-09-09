@@ -1,3 +1,37 @@
+Changes 4.1.2 -> 4.1.3:
+* Hide splashscreen if showing a message during startup.
+* Always autosuspend buses, pipes, patchbay instruments, and the
+  sampler instrument.
+* Buttons for doing A/B testing (A/B/C/D/E/F/G/H testing).
+* Don't autosuspend current instrument when not playing.
+  (Annoying to look at flickering mixer objects.)
+* Add a close button to the MIDI learn configuration window.
+* Rearrange plugin parameters when changing size between
+  normal/half/full. (Show less tabs in half or full mode).
+* Fix display of CPU usage for the current instrument when
+  showing CPU usage in the mixer.
+* Don't write "Auto-suspended" immediately in the top of the
+  instrument widget when instrument is auto-suspended.
+  Use the normal cpu usage update interval. (Less flickering)
+* Never shrink the note duplicator widget. Always let
+  it have the same size.
+* Fix saving a song which had previously been saved with
+  embedded samples.
+* Show restart instructions when jack is not running properly.
+* Option not to stop playing when saving song.
+* Do autobackups even while playing. (Can be turned off in
+  the preferences window.)
+* Never grey out editor when editing colors, even if the
+  editor doesn't have keyboard focus.
+* Fix undo/redo for system effect parameters.
+* Thicker track borders.
+* Lighter default track border color.
+* Start/continue/stop playing when receiving MIDI
+  start/continue/stop messages.
+* Fix some always-on-top-of-main-window issues.
+
+
+
 Changes 4.1.1. -> 4.1.2:
 * Rename auto-bypass to auto-suspend.
 * Optionally show CPU usage per instrument in the mixer.
