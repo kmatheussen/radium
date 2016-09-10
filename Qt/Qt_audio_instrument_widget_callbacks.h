@@ -174,14 +174,14 @@ public:
     pipe_label = NULL;
 #endif
 
-    effects_layout->insertWidget(3,_plugin_widget);
+    effects_layout->insertWidget(4,_plugin_widget);
     _plugin_widget->setVisible(plugin->show_controls_gui);
     spacer_holder->setVisible(!plugin->show_controls_gui);
     
 
     if(plugin->type==PR_get_plugin_type_by_name(NULL, "Sample Player","Sample Player") || plugin->type==PR_get_plugin_type_by_name(NULL, "Sample Player","Click") || plugin->type==PR_get_plugin_type_by_name(NULL, "FluidSynth","FluidSynth")){
       _sample_requester_widget = new Sample_requester_widget(this, _patch_widget->name_widget, _plugin_widget->sample_name_label, _patch);
-      effects_layout->insertWidget(2,_sample_requester_widget);
+      effects_layout->insertWidget(3,_sample_requester_widget);
       show_browser->setFixedWidth(browserArrow->width());
 
       /*
