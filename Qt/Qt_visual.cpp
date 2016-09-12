@@ -62,9 +62,9 @@ static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
     return QColor(r,g,b);
   }else{
 
-    int r = c1.red()*a1 + c2.red()*a2;
-    int g = c1.green()*a1 + c2.green()*a2;
-    int b = c1.blue()*a1 + c2.blue()*a2;
+    int r = sqrtf(c1.red()*c1.red()*a1      + c2.red()*c2.red()*a2);
+    int g = sqrtf(c1.green()*c1.green()*a1  + c2.green()*c2.green()*a2);
+    int b = sqrtf(c1.blue()*c1.blue()*a1    + c2.blue()*c2.blue()*a2);
 
     return QColor(r,g,b);
   }
