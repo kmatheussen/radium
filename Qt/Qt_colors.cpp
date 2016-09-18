@@ -115,7 +115,8 @@ static const ColorConfig g_colorconfig[] = {
   {AUTOMATION_INDICATOR_COLOR_NUM,          "automation_indicator", "Automation indicator"},
 
   {TRACK_SEPARATOR1_COLOR_NUM,              "track_separator1", "Track separator 1"},
-  {TRACK_SEPARATOR2_COLOR_NUM,              "track_separator2", "Track separator 2"},
+  {TRACK_SEPARATOR2A_COLOR_NUM,             "track_separator2_darkened", "Track separator 2 left part"},
+  {TRACK_SEPARATOR2B_COLOR_NUM,             "track_separator2",  "Track separator 2 right part"},
 
   {BAR_TEXT_COLOR_NUM,                      "bar_text", "Bar text"},
   {ZOOMLINE_TEXT_COLOR_NUM1, "zoomline_text1", "Zoom line 1"},
@@ -177,7 +178,7 @@ static ReplacementColorNum g_replacement_color_num[] = {
   {AUTOMATION_INDICATOR_COLOR_NUM, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
 
   {TRACK_SEPARATOR1_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
-  {TRACK_SEPARATOR2_COLOR_NUM, LOW_BACKGROUND_COLOR_NUM},
+  {TRACK_SEPARATOR2B_COLOR_NUM, LOW_BACKGROUND_COLOR_NUM},
 
   {BAR_TEXT_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
   {ZOOMLINE_TEXT_COLOR_NUM1, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
@@ -211,6 +212,8 @@ static ReplacementColor g_replacement_color[] = {
   {PLAY_CURSOR_COLOR_NUM, QColor(255, 0, 0)},
   {BUTTONS_ON_OFF_COLOR_NUM, QColor(40, 40, 40)},
   {LINE_SLIDER_COLOR_NUM, QColor(1,1,1)},
+
+  {TRACK_SEPARATOR2A_COLOR_NUM, QColor(1,1,1)},
 
   {BUTTONS_TEXT_COLOR_NUM, QColor(1,1,1)},
   
