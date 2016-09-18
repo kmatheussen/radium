@@ -18,6 +18,7 @@
 (set! (*s7* 'history-size) 40)
 
 
+
 ;;(set! (*stacktrace* 'max-frames) 1000)
 ;(set! (*stacktrace* 'code-cols) 2000)
 ;(set! (*stacktrace* 'total-cols) 2450)

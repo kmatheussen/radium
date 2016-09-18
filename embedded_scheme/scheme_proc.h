@@ -1,6 +1,6 @@
 extern LANGSPEC bool quantitize_note(const struct Blocks *block, struct Notes *note);
 
-
+extern LANGSPEC const char *SCHEME_get_backtrace(void);
 extern LANGSPEC bool SCHEME_mousepress(int button, float x, float y);
 extern LANGSPEC bool SCHEME_mousemove(int button, float x, float y);
 extern LANGSPEC bool SCHEME_mouserelease(int button, float x, float y);

@@ -1513,6 +1513,11 @@ void printMixerTree(void){
 }
 
 void testCrashreporter(void){
+  //R_ASSERT(false);
+  //return;
+#if !defined(RELEASE)
+  abort(); // The crash below usually doesn't work in non-release mode since we usually compile with fsanitize=address
+#endif
   int *ai=NULL;
   ai[0] = 50;
 }

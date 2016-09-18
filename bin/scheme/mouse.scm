@@ -57,6 +57,34 @@
 
 (define (square x) (* x x))
 
+#||
+;; Todo: use this one instead of the 'get-distance' function below, since this one is much faster. (function originally created for ab, but not used)
+(define (distance-to-vector x y vector)
+  (define point  (create-point x y))
+  (define point1 (vector-point1 vector))
+  (define point2 (vector-point2 vector))
+  
+  (define x1 (point-x point1))
+  (define x2 (point-x point2))
+  (define y1 (point-y point1))
+  (define y2 (point-y point2))
+  
+  (define distance12 (distance point1 point2))
+  (define distance1  (distance point point1))
+  (define distance2  (distance point point2))
+  
+  (if (= 0 distance12)
+      distance1
+      (begin
+        (define distance   (/ (abs (+ (* x  (- y2 y1))
+                                      (* (- y) (- x2 x1))
+                                      (* y1 x2)
+                                      (* (- x1) y2)))
+                              distance12))
+
+        (min distance distance1 distance2))))
+||#
+
 ;; shortest distance between a point and a non-infinite line. Can be optimized (a lot).
 (define (get-distance x y x1 y1 x2 y2)
   (define dist-1-to-2 (sqrt (+ (square (- x2 x1))
@@ -366,12 +394,18 @@
     (catch #t
            thunk
            (lambda args
-             (display "args")(display args)(newline)
-             (c-display "Resetting mouse cycle since I caught something:" (car args))
+             ;; Commenting out output printing here since it causes unnecessary lines to be put into the (ow!) backtrace.
+             ;;
+             ;;(display "args")(display args)(newline)
+             ;;(c-display "Resetting mouse cycle since I caught something:" (car args))
              ;;(apply format (cons '() args)))
-             (apply format #t (cadr args))
-             (display (ow!))
+             ;;(if (string? (cadr args))
+             ;;    (apply format #t (cadr args))
+             ;;    (c-display (cadr args)))
+             ;;(display (ow!))
+             ;;
              (set! *current-mouse-cycle* #f)
+             (throw (car args)) ;; rethrowing
              #f)))
   
   (if (not mouse-fx-has-been-set)

@@ -57,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/threading.h"
 #include "../common/disk_save_proc.h"
 #include "../common/undo.h"
+#include "../embedded_scheme/scheme_proc.h"
 #include "../OpenGL/Widget_proc.h"
 #include "../Qt/helpers.h"
 
@@ -384,9 +385,10 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
 }
 
-
-
 #if defined(CRASHREPORTER_BIN)
+
+
+
 
 QMainWindow *g_main_window = NULL; // referenced by helpers.h
 QSplashScreen *g_splashscreen = NULL; // referenced by helpers.h
@@ -595,6 +597,11 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   tosend += "end event_pos: " + QString::number(ATOMIC_GET(g_event_pos) % NUM_EVENTS) + "\n";
   
   tosend += "\n\n";
+
+  if (crash_type!=CT_CRASH){
+    tosend += QString(SCHEME_get_backtrace()) + "\n\n";
+  }
+  
 
 #if defined(FOR_LINUX)
   tosend += "LINUX\n\n";

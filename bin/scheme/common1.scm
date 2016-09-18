@@ -60,8 +60,6 @@
 	       (format p "~%~{~A~| ~}~%" e))
 	   (set! elist (cons e elist))))))))
 
-
-
 (define (assert something)
   (if (not something)
       (throw "assert-failed")))

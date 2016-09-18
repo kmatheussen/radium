@@ -324,6 +324,20 @@ Place p_Quantitize(const Place p, const Place q){
   return place_operation_place_p1_p2(scheme_func, p, q);
 }
 
+const char *SCHEME_get_backtrace(void){
+  SCHEME_eval("(throw \'get-backtrace)"); // Fill in error-lines and so forth into s7.
+  
+  const char *ret = s7_string(
+                              s7_call(s7,
+                                      s7_name_to_value(s7, "ow!"),
+                                      s7_list(s7, 0)
+                                      )
+                              );
+
+  printf("Got: %s\n", ret);
+  return ret;
+}
+
 
 bool SCHEME_mousepress(int button, float x, float y){
 
