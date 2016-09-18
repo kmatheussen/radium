@@ -1,3 +1,22 @@
+Changes 4.1.3 -> 4.1.4:
+* Fix various crashes happening after loading a song
+  or a preset that was saved with Radium 4.1.3.
+* Don't crash during startup if a popup window is
+  shown right after splash screen is hidden. (Bug
+  introduced in 4.1.3)
+* Turn on the "Briefly pause rendering when opening windows"
+  option if using an AMD or Intel card on Linux
+  (Can be turned off manually).
+* Make it possible to configure color for the left part
+  of the track separators. (The left part was hardcoded
+  to black color before.)
+* Use correct rgb color mixing algorithm.
+  (i.e. "sqrt(m*c1^2 + (1-m)*c2^2)")
+* Put the "Show controls" check box and sample browser
+  back to the old positions in the instrument widget.
+
+
+
 Changes 4.1.2 -> 4.1.3:
 * Hide splashscreen if showing a message during startup.
 * Always autosuspend buses, pipes, patchbay instruments, and the
