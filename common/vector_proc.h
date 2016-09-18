@@ -137,4 +137,25 @@ extern LANGSPEC void VECTOR_insert_place(vector_t *v, const Place *p);
 #define END_VECTOR_FOR_EACH }}
 
 
+
+extern vector_t g_global_roots;
+
+static inline void *add_gc_root(void *root){
+  VECTOR_push_back(&g_global_roots, root);
+  return root;
+}
+
+static inline void remove_gc_root(void *root){
+  VECTOR_remove(&g_global_roots, root);
+}
+
+static inline void *replace_gc_root(void *old_root, void *new_root){
+  remove_gc_root(old_root);
+  add_gc_root(new_root);
+  return new_root;
+}
+
+
+
+
 #endif

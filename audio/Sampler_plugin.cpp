@@ -2356,6 +2356,8 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
 }
 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
+  R_ASSERT_RETURN_IF_FALSE(state!=NULL);
+  
   Data *data=(Data*)plugin->data;
 
   const wchar_t *maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename);

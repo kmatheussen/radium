@@ -136,18 +136,6 @@ hash_t *HASH_create(int approx_size){
   return hash;
 }
 
-static vector_t g_global_hash = {0};
-
-hash_t *HASH_create2(int approx_size){
-  hash_t *ret = HASH_create(approx_size);
-  VECTOR_push_back(&g_global_hash, ret);
-  return ret;
-}
-
-void HASH_free2(hash_t *hash){
-  VECTOR_remove(&g_global_hash, hash);
-}
-
 static void put2(hash_t *hash, const char *key, int i, hash_element_t *element);
 
 hash_t *HASH_copy(const hash_t *hash){
@@ -437,6 +425,11 @@ static hash_t *get_hash(const hash_t *hash, const char *key, int i){
   if(element==NULL)
     return NULL;
 
+  if (element->hash==NULL){
+    RError("element->hash==NULL. key: %s, i: %d\n", key, i);
+    return HASH_create(1);
+  }
+  
   return element->hash;
 }
 

@@ -371,7 +371,7 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
 
   for(int i=0;i<NUM_AB;i++){
     plugin->ab_values[i] = (float*) V_calloc(sizeof(float), plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
-    plugin->ab_states[i] = HASH_create2(5);
+    plugin->ab_states[i] = (hash_t*)add_gc_root(HASH_create(5));
   }
   
   ATOMIC_NAME(plugin->is_recording_automation) = (bool*) V_calloc(sizeof(bool), plugin_type->num_effects+NUM_SYSTEM_EFFECTS); // plugin_type->num_effects might be set after calling create_plugin_data.
@@ -551,7 +551,7 @@ void PLUGIN_delete(SoundPlugin *plugin){
 
   for(int i=0;i<NUM_AB;i++){
     V_free(plugin->ab_values[i]);
-    HASH_free2(plugin->ab_states[i]);
+    remove_gc_root(plugin->ab_states[i]);
   }
 
   
@@ -1697,7 +1697,7 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
         plugin->ab_is_valid[i] = HASH_get_bool_at(ab_state, "is_valid", i);
 
         if (plugin->ab_is_valid[i]){
-          plugin->ab_states[i] = HASH_get_hash_at(ab_state, "ab_state", i);
+          plugin->ab_states[i] = (hash_t*)replace_gc_root(plugin->ab_states[i], HASH_get_hash_at(ab_state, "ab_state", i));
           
           hash_t *values_state = HASH_get_hash_at(ab_state, "ab_values", i);
           for(int n=0;n<num_effects;n++)
