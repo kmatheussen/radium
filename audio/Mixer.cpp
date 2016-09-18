@@ -591,17 +591,22 @@ struct Mixer{
       _main_inputs[0] = jack_port_register(_rjack_client, "main_input_1", JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
       _main_inputs[1] = jack_port_register(_rjack_client, "main_input_2", JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
       
-      const char **outportnames=jack_get_ports(_rjack_client,NULL,NULL,JackPortIsPhysical|JackPortIsOutput);
-      if (outportnames[0] != NULL){
-        jack_connect(_rjack_client, outportnames[0],
-                     jack_port_name(_main_inputs[0])
-                     );
-        if (outportnames[1] != NULL )
-          jack_connect(_rjack_client, outportnames[1],
-                       jack_port_name(_main_inputs[1])
+      const char **outportnames = jack_get_ports(_rjack_client,NULL,NULL,JackPortIsPhysical|JackPortIsOutput);
+      R_ASSERT(outportnames != NULL);
+
+      if (outportnames != NULL) {
+        if (outportnames[0] != NULL){
+          jack_connect(_rjack_client, outportnames[0],
+                       jack_port_name(_main_inputs[0])
                        );
+          if (outportnames[1] != NULL )
+            jack_connect(_rjack_client, outportnames[1],
+                         jack_port_name(_main_inputs[1])
+                         );
+        }
+
+        jack_free(outportnames);
       }
-      jack_free(outportnames);
     }
 
     g_jack_client = _rjack_client;
