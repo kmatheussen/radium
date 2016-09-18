@@ -37,9 +37,9 @@ struct MyQMessageBox : public QMessageBox {
   }
   
   void showEvent(QShowEvent *event){
-    _splashscreen_visible = g_splashscreen->isVisible();
+    _splashscreen_visible = g_splashscreen!=NULL && g_splashscreen->isVisible();
 
-    if (_splashscreen_visible && g_splashscreen!=NULL)
+    if (_splashscreen_visible)
       g_splashscreen->hide();
 
     QMessageBox::showEvent(event);
