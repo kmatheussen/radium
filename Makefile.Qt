@@ -154,9 +154,10 @@ UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 
 # clang:
 #UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined,integer -fno-sanitize-recover=undefined,integer
+#UNDEFINED_SANITIZE_OPTS=
 
 # Note that "make clean" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
-OS_DEBUG_BUILD_OPTS ?= -Og $(UNDEFINED_SANITIZE_OPTS) -fsanitize=address # -fsanitize=address  -Og -fcheck-pointer-bounds -mmpx  # -DDISABLE_BDWGC -Og -
+OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) #-fsanitize=address #-Og # -fsanitize=address  -Og -fcheck-pointer-bounds -mmpx  # -DDISABLE_BDWGC -Og -
 DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
 # -Og -Og -fsanitize=address
 #-Og 
@@ -166,6 +167,8 @@ DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-optimize-sibling-calls $(OS_DEBUG_BUILD
 ifneq (,$(findstring clang,$(CC)))
 	DEBUG_BUILD_OPTS += -Wshorten-64-to-32
 	S7OPTS += -Wno-shorten-64-to-32
+else
+	DEBUG_BUILD_OPTS += -Og
 endif
 
 

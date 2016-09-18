@@ -285,6 +285,11 @@ static void put_float(hash_t *hash, const char *key, int i, double val){
 }
 
 static void put_hash(hash_t *hash, const char *key, int i, hash_t *val){
+  if (val==NULL){
+    RError("put_hash: val==NULL. key: %d, i: %d\n", key, i);
+    return;
+  }
+  
   hash_element_t *element = talloc(sizeof(hash_element_t));
   element->type=HASH_TYPE;
   element->hash=val;
@@ -476,13 +481,13 @@ hash_t *HASH_get_hash_at(const hash_t *hash, const char *key, int i){
 }
 
 
-static vector_t *get_elements(const hash_t *hash){
-  vector_t *vector = talloc(sizeof(vector_t));
+static vector_t get_elements(const hash_t *hash){
+  vector_t vector = {0};
   int i;
   for(i=0;i<hash->elements_size;i++){
     hash_element_t *element = hash->elements[i];
     while(element!=NULL){
-      VECTOR_push_back(vector, element);
+      VECTOR_push_back(&vector, element);
       element=element->next;
     }
   }
@@ -504,9 +509,9 @@ static int compare_hash_elements(const void *a2, const void *b2){
   return a->i - b->i;
 }
 
-static vector_t *get_sorted_elements(hash_t *hash){
-  vector_t *elements = get_elements(hash);
-  qsort(elements->elements, elements->num_elements, sizeof(void*), compare_hash_elements);
+static vector_t get_sorted_elements(hash_t *hash){
+  vector_t elements = get_elements(hash);
+  qsort(elements.elements, elements.num_elements, sizeof(void*), compare_hash_elements);
   return elements;
 }
 
@@ -522,33 +527,41 @@ wchar_t *HASH_to_string(hash_t *hash){
 void HASH_save(hash_t *hash, disk_t *file){
   DISK_write(file, ">> HASH MAP V2 BEGIN\n");
 
-  vector_t *elements = get_sorted_elements(hash);
+  R_ASSERT(hash != NULL);
+  
+  if (hash != NULL) {
+    vector_t elements = get_sorted_elements(hash);
 
-  DISK_printf(file, "%d\n", elements->num_elements);
-
-  int i;
-  for(i=0;i<elements->num_elements;i++){
-    hash_element_t *element=elements->elements[i];
-    //DISK_write(file,element->key);DISK_write(file,"\n");
-    DISK_printf(file,"%s\n",element->key);
-    DISK_printf(file,"%d\n",element->i);
-    DISK_printf(file,"%s\n",type_to_typename(element->type));
-    switch(element->type){
-    case STRING_TYPE:
-      DISK_write_wchar(file, element->string);
-      DISK_write(file, "\n");
-      break;
-    case INT_TYPE:
-      DISK_printf(file,"%" PRId64 "\n",element->int_number);
-      break;
-    case FLOAT_TYPE:
-      DISK_printf(file,"%s\n",OS_get_string_from_double(element->float_number));
-      break;
-    case HASH_TYPE:
-      HASH_save(element->hash, file);
-      break;
+    DISK_printf(file, "%d\n", elements.num_elements);
+    
+    int i;
+    for(i=0;i<elements.num_elements;i++){
+      hash_element_t *element=elements.elements[i];
+      //DISK_write(file,element->key);DISK_write(file,"\n");
+      DISK_printf(file,"%s\n",element->key);
+      DISK_printf(file,"%d\n",element->i);
+      DISK_printf(file,"%s\n",type_to_typename(element->type));
+      switch(element->type){
+        case STRING_TYPE:
+          DISK_write_wchar(file, element->string);
+          DISK_write(file, "\n");
+          break;
+        case INT_TYPE:
+          DISK_printf(file,"%" PRId64 "\n",element->int_number);
+          break;
+        case FLOAT_TYPE:
+          DISK_printf(file,"%s\n",OS_get_string_from_double(element->float_number));
+          break;
+        case HASH_TYPE:
+          if (element->hash==NULL)
+            RError("element->hash==NULL. i: %d, num_elements: %d, element->key: %s. element->i: %d, typename: %s", i, elements.num_elements, element->key, element->i, type_to_typename(element->type));
+          
+          HASH_save(element->hash, file);
+          break;
+      }
     }
   }
+  
   DISK_write(file,"<< HASH MAP V2 END\n");
 }
 

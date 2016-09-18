@@ -135,7 +135,7 @@ static void crash(int sig, siginfo_t *siginfo, void *secret) {
   if(crash_already_reported()==false){
 
     if(fork()==0){
-      const char temp[64];
+      char temp[64];
       sprintf(temp,"signum: %d\n", sig);
       CRASHREPORTER_send_message_with_backtrace(temp, CT_CRASH,now_time);
       num_crash_reports++;

@@ -910,14 +910,14 @@ public:
     }
   }
 
-  void hideEvent(QHideEvent * event){
+  void hideEvent(QHideEvent * event) override {
     _size_type_before_hidden = _size_type;
     
     if(_size_type!=SIZETYPE_NORMAL)
       set_small(); // If not, all instrument widgets will have large height (due to the call to web->setMaximumHeight(window_height/2) in set_large()).
   }
 
-  void showEvent(QShowEvent * event){
+  void showEvent(QShowEvent * event) override {
     if (_size_type_before_hidden != SIZETYPE_NORMAL)
       set_large(_size_type_before_hidden);
   }

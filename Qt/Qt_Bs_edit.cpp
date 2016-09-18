@@ -85,7 +85,7 @@ public:
   }
   
   // popup menu
-  void mousePressEvent(QMouseEvent *event){
+  void mousePressEvent(QMouseEvent *event) override {
     QListWidgetItem *item = itemAt(event->pos());
 
     QListWidget::mousePressEvent(event);
