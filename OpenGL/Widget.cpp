@@ -1557,7 +1557,7 @@ QWidget *GL_create_widget(QWidget *parent){
       SETTINGS_write_bool("show_not_nvidia_warning", false);
     }
     
-    if (s_vendor.contains("ATI"))
+    if (s_vendor.contains("ATI")) {
       if (SETTINGS_read_bool("show_catalyst_gfx_message_during_startup", true)) {
         vector_t v = {};
         VECTOR_push_back(&v,"Ok");
@@ -1575,10 +1575,30 @@ QWidget *GL_create_widget(QWidget *parent){
         if (result==1)
           SETTINGS_write_bool("show_catalyst_gfx_message_during_startup", false);
 
+#if FOR_LINUX
+        GL_set_pause_rendering_on_off(true);
+#endif
+
         //g_should_do_modal_windows = true;
         g_should_do_modal_windows = false;
-      }
+        
+      } else {
+        
+        if (SETTINGS_read_bool("show_catalyst_gfx_message3_during_startup", true)) {
 
+#if FOR_LINUX
+          GFX_Message(NULL,
+                      "Catalyst Linux driver detected. Turning on the \"Briefly pause rendering when opening windows\" option."
+                      );
+          
+          GL_set_pause_rendering_on_off(true);
+#endif
+          
+          SETTINGS_write_bool("show_catalyst_gfx_message3_during_startup", true);
+        }
+
+      }
+    }
     
     if (s_renderer.contains("Gallium") && s_renderer.contains("AMD")) {
       if (SETTINGS_read_bool("show_gallium_gfx_message_during_startup", true)) {
@@ -1598,6 +1618,25 @@ QWidget *GL_create_widget(QWidget *parent){
         if (result==1)
           SETTINGS_write_bool("show_gallium_gfx_message_during_startup", false);
 
+#if FOR_LINUX
+        GL_set_pause_rendering_on_off(true);
+#endif
+
+      } else {
+
+        if (SETTINGS_read_bool("show_gallium_gfx_message3_during_startup", true)) {
+
+#if FOR_LINUX
+          GFX_Message(NULL,
+                      "Gallium Linux driver detected. Turning on the \"Briefly pause rendering when opening windows\" option."
+                      );
+          
+          GL_set_pause_rendering_on_off(true);
+#endif
+          
+          SETTINGS_write_bool("show_gallium_gfx_message3_during_startup", true);
+        }
+
       }
       
       show_mesa_warning = false;
@@ -1616,7 +1655,7 @@ QWidget *GL_create_widget(QWidget *parent){
       show_mesa_warning = false;
     }
 
-    if (s_vendor.contains("Intel")) {
+    if (s_vendor.contains("Intel")) {      
       if (SETTINGS_read_bool("show_intel_gfx_message2_during_startup", true)) {
         vector_t v = {};
         VECTOR_push_back(&v,"Ok");
@@ -1652,6 +1691,24 @@ QWidget *GL_create_widget(QWidget *parent){
 
         if (result==1)
           SETTINGS_write_bool("show_intel_gfx_message2_during_startup", false);
+
+#if FOR_LINUX
+        GL_set_pause_rendering_on_off(true);
+#endif
+        
+      } else {
+        if (SETTINGS_read_bool("show_intel_gfx_message3_during_startup", true)) {
+
+#if FOR_LINUX
+          GFX_Message(NULL,
+                      "Intel Linux driver detected. Turning on the \"Briefly pause rendering when opening windows\" option."
+                      );
+          
+          GL_set_pause_rendering_on_off(true);
+#endif
+          
+          SETTINGS_write_bool("show_intel_gfx_message3_during_startup", true);
+        }
       }
 
       //g_should_do_modal_windows = true;
