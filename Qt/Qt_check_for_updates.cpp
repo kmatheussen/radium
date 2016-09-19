@@ -11,6 +11,8 @@
 #include "../common/settings_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
+#include "helpers.h"
+
 #else
 #include <assert.h>
 
@@ -79,15 +81,17 @@ static void set_last_informed_version(QString version){}
 static void maybeInformAboutNewVersion(QString newestversion = "3.5.1"){
   fprintf(stderr,"newestversion: -%s-, VERSION: -%s-, last_informed: -%s-\n",newestversion.toUtf8().constData(), VERSION, last_informed_version().toUtf8().constData());
   //abort();
-  if (false || (hasNewer(newestversion, VERSION) && last_informed_version()!=newestversion)) {
+  if (true || (hasNewer(newestversion, VERSION) && last_informed_version()!=newestversion)) {
     printf("Version %s of Radium is available for download at http://users.notam02.no/~kjetism/radium (%s)\n", newestversion.toUtf8().constData(), VERSION);
-    GL_lock();{
-      QMessageBox::information(NULL,
-                               "Hello!",
-                               "You are running Radium V" VERSION ".<p>"
-                               "A newer version (V" + newestversion + ") is available for download at <A href=\"http://users.notam02.no/~kjetism/radium\">http://users.notam02.no/~kjetism/radium</a>"
-                               );
-    }GL_unlock();
+    MyQMessageBox *msgBox = new MyQMessageBox;
+
+    msgBox->setIcon(QMessageBox::Information);
+    msgBox->setText("You are running Radium V" VERSION ".<p>"
+                   "A newer version (V" + newestversion + ") is available for download at <A href=\"http://users.notam02.no/~kjetism/radium\">http://users.notam02.no/~kjetism/radium</a>");
+    msgBox->setStandardButtons(QMessageBox::Ok);
+
+    safeShow(msgBox);
+    
     set_last_informed_version(newestversion);
   } else
     printf("Nope, %s is actually newer than (or just as old) as %s\n", VERSION, newestversion.toUtf8().constData());
