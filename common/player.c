@@ -167,7 +167,12 @@ void PlayerTask(STime reltime){
           ATOMIC_SET(pc->player_state, PLAYER_STATE_PLAYING);
 }
 
+
+STime g_last_seq_time_converted_to_delta_time;
+
 int PLAYER_get_block_delta_time(STime time){
+  g_last_seq_time_converted_to_delta_time = time;
+  
   if(time<pc->start_time || time>pc->end_time) // time may be screwed up if not coming from the player.
     return 0;
 

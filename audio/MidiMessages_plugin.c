@@ -124,6 +124,30 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   }
 }
 
+static void play_note(struct SoundPlugin *plugin, int time, note_t note){
+  Data *data = (Data*)plugin->data;
+
+  note.midi_channel = data->values[CHANNEL];
+  
+  RT_PATCH_send_play_note_to_receivers((struct Patch*)plugin->patch, note, g_last_seq_time_converted_to_delta_time);
+}
+
+static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
+  Data *data = (Data*)plugin->data;
+
+  note.midi_channel = data->values[CHANNEL];
+  
+  RT_PATCH_send_change_velocity_to_receivers((struct Patch*)plugin->patch, note, g_last_seq_time_converted_to_delta_time);
+}
+
+static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
+  Data *data = (Data*)plugin->data;
+
+  note.midi_channel = data->values[CHANNEL];
+  
+  RT_PATCH_send_stop_note_to_receivers((struct Patch*)plugin->patch, note, g_last_seq_time_converted_to_delta_time);
+}
+
 
 static void send_msg(struct SoundPlugin *plugin, int64_t block_delta_time, unsigned int byte1, unsigned int byte2, int byte3){
   Data *data = (Data*)plugin->data;
@@ -153,7 +177,7 @@ static void get_minval_and_maxval(int effect_num, int *minval, int *maxval){
   switch(effect_num){
   case CHANNEL:
     *minval = 0;
-    *maxval = 16;
+    *maxval = 15;
     break;
   case PITCH_BEND:
     *minval = -8193;
@@ -405,10 +429,11 @@ void create_midimessages_plugin(void){
   plugin_type->create_plugin_data       = create_plugin_data;
   plugin_type->cleanup_plugin_data      = cleanup_plugin_data;
   
-  plugin_type->RT_process       = RT_process;
-  plugin_type->play_note        = NULL;
-  plugin_type->set_note_volume  = NULL;
-  plugin_type->stop_note        = NULL;
+  plugin_type->RT_process      = RT_process;
+  plugin_type->play_note       = play_note;
+  plugin_type->set_note_volume = set_note_volume;
+  plugin_type->stop_note       = stop_note;
+  
   plugin_type->set_effect_value = RT_set_effect_value;
   plugin_type->get_effect_value = RT_get_effect_value;
   plugin_type->get_display_value_string = get_display_value_string;
