@@ -1639,7 +1639,7 @@ EXPORT llvm_dsp* createDSPInstance(llvm_dsp_factory* factory)
     if ((it = llvm_dsp_factory::gFactoryTable.find(factory)) != llvm_dsp_factory::gFactoryTable.end()) {
         llvm_dsp_aux* instance = factory->createDSPInstance();
         (*it).second.push_back(instance);
-        return reinterpret_cast<llvm_dsp*>(instance);
+        return instance; //reinterpret_cast<llvm_dsp*>(instance);
     } else {
         return NULL;
     }

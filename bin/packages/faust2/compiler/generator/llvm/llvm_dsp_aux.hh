@@ -163,7 +163,27 @@ class llvm_dsp_factory : public smartable {
         static int gInstance;
 };
 
-class llvm_dsp_aux : public dsp {
+class EXPORT llvm_dsp : public dsp {
+                
+    public:
+    
+        void metadata(Meta* m);
+     
+        int getNumInputs();
+        int getNumOutputs();
+    
+        void init(int samplingRate);
+        void instanceInit(int samplingRate);
+      
+        void buildUserInterface(UI* ui_interface);
+        
+        void compute(int count, FAUSTFLOAT** input, FAUSTFLOAT** output);
+        
+        llvm_dsp* copy();
+     
+};
+
+class llvm_dsp_aux : public llvm_dsp {
 
     friend class llvm_dsp_factory;
    
@@ -258,26 +278,6 @@ EXPORT llvm_dsp_factory* readDSPFactoryFromMachineFile(const std::string& machin
 EXPORT void writeDSPFactoryToMachineFile(llvm_dsp_factory* factory, const std::string& machine_code_path, const std::string& target);
 
 EXPORT void metadataDSPFactory(llvm_dsp_factory* factory, Meta* m);
-
-class EXPORT llvm_dsp : public dsp {
-                
-    public:
-    
-        void metadata(Meta* m);
-     
-        int getNumInputs();
-        int getNumOutputs();
-    
-        void init(int samplingRate);
-        void instanceInit(int samplingRate);
-      
-        void buildUserInterface(UI* ui_interface);
-        
-        void compute(int count, FAUSTFLOAT** input, FAUSTFLOAT** output);
-        
-        llvm_dsp* copy();
-     
-};
 
 EXPORT llvm_dsp* createDSPInstance(llvm_dsp_factory* factory);
 

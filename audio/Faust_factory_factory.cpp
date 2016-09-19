@@ -130,11 +130,11 @@ namespace{
 namespace{
   struct FFF_Reply {
     
-    Data *data;
-    QTemporaryDir *svg_dir;
+    Data *data = NULL;
+    QTemporaryDir *svg_dir = NULL;
     QString error_message;
-    bool is_instrument;
-    llvm_dsp_factory *factory;
+    bool is_instrument = false;
+    llvm_dsp_factory *factory = NULL;
     
     bool is_empty(void){
       if (data==NULL && error_message=="") {
@@ -144,13 +144,6 @@ namespace{
       } else
         return false;
     }
-
-
-    FFF_Reply()
-      : data(NULL)
-      , svg_dir(NULL)
-      , factory(NULL)
-    {}
   };
 
   struct Request{
