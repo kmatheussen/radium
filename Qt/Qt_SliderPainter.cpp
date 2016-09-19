@@ -146,8 +146,6 @@ struct SliderPainter{
   float *_peak_values;
   bool _local_peak_values; // TODO: Remove this one. Seems like it is always false.
   float _automation_value;
-  enum ColorNums _automation_color;
-  enum ColorNums _peak_color;
 
   bool _alternative_color;
   bool _recording_color;
@@ -238,8 +236,6 @@ struct SliderPainter{
     _num_channels = 0;
     _peak_values = NULL;
     _local_peak_values=false;
-    _automation_color = AUTOMATION1_COLOR_NUM;
-    _peak_color = PEAKS_COLOR_NUM;
     _alternative_color = false;
     _recording_color = false;
     _auto_updater_has_started = false;
@@ -277,24 +273,24 @@ struct SliderPainter{
       if (value >= 0.0f && value != data->last_value) {
 
         float gain;
-        
-        if(data->is_automation)
+
+        if(data->is_automation) {
           gain = value;
-        else{
+        } else{
           float db = gain2db(value);
           if(db>4.0f)
-            _peak_color = PEAKS_4DB_COLOR_NUM;
+            data->color = PEAKS_4DB_COLOR_NUM;
           else if(db>0.0f)
-            _peak_color = PEAKS_0DB_COLOR_NUM;
+            data->color = PEAKS_0DB_COLOR_NUM;
           else
-            _peak_color = PEAKS_COLOR_NUM;
+            data->color = PEAKS_COLOR_NUM;
           
           gain = db2linear(db);
         }
         
         data->requested_pos = scale(gain,0.0f,1.0f,
                                     0.0f,(float)width()-2)
-          - 1;
+                              - 1;
         
         if(data->last_drawn_pos != data->requested_pos){
           
@@ -360,7 +356,7 @@ struct SliderPainter{
       data->ch            = ch;
       data->num_ch        = num_channels;
       data->is_automation = false;
-      data->color         = _peak_color;
+      data->color         = PEAKS_COLOR_NUM;
     }
   }
 
@@ -397,15 +393,19 @@ struct SliderPainter{
         int y1 = DATA_get_y1(data,height());
         int y2 = DATA_get_y2(data,height());
         int height = y2-y1;
-        
-        QRectF f(data->requested_pos+1 ,y1+1,
-                 2,                    height-1);
+
+#if 1
+        const QRectF f(data->requested_pos+1 ,y1+1,
+                       2,                    height-1);
+#else
+        const QRectF f(0, y1+1,
+                       data->requested_pos+1, height-1);
+#endif
         p->fillRect(f, get_qcolor(data->color));
         
         p->setPen(QPen(get_qcolor(HIGH_BACKGROUND_COLOR_NUM).light(120),1));
-        
-        QRectF f2(data->requested_pos+1 ,y1+1,
-                  2,                    height-1);
+
+        const QRectF &f2 = f; //f.adjusted(0, 0, 0, 0);
         
         p->drawRect(f2);
         
