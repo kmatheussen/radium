@@ -81,7 +81,7 @@ static void set_last_informed_version(QString version){}
 static void maybeInformAboutNewVersion(QString newestversion = "3.5.1"){
   fprintf(stderr,"newestversion: -%s-, VERSION: -%s-, last_informed: -%s-\n",newestversion.toUtf8().constData(), VERSION, last_informed_version().toUtf8().constData());
   //abort();
-  if (true || (hasNewer(newestversion, VERSION) && last_informed_version()!=newestversion)) {
+  if (false || (hasNewer(newestversion, VERSION) && last_informed_version()!=newestversion)) {
     printf("Version %s of Radium is available for download at http://users.notam02.no/~kjetism/radium (%s)\n", newestversion.toUtf8().constData(), VERSION);
     MyQMessageBox *msgBox = new MyQMessageBox;
 

@@ -545,11 +545,11 @@ private:
 #ifdef WITH_FAUST_DEV
     if (_faust_plugin_widget != NULL)
       _faust_plugin_widget->change_height(type, header->height());
-#endif
-
+#else
     delete _plugin_widget;
     _plugin_widget=PluginWidget_create(this, _patch, type);
     vertical_layout->insertWidget(1,_plugin_widget);
+#endif
   }
 
   int _ab_checkbox_width = -1;
