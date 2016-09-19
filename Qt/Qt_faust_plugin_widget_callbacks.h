@@ -664,7 +664,7 @@ public:
         if (_cpp_editor != NULL && _cpp_editor->isVisible())
           _cpp_editor->setText(FAUST_get_cpp_code(plugin));
 
-        _plugin_widget->set_automation_value_pointers(plugin);
+        //_plugin_widget->set_automation_value_pointers(plugin);
 
         delete old;
       }

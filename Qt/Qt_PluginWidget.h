@@ -345,7 +345,7 @@ struct PluginWidget : public QWidget{
 
   int _num_rows;
   
- PluginWidget(QWidget *parent, struct Patch *patch)
+  PluginWidget(QWidget *parent, struct Patch *patch)
     : QWidget(parent)
     , _patch(patch)
     , _num_rows(0)
@@ -370,18 +370,6 @@ struct PluginWidget : public QWidget{
 
   }
   
-
-  void set_automation_value_pointers(SoundPlugin *plugin){
-    for(ParamWidget *paramWidget : _param_widgets){
-      int effect_num = paramWidget->_effect_num;
-      
-      MyQSlider *slider = paramWidget->_slider;
-      if (slider != NULL){
-        SLIDERPAINTER_set_automation_value_pointer(slider->_painter, get_effect_color(plugin, effect_num), &plugin->automation_values[effect_num]);
-      }
-    }
-  }
-
   void calledRegularlyByParent(void){
     bool has_been_visible = false;
     

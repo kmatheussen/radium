@@ -588,6 +588,7 @@ public:
         SLIDERPAINTER_set_automation_value_pointer(slider->_painter, get_effect_color(plugin, effect_num), &plugin->automation_values[effect_num]);
     }
 
+#if 0
     PluginWidget *plugin_widget = NULL;
 
     if (_plugin_widget->_plugin_widget != NULL)
@@ -598,8 +599,9 @@ public:
       plugin_widget = _plugin_widget->_faust_plugin_widget->_plugin_widget;
 #endif
 
-    if (plugin_widget != NULL)
-      plugin_widget->set_automation_value_pointers(plugin);
+    //if (plugin_widget != NULL)
+    //  plugin_widget->set_automation_value_pointers(plugin);
+#endif
     
     if (_plugin_widget->_pd_plugin_widget != NULL){
 

@@ -230,6 +230,8 @@ public:
       preset_selector->setMaximum(type->get_num_presets(plugin));
     }
 
+    //_plugin_widget->set_automation_value_pointers(plugin);
+
     update_widget();
   }
 
