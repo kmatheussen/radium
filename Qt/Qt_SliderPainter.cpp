@@ -116,7 +116,7 @@ public:
   int num_ch;
 
   bool is_automation;
-
+  bool single_line_style;
   
 };
 }
@@ -287,10 +287,15 @@ struct SliderPainter{
           
           gain = db2linear(db);
         }
-        
-        data->requested_pos = scale(gain,0.0f,1.0f,
-                                    0.0f,(float)width()-2)
-                              - 1;
+
+        if (data->single_line_style)
+          data->requested_pos = scale(gain,0.0f,1.0f,
+                                      0.0f,(float)width()-2)
+                                - 1;
+        else
+          data->requested_pos = scale(gain,0.0f,1.0f,
+                                      0.0f,(float)width());
+          
         
         if(data->last_drawn_pos != data->requested_pos){
           
@@ -302,10 +307,22 @@ struct SliderPainter{
           int height = y2-y1;
         
           //printf("y1: %d, y2: %d, height: %d. req: %d, last: %d\n",y1,y2,height,data->requested_pos,data->last_drawn_pos);
-          update(data->requested_pos-1,
-                 y1,6,height+1);
-          update(data->last_drawn_pos-1,
-                 y1,6,height+1);
+          if (data->single_line_style) {
+            
+            update(data->requested_pos-1,
+                   y1,
+                   6,height+1);
+            update(data->last_drawn_pos-1,
+                   y1,
+                   6,height+1);
+            
+          } else {
+
+            float x1 = R_MIN(data->last_drawn_pos-1, data->requested_pos-1);
+            float x2 = R_MAX(data->last_drawn_pos-1+6, data->requested_pos-1+6);
+            update(x1,    y1,
+                   x2-x1, height+1);
+          }
           
           //printf("%d - %d\n",data->requested_pos,data->last_drawn_pos);
         }
@@ -332,7 +349,8 @@ struct SliderPainter{
     data->num_ch = 1;
 
     data->is_automation = true;
-
+    data->single_line_style = true;
+    
     _data.push_back(data);
 
     return data;
@@ -343,7 +361,7 @@ struct SliderPainter{
     data->color = color_num;
   }
 
-  void set_peak_value_pointers(int num_channels, float *peak_values){
+  void set_peak_value_pointers(int num_channels, float *peak_values, bool single_line_style){
     R_ASSERT(THREADING_is_main_thread());
     R_ASSERT(peak_values != NULL);
 
@@ -357,9 +375,68 @@ struct SliderPainter{
       data->num_ch        = num_channels;
       data->is_automation = false;
       data->color         = PEAKS_COLOR_NUM;
+      data->single_line_style = single_line_style;
     }
   }
 
+  void paint_peaks_non_single_line_style(QPainter *p, AutomationOrPeakData *data, int y1, int y2, int height){
+    float x1 = 0.0f;
+    float x4 = width();
+    
+    float x2 = scale(db2linear(0.0f), 0, 1, x1, x4);
+    float x3 = scale(db2linear(4.0f), 0, 1, x1, x4);
+
+    float x = data->requested_pos;
+
+    QRect f(x1, y1, R_MIN(x, x2) - x1, height);
+    p->fillRect(f, get_qcolor(PEAKS_COLOR_NUM));
+    
+    if (x > x2) {
+      QRect f(x2, y1, R_MIN(x, x3) - x2, height);
+      p->fillRect(f, get_qcolor(PEAKS_0DB_COLOR_NUM));
+
+      if (x > x3) {
+        QRect f(x3, y1, x - x3, height);
+        p->fillRect(f, get_qcolor(PEAKS_4DB_COLOR_NUM));
+      }
+    }
+    
+  }
+  
+  void paint_automation_or_peaks(QPainter *p, bool single_line_style){
+    for(int i=0;i<(int)_data.size();i++){
+      AutomationOrPeakData *data = _data.at(i);
+
+      if ( (data->single_line_style==single_line_style) && data->last_value >= 0.0f){
+        
+        //printf("%s: sp: %p, i: %d, size: %d (%d/%d)\n",_display_string.toUtf8().constData(),this,(int)i,(int)_data.size(),sizeof(float),sizeof(float*));
+        
+        int y1 = DATA_get_y1(data,height());
+        int y2 = DATA_get_y2(data,height());
+        int height = y2-y1;
+
+        if (data->single_line_style) {
+          QRectF f(data->requested_pos+1, y1+1,
+                   2,                     height-1);
+
+          p->fillRect(f, get_qcolor(data->color));
+        
+          p->setPen(QPen(get_qcolor(HIGH_BACKGROUND_COLOR_NUM).light(120),1));
+          const QRectF &f2 = f; //f.adjusted(0, 0, 0, 0);        
+          p->drawRect(f2);
+
+        } else {
+        
+          paint_peaks_non_single_line_style(p, data, y1, y2, height);
+        
+        }
+      
+        data->last_drawn_pos = data->requested_pos;
+
+      }
+    }
+  }
+  
   void paint(QPainter *p){
     R_ASSERT(THREADING_is_main_thread());
         
@@ -374,6 +451,8 @@ struct SliderPainter{
       p->fillRect(0,0,width(),height(),c);
     }
 
+    paint_automation_or_peaks(p, false); // chip peaks
+        
     cvs::MyPainter mp(p);
 
     SLIDERPAINTERPAINTER_paint(&mp,0,0,width(),height(),
@@ -383,35 +462,7 @@ struct SliderPainter{
                                _alternative_color
                                );
 
-    for(int i=0;i<(int)_data.size();i++){
-      AutomationOrPeakData *data = _data.at(i);
-
-      if (data->last_value >= 0.0f){
-          
-        //printf("%s: sp: %p, i: %d, size: %d (%d/%d)\n",_display_string.toUtf8().constData(),this,(int)i,(int)_data.size(),sizeof(float),sizeof(float*));
-        
-        int y1 = DATA_get_y1(data,height());
-        int y2 = DATA_get_y2(data,height());
-        int height = y2-y1;
-
-#if 1
-        const QRectF f(data->requested_pos+1 ,y1+1,
-                       2,                    height-1);
-#else
-        const QRectF f(0, y1+1,
-                       data->requested_pos+1, height-1);
-#endif
-        p->fillRect(f, get_qcolor(data->color));
-        
-        p->setPen(QPen(get_qcolor(HIGH_BACKGROUND_COLOR_NUM).light(120),1));
-
-        const QRectF &f2 = f; //f.adjusted(0, 0, 0, 0);
-        
-        p->drawRect(f2);
-        
-        data->last_drawn_pos = data->requested_pos;
-      }
-    }
+    paint_automation_or_peaks(p, true); // everything else
   }
 
 };
@@ -463,8 +514,8 @@ void SLIDERPAINTER_paint(SliderPainter *painter, QPainter *p){
   painter->paint(p);
 }
 
-void SLIDERPAINTER_set_peak_value_pointers(SliderPainter *painter, int num_channels, float *pointers){
-  painter->set_peak_value_pointers(num_channels, pointers);
+void SLIDERPAINTER_set_peak_value_pointers(SliderPainter *painter, int num_channels, float *pointers, bool single_line_style){
+  painter->set_peak_value_pointers(num_channels, pointers, single_line_style);
   //painter->set_peak_value_pointers(num_channels, NULL);
 }
 

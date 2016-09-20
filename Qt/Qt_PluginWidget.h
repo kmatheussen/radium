@@ -158,7 +158,7 @@ class ParamWidget : public QWidget {
         if(!strcmp(type->type_name,"Faust")){
           float *peak_pointers = FAUST_get_peak_value_pointer(plugin, effect_num);
           if(peak_pointers != NULL)
-            SLIDERPAINTER_set_peak_value_pointers(_slider->_painter, 1, peak_pointers);
+            SLIDERPAINTER_set_peak_value_pointers(_slider->_painter, 1, peak_pointers, true);
         }
         
         if(_check_button){

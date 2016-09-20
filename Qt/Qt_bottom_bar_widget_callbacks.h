@@ -424,13 +424,13 @@ extern "C"{
     if (plugin == NULL){
       
       static float nullfloats[2] = {0.0f, 0.0f};
-      SLIDERPAINTER_set_peak_value_pointers(g_bottom_bar_widget->system_volume_slider->_painter, 2, nullfloats);
+      SLIDERPAINTER_set_peak_value_pointers(g_bottom_bar_widget->system_volume_slider->_painter, 2, nullfloats, true);
       
     } else {
 
       const SoundPluginType *type = plugin->type;
 
-      SLIDERPAINTER_set_peak_value_pointers(g_bottom_bar_widget->system_volume_slider->_painter, type->num_inputs, plugin->input_volume_peak_values);
+      SLIDERPAINTER_set_peak_value_pointers(g_bottom_bar_widget->system_volume_slider->_painter, type->num_inputs, plugin->input_volume_peak_values, true);
       
     }    
   }
