@@ -4,10 +4,8 @@ Changes 4.1.4 -> 4.1.5:
 * Option to assign MIDI channel to track. Can be convenient for some
   VST instruments. Ignored by the MIDI instrument.
 * Display MIDI channel 1-16 instead of 0-15 in the MIDI messages instrument.
+  (Radium has always used 1->16 for MIDI channel.)
 * Paint solid bars for the peak meters in the mixer, not just single lines.
-* Adjust the "channel" parameter range in the MIDI messages plugin to be
-  between 1 and 16 instead of 0 and 15. (Radium has always used 1->16
-  for MIDI channel.)
 * Let the MIDI messages plugin receive notes from the editor, and add
   channel value to the notes.
 * Fix sliders in the FaustDev instrument when pressing "half" or "full".
