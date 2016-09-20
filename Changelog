@@ -1,3 +1,23 @@
+Changes 4.1.4 -> 4.1.5:
+* MIDI instrument: Fix bug that caused midi channel 2 to be send out
+  at channel 3, channel 3 to be sent out at channel 4, and so forth.
+* Option to assign MIDI channel to track. Can be convenient for some
+  VST instruments. Ignored by the MIDI instrument.
+* Display MIDI channel 1-16 instead of 0-15 in the MIDI messages instrument.
+* Paint solid bars for the peak meters in the mixer, not just single lines.
+* Adjust the "channel" parameter range in the MIDI messages plugin to be
+  between 1 and 16 instead of 0 and 15. (Radium has always used 1->16
+  for MIDI channel.)
+* Let the MIDI messages plugin receive notes from the editor, and add
+  channel value to the notes.
+* Fix sliders in the FaustDev instrument when pressing "half" or "full".
+* Still show automation values in the sliders after selecting "half"/"full".
+* Don't open the window informing about new versions modally since this
+  can block starting up the program if another window opens on top of it.
+* Fix peak colors when db > 0 (i.e. show yellow and red too, not just green).
+
+
+
 Changes 4.1.3 -> 4.1.4:
 * Fix various crashes happening after loading a song
   or a preset that was saved with Radium 4.1.3.
