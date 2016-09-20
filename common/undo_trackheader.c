@@ -12,6 +12,7 @@ struct Undo_TrackHeader{
 	int pan;
 	bool volumeonoff;
 	bool panonoff;
+        int midi_channel;
 };
 
 static void *Undo_Do_TrackHeader(
@@ -35,6 +36,7 @@ void ADD_UNDO_FUNC(TrackHeader(
 	u_th->pan=track->pan;
 	u_th->volumeonoff=track->volumeonoff;
 	u_th->panonoff=track->panonoff;
+        u_th->midi_channel=ATOMIC_GET(track->midi_channel);
 
         Undo_Add_dont_stop_playing(
                                    window->l.num,
@@ -61,11 +63,13 @@ static void *Undo_Do_TrackHeader(
 	int pan=wtrack->track->pan;
 	bool volumeonoff=wtrack->track->volumeonoff;
 	bool panonoff=wtrack->track->panonoff;
+        int midi_channel=ATOMIC_GET(wtrack->track->midi_channel);
 
 	wtrack->track->volume=u_th->volume;
 	wtrack->track->pan=u_th->pan;
 	wtrack->track->volumeonoff=u_th->volumeonoff;
-	wtrack->track->panonoff=u_th->panonoff;
+	wtrack->track->panonoff = u_th->panonoff;
+        ATOMIC_SET(wtrack->track->midi_channel, u_th->midi_channel);
 
 	if(wtrack->track->panonoff && wtrack->track->patch!=NULL){
           PLAYER_lock();
@@ -77,7 +81,8 @@ static void *Undo_Do_TrackHeader(
 	u_th->pan=pan;
 	u_th->panonoff=panonoff;
 	u_th->volumeonoff=volumeonoff;
-
+        u_th->midi_channel=midi_channel;
+        
 	return u_th;
 }
 

@@ -1036,6 +1036,12 @@
               "-------"
               "Set Instrument     (F12)" (lambda ()
                                            (select-track-instrument *current-track-num*))
+              (<-> "Set MIDI channel (now: " (1+ (<ra> :get-track-midi-channel *current-track-num*)) ")")
+              (lambda ()
+                (c-display "CURETNTE TRSCKN NUM: " *current-track-num*)
+                (define channelnum (<ra> :request-integer "MIDI channel (1-16):" 1 16))
+                (if (>= channelnum 1)
+                    (<ra> :set-track-midi-channel (1- channelnum) *current-track-num*)))
               "-------"
               "Help Chance text" (lambda ()
                                    (<ra> :show-chance-help-window))

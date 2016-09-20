@@ -146,7 +146,8 @@ static void scheduled_change_velocity(int64_t time, const union SuperType *args)
                                          note->note,
                                          TRACK_get_velocity(track,x),
                                          0,
-                                         0),
+                                         ATOMIC_GET(track->midi_channel)
+                                         ),
                            time
                            );
 }

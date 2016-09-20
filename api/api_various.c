@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/track_insert_proc.h"
 #include "../common/tracks_proc.h"
 #include "../common/wtracks_proc.h"
+#include "../common/undo_trackheader_proc.h"
 #include "../common/block_insert_proc.h"
 #include "../common/block_delete_proc.h"
 #include "../common/block_split_proc.h"
@@ -775,6 +776,45 @@ void switchBlockNoteShowType(int blocknum,int windownum){
 
   setBlockNoteShowType(type, blocknum, windownum);
 }
+
+// track midi channel
+int getTrackMidiChannel(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return 0;
+
+  return ATOMIC_GET(wtrack->track->midi_channel);
+}
+
+void setTrackMidiChannel(int channelnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return;
+
+  ADD_UNDO(TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline));
+  ATOMIC_SET(wtrack->track->midi_channel, channelnum);
+}
+
 
 // centtext
 

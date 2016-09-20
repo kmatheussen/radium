@@ -51,6 +51,8 @@ DC_start("TRACK");
 	DC_SSB("volumeonoff",track->volumeonoff);
 	DC_SSB("panonoff",track->panonoff);
 
+        DC_SSI("midi_channel", ATOMIC_GET(track->midi_channel));
+        
 	if(track->patch!=NULL){
 		DC_SSN("patchnum",track->patch->id);
 	}else{
@@ -78,7 +80,7 @@ struct Tracks *LoadTrack(void){
 		"STOPS",
 		"FXS"
 	};
-	static char *vars[9]={
+	static char *vars[10]={
 		"onoff",
 		"trackname",
 		"patchnum",
@@ -86,6 +88,7 @@ struct Tracks *LoadTrack(void){
 		"pan",
 		"volumeonoff",
 		"panonoff",
+                "midi_channel",
 		"relvol",
                 "instrument_type"
 	};
@@ -93,7 +96,7 @@ struct Tracks *LoadTrack(void){
 	track->l.num=DC_LoadN();
         InitTrack(track);
 
-	GENERAL_LOAD(3,9)
+	GENERAL_LOAD(3,10)
 
 var0:
 	track->onoff=DC_LoadI();
@@ -120,11 +123,16 @@ var5:
 var6:
 	track->panonoff=DC_LoadB();
 	goto start;
+        
 var7:
+        ATOMIC_SET(track->midi_channel, DC_LoadI());
+        goto start;
+        
+var8:
 	DC_LoadI(); // relvol is not used anymore
 	goto start;
 
-var8:
+var9:
         if(track->patch==NULL)
           track->patch=PATCH_alloc(); // track->patch is replaced later. Only patch.id and instrument.id is used during loading.
         track->patch->instrument = get_instrument_from_type(DC_LoadI());
@@ -140,7 +148,6 @@ obj2:
         VECTOR_push_back(&track->fxs, LoadFXs(track));
 	goto start;
 
-var9:
 var10:
 var11:
 var12:

@@ -82,14 +82,20 @@ void DrawWTrackNames(
                );
     
     int name_x = wtrack1->x+window->fontwidth/2 + GFX_get_text_width(window,temp) + window->fontwidth;
+    const char *name = patch==NULL ? wtrack1->track->trackname : patch->name;
+    int midi_channel = ATOMIC_GET(wtrack1->track->midi_channel);
+    if (midi_channel > 0){
+      snprintf(temp, 498, "%s [%d]", name, midi_channel+1);
+      name = (const char*)&temp;
+    }
     GFX_T_Text(
-                   window,INSTRUMENT_NAME_COLOR_NUM,patch==NULL ? wtrack1->track->trackname : patch->name,
-                   name_x,
-                   wtrack1->y+WTRACKS_SPACE,
-                   wtrack2->x2 - name_x, //(wtrack2->x2-window->fontwidth/2) - name_x,
-                   TEXT_SCALE, //|TEXT_CENTER,
-                   PAINT_BUFFER
-                   );
+               window,INSTRUMENT_NAME_COLOR_NUM, name,
+               name_x,
+               wtrack1->y+WTRACKS_SPACE,
+               wtrack2->x2 - name_x, //(wtrack2->x2-window->fontwidth/2) - name_x,
+               TEXT_SCALE, //|TEXT_CENTER,
+               PAINT_BUFFER
+               );
   }
   GFX_CancelClipRect(window,PAINT_BUFFER);
 }
@@ -104,16 +110,19 @@ static void DrawAllWTrackNames(
     return;
 
   int tracknum1 = wtrack1->l.num;
-  
+
+  int channelnum1 = ATOMIC_GET(wtrack1->track->midi_channel);
   struct Patch   *patch1   = wtrack1->track->patch;
   struct WTracks *wtrack2  = NextWTrack(wtrack1);
   int tracknum2            = tracknum1;
   
   for(;;){
-    if (wtrack2==NULL || wtrack2->track->patch==NULL || patch1==NULL || wtrack2->track->patch != patch1){
+    int channelnum2 = wtrack2==NULL ? 0 : ATOMIC_GET(wtrack2->track->midi_channel);
+    if (wtrack2==NULL || wtrack2->track->patch==NULL || patch1==NULL || wtrack2->track->patch != patch1 || channelnum2 != channelnum1){
       
       DrawWTrackNames(window, wblock, tracknum1, tracknum2);
       tracknum1 = tracknum2 = tracknum2+1;
+      channelnum1 = channelnum2;
       patch1 = wtrack2==NULL ? NULL : wtrack2->track->patch;
       
     } else {

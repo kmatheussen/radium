@@ -909,6 +909,8 @@ struct Tracks{
 	bool panonoff;
         bool volumeonoff;                      /* The volume-button on/off, not track on/off. (i.e. if off, volume=1.0, not 0.0) */
 
+        DEFINE_ATOMIC(int, midi_channel);
+  
         DEFINE_ATOMIC(bool, is_recording);
 };
 #define NextTrack(a) ((struct Tracks *)((a)->l.next))
@@ -1772,6 +1774,14 @@ static inline note_t create_note_t2(int64_t note_id,
                                     )
 {
   return create_note_t(note_id, pitch, 0, 0, 0);
+}
+
+static inline note_t create_note_t3(int64_t note_id,
+                                    float pitch,
+                                    int midi_channel
+                                    )
+{
+  return create_note_t(note_id, pitch, 0, 0, midi_channel);
 }
 
 

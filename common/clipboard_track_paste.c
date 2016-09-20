@@ -160,7 +160,8 @@ static bool paste_track(
 	totrack->volume=track->volume;
 	totrack->panonoff=track->panonoff;
 	totrack->volumeonoff=track->volumeonoff;
-
+        ATOMIC_SET(totrack->midi_channel, ATOMIC_GET(track->midi_channel));
+        
 	if(track->midi_instrumentdata!=NULL){
           totrack->midi_instrumentdata=MIDI_CopyInstrumentData(track);
 	}

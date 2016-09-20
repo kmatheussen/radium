@@ -242,7 +242,7 @@ static void scheduled_play_note(int64_t time, const union SuperType *args){
                                note->note,
                                TRACK_get_velocity(track,note->velocity),
                                TRACK_get_pan(track),
-                               0
+                               ATOMIC_GET(track->midi_channel)
                                );
 
   RT_PATCH_play_note(track->patch,note2,time);
@@ -271,8 +271,9 @@ static void scheduled_stop_note(int64_t time, const union SuperType *args){
   struct Tracks *track = args[0].pointer;
   struct Notes *note = args[1].pointer;
   
-  note_t note2 = create_note_t2(note->id,
-                                note->note
+  note_t note2 = create_note_t3(note->id,
+                                note->note,
+                                ATOMIC_GET(track->midi_channel)
                                 );
 
   RT_PATCH_stop_note(track->patch,note2,time);
