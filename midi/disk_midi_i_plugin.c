@@ -87,6 +87,8 @@ var0:
 	goto start;
 var1:
 	patchdata->channel=DC_LoadI();
+        if(patchdata->channel > 15)
+          patchdata->channel = 15; // Fix for bug in previous version.
 	goto start;
 var2:
 	patchdata->preset=DC_LoadI();

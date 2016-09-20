@@ -125,6 +125,7 @@ static void MIDIplaynote(struct Patch *patch,
 
         struct MidiPort *midi_port = patchdata->midi_port;
 	const int channel=patchdata->channel; // We don't use note.midi_channel here.
+
 	int maxbuf=70;
 
         int notenum = note.pitch;

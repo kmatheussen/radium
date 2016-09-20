@@ -600,7 +600,7 @@ static void update_midi_instrument_widget(MIDI_instrument_widget *instrument, st
 
   instrument->volume_spin->setValue(patchdata->volume);
   instrument->panning_spin->setValue(patchdata->pan-63);
-  instrument->channel->setValue(patchdata->channel);
+  instrument->channel->setValue(patchdata->channel+1);
   instrument->msb->setValue(patchdata->MSB);
   instrument->lsb->setValue(patchdata->LSB);
 

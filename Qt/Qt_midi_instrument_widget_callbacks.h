@@ -168,7 +168,7 @@ public slots:
 
   void on_channel_valueChanged( int val)
   {
-    patchdata->channel = val;
+    patchdata->channel = val-1;
     //set_editor_focus();                                               
   }
 
