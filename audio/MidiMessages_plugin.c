@@ -371,28 +371,31 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
   }
   
   switch(effect_num){
-  case PITCH_BEND:
-    snprintf(buffer,buffersize-1,"%d",(int)RT_get_effect_value(plugin, effect_num, PLUGIN_FORMAT_NATIVE));
-    break;
-  case DAMPER_ONOFF:
-  case PORTAMENTO_ONOFF:
-  case SOSTENUTO_ONOFF:
-  case SOFT_PEDAL_ONOFF:
-  case HOLD2_ONOFF:
-    if (value==0)
-      snprintf(buffer,buffersize-1,"Off");
-    else
-      snprintf(buffer,buffersize-1,"On");
-    break;
-  case LEGATO_FOOTSWITCH:
-    if (value==0)
-      snprintf(buffer,buffersize-1,"Normal");
-    else
-      snprintf(buffer,buffersize-1,"Legato");
-    break;
-  default:   
-    snprintf(buffer,buffersize-1,"%d",(int)RT_get_effect_value(plugin, effect_num, PLUGIN_FORMAT_NATIVE));
-    break;
+    case CHANNEL:
+      snprintf(buffer,buffersize-1,"%d",value+1);
+      break;
+    case PITCH_BEND:
+      snprintf(buffer,buffersize-1,"%d",(int)RT_get_effect_value(plugin, effect_num, PLUGIN_FORMAT_NATIVE));
+      break;
+    case DAMPER_ONOFF:
+    case PORTAMENTO_ONOFF:
+    case SOSTENUTO_ONOFF:
+    case SOFT_PEDAL_ONOFF:
+    case HOLD2_ONOFF:
+      if (value==0)
+        snprintf(buffer,buffersize-1,"Off");
+      else
+        snprintf(buffer,buffersize-1,"On");
+      break;
+    case LEGATO_FOOTSWITCH:
+      if (value==0)
+        snprintf(buffer,buffersize-1,"Normal");
+      else
+        snprintf(buffer,buffersize-1,"Legato");
+      break;
+    default:   
+      snprintf(buffer,buffersize-1,"%d",(int)RT_get_effect_value(plugin, effect_num, PLUGIN_FORMAT_NATIVE));
+      break;
   }
 }
 
