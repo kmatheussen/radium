@@ -90,7 +90,7 @@
      <item>
       <widget class="QCheckBox" name="show_cpu_usage">
        <property name="text">
-        <string>Show CPU usage</string>
+        <string>CPU</string>
        </property>
       </widget>
      </item>
