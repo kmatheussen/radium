@@ -110,6 +110,11 @@ bool TRACK_get_min_and_max_pitches(const struct Tracks *track, float *ret_min_pi
       min_pitch = R_MIN(note->note, min_pitch);
       max_pitch = R_MAX(note->note, max_pitch);
       num_pitches ++;
+      if (note->pitch_end > 0){
+        min_pitch = R_MIN(note->pitch_end, min_pitch);
+        max_pitch = R_MAX(note->pitch_end, max_pitch);
+        num_pitches ++;
+      }
       struct Pitches *pitch = note->pitches;
       while(pitch != NULL){
         min_pitch = R_MIN(pitch->note, min_pitch);
