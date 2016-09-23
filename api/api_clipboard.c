@@ -27,11 +27,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/clipboard_track_cut_proc.h"
 #include "../common/clipboard_block_copy_proc.h"
 #include "../common/clipboard_block_paste_proc.h"
+#include "../common/clipboard_range.h"
+#include "../mixergui/QM_MixerWidget.h"
 #include "../common/undo_tracks_proc.h"
 #include "../common/visual_proc.h"
 #include "../config/config.h"
 
 #include "api_common_proc.h"
+
+
+extern struct Range *range;
 
 
 
@@ -158,11 +163,6 @@ void markRange(int windownum){
 }
 
 
-#include "../common/clipboard_range.h"
-
-extern struct Range *range;
-
-
 int getNumTracksInRange(void){
   if (range==NULL)
     return 0;
@@ -177,6 +177,46 @@ Place getRangeLength(void){
   return range->length;
 }
 
+void copySelectedMixerObjects(void){
+  MW_copy();
+}
+
+void deleteSelectedMixerObjects(void){
+  MW_delete();
+}
+
+void cutSelectedMixerObjects(void){
+  MW_cut();
+}
+
+int pasteMixerObjects(float x, float y){
+  int64_t ret;
+  
+  Undo_Open();{
+    ret = CAST_API_PATCH_ID(MW_paste(x, y));
+  }Undo_Close();
+
+  return ret;
+}
+
+void cutGeneral(void){
+  if (MW_has_mouse_pointer())
+    cutSelectedMixerObjects();
+}
+
+void copyGeneral(void){
+  if (MW_has_mouse_pointer())
+    copySelectedMixerObjects();
+  else
+    copyBlock(-1);
+}
+
+void pasteGeneral(void){
+  if (MW_has_mouse_pointer())
+    pasteMixerObjects(-10000,-10000);
+  else
+    pasteBlock(-1);
+}
 
 #if 0
 // nah

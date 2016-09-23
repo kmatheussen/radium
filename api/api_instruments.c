@@ -245,7 +245,7 @@ int createAudioInstrumentFromDescription(const char *instrument_description, cha
     
   } else if (instrument_description[0]=='3'){
 
-    return CAST_API_PATCH_ID(PRESET_paste(x, y));
+    return CAST_API_PATCH_ID(MW_paste(x, y));
         
   } else {
 

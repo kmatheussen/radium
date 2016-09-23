@@ -178,6 +178,13 @@ extern LANGSPEC char *MW_request_load_preset_instrument_description(void);
 extern LANGSPEC const char *MW_popup_plugin_selector2(void);
 extern LANGSPEC SoundPluginType *MW_popup_plugin_type_selector(void);
 
+extern LANGSPEC void MW_copy(void);
+extern LANGSPEC void MW_delete(void);
+extern LANGSPEC void MW_cut(void);
+extern LANGSPEC int64_t MW_paste(float x, float y);
+
+extern LANGSPEC bool MW_has_mouse_pointer(void);
+
 extern LANGSPEC void MW_autoconnect_plugin(SoundPlugin *plugin);
 
 extern LANGSPEC void MW_connect(struct Patch *source, struct Patch *dest);

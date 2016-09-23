@@ -50,6 +50,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/tempos_proc.h"
 #include "../common/undo_tempos_proc.h"
 
+#include "../mixergui/QM_MixerWidget.h"
+
 #include "../OpenGL/Render_proc.h"
 
 #include "api_common_proc.h"
@@ -152,6 +154,10 @@ void setMouseTrackToReltempo(void){
   setMouseTrack(TEMPONODETRACK);
 }
 
+
+bool mousePointerInMixer(void){
+  return MW_has_mouse_pointer();
+}
 
 // placement (block time)
 ///////////////////////////////////////////////////

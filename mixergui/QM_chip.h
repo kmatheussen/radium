@@ -124,12 +124,15 @@ public:
     , visible_line(this)
     , arrow_line1(this)
   {
-    QPen pen(Qt::gray, 50);
+    QPen pen(Qt::red, 50);
     pen.setJoinStyle(Qt::RoundJoin);
     pen.setCapStyle(Qt::RoundCap);
-    pen.setColor(QColor(30,25,70,6));
     pen.setWidth(3);
-    
+
+    QColor c(30,25,70,0);
+    c.setAlpha(0);
+    pen.setColor(c);
+
     setPen(pen);
     //_line_item->setPen(QPen(Qt::black, 2));
     //_line_item->setPos(QPointF(x+50,y+50));
@@ -141,6 +144,8 @@ public:
     visible_line.setPen(getPen());
     parent->addItem(&visible_line);
 
+    //setVisible(false);
+    
     /*
     if(_is_event_connection){
       arrow_line1.setPen(getPen());
@@ -151,6 +156,7 @@ public:
 
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
              QWidget *widget)
+    override
   {
     update_colors();
     QGraphicsLineItem::paint(painter,option,widget);    
@@ -248,10 +254,17 @@ public:
       QPen pen(Qt::gray, 50);
       pen.setJoinStyle(Qt::RoundJoin);
       pen.setCapStyle(Qt::RoundCap);
-      pen.setColor(QColor(30,25,70,0));
+
+      //pen.setColor(QColor(30,25,70,0));
+
+      QColor c(30,25,70,0);
+      c.setAlpha(0);
+      pen.setColor(c);
 
       setPen(pen);
     }
+
+    //setVisible(false);
   }
 
   void setSelected(bool selected){

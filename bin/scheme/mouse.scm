@@ -402,7 +402,7 @@
              ;;(if (string? (cadr args))
              ;;    (apply format #t (cadr args))
              ;;    (c-display (cadr args)))
-             ;;(display (ow!))
+             (display (ow!))
              ;;
              (set! *current-mouse-cycle* #f)
              (throw (car args)) ;; rethrowing

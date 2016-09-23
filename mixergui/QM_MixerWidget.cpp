@@ -913,7 +913,66 @@ static vector_t get_selected_patches(void){
 
   return patches;
 }
+
+
+void MW_copy(void){
+  vector_t patches = get_selected_patches();
   
+  PRESET_copy(&patches);
+}
+
+static void MW_delete2(float mouse_x, float mouse_y, bool has_mouse_coordinates){
+  vector_t patches = get_selected_patches();
+  
+  if (patches.num_elements==1)
+    mousepress_delete_chip(&g_mixer_widget->scene, get_selected_chips()[0], mouse_x, mouse_y);
+  else {
+    delete_several_chips(patches);
+  }  
+}
+
+void MW_delete(void){
+  MW_delete2(0,0,false);
+}
+
+static void MW_cut2(float mouse_x, float mouse_y, bool has_mouse_coordinates){
+  vector_t patches = get_selected_patches();
+  
+  PRESET_copy(&patches);
+
+  MW_delete2(mouse_x, mouse_y, has_mouse_coordinates);
+}
+
+void MW_cut(void){
+  MW_cut2(0,0,false);
+}
+
+int64_t MW_paste(float x, float y){
+  if (PRESET_has_copy()==false)
+    return -1;
+
+  if (x <= -10000 || y <= -10000){
+    QPoint viewPoint = g_mixer_widget->view->mapFromGlobal(QCursor::pos());
+    QPointF scenePoint = g_mixer_widget->view->mapToScene(viewPoint);
+
+    get_slotted_x_y(scenePoint.x(), scenePoint.y(), x, y);
+
+    //x = scenePoint.x();
+    //y = scenePoint.y();
+  }
+
+  return PRESET_paste(x, y);
+}
+
+bool MW_has_mouse_pointer(void){
+  QPoint p = g_mixer_widget->mapFromGlobal(QCursor::pos());
+  if (p.x() >= 0 && p.x() < g_mixer_widget->width() && p.y() >= 0 && p.y() < g_mixer_widget->height())
+    return true;
+  else
+    return false;
+}
+
+
 static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent * event, float mouse_x, float mouse_y){
 
   Chip *chip_under = MW_get_chip_at(mouse_x,mouse_y,NULL);
@@ -970,31 +1029,15 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
   } else if (sel==copy) {
 
-    vector_t patches = get_selected_patches();
-
-    PRESET_copy(&patches);
+    MW_copy();
     
   } else if (sel==cut) {
-    
-    vector_t patches = get_selected_patches();
 
-    PRESET_copy(&patches);
-
-    if (patches.num_elements==1)
-      mousepress_delete_chip(scene, chips[0], mouse_x, mouse_y);
-    else {
-      delete_several_chips(patches);
-    }
+    MW_cut2(mouse_x, mouse_y, true);
       
   } else if (sel==delete_) {
 
-    vector_t patches = get_selected_patches();
-        
-    if (patches.num_elements==1)
-      mousepress_delete_chip(scene, chips[0], mouse_x, mouse_y);
-    else {
-      delete_several_chips(patches);
-    }
+    MW_delete2(mouse_x, mouse_y, true);
     
   } else if (sel==save) {
     

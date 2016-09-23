@@ -1086,7 +1086,7 @@ extern QHash<int, QColor> custom_colors;
 void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
   Q_UNUSED(widget);
-
+  
   SoundPlugin *plugin = SP_get_plugin(_sound_producer);
   volatile struct Patch *patch = plugin->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);

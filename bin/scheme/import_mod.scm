@@ -5796,7 +5796,9 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   
            (<ra> :close-progress-window)
            (<ra> :show-message (<-> "Something went wrong: " args))
-           ;;(c-display (ow!))
+           
+           (display (ow!))
+           
            (throw (car args))
            ))
 
