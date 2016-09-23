@@ -1360,7 +1360,7 @@ Done during input reading instead.
                      :pattern patternnum
                      :channel 0
                      :instrumentnum -1
-                     :line (1- max-num-lines))
+                     :line max-num-lines) ;;(1- max-num-lines))
                 rest)
           rest)))
 
@@ -2992,27 +2992,30 @@ The behavior for these three tests are not needed since break events are always 
                                                  linenum-in-next-pattern
                                                  end-linenum)
 
-  (define (finished next-playlistpos next-linenum)
-    (c-display "  ***** Next playlistpos:" next-playlistpos ", next-linenum:" next-linenum ", end-linenum:" end-linenum)
-    (list (reverse (cons (m-e :break :line end-linenum :pattern patternnum :instrumentnum -1) ;; we need a :break event to know how many lines there are in the pattern
-                         result))
-          next-playlistpos
-          next-linenum))
+  ;;(c-display "        " patternnum curr-playlistpos next-playlistpos linenum-in-next-pattern end-linenum)
+  
+  (define (finished next-linenum)
+    (let ((next-playlistpos (or next-playlistpos (1+ curr-playlistpos))))
+      (c-display "  ***** playlistpos: " curr-playlistpos ", next playlistpos:" next-playlistpos ", patternnum: " patternnum ", next-linenum:" linenum-in-next-pattern next-linenum ", end-linenum:" end-linenum ", null-events?" (null? events) "\n\n")
+      (list (reverse (cons (m-e :break :line end-linenum :pattern patternnum :instrumentnum -1) ;; we need a :break event to know how many lines there are in the pattern
+                           result))
+            next-playlistpos
+            next-linenum)))
   
   (if (null? events)
-      (finished (or next-playlistpos (1+ curr-playlistpos)) linenum-in-next-pattern)
+      (finished linenum-in-next-pattern)
       (let* ((event (car events))
              (type (event :type))
              (linenum (event :linenum)))
         
         (cond ((and end-linenum (>= linenum end-linenum))
-               (finished (or next-playlistpos (1+ curr-playlistpos)) linenum-in-next-pattern))
+               (finished linenum-in-next-pattern))
 
               ((eq? :loop type) ;; loop logic copied from the protracker 2.3d clone source code made by Olav "8bitbubsy" Sorensen.
-               (print-event event)
                (let* ((channelnum (event :channel))
                       (value (event :value))
                       (loop-counter (or (get-memory memory channelnum :loop-counter) 0))
+                      (loop-counter-before loop-counter)
                       (do-looping? (cond ((= value 0)
                                           (set-memory! memory channelnum :loop-start-line linenum)
                                           #f)
@@ -3024,6 +3027,14 @@ The behavior for these three tests are not needed since break events are always 
                                           (set-memory! memory channelnum :loop-counter loop-counter)
                                           (> loop-counter 0)))))
 
+                 ;;(c-display "   " linenum ": do-looping:" do-looping?
+                 ;;           ", value:" value
+                 ;;           ", counter:" loop-counter-before loop-counter
+                 ;;           ", event:" (event-to-string event)
+                 ;;           ", memstartline:" (get-memory memory channelnum :loop-start-line))
+                 ;;(when (= linenum 63)
+                 ;;  (print-events events)
+                 ;;  (c-display "  << loop finished"))
                  (if do-looping?
                      (get-pattern-data-for-next-run-through-0 result
                                                               (cdr events)
@@ -3042,6 +3053,7 @@ The behavior for these three tests are not needed since break events are always 
                                                               linenum-in-next-pattern
                                                               end-linenum))))
               ((eq? :position-jump type)
+               ;;(c-display "  posjump:" (event-to-string event))
                (get-pattern-data-for-next-run-through-0 result
                                                         (cdr events)
                                                         memory
@@ -3052,12 +3064,20 @@ The behavior for these three tests are not needed since break events are always 
                                                         (1+ linenum)))
 
               ((eq? :break type)
+               ;;(c-display "  break. curr-playlistpos:" curr-playlistpos ", next-playlistpos: " next-playlistpos ", event:" (event-to-string event))
+               ;;(print-events events)
+               ;;(c-display "  << break finished")
                (get-pattern-data-for-next-run-through-0 result
                                                         (cdr events)
                                                         memory
                                                         patternnum
                                                         curr-playlistpos
-                                                        next-playlistpos
+                                                        (if #f
+                                                            (if next-playlistpos
+                                                                (1+ next-playlistpos)
+                                                                (1+ curr-playlistpos))
+                                                            next-playlistpos
+                                                            )
                                                         (event :value)
                                                         (1+ linenum)))
 
@@ -3084,6 +3104,7 @@ The behavior for these three tests are not needed since break events are always 
                                                          #f ;;linenum-in-next-pattern
                                                          max-num-lines ;;end-linenum
                                                          ))
+  ;;(c-display " RESULT:" start-linenum ((car (reverse (car stuff))) :linenum))
   (list (if start-linenum
             (map (lambda (event)
                    (copy-event event
@@ -3156,7 +3177,7 @@ The behavior for these three tests are not needed since break events are always 
       (hash-table-set! memory playlistpos-key (1+ num-visits-before)))
       
   ;;(c-display "pos: " playlistpos "___playlist " playlist " linenum: " linenum (length (get-pattern events 21)) ", num_patterns:" (find-num-patterns events))
-  (c-display "   playlistpos:" playlistpos)
+  (c-display "   playlistpos-key:" playlistpos-key ", num-visits-before:" num-visits-before)
       
   (cond ((= (length org-playlist)
             playlistpos)
@@ -5775,7 +5796,8 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   
            (<ra> :close-progress-window)
            (<ra> :show-message (<-> "Something went wrong: " args))
-           (c-display (ow!))
+           ;;(c-display (ow!))
+           (throw (car args))
            ))
 
   (<ra> :reset-undo)
