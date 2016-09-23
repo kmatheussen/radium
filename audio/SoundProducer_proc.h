@@ -108,6 +108,7 @@ extern LANGSPEC bool SP_is_plugin_running(struct SoundPlugin *plugin);
 extern LANGSPEC void SP_print_tree(void);
 
 extern LANGSPEC bool SP_has_input_links(struct SoundProducer *sp);
+extern LANGSPEC bool SP_has_audio_input_link(SoundProducer *sp);
 
 extern LANGSPEC void SP_called_regularly_by_main_thread(struct SoundProducer *sp);
   

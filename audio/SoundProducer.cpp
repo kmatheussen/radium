@@ -253,15 +253,11 @@ struct SoundProducerLink {
       SoundPlugin *plugin = SP_get_plugin(source);
 
       if (ATOMIC_GET(plugin->solo_is_on) == false) {
-        
-        if (SP_has_input_links(source)==false) {
 
-          if (SP_get_bus_num(source) == -1) {
-            
+        if (SP_has_audio_input_link(source)==false)
+          if (SP_get_bus_num(source) == -1)            
             return true;
-            
-          }          
-        }
+        
       }      
     }
 
@@ -1690,6 +1686,15 @@ double SP_get_running_time(const SoundProducer *sp){
 
 bool SP_has_input_links(SoundProducer *sp){
   return sp->_input_links.size() > 0;
+}
+
+bool SP_has_audio_input_link(SoundProducer *sp){
+  for(auto *link : sp->_input_links){
+    if (!link->is_event_link)
+      return true;
+  }
+
+  return false;
 }
 
 void SP_called_regularly_by_main_thread(SoundProducer *sp){
