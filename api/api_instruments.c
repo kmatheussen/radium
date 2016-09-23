@@ -385,12 +385,12 @@ void setInstrumentEffect(int instrument_id, char *effect_name, float value){
     return;
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
-
+  /*
   if (strcmp(plugin->type->name, "Sample Player")) {
     GFX_Message(NULL, "instrument %d is not a Sample Player plugin", instrument_id);
     return;
   }
-
+  */
   PLUGIN_set_effect_from_name(plugin, effect_name, value);
 
   GFX_update_instrument_widget(patch);

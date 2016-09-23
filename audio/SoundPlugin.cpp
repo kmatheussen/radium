@@ -1534,7 +1534,7 @@ void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, f
       break;
   }
 
-  if (i==type->num_effects) {
+  if (i==type->num_effects+NUM_SYSTEM_EFFECTS) {
     GFX_Message(NULL, "No effect named \"%s\" in %s/%s", effect_name, type->type_name, type->name);
     return;
   }

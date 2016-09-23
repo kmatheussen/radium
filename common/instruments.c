@@ -83,6 +83,9 @@ struct Instruments *get_MIDI_instrument(void){
 }
 
 struct Instruments *get_audio_instrument(void){
+  if(g_instruments==NULL){
+    abort();
+  }
   return NextInstrument(g_instruments);
 }
 
