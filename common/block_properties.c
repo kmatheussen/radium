@@ -61,80 +61,84 @@ void Block_Set_num_lines(
 
 	if(org_num_lines==num_lines || num_lines<2) return;
 
-	PlaceSetLastPos(block,&lastplace1);
+        PC_Pause();{
+              
+          PlaceSetLastPos(block,&lastplace1);
 
-	block->num_lines=num_lines;
+          block->num_lines=num_lines;
 
-	PlaceSetLastPos(block,&lastplace);
+          PlaceSetLastPos(block,&lastplace);
 
-	if(num_lines<org_num_lines){
+          if(num_lines<org_num_lines){
 
-                CutListAt_a(&block->signatures,&lastplace);
-		CutListAt_a(&block->lpbs,&lastplace);
-		CutListAt_a(&block->tempos,&lastplace);
-		CutListAt_a(&block->temponodes,&lastplace);
-		PlaceSetLastPos(block,&block->lasttemponode->l.p);
-		ListAddElement3(&block->temponodes,&block->lasttemponode->l);
+            CutListAt_a(&block->signatures,&lastplace);
+            CutListAt_a(&block->lpbs,&lastplace);
+            CutListAt_a(&block->tempos,&lastplace);
+            CutListAt_a(&block->temponodes,&lastplace);
+            PlaceSetLastPos(block,&block->lasttemponode->l.p);
+            ListAddElement3(&block->temponodes,&block->lasttemponode->l);
 
-		while(track!=NULL){
-			CutListAt_a(&track->notes,&lastplace);
-			note=track->notes;
-			while(note!=NULL){
-				CutListAt(&note->velocities,&lastplace);
-				CutListAt(&note->pitches,&lastplace);
-				if(PlaceEqual(&note->end,&lastplace1) && note->noend==1){
-					PlaceCopy(&note->end,&lastplace);
-				}
-				note=NextNote(note);
-			}
-			LegalizeNotes(block,track);
+            while(track!=NULL){
+              CutListAt_a(&track->notes,&lastplace);
+              note=track->notes;
+              while(note!=NULL){
+                CutListAt(&note->velocities,&lastplace);
+                CutListAt(&note->pitches,&lastplace);
+                if(PlaceEqual(&note->end,&lastplace1) && note->noend==1){
+                  PlaceCopy(&note->end,&lastplace);
+                }
+                note=NextNote(note);
+              }
+              LegalizeNotes(block,track);
 
-			CutListAt_a(&track->stops,&lastplace);
+              CutListAt_a(&track->stops,&lastplace);
 
-                        VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
-                          CutListAt_a(&fxs->fxnodelines,&lastplace);
-                        }END_VECTOR_FOR_EACH;
-			LegalizeFXlines(block,track);
-			track=NextTrack(track);
-		}
-		while(window!=NULL){
-			wblock=ListFindElement1(&window->wblocks->l,block->l.num);
-			CutListAt_a(&wblock->localzooms,&lastplace);
-			window=NextWindow(window);
-		}
-	}else{
+              VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+                CutListAt_a(&fxs->fxnodelines,&lastplace);
+              }END_VECTOR_FOR_EACH;
+              LegalizeFXlines(block,track);
+              track=NextTrack(track);
+            }
+            while(window!=NULL){
+              wblock=ListFindElement1(&window->wblocks->l,block->l.num);
+              CutListAt_a(&wblock->localzooms,&lastplace);
+              window=NextWindow(window);
+            }
+          }else{
 
-		PlaceSetLastPos(block,&block->lasttemponode->l.p);
+            PlaceSetLastPos(block,&block->lasttemponode->l.p);
 
-		while(track!=NULL){
-			note=track->notes;
-			while(note!=NULL){
-				if(PlaceEqual(&note->end,&lastplace1) && note->noend==1){
-					PlaceSetLastPos(block,&note->end);
-				}
-				note=NextNote(note);
-			}
-			LegalizeNotes(block,track);
-			track=NextTrack(track);
-		}
-		while(window!=NULL){
-			wblock=ListFindElement1(&window->wblocks->l,block->l.num);
-			for(lokke=org_num_lines;lokke<num_lines;lokke++){
-				localzoom=talloc(sizeof(struct LocalZooms));
-				localzoom->Tline=lokke;
-				localzoom->Tdividor=1;
-				localzoom->zoomline=lokke;
-				ListAddElement3(&wblock->localzooms,&localzoom->l);
-			}
-			window=NextWindow(window);
-		}
+            while(track!=NULL){
+              note=track->notes;
+              while(note!=NULL){
+                if(PlaceEqual(&note->end,&lastplace1) && note->noend==1){
+                  PlaceSetLastPos(block,&note->end);
+                }
+                note=NextNote(note);
+              }
+              LegalizeNotes(block,track);
+              track=NextTrack(track);
+            }
+            while(window!=NULL){
+              wblock=ListFindElement1(&window->wblocks->l,block->l.num);
+              for(lokke=org_num_lines;lokke<num_lines;lokke++){
+                localzoom=talloc(sizeof(struct LocalZooms));
+                localzoom->Tline=lokke;
+                localzoom->Tdividor=1;
+                localzoom->zoomline=lokke;
+                ListAddElement3(&wblock->localzooms,&localzoom->l);
+              }
+              window=NextWindow(window);
+            }
 
-	}
+          }
 
 
-        UpdateSTimes(block);
-        UpdateBeats(block);
+          UpdateSTimes(block);
+          UpdateBeats(block);
 
+        }PC_StopPause(NULL);
+        
 	window=root->song->tracker_windows;
 
 	while(window!=NULL){
@@ -144,6 +148,7 @@ void Block_Set_num_lines(
 		window=NextWindow(window);
 	}
 
+        
 }
 
 
