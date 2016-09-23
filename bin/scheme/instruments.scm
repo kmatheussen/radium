@@ -17,7 +17,11 @@
   (map (lambda (instrument-num)
          (<ra> :get-audio-instrument-id instrument-num))
        (iota (<ra> :get-num-audio-instruments))))
-         
+
+#||
+(for-each (lambda (i) (<ra> :set-instrument-effect i "System Solo On/Off" 0)) (get-all-audio-instruments))
+||#
+
 (define (get-instruments-connecting-to-instrument id-instrument)
   (map (lambda (in-connection)
          (<ra> :get-audio-connection-source-instrument in-connection id-instrument))
