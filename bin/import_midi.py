@@ -600,11 +600,11 @@ def get_last_tick(tracks):
     
 # Quick hack.
 def clear_radium_editor():
-    while radium.getNumBlocks()>1:
-        radium.deleteBlock()
+    #while radium.getNumBlocks()>1:
+    #    radium.deleteBlock()
     radium.appendBlock()
-    radium.selectPrevBlock()
-    radium.deleteBlock()
+    #radium.selectPrevBlock()
+    #radium.deleteBlock()
     
 
 def import_midi_do(tracks, lpb=4, midi_port="", polyphonic=True):
