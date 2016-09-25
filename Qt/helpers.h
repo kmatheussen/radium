@@ -4,6 +4,7 @@
 #include <QMessageBox>
 #include <QMenu>
 #include <QTimer>
+#include <QTime>
 #include <QMainWindow>
 #include <QSplashScreen>
 #include <QApplication>
@@ -21,6 +22,39 @@ extern void set_editor_focus(void);
 
 extern QMainWindow *g_main_window;
 extern QSplashScreen *g_splashscreen;
+
+namespace radium{
+  struct ASMTimer : public QTimer{
+    QTime time;
+    bool left_mouse_is_down = false;
+    
+    ASMTimer(QWidget *parent)
+      :QTimer(parent)
+    {
+      time.start();
+      setInterval(10);
+    }
+
+    void timerEvent ( QTimerEvent * e ){
+      if (QGuiApplication::mouseButtons()==Qt::LeftButton)
+        left_mouse_is_down = true;
+      else if (left_mouse_is_down){
+        left_mouse_is_down = false;
+        time.restart();
+      }
+        
+      //printf("  MOUSE DOWN: %d\n", QGuiApplication::mouseButtons()==Qt::LeftButton);
+    }
+
+    bool mouseWasDown(void){
+      if(left_mouse_is_down==true)
+        return true;
+      if (time.elapsed() < 500)
+        return true;
+      return false;
+    }
+  };
+}
 
 
 struct MyQMessageBox : public QMessageBox {

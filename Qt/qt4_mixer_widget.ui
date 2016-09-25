@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>644</width>
-    <height>411</height>
+    <width>1052</width>
+    <height>358</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -31,47 +31,112 @@
    </property>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="spacing">
+      <number>0</number>
+     </property>
      <item>
-      <widget class="QRadioButton" name="right_button">
+      <widget class="QToolButton" name="ab_reset">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>16777215</height>
+        </size>
+       </property>
        <property name="toolTip">
-        <string>Signal flow: left to right.</string>
+        <string>Reset A/B testing</string>
        </property>
        <property name="text">
-        <string>⇒</string>
+        <string>↝</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="ab_a">
+       <property name="text">
+        <string>A*</string>
        </property>
        <property name="checked">
         <bool>true</bool>
        </property>
+       <attribute name="buttonGroup">
+        <string notr="true">buttonGroup</string>
+       </attribute>
       </widget>
      </item>
      <item>
-      <widget class="QRadioButton" name="left_button">
-       <property name="toolTip">
-        <string>Signal flow: right to left.</string>
-       </property>
+      <widget class="QCheckBox" name="ab_b">
        <property name="text">
-        <string>⇐</string>
+        <string>B</string>
        </property>
+       <attribute name="buttonGroup">
+        <string notr="true">buttonGroup</string>
+       </attribute>
       </widget>
      </item>
      <item>
-      <widget class="QRadioButton" name="up_button">
-       <property name="toolTip">
-        <string>Signal flow: bottom to top.</string>
-       </property>
+      <widget class="QCheckBox" name="ab_c">
        <property name="text">
-        <string>⇑</string>
+        <string>C</string>
        </property>
+       <attribute name="buttonGroup">
+        <string notr="true">buttonGroup</string>
+       </attribute>
       </widget>
      </item>
      <item>
-      <widget class="QRadioButton" name="down_button">
-       <property name="toolTip">
-        <string>Signal flow: Top to bottom.</string>
-       </property>
+      <widget class="QCheckBox" name="ab_d">
        <property name="text">
-        <string>⇓</string>
+        <string>D</string>
        </property>
+       <attribute name="buttonGroup">
+        <string notr="true">buttonGroup</string>
+       </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="ab_e">
+       <property name="text">
+        <string>E</string>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">buttonGroup</string>
+       </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="ab_f">
+       <property name="text">
+        <string>F</string>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">buttonGroup</string>
+       </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="ab_g">
+       <property name="text">
+        <string>G</string>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">buttonGroup</string>
+       </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="ab_h">
+       <property name="text">
+        <string>H</string>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">buttonGroup</string>
+       </attribute>
       </widget>
      </item>
      <item>
@@ -114,7 +179,20 @@
         <string>Reset zoom to default value.</string>
        </property>
        <property name="text">
-        <string>Reset</string>
+        <string>↝ Zoom</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="mixer_direction_menu_button">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>=&gt;</string>
        </property>
       </widget>
      </item>
@@ -129,6 +207,9 @@
    </item>
    <item>
     <layout class="QHBoxLayout" name="mixer_layout">
+     <property name="spacing">
+      <number>0</number>
+     </property>
      <item>
       <widget class="QGraphicsView" name="view">
        <property name="autoFillBackground">
@@ -170,4 +251,7 @@
  </widget>
  <resources/>
  <connections/>
+ <buttongroups>
+  <buttongroup name="buttonGroup"/>
+ </buttongroups>
 </ui>

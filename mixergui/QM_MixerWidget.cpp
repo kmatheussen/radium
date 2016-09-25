@@ -57,7 +57,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
-
+#define __STDC_FORMAT_MACROS 1
+#include <inttypes.h>
 #include <unistd.h>
 
 #include <QTimer>
@@ -956,9 +957,6 @@ int64_t MW_paste(float x, float y){
     QPointF scenePoint = g_mixer_widget->view->mapToScene(viewPoint);
 
     get_slotted_x_y(scenePoint.x(), scenePoint.y(), x, y);
-
-    //x = scenePoint.x();
-    //y = scenePoint.y();
   }
 
   return PRESET_paste(x, y);
@@ -966,7 +964,12 @@ int64_t MW_paste(float x, float y){
 
 bool MW_has_mouse_pointer(void){
   QPoint p = g_mixer_widget->mapFromGlobal(QCursor::pos());
-  if (p.x() >= 0 && p.x() < g_mixer_widget->width() && p.y() >= 0 && p.y() < g_mixer_widget->height())
+  if (true
+      && p.x() >= 0
+      && p.x() <  g_mixer_widget->width()
+      && p.y() >= 0
+      && p.y() <  g_mixer_widget->height()
+      )
     return true;
   else
     return false;
@@ -1833,7 +1836,7 @@ void MW_cleanup(bool is_loading){
   while(delete_a_chip(is_loading)); // remove all chips. All connections are removed as well when removing all chips.
 }
 
-static void get_patches_min_x_y(vector_t *patches, float &min_x, float &min_y){
+static void get_patches_min_x_y(const vector_t *patches, float &min_x, float &min_y){
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
   
   min_x = 0;
@@ -1872,7 +1875,14 @@ static void get_patches_min_x_y(vector_t *patches, float &min_x, float &min_y){
   }     
 }
 
-static hash_t *MW_get_audio_patches_state(vector_t *patches){
+char *get_patch_key(struct Patch *patch){
+  static char temp[128];
+  sprintf(temp, "%" PRId64, patch->id);
+  return temp;
+}
+
+
+static hash_t *MW_get_audio_patches_state(const vector_t *patches, bool put_in_array){
 
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
 
@@ -1902,8 +1912,11 @@ static hash_t *MW_get_audio_patches_state(vector_t *patches){
           // dont need it
           if (patches != NULL)
             HASH_remove(state, "plugin");
-          
-          HASH_put_hash_at(chips, "", num_chips, state);
+
+          if (put_in_array)
+            HASH_put_hash_at(chips, "", num_chips, state);
+          else
+            HASH_put_hash(chips, get_patch_key(patch), state);
           
           num_chips++;
           
@@ -1919,7 +1932,7 @@ static hash_t *MW_get_audio_patches_state(vector_t *patches){
 }
 
 // returns true if the 'connection' connects two patches in 'patches'. (or 'patches' is NULL)
-static bool connection_is_in_patches(SuperConnection *connection, vector_t *patches){
+static bool connection_is_in_patches(SuperConnection *connection, const vector_t *patches){
   if (patches==NULL)
     return true;
 
@@ -1948,18 +1961,32 @@ static bool connection_is_in_patches(SuperConnection *connection, vector_t *patc
   return false;
 }
 
-hash_t *MW_get_connections_state(vector_t *patches){
+static QVector<SuperConnection*> get_connections(void){ 
+  QVector<SuperConnection*> ret;
+  
+  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  
+  for (int i = 0; i < das_items.size(); ++i) {
+    SuperConnection *connection = dynamic_cast<SuperConnection*>(das_items.at(i));
+    if(connection!=NULL)
+      if(connection->from!=NULL && connection->to!=NULL) // ongoing connections are not real connections.
+        ret.push_back(connection);
+  }
+
+  return ret;
+}
+
+hash_t *MW_get_connections_state(const vector_t *patches){  
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
 
   hash_t *connections = HASH_create(das_items.size());
 
-  int num_connections=0;
-  for (int i = 0; i < das_items.size(); ++i) {
-    SuperConnection *connection = dynamic_cast<SuperConnection*>(das_items.at(i));
-    if(connection!=NULL)
-      if(connection->from!=NULL && connection->to!=NULL) // dont save ongoing connections.
-        if (connection_is_in_patches(connection, patches))
-          HASH_put_hash_at(connections, "", num_connections++, CONNECTION_get_state(connection, patches));
+  auto super_connections = get_connections();
+  int num_connections = 0;
+  
+  for(auto *connection : super_connections){
+    if (connection_is_in_patches(connection, patches))
+      HASH_put_hash_at(connections, "", num_connections++, CONNECTION_get_state(connection, patches));
   }
   
   HASH_put_int(connections, "num_connections", num_connections);
@@ -1967,10 +1994,27 @@ hash_t *MW_get_connections_state(vector_t *patches){
   return connections;
 }
 
-hash_t *MW_get_state(vector_t *patches){
+// Return NULL if the connection doesn't exist. Used by a/b testing to avoid recreating all connections when changing a/b number.
+static SuperConnection *get_connection(int64_t id_from, int64_t id_to, bool is_event_connection){
+  auto super_connections = get_connections();
+  for(auto *connection : super_connections){
+    if (true
+        && CHIP_get_patch(connection->from)->id == id_from
+        && CHIP_get_patch(connection->to)->id == id_to
+        && connection->is_event_connection == is_event_connection
+        )
+      return connection;
+  }
+
+  return NULL;
+}
+
+
+
+hash_t *MW_get_state(const vector_t *patches){
   hash_t *state = HASH_create(2);
 
-  HASH_put_hash(state, "chips", MW_get_audio_patches_state(patches));
+  HASH_put_hash(state, "chips", MW_get_audio_patches_state(patches, true));
   HASH_put_hash(state, "connections", MW_get_connections_state(patches));
 
   return state;
@@ -1994,7 +2038,7 @@ static void MW_create_chips_from_full_state(hash_t *chips, Buses buses, bool is_
   }
 }
 
-static void MW_position_chips_from_state(hash_t *chips, vector_t *patches, float x, float y){
+static void MW_position_chips_from_state(const hash_t *chips, const vector_t *patches, float x, float y){
   
   int64_t num_chips = HASH_get_int(chips, "num_chips");
   printf("number of chips: %d\n",(int)num_chips);
@@ -2012,17 +2056,17 @@ static void MW_position_chips_from_state(hash_t *chips, vector_t *patches, float
   }
 }
 
-static void MW_create_connections_from_state_internal(hash_t *connections, int patch_id_old, int patch_id_new){
+static void MW_create_connections_from_state_internal(const hash_t *connections, int patch_id_old, int patch_id_new){
   for(int i=0;i<HASH_get_int(connections, "num_connections");i++)
     CONNECTION_create_from_state(&g_mixer_widget->scene, HASH_get_hash_at(connections, "", i), patch_id_old, patch_id_new);
 }
 
-void MW_create_connections_from_state_and_replace_patch(hash_t *connections, int patch_id_old, int patch_id_new){
+void MW_create_connections_from_state_and_replace_patch(const hash_t *connections, int patch_id_old, int patch_id_new){
   MW_cleanup_connections(false);
   MW_create_connections_from_state_internal(connections, patch_id_old, patch_id_new);
 }
 
-void MW_create_connections_from_state(hash_t *connections){
+void MW_create_connections_from_state(const hash_t *connections){
   MW_create_connections_from_state_and_replace_patch(connections, -1, -1);
 }
 
@@ -2037,7 +2081,7 @@ static void add_undo_for_all_chip_positions(void){
 }
 
 // Not used when loading song.
-void MW_create_from_state(hash_t *state, vector_t *patches, float x, float y){
+void MW_create_from_state(const hash_t *state, const vector_t *patches, float x, float y){
   R_ASSERT(patches != NULL);
   R_ASSERT(Undo_Is_Open());
  
@@ -2075,10 +2119,9 @@ void MW_create_from_state(hash_t *state, vector_t *patches, float x, float y){
 }
 
 
-
 // FIXME/TODO!
 
-static hash_t *convert_state_to_new_type(hash_t *state){
+static hash_t *convert_state_to_new_type(const hash_t *state){
   hash_t *old_chips = HASH_get_hash(state, "chips");
   int num_old_chips = HASH_get_int32(old_chips, "num_chips");
   
@@ -2143,7 +2186,7 @@ static void autoposition_missing_bus_chips(hash_t *bus_chips_state){
 
 // Patches must be created before calling this one.
 // However, patch->patchdata are created here.
-void MW_create_full_from_state(hash_t *state, bool is_loading){
+void MW_create_full_from_state(const hash_t *state, bool is_loading){
 
   //MW_cleanup();
 
@@ -2198,5 +2241,200 @@ void MW_create_plain(void){
   //MW_cleanup();
   g_mixer_widget->populateScene();
 }
+
+
+// A/B
+
+static hash_t *g_ab_states[MW_NUM_AB] = {};
+static bool g_ab_is_valid[MW_NUM_AB] = {};
+static int g_curr_ab = 0;
+
+int MW_get_curr_ab(void){
+  return g_curr_ab;
+}
+
+bool MW_is_ab_valid(int ab_num){
+  return g_ab_is_valid[ab_num];
+}
+
+/*
+  Complicated.
+
+static hash_t *create_ab_state(void){
+  hash_t *state = HASH_create(5);
+
+  //const vector_t *patches = &get_audio_instrument()->patches;
+  HASH_put_hash(state, "patches", PATCHES_get_state(NULL));
+    
+  HASH_put_hash(state, "chips", MW_get_audio_patches_state(NULL, false));
+  
+  HASH_put_hash(state, "connections", MW_get_connections_state(NULL));
+
+  return state;
+}
+
+static hash_t *apply_ab_patch_state(hash_t *patches_state, hash_t *chips, hash_t *curr_patches, hash_t *curr_chips){
+  int num_presets = HASH_get(patches_state, "num_patches");
+
+  hash_t *patch_id_map = HASH_create(num_presets);
+  
+  for(int i = 0 ; i < num_presets ; i++) {
+    hash_t *new_patch_state = HASH_get_hash_at(patches_state, "patch", i);
+    const char *key = talloc_format("%" PRId64, HASH_get_int(new_patch_state, "id"));
+    
+    if (!HASH_has_key(curr_patches, key)) {
+      
+      struct Patch *patch = PATCH_create_audio(NULL, NULL, NULL, new_patch_state, 0, 0);
+      HASH_put_int(patch_id_map, key, patch->id);
+      
+      hasht *chip_state = HASH_get_hash(chips, key);
+      CHIP_set_pos(patch, HASH_get_float(chip_state, "x"), HASH_get_float(chip_state, "y"));
+      
+    } else {
+      
+        hash_t *curr_patch_state = HASH_get_hash(curr_patches, key);
+        if (!HASH_equal(new_patch_state, curr_patch_state)){
+
+          // Find out if it's enough to change the plugin state, or if the whole plugin needs to be reloaded
+          
+          
+        }
+  }
+
+  return patch_id_map;
+}
+*/
+
+static hash_t *create_ab_state(void){
+  hash_t *state = HASH_create(5);
+  HASH_put_hash(state, "connections", MW_get_connections_state(NULL));
+
+  vector_t *patches = &get_audio_instrument()->patches;
+  hash_t *plugin_ab_states = HASH_create(patches->num_elements);
+
+  for(int i=0;i<patches->num_elements;i++){
+    struct Patch *patch = (struct Patch*)patches->elements[i];
+    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    HASH_put_hash(plugin_ab_states, get_patch_key(patch), PLUGIN_get_ab_state(plugin));
+  }
+
+  HASH_put_hash(state, "plugin_ab_states", plugin_ab_states);
+  
+  return state;
+}
+
+static void apply_ab_plugin_ab_states(hash_t *plugin_ab_state, hash_t *curr_plugin_ab_state){
+  
+  const vector_t &patches = get_audio_instrument()->patches;
+
+  bool updated = false;
+
+  for(int i=0;i<patches.num_elements;i++){
+    
+    struct Patch *patch=(struct Patch*)patches.elements[i];
+    const char *key = get_patch_key(patch);
+    
+    if (HASH_has_key(plugin_ab_state, key)){
+      
+      hash_t *ab_state = HASH_get_hash(plugin_ab_state, key);
+      hash_t *curr_ab_state = HASH_get_hash(curr_plugin_ab_state, key);
+      
+      if (!HASH_equal(ab_state, curr_ab_state)){
+        
+        SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+        PLUGIN_apply_ab_state(plugin, ab_state);
+
+        updated = true;
+      }
+    }
+  }
+
+  if (updated)
+    GFX_update_current_instrument_widget();
+}
+
+static bool in_patches(const vector_t *patches, int64_t id){
+  VECTOR_FOR_EACH(struct Patch *, patch, patches){
+    if (patch->id==id)
+      return true;
+  }END_VECTOR_FOR_EACH;
+  
+  return false;
+}
+
+static void apply_ab_connections_state(hash_t *connections){
+  const vector_t &patches = get_audio_instrument()->patches;
+    
+  for(int i=0;i<HASH_get_int(connections, "num_connections");i++) {
+    hash_t *connection_state = HASH_get_hash_at(connections, "", i);
+    
+    int64_t id_from = HASH_get_int(connection_state, "from_patch");
+    int64_t id_to = HASH_get_int(connection_state, "to_patch");
+    bool is_event_connection = HASH_get_bool(connection_state, "is_event_connection");
+
+    if (in_patches(&patches, id_from) && in_patches(&patches, id_to)) {
+      SuperConnection *connection = get_connection(id_from, id_to, is_event_connection);
+
+      if (connection==NULL) {
+        CONNECTION_create_from_state(&g_mixer_widget->scene,
+                                     connection_state,
+                                     -1, -1);
+        connection = get_connection(id_from, id_to, is_event_connection);
+        R_ASSERT_RETURN_IF_FALSE(connection!=NULL);
+      }
+    
+      connection->is_ab_touched = true;
+    }
+  }
+
+  auto super_connections = get_connections();
+  
+  for(auto *connection : super_connections){
+    
+    if (connection->is_ab_touched==false)
+      CONNECTION_delete_connection(connection);
+    else
+      connection->is_ab_touched=false;
+    
+  }
+}
+
+static void apply_ab_state(hash_t *state, hash_t *curr_state){
+
+  Undo_Open();{
+    apply_ab_plugin_ab_states(HASH_get_hash(state, "plugin_ab_states"),
+                              HASH_get_hash(curr_state, "plugin_ab_states")
+                              );
+    
+    apply_ab_connections_state(HASH_get_hash(state, "connections"));
+  }Undo_Close();
+}
+
+void MW_change_ab(int ab_num){
+  int old_ab_num = g_curr_ab;
+  int new_ab_num = ab_num;
+
+  hash_t *curr_state = create_ab_state();
+  
+  // save old data
+  {
+    g_ab_states[old_ab_num] = curr_state;
+    g_ab_is_valid[old_ab_num] = true;
+  }
+
+  // insert new data
+  if (g_ab_is_valid[new_ab_num]){
+    apply_ab_state(g_ab_states[new_ab_num], curr_state);
+  }
+
+  g_curr_ab = new_ab_num;
+  printf("Curr ab: %d\n", new_ab_num);
+}
+
+void MW_reset_ab(void){
+  for(int i=0;i<MW_NUM_AB;i++)
+    g_ab_is_valid[i]=false;
+}
+
 
 #include "mQM_MixerWidget.cpp"

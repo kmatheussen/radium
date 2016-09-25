@@ -18,6 +18,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <unistd.h>
 #include <string.h>
 
+#define __STDC_FORMAT_MACROS 1
+#include <inttypes.h>
+
 
 #include "nsmtracker.h"
 #include "visual_proc.h"
@@ -256,6 +259,26 @@ hash_t *PATCH_get_state(struct Patch *patch){
   HASH_put_chars(state, "instrument", patch->instrument==get_audio_instrument() ? "audio" : "MIDI");
   
   return state;
+}
+
+hash_t *PATCHES_get_state(vector_t *patches, bool put_in_array){
+  if (patches==NULL)
+    patches = &get_audio_instrument()->patches;
+
+  hash_t *patches_state = HASH_create(patches->num_elements);
+  for(int i = 0 ; i < patches->num_elements ; i++){
+    struct Patch *patch = (struct Patch*)patches->elements[i];
+    hash_t *patch_state = PATCH_get_state(patch);
+    if (put_in_array)
+      HASH_put_hash_at(patches_state, "patch", i, patch_state);
+    else
+      HASH_put_hash(patches_state, talloc_format("%" PRId64, patch->id), patch_state);
+  }
+
+  if (!put_in_array)
+    HASH_put_int(patches_state, "num_patches", patches->num_elements);
+  
+  return patches_state;
 }
 
 static void apply_patch_state(struct Patch *patch, hash_t *state){

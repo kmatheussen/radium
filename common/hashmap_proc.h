@@ -26,7 +26,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 // A key can not contain lineshift since lineshifts are used as delimiter character when loading/saving.
 
+extern LANGSPEC void HASH_clear(hash_t *hash);
+
 extern LANGSPEC hash_t *HASH_create(int approx_size);
+
+extern LANGSPEC bool HASH_equal(const hash_t *h1, const hash_t *h2);
 
 extern LANGSPEC hash_t *HASH_copy(const hash_t *hash);
 

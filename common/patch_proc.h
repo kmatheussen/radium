@@ -23,6 +23,7 @@ extern LANGSPEC void PATCH_reset_time(void);
 extern LANGSPEC void handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch);
 extern LANGSPEC void PATCH_init_voices(struct Patch *patch);
 extern LANGSPEC hash_t *PATCH_get_state(struct Patch *patch);
+extern LANGSPEC hash_t *PATCHES_get_state(vector_t *patches, bool put_in_array);
 extern LANGSPEC bool PATCH_make_active_audio(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *state, float x, float y);
 extern LANGSPEC void PATCH_init_audio_when_loading_song(struct Patch *patch, hash_t *state);
 extern LANGSPEC struct Patch *PATCH_alloc(void);

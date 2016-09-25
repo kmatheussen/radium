@@ -84,7 +84,7 @@ void VECTOR_copy_elements(vector_t *from, int from_pos, int num_elements_to_copy
   memcpy(to->elements, &from->elements[from_pos], sizeof(void*)*num_elements_to_copy);
 }
 
-vector_t *VECTOR_append(vector_t *v1, vector_t *v2){
+vector_t *VECTOR_append(vector_t *v1, const vector_t *v2){
   int i;
   for(i=0;i<v2->num_elements;i++)
     VECTOR_push_back(v1,v2->elements[i]);
@@ -102,7 +102,7 @@ void VECTOR_delete(vector_t *v, int pos){
   v->elements[v->num_elements]=NULL;
 }
 
-int VECTOR_find_pos(vector_t *v, const void *element){
+int VECTOR_find_pos(const vector_t *v, const void *element){
   int i;
   for(i=0;i<v->num_elements;i++)
     if(v->elements[i]==element)
@@ -110,7 +110,7 @@ int VECTOR_find_pos(vector_t *v, const void *element){
   return -1;
 }
 
-bool VECTOR_is_in_vector(vector_t *v, const void *element){
+bool VECTOR_is_in_vector(const vector_t *v, const void *element){
   return VECTOR_find_pos(v,element)>=0;
 }
 

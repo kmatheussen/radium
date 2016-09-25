@@ -106,7 +106,7 @@ void PC_StopPause(struct Tracker_Windows *window){
     g_pausing_level = 0;
   }
 
-  printf("   Leaving pause %d. relaline: %d\n", g_pausing_level, ATOMIC_GET(g_pause_realline));
+  //printf("   Leaving pause %d. relaline: %d\n", g_pausing_level, ATOMIC_GET(g_pause_realline));
   
   if (g_pausing_level>0)
     return;

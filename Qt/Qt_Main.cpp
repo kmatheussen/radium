@@ -1328,7 +1328,10 @@ protected:
         
     //MIXER_called_regularly_by_main_thread();
 
-    R_ASSERT(g_pausing_level==0);
+    if(g_pausing_level != 0){
+      RError("Qt_Main. g_pausing_level: %d", g_pausing_level);
+      g_pausing_level = 0;
+    }
     
 #if 0
     // Update graphics when playing

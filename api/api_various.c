@@ -60,7 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundProducer_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../audio/Faust_plugins_proc.h"
-
+#include "../mixergui/QM_MixerWidget.h"
 
 #ifdef _AMIGA
 #include "Amiga_colors_proc.h"
@@ -84,6 +84,11 @@ void instrumentWindowToFront(void){
 void helpWindowToFront(void){
 	GFX_HelpWindowToFront();
 }
+
+void setMixerRotate(float rotate){
+  MW_set_rotate(rotate);
+}
+
 
 void maximizeEditorWindow(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;

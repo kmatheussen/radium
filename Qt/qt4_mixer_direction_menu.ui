@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Mixer_Direction_Menu</class>
+ <widget class="QDialog" name="Mixer_Direction_Menu">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>376</width>
+    <height>219</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QRadioButton" name="right_button">
+     <property name="toolTip">
+      <string>Signal flow: left to right.</string>
+     </property>
+     <property name="text">
+      <string>⇒</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="left_button">
+     <property name="toolTip">
+      <string>Signal flow: right to left.</string>
+     </property>
+     <property name="text">
+      <string>⇐</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="up_button">
+     <property name="toolTip">
+      <string>Signal flow: bottom to top.</string>
+     </property>
+     <property name="text">
+      <string>⇑</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="down_button">
+     <property name="toolTip">
+      <string>Signal flow: Top to bottom.</string>
+     </property>
+     <property name="text">
+      <string>⇓</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+ <buttongroups>
+  <buttongroup name="buttonGroup"/>
+ </buttongroups>
+</ui>

@@ -1581,7 +1581,7 @@ static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int64_t patch_id){
 }
 
 
-static int64_t get_saving_patch_id(struct Patch *patch, vector_t *patches){
+static int64_t get_saving_patch_id(struct Patch *patch, const vector_t *patches){
   if (patches==NULL)
     return patch->id;
 
@@ -1594,7 +1594,7 @@ static int64_t get_saving_patch_id(struct Patch *patch, vector_t *patches){
   return -1;
 }
                             
-hash_t *CONNECTION_get_state(SuperConnection *connection, vector_t *patches){
+hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *patches){
   hash_t *state=HASH_create(4);
 
   HASH_put_int(state, "from_patch", get_saving_patch_id(CHIP_get_patch(connection->from), patches));

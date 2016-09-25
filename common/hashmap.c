@@ -108,14 +108,42 @@ typedef struct _hash_element_t{
 
 static hash_element_t *copy_element(hash_element_t *element){
   hash_element_t *element_copy = tcopy(element, sizeof(hash_element_t));
-  element_copy->key = talloc_strdup(element->key);
+  //element_copy->key = talloc_strdup(element->key); // is this necessary? The key is already allocated by bdwgc, and it is never changed as far as I know.
   
   if (element->type==HASH_TYPE)
     element_copy->hash = HASH_copy(element->hash);
-  else if (element->type==STRING_TYPE)
-    element_copy->string = STRING_copy(element->string);
+  
+  //else if (element->type==STRING_TYPE)
+  //  element_copy->string = STRING_copy(element->string); // This is probably not necessary since strings are copied before inserted into the hash table.
 
   return element_copy;
+}
+
+static bool elements_are_equal(const hash_element_t *el1, const hash_element_t *el2){
+  R_ASSERT_NON_RELEASE(el1->i==el2->i);
+  R_ASSERT_NON_RELEASE(!strcmp(el1->key,el2->key));
+
+  if (el1->type!=el2->type)
+    return false;
+  
+  switch(el1->type){
+    case STRING_TYPE:
+      if (el1->string==el2->string)
+        return true;
+      else if (el1->string==NULL || el2->string==NULL)
+        return false;
+      else
+        return !wcscmp(el1->string, el2->string);
+    case INT_TYPE:
+      return el1->int_number==el2->int_number;
+    case FLOAT_TYPE:
+      return el1->float_number==el2->float_number;
+    case HASH_TYPE:
+      return HASH_equal(el1->hash, el2->hash);
+  }
+
+  R_ASSERT(false);
+  return false;
 }
 
 struct _hash_t{
@@ -125,6 +153,38 @@ struct _hash_t{
   int elements_size;
   hash_element_t *elements[];
 }; // hash_t;
+
+
+void HASH_clear(hash_t *hash){
+  hash->num_elements=0;
+  hash->num_array_elements=0;
+  memset(hash->elements, 0, hash->elements_size*sizeof(hash_element_t*));
+}
+  
+static hash_element_t *HASH_get_no_complaining(const hash_t *hash, const char *raw_key, int i);
+
+bool HASH_equal(const hash_t *h1, const hash_t *h2){
+  if (h1->num_elements != h2->num_elements)
+    return false;
+  
+  for(int i=0;i<h1->elements_size;i++){
+    const hash_element_t *el1 = h1->elements[i];
+    
+    while (el1 != NULL){
+      const hash_element_t *el2 = HASH_get_no_complaining(h2, el1->key, el1->i);
+    
+      if(el2==NULL)
+        return false;
+      
+      if (elements_are_equal(el1, el2)==false)
+        return false;
+
+      el1=el1->next;
+    }
+  }
+
+  return true;
+}
 
 hash_t *HASH_create(int approx_size){
   int elements_size = find_next_prime_number(approx_size*3/2);
@@ -221,8 +281,9 @@ bool HASH_remove(hash_t *hash, const char *raw_key){
   return HASH_remove_at(hash, raw_key, 0);
 }
 
-  
 static void put2(hash_t *hash, const char *key, int i, hash_element_t *element){
+  R_ASSERT_NON_RELEASE(!HASH_has_key_at(hash, key, i));
+  
   unsigned int index = oat_hash(key,i) % hash->elements_size;
   //fprintf(stderr,"put %p. index: %u\n",hash,index);
 
@@ -237,6 +298,7 @@ static void put2(hash_t *hash, const char *key, int i, hash_element_t *element){
 
 static void put(hash_t *hash, const char *raw_key, int i, hash_element_t *element){
   const char *key = STRING_get_utf8_chars(raw_key);
+
   put2(hash, key, i, element);
 }
 
@@ -504,7 +566,10 @@ static int compare_hash_elements(const void *a2, const void *b2){
 
 static vector_t get_sorted_elements(hash_t *hash){
   vector_t elements = get_elements(hash);
-  qsort(elements.elements, elements.num_elements, sizeof(void*), compare_hash_elements);
+  
+  if(elements.num_elements>1) // fsanitize=undefined aborts the program if sending null pointer to qsort.
+    qsort(elements.elements, elements.num_elements, sizeof(void*), compare_hash_elements);
+  
   return elements;
 }
 

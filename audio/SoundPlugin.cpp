@@ -1458,6 +1458,53 @@ hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin){
   return effects;
 }
 
+void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *state){
+  SoundPluginType *type = plugin->type;
+
+  int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
+      
+  volatile struct Patch *patch = plugin->patch;
+  
+  for(int i=0;i<num_effects;i++)
+    ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, i));
+
+  hash_t *values_state = HASH_get_hash(state, "values");
+
+  float values[num_effects];
+  for(int i=0;i<num_effects;i++)
+    values[i] = HASH_get_float_at(values_state,"value",i);
+  
+  PLAYER_lock();{
+    for(int i=0;i<num_effects;i++)
+      PLUGIN_set_effect_value(plugin, 0, i, values[i], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  }PLAYER_unlock();
+  
+  if(type->recreate_from_state!=NULL)
+    type->recreate_from_state(plugin, HASH_get_hash(state, "plugin_state"), false);
+}
+
+hash_t *PLUGIN_get_ab_state(SoundPlugin *plugin){
+  hash_t *state = HASH_create(2);
+
+  SoundPluginType *type = plugin->type;
+  
+  int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
+    
+  hash_t *values_state = HASH_create(num_effects);
+  for(int n=0;n<num_effects;n++)
+    HASH_put_float_at(values_state,"value",n,plugin->savable_effect_values[n]);
+  
+  HASH_put_hash(state, "values", values_state);
+    
+  if(type->create_state!=NULL){
+    hash_t *plugin_state = HASH_create(5);
+    type->create_state(plugin, plugin_state);
+    HASH_put_hash(state, "plugin_state", plugin_state);
+  }
+
+  return state;
+}
+
 hash_t *PLUGIN_get_state(SoundPlugin *plugin){
   const SoundPluginType *type=plugin->type;
 
@@ -1493,9 +1540,9 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
 
   // A/B
   {
-    int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
-    
     hash_t *ab_state=HASH_create(NUM_AB);
+    
+    int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
     
     HASH_put_int(ab_state, "curr_ab_num", plugin->curr_ab_num);
     
@@ -1726,8 +1773,10 @@ void PLUGIN_change_ab(SoundPlugin *plugin, int ab_num){
   {
     memcpy(plugin->ab_values[old_ab_num], plugin->savable_effect_values, sizeof(float)*num_effects);
     
-    if(type->create_state!=NULL)
+    if(type->create_state!=NULL) {
+      HASH_clear(plugin->ab_states[old_ab_num]);
       type->create_state(plugin, plugin->ab_states[old_ab_num]);
+    }
     
     plugin->ab_is_valid[old_ab_num] = true;
   }

@@ -1,18 +1,16 @@
 
-#include "Qt_auto_suspend_menu.h"
+#include "Qt_mixer_direction_menu.h"
 
-class Auto_Suspend_Menu : public QDialog, public Ui::Auto_Suspend_Menu{
+class Mixer_Direction_Menu : public QDialog, public Ui::Mixer_Direction_Menu{
   Q_OBJECT
 
  public:
   bool _initing;
   bool _is_updating_widget = false;
-  struct Patch *_patch;
   radium::ASMTimer _timer;
   
-  Auto_Suspend_Menu(QWidget *parent, struct Patch *patch)
+  Mixer_Direction_Menu(QWidget *parent)
     : QDialog(parent)
-    , _patch(patch)
     , _timer(this)
   {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
@@ -28,16 +26,18 @@ class Auto_Suspend_Menu : public QDialog, public Ui::Auto_Suspend_Menu{
 
   void update_widget(void){
     _is_updating_widget = true;{
+      /*
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       if (plugin != NULL){
-        enum AutoSuspendBehavior auto_suspend_behavior = PLUGIN_get_autosuspend_behavior(plugin);
-        if (auto_suspend_behavior==DEFAULT_AUTOSUSPEND_BEHAVIOR)
+        enum AutoSuspendBehavior mixer_direction_behavior = PLUGIN_get_autosuspend_behavior(plugin);
+        if (mixer_direction_behavior==DEFAULT_AUTOSUSPEND_BEHAVIOR)
           default_suspend->setChecked(true);
-        else if (auto_suspend_behavior==AUTOSUSPEND_ENABLED)
+        else if (mixer_direction_behavior==AUTOSUSPEND_ENABLED)
           enable_suspend->setChecked(true);
         else
           disable_suspend->setChecked(true);
       }
+      */
     }_is_updating_widget=false;
   }
 
@@ -57,46 +57,36 @@ class Auto_Suspend_Menu : public QDialog, public Ui::Auto_Suspend_Menu{
   void myExec(void){
     update_widget();
     move(QCursor::pos());
-    qApp->setActiveWindow(enable_suspend);
+    qApp->setActiveWindow(up_button);
     
     _timer.start();
     safeExec(this);
     _timer.stop();
   }
+  
+  void clicked(float rotate){
+    if(_is_updating_widget)
+      return;
+
+    setMixerRotate(rotate);
+               
+    if (_timer.mouseWasDown())
+      hide();
+  }
 
 public slots:
 
-  void on_default_suspend_toggled(bool val){
-    if(_is_updating_widget)
-      return;
-    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    if (plugin != NULL){
-      PLUGIN_set_autosuspend_behavior(plugin, DEFAULT_AUTOSUSPEND_BEHAVIOR);
-    }
-    if (_timer.mouseWasDown())
-      hide();
+  void on_up_button_toggled(bool val){
+    clicked(270);
+  }
+  void on_down_button_toggled(bool val){
+    clicked(90);
+  }
+  void on_left_button_toggled(bool val){
+    clicked(180);
   }
 
-  void on_enable_suspend_toggled(bool val){
-    if(_is_updating_widget)
-      return;
-    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    if (plugin != NULL){
-      PLUGIN_set_autosuspend_behavior(plugin, AUTOSUSPEND_ENABLED);
-    }
-    if (_timer.mouseWasDown())
-      hide();
-  }
-  
-  void on_disable_suspend_toggled(bool val){
-    if(_is_updating_widget)
-      return;
-    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    if (plugin != NULL){
-      PLUGIN_set_autosuspend_behavior(plugin, AUTOSUSPEND_DISABLED);
-    }
-    if (_timer.mouseWasDown())
-      hide();
+  void on_right_button_toggled(bool val){
+    clicked(0);
   }
 };
-

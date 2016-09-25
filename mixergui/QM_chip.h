@@ -88,6 +88,8 @@ public:
   bool is_selected; // for some reason isSelected() doesn't work.
   bool is_event_connection;
   enum ColorNums color_num;
+
+  bool is_ab_touched = false; // used by a/b to determine wheter it should be deleted or not after changing ab.
   
   QColor getColor(void) {
     if (is_selected)
@@ -208,8 +210,8 @@ public:
   }
 #endif
 
-  void hoverEnterEvent ( QGraphicsSceneHoverEvent * event ){
-    //printf("hover enter\n");
+  void hoverEnterEvent ( QGraphicsSceneHoverEvent * event ) override {
+    printf("hover enter\n");
 
     /*
     QPen pen(Qt::gray,6);
@@ -236,10 +238,12 @@ public:
       
       setPen(pen);
     }
+
+    setVisible(true);
   }
 
-  void hoverLeaveEvent ( QGraphicsSceneHoverEvent * event ){
-    //printf("hover leave\n");
+  void hoverLeaveEvent ( QGraphicsSceneHoverEvent * event ) override {
+    printf("hover leave\n");
 
     /*
     QPen pen(Qt::gray,6);
@@ -407,7 +411,7 @@ Chip *CHIP_get(QGraphicsScene *scene, const Patch *patch);
 
 struct Patch *CHIP_get_patch(Chip *chip);
 
-hash_t *CONNECTION_get_state(SuperConnection *connection, vector_t *patches);
+hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *patches);
 void CONNECTION_create_from_state2(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new, int64_t patch_id_old2, int64_t patch_id_new2);
 void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new);
 

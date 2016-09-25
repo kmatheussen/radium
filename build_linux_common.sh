@@ -94,7 +94,15 @@ else
 fi
 # _debug
 
-export OS_LDFLAGS="bin/packages/QScintilla_gpl-2.9.2/Qt4Qt5/libqscintilla2.a $FAUSTLDFLAGS bin/packages/libpd-master/libs/libpds.a pluginhost/Builds/Linux/build/libMyPluginHost.a -lasound -ljack -llrdf -pthread -lrt -lX11 $GCDIR/.libs/libgc.a  $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs Qt5X11Extras` -lXext `$PKG --libs glib-2.0` -lxcb -lxcb-keysyms -Wl,-Bstatic -lbfd -Wl,-Bdynamic -lz -liberty -lutil -ldl"
+if ! env |grep RADIUM_BFD_CFLAGS ; then
+    export RADIUM_BFD_CFLAGS=""
+fi
+
+if ! env |grep RADIUM_BFD_LDFLAGS ; then
+    export RADIUM_BFD_LDFLAGS="-Wl,-Bstatic -lbfd -Wl,-Bdynamic"
+fi
+
+export OS_LDFLAGS="bin/packages/QScintilla_gpl-2.9.2/Qt4Qt5/libqscintilla2.a $FAUSTLDFLAGS bin/packages/libpd-master/libs/libpds.a pluginhost/Builds/Linux/build/libMyPluginHost.a -lasound -ljack -llrdf -pthread -lrt -lX11 $GCDIR/.libs/libgc.a  $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs Qt5X11Extras` -lXext `$PKG --libs glib-2.0` -lxcb -lxcb-keysyms $RADIUM_BFD_LDFLAGS -lz -liberty -lutil -ldl"
 
 # 
 

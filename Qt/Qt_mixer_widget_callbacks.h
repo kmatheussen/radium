@@ -76,8 +76,13 @@ public:
 #define QGraphicsView MyQGraphicsView
 #include "Qt_mixer_widget.h"
 
+#include "mQt_mixer_direction_menu_callbacks.h"
+
+
 extern EditorWidget *g_editor;
 
+class Mixer_widget;
+static Mixer_widget *g_mixer_widget2;
 
 class Mixer_widget : public QWidget, public Ui::Mixer_widget{
   Q_OBJECT
@@ -88,11 +93,14 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
   qreal _rotate;
 
   qreal _middle_zoom;
+
+  Mixer_Direction_Menu _mixer_direction_menu;
   
  Mixer_widget(QWidget *parent=NULL)
     : QWidget(parent)
     , _rotate(0)
     , _middle_zoom(1.0)
+    , _mixer_direction_menu(this)
   {
     initing = true;
     setupUi(this);
@@ -104,6 +112,14 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     _middle_zoom = 230 - (font.pointSize()-12) * 4.0;
     
     on_zoom_slider_valueChanged(zoom_slider->value());
+
+    // don't need the zoom buttons.
+    zoomin_button->hide();
+    zoomout_button->hide();
+    
+    update_ab_buttons();
+
+    g_mixer_widget2 = this;
   }
 
   void set_rotate(qreal rotate){
@@ -118,13 +134,108 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     view->setMatrix(matrix);    
   }
 
-  public slots:
+  void update_ab_buttons(void){
+    int curr = MW_get_curr_ab();
 
+    MyQCheckBox *buttons[MW_NUM_AB] = {ab_a, ab_b, ab_c, ab_d, ab_e, ab_f, ab_g, ab_h};
+    const QString names[MW_NUM_AB] = {"A", "B", "C", "D", "E", "F", "G", "H"};
+    const QString selnames[MW_NUM_AB] = {"A*", "B*", "C*", "E*", "F*", "G*", "H*"};
+
+    static int _ab_checkbox_width=-1;
+    
+    if (_ab_checkbox_width==-1){
+      ab_a->adjustSize();
+      _ab_checkbox_width = ab_a->width() * 2 / 3;
+    }
+
+    for(int i=0;i<MW_NUM_AB;i++){
+      
+      buttons[i]->setMinimumWidth(_ab_checkbox_width);
+      buttons[i]->setMaximumWidth(_ab_checkbox_width);
+
+      if(curr==i || MW_is_ab_valid(i))
+        buttons[i]->setText(selnames[i]);
+      else
+        buttons[i]->setText(names[i]);
+    }
+  }
+
+public slots:
+
+  void on_ab_a_toggled(bool val){
+    if (val && !initing)
+      MW_change_ab(0);
+    update_ab_buttons();
+  }
+  
+  void on_ab_b_toggled(bool val){
+    if (val && !initing)
+      MW_change_ab(1);
+    update_ab_buttons();
+  }
+  
+  void on_ab_c_toggled(bool val){
+    if (val && !initing)
+      MW_change_ab(2);
+    update_ab_buttons();
+  }
+  
+  void on_ab_d_toggled(bool val){
+    if (val && !initing)
+      MW_change_ab(3);
+    update_ab_buttons();
+  }
+  
+  void on_ab_e_toggled(bool val){
+    if (val && !initing)
+      MW_change_ab(4);
+    update_ab_buttons();
+  }
+  
+  void on_ab_f_toggled(bool val){
+    if (val && !initing)
+      MW_change_ab(5);
+    update_ab_buttons();
+  }
+  
+  void on_ab_g_toggled(bool val){
+    if (val && !initing)
+      MW_change_ab(6);
+    update_ab_buttons();
+  }
+  
+  void on_ab_h_toggled(bool val){
+    if (val && !initing)
+      MW_change_ab(7);
+    update_ab_buttons();
+  }
+  
+  void on_ab_reset_clicked(){
+    MW_reset_ab();
+    update_ab_buttons();
+  }
+  
   void on_show_cpu_usage_toggled(bool val){
     ATOMIC_SET(g_show_cpu_usage_in_mixer, val);
     MW_update_all_chips();
   }
+
+  void on_mixer_direction_menu_button_released() {
+    _mixer_direction_menu.myExec();
     
+    if (_rotate>=(270+180)/2)
+      mixer_direction_menu_button->setText("\342\207\221");
+    else if (_rotate>=(180+90)/2)
+      mixer_direction_menu_button->setText("\342\207\220");
+    else if (_rotate>=(90/2))
+      mixer_direction_menu_button->setText("\342\207\223");
+    else
+      mixer_direction_menu_button->setText("\342\207\222");
+    
+    //update_widget();
+  }
+
+  /*    
   void on_up_button_toggled(bool val){
     if(val==true){
       set_rotate(270);
@@ -145,7 +256,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
       set_rotate(0);
     }
   }
-
+  */
+  
   void on_zoom_slider_valueChanged(int val){
     
     qreal scale = qPow(qreal(2), (val - _middle_zoom) / qreal(50));
@@ -172,6 +284,12 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
   }
 
 };
+
+
+void MW_set_rotate(float rotate){
+  g_mixer_widget2->set_rotate(rotate);
+}
+
 
 #if 0
 extern "C"{ void GFX_showHideMixerWidget(void);}

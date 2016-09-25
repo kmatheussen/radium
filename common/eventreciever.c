@@ -335,8 +335,11 @@ bool EventReciever(struct TEvent *in_tevent, struct Tracker_Windows *window){
             ret=EventTreater(in_tevent,window);
           });
 
-        R_ASSERT(g_pausing_level==0);
-          
+        if(g_pausing_level != 0){
+          RError("EventReceiver: g_pausing_level: %d", g_pausing_level);
+          g_pausing_level = 0;
+        }
+        
         return ret;
 }
 

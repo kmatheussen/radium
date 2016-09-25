@@ -284,15 +284,7 @@ hash_t *get_preset_state(vector_t *patches){
     
     HASH_put_bool(state, "multipreset_presets", true);
     
-    {
-      hash_t *patches_state = HASH_create(patches->num_elements);
-      for(int i = 0 ; i < patches->num_elements ; i++){
-        struct Patch *patch = (struct Patch*)patches->elements[i];
-        HASH_put_hash_at(patches_state, "patch", i, PATCH_get_state(patch));
-      }
-
-      HASH_put_hash(state, "patches", patches_state);
-    }
+    HASH_put_hash(state, "patches", PATCHES_get_state(patches, true));
 
     {
       hash_t *mixer_state = MW_get_state(patches);

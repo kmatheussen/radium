@@ -60,6 +60,9 @@ extern LANGSPEC void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int bl
        PLUGIN_set_effect_value2(a,b,c,d,e,f,g,PLAYERLOCK_MAYBE_REQUIRED, PLUGIN_FORMAT_NATIVE, false)
 extern LANGSPEC float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum WhereToGetValue where);
 
+extern LANGSPEC void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *state);
+extern LANGSPEC hash_t *PLUGIN_get_ab_state(SoundPlugin *plugin);
+
 extern LANGSPEC hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin);
 extern LANGSPEC hash_t *PLUGIN_get_state(SoundPlugin *plugin);
 
