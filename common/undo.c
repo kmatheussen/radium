@@ -477,7 +477,7 @@ currently_undoing = true;
         EVENTLOG_add_event("     Undoing Start");
                 
        {
-         bool has_paused = false;
+         int num_pausing = 0;
          
           int i;
           for(i=undo->entries.num_elements-1 ; i>=0 ; i--){
@@ -489,7 +489,7 @@ currently_undoing = true;
                     
             if(entry->stop_playing) {
               PC_Pause();
-              has_paused = true;
+              num_pausing++;
             }
  
             struct Tracker_Windows *window=ListFindElement1(&root->song->tracker_windows->l,entry->windownum);
@@ -532,7 +532,7 @@ currently_undoing = true;
             ATOMIC_WRITE(window->curr_track, entry->tracknum);
           }
 
-          if (has_paused)
+          for(int i=0;i<num_pausing;i++)
             PC_StopPause(NULL);
        }
 
