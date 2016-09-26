@@ -32,9 +32,15 @@ extern struct Root *root;
 
 struct Undo_AudioEffect{
   struct Patch *patch;
-  int effect_num;
-  float value;
+
+  struct{
+    int effect_num; // if -1, 'values' is used instead.
+    float value;
+  };
+  
+  float *values;
 };
+
 
 static void *Undo_Do_AudioEffect(
                                  struct Tracker_Windows *window,
@@ -48,7 +54,7 @@ static void Undo_AudioEffect(
                              struct Tracker_Windows *window,
                              struct WBlocks *wblock,
                              struct Patch *patch,
-                             int effect_num
+                             int effect_num // if -1, all values are stored.
                              )
 {
   struct Undo_AudioEffect *undo_ae=talloc(sizeof(struct Undo_AudioEffect));
@@ -56,7 +62,13 @@ static void Undo_AudioEffect(
   
   undo_ae->patch = patch;
   undo_ae->effect_num = effect_num;
-  undo_ae->value = plugin->savable_effect_values[effect_num];
+
+  int num_effects = plugin->type->num_effects+NUM_SYSTEM_EFFECTS;
+    
+  if (effect_num==-1)
+    undo_ae->values = tcopy(plugin->savable_effect_values, sizeof(float)*num_effects);
+  else
+    undo_ae->value = plugin->savable_effect_values[effect_num];
 
 
   //printf("********* Storing eff undo. value: %f %d\n",undo_ae->value,plugin->comp.is_on);
@@ -90,24 +102,49 @@ static void *Undo_Do_AudioEffect(
   struct Undo_AudioEffect *undo_ae=pointer;
   SoundPlugin *plugin = undo_ae->patch->patchdata;
 
-  float new_value = plugin->savable_effect_values[undo_ae->effect_num];
+  int num_effects = plugin->type->num_effects+NUM_SYSTEM_EFFECTS;
 
-  printf("Calling Undo_do for %d. Current value: %f. Now setting it back to %f\n",undo_ae->effect_num,new_value,undo_ae->value);
+  if (undo_ae->effect_num >= 0 && undo_ae->effect_num < num_effects) {
+    float new_value = plugin->savable_effect_values[undo_ae->effect_num];
 
-  PLAYER_lock();{
-    PLUGIN_set_effect_value(plugin,
-                            -1, 
-                            undo_ae->effect_num, 
-                            undo_ae->value, 
-                            PLUGIN_STORED_TYPE,
-                            PLUGIN_STORE_VALUE,
-                            FX_single
-                            );
-  }PLAYER_unlock();
+    printf("Calling Undo_do for %d. Current value: %f. Now setting it back to %f\n",undo_ae->effect_num,new_value,undo_ae->value);
+
+    PLAYER_lock();{
+
+      PLUGIN_set_effect_value(plugin,
+                              0,
+                              undo_ae->effect_num, 
+                              undo_ae->value, 
+                              PLUGIN_STORED_TYPE,
+                              PLUGIN_STORE_VALUE,
+                              FX_single
+                              );
+    }PLAYER_unlock();
+
+    undo_ae->value = new_value;
+
+  } else {
+
+    R_ASSERT_RETURN_IF_FALSE2(undo_ae->effect_num==-1, undo_ae);
+
+    float *new_values = tcopy(plugin->savable_effect_values, sizeof(float)*num_effects);
+        
+    PLAYER_lock();{
+      for(int i=0;i<num_effects;i++)
+        PLUGIN_set_effect_value(plugin,
+                                0,
+                                i,
+                                undo_ae->values[i],
+                                PLUGIN_STORED_TYPE,
+                                PLUGIN_STORE_VALUE,
+                                FX_single);
+    }PLAYER_unlock();
+
+    undo_ae->values = new_values;
+  }
+    
 
   GFX_update_instrument_widget(undo_ae->patch);
-
-  undo_ae->value = new_value;
 
   return undo_ae;
 }

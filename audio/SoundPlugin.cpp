@@ -1461,13 +1461,12 @@ hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin){
 void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *state){
   SoundPluginType *type = plugin->type;
 
-  int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
-      
   volatile struct Patch *patch = plugin->patch;
   
-  for(int i=0;i<num_effects;i++)
-    ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, i));
+  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, -1));
 
+  int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
+      
   hash_t *values_state = HASH_get_hash(state, "values");
 
   float values[num_effects];
@@ -1787,11 +1786,7 @@ void PLUGIN_change_ab(SoundPlugin *plugin, int ab_num){
     
     float *new_ab_values = plugin->ab_values[new_ab_num];
 
-    Undo_Open();{
-      volatile struct Patch *patch = plugin->patch;
-      for(int i=0;i<num_effects;i++)
-        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, i));
-    }Undo_Close();
+    ADD_UNDO(AudioEffect_CurrPos((struct Patch*)plugin->patch, -1));
 
     PLAYER_lock();{
       for(int i=0;i<num_effects;i++)
@@ -1988,10 +1983,7 @@ void PLUGIN_reset(SoundPlugin *plugin){
   volatile struct Patch *patch = plugin->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
   
-  Undo_Open();{
-    for(int i=0;i<type->num_effects;i++)
-      ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, i));
-  }Undo_Close();
+  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, -1));
 
   PLAYER_lock();{
     for(int i=0;i<type->num_effects;i++)
@@ -2028,10 +2020,7 @@ void PLUGIN_random(SoundPlugin *plugin){
   if (type->num_effects==0)
     return;
   
-  Undo_Open();{
-    for(i=0;i<type->num_effects;i++)
-      ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, i));
-  }Undo_Close();
+  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, -1));
 
   float values[type->num_effects];
   for(i=0;i<type->num_effects;i++)
