@@ -60,7 +60,7 @@ DC_start("SONG");
 
         // Patchdata for audio patches are saved here, not in disk_patches.
         DC_start("MIXERWIDGET");{
-          HASH_save(MW_get_state(NULL), dc.file);
+          HASH_save(MW_get_state(NULL, true), dc.file);
           //HASH_save(create_instrument_widget_order_state(),dc.file);
         }DC_end();
 

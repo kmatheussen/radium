@@ -78,7 +78,7 @@ static void *Undo_Do_Mixer(
 	void *pointer
 ){
 
-  hash_t *current_state = MW_get_state(NULL);
+  hash_t *current_state = MW_get_state(NULL, false);
   MW_create_full_from_state(pointer, false);
 
   return current_state;

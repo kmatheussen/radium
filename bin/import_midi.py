@@ -600,11 +600,11 @@ def get_last_tick(tracks):
     
 # Quick hack.
 def clear_radium_editor():
-    #while radium.getNumBlocks()>1:
-    #    radium.deleteBlock()
+    while radium.getNumBlocks()>1:
+        radium.deleteBlock()
     radium.appendBlock()
-    #radium.selectPrevBlock()
-    #radium.deleteBlock()
+    radium.selectPrevBlock()
+    radium.deleteBlock()
     
 
 def import_midi_do(tracks, lpb=4, midi_port="", polyphonic=True):
@@ -620,8 +620,9 @@ def import_midi_do(tracks, lpb=4, midi_port="", polyphonic=True):
     num_tracks = 0 #radium.numTracks()
     tracknum = 0
 
-    clear_radium_editor()    
-
+    #clear_radium_editor()    
+    radium.appendBlock()
+    
     radium.setMainLPB(lpb)
     radium.setMainBPM(120) # Default SMF value.
 

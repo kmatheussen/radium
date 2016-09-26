@@ -138,8 +138,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     int curr = MW_get_curr_ab();
 
     MyQCheckBox *buttons[MW_NUM_AB] = {ab_a, ab_b, ab_c, ab_d, ab_e, ab_f, ab_g, ab_h};
-    const QString names[MW_NUM_AB] = {"A", "B", "C", "D", "E", "F", "G", "H"};
-    const QString selnames[MW_NUM_AB] = {"A*", "B*", "C*", "E*", "F*", "G*", "H*"};
+    const QString names[MW_NUM_AB]    = {"A",  "B",  "C",  "D", "E",  "F",  "G",  "H"};
+    const QString selnames[MW_NUM_AB] = {"A*", "B*", "C*", "D", "E*", "F*", "G*", "H*"};
 
     static int _ab_checkbox_width=-1;
     

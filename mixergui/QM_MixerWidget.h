@@ -199,7 +199,7 @@ extern LANGSPEC void MW_update_all_chips(void);
 extern LANGSPEC void MW_cleanup(bool is_loading);
 
 extern LANGSPEC hash_t *MW_get_connections_state(const vector_t *patches);
-extern LANGSPEC hash_t *MW_get_state(const vector_t *patches);
+extern LANGSPEC hash_t *MW_get_state(const vector_t *patches, bool include_ab);
 extern LANGSPEC void MW_create_connections_from_state(const hash_t *connections);
 extern LANGSPEC void MW_create_connections_from_state_and_replace_patch(const hash_t *connections, int patch_id_old, int patch_id_new);
 extern LANGSPEC void MW_create_from_state(const hash_t *state, const vector_t *patches, float x, float y);
@@ -213,7 +213,9 @@ extern LANGSPEC int MW_get_curr_ab(void);
 extern LANGSPEC bool MW_is_ab_valid(int ab_num);
 extern LANGSPEC void MW_change_ab(int ab_num);
 extern LANGSPEC void MW_reset_ab(void);
-  
+extern LANGSPEC hash_t *MW_get_ab_state(void);
+extern LANGSPEC void MW_recreate_ab_from_state(hash_t *ab_state);
+
 extern LANGSPEC void MW_set_chip_position(struct Patch *patch, float x, float y);
 extern LANGSPEC float MW_get_chip_x(const struct Patch *patch);
 extern LANGSPEC float MW_get_chip_y(struct Patch *patch);

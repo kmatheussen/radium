@@ -287,7 +287,7 @@ hash_t *get_preset_state(vector_t *patches){
     HASH_put_hash(state, "patches", PATCHES_get_state(patches, true));
 
     {
-      hash_t *mixer_state = MW_get_state(patches);
+      hash_t *mixer_state = MW_get_state(patches, false);
       
       HASH_put_hash(state, "mixer_state", mixer_state);
     }

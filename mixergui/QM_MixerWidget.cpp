@@ -2011,12 +2011,15 @@ static SuperConnection *get_connection(int64_t id_from, int64_t id_to, bool is_e
 
 
 
-hash_t *MW_get_state(const vector_t *patches){
+hash_t *MW_get_state(const vector_t *patches, bool include_ab){
   hash_t *state = HASH_create(2);
 
   HASH_put_hash(state, "chips", MW_get_audio_patches_state(patches, true));
   HASH_put_hash(state, "connections", MW_get_connections_state(patches));
-
+  
+  if (include_ab)
+    HASH_put_hash(state, "ab_state", MW_get_ab_state());
+                  
   return state;
 }
 
@@ -2229,6 +2232,9 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
 
   MW_create_connections_from_state_internal(HASH_get_hash(state, "connections"), -1, -1);
 
+  if (HASH_has_key(state, "ab_state"))
+    MW_recreate_ab_from_state(HASH_get_hash(state, "ab_state"));
+  
   AUDIO_update_all_permanent_ids();
   
   GFX_update_all_instrument_widgets();
@@ -2436,5 +2442,34 @@ void MW_reset_ab(void){
     g_ab_is_valid[i]=false;
 }
 
+hash_t *MW_get_ab_state(void){
+  hash_t *ab_state = HASH_create(MW_NUM_AB);
+
+  HASH_put_int(ab_state, "curr_ab_num", g_curr_ab);
+      
+  for(int i=0;i<MW_NUM_AB;i++){
+    bool is_valid = g_ab_is_valid[i];
+    
+    HASH_put_bool_at(ab_state,"is_valid",i,is_valid);
+
+    if (is_valid)
+      HASH_put_hash_at(ab_state, "ab_state", i, g_ab_states[i]);
+  }
+
+  return ab_state;
+}
+
+void MW_recreate_ab_from_state(hash_t *ab_state){
+  
+  g_curr_ab = HASH_get_int32(ab_state, "curr_ab_num");
+
+  for(int i=0;i<NUM_AB;i++){
+    g_ab_is_valid[i] = HASH_get_bool_at(ab_state, "is_valid", i);
+    
+    if (g_ab_is_valid[i])
+      g_ab_states[i] = HASH_get_hash_at(ab_state, "ab_state", i);
+  }
+
+}
 
 #include "mQM_MixerWidget.cpp"
