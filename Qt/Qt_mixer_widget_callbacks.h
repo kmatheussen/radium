@@ -119,6 +119,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     
     update_ab_buttons();
 
+    //connect(ab_a, SIGNAL(rightClicked()), this, SLOT(on_ab_a_rightClicked()));
+      
     g_mixer_widget2 = this;
   }
 
@@ -138,8 +140,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     int curr = MW_get_curr_ab();
 
     MyQCheckBox *buttons[MW_NUM_AB] = {ab_a, ab_b, ab_c, ab_d, ab_e, ab_f, ab_g, ab_h};
-    const QString names[MW_NUM_AB]    = {"A",  "B",  "C",  "D", "E",  "F",  "G",  "H"};
-    const QString selnames[MW_NUM_AB] = {"A*", "B*", "C*", "D", "E*", "F*", "G*", "H*"};
+    const QString names[MW_NUM_AB]    = {"A",  "B",  "C",  "D",  "E",  "F",  "G",  "H"};
+    const QString selnames[MW_NUM_AB] = {"A*", "B*", "C*", "D*", "E*", "F*", "G*", "H*"};
 
     static int _ab_checkbox_width=-1;
     
@@ -160,8 +162,25 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     }
   }
 
+  void ab_rightclicked(int num){
+    if (MW_get_curr_ab() != num)
+      if (popupMenu("Reset")==0){
+        MW_reset_ab(num);
+        update_ab_buttons();
+      }
+  }
+
 public slots:
 
+  void on_ab_a_clicked(){ab_rightclicked(0);}
+  void on_ab_b_clicked(){ab_rightclicked(1);}
+  void on_ab_c_clicked(){ab_rightclicked(2);}
+  void on_ab_d_clicked(){ab_rightclicked(3);}
+  void on_ab_e_clicked(){ab_rightclicked(4);}
+  void on_ab_f_clicked(){ab_rightclicked(5);}
+  void on_ab_g_clicked(){ab_rightclicked(5);}
+  void on_ab_h_clicked(){ab_rightclicked(6);}
+    
   void on_ab_a_toggled(bool val){
     if (val && !initing)
       MW_change_ab(0);
@@ -211,7 +230,7 @@ public slots:
   }
   
   void on_ab_reset_clicked(){
-    MW_reset_ab();
+    MW_reset_ab(-1);
     update_ab_buttons();
   }
   

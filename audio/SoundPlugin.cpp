@@ -1800,9 +1800,12 @@ void PLUGIN_change_ab(SoundPlugin *plugin, int ab_num){
   plugin->curr_ab_num = new_ab_num;
 }
 
-void PLUGIN_reset_ab(SoundPlugin *plugin){
-  for(int ab=0;ab<NUM_AB;ab++)
-    plugin->ab_is_valid[ab] = false;
+void PLUGIN_reset_ab(SoundPlugin *plugin, int num){
+  if (num==-1)
+    for(int ab=0;ab<NUM_AB;ab++)
+      plugin->ab_is_valid[ab] = false;
+  else
+    plugin->ab_is_valid[num] = false;
 }
 
 char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type){

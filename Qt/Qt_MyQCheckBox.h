@@ -171,8 +171,10 @@ struct MyQCheckBox : public QCheckBox{
       if (_is_patchvoice_onoff_button==true)
         return;
 
-      if(_patch==NULL || _patch->instrument!=get_audio_instrument() || _patch->patchdata == NULL)
+      if(_patch==NULL || _patch->instrument!=get_audio_instrument() || _patch->patchdata == NULL) {
+        emit clicked();//rightClicked();
         return;
+      }
       
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
@@ -256,6 +258,15 @@ struct MyQCheckBox : public QCheckBox{
     
     CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text2);
   }
+
+#if 0  //unable to make this work. Using the "clicked" signal instead.
+ signals:
+  
+  void rightClicked(){
+    printf("Right clicked\n");
+  }
+#endif
+  
 };
 
 

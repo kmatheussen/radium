@@ -212,7 +212,7 @@ extern LANGSPEC void MW_create_plain(void);
 extern LANGSPEC int MW_get_curr_ab(void);
 extern LANGSPEC bool MW_is_ab_valid(int ab_num);
 extern LANGSPEC void MW_change_ab(int ab_num);
-extern LANGSPEC void MW_reset_ab(void);
+extern LANGSPEC void MW_reset_ab(int ab_num); // -1 resets all
 extern LANGSPEC hash_t *MW_get_ab_state(void);
 extern LANGSPEC void MW_recreate_ab_from_state(hash_t *ab_state);
 

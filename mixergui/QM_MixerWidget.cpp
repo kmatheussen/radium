@@ -2437,9 +2437,12 @@ void MW_change_ab(int ab_num){
   printf("Curr ab: %d\n", new_ab_num);
 }
 
-void MW_reset_ab(void){
-  for(int i=0;i<MW_NUM_AB;i++)
-    g_ab_is_valid[i]=false;
+void MW_reset_ab(int num){
+  if (num==-1)
+    for(int i=0;i<MW_NUM_AB;i++)
+      g_ab_is_valid[i]=false;
+  else
+    g_ab_is_valid[num]=false;
 }
 
 hash_t *MW_get_ab_state(void){

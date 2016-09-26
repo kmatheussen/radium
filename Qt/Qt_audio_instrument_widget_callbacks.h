@@ -979,11 +979,25 @@ public:
     
   }
 
+  void ab_rightclicked(int num){
+    _plugin_widget->ab_rightclicked(num);
+    update_all_ab_buttons();
+  }
+
 public slots:
+
+  void on_ab0_clicked(){ab_rightclicked(0);}
+  void on_ab1_clicked(){ab_rightclicked(1);}
+  void on_ab2_clicked(){ab_rightclicked(2);}
+  void on_ab3_clicked(){ab_rightclicked(3);}
+  void on_ab4_clicked(){ab_rightclicked(4);}
+  void on_ab5_clicked(){ab_rightclicked(5);}
+  void on_ab6_clicked(){ab_rightclicked(5);}
+  void on_ab7_clicked(){ab_rightclicked(6);}
 
   void on_ab_reset_button_clicked(){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    PLUGIN_reset_ab(plugin);
+    PLUGIN_reset_ab(plugin,-1);
     update_all_ab_buttons();
   }
 

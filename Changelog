@@ -1,3 +1,25 @@
+Changes 4.1.5 -> 4.1.6:
+* Don't fill up undo log when adding undo for all effects of an instrument.
+* Don't delete old song when importing MIDI, just put the midi data
+  into a new appended block.
+* Add "reset" option to the a/b testing buttons when right clicking one.
+* Mixer a/b testing
+* Fix bug that sometimes caused player not to restart after undoing or redoing.
+* Update s7 scheme interpreter to latest version.
+* Keyboard shortcuts and menu entries for copy/paste/cut/delete mixer objects
+* Fix solo for instruments that have input event connections.
+* Add "Turn off solo for all instruments" entry to the Solo/Mute menu
+* API: Make the setInstrumentEffect function work on any instrument,
+  not just the sample player.
+* Fix importing midi (and calling the "setNumLines" api function) while
+  playing.
+* Mixer: Remove the "Zoom in" and "Zoom out" buttons.
+* Mixer: "Reset Zoom" -> "<snake-arrow>Zoom".
+* Mixer: "Show CPU usage" -> "CPU"
+* import mod: Fix looping when looping from last line of pattern
+
+
+
 Changes 4.1.4 -> 4.1.5:
 * MIDI instrument: Fix bug that caused midi channel 2 to be send out
   at channel 3, channel 3 to be sent out at channel 4, and so forth.

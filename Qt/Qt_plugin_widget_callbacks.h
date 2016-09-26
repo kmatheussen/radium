@@ -581,12 +581,36 @@ public:
       ab_b->setText("B");
   }
 
+  void ab_rightclicked(int num){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    int curr=plugin->curr_ab_num;
+    
+    if (curr != num)
+      if (popupMenu("Reset")==0){
+        PLUGIN_reset_ab(plugin, num);
+        update_ab_buttons();
+        AUDIOWIDGET_redraw_ab(_patch);
+      }
+  }
+
+
 public slots:
 
   // ab-testing
+  void on_ab_a_clicked(){ab_rightclicked(0);}
+  void on_ab_b_clicked(){ab_rightclicked(1);}
+  /*
+  void on_ab_c_clicked(){ab_rightclicked(2);}
+  void on_ab_d_clicked(){ab_rightclicked(3);}
+  void on_ab_e_clicked(){ab_rightclicked(4);}
+  void on_ab_f_clicked(){ab_rightclicked(5);}
+  void on_ab_g_clicked(){ab_rightclicked(5);}
+  void on_ab_h_clicked(){ab_rightclicked(6);}
+  */
+  
   void on_ab_reset_clicked(){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    PLUGIN_reset_ab(plugin);
+    PLUGIN_reset_ab(plugin,-1);
     update_ab_buttons();
     AUDIOWIDGET_redraw_ab(_patch);
   }
