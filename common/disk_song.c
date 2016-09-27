@@ -48,7 +48,7 @@ DC_start("SONG");
 	DC_SSN("num_blocks",song->num_blocks);
 	DC_SSI("length",song->length);
 	DC_SSS("songname",song->songname);
-	DC_SSN("maxtracks",song->maxtracks);
+	//DC_SSN("maxtracks",song->maxtracks);
 
         DC_start("COMMENT");{
           HASH_save(COMMENT_get_state(), dc.file);
@@ -147,7 +147,8 @@ var2:
 	song->songname=DC_LoadS();
 	goto start;
 var3:
-	song->maxtracks=DC_LoadN();
+	//song->maxtracks=DC_LoadN();
+        DC_LoadN(); // not used anymore
 	goto start;
 
 var4:

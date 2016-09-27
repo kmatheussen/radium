@@ -423,7 +423,9 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
 
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblocks;
-    
+
+  bool has_paused = false;
+  
   while(wblock!=NULL){
     struct WTracks *wtrack = wblock->wtracks;
     while(wtrack!=NULL){
@@ -432,16 +434,18 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
       struct Tracks *track = wtrack->track;
       if(track->patch==old_patch){
 
-        PC_Pause();{
-          ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
-
-          PLAYER_lock();{
-            handle_fx_when_theres_a_new_patch_for_track(track,track->patch,new_patch);
-            track->patch = new_patch;
-          }PLAYER_unlock();
-          
-        }PC_StopPause(window);
+        if (!has_paused){
+          PC_Pause();
+          has_paused = true;
+        }
         
+        ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
+
+        PLAYER_lock();{
+          handle_fx_when_theres_a_new_patch_for_track(track,track->patch,new_patch);
+          track->patch = new_patch;
+        }PLAYER_unlock();
+                  
       } else if (new_patch == NULL){
 
       again:
@@ -469,7 +473,10 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
       wtrack = NextWTrack(wtrack);
     }
     wblock = NextWBlock(wblock);
-  }    
+  }
+
+  if (has_paused)
+    PC_StopPause(window);
 }
 
 static void remove_patch_from_song(struct Patch *patch){
@@ -497,7 +504,7 @@ static void make_inactive(struct Patch *patch, bool force_removal){
   }
 
   PATCH_stop_all_notes(patch);
-    
+
   remove_patch_from_song(patch);
 
   hash_t *audio_patch_state = AUDIO_get_audio_patch_state(patch); // The state is unavailable after calling remove_patch().
