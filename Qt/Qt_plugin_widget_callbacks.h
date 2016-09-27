@@ -585,12 +585,11 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     int curr=plugin->curr_ab_num;
     
-    if (curr != num)
-      if (popupMenu("Reset")==0){
-        PLUGIN_reset_ab(plugin, num);
-        update_ab_buttons();
-        AUDIOWIDGET_redraw_ab(_patch);
-      }
+    if (popupMenu(talloc_format("%sReset",curr==num?"[disabled]":""))==0){
+      PLUGIN_reset_ab(plugin, num);
+      update_ab_buttons();
+      AUDIOWIDGET_redraw_ab(_patch);
+    }
   }
 
 

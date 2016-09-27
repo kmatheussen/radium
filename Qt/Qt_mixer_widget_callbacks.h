@@ -163,11 +163,10 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
   }
 
   void ab_rightclicked(int num){
-    if (MW_get_curr_ab() != num)
-      if (popupMenu("Reset")==0){
-        MW_reset_ab(num);
-        update_ab_buttons();
-      }
+    if (popupMenu(talloc_format("%sReset",MW_get_curr_ab()==num?"[disabled]":""))==0){
+      MW_reset_ab(num);
+      update_ab_buttons();
+    }
   }
 
 public slots:
