@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/PEQ_LPB_proc.h"
 #include "../common/PEQ_Signature_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/disk.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -584,7 +585,7 @@ static double RT_get_src_ratio3(Data *data, const Sample *sample, float pitch){
 static double RT_get_src_ratio2(Data *data, const Sample *sample, float pitch){
 
   //printf("note_adjust: %d (%f)\n",(int)data->p.note_adjust,data->p.note_adjust);
-  double adjusted_pitch = pitch + scale_double(data->p.finetune, 0, 1, -1, 1) + (int)data->p.note_adjust;
+  double adjusted_pitch = pitch + scale_double(data->p.finetune, 0, 1, -1, 1) + data->p.note_adjust;
   return RT_get_src_ratio3(data, sample, adjusted_pitch);
 }
 
@@ -1672,8 +1673,8 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     if(false && data->num_different_samples>1)
       snprintf(buffer,buffersize-1,"disabled (multi-sample instrument)");
     else{
-      int adjust = data->p.note_adjust;
-      snprintf(buffer,buffersize-1,"%s%d note%s",adjust>0?"+":"",adjust,adjust==-1?"":adjust==1?"":"s");
+      float adjust = data->p.note_adjust;
+      snprintf(buffer,buffersize-1,"%s%.2f note%s",adjust>0?"+":"",adjust,adjust==-1?"":adjust==1?"":"s");
     }
     break;
 #if 0
@@ -2344,8 +2345,13 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
   if(set_new_sample(plugin,filename,instrument_number,resampler_type,loop_start,loop_length, use_sample_file_middle_note, is_loading)==false)
     GFX_Message(NULL, "Could not load soundfile \"%s\". (instrument number: %d)\n",STRING_get_chars(filename),instrument_number);
 
+  Data *data=(Data*)plugin->data;
+
+  if (is_loading && disk_load_version <= 0.865){
+    data->p.note_adjust = int(data->p.note_adjust);
+  }
+  
   if (audiodata_is_included) {    
-    Data *data=(Data*)plugin->data;
     if (data!=NULL)
       data->filename = wcsdup(org_filename);
   }
