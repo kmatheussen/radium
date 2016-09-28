@@ -1659,17 +1659,35 @@ struct Tracker_Windows{
 	song.h
 *********************************************************************/
 
+struct SeqBlock{
+  struct Blocks *block;
+  int64_t time; // Player must be stopped when modifying this variable
+};
+
+struct SeqTrack{
+  //int num_seqblocks;
+  //struct SeqBlock **seqblocks; // Player must be stopped when modifying this variable
+  vector_t seqblocks;
+};
+
+/*
+struct SeqPlaylist{
+  struct SeqTrack **seqtracks;
+};
+*/
 
 struct Song{
 	struct Tracker_Windows *tracker_windows;
 	struct Blocks *blocks;
 	struct Blocks **playlist;			/* This variable is just temporarily. Later, the playlist will be much more advanced. */
 
+        //int num_seqtracks;
+        //struct SeqTrack **seqtracks; // New playlist. Player must be stopped when modifying this variable
+        vector_t seqtracks;
+  
 	NInt num_blocks;
 	int length;								/* Playlist length. */
 	char *songname;
-
-	NInt maxtracks;						/* The highest number of tracks in a block. (changed when exceeding) */
 
 	hash_t *mixerwidget_state; // Only used during loading.
 	hash_t *instrument_widget_order_state; // Only used during loading.

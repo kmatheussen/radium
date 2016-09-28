@@ -77,7 +77,6 @@ bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct 
 
 static void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, STime addtime,bool before,bool add_latency){
         STime time=ATOMIC_GET(pc->seqtime);
-	int playpos;
 
 	if(addplaypos>0){
 		if(pc->playtype==PLAYBLOCK || pc->playtype==PLAYBLOCK_NONLOOP){
@@ -85,7 +84,7 @@ static void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, ST
 		}else{
                   int curr_playlistpos = ATOMIC_GET(root->curr_playlist);
                   for(
-                      playpos=curr_playlistpos;
+                      int playpos=curr_playlistpos;
                       playpos<curr_playlistpos+addplaypos;
                       playpos++
                       )

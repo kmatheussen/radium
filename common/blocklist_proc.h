@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern LANGSPEC void BL_init(void);
 extern LANGSPEC int *BL_copy(void);
 extern LANGSPEC void BL_paste(int *playlist);
+extern LANGSPEC void BL_paste2(struct Song *song, int *playlist);
 extern LANGSPEC void BL_insert(int pos,struct Blocks *block);
 extern LANGSPEC void BL_insertCurrPos(int pos,struct Blocks *block);
 extern LANGSPEC void BL_delete(int pos);

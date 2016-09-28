@@ -28,8 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdio.h>
 
 
-//#define PACKAGE 1 // workaround for bug in libbfd
-//#define PACKAGE_VERSION 1 // workaround for bug in libbfd
+#define PACKAGE 1 // workaround for bug in libbfd
+#define PACKAGE_VERSION 1 // workaround for bug in libbfd
 #include "backtrace-symbols.c"
 
 #elif defined(FOR_MACOSX)

@@ -121,6 +121,17 @@ extern LANGSPEC vector_t *VECTOR_list3_to_vector(const struct ListHeader3 *list)
 extern LANGSPEC void VECTOR_insert_list3(vector_t *v, const struct ListHeader3 *element);
 extern LANGSPEC void VECTOR_insert_place(vector_t *v, const Place *p);
 
+static inline void VECTOR_set(vector_t *v, int pos, void *element){
+  R_ASSERT_RETURN_IF_FALSE(v->num_elements > pos);
+  v->elements[pos] = element;
+}
+
+static inline void VECTOR_delete_last(vector_t *v){
+  R_ASSERT_RETURN_IF_FALSE(v->num_elements > 0);
+  v->num_elements--;
+  v->elements[v->num_elements]=NULL;
+}
+
 #ifdef __cplusplus
 #define VECTOR_FOR_EACH(type,varname,vector) {                          \
   int iterator666;                                                      \

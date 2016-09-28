@@ -86,6 +86,7 @@ struct Song *LoadSong(void){
 		"maxtracks",
 	};
 	struct Song *song=DC_alloc(sizeof(struct Song));
+        VECTOR_push_back(&song->seqtracks, talloc(sizeof(struct SeqTrack)));
 
         MW_cleanup(true);
           
