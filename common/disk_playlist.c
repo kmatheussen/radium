@@ -67,7 +67,7 @@ void DLoadPlayList(struct Root *newroot,struct Song *song){
 	int num_playlists=dc.num_playlists;
 	int lokke;
 
-        int *to_paste = talloc_atomic(num_playlists+1);
+        int *to_paste = talloc_atomic(sizeof(int) * (num_playlists+1));
         to_paste[0] = num_playlists;
 
 	for(lokke=0;lokke<num_playlists;lokke++){
