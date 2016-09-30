@@ -1230,10 +1230,10 @@ $(P)Qt_upperleft_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_upperleft_widget.ui $(P
 
 
 
-$(P)Qt_mixer_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_widget.ui $(P)create_source_from_ui.sh $(P)Qt_mixer_widget_callbacks.h $(P)mQt_mixer_direction_menu.h
+$(P)Qt_mixer_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_widget.ui $(P)create_source_from_ui.sh $(P)Qt_mixer_widget_callbacks.h $(P)Qt_mixer_direction_menu.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) mixer_widget
 
-$(P)mQt_mixer_direction_menu.h:  $(BUILD_DEPENDENCIES) $(P)qt4_mixer_direction_menu.ui $(P)create_source_from_ui.sh  $(P)Qt_mixer_direction_menu_callbacks.h
+$(P)Qt_mixer_direction_menu.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_direction_menu.ui $(P)create_source_from_ui.sh  $(P)Qt_mixer_direction_menu_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) mixer_direction_menu
 
 
