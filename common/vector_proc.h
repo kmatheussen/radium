@@ -122,7 +122,7 @@ extern LANGSPEC void VECTOR_insert_list3(vector_t *v, const struct ListHeader3 *
 extern LANGSPEC void VECTOR_insert_place(vector_t *v, const Place *p);
 
 static inline void VECTOR_set(vector_t *v, int pos, void *element){
-  R_ASSERT_RETURN_IF_FALSE(v->num_elements > pos);
+  R_ASSERT_RETURN_IF_FALSE(pos < v->num_elements);
   v->elements[pos] = element;
 }
 

@@ -4,7 +4,7 @@
 
 #include "scheduler_proc.h"
 
-#define DO_DEBUG 1
+#define DO_DEBUG 0
 
 
 static const int g_num_pitches_args = 7;

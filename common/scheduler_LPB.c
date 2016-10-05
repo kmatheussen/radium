@@ -11,14 +11,19 @@
  */
 
 
+#define DEBUG_BUGS 0
+
+
 static double get_num_beats(const struct SeqBlock *seqblock, const LPB_Iterator *iterator, int audioframes_to_add){
   struct Blocks *block = pc->block;
 
   double time = ATOMIC_DOUBLE_GET(pc->start_time_f) - seqblock->time; //(double)ATOMIC_GET(pc->seqtime);
 
   //printf("start_time_f: %d / %d (%d), seqblock->time: %d\n",(int)ATOMIC_DOUBLE_GET(pc->start_time_f), (int)pc->start_time, (int)fabsf(ATOMIC_DOUBLE_GET(pc->start_time_f)-pc->start_time), (int)seqblock->time);
-  
+
+#if DEBUG_BUGS
   R_ASSERT_NON_RELEASE(time > -(RADIUM_BLOCKSIZE*safe_volatile_float_read(&block->reltempo)));
+#endif
   
   if (time < 0) // Happens when switching between two seqblocks at a non-audio block alignment (i.e. delta time > 0). To avoid this minor inaccuracy, it seems necessary to break the use of constant 64 frame audio block sizes, so it's not worth it.
     time = 0;
@@ -58,8 +63,10 @@ static void set_new_num_beats_values(struct SeqTrack *seqtrack, const struct Seq
 
   }
 
+#if DEBUG_BUGS
   R_ASSERT_NON_RELEASE(iterator->next_num_beats > iterator->curr_num_beats);
-
+#endif
+  
   RT_Beats_set_new_last_bar_start_value(seqtrack, iterator->curr_num_beats, just_started_playing);
 }
 
@@ -80,8 +87,10 @@ void RT_LPB_set_beat_position(struct SeqTrack *seqtrack, int audioblocksize){
     
   double num_beats_till_next_time = iterator->next_num_beats - iterator->curr_num_beats;
 
+#if DEBUG_BUGS
   R_ASSERT_NON_RELEASE(num_beats_till_next_time > 0);
-
+#endif
+  
   double beats_per_minute = num_beats_till_next_time * 60.0 * (double)pc->pfreq / (double)audioblocksize;
   //printf("beats_per_minute: %f, curr_num_beats: %f - %f (d: %f)\n", beats_per_minute,iterator->curr_num_beats,iterator->next_num_beats,num_beats_till_next_time);
 
@@ -147,7 +156,7 @@ static void set_iterator_data2(LPB_Iterator *iterator, const struct Blocks *bloc
   print_lpb_iterator_status(block, iterator);
 }
 
-static void set_iterator_data(LPB_Iterator *iterator, const struct Blocks *block, const struct LPBs *lpb){
+static void set_iterator_data(LPB_Iterator *iterator, const struct Blocks *block, const struct LPBs *lpb){  
   R_ASSERT_RETURN_IF_FALSE(lpb != NULL);
 
   set_iterator_data2(iterator, block, lpb->l.p, lpb->lpb, NextLPB(lpb));

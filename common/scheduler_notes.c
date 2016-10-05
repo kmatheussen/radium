@@ -67,7 +67,7 @@ static int64_t RT_schedule_end_note(
     if (note_start_time == time)
       priority = SCHEDULER_LOWEST_NOTE_PRIORITY; // Make sure note is stopped after all other events, in case the note is stopped at the same time as it was started. (very corner case situtation)
 
-    printf(" Scheduling END note at %d. seqblock->time: %d\n",(int)time, (int)seqblock->time);
+    //printf(" Scheduling END note at %d. seqblock->time: %d\n",(int)time, (int)seqblock->time);
     SCHEDULER_add_event(time, RT_scheduled_stop_note, &args[0], num_args, priority);
           
     return time;

@@ -205,7 +205,13 @@ void BL_delete(int pos){
 
   // Seqtracks
   {
-    VECTOR_delete(root->song->seqtracks.elements[0], pos);
+    vector_t *seqblocks = root->song->seqtracks.elements[0];
+    
+    VECTOR_delete(seqblocks, pos);
+    
+    if (seqblocks->num_elements==0)
+      VECTOR_push_back(seqblocks, get_seqblock(root->song->blocks));
+    
     update_seqtrack_timing2();
   }
 
@@ -267,8 +273,14 @@ void BL_setLength(int length){
       
       root->song->playlist = playlist;
 
-      for(int i=root->song->length;i<length;i++)
-        VECTOR_push_back(root->song->seqtracks.elements[0], get_seqblock(playlist[i]));
+      vector_t *seqblocks = root->song->seqtracks.elements[0];
+        
+      for(int i=root->song->length;i<length;i++){
+        printf("  PUSH PUSH %d. len: %d\n",i,seqblocks->num_elements);
+        VECTOR_push_back(seqblocks, get_seqblock(playlist[i]));
+        printf(" Got it. Lnegth now: %d\n",seqblocks->num_elements);
+      }
+      //abort();
       
     } else {
 
@@ -297,7 +309,7 @@ void BL_setBlock(int pos, struct Blocks *block){
 
   PC_Pause();{
     root->song->playlist[pos] = block;
-    VECTOR_set(root->song->seqtracks.elements[0], pos, block);
+    VECTOR_set(root->song->seqtracks.elements[0], pos, get_seqblock(block));
     update_seqtrack_timing2();
   }PC_StopPause(NULL);
   

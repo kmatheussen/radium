@@ -5467,9 +5467,9 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (let loop ((pos 0)
              (playlist playlist))
     (when (not (null? playlist))
-          (<ra> :set-playlist-block pos (car playlist))
-          (loop (1+ pos)
-                (cdr playlist)))))
+      (<ra> :set-playlist-block pos (car playlist))
+      (loop (1+ pos)
+            (cdr playlist)))))
 
 (define (send-events-to-radium playlist instruments patterns)
   (clear-radium-editor)
@@ -5922,6 +5922,18 @@ FIX:
           (iota 100))
 (load "import_mod.scm")
 (gc)
+
+
+(<ra> :set-playlist-length 27)
+(<ra> :set-playlist-block 15 3)
+
+  (let loop ((pos 0)
+             (playlist playlist))
+    (when (not (null? playlist))
+      (<ra> :set-playlist-block pos (car playlist))
+      (loop (1+ pos)
+            (cdr playlist)))))
+
 ||#
 
       
