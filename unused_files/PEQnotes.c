@@ -49,7 +49,7 @@ static void InitPEQendnote(
 ){
 	NInt tracknum=track->l.num;
 	struct PEventQueue *peq=GetPEQelement();
-	int orgplaylistaddpos=playlistaddpos;
+	//int orgplaylistaddpos=playlistaddpos;
 
 	peq->TreatMe=PE_StopNote;
 	peq->block=block;
@@ -90,7 +90,7 @@ static void InitPEQendnote(
 	}
 
 //A small hack here.
-	peq->playpos=orgplaylistaddpos;
+//	peq->playpos=orgplaylistaddpos;
 }
 
 static int rnd(int max){

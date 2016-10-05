@@ -23,6 +23,11 @@ extern LANGSPEC struct Blocks *PC_GetPlayBlock(int numfromcurrent);
 
 extern LANGSPEC bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct Notes **note, struct Tracks **track, const struct Blocks **block);
 
+void PC2_add_a(struct PEventQueue *peq,
+               int64_t block_start_time,
+               Place *p
+               );
+
 extern LANGSPEC void PC_InsertElement(struct PEventQueue *peq, int addplaypos, STime addtime);
 extern LANGSPEC void PC_InsertElement_latencycompencated(struct PEventQueue *peq, int addplaypos, STime addtime);
 extern LANGSPEC void PC_InsertElement_a_latencycompencated(struct PEventQueue *peq, int addplaypos, STime addtime);

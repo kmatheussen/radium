@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
+#if 0
 /*********************************************************************
  This is an oop struct. 'TreatMe' is a virtual procedure. Because
  of simplicity (GC_malloc can not be used from the player-thread, see
@@ -33,10 +33,11 @@ struct PEventQueue{
 	void (*TreatMe)(struct PEventQueue *peq, int doit);
 
 // Used by all
-	int playpos;				// Position in the playlist this event was generated from.
+//	int playpos;				// Position in the playlist this event was generated from.
 
 
 // Used by various functions.
+        const struct SeqTrack *seqtrack;
 	const struct Tracker_Windows *window;
         struct WBlocks *wblock; // not const.
 	const struct Blocks *block;
@@ -85,6 +86,9 @@ struct PEventQueue{
 #define PEQT_VELTOEND 8
 #define PEQT_VELFROMSTARTTOEND 9
 
+#endif
+
+
 typedef enum {
   PLAYER_STATE_PROGRAM_NOT_READY = 0,
   PLAYER_STATE_STARTING_TO_PLAY,
@@ -98,7 +102,7 @@ typedef struct{
 
 //private
 
-	struct PEventQueue *peq;	// Player events.
+//	struct PEventQueue *peq;	// Player events.
 
         int pfreq; // player frequency. i.e. sample rate. TODO: Get rid of this one. Use MIXER_getsamplerate instead.
 
@@ -164,7 +168,7 @@ static inline void init_player_state(void){
 #define PLAYRANGE 2 // Must never be set. We set pc->is_playing_range to true instead.
 #define PLAYBLOCK_NONLOOP 3
 
-typedef struct ListHeader1 PEQ_UsedTracks;
+//typedef struct ListHeader1 PEQ_UsedTracks;
 
 #endif
 

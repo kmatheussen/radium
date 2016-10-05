@@ -282,7 +282,7 @@ $1 = (SoundPlugin *) 0x0
 #include "../common/OS_visual_input.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/patch_proc.h"
-#include "../common/PEQcommon_proc.h"
+//#include "../common/PEQcommon_proc.h"
 #include "../common/playerclass.h"
 extern PlayerClass *pc;
 
@@ -498,7 +498,9 @@ void RT_PD_set_line(int64_t time, int64_t time_nextline, int line){
     t_atom v_line[6];
     int sample_rate = MIXER_get_sample_rate();
 
-    const struct Blocks *block = PC_GetPlayBlock(0);
+    const struct SeqTrack *seqtrack = pc->playtype==PLAYSONG ? ((struct SeqTrack*)root->song->seqtracks.elements[0]) : &root->song->block_seqtrack;
+    const struct Blocks *block = seqtrack->curr_seqblock->block;
+
     int64_t duration = block->times[line+1].time - block->times[line].time;
       
     SETFLOAT(v_line + 0, int(time / sample_rate));

@@ -141,7 +141,7 @@ static inline void VECTOR_delete_last(vector_t *v){
 #else
 #define VECTOR_FOR_EACH(var,vector) {                                   \
   int iterator666;                                                      \
-  vector_t *vector666 = vector;                                         \
+  const vector_t *vector666 = vector;                                         \
   for(iterator666=0;iterator666<(vector666)->num_elements;iterator666++){  \
   var = (vector666)->elements[iterator666];
 #endif

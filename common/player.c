@@ -25,8 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "playerclass.h"
-#include "PEQcommon_proc.h"
-#include "PEQ_type_proc.h"
+//#include "PEQcommon_proc.h"
+//#include "PEQ_type_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../audio/Pd_plugin_proc.h"
 #include "../Qt/Qt_AutoBackups_proc.h"
@@ -38,6 +38,8 @@ extern PlayerClass *pc;
 extern struct Root *root;
 
 extern LANGSPEC void OS_InitMidiTiming(void);
+
+static bool g_time_was_stopped = true;
 
 void PlayerTask(STime reltime){
         if (ATOMIC_GET(is_starting_up))
@@ -54,8 +56,9 @@ void PlayerTask(STime reltime){
           return;
 
         } else if (player_state==PLAYER_STATE_STOPPING) {
-          PC_ReturnElements();
-          
+          //PC_ReturnElements();
+
+          g_time_was_stopped = true;
           pc->end_time=0;
           pc->end_time_f=0;
 
@@ -101,10 +104,11 @@ void PlayerTask(STime reltime){
           return;
         }
         
-        if(pc->end_time==0){
+        if(g_time_was_stopped){
           ATOMIC_SET(pc->therealtime, reltime);
           OS_InitMidiTiming();
           OS_InitAudioTiming();
+          g_time_was_stopped = false;
         }else{
           ATOMIC_ADD(pc->therealtime, reltime);
         }
@@ -139,6 +143,7 @@ void PlayerTask(STime reltime){
 
         pc->is_treating_editor_events = true; {
 
+#if 0
           struct PEventQueue *peq = pc->peq;
           
           while(
@@ -154,7 +159,8 @@ void PlayerTask(STime reltime){
               pc->pausetime=peq->l.time;
               peq=pc->peq;
             }
-
+#endif
+          
           // Currently, there are two scheduling systems. The old linked list (PEQ), and this one.
           // This one, the SCHEDULER, is a priority queue. The plan is to shift things from PEQ into SCHEDULER.
           // Until everything is shifted from PEQ to SCHEDULER, and the PEQ-mess remains, things will be more complicated than necessary.

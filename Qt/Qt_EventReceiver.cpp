@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/disk_load_proc.h"
 #include "../common/OS_string_proc.h"
 #include "../common/eventreciever_proc.h"
-#include "../common/PEQ_clock_proc.h"
+//#include "../common/PEQ_clock_proc.h"
 #include "../common/gfx_proc.h"
 #include "../common/gfx_wtrackheaders_proc.h"
 #include "../midi/midi_i_input_proc.h"

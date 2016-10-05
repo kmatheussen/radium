@@ -213,21 +213,3 @@ void PE_HandleFX(struct PEventQueue *peq,int doit){
 	return;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,5 +1,7 @@
 #OBJ4= mouse.o mouse_wtrack.o mouse_wtrackheader.o mouse_tempoheader.o mouse_wtrackborder.o mouse_temponodeborder.o mouse_fxarea.o mouse_pitches.o mouse_vellinenode.o mouse_vellineend.o mouse_vellinestart.o mouse_fxnode.o mouse_quantitize.o mouse_reltemposlider.o mouse_temponodes.o
 
+#OBJ9= PEQrealline.o PEQline.o PEQmempool.o PEQblock.o PEQnotes.o PEQcommon.o PEQvelocities.o PEQpitches.o PEQ_calc.o PEQfxs.o PEQ_type.o PEQ_calc_64bit.o PEQ_clock.o PEQ_LPB.o PEQ_Signature.o PEQ_Beats.o
+
 subtrack.o 
 gfx_wtracks.o 
 gfx_tempotrackheader.o
@@ -101,4 +103,35 @@ mouse_quantitize.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_quantitize.c
 
 mouse_reltemposlider.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_reltemposlider.c
 	$(CC) $(CD)mouse_reltemposlider.c $(OPT)
+
+
+PEQrealline.o:  $(BUILD_DEPENDENCIES) $(CD)PEQrealline.c $(CD)playerclass.h
+	$(CC) $(CD)PEQrealline.c $(OPT) 
+
+PEQline.o:  $(BUILD_DEPENDENCIES) $(CD)PEQline.c $(CD)playerclass.h
+	$(CC) $(CD)PEQline.c $(OPT) 
+
+PEQmempool.o:  $(BUILD_DEPENDENCIES) $(CD)PEQmempool.c $(CD)playerclass.h
+	$(GCC) $(CD)PEQmempool.c $(OPT) 
+
+PEQblock.o:  $(BUILD_DEPENDENCIES) $(CD)PEQblock.c $(CD)playerclass.h
+	$(CC) $(CD)PEQblock.c $(OPT)
+
+PEQnotes.o:  $(BUILD_DEPENDENCIES) $(CD)PEQnotes.c $(CD)playerclass.h
+	$(CC) $(CD)PEQnotes.c $(OPT)
+
+PEQcommon.o:  $(BUILD_DEPENDENCIES) $(CD)PEQcommon.c $(CD)playerclass.h
+	$(CC) $(CD)PEQcommon.c $(OPT)
+
+PEQvelocities.o:  $(BUILD_DEPENDENCIES) $(CD)PEQvelocities.c
+	$(CC) $(CD)PEQvelocities.c $(OPT)
+
+PEQpitches.o:  $(BUILD_DEPENDENCIES) $(CD)PEQpitches.c
+	$(CC) $(CD)PEQpitches.c $(OPT)
+
+PEQ_calc.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_calc.c
+	$(CC) $(CD)PEQ_calc.c $(OPT)
+
+PEQfxs.o:  $(BUILD_DEPENDENCIES) $(CD)PEQfxs.c
+	$(CC) $(CD)PEQfxs.c $(OPT)
 

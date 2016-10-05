@@ -23,15 +23,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
-#include "PEQmempool_proc.h"
-#include "PEQ_type_proc.h"
+//#include "PEQmempool_proc.h"
+//#include "PEQ_type_proc.h"
 #include "playerclass.h"
 #include "song_proc.h"
 #include "patch_proc.h"
 #include "instruments_proc.h"
 #include "OS_endprogram_proc.h"
 #include "input.h"
-#include "PEQ_clock_proc.h"
+//#include "PEQ_clock_proc.h"
 #include "blts_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../midi/midi_i_input_proc.h"
@@ -114,19 +114,24 @@ bool InitProgram(void){
 
 	printf("...Player 1/2\n");
 
+#if 0
 	if( ( ! InitPEQmempool() )   ){	// 1000 and 4000 are hardcoded values. Not good.
 		return false;
 	}
+#endif
 
-
+#if 0
 	printf("...Clock handler\n");
 
 	if( ! InitClock() ) return false;
-
+#endif
+        
 	printf("...Player 2/2\n");
 
+#if 0
 	PEQ_GetType_Init();
-
+#endif
+        
 	printf("...Instrument\n");
 
 	if( OpenInstruments()==false ){
@@ -163,9 +168,11 @@ void EndProgram(void){
 	printf("...Song\n");
 	ClearSong();
 
+#if 0
 	printf("...Clock handler\n");
 	CloseClock();
-
+#endif
+        
 	printf("...Error handler\n");
 	Error_uninit();
 

@@ -39,7 +39,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/stacktoucher_proc.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/threading_lowlevel.h"
-#include "../common/PEQ_LPB_proc.h"
+#include "../common/scheduler_proc.h"
+//#include "../common/PEQ_LPB_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../midi/midi_i_input_proc.h"
 
@@ -749,9 +750,16 @@ struct Mixer{
       while(jackblock_delta_time < num_frames){
 
         PlayerTask(RADIUM_BLOCKSIZE);
-        
-        RT_LPB_set_beat_position(RADIUM_BLOCKSIZE);
 
+        if (is_playing()) {
+          if (pc->playtype==PLAYBLOCK)
+            RT_LPB_set_beat_position(&root->song->block_seqtrack, RADIUM_BLOCKSIZE);
+          else
+            VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+              RT_LPB_set_beat_position(seqtrack, RADIUM_BLOCKSIZE);
+            }END_VECTOR_FOR_EACH;
+        }
+              
         RT_MIDI_handle_play_buffer();
         
         MULTICORE_run_all(_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);

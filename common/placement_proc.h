@@ -401,6 +401,13 @@ static inline Place p_Last_Pos(const struct Blocks *block){
   return place(block->num_lines-1, MAX_UINT32-1, MAX_UINT32);
 }
 
+#define SetAbsoluteLastPlace(place, block) do{        \
+    Place *p = place;                                 \
+    p->line = (block)->num_lines;                     \
+    p->counter = 0;                                   \
+    p->dividor = 1;                                   \
+  }while(0)
+
 static inline const char* PlaceToString(const Place *a){
   return talloc_format("%d + %d/%d\n",(a)->line,(a)->counter,(a)->dividor);
 }

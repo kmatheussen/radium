@@ -81,11 +81,16 @@ static int64_t scheduler_to_seq_time(int64_t scheduler_time){
 
 static int64_t seq_to_scheduler_time(int64_t seq_time){
 
-  //int64_t block_length = pc->end_time - pc->start_time;
-  //return scale(seq_time, pc->start_time, pc->end_time, g_current_time, g_current_time + block_length);
-  //
+#if 0
+  int64_t block_length = pc->end_time - pc->start_time;
+  return scale(seq_time,
+               pc->start_time, pc->end_time,
+               g_current_time, g_current_time + block_length
+               );
+#else
   //... is the same as:
-  return g_current_time + (seq_time - pc->start_time);
+  return g_current_time + (seq_time - pc->start_time); // (optimization)
+#endif
 }
 
 void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const union SuperType *args, int num_args, enum SchedulerPriority priority){
@@ -95,7 +100,7 @@ void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const uni
   // If not it won't be run until the next audio block since SCHEDULER_called_per_block
   // has already been called for this audio block.
   // (Q: why not do this for events genereated by the editor too?
-  //  A: Because then effects could be run after notes, "note on" events could be run before "note off" events, and so forth)
+  //  A: Because priority would be lost. Effects could run after notes, "note on" events could run before "note off" events, and so forth)
   if (false==pc->is_treating_editor_events && seq_time < pc->end_time) {
     callback(seq_time, args);
     return;
@@ -149,9 +154,7 @@ void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const uni
   g_queue[i] = event;
 
 
-  int argnum;
-  for(argnum=0;argnum<num_args;argnum++)
-    event->args[argnum] = args[argnum];
+  memcpy(event->args, args, sizeof(union SuperType)*num_args);
 }
 
 static void remove_first_event(void){
@@ -192,6 +195,7 @@ void SCHEDULER_called_per_block(int64_t reltime){
   while(g_queue_size>0){
     event_t *event = get_first_event();
     int64_t event_time = event->time >> SCHEDULER_NUM_PRIORITY_BITS;  // remove priority bits.
+    //printf("  SCHEDULER: sched: %d - seq: %d.  First event: %d. pc->start_time: %d, pc->end_time: %d\n",(int)end_time, (int)scheduler_to_seq_time(end_time), (int)scheduler_to_seq_time(event_time),(int)pc->start_time, (int)pc->end_time);
     if(event_time < end_time){
       remove_first_event();
       {
@@ -225,6 +229,10 @@ bool SCHEDULER_clear(void){
     return false;
   else
     return true;
+}
+
+int SCHEDULER_num_events(void){
+  return g_queue_size;
 }
 
 void SCHEDULER_init(void){

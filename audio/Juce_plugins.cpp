@@ -40,9 +40,9 @@
 #define Slider Radium_Slider
 #include "../common/nsmtracker.h"
 #include "../common/patch_proc.h"
-#include "../common/PEQ_LPB_proc.h"
-#include "../common/PEQ_Signature_proc.h"
-#include "../common/PEQ_Beats_proc.h"
+#include "../common/scheduler_proc.h"
+//#include "../common/PEQ_Signature_proc.h"
+//#include "../common/PEQ_Beats_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/player_proc.h"
 #include "../common/OS_Player_proc.h"
@@ -162,11 +162,24 @@ namespace{
       if (block==NULL)
         return false;
 #endif
-      
-      result.bpm = RT_LPB_get_current_BPM();
+
+      const struct SeqTrack *seqtrack;
+
+      if (pc->playtype==PLAYBLOCK)
+        seqtrack = &root->song->block_seqtrack;
+      else
+        seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[0]; // fix
+
+
+      result.bpm = RT_LPB_get_current_BPM(seqtrack);
       //printf("result.bpm: %f\n",result.bpm);
 
-      Ratio signature = RT_Signature_get_current_Signature();
+      if (result.bpm==0){
+        R_ASSERT_NON_RELEASE(false);
+        result.bpm = 1; // At least one vst plugin crashes if bpm is 0.
+      }
+      
+      Ratio signature = RT_Signature_get_current_Signature(seqtrack);
       result.timeSigNumerator = signature.numerator;
       result.timeSigDenominator = signature.denominator;
       //printf("%d/%d\n",signature.numerator,signature.denominator);
@@ -190,8 +203,8 @@ namespace{
         result.timeInSamples = pc->start_time - latency;
         result.timeInSeconds = result.timeInSamples / (double)pc->pfreq;
 
-        result.ppqPosition               = RT_LPB_get_beat_position() - latency_beats;
-        result.ppqPositionOfLastBarStart = g_beat_position_of_last_bar_start;
+        result.ppqPosition               = RT_LPB_get_beat_position(seqtrack) - latency_beats;
+        result.ppqPositionOfLastBarStart = seqtrack->beat_iterator.beat_position_of_last_bar_start;
         
         if (result.ppqPosition < result.ppqPositionOfLastBarStart) {
 

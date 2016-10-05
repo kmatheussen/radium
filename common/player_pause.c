@@ -23,17 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "OS_Player_proc.h"
 #include "threading.h"
-#include "PEQcommon_proc.h"
 #include "placement_proc.h"
-#include "PEQnotes_proc.h"
-#include "PEQrealline_proc.h"
-#include "PEQline_proc.h"
-#include "PEQblock_proc.h"
-#include "PEQfxs_proc.h"
-#include "PEQ_clock_proc.h"
-#include "PEQ_LPB_proc.h"
-#include "PEQ_Signature_proc.h"
-#include "PEQ_Beats_proc.h"
 
 #include "player_pause_proc.h"
 
@@ -140,6 +130,18 @@ void PC_StopPause(struct Tracker_Windows *window){
 // Old code below. It was more sophisticated, but also a bit more complicated.
 
 #if 0
+
+#include "PEQcommon_proc.h"
+#include "PEQnotes_proc.h"
+#include "PEQrealline_proc.h"
+#include "PEQline_proc.h"
+#include "PEQblock_proc.h"
+#include "PEQfxs_proc.h"
+#include "PEQ_clock_proc.h"
+#include "PEQ_LPB_proc.h"
+#include "PEQ_Signature_proc.h"
+#include "PEQ_Beats_proc.h"
+
 
 void PC_Pause(void){
 

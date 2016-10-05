@@ -94,7 +94,7 @@ double g_beat_position_of_last_bar_start = 0.0;
 static bool new_beat_bar_set = false;
 
 // Called from RT_LPB_set_beat_position, which is called from Mixer.cpp after events are calculated, and before audio is created.
-void RT_PEQ_Beats_set_new_last_bar_start_value(double beat_position, bool just_started_playing){
+void RT_PEQ_Beats_set_new_last_bar_start_value_old(double beat_position, bool just_started_playing){
 
   if (just_started_playing) {
 

@@ -228,7 +228,7 @@ static inline int64_t scale_int64(int64_t x, int64_t x1, int64_t x2, int64_t y1,
   else
     return y1 + ( ((x-x1)*(y2-y1))
                   /
-                  (x2-x1)
+                  diff
                   );
 }
 
@@ -557,15 +557,9 @@ struct Pitches{
 	int logtype;
 
         int chance;
-        bool doit; // Only used in the player thread. Set to false if chance failed. Set to true othervice.
 };
 #define NextPitch(a) ((struct Pitches *)((a)->l.next))
 
-typedef struct TrackReallineElements WPitches;
-enum{
-  TRE_PITCHLINE,
-  TRE_PITCHNODE
-};
 
 
 /*********************************************************************
@@ -592,13 +586,12 @@ struct Notes{
 	Place end;
 
         int chance;
-        bool doit; // Only used in the player thread. Set to false if chance failed. Set to true othervice.
   
 	struct Velocities *velocities;
 	int velocity_end;
   
 	struct Pitches *pitches;
-	float pitch_end;
+        float pitch_end; // If pitch_end==0 and pitches==NULL, there's no pitch changes for this note.
   
 	struct Velocities first_velocity; // used by nodelines
 	struct Velocities last_velocity; // used by nodelines
@@ -626,8 +619,10 @@ union SuperType{
   void *pointer;
   const void *const_pointer;
   int64_t int_num;
-  uint32_t uint32_num;
+  int32_t int32_num;
+  uint32_t uint32_num; // Only used for midi messages
   double float_num;
+  bool bool_num;
 };
 
 enum TimeFormat{
@@ -774,8 +769,8 @@ struct FX{
 	const char *name;
 	enum ColorNums color;
 	void (*configureFX)(struct FX *fx,struct Tracks *track);
-	int min;
-	int max;
+        int min; // can not be equal to INT32_MIN (automation can fail if that is the case)
+        int max; // same here
 
         struct Patch *patch;
   
@@ -1659,16 +1654,84 @@ struct Tracker_Windows{
 	song.h
 *********************************************************************/
 
+struct LPBs;
+
+typedef struct {
+  const struct LPBs *next_lpb;
+
+  double num_beats_played_so_far;
+
+  Place place1;
+  Place place2;
+  
+  double place1_f;
+  double place2_f;
+  
+  int lpb_value;
+  double num_beats_between_place1_and_place2;
+
+  // Beats / BPM (the BPM value used in timing is calculated from LPB, not calculated from the BPM track)
+  double curr_num_beats;
+  double next_num_beats;
+  double curr_beats_per_minute;
+
+  bool has_next_num_beats;
+  
+} LPB_Iterator;
+
+
+typedef struct {
+  const struct Beats *next_beat;
+
+  double beat_position_of_last_bar_start; // = 0.0;
+
+  Ratio last_valid_signature; // = {4,4};
+
+  int last_played_metronome_note_num; // = -1;
+
+  bool new_beat_bar_set; // = false;
+} Beat_Iterator;
+
+typedef struct {
+  const struct Signatures *next_signature;
+  Ratio signature_value; // = {4,4};
+} Signature_Iterator;
+
+
 struct SeqBlock{
   struct Blocks *block;
-  int64_t time; // Player must be stopped when modifying this variable
+  int64_t time; // Player must be stopped when modifying this variable.
 };
+
 
 struct SeqTrack{
   //int num_seqblocks;
   //struct SeqBlock **seqblocks; // Player must be stopped when modifying this variable
   vector_t seqblocks;
+
+  struct SeqBlock *curr_seqblock; // curr_seqblock->block and curr_seqblock->time contains the same values as pc->block and pc->seqtime did before introducing seqtrack/seqblock.
+  
+  Place p; // Used by the scheduler when starting to play in the middle of a block
+
+  LPB_Iterator lpb_iterator; // Used by scheduler_LPB.c to keep track of timing (PPQ and BPM)
+  Beat_Iterator beat_iterator;
+  Signature_Iterator signature_iterator;
 };
+
+
+#ifndef __cplusplus
+static inline struct SeqBlock *get_next_seqblock(const struct SeqTrack *seqtrack, int64_t start_time){
+  
+  VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
+
+    if (seqblock->time > start_time)
+      return seqblock;
+     
+  }END_VECTOR_FOR_EACH;
+
+  return NULL;
+}
+#endif
 
 /*
 struct SeqPlaylist{
@@ -1681,9 +1744,11 @@ struct Song{
 	struct Blocks *blocks;
 	struct Blocks **playlist;			/* This variable is just temporarily. Later, the playlist will be much more advanced. */
 
+        struct SeqTrack block_seqtrack; // Used when playing block.
+  
         //int num_seqtracks;
-        //struct SeqTrack **seqtracks; // New playlist. Player must be stopped when modifying this variable
-        vector_t seqtracks;
+        //struct SeqTrack **seqtracks;
+        vector_t seqtracks; // New playlist. Player must be stopped when modifying this variable.
   
 	NInt num_blocks;
 	int length;								/* Playlist length. */

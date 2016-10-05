@@ -800,6 +800,14 @@ private:
         
       blocktime = ATOMIC_DOUBLE_GET(block->player_time);
 
+#if !defined(RELEASE)
+      if (blocktime==-100 || blocktime>=0.0){
+      }else{
+        fprintf(stderr,"blocktime: %f\n",blocktime);
+        abort();
+      }
+#endif
+
       R_ASSERT_NON_RELEASE(blocktime==-100 || blocktime>=0.0);
 
       //printf("blocktime: %f\n",blocktime);

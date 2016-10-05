@@ -26,27 +26,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "playerclass.h"
 #include "placement_proc.h"
 #include "OS_Player_proc.h"
+#if 0
 #include "PEQrealline_proc.h"
 #include "PEQline_proc.h"
 #include "PEQblock_proc.h"
 #include "PEQnotes_proc.h"
+#include "PEQ_clock_proc.h"
+#include "PEQ_LPB_proc.h"
+#include "PEQ_Signature_proc.h"
+#include "PEQ_Beats_proc.h"
+#include "PEQmempool_proc.h"
+#endif
 #include "instruments_proc.h"
 #include "blocklist_proc.h"
 #include "OS_Ptask2Mtask_proc.h"
 #include "time_proc.h"
-#include "PEQ_clock_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "list_proc.h"
 #include "clipboard_range_calc_proc.h"
 #include "gfx_wblocks_proc.h"
 #include "patch_proc.h"
 #include "cursor_updown_proc.h"
-#include "PEQ_LPB_proc.h"
-#include "PEQ_Signature_proc.h"
-#include "PEQ_Beats_proc.h"
-#include "PEQmempool_proc.h"
 #include "../midi/midi_i_input_proc.h"
 #include "../audio/Mixer_proc.h"
+#include "scheduler_proc.h"
 
 #include "player_proc.h"
 
@@ -135,7 +138,7 @@ static void PlayStopReally(bool doit){
 
         R_ASSERT(is_playing()==false);
         
-        InitPEQmempool(); // Clean memory used by player so it can be freed by the garbage collector.
+        //InitPEQmempool(); // Clean memory used by player so it can be freed by the garbage collector.
 
         R_ASSERT(is_playing()==false);
 }
@@ -190,8 +193,10 @@ static void start_player(int playtype, int playpos, bool set_curr_playlist, Plac
   //abort();
   fflush(stdout);
 
-  // player is stopped, so we can do these things here.
   PATCH_reset_time();
+
+#if 0
+  // player is stopped, so we can do these things here.
   InitPEQclock();
   InitPEQ_LPB(pc->block,place);
   InitPEQ_Signature(pc->block,place);
@@ -200,7 +205,11 @@ static void start_player(int playtype, int playpos, bool set_curr_playlist, Plac
   InitPEQline(block,place);
   InitPEQblock(block,place);
   InitAllPEQnotes(block,place);
-
+#else
+  int64_t start_time = Place2STime(block,place);
+  start_seqtrack_scheduling(start_time, *place, playtype);
+#endif
+  
   ATOMIC_SET(pc->player_state, PLAYER_STATE_STARTING_TO_PLAY);
   while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_PLAYING && ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED)
     OS_WaitForAShortTime(2);

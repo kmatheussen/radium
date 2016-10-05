@@ -20,19 +20,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef COMMON_SCHEDULER_PROC_H
 #define COMMON_SCHEDULER_PROC_H
 
+#include "time_proc.h"
+
 typedef void (*SchedulerCallback)(int64_t time_into_the_future, const union SuperType *args);
 
 enum SchedulerPriority{
-  SCHEDULER_FX_PRIORITY             = 0,
-  SCHEDULER_RAWMIDIMESSAGE_PRIORITY = 0,
-  SCHEDULER_NOTE_OFF_PRIORITY       = 1,
-  SCHEDULER_NOTE_ON_PRIORITY        = 2,
-  SCHEDULER_VELOCITY_PRIORITY       = 3, // Note that the end velocity is never sent out at note_end time. If it had, those velocities must have been scheduled with priorith 0.
-  SCHEDULER_PITCH_PRIORITY          = 3, // Same here, I think.
+  SCHEDULER_INIT_PRIORITY           = 0,
+  SCHEDULER_INIT_BLOCK_PRIORITY     = 0,
+  SCHEDULER_SIGNATURE_PRIORITY      = 0,
+  SCHEDULER_LPB_PRIORITY            = 0,
+  SCHEDULER_BEAT_PRIORITY           = 0,
+  SCHEDULER_LINE_PRIORITY           = 1,
+  SCHEDULER_FX_PRIORITY             = 2,
+  SCHEDULER_RAWMIDIMESSAGE_PRIORITY = 2,
+  SCHEDULER_NOTE_OFF_PRIORITY       = 3,
+  SCHEDULER_NOTE_ON_PRIORITY        = 4,
+  SCHEDULER_VELOCITY_PRIORITY       = 5, // Note that the end velocity is never sent out at note_end time. If it had, those velocities must have been scheduled with priorith 0.
+  SCHEDULER_PITCH_PRIORITY          = 5, // Same here, I think.
 
-  SCHEDULER_LOWEST_NOTE_PRIORITY    = 4
+  SCHEDULER_LOWEST_NOTE_PRIORITY    = 6 // Used when note off starts at the same time as note on. Must be higher than pitch and velocity priority.
 
-  // priority 5,6,7 are free
+  // priority 7 is free (set SCHEDULER_NUM_PRIORITY_BITS to 4, to get 9 new priorities)
 
   
   /*
@@ -47,6 +55,7 @@ enum SchedulerPriority{
 extern LANGSPEC void SCHEDULER_add_event(int64_t time_into_the_future, SchedulerCallback callback, const union SuperType *args, int num_args, enum SchedulerPriority priority);
 extern LANGSPEC void SCHEDULER_called_per_block(int64_t reltime);
 
+extern LANGSPEC int SCHEDULER_num_events(void);
 extern LANGSPEC bool SCHEDULER_clear(void);
 extern LANGSPEC void SCHEDULER_init(void);
 
@@ -71,6 +80,70 @@ static inline note_t create_note_from_args(const union SuperType *args){
 }
 
 
+static inline int64_t get_seqblock_place_time(const struct SeqBlock *seqblock, Place p){
+  return seqblock->time + Place2STime(seqblock->block, &p);
+}
+                                 
+
+//  scheduler_notes_proc.h
+
+extern LANGSPEC void RT_schedule_notes_newblock(const struct SeqTrack *seqtrack,
+                                                const struct SeqBlock *seqblock,
+                                                int64_t start_time,
+                                                Place start_place);
+
+// scheduler_pitches_proc.h
+
+extern LANGSPEC void RT_schedule_pitches_newnote(int64_t current_time,
+                                                 const struct SeqTrack *seqtrack,
+                                                 const struct SeqBlock *seqblock,
+                                                 const struct Tracks *track,
+                                                 const struct Notes *note);
+
+// scheduler_velocities_proc.h
+
+void RT_schedule_velocities_newnote(int64_t current_time,
+                                    const struct SeqTrack *seqtrack,
+                                    const struct SeqBlock *seqblock,
+                                    const struct Tracks *track,
+                                    const struct Notes *note);
+
+// scheduler_fxs_proc.h
+
+extern LANGSPEC void RT_schedule_fxs_newblock(const struct SeqTrack *seqtrack,
+                                              const struct SeqBlock *seqblock,
+                                              int64_t start_time,
+                                              Place start_place);
+
+
+// scheduler_seqtrack_proc.h
+extern LANGSPEC void start_seqtrack_scheduling(int64_t start_time, Place place, int playtype); // 'place' is ignored when playing song.
+
+
+// scheduler_realline_proc.h
+extern LANGSPEC void RT_schedule_reallines_in_block(const struct SeqBlock *seqblock, const Place place);
+
+// scheduler_lpb_proc.h
+extern LANGSPEC void RT_schedule_LPBs_newblock(struct SeqTrack *seqtrack,
+                                               const struct SeqBlock *seqblock,
+                                               const Place start_place);
+extern LANGSPEC double RT_LPB_get_current_BPM(const struct SeqTrack *seqtrack);
+extern LANGSPEC double RT_LPB_get_beat_position(const struct SeqTrack *seqtrack);
+extern LANGSPEC void RT_LPB_set_beat_position(struct SeqTrack *seqtrack, int audioblocksize);
+
+// scheduler_Beats_proc.h
+extern void RT_schedule_Beats_newblock(struct SeqTrack *seqtrack,
+                                       const struct SeqBlock *seqblock,
+                                       const Place start_place);
+extern LANGSPEC void RT_Beats_set_new_last_bar_start_value(struct SeqTrack *seqtrack, double beat_position, bool just_started_playing);
+  
+// scheduler_Signature_proc.h
+extern LANGSPEC Ratio RT_Signature_get_current_Signature(const struct SeqTrack *seqtrack);
+extern LANGSPEC void RT_schedule_Signature_newblock(struct SeqTrack *seqtrack,
+                                                    const struct SeqBlock *seqblock,
+                                                    const Place start_place);
+
+  
 #endif // COMMON_SCHEDULER_PROC_H
 
 

@@ -1,0 +1,92 @@
+
+#include "nsmtracker.h"
+#include "placement_proc.h"
+
+
+#include "scheduler_proc.h"
+
+
+
+// Called from ../audio/Juce_plugins.cpp
+//
+Ratio RT_Signature_get_current_Signature(const struct SeqTrack *seqtrack){
+  if (is_playing())
+    return seqtrack->signature_iterator.signature_value;
+  else {
+    if (root==NULL) // When does this happen?
+      return ratio(4,4);
+    else
+      return root->signature;
+  }
+}
+
+
+
+
+static void RT_scheduled_Signature(int64_t time, const union SuperType *args){
+
+  struct SeqTrack       *seqtrack = args[0].pointer;
+  const struct SeqBlock *seqblock = args[1].const_pointer;
+
+  Signature_Iterator *iterator = &seqtrack->signature_iterator;
+
+  const struct Signatures *signature = iterator->next_signature;
+  
+  iterator->signature_value = signature->signature;
+  iterator->next_signature  = NextSignature(signature);
+
+  //printf("   SIG %d/%d\n",iterator->signature_value.numerator, iterator->signature_value.denominator);
+  
+  // Schedule next signature
+  if (iterator->next_signature != NULL){
+    const int num_args = 2;
+        
+    int64_t time = get_seqblock_place_time(seqblock, iterator->next_signature->l.p);
+    
+    SCHEDULER_add_event(time, RT_scheduled_Signature, args, num_args, SCHEDULER_SIGNATURE_PRIORITY);
+  }
+}
+
+
+
+
+void RT_schedule_Signature_newblock(struct SeqTrack *seqtrack,
+                                    const struct SeqBlock *seqblock,
+                                    const Place start_place)
+{
+
+  Signature_Iterator *iterator = &seqtrack->signature_iterator;
+  memset(iterator, 0, sizeof(Signature_Iterator));
+  iterator->signature_value = root->signature;
+  //printf("   SIG Init %d/%d\n",iterator->signature_value.numerator, iterator->signature_value.denominator);
+  
+  const struct Blocks *block = seqblock->block;
+    
+  const struct Signatures *next_signature = block->signatures;
+
+  if(next_signature==NULL)
+    return;
+
+  // spool forward to the 'signature' that is used by 'start_place'
+  //
+  while(PlaceGreaterThan(&start_place, &next_signature->l.p)){
+    iterator->signature_value = next_signature->signature;
+    //printf("   SIG Init %d/%d\n",iterator->signature_value.numerator, iterator->signature_value.denominator);
+    next_signature = NextSignature(next_signature);
+    if (next_signature==NULL)
+      return;
+  }
+
+  iterator->next_signature = next_signature;
+  
+  {
+    int num_args = 2;
+    union SuperType args[num_args];
+    args[0].pointer       = seqtrack;
+    args[1].const_pointer = seqblock;
+    
+    int64_t time = get_seqblock_place_time(seqblock, next_signature->l.p);
+    
+    SCHEDULER_add_event(time, RT_scheduled_Signature, &args[0], num_args, SCHEDULER_SIGNATURE_PRIORITY);
+  }
+}

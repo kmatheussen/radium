@@ -49,7 +49,7 @@ typedef struct {
 
 static LPB_iterator g_lpb_iterator = {0};
 
-
+#if 0 // Moved to scheduler_LPB.c. This file will be removed soon.
 static double g_curr_num_beats = 0.0;
 static double g_next_num_beats = 0.0;
 static double g_curr_beats_per_minute = 0.0;
@@ -94,6 +94,7 @@ static void set_new_g_num_beats_values(LPB_iterator *iterator, int audioblocksiz
 
   RT_PEQ_Beats_set_new_last_bar_start_value(g_curr_num_beats, just_started_playing);
 }
+
 
 
 
@@ -142,6 +143,8 @@ double RT_LPB_get_current_BPM(void){
 
 }
 
+#endif
+
 
 static void print_lpb_iterator_status(const struct Blocks *block){
 #if 0
@@ -154,12 +157,6 @@ static void print_lpb_iterator_status(const struct Blocks *block){
 }
 
 
-#define SetAbsoluteLastPlace(place, block) do{        \
-    Place *p = place;                                 \
-    p->line = block->num_lines;                       \
-    p->counter = 0;                                   \
-    p->dividor = 1;                                   \
-  }while(0)
 
 static void InitPEQ_LPB_new_block(const struct Blocks *block, LPB_iterator *iterator){
   struct LPBs *lpb = block->lpbs;

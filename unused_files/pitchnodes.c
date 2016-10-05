@@ -30,6 +30,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if !USE_OPENGL
 
+typedef struct TrackReallineElements WPitches;
+enum{
+  TRE_PITCHLINE,
+  TRE_PITCHNODE
+};
+
 
 struct ExtraInfo{
   struct Pitches *pitch;

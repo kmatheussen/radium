@@ -75,6 +75,16 @@ bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct 
   return false;
 }
 
+void PC2_add_a(struct PEventQueue *peq,
+               int64_t block_start_time,
+               Place *p
+               )
+{
+  peq->l.time = block_start_time + Place2STime(peq->block, p);
+  ListAddElementP_a(&pc->peq,&peq->l);
+}
+
+// Not sure if there's any point about 'before' anymore since all events should be sorted properly in scheduler.c before being sent to the instruments.
 static void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, STime addtime,bool before,bool add_latency){
         STime time=ATOMIC_GET(pc->seqtime);
 
@@ -114,7 +124,7 @@ static void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, ST
         // (time can be negative when starting to play.)
         // R_ASSERT_RETURN_IF_FALSE(peq->l.time >= 0);
 
-	peq->playpos=pc->playpos+addplaypos;
+	//peq->playpos=pc->playpos+addplaypos;
 
 	if(before){
 		ListAddElementP(&pc->peq,&peq->l);
@@ -207,6 +217,7 @@ void PC_ReturnElements(void){
 }
 
 
+#if 0
 void PC_ReturnElements_fromPlayPos(int playpos){
 	struct PEventQueue *peq;
 	struct PEventQueue *temp;
@@ -225,6 +236,7 @@ void PC_ReturnElements_fromPlayPos(int playpos){
 	}
 
 }
+#endif
 
 
 void PC_GoNextBlock(void){

@@ -268,7 +268,7 @@ OBJ7= instruments.o patch.o undo_audio_patch_addremove.o fxlines.o fxlines_legal
 OBJ8= reltempo.o temponodes.o tempos.o time.o temponodes_legalize.o
 
 #Playing
-OBJ9= Ptask2Mtask.o player.o scheduler.o PEQrealline.o PEQline.o PEQmempool.o PEQblock.o PEQnotes.o PEQcommon.o playerclass.o player_startstop.o PEQvelocities.o PEQpitches.o PEQ_calc.o PEQfxs.o player_pause.o PEQ_type.o PEQ_calc_64bit.o PEQ_clock.o PEQ_LPB.o PEQ_Signature.o PEQ_Beats.o
+OBJ9= Ptask2Mtask.o player.o scheduler.o scheduler_seqtracks.o scheduler_notes.o scheduler_pitches.o scheduler_velocities.o scheduler_fxs.o scheduler_reallines.o scheduler_LPB.o scheduler_Beats.o scheduler_Signature.o playerclass.o player_startstop.o player_pause.o 
 
 #Disk
 OBJ10= disk.o disk_fxs.o disk_wblock.o disk_localzooms.o disk_track.o disk_fx.o disk_fxnodelines.o disk_wtrack.o disk_temponodes.o disk_tempos.o disk_song.o disk_velocities.o disk_block.o disk_placement.o disk_stops.o disk_playlist.o disk_root.o disk_notes.o disk_lpbs.o disk_signatures.o disk_windows.o disk_warea.o disk_save.o disk_load.o disk_instrument.o disk_patches.o disk_slider.o
@@ -700,7 +700,7 @@ range.o:  $(BUILD_DEPENDENCIES) $(CD)range.c
 	$(CC) $(CD)range.c $(OPT)
 
 blocklist.o:  $(BUILD_DEPENDENCIES) $(CD)blocklist.c
-	$(CC) $(CD)blocklist.c $(OPT)
+	$(CC) $(CD)blocklist.c $(OPT) #-fno-sanitize=undefined
 
 time.o:  $(BUILD_DEPENDENCIES) $(CD)time.c
 	$(CC) $(CD)time.c $(OPT) 
@@ -714,47 +714,44 @@ reltempo.o:  $(BUILD_DEPENDENCIES) $(CD)reltempo.c
 Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) $(CD)Ptask2Mtask.c $(CD)playerclass.h
 	$(CC) $(CD)Ptask2Mtask.c $(OPT) 
 
-player.o:  $(BUILD_DEPENDENCIES) $(CD)player.c $(CD)playerclass.h
+player.o:  $(BUILD_DEPENDENCIES) $(CD)player.c $(CD)playerclass.h $(CD)scheduler_proc.h
 	$(CC) $(CD)player.c $(OPT)
 
-scheduler.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler.c
+scheduler.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler.c $(CD)scheduler_proc.h
 	$(CC) $(CD)scheduler.c $(OPT)
 
-PEQrealline.o:  $(BUILD_DEPENDENCIES) $(CD)PEQrealline.c $(CD)playerclass.h
-	$(CC) $(CD)PEQrealline.c $(OPT) 
+scheduler_seqtracks.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_seqtracks.c $(CD)scheduler_proc.h
+	$(CC) $(CD)scheduler_seqtracks.c $(OPT) -fno-sanitize=undefined -O0
 
-PEQline.o:  $(BUILD_DEPENDENCIES) $(CD)PEQline.c $(CD)playerclass.h
-	$(CC) $(CD)PEQline.c $(OPT) 
+scheduler_notes.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_notes.c $(CD)scheduler_proc.h
+	$(CC) $(CD)scheduler_notes.c $(OPT)
 
-PEQmempool.o:  $(BUILD_DEPENDENCIES) $(CD)PEQmempool.c $(CD)playerclass.h
-	$(GCC) $(CD)PEQmempool.c $(OPT) 
+scheduler_pitches.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_pitches.c $(CD)scheduler_proc.h
+	$(CC) $(CD)scheduler_pitches.c $(OPT)
 
-PEQblock.o:  $(BUILD_DEPENDENCIES) $(CD)PEQblock.c $(CD)playerclass.h
-	$(CC) $(CD)PEQblock.c $(OPT)
+scheduler_velocities.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_velocities.c $(CD)scheduler_proc.h
+	$(CC) $(CD)scheduler_velocities.c $(OPT) #-fno-sanitize=undefined -O0
 
-PEQnotes.o:  $(BUILD_DEPENDENCIES) $(CD)PEQnotes.c $(CD)playerclass.h
-	$(CC) $(CD)PEQnotes.c $(OPT)
+scheduler_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_fxs.c $(CD)scheduler_proc.h
+	$(CC) $(CD)scheduler_fxs.c $(OPT)
 
-PEQcommon.o:  $(BUILD_DEPENDENCIES) $(CD)PEQcommon.c $(CD)playerclass.h
-	$(CC) $(CD)PEQcommon.c $(OPT)
+scheduler_reallines.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_reallines.c $(CD)scheduler_proc.h
+	$(CC) $(CD)scheduler_reallines.c $(OPT)
+
+scheduler_LPB.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_LPB.c $(CD)scheduler_proc.h
+	$(CC) $(CD)scheduler_LPB.c $(OPT)
+
+scheduler_Beats.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_Beats.c $(CD)scheduler_proc.h
+	$(CC) $(CD)scheduler_Beats.c $(OPT)
+
+scheduler_Signature.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_Signature.c $(CD)scheduler_proc.h
+	$(CC) $(CD)scheduler_Signature.c $(OPT)
 
 playerclass.o:  $(BUILD_DEPENDENCIES) $(CD)playerclass.c $(CD)playerclass.h
 	$(CC) $(CD)playerclass.c $(OPT)
 
-player_startstop.o:  $(BUILD_DEPENDENCIES) $(CD)player_startstop.c $(CD)playerclass.h
+player_startstop.o:  $(BUILD_DEPENDENCIES) $(CD)player_startstop.c $(CD)playerclass.h $(CD)scheduler_proc.h
 	$(GCC) $(CD)player_startstop.c $(OPT)
-
-PEQvelocities.o:  $(BUILD_DEPENDENCIES) $(CD)PEQvelocities.c
-	$(CC) $(CD)PEQvelocities.c $(OPT)
-
-PEQpitches.o:  $(BUILD_DEPENDENCIES) $(CD)PEQpitches.c
-	$(CC) $(CD)PEQpitches.c $(OPT)
-
-PEQ_calc.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_calc.c
-	$(CC) $(CD)PEQ_calc.c $(OPT)
-
-PEQfxs.o:  $(BUILD_DEPENDENCIES) $(CD)PEQfxs.c
-	$(CC) $(CD)PEQfxs.c $(OPT)
 
 patch.o:  $(BUILD_DEPENDENCIES) $(CD)patch.cpp $(CD)nsmtracker.h
 	$(CCC) $(CD)patch.cpp $(QTOPT)

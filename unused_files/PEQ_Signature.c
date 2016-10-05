@@ -32,7 +32,7 @@ extern struct Root *root;
 static Ratio g_signature_value = {4,4};
 static struct Signatures *g_signature = NULL;
 
-Ratio RT_Signature_get_current_Signature(void){
+Ratio RT_Signature_get_current_Signature_old(void){
   if (is_playing())
     return g_signature_value;
   else {

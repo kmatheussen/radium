@@ -501,6 +501,12 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
   #error "unknown system"
 #endif
 
+#if !defined(RELEASE)
+    abort();
+#endif
+    
+
+
 }
 
 
@@ -674,7 +680,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 #ifdef RELEASE
     bool do_block = false;
 #else
-    bool do_block = true;
+    bool do_block = false; //true;
 #endif
 
     QTemporaryFile emergency_save_file("radium_crash_save");
@@ -684,7 +690,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 #else
     bool dosave = false; // saving inside a forked version of the program didn't really work that well. Maybe it works better in windows.
 #endif
-    
+
     if (dosave)
       emergency_save_file.open();
     
