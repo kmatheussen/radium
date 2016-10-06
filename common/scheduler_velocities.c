@@ -190,7 +190,7 @@ static void RT_schedule_velocity(int64_t current_time,
     int val1 = velocity1==NULL ? note->velocity     : velocity1->velocity;
     int val2 = velocity2==NULL ? note->velocity_end : velocity2->velocity;
     
-    printf(" Scheduling Velocity. %x -> %x, %d -> %d\n", val1, val2, (int)time1, (int)time2);
+    printf(" Scheduling Velocity. %x -> %x, %d -> %d. pc->start_time: %f\n", val1, val2, (int)time1, (int)time2, pc->start_time);
 #endif
   
     SCHEDULER_add_event(time1, RT_scheduled_glide_velocity, &args[0], g_num_velocities_args, SCHEDULER_VELOCITY_PRIORITY);

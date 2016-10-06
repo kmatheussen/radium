@@ -100,7 +100,9 @@ void PlayerTask(STime reltime){
           addreltime=0;
 
         if (player_state==PLAYER_STATE_STOPPED){
-          SCHEDULER_called_per_block(tempoadjusted_reltime);
+          pc->is_treating_editor_events = true; {
+            SCHEDULER_called_per_block(tempoadjusted_reltime);
+          } pc->is_treating_editor_events = false;
           return;
         }
         

@@ -168,7 +168,8 @@ ifneq (,$(findstring clang,$(CC)))
 	DEBUG_BUILD_OPTS += -Wshorten-64-to-32
 	S7OPTS += -Wno-shorten-64-to-32
 else
-	DEBUG_BUILD_OPTS += -Og
+#	DEBUG_BUILD_OPTS += -Og
+	CPUOPT += -Og
 endif
 
 

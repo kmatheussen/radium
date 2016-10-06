@@ -34,6 +34,7 @@ extern PlayerClass *pc;
 
 typedef struct _event_t{
   int64_t time;
+  int64_t seq_time;
   union SuperType args[MAX_ARGS];
   SchedulerCallback callback;
   struct _event_t *next;
@@ -71,14 +72,17 @@ static event_t *get_first_event(void){
 //
 // Since we know the start and end time of the current block for both SCHEDULER and SEQ, the conversion is simple.
 
+#if 0
 static int64_t scheduler_to_seq_time(int64_t scheduler_time){
   //int64_t block_length = pc->end_time - pc->start_time;
   //return scale(scheduler_time,g_current_time,g_current_time + block_length, pc->start_time, pc->end_time);
   //
   //... is the same as:
-  return pc->start_time + (scheduler_time - g_current_time);
+  return ((int64_t)pc->start_time) + (scheduler_time - g_current_time);
 }
+#endif
 
+// Warning: It's quite complicated to get the same value back as you started with when convert betwween seq time and scheduler time.
 static int64_t seq_to_scheduler_time(int64_t seq_time){
 
 #if 0
@@ -89,7 +93,7 @@ static int64_t seq_to_scheduler_time(int64_t seq_time){
                );
 #else
   //... is the same as:
-  return g_current_time + (seq_time - pc->start_time); // (optimization)
+  return g_current_time + (seq_time - ((int64_t)pc->start_time)); // (optimization)
 #endif
 }
 
@@ -105,9 +109,11 @@ void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const uni
     callback(seq_time, args);
     return;
   }
-      
+  
   int64_t time = seq_to_scheduler_time(seq_time);
-
+  
+  //R_ASSERT(seq_time==scheduler_to_seq_time(time));
+           
   if(time < 0){
 #if !defined(RELEASE)
     fprintf(stderr,"time<0: %d. seq_time: %d\n",(int)time,(int)seq_time);
@@ -125,21 +131,26 @@ void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const uni
 #endif
 
   if(g_queue_size > QUEUE_SIZE-2){
-    printf("SCHEDULER: queue full. Skipping.\n");
+    printf("SCHEDULER: queue full. Skipping.\n"); // Can happen if playing very fast. Should perhaps use RT_message instead.
     return;
   }
+  
+#if !defined(RELEASE)
   if(num_args>MAX_ARGS){
-    printf("Max %d args allowed for scheduler...\n",MAX_ARGS);
-    return;
+    fprintf(stderr, "Max %d args allowed for scheduler...\n", MAX_ARGS);
+    abort();
   }
+#endif
   
   // Add priority bit.
   time = time << SCHEDULER_NUM_PRIORITY_BITS;
   time = time + priority;
 
+  
   event_t *event = get_free_event();
   event->callback=callback;
   event->time = time;
+  event->seq_time = seq_time;
 
   g_queue_size++;
 
@@ -191,7 +202,8 @@ static void release_event(event_t *event){
 
 void SCHEDULER_called_per_block(int64_t reltime){
   int64_t end_time = g_current_time + reltime;
-
+  //printf("  called_per_block. end_time: %d. pc->start_time: %f\n",(int)end_time, pc->start_time);
+  
   while(g_queue_size>0){
     event_t *event = get_first_event();
     int64_t event_time = event->time >> SCHEDULER_NUM_PRIORITY_BITS;  // remove priority bits.
@@ -199,7 +211,7 @@ void SCHEDULER_called_per_block(int64_t reltime){
     if(event_time < end_time){
       remove_first_event();
       {
-        event->callback(scheduler_to_seq_time(event_time), &event->args[0]); // note that the callback can also schedule new events
+        event->callback(event->seq_time, &event->args[0]); // note that the callback can also schedule new events
       }
       release_event(event);
     }else

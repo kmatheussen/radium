@@ -40,8 +40,7 @@ enum SchedulerPriority{
 
   SCHEDULER_LOWEST_NOTE_PRIORITY    = 6 // Used when note off starts at the same time as note on. Must be higher than pitch and velocity priority.
 
-  // priority 7 is free (set SCHEDULER_NUM_PRIORITY_BITS to 4, to get 9 new priorities)
-
+  // priority 7 is free (set SCHEDULER_NUM_PRIORITY_BITS to 4, to get 8 new priorities)
   
   /*
   SCHEDULER_ADDORDER_DOESNT_MATTER = 1,
