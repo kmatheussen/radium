@@ -200,7 +200,7 @@ static void release_event(event_t *event){
   g_free_events = event;
 }
 
-void SCHEDULER_called_per_block(int64_t reltime){
+int SCHEDULER_called_per_block(int64_t reltime){
   int64_t end_time = g_current_time + reltime;
   //printf("  called_per_block. end_time: %d. pc->start_time: %f\n",(int)end_time, pc->start_time);
   
@@ -219,6 +219,9 @@ void SCHEDULER_called_per_block(int64_t reltime){
   }
 
   g_current_time = end_time;
+
+  
+  return g_queue_size;
 }
 
 // * Must be called when deleting a patch or track. (why?)

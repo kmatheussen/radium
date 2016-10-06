@@ -143,6 +143,8 @@ void PlayerTask(STime reltime){
         //printf("time: %d. time of next event: %d\n",(int)time,(int)pc->peq->l.time);
         //fflush(stdout);
 
+        int num_scheduled_events;
+          
         pc->is_treating_editor_events = true; {
 
 #if 0
@@ -166,13 +168,17 @@ void PlayerTask(STime reltime){
           // Currently, there are two scheduling systems. The old linked list (PEQ), and this one.
           // This one, the SCHEDULER, is a priority queue. The plan is to shift things from PEQ into SCHEDULER.
           // Until everything is shifted from PEQ to SCHEDULER, and the PEQ-mess remains, things will be more complicated than necessary.
-          SCHEDULER_called_per_block(tempoadjusted_reltime);
+          num_scheduled_events = SCHEDULER_called_per_block(tempoadjusted_reltime);
 
         } pc->is_treating_editor_events = false;
 
 
         if (player_state == PLAYER_STATE_STARTING_TO_PLAY)
           ATOMIC_SET(pc->player_state, PLAYER_STATE_PLAYING);
+
+        //printf("num_scheduled: %d. state: %d\n",num_scheduled_events,player_state);
+        if(player_state == PLAYER_STATE_PLAYING && num_scheduled_events==0)
+          ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
 }
 
 

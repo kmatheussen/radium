@@ -124,6 +124,13 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
       printf("  2. Scheduling RT_scheduled_seqblock at %d\n",(int)next_time);
 #endif
       SCHEDULER_add_event(next_time, RT_scheduled_seqblock, &args[0], num_args, SCHEDULER_INIT_BLOCK_PRIORITY);
+
+    } else {
+      
+#if DO_DEBUG
+      printf("    3. seqtrack finished.\n");
+#endif
+      
     }
 
   }
@@ -151,6 +158,7 @@ static void RT_schedule_seqtracks(
                                   int playtype
                                   )
 {
+  
   VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
 
     // Schedule the first seqblock in each seqtrack.
@@ -173,6 +181,7 @@ static void RT_schedule_seqtracks(
         args[5].int32_num     = 0; // FIX
             
         SCHEDULER_add_event(start_time, RT_scheduled_seqblock, &args[0], num_args, SCHEDULER_INIT_BLOCK_PRIORITY);
+
         break;
       }
 

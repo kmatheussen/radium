@@ -52,7 +52,7 @@ enum SchedulerPriority{
 
 
 extern LANGSPEC void SCHEDULER_add_event(int64_t time_into_the_future, SchedulerCallback callback, const union SuperType *args, int num_args, enum SchedulerPriority priority);
-extern LANGSPEC void SCHEDULER_called_per_block(int64_t reltime);
+extern LANGSPEC int SCHEDULER_called_per_block(int64_t reltime);
 
 extern LANGSPEC int SCHEDULER_num_events(void);
 extern LANGSPEC bool SCHEDULER_clear(void);
