@@ -11,7 +11,7 @@
 
 
 
-static void RT_scheduled_realline(int64_t time, const union SuperType *args){
+static int64_t RT_scheduled_realline(int64_t time, union SuperType *args){
   const struct SeqBlock *seqblock = args[0].const_pointer;
   struct WBlocks *wblock = args[1].pointer;
   int realline = args[2].int32_num;
@@ -67,40 +67,29 @@ static void RT_scheduled_realline(int64_t time, const union SuperType *args){
 
       //PC_ReturnElements();
 
-      return;
+      return DONT_RESCHEDULE;
     }
           
   }else if(realline>=wblock->num_reallines) {
 
-    return;
+    return DONT_RESCHEDULE;
     
   }
 
-
-  {
-    const int num_args = 3;
     
-    union SuperType args[num_args];
-    
-    args[0].const_pointer = seqblock;
-    args[1].pointer = wblock;
-    args[2].int32_num = realline;
-
-    Place place = wblock->reallines[realline]->l.p;
-    
-    int64_t next_time = get_seqblock_place_time(seqblock, place);
-    
-    SCHEDULER_add_event(next_time, RT_scheduled_realline, &args[0], num_args, SCHEDULER_INIT_PRIORITY);
-  }
-  
-  
 #ifdef WITH_PD
   if (org_pos != NULL)
     if(inserted_pd_realline==false)
       RT_PD_set_realline(org_time, time, org_pos);
 #endif
 
-  return;
+  {
+    args[2].int32_num = realline;
+    
+    Place place = wblock->reallines[realline]->l.p;
+
+    return get_seqblock_place_time(seqblock, place);
+  }
 }
 
 

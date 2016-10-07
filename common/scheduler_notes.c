@@ -16,7 +16,7 @@ static int rnd(int max){
 }
 
 
-static void RT_scheduled_stop_note(int64_t time, const union SuperType *args){
+static int64_t RT_scheduled_stop_note(int64_t time, union SuperType *args){
   struct Tracks *track = args[0].pointer;
   struct Notes *note   = args[1].pointer;
   
@@ -32,7 +32,8 @@ static void RT_scheduled_stop_note(int64_t time, const union SuperType *args){
     RT_PATCH_stop_note(patch,note2,time);
     
   }
-  
+
+  return DONT_RESCHEDULE;
 }
 
 static int64_t RT_schedule_end_note(
@@ -143,7 +144,7 @@ static void RT_schedule_note(
                              const struct Notes *note
                              );
 
-static void RT_scheduled_note(int64_t time, const union SuperType *args){
+static int64_t RT_scheduled_note(int64_t time, union SuperType *args){
   const struct SeqTrack *seqtrack = args[0].const_pointer;
   const struct SeqBlock *seqblock = args[1].const_pointer;
   const struct Tracks *track = args[2].const_pointer;
@@ -151,7 +152,7 @@ static void RT_scheduled_note(int64_t time, const union SuperType *args){
   
   struct Patch *patch = track->patch;
 
-  bool doit = note->chance==0x100 || note->chance > rnd(0x100); // Check this now, and not in RT_schedule_note, since note->chance might change between RT_schedule_note and RT_scheduled_note.
+  bool doit = note->chance==0x100 || note->chance > rnd(0x100); // Check this here, and not in RT_schedule_note, since note->chance might change between RT_schedule_note and RT_scheduled_note.
     
   if(doit && track->onoff==1 && patch!=NULL){
     
@@ -173,7 +174,8 @@ static void RT_scheduled_note(int64_t time, const union SuperType *args){
     if (next_note != NULL)
       RT_schedule_note(seqtrack, seqblock, track, next_note);
   }
-  
+
+  return DONT_RESCHEDULE;
 }
 
 static void RT_schedule_note(

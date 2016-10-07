@@ -22,7 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "time_proc.h"
 
-typedef void (*SchedulerCallback)(int64_t time_into_the_future, const union SuperType *args);
+typedef int64_t (*SchedulerCallback)(int64_t time_into_the_future, union SuperType *args);
+
+#define DONT_RESCHEDULE INT64_MIN
 
 enum SchedulerPriority{
   SCHEDULER_INIT_PRIORITY           = 0,
@@ -51,7 +53,7 @@ enum SchedulerPriority{
 #define SCHEDULER_NUM_PRIORITY_BITS 3
 
 
-extern LANGSPEC void SCHEDULER_add_event(int64_t time_into_the_future, SchedulerCallback callback, const union SuperType *args, int num_args, enum SchedulerPriority priority);
+extern LANGSPEC void SCHEDULER_add_event(int64_t time_into_the_future, SchedulerCallback callback, union SuperType *args, int num_args, enum SchedulerPriority priority);
 extern LANGSPEC int SCHEDULER_called_per_block(int64_t reltime);
 
 extern LANGSPEC int SCHEDULER_num_events(void);

@@ -183,7 +183,7 @@ static void set_iterator_data(LPB_Iterator *iterator, const struct Blocks *block
   set_iterator_data2(iterator, block, lpb->l.p, lpb->lpb, NextLPB(lpb));
 }
 
-static void RT_scheduled_LPB(int64_t time, const union SuperType *args);
+static int64_t RT_scheduled_LPB(int64_t time, union SuperType *args);
 
 static void schedule_next_LPB(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const struct LPBs *next_lpb){
   R_ASSERT_RETURN_IF_FALSE(next_lpb != NULL);
@@ -203,7 +203,7 @@ static void schedule_next_LPB(struct SeqTrack *seqtrack, const struct SeqBlock *
   SCHEDULER_add_event(time, RT_scheduled_LPB, &args[0], num_args, SCHEDULER_LPB_PRIORITY);
 }
 
-static void RT_scheduled_LPB(int64_t time, const union SuperType *args){
+static int64_t RT_scheduled_LPB(int64_t time, union SuperType *args){
 
   struct SeqTrack       *seqtrack = args[0].pointer;
   const struct SeqBlock *seqblock = args[1].const_pointer;
@@ -219,6 +219,8 @@ static void RT_scheduled_LPB(int64_t time, const union SuperType *args){
 
   if (next_lpb != NULL)
     schedule_next_LPB(seqtrack, seqblock, next_lpb);
+
+  return DONT_RESCHEDULE;
 }
 
 void RT_schedule_LPBs_newblock(struct SeqTrack *seqtrack,

@@ -54,17 +54,19 @@ static void RT_scheduled_hold_velocity_do(int64_t time,
     RT_schedule_velocity(time, seqblock, track, note, velocity2, false);
 }
 
-static void RT_scheduled_hold_velocity(int64_t time, const union SuperType *args){
+static int64_t RT_scheduled_hold_velocity(int64_t time, union SuperType *args){
   const struct SeqBlock   *seqblock  = args[0].const_pointer;
   const struct Tracks     *track     = args[1].const_pointer;
   const struct Notes      *note      = args[2].pointer;
   const struct Velocities *velocity1 = args[3].pointer;
 
   RT_scheduled_hold_velocity_do(time, seqblock, track, note, velocity1, false);
+  
+  return DONT_RESCHEDULE;
 }
 
 
-static void RT_scheduled_glide_velocity(int64_t time, const union SuperType *args){
+static int64_t RT_scheduled_glide_velocity(int64_t time, union SuperType *args){
   const struct SeqBlock   *seqblock  = args[0].const_pointer;
   const struct Tracks     *track     = args[1].const_pointer;
   const struct Notes      *note      = args[2].pointer;
@@ -76,7 +78,7 @@ static void RT_scheduled_glide_velocity(int64_t time, const union SuperType *arg
   struct Patch *patch = track->patch;
 
   if (patch==NULL)
-    return;
+    return DONT_RESCHEDULE;
   
   R_ASSERT_NON_RELEASE(time >= time1);
   R_ASSERT_NON_RELEASE(time <= time2);
@@ -109,15 +111,14 @@ static void RT_scheduled_glide_velocity(int64_t time, const union SuperType *arg
     
     if (velocity2 != NULL)
       RT_schedule_velocity(time, seqblock, track, note, velocity2, true);
+
+    return DONT_RESCHEDULE;
     
   } else {
     
-    union SuperType new_args[g_num_velocities_args];
-    memcpy(&new_args[0], args, g_num_velocities_args * sizeof(union SuperType));
-    new_args[6].int32_num = val;
+    args[6].int32_num = val;
     
-    int64_t next_time = R_MIN(time2, time + RADIUM_BLOCKSIZE);
-    SCHEDULER_add_event(next_time, RT_scheduled_glide_velocity, &new_args[0], g_num_velocities_args, SCHEDULER_VELOCITY_PRIORITY);
+    return R_MIN(time2, time + RADIUM_BLOCKSIZE);
     
   }
 }

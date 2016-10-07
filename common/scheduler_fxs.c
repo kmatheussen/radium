@@ -18,7 +18,7 @@ static void RT_schedule_fxnodeline(
                                    Place start_place
                                    );
 
-static void RT_scheduled_fx(int64_t time, const union SuperType *args){
+static int64_t RT_scheduled_fx(int64_t time, union SuperType *args){
   const struct SeqBlock    *seqblock    = args[0].const_pointer;
   const struct Tracks      *track       = args[1].const_pointer;
   struct FX                *fx          = args[2].pointer;
@@ -29,13 +29,13 @@ static void RT_scheduled_fx(int64_t time, const union SuperType *args){
 
   const struct FXNodeLines *fxnodeline2 = NextFXNodeLine(fxnodeline1);
   if (fxnodeline2==NULL) // Can happen if deleting a nodeline while playing.
-    return;
+    return DONT_RESCHEDULE;
   
   struct Patch *patch = track->patch;
   
   // May happen if removing patch from track while playing, not sure. Doesn't hurt to have this check.
   if (fx->patch != patch)
-    return;
+    return DONT_RESCHEDULE;
 
   int val1 = fxnodeline1->val;
   int val2 = fxnodeline2->val;
@@ -78,22 +78,16 @@ static void RT_scheduled_fx(int64_t time, const union SuperType *args){
   if (time==time2) { // If we check "when==FX_end" instead, we go into an infinte loop if time==time1==time2.
     
     RT_schedule_fxnodeline(seqblock, track, fx, fxnodeline2, fxnodeline2->l.p);
-
+    return DONT_RESCHEDULE;
+    
   } else {
 
-    union SuperType new_args[g_num_fx_args];
-    memcpy(&new_args[0], args, sizeof(union SuperType)*g_num_fx_args);
-           
-    new_args[6].int32_num = x;
+    args[6].int32_num = x;
 
-    int64_t next_time;
-    
     if (fxnodeline1->logtype == LOGTYPE_HOLD)
-      next_time = time2;
+      return time2;
     else
-      next_time = R_MIN(time + RADIUM_BLOCKSIZE, time2);
-    
-    SCHEDULER_add_event(next_time, RT_scheduled_fx, &new_args[0], g_num_fx_args, SCHEDULER_FX_PRIORITY);
+      return R_MIN(time + RADIUM_BLOCKSIZE, time2);
   }
     
 }

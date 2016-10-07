@@ -60,6 +60,12 @@ static event_t *get_free_event(void){
   return ret;
 }
 
+static void release_event(event_t *event){
+  memset(event,0,sizeof(event_t)); // for the gc
+  event->next = g_free_events;
+  g_free_events = event;
+}
+
 static event_t *get_first_event(void){
   return g_queue[1];
 }
@@ -97,36 +103,7 @@ static int64_t seq_to_scheduler_time(int64_t seq_time){
 #endif
 }
 
-static void schedule_event(event_t *event){
-  int64_t time = event->time;
-  
-  g_queue_size++;
-
-  int i = g_queue_size;
-  int new_i = i >> 1;
-
-  while(time <= g_queue[new_i]->time){ // '<=' (instead of '<') means that the event will be inserted after events with the same time.
-    g_queue[i] = g_queue[new_i];
-    i = new_i;
-    new_i = new_i >> 1;
-  }
-  
-  g_queue[i] = event;
-}
-
-void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const union SuperType *args, int num_args, enum SchedulerPriority priority){
-  R_ASSERT(PLAYER_current_thread_has_lock());
-  
-  // An event created by an RT_process function needs to run right away.
-  // If not it won't be run until the next audio block since SCHEDULER_called_per_block
-  // has already been called for this audio block.
-  // (Q: why not do this for events genereated by the editor too?
-  //  A: Because priority would be lost. Effects could run after notes, "note on" events could run before "note off" events, and so forth)
-  if (false==pc->is_treating_editor_events && seq_time < pc->end_time) {
-    callback(seq_time, args);
-    return;
-  }
-  
+static bool schedule_event(event_t *event, int64_t seq_time, enum SchedulerPriority priority){
   int64_t time = seq_to_scheduler_time(seq_time);
   
   //R_ASSERT(seq_time==scheduler_to_seq_time(time));
@@ -136,7 +113,7 @@ void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const uni
     fprintf(stderr,"time<0: %d. seq_time: %d\n",(int)time,(int)seq_time);
     abort();
 #endif
-    return;
+    return false;
   }
   
   //args=NULL; // test crashreporter
@@ -149,9 +126,36 @@ void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const uni
 
   if(g_queue_size > QUEUE_SIZE-2){
     printf("SCHEDULER: queue full. Skipping.\n"); // Can happen if playing very fast. Should perhaps use RT_message instead.
-    return;
+    return false;
   }
   
+  // Add priority bit.
+  time = time << SCHEDULER_NUM_PRIORITY_BITS;
+  time = time + priority;
+
+  
+  event->time = time;
+  event->seq_time = seq_time;
+
+  g_queue_size++;
+
+  int i = g_queue_size;
+  int new_i = i >> 1;
+
+  while(time <= g_queue[new_i]->time){ // '<=' (instead of '<') means that the event will be inserted after events with the same time.
+    g_queue[i] = g_queue[new_i];
+    i = new_i;
+    new_i = new_i >> 1;
+  }
+  
+  g_queue[i] = event;
+
+  return true;
+}
+
+void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, union SuperType *args, int num_args, enum SchedulerPriority priority){
+  R_ASSERT(PLAYER_current_thread_has_lock());
+
 #if !defined(RELEASE)
   if(num_args>MAX_ARGS){
     fprintf(stderr, "Max %d args allowed for scheduler...\n", MAX_ARGS);
@@ -159,19 +163,24 @@ void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const uni
   }
 #endif
   
-  // Add priority bit.
-  time = time << SCHEDULER_NUM_PRIORITY_BITS;
-  time = time + priority;
 
-  
+  // An event created by an RT_process function needs to run right away.
+  // If not it won't be run until the next audio block since SCHEDULER_called_per_block
+  // has already been called for this audio block.
+  // (Q: why not do this for events genereated by the editor too?
+  //  A: Because priority would be lost. Effects could run after notes, "note on" events could run before "note off" events, and so forth)
+  if (false==pc->is_treating_editor_events && seq_time < pc->end_time) {
+    callback(seq_time, args);
+    return;
+  }
+
   event_t *event = get_free_event();
+  
   event->callback=callback;
-  event->time = time;
-  event->seq_time = seq_time;
-
   memcpy(event->args, args, sizeof(union SuperType)*num_args);
 
-  schedule_event(event);
+  if (schedule_event(event, seq_time, priority)==false)
+    release_event(event);
 }
 
 static void remove_first_event(void){
@@ -200,10 +209,8 @@ static void remove_first_event(void){
   g_queue[g_queue_size+1] = NULL; // for the gc
 }
 
-static void release_event(event_t *event){
-  memset(event,0,sizeof(event_t)); // for the gc
-  event->next = g_free_events;
-  g_free_events = event;
+static int get_priority(event_t *event){
+  return event->time & ( (2<<SCHEDULER_NUM_PRIORITY_BITS) - 1);
 }
 
 int SCHEDULER_called_per_block(int64_t reltime){
@@ -211,17 +218,30 @@ int SCHEDULER_called_per_block(int64_t reltime){
   //printf("  called_per_block. end_time: %d. pc->start_time: %f\n",(int)end_time, pc->start_time);
   
   while(g_queue_size>0){
+    
     event_t *event = get_first_event();
     int64_t event_time = event->time >> SCHEDULER_NUM_PRIORITY_BITS;  // remove priority bits.
     //printf("  SCHEDULER: sched: %d - seq: %d.  First event: %d. pc->start_time: %d, pc->end_time: %d\n",(int)end_time, (int)scheduler_to_seq_time(end_time), (int)scheduler_to_seq_time(event_time),(int)pc->start_time, (int)pc->end_time);
+    
     if(event_time < end_time){
+      
       remove_first_event();
-      {
-        event->callback(event->seq_time, &event->args[0]); // note that the callback can also schedule new events
+      
+      int64_t new_seq_time = event->callback(event->seq_time, &event->args[0]); // note that the callback can also schedule new events
+      
+      if (new_seq_time==DONT_RESCHEDULE){
+        release_event(event);
+      } else {
+        int priority = get_priority(event);
+        if (schedule_event(event, new_seq_time, priority)==false)
+          release_event(event);
       }
-      release_event(event);
-    }else
+      
+    }else {
+      
       break;
+
+    }
   }
 
   g_current_time = end_time;

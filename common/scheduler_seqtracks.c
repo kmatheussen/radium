@@ -6,10 +6,10 @@
 
 #include "scheduler_proc.h"
 
-#define DO_DEBUG 0
+#define DO_DEBUG 1
 
 
-static void RT_scheduled_seqblock(int64_t time, const union SuperType *args);
+static int64_t RT_scheduled_seqblock(int64_t time, union SuperType *args);
 
 static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
                                      struct SeqBlock *seqblock,
@@ -136,7 +136,7 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
 
 }
 
-static void RT_scheduled_seqblock(int64_t time, const union SuperType *args){
+static int64_t RT_scheduled_seqblock(int64_t time, union SuperType *args){
   struct SeqTrack *seqtrack               = args[0].pointer;
   struct SeqBlock       *seqblock         = args[1].pointer;
   int64_t                block_start_time = args[2].int_num;
@@ -148,6 +148,8 @@ static void RT_scheduled_seqblock(int64_t time, const union SuperType *args){
   printf("     RT_scheduled_seqblock called. time: %d\n", (int)time);
 #endif
   RT_schedule_new_seqblock(seqtrack, seqblock, time, block_start_time, place, playtype, playlistpos);
+
+  return DONT_RESCHEDULE;
 }
 
 
@@ -189,7 +191,7 @@ static void RT_schedule_seqtracks(
 }
 
 
-static void RT_scheduled_startplaying(int64_t time, const union SuperType *args){
+static int64_t RT_scheduled_startplaying(int64_t time, union SuperType *args){
   int64_t      start_time = args[0].int_num;
   int          playtype   = args[1].int32_num;
   const Place *place      = args[2].const_pointer;
@@ -220,7 +222,8 @@ static void RT_scheduled_startplaying(int64_t time, const union SuperType *args)
   
     RT_schedule_seqtracks(start_time, playtype);
   }
-  
+
+  return DONT_RESCHEDULE;
 }
 
 

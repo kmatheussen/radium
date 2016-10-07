@@ -73,26 +73,30 @@ static void RT_play_note(Beat_Iterator *iterator, int64_t time, int note_num){
   iterator->last_played_metronome_note_num = note_num;
 }
 
-static void RT_scheduled_play_bar_note(int64_t time, const union SuperType *args){
+static int64_t RT_scheduled_play_bar_note(int64_t time, union SuperType *args){
   Beat_Iterator *iterator = args[0].pointer;
     
   RT_stop_last_played_note(iterator, time);
   //printf("** BAR\n");
   if (ATOMIC_GET(root->clickonoff))
     RT_play_note(iterator, time, bar_note_num);
+
+  return DONT_RESCHEDULE;
 }
 
-static void RT_scheduled_play_beat_note(int64_t time, const union SuperType *args){
+static int64_t RT_scheduled_play_beat_note(int64_t time, union SuperType *args){
   Beat_Iterator *iterator = args[0].pointer;
     
   RT_stop_last_played_note(iterator, time);
   //printf("     BEAT **\n");
   if (ATOMIC_GET(root->clickonoff))
     RT_play_note(iterator, time, beat_note_num);
+
+  return DONT_RESCHEDULE;
 }
 
 
-static void RT_scheduled_Beat(int64_t time, const union SuperType *args){
+static int64_t RT_scheduled_Beat(int64_t time, union SuperType *args){
 
   struct SeqTrack       *seqtrack = args[0].pointer;
   const struct SeqBlock *seqblock = args[1].const_pointer;
@@ -129,13 +133,10 @@ static void RT_scheduled_Beat(int64_t time, const union SuperType *args){
   iterator->next_beat = NextBeat(beat);
   
   // Schedule next beat
-  if (iterator->next_beat != NULL){
-    const int num_args = 2;
-    
-    int64_t time = get_seqblock_place_time(seqblock, iterator->next_beat->l.p);
-    
-    SCHEDULER_add_event(time, RT_scheduled_Beat, args, num_args, SCHEDULER_BEAT_PRIORITY);
-  }
+  if (iterator->next_beat != NULL)
+    return get_seqblock_place_time(seqblock, iterator->next_beat->l.p);
+  else
+    return DONT_RESCHEDULE;
 }
 
 

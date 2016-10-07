@@ -55,7 +55,7 @@ static void RT_scheduled_hold_pitch_do(int64_t time,
     RT_schedule_pitch(time, seqblock, track, note, pitch2, false);
 }
 
-static void RT_scheduled_hold_pitch(int64_t time, const union SuperType *args){
+static int64_t RT_scheduled_hold_pitch(int64_t time, union SuperType *args){
   const struct SeqBlock   *seqblock  = args[0].const_pointer;
   const struct Tracks     *track     = args[1].const_pointer;
   const struct Notes      *note      = args[2].pointer;
@@ -69,10 +69,12 @@ static void RT_scheduled_hold_pitch(int64_t time, const union SuperType *args){
     doit = pitch1->chance==0x100 || pitch1->chance > rnd(0x100);
 
   RT_scheduled_hold_pitch_do(time, seqblock, track, note, pitch1, doit);
+  
+  return DONT_RESCHEDULE;
 }
 
 
-static void RT_scheduled_glide_pitch(int64_t time, const union SuperType *args){
+static int64_t RT_scheduled_glide_pitch(int64_t time, union SuperType *args){
   const struct SeqBlock   *seqblock  = args[0].const_pointer;
   const struct Tracks     *track     = args[1].const_pointer;
   const struct Notes      *note      = args[2].pointer;
@@ -84,7 +86,7 @@ static void RT_scheduled_glide_pitch(int64_t time, const union SuperType *args){
   struct Patch *patch = track->patch;
 
   if (patch==NULL)
-    return;
+    return DONT_RESCHEDULE;
   
   R_ASSERT_NON_RELEASE(time >= time1);
   R_ASSERT_NON_RELEASE(time <= time2);
@@ -113,10 +115,11 @@ static void RT_scheduled_glide_pitch(int64_t time, const union SuperType *args){
     if (pitch2 != NULL)
       RT_schedule_pitch(time, seqblock, track, note, pitch2, true);
     
+    return DONT_RESCHEDULE;
+    
   } else {
 
-    int64_t next_time = R_MIN(time2, time + RADIUM_BLOCKSIZE);
-    SCHEDULER_add_event(next_time, RT_scheduled_glide_pitch, args, g_num_pitches_args, SCHEDULER_PITCH_PRIORITY);
+    return R_MIN(time2, time + RADIUM_BLOCKSIZE);
     
   }
 }
