@@ -240,14 +240,15 @@ void start_seqtrack_scheduling(int64_t start_time, Place place, int playtype){
 
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
   R_ASSERT(SCHEDULER_num_events()==0);
-  
-  pc->start_time = start_time;  // Set play "cursor" position
-  ATOMIC_DOUBLE_SET(pc->start_time_f, start_time);
-  
-  pc->end_time = start_time; // Must set end_time too, since this is the value used for setting next pc->start_time in the player.
-  pc->end_time_f = start_time;
-  
+
   PLAYER_lock();{
+
+    pc->start_time = start_time;  // Set play "cursor" position
+    ATOMIC_DOUBLE_SET(pc->start_time_f, start_time);
+    
+    pc->end_time = start_time; // Must set end_time too, since this is the value used for setting next pc->start_time in the player.
+    pc->end_time_f = start_time;
+  
     SCHEDULER_add_event(0, RT_scheduled_startplaying, &args[0], num_args, SCHEDULER_INIT_PRIORITY);
   }PLAYER_unlock();
 }

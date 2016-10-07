@@ -19,13 +19,37 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <string.h>
 
+static inline void VECTOR_ensure_space_for_one_more_element(vector_t *v){
+  const int num_elements = v->num_elements;
+
+  if(num_elements==v->num_elements_allocated){
+    if(num_elements==0){
+#ifdef TEST_VECTOR
+      const int num_init = 2;
+#else
+      const int num_init = 8;
+#endif
+      v->num_elements_allocated = num_init;
+      v->elements = (void**)talloc(num_init*(int)sizeof(void*));
+    }else{
+      const int num_elements_allocated = num_elements * 2;
+      v->num_elements_allocated = num_elements_allocated;
+      v->elements = (void**)talloc_realloc(v->elements,num_elements_allocated*(int)sizeof(void*));
+    }
+  }
+  
+}
+
 static inline int VECTOR_push_back(vector_t *v, const void *element){
 #if 0 //ifndef RELEASE
   R_ASSERT(element!=NULL);
 #endif
+
+  VECTOR_ensure_space_for_one_more_element(v);
   
   const int num_elements = v->num_elements;
 
+  
   if(num_elements==v->num_elements_allocated){
     if(num_elements==0){
 #ifdef TEST_VECTOR

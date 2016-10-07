@@ -1748,7 +1748,7 @@ struct Song{
   
         //int num_seqtracks;
         //struct SeqTrack **seqtracks;
-        vector_t seqtracks; // New playlist. Player must be stopped when modifying this variable.
+        vector_t seqtracks; // New playlist. Player must both be stopped and locked when modifying this variable, or any of the contents.
   
 	NInt num_blocks;
 	int length;								/* Playlist length. */
