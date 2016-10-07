@@ -11,10 +11,10 @@
  */
 
 
-#define DEBUG_BUGS 1
+#define DEBUG_BUGS 0
 
 
-static double get_num_beats(const struct SeqBlock *seqblock, const LPB_Iterator *iterator, int audioframes_to_add, const char *from_where){
+static double get_num_beats(const struct SeqBlock *seqblock, LPB_Iterator *iterator, int audioframes_to_add, const char *from_where){
   struct Blocks *block = pc->block;
 
 #if DEBUG_BUGS
@@ -41,6 +41,9 @@ static double get_num_beats(const struct SeqBlock *seqblock, const LPB_Iterator 
          STime2Place_f(block, time+time_to_add)
          );
 #endif
+
+  if (time+time_to_add > getBlockSTimeLength(block)) // can happen when switching block
+    iterator->curr_num_beats_is_valid = false;
   
   return
     iterator->num_beats_played_so_far +
@@ -53,6 +56,8 @@ static double get_num_beats(const struct SeqBlock *seqblock, const LPB_Iterator 
 
 static void set_new_num_beats_values(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, LPB_Iterator *iterator, int audioblocksize){
 
+  iterator->curr_num_beats_is_valid = true;
+      
   //double curr_num_before = iterator->num_beats_played_so_far;
 
   bool just_started_playing = iterator->has_next_num_beats==false;
@@ -104,11 +109,13 @@ void RT_LPB_set_beat_position(struct SeqTrack *seqtrack, int audioblocksize){
 #if DEBUG_BUGS
   R_ASSERT_NON_RELEASE(num_beats_till_next_time > 0);
 #endif
-  
-  double beats_per_minute = num_beats_till_next_time * 60.0 * (double)pc->pfreq / (double)audioblocksize;
-  //printf("beats_per_minute: %f, curr_num_beats: %f - %f (d: %f)\n", beats_per_minute,iterator->curr_num_beats,iterator->next_num_beats,num_beats_till_next_time);
 
-  iterator->curr_beats_per_minute = beats_per_minute;
+  if (iterator->curr_num_beats_is_valid==true) {
+    double bpm = num_beats_till_next_time * 60.0 * (double)pc->pfreq / (double)audioblocksize;
+    //printf("bpm: %f, curr_num_beats: %f - %f (d: %f)\n", bpm,iterator->curr_num_beats,iterator->next_num_beats,num_beats_till_next_time);
+
+    iterator->curr_bpm = bpm;
+  }
 }
 
 // Returns number of beats played so far. (actually returns the number of quarter notes)
@@ -122,7 +129,7 @@ double RT_LPB_get_current_BPM(const struct SeqTrack *seqtrack){
     return 120.0;
   
   else if (is_playing())
-    return seqtrack->lpb_iterator.curr_beats_per_minute;
+    return seqtrack->lpb_iterator.curr_bpm;
   
   else {
     struct Blocks *block = ATOMIC_GET(g_curr_block);

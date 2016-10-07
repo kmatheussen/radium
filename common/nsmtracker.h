@@ -1673,7 +1673,8 @@ typedef struct {
   // Beats / BPM (the BPM value used in timing is calculated from LPB, not calculated from the BPM track)
   double curr_num_beats;
   double next_num_beats;
-  double curr_beats_per_minute;
+  bool curr_num_beats_is_valid; // Might be false when switching block. If false, we must not set new curr_bpm value.
+  double curr_bpm;
 
   bool has_next_num_beats;
   
