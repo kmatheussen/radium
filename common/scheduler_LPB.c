@@ -11,26 +11,36 @@
  */
 
 
-#define DEBUG_BUGS 0
+#define DEBUG_BUGS 1
 
 
-static double get_num_beats(const struct SeqBlock *seqblock, const LPB_Iterator *iterator, int audioframes_to_add){
+static double get_num_beats(const struct SeqBlock *seqblock, const LPB_Iterator *iterator, int audioframes_to_add, const char *from_where){
   struct Blocks *block = pc->block;
 
+#if DEBUG_BUGS
+  R_ASSERT_NON_RELEASE(block==seqblock->block);
+#endif
+  
   double time = ATOMIC_DOUBLE_GET(pc->start_time_f) - seqblock->time;
-
-  //printf("start_time_f: %d / %d (%d), seqblock->time: %d\n",(int)ATOMIC_DOUBLE_GET(pc->start_time_f), (int)pc->start_time, (int)fabsf(ATOMIC_DOUBLE_GET(pc->start_time_f)-pc->start_time), (int)seqblock->time);
 
 #if DEBUG_BUGS
   R_ASSERT_NON_RELEASE(time > -(RADIUM_BLOCKSIZE*safe_volatile_float_read(&block->reltempo)));
 #endif
   
-  if (time < 0) // Happens when switching between two seqblocks at a non-audio block alignment (i.e. delta time > 0). To avoid this minor inaccuracy, it seems necessary to break the use of constant 64 frame audio block sizes, so it's not worth it.
+  if (time < 0) // Happens when switching between two seqblocks at a non-audio block alignment (i.e. delta time > 0). To avoid this minor inaccuracy, it seems necessary to break the use of constant 64 frame audio block sizes, so it's probably not worth it.
     time = 0;
   
   double time_to_add = (double)audioframes_to_add * safe_volatile_float_read(&block->reltempo);
 
-  //fprintf(stderr, "Time to add: %f. time: %f, 2place_f: %f. 1-2: %f - %f\n", time_to_add, time, STime2Place_f(block, time+time_to_add),ATOMIC_DOUBLE_GET(pc->start_time_f),pc->end_time_f);
+#if DEBUG_BUGS
+  printf("Get num_beats. from_where: %s, time: %f, time_to_add: %f, pc->start_time_f: %f, stime2place: %f\n",
+         from_where,
+         time,
+         time_to_add,
+         ATOMIC_DOUBLE_GET(pc->start_time_f),
+         STime2Place_f(block, time+time_to_add)
+         );
+#endif
   
   return
     iterator->num_beats_played_so_far +
@@ -49,8 +59,8 @@ static void set_new_num_beats_values(struct SeqTrack *seqtrack, const struct Seq
   
   if (iterator->has_next_num_beats==false){
 
-    iterator->curr_num_beats = get_num_beats(seqblock, iterator, 0);
-    iterator->next_num_beats = get_num_beats(seqblock, iterator, audioblocksize);
+    iterator->curr_num_beats = get_num_beats(seqblock, iterator, 0, "start1");
+    iterator->next_num_beats = get_num_beats(seqblock, iterator, audioblocksize, "start2");
 
     iterator->has_next_num_beats=true;
     
@@ -58,12 +68,19 @@ static void set_new_num_beats_values(struct SeqTrack *seqtrack, const struct Seq
 
   } else {
 
+#if DEBUG_BUGS
+    printf("Prev curr_num_beats: %f\n",iterator->curr_num_beats);
+#endif
+    
     iterator->curr_num_beats = iterator->next_num_beats; // Since the prev value might have been calculated using previous LPB values, this value sometimtes might not be 100% correct, but it should be good enough.
-    iterator->next_num_beats = get_num_beats(seqblock, iterator, audioblocksize);
+    iterator->next_num_beats = get_num_beats(seqblock, iterator, audioblocksize, "nextnumbeats");
 
   }
 
 #if DEBUG_BUGS
+  printf("curr: %f, next: %f\n",iterator->curr_num_beats,iterator->next_num_beats);
+  if (iterator->next_num_beats <= iterator->curr_num_beats)
+    abort();
   R_ASSERT_NON_RELEASE(iterator->next_num_beats > iterator->curr_num_beats);
 #endif
   
