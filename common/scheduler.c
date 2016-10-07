@@ -97,6 +97,23 @@ static int64_t seq_to_scheduler_time(int64_t seq_time){
 #endif
 }
 
+static void schedule_event(event_t *event){
+  int64_t time = event->time;
+  
+  g_queue_size++;
+
+  int i = g_queue_size;
+  int new_i = i >> 1;
+
+  while(time <= g_queue[new_i]->time){ // '<=' (instead of '<') means that the event will be inserted after events with the same time.
+    g_queue[i] = g_queue[new_i];
+    i = new_i;
+    new_i = new_i >> 1;
+  }
+  
+  g_queue[i] = event;
+}
+
 void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const union SuperType *args, int num_args, enum SchedulerPriority priority){
   R_ASSERT(PLAYER_current_thread_has_lock());
   
@@ -152,20 +169,9 @@ void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const uni
   event->time = time;
   event->seq_time = seq_time;
 
-  g_queue_size++;
-
-  int i = g_queue_size;
-  int new_i = i >> 1;
-
-  while(time <= g_queue[new_i]->time){ // '<=' (instead of '<') means that the event will be inserted after events with the same time.
-    g_queue[i] = g_queue[new_i];
-    i = new_i;
-    new_i = new_i >> 1;
-  }
-  g_queue[i] = event;
-
-
   memcpy(event->args, args, sizeof(union SuperType)*num_args);
+
+  schedule_event(event);
 }
 
 static void remove_first_event(void){

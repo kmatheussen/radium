@@ -14,7 +14,7 @@
 #define DEBUG_BUGS 0
 
 
-static double get_num_beats(const struct SeqBlock *seqblock, LPB_Iterator *iterator, int audioframes_to_add, const char *from_where){
+static double get_num_beats(const struct SeqBlock *seqblock, LPB_Iterator *iterator, int audioframes_to_add, const char *from_where, bool *curr_num_beats_is_valid){
   struct Blocks *block = pc->block;
 
 #if DEBUG_BUGS
@@ -43,7 +43,7 @@ static double get_num_beats(const struct SeqBlock *seqblock, LPB_Iterator *itera
 #endif
 
   if (time+time_to_add > getBlockSTimeLength(block)) // can happen when switching block
-    iterator->curr_num_beats_is_valid = false;
+    *curr_num_beats_is_valid = false;
   
   return
     iterator->num_beats_played_so_far +
@@ -54,18 +54,16 @@ static double get_num_beats(const struct SeqBlock *seqblock, LPB_Iterator *itera
 }
 
 
-static void set_new_num_beats_values(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, LPB_Iterator *iterator, int audioblocksize){
+static void set_new_num_beats_values(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, LPB_Iterator *iterator, int audioblocksize, bool *curr_num_beats_is_valid){
 
-  iterator->curr_num_beats_is_valid = true;
-      
   //double curr_num_before = iterator->num_beats_played_so_far;
 
   bool just_started_playing = iterator->has_next_num_beats==false;
   
   if (iterator->has_next_num_beats==false){
 
-    iterator->curr_num_beats = get_num_beats(seqblock, iterator, 0, "start1");
-    iterator->next_num_beats = get_num_beats(seqblock, iterator, audioblocksize, "start2");
+    iterator->curr_num_beats = get_num_beats(seqblock, iterator, 0, "start1", curr_num_beats_is_valid);
+    iterator->next_num_beats = get_num_beats(seqblock, iterator, audioblocksize, "start2", curr_num_beats_is_valid);
 
     iterator->has_next_num_beats=true;
     
@@ -78,7 +76,7 @@ static void set_new_num_beats_values(struct SeqTrack *seqtrack, const struct Seq
 #endif
     
     iterator->curr_num_beats = iterator->next_num_beats; // Since the prev value might have been calculated using previous LPB values, this value sometimtes might not be 100% correct, but it should be good enough.
-    iterator->next_num_beats = get_num_beats(seqblock, iterator, audioblocksize, "nextnumbeats");
+    iterator->next_num_beats = get_num_beats(seqblock, iterator, audioblocksize, "nextnumbeats", curr_num_beats_is_valid);
 
   }
 
@@ -100,9 +98,11 @@ void RT_LPB_set_beat_position(struct SeqTrack *seqtrack, int audioblocksize){
   if (is_playing()==false)
     return;
 
-  LPB_Iterator *iterator = &seqtrack->lpb_iterator;
+  bool curr_num_beats_is_valid = true; // Might become false when switching block. If false, we must not set new curr_bpm value.
 
-  set_new_num_beats_values(seqtrack, seqtrack->curr_seqblock, iterator, audioblocksize);
+  LPB_Iterator *iterator = &seqtrack->lpb_iterator;
+  
+  set_new_num_beats_values(seqtrack, seqtrack->curr_seqblock, iterator, audioblocksize, &curr_num_beats_is_valid);
     
   double num_beats_till_next_time = iterator->next_num_beats - iterator->curr_num_beats;
 
@@ -110,7 +110,7 @@ void RT_LPB_set_beat_position(struct SeqTrack *seqtrack, int audioblocksize){
   R_ASSERT_NON_RELEASE(num_beats_till_next_time > 0);
 #endif
 
-  if (iterator->curr_num_beats_is_valid==true) {
+  if (curr_num_beats_is_valid==true) {
     double bpm = num_beats_till_next_time * 60.0 * (double)pc->pfreq / (double)audioblocksize;
     //printf("bpm: %f, curr_num_beats: %f - %f (d: %f)\n", bpm,iterator->curr_num_beats,iterator->next_num_beats,num_beats_till_next_time);
 
