@@ -234,7 +234,6 @@ void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
 	PlayStopReally(false);
 
 	ATOMIC_SET(root->setfirstpos, true);
-	ATOMIC_SET(pc->seqtime, 0);
         
         {
           struct WBlocks *wblock=window->wblock;
@@ -256,10 +255,6 @@ void PlayBlockCurrPos2(struct Tracker_Windows *window, Place *place){
 	if(wblock->curr_realline==0)
           ATOMIC_SET(root->setfirstpos, true);
 
-	ATOMIC_SET(pc->seqtime, -Place2STime(wblock->block,place));
-
-//	printf("contblock, time: %d\n",pc->seqtime);
-
         pc->is_playing_range = false;
 	PlayBlock(wblock->block,place,true);
 }
@@ -271,10 +266,6 @@ void PlayBlockCurrPos(struct Tracker_Windows *window){
 
 static void PlayRange(struct Tracker_Windows *window, Place *place){
   struct WBlocks *wblock = window->wblock;
-  
-  ATOMIC_SET(pc->seqtime, -Place2STime(wblock->block,place));
-
-  //	printf("playrange, time: %d\n",pc->seqtime);
   
   //Place *place_start = getRangeStartPlace(wblock);
   Place *place_end   = getRangeEndPlace(wblock);
@@ -426,7 +417,6 @@ void PlaySongFromStart(struct Tracker_Windows *window){
         
 	//debug("root->curr_block: %d\n",root->curr_block);
 	ATOMIC_SET(root->setfirstpos, true);
-	ATOMIC_SET(pc->seqtime, 0);
 
 	InitAllInstrumentsForPlaySongFromStart();
 
@@ -470,18 +460,12 @@ void PlaySongCurrPos2(struct Tracker_Windows *window, Place *place){
           ATOMIC_SET(root->setfirstpos, true);
 
 
-	//debug("contsong, playpos: %d , root->curr_block: %d\n",playpos,root->curr_block);
-
 	if(changeblock){
 		place=PlaceGetFirstPos();
-		ATOMIC_SET(pc->seqtime, 0);
 	}else{
           if (place==NULL || PlaceLegal(block, place)==false)
             place=&wblock->reallines[wblock->curr_realline]->l.p;
-          
-          ATOMIC_SET(pc->seqtime, -Place2STime(wblock->block,place));
-	}
-	//debug("contsong, time: %d, playpos: %d , root->curr_block: %d\n",pc->seqtime,playpos,root->curr_block);
+        }
 
 #if 0
 	place->line++;

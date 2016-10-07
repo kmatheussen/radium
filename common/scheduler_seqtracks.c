@@ -45,8 +45,6 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
       ATOMIC_DOUBLE_SET(block->player_time, -100.0); // Any value less than -10 will delay rendering the new block. Instead we wait until player.c is called and a proper player_time value is calculated, to avoid jumpy graphics.
     }
 
-    ATOMIC_SET(pc->seqtime, seqblock->time);
-
     // GFX
     ATOMIC_SET(root->curr_blocknum, pc->block->l.num);
     ATOMIC_SET(root->setfirstpos, true);

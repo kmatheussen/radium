@@ -130,9 +130,12 @@ void PlayerTask(STime reltime){
 
         //printf("Setting new starttime to %f (%d)\n",pc->end_time_f,(int)pc->end_time);
         ATOMIC_DOUBLE_SET(pc->start_time_f, pc->end_time_f);
-        
-        //ATOMIC_DOUBLE_SET(pc->block->player_time, ATOMIC_DOUBLE_GET(pc->start_time_f) - (double)ATOMIC_GET(pc->seqtime)); // <-- This line is correct, but the player isn't doing the correct thing.
-        ATOMIC_DOUBLE_SET(pc->block->player_time, pc->end_time - (double)ATOMIC_GET(pc->seqtime)); // <-- This line is incorrect, but it reflects what we actually hear. (TODO: fix this. Use pc->end_time_f everywhere, and  delete pc->end_time)
+
+        struct SeqBlock *curr_seqblock = RT_get_curr_seqblock();
+        if (curr_seqblock != NULL)
+          ATOMIC_DOUBLE_SET(pc->block->player_time, pc->end_time - curr_seqblock->time); // curr_seqblock is set in RT_schedule_new_seqblock
+        else
+          ATOMIC_DOUBLE_SET(pc->block->player_time, 0);
         
         pc->end_time_f  += tempoadjusted_reltime_f;
         

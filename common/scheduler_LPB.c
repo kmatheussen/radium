@@ -17,7 +17,7 @@
 static double get_num_beats(const struct SeqBlock *seqblock, const LPB_Iterator *iterator, int audioframes_to_add){
   struct Blocks *block = pc->block;
 
-  double time = ATOMIC_DOUBLE_GET(pc->start_time_f) - seqblock->time; //(double)ATOMIC_GET(pc->seqtime);
+  double time = ATOMIC_DOUBLE_GET(pc->start_time_f) - seqblock->time;
 
   //printf("start_time_f: %d / %d (%d), seqblock->time: %d\n",(int)ATOMIC_DOUBLE_GET(pc->start_time_f), (int)pc->start_time, (int)fabsf(ATOMIC_DOUBLE_GET(pc->start_time_f)-pc->start_time), (int)seqblock->time);
 
@@ -80,9 +80,6 @@ void RT_LPB_set_beat_position(struct SeqTrack *seqtrack, int audioblocksize){
 
   LPB_Iterator *iterator = &seqtrack->lpb_iterator;
 
-  //R_ASSERT( (pc->end_time-pc->seqtime) >= iterator->time1);
-  //R_ASSERT( (pc->start_time - pc->seqtime) < iterator->time2);
-  
   set_new_num_beats_values(seqtrack, seqtrack->curr_seqblock, iterator, audioblocksize);
     
   double num_beats_till_next_time = iterator->next_num_beats - iterator->curr_num_beats;

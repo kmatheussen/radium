@@ -1390,7 +1390,7 @@ struct Blocks{
 
 	volatile float reltempo;					/* factor that the tempo is multiplied with when playing this block. */
 
-        DEFINE_ATOMIC(double, player_time);	/* = pc->start_time_f - pc->seqtime */
+        DEFINE_ATOMIC(double, player_time);	/* = pc->end_time - RT_curr_seqblock()->time */
 
   // This variable is checked after each keyboard or menu event. If true, trackreallines, wtracks, etc. will be updated.
   bool is_dirty; 
@@ -1758,8 +1758,6 @@ struct Song{
 	hash_t *instrument_widget_order_state; // Only used during loading.
 };
 
-
-
 /*********************************************************************
 	root.h
 *********************************************************************/
@@ -1796,6 +1794,26 @@ struct Root{
 extern struct Root *root;
 extern DEFINE_ATOMIC(bool, is_starting_up);
 extern bool g_embed_samples;
+
+static inline struct SeqTrack *RT_get_curr_seqtrack(void){
+  if (pc->playtype==PLAYSONG) {
+    vector_t *seqtracks = &root->song->seqtracks;
+    if (seqtracks->num_elements==0)
+      return NULL;
+    else
+      return (struct SeqTrack*)seqtracks->elements[0];
+  } else {
+    return &root->song->block_seqtrack;
+  }
+}
+
+static inline struct SeqBlock *RT_get_curr_seqblock(void){
+  struct SeqTrack *curr_seqtrack = RT_get_curr_seqtrack();
+  if (curr_seqtrack==NULL)
+    return NULL;
+  else
+    return curr_seqtrack->curr_seqblock;
+}
 
 static inline note_t create_note_t_plain(int64_t note_id,
                                          float pitch,

@@ -498,8 +498,7 @@ void RT_PD_set_line(int64_t time, int64_t time_nextline, int line){
     t_atom v_line[6];
     int sample_rate = MIXER_get_sample_rate();
 
-    const struct SeqTrack *seqtrack = pc->playtype==PLAYSONG ? ((struct SeqTrack*)root->song->seqtracks.elements[0]) : &root->song->block_seqtrack;
-    const struct Blocks *block = seqtrack->curr_seqblock->block;
+    const struct Blocks *block = RT_get_curr_seqblock()->block;
 
     int64_t duration = block->times[line+1].time - block->times[line].time;
       

@@ -116,8 +116,6 @@ typedef struct{
 
         STime reltime; // The argument for PlayerTask. Will usually contain the audio blocksize. Necessary for calculating delta time. (I'm 99% this value is always equal to RADIUM_BLOCKSIZE, i.e. 64)
 
-	DEFINE_ATOMIC(STime, seqtime);		/* Time being played at the top of the block that now is playing. TODO: Don't read this variable from other threads.*/
-
         DEFINE_ATOMIC(Player_State, player_state);
 
         /*

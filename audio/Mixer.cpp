@@ -717,7 +717,13 @@ struct Mixer{
         ATOMIC_SET(jackblock_cycle_start_stime, pc->end_time);
         ATOMIC_SET(jackblock_last_frame_stime, jack_last_frame_time(_rjack_client));
         ATOMIC_SET(jackblock_block, pc->block);
-        ATOMIC_SET(jackblock_seqtime, ATOMIC_GET(pc->seqtime));
+
+        struct SeqBlock *curr_seqblock = RT_get_curr_seqblock();
+        if (curr_seqblock != NULL)
+          ATOMIC_SET(jackblock_seqtime, curr_seqblock->time);
+        else
+          ATOMIC_SET(jackblock_seqtime, 0);
+        
         ATOMIC_SET(jackblock_playlistpos, ATOMIC_GET(root->curr_playlist));
         
       }jackblock_variables_protector.write_end();
