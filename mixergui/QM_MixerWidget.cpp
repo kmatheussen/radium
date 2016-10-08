@@ -918,7 +918,12 @@ static vector_t get_selected_patches(void){
 
 void MW_copy(void){
   vector_t patches = get_selected_patches();
-  
+
+  if (patches.num_elements==0){
+    GFX_Message(NULL, "No sound object selected");
+    return;
+  }
+
   PRESET_copy(&patches);
 }
 
@@ -938,6 +943,11 @@ void MW_delete(void){
 
 static void MW_cut2(float mouse_x, float mouse_y, bool has_mouse_coordinates){
   vector_t patches = get_selected_patches();
+
+  if (patches.num_elements==0){
+    GFX_Message(NULL, "No sound object selected");
+    return;
+  }
   
   PRESET_copy(&patches);
 

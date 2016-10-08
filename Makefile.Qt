@@ -716,13 +716,13 @@ Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) $(CD)Ptask2Mtask.c $(CD)playerclass.h
 	$(CC) $(CD)Ptask2Mtask.c $(OPT) 
 
 player.o:  $(BUILD_DEPENDENCIES) $(CD)player.c $(CD)playerclass.h $(CD)scheduler_proc.h
-	$(CC) $(CD)player.c $(OPT)
+	$(CC) $(CD)player.c $(OPT) -fno-sanitize=undefined
 
 scheduler.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler.c $(CD)scheduler_proc.h
 	$(CC) $(CD)scheduler.c $(OPT)
 
 scheduler_seqtracks.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_seqtracks.c $(CD)scheduler_proc.h
-	$(CC) $(CD)scheduler_seqtracks.c $(OPT) -fno-sanitize=undefined -O0
+	$(CC) $(CD)scheduler_seqtracks.c $(OPT) -fno-sanitize=undefined
 
 scheduler_notes.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_notes.c $(CD)scheduler_proc.h
 	$(CC) $(CD)scheduler_notes.c $(OPT)
