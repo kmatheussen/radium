@@ -83,6 +83,9 @@ extern LANGSPEC void PLUGIN_set_all_effects_to_not_recording(SoundPlugin *plugin
 
 extern LANGSPEC void PLUGIN_set_autosuspend_behavior(SoundPlugin *plugin, enum AutoSuspendBehavior new_behavior);
 extern LANGSPEC enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(SoundPlugin *plugin);
+extern LANGSPEC void PLUGIN_set_random_behavior(SoundPlugin *plugin, const int effect_num, bool do_random);
+extern LANGSPEC bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int effect_num);
+
 static inline void RT_PLUGIN_touch(SoundPlugin *plugin){
   //  if (plugin->patch!=NULL && !strcmp(plugin->patch->name,"Test"))
   //    printf("Touching %s\n",plugin->patch==NULL ? "(null)" : plugin->patch->name);

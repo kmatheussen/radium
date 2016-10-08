@@ -299,11 +299,12 @@ class ParamWidget : public QWidget {
   QString get_slider_string(void){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     char buf[64]={0};
-    PLUGIN_get_display_value_string(plugin, _effect_num, buf, 64); 
-    if (PLUGIN_has_midi_learn(plugin, _effect_num))
-      return "*" + _name + ": " + QString::fromUtf8(buf);
-    else
-      return _name + ": " + QString::fromUtf8(buf);
+    PLUGIN_get_display_value_string(plugin, _effect_num, buf, 64);
+
+    QString b = PLUGIN_has_midi_learn(plugin, _effect_num) ? "*" : "";
+    QString a = PLUGIN_get_random_behavior(plugin, _effect_num) ? "" : " [xR]";
+
+    return b + _name + ": " + QString::fromUtf8(buf) + a;
   }
   
   void set_slider_string(void){

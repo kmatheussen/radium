@@ -378,7 +378,7 @@ public:
     SLIDERPAINTER_set_recording_color(slider->_painter, PLUGIN_is_recording_automation(plugin, effect_num));
     
     QString p = PLUGIN_has_midi_learn(plugin, effect_num) ? "*" : "";
-          
+    
     char buf[64]={0};
     PLUGIN_get_display_value_string(plugin, effect_num, buf, 64);
     if(system_effect==EFFNUM_DRYWET)
@@ -393,9 +393,10 @@ public:
       SLIDERPAINTER_set_string(slider->_painter, p + QString(BUS_get_bus_name(3)) + ": " + QString(buf));
     else if(system_effect==EFFNUM_BUS5)
       SLIDERPAINTER_set_string(slider->_painter, p + QString(BUS_get_bus_name(4)) + ": " + QString(buf));
-    else
+    else {
       SLIDERPAINTER_set_string(slider->_painter, p + QString(PLUGIN_get_effect_name(plugin, effect_num)+strlen("System ")) + ": " + QString(buf));
-
+    }
+      
     slider->update();
   }
 

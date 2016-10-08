@@ -182,7 +182,16 @@ struct MyQCheckBox : public QCheckBox{
       vector_t options = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
       bool has_midi_learn = PLUGIN_has_midi_learn(plugin, _effect_num);
-            
+      bool doing_random_change = PLUGIN_get_random_behavior(plugin, _effect_num);
+
+      int delete_pd = -10;
+      int reset = -10;
+      int remove_midi_learn = -10;
+      int midi_relearn = -10;
+      int add_midi_learn = -10;
+      int add_random = -10;
+      int remove_random = -10;
+
       if(_is_a_pd_slider){
         /*
         VECTOR_push_back(&options, "Set Symbol Name");
@@ -190,48 +199,54 @@ struct MyQCheckBox : public QCheckBox{
         VECTOR_push_back(&options, "Set Minimum Value");
         VECTOR_push_back(&options, "Set Maximum Value");
         */
-        VECTOR_push_back(&options, "Delete");
+        delete_pd = VECTOR_push_back(&options, "Delete");
       } else {
-        VECTOR_push_back(&options, "Reset");
+        reset = VECTOR_push_back(&options, "Reset");
         //VECTOR_push_back(&options, "Set Value");
       }
 
       if (has_midi_learn){
-        VECTOR_push_back(&options, "Remove MIDI Learn");
-        VECTOR_push_back(&options, "MIDI Relearn");
+        remove_midi_learn = VECTOR_push_back(&options, "Remove MIDI Learn");
+        midi_relearn = VECTOR_push_back(&options, "MIDI Relearn");
       }else{
-        VECTOR_push_back(&options, "MIDI Learn");
+        add_midi_learn = VECTOR_push_back(&options, "MIDI Learn");
       }      
 
+      if (_effect_num < plugin->type->num_effects){
+        if (doing_random_change)
+          remove_random = VECTOR_push_back(&options, "Don't change value when pressing \"Random\"");
+        else
+          add_random = VECTOR_push_back(&options, "Change value when pressing \"Random\"");
+      }
       
       int command = GFX_Menu(root->song->tracker_windows, NULL, "", &options);
 
       //printf("command: %d, _patch: %p, is_audio: %d\n",command, _patch, _patch!=NULL && _patch->instrument==get_audio_instrument());
 
-      if(command==0){
-        if(_is_a_pd_slider) {
-          //printf("Calling delete controller for %p / %d\n",plugin,_effect_num);
-          PD_delete_controller(plugin, _effect_num);
-        } else {
-          PLUGIN_reset_one_effect(plugin,_effect_num);
-          GFX_update_instrument_widget(_patch);
-        }
-      }
+      if (command==delete_pd)
+        PD_delete_controller(plugin, _effect_num);
+      
+      else if (command==reset)
+        PLUGIN_reset_one_effect(plugin,_effect_num);
 
-      else if(command==1 && has_midi_learn==false){
+      else if (command==remove_random)
+        PLUGIN_set_random_behavior(plugin, _effect_num, false);
+      
+      else if (command==add_random)
+        PLUGIN_set_random_behavior(plugin, _effect_num, true);
+      
+      else if (command==add_midi_learn)
+        PLUGIN_add_midi_learn(plugin, _effect_num);
+          
+      else if (command==remove_midi_learn)
+        PLUGIN_remove_midi_learn(plugin, _effect_num, true);
+      
+      else if (command==midi_relearn) {
+        PLUGIN_remove_midi_learn(plugin, _effect_num, true);
         PLUGIN_add_midi_learn(plugin, _effect_num);
       }
-      
-      else if(command==1){
-        PLUGIN_remove_midi_learn(plugin, _effect_num, true);
-        GFX_update_instrument_widget(_patch);
-      }
-      
-      else if(command==2){
-        PLUGIN_remove_midi_learn(plugin, _effect_num, true);
-        PLUGIN_add_midi_learn(plugin, _effect_num);
-      }
 
+      GFX_update_instrument_widget(_patch);
       
 #endif // COMPILING_RADIUM
 
@@ -252,8 +267,10 @@ struct MyQCheckBox : public QCheckBox{
 
     if(_patch!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata != NULL){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      if (PLUGIN_has_midi_learn(plugin, _effect_num))
-        text2 = "*" + text2;
+      QString b = PLUGIN_has_midi_learn(plugin, _effect_num) ? "*" : "";
+      QString a = (_effect_num>=plugin->type->num_effects || PLUGIN_get_random_behavior(plugin, _effect_num)) ? "" : " [xR]";
+
+      text2 = b + text2 + a;
     }
     
     CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text2);

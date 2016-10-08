@@ -481,6 +481,12 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
     memcpy(plugin->initial_effect_values, plugin->savable_effect_values, sizeof(float) * (plugin_type->num_effects+NUM_SYSTEM_EFFECTS));
   }
 
+  {
+    plugin->do_random_change = (bool*)V_calloc(sizeof(bool), plugin_type->num_effects);
+    for(int i=0;i<plugin_type->num_effects;i++)
+      plugin->do_random_change[i] = true;
+  }
+  
   if (plugin_type->called_after_plugin_has_been_created != NULL)    
     plugin_type->called_after_plugin_has_been_created(plugin_type, plugin);
 
@@ -501,6 +507,7 @@ void PLUGIN_delete(SoundPlugin *plugin){
 
   plugin_type->cleanup_plugin_data(plugin);
 
+  V_free(plugin->do_random_change);
   V_free(plugin->initial_effect_values);
   V_free(plugin->savable_effect_values);
 
@@ -1532,6 +1539,10 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
     HASH_put_hash_at(state, "midi_learns", i, midi_learn->create_state());
   }
 
+  // do_random
+  for(int i=0;i<type->num_effects;i++)
+    HASH_put_bool_at(state, "do_random_change", i, plugin->do_random_change[i]);
+                     
   // effects
   HASH_put_hash(state,"effects",PLUGIN_get_effects_state(plugin));
 
@@ -1727,6 +1738,11 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   if (HASH_has_key(state, "auto_suspend_behavior"))
     PLUGIN_set_autosuspend_behavior(plugin, (AutoSuspendBehavior)HASH_get_int(state, "auto_suspend_behavior"));
 
+  // do_random
+  for(int i=0;i<type->num_effects;i++)
+    if (HASH_has_key_at(state, "do_random_change", i))
+      plugin->do_random_change[i] = HASH_get_bool_at(state, "do_random_change", i);
+  
   // midi learns state
   {
     for(int i = 0 ; i < HASH_get_array_size(state) ; i++){
@@ -1914,6 +1930,17 @@ enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(SoundPlugin *plugin){
   return ATOMIC_GET(plugin->auto_suspend_behavior);
 }
 
+void PLUGIN_set_random_behavior(SoundPlugin *plugin, const int effect_num, bool do_random){
+  plugin->do_random_change[effect_num] = do_random;
+}
+
+bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int effect_num){
+  if (effect_num >= plugin->type->num_effects)
+    return false;
+  else
+    return plugin->do_random_change[effect_num];
+}
+
 // only called from MultiCore.cpp, one time per audio block per instrument
 bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time){
 
@@ -2034,11 +2061,13 @@ void PLUGIN_random(SoundPlugin *plugin){
 
   float values[type->num_effects];
   for(i=0;i<type->num_effects;i++)
-    values[i]=get_rand();
+    if (plugin->do_random_change[i])
+      values[i]=get_rand();
   
   PLAYER_lock();{
     for(i=0;i<type->num_effects;i++)
-      PLUGIN_set_effect_value(plugin, 0, i, values[i], PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      if (plugin->do_random_change[i])
+        PLUGIN_set_effect_value(plugin, 0, i, values[i], PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
   };PLAYER_unlock();
 }
 
