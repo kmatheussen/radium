@@ -1,3 +1,28 @@
+Changes 4.1.6 -> 4.1.7:
+* Reintroduce pitch lines for non-gliding notes, but don't draw pitch
+  lines under note names.
+* Make the pitch lines twice as thick.
+* Options to enable/disable whether parameters should change when
+  clicking "Random". (Right click slider or checkbox to select.)
+* Give message if trying to cut or copy sound object when no sound
+  object is selected. (Instead of showing the assertion reporter.)
+* Workaround for possibly wrong BPM values sent to VST plugins
+  when switching block while playing, and block multiplier is not 1.0.
+* Fix very rare player freeze when changing block tempo.
+  (plus fix unreliable timing).
+* Only use the scheduler from year 2012, and remove all remaining
+  use of the scheduler from year 2000.
+* New and very flexible internal playlist structure.
+* Don't restart player for every automation in the whole song
+  when deleting an instrument. Just stop it once if necessary.
+  (Fixes xrun-like sound when deleting instrument)
+* Sampler: make "note adjust" floating number.
+* Show the "Reset" option when trying to reset the current
+  a/b setting setting. Display it in disabled mode though.
+  (It was a bit confusing when nothing happened before.)
+
+
+
 Changes 4.1.5 -> 4.1.6:
 * Don't fill up undo log when adding undo for all effects of an instrument.
 * Don't delete old song when importing MIDI, just put the midi data

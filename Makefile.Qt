@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 4.1.6
+VERSION = 4.1.7
 
 #----------------USER SETTINGS-------------------------------
 
@@ -157,8 +157,8 @@ UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 #UNDEFINED_SANITIZE_OPTS=
 
 # Note that "make clean" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
-OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) #-fsanitize=address #-Og # -fsanitize=address  -Og -fcheck-pointer-bounds -mmpx  # -DDISABLE_BDWGC -Og -
-DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
+OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) -fsanitize=address -DDISABLE_BDWGC # -fsanitize=address  -Og -fcheck-pointer-bounds -mmpx  # -DDISABLE_BDWGC -Og -
+DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS) -ftree-vrp -Warray-bounds=2
 # -Og -Og -fsanitize=address
 #-Og 
 #  -fsanitize=thread 
