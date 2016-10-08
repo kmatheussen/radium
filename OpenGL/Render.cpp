@@ -1323,30 +1323,44 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
 
     GE_Context *line_color = NULL;
 
-    for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
-      if(nodeline->x1!=nodeline->x2) {
+    for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next) {
+      bool vertical_line = nodeline->x1==nodeline->x2;
+      bool continues_next_block = nodeline->next==NULL && note_continues_next_block(wblock->block, note);
+    
+      if(true || !vertical_line) {
         int logtype = nodeline->logtype;
         
         float x1 = nodeline->x1;
         float x2 = logtype==LOGTYPE_HOLD ? nodeline->x1 : nodeline->x2;
+        float y1 = nodeline->y1;
+        float y2 = nodeline->y2;
+
+        if (vertical_line)
+          y1 += window->fontheight;
+
+        line_color = line_color!=NULL ? GE_y(line_color, y1) : GE_color_alpha(PITCH_LINE_COLOR_NUM, 0.5, y1);  
+
+        int width = get_pitchline_width();
+        //if (vertical_line)
+        width *= 2;
         
-        line_color = line_color!=NULL ? GE_y(line_color, nodeline->y1) : GE_color_alpha(PITCH_LINE_COLOR_NUM, 0.5, nodeline->y1);  
-        
-        GE_line(line_color, x1, nodeline->y1, x2, nodeline->y2, get_pitchline_width());
-        
-        if (logtype==LOGTYPE_HOLD)
-          GE_line(line_color, x2, nodeline->y2, nodeline->x2, nodeline->y2, get_pitchline_width());
-        
-        if (nodeline->next==NULL){
-          if (note_continues_next_block(wblock->block, note)){
-            float y1 = nodeline->y2;
-            float y2 = nodeline->y2 + 25;
-            GE_line(line_color, nodeline->x2, y1, nodeline->x2, y2, get_pitchline_width());
-            GE_line(line_color, nodeline->x2 - 5, y2 - 8, nodeline->x2, y2, get_pitchline_width());
-            GE_line(line_color, nodeline->x2 + 5, y2 - 8, nodeline->x2, y2, get_pitchline_width());
-          }
+        if (y2 > y1 + 2){
+          GE_line(line_color, x1, y1, x2, y2, width);
+          
+          if (logtype==LOGTYPE_HOLD)
+            GE_line(line_color, x2, y2, nodeline->x2, y2, width);
+        }
+          
+        if (continues_next_block){
+          float y1 = nodeline->y2;
+          float y2 = nodeline->y2 + 25;
+          GE_line(line_color, nodeline->x2, y1, nodeline->x2, y2, width);
+          GE_line(line_color, nodeline->x2 - 5, y2 - 8, nodeline->x2, y2, width);
+          GE_line(line_color, nodeline->x2 + 5, y2 - 8, nodeline->x2, y2, width);
         }
       }
+
+    }
 
   }
   
