@@ -113,7 +113,7 @@ struct SmoothDelay {
   }
   
   
-  bool RT_process(int count, FAUSTFLOAT* input0, FAUSTFLOAT* output0) {
+  bool RT_process(int count, const FAUSTFLOAT* input0, FAUSTFLOAT* output0) {
     const int iSlow0 = iHslider0;
 
     const int anding = buffer_size-1;

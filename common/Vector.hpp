@@ -283,7 +283,7 @@ public:
   // RT safe (except for the O(n) performance)
   //
   // This function can NOT be called in parallell with other functions
-  void remove(T t, bool keep_order = false){
+  void remove(const T t, bool keep_order = false){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
     
     R_ASSERT(next_elements == NULL);

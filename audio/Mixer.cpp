@@ -484,7 +484,7 @@ struct Mixer{
   }
     
   void remove_SoundProducer(SoundProducer *sound_producer){
-    SoundPlugin *plugin = SP_get_plugin(sound_producer);
+    const SoundPlugin *plugin = SP_get_plugin(sound_producer);
     
     bool is_click_patch = false;
 
@@ -616,9 +616,9 @@ struct Mixer{
     return true;
   }
 
-  static int compare_sound_producers(const void *vsp1, const void *vsp2){
-    SoundProducer **sp1 = (SoundProducer**)(vsp1);
-    SoundProducer **sp2 = (SoundProducer**)(vsp2);
+  static int compare_sound_producers(const void *vsp1, const void *vsp2) {
+    const SoundProducer **sp1 = (const SoundProducer**)(vsp1);
+    const SoundProducer **sp2 = (const SoundProducer**)(vsp2);
     double dur1 = SP_get_running_time(*sp1);
     double dur2 = SP_get_running_time(*sp2);
 

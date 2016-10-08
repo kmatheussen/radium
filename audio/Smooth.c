@@ -31,7 +31,7 @@ void SMOOTH_release(Smooth *smooth){
   V_free(smooth->values);
 }
 
-static bool is_smoothing_necessary(Smooth *smooth){
+static bool is_smoothing_necessary(const Smooth *smooth){
   return smooth->smoothing_is_necessary;
 }
 
@@ -40,7 +40,7 @@ void SMOOTH_set_target_value(Smooth *smooth, float value){
   safe_volatile_float_write(&smooth->next_target_value, value);
 }
 
-float SMOOTH_get_target_value(Smooth *smooth){
+float SMOOTH_get_target_value(const Smooth *smooth){
   return safe_volatile_float_read(&smooth->next_target_value);
 }
 
@@ -91,7 +91,7 @@ void SMOOTH_called_per_block(Smooth *smooth){
   }
 }
 
-void SMOOTH_apply_volume(Smooth *smooth, float *sound, int num_frames){
+void SMOOTH_apply_volume(const Smooth *smooth, float *sound, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
     
   int i;
@@ -110,7 +110,7 @@ void SMOOTH_apply_volume(Smooth *smooth, float *sound, int num_frames){
   }
 }
 
-void SMOOTH_copy_sound(Smooth *smooth, float *dst, float *src, int num_frames){
+void SMOOTH_copy_sound(const Smooth *smooth, float *dst, const float *src, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
   
   int i;
@@ -131,7 +131,7 @@ void SMOOTH_copy_sound(Smooth *smooth, float *dst, float *src, int num_frames){
   }
 }
 
-void SMOOTH_apply_volume_using_inverted_values(Smooth *smooth, float *sound, int num_frames){
+void SMOOTH_apply_volume_using_inverted_values(const Smooth *smooth, float *sound, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
   
   int i;
@@ -147,7 +147,7 @@ void SMOOTH_apply_volume_using_inverted_values(Smooth *smooth, float *sound, int
   }
 }
 
-void SMOOTH_mix_sounds_raw(float *target, float *source, int num_frames, float start_volume, float end_volume){
+void SMOOTH_mix_sounds_raw(float *target, const float *source, int num_frames, float start_volume, float end_volume){
 
   if (num_frames==0) {
 #if defined(RELEASE)
@@ -179,12 +179,12 @@ void SMOOTH_mix_sounds_raw(float *target, float *source, int num_frames, float s
 }
 
 
-bool SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(Smooth *smooth){
+bool SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(const Smooth *smooth){
   return smooth->target_audio_will_be_modified;
 }
 
 
-void SMOOTH_mix_sounds(Smooth *smooth, float *target, float *source, int num_frames){
+void SMOOTH_mix_sounds(const Smooth *smooth, float *target, const float *source, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
   
   int i;
@@ -206,7 +206,7 @@ void SMOOTH_mix_sounds(Smooth *smooth, float *target, float *source, int num_fra
   }
 }
 
-void SMOOTH_mix_sounds_using_inverted_values(Smooth *smooth, float *target, float *source, int num_frames){
+void SMOOTH_mix_sounds_using_inverted_values(const Smooth *smooth, float *target, const float *source, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
   
   int i;
@@ -279,7 +279,7 @@ static Panvals das_get_pan_vals_vector(float pan, int num_source_channels){
 
 // Think I found this pan calculation method in the ardour source many years ago.
 // TODO: Optimize panning when smoothing is necessary.
-void SMOOTH_apply_pan(Smooth *smooth, float **sound, int num_channels, int num_frames){
+void SMOOTH_apply_pan(const Smooth *smooth, float **sound, int num_channels, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
   
   int i;

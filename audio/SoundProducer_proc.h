@@ -64,20 +64,20 @@ struct DoublyLinkedList{
 
 enum SoundProducerRunningState {HASNT_RUN_YET, IS_RUNNING, FINISHED_RUNNING};
 
-int64_t SP_get_id(SoundProducer *producer);
+int64_t SP_get_id(const SoundProducer *producer);
 bool SP_add_elink(SoundProducer *target, SoundProducer *source);
 bool SP_add_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch);
-void SP_remove_elink(SoundProducer *target, SoundProducer *source);
-void SP_remove_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch);
-void SP_remove_all_links(radium::Vector<SoundProducer*> &soundproducers);
+void SP_remove_elink(SoundProducer *target, const SoundProducer *source);
+void SP_remove_link(SoundProducer *target, int target_ch, const SoundProducer *source, int source_ch);
+void SP_remove_all_links(const radium::Vector<SoundProducer*> &soundproducers);
 void SP_RT_called_for_each_soundcard_block1(SoundProducer *producer, int64_t time);
 void SP_RT_called_for_each_soundcard_block2(SoundProducer *producer, int64_t time);
 void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins);
 void SP_RT_clean_output(SoundProducer *producer, int num_frames);
 void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_num, bool process_plugins);
 void SP_RT_set_bus_descendant_type_for_plugin(SoundProducer *producer);
-int SP_get_bus_num(SoundProducer *sp);
-enum BusDescendantType SP_get_bus_descendant_type(SoundProducer *sp);
+int SP_get_bus_num(const SoundProducer *sp);
+enum BusDescendantType SP_get_bus_descendant_type(const SoundProducer *sp);
 float SP_get_input_peak(SoundProducer *producer, int ch);
 float SP_get_output_peak(SoundProducer *producer, int ch);
 void SP_set_buffer_size(SoundProducer *producer,int buffer_size);
@@ -94,21 +94,21 @@ void SP_write_mixer_tree_to_disk(QFile *file);
 struct SoundPlugin;
 #endif
 
-extern LANGSPEC struct SoundPlugin *SP_get_plugin(struct SoundProducer *producer);
+extern LANGSPEC struct SoundPlugin *SP_get_plugin(const struct SoundProducer *producer);
 
 extern LANGSPEC struct SoundProducer *SP_create(struct SoundPlugin *plugin, Buses buses);
 extern LANGSPEC void SP_delete(struct SoundProducer *producer);
 
-extern LANGSPEC int RT_SP_get_input_latency(struct SoundProducer *sp);
+extern LANGSPEC int RT_SP_get_input_latency(const struct SoundProducer *sp);
 
-extern LANGSPEC bool SP_is_autosuspending(struct SoundProducer *sp);
+extern LANGSPEC bool SP_is_autosuspending(const struct SoundProducer *sp);
 
-extern LANGSPEC bool SP_replace_plugin(struct SoundPlugin *old_plugin, struct SoundPlugin *new_plugin);
-extern LANGSPEC bool SP_is_plugin_running(struct SoundPlugin *plugin);
+//extern LANGSPEC bool SP_replace_plugin(struct SoundPlugin *old_plugin, struct SoundPlugin *new_plugin);
+extern LANGSPEC bool SP_is_plugin_running(const struct SoundPlugin *plugin);
 extern LANGSPEC void SP_print_tree(void);
 
-extern LANGSPEC bool SP_has_input_links(struct SoundProducer *sp);
-extern LANGSPEC bool SP_has_audio_input_link(struct SoundProducer *sp);
+extern LANGSPEC bool SP_has_input_links(const struct SoundProducer *sp);
+extern LANGSPEC bool SP_has_audio_input_link(const struct SoundProducer *sp);
 
 extern LANGSPEC void SP_called_regularly_by_main_thread(struct SoundProducer *sp);
   

@@ -153,11 +153,11 @@ static inline void safe_volatile_float_write(volatile float *pos, float value){
   *pos = value;
 }
 
-static inline float safe_volatile_float_read(volatile float *pos){
+static inline float safe_volatile_float_read(volatile const float *pos){
   return *pos;
 }
 
-static inline float safe_float_read(float *pos){
+static inline float safe_float_read(const float *pos){
   return *pos;
 }
 
@@ -165,7 +165,7 @@ static inline void safe_int_write(int *pos, int value){
   *pos = value;
 }
 
-static inline int safe_int_read(int *pos){
+static inline int safe_int_read(const int *pos){
   return *pos;
 }
 

@@ -200,7 +200,7 @@ struct LatencyCompensatorDelay {
   }
   
   // May return 'input_sound'. Also, 'input_sound' is never modified.
-  float *RT_process(float *input_sound, int num_frames){
+  const float *RT_process(const float *input_sound, int num_frames){
 
 #if !defined(RELEASE)
     R_ASSERT_RETURN_IF_FALSE2(input_sound!=NULL, g_empty_sound);
@@ -247,7 +247,7 @@ struct SoundProducerLink {
     ATOMIC_SET(should_be_turned_off, true);
   }
 
-  bool turn_off_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(void){
+  bool turn_off_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(void) const {
     if (MIXER_someone_has_solo()){
       
       SoundPlugin *plugin = SP_get_plugin(source);
@@ -264,8 +264,8 @@ struct SoundProducerLink {
     return false;
   }
   
-  float get_total_link_volume(void){    
-    SoundPlugin *source_plugin = SP_get_plugin(source);
+  float get_total_link_volume(void) const {
+    const SoundPlugin *source_plugin = SP_get_plugin(source);
     float plugin_volume = source_plugin->volume;  // (Note that plugin->volume==0 when plugin->volume_onoff==false, so we don't need to test for that)
 
     if (turn_off_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis())
@@ -325,7 +325,7 @@ struct SoundProducerLink {
     
   }
 
-  bool can_be_removed(void){
+  bool can_be_removed(void) const {
     if (is_event_link)
       return true;
 
@@ -434,7 +434,7 @@ static void RT_apply_volume2(float *sound, int num_frames, float start_volume, f
 #endif
 
 #if 0
-static void RT_copy_sound_and_apply_volume(float *to_sound, float *from_sound, int num_frames, float start_volume, float end_volume){
+static void RT_copy_sound_and_apply_volume(float *to_sound, const float *from_sound, int num_frames, float start_volume, float end_volume){
   if(start_volume==end_volume || fabsf(start_volume-end_volume) < 0.001){
     if(end_volume!=1.0)
       for(int i=0;i<num_frames;i++)
@@ -452,11 +452,11 @@ static void RT_copy_sound_and_apply_volume(float *to_sound, float *from_sound, i
 #endif
 
 
-static void RT_apply_dry_wet(float **dry, int num_dry_channels, float **wet, int num_wet_channels, int num_frames, Smooth *wet_values){
+static void RT_apply_dry_wet(const float **dry, int num_dry_channels, float **wet, int num_wet_channels, int num_frames, const Smooth *wet_values){
   int num_channels = std::min(num_dry_channels,num_wet_channels);
   for(int ch=0;ch<num_channels;ch++){
     float *w=wet[ch];
-    float *d=dry[ch];
+    const float *d=dry[ch];
 
     SMOOTH_apply_volume(wet_values, w, num_frames);
     SMOOTH_mix_sounds_using_inverted_values(wet_values, w, d, num_frames);
@@ -562,7 +562,7 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
 
 }
 
-static int get_bus_num(SoundPlugin *plugin){
+static int get_bus_num(const SoundPlugin *plugin){
   if (strcmp(plugin->type->type_name,"Bus"))
     return -1;
 
@@ -849,7 +849,7 @@ public:
       _output_sound[ch] = (float*)V_calloc(sizeof(float),num_frames);
   }
 
-  bool is_recursive(SoundProducer *start_producer){
+  bool is_recursive(const SoundProducer *start_producer) const {
     if(start_producer==this)
       return true;
 
@@ -914,7 +914,7 @@ public:
     return SoundProducer::add_link(link);
   }
 
-  static void remove_links(radium::Vector<SoundProducerLink*> &links){
+  static void remove_links(const radium::Vector<SoundProducerLink*> &links){
 
       // tell them to turn off
     for(auto link : links)
@@ -971,7 +971,7 @@ public:
     delete link;    
   }
   
-  void remove_eventSoundProducerInput(SoundProducer *source){
+  void remove_eventSoundProducerInput(const SoundProducer *source){
     if (PLAYER_is_running()==false)
       return;
      
@@ -989,7 +989,7 @@ public:
   }
 
 
-  void remove_SoundProducerInput(SoundProducer *source, int source_ch, int target_ch){
+  void remove_SoundProducerInput(const SoundProducer *source, int source_ch, int target_ch){
     //printf("**** Asking to remove connection\n");
 
     if (PLAYER_is_running()==false)
@@ -1011,7 +1011,7 @@ public:
   }
 
   // fade in 'input'
-  void RT_crossfade_in2(float *input, float *output, int fade_pos, int num_frames){
+  void RT_crossfade_in2(float *input, float *output, int fade_pos, int num_frames) const {
     RT_fade_in2(input, fade_pos, num_frames);
     RT_fade_out2(output, fade_pos, num_frames);
           
@@ -1020,7 +1020,7 @@ public:
   }
 
   // fade out 'input'
-  void RT_crossfade_out2(float *input, float *output, int fade_pos, int num_frames){
+  void RT_crossfade_out2(float *input, float *output, int fade_pos, int num_frames) const {
     RT_fade_out2(input, fade_pos, num_frames);
     RT_fade_in2(output, fade_pos, num_frames);
           
@@ -1028,7 +1028,7 @@ public:
       output[i] += input[i];
   }
 
-  void RT_apply_system_filter_apply(SystemFilter *filter, float **input, float **output, int num_channels, int num_frames, bool process_plugins){
+  void RT_apply_system_filter_apply(SystemFilter *filter, float **input, float **output, int num_channels, int num_frames, bool process_plugins) const {
     if(filter->plugins==NULL)
       if(num_channels==0){
         return;
@@ -1050,7 +1050,7 @@ public:
   }
 
   // Quite chaotic with all the on/off is/was booleans.
-  void RT_apply_system_filter(SystemFilter *filter, float **sound, int num_channels, int num_frames, bool process_plugins){
+  void RT_apply_system_filter(SystemFilter *filter, float **sound, int num_channels, int num_frames, bool process_plugins) const {
     if(ATOMIC_GET(filter->is_on)==false && filter->was_on==false)
       return;
 
@@ -1101,7 +1101,7 @@ public:
     }
   }
 
-  bool should_consider_latency(SoundProducerLink *input_audio_link){
+  bool should_consider_latency(const SoundProducerLink *input_audio_link) const {
     if (input_audio_link->is_active==false) {
           
       if (input_audio_link->is_bus_link){
@@ -1189,11 +1189,11 @@ public:
       _dry_sound_latencycompensator_delays[ch].RT_set_preferred_delay(my_latency);
   }
   
-  bool has_run(int64_t time){
+  bool has_run(int64_t time) const {
     return _last_time == time;
   }
 
-  void RT_set_input_peak_values(float *input_peaks, float **dry_sound){
+  void RT_set_input_peak_values(const float *input_peaks, float **dry_sound){
     for(int ch=0;ch<_num_dry_sounds;ch++){
       float peak = input_peaks[ch];
       
@@ -1228,7 +1228,7 @@ public:
     }
   }
     
-  void RT_set_output_peak_values(float *volume_peaks){
+  void RT_set_output_peak_values(const float *volume_peaks) const {
     // Output peaks
     {
       for(int ch=0;ch<_num_outputs;ch++){
@@ -1285,7 +1285,7 @@ public:
     }
   }
   
-  void RT_process(int64_t time, int num_frames, bool process_plugins){
+  void RT_process(int64_t time, int num_frames, bool process_plugins) {
 
     int dry_sound_sound_size = R_MAX(1,_num_dry_sounds)*num_frames*sizeof(float);
     
@@ -1347,9 +1347,9 @@ public:
 
         SMOOTH_called_per_block(&link->volume);
 
-        float *input_producer_sound = link->source->_output_sound[link->source_ch];
+        const float *input_producer_sound = link->source->_output_sound[link->source_ch];
 
-        float *latency_compensated_input_producer_sound = link->_delay.RT_process(input_producer_sound, num_frames);
+        const float *latency_compensated_input_producer_sound = link->_delay.RT_process(input_producer_sound, num_frames);
 
         SMOOTH_mix_sounds(&link->volume,
                           dry_sound[link->target_ch],
@@ -1388,7 +1388,7 @@ public:
     }
 
 
-    float *_latency_dry_sound[R_MAX(1,_num_dry_sounds)];
+    const float *_latency_dry_sound[R_MAX(1,_num_dry_sounds)];
     for(int ch=0;ch<_num_dry_sounds;ch++)        
       _latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(dry_sound[ch], num_frames);
 
@@ -1471,7 +1471,7 @@ void SP_delete(SoundProducer *producer){
   delete producer;
 }
 
-int64_t SP_get_id(SoundProducer *producer){
+int64_t SP_get_id(const SoundProducer *producer){
   return producer->_id;
 }
 
@@ -1484,17 +1484,17 @@ bool SP_add_link(SoundProducer *target, int target_ch, SoundProducer *source, in
   return target->add_SoundProducerInput(source,source_ch,target_ch);
 }
 
-void SP_remove_elink(SoundProducer *target, SoundProducer *source){
+void SP_remove_elink(SoundProducer *target, const SoundProducer *source){
   target->remove_eventSoundProducerInput(source);
 }
 
-void SP_remove_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch){
+void SP_remove_link(SoundProducer *target, int target_ch, const SoundProducer *source, int source_ch){
   target->remove_SoundProducerInput(source,source_ch,target_ch);
 }
 
 
 // Does NOT delete the bus links. Those are deleted in the SoundProducer destructor.
-void SP_remove_all_links(radium::Vector<SoundProducer*> &soundproducers){
+void SP_remove_all_links(const radium::Vector<SoundProducer*> &soundproducers){
 
   radium::Vector<SoundProducerLink *> links_to_delete;
   
@@ -1628,15 +1628,15 @@ void SP_RT_clean_output(SoundProducer *producer, int num_frames){
 #endif
 
 
-struct SoundPlugin *SP_get_plugin(SoundProducer *producer){
+struct SoundPlugin *SP_get_plugin(const SoundProducer *producer){
   return producer->_plugin;
 }
 
-int SP_get_bus_num(SoundProducer *sp){
+int SP_get_bus_num(const SoundProducer *sp){
   return sp->_bus_num;
 }
 
-enum BusDescendantType SP_get_bus_descendant_type(SoundProducer *sp){
+enum BusDescendantType SP_get_bus_descendant_type(const SoundProducer *sp){
   if(sp==NULL){
     RError("SP_get_bus_descendant_type: sp==NULL\n");
     return IS_BUS_PROVIDER;
@@ -1644,6 +1644,7 @@ enum BusDescendantType SP_get_bus_descendant_type(SoundProducer *sp){
   return sp->_bus_descendant_type;
 }
 
+#if 0
 bool SP_replace_plugin(SoundPlugin *old_plugin, SoundPlugin *new_plugin){
   if (!PLAYER_current_thread_has_lock()) {
     RError("Current thread is not holding player lock");
@@ -1659,16 +1660,17 @@ bool SP_replace_plugin(SoundPlugin *old_plugin, SoundPlugin *new_plugin){
   sp->_plugin = new_plugin;
   return true;  
 }
+#endif
 
-bool SP_is_plugin_running(SoundPlugin *plugin){
+bool SP_is_plugin_running(const SoundPlugin *plugin){
   return plugin->sp != NULL;
 }
 
-int RT_SP_get_input_latency(SoundProducer *sp){
+int RT_SP_get_input_latency(const SoundProducer *sp){
   return sp->_highest_input_link_latency;
 }
 
-bool SP_is_autosuspending(SoundProducer *sp){
+bool SP_is_autosuspending(const SoundProducer *sp){
   return ATOMIC_GET_RELAXED(sp->_is_autosuspending);
 }
 
@@ -1684,11 +1686,11 @@ double SP_get_running_time(const SoundProducer *sp){
   return sp->running_time;
 }
 
-bool SP_has_input_links(SoundProducer *sp){
+bool SP_has_input_links(const SoundProducer *sp){
   return sp->_input_links.size() > 0;
 }
 
-bool SP_has_audio_input_link(SoundProducer *sp){
+bool SP_has_audio_input_link(const SoundProducer *sp){
   for(auto *link : sp->_input_links){
     if (!link->is_event_link)
       return true;
