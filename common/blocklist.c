@@ -309,11 +309,15 @@ void BL_setLength(int length){
       for(int i=root->song->length;i<length;i++)
         VECTOR_ensure_space_for_one_more_element(seqblocks);
 
+      struct SeqBlock *new_seqblocks[length];
+      for(int i=root->song->length;i<length;i++)
+        new_seqblocks[i] = get_seqblock(playlist[i]);
+      
       PLAYER_lock();{
         
         for(int i=root->song->length;i<length;i++){
           //printf("  PUSH PUSH %d. len: %d\n",i,seqblocks->num_elements);
-          VECTOR_push_back(seqblocks, get_seqblock(playlist[i]));
+          VECTOR_push_back(seqblocks, new_seqblocks[i]);
           //printf(" Got it. Lnegth now: %d\n",seqblocks->num_elements);
         }
 
