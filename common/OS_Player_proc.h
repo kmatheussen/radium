@@ -55,6 +55,40 @@ extern LANGSPEC void RT_request_to_continue_playing(void);
 extern LANGSPEC void RT_request_to_stop_playing(void);
 extern LANGSPEC void RT_pause_plugins(void);
 
+#ifdef __cplusplus
+
+namespace radium{
+  
+struct PlayerLock{
+  PlayerLock()
+  {
+    PLAYER_lock();
+  }
+
+  ~PlayerLock(){
+    PLAYER_unlock();
+  }
+};
+ 
+struct PlayerRecursiveLock{
+  bool gotit;
+  
+  PlayerRecursiveLock()
+  : gotit (!PLAYER_current_thread_has_lock())
+  {
+    if (gotit)
+      PLAYER_lock();
+  }
+
+  ~PlayerRecursiveLock(){
+    if (gotit)
+      PLAYER_unlock();
+  }
+};
+ 
+}
+
+#endif
 
 #endif
 

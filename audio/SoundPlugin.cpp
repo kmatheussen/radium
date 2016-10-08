@@ -1202,24 +1202,32 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
       break;
 
     case EFFNUM_DELAY_TIME:
-      store_value = value_type==PLUGIN_STORED_TYPE ? value : scale(value, 0, 1, DELAY_MIN, DELAY_MAX);
-      plugin->delay_time = store_value;
-      if (plugin->delay != NULL){
-        int val = 0;
-        if (ATOMIC_GET(plugin->delay_is_on))
-          val = plugin->delay_time*MIXER_get_sample_rate()/1000;
-        static_cast<radium::SmoothDelay*>(plugin->delay)->setSize(val);
+      {
+        radium::PlayerRecursiveLock lock;
+        
+        store_value = value_type==PLUGIN_STORED_TYPE ? value : scale(value, 0, 1, DELAY_MIN, DELAY_MAX);
+        plugin->delay_time = store_value;
+        if (plugin->delay != NULL){
+          int val = 0;
+          if (ATOMIC_GET(plugin->delay_is_on))
+            val = plugin->delay_time*MIXER_get_sample_rate()/1000;
+          static_cast<radium::SmoothDelay*>(plugin->delay)->setSize(val);
+        }
+        break;
       }
-      break;
     case EFFNUM_DELAY_ONOFF:
-      ATOMIC_SET(plugin->delay_is_on, store_value > 0.5f);
-      if (plugin->delay != NULL){
-        int val = 0;
-        if (ATOMIC_GET(plugin->delay_is_on))
-          val = plugin->delay_time*MIXER_get_sample_rate()/1000;
-        static_cast<radium::SmoothDelay*>(plugin->delay)->setSize(val);
+      {
+        radium::PlayerRecursiveLock lock;
+        
+        ATOMIC_SET(plugin->delay_is_on, store_value > 0.5f);
+        if (plugin->delay != NULL){
+          int val = 0;
+          if (ATOMIC_GET(plugin->delay_is_on))
+            val = plugin->delay_time*MIXER_get_sample_rate()/1000;
+          static_cast<radium::SmoothDelay*>(plugin->delay)->setSize(val);
+        }
+        break;
       }
-      break;
       
     default:
       RError("2. Unknown effect number: %d (%d). %s / %s",effect_num,system_effect,plugin->type->type_name,plugin->type->name);
@@ -1603,10 +1611,9 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
     if(HASH_has_key(effects, effect_name)){
       float val = HASH_get_float(effects, effect_name);
       if(i<type->num_effects){
-        PLAYER_lock();{
-          type->set_effect_value(plugin, -1, i, val, PLUGIN_FORMAT_NATIVE, FX_single);
-          plugin->savable_effect_values[i] = type->get_effect_value(plugin, i, PLUGIN_FORMAT_SCALED);
-        }PLAYER_unlock();
+        radium::PlayerLock lock;
+        type->set_effect_value(plugin, -1, i, val, PLUGIN_FORMAT_NATIVE, FX_single);
+        plugin->savable_effect_values[i] = type->get_effect_value(plugin, i, PLUGIN_FORMAT_SCALED);
       }else
         PLUGIN_set_effect_value(plugin, -1, i, val, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
     }else
@@ -1666,16 +1673,16 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
 
   // 3. Store custom effects (need lock here)
   if (type->dont_send_effect_values_from_state_into_plugin ==false) {
-    PLAYER_lock();{
-      for(i=0;i<type->num_effects;i++){
-        if(has_value[i]){
-          float val = values[i];
-          type->set_effect_value(plugin, -1, i, val, PLUGIN_FORMAT_NATIVE, FX_single);
-          plugin->savable_effect_values[i] = type->get_effect_value(plugin, i, PLUGIN_FORMAT_SCALED);
-        }else
-          plugin->savable_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN);
-      }
-    }PLAYER_unlock();
+    radium::PlayerLock lock;
+
+    for(i=0;i<type->num_effects;i++){
+      if(has_value[i]){
+        float val = values[i];
+        type->set_effect_value(plugin, -1, i, val, PLUGIN_FORMAT_NATIVE, FX_single);
+        plugin->savable_effect_values[i] = type->get_effect_value(plugin, i, PLUGIN_FORMAT_SCALED);
+      }else
+        plugin->savable_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN);
+    }
   }
 }
 
