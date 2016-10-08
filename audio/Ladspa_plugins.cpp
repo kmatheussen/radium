@@ -1033,6 +1033,10 @@ static void init_menues(){
 }
 
 void create_ladspa_plugins(void){
+#if !defined(RELEASE)
+  return; // takes long time to load ladspa plugins in gdb.
+#endif
+  
   char ladspa_path[1024];
 
 #if FOR_LINUX && !defined(IS_LINUX_BINARY)  // We don't use system ladspa plugins in the binaries because they might use incompatible libraries with the ones included with radium. (happens with guitarix, which links in glib, preventing radium from even starting.)

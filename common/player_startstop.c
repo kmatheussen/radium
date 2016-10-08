@@ -140,6 +140,14 @@ static void PlayStopReally(bool doit){
         
         //InitPEQmempool(); // Clean memory used by player so it can be freed by the garbage collector.
 
+        // Clean all seqtrack->curr_seqblock values
+        PLAYER_lock();{
+          VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
+            seqtrack->curr_seqblock = NULL;
+          }END_VECTOR_FOR_EACH;
+        }PLAYER_unlock();
+
+          
         R_ASSERT(is_playing()==false);
 }
 
@@ -206,8 +214,21 @@ static void start_player(int playtype, int playpos, bool set_curr_playlist, Plac
   InitPEQblock(block,place);
   InitAllPEQnotes(block,place);
 #else
-  int64_t start_time = Place2STime(block,place);
-  start_seqtrack_scheduling(start_time, *place, playtype);
+
+  int64_t block_start_time = 0;
+  if (playtype==PLAYSONG) {
+    PLAYER_lock();{
+      struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
+      struct SeqBlock *seqblock = seqtrack->seqblocks.elements[playpos];
+      block_start_time = seqblock->time;
+    }PLAYER_unlock();
+  }
+
+  int64_t block_time = Place2STime(block,place);
+  int64_t global_start_time = block_start_time + block_time;
+  
+  start_seqtrack_scheduling(global_start_time, block_time, *place, playtype, playpos);
+  
 #endif
   
   ATOMIC_SET(pc->player_state, PLAYER_STATE_STARTING_TO_PLAY);

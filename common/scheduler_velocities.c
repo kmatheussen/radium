@@ -7,7 +7,7 @@
 #define DO_DEBUG 0
 
 
-static const int g_num_velocities_args = 7;
+#define g_num_velocities_args 7
 
 
 static void RT_schedule_velocity(int64_t current_time,

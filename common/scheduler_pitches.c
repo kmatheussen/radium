@@ -7,7 +7,7 @@
 #define DO_DEBUG 0
 
 
-static const int g_num_pitches_args = 7;
+#define g_num_pitches_args 7
 
 
 static int rnd(int max){

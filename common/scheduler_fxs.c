@@ -8,7 +8,7 @@
 
 
 
-static const int g_num_fx_args = 7;
+#define g_num_fx_args 7
 
 static void RT_schedule_fxnodeline(
                                    const struct SeqBlock *seqblock,

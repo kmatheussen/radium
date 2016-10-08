@@ -118,8 +118,7 @@ extern LANGSPEC void RT_schedule_fxs_newblock(const struct SeqTrack *seqtrack,
 
 
 // scheduler_seqtrack_proc.h
-extern LANGSPEC void start_seqtrack_scheduling(int64_t start_time, Place place, int playtype); // 'place' is ignored when playing song.
-
+extern LANGSPEC void start_seqtrack_scheduling(int64_t global_start_time, int64_t block_time, Place place, int playtype, int playlistpos);
 
 // scheduler_realline_proc.h
 extern LANGSPEC void RT_schedule_reallines_in_block(const struct SeqBlock *seqblock, const Place place);
