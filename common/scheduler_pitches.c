@@ -90,10 +90,16 @@ static int64_t RT_scheduled_glide_pitch(struct SeqTrack *seqtrack, int64_t time,
 
   if (patch==NULL)
     return DONT_RESCHEDULE;
+
+#if !defined(RELEASE)
+  if (time < time1 || time>time2)
+    RError("RT_scheduled_glide_pitch: time: %d, time1: %d, time2: %d", time, time1, time2);
+#endif
   
-  R_ASSERT_NON_RELEASE(time >= time1);
-  R_ASSERT_NON_RELEASE(time <= time2);
-  //R_ASSERT_NON_RELEASE(time2 > time1);
+  if (time < time1)
+    time = time1;
+  if (time > time2)
+    time = time2;
 
   const struct Pitches *pitch2 = pitch1==NULL ? note->pitches : NextPitch(pitch1);
 

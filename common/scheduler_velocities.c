@@ -82,11 +82,17 @@ static int64_t RT_scheduled_glide_velocity(struct SeqTrack *seqtrack, int64_t ti
 
   if (patch==NULL)
     return DONT_RESCHEDULE;
-  
-  R_ASSERT_NON_RELEASE(time >= time1);
-  R_ASSERT_NON_RELEASE(time <= time2);
-  //R_ASSERT_NON_RELEASE(time2 > time1);
 
+#if !defined(RELEASE)
+  if (time < time1 || time>time2)
+    RError("RT_scheduled_glide_velocity: time: %d, time1: %d, time2: %d", time, time1, time2);
+#endif
+  
+  if (time < time1)
+    time = time1;
+  if (time > time2)
+    time = time2;
+  
   const struct Velocities *velocity2 = velocity1==NULL ? note->velocities : NextVelocity(velocity1);
 
   int val1 = velocity1==NULL ? note->velocity     : velocity1->velocity;
@@ -96,7 +102,7 @@ static int64_t RT_scheduled_glide_velocity(struct SeqTrack *seqtrack, int64_t ti
     
   if (val != last_val) {
 #if DO_DEBUG
-    printf("  Sending velocity %x at %d\n",val,(int)time);
+    //printf("  Sending velocity %x at %d\n",val,(int)time);
 #endif
     
     RT_PATCH_change_velocity(seqtrack,
@@ -121,7 +127,7 @@ static int64_t RT_scheduled_glide_velocity(struct SeqTrack *seqtrack, int64_t ti
   } else {
     
     args[6].int32_num = val;
-    
+
     return R_MIN(time2, time + RADIUM_BLOCKSIZE);
     
   }
