@@ -8,6 +8,7 @@
 #include "../common/player_proc.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/patch_proc.h"
+#include "../common/scheduler_proc.h"
 
 #include "SoundPluginRegistry_proc.h"
 
@@ -129,7 +130,7 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note){
 
   note.midi_channel = data->values[CHANNEL];
   
-  RT_PATCH_send_play_note_to_receivers((struct Patch*)plugin->patch, note, g_last_seq_time_converted_to_delta_time);
+  RT_PATCH_send_play_note_to_receivers(g_RT_curr_scheduling_seqtrack, (struct Patch*)plugin->patch, note, g_last_seq_time_converted_to_delta_time);
 }
 
 static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
@@ -137,7 +138,7 @@ static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
 
   note.midi_channel = data->values[CHANNEL];
   
-  RT_PATCH_send_change_velocity_to_receivers((struct Patch*)plugin->patch, note, g_last_seq_time_converted_to_delta_time);
+  RT_PATCH_send_change_velocity_to_receivers(g_RT_curr_scheduling_seqtrack, (struct Patch*)plugin->patch, note, g_last_seq_time_converted_to_delta_time);
 }
 
 static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
@@ -145,7 +146,7 @@ static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
 
   note.midi_channel = data->values[CHANNEL];
   
-  RT_PATCH_send_stop_note_to_receivers((struct Patch*)plugin->patch, note, g_last_seq_time_converted_to_delta_time);
+  RT_PATCH_send_stop_note_to_receivers(g_RT_curr_scheduling_seqtrack, (struct Patch*)plugin->patch, note, g_last_seq_time_converted_to_delta_time);
 }
 
 
@@ -168,7 +169,7 @@ static void send_msg(struct SoundPlugin *plugin, int64_t block_delta_time, unsig
   int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+block_delta_time);
   int64_t radium_time = pc->start_time + delta_time;
 
-  RT_PATCH_send_raw_midi_message_to_receivers((struct Patch*)patch, msg, radium_time);
+  RT_PATCH_send_raw_midi_message_to_receivers(g_RT_curr_scheduling_seqtrack, (struct Patch*)patch, msg, radium_time);
 }
 
 static void get_minval_and_maxval(int effect_num, int *minval, int *maxval){

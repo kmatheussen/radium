@@ -760,7 +760,7 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         
         if (patch!=NULL) {
           RT_PLAYER_runner_lock();{
-            RT_PATCH_send_play_note_to_receivers(patch, create_note_t(note_id, pitch, velocity, pan, 0), time);
+            RT_PATCH_send_play_note_to_receivers(RT_get_curr_seqtrack(), patch, create_note_t(note_id, pitch, velocity, pan, 0), time);
           }RT_PLAYER_runner_unlock();
         }
       }
@@ -781,7 +781,7 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         int64_t time    = seconds*sample_rate + frames;
         if (patch!=NULL) {
           RT_PLAYER_runner_lock();{
-            RT_PATCH_send_stop_note_to_receivers(patch, create_note_t2(note_id, pitch), time);
+            RT_PATCH_send_stop_note_to_receivers(RT_get_curr_seqtrack(), patch, create_note_t2(note_id, pitch), time);
           }RT_PLAYER_runner_unlock();
         }
       }
@@ -805,7 +805,7 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         //printf("send_velocity. id: %d, argv[0]: %f, notenum: %f, velocity: %f, seconds: %f, frames: %d\n",(int)note_id,libpd_get_float(argv[0]),notenum,velocity,seconds,frames);
         if (patch!=NULL) {
           RT_PLAYER_runner_lock();{
-            RT_PATCH_send_change_velocity_to_receivers(patch, create_note_t(note_id, notenum, velocity, 0, 0), time);
+            RT_PATCH_send_change_velocity_to_receivers(RT_get_curr_seqtrack(), patch, create_note_t(note_id, notenum, velocity, 0, 0), time);
           }RT_PLAYER_runner_unlock();
         }
       }
@@ -828,7 +828,7 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         int64_t time    = seconds*sample_rate + frames;
         if (patch!=NULL) {
           RT_PLAYER_runner_lock();{
-            RT_PATCH_send_change_pitch_to_receivers(patch, create_note_t(note_id, notenum, 0, pitch, 0), time);
+            RT_PATCH_send_change_pitch_to_receivers(RT_get_curr_seqtrack(), patch, create_note_t(note_id, notenum, 0, pitch, 0), time);
           }RT_PLAYER_runner_unlock();
         }
       }
@@ -877,9 +877,9 @@ static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
   
   RT_PLAYER_runner_lock();{
     if(velocity>0)
-      RT_PATCH_send_play_note_to_receivers((struct Patch*)patch, create_note_t(-1, pitch, (float)velocity / 127.0f, 0.0f, channel), -1);
+      RT_PATCH_send_play_note_to_receivers(RT_get_curr_seqtrack(), (struct Patch*)patch, create_note_t(-1, pitch, (float)velocity / 127.0f, 0.0f, channel), -1);
     else
-      RT_PATCH_send_stop_note_to_receivers((struct Patch*)patch, create_note_t(-1, pitch, 0, 0, channel), -1);
+      RT_PATCH_send_stop_note_to_receivers(RT_get_curr_seqtrack(), (struct Patch*)patch, create_note_t(-1, pitch, 0, 0, channel), -1);
   }RT_PLAYER_runner_unlock();
 
   //  printf("Got note on %d %d %d (%p) %f\n",channel,pitch,velocity,d,(float)velocity / 127.0f);
@@ -894,7 +894,7 @@ static void RT_polyaftertouchhook(void *d, int channel, int pitch, int velocity)
     return;
 
   RT_PLAYER_runner_lock();{
-    RT_PATCH_send_change_velocity_to_receivers((struct Patch*)patch, create_note_t(-1, pitch, (float)velocity / 127.0f, 0, channel), -1);
+    RT_PATCH_send_change_velocity_to_receivers(RT_get_curr_seqtrack(), (struct Patch*)patch, create_note_t(-1, pitch, (float)velocity / 127.0f, 0, channel), -1);
   }RT_PLAYER_runner_unlock();
   
   //printf("Got poly aftertouch %d %d %d (%p)\n",channel,pitch,velocity,d);

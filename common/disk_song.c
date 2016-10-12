@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "fxlines_proc.h"
 #include "patch_proc.h"
 #include "visual_proc.h"
+#include "scheduler_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
@@ -86,8 +87,11 @@ struct Song *LoadSong(void){
 		"maxtracks",
 	};
 	struct Song *song=DC_alloc(sizeof(struct Song));
-        VECTOR_push_back(&song->seqtracks, talloc(sizeof(struct SeqTrack)));
-
+        struct SeqTrack *seqtrack = talloc(sizeof(struct SeqTrack));
+        seqtrack->scheduler = SCHEDULER_create();
+        VECTOR_push_back(&song->seqtracks, seqtrack);
+        song->block_seqtrack.scheduler = SCHEDULER_create();
+        
         MW_cleanup(true);
           
         VECTOR_FOR_EACH(struct Patch *patch, &get_MIDI_instrument()->patches){

@@ -15,15 +15,17 @@ static int rnd(int max){
 }
 
 
-static void RT_schedule_pitch(int64_t current_time,
-                                 const struct SeqBlock *seqblock,
-                                 const struct Tracks *track,
-                                 const struct Notes *note,
-                                 const struct Pitches *pitch1,
-                                 bool first_val_has_been_sent
-                                 );
+static void RT_schedule_pitch(struct SeqTrack *seqtrack,
+                              int64_t current_time,
+                              const struct SeqBlock *seqblock,
+                              const struct Tracks *track,
+                              const struct Notes *note,
+                              const struct Pitches *pitch1,
+                              bool first_val_has_been_sent
+                              );
 
-static void RT_scheduled_hold_pitch_do(int64_t time,
+static void RT_scheduled_hold_pitch_do(struct SeqTrack *seqtrack,
+                                       int64_t time,
                                        const struct SeqBlock *seqblock,
                                        const struct Tracks *track,
                                        const struct Notes *note,
@@ -44,7 +46,8 @@ static void RT_scheduled_hold_pitch_do(int64_t time,
     printf("  Sending HOLD pitch %f at %d\n",val,(int)time);
 #endif
     
-    RT_PATCH_change_pitch(patch,
+    RT_PATCH_change_pitch(seqtrack,
+                          patch,
                           create_note_t2(note->id, val),
                           time
                           );
@@ -52,10 +55,10 @@ static void RT_scheduled_hold_pitch_do(int64_t time,
 
   const struct Pitches *pitch2 = pitch1==NULL ? note->pitches : NextPitch(pitch1);
   if (pitch2 != NULL)
-    RT_schedule_pitch(time, seqblock, track, note, pitch2, false);
+    RT_schedule_pitch(seqtrack, time, seqblock, track, note, pitch2, false);
 }
 
-static int64_t RT_scheduled_hold_pitch(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_hold_pitch(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   const struct SeqBlock   *seqblock  = args[0].const_pointer;
   const struct Tracks     *track     = args[1].const_pointer;
   const struct Notes      *note      = args[2].pointer;
@@ -68,13 +71,13 @@ static int64_t RT_scheduled_hold_pitch(int64_t time, union SuperType *args){
   else
     doit = pitch1->chance==0x100 || pitch1->chance > rnd(0x100);
 
-  RT_scheduled_hold_pitch_do(time, seqblock, track, note, pitch1, doit);
+  RT_scheduled_hold_pitch_do(seqtrack, time, seqblock, track, note, pitch1, doit);
   
   return DONT_RESCHEDULE;
 }
 
 
-static int64_t RT_scheduled_glide_pitch(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_glide_pitch(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   const struct SeqBlock   *seqblock  = args[0].const_pointer;
   const struct Tracks     *track     = args[1].const_pointer;
   const struct Notes      *note      = args[2].pointer;
@@ -104,7 +107,8 @@ static int64_t RT_scheduled_glide_pitch(int64_t time, union SuperType *args){
     printf("  Sending pitch %f at %d\n",val,(int)time);
 #endif
     
-    RT_PATCH_change_pitch(patch,
+    RT_PATCH_change_pitch(seqtrack,
+                          patch,
                           create_note_t2(note->id, val),
                           time
                           );
@@ -113,7 +117,7 @@ static int64_t RT_scheduled_glide_pitch(int64_t time, union SuperType *args){
   if (time >= time2) {
     
     if (pitch2 != NULL)
-      RT_schedule_pitch(time, seqblock, track, note, pitch2, true);
+      RT_schedule_pitch(seqtrack, time, seqblock, track, note, pitch2, true);
     
     return DONT_RESCHEDULE;
     
@@ -124,12 +128,13 @@ static int64_t RT_scheduled_glide_pitch(int64_t time, union SuperType *args){
   }
 }
 
-static void RT_schedule_pitch(int64_t current_time,
-                                 const struct SeqBlock *seqblock,
-                                 const struct Tracks *track,
-                                 const struct Notes *note,
-                                 const struct Pitches *pitch1,
-                                 bool first_val_has_been_sent
+static void RT_schedule_pitch(struct SeqTrack *seqtrack,
+                              int64_t current_time,
+                              const struct SeqBlock *seqblock,
+                              const struct Tracks *track,
+                              const struct Notes *note,
+                              const struct Pitches *pitch1,
+                              bool first_val_has_been_sent
                               )
 {
 
@@ -160,7 +165,7 @@ static void RT_schedule_pitch(int64_t current_time,
 
     if (current_time == time1) {
       
-      RT_scheduled_hold_pitch_do(current_time, seqblock, track, note, pitch1, !first_val_has_been_sent);
+      RT_scheduled_hold_pitch_do(seqtrack, current_time, seqblock, track, note, pitch1, !first_val_has_been_sent);
                                     
     } else {
         
@@ -172,7 +177,7 @@ static void RT_schedule_pitch(int64_t current_time,
       args[2].const_pointer = note;
       args[3].const_pointer = pitch1;
       
-      SCHEDULER_add_event(time1, RT_scheduled_hold_pitch, &args[0], num_args, SCHEDULER_PITCH_PRIORITY);
+      SCHEDULER_add_event(seqtrack, time1, RT_scheduled_hold_pitch, &args[0], num_args, SCHEDULER_PITCH_PRIORITY);
     }
       
   } else {
@@ -202,17 +207,17 @@ static void RT_schedule_pitch(int64_t current_time,
     printf(" Scheduling Pitch. %f -> %f, %d -> %d\n", val1, val2, (int)time1, (int)time2);
 #endif
   
-    SCHEDULER_add_event(time1, RT_scheduled_glide_pitch, &args[0], g_num_pitches_args, SCHEDULER_PITCH_PRIORITY);
+    SCHEDULER_add_event(seqtrack, time1, RT_scheduled_glide_pitch, &args[0], g_num_pitches_args, SCHEDULER_PITCH_PRIORITY);
 
   }
 }
 
 
 void RT_schedule_pitches_newnote(int64_t current_time,
-                                    const struct SeqTrack *seqtrack,
-                                    const struct SeqBlock *seqblock,
-                                    const struct Tracks *track,
-                                    const struct Notes *note)
+                                 struct SeqTrack *seqtrack,
+                                 const struct SeqBlock *seqblock,
+                                 const struct Tracks *track,
+                                 const struct Notes *note)
 {
   if (track->patch==NULL)
     return;
@@ -220,5 +225,5 @@ void RT_schedule_pitches_newnote(int64_t current_time,
   if(note->pitches==NULL && note->pitch_end==0.0)
     return;
 
-  RT_schedule_pitch(current_time, seqblock, track, note, NULL, true);
+  RT_schedule_pitch(seqtrack, current_time, seqblock, track, note, NULL, true);
 }

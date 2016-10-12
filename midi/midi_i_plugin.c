@@ -114,7 +114,8 @@ void MyPutMidi(
 
 /******************** notes **************************/
 
-static void MIDIplaynote(struct Patch *patch,
+static void MIDIplaynote(struct SeqTrack *seqtrack,
+                         struct Patch *patch,
                          note_t note,
                          STime time
 ){
@@ -225,7 +226,8 @@ void MIDI_set_use_0x90_for_note_off(bool doit){
 }
 
 
-static void MIDIstopnote(struct Patch *patch,
+static void MIDIstopnote(struct SeqTrack *seqtrack,
+                         struct Patch *patch,
                          note_t note,
                          STime time
 ){
@@ -262,7 +264,7 @@ static void MIDIstopnote(struct Patch *patch,
 
 /******************* Velocity *************************/
 
-static void MIDIchangevelocity(struct Patch *patch,note_t note,STime time){
+static void MIDIchangevelocity(struct SeqTrack *seqtrack,struct Patch *patch,note_t note,STime time){
 	struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
 
         if(patchdata==NULL)
@@ -295,10 +297,10 @@ static void MIDIchangevelocity(struct Patch *patch,note_t note,STime time){
 }
 
 
-static void MIDIchangepitch(struct Patch *patch,note_t note,STime time){ // never called
+static void MIDIchangepitch(struct SeqTrack *seqtrack,struct Patch *patch,note_t note,STime time){ // never called
 }
 
-static void MIDIsendrawmidimessage(struct Patch *patch,uint32_t msg,STime time, float block_reltempo){ // never called
+static void MIDIsendrawmidimessage(struct SeqTrack *seqtrack,struct Patch *patch,uint32_t msg,STime time, float block_reltempo){ // never called
 }
 
 /******************** patch **************************/
@@ -633,7 +635,7 @@ static void MIDI_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *trac
   return;
 }
 
-static void MIDI_remove_patch(struct Patch *patch){
+static void MIDI_remove_patchdata(struct Patch *patch){
   // nothing to do.
 }
 
@@ -666,7 +668,7 @@ int MIDI_initInstrumentPlugIn(struct Instruments *instrument){
   instrument->PP_Update = MIDI_PP_Update;
 
   instrument->handle_fx_when_theres_a_new_patch_for_track = MIDI_handle_fx_when_theres_a_new_patch_for_track;
-  instrument->remove_patch                                = MIDI_remove_patch;
+  instrument->remove_patchdata                            = MIDI_remove_patchdata;
 
   instrument->setPatchData = MIDISetPatchData;
   instrument->getPatchData = MIDIGetPatchData;

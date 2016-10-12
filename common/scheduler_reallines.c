@@ -11,7 +11,7 @@
 
 
 
-static int64_t RT_scheduled_realline(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_realline(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   const struct SeqBlock *seqblock = args[0].const_pointer;
   struct WBlocks *wblock = args[1].pointer;
   int realline = args[2].int32_num;
@@ -35,7 +35,7 @@ static int64_t RT_scheduled_realline(int64_t time, union SuperType *args){
       // Set current realline in opengl thread
       //printf("PEQ: set realline %d\n",realline);
       GE_set_curr_realline(realline);
-      
+
     }
 
     PC_Pause_set_pos(wblock->l.num, realline);
@@ -94,7 +94,7 @@ static int64_t RT_scheduled_realline(int64_t time, union SuperType *args){
 
 
 
-void RT_schedule_reallines_in_block(const struct SeqBlock *seqblock, const Place place){
+void RT_schedule_reallines_in_block(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const Place place){
   struct WBlocks *wblock=(struct WBlocks *)ListFindElement1(&root->song->tracker_windows->wblocks->l,seqblock->block->l.num);
 
   int realline=FindRealLineFor(wblock,0,&place);
@@ -113,5 +113,5 @@ void RT_schedule_reallines_in_block(const struct SeqBlock *seqblock, const Place
   Place realline_place = wblock->reallines[realline]->l.p;
   int64_t time = get_seqblock_place_time(seqblock, realline_place);
 
-  SCHEDULER_add_event(time, RT_scheduled_realline, &args[0], num_args, SCHEDULER_INIT_PRIORITY);
+  SCHEDULER_add_event(seqtrack, time, RT_scheduled_realline, &args[0], num_args, SCHEDULER_INIT_PRIORITY);
 }

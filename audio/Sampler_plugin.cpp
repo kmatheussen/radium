@@ -972,16 +972,18 @@ static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
   
   Voice *voice = data->voices_playing;
 
-  if(time==-1){
-    RError("time==-1 at stop_note. Will cause hanging note.");
-    time=0;
-  }
-
+  R_ASSERT_NON_RELEASE(time >= 0);
+  R_ASSERT_NON_RELEASE(time < RADIUM_BLOCK_SIZE);
+  
+  if (time < 0)
+    time = 0;
+  else if (time >= RADIUM_BLOCK_SIZE)
+    time = RADIUM_BLOCK_SIZE -1;
+  
   while(voice!=NULL){
     if(voice->note_id==note.id){
       if(voice->delta_pos_at_end == -1)
         voice->delta_pos_at_end = time;
-      //voice->end_volume = velocity2gain(volume); // no no no. end_volume is for change velocity only. If volume==0, note ends here, not when release is finished. (the volume argument for stop_note is probably completely useless)
     }
 
     voice = voice->next;

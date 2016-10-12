@@ -76,10 +76,6 @@ static void PATCH_clean_unused_patches(void){
 
 void PATCH_remove_from_instrument(struct Patch *patch){
   //R_ASSERT(patch->patchdata == NULL); (not true for MIDI)
-#if !defined(RELEASE)
-  R_ASSERT(patch->playing_notes==NULL);
-  R_ASSERT(patch->playing_notes==NULL);
-#endif
   VECTOR_remove(&patch->instrument->patches, patch);
   VECTOR_push_back(&g_unused_patches, patch);
 }
@@ -125,12 +121,6 @@ struct Patch *PATCH_get_from_id(int64_t id){
       return patch;
   }
   return NULL;
-}
-
-void PATCH_reset_time(void){
-  VECTOR_FOR_EACH(struct Patch *, patch,get_all_patches()){
-    patch->last_time = 0;
-  }END_VECTOR_FOR_EACH;
 }
 
 void handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
@@ -503,18 +493,16 @@ static void make_inactive(struct Patch *patch, bool force_removal){
     return;
   }
 
-  PATCH_stop_all_notes(patch);
-
   remove_patch_from_song(patch);
 
   hash_t *audio_patch_state = AUDIO_get_audio_patch_state(patch); // The state is unavailable after calling remove_patch().
-  
-  patch->instrument->remove_patch(patch);
 
+  patch->instrument->remove_patchdata(patch);
+  
   ADD_UNDO(Audio_Patch_Remove_CurrPos(patch, audio_patch_state)); // Must be called last, if not the undo/redo order will be wrong.
 
-  //Undo_Patchlist_CurrPos(LOC());
-  //VECTOR_remove(&patch->instrument->patches, patch);
+  PATCH_stop_all_notes(patch);
+
   PATCH_remove_from_instrument(patch);
 }
 
@@ -714,7 +702,9 @@ static bool Patch_is_voice_playing_questionmark(struct Patch *patch, int64_t voi
   return false;
 }
 
-void Patch_addPlayingVoice(linked_note_t **rootp, const note_t note){
+bool Patch_addPlayingVoice(linked_note_t **rootp, const note_t note, struct SeqTrack *seqtrack){
+  R_ASSERT_RETURN_IF_FALSE2(seqtrack!=NULL, false);
+
 #if 0
   printf("Adding note with id %d\n",(int)note_id);
   if(note_id==52428)
@@ -723,24 +713,31 @@ void Patch_addPlayingVoice(linked_note_t **rootp, const note_t note){
 
   R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
 
+  R_ASSERT_RETURN_IF_FALSE2(seqtrack!=NULL, false);
+  
   linked_note_t *linked_note = g_unused_linked_notes;
   
   if (linked_note==NULL){
     RT_message("Error. Reached max number of voices it's possible to play.\n");
-    return;
+    return false;
   }
   
   remove_linked_note(&g_unused_linked_notes, linked_note);
 
   linked_note->note = note;
-    
+  linked_note->seqtrack = seqtrack;
+  
   add_linked_note(rootp, linked_note);
+
+  return true;
 }
 
 
-void Patch_removePlayingVoice(linked_note_t **rootp, int64_t note_id){
+void Patch_removePlayingVoice(linked_note_t **rootp, int64_t note_id, struct SeqTrack *seqtrack){
+  R_ASSERT_RETURN_IF_FALSE(seqtrack!=NULL);
+  
   R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
-
+ 
   linked_note_t *linked_note = find_linked_note(*rootp, note_id);
 
 #if !defined(RELEASE)
@@ -749,37 +746,49 @@ void Patch_removePlayingVoice(linked_note_t **rootp, int64_t note_id){
 #endif
 
   if (linked_note!=NULL){
+    R_ASSERT(linked_note->seqtrack==seqtrack);
     remove_linked_note(rootp, linked_note);
     add_linked_note(&g_unused_linked_notes, linked_note);
+    linked_note->seqtrack = NULL;
   }
 }
 
-void Patch_addPlayingNote(struct Patch *patch, const note_t note){
+static bool Patch_addPlayingNote(struct Patch *patch, const note_t note, struct SeqTrack *seqtrack){
+  R_ASSERT_RETURN_IF_FALSE2(seqtrack!=NULL, false);
+  
   linked_note_t *linked_note = g_unused_linked_notes;
 
   if (linked_note==NULL){
     RT_message("Error. Reached max number of notes it's possible to play.\n");
-    return;
+    return false;
   }
 
   remove_linked_note(&g_unused_linked_notes, linked_note);
 
   linked_note->note = note;
-
+  linked_note->seqtrack = seqtrack;
+  
   add_linked_note(&patch->playing_notes, linked_note);
+
+  return true;
 }
 
-static void Patch_removePlayingNote(struct Patch *patch, int64_t note_id){
+static void Patch_removePlayingNote(struct Patch *patch, int64_t note_id, struct SeqTrack *seqtrack){
+  R_ASSERT_RETURN_IF_FALSE(seqtrack!=NULL);
+  
   linked_note_t *linked_note = find_linked_note(patch->playing_notes, note_id);
 
+  
 #if !defined(RELEASE)
   if (linked_note==NULL && is_playing())
     printf("Warning. Unable to find note with note_id %d when removing playing note\n",(int)note_id); // think there are legitimate situations where this can happen
 #endif
   
   if (linked_note!=NULL){
+    R_ASSERT(linked_note->seqtrack==seqtrack);
     remove_linked_note(&patch->playing_notes, linked_note);
     add_linked_note(&g_unused_linked_notes, linked_note);
+    linked_note->seqtrack = NULL;
   }
 }
 
@@ -790,7 +799,7 @@ static float get_voice_velocity(struct PatchVoice *voice){
     return scale(voice->volume,35,70,2,7);
 }
 
-void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, const note_t note, STime time){
+void RT_PATCH_send_play_note_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   int i;
   
   RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
@@ -798,32 +807,28 @@ void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, const note_t note
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
     R_ASSERT_RETURN_IF_FALSE(receiver!=patch); // unnecessary. We detect recursions when creating connections. (Not just once (which should have been enough) but both here and in SoundProducer.cpp)
-    RT_PATCH_play_note(receiver, note, time);
+    RT_PATCH_play_note(seqtrack, receiver, note, time);
   }
 }
 
-static void RT_play_voice(struct Patch *patch, const note_t note, STime time){
+static void RT_play_voice(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   //printf("\n\n___RT_play_voice. note %d, time: %d, velocity: %d\n\n",notenum,(int)time,velocity);
 
   if(note.pitch < 1.0 || note.pitch > 127)
     return;
 
-  if(time < patch->last_time)
-    time = patch->last_time;
-  else 
-    patch->last_time = time;
-
-  Patch_addPlayingVoice(&patch->playing_voices, note);
+  if (!Patch_addPlayingVoice(&patch->playing_voices, note, seqtrack))
+    return;
   
-  patch->playnote(patch,note,time);
+  patch->playnote(seqtrack, patch,note,time);
 
   ATOMIC_SET_RELAXED(patch->visual_note_intencity, MAX_NOTE_INTENCITY);
 
   if(patch->forward_events)
-    RT_PATCH_send_play_note_to_receivers(patch, note, time);
+    RT_PATCH_send_play_note_to_receivers(seqtrack, patch, note, time);
 }
 
-static int64_t RT_scheduled_play_voice(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_play_voice(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Patch *patch = (struct Patch*)args[0].pointer;
 
   const note_t note = create_note_from_args(&args[1]);
@@ -831,7 +836,8 @@ static int64_t RT_scheduled_play_voice(int64_t time, union SuperType *args){
   //printf("playing scheduled play note: %d. time: %d, velocity: %d\n",notenum,(int)time,velocity);
   //return;
 
-  RT_play_voice(patch,
+  RT_play_voice(seqtrack,
+                patch,
                 note,
                 time);
 
@@ -839,19 +845,17 @@ static int64_t RT_scheduled_play_voice(int64_t time, union SuperType *args){
 }
 
 
-static int64_t RT_scheduled_stop_voice(int64_t time_into_the_future, union SuperType *args);
+static int64_t RT_scheduled_stop_voice(struct SeqTrack *seqtrack, int64_t time_into_the_future, union SuperType *args);
 
 static int rnd(int max){
   return rand() % max;
 }
 
-int64_t RT_PATCH_play_note(struct Patch *patch, const note_t note, STime time){
+int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   //printf("\n\nRT_PATCH_PLAY_NOTE. ___Starting note %f, time: %d, id: %d. block_reltempo: %f\n\n",note.pitch,(int)time,(int)note.id,note.block_reltempo);
 
-  if(time==-1)
-    time = patch->last_time;
-
-  Patch_addPlayingNote(patch, note);
+  if (!Patch_addPlayingNote(patch, note, seqtrack))
+    return note.id;
 
   float sample_rate = MIXER_get_sample_rate();
 
@@ -874,11 +878,11 @@ int64_t RT_PATCH_play_note(struct Patch *patch, const note_t note, STime time){
       args[3].float_num = voice_velocity;
 
       // voice ON
-      SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_play_voice, &args[0], 7, SCHEDULER_NOTE_ON_PRIORITY);
+      SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_play_voice, &args[0], 7, SCHEDULER_NOTE_ON_PRIORITY);
 
       // voice OFF
       if(voice->length>0.001) // The voice decides when to stop by itself.
-        SCHEDULER_add_event(time + (voice->start+voice->length)*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 7, SCHEDULER_NOTE_OFF_PRIORITY);
+        SCHEDULER_add_event(seqtrack, time + (voice->start+voice->length)*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 7, SCHEDULER_NOTE_OFF_PRIORITY);
     }
   }
 
@@ -892,7 +896,7 @@ int64_t PATCH_play_note(struct Patch *patch, const note_t note){
   int64_t ret;
   
   PLAYER_lock();{
-    ret = RT_PATCH_play_note(patch,note,-1);
+    ret = RT_PATCH_play_note(RT_get_curr_seqtrack(), patch,note,SCHEDULE_NOW);
   }PLAYER_unlock();
 
   return ret;
@@ -902,18 +906,18 @@ int64_t PATCH_play_note(struct Patch *patch, const note_t note){
 ////////////////////////////////////
 // Stop note
 
-void RT_PATCH_send_stop_note_to_receivers(struct Patch *patch, const note_t note, STime time){
+void RT_PATCH_send_stop_note_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   int i;
 
   RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
     
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
-    RT_PATCH_stop_note(receiver, note, time);
+    RT_PATCH_stop_note(seqtrack, receiver, note, time);
   }
 }
 
-static void RT_stop_voice(struct Patch *patch, const note_t note, STime time){
+static void RT_stop_voice(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   if(note.pitch < 0.0 || note.pitch>127)
     return;
 
@@ -924,18 +928,16 @@ static void RT_stop_voice(struct Patch *patch, const note_t note, STime time){
     velocity = PATCH_radiumvelocity_to_patchvelocity(patch,velocity);
 #endif
 
-  patch->last_time = time;
-
-  Patch_removePlayingVoice(&patch->playing_voices, note.id);
+  Patch_removePlayingVoice(&patch->playing_voices, note.id, seqtrack);
 
   //printf("__stopping note: %d. time: %d\n",(int)note.id,(int)time);
-  patch->stopnote(patch, note, time);
+  patch->stopnote(seqtrack, patch, note, time);
 
   if(patch->forward_events)
-    RT_PATCH_send_stop_note_to_receivers(patch, note, time);
+    RT_PATCH_send_stop_note_to_receivers(seqtrack, patch, note, time);
 }
 
-static int64_t RT_scheduled_stop_voice(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_stop_voice(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Patch *patch = (struct Patch*)args[0].pointer;
 
   const note_t note = create_note_from_args(&args[1]);
@@ -944,18 +946,15 @@ static int64_t RT_scheduled_stop_voice(int64_t time, union SuperType *args){
   //printf("stopping scheduled play note: %d. time: %d, velocity: %d\n",notenum,(int)time,velocity);
   //return;
 
-  RT_stop_voice(patch, note, time);
+  RT_stop_voice(seqtrack, patch, note, time);
 
   return DONT_RESCHEDULE;
 }
 
-void RT_PATCH_stop_note(struct Patch *patch, const note_t note, STime time){
+void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   //printf("\n\nRT_PATCH_STOP_NOTE. ___Stopping note %f, time: %d, id: %d\n\n",note.pitch,(int)time,(int)note.id);
 
-  if(time==-1)
-    time = patch->last_time;
-
-  Patch_removePlayingNote(patch, note.id);
+  Patch_removePlayingNote(patch, note.id,seqtrack);
 
   float sample_rate = MIXER_get_sample_rate();
 
@@ -979,7 +978,7 @@ void RT_PATCH_stop_note(struct Patch *patch, const note_t note, STime time){
           args[1].float_num = voice_notenum;
           args[2].int_num = voice_id;
 
-          SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 7, SCHEDULER_NOTE_OFF_PRIORITY);
+          SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 7, SCHEDULER_NOTE_OFF_PRIORITY);
         }
       }
     }
@@ -989,7 +988,7 @@ void RT_PATCH_stop_note(struct Patch *patch, const note_t note, STime time){
 void PATCH_stop_note(struct Patch *patch, const note_t note){
   //printf("** stopping note %s\n\n",NotesTexts3[notenum]);
   PLAYER_lock();{
-    RT_PATCH_stop_note(patch,note,-1);
+    RT_PATCH_stop_note(RT_get_curr_seqtrack(), patch,note,SCHEDULE_NOW);
   }PLAYER_unlock();
 }
 
@@ -998,7 +997,7 @@ void PATCH_stop_note(struct Patch *patch, const note_t note){
 ////////////////////////////////////
 // Change velocity
 
-void RT_PATCH_send_change_velocity_to_receivers(struct Patch *patch, const note_t note, STime time){
+void RT_PATCH_send_change_velocity_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   //printf("\n\nRT_PATCH_VELOCITY. ___velocity for note %f, time: %d, id: %d (vel: %f)\n\n",notenum,(int)time,(int)note_id,velocity);
 
   RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
@@ -1007,11 +1006,11 @@ void RT_PATCH_send_change_velocity_to_receivers(struct Patch *patch, const note_
 
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
-    RT_PATCH_change_velocity(receiver, note, time);
+    RT_PATCH_change_velocity(seqtrack, receiver, note, time);
   }
 }
 
-static void RT_change_voice_velocity(struct Patch *patch, const note_t note, STime time){
+static void RT_change_voice_velocity(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   if(note.pitch < 1 || note.pitch>127)
     return;
 
@@ -1022,18 +1021,13 @@ static void RT_change_voice_velocity(struct Patch *patch, const note_t note, STi
     velocity = PATCH_radiumvelocity_to_patchvelocity(patch,velocity);
 #endif
 
-  if(time==-1)
-    time = patch->last_time;
-  else
-    patch->last_time = time;
-
-  patch->changevelocity(patch,note,time);
+  patch->changevelocity(seqtrack,patch,note,time);
 
   if(patch->forward_events)
-    RT_PATCH_send_change_velocity_to_receivers(patch, note, time);
+    RT_PATCH_send_change_velocity_to_receivers(seqtrack, patch, note, time);
 }
 
-static int64_t RT_scheduled_change_voice_velocity(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_change_voice_velocity(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Patch *patch = (struct Patch*)args[0].pointer;
 
   const note_t note = create_note_from_args(&args[1]);
@@ -1041,15 +1035,13 @@ static int64_t RT_scheduled_change_voice_velocity(int64_t time, union SuperType 
   //printf("stopping scheduled play note: %d. time: %d, velocity: %d\n",notenum,(int)time,velocity);
   //return;
 
-  RT_change_voice_velocity(patch,note,time);
+  RT_change_voice_velocity(seqtrack, patch,note,time);
 
   return DONT_RESCHEDULE;
 }
 
-void RT_PATCH_change_velocity(struct Patch *patch, const note_t note, STime time){
+void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   //printf("vel: %d\n",velocity);
-  if(time==-1)
-    time = patch->last_time;
 
   float sample_rate = MIXER_get_sample_rate();
 
@@ -1073,7 +1065,7 @@ void RT_PATCH_change_velocity(struct Patch *patch, const note_t note, STime time
         args[2].int_num = voice_id;
         args[3].float_num = voice_velocity;
       
-        SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 7, SCHEDULER_VELOCITY_PRIORITY);
+        SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 7, SCHEDULER_VELOCITY_PRIORITY);
       }
     }
   }
@@ -1081,7 +1073,7 @@ void RT_PATCH_change_velocity(struct Patch *patch, const note_t note, STime time
 
 void PATCH_change_velocity(struct Patch *patch, const note_t note){
   PLAYER_lock();{
-    RT_PATCH_change_velocity(patch,note,-1);
+    RT_PATCH_change_velocity(RT_get_curr_seqtrack(), patch,note,SCHEDULE_NOW);
   }PLAYER_unlock();
 }
 
@@ -1090,47 +1082,40 @@ void PATCH_change_velocity(struct Patch *patch, const note_t note){
 ////////////////////////////////////
 // Change pitch
 
-void RT_PATCH_send_change_pitch_to_receivers(struct Patch *patch, const note_t note, STime time){
+void RT_PATCH_send_change_pitch_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   int i;
 
   RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
   
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
-    RT_PATCH_change_pitch(receiver, note, time);
+    RT_PATCH_change_pitch(seqtrack, receiver, note, time);
   }
 }
 
-static void RT_change_voice_pitch(struct Patch *patch, const note_t note, STime time){
+static void RT_change_voice_pitch(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   if(note.pitch < 1 || note.pitch>127)
     return;
 
-  if(time==-1)
-    time = patch->last_time;
-  else
-    patch->last_time = time;
-
   //printf("Calling patch->changeptitch %d %f\n",notenum,pitch);
-  patch->changepitch(patch,note,time);
+  patch->changepitch(seqtrack, patch,note,time);
 
   if(patch->forward_events)
-    RT_PATCH_send_change_pitch_to_receivers(patch, note, time);
+    RT_PATCH_send_change_pitch_to_receivers(seqtrack, patch, note, time);
 }
 
-static int64_t RT_scheduled_change_voice_pitch(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_change_voice_pitch(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Patch *patch = (struct Patch*)args[0].pointer;
 
   const note_t note = create_note_from_args(&args[1]);
 
-  RT_change_voice_pitch(patch,note,time);
+  RT_change_voice_pitch(seqtrack,patch,note,time);
 
   return DONT_RESCHEDULE;
 }
 
-void RT_PATCH_change_pitch(struct Patch *patch, const note_t note, STime time){
+void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   //printf("vel: %d\n",pitch);
-  if(time==-1)
-    time = patch->last_time;
 
   float sample_rate = MIXER_get_sample_rate();
 
@@ -1153,7 +1138,7 @@ void RT_PATCH_change_pitch(struct Patch *patch, const note_t note, STime time){
         args[1].float_num = voice_notenum;
         args[2].int_num = voice_id;
 
-        SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 7, SCHEDULER_PITCH_PRIORITY);
+        SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 7, SCHEDULER_PITCH_PRIORITY);
       }
     }
   }
@@ -1161,7 +1146,7 @@ void RT_PATCH_change_pitch(struct Patch *patch, const note_t note, STime time){
 
 void PATCH_change_pitch(struct Patch *patch, const note_t note){
   PLAYER_lock();{
-    RT_PATCH_change_pitch(patch,note,-1);
+    RT_PATCH_change_pitch(RT_get_curr_seqtrack(), patch,note,SCHEDULE_NOW);
   }PLAYER_unlock();
 }
 
@@ -1172,7 +1157,7 @@ void PATCH_change_pitch(struct Patch *patch, const note_t note){
 
 extern void aiai(int64_t id, const symbol_t *port_name, uint32_t msg);
 
-void RT_PATCH_send_raw_midi_message_to_receivers(struct Patch *patch, uint32_t msg, STime time){
+void RT_PATCH_send_raw_midi_message_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, uint32_t msg, STime time){
   RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
   
   int i;
@@ -1180,32 +1165,30 @@ void RT_PATCH_send_raw_midi_message_to_receivers(struct Patch *patch, uint32_t m
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];    
     MidiLearn::RT_maybe_use_forall(receiver->id, patch->midi_learn_port_name, msg);
-    RT_PATCH_send_raw_midi_message(receiver, msg, time);
+    RT_PATCH_send_raw_midi_message(seqtrack, receiver, msg, time);
   }
 }
 
-static void RT_send_raw_midi_message(struct Patch *patch, uint32_t msg, STime time, float block_reltempo){
-  patch->sendrawmidimessage(patch,msg,time, block_reltempo);
+static void RT_send_raw_midi_message(struct SeqTrack *seqtrack, struct Patch *patch, uint32_t msg, STime time, float block_reltempo){
+  patch->sendrawmidimessage(seqtrack,patch,msg,time, block_reltempo);
 
   if(patch->forward_events)
-    RT_PATCH_send_raw_midi_message_to_receivers(patch, msg, time);
+    RT_PATCH_send_raw_midi_message_to_receivers(seqtrack, patch, msg, time);
 }
 
-static int64_t RT_scheduled_send_raw_midi_message(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_send_raw_midi_message(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Patch *patch = (struct Patch*)args[0].pointer;
 
   uint32_t msg = args[1].uint32_num;
 
   float block_reltempo = args[2].float_num;
   
-  RT_send_raw_midi_message(patch, msg, time, block_reltempo);
+  RT_send_raw_midi_message(seqtrack, patch, msg, time, block_reltempo);
 
   return DONT_RESCHEDULE;
 }
 
-void RT_PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg, STime time){
-  if(time==-1)
-    time = patch->last_time;
+void RT_PATCH_send_raw_midi_message(struct SeqTrack *seqtrack, struct Patch *patch, uint32_t msg, STime time){
 
   float sample_rate = MIXER_get_sample_rate();
     
@@ -1221,14 +1204,14 @@ void RT_PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg, STime tim
       args[1].uint32_num = msg;
       args[2].float_num = get_block_reltempo();
       
-      SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_send_raw_midi_message, &args[0], 3, SCHEDULER_RAWMIDIMESSAGE_PRIORITY);
+      SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_send_raw_midi_message, &args[0], 3, SCHEDULER_RAWMIDIMESSAGE_PRIORITY);
     }
   }
 }
 
 void PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg){
   PLAYER_lock();{
-    RT_PATCH_send_raw_midi_message(patch,msg,-1);
+    RT_PATCH_send_raw_midi_message(RT_get_curr_seqtrack(),patch,msg,SCHEDULE_NOW);
   }PLAYER_unlock();
 }
 
@@ -1239,29 +1222,26 @@ void PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg){
 
 // All FX goes through this function.
 
-void RT_FX_treat_fx(struct FX *fx,int val,STime time,int skip, FX_when when){
+void RT_FX_treat_fx(struct SeqTrack *seqtrack, struct FX *fx,int val,STime time,int skip, FX_when when){
   struct Patch *patch = fx->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
-  if(time==-1)
-    time = patch->last_time;
-  else
-    patch->last_time = time;
-
-  fx->treatFX(fx,val,time,skip,when,get_block_reltempo());
+  fx->treatFX(seqtrack,fx,val,time,skip,when,get_block_reltempo());
 }
 
+/*
 void FX_treat_fx(struct FX *fx,int val,int skip){
   PLAYER_lock();{
-    RT_FX_treat_fx(fx,val,-1,skip, FX_single);
+    RT_FX_treat_fx(fx,val,SCHEDULE_NOW,skip, FX_single);
   }PLAYER_unlock();
 }
+*/
 
 
 ////////////////////////////////////
 //
 
-static void RT_PATCH_turn_voice_on(struct Patch *patch, int voicenum){ 
+static void RT_PATCH_turn_voice_on(struct SeqTrack *seqtrack, struct Patch *patch, int voicenum){ 
 
   struct PatchVoice *voice = &patch->voices[voicenum];
 
@@ -1273,21 +1253,22 @@ static void RT_PATCH_turn_voice_on(struct Patch *patch, int voicenum){
       
       const note_t &note = linked_note->note;
 
-      RT_play_voice(patch,
+      RT_play_voice(seqtrack,
+                    patch,
                     create_note_t(note.id + voicenum,
                                   note.pitch + voice->transpose,
                                   voice_velocity,
                                   note.pan,
                                   note.midi_channel
                                   ),
-                    -1
+                    SCHEDULE_NOW
                     );
   }    
     voice->is_on = true;
   }
 }
 
-static void RT_PATCH_turn_voice_off(struct Patch *patch, int voicenum){ 
+static void RT_PATCH_turn_voice_off(struct SeqTrack *seqtrack, struct Patch *patch, int voicenum){ 
 
   struct PatchVoice *voice = &patch->voices[voicenum];
 
@@ -1297,14 +1278,15 @@ static void RT_PATCH_turn_voice_off(struct Patch *patch, int voicenum){
       
       const note_t &note = linked_note->note;
 
-      RT_stop_voice(patch,
+      RT_stop_voice(seqtrack,
+                    patch,
                     create_note_t(note.id + voicenum,
                                   note.pitch + voice->transpose,
                                   note.velocity,
                                   note.pan,
                                   note.midi_channel
                                   ),
-                    -1
+                    SCHEDULE_NOW
                     );
     }
     voice->is_on = false;
@@ -1313,13 +1295,13 @@ static void RT_PATCH_turn_voice_off(struct Patch *patch, int voicenum){
 
 void PATCH_turn_voice_on(struct Patch *patch, int voicenum){ 
   PLAYER_lock();{
-    RT_PATCH_turn_voice_on(patch,voicenum);
+    RT_PATCH_turn_voice_on(RT_get_curr_seqtrack(),patch,voicenum);
   }PLAYER_unlock();
 }
 
 void PATCH_turn_voice_off(struct Patch *patch, int voicenum){ 
   PLAYER_lock();{
-    RT_PATCH_turn_voice_off(patch,voicenum);
+    RT_PATCH_turn_voice_off(RT_get_curr_seqtrack(),patch,voicenum);
   }PLAYER_unlock();
 }
 
@@ -1328,21 +1310,25 @@ void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, float new_t
     bool was_on = patch->voices[voicenum].is_on;
 
     if(was_on==true)
-      RT_PATCH_turn_voice_off(patch,voicenum);
+      RT_PATCH_turn_voice_off(RT_get_curr_seqtrack(),patch,voicenum);
     
     patch->voices[voicenum].transpose = new_transpose;
     
     if(was_on==true)
-      RT_PATCH_turn_voice_on(patch,voicenum);
+      RT_PATCH_turn_voice_on(RT_get_curr_seqtrack(),patch,voicenum);
 
   }PLAYER_unlock();
 }
 
+// Note: This function does not guarantee that all notes are stopped. A note can be scheduled
+// to start playing after this function returns.
 void PATCH_stop_all_notes(struct Patch *patch){
 
   printf("STOP ALL NOTES on \"%s\".\n", patch->name);
 
-  PLAYER_lock();{
+  {
+    radium::PlayerLock lock;
+    
     // Note that we use RT_stop_voice instead of RT_stop_note to turn off sound.
     //
     // The reason is that all sound must be stopped after returning from this function,
@@ -1352,22 +1338,28 @@ void PATCH_stop_all_notes(struct Patch *patch){
     // 1. Clean patch->playing_voices
     //
     while(patch->playing_voices != NULL) {
-      RT_stop_voice(patch,                    
+      RT_stop_voice(patch->playing_voices->seqtrack,
+                    patch,                    
                     patch->playing_voices->note,
-                    -1
+                    SCHEDULE_NOW
                     );
     }
 
     // 2. Clean patch->playing_notes
     //
     while(patch->playing_notes != NULL)
-      Patch_removePlayingNote(patch, patch->playing_notes->note.id);
+      Patch_removePlayingNote(patch, patch->playing_notes->note.id, patch->playing_notes->seqtrack);
 
     // 3. Do the same to the playing voices in the audio system.
     //
     AUDIO_stop_all_notes(patch);
-    
-  }PLAYER_unlock();
+
+#if !defined(RELEASE)
+    R_ASSERT(patch->playing_notes==NULL);
+    R_ASSERT(patch->playing_notes==NULL);
+#endif
+
+  }
 }
 
 void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id){

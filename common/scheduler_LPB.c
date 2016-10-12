@@ -186,16 +186,15 @@ static void set_iterator_data(LPB_Iterator *iterator, const struct Blocks *block
   set_iterator_data2(iterator, block, lpb->l.p, lpb->lpb, NextLPB(lpb));
 }
 
-static int64_t RT_scheduled_LPB(int64_t time, union SuperType *args);
+static int64_t RT_scheduled_LPB(struct SeqTrack *seqtrack, int64_t time, union SuperType *args);
 
 static void schedule_next_LPB(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const struct LPBs *next_lpb){
   R_ASSERT_RETURN_IF_FALSE(next_lpb != NULL);
   
-  const int num_args = 2;
+  const int num_args = 1;
         
   union SuperType args[num_args];
-  args[0].pointer       = seqtrack;
-  args[1].const_pointer = seqblock;
+  args[0].const_pointer = seqblock;
 
   LPB_Iterator *iterator = &seqtrack->lpb_iterator;
     
@@ -203,12 +202,11 @@ static void schedule_next_LPB(struct SeqTrack *seqtrack, const struct SeqBlock *
 
   int64_t time = get_seqblock_place_time(seqblock, next_lpb->l.p);
   
-  SCHEDULER_add_event(time, RT_scheduled_LPB, &args[0], num_args, SCHEDULER_LPB_PRIORITY);
+  SCHEDULER_add_event(seqtrack, time, RT_scheduled_LPB, &args[0], num_args, SCHEDULER_LPB_PRIORITY);
 }
 
-static int64_t RT_scheduled_LPB(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_LPB(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
 
-  struct SeqTrack       *seqtrack = args[0].pointer;
   const struct SeqBlock *seqblock = args[1].const_pointer;
 
   LPB_Iterator *iterator = &seqtrack->lpb_iterator;

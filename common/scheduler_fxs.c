@@ -11,6 +11,7 @@
 #define g_num_fx_args 7
 
 static void RT_schedule_fxnodeline(
+                                   struct SeqTrack *seqtrack,
                                    const struct SeqBlock *seqblock,
                                    const struct Tracks *track,
                                    struct FX *fx,
@@ -18,7 +19,7 @@ static void RT_schedule_fxnodeline(
                                    Place start_place
                                    );
 
-static int64_t RT_scheduled_fx(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_fx(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   const struct SeqBlock    *seqblock    = args[0].const_pointer;
   const struct Tracks      *track       = args[1].const_pointer;
   struct FX                *fx          = args[2].pointer;
@@ -64,7 +65,7 @@ static int64_t RT_scheduled_fx(int64_t time, union SuperType *args){
 
     //printf("   Sending out %d at %d\n",x,(int)time);
     
-    RT_FX_treat_fx(fx, x, time, 0, when);
+    RT_FX_treat_fx(seqtrack, fx, x, time, 0, when);
 
     float *slider_automation_value = ATOMIC_GET(fx->slider_automation_value);
     if(slider_automation_value!=NULL)
@@ -77,7 +78,7 @@ static int64_t RT_scheduled_fx(int64_t time, union SuperType *args){
   
   if (time==time2) { // If we check "when==FX_end" instead, we go into an infinte loop if time==time1==time2.
     
-    RT_schedule_fxnodeline(seqblock, track, fx, fxnodeline2, fxnodeline2->l.p);
+    RT_schedule_fxnodeline(seqtrack, seqblock, track, fx, fxnodeline2, fxnodeline2->l.p);
     return DONT_RESCHEDULE;
     
   } else {
@@ -95,6 +96,7 @@ static int64_t RT_scheduled_fx(int64_t time, union SuperType *args){
 
 
 static void RT_schedule_fxnodeline(
+                                   struct SeqTrack *seqtrack,
                                    const struct SeqBlock *seqblock,
                                    const struct Tracks *track,
                                    struct FX *fx,
@@ -127,11 +129,11 @@ static void RT_schedule_fxnodeline(
   args[6].int32_num     = INT32_MIN;
   
   //printf(" Scheduling FX at %d. seqblock->time: %d\n",(int)time, (int)seqblock->time);
-  SCHEDULER_add_event(time, RT_scheduled_fx, &args[0], g_num_fx_args, SCHEDULER_FX_PRIORITY);
+  SCHEDULER_add_event(seqtrack, time, RT_scheduled_fx, &args[0], g_num_fx_args, SCHEDULER_FX_PRIORITY);
 }
 
 
-void RT_schedule_fxs_newblock(const struct SeqTrack *seqtrack,
+void RT_schedule_fxs_newblock(struct SeqTrack *seqtrack,
                               const struct SeqBlock *seqblock,
                               int64_t start_time,
                               Place start_place)
@@ -146,7 +148,7 @@ void RT_schedule_fxs_newblock(const struct SeqTrack *seqtrack,
 
       if (PlaceGreaterOrEqual(&fxnodeline1->l.p, &start_place)){
         
-        RT_schedule_fxnodeline(seqblock, track, fxs->fx, fxnodeline1, fxnodeline1->l.p);
+        RT_schedule_fxnodeline(seqtrack, seqblock, track, fxs->fx, fxnodeline1, fxnodeline1->l.p);
         
       } else {
 
@@ -154,7 +156,7 @@ void RT_schedule_fxs_newblock(const struct SeqTrack *seqtrack,
 
         while(fxnodeline2 != NULL){
           if (PlaceGreaterOrEqual(&start_place, &fxnodeline1->l.p) && PlaceLessThan(&start_place, &fxnodeline2->l.p)) {
-            RT_schedule_fxnodeline(seqblock, track, fxs->fx, fxnodeline1, start_place);
+            RT_schedule_fxnodeline(seqtrack, seqblock, track, fxs->fx, fxnodeline1, start_place);
             break;
           }
           fxnodeline1 = fxnodeline2;

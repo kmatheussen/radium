@@ -23,10 +23,9 @@ Ratio RT_Signature_get_current_Signature(const struct SeqTrack *seqtrack){
 
 
 
-static int64_t RT_scheduled_Signature(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_Signature(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
 
-  struct SeqTrack       *seqtrack = args[0].pointer;
-  const struct SeqBlock *seqblock = args[1].const_pointer;
+  const struct SeqBlock *seqblock = args[0].const_pointer;
 
   Signature_Iterator *iterator = &seqtrack->signature_iterator;
 
@@ -77,13 +76,12 @@ void RT_schedule_Signature_newblock(struct SeqTrack *seqtrack,
   iterator->next_signature = next_signature;
   
   {
-    int num_args = 2;
+    int num_args = 1;
     union SuperType args[num_args];
-    args[0].pointer       = seqtrack;
-    args[1].const_pointer = seqblock;
+    args[0].const_pointer = seqblock;
     
     int64_t time = get_seqblock_place_time(seqblock, next_signature->l.p);
     
-    SCHEDULER_add_event(time, RT_scheduled_Signature, &args[0], num_args, SCHEDULER_SIGNATURE_PRIORITY);
+    SCHEDULER_add_event(seqtrack, time, RT_scheduled_Signature, &args[0], num_args, SCHEDULER_SIGNATURE_PRIORITY);
   }
 }

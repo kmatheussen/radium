@@ -45,7 +45,6 @@ void PlayerTask(STime reltime){
         if (ATOMIC_GET(is_starting_up))
           return;
 
-
         Player_State player_state = ATOMIC_GET(pc->player_state);
 
         if (player_state==PLAYER_STATE_PROGRAM_NOT_READY){
@@ -62,7 +61,7 @@ void PlayerTask(STime reltime){
           pc->end_time=0;
           pc->end_time_f=0;
 
-          if (SCHEDULER_clear()) {
+          if (SCHEDULER_clear_all()) {
             ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);  // Finished. SCHEDULER_clear() cleared everything.
             //RT_BACKUP_reset_timer(); // Don't want to take backup right after stopping to play. It's quite annoying. (we handle this directly in Qt_AutoBackups instead)
             player_state = PLAYER_STATE_STOPPED;           
@@ -146,7 +145,7 @@ void PlayerTask(STime reltime){
         //printf("time: %d. time of next event: %d\n",(int)time,(int)pc->peq->l.time);
         //fflush(stdout);
 
-        int num_scheduled_events;
+        bool is_finished;
           
         pc->is_treating_editor_events = true; {
 
@@ -171,7 +170,7 @@ void PlayerTask(STime reltime){
           // Currently, there are two scheduling systems. The old linked list (PEQ), and this one.
           // This one, the SCHEDULER, is a priority queue. The plan is to shift things from PEQ into SCHEDULER.
           // Until everything is shifted from PEQ to SCHEDULER, and the PEQ-mess remains, things will be more complicated than necessary.
-          num_scheduled_events = SCHEDULER_called_per_block(tempoadjusted_reltime);
+          is_finished = SCHEDULER_called_per_block(tempoadjusted_reltime);
 
         } pc->is_treating_editor_events = false;
 
@@ -180,7 +179,7 @@ void PlayerTask(STime reltime){
           ATOMIC_SET(pc->player_state, PLAYER_STATE_PLAYING);
 
         //printf("num_scheduled: %d. state: %d\n",num_scheduled_events,player_state);
-        if(player_state == PLAYER_STATE_PLAYING && num_scheduled_events==0)
+        if(player_state == PLAYER_STATE_PLAYING && is_finished)
           ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
 }
 

@@ -22,3 +22,15 @@ extern LANGSPEC void PC_Pause(void);
 
 extern LANGSPEC void PC_StopPause(struct Tracker_Windows *window);
 
+#ifdef __cplusplus
+namespace radium{
+  struct PlayerPause{
+    PlayerPause(){
+      PC_Pause();
+    }
+    ~PlayerPause(){
+      PC_StopPause(NULL);
+    }
+  };
+}
+#endif

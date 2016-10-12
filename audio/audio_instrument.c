@@ -61,7 +61,7 @@ enum{
     
 /* Audio Patch */
 
-static int64_t RT_scheduled_send_play_note_to_plugin(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_send_play_note_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Patch *patch = (struct Patch*)args[0].pointer;
 
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
@@ -73,13 +73,15 @@ static int64_t RT_scheduled_send_play_note_to_plugin(int64_t time, union SuperTy
 
   //printf("     Time: %d, Delta time: %d\n", (int)time, (int)PLAYER_get_block_delta_time(time));
 
-  Patch_addPlayingVoice(&plugin->playing_voices, note);
+  if (!Patch_addPlayingVoice(&plugin->playing_voices, note, seqtrack))
+    return DONT_RESCHEDULE;
+  
   plugin->type->play_note(plugin, PLAYER_get_block_delta_time(time), note);
 
   return DONT_RESCHEDULE;
 }
 
-static void AUDIO_playnote(struct Patch *patch,note_t note,STime time){
+static void AUDIO_playnote(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL || plugin->type->play_note == NULL)
@@ -90,7 +92,8 @@ static void AUDIO_playnote(struct Patch *patch,note_t note,STime time){
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   if (latency == 0) {
-    Patch_addPlayingVoice(&plugin->playing_voices, note);
+    if (!Patch_addPlayingVoice(&plugin->playing_voices, note, seqtrack))
+      return;
     plugin->type->play_note(plugin, PLAYER_get_block_delta_time(time), note);
     return;
   }
@@ -102,10 +105,10 @@ static void AUDIO_playnote(struct Patch *patch,note_t note,STime time){
   put_note_into_args(&args[1], note);
 
   //printf("   Scheduling %d (latency: %d). block_reltempo: %f\n", (int)time, latency, note.block_reltempo);
-  SCHEDULER_add_event(time, RT_scheduled_send_play_note_to_plugin, &args[0], 7, SCHEDULER_NOTE_ON_PRIORITY);
+  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_play_note_to_plugin, &args[0], 7, SCHEDULER_NOTE_ON_PRIORITY);
 }
 
-static int64_t RT_scheduled_send_note_volume_to_plugin(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_send_note_volume_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Patch *patch = (struct Patch*)args[0].pointer;
 
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
@@ -120,7 +123,7 @@ static int64_t RT_scheduled_send_note_volume_to_plugin(int64_t time, union Super
   return DONT_RESCHEDULE;
 }
 
-static void AUDIO_changevelocity(struct Patch *patch,note_t note,STime time){
+static void AUDIO_changevelocity(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL || plugin->type->set_note_volume == NULL)
@@ -139,10 +142,10 @@ static void AUDIO_changevelocity(struct Patch *patch,note_t note,STime time){
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
   
-  SCHEDULER_add_event(time, RT_scheduled_send_note_volume_to_plugin, &args[0], 7, SCHEDULER_VELOCITY_PRIORITY);
+  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_note_volume_to_plugin, &args[0], 7, SCHEDULER_VELOCITY_PRIORITY);
 }
 
-static int64_t RT_scheduled_send_note_pitch_to_plugin(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_send_note_pitch_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Patch *patch = (struct Patch*)args[0].pointer;
 
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
@@ -157,7 +160,7 @@ static int64_t RT_scheduled_send_note_pitch_to_plugin(int64_t time, union SuperT
   return DONT_RESCHEDULE;
 }
 
-static void AUDIO_changepitch(struct Patch *patch,note_t note,STime time){
+static void AUDIO_changepitch(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL || plugin->type->set_note_pitch == NULL)
@@ -178,10 +181,10 @@ static void AUDIO_changepitch(struct Patch *patch,note_t note,STime time){
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
   
-  SCHEDULER_add_event(time, RT_scheduled_send_note_pitch_to_plugin, &args[0], 7, SCHEDULER_PITCH_PRIORITY);
+  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_note_pitch_to_plugin, &args[0], 7, SCHEDULER_PITCH_PRIORITY);
 }
 
-static int64_t RT_scheduled_send_raw_midi_to_plugin(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_send_raw_midi_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Patch *patch = (struct Patch*)args[0].pointer;
   
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
@@ -196,7 +199,7 @@ static int64_t RT_scheduled_send_raw_midi_to_plugin(int64_t time, union SuperTyp
   return DONT_RESCHEDULE;
 }
 
-static void AUDIO_sendrawmidimessage(struct Patch *patch, uint32_t msg, STime time, float block_reltempo){
+static void AUDIO_sendrawmidimessage(struct SeqTrack *seqtrack, struct Patch *patch, uint32_t msg, STime time, float block_reltempo){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL || plugin->type->send_raw_midi_message == NULL)
@@ -217,10 +220,10 @@ static void AUDIO_sendrawmidimessage(struct Patch *patch, uint32_t msg, STime ti
   args[0].pointer = patch;
   args[1].uint32_num = msg;
   
-  SCHEDULER_add_event(time, RT_scheduled_send_raw_midi_to_plugin, &args[0], 2, SCHEDULER_RAWMIDIMESSAGE_PRIORITY);
+  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_raw_midi_to_plugin, &args[0], 2, SCHEDULER_RAWMIDIMESSAGE_PRIORITY);
 }
 
-static int64_t RT_scheduled_send_stop_note_to_plugin(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_send_stop_note_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Patch *patch = (struct Patch*)args[0].pointer;
 
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
@@ -230,13 +233,13 @@ static int64_t RT_scheduled_send_stop_note_to_plugin(int64_t time, union SuperTy
 
   const note_t note = create_note_from_args(&args[1]);
 
-  Patch_removePlayingVoice(&plugin->playing_voices, note.id);
+  Patch_removePlayingVoice(&plugin->playing_voices, note.id, seqtrack);
   plugin->type->stop_note(plugin, PLAYER_get_block_delta_time(time), note);
 
   return DONT_RESCHEDULE;
 }
 
-static void AUDIO_stopnote(struct Patch *patch,note_t note,STime time){
+static void AUDIO_stopnote(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL || plugin->type->stop_note == NULL)
@@ -248,7 +251,7 @@ static void AUDIO_stopnote(struct Patch *patch,note_t note,STime time){
 
   //printf("  stopnote called. %d, time: %d\n",(int)note.id, (int)time);
   if (latency == 0 || time==-1) {
-    Patch_removePlayingVoice(&plugin->playing_voices, note.id);
+    Patch_removePlayingVoice(&plugin->playing_voices, note.id, seqtrack);
     plugin->type->stop_note(plugin, PLAYER_get_block_delta_time(time), note);
     return;
   }
@@ -259,7 +262,7 @@ static void AUDIO_stopnote(struct Patch *patch,note_t note,STime time){
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
   
-  SCHEDULER_add_event(time, RT_scheduled_send_stop_note_to_plugin, &args[0], 7, SCHEDULER_NOTE_OFF_PRIORITY);
+  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_stop_note_to_plugin, &args[0], 7, SCHEDULER_NOTE_OFF_PRIORITY);
 }
 
 void AUDIO_stop_all_notes(struct Patch *patch){
@@ -274,8 +277,9 @@ void AUDIO_stop_all_notes(struct Patch *patch){
     
     while(plugin->playing_voices != NULL) {
       note_t note = plugin->playing_voices->note;
+      struct SeqTrack *seqtrack = plugin->playing_voices->seqtrack;
       
-      Patch_removePlayingVoice(&plugin->playing_voices, note.id);
+      Patch_removePlayingVoice(&plugin->playing_voices, note.id, seqtrack);
       plugin->type->stop_note(plugin, 0, note);
     }
 
@@ -490,7 +494,7 @@ static void send_fx_to_plugin(SoundPlugin *plugin, STime time, FX_when when, int
   PLUGIN_set_effect_value(plugin,PLAYER_get_block_delta_time(time),effect_num,effect_val, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, when);
 }
 
-static int64_t RT_scheduled_send_fx_to_plugin(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_send_fx_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Patch *patch = (struct Patch*)args[0].pointer;
 
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
@@ -508,7 +512,7 @@ static int64_t RT_scheduled_send_fx_to_plugin(int64_t time, union SuperType *arg
 }
 
 
-static void AUDIO_treat_FX(struct FX *fx,int val,STime time,int skip, FX_when when, float block_reltempo){
+static void AUDIO_treat_FX(struct SeqTrack *seqtrack, struct FX *fx,int val,STime time,int skip, FX_when when, float block_reltempo){
   struct Patch *patch = fx->patch;
   
   R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
@@ -536,7 +540,7 @@ static void AUDIO_treat_FX(struct FX *fx,int val,STime time,int skip, FX_when wh
   args[3].int_num = fx->effect_num;
 
   //printf("   Scheduling %d (latency: %d). block_reltempo: %f\n", (int)time, latency, note.block_reltempo);
-  SCHEDULER_add_event(time, RT_scheduled_send_fx_to_plugin, &args[0], 4, SCHEDULER_FX_PRIORITY);
+  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_fx_to_plugin, &args[0], 4, SCHEDULER_FX_PRIORITY);
 }
 
 // NOT called from RT thread
@@ -945,7 +949,7 @@ hash_t *AUDIO_get_audio_patch_state(struct Patch *patch){
   return state;
 }
 
-static void AUDIO_remove_patch(struct Patch *patch){
+static void AUDIO_remove_patchdata(struct Patch *patch){
   ADD_UNDO(MixerConnections_CurrPos());
   
   InstrumentWidget_delete(patch);
@@ -1044,7 +1048,7 @@ int AUDIO_initInstrumentPlugIn(struct Instruments *instrument){
   instrument->PP_Update = AUDIO_PP_Update;
 
   instrument->handle_fx_when_theres_a_new_patch_for_track=AUDIO_handle_fx_when_theres_a_new_patch_for_track;
-  instrument->remove_patch = AUDIO_remove_patch;
+  instrument->remove_patchdata = AUDIO_remove_patchdata;
 
   instrument->setPatchData = AUDIO_setPatchData;
   instrument->getPatchData = AUDIO_getPatchData;

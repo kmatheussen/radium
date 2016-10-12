@@ -39,30 +39,32 @@ void RT_Beats_set_new_last_bar_start_value(struct SeqTrack *seqtrack, double bea
   iterator->new_beat_bar_set = false;
 }
 
-static void RT_stop_note(Beat_Iterator *iterator, int64_t time, int note_num){
+static void RT_stop_note(struct SeqTrack *seqtrack, Beat_Iterator *iterator, int64_t time, int note_num){
   int num_patches = 0;
   struct Patch **patches = RT_MIXER_get_all_click_patches(&num_patches);
   int i;
   for (i=0 ; i<num_patches ; i++){
-    RT_PATCH_stop_note(patches[i],
+    RT_PATCH_stop_note(seqtrack,
+                       patches[i],
                        create_note_t2(-1, iterator->last_played_metronome_note_num),
                        time);
   }
 }
 
-static void RT_stop_last_played_note(Beat_Iterator *iterator, int64_t time){
+static void RT_stop_last_played_note(struct SeqTrack *seqtrack, Beat_Iterator *iterator, int64_t time){
   if (iterator->last_played_metronome_note_num != -1) {
-    RT_stop_note(iterator, time, iterator->last_played_metronome_note_num);
+    RT_stop_note(seqtrack, iterator, time, iterator->last_played_metronome_note_num);
     iterator->last_played_metronome_note_num = -1;
   }
 }
 
-static void RT_play_note(Beat_Iterator *iterator, int64_t time, int note_num){
+static void RT_play_note(struct SeqTrack *seqtrack, Beat_Iterator *iterator, int64_t time, int note_num){
   int num_patches = 0;
   struct Patch **patches = RT_MIXER_get_all_click_patches(&num_patches);
   int i;
   for (i=0 ; i<num_patches ; i++){
-    RT_PATCH_play_note(patches[i],
+    RT_PATCH_play_note(seqtrack,
+                       patches[i],
                        create_note_t(-1,
                                      note_num,
                                      1.0,
@@ -73,33 +75,32 @@ static void RT_play_note(Beat_Iterator *iterator, int64_t time, int note_num){
   iterator->last_played_metronome_note_num = note_num;
 }
 
-static int64_t RT_scheduled_play_bar_note(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_play_bar_note(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   Beat_Iterator *iterator = args[0].pointer;
     
-  RT_stop_last_played_note(iterator, time);
+  RT_stop_last_played_note(seqtrack, iterator, time);
   //printf("** BAR\n");
   if (ATOMIC_GET(root->clickonoff))
-    RT_play_note(iterator, time, bar_note_num);
+    RT_play_note(seqtrack, iterator, time, bar_note_num);
 
   return DONT_RESCHEDULE;
 }
 
-static int64_t RT_scheduled_play_beat_note(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_play_beat_note(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   Beat_Iterator *iterator = args[0].pointer;
     
-  RT_stop_last_played_note(iterator, time);
+  RT_stop_last_played_note(seqtrack, iterator, time);
   //printf("     BEAT **\n");
   if (ATOMIC_GET(root->clickonoff))
-    RT_play_note(iterator, time, beat_note_num);
+    RT_play_note(seqtrack, iterator, time, beat_note_num);
 
   return DONT_RESCHEDULE;
 }
 
 
-static int64_t RT_scheduled_Beat(int64_t time, union SuperType *args){
+static int64_t RT_scheduled_Beat(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
 
-  struct SeqTrack       *seqtrack = args[0].pointer;
-  const struct SeqBlock *seqblock = args[1].const_pointer;
+  const struct SeqBlock *seqblock = args[0].const_pointer;
 
   Beat_Iterator *iterator = &seqtrack->beat_iterator;
 
@@ -125,9 +126,9 @@ static int64_t RT_scheduled_Beat(int64_t time, union SuperType *args){
     args[0].pointer = iterator;
 
     if (beat->beat_num==1)
-      SCHEDULER_add_event(time, RT_scheduled_play_bar_note, &args[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
+      SCHEDULER_add_event(seqtrack, time, RT_scheduled_play_bar_note, &args[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
     else
-      SCHEDULER_add_event(time, RT_scheduled_play_beat_note, &args[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
+      SCHEDULER_add_event(seqtrack, time, RT_scheduled_play_beat_note, &args[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
   }
 
   iterator->next_beat = NextBeat(beat);
@@ -169,13 +170,12 @@ void RT_schedule_Beats_newblock(struct SeqTrack *seqtrack,
   iterator->next_beat = next_beat;
   
   {
-    int num_args = 2;
+    int num_args = 1;
     union SuperType args[num_args];
-    args[0].pointer       = seqtrack;
-    args[1].const_pointer = seqblock;
+    args[0].const_pointer = seqblock;
     
     int64_t time = get_seqblock_place_time(seqblock, next_beat->l.p);
     
-    SCHEDULER_add_event(time, RT_scheduled_Beat, &args[0], num_args, SCHEDULER_BEAT_PRIORITY);
+    SCHEDULER_add_event(seqtrack, time, RT_scheduled_Beat, &args[0], num_args, SCHEDULER_BEAT_PRIORITY);
   }
 }

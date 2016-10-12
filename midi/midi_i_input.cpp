@@ -765,7 +765,7 @@ void RT_MIDI_handle_play_buffer(void){
 
       uint8_t byte[3] = {(uint8_t)MIDI_msg_byte1(msg), (uint8_t)MIDI_msg_byte2(msg), (uint8_t)MIDI_msg_byte3(msg)};
 
-      RT_MIDI_send_msg_to_patch((struct Patch*)through_patch, byte, 3, -1);
+      RT_MIDI_send_msg_to_patch(RT_get_curr_seqtrack(), (struct Patch*)through_patch, byte, 3, -1);
     }
     
   }

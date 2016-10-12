@@ -684,6 +684,7 @@ typedef struct _linked_note_t{
   struct _linked_note_t *next;
   struct _linked_note_t *prev;
   note_t note;
+  struct SeqTrack *seqtrack;
 } linked_note_t;
 
 
@@ -702,13 +703,11 @@ struct Patch{
   
   int colornum;
 
-  STime last_time; // player lock must be held when setting this value.
-
-  void (*playnote)(struct Patch *patch,note_t note,STime time);
-  void (*changevelocity)(struct Patch *patch,note_t note,STime time);
-  void (*changepitch)(struct Patch *patch,note_t note,STime time);
-  void (*sendrawmidimessage)(struct Patch *patch,uint32_t msg,STime time,float block_reltempo); // note on, note off, and polyphonic aftertouch are/should not be sent using sendmidimessage. sysex is not supported either.
-  void (*stopnote)(struct Patch *patch,note_t note,STime time);
+  void (*playnote)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
+  void (*changevelocity)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
+  void (*changepitch)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
+  void (*sendrawmidimessage)(struct SeqTrack *seqtrack, struct Patch *patch,uint32_t msg,STime time,float block_reltempo); // note on, note off, and polyphonic aftertouch are/should not be sent using sendmidimessage. sysex is not supported either.
+  void (*stopnote)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
   void (*closePatch)(struct Patch *patch);
   
   struct Instruments *instrument;
@@ -784,7 +783,7 @@ struct FX{
         DEFINE_ATOMIC(float *, slider_automation_value); // Pointer to the float value showing automation in slider. Value is scaled between 0-1. May be NULL.
         DEFINE_ATOMIC(enum ColorNums   *, slider_automation_color); // Pointer to the integer holding color number for showing automation in slider. May be NULL.
 
-       void (*treatFX)(struct FX *fx,int val,STime time,int skip, FX_when when, float block_reltempo);
+       void (*treatFX)(struct SeqTrack *seqtrack, struct FX *fx,int val,STime time,int skip, FX_when when, float block_reltempo);
 
 	void (*closeFX)(struct FX *fx,const struct Tracks *track);
 	void *fxdata;	//Free use for the instrument plug-in.
@@ -838,7 +837,7 @@ struct Instruments{
 	void *(*LoadFX)(struct FX *fx,const struct Tracks *track);
 
 	void (*handle_fx_when_theres_a_new_patch_for_track)(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch);
-        void (*remove_patch)(struct Patch *patch);
+        void (*remove_patchdata)(struct Patch *patch);
 
 	void (*setPatchData)(struct Patch *patch, char *key, char *value);
 	char *(*getPatchData)(struct Patch *patch, char *key);
@@ -1692,6 +1691,7 @@ typedef struct {
   bool new_beat_bar_set; // = false;
 } Beat_Iterator;
 
+
 typedef struct {
   const struct Signatures *next_signature;
   Ratio signature_value; // = {4,4};
@@ -1699,10 +1699,12 @@ typedef struct {
 
 
 struct SeqBlock{
-  struct Blocks *block;
   int64_t time; // Player must be stopped when modifying this variable.
+  struct Blocks *block;
 };
 
+struct _scheduler_t;
+typedef struct _scheduler_t scheduler_t;
 
 struct SeqTrack{
   //int num_seqblocks;
@@ -1716,6 +1718,8 @@ struct SeqTrack{
   LPB_Iterator lpb_iterator; // Used by scheduler_LPB.c to keep track of timing (PPQ and BPM)
   Beat_Iterator beat_iterator;
   Signature_Iterator signature_iterator;
+
+  scheduler_t *scheduler;
 };
 
 
@@ -1796,7 +1800,7 @@ extern DEFINE_ATOMIC(bool, is_starting_up);
 extern bool g_embed_samples;
 
 static inline struct SeqTrack *RT_get_curr_seqtrack(void){
-  if (pc->playtype==PLAYSONG) {
+  if (pc->playtype==PLAYSONG){// && is_playing()) {
     vector_t *seqtracks = &root->song->seqtracks;
     if (seqtracks->num_elements==0)
       return NULL;
@@ -1827,12 +1831,7 @@ static inline note_t create_note_t_plain(int64_t note_id,
   R_ASSERT(midi_channel>=0 && midi_channel <= 15);
   R_ASSERT(note_id >= -1);
   
-  {
-#if defined(RELEASE)
-    R_ASSERT(false);
-#endif
-    R_ASSERT(pitch < 150); // approx. This assert might give false positives.
-  }
+  //R_ASSERT(pitch < 150); // approx. This assert might give false positives.
 
   R_ASSERT(pitch >= 0);
   //R_ASSERT(pan >= -1); // Pans have different range in midi

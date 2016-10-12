@@ -83,6 +83,8 @@ static void PlayStopReally(bool doit){
         if(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED)
           return;
         
+	StopAllInstruments();
+
         ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
         
         printf("PlayStopReally called: %s\n",doit==true?"true":"false");
@@ -98,9 +100,7 @@ static void PlayStopReally(bool doit){
 
         R_ASSERT(is_playing()==false);
 
-	StopAllInstruments();
-
-        R_ASSERT(is_playing()==false);
+        //R_ASSERT(is_playing()==false);
                 
 #if !USE_OPENGL
 	if(doit) (*Ptask2MtaskCallBack)();
@@ -123,7 +123,6 @@ static void PlayStopReally(bool doit){
 #if STOP_GC_WHILE_PLAYING
         printf("[hb gakkgakk: %d\n",GC_dont_gc);
 #endif
-        PATCH_reset_time();
 
         R_ASSERT(is_playing()==false);
                 
@@ -201,7 +200,6 @@ static void start_player(int playtype, int playpos, bool set_curr_playlist, Plac
   //abort();
   fflush(stdout);
 
-  PATCH_reset_time();
 
 #if 0
   // player is stopped, so we can do these things here.

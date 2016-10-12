@@ -22,9 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "time_proc.h"
 
-typedef int64_t (*SchedulerCallback)(int64_t time_into_the_future, union SuperType *args);
+typedef int64_t (*SchedulerCallback)(struct SeqTrack *seqtrack, int64_t time, union SuperType *args);
 
 #define DONT_RESCHEDULE INT64_MIN
+
+#define SCHEDULE_NOW (INT64_MIN/2)
 
 enum SchedulerPriority{
   SCHEDULER_INIT_PRIORITY           = 0,
@@ -52,13 +54,16 @@ enum SchedulerPriority{
 };
 #define SCHEDULER_NUM_PRIORITY_BITS 3
 
+extern struct SeqTrack *g_RT_curr_scheduling_seqtrack;
 
-extern LANGSPEC void SCHEDULER_add_event(int64_t time_into_the_future, SchedulerCallback callback, union SuperType *args, int num_args, enum SchedulerPriority priority);
-extern LANGSPEC int SCHEDULER_called_per_block(int64_t reltime);
+extern LANGSPEC void SCHEDULER_add_event(struct SeqTrack *seqtrack, int64_t time_into_the_future, SchedulerCallback callback, union SuperType *args, int num_args, enum SchedulerPriority priority);
+extern LANGSPEC bool SCHEDULER_called_per_block(int64_t reltime);
 
-extern LANGSPEC int SCHEDULER_num_events(void);
-extern LANGSPEC bool SCHEDULER_clear(void);
+extern LANGSPEC int SCHEDULER_num_events(scheduler_t *scheduler);
+extern LANGSPEC bool SCHEDULER_clear(scheduler_t *scheduler);
+extern LANGSPEC bool SCHEDULER_clear_all(void);
 extern LANGSPEC void SCHEDULER_init(void);
+extern LANGSPEC scheduler_t *SCHEDULER_create(void);
 
 static inline void put_note_into_args(union SuperType *args, const note_t note){
   args[0].float_num = note.pitch;
@@ -88,7 +93,7 @@ static inline int64_t get_seqblock_place_time(const struct SeqBlock *seqblock, P
 
 //  scheduler_notes_proc.h
 
-extern LANGSPEC void RT_schedule_notes_newblock(const struct SeqTrack *seqtrack,
+extern LANGSPEC void RT_schedule_notes_newblock(struct SeqTrack *seqtrack,
                                                 const struct SeqBlock *seqblock,
                                                 int64_t start_time,
                                                 Place start_place);
@@ -96,7 +101,7 @@ extern LANGSPEC void RT_schedule_notes_newblock(const struct SeqTrack *seqtrack,
 // scheduler_pitches_proc.h
 
 extern LANGSPEC void RT_schedule_pitches_newnote(int64_t current_time,
-                                                 const struct SeqTrack *seqtrack,
+                                                 struct SeqTrack *seqtrack,
                                                  const struct SeqBlock *seqblock,
                                                  const struct Tracks *track,
                                                  const struct Notes *note);
@@ -104,14 +109,14 @@ extern LANGSPEC void RT_schedule_pitches_newnote(int64_t current_time,
 // scheduler_velocities_proc.h
 
 void RT_schedule_velocities_newnote(int64_t current_time,
-                                    const struct SeqTrack *seqtrack,
+                                    struct SeqTrack *seqtrack,
                                     const struct SeqBlock *seqblock,
                                     const struct Tracks *track,
                                     const struct Notes *note);
 
 // scheduler_fxs_proc.h
 
-extern LANGSPEC void RT_schedule_fxs_newblock(const struct SeqTrack *seqtrack,
+extern LANGSPEC void RT_schedule_fxs_newblock(struct SeqTrack *seqtrack,
                                               const struct SeqBlock *seqblock,
                                               int64_t start_time,
                                               Place start_place);
@@ -121,7 +126,7 @@ extern LANGSPEC void RT_schedule_fxs_newblock(const struct SeqTrack *seqtrack,
 extern LANGSPEC void start_seqtrack_scheduling(int64_t global_start_time, int64_t block_time, Place place, int playtype, int playlistpos);
 
 // scheduler_realline_proc.h
-extern LANGSPEC void RT_schedule_reallines_in_block(const struct SeqBlock *seqblock, const Place place);
+extern LANGSPEC void RT_schedule_reallines_in_block(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const Place place);
 
 // scheduler_lpb_proc.h
 extern LANGSPEC void RT_schedule_LPBs_newblock(struct SeqTrack *seqtrack,
@@ -143,7 +148,8 @@ extern LANGSPEC void RT_schedule_Signature_newblock(struct SeqTrack *seqtrack,
                                                     const struct SeqBlock *seqblock,
                                                     const Place start_place);
 
-  
+
+
 #endif // COMMON_SCHEDULER_PROC_H
 
 

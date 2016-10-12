@@ -24,10 +24,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_playlist_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "visual_proc.h"
+#include "scheduler_proc.h"
 
 #include "blocklist_proc.h"
 
-extern struct Root *root;
 
 // Note: talloc_atomic could be used instead of talloc, since the blocks are stored elsewhere.
 // However, in case of bugs, using talloc_atomic here could lead to crashes that would be very hard to find the origin of.
@@ -71,6 +71,8 @@ void BL_init(void){
         {
 
           struct SeqTrack *seqtrack = talloc(sizeof(struct SeqTrack));
+          seqtrack->scheduler = SCHEDULER_create();
+          
           VECTOR_ensure_space_for_one_more_element(&seqtrack->seqblocks);
 
           VECTOR_ensure_space_for_one_more_element(&root->song->seqtracks);
@@ -385,15 +387,18 @@ void BL_moveDown(int pos){
 
   struct Blocks *old = root->song->playlist[pos+1];
 
+  struct SeqBlock *seq1 = get_seqblock(root->song->playlist[pos]);
+  struct SeqBlock *seq2 = get_seqblock(root->song->playlist[pos+1]);
+  
   PC_Pause();{
 
     PLAYER_lock();{
       
       root->song->playlist[pos+1] = root->song->playlist[pos];
-      VECTOR_set(root->song->seqtracks.elements[0], pos+1, root->song->playlist[pos]);
+      VECTOR_set(root->song->seqtracks.elements[0], pos+1, seq1);
       
       root->song->playlist[pos] = old;
-      VECTOR_set(root->song->seqtracks.elements[0], pos, old);
+      VECTOR_set(root->song->seqtracks.elements[0], pos, seq2);
       
       update_seqtrack_timing2();
 
@@ -416,16 +421,18 @@ void BL_moveUp(int pos){
   ADD_UNDO(Playlist());
 
   struct Blocks *old = root->song->playlist[pos-1];
+  struct SeqBlock *seq1 = get_seqblock(root->song->playlist[pos]);
+  struct SeqBlock *seq2 = get_seqblock(root->song->playlist[pos-1]);
 
   PC_Pause();{
 
     PLAYER_lock();{
           
       root->song->playlist[pos-1] = root->song->playlist[pos];
-      VECTOR_set(root->song->seqtracks.elements[0], pos-1, root->song->playlist[pos]);
+      VECTOR_set(root->song->seqtracks.elements[0], pos-1, seq1);
       
       root->song->playlist[pos] = old;
-      VECTOR_set(root->song->seqtracks.elements[0], pos, old);
+      VECTOR_set(root->song->seqtracks.elements[0], pos, seq2);
 
       update_seqtrack_timing2();
 
