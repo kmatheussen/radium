@@ -973,12 +973,12 @@ static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
   Voice *voice = data->voices_playing;
 
   R_ASSERT_NON_RELEASE(time >= 0);
-  R_ASSERT_NON_RELEASE(time < RADIUM_BLOCK_SIZE);
+  R_ASSERT_NON_RELEASE(time < RADIUM_BLOCKSIZE);
   
   if (time < 0)
     time = 0;
-  else if (time >= RADIUM_BLOCK_SIZE)
-    time = RADIUM_BLOCK_SIZE -1;
+  else if (time >= RADIUM_BLOCKSIZE)
+    time = RADIUM_BLOCKSIZE -1;
   
   while(voice!=NULL){
     if(voice->note_id==note.id){
