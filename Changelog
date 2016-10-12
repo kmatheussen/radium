@@ -1,3 +1,10 @@
+Changes 4.1.7 -> 4.1.8:
+* Fix various player bugs introduced in 4.1.7.
+* Support VST3 plugins under Windows and OSX, and AudioUnit pluins
+  under OSX.
+
+
+
 Changes 4.1.6 -> 4.1.7:
 * Reintroduce pitch lines for non-gliding notes, but don't draw pitch
   lines under note names.
