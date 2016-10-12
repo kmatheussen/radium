@@ -350,6 +350,8 @@ static void release_system_filter(SystemFilter *filter, int num_channels){
 }
 
 SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading){
+  printf("PLUGIN_create called\n");
+  
   SoundPlugin *plugin = (SoundPlugin*)V_calloc(1,sizeof(SoundPlugin));
   plugin->type = plugin_type;
 

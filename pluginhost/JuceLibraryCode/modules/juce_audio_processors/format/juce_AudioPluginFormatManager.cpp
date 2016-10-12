@@ -90,7 +90,7 @@ AudioPluginInstance* AudioPluginFormatManager::createPluginInstance (const Plugi
             return result;
 
     errorMessage = doesPluginStillExist (description) ? TRANS ("This plug-in failed to load correctly")
-                                                      : TRANS ("This plug-in file no longer exists");
+                                                      : TRANS ("This plug-in file no longer exists.");
     return nullptr;
 }
 

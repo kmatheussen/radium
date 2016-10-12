@@ -126,11 +126,13 @@ extern "C"{
   typedef AEffect* (*VST_GetPluginInstance) (audioMasterCallback);
 }
 
+#if 0
 // Not necessary to load non-shell plugins during startup. In addition, some of these are, or can be, buggy.
 static const char *known_nonshell_plugins[] = {"3BandEQ", "drumsynth", "JuceDemoPlugin", "mdaDelay", "mdaLimiter", "mdaSplitter", "nekobeevst", "TheFunction", "3BandSplitter", "eqinox", "kmeter_stereo_x64", "mdaDetune", "mdaLooplex", "mdaStereo", "NewProject", "StringVST", "ThePilgrim", "AspectVST", "eqinoxvst", "kmeter_surround_x64", "mdaDither", "mdaLoudness", "mdaSubSynth", "peggy2000vst", "TAL-Dub-3", "tonespace", "bitmanglervst", "freeverb", "mdaDubDelay", "mdaMultiBand", "mdaTalkBox", "PingPongPan", "TAL-Filter-2", "wolpertingervst", "capsaicin", "mdaDX10", "mdaOverdrive", "mdaTestTone", "radium_compressor", "TAL-Filter", "glitch2", "mdaAmbience", "mdaDynamics", "mdaPiano", "mdaThruZero", "tal-filtervst", "drowaudio-distortionshaper", "gr-eq2", "mdaBandisto", "mdaEnvelope", "mdaRePsycho!", "mdaTracker", "soundcrabvst", "TAL-NoiseMaker", "zita_vst", "drowaudio-distortion", "highlifevst_juced", "mdaBeatBox", "mdaEPiano", "mdaRezFilter", "mdaTransient", "TAL-Reverb-2", "drowaudio-flanger", "highlifevst", "mdaCombo", "mdaImage", "mdaRingMod", "mdaVocInput", "TAL-Reverb-3", "drowaudio-reverb", "HybridReverb2", "mdaDe-ess", "mdaJX10", "mdaRoundPan", "mdaVocoder", "tal-reverbvst", "drowaudio-tremolo", "jostvst", "mdaDegrade", "mdaLeslie", "mdaShepard", "midiSimpleLFO", "String_FXVST", "TAL-Vocoder-2", "wolpertingervst", "soundcrabvst", "mdaVocoder", "mdaTalkBox", "mdaRingMod", "mdaLoudness", "mdaEPiano", "mdaDetune", "mdaBandisto", "freeverb", "tonespace", "Compressor", "mdaVocInput", "mdaSubSynth", "mdaRezFilter", "mdaLooplex", "mdaEnvelope", "mdaDelay", "mdaAmbience", "eqinoxvst", "tal-reverbvst", "radium_compressor", "mdaTransient", "mdaStereo", "mdaRePsycho!", "mdaLimiter", "mdaDynamics", "mdaDegrade", "jostvst", "bitmanglervst", "tal-filtervst", "peggy2000vst", "mdaTracker", "mdaSplitter", "mdaPiano", "mdaLeslie", "mdaDX10", "mdaDe-ess", "highlifevst", "AspectVST", "StringVST", "nekobeevst", "mdaThruZero", "mdaShepard", "mdaOverdrive", "mdaJX10", "mdaDubDelay", "mdaCombo", "highlifevst_juced", "String_FXVST", "midiSimpleLFO", "mdaTestTone", "mdaRoundPan", "mdaMultiBand", "mdaImage", "mdaDither", "mdaBeatBox", "gr-eq2", "AspectVST", "kmeter_surround_x64", "kmeter_stereo_x64", "Radium Compressor Mono", "Radium Compressor Stereo", NULL};
 
 // These are not banned (could be me having too old version for instance). But they are, like all known non-shell plugins, not loaded during program startup.
 static const char *known_nonshell_notworking_plugins[] = {"analyzervst", "argotlunar", "capsaicinvst", "drumsynthvst", "vexvst", "TAL-Reverb", NULL};
+#endif
 
 
 #define MAX_EVENTS 512
@@ -1023,10 +1025,6 @@ static bool name_is_in_list(QString name, const char *names[]){
   return false;
 }
 
-static bool plugin_is_known_nonshell_plugin(QString basename){
-  return name_is_in_list(basename, known_nonshell_plugins) || name_is_in_list(basename, known_nonshell_notworking_plugins);
-}
-
 namespace{
 struct MyQLibrary : public QLibrary {
   
@@ -1040,6 +1038,12 @@ struct MyQLibrary : public QLibrary {
 };
 }
 
+
+/*
+static bool plugin_is_known_nonshell_plugin(QString basename){
+  return name_is_in_list(basename, known_nonshell_plugins) || name_is_in_list(basename, known_nonshell_notworking_plugins);
+}
+
 static vector_t VST_get_uids2(const wchar_t *w_filename, QString &resolve_error_message){
   vector_t uids = {};
   bool effect_opened = false;
@@ -1047,14 +1051,15 @@ static vector_t VST_get_uids2(const wchar_t *w_filename, QString &resolve_error_
   QString filename = STRING_get_qstring(w_filename);
   const char *plugin_name = STRING_get_chars(w_filename);
 
+  bool is_vst3 = QFileInfo(filename).suffix().toLower() == VST3_SUFFIX;
   
-#if 0
-  if (QFileInfo(filename).suffix().toLower()===VST3_SUFFIX) {
+#if 1
+  if (QFileInfo(filename).suffix().toLower() == VST3_SUFFIX) {    
     radium_vst_uids_t *ruid = (radium_vst_uids_t *)talloc(sizeof(radium_vst_uids_t));
-    ruid->name = NULL; //talloc_strdup(plugin_name);
+    ruid->name = NULL;//talloc_strdup(plugin_name);
     ruid->uid = 0;
     
-    VECTOR_push_back(uids, ruid);
+    VECTOR_push_back(&uids, ruid);
     return uids;
   }
 #endif
@@ -1066,6 +1071,9 @@ static vector_t VST_get_uids2(const wchar_t *w_filename, QString &resolve_error_
 
   if (get_plugin_instance == NULL)
     get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("main");
+
+  if (is_vst3 && get_plugin_instance == NULL)
+    get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("InitDll");
   
   if (get_plugin_instance == NULL){
     fprintf(stderr,"(failed) %s", myLib.errorString().toUtf8().constData());
@@ -1202,7 +1210,7 @@ vector_t VST_get_uids(const wchar_t *w_filename){
   return ret;
 #endif
 }
-
+*/
 
 bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool is_juce_plugin){
   QString filename = file_info.absoluteFilePath();
@@ -1257,8 +1265,8 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
 
 #if defined(FOR_MACOSX)
   const char *plugin_name = talloc_strdup(QFileInfo(QDir(file_or_identifier).dirName()).baseName().toUtf8().constData());
-  filename = file_or_identifier + "/Contents/MacOS/"; // Confusion: this is actually the name of a directory, not a filename. The dirname is used in VST_get_uids.
-  if(QFileInfo(filename).exists()==false) {
+  //filename = file_or_identifier + "/Contents/MacOS/"; // Confusion: this is actually the name of a directory, not a filename. The dirname is used in VST_get_uids.
+  if(QFileInfo(file_or_identifier + "/Contents/MacOS/").exists()==false) {
     fprintf(stderr,"   Could not find -%s\n",filename.toUtf8().constData());
     //abort();
     return false;
@@ -1379,8 +1387,18 @@ void create_vst_plugins(bool is_juce_plugin){
 
 #if defined(FOR_MACOSX)
 
-  create_vst_plugins_recursively("/Library/Audio/Plug-Ins/VST/", &time, is_juce_plugin);
+  PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{    
+    create_vst_plugins_recursively("/Library/Audio/Plug-Ins/VST/", &time, is_juce_plugin);
+  }PR_add_menu_entry(PluginMenuEntry::level_down());
 
+  PR_add_menu_entry(PluginMenuEntry::level_up("VST3"));{    
+    create_vst_plugins_recursively("/Library/Audio/Plug-Ins/VST3/", &time, is_juce_plugin);
+  }PR_add_menu_entry(PluginMenuEntry::level_down());
+
+  PR_add_menu_entry(PluginMenuEntry::level_up("AU"));{
+    create_vst_plugins_recursively("/Library/Audio/Plug-Ins/Components/", &time, is_juce_plugin);
+  }PR_add_menu_entry(PluginMenuEntry::level_down());
+  
   #if 0
   QDir dir("/Library/Audio/Plug-Ins/VST/");
   //Digits.vst/Contents/MacOS/Digits 
@@ -1409,15 +1427,22 @@ void create_vst_plugins(bool is_juce_plugin){
   
   int num_paths = SETTINGS_read_int("num_vst_paths", 0);
 
-  for(int i=0;i<num_paths; i++){
-    QString vst_path = SETTINGS_read_qstring(QString("vst_path")+QString::number(i), QString(""));
-    if(vst_path=="")
-      continue;
-    printf("vst_path: %s\n",vst_path.toUtf8().constData());
-    create_vst_plugins_recursively(vst_path, &time, is_juce_plugin);
-    PR_add_menu_entry(PluginMenuEntry::separator());
-  }    
-
+#if FOR_LINUX
+  PR_add_menu_entry(PluginMenuEntry::level_up("VST"));
+#else
+  PR_add_menu_entry(PluginMenuEntry::level_up("VST/VST3"));
+#endif
+  {
+    for(int i=0;i<num_paths; i++){
+      QString vst_path = SETTINGS_read_qstring(QString("vst_path")+QString::number(i), QString(""));
+      if(vst_path=="")
+        continue;
+      printf("vst_path: %s\n",vst_path.toUtf8().constData());
+      create_vst_plugins_recursively(vst_path, &time, is_juce_plugin);
+      PR_add_menu_entry(PluginMenuEntry::separator());
+    }    
+  }PR_add_menu_entry(PluginMenuEntry::level_down());
+  
 #endif // !defined(FOR_MACOSX)
 }
 

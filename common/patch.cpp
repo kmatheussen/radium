@@ -289,6 +289,8 @@ static void apply_patch_state(struct Patch *patch, hash_t *state){
 bool PATCH_make_active_audio(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *state, float x, float y) {
   R_ASSERT_RETURN_IF_FALSE2(patch->instrument==get_audio_instrument(),false);
 
+  printf("PATCH_make_active_audio called\n");
+
   if (VECTOR_is_in_vector(&patch->instrument->patches,patch)){
     RError("Patch %s is already active",patch->name);
     return true;
@@ -317,6 +319,8 @@ void PATCH_init_audio_when_loading_song(struct Patch *patch, hash_t *state) {
 
 // Either type_name and plugin_name is NULL, or state==NULL
 struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state, float x, float y) {
+  printf("PATCH_create_audio called\n");
+  
   struct Patch *patch = create_new_patch(name);
 
   patch->instrument=get_audio_instrument();

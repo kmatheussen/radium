@@ -192,6 +192,8 @@ int createMIDIInstrument(char *name) {
 
 // There was a good reason for the 'name' parameter. Think it had something to do with replace instrument, and whether to use old name or autogenerate new one.
 int createAudioInstrument(char *type_name, char *plugin_name, char *name, float x, float y) {
+  printf("createAudioInstrument called\n");
+  
   if (name!=NULL && strlen(name)==0)
     name = NULL;
 

@@ -436,9 +436,7 @@ void PR_init_plugin_types(void){
 
   if (true || PR_is_initing_vst_first()){
 
-    PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{    
-      create_vst_plugins(true);
-    }PR_add_menu_entry(PluginMenuEntry::level_down());
+    create_vst_plugins(true);
 
     PR_add_menu_entry(PluginMenuEntry::separator());
     
@@ -449,10 +447,7 @@ void PR_init_plugin_types(void){
     create_ladspa_plugins();
     PR_add_menu_entry(PluginMenuEntry::separator());
 
-    PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{    
-      create_vst_plugins(true);
-    }PR_add_menu_entry(PluginMenuEntry::level_down());
-  
+    create_vst_plugins(true);  
   }
 
   /*

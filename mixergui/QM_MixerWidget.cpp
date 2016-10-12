@@ -868,10 +868,13 @@ static QVector<Chip*> get_selected_chips(void){
 
 //static bool mousepress_create_chip(MyScene *scene, float mouse_x, float mouse_y){
 static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_y){
+  printf("mouserelease_create_chip called\n");
   
   draw_slot(scene,mouse_x,mouse_y);
 
   const char *instrument_description = instrumentDescriptionPopupMenu();
+  printf("   instrument_description: %s\n",instrument_description);
+  
   if (instrument_description != NULL){
 
     float x, y;
@@ -1644,6 +1647,7 @@ static const char *popup_plugin_selector(SoundPluginType **type){
   MyQAction *action;
 
   action = dynamic_cast<MyQAction*>(safeExec(&menu));
+  printf("action: %p\n",action);
   
   if (action==NULL)
     return NULL;
@@ -1651,7 +1655,6 @@ static const char *popup_plugin_selector(SoundPluginType **type){
   struct PluginMenuEntry entry = action->entry;
 
   if (entry.type==PluginMenuEntry::IS_CONTAINER) {
-
     vector_t names={};
 
     SoundPluginTypeContainer *plugin_type_container = entry.plugin_type_container;
@@ -1685,16 +1688,14 @@ static const char *popup_plugin_selector(SoundPluginType **type){
     }
     
   }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
-    
     return PRESET_request_load_instrument_description();
  
   }else if(entry.type==PluginMenuEntry::IS_PASTE_PRESET){
-    
     return "3";
  
   }else if(entry.type==PluginMenuEntry::IS_NUM_USED_PLUGIN){
-
     SoundPluginType *type2 = PR_get_plugin_type_by_name(entry.hepp.container_name.toUtf8().constData(), entry.hepp.type_name.toUtf8().constData(), entry.hepp.name.toUtf8().constData());
+
     if (type2 != NULL){
       if (type!=NULL)
         *type = type2;
@@ -1703,7 +1704,7 @@ static const char *popup_plugin_selector(SoundPluginType **type){
       return NULL;
 
   } else {
-
+    
     if (type!=NULL)
       *type = entry.plugin_type;
 

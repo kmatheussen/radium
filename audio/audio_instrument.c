@@ -389,7 +389,8 @@ static bool state_only_contains_plugin(hash_t *state){
 
 // x and y are ignored if audio_state!=NULL (since audio state has its own "x" and "y")
 bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *audio_state, bool is_loading_song, float x, float y) {
-
+  printf("AUDIO_InitPatch2 called\n");
+  
   SoundPluginType *type;
   struct SoundPlugin *plugin;
 

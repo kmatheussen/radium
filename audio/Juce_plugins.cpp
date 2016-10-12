@@ -270,6 +270,18 @@ namespace{
     }
   };
 
+  static bool is_vst2(AudioProcessor *processor){
+    return processor->wrapperType == AudioProcessor::wrapperType_VST;
+  }
+
+  static bool is_vst3(AudioProcessor *processor){
+    return processor->wrapperType == AudioProcessor::wrapperType_VST3;
+  }
+
+  static bool is_vst(AudioProcessor *processor){
+    return is_vst2(processor) || is_vst3(processor);
+  }
+
   struct Data{
     AudioPluginInstance *audio_instance;
     
@@ -287,7 +299,19 @@ namespace{
 
     int x;
     int y;
+
+    bool is_vst2(void){
+      return ::is_vst2(audio_instance);
+    }
+
+    bool is_vst3(void){
+      return ::is_vst3(audio_instance);
+    }
     
+    bool is_vst(void){
+      return ::is_vst(audio_instance);
+    }
+
     Data(AudioPluginInstance *audio_instance, SoundPlugin *plugin, int num_input_channels, int num_output_channels)
       : audio_instance(audio_instance)
       , window(NULL)
@@ -304,17 +328,33 @@ namespace{
     }
   };
 
+  
+  /*
+  static bool is_au(AudioProcessor *processor){
+    return processor->wrapperType == AudioProcessor::wrapperType_AudioUnit ; // || processor->wrapperType == AudioProcessor::wrapperType_AudioUnitv3;
+  }
+  */
+
   struct TypeData{
     const wchar_t *file_or_identifier; // used by Juce
-    int uid;
-    AudioProcessor::WrapperType wrapper_type;
-    const char **effect_names; // set the first time the plugin is loaded
+    PluginDescription description;
+    const char **effect_names = NULL; // set the first time the plugin is loaded
+    TypeData(const wchar_t *file_or_identifier,
+             PluginDescription description
+             )
+      : file_or_identifier(wcsdup(file_or_identifier))
+      , description(description)
+    {}
+
+    ~TypeData(){
+      RError("Not supposed to be called\n");
+      free((void*)file_or_identifier);      
+    }
   };
 
   struct ContainerData{
     const wchar_t *file_or_identifier; // used by Juce
     const wchar_t *library_file_full_path; // used by VST_get_uids()
-    AudioProcessor::WrapperType wrapper_type;
   };
 
   //int button_height = 10;
@@ -588,7 +628,7 @@ static void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_si
   data->buffer.setSize(data->buffer.getNumChannels(), new_buffer_size);
 }
 
-
+// 
 static void RT_MIDI_send_msg_to_patch_receivers2(struct SeqTrack *seqtrack, struct Patch *patch, MidiMessage message, int64_t seq_time){       
   if (message.isNoteOn()) {
     //printf("Out. Sending note ON %d\n",  message.getNoteNumber());
@@ -867,19 +907,28 @@ static int RT_get_latency(struct SoundPlugin *plugin){
 // so we acces the VST plugin directly.
 static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
-  AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
 
-  // "[return value]: tail size (for example the reverb time of a reverb plug-in); 0 is default (return 1 for 'no tail')"
-  int tail = aeffect->dispatcher(aeffect, effGetTailSize,
-                                 0, 0, 0, 0);
+  if (data->is_vst2()){
+    
+    AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
+    
+    // "[return value]: tail size (for example the reverb time of a reverb plug-in); 0 is default (return 1 for 'no tail')"
+    int tail = aeffect->dispatcher(aeffect, effGetTailSize,
+                                   0, 0, 0, 0);
+    
+    if (tail==0)
+      return -1; // i.e unable to report
+    
+    if (tail==1) // i.e. no tail
+      return 0;
 
-  if (tail==0)
-    return -1; // i.e unable to report
-  
-  if (tail==1) // i.e. no tail
-    return 0;
-
-  return tail;
+    return tail;
+    
+  } else {
+    
+    return -1;
+    
+  }
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
@@ -887,33 +936,33 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
 
   //if (effect_num==99)
   //  printf("   Juce_plugins.cpp:set_effect_value.   parm %d: %f\n",effect_num,value);
-  
-#if 1
-  // juce::VSTPluginInstance::setParameter obtains the vst lock. That should not be necessary (Radium ensures that we are alone here), plus that it causes glitches in sound.
-  // So instead, we call the vst setParameter function directly:
-  AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
 
-  aeffect->setParameter(aeffect, effect_num, value);
-
-#else
-  // This causes glitches, especially when doing heavy operations such as opening the gui:
-   data->audio_instance->setParameter(effect_num, value);
-#endif
+  if (data->is_vst2()){
+    // juce::VSTPluginInstance::setParameter obtains the vst lock. That should not be necessary (Radium ensures that we are alone here), plus that it causes glitches in sound.
+    // So instead, we call the vst setParameter function directly:
+    AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
+    
+    aeffect->setParameter(aeffect, effect_num, value);
+    
+  } else {
+    // This causes glitches, especially when doing heavy operations such as opening the gui:
+    data->audio_instance->setParameter(effect_num, value);
+  }
 }
 
 static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
   Data *data = (Data*)plugin->data;
-#if 1
-  // juce::VSTPluginInstance::getParameter obtains the vst lock. That should not be necessary (Radium ensures that we are alone here), plus that it causes glitches in sound.
-  // So instead, we call the vst getParameter function directly:
-  AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
-
-  float val = aeffect->getParameter(aeffect, effect_num);
-
-  return val;
-#else
-  return data->audio_instance->getParameter(effect_num);
-#endif
+  if (data->is_vst2()){
+    // juce::VSTPluginInstance::getParameter obtains the vst lock. That should not be necessary (Radium ensures that we are alone here), plus that it causes glitches in sound.
+    // So instead, we call the vst getParameter function directly:
+    AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
+    
+    float val = aeffect->getParameter(aeffect, effect_num);
+    
+    return val;
+  } else {
+    return data->audio_instance->getParameter(effect_num);
+  }
 }
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
@@ -927,7 +976,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
   String l = data->audio_instance->getParameterLabel(effect_num);
   const char *label = l.toRawUTF8();
 
-  if (true) // audio_instance->getParameterText() sometimes crashes. Doing it manually instead.
+  if (data->is_vst2()) // audio_instance->getParameterText() sometimes crashes. Doing it manually instead.
   {
     char disp[128] = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
     AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
@@ -1023,10 +1072,10 @@ static AudioPluginInstance *create_audio_instance(const TypeData *type_data, flo
   
   String errorMessage;
 
-  PluginDescription description;
+  const PluginDescription &description = type_data->description;
   
-  description.fileOrIdentifier = String(type_data->file_or_identifier);
-  description.uid = type_data->uid;
+  bool exists = File (description.fileOrIdentifier).exists();
+  printf("  Trying to load -%s-. Exists? %d\n", STRING_get_chars(type_data->file_or_identifier),exists?1:0);
 
   AudioPluginInstance *instance = formatManager.createPluginInstance(description,sample_rate,block_size,errorMessage);
   
@@ -1039,6 +1088,7 @@ static AudioPluginInstance *create_audio_instance(const TypeData *type_data, flo
 
   return instance;
 }
+
 
 static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPluginType *plugin_type){
   TypeData *type_data = (struct TypeData*)plugin_type->data;
@@ -1056,7 +1106,7 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
  
   const char *wrapper_info = "";
   
-  if (type_data->wrapper_type == AudioProcessor::wrapperType_VST) {
+  if (is_vst2(audio_instance)){
     AEffect *aeffect = (AEffect*)audio_instance->getPlatformSpecificData();
     {
       char vendor[1024] = {0};
@@ -1308,26 +1358,21 @@ static void set_preset_name(struct SoundPlugin *plugin, int num, const char* new
   instance->changeProgramName(num, new_name);
 }
 
-static SoundPluginType *create_plugin_type(const char *name, int uid, const wchar_t *file_or_identifier, SoundPluginTypeContainer *container){ //, const wchar_t *library_file_full_path){
+static SoundPluginType *create_plugin_type(const PluginDescription description, const wchar_t *file_or_identifier, SoundPluginTypeContainer *container){ //, const wchar_t *library_file_full_path){
   printf("b02 %s\n",STRING_get_chars(file_or_identifier));
   fflush(stdout);
   //  return;
 
   SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
 
-  TypeData *typeData = (TypeData*)V_calloc(1, sizeof(TypeData));
-
-  typeData->file_or_identifier = wcsdup(file_or_identifier);
-  typeData->uid = uid;
-
-  //typeData->library_file_full_path = wcsdup(library_file_full_path);  
+  TypeData *typeData = new TypeData(wcsdup(file_or_identifier),
+                                    description
+                                    );
   
-  typeData->wrapper_type = AudioProcessor::wrapperType_VST;
-
   plugin_type->data = typeData;
 
   plugin_type->type_name = "VST";
-  plugin_type->name      = V_strdup(name);
+  plugin_type->name      = V_strdup(description.name.toRawUTF8());
 
   plugin_type->container = container;
 
@@ -1372,7 +1417,62 @@ static SoundPluginType *create_plugin_type(const char *name, int uid, const wcha
   return plugin_type;
 }
 
+static void add_plugins(OwnedArray<PluginDescription> &descriptions, String filename){
+  VSTPluginFormat vst2_format;
+  vst2_format.findAllTypesForFile(descriptions, filename);
+  
+#if !defined(FOR_LINUX)
+  VST3PluginFormat vst3_format;
+  vst3_format.findAllTypesForFile(descriptions, filename);
+#endif
+  
+#if FOR_MACOSX
+  AudioUnitPluginFormat au_format;
+  au_format.findAllTypesForFile(descriptions, filename);
+#endif
+}
+                        
 static void populate(SoundPluginTypeContainer *container){
+  if (container->is_populated)
+    return;
+
+  container->is_populated = true;
+
+  ContainerData *data = (ContainerData*)container->data;
+
+  OwnedArray<PluginDescription> descriptions;
+
+#if 0 //FOR_MACOSX
+  DirectoryIterator iter(File(data->library_file_full_path), false, "*", File::findFiles);
+  while (iter.next()) {
+    printf("Checking -%s- (%s)\n",iter.getFile().getFullPathName().toRawUTF8(), STRING_get_chars(data->library_file_full_path));
+    add_plugins(descriptions, iter.getFile().getFullPathName());
+  }
+#else
+  add_plugins(descriptions, data->library_file_full_path);
+#endif
+  
+  int size = descriptions.size();
+
+  if (size==0) {
+    GFX_Message(NULL, "No plugins found in %s", STRING_get_chars(data->library_file_full_path));
+    return;
+  }
+
+  container->num_types = size;
+  container->plugin_types = (SoundPluginType**)V_calloc(size, sizeof(SoundPluginType));
+
+  int i = 0;
+  for (auto description : descriptions){
+    container->plugin_types[i] = create_plugin_type(*description, data->file_or_identifier, container);
+    i++;
+  }
+
+  fflush(stderr);  
+}
+
+#if 0
+static void populate_old(SoundPluginTypeContainer *container){
   if (container->is_populated)
     return;
 
@@ -1401,7 +1501,7 @@ static void populate(SoundPluginTypeContainer *container){
 
   fflush(stderr);  
 }
-
+#endif
 
 void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, const wchar_t *library_file_full_path){
   SoundPluginTypeContainer *container = (SoundPluginTypeContainer*)V_calloc(1,sizeof(SoundPluginTypeContainer));
@@ -1413,13 +1513,12 @@ void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, c
   ContainerData *data = (ContainerData*)V_calloc(1, sizeof(ContainerData));
   data->file_or_identifier = wcsdup(file_or_identifier);
   data->library_file_full_path = wcsdup(library_file_full_path);  
-  data->wrapper_type = AudioProcessor::wrapperType_VST;
 
   container->data = data;
   
   PR_add_plugin_container(container);
 }
-
+ 
 
 #if 0 // Only works in linux.
 

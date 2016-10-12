@@ -23,7 +23,6 @@
 */
 
 #if JUCE_PLUGINHOST_VST3
-
 } // namespace juce
 
 #if JucePlugin_Build_VST3
@@ -1319,9 +1318,10 @@ public:
         }
 
         VST3ModuleHandle::Ptr m (new VST3ModuleHandle (file));
-
-        if (! m->open (file, description))
+        
+        if (! m->open (file, description)) {
             m = nullptr;
+        }
 
         return m;
     }
@@ -1350,7 +1350,8 @@ private:
         ComSmartPtr<IPluginFactory> pluginFactory (dllHandle->getPluginFactory());
 
         if (pluginFactory != nullptr)
-        {
+          {
+          
             ComSmartPtr<VST3HostContext> host (new VST3HostContext (nullptr));
             MatchingDescriptionFinder finder (host, pluginFactory, description);
 
@@ -1361,6 +1362,7 @@ private:
                 name = description.name;
                 return true;
             }
+
         }
 
         return false;
@@ -2487,6 +2489,7 @@ AudioPluginInstance* VST3PluginFormat::createInstanceFromDescription (const Plug
 
         if (const VST3Classes::VST3ModuleHandle::Ptr module = VST3Classes::VST3ModuleHandle::findOrCreateModule (file, description))
         {
+                
             result = new VST3Classes::VST3PluginInstance (module);
 
             if (! result->initialise())
