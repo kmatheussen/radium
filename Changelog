@@ -1,3 +1,13 @@
+Changes 4.1.9 -> 4.2.0:
+* Use less time deleting plugins that have thousands of parameters
+* Remove a couple of situations where the assertion reporter
+  popped up unnecessarily.
+* Fix loading AU and VST3 plugins.
+* Disable changing presets for VST3 plugins, at least for now
+  since it's not working.
+
+
+
 Changes 4.1.8 -> 4.1.9:
 * Play block when selecting a block in the block selector.
   It didn't work before when playing song.
