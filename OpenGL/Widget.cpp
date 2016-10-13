@@ -1704,20 +1704,29 @@ QWidget *GL_create_widget(QWidget *parent){
         GL_set_pause_rendering_on_off(true);
 #endif
         
-      } else {
-        if (SETTINGS_read_bool("show_intel_gfx_message3_during_startup", true)) {
+      } else if (SETTINGS_read_bool("show_intel_gfx_message3_during_startup", true)) {
+        
+#if FOR_LINUX
+        GFX_Message(NULL,
+                      "Intel Linux driver detected. Turning on the \"Briefly pause rendering when opening windows\" option."
+                    );
+        
+        GL_set_pause_rendering_on_off(true);
+#endif
+        
+        SETTINGS_write_bool("show_intel_gfx_message3_during_startup", true);
+      }
 
 #if FOR_LINUX
+      //if (SETTINGS_read_bool("show_intel_gfx_message4_during_startup", true)) {
+        if (s_version.contains("Mesa 10.3.2") || s_version.contains(" 10.3.1") || s_version.contains(" 10.3.0") || s_version.contains(" 10.2.") || s_version.contains(" 10.1.") || s_version.contains(" 10.0.")) {
           GFX_Message(NULL,
-                      "Intel Linux driver detected. Turning on the \"Briefly pause rendering when opening windows\" option."
+                      "Old Intel Linux driver detected. Upgrading the GFX driver might prevent Radium from crashing."
                       );
-          
-          GL_set_pause_rendering_on_off(true);
-#endif
-          
-          SETTINGS_write_bool("show_intel_gfx_message3_during_startup", true);
         }
-      }
+        //SETTINGS_write_bool("show_intel_gfx_message4_during_startup", true);
+        //}
+#endif
 
       //g_should_do_modal_windows = true;
       g_should_do_modal_windows = false;
