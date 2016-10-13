@@ -78,7 +78,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
     return PR_get_plugin_type_by_name(plugin_name,type_name,plugin_name);
   }
 
-  if(!strcmp(type_name,"VST")){
+  if(!strcmp(type_name,"VST") || !strcmp(type_name,"VST3") || !strcmp(type_name,"AudioUnit")){
     while(true){
       vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
