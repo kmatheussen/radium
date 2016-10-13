@@ -1310,6 +1310,10 @@ static int get_num_presets(struct SoundPlugin *plugin){
 #endif
 
   Data *data = (Data*)plugin->data;
+
+  if (data->is_vst3()) // Must upgrade JUCE. With the current version, presets are not working with vst3.
+    return 0;
+  
   AudioPluginInstance *instance = data->audio_instance;
 
   return instance->getNumPrograms();
