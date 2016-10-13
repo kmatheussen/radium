@@ -1371,7 +1371,7 @@ static SoundPluginType *create_plugin_type(const PluginDescription description, 
   
   plugin_type->data = typeData;
 
-  plugin_type->type_name = "VST";
+  plugin_type->type_name = V_strdup(description->pluginFormatName.toRawUTF8());
   plugin_type->name      = V_strdup(description.name.toRawUTF8());
 
   plugin_type->container = container;
