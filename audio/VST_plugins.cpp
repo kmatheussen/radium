@@ -1277,7 +1277,7 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
     basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
   } else {
     basename.resize(basename.size()-strlen(VST3_SUFFIX)-1);
-    constainer_type_name = "VST3";
+    container_type_name = "VST3";
   }
   const char *plugin_name = talloc_strdup(basename.toUtf8().constData());
 #endif
@@ -1372,8 +1372,10 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
     }
     
 #if !defined(FOR_MACOSX)       
-    else if(file_info.suffix().toLower()==VST_SUFFIX || file_info.suffix().toLower()==VST3_SUFFIX){
-      add_vst_plugin_type(file_info, file_path, is_juce_plugin);
+    else if(file_info.suffix().toLower()==VST_SUFFIX){
+      add_vst_plugin_type(file_info, file_path, is_juce_plugin, "VST");
+    }else if(file_info.suffix().toLower()==VST3_SUFFIX){
+      add_vst_plugin_type(file_info, file_path, is_juce_plugin, "VST3");
     }
 #endif
   }

@@ -446,7 +446,7 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
 
-    if (type->get_num_presets != NULL){
+    if (type->get_num_presets != NULL && preset_selector->isVisible()){
 
       int preset_num = type->get_current_preset(plugin);
       if (preset_num != preset_selector->value())

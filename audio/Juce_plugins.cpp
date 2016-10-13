@@ -270,18 +270,33 @@ namespace{
     }
   };
 
+  static bool is_vst2(const struct SoundPluginType *type){
+    return !strcmp(type->type_name, "VST");
+  }
+  
+  static bool is_vst2(const SoundPlugin *plugin){
+    return is_vst2(plugin->type);
+  }
+  
+  static bool is_vst3(const SoundPlugin *plugin){
+    return !strcmp(plugin->type->type_name, "VST3");
+  }
+
+  /*
   static bool is_vst2(AudioProcessor *processor){
     return processor->wrapperType == AudioProcessor::wrapperType_VST;
   }
 
   static bool is_vst3(AudioProcessor *processor){
+    RError("This function doesnt work");
     return processor->wrapperType == AudioProcessor::wrapperType_VST3;
   }
 
   static bool is_vst(AudioProcessor *processor){
     return is_vst2(processor) || is_vst3(processor);
   }
-
+  */
+  
   struct Data{
     AudioPluginInstance *audio_instance;
     
@@ -300,6 +315,7 @@ namespace{
     int x;
     int y;
 
+    /*
     bool is_vst2(void){
       return ::is_vst2(audio_instance);
     }
@@ -311,7 +327,7 @@ namespace{
     bool is_vst(void){
       return ::is_vst(audio_instance);
     }
-
+    */
     Data(AudioPluginInstance *audio_instance, SoundPlugin *plugin, int num_input_channels, int num_output_channels)
       : audio_instance(audio_instance)
       , window(NULL)
@@ -908,7 +924,7 @@ static int RT_get_latency(struct SoundPlugin *plugin){
 static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
 
-  if (data->is_vst2()){
+  if (is_vst2(plugin)){
     
     AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
     
@@ -937,7 +953,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
   //if (effect_num==99)
   //  printf("   Juce_plugins.cpp:set_effect_value.   parm %d: %f\n",effect_num,value);
 
-  if (data->is_vst2()){
+  if (is_vst2(plugin)){
     // juce::VSTPluginInstance::setParameter obtains the vst lock. That should not be necessary (Radium ensures that we are alone here), plus that it causes glitches in sound.
     // So instead, we call the vst setParameter function directly:
     AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
@@ -952,7 +968,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
 
 static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
   Data *data = (Data*)plugin->data;
-  if (data->is_vst2()){
+  if (is_vst2(plugin)){
     // juce::VSTPluginInstance::getParameter obtains the vst lock. That should not be necessary (Radium ensures that we are alone here), plus that it causes glitches in sound.
     // So instead, we call the vst getParameter function directly:
     AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
@@ -977,7 +993,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
   String l = data->audio_instance->getParameterLabel(effect_num);
   const char *label = l.toRawUTF8();
 
-  if (data->is_vst2()) // audio_instance->getParameterText() sometimes crashes. Doing it manually instead.
+  if (is_vst2(plugin)) // audio_instance->getParameterText() sometimes crashes. Doing it manually instead.
   {
     char disp[128] = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
     AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
@@ -1098,7 +1114,7 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
  
   const char *wrapper_info = "";
   
-  if (false && is_vst2(audio_instance)){
+  if (false && is_vst2(plugin_type)){
     AEffect *aeffect = (AEffect*)audio_instance->getPlatformSpecificData();
     {
       char vendor[1024] = {0};
@@ -1311,7 +1327,9 @@ static int get_num_presets(struct SoundPlugin *plugin){
 
   Data *data = (Data*)plugin->data;
 
-  if (data->is_vst3()) // Must upgrade JUCE. With the current version, presets are not working with vst3.
+  //printf("   IS_VST3: %d,  IS_VST2: %d\n", data->is_vst3(), data->is_vst2());
+  
+  if (is_vst3(plugin)) // Must upgrade JUCE. With the current version, presets are not working with vst3.
     return 0;
   
   AudioPluginInstance *instance = data->audio_instance;
