@@ -1,3 +1,16 @@
+Changes 4.1.8 -> 4.1.9:
+* Play block when selecting a block in the block selector.
+  It didn't work before when playing song.
+* Warn about old Intel Linux GFX driver during startup.
+* Reorganize the instrument header buttons.
+* Don't load a VST3 plugin when you meant to load the VST plugin
+  with the same name, plus 5 other similar situations.
+  I.e. set the type name of a VST3 plugins to "VST3" (not "VST")
+  and the type name of audio unit plugins to "AudioUnit" (not "VST"). 
+ 
+
+
+
 Changes 4.1.7 -> 4.1.8:
 * Fix various player bugs introduced in 4.1.7.
 * Support VST3 plugins under Windows and OSX, and AudioUnit pluins
