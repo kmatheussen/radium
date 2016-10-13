@@ -945,7 +945,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
     aeffect->setParameter(aeffect, effect_num, value);
     
   } else {
-    // This causes glitches, especially when doing heavy operations such as opening the gui:
+    // This caused glitches with vst2 plugins, but there doesn't seem to be locks when using vst3 or au plugins.
     data->audio_instance->setParameter(effect_num, value);
   }
 }
@@ -961,6 +961,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
     
     return val;
   } else {
+    // This caused glitches with vst2 plugins, but there doesn't seem to be locks when using vst3 or au plugins.
     return data->audio_instance->getParameter(effect_num);
   }
 }
@@ -1061,15 +1062,6 @@ static AudioPluginInstance *create_audio_instance(const TypeData *type_data, flo
     inited=true;
   }
 
-  
-  //int uid = VST_get_uid(type_data->library_file_full_path);
-  //printf("uid: %d\n",uid);
-  //getchar();
-  //((PluginDescription*)description)->uid = uid;
-
-  //if (uid==-1)
-  //  return NULL;
-  
   String errorMessage;
 
   const PluginDescription &description = type_data->description;
@@ -1080,7 +1072,7 @@ static AudioPluginInstance *create_audio_instance(const TypeData *type_data, flo
   AudioPluginInstance *instance = formatManager.createPluginInstance(description,sample_rate,block_size,errorMessage);
   
   if (instance==NULL){
-    GFX_Message(NULL, "Unable to open VST plugin %s: %s\n",description.fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
+    GFX_Message(NULL, "Unable to open %s plugin %s: %s\n",description.pluginFormatName.toRawUTF8(), description.fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
     return NULL;
   }
 
@@ -1106,7 +1098,7 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
  
   const char *wrapper_info = "";
   
-  if (is_vst2(audio_instance)){
+  if (false && is_vst2(audio_instance)){
     AEffect *aeffect = (AEffect*)audio_instance->getPlatformSpecificData();
     {
       char vendor[1024] = {0};
@@ -1117,6 +1109,15 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
       if(strlen(vendor)>0 || strlen(product)>0)
         wrapper_info = talloc_format("Vendor: %s\nProduct: %s\n",vendor,product);
     }
+  } else {
+    const PluginDescription &description = type_data->description;
+    wrapper_info = talloc_format("%s\n\nVersion: %s\nVendor: %s\nCategory: %s\n",
+                                 description.descriptiveName.toRawUTF8(),
+                                 description.version.toRawUTF8(),                                 
+                                 description.manufacturerName.toRawUTF8(),
+                                 description.category.toRawUTF8()
+                                 );
+                                 
   }
 
   plugin_type->info = V_strdup(talloc_format("%sAccepts MIDI: %s\nProduces MIDI: %s\n",wrapper_info, audio_instance->acceptsMidi()?"Yes":"No", audio_instance->producesMidi()?"Yes":"No"));
@@ -1181,7 +1182,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
   if(isFullVersion()==false && num_running_plugins >= 2){
     GFX_Message(NULL,
-                "Using more than 2 VST plugins is only available to subscribers.<p>"
+                "Using more than 2 VST/VST3/AU plugins is only available to subscribers.<p>"
                 "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>.");
     return NULL;
   }
@@ -1371,7 +1372,7 @@ static SoundPluginType *create_plugin_type(const PluginDescription description, 
   
   plugin_type->data = typeData;
 
-  plugin_type->type_name = V_strdup(description->pluginFormatName.toRawUTF8());
+  plugin_type->type_name = V_strdup(description.pluginFormatName.toRawUTF8());
   plugin_type->name      = V_strdup(description.name.toRawUTF8());
 
   plugin_type->container = container;
