@@ -178,7 +178,7 @@ class ParamWidget : public QWidget {
   
   ~ParamWidget(){
     prepare_for_deletion();
-    printf("           Deleting ParamWidget %d\n",_effect_num);
+    //printf("           Deleting ParamWidget %d\n",_effect_num);
   }
 
   void calledRegularlyByParent(void){        
