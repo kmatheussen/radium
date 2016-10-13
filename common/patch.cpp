@@ -750,7 +750,7 @@ void Patch_removePlayingVoice(linked_note_t **rootp, int64_t note_id, struct Seq
 #endif
 
   if (linked_note!=NULL){
-    R_ASSERT(linked_note->seqtrack==seqtrack);
+    R_ASSERT_NON_RELEASE(linked_note->seqtrack==seqtrack); // Think there are legitimate situations where this can happen
     remove_linked_note(rootp, linked_note);
     add_linked_note(&g_unused_linked_notes, linked_note);
     linked_note->seqtrack = NULL;
@@ -789,7 +789,7 @@ static void Patch_removePlayingNote(struct Patch *patch, int64_t note_id, struct
 #endif
   
   if (linked_note!=NULL){
-    R_ASSERT(linked_note->seqtrack==seqtrack);
+    //R_ASSERT(linked_note->seqtrack==seqtrack); // There are legitimate situations where this can happen
     remove_linked_note(&patch->playing_notes, linked_note);
     add_linked_note(&g_unused_linked_notes, linked_note);
     linked_note->seqtrack = NULL;
