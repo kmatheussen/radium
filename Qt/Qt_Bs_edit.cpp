@@ -486,7 +486,7 @@ private slots:
       EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
       editor->updateEditor();
 
-    }PC_StopPause(NULL);
+    }PC_StopPause_ForcePlayBlock(NULL);
   }
 
   void blocklist_doubleclicked(QListWidgetItem *item){

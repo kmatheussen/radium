@@ -86,7 +86,7 @@ void PC_Pause(void){
   }  
 }
 
-void PC_StopPause(struct Tracker_Windows *window){
+static void stop_pause(struct Tracker_Windows *window, bool force_play_block){
   R_ASSERT(THREADING_is_main_thread());
 
   g_pausing_level--;
@@ -116,16 +116,22 @@ void PC_StopPause(struct Tracker_Windows *window){
   Place *place = &wblock->reallines[realline]->l.p;
     
   if (g_was_playing) {
-    if (g_was_playing_range)
+    if (force_play_block || g_playtype==PLAYBLOCK)
+      PlayBlockCurrPos2(window, place);
+    else if (g_was_playing_range)
       PlayRangeCurrPos2(window, place);
     else if (g_playtype==PLAYSONG)
       PlaySongCurrPos2(window, place);
-    else if (g_playtype==PLAYBLOCK)
-      PlayBlockCurrPos2(window, place);
   }
 }
 
-  
+void PC_StopPause(struct Tracker_Windows *window){
+  stop_pause(window, false);
+}
+
+void PC_StopPause_ForcePlayBlock(struct Tracker_Windows *window){
+  stop_pause(window, true);
+}
 
 // Old code below. It was more sophisticated, but also a bit more complicated.
 
