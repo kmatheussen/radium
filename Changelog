@@ -7,7 +7,7 @@ Changes 4.1.8 -> 4.1.9:
   with the same name, plus 5 other similar situations.
   I.e. set the type name of a VST3 plugins to "VST3" (not "VST")
   and the type name of audio unit plugins to "AudioUnit" (not "VST"). 
- 
+* Various minor VST/VST3/AU fixes. 
 
 
 
