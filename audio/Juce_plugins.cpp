@@ -1376,7 +1376,12 @@ static SoundPluginType *create_plugin_type(const PluginDescription description, 
   
   plugin_type->data = typeData;
 
-  plugin_type->type_name = V_strdup(description.pluginFormatName.toRawUTF8());
+  plugin_type->type_name
+    = description.pluginFormatName=="VST" ? "VST"
+    : description.pluginFormatName=="VST3" ? "VST3"
+    : description.pluginFormatName=="AudioUnit" ? "AU"
+    : (RError("Unknown type %s", description.pluginFormatName.toRawUTF8()), "Unknown");
+  
   plugin_type->name      = V_strdup(description.name.toRawUTF8());
 
   plugin_type->container = container;
@@ -1508,10 +1513,10 @@ static void populate_old(SoundPluginTypeContainer *container){
 }
 #endif
 
-void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, const wchar_t *library_file_full_path){
+void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, const wchar_t *library_file_full_path, const char *container_type_name){
   SoundPluginTypeContainer *container = (SoundPluginTypeContainer*)V_calloc(1,sizeof(SoundPluginTypeContainer));
 
-  container->type_name = "VST";
+  container->type_name = V_strdup(container_type_name);
   container->name = V_strdup(name);
   container->populate = populate;
 

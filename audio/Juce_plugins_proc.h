@@ -12,7 +12,7 @@ extern LANGSPEC const char *JUCE_get_backtrace(void);
 void JUCE_get_min_max_val(const float *array, const int num_elements, float *min_val, float *max_val);
 float JUCE_get_max_val(const float *array, const int num_elements);
   
-void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, const wchar_t *library_file_full_path);
+void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, const wchar_t *library_file_full_path, const char *container_type_name);
 
 void PLUGINHOST_load_fxbp(struct SoundPlugin *plugin, wchar_t *filename);
 void PLUGINHOST_save_fxb(struct SoundPlugin *plugin, wchar_t *filename);
