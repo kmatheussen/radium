@@ -25,38 +25,6 @@
 
 namespace{
 
-class MyVerticalScroll : public QScrollArea {
-  Q_OBJECT;
-
-  QVBoxLayout *layout;
-
-public:
-
-  MyVerticalScroll(QWidget *parent)
-    :QScrollArea(parent)
-  {
-    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    setWidgetResizable(true);
-
-    QWidget *contents = new QWidget(this);
-
-    layout = new QVBoxLayout(contents);
-    layout->setSpacing(1);
-
-    contents->setLayout(layout);
-    
-    setWidget(contents);    
-  }
-
-  void addWidget(QWidget *widget){
-    layout->addWidget(widget);
-  }
-
-  void removeWidget(QWidget *widget){
-    layout->removeWidget(widget);
-  }
-};
-
 struct MidiLearnItem : public QWidget {
   Q_OBJECT;
   
@@ -117,7 +85,7 @@ class MidiLearnPrefs : public RememberGeometryQDialog {
 
   QLayout *main_layout;
 
-  MyVerticalScroll *vertical_scroll;
+  radium::VerticalScroll *vertical_scroll;
 
   radium::Vector<MidiLearnItem*> items;
 
@@ -146,7 +114,7 @@ public:
     main_layout = new QGridLayout(this);
     setLayout(main_layout);
 
-    vertical_scroll = new MyVerticalScroll(this);
+    vertical_scroll = new radium::VerticalScroll(this);
     main_layout->addWidget(vertical_scroll);
 
     QDialogButtonBox *button_box = new QDialogButtonBox(this);

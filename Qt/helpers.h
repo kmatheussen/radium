@@ -8,6 +8,8 @@
 #include <QMainWindow>
 #include <QSplashScreen>
 #include <QApplication>
+#include <QScrollArea>
+#include <QVBoxLayout>
 
 #include "../OpenGL/Widget_proc.h"
 #include "../common/keyboard_focus_proc.h"
@@ -54,6 +56,40 @@ namespace radium{
       return false;
     }
   };
+
+  class VerticalScroll : public QScrollArea {
+    //    Q_OBJECT;
+    
+    QVBoxLayout *layout;
+    
+  public:
+    
+    VerticalScroll(QWidget *parent)
+      :QScrollArea(parent)
+    {
+      setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+      setWidgetResizable(true);
+      
+      QWidget *contents = new QWidget(this);
+      
+      layout = new QVBoxLayout(contents);
+      layout->setSpacing(1);
+      
+      contents->setLayout(layout);
+      
+      setWidget(contents);    
+    }
+    
+    void addWidget(QWidget *widget){
+      layout->addWidget(widget);
+    }
+    
+    void removeWidget(QWidget *widget){
+      layout->removeWidget(widget);
+    }
+  };
+
+
 }
 
 

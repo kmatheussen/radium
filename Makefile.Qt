@@ -213,6 +213,9 @@ CPUOPT ?=
 # CPPOPT is CPP flags
 CPPOPT = $(COMMONOPT) -Wno-unused-function -std=gnu++11 -DNDEBUG # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
 
+# Can't be enabled because of 3rd party header files:
+#-Wsuggest-override
+
 # Common QT opts (both 3 and 4)
 COMMON_QTOPTS =
 
@@ -1094,7 +1097,7 @@ X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.cpp
 
 $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
-Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h
+Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h $(P)Qt_seqtrack_widget.h $(P)Qt_seqtrack_widget_callbacks.h 
 	$(GPLUSPLUS) $(P)Qt_Main.cpp $(QTOPT) $(IS_LINUX_BINARY) -Wno-deprecated-declarations
 
 Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h
@@ -1226,6 +1229,9 @@ $(P)Qt_bottom_bar_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_bottom_bar_widget.ui $
 
 $(P)Qt_upperleft_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_upperleft_widget.ui $(P)create_source_from_ui.sh $(P)Qt_upperleft_widget_callbacks.h $(P)Qt_MyQButton.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) upperleft_widget
+
+$(P)Qt_seqtrack_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_seqtrack_widget.ui $(P)create_source_from_ui.sh $(P)Qt_seqtrack_widget_callbacks.h $(P)Qt_MyQButton.h
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) seqtrack_widget
 
 
 

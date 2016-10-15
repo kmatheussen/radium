@@ -148,7 +148,7 @@ struct MyQCheckBox : public QCheckBox{
   MyQCheckBox ( QWidget * parent = 0 ) : QCheckBox(parent) {init();}
   MyQCheckBox ( const QString & text, QWidget * parent = 0) : QCheckBox(text,parent) {init();}
 
-  void mousePressEvent ( QMouseEvent * event )
+  void mousePressEvent ( QMouseEvent * event ) override
   {
     if(_patch!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
       return;
@@ -255,7 +255,7 @@ struct MyQCheckBox : public QCheckBox{
   }
 
 
-  void paintEvent ( QPaintEvent * ev ){
+  void paintEvent ( QPaintEvent * ev ) override {
     QPainter p(this);
 
     if(text().startsWith("V ")){

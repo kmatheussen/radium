@@ -195,7 +195,7 @@ struct MyQSlider : public QSlider {
   }
 
   // mousePressEvent 
-  void mousePressEvent ( QMouseEvent * event )
+  void mousePressEvent ( QMouseEvent * event ) override
   {
     if(_patch!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
       return;
@@ -389,7 +389,7 @@ struct MyQSlider : public QSlider {
     }
   }
 
-  void mouseMoveEvent ( QMouseEvent * event )
+  void mouseMoveEvent ( QMouseEvent * event ) override
   {
     if (_has_mouse){
       handle_mouse_event(event);
@@ -397,7 +397,7 @@ struct MyQSlider : public QSlider {
       QSlider::mouseMoveEvent(event);
   }
 
-  void mouseReleaseEvent ( QMouseEvent * event )
+  void mouseReleaseEvent ( QMouseEvent * event ) override
   {
     //printf("Got mouse release event %d / %d\n",(int)event->x(),(int)event->y());
     if (_has_mouse){
@@ -412,7 +412,7 @@ struct MyQSlider : public QSlider {
       QSlider::mouseReleaseEvent(event);
   }
 
-  void paintEvent ( QPaintEvent * ev ){
+  void paintEvent ( QPaintEvent * ev ) override {
     if(_minimum_size_set==false){
       _minimum_size_set=true;
       setMinimumHeight(g_minimum_height);

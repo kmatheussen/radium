@@ -119,6 +119,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MainWindow_proc.h"
 #include "Qt_Menues_proc.h"
 
+#include "mQt_seqtrack_widget_callbacks.h"
+
+
 #include "../GTK/GTK_visual_proc.h"
 
 #if 0
@@ -137,8 +140,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_Main_proc.h"
 
 
+static Sequencer_widget *g_sequencer_widget = NULL;
+
 extern bool doquit;
-extern struct Root *root;
 
 extern bool g_show_key_codes;
 
@@ -1324,7 +1328,8 @@ protected:
     }
     #endif
 
-    
+    if (g_sequencer_widget != NULL)
+      g_sequencer_widget->call_very_often();
         
     //MIXER_called_regularly_by_main_thread();
 
@@ -1709,13 +1714,21 @@ int radium_main(char *arg){
         editor->ysplitter = ysplitter;
         ysplitter->setOpaqueResize(true);
         
-
-        QWidget *instruments = createInstrumentsWidget();
-
         xsplitter->setParent(ysplitter); //, QPoint(0,0), true);
-        instruments->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
-        instruments->move(0, main_window->height()-220);
-    
+
+        {
+#if 0
+          g_sequencer_widget = new Sequencer_widget(main_window);
+          //sequencer_widget->setMinimumHeight(220);
+          //sequencer_widget->setMaximumHeight(220);
+          g_sequencer_widget->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
+          g_sequencer_widget->move(0, main_window->height()-220);        
+#endif     
+          QWidget *instruments = createInstrumentsWidget();
+          instruments->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
+          instruments->move(0, main_window->height()-220);
+        }
+        
         main_window->setCentralWidget(ysplitter);
 
         ysplitter->setStretchFactor(0,100000);
