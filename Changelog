@@ -1,3 +1,8 @@
+Changes 4.2.0 -> 4.2.1:
+* Update block play positions in the playlist after changing
+  a block length. (Bug introduced in 4.1.7)
+
+
 Changes 4.1.9 -> 4.2.0:
 * Use less time deleting plugins that have thousands of parameters
 * Remove a couple of situations where the assertion reporter
