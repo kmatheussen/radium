@@ -1967,8 +1967,11 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
 
   //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
   subtrack_x1 = GetNoteX1(wtrack,note);
-  subtrack_x2 = R_MAX(subtrack_x1+1, GetNoteX2(wtrack,note));
+  subtrack_x2 = GetNoteX2(wtrack,note);
 
+  if(subtrack_x1==subtrack_x2)
+    return;
+  
   const struct NodeLine *nodelines = GetVelocityNodeLines(window, wblock, wtrack, note);
   const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
 
