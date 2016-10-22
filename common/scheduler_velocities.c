@@ -32,7 +32,7 @@ static void RT_scheduled_hold_velocity_do(struct SeqTrack *seqtrack,
   if (patch==NULL)
     return;
 
-  if (first_val_has_been_sent==false) {
+  if (first_val_has_been_sent==false && velocity1!=NULL) {
     
     int val = velocity1->velocity;
 

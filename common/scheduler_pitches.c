@@ -35,10 +35,7 @@ static void RT_scheduled_hold_pitch_do(struct SeqTrack *seqtrack,
 {
   struct Patch *patch = track->patch;
 
-  if (patch==NULL)
-    return;
-
-  if (doit) {
+  if (patch!=NULL && pitch1!=NULL && doit) {
     
     float val = pitch1->note;
 
@@ -62,7 +59,7 @@ static int64_t RT_scheduled_hold_pitch(struct SeqTrack *seqtrack, int64_t time, 
   const struct SeqBlock   *seqblock  = args[0].const_pointer;
   const struct Tracks     *track     = args[1].const_pointer;
   const struct Notes      *note      = args[2].pointer;
-  const struct Pitches *pitch1 = args[3].pointer;
+  const struct Pitches    *pitch1    = args[3].pointer;
 
   bool doit;
   
