@@ -29,6 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   FUNCTION
     Returns the left X coordinate relative to track->fx.y for the subtrack
     'subtrack'.
+
+   WARNING
+    GetPolyX2 might return the same value as GetPolyX1
 ************************************************************************/
 static int GetPolyX1(
 	const struct WTracks *wtrack,
@@ -111,6 +114,9 @@ int GetXSubTrack1(
   FUNCTION
     Returns the right X coordinate relative to track->fx.y for the subtrack
     'subtrack'.
+
+   WARNING
+    GetPolyX2 might return the same value as GetPolyX1
 ************************************************************************/
 static int GetPolyX2(
 	const struct WTracks *wtrack,
