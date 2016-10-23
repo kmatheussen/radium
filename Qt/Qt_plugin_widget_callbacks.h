@@ -868,12 +868,12 @@ public slots:
     }
 
     void on_load_button_clicked(){      
-      loadInstrumentPreset(CAST_API_PATCH_ID(_patch->id), "");
+      loadInstrumentPreset(_patch->id, "");
       // Warning. 'this' might not be here anymore when returning.
     }
 
     void on_replace_button_clicked(){
-      replaceInstrument(CAST_API_PATCH_ID(_patch->id), "");
+      replaceInstrument(_patch->id, "");
       // Warning. 'this' might not be here anymore when returning.
     }
     

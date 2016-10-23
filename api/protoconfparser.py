@@ -64,6 +64,8 @@ class Argument:
     def get_s7_make_type_function(self):
         if self.type_string=="int":
             return "s7_make_integer"
+        elif self.type_string=="int64_t":
+            return "s7_make_integer"
         elif self.type_string=="float":
             return "s7_make_real"
         elif self.type_string=="char*":
@@ -83,6 +85,8 @@ class Argument:
     def get_s7_get_type_function(self):
         if self.type_string=="int":
             return "(int)s7_integer("
+        elif self.type_string=="int64_t":
+            return "s7_integer("
         elif self.type_string=="float":
             return "s7_number_to_real(radiums7_sc, "
         elif self.type_string=="char*":
@@ -101,6 +105,8 @@ class Argument:
 
     def get_s7_variable_check_function(self):
         if self.type_string=="int":
+            return "s7_is_integer"
+        elif self.type_string=="int64_t":
             return "s7_is_integer"
         elif self.type_string=="float":
             return "s7_is_number"
@@ -269,6 +275,8 @@ class Proto:
             qualifier=arg.qualifiers[len(arg.qualifiers)-1]
             if qualifier=="int":
                 t="i"
+            elif qualifier=="int64_t":
+                t="L"
             elif qualifier=="float":
                 t="f"
             elif qualifier=="PyObject*":
@@ -318,6 +326,8 @@ class Proto:
             else:
                 if qualifier=="int":
                     t="PyInt_FromLong((long)"
+                elif qualifier=="int64_t":
+                    t="PyInt_FromLong((long)" # doesn't seem to be a PyInt_FromLongLong function.
                 elif qualifier=="float":
                     t="PyFloat_FromDouble("
                 elif qualifier=="char*":

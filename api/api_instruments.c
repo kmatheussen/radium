@@ -113,15 +113,15 @@ void selectInstrumentForTrack(int tracknum){
   s7extra_callFunc2_void_int("select-track-instrument", tracknum);
 }
 
-void replaceInstrument(int instrument_id, const_char* instrument_description){
+void replaceInstrument(int64_t instrument_id, const_char* instrument_description){
   s7extra_callFunc2_void_int_charpointer("replace-instrument", instrument_id, instrument_description);
 }
 
-void loadInstrumentPreset(int instrument_id, const_char* instrument_description){
+void loadInstrumentPreset(int64_t instrument_id, const_char* instrument_description){
   s7extra_callFunc2_void_int_charpointer("load-instrument-preset", instrument_id, instrument_description);
 }
 
-int getInstrumentForTrack(int tracknum, int blocknum, int windownum){
+int64_t getInstrumentForTrack(int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
   struct WBlocks *wblock;
@@ -141,10 +141,10 @@ int getInstrumentForTrack(int tracknum, int blocknum, int windownum){
   if (patch==NULL)
     return -2;
 
-  return CAST_API_PATCH_ID(patch->id);
+  return patch->id;
 }
 
-void setInstrumentForTrack(int instrument_id, int tracknum, int blocknum, int windownum){
+void setInstrumentForTrack(int64_t instrument_id, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
   struct WBlocks *wblock;
@@ -184,14 +184,14 @@ void setInstrumentForTrack(int instrument_id, int tracknum, int blocknum, int wi
   (*new_patch->instrument->PP_Update)(new_patch->instrument,new_patch);
 }
 
-int createMIDIInstrument(char *name) {
+int64_t createMIDIInstrument(char *name) {
   struct Patch *patch = PATCH_create_midi(name);
   GFX_PP_Update(patch);
-  return CAST_API_PATCH_ID(patch->id);
+  return patch->id;
 }
 
 // There was a good reason for the 'name' parameter. Think it had something to do with replace instrument, and whether to use old name or autogenerate new one.
-int createAudioInstrument(char *type_name, char *plugin_name, char *name, float x, float y) {
+int64_t createAudioInstrument(char *type_name, char *plugin_name, char *name, float x, float y) {
   printf("createAudioInstrument called\n");
   
   if (name!=NULL && strlen(name)==0)
@@ -208,14 +208,14 @@ int createAudioInstrument(char *type_name, char *plugin_name, char *name, float 
     inc_plugin_usage_number(plugin->type);
   }
 
-  return CAST_API_PATCH_ID(patch->id);
+  return patch->id;
 }
 
-int createAudioInstrumentFromPreset(const char *filename, char *name, float x, float y) {
-  return CAST_API_PATCH_ID(PRESET_load(STRING_create(filename), name, false, x, y));
+int64_t createAudioInstrumentFromPreset(const char *filename, char *name, float x, float y) {
+  return PRESET_load(STRING_create(filename), name, false, x, y);
 }
 
-int createAudioInstrumentFromDescription(const char *instrument_description, char *name, float x, float y){
+int64_t createAudioInstrumentFromDescription(const char *instrument_description, char *name, float x, float y){
   if (strlen(instrument_description)==0)
     return -1;
 
@@ -243,11 +243,11 @@ int createAudioInstrumentFromDescription(const char *instrument_description, cha
     wchar_t *filename = STRING_fromBase64(STRING_create(&instrument_description[1]));
     //printf("filename: %s\n",filename);
 
-    return CAST_API_PATCH_ID(PRESET_load(filename, name, true, x, y));
+    return PRESET_load(filename, name, true, x, y);
     
   } else if (instrument_description[0]=='3'){
 
-    return CAST_API_PATCH_ID(MW_paste(x, y));
+    return MW_paste(x, y);
         
   } else {
 
@@ -257,7 +257,7 @@ int createAudioInstrumentFromDescription(const char *instrument_description, cha
   }
 }
 
-int cloneAudioInstrument(int instrument_id, float x, float y){
+int64_t cloneAudioInstrument(int64_t instrument_id, float x, float y){
   struct Patch *old_patch = getAudioPatchFromNum(instrument_id);
   if(old_patch==NULL)
     return -1;
@@ -268,10 +268,10 @@ int cloneAudioInstrument(int instrument_id, float x, float y){
   if (new_patch==NULL)
     return -1;
 
-  return CAST_API_PATCH_ID(new_patch->id);
+  return new_patch->id;
 }
 
-void connectAudioInstrumentToMainPipe(int instrument_id){
+void connectAudioInstrumentToMainPipe(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -288,7 +288,7 @@ const_char* requestLoadPresetInstrumentDescription(void){
   return PRESET_request_load_instrument_description();
 }
 
-int getNumInstrumentEffects(int instrument_id){
+int getNumInstrumentEffects(int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -296,7 +296,7 @@ int getNumInstrumentEffects(int instrument_id){
   return patch->instrument->getFxNames(patch)->num_elements;
 }
 
-const_char* getInstrumentEffectName(int effect_num, int instrument_id){
+const_char* getInstrumentEffectName(int effect_num, int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
@@ -319,7 +319,7 @@ bool hasPureData(void){
 #endif
 }
 
-void setInstrumentSample(int instrument_id, char *filename){
+void setInstrumentSample(int64_t instrument_id, char *filename){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -335,7 +335,7 @@ void setInstrumentSample(int instrument_id, char *filename){
   SAMPLER_set_new_sample(plugin, STRING_create(filename), -1);
 }
 
-void setInstrumentLoopData(int instrument_id, int start, int length){
+void setInstrumentLoopData(int64_t instrument_id, int start, int length){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -354,7 +354,7 @@ void setInstrumentLoopData(int instrument_id, int start, int length){
 
 }
 
-char *getInstrumentName(int instrument_id) {
+char *getInstrumentName(int64_t instrument_id) {
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
@@ -362,7 +362,7 @@ char *getInstrumentName(int instrument_id) {
   return (char*)patch->name;
 }
 
-void setInstrumentName(char *name, int instrument_id) {
+void setInstrumentName(char *name, int64_t instrument_id) {
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -373,7 +373,7 @@ void setInstrumentName(char *name, int instrument_id) {
   (*patch->instrument->PP_Update)(patch->instrument,patch);
 }
 
-bool instrumentNameWasAutogenerated(int instrument_id){
+bool instrumentNameWasAutogenerated(int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -381,7 +381,7 @@ bool instrumentNameWasAutogenerated(int instrument_id){
   return !patch->name_is_edited;
 }
 
-void setInstrumentEffect(int instrument_id, char *effect_name, float value){
+void setInstrumentEffect(int64_t instrument_id, char *effect_name, float value){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -400,7 +400,7 @@ void setInstrumentEffect(int instrument_id, char *effect_name, float value){
 
 
 #if 0
-void setInstrumentVolume(int instrument_id, float volume) {
+void setInstrumentVolume(int64_t instrument_id, float volume) {
   struct Instruments *instrument = getInstrumentFromNum(instrument_id);
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL) return NULL;
@@ -408,12 +408,12 @@ void setInstrumentVolume(int instrument_id, float volume) {
   (*patch->instrument->PP_Update)(instrument,patch);
 }
 
-float getInstrumentVolume(int instrument_id) {
+float getInstrumentVolume(int64_t instrument_id) {
   return 0.0f;
 }
 #endif
 
-void setInstrumentData(int instrument_id, char *key, char *value) {
+void setInstrumentData(int64_t instrument_id, char *key, char *value) {
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -423,7 +423,7 @@ void setInstrumentData(int instrument_id, char *key, char *value) {
   (*patch->instrument->PP_Update)(patch->instrument,patch);
 }
 
-char *getInstrumentData(int instrument_id, char *key) {
+char *getInstrumentData(int64_t instrument_id, char *key) {
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
@@ -436,29 +436,29 @@ int getNumMIDIInstruments(void){
   return get_MIDI_instrument()->patches.num_elements;
 }
 
-int getMIDIInstrumentId(int instrument_num){
+int64_t getMIDIInstrumentId(int instrument_num){
   if (instrument_num>=getNumMIDIInstruments()){
     RError("No instrument #%d",instrument_num);
     return -1;
   }
   struct Patch *patch = get_MIDI_instrument()->patches.elements[instrument_num];
-  return CAST_API_PATCH_ID(patch->id);
+  return patch->id;
 }
 
 int getNumAudioInstruments(void){
   return get_audio_instrument()->patches.num_elements;
 }
 
-int getAudioInstrumentId(int instrument_num){
+int64_t getAudioInstrumentId(int instrument_num){
   if (instrument_num>=getNumAudioInstruments()){
     RError("No instrument #%d",instrument_num);
     return -1;
   }
   struct Patch *patch = get_audio_instrument()->patches.elements[instrument_num];
-  return CAST_API_PATCH_ID(patch->id);
+  return patch->id;
 }
 
-bool instrumentIsPermanent(int instrument_id){  
+bool instrumentIsPermanent(int64_t instrument_id){  
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -469,7 +469,7 @@ bool instrumentIsPermanent(int instrument_id){
     return true; // Can not delete midi instruments.
 }
 
-bool instrumentIsAudio(int instrument_id){
+bool instrumentIsAudio(int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -478,7 +478,7 @@ bool instrumentIsAudio(int instrument_id){
 }
 
 // Mixer GUI
-float getInstrumentX(int instrument_id){
+float getInstrumentX(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0.0;
@@ -486,7 +486,7 @@ float getInstrumentX(int instrument_id){
   return CHIP_get_pos_x(patch);
 }
 
-float getInstrumentY(int instrument_id){
+float getInstrumentY(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0.0;
@@ -494,7 +494,7 @@ float getInstrumentY(int instrument_id){
   return CHIP_get_pos_y(patch);
 }
 
-void setInstrumentPosition(float x, float y, int instrument_id){
+void setInstrumentPosition(float x, float y, int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -504,7 +504,7 @@ void setInstrumentPosition(float x, float y, int instrument_id){
   CHIP_set_pos(patch,x,y);
 }
 
-void autopositionInstrument(int instrument_id){
+void autopositionInstrument(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -512,7 +512,7 @@ void autopositionInstrument(int instrument_id){
   CHIP_autopos(patch);
 }
 
-int getNumInAudioConnections(int instrument_id){
+int getNumInAudioConnections(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -520,7 +520,7 @@ int getNumInAudioConnections(int instrument_id){
   return CHIP_get_num_in_connections(patch);
 }
 
-int getNumInEventConnections(int instrument_id){
+int getNumInEventConnections(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -528,7 +528,7 @@ int getNumInEventConnections(int instrument_id){
   return CHIP_get_num_in_econnections(patch);
 }
 
-int getNumOutAudioConnections(int instrument_id){
+int getNumOutAudioConnections(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -536,7 +536,7 @@ int getNumOutAudioConnections(int instrument_id){
   return CHIP_get_num_out_connections(patch);
 }
 
-int getNumOutEventConnections(int instrument_id){
+int getNumOutEventConnections(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -544,7 +544,7 @@ int getNumOutEventConnections(int instrument_id){
   return CHIP_get_num_out_econnections(patch);
 }
 
-int getAudioConnectionSourceInstrument(int connectionnum, int instrument_id){
+int64_t getAudioConnectionSourceInstrument(int connectionnum, int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -553,10 +553,10 @@ int getAudioConnectionSourceInstrument(int connectionnum, int instrument_id){
   if (source == NULL)
     return 0;
     
-  return CAST_API_PATCH_ID(source->id);
+  return source->id;
 }
 
-int getEventConnectionSourceInstrument(int connectionnum, int instrument_id){
+int64_t getEventConnectionSourceInstrument(int connectionnum, int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -565,10 +565,10 @@ int getEventConnectionSourceInstrument(int connectionnum, int instrument_id){
   if (source == NULL)
     return 0;
     
-  return CAST_API_PATCH_ID(source->id);
+  return source->id;
 }
 
-int getAudioConnectionDestInstrument(int connectionnum, int instrument_id){
+int64_t getAudioConnectionDestInstrument(int connectionnum, int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -577,10 +577,10 @@ int getAudioConnectionDestInstrument(int connectionnum, int instrument_id){
   if (dest == NULL)
     return 0;
   
-  return CAST_API_PATCH_ID(dest->id);
+  return dest->id;
 }
 
-int getEventConnectionDestInstrument(int connectionnum, int instrument_id){
+int64_t getEventConnectionDestInstrument(int connectionnum, int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -589,10 +589,10 @@ int getEventConnectionDestInstrument(int connectionnum, int instrument_id){
   if (dest == NULL)
     return 0;
   
-  return CAST_API_PATCH_ID(dest->id);
+  return dest->id;
 }
 
-void createAudioConnection(int source_id, int dest_id){
+void createAudioConnection(int64_t source_id, int64_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -604,7 +604,7 @@ void createAudioConnection(int source_id, int dest_id){
   MW_connect(source, dest); 
 }
                            
-void createEventConnection(int source_id, int dest_id){
+void createEventConnection(int64_t source_id, int64_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -616,7 +616,7 @@ void createEventConnection(int source_id, int dest_id){
   MW_econnect(source, dest); 
 }
                            
-void deleteInstrument(int instrument_id){
+void deleteInstrument(int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -676,7 +676,7 @@ static int note_ids_pos = 0;
 static int64_t note_ids[NUM_IDS] = {0}; // TODO: Change int to int64_t everywhere in the api.
 static float initial_pitches[NUM_IDS] = {0}; // TODO: Change int to int64_t everywhere in the api.
 
-int playNote(float pitch, float velocity, float pan, int instrument_id){
+int playNote(float pitch, float velocity, float pan, int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;
@@ -693,7 +693,7 @@ int playNote(float pitch, float velocity, float pan, int instrument_id){
   return ret;
 }
 
-void changeNotePitch(float pitch, int note_id, int instrument_id){
+void changeNotePitch(float pitch, int note_id, int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -707,7 +707,7 @@ void changeNotePitch(float pitch, int note_id, int instrument_id){
   PATCH_change_pitch(patch, create_note_t(note_ids[note_id], pitch, 0, pitch, 0));
 }
 
-void stopNote(int note_id, int instrument_id){
+void stopNote(int note_id, int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;

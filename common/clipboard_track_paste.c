@@ -81,7 +81,7 @@ static void make_patches_usable(struct Tracks *track){
         new_patch = AUDIO_get_the_replacement_for_old_permanent_patch(old_patch);
       else {
         new_patch = PATCH_create_audio(NULL, NULL, old_patch->name, old_patch->state, 0, 0);
-        connectAudioInstrumentToMainPipe(CAST_API_PATCH_ID(new_patch->id));
+        connectAudioInstrumentToMainPipe(new_patch->id);
       }
       
       track->patch = new_patch;

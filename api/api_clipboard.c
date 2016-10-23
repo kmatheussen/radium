@@ -196,7 +196,7 @@ int pasteMixerObjects(float x, float y){
     ret = MW_paste(x, y);
   }Undo_Close();
 
-  return CAST_API_PATCH_ID(ret);
+  return ret;
 }
 
 void cutGeneral(void){

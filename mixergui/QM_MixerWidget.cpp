@@ -701,7 +701,7 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsItem *item, float mo
       VECTOR_FOR_EACH(struct Patch *,patch,&instrument->patches){
         if(patch->patchdata==SP_get_plugin(chip->_sound_producer)){
           printf("Found patch\n");
-          deleteInstrument(CAST_API_PATCH_ID(patch->id));
+          deleteInstrument(patch->id);
           break;
         }
       }END_VECTOR_FOR_EACH;
@@ -720,7 +720,7 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsItem *item, float mo
 static void delete_several_chips(const vector_t &patches){
   Undo_Open_rec();{
     VECTOR_FOR_EACH(struct Patch *,patch,&patches){
-      deleteInstrument(CAST_API_PATCH_ID(patch->id));
+      deleteInstrument(patch->id);
     }END_VECTOR_FOR_EACH;
   }Undo_Close();
 }
@@ -843,7 +843,7 @@ static bool mouserelease_replace_patch(MyScene *scene, float mouse_x, float mous
       volatile struct Patch *patch = plugin->patch;
       R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
 
-      replaceInstrument(CAST_API_PATCH_ID(patch->id), "");
+      replaceInstrument(patch->id, "");
         
       return true;
     }

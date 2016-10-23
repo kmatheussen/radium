@@ -429,7 +429,7 @@ static void add_recorded_fx(struct Tracker_Windows *window, struct WBlocks *wblo
     return;
 
   if (track_patch==NULL) {
-    setInstrumentForTrack(CAST_API_PATCH_ID(patch->id), tracknum, blocknum, -1);
+    setInstrumentForTrack(patch->id, tracknum, blocknum, -1);
     track_patch = patch;
   }
   
@@ -442,7 +442,7 @@ static void add_recorded_fx(struct Tracker_Windows *window, struct WBlocks *wblo
 
   bool next_node_must_be_set = false;
   
-  int fxnum = getFx(effect_name, tracknum, CAST_API_PATCH_ID(patch->id), blocknum, -1);
+  int fxnum = getFx(effect_name, tracknum, patch->id, blocknum, -1);
   if (fxnum==-1)
     return;
 
@@ -451,7 +451,7 @@ static void add_recorded_fx(struct Tracker_Windows *window, struct WBlocks *wblo
   Undo_start_ignoring_undo_operations();
   
   if (fxnum==-2){
-    fxnum = createFx(value, place, effect_name, tracknum, CAST_API_PATCH_ID(patch->id), blocknum, -1);
+    fxnum = createFx(value, place, effect_name, tracknum, patch->id, blocknum, -1);
     setFxnodeLogtype(LOGTYPE_HOLD, 0, fxnum, tracknum, blocknum, -1);
     next_node_must_be_set = true;
   }else{

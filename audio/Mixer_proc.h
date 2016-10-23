@@ -1,3 +1,7 @@
+
+#ifndef _RADIUM_AUDIO_MIXER_PROC_H
+#define _RADIUM_AUDIO_MIXER_PROC_H 1
+
 #ifdef MEMORY_DEBUG
 extern LANGSPEC void PLAYER_memory_debug_wake_up(void);
 #else
@@ -53,3 +57,5 @@ extern LANGSPEC bool MIXER_someone_has_solo(void);
 extern LANGSPEC void MIXER_called_regularly_by_main_thread(void);
 
 extern LANGSPEC void MIXER_set_all_plugins_to_not_recording(void);
+
+#endif

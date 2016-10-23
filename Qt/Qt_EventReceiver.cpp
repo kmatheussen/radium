@@ -463,7 +463,7 @@ static int getMouseButtonEventID( QMouseEvent *qmouseevent){
     return 0;
 }
 
-void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
+void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent) {
   if(ATOMIC_GET(is_starting_up)==true)
     return;
 

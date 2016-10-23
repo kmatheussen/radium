@@ -319,10 +319,10 @@ struct MyQSlider : public QSlider {
         int64_t current_instrument_id = getInstrumentForTrack(tracknum, blocknum, -1);
         if (current_instrument_id < 0) {
           current_instrument_id = _patch->id;
-          setInstrumentForTrack(CAST_API_PATCH_ID(_patch->id), tracknum, blocknum, -1);
+          setInstrumentForTrack(_patch->id, tracknum, blocknum, -1);
         }
         
-        if (!instrumentIsAudio(CAST_API_PATCH_ID(current_instrument_id))){
+        if (!instrumentIsAudio(current_instrument_id)){
           
           GFX_Message(NULL, "The instrument for the current track is not an audio instrument");
           
@@ -331,7 +331,7 @@ struct MyQSlider : public QSlider {
           const char *fxname = PLUGIN_get_effect_name(plugin, _effect_num);
           float value = PLUGIN_get_effect_value(plugin, _effect_num, VALUE_FROM_STORAGE);
 
-          int fxnum = getFx(fxname, tracknum, CAST_API_PATCH_ID(_patch->id), blocknum, -1);
+          int fxnum = getFx(fxname, tracknum, _patch->id, blocknum, -1);
 
           if (fxnum >= 0){
 
@@ -349,7 +349,7 @@ struct MyQSlider : public QSlider {
                      p_Create(currentLine(blocknum, -1), 0, 1),
                      fxname,
                      tracknum,
-                     CAST_API_PATCH_ID(_patch->id),
+                     _patch->id,
                      blocknum,
                      -1);
           }

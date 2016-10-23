@@ -631,6 +631,19 @@ float getEditorX2(int windownum){
   return window->width;
 }
 
+float getEditorY1(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL)
+    return -1;
+  return window->wblock->t.y1;
+}
+
+float getEditorY2(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL)
+    return -1;
+  return window->wblock->t.y2;
+}
 
 // block positions
 ///////////////////////////////////////////////////
@@ -2719,7 +2732,7 @@ static int get_effect_num(struct Patch *patch, const char *fx_name){
   return -1;
 }
 
-int getFx(const char* fx_name, int tracknum, int instrument_id, int blocknum, int windownum){
+int getFx(const char* fx_name, int tracknum, int64_t instrument_id, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -2763,7 +2776,7 @@ int getFx(const char* fx_name, int tracknum, int instrument_id, int blocknum, in
   return -2;
 }
 
-int createFx(float value, Place place, const char* fx_name, int tracknum, int instrument_id, int blocknum, int windownum){
+int createFx(float value, Place place, const char* fx_name, int tracknum, int64_t instrument_id, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -2838,7 +2851,7 @@ int createFx(float value, Place place, const char* fx_name, int tracknum, int in
   }
 }
 
-int createFxF(float value, float floatplace, const char* fx_name, int tracknum, int instrument_id, int blocknum, int windownum){
+int createFxF(float value, float floatplace, const char* fx_name, int tracknum, int64_t instrument_id, int blocknum, int windownum){
   Place place;
   Float2Placement(floatplace, &place);
 
@@ -2936,7 +2949,7 @@ const char* getFxName(int fxnum, int tracknum, int blocknum, int windownum){
   return fxs->fx->name;
 }
   
-int getFxInstrument(int fxnum, int tracknum, int blocknum, int windownum){
+int64_t getFxInstrument(int fxnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -2952,7 +2965,7 @@ int getFxInstrument(int fxnum, int tracknum, int blocknum, int windownum){
   //if (wtrack->track->patch == fxs->fx->patch)
   //  return -1;
   
-  return CAST_API_PATCH_ID(fxs->fx->patch->id);
+  return fxs->fx->patch->id;
 }
   
 char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){   
