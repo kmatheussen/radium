@@ -35,7 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "list_proc.h"
 #include "reltempo_proc.h"
-#include "blocklist_proc.h"
+#include "seqtrack_proc.h"
+#include "OS_Bs_edit_proc.h"
 
 #include "time_proc.h"
 
@@ -849,19 +850,11 @@ void UpdateSTimes2(struct Blocks *block, int default_bpm, int default_lpb){
 
           STP_fillinLastSTimeTempos(&stp);
 
-          {
-            bool gotit = !PLAYER_current_thread_has_lock();
-            if (gotit)
-              PLAYER_lock();
-            
-            update_all_seqtrack_timing();
-            
-            if (gotit)
-              PLAYER_unlock();
-          }
+          SEQUENCER_update();
+          BS_UpdatePlayList();
+
         }PC_StopPause(NULL);
-
-
+        
         //update_is_beat(block, stp.times);
 
 #if 0

@@ -82,8 +82,7 @@ bool InitProgram(void){
         ATOMIC_SET(root->play_cursor_onoff, false);
         ATOMIC_SET(root->editor_follows_play_cursor_onoff, true);
 
-	root->song=talloc(sizeof(struct Song));
-        root->song->block_seqtrack.scheduler = SCHEDULER_create();
+	root->song=SONG_create();
           
 	pc=tralloc(sizeof(PlayerClass));
 

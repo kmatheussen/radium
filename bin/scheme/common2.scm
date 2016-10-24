@@ -420,6 +420,12 @@
                     ( ,(<_> 'ra:get- prefix '-y2) ,@rest)))
   )
 
+(define-expansion (ra:get-box2 prefix . rest)
+  `(make-box2 ( ,(<_> 'ra:get- prefix '-x1) ,@rest)
+              ( ,(<_> 'ra:get- prefix '-y1) ,@rest)
+              ( ,(<_> 'ra:get- prefix '-x2) ,@rest)
+              ( ,(<_> 'ra:get- prefix '-y2) ,@rest)))
+
 
 (define (box-to-string box)
   (if (not box)

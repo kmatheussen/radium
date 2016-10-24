@@ -268,12 +268,48 @@ typedef struct{
       sp;                                                       \
     })
 
-  
+
+
 /*********************************************************************
 	time.h
 *********************************************************************/
 
 #include "nsmtracker_time.h"
+
+#if USE_QT4
+#include <QString>
+
+namespace radium{
+
+  // Note: "static inline QString get_time_string(int64_t frames, bool include_centiseconds = true)" is available by including audio/Mixer_proc.h
+  //
+  static inline QString get_time_string(double seconds, bool include_centiseconds = true){
+    int i_seconds = seconds;
+    int minutes = i_seconds / 60;
+    int hours = minutes / 60;
+    
+    int centiseconds = seconds*100 - i_seconds*100;
+
+    i_seconds = i_seconds % 60;
+    minutes = minutes % 60;
+    
+    
+    QString base((minutes < 10 ? "0" : "") +
+                 QString::number(minutes) +
+                 ":" +
+                 (i_seconds < 10 ? "0" : "") +
+                 QString::number(i_seconds));
+    
+    QString ret = base + ":" + (centiseconds < 10 ? "0" : "") + QString::number(centiseconds);
+    
+    if (hours > 0)
+      return QString(hours < 10 ? " " : "" + hours) + ret;
+    else
+      return ret;
+  }
+
+}
+#endif
 
 
 /*********************************************************************
@@ -1699,8 +1735,18 @@ typedef struct {
 
 
 struct SeqBlock{
-  int64_t time; // Player must be stopped when modifying this variable.
+  int64_t time;      // Seqtime. Player must be stopped when modifying this variable. Note that because of tempo multipliers (block->reltempo), the 'start_time' and 'end_time' fields does not correspond linearly to this value. Written to by the main thread, read by the main thread and the player thread(s).
   struct Blocks *block;
+
+  // 'start_time' and 'end_time' are absolute times.
+  // They are only used the main thread.
+  //
+  // Note that these two values are NOT updated when seqblock->time or seqblock->block is changed.
+  // Instead, the function SEQTRACK_update_seqblock_start_and_end_times must be called right before reading any of these two variables.
+  // (using these two variables is functional programming in disguise. We could have had a function returning
+  //  a vector with all these values instead, but that would have been more inconvenient and slower (although speed probably doesn't matter here).)
+  double start_time;
+  double end_time;
 };
 
 struct _scheduler_t;
@@ -1749,7 +1795,8 @@ struct Song{
 	struct Blocks **playlist;			/* This variable is just temporarily. Later, the playlist will be much more advanced. */
 
         struct SeqTrack block_seqtrack; // Used when playing block.
-  
+
+        int curr_seqtracknum;
         //int num_seqtracks;
         //struct SeqTrack **seqtracks;
         vector_t seqtracks; // New playlist. Player must both be stopped and locked when modifying this variable, or any of the contents.
@@ -1799,13 +1846,17 @@ extern struct Root *root;
 extern DEFINE_ATOMIC(bool, is_starting_up);
 extern bool g_embed_samples;
 
+static inline struct SeqTrack *SEQUENCER_get_curr_seqtrack(void){
+  vector_t *seqtracks = &root->song->seqtracks;
+  if (seqtracks->num_elements==0)
+    return NULL;
+  else
+    return (struct SeqTrack*)seqtracks->elements[root->song->curr_seqtracknum];
+}
+
 static inline struct SeqTrack *RT_get_curr_seqtrack(void){
   if (pc->playtype==PLAYSONG){// && is_playing()) {
-    vector_t *seqtracks = &root->song->seqtracks;
-    if (seqtracks->num_elements==0)
-      return NULL;
-    else
-      return (struct SeqTrack*)seqtracks->elements[0];
+    return SEQUENCER_get_curr_seqtrack();
   } else {
     return &root->song->block_seqtrack;
   }

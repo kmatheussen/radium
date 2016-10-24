@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "blocks_proc.h"
 #include "instruments_proc.h"
 #include "blocklist_proc.h"
+#include "vector_proc.h"
+#include "seqtrack_proc.h"
 
 #include "song_proc.h"
 
@@ -54,4 +56,11 @@ bool NewSong(void){
 	return true;
 }
 
+struct Song *SONG_create(void){
+  struct Song *song=talloc(sizeof(struct Song));
+  VECTOR_push_back(&song->seqtracks, SEQTRACK_create());
+  SEQTRACK_init(&song->block_seqtrack);
+  
+  return song;
+}
 

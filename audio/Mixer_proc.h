@@ -47,6 +47,15 @@ extern LANGSPEC struct Patch **RT_MIXER_get_all_click_patches(int *num_click_pat
 
 extern LANGSPEC float MIXER_get_sample_rate(void);
 
+#ifdef USE_QT4
+#include <QString>
+namespace radium{
+  static inline QString get_time_string(int64_t frames, bool include_centiseconds = true){
+    return get_time_string((double)frames / MIXER_get_sample_rate(), include_centiseconds);
+  }
+}
+#endif
+
 extern LANGSPEC int MIXER_get_buffer_size(void);
 extern LANGSPEC int MIXER_get_jack_block_size(void);
 

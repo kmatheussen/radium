@@ -224,8 +224,11 @@ static void start_player(int playtype, int playpos, bool set_curr_playlist, Plac
 
   int64_t block_time = Place2STime(block,place);
   int64_t global_start_time = block_start_time + block_time;
-  
-  start_seqtrack_scheduling(global_start_time, block_time, *place, playtype, playpos);
+
+  if (playtype==PLAYSONG)
+    start_seqtrack_song_scheduling(global_start_time);
+  else
+    start_seqtrack_block_scheduling(*place);
   
 #endif
   
@@ -412,7 +415,7 @@ static void PlaySong(
 	int playpos,
         bool set_curr_playlist
 ){
-  struct Blocks *block=BL_GetBlockFromPos(playpos);
+  struct Blocks *block=BS_GetBlockFromPos(playpos);
 
   printf("Play song. blocknum:%d. Block: %p\n",block->l.num, block);
 
@@ -444,6 +447,7 @@ void PlaySongFromStart(struct Tracker_Windows *window){
         PlaySong(&place,0,true);
 }
 
+
 void PlaySongCurrPos2(struct Tracker_Windows *window, Place *place){
 	struct Blocks *block;
 	struct WBlocks *wblock;
@@ -458,7 +462,7 @@ void PlaySongCurrPos2(struct Tracker_Windows *window, Place *place){
 
 	playpos = ATOMIC_GET(root->curr_playlist);
                 
-	block=BL_GetBlockFromPos(playpos);
+	block=BS_GetBlockFromPos(playpos);
 	if(block==NULL) return;
 
 	if(wblock->l.num!=block->l.num){

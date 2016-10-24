@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/wblocks_proc.h"
 #include "../common/gfx_proc.h"
 #include "../common/settings_proc.h"
+#include "../common/seqtrack_proc.h"
+#include "../common/undo_sequencer_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -134,6 +136,121 @@ static const int yborder = 0;
 
 static int button_height = 30;
 static int button_width = 50;
+
+namespace{
+
+  // Note: Can only be used temporarily since 'seqblock' is not gc protected.
+  //
+  struct PlaylistElement{
+
+    struct SeqBlock *seqblock;
+    int seqblocknum;
+    
+  private:
+    
+    int64_t _pause;
+
+  public:
+    
+    static PlaylistElement pause(int seqblocknum, struct SeqBlock *seqblock, int64_t pause){
+      R_ASSERT(pause > 0);
+      
+      PlaylistElement pe;
+      
+      pe.seqblocknum = seqblocknum;
+      pe.seqblock = seqblock;
+      pe._pause = pause;
+
+      return pe;
+    }
+
+    static PlaylistElement block(int seqblocknum, struct SeqBlock *seqblock){
+      PlaylistElement pe;
+      
+      pe.seqblocknum = seqblocknum;
+      pe.seqblock = seqblock;
+      pe._pause = 0;
+      
+      return pe;
+    }
+
+    static PlaylistElement illegal(void){
+      PlaylistElement pe;
+      
+      pe.seqblocknum = -1;
+      pe.seqblock = NULL;
+      pe._pause = 0;
+      
+      return pe;
+    }
+    
+    bool is_legal(void) const {
+      return seqblocknum >= 0;
+    }
+    
+    bool is_illegal(void) const {
+      return !is_legal();
+    }
+    
+    bool is_pause(void) const {
+      return _pause > 0;
+    }
+
+    int64_t get_pause(void) const {
+      R_ASSERT(_pause > 0);
+      return _pause;
+    }
+
+  };
+}
+
+
+QVector<PlaylistElement> get_playlist_elements(void){
+
+  QVector<PlaylistElement> ret;
+    
+  struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+
+  double last_end_seq_time = 0;
+  
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+
+    int64_t pause_time = seqblock->time - last_end_seq_time;
+    
+    if (pause_time > 0) {
+      PlaylistElement pe = PlaylistElement::pause(iterator666, seqblock, pause_time);
+      ret.push_back(pe);
+    }
+    
+    {
+      PlaylistElement pe = PlaylistElement::block(iterator666, seqblock);      
+      ret.push_back(pe);
+    }
+    
+    last_end_seq_time = seqblock->time + getBlockSTimeLength(seqblock->block);
+    
+  }END_VECTOR_FOR_EACH;
+
+  return ret;
+}
+
+static PlaylistElement get_playlist_element(int num){
+  if(num < 0)
+    goto ret_illegal;
+
+  {
+    QVector<PlaylistElement> elements = get_playlist_elements();
+    
+    if (num >= elements.size())
+      goto ret_illegal;
+
+    return elements.at(num);
+  }
+  
+ ret_illegal:
+  return PlaylistElement::illegal();
+}
+  
 
 static int get_blocklist_x2(bool stacked, int width, int height);
 
@@ -416,33 +533,101 @@ public:
 
   int last_shown_width;
 
+  struct SeqBlock *get_prev_playlist_block(void){
+    QVector<PlaylistElement> elements = get_playlist_elements();
+    
+    for(int pos = playlist.currentRow() - 1 ; pos > 0 ; pos--)
+      if (elements.at(pos).is_pause()==false)
+        return elements.at(pos).seqblock;
+    
+    return NULL;
+  }
+                           
+  struct SeqBlock *get_next_playlist_block(void){
+    QVector<PlaylistElement> elements = get_playlist_elements();
+    
+    for(int pos = playlist.currentRow() + 1 ; pos < elements.size()  ; pos++)
+      if (elements.at(pos).is_pause()==false)
+        return elements.at(pos).seqblock;
+    
+    return NULL;
+  }
+
+  struct Blocks *get_block_from_pos(int pos){
+    const PlaylistElement pe = get_playlist_element(pos);
+    
+    if (pe.is_illegal())
+      return NULL;
+    
+    return pe.seqblock->block;
+  }
+
 private slots:
 
   void add_to_playlist(void){
+
+    struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+      
+    struct Blocks *block = getBlockFromNum(blocklist.currentItem());
+
 #ifdef USE_QT3
     int pos = playlist.currentItem();
 #else
     int pos = playlist.currentRow();
 #endif
-    if(pos==-1)
-      return;
+    const PlaylistElement pe = get_playlist_element(pos);
 
-    BL_insertCurrPos(playlist.currentItem(), getBlockFromNum(blocklist.currentItem()));
+    ADD_UNDO(Sequencer());
+    
+    if (pe.is_illegal()) {
+      
+      // Append block
 
+      const struct SeqBlock *last_seqblock = (const struct SeqBlock*)VECTOR_last(&seqtrack->seqblocks);
+      int64_t seqtime = last_seqblock==NULL ? 0 : (last_seqblock->time + getBlockSTimeLength(last_seqblock->block));
+      
+      SEQTRACK_insert_seqblock(seqtrack, block, seqtime);
+
+    } else {
+
+      // Insert block
+      
+      int64_t seqtime = pe.seqblock->time;
+      
+      if (pe.is_pause())
+        seqtime -= pe.get_pause();
+      
+      // Uncomment this line to keep same pause time if adding the block to a pause entry:
+      //
+      // SEQTRACK_insert_silence(seqtrack, seqtime, getBlockSTimeLength(block));
+      
+      SEQTRACK_insert_seqblock(seqtrack, block, seqtime);
+      
+    }
+    
     playlist.setSelected(pos+1, true);
-    if(pos<(int)playlist.count()-1)
-      ATOMIC_SET(root->curr_playlist, pos);
   }
 
   void remove_from_playlist(void){
-    int num = playlist.currentItem();
-    if(num==-1)
-      return;
-    if(playlist.count()<=2)
+    int pos = playlist.currentItem();
+
+    const PlaylistElement pe = get_playlist_element(pos);
+    if (pe.is_illegal())
       return;
 
-    BL_deleteCurrPos(num);
+    ADD_UNDO(Sequencer());
+    
+    if (pe.is_pause())
+      SEQTRACK_move_all_seqblocks_to_the_right_of(SEQUENCER_get_curr_seqtrack(), pe.seqblocknum, -pe.get_pause());
+    else{
+      SEQTRACK_delete_seqblock(SEQUENCER_get_curr_seqtrack(), pe.seqblock);
+      SEQTRACK_move_all_seqblocks_to_the_right_of(SEQUENCER_get_curr_seqtrack(), pe.seqblocknum, -getBlockSTimeLength(pe.seqblock->block));
+    }
+    
+      //BL_deleteCurrPos(num);
 
+    //BS_UpdatePlayList();
+    
     printf("remove from playlist\n");
   }
 
@@ -483,8 +668,8 @@ private slots:
         wblock->curr_realline = 0;
       
       DO_GFX(SelectWBlock(window,wblock));
-      EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-      editor->updateEditor();
+      //EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+      //editor->updateEditor();
 
     }PC_StopPause_ForcePlayBlock(NULL);
   }
@@ -509,21 +694,25 @@ private slots:
   }
   
   void playlist_highlighted(int num){
-    if(num==-1)
-      return;
-    if(num==(int)playlist.count()-1)
-      return;
 
     if(num_visitors>0) // event created internally
       return;
 
-    PC_Pause();{
+    PlaylistElement pe = get_playlist_element(num);
 
-      ATOMIC_SET(root->curr_playlist, num);
-
-      blocklist_highlighted(BL_GetBlockFromPos(num)->l.num);
-                            
-    }PC_StopPause(NULL);
+    if (pe.is_illegal())
+      return;
+    
+    if (pe.is_pause()){
+      PC_Pause();{
+          
+        ATOMIC_SET(root->curr_playlist, num);
+        
+        blocklist_highlighted(pe.seqblock->block->l.num);
+          
+      }PC_StopPause(NULL);
+    }
+    
   }
 
   void playlist_itemPressed(QListWidgetItem * item){
@@ -548,7 +737,7 @@ private slots:
 }
 
 
-static BlockSelector *bs;
+static BlockSelector *bs = NULL;
 
 QWidget *create_blockselector(){
   ScopedVisitors v;
@@ -582,6 +771,46 @@ void BS_UpdateBlockList(void){
 }
 
 void BS_UpdatePlayList(void){
+  if (bs==NULL)
+    return;
+  
+  if (root->song->seqtracks.num_elements==0)
+    return;
+  
+  int orgpos = bs->playlist.currentItem();
+
+  while(bs->playlist.count()>0)
+    bs->playlist.removeItem(0);
+
+  struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+  
+  SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
+
+  int justify_playlist = log10(seqtrack->seqblocks.num_elements) + 1;
+  int justify_blocklist = log10(root->song->num_blocks) + 1;
+  
+  QVector<PlaylistElement> elements = get_playlist_elements();
+
+  int pos = 0;
+  for(const PlaylistElement &pe : elements){
+    if (pe.is_pause())
+      bs->playlist.insertItem(" pause: "+radium::get_time_string(pe.get_pause()));
+    else {
+      struct Blocks *block = pe.seqblock->block;
+      bs->playlist.insertItem(QString::number(pos).rightJustified(justify_playlist, ' ')
+                              +": "+QString::number(block->l.num).rightJustified(justify_blocklist, ' ')
+                              +"/"+QString(block->name));
+      pos++;
+    }
+  }
+        
+  bs->playlist.insertItem(" "); // Make it possible to put a block at the end of the playlist.
+  
+  BS_SelectPlaylistPos(orgpos);
+}
+
+/*
+void BS_UpdatePlayList_old(void){
   ScopedVisitors v;
 
   int pos = bs->playlist.currentItem();//root->curr_playlist;
@@ -606,6 +835,7 @@ void BS_UpdatePlayList(void){
 
   BS_SelectPlaylistPos(pos);
 }
+*/
 
 void BS_SelectBlock(struct Blocks *block){
   ScopedVisitors v;
@@ -618,6 +848,18 @@ void BS_SelectPlaylistPos(int pos){
   if(pos==-1)
     return;
   bs->playlist.setSelected(pos, true);
+}
+
+struct SeqBlock *BS_GetPrevPlaylistBlock(void){
+  return bs->get_prev_playlist_block();
+}
+  
+struct SeqBlock *BS_GetNextPlaylistBlock(void){
+  return bs->get_next_playlist_block();
+}
+
+struct Blocks *BS_GetBlockFromPos(int pos){
+  return bs->get_block_from_pos(pos);
 }
 
 #if 0

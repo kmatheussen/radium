@@ -32,6 +32,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "patch_proc.h"
 #include "visual_proc.h"
 #include "scheduler_proc.h"
+#include "song_proc.h"
+#include "seqtrack_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
@@ -42,6 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern hash_t *COMMENT_get_state(void);
 extern void COMMENT_reset(void);
 extern void COMMENT_set_state(hash_t *state);
+
+static hash_t *g_sequencer_state = NULL;
 
 void SaveSong(struct Song *song){
 DC_start("SONG");
@@ -57,8 +61,13 @@ DC_start("SONG");
 
 	SaveWindow(song->tracker_windows);
 	SaveBlock(song->blocks);
-	SavePlayList(song->playlist,song->length);
+        
+	//SavePlayList(song->playlist,song->length);
 
+        DC_start("SEQUENCER");{
+          HASH_save(SEQUENCER_get_state(), dc.file);
+        }DC_end();
+        
         // Patchdata for audio patches are saved here, not in disk_patches.
         DC_start("MIXERWIDGET");{
           HASH_save(MW_get_state(NULL, true), dc.file);
@@ -72,12 +81,13 @@ DC_end();
 }
 
 struct Song *LoadSong(void){
-	static char *objs[6]={
+	static char *objs[7]={
 		"TRACKER_WINDOW",
 		"BLOCK",
 		"PLAYLIST",
 		"INSTRUMENT",
                 "MIXERWIDGET",
+                "SEQUENCER",
                 "COMMENT"
 	};
 	static char *vars[4]={
@@ -86,11 +96,7 @@ struct Song *LoadSong(void){
 		"songname",
 		"maxtracks",
 	};
-	struct Song *song=DC_alloc(sizeof(struct Song));
-        struct SeqTrack *seqtrack = talloc(sizeof(struct SeqTrack));
-        seqtrack->scheduler = SCHEDULER_create();
-        VECTOR_push_back(&song->seqtracks, seqtrack);
-        song->block_seqtrack.scheduler = SCHEDULER_create();
+	struct Song *song=SONG_create();
         
         MW_cleanup(true);
           
@@ -113,7 +119,7 @@ struct Song *LoadSong(void){
 
         COMMENT_reset();
         
-        GENERAL_LOAD(6,4)
+        GENERAL_LOAD(7,4)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());
@@ -122,7 +128,7 @@ obj1:
 	DC_ListAdd1(&song->blocks,LoadBlock());
 	goto start;
 obj2:
-	LoadPlayList();
+	LoadPlayList(); // Used in older songs instead of sequencer.
 	goto start;
 obj3:
         LoadInstrument();
@@ -136,8 +142,15 @@ obj4:
           song->mixerwidget_state = mixer_state;
           goto start;
         }
-
 obj5:
+        {
+          g_sequencer_state = HASH_load(dc.file);          
+          DC_fgets();
+
+          goto start;
+        }
+        
+obj6:
         COMMENT_set_state(HASH_load(dc.file));
         DC_fgets();
         goto start;
@@ -172,10 +185,8 @@ var16:
 var17:
 var18:
 var19:
- var20:
+var20:
         
-obj6:
-
 error:
 end:
 
@@ -188,8 +199,14 @@ void DLoadSong(struct Root *newroot,struct Song *song){
         DLoadInstrument(get_audio_instrument());
 
 	DLoadBlocks(newroot,song->blocks);
-	DLoadPlayList(newroot,song);
 
+        if (disk_load_version<0.875)
+          DLoadPlayList(newroot,song);
+        else {
+          SEQUENCER_create_from_state(g_sequencer_state);
+          g_sequencer_state = NULL;
+        }
+        
 	DLoadWindows(newroot,song->tracker_windows);
 
         GFX_ShowProgressMessage("Creating instruments");

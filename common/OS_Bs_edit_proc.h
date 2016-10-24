@@ -15,13 +15,17 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
+#ifndef _RADIUM_COMMON_OS_BS_EDIT_PROC_H
+#define _RADIUM_COMMON_OS_BS_EDIT_PROC_H
 
 extern LANGSPEC void BS_resizewindow(void);
 extern LANGSPEC void BS_UpdateBlockList(void);
 extern LANGSPEC void BS_UpdatePlayList(void);
 extern LANGSPEC void BS_SelectBlock(struct Blocks *block);
 extern LANGSPEC void BS_SelectPlaylistPos(int pos);
+extern LANGSPEC struct SeqBlock *BS_GetPrevPlaylistBlock(void);
+extern LANGSPEC struct SeqBlock *BS_GetNextPlaylistBlock(void);  
+extern LANGSPEC struct Blocks *BS_GetBlockFromPos(int pos);
 
 #endif
 

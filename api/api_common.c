@@ -301,3 +301,38 @@ struct Patch *getAudioPatchFromNum(int instrument_id){
   return patch;
 }
 
+struct SeqTrack *getSeqtrackFromNum(int seqtracknum){
+  if (seqtracknum >= root->song->seqtracks.num_elements){
+    GFX_Message(NULL, "Sequencer track %d not found", seqtracknum);
+    return NULL;
+  }
+  
+  return root->song->seqtracks.elements[seqtracknum];
+}
+
+struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return NULL;
+
+  if (seqblocknum >= seqtrack->seqblocks.num_elements){
+    GFX_Message(NULL, "Block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
+    return NULL;
+  }
+
+  return seqtrack->seqblocks.elements[seqblocknum];
+}
+
+struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack){
+  (*seqtrack) = getSeqtrackFromNum(seqtracknum);
+  if ((*seqtrack)==NULL)
+    return NULL;
+
+  if (seqblocknum >= (*seqtrack)->seqblocks.num_elements){
+    GFX_Message(NULL, "Block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
+    return NULL;
+  }
+
+  return (*seqtrack)->seqblocks.elements[seqblocknum];
+}
+

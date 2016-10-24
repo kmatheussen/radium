@@ -53,6 +53,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 #include "../common/undo_blocks_proc.h"
 #include "../common/time_proc.h"
+#include "../common/seqtrack_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
 #include "../OpenGL/Widget_proc.h"
 #include "../OpenGL/Render_proc.h"
@@ -1649,16 +1650,16 @@ float getBlockLength(int blocknum, int windownum){
 }
 
 float getSongLength(void){
-  struct Blocks **playlist = root->song->playlist;
-  double result = 0.0;
-
-  int i;
-  for(i=0;i<root->song->length;i++)
-    result += get_block_length(playlist[i]);
-
-  return result;
+  return SONG_get_length();
 }
 
+int64_t getSongLengthInFrames(void){
+  return SONG_get_length() * MIXER_get_sample_rate();
+}
+
+float getSampleRate(void){
+  return MIXER_get_sample_rate();
+}
 
 int getLogtypeHold(void){
   return LOGTYPE_HOLD;

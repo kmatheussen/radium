@@ -450,7 +450,7 @@ void EditorWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
 
 #if USE_QT_VISUAL
 
-static int currentButton = 0;
+static int g_currentButton = 0;
 
 static int getMouseButtonEventID( QMouseEvent *qmouseevent){
   if(qmouseevent->button()==Qt::LeftButton)
@@ -475,11 +475,11 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent) {
   tevent.x  = qmouseevent->posF().x();
   tevent.y  = qmouseevent->posF().y();
 #endif
-  currentButton = tevent.ID;
+  g_currentButton = tevent.ID;
 
   //printf("> Got mouse press %d %d\n",tevent.x,tevent.y);
 
-  if (SCHEME_mousepress(currentButton, tevent.x, tevent.y)==false) {
+  if (SCHEME_mousepress(g_currentButton, tevent.x, tevent.y)==false) {
 
     EventReciever(&tevent,this->window);
 
@@ -500,7 +500,7 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent) {
 }
 
 
-void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
+void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent) {
   if(ATOMIC_GET(is_starting_up)==true)
     return;
 
@@ -516,7 +516,7 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   //Qt::ButtonState buttonstate=qmouseevent->state();
   //printf("************** buttonstate: %d, %d, %d\n",getMouseButtonEventID(qmouseevent),buttonstate,tevent.keyswitch);
 
-  if (SCHEME_mousemove(currentButton, tevent.x, tevent.y)==false)
+  if (SCHEME_mousemove(g_currentButton, tevent.x, tevent.y)==false)
     EventReciever(&tevent,this->window);
 
   R_ASSERT(g_pausing_level==0);
@@ -530,7 +530,7 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
 }
 
 
-void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
+void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent) {
   if(ATOMIC_GET(is_starting_up)==true)
     return;
 
@@ -552,12 +552,12 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
 #endif
 
   //printf("< Got mouse release %d %d\n",tevent.x,tevent.y);
-  if (SCHEME_mouserelease(currentButton, tevent.x, tevent.y)==false)
+  if (SCHEME_mouserelease(g_currentButton, tevent.x, tevent.y)==false)
     EventReciever(&tevent,this->window);
 
   R_ASSERT(g_pausing_level==0);
   
-  currentButton = 0;
+  g_currentButton = 0;
 
   updateEditor();
 

@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "disk.h"
 #include "blocklist_proc.h"
+#include "seqtrack_proc.h"
 
 #include "disk_playlist_proc.h"
 
@@ -67,16 +68,22 @@ void DLoadPlayList(struct Root *newroot,struct Song *song){
 	int num_playlists=dc.num_playlists;
 	int lokke;
 
-        int *to_paste = talloc_atomic(sizeof(int) * (num_playlists+1));
-        to_paste[0] = num_playlists;
+        int *to_paste = talloc_atomic(sizeof(int) * num_playlists);
 
 	for(lokke=0;lokke<num_playlists;lokke++){
-          to_paste[lokke+1]=playlist->listnum;
+          to_paste[lokke]=playlist->listnum;
 
           playlist=NextPlayListHolder(playlist);
 	}
 
-        BL_paste2(song, to_paste);
+        struct SeqTrack *new_seqtrack = SEQTRACK_create_from_playlist(to_paste, num_playlists);
+
+        while(root->song->seqtracks.num_elements > 1)
+          SONG_delete_seqtrack(0);
+
+        SONG_replace_seqtrack(new_seqtrack, 0);
+
+        //BL_paste2(song, to_paste);
         
 	dc.playlist=NULL;
 }

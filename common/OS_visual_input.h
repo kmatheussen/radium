@@ -43,9 +43,12 @@ void handleDropEvent(QString filename, float x);
 
 extern LANGSPEC void SetNormalPointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetPointingPointer(struct Tracker_Windows *tvisual);
+extern LANGSPEC void SetOpenHandPointer(struct Tracker_Windows *tvisual);
+extern LANGSPEC void SetClosedHandPointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetBlankPointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetDiagResizePointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetHorizResizePointer(struct Tracker_Windows *tvisual);
+extern LANGSPEC void SetHorizSplitPointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetVerticalResizePointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void MovePointer(struct Tracker_Windows *tvisual, float x, float y);
 extern LANGSPEC WPoint GetPointerPos(struct Tracker_Windows *tvisual);

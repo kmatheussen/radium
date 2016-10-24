@@ -3,30 +3,46 @@
 #include "time_proc.h"
 #include "playerclass.h"
 #include "placement_proc.h"
+#include "seqtrack_proc.h"
 
 #include "scheduler_proc.h"
 
 #define DO_DEBUG 0
 
+#define G_NUM_ARGS 4
 
 static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t time, union SuperType *args);
 
 static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
                                      struct SeqBlock *seqblock,
-                                     int64_t start_time,
+                                     int64_t seqtime,
                                      int64_t block_start_time,
-                                     const Place *place,
-                                     int playtype,
-                                     int playlistpos)
+                                     const Place *place_pointer,
+                                     int playtype)
 {
+
+  Place place;
 
   seqtrack->curr_seqblock = seqblock; // bang!
 
   struct Blocks *block = seqblock->block;
 
-  if (playtype==PLAYBLOCK)
-    seqblock->time = block_start_time; // We can not set seqblock->time before scheduling since seqblock->time is used various places when playing a block.
+  if (playtype==PLAYBLOCK) {
 
+    R_ASSERT_RETURN_IF_FALSE(place_pointer != NULL);
+
+    place = *place_pointer;
+    
+    seqblock->time = block_start_time; // We can not set seqblock->time before scheduling since seqblock->time is used various places when playing a block.
+    
+  } else {
+
+    if (place_pointer==NULL)
+      place = STime2Place(block, seqtime - seqblock->time);
+    else
+      place = *place_pointer;
+  }
+  
 #if DO_DEBUG
   printf("  RT_schedule_new_seqblock called. place: %d + %d/%d\n", place->line,place->counter,place->dividor);
 #endif
@@ -35,12 +51,6 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
   {
     atomic_pointer_write((void**)&pc->block, block);
 
-    // Update playlist
-    //
-    pc->playpos = playlistpos;
-    if(pc->playtype==PLAYSONG)
-      ATOMIC_SET(root->curr_playlist, playlistpos);
-    
     if (pc->block != block) {
       ATOMIC_DOUBLE_SET(block->player_time, -100.0); // Any value less than -10 will delay rendering the new block. Instead we wait until player.c is called and a proper player_time value is calculated, to avoid jumpy graphics.
     }
@@ -50,16 +60,16 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
     ATOMIC_SET(root->setfirstpos, true);
 
     // Signature
-    RT_schedule_Signature_newblock(seqtrack, seqblock, *place);
+    RT_schedule_Signature_newblock(seqtrack, seqblock, place);
 
     // Beats
-    RT_schedule_Beats_newblock(seqtrack, seqblock, *place);
+    RT_schedule_Beats_newblock(seqtrack, seqblock, place);
 
     // LPB
-    RT_schedule_LPBs_newblock(seqtrack, seqblock, *place);
+    RT_schedule_LPBs_newblock(seqtrack, seqblock, place);
     
     // Reallines
-    RT_schedule_reallines_in_block(seqtrack, seqblock, *place);
+    RT_schedule_reallines_in_block(seqtrack, seqblock, place);
 
     // Send new track pan values to patches
     //
@@ -74,10 +84,10 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
     }
 
     // fx
-    RT_schedule_fxs_newblock(seqtrack, seqblock, start_time, *place);
+    RT_schedule_fxs_newblock(seqtrack, seqblock, seqtime, place);
     
     // notes
-    RT_schedule_notes_newblock(seqtrack, seqblock, start_time, *place);
+    RT_schedule_notes_newblock(seqtrack, seqblock, seqtime, place);
   }
   
   // Schedule next block, and set various data
@@ -107,20 +117,17 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
 
       static const Place first_place = {0,0,1};
 
-      const int num_args = 5;
-  
-      union SuperType args[num_args];
+      union SuperType args[G_NUM_ARGS];
 
       args[0].pointer       = next_seqblock;
       args[1].int_num       = next_time;
       args[2].const_pointer = &first_place;
       args[3].int32_num     = playtype;
-      args[4].int32_num     = playlistpos+1;
 
 #if DO_DEBUG
       printf("  2. Scheduling RT_scheduled_seqblock at %d\n",(int)next_time);
 #endif
-      SCHEDULER_add_event(seqtrack, next_time, RT_scheduled_seqblock, &args[0], num_args, SCHEDULER_INIT_BLOCK_PRIORITY);
+      SCHEDULER_add_event(seqtrack, next_time, RT_scheduled_seqblock, &args[0], G_NUM_ARGS, SCHEDULER_INIT_BLOCK_PRIORITY);
 
     } else {
       
@@ -135,118 +142,23 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
 
 }
 
-static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
+static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t seqtime, union SuperType *args){
   struct SeqBlock       *seqblock         = args[0].pointer;
   int64_t                block_start_time = args[1].int_num;
   const Place           *place            = args[2].const_pointer;
   int                    playtype         = args[3].int32_num;
-  int                    playlistpos      = args[4].int32_num;
 
 #if DO_DEBUG
   printf("     RT_scheduled_seqblock called. time: %d\n", (int)time);
 #endif
-  RT_schedule_new_seqblock(seqtrack, seqblock, time, block_start_time, place, playtype, playlistpos);
+  RT_schedule_new_seqblock(seqtrack, seqblock, seqtime, block_start_time, place, playtype);
 
   return DONT_RESCHEDULE;
 }
 
 
-static void RT_schedule_seqtracks(struct SeqTrack *seqtrack_notused,
-                                  int64_t start_time,
-                                  int playtype,
-                                  int playlistpos,
-                                  const Place *place
-                                  )
-{
-  
-  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
-
-    // Schedule the first seqblock in each seqtrack.
-    VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
-
-      int64_t seqblock_start_time = seqblock->time;
-      int64_t seqblock_end_time   = seqblock_start_time + getBlockSTimeLength(seqblock->block);
-      
-      if (start_time >= seqblock_start_time && start_time < seqblock_end_time){
-        const int num_args = 5;
+void start_seqtrack_song_scheduling(int64_t abs_start_time){
     
-        union SuperType args[num_args];
-
-        args[0].pointer       = seqblock;
-        args[1].int_num       = seqblock->time;
-        args[2].const_pointer = place;
-        args[3].int32_num     = playtype;
-        args[4].int32_num     = playlistpos; // FIX
-            
-#if DO_DEBUG
-        printf("  Song: Scheduling RT_scheduled_seqblock at %d. pc->start_time: %d\n",(int)start_time, (int)pc->start_time);
-#endif
-
-        SCHEDULER_add_event(seqtrack, start_time, RT_scheduled_seqblock, &args[0], num_args, SCHEDULER_INIT_BLOCK_PRIORITY);
-
-        break;
-      }
-
-    }END_VECTOR_FOR_EACH;
-    
-  }END_VECTOR_FOR_EACH;
-}
-
-
-static int64_t RT_scheduled_startplaying(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
-  int64_t      start_time  = args[0].int_num;
-  int          playtype    = args[1].int32_num;
-  int          playlistpos = args[2].int32_num;
-  const Place *place       = args[3].const_pointer;
-
-#if DO_DEBUG
-  printf("  RT_scheduled_startplaying called. playtype: %d %d\n", playtype, PLAYBLOCK);
-#endif
-  
-  if (playtype==PLAYBLOCK){
-
-    R_ASSERT(seqtrack==&root->song->block_seqtrack);
-    
-    static struct SeqBlock seqblock = {0};
-    seqblock.block = pc->block;
-    seqblock.time = 0;
- 
-    const int num_args = 5;
-    
-    union SuperType args[num_args];
-    
-    args[0].pointer = &seqblock;
-    args[1].int_num = seqblock.time;
-    args[2].const_pointer = place;
-    args[3].int32_num = playtype;
-    args[4].int32_num = 0;
-
-#if DO_DEBUG
-    printf("  Scheduling RT_scheduled_seqblock at %d. pc->start_time: %d\n",(int)start_time, (int)pc->start_time);
-#endif
-    SCHEDULER_add_event(seqtrack, start_time, RT_scheduled_seqblock, &args[0], num_args, SCHEDULER_INIT_BLOCK_PRIORITY);
-
-  } else {
-  
-    RT_schedule_seqtracks(seqtrack, start_time, playtype, playlistpos, place);
-  }
-
-  return DONT_RESCHEDULE;
-}
-
-
-void start_seqtrack_scheduling(int64_t global_start_time, int64_t block_time, Place place, int playtype, int playlistpos){
-  static Place static_place;
-  static_place = place;
-
-  const int num_args = 4;
-  
-  union SuperType args[num_args];
-  args[0].int_num = global_start_time;
-  args[1].int32_num = playtype;
-  args[2].int32_num = playlistpos;
-  args[3].const_pointer = &static_place;
-
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
 
   struct Blocks *block = pc->block;
@@ -257,17 +169,94 @@ void start_seqtrack_scheduling(int64_t global_start_time, int64_t block_time, Pl
     
     R_ASSERT(SCHEDULER_num_events(RT_get_curr_seqtrack()->scheduler)==0);
 
-    pc->start_time = global_start_time;  // Set play "cursor" position
-    ATOMIC_DOUBLE_SET(pc->start_time_f, global_start_time);
+    ATOMIC_SET(pc->song_abstime, abs_start_time);
+
+    VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
+
+      int64_t seq_start_time = get_seqtime_from_abstime(seqtrack, NULL, abs_start_time); // Ab ab ab. Not quite working if starting to play in the middle of a block, I think.
+      
+      pc->start_time = seq_start_time;
+      ATOMIC_DOUBLE_SET(pc->start_time_f, seq_start_time);
+      
+      pc->end_time = seq_start_time; // Must set end_time too, since this is the value used for setting next pc->start_time in the player.
+      pc->end_time_f = seq_start_time;
+      
+      // Schedule the first seqblock in each seqtrack.
+      VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
+        
+        int64_t seqblock_start_time = seqblock->time;
+        int64_t seqblock_end_time   = seqblock_start_time + getBlockSTimeLength(seqblock->block);
+        
+        if (seq_start_time >= seqblock_start_time && seq_start_time < seqblock_end_time){
+          
+          union SuperType args[G_NUM_ARGS];
+          
+          args[0].pointer       = seqblock;
+          args[1].int_num       = seqblock->time;
+          args[2].const_pointer = NULL;
+          args[3].int_num       = PLAYSONG;
+          
+#if DO_DEBUG
+          printf("  Song: Scheduling RT_scheduled_seqblock at %d. pc->start_time: %d\n",(int)start_time, (int)pc->start_time);
+#endif
+          
+          SCHEDULER_add_event(seqtrack, seq_start_time, RT_scheduled_seqblock, &args[0], G_NUM_ARGS, SCHEDULER_INIT_BLOCK_PRIORITY);
+          
+          break;
+        }
+        
+      }END_VECTOR_FOR_EACH;
     
-    pc->end_time = global_start_time; // Must set end_time too, since this is the value used for setting next pc->start_time in the player.
-    pc->end_time_f = global_start_time;
+    }END_VECTOR_FOR_EACH;
+
+  }PLAYER_unlock();
+}
+
+
+void start_seqtrack_block_scheduling(const Place place){
+  static Place static_place;
+
+  static_place = place;
+
+  R_ASSERT_RETURN_IF_FALSE(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
+  R_ASSERT_RETURN_IF_FALSE(pc->block != NULL);
+    
+  struct Blocks *block = pc->block;
+  ATOMIC_DOUBLE_SET(block->player_time, -100.0); // Stop gfx rendering since we are soon going to change the values of pc->end_time and friends.
+
+  int64_t seq_start_time = Place2STime(block, &place);
+              
+  PLAYER_lock();{
+    
+    R_ASSERT(SCHEDULER_num_events(RT_get_curr_seqtrack()->scheduler)==0);
+
+    pc->start_time = seq_start_time;
+    ATOMIC_DOUBLE_SET(pc->start_time_f, seq_start_time);
+    
+    pc->end_time   = seq_start_time; // Must set end_time too, since this is the value used for setting next pc->start_time in the player.
+    pc->end_time_f = seq_start_time;
 
 #if DO_DEBUG
     printf("  Scheduling start-playing event at 0. Seqtrack: %p\n", RT_get_curr_seqtrack());
 #endif
+
+    struct SeqTrack *seqtrack = &root->song->block_seqtrack;
     
-    SCHEDULER_add_event(RT_get_curr_seqtrack(), 0, RT_scheduled_startplaying, &args[0], num_args, SCHEDULER_INIT_PRIORITY);
+    static struct SeqBlock seqblock = {0};
+    seqblock.block = pc->block;
+    seqblock.time = 0;
+ 
+    union SuperType args[G_NUM_ARGS];
+    
+    args[0].pointer = &seqblock;
+    args[1].int_num = seqblock.time;
+    args[2].const_pointer = &static_place;
+    args[3].int32_num = PLAYBLOCK;
+
+#if DO_DEBUG
+    printf("  Scheduling RT_scheduled_seqblock at %d. pc->start_time: %d\n",(int)start_time, (int)pc->start_time);
+#endif
+    SCHEDULER_add_event(seqtrack, seq_start_time, RT_scheduled_seqblock, &args[0], G_NUM_ARGS, SCHEDULER_INIT_BLOCK_PRIORITY);
     
   }PLAYER_unlock();
 }

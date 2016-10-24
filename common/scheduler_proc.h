@@ -123,10 +123,13 @@ extern LANGSPEC void RT_schedule_fxs_newblock(struct SeqTrack *seqtrack,
 
 
 // scheduler_seqtrack_proc.h
-extern LANGSPEC void start_seqtrack_scheduling(int64_t global_start_time, int64_t block_time, Place place, int playtype, int playlistpos);
+extern LANGSPEC void start_seqtrack_song_scheduling(int64_t abs_start_time);
+extern LANGSPEC void start_seqtrack_block_scheduling(const Place place);
+
 
 // scheduler_realline_proc.h
 extern LANGSPEC void RT_schedule_reallines_in_block(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const Place place);
+
 
 // scheduler_lpb_proc.h
 extern LANGSPEC void RT_schedule_LPBs_newblock(struct SeqTrack *seqtrack,

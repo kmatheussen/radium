@@ -8,6 +8,7 @@
 #include "player_proc.h"
 #include "player_pause_proc.h"
 #include "blocklist_proc.h"
+#include "seqtrack_proc.h"
 
 #include "block_delete_proc.h"
 
@@ -47,8 +48,7 @@ void DeleteBlock(
 		window=NextWindow(window);
 	}
 
-        // Call BL_removeBlockFromPlaylist after blocklist is updated.
-        BL_removeBlockFromPlaylist(removed_block);
+        SEQUENCER_remove_block_from_seqtracks(removed_block);
 }
 
 

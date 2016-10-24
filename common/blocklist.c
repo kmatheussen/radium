@@ -29,6 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "blocklist_proc.h"
 
 
+
+
 // Note: talloc_atomic could be used instead of talloc, since the blocks are stored elsewhere.
 // However, in case of bugs, using talloc_atomic here could lead to crashes that would be very hard to find the origin of.
 
@@ -39,6 +41,8 @@ static struct SeqBlock *get_seqblock(struct Blocks *block){
   seqblock->time = -1;
   return seqblock;
 }
+
+#if 1
 
 void update_seqtrack_timing(struct SeqTrack *seqtrack){
   R_ASSERT(PLAYER_current_thread_has_lock());
@@ -155,7 +159,8 @@ void BL_paste(int *playlist){
 
 void BL_insert(int pos,struct Blocks *block){
   PC_Pause();{
-      
+
+    
     // Playlist
     {
       struct Blocks **temp;
@@ -375,6 +380,10 @@ void BL_setBlock(int pos, struct Blocks *block){
   
   BS_UpdatePlayList();
 }
+
+
+#endif
+
 
 void BL_moveDown(int pos){
   if (pos < 0 || pos >= root->song->length){

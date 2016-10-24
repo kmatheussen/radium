@@ -106,12 +106,14 @@ void PlayerTask(STime reltime){
         }
         
         if(g_time_was_stopped){
-          ATOMIC_SET(pc->therealtime, reltime);
+          ATOMIC_SET(pc->abstime_since_starting_to_play, reltime);
           OS_InitMidiTiming();
           OS_InitAudioTiming();
           g_time_was_stopped = false;
         }else{
-          ATOMIC_ADD(pc->therealtime, reltime);
+          ATOMIC_ADD(pc->abstime_since_starting_to_play, reltime);
+          if(pc->playtype==PLAYSONG)
+            ATOMIC_ADD(pc->song_abstime, reltime);
         }
 
 #if 0

@@ -268,7 +268,7 @@ OBJ5= debug.o memory.o validatemem.o placement.o t_gc.o cursor.o cursor_updown.o
 
 OBJ6= realline_calc.o gfx_subtrack.o LPB.o Signature.o Beats.o gfx_wtrackheaders.o gfx_wtrackheader_volpan.o gfx_slider.o reallines_insert.o gfx_shrink.o gfx_shrink_t.o gfx_request.o
 
-OBJ7= instruments.o patch.o undo_audio_patch_addremove.o fxlines.o fxlines_legalize.o blocklist.o  scroll_play.o crashreporter.o crashreporter_posix.o crashreporter_windows.o error.o  threading.o Semaphores.o stacktoucher.o
+OBJ7= instruments.o patch.o undo_audio_patch_addremove.o fxlines.o fxlines_legalize.o blocklist.o seqtrack.o scroll_play.o crashreporter.o crashreporter_posix.o crashreporter_windows.o error.o  threading.o Semaphores.o stacktoucher.o
 
 #Tempos and time
 OBJ8= reltempo.o temponodes.o tempos.o time.o temponodes_legalize.o
@@ -280,7 +280,7 @@ OBJ9= Ptask2Mtask.o player.o scheduler.o scheduler_seqtracks.o scheduler_notes.o
 OBJ10= disk.o disk_fxs.o disk_wblock.o disk_localzooms.o disk_track.o disk_fx.o disk_fxnodelines.o disk_wtrack.o disk_temponodes.o disk_tempos.o disk_song.o disk_velocities.o disk_block.o disk_placement.o disk_stops.o disk_playlist.o disk_root.o disk_notes.o disk_lpbs.o disk_signatures.o disk_windows.o disk_warea.o disk_save.o disk_load.o disk_instrument.o disk_patches.o disk_slider.o
 
 #Undo
-OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.o undo_signatures.o undo_notesandfxs.o undo_reallines.o undo_tracks.o undo_range.o undo_blocks.o undo_trackheader.o undo_reltempomax.o undo_maintempos.o undo_block_insertdelete.o undo_block_mergesplit.o undo_reltemposlider.o undo_playlist.o undo_patchlist.o undo_patchvoice.o undo_patchname.o undo_chip_position.o
+OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.o undo_signatures.o undo_notesandfxs.o undo_reallines.o undo_tracks.o undo_range.o undo_blocks.o undo_trackheader.o undo_reltempomax.o undo_maintempos.o undo_block_insertdelete.o undo_block_mergesplit.o undo_reltemposlider.o undo_playlist.o undo_sequencer.o undo_patchlist.o undo_patchvoice.o undo_patchname.o undo_chip_position.o
 
 #X11 Spesific
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
@@ -300,7 +300,7 @@ OBJ_WIN ?= X11_disk.o X11_Qtstuff.o W_Keyboard.o
 OBJ_MACOSX ?= X11_disk.o X11_Qtstuff.o cocoa_Keyboard.o do.o
 
 #Python
-OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_support.o ad_noteadd.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_requesters.o api_mouse.o
+OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_support.o ad_noteadd.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_requesters.o api_mouse.o api_seqtracks.o
 
 #Midi
 OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o midi_i_input.o midi_menues.o
@@ -708,6 +708,9 @@ range.o:  $(BUILD_DEPENDENCIES) $(CD)range.c
 blocklist.o:  $(BUILD_DEPENDENCIES) $(CD)blocklist.c
 	$(CC) $(CD)blocklist.c $(OPT) #-fno-sanitize=undefined
 
+seqtrack.o:  $(BUILD_DEPENDENCIES) $(CD)seqtrack.cpp
+	$(CCC) $(CD)seqtrack.cpp $(QTOPT)
+
 time.o:  $(BUILD_DEPENDENCIES) $(CD)time.c
 	$(CC) $(CD)time.c $(OPT) 
 
@@ -979,6 +982,9 @@ undo_maintempos.o:  $(BUILD_DEPENDENCIES) $(CD)undo_maintempos.c
 
 undo_playlist.o:  $(BUILD_DEPENDENCIES) $(CD)undo_playlist.c
 	$(CC) $(CD)undo_playlist.c $(OPT)
+
+undo_sequencer.o:  $(BUILD_DEPENDENCIES) $(CD)undo_sequencer.c
+	$(CC) $(CD)undo_sequencer.c $(OPT)
 
 undo_patchlist.o:  $(BUILD_DEPENDENCIES) $(CD)undo_patchlist.c
 	$(CC) $(CD)undo_patchlist.c $(OPT)
@@ -1439,6 +1445,9 @@ api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.c $(API)radium_pr
 
 api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.c $(API)radium_proc.h
 	$(CC)  $(API)api_mouse.c $(OPT)
+
+api_seqtracks.o:  $(BUILD_DEPENDENCIES)  $(API)api_seqtracks.c $(API)radium_proc.h
+	$(CC)  $(API)api_seqtracks.c $(OPT)
 
 radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c $(API)radium_proc.h
 	$(CC)  $(API)radium_wrap.c $(OPT) -w

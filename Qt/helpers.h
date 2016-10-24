@@ -60,9 +60,9 @@ namespace radium{
   class VerticalScroll : public QScrollArea {
     //    Q_OBJECT;
     
-    QVBoxLayout *layout;
-    
   public:
+
+    QVBoxLayout *layout;    
     
     VerticalScroll(QWidget *parent)
       :QScrollArea(parent)

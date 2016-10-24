@@ -49,6 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_blocks_proc.h"
 #include "../common/tempos_proc.h"
 #include "../common/undo_tempos_proc.h"
+#include "../common/seqtrack_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -58,8 +59,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "radium_proc.h"
 
-
-extern struct Root *root;
 
 extern volatile float g_scroll_pos;
 
@@ -308,6 +307,8 @@ void setReltempo(float reltempo){
   //update_statusbar(window);
   //DrawBlockRelTempo(window,wblock);
 
+  SEQUENCER_update();
+    
   window->must_redraw = true;
 }
 
@@ -3548,6 +3549,16 @@ void setPointingMousePointer(int windownum){
   if (window!=NULL)
     SetPointingPointer(window);
 }
+void setOpenHandMousePointer(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    SetOpenHandPointer(window);
+}
+void setClosedHandMousePointer(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    SetClosedHandPointer(window);
+}
 void setBlankMousePointer(int windownum){
   struct Tracker_Windows *window = getWindowFromNum(windownum);
   if (window!=NULL)
@@ -3562,6 +3573,11 @@ void setHorizontalResizeMousePointer(int windownum){
   struct Tracker_Windows *window = getWindowFromNum(windownum);
   if (window!=NULL)
     SetHorizResizePointer(window);
+}
+void setHorizontalSplitMousePointer(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    SetHorizSplitPointer(window);
 }
 void setVerticalResizeMousePointer(int windownum){
   struct Tracker_Windows *window = getWindowFromNum(windownum);

@@ -219,7 +219,7 @@
 (define (only-x-direction)
   (<ra> :left-extra-pressed))
 
-(delafina (add-delta-mouse-handler :press :move-and-release :release #f :mouse-pointer-is-hidden #f)
+(delafina (add-delta-mouse-handler :press :move-and-release :release #f :mouse-pointer-is-hidden-func #f)
   (define prev-x #f)
   (define prev-y #f)
   (define value #f)
@@ -266,8 +266,8 @@
           
           ;; dirty trick to avoid the screen edges
           ;;
-          (when mouse-pointer-is-hidden  ;; <- this line can cause mouse pointer to be stuck between 100,100 and 500,500 if something goes wrong.
-          ;;(when mouse-pointer-has-been-set ;; <- Workaround. Hopefully there's no problem doing it like this.
+          (when (and mouse-pointer-is-hidden-func (mouse-pointer-is-hidden-func)) ;; <- this line can cause mouse pointer to be stuck between 100,100 and 500,500 if something goes wrong.
+            ;;(when mouse-pointer-has-been-set ;; <- Workaround. Hopefully there's no problem doing it like this.
             (when (or (< (<ra> :get-mouse-pointer-x) 100)
                       (< (<ra> :get-mouse-pointer-y) 100)
                       (> (<ra> :get-mouse-pointer-x) 500)
@@ -402,6 +402,7 @@
              ;;(if (string? (cadr args))
              ;;    (apply format #t (cadr args))
              ;;    (c-display (cadr args)))
+             ;;(c-display "    GAKK GAKK GAKK " args)
              (display (ow!))
              ;;
              (set! *current-mouse-cycle* #f)
@@ -625,7 +626,9 @@
                                      (get-cycle-and-node Button X Y Rest))))
 
 
-                         
+
+(define *mouse-pointer-is-currently-hidden* #t)
+
 ;; This cycle handler makes sure all move-existing-node cycles are given a chance to run before the create-new-node cycles.
 (add-delta-mouse-handler
  :press (lambda (Button X Y)
@@ -648,9 +651,9 @@
             (define Release (Cycle-and-node :release))
             (define node (Cycle-and-node :node))
             (Release Button X Y node))
-
- :mouse-pointer-is-hidden #t)
-
+ 
+ :mouse-pointer-is-hidden-func (lambda () *mouse-pointer-is-currently-hidden*)
+ ) 
 
    
 (delafina (add-node-mouse-handler :Get-area-box
@@ -666,6 +669,8 @@
                                   :Publicize
                                   :Get-pixels-per-value-unit #f
                                   :Create-button #f
+                                  :Use-Place #t
+                                  :Mouse-pointer-func #f
                                   )
   
   (define-struct node
@@ -675,12 +680,19 @@
 
   (define (press-existing-node Button X Y)
     (and (select-button Button)
+         (let ((area-box (Get-area-box)))
+           ;;(c-display X Y "area-box" (and area-box (box-to-string area-box)) (and area-box (inside-box-forgiving area-box X Y)) (box-to-string (<ra> :get-box reltempo-slider)))
+           (and area-box
+                (inside-box-forgiving area-box X Y)))
          (Get-existing-node-info X
                                  Y
                                  (lambda (Node-info Value Node-y)
                                    (Make-undo Node-info)
                                    (Publicize Node-info)
-                                   (set-mouse-pointer ra:set-blank-mouse-pointer)
+                                   (if Mouse-pointer-func
+                                       (set! *mouse-pointer-is-currently-hidden* #f)
+                                       (set! *mouse-pointer-is-currently-hidden* #t))
+                                   (set-mouse-pointer (or Mouse-pointer-func ra:set-blank-mouse-pointer))
                                    (make-node :node-info Node-info
                                               :value Value
                                               :y Node-y
@@ -696,10 +708,15 @@
   (define (press-and-create-new-node Button X Y)
     (and (can-create Button X Y)
          (Create-new-node X
-                          (get-place-from-y Button Y)
+                          (if Use-Place
+                              (get-place-from-y Button Y)
+                              Y)
                           (lambda (Node-info Value)
                             (Publicize Node-info)
-                            (set-mouse-pointer ra:set-blank-mouse-pointer)
+                            (if Mouse-pointer-func
+                                (set! *mouse-pointer-is-currently-hidden* #f)
+                                (set! *mouse-pointer-is-currently-hidden* #t))
+                            (set-mouse-pointer (or Mouse-pointer-func ra:set-blank-mouse-pointer))
                             (make-node :node-info Node-info
                                        :value Value
                                        :y Y)))))
@@ -718,18 +735,23 @@
                                        (/ Dx
                                           pixels-per-value-unit))))
                         (between min try-it max)))
-    
+
+    ;;(c-display "Dy/Y" Dy (Node :y))
     ;;(c-display "num" ($node :num) ($get-num-nodes-func) "value" $dx ($node :value) (node-area :x1) (node-area :x2) ($get-node-value-func ($node :num)))
-    (define new-y (and (not (= 0 Dy))
-                       (let ((try-it (+ (Node :y)
-                                        Dy)))
-                         (between (1- (<ra> :get-top-visible-y))
-                                  try-it
-                                  (+ 2 (<ra> :get-bot-visible-y))))))
+    (define new-y (if Use-Place
+                      (and (not (= 0 Dy))                           
+                           (let ((try-it (+ (Node :y)
+                                            Dy)))
+                             (between (1- (<ra> :get-top-visible-y))
+                                      try-it
+                                      (+ 2 (<ra> :get-bot-visible-y)))))
+                      (+ Dy (Node :y))))
 
     (let ((node-info (Move-node node-info new-value
-                                (and new-y
-                                     (get-place-from-y Button new-y)))))
+                                (if (not Use-Place)
+                                    new-y
+                                    (and new-y
+                                         (get-place-from-y Button new-y))))))
       (Publicize node-info)
       (make-node :node-info node-info
                  :value new-value
@@ -771,14 +793,16 @@
                                   :Get-value
                                   :Make-undo
                                   :Move
-                                  :Publicize)
+                                  :Publicize
+                                  :Mouse-pointer-func #f)
  
   (define-struct info
     :handler-data
     :y)
 
-  (add-node-mouse-handler :Get-area-box (lambda () (make-box2 0 0 10000 1))
+  (add-node-mouse-handler :Get-area-box (lambda () (make-box2 0 0 100000 100000))
                           :Get-existing-node-info (lambda (X Y callback)
+                                                    (c-display "  horiz: " X Y)
                                                     (define handler-data (Get-handler-data X Y))
                                                     (and handler-data
                                                          (let ((info (make-info :handler-data handler-data
@@ -809,6 +833,7 @@
                                                              (Get-x1 (Info :handler-data)))
                                                           (- (Get-max-value (Info :handler-data))
                                                              (Get-min-value (Info :handler-data)))))
+                          :Mouse-pointer-func Mouse-pointer-func
                           ))
                                   
 
@@ -818,9 +843,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (add-mouse-move-handler
  :move (lambda ($button X Y)
+         (c-display X Y (box-to-string (get-seqnav-move-box)))
          (cond ((and *current-track-num*
                      (inside-box (<ra> :get-box track-pan-slider *current-track-num*) X Y))
-                (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer)
+                (set-mouse-pointer ra:set-horizontal-split-mouse-pointer)
                 (show-track-pan-in-statusbar *current-track-num*))
                
                ((and *current-track-num*
@@ -847,6 +873,9 @@
                 (set-mouse-pointer ra:set-pointing-mouse-pointer)
                 (<ra> :set-statusbar-text (<-> "Select instrument for track " *current-track-num*)))
 
+               ((inside-box (get-seqnav-move-box) X Y)
+                (set-mouse-pointer ra:set-open-hand-mouse-pointer))
+               
                ((not *current-track-num*)
                 (set-mouse-pointer ra:set-pointing-mouse-pointer))
                
@@ -954,7 +983,8 @@
 ;; reset slider value
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)                                
-                                (if (inside-box (<ra> :get-box reltempo-slider) X Y)
+                                (if (and (= Button *right-button*)
+                                         (inside-box (<ra> :get-box reltempo-slider) X Y))
                                     (begin
                                       (popup-menu "Reset" reset-tempo-multiplier
                                                   "Apply tempo" apply-tempo-multiplier-to-block)
@@ -2059,7 +2089,6 @@
 
 
 
-
 ;; add and move velocity
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-track-num*
@@ -2259,12 +2288,14 @@
   X Y Tracknum :> (get-resize-point-track X Y (1+ Tracknum)))
 
 (define (get-trackwidth-info X Y)
-  (define resize-point-track (get-resize-point-track X Y 0))
-  (and resize-point-track
-       (let ((tracknum (1- resize-point-track)))
-         (make-trackwidth-info :tracknum tracknum
-                               :width    (<ra> :get-track-width tracknum)
-                               :y        Y))))
+  (and (inside-box (<ra> :get-box editor) X Y)
+       (begin
+         (define resize-point-track (get-resize-point-track X Y 0))
+         (and resize-point-track
+              (let ((tracknum (1- resize-point-track)))
+                (make-trackwidth-info :tracknum tracknum
+                                      :width    (<ra> :get-track-width tracknum)
+                                      :y        Y))))))
 
 #||
 (add-delta-mouse-handler
@@ -2682,7 +2713,7 @@
                         
                         (trackwidth-info
                          (set! resize-mouse-pointer-is-set #t)
-                         (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer))
+                         (set-mouse-pointer ra:set-horizontal-split-mouse-pointer))
                         
                         ((and is-in-fx-area velocity-dist-is-shortest)
                          (set-mouse-note *current-note-num* *current-track-num*))
@@ -2713,6 +2744,7 @@
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
                 (and ;(= Button *middle-button*)
+                 (inside-box (<ra> :get-box editor) X Y)
                  *current-track-num*
                  (<ra> :select-track *current-track-num*)
                  #t))))
@@ -2740,6 +2772,249 @@
                             (c-display "signature")
                             (popup-menu "hide time signature track" ra:show-hide-signature-track)))
                      #t))))
+
+
+
+;; seqtrack / seqblock
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-struct seqblock-info
+  :seqtracknum
+  :seqblocknum)
+
+
+(define (get-seqblock seqtracknum X Y)
+  (define num-seqblocks (<ra> :get-num-seqblocks seqtracknum))
+  (let loop ((seqblocknum 0))
+    (cond ((= seqblocknum num-seqblocks)
+           #f)
+          ((inside-box (ra:get-box2 seqblock seqblocknum seqtracknum) X Y)
+           (make-seqblock-info :seqtracknum seqtracknum
+                               :seqblocknum seqblocknum))
+          (else
+           (c-display X Y (box-to-string (ra:get-box2 seqblock seqblocknum seqtracknum)))
+           (loop (1+ seqblocknum))))))
+
+(define (get-seqtracknum X Y)
+  (define num-seqtracks (<ra> :get-num-seqtracks))
+  (let loop ((seqtracknum 0))
+    (cond ((= seqtracknum num-seqtracks)
+           #f)
+          ((inside-box (ra:get-box2 seqtrack seqtracknum) X Y)
+           seqtracknum)
+          (else
+           (loop (1+ seqtracknum))))))
+     
+(define (get-seqblock-info X Y)
+  (define seqtracknum (get-seqtracknum X Y))
+  (and seqtracknum
+       (get-seqblock seqtracknum X Y)))
+
+
+;; TODO: Fix.
+(define last-value 0)
+
+;; seqblock move
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(add-node-mouse-handler :Get-area-box (lambda()
+                                        (<ra> :get-box sequencer))
+                        :Get-existing-node-info (lambda (X Y callback)
+                                                  (let ((seqblock-info (get-seqblock-info X Y)))
+                                                    ;;(c-display "get-existing " seqblock-info X Y)
+                                                    (and seqblock-info
+                                                         (callback seqblock-info (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum)
+                                                                                                                (seqblock-info :seqtracknum))
+                                                                                 Y))))
+                        :Get-min-value (lambda (seqblock-info)
+                                         (define seqtracknum (seqblock-info :seqtracknum))
+                                         (define seqblocknum (seqblock-info :seqblocknum))
+                                         (if (= 0 seqblocknum)
+                                             0
+                                             (<ra> :get-seqblock-end-time (1- seqblocknum) seqtracknum)))
+                        :Get-max-value (lambda (seqblock-info)
+                                         (define seqtracknum (seqblock-info :seqtracknum))
+                                         (define seqblocknum (seqblock-info :seqblocknum))
+                                         (define num-seqblocks (<ra> :get-num-seqblocks (seqblock-info :seqtracknum)))
+                                         (if (= (1- num-seqblocks) seqblocknum)
+                                             (+ 100000 (<ra> :get-seqblock-end-time (seqblock-info :seqblocknum) seqtracknum))
+                                             (<ra> :get-seqblock-start-time (1+ seqblocknum) seqtracknum)))
+                        :Get-x (lambda (info) (/ (+ (<ra> :get-seqblock-x1 (info :seqblocknum)
+                                                          (info :seqtracknum))
+                                                    (<ra> :get-seqblock-x2 (info :seqblocknum)
+                                                          (info :seqtracknum)))
+                                                 2))
+                        :Get-y (lambda (info) (/ (+ (<ra> :get-seqblock-y1 (info :seqblocknum)
+                                                          (info :seqtracknum))
+                                                    (<ra> :get-seqblock-y2 (info :seqblocknum)
+                                                          (info :seqtracknum)))
+                                                 2))
+                        :Make-undo (lambda (_)
+                                     (<ra> :undo-sequencer))
+                        :Create-new-node (lambda (X seqtracknum callback)
+                                           #f)
+                        :Publicize (lambda (seqblock-info)
+                                     (<ra> :set-statusbar-text (<-> (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum) (seqblock-info :seqtracknum)))))
+
+                        :Release-node (lambda (seqblock-info)
+                                        ;;(c-display "  Y" Y (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y))
+                                        (<ra> :move-seqblock (seqblock-info :seqblocknum) (floor last-value) (seqblock-info :seqtracknum))
+                                        seqblock-info)
+
+                        ;; TODO/FIX: Only change graphics here.
+                        :Move-node (lambda (seqblock-info Value Y)
+                                     (set! last-value Value)
+                                     ;;(c-display "  Y" Y (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y))
+                                     (<ra> :move-seqblock (seqblock-info :seqblocknum) (floor Value) (seqblock-info :seqtracknum))
+                                     seqblock-info)
+
+                        :Use-Place #f
+
+                        :Get-pixels-per-value-unit (lambda (Info)
+                                                     (/ 20.0 (<ra> :get-sample-rate)))
+
+                        )
+
+
+;; left size handle in navigator
+(add-horizontal-handler :Get-handler-data (lambda (X Y)
+                                            (define box (<ra> :get-box seqnav-left-size-handle))
+                                            (c-display "box" box)
+                                            (and (inside-box box X Y)
+                                                 (<ra> :get-seqnav-left-size-handle-x1)))
+                        :Get-x1 (lambda (_)
+                                  (<ra> :get-seqnav-x1))
+                        :Get-x2 (lambda (_)
+                                  (1- (<ra> :get-seqnav-right-size-handle-x2)))
+                        :Get-min-value (lambda (_)
+                                         (<ra> :get-seqnav-x1))
+                        :Get-max-value (lambda (_)
+                                         (1- (<ra> :get-seqnav-right-size-handle-x2)))
+                        ;;(<ra> :get-seqnav-x2))
+                        :Get-x (lambda (_)                                 
+                                 (/ (+ (<ra> :get-seqnav-left-size-handle-x1)
+                                       (<ra> :get-seqnav-left-size-handle-x2))
+                                    2))
+                        :Get-value (lambda (Value)
+                                     Value)
+                        :Make-undo (lambda (_)
+                                     50)
+                        :Move (lambda (_ Value)
+                                (define song-length (<ra> :get-song-length-in-frames))
+                                (define new-start-time (floor (scale Value
+                                                                     (<ra> :get-seqnav-x1) (<ra> :get-seqnav-x2);; (<ra> :get-seqnav-right-size-handle-x1)
+                                                                     0 song-length)))
+                                (c-display "       Move" Value (/ new-start-time 48000.0) "x1:" (<ra> :get-seqnav-x1) "x2:" (<ra> :get-seqnav-x2) "end:" (/ (<ra> :get-sequencer-visible-end-time) 48000.0))
+                                (define end-time (<ra> :get-sequencer-visible-end-time))
+                                (<ra> :set-sequencer-visible-start-time (max 0 (min (1- end-time) new-start-time))))
+                        :Publicize (lambda (_)
+                                     (<ra> :set-statusbar-text (<-> (/ (<ra> :get-sequencer-visible-start-time) (<ra> :get-sample-rate)))))
+
+                        :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
+                        )
+
+;; right size handle in navigator
+(add-horizontal-handler :Get-handler-data (lambda (X Y)
+                                            (define box (<ra> :get-box seqnav-right-size-handle))
+                                            (c-display "box2" box)
+                                            (and (inside-box box X Y)
+                                                 (<ra> :get-seqnav-right-size-handle-x2)))
+                        :Get-x1 (lambda (_)
+                                  (1- (<ra> :get-seqnav-left-size-handle-x1)))
+                        :Get-x2 (lambda (_)
+                                  (<ra> :get-seqnav-x2))
+                        :Get-min-value (lambda (_)
+                                         (1- (<ra> :get-seqnav-left-size-handle-x1)))
+                        :Get-max-value (lambda (_)
+                                         (<ra> :get-seqnav-x2))
+                        ;;(<ra> :get-seqnav-x2))
+                        :Get-x (lambda (_)                                 
+                                 (/ (+ (<ra> :get-seqnav-right-size-handle-x1)
+                                       (<ra> :get-seqnav-right-size-handle-x2))
+                                    2))
+                        :Get-value (lambda (Value)
+                                     Value)
+                        :Make-undo (lambda (_)
+                                     50)
+                        :Move (lambda (_ Value)
+                                (define song-length (<ra> :get-song-length-in-frames))
+                                (define new-end-time (floor (scale Value
+                                                                   (<ra> :get-seqnav-x1) (<ra> :get-seqnav-x2);; (<ra> :get-seqnav-right-size-handle-x1)
+                                                                   0 song-length)))
+                                ;;(c-display "       Move" Value (/ new-start-time 48000.0) "x1:" (<ra> :get-seqnav-x1) "x2:" (<ra> :get-seqnav-x2) "end:" (/ (<ra> :get-sequencer-visible-end-time) 48000.0))
+                                (define start-time (<ra> :get-sequencer-visible-start-time))
+                                (c-display "new-end-time:" (/ new-end-time 48000.0) Value)
+                                (<ra> :set-sequencer-visible-end-time (min song-length (max (1+ start-time) new-end-time))))
+                        :Publicize (lambda (_)
+                                     (<ra> :set-statusbar-text (<-> (/ (<ra> :get-sequencer-visible-end-time) (<ra> :get-sample-rate)))))
+
+                        :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
+                        )
+
+(define (get-seqnav-width)
+  (define space-left (- (<ra> :get-seqnav-left-size-handle-x1)
+                        (<ra> :get-seqnav-x1)))
+  (define space-right (- (<ra> :get-seqnav-x2)
+                         (<ra> :get-seqnav-right-size-handle-x2)))
+  (+ space-left space-right))
+
+(define (get-seqnav-move-box)
+  (make-box2 (<ra> :get-seqnav-left-size-handle-x2) (<ra> :get-seqnav-left-size-handle-y1)
+             (<ra> :get-seqnav-right-size-handle-x1) (<ra> :get-seqnav-right-size-handle-y2)))
+
+;; TODO: Fix this.
+(define org-x #f)
+(define org-seqnav-left #f)
+
+;; move navigator left/right
+(add-horizontal-handler :Get-handler-data (lambda (X Y)
+                                            (set! org-x X)
+                                            (set! org-seqnav-left (<ra> :get-seqnav-left-size-handle-x1))
+                                            (if (> (get-seqnav-width) 0)
+                                                (let ((box (get-seqnav-move-box)))
+                                                  (and (inside-box box X Y)
+                                                       (<ra> :get-seqnav-left-size-handle-x1)))
+                                                #f))
+                        :Get-x1 (lambda (_)
+                                  0)
+                        :Get-x2 (lambda (_)
+                                  (get-seqnav-width))
+                        :Get-min-value (lambda (_)
+                                         0)
+                        :Get-max-value (lambda (_)
+                                         (get-seqnav-width))
+                        :Get-x (lambda (_)
+                                 (+ org-x (- (<ra> :get-seqnav-left-size-handle-x1)
+                                             org-seqnav-left)))
+;                                 (/ (+ (<ra> :get-seqnav-left-size-handle-x1)
+;                                       (<ra> :get-seqnav-right-size-handle-x2))
+;                                    2))
+                        :Get-value (lambda (Value)
+                                     Value)
+                        :Make-undo (lambda (_)
+                                     50)
+                        :Move (lambda (_ Value)
+                                (define old-start-time (<ra> :get-sequencer-visible-start-time))
+                                (define song-length (<ra> :get-song-length-in-frames))
+                                (define new-start-time (floor (scale Value
+                                                                     (<ra> :get-seqnav-x1) (<ra> :get-seqnav-x2);; (<ra> :get-seqnav-right-size-handle-x1)
+                                                                     0 song-length)))
+                                (c-display "       Move" Value (/ new-start-time 48000.0) "x1:" (<ra> :get-seqnav-x1) "x2:" (<ra> :get-seqnav-x2) "end:" (/ (<ra> :get-sequencer-visible-end-time) 48000.0))
+                                (define end-time (<ra> :get-sequencer-visible-end-time))
+                                (define new-start-time2 (max 0 (min (1- end-time) new-start-time)))
+                                
+                                (define diff (- new-start-time2 old-start-time))
+                                (define new-end-time (+ end-time diff))
+                                (define new-end-time2 (min song-length (max (1+ new-start-time2) new-end-time)))
+                        
+                                (<ra> :set-sequencer-visible-start-time new-start-time2)
+                                (<ra> :set-sequencer-visible-end-time new-end-time2))
+                                
+                        :Publicize (lambda (_)
+                                     (<ra> :set-statusbar-text (<-> (/ (<ra> :get-sequencer-visible-end-time) (<ra> :get-sample-rate)))))
+                        
+                        :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
+                        )
+
 
 #||
 (load "lint.scm")

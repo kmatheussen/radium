@@ -65,3 +65,7 @@ extern LANGSPEC struct FXs *getFXsFromNum(int windownum,int blocknum,int tracknu
 
 extern LANGSPEC struct Patch *getPatchFromNum(int instrument_id);
 extern LANGSPEC struct Patch *getAudioPatchFromNum(int instrument_id);
+
+extern LANGSPEC struct SeqTrack *getSeqtrackFromNum(int seqtracknum);
+extern LANGSPEC struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum);
+extern LANGSPEC struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack);

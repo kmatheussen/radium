@@ -112,7 +112,8 @@ typedef struct{
         DEFINE_ATOMIC(double, start_time_f);       // double version of start_time.
         double end_time_f;         // double version of end_time.
 
-	DEFINE_ATOMIC(STime, therealtime);	// Shows the real time, not taking the block->reltempo variable into consideration. Only used by PEQ_clock and PTask2MTask.c.
+        DEFINE_ATOMIC(STime, song_abstime); // Used by the cursor position in the sequencer. Absolute time, i.e. not seqtime.
+	DEFINE_ATOMIC(STime, abstime_since_starting_to_play);	// Absolute time, i.e. not seqtime.
 
         STime reltime; // The argument for PlayerTask. Will usually contain the audio blocksize. Necessary for calculating delta time. (I'm 99% this value is always equal to RADIUM_BLOCKSIZE, i.e. 64)
 

@@ -119,6 +119,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MainWindow_proc.h"
 #include "Qt_Menues_proc.h"
 
+
+extern EditorWidget *g_editor;
+
+
 #include "mQt_seqtrack_widget_callbacks.h"
 
 
@@ -139,8 +143,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_Main_proc.h"
 
-
-static Sequencer_widget *g_sequencer_widget = NULL;
 
 extern bool doquit;
 
@@ -345,8 +347,6 @@ static bool handle_qt_keyboard(QKeyEvent *event, bool is_key_down){
   return handle_keyboard(keynum, event->nativeScanCode()-sub, event->nativeVirtualKey(), is_key_down);
 }
 #endif
-
-extern EditorWidget *g_editor;
 
 #if USE_QT5
 #include <QAbstractNativeEventFilter>
@@ -1328,9 +1328,11 @@ protected:
     }
     #endif
 
-    if (g_sequencer_widget != NULL)
-      g_sequencer_widget->call_very_often();
-        
+    if ( (num_calls % (15/interval)) == 0) { // call each 10 ms. (i.e. more often than vsync)
+      if (g_sequencer_widget != NULL)
+        g_sequencer_widget->call_very_often();
+    }
+    
     //MIXER_called_regularly_by_main_thread();
 
     if(g_pausing_level != 0){
@@ -1409,6 +1411,14 @@ void SetPointingPointer(struct Tracker_Windows *tvisual){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::PointingHandCursor);
 }
+void SetOpenHandPointer(struct Tracker_Windows *tvisual){
+  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  main_window->setCursor(Qt::OpenHandCursor);
+}
+void SetClosedHandPointer(struct Tracker_Windows *tvisual){
+  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  main_window->setCursor(Qt::ClosedHandCursor);
+}
 void SetBlankPointer(struct Tracker_Windows *tvisual){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::BlankCursor);
@@ -1419,7 +1429,13 @@ void SetDiagResizePointer(struct Tracker_Windows *tvisual){
 }
 void SetHorizResizePointer(struct Tracker_Windows *tvisual){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  //printf("      1. Setting HorizResizeCursor\n");
   main_window->setCursor(Qt::SizeHorCursor);
+}
+void SetHorizSplitPointer(struct Tracker_Windows *tvisual){
+  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  //printf("      2. Setting SplitHCursor\n");
+  main_window->setCursor(Qt::SplitHCursor);
 }
 void SetVerticalResizePointer(struct Tracker_Windows *tvisual){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
@@ -1717,7 +1733,7 @@ int radium_main(char *arg){
         xsplitter->setParent(ysplitter); //, QPoint(0,0), true);
 
         {
-#if 0
+#if 1
           g_sequencer_widget = new Sequencer_widget(main_window);
           //sequencer_widget->setMinimumHeight(220);
           //sequencer_widget->setMaximumHeight(220);

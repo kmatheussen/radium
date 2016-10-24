@@ -497,29 +497,35 @@ void SelectNextWBlock(struct Tracker_Windows *window){
 }
 
 void SelectPrevPlaylistWBlock(struct Tracker_Windows *window){
-        struct Blocks *block=BL_GetBlockFromPos(ATOMIC_GET(root->curr_playlist)-1);
-	if(block==NULL) return;
+  struct SeqBlock *seqblock = BS_GetPrevPlaylistBlock();
+  if (seqblock==NULL)
+    return;
+  
+  struct Blocks *block=seqblock->block;
 
-        PC_Pause();{
-          ATOMIC_ADD(root->curr_playlist, -1);
-
-          SelectWBlock(window,ListFindElement1(&window->wblocks->l,block->l.num));
-
-          BS_SelectPlaylistPos(ATOMIC_GET(root->curr_playlist));
-        }PC_StopPause(NULL);
+  PC_Pause();{
+    ATOMIC_ADD(root->curr_playlist, -1);
+    
+    SelectWBlock(window,ListFindElement1(&window->wblocks->l,block->l.num));
+    
+    BS_SelectPlaylistPos(ATOMIC_GET(root->curr_playlist));
+  }PC_StopPause(NULL);
 }
 
 void SelectNextPlaylistWBlock(struct Tracker_Windows *window){
-        struct Blocks *block=BL_GetBlockFromPos(ATOMIC_GET(root->curr_playlist)+1);
-	if(block==NULL) return;
+  struct SeqBlock *seqblock = BS_GetNextPlaylistBlock();
+  if (seqblock==NULL)
+    return;
+  
+  struct Blocks *block=seqblock->block;
 
-        PC_Pause();{
-          ATOMIC_ADD(root->curr_playlist, 1);
-
-          SelectWBlock(window,ListFindElement1(&window->wblocks->l,block->l.num));
-
-          BS_SelectPlaylistPos(ATOMIC_GET(root->curr_playlist));
-        }PC_StopPause(NULL);
+  PC_Pause();{
+    ATOMIC_ADD(root->curr_playlist, 1);
+    
+    SelectWBlock(window,ListFindElement1(&window->wblocks->l,block->l.num));
+    
+    BS_SelectPlaylistPos(ATOMIC_GET(root->curr_playlist));
+  }PC_StopPause(NULL);
 }
 
 extern size_t allocated;

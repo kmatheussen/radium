@@ -14,12 +14,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
-#ifndef TRACKER_INCLUDE
-
-#include "nsmtracker.h"
+#ifndef _RADIUM_COMMON_SONG_PROC_H
+#define _RADIUM_COMMON_SONG_PROC_H
 
 extern void ClearSong(void);
 extern bool NewSong(void);
+
+extern LANGSPEC struct Song *SONG_create(void);
 
 #endif
