@@ -805,8 +805,9 @@ static float get_voice_velocity(struct PatchVoice *voice){
 
 void RT_PATCH_send_play_note_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   int i;
-  
-  RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
+
+  if (patch->instrument==get_audio_instrument())
+    RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
              
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
@@ -913,7 +914,8 @@ int64_t PATCH_play_note(struct Patch *patch, const note_t note){
 void RT_PATCH_send_stop_note_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   int i;
 
-  RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
+  if (patch->instrument==get_audio_instrument())
+    RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
     
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
@@ -1004,7 +1006,8 @@ void PATCH_stop_note(struct Patch *patch, const note_t note){
 void RT_PATCH_send_change_velocity_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   //printf("\n\nRT_PATCH_VELOCITY. ___velocity for note %f, time: %d, id: %d (vel: %f)\n\n",notenum,(int)time,(int)note_id,velocity);
 
-  RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
+  if (patch->instrument==get_audio_instrument())
+    RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
     
   int i;
 
@@ -1089,7 +1092,8 @@ void PATCH_change_velocity(struct Patch *patch, const note_t note){
 void RT_PATCH_send_change_pitch_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   int i;
 
-  RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
+  if (patch->instrument==get_audio_instrument())
+    RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
   
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
@@ -1162,7 +1166,9 @@ void PATCH_change_pitch(struct Patch *patch, const note_t note){
 extern void aiai(int64_t id, const symbol_t *port_name, uint32_t msg);
 
 void RT_PATCH_send_raw_midi_message_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, uint32_t msg, STime time){
-  RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
+
+  if (patch->instrument==get_audio_instrument())
+    RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
   
   int i;
 

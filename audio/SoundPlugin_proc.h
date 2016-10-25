@@ -90,9 +90,6 @@ static inline void RT_PLUGIN_touch(SoundPlugin *plugin){
   //  if (plugin->patch!=NULL && !strcmp(plugin->patch->name,"Test"))
   //    printf("Touching %s\n",plugin->patch==NULL ? "(null)" : plugin->patch->name);
 
-  if (patch->instrument!=get_audio_instrument())
-    return;
-    
   if (plugin != NULL) {
     int64_t last_used_time = MIXER_get_last_used_time();
   
