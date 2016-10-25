@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "cursor_proc.h"
 #include "undo_block_insertdelete_proc.h"
 #include "playerclass.h"
-#include "blocklist_proc.h"
 #include "player_proc.h"
 #include "player_pause_proc.h"
 #include "visual_proc.h"

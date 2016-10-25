@@ -51,7 +51,7 @@ void SaveSong(struct Song *song){
 DC_start("SONG");
 
 	DC_SSN("num_blocks",song->num_blocks);
-	DC_SSI("length",song->length);
+	DC_SSI("length", 0); // Not used anymore
 	DC_SSS("songname",song->songname);
 	//DC_SSN("maxtracks",song->maxtracks);
 
@@ -159,7 +159,8 @@ var0:
 	song->num_blocks=DC_LoadI();
 	goto start;
 var1:
-	song->length=DC_LoadI();
+	//song->length=DC_LoadI();
+        DC_LoadI();
 	goto start;
 var2:
 	song->songname=DC_LoadS();

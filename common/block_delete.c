@@ -7,7 +7,6 @@
 #include "undo_block_insertdelete_proc.h"
 #include "player_proc.h"
 #include "player_pause_proc.h"
-#include "blocklist_proc.h"
 #include "seqtrack_proc.h"
 
 #include "block_delete_proc.h"

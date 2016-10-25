@@ -38,7 +38,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "PEQmempool_proc.h"
 #endif
 #include "instruments_proc.h"
-#include "blocklist_proc.h"
 #include "OS_Ptask2Mtask_proc.h"
 #include "time_proc.h"
 #include "OS_Bs_edit_proc.h"
@@ -478,7 +477,7 @@ void PlaySongCurrPos2(struct Tracker_Windows *window, Place *place){
 
 	if(
 		! changeblock &&
-		playpos==root->song->length-1 &&
+		//playpos==root->song->length-1 &&
 		wblock->curr_realline==wblock->num_reallines  // ??. Never supposed to happen.
 	){
 		return;

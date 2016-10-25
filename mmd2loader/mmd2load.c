@@ -512,7 +512,6 @@ static void MMD_LoadPlayList(struct Tracker_Windows *window,disk_t *file,ULONG m
           SONG_delete_seqtrack(0);
 
         SONG_replace_seqtrack(new_seqtrack, 0);
-
 }
 
 
