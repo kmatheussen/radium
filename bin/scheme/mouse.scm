@@ -2899,7 +2899,7 @@
                         :Make-undo (lambda (_)
                                      50)
                         :Move (lambda (_ Value)
-                                (define song-length (<ra> :get-song-length-in-frames))
+                                (define song-length (<ra> :get-sequencer-song-length-in-frames))
                                 (define new-start-time (floor (scale Value
                                                                      (<ra> :get-seqnav-x1) (<ra> :get-seqnav-x2);; (<ra> :get-seqnav-right-size-handle-x1)
                                                                      0 song-length)))
@@ -2936,7 +2936,7 @@
                         :Make-undo (lambda (_)
                                      50)
                         :Move (lambda (_ Value)
-                                (define song-length (<ra> :get-song-length-in-frames))
+                                (define song-length (<ra> :get-sequencer-song-length-in-frames))
                                 (define new-end-time (floor (scale Value
                                                                    (<ra> :get-seqnav-x1) (<ra> :get-seqnav-x2);; (<ra> :get-seqnav-right-size-handle-x1)
                                                                    0 song-length)))
@@ -2994,7 +2994,7 @@
                                      50)
                         :Move (lambda (_ Value)
                                 (define old-start-time (<ra> :get-sequencer-visible-start-time))
-                                (define song-length (<ra> :get-song-length-in-frames))
+                                (define song-length (<ra> :get-sequencer-song-length-in-frames))
                                 (define new-start-time (floor (scale Value
                                                                      (<ra> :get-seqnav-x1) (<ra> :get-seqnav-x2);; (<ra> :get-seqnav-right-size-handle-x1)
                                                                      0 song-length)))

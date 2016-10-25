@@ -1037,11 +1037,12 @@ class Playlist:
         self.patternnums = patternnums
 
     def generate(self):
-        radium.setPlaylistLength(len(self.patternnums))
-        pos = 0
+        #radium.setPlaylistLength(len(self.patternnums))
+        #pos = 0
         for patternnum in self.patternnums:
-            radium.setPlaylistBlock(pos, patternnum)
-            pos += 1
+            radium.addBlockToSeqTrack(0, patternnum, radium.getSongLengthInFrames())
+            #radium.setPlaylistBlock(pos, patternnum)
+            #pos += 1
 
 class Song:
     def __init__(self, name, patterns, samples, playlist):

@@ -473,7 +473,7 @@ double SONG_get_length(void){
       len = seqtrack_len;
   }END_VECTOR_FOR_EACH;
 
-  return len + 30;
+  return len;
 }
 
 void SONG_init(void){

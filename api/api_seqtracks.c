@@ -51,6 +51,10 @@ void undoSequencer(void){
 
 // sequencer
 
+int64_t getSequencerSongLengthInFrames(void){
+  return (SONG_get_length() + SEQUENCER_EXTRA_SONG_LENGTH) * MIXER_get_sample_rate();
+}
+
 int getSequencerVisibleStartTime(void){
   return (int)SEQUENCER_get_visible_start_time();
 }

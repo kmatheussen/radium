@@ -4,6 +4,7 @@
 #define _RADIUM_COMMON_SEQTRACK_PROC_H
 
 #define SEQNAV_SIZE_HANDLE_WIDTH 50
+#define SEQUENCER_EXTRA_SONG_LENGTH 30.0 // sequencer gui always shows 30 seconds more than the song length
 
 extern LANGSPEC int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_to_ignore, int64_t abstime);
   

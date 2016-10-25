@@ -25,6 +25,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static bool g_need_update = false;
 
+static double get_visible_song_length(void){
+  return SONG_get_length() + SEQUENCER_EXTRA_SONG_LENGTH;
+}
+  
+
 
 static QPoint mapToEditor(QWidget *widget, QPoint point){
   //return widget->mapTo(g_editor, point); (g_editor must be a parent, for some reason)
@@ -231,6 +236,15 @@ public:
     QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
     QColor border_color(50,20,35);// = get_qcolor(MIXER_BORDER_COLOR_NUM);
 
+    QColor header_border_color = QColor(20,20,20);
+    QColor track_border_color = QColor(20,20,20,128);
+
+    QPen header_border_pen(header_border_color);
+    QPen track_border_pen(track_border_color);
+
+    header_border_pen.setWidthF(2.3);
+    track_border_pen.setWidthF(1.3);
+
     //if (x1 > -5000) { // avoid integer overflow error.
     p.setPen(text_color);
     //p.drawText(x1+4,2,x2-x1-6,height()-4, Qt::AlignLeft, QString::number(seqblock->block->l.num) + ": " + seqblock->block->name);
@@ -250,15 +264,9 @@ public:
       float t_y2 = scale(track->l.num+1,0,num_tracks,y1+20,y2);
       
       // Draw track border
-      if (track->l.num>=0){
-
-        QLineF line(x1,t_y1,x2,t_y1);
-
-        QPen pen(QColor(20,20,20));
-        pen.setWidthF(2.3);
-        p.setPen(pen);
-        
-        p.drawLine(line);        
+      {
+        p.setPen(track->l.num==0 ? header_border_pen : track_border_pen);        
+        p.drawLine(QLineF(x1,t_y1,x2,t_y1));
       }
 
       // Draw track
@@ -279,7 +287,7 @@ public:
     p.fillRect(1,1,width()-2,height()-1, QColor(50,50,50));
 
     double sample_rate = MIXER_get_sample_rate();
-    //double song_length = SONG_get_length()*sample_rate;
+    //double song_length = get_visible_song_length()*sample_rate;
   
     SEQTRACK_update_all_seqblock_start_and_end_times(_seqtrack);
 
@@ -594,18 +602,18 @@ private:
     return scale(_end_time, 0, total, 0, width());
   }
 public:
-  
+
   float get_x1(void){
-    return get_x1(SONG_get_length()*MIXER_get_sample_rate());
+    return get_x1(get_visible_song_length()*MIXER_get_sample_rate());
   }
   float get_x2(void){
-    return get_x2(SONG_get_length()*MIXER_get_sample_rate());
+    return get_x2(get_visible_song_length()*MIXER_get_sample_rate());
   }
   
   void paintEvent ( QPaintEvent * ev ) override {
     QPainter p(this);
 
-    double total_seconds = SONG_get_length();
+    double total_seconds = get_visible_song_length();
     double total = total_seconds*MIXER_get_sample_rate();
     
     p.setRenderHints(QPainter::Antialiasing,true);
@@ -697,7 +705,7 @@ struct Sequencer_widget : public QWidget {
   
   Sequencer_widget(QWidget *parent)
     : QWidget(parent)
-    , _end_time(SONG_get_length()*MIXER_get_sample_rate())
+    , _end_time(get_visible_song_length()*MIXER_get_sample_rate())
     , _samples_per_pixel((_end_time-_start_time) / width())
     , _timeline_widget(this, _start_time, _end_time)
     , _seqtracks_widget(this, _start_time, _end_time)
@@ -714,7 +722,7 @@ struct Sequencer_widget : public QWidget {
   }
 
   void my_update(void){
-    int64_t song_length = MIXER_get_sample_rate() * SONG_get_length();
+    int64_t song_length = MIXER_get_sample_rate() * get_visible_song_length();
     if (_end_time > song_length)
       _end_time = song_length;
     
