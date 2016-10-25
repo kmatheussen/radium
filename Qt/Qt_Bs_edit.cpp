@@ -750,8 +750,6 @@ private slots:
     if (pe.is_pause()){
       PC_Pause();{
           
-        ATOMIC_SET(root->curr_playlist, num);
-        
         blocklist_highlighted(pe.seqblock->block->l.num);
           
       }PC_StopPause(NULL);
@@ -904,6 +902,10 @@ struct SeqBlock *BS_GetNextPlaylistBlock(void){
 
 struct Blocks *BS_GetBlockFromPos(int pos){
   return bs->get_block_from_pos(pos);
+}
+
+int BS_GetCurrPlaylistPos(void){
+  return bs->playlist.currentRow();
 }
 
 #if 0

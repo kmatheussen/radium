@@ -69,8 +69,6 @@ int default_scrolls_per_second = 20;
 // Simpler version when using opengl
 void P2MUpdateSongPosCallBack(void){
 
-  bool setfirstpos=ATOMIC_GET(root->setfirstpos);
-
   NInt curr_block_num = ATOMIC_GET(root->curr_blocknum);
   
   struct Tracker_Windows *window=root->song->tracker_windows;
@@ -86,9 +84,6 @@ void P2MUpdateSongPosCallBack(void){
     wblock->bot_realline += till_curr_realline - old_curr_realline;
   }
   
-  if(pc->playtype==PLAYSONG)
-    BS_SelectPlaylistPos(ATOMIC_GET(root->curr_playlist));
-  
   if(window->curr_block!=curr_block_num){
 
 #if 0
@@ -98,11 +93,6 @@ void P2MUpdateSongPosCallBack(void){
 
     //printf("Bef. w: %d, r: %d\n",window->curr_block,root->curr_block);
 
-    if(setfirstpos){
-      wblock->curr_realline=0;
-      SetWBlock_Top_And_Bot_Realline(window,wblock);
-      GE_set_curr_realline(0);
-    }
     SelectWBlock(
                  window,
                  wblock
@@ -121,7 +111,6 @@ static STime last_time = 0;
 
 void P2MUpdateSongPosCallBack(void){
 	struct Tracker_Windows *window=root->song->tracker_windows;
-	bool setfirstpos=ATOMIC_GET(root->setfirstpos);
 	NInt curr_block=ATOMIC_GET(root->curr_blocknum);
 	struct WBlocks *wblock;
 	int till_curr_realline;
@@ -140,20 +129,12 @@ void P2MUpdateSongPosCallBack(void){
 			till_curr_realline=ATOMIC_GET(wblock->till_curr_realline);
                         
 			if(window->curr_block!=curr_block){
-				if(setfirstpos){
-					wblock->curr_realline=0;
-					SetWBlock_Top_And_Bot_Realline(window,wblock);
-				}
 				SelectWBlock(
 					window,
 					wblock
 				);
 			}
 
-			if(setfirstpos){			// The player routine (PEQblock.c) sets this one.
-                          ATOMIC_SET(wblock->till_curr_realline, 0);
-                          till_curr_realline=0;
-			}
 
 			//fprintf(stderr,"tilline: %d\n",till_curr_realline);
 #if 0
@@ -197,7 +178,6 @@ void P2MUpdateSongPosCallBack(void){
 		window=NextWindow(window);
 }
 
-	ATOMIC_SET(root->setfirstpos, false);
 
 }
 

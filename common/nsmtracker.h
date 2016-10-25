@@ -1792,17 +1792,13 @@ struct SeqPlaylist{
 struct Song{
 	struct Tracker_Windows *tracker_windows;
 	struct Blocks *blocks;
-        //struct Blocks **playlist;			/* This variable is just temporarily. Later, the playlist will be much more advanced. */
 
         struct SeqTrack block_seqtrack; // Used when playing block.
 
         int curr_seqtracknum;
-        //int num_seqtracks;
-        //struct SeqTrack **seqtracks;
         vector_t seqtracks; // New playlist. Player must both be stopped and locked when modifying this variable, or any of the contents.
   
 	NInt num_blocks;
-  //int length;								/* Playlist length. */
 	char *songname;
 
 	hash_t *mixerwidget_state; // Only used during loading.
@@ -1816,10 +1812,7 @@ struct Song{
 struct Root{
 	struct Song *song;
 
-        DEFINE_ATOMIC(int, curr_playlist); // TODO: Remove
         DEFINE_ATOMIC(NInt, curr_blocknum); // Currently playing blocknum
-
-        DEFINE_ATOMIC(bool, setfirstpos);
 
 	int tempo;			/* Standard tempo. */
 	int lpb;			/* Standard lpb. */

@@ -167,7 +167,7 @@ bool SOUNDFILESAVER_save(const char *filename, enum SOUNDFILESAVER_what what_to_
   {
     MIXER_start_saving_soundfile();
     if(what_to_save==SAVE_SONG)
-      PlaySongFromStart(root->song->tracker_windows);
+      PlaySongFromStart();
     else if(what_to_save==SAVE_BLOCK)
       PlayBlockFromStart(root->song->tracker_windows,false);
     else

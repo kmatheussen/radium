@@ -503,11 +503,9 @@ void SelectPrevPlaylistWBlock(struct Tracker_Windows *window){
   struct Blocks *block=seqblock->block;
 
   PC_Pause();{
-    ATOMIC_ADD(root->curr_playlist, -1);
-    
     SelectWBlock(window,ListFindElement1(&window->wblocks->l,block->l.num));
     
-    BS_SelectPlaylistPos(ATOMIC_GET(root->curr_playlist));
+    BS_SelectPlaylistPos(BS_GetCurrPlaylistPos()-1);
   }PC_StopPause(NULL);
 }
 
@@ -519,11 +517,9 @@ void SelectNextPlaylistWBlock(struct Tracker_Windows *window){
   struct Blocks *block=seqblock->block;
 
   PC_Pause();{
-    ATOMIC_ADD(root->curr_playlist, 1);
-    
     SelectWBlock(window,ListFindElement1(&window->wblocks->l,block->l.num));
-    
-    BS_SelectPlaylistPos(ATOMIC_GET(root->curr_playlist));
+
+    BS_SelectPlaylistPos(BS_GetCurrPlaylistPos()+1);
   }PC_StopPause(NULL);
 }
 

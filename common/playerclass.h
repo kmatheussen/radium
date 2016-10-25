@@ -32,10 +32,6 @@ struct PEventQueue{
 
 	void (*TreatMe)(struct PEventQueue *peq, int doit);
 
-// Used by all
-//	int playpos;				// Position in the playlist this event was generated from.
-
-
 // Used by various functions.
         const struct SeqTrack *seqtrack;
 	const struct Tracker_Windows *window;
@@ -136,7 +132,6 @@ typedef struct{
         
 	struct Blocks *block;		// The block now playing. Must be read and written atomically, except when we are reading in the player thread. Can only be written to in the player thread.
 
-	volatile int playpos;		// Number of blocks currently being played. Not the same as root->curr_playlist.
 	STime pausetime;
 	bool nowpausing;
 

@@ -365,7 +365,6 @@ static DEFINE_ATOMIC(STime, jackblock_cycle_start_stime) = 0;
 static DEFINE_ATOMIC(STime, jackblock_last_frame_stime) = 0;
 static DEFINE_ATOMIC(Blocks *, jackblock_block) = NULL;
 static DEFINE_ATOMIC(STime, jackblock_seqtime) = 0;
-static DEFINE_ATOMIC(int, jackblock_playlistpos) = 0;
 
 //static DEFINE_SPINLOCK(jackblock_spinlock); // used by two realtime threads (midi input and audio thread)
 static SetSeveralAtomicVariables jackblock_variables_protector;
@@ -722,8 +721,6 @@ struct Mixer{
           ATOMIC_SET(jackblock_seqtime, curr_seqblock->time);
         else
           ATOMIC_SET(jackblock_seqtime, 0);
-        
-        ATOMIC_SET(jackblock_playlistpos, ATOMIC_GET(root->curr_playlist));
         
       }jackblock_variables_protector.write_end();
       

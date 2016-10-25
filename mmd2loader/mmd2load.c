@@ -688,7 +688,6 @@ bool LoadMMP2(struct Tracker_Windows *window,const wchar_t *filename){
 
 	ResetUndo();
 
-	ATOMIC_SET(root->curr_playlist, 0);
 	BS_UpdatePlayList();
 	BS_UpdateBlockList();
 

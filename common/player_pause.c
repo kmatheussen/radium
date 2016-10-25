@@ -121,7 +121,7 @@ static void stop_pause(struct Tracker_Windows *window, bool force_play_block){
     else if (g_was_playing_range)
       PlayRangeCurrPos2(window, place);
     else if (g_playtype==PLAYSONG)
-      PlaySongCurrPos2(window, place);
+      PlaySong(0);
   }
 }
 
