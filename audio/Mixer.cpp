@@ -1029,8 +1029,8 @@ static bool fill_in_time_position2(time_position_t *time_position){
   STime jackblock_size2;
   STime seqtime;
   struct Blocks *block;
-  int playlistpos;
-  int playlistpos_numfromcurrent = 0;
+  //int playlistpos;
+  //int playlistpos_numfromcurrent = 0;
 
   int generation;
   do{
@@ -1041,7 +1041,7 @@ static bool fill_in_time_position2(time_position_t *time_position){
     jackblock_size2              = ATOMIC_GET(jackblock_size);
     block                        = ATOMIC_GET(jackblock_block);
     seqtime                      = ATOMIC_GET(jackblock_seqtime);
-    playlistpos                  = ATOMIC_GET(jackblock_playlistpos);
+    //playlistpos                  = ATOMIC_GET(jackblock_playlistpos);
     
   } while(jackblock_variables_protector.read_end(generation)==false); // ensure that the variables inside this loop are read atomically.
 
@@ -1070,13 +1070,17 @@ static bool fill_in_time_position2(time_position_t *time_position){
 #endif
 
   while (accurate_block_time >= getBlockSTimeLength(block)){
+#if 1 // fixme
+    return false;
+#else
     accurate_block_time -= getBlockSTimeLength(block);
     if(pc->playtype==PLAYSONG) {
       playlistpos_numfromcurrent++;
       block = BL_GetBlockFromPos(playlistpos + playlistpos_numfromcurrent);
       if (block==NULL)
-        return false; // end of song
+        return false; // end of song or pause
     }
+#endif
   }
 
 #if !defined(RELEASE)

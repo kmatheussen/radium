@@ -47,7 +47,8 @@ bool NewSong(void){
 
 	AppendBlock();
 
-	BL_init();
+        SONG_init();
+	//BL_init();
 
 
 	if(OpenTrackerWindow(20,20,00,00)==-1) return false;

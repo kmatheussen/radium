@@ -1622,6 +1622,7 @@ void setFaustGuiStyle(const char *style){
 
 // PLAYLIST
 
+/*
 void setPlaylistLength(int len){
   BL_setLength(len);
 }
@@ -1633,6 +1634,7 @@ void setPlaylistBlock(int pos, int blocknum){
 
   BL_setBlock(pos, block);
 }
+*/
 
 static double get_block_length(struct Blocks *block){
   double time = getBlockSTimeLength(block);

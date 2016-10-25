@@ -77,6 +77,7 @@ extern LANGSPEC void SEQUENCER_update_all_seqblock_start_and_end_times(void);
 extern LANGSPEC double SONG_get_length(void);
 extern LANGSPEC void SONG_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos);
 extern LANGSPEC void SONG_delete_seqtrack(int pos);
-  
+extern LANGSPEC void SONG_init(void);
+
 #endif
 
