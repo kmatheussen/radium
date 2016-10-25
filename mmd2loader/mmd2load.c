@@ -78,7 +78,7 @@ typedef uint8_t UBYTE;
 #include "../common/reallines_proc.h"
 #include "../common/undo.h"
 #include "../common/visual_proc.h"
-#include "../common/blocklist_proc.h"
+#include "../common/seqtrack_proc.h"
 #include "../common/disk_load_proc.h"
 #include "../common/time_proc.h"
 #include "../common/Beats_proc.h"
@@ -482,7 +482,6 @@ static void MMD_LoadPlayList(struct Tracker_Windows *window,disk_t *file,ULONG m
 	UWORD length;
 	UWORD blocknum;
 	int lokke;
-	struct WBlocks *wblock;
 
 	DISK_set_pos(file,mmd2song+(sizeof(struct MMD0sample)*63)+4);
 	//fread(&playseq,4,1,file);
@@ -500,15 +499,20 @@ static void MMD_LoadPlayList(struct Tracker_Windows *window,disk_t *file,ULONG m
 
 	printf("length: %x\n",length);
 
-	root->song->length=length;
-	root->song->playlist=talloc_atomic(sizeof(struct Blocks *)*length);
-
+        int *playlist = talloc_atomic(sizeof(int) * length);
+        
 	for(lokke=0;lokke<length;lokke++){
-          //fread(&blocknum,2,1,file);
           blocknum = read_be16uint(file);
-          wblock=ListFindElement1(&window->wblocks->l,(NInt)blocknum);
-          root->song->playlist[lokke]=wblock->block;
+          playlist[lokke] = blocknum;
 	}
+
+        struct SeqTrack *new_seqtrack = SEQTRACK_create_from_playlist(playlist, length);
+
+        while(root->song->seqtracks.num_elements > 1)
+          SONG_delete_seqtrack(0);
+
+        SONG_replace_seqtrack(new_seqtrack, 0);
+
 }
 
 
