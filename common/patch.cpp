@@ -1360,9 +1360,10 @@ void PATCH_stop_all_notes(struct Patch *patch){
     while(patch->playing_notes != NULL)
       Patch_removePlayingNote(patch, patch->playing_notes->note.id, patch->playing_notes->seqtrack);
 
-    // 3. Do the same to the playing voices in the audio system.
+    // 3. Do the same to the playing voices in the audio system. (may be hanging notes there due to notes started later because of latency compensation)
     //
-    AUDIO_stop_all_notes(patch);
+    if (patch->instrument==get_audio_instrument())
+      AUDIO_stop_all_notes(patch);
 
 #if !defined(RELEASE)
     R_ASSERT(patch->playing_notes==NULL);
