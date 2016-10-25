@@ -169,9 +169,6 @@ void PlayerTask(STime reltime){
             }
 #endif
           
-          // Currently, there are two scheduling systems. The old linked list (PEQ), and this one.
-          // This one, the SCHEDULER, is a priority queue. The plan is to shift things from PEQ into SCHEDULER.
-          // Until everything is shifted from PEQ to SCHEDULER, and the PEQ-mess remains, things will be more complicated than necessary.
           is_finished = SCHEDULER_called_per_block(tempoadjusted_reltime);
 
         } pc->is_treating_editor_events = false;

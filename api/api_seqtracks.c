@@ -143,7 +143,7 @@ float getSeqtrackY2(int seqtracknum){
   return SEQTRACK_get_y2(seqtracknum);
 }
 
-void insertSilenceToSeqtrack( int seqtracknum, int64_t pos, int64_t duration){
+void insertSilenceToSeqtrack(int seqtracknum, int64_t pos, int64_t duration){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return;
@@ -153,7 +153,7 @@ void insertSilenceToSeqtrack( int seqtracknum, int64_t pos, int64_t duration){
   SEQTRACK_insert_silence(seqtrack, pos, duration);
 }
 
-void addBlockToSeqtrack( int seqtracknum, int blocknum, int64_t pos){
+void addBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return;
@@ -164,7 +164,7 @@ void addBlockToSeqtrack( int seqtracknum, int blocknum, int64_t pos){
 
   ADD_UNDO(Sequencer());
 
-  SEQTRACK_insert_seqblock(seqtrack, block, pos);
+  SEQTRACK_insert_block(seqtrack, block, pos);
 }
 
 // seqblocks
@@ -222,5 +222,12 @@ void moveSeqblock(int seqblocknum, int64_t abstime, int seqtracknum){
   
   //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
   SEQTRACK_move_seqblock(seqtrack, seqblock, abstime);
+}
+
+void deleteSeqblock(int seqtracknum, int seqblocknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+
+  SEQTRACK_delete_seqblock(seqtrack, seqblock);
 }
 

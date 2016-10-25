@@ -52,11 +52,14 @@ extern LANGSPEC void SEQUENCER_update(void);
 
   
 // seqtrack
+extern LANGSPEC void RT_legalize_seqtrack_timing(struct SeqTrack *seqtrack);
+
 extern LANGSPEC void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int seqblocknum, int64_t how_much);
 extern LANGSPEC void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
 extern LANGSPEC void SEQTRACK_move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
 extern LANGSPEC void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t length);
-extern LANGSPEC void SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime);
+extern LANGSPEC void SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime);
+extern LANGSPEC void SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime);
 extern LANGSPEC double SEQTRACK_get_length(struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQTRACK_init(struct SeqTrack *seqtrack);
 extern LANGSPEC struct SeqTrack *SEQTRACK_create(void);

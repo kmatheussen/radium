@@ -20,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/playerclass.h"
 #include "../common/visual_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
-#include "../common/blocklist_proc.h"
 #include "../api/api_common_proc.h"
 #include "../common/player_proc.h"
 #include "../common/player_pause_proc.h"
@@ -586,7 +585,7 @@ private slots:
       const struct SeqBlock *last_seqblock = (const struct SeqBlock*)VECTOR_last(&seqtrack->seqblocks);
       int64_t seqtime = last_seqblock==NULL ? 0 : (last_seqblock->time + getBlockSTimeLength(last_seqblock->block));
       
-      SEQTRACK_insert_seqblock(seqtrack, block, seqtime);
+      SEQTRACK_insert_block(seqtrack, block, seqtime);
 
     } else {
 
@@ -601,7 +600,7 @@ private slots:
       //
       // SEQTRACK_insert_silence(seqtrack, seqtime, getBlockSTimeLength(block));
       
-      SEQTRACK_insert_seqblock(seqtrack, block, seqtime);
+      SEQTRACK_insert_block(seqtrack, block, seqtime);
       
     }
     
@@ -631,24 +630,69 @@ private slots:
     printf("remove from playlist\n");
   }
 
-  void move_down(void){
-    int num = playlist.currentItem();
-    if(num==-1)
-      return;
-    if (num>=playlist.count()-2)
-      return;
-    BL_moveDown(num);
-    playlist.setSelected(num+1, true);
-  }
+  void swap(int pos1, int pos2){
+    struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+      
+    QVector<PlaylistElement> elements = get_playlist_elements();
 
+    const PlaylistElement &element1 = elements.at(pos1);
+    const PlaylistElement &element2 = elements.at(pos2);
+
+    struct SeqBlock *seqblock1 = element1.seqblock;
+    struct SeqBlock *seqblock2 = element2.seqblock;
+
+    ADD_UNDO(Sequencer());
+        
+    if (element2.is_pause()){
+      
+      SEQTRACK_move_seqblock(seqtrack, seqblock1, seqblock1->time + element2.get_pause());
+      
+    } else if (element1.is_pause()){
+
+      SEQTRACK_move_seqblock(seqtrack, seqblock2, seqblock2->time - element1.get_pause());
+      
+    } else {
+
+      //printf("Bef: %f %f\n", (double)seqblock1->time/MIXER_get_sample_rate(), (double)seqblock2->time/MIXER_get_sample_rate());
+
+      {
+        radium::PlayerPause pause; // Only restart the player once.
+
+        SEQTRACK_delete_seqblock(seqtrack, seqblock1);
+        SEQTRACK_move_seqblock(seqtrack, seqblock2, seqblock1->time);
+        SEQTRACK_insert_seqblock(seqtrack, seqblock1, seqblock2->time+getBlockSTimeLength(seqblock2->block));
+      }
+
+      //printf("Aft2: %f %f\n", (double)seqblock1->time/MIXER_get_sample_rate(), (double)seqblock2->time/MIXER_get_sample_rate());
+            
+      SEQUENCER_update();
+      BS_UpdatePlayList();
+    }
+  }
+  
+  void move_down(void){
+    int pos= playlist.currentItem();
+    if(pos==-1)
+      return;
+    if (pos>=playlist.count()-2)
+      return;
+
+    swap(pos, pos+1);
+    
+    playlist.setSelected(pos+1, true);
+    
+  }
+  
   void move_up(void){
-    int num = playlist.currentItem();
-    if(num<=0)
+    int pos = playlist.currentItem();
+    if(pos<=0)
       return;
-    if (num==playlist.count()-1)
+    if (pos==playlist.count()-1)
       return;
-    BL_moveUp(num);
-    playlist.setSelected(num-1, true);
+
+    swap(pos-1, pos);
+        
+    playlist.setSelected(pos-1, true);
   }
   
   void blocklist_highlighted(int num){

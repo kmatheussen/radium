@@ -222,13 +222,18 @@ static void start_player(int playtype, int playpos, bool set_curr_playlist, Plac
     }PLAYER_unlock();
   }
 
-  int64_t block_time = Place2STime(block,place);
-  int64_t global_start_time = block_start_time + block_time;
 
-  if (playtype==PLAYSONG)
-    start_seqtrack_song_scheduling(global_start_time);
-  else
+  if (playtype==PLAYSONG) {
+    
+    int64_t block_seqtime = Place2STime(block,place);
+    int64_t global_start_seqtime = block_start_time + block_seqtime;
+    start_seqtrack_song_scheduling(global_start_seqtime);
+    
+  } else {
+    
     start_seqtrack_block_scheduling(*place);
+    
+  }
   
 #endif
   
@@ -502,3 +507,6 @@ void PlaySongCurrPos2(struct Tracker_Windows *window, Place *place){
 void PlaySongCurrPos(struct Tracker_Windows *window){
   PlaySongCurrPos2(window, NULL);
 }
+
+
+

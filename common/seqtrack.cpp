@@ -64,7 +64,7 @@ static struct SeqBlock *get_seqblock(struct Blocks *block){
 
 // Ensures that two seqblocks doesn't overlap, and that a seqblock doesn't start before 0.
 // Preserves original pause times.
-static void RT_legalize_seqtrack_timing(struct SeqTrack *seqtrack){
+void RT_legalize_seqtrack_timing(struct SeqTrack *seqtrack){
   R_ASSERT(PLAYER_current_thread_has_lock());
   
   int64_t last_end_time = 0;
@@ -344,8 +344,14 @@ void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t
   BS_UpdatePlayList();
 }
 
-void SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime){
+void SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime){
 
+  // Assert that the seqblock is not in a seqtrack already.
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack_here, &root->song->seqtracks){
+    R_ASSERT_RETURN_IF_FALSE(!VECTOR_is_in_vector(&seqtrack_here->seqblocks, seqblock));
+  }END_VECTOR_FOR_EACH;
+
+  
   int pos = 0;
   
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
@@ -363,8 +369,6 @@ void SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct Blocks *block, i
     
   VECTOR_ensure_space_for_one_more_element(&seqtrack->seqblocks);
 
-  struct SeqBlock *seqblock = get_seqblock(block);
-  
   {
     radium::PlayerPause pause;
     radium::PlayerLock lock;
@@ -377,6 +381,11 @@ void SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct Blocks *block, i
   }
 
   RT_SEQUENCER_update_sequencer_and_playlist();
+}
+
+void SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime){
+  struct SeqBlock *seqblock = get_seqblock(block);
+  SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime);
 }
 
 double SEQTRACK_get_length(struct SeqTrack *seqtrack){
