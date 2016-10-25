@@ -76,7 +76,7 @@ static int64_t RT_scheduled_fx(struct SeqTrack *seqtrack, int64_t time, union Su
       __atomic_store_n(slider_automation_color, fx->color, __ATOMIC_SEQ_CST);
   }
   
-  if (time==time2) { // If we check "when==FX_end" instead, we go into an infinte loop if time==time1==time2.
+  if (time >= time2) { // If we check "when==FX_end" instead, we go into an infinte loop if time==time1==time2.
     
     RT_schedule_fxnodeline(seqtrack, seqblock, track, fx, fxnodeline2, fxnodeline2->l.p);
     return DONT_RESCHEDULE;
