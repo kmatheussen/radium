@@ -65,7 +65,9 @@ void PlayerTask(STime reltime){
           if (SCHEDULER_clear_all()) {
             ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);  // Finished. SCHEDULER_clear() cleared everything.
             //RT_BACKUP_reset_timer(); // Don't want to take backup right after stopping to play. It's quite annoying. (we handle this directly in Qt_AutoBackups instead)
-            player_state = PLAYER_STATE_STOPPED;           
+            
+            player_state = PLAYER_STATE_STOPPED;
+            
           } else            
             return; // Must run SCHEDULER_clear() at least one more time. We don't want clear too much at once since it could cause CPU spikes.
           

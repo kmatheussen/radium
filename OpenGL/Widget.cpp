@@ -804,16 +804,16 @@ private:
       if (blocktime==-100 || blocktime>=0.0){
       }else{
         fprintf(stderr,"blocktime: %f\n",blocktime);
-        abort();
+        //abort();
       }
 #endif
 
-      R_ASSERT_NON_RELEASE(blocktime==-100 || blocktime>=0.0);
+      //R_ASSERT_NON_RELEASE(blocktime==-100 || blocktime>=0.0);
 
       //printf("blocktime: %f\n",blocktime);
       
       if (is_playing){
-        if (blocktime < -10.0) {  // I.e. we just switched block, but the blocktime has not been calculated yet.
+        if (blocktime < 0.0) {  // Either the block hasn't started playing yet (sequencer cursor is inside a pause), or we just switched block and waiting for a proper blocktime to be calculated.
           
           if (new_t2_data!=NULL && use_t2_thread)
             T3_t2_data_picked_up_but_old_data_will_be_sent_back_later();

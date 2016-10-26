@@ -194,12 +194,14 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
 
   
   PLAYER_lock();{
-    
+
     R_ASSERT(SCHEDULER_num_events(RT_get_curr_seqtrack()->scheduler)==0);
 
     ATOMIC_SET(pc->song_abstime, abs_start_time);
 
     VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
+
+      seqtrack->curr_seqblock = NULL;
 
       int64_t seq_start_time = seq_start_times[iterator666];
       
@@ -215,7 +217,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
         int64_t seqblock_start_time = seqblock->time;
         int64_t seqblock_end_time   = seqblock_start_time + getBlockSTimeLength(seqblock->block);
         
-        if (seq_start_time >= seqblock_start_time && seq_start_time < seqblock_end_time){
+        if (seq_start_time < seqblock_end_time){
           
           union SuperType args[G_NUM_ARGS];
           
@@ -270,6 +272,7 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place){
 #endif
 
     struct SeqTrack *seqtrack = &root->song->block_seqtrack;
+    seqtrack->curr_seqblock = NULL;
     
     static struct SeqBlock seqblock = {0};
     seqblock.block = block;
