@@ -779,8 +779,8 @@ private:
     int playing_blocknum = -1;
 
     if (is_playing){
-      
-      const struct Blocks *block = (const struct Blocks*)atomic_pointer_read((void**)&pc->block);
+
+      const struct Blocks *block = RT_get_curr_visible_block();
         
       if ((block==NULL || sv->block!=block)) { // Check that our blocktime belongs to the block that is rendered.
         

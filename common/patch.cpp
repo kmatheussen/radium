@@ -1212,7 +1212,7 @@ void RT_PATCH_send_raw_midi_message(struct SeqTrack *seqtrack, struct Patch *pat
       
       args[0].pointer = patch;
       args[1].uint32_num = msg;
-      args[2].float_num = get_block_reltempo();
+      args[2].float_num = get_block_reltempo(seqtrack);
       
       SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_send_raw_midi_message, &args[0], 3, SCHEDULER_RAWMIDIMESSAGE_PRIORITY);
     }
@@ -1236,7 +1236,7 @@ void RT_FX_treat_fx(struct SeqTrack *seqtrack, struct FX *fx,int val,STime time,
   struct Patch *patch = fx->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
-  fx->treatFX(seqtrack,fx,val,time,skip,when,get_block_reltempo());
+  fx->treatFX(seqtrack,fx,val,time,skip,when,get_block_reltempo(seqtrack));
 }
 
 /*
@@ -1265,7 +1265,8 @@ static void RT_PATCH_turn_voice_on(struct SeqTrack *seqtrack, struct Patch *patc
 
       RT_play_voice(seqtrack,
                     patch,
-                    create_note_t(note.id + voicenum,
+                    create_note_t(seqtrack,
+                                  note.id + voicenum,
                                   note.pitch + voice->transpose,
                                   voice_velocity,
                                   note.pan,
@@ -1290,7 +1291,7 @@ static void RT_PATCH_turn_voice_off(struct SeqTrack *seqtrack, struct Patch *pat
 
       RT_stop_voice(seqtrack,
                     patch,
-                    create_note_t(note.id + voicenum,
+                    create_note_t(seqtrack, note.id + voicenum,
                                   note.pitch + voice->transpose,
                                   note.velocity,
                                   note.pan,
@@ -1380,7 +1381,8 @@ void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_
 	if(patch==NULL || notenum<0 || notenum>127) return;
 
 	PATCH_play_note(patch,
-                        create_note_t(note_id,
+                        create_note_t(NULL,
+                                      note_id,
                                       notenum,
                                       TRACK_get_volume(track),
                                       TRACK_get_pan(track),
@@ -1397,7 +1399,7 @@ void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,float notenum, int64_t
 	if(patch==NULL || notenum<0 || notenum>127) return;
 
 	PATCH_stop_note(patch,
-                        create_note_t2(note_id, notenum)
+                        create_note_t2(NULL, note_id, notenum)
                         );
 }
 

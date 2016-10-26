@@ -24,7 +24,8 @@ static int64_t RT_scheduled_stop_note(struct SeqTrack *seqtrack, int64_t time, u
   
   if (patch != NULL){
 
-    note_t note2 = create_note_t3(note->id,
+    note_t note2 = create_note_t3(seqtrack,
+                                  note->id,
                                   note->note,
                                   ATOMIC_GET(track->midi_channel)
                                   );
@@ -153,7 +154,8 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
     
   if(doit && track->onoff==1 && patch!=NULL){
     
-    note_t note2 = create_note_t(note->id,
+    note_t note2 = create_note_t(seqtrack,
+                                 note->id,
                                  note->note,
                                  TRACK_get_velocity(track,note->velocity),
                                  TRACK_get_pan(track),

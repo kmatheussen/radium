@@ -21,12 +21,22 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
                                      int playtype)
 {
 
+  R_ASSERT_RETURN_IF_FALSE(seqblock!=NULL);
+  
   Place place;
-
-  seqtrack->curr_seqblock = seqblock; // bang!
 
   struct Blocks *block = seqblock->block;
 
+  bool new_block = seqtrack->curr_seqblock != seqblock;
+
+  if (new_block) {
+    seqtrack->curr_seqblock = seqblock; // bang!
+
+    // Any value less than -10 will delay rendering the new block. Instead we wait until player.c is called and a proper player_time value is calculated.
+    // To avoid jumpy graphics.
+    ATOMIC_DOUBLE_SET(block->player_time, -100.0);
+  }
+  
   if (playtype==PLAYBLOCK) {
 
     R_ASSERT_RETURN_IF_FALSE(place_pointer != NULL);
@@ -49,14 +59,8 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
   
   // Schedule notes, fx, etc.
   {
-    atomic_pointer_write((void**)&pc->block, block);
-
-    if (pc->block != block) {
-      ATOMIC_DOUBLE_SET(block->player_time, -100.0); // Any value less than -10 will delay rendering the new block. Instead we wait until player.c is called and a proper player_time value is calculated, to avoid jumpy graphics.
-    }
-
     // GFX
-    ATOMIC_SET(root->curr_blocknum, pc->block->l.num);
+    ATOMIC_SET(root->curr_blocknum, block->l.num);
 
     // Signature
     RT_schedule_Signature_newblock(seqtrack, seqblock, place);
@@ -72,14 +76,12 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
 
     // Send new track pan values to patches
     //
-    if(pc->block!=NULL){
-      struct Tracks *track=pc->block->tracks;
-      while(track!=NULL){
-        if(track->panonoff && track->patch!=NULL){
-          (*track->patch->changeTrackPan)(track->pan,track);
-        }
-        track=NextTrack(track);
+    struct Tracks *track=block->tracks;
+    while(track!=NULL){
+      if(track->panonoff && track->patch!=NULL){
+        (*track->patch->changeTrackPan)(track->pan,track);
       }
+      track=NextTrack(track);
     }
 
     // fx
@@ -163,10 +165,14 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
     
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
 
-  struct Blocks *block = pc->block;
-  if (block!=NULL)
-    ATOMIC_DOUBLE_SET(block->player_time, -100.0); // Stop gfx rendering since we are soon going to change the values of pc->end_time and friends.
+  {
+    struct SeqBlock *seqblock = startdata->seqblock;
+    struct Blocks *block = seqblock==NULL ? NULL : seqblock->block;
 
+    if (block!=NULL)
+      ATOMIC_DOUBLE_SET(block->player_time, -100.0); // Stop gfx rendering since we are soon going to change the values of pc->end_time and friends.
+  }
+  
   
   int64_t block_seq_time = 0;
   int64_t abs_start_time;
@@ -174,6 +180,8 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
   if (startdata->seqtrack == NULL) {
     abs_start_time = startdata->abstime;
   } else {
+    R_ASSERT_RETURN_IF_FALSE(startdata->seqblock!=NULL);
+    R_ASSERT_RETURN_IF_FALSE(startdata->seqblock->block!=NULL);
     block_seq_time = Place2STime(startdata->seqblock->block, &startdata->place);
     abs_start_time = get_abstime_from_seqtime(startdata->seqtrack, startdata->seqblock, block_seq_time);
   }
@@ -236,15 +244,16 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
 }
 
 
-void start_seqtrack_block_scheduling(const Place place){
+void start_seqtrack_block_scheduling(struct Blocks *block, const Place place){
   static Place static_place;
 
   static_place = place;
 
+  R_ASSERT_RETURN_IF_FALSE(block!=NULL);
+  
   R_ASSERT_RETURN_IF_FALSE(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
-  R_ASSERT_RETURN_IF_FALSE(pc->block != NULL);
+  
     
-  struct Blocks *block = pc->block;
   ATOMIC_DOUBLE_SET(block->player_time, -100.0); // Stop gfx rendering since we are soon going to change the values of pc->end_time and friends.
 
   int64_t seq_start_time = Place2STime(block, &place);
@@ -266,7 +275,7 @@ void start_seqtrack_block_scheduling(const Place place){
     struct SeqTrack *seqtrack = &root->song->block_seqtrack;
     
     static struct SeqBlock seqblock = {0};
-    seqblock.block = pc->block;
+    seqblock.block = block;
     seqblock.time = 0;
  
     union SuperType args[G_NUM_ARGS];

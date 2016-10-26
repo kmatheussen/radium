@@ -68,7 +68,8 @@ static void Scroll_play_down3(
         while(note != NULL){
           if (PlaceIsBetween2(&note->l.p, p1, p2))
             PATCH_play_note(patch, 
-                            create_note_t(note->id,
+                            create_note_t(NULL,
+                                          note->id,
                                           note->note,
                                           VELOCITY_get(note->velocity),
                                           TRACK_get_pan(track),
@@ -77,7 +78,7 @@ static void Scroll_play_down3(
           
           if (PlaceIsBetween2(&note->end, p1, p2))
             PATCH_stop_note(patch,
-                            create_note_t2(note->id, note->note)
+                            create_note_t2(NULL, note->id, note->note)
                             );
           
           note = NextNote(note);
@@ -99,7 +100,7 @@ static void stop_all_notes_in_track(struct Tracks *track){
     if (patch!=NULL) {
             
       VECTOR_FOR_EACH(struct Notes *note, &scrollplaying_notes[tracknum]){
-        PATCH_stop_note(patch,create_note_t2(note->id, note->note));
+        PATCH_stop_note(patch,create_note_t2(NULL, note->id, note->note));
       }END_VECTOR_FOR_EACH;
       
     }
@@ -138,7 +139,8 @@ static void Scroll_play_up3(
         while(note != NULL){
           if (PlaceIsBetween2(&note->l.p, p1, p2)) {
             PATCH_play_note(patch,
-                            create_note_t(note->id,
+                            create_note_t(NULL,
+                                          note->id,
                                           note->note, 
                                           VELOCITY_get(note->velocity),
                                           TRACK_get_pan(track),

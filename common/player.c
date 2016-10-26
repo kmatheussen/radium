@@ -41,6 +41,7 @@ extern LANGSPEC void OS_InitMidiTiming(void);
 
 static bool g_time_was_stopped = true;
 
+
 void PlayerTask(STime reltime){
         if (ATOMIC_GET(is_starting_up))
           return;
@@ -82,7 +83,9 @@ void PlayerTask(STime reltime){
                    
         double reltempo = 1.0;
 
-        struct Blocks *block = pc->block;          
+        struct SeqBlock *curr_seqblock = RT_get_curr_seqblock();
+        struct Blocks *block = curr_seqblock==NULL ? root->song->blocks : curr_seqblock->block;
+        
         if(block!=NULL)
           reltempo = safe_volatile_float_read(&block->reltempo);
 
@@ -132,11 +135,10 @@ void PlayerTask(STime reltime){
         //printf("Setting new starttime to %f (%d)\n",pc->end_time_f,(int)pc->end_time);
         ATOMIC_DOUBLE_SET(pc->start_time_f, pc->end_time_f);
 
-        struct SeqBlock *curr_seqblock = RT_get_curr_seqblock();
         if (curr_seqblock != NULL)
-          ATOMIC_DOUBLE_SET(pc->block->player_time, pc->end_time - curr_seqblock->time); // curr_seqblock is set in RT_schedule_new_seqblock
+          ATOMIC_DOUBLE_SET(block->player_time, pc->end_time - curr_seqblock->time); // curr_seqblock is set in RT_schedule_new_seqblock
         else
-          ATOMIC_DOUBLE_SET(pc->block->player_time, 0);
+          ATOMIC_DOUBLE_SET(block->player_time, -100);
         
         pc->end_time_f  += tempoadjusted_reltime_f;
         

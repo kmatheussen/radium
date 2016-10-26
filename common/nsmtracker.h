@@ -1760,7 +1760,7 @@ struct SeqTrack{
 
   struct SeqBlock *curr_seqblock; // curr_seqblock->block and curr_seqblock->time contains the same values as pc->block and pc->seqtime did before introducing seqtrack/seqblock.
   
-  Place p; // Used by the scheduler when starting to play in the middle of a block
+  //Place p; // Used by the scheduler when starting to play in the middle of a block
 
   LPB_Iterator lpb_iterator; // Used by scheduler_LPB.c to keep track of timing (PPQ and BPM)
   Beat_Iterator beat_iterator;
@@ -1864,6 +1864,17 @@ static inline struct SeqBlock *RT_get_curr_seqblock(void){
     return curr_seqtrack->curr_seqblock;
 }
 
+static inline struct Blocks *RT_get_curr_visible_block(void){
+  struct SeqBlock *seqblock = RT_get_curr_seqblock();
+  if (seqblock != NULL)
+    return seqblock->block;
+
+  if (root->song->tracker_windows != NULL)
+    return root->song->tracker_windows->wblock->block;
+  else
+    return root->song->blocks;
+}
+
 static inline note_t create_note_t_plain(int64_t note_id,
                                          float pitch,
                                          float velocity,
@@ -1891,42 +1902,43 @@ static inline note_t create_note_t_plain(int64_t note_id,
   return note;  
 }
 
-static inline float get_block_reltempo(void){
-  float reltempo = 1.0f;
+static inline float get_block_reltempo(struct SeqTrack *seqtrack){
+  if (seqtrack==NULL)
+    return 0.0f;
+  
+  struct SeqBlock *seqblock = seqtrack->curr_seqblock;
+  if (seqblock==NULL)
+    return 0.0f;
 
-  if (THREADING_is_main_thread())
-    reltempo = root->song->tracker_windows->wblock->block->reltempo;
-  else if (THREADING_is_player_thread()) {
-    if (pc->block != NULL)
-      reltempo = pc->block->reltempo;
-  }
-
-  return reltempo;
+  return seqblock->block->reltempo;
 }
 
-static inline note_t create_note_t(int64_t note_id,
+static inline note_t create_note_t(struct SeqTrack *seqtrack,
+                                   int64_t note_id,
                                    float pitch,
                                    float velocity,
                                    float pan,
                                    int midi_channel
                                    )
 {
-  return create_note_t_plain(note_id, pitch, velocity, pan, midi_channel, get_block_reltempo());
+  return create_note_t_plain(note_id, pitch, velocity, pan, midi_channel, get_block_reltempo(seqtrack));
 }
 
-static inline note_t create_note_t2(int64_t note_id,
+static inline note_t create_note_t2(struct SeqTrack *seqtrack,
+                                    int64_t note_id,
                                     float pitch
                                     )
 {
-  return create_note_t(note_id, pitch, 0, 0, 0);
+  return create_note_t(seqtrack, note_id, pitch, 0, 0, 0);
 }
 
-static inline note_t create_note_t3(int64_t note_id,
+static inline note_t create_note_t3(struct SeqTrack *seqtrack,
+                                    int64_t note_id,
                                     float pitch,
                                     int midi_channel
                                     )
 {
-  return create_note_t(note_id, pitch, 0, 0, midi_channel);
+  return create_note_t(seqtrack, note_id, pitch, 0, 0, midi_channel);
 }
 
 

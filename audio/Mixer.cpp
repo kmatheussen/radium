@@ -714,14 +714,16 @@ struct Mixer{
         ATOMIC_SET(jackblock_size, num_frames);
         ATOMIC_SET(jackblock_cycle_start_stime, pc->end_time);
         ATOMIC_SET(jackblock_last_frame_stime, jack_last_frame_time(_rjack_client));
-        ATOMIC_SET(jackblock_block, pc->block);
 
         struct SeqBlock *curr_seqblock = RT_get_curr_seqblock();
-        if (curr_seqblock != NULL)
+        if (curr_seqblock != NULL) {
           ATOMIC_SET(jackblock_seqtime, curr_seqblock->time);
-        else
+          ATOMIC_SET(jackblock_block, curr_seqblock->block);
+        } else {
           ATOMIC_SET(jackblock_seqtime, 0);
-        
+          ATOMIC_SET(jackblock_block, NULL);
+        }
+          
       }jackblock_variables_protector.write_end();
       
       if(g_test_crashreporter_in_audio_thread){
@@ -1041,13 +1043,9 @@ static bool fill_in_time_position2(time_position_t *time_position){
     
   } while(jackblock_variables_protector.read_end(generation)==false); // ensure that the variables inside this loop are read atomically.
 
-#if defined(RELEASE)
-  if (block==NULL) // I think this might be valid in some situations.
+  if (block==NULL)
     return false;
-#else
-  R_ASSERT_RETURN_IF_FALSE2(block!=NULL, false);
-#endif
-  
+
   int deltatime = get_audioblock_time(jackblock_last_frame_stime2);
 
   STime accurate_radium_time =

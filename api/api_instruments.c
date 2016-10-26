@@ -683,7 +683,7 @@ int playNote(float pitch, float velocity, float pan, int64_t instrument_id){
 
   int ret = note_ids_pos;
 
-  note_ids[ret] = PATCH_play_note(patch, create_note_t(-1, pitch, velocity, pan, 0));
+  note_ids[ret] = PATCH_play_note(patch, create_note_t(NULL, -1, pitch, velocity, pan, 0));
   initial_pitches[ret] = pitch;
     
   note_ids_pos++;
@@ -704,7 +704,7 @@ void changeNotePitch(float pitch, int note_id, int64_t instrument_id){
   }
 
   //printf("change pitch %f %d %d\n",pitch,note_id,instrument_id);
-  PATCH_change_pitch(patch, create_note_t(note_ids[note_id], pitch, 0, pitch, 0));
+  PATCH_change_pitch(patch, create_note_t(NULL, note_ids[note_id], pitch, 0, pitch, 0));
 }
 
 void stopNote(int note_id, int64_t instrument_id){
@@ -718,5 +718,5 @@ void stopNote(int note_id, int64_t instrument_id){
   }
 
   //printf("stop note %d %d\n",note_id,instrument_id);
-  PATCH_stop_note(patch, create_note_t2(note_ids[note_id], initial_pitches[note_id]));
+  PATCH_stop_note(patch, create_note_t2(NULL, note_ids[note_id], initial_pitches[note_id]));
 }

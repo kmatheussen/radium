@@ -15,12 +15,8 @@
 
 
 static double get_num_beats(const struct SeqBlock *seqblock, LPB_Iterator *iterator, int audioframes_to_add, const char *from_where, bool *curr_num_beats_is_valid){
-  struct Blocks *block = pc->block;
+  struct Blocks *block = seqblock->block;
 
-#if DEBUG_BUGS
-  R_ASSERT_NON_RELEASE(block==seqblock->block);
-#endif
-  
   double time = ATOMIC_DOUBLE_GET(pc->start_time_f) - seqblock->time;
 
 #if DEBUG_BUGS

@@ -45,7 +45,7 @@ static void RT_scheduled_hold_pitch_do(struct SeqTrack *seqtrack,
     
     RT_PATCH_change_pitch(seqtrack,
                           patch,
-                          create_note_t2(note->id, val),
+                          create_note_t2(seqtrack,note->id, val),
                           time
                           );
   }
@@ -112,7 +112,7 @@ static int64_t RT_scheduled_glide_pitch(struct SeqTrack *seqtrack, int64_t time,
     
     RT_PATCH_change_pitch(seqtrack,
                           patch,
-                          create_note_t2(note->id, val),
+                          create_note_t2(seqtrack,note->id, val),
                           time
                           );
   }

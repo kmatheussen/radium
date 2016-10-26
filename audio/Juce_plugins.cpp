@@ -156,19 +156,12 @@ namespace{
 
       bool isplaying = is_playing();
 
-#if 0
-      struct Blocks *block = isplaying ? pc->block : root->song->tracker_windows->wblock->block;
-
-      if (block==NULL)
-        return false;
-#endif
-
       const struct SeqTrack *seqtrack;
 
       if (pc->playtype==PLAYBLOCK)
         seqtrack = &root->song->block_seqtrack;
       else
-        seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[0]; // fix
+        seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[0]; // FIX.
 
 
       result.bpm = RT_LPB_get_current_BPM(seqtrack);
@@ -648,7 +641,8 @@ static void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_si
 static void RT_MIDI_send_msg_to_patch_receivers2(struct SeqTrack *seqtrack, struct Patch *patch, MidiMessage message, int64_t seq_time){       
   if (message.isNoteOn()) {
     //printf("Out. Sending note ON %d\n",  message.getNoteNumber());
-    note_t note = create_note_t(-1,
+    note_t note = create_note_t(seqtrack,
+                                -1,
                                 message.getNoteNumber(),
                                 message.getVelocity() / 127.0f,
                                 0.0f,
@@ -657,7 +651,8 @@ static void RT_MIDI_send_msg_to_patch_receivers2(struct SeqTrack *seqtrack, stru
     
   } else if (message.isNoteOff()) {
     //printf("Out. Sending note OFF %d\n",  message.getNoteNumber());
-    note_t note = create_note_t(-1,
+    note_t note = create_note_t(seqtrack,
+                                -1,
                                 message.getNoteNumber(),
                                 0,
                                 0.0f,
@@ -665,7 +660,8 @@ static void RT_MIDI_send_msg_to_patch_receivers2(struct SeqTrack *seqtrack, stru
     RT_PATCH_send_stop_note_to_receivers(seqtrack, patch, note, seq_time);
   
   } else if (message.isAftertouch()) {
-    note_t note = create_note_t(-1,
+    note_t note = create_note_t(seqtrack,
+                                -1,
                                 message.getNoteNumber(),
                                 message.getAfterTouchValue() / 127.0f,                                
                                 0.0f,
@@ -716,7 +712,8 @@ int RT_MIDI_send_msg_to_patch_receivers(struct SeqTrack *seqtrack, struct Patch 
 
 static void RT_MIDI_send_msg_to_patch2(struct SeqTrack *seqtrack, struct Patch *patch, MidiMessage message, int64_t seq_time){       
   if (message.isNoteOn()) {
-    note_t note = create_note_t(-1,
+    note_t note = create_note_t(seqtrack,
+                                -1,
                                 message.getNoteNumber(),
                                 message.getVelocity() / 127.0f,
                                 0.0f,
@@ -725,7 +722,8 @@ static void RT_MIDI_send_msg_to_patch2(struct SeqTrack *seqtrack, struct Patch *
     RT_PATCH_play_note(seqtrack, patch, note, seq_time);
   
   } else if (message.isNoteOff()) {
-    note_t note = create_note_t(-1,
+    note_t note = create_note_t(seqtrack,
+                                -1,
                                 message.getNoteNumber(),
                                 0,
                                 0.0f,
@@ -733,7 +731,8 @@ static void RT_MIDI_send_msg_to_patch2(struct SeqTrack *seqtrack, struct Patch *
     RT_PATCH_stop_note(seqtrack, patch, note, seq_time);
   
   } else if (message.isAftertouch()) {
-    note_t note = create_note_t(-1,
+    note_t note = create_note_t(seqtrack,
+                                -1,
                                 message.getNoteNumber(),
                                 message.getAfterTouchValue() / 127.0f,                                
                                 0.0f,

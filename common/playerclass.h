@@ -89,8 +89,8 @@ typedef struct{
   int playtype;
   
   int64_t abstime;
-  const struct SeqTrack *seqtrack;
-  const struct SeqBlock *seqblock;
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock;
   Place place; // Is only valid if seqtrack!=NULL (and therefore also seqblock)
 } player_start_data_t;
 
@@ -140,7 +140,7 @@ typedef struct{
         bool is_playing_range;
         STime range_duration;
         
-	struct Blocks *block;		// The block now playing. Must be read and written atomically, except when we are reading in the player thread. Can only be written to in the player thread.
+	//struct Blocks *block;		// The block now playing. Must be read and written atomically, except when we are reading in the player thread. Can only be written to in the player thread.
 
 	STime pausetime;
 	bool nowpausing;

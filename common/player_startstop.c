@@ -187,13 +187,13 @@ static void start_player(int playtype, Place *place, struct Blocks *block){
     if (block == NULL)
       block = root->song->blocks;
     
-    atomic_pointer_write((void**)&pc->block, block);
-    ATOMIC_SET(root->curr_blocknum, pc->block->l.num);
+    //atomic_pointer_write((void**)&pc->block, block);
+    ATOMIC_SET(root->curr_blocknum, block->l.num);
     
   }PLAYER_unlock();
 
   
-  printf("Play. root->curr_block: %d. Block: %p\n",ATOMIC_GET(root->curr_blocknum),pc->block);
+  printf("Play. root->curr_block: %d. Block: %p\n",ATOMIC_GET(root->curr_blocknum),block);
   //abort();
   fflush(stdout);
 
@@ -220,7 +220,7 @@ static void start_player(int playtype, Place *place, struct Blocks *block){
     
   } else {
     
-    start_seqtrack_block_scheduling(*place);
+    start_seqtrack_block_scheduling(block, *place);
     
   }
   
