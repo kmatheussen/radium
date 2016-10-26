@@ -45,7 +45,9 @@ static int g_playtype = 0;
 static bool g_was_playing_range = false;
 static DEFINE_ATOMIC(int, g_pause_realline) = 0;
 static DEFINE_ATOMIC(int, g_pause_blocknum) = 0;
+static int64_t g_pause_song_abstime = 0;
 
+// Called from the realtime thread.
 void PC_Pause_set_pos(int blocknum, int realline){
   ATOMIC_SET(g_pause_realline, realline);
   ATOMIC_SET(g_pause_blocknum, blocknum);
@@ -81,6 +83,7 @@ void PC_Pause(void){
     
     g_playtype = pc->playtype;
     g_was_playing_range = pc->is_playing_range;
+    g_pause_song_abstime = ATOMIC_GET(pc->song_abstime);
     PlayStop();
     g_was_playing = true;
   }  
@@ -121,7 +124,7 @@ static void stop_pause(struct Tracker_Windows *window, bool force_play_block){
     else if (g_was_playing_range)
       PlayRangeCurrPos2(window, place);
     else if (g_playtype==PLAYSONG)
-      PlaySong(0);
+      PlaySong(g_pause_song_abstime);
   }
 }
 

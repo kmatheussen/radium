@@ -161,7 +161,7 @@ void PlayStop(void){
     PlayStopReally(true);
 }
 
-static void start_player(int playtype, Place *place, struct Blocks *block){
+static void start_player(int playtype, int64_t abstime, Place *place, struct Blocks *block, struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
 
   g_player_was_stopped_manually = false;
@@ -178,50 +178,39 @@ static void start_player(int playtype, Place *place, struct Blocks *block){
 
   ATOMIC_SET(root->song_state_is_locked, true);
   
-  PLAYER_lock();{
-    
-    ATOMIC_ADD(pc->play_id, 1);
-
-    pc->playtype = playtype;
-
-    if (block == NULL)
-      block = root->song->blocks;
-    
-  }PLAYER_unlock();
+  ATOMIC_ADD(pc->play_id, 1);
 
   
-  printf("Play. Block: %d\n",block==NULL? -1 : block->l.num);
-  //abort();
-  fflush(stdout);
+  pc->playtype = playtype;
 
-
-#if 0
-  // player is stopped, so we can do these things here.
-  InitPEQclock();
-  InitPEQ_LPB(pc->block,place);
-  InitPEQ_Signature(pc->block,place);
-  InitPEQ_Beat(pc->block,place);
-  InitPEQrealline(block,place);
-  InitPEQline(block,place);
-  InitPEQblock(block,place);
-  InitAllPEQnotes(block,place);
-#else
-
-
+  
   if (playtype==PLAYSONG) {
 
-    player_start_data_t startdata = {0};
+    R_ASSERT(block==NULL);
+    
+    player_start_data_t startdata = {0}; 
     startdata.playtype = playtype;
+    startdata.abstime = abstime;
+    if (place!=NULL)
+      startdata.place = *place;
+    startdata.seqtrack = seqtrack;
+    startdata.seqblock = seqblock;
     
     start_seqtrack_song_scheduling(&startdata);
     
   } else {
+
+    R_ASSERT(playtype=PLAYBLOCK);
+    R_ASSERT(abstime==0);
+    R_ASSERT(seqtrack==NULL);
+    R_ASSERT(seqblock==NULL);
+
+    R_ASSERT_RETURN_IF_FALSE(block!=NULL);
+    R_ASSERT_RETURN_IF_FALSE(place!=NULL);
     
     start_seqtrack_block_scheduling(block, *place);
     
   }
-  
-#endif
   
   ATOMIC_SET(pc->player_state, PLAYER_STATE_STARTING_TO_PLAY);
   while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_PLAYING && ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED)
@@ -240,7 +229,7 @@ static void PlayBlock(
   else
     playtype=PLAYBLOCK_NONLOOP;
 
-  start_player(playtype, place, block);
+  start_player(playtype, 0, place, block, NULL, NULL);
 }
 
 void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
@@ -400,7 +389,7 @@ void PlaySong(int64_t abstime){
 
   pc->is_playing_range = false;
 
-  start_player(PLAYSONG, NULL, NULL);
+  start_player(PLAYSONG, abstime, NULL, NULL, NULL, NULL);
 
   // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
 #if STOP_GC_WHILE_PLAYING
