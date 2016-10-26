@@ -212,8 +212,11 @@ static void start_player(int playtype, Place *place, struct Blocks *block){
 
 
   if (playtype==PLAYSONG) {
+
+    player_start_data_t startdata = {0};
+    startdata.playtype = playtype;
     
-    start_seqtrack_song_scheduling(0);
+    start_seqtrack_song_scheduling(&startdata);
     
   } else {
     

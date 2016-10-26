@@ -156,14 +156,38 @@ static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t seqtime,
 }
 
 
-void start_seqtrack_song_scheduling(int64_t abs_start_time){
+void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
+  static Place static_place;
+
+  static_place = startdata->place;
     
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
 
   struct Blocks *block = pc->block;
   if (block!=NULL)
     ATOMIC_DOUBLE_SET(block->player_time, -100.0); // Stop gfx rendering since we are soon going to change the values of pc->end_time and friends.
-    
+
+  
+  int64_t block_seq_time = 0;
+  int64_t abs_start_time;
+  
+  if (startdata->seqtrack == NULL) {
+    abs_start_time = startdata->abstime;
+  } else {
+    block_seq_time = Place2STime(startdata->seqblock->block, &startdata->place);
+    abs_start_time = get_abstime_from_seqtime(startdata->seqtrack, startdata->seqblock, block_seq_time);
+  }
+
+  
+  int64_t seq_start_times[root->song->seqtracks.num_elements];
+  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
+    if (seqtrack==startdata->seqtrack)
+      seq_start_times[iterator666] = startdata->seqblock->time + block_seq_time;
+    else
+      seq_start_times[iterator666] = get_seqtime_from_abstime(seqtrack, NULL, abs_start_time); // Ab ab ab. Not quite working if starting to play in the middle of a block, I think.      
+  }END_VECTOR_FOR_EACH;
+
+  
   PLAYER_lock();{
     
     R_ASSERT(SCHEDULER_num_events(RT_get_curr_seqtrack()->scheduler)==0);
@@ -172,7 +196,7 @@ void start_seqtrack_song_scheduling(int64_t abs_start_time){
 
     VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
 
-      int64_t seq_start_time = get_seqtime_from_abstime(seqtrack, NULL, abs_start_time); // Ab ab ab. Not quite working if starting to play in the middle of a block, I think.
+      int64_t seq_start_time = seq_start_times[iterator666];
       
       pc->start_time = seq_start_time;
       ATOMIC_DOUBLE_SET(pc->start_time_f, seq_start_time);
@@ -192,7 +216,7 @@ void start_seqtrack_song_scheduling(int64_t abs_start_time){
           
           args[0].pointer       = seqblock;
           args[1].int_num       = seqblock->time;
-          args[2].const_pointer = NULL;
+          args[2].const_pointer = startdata->seqblock==seqblock ? &static_place : NULL;
           args[3].int_num       = PLAYSONG;
           
 #if DO_DEBUG

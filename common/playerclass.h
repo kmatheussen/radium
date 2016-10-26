@@ -85,6 +85,16 @@ struct PEventQueue{
 #endif
 
 
+typedef struct{
+  int playtype;
+  
+  int64_t abstime;
+  const struct SeqTrack *seqtrack;
+  const struct SeqBlock *seqblock;
+  Place place; // Is only valid if seqtrack!=NULL (and therefore also seqblock)
+} player_start_data_t;
+
+
 typedef enum {
   PLAYER_STATE_PROGRAM_NOT_READY = 0,
   PLAYER_STATE_STARTING_TO_PLAY,

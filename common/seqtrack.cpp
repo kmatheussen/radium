@@ -15,6 +15,43 @@
 
 #include "seqtrack_proc.h"
 
+int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_where_time_is, int64_t block_seqtime){
+  int64_t last_seq_end_time = 0;
+  double last_abs_end_time = 0; // Is double because of reltempo multiplication.
+    
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+    
+    struct Blocks *block            = seqblock->block;
+    double         tempo_multiplier = block->reltempo;
+    
+    int64_t pause_duration  = seqblock->time - last_seq_end_time; // (reltempo is not applied to pauses)
+    
+    int64_t seq_start_time  = seqblock->time;
+    double  abs_start_time  = last_abs_end_time + pause_duration;
+      
+    if (seqblock == seqblock_where_time_is)
+      return abs_start_time + ((double)block_seqtime / seqblock->block->reltempo); // Important that we round down.
+      
+    int64_t seq_block_duration = getBlockSTimeLength(seqblock->block);
+    int64_t abs_block_duration = ((double)seq_block_duration / tempo_multiplier);
+    
+    int64_t seq_end_time = seq_start_time + seq_block_duration;
+    double  abs_end_time = abs_start_time + abs_block_duration;
+    
+    //last_abs_start_time = abs_start_time;
+    last_seq_end_time   = seq_end_time;
+    last_abs_end_time   = abs_end_time;
+    
+    //printf("  start/end: %f  ->   %f\n",seqblock->start_time,seqblock->end_time);
+  }END_VECTOR_FOR_EACH;
+
+  // !!!
+  R_ASSERT(false);
+  // !!!
+  
+  return seqblock_where_time_is->time + ((double)block_seqtime / seqblock_where_time_is->block->reltempo); // fallback.
+}
+
 // Returns in frame format, not in seconds. (int64_t is always in frames, double is always in seconds)
 int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_to_ignore, int64_t abstime){
   //int64_t last_seq_start_time = 0;
@@ -509,6 +546,9 @@ hash_t *SEQUENCER_get_state(void){
 }
 
 void SEQUENCER_create_from_state(hash_t *state){
+
+  //printf("        CREATING FROM STATE\n");
+  
   vector_t seqtracks = {0};
   
   int num_seqtracks = HASH_get_num_elements(state);

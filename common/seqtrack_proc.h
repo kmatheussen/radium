@@ -6,7 +6,8 @@
 #define SEQNAV_SIZE_HANDLE_WIDTH 50
 #define SEQUENCER_EXTRA_SONG_LENGTH 30.0 // sequencer gui always shows 30 seconds more than the song length
 
-extern LANGSPEC int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_to_ignore, int64_t abstime);
+extern LANGSPEC int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, int64_t block_seqtime); // Result is rounded down to nearest integer.
+extern LANGSPEC int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_to_ignore, int64_t abstime); // Result is rounded down to nearest integer.
   
 // sequencer gfx
 extern LANGSPEC float SEQUENCER_get_x1(void);
