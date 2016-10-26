@@ -1857,7 +1857,7 @@ static void create_velocity_gradient_background(
 
     bool is_inside = vel_y1>=area_y1 || vel_y2>=area_y1;
 
-    if (is_inside){
+    if (is_inside && vel_y1!=vel_y2){
 
       int logtype = nodeline->logtype;
       float x1 = nodeline->x1;
