@@ -1164,7 +1164,7 @@ class CalledPeriodically : public QTimer {
   
 public:
   CalledPeriodically()
-    : interval(5) // can be set to 1, 2, 5, 10, 25, or 50.
+    : interval(MAIN_TIMER_INTERVAL) // is set to either 1, 2, 5, 10, 25, or 50.
     , num_calls(0)
   {
     msgBox.setModal(false);

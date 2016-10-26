@@ -153,6 +153,7 @@ typedef int32_t NInt;
 // Must be a multiply of 64 because of pd, which uses a block size of 64. 64 seems to work fine.
 #define RADIUM_BLOCKSIZE 64
 
+#define MAIN_TIMER_INTERVAL 5 // in milliseconds. Can be set to 1, 2, 5, 10, 25, or 50.
 
 #define MINBLOCKRELTIME 0.001f
 #define MAXBLOCKRELTIME 6.0f

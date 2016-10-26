@@ -233,6 +233,8 @@ public:
       
     p.fillRect(rect, QColor(140,140,140));
 
+    const int header_height = root->song->tracker_windows->fontheight + 2;
+    
     QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
     QColor border_color(50,20,35);// = get_qcolor(MIXER_BORDER_COLOR_NUM);
 
@@ -248,7 +250,7 @@ public:
     //if (x1 > -5000) { // avoid integer overflow error.
     p.setPen(text_color);
     //p.drawText(x1+4,2,x2-x1-6,height()-4, Qt::AlignLeft, QString::number(seqblock->block->l.num) + ": " + seqblock->block->name);
-    p.drawText(rect.adjusted(2,1,-4,-2), QString::number(block->l.num) + ": " + block->name, QTextOption(Qt::AlignLeft | Qt::AlignTop));
+    p.drawText(rect.adjusted(2,1,-4,-(rect.height()-header_height)), QString::number(block->l.num) + ": " + block->name, QTextOption(Qt::AlignLeft | Qt::AlignTop));
     //}
     
     p.setPen(border_color);
@@ -260,8 +262,8 @@ public:
     struct Tracks *track = block->tracks;
     while(track != NULL){
 
-      float t_y1 = scale(track->l.num,0,num_tracks,y1+20,y2);
-      float t_y2 = scale(track->l.num+1,0,num_tracks,y1+20,y2);
+      float t_y1 = scale(track->l.num,0,num_tracks,y1+header_height,y2);
+      float t_y2 = scale(track->l.num+1,0,num_tracks,y1+header_height,y2);
       
       // Draw track border
       {
@@ -278,6 +280,7 @@ public:
   }
   
   void paintEvent ( QPaintEvent * ev ) override {
+    
     QPainter p(this);
 
     p.setRenderHints(QPainter::Antialiasing,true);
@@ -617,73 +620,95 @@ public:
     double total = total_seconds*MIXER_get_sample_rate();
     
     p.setRenderHints(QPainter::Antialiasing,true);
+
+    QColor border_color = get_qcolor(MIXER_BORDER_COLOR_NUM);      
     
+
+    // Background
+    //
     QRect rect1(1,1,width()-1,height()-2);
     p.fillRect(rect1, QColor(50,50,50));
-
-    float x1 = get_x1(total);
-    float x2 = get_x2(total);
-    
-    QRectF rect2(x1,1,x2-x1,height()-2);
-    p.fillRect(rect2, QColor(140,140,140));
 
     //QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
     //p.setPen(text_color);
     //p.drawText(4,2,width()-6,height()-4, Qt::AlignLeft, "seqtracks navigator");
-    
-    QColor border_color = get_qcolor(MIXER_BORDER_COLOR_NUM);
-    p.setPen(border_color);
-    p.drawRect(rect1);
-    p.drawRect(rect2);
 
-    float handle1_x = x1+SEQNAV_SIZE_HANDLE_WIDTH;
-    float handle2_x = x2-SEQNAV_SIZE_HANDLE_WIDTH;
-    //p.drawLine(handle1_x, 0, handle1, height());
-    //p.drawLine(handle2_x, 0, handle1, height());
-
-    QRectF handle1_rect(x1, 0, handle1_x-x1, height());
-    QRectF handle2_rect(handle2_x, 0, x2-handle2_x, height());
-    
-    p.setBrush(QColor(50,50,50,180));
-    
-    p.drawRect(handle1_rect);
-    p.drawRect(handle2_rect);
         
     //printf("   start: %f -> %f (%d)\n", _start_time/48000.0, _end_time/48000.0, width());
 
-    QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
+    //printf("\n\n\n Navigator update. end: %f\n",_end_time/48000.0);
+    
+    // Blocks
+    {
 
-    int num_seqtracks = root->song->seqtracks.num_elements;
-    int seqtracknum = 0;
-    for(Seqtrack_widget *seqtrack_widget : _seqtracks_widget._seqtrack_widgets) {
-      struct SeqTrack *seqtrack = seqtrack_widget->_seqtrack;
+      QColor block_color = QColor(140,140,140,180);
+      QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
       
-      float y1 = scale(seqtracknum, 0, num_seqtracks, 5, height()-10);
-      float y2 = y1 + (float)(height()-10) / (float)num_seqtracks;
-
-      SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
-      //double start_time = _start_time / MIXER_get_sample_rate();
-      //double end_time = _end_time / MIXER_get_sample_rate();
-
-      VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-
-        float x1 = scale(seqblock->start_time, 0, total_seconds, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x1(seqblock, start_time, end_time);
-        float x2 = scale(seqblock->end_time, 0, total_seconds, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x2(seqblock, start_time, end_time);
+      int num_seqtracks = root->song->seqtracks.num_elements;
+      int seqtracknum = 0;
+      for(Seqtrack_widget *seqtrack_widget : _seqtracks_widget._seqtrack_widgets) {
+        struct SeqTrack *seqtrack = seqtrack_widget->_seqtrack;
         
-        QRectF rect(x1,y1+1,x2-x1,y2-y1-2);
-        p.fillRect(rect, QColor(140,140,140,180));
+        float y1 = scale(seqtracknum, 0, num_seqtracks, 5, height()-10);
+        float y2 = y1 + (float)(height()-10) / (float)num_seqtracks;
         
-        p.setPen(text_color);
-        p.drawText(rect.adjusted(2,1,-1,-1), QString::number(seqblock->block->l.num) + ": " + seqblock->block->name, QTextOption(Qt::AlignLeft | Qt::AlignTop));
-        
-        p.setPen(border_color);
-        p.drawRect(rect);
-        
-      }END_VECTOR_FOR_EACH;
+        SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
+        //double start_time = _start_time / MIXER_get_sample_rate();
+        //double end_time = _end_time / MIXER_get_sample_rate();
 
-      seqtracknum++;
+        VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+          
+          //printf("\n\n\n Start/end: %f / %f. Seqtrack/seqblock %p / %p\n\n", seqblock->start_time, seqblock->end_time, seqtrack, seqblock);
+            
+          float x1 = scale(seqblock->start_time, 0, total_seconds, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x1(seqblock, start_time, end_time);
+          float x2 = scale(seqblock->end_time, 0, total_seconds, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x2(seqblock, start_time, end_time);
+          
+          QRectF rect(x1,y1+1,x2-x1,y2-y1-2);
+          p.fillRect(rect, block_color);
+          
+          p.setPen(text_color);
+          p.drawText(rect.adjusted(2,1,-1,-1), QString::number(seqblock->block->l.num) + ": " + seqblock->block->name, QTextOption(Qt::AlignLeft | Qt::AlignTop));
+          
+          p.setPen(border_color);
+          p.drawRect(rect);
+          
+        }END_VECTOR_FOR_EACH;
+        
+        seqtracknum++;
+      }
     }
 
+
+    // Navigator
+    //
+    {
+      float x1 = get_x1(total);
+      float x2 = get_x2(total);
+
+      QRectF rectA(0, 1, x1, height()-2);
+      QRectF rectB(x2, 1, width()-x2, height()-2);      
+      QRectF rect2(x1,1,x2-x1,height()-2);
+      
+      p.fillRect(rectA, QColor(140,140,140,100));
+      p.fillRect(rectB, QColor(140,140,140,100));
+
+      p.setPen(border_color);
+      p.drawRect(rect2);
+      
+      float handle1_x = x1+SEQNAV_SIZE_HANDLE_WIDTH;
+      float handle2_x = x2-SEQNAV_SIZE_HANDLE_WIDTH;
+      //p.drawLine(handle1_x, 0, handle1, height());
+      //p.drawLine(handle2_x, 0, handle1, height());
+      
+      QRectF handle1_rect(x1, 0, handle1_x-x1, height());
+      QRectF handle2_rect(handle2_x, 0, x2-handle2_x, height());
+      
+      p.setBrush(QColor(20,20,20,90));
+      
+      p.drawRect(handle1_rect);
+      p.drawRect(handle2_rect);
+    }
+    
   }
 
 };
