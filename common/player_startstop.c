@@ -82,7 +82,7 @@ static void PlayStopReally(bool doit){
         if(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED)
           return;
         
-	StopAllInstruments();
+        StopAllInstruments();
 
         ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
         
@@ -95,7 +95,7 @@ static void PlayStopReally(bool doit){
 
         if (PLAYER_is_running())
           while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED)
-            OS_WaitForAShortTime(5);
+            OS_WaitForAShortTime(3);
 
         R_ASSERT(is_playing()==false);
 

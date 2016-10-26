@@ -146,6 +146,11 @@ public:
     printf("Seqblocks widget deleted\n");
   }
 
+  void wheelEvent(QWheelEvent *qwheelevent) override {
+    if (qwheelevent->delta() > 0)
+      PlaySong(scale(qwheelevent->x(), 0, width(), _start_time, _end_time));
+  }
+    
   float get_seqblock_x1(struct SeqBlock *seqblock, double start_time, double end_time){
     return scale(seqblock->start_time, start_time, end_time, 0, width());
   }
@@ -505,6 +510,11 @@ struct Timeline_widget : public MouseTrackerQWidget {
   {    
   }
 
+  void wheelEvent(QWheelEvent *qwheelevent) override {
+    if (qwheelevent->delta() > 0)
+      PlaySong(scale(qwheelevent->x(), 0, width(), _start_time, _end_time));
+  }
+
   void draw_filled_triangle(QPainter &p, double x1, double y1, double x2, double y2, double x3, double y3){
     const QPointF points[3] = {
       QPointF(x1, y1),
@@ -566,7 +576,6 @@ struct Timeline_widget : public MouseTrackerQWidget {
     }
 
     const int t1 = 4;
-    const int t2 = 8;
     
     int64_t time = inc_time * int((double)start_time/(double)inc_time);
     
@@ -576,10 +585,13 @@ struct Timeline_widget : public MouseTrackerQWidget {
         break;
 
       if (x > 20) {
-        const double y1 = 5;
-        const double y2 = height() - t2 - 4;
-        p.drawText(x-12, y1+10, seconds_to_timestring(time));
-        draw_filled_triangle(p, x-t1, y2, x+t1, y2, x, y2+t2);
+        const double y1 = 4;
+        const double y2 = height() - 4;
+                
+        draw_filled_triangle(p, x-t1, y1, x+t1, y1, x, y2);
+        //QRect rect(x + t1 + 2, y1, width(), y2-y1);
+        QRect rect(x + t1 + 4, 0, width(), height());
+        p.drawText(rect, seconds_to_timestring(time), QTextOption(Qt::AlignLeft | Qt::AlignTop));
       }
       
       time += inc_time;
@@ -601,7 +613,12 @@ struct Seqtracks_navigator_widget : public MouseTrackerQWidget {
     , _seqtracks_widget(seqtracks_widget)
   {
   }
-  
+
+  void wheelEvent(QWheelEvent *qwheelevent) override {
+    if (qwheelevent->delta() > 0)
+      PlaySong(scale(qwheelevent->x(), 0, width(), 0, get_visible_song_length()*MIXER_get_sample_rate()));
+  }
+
 private:
   float get_x1(double total){
     return scale(_start_time, 0, total, 0, width());
@@ -725,7 +742,6 @@ struct Sequencer_widget : public QWidget {
   int64_t _end_time;
   double _samples_per_pixel;
   
-  const int timeline_widget_height = 30;
   const int bottom_height = 30;
   
   Timeline_widget _timeline_widget;
@@ -783,6 +799,8 @@ struct Sequencer_widget : public QWidget {
     
     const int x1 = p.x() + mute_button->width();
     const int x1_width = width() - x1;
+
+    const int timeline_widget_height = root->song->tracker_windows->fontheight + 2;
 
     const int y1 = timeline_widget_height;
     const int y2 = height() - bottom_height;
