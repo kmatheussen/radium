@@ -818,7 +818,7 @@ private:
           if (new_t2_data!=NULL && use_t2_thread)
             T3_t2_data_picked_up_but_old_data_will_be_sent_back_later();
           
-          if (t2_data_can_be_used){
+          if (t2_data_can_be_used  || blocktime != -100.0){
             _rendering->render();
             return true;
           } else {
