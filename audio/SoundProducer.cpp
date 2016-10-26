@@ -1440,9 +1440,8 @@ public:
       for(int ch=0;ch<_num_outputs;ch++) {
 
         float out_peak = RT_get_max_val(_output_sound[ch],num_frames);
-        
-        if (!is_touched && out_peak > MIN_AUTOSUSPEND_PEAK)
-          is_touched = true;
+
+        is_touched = is_touched || (out_peak > MIN_AUTOSUSPEND_PEAK);
 
         volume_peaks[ch] = out_peak * _plugin->volume;
       }

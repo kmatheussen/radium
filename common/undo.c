@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wblocks_proc.h"
 #include "player_pause_proc.h"
 #include "player_proc.h"
+#include "seqtrack_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"
 #include "../OpenGL/Widget_proc.h"
@@ -123,6 +124,7 @@ static void update_gfx(void){
   else
     show_star();
   OS_GFX_NumUndosHaveChanged(num_undos,CurrUndo->next!=NULL,showing_star_in_filename);
+
 }
 
 int Undo_num_undos(void){
@@ -579,6 +581,9 @@ currently_undoing = true;
          }
 
          GE_set_curr_realline(wblock->curr_realline);
+
+         // Unnecessary, and can cause a small flicker.
+         //SEQUENCER_update();
          
        }
        

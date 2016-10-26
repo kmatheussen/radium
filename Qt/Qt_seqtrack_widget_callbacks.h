@@ -299,6 +299,8 @@ public:
 
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &_seqtrack->seqblocks){
 
+      //printf("      PAINTING BLOCK %f / %f, seqtrack/seqblock: %p / %p\n", seqblock->start_time, seqblock->end_time, _seqtrack, seqblock);
+
       if (seqblock->start_time < end_time && seqblock->end_time >= start_time) {
         
         float x1 = get_seqblock_x1(seqblock, start_time, end_time);
@@ -333,7 +335,7 @@ public:
   
   void call_very_often(void){
     if (_last_num_seqblocks != _seqtrack->seqblocks.num_elements) {
-      update();
+      SEQUENCER_update();
       _last_num_seqblocks = _seqtrack->seqblocks.num_elements;
     }
 
@@ -394,7 +396,8 @@ class Seqtrack_widget : public QWidget, public Ui::Seqtrack_widget {
     printf("Seqtrack widget deleted\n");
   }
 
-  void updateWidgets(void){
+  void my_update(void){
+    _seqblocks_widget->update();
   }
 
   void call_very_often(void){
@@ -429,13 +432,13 @@ public:
 
   void my_update(void){
     for(auto *seqtrack_widget : _seqtrack_widgets)
-      seqtrack_widget->update();
+      seqtrack_widget->my_update();
     
     update();
   }
   
   void update_seqtracks(void){
-    printf("  Updating seqtracks\n");
+    //printf("  Updating seqtracks\n");
     
     for(auto *seqtrack_widget : _seqtrack_widgets)
       delete seqtrack_widget;
@@ -447,6 +450,8 @@ public:
       _seqtrack_widgets.push_back(seqtrack_widget);
       addWidget(seqtrack_widget);
     }END_VECTOR_FOR_EACH;
+
+    SEQUENCER_update(); // If we only call update(), the navigator won't update.
   }
 
   void call_very_often(void){
@@ -747,9 +752,9 @@ struct Sequencer_widget : public QWidget {
   }
 
   void my_update(void){
-    int64_t song_length = MIXER_get_sample_rate() * get_visible_song_length();
-    if (_end_time > song_length)
-      _end_time = song_length;
+    int64_t visible_song_length = MIXER_get_sample_rate() * get_visible_song_length();
+    if (_end_time > visible_song_length)
+      _end_time = visible_song_length;
     
     _timeline_widget.update();
     _seqtracks_widget.my_update();
@@ -797,16 +802,30 @@ struct Sequencer_widget : public QWidget {
 
   
   int _last_num_seqtracks = 0;
+  double _last_visible_song_length = 0;
+  int _num_calls = 0;
+  
   void call_very_often(void){
+    _seqtracks_widget.call_very_often();
+
     if (g_need_update){
       my_update();
       BS_UpdatePlayList();
       g_need_update=false;
     }
     
-    _seqtracks_widget.call_very_often();
+    bool do_update = _seqtracks_widget._seqtrack_widgets.size() != _last_num_seqtracks;
 
-    if (_seqtracks_widget._seqtrack_widgets.size() != _last_num_seqtracks){
+    if (!do_update) {
+      if ( (_num_calls % (1000/MAIN_TIMER_INTERVAL)) == 0) // 1000ms. This is only an insurance. SEQUENCER_update is supposed to be called manually when needed.
+        if (_last_visible_song_length != get_visible_song_length()) {
+          do_update = true;
+          _last_visible_song_length = get_visible_song_length();
+        }
+      _num_calls++;
+    }  
+    
+    if (do_update){
       position_widgets();
       my_update();
       _last_num_seqtracks = _seqtracks_widget._seqtrack_widgets.size();
