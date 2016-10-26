@@ -187,13 +187,10 @@ static void start_player(int playtype, Place *place, struct Blocks *block){
     if (block == NULL)
       block = root->song->blocks;
     
-    //atomic_pointer_write((void**)&pc->block, block);
-    ATOMIC_SET(root->curr_blocknum, block->l.num);
-    
   }PLAYER_unlock();
 
   
-  printf("Play. root->curr_block: %d. Block: %p\n",ATOMIC_GET(root->curr_blocknum),block);
+  printf("Play. Block: %d\n",block==NULL? -1 : block->l.num);
   //abort();
   fflush(stdout);
 

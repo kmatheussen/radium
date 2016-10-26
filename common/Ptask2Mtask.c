@@ -69,7 +69,11 @@ int default_scrolls_per_second = 20;
 // Simpler version when using opengl
 void P2MUpdateSongPosCallBack(void){
 
-  NInt curr_block_num = ATOMIC_GET(root->curr_blocknum);
+  struct Blocks *block = RT_get_curr_visible_block();
+  if (block==NULL)
+    return;
+  
+  NInt curr_block_num = block->l.num;
   
   struct Tracker_Windows *window=root->song->tracker_windows;
   struct WBlocks *wblock = ListFindElement1(&window->wblocks->l,curr_block_num);

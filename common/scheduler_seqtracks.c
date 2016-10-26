@@ -59,9 +59,6 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
   
   // Schedule notes, fx, etc.
   {
-    // GFX
-    ATOMIC_SET(root->curr_blocknum, block->l.num);
-
     // Signature
     RT_schedule_Signature_newblock(seqtrack, seqblock, place);
 

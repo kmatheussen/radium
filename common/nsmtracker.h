@@ -1813,7 +1813,7 @@ struct Song{
 struct Root{
 	struct Song *song;
 
-        DEFINE_ATOMIC(NInt, curr_blocknum); // Currently playing blocknum
+       //DEFINE_ATOMIC(NInt, curr_blocknum); // Currently playing blocknum
 
 	int tempo;			/* Standard tempo. */
 	int lpb;			/* Standard lpb. */
