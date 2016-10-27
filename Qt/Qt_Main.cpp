@@ -1151,6 +1151,8 @@ static DEFINE_ATOMIC(bool, request_to_start_playing) = false;
 static DEFINE_ATOMIC(bool, request_to_continue_playing) = false;
 static DEFINE_ATOMIC(bool, request_to_stop_playing) = false;
 
+int g_main_timer_num_calls = 0;
+
 class CalledPeriodically : public QTimer {
 
   MyQMessageBox msgBox;
@@ -1160,12 +1162,10 @@ class CalledPeriodically : public QTimer {
   QSet<QString> dontshow;
 
   const int interval;
-  int64_t num_calls;
   
 public:
   CalledPeriodically()
     : interval(MAIN_TIMER_INTERVAL) // is set to either 1, 2, 5, 10, 25, or 50.
-    , num_calls(0)
   {
     msgBox.setModal(false);
     msgBox_dontshowagain = (QAbstractButton*)msgBox.addButton("Dont show this message again",QMessageBox::ApplyRole);
@@ -1212,12 +1212,12 @@ protected:
       ATOMIC_SET(rt_message_status, RT_MESSAGE_READY);
     }
 
-    num_calls++;
+    g_main_timer_num_calls++;
 
     struct Tracker_Windows *window=root->song->tracker_windows;
 
     /*
-    if(num_calls<1000/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
+    if(g_main_timer_num_calls<1000/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
       window->must_redraw = true;
     }
     */
@@ -1261,7 +1261,7 @@ protected:
 
     SampleRecorder_called_regularly();
     
-    if (num_calls % (50/interval) == 0) // 50ms = 3*1000ms/60 (each third frame)
+    if (is_called_every_ms(50)) // 50ms = 3*1000ms/60 (each third frame)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function    
 
     if(doquit==true) {
@@ -1295,7 +1295,7 @@ protected:
       
     }
     
-    if ( (num_calls % (5*1000/interval)) == 0) { // Ask for gl.make_current each 5 seconds.
+    if (is_called_every_ms(5000)){  // Ask for gl.make_current each 5 seconds.
       GL_lock();{
         GL_EnsureMakeCurrentIsCalled();
       }GL_unlock();
@@ -1328,10 +1328,10 @@ protected:
     }
     #endif
 
-    if ( (num_calls % (15/interval)) == 0) { // call each 10 ms. (i.e. more often than vsync)
-      if (g_sequencer_widget != NULL)
-        g_sequencer_widget->call_very_often();
-    }
+    if (g_sequencer_widget != NULL)
+      g_sequencer_widget->call_very_often();
+
+    BS_call_very_often();
     
     //MIXER_called_regularly_by_main_thread();
 

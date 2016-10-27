@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef _RADIUM_COMMON_OS_BS_EDIT_PROC_H
 #define _RADIUM_COMMON_OS_BS_EDIT_PROC_H
 
+extern LANGSPEC void BS_call_very_often(void);
 extern LANGSPEC void BS_resizewindow(void);
 extern LANGSPEC void BS_UpdateBlockList(void);
 extern LANGSPEC void BS_UpdatePlayList(void);

@@ -144,6 +144,8 @@ namespace{
 
     struct SeqBlock *seqblock;
     int seqblocknum;
+
+    bool is_current;
     
   private:
     
@@ -151,7 +153,7 @@ namespace{
 
   public:
     
-    static PlaylistElement pause(int seqblocknum, struct SeqBlock *seqblock, int64_t pause){
+    static PlaylistElement pause(int seqblocknum, struct SeqBlock *seqblock, int64_t pause, bool is_current){
       R_ASSERT(pause > 0);
       
       PlaylistElement pe;
@@ -159,16 +161,18 @@ namespace{
       pe.seqblocknum = seqblocknum;
       pe.seqblock = seqblock;
       pe._pause = pause;
-
+      pe.is_current = is_current;
+      
       return pe;
     }
 
-    static PlaylistElement block(int seqblocknum, struct SeqBlock *seqblock){
+    static PlaylistElement block(int seqblocknum, struct SeqBlock *seqblock, bool is_current){
       PlaylistElement pe;
       
       pe.seqblocknum = seqblocknum;
       pe.seqblock = seqblock;
       pe._pause = 0;
+      pe.is_current = is_current;
       
       return pe;
     }
@@ -210,23 +214,29 @@ QVector<PlaylistElement> get_playlist_elements(void){
     
   struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
 
+  double current_seq_time = ATOMIC_DOUBLE_GET(pc->start_time_f); // TODO: Move pc->start_time/etc. from playerclass into seqtrack.
+  
   double last_end_seq_time = 0;
   
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
 
+    int64_t next_last_end_seq_time = seqblock->gfx_time + getBlockSTimeLength(seqblock->block);
+        
     int64_t pause_time = seqblock->gfx_time - last_end_seq_time;
-    
+
     if (pause_time > 0) {
-      PlaylistElement pe = PlaylistElement::pause(iterator666, seqblock, pause_time);
+      bool is_current = current_seq_time >= last_end_seq_time && current_seq_time < seqblock->gfx_time;
+      PlaylistElement pe = PlaylistElement::pause(iterator666, seqblock, pause_time, is_current);
       ret.push_back(pe);
     }
     
     {
-      PlaylistElement pe = PlaylistElement::block(iterator666, seqblock);      
+      bool is_current = current_seq_time >= seqblock->gfx_time && current_seq_time < next_last_end_seq_time;
+      PlaylistElement pe = PlaylistElement::block(iterator666, seqblock, is_current);
       ret.push_back(pe);
     }
     
-    last_end_seq_time = seqblock->gfx_time + getBlockSTimeLength(seqblock->block);
+    last_end_seq_time = next_last_end_seq_time;
     
   }END_VECTOR_FOR_EACH;
 
@@ -516,6 +526,28 @@ public:
     MOVE_WIDGET(move_down_button);
     MOVE_WIDGET(move_up_button);
   }
+  
+  void call_very_often(void){
+    //struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+    
+    QVector<PlaylistElement> elements = get_playlist_elements();
+
+    int curr_pos = 0;
+    
+    for(int i = 0 ; i < elements.size() ; i++){
+      const PlaylistElement &el = elements.at(i);
+      if (el.is_current==true){
+        curr_pos = i;
+        break;
+      }
+    }
+
+    if (curr_pos != playlist.currentRow()){
+      playlist.setSelected(curr_pos, true);
+    }
+  }
+
+
 #if 0
   QPushButton add_button;
   QPushButton remove_button;
@@ -669,7 +701,7 @@ private slots:
       BS_UpdatePlayList();
     }
   }
-  
+
   void move_down(void){
     int pos= playlist.currentItem();
     if(pos==-1)
@@ -909,6 +941,12 @@ struct Blocks *BS_GetBlockFromPos(int pos){
 int BS_GetCurrPlaylistPos(void){
   ScopedVisitors v;
   return bs->playlist.currentRow();
+}
+
+void BS_call_very_often(void){
+  ScopedVisitors v;
+  if (is_called_every_ms(50))
+    return bs->call_very_often();
 }
 
 #if 0

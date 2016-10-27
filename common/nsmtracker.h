@@ -154,6 +154,7 @@ typedef int32_t NInt;
 #define RADIUM_BLOCKSIZE 64
 
 #define MAIN_TIMER_INTERVAL 5 // in milliseconds. Can be set to 1, 2, 5, 10, 25, or 50.
+extern int g_main_timer_num_calls;
 
 #define MINBLOCKRELTIME 0.001f
 #define MAXBLOCKRELTIME 6.0f
@@ -311,6 +312,13 @@ namespace radium{
 
 }
 #endif
+
+static inline bool is_called_every_ms(int ms){
+#if !defined(RELEASE)
+  R_ASSERT( (ms % MAIN_TIMER_INTERVAL) == 0);
+#endif
+  return g_main_timer_num_calls % (ms/MAIN_TIMER_INTERVAL) == 0;
+}
 
 
 /*********************************************************************

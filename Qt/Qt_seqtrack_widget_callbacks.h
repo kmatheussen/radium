@@ -817,33 +817,36 @@ struct Sequencer_widget : public QWidget {
   
   int _last_num_seqtracks = 0;
   double _last_visible_song_length = 0;
-  int _num_calls = 0;
   
   void call_very_often(void){
-    _seqtracks_widget.call_very_often();
-
-    if (g_need_update){
-      my_update();
-      BS_UpdatePlayList();
-      g_need_update=false;
+    if (is_called_every_ms(15)){  // call each 15 ms. (i.e. more often than vsync)
+      _seqtracks_widget.call_very_often();    
+    
+      if (g_need_update){
+        my_update();
+        BS_UpdatePlayList();
+        g_need_update=false;
+      }
     }
-    
-    bool do_update = _seqtracks_widget._seqtrack_widgets.size() != _last_num_seqtracks;
 
-    if (!do_update) {
-      if ( (_num_calls % (1000/MAIN_TIMER_INTERVAL)) == 0) // 1000ms. This is only an insurance. SEQUENCER_update is supposed to be called manually when needed.
-        if (_last_visible_song_length != SONG_get_gfx_length()) {
-          do_update = true;
-          _last_visible_song_length = SONG_get_gfx_length();
-        }
-      _num_calls++;
-    }  
-    
-    if (do_update){
-      position_widgets();
-      my_update();
-      _last_num_seqtracks = _seqtracks_widget._seqtrack_widgets.size();
-    }    
+    if (is_called_every_ms(50)){
+      bool do_update = _seqtracks_widget._seqtrack_widgets.size() != _last_num_seqtracks;
+      
+      if (!do_update) {
+        if (is_called_every_ms(1000)) // This is only an insurance. SEQUENCER_update is supposed to be called manually when needed.
+          if (_last_visible_song_length != SONG_get_gfx_length()) {
+            do_update = true;
+            _last_visible_song_length = SONG_get_gfx_length();
+          }
+      }  
+      
+      if (do_update){
+        position_widgets();
+        my_update();
+        _last_num_seqtracks = _seqtracks_widget._seqtrack_widgets.size();
+      }
+    }
+      
 
   }
   
