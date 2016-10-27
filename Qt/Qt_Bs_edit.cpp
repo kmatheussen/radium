@@ -945,7 +945,7 @@ int BS_GetCurrPlaylistPos(void){
 
 void BS_call_very_often(void){
   ScopedVisitors v;
-  if (is_called_every_ms(50))
+  if (is_called_every_ms(70))
     return bs->call_very_often();
 }
 
