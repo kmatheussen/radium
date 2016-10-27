@@ -1739,11 +1739,15 @@ struct SeqBlock{
   int64_t time;      // Seqtime. Player must be stopped when modifying this variable. Note that because of tempo multipliers (block->reltempo), the 'start_time' and 'end_time' fields does not correspond linearly to this value. Written to by the main thread, read by the main thread and the player thread(s).
   struct Blocks *block;
 
+  int64_t gfx_time;  // Usually contains the same value as 'time', but when moving seqblocks with the mouse, it contains the currently visible time instead. When releasing the mouse button, 'time' will get the same value as 'gfx_time'.
+
+  
   // 'start_time' and 'end_time' are absolute times.
   // They are only used the main thread.
   //
   // Note that these two values are NOT updated when seqblock->time or seqblock->block is changed.
-  // Instead, the function SEQTRACK_update_seqblock_start_and_end_times must be called right before reading any of these two variables.
+  // Instead, the function SEQTRACK_update_seqblock_start_and_end_times or the function SEQTRACK_update_seqblock_gfx_start_and_end_times
+  // must be called right before reading any of these two variables.
   // (using these two variables is functional programming in disguise. We could have had a function returning
   //  a vector with all these values instead, but that would have been more inconvenient and slower (although speed probably doesn't matter here).)
   double start_time;

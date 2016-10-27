@@ -49,6 +49,7 @@ extern LANGSPEC float SEQBLOCK_get_y2(int seqblocknum, int seqtracknum);
 
 // sequencer_gfx
 extern LANGSPEC void SEQTRACK_update_all_seqblock_start_and_end_times(struct SeqTrack *seqtrack);
+extern LANGSPEC void SEQTRACK_update_all_seqblock_gfx_start_and_end_times(struct SeqTrack *seqtrack);
 //extern LANGSPEC void SEQUENCER_update_all_seqblock_positions(void);
 extern LANGSPEC void SEQUENCER_update(void);
 
@@ -59,10 +60,12 @@ extern LANGSPEC void RT_legalize_seqtrack_timing(struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int seqblocknum, int64_t how_much);
 extern LANGSPEC void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
 extern LANGSPEC void SEQTRACK_move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
+extern LANGSPEC void SEQTRACK_move_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
 extern LANGSPEC void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t length);
 extern LANGSPEC void SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime);
 extern LANGSPEC void SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime);
 extern LANGSPEC double SEQTRACK_get_length(struct SeqTrack *seqtrack);
+extern LANGSPEC double SEQTRACK_get_gfx_length(struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQTRACK_init(struct SeqTrack *seqtrack);
 extern LANGSPEC struct SeqTrack *SEQTRACK_create(void);
 extern LANGSPEC struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len);
@@ -76,6 +79,7 @@ extern LANGSPEC void SEQUENCER_update_all_seqblock_start_and_end_times(void);
 
 // song
 extern LANGSPEC double SONG_get_length(void);
+extern LANGSPEC double SONG_get_gfx_length(void);
 extern LANGSPEC void SONG_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos);
 extern LANGSPEC void SONG_delete_seqtrack(int pos);
 extern LANGSPEC void SONG_init(void);

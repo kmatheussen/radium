@@ -228,6 +228,14 @@ void moveSeqblock(int seqblocknum, int64_t abstime, int seqtracknum){
   SEQTRACK_move_seqblock(seqtrack, seqblock, abstime);
 }
 
+void moveSeqblockGfx(int seqblocknum, int64_t abstime, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  
+  //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
+  SEQTRACK_move_gfx_seqblock(seqtrack, seqblock, abstime);
+}
+
 void deleteSeqblock(int seqtracknum, int seqblocknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);

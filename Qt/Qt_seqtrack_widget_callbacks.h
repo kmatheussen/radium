@@ -25,10 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static bool g_need_update = false;
 
-static double get_visible_song_length(void){
-  return SONG_get_length() + SEQUENCER_EXTRA_SONG_LENGTH;
-}
-  
 
 
 static QPoint mapToEditor(QWidget *widget, QPoint point){
@@ -163,7 +159,7 @@ public:
     R_ASSERT_RETURN_IF_FALSE2(seqblocknum>=0, 0);
     R_ASSERT_RETURN_IF_FALSE2(seqblocknum<_seqtrack->seqblocks.num_elements, 0);
     
-    SEQTRACK_update_all_seqblock_start_and_end_times(_seqtrack);
+    SEQTRACK_update_all_seqblock_gfx_start_and_end_times(_seqtrack);
     double start_time = _start_time / MIXER_get_sample_rate();
     double end_time = _end_time / MIXER_get_sample_rate();
     return get_seqblock_x1((struct SeqBlock*)_seqtrack->seqblocks.elements[seqblocknum], start_time, end_time);
@@ -173,7 +169,7 @@ public:
     R_ASSERT_RETURN_IF_FALSE2(seqblocknum>=0, 0);
     R_ASSERT_RETURN_IF_FALSE2(seqblocknum<_seqtrack->seqblocks.num_elements, 0);
 
-    SEQTRACK_update_all_seqblock_start_and_end_times(_seqtrack);
+    SEQTRACK_update_all_seqblock_gfx_start_and_end_times(_seqtrack);
     double start_time = _start_time / MIXER_get_sample_rate();
     double end_time = _end_time / MIXER_get_sample_rate();
     return get_seqblock_x2((struct SeqBlock*)_seqtrack->seqblocks.elements[seqblocknum], start_time, end_time);
@@ -297,7 +293,7 @@ public:
     double sample_rate = MIXER_get_sample_rate();
     //double song_length = get_visible_song_length()*sample_rate;
   
-    SEQTRACK_update_all_seqblock_start_and_end_times(_seqtrack);
+    SEQTRACK_update_all_seqblock_gfx_start_and_end_times(_seqtrack);
 
     double start_time = _start_time / sample_rate;
     double end_time = _end_time / sample_rate;
@@ -550,7 +546,7 @@ struct Timeline_widget : public MouseTrackerQWidget {
 
     p.setBrush(QColor(200,50,50));
     
-    double min_pixels_between_text = width() / 4;
+    double min_pixels_between_text = 40; //width() / 4;
 
     double start_time = _start_time / MIXER_get_sample_rate();
     double end_time = _end_time / MIXER_get_sample_rate();
@@ -589,8 +585,8 @@ struct Timeline_widget : public MouseTrackerQWidget {
         const double y2 = height() - 4;
                 
         draw_filled_triangle(p, x-t1, y1, x+t1, y1, x, y2);
-        //QRect rect(x + t1 + 2, y1, width(), y2-y1);
-        QRect rect(x + t1 + 4, 0, width(), height());
+        
+        QRect rect(x + t1 + 4, 2, width(), height());
         p.drawText(rect, seconds_to_timestring(time), QTextOption(Qt::AlignLeft | Qt::AlignTop));
       }
       
@@ -616,7 +612,7 @@ struct Seqtracks_navigator_widget : public MouseTrackerQWidget {
 
   void wheelEvent(QWheelEvent *qwheelevent) override {
     if (qwheelevent->delta() > 0)
-      PlaySong(scale(qwheelevent->x(), 0, width(), 0, get_visible_song_length()*MIXER_get_sample_rate()));
+      PlaySong(scale(qwheelevent->x(), 0, width(), 0, SONG_get_gfx_length()*MIXER_get_sample_rate()));
   }
 
 private:
@@ -629,16 +625,16 @@ private:
 public:
 
   float get_x1(void){
-    return get_x1(get_visible_song_length()*MIXER_get_sample_rate());
+    return get_x1(SONG_get_gfx_length()*MIXER_get_sample_rate());
   }
   float get_x2(void){
-    return get_x2(get_visible_song_length()*MIXER_get_sample_rate());
+    return get_x2(SONG_get_gfx_length()*MIXER_get_sample_rate());
   }
   
   void paintEvent ( QPaintEvent * ev ) override {
     QPainter p(this);
 
-    double total_seconds = get_visible_song_length();
+    double total_seconds = SONG_get_gfx_length();
     double total = total_seconds*MIXER_get_sample_rate();
     
     p.setRenderHints(QPainter::Antialiasing,true);
@@ -674,7 +670,7 @@ public:
         float y1 = scale(seqtracknum, 0, num_seqtracks, 5, height()-10);
         float y2 = y1 + (float)(height()-10) / (float)num_seqtracks;
         
-        SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
+        SEQTRACK_update_all_seqblock_gfx_start_and_end_times(seqtrack);
         //double start_time = _start_time / MIXER_get_sample_rate();
         //double end_time = _end_time / MIXER_get_sample_rate();
 
@@ -751,7 +747,7 @@ struct Sequencer_widget : public QWidget {
   
   Sequencer_widget(QWidget *parent)
     : QWidget(parent)
-    , _end_time(get_visible_song_length()*MIXER_get_sample_rate())
+    , _end_time(SONG_get_gfx_length()*MIXER_get_sample_rate())
     , _samples_per_pixel((_end_time-_start_time) / width())
     , _timeline_widget(this, _start_time, _end_time)
     , _seqtracks_widget(this, _start_time, _end_time)
@@ -768,7 +764,7 @@ struct Sequencer_widget : public QWidget {
   }
 
   void my_update(void){
-    int64_t visible_song_length = MIXER_get_sample_rate() * get_visible_song_length();
+    int64_t visible_song_length = MIXER_get_sample_rate() * SONG_get_gfx_length();
     if (_end_time > visible_song_length)
       _end_time = visible_song_length;
     
@@ -836,9 +832,9 @@ struct Sequencer_widget : public QWidget {
 
     if (!do_update) {
       if ( (_num_calls % (1000/MAIN_TIMER_INTERVAL)) == 0) // 1000ms. This is only an insurance. SEQUENCER_update is supposed to be called manually when needed.
-        if (_last_visible_song_length != get_visible_song_length()) {
+        if (_last_visible_song_length != SONG_get_gfx_length()) {
           do_update = true;
-          _last_visible_song_length = get_visible_song_length();
+          _last_visible_song_length = SONG_get_gfx_length();
         }
       _num_calls++;
     }  

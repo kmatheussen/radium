@@ -446,6 +446,8 @@
      *current-mouse-cycle*)))
 
 (define (radium-mouse-move $button $x $y)
+  ;;(c-display "radium-mouse-move" $x $y)
+
   (handling-nodes
    (lambda()
      ;;(c-display "mouse move2" $button $x $y (<ra> :ctrl-pressed) (<ra> :shift-pressed))
@@ -2836,7 +2838,7 @@
                                          (define seqblocknum (seqblock-info :seqblocknum))
                                          (define num-seqblocks (<ra> :get-num-seqblocks (seqblock-info :seqtracknum)))
                                          (if (= (1- num-seqblocks) seqblocknum)
-                                             (+ 100000 (<ra> :get-seqblock-end-time (seqblock-info :seqblocknum) seqtracknum))
+                                             (+ 10000000000 (<ra> :get-seqblock-end-time (seqblock-info :seqblocknum) seqtracknum))
                                              (<ra> :get-seqblock-start-time (1+ seqblocknum) seqtracknum)))
                         :Get-x (lambda (info) (/ (+ (<ra> :get-seqblock-x1 (info :seqblocknum)
                                                           (info :seqtracknum))
@@ -2856,6 +2858,7 @@
                                      (<ra> :set-statusbar-text (<-> (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum) (seqblock-info :seqtracknum)))))
 
                         :Release-node (lambda (seqblock-info)
+                                        ;;(c-display "  RELEASING GFX")
                                         ;;(c-display "  Y" Y (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y))
                                         (<ra> :move-seqblock (seqblock-info :seqblocknum) (floor last-value) (seqblock-info :seqtracknum))
                                         seqblock-info)
@@ -2863,8 +2866,9 @@
                         ;; TODO/FIX: Only change graphics here.
                         :Move-node (lambda (seqblock-info Value Y)
                                      (set! last-value Value)
+                                     ;;(c-display "  MOVING GFX " Value)
                                      ;;(c-display "  Y" Y (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y))
-                                     (<ra> :move-seqblock (seqblock-info :seqblocknum) (floor Value) (seqblock-info :seqtracknum))
+                                     (<ra> :move-seqblock-gfx (seqblock-info :seqblocknum) (floor Value) (seqblock-info :seqtracknum))
                                      seqblock-info)
 
                         :Use-Place #f

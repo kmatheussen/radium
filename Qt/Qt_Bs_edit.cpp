@@ -214,7 +214,7 @@ QVector<PlaylistElement> get_playlist_elements(void){
   
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
 
-    int64_t pause_time = seqblock->time - last_end_seq_time;
+    int64_t pause_time = seqblock->gfx_time - last_end_seq_time;
     
     if (pause_time > 0) {
       PlaylistElement pe = PlaylistElement::pause(iterator666, seqblock, pause_time);
@@ -226,7 +226,7 @@ QVector<PlaylistElement> get_playlist_elements(void){
       ret.push_back(pe);
     }
     
-    last_end_seq_time = seqblock->time + getBlockSTimeLength(seqblock->block);
+    last_end_seq_time = seqblock->gfx_time + getBlockSTimeLength(seqblock->block);
     
   }END_VECTOR_FOR_EACH;
 
@@ -383,7 +383,7 @@ static int get_move_down_button_y2(bool stacked, int width, int height){
 }
 
 
-static int num_visitors;
+static int num_visitors = 0;
 
 namespace{
 struct ScopedVisitors{
@@ -747,14 +747,8 @@ private slots:
     if (pe.is_illegal())
       return;
     
-    if (pe.is_pause()){
-      PC_Pause();{
-          
-        blocklist_highlighted(pe.seqblock->block->l.num);
-          
-      }PC_StopPause(NULL);
-    }
-    
+    if (pe.is_pause())
+      blocklist_highlighted(pe.seqblock->block->l.num);
   }
 
   void playlist_itemPressed(QListWidgetItem * item){
@@ -813,20 +807,23 @@ void BS_UpdateBlockList(void){
 }
 
 void BS_UpdatePlayList(void){
+  ScopedVisitors v;
+    
   if (bs==NULL)
     return;
   
   if (root->song->seqtracks.num_elements==0)
     return;
-  
+
   int orgpos = bs->playlist.currentItem();
 
+  // Remove all
   while(bs->playlist.count()>0)
     bs->playlist.removeItem(0);
 
   struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
   
-  SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
+  //SEQTRACK_update_all_seqblock_gfx_start_and_end_times(seqtrack);
 
   int justify_playlist = log10(seqtrack->seqblocks.num_elements) + 1;
   int justify_blocklist = log10(root->song->num_blocks) + 1;
@@ -847,6 +844,8 @@ void BS_UpdatePlayList(void){
   }
         
   bs->playlist.insertItem(" "); // Make it possible to put a block at the end of the playlist.
+
+  //printf("orgpos: %d\n",orgpos);
   
   BS_SelectPlaylistPos(orgpos);
 }
@@ -893,18 +892,22 @@ void BS_SelectPlaylistPos(int pos){
 }
 
 struct SeqBlock *BS_GetPrevPlaylistBlock(void){
+  ScopedVisitors v;
   return bs->get_prev_playlist_block();
 }
   
 struct SeqBlock *BS_GetNextPlaylistBlock(void){
+  ScopedVisitors v;
   return bs->get_next_playlist_block();
 }
 
 struct Blocks *BS_GetBlockFromPos(int pos){
+  ScopedVisitors v;
   return bs->get_block_from_pos(pos);
 }
 
 int BS_GetCurrPlaylistPos(void){
+  ScopedVisitors v;
   return bs->playlist.currentRow();
 }
 
@@ -954,6 +957,8 @@ void GFX_PlayListWindowToBack(void){
 }
 
 void GFX_showHidePlaylist(struct Tracker_Windows *window){
+  ScopedVisitors v;
+
 #if 0
   if(bs->width() < 10)
     GFX_PlayListWindowToFront();
