@@ -478,7 +478,7 @@ public:
 #if USE_QT4
     connect(&blocklist, SIGNAL(currentRowChanged(int)), this, SLOT(blocklist_highlighted(int)));
     connect(&blocklist, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(blocklist_doubleclicked(QListWidgetItem*)));
-    connect(&playlist, SIGNAL(currentRowChanged(int)), this, SLOT(playlist_highlighted(int)));
+    //connect(&playlist, SIGNAL(currentRowChanged(int)), this, SLOT(playlist_highlighted(int)));
     connect(&playlist, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(playlist_doubleclicked(QListWidgetItem*)));
 #endif
 
@@ -529,21 +529,21 @@ public:
   
   void call_very_often(void){
     //struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-    
-    QVector<PlaylistElement> elements = get_playlist_elements();
 
-    int curr_pos = 0;
-    
-    for(int i = 0 ; i < elements.size() ; i++){
-      const PlaylistElement &el = elements.at(i);
-      if (el.is_current==true){
-        curr_pos = i;
-        break;
+    if (is_playing() && pc->playtype==PLAYSONG) {
+      QVector<PlaylistElement> elements = get_playlist_elements();
+
+      int i;
+      
+      for(i = 0 ; i < elements.size() ; i++){
+        const PlaylistElement &el = elements.at(i);
+        if (el.is_current==true)
+          break;
       }
-    }
-
-    if (curr_pos != playlist.currentRow()){
-      playlist.setSelected(curr_pos, true);
+      
+      if (i != playlist.currentRow()){
+        playlist.setSelected(i, true);
+      }
     }
   }
 
@@ -768,29 +768,83 @@ private slots:
       }
     }
   }
-  
+
+  /*
   void playlist_highlighted(int num){
 
-    if(num_visitors>0) // event created internally
-      return;
-
-    PlaylistElement pe = get_playlist_element(num);
-
-    if (pe.is_illegal())
-      return;
-    
-    if (pe.is_pause())
-      blocklist_highlighted(pe.seqblock->block->l.num);
   }
-
+  */
+  
   void playlist_itemPressed(QListWidgetItem * item){
     printf("pressed 2: %d\n",(int)QApplication::mouseButtons());
     
+    if(num_visitors>0) // event created internally
+      return;
+
     if (QApplication::mouseButtons()==Qt::RightButton){
       
       if (shiftPressed()){
         remove_from_playlist();
       }
+
+    } else {
+
+      int num = playlist.currentItem();
+      
+      struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+      
+      if (num>=playlist.count()-1) {
+        PlaySong(SEQTRACK_get_length(seqtrack)*MIXER_get_sample_rate());
+        return;
+      }
+      
+      PlaylistElement pe = get_playlist_element(num);
+      if (pe.is_illegal())
+        return;
+      
+      int seqblocknum = pe.seqblocknum;
+
+      int64_t abstime, seqtime;
+      
+      SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
+
+      struct SeqBlock *seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum];
+
+      if (pe.is_pause()) {
+        if (seqblocknum==0) {
+          abstime = 0;
+          seqtime = 0;
+        } else {
+          struct SeqBlock *prev_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum-1];
+          abstime = prev_seqblock->end_time * MIXER_get_sample_rate();
+          seqtime = prev_seqblock->start_time + getBlockSTimeLength(prev_seqblock->block);
+        }
+      } else {
+        abstime = seqblock->start_time * MIXER_get_sample_rate();
+        seqtime = seqblock->time;
+      }      
+
+      if (!is_playing() || pc->playtype==PLAYBLOCK) {
+        
+        struct Tracker_Windows *window=getWindowFromNum(-1);
+        struct WBlocks *wblock=getWBlockFromNum(-1,seqblock->block->l.num);
+        if(wblock->curr_realline == wblock->num_reallines-1)
+          wblock->curr_realline = 0;
+        
+        PC_Pause();{
+          ATOMIC_SET(pc->song_abstime, abstime);
+          ATOMIC_DOUBLE_SET(pc->start_time_f, seqtime);
+          DO_GFX(SelectWBlock(window,wblock));
+        }PC_StopPause_ForcePlayBlock(NULL);
+
+        SEQUENCER_update();
+              
+      } else {
+        
+        PlaySong(abstime);
+        
+      }
+        
     }
   }
   
