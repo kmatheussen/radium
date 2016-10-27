@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include <math.h>
+
 #include "Qt_MyQCheckBox.h"
 #include "Qt_MyQSlider.h"
 
@@ -114,6 +116,75 @@ public:
 };
 
 
+static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play_time, double end_play_time) {
+      
+  if (  (e->modifiers() & Qt::ControlModifier) || (e->modifiers() & Qt::ShiftModifier)) {
+
+    double nav_start_time = SEQUENCER_get_visible_start_time();
+    double nav_end_time = SEQUENCER_get_visible_end_time();
+    double visible_song_length = SONG_get_gfx_length() * MIXER_get_sample_rate();
+    double new_start,new_end;
+    
+    double range = nav_end_time - nav_start_time;
+    double middle = nav_start_time + range/2.0;
+    double how_much = range / 10.0;
+     
+    if (e->modifiers() & Qt::ControlModifier) {
+      
+      if (e->delta() > 0) {
+        
+        new_start = nav_start_time + how_much;
+        new_end = nav_end_time - how_much;
+        
+      } else {
+        
+        new_start = nav_start_time - how_much;
+        new_end = nav_end_time + how_much;
+        
+      }
+      
+      if (fabs(new_end-new_start) < 400 || new_end<=new_start) {
+        new_start = middle - 200;
+        new_end = middle + 200;
+      }
+      
+    } else {
+
+      if (e->delta() > 0) {
+        
+        new_start = nav_start_time + how_much;
+        new_end = nav_end_time + how_much;
+        
+      } else {
+        
+        new_start = nav_start_time - how_much;
+        new_end = nav_end_time - how_much;
+        
+      }
+      
+    }
+
+    if (new_start < 0){
+      new_end -= new_start;
+      new_start = 0;
+    }
+    
+    if (new_end > visible_song_length){
+      double over = new_end - visible_song_length;
+      new_end = visible_song_length;
+      new_start -= over;
+    }
+      
+    SEQUENCER_set_visible_start_and_end_time(new_start, new_end);
+
+  } else {
+      
+    if (e->delta() > 0)
+      PlaySong(scale(e->x(), x1, x2, start_play_time, end_play_time));
+      
+  }
+}
+
 
 class Seqblocks_widget : public MouseTrackerQWidget {
 public:
@@ -142,9 +213,8 @@ public:
     printf("Seqblocks widget deleted\n");
   }
 
-  void wheelEvent(QWheelEvent *qwheelevent) override {
-    if (qwheelevent->delta() > 0)
-      PlaySong(scale(qwheelevent->x(), 0, width(), _start_time, _end_time));
+  void wheelEvent(QWheelEvent *e) override {
+    handle_wheel_event(e, 0, width(), _start_time, _end_time);
   }
     
   float get_seqblock_x1(struct SeqBlock *seqblock, double start_time, double end_time){
@@ -506,9 +576,8 @@ struct Timeline_widget : public MouseTrackerQWidget {
   {    
   }
 
-  void wheelEvent(QWheelEvent *qwheelevent) override {
-    if (qwheelevent->delta() > 0)
-      PlaySong(scale(qwheelevent->x(), 0, width(), _start_time, _end_time));
+  void wheelEvent(QWheelEvent *e) override {
+    handle_wheel_event(e, 0, width(), _start_time, _end_time);
   }
 
   void draw_filled_triangle(QPainter &p, double x1, double y1, double x2, double y2, double x3, double y3){
@@ -610,9 +679,8 @@ struct Seqtracks_navigator_widget : public MouseTrackerQWidget {
   {
   }
 
-  void wheelEvent(QWheelEvent *qwheelevent) override {
-    if (qwheelevent->delta() > 0)
-      PlaySong(scale(qwheelevent->x(), 0, width(), 0, SONG_get_gfx_length()*MIXER_get_sample_rate()));
+  void wheelEvent(QWheelEvent *e) override {
+    handle_wheel_event(e, 0, width(), 0, SONG_get_gfx_length()*MIXER_get_sample_rate());
   }
 
 private:
@@ -893,17 +961,25 @@ int64_t SEQUENCER_get_visible_end_time(void){
   return g_sequencer_widget->_end_time;
 }
 
+void SEQUENCER_set_visible_start_and_end_time(int64_t start_time, int64_t end_time){
+  R_ASSERT_RETURN_IF_FALSE(end_time > start_time);
+  
+  g_sequencer_widget->_start_time = R_MAX(start_time, 0);
+  g_sequencer_widget->_end_time = R_MIN(end_time, SONG_get_gfx_length() * MIXER_get_sample_rate());
+  g_sequencer_widget->my_update();
+}
+
 void SEQUENCER_set_visible_start_time(int64_t val){
   R_ASSERT_RETURN_IF_FALSE(val < g_sequencer_widget->_end_time);
-  
-  g_sequencer_widget->_start_time = val;
+
+  g_sequencer_widget->_start_time = R_MAX(val, 0);
   g_sequencer_widget->my_update();
 }
 
 void SEQUENCER_set_visible_end_time(int64_t val){
   R_ASSERT_RETURN_IF_FALSE(val > g_sequencer_widget->_start_time);
   
-  g_sequencer_widget->_end_time = val;
+  g_sequencer_widget->_end_time = R_MIN(val, SONG_get_gfx_length() * MIXER_get_sample_rate());
   g_sequencer_widget->my_update();
 }
 

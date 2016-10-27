@@ -17,6 +17,7 @@ extern LANGSPEC float SEQUENCER_get_y2(void);
 
 extern LANGSPEC int64_t SEQUENCER_get_visible_start_time(void);
 extern LANGSPEC int64_t SEQUENCER_get_visible_end_time(void);
+extern LANGSPEC void SEQUENCER_set_visible_start_and_end_time(int64_t start_time, int64_t end_time);
 extern LANGSPEC void SEQUENCER_set_visible_start_time(int64_t val);
 extern LANGSPEC void SEQUENCER_set_visible_end_time(int64_t val);
 

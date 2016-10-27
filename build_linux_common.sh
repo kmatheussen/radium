@@ -71,7 +71,15 @@ export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 export OS_OPTS="-Werror=array-bounds -msse2 -fno-omit-frame-pointer -DFOR_LINUX -DWITH_PD `$PKG --cflags Qt5X11Extras`"
 #export OS_OPTS="-Werror=array-bounds -march=native"
 
-if ! env |grep IS_LINUX_BINARY ; then
+# Don't include faustdev in debug builds since it increases linker time and increases startup time when running under gdb.
+if [[ $BUILDTYPE == RELEASE ]]
+then
+    if ! env |grep IS_LINUX_BINARY ; then
+        export INCLUDE_FAUSTDEV="jadda"
+    fi
+fi
+
+if env |grep INCLUDE_FAUSTDEV ; then
     export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV"
 fi
 
@@ -87,10 +95,10 @@ else
     LLVMLIBS=`llvm-config --libs`
 fi
 
-if env |grep IS_LINUX_BINARY ; then
-    FAUSTLDFLAGS=""
-else    
+if env |grep INCLUDE_FAUSTDEV ; then
     FAUSTLDFLAGS="bin/packages/faust2/compiler/libfaust.a `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
+else    
+    FAUSTLDFLAGS=""
 fi
 # _debug
 

@@ -600,6 +600,7 @@ void SONG_init(void){
   }PLAYER_unlock();
 }
 
+
 hash_t *SEQUENCER_get_state(void){
   hash_t *state = HASH_create(root->song->seqtracks.num_elements);
 
