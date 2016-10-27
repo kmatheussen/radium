@@ -236,7 +236,7 @@ void moveSeqblockGfx(int seqblocknum, int64_t abstime, int seqtracknum){
   SEQTRACK_move_gfx_seqblock(seqtrack, seqblock, abstime);
 }
 
-void deleteSeqblock(int seqtracknum, int seqblocknum){
+void deleteSeqblock(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
 

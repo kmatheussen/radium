@@ -2808,9 +2808,11 @@
            (loop (1+ seqtracknum))))))
      
 (define (get-seqblock-info X Y)
-  (define seqtracknum (get-seqtracknum X Y))
-  (and seqtracknum
-       (get-seqblock seqtracknum X Y)))
+  (and (inside-box (<ra> :get-box sequencer) X Y)
+       (begin
+         (define seqtracknum (get-seqtracknum X Y))
+         (and seqtracknum
+              (get-seqblock seqtracknum X Y)))))
 
 
 ;; TODO: Fix.
@@ -2877,6 +2879,19 @@
                                                      (/ 20.0 (<ra> :get-sample-rate)))
 
                         )
+
+;; delete seqblock
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (and (= Button *right-button*)                     
+                     (let ((seqblock-info (get-seqblock-info X Y)))
+                       ;;(c-display "get-existing " seqblock-info X Y)
+                       (and seqblock-info
+                            (begin
+                              (<ra> :undo-sequencer)
+                              (<ra> :delete-seqblock (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))
+                              #t)))))))
 
 
 ;; left size handle in navigator
