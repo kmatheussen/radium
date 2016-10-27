@@ -2884,7 +2884,8 @@
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
-                (and (= Button *right-button*)                     
+                (and (= Button *right-button*)
+                     (<ra> :shift-pressed)
                      (let ((seqblock-info (get-seqblock-info X Y)))
                        ;;(c-display "get-existing " seqblock-info X Y)
                        (and seqblock-info
