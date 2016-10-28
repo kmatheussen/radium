@@ -1309,8 +1309,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
 
 }
 
-static void create_pitches(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note, bool draw_pitches){
-  const bool show_read_lines = true; //wtrack->noteshowtype==GFXTYPE1 || wblock->mouse_track==wtrack->l.num;
+static void create_pitches(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
 
   const struct NodeLine *nodelines = GetPitchNodeLines(window,
                                                        wblock,
@@ -1319,7 +1318,7 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
                                                        );
 
   // lines
-  if (draw_pitches && show_read_lines) {
+  {
 
     GE_Context *line_color = NULL;
 
@@ -2200,17 +2199,13 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
 
   SetNotePolyphonyAttributes(wtrack->track);
 
-  float track_pitch_min;
-  float track_pitch_max;
-  TRACK_get_min_and_max_pitches(wtrack->track, &track_pitch_min, &track_pitch_max);
-    
   // velocities and pitches
   {  
     const struct Notes *note=wtrack->track->notes;
     while(note != NULL){
       if(NOTE_subtrack(wtrack, note) >= left_subtrack) {        
         if (left_subtrack==-1 && wtrack->notesonoff==1)
-          create_pitches(window, wblock, wtrack, note, track_pitch_min != track_pitch_max);
+          create_pitches(window, wblock, wtrack, note);
         create_track_velocities(window, wblock, wtrack, note);
       }
       note = NextNote(note);
