@@ -124,6 +124,7 @@ static inline void GFX_ScheduleCalculateCoordinates(void){
 
 
 extern LANGSPEC void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual);
+extern LANGSPEC bool GFX_PlaylistWindowIsVisible(void);
 extern LANGSPEC void GFX_PlayListWindowToFront(void);
 extern LANGSPEC void GFX_PlayListWindowToBack(void);
 extern LANGSPEC void GFX_InstrumentWindowToFront(void);
@@ -141,6 +142,10 @@ extern LANGSPEC void GFX_SetMinimalInstrumentWindow(void);
 extern LANGSPEC bool GFX_EditorIsVisible(void);
 extern LANGSPEC void GFX_ShowEditor(void);
 extern LANGSPEC void GFX_HideEditor(void);
+
+extern LANGSPEC bool GFX_SequencerIsVisible(void);
+extern LANGSPEC void GFX_ShowSequencer(void);
+extern LANGSPEC void GFX_HideSequencer(void);
 
 extern LANGSPEC bool GFX_MixerIsVisible(void);
 extern LANGSPEC void GFX_ShowMixer(void);

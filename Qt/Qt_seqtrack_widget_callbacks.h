@@ -1126,3 +1126,23 @@ void RT_SEQUENCER_update_sequencer_and_playlist(void){
     
   }
 }
+
+bool GFX_SequencerIsVisible(void){
+  return g_sequencer_widget->isVisible();
+}
+
+void GFX_ShowSequencer(void){
+  //set_widget_height(30);
+  GL_lock(); {
+    g_sequencer_widget->show();
+  }GL_unlock();
+
+  set_editor_focus();
+}
+
+void GFX_HideSequencer(void){
+  g_sequencer_widget->hide();
+  //set_widget_height(0);
+
+  set_editor_focus();
+}

@@ -1750,6 +1750,7 @@ int radium_main(char *arg){
         ysplitter->setStretchFactor(0,100000);
         ysplitter->setStretchFactor(1,0);
         ysplitter->handle(1)->setEnabled(false);
+        ysplitter->handle(2)->setEnabled(false);
 
         qApp->setStyleSheet("QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).dark(110).name() + ";}"); 
 

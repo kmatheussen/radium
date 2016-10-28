@@ -120,6 +120,37 @@ void showHideEditor(int windownum){
   GFX_showHideEditor();
 }
 
+void showHideSequencer(void){
+  if(GFX_SequencerIsVisible())
+    GFX_HideSequencer();
+  else
+    GFX_ShowSequencer();
+}
+
+void switchSequencerPlaylistConfiguration(void){
+  bool seq  = GFX_SequencerIsVisible();
+  bool play = GFX_PlaylistWindowIsVisible();
+
+  int state = (seq ? 2 : 0) + (play ? 1 : 0);
+
+  switch(state){
+    case 0: // 00 -> 01
+      GFX_PlayListWindowToFront();
+      break;
+    case 1: // 01 -> 10
+      GFX_ShowSequencer();
+      GFX_PlayListWindowToBack();
+      break;
+    case 2: // 10 -> 11
+      GFX_PlayListWindowToFront();
+      break;
+    case 3: // 11 -> 00
+      GFX_HideSequencer();
+      GFX_PlayListWindowToBack();
+      break;
+  }
+}
+
 void showHideMixerWidget(void){
   GFX_showHideMixerWidget();
 }
@@ -133,13 +164,14 @@ void showHideInstrumentWidget(int windownum){
     GFX_InstrumentWindowToFront();
 }
 
+
 #if 0
 void toggleInstrumentWidgetOnly(void){
   //if(GFX_
 }
 #endif
 
-void showHidePlaylist(int windownum){
+void showHidePlaylist(int windownum){  
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_showHidePlaylist(window);
 }

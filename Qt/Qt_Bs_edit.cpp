@@ -1019,6 +1019,10 @@ static void set_widget_width(int width){
 
 static bool is_hidden = false;
 
+bool GFX_PlaylistWindowIsVisible(void){
+  return !is_hidden;
+}
+
 void GFX_PlayListWindowToFront(void){
   ScopedVisitors v;
 
