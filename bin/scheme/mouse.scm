@@ -845,7 +845,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (add-mouse-move-handler
  :move (lambda ($button X Y)
-         (c-display X Y (box-to-string (get-seqnav-move-box)))
+         ;;(c-display X Y (box-to-string (get-seqnav-move-box)))
          (cond ((and *current-track-num*
                      (inside-box (<ra> :get-box track-pan-slider *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-horizontal-split-mouse-pointer)

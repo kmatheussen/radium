@@ -61,7 +61,7 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
     int64_t time = get_seqblock_place_time(seqblock, note->end);
 
     if (time < note_start_time){
-      RError("time >= note_start_time: %d - %d", (int)time, (int)note_start_time);
+      // RError("time >= note_start_time: %d - %d", (int)time, (int)note_start_time); // Can happen if seq_time < pc->start_time in schedule_event.
       time = note_start_time;
     }
           
@@ -161,7 +161,8 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
                                  TRACK_get_pan(track),
                                  ATOMIC_GET(track->midi_channel)
                                  );
-    
+
+    //printf("  Playing note at %d\n",(int)time);
     RT_PATCH_play_note(seqtrack, patch,note2,time);
 
     RT_schedule_pitches_newnote(time, seqtrack, seqblock, track, note);

@@ -831,7 +831,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
   Data *data = (Data*)plugin->data;
 
-  //printf("  Sampler_plugin.cpp: Request to play note %d\n", (int)note2.id);
+  //printf("  Sampler_plugin.cpp: Request to play note %d at %d\n", (int)note2.id, time);
 
   R_ASSERT_NON_RELEASE(time >= 0);
   R_ASSERT_NON_RELEASE(time < RADIUM_BLOCKSIZE);
@@ -1297,6 +1297,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
   if(value_format==PLUGIN_FORMAT_SCALED){
     switch(effect_num){
     case EFF_STARTPOS:
+      //printf("    Samp: start pos to %f at %d\n", value , time);
       data->p.startpos = value;
       update_peaks(plugin);
       break;

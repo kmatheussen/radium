@@ -15,7 +15,9 @@ static int64_t RT_scheduled_realline(struct SeqTrack *seqtrack, int64_t time, un
   const struct SeqBlock *seqblock = args[0].const_pointer;
   struct WBlocks *wblock = args[1].pointer;
   int realline = args[2].int32_num;
-    
+
+  //printf("%d\n", realline);
+  
 #ifdef WITH_PD
   bool inserted_pd_realline = false;
   int64_t org_time = time;

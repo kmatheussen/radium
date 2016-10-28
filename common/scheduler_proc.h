@@ -57,7 +57,7 @@ enum SchedulerPriority{
 extern struct SeqTrack *g_RT_curr_scheduling_seqtrack;
 
 extern LANGSPEC void SCHEDULER_add_event(struct SeqTrack *seqtrack, int64_t time_into_the_future, SchedulerCallback callback, union SuperType *args, int num_args, enum SchedulerPriority priority);
-extern LANGSPEC bool SCHEDULER_called_per_block(int64_t reltime);
+extern LANGSPEC bool SCHEDULER_called_per_block(double reltime);
 
 extern LANGSPEC int SCHEDULER_num_events(scheduler_t *scheduler);
 extern LANGSPEC bool SCHEDULER_clear(scheduler_t *scheduler);

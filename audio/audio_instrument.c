@@ -455,7 +455,7 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
     y = HASH_get_float(audio_state, "y");
   }
 
-  printf("x: %f, y: %f\n",x,y);
+  //printf("x: %f, y: %f\n",x,y);
   //getchar();
 
   // Create mixer object

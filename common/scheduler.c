@@ -70,7 +70,7 @@ static void release_event(event_t *event){
  *
  ****/
 struct _scheduler_t {
-  int64_t current_time;
+  double current_time;
 
   int queue_size;
   
@@ -118,8 +118,8 @@ static int64_t seq_to_scheduler_time(struct SeqTrack *seqtrack, scheduler_t *sch
 static bool schedule_event(struct SeqTrack *seqtrack, event_t *event, int64_t seq_time, enum SchedulerPriority priority){
   scheduler_t *scheduler = seqtrack->scheduler;
 
-  if (seq_time < (int64_t)pc->start_time)
-    seq_time = (int64_t)pc->start_time;
+  //  if (seq_time < (int64_t)pc->start_time)
+  //    seq_time = (int64_t)pc->start_time; // TODO/FIX: This is probably not a good thing. Why was this code added again?
   
   int64_t time = seq_to_scheduler_time(seqtrack, scheduler, seq_time);
 
@@ -232,15 +232,22 @@ static int get_priority(event_t *event){
 
 struct SeqTrack *g_RT_curr_scheduling_seqtrack;
 
-static int called_per_block(struct SeqTrack *seqtrack, int64_t reltime){
+static int called_per_block(struct SeqTrack *seqtrack, double reltime){
   g_RT_curr_scheduling_seqtrack = seqtrack;
   
   scheduler_t *scheduler = seqtrack->scheduler;
+
+  double end_time_f = scheduler->current_time + reltime;
+  int64_t end_time = end_time_f;
   
-  int64_t end_time = scheduler->current_time + reltime;
   //printf("  called_per_block. end_time: %d. pc->start_time: %f\n",(int)end_time, pc->start_time);
 
-  //printf("called_per_block. seqtrack: %p\n", seqtrack);
+#if 0
+  static int counter = 0;
+  if ( (counter % 512)==0 && is_playing())
+    printf("called_per_block.  pc->end_time: %d. %f %f\n",(int)pc->end_time,scheduler->current_time,reltime);
+  counter++;
+#endif
   
   while(scheduler->queue_size>0){
     
@@ -249,7 +256,7 @@ static int called_per_block(struct SeqTrack *seqtrack, int64_t reltime){
     //printf("  SCHEDULER: sched: %d - seq: %d.  First event: %d. pc->start_time: %d, pc->end_time: %d\n",(int)end_time, (int)scheduler_to_seq_time(end_time), (int)scheduler_to_seq_time(event_time),(int)pc->start_time, (int)pc->end_time);
 
     //printf("   Sched. Now: %d,  first event: %d. Seqtrack: %p\n", (int)end_time, (int)event_time, seqtrack);
-    
+
     if(event_time < end_time){
       
       remove_first_event(scheduler);
@@ -271,7 +278,7 @@ static int called_per_block(struct SeqTrack *seqtrack, int64_t reltime){
     }
   }
 
-  scheduler->current_time = end_time;
+  scheduler->current_time = end_time_f;
 
 #if !defined(RELEASE)
   g_RT_curr_scheduling_seqtrack = NULL;
@@ -282,7 +289,7 @@ static int called_per_block(struct SeqTrack *seqtrack, int64_t reltime){
 
 // Calls SCHEDULER_called_per_block for all seqtracks.
 //
-bool SCHEDULER_called_per_block(int64_t reltime){
+bool SCHEDULER_called_per_block(double reltime){
   bool is_finished = true;
 
   if (called_per_block(&root->song->block_seqtrack, reltime) > 0)
