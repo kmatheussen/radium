@@ -11,9 +11,9 @@
 #include <math.h>
 #include <string.h>
 
-#include "../pluginhost/JuceLibraryCode/JuceHeader.h"
-
 #include "../pluginhost/JuceLibraryCode/AppConfig.h"
+
+#include "../pluginhost/JuceLibraryCode/JuceHeader.h"
 
 
 #if JUCE_LINUX
@@ -1068,11 +1068,15 @@ static void hide_gui(struct SoundPlugin *plugin){
 
 
 static AudioPluginInstance *create_audio_instance(const TypeData *type_data, float sample_rate, int block_size){
+  
   static bool inited=false;
 
   static AudioPluginFormatManager formatManager;
     
   if (inited==false){
+#if CUSTOM_MM_THREAD
+    const MessageManagerLock mmLock;
+#endif
     formatManager.addDefaultFormats();
     inited=true;
   }
@@ -1084,15 +1088,20 @@ static AudioPluginInstance *create_audio_instance(const TypeData *type_data, flo
   bool exists = File (description.fileOrIdentifier).exists();
   printf("  Trying to load -%s-. Exists? %d\n", STRING_get_chars(type_data->file_or_identifier),exists?1:0);
 
-  AudioPluginInstance *instance = formatManager.createPluginInstance(description,sample_rate,block_size,errorMessage);
+  AudioPluginInstance *instance = formatManager.createPluginInstance (description,sample_rate,block_size,errorMessage);
   
   if (instance==NULL){
     GFX_Message(NULL, "Unable to open %s plugin %s: %s\n",description.pluginFormatName.toRawUTF8(), description.fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
     return NULL;
   }
 
-  instance->prepareToPlay(sample_rate, block_size);
-
+  {
+  #if CUSTOM_MM_THREAD
+    const MessageManagerLock mmLock;
+#endif
+    instance->prepareToPlay(sample_rate, block_size);
+  }
+  
   return instance;
 }
 
@@ -1189,10 +1198,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
 static int num_running_plugins = 0;
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
-#if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;
-#endif
-
+  
   TypeData *type_data = (struct TypeData*)plugin_type->data;
 
   if(isFullVersion()==false && num_running_plugins >= 2){
@@ -1207,24 +1213,30 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
     return NULL;
   }
 
-  PluginDescription description = audio_instance->getPluginDescription();
+  {
+#if CUSTOM_MM_THREAD
+    const MessageManagerLock mmLock;
+#endif
 
-  //plugin->name = talloc_strdup(description.name.toUTF8());
+    PluginDescription description = audio_instance->getPluginDescription();
 
-  Data *data = new Data(audio_instance, plugin, audio_instance->getTotalNumInputChannels(), audio_instance->getTotalNumOutputChannels());
-  plugin->data = data;
+    //plugin->name = talloc_strdup(description.name.toUTF8());
+    
+    Data *data = new Data(audio_instance, plugin, audio_instance->getTotalNumInputChannels(), audio_instance->getTotalNumOutputChannels());
+    plugin->data = data;
+    
+    audio_instance->setPlayHead(&data->playHead);
+    
+    if(type_data->effect_names==NULL)
+      set_plugin_type_data(audio_instance,(SoundPluginType*)plugin_type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
+    
+    if (state!=NULL)
+      recreate_from_state(plugin, state, is_loading);
+    
+    num_running_plugins++;
 
-  audio_instance->setPlayHead(&data->playHead);
-
-  if(type_data->effect_names==NULL)
-    set_plugin_type_data(audio_instance,(SoundPluginType*)plugin_type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
-  
-  if (state!=NULL)
-    recreate_from_state(plugin, state, is_loading);
-
-  num_running_plugins++;
-
-  return data;
+    return data;
+  }
 }
 
 
