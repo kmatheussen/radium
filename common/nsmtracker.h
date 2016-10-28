@@ -305,7 +305,7 @@ namespace radium{
     QString ret = base + ":" + (centiseconds < 10 ? "0" : "") + QString::number(centiseconds);
     
     if (hours > 0)
-      return QString(hours < 10 ? " " : "" + hours) + ret;
+      return QString(hours < 10 ? " " : "" + QString::number(hours)) + ret;
     else
       return ret;
   }

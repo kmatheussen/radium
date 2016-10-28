@@ -189,7 +189,7 @@ void cutSelectedMixerObjects(void){
   MW_cut();
 }
 
-int pasteMixerObjects(float x, float y){
+int64_t pasteMixerObjects(float x, float y){
   int64_t ret;
   
   Undo_Open();{

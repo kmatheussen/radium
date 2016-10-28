@@ -117,7 +117,7 @@ func_t *s7extra_func(s7_scheme *s7, s7_pointer func){
   return (func_t*)func;
 }
 
-void s7extra_callFunc_void_int_bool(func_t *func, int arg1, bool arg2){
+void s7extra_callFunc_void_int_bool(func_t *func, int64_t arg1, bool arg2){
   s7_call(s7,
           (s7_pointer)func,
           s7_list(s7,
@@ -128,22 +128,22 @@ void s7extra_callFunc_void_int_bool(func_t *func, int arg1, bool arg2){
           );
 }
 
-void s7extra_callFunc2_void_int_bool(const char *funcname, int arg1, bool arg2){
+void s7extra_callFunc2_void_int_bool(const char *funcname, int64_t arg1, bool arg2){
   s7extra_callFunc_void_int_bool((func_t*)s7_name_to_value(s7, funcname), arg1, arg2);
 }
 
-void s7extra_callFunc_void_int(func_t *func, int arg1){
+void s7extra_callFunc_void_int(func_t *func, int64_t arg1){
   s7_call(s7,
           (s7_pointer)func,
           s7_list(s7, 1, s7_make_integer(s7, arg1))
           );
 }
 
-void s7extra_callFunc2_void_int(const char *funcname, int arg1){
+void s7extra_callFunc2_void_int(const char *funcname, int64_t arg1){
   s7extra_callFunc_void_int((func_t*)s7_name_to_value(s7, funcname), arg1);
 }
 
-void s7extra_callFunc_void_int_charpointer(func_t *func, int arg1, const char* arg2){
+void s7extra_callFunc_void_int_charpointer(func_t *func, int64_t arg1, const char* arg2){
   s7_call(s7,
           (s7_pointer)func,
           s7_list(s7,
@@ -154,7 +154,7 @@ void s7extra_callFunc_void_int_charpointer(func_t *func, int arg1, const char* a
           );
 }
 
-void s7extra_callFunc2_void_int_charpointer(const char *funcname, int arg1, const char* arg2){
+void s7extra_callFunc2_void_int_charpointer(const char *funcname, int64_t arg1, const char* arg2){
   s7extra_callFunc_void_int_charpointer((func_t*)s7_name_to_value(s7, funcname), arg1, arg2);
 }
 

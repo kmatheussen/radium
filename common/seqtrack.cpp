@@ -121,7 +121,7 @@ static void legalize_seqtrack_timing(struct SeqTrack *seqtrack, bool is_gfx){
     if (seq_block_start != seqblock->time) {
       if (!is_gfx)
         seqblock->time = seq_block_start;
-      seqblock->gfx_time = seqblock->time;
+      seqblock->gfx_time = seq_block_start;
     }
 
     last_end_time = seq_block_start + getBlockSTimeLength(seqblock->block);
@@ -213,7 +213,7 @@ hash_t *SEQBLOCK_get_state(const struct SeqBlock *seqblock){
 
 struct SeqBlock *SEQBLOCK_create_from_state(const hash_t *state){
   struct SeqBlock *seqblock = (struct SeqBlock*)talloc(sizeof(struct SeqBlock));
-  int blocknum = HASH_get_int(state, "blocknum");
+  int blocknum = HASH_get_int32(state, "blocknum");
 
   double samplerate = HASH_get_float(state, "samplerate");
       
@@ -350,14 +350,22 @@ static void move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, 
   int64_t time2 = time1 + getBlockSTimeLength(seqblock->block);
   int64_t duration = time2-time1;
   
-  int64_t mintime = prev_seqblock==NULL ?  0 : prev_seqblock->time + getBlockSTimeLength(prev_seqblock->block);
-  int64_t maxtime = next_seqblock==NULL ? -1 : next_seqblock->time - duration;
+  int64_t mintime;
+  int64_t maxtime;
 
-  if (maxtime==-1)
-    new_seqblock_time = R_MAX(mintime, new_seqblock_time);
-  else
-    new_seqblock_time = R_BOUNDARIES(mintime, new_seqblock_time, maxtime);
+  if (false && is_gfx) {
+    mintime = 0;
+    maxtime = SONG_get_gfx_length() + 10000000;
+  } else {
+    mintime = prev_seqblock==NULL ?  0 : prev_seqblock->time + getBlockSTimeLength(prev_seqblock->block);
+    maxtime = next_seqblock==NULL ? -1 : next_seqblock->time - duration;
 
+    if (maxtime==-1)
+      new_seqblock_time = R_MAX(mintime, new_seqblock_time);
+    else
+      new_seqblock_time = R_BOUNDARIES(mintime, new_seqblock_time, maxtime);
+  }
+  
   if (new_seqblock_time==time1)
     return;
 
