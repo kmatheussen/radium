@@ -22,7 +22,6 @@
   ==============================================================================
 */
 
-
 MidiRPNDetector::MidiRPNDetector() noexcept
 {
 }
@@ -55,7 +54,7 @@ void MidiRPNDetector::reset() noexcept
 }
 
 //==============================================================================
-MidiRPNDetector::ChannelState::ChannelState () noexcept
+MidiRPNDetector::ChannelState::ChannelState() noexcept
     : parameterMSB (0xff), parameterLSB (0xff), valueMSB (0xff), valueLSB (0xff), isNRPN (false)
 {
 }
@@ -331,7 +330,7 @@ public:
     }
 
 private:
-    //==========================================================================
+    //==============================================================================
     void expectContainsRPN (const MidiBuffer& midiBuffer,
                             int channel,
                             int parameterNumber,
@@ -343,7 +342,7 @@ private:
         expectContainsRPN (midiBuffer, expected);
     }
 
-    //==========================================================================
+    //==============================================================================
     void expectContainsRPN (const MidiBuffer& midiBuffer, MidiRPNMessage expected)
     {
         MidiBuffer::Iterator iter (midiBuffer);

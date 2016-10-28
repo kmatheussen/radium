@@ -130,7 +130,8 @@ bool FileChooser::isPlatformDialogAvailable()
 void FileChooser::showPlatformDialog (Array<File>& results, const String& title_, const File& currentFileOrDirectory,
                                       const String& filter, bool selectsDirectory, bool /*selectsFiles*/,
                                       bool isSaveDialogue, bool warnAboutOverwritingExistingFiles,
-                                      bool selectMultipleFiles, FilePreviewComponent* extraInfoComponent)
+                                      bool selectMultipleFiles, bool /*treatFilePackagesAsDirs*/,
+                                      FilePreviewComponent* extraInfoComponent)
 {
     using namespace FileChooserHelpers;
 
@@ -146,7 +147,7 @@ void FileChooser::showPlatformDialog (Array<File>& results, const String& title_
 
     // use a modal window as the parent for this dialog box
     // to block input from other app windows
-    Component parentWindow (String::empty);
+    Component parentWindow;
     const Rectangle<int> mainMon (Desktop::getInstance().getDisplays().getMainDisplay().userArea);
     parentWindow.setBounds (mainMon.getX() + mainMon.getWidth() / 4,
                             mainMon.getY() + mainMon.getHeight() / 4,

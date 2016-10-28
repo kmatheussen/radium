@@ -32,7 +32,7 @@ void JUCE_CALLTYPE AudioProcessor::setTypeOfNextNewPlugin (AudioProcessor::Wrapp
 AudioProcessor::AudioProcessor()
     : wrapperType (wrapperTypeBeingCreated.get()),
       playHead (nullptr),
-      sampleRate (0),
+      currentSampleRate (0),
       blockSize (0),
       latencySamples (0),
      #if JUCE_DEBUG
@@ -42,23 +42,47 @@ AudioProcessor::AudioProcessor()
       nonRealtime (false),
       processingPrecision (singlePrecision)
 {
-  #if ! JucePlugin_IsMidiEffect
    #ifdef JucePlugin_PreferredChannelConfigurations
     const short channelConfigs[][2] = { JucePlugin_PreferredChannelConfigurations };
    #else
     const short channelConfigs[][2] = { {2, 2} };
    #endif
-    int numChannelConfigs = sizeof (channelConfigs) / sizeof (*channelConfigs);
 
-    if (numChannelConfigs > 0)
-    {
-       #if ! JucePlugin_IsSynth
-        busArrangement.inputBuses.add  (AudioProcessorBus ("Input",    AudioChannelSet::canonicalChannelSet (channelConfigs[0][0])));
-       #endif
-        busArrangement.outputBuses.add (AudioProcessorBus ("Output",   AudioChannelSet::canonicalChannelSet (channelConfigs[0][1])));
-    }
+   #ifdef JucePlugin_MaxNumInputChannels
+    const int maxInChannels = JucePlugin_MaxNumInputChannels;
+   #else
+    const int maxInChannels = std::numeric_limits<int>::max();
+   #endif
+    ignoreUnused (maxInChannels);
+
+   #ifdef JucePlugin_MaxNumOutputChannels
+    const int maxOutChannels = JucePlugin_MaxNumOutputChannels;
+   #else
+    const int maxOutChannels = std::numeric_limits<int>::max();
+   #endif
+    ignoreUnused (maxOutChannels);
+
+ #if JucePlugin_IsMidiEffect
+    ignoreUnused (channelConfigs);
+ #else
+   #if ! JucePlugin_IsSynth
+    const int numInChannels = jmin (maxInChannels, (int) channelConfigs[0][0]);
+
+    if (numInChannels > 0)
+        busArrangement.inputBuses.add  (AudioProcessorBus ("Input",  AudioChannelSet::canonicalChannelSet (numInChannels)));
+   #endif
+
+    const int numOutChannels = jmin (maxOutChannels, (int) channelConfigs[0][1]);
+    if (numOutChannels > 0)
+        busArrangement.outputBuses.add (AudioProcessorBus ("Output", AudioChannelSet::canonicalChannelSet (numOutChannels)));
+
+  #ifdef JucePlugin_PreferredChannelConfigurations
+   #if ! JucePlugin_IsSynth
+    AudioProcessor::setPreferredBusArrangement (true,  0, AudioChannelSet::stereo());
+   #endif
+    AudioProcessor::setPreferredBusArrangement (false, 0, AudioChannelSet::stereo());
   #endif
-
+ #endif
     updateSpeakerFormatStrings();
 }
 
@@ -121,7 +145,7 @@ void AudioProcessor::setPlayConfigDetails (const int newNumIns,
 
 void AudioProcessor::setRateAndBufferSizeDetails (double newSampleRate, int newBlockSize) noexcept
 {
-    sampleRate = newSampleRate;
+    currentSampleRate = newSampleRate;
     blockSize = newBlockSize;
 }
 
@@ -270,6 +294,15 @@ const String AudioProcessor::getParameterName (int index)
     return String();
 }
 
+String AudioProcessor::getParameterID (int index)
+{
+    // Don't use getParamChecked here, as this must also work for legacy plug-ins
+    if (AudioProcessorParameterWithID* p = dynamic_cast<AudioProcessorParameterWithID*> (managedParameters[index]))
+        return p->paramID;
+
+    return String (index);
+}
+
 String AudioProcessor::getParameterName (int index, int maximumStringLength)
 {
     if (AudioProcessorParameter* p = managedParameters[index])
@@ -372,8 +405,16 @@ void AudioProcessor::suspendProcessing (const bool shouldBeSuspended)
 }
 
 void AudioProcessor::reset() {}
-void AudioProcessor::processBlockBypassed (AudioBuffer<float>&, MidiBuffer&) {}
-void AudioProcessor::processBlockBypassed (AudioBuffer<double>&, MidiBuffer&) {}
+
+template <typename floatType>
+void AudioProcessor::processBypassed (AudioBuffer<floatType>& buffer, MidiBuffer&)
+{
+    for (int ch = getMainBusNumInputChannels(); ch < getTotalNumOutputChannels(); ++ch)
+        buffer.clear (ch, 0, buffer.getNumSamples());
+}
+
+void AudioProcessor::processBlockBypassed (AudioBuffer<float>&  buffer, MidiBuffer& midi)    { processBypassed (buffer, midi); }
+void AudioProcessor::processBlockBypassed (AudioBuffer<double>& buffer, MidiBuffer& midi)    { processBypassed (buffer, midi); }
 
 void AudioProcessor::processBlock (AudioBuffer<double>& buffer, MidiBuffer& midiMessages)
 {
@@ -401,47 +442,28 @@ bool AudioProcessor::supportsDoublePrecisionProcessing() const
 }
 
 //==============================================================================
-const String AudioProcessor::getInputChannelName (int channelIndex) const
+static String getChannelName (const Array<AudioProcessor::AudioProcessorBus>& buses, int index)
 {
-    // this is deprecated! Assume the user wants the name of the channel index in the first input bus
-    if (busArrangement.outputBuses.size() > 0)
-        return AudioChannelSet::getChannelTypeName (busArrangement.inputBuses.getReference(0)
-                                                      .channels.getTypeOfChannel (channelIndex));
-
-    return String();
+    return buses.size() > 0 ? AudioChannelSet::getChannelTypeName (buses.getReference(0).channels.getTypeOfChannel (index))
+                            : String();
 }
 
-const String AudioProcessor::getOutputChannelName (int channelIndex) const
+const String AudioProcessor::getInputChannelName (int index) const   { return getChannelName (busArrangement.inputBuses, index); }
+const String AudioProcessor::getOutputChannelName (int index) const  { return getChannelName (busArrangement.outputBuses, index); }
+
+static bool isStereoPair (const Array<AudioProcessor::AudioProcessorBus>& buses, int index)
 {
-    // this is deprecated! Assume the user wants the name of the channel index in the first output bus
-    if (busArrangement.outputBuses.size() > 0)
-        return AudioChannelSet::getChannelTypeName (busArrangement.outputBuses.getReference(0)
-                                                      .channels.getTypeOfChannel (channelIndex));
-
-    return String();
-}
-
-bool AudioProcessor::isInputChannelStereoPair (int index) const
-{
-    const Array<AudioProcessorBus>& buses = busArrangement.inputBuses;
-
     return index < 2
             && buses.size() > 0
             && buses.getReference(0).channels == AudioChannelSet::stereo();
 }
 
-bool AudioProcessor::isOutputChannelStereoPair (int index) const
-{
-    const Array<AudioProcessorBus>& buses = busArrangement.outputBuses;
+bool AudioProcessor::isInputChannelStereoPair  (int index) const    { return isStereoPair (busArrangement.inputBuses, index); }
+bool AudioProcessor::isOutputChannelStereoPair (int index) const    { return isStereoPair (busArrangement.outputBuses, index); }
 
-    return index < 2
-            && buses.size() > 0
-            && buses.getReference(0).channels == AudioChannelSet::stereo();
-}
-
+//==============================================================================
 bool AudioProcessor::setPreferredBusArrangement (bool isInput, int busIndex, const AudioChannelSet& preferredSet)
 {
-
     const int oldNumInputs  = getTotalNumInputChannels();
     const int oldNumOutputs = getTotalNumOutputChannels();
 
@@ -451,6 +473,16 @@ bool AudioProcessor::setPreferredBusArrangement (bool isInput, int busIndex, con
 
     if (! isPositiveAndBelow (busIndex, numBuses))
         return false;
+
+   #ifdef JucePlugin_MaxNumInputChannels
+    if (isInput && preferredSet.size() > JucePlugin_MaxNumInputChannels)
+        return false;
+   #endif
+
+   #ifdef JucePlugin_MaxNumOutputChannels
+    if (! isInput && preferredSet.size() > JucePlugin_MaxNumOutputChannels)
+        return false;
+   #endif
 
     AudioProcessorBus& bus = buses.getReference (busIndex);
 

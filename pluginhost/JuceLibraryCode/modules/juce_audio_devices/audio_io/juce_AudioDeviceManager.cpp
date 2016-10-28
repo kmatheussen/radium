@@ -151,7 +151,6 @@ AudioDeviceManager::AudioDeviceManager()
     : numInputChansNeeded (0),
       numOutputChansNeeded (2),
       listNeedsScanning (true),
-      inputLevel (0),
       cpuUsageMs (0),
       timeToCpuScale (0)
 {
@@ -346,8 +345,8 @@ String AudioDeviceManager::initialiseFromXML (const XmlElement& xml,
             currentDeviceType = availableDeviceTypes.getUnchecked(0)->getTypeName();
     }
 
-    setup.bufferSize = xml.getIntAttribute ("audioDeviceBufferSize");
-    setup.sampleRate = xml.getDoubleAttribute ("audioDeviceRate");
+    setup.bufferSize = xml.getIntAttribute ("audioDeviceBufferSize", setup.bufferSize);
+    setup.sampleRate = xml.getDoubleAttribute ("audioDeviceRate", setup.sampleRate);
 
     setup.inputChannels .parseString (xml.getStringAttribute ("audioDeviceInChans",  "11"), 2);
     setup.outputChannels.parseString (xml.getStringAttribute ("audioDeviceOutChans", "11"), 2);
@@ -761,31 +760,8 @@ void AudioDeviceManager::audioDeviceIOCallbackInt (const float** inputChannelDat
 {
     const ScopedLock sl (audioCallbackLock);
 
-    if (inputLevelMeasurementEnabledCount.get() > 0 && numInputChannels > 0)
-    {
-        for (int j = 0; j < numSamples; ++j)
-        {
-            float s = 0;
-
-            for (int i = 0; i < numInputChannels; ++i)
-                s += std::abs (inputChannelData[i][j]);
-
-            s /= numInputChannels;
-
-            const double decayFactor = 0.99992;
-
-            if (s > inputLevel)
-                inputLevel = s;
-            else if (inputLevel > 0.001f)
-                inputLevel *= decayFactor;
-            else
-                inputLevel = 0;
-        }
-    }
-    else
-    {
-        inputLevel = 0;
-    }
+    inputLevelMeter.updateLevel (inputChannelData, numInputChannels, numSamples);
+    outputLevelMeter.updateLevel (const_cast<const float**> (outputChannelData), numOutputChannels, numSamples);
 
     if (callbacks.size() > 0)
     {
@@ -993,9 +969,9 @@ void AudioDeviceManager::setDefaultMidiOutput (const String& deviceName)
 class AudioSampleBufferSource  : public PositionableAudioSource
 {
 public:
-    AudioSampleBufferSource (AudioSampleBuffer* audioBuffer, bool ownBuffer)
+    AudioSampleBufferSource (AudioSampleBuffer* audioBuffer, bool ownBuffer, bool playOnAllChannels)
         : buffer (audioBuffer, ownBuffer),
-          position (0), looping (false)
+          position (0), looping (false), playAcrossAllChannels (playOnAllChannels)
     {}
 
     //==============================================================================
@@ -1029,8 +1005,11 @@ public:
 
         if (samplesToCopy > 0)
         {
-            const int maxInChannels = buffer->getNumChannels();
-            const int maxOutChannels = jmin (bufferToFill.buffer->getNumChannels(), jmax (maxInChannels, 2));
+            int maxInChannels = buffer->getNumChannels();
+            int maxOutChannels = bufferToFill.buffer->getNumChannels();
+
+            if (! playAcrossAllChannels)
+                maxOutChannels = jmin (maxOutChannels, maxInChannels);
 
             for (int i = 0; i < maxOutChannels; ++i)
                 bufferToFill.buffer->copyFrom (i, bufferToFill.startSample, *buffer,
@@ -1047,7 +1026,7 @@ private:
     //==============================================================================
     OptionalScopedPointer<AudioSampleBuffer> buffer;
     int position;
-    bool looping;
+    bool looping, playAcrossAllChannels;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioSampleBufferSource)
 };
@@ -1080,10 +1059,10 @@ void AudioDeviceManager::playSound (AudioFormatReader* reader, bool deleteWhenFi
         playSound (new AudioFormatReaderSource (reader, deleteWhenFinished), true);
 }
 
-void AudioDeviceManager::playSound (AudioSampleBuffer* buffer, bool deleteWhenFinished)
+void AudioDeviceManager::playSound (AudioSampleBuffer* buffer, bool deleteWhenFinished, bool playOnAllOutputChannels)
 {
     if (buffer != nullptr)
-        playSound (new AudioSampleBufferSource (buffer, deleteWhenFinished), true);
+        playSound (new AudioSampleBufferSource (buffer, deleteWhenFinished, playOnAllOutputChannels), true);
 }
 
 void AudioDeviceManager::playSound (PositionableAudioSource* audioSource, bool deleteWhenFinished)
@@ -1134,22 +1113,55 @@ void AudioDeviceManager::playTestSound()
     newSound->applyGainRamp (0, 0, soundLength / 10, 0.0f, 1.0f);
     newSound->applyGainRamp (0, soundLength - soundLength / 4, soundLength / 4, 1.0f, 0.0f);
 
-    playSound (newSound, true);
+    playSound (newSound, true, true);
 }
 
 //==============================================================================
-void AudioDeviceManager::enableInputLevelMeasurement (const bool enableMeasurement)
+AudioDeviceManager::LevelMeter::LevelMeter() noexcept : level() {}
+
+void AudioDeviceManager::LevelMeter::updateLevel (const float* const* channelData, int numChannels, int numSamples) noexcept
 {
-    if (enableMeasurement)
-        ++inputLevelMeasurementEnabledCount;
+    if (enabled.get() != 0 && numChannels > 0)
+    {
+        for (int j = 0; j < numSamples; ++j)
+        {
+            float s = 0;
+
+            for (int i = 0; i < numChannels; ++i)
+                s += std::abs (channelData[i][j]);
+
+            s /= numChannels;
+
+            const double decayFactor = 0.99992;
+
+            if (s > level)
+                level = s;
+            else if (level > 0.001f)
+                level *= decayFactor;
+            else
+                level = 0;
+        }
+    }
     else
-        --inputLevelMeasurementEnabledCount;
-
-    inputLevel = 0;
+    {
+        level = 0;
+    }
 }
 
-double AudioDeviceManager::getCurrentInputLevel() const
+void AudioDeviceManager::LevelMeter::setEnabled (bool shouldBeEnabled) noexcept
 {
-    jassert (inputLevelMeasurementEnabledCount.get() > 0); // you need to call enableInputLevelMeasurement() before using this!
-    return inputLevel;
+    enabled.set (shouldBeEnabled ? 1 : 0);
+    level = 0;
 }
+
+double AudioDeviceManager::LevelMeter::getCurrentLevel() const noexcept
+{
+    jassert (enabled.get() != 0); // you need to call setEnabled (true) before using this!
+    return level;
+}
+
+double AudioDeviceManager::getCurrentInputLevel() const noexcept    { return inputLevelMeter.getCurrentLevel(); }
+double AudioDeviceManager::getCurrentOutputLevel() const noexcept   { return outputLevelMeter.getCurrentLevel(); }
+
+void AudioDeviceManager::enableInputLevelMeasurement  (bool enable) noexcept  { inputLevelMeter.setEnabled (enable); }
+void AudioDeviceManager::enableOutputLevelMeasurement (bool enable) noexcept  { outputLevelMeter.setEnabled (enable); }

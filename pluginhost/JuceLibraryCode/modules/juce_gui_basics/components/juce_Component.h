@@ -544,9 +544,8 @@ public:
 
     /** Changes the position of the component's centre.
 
-        Leaves the position unchanged, but positions its centre relative to its
-        parent's size. E.g. setCentreRelative (0.5f, 0.5f) would place it centrally in
-        its parent.
+        Leaves the size unchanged, but positions its centre relative to its parent's size.
+        E.g. setCentreRelative (0.5f, 0.5f) would place it centrally in its parent.
     */
     void setCentreRelative (float x, float y);
 
@@ -574,7 +573,7 @@ public:
         Currently, transforms are not supported for desktop windows, so the transform will be ignored if you
         put a component on the desktop.
 
-        To remove a component's transform, simply pass AffineTransform::identity as the parameter to this method.
+        To remove a component's transform, simply pass AffineTransform() as the parameter to this method.
     */
     void setTransform (const AffineTransform& transform);
 
@@ -1768,7 +1767,7 @@ public:
         This is a handy equivalent to (isMouseOver() || isMouseButtonDown()).
         @see isMouseOver, isMouseButtonDown, isMouseButtonDownAnywhere
     */
-    bool isMouseOverOrDragging() const;
+    bool isMouseOverOrDragging (bool includeChildren = false) const;
 
     /** Returns true if a mouse button is currently down.
 
@@ -1953,12 +1952,14 @@ public:
     /** Returns true if this component is the modal one.
 
         It's possible to have nested modal components, e.g. a pop-up dialog box
-        that launches another pop-up, but this will only return true for
-        the one at the top of the stack.
+        that launches another pop-up. If onlyConsiderForemostModalComponent is
+        true then isCurrentlyModal will only return true for the one at the top
+        of the stack. If onlyConsiderForemostModalComponent is false then
+        isCurrentlyModal will return true for any modal component in the stack.
 
         @see getCurrentlyModalComponent
     */
-    bool isCurrentlyModal() const noexcept;
+    bool isCurrentlyModal (bool onlyConsiderForemostModalComponent = true) const noexcept;
 
     /** Returns the number of components that are currently in a modal state.
         @see getCurrentlyModalComponent
@@ -2037,7 +2038,7 @@ public:
         look-and-feel either, it will just return black.
 
         The colour IDs for various purposes are stored as enums in the components that
-        they are relevent to - for an example, see Slider::ColourIds,
+        they are relevant to - for an example, see Slider::ColourIds,
         Label::ColourIds, TextEditor::ColourIds, TreeView::ColourIds, etc.
 
         @see setColour, isColourSpecified, colourChanged, LookAndFeel::findColour, LookAndFeel::setColour
@@ -2277,7 +2278,6 @@ private:
         bool bufferToImageFlag          : 1;
         bool bringToFrontOnClickFlag    : 1;
         bool repaintOnMouseActivityFlag : 1;
-        bool currentlyModalFlag         : 1;
         bool isDisabledFlag             : 1;
         bool childCompFocusedFlag       : 1;
         bool dontClipGraphicsFlag       : 1;
@@ -2301,7 +2301,7 @@ private:
     void internalMouseEnter (MouseInputSource, Point<float>, Time);
     void internalMouseExit  (MouseInputSource, Point<float>, Time);
     void internalMouseDown  (MouseInputSource, Point<float>, Time, float);
-    void internalMouseUp    (MouseInputSource, Point<float>, Time, const ModifierKeys oldModifiers);
+    void internalMouseUp    (MouseInputSource, Point<float>, Time, const ModifierKeys oldModifiers, float);
     void internalMouseDrag  (MouseInputSource, Point<float>, Time, float);
     void internalMouseMove  (MouseInputSource, Point<float>, Time);
     void internalMouseWheel (MouseInputSource, Point<float>, Time, const MouseWheelDetails&);

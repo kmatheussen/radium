@@ -88,6 +88,7 @@ Synthesiser::Synthesiser()
     : sampleRate (0),
       lastNoteOnCounter (0),
       minimumSubBlockSize (32),
+      subBlockSubdivisionIsStrict (false),
       shouldStealNotes (true)
 {
     for (int i = 0; i < numElementsInArray (lastPitchWheelValues); ++i)
@@ -147,10 +148,11 @@ void Synthesiser::setNoteStealingEnabled (const bool shouldSteal)
     shouldStealNotes = shouldSteal;
 }
 
-void Synthesiser::setMinimumRenderingSubdivisionSize (int numSamples) noexcept
+void Synthesiser::setMinimumRenderingSubdivisionSize (int numSamples, bool shouldBeStrict) noexcept
 {
     jassert (numSamples > 0); // it wouldn't make much sense for this to be less than 1
     minimumSubBlockSize = numSamples;
+    subBlockSubdivisionIsStrict = shouldBeStrict;
 }
 
 //==============================================================================
@@ -181,6 +183,7 @@ void Synthesiser::processNextBlock (AudioBuffer<floatType>& outputAudio,
     MidiBuffer::Iterator midiIterator (midiData);
     midiIterator.setNextSamplePosition (startSample);
 
+    bool firstEvent = true;
     int midiEventPos;
     MidiMessage m;
 
@@ -203,11 +206,13 @@ void Synthesiser::processNextBlock (AudioBuffer<floatType>& outputAudio,
             break;
         }
 
-        if (samplesToNextMidiMessage < minimumSubBlockSize)
+        if (samplesToNextMidiMessage < ((firstEvent && ! subBlockSubdivisionIsStrict) ? 1 : minimumSubBlockSize))
         {
             handleMidiEvent (m);
             continue;
         }
+
+        firstEvent = false;
 
         renderVoices (outputAudio, startSample, samplesToNextMidiMessage);
         handleMidiEvent (m);
@@ -512,13 +517,13 @@ void Synthesiser::handleSostenutoPedal (int midiChannel, bool isDown)
 
 void Synthesiser::handleSoftPedal (int midiChannel, bool /*isDown*/)
 {
-    (void) midiChannel;
+    ignoreUnused (midiChannel);
     jassert (midiChannel > 0 && midiChannel <= 16);
 }
 
 void Synthesiser::handleProgramChange (int midiChannel, int programNumber)
 {
-    (void) midiChannel; (void) programNumber;
+    ignoreUnused (midiChannel, programNumber);
     jassert (midiChannel > 0 && midiChannel <= 16);
 }
 

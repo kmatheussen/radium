@@ -93,7 +93,7 @@ typedef unsigned int                uint32;
 #endif
 
 //==============================================================================
-// Some indispensible min/max functions
+// Some indispensable min/max functions
 
 /** Returns the larger of two values. */
 template <typename Type>
@@ -299,7 +299,7 @@ void ignoreUnused (const Type1&, const Type2&, const Type3&, const Type4&) noexc
 template <typename Type, int N>
 int numElementsInArray (Type (&array)[N])
 {
-    (void) array; // (required to avoid a spurious warning in MS compilers)
+    ignoreUnused (array);
     (void) sizeof (0[array]); // This line should cause an error if you pass an object with a user-defined subscript operator
     return N;
 }
@@ -324,9 +324,9 @@ template <>
 inline float juce_hypot (float a, float b) noexcept
 {
    #if JUCE_MSVC
-    return (_hypotf (a, b));
+    return _hypotf (a, b);
    #else
-    return (hypotf (a, b));
+    return hypotf (a, b);
    #endif
 }
 #endif
@@ -356,12 +356,16 @@ const float   float_Pi   = 3.14159265358979323846f;
 
 
 /** Converts an angle in degrees to radians. */
-template <typename FloatType>
-FloatType degreesToRadians (FloatType degrees) noexcept  { return degrees * static_cast<FloatType> (double_Pi / 180.0); }
+inline float degreesToRadians (float degrees) noexcept     { return degrees * (float_Pi / 180.0f); }
+
+/** Converts an angle in degrees to radians. */
+inline double degreesToRadians (double degrees) noexcept   { return degrees * (double_Pi / 180.0); }
 
 /** Converts an angle in radians to degrees. */
-template <typename FloatType>
-FloatType radiansToDegrees (FloatType radians) noexcept  { return radians * static_cast<FloatType> (180.0 / double_Pi); }
+inline float radiansToDegrees (float radians) noexcept     { return radians * (180.0f / float_Pi); }
+
+/** Converts an angle in radians to degrees. */
+inline double radiansToDegrees (double radians) noexcept   { return radians * (180.0 / double_Pi); }
 
 
 //==============================================================================
@@ -540,6 +544,25 @@ NumericType square (NumericType n) noexcept
 {
     return n * n;
 }
+
+//==============================================================================
+/** Writes a number of bits into a memory buffer at a given bit index.
+    The buffer is treated as a sequence of 8-bit bytes, and the value is encoded in little-endian order,
+    so for example if startBit = 10, and numBits = 11 then the lower 6 bits of the value would be written
+    into bits 2-8 of targetBuffer[1], and the upper 5 bits of value into bits 0-5 of targetBuffer[2].
+
+    @see readLittleEndianBitsInBuffer
+*/
+void writeLittleEndianBitsInBuffer (void* targetBuffer, uint32 startBit, uint32 numBits, uint32 value) noexcept;
+
+/** Reads a number of bits from a buffer at a given bit index.
+    The buffer is treated as a sequence of 8-bit bytes, and the value is encoded in little-endian order,
+    so for example if startBit = 10, and numBits = 11 then the lower 6 bits of the result would be read
+    from bits 2-8 of sourceBuffer[1], and the upper 5 bits of the result from bits 0-5 of sourceBuffer[2].
+
+    @see writeLittleEndianBitsInBuffer
+*/
+uint32 readLittleEndianBitsInBuffer (const void* sourceBuffer, uint32 startBit, uint32 numBits) noexcept;
 
 
 //==============================================================================

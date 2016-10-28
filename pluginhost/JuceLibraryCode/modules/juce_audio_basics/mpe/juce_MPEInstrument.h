@@ -68,7 +68,7 @@ public:
     /** Destructor. */
     virtual ~MPEInstrument();
 
-    //==========================================================================
+    //==============================================================================
     /** Returns the current zone layout of the instrument.
         This happens by value, to enforce thread-safety and class invariants.
 
@@ -98,7 +98,7 @@ public:
     */
     bool isMasterChannel (int midiChannel) const noexcept;
 
-    //==========================================================================
+    //==============================================================================
     /** The MPE note tracking mode. In case there is more than one note playing
         simultaneously on the same MIDI channel, this determines which of these
         notes will be modulated by an incoming MPE message on that channel
@@ -123,7 +123,7 @@ public:
     /** Set the MPE tracking mode for the timbre dimension. */
     void setTimbreTrackingMode (TrackingMode modeToUse);
 
-    //==========================================================================
+    //==============================================================================
     /** Process a MIDI message and trigger the appropriate method calls
         (noteOn, noteOff etc.)
 
@@ -132,7 +132,7 @@ public:
     */
     virtual void processNextMidiEvent (const MidiMessage& message);
 
-    //==========================================================================
+    //==============================================================================
     /** Request a note-on on the given channel, with the given initial note
         number and velocity.
         If the message arrives on a valid note channel, this will create a
@@ -187,7 +187,7 @@ public:
     */
     void releaseAllNotes();
 
-    //==========================================================================
+    //==============================================================================
     /** Returns the number of MPE notes currently played by the
         instrument.
     */
@@ -221,7 +221,7 @@ public:
     */
     MPENote getMostRecentNoteOtherThan (MPENote otherThanThisNote) const noexcept;
 
-    //==========================================================================
+    //==============================================================================
     /** Derive from this class to be informed about any changes in the expressive
         MIDI notes played by this instrument.
 
@@ -230,14 +230,11 @@ public:
         Therefore you should never do heavy work such as graphics rendering etc.
         inside those callbacks.
     */
-    class Listener
+    class JUCE_API  Listener
     {
     public:
-        /** Constructor. */
-        Listener();
-
         /** Destructor. */
-        virtual ~Listener();
+        virtual ~Listener() {}
 
         /** Implement this callback to be informed whenever a new expressive
             MIDI note is triggered.
@@ -278,14 +275,14 @@ public:
         virtual void noteReleased (MPENote finishedNote) = 0;
     };
 
-    //==========================================================================
+    //==============================================================================
     /** Adds a listener. */
-    void addListener (Listener* const listenerToAdd) noexcept;
+    void addListener (Listener* listenerToAdd) noexcept;
 
     /** Removes a listener. */
-    void removeListener (Listener* const listenerToRemove) noexcept;
+    void removeListener (Listener* listenerToRemove) noexcept;
 
-    //==========================================================================
+    //==============================================================================
     /** Puts the instrument into legacy mode.
         As a side effect, this will discard all currently playing notes,
         and call noteReleased for all of them.
@@ -323,38 +320,8 @@ public:
     /** Re-sets the pitchbend range in semitones (0-96) to be used for notes when in legacy mode. */
     void setLegacyModePitchbendRange (int pitchbendRange);
 
-protected:
-    //==========================================================================
-    /** This method defines what initial pitchbend value should be used for newly
-        triggered notes. The default is to use the last pitchbend value
-        that has been received on the same MIDI channel (or no pitchbend
-        if no pitchbend messages have been received so far).
-        Override this method if you need different behaviour.
-    */
-    virtual MPEValue getInitialPitchbendForNoteOn (int midiChannel,
-                                                   int midiNoteNumber,
-                                                   MPEValue midiNoteOnVelocity) const;
-
-    /** This method defines what initial pressure value should be used for newly
-        triggered notes. The default is to re-use the note-on velocity value.
-        Override this method if you need different behaviour.
-    */
-    virtual MPEValue getInitialPressureForNoteOn (int midiChannel,
-                                                  int midiNoteNumber,
-                                                  MPEValue midiNoteOnVelocity) const;
-
-    /** This method defines what initial timbre value should be used for newly
-        triggered notes. The default is to use the last timbre value that has
-        that has been received on the same MIDI channel (or a neutral centred value
-        if no pitchbend messages have been received so far).
-        Override this method if you need different behaviour.
-    */
-    virtual MPEValue getInitialTimbreForNoteOn (int midiChannel,
-                                                int midiNoteNumber,
-                                                MPEValue midiNoteOnVelocity) const;
-
 private:
-    //==========================================================================
+    //==============================================================================
     CriticalSection lock;
     Array<MPENote> notes;
     MPEZoneLayout zoneLayout;
@@ -387,6 +354,7 @@ private:
     void updateDimensionMaster (MPEZone&, MPEDimension&, MPEValue);
     void updateDimensionForNote (MPENote&, MPEDimension&, MPEValue);
     void callListenersDimensionChanged (MPENote&, MPEDimension&);
+    MPEValue getInitialValueForNewNote (int midiChannel, MPEDimension&) const;
 
     void processMidiNoteOnMessage (const MidiMessage&);
     void processMidiNoteOffMessage (const MidiMessage&);

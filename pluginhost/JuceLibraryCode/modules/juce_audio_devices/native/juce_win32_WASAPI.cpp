@@ -96,10 +96,17 @@ bool check (HRESULT hr)
 }
 
 #if JUCE_MINGW
+
  #define JUCE_COMCLASS(name, guid) \
     struct name; \
     template<> struct UUIDGetter<name>   { static CLSID get() { return uuidFromString (guid); } }; \
     struct name
+
+ #ifdef __uuidof
+  #undef __uuidof
+ #endif
+
+ #define __uuidof(cls) UUIDGetter<cls>::get()
 
  struct PROPERTYKEY
  {
@@ -117,7 +124,6 @@ bool check (HRESULT hr)
  #undef KSDATAFORMAT_SUBTYPE_IEEE_FLOAT
 #endif
 
- 
 #ifndef KSDATAFORMAT_SUBTYPE_PCM
  #define KSDATAFORMAT_SUBTYPE_PCM         uuidFromString ("00000001-0000-0010-8000-00aa00389b71")
  #define KSDATAFORMAT_SUBTYPE_IEEE_FLOAT  uuidFromString ("00000003-0000-0010-8000-00aa00389b71")
@@ -716,12 +722,11 @@ public:
     }
 
     template<class SourceType>
-  void updateFormatWithType (SourceType*) noexcept
-  {
-    typedef AudioData::Pointer<AudioData::Float32, AudioData::NativeEndian, AudioData::NonInterleaved, AudioData::NonConst> NativeType;
-    converter = new AudioData::ConverterInstance<AudioData::Pointer<SourceType, AudioData::LittleEndian, AudioData::Interleaved, AudioData::Const>, NativeType> (actualNumChannels, 1);
-  }
-
+    void updateFormatWithType (SourceType*) noexcept
+    {
+        typedef AudioData::Pointer<AudioData::Float32, AudioData::NativeEndian, AudioData::NonInterleaved, AudioData::NonConst> NativeType;
+        converter = new AudioData::ConverterInstance<AudioData::Pointer<SourceType, AudioData::LittleEndian, AudioData::Interleaved, AudioData::Const>, NativeType> (actualNumChannels, 1);
+    }
 
     void updateFormat (bool isFloat) override
     {
@@ -842,7 +847,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WASAPIInputDevice)
 };
 
-
 //==============================================================================
 class WASAPIOutputDevice  : public WASAPIDeviceBase
 {
@@ -871,11 +875,11 @@ public:
     }
 
     template<class DestType>
-  void updateFormatWithType (DestType*)
-  {
-    typedef AudioData::Pointer<AudioData::Float32, AudioData::NativeEndian, AudioData::NonInterleaved, AudioData::Const> NativeType;
-    converter = new AudioData::ConverterInstance<NativeType, AudioData::Pointer<DestType, AudioData::LittleEndian, AudioData::Interleaved, AudioData::NonConst> > (1, actualNumChannels);
-  }
+    void updateFormatWithType (DestType*)
+    {
+        typedef AudioData::Pointer<AudioData::Float32, AudioData::NativeEndian, AudioData::NonInterleaved, AudioData::Const> NativeType;
+        converter = new AudioData::ConverterInstance<NativeType, AudioData::Pointer<DestType, AudioData::LittleEndian, AudioData::Interleaved, AudioData::NonConst> > (1, actualNumChannels);
+    }
 
     void updateFormat (bool isFloat) override
     {
@@ -960,8 +964,6 @@ public:
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WASAPIOutputDevice)
 };
-
-
 
 //==============================================================================
 class WASAPIAudioIODevice  : public AudioIODevice,

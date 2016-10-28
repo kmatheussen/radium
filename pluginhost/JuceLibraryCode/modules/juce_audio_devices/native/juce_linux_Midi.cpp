@@ -45,31 +45,13 @@ class AlsaClient : public ReferenceCountedObject
 public:
     typedef ReferenceCountedObjectPtr<AlsaClient> Ptr;
 
-    AlsaClient (bool forInput)
-        : input (forInput), handle (nullptr)
+    static Ptr getInstance (bool forInput)
     {
-        snd_seq_open (&handle, "default", forInput ? SND_SEQ_OPEN_INPUT
-                                                   : SND_SEQ_OPEN_OUTPUT, 0);
+        AlsaClient*& instance = (forInput ? inInstance : outInstance);
+        if (instance == nullptr)
+            instance = new AlsaClient (forInput);
 
-        snd_seq_set_client_name (handle, forInput ? JUCE_ALSA_MIDI_INPUT_NAME
-                                                  : JUCE_ALSA_MIDI_OUTPUT_NAME);
-    }
-
-    ~AlsaClient()
-    {
-        if (handle != nullptr)
-        {
-            snd_seq_close (handle);
-            handle = nullptr;
-        }
-
-        jassert (activeCallbacks.size() == 0);
-
-        if (inputThread)
-        {
-            inputThread->stopThread (3000);
-            inputThread = nullptr;
-        }
+        return instance;
     }
 
     bool isInput() const noexcept    { return input; }
@@ -101,7 +83,8 @@ public:
             inputThread->signalThreadShouldExit();
     }
 
-    void handleIncomingMidiMessage (const MidiMessage& message, int port);
+    void handleIncomingMidiMessage (snd_seq_event*, const MidiMessage&);
+    void handlePartialSysexMessage (snd_seq_event*, const uint8*, int, double);
 
     snd_seq_t* get() const noexcept     { return handle; }
 
@@ -112,22 +95,58 @@ private:
     Array<AlsaPortAndCallback*> activeCallbacks;
     CriticalSection callbackLock;
 
+    static AlsaClient* inInstance;
+    static AlsaClient* outInstance;
+
+    //==============================================================================
+    friend class ReferenceCountedObjectPtr<AlsaClient>;
+    friend struct ContainerDeletePolicy<AlsaClient>;
+
+    AlsaClient (bool forInput)
+        : input (forInput), handle (nullptr)
+    {
+        AlsaClient*& instance = (input ? inInstance : outInstance);
+        jassert (instance == nullptr);
+
+        instance = this;
+
+        snd_seq_open (&handle, "default", forInput ? SND_SEQ_OPEN_INPUT
+                      : SND_SEQ_OPEN_OUTPUT, 0);
+
+        snd_seq_set_client_name (handle, forInput ? JUCE_ALSA_MIDI_INPUT_NAME
+                                 : JUCE_ALSA_MIDI_OUTPUT_NAME);
+    }
+
+    ~AlsaClient()
+    {
+        AlsaClient*& instance = (input ? inInstance : outInstance);
+        jassert (instance != nullptr);
+
+        instance = nullptr;
+
+        if (handle != nullptr)
+        {
+            snd_seq_close (handle);
+            handle = nullptr;
+        }
+
+        jassert (activeCallbacks.size() == 0);
+
+        if (inputThread)
+        {
+            inputThread->stopThread (3000);
+            inputThread = nullptr;
+        }
+    }
+
     //==============================================================================
     class MidiInputThread   : public Thread
     {
     public:
         MidiInputThread (AlsaClient& c)
-            : Thread ("Juce MIDI Input"), client (c)
+            : Thread ("Juce MIDI Input"), client (c), concatenator (2048)
         {
             jassert (client.input && client.get() != nullptr);
-        }
-
-        void setLowestRealtimePriority()
-        {
-            struct sched_param param = {0};
-            param.sched_priority=sched_get_priority_min(SCHED_RR);
-
-            pthread_setschedparam(pthread_self(), SCHED_RR, &param);
         }
 
         void run() override
@@ -135,8 +154,6 @@ private:
             const int maxEventSize = 16 * 1024;
             snd_midi_event_t* midiParser;
             snd_seq_t* seqHandle = client.get();
-
-            setLowestRealtimePriority();
 
             if (snd_midi_event_new (maxEventSize, &midiParser) >= 0)
             {
@@ -167,13 +184,9 @@ private:
 
                                 snd_midi_event_reset_decode (midiParser);
 
-                                if (numBytes > 0)
-                                {
-                                    const MidiMessage message ((const uint8*) buffer, (int) numBytes,
-                                                               Time::getMillisecondCounter() * 0.001);
-
-                                    client.handleIncomingMidiMessage (message, inputEvent->dest.port);
-                                }
+                                concatenator.pushMidiData (buffer, (int) numBytes,
+                                                           Time::getMillisecondCounter() * 0.001,
+                                                           inputEvent, client);
 
                                 snd_seq_free_event (inputEvent);
                             }
@@ -188,29 +201,14 @@ private:
 
     private:
         AlsaClient& client;
+        MidiDataConcatenator concatenator;
     };
 
     ScopedPointer<MidiInputThread> inputThread;
 };
 
-
-static AlsaClient::Ptr globalAlsaSequencerIn()
-{
-    static AlsaClient::Ptr global (new AlsaClient (true));
-    return global;
-}
-
-static AlsaClient::Ptr globalAlsaSequencerOut()
-{
-    static AlsaClient::Ptr global (new AlsaClient (false));
-    return global;
-}
-
-static AlsaClient::Ptr globalAlsaSequencer (bool input)
-{
-    return input ? globalAlsaSequencerIn()
-                 : globalAlsaSequencerOut();
-}
+AlsaClient* AlsaClient::inInstance  = nullptr;
+AlsaClient* AlsaClient::outInstance = nullptr;
 
 //==============================================================================
 // represents an input or output port of the supplied AlsaClient
@@ -290,6 +288,11 @@ public:
         callback->handleIncomingMidiMessage (midiInput, message);
     }
 
+    void handlePartialSysexMessage (const uint8* messageData, int numBytesSoFar, double timeStamp)
+    {
+        callback->handlePartialSysexMessage (midiInput, messageData, numBytesSoFar, timeStamp);
+    }
+
 private:
     AlsaPort port;
     MidiInput* midiInput;
@@ -299,17 +302,23 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AlsaPortAndCallback)
 };
 
-void AlsaClient::handleIncomingMidiMessage (const MidiMessage& message, int port)
+void AlsaClient::handleIncomingMidiMessage (snd_seq_event_t* event, const MidiMessage& message)
 {
     const ScopedLock sl (callbackLock);
 
-    if (AlsaPortAndCallback* const cb = activeCallbacks[port])
+    if (AlsaPortAndCallback* const cb = activeCallbacks[event->dest.port])
         cb->handleIncomingMidiMessage (message);
 }
 
-//===============================================================================
-// Both used when getting list of port names, and when opening or creating a port.
-// 'deviceIndexToOpen' has the value -1 when used for getting list of port names.
+void AlsaClient::handlePartialSysexMessage (snd_seq_event* event, const uint8* messageData, int numBytesSoFar, double timeStamp)
+{
+    const ScopedLock sl (callbackLock);
+
+    if (AlsaPortAndCallback* const cb = activeCallbacks[event->dest.port])
+        cb->handlePartialSysexMessage (messageData, numBytesSoFar, timeStamp);
+}
+
+//==============================================================================
 static AlsaPort iterateMidiClient (const AlsaClient::Ptr& seq,
                                    snd_seq_client_info_t* clientInfo,
                                    const bool forInput,
@@ -364,14 +373,12 @@ static AlsaPort iterateMidiClient (const AlsaClient::Ptr& seq,
     return port;
 }
 
-// Both used when getting list of port names, and when opening or creating a port.
-// 'deviceIndexToOpen' has the value -1 when used for getting list of port names.
 static AlsaPort iterateMidiDevices (const bool forInput,
                                     StringArray& deviceNamesFound,
                                     const int deviceIndexToOpen)
 {
     AlsaPort port;
-    const AlsaClient::Ptr client (globalAlsaSequencer (forInput));
+    const AlsaClient::Ptr client (AlsaClient::getInstance (forInput));
 
     if (snd_seq_t* const seqHandle = client->get())
     {
@@ -512,7 +519,7 @@ MidiOutput* MidiOutput::createNewDevice (const String& deviceName)
     MidiOutput* newDevice = nullptr;
     AlsaPort port;
 
-    const AlsaClient::Ptr client (globalAlsaSequencer (false));
+    const AlsaClient::Ptr client (AlsaClient::getInstance (false));
 
     port.createPort (client, deviceName, false);
 
@@ -592,7 +599,7 @@ MidiInput* MidiInput::createNewDevice (const String& deviceName, MidiInputCallba
     MidiInput* newDevice = nullptr;
     AlsaPort port;
 
-    const AlsaClient::Ptr client (globalAlsaSequencer (true));
+    const AlsaClient::Ptr client (AlsaClient::getInstance (true));
 
     port.createPort (client, deviceName, true);
 

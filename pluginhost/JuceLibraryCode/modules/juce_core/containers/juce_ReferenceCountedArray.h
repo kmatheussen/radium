@@ -149,6 +149,12 @@ public:
         return numUsed;
     }
 
+    /** Returns true if the array is empty, false otherwise. */
+    inline bool isEmpty() const noexcept
+    {
+        return size() == 0;
+    }
+
     /** Returns a pointer to the object at this index in the array.
 
         If the index is out-of-range, this will return a null pointer, (and
@@ -380,12 +386,17 @@ public:
         If the array already contains a matching object, nothing will be done.
 
         @param newObject   the new object to add to the array
+        @returns           true if the object has been added, false otherwise
     */
-    void addIfNotAlreadyThere (ObjectClass* const newObject) noexcept
+    bool addIfNotAlreadyThere (ObjectClass* const newObject) noexcept
     {
         const ScopedLockType lock (getLock());
-        if (! contains (newObject))
-            add (newObject);
+
+        if (contains (newObject))
+            return false;
+
+        add (newObject);
+        return true;
     }
 
     /** Replaces an object in the array with a different one.
@@ -518,7 +529,7 @@ public:
     int indexOfSorted (ElementComparator& comparator,
                        const ObjectClass* const objectToLookFor) const noexcept
     {
-        (void) comparator;
+        ignoreUnused (comparator);
         const ScopedLockType lock (getLock());
         int s = 0, e = numUsed;
 
@@ -835,8 +846,8 @@ public:
     void sort (ElementComparator& comparator,
                const bool retainOrderOfEquivalentItems = false) const noexcept
     {
-        (void) comparator;  // if you pass in an object with a static compareElements() method, this
-                            // avoids getting warning messages about the parameter being unused
+        ignoreUnused (comparator); // if you pass in an object with a static compareElements() method, this
+                                   // avoids getting warning messages about the parameter being unused
 
         const ScopedLockType lock (getLock());
         sortArray (comparator, data.elements.getData(), 0, size() - 1, retainOrderOfEquivalentItems);

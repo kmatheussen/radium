@@ -29,7 +29,6 @@
 #ifndef JUCE_BASICNATIVEHEADERS_H_INCLUDED
 #define JUCE_BASICNATIVEHEADERS_H_INCLUDED
 
-#include "../system/juce_TargetPlatform.h"
 #undef T
 
 //==============================================================================
@@ -42,12 +41,8 @@
   #import <MobileCoreServices/MobileCoreServices.h>
   #include <sys/fcntl.h>
  #else
-  #define Point CarbonDummyPointName
-  #define Component CarbonDummyCompName
   #import <Cocoa/Cocoa.h>
   #import <CoreAudio/HostTime.h>
-  #undef Point
-  #undef Component
   #include <sys/dir.h>
  #endif
 
@@ -120,6 +115,10 @@
  #else
   #include <crtdbg.h>
   #include <comutil.h>
+ #endif
+
+ #ifndef S_FALSE
+  #define S_FALSE (1) // (apparently some obscure win32 dev environments don't define this)
  #endif
 
  #undef PACKED
