@@ -459,6 +459,12 @@ class Seqtrack_widget : public QWidget, public Ui::Seqtrack_widget {
   {
     setupUi(this);
 
+    // Remove widget we don't use yet
+#if 1
+    header_widget->hide();
+#endif
+    
+
     main_layout->addWidget(_seqblocks_widget);
   }
 
@@ -499,6 +505,8 @@ public:
     setContentsMargins(0,0,0,0);
     layout->setContentsMargins(0,0,0,0);
     layout->setSpacing(0);
+    
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   }
 
   void my_update(void){
@@ -822,7 +830,7 @@ struct Sequencer_widget : public QWidget {
     , _navigator_widget(this, _start_time, _end_time, _seqtracks_widget)
     , _main_reltempo(this)
   {
-      
+
     _timeline_widget.show();
     _seqtracks_widget.show();
     _navigator_widget.show();
@@ -858,10 +866,12 @@ struct Sequencer_widget : public QWidget {
   void position_widgets(void){
     R_ASSERT_RETURN_IF_FALSE(_seqtracks_widget._seqtrack_widgets.size() > 0);
 
+#if 0
     const QWidget *mute_button = _seqtracks_widget._seqtrack_widgets.at(0)->mute_button;
     const QPoint p = mute_button->mapTo(this, mute_button->pos());
+#endif
     
-    const int x1 = p.x() + mute_button->width();
+    const int x1 = 0; //p.x() + mute_button->width();
     const int x1_width = width() - x1;
 
     const int timeline_widget_height = root->song->tracker_windows->fontheight + 2;
