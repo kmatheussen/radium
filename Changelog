@@ -1,3 +1,29 @@
+Changes 4.2.1 -> 4.2.2:
+* Make mixer object peaks less invisible for instruments with more
+  than 16 channels
+* Print jack samplerate in the about window
+* Fix automation from other instruments in a track
+  (bug introduced in 4.1.7)
+* Fix GUI lockup which could happen if more than one special type
+  of GUI element asked for keyboard input simultaneously and/or
+  more than one input requester window was visible.
+* Upgrade to Juce 4.2.4
+* Some emergency scheduler fixes. Some things still not working.
+* Always draw the tiny pitch lines. Didn't always see if the notes
+  continued playing into the next block before
+* Fix unnecessary drawing when velocity has height 0. Also avoids
+  a divide by zero assertion in debug mode.
+* Fix possible freeze in automation scheduler
+* Fix a couple of memory corruptions when using the MIDI instrument.
+* Started work on a vertical timeline sequencer. More than one sequencer
+  track is supported, but only one is visible for now.
+* Add 64 bit integer type to the API
+* Fix semi-rare scheduler crash(es) when doing pitch and velocity
+  operations.
+* Fix a division by zero occurence in the Editor renderer.
+
+
+
 Changes 4.2.0 -> 4.2.1:
 * Update block play positions in the playlist after changing
   a block length. (Bug introduced in 4.1.7)
