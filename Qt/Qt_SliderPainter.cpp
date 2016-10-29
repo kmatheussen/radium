@@ -121,13 +121,13 @@ public:
 };
 }
 
-static int DATA_get_y1(AutomationOrPeakData *data, int height){
+static float DATA_get_y1(AutomationOrPeakData *data, int height){
   R_ASSERT(data->num_ch>0);
-  return scale_int(data->ch,0,data->num_ch,1,height-1);
+  return scale(data->ch,0,data->num_ch,1,height-1);
 }
 
-static int DATA_get_y2(AutomationOrPeakData *data, int height){
-  return scale_int(data->ch+1,0,data->num_ch,1,height-1);
+static float DATA_get_y2(AutomationOrPeakData *data, int height){
+  return scale(data->ch+1,0,data->num_ch,1,height-1);
 }
 
 struct SliderPainter{
@@ -302,9 +302,13 @@ struct SliderPainter{
           //printf("Painting. Last drawn: %d. requested: %d\n",data->last_drawn_pos,data->requested_pos);
           
           
-          int y1 = DATA_get_y1(data,height());
-          int y2 = DATA_get_y2(data,height());
-          int height = y2-y1;
+          float y1 = DATA_get_y1(data,height());
+          y1 = floor(y1);
+          
+          float y2 = DATA_get_y2(data,height());
+          y2 = ceil(y2);
+          
+          int height = R_MAX(1, y2-y1);
         
           //printf("y1: %d, y2: %d, height: %d. req: %d, last: %d\n",y1,y2,height,data->requested_pos,data->last_drawn_pos);
           if (data->single_line_style) {
@@ -379,7 +383,7 @@ struct SliderPainter{
     }
   }
 
-  void paint_peaks_non_single_line_style(QPainter *p, AutomationOrPeakData *data, int y1, int y2, int height){
+  void paint_peaks_non_single_line_style(QPainter *p, AutomationOrPeakData *data, float y1, float y2, float peak_height){
     float x1 = 0.0f;
     float x4 = width();
     
@@ -388,15 +392,29 @@ struct SliderPainter{
 
     float x = data->requested_pos;
 
-    QRect f(x1, y1, R_MIN(x, x2) - x1, height);
+    if (peak_height < 1) {
+      y2 = y1 + 1;
+      peak_height = 1;
+    }
+
+    if (y1 < 0)
+      y1 = 0;
+    
+    if (y2 > height()-1)
+      y2 = height() - 1;
+    
+      
+    
+        
+    QRect f(x1, y1, R_MIN(x, x2) - x1, peak_height);
     p->fillRect(f, get_qcolor(PEAKS_COLOR_NUM));
     
     if (x > x2) {
-      QRect f(x2, y1, R_MIN(x, x3) - x2, height);
+      QRectF f(x2, y1, R_MIN(x, x3) - x2, peak_height);
       p->fillRect(f, get_qcolor(PEAKS_0DB_COLOR_NUM));
 
       if (x > x3) {
-        QRect f(x3, y1, x - x3, height);
+        QRectF f(x3, y1, x - x3, peak_height);
         p->fillRect(f, get_qcolor(PEAKS_4DB_COLOR_NUM));
       }
     }
@@ -411,13 +429,13 @@ struct SliderPainter{
         
         //printf("%s: sp: %p, i: %d, size: %d (%d/%d)\n",_display_string.toUtf8().constData(),this,(int)i,(int)_data.size(),sizeof(float),sizeof(float*));
         
-        int y1 = DATA_get_y1(data,height());
-        int y2 = DATA_get_y2(data,height());
-        int height = y2-y1;
+        float y1 = DATA_get_y1(data,height());
+        float y2 = DATA_get_y2(data,height());
+        float height = y2-y1;
 
         if (data->single_line_style) {
           QRectF f(data->requested_pos+1, y1+1,
-                   2,                     height-1);
+                   2,                     height);
 
           p->fillRect(f, get_qcolor(data->color));
         
