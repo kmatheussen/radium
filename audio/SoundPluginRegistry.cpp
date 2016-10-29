@@ -90,13 +90,28 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
       int ret = GFX_Message(&v, ("VST Plugin " + QString(plugin_name) + " not found.").toUtf8().constData());
 
       if (ret==select_plugin_file) {
-        QString filename = QFileDialog::getOpenFileName(NULL,
-                                                        plugin_name,
-                                                        QString(),
-                                                        QString(),
-                                                        0,
-                                                        useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
-                                                        );
+
+        R_ASSERT(g_radium_runs_custom_exec==false);
+        g_radium_runs_custom_exec = true;
+      
+        obtain_keyboard_focus();
+
+        QString filename;
+
+        GL_lock();{
+          filename = QFileDialog::getOpenFileName(NULL,
+                                                  plugin_name,
+                                                  QString(),
+                                                  QString(),
+                                                  0,
+                                                  useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
+                                                  );
+        }GL_unlock();
+        
+        release_keyboard_focus();
+
+        g_radium_runs_custom_exec = false;
+
         QFileInfo info(filename);
 
         QString basename = info.fileName();

@@ -171,6 +171,9 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
       
       safeExec(msgBox);
 
+      R_ASSERT(g_radium_runs_custom_exec==false);
+      g_radium_runs_custom_exec = true;      
+
       QString filename;
 
 #if 0
@@ -194,6 +197,8 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
 
       release_keyboard_focus();
 
+      g_radium_runs_custom_exec = false;
+        
       if(filename == "")
         return NULL;
 

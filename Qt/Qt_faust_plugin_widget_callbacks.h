@@ -574,7 +574,7 @@ public:
     if (Undo_num_undos()==0) // I don't think this can happen, but in case it does, we return since the call to Undo_ReopenLast() below would fail (badly).
       return;
 
-    if (radium_runs_custom_exec==true)
+    if (g_radium_runs_custom_exec==true)
       return;
 
     //R_ASSERT_RETURN_IF_FALSE(Undo_Is_Open()==false);

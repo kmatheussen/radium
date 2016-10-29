@@ -18,7 +18,7 @@
 
 #define PUT_ON_TOP 0
 
-extern bool radium_runs_custom_exec;
+extern bool g_radium_runs_custom_exec;
 
 extern void set_editor_focus(void);
 
@@ -217,7 +217,9 @@ struct GL_PauseCaller{
 static inline int safeExec(QMessageBox *widget){
   int ret;
 
-  radium_runs_custom_exec = true;
+  R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
+
+  g_radium_runs_custom_exec = true;
   
   obtain_keyboard_focus();
   
@@ -227,7 +229,7 @@ static inline int safeExec(QMessageBox *widget){
 
   release_keyboard_focus();
 
-  radium_runs_custom_exec = false;
+  g_radium_runs_custom_exec = false;
   
   return ret;
 }
@@ -235,7 +237,9 @@ static inline int safeExec(QMessageBox *widget){
 static inline int safeExec(QMessageBox &widget){
   int ret;
 
-  radium_runs_custom_exec = true;
+  R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
+
+  g_radium_runs_custom_exec = true;
     
   obtain_keyboard_focus();
 
@@ -245,7 +249,7 @@ static inline int safeExec(QMessageBox &widget){
 
   release_keyboard_focus();
 
-  radium_runs_custom_exec = false;
+  g_radium_runs_custom_exec = false;
   
   return ret;
 }
@@ -253,7 +257,9 @@ static inline int safeExec(QMessageBox &widget){
 static inline int safeExec(QDialog *widget){
   int ret;
 
-  radium_runs_custom_exec = true;
+  R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
+
+  g_radium_runs_custom_exec = true;
   
   obtain_keyboard_focus();
 
@@ -263,7 +269,7 @@ static inline int safeExec(QDialog *widget){
 
   release_keyboard_focus();
 
-  radium_runs_custom_exec = false;
+  g_radium_runs_custom_exec = false;
   
   return ret;
 }
@@ -271,7 +277,9 @@ static inline int safeExec(QDialog *widget){
 static inline QAction *safeExec(QMenu *widget){
   QAction *ret;
 
-  radium_runs_custom_exec = true;
+  R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
+
+  g_radium_runs_custom_exec = true;
     
   obtain_keyboard_focus();
 
@@ -288,7 +296,7 @@ static inline QAction *safeExec(QMenu *widget){
   
   release_keyboard_focus();
 
-  radium_runs_custom_exec = false;
+  g_radium_runs_custom_exec = false;
   
   return ret;
 }

@@ -59,6 +59,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo.h"
 #include "../embedded_scheme/scheme_proc.h"
 #include "../OpenGL/Widget_proc.h"
+
 #include "../Qt/helpers.h"
 
 #include "../audio/SoundProducer_proc.h"
@@ -392,6 +393,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
 QMainWindow *g_main_window = NULL; // referenced by helpers.h
 QSplashScreen *g_splashscreen = NULL; // referenced by helpers.h
+bool g_radium_runs_custom_exec = false; // used by helpers.h
 
 int main(int argc, char **argv){
   

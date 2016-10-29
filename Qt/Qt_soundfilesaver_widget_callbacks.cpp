@@ -354,13 +354,25 @@ public slots:
       }
         
     } else {
-      QString filename = QFileDialog::getSaveFileName(this, 
-                                                      QString("Select file"),
-                                                      QString(),
-                                                      QString(),
-                                                      0,
-                                                      options
-                                                      );
+
+      obtain_keyboard_focus();
+
+      QString filename;
+
+      GL_lock();{
+        filename = QFileDialog::getSaveFileName(this, 
+                                                QString("Select file"),
+                                                QString(),
+                                                QString(),
+                                                0,
+                                                options
+                                                );
+      }GL_unlock();
+
+      release_keyboard_focus();
+
+      g_radium_runs_custom_exec = false;
+
       filename_edit->setText(filename);
     }
   }

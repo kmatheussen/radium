@@ -150,7 +150,7 @@ extern bool g_show_key_codes;
 
 bool g_do_grey_editor = false;
 static bool editor_has_keyboard = true;
-bool radium_runs_custom_exec = false;
+bool g_radium_runs_custom_exec = false;
 
 bool g_gc_is_incremental = false;
 
@@ -1186,7 +1186,10 @@ protected:
     printf("triggering full collect\n");
     GC_gcollect();
 #endif
-    
+
+    if (g_radium_runs_custom_exec==true)
+      return;
+
     //static int hepp=0; printf("hepp %d\n",hepp++);
     
     if (ATOMIC_GET(rt_message_status) == RT_MESSAGE_READY_FOR_SHOWING) {

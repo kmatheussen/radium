@@ -26,9 +26,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTime>
 #include <QThread>
 
-#include "../Qt/helpers.h"
 
 #include "../common/nsmtracker.h"
+#include "../Qt/helpers.h"
+
 #include "../common/time_proc.h"
 #include "../common/Mutex.hpp"
 #include "../common/visual_proc.h"

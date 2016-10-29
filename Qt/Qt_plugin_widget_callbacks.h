@@ -463,6 +463,9 @@ private:
   void SaveFXBP(bool is_fxb){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
+    R_ASSERT(g_radium_runs_custom_exec==false);
+    g_radium_runs_custom_exec = true;      
+
     obtain_keyboard_focus();
 
     QString filename;
@@ -483,6 +486,8 @@ private:
     }GL_unlock();
 
     release_keyboard_focus();
+
+    g_radium_runs_custom_exec = false;
     
     if(filename=="")
       return;
@@ -497,6 +502,9 @@ private:
 
   void LoadFXBP(void){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    
+    R_ASSERT(g_radium_runs_custom_exec==false);
+    g_radium_runs_custom_exec = true;      
 
     obtain_keyboard_focus();
 
@@ -518,6 +526,8 @@ private:
     }GL_unlock();
 
     release_keyboard_focus();
+
+    g_radium_runs_custom_exec = false;
     
     if(filename=="")
       return;
@@ -658,6 +668,9 @@ public slots:
 
       QString filename;
 
+      R_ASSERT(g_radium_runs_custom_exec==false);
+      g_radium_runs_custom_exec = true;      
+
       obtain_keyboard_focus();
 
       GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
@@ -674,6 +687,8 @@ public slots:
       
       release_keyboard_focus();
 
+      g_radium_runs_custom_exec = false;
+      
       if(filename != "")
         _faust_plugin_widget->load_source(filename);
     }
@@ -685,6 +700,9 @@ public slots:
     if (_faust_plugin_widget != NULL){
 
       QString filename;
+
+      R_ASSERT(g_radium_runs_custom_exec==false);
+      g_radium_runs_custom_exec = true;      
 
       obtain_keyboard_focus();
 
@@ -702,6 +720,8 @@ public slots:
       
       release_keyboard_focus();
 
+      g_radium_runs_custom_exec = false;
+            
       if(filename != "")
         _faust_plugin_widget->save_source(filename);      
     }

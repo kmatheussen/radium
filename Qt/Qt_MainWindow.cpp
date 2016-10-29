@@ -671,6 +671,9 @@ const wchar_t *GFX_GetLoadFileName(
 ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
+  R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, NULL);
+  g_radium_runs_custom_exec = true;
+  
   obtain_keyboard_focus();
 
   QString filename;
@@ -689,6 +692,8 @@ const wchar_t *GFX_GetLoadFileName(
   }GL_unlock();
 
   release_keyboard_focus();
+
+  g_radium_runs_custom_exec = false;
     
   if(filename == "")
     return NULL;
@@ -705,6 +710,9 @@ const wchar_t *GFX_GetSaveFileName(
                                    ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
+  R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, NULL);
+  g_radium_runs_custom_exec = true;
+  
   obtain_keyboard_focus();
 
   QString filename;
@@ -723,6 +731,8 @@ const wchar_t *GFX_GetSaveFileName(
 
   release_keyboard_focus();
 
+  g_radium_runs_custom_exec = false;
+    
   if (filename == "")
     return NULL;
 
@@ -732,7 +742,7 @@ const wchar_t *GFX_GetSaveFileName(
 
 static int GFX_Message(vector_t *buttons, QString message){
   R_ASSERT(THREADING_is_main_thread());
-
+  
   MyQMessageBox msgBox(g_editor);
   
   msgBox.setText(message);
@@ -778,7 +788,7 @@ int GFX_Message(vector_t *buttons, const char *fmt,...){
   vsprintf(message,fmt,argp);
   va_end(argp);
 
-  if (g_qt_is_running==false || !THREADING_is_main_thread()) {
+  if (g_qt_is_running==false || !THREADING_is_main_thread() || g_radium_runs_custom_exec) {
 
     SYSTEM_show_message(message);
     return -1;

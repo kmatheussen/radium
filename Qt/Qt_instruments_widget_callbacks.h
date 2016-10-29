@@ -15,6 +15,9 @@ public:
       if (ATOMIC_GET(is_starting_up))
         return;
 
+      if (g_radium_runs_custom_exec==true)
+        return;
+
       //printf("instrwi: %p\n",instruments_widget);
       
       if (instruments_widget->isVisible()==false)

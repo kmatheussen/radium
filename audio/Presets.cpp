@@ -79,7 +79,10 @@ static QVector<QString> get_all_presets_in_path(QString path){
 
 static QString request_load_preset_filename_from_requester(void){
   QString filename;
-  
+
+  R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, "");
+  g_radium_runs_custom_exec = true;
+
   obtain_keyboard_focus();{
 
     GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
@@ -99,6 +102,8 @@ static QString request_load_preset_filename_from_requester(void){
     
   }release_keyboard_focus();
 
+  g_radium_runs_custom_exec = false;
+  
   return filename;
 }
 

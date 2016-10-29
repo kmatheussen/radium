@@ -23,9 +23,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLocale>
 #include <QCoreApplication>
 
-#include "helpers.h"
 
 #include "../common/nsmtracker.h"
+
+#include "helpers.h"
+
 #include "../common/visual_proc.h"
 
 #include "../common/OS_string_proc.h"

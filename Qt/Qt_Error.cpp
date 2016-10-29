@@ -8,6 +8,19 @@
 #include <QProcess>
 #include <QDir>
 
+#ifdef COMPILE_EXECUTABLE
+#define R_ASSERT_RETURN_IF_FALSE2(a,b)                                  \
+  do{                                                                   \
+    if(!(a)) {                                                          \
+      fprintf(stderr, "Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); \
+      return b;                                                         \
+    }                                                                   \
+  }while(0)
+#else
+#include "../common/nsmtracker.h"
+#endif
+
+
 #include "helpers.h"
 
 #ifndef TEST_MAIN
@@ -61,6 +74,7 @@ static int show_message(const char *message){
 
 QMainWindow *g_main_window = NULL; // referenced by helpers.h
 QSplashScreen *g_splashscreen = NULL; // referenced by helpers.h
+bool g_radium_runs_custom_exec = false; // used by helpers.h
 
 int main(int argc, char **argv){
   QCoreApplication::setLibraryPaths(QStringList());
