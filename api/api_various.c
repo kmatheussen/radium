@@ -488,12 +488,15 @@ void openAboutWindow(void){
               "<p>"
               "<A href=\"http://users.notam02.no/~kjetism/radium/development.php\">Credits</A>"
               "<p>"
+              "Jack samplerate: %d"
+              "<p>"
               "Song length: %02d : %02d : %02d",
               ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : ATOMIC_GET(GE_vendor_string),
               ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : ATOMIC_GET(GE_renderer_string),
               ATOMIC_GET(GE_version_string)==NULL ? "(null)" : ATOMIC_GET(GE_version_string),
               ATOMIC_GET(GE_opengl_version_flags),
               GFX_qVersion(),
+              (int)MIXER_get_sample_rate(),
               minutes, seconds, s2
               );
 }
