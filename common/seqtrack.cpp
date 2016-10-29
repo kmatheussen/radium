@@ -218,11 +218,9 @@ struct SeqBlock *SEQBLOCK_create_from_state(const hash_t *state){
   double samplerate = HASH_get_float(state, "samplerate");
       
   seqblock->block = (struct Blocks*)ListFindElement1(&root->song->blocks->l, blocknum);
-  seqblock->time = HASH_get_int(state, "time");
+  
+  seqblock->time = round(double(HASH_get_int(state, "time")) * MIXER_get_sample_rate() / samplerate);
 
-  if (fabs(samplerate - MIXER_get_sample_rate()) < 1)
-    seqblock->time *= samplerate / MIXER_get_sample_rate();
-    
   seqblock->gfx_time = seqblock->time;
   
   return seqblock;
