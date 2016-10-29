@@ -147,6 +147,20 @@ static const ColorConfig g_colorconfig[] = {
   {MIXER_EVENT_CONNECTION_COLOR_NUM, "mixer_event_connection_color", "Event connection color"},
   {MIXER_AUDIO_CONNECTION_COLOR_NUM, "mixer_audio_connection_color", "Audio connection color"},
   {MIXER_AUTOSUSPENSION_COLOR_NUM, "mixer_autosuspension_color", "Auto-suspension sound object color"},
+
+  {SEQUENCER_BACKGROUND_COLOR_NUM, "sequencer_background_color", "Sequencer background color"},
+  {SEQUENCER_BORDER_COLOR_NUM, "sequencer_border_color", "Sequencer border color"},
+  {SEQUENCER_TEXT_COLOR_NUM, "sequencer_text_color", "Sequencer text color"},
+  {SEQUENCER_NOTE_COLOR_NUM, "sequencer_note_color", "Sequencer note color"},
+  {SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, "sequencer_block_background_color", "Sequencer block background color"},
+  {SEQUENCER_BLOCK_BORDER_COLOR_NUM, "sequencer_block_border_color", "Sequencer block border color"},
+  {SEQUENCER_TRACK_BORDER1_COLOR_NUM, "sequencer_track_border1_color", "Sequencer track border color (first)"},
+  {SEQUENCER_TRACK_BORDER2_COLOR_NUM, "sequencer_track_border2_color", "Sequencer track border color"},
+  {SEQUENCER_CURSOR_COLOR_NUM, "sequencer_cursor_color", "Sequencer cursor color"},
+  {SEQUENCER_TIMELINE_BACKGROUND_COLOR_NUM, "sequencer_timeline_background_color", "Sequencer timeline background color"},
+  {SEQUENCER_TIMELINE_ARROW_COLOR_NUM, "sequencer_tinmeline_arrow_color", "Sequencer timeline arrow color"},
+  {SEQUENCER_NAVIGATOR_HANDLER_COLOR, "sequencer_navigator_handler_color", "Sequencer navigator handler color"},
+  {SEQUENCER_NAVIGATOR_GRAYOUT_COLOR, "sequencer_navigator_grayout_color", "Sequencer navigator gray out color"},
   
   {END_CONFIG_COLOR_NUM, NULL, NULL}
 };
@@ -224,6 +238,20 @@ static ReplacementColor g_replacement_color[] = {
   {MIXER_AUDIO_CONNECTION_COLOR_NUM, QColor(50,25,70,140)},
   {MIXER_AUTOSUSPENSION_COLOR_NUM, QColor("#28a6a6a6")},
 
+  {SEQUENCER_BACKGROUND_COLOR_NUM, QColor(50,50,50)},
+  {SEQUENCER_BORDER_COLOR_NUM, QColor(1,1,1)},
+  {SEQUENCER_TEXT_COLOR_NUM, QColor(1,1,1)},
+  {SEQUENCER_NOTE_COLOR_NUM, QColor(1,1,200,150)},
+  {SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, QColor(140,140,140)},
+  {SEQUENCER_BLOCK_BORDER_COLOR_NUM, QColor(50,20,35)},
+  {SEQUENCER_TRACK_BORDER1_COLOR_NUM, QColor(20,20,20)},
+  {SEQUENCER_TRACK_BORDER2_COLOR_NUM, QColor(20,20,20,128)},
+  {SEQUENCER_CURSOR_COLOR_NUM, QColor(200,20,20)},
+  {SEQUENCER_TIMELINE_BACKGROUND_COLOR_NUM, QColor(140,140,140)},
+  {SEQUENCER_TIMELINE_ARROW_COLOR_NUM, QColor(200,50,50)},
+  {SEQUENCER_NAVIGATOR_HANDLER_COLOR, QColor(20,20,20,90)},
+  {SEQUENCER_NAVIGATOR_GRAYOUT_COLOR, QColor(50,50,50,150)},
+  
   {END_CONFIG_COLOR_NUM, QColor(1,2,3)}
 };
 

@@ -2962,7 +2962,7 @@
                                                                    0 song-length)))
                                 ;;(c-display "       Move" Value (/ new-start-time 48000.0) "x1:" (<ra> :get-seqnav-x1) "x2:" (<ra> :get-seqnav-x2) "end:" (/ (<ra> :get-sequencer-visible-end-time) 48000.0))
                                 (define start-time (<ra> :get-sequencer-visible-start-time))
-                                (c-display "new-end-time:" (/ new-end-time 48000.0) Value)
+                                ;;(c-display "new-end-time:" (/ new-end-time 48000.0) Value)
                                 (<ra> :set-sequencer-visible-end-time (min song-length (max (1+ start-time) new-end-time))))
                         :Publicize (lambda (_)
                                      (<ra> :set-statusbar-text (<-> (/ (<ra> :get-sequencer-visible-end-time) (<ra> :get-sample-rate)))))

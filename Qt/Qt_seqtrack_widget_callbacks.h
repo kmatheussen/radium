@@ -254,7 +254,7 @@ public:
 
   
   void paintTrack(QPainter &p, float x1, float y1, float x2, float y2, const struct Blocks *block, const struct Tracks *track, int64_t blocklen) const {
-    QColor color(1,1,200,150);
+    QColor color = get_qcolor(SEQUENCER_NOTE_COLOR_NUM);
     
 #define SHOW_BARS 0
 
@@ -302,15 +302,15 @@ public:
     qreal x1,y1,x2,y2;
     rect.getCoords(&x1, &y1, &x2, &y2);
       
-    p.fillRect(rect, QColor(140,140,140));
+    p.fillRect(rect, get_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM));
 
     const int header_height = root->song->tracker_windows->fontheight + 2;
     
-    QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
-    QColor border_color(50,20,35);// = get_qcolor(MIXER_BORDER_COLOR_NUM);
+    QColor text_color = get_qcolor(SEQUENCER_TEXT_COLOR_NUM);
+    QColor border_color = get_qcolor(SEQUENCER_BLOCK_BORDER_COLOR_NUM);
 
-    QColor header_border_color = QColor(20,20,20);
-    QColor track_border_color = QColor(20,20,20,128);
+    QColor header_border_color = get_qcolor(SEQUENCER_TRACK_BORDER1_COLOR_NUM);
+    QColor track_border_color  = get_qcolor(SEQUENCER_TRACK_BORDER2_COLOR_NUM);
 
     QPen header_border_pen(header_border_color);
     QPen track_border_pen(track_border_color);
@@ -358,7 +358,7 @@ public:
         
     //printf("PAINTING seqblocks. gakk\n");
 
-    p.fillRect(1,1,width()-2,height()-1, QColor(50,50,50));
+    p.fillRect(1,1,width()-2,height()-1, get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
 
     double sample_rate = MIXER_get_sample_rate();
     //double song_length = get_visible_song_length()*sample_rate;
@@ -390,7 +390,7 @@ public:
     
     // Cursor
     {
-      QPen pen(QColor(200,20,20));
+      QPen pen(get_qcolor(SEQUENCER_CURSOR_COLOR_NUM));
       pen.setWidthF(cursor_width);
 
       _last_painted_cursor_x = get_curr_cursor_x(0);
@@ -607,11 +607,11 @@ struct Timeline_widget : public MouseTrackerQWidget {
 
     p.setRenderHints(QPainter::Antialiasing,true);
                    
-    QColor border_color = get_qcolor(MIXER_BORDER_COLOR_NUM);
+    QColor border_color = get_qcolor(SEQUENCER_BORDER_COLOR_NUM);
     //QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
 
     QRect rect(1,1,width()-1,height()-2);
-    p.fillRect(rect, QColor(140,140,140));
+    p.fillRect(rect, get_qcolor(SEQUENCER_TIMELINE_BACKGROUND_COLOR_NUM));
     
     //p.setPen(text_color);
     //p.drawText(4,2,width()-6,height()-4, Qt::AlignLeft, "timeline");
@@ -621,7 +621,7 @@ struct Timeline_widget : public MouseTrackerQWidget {
 
     // This code is copied from hurtigmixer. (translated from scheme)
 
-    p.setBrush(QColor(200,50,50));
+    p.setBrush(get_qcolor(SEQUENCER_TIMELINE_ARROW_COLOR_NUM));
     
     double min_pixels_between_text = 40; //width() / 4;
 
@@ -715,13 +715,13 @@ public:
     
     p.setRenderHints(QPainter::Antialiasing,true);
 
-    QColor border_color = get_qcolor(MIXER_BORDER_COLOR_NUM);      
+    QColor border_color = get_qcolor(SEQUENCER_BORDER_COLOR_NUM);      
     
 
     // Background
     //
     QRect rect1(1,1,width()-1,height()-2);
-    p.fillRect(rect1, QColor(50,50,50));
+    p.fillRect(rect1, get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
 
     //QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
     //p.setPen(text_color);
@@ -735,8 +735,9 @@ public:
     // Blocks
     {
 
-      QColor block_color = QColor(140,140,140,180);
-      QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
+      //QColor block_color = QColor(140,140,140,180);
+      QColor block_color = get_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM);
+      QColor text_color = get_qcolor(SEQUENCER_TEXT_COLOR_NUM);
       
       int num_seqtracks = root->song->seqtracks.num_elements;
       int seqtracknum = 0;
@@ -782,10 +783,14 @@ public:
       QRectF rectA(0, 1, x1, height()-2);
       QRectF rectB(x2, 1, width()-x2, height()-2);      
       QRectF rect2(x1,1,x2-x1,height()-2);
-      
-      p.fillRect(rectA, QColor(140,140,140,100));
-      p.fillRect(rectB, QColor(140,140,140,100));
 
+      {
+        QColor grayout_color = get_qcolor(SEQUENCER_NAVIGATOR_GRAYOUT_COLOR);
+      
+        p.fillRect(rectA, grayout_color);
+        p.fillRect(rectB, grayout_color);
+      }
+      
       p.setPen(border_color);
       p.drawRect(rect2);
       
@@ -797,7 +802,7 @@ public:
       QRectF handle1_rect(x1, 0, handle1_x-x1, height());
       QRectF handle2_rect(handle2_x, 0, x2-handle2_x, height());
       
-      p.setBrush(QColor(20,20,20,90));
+      p.setBrush(get_qcolor(SEQUENCER_NAVIGATOR_HANDLER_COLOR));
       
       p.drawRect(handle1_rect);
       p.drawRect(handle2_rect);
