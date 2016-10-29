@@ -32,12 +32,12 @@ static int64_t RT_scheduled_fx(struct SeqTrack *seqtrack, int64_t time, union Su
   if (fxnodeline2==NULL) // Can happen if deleting a nodeline while playing.
     return DONT_RESCHEDULE;
   
-  struct Patch *patch = track->patch;
-  
   // May happen if removing patch from track while playing, not sure. Doesn't hurt to have this check.
-  if (fx->patch != patch)
+  if (track->patch==NULL)
     return DONT_RESCHEDULE;
 
+  R_ASSERT_RETURN_IF_FALSE2(fx->patch!=NULL, DONT_RESCHEDULE);
+  
   int val1 = fxnodeline1->val;
   int val2 = fxnodeline2->val;
   
