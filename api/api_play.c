@@ -86,8 +86,16 @@ void mute(void){
 }
 
 
-int isPlaying(void){
+bool isPlaying(void){
   return is_playing();
+}
+
+bool isPlayingBlock(void){
+  return isPlaying() && pc->playtype==PLAYBLOCK;
+}
+
+bool isPlayingSong(void){
+  return isPlaying() && pc->playtype==PLAYSONG;
 }
 
 float lineDuration(int line, int tracknum, int blocknum, int windownum){

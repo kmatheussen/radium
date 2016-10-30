@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_visual_input.h"
 #include "../common/settings_proc.h"
 #include "../common/player_proc.h"
+#include "../common/player_pause_proc.h"
 #include "../common/undo_blocks_proc.h"
 #include "../common/time_proc.h"
 #include "../common/seqtrack_proc.h"
@@ -668,6 +669,20 @@ int getNumLines(int blocknum){
 
 int getNumBlocks(void){
   return root->song->num_blocks;
+}
+
+void selectBlock(int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WBlocks *wblock = getWBlockFromNumA(
+                                             windownum,
+                                             &window,
+                                             blocknum
+                                             );
+  if(wblock==NULL) return;
+
+  PC_Pause();{
+    SelectWBlock(window, wblock);    
+  }PC_StopPause(window);
 }
 
 void setTrackNoteShowType(int type,int tracknum,int blocknum,int windownum){

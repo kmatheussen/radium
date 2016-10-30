@@ -2826,9 +2826,12 @@
                                                   (let ((seqblock-info (get-seqblock-info X Y)))
                                                     ;;(c-display "get-existing " seqblock-info X Y)
                                                     (and seqblock-info
-                                                         (callback seqblock-info (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum)
-                                                                                                                (seqblock-info :seqtracknum))
-                                                                                 Y))))
+                                                         (begin
+                                                           (if (not (<ra> :is-playing-song))
+                                                               (<ra> :select-block (<ra> :get-seqblock-blocknum (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))))
+                                                           (callback seqblock-info (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum)
+                                                                                                                  (seqblock-info :seqtracknum))
+                                                                     Y)))))
                         :Get-min-value (lambda (seqblock-info)
                                          (define seqtracknum (seqblock-info :seqtracknum))
                                          (define seqblocknum (seqblock-info :seqblocknum))
@@ -2935,7 +2938,7 @@
 ;; right size handle in navigator
 (add-horizontal-handler :Get-handler-data (lambda (X Y)
                                             (define box (<ra> :get-box seqnav-right-size-handle))
-                                            (c-display "box2" box)
+                                            ;;(c-display "box2" box)
                                             (and (inside-box box X Y)
                                                  (<ra> :get-seqnav-right-size-handle-x2)))
                         :Get-x1 (lambda (_)

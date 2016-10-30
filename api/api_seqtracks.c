@@ -223,6 +223,8 @@ float getSeqblockY2(int seqblocknum, int seqtracknum){
 void moveSeqblock(int seqblocknum, int64_t abstime, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return;
   
   //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
   SEQTRACK_move_seqblock(seqtrack, seqblock, abstime);
@@ -231,7 +233,9 @@ void moveSeqblock(int seqblocknum, int64_t abstime, int seqtracknum){
 void moveSeqblockGfx(int seqblocknum, int64_t abstime, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
-  
+  if (seqblock==NULL)
+    return;
+    
   //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
   SEQTRACK_move_gfx_seqblock(seqtrack, seqblock, abstime);
 }
@@ -239,7 +243,17 @@ void moveSeqblockGfx(int seqblocknum, int64_t abstime, int seqtracknum){
 void deleteSeqblock(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return;
 
   SEQTRACK_delete_seqblock(seqtrack, seqblock);
 }
 
+int getSeqblockBlocknum(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 0;
+
+  return seqblock->block->l.num;
+}

@@ -323,9 +323,18 @@ public:
     //p.drawText(x1+4,2,x2-x1-6,height()-4, Qt::AlignLeft, QString::number(seqblock->block->l.num) + ": " + seqblock->block->name);
     p.drawText(rect.adjusted(2,1,-4,-(rect.height()-header_height)), QString::number(block->l.num) + ": " + block->name, QTextOption(Qt::AlignLeft | Qt::AlignTop));
     //}
-    
-    p.setPen(border_color);
-    p.drawRect(rect);          
+
+    bool is_current_block = block == root->song->tracker_windows->wblock->block;
+      
+    if (is_current_block){
+      QColor c = get_qcolor(CURSOR_EDIT_ON_COLOR_NUM);
+      c.setAlpha(150);      
+      p.setPen(QPen(c, 4));
+    } else {
+      p.setPen(border_color);
+    }
+
+    p.drawRoundedRect(rect,1,1);
 
     int64_t blocklen = getBlockSTimeLength(block);
     int num_tracks = block->num_tracks;
