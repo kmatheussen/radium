@@ -31,8 +31,10 @@ then
     if ! env |grep IS_LINUX_BINARY ; then
         export INCLUDE_FAUSTDEV="jadda"
     fi
-    export INCLUDE_PDDEV="jadda"
 fi
+
+# Always compile pddev. Must of it is placed in a dynamic library, so it doesn't contribute to higher link time or startup time.
+export INCLUDE_PDDEV="jadda"
 
 
 #if ! env |grep OPTIMIZE ; then
@@ -110,8 +112,8 @@ else
 fi
 # _debug
 
-if env |grep INCLUDE_FAUSTDEV ; then
-    PDLDFLAGS="$FAUSTLDFLAGS bin/packages/libpd-master/libs/libpds.a"
+if env |grep INCLUDE_PDDEV ; then
+    PDLDFLAGS="bin/packages/libpd-master/libs/libpds.a"
 else    
     PDLDFLAGS=""
 fi
@@ -124,7 +126,7 @@ if ! env |grep RADIUM_BFD_LDFLAGS ; then
     export RADIUM_BFD_LDFLAGS="-Wl,-Bstatic -lbfd -Wl,-Bdynamic"
 fi
 
-export OS_LDFLAGS="$PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a -lasound -ljack -llrdf -pthread -lrt -lX11 $GCDIR/.libs/libgc.a  $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs Qt5X11Extras` -lXext `$PKG --libs glib-2.0` -lxcb -lxcb-keysyms $RADIUM_BFD_LDFLAGS -lz -liberty -lutil -ldl"
+export OS_LDFLAGS="$FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a -lasound -ljack -llrdf -pthread -lrt -lX11 $GCDIR/.libs/libgc.a  $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs Qt5X11Extras` -lXext `$PKG --libs glib-2.0` -lxcb -lxcb-keysyms $RADIUM_BFD_LDFLAGS -lz -liberty -lutil -ldl"
 
 # 
 

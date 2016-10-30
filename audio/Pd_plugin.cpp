@@ -918,7 +918,7 @@ static QTemporaryFile *get_pdfile_from_state(hash_t *state){
   int num_lines = HASH_get_int(state, "num_lines");
 
   for(int i=0; i<num_lines; i++)
-    out << STRING_get_qstring(HASH_get_string_at(state, "line", i));
+    out << STRING_get_qstring(HASH_get_string_at(state, "line", i)) + "\n";
 
   pdfile->close();
 
