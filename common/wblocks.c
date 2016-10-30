@@ -500,13 +500,7 @@ void SelectPrevPlaylistWBlock(struct Tracker_Windows *window){
   if (seqblock==NULL)
     return;
   
-  struct Blocks *block=seqblock->block;
-
-  PC_Pause();{
-    SelectWBlock(window,ListFindElement1(&window->wblocks->l,block->l.num));
-    
-    BS_SelectPlaylistPos(BS_GetCurrPlaylistPos()-1);
-  }PC_StopPause(NULL);
+  BS_SelectPlaylistPos(BS_GetCurrPlaylistPos()-1);
 }
 
 void SelectNextPlaylistWBlock(struct Tracker_Windows *window){
@@ -514,13 +508,7 @@ void SelectNextPlaylistWBlock(struct Tracker_Windows *window){
   if (seqblock==NULL)
     return;
   
-  struct Blocks *block=seqblock->block;
-
-  PC_Pause();{
-    SelectWBlock(window,ListFindElement1(&window->wblocks->l,block->l.num));
-
-    BS_SelectPlaylistPos(BS_GetCurrPlaylistPos()+1);
-  }PC_StopPause(NULL);
+  BS_SelectPlaylistPos(BS_GetCurrPlaylistPos()+1);
 }
 
 extern size_t allocated;

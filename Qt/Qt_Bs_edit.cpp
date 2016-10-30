@@ -602,7 +602,7 @@ public:
     return pe.seqblock->block;
   }
 
-private slots:
+public slots:
 
   void add_to_playlist(void){
 
@@ -780,11 +780,11 @@ private slots:
 
   /*
   void playlist_highlighted(int num){
-
+  playlist_itemPressed(NULL);
   }
   */
   
-  void playlist_itemPressed(QListWidgetItem * item){
+  void playlist_itemPressed(QListWidgetItem *){
     printf("pressed 2: %d\n",(int)QApplication::mouseButtons());
     
     if(num_visitors>0) // event created internally
@@ -979,11 +979,16 @@ void BS_SelectBlock(struct Blocks *block){
 }
 
 void BS_SelectPlaylistPos(int pos){
-  ScopedVisitors v;
-  //printf("selectplaylistpos %d\n",pos);
-  if(pos==-1)
-    return;
-  bs->playlist.setSelected(pos, true);
+  {
+    ScopedVisitors v;
+    //printf("selectplaylistpos %d\n",pos);
+    if(pos==-1)
+      return;
+    
+    bs->playlist.setSelected(pos, true);
+  }
+  
+  bs->playlist_itemPressed(NULL);
 }
 
 struct SeqBlock *BS_GetPrevPlaylistBlock(void){
