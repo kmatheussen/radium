@@ -63,7 +63,7 @@ static int64_t RT_scheduled_fx(struct SeqTrack *seqtrack, int64_t time, union Su
 
   if (when!=FX_middle || x != last_val){   // Note: We don't check if last value was similar when sending out FX_end. FX_start and FX_end is always sent to the instrument.
 
-    //printf("   Sending out %d at %d (%d)\n",x,fxnodeline1->l.p.line, (int)time);
+    //printf("   scheduler_fxs.c. Sending out %d at %d (%d)\n",x,fxnodeline1->l.p.line, (int)time);
 
     RT_FX_treat_fx(seqtrack, fx, x, time, 0, when);
 

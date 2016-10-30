@@ -227,7 +227,7 @@ static void remove_first_event(scheduler_t *scheduler){
 }
 
 static int get_priority(event_t *event){
-  return event->time & ( (2<<SCHEDULER_NUM_PRIORITY_BITS) - 1);
+  return event->time & ( (1<<SCHEDULER_NUM_PRIORITY_BITS) - 1);
 }
 
 struct SeqTrack *g_RT_curr_scheduling_seqtrack;
@@ -260,7 +260,8 @@ static int called_per_block(struct SeqTrack *seqtrack, double reltime){
     if(event_time < end_time){
       
       remove_first_event(scheduler);
-      
+
+      //printf("        Calling callback. time: %d. priority: %d\n", (int)event->seq_time, (int)event->time & 7);
       int64_t new_seq_time = event->callback(seqtrack, event->seq_time, &event->args[0]); // note that the callback can also schedule new events
       
       if (new_seq_time==DONT_RESCHEDULE){

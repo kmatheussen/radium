@@ -817,14 +817,13 @@ void RT_PATCH_send_play_note_to_receivers(struct SeqTrack *seqtrack, struct Patc
 }
 
 static void RT_play_voice(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
-  //printf("\n\n___RT_play_voice. note %d, time: %d, velocity: %d\n\n",notenum,(int)time,velocity);
 
   if(note.pitch < 1.0 || note.pitch > 127)
     return;
 
   if (!Patch_addPlayingVoice(&patch->playing_voices, note, seqtrack))
     return;
-  
+
   patch->playnote(seqtrack, patch,note,time);
 
   ATOMIC_SET_RELAXED(patch->visual_note_intencity, MAX_NOTE_INTENCITY);
@@ -840,6 +839,8 @@ static int64_t RT_scheduled_play_voice(struct SeqTrack *seqtrack, int64_t time, 
 
   //printf("playing scheduled play note: %d. time: %d, velocity: %d\n",notenum,(int)time,velocity);
   //return;
+
+  //printf("___RT_scheduled_play_voice. time: %d\n", (int)time);
 
   RT_play_voice(seqtrack,
                 patch,
@@ -883,6 +884,8 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
       args[3].float_num = voice_velocity;
 
       // voice ON
+      //printf("___RT_PATCH_play_note. time: %d (%d)\n", (int)time, (int)(time + voice->start*sample_rate/1000));
+
       SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_play_voice, &args[0], 7, SCHEDULER_NOTE_ON_PRIORITY);
 
       // voice OFF
@@ -1236,6 +1239,7 @@ void RT_FX_treat_fx(struct SeqTrack *seqtrack, struct FX *fx,int val,STime time,
   struct Patch *patch = fx->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
+  //printf("RT_FX_treat_fx %d %d\n",(int)time,val);
   fx->treatFX(seqtrack,fx,val,time,skip,when,get_block_reltempo(seqtrack));
 }
 

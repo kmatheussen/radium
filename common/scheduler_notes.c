@@ -162,7 +162,7 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
                                  ATOMIC_GET(track->midi_channel)
                                  );
 
-    //printf("  Playing note at %d\n",(int)time);
+    //printf("  scheduler_notes.c. Playing note at %d\n",(int)time);
     RT_PATCH_play_note(seqtrack, patch,note2,time);
 
     RT_schedule_pitches_newnote(time, seqtrack, seqblock, track, note);
