@@ -1,3 +1,16 @@
+Changes 4.2.2 -> 4.2.3:
+* Switch editor block when clicking a block in the sequencer
+* Draw blue border around current block in the sequencer
+* Fix a pd loading bug that happened when loading long lines.
+  Could for instance cause mininum and maximum slider values to be lost.
+* Fix select next and previous playlist position.
+  (ra.selectNextPlaylistBlock and ra.selectPrevPlaylistBlock)
+* Fix play song from current position
+* Fix a scheduling bug that sometimes caused events to be scheduled
+  at the wrong time.
+
+
+
 Changes 4.2.1 -> 4.2.2:
 * Make mixer object peaks less invisible for instruments with more
   than 16 channels
