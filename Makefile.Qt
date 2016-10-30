@@ -721,13 +721,13 @@ Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) $(CD)Ptask2Mtask.c $(CD)playerclass.h
 	$(CC) $(CD)Ptask2Mtask.c $(OPT) 
 
 player.o:  $(BUILD_DEPENDENCIES) $(CD)player.c $(CD)playerclass.h $(CD)scheduler_proc.h
-	$(CC) $(CD)player.c $(OPT) -fno-sanitize=undefined
+	$(CC) $(CD)player.c $(OPT) #-fno-sanitize=undefined
 
 scheduler.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler.c $(CD)scheduler_proc.h
-	$(CC) $(CD)scheduler.c $(OPT)
+	$(CC) $(CD)scheduler.c $(OPT) #-fno-sanitize=undefined
 
 scheduler_seqtracks.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_seqtracks.c $(CD)scheduler_proc.h
-	$(CC) $(CD)scheduler_seqtracks.c $(OPT) -fno-sanitize=undefined
+	$(CC) $(CD)scheduler_seqtracks.c $(OPT) #-fno-sanitize=undefined
 
 scheduler_notes.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_notes.c $(CD)scheduler_proc.h
 	$(CC) $(CD)scheduler_notes.c $(OPT)
@@ -757,7 +757,7 @@ playerclass.o:  $(BUILD_DEPENDENCIES) $(CD)playerclass.c $(CD)playerclass.h
 	$(CC) $(CD)playerclass.c $(OPT)
 
 player_startstop.o:  $(BUILD_DEPENDENCIES) $(CD)player_startstop.c $(CD)playerclass.h $(CD)scheduler_proc.h
-	$(GCC) $(CD)player_startstop.c $(OPT)
+	$(GCC) $(CD)player_startstop.c $(OPT) #-fno-sanitize=undefined
 
 patch.o:  $(BUILD_DEPENDENCIES) $(CD)patch.cpp $(CD)nsmtracker.h
 	$(CCC) $(CD)patch.cpp $(QTOPT)
@@ -1159,7 +1159,7 @@ Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
 QD = $(P)
 
 Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
-	$(CCC) $(P)Qt_Bs_edit.cpp $(QTOPT)
+	$(CCC) $(P)Qt_Bs_edit.cpp $(QTOPT) #-fno-sanitize=undefined
 
 $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_Bs_edit.cpp >$(P)mQt_Bs_edit.cpp

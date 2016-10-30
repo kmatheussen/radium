@@ -584,6 +584,15 @@ public:
     return NULL;
   }
 
+  struct SeqBlock *get_seqblock_from_pos(int pos){
+    const PlaylistElement pe = get_playlist_element(pos);
+    
+    if (pe.is_illegal())
+      return NULL;
+    
+    return pe.seqblock;
+  }
+
   struct Blocks *get_block_from_pos(int pos){
     const PlaylistElement pe = get_playlist_element(pos);
     
@@ -985,6 +994,11 @@ struct SeqBlock *BS_GetPrevPlaylistBlock(void){
 struct SeqBlock *BS_GetNextPlaylistBlock(void){
   ScopedVisitors v;
   return bs->get_next_playlist_block();
+}
+
+struct SeqBlock *BS_GetSeqBlockFromPos(int pos){
+  ScopedVisitors v;
+  return bs->get_seqblock_from_pos(pos);
 }
 
 struct Blocks *BS_GetBlockFromPos(int pos){

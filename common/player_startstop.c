@@ -49,6 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../midi/midi_i_input_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "scheduler_proc.h"
+#include "seqtrack_proc.h"
 
 #include "player_proc.h"
 
@@ -400,8 +401,28 @@ void PlaySong(int64_t abstime){
 }
 
 void PlaySongCurrPos(void){
-  printf("Fix\n");
-  PlaySong(0);
+  //PlaySong(ATOMIC_GET(pc->song_abstime));
+
+  struct WBlocks *wblock=root->song->tracker_windows->wblock;
+  
+  int playlistpos = BS_GetCurrPlaylistPos();
+
+  struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+  
+  struct SeqBlock *seqblock = BS_GetSeqBlockFromPos(playlistpos);
+  if (seqblock==NULL)
+    return;
+
+  Place *place;
+  if (wblock->block != seqblock->block){
+    place=PlaceGetFirstPos();
+  }else{
+    place=&wblock->reallines[wblock->curr_realline]->l.p;
+  }
+
+  int64_t abstime = get_abstime_from_seqtime(seqtrack, seqblock, Place2STime(seqblock->block, place));
+  
+  PlaySong(abstime);
 }
 
 void PlaySongFromStart(void){
