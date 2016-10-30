@@ -23,6 +23,18 @@ if ! env |grep BUILDTYPE ; then
     exit -1
 fi
 
+
+# Don't include faustdev and pddev (by default) in debug builds since it increases linker time and increases startup time when running under gdb.
+#
+if [[ $BUILDTYPE == RELEASE ]]
+then
+    if ! env |grep IS_LINUX_BINARY ; then
+        export INCLUDE_FAUSTDEV="jadda"
+    fi
+    export INCLUDE_PDDEV="jadda"
+fi
+
+
 #if ! env |grep OPTIMIZE ; then
 export OPTIMIZE="-O3 -mfpmath=sse -msse2 $RADIUM_RELEASE_CFLAGS"
 #fi
@@ -68,19 +80,15 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds -msse2 -fno-omit-frame-pointer -DFOR_LINUX -DWITH_PD `$PKG --cflags Qt5X11Extras`"
+export OS_OPTS="-Werror=array-bounds -msse2 -fno-omit-frame-pointer -DFOR_LINUX `$PKG --cflags Qt5X11Extras`"
 #export OS_OPTS="-Werror=array-bounds -march=native"
-
-# Don't include faustdev in debug builds since it increases linker time and increases startup time when running under gdb.
-if [[ $BUILDTYPE == RELEASE ]]
-then
-    if ! env |grep IS_LINUX_BINARY ; then
-        export INCLUDE_FAUSTDEV="jadda"
-    fi
-fi
 
 if env |grep INCLUDE_FAUSTDEV ; then
     export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV"
+fi
+
+if env |grep INCLUDE_PDDEV ; then
+    export OS_OPTS="$OS_OPTS -DWITH_PD"
 fi
 
 PYTHONLIBPATH=`$PYTHONEXE -c "import sys;print '-L'+sys.prefix+'/lib'"`
@@ -96,11 +104,17 @@ else
 fi
 
 if env |grep INCLUDE_FAUSTDEV ; then
-    FAUSTLDFLAGS="bin/packages/faust2/compiler/libfaust.a `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
+    FAUSTLDFLAGS="bin/packages/QScintilla_gpl-2.9.2/Qt4Qt5/libqscintilla2.a bin/packages/faust2/compiler/libfaust.a `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
 else    
     FAUSTLDFLAGS=""
 fi
 # _debug
+
+if env |grep INCLUDE_FAUSTDEV ; then
+    PDLDFLAGS="$FAUSTLDFLAGS bin/packages/libpd-master/libs/libpds.a"
+else    
+    PDLDFLAGS=""
+fi
 
 if ! env |grep RADIUM_BFD_CFLAGS ; then
     export RADIUM_BFD_CFLAGS=""
@@ -110,7 +124,7 @@ if ! env |grep RADIUM_BFD_LDFLAGS ; then
     export RADIUM_BFD_LDFLAGS="-Wl,-Bstatic -lbfd -Wl,-Bdynamic"
 fi
 
-export OS_LDFLAGS="bin/packages/QScintilla_gpl-2.9.2/Qt4Qt5/libqscintilla2.a $FAUSTLDFLAGS bin/packages/libpd-master/libs/libpds.a pluginhost/Builds/Linux/build/libMyPluginHost.a -lasound -ljack -llrdf -pthread -lrt -lX11 $GCDIR/.libs/libgc.a  $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs Qt5X11Extras` -lXext `$PKG --libs glib-2.0` -lxcb -lxcb-keysyms $RADIUM_BFD_LDFLAGS -lz -liberty -lutil -ldl"
+export OS_LDFLAGS="$PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a -lasound -ljack -llrdf -pthread -lrt -lX11 $GCDIR/.libs/libgc.a  $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs Qt5X11Extras` -lXext `$PKG --libs glib-2.0` -lxcb -lxcb-keysyms $RADIUM_BFD_LDFLAGS -lz -liberty -lutil -ldl"
 
 # 
 
