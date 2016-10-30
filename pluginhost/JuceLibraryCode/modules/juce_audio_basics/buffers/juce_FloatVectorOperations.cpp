@@ -995,15 +995,21 @@ double JUCE_CALLTYPE FloatVectorOperations::findMaximum (const double* src, int 
    #endif
 }
 
-void JUCE_CALLTYPE FloatVectorOperations::enableFlushToZeroMode (bool shouldEnable) noexcept
+void JUCE_CALLTYPE FloatVectorOperations::enableFlushToZeroMode (bool shouldEnable) //noexcept
 {
-   #if JUCE_USE_SSE_INTRINSICS
-    _MM_SET_FLUSH_ZERO_MODE (shouldEnable ? _MM_FLUSH_ZERO_ON : _MM_FLUSH_ZERO_OFF);
-   #endif
-    ignoreUnused (shouldEnable);
+#if 0
+  _mm_setcsr(_mm_getcsr() | 0x8040); // Workaround. The code below caused internal compiler error on 32 bit mingw, gcc 4.9.4.
+#else
+#if JUCE_USE_SSE_INTRINSICS
+  _MM_SET_FLUSH_ZERO_MODE (shouldEnable ? _MM_FLUSH_ZERO_ON : _MM_FLUSH_ZERO_OFF);
+#endif
+#endif
+
+  // No, the line below was the one causing internal compiler error. Just comment it out. No, it was "noexcept" that caused it.
+  ignoreUnused (shouldEnable);
 }
 
-void JUCE_CALLTYPE FloatVectorOperations::disableDenormalisedNumberSupport() noexcept
+void JUCE_CALLTYPE FloatVectorOperations::disableDenormalisedNumberSupport() //noexcept
 {
    #if JUCE_USE_SSE_INTRINSICS
     const unsigned int mxcsr = _mm_getcsr();

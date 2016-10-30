@@ -197,13 +197,13 @@ public:
     /** On Intel CPUs, this method enables or disables the SSE flush-to-zero mode.
         Effectively, this is a wrapper around a call to _MM_SET_FLUSH_ZERO_MODE
     */
-    static void JUCE_CALLTYPE enableFlushToZeroMode (bool shouldEnable) noexcept;
+    static void JUCE_CALLTYPE enableFlushToZeroMode (bool shouldEnable);// noexcept;
 
     /** On Intel CPUs, this method enables the SSE flush-to-zero and denormalised-are-zero modes.
         This effectively sets the DAZ and FZ bits of the MXCSR register. It's a convenient thing to
         call before audio processing code where you really want to avoid denormalisation performance hits.
     */
-    static void JUCE_CALLTYPE disableDenormalisedNumberSupport() noexcept;
+    static void JUCE_CALLTYPE disableDenormalisedNumberSupport() ; // noexcept;
 };
 
 
