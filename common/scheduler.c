@@ -348,6 +348,7 @@ bool SCHEDULER_all_is_clear(void){
 }
 
 void reset_timing(struct SeqTrack *seqtrack){
+  seqtrack->reltime = 0;
   seqtrack->end_time=0;
   seqtrack->end_time_f=0;
   seqtrack->start_time=0;

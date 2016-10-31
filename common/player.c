@@ -79,8 +79,6 @@ void PlayerTask(STime reltime){
         R_ASSERT(player_state==PLAYER_STATE_STARTING_TO_PLAY || player_state==PLAYER_STATE_PLAYING || player_state==PLAYER_STATE_STOPPED);
         
         
-	static double addreltime=0;
-        //RError("hepp");
         pc->reltime     = reltime;
                    
         double reltempo = 1.0;
@@ -93,9 +91,9 @@ void PlayerTask(STime reltime){
         if(block!=NULL)
           reltempo = safe_volatile_float_read(&block->reltempo);
 
-	addreltime+=reltime;
+	seqtrack->addreltime+=reltime;
 
-        double tempoadjusted_reltime_f = (double)addreltime * reltempo;
+        double tempoadjusted_reltime_f  = seqtrack->addreltime * reltempo;
         double tempoadjusted_reltime    = tempoadjusted_reltime_f;
         
         if(tempoadjusted_reltime<1) {
@@ -103,7 +101,7 @@ void PlayerTask(STime reltime){
           double new_start_time_f = old_start_time_f + (double)reltime * reltempo;  // <- Don't need atomic increment operation here since we only write to seqtrack->start_time_f in this thread.
           ATOMIC_DOUBLE_SET(seqtrack->start_time_f, new_start_time_f);                 //
         } else
-          addreltime=0;
+          seqtrack->addreltime=0;
 
         if (player_state==PLAYER_STATE_STOPPED){
           pc->is_treating_editor_events = true; {

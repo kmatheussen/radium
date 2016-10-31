@@ -1786,10 +1786,10 @@ struct SeqTrack{
   vector_t seqblocks;
 
   struct SeqBlock *curr_seqblock; // curr_seqblock->block and curr_seqblock->time contains the same values as pc->block and pc->seqtime did before introducing seqtrack/seqblock.
-  
+
+  double addreltime;
   volatile double start_time; // During current call to peq->treatMe
-  volatile double end_time;   // During current call to peq->treatMe
-  
+  volatile double end_time;   // During current call to peq->treatMe  
   DEFINE_ATOMIC(double, start_time_f);       // double version of start_time.
   double end_time_f;         // double version of end_time.
 
