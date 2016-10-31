@@ -214,7 +214,7 @@ QVector<PlaylistElement> get_playlist_elements(void){
     
   struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
 
-  double current_seq_time = ATOMIC_DOUBLE_GET(pc->start_time_f); // TODO: Move pc->start_time/etc. from playerclass into seqtrack.
+  double current_seq_time = ATOMIC_DOUBLE_GET(seqtrack->start_time_f);
   
   double last_end_seq_time = 0;
   
@@ -842,7 +842,7 @@ public slots:
         
         PC_Pause();{
           ATOMIC_SET(pc->song_abstime, abstime);
-          ATOMIC_DOUBLE_SET(pc->start_time_f, seqtime);
+          ATOMIC_DOUBLE_SET(seqtrack->start_time_f, seqtime);
           DO_GFX(SelectWBlock(window,wblock));
         }PC_StopPause_ForcePlayBlock(NULL);
 

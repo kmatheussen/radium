@@ -59,8 +59,8 @@ void PlayerTask(STime reltime){
           //PC_ReturnElements();
 
           g_time_was_stopped = true;
-          pc->end_time=0;
-          pc->end_time_f=0;
+
+          SCHEDULER_reset_all_timing();
 
           if (SCHEDULER_clear_all()) {
             ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);  // Finished. SCHEDULER_clear() cleared everything.
@@ -85,7 +85,9 @@ void PlayerTask(STime reltime){
                    
         double reltempo = 1.0;
 
-        struct SeqBlock *curr_seqblock = RT_get_curr_seqblock();
+        struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
+          
+        struct SeqBlock *curr_seqblock = seqtrack==NULL ? NULL : seqtrack->curr_seqblock;
         struct Blocks *block = curr_seqblock==NULL ? root->song->blocks : curr_seqblock->block;
         
         if(block!=NULL)
@@ -97,9 +99,9 @@ void PlayerTask(STime reltime){
         double tempoadjusted_reltime    = tempoadjusted_reltime_f;
         
         if(tempoadjusted_reltime<1) {
-          double old_start_time_f = ATOMIC_DOUBLE_GET(pc->start_time_f);          //
-          double new_start_time_f = old_start_time_f + (double)reltime * reltempo;  // <- Don't need atomic increment operation here since we only write to pc->start_time_f in this thread.
-          ATOMIC_DOUBLE_SET(pc->start_time_f, new_start_time_f);                 //
+          double old_start_time_f = ATOMIC_DOUBLE_GET(seqtrack->start_time_f);          //
+          double new_start_time_f = old_start_time_f + (double)reltime * reltempo;  // <- Don't need atomic increment operation here since we only write to seqtrack->start_time_f in this thread.
+          ATOMIC_DOUBLE_SET(seqtrack->start_time_f, new_start_time_f);                 //
         } else
           addreltime=0;
 
@@ -126,26 +128,26 @@ void PlayerTask(STime reltime){
         printf("pc->realtime_to_add: %d (%f), now: %d (%f). Actual time: %f\n",
                (int)pc->reltime_to_add,pc->reltime_to_add/(double)pc->pfreq,
                reltime_to_add_now,reltime_to_add_now/(double)pc->pfreq,
-               (pc->end_time+tempoadjusted_reltime+pc->reltime_to_add)/(double)pc->pfreq
+               (seqtrack->end_time+tempoadjusted_reltime+pc->reltime_to_add)/(double)pc->pfreq
                );
         fflush(stdout);
 #endif
 
-        pc->start_time  = pc->end_time;
-        pc->end_time   += tempoadjusted_reltime;
+        seqtrack->start_time  = seqtrack->end_time;
+        seqtrack->end_time   += tempoadjusted_reltime;
 
-        //printf("Setting new starttime to %f (%d)\n",pc->end_time_f,(int)pc->end_time);
-        ATOMIC_DOUBLE_SET(pc->start_time_f, pc->end_time_f);
+        //printf("Setting new starttime to %f (%d)\n",seqtrack->end_time_f,(int)seqtrack->end_time);
+        ATOMIC_DOUBLE_SET(seqtrack->start_time_f, seqtrack->end_time_f);
 
         if (curr_seqblock != NULL)
-          ATOMIC_DOUBLE_SET(block->player_time, pc->end_time - curr_seqblock->time); // curr_seqblock is set in RT_schedule_new_seqblock
+          ATOMIC_DOUBLE_SET(block->player_time, seqtrack->end_time - curr_seqblock->time); // curr_seqblock is set in RT_schedule_new_seqblock
         else
           ATOMIC_DOUBLE_SET(block->player_time, -100);
         
-        pc->end_time_f  += tempoadjusted_reltime_f;
+        seqtrack->end_time_f  += tempoadjusted_reltime_f;
         
 #ifdef WITH_PD
-        RT_PD_set_absolute_time(pc->start_time);
+        RT_PD_set_absolute_time(seqtrack->start_time);
 #endif
         
         //printf("time: %d. time of next event: %d\n",(int)time,(int)pc->peq->l.time);
@@ -160,7 +162,7 @@ void PlayerTask(STime reltime){
           
           while(
                 peq!=NULL
-                && peq->l.time < pc->end_time
+                && peq->l.time < seqtrack->end_time
                 )
             {
               
@@ -189,14 +191,14 @@ void PlayerTask(STime reltime){
 
 STime g_last_seq_time_converted_to_delta_time;
 
-int PLAYER_get_block_delta_time(STime time){
+int PLAYER_get_block_delta_time(struct SeqTrack *seqtrack, STime time){
   g_last_seq_time_converted_to_delta_time = time;
   
-  if(time<pc->start_time || time>pc->end_time) // time may be screwed up if not coming from the player.
+  if(time<seqtrack->start_time || time>seqtrack->end_time) // time may be screwed up if not coming from the player.
     return 0;
 
   if(is_playing()){
-    int ret = ((time - pc->start_time) * pc->reltime / (pc->end_time - pc->start_time)); // i.e. "scale(time, pc->start_time, pc->end_time, 0, pc->reltime)"
+    int ret = ((time - seqtrack->start_time) * pc->reltime / (seqtrack->end_time - seqtrack->start_time)); // i.e. "scale(time, seqtrack->start_time, seqtrack->end_time, 0, pc->reltime)"
     if(ret<0){
       RWarning("ret<0: %d",ret);
       return 0;

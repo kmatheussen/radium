@@ -166,10 +166,11 @@ static void send_msg(struct SoundPlugin *plugin, int64_t block_delta_time, unsig
   else
     msg = MIDI_msg_pack3(byte1, byte2, byte3);
 
-  int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+block_delta_time);
-  int64_t radium_time = pc->start_time + delta_time;
+  struct SeqTrack *seqtrack = g_RT_curr_scheduling_seqtrack;
+  int64_t delta_time = PLAYER_get_block_delta_time(seqtrack, seqtrack->start_time + block_delta_time);
+  int64_t radium_time = seqtrack->start_time + delta_time;
 
-  RT_PATCH_send_raw_midi_message_to_receivers(g_RT_curr_scheduling_seqtrack, (struct Patch*)patch, msg, radium_time);
+  RT_PATCH_send_raw_midi_message_to_receivers(seqtrack, (struct Patch*)patch, msg, radium_time);
 }
 
 static void get_minval_and_maxval(int effect_num, int *minval, int *maxval){

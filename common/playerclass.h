@@ -112,12 +112,6 @@ typedef struct{
 
         int pfreq; // player frequency. i.e. sample rate. TODO: Get rid of this one. Use MIXER_getsamplerate instead.
 
-        volatile double start_time; // During current call to peq->treatMe
-        volatile double end_time;   // During current call to peq->treatMe
-
-        DEFINE_ATOMIC(double, start_time_f);       // double version of start_time.
-        double end_time_f;         // double version of end_time.
-
         DEFINE_ATOMIC(STime, song_abstime); // Used by the cursor position in the sequencer. Absolute time, i.e. not seqtime.
 	DEFINE_ATOMIC(STime, abstime_since_starting_to_play);	// Absolute time, i.e. not seqtime.
 

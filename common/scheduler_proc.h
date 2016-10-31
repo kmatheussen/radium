@@ -64,6 +64,7 @@ extern LANGSPEC bool SCHEDULER_clear(scheduler_t *scheduler);
 extern LANGSPEC bool SCHEDULER_clear_all(void);
 extern LANGSPEC bool SCHEDULER_is_clear(scheduler_t *scheduler);
 extern LANGSPEC bool SCHEDULER_all_is_clear(void);
+extern LANGSPEC void SCHEDULER_reset_all_timing(void);
 extern LANGSPEC void SCHEDULER_init(void);
 extern LANGSPEC scheduler_t *SCHEDULER_create(void);
 

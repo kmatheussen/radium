@@ -711,12 +711,14 @@ struct Mixer{
       MIXER_check_if_someone_has_solo();
 
       jackblock_variables_protector.write_start();{
+
+        struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
+        struct SeqBlock *curr_seqblock = seqtrack==NULL ? NULL : seqtrack->curr_seqblock;
         
         ATOMIC_SET(jackblock_size, num_frames);
-        ATOMIC_SET(jackblock_cycle_start_stime, pc->end_time);
+        ATOMIC_SET(jackblock_cycle_start_stime, seqtrack->end_time);
         ATOMIC_SET(jackblock_last_frame_stime, jack_last_frame_time(_rjack_client));
 
-        struct SeqBlock *curr_seqblock = RT_get_curr_seqblock();
         if (curr_seqblock != NULL) {
           ATOMIC_SET(jackblock_seqtime, curr_seqblock->time);
           ATOMIC_SET(jackblock_block, curr_seqblock->block);
@@ -1018,7 +1020,7 @@ static int get_audioblock_time(STime jack_block_start_time){
   return int(abs_jack_time - jack_block_start_time);
 }
 
-// Like pc->start_time, but sub-block accurately. Can be called from any thread.
+// Like seqtrack->start_time, but sub-block accurately. Can be called from any thread.
 //
 // I understand the function quite well when writing this comment, but I might not next time reading this code.
 // Should probably think about how to abstract all this stuff.

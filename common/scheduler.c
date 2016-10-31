@@ -92,11 +92,11 @@ static event_t *get_first_event(scheduler_t *scheduler){
 
 #if 0
 static int64_t scheduler_to_seq_time(int64_t scheduler_time){
-  //int64_t block_length = pc->end_time - pc->start_time;
-  //return scale(scheduler_time,g_current_time,g_current_time + block_length, pc->start_time, pc->end_time);
+  //int64_t block_length = pc->end_time - seqtrack->start_time;
+  //return scale(scheduler_time,g_current_time,g_current_time + block_length, seqtrack->start_time, pc->end_time);
   //
   //... is the same as:
-  return ((int64_t)pc->start_time) + (scheduler_time - g_current_time);
+  return ((int64_t)seqtrack->start_time) + (scheduler_time - g_current_time);
 }
 #endif
 
@@ -104,31 +104,31 @@ static int64_t scheduler_to_seq_time(int64_t scheduler_time){
 static int64_t seq_to_scheduler_time(struct SeqTrack *seqtrack, scheduler_t *scheduler, int64_t seq_time){
 
 #if 0
-  int64_t block_length = pc->end_time - pc->start_time;
+  int64_t block_length = pc->end_time - seqtrack->start_time;
   return scale(seq_time,
-               pc->start_time, pc->end_time,
+               seqtrack->start_time, pc->end_time,
                scheduler->current_time, scheduler->current_time + block_length
                );
 #else
   //... is the same as:
-  return scheduler->current_time + (seq_time - ((int64_t)pc->start_time)); // (optimization)
+  return scheduler->current_time + (seq_time - ((int64_t)seqtrack->start_time)); // (optimization)
 #endif
 }
 
 static bool schedule_event(struct SeqTrack *seqtrack, event_t *event, int64_t seq_time, enum SchedulerPriority priority){
   scheduler_t *scheduler = seqtrack->scheduler;
 
-  //  if (seq_time < (int64_t)pc->start_time)
-  //    seq_time = (int64_t)pc->start_time; // TODO/FIX: This is probably not a good thing. Why was this code added again?
+  //  if (seq_time < (int64_t)seqtrack->start_time)
+  //    seq_time = (int64_t)seqtrack->start_time; // TODO/FIX: This is probably not a good thing. Why was this code added again?
   
   int64_t time = seq_to_scheduler_time(seqtrack, scheduler, seq_time);
 
   //args=NULL; // test crashreporter
   
 #if 0
-  printf("|||||||||| Adding event at seq_time %d, scheduler_time %d. g_current_time: %d, pc->start_time: %d\n",
+  printf("|||||||||| Adding event at seq_time %d, scheduler_time %d. g_current_time: %d, seqtrack->start_time: %d\n",
          (int)seq_time,(int)time,
-         (int)g_current_time,(int)pc->start_time);
+         (int)g_current_time,(int)seqtrack->start_time);
 #endif
 
   if(scheduler->queue_size > QUEUE_SIZE-2){
@@ -178,7 +178,7 @@ void SCHEDULER_add_event(struct SeqTrack *seqtrack, int64_t seq_time, SchedulerC
   // has already been called for this audio block.
   // (Q: why not do this for events genereated by the editor too?
   //  A: Because priority would be lost. Effects could run after notes, "note on" events could run before "note off" events, and so forth)
-  if (false==pc->is_treating_editor_events && seq_time < pc->end_time) {
+  if (false==pc->is_treating_editor_events && seq_time < seqtrack->end_time) {
     callback(seqtrack, seq_time, args);
     return;
   }
@@ -240,12 +240,12 @@ static int called_per_block(struct SeqTrack *seqtrack, double reltime){
   double end_time_f = scheduler->current_time + reltime;
   int64_t end_time = end_time_f;
   
-  //printf("  called_per_block. end_time: %d. pc->start_time: %f\n",(int)end_time, pc->start_time);
+  //printf("  called_per_block. end_time: %d. seqtrack->start_time: %f\n",(int)end_time, seqtrack->start_time);
 
 #if 0
   static int counter = 0;
   if ( (counter % 512)==0 && is_playing())
-    printf("called_per_block.  pc->end_time: %d. %f %f\n",(int)pc->end_time,scheduler->current_time,reltime);
+    printf("called_per_block.  seqtrack->end_time: %d. %f %f\n",(int)seqtrack->end_time,scheduler->current_time,reltime);
   counter++;
 #endif
   
@@ -253,7 +253,7 @@ static int called_per_block(struct SeqTrack *seqtrack, double reltime){
     
     event_t *event = get_first_event(scheduler);
     int64_t event_time = event->time >> SCHEDULER_NUM_PRIORITY_BITS;  // remove priority bits.
-    //printf("  SCHEDULER: sched: %d - seq: %d.  First event: %d. pc->start_time: %d, pc->end_time: %d\n",(int)end_time, (int)scheduler_to_seq_time(end_time), (int)scheduler_to_seq_time(event_time),(int)pc->start_time, (int)pc->end_time);
+    //printf("  SCHEDULER: sched: %d - seq: %d.  First event: %d. seqtrack->start_time: %d, seqtrack->end_time: %d\n",(int)end_time, (int)scheduler_to_seq_time(end_time), (int)scheduler_to_seq_time(event_time),(int)seqtrack->start_time, (int)seqtrack->end_time);
 
     //printf("   Sched. Now: %d,  first event: %d. Seqtrack: %p\n", (int)end_time, (int)event_time, seqtrack);
 
@@ -360,6 +360,23 @@ bool SCHEDULER_all_is_clear(void){
   }END_VECTOR_FOR_EACH;
 
   return true;
+}
+
+void reset_timing(struct SeqTrack *seqtrack){
+  seqtrack->end_time=0;
+  seqtrack->end_time_f=0;
+  seqtrack->start_time=0;
+  ATOMIC_DOUBLE_SET(seqtrack->start_time_f, 0);
+}
+
+void SCHEDULER_reset_all_timing(void){
+  reset_timing(&root->song->block_seqtrack);
+  
+  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
+    
+    reset_timing(seqtrack);
+    
+  }END_VECTOR_FOR_EACH;
 }
 
 int SCHEDULER_num_events(scheduler_t *scheduler){

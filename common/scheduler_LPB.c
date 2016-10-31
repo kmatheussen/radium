@@ -14,10 +14,10 @@
 #define DEBUG_BUGS 0
 
 
-static double get_num_beats(const struct SeqBlock *seqblock, LPB_Iterator *iterator, int audioframes_to_add, const char *from_where, bool *curr_num_beats_is_valid){
+static double get_num_beats(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, LPB_Iterator *iterator, int audioframes_to_add, const char *from_where, bool *curr_num_beats_is_valid){
   struct Blocks *block = seqblock->block;
 
-  double time = ATOMIC_DOUBLE_GET(pc->start_time_f) - seqblock->time;
+  double time = ATOMIC_DOUBLE_GET(seqtrack->start_time_f) - seqblock->time;
 
 #if DEBUG_BUGS
   R_ASSERT_NON_RELEASE(time > -(RADIUM_BLOCKSIZE*safe_volatile_float_read(&block->reltempo)));
@@ -33,7 +33,7 @@ static double get_num_beats(const struct SeqBlock *seqblock, LPB_Iterator *itera
          from_where,
          time,
          time_to_add,
-         ATOMIC_DOUBLE_GET(pc->start_time_f),
+         ATOMIC_DOUBLE_GET(seqtrack->start_time_f),
          STime2Place_f(block, time+time_to_add)
          );
 #endif
@@ -58,8 +58,8 @@ static void set_new_num_beats_values(struct SeqTrack *seqtrack, const struct Seq
   
   if (iterator->has_next_num_beats==false){
 
-    iterator->curr_num_beats = get_num_beats(seqblock, iterator, 0, "start1", curr_num_beats_is_valid);
-    iterator->next_num_beats = get_num_beats(seqblock, iterator, audioblocksize, "start2", curr_num_beats_is_valid);
+    iterator->curr_num_beats = get_num_beats(seqtrack, seqblock, iterator, 0, "start1", curr_num_beats_is_valid);
+    iterator->next_num_beats = get_num_beats(seqtrack, seqblock, iterator, audioblocksize, "start2", curr_num_beats_is_valid);
 
     iterator->has_next_num_beats=true;
     
@@ -72,7 +72,7 @@ static void set_new_num_beats_values(struct SeqTrack *seqtrack, const struct Seq
 #endif
     
     iterator->curr_num_beats = iterator->next_num_beats; // Since the prev value might have been calculated using previous LPB values, this value sometimtes might not be 100% correct, but it should be good enough.
-    iterator->next_num_beats = get_num_beats(seqblock, iterator, audioblocksize, "nextnumbeats", curr_num_beats_is_valid);
+    iterator->next_num_beats = get_num_beats(seqtrack, seqblock, iterator, audioblocksize, "nextnumbeats", curr_num_beats_is_valid);
 
   }
 

@@ -76,7 +76,7 @@ static int64_t RT_scheduled_send_play_note_to_plugin(struct SeqTrack *seqtrack, 
   if (!Patch_addPlayingVoice(&plugin->playing_voices, note, seqtrack))
     return DONT_RESCHEDULE;
   
-  plugin->type->play_note(plugin, PLAYER_get_block_delta_time(time), note);
+  plugin->type->play_note(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
 
   return DONT_RESCHEDULE;
 }
@@ -94,7 +94,7 @@ static void AUDIO_playnote(struct SeqTrack *seqtrack, struct Patch *patch,note_t
   if (latency == 0) {
     if (!Patch_addPlayingVoice(&plugin->playing_voices, note, seqtrack))
       return;
-    plugin->type->play_note(plugin, PLAYER_get_block_delta_time(time), note);
+    plugin->type->play_note(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
     return;
   }
 
@@ -118,7 +118,7 @@ static int64_t RT_scheduled_send_note_volume_to_plugin(struct SeqTrack *seqtrack
 
   const note_t note = create_note_from_args(&args[1]);
 
-  plugin->type->set_note_volume(plugin, PLAYER_get_block_delta_time(time), note);
+  plugin->type->set_note_volume(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
 
   return DONT_RESCHEDULE;
 }
@@ -132,7 +132,7 @@ static void AUDIO_changevelocity(struct SeqTrack *seqtrack, struct Patch *patch,
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   if (latency == 0) {
-    plugin->type->set_note_volume(plugin, PLAYER_get_block_delta_time(time), note);
+    plugin->type->set_note_volume(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
     return;
   }
 
@@ -155,7 +155,7 @@ static int64_t RT_scheduled_send_note_pitch_to_plugin(struct SeqTrack *seqtrack,
 
   const note_t note = create_note_from_args(&args[1]);
 
-  plugin->type->set_note_pitch(plugin, PLAYER_get_block_delta_time(time), note);
+  plugin->type->set_note_pitch(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
 
   return DONT_RESCHEDULE;
 }
@@ -171,7 +171,7 @@ static void AUDIO_changepitch(struct SeqTrack *seqtrack, struct Patch *patch,not
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   if (latency == 0) {
-    plugin->type->set_note_pitch(plugin, PLAYER_get_block_delta_time(time), note); 
+    plugin->type->set_note_pitch(plugin, PLAYER_get_block_delta_time(seqtrack, time), note); 
     return;
   }
 
@@ -194,7 +194,7 @@ static int64_t RT_scheduled_send_raw_midi_to_plugin(struct SeqTrack *seqtrack, i
 
   uint32_t msg = args[1].uint32_num;
   
-  plugin->type->send_raw_midi_message(plugin, PLAYER_get_block_delta_time(time), msg);
+  plugin->type->send_raw_midi_message(plugin, PLAYER_get_block_delta_time(seqtrack, time), msg);
 
   return DONT_RESCHEDULE;
 }
@@ -210,7 +210,7 @@ static void AUDIO_sendrawmidimessage(struct SeqTrack *seqtrack, struct Patch *pa
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   if (latency == 0) {
-    plugin->type->send_raw_midi_message(plugin, PLAYER_get_block_delta_time(time), msg); 
+    plugin->type->send_raw_midi_message(plugin, PLAYER_get_block_delta_time(seqtrack, time), msg); 
     return;
   }
 
@@ -234,7 +234,7 @@ static int64_t RT_scheduled_send_stop_note_to_plugin(struct SeqTrack *seqtrack, 
   const note_t note = create_note_from_args(&args[1]);
 
   Patch_removePlayingVoice(&plugin->playing_voices, note.id, seqtrack);
-  plugin->type->stop_note(plugin, PLAYER_get_block_delta_time(time), note);
+  plugin->type->stop_note(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
 
   return DONT_RESCHEDULE;
 }
@@ -252,7 +252,7 @@ static void AUDIO_stopnote(struct SeqTrack *seqtrack, struct Patch *patch,note_t
   //printf("  stopnote called. %d, time: %d\n",(int)note.id, (int)time);
   if (latency == 0 || time==-1) {
     Patch_removePlayingVoice(&plugin->playing_voices, note.id, seqtrack);
-    plugin->type->stop_note(plugin, PLAYER_get_block_delta_time(time), note);
+    plugin->type->stop_note(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
     return;
   }
 
@@ -494,12 +494,12 @@ static void AUDIO_close_FX(struct FX *fx,const struct Tracks *track){
   //OS_SLIDER_release_automation_pointers(patch,fx->effect_num);
 }
 
-static void send_fx_to_plugin(SoundPlugin *plugin, STime time, FX_when when, int val, int effect_num){
+static void send_fx_to_plugin(struct SeqTrack *seqtrack, SoundPlugin *plugin, STime time, FX_when when, int val, int effect_num){
   float effect_val = val / (float)MAX_FX_VAL;
 
   plugin->automation_values[effect_num] = effect_val;
 
-  PLUGIN_set_effect_value(plugin,PLAYER_get_block_delta_time(time),effect_num,effect_val, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, when);
+  PLUGIN_set_effect_value(plugin,PLAYER_get_block_delta_time(seqtrack, time),effect_num,effect_val, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, when);
 }
 
 static int64_t RT_scheduled_send_fx_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
@@ -514,7 +514,7 @@ static int64_t RT_scheduled_send_fx_to_plugin(struct SeqTrack *seqtrack, int64_t
   int val = (int)args[2].int_num;
   int effect_num = (int)args[3].int_num;
 
-  send_fx_to_plugin(plugin, time, when, val, effect_num);
+  send_fx_to_plugin(seqtrack, plugin, time, when, val, effect_num);
 
   return DONT_RESCHEDULE;
 }
@@ -535,7 +535,7 @@ static void AUDIO_treat_FX(struct SeqTrack *seqtrack, struct FX *fx,int val,STim
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   if (latency == 0) {
-    send_fx_to_plugin(plugin, time, when, val, fx->effect_num);
+    send_fx_to_plugin(seqtrack, plugin, time, when, val, fx->effect_num);
     return;
   }
 

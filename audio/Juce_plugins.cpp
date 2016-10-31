@@ -193,7 +193,7 @@ namespace{
 
       } else {
         
-        result.timeInSamples = pc->start_time - latency;
+        result.timeInSamples = seqtrack->start_time - latency;
         result.timeInSeconds = result.timeInSamples / (double)pc->pfreq;
 
         result.ppqPosition               = RT_LPB_get_beat_position(seqtrack) - latency_beats;
@@ -843,12 +843,14 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 #endif
         
         if (len>=1 && len<=3) { // Filter out sysex messages.
-          if (patch != NULL) {          
-            int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+samplePosition);
+          if (patch != NULL) {
+            struct SeqTrack *seqtrack = RT_get_aux_seqtrack();
             
-            int64_t radium_time = pc->start_time + delta_time;
+            int64_t delta_time = PLAYER_get_block_delta_time(seqtrack, seqtrack->start_time+samplePosition);
             
-            RT_MIDI_send_msg_to_patch_receivers2(RT_get_curr_seqtrack(), (struct Patch*)patch, message, radium_time);            
+            int64_t radium_time = seqtrack->start_time + delta_time;
+            
+            RT_MIDI_send_msg_to_patch_receivers2(seqtrack, (struct Patch*)patch, message, radium_time);            
           }
         }
       }
