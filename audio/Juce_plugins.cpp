@@ -918,14 +918,16 @@ static int RT_get_latency(struct SoundPlugin *plugin){
   return latency;
 }
 
-// Unfortunately, juce doesn't have a mechanism to tell whether AudioProcessor::getTailLengthSeconds() returns a valid value,
-// so we acces the VST plugin directly.
 static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
+  AudioPluginInstance *instance = data->audio_instance;
 
   if (is_vst2(plugin)){
-    
-    AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
+
+    // Unfortunately, juce doesn't have a mechanism to tell whether AudioProcessor::getTailLengthSeconds() returns a valid value,
+    // so we acces the VST plugin directly.
+
+    AEffect *aeffect = (AEffect*)instance->getPlatformSpecificData();
     
     // "[return value]: tail size (for example the reverb time of a reverb plug-in); 0 is default (return 1 for 'no tail')"
     int tail = aeffect->dispatcher(aeffect, effGetTailSize,
@@ -940,8 +942,8 @@ static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
     return tail;
     
   } else {
-    
-    return -1;
+
+    return ceil(instance->getTailLengthSeconds()*MIXER_get_sample_rate());
     
   }
 }
