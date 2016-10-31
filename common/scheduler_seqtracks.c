@@ -259,8 +259,6 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place){
               
   PLAYER_lock();{
     
-    R_ASSERT(SCHEDULER_num_events(RT_get_curr_seqtrack()->scheduler)==0);
-
     pc->start_time = seq_start_time;
     ATOMIC_DOUBLE_SET(pc->start_time_f, seq_start_time);
     
@@ -272,6 +270,9 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place){
 #endif
 
     struct SeqTrack *seqtrack = &root->song->block_seqtrack;
+
+    R_ASSERT(SCHEDULER_num_events(seqtrack->scheduler)==0);
+
     seqtrack->curr_seqblock = NULL;
     
     static struct SeqBlock seqblock = {0};

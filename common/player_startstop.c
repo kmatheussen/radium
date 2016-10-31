@@ -70,6 +70,20 @@ static bool g_player_was_stopped_manually = true;
 
 extern void (*Ptask2MtaskCallBack)(void);
 
+static void clear_scheduler_and_stop_player(void){
+  bool is_clear;
+  PLAYER_lock();{
+    is_clear = SCHEDULER_all_is_clear();
+  }PLAYER_unlock();
+
+  if (is_clear)
+    return;
+      
+  ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
+  while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED)
+    OS_WaitForAShortTime(3);
+}
+
 static void PlayStopReally(bool doit){
     g_player_was_stopped_manually = true;
     
@@ -80,24 +94,20 @@ static void PlayStopReally(bool doit){
         if (ATOMIC_GET(is_starting_up))
           return;
 
-        if(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED)
+        if(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED) {
+          clear_scheduler_and_stop_player(); // must clear, and it doesn't hurt to stop player one more time.
           return;
+        }
         
         StopAllInstruments();
-
-        ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
-        
-        printf("PlayStopReally called: %s\n",doit==true?"true":"false");
 
         if (PLAYER_current_thread_has_lock()){
           RError("Potential deadlock detected: Calling PlayStopReally while holding player lock.");
           return;
         }
 
-        if (PLAYER_is_running())
-          while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED)
-            OS_WaitForAShortTime(3);
-
+        clear_scheduler_and_stop_player();
+        
         R_ASSERT(is_playing()==false);
 
         //R_ASSERT(is_playing()==false);

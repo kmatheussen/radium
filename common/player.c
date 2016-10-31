@@ -49,7 +49,7 @@ void PlayerTask(STime reltime){
         Player_State player_state = ATOMIC_GET(pc->player_state);
 
         if (player_state==PLAYER_STATE_PROGRAM_NOT_READY){
-          printf("player: program not ready\n");
+          //printf("player: program not ready\n");
           return;
 
         } else if (player_state==PLAYER_STATE_ENDING) {

@@ -343,6 +343,25 @@ bool SCHEDULER_clear_all(void){
   return true;
 }
 
+bool SCHEDULER_is_clear(scheduler_t *scheduler){
+  return scheduler->queue_size==0;
+}
+
+bool SCHEDULER_all_is_clear(void){
+  
+  if (SCHEDULER_is_clear(root->song->block_seqtrack.scheduler)==false)
+    return false;
+  
+  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
+    
+    if (SCHEDULER_is_clear(seqtrack->scheduler)==false)
+      return false;
+    
+  }END_VECTOR_FOR_EACH;
+
+  return true;
+}
+
 int SCHEDULER_num_events(scheduler_t *scheduler){
   return scheduler->queue_size;
 }
