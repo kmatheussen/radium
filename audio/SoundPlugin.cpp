@@ -1982,9 +1982,12 @@ bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time){
     if (type->RT_get_audio_tail_length != NULL)
       delay = type->RT_get_audio_tail_length(plugin);
 
-    if (delay < 0)
+    if (delay == -1)
       delay = (double)ATOMIC_GET(g_autobypass_delay) * MIXER_get_sample_rate() / 1000.0;
 
+    if (delay < -1)
+      return false;
+    
     // input latency
     delay += RT_SP_get_input_latency(plugin->sp);
 

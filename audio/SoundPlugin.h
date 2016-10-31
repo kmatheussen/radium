@@ -232,7 +232,8 @@ typedef struct SoundPluginType{
   // Used by auto-suspend to determine how long time to wait until suspending. If NULL, the default value will be used instead.
   // * The function can not return a lower value than the actual tail. That may cause an audio tail to suddenly kick in when instrument is brought back from suspension.
   // * The function is allowed to return a higher value than the actual tail.
-  // * If the function returns a negative value, it means that it was unable to report audio tail lenght.
+  // * If the function returns -1, it means that it was unable to report audio tail lenght. (use default/global tail length instead)
+  // * If the function returns a value < -1, it means that the tail has infinite length.
   int (*RT_get_audio_tail_length)(struct SoundPlugin *plugin);
   
   int (*RT_get_latency)(struct SoundPlugin *plugin);
