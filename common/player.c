@@ -201,9 +201,9 @@ int PLAYER_get_block_delta_time(STime time){
       RWarning("ret<0: %d",ret);
       return 0;
     }
-    if(ret>pc->reltime){
+    if(ret>=pc->reltime){
       RWarning("ret>pc->reltime: %d > %d",ret,pc->reltime);
-      return 0;
+      return pc->reltime-1;
     }
     return ret;
   }else
