@@ -151,9 +151,9 @@ static void PlayStopReally(bool doit){
 
         // Clean all seqtrack->curr_seqblock values
         PLAYER_lock();{
-          VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
+          ALL_SEQTRACKS_FOR_EACH(){
             seqtrack->curr_seqblock = NULL;
-          }END_VECTOR_FOR_EACH;
+          }END_ALL_SEQTRACKS_FOR_EACH;
         }PLAYER_unlock();
 
           

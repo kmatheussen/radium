@@ -293,16 +293,11 @@ static int called_per_block(struct SeqTrack *seqtrack, double reltime){
 bool SCHEDULER_called_per_block(double reltime){
   bool is_finished = true;
 
-  if (called_per_block(&root->song->block_seqtrack, reltime) > 0)
-    is_finished = false;
-
-  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
-    
+  ALL_SEQTRACKS_FOR_EACH(){
     if (called_per_block(seqtrack, reltime) > 0)
       is_finished = false;
+  }END_ALL_SEQTRACKS_FOR_EACH;
     
-  }END_VECTOR_FOR_EACH;
-
   return is_finished;
 }
 
@@ -329,17 +324,12 @@ bool SCHEDULER_clear(scheduler_t *scheduler){
 }
 
 bool SCHEDULER_clear_all(void){
-  
-  if (SCHEDULER_clear(root->song->block_seqtrack.scheduler)==false)
-    return false;
-  
-  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
-    
+
+  ALL_SEQTRACKS_FOR_EACH(){
     if (SCHEDULER_clear(seqtrack->scheduler)==false)
       return false;
-    
-  }END_VECTOR_FOR_EACH;
-
+  }END_ALL_SEQTRACKS_FOR_EACH;
+  
   return true;
 }
 
@@ -348,17 +338,12 @@ bool SCHEDULER_is_clear(scheduler_t *scheduler){
 }
 
 bool SCHEDULER_all_is_clear(void){
-  
-  if (SCHEDULER_is_clear(root->song->block_seqtrack.scheduler)==false)
-    return false;
-  
-  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
-    
+
+  ALL_SEQTRACKS_FOR_EACH(){  
     if (SCHEDULER_is_clear(seqtrack->scheduler)==false)
       return false;
-    
-  }END_VECTOR_FOR_EACH;
-
+  }END_ALL_SEQTRACKS_FOR_EACH;
+  
   return true;
 }
 
@@ -370,13 +355,9 @@ void reset_timing(struct SeqTrack *seqtrack){
 }
 
 void SCHEDULER_reset_all_timing(void){
-  reset_timing(&root->song->block_seqtrack);
-  
-  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
-    
+  ALL_SEQTRACKS_FOR_EACH(){
     reset_timing(seqtrack);
-    
-  }END_VECTOR_FOR_EACH;
+  }END_ALL_SEQTRACKS_FOR_EACH;
 }
 
 int SCHEDULER_num_events(scheduler_t *scheduler){

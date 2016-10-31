@@ -25,7 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 vector_t g_global_roots = {0};
 
 
-
 void VECTOR_reverse(vector_t *v){
   int size=v->num_elements;
   int i;
