@@ -254,7 +254,8 @@ public:
 
   
   void paintTrack(QPainter &p, float x1, float y1, float x2, float y2, const struct Blocks *block, const struct Tracks *track, int64_t blocklen) const {
-    QColor color = get_qcolor(SEQUENCER_NOTE_COLOR_NUM);
+    QColor color1 = get_qcolor(SEQUENCER_NOTE_COLOR_NUM);
+    QColor color2 = get_qcolor(SEQUENCER_NOTE_START_COLOR_NUM);
     
 #define SHOW_BARS 0
 
@@ -262,11 +263,15 @@ public:
     p.setBrush(QBrush(color));
 #else
     const float bar_height = 2.3;
+    const float bar_header_length = 3.2;
     
-    QPen pen(color);
-    pen.setWidthF(bar_height);
-    pen.setCapStyle(Qt::FlatCap);
-    p.setPen(pen);
+    QPen pen1(color1);
+    pen1.setWidthF(bar_height);
+    pen1.setCapStyle(Qt::FlatCap);
+
+    QPen pen2(pen1);
+    pen2.setColor(color2);
+    
 #endif
     
     struct Notes *note = track->notes;
@@ -278,20 +283,30 @@ public:
       float n_x1 = scale(start, 0, blocklen, x1, x2);
       float n_x2 = scale(end, 0, blocklen, x1, x2);
 
+      p.setPen(pen1);
+
 #if SHOW_BARS
       float n_y1 = scale(note->note, 127, 0, y1, y2);
       float n_y2 = y2;
+      
       QRectF rect(n_x1, n_y1, n_x2-n_x1, n_y2-n_y1);
       p.drawRect(rect);
       
 #else
       float n_y = scale(note->note+0.5, 127, 0, y1, y2);
-                  
-      QLineF line(n_x1,n_y,n_x2,n_y);
-      
-      p.drawLine(line);
-#endif
 
+      {
+        QLineF line(n_x1,n_y,n_x1+bar_header_length,n_y);
+        p.setPen(pen2);
+        p.drawLine(line);
+
+        if (n_x2 > n_x1+bar_header_length){
+          QLineF line(n_x1+2,n_y,n_x2,n_y);
+          p.setPen(pen1);
+          p.drawLine(line);
+        }
+      }
+#endif
 #undef SHOW_BARS
       
       note = NextNote(note);
