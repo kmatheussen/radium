@@ -61,6 +61,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/Vector.hpp"
 #include "../common/player_proc.h"
 
+#include "../audio/Juce_plugins_proc.h"
+
 #define GE_DRAW_VL
 #include "GfxElements.h"
 #include "T2.hpp"
@@ -988,9 +990,17 @@ private:
     if (USE_GL_LOCK)
       mutex.lock();
 
+    void *juce_lock = NULL;
+
+    if (doLockJuceWhenSwappingOpenGL())
+      juce_lock = JUCE_lock();
+    
     // Swap to the newly rendered buffer
     if ( openglContext()->hasDoubleBuffer())
       openglContext()->swapBuffers();
+
+    if (juce_lock != NULL)
+      JUCE_unlock(juce_lock);
 
     if (USE_GL_LOCK)
       mutex.unlock();
@@ -1483,6 +1493,8 @@ static void setup_widget(QWidget *parent){
 
 QWidget *GL_create_widget(QWidget *parent){
 
+  doLockJuceWhenSwappingOpenGL(); // Load value from disk so the function can be called from the opengl thread later.
+    
 #if defined(FOR_MACOSX)
   // doesn't work.
   //cocoa_set_best_resolution(NULL);//(void*)widget->winId());

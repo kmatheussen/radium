@@ -1576,6 +1576,25 @@ void setModalWindows(bool doit){
 }
 
 
+static DEFINE_ATOMIC(bool, g_lock_juce_when_swapping_opengl) = false;
+
+bool doLockJuceWhenSwappingOpenGL(void){
+  static DEFINE_ATOMIC(bool, has_inited) = false;
+
+  if (ATOMIC_GET(has_inited)==false){
+    ATOMIC_SET(g_lock_juce_when_swapping_opengl, SETTINGS_read_bool("lock_juce_when_swapping_opengl", false));
+    ATOMIC_SET(has_inited, true);
+  }
+
+  return ATOMIC_GET(g_lock_juce_when_swapping_opengl);
+}
+
+void setLockJuceWhenSwappingOpenGL(bool doit){
+  ATOMIC_SET(g_lock_juce_when_swapping_opengl, doit);
+  SETTINGS_write_bool("lock_juce_when_swapping_opengl", doit);
+}
+
+
 static bool g_native_file_requesters;
 
 bool useNativeFileRequesters(void){

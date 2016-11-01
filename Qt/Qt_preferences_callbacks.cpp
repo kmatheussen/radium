@@ -402,6 +402,9 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       bool draw_in_separate_process = SETTINGS_read_bool("opengl_draw_in_separate_process",false);//GL_using_nvidia_card());
       draw_in_separate_process_onoff->setChecked(draw_in_separate_process);
       
+      bool lock_juce = doLockJuceWhenSwappingOpenGL();
+      lock_juce_when_swapping_onoff->setChecked(lock_juce);
+      
       safeModeOnoff->setChecked(GL_get_safe_mode());
     }
 
@@ -571,6 +574,11 @@ public slots:
   void on_draw_in_separate_process_onoff_toggled(bool val){
     if (_initing==false)
       SETTINGS_write_bool("opengl_draw_in_separate_process",val);
+  }
+  
+  void lock_juce_when_swapping_onoff_toggled(bool val){
+    if (_initing==false)
+      setLockJuceWhenSwappingOpenGL(val);
   }
   
   void on_safeModeOnoff_toggled(bool val){

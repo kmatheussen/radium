@@ -1639,6 +1639,15 @@ void GFX_CloseProgress(void){
 
 #endif
 
+void *JUCE_lock(void){
+  return new MessageManagerLock;
+}
+
+void JUCE_unlock(void *lock){
+  MessageManagerLock *mmLock = static_cast<MessageManagerLock *>(lock);
+  delete mmLock;
+}
+
 bool JUCE_native_gui_grabs_keyboard(void){
   return g_vst_grab_keyboard;
 }
