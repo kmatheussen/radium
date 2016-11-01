@@ -61,7 +61,7 @@ SaveNotes(NextNote(note));
 
 
 struct Notes *LoadNote(void){
-        struct Notes *note = NewNote(); // DC_alloc just checks if there is enough memory, and handle failure gracefully.
+        struct Notes *note = NewNote();
 
 	LoadPlace(&note->l.p);
         

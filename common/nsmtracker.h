@@ -1757,8 +1757,9 @@ typedef struct {
   Ratio signature_value; // = {4,4};
 } Signature_Iterator;
 
-
 struct SeqBlock{
+  int seqblocknum; // Must be unique. Can change value when player is stopped.
+  
   int64_t time;      // Seqtime. Player must be stopped when modifying this variable. Note that because of tempo multipliers (block->reltempo), the 'start_time' and 'end_time' fields does not correspond linearly to this value. Written to by the main thread, read by the main thread and the player thread(s).
   struct Blocks *block;
 

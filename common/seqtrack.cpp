@@ -92,13 +92,14 @@ int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct S
   return last_seq_end_time + (abstime - last_abs_end_time); // We lose the decimals here. Wonder if this inaccuracy could build up. Maybe using double/seconds everywhere instead would be better...
 }
 
-static struct SeqBlock *get_seqblock(struct Blocks *block){
+static struct SeqBlock *SEQBLOCK_create(struct Blocks *block){
   struct SeqBlock *seqblock = (struct SeqBlock*)talloc(sizeof(struct SeqBlock));
   seqblock->block = block;
   seqblock->time = -1;
   seqblock->gfx_time = seqblock->time;
   return seqblock;
 }
+
 
 // Ensures that two seqblocks doesn't overlap, and that a seqblock doesn't start before 0.
 // Preserves original pause times.
@@ -212,12 +213,12 @@ hash_t *SEQBLOCK_get_state(const struct SeqBlock *seqblock){
 }
 
 struct SeqBlock *SEQBLOCK_create_from_state(const hash_t *state){
-  struct SeqBlock *seqblock = (struct SeqBlock*)talloc(sizeof(struct SeqBlock));
+  
   int blocknum = HASH_get_int32(state, "blocknum");
 
   double samplerate = HASH_get_float(state, "samplerate");
-      
-  seqblock->block = (struct Blocks*)ListFindElement1(&root->song->blocks->l, blocknum);
+
+  struct SeqBlock *seqblock = SEQBLOCK_create((struct Blocks*)ListFindElement1(&root->song->blocks->l, blocknum));
   
   seqblock->time = round(double(HASH_get_int(state, "time")) * MIXER_get_sample_rate() / samplerate);
 
@@ -263,7 +264,7 @@ struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len){
   vector_t seqblocks = {0};
   
   for(int pos=0;pos<len;pos++)
-    VECTOR_push_back(&seqblocks, get_seqblock((struct Blocks *)ListFindElement1(&root->song->blocks->l,playlist[pos])));
+    VECTOR_push_back(&seqblocks, SEQBLOCK_create((struct Blocks *)ListFindElement1(&root->song->blocks->l,playlist[pos])));
   
   struct SeqTrack *seqtrack = SEQTRACK_create();
     
@@ -467,7 +468,7 @@ void SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblo
 }
 
 void SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime){
-  struct SeqBlock *seqblock = get_seqblock(block);
+  struct SeqBlock *seqblock = SEQBLOCK_create(block);
   SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime);
 }
 
@@ -598,7 +599,7 @@ void SONG_init(void){
   
   VECTOR_ensure_space_for_one_more_element(&root->song->seqtracks);
   
-  struct SeqBlock *seqblock = get_seqblock(root->song->blocks);
+  struct SeqBlock *seqblock = SEQBLOCK_create(root->song->blocks);
   
   PLAYER_lock();{
     

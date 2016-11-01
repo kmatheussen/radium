@@ -846,7 +846,7 @@ public slots:
         PC_Pause();{
           ATOMIC_SET(pc->song_abstime, abstime);
           //ATOMIC_DOUBLE_SET(seqtrack->start_time_f, seqtime);
-          //printf("seqtime: %d\n",(int)seqtime);
+          printf("seqtime: %d\n",(int)seqtime);
           DO_GFX(SelectWBlock(window,wblock));
         }PC_StopPause_ForcePlayBlock(NULL);
 
