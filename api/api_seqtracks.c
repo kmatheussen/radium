@@ -20,6 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/seqtrack_proc.h"
 #include "../common/time_proc.h"
 #include "../common/undo_sequencer_proc.h"
+#include "../common/visual_proc.h"
+#include "../common/OS_Bs_edit_proc.h"
+
 #include "../audio/Mixer_proc.h"
 
 #include "api_common_proc.h"
@@ -124,12 +127,44 @@ float getSeqnavRightSizeHandleY2(void){
   return getSeqnavY2();
 }
 
+void appendSeqtrack(void){
+  SEQUENCER_append_seqtrack(NULL);
+}
 
-// seqtracks
+void insertSeqtrack(int pos){
+  if (pos < 0 || pos > root->song->seqtracks.num_elements){
+    GFX_Message(NULL, "Position #%d not legal", pos);
+    return;
+  }
+
+  SEQUENCER_insert_seqtrack(NULL, pos);
+}
+
+void deleteSeqtrack(int seqtracknum){
+  if (seqtracknum < 0 || seqtracknum > root->song->seqtracks.num_elements){
+    GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
+    return;
+  }
+    
+  SEQUENCER_delete_seqtrack(seqtracknum);
+}
+
+void selectSeqtrack(int seqtracknum){
+  if (seqtracknum < 0 || seqtracknum > root->song->seqtracks.num_elements){
+    GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
+    return;
+  }
+
+  root->song->curr_seqtracknum = seqtracknum;
+  BS_UpdatePlayList();
+}
 
 int getNumSeqtracks(void){
   return root->song->seqtracks.num_elements;
 }
+
+
+// seqtracks
 
 float getSeqtrackX1(int seqtracknum){
   return SEQTRACK_get_x1(seqtracknum);

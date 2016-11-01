@@ -77,12 +77,14 @@ extern LANGSPEC void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block)
 extern LANGSPEC hash_t *SEQUENCER_get_state(void);
 extern LANGSPEC void SEQUENCER_create_from_state(hash_t *state);
 extern LANGSPEC void SEQUENCER_update_all_seqblock_start_and_end_times(void);
+extern LANGSPEC void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos);
+extern LANGSPEC void SEQUENCER_append_seqtrack(struct SeqTrack *new_seqtrack);
+extern LANGSPEC void SEQUENCER_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos);
+extern LANGSPEC void SEQUENCER_delete_seqtrack(int pos);
 
 // song
 extern LANGSPEC double SONG_get_length(void);
 extern LANGSPEC double SONG_get_gfx_length(void);
-extern LANGSPEC void SONG_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos);
-extern LANGSPEC void SONG_delete_seqtrack(int pos);
 extern LANGSPEC void SONG_init(void);
 
 #endif

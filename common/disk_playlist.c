@@ -78,9 +78,9 @@ void DLoadPlayList(struct Root *newroot,struct Song *song){
         struct SeqTrack *new_seqtrack = SEQTRACK_create_from_playlist(to_paste, num_playlists);
 
         while(root->song->seqtracks.num_elements > 1)
-          SONG_delete_seqtrack(0);
+          SEQUENCER_delete_seqtrack(0);
 
-        SONG_replace_seqtrack(new_seqtrack, 0);
+        SEQUENCER_replace_seqtrack(new_seqtrack, 0);
 
         //BL_paste2(song, to_paste);
         

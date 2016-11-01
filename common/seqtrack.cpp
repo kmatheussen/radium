@@ -518,7 +518,10 @@ void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block){
   RT_SEQUENCER_update_sequencer_and_playlist();
 }
 
-void SONG_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos){
+void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos){
+
+  if (new_seqtrack==NULL)
+    new_seqtrack = SEQTRACK_create();
   
   VECTOR_ensure_space_for_one_more_element(&root->song->seqtracks);
 
@@ -532,7 +535,11 @@ void SONG_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos){
   RT_SEQUENCER_update_sequencer_and_playlist();
 }
 
-void SONG_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos){
+void SEQUENCER_append_seqtrack(struct SeqTrack *new_seqtrack){
+  SEQUENCER_insert_seqtrack(new_seqtrack, root->song->seqtracks.num_elements);
+}
+  
+void SEQUENCER_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos){
   {
     radium::PlayerPause pause;
     radium::PlayerLock lock;
@@ -544,7 +551,7 @@ void SONG_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos){
   
 }
 
-void SONG_delete_seqtrack(int pos){
+void SEQUENCER_delete_seqtrack(int pos){
   R_ASSERT_RETURN_IF_FALSE(pos >= 0);
   R_ASSERT_RETURN_IF_FALSE(root->song->seqtracks.num_elements > 1); // There must always be a seqtrack
   R_ASSERT_RETURN_IF_FALSE(pos < root->song->seqtracks.num_elements);

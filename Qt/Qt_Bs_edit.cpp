@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
 #include "../common/visual_proc.h"
-#include "../common/OS_Bs_edit_proc.h"
 #include "../api/api_common_proc.h"
 #include "../common/player_proc.h"
 #include "../common/player_pause_proc.h"
@@ -35,6 +34,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_colors_proc.h"
 
 #include "Qt_MyQButton.h"
+
+#include "../common/OS_Bs_edit_proc.h"
+
+
 
 #include <qpushbutton.h>
 #include <qsplitter.h>
@@ -843,7 +846,7 @@ public slots:
         PC_Pause();{
           ATOMIC_SET(pc->song_abstime, abstime);
           //ATOMIC_DOUBLE_SET(seqtrack->start_time_f, seqtime);
-          printf("seqtime: %d\n",(int)seqtime);
+          //printf("seqtime: %d\n",(int)seqtime);
           DO_GFX(SelectWBlock(window,wblock));
         }PC_StopPause_ForcePlayBlock(NULL);
 

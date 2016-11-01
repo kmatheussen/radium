@@ -2811,6 +2811,7 @@
   (and (inside-box (<ra> :get-box sequencer) X Y)
        (begin
          (define seqtracknum (get-seqtracknum X Y))
+         (c-display "seqtracknum:" seqtracknum X Y (inside-box (ra:get-box2 seqtrack 1) X Y))
          (and seqtracknum
               (get-seqblock seqtracknum X Y)))))
 
@@ -3132,5 +3133,15 @@
 (load "/home/kjetil/radium3.0/bin/scheme/mouse/bug.scm")
 
 (<ra> :move-mouse-pointer 50 50)
+
+(<ra> :append-seqtrack)
+(<ra> :select-seqtrack 0)
+(<ra> :select-seqtrack 1)
+(<ra> :select-seqtrack 2)
+
+(box-to-string (ra:get-box2 seqtrack 0))
+(box-to-string (ra:get-box2 seqtrack 1))
+
+
 ||#
 

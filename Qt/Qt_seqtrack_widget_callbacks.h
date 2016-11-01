@@ -591,8 +591,10 @@ public:
     if (seqtracknum >= _seqtrack_widgets.size())
       update_seqtracks();
   
-    R_ASSERT_RETURN_IF_FALSE2(seqtracknum < _seqtrack_widgets.size(), NULL);
+    R_ASSERT_RETURN_IF_FALSE2(seqtracknum<_seqtrack_widgets.size(), NULL);
 
+    //printf("%d: y: %d\n",seqtracknum,_seqtrack_widgets.at(seqtracknum)->pos().y());
+    
     return _seqtrack_widgets.at(seqtracknum);
   }
 
@@ -1112,7 +1114,7 @@ float SEQTRACK_get_x1(int seqtracknum){
   if (w==NULL)
     return 0.0;
     
-  return mapToEditorX(w, w->x());
+  return mapToEditorX(w, 0);
 }
 
 float SEQTRACK_get_x2(int seqtracknum){
@@ -1120,15 +1122,15 @@ float SEQTRACK_get_x2(int seqtracknum){
   if (w==NULL)
     return 0.0;
     
-  return mapToEditorX(w, w->x()+w->width());
+  return mapToEditorX(w, w->width());
 }
 
 float SEQTRACK_get_y1(int seqtracknum){
-  auto *w = g_sequencer_widget->get_seqtrack_widget(seqtracknum);
+  Seqtrack_widget *w = g_sequencer_widget->get_seqtrack_widget(seqtracknum);
   if (w==NULL)
     return 0.0;
     
-  return mapToEditorY(w, w->y());
+  return mapToEditorY(w, 0);
 }
 
 float SEQTRACK_get_y2(int seqtracknum){
@@ -1136,7 +1138,7 @@ float SEQTRACK_get_y2(int seqtracknum){
   if (w==NULL)
     return 0.0;
     
-  return mapToEditorY(w, w->y()+w->height());
+  return mapToEditorY(w, w->height());
 }
 
 void SEQTRACK_update(struct SeqTrack *seqtrack){

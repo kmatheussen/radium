@@ -126,11 +126,21 @@ void PlayerTask(STime reltime){
           
 
             if (player_state != PLAYER_STATE_STOPPED){
-              
+
               if (curr_seqblock != NULL) {
-                ATOMIC_DOUBLE_SET(block->player_time, seqtrack->start_time - curr_seqblock->time);
+                
+                bool set_player_time = false;
+
+                if (pc->playtype==PLAYBLOCK && seqtrack==&root->song->block_seqtrack)
+                  set_player_time = true;
+
+                else if (pc->playtype==PLAYSONG && seqtrack==root->song->seqtracks.elements[root->song->curr_seqtracknum])
+                  set_player_time = true;
+                  
+                if (set_player_time)
+                  ATOMIC_DOUBLE_SET(block->player_time, seqtrack->start_time - curr_seqblock->time);
+                //else ATOMIC_DOUBLE_SET(block->player_time, -100); // Not necessary (-100 is set in scheduler_seqtrack.c when switching block), and we also need to check if we are playing block, etc.
               }
-              //else ATOMIC_DOUBLE_SET(block->player_time, -100); // Not necessary (-100 is set in scheduler_seqtrack.c when switching block), and we also need to check if we are playing block, etc.
               
             }
           
