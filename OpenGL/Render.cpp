@@ -1309,6 +1309,16 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
 
 }
 
+static float next_line_y1(const struct Tracker_Windows *window, float y){
+  float y1 = ceil(y / window->fontheight);
+  float ret = y1*window->fontheight;
+  
+  if (fabsf(ret - y) < 0.001)
+    return ret+window->fontheight;
+  else
+    return ret;
+}
+
 static void create_pitches(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
 
   const struct NodeLine *nodelines = GetPitchNodeLines(window,
@@ -1335,7 +1345,7 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
         float y2 = nodeline->y2;
 
         if (vertical_line)
-          y1 += window->fontheight;
+          y1 = next_line_y1(window, y1);
 
         line_color = line_color!=NULL ? GE_y(line_color, y1) : GE_color_alpha(PITCH_LINE_COLOR_NUM, 0.5, y1);  
 
