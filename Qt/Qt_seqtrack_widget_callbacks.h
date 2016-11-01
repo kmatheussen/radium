@@ -296,12 +296,14 @@ public:
       float n_y = scale(note->note+0.5, 127, 0, y1, y2);
 
       {
-        QLineF line(n_x1,n_y,n_x1+bar_header_length,n_y);
+        float x2 = R_MIN(n_x2, n_x1+bar_header_length);
+        
+        QLineF line(n_x1,n_y,x2,n_y);
         p.setPen(pen2);
         p.drawLine(line);
 
-        if (n_x2 > n_x1+bar_header_length){
-          QLineF line(n_x1+2,n_y,n_x2,n_y);
+        if (n_x2 > x2){
+          QLineF line(x2,n_y,n_x2,n_y);
           p.setPen(pen1);
           p.drawLine(line);
         }
