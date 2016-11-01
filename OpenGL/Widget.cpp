@@ -799,7 +799,9 @@ private:
       playing_blocknum = block->l.num;
         
       blocktime = ATOMIC_DOUBLE_GET(block->player_time);
-
+      //if (blocktime < -50)
+      //  printf("blocktime: %f\n",blocktime);
+      
 #if !defined(RELEASE)
       if (blocktime==-100 || blocktime>=0.0){
       }else{

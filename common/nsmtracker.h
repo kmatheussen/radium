@@ -1786,12 +1786,14 @@ struct SeqTrack{
   vector_t seqblocks;
 
   struct SeqBlock *curr_seqblock; // curr_seqblock->block and curr_seqblock->time contains the same values as pc->block and pc->seqtime did before introducing seqtrack/seqblock.
+  
+  double start_time; // Can only be accessed from the player thread
+  double end_time;   // Same here.
 
-  double addreltime;
-  volatile double start_time; // During current call to peq->treatMe
-  volatile double end_time;   // During current call to peq->treatMe  
-  DEFINE_ATOMIC(double, start_time_f);       // double version of start_time.
-  double end_time_f;         // double version of end_time.
+  // These two variables are here only for convenience so that we don't have to do atomic operations on start_time and end_time in the player thread.
+  // They contain the same values as 'start_time" and 'end_time' above.
+  DEFINE_ATOMIC(double, start_time_nonrealtime);
+  DEFINE_ATOMIC(double, end_time_nonrealtime);
 
   //Place p; // Used by the scheduler when starting to play in the middle of a block
 

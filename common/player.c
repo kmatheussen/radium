@@ -43,11 +43,21 @@ static bool g_time_was_stopped = true;
 
 
 void PlayerTask(STime reltime){
+
+  
         if (ATOMIC_GET(is_starting_up))
           return;
 
+
+        
+        pc->reltime     = reltime;
+
+
+        
         Player_State player_state = ATOMIC_GET(pc->player_state);
 
+
+        
         if (player_state==PLAYER_STATE_PROGRAM_NOT_READY){
           //printf("player: program not ready\n");
           return;
@@ -76,111 +86,75 @@ void PlayerTask(STime reltime){
         }
 
         
+        
         R_ASSERT(player_state==PLAYER_STATE_STARTING_TO_PLAY || player_state==PLAYER_STATE_PLAYING || player_state==PLAYER_STATE_STOPPED);
+
         
+        if (player_state != PLAYER_STATE_STOPPED)
+          if(g_time_was_stopped){
+            OS_InitMidiTiming();
+            OS_InitAudioTiming();
+            g_time_was_stopped = false;
+          }
+
+
+
+        bool is_finished = true;
         
-        pc->reltime     = reltime;
-                   
-        double reltempo = 1.0;
 
-        struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
-          
-        struct SeqBlock *curr_seqblock = seqtrack==NULL ? NULL : seqtrack->curr_seqblock;
-        struct Blocks *block = curr_seqblock==NULL ? root->song->blocks : curr_seqblock->block;
         
-        if(block!=NULL)
-          reltempo = safe_volatile_float_read(&block->reltempo);
+        ALL_SEQTRACKS_FOR_EACH(){
 
-	seqtrack->addreltime+=reltime;
+            double reltempo = 1.0;
 
-        double tempoadjusted_reltime_f  = seqtrack->addreltime * reltempo;
-        double tempoadjusted_reltime    = tempoadjusted_reltime_f;
-        
-        if(tempoadjusted_reltime<1) {
-          double old_start_time_f = ATOMIC_DOUBLE_GET(seqtrack->start_time_f);          //
-          double new_start_time_f = old_start_time_f + (double)reltime * reltempo;  // <- Don't need atomic increment operation here since we only write to seqtrack->start_time_f in this thread.
-          ATOMIC_DOUBLE_SET(seqtrack->start_time_f, new_start_time_f);                 //
-        } else
-          seqtrack->addreltime=0;
+            struct SeqBlock *curr_seqblock = seqtrack->curr_seqblock;
+            struct Blocks *block = curr_seqblock==NULL ? root->song->blocks : curr_seqblock->block;
+            
+            if(block!=NULL)
+              reltempo = safe_volatile_float_read(&block->reltempo);
+            
+            double seqreltime  = (double)reltime * reltempo;
 
-        if (player_state==PLAYER_STATE_STOPPED){
-          pc->is_treating_editor_events = true; {
-            SCHEDULER_called_per_block(tempoadjusted_reltime);
-          } pc->is_treating_editor_events = false;
-          return;
-        }
-        
-        if(g_time_was_stopped){
-          ATOMIC_SET(pc->abstime_since_starting_to_play, reltime);
-          OS_InitMidiTiming();
-          OS_InitAudioTiming();
-          g_time_was_stopped = false;
-        }else{
-          ATOMIC_ADD(pc->abstime_since_starting_to_play, reltime);
-          if(pc->playtype==PLAYSONG)
-            ATOMIC_ADD(pc->song_abstime, reltime);
-        }
+            SCHEDULER_set_seqtrack_timing(seqtrack, seqtrack->end_time, seqtrack->end_time + seqreltime);
 
-#if 0
-        // This debug print is helpful to understand the timing.
-        printf("pc->realtime_to_add: %d (%f), now: %d (%f). Actual time: %f\n",
-               (int)pc->reltime_to_add,pc->reltime_to_add/(double)pc->pfreq,
-               reltime_to_add_now,reltime_to_add_now/(double)pc->pfreq,
-               (seqtrack->end_time+tempoadjusted_reltime+pc->reltime_to_add)/(double)pc->pfreq
-               );
-        fflush(stdout);
-#endif
-
-        seqtrack->start_time  = seqtrack->end_time;
-        seqtrack->end_time   += tempoadjusted_reltime;
-
-        //printf("Setting new starttime to %f (%d)\n",seqtrack->end_time_f,(int)seqtrack->end_time);
-        ATOMIC_DOUBLE_SET(seqtrack->start_time_f, seqtrack->end_time_f);
-
-        if (curr_seqblock != NULL)
-          ATOMIC_DOUBLE_SET(block->player_time, seqtrack->end_time - curr_seqblock->time); // curr_seqblock is set in RT_schedule_new_seqblock
-        else
-          ATOMIC_DOUBLE_SET(block->player_time, -100);
-        
-        seqtrack->end_time_f  += tempoadjusted_reltime_f;
-        
-#ifdef WITH_PD
-        RT_PD_set_absolute_time(seqtrack->start_time);
-#endif
-        
-        //printf("time: %d. time of next event: %d\n",(int)time,(int)pc->peq->l.time);
-        //fflush(stdout);
-
-        bool is_finished;
-          
-        pc->is_treating_editor_events = true; {
-
-#if 0
-          struct PEventQueue *peq = pc->peq;
-          
-          while(
-                peq!=NULL
-                && peq->l.time < seqtrack->end_time
-                )
-            {
+            pc->is_treating_editor_events = true; {
               
-              //printf("time: %d, peq->l.time: %d\n",(int)time,(int)peq->l.time);
-              //fflush(stdout);
-              PC_RemoveFirst();
-              (*peq->TreatMe)(peq,1);
-              pc->pausetime=peq->l.time;
-              peq=pc->peq;
-            }
-#endif
+              if (SCHEDULER_called_per_block(seqtrack, seqreltime) > 0)
+                is_finished = false;
+              
+            } pc->is_treating_editor_events = false;
           
-          is_finished = SCHEDULER_called_per_block(tempoadjusted_reltime);
 
-        } pc->is_treating_editor_events = false;
+            if (player_state != PLAYER_STATE_STOPPED){
+              
+              if (curr_seqblock != NULL) {
+                ATOMIC_DOUBLE_SET(block->player_time, seqtrack->start_time - curr_seqblock->time);
+              }
+              //else ATOMIC_DOUBLE_SET(block->player_time, -100); // Not necessary (-100 is set in scheduler_seqtrack.c when switching block), and we also need to check if we are playing block, etc.
+              
+            }
+          
+        }END_ALL_SEQTRACKS_FOR_EACH;
+
+        
+        
+        if (player_state==PLAYER_STATE_STOPPED)
+          return;        
 
 
+        
+        if(pc->playtype==PLAYSONG)
+          ATOMIC_ADD(pc->song_abstime, reltime);
+
+#ifdef WITH_PD
+        RT_PD_set_absolute_time(ATOMIC_DOUBLE_GET(pc->song_abstime));
+#endif
+
+        
         if (player_state == PLAYER_STATE_STARTING_TO_PLAY)
           ATOMIC_SET(pc->player_state, PLAYER_STATE_PLAYING);
 
+        
         //printf("num_scheduled: %d. state: %d\n",num_scheduled_events,player_state);
         if(player_state == PLAYER_STATE_PLAYING && is_finished)
           ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);

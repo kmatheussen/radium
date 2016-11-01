@@ -204,13 +204,9 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
       seqtrack->curr_seqblock = NULL;
 
       int64_t seq_start_time = seq_start_times[iterator666];
-      
-      seqtrack->start_time = seq_start_time;
-      ATOMIC_DOUBLE_SET(seqtrack->start_time_f, seq_start_time);
-      
-      seqtrack->end_time = seq_start_time; // Must set end_time too, since this is the value used for setting next seqtrack->start_time in the player.
-      seqtrack->end_time_f = seq_start_time;
-      
+
+      SCHEDULER_set_seqtrack_timing(seqtrack, seq_start_time, seq_start_time);
+                  
       // Schedule the first seqblock in each seqtrack.
       VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
         
@@ -261,12 +257,8 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place){
 
     struct SeqTrack *seqtrack = &root->song->block_seqtrack;
 
-    seqtrack->start_time = seq_start_time;
-    ATOMIC_DOUBLE_SET(seqtrack->start_time_f, seq_start_time);
+    SCHEDULER_set_seqtrack_timing(seqtrack, seq_start_time, seq_start_time);
     
-    seqtrack->end_time   = seq_start_time; // Must set end_time too, since this is the value used for setting next seqtrack->start_time in the player.
-    seqtrack->end_time_f = seq_start_time;
-
 #if DO_DEBUG
     printf("  Scheduling start-playing event at 0. Seqtrack: %p\n", RT_get_curr_seqtrack());
 #endif

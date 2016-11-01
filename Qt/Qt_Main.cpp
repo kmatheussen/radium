@@ -2552,6 +2552,11 @@ int main(int argc, char **argv){
 #if defined(FOR_LINUX) && defined(RELEASE) && QT_VERSION==0x050700
   kill(getpid(), SIGKILL);
 #endif
+
+  // Linux/debug usually hangs when exiting.
+#if defined(FOR_LINUX) && !defined(RELEASE)
+  kill(getpid(), SIGKILL);
+#endif
   
   //RError("hepp");
   return 0;

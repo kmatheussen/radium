@@ -113,7 +113,6 @@ typedef struct{
         int pfreq; // player frequency. i.e. sample rate. TODO: Get rid of this one. Use MIXER_getsamplerate instead.
 
         DEFINE_ATOMIC(STime, song_abstime); // Used by the cursor position in the sequencer. Absolute time, i.e. not seqtime.
-	DEFINE_ATOMIC(STime, abstime_since_starting_to_play);	// Absolute time, i.e. not seqtime.
 
         STime reltime; // The argument for PlayerTask. Will usually contain the audio blocksize. Necessary for calculating delta time. (I'm 99% this value is always equal to RADIUM_BLOCKSIZE, i.e. 64)
 

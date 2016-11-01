@@ -232,7 +232,7 @@ static int get_priority(event_t *event){
 
 struct SeqTrack *g_RT_curr_scheduling_seqtrack;
 
-static int called_per_block(struct SeqTrack *seqtrack, double reltime){
+int SCHEDULER_called_per_block(struct SeqTrack *seqtrack, double reltime){
   g_RT_curr_scheduling_seqtrack = seqtrack;
   
   scheduler_t *scheduler = seqtrack->scheduler;
@@ -290,6 +290,7 @@ static int called_per_block(struct SeqTrack *seqtrack, double reltime){
 
 // Calls SCHEDULER_called_per_block for all seqtracks.
 //
+/*
 bool SCHEDULER_called_per_block(double reltime){
   bool is_finished = true;
 
@@ -300,6 +301,7 @@ bool SCHEDULER_called_per_block(double reltime){
     
   return is_finished;
 }
+*/
 
 // * Must be called when deleting a patch or track. (why?)
 // * Can't there be hanging notes, or other undefined behaviors, when the event callback is not called?
@@ -347,12 +349,16 @@ bool SCHEDULER_all_is_clear(void){
   return true;
 }
 
-void reset_timing(struct SeqTrack *seqtrack){
-  seqtrack->reltime = 0;
-  seqtrack->end_time=0;
-  seqtrack->end_time_f=0;
-  seqtrack->start_time=0;
-  ATOMIC_DOUBLE_SET(seqtrack->start_time_f, 0);
+void SCHEDULER_set_seqtrack_timing(struct SeqTrack *seqtrack, double start_time, double end_time){
+  seqtrack->start_time = start_time;
+  seqtrack->end_time = end_time;
+  
+  ATOMIC_DOUBLE_SET(seqtrack->start_time_nonrealtime, start_time);
+  ATOMIC_DOUBLE_SET(seqtrack->end_time_nonrealtime, end_time);
+}
+
+static void reset_timing(struct SeqTrack *seqtrack){
+  SCHEDULER_set_seqtrack_timing(seqtrack, 0, 0);
 }
 
 void SCHEDULER_reset_all_timing(void){
