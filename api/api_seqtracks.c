@@ -141,7 +141,7 @@ void insertSeqtrack(int pos){
 }
 
 void deleteSeqtrack(int seqtracknum){
-  if (seqtracknum < 0 || seqtracknum > root->song->seqtracks.num_elements){
+  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
     GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
     return;
   }
@@ -150,7 +150,7 @@ void deleteSeqtrack(int seqtracknum){
 }
 
 void selectSeqtrack(int seqtracknum){
-  if (seqtracknum < 0 || seqtracknum > root->song->seqtracks.num_elements){
+  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
     GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
     return;
   }
@@ -167,18 +167,34 @@ int getNumSeqtracks(void){
 // seqtracks
 
 float getSeqtrackX1(int seqtracknum){
+  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
+    GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
+    return 0;
+  }
   return SEQTRACK_get_x1(seqtracknum);
 }
 
 float getSeqtrackX2(int seqtracknum){
+  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
+    GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
+    return 0;
+  }
   return SEQTRACK_get_x2(seqtracknum);
 }
 
 float getSeqtrackY1(int seqtracknum){
+  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
+    GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
+    return 0;
+  }
   return SEQTRACK_get_y1(seqtracknum);
 }
 
 float getSeqtrackY2(int seqtracknum){
+  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
+    GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
+    return 0;
+  }
   return SEQTRACK_get_y2(seqtracknum);
 }
 
@@ -240,18 +256,30 @@ int64_t getSeqblockEndTime(int seqblocknum, int seqtracknum){
 }
 
 float getSeqblockX1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
   return SEQBLOCK_get_x1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockX2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
   return SEQBLOCK_get_x2(seqblocknum, seqtracknum);
 }
 
 float getSeqblockY1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
   return SEQBLOCK_get_y1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockY2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
   return SEQBLOCK_get_y2(seqblocknum, seqtracknum);
 }
 

@@ -176,7 +176,15 @@ static void start_player(int playtype, int64_t abstime, Place *place, struct Blo
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
 
   g_player_was_stopped_manually = false;
-    
+
+  {
+    struct Blocks *block = root->song->blocks;
+    while(block!=NULL){
+      ATOMIC_DOUBLE_SET(block->player_time, -100.0);
+      block = NextBlock(block);
+    }
+  }
+  
   // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
   //while(GC_is_disabled()==false){
   //printf("Calling gc_disable: %d\n",GC_dont_gc);

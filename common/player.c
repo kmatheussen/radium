@@ -115,8 +115,9 @@ void PlayerTask(STime reltime){
             
             double seqreltime  = (double)reltime * reltempo;
 
-            SCHEDULER_set_seqtrack_timing(seqtrack, seqtrack->end_time, seqtrack->end_time + seqreltime);
-
+            //if(reltempo!=1.0)
+            //  printf("Curr_seqblock: %p. seqrelteim: %f\n", curr_seqblock,seqreltime);
+                   
             pc->is_treating_editor_events = true; {
               
               if (SCHEDULER_called_per_block(seqtrack, seqreltime) > 0)

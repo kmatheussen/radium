@@ -13,6 +13,12 @@
 
 static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t time, union SuperType *args);
 
+static int64_t RT_scheduled_end_of_seqblock(struct SeqTrack *seqtrack, int64_t seqtime, union SuperType *args){
+  seqtrack->curr_seqblock = NULL;
+
+  return DONT_RESCHEDULE;
+}
+
 static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
                                      struct SeqBlock *seqblock,
                                      int64_t seqtime,
@@ -87,7 +93,15 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
     // notes
     RT_schedule_notes_newblock(seqtrack, seqblock, seqtime, place);
   }
-  
+
+  // Schedule end block
+  {
+    union SuperType args[1];
+    int64_t endblock_time = seqblock->time + getBlockSTimeLength(block);
+    SCHEDULER_add_event(seqtrack, endblock_time, RT_scheduled_end_of_seqblock, &args[0], 0, SCHEDULER_ENDBLOCK_PRIORITY);
+  }
+    
+
   // Schedule next block, and set various data
   {
     int64_t seqblock_duration = getBlockSTimeLength(block);
@@ -226,7 +240,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
           printf("  Song: Scheduling RT_scheduled_seqblock at %d. seqtrack->start_time: %d\n",(int)seq_start_time, (int)seqtrack->start_time);
 #endif
           
-          SCHEDULER_add_event(seqtrack, seq_start_time, RT_scheduled_seqblock, &args[0], G_NUM_ARGS, SCHEDULER_INIT_BLOCK_PRIORITY);
+          SCHEDULER_add_event(seqtrack, seqblock_start_time, RT_scheduled_seqblock, &args[0], G_NUM_ARGS, SCHEDULER_INIT_BLOCK_PRIORITY);
           
           break;
         }

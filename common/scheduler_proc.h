@@ -30,19 +30,22 @@ typedef int64_t (*SchedulerCallback)(struct SeqTrack *seqtrack, int64_t time, un
 
 enum SchedulerPriority{
   SCHEDULER_INIT_PRIORITY           = 0,
-  SCHEDULER_INIT_BLOCK_PRIORITY     = 0,
-  SCHEDULER_SIGNATURE_PRIORITY      = 0,
-  SCHEDULER_LPB_PRIORITY            = 0,
-  SCHEDULER_BEAT_PRIORITY           = 0,
-  SCHEDULER_LINE_PRIORITY           = 1,
-  SCHEDULER_FX_PRIORITY             = 2,
-  SCHEDULER_RAWMIDIMESSAGE_PRIORITY = 2,
-  SCHEDULER_NOTE_OFF_PRIORITY       = 3,
-  SCHEDULER_NOTE_ON_PRIORITY        = 4,
-  SCHEDULER_VELOCITY_PRIORITY       = 5, // Note that the end velocity is never sent out at note_end time. If it had, those velocities must have been scheduled with priorith 0.
-  SCHEDULER_PITCH_PRIORITY          = 5, // Same here, I think.
+  
+  SCHEDULER_ENDBLOCK_PRIORITY       = 0,
+  SCHEDULER_INIT_BLOCK_PRIORITY     = 1,
+  
+  SCHEDULER_SIGNATURE_PRIORITY      = 1,
+  SCHEDULER_LPB_PRIORITY            = 1,
+  SCHEDULER_BEAT_PRIORITY           = 1,
+  SCHEDULER_LINE_PRIORITY           = 2,
+  SCHEDULER_FX_PRIORITY             = 3,
+  SCHEDULER_RAWMIDIMESSAGE_PRIORITY = 3,
+  SCHEDULER_NOTE_OFF_PRIORITY       = 4,
+  SCHEDULER_NOTE_ON_PRIORITY        = 5,
+  SCHEDULER_VELOCITY_PRIORITY       = 6, // Note that the end velocity is never sent out at note_end time. If it had, those velocities must have been scheduled with priorith 0.
+  SCHEDULER_PITCH_PRIORITY          = 6, // Same here, I think.
 
-  SCHEDULER_LOWEST_NOTE_PRIORITY    = 6 // Used when note off starts at the same time as note on. Must be higher than pitch and velocity priority.
+  SCHEDULER_LOWEST_NOTE_PRIORITY    = 7, // Used when note off starts at the same time as note on. Must be higher than pitch and velocity priority.
 
   // priority 7 is free (set SCHEDULER_NUM_PRIORITY_BITS to 4, to get 8 new priorities)
   
