@@ -10,6 +10,7 @@
 #include <QApplication>
 #include <QScrollArea>
 #include <QVBoxLayout>
+#include <QGuiApplication>
 
 #include "../OpenGL/Widget_proc.h"
 #include "../common/keyboard_focus_proc.h"

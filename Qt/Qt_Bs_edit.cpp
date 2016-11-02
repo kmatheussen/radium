@@ -788,7 +788,7 @@ public slots:
   */
   
   void playlist_itemPressed(QListWidgetItem *){
-    printf("pressed 2: %d\n",(int)QApplication::mouseButtons());
+    //printf("pressed 2: %d\n",(int)QApplication::mouseButtons());
     
     if(num_visitors>0) // event created internally
       return;
