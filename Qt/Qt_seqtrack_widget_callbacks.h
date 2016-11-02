@@ -772,8 +772,8 @@ public:
       for(Seqtrack_widget *seqtrack_widget : _seqtracks_widget._seqtrack_widgets) {
         struct SeqTrack *seqtrack = seqtrack_widget->_seqtrack;
         
-        float y1 = scale(seqtracknum, 0, num_seqtracks, 5, height()-10);
-        float y2 = y1 + (float)(height()-10) / (float)num_seqtracks;
+        float y1 = scale(seqtracknum,   0, num_seqtracks, 3, height()-3);
+        float y2 = scale(seqtracknum+1, 0, num_seqtracks, 3, height()-3);
         
         SEQTRACK_update_all_seqblock_gfx_start_and_end_times(seqtrack);
         //double start_time = _start_time / MIXER_get_sample_rate();
@@ -788,9 +788,11 @@ public:
           
           QRectF rect(x1,y1+1,x2-x1,y2-y1-2);
           p.fillRect(rect, block_color);
-          
-          p.setPen(text_color);
-          p.drawText(rect.adjusted(2,1,-1,-1), QString::number(seqblock->block->l.num) + ": " + seqblock->block->name, QTextOption(Qt::AlignLeft | Qt::AlignTop));
+
+          if(rect.height() > root->song->tracker_windows->fontheight){
+            p.setPen(text_color);
+            p.drawText(rect.adjusted(2,1,-1,-1), QString::number(seqblock->block->l.num) + ": " + seqblock->block->name, QTextOption(Qt::AlignLeft | Qt::AlignTop));
+          }
           
           p.setPen(border_color);
           p.drawRect(rect);
@@ -808,9 +810,9 @@ public:
       float x1 = get_x1(total);
       float x2 = get_x2(total);
 
-      QRectF rectA(0, 1, x1, height()-2);
+      QRectF rectA(0,  1, x1,         height()-2);
       QRectF rectB(x2, 1, width()-x2, height()-2);      
-      QRectF rect2(x1,1,x2-x1,height()-2);
+      QRectF rect2(x1, 1, x2-x1,      height()-2);
 
       {
         QColor grayout_color = get_qcolor(SEQUENCER_NAVIGATOR_GRAYOUT_COLOR);
@@ -827,7 +829,7 @@ public:
       //p.drawLine(handle1_x, 0, handle1, height());
       //p.drawLine(handle2_x, 0, handle1, height());
       
-      QRectF handle1_rect(x1, 0, handle1_x-x1, height());
+      QRectF handle1_rect(x1,        0, handle1_x-x1, height());
       QRectF handle2_rect(handle2_x, 0, x2-handle2_x, height());
       
       p.setBrush(get_qcolor(SEQUENCER_NAVIGATOR_HANDLER_COLOR));
