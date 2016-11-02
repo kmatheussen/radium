@@ -2811,7 +2811,7 @@
   (and (inside-box (<ra> :get-box sequencer) X Y)
        (begin
          (define seqtracknum (get-seqtracknum X Y))
-         (c-display "seqtracknum:" seqtracknum X Y (inside-box (ra:get-box2 seqtrack 1) X Y))
+         ;;(c-display "seqtracknum:" seqtracknum X Y (inside-box (ra:get-box2 seqtrack 1) X Y))
          (and seqtracknum
               (get-seqblock seqtracknum X Y)))))
 
