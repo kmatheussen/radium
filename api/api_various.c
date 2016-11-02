@@ -1707,7 +1707,7 @@ void setPlaylistBlock(int pos, int blocknum){
 static double get_block_length(struct Blocks *block){
   double time = getBlockSTimeLength(block);
 
-  time /= (double)block->reltempo;
+  time /= ATOMIC_DOUBLE_GET(block->reltempo);
 
   return time / (double)MIXER_get_sample_rate();
 }

@@ -88,6 +88,7 @@ extern void DC_fgets(void);
 extern int DC_LoadI(void);
 extern int64_t DC_LoadL(void);
 extern float DC_LoadF(void);
+extern double DC_LoadD(void);
 extern uint_32 DC_LoadU32(void);
 extern NInt DC_LoadN(void);
 extern char *DC_LoadS(void);

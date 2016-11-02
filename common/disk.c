@@ -216,6 +216,11 @@ float DC_LoadF(void){
 	return OS_get_double_from_string(dc.ret);
 }
 
+double DC_LoadD(void){
+  DC_fgets();
+  return OS_get_double_from_string(dc.ret);
+}
+
 /************** OS depended function. ****************/
 uint_32 DC_LoadU32(void){
   return (uint_32)DC_LoadUL();

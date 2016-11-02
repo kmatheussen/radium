@@ -19,12 +19,13 @@ static int rnd(int max){
 static int64_t RT_scheduled_stop_note(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Tracks *track = args[0].pointer;
   struct Notes *note   = args[1].pointer;
+  const struct SeqBlock *seqblock   = args[2].const_pointer;
   
   struct Patch *patch = track->patch;
   
   if (patch != NULL){
 
-    note_t note2 = create_note_t3(seqtrack,
+    note_t note2 = create_note_t3(seqblock,
                                   note->id,
                                   note->note,
                                   ATOMIC_GET(track->midi_channel)
@@ -47,11 +48,12 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
   const struct Blocks *block = seqblock->block;
   NInt tracknum=track->l.num;
 
-  const int num_args = 2;
+  const int num_args = 3;
         
   union SuperType args[num_args];
   args[0].const_pointer = track;
   args[1].const_pointer = note;
+  args[2].const_pointer = seqblock;
 
   int priority = SCHEDULER_NOTE_OFF_PRIORITY;
 
@@ -154,7 +156,7 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
     
   if(doit && track->onoff==1 && patch!=NULL){
     
-    note_t note2 = create_note_t(seqtrack,
+    note_t note2 = create_note_t(seqblock,
                                  note->id,
                                  note->note,
                                  TRACK_get_velocity(track,note->velocity),

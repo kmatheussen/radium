@@ -77,7 +77,7 @@ static inline void put_note_into_args(union SuperType *args, const note_t note){
   args[2].float_num = note.velocity;
   args[3].float_num = note.pan;
   args[4].int_num = note.midi_channel;
-  args[5].float_num = note.block_reltempo;
+  args[5].const_pointer = note.seqblock;
 }
 
 static inline note_t create_note_from_args(const union SuperType *args){
@@ -86,9 +86,9 @@ static inline note_t create_note_from_args(const union SuperType *args){
   float   velocity     = args[2].float_num;
   float   pan          = args[3].float_num;
   int     midi_channel = (int)args[4].int_num;
-  float   block_reltempo = args[5].float_num;
+  const struct SeqBlock *seqblock = (struct SeqBlock*)args[5].const_pointer;
 
-  return create_note_t_plain(note_id, notenum, velocity, pan, midi_channel, block_reltempo);
+  return create_note_t_plain(seqblock, note_id, notenum, velocity, pan, midi_channel);
 }
 
 

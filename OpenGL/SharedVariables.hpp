@@ -16,7 +16,7 @@ struct SharedVariables{
   int curr_realline;
   int fontheight;
 
-  float reltempo;
+  double reltempo;
   STime block_duration;
 
   float scrollbar_height;
@@ -85,7 +85,7 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
   sv->curr_realline = wblock->curr_realline;
   sv->fontheight    = window->fontheight;
   
-  sv->reltempo       = block->reltempo;
+  sv->reltempo       = ATOMIC_DOUBLE_GET(block->reltempo);
   sv->block_duration = getBlockSTimeLength(block);
 
   sv->scrollbar_height          = get_scrollbar_y2(window,wblock) - get_scrollbar_y1(window,wblock);

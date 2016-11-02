@@ -46,7 +46,7 @@ static void RT_stop_note(struct SeqTrack *seqtrack, Beat_Iterator *iterator, int
   for (i=0 ; i<num_patches ; i++){
     RT_PATCH_stop_note(seqtrack,
                        patches[i],
-                       create_note_t2(seqtrack, -1, iterator->last_played_metronome_note_num),
+                       create_note_t2(NULL, -1, iterator->last_played_metronome_note_num),
                        time);
   }
 }
@@ -65,7 +65,7 @@ static void RT_play_note(struct SeqTrack *seqtrack, Beat_Iterator *iterator, int
   for (i=0 ; i<num_patches ; i++){
     RT_PATCH_play_note(seqtrack,
                        patches[i],
-                       create_note_t(seqtrack,
+                       create_note_t(NULL,
                                      -1,
                                      note_num,
                                      1.0,

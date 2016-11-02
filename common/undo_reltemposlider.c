@@ -26,7 +26,7 @@ void ADD_UNDO_FUNC(RelTempoSlider(
                    )
 {
 	struct Undo_RelTempoSlider *u_rts=talloc_atomic(sizeof(struct Undo_RelTempoSlider));
-	u_rts->reltempo=wblock->block->reltempo;
+	u_rts->reltempo=ATOMIC_DOUBLE_GET(wblock->block->reltempo);
 
         Undo_Add_dont_stop_playing(
                                    window->l.num,
@@ -48,9 +48,9 @@ static void *Undo_Do_RelTempoSlider(
 ){
 	struct Undo_RelTempoSlider *u_rts=(struct Undo_RelTempoSlider *)pointer;
 
-	float reltempo=wblock->block->reltempo;
+	float reltempo=ATOMIC_DOUBLE_GET(wblock->block->reltempo);
 
-	wblock->block->reltempo=u_rts->reltempo;
+	ATOMIC_DOUBLE_SET(wblock->block->reltempo, u_rts->reltempo);
 
 	u_rts->reltempo=reltempo;
 

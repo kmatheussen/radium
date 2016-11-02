@@ -728,16 +728,18 @@ typedef struct {
   float velocity;
   float pan;
   int midi_channel;
-  float block_reltempo;
+  const struct SeqBlock *seqblock;
 } note_t;
+
+static inline bool is_note(note_t note, int64_t id, const struct SeqBlock *seqblock){
+  return note.id==id && note.seqblock==seqblock;
+}
 
 #define NOTE_ID_RESOLUTION 256 // i.e. 256 id's per note.
 static inline int64_t NotenumId(float notenum){
   int64_t n = notenum*NOTE_ID_RESOLUTION;
   return n*NUM_PATCH_VOICES;
 }
-
-
 
 
 typedef struct _linked_note_t{
@@ -766,7 +768,7 @@ struct Patch{
   void (*playnote)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
   void (*changevelocity)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
   void (*changepitch)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
-  void (*sendrawmidimessage)(struct SeqTrack *seqtrack, struct Patch *patch,uint32_t msg,STime time,float block_reltempo); // note on, note off, and polyphonic aftertouch are/should not be sent using sendmidimessage. sysex is not supported either.
+  void (*sendrawmidimessage)(struct SeqTrack *seqtrack, struct Patch *patch,uint32_t msg,STime time,double block_reltempo); // note on, note off, and polyphonic aftertouch are/should not be sent using sendmidimessage. sysex is not supported either.
   void (*stopnote)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
   void (*closePatch)(struct Patch *patch);
   
@@ -843,7 +845,7 @@ struct FX{
         DEFINE_ATOMIC(float *, slider_automation_value); // Pointer to the float value showing automation in slider. Value is scaled between 0-1. May be NULL.
         DEFINE_ATOMIC(enum ColorNums   *, slider_automation_color); // Pointer to the integer holding color number for showing automation in slider. May be NULL.
 
-       void (*treatFX)(struct SeqTrack *seqtrack, struct FX *fx,int val,STime time,int skip, FX_when when, float block_reltempo);
+       void (*treatFX)(struct SeqTrack *seqtrack, struct FX *fx,int val,STime time,int skip, FX_when when, double block_reltempo);
 
 	void (*closeFX)(struct FX *fx,const struct Tracks *track);
 	void *fxdata;	//Free use for the instrument plug-in.
@@ -1395,7 +1397,7 @@ struct WTempos{
 
 struct TempoNodes{
 	struct ListHeader3 l;
-	float reltempo;
+	double reltempo;
 };
 #define NextTempoNode(a) ((struct TempoNodes *)((a)->l.next))
 
@@ -1409,9 +1411,9 @@ struct STimeChanges{
 	struct ListHeader3 l;
 	STime time;
 
-	float tempo1;			// tempo (tempo*lpb) at this->l.p
-	float rel;				// reltempo for this->l.p
-	float deltarel;		// rel+deltarel is reltempo for this->l.next->l.p
+	double tempo1;			// tempo (tempo*lpb) at this->l.p
+	double rel;				// reltempo for this->l.p
+	double deltarel;		// rel+deltarel is reltempo for this->l.next->l.p
 };
 #define NextSTimeChange(a) (struct STimeChanges *)((a)->l.next)
 
@@ -1447,7 +1449,7 @@ struct Blocks{
         int num_time_lines; // Contains number of lines in 'times' minus one (same as num_lines, normally). Only for validation.
         const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. */
 
-	volatile float reltempo;					/* factor that the tempo is multiplied with when playing this block. */
+        DEFINE_ATOMIC(double, reltempo);					/* factor that the tempo is multiplied with when playing this block. */
 
         DEFINE_ATOMIC(double, player_time);	/* = pc->end_time - RT_curr_seqblock()->time */
 
@@ -1556,7 +1558,7 @@ struct WBlocks{
 	int right_subtrack;
 
         //struct WTempos *wtempos;
-	float reltempomax;
+	double reltempomax;
 
 	bool isranged;
 	NInt rangex1;
@@ -1778,6 +1780,16 @@ struct SeqBlock{
   double end_time;
 };
 
+
+static inline double get_note_reltempo(note_t note){
+  if (note.seqblock==NULL)
+    return 1.0f;
+  else
+    return ATOMIC_DOUBLE_GET(note.seqblock->block->reltempo);
+}
+
+
+
 struct _scheduler_t;
 typedef struct _scheduler_t scheduler_t;
 
@@ -1804,6 +1816,18 @@ struct SeqTrack{
 
   scheduler_t *scheduler;
 };
+
+
+static inline double get_seqtrack_reltempo(struct SeqTrack *seqtrack){
+  if (seqtrack==NULL)
+    return 0.0;
+  
+  struct SeqBlock *seqblock = seqtrack->curr_seqblock;
+  if (seqblock==NULL)
+    return 0.0f;
+
+  return ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
+}
 
 
 #ifndef __cplusplus
@@ -1915,12 +1939,12 @@ static inline struct Blocks *RT_get_curr_visible_block(void){
     return root->song->blocks;
 }
 
-static inline note_t create_note_t_plain(int64_t note_id,
+static inline note_t create_note_t_plain(const struct SeqBlock *seqblock,
+                                         int64_t note_id,
                                          float pitch,
                                          float velocity,
                                          float pan,
-                                         int midi_channel,
-                                         float block_reltempo
+                                         int midi_channel                                         
                                          )
 {
 #if !defined(RELEASE)
@@ -1937,23 +1961,12 @@ static inline note_t create_note_t_plain(int64_t note_id,
   if(note_id==-1)
     note_id = NotenumId(pitch);
 
-  note_t note = {note_id, pitch, velocity, pan, midi_channel, block_reltempo};
+  note_t note = {note_id, pitch, velocity, pan, midi_channel, seqblock};
   
   return note;  
 }
 
-static inline float get_block_reltempo(struct SeqTrack *seqtrack){
-  if (seqtrack==NULL)
-    return 0.0f;
-  
-  struct SeqBlock *seqblock = seqtrack->curr_seqblock;
-  if (seqblock==NULL)
-    return 0.0f;
-
-  return seqblock->block->reltempo;
-}
-
-static inline note_t create_note_t(struct SeqTrack *seqtrack,
+static inline note_t create_note_t(const struct SeqBlock *seqblock,
                                    int64_t note_id,
                                    float pitch,
                                    float velocity,
@@ -1961,24 +1974,24 @@ static inline note_t create_note_t(struct SeqTrack *seqtrack,
                                    int midi_channel
                                    )
 {
-  return create_note_t_plain(note_id, pitch, velocity, pan, midi_channel, get_block_reltempo(seqtrack));
+  return create_note_t_plain(seqblock, note_id, pitch, velocity, pan, midi_channel);
 }
 
-static inline note_t create_note_t2(struct SeqTrack *seqtrack,
+static inline note_t create_note_t2(const struct SeqBlock *seqblock,
                                     int64_t note_id,
                                     float pitch
                                     )
 {
-  return create_note_t(seqtrack, note_id, pitch, 0, 0, 0);
+  return create_note_t(seqblock, note_id, pitch, 0, 0, 0);
 }
 
-static inline note_t create_note_t3(struct SeqTrack *seqtrack,
+static inline note_t create_note_t3(const struct SeqBlock *seqblock,
                                     int64_t note_id,
                                     float pitch,
                                     int midi_channel
                                     )
 {
-  return create_note_t(seqtrack, note_id, pitch, 0, 0, midi_channel);
+  return create_note_t(seqblock, note_id, pitch, 0, 0, midi_channel);
 }
 
 

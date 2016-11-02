@@ -72,7 +72,7 @@ static float mapToEditorY2(QWidget *widget){
 }
 
 static double getBlockAbsDuration(struct Blocks *block){
-  return getBlockSTimeLength(block) * block->reltempo;
+  return getBlockSTimeLength(block) * ATOMIC_DOUBLE_GET(block->reltempo);
 }
 
 

@@ -21,7 +21,7 @@ void DrawBlockRelTempo(
 	DrawSlider(
 		window,
 		&wblock->reltempo,
-		wblock->block->reltempo,
+		ATOMIC_DOUBLE_GET(wblock->block->reltempo),
 		MINBLOCKRELTIME,
 		MAXBLOCKRELTIME,
 		true,

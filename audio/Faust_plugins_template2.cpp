@@ -249,7 +249,8 @@ struct Voice{
   MyUI myUI;
   float note_num;
   int64_t note_id;
-
+  const struct SeqBlock *seqblock;
+  
   int frames_since_stop;
 
   int delta_pos_at_start; // Within the current block. Set when starting a note.
@@ -461,7 +462,8 @@ static void play_note2(Data *data, int time, note_t note){
 
   voice->note_num = note.pitch;
   voice->note_id = note.id;
-
+  voice->seqblock = note.seqblock;
+  
   voice->frames_since_stop = 0;
   voice->delta_pos_at_start = time;
   voice->delta_pos_at_end = -1;
@@ -476,7 +478,7 @@ static void set_note_volume2(Data *data, int time, note_t note){
   Voice *voice = data->voices_playing;
   //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
   while(voice!=NULL){
-    if(voice->note_id==note.id)
+    if(is_note(note, voice->note_id, voice->seqblock))
       *(voice->myUI._gain_control) = velocity2gain(note.velocity);
     voice=voice->next;
   }
@@ -491,7 +493,7 @@ static void set_note_pitch2(Data *data, int time, note_t note){
   Voice *voice = data->voices_playing;
   //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
   while(voice!=NULL){
-    if(voice->note_id==note.id)
+    if(is_note(note, voice->note_id, voice->seqblock))
       *(voice->myUI._freq_control) = midi_to_hz(note.pitch);
     voice=voice->next;
   }
@@ -504,7 +506,7 @@ static void set_note_pitch(struct SoundPlugin *plugin, int time, note_t note){
 static void stop_note2(Data *data, int time, note_t note){
   Voice *voice = data->voices_playing;
   while(voice!=NULL){
-    if(voice->note_id==note.id)
+    if(is_note(note, voice->note_id, voice->seqblock))
       voice->delta_pos_at_end = time;
     voice=voice->next;
   }

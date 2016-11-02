@@ -1706,6 +1706,8 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
   float track_volume =  wtrack->track->volumeonoff ? (float)wtrack->track->volume / MAXTRACKVOL : 1.0f;
   //float velocity = scale(n,0,num_peaks, velocity1->velocity, velocity2->velocity);
 
+  const double reltempo = ATOMIC_DOUBLE_GET(wblock->block->reltempo);
+    
   const int num_channels=PATCH_get_peaks(patch, 0,
                                          -1,
                                          wtrack->track,
@@ -1791,8 +1793,8 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
                         note->note,
                         ch,
                         wtrack->track,
-                        start_time / wblock->block->reltempo,
-                        end_time / wblock->block->reltempo,
+                        start_time / reltempo,
+                        end_time / reltempo,
                         &min,
                         &max);
 
@@ -1814,8 +1816,8 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
         printf("Adding %f,%f at %f. min/max: %f/%f. vel1/vel2: %f/%f. time1/time2: %f/%f\n",x1,x2,y,min,max,
                scale(n,0,num_peaks,velocity1->velocity, velocity2->velocity),
                scale(n+NUM_LINES_PER_PEAK,0,num_peaks,velocity1->velocity, velocity2->velocity),
-               scale(n,0,num_peaks,time1,time2) / wblock->block->reltempo,
-               scale(n+NUM_LINES_PER_PEAK,0,num_peaks,time1,time2) / wblock->block->reltempo);
+               scale(n,0,num_peaks,time1,time2) / reltempo,
+               scale(n+NUM_LINES_PER_PEAK,0,num_peaks,time1,time2) / reltempo);
 #endif
 
         if(fabsf(x1-x2) < 0.5) {

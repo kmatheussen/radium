@@ -18,10 +18,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_INCLUDE
 
 
-extern float RelTempo2RealRelTempo(float reltempo);
-extern float RealRelTempo2RelTempo(float realreltempo);
-extern float FindAverageRealRelTempo(float r1,float r2);
-extern float Gfx2RelTempo(struct WBlocks *wblock,int dx);
+extern double RelTempo2RealRelTempo(double reltempo);
+extern double RealRelTempo2RelTempo(double realreltempo);
+extern double FindAverageRealRelTempo(double r1,double r2);
+extern double Gfx2RelTempo(struct WBlocks *wblock,int dx);
 
 
 #endif

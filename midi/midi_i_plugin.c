@@ -300,7 +300,7 @@ static void MIDIchangevelocity(struct SeqTrack *seqtrack,struct Patch *patch,not
 static void MIDIchangepitch(struct SeqTrack *seqtrack,struct Patch *patch,note_t note,STime time){ // never called
 }
 
-static void MIDIsendrawmidimessage(struct SeqTrack *seqtrack,struct Patch *patch,uint32_t msg,STime time, float block_reltempo){ // never called
+static void MIDIsendrawmidimessage(struct SeqTrack *seqtrack,struct Patch *patch,uint32_t msg,STime time, double block_reltempo){ // never called
 }
 
 /******************** patch **************************/

@@ -48,7 +48,7 @@ DC_start("BLOCK");
 
 	DC_SSN("num_tracks",block->num_tracks);
 	DC_SSI("num_lines",block->num_lines);
-	DC_SSF("reltempo",block->reltempo);
+	DC_SSF("reltempo",ATOMIC_DOUBLE_GET(block->reltempo));
 
 	SaveTrack(block->tracks);
 	SaveSignatures(block->signatures);
@@ -78,7 +78,7 @@ struct Blocks *LoadBlock(void){
 		"reltempo"
 	};
 	struct Blocks *block=DC_alloc(sizeof(struct Blocks));
-	block->reltempo=1.0f;
+	ATOMIC_DOUBLE_SET(block->reltempo, 1.0);
 
 	block->l.num=DC_LoadN();
 
@@ -94,7 +94,7 @@ var2:
 	block->num_lines=DC_LoadI();
 	goto start;
 var3:
-	block->reltempo=DC_LoadF();
+	ATOMIC_DOUBLE_SET(block->reltempo, DC_LoadD());
 	goto start;
 
 obj0:

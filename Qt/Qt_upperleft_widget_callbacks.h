@@ -318,7 +318,7 @@ public slots:
     struct Tracker_Windows *window = root->song->tracker_windows;
     struct WBlocks *wblock = window->wblock;
 
-    float new_value = reltempomax->value();
+    double new_value = reltempomax->value();
     if (new_value < 1.1){
       new_value = 1.1;
       reltempomax->setValue(new_value); // Setting the min value in the widget causes the widget to ignore trying to set a value less than the min value, not setting it to the min value.
@@ -329,7 +329,7 @@ public slots:
       return;
     }
     
-    float highest = FindHighestTempoNodeVal(wblock->block) + 1.0f;
+    double highest = FindHighestTempoNodeVal(wblock->block) + 1.0f;
 
     if(highest > new_value)
       reltempomax->setValue(highest);

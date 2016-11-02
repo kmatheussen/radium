@@ -22,7 +22,7 @@ int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct S
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
     
     struct Blocks *block            = seqblock->block;
-    double         tempo_multiplier = block->reltempo;
+    double         tempo_multiplier = ATOMIC_DOUBLE_GET(block->reltempo);
     
     int64_t pause_duration  = seqblock->time - last_seq_end_time; // (reltempo is not applied to pauses)
     
@@ -30,7 +30,7 @@ int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct S
     double  abs_start_time  = last_abs_end_time + pause_duration;
       
     if (seqblock == seqblock_where_time_is)
-      return abs_start_time + ((double)block_seqtime / seqblock->block->reltempo); // Important that we round down.
+      return abs_start_time + ((double)block_seqtime / ATOMIC_DOUBLE_GET(seqblock->block->reltempo)); // Important that we round down.
       
     int64_t seq_block_duration = getBlockSTimeLength(seqblock->block);
     int64_t abs_block_duration = ((double)seq_block_duration / tempo_multiplier);
@@ -49,7 +49,7 @@ int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct S
   R_ASSERT(false);
   // !!!
   
-  return seqblock_where_time_is->time + ((double)block_seqtime / seqblock_where_time_is->block->reltempo); // fallback.
+  return seqblock_where_time_is->time + ((double)block_seqtime / ATOMIC_DOUBLE_GET(seqblock_where_time_is->block->reltempo)); // fallback.
 }
 
 // Returns in frame format, not in seconds. (int64_t is always in frames, double is always in seconds)
@@ -64,7 +64,7 @@ int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct S
     if (seqblock != seqblock_to_ignore) { // seqblock_to_ignore is used when moving a seqblock.
       
       struct Blocks *block            = seqblock->block;
-      double         tempo_multiplier = block->reltempo;
+      double         tempo_multiplier = ATOMIC_DOUBLE_GET(block->reltempo);
       
       int64_t pause_duration  = seqblock->time - last_seq_end_time; // (reltempo is not applied to pauses)
       
@@ -144,7 +144,7 @@ static void update_all_seqblock_start_and_end_times(struct SeqTrack *seqtrack, b
   
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
     struct Blocks *block            = seqblock->block;
-    double         tempo_multiplier = block->reltempo;
+    double         tempo_multiplier = ATOMIC_DOUBLE_GET(block->reltempo);
 
     int64_t seq_block_start = is_gfx ? seqblock->gfx_time : seqblock->time;
 

@@ -50,7 +50,7 @@ void NewBlock(
 	block->num_tracks=num_tracks;
 	block->num_lines=num_lines;
 	block->name=name;
-	block->reltempo=1.0f;
+	ATOMIC_DOUBLE_SET(block->reltempo, 1.0);
         //ATOMIC_DOUBLE_SET(block->player_time, -200.0);
 
 	temponode=talloc(sizeof(struct TempoNodes));

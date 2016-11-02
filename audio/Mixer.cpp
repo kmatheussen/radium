@@ -1055,7 +1055,7 @@ static bool fill_in_time_position2(time_position_t *time_position){
     jackblock_cycle_start_stime2 +
     scale(deltatime,
           0, jackblock_size2,
-          0, jackblock_size2 * safe_volatile_float_read(&block->reltempo)
+          0, jackblock_size2 * ATOMIC_DOUBLE_GET(block->reltempo)
           );
   
   STime accurate_block_time = accurate_radium_time - seqtime;

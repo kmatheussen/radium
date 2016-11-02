@@ -35,12 +35,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
    -1.0 -> 1/2.0
 ******************************************************/
 
-float RelTempo2RealRelTempo(float reltempo){
+double RelTempo2RealRelTempo(double reltempo){
 
   if (reltempo>=0.0f)
-    return (float)(reltempo+1.0f);
+    return (double)(reltempo+1.0f);
   else
-    return (float)(1.0f / ((-reltempo)+1.0f) );
+    return (double)(1.0f / ((-reltempo)+1.0f) );
 
 }
 
@@ -49,10 +49,10 @@ float RelTempo2RealRelTempo(float reltempo){
     Does the opposite thing of RelTempo2RealRelTempo.
 ******************************************************/
 
-float RealRelTempo2RelTempo(float realreltempo){
-	if(realreltempo>=1.0f) return (float)(realreltempo-1.0f);
+double RealRelTempo2RelTempo(double realreltempo){
+	if(realreltempo>=1.0f) return (double)(realreltempo-1.0f);
 
-	return (float)(-((1.0f/realreltempo)-1.0f));
+	return (double)(-((1.0f/realreltempo)-1.0f));
 
 }
 
@@ -63,8 +63,8 @@ float RealRelTempo2RelTempo(float realreltempo){
     reltempos;
 ******************************************************/
 
-float FindAverageRealRelTempo(float r1,float r2){
-	return RelTempo2RealRelTempo((float)((r1+r2)/2.0f));
+double FindAverageRealRelTempo(double r1,double r2){
+	return RelTempo2RealRelTempo((double)((r1+r2)/2.0f));
 }
 
 
@@ -73,12 +73,12 @@ float FindAverageRealRelTempo(float r1,float r2){
     Returns the reltempo for the relative x value 'x',
     in the temponodearea in wblock 'wblock'.
 ******************************************************/
-float Gfx2RelTempo(struct WBlocks *wblock,int x){
+double Gfx2RelTempo(struct WBlocks *wblock,int x){
 
 	int tw=wblock->temponodearea.width-1;
-	float max=wblock->reltempomax-1.0f;
+	double max=wblock->reltempomax-1.0f;
 
-	return (float)((x*max*2/tw)-max);
+	return (double)((x*max*2/tw)-max);
 
 }
 

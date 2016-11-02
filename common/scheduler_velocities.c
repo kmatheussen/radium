@@ -42,7 +42,7 @@ static void RT_scheduled_hold_velocity_do(struct SeqTrack *seqtrack,
     
     RT_PATCH_change_velocity(seqtrack,
                              patch,
-                             create_note_t(seqtrack,
+                             create_note_t(seqblock,
                                            note->id,
                                            note->note,
                                            TRACK_get_velocity(track,val),
@@ -108,7 +108,7 @@ static int64_t RT_scheduled_glide_velocity(struct SeqTrack *seqtrack, int64_t ti
     
     RT_PATCH_change_velocity(seqtrack,
                              patch,
-                             create_note_t(seqtrack,
+                             create_note_t(seqblock,
                                            note->id,
                                            note->note,
                                            TRACK_get_velocity(track,val),

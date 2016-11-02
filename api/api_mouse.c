@@ -287,7 +287,7 @@ float getReltempo(int blocknum, int windownum){
   if (wblock==NULL)
     return 0.0f;
   else
-    return wblock->block->reltempo;
+    return ATOMIC_DOUBLE_GET(wblock->block->reltempo);
 }
 
 void undoReltempo(void){
@@ -298,11 +298,14 @@ void undoReltempo(void){
 void setReltempo(float reltempo){
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblock;
-  wblock->block->reltempo=R_BOUNDARIES(
+  
+  double new_reltempo = R_BOUNDARIES(
     MINBLOCKRELTIME,
     reltempo,
     MAXBLOCKRELTIME
   );
+  
+  ATOMIC_DOUBLE_SET(wblock->block->reltempo, new_reltempo);
 
   //update_statusbar(window);
   //DrawBlockRelTempo(window,wblock);

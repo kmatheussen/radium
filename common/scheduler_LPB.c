@@ -20,13 +20,13 @@ static double get_num_beats(const struct SeqTrack *seqtrack, const struct SeqBlo
   double time = seqtrack->start_time - seqblock->time;
 
 #if DEBUG_BUGS
-  R_ASSERT_NON_RELEASE(time > -(RADIUM_BLOCKSIZE*safe_volatile_float_read(&block->reltempo)));
+  R_ASSERT_NON_RELEASE(time > -(RADIUM_BLOCKSIZE*ATOMIC_DOUBLE_GET(block->reltempo)));
 #endif
   
   if (time < 0) // Happens when switching between two seqblocks at a non-audio block alignment (i.e. delta time > 0). To avoid this minor inaccuracy, it seems necessary to break the use of constant 64 frame audio block sizes, so it's probably not worth it.
     time = 0;
   
-  double time_to_add = (double)audioframes_to_add * safe_volatile_float_read(&block->reltempo);
+  double time_to_add = (double)audioframes_to_add * ATOMIC_DOUBLE_GET(block->reltempo);
 
 #if DEBUG_BUGS
   printf("Get num_beats. from_where: %s, time: %f, time_to_add: %f, pc->start_time_f: %f, stime2place: %f\n",
@@ -136,7 +136,7 @@ double RT_LPB_get_current_BPM(const struct SeqTrack *seqtrack){
     if (block==NULL)
       return (double)root->tempo;
     else
-      return (double)root->tempo * safe_volatile_float_read(&block->reltempo);
+      return (double)root->tempo * ATOMIC_DOUBLE_GET(block->reltempo);
   }
 
 }

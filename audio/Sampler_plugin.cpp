@@ -133,7 +133,8 @@ typedef struct _Voice{
 
   float note_num;
   int64_t note_id;
-
+  const struct SeqBlock *seqblock; // Not quite sure, but this variable could perhaps be gc-ed while its here, so it should only be used for comparison. (pretty sure it can not be gc-ed though)
+  
   // These two variables are used when setting velocity after a note has started playing.
   float start_volume;
   float end_volume;
@@ -244,7 +245,8 @@ struct Data{
   DEFINE_ATOMIC(bool, recording_from_main_input);
   DEFINE_ATOMIC(int, recording_note);
   int64_t recording_note_id;
-
+  const struct SeqBlock *recording_seqblock;
+  
   // No need to clear these two fields after usage (to save some memory) since plugin->data is reloaded after recording.
   radium::Vector<float> min_recording_peaks[2];
   radium::Vector<float> max_recording_peaks[2];
@@ -847,6 +849,7 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
                                       note2.pitch);
     
     data->recording_note_id = note2.id;
+    data->recording_seqblock = note2.seqblock;
     data->recording_start_frame = time;
     
     ATOMIC_SET(data->recording_note, note2.pitch * 10000);
@@ -878,7 +881,8 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
     
     voice->note_num = note2.pitch;
     voice->note_id = note2.id;
-
+    voice->seqblock = note2.seqblock;
+    
     voice->start_volume = velocity2gain(note2.velocity);
     voice->end_volume = voice->start_volume;
 
@@ -923,7 +927,7 @@ static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
   while(voice!=NULL){
     //printf("Setting volume to %f. note_num: %d. voice: %d\n",volume,note_num,voice->note_num);
 
-    if(voice->note_id==note.id)
+    if(is_note(note, voice->note_id, voice->seqblock))
       voice->end_volume = velocity2gain(note.velocity);
 
     voice = voice->next;
@@ -942,7 +946,7 @@ static void set_note_pitch(struct SoundPlugin *plugin, int time, note_t note){
 
   while(voice!=NULL){
 
-    if(voice->note_id==note.id){
+    if(is_note(note, voice->note_id, voice->seqblock)){
       voice->end_pitch = note.pitch;
       //printf("Got it\n");
     }
@@ -957,7 +961,7 @@ static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
   //printf("  Sampler_plugin.cpp: Request to stop note %d\n", (int)note.id);
   
   if (ATOMIC_GET(data->recording_status)==IS_RECORDING){
-    if (note.id==data->recording_note_id){
+    if (is_note(note, data->recording_note_id, data->recording_seqblock)){
       
       struct Patch *patch = (struct Patch*)plugin->patch;
       
@@ -981,7 +985,7 @@ static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
     time = RADIUM_BLOCKSIZE -1;
   
   while(voice!=NULL){
-    if(voice->note_id==note.id){
+    if(is_note(note, voice->note_id, voice->seqblock)){
       if(voice->delta_pos_at_end == -1)
         voice->delta_pos_at_end = time;
     }

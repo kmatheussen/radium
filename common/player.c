@@ -111,7 +111,7 @@ void PlayerTask(STime reltime){
             struct Blocks *block = curr_seqblock==NULL ? root->song->blocks : curr_seqblock->block;
             
             if(block!=NULL)
-              reltempo = safe_volatile_float_read(&block->reltempo);
+              reltempo = ATOMIC_DOUBLE_GET(block->reltempo);
             
             double seqreltime  = (double)reltime * reltempo;
 
