@@ -98,7 +98,7 @@ void SetTempoCurrPos(struct Tracker_Windows *window){
 	int curr_realline=wblock->curr_realline;
 	Place *place= &wblock->reallines[curr_realline]->l.p;
 	int newtempo=GFX_GetInteger(window,NULL,"New tempo: >",1,999);
-	if(newtempo==-1) return;
+	if(newtempo<=0) return;
 
 	ADD_UNDO(Tempos_CurrPos(window));
 
