@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "disk_temponodes_proc.h"
 #include "time_proc.h"
 #include "Beats_proc.h"
+#include "visual_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
 #include "disk_block_proc.h"
@@ -81,7 +82,8 @@ struct Blocks *LoadBlock(void){
 	ATOMIC_DOUBLE_SET(block->reltempo, 1.0);
 
 	block->l.num=DC_LoadN();
-
+        block->color = GFX_MakeRandomColor();
+        
 	GENERAL_LOAD(5,4)
 
 var0:

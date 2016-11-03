@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "tempos_proc.h"
 #include "time_proc.h"
 #include "Beats_proc.h"
+#include "visual_proc.h"
 
 #include "blocks_proc.h"
 
@@ -65,7 +66,9 @@ void NewBlock(
 	temponode->reltempo=0.0f;
 	block->temponodes->l.next= &temponode->l;
 	block->lasttemponode=temponode;
-	
+
+        block->color = GFX_MakeRandomColor();
+        
 	for(lokke=0;lokke<block->num_tracks;lokke++){
 		AppendTrack(block);
 	}

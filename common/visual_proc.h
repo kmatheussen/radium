@@ -163,6 +163,7 @@ extern LANGSPEC void GFX_SetDefaultColors1(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_SetDefaultColors2(struct Tracker_Windows *tvisual);
 
 extern LANGSPEC void GFX_SetCustomColor(struct Tracker_Windows *tvisual, void *color);
+extern LANGSPEC unsigned int GFX_MakeRandomColor(void);//int blendcolornum, float blendfactor);
 extern LANGSPEC int GFX_MakeRandomCustomColor(int colornum);
 
 //bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){

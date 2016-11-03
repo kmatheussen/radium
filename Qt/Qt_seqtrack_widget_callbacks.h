@@ -71,10 +71,14 @@ static float mapToEditorY2(QWidget *widget){
   return mapToEditor(widget, QPoint(0, 0)).y() + widget->height();
 }
 
-static double getBlockAbsDuration(struct Blocks *block){
+static double getBlockAbsDuration(const struct Blocks *block){
   return getBlockSTimeLength(block) * ATOMIC_DOUBLE_GET(block->reltempo);
 }
 
+static QColor get_block_color(const struct Blocks *block){
+  //return mix_colors(QColor(block->color), get_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM), 0.32f);
+  return mix_colors(QColor(block->color), get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.12f);
+}
 
 class MouseTrackerQWidget : public QWidget {
 public:
@@ -316,10 +320,6 @@ public:
   }
   
   void paintBlock(QPainter &p, const QRectF &rect, const struct Blocks *block){
-    qreal x1,y1,x2,y2;
-    rect.getCoords(&x1, &y1, &x2, &y2);
-      
-    p.fillRect(rect, get_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM));
 
     const int header_height = root->song->tracker_windows->fontheight + 2;
     
@@ -335,22 +335,27 @@ public:
     header_border_pen.setWidthF(2.3);
     track_border_pen.setWidthF(1.3);
 
+    bool is_current_block = block == root->song->tracker_windows->wblock->block;
+
+    qreal x1,y1,x2,y2;
+    rect.getCoords(&x1, &y1, &x2, &y2);
+
+    if (true || is_current_block) {
+      QRectF rect1(x1, y1, x2-x1, header_height);
+      QRectF rect2(x1, y1+header_height, x2-x1, y2-(y1+header_height));
+      p.fillRect(rect1, get_block_color(block));//QColor(block->color));//get_qcolor(SEQUENCER_BLOCK_HEADER_BACKGROUND_COLOR_NUM));
+      p.fillRect(rect2, get_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM));
+    } else {
+      p.fillRect(rect, get_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM));
+    }
+    
     //if (x1 > -5000) { // avoid integer overflow error.
     p.setPen(text_color);
     //p.drawText(x1+4,2,x2-x1-6,height()-4, Qt::AlignLeft, QString::number(seqblock->block->l.num) + ": " + seqblock->block->name);
     p.drawText(rect.adjusted(2,1,-4,-(rect.height()-header_height)), QString::number(block->l.num) + ": " + block->name, QTextOption(Qt::AlignLeft | Qt::AlignTop));
     //}
 
-    bool is_current_block = block == root->song->tracker_windows->wblock->block;
-      
-    if (is_current_block){
-      QColor c = get_qcolor(CURSOR_EDIT_ON_COLOR_NUM);
-      c.setAlpha(150);      
-      p.setPen(QPen(c, 4));
-    } else {
-      p.setPen(border_color);
-    }
-
+    p.setPen(border_color);
     p.drawRoundedRect(rect,1,1);
 
     int64_t blocklen = getBlockSTimeLength(block);
@@ -764,7 +769,6 @@ public:
     {
 
       //QColor block_color = QColor(140,140,140,180);
-      QColor block_color = get_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM);
       QColor text_color = get_qcolor(SEQUENCER_TEXT_COLOR_NUM);
       
       int num_seqtracks = root->song->seqtracks.num_elements;
@@ -780,7 +784,11 @@ public:
         //double end_time = _end_time / MIXER_get_sample_rate();
 
         VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+
+          const struct Blocks *block = seqblock->block;
           
+          QColor block_color = get_block_color(block);//->color);// = get_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM);
+
           //printf("\n\n\n Start/end: %f / %f. Seqtrack/seqblock %p / %p\n\n", seqblock->start_time, seqblock->end_time, seqtrack, seqblock);
             
           float x1 = scale(seqblock->start_time, 0, total_seconds, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x1(seqblock, start_time, end_time);
@@ -791,7 +799,7 @@ public:
 
           if(rect.height() > root->song->tracker_windows->fontheight){
             p.setPen(text_color);
-            p.drawText(rect.adjusted(2,1,-1,-1), QString::number(seqblock->block->l.num) + ": " + seqblock->block->name, QTextOption(Qt::AlignLeft | Qt::AlignTop));
+            p.drawText(rect.adjusted(2,1,-1,-1), QString::number(block->l.num) + ": " + block->name, QTextOption(Qt::AlignLeft | Qt::AlignTop));
           }
           
           p.setPen(border_color);

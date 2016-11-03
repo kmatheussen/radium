@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #include "EditorWidget.h"
-#include "Qt_colors_proc.h"
+#include "Qt_mix_colors.h"
 #include "Qt_instruments_proc.h"
 
 #include "../common/settings_proc.h"
@@ -46,6 +46,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_proc.h"
 #include "../GTK/GTK_visual_proc.h"
 #include "../common/OS_settings_proc.h"
+
+#include "Qt_colors_proc.h"
 
 
 namespace{
@@ -153,6 +155,7 @@ static const ColorConfig g_colorconfig[] = {
   {SEQUENCER_TEXT_COLOR_NUM, "sequencer_text_color", "Sequencer text color"},
   {SEQUENCER_NOTE_COLOR_NUM, "sequencer_note_color", "Sequencer note color"},
   {SEQUENCER_NOTE_START_COLOR_NUM, "sequencer_note_start_color", "Sequencer note start color"},
+  {SEQUENCER_BLOCK_HEADER_BACKGROUND_COLOR_NUM, "sequencer_block_header_background_color", "Sequencer block header background color"},
   {SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, "sequencer_block_background_color", "Sequencer block background color"},
   {SEQUENCER_BLOCK_BORDER_COLOR_NUM, "sequencer_block_border_color", "Sequencer block border color"},
   {SEQUENCER_TRACK_BORDER1_COLOR_NUM, "sequencer_track_border1_color", "Sequencer track border color (first)"},
@@ -244,6 +247,7 @@ static ReplacementColor g_replacement_color[] = {
   {SEQUENCER_TEXT_COLOR_NUM, QColor(1,1,1)},
   {SEQUENCER_NOTE_COLOR_NUM, QColor(1,1,200,150)},
   {SEQUENCER_NOTE_START_COLOR_NUM, QColor(0,0,0)},
+  {SEQUENCER_BLOCK_HEADER_BACKGROUND_COLOR_NUM, QColor(170,156,160)},
   {SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, QColor(140,140,140)},
   {SEQUENCER_BLOCK_BORDER_COLOR_NUM, QColor(50,20,35)},
   {SEQUENCER_TRACK_BORDER1_COLOR_NUM, QColor(20,20,20)},
@@ -266,19 +270,6 @@ static QColor *button_color=NULL;
 static bool override_default_qt_colors=true;
 
 static QColor g_note_colors[128];
-
-static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
-
-  float a1 = how_much;
-  float a2 = 1.0f-a1;
-
-  int r = c1.red()*a1 + c2.red()*a2;
-  int g = c1.green()*a1 + c2.green()*a2;
-  int b = c1.blue()*a1 + c2.blue()*a2;
-
-  return QColor(r,g,b);
-}
-
 
 #if 0
 #define NUM_NOTE_COLOR_CONF 4
@@ -376,6 +367,12 @@ static QColor get_next_color(void){
   h = fmod(h, 1.0);
 
   return color;
+}
+
+unsigned int GFX_MakeRandomColor(void){//int blendcolornum, float blendfactor){
+  QColor color = get_next_color();//mix_colors(get_next_color(), get_qcolor(blendcolornum), blendfactor);
+  //QColor color = mix_colors(get_next_color(), get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.12f);
+  return color.rgb();
 }
 
 // if colornum==-1, create new color

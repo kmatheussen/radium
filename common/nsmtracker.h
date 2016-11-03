@@ -325,6 +325,8 @@ static inline bool is_called_every_ms(int ms){
 	colors.h
 *********************************************************************/
 
+
+
 enum ColorNums {
   ILLEGAL_COLOR_NUM = -1,
   
@@ -411,6 +413,8 @@ enum ColorNums {
   SEQUENCER_TEXT_COLOR_NUM,
   SEQUENCER_NOTE_COLOR_NUM,
   SEQUENCER_NOTE_START_COLOR_NUM,
+
+  SEQUENCER_BLOCK_HEADER_BACKGROUND_COLOR_NUM,
   SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM,
   SEQUENCER_BLOCK_BORDER_COLOR_NUM,
   SEQUENCER_TRACK_BORDER1_COLOR_NUM,
@@ -429,7 +433,6 @@ enum ColorNums {
 
   END_ALL_COLOR_NUMS,
 };
-
 
 
 /*********************************************************************
@@ -1453,6 +1456,8 @@ struct Blocks{
 
         DEFINE_ATOMIC(double, player_time);	/* = pc->end_time - RT_curr_seqblock()->time */
 
+  unsigned int color;
+  
   // This variable is checked after each keyboard or menu event. If true, trackreallines, wtracks, etc. will be updated.
   bool is_dirty; 
 };

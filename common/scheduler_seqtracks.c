@@ -4,10 +4,11 @@
 #include "playerclass.h"
 #include "placement_proc.h"
 #include "seqtrack_proc.h"
+#include "../audio/Mixer_proc.h"
 
 #include "scheduler_proc.h"
 
-#define DO_DEBUG 0
+#define DO_DEBUG 1
 
 #define G_NUM_ARGS 4
 
