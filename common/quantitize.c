@@ -73,7 +73,7 @@ void Quantitize_fxs(struct Tracker_Windows *window, struct WBlocks *wblock, stru
 
   Undo_start_ignoring_undo_operations();{
 
-    int fxnum = getFx(fxs->fx->name, wtrack->l.num, wtrack->track->patch->id, wblock->l.num, window->l.num);
+    int fxnum = getFx(fxs->fx->name, wtrack->l.num, fxs->fx->patch->id, wblock->l.num, window->l.num);
                    
     SCHEME_eval(
                 talloc_format("(simple-quantitize-fxs! %d %d %d %d/%d)",
