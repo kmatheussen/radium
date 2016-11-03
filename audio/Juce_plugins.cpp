@@ -1396,6 +1396,17 @@ static void set_preset_name(struct SoundPlugin *plugin, int num, const char* new
   instance->changeProgramName(num, new_name);
 }
 
+static void set_non_realtime(struct SoundPlugin *plugin, bool is_non_realtime){
+#if CUSTOM_MM_THREAD
+  const MessageManagerLock mmLock;
+#endif
+
+  Data *data = (Data*)plugin->data;
+  AudioPluginInstance *instance = data->audio_instance;
+
+  instance->setNonRealtime(is_non_realtime);
+}
+
 static SoundPluginType *create_plugin_type(const PluginDescription description, const wchar_t *file_or_identifier, SoundPluginTypeContainer *container){ //, const wchar_t *library_file_full_path){
   printf("b02 %s\n",STRING_get_chars(file_or_identifier));
   fflush(stdout);
@@ -1455,6 +1466,8 @@ static SoundPluginType *create_plugin_type(const PluginDescription description, 
   plugin_type->get_preset_name = get_preset_name;
   plugin_type->set_preset_name = set_preset_name;
 
+  plugin_type->set_non_realtime = set_non_realtime;
+  
   PR_add_plugin_type_no_menu(plugin_type);
   
   return plugin_type;

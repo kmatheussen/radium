@@ -263,7 +263,9 @@ typedef struct SoundPluginType{
   void (*set_current_preset)(struct SoundPlugin *plugin, int num);
   const char *(*get_preset_name)(struct SoundPlugin *plugin, int num);
   void (*set_preset_name)(struct SoundPlugin *plugin, int num, const char* new_name);
-    
+
+  void (*set_non_realtime)(struct SoundPlugin *plugin, bool is_non_realtime);
+  
   // Free use by the plugin
   void *data;
 

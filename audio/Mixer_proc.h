@@ -15,6 +15,8 @@ extern LANGSPEC bool PLAYER_is_running(void);
 extern LANGSPEC bool MIXER_start(void);
 extern LANGSPEC void MIXER_stop(void);
 
+extern LANGSPEC void MIXER_set_all_non_realtime(bool is_non_realtime);
+  
 extern LANGSPEC void MIXER_start_saving_soundfile(void);
 extern LANGSPEC void MIXER_request_stop_saving_soundfile(void);
 

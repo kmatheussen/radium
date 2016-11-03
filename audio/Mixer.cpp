@@ -985,6 +985,17 @@ bool MIXER_is_saving(void){
   return g_mixer->_is_freewheeling;
 }
 
+
+void MIXER_set_all_non_realtime(bool is_non_realtime){
+  const radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
+  for (SoundProducer *sp : *sp_all) {
+    SoundPlugin *plugin = SP_get_plugin(sp);
+    if (plugin->type->set_non_realtime != NULL)
+      plugin->type->set_non_realtime(plugin, is_non_realtime);
+  }
+}
+
+
 void MIXER_start_saving_soundfile(void){
   RSEMAPHORE_reset(g_freewheeling_has_started); // Must do this in case a different jack client started freewheeling since last call to sem_init.
   jack_set_freewheel(g_jack_client, 1);

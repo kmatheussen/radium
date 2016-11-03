@@ -79,6 +79,8 @@ static bool stop_writing(bool is_cancelled){
 
   SOUNDFILESAVERGUI_stop(temp);
 
+  MIXER_set_all_non_realtime(false);
+
   g_save_state=AFTER_WRITING;
 
   return ret;
@@ -162,6 +164,10 @@ bool SOUNDFILESAVER_save(const char *filename, enum SOUNDFILESAVER_what what_to_
   g_saving_was_successful = true;
   g_filename = talloc_strdup(filename);
   g_post_writing_left = post_recording_length;
+
+  
+  MIXER_set_all_non_realtime(true);
+  
 
   g_save_state=BEFORE_WRITING; PaUtil_FullMemoryBarrier();
   {
