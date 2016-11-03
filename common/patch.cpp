@@ -937,14 +937,14 @@ static void RT_stop_voice(struct SeqTrack *seqtrack, struct Patch *patch, const 
     velocity = PATCH_radiumvelocity_to_patchvelocity(patch,velocity);
 #endif
 
-  Patch_removePlayingVoice(&patch->playing_voices, note.id, seqtrack, note.seqblock);
-
-  //printf("__stopping note: %d. time: %d\n",(int)note.id,(int)time);
   bool voice_is_playing = Patch_is_voice_playing_questionmark(patch, note.id, note.seqblock);
-
-  if (voice_is_playing)
+  //printf("voice_is_playing: %d\n",voice_is_playing);
+  
+  if (voice_is_playing) {
+    Patch_removePlayingVoice(&patch->playing_voices, note.id, seqtrack, note.seqblock);
     patch->stopnote(seqtrack, patch, note, time);
-
+  }
+  
   if(patch->forward_events)
     RT_PATCH_send_stop_note_to_receivers(seqtrack, patch, note, time);
 }
