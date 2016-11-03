@@ -886,6 +886,7 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
       // voice ON
       //printf("___RT_PATCH_play_note. time: %d (%d)\n", (int)time, (int)(time + voice->start*sample_rate/1000));
 
+      //printf("  add %d at %d\n", (int)voice_id, (int)((int64_t)time + voice->start*sample_rate/1000));
       SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_play_voice, &args[0], 7, SCHEDULER_NOTE_ON_PRIORITY);
 
       // voice OFF
@@ -938,7 +939,7 @@ static void RT_stop_voice(struct SeqTrack *seqtrack, struct Patch *patch, const 
 #endif
 
   bool voice_is_playing = Patch_is_voice_playing_questionmark(patch, note.id, note.seqblock);
-  //printf("voice_is_playing: %d\n",voice_is_playing);
+  //printf("voice_is_playing: %d. note_id: %d\n",voice_is_playing, (int)note.id);
   
   if (voice_is_playing) {
     Patch_removePlayingVoice(&patch->playing_voices, note.id, seqtrack, note.seqblock);
@@ -990,6 +991,7 @@ void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch *patch, const no
         args[1].float_num = voice_notenum;
         args[2].int_num = voice_id;
 
+        //printf("    remove %d at %d\n", (int)voice_id, (int)((int64_t)time + voice->start*sample_rate/1000));
         SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 7, SCHEDULER_NOTE_OFF_PRIORITY);
       }
     }

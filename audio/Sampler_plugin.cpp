@@ -833,6 +833,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
   Data *data = (Data*)plugin->data;
 
+  //printf("  Sampler_plugin.cpp: Request to play note %f. Id: %d\n", note2.pitch, (int)note2.id);
   //printf("  Sampler_plugin.cpp: Request to play note %d at %d\n", (int)note2.id, time);
 
   R_ASSERT_NON_RELEASE(time >= 0);
@@ -958,7 +959,7 @@ static void set_note_pitch(struct SoundPlugin *plugin, int time, note_t note){
 static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
 
-  //printf("  Sampler_plugin.cpp: Request to stop note %d\n", (int)note.id);
+  //printf("  Sampler_plugin.cpp: Request to stop note %f. Id: %d\n", note.pitch, (int)note.id);
   
   if (ATOMIC_GET(data->recording_status)==IS_RECORDING){
     if (is_note(note, data->recording_note_id, data->recording_seqblock)){

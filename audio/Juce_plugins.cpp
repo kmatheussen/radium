@@ -728,7 +728,7 @@ static void RT_MIDI_send_msg_to_patch2(struct SeqTrack *seqtrack, struct Patch *
                                 0,
                                 0.0f,
                                 message.getChannel()-1);
-    RT_PATCH_stop_note(seqtrack, patch, note, seq_time);
+    RT_PATCH_stop_note(seqtrack, patch, note, seq_time + 1); // We add 1 to the timing here to avoid hanging note if note on and note off are sent simultaneously.
   
   } else if (message.isAftertouch()) {
     note_t note = create_note_t(NULL,
