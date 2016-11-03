@@ -8,7 +8,7 @@
 
 #include "scheduler_proc.h"
 
-#define DO_DEBUG 1
+#define DO_DEBUG 0
 
 #define G_NUM_ARGS 4
 
@@ -138,7 +138,7 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
       args[3].int32_num     = playtype;
 
 #if DO_DEBUG
-      printf("  2. Scheduling RT_scheduled_seqblock at %d\n",(int)next_time);
+      printf("  2. Scheduling RT_scheduled_seqblock at %f\n",next_time/MIXER_get_sample_rate());
 #endif
       SCHEDULER_add_event(seqtrack, next_time, RT_scheduled_seqblock, &args[0], G_NUM_ARGS, SCHEDULER_INIT_BLOCK_PRIORITY);
 
@@ -162,7 +162,7 @@ static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t seqtime,
   int                    playtype         = args[3].int32_num;
 
 #if DO_DEBUG
-  printf("     RT_scheduled_seqblock called. time: %d\n", (int)seqtime);
+  printf("     RT_scheduled_seqblock called. time: %f\n", (double)seqtime/MIXER_get_sample_rate());
 #endif
   RT_schedule_new_seqblock(seqtrack, seqblock, seqtime, block_start_time, place, playtype);
 
@@ -212,6 +212,8 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
 
     R_ASSERT(SCHEDULER_num_events(RT_get_curr_seqtrack()->scheduler)==0);
 
+    SCHEDULER_set_seqtrack_timing(&root->song->block_seqtrack, 0, 0);
+        
     ATOMIC_SET(pc->song_abstime, abs_start_time);
 
     VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
@@ -238,7 +240,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
           args[3].int_num       = PLAYSONG;
           
 #if DO_DEBUG
-          printf("  Song: Scheduling RT_scheduled_seqblock at %d. seqtrack->start_time: %d\n",(int)seq_start_time, (int)seqtrack->start_time);
+          printf("  Song: Scheduling RT_scheduled_seqblock at %f. seqtrack->start_time: %f\n",(double)seq_start_time/MIXER_get_sample_rate(), (double)seqtrack->start_time/MIXER_get_sample_rate());
 #endif
           
           SCHEDULER_add_event(seqtrack, seqblock_start_time, RT_scheduled_seqblock, &args[0], G_NUM_ARGS, SCHEDULER_INIT_BLOCK_PRIORITY);

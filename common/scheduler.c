@@ -242,7 +242,8 @@ int SCHEDULER_called_per_block(struct SeqTrack *seqtrack, double reltime){
   double end_time_f = scheduler->current_time + reltime;
   int64_t end_time = end_time_f;
 
-  printf("   called per block. start_time: %f\n",seqtrack->start_time/44100.0);
+  
+  //printf("   called per block. start_time: %f. reltime: %f\n",seqtrack->start_time/44100.0, reltime);
   //printf("  called_per_block. end_time: %d. seqtrack->start_time: %f\n",(int)end_time, seqtrack->start_time);
 
 #if 0

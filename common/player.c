@@ -108,7 +108,7 @@ void PlayerTask(STime reltime){
             double reltempo = 1.0;
 
             struct SeqBlock *curr_seqblock = seqtrack->curr_seqblock;
-            struct Blocks *block = curr_seqblock==NULL ? root->song->blocks : curr_seqblock->block;
+            struct Blocks *block = curr_seqblock==NULL ? NULL : curr_seqblock->block;
             
             if(block!=NULL)
               reltempo = ATOMIC_DOUBLE_GET(block->reltempo);
