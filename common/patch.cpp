@@ -940,7 +940,10 @@ static void RT_stop_voice(struct SeqTrack *seqtrack, struct Patch *patch, const 
   Patch_removePlayingVoice(&patch->playing_voices, note.id, seqtrack, note.seqblock);
 
   //printf("__stopping note: %d. time: %d\n",(int)note.id,(int)time);
-  patch->stopnote(seqtrack, patch, note, time);
+  bool voice_is_playing = Patch_is_voice_playing_questionmark(patch, note.id, note.seqblock);
+
+  if (voice_is_playing)
+    patch->stopnote(seqtrack, patch, note, time);
 
   if(patch->forward_events)
     RT_PATCH_send_stop_note_to_receivers(seqtrack, patch, note, time);
@@ -982,13 +985,12 @@ void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch *patch, const no
         float voice_notenum = note.pitch + voice->transpose;
         int64_t voice_id = note.id + i;
 
-        if (Patch_is_voice_playing_questionmark(patch, voice_id, note.seqblock)) {
+        //printf("RT_PATCH_stop_note. voice_id: %d. voice_is_playing: %d\n",(int)voice_id,(int)voice_is_playing);
         
-          args[1].float_num = voice_notenum;
-          args[2].int_num = voice_id;
+        args[1].float_num = voice_notenum;
+        args[2].int_num = voice_id;
 
-          SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 7, SCHEDULER_NOTE_OFF_PRIORITY);
-        }
+        SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 7, SCHEDULER_NOTE_OFF_PRIORITY);
       }
     }
   }
@@ -1031,7 +1033,8 @@ static void RT_change_voice_velocity(struct SeqTrack *seqtrack, struct Patch *pa
     velocity = PATCH_radiumvelocity_to_patchvelocity(patch,velocity);
 #endif
 
-  patch->changevelocity(seqtrack,patch,note,time);
+  if (Patch_is_voice_playing_questionmark(patch, note.id, note.seqblock))
+    patch->changevelocity(seqtrack,patch,note,time);
 
   if(patch->forward_events)
     RT_PATCH_send_change_velocity_to_receivers(seqtrack, patch, note, time);
@@ -1069,14 +1072,11 @@ void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, co
       int64_t voice_id = note.id + i;
       float voice_velocity = note.velocity * get_voice_velocity(voice);
 
-      if (Patch_is_voice_playing_questionmark(patch, voice_id, note.seqblock)) {
-        
-        args[1].float_num = voice_notenum;
-        args[2].int_num = voice_id;
-        args[3].float_num = voice_velocity;
+      args[1].float_num = voice_notenum;
+      args[2].int_num = voice_id;
+      args[3].float_num = voice_velocity;
       
-        SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 7, SCHEDULER_VELOCITY_PRIORITY);
-      }
+      SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 7, SCHEDULER_VELOCITY_PRIORITY);
     }
   }
 }
@@ -1109,7 +1109,8 @@ static void RT_change_voice_pitch(struct SeqTrack *seqtrack, struct Patch *patch
     return;
 
   //printf("Calling patch->changeptitch %d %f\n",notenum,pitch);
-  patch->changepitch(seqtrack, patch,note,time);
+  if (Patch_is_voice_playing_questionmark(patch, note.id, note.seqblock))
+    patch->changepitch(seqtrack, patch,note,time);
 
   if(patch->forward_events)
     RT_PATCH_send_change_pitch_to_receivers(seqtrack, patch, note, time);
@@ -1144,13 +1145,10 @@ void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch, const
       float voice_notenum = note.pitch + voice->transpose;
       int64_t voice_id = note.id + i;
 
-      if (Patch_is_voice_playing_questionmark(patch, voice_id, note.seqblock)) {
-        
-        args[1].float_num = voice_notenum;
-        args[2].int_num = voice_id;
-
-        SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 7, SCHEDULER_PITCH_PRIORITY);
-      }
+      args[1].float_num = voice_notenum;
+      args[2].int_num = voice_id;
+      
+      SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 7, SCHEDULER_PITCH_PRIORITY);
     }
   }
 }
