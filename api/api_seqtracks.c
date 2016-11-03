@@ -128,24 +128,38 @@ float getSeqnavRightSizeHandleY2(void){
 }
 
 void appendSeqtrack(void){
+  undoSequencer();
   SEQUENCER_append_seqtrack(NULL);
 }
 
 void insertSeqtrack(int pos){
+  if (pos==-1)
+    pos = root->song->curr_seqtracknum;
+  
   if (pos < 0 || pos > root->song->seqtracks.num_elements){
     GFX_Message(NULL, "Position #%d not legal", pos);
     return;
   }
 
+  undoSequencer();
   SEQUENCER_insert_seqtrack(NULL, pos);
 }
 
 void deleteSeqtrack(int seqtracknum){
+  if (seqtracknum==-1)
+    seqtracknum = root->song->curr_seqtracknum;
+  
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
     GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
     return;
   }
-    
+
+  if (root->song->seqtracks.num_elements==1){
+    GFX_Message(NULL, "Must have at least one sequencer track");
+    return;
+  }    
+  
+  undoSequencer();
   SEQUENCER_delete_seqtrack(seqtracknum);
 }
 
