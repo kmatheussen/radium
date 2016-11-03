@@ -776,7 +776,9 @@ private:
 
     SharedVariables *sv = GE_get_shared_variables(t2_data->painting_data);
 
-    const struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
+    const struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+    R_ASSERT_RETURN_IF_FALSE2(seqtrack!=NULL, false);
+    
     const struct SeqBlock *seqblock = seqtrack->curr_seqblock;
     const struct Blocks *visible_block = seqblock==NULL ? NULL : seqblock->block;
     

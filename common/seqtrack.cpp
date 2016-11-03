@@ -563,9 +563,12 @@ void SEQUENCER_delete_seqtrack(int pos){
     
     VECTOR_delete(&root->song->seqtracks, pos);
 
+    if (root->song->curr_seqtracknum >= root->song->seqtracks.num_elements)
+      root->song->curr_seqtracknum = root->song->seqtracks.num_elements -1;
+    
     RT_SEQUENCER_update_sequencer_and_playlist();      
   }
-
+  
 }
 
 double SONG_get_length(void){
@@ -623,6 +626,8 @@ hash_t *SEQUENCER_get_state(void){
     HASH_put_hash_at(state, "seqtracks", iterator666, seqtrack_state);
   }END_VECTOR_FOR_EACH;
 
+  HASH_put_int(state, "curr_seqtracknum", root->song->curr_seqtracknum);
+    
   return state;
 }
 
@@ -632,17 +637,22 @@ void SEQUENCER_create_from_state(hash_t *state){
   
   vector_t seqtracks = {0};
   
-  int num_seqtracks = HASH_get_num_elements(state);
+  int num_seqtracks = HASH_get_array_size(state);
+  R_ASSERT_RETURN_IF_FALSE(num_seqtracks > 0);
+  
   for(int i = 0 ; i < num_seqtracks ; i++){
     struct SeqTrack *seqtrack = SEQTRACK_create_from_state(HASH_get_hash_at(state, "seqtracks", i));
     VECTOR_push_back(&seqtracks, seqtrack);
   }
 
+  int new_curr_seqtracknum = HASH_has_key(state, "curr_seqtracknum") ? HASH_get_int32(state, "curr_seqtracknum") : 0;
+  
   {
     radium::PlayerPause pause;
     radium::PlayerLock lock;
 
     root->song->seqtracks = seqtracks;
+    root->song->curr_seqtracknum = new_curr_seqtracknum;
   }
 
   BS_UpdatePlayList();

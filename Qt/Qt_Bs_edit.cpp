@@ -921,6 +921,7 @@ void BS_UpdatePlayList(void){
     bs->playlist.removeItem(0);
 
   struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+  R_ASSERT_RETURN_IF_FALSE(seqtrack!=NULL);
   
   //SEQTRACK_update_all_seqblock_gfx_start_and_end_times(seqtrack);
 

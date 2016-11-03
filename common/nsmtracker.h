@@ -1907,6 +1907,7 @@ extern DEFINE_ATOMIC(bool, is_starting_up);
 extern bool g_embed_samples;
 
 static inline struct SeqTrack *SEQUENCER_get_curr_seqtrack(void){
+  R_ASSERT_NON_RELEASE(root->song->curr_seqtracknum < root->song->seqtracks.num_elements);
   vector_t *seqtracks = &root->song->seqtracks;
   if (seqtracks->num_elements==0)
     return NULL;

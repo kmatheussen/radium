@@ -716,7 +716,10 @@ struct Mixer{
         struct SeqBlock *curr_seqblock = seqtrack==NULL ? NULL : seqtrack->curr_seqblock;
         
         ATOMIC_SET(jackblock_size, num_frames);
-        ATOMIC_SET(jackblock_cycle_start_stime, seqtrack->end_time);
+        if (seqtrack!=NULL)
+          ATOMIC_SET(jackblock_cycle_start_stime, seqtrack->end_time);
+        else
+          ATOMIC_SET(jackblock_cycle_start_stime, 0);
         ATOMIC_SET(jackblock_last_frame_stime, jack_last_frame_time(_rjack_client));
 
         if (curr_seqblock != NULL) {

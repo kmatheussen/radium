@@ -2828,7 +2828,6 @@
                                                     (and seqtracknum
                                                          (begin
                                                            (<ra> :select-seqtrack seqtracknum)
-
                                                            (let ((seqblock-info (get-seqblock-info X Y)))
                                                              ;;(c-display "get-existing " seqblock-info X Y)
                                                              (and seqblock-info
@@ -2909,6 +2908,23 @@
                               #t)))))))
 
 
+;; seqblock menu
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (and (= Button *right-button*)
+                     (not (<ra> :shift-pressed))
+                     (let ((seqtracknum (get-seqtracknum X Y)))
+                       (and seqtracknum
+                            (begin
+                              (popup-menu "Insert sequencer track" (lambda ()
+                                                                     (<ra> :insert-seqtrack seqtracknum))
+                                          (list "Delete sequencer track"
+                                                :enabled (> (<ra> :get-num-seqtracks) 1)
+                                                (lambda ()
+                                                  (<ra> :delete-seqtrack seqtracknum)))
+                                          "Append sequencer track" (lambda ()
+                                                                     (<ra> :append-seqtrack))))))))))
 ;; left size handle in navigator
 (add-horizontal-handler :Get-handler-data (lambda (X Y)
                                             (define box (<ra> :get-box seqnav-left-size-handle))

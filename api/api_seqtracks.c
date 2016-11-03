@@ -304,7 +304,7 @@ float getSeqblockY2(int seqblocknum, int seqtracknum){
   return SEQBLOCK_get_y2(seqblocknum, seqtracknum);
 }
 
-void moveSeqblock(int seqblocknum, int64_t abstime, int seqtracknum){
+void moveSeqblock(int seqblocknum, int64_t abstime, int seqtracknum, int new_seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
@@ -316,7 +316,7 @@ void moveSeqblock(int seqblocknum, int64_t abstime, int seqtracknum){
   SEQTRACK_move_seqblock(seqtrack, seqblock, abstime);
 }
 
-void moveSeqblockGfx(int seqblocknum, int64_t abstime, int seqtracknum){
+void moveSeqblockGfx(int seqblocknum, int64_t abstime, int seqtracknum, int new_seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)

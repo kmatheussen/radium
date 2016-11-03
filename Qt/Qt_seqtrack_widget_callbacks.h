@@ -396,7 +396,7 @@ public:
 
     p.setRenderHints(QPainter::Antialiasing,true);
 
-    bool is_current = _seqtrack==(struct SeqTrack*)root->song->seqtracks.elements[root->song->curr_seqtracknum];
+    //bool is_current = _seqtrack==(struct SeqTrack*)root->song->seqtracks.elements[root->song->curr_seqtracknum];
       
     //printf("PAINTING seqblocks. gakk\n");
 
