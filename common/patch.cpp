@@ -904,7 +904,7 @@ int64_t PATCH_play_note(struct Patch *patch, const note_t note){
   int64_t ret;
   
   PLAYER_lock();{
-    ret = RT_PATCH_play_note(RT_get_curr_seqtrack(), patch,note,SCHEDULE_NOW);
+    ret = RT_PATCH_play_note(RT_get_curr_seqtrack(), patch, note, RT_get_curr_seqtrack()->start_time);
   }PLAYER_unlock();
 
   return ret;
@@ -997,7 +997,7 @@ void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch *patch, const no
 void PATCH_stop_note(struct Patch *patch, const note_t note){
   //printf("** stopping note %s\n\n",NotesTexts3[notenum]);
   PLAYER_lock();{
-    RT_PATCH_stop_note(RT_get_curr_seqtrack(), patch,note,SCHEDULE_NOW);
+    RT_PATCH_stop_note(RT_get_curr_seqtrack(), patch,note,RT_get_curr_seqtrack()->start_time);
   }PLAYER_unlock();
 }
 
@@ -1083,7 +1083,7 @@ void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, co
 
 void PATCH_change_velocity(struct Patch *patch, const note_t note){
   PLAYER_lock();{
-    RT_PATCH_change_velocity(RT_get_curr_seqtrack(), patch,note,SCHEDULE_NOW);
+    RT_PATCH_change_velocity(RT_get_curr_seqtrack(), patch,note,RT_get_curr_seqtrack()->start_time);
   }PLAYER_unlock();
 }
 
@@ -1157,7 +1157,7 @@ void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch, const
 
 void PATCH_change_pitch(struct Patch *patch, const note_t note){
   PLAYER_lock();{
-    RT_PATCH_change_pitch(RT_get_curr_seqtrack(), patch,note,SCHEDULE_NOW);
+    RT_PATCH_change_pitch(RT_get_curr_seqtrack(), patch,note,RT_get_curr_seqtrack()->start_time);
   }PLAYER_unlock();
 }
 
@@ -1224,7 +1224,7 @@ void RT_PATCH_send_raw_midi_message(struct SeqTrack *seqtrack, struct Patch *pat
 
 void PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg){
   PLAYER_lock();{
-    RT_PATCH_send_raw_midi_message(RT_get_curr_seqtrack(),patch,msg,SCHEDULE_NOW);
+    RT_PATCH_send_raw_midi_message(RT_get_curr_seqtrack(),patch,msg,RT_get_curr_seqtrack()->start_time);
   }PLAYER_unlock();
 }
 
@@ -1276,7 +1276,7 @@ static void RT_PATCH_turn_voice_on(struct SeqTrack *seqtrack, struct Patch *patc
                                   note.pan,
                                   note.midi_channel
                                   ),
-                    SCHEDULE_NOW
+                    seqtrack->start_time
                     );
   }    
     voice->is_on = true;
@@ -1301,7 +1301,7 @@ static void RT_PATCH_turn_voice_off(struct SeqTrack *seqtrack, struct Patch *pat
                                   note.pan,
                                   note.midi_channel
                                   ),
-                    SCHEDULE_NOW
+                    seqtrack->start_time
                     );
     }
     voice->is_on = false;
@@ -1356,7 +1356,7 @@ void PATCH_stop_all_notes(struct Patch *patch){
       RT_stop_voice(patch->playing_voices->seqtrack,
                     patch,                    
                     patch->playing_voices->note,
-                    SCHEDULE_NOW
+                    patch->playing_voices->seqtrack->start_time
                     );
     }
 

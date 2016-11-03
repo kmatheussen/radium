@@ -26,7 +26,7 @@ typedef int64_t (*SchedulerCallback)(struct SeqTrack *seqtrack, int64_t time, un
 
 #define DONT_RESCHEDULE INT64_MIN
 
-#define SCHEDULE_NOW (INT64_MIN/2)
+//#define SCHEDULE_NOW (INT64_MIN/2)
 
 enum SchedulerPriority{
   SCHEDULER_INIT_PRIORITY           = 0,
