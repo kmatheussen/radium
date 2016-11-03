@@ -130,6 +130,9 @@ float getSeqnavRightSizeHandleY2(void){
 void appendSeqtrack(void){
   undoSequencer();
   SEQUENCER_append_seqtrack(NULL);
+
+  root->song->curr_seqtracknum = root->song->seqtracks.num_elements -1;
+  BS_UpdatePlayList();
 }
 
 void insertSeqtrack(int pos){
@@ -143,6 +146,9 @@ void insertSeqtrack(int pos){
 
   undoSequencer();
   SEQUENCER_insert_seqtrack(NULL, pos);
+
+  root->song->curr_seqtracknum = pos;
+  BS_UpdatePlayList();
 }
 
 void deleteSeqtrack(int seqtracknum){
@@ -171,6 +177,7 @@ void selectSeqtrack(int seqtracknum){
 
   root->song->curr_seqtracknum = seqtracknum;
   BS_UpdatePlayList();
+  SEQUENCER_update();
 }
 
 int getNumSeqtracks(void){
@@ -302,6 +309,8 @@ void moveSeqblock(int seqblocknum, int64_t abstime, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
     return;
+
+  root->song->curr_seqtracknum = seqtracknum;
   
   //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
   SEQTRACK_move_seqblock(seqtrack, seqblock, abstime);
@@ -312,7 +321,9 @@ void moveSeqblockGfx(int seqblocknum, int64_t abstime, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
     return;
-    
+
+  root->song->curr_seqtracknum = seqtracknum;
+
   //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
   SEQTRACK_move_gfx_seqblock(seqtrack, seqblock, abstime);
 }
@@ -324,6 +335,9 @@ void deleteSeqblock(int seqblocknum, int seqtracknum){
     return;
 
   SEQTRACK_delete_seqblock(seqtrack, seqblock);
+
+  root->song->curr_seqtracknum = R_MAX(seqtracknum -1, 0);
+  BS_UpdatePlayList();
 }
 
 int getSeqblockBlocknum(int seqblocknum, int seqtracknum){

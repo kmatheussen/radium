@@ -775,6 +775,10 @@ private:
       return false;
 
     SharedVariables *sv = GE_get_shared_variables(t2_data->painting_data);
+
+    const struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
+    const struct SeqBlock *seqblock = seqtrack->curr_seqblock;
+    const struct Blocks *visible_block = seqblock==NULL ? NULL : seqblock->block;
     
     double blocktime = 0.0;
 
@@ -782,9 +786,7 @@ private:
 
     if (is_playing){
 
-      const struct Blocks *block = RT_get_curr_visible_block();
-        
-      if ((block==NULL || sv->block!=block)) { // Check that our blocktime belongs to the block that is rendered.
+      if ((visible_block==NULL || sv->block!=visible_block)) { // Check that our blocktime belongs to the block that is rendered.
         
         if (new_t2_data!=NULL && use_t2_thread)
           T3_t2_data_picked_up_but_old_data_will_be_sent_back_later();
@@ -798,9 +800,9 @@ private:
         }
       }
 
-      playing_blocknum = block->l.num;
+      playing_blocknum = visible_block->l.num;
         
-      blocktime = ATOMIC_DOUBLE_GET(block->player_time);
+      blocktime = ATOMIC_DOUBLE_GET(visible_block->player_time);
       //if (blocktime < -50)
       //  printf("blocktime: %f\n",blocktime);
       
@@ -817,6 +819,7 @@ private:
       //printf("blocktime: %f\n",blocktime);
       
       if (is_playing){
+        
         if (blocktime < 0.0) {  // Either the block hasn't started playing yet (sequencer cursor is inside a pause), or we just switched block and waiting for a proper blocktime to be calculated.
           
           if (new_t2_data!=NULL && use_t2_thread)

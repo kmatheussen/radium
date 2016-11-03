@@ -2824,15 +2824,20 @@
 (add-node-mouse-handler :Get-area-box (lambda()
                                         (<ra> :get-box sequencer))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  (let ((seqblock-info (get-seqblock-info X Y)))
-                                                    ;;(c-display "get-existing " seqblock-info X Y)
-                                                    (and seqblock-info
+                                                  (let ((seqtracknum (get-seqtracknum X Y)))
+                                                    (and seqtracknum
                                                          (begin
-                                                           (if (not (<ra> :is-playing-song))
-                                                               (<ra> :select-block (<ra> :get-seqblock-blocknum (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))))
-                                                           (callback seqblock-info (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum)
-                                                                                                                  (seqblock-info :seqtracknum))
-                                                                     Y)))))
+                                                           (<ra> :select-seqtrack seqtracknum)
+
+                                                           (let ((seqblock-info (get-seqblock-info X Y)))
+                                                             ;;(c-display "get-existing " seqblock-info X Y)
+                                                             (and seqblock-info
+                                                                  (begin
+                                                                    (if (not (<ra> :is-playing-song))
+                                                                        (<ra> :select-block (<ra> :get-seqblock-blocknum (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))))
+                                                                    (callback seqblock-info (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum)
+                                                                                                                           (seqblock-info :seqtracknum))
+                                                                              Y))))))))
                         :Get-min-value (lambda (seqblock-info)
                                          (define seqtracknum (seqblock-info :seqtracknum))
                                          (define seqblocknum (seqblock-info :seqblocknum))
@@ -2857,16 +2862,21 @@
                                                           (info :seqtracknum)))
                                                  2))
                         :Make-undo (lambda (_)
-                                     (<ra> :undo-sequencer))
+                                     #f)
                         :Create-new-node (lambda (X seqtracknum callback)
                                            #f)
                         :Publicize (lambda (seqblock-info)
                                      (<ra> :set-statusbar-text (<-> (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum) (seqblock-info :seqtracknum)))))
 
                         :Release-node (lambda (seqblock-info)
-                                        ;;(c-display "  RELEASING GFX")
+                                        (define old-value (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum)
+                                                                (seqblock-info :seqtracknum)))
+                                        (define new-value (floor last-value))
+                                        ;;(c-display "  RELEASING GFX " old-value new-value)
                                         ;;(c-display "  Y" Y (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y))
-                                        (<ra> :move-seqblock (seqblock-info :seqblocknum) (floor last-value) (seqblock-info :seqtracknum))
+                                        (when (not (= old-value new-value))
+                                          (<ra> :undo-sequencer)
+                                          (<ra> :move-seqblock (seqblock-info :seqblocknum) (floor last-value) (seqblock-info :seqtracknum)))
                                         seqblock-info)
 
                         ;; TODO/FIX: Only change graphics here.
@@ -2927,7 +2937,7 @@
                                 (define new-start-time (floor (scale Value
                                                                      (<ra> :get-seqnav-x1) (<ra> :get-seqnav-x2);; (<ra> :get-seqnav-right-size-handle-x1)
                                                                      0 song-length)))
-                                (c-display "       Move" Value (/ new-start-time 48000.0) "x1:" (<ra> :get-seqnav-x1) "x2:" (<ra> :get-seqnav-x2) "end:" (/ (<ra> :get-sequencer-visible-end-time) 48000.0))
+                                ;;(c-display "       Move" Value (/ new-start-time 48000.0) "x1:" (<ra> :get-seqnav-x1) "x2:" (<ra> :get-seqnav-x2) "end:" (/ (<ra> :get-sequencer-visible-end-time) 48000.0))
                                 (define end-time (<ra> :get-sequencer-visible-end-time))
                                 (<ra> :set-sequencer-visible-start-time (max 0 (min (1- end-time) new-start-time))))
                         :Publicize (lambda (_)
@@ -2973,6 +2983,18 @@
 
                         :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
                         )
+
+;; seqtrack select
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;(add-mouse-cycle
+; (make-mouse-cycle
+;  :press-func (lambda (Button X Y)
+;                (let ((seqtracknum (get-seqtracknum X Y)))
+;                  (if seqtracknum
+;                      (begin
+;                        (<ra> :select-seqtrack seqtracknum)))
+;                  #f))))
+
 
 (define (get-seqnav-width)
   (define space-left (- (<ra> :get-seqnav-left-size-handle-x1)

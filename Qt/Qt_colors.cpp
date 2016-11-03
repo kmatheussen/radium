@@ -150,6 +150,7 @@ static const ColorConfig g_colorconfig[] = {
   {MIXER_AUDIO_CONNECTION_COLOR_NUM, "mixer_audio_connection_color", "Audio connection color"},
   {MIXER_AUTOSUSPENSION_COLOR_NUM, "mixer_autosuspension_color", "Auto-suspension sound object color"},
 
+  {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, "sequencer_currtrack_border_color", "Sequencer current track border color"},
   {SEQUENCER_BACKGROUND_COLOR_NUM, "sequencer_background_color", "Sequencer background color"},
   {SEQUENCER_BORDER_COLOR_NUM, "sequencer_border_color", "Sequencer border color"},
   {SEQUENCER_TEXT_COLOR_NUM, "sequencer_text_color", "Sequencer text color"},
@@ -242,6 +243,7 @@ static ReplacementColor g_replacement_color[] = {
   {MIXER_AUDIO_CONNECTION_COLOR_NUM, QColor(50,25,70,140)},
   {MIXER_AUTOSUSPENSION_COLOR_NUM, QColor("#28a6a6a6")},
 
+  {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, QColor(200,200,200)},
   {SEQUENCER_BACKGROUND_COLOR_NUM, QColor(50,50,50)},
   {SEQUENCER_BORDER_COLOR_NUM, QColor(1,1,1)},
   {SEQUENCER_TEXT_COLOR_NUM, QColor(1,1,1)},

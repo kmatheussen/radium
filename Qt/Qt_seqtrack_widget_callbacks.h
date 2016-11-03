@@ -16,6 +16,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <math.h>
 
+#include <QColor>
+
 #include "Qt_MyQCheckBox.h"
 #include "Qt_MyQSlider.h"
 
@@ -194,7 +196,7 @@ class Seqblocks_widget : public MouseTrackerQWidget {
 public:
 
   //QVector<Seqblock_widget*> _seqblock_widgets; // deleted automatically when 'this' is deleted.
-  
+
   SeqTrack *_seqtrack;
 
   const int64_t &_start_time;
@@ -343,19 +345,26 @@ public:
     if (true || is_current_block) {
       QRectF rect1(x1, y1, x2-x1, header_height);
       QRectF rect2(x1, y1+header_height, x2-x1, y2-(y1+header_height));
-      p.fillRect(rect1, get_block_color(block));//QColor(block->color));//get_qcolor(SEQUENCER_BLOCK_HEADER_BACKGROUND_COLOR_NUM));
+      p.fillRect(rect1, get_block_color(block));
       p.fillRect(rect2, get_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM));
     } else {
       p.fillRect(rect, get_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM));
     }
-    
+
     //if (x1 > -5000) { // avoid integer overflow error.
     p.setPen(text_color);
     //p.drawText(x1+4,2,x2-x1-6,height()-4, Qt::AlignLeft, QString::number(seqblock->block->l.num) + ": " + seqblock->block->name);
     p.drawText(rect.adjusted(2,1,-4,-(rect.height()-header_height)), QString::number(block->l.num) + ": " + block->name, QTextOption(Qt::AlignLeft | Qt::AlignTop));
     //}
 
-    p.setPen(border_color);
+    if (is_current_block){
+      QColor c = get_qcolor(CURSOR_EDIT_ON_COLOR_NUM);
+      c.setAlpha(150);      
+      p.setPen(QPen(c, 4));
+    } else {
+      p.setPen(border_color);
+    }
+
     p.drawRoundedRect(rect,1,1);
 
     int64_t blocklen = getBlockSTimeLength(block);
@@ -386,7 +395,9 @@ public:
     QPainter p(this);
 
     p.setRenderHints(QPainter::Antialiasing,true);
-        
+
+    bool is_current = _seqtrack==(struct SeqTrack*)root->song->seqtracks.elements[root->song->curr_seqtracknum];
+      
     //printf("PAINTING seqblocks. gakk\n");
 
     p.fillRect(1,1,width()-2,height()-1, get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
@@ -418,6 +429,23 @@ public:
     }END_VECTOR_FOR_EACH;
 
 
+    // Current track border and non-current track shadowing
+    {
+      if (_seqtrack==(struct SeqTrack*)root->song->seqtracks.elements[root->song->curr_seqtracknum]){
+        if (root->song->seqtracks.num_elements > 1){
+          QPen pen(get_qcolor(SEQUENCER_CURRTRACK_BORDER_COLOR_NUM));
+          pen.setWidthF(2.3);
+          p.setPen(pen);
+          p.drawLine(0,0,width(),0);
+          p.drawLine(0,height(),width(),height());
+        }
+      }else{
+        QColor color(0,0,0,35);
+        //QColor color = get_qcolor(SEQUENCER_CURRTRACK_BORDER_COLOR_NUM);
+        p.fillRect(0,0,width(),height(), color);
+      }
+    }
+
     
     // Cursor
     {
@@ -431,6 +459,7 @@ public:
       p.setPen(pen);
       p.drawLine(line);
     }
+
   }
 
   int _last_num_seqblocks = 0;
