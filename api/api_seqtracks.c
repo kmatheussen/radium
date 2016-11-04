@@ -58,20 +58,20 @@ int64_t getSequencerSongLengthInFrames(void){
   return (SONG_get_length() + SEQUENCER_EXTRA_SONG_LENGTH) * MIXER_get_sample_rate();
 }
 
-int getSequencerVisibleStartTime(void){
-  return (int)SEQUENCER_get_visible_start_time();
+int64_t getSequencerVisibleStartTime(void){
+  return SEQUENCER_get_visible_start_time();
 }
 
-int getSequencerVisibleEndTime(void){
-  return (int)SEQUENCER_get_visible_end_time();
+int64_t getSequencerVisibleEndTime(void){
+  return SEQUENCER_get_visible_end_time();
 }
 
-void setSequencerVisibleStartTime(int value){
+void setSequencerVisibleStartTime(int64_t value){
   printf("                   Set: %f\n", value/48000.0);
   SEQUENCER_set_visible_start_time(value);
 }
 
-void setSequencerVisibleEndTime(int value){
+void setSequencerVisibleEndTime(int64_t value){
   SEQUENCER_set_visible_end_time(value);
 }
 
@@ -334,6 +334,8 @@ void deleteSeqblock(int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return;
 
+  undoSequencer();
+  
   SEQTRACK_delete_seqblock(seqtrack, seqblock);
 
   root->song->curr_seqtracknum = R_MAX(seqtracknum -1, 0);

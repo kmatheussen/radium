@@ -2794,7 +2794,7 @@
            (make-seqblock-info :seqtracknum seqtracknum
                                :seqblocknum seqblocknum))
           (else
-           (c-display X Y (box-to-string (ra:get-box2 seqblock seqblocknum seqtracknum)))
+           ;;(c-display X Y (box-to-string (ra:get-box2 seqblock seqblocknum seqtracknum)))
            (loop (1+ seqblocknum))))))
 
 (define (get-seqtracknum X Y)
@@ -2903,10 +2903,13 @@
                        ;;(c-display "get-existing " seqblock-info X Y)
                        (and seqblock-info
                             (begin
-                              (<ra> :undo-sequencer)
                               (<ra> :delete-seqblock (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))
                               #t)))))))
 
+(define (get-sequencer-pos-from-x X)
+  (round (scale X
+                (<ra> :get-sequencer-x1) (<ra> :get-sequencer-x2)
+                (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time))))
 
 ;; seqblock menu
 (add-mouse-cycle
@@ -2916,8 +2919,23 @@
                      (not (<ra> :shift-pressed))
                      (let ((seqtracknum (get-seqtracknum X Y)))
                        (and seqtracknum
-                            (begin
-                              (popup-menu "Insert sequencer track" (lambda ()
+                            (let ((seqblock-info (get-seqblock-info X Y)))
+                              (popup-menu (list "Delete block"
+                                                :enabled seqblock-info
+                                                (lambda ()
+                                                  (<ra> :delete-seqblock (seqblock-info :seqblocknum) seqtracknum)))                                          
+                                          "Insert current block" (lambda ()
+                                                                   (<ra> :add-block-to-seqtrack seqtracknum (<ra> :current-block) (get-sequencer-pos-from-x X)))
+                                          "Insert block" (lambda ()
+                                                           (let ((pos (get-sequencer-pos-from-x X)))
+                                                             (apply popup-menu
+                                                                    (map (lambda (blocknum)
+                                                                           (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
+                                                                                 (lambda ()
+                                                                                   (<ra> :add-block-to-seqtrack seqtracknum blocknum pos))))
+                                                                         (iota (<ra> :get-num-blocks))))))
+                                          "-----------------"
+                                          "Insert sequencer track" (lambda ()
                                                                      (<ra> :insert-seqtrack seqtracknum))
                                           (list "Delete sequencer track"
                                                 :enabled (> (<ra> :get-num-seqtracks) 1)
