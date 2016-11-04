@@ -667,6 +667,13 @@ int getNumLines(int blocknum){
   return wblock->block->num_lines;
 }
 
+char *getBlockName(int blocknum){
+  struct WBlocks *wblock = getWBlockFromNum(-1, blocknum);
+  if(wblock==NULL) return "";
+
+  return wblock->block->name;
+}
+
 int getNumBlocks(void){
   return root->song->num_blocks;
 }
