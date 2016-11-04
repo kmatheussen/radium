@@ -113,8 +113,15 @@ void RT_LPB_set_beat_position(struct SeqTrack *seqtrack, int audioblocksize){
     double bpm = num_beats_till_next_time * 60.0 * (double)pc->pfreq / (double)audioblocksize;
     //printf("bpm: %f, curr_num_beats: %f - %f (d: %f)\n", bpm,iterator->curr_num_beats,iterator->next_num_beats,num_beats_till_next_time);
 
-    iterator->curr_bpm = bpm;
+    if (fabs(bpm-iterator->curr_bpm) > 0.001)
+      iterator->curr_bpm = bpm;
   }
+
+#if DEBUG_BUGS
+  static double last = 0.0;
+  printf("Num_beats: %f. (diff: %f). So far: %f\n", iterator->curr_num_beats, iterator->curr_num_beats-last, iterator->num_beats_played_so_far);
+  last = iterator->curr_num_beats;
+#endif
 }
 
 // Returns number of beats played so far. (actually returns the number of quarter notes)
