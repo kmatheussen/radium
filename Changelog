@@ -1,3 +1,38 @@
+Changes 4.2.3 -> 4.2.4:
+* Add options to the sequencer popup menu for deleting and inserting
+  blocks.
+* Temporary fix to avoid tiny inaccuracies in the BPM value sent
+  to plugins. Should fix some plugins from re-syncing.
+* Don't reset transport location when switching block while playing.
+  (bug introduced in 4.2.17)
+* Fix quantitization on imported automation.
+* Tell plugins that we are in non-realtime mode when rendering
+  sound files.
+* Add options to the sequencer popup menu for creating and
+  deleting sequencer tracks.
+* Don't allow trying to set BPM or LPB to 0.
+* Avoid hanging note if receiving note on and note off at the
+  same time from MIDI.
+* Fix note stop / velocity change / pitch change for notes that
+  are scheduled to start in the future
+* Fix play note that has start time > 0 when playing notes
+  triggered by MIDI or computer input.
+* Don't multiply tempo with the block tempo multiplier of
+  block #0 when pausing.
+* Unique block colors in the sequencer.
+* Various sequencer navigator GFX tweaks.
+* Option to lock juce when swapping opengl. Might prevent some
+  plugins from crashing when opening native GUI.
+* Minor pitch line GFX tweak.
+* Tweak sequencer "piano roll" painting.
+* Ensure scheduler is really cleared before starting to play.
+  Should prevent the assertion reporter from popping up in
+  some situations.
+* Ask VST3 and AU plugins for audio tail length instead of
+  using default value.
+
+
+
 Changes 4.2.2 -> 4.2.3:
 * Switch editor block when clicking a block in the sequencer
 * Draw blue border around current block in the sequencer
