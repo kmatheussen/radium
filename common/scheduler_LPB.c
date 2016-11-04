@@ -186,6 +186,7 @@ static int64_t RT_scheduled_LPB(struct SeqTrack *seqtrack, int64_t time, union S
 
 static void schedule_next_LPB(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const struct LPBs *next_lpb){
   R_ASSERT_RETURN_IF_FALSE(next_lpb != NULL);
+  R_ASSERT_RETURN_IF_FALSE(seqblock!=NULL);
   
   const int num_args = 1;
         
@@ -203,7 +204,7 @@ static void schedule_next_LPB(struct SeqTrack *seqtrack, const struct SeqBlock *
 
 static int64_t RT_scheduled_LPB(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
 
-  const struct SeqBlock *seqblock = args[1].const_pointer;
+  const struct SeqBlock *seqblock = args[0].const_pointer;
 
   LPB_Iterator *iterator = &seqtrack->lpb_iterator;
   
