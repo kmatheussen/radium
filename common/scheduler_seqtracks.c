@@ -238,12 +238,13 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
           args[1].int_num       = seqblock->time;
           args[2].const_pointer = startdata->seqblock==seqblock ? &static_place : NULL;
           args[3].int_num       = PLAYSONG;
-          
+
+          int64_t seqtime = R_MAX(seqblock_start_time, seq_start_time);
 #if DO_DEBUG
-          printf("  Song: Scheduling RT_scheduled_seqblock at %f. seqtrack->start_time: %f\n",(double)seq_start_time/MIXER_get_sample_rate(), (double)seqtrack->start_time/MIXER_get_sample_rate());
+          printf("  Song: Scheduling RT_scheduled_seqblock at %f. seqtrack->start_time: %f\n",(double)seqtime/MIXER_get_sample_rate(), (double)seqtrack->start_time/MIXER_get_sample_rate());
 #endif
           
-          SCHEDULER_add_event(seqtrack, seqblock_start_time, RT_scheduled_seqblock, &args[0], G_NUM_ARGS, SCHEDULER_INIT_BLOCK_PRIORITY);
+          SCHEDULER_add_event(seqtrack, seqtime, RT_scheduled_seqblock, &args[0], G_NUM_ARGS, SCHEDULER_INIT_BLOCK_PRIORITY);
           
           break;
         }

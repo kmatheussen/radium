@@ -259,6 +259,7 @@ namespace{
 
       result.isLooping = false; //pc->playtype==PLAYBLOCK || pc->playtype==PLAYRANGE; (same here)
 #endif
+
       return true;
     }
   };
