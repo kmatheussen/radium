@@ -221,13 +221,23 @@ static int64_t RT_scheduled_LPB(struct SeqTrack *seqtrack, int64_t time, union S
   return DONT_RESCHEDULE;
 }
 
+void RT_LPB_call_when_start_playing(struct SeqTrack *seqtrack){
+  LPB_Iterator *iterator = &seqtrack->lpb_iterator;
+  iterator->num_beats_played_so_far = 0.0;
+  iterator->num_beats_between_place1_and_place2 = 0.0;
+}
+
 void RT_schedule_LPBs_newblock(struct SeqTrack *seqtrack,
                                const struct SeqBlock *seqblock,
                                const Place start_place)
 {
   LPB_Iterator *iterator = &seqtrack->lpb_iterator;
-  memset(iterator, 0, sizeof(LPB_Iterator));
 
+  // Null out all fields, except num_beats_played_so_far.
+  double num_beats_played_so_far = iterator->num_beats_played_so_far + iterator->num_beats_between_place1_and_place2;
+  memset(iterator, 0, sizeof(LPB_Iterator));
+  iterator->num_beats_played_so_far = num_beats_played_so_far;
+  
   const struct Blocks *block = seqblock->block;
 
   const struct LPBs *lpb = block->lpbs;

@@ -1747,6 +1747,23 @@ typedef struct {
 } LPB_Iterator;
 
 
+#if 0
+struct Tempos;
+
+typedef struct {
+  const struct tempos *next_tempo;
+
+  Place place1;
+  Place place2;
+  
+  double place1_f;
+  double place2_f;
+  
+  int lpb_value;
+} BPM_Iterator;
+#endif
+
+
 typedef struct {
   const struct Beats *next_beat;
 

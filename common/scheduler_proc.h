@@ -141,6 +141,7 @@ extern LANGSPEC void RT_schedule_reallines_in_block(struct SeqTrack *seqtrack, c
 
 
 // scheduler_lpb_proc.h
+extern LANGSPEC void RT_LPB_call_when_start_playing(struct SeqTrack *seqtrack);
 extern LANGSPEC void RT_schedule_LPBs_newblock(struct SeqTrack *seqtrack,
                                                const struct SeqBlock *seqblock,
                                                const Place start_place);
