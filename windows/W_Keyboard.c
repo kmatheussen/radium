@@ -40,6 +40,8 @@ static DEFINE_ATOMIC(bool, right_windows_down) = false;
 
 static unsigned int g_last_keyswitch;
 
+#ifndef RUN_TEST
+
 void OS_WINDOWS_set_always_on_top(void *child_handle){
 #if 0
   //SetWindowPos(main_handle, hwnd, 100, 100, 1000, 1000, SWP_SHOWWINDOW);
@@ -51,6 +53,8 @@ void OS_WINDOWS_set_always_on_top(void *child_handle){
   SetWindowLongPtr(child_hwnd, -8, (LONG_PTR)parent_hwnd);
 #endif
 }
+
+#endif
 
 static uint32_t get_keyswitch(void){
   uint32_t keyswitch=0;
@@ -648,8 +652,14 @@ bool EventReciever(struct TEvent *tevent,struct Tracker_Windows *window){
 }
 void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
 }
+void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...){
+  fprintf(stderr," CRASH: %s\n", fmt);
+  abort();
+}
+void call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_events(void){
+}
 
-// x86_64-w64-mingw32-g++ -Wall W_Keyboard.c -mconsole -DRUN_TEST -DFOR_WINDOWS -DDEBUG -I../Qt/ -DUSE_QT_REQTYPE=1 ../common/scancodes.c `mingw64-pkg-config --libs --cflags QtGui` && wine64 a.exe 
+// x86_64-w64-mingw32-g++ -Wall W_Keyboard.c -mconsole -DRUN_TEST -DFOR_WINDOWS -I../Qt/ -DUSE_QT_REQTYPE=1 ../common/scancodes.c `mingw64-pkg-config --libs --cflags QtGui` && wine64 a.exe 
 
 #include <QApplication>
 #include <QPushButton>
@@ -676,8 +686,8 @@ protected:
     if (type!=-1){
       int keynum = OS_SYSTEM_get_keynum(event);
       int qwerty = OS_SYSTEM_get_qwerty_keynum(event);
-      printf("Got %s event: %d / %d. swiktch: %x. wparam: 0x%x. Modifier: %d. Autorepeat: %s\n",
-             type==TR_KEYBOARD?"press":"release",keynum,qwerty,get_keyswitch(),msg->wParam,OS_SYSTEM_get_modifier(event),type==TR_AUTOREPEAT?"true":"false"
+      printf("Got %s event: %d / %d. swiktch: %x. wparam: 0x%lx. Modifier: %d. Autorepeat: %s\n",
+             type==TR_KEYBOARD?"press":"release",keynum,qwerty,get_keyswitch(),(long unsigned int)msg->wParam,OS_SYSTEM_get_modifier(event),type==TR_AUTOREPEAT?"true":"false"
              );
     }
     return false;

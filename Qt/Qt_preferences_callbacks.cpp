@@ -267,7 +267,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     {    
       vst_widget->buttonBox->hide();
       
-      tabWidget->insertTab(tabWidget->count()-2, vst_widget, "VST");
+      tabWidget->insertTab(tabWidget->count()-2, vst_widget, "Plugins");
     }
 
     // Colors
@@ -394,6 +394,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
 #if USE_QT5
       eraseEstimatedVBlankInterval->hide();
+      erase_vblank_group_box_layout->removeItem(erase_estimated_vblank_spacer);
 #else
       QString vblankbuttontext = QString("Erase Estimated Vertical Blank (")+QString::number(1000.0/GL_get_estimated_vblank())+" Hz)";
       eraseEstimatedVBlankInterval->setText(vblankbuttontext);
@@ -401,9 +402,6 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       
       bool draw_in_separate_process = SETTINGS_read_bool("opengl_draw_in_separate_process",false);//GL_using_nvidia_card());
       draw_in_separate_process_onoff->setChecked(draw_in_separate_process);
-      
-      bool lock_juce = doLockJuceWhenSwappingOpenGL();
-      lock_juce_when_swapping_onoff->setChecked(lock_juce);
       
       safeModeOnoff->setChecked(GL_get_safe_mode());
     }
@@ -574,11 +572,6 @@ public slots:
   void on_draw_in_separate_process_onoff_toggled(bool val){
     if (_initing==false)
       SETTINGS_write_bool("opengl_draw_in_separate_process",val);
-  }
-  
-  void lock_juce_when_swapping_onoff_toggled(bool val){
-    if (_initing==false)
-      setLockJuceWhenSwappingOpenGL(val);
   }
   
   void on_safeModeOnoff_toggled(bool val){

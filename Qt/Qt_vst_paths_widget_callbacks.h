@@ -74,7 +74,13 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
 
   void updateWidgets(void){
     _is_updating_widgets = true;
+    
     always_on_top->setChecked(vstGuiIsAlwaysOnTop());
+
+    bool lock_juce = doLockJuceWhenSwappingOpenGL();
+    lock_juce_when_swapping_onoff->setChecked(lock_juce);
+      
+
     _is_updating_widgets = false;
   }
   
@@ -121,6 +127,11 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
     if (_is_updating_widgets == false){
       setVstGuiAlwaysOnTop(val);
     }
+  }
+
+  void lock_juce_when_swapping_onoff_toggled(bool val){
+    if (_is_updating_widgets == false)
+      setLockJuceWhenSwappingOpenGL(val);
   }
   
   void on_path_edit_editingFinished(){
