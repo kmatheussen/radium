@@ -158,7 +158,10 @@
          <item>
           <widget class="QLabel" name="label_12">
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Adjusts the amount of anti-aliasing. 4X should normally be a good value.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
+Adjusts the amount of anti-aliasing. 4X should normally be a good value.&lt;br/&gt;
+If you experience slow graphical performance in the editor, it will help to lower&lt;br/&gt;
+or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
