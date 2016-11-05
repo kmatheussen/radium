@@ -1738,7 +1738,7 @@ QWidget *GL_create_widget(QWidget *parent){
 
 #if FOR_LINUX
       //if (SETTINGS_read_bool("show_intel_gfx_message4_during_startup", true)) {
-        if (s_version.contains("Mesa 10.3.2") || s_version.contains(" 10.3.1") || s_version.contains(" 10.3.0") || s_version.contains(" 10.2.") || s_version.contains(" 10.1.") || s_version.contains(" 10.0.")) {
+        if (s_version.contains("Mesa 10.3.3") || s_version.contains("Mesa 10.3.2") || s_version.contains(" 10.3.1") || s_version.contains(" 10.3.0") || s_version.contains(" 10.2.") || s_version.contains(" 10.1.") || s_version.contains(" 10.0.")) {
           GFX_Message(NULL,
                       "Old Intel Linux driver detected. Upgrading the GFX driver might prevent Radium from crashing."
                       );
