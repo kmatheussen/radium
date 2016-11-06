@@ -359,7 +359,7 @@ void selectSeqblock(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
-    return 0;
+    return;
 
   root->song->curr_seqtracknum = seqtracknum;
 
