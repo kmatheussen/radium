@@ -309,9 +309,9 @@ void generalReturn(int windownum){
   }  
 }
 
-void appendBlock(void){
+int appendBlock(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);
-  AppendWBlock(window);
+  return AppendWBlock(window)->l.num;
 }
 
 void appendTrack(int blocknum){
@@ -648,9 +648,9 @@ void deleteBlock(int windownum){
   DeleteBlock_CurrPos(window);
 }
 
-void insertBlock(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  InsertBlock_CurrPos(window);
+int insertBlock(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return -1;
+  return InsertBlock_CurrPos(window)->l.num;
 }
 
 int getNumTracks(int blocknum){

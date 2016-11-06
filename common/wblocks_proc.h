@@ -54,6 +54,6 @@ extern LANGSPEC void NewWBlock(
 
 extern LANGSPEC void UpdateWBlocks(struct Tracker_Windows *window);
 
-extern LANGSPEC void AppendWBlock(struct Tracker_Windows *window);
+extern LANGSPEC struct Blocks *AppendWBlock(struct Tracker_Windows *window);
 
 extern LANGSPEC void AppendWBlock_spes(struct Tracker_Windows *window,int num_lines,NInt num_tracks);

@@ -2926,14 +2926,18 @@
                                                   (<ra> :delete-seqblock (seqblock-info :seqblocknum) seqtracknum)))                                          
                                           "Insert current block" (lambda ()
                                                                    (<ra> :add-block-to-seqtrack seqtracknum (<ra> :current-block) (get-sequencer-pos-from-x X)))
-                                          "Insert block" (lambda ()
-                                                           (let ((pos (get-sequencer-pos-from-x X)))
-                                                             (apply popup-menu
-                                                                    (map (lambda (blocknum)
-                                                                           (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
-                                                                                 (lambda ()
-                                                                                   (<ra> :add-block-to-seqtrack seqtracknum blocknum pos))))
-                                                                         (iota (<ra> :get-num-blocks))))))
+                                          "Insert existing block" (lambda ()
+                                                                    (let ((pos (get-sequencer-pos-from-x X)))
+                                                                      (apply popup-menu
+                                                                             (map (lambda (blocknum)
+                                                                                    (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
+                                                                                          (lambda ()
+                                                                                            (<ra> :add-block-to-seqtrack seqtracknum blocknum pos))))
+                                                                                  (iota (<ra> :get-num-blocks))))))
+                                          "Insert new block" (lambda ()
+                                                               (let* ((pos (get-sequencer-pos-from-x X))
+                                                                      (blocknum (<ra> :append-block)))
+                                                                 (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
                                           "-----------------"
                                           "Insert sequencer track" (lambda ()
                                                                      (<ra> :insert-seqtrack seqtracknum))
@@ -2944,6 +2948,14 @@
                                           "Append sequencer track" (lambda ()
                                                                      (<ra> :append-seqtrack))
                                           "------------------"
+                                          (list "Configure block"
+                                                :enabled (and seqblock-info (not (<ra> :is-playing-song)))
+                                                (lambda ()
+                                                  (define blocknum (<ra> :get-seqblock-blocknum (seqblock-info :seqblocknum)
+                                                                         (seqblock-info :seqtracknum)))
+                                                  (<ra> :select-block blocknum)
+                                                  (<ra> :config-block)))
+
                                           (list "Configure block color"
                                                 :enabled seqblock-info
                                                 (lambda ()

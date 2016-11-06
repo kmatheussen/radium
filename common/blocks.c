@@ -79,13 +79,15 @@ void NewBlock(
 	ListAddElement1(&root->song->blocks,&block->l);
 }
 
-void AppendBlock(void){
+struct Blocks *AppendBlock(void){
 	NInt blocknum=ListFindFirstFreePlace1(&root->song->blocks->l);
-	struct Blocks *temp=talloc(sizeof(struct Blocks));
+	struct Blocks *block=talloc(sizeof(struct Blocks));
 
-	temp->l.num=blocknum;
-	NewBlock(temp,7,70,"NN");
+	block->l.num=blocknum;
+	NewBlock(block,7,70,"NN");
 	root->song->num_blocks++;
+
+        return block;
 }
 
 void AppendBlock_spes(int num_lines,NInt num_tracks){

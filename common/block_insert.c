@@ -54,12 +54,13 @@ void InsertBlock_IncBlockNums(
 	}
 }
 
-void InsertBlock(
-	NInt blockpos,
-	NInt num_tracks,
-	int num_lines,
-	char *name
-){
+struct Blocks *InsertBlock(
+                           NInt blockpos,
+                           NInt num_tracks,
+                           int num_lines,
+                           char *name
+                           )
+{
         R_ASSERT(is_playing()==false);
 
 	struct Tracker_Windows *window=root->song->tracker_windows;
@@ -82,20 +83,24 @@ void InsertBlock(
             
             window=NextWindow(window);
         }
-        
+
+        return block;
 }
 
 
-void InsertBlock_CurrPos(
-	struct Tracker_Windows *window
-){
+struct Blocks *InsertBlock_CurrPos(
+                                   struct Tracker_Windows *window
+                                   )
+{
 	struct WBlocks *wblock=window->wblock;
 	NInt blockpos=wblock->l.num;
 
 	ADD_UNDO(Block_Insert(blockpos));
 
+        struct Blocks *ret;
+        
         PC_Pause();{
-          InsertBlock(blockpos,wblock->block->num_tracks,wblock->block->num_lines,"NN");
+          ret = InsertBlock(blockpos,wblock->block->num_tracks,wblock->block->num_lines,"NN");
 
           SelectWBlock(window,(struct WBlocks *)ListFindElement1(&window->wblocks->l,blockpos));
 
@@ -103,5 +108,7 @@ void InsertBlock_CurrPos(
           BS_UpdatePlayList();
 
         }PC_StopPause(window);
+
+        return ret;
 }
 

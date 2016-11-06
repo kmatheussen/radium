@@ -516,12 +516,14 @@ void SelectNextPlaylistWBlock(struct Tracker_Windows *window){
 
 extern size_t allocated;
 
-void AppendWBlock(struct Tracker_Windows *window){
+struct Blocks *AppendWBlock(struct Tracker_Windows *window){
 
 	ADD_UNDO(Block_Insert(root->song->num_blocks));
 
+        struct Blocks *ret;
+        
         PC_Pause();{
-          AppendBlock();
+          ret = AppendBlock();
           UpdateWBlocks(window);
           SelectWBlock(
                        window,
@@ -529,6 +531,8 @@ void AppendWBlock(struct Tracker_Windows *window){
                        );
           BS_UpdateBlockList();
         }PC_StopPause(NULL);
+
+        return ret;
 }
 
 void AppendWBlock_spes(struct Tracker_Windows *window,int num_lines,NInt num_tracks){
