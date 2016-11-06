@@ -180,6 +180,10 @@ void selectSeqtrack(int seqtracknum){
   SEQUENCER_update();
 }
 
+int getCurrSeqtrack(void){
+  return root->song->curr_seqtracknum;
+}
+
 int getNumSeqtracks(void){
   return root->song->seqtracks.num_elements;
 }

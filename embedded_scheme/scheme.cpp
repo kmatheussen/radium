@@ -158,6 +158,17 @@ void s7extra_callFunc2_void_int_charpointer(const char *funcname, int64_t arg1, 
   s7extra_callFunc_void_int_charpointer((func_t*)s7_name_to_value(s7, funcname), arg1, arg2);
 }
 
+void s7extra_callFunc_void_charpointer(func_t *func, const char* arg1){
+  s7_call(s7,
+          (s7_pointer)func,
+          s7_list(s7,
+                  1,
+                  s7_make_string(s7, arg1)
+                  )
+          );
+}
+
+
 int placetest(Place dasplacevar,int windownum){
   return dasplacevar.line;
 }

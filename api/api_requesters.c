@@ -152,6 +152,10 @@ int popupMenu2(const char *texts, func_t* callback){
   return GFX_Menu2(window, NULL,"",vec, callback);
 }
 
+char* colorDialog(const char *initial_color, func_t* callback){
+  return GFX_color_dialog(initial_color, callback);
+}
+
 void callFunc_void_int_bool(func_t* callback, int arg1, bool arg2){
   s7extra_callFunc_void_int_bool(callback, arg1, arg2);
 }

@@ -15,9 +15,10 @@ extern "C" {
   void s7extra_callFunc_void_int(func_t *func, int64_t arg1);
   void s7extra_callFunc2_void_int(const char *funcname, int64_t arg1);
 
-  void s7extra_callFunc_void_charpointer(func_t *func, int64_t arg1, const char* arg2);
   void s7extra_callFunc2_void_int_charpointer(const char *funcname, int64_t arg1, const char* arg2);
 
+  void s7extra_callFunc_void_charpointer(func_t *func, const char* arg1);
+    
 #ifdef __cplusplus
 }
 #endif

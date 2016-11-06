@@ -79,7 +79,7 @@ static double getBlockAbsDuration(const struct Blocks *block){
 
 static QColor get_block_color(const struct Blocks *block){
   //return mix_colors(QColor(block->color), get_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM), 0.32f);
-  return mix_colors(QColor(block->color), get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.12f);
+  return QColor(block->color);
 }
 
 class MouseTrackerQWidget : public QWidget {

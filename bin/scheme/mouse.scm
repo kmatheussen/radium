@@ -2942,7 +2942,19 @@
                                                 (lambda ()
                                                   (<ra> :delete-seqtrack seqtracknum)))
                                           "Append sequencer track" (lambda ()
-                                                                     (<ra> :append-seqtrack))))))))))
+                                                                     (<ra> :append-seqtrack))
+                                          "------------------"
+                                          (list "Configure block color"
+                                                :enabled seqblock-info
+                                                (lambda ()
+                                                  (define blocknum (<ra> :get-seqblock-blocknum (seqblock-info :seqblocknum)
+                                                                                                (seqblock-info :seqtracknum)))
+                                                  (<ra> :color-dialog (<ra> :get-block-color blocknum)
+                                                                      (lambda (color)
+                                                                        (<ra> :set-block-color color blocknum)))))))))))))
+                                                                                 
+
+
 ;; left size handle in navigator
 (add-horizontal-handler :Get-handler-data (lambda (X Y)
                                             (define box (<ra> :get-box seqnav-left-size-handle))
@@ -3197,7 +3209,6 @@
 
 (box-to-string (ra:get-box2 seqtrack 0))
 (box-to-string (ra:get-box2 seqtrack 1))
-
 
 ||#
 

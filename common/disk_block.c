@@ -50,7 +50,8 @@ DC_start("BLOCK");
 	DC_SSN("num_tracks",block->num_tracks);
 	DC_SSI("num_lines",block->num_lines);
 	DC_SSF("reltempo",ATOMIC_DOUBLE_GET(block->reltempo));
-
+        DC_SSS("color", GFX_get_colorname_from_colornum(block->color));
+        
 	SaveTrack(block->tracks);
 	SaveSignatures(block->signatures);
         SaveLPBs(block->lpbs);
@@ -72,19 +73,20 @@ struct Blocks *LoadBlock(void){
 		"TEMPOS",
 		"RELTEMPO"
 	};
-	static char *vars[4]={
+	static char *vars[5]={
 		"name",
 		"num_tracks",
 		"num_lines",
-		"reltempo"
+		"reltempo",
+                "color"
 	};
 	struct Blocks *block=DC_alloc(sizeof(struct Blocks));
 	ATOMIC_DOUBLE_SET(block->reltempo, 1.0);
 
 	block->l.num=DC_LoadN();
-        block->color = GFX_MakeRandomColor();
+        block->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.12f);
         
-	GENERAL_LOAD(5,4)
+	GENERAL_LOAD(5,5)
 
 var0:
 	block->name=DC_LoadS();
@@ -98,7 +100,9 @@ var2:
 var3:
 	ATOMIC_DOUBLE_SET(block->reltempo, DC_LoadD());
 	goto start;
-
+var4:
+        block->color = GFX_get_colornum_from_colorname(DC_LoadS());
+        
 obj0:
 	DC_ListAdd1(&block->tracks,LoadTrack());
 	goto start;
@@ -116,7 +120,6 @@ obj4:
 	goto start;
 
 
-var4:
 var5:
 var6:
 var7:

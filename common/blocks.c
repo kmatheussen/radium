@@ -67,7 +67,7 @@ void NewBlock(
 	block->temponodes->l.next= &temponode->l;
 	block->lasttemponode=temponode;
 
-        block->color = GFX_MakeRandomColor();
+        block->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.12f);
         
 	for(lokke=0;lokke<block->num_tracks;lokke++){
 		AppendTrack(block);

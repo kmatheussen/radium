@@ -692,6 +692,33 @@ void selectBlock(int blocknum, int windownum){
   }PC_StopPause(window);
 }
 
+void setBlockColor(const_char *colorname, int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WBlocks *wblock = getWBlockFromNumA(
+                                             windownum,
+                                             &window,
+                                             blocknum
+                                             );
+  if(wblock==NULL) return;
+
+  unsigned int colornum = GFX_get_colornum_from_colorname(colorname);
+  wblock->block->color = colornum;
+
+  SEQUENCER_update();
+}
+
+const char *getBlockColor(int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WBlocks *wblock = getWBlockFromNumA(
+                                             windownum,
+                                             &window,
+                                             blocknum
+                                             );
+  if(wblock==NULL) return "";
+
+  return GFX_get_colorname_from_colornum(wblock->block->color);
+}
+
 void setTrackNoteShowType(int type,int tracknum,int blocknum,int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;

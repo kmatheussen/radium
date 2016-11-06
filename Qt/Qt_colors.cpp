@@ -46,6 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_proc.h"
 #include "../GTK/GTK_visual_proc.h"
 #include "../common/OS_settings_proc.h"
+#include "../embedded_scheme/s7extra_proc.h"
 
 #include "Qt_colors_proc.h"
 
@@ -328,6 +329,68 @@ static void configure_note_colors(void){
       g_note_colors[note] = mix_colors(end_color, start_color, (float)(note-start_note)/(end_note-start_note));
     }
   }
+}
+
+unsigned int GFX_mix_colors(unsigned int c1, unsigned int c2, float how_much){
+  return mix_colors(QColor(c1), QColor(c2), how_much).rgb();
+}
+
+namespace{
+  struct MyColorDialog : public QColorDialog {
+    Q_OBJECT;
+    
+public:
+
+    func_t *_callback;
+    
+    MyColorDialog(QWidget *parent, func_t *callback)
+      : QColorDialog(parent)
+      , _callback(callback)        
+    {
+      setOption(QColorDialog::DontUseNativeDialog, true);
+      setOption(QColorDialog::ShowAlphaChannel, true);
+
+      connect(this, SIGNAL(currentColorChanged(const QColor &)), this, SLOT(color_changed(const QColor &)));
+      
+    }
+
+  public slots:
+    void color_changed(const QColor &col){
+      printf("Color changed\n");
+      s7extra_callFunc_void_charpointer(_callback, col.name().toUtf8().constData());
+    }
+  };
+}
+
+
+char *GFX_color_dialog(const char *initial_color, func_t *callback){
+  MyColorDialog color_dialog(g_main_window, callback);
+  color_dialog.setCurrentColor(QColor(initial_color));
+
+  int ret = safeExec(&color_dialog);  
+
+  if (ret==QDialog::Rejected){
+    
+    s7extra_callFunc_void_charpointer(callback, initial_color);
+    return talloc_strdup(initial_color);
+    
+  }
+    
+  return talloc_strdup(color_dialog.currentColor().name().toUtf8().constData());
+}
+
+unsigned int GFX_get_color(enum ColorNums colornum){
+  return get_qcolor(colornum).rgb();
+}
+
+unsigned int GFX_get_colornum_from_colorname(const char *colorname){
+  QColor color(colorname);
+  return color.rgb();
+}
+
+const char *GFX_get_colorname_from_colornum(unsigned int colornum){
+  QColor color(colornum);
+  return talloc_strdup(color.name().toUtf8());
 }
 
 QHash<int, QColor> custom_colors;
