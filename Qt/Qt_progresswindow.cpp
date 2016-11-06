@@ -6,6 +6,11 @@
 #include <QMessageBox>
 #include <QFile>
 #include <QProcess>
+#include <QTimer>
+
+static const QString message_hide = "_MESSAGE_HIDE";
+static const QString message_show = "_MESSAGE_SHOW";
+static const QString message_exit = "_MESSAGE_EXIT";
 
 #ifdef P_CLIENT
 
@@ -19,6 +24,21 @@ static int longest_line(QString text){
 
   return ret;
 }
+
+class MyTimer : public QTimer{
+public:
+  MyTimer(){
+    setInterval(200);
+  }
+
+  void timerEvent(QTimerEvent *e) override {
+    if (progressBox != NULL && progressBox->isVisible()) {
+      progressBox->raise();
+    }
+  }
+};
+
+static MyTimer mytimer;
 
 void process_OpenProgress(QString message){
   delete progressBox;
@@ -42,6 +62,7 @@ void process_OpenProgress(QString message){
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
     usleep(10);
   }
+
 }
 
 void process_ShowProgressMessage(QString message){
@@ -86,6 +107,8 @@ int main(int argc, char **argv){
   
   QApplication app(argc, argv);
 
+  mytimer.start();
+
   QString header = QByteArray::fromBase64(argv[1]).constData();
   process_OpenProgress(header);
 
@@ -94,10 +117,19 @@ int main(int argc, char **argv){
 
   while(true){
     QString line = QByteArray::fromBase64(in.readLine().trimmed().constData());
-    printf("Got line -%s-\n",line.toUtf8().constData());
-    if (line=="exit")
+    printf(" *********** Got line -%s- ************* \n",line.toUtf8().constData());
+    //getchar();
+    
+    if (line==message_exit)
       break;
-    process_ShowProgressMessage(line);
+    else if (line==message_hide) {
+      //progressBox->setText("HIDING\n");
+      progressBox->hide();
+    } else if (line==message_show) {
+      progressBox->show();
+      progressBox->raise();
+    } else if (progressBox->isVisible())
+      process_ShowProgressMessage(line);
   }
 
   process_CloseProgress();
@@ -133,7 +165,7 @@ void GFX_OpenProgress(const char *message){
 #endif
 
   g_process->start(program+" "+QString(QString(message).toUtf8().toBase64().constData()), QIODevice::WriteOnly | QIODevice::Text | QIODevice::Unbuffered | QIODevice::Append);
-
+ 
   if (g_process->waitForStarted()==false){
     printf("Unable to start process\n");
     delete g_process;
@@ -141,13 +173,18 @@ void GFX_OpenProgress(const char *message){
   }
 }
 
+static void send_string(QString message){
+  printf("-______ sending string %s\n",message.toUtf8().constData());
+  g_process->write((QString(message.toUtf8().toBase64().constData())+"\n").toUtf8());
+  g_process->waitForBytesWritten();
+}
+    
 void GFX_ShowProgressMessage(const char *message){
   if (g_process == NULL)
     GFX_OpenProgress("...");
 
   if (g_process != NULL) {
-    g_process->write((QString(QString(message).toUtf8().toBase64().constData())+"\n").toUtf8());
-    g_process->waitForBytesWritten();
+    send_string(message);
 
     //g_process->waitForFinished();
     //g_process->closeWriteChannel();
@@ -156,8 +193,7 @@ void GFX_ShowProgressMessage(const char *message){
 
 void GFX_CloseProgress(void){
   if (g_process != NULL){
-    g_process->write(QString(QString(QString("exit").toUtf8().toBase64().constData())+"\n").toUtf8().constData());
-    g_process->waitForBytesWritten();
+    send_string(message_exit);
     g_process->closeWriteChannel();
     g_process->waitForFinished();
     delete g_process;
@@ -165,8 +201,33 @@ void GFX_CloseProgress(void){
   }
 }
 
+void GFX_HideProgress(void){
+  if (g_process != NULL) {
+    send_string(message_hide);
+  }
+}
+
+void GFX_ShowProgress(void){
+  if (g_process != NULL)
+    send_string(message_show);
+}
+
 
 #ifdef TEST_MAIN
+
+
+/*
+cd ..
+BUILDTYPE=DEBUG ./build_linux.sh
+cd Qt
+g++ Qt_progresswindow.cpp -DTEST_MAIN `pkg-config --libs Qt5Gui --cflags Qt5Gui --cflags Qt5Widgets` -std=gnu++11 -DNDEBUG -DP_SERVER -I../Qt -DFOR_LINUX -DUSE_QT4 -DUSE_QT5 `cat ../flagopts.opt`
+./a.out
+*/
+
+  
+QString OS_get_full_program_file_path(QString name){
+  return "/home/kjetil/radium/bin/radium_progress_window";
+}
 
 int main(int argc, char **argv){
   QApplication app(argc, argv);
@@ -175,7 +236,7 @@ int main(int argc, char **argv){
 
   usleep(1000*1000);
 
-  for(int i =0;i<=10;i++){
+  for(int i =0;i<=5;i++){
     printf("trying to show %d\n",i);
     GFX_ShowProgressMessage((QString("ap ")+QString::number(i)).toUtf8().constData());
     usleep(1000*1000);

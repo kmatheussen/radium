@@ -1181,7 +1181,7 @@ public:
   }
 protected:
 
-  void 	timerEvent ( QTimerEvent * e ){
+  void 	timerEvent ( QTimerEvent * e ) override {
 #ifdef TEST_GC
     printf("triggering full collect\n");
     GC_gcollect();

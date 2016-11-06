@@ -8,17 +8,7 @@
 #include <QProcess>
 #include <QDir>
 
-#ifdef COMPILE_EXECUTABLE
-#define R_ASSERT_RETURN_IF_FALSE2(a,b)                                  \
-  do{                                                                   \
-    if(!(a)) {                                                          \
-      fprintf(stderr, "Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); \
-      return b;                                                         \
-    }                                                                   \
-  }while(0)
-#else
 #include "../common/nsmtracker.h"
-#endif
 
 
 #include "helpers.h"

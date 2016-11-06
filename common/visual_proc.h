@@ -42,9 +42,13 @@ extern LANGSPEC void GFX_showMixerHelpWindow(void);
 extern LANGSPEC void GFX_showFXHelpWidget(void);
 extern LANGSPEC void GFX_showVelocityHelpWidget(void);
 extern LANGSPEC void GFX_showChanceHelpWidget(void);
+
 extern LANGSPEC void GFX_OpenProgress(const char *message);
 extern LANGSPEC void GFX_ShowProgressMessage(const char *message);
+extern LANGSPEC void GFX_HideProgress(void);
+extern LANGSPEC void GFX_ShowProgress(void);
 extern LANGSPEC void GFX_CloseProgress(void);
+
 extern LANGSPEC int GFX_Message(vector_t *buttons,const char *fmt,...);
 extern LANGSPEC const char *GFX_qVersion(void);
 

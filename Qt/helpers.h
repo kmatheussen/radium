@@ -14,6 +14,7 @@
 
 #include "../OpenGL/Widget_proc.h"
 #include "../common/keyboard_focus_proc.h"
+#include "../common/visual_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -223,11 +224,15 @@ static inline int safeExec(QMessageBox *widget){
   g_radium_runs_custom_exec = true;
   
   obtain_keyboard_focus();
+
+  GFX_HideProgress();
   
   GL_lock();{
     ret = widget->exec();
   }GL_unlock();
 
+  GFX_ShowProgress();
+    
   release_keyboard_focus();
 
   g_radium_runs_custom_exec = false;
@@ -244,10 +249,14 @@ static inline int safeExec(QMessageBox &widget){
     
   obtain_keyboard_focus();
 
+  GFX_HideProgress();
+  
   GL_lock();{
     ret = widget.exec();
   }GL_unlock();
 
+  GFX_ShowProgress();
+    
   release_keyboard_focus();
 
   g_radium_runs_custom_exec = false;
@@ -264,10 +273,14 @@ static inline int safeExec(QDialog *widget){
   
   obtain_keyboard_focus();
 
+  GFX_HideProgress();
+  
   GL_lock();{
     ret = widget->exec();
   }GL_unlock();
 
+  GFX_ShowProgress();
+    
   release_keyboard_focus();
 
   g_radium_runs_custom_exec = false;
@@ -279,11 +292,13 @@ static inline QAction *safeExec(QMenu *widget){
   QAction *ret;
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
-
+  
   g_radium_runs_custom_exec = true;
     
   obtain_keyboard_focus();
 
+  GFX_HideProgress();
+  
   if (doModalWindows()) {
     GL_lock();{
       ret = widget->exec(QCursor::pos());
@@ -294,6 +309,8 @@ static inline QAction *safeExec(QMenu *widget){
     }GL_unlock();    
     ret = widget->exec(QCursor::pos());
   }
+
+  GFX_ShowProgress();
   
   release_keyboard_focus();
 
