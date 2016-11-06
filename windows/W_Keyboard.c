@@ -423,7 +423,7 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
       //printf("2. Got Activate. wParam: %d. Active: %p\n",(int)msg->wParam,GetForegroundWindow());
       //fflush(stdout);
       //if (msg->wParam==0)
-      //call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_events();
+      call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_events(); // Need to call this one since EVENT_SYSTEM_FOREGROUND is not called when radium is sent to the foreground if the program was minimized by pressing the icon in the windows bar instead of the "_" icon in the window bar.
       break;
       
     case WM_ACTIVATEAPP:
@@ -615,7 +615,7 @@ void OS_SYSTEM_init_keyboard(void) {
                                              EVENT_SYSTEM_FOREGROUND ,
                                              NULL, 
                                              WinEventProcCallback, 0, 0, 
-                                             WINEVENT_OUTOFCONTEXT //| WINEVENT_SKIPOWNPROCESS);
+                                             WINEVENT_OUTOFCONTEXT  //| WINEVENT_SKIPOWNPROCESS);
                                              );
 
 
