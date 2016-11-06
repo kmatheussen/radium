@@ -354,3 +354,14 @@ int getSeqblockBlocknum(int seqblocknum, int seqtracknum){
 
   return seqblock->block->l.num;
 }
+
+void selectSeqblock(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 0;
+
+  root->song->curr_seqtracknum = seqtracknum;
+
+  selectBlock(seqblock->block->l.num, -1);
+}
