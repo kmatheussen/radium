@@ -690,6 +690,8 @@ struct Timeline_widget : public MouseTrackerQWidget {
     double start_time = _start_time / MIXER_get_sample_rate();
     double end_time = _end_time / MIXER_get_sample_rate();
 
+    R_ASSERT_RETURN_IF_FALSE(end_time > start_time);
+    
     int inc_time = R_MAX(1, ceil(scale(min_pixels_between_text, 0, width(), 0, end_time-start_time)));
 
     // Ensure inc_time is aligned in seconds, 5 seconds, or 30 seconds.
@@ -715,7 +717,7 @@ struct Timeline_widget : public MouseTrackerQWidget {
     int64_t time = inc_time * int((double)start_time/(double)inc_time);
     
     for(;;){
-      const double x = scale(time, start_time, end_time, 0, width());
+      const double x = scale_double(time, start_time, end_time, 0, width());
       if (x >= width())
         break;
 
@@ -1048,6 +1050,10 @@ void SEQUENCER_set_visible_start_and_end_time(int64_t start_time, int64_t end_ti
   
   g_sequencer_widget->_start_time = R_MAX(start_time, 0);
   g_sequencer_widget->_end_time = R_MIN(end_time, SONG_get_gfx_length() * MIXER_get_sample_rate());
+
+  if (g_sequencer_widget->_start_time >= g_sequencer_widget->_end_time - 10)
+    g_sequencer_widget->_start_time = R_MAX(g_sequencer_widget->_end_time - 10, 0);
+    
   g_sequencer_widget->my_update();
 }
 
