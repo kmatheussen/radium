@@ -592,7 +592,7 @@ struct Mixer{
       _main_inputs[1] = jack_port_register(_rjack_client, "main_input_2", JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
       
       const char **outportnames = jack_get_ports(_rjack_client,NULL,NULL,JackPortIsPhysical|JackPortIsOutput);
-      R_ASSERT(outportnames != NULL);
+      //R_ASSERT(outportnames != NULL);
 
       if (outportnames != NULL) {
         if (outportnames[0] != NULL){
