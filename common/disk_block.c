@@ -102,6 +102,7 @@ var3:
 	goto start;
 var4:
         block->color = GFX_get_colornum_from_colorname(DC_LoadS());
+        goto start;
         
 obj0:
 	DC_ListAdd1(&block->tracks,LoadTrack());
