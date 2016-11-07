@@ -368,26 +368,60 @@ public:
     p.drawRoundedRect(rect,1,1);
 
     int64_t blocklen = getBlockSTimeLength(block);
-    int num_tracks = block->num_tracks;
-    
-    struct Tracks *track = block->tracks;
-    while(track != NULL){
 
-      float t_y1 = scale(track->l.num,0,num_tracks,y1+header_height,y2);
-      float t_y2 = scale(track->l.num+1,0,num_tracks,y1+header_height,y2);
+    // Tracks
+    {
+      int num_tracks = block->num_tracks;
       
-      // Draw track border
-      {
-        p.setPen(track->l.num==0 ? header_border_pen : track_border_pen);        
-        p.drawLine(QLineF(x1,t_y1,x2,t_y1));
+      struct Tracks *track = block->tracks;
+      while(track != NULL){
+        
+        float t_y1 = scale(track->l.num,0,num_tracks,y1+header_height,y2);
+        float t_y2 = scale(track->l.num+1,0,num_tracks,y1+header_height,y2);
+        
+        // Draw track border
+        {
+          p.setPen(track->l.num==0 ? header_border_pen : track_border_pen);        
+          p.drawLine(QLineF(x1,t_y1,x2,t_y1));
+        }
+        
+        // Draw track
+        paintTrack(p, x1, t_y1, x2, t_y2, block, track, blocklen);
+        
+        track = NextTrack(track);
       }
-
-      // Draw track
-      paintTrack(p, x1, t_y1, x2, t_y2, block, track, blocklen);
-      
-      track = NextTrack(track);
     }
-    
+
+    // Bar and beats
+    {
+      struct Beats *beat = block->beats;
+      QColor bar_color = get_qcolor(SEQUENCER_BLOCK_BAR_COLOR_NUM);
+      QColor beat_color = get_qcolor(SEQUENCER_BLOCK_BEAT_COLOR_NUM);
+      QPen bar_pen(bar_color);
+      QPen beat_pen(beat_color);
+
+      //bar_pen.setWidth(1.0);
+      //beat_pen.setWidth(1.0);
+      
+      while(beat != NULL){
+        float b_y1 = y1+header_height;
+        float b_y2 = y2;
+
+        float pos = Place2STime(block, &beat->l.p);
+        
+        float b_x = scale(pos, 0, blocklen, x1, x2);
+
+        if (beat->beat_num==1)
+          p.setPen(bar_pen);
+        else
+          p.setPen(beat_pen);
+
+        QLineF line(b_x, b_y1, b_x, b_y2);
+        p.drawLine(line);
+        
+        beat = NextBeat(beat);
+      }
+    }
   }
   
   void paintEvent ( QPaintEvent * ev ) override {
