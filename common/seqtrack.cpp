@@ -556,6 +556,7 @@ static void move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, 
   if (is_gfx) {
     
     seqblock->gfx_time = new_seqblock_time;
+    
     legalize_seqtrack_timing(seqtrack, true);
     
   } else {
@@ -565,7 +566,7 @@ static void move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, 
     seqblock->time = new_seqblock_time;
     seqblock->gfx_time = seqblock->time;
 
-    RT_legalize_seqtrack_timing(seqtrack);
+    legalize_seqtrack_timing(seqtrack, false);
   }
 
   double new_song_visible_length = SONG_get_gfx_length();

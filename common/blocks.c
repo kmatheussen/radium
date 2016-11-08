@@ -84,7 +84,7 @@ struct Blocks *AppendBlock(void){
 	struct Blocks *block=talloc(sizeof(struct Blocks));
 
 	block->l.num=blocknum;
-	NewBlock(block,7,70,"NN");
+	NewBlock(block,7,64,"NN");
 	root->song->num_blocks++;
 
         return block;
