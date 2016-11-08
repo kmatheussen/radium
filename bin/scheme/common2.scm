@@ -998,11 +998,13 @@ for .emacs:
 
 (define (undo-block block)
   (<ra> :open-undo)
-  (catch #t
-         block
-         (lambda args ;; Catch exceptions to ensure (<ra> :cose-undo) will be called
-           (display "args")(display args)(newline)
-           (apply format #t (cadr args))
-           (display (ow!))))
-  (<ra> :close-undo))
+  (let ((ret (catch #t
+                    block
+                    (lambda args ;; Catch exceptions to ensure (<ra> :cose-undo) will be called
+                      (display "args")(display args)(newline)
+                      (apply format #t (cadr args))
+                      (display (ow!))))))
+    (<ra> :close-undo)
+    ret))
+
 

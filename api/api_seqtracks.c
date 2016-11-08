@@ -242,18 +242,18 @@ void insertSilenceToSeqtrack(int seqtracknum, int64_t pos, int64_t duration){
   SEQTRACK_insert_silence(seqtrack, pos, duration);
 }
 
-void addBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos){
+int addBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
-    return;
+    return -1;
 
   struct Blocks *block = getBlockFromNum(blocknum);
   if (block==NULL)
-    return;
+    return -1;
 
   ADD_UNDO(Sequencer());
 
-  SEQTRACK_insert_block(seqtrack, block, pos);
+  return SEQTRACK_insert_block(seqtrack, block, pos);
 }
 
 // seqblocks

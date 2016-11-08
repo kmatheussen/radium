@@ -611,11 +611,11 @@ void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t
   BS_UpdatePlayList();
 }
 
-void SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime){
+int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime){
 
   // Assert that the seqblock is not in a seqtrack already.
   VECTOR_FOR_EACH(struct SeqTrack *, seqtrack_here, &root->song->seqtracks){
-    R_ASSERT_RETURN_IF_FALSE(!VECTOR_is_in_vector(&seqtrack_here->seqblocks, seqblock));
+    R_ASSERT_RETURN_IF_FALSE2(!VECTOR_is_in_vector(&seqtrack_here->seqblocks, seqblock), 0);
   }END_VECTOR_FOR_EACH;
 
   
@@ -649,11 +649,13 @@ void SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblo
   }
 
   RT_SEQUENCER_update_sequencer_and_playlist();
+
+  return pos;
 }
 
-void SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime){
+int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime){
   struct SeqBlock *seqblock = SEQBLOCK_create(block);
-  SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime);
+  return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime);
 }
 
 double SEQTRACK_get_length(struct SeqTrack *seqtrack){
