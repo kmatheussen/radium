@@ -850,6 +850,12 @@ void UpdateSTimes2(struct Blocks *block, int default_bpm, int default_lpb){
 
           STP_fillinLastSTimeTempos(&stp);
 
+          PLAYER_lock();{
+            ALL_SEQTRACKS_FOR_EACH(){
+              RT_legalize_seqtrack_timing(seqtrack);
+            }END_ALL_SEQTRACKS_FOR_EACH;
+          }PLAYER_unlock();
+          
           SEQUENCER_update();
           BS_UpdatePlayList();
 
