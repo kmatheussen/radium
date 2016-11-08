@@ -1,3 +1,37 @@
+Changes 4.2.4 -> 4.2.5:
+* Don't paste color when pasting block
+* Move sequencer blocks in the vertical direction as well as the
+  horizontal direction.
+* Always hide sequencer window if instrument window is half or
+  full size.
+* Let new blocks have 64 lines by default, not 70.
+* Mouse: Align sequencer blocks by bar positions in the sequencer
+  track(s) above. Pressing ctrl (to finetune) prevents automatic
+  alignment.
+* Update default sequencer colors.
+* Legalize sequencer block positions when timing has been changed.
+* Paint bars and beats in the sequencer.
+* Fix rare hang when loading song or protracker module.
+* Don't show assertion reporter if the user doesn't have physical
+  jack output ports.
+* Always select the block when right clicking on a block in the
+  sequencer.
+* Options to replace block under mouse with current/existing/new
+  block, in sequencer popup menu.
+* Add "configure block" option to sequencer block popup menu.
+* Option to configure block colors. Block colors are also saved
+  to disk.
+* Hide progress window when showing message so that it doesn't
+  cover the message window.
+* Regularly make sure progress window is on top when open.
+* Various preferences gui adjustments.
+* Windows: Fix keyboard after Radium was brought to foreground
+  again after being minimized by clicking the taskbar icon.
+* Include Linux Intel 10.3.3 driver in list of GFX drivers to
+  show warning about.
+
+
+
 Changes 4.2.3 -> 4.2.4:
 * Add options to the sequencer popup menu for deleting and inserting
   blocks.
