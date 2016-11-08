@@ -223,6 +223,15 @@ float getSeqtrackY2(int seqtracknum){
   return SEQTRACK_get_y2(seqtracknum);
 }
 
+int64_t findClosestSeqtrackBarStart(int seqtracknum, int64_t pos){
+  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
+    GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
+    return 0;
+  }
+  
+  return SEQUENCER_find_closest_bar_start(seqtracknum, pos);
+}
+
 void insertSilenceToSeqtrack(int seqtracknum, int64_t pos, int64_t duration){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
@@ -355,6 +364,7 @@ int getSeqblockBlocknum(int seqblocknum, int seqtracknum){
   return seqblock->block->l.num;
 }
 
+/*
 void selectSeqblock(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
@@ -365,3 +375,16 @@ void selectSeqblock(int seqblocknum, int seqtracknum){
 
   selectBlock(seqblock->block->l.num, -1);
 }
+*/
+
+void selectSeqblock(bool is_selected, int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return;
+
+  seqblock->is_selected = is_selected;
+
+  SEQUENCER_update();
+}
+

@@ -2780,6 +2780,26 @@
 ;; seqtrack / seqblock
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+#||
+(define (find-closest-bar seqtracknum pos)
+  (let loop ((seqblocknum 0)
+             (last-bar-pos 0)
+             (last-bar-len 0)
+             (min-dist #f))
+    (let* ((after-end (>= seqblocknum (<ra> :get-num-seqblocks seqtracknum)))
+           (start (if after-end
+                      (+ last-bar-pos last-bar-len)
+                      (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+           (end   (if after-end
+                      (+ last-bar-pos (* last-bar-len 2))
+                      (<ra> :get-seqblock-end-time seqblocknum seqtracknum))))
+      (cond ((and (>= pos start)
+                  (< pos end))
+             )))))
+||#
+
+             
 (define-struct seqblock-info
   :seqtracknum
   :seqblocknum)
@@ -2816,11 +2836,9 @@
               (get-seqblock seqtracknum X Y)))))
 
 
-;; TODO: Fix.
-(define last-value 0)
-
 ;; seqblock move
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define gakklast-value 0) ;; TODO: Fix.
 (add-node-mouse-handler :Get-area-box (lambda()
                                         (<ra> :get-box sequencer))
                         :Get-existing-node-info (lambda (X Y callback)
@@ -2870,20 +2888,28 @@
                         :Release-node (lambda (seqblock-info)
                                         (define old-value (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum)
                                                                 (seqblock-info :seqtracknum)))
-                                        (define new-value (floor last-value))
+                                        (define new-value (if (<ra> :ctrl-pressed)
+                                                              (floor gakklast-value)
+                                                              (<ra> :find-closest-seqtrack-bar-start (seqblock-info :seqtracknum) (floor gakklast-value))))
                                         ;;(c-display "  RELEASING GFX " old-value new-value)
                                         ;;(c-display "  Y" Y (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y))
-                                        (when (not (= old-value new-value))
-                                          (<ra> :undo-sequencer)
-                                          (<ra> :move-seqblock (seqblock-info :seqblocknum) (floor last-value) (seqblock-info :seqtracknum)))
+                                        (if (not (= old-value new-value))
+                                            (begin
+                                              (<ra> :undo-sequencer)
+                                              (<ra> :move-seqblock (seqblock-info :seqblocknum) new-value (seqblock-info :seqtracknum)))
+                                            (<ra> :move-seqblock-gfx (seqblock-info :seqblocknum) old-value (seqblock-info :seqtracknum)))
                                         seqblock-info)
 
                         ;; TODO/FIX: Only change graphics here.
                         :Move-node (lambda (seqblock-info Value Y)
-                                     (set! last-value Value)
-                                     ;;(c-display "  MOVING GFX " Value)
-                                     ;;(c-display "  Y" Y (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y))
-                                     (<ra> :move-seqblock-gfx (seqblock-info :seqblocknum) (floor Value) (seqblock-info :seqtracknum))
+                                     (define new-value (if (<ra> :ctrl-pressed)
+                                                           (floor Value)
+                                                           (<ra> :find-closest-seqtrack-bar-start (seqblock-info :seqtracknum) (floor Value))))
+
+                                     (set! gakklast-value new-value)
+                                     (c-display "  MOVING GFX " (/ new-value 44100.0))
+                                     (c-display "  Y" Y (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y))
+                                     (<ra> :move-seqblock-gfx (seqblock-info :seqblocknum) new-value (seqblock-info :seqtracknum))
                                      seqblock-info)
 
                         :Use-Place #f
@@ -2932,7 +2958,7 @@
                                           ;;"Insert current block" (lambda ()
                                           ;;                         (<ra> :add-block-to-seqtrack seqtracknum (<ra> :current-block) (get-sequencer-pos-from-x X)))
                                           "Insert existing block" (lambda ()
-                                                                    (let ((pos (get-sequencer-pos-from-x X)))
+                                                                    (let ((pos (<ra> :find-closest-seqtrack-bar-start seqtracknum (get-sequencer-pos-from-x X))))
                                                                       (apply popup-menu
                                                                              (map (lambda (blocknum)
                                                                                     (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
@@ -2950,7 +2976,7 @@
                                           ;;                             (iota (<ra> :get-num-blocks)))
                                           
                                           "Insert new block" (lambda ()
-                                                               (let* ((pos (get-sequencer-pos-from-x X))
+                                                               (let* ((pos (<ra> :find-closest-seqtrack-bar-start seqtracknum (get-sequencer-pos-from-x X)))
                                                                       (blocknum (<ra> :append-block)))
                                                                  (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
                                           
@@ -3009,6 +3035,13 @@
                                                        (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
                                                     (<ra> :select-block blocknum))))
                                           
+                                          ;;"-----------------"
+                                          ;;
+                                          ;;(list "Remove pause"
+                                          ;;      :enabled #f
+                                          ;;      (lambda ()
+                                          ;;        #f))
+
                                           "-----------------"
                                           
                                           "Insert sequencer track" (lambda ()

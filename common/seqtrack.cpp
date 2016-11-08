@@ -15,10 +15,13 @@
 
 #include "seqtrack_proc.h"
 
+// The API for this function is a little bit stupid:
+// 1. If seqblock_where_time_is==NULL, then block_seqtime is actually a seqtime, i.e. starts counting from the beginning of the song.
+// 2. If seqblock_where_time_is!=NULL, then block_seqtime is what it says, seqtime within seqblock_where_time_is.
 int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_where_time_is, int64_t block_seqtime){
   int64_t last_seq_end_time = 0;
   double last_abs_end_time = 0; // Is double because of reltempo multiplication.
-    
+
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
     
     struct Blocks *block            = seqblock->block;
@@ -28,7 +31,12 @@ int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct S
     
     int64_t seq_start_time  = seqblock->time;
     double  abs_start_time  = last_abs_end_time + pause_duration;
-      
+
+    if (seqblock_where_time_is == NULL) {
+      if (block_seqtime < seq_start_time)
+        return last_abs_end_time + (block_seqtime - last_seq_end_time);
+    }
+    
     if (seqblock == seqblock_where_time_is)
       return abs_start_time + ((double)block_seqtime / ATOMIC_DOUBLE_GET(seqblock->block->reltempo)); // Important that we round down.
       
@@ -37,6 +45,11 @@ int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct S
     
     int64_t seq_end_time = seq_start_time + seq_block_duration;
     double  abs_end_time = abs_start_time + abs_block_duration;
+
+    if (seqblock_where_time_is == NULL){
+      if (block_seqtime >= seq_start_time && block_seqtime < seq_end_time)
+        return abs_start_time + ((double) (block_seqtime-seq_start_time) / ATOMIC_DOUBLE_GET(seqblock->block->reltempo)); // Important that we round down.
+    }
     
     //last_abs_start_time = abs_start_time;
     last_seq_end_time   = seq_end_time;
@@ -44,6 +57,9 @@ int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct S
     
     //printf("  start/end: %f  ->   %f\n",seqblock->start_time,seqblock->end_time);
   }END_VECTOR_FOR_EACH;
+
+  if (seqblock_where_time_is == NULL)
+    return last_abs_end_time + (block_seqtime - last_seq_end_time);
 
   // !!!
   R_ASSERT(false);
@@ -90,6 +106,12 @@ int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct S
   }END_VECTOR_FOR_EACH;
 
   return last_seq_end_time + (abstime - last_abs_end_time); // We lose the decimals here. Wonder if this inaccuracy could build up. Maybe using double/seconds everywhere instead would be better...
+}
+
+static int64_t convert_seqtime(struct SeqTrack *from_seqtrack, struct SeqTrack *to_seqtrack, int64_t from_seqtime){
+  int64_t abstime = get_abstime_from_seqtime(from_seqtrack, NULL, from_seqtime);
+  //printf("in: %f, abstime: %f. out: %f\n",(double)from_seqtime/44100.0, (double)abstime/44100.0, (double)get_seqtime_from_abstime(to_seqtrack, NULL, abstime)/44100.0);
+  return get_seqtime_from_abstime(to_seqtrack, NULL, abstime);
 }
 
 static struct SeqBlock *SEQBLOCK_create(struct Blocks *block){
@@ -187,6 +209,167 @@ void SEQUENCER_update_all_seqblock_start_and_end_times(void){
   }END_VECTOR_FOR_EACH;
 }
 
+
+/**
+ * Find closest bar start, start
+ */
+
+struct SeqTrack *find_closest_seqtrack_with_bar_start(int seqtracknum){
+  if (seqtracknum==0)
+    return (struct SeqTrack*)root->song->seqtracks.elements[0];
+
+  seqtracknum--;
+  
+  while(seqtracknum > 0){
+    struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
+    if (seqtrack->seqblocks.num_elements > 0)
+      return seqtrack;
+
+    seqtracknum--;
+  }
+
+  return (struct SeqTrack*)root->song->seqtracks.elements[0];
+}
+
+/*
+static int64_t find_bar_start_before(struct SeqBlock *seqblock, int64_t seqtime){
+  struct Blocks *block = seqblock->block;
+
+  struct Beats *beat = NextBeat(block->beats);
+  while (beat != NULL){
+    if (beat->beat_num==1)
+      break;
+    beat = NextBeat(beat);
+  }
+
+  int64_t bar_length;
+  
+  if (beat==NULL)
+    bar_length = getBlockSTimeLength(block);
+  else
+    bar_length = Place2STime(block, &beat->l.p);
+  
+  return seqblock->time - bar_length;
+}
+*/
+
+static int64_t find_bar_start_inside(struct SeqBlock *seqblock, int64_t seqtime){
+  struct Blocks *block = seqblock->block;
+
+  int64_t ret = seqblock->time;
+  int64_t mindist = INT64_MAX;
+  
+  struct Beats *beat = block->beats;
+
+  while (beat != NULL){
+    if (beat->beat_num==1){
+      int64_t bartime = seqblock->time + Place2STime(block, &beat->l.p);
+      int64_t dist = R_ABS(bartime-seqtime);
+      //printf("bar/beat: %d/%d. seqtime: %f. bartime: %f. dist: %f\n",beat->bar_num,beat->beat_num,(double)seqtime/44100.0, (double)bartime/44100.0,(double)dist/44100.0);
+      if (dist < mindist){
+        mindist = dist;
+        ret = bartime;
+      }
+      if (bartime >= seqtime)
+        break;
+    }
+    beat = NextBeat(beat);
+  }
+
+  //printf("  GOT: %f.\n\n", (double)ret/44100.0);
+  return ret;
+}
+
+static int64_t find_bar_start_after(struct SeqBlock *seqblock, int64_t seqtime, int64_t maxtime){
+  struct Blocks *block = seqblock->block;
+
+  struct Beats *last_bar = NULL;
+  
+  struct Beats *beat = NextBeat(block->beats);
+  while (beat != NULL){
+    if (beat->beat_num==1)
+      last_bar = beat;
+    beat = NextBeat(beat);
+  }
+
+  int64_t blocklen = getBlockSTimeLength(block);
+  
+  int64_t bar_length;
+  
+  if (last_bar==NULL)
+    bar_length = blocklen;
+  else
+    bar_length = blocklen - Place2STime(block, &last_bar->l.p);
+
+  int64_t ret = seqblock->time + blocklen;
+  int64_t mindiff = R_ABS(ret-seqtime);
+  int64_t lastdiff = mindiff;
+  
+  int maybe = ret + bar_length;
+  while(maybe < maxtime){
+    int64_t diff = R_ABS(maybe-seqtime);
+    if (diff > lastdiff)
+      break;
+    
+    if(diff < mindiff){
+      mindiff = diff;
+      ret = maybe;
+    }
+
+    lastdiff = diff;
+    maybe += bar_length;
+  }
+  
+  return ret;
+}
+
+int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_seqtime){
+  struct SeqTrack *pos_seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
+  struct SeqTrack *seqtrack = find_closest_seqtrack_with_bar_start(seqtracknum);
+
+  int64_t seqtime = convert_seqtime(pos_seqtrack, seqtrack, pos_seqtime);
+
+  int64_t bar_start_time = 0;
+
+  struct SeqBlock *last_seqblock = NULL;
+  
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+
+    int64_t starttime = seqblock->time;
+    int64_t endtime = seqblock->time + getBlockSTimeLength(seqblock->block);
+    
+    if (seqtime >= starttime && seqtime < endtime) {
+      bar_start_time = find_bar_start_inside(seqblock, seqtime);
+      goto gotit;
+    }
+    
+    if (seqtime < starttime && last_seqblock==NULL) {
+      bar_start_time = pos_seqtime; //find_bar_start_before(seqblock, seqtime);
+      goto gotit;
+    }
+    
+    if (seqtime < starttime) {
+      bar_start_time = find_bar_start_after(last_seqblock, seqtime, starttime);
+      goto gotit;
+    }
+    
+    last_seqblock = seqblock;
+  }END_VECTOR_FOR_EACH;
+
+  if (last_seqblock==NULL)
+    return pos_seqtime;
+  else
+    bar_start_time = find_bar_start_after(last_seqblock, seqtime, INT64_MAX);
+  
+ gotit:
+
+  //printf("Converting %f to %f\n",(double)bar_start_time/44100.0, (double)convert_seqtime(seqtrack, pos_seqtrack, bar_start_time)/44100.0);
+  return convert_seqtime(seqtrack, pos_seqtrack, bar_start_time);
+}
+
+/**
+ * Find closest bar start, end
+ */
 
 
 static void set_plain_seqtrack_timing_no_pauses(struct SeqTrack *seqtrack){

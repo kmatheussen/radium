@@ -74,6 +74,7 @@ extern LANGSPEC struct SeqTrack *SEQTRACK_create_from_playlist(const int *playli
 
 // sequencer
 extern LANGSPEC void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block);
+extern LANGSPEC int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_seqtime);
 extern LANGSPEC hash_t *SEQUENCER_get_state(void);
 extern LANGSPEC void SEQUENCER_create_from_state(hash_t *state);
 extern LANGSPEC void SEQUENCER_update_all_seqblock_start_and_end_times(void);

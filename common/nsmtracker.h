@@ -418,6 +418,8 @@ enum ColorNums {
   SEQUENCER_BLOCK_HEADER_BACKGROUND_COLOR_NUM,
   SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM,
   SEQUENCER_BLOCK_BORDER_COLOR_NUM,
+  SEQUENCER_BLOCK_BAR_COLOR_NUM,
+  SEQUENCER_BLOCK_BEAT_COLOR_NUM,
   SEQUENCER_TRACK_BORDER1_COLOR_NUM,
   SEQUENCER_TRACK_BORDER2_COLOR_NUM,
   SEQUENCER_CURSOR_COLOR_NUM,
@@ -1790,6 +1792,7 @@ struct SeqBlock{
 
   int64_t gfx_time;  // Usually contains the same value as 'time', but when moving seqblocks with the mouse, it contains the currently visible time instead. When releasing the mouse button, 'time' will get the same value as 'gfx_time'.
 
+  bool is_selected;
   
   // 'start_time' and 'end_time' are absolute times.
   // They are only used the main thread.
