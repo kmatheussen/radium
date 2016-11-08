@@ -21,6 +21,9 @@ extern LANGSPEC void SEQUENCER_set_visible_start_and_end_time(int64_t start_time
 extern LANGSPEC void SEQUENCER_set_visible_start_time(int64_t val);
 extern LANGSPEC void SEQUENCER_set_visible_end_time(int64_t val);
 
+extern LANGSPEC void SEQUENCER_hide_because_instrument_widget_is_large(void);
+extern LANGSPEC void SEQUENCER_show_because_instrument_widget_is_large(void);
+
 
 // sequencer navigator gfx
 extern LANGSPEC float SEQNAV_get_x1(void);

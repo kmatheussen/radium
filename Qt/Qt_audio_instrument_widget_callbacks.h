@@ -15,6 +15,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#include "../common/seqtrack_proc.h"
+
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundPluginRegistry_proc.h"
 
@@ -847,12 +849,14 @@ private:
     struct Tracker_Windows *window = root->song->tracker_windows;
     EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
     editor->xsplitter->hide();
+
   }
 
   void show_non_instrument_widgets(void){
     struct Tracker_Windows *window = root->song->tracker_windows;
     EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
     editor->xsplitter->show();
+    
     /*
     GFX_ShowEditor();
     GFX_ShowMixer();
@@ -872,6 +876,11 @@ public:
     else if (_size_type == SIZETYPE_FULL)
       show_non_instrument_widgets();
 
+    if (new_size_type==SIZETYPE_NORMAL)
+      SEQUENCER_show_because_instrument_widget_is_large();
+    else
+      SEQUENCER_hide_because_instrument_widget_is_large();
+    
     if (new_size_type==SIZETYPE_NORMAL)
       show_small();
     else

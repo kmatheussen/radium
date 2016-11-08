@@ -323,7 +323,7 @@ public:
   
   void paintBlock(QPainter &p, const QRectF &rect, const struct Blocks *block){
 
-    const int header_height = root->song->tracker_windows->fontheight + 2;
+    const int header_height = root->song->tracker_windows->fontheight;
     
     QColor text_color = get_qcolor(SEQUENCER_TEXT_COLOR_NUM);
     QColor border_color = get_qcolor(SEQUENCER_BLOCK_BORDER_COLOR_NUM);
@@ -1249,22 +1249,62 @@ void RT_SEQUENCER_update_sequencer_and_playlist(void){
   }
 }
 
+static bool g_sequencer_visible = true;
+static bool g_sequencer_hidden_because_instrument_widget_is_large = false;
+
+static void init_sequencer_visible(void){
+  static bool g_sequencer_visible_inited = false;
+  if (g_sequencer_visible_inited==false){
+    g_sequencer_visible = g_sequencer_widget->isVisible();
+    g_sequencer_visible_inited=true;
+  }
+}
+
 bool GFX_SequencerIsVisible(void){
-  return g_sequencer_widget->isVisible();
+  init_sequencer_visible();
+  return g_sequencer_visible;
 }
 
 void GFX_ShowSequencer(void){
+  init_sequencer_visible();
+  
   //set_widget_height(30);
-  GL_lock(); {
-    g_sequencer_widget->show();
-  }GL_unlock();
+  if (g_sequencer_hidden_because_instrument_widget_is_large == false){
+    GL_lock(); {
+      g_sequencer_widget->show();
+      g_sequencer_visible = true;
+    }GL_unlock();
+  }
 
   set_editor_focus();
 }
 
 void GFX_HideSequencer(void){
+  init_sequencer_visible();
+  
   g_sequencer_widget->hide();
+  g_sequencer_visible = false;
   //set_widget_height(0);
 
   set_editor_focus();
 }
+
+void SEQUENCER_hide_because_instrument_widget_is_large(void){
+  init_sequencer_visible();
+
+  g_sequencer_widget->hide();
+  g_sequencer_hidden_because_instrument_widget_is_large = true;
+}
+
+void SEQUENCER_show_because_instrument_widget_is_large(void){
+  init_sequencer_visible();
+  
+  if (g_sequencer_visible == true){
+    GL_lock(); {
+      g_sequencer_widget->show();
+    }GL_unlock();
+  }
+
+  g_sequencer_hidden_because_instrument_widget_is_large = false; 
+}
+

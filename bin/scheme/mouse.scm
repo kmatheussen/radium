@@ -804,7 +804,7 @@
 
   (add-node-mouse-handler :Get-area-box (lambda () (make-box2 0 0 100000 100000))
                           :Get-existing-node-info (lambda (X Y callback)
-                                                    (c-display "  horiz: " X Y)
+                                                    ;;(c-display "  horiz: " X Y)
                                                     (define handler-data (Get-handler-data X Y))
                                                     (and handler-data
                                                          (let ((info (make-info :handler-data handler-data
@@ -2907,8 +2907,8 @@
                                                            (<ra> :find-closest-seqtrack-bar-start (seqblock-info :seqtracknum) (floor Value))))
 
                                      (set! gakklast-value new-value)
-                                     (c-display "  MOVING GFX " (/ new-value 44100.0))
-                                     (c-display "  Y" Y (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y))
+                                     ;;(c-display "  MOVING GFX " (/ new-value 44100.0))
+                                     ;;(c-display "  Y" Y (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y))
                                      (<ra> :move-seqblock-gfx (seqblock-info :seqblocknum) new-value (seqblock-info :seqtracknum))
                                      seqblock-info)
 

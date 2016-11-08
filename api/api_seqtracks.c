@@ -323,7 +323,14 @@ void moveSeqblock(int seqblocknum, int64_t abstime, int seqtracknum, int new_seq
   if (seqblock==NULL)
     return;
 
-  root->song->curr_seqtracknum = seqtracknum;
+  if (new_seqtracknum==-1)
+    new_seqtracknum = seqtracknum;
+
+  struct SeqTrack *new_seqtrack = getSeqtrackFromNum(new_seqtracknum);
+  if (new_seqtrack==NULL)
+    return;
+  
+  root->song->curr_seqtracknum = new_seqtracknum;
   
   //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
   SEQTRACK_move_seqblock(seqtrack, seqblock, abstime);
@@ -335,8 +342,15 @@ void moveSeqblockGfx(int seqblocknum, int64_t abstime, int seqtracknum, int new_
   if (seqblock==NULL)
     return;
 
-  root->song->curr_seqtracknum = seqtracknum;
+  if (new_seqtracknum==-1)
+    new_seqtracknum = seqtracknum;
 
+  struct SeqTrack *new_seqtrack = getSeqtrackFromNum(new_seqtracknum);
+  if (new_seqtrack==NULL)
+    return;
+  
+  root->song->curr_seqtracknum = new_seqtracknum;
+  
   //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
   SEQTRACK_move_gfx_seqblock(seqtrack, seqblock, abstime);
 }
