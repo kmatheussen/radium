@@ -67,11 +67,15 @@ void CB_PasteBlock(
 	NInt blocknum=toblock->l.num;
 	struct ListHeader1 *nextblock=toblock->l.next;
 
+        unsigned int org_color = toblock->color;
+          
 	NInt org_num_tracks=toblock->num_tracks;
 
 	memcpy(towblock,wblock,sizeof(struct WBlocks));
 	memcpy(toblock,block,sizeof(struct Blocks));
 
+        toblock->color = org_color; // Don't want to paste color.
+        
 	towblock->l.next=nextwblock;
 	towblock->l.num=wblocknum;
 
