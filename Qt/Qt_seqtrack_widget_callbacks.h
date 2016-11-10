@@ -919,7 +919,7 @@ struct Sequencer_widget : public QWidget {
 
   int _old_width = 600;
   int64_t _start_time = 0;
-  int64_t _end_time;
+  int64_t _end_time = 600;
   double _samples_per_pixel;
   
   const int bottom_height = 30;
@@ -949,8 +949,13 @@ struct Sequencer_widget : public QWidget {
 
   void my_update(void){
     int64_t visible_song_length = MIXER_get_sample_rate() * SONG_get_gfx_length();
-    if (_end_time > visible_song_length)
+    if (_end_time > visible_song_length) {
       _end_time = visible_song_length;
+      if (_start_time >= _end_time)
+        _start_time = 0;
+      if (_start_time >= _end_time)
+        _end_time = 10;
+    }
     
     _timeline_widget.update();
     _seqtracks_widget.my_update();
