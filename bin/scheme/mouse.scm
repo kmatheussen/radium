@@ -2929,8 +2929,8 @@
 
                         :Use-Place #f
 
-                        ;;:Mouse-pointer-func ra:set-closed-hand-mouse-pointer
-                        :Mouse-pointer-func ra:set-blank-mouse-pointer
+                        :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
+                        ;;:Mouse-pointer-func ra:set-blank-mouse-pointer
                         
                         :Get-pixels-per-value-unit (lambda (seqblock-info)
                                                      (/ (- (<ra> :get-sequencer-x2)
