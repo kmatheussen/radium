@@ -2910,7 +2910,8 @@
                                      (define new-seqtracknum (or (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y) (seqblock-info :seqtracknum)))
                                      ;;(c-display "  Y" Y new-seqtracknum)
 
-                                     (define new-pos (if (<ra> :ctrl-pressed)
+                                     (define new-pos (if (or (= 0 (seqblock-info :seqblocknum))
+                                                             (<ra> :ctrl-pressed))
                                                          (floor Value)
                                                          (<ra> :find-closest-seqtrack-bar-start new-seqtracknum (floor Value))))
                                      (set! gakklast-value new-pos)
