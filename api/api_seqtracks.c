@@ -75,7 +75,16 @@ void setSequencerVisibleEndTime(int64_t value){
   SEQUENCER_set_visible_end_time(value);
 }
 
-
+/*
+float getSeqtempoAreaX1(void){
+}
+float getSeqtempoAreaY1(void){
+}
+float getSeqtempoAreaX2(void){
+}
+float getSeqtempoAreaY2(void){
+}
+*/
 
 
 float getSeqnavX1(void){
@@ -189,7 +198,52 @@ int getNumSeqtracks(void){
 }
 
 
+
+// sequencer tempo automation
+//
+
+/*
+float getSeqtempoX1(int nodenum){
+}
+float getSeqtempoY1(int nodenum){
+}
+float getSeqtempoX2(int nodenum){
+}
+float getSeqtempoY2(int nodenum){
+}
+
+double getSeqtempoValue(int nodenum){
+  return TEMPOAUTOMATION_get_value(nodenum);
+}
+
+double getSeqtempoTime(int nodenum){
+  return TEMPOAUTOMATION_get_abstime(nodenum);
+}
+
+int getSeqtempoLogtype(int nodenum){
+  return TEMPOAUTOMATION_get_logtype(nodenum);
+}
+
+int getNumSeqtempos(void){
+  return TEMPOAUTOMATION_get_num_nodes();
+}
+
+void addSeqtempo(double abstime, double value, int logtype){
+  TEMPOAUTOMATION_add_node(abstime, value, logtype);
+}
+
+void deleteSeqtempo(int nodenum){
+  TEMPOAUTOMATION_delete_node(nodenum);
+}
+
+void setSeqtempo(int nodenum, double abstime, double value, int logtype){
+  void TEMPOAUTOMATION_set(nodenum, abstime, value, logtype);
+}
+*/
+
+
 // seqtracks
+//
 
 float getSeqtrackX1(int seqtracknum){
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){

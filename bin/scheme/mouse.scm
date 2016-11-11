@@ -3264,6 +3264,78 @@
                         )
 
 
+;; sequencer tempo automation
+;;
+#||
+(add-node-mouse-handler :Get-area-box (lambda ()
+                                        (and (<ra> :seqtempo-visible)
+                                             (<ra> :get-box seqtempo-area)))
+                        :Get-existing-node-info (lambda (X Y callback)
+                                                  (and (<ra> :seqtempo-visible)
+                                                       (inside-box-forgiving (<ra> :get-box seqtempo-area) X Y)
+                                                       (match (list (find-node X Y get-seqtempoonode-box (<ra> :get-num-temponodes)))
+                                                              (existing-box Num Box) :> (callback Num (make-seqtempo-node (temponodeval->01 (<ra> :get-temponode-value Num)) (Box :y))
+                                                              _                      :> #f))))
+                        :Get-min-value (lambda (_) 0);(- (1- (<ra> :get-temponode-max))))
+                        :Get-max-value (lambda (_) 1);(1- (<ra> :get-temponode-max)))
+                        :Get-x (lambda (Num) (<ra> :get-temponode-x Num))
+                        :Get-y (lambda (Num) (<ra> :get-temponode-y Num))
+                        :Make-undo (lambda (_) (ra:undo-temponodes))
+                        :Create-new-node (lambda (X Y callback)
+                                           (define Value (scale Y (<ra> :get-temponode-area-x1) (<ra> :get-temponode-area-x2) 0 1))
+                                           (define Num (<ra> :create-temponode (01->temponodeval Value) Place))
+                                           (if (= -1 Num)
+                                               #f
+                                               (callback Num (temponodeval->01 (<ra> :get-temponode-value Num)))))
+                        :Move-node (lambda (Num Value Place)
+                                     (<ra> :set-temponode Num (01->temponodeval Value) (or Place -1))
+                                     (define new-value (<ra> :get-temponode-value Num)) ;; might differ from Value
+                                     ;;(c-display "Place/New:" Place (<ra> :get-temponode-value Num))
+                                     (temponodeval->01 new-value)
+                                     Num
+                                     )
+                        :Publicize (lambda (Num) ;; this version works though. They are, or at least, should be, 100% functionally similar.
+                                     (set-indicator-temponode Num)
+                                     (show-temponode-in-statusbar (<ra> :get-temponode-value Num)))
+
+                        :Use-Place #f
+                        
+                        :Get-pixels-per-value-unit #f
+                        )                        
+||#
+
+#||
+;; delete temponode
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda ($button $x $y)
+                (and (= $button *right-button*)
+                     (<ra> :reltempo-track-visible)
+                     (inside-box (<ra> :get-box temponode-area) $x $y)                                     
+                     (match (list (find-node $x $y get-temponode-box (<ra> :get-num-temponodes)))
+                            (existing-box Num Box) :> (begin
+                                                        (<ra> :undo-temponodes)
+                                                        (<ra> :delete-temponode Num)
+                                                        #t)
+                            _                      :> #f)))))
+
+;; highlight current temponode
+(add-mouse-move-handler
+ :move (lambda ($button $x $y)
+         (and (<ra> :reltempo-track-visible)
+              (inside-box-forgiving (<ra> :get-box temponode-area) $x $y)
+              (match (list (find-node $x $y get-temponode-box (<ra> :get-num-temponodes)))
+                     (existing-box Num Box) :> (begin
+                                                 (set-mouse-track-to-reltempo)
+                                                 (set-current-temponode Num)
+                                                 (set-indicator-temponode Num)
+                                                 (show-temponode-in-statusbar (<ra> :get-temponode-value Num))
+                                                 #t)
+                     _                      :> #f))))
+||#
+
+
+
 #||
 (load "lint.scm")
 (define *report-unused-parameters* #f)

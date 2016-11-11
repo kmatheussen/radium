@@ -25,7 +25,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../embedded_scheme/scheme_proc.h"
 #include "../common/seqtrack_proc.h"
+#include "../common/song_tempo_automation_proc.h"
 
+
+#define ENABLE_TEMPO_AUTOMATION 0
 
 static bool g_need_update = false;
 
@@ -657,8 +660,8 @@ public:
       if (seqtrack_widget->_seqtrack==seqtrack)
         return seqtrack_widget;
     
-    R_ASSERT(false);    
-    return NULL;
+    //R_ASSERT(false);    
+    return NULL; // Think it may legitimately happen if gui hasn't been updated yet.
   }
   
   Seqtrack_widget *get_seqtrack_widget(int seqtracknum){
@@ -674,6 +677,28 @@ public:
 
 };
 
+
+struct SongTempoAutomation_widget : public QWidget {
+  const int64_t &_start_time;
+  const int64_t &_end_time;
+  
+  SongTempoAutomation_widget(QWidget *parent, const int64_t &start_time, const int64_t &end_time)
+    : QWidget(parent)
+    , _start_time(start_time)
+    , _end_time(end_time)
+  {    
+  }
+
+  void paintEvent ( QPaintEvent * ev ) override {
+    QPainter p(this);
+
+    p.setRenderHints(QPainter::Antialiasing,true);
+
+    //printf("height: %d\n",height());
+    TEMPOAUTOMATION_paint(&p, 0, 0, width(), height(), _start_time, _end_time);
+  }
+
+};
 
 struct Timeline_widget : public MouseTrackerQWidget {
   const int64_t &_start_time;
@@ -929,7 +954,8 @@ struct Sequencer_widget : public QWidget {
   double _samples_per_pixel;
   
   const int bottom_height = 30;
-  
+
+  SongTempoAutomation_widget _songtempoautomation_widget;
   Timeline_widget _timeline_widget;
   Seqtracks_widget _seqtracks_widget;
   Seqtracks_navigator_widget _navigator_widget;
@@ -939,12 +965,15 @@ struct Sequencer_widget : public QWidget {
     : QWidget(parent)
     , _end_time(SONG_get_gfx_length()*MIXER_get_sample_rate())
     , _samples_per_pixel((_end_time-_start_time) / width())
+    , _songtempoautomation_widget(this, _start_time, _end_time)
     , _timeline_widget(this, _start_time, _end_time)
     , _seqtracks_widget(this, _start_time, _end_time)
     , _navigator_widget(this, _start_time, _end_time, _seqtracks_widget)
     , _main_reltempo(this)
   {
-
+#if ENABLE_TEMPO_AUTOMATION
+    _songtempoautomation_widget.show();
+#endif
     _timeline_widget.show();
     _seqtracks_widget.show();
     _navigator_widget.show();
@@ -997,19 +1026,45 @@ struct Sequencer_widget : public QWidget {
 
     const int timeline_widget_height = root->song->tracker_windows->fontheight + 2;
 
-    const int y1 = timeline_widget_height;
-    const int y2 = height() - bottom_height;
+    int y1 = 0;
+
     
-    _timeline_widget.setGeometry(x1, 0,
+#if ENABLE_TEMPO_AUTOMATION
+    const int songtempoautomation_widget_height = root->song->tracker_windows->fontheight*3;
+
+    // tempo automation
+    _songtempoautomation_widget.setGeometry(x1, y1,
+                                            x1_width, songtempoautomation_widget_height);
+    
+    
+    y1 += songtempoautomation_widget_height;
+#endif
+    
+
+    // timeline
+    _timeline_widget.setGeometry(x1, y1,
                                  x1_width, timeline_widget_height);
-    
-    _seqtracks_widget.setGeometry(0, timeline_widget_height,
+
+
+    y1 += timeline_widget_height;
+
+
+    // sequencer tracks
+        
+    int y2 = height() - bottom_height;
+
+    _seqtracks_widget.setGeometry(0, y1,
                                   width(), y2 - y1);
 
-    _navigator_widget.setGeometry(x1, y2,
+    y1 = y2;
+
+
+    // navigator
+    
+    _navigator_widget.setGeometry(x1, y1,
                                   x1_width, bottom_height);
 
-    _main_reltempo.setGeometry(0, y2,
+    _main_reltempo.setGeometry(0, y1,
                                x1, bottom_height);
   }
 
