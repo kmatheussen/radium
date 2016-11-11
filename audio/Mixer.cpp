@@ -57,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Mixer_proc.h"
 
+extern bool g_rt_always_run_buses;
 
 volatile bool g_test_crashreporter_in_audio_thread = false;
 
@@ -705,7 +706,9 @@ struct Mixer{
         pause_time.restart();
         excessive_time.restart();
       }
-                  
+
+      g_rt_always_run_buses = doAlwaysRunBuses();
+      
       RT_lock_player();
       
       MIXER_check_if_someone_has_solo();
@@ -930,6 +933,8 @@ bool MIXER_start(void){
   
   R_ASSERT(THREADING_is_main_thread());
 
+  doAlwaysRunBuses();
+  
   SampleRecorder_Init();
     
   init_player_lock();

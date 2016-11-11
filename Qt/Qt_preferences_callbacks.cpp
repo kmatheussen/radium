@@ -435,6 +435,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       numCPUs->setValue(MULTICORE_get_num_threads());
       enable_autobypass->setChecked(autobypassEnabled());
       autobypass_delay->setValue(getAutoBypassDelay());
+      recalculate_bus_latency_onoff->setChecked(doAlwaysRunBuses());
     }
 
     {
@@ -695,6 +696,10 @@ public slots:
     }GL_unlock();
   }
 
+  void on_recalculate_bus_latency_onoff_toggled(bool val){
+    if (_initing==false)
+      setAlwaysRunBuses(val);
+  }
   
   // embedded audio file paths
   void on_embedded_audio_files_editingFinished(){

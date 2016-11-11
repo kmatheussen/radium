@@ -77,6 +77,9 @@ static inline int myisinf(float val){
 
 #include "SoundProducer_proc.h"
 
+// Updated each block in Mixer.cpp
+bool g_rt_always_run_buses = false;
+
 
 #if 0
 faust conversions:
@@ -1101,11 +1104,16 @@ public:
     }
   }
 
-  bool should_consider_latency(const SoundProducerLink *input_audio_link) const {
+  bool should_run_link(const SoundProducerLink *input_audio_link) const {
     if (input_audio_link->is_active==false) {
           
       if (input_audio_link->is_bus_link){
 
+        if (g_rt_always_run_buses==true){
+          //printf("Ret false\n");
+          return false;
+        }
+        
         SoundProducer *source = input_audio_link->source;
 
         bool legal_bus_provider = source->_bus_descendant_type==IS_BUS_PROVIDER;
@@ -1149,7 +1157,7 @@ public:
       if (link->is_event_link)
         continue;
 
-      if (!should_consider_latency(link))
+      if (!should_run_link(link))
         continue;
 
       link->source->RT_called_for_each_soundcard_block2(time);
@@ -1168,7 +1176,7 @@ public:
         if (link->is_event_link)
           continue;
 
-        if (!should_consider_latency(link))
+        if (!should_run_link(link))
           continue;
         
         SoundProducer *source = link->source;
@@ -1312,7 +1320,7 @@ public:
       if (link->is_event_link)
         continue;
       
-      if (!should_consider_latency(link)) // <-- 'should_consider_latency' returns false if the link is inactive, a bus, and not a bus provider. I.e. a link that would never provide samples to us.
+      if (!should_run_link(link)) // <-- 'should_run_link' returns false if the link is inactive, a bus, and not a bus provider. I.e. a link that would never provide samples to us.
         continue;
       
       SoundProducer *source = link->source;
