@@ -2929,10 +2929,14 @@
 
                         :Use-Place #f
 
-                        :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
+                        ;;:Mouse-pointer-func ra:set-closed-hand-mouse-pointer
+                        :Mouse-pointer-func ra:set-blank-mouse-pointer
                         
-                        :Get-pixels-per-value-unit (lambda (Info)
-                                                     (/ 20.0 (<ra> :get-sample-rate)))
+                        :Get-pixels-per-value-unit (lambda (seqblock-info)
+                                                     (/ (- (<ra> :get-sequencer-x2)
+                                                           (<ra> :get-sequencer-x1))
+                                                        (- (<ra> :get-sequencer-visible-end-time)
+                                                           (<ra> :get-sequencer-visible-start-time))))
 
                         )
 
