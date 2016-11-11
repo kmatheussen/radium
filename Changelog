@@ -1,3 +1,20 @@
+Changes 4.2.5 -> 4.2.6:
+* Mouse: Don't bar-align the first block in the sequencer.
+* Mouse: Always move the sequencer blocks the same number of pixels.
+* Option to recalculate latency on the fly when turning on/off
+  a bus connection. Saves a lot of CPU on songs with many instruments.
+  This is probably just a temporary workaround for the CPU problem
+  until a proper solution is implemented. Latency should not be
+  recalculated when you turn on/off of a bus connection since
+  it produces minor artifacts (caused by interpolation) and also
+  causes minor temporary tempo changes (i.e. at least one beat will
+  have a different length than the surrounding beats).
+* Fix mouse problems when moving sequencer blocks. A very common
+  problem on OSX, but it has also been observed on Linux.
+* Fix rare assertion window popup when loading song.
+
+
+
 Changes 4.2.4 -> 4.2.5:
 * Don't paste color when pasting block
 * Move sequencer blocks in the vertical direction as well as the
