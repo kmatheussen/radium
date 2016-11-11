@@ -305,7 +305,7 @@ static int64_t find_bar_start_after(struct SeqBlock *seqblock, int64_t seqtime, 
   int64_t mindiff = R_ABS(ret-seqtime);
   int64_t lastdiff = mindiff;
   
-  int maybe = ret + bar_length;
+  int64_t maybe = ret + bar_length;
   while(maybe < maxtime){
     int64_t diff = R_ABS(maybe-seqtime);
     if (diff > lastdiff)

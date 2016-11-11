@@ -105,18 +105,24 @@ public:
   }
 
   void	mousePressEvent( QMouseEvent *event) override{
+    event->accept();
     _currentButton = getMouseButtonEventID(event);
     QPoint point = mapToEditor(this, event->pos());
     SCHEME_mousepress(_currentButton, point.x(), point.y());
+    //printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
   }
   void	mouseReleaseEvent( QMouseEvent *event) override{
+    event->accept();
     QPoint point = mapToEditor(this, event->pos());
     SCHEME_mouserelease(_currentButton, point.x(), point.y());
     _currentButton = 0;
+    //printf("  Release. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
   }
   void	mouseMoveEvent( QMouseEvent *event) override{
+    event->accept();
     QPoint point = mapToEditor(this, event->pos());
     SCHEME_mousemove(_currentButton, point.x(), point.y());
+    //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
   }
 
 };
@@ -979,6 +985,8 @@ struct Sequencer_widget : public QWidget {
   void position_widgets(void){
     R_ASSERT_RETURN_IF_FALSE(_seqtracks_widget._seqtrack_widgets.size() > 0);
 
+    printf("   ***** Posisiotioing sequencer widgets ********\n");
+    
 #if 0
     const QWidget *mute_button = _seqtracks_widget._seqtrack_widgets.at(0)->mute_button;
     const QPoint p = mute_button->mapTo(this, mute_button->pos());
@@ -1032,7 +1040,7 @@ struct Sequencer_widget : public QWidget {
       }  
       
       if (do_update){
-        position_widgets();
+        //position_widgets();
         my_update();
         _last_num_seqtracks = _seqtracks_widget._seqtrack_widgets.size();
       }

@@ -2925,6 +2925,8 @@
 
                         :Use-Place #f
 
+                        :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
+                        
                         :Get-pixels-per-value-unit (lambda (Info)
                                                      (/ 20.0 (<ra> :get-sample-rate)))
 

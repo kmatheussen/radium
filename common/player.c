@@ -188,7 +188,7 @@ int PLAYER_get_block_delta_time(struct SeqTrack *seqtrack, STime time){
     }
     if(ret>=pc->reltime){
       RWarning("ret>pc->reltime: %d > %d",ret,pc->reltime);
-      return pc->reltime-1;
+      return (int)pc->reltime-1;
     }
     return ret;
   }else

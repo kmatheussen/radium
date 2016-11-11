@@ -1884,7 +1884,7 @@ struct Song{
 
         int curr_seqtracknum;
         vector_t seqtracks; // New playlist. Player must both be stopped and locked when modifying this variable, or any of the contents.
-  
+
 	NInt num_blocks;
 	char *songname;
 
