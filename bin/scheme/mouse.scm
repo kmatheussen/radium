@@ -875,6 +875,10 @@
                 (set-mouse-pointer ra:set-pointing-mouse-pointer)
                 (<ra> :set-statusbar-text (<-> "Select instrument for track " *current-track-num*)))
 
+               ((and (<ra> :get-box sequencer)
+                     (get-seqblock-info X Y))
+                (set-mouse-pointer ra:set-open-hand-mouse-pointer))
+               
                ((inside-box (get-seqnav-move-box) X Y)
                 (set-mouse-pointer ra:set-open-hand-mouse-pointer))
                
@@ -2925,7 +2929,7 @@
 
                         :Use-Place #f
 
-                        :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
+                        :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
                         
                         :Get-pixels-per-value-unit (lambda (Info)
                                                      (/ 20.0 (<ra> :get-sample-rate)))
