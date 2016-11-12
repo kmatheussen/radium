@@ -177,20 +177,20 @@ static float *g_empty_sound = NULL;
 struct LatencyCompensatorDelay {
   radium::SmoothDelay _delay;
   
-  float *_output_sound;
+  //float *_output_sound;
   
   LatencyCompensatorDelay()
     :_delay(MAX_COMPENSATED_LATENCY*MIXER_get_sample_rate()/1000)
   {
-    _output_sound = (float*)V_calloc(sizeof(float), MIXER_get_buffer_size());
+    //_output_sound = (float*)V_calloc(sizeof(float), MIXER_get_buffer_size());
     
     if (g_empty_sound==NULL)
       g_empty_sound = (float*)V_calloc(sizeof(float), MIXER_get_buffer_size());
   }
   
   ~LatencyCompensatorDelay(){
-    V_free(_output_sound);
-    _output_sound = NULL;
+    //V_free(_output_sound);
+    //_output_sound = NULL;
   }
 
   void RT_set_preferred_delay(int preferred_delay){
@@ -203,17 +203,17 @@ struct LatencyCompensatorDelay {
   }
   
   // May return 'input_sound'. Also, 'input_sound' is never modified.
-  const float *RT_process(const float *input_sound, int num_frames){
+  const float *RT_process(const float *input_sound, float *output_sound, int num_frames){
 
 #if !defined(RELEASE)
     R_ASSERT_RETURN_IF_FALSE2(input_sound!=NULL, g_empty_sound);
-    R_ASSERT_RETURN_IF_FALSE2(_output_sound!=NULL, g_empty_sound);
+    R_ASSERT_RETURN_IF_FALSE2(output_sound!=NULL, g_empty_sound);
     R_ASSERT_RETURN_IF_FALSE2(_delay.fVec0!=NULL, g_empty_sound);
     R_ASSERT_RETURN_IF_FALSE2(num_frames==MIXER_get_buffer_size(), g_empty_sound);
 #endif
     
-    if(_delay.RT_process(num_frames, input_sound, _output_sound))
-      return _output_sound;
+    if(_delay.RT_process(num_frames, input_sound, output_sound))
+      return output_sound;
     else
       return input_sound;
   }
@@ -1357,7 +1357,8 @@ public:
 
         const float *input_producer_sound = link->source->_output_sound[link->source_ch];
 
-        const float *latency_compensated_input_producer_sound = link->_delay.RT_process(input_producer_sound, num_frames);
+        float latency_sound_sound[num_frames];
+        const float *latency_compensated_input_producer_sound = link->_delay.RT_process(input_producer_sound, latency_sound_sound, num_frames);
 
         SMOOTH_mix_sounds(&link->volume,
                           dry_sound[link->target_ch],
@@ -1395,10 +1396,10 @@ public:
       RT_set_input_peak_values(input_peaks, dry_sound);
     }
 
-
-    const float *_latency_dry_sound[R_MAX(1,_num_dry_sounds)];
+    float latency_dry_sound_sound[R_MAX(1,_num_dry_sounds)][num_frames];
+    const float *latency_dry_sound[R_MAX(1,_num_dry_sounds)];
     for(int ch=0;ch<_num_dry_sounds;ch++)        
-      _latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(dry_sound[ch], num_frames);
+      latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(dry_sound[ch], latency_dry_sound_sound[ch], num_frames);
 
     
     if(is_a_generator){
@@ -1430,7 +1431,7 @@ public:
     RT_apply_system_filter(&_plugin->highpass,  _output_sound, _num_outputs, num_frames, process_plugins);
     
     // dry/wet              
-    RT_apply_dry_wet(_latency_dry_sound, _num_dry_sounds, _output_sound, _num_outputs, num_frames, &_plugin->drywet);
+    RT_apply_dry_wet(latency_dry_sound, _num_dry_sounds, _output_sound, _num_outputs, num_frames, &_plugin->drywet);
 
     
     // Output pan

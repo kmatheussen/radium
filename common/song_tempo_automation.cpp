@@ -1,18 +1,17 @@
 
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wshorten-64-to-32"
-
-#include <QVector> // Shortening warning in the QVector header. Temporarily turned off by the surrounding pragmas.
-
-#pragma clang diagnostic pop
-
 
 
 #include "nsmtracker.h"
 #include "song_tempo_automation_proc.h"
 
 #include <QPainter>
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
+#include <QVector> // Shortening warning in the QVector header. Temporarily turned off by the surrounding pragmas.
+#pragma clang diagnostic pop
+
 
 // The sequencer tempo automation. It maps between abstime and absabstime.
 //
