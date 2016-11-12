@@ -662,8 +662,8 @@
                                   :Get-existing-node-info
                                   :Get-min-value
                                   :Get-max-value
-                                  :Get-x ;; Only used when releasing mouse button
-                                  :Get-y ;; Only used when releasing mouse button
+                                  :Get-x #f ;; Only used when releasing mouse button
+                                  :Get-y #f ;; Only used when releasing mouse button
                                   :Make-undo 
                                   :Create-new-node
                                   :Move-node
@@ -766,9 +766,11 @@
     (define node-info (Node :node-info))
     (if Release-node
         (Release-node node-info))
-    (<ra> :move-mouse-pointer
-          (Get-x node-info)
-          (Get-y node-info)))
+    (if (and Get-x Get-y)
+        (let ((x (Get-x node-info))
+              (y (Get-y node-info)))
+          (and x y
+               (<ra> :move-mouse-pointer x y)))))
 
   (define move-existing-node-mouse-cycle (make-node-mouse-cycle :press press-existing-node
                                                                 :move-and-release move-and-release
@@ -791,7 +793,7 @@
                                   :Get-x2
                                   :Get-min-value
                                   :Get-max-value
-                                  :Get-x
+                                  :Get-x #f
                                   :Get-value
                                   :Make-undo
                                   :Move
@@ -817,9 +819,11 @@
                           :Get-max-value (lambda (Info)
                                            (Get-max-value (Info :handler-data)))
                           :Get-x (lambda (Info)
-                                   (Get-x (Info :handler-data)))
+                                   (and Get-x
+                                        (Get-x (Info :handler-data))))
                           :Get-y (lambda (Info)
-                                   (Info :y))
+                                   (and Get-x
+                                        (Info :y)))
                           :Make-undo (lambda (Info)
                                        (Make-undo (Info :handler-data)))
                           :Create-new-node (lambda (Value Place callback)
@@ -2839,6 +2843,11 @@
          (and seqtracknum
               (get-seqblock seqtracknum X Y)))))
 
+(define (num-seqblocks-in-sequencer)
+  (apply +
+         (map (lambda (seqtracknum)
+                (<ra> :get-num-seqblocks seqtracknum))
+              (iota (<ra> :get-num-seqtracks)))))
 
 ;; seqblock move
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2872,16 +2881,16 @@
                                          (if (= (1- num-seqblocks) seqblocknum)
                                              (+ 10000000000 (<ra> :get-seqblock-end-time (seqblock-info :seqblocknum) seqtracknum))
                                              (<ra> :get-seqblock-start-time (1+ seqblocknum) seqtracknum)))
-                        :Get-x (lambda (info) (/ (+ (<ra> :get-seqblock-x1 (info :seqblocknum)
-                                                          (info :seqtracknum))
-                                                    (<ra> :get-seqblock-x2 (info :seqblocknum)
-                                                          (info :seqtracknum)))
-                                                 2))
-                        :Get-y (lambda (info) (/ (+ (<ra> :get-seqblock-y1 (info :seqblocknum)
-                                                          (info :seqtracknum))
-                                                    (<ra> :get-seqblock-y2 (info :seqblocknum)
-                                                          (info :seqtracknum)))
-                                                 2))
+                        :Get-x (lambda (info) #f) ;;(/ (+ (<ra> :get-seqblock-x1 (info :seqblocknum)
+                                                  ;;        (info :seqtracknum))
+                                                  ;;  (<ra> :get-seqblock-x2 (info :seqblocknum)
+                                                  ;;        (info :seqtracknum)))
+                                                  ;;2))
+                        :Get-y (lambda (info) #f) ;;(/ (+ (<ra> :get-seqblock-y1 (info :seqblocknum)
+                                                  ;;        (info :seqtracknum))
+                                                  ;;  (<ra> :get-seqblock-y2 (info :seqblocknum)
+                                                  ;;        (info :seqtracknum)))
+                                                  ;;2))
                         :Make-undo (lambda (_)
                                      #f)
                         :Create-new-node (lambda (X seqtracknum callback)
@@ -2892,9 +2901,10 @@
                         :Release-node (lambda (seqblock-info)
                                         (define old-pos (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum)
                                                                 (seqblock-info :seqtracknum)))
-                                        (define new-pos (if (<ra> :ctrl-pressed)
-                                                              (floor gakklast-value)
-                                                              (<ra> :find-closest-seqtrack-bar-start (seqblock-info :seqtracknum) (floor gakklast-value))))
+                                        (define new-pos (if (or (= 1 (num-seqblocks-in-sequencer))
+                                                                (<ra> :ctrl-pressed))
+                                                            (floor gakklast-value)
+                                                            (<ra> :find-closest-seqtrack-bar-start (seqblock-info :seqtracknum) (floor gakklast-value))))
                                         ;;(c-display "  RELEASING GFX " old-pos new-pos)
                                         ;;(c-display "  Y" Y (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y))
                                         (if (not (= old-pos new-pos))
@@ -2910,7 +2920,7 @@
                                      (define new-seqtracknum (or (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y) (seqblock-info :seqtracknum)))
                                      ;;(c-display "  Y" Y new-seqtracknum)
 
-                                     (define new-pos (if (or (= 0 (seqblock-info :seqblocknum))
+                                     (define new-pos (if (or (= 1 (num-seqblocks-in-sequencer))
                                                              (<ra> :ctrl-pressed))
                                                          (floor Value)
                                                          (<ra> :find-closest-seqtrack-bar-start new-seqtracknum (floor Value))))
@@ -3135,10 +3145,10 @@
                         :Get-max-value (lambda (_)
                                          (1- (<ra> :get-seqnav-right-size-handle-x2)))
                         ;;(<ra> :get-seqnav-x2))
-                        :Get-x (lambda (_)                                 
-                                 (/ (+ (<ra> :get-seqnav-left-size-handle-x1)
-                                       (<ra> :get-seqnav-left-size-handle-x2))
-                                    2))
+                        ;;:Get-x (lambda (_)                                 
+                        ;;         (/ (+ (<ra> :get-seqnav-left-size-handle-x1)
+                        ;;               (<ra> :get-seqnav-left-size-handle-x2))
+                        ;;            2))
                         :Get-value (lambda (Value)
                                      Value)
                         :Make-undo (lambda (_)
@@ -3172,10 +3182,10 @@
                         :Get-max-value (lambda (_)
                                          (<ra> :get-seqnav-x2))
                         ;;(<ra> :get-seqnav-x2))
-                        :Get-x (lambda (_)                                 
-                                 (/ (+ (<ra> :get-seqnav-right-size-handle-x1)
-                                       (<ra> :get-seqnav-right-size-handle-x2))
-                                    2))
+                        ;;:Get-x (lambda (_)                                 
+                        ;;         (/ (+ (<ra> :get-seqnav-right-size-handle-x1)
+                        ;;               (<ra> :get-seqnav-right-size-handle-x2))
+                        ;;            2))
                         :Get-value (lambda (Value)
                                      Value)
                         :Make-undo (lambda (_)
@@ -3218,14 +3228,9 @@
   (make-box2 (<ra> :get-seqnav-left-size-handle-x2) (<ra> :get-seqnav-left-size-handle-y1)
              (<ra> :get-seqnav-right-size-handle-x1) (<ra> :get-seqnav-right-size-handle-y2)))
 
-;; TODO: Fix this.
-(define org-x #f)
-(define org-seqnav-left #f)
 
 ;; move navigator left/right
 (add-horizontal-handler :Get-handler-data (lambda (X Y)
-                                            (set! org-x X)
-                                            (set! org-seqnav-left (<ra> :get-seqnav-left-size-handle-x1))
                                             (if (> (get-seqnav-width) 0)
                                                 (let ((box (get-seqnav-move-box)))
                                                   (and (inside-box box X Y)
@@ -3239,9 +3244,9 @@
                                          0)
                         :Get-max-value (lambda (_)
                                          (get-seqnav-width))
-                        :Get-x (lambda (_)
-                                 (+ org-x (- (<ra> :get-seqnav-left-size-handle-x1)
-                                             org-seqnav-left)))
+                        ;;:Get-x (lambda (_)
+                        ;;         (+ org-x (- (<ra> :get-seqnav-left-size-handle-x1)
+                        ;;                     org-seqnav-left)))
 ;                                 (/ (+ (<ra> :get-seqnav-left-size-handle-x1)
 ;                                       (<ra> :get-seqnav-right-size-handle-x2))
 ;                                    2))
