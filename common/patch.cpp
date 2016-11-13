@@ -194,7 +194,8 @@ static struct Patch *create_new_patch(const char *name){
 
   PATCH_set_name(patch, name);
   
-  patch->colornum = GFX_MakeRandomCustomColor(-1);
+  //patch->colornum = GFX_MakeRandomCustomColor(-1);
+  patch->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.12f);
 
   PATCH_init_voices(patch);
 
@@ -245,7 +246,8 @@ hash_t *PATCH_get_state(struct Patch *patch){
   HASH_put_int(state, "id", patch->id);
   HASH_put_int(state, "name_is_edited", patch->name_is_edited ? 1 : 0);
   HASH_put_chars(state, "name", patch->name);
-  HASH_put_int(state, "colornum", patch->colornum);
+  //HASH_put_int(state, "colornum", patch->colornum);
+  HASH_put_chars(state, "color", GFX_get_colorname_from_colornum(patch->color));
   HASH_put_chars(state, "instrument", patch->instrument==get_audio_instrument() ? "audio" : "MIDI");
   
   return state;

@@ -216,6 +216,10 @@ extern LANGSPEC void OS_GFX_CancelMixColor(struct Tracker_Windows* tvisual);
 extern LANGSPEC void QUEUE_GFX_CancelMixColor(struct Tracker_Windows* tvisual);
 extern LANGSPEC void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,enum ColorNums color1,enum ColorNums color2,int mix_factor);
 extern LANGSPEC void QUEUE_GFX_SetMixColor(struct Tracker_Windows *tvisual,enum ColorNums color1,enum ColorNums color2,int mix_factor);
+#if USE_QT4
+#include <QColor>
+void GFX_SetMixColor2(struct Tracker_Windows *tvisual,QColor color1,QColor color2, int mix_factor);
+#endif
 
 extern LANGSPEC void OS_GFX_Polygon(
                                     struct Tracker_Windows *tvisual,
@@ -300,7 +304,7 @@ extern LANGSPEC int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y
 
 
 
-void GFXS_LineType(
+extern LANGSPEC void GFXS_LineType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
 				enum ColorNums color,
@@ -312,7 +316,7 @@ void GFXS_LineType(
 	     int x,int y,int x2,int y2,
              int where
 	     );
-void GFXS_BoxType(
+extern LANGSPEC void GFXS_BoxType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
 				enum ColorNums color,
@@ -325,7 +329,7 @@ void GFXS_BoxType(
              int where
 	     );
 
-void GFXS_TextType(
+extern LANGSPEC void GFXS_TextType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
 				enum ColorNums color,const char *text,
@@ -342,7 +346,7 @@ void GFXS_TextType(
              int where
 	     );
 
-void GFXS_BorderType(
+extern LANGSPEC void GFXS_BorderType(
 		     void (*GFX_P_OSFunc)(
                                           struct Tracker_Windows *tvisual,
                                           int x, int y, int y2,
@@ -353,7 +357,7 @@ void GFXS_BorderType(
                      int where
 		     );
 
-void GFXS_BorderType2(
+extern LANGSPEC void GFXS_BorderType2(
 		     void (*GFX_P_OSFunc)(
                                           struct Tracker_Windows *tvisual,
                                           int x, int y, int y2,
@@ -364,7 +368,7 @@ void GFXS_BorderType2(
                      int where
 		     );
 
-void GFXS_BitBltType(
+extern LANGSPEC void GFXS_BitBltType(
 		     void (*GFX_P_OSFunc)(
 					  struct Tracker_Windows *tvisual,
 					  int dx,int dy,
@@ -377,7 +381,7 @@ void GFXS_BitBltType(
 		     int x2,int y2
 		     );
 
-void GFXST_LineType(
+extern LANGSPEC void GFXST_LineType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
 				enum ColorNums color,
@@ -390,7 +394,7 @@ void GFXST_LineType(
              int where
 	     );
 
-void GFXST_BoxType(
+extern LANGSPEC void GFXST_BoxType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
 				enum ColorNums color,
@@ -402,7 +406,7 @@ void GFXST_BoxType(
 	     int x,int y,int x2,int y2,
              int where
 	     );
-void GFXST_TextType(
+extern LANGSPEC void GFXST_TextType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
 				enum ColorNums color,const char *text,
@@ -418,7 +422,7 @@ void GFXST_TextType(
              int flags,
              int where
 	     );
-void GFXST_BorderType(
+extern LANGSPEC void GFXST_BorderType(
 		     void (*GFX_P_OSFunc)(
 							 struct Tracker_Windows *window,
 							 int x, int y, int y2,
@@ -428,7 +432,7 @@ void GFXST_BorderType(
 		     int x, int y, int y2,
                      int where
 		     );
-void GFXST_BorderType2(
+extern LANGSPEC void GFXST_BorderType2(
 		     void (*GFX_P_OSFunc)(
 							 struct Tracker_Windows *window,
 							 int x, int y, int y2,
@@ -463,6 +467,8 @@ void GFXST_BorderType2(
 
 #define GFX_SetMixColor QUEUE_GFX_SetMixColor
 #define GFX_CancelMixColor QUEUE_GFX_CancelMixColor
+
+
 
 #define GFX_Polygon QUEUE_GFX_Polygon
 #define GFX_Polyline QUEUE_GFX_Polyline

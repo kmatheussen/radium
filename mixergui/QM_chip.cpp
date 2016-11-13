@@ -1148,8 +1148,9 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     int x1,y1,x2,y2;
     get_name_coordinates(x1,y1,x2,y2);
 
-    int colornum = patch->colornum;
-    QColor patchcolor(custom_colors[colornum]);
+    //int colornum = patch->colornum;
+    //QColor patchcolor(custom_colors[colornum]);
+    QColor patchcolor(patch->color);
 
     QColor c =
       (false && is_selected)

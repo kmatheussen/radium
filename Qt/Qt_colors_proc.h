@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 
 class EditorWidget;
+class QWidget;
+class QApplication;
 
 extern const char *get_color_display_name(enum ColorNums colornum);
 extern QColor get_qcolor(enum ColorNums colornum);

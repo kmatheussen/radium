@@ -769,7 +769,8 @@ struct Patch{
   const char *name;
   const symbol_t *midi_learn_port_name;
   
-  int colornum;
+  unsigned int color;
+  //int colornum;
 
   void (*playnote)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
   void (*changevelocity)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);

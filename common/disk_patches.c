@@ -224,6 +224,7 @@ struct Patch *LoadPatch(void){
         patch->is_usable = true;
         patch->forward_events = true; // default value
         patch->name_is_edited = true; // compatibility value when loading older songs
+        patch->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.12f);
         
         PATCH_init_voices(patch);
 
@@ -296,10 +297,6 @@ end:
         if(is_MIDI_instrument==false)
           //PATCH_create_audio("Sample Player", "Sample Player", name, NULL);
           AUDIO_set_patch_attributes(patch,NULL);
-
-
-        if(patch->colornum==0)
-          patch->colornum = GFX_MakeRandomCustomColor(-1);
 
 	return patch;
 }

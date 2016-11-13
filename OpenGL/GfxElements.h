@@ -34,6 +34,11 @@ typedef struct{
 
 GE_Rgb GE_get_rgb(enum ColorNums colornum);
 GE_Rgb GE_get_custom_rgb(int custom_colornum);
+static inline GE_Rgb GE_get_rgb(unsigned int color){
+  const QColor c(color);
+  GE_Rgb ret = {(unsigned char)c.red(), (unsigned char)c.green(), (unsigned char)c.blue(), (unsigned char)c.alpha()};
+  return ret;
+}
 
 static inline GE_Rgb GE_rgb(unsigned char r, unsigned char g, unsigned char b){
   GE_Rgb ret = {r,g,b,255};
