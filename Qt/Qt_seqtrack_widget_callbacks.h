@@ -24,8 +24,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_seqtrack_widget.h"
 
 #include "../embedded_scheme/scheme_proc.h"
-#include "../common/seqtrack_proc.h"
+#include "../common/undo.h"
 #include "../common/song_tempo_automation_proc.h"
+
+#include "../common/seqtrack_proc.h"
+
 
 
 #define ENABLE_TEMPO_AUTOMATION 0
@@ -506,6 +509,7 @@ public:
   }
 
   int _last_num_seqblocks = 0;
+  int _last_num_undos = -1;
   
   void call_very_often(void){
     if (_last_num_seqblocks != _seqtrack->seqblocks.num_elements) {
@@ -514,7 +518,9 @@ public:
     }
 
     {
-      if (_time.elapsed() > 1000) { // Update every second.
+      int num_undos = Undo_num_undos();
+      if (_last_num_undos != num_undos || _time.elapsed() > 5000) { // Update at least every five seconds.
+        _last_num_undos = num_undos;
         update();
         _time.restart();
       }
