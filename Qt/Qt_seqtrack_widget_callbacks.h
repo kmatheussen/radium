@@ -519,9 +519,26 @@ public:
 
     {
       int num_undos = Undo_num_undos();
-      if (_last_num_undos != num_undos || _time.elapsed() > 5000) { // Update at least every five seconds.
-        _last_num_undos = num_undos;
-        update();
+      bool unequal_undos = _last_num_undos != num_undos;
+      
+      if (unequal_undos || _time.elapsed() > 5000) { // Update at least every five seconds.
+        if (unequal_undos) {
+          _last_num_undos = num_undos;
+
+          double sample_rate = MIXER_get_sample_rate();
+          double start_time = _start_time / sample_rate;
+          double end_time = _end_time / sample_rate;
+
+          // Not sure if this makes a difference (rather than just calling update()).
+          VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &_seqtrack->seqblocks){
+            float x1 = get_seqblock_x1(seqblock, start_time, end_time);
+            float x2 = get_seqblock_x2(seqblock, start_time, end_time);
+            update(x1-1, 0, x2-x1+1, height());
+          }END_VECTOR_FOR_EACH;
+          
+        } else {
+          update();
+        }
         _time.restart();
       }
     }
