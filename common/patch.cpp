@@ -247,7 +247,7 @@ hash_t *PATCH_get_state(struct Patch *patch){
   HASH_put_int(state, "name_is_edited", patch->name_is_edited ? 1 : 0);
   HASH_put_chars(state, "name", patch->name);
   //HASH_put_int(state, "colornum", patch->colornum);
-  HASH_put_chars(state, "color", GFX_get_colorname_from_colornum(patch->color));
+  HASH_put_chars(state, "color", GFX_get_colorname_from_color(patch->color));
   HASH_put_chars(state, "instrument", patch->instrument==get_audio_instrument() ? "audio" : "MIDI");
   
   return state;
@@ -282,6 +282,9 @@ static void apply_patch_state(struct Patch *patch, hash_t *state){
 
   if (HASH_has_key(state, "name"))
     patch->name = HASH_get_chars(state, "name");
+  
+  if (HASH_has_key(state, "color"))
+    patch->color = GFX_get_color_from_colorname(HASH_get_chars(state, "color"));
 }
 
 

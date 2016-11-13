@@ -346,18 +346,38 @@ namespace{
 public:
 
     func_t *_callback;
+    QColor _initial_color;
     
-    MyColorDialog(QWidget *parent, func_t *callback)
+    MyColorDialog(QWidget *parent, func_t *callback, const char *initial_color)
       : QColorDialog(parent)
-      , _callback(callback)        
+      , _callback(callback)
+      , _initial_color(initial_color)
     {
       setOption(QColorDialog::DontUseNativeDialog, true);
       setOption(QColorDialog::ShowAlphaChannel, true);
 
-      connect(this, SIGNAL(currentColorChanged(const QColor &)), this, SLOT(color_changed(const QColor &)));
+      setCurrentColor(_initial_color);
       
+      connect(this, SIGNAL(currentColorChanged(const QColor &)), this, SLOT(color_changed(const QColor &)));
+
+      s7extra_protect(_callback);
+    }
+    
+    ~MyColorDialog(){
+      printf("  MyColorDialog deleted\n");
     }
 
+    void done(int result) override{
+      if (result==QDialog::Rejected)
+        s7extra_callFunc_void_charpointer(_callback, _initial_color.name().toUtf8().constData());
+      
+      func_t *callback = _callback; // Make local copy in case QColorDialog::done deletes us.
+
+      QColorDialog::done(result);
+
+      s7extra_unprotect(callback);
+    }
+     
   public slots:
     void color_changed(const QColor &col){
       printf("Color changed\n");
@@ -367,32 +387,35 @@ public:
 }
 
 
-char *GFX_color_dialog(const char *initial_color, func_t *callback){
-  MyColorDialog color_dialog(g_main_window, callback);
-  color_dialog.setCurrentColor(QColor(initial_color));
+void GFX_color_dialog(const char *initial_color, func_t *callback){
+  MyColorDialog *color_dialog = new MyColorDialog(g_main_window, callback, initial_color);
 
+  safeShow(color_dialog);
+  
+  #if 0
   int ret = safeExec(&color_dialog);  
 
   if (ret==QDialog::Rejected){
     
     s7extra_callFunc_void_charpointer(callback, initial_color);
-    return talloc_strdup(initial_color);
+    //return talloc_strdup(initial_color);
     
   }
     
-  return talloc_strdup(color_dialog.currentColor().name().toUtf8().constData());
+  //return talloc_strdup(color_dialog.currentColor().name().toUtf8().constData());
+  #endif
 }
 
 unsigned int GFX_get_color(enum ColorNums colornum){
   return get_qcolor(colornum).rgb();
 }
 
-unsigned int GFX_get_colornum_from_colorname(const char *colorname){
+unsigned int GFX_get_color_from_colorname(const char *colorname){
   QColor color(colorname);
   return color.rgb();
 }
 
-const char *GFX_get_colorname_from_colornum(unsigned int colornum){
+const char *GFX_get_colorname_from_color(unsigned int colornum){
   QColor color(colornum);
   return talloc_strdup(color.name().toUtf8());
 }

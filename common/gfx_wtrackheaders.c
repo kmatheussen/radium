@@ -14,8 +14,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#include <QColor>
-
 #include "nsmtracker.h"
 #include "gfx_wtext_proc.h"
 #include "visual_proc.h"
@@ -25,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "blts_proc.h"
 #include "../audio/SoundPlugin.h"
 #include "../Qt/Qt_instruments_proc.h"
-#include "../Qt/Qt_colors_proc.h"
 #include "OS_visual_input.h"
 
 #include "gfx_wtrackheaders_proc.h"
@@ -52,13 +49,13 @@ void DrawWTrackNames(
   int y2 = wtrack1->panonoff.y1 - 1;
 
   // Background
-  QColor color = patch==NULL ? get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM) : QColor(patch->color);
+  unsigned int color = patch==NULL ? GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM) : patch->color;
   bool is_current_track = get_current_instruments_gui_patch()==patch;
   
   if(is_current_track)
-    GFX_SetMixColor2(window, get_qcolor(WHITE_COLOR_NUM), color, 150);
+    GFX_SetMixColor2(window, WHITE_COLOR_NUM, color, 150);
   else
-    GFX_SetMixColor2(window, get_qcolor(WHITE_COLOR_NUM), color, 0);
+    GFX_SetMixColor2(window, WHITE_COLOR_NUM, color, 0);
     
   GFX_T_FilledBox(window, CURSOR_EDIT_ON_COLOR_NUM,
                   x1,y1,x2,y2,

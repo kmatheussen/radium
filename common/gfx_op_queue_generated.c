@@ -13,6 +13,7 @@ ENUM_GFX_Polygon,
 ENUM_GFX_Polyline, 
 ENUM_GFX_CancelMixColor, 
 ENUM_GFX_SetMixColor, 
+ENUM_GFX_SetMixColor2, 
 ENUM_GFX_Text, 
 ENUM_GFX_BitBlt, 
 #endif 
@@ -30,6 +31,7 @@ case ENUM_GFX_Polygon: OS_GFX_Polygon(window, el->i1, el->i2, el->i3, el->i4, el
 case ENUM_GFX_Polyline: OS_GFX_Polyline(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6, el->p7, el->i8); break; 
 case ENUM_GFX_CancelMixColor: OS_GFX_CancelMixColor(window); break; 
 case ENUM_GFX_SetMixColor: OS_GFX_SetMixColor(window, el->i1, el->i2, el->i3); break; 
+case ENUM_GFX_SetMixColor2: OS_GFX_SetMixColor2(window, el->i1, el->u2, el->i3); break; 
 case ENUM_GFX_Text: PREOS_GFX_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6, el->i7); break; 
 case ENUM_GFX_BitBlt: OS_GFX_BitBlt(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 #endif 
@@ -162,6 +164,15 @@ void QUEUE_GFX_SetMixColor(struct Tracker_Windows* tvisual, enum ColorNums color
   el->type = ENUM_GFX_SetMixColor ; 
   el->i1 = color1 ; 
   el->i2 = color2 ; 
+  el->i3 = mix_factor ; 
+} 
+
+void QUEUE_GFX_SetMixColor2(struct Tracker_Windows* tvisual, enum ColorNums color1, unsigned int color2, int mix_factor){ 
+  if(tvisual->must_redraw==true) return; 
+  queue_element_t *el = get_next_element(tvisual->op_queue); 
+  el->type = ENUM_GFX_SetMixColor2 ; 
+  el->i1 = color1 ; 
+  el->u2 = color2 ; 
   el->i3 = mix_factor ; 
 } 
 

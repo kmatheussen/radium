@@ -75,7 +75,7 @@ struct Tracker_Windows *getWindowFromNum(int windownum){
 	if(windownum==-1) return root->song->tracker_windows;
 	struct Tracker_Windows *ret = ListFindElement1_r0(&root->song->tracker_windows->l,(NInt)windownum);
         if (ret==NULL)
-          RError("Window #%d does not exist", windownum);
+          GFX_Message(NULL, "Window #%d does not exist", windownum);
         return ret;
 }
 
@@ -87,7 +87,7 @@ struct WBlocks *getWBlockFromNum(int windownum,int wblocknum){
 	if(wblocknum==-1) return window->wblock;
 	struct WBlocks *ret = ListFindElement1_num(&window->wblocks->l,(NInt)wblocknum);
         if (ret==NULL)
-          RError("WBlock #%d does not exist", wblocknum);
+          GFX_Message(NULL, "WBlock #%d does not exist", wblocknum);
         return ret;
 }
 
@@ -103,14 +103,14 @@ struct WBlocks *getWBlockFromNumA(
 	if(blocknum==-1) return (*window)->wblock;
 	struct WBlocks *ret = ListFindElement1_num(&(*window)->wblocks->l,(NInt)blocknum);
         if (ret==NULL)
-          RError("WBlock #%d does not exist", blocknum);
+          GFX_Message(NULL, "WBlock #%d does not exist", blocknum);
         return ret;
 }
 
 struct Blocks *getBlockFromNum(int blocknum){
   struct Blocks *ret = ListFindElement1_r0(&root->song->blocks->l,(NInt)blocknum);
   if (ret==NULL)
-    RError("Block #%d does not exist",blocknum);
+    GFX_Message(NULL, "Block #%d does not exist",blocknum);
   return ret;
 }
 
@@ -121,7 +121,7 @@ struct Tracks *getTrackFromNum(int blocknum,int tracknum){
 
 	struct Tracks *ret = ListFindElement1_num(&block->tracks->l,(NInt)tracknum);
         if (ret==NULL)
-          RError("Track #%d in Block #%d does not exist",tracknum,blocknum);
+          GFX_Message(NULL, "Track #%d in Block #%d does not exist",tracknum,blocknum);
         return ret;
 }
 
@@ -135,7 +135,7 @@ struct WTracks *getWTrackFromNum(
 	if(wtracknum==-1) return wblock->wtrack;
 	struct WTracks *ret = ListFindElement1_num(&wblock->wtracks->l,(NInt)wtracknum);
         if (ret==NULL)
-          RError("WTrack #%d in WBlock #%d in window #%d does not exist",wtracknum, wblocknum, windownum);
+          GFX_Message(NULL, "WTrack #%d in WBlock #%d in window #%d does not exist",wtracknum, wblocknum, windownum);
         return ret;
 }
 
@@ -147,13 +147,13 @@ struct WTracks *getWTrackFromNumA(
 	int wtracknum
 ){
 	if(wblock==NULL){
-		RError("Warning, might be a program-error, wblock==NULL at function getWTrackFromNumA in file api/api_common.c\n");
+		GFX_Message(NULL, "Warning, might be a program-error, wblock==NULL at function getWTrackFromNumA in file api/api_common.c\n");
 		return NULL;
 	}
 
       	(*wblock)=getWBlockFromNumA(windownum,window,wblocknum);
         if ((*wblock)==NULL){
-          RError("WBlock %d does not exist",wblocknum);
+          GFX_Message(NULL, "WBlock %d does not exist",wblocknum);
           return NULL;
         }
           
@@ -161,7 +161,7 @@ struct WTracks *getWTrackFromNumA(
 //	printf("So far.. %d,%d\n",wblocknum,wtracknum);
 	struct WTracks *ret = ListFindElement1_num(&(*wblock)->wtracks->l,(NInt)wtracknum);
         if (ret==NULL)
-          RError("WTrack #%d in WBlock %d does not exist",wtracknum, wblocknum);
+          GFX_Message(NULL, "WTrack #%d in WBlock %d does not exist",wtracknum, wblocknum);
         return ret;
 }
 
@@ -175,7 +175,7 @@ struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int
     
     struct Notes *note = GetCurrNote(*window);
     if (note==NULL) {
-      RError("Note #%d in track #%d in block #%d in window #%d does not exist",notenum,tracknum,blocknum,windownum);
+      GFX_Message(NULL, "Note #%d in track #%d in block #%d in window #%d does not exist",notenum,tracknum,blocknum,windownum);
       return NULL;
     }else
       return note;
@@ -185,7 +185,7 @@ struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int
     struct Tracks *track = (*wtrack)->track;
     struct Notes *ret = ListFindElement3_num(&track->notes->l,(NInt)notenum);
     if (ret==NULL)
-      RError("Note #%d in track #%d in block #%d does not exist",notenum,tracknum,blocknum);
+      GFX_Message(NULL, "Note #%d in track #%d in block #%d does not exist",notenum,tracknum,blocknum);
     
     return ret;
   }
@@ -207,7 +207,7 @@ struct Signatures *getSignatureFromNumA(int windownum,struct Tracker_Windows **w
   
   struct Signatures *ret = ListFindElement3_num(&block->signatures->l,(NInt)num);
   if (ret==NULL)
-      RError("Signature #%d in block #%d does not exist",num,blocknum);
+      GFX_Message(NULL, "Signature #%d in block #%d does not exist",num,blocknum);
     
   return ret;
 }
@@ -227,7 +227,7 @@ struct LPBs *getLPBFromNumA(int windownum,struct Tracker_Windows **window, int b
   
   struct LPBs *ret = ListFindElement3_num(&block->signatures->l,(NInt)num);
   if (ret==NULL)
-      RError("LPB #%d in block #%d does not exist",num,blocknum);
+      GFX_Message(NULL, "LPB #%d in block #%d does not exist",num,blocknum);
     
   return ret;
 }
@@ -247,7 +247,7 @@ struct BPMs *getBPMFromNumA(int windownum,struct Tracker_Windows **window, int b
   
   struct BPMs *ret = ListFindElement3_num(&block->tempos->l,(NInt)bpmnum);
   if (ret==NULL)
-      RError("BPM #%d in block #%d does not exist",bpmnum,blocknum);
+      GFX_Message(NULL, "BPM #%d in block #%d does not exist",bpmnum,blocknum);
     
   return ret;
 }
@@ -266,7 +266,7 @@ struct FXs *getFXsFromNumA(int windownum,struct Tracker_Windows **window, int bl
   struct Tracks *track = (*wtrack)->track;
   struct FXs *ret = VECTOR_get_r0(&track->fxs,fxnum,"fxs");
   if (ret==NULL)
-    RError("FX #%d in track #%d in block #%d does not exist",fxnum,tracknum,blocknum);
+    GFX_Message(NULL, "FX #%d in track #%d in block #%d does not exist",fxnum,tracknum,blocknum);
   
   return ret;
 }

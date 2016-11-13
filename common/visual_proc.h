@@ -168,9 +168,9 @@ extern LANGSPEC void GFX_SetDefaultColors2(struct Tracker_Windows *tvisual);
 
 extern LANGSPEC unsigned int GFX_mix_colors(unsigned int c1, unsigned int c2, float how_much);
 extern LANGSPEC unsigned int GFX_get_color(enum ColorNums colornum);
-extern LANGSPEC unsigned int GFX_get_colornum_from_colorname(const char *colorname);
-extern LANGSPEC const char *GFX_get_colorname_from_colornum(unsigned int colornum);
-extern LANGSPEC char *GFX_color_dialog(const char *initial_color, func_t *callback);
+extern LANGSPEC unsigned int GFX_get_color_from_colorname(const char *colorname);
+extern LANGSPEC const char *GFX_get_colorname_from_color(unsigned int colornum);
+extern LANGSPEC void GFX_color_dialog(const char *initial_color, func_t *callback);
 
 extern LANGSPEC void GFX_SetCustomColor(struct Tracker_Windows *tvisual, void *color);
 extern LANGSPEC unsigned int GFX_MakeRandomColor(void);//int blendcolornum, float blendfactor);
@@ -216,10 +216,8 @@ extern LANGSPEC void OS_GFX_CancelMixColor(struct Tracker_Windows* tvisual);
 extern LANGSPEC void QUEUE_GFX_CancelMixColor(struct Tracker_Windows* tvisual);
 extern LANGSPEC void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,enum ColorNums color1,enum ColorNums color2,int mix_factor);
 extern LANGSPEC void QUEUE_GFX_SetMixColor(struct Tracker_Windows *tvisual,enum ColorNums color1,enum ColorNums color2,int mix_factor);
-#if USE_QT4
-#include <QColor>
-void GFX_SetMixColor2(struct Tracker_Windows *tvisual,QColor color1,QColor color2, int mix_factor);
-#endif
+extern LANGSPEC void OS_GFX_SetMixColor2(struct Tracker_Windows *tvisual,enum ColorNums color1,unsigned int color2,int mix_factor);
+extern LANGSPEC void QUEUE_GFX_SetMixColor2(struct Tracker_Windows *tvisual,enum ColorNums color1,unsigned int color2,int mix_factor);
 
 extern LANGSPEC void OS_GFX_Polygon(
                                     struct Tracker_Windows *tvisual,
@@ -466,6 +464,7 @@ extern LANGSPEC void GFXST_BorderType2(
 #define GFX_T_DrawTrackBorderDouble(a,b,c,d,e) GFXST_BorderType2(GFX_DrawTrackBorderDouble,a,b,c,d,e)
 
 #define GFX_SetMixColor QUEUE_GFX_SetMixColor
+#define GFX_SetMixColor2 QUEUE_GFX_SetMixColor2
 #define GFX_CancelMixColor QUEUE_GFX_CancelMixColor
 
 

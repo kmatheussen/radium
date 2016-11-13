@@ -701,8 +701,8 @@ void setBlockColor(const_char *colorname, int blocknum, int windownum){
                                              );
   if(wblock==NULL) return;
 
-  unsigned int colornum = GFX_get_colornum_from_colorname(colorname);
-  wblock->block->color = colornum;
+  unsigned int color = GFX_get_color_from_colorname(colorname);
+  wblock->block->color = color;
 
   SEQUENCER_update();
 }
@@ -716,7 +716,7 @@ const char *getBlockColor(int blocknum, int windownum){
                                              );
   if(wblock==NULL) return "";
 
-  return GFX_get_colorname_from_colornum(wblock->block->color);
+  return GFX_get_colorname_from_color(wblock->block->color);
 }
 
 void setTrackNoteShowType(int type,int tracknum,int blocknum,int windownum){

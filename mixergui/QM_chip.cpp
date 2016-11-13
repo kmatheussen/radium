@@ -1361,6 +1361,9 @@ bool Chip::positionedAtSlider(QPointF pos){
 
 void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
+  if (g_radium_runs_custom_exec==true)
+    return;
+
 
   if(event->button()==Qt::LeftButton){
 
@@ -1496,6 +1499,9 @@ QVariant Chip::itemChange(GraphicsItemChange change, const QVariant &value) {
 
 void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
+  if (g_radium_runs_custom_exec==true)
+    return;
+
   if(_slider_being_edited>0){
     SoundPlugin *plugin = SP_get_plugin(_sound_producer);
     int num_effects = plugin->type->num_effects;
@@ -1547,6 +1553,9 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
 void Chip::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
+  if (g_radium_runs_custom_exec==true)
+    return;
+
   if(_slider_being_edited>0)
     _slider_being_edited=0;
 

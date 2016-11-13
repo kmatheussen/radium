@@ -291,7 +291,11 @@ static inline int safeExec(QDialog *widget){
 static inline QAction *safeExec(QMenu *widget){
   QAction *ret;
 
-  R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
+  // safeExec might be called recursively if you double click right mouse button to open a pop up menu. Seems like a bug or design flaw in Qt.
+#if !defined(RELEASE)
+  if (g_radium_runs_custom_exec==true)
+    GFX_Message(NULL, "Already runs custom exec");
+#endif
   
   g_radium_runs_custom_exec = true;
     

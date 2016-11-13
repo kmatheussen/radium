@@ -1042,6 +1042,11 @@
                                      60)
                         )
 
+(define (show-instrument-color-dialog instrument-id)
+  (<ra> :color-dialog (<ra> :get-instrument-color instrument-id)
+        (lambda (color)
+          (<ra> :set-instrument-color color instrument-id))))
+
 (define (track-configuration-popup X Y)
   (c-display "TRACK " *current-track-num*)
   (popup-menu "Pianoroll     (left alt + p)" :check (<ra> :pianoroll-visible *current-track-num*) (lambda (onoff)
@@ -1082,6 +1087,11 @@
                 (define channelnum (<ra> :request-integer "MIDI channel (1-16):" 1 16))
                 (if (>= channelnum 1)
                     (<ra> :set-track-midi-channel (1- channelnum) *current-track-num*)))
+              (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
+                (list "Configure instrument color"
+                      :enabled (>= instrument-id 0)
+                      (lambda ()
+                        (show-instrument-color-dialog instrument-id))))
               "-------"
               "Help Chance text" (lambda ()
                                    (<ra> :show-chance-help-window))

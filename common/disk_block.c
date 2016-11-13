@@ -50,7 +50,7 @@ DC_start("BLOCK");
 	DC_SSN("num_tracks",block->num_tracks);
 	DC_SSI("num_lines",block->num_lines);
 	DC_SSF("reltempo",ATOMIC_DOUBLE_GET(block->reltempo));
-        DC_SSS("color", GFX_get_colorname_from_colornum(block->color));
+        DC_SSS("color", GFX_get_colorname_from_color(block->color));
         
 	SaveTrack(block->tracks);
 	SaveSignatures(block->signatures);
@@ -101,7 +101,7 @@ var3:
 	ATOMIC_DOUBLE_SET(block->reltempo, DC_LoadD());
 	goto start;
 var4:
-        block->color = GFX_get_colornum_from_colorname(DC_LoadS());
+        block->color = GFX_get_color_from_colorname(DC_LoadS());
         goto start;
         
 obj0:

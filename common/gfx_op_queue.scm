@@ -93,6 +93,7 @@ void GFX_Polyline(
 
 void GFX_CancelMixColor(struct Tracker_Windows* tvisual);
 void GFX_SetMixColor(struct Tracker_Windows* tvisual,enum ColorNums color1,enum ColorNums color2,int mix_factor);
+void GFX_SetMixColor2(struct Tracker_Windows* tvisual,enum ColorNums color1,unsigned int color2,int mix_factor);
 
 void GFX_Text(
 	struct Tracker_Windows* tvisual,
@@ -163,6 +164,7 @@ void GFX_BitBlt(
 
 (define (get-element-slot-name type n)
   (<-> (cond ((string=? type "int") "i")
+             ((string=? type "unsigned int") "u")
              ((string=? type "enum ColorNums") "i")
              ((string=? type "bool") "b")
              ((string=? type "char*") "s")

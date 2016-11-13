@@ -16,6 +16,7 @@ extern LANGSPEC void OS_GFX_Polygon(struct Tracker_Windows* tvisual,enum ColorNu
 extern LANGSPEC void OS_GFX_Polyline(struct Tracker_Windows* tvisual,enum ColorNums color,int x1,int y1,int x2,int y2,int num_points,APoint* peaks,int where); 
 extern LANGSPEC void OS_GFX_CancelMixColor(struct Tracker_Windows* tvisual); 
 extern LANGSPEC void OS_GFX_SetMixColor(struct Tracker_Windows* tvisual,enum ColorNums color1,enum ColorNums color2,int mix_factor); 
+extern LANGSPEC void OS_GFX_SetMixColor2(struct Tracker_Windows* tvisual,enum ColorNums color1,unsigned int color2,int mix_factor); 
 extern LANGSPEC void OS_GFX_Text(struct Tracker_Windows* tvisual,enum ColorNums color,const char* text,int x,int y,int width,int flags,int where); 
 extern LANGSPEC void OS_GFX_BitBlt(struct Tracker_Windows* tvisual,int dx,int dy,int x,int y,int x2,int y2); 
 

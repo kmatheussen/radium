@@ -41,6 +41,7 @@ typedef struct{
   int i1;
   union{
     int i2;
+    unsigned int u2;
     char s2[64];
   };
   int i3;

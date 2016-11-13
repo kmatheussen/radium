@@ -549,6 +549,9 @@ static bool stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
 
 void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
 
+  if (g_radium_runs_custom_exec==true)
+    return;
+
   QPointF pos=event->scenePos();
 
   draw_slot(this, pos.x(), pos.y());
@@ -1008,6 +1011,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int cut = -1;
   int delete_ = -1;
   int save = -1;
+  int config_color = -1;
   
   if (chips.size() > 1) {
     
@@ -1027,7 +1031,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     delete_ = VECTOR_push_back(&v, "Delete sound object");
     VECTOR_push_back(&v, "--------");
     save = VECTOR_push_back(&v, "Save preset file (.rec)");
-    
+    config_color = VECTOR_push_back(&v, "Configure instrument color");
   }
 
       
@@ -1061,6 +1065,11 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
 
     PRESET_save(&patches, false);
 
+  } else if (sel==config_color) {
+
+    QString command = QString("(show-instrument-color-dialog ") + QString::number(CHIP_get_patch(chip_under)->id) + ")";
+    evalScheme(talloc_strdup(command.toUtf8().constData()));
+
   } else {
     
     R_ASSERT(false);
@@ -1085,6 +1094,9 @@ void MyScene::mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event ){
   QPointF pos=event->scenePos();
   printf("Scene is double-clicked\n");
 
+  if (g_radium_runs_custom_exec==true)
+    return;
+  
   Chip *chip = MW_get_chip_at(pos.x(), pos.y(), NULL);
   if(chip!=NULL){
     if (chip->myMouseDoubleClickEvent(pos.x()-chip->x(), pos.y()-chip->y())){
@@ -1113,6 +1125,9 @@ void MyScene::mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event ){
 void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
   printf("mousepress: %p\n",_current_connection);
 
+  if (g_radium_runs_custom_exec==true)
+    return;
+  
   QPointF pos=event->scenePos();
   float mouse_x = pos.x();
   float mouse_y = pos.y();
@@ -1170,6 +1185,9 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
 
 void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
   printf("mouse release: %p\n",_current_connection);
+
+  if (g_radium_runs_custom_exec==true)
+    return;
 
   GFX_ScheduleRedraw();
 

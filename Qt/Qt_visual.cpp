@@ -671,10 +671,10 @@ void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,enum ColorNums color1,en
   //printf("mixcolor called\n");
 }
 
-void GFX_SetMixColor2(struct Tracker_Windows *tvisual,QColor color1,QColor color2, int mix_factor){
+void OS_GFX_SetMixColor2(struct Tracker_Windows *tvisual,enum ColorNums color1,unsigned int color2, int mix_factor){
   //EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   //printf("mix_factor: %d\n",mix_factor);
-  g_custom_color = mix_colors(color1, color2, mix_factor / 1000.0);
+  g_custom_color = mix_colors(get_qcolor(color1), QColor(color2), mix_factor / 1000.0);
   g_use_custom_color = true;
   //printf("mixcolor called\n");
 }
