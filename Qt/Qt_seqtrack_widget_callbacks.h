@@ -799,7 +799,8 @@ struct Timeline_widget : public MouseTrackerQWidget {
         if (inc_time%30 != 0)
           inc_time += 30-(inc_time%30);
     }
-
+    //inc_time = 1;
+    
     const int t1 = 4;
     
     int64_t time = inc_time * int((double)start_time/(double)inc_time);

@@ -95,6 +95,9 @@ int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct S
       
       int64_t seq_end_time = seq_start_time + seq_block_duration;
       double  abs_end_time = abs_start_time + abs_block_duration;
+
+      if (abstime <= abs_end_time)
+        return scale(abstime, abs_start_time, abs_end_time, seq_start_time, seq_end_time);
       
       //last_abs_start_time = abs_start_time;
       last_seq_end_time   = seq_end_time;
@@ -292,14 +295,14 @@ static int64_t find_bar_start_after(struct SeqBlock *seqblock, int64_t seqtime, 
     beat = NextBeat(beat);
   }
 
-  int64_t blocklen = getBlockSTimeLength(block);
+  int64_t blocklen = getBlockSTimeLength(block); // / ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
   
   int64_t bar_length;
   
   if (last_bar==NULL)
-    bar_length = blocklen;
+    bar_length = blocklen / ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
   else
-    bar_length = blocklen - Place2STime(block, &last_bar->l.p);
+    bar_length = (blocklen - Place2STime(block, &last_bar->l.p)) / ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
 
   int64_t ret = seqblock->time + blocklen;
   int64_t mindiff = R_ABS(ret-seqtime);
@@ -327,6 +330,7 @@ int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_seqtime){
   struct SeqTrack *pos_seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
   struct SeqTrack *seqtrack = find_closest_seqtrack_with_bar_start(seqtracknum);
 
+  //printf("pos_seqtime: %f\n",(double)pos_seqtime/44100.0);
   int64_t seqtime = convert_seqtime(pos_seqtrack, seqtrack, pos_seqtime);
 
   int64_t bar_start_time = 0;
