@@ -245,7 +245,10 @@ public:
 
   float get_seqblock_x1(int seqblocknum){
     R_ASSERT_RETURN_IF_FALSE2(seqblocknum>=0, 0);
-    R_ASSERT_RETURN_IF_FALSE2(seqblocknum<_seqtrack->seqblocks.num_elements, 0);
+
+    // This can happen while the sequencer is updated.
+    if (seqblocknum >= _seqtrack->seqblocks.num_elements)
+      return 0;
     
     SEQTRACK_update_all_seqblock_gfx_start_and_end_times(_seqtrack);
     double start_time = _start_time / MIXER_get_sample_rate();
@@ -255,7 +258,10 @@ public:
 
   float get_seqblock_x2(int seqblocknum){
     R_ASSERT_RETURN_IF_FALSE2(seqblocknum>=0, 0);
-    R_ASSERT_RETURN_IF_FALSE2(seqblocknum<_seqtrack->seqblocks.num_elements, 0);
+
+    // This can happen while the sequencer is updated.
+    if (seqblocknum >= _seqtrack->seqblocks.num_elements)
+      return 100;
 
     SEQTRACK_update_all_seqblock_gfx_start_and_end_times(_seqtrack);
     double start_time = _start_time / MIXER_get_sample_rate();
