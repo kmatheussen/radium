@@ -151,6 +151,8 @@ typedef struct _Voice{
 
   int64_t pos;
 
+  bool reverse;
+  
   void *resampler;
   void *adsr;
 
@@ -533,7 +535,7 @@ static long RT_src_callback(void *cb_data, float **out_data){
   Data  *data          = sample->data;
 
   bool pingpong = ATOMIC_GET(sample->data->p.pingpong);
-  bool reverse = ATOMIC_GET(sample->data->p.reverse);
+  bool reverse = voice->reverse;
   bool loop = ATOMIC_GET(sample->data->p.loop_onoff);
 
   int64_t ret;
@@ -904,6 +906,8 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
                        0,1,
                        0,sample->num_frames);
 
+    voice->reverse = ATOMIC_GET(sample->data->p.reverse);
+    
     voice->pan = get_pan_vals_vector(note2.pan,voice->sample->ch==-1?1:2);
         
     RESAMPLER_reset(voice->resampler);
