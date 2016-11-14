@@ -326,13 +326,14 @@ static int64_t find_bar_start_after(struct SeqBlock *seqblock, int64_t seqtime, 
   return ret;
 }
 
-int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_seqtime){
-  struct SeqTrack *pos_seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
+int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_abstime){
+  //struct SeqTrack *pos_seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
   struct SeqTrack *seqtrack = find_closest_seqtrack_with_bar_start(seqtracknum);
 
   //printf("pos_seqtime: %f\n",(double)pos_seqtime/44100.0);
-  int64_t seqtime = convert_seqtime(pos_seqtrack, seqtrack, pos_seqtime);
-
+  //int64_t seqtime = convert_seqtime(pos_seqtrack, seqtrack, pos_seqtime);
+  int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, pos_abstime);
+                         
   int64_t bar_start_time = 0;
 
   struct SeqBlock *last_seqblock = NULL;
@@ -348,8 +349,9 @@ int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_seqtime){
     }
     
     if (seqtime < starttime && last_seqblock==NULL) {
-      bar_start_time = pos_seqtime; //find_bar_start_before(seqblock, seqtime);
-      goto gotit;
+      return pos_abstime;
+      //bar_start_time = pos_seqtime; //find_bar_start_before(seqblock, seqtime);
+      //goto gotit;
     }
     
     if (seqtime < starttime) {
@@ -361,14 +363,15 @@ int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_seqtime){
   }END_VECTOR_FOR_EACH;
 
   if (last_seqblock==NULL)
-    return pos_seqtime;
+    return pos_abstime;
   else
     bar_start_time = find_bar_start_after(last_seqblock, seqtime, INT64_MAX);
   
  gotit:
 
   //printf("Converting %f to %f\n",(double)bar_start_time/44100.0, (double)convert_seqtime(seqtrack, pos_seqtrack, bar_start_time)/44100.0);
-  return convert_seqtime(seqtrack, pos_seqtrack, bar_start_time);
+  //return convert_seqtime(seqtrack, pos_seqtrack, bar_start_time);
+  return get_abstime_from_seqtime(seqtrack, NULL, bar_start_time);
 }
 
 /**
