@@ -696,7 +696,10 @@ public:
   Seqtrack_widget *get_seqtrack_widget(int seqtracknum){
     if (seqtracknum >= _seqtrack_widgets.size())
       update_seqtracks();
-  
+
+    if (seqtracknum >= _seqtrack_widgets.size())
+      return NULL;
+    
     R_ASSERT_RETURN_IF_FALSE2(seqtracknum<_seqtrack_widgets.size(), NULL);
 
     //printf("%d: y: %d\n",seqtracknum,_seqtrack_widgets.at(seqtracknum)->pos().y());
