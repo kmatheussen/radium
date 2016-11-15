@@ -1,3 +1,30 @@
+Changes 4.2.6 -> 4.2.7:
+* Make fewer undo points when moving sequencer blocks
+* Attempt to lower file requester startup time on windows
+* Show sequencer grid graphically when moving blocks
+* Only use first sequencer track to define grid
+* Scrolling the mouse wheel down stops the player and
+  sets cursor position in the sequencer.
+* Sampler: Don't change reverse value in realtime.
+  I.e. already playing notes doesn't suddenly change
+  between playing backards and forwards.
+* Fix "Block Copy" and "Block Paste" in the menus
+* Fix semi-rare crash that could happen right after
+  a sequencer is deleted or changed, for instance after
+  loading a song.
+* Fix sequencer grid when a block tempo multiplier doesn't
+  have the value 1.0.
+* Update note graphics in the sequencer immediately.
+* Configure instrument colors (select "Configure color"
+  from the track header or mixer sound object popup menus).
+* Warn about all Mesa 10 Linux Intel GFX drivers during startup.
+  It seems like Radium could crash at any time if using
+  these drivers.
+* Possibly improve audio performance by reducing cache misses.
+  Memory usage has decreased a little bit too.
+
+
+
 Changes 4.2.5 -> 4.2.6:
 * Mouse: Don't bar-align the first block in the sequencer.
 * Mouse: Always move the sequencer blocks the same number of pixels.
