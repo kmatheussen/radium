@@ -333,7 +333,7 @@ public slots:
   }
   
   void on_filename_button_clicked(){
-    QFileDialog::Options options = useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog;
+    QFileDialog::Options options = QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog);
     if (many_soundfiles->isChecked()) {
       
       QFileDialog dialog(this, 

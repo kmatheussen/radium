@@ -96,7 +96,7 @@ static QString request_load_preset_filename_from_requester(void){
                                               "Radium Effect Configuration (*.rec *.mrec) ;; Radium Single Effect Configuration (*.rec) ;; Radium Multi Effect Configuration (*.mrec) ;; All files (*)",
 #endif
                                               0,
-                                              useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
+                                              QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                               );
     }GL_unlock();
     
@@ -364,7 +364,7 @@ void PRESET_save(vector_t *patches, bool save_button_pressed){  // "save_button_
                                              : "Radium Effect Configuration (*.rec) ;; All files (*)",
 #endif
                                             0,
-                                            useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
+                                            QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                             );
   }GL_unlock();
 

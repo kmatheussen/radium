@@ -191,7 +191,7 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
                                                 QString(),
                                                 QString(),
                                                 0,
-                                                useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
+                                                QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                                 );
       }GL_unlock();
 

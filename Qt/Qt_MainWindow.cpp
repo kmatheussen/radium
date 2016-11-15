@@ -686,7 +686,7 @@ const wchar_t *GFX_GetLoadFileName(
                                             dir,
                                             get_postfixes_filter(postfixes),
                                             0,
-                                            useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
+                                            QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                             );
     
   }GL_unlock();
@@ -725,7 +725,7 @@ const wchar_t *GFX_GetSaveFileName(
                                             "",
                                             get_postfixes_filter(postfixes),
                                             0,
-                                            useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
+                                            QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                             );
   }GL_unlock();
 

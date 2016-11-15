@@ -157,7 +157,10 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
     obtain_keyboard_focus();
 
     GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-      QString dirname = QFileDialog::getExistingDirectory(this,"Select VST Directory");
+      QString dirname = QFileDialog::getExistingDirectory(this,
+                                                          "Select VST Directory",
+                                                          QString(),
+                                                          QFileDialog::DontUseCustomDirectoryIcons);
       path_edit->setText(dirname);
     }GL_unlock();
 

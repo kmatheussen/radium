@@ -481,7 +481,7 @@ private:
                                               is_fxb ? "VST FXB (*.fxb) ;; All files (*)" : "VST FXP (*.fxp) ;; All files (*)",
 #endif
                                               0,
-                                              useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
+                                              QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                               );
     }GL_unlock();
 
@@ -521,7 +521,7 @@ private:
                                               "VST FXB/FXP files (*.fxb *.fxp) ;; All files (*)",
 #endif
                                               0,
-                                              useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
+                                              QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                               );
     }GL_unlock();
 
@@ -680,7 +680,7 @@ public slots:
                                                 "",
                                                 "*.dsp ;; All files (*)",
                                                 0,
-                                                useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
+                                                QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                                 );
         
       }GL_unlock();
@@ -713,7 +713,7 @@ public slots:
                                                 "",
                                                 "*.dsp ;; All files (*)",
                                                 0,
-                                                useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
+                                                QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                                 );
         
       }GL_unlock();

@@ -104,7 +104,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
                                                   QString(),
                                                   QString(),
                                                   0,
-                                                  useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
+                                                  QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                                   );
         }GL_unlock();
         
