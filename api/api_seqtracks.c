@@ -75,6 +75,10 @@ void setSequencerVisibleEndTime(int64_t value){
   SEQUENCER_set_visible_end_time(value);
 }
 
+void setSequencerGridType(int grid_type){
+  SEQUENCER_set_grid_type(grid_type);
+}
+
 /*
 float getSeqtempoAreaX1(void){
 }

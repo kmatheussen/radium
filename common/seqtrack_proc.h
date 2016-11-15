@@ -6,6 +6,13 @@
 #define SEQNAV_SIZE_HANDLE_WIDTH 50
 #define SEQUENCER_EXTRA_SONG_LENGTH 30.0 // sequencer gui always shows 30 seconds more than the song length
 
+enum GridType{
+  NO_GRID = 0,
+  BAR_GRID = 1,
+  BEAT_GRID = 1
+};
+
+
 extern LANGSPEC int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, int64_t block_seqtime); // Result is rounded down to nearest integer.
 extern LANGSPEC int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_to_ignore, int64_t abstime); // Result is rounded down to nearest integer.
   
@@ -20,6 +27,8 @@ extern LANGSPEC int64_t SEQUENCER_get_visible_end_time(void);
 extern LANGSPEC void SEQUENCER_set_visible_start_and_end_time(int64_t start_time, int64_t end_time);
 extern LANGSPEC void SEQUENCER_set_visible_start_time(int64_t val);
 extern LANGSPEC void SEQUENCER_set_visible_end_time(int64_t val);
+
+extern LANGSPEC void SEQUENCER_set_grid_type(enum GridType grid_type);
 
 extern LANGSPEC void SEQUENCER_hide_because_instrument_widget_is_large(void);
 extern LANGSPEC void SEQUENCER_show_because_instrument_widget_is_large(void);

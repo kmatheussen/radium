@@ -2859,6 +2859,12 @@
                 (<ra> :get-num-seqblocks seqtracknum))
               (iota (<ra> :get-num-seqtracks)))))
 
+(define (set-grid-type doit)
+  (if doit
+      (<ra> :set-sequencer-grid-type 1)
+      (<ra> :set-sequencer-grid-type 0)))
+      
+
 ;; seqblock move
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define gakklast-value 0) ;; TODO: Fix.
@@ -2875,6 +2881,7 @@
                                                                   (begin
                                                                     (if (not (<ra> :is-playing-song))
                                                                         (<ra> :select-block (<ra> :get-seqblock-blocknum (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))))
+                                                                    (set-grid-type #t)
                                                                     (callback seqblock-info (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum)
                                                                                                                            (seqblock-info :seqtracknum))
                                                                               Y))))))))
@@ -2911,10 +2918,10 @@
                         :Release-node (lambda (seqblock-info)
                                         (define old-pos (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum)
                                                                 (seqblock-info :seqtracknum)))
-                                        (define new-pos (if (or (= 1 (num-seqblocks-in-sequencer))
-                                                                (<ra> :ctrl-pressed))
-                                                            (floor gakklast-value)
-                                                            (<ra> :find-closest-seqtrack-bar-start (seqblock-info :seqtracknum) (floor gakklast-value))))
+                                        (define new-pos gakklast-value) ;(if (or (= 1 (num-seqblocks-in-sequencer))
+                                                         ;       (<ra> :ctrl-pressed))
+                                                         ;   (floor gakklast-value)
+                                                         ;   (<ra> :find-closest-seqtrack-bar-start (seqblock-info :seqtracknum) (floor gakklast-value))))
                                         ;;(c-display "  RELEASING GFX " old-pos new-pos)
                                         ;;(c-display "  Y" Y (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y))
                                         (if (not (= old-pos new-pos))
@@ -2922,6 +2929,7 @@
                                               (<ra> :undo-sequencer)
                                               (<ra> :move-seqblock (seqblock-info :seqblocknum) new-pos (seqblock-info :seqtracknum)))
                                             (<ra> :move-seqblock-gfx (seqblock-info :seqblocknum) old-pos (seqblock-info :seqtracknum)))
+                                        (set-grid-type #f)
                                         seqblock-info)
 
                         ;; TODO/FIX: Only change graphics here.
@@ -2935,7 +2943,9 @@
                                                          (floor Value)
                                                          (<ra> :find-closest-seqtrack-bar-start new-seqtracknum (floor Value))))
                                      (set! gakklast-value new-pos)
-
+                                     
+                                     (set-grid-type #t)
+                                     
                                      (if (not (= (seqblock-info :seqtracknum) new-seqtracknum))
                                          (let ((blocknum (<ra> :get-seqblock-blocknum (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))))
                                            (undo-block

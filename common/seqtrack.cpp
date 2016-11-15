@@ -218,6 +218,9 @@ void SEQUENCER_update_all_seqblock_start_and_end_times(void){
  */
 
 struct SeqTrack *find_closest_seqtrack_with_bar_start(int seqtracknum){
+#if 1
+  return (struct SeqTrack*)root->song->seqtracks.elements[0];
+#else
   if (seqtracknum==0)
     return (struct SeqTrack*)root->song->seqtracks.elements[0];
 
@@ -232,6 +235,7 @@ struct SeqTrack *find_closest_seqtrack_with_bar_start(int seqtracknum){
   }
 
   return (struct SeqTrack*)root->song->seqtracks.elements[0];
+#endif
 }
 
 /*
@@ -578,7 +582,7 @@ static void move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, 
 
   double new_song_visible_length = SONG_get_gfx_length();
 
-  if (new_song_visible_length != old_song_visible_length)
+  if (!is_gfx || new_song_visible_length != old_song_visible_length || seqtrack==root->song->seqtracks.elements[0])
     SEQUENCER_update();
   else{
     SEQTRACK_update(seqtrack);
