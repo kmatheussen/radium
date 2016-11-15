@@ -1070,8 +1070,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   enum GridType _grid_type;
 
   const int bottom_height = 30;
-
+#if ENABLE_TEMPO_AUTOMATION
   SongTempoAutomation_widget _songtempoautomation_widget;
+#endif
   Timeline_widget _timeline_widget;
   Seqtracks_widget _seqtracks_widget;
   Seqtracks_navigator_widget _navigator_widget;
@@ -1081,7 +1082,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     : MouseTrackerQWidget(parent)
     , _end_time(SONG_get_gfx_length()*MIXER_get_sample_rate())
     , _samples_per_pixel((_end_time-_start_time) / width())
+#if ENABLE_TEMPO_AUTOMATION
     , _songtempoautomation_widget(this, _start_time, _end_time)
+#endif
     , _timeline_widget(this, _start_time, _end_time)
     , _seqtracks_widget(this, _start_time, _end_time)
     , _navigator_widget(this, _start_time, _end_time, _seqtracks_widget)
