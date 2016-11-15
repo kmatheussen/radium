@@ -2868,6 +2868,7 @@
 ;; seqblock move
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define gakklast-value 0) ;; TODO: Fix.
+(define has-made-undo #f)
 (add-node-mouse-handler :Get-area-box (lambda()
                                         (<ra> :get-box sequencer))
                         :Get-existing-node-info (lambda (X Y callback)
@@ -2882,6 +2883,7 @@
                                                                     (if (not (<ra> :is-playing-song))
                                                                         (<ra> :select-block (<ra> :get-seqblock-blocknum (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))))
                                                                     (set-grid-type #t)
+                                                                    (set! has-made-undo #f)
                                                                     (callback seqblock-info (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum)
                                                                                                                            (seqblock-info :seqtracknum))
                                                                               Y))))))))
@@ -2926,10 +2928,12 @@
                                         ;;(c-display "  Y" Y (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y))
                                         (if (not (= old-pos new-pos))
                                             (begin
-                                              (<ra> :undo-sequencer)
+                                              (if (not has-made-undo)
+                                                  (<ra> :undo-sequencer))
                                               (<ra> :move-seqblock (seqblock-info :seqblocknum) new-pos (seqblock-info :seqtracknum)))
                                             (<ra> :move-seqblock-gfx (seqblock-info :seqblocknum) old-pos (seqblock-info :seqtracknum)))
                                         (set-grid-type #f)
+                                        (set! has-made-undo #f)
                                         seqblock-info)
 
                         ;; TODO/FIX: Only change graphics here.
@@ -2948,12 +2952,14 @@
                                      
                                      (if (not (= (seqblock-info :seqtracknum) new-seqtracknum))
                                          (let ((blocknum (<ra> :get-seqblock-blocknum (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))))
-                                           (undo-block
-                                            (lambda ()
-                                              (<ra> :delete-seqblock (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))
-                                              (define new-seqblocknum (<ra> :add-block-to-seqtrack new-seqtracknum blocknum new-pos))
-                                              (make-seqblock-info :seqtracknum new-seqtracknum
-                                                                  :seqblocknum new-seqblocknum))))
+                                           (define (doit)
+                                             (<ra> :delete-seqblock (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))
+                                             (define new-seqblocknum (<ra> :add-block-to-seqtrack new-seqtracknum blocknum new-pos))
+                                             (make-seqblock-info :seqtracknum new-seqtracknum
+                                                                 :seqblocknum new-seqblocknum))
+                                           (begin
+                                             (set! has-made-undo #t)
+                                             (undo-block doit)))
                                          (begin
                                            (<ra> :move-seqblock-gfx (seqblock-info :seqblocknum) new-pos (seqblock-info :seqtracknum))
                                            seqblock-info)))
