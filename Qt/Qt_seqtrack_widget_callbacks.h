@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#define ENABLE_TEMPO_AUTOMATION 0
+#define ENABLE_TEMPO_AUTOMATION 1
 
 static bool g_need_update = false;
 
@@ -726,8 +726,10 @@ public:
     
     update();
   }
-  
+
   void update_seqtracks(void){
+    SEQUENCER_ScopedGfxDisable gfx_disable;
+    
     //printf("  Updating seqtracks\n");
     
     for(auto *seqtrack_widget : _seqtrack_widgets)
@@ -745,7 +747,9 @@ public:
     //position_widgets(t_x1, t_y1, t_x2, t_y2);
   }
 
+  
   void call_very_often(void){
+    SEQUENCER_ScopedGfxDisable gfx_disable;
     
     if (_seqtrack_widgets.size() != root->song->seqtracks.num_elements)
       update_seqtracks();
@@ -799,12 +803,12 @@ public:
 };
 
 
-struct SongTempoAutomation_widget : public QWidget {
+struct SongTempoAutomation_widget : public MouseTrackerQWidget {
   const int64_t &_start_time;
   const int64_t &_end_time;
   
   SongTempoAutomation_widget(QWidget *parent, const int64_t &start_time, const int64_t &end_time)
-    : QWidget(parent)
+    : MouseTrackerQWidget(parent)
     , _start_time(start_time)
     , _end_time(end_time)
   {    
@@ -1282,6 +1286,20 @@ float SEQUENCER_get_y2(void){
   return mapToEditorY2(g_sequencer_widget);
 }
 
+
+static int update_enabled_counter = 0;
+
+void SEQUENCER_disable_gfx_updates(void){
+  update_enabled_counter++;
+  if (update_enabled_counter==1 && g_sequencer_widget!=NULL)
+    g_sequencer_widget->setUpdatesEnabled(false);
+}
+void SEQUENCER_enable_gfx_updates(void){
+  update_enabled_counter--;
+  if (update_enabled_counter==0 && g_sequencer_widget!=NULL)
+    g_sequencer_widget->setUpdatesEnabled(true);
+}
+
 int64_t SEQUENCER_get_visible_start_time(void){
   return g_sequencer_widget->_start_time;
 }
@@ -1349,6 +1367,30 @@ float SEQNAV_get_right_handle_x(void){
 
 void SEQNAV_update(void){
   g_sequencer_widget->_navigator_widget.update();
+}
+
+
+
+// seqtempo automation
+
+float SEQTEMPO_get_x1(void){
+  return mapToEditorX1(&g_sequencer_widget->_songtempoautomation_widget);
+}
+
+float SEQTEMPO_get_x2(void){
+  return mapToEditorX2(&g_sequencer_widget->_songtempoautomation_widget);
+}
+
+float SEQTEMPO_get_y1(void){
+  return mapToEditorY1(&g_sequencer_widget->_songtempoautomation_widget);
+}
+
+float SEQTEMPO_get_y2(void){
+  return mapToEditorY2(&g_sequencer_widget->_songtempoautomation_widget);
+}
+
+bool SEQTEMPO_is_visible(void){
+  return true;
 }
 
 

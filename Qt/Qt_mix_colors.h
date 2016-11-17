@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <math.h>
 
+#include <QColor>
+
 static inline QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
 
   float a1 = how_much;

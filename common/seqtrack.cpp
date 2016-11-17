@@ -12,6 +12,7 @@
 #include "scheduler_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "OS_Bs_edit_proc.h"
+#include "song_tempo_automation_proc.h"
 
 #include "seqtrack_proc.h"
 
@@ -824,33 +825,45 @@ hash_t *SEQUENCER_get_state(void){
   }END_VECTOR_FOR_EACH;
 
   HASH_put_int(state, "curr_seqtracknum", root->song->curr_seqtracknum);
-    
+
+  // I'm not 100% sure, but I think we need this one since song tempo automation automatically changes length when the song changes length.
+  // (modifying song tempo automation is a light operation + that it's atomically real time safe, so it doesn't matter much if we do this)
+  HASH_put_hash(state, "song_tempo_automation", TEMPOAUTOMATION_get_state());
+
   return state;
 }
 
 void SEQUENCER_create_from_state(hash_t *state){
 
-  //printf("        CREATING FROM STATE\n");
-  
-  vector_t seqtracks = {0};
-  
-  int num_seqtracks = HASH_get_array_size(state);
-  R_ASSERT_RETURN_IF_FALSE(num_seqtracks > 0);
-  
-  for(int i = 0 ; i < num_seqtracks ; i++){
-    struct SeqTrack *seqtrack = SEQTRACK_create_from_state(HASH_get_hash_at(state, "seqtracks", i));
-    VECTOR_push_back(&seqtracks, seqtrack);
-  }
-
-  int new_curr_seqtracknum = HASH_has_key(state, "curr_seqtracknum") ? HASH_get_int32(state, "curr_seqtracknum") : 0;
-  
   {
-    radium::PlayerPause pause;
-    radium::PlayerLock lock;
+    SEQUENCER_ScopedGfxDisable gfx_disable;
+    
+    //printf("        CREATING FROM STATE\n");
+    
+    vector_t seqtracks = {0};
+  
+    int num_seqtracks = HASH_get_array_size(state);
+    R_ASSERT_RETURN_IF_FALSE(num_seqtracks > 0);
+    
+    for(int i = 0 ; i < num_seqtracks ; i++){
+      struct SeqTrack *seqtrack = SEQTRACK_create_from_state(HASH_get_hash_at(state, "seqtracks", i));
+      VECTOR_push_back(&seqtracks, seqtrack);
+    }
+    
+    int new_curr_seqtracknum = HASH_has_key(state, "curr_seqtracknum") ? HASH_get_int32(state, "curr_seqtracknum") : 0;
+    
+    {
+      radium::PlayerPause pause;
+      radium::PlayerLock lock;
+      
+      root->song->seqtracks = seqtracks;
+      root->song->curr_seqtracknum = new_curr_seqtracknum;
+    }
 
-    root->song->seqtracks = seqtracks;
-    root->song->curr_seqtracknum = new_curr_seqtracknum;
+    if(HASH_has_key(state, "song_tempo_automation"))
+      TEMPOAUTOMATION_create_from_state(HASH_get_hash(state, "song_tempo_automation"));
   }
 
   BS_UpdatePlayList();
+  SEQUENCER_update();
 }

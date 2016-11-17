@@ -6,12 +6,20 @@ extern LANGSPEC double TEMPOAUTOMATION_get_value(int nodenum);
 extern LANGSPEC double TEMPOAUTOMATION_get_abstime(int nodenum);
 extern LANGSPEC int TEMPOAUTOMATION_get_logtype(int nodenum);
 extern LANGSPEC int TEMPOAUTOMATION_get_num_nodes(void);
-extern LANGSPEC void TEMPOAUTOMATION_add_node(double abstime, double value, int logtype);
+extern LANGSPEC int TEMPOAUTOMATION_add_node(double abstime, double value, int logtype);
 extern LANGSPEC void TEMPOAUTOMATION_delete_node(int nodenum);
+extern LANGSPEC void TEMPOAUTOMATION_set_curr_node(int nodenum);
 extern LANGSPEC void TEMPOAUTOMATION_set(int nodenum, double abstime, double value, int logtype);
 extern LANGSPEC void TEMPOAUTOMATION_set_length(double end_time, bool do_shrink);
 extern LANGSPEC double TEMPOAUTOMATION_get_length(void);
 extern LANGSPEC double TEMPOAUTOMATION_get_absabstime(double abstime);
+
+extern LANGSPEC hash_t *TEMPOAUTOMATION_get_state(void);
+extern LANGSPEC void TEMPOAUTOMATION_create_from_state(hash_t *state);
+  
+extern LANGSPEC float TEMPOAUTOMATION_get_node_x(int nodenum);
+extern LANGSPEC float TEMPOAUTOMATION_get_node_y(int nodenum);
+
 
 #if USE_QT4
 class QPainter;

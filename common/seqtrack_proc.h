@@ -22,6 +22,20 @@ extern LANGSPEC float SEQUENCER_get_x2(void);
 extern LANGSPEC float SEQUENCER_get_y1(void);
 extern LANGSPEC float SEQUENCER_get_y2(void);
 
+extern LANGSPEC void SEQUENCER_disable_gfx_updates(void);
+extern LANGSPEC void SEQUENCER_enable_gfx_updates(void);
+
+#ifdef __cplusplus
+struct SEQUENCER_ScopedGfxDisable{
+  SEQUENCER_ScopedGfxDisable(){
+    SEQUENCER_disable_gfx_updates();
+  }
+  ~SEQUENCER_ScopedGfxDisable(){
+    SEQUENCER_enable_gfx_updates();
+  }
+};
+#endif
+
 extern LANGSPEC int64_t SEQUENCER_get_visible_start_time(void);
 extern LANGSPEC int64_t SEQUENCER_get_visible_end_time(void);
 extern LANGSPEC void SEQUENCER_set_visible_start_and_end_time(int64_t start_time, int64_t end_time);
@@ -53,6 +67,12 @@ extern LANGSPEC float SEQTRACK_get_y2(int seqtracknum);
 extern LANGSPEC void SEQTRACK_update(struct SeqTrack *seqtrack);
 //extern LANGSPEC void SEQTRACK_recreate(int seqtracknum);
 
+
+extern LANGSPEC float SEQTEMPO_get_x1(void);
+extern LANGSPEC float SEQTEMPO_get_x2(void);
+extern LANGSPEC float SEQTEMPO_get_y1(void);
+extern LANGSPEC float SEQTEMPO_get_y2(void);
+extern LANGSPEC bool SEQTEMPO_is_visible(void);
 
 // seqblocks gfx
 extern LANGSPEC float SEQBLOCK_get_x1(int seqblocknum, int seqtracknum);

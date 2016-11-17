@@ -1,5 +1,5 @@
-#ifndef UNDO_PLAYLIST_PROC_H
-#define UNDO_PLAYLIST_PROC_H
+#ifndef UNDO_SEQUENCER_PROC_H
+#define UNDO_SEQUENCER_PROC_H
 
 extern LANGSPEC void ADD_UNDO_FUNC(Sequencer(void));
 

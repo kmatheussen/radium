@@ -602,6 +602,30 @@
                (else
                 (find-node $x $y $get-node-box $num-nodes (1+ $num)))))))
 
+(delafina (find-node-horizontal :$x
+                                :$y
+                                :$get-node-box
+                                :$num-nodes
+                                :$num 0
+                                )
+  
+  (cond ((= 0 $num-nodes)
+         (list 'new-box 0))
+        (else
+         (define box ($get-node-box $num))
+         (c-display "find-node:" $x $y (box-to-string box))
+         (cond ((inside-box box $x $y)
+                (list 'existing-box $num box))
+               ((and (= 0 $num)
+                     (< $x (box :x1)))
+                'before)
+               ((> (box :x1) $x)
+                (list 'new-box $num))
+               ((= $num (1- $num-nodes))
+                'after)
+               (else
+                (find-node-horizontal $x $y $get-node-box $num-nodes (1+ $num)))))))
+
 
 (define-struct move-node-handler
   :move
@@ -3306,45 +3330,116 @@
 
 ;; sequencer tempo automation
 ;;
-#||
+(define (get-seqtemponode-box $num)
+  (get-common-node-box (<ra> :get-seqtemponode-x $num)
+                       (<ra> :get-seqtemponode-y $num)))
+
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and (<ra> :seqtempo-visible)
                                              (<ra> :get-box seqtempo-area)))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  (and (<ra> :seqtempo-visible)
+                                                  (and (c-display "-1")
+                                                       (<ra> :seqtempo-visible)
+                                                       (c-display "a")
                                                        (inside-box-forgiving (<ra> :get-box seqtempo-area) X Y)
-                                                       (match (list (find-node X Y get-seqtempoonode-box (<ra> :get-num-temponodes)))
-                                                              (existing-box Num Box) :> (callback Num (make-seqtempo-node (temponodeval->01 (<ra> :get-temponode-value Num)) (Box :y))
-                                                              _                      :> #f))))
-                        :Get-min-value (lambda (_) 0);(- (1- (<ra> :get-temponode-max))))
-                        :Get-max-value (lambda (_) 1);(1- (<ra> :get-temponode-max)))
-                        :Get-x (lambda (Num) (<ra> :get-temponode-x Num))
-                        :Get-y (lambda (Num) (<ra> :get-temponode-y Num))
-                        :Make-undo (lambda (_) (ra:undo-temponodes))
+                                                       (c-display "b")
+                                                       (match (list (find-node-horizontal X Y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
+                                                              (existing-box Num Box) :> (begin
+                                                                                          (c-display "EXISTING " Num)
+                                                                                          (define Time (scale X (<ra> :get-seqtempo-area-x1) (<ra> :get-seqtempo-area-x2)
+                                                                                                              (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+                                                                                          (callback Num Time Y))
+                                                              _                      :> #f)))
+                        :Get-min-value (lambda (_)
+                                         (<ra> :get-sequencer-visible-start-time))
+                        :Get-max-value (lambda (_)
+                                         (<ra> :get-sequencer-visible-end-time))
+                        :Get-x (lambda (Num) (<ra> :get-seqtemponode-x Num))
+                        :Get-y (lambda (Num) (<ra> :get-seqtemponode-y Num))
+                        :Make-undo (lambda (_)
+                                     (<ra> :undo-seqtempo))
                         :Create-new-node (lambda (X Y callback)
-                                           (define Value (scale Y (<ra> :get-temponode-area-x1) (<ra> :get-temponode-area-x2) 0 1))
-                                           (define Num (<ra> :create-temponode (01->temponodeval Value) Place))
+                                           (define Time (scale X (<ra> :get-seqtempo-area-x1) (<ra> :get-seqtempo-area-x2) (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+                                           (define TempoMul (scale Y (<ra> :get-seqtempo-area-y1) (<ra> :get-seqtempo-area-y2) 0 1))
+                                           (define Num (<ra> :add-seqtemponode Time TempoMul 0))
                                            (if (= -1 Num)
                                                #f
-                                               (callback Num (temponodeval->01 (<ra> :get-temponode-value Num)))))
-                        :Move-node (lambda (Num Value Place)
-                                     (<ra> :set-temponode Num (01->temponodeval Value) (or Place -1))
-                                     (define new-value (<ra> :get-temponode-value Num)) ;; might differ from Value
-                                     ;;(c-display "Place/New:" Place (<ra> :get-temponode-value Num))
-                                     (temponodeval->01 new-value)
+                                               (callback Num Time)))
+                        :Move-node (lambda (Num Time Y)
+                                     (define TempoMul (scale Y (<ra> :get-seqtempo-area-y1) (<ra> :get-seqtempo-area-y2) 0 1))
+                                     (define logtype (<ra> :get-seqtempo-logtype Num))
+                                     (<ra> :set-seqtemponode Time TempoMul logtype Num)
+                                     (c-display "NUM:" Num ", Time:" Time ", TempoMul:" TempoMul)
                                      Num
                                      )
                         :Publicize (lambda (Num) ;; this version works though. They are, or at least, should be, 100% functionally similar.
-                                     (set-indicator-temponode Num)
-                                     (show-temponode-in-statusbar (<ra> :get-temponode-value Num)))
-
-                        :Use-Place #f
+                                     (<ra> :set-curr-seqtemponode Num)
+                                     #f)
                         
+                        :Use-Place #f
+                        :Mouse-pointer-func ra:set-normal-mouse-pointer
                         :Get-pixels-per-value-unit #f
                         )                        
-||#
+
+;; delete seqtemponode / popupmenu
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda ($button $x $y)
+                (and (= $button *right-button*)
+                     (<ra> :seqtempo-visible)                     
+                     (inside-box-forgiving (<ra> :get-box seqtempo-area) $x $y)
+                     (match (list (find-node-horizontal $x $y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
+                            (existing-box Num Box) :> (begin
+                                                        (if (<ra> :shift-pressed)
+                                                            (begin
+                                                              ;;(c-display "  Deleting" Num)
+                                                              (<ra> :undo-seqtempo)
+                                                              (<ra> :delete-seqtemponode Num))
+                                                            (popup-menu (list "Delete"
+                                                                              (lambda ()
+                                                                                (<ra> :undo-seqtempo)
+                                                                                (<ra> :delete-seqtemponode Num)))
+                                                                        (list "Glide to next break point"
+                                                                              :check (= (<ra> :get-seqtempo-logtype Num)
+                                                                                        *logtype-linear*)
+                                                                              (lambda (maybe)
+                                                                                (<ra> :undo-seqtempo)
+                                                                                (<ra> :set-seqtemponode
+                                                                                      (<ra> :get-seqtempo-abstime Num)
+                                                                                      (<ra> :get-seqtempo-value Num)
+                                                                                      (if maybe *logtype-linear* *logtype-hold*)
+                                                                                      Num)))))
+                                                        #t)
+                            _                      :> #f)))))
+
+;; highlight current seqtemponode
+(add-mouse-move-handler
+ :move (lambda ($button $x $y)
+         (c-display "Ua")
+         (and (<ra> :seqtempo-visible)
+              (or (c-display "---" $x $y (box-to-string (<ra> :get-box seqtempo-area)) (inside-box-forgiving (<ra> :get-box seqtempo-area) $x $y)) #t)
+              (inside-box-forgiving (<ra> :get-box seqtempo-area) $x $y)
+              (or (c-display "gotit") #t)
+              (match (list (find-node-horizontal $x $y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
+                     (existing-box Num Box) :> (begin
+                                                 (c-display "hepp" Num)
+                                                 (<ra> :set-curr-seqtemponode Num)
+                                                 ;(set-mouse-track-to-reltempo)
+                                                 ;(set-current-temponode Num)
+                                                 ;(set-indicator-temponode Num)
+                                                 ;(show-temponode-in-statusbar (<ra> :get-temponode-value Num))
+                                                 #t)
+                     A                      :> (begin
+                                                 (c-display "**Didnt get it:" A)
+                                                 (<ra> :set-curr-seqtemponode -1)
+                                                 #f)))))
+
+;(<ra> :seqtempo-visible)
+;(inside-box-forgiving (<ra> :get-box seqtempo-area) $x $y)
 
 #||
+(<ra> :get-num-seqtemponodes)
+
 ;; delete temponode
 (add-mouse-cycle
  (make-mouse-cycle

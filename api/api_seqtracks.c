@@ -18,8 +18,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/seqtrack_proc.h"
+#include "../common/song_tempo_automation_proc.h"
 #include "../common/time_proc.h"
 #include "../common/undo_sequencer_proc.h"
+#include "../common/undo_song_tempo_automation_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
 
@@ -79,16 +81,7 @@ void setSequencerGridType(int grid_type){
   SEQUENCER_set_grid_type(grid_type);
 }
 
-/*
-float getSeqtempoAreaX1(void){
-}
-float getSeqtempoAreaY1(void){
-}
-float getSeqtempoAreaX2(void){
-}
-float getSeqtempoAreaY2(void){
-}
-*/
+
 
 
 float getSeqnavX1(void){
@@ -206,44 +199,98 @@ int getNumSeqtracks(void){
 // sequencer tempo automation
 //
 
-/*
-float getSeqtempoX1(int nodenum){
+void undoSeqtempo(void){
+  ADD_UNDO(SongTempoAutomation());
 }
-float getSeqtempoY1(int nodenum){
+
+float getSeqtempoAreaX1(void){
+  return SEQTEMPO_get_x1();
 }
-float getSeqtempoX2(int nodenum){
+float getSeqtempoAreaY1(void){
+  return SEQTEMPO_get_y1();
 }
-float getSeqtempoY2(int nodenum){
+float getSeqtempoAreaX2(void){
+  return SEQTEMPO_get_x2();
+}
+float getSeqtempoAreaY2(void){
+  return SEQTEMPO_get_y2();
+}
+float getSeqtemponodeX(int nodenum){
+  if (nodenum < 0 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
+    GFX_Message(NULL, "There is no tempo node #%d", nodenum);
+    return 0.0;
+  }
+  return TEMPOAUTOMATION_get_node_x(nodenum);
+}
+float getSeqtemponodeY(int nodenum){
+  if (nodenum < 0 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
+    GFX_Message(NULL, "There is no tempo node #%d", nodenum);
+    return 0.0;
+  }
+  return TEMPOAUTOMATION_get_node_y(nodenum);
+}
+bool seqtempoVisible(void){
+  return SEQTEMPO_is_visible();
 }
 
 double getSeqtempoValue(int nodenum){
+  if (nodenum < 0 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
+    GFX_Message(NULL, "There is no tempo node #%d", nodenum);
+    return 0.0;
+  }
   return TEMPOAUTOMATION_get_value(nodenum);
 }
-
-double getSeqtempoTime(int nodenum){
+double getSeqtempoAbstime(int nodenum){
+  if (nodenum < 0 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
+    GFX_Message(NULL, "There is no tempo node #%d", nodenum);
+    return 0.0;
+  }
   return TEMPOAUTOMATION_get_abstime(nodenum);
 }
-
 int getSeqtempoLogtype(int nodenum){
+  if (nodenum < 0 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
+    GFX_Message(NULL, "There is no tempo node #%d", nodenum);
+    return 0;
+  }
   return TEMPOAUTOMATION_get_logtype(nodenum);
 }
-
-int getNumSeqtempos(void){
+int getNumSeqtemponodes(void){
   return TEMPOAUTOMATION_get_num_nodes();
 }
-
-void addSeqtempo(double abstime, double value, int logtype){
-  TEMPOAUTOMATION_add_node(abstime, value, logtype);
+int addSeqtemponode(double abstime, double value, int logtype){
+  undoSeqtempo();
+  int ret = TEMPOAUTOMATION_add_node(abstime, value, logtype);
+  if (ret==-1)
+    Undo_CancelLastUndo();
+  return ret;
+}
+void deleteSeqtemponode(int nodenum){
+  return TEMPOAUTOMATION_delete_node(nodenum);
+}
+void setCurrSeqtemponode(int nodenum){
+  if (nodenum < -1 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
+    GFX_Message(NULL, "There is no tempo node #%d", nodenum);
+    return;
+  }
+  TEMPOAUTOMATION_set_curr_node(nodenum);
+}
+void setSeqtemponode(double abstime, double value, int logtype, int nodenum){
+  if (nodenum < 0 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
+    GFX_Message(NULL, "There is no tempo node #%d", nodenum);
+    return;
+  }
+  return TEMPOAUTOMATION_set(nodenum, abstime, value, logtype);
+}
+void setSeqtempoLength(double end_time, bool do_shrink){
+  return TEMPOAUTOMATION_set_length(end_time, do_shrink);
+}
+double getSeqtempoLength(void){
+  return TEMPOAUTOMATION_get_length();
+}
+double getSeqtempoAbsabstime(double abstime){
+  return TEMPOAUTOMATION_get_absabstime(abstime);
 }
 
-void deleteSeqtempo(int nodenum){
-  TEMPOAUTOMATION_delete_node(nodenum);
-}
-
-void setSeqtempo(int nodenum, double abstime, double value, int logtype){
-  void TEMPOAUTOMATION_set(nodenum, abstime, value, logtype);
-}
-*/
 
 
 // seqtracks

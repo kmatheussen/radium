@@ -282,7 +282,7 @@ float getReltempoSliderY2(void){
   return root->song->tracker_windows->wblock->reltempo.y2;
 }
 
-float getReltempo(int blocknum, int windownum){
+double getReltempo(int blocknum, int windownum){
   struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
   if (wblock==NULL)
     return 0.0f;
@@ -295,7 +295,7 @@ void undoReltempo(void){
   ADD_UNDO(RelTempoSlider(window,window->wblock));
 }
 
-void setReltempo(float reltempo){
+void setReltempo(double reltempo){
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblock;
   
@@ -815,14 +815,14 @@ Place getTemponodePlace(int num, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL) {
-    RWarning("getTemponodeValue: No block %d in window %d",blocknum,windownum);
+    GFX_Message(NULL, "getTemponodeValue: No block %d in window %d",blocknum,windownum);
     return place(0,0,1);
   }
 
   struct Blocks *block = wblock->block;
   struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
   if (temponode==NULL) {
-    RWarning("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
+    GFX_Message(NULL, "No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
     return place(0,0,1);
   }
 
@@ -833,14 +833,14 @@ float getTemponodeValue(int num, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL) {
-    RWarning("getTemponodeValue: No block %d in window %d",blocknum,windownum);
+    GFX_Message(NULL, "getTemponodeValue: No block %d in window %d",blocknum,windownum);
     return 0.0;
   }
 
   struct Blocks *block = wblock->block;
   struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
   if (temponode==NULL) {
-    RWarning("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
+    GFX_Message(NULL, "No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
     return 0.0;
   }
 
@@ -855,7 +855,7 @@ void undoTemponodes(void){
 void setCurrentTemponode(int num, int blocknum){
   struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
   if (block==NULL) {
-    RWarning("setCurrentTemponode: No block %d",blocknum);
+    GFX_Message(NULL, "setCurrentTemponode: No block %d",blocknum);
     return;
   }
   
@@ -867,7 +867,7 @@ void setCurrentTemponode(int num, int blocknum){
 void setIndicatorTemponode(int num, int blocknum){
   struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
   if (block==NULL) {
-    RWarning("setCurrentTemponode: No block %d",blocknum);
+    GFX_Message(NULL, "setCurrentTemponode: No block %d",blocknum);
     return;
   }
   
@@ -881,7 +881,7 @@ void setTemponode(int num, float value, Place place, int blocknum, int windownum
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL) {
-    RWarning("setTemponode: No block %d in window %d",blocknum,windownum);
+    GFX_Message(NULL, "setTemponode: No block %d in window %d",blocknum,windownum);
     return;
   }
 
@@ -900,7 +900,7 @@ void setTemponode(int num, float value, Place place, int blocknum, int windownum
     temponode = ListLast3(&block->temponodes->l); // don't want to set placement for the last node. It's always at bottom.
 
   else if (num>=tempo_nodes->num_elements) {
-    RWarning("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
+    GFX_Message(NULL, "No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
     return;
     
   } else if (place.line < 0) {
@@ -945,7 +945,7 @@ void deleteTemponode(int num, int blocknum){
   const vector_t *tempo_nodes = GetTempoNodes(window, wblock);
 
   if (num >= tempo_nodes->num_elements){
-    RWarning("deleteTemponode: No temponode %d in block %d",num,blocknum);
+    GFX_Message(NULL, "deleteTemponode: No temponode %d in block %d",num,blocknum);
     return;
   }
 
@@ -969,7 +969,7 @@ int createTemponode(float value, Place place, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL) {
-    RWarning("createTemponode: No block %d in window %d",blocknum,windownum);
+    GFX_Message(NULL, "createTemponode: No block %d in window %d",blocknum,windownum);
     return -1;
   }
 
@@ -1049,7 +1049,7 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
     
     struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
     if (pitch==NULL){
-      RWarning("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+      GFX_Message(NULL, "There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
       return 0;
     }
     return pitch->note;
@@ -1070,7 +1070,7 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
   }
 
   if (nodeline==NULL) {
-    RWarning("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);  
+    GFX_Message(NULL, "There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);  
     return 0;
   }
 
@@ -1086,7 +1086,7 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
   case PIANONOTE_INFO_Y2:
     return wblock->t.y1 + box.y2 - get_scroll_pos();
   default:
-    RWarning("Internal error");
+    GFX_Message(NULL, "Internal error");
     return 0;
   }
 }
@@ -1139,7 +1139,7 @@ static void setPianoNoteValues(float value, int pianonotenum, struct Notes *note
   
     struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
     if (pitch==NULL){
-      RWarning("There is no pianonote %d",pianonotenum);
+      GFX_Message(NULL, "There is no pianonote %d",pianonotenum);
       return;
     }
 
@@ -1172,7 +1172,7 @@ static Place getPianoNotePlace(int pianonotenum, struct Notes *note){
   
   struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
   if (pitch==NULL){
-    RWarning("There is no pianonote %d",pianonotenum);
+    GFX_Message(NULL, "There is no pianonote %d",pianonotenum);
     return note->l.p;
   }
 
@@ -1201,7 +1201,7 @@ static int getPitchNumFromPianonoteNum(int pianonotenum, int notenum, int trackn
       if (pianonotenum > 0) {
         struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
         if (pitch==NULL){
-          RWarning("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+          GFX_Message(NULL, "There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
           return 0;
         }
       }
@@ -1221,7 +1221,7 @@ static int getPitchNumFromPianonoteNum(int pianonotenum, int notenum, int trackn
     note = NextNote(note);
   }
 
-  RWarning("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+  GFX_Message(NULL, "There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
   return 0;
 }
 
@@ -1480,7 +1480,7 @@ int createPianonote(float value, float floatplace, float endfloatplace, int trac
     endfloatplace = lastfloatplace;
 
   if (floatplace >= endfloatplace) {
-    //RWarning("Illegal parameters for createPianonote. start: %f, end: %f",floatplace, endfloatplace);
+    //GFX_Message(NULL, "Illegal parameters for createPianonote. start: %f, end: %f",floatplace, endfloatplace);
     return -1;
   }
 
@@ -1598,14 +1598,14 @@ static int getPitchNum(struct Tracks *track, struct Notes *note, struct Pitches 
     }
 
     if (note==note2) {
-      RWarning("getPitchNum: Could not find pitch in note.");
+      GFX_Message(NULL, "getPitchNum: Could not find pitch in note.");
       return 0;
     }
 
     note2 = NextNote(note2);
   }
 
-  RWarning("getPitchNum: Could not find it");
+  GFX_Message(NULL, "getPitchNum: Could not find it");
   return 0;
 }
 
@@ -1692,7 +1692,7 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
     notes = NextNote(notes);
   }
 
-  RWarning("no pitch %d in track %d in block %d\n",pitchnum,tracknum,blocknum);
+  GFX_Message(NULL, "no pitch %d in track %d in block %d\n",pitchnum,tracknum,blocknum);
   return;
   
  gotit:
@@ -1742,7 +1742,7 @@ static bool getPitch(int pitchnum, struct Pitches **pitch, struct Notes **note, 
     notes = NextNote(notes);
   }
 
-  RWarning("Pitch #%d in track #%d does not exist",pitchnum,track->l.num);
+  GFX_Message(NULL, "Pitch #%d in track #%d does not exist",pitchnum,track->l.num);
   return false;
 }
 
@@ -1840,7 +1840,7 @@ static float getPitchInfo(enum PitchInfoWhatToGet what_to_get, int pitchnum, int
     }
   }
 
-  RWarning("internal error (getPitchInfo)\n");
+  GFX_Message(NULL, "internal error (getPitchInfo)\n");
   return 0;
 }
 
@@ -2275,7 +2275,7 @@ static struct WTracks *getSubtrackWTrack(int subtracknum, int tracknum, int bloc
     return NULL;
 
   if (subtracknum>=GetNumSubtracks(wtrack)){
-    RWarning("No subtrack %d in track %d in block %d (only %d subtracks in this track)\n", subtracknum, tracknum, blocknum, GetNumSubtracks(wtrack));
+    GFX_Message(NULL, "No subtrack %d in track %d in block %d (only %d subtracks in this track)\n", subtracknum, tracknum, blocknum, GetNumSubtracks(wtrack));
     return 0;
   }
 
@@ -2398,7 +2398,7 @@ static struct Node *get_velocitynode(int velocitynum, int notenum, int tracknum,
 
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    RWarning("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    GFX_Message(NULL, "There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return NULL;
   }
   
@@ -2468,12 +2468,12 @@ int createVelocity(float value, Place place, int notenum, int tracknum, int bloc
 
   if (PlaceLessOrEqual(&place, &note->l.p)) {
     //if (notenum>0)
-    //  RWarning("createVelocity: placement before note start for note #%d", notenum);
+    //  GFX_Message(NULL, "createVelocity: placement before note start for note #%d", notenum);
     return -1;
   }
 
   if (PlaceGreaterOrEqual(&place, &note->end)) {
-    //RWarning("createVelocity: placement after note end for note #%d", notenum);
+    //GFX_Message(NULL, "createVelocity: placement after note end for note #%d", notenum);
     return -1;
   }
 
@@ -2482,7 +2482,7 @@ int createVelocity(float value, Place place, int notenum, int tracknum, int bloc
   int ret = AddVelocity(value*MAX_VELOCITY, &place, note);
 
   if (ret==-1){
-    //RWarning("createVelocity: Can not create new velocity with the same position as another velocity");
+    //GFX_Message(NULL, "createVelocity: Can not create new velocity with the same position as another velocity");
     return -1;
   }
 
@@ -2512,7 +2512,7 @@ int setVelocity(int velocitynum, float value, Place place, int notenum, int trac
   
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    RWarning("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    GFX_Message(NULL, "There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return notenum;
   }
 
@@ -2580,7 +2580,7 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
 
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    RWarning("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    GFX_Message(NULL, "There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return;
   }
 
@@ -2626,7 +2626,7 @@ void setVelocityLogtypeHolding(bool is_holding, int velocitynum, int notenum, in
 
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    RWarning("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    GFX_Message(NULL, "There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return;
   }
     
@@ -2663,7 +2663,7 @@ void setCurrentVelocityNode(int velocitynum, int notenum, int tracknum, int bloc
 
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    RWarning("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    GFX_Message(NULL, "There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return;
   }
 
@@ -2683,7 +2683,7 @@ void setIndicatorVelocityNode(int velocitynum, int notenum, int tracknum, int bl
 
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    RWarning("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    GFX_Message(NULL, "There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return;
   }
 
@@ -3068,12 +3068,12 @@ int createFxnode(float value, Place place, int fxnum, int tracknum, int blocknum
   PlaceSetLastPos(wblock->block, &lastplace);
 
   if (PlaceLessThan(&place, PlaceGetFirstPos())){
-    RWarning("createFxnode: placement before top of block for fx #%d. (%s)", fxnum, PlaceToString(&place));
+    GFX_Message(NULL, "createFxnode: placement before top of block for fx #%d. (%s)", fxnum, PlaceToString(&place));
     place = *PlaceGetFirstPos();
   }
 
   if (PlaceGreaterThan(&place, &lastplace)) {    
-    RWarning("createFxnode: placement after fx end for fx #%d (%s). num_lines: #%d", fxnum, PlaceToString(&place), wblock->block->num_lines);
+    GFX_Message(NULL, "createFxnode: placement after fx end for fx #%d (%s). num_lines: #%d", fxnum, PlaceToString(&place), wblock->block->num_lines);
     place = lastplace;
   }
 
@@ -3092,7 +3092,7 @@ int createFxnode(float value, Place place, int fxnum, int tracknum, int blocknum
                           );
 
   if (ret==-1){
-    //RWarning("createFxnode: Can not create new fx with the same position as another fx");
+    //GFX_Message(NULL, "createFxnode: Can not create new fx with the same position as another fx");
     Undo_CancelLastUndo();
     return -1;
   }
@@ -3122,7 +3122,7 @@ void setFxnode(int fxnodenum, float value, Place place, int fxnum, int tracknum,
 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fx);
   if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
-    RWarning("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    GFX_Message(NULL, "There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
     return;
   }
 
@@ -3169,7 +3169,7 @@ void setFxnodeLogtype(int logtype, int fxnodenum, int fxnum, int tracknum, int b
   
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
   if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
-    RWarning("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    GFX_Message(NULL, "There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
     return;
   }
 
@@ -3197,7 +3197,7 @@ void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
   if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
-    RWarning("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    GFX_Message(NULL, "There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
     return;
   }
 
@@ -3222,7 +3222,7 @@ void setCurrentFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int 
 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fx);
   if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
-    RWarning("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    GFX_Message(NULL, "There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
     return;
   }
 
@@ -3242,7 +3242,7 @@ void setIndicatorFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, in
 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fx);
   if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
-    RWarning("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    GFX_Message(NULL, "There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
     return;
   }
 
@@ -3300,20 +3300,20 @@ Place getFxrangenodePlace(int fxnodenum, int fxnum, int rangetracknum){
     return place(0,0,1);
 
   if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
-    RWarning("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
+    GFX_Message(NULL, "rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
     return place(0,0,1);
   }
   
   struct FXs *fxs = VECTOR_get_r0(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
-    RWarning("fxnum > num_fxs: %d",fxnum);
+    GFX_Message(NULL, "fxnum > num_fxs: %d",fxnum);
     return place(0,0,1);
   }
   
   struct FXNodeLines *fxnodeline = ListFindElement3_num_r0(&fxs->fxnodelines->l, fxnodenum);
 
   if (fxnodeline==NULL){
-    RWarning("getFxrangenodeValue: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
+    GFX_Message(NULL, "getFxrangenodeValue: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
     return place(0,0,1);
   }
 
@@ -3326,20 +3326,20 @@ float getFxrangenodeValue(int fxnodenum, int fxnum, int rangetracknum){
     return 0;
 
   if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
-    RWarning("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
+    GFX_Message(NULL, "rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
     return 0;
   }
   
   struct FXs *fxs = VECTOR_get_r0(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
-    RWarning("fxnum > num_fxs: %d",fxnum);
+    GFX_Message(NULL, "fxnum > num_fxs: %d",fxnum);
     return 0;
   }
   
   struct FXNodeLines *fxnodeline = ListFindElement3_num_r0(&fxs->fxnodelines->l, fxnodenum);
 
   if (fxnodeline==NULL){
-    RWarning("getFxrangenodeValue: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
+    GFX_Message(NULL, "getFxrangenodeValue: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
     return 0;
   }
 
@@ -3354,20 +3354,20 @@ int getFxrangenodeLogtype(int fxnodenum, int fxnum, int rangetracknum){
     return 0;
 
   if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
-    RWarning("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
+    GFX_Message(NULL, "rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
     return 0;
   }
   
   struct FXs *fxs = VECTOR_get_r0(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
-    RWarning("fxnum > num_fxs: %d",fxnum);
+    GFX_Message(NULL, "fxnum > num_fxs: %d",fxnum);
     return 0;
   }
   
   struct FXNodeLines *fxnodelines = ListFindElement3_num_r0(&fxs->fxnodelines->l, fxnodenum);
 
   if (fxnodelines==NULL){
-    RWarning("getFxrangenodeLogtype: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
+    GFX_Message(NULL, "getFxrangenodeLogtype: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
     return 0;
   }
 
@@ -3379,13 +3379,13 @@ const char* getFxrangeName(int fxnum, int rangetracknum){
     return 0;
 
   if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
-    RWarning("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
+    GFX_Message(NULL, "rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
     return 0;
   }
 
   struct FXs *fxs = VECTOR_get_r0(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
-    RWarning("fxnum > num_fxs: %d",fxnum);
+    GFX_Message(NULL, "fxnum > num_fxs: %d",fxnum);
     return "";
   }
   
@@ -3397,13 +3397,13 @@ int getNumFxrangenodes(int fxnum, int rangetracknum){
     return 0;
 
   if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
-    RWarning("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
+    GFX_Message(NULL, "rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
     return 0;
   }
 
   struct FXs *fxs = VECTOR_get_r0(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
-    RWarning("fxnum > num_fxs: %d",fxnum);
+    GFX_Message(NULL, "fxnum > num_fxs: %d",fxnum);
     return 0;
   }
   
@@ -3415,7 +3415,7 @@ int getNumFxsInRange(int rangetracknum){
     return 0;
 
   if (rangetracknum >= range->num_tracks || rangetracknum < 0){
-    RWarning("rangetracknum >= range->num_tracks: %d >= %d",rangetracknum, range->num_tracks);
+    GFX_Message(NULL, "rangetracknum >= range->num_tracks: %d >= %d",rangetracknum, range->num_tracks);
     return 0;
   }
 
@@ -3469,7 +3469,7 @@ void undoTrackWidth(void){
 void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){
   if (new_width < 2) {
 #if 0
-    RWarning("Can not set width smaller than 2");
+    GFX_Message(NULL, "Can not set width smaller than 2");
     return;
 #else
     new_width = 2;
