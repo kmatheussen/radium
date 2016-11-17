@@ -582,6 +582,8 @@ public:
     
     setMouseTracking(true);
     //setAttribute(Qt::WA_PaintOnScreen);
+
+    _update_event_counter_timer.start();
   }
 
   // Main thread
@@ -1013,11 +1015,27 @@ private:
 
 public:
 
+  int _num_update_event_calls = 0;
+  QTime _update_event_counter_timer;
+  
   /** Event generated when the bound OpenGLContext does not have any other message to process 
       and OpenGLContext::continuousUpdate() is set to \p true or somebody calls OpenGLContext::update(). */
   // OpenGL thread
   virtual void updateEvent() {
 
+    _num_update_event_calls++;
+    if (_update_event_counter_timer.elapsed() >= 1000){
+      int vblank = _num_update_event_calls;
+
+      printf("vblank: %d\n",vblank);
+      
+      if (vblank > 260)
+        RT_message("Warning: Very high refresh rate detected: %d.\n\nYou are probably experience very slow graphical performance now.\n\nPlease check that VSync is turned on both under Edit -> Preferences -> OpenGL, and globally on your system.", vblank);
+
+      _num_update_event_calls = 0;
+      _update_event_counter_timer.restart();
+    }
+    
     bool handle_current = true; // I don't know if there's any point setting this to true.
 
     if (handle_current)
