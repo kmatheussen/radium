@@ -1025,12 +1025,25 @@ public:
 
     _num_update_event_calls++;
     if (_update_event_counter_timer.elapsed() >= 1000){
-      int vblank = _num_update_event_calls;
+      int measured_vblank = _num_update_event_calls;
 
-      printf("vblank: %d\n",vblank);
+      double system_vblank = GL_get_vblank();
+
+      int max_healthy_vblank;
+      if (system_vblank >= 0)
+        max_healthy_vblank = round(1000.0/system_vblank) + 20;
+      else
+        max_healthy_vblank = 260;
+
+      //printf("vblank: %d\n",measured_vblank);
       
-      if (vblank > 260)
-        RT_message("Warning: Very high refresh rate detected: %d.\n\nYou are probably experience very slow graphical performance now.\n\nPlease check that VSync is turned on both under Edit -> Preferences -> OpenGL, and globally on your system.", vblank);
+      if (measured_vblank > max_healthy_vblank)
+        RT_message("Warning: Very high refresh rate detected.\n"
+                   "(%dHz > %dHz).\n\n"
+                   "You are probably experience very slow graphical performance now.\n\n"
+                   "Please check that VSync is turned on both under\n"
+                   "Edit -> Preferences -> OpenGL, and globally in your system.",
+                   measured_vblank, max_healthy_vblank);
 
       _num_update_event_calls = 0;
       _update_event_counter_timer.restart();
