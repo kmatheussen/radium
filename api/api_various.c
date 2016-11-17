@@ -478,7 +478,9 @@ void openAboutWindow(void){
   int minutes = length / 60;
   int seconds = length - (minutes*60);
   int s2      = (length - floorf(length)) * 100.0f;
-
+  
+  double vblank = GL_get_vblank();
+  
   GFX_Message(NULL,"<center><b>Radium "  VERSION "</b></center>"
               "<p>"
               "OpenGL vendor: \"%s\"<br>"
@@ -489,7 +491,8 @@ void openAboutWindow(void){
               "<p>"
               "<A href=\"http://users.notam02.no/~kjetism/radium/development.php\">Credits</A>"
               "<p>"
-              "Jack samplerate: %d"
+              "Jack samplerate: %d<br>"
+              "Monitor refresh rate: %s"
               "<p>"
               "Song length: %02d : %02d : %02d",
               ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : ATOMIC_GET(GE_vendor_string),
@@ -498,6 +501,7 @@ void openAboutWindow(void){
               ATOMIC_GET(GE_opengl_version_flags),
               GFX_qVersion(),
               (int)MIXER_get_sample_rate(),
+              vblank < 0 ? "Refresh rate not detected" : talloc_format("%.2f", 1000.0 / vblank),
               minutes, seconds, s2
               );
 }
