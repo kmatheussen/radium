@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/player_proc.h"
 #include "../common/playerclass.h"
+#include "../common/song_tempo_automation_proc.h"
 #include "../common/Semaphores.hpp"
 #include "../common/stacktoucher_proc.h"
 #include "../common/OS_Player_proc.h"
@@ -762,7 +763,9 @@ struct Mixer{
       jackblock_delta_time = 0;
       while(jackblock_delta_time < num_frames){
 
-        PlayerTask(RADIUM_BLOCKSIZE);
+        double song_tempo_automation_tempo = pc->playtype==PLAYSONG ? RT_TEMPOAUTOMATION_get_value(ATOMIC_GET(pc->song_abstime)) : 1.0;
+        
+        PlayerTask((double)RADIUM_BLOCKSIZE / song_tempo_automation_tempo);
 
         if (is_playing()) {
           if (pc->playtype==PLAYBLOCK)

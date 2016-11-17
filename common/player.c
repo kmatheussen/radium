@@ -42,7 +42,7 @@ extern LANGSPEC void OS_InitMidiTiming(void);
 static bool g_time_was_stopped = true;
 
 
-void PlayerTask(STime reltime){
+void PlayerTask(double reltime){
 
   
         if (ATOMIC_GET(is_starting_up))
@@ -181,14 +181,16 @@ int PLAYER_get_block_delta_time(struct SeqTrack *seqtrack, STime time){
     return 0;
 
   if(is_playing()){
-    int ret = ((time - seqtrack->start_time) * pc->reltime / (seqtrack->end_time - seqtrack->start_time)); // i.e. "scale(time, seqtrack->start_time, seqtrack->end_time, 0, pc->reltime)"
+    //int ret = ((time - seqtrack->start_time) * pc->reltime / (seqtrack->end_time - seqtrack->start_time)); // i.e. "scale(time, seqtrack->start_time, seqtrack->end_time, 0, pc->reltime)"
+    int ret = ((time - seqtrack->start_time) * RADIUM_BLOCKSIZE / (seqtrack->end_time - seqtrack->start_time)); // i.e. "scale(time, seqtrack->start_time, seqtrack->end_time, 0, RADIUM_BLOCKSIZE)"
     if(ret<0){
       RWarning("ret<0: %d",ret);
       return 0;
     }
-    if(ret>=pc->reltime){
-      RWarning("ret>pc->reltime: %d > %d",ret,pc->reltime);
-      return (int)pc->reltime-1;
+    //if(ret>=pc->reltime){
+    if(ret>=RADIUM_BLOCKSIZE){
+      RWarning("ret>pc->reltime: %d > %d",ret,RADIUM_BLOCKSIZE);
+      return (int)RADIUM_BLOCKSIZE-1;
     }
     return ret;
   }else

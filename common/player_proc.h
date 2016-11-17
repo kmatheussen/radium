@@ -17,7 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef _RADIUM_COMMON_PLAYER_PROC_H
 #define _RADIUM_COMMON_PLAYER_PROC_H
 
-extern LANGSPEC void PlayerTask(STime stime);
+extern LANGSPEC void PlayerTask(double reltime);
 extern LANGSPEC void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop);
 extern LANGSPEC void PlayBlockCurrPos2(struct Tracker_Windows *window, Place *place);
 extern LANGSPEC void PlayBlockCurrPos(struct Tracker_Windows *window);

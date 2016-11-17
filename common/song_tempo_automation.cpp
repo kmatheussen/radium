@@ -84,14 +84,19 @@ static struct TempoAutomation *from_qvector(const QVector<TempoAutomationNode> &
   return tempo_automation;
 }
 
+static const struct TempoAutomation *g_last_used_rt_tempo_automation = NULL; // For the GC. Always prevent previous generation from being garbage collected.
 static void set_rt_tempo_automation(void){
-  ATOMIC_SET(g_rt_tempo_automation, (const struct TempoAutomation*)from_qvector(g_tempo_automation));
+  const struct TempoAutomation *new_rt_tempo_automation = (const struct TempoAutomation*)from_qvector(g_tempo_automation);
+
+  g_last_used_rt_tempo_automation = ATOMIC_GET(g_rt_tempo_automation);
+  
+  ATOMIC_SET(g_rt_tempo_automation, new_rt_tempo_automation);
 }
 
 
 
 
-static const struct TempoAutomation *g_last_used_rt_tempo_automation = NULL; // For the GC.
+static const struct TempoAutomation *g_last_used_rt_tempo_automation2 = NULL; // For the GC.
 
 // Called from MIXER.cpp in the player thread.
 double RT_TEMPOAUTOMATION_get_value(double abstime){
@@ -100,9 +105,9 @@ double RT_TEMPOAUTOMATION_get_value(double abstime){
   // It probably never happens though, there shouldn't be time for it to
   // be both found, freed, and reused, in such a short time, but now we
   // don't have to worry about the possibility.
-  g_last_used_rt_tempo_automation = ATOMIC_GET(g_rt_tempo_automation);
+  g_last_used_rt_tempo_automation2 = ATOMIC_GET(g_rt_tempo_automation);
   
-  const struct TempoAutomation *rt_tempo_automation = g_last_used_rt_tempo_automation;
+  const struct TempoAutomation *rt_tempo_automation = g_last_used_rt_tempo_automation2;
 
   for(int i = 0 ; i < rt_tempo_automation->num_nodes-1 ; i++){
     const TempoAutomationNode &node1 = rt_tempo_automation->nodes[i];
@@ -120,21 +125,21 @@ double RT_TEMPOAUTOMATION_get_value(double abstime){
 }
 
 double TEMPOAUTOMATION_get_value(int nodenum){
-  R_ASSERT_RETURN_IF_FALSE2(nodenum>0, 1.0);
+  R_ASSERT_RETURN_IF_FALSE2(nodenum>=0, 1.0);
   R_ASSERT_RETURN_IF_FALSE2(nodenum<g_tempo_automation.size(), 1.0);
 
   return g_tempo_automation.at(nodenum).value;
 }
 
 double TEMPOAUTOMATION_get_abstime(int nodenum){
-  R_ASSERT_RETURN_IF_FALSE2(nodenum>0, 0);
+  R_ASSERT_RETURN_IF_FALSE2(nodenum>=0, 0);
   R_ASSERT_RETURN_IF_FALSE2(nodenum<g_tempo_automation.size(), 0);
 
   return g_tempo_automation.at(nodenum).abstime;
 }
 
 int TEMPOAUTOMATION_get_logtype(int nodenum){
-  R_ASSERT_RETURN_IF_FALSE2(nodenum>0, LOGTYPE_LINEAR);
+  R_ASSERT_RETURN_IF_FALSE2(nodenum>=0, LOGTYPE_LINEAR);
   R_ASSERT_RETURN_IF_FALSE2(nodenum<g_tempo_automation.size(), LOGTYPE_LINEAR);
 
   return g_tempo_automation.at(nodenum).logtype;
@@ -221,7 +226,7 @@ void TEMPOAUTOMATION_set(int nodenum, double abstime, double value, int logtype)
 
   abstime = R_BOUNDARIES(mintime, abstime, maxtime);
 
-  value = R_BOUNDARIES(0, value, 2);
+  value = R_BOUNDARIES(0.01, value, 2);
 
   node->abstime = abstime;
   node->value = value;
@@ -273,6 +278,12 @@ double TEMPOAUTOMATION_get_length(void){
   
   return g_tempo_automation.last().abstime;
 }
+
+void TEMPOAUTOMATION_reset(void){
+  g_tempo_automation.clear();
+  //TEMPOAUTOMATION_set_length(SONG_get_length(), true);
+}
+
 
 double TEMPOAUTOMATION_get_absabstime(double abstime){
   return 1.0;

@@ -838,8 +838,8 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
   //printf("  Sampler_plugin.cpp: Request to play note %f. Id: %d\n", note2.pitch, (int)note2.id);
   //printf("  Sampler_plugin.cpp: Request to play note %d at %d\n", (int)note2.id, time);
 
-  R_ASSERT_NON_RELEASE(time >= 0);
-  R_ASSERT_NON_RELEASE(time < RADIUM_BLOCKSIZE);
+  R_ASSERT_NON_RELEASE(time>=0);
+  R_ASSERT_NON_RELEASE(time<RADIUM_BLOCKSIZE);
   
   //fprintf(stderr,"playing note %d. Pitch: %d, time: %d\n",(int)note_id,(int)note_num,(int)time);
 
@@ -981,8 +981,8 @@ static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
   
   Voice *voice = data->voices_playing;
 
-  R_ASSERT_NON_RELEASE(time >= 0);
-  R_ASSERT_NON_RELEASE(time < RADIUM_BLOCKSIZE);
+  R_ASSERT_NON_RELEASE(time>=0);
+  R_ASSERT_NON_RELEASE(time<RADIUM_BLOCKSIZE);
   
   if (time < 0)
     time = 0;

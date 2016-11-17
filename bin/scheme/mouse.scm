@@ -613,7 +613,6 @@
          (list 'new-box 0))
         (else
          (define box ($get-node-box $num))
-         (c-display "find-node:" $x $y (box-to-string box))
          (cond ((inside-box box $x $y)
                 (list 'existing-box $num box))
                ((and (= 0 $num)
@@ -3338,14 +3337,11 @@
                                         (and (<ra> :seqtempo-visible)
                                              (<ra> :get-box seqtempo-area)))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  (and (c-display "-1")
-                                                       (<ra> :seqtempo-visible)
-                                                       (c-display "a")
+                                                  (and (<ra> :seqtempo-visible)
                                                        (inside-box-forgiving (<ra> :get-box seqtempo-area) X Y)
-                                                       (c-display "b")
                                                        (match (list (find-node-horizontal X Y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
                                                               (existing-box Num Box) :> (begin
-                                                                                          (c-display "EXISTING " Num)
+                                                                                          ;;(c-display "EXISTING " Num)
                                                                                           (define Time (scale X (<ra> :get-seqtempo-area-x1) (<ra> :get-seqtempo-area-x2)
                                                                                                               (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
                                                                                           (callback Num Time Y))
@@ -3369,7 +3365,7 @@
                                      (define TempoMul (scale Y (<ra> :get-seqtempo-area-y1) (<ra> :get-seqtempo-area-y2) 0 1))
                                      (define logtype (<ra> :get-seqtempo-logtype Num))
                                      (<ra> :set-seqtemponode Time TempoMul logtype Num)
-                                     (c-display "NUM:" Num ", Time:" Time ", TempoMul:" TempoMul)
+                                     ;;(c-display "NUM:" Num ", Time:" Time ", TempoMul:" TempoMul)
                                      Num
                                      )
                         :Publicize (lambda (Num) ;; this version works though. They are, or at least, should be, 100% functionally similar.
@@ -3396,9 +3392,18 @@
                                                               (<ra> :undo-seqtempo)
                                                               (<ra> :delete-seqtemponode Num))
                                                             (popup-menu (list "Delete"
+                                                                              :enabled (and (> Num 0) (< Num (1- (<ra> :get-num-seqtemponodes))))
                                                                               (lambda ()
                                                                                 (<ra> :undo-seqtempo)
                                                                                 (<ra> :delete-seqtemponode Num)))
+                                                                        (list "Reset"
+                                                                              (lambda ()
+                                                                                (<ra> :undo-seqtempo)
+                                                                                (<ra> :set-seqtemponode
+                                                                                      (<ra> :get-seqtempo-abstime Num)
+                                                                                      1.0
+                                                                                      (<ra> :get-seqtempo-logtype Num)
+                                                                                      Num)))
                                                                         (list "Glide to next break point"
                                                                               :check (= (<ra> :get-seqtempo-logtype Num)
                                                                                         *logtype-linear*)
@@ -3422,7 +3427,7 @@
               (or (c-display "gotit") #t)
               (match (list (find-node-horizontal $x $y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
                      (existing-box Num Box) :> (begin
-                                                 (c-display "hepp" Num)
+                                                 ;;(c-display "hepp" Num)
                                                  (<ra> :set-curr-seqtemponode Num)
                                                  ;(set-mouse-track-to-reltempo)
                                                  ;(set-current-temponode Num)
@@ -3430,7 +3435,7 @@
                                                  ;(show-temponode-in-statusbar (<ra> :get-temponode-value Num))
                                                  #t)
                      A                      :> (begin
-                                                 (c-display "**Didnt get it:" A)
+                                                 ;;(c-display "**Didnt get it:" A)
                                                  (<ra> :set-curr-seqtemponode -1)
                                                  #f)))))
 

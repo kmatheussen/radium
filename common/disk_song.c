@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "song_proc.h"
 #include "seqtrack_proc.h"
 
+
 #include "../mixergui/QM_MixerWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
 #include "../audio/audio_instrument_proc.h"
