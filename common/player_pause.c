@@ -83,7 +83,7 @@ void PC_Pause(void){
     
     g_playtype = pc->playtype;
     g_was_playing_range = pc->is_playing_range;
-    g_pause_song_abstime = ATOMIC_GET(pc->song_abstime);
+    g_pause_song_abstime = ATOMIC_DOUBLE_GET(pc->song_abstime);
     PlayStop();
     g_was_playing = true;
   }  

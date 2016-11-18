@@ -154,9 +154,11 @@ void PlayerTask(double reltime){
 
 
         
-        if(pc->playtype==PLAYSONG)
-          ATOMIC_ADD(pc->song_abstime, reltime);
-
+        if(pc->playtype==PLAYSONG) {
+          double song_abstime = ATOMIC_DOUBLE_GET(pc->song_abstime);
+          ATOMIC_DOUBLE_SET(pc->song_abstime, song_abstime + reltime);
+        }
+        
 #ifdef WITH_PD
         RT_PD_set_absolute_time(ATOMIC_DOUBLE_GET(pc->song_abstime));
 #endif

@@ -763,7 +763,7 @@ struct Mixer{
       jackblock_delta_time = 0;
       while(jackblock_delta_time < num_frames){
 
-        double song_tempo_automation_tempo = pc->playtype==PLAYSONG ? RT_TEMPOAUTOMATION_get_value(ATOMIC_GET(pc->song_abstime)) : 1.0;
+        double song_tempo_automation_tempo = pc->playtype==PLAYSONG ? RT_TEMPOAUTOMATION_get_value(ATOMIC_DOUBLE_GET(pc->song_abstime)) : 1.0;
         
         PlayerTask((double)RADIUM_BLOCKSIZE / song_tempo_automation_tempo);
 

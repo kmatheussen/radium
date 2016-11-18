@@ -419,7 +419,6 @@ void PlaySong(int64_t abstime){
 }
 
 void PlaySongCurrPos(void){
-  //PlaySong(ATOMIC_GET(pc->song_abstime));
 
   struct WBlocks *wblock=root->song->tracker_windows->wblock;
   

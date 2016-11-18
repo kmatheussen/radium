@@ -215,7 +215,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
     SCHEDULER_set_seqtrack_timing(&root->song->block_seqtrack, 0, 0);
     RT_LPB_call_when_start_playing(&root->song->block_seqtrack);
         
-    ATOMIC_SET(pc->song_abstime, abs_start_time);
+    ATOMIC_DOUBLE_SET(pc->song_abstime, abs_start_time);
 
     VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
 

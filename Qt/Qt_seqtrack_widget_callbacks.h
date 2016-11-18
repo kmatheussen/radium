@@ -202,7 +202,7 @@ static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play
       PlaySong(pos);
     else {
       PlayStop();
-      ATOMIC_SET(pc->song_abstime, pos);
+      ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
       SEQUENCER_update();
     }
   }
@@ -657,7 +657,7 @@ public:
   float _last_painted_cursor_x = 0.0f;
   
   float get_curr_cursor_x(int frames_to_add){
-    return scale_double(ATOMIC_GET(pc->song_abstime)+frames_to_add, _start_time, _end_time, t_x1, t_x2);
+    return scale_double(ATOMIC_DOUBLE_GET(pc->song_abstime)+frames_to_add, _start_time, _end_time, t_x1, t_x2);
   }
 
   int t_x1=0,t_y1=0,t_x2=50,t_y2=50;
