@@ -79,9 +79,11 @@ static float mapToEditorY2(QWidget *widget){
   return mapToEditor(widget, QPoint(0, 0)).y() + widget->height();
 }
 
+/*
 static double getBlockAbsDuration(const struct Blocks *block){
   return getBlockSTimeLength(block) * ATOMIC_DOUBLE_GET(block->reltempo);
 }
+*/
 
 static QColor get_block_color(const struct Blocks *block){
   //return mix_colors(QColor(block->color), get_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM), 0.32f);

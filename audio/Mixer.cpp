@@ -370,6 +370,7 @@ static DEFINE_ATOMIC(STime, jackblock_cycle_start_stime) = 0;
 static DEFINE_ATOMIC(STime, jackblock_last_frame_stime) = 0;
 static DEFINE_ATOMIC(Blocks *, jackblock_block) = NULL;
 static DEFINE_ATOMIC(STime, jackblock_seqtime) = 0;
+static DEFINE_ATOMIC(double, jackblock_song_tempo_multiplier) = 1.0;
 
 //static DEFINE_SPINLOCK(jackblock_spinlock); // used by two realtime threads (midi input and audio thread)
 static SetSeveralAtomicVariables jackblock_variables_protector;
@@ -735,7 +736,9 @@ struct Mixer{
           ATOMIC_SET(jackblock_seqtime, 0);
           ATOMIC_SET(jackblock_block, NULL);
         }
-          
+
+        ATOMIC_DOUBLE_SET(jackblock_song_tempo_multiplier, ATOMIC_DOUBLE_GET(g_curr_song_tempo_automation_tempo));
+                          
       }jackblock_variables_protector.write_end();
       
       if(g_test_crashreporter_in_audio_thread){
@@ -1053,8 +1056,10 @@ static bool fill_in_time_position2(time_position_t *time_position){
   STime jackblock_cycle_start_stime2;
   STime jackblock_last_frame_stime2;
   STime jackblock_size2;
-  STime seqtime;
   struct Blocks *block;
+  STime seqtime;
+  double song_tempo_multiplier;
+  
   //int playlistpos;
   //int playlistpos_numfromcurrent = 0;
 
@@ -1067,6 +1072,7 @@ static bool fill_in_time_position2(time_position_t *time_position){
     jackblock_size2              = ATOMIC_GET(jackblock_size);
     block                        = ATOMIC_GET(jackblock_block);
     seqtime                      = ATOMIC_GET(jackblock_seqtime);
+    song_tempo_multiplier        = ATOMIC_DOUBLE_GET(jackblock_song_tempo_multiplier);
     //playlistpos                  = ATOMIC_GET(jackblock_playlistpos);
     
   } while(jackblock_variables_protector.read_end(generation)==false); // ensure that the variables inside this loop are read atomically.
@@ -1080,7 +1086,7 @@ static bool fill_in_time_position2(time_position_t *time_position){
     jackblock_cycle_start_stime2 +
     scale(deltatime,
           0, jackblock_size2,
-          0, jackblock_size2 * ATOMIC_DOUBLE_GET(block->reltempo)
+          0, jackblock_size2 * ATOMIC_DOUBLE_GET(block->reltempo) * song_tempo_multiplier
           );
   
   STime accurate_block_time = accurate_radium_time - seqtime;
