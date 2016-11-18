@@ -281,6 +281,7 @@ double TEMPOAUTOMATION_get_length(void){
 
 void TEMPOAUTOMATION_reset(void){
   g_tempo_automation.clear();
+  SEQTEMPO_set_visible(false);
   //TEMPOAUTOMATION_set_length(SONG_get_length(), true);
 }
 
@@ -315,18 +316,23 @@ hash_t *TEMPOAUTOMATION_get_state(void){
   
   for(int i = 0 ; i < size ; i++)
     HASH_put_hash_at(state, "node", i, get_node_state(i));
+
+  HASH_put_bool(state, "is_visible", SEQTEMPO_is_visible());
   
   return state;
 }
 
 void TEMPOAUTOMATION_create_from_state(hash_t *state){
-  int size = HASH_get_num_elements(state);
+  int size = HASH_get_array_size(state);
 
   g_tempo_automation.clear();
 
   for(int i = 0 ; i < size ; i++)
     g_tempo_automation.push_back(create_node_from_state(HASH_get_hash_at(state, "node", i)));
 
+  if (HASH_has_key(state, "is_visible"))
+    SEQTEMPO_set_visible(HASH_get_bool(state, "is_visible"));
+    
   set_rt_tempo_automation();
 }
 
@@ -426,7 +432,7 @@ float TEMPOAUTOMATION_get_node_y(int nodenum){
   
   const TempoAutomationNode &node1 = g_tempo_automation.at(nodenum);
   
-  return scale(node1.value, 0, 2, y1, y2);
+  return scale(node1.value, 2, 0, y1, y2);
 }
 
 void TEMPOAUTOMATION_paint(QPainter *p, float x1, float y1, float x2, float y2, double start_time, double end_time){

@@ -465,8 +465,8 @@
   (define width/2 (1+ (ra:get-half-of-node-width)))
   (and (>= X (- (Box :x1) width/2))
        (<  X (+ (Box :x2) width/2))
-       (>= Y (Box :y1))
-       (<  Y (Box :y2))))
+       (>= Y (- (Box :y1) width/2))
+       (<  Y (+ (Box :y2) width/2))))
 
 
 ;; Replaces all occurences of A with B in List

@@ -229,6 +229,9 @@ float getSeqtemponodeY(int nodenum){
   }
   return TEMPOAUTOMATION_get_node_y(nodenum);
 }
+void setSeqtempoVisible(bool visible){
+  SEQTEMPO_set_visible(visible);
+}
 bool seqtempoVisible(void){
   return SEQTEMPO_is_visible();
 }

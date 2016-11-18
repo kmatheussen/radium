@@ -446,7 +446,7 @@ hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack){
 struct SeqTrack *SEQTRACK_create_from_state(const hash_t *state){
   struct SeqTrack *seqtrack = SEQTRACK_create();
 
-  int num_seqblocks = HASH_get_num_elements(state);
+  int num_seqblocks = HASH_get_array_size(state);
 
   for(int i=0;i<num_seqblocks;i++)
     VECTOR_push_back(&seqtrack->seqblocks, SEQBLOCK_create_from_state(HASH_get_hash_at(state, "seqblock", i)));

@@ -3150,7 +3150,10 @@
                                                   (<ra> :delete-seqtrack seqtracknum)))
                                           "Append sequencer track" (lambda ()
                                                                      (<ra> :append-seqtrack))
-                                          
+                                          (list "Show song tempo automation"
+                                                :check (<ra> :seqtempo-visible)
+                                                (lambda (doit)
+                                                  (<ra> :set-seqtempo-visible doit)))
                                           "------------------"
 
                                           (list "Clone block"
@@ -3344,6 +3347,7 @@
                                                                                           ;;(c-display "EXISTING " Num)
                                                                                           (define Time (scale X (<ra> :get-seqtempo-area-x1) (<ra> :get-seqtempo-area-x2)
                                                                                                               (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+                                                                                          (set-grid-type #t)
                                                                                           (callback Num Time Y))
                                                               _                      :> #f)))
                         :Get-min-value (lambda (_)
@@ -3356,19 +3360,28 @@
                                      (<ra> :undo-seqtempo))
                         :Create-new-node (lambda (X Y callback)
                                            (define Time (scale X (<ra> :get-seqtempo-area-x1) (<ra> :get-seqtempo-area-x2) (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+                                           (if (not (<ra> :ctrl-pressed))
+                                               (set! Time (<ra> :find-closest-seqtrack-bar-start 0 (floor Time))))
                                            (define TempoMul (scale Y (<ra> :get-seqtempo-area-y1) (<ra> :get-seqtempo-area-y2) 2 0))
                                            (define Num (<ra> :add-seqtemponode Time TempoMul 0))
                                            (if (= -1 Num)
                                                #f
-                                               (callback Num Time)))
+                                               (begin
+                                                 (set-grid-type #t)
+                                                 (callback Num Time))))
+                        :Release-node (lambda (Num)
+                                        (set-grid-type #f))
                         :Move-node (lambda (Num Time Y)
                                      (define TempoMul (scale Y (<ra> :get-seqtempo-area-y1) (<ra> :get-seqtempo-area-y2) 2 0))
                                      (define logtype (<ra> :get-seqtempo-logtype Num))
+                                     (if (not (<ra> :ctrl-pressed))
+                                         (set! Time (<ra> :find-closest-seqtrack-bar-start 0 (floor Time))))
                                      (<ra> :set-seqtemponode Time TempoMul logtype Num)
                                      ;;(c-display "NUM:" Num ", Time:" Time ", TempoMul:" TempoMul)
                                      Num
                                      )
                         :Publicize (lambda (Num) ;; this version works though. They are, or at least, should be, 100% functionally similar.
+                                     (<ra> :set-statusbar-text (<-> "Tempo: " (two-decimal-string (<ra> :get-seqtempo-value Num))))
                                      (<ra> :set-curr-seqtemponode Num)
                                      #f)
                         
@@ -3396,7 +3409,7 @@
                                                                               (lambda ()
                                                                                 (<ra> :undo-seqtempo)
                                                                                 (<ra> :delete-seqtemponode Num)))
-                                                                        (list "Reset"
+                                                                        (list "Reset (set value to 1.0)"
                                                                               (lambda ()
                                                                                 (<ra> :undo-seqtempo)
                                                                                 (<ra> :set-seqtemponode

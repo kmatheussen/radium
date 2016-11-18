@@ -72,6 +72,7 @@ extern LANGSPEC float SEQTEMPO_get_x1(void);
 extern LANGSPEC float SEQTEMPO_get_x2(void);
 extern LANGSPEC float SEQTEMPO_get_y1(void);
 extern LANGSPEC float SEQTEMPO_get_y2(void);
+extern LANGSPEC void SEQTEMPO_set_visible(bool visible);
 extern LANGSPEC bool SEQTEMPO_is_visible(void);
 
 // seqblocks gfx

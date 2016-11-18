@@ -30,8 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#define ENABLE_TEMPO_AUTOMATION 1
-
 static bool g_need_update = false;
 
 static void g_position_widgets(void);
@@ -655,13 +653,6 @@ public:
   }
 
 
-  const float cursor_width = 2.7;
-  float _last_painted_cursor_x = 0.0f;
-  
-  float get_curr_cursor_x(int frames_to_add){
-    return scale_double(ATOMIC_DOUBLE_GET(pc->song_abstime)+frames_to_add, _start_time, _end_time, t_x1, t_x2);
-  }
-
   int t_x1=0,t_y1=0,t_x2=50,t_y2=50;
   int width=0,height=0;
   
@@ -681,45 +672,13 @@ public:
 
   }  
 
-  void paint(const QRect update_rect, QPainter &p, enum GridType grid_type){
+  void paint(const QRect update_rect, QPainter &p){
     position_widgets(t_x1, t_y1, t_x2, t_y2);
-    
+
+    // seqtracks
+    //
     for(auto *seqtrack_widget : _seqtrack_widgets)
       seqtrack_widget->paint(update_rect, p);
-    
-    if (grid_type==BAR_GRID) {
-      QPen pen(get_qcolor(SEQUENCER_GRID_COLOR_NUM));
-      p.setPen(pen);
-      int64_t last_bar = -50000;
-      int64_t abstime = _start_time;
-      int inc = (_end_time-_start_time) / width;
-      while(abstime < _end_time){
-        int64_t maybe = SEQUENCER_find_closest_bar_start(0, abstime);
-        if (maybe > last_bar){
-          float x = scale(maybe, _start_time, _end_time, 0, width);
-          //printf("x: %f, abstime: %f\n",x,(float)maybe/44100.0);
-          QLineF line(x, t_y1+2, x, t_y2-4);
-          p.drawLine(line);
-          last_bar = maybe;
-          abstime = maybe;
-        }
-        abstime += inc;
-      }
-    }
-    
-    // Cursor
-    {
-      QPen pen(get_qcolor(SEQUENCER_CURSOR_COLOR_NUM));
-      pen.setWidthF(cursor_width);
-
-      _last_painted_cursor_x = get_curr_cursor_x(0);
-      
-      QLineF line(_last_painted_cursor_x, t_y1+2, _last_painted_cursor_x, t_y2-4);
-      
-      p.setPen(pen);
-      p.drawLine(line);
-    }
-
   }
 
   void my_update(void){
@@ -767,16 +726,6 @@ public:
 
       seqtrack->call_very_often();
     }
-
-    if (is_playing() && pc->playtype==PLAYSONG) {
-      float x = get_curr_cursor_x(1 + MIXER_get_sample_rate() * 60.0 / 1000.0);
-
-      float x_min = R_MIN(x-cursor_width/2.0, _last_painted_cursor_x-cursor_width/2.0) - 2;
-      float x_max = R_MAX(x+cursor_width/2.0, _last_painted_cursor_x+cursor_width/2.0) + 2;
-
-      //printf("x_min -> x_max: %f -> %f\n",x_min,x_max);
-      _sequencer_widget->update(x_min, t_y1, 1+x_max-x_min, height);
-    }
   }
 
   Seqtrack_widget *get_seqtrack_widget(struct SeqTrack *seqtrack){
@@ -805,24 +754,40 @@ public:
 };
 
 
-struct SongTempoAutomation_widget : public MouseTrackerQWidget {
+struct SongTempoAutomation_widget { //: public MouseTrackerQWidget {
+  bool is_visible = false;
+   
   const int64_t &_start_time;
   const int64_t &_end_time;
-  
+   
+  int t_x1,t_y1,t_x2,t_y2,width,height;
+  QRectF _rect;
+   
   SongTempoAutomation_widget(QWidget *parent, const int64_t &start_time, const int64_t &end_time)
-    : MouseTrackerQWidget(parent)
-    , _start_time(start_time)
+  //: MouseTrackerQWidget(parent)
+    : _start_time(start_time)
     , _end_time(end_time)
-  {    
+  {
+    position_widgets(0,0,100,100);
   }
 
-  void paintEvent ( QPaintEvent * ev ) override {
-    QPainter p(this);
+  void position_widgets(int x1, int y1, int x2, int y2){
+    t_x1 = x1;
+    t_y1 = y1;
+    t_x2 = x2;
+    t_y2 = y2;
+    height = t_y2-t_y1;
+    width = t_x2-t_x1;
+    
+    _rect = QRect(t_x1, t_y1, width, height);
+  }
 
-    p.setRenderHints(QPainter::Antialiasing,true);
+  void paint(const QRect update_rect, QPainter &p){
 
+    p.fillRect(_rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
+    
     //printf("height: %d\n",height());
-    TEMPOAUTOMATION_paint(&p, 0, 0, width(), height(), _start_time, _end_time);
+    TEMPOAUTOMATION_paint(&p, t_x1, t_y1, t_x2, t_y2, _start_time, _end_time);
   }
 
 };
@@ -1076,9 +1041,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   enum GridType _grid_type;
 
   const int bottom_height = 30;
-#if ENABLE_TEMPO_AUTOMATION
   SongTempoAutomation_widget _songtempoautomation_widget;
-#endif
   Timeline_widget _timeline_widget;
   Seqtracks_widget _seqtracks_widget;
   Seqtracks_navigator_widget _navigator_widget;
@@ -1088,17 +1051,12 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     : MouseTrackerQWidget(parent)
     , _end_time(SONG_get_gfx_length()*MIXER_get_sample_rate())
     , _samples_per_pixel((_end_time-_start_time) / width())
-#if ENABLE_TEMPO_AUTOMATION
     , _songtempoautomation_widget(this, _start_time, _end_time)
-#endif
     , _timeline_widget(this, _start_time, _end_time)
     , _seqtracks_widget(this, _start_time, _end_time)
     , _navigator_widget(this, _start_time, _end_time, _seqtracks_widget)
       //, _main_reltempo(this)
   {
-#if ENABLE_TEMPO_AUTOMATION
-    _songtempoautomation_widget.show();
-#endif
     _timeline_widget.show();
     _seqtracks_widget.show();
     _navigator_widget.show();
@@ -1145,7 +1103,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   void position_widgets(void){
     R_ASSERT_RETURN_IF_FALSE(_seqtracks_widget._seqtrack_widgets.size() > 0);
 
-    printf("   ***** Posisiotioing sequencer widgets ********\n");
+    //printf("   ***** Posisiotioing sequencer widgets ********\n");
     
 #if 0
     const QWidget *mute_button = _seqtracks_widget._seqtrack_widgets.at(0)->mute_button;
@@ -1156,45 +1114,50 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     const int x1_width = width() - x1;
 
     const int timeline_widget_height = root->song->tracker_windows->fontheight + 2;
-
+ 
     int y1 = 0;
-
-    
-#if ENABLE_TEMPO_AUTOMATION
-    const int songtempoautomation_widget_height = root->song->tracker_windows->fontheight*3;
-
-    // tempo automation
-    _songtempoautomation_widget.setGeometry(x1, y1,
-                                            x1_width, songtempoautomation_widget_height);
-    
-    
-    y1 += songtempoautomation_widget_height;
-#endif
     
 
     // timeline
+    //
     _timeline_widget.setGeometry(x1, y1,
                                  x1_width, timeline_widget_height);
 
 
     y1 += timeline_widget_height;
 
+    
+    // song tempo automation
+    //
+    {
+      const int songtempoautomation_widget_height = root->song->tracker_windows->fontheight*3.5;
 
+      int y2 = y1 + songtempoautomation_widget_height;
+
+      _songtempoautomation_widget.position_widgets(1, y1,
+                                                   width()-1, y2);
+
+      if (_songtempoautomation_widget.is_visible)
+        y1 = y2;
+    }
+    
+    
     // sequencer tracks
-        
-    int y2 = height() - bottom_height;
-    _seqtracks_widget.setGeometry(0, y1,
-                                  1, y2 - y1);
+    //
+    {
+      int y2 = height() - bottom_height;
+      _seqtracks_widget.setGeometry(0, y1,
+                                    1, y2 - y1);
+      
+      _seqtracks_widget.position_widgets(1,y1,
+                                         width()-1, y2);
 
-    _seqtracks_widget.position_widgets(1,y1,
-                                       width()-1, y2);
-
-
-    y1 = y2;
+      y1 = y2;
+    }
 
 
     // navigator
-    
+    //
     _navigator_widget.setGeometry(x1, y1,
                                   x1_width, bottom_height);
 
@@ -1209,7 +1172,21 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   int _last_num_seqtracks = 0;
   double _last_visible_song_length = 0;
   
+  const float cursor_width = 2.7;
+  float _last_painted_cursor_x = 0.0f;
+  
+  float get_curr_cursor_x(int frames_to_add){
+    return scale_double(ATOMIC_DOUBLE_GET(pc->song_abstime)+frames_to_add, _start_time, _end_time, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2);
+  }
+
+  bool _song_tempo_automation_was_visible = false;
+  
   void call_very_often(void){
+    if (_song_tempo_automation_was_visible != _songtempoautomation_widget.is_visible){
+      _song_tempo_automation_was_visible = _songtempoautomation_widget.is_visible;
+      position_widgets();
+    }
+    
     if (is_called_every_ms(15)){  // call each 15 ms. (i.e. more often than vsync)
       _seqtracks_widget.call_very_often();    
     
@@ -1237,16 +1214,81 @@ struct Sequencer_widget : public MouseTrackerQWidget {
         _last_num_seqtracks = _seqtracks_widget._seqtrack_widgets.size();
       }
     }
+
+    
+    if (is_playing() && pc->playtype==PLAYSONG) {
+      float x = get_curr_cursor_x(1 + MIXER_get_sample_rate() * 60.0 / 1000.0);
       
+      float x_min = R_MIN(x-cursor_width/2.0, _last_painted_cursor_x-cursor_width/2.0) - 2;
+      float x_max = R_MAX(x+cursor_width/2.0, _last_painted_cursor_x+cursor_width/2.0) + 2;
+      
+      //printf("x_min -> x_max: %f -> %f\n",x_min,x_max);
+      float y1 = _songtempoautomation_widget.t_y1;
+      float y2 = _seqtracks_widget.t_y2;
+      
+      update(x_min, y1, 1+x_max-x_min, y2-y1);
+    }
 
   }
+
+
+  void paintGrid(const QRect update_rect, QPainter &p, enum GridType grid_type){
+    float x1 = _seqtracks_widget.t_x1;
+    float x2 = _seqtracks_widget.t_x2;
+    float width = x2-x1;
+    
+    float y1 = _songtempoautomation_widget.t_y1;
+    float y2 = _seqtracks_widget.t_y2;
+
+    if (grid_type==BAR_GRID) {
+      QPen pen(get_qcolor(SEQUENCER_GRID_COLOR_NUM));
+      p.setPen(pen);
+      int64_t last_bar = -50000;
+      int64_t abstime = _start_time;
+      int inc = (_end_time-_start_time) / width;
+      while(abstime < _end_time){
+        int64_t maybe = SEQUENCER_find_closest_bar_start(0, abstime);
+        if (maybe > last_bar){
+          float x = scale(maybe, _start_time, _end_time, 0, width);
+          //printf("x: %f, abstime: %f\n",x,(float)maybe/44100.0);
+          QLineF line(x, y1+2, x, y2-4);
+          p.drawLine(line);
+          last_bar = maybe;
+          abstime = maybe;
+        }
+        abstime += inc;
+      }
+    }
+  }
+      
+  void paintCursor(const QRect update_rect, QPainter &p){
+    float y1 = _songtempoautomation_widget.t_y1;
+    float y2 = _seqtracks_widget.t_y2;
+    
+    QPen pen(get_qcolor(SEQUENCER_CURSOR_COLOR_NUM));
+    pen.setWidthF(cursor_width);
+    
+    _last_painted_cursor_x = get_curr_cursor_x(0);
+    
+    QLineF line(_last_painted_cursor_x, y1+2, _last_painted_cursor_x, y2-4);
+    
+    p.setPen(pen);
+    p.drawLine(line);
+  }
+      
 
   void paintEvent (QPaintEvent *ev) override {
     QPainter p(this);
 
     p.setRenderHints(QPainter::Antialiasing,true);    
 
-    _seqtracks_widget.paint(ev->rect(), p, _grid_type);
+    _seqtracks_widget.paint(ev->rect(), p);
+
+    if (_songtempoautomation_widget.is_visible)
+      _songtempoautomation_widget.paint(ev->rect(), p);
+
+    paintGrid(ev->rect(), p, _grid_type);
+    paintCursor(ev->rect(), p);
   }
 
   
@@ -1376,23 +1418,33 @@ void SEQNAV_update(void){
 // seqtempo automation
 
 float SEQTEMPO_get_x1(void){
-  return mapToEditorX1(&g_sequencer_widget->_songtempoautomation_widget);
+  return mapToEditorX(g_sequencer_widget, 0);
+  //return mapToEditorX1(&g_sequencer_widget->_songtempoautomation_widget);
 }
 
 float SEQTEMPO_get_x2(void){
-  return mapToEditorX2(&g_sequencer_widget->_songtempoautomation_widget);
+  return mapToEditorX(g_sequencer_widget, g_sequencer_widget->width());
+  //return mapToEditorX2(&g_sequencer_widget->_songtempoautomation_widget);
 }
 
 float SEQTEMPO_get_y1(void){
-  return mapToEditorY1(&g_sequencer_widget->_songtempoautomation_widget);
+  return mapToEditorY1(g_sequencer_widget) + g_sequencer_widget->_songtempoautomation_widget.t_y1;
 }
 
 float SEQTEMPO_get_y2(void){
-  return mapToEditorY2(&g_sequencer_widget->_songtempoautomation_widget);
+  return mapToEditorY1(g_sequencer_widget) + g_sequencer_widget->_songtempoautomation_widget.t_y2;
+}
+
+void SEQTEMPO_set_visible(bool visible){
+  if (g_sequencer_widget != NULL){
+    g_sequencer_widget->_songtempoautomation_widget.is_visible = visible;
+    g_sequencer_widget->position_widgets();
+    SEQUENCER_update();
+  }
 }
 
 bool SEQTEMPO_is_visible(void){
-  return true;
+  return g_sequencer_widget->_songtempoautomation_widget.is_visible;
 }
 
 
