@@ -1013,17 +1013,12 @@ private:
       mutex.unlock();
   }
 
-public:
-
   int _num_update_event_calls = 0;
   QTime _update_event_counter_timer;
   
-  /** Event generated when the bound OpenGLContext does not have any other message to process 
-      and OpenGLContext::continuousUpdate() is set to \p true or somebody calls OpenGLContext::update(). */
-  // OpenGL thread
-  virtual void updateEvent() {
-
+  void assertHealthyVBlank(void){
     _num_update_event_calls++;
+    
     if (_update_event_counter_timer.elapsed() >= 1000){
       int measured_vblank = _num_update_event_calls;
 
@@ -1039,15 +1034,26 @@ public:
       
       if (measured_vblank > max_healthy_vblank)
         RT_message("Warning: Very high refresh rate detected.\n"
-                   "(%dHz > %dHz).\n\n"
+                   "Got %dHz. Expected maximum %dHz.\n\n"
                    "You are probably experience very slow graphical performance now.\n\n"
                    "Please check that VSync is turned on both under\n"
                    "Edit -> Preferences -> OpenGL, and globally in your system.",
-                   measured_vblank, max_healthy_vblank);
+                   measured_vblank,
+                   max_healthy_vblank);
 
       _num_update_event_calls = 0;
       _update_event_counter_timer.restart();
     }
+  }
+  
+public:
+
+  /** Event generated when the bound OpenGLContext does not have any other message to process 
+      and OpenGLContext::continuousUpdate() is set to \p true or somebody calls OpenGLContext::update(). */
+  // OpenGL thread
+  virtual void updateEvent() {
+
+    assertHealthyVBlank();
     
     bool handle_current = true; // I don't know if there's any point setting this to true.
 

@@ -3420,11 +3420,9 @@
 ;; highlight current seqtemponode
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
-         (c-display "Ua")
          (and (<ra> :seqtempo-visible)
-              (or (c-display "---" $x $y (box-to-string (<ra> :get-box seqtempo-area)) (inside-box-forgiving (<ra> :get-box seqtempo-area) $x $y)) #t)
+              ;;(or (c-display "---" $x $y (box-to-string (<ra> :get-box seqtempo-area)) (inside-box-forgiving (<ra> :get-box seqtempo-area) $x $y)) #t)
               (inside-box-forgiving (<ra> :get-box seqtempo-area) $x $y)
-              (or (c-display "gotit") #t)
               (match (list (find-node-horizontal $x $y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
                      (existing-box Num Box) :> (begin
                                                  ;;(c-display "hepp" Num)
