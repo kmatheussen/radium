@@ -366,7 +366,7 @@ static bool need_to_reset_timing(SharedVariables *sv, double stime, int last_use
 static double find_current_realline_while_playing(SharedVariables *sv, double blocktime){
 
   double time_in_ms = blocktime * 1000.0 / (double)pc->pfreq; // I'm not entirely sure reading pc->start_time_f instead of pc->start_time is unproblematic.
-  double stime      = time_estimator.get(time_in_ms, sv->reltempo) * (double)pc->pfreq / 1000.0; // Could this value be slightly off because we just changed block, and because of that we skipped a few calles to time_estimator.get ? (it shouldn't matter though, timing is resetted when that happens. 'time_in_ms' should always be valid)
+  double stime      = time_estimator.get(time_in_ms, sv->reltempo * ATOMIC_DOUBLE_GET(g_curr_song_tempo_automation_tempo)) * (double)pc->pfreq / 1000.0; // Could this value be slightly off because we just changed block, and because of that we skipped a few calles to time_estimator.get ? (it shouldn't matter though, timing is resetted when that happens. 'time_in_ms' should always be valid)
 
   //stime      = time_in_ms* (double)pc->pfreq / 1000.0;
 

@@ -4,6 +4,7 @@
 #include "../common/time_proc.h"
 #include "../common/vector_proc.h"
 #include "../common/threading.h"
+#include "../audio/Mixer_proc.h"
 
 
 extern struct Root *root;

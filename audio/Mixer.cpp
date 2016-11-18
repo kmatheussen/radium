@@ -76,6 +76,7 @@ static SoundPlugin **g_click_plugins = NULL;
 static Patch **g_click_patches = NULL; // only written to in RT_MIXER_get_all_click_patches.
 
 
+
 #ifdef MEMORY_DEBUG
 
 static radium::Mutex debug_mutex;
@@ -87,6 +88,7 @@ void PLAYER_memory_debug_wake_up(void){
 #endif
 
 DEFINE_ATOMIC(bool, g_currently_processing_dsp) = false;
+DEFINE_ATOMIC(double, g_curr_song_tempo_automation_tempo) = 1.0;
 
 
 jack_client_t *g_jack_client;
@@ -763,9 +765,10 @@ struct Mixer{
       jackblock_delta_time = 0;
       while(jackblock_delta_time < num_frames){
 
-        double song_tempo_automation_tempo = pc->playtype==PLAYSONG ? RT_TEMPOAUTOMATION_get_value(ATOMIC_DOUBLE_GET(pc->song_abstime)) : 1.0;
+        double curr_song_tempo_automation_tempo = pc->playtype==PLAYSONG ? RT_TEMPOAUTOMATION_get_value(ATOMIC_DOUBLE_GET(pc->song_abstime)) : 1.0;
+        ATOMIC_DOUBLE_SET(g_curr_song_tempo_automation_tempo, curr_song_tempo_automation_tempo);
         
-        PlayerTask((double)RADIUM_BLOCKSIZE / song_tempo_automation_tempo);
+        PlayerTask((double)RADIUM_BLOCKSIZE * curr_song_tempo_automation_tempo);
 
         if (is_playing()) {
           if (pc->playtype==PLAYBLOCK)

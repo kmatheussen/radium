@@ -9,6 +9,7 @@ extern LANGSPEC void PLAYER_memory_debug_wake_up(void);
 #endif
 
 extern DEFINE_ATOMIC(bool, g_currently_processing_dsp);
+extern DEFINE_ATOMIC(double, g_curr_song_tempo_automation_tempo);
 
 extern LANGSPEC bool PLAYER_is_running(void);
   

@@ -450,8 +450,8 @@ void TEMPOAUTOMATION_paint(QPainter *p, float x1, float y1, float x2, float y2, 
     float x_a = scale(node1.abstime, start_time, end_time, x1, x2);
     float x_b = scale(node2.abstime, start_time, end_time, x1, x2);
 
-    float y_a = scale(node1.value, 0, 2, y1, y2);
-    float y_b = scale(node2.value, 0, 2, y1, y2);
+    float y_a = scale(node1.value, 2, 0, y1, y2);
+    float y_b = scale(node2.value, 2, 0, y1, y2);
 
     //printf("y_a: %f, y1: %f, y2: %f\n", 
     
