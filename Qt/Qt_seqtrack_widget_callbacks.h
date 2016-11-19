@@ -358,7 +358,7 @@ public:
   
   void paintBlock(QPainter &p, const QRectF &rect, const struct Blocks *block){
 
-    const int header_height = root->song->tracker_windows->fontheight;
+    const int header_height = root->song->tracker_windows->systemfontheight*1.3;
     
     QColor text_color = get_qcolor(SEQUENCER_TEXT_COLOR_NUM);
     QColor border_color = get_qcolor(SEQUENCER_BLOCK_BORDER_COLOR_NUM);
@@ -996,7 +996,7 @@ public:
           QRectF rect(x1,y1+1,x2-x1,y2-y1-2);
           p.fillRect(rect, block_color);
 
-          if(rect.height() > root->song->tracker_windows->fontheight){
+          if(rect.height() > root->song->tracker_windows->systemfontheight*1.3){
             p.setPen(text_color);
             p.drawText(rect.adjusted(2,1,-1,-1), QString::number(block->l.num) + ": " + block->name, QTextOption(Qt::AlignLeft | Qt::AlignTop));
           }
@@ -1082,7 +1082,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     _main_reltempo.show();
     */
 
-    int height = root->song->tracker_windows->fontheight * 13;
+    int height = root->song->tracker_windows->systemfontheight*1.3 * 13;
     setMinimumHeight(height);
     setMaximumHeight(height);
   }
@@ -1133,7 +1133,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     const int x1 = 0; //p.x() + mute_button->width();
     const int x1_width = width() - x1;
 
-    const int timeline_widget_height = root->song->tracker_windows->fontheight + 2;
+    const int timeline_widget_height = root->song->tracker_windows->systemfontheight*1.3 + 2;
  
     int y1 = 0;
     
@@ -1150,7 +1150,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     // song tempo automation
     //
     {
-      const int songtempoautomation_widget_height = root->song->tracker_windows->fontheight*3.5;
+      const int songtempoautomation_widget_height = root->song->tracker_windows->systemfontheight*1.3*3.5;
 
       int y2 = y1 + songtempoautomation_widget_height;
 
