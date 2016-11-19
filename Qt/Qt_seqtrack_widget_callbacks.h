@@ -1004,7 +1004,7 @@ public:
       QRectF rect2(x1, 1, x2-x1,      height()-2);
 
       {
-        QColor grayout_color = get_qcolor(SEQUENCER_NAVIGATOR_GRAYOUT_COLOR);
+        QColor grayout_color = get_qcolor(SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM);
       
         p.fillRect(rectA, grayout_color);
         p.fillRect(rectB, grayout_color);
@@ -1021,7 +1021,7 @@ public:
       QRectF handle1_rect(x1,        0, handle1_x-x1, height());
       QRectF handle2_rect(handle2_x, 0, x2-handle2_x, height());
       
-      p.setBrush(get_qcolor(SEQUENCER_NAVIGATOR_HANDLER_COLOR));
+      p.setBrush(get_qcolor(SEQUENCER_NAVIGATOR_HANDLER_COLOR_NUM));
       
       p.drawRect(handle1_rect);
       p.drawRect(handle2_rect);
