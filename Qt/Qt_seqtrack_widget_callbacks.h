@@ -664,6 +664,24 @@ public:
     width = t_x2-t_x1;
     height = t_y2-t_y1;
 
+#if 0
+    int num_seqtracks = _seqtrack_widgets.size();
+    
+    if (num_seqtracks > 5) {      
+      //setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+      for(auto *seqtrack_widget : _seqtrack_widgets){
+        seqtrack_widget->setMinimumHeight(height / 5);
+        seqtrack_widget->setMaximumHeight(height / 5);
+      }
+    }else {
+      //setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+      for(auto *seqtrack_widget : _seqtrack_widgets){
+        seqtrack_widget->setMinimumHeight(height / 5);
+        seqtrack_widget->setMaximumHeight(5000000);
+      }
+    }
+#endif
+    
     for(auto *seqtrack_widget : _seqtrack_widgets){
       int y1_b = y1+seqtrack_widget->y();
       int y2_b = y1_b + seqtrack_widget->height();
@@ -1063,8 +1081,10 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     /*
     _main_reltempo.show();
     */
-    
-    setMinimumHeight(200);
+
+    int height = root->song->tracker_windows->fontheight * 13;
+    setMinimumHeight(height);
+    setMaximumHeight(height);
   }
 
   void my_update(void){
