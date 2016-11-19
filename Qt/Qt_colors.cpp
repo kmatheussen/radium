@@ -168,8 +168,9 @@ static const ColorConfig g_colorconfig[] = {
   {SEQUENCER_CURSOR_COLOR_NUM, "sequencer_cursor_color", "Sequencer cursor color"},
   {SEQUENCER_TIMELINE_BACKGROUND_COLOR_NUM, "sequencer_timeline_background_color", "Sequencer timeline background color"},
   {SEQUENCER_TIMELINE_ARROW_COLOR_NUM, "sequencer_tinmeline_arrow_color", "Sequencer timeline arrow color"},
-  {SEQUENCER_NAVIGATOR_HANDLER_COLOR, "sequencer_navigator_handler_color", "Sequencer navigator handler color"},
-  {SEQUENCER_NAVIGATOR_GRAYOUT_COLOR, "sequencer_navigator_grayout_color", "Sequencer navigator gray out color"},
+  {SEQUENCER_NAVIGATOR_HANDLER_COLOR_NUM, "sequencer_navigator_handler_color", "Sequencer navigator handler color"},
+  {SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM, "sequencer_navigator_grayout_color", "Sequencer navigator gray out color"},
+  {SEQUENCER_TEMPO_AUTOMATION_COLOR_NUM, "sequencer_tempo_automation_color", "Sequencer tempo automation color"},
   
   {END_CONFIG_COLOR_NUM, NULL, NULL}
 };
@@ -264,8 +265,9 @@ static ReplacementColor g_replacement_color[] = {
   {SEQUENCER_CURSOR_COLOR_NUM, QColor("#ffc81414")},
   {SEQUENCER_TIMELINE_BACKGROUND_COLOR_NUM, QColor("#ff8c8c8c")},
   {SEQUENCER_TIMELINE_ARROW_COLOR_NUM, QColor("#ffc83232")},
-  {SEQUENCER_NAVIGATOR_HANDLER_COLOR, QColor("#5a141414")},
-  {SEQUENCER_NAVIGATOR_GRAYOUT_COLOR, QColor("#96323232")},
+  {SEQUENCER_NAVIGATOR_HANDLER_COLOR_NUM, QColor("#5a141414")},
+  {SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM, QColor("#96323232")},
+  {SEQUENCER_TEMPO_AUTOMATION_COLOR_NUM, QColor("#baab88")},
   
   {END_CONFIG_COLOR_NUM, QColor(1,2,3)}
 };

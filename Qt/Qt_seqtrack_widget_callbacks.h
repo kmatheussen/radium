@@ -358,7 +358,7 @@ public:
   
   void paintBlock(QPainter &p, const QRectF &rect, const struct Blocks *block){
 
-    const int header_height = root->song->tracker_windows->fontheight;
+    const int header_height = root->song->tracker_windows->systemfontheight*1.3;
     
     QColor text_color = get_qcolor(SEQUENCER_TEXT_COLOR_NUM);
     QColor border_color = get_qcolor(SEQUENCER_BLOCK_BORDER_COLOR_NUM);
@@ -664,6 +664,24 @@ public:
     width = t_x2-t_x1;
     height = t_y2-t_y1;
 
+#if 0
+    int num_seqtracks = _seqtrack_widgets.size();
+    
+    if (num_seqtracks > 5) {      
+      //setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+      for(auto *seqtrack_widget : _seqtrack_widgets){
+        seqtrack_widget->setMinimumHeight(height / 5);
+        seqtrack_widget->setMaximumHeight(height / 5);
+      }
+    }else {
+      //setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+      for(auto *seqtrack_widget : _seqtrack_widgets){
+        seqtrack_widget->setMinimumHeight(height / 5);
+        seqtrack_widget->setMaximumHeight(5000000);
+      }
+    }
+#endif
+    
     for(auto *seqtrack_widget : _seqtrack_widgets){
       int y1_b = y1+seqtrack_widget->y();
       int y2_b = y1_b + seqtrack_widget->height();
@@ -978,7 +996,7 @@ public:
           QRectF rect(x1,y1+1,x2-x1,y2-y1-2);
           p.fillRect(rect, block_color);
 
-          if(rect.height() > root->song->tracker_windows->fontheight){
+          if(rect.height() > root->song->tracker_windows->systemfontheight*1.3){
             p.setPen(text_color);
             p.drawText(rect.adjusted(2,1,-1,-1), QString::number(block->l.num) + ": " + block->name, QTextOption(Qt::AlignLeft | Qt::AlignTop));
           }
@@ -1004,7 +1022,7 @@ public:
       QRectF rect2(x1, 1, x2-x1,      height()-2);
 
       {
-        QColor grayout_color = get_qcolor(SEQUENCER_NAVIGATOR_GRAYOUT_COLOR);
+        QColor grayout_color = get_qcolor(SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM);
       
         p.fillRect(rectA, grayout_color);
         p.fillRect(rectB, grayout_color);
@@ -1021,7 +1039,7 @@ public:
       QRectF handle1_rect(x1,        0, handle1_x-x1, height());
       QRectF handle2_rect(handle2_x, 0, x2-handle2_x, height());
       
-      p.setBrush(get_qcolor(SEQUENCER_NAVIGATOR_HANDLER_COLOR));
+      p.setBrush(get_qcolor(SEQUENCER_NAVIGATOR_HANDLER_COLOR_NUM));
       
       p.drawRect(handle1_rect);
       p.drawRect(handle2_rect);
@@ -1063,8 +1081,10 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     /*
     _main_reltempo.show();
     */
-    
-    setMinimumHeight(200);
+
+    int height = root->song->tracker_windows->systemfontheight*1.3 * 13;
+    setMinimumHeight(height);
+    setMaximumHeight(height);
   }
 
   void my_update(void){
@@ -1113,7 +1133,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     const int x1 = 0; //p.x() + mute_button->width();
     const int x1_width = width() - x1;
 
-    const int timeline_widget_height = root->song->tracker_windows->fontheight + 2;
+    const int timeline_widget_height = root->song->tracker_windows->systemfontheight*1.3 + 2;
  
     int y1 = 0;
     
@@ -1130,7 +1150,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     // song tempo automation
     //
     {
-      const int songtempoautomation_widget_height = root->song->tracker_windows->fontheight*3.5;
+      const int songtempoautomation_widget_height = root->song->tracker_windows->systemfontheight*1.3*3.5;
 
       int y2 = y1 + songtempoautomation_widget_height;
 

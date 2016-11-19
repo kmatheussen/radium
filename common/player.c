@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_AutoBackups_proc.h"
 #include "scheduler_proc.h"
 
+
 #include "player_proc.h"
 
 extern PlayerClass *pc;
@@ -98,7 +99,6 @@ void PlayerTask(double reltime){
           }
 
 
-
         bool is_finished = true;
         
 
@@ -152,7 +152,7 @@ void PlayerTask(double reltime){
         if (player_state==PLAYER_STATE_STOPPED)
           return;        
 
-
+        pc->absabstime += RADIUM_BLOCKSIZE;
         
         if(pc->playtype==PLAYSONG) {
           double song_abstime = ATOMIC_DOUBLE_GET(pc->song_abstime);

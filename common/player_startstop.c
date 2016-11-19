@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 #include "scheduler_proc.h"
 #include "seqtrack_proc.h"
+#include "song_tempo_automation_proc.h"
 
 #include "player_proc.h"
 
@@ -230,6 +231,12 @@ static void start_player(int playtype, int64_t abstime, Place *place, struct Blo
     start_seqtrack_block_scheduling(block, *place);
     
   }
+
+  // We can set pc->absabstime here without getting a tsan hit since pc->absabstime is neither read nor written to in a player thread while the player is stopped.
+  if (playtype==PLAYBLOCK)
+    pc->absabstime = abstime;
+  else
+    pc->absabstime = TEMPOAUTOMATION_get_absabstime(abstime);
   
   ATOMIC_SET(pc->player_state, PLAYER_STATE_STARTING_TO_PLAY);
   while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_PLAYING && ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED)

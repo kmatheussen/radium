@@ -6,6 +6,7 @@
 #include "hashmap_proc.h"
 #include "seqtrack_proc.h"
 #include "../Qt/Qt_mix_colors.h"
+#include "../Qt/Qt_colors_proc.h"
 
 #include "song_tempo_automation_proc.h"
 
@@ -94,7 +95,18 @@ static void set_rt_tempo_automation(void){
 }
 
 
-
+static double get_value(const TempoAutomationNode *node1, const TempoAutomationNode *node2, double abstime){
+  if (abstime >= node1->abstime && abstime < node2->abstime){
+    if (node1->logtype==LOGTYPE_LINEAR){
+      if (node1->abstime==node2->abstime)
+        return (node1->value+node2->value) / 2.0;
+      else
+        return scale_double(abstime, node1->abstime, node2->abstime, node1->value, node2->value);
+    }else
+      return node1->value;
+  } else
+    return -1;
+}
 
 static const struct TempoAutomation *g_last_used_rt_tempo_automation2 = NULL; // For the GC.
 
@@ -110,15 +122,12 @@ double RT_TEMPOAUTOMATION_get_value(double abstime){
   const struct TempoAutomation *rt_tempo_automation = g_last_used_rt_tempo_automation2;
 
   for(int i = 0 ; i < rt_tempo_automation->num_nodes-1 ; i++){
-    const TempoAutomationNode &node1 = rt_tempo_automation->nodes[i];
-    const TempoAutomationNode &node2 = rt_tempo_automation->nodes[i+1];
+    const TempoAutomationNode *node1 = &rt_tempo_automation->nodes[i];
+    const TempoAutomationNode *node2 = &rt_tempo_automation->nodes[i+1];
 
-    if (abstime >= node1.abstime && abstime < node2.abstime){
-      if (node1.logtype==LOGTYPE_LINEAR)
-        return scale(abstime, node1.abstime, node2.abstime, node1.value, node2.value);
-      else
-        return node1.value;
-    }
+    double maybe = get_value(node1, node2, abstime);
+    if (maybe >= 0.0)
+      return maybe;
   }
 
   return 1.0; //rt_tempo_automation->nodes[rt_tempo_automation->num-1].value;
@@ -286,9 +295,44 @@ void TEMPOAUTOMATION_reset(void){
 }
 
 
-double TEMPOAUTOMATION_get_absabstime(double abstime){
-  return 1.0;
+// A little bit tricky to calculate this more efficiently when we want to get a very accurate value.
+double TEMPOAUTOMATION_get_absabstime(double goal){
+  int64_t absabstime = 0;
+  double abstime = 0.0;
+
+  int size = g_tempo_automation.size();
+
+  if (size < 2)
+    return goal;
+  
+  const TempoAutomationNode *node1 = &g_tempo_automation.at(0);
+  const TempoAutomationNode *node2 = &g_tempo_automation.at(1);
+  int i = 1;
+  
+  while(true){
+    if (abstime >= goal)
+      return absabstime;
+    
+    double tempo;
+    
+    if (i==size) {
+      tempo = 1.0;
+    } else {
+      tempo = get_value(node1, node2, abstime);
+      if (tempo < 0.0){
+        i++;
+        node1 = node2;
+        node2 = &g_tempo_automation.at(i);
+        continue;
+      }
+    }
+
+    abstime += (double)RADIUM_BLOCKSIZE * tempo;
+    absabstime += RADIUM_BLOCKSIZE;
+  }
 }
+
+
 
 static hash_t *get_node_state(int nodenum){
   const auto &node = g_tempo_automation.at(nodenum);
@@ -342,7 +386,7 @@ static QColor get_color(QColor col1, QColor col2, int mix, float alpha){
   return ret;
 }
 
-static void paint_node(QPainter *p, float x, float y, int nodenum){ //const TempoAutomationNode &node){
+static void paint_node(QPainter *p, float x, float y, int nodenum, QColor color){ //const TempoAutomationNode &node){
   float minnodesize = root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in getHalfOfNodeWidth in api_mouse.c and OpenGL/Render.cpp
   float x1 = x-minnodesize;
   float x2 = x+minnodesize;
@@ -355,7 +399,7 @@ static void paint_node(QPainter *p, float x, float y, int nodenum){ //const Temp
   static bool has_inited = false;
   
   if(has_inited==false){
-    QColor color = QColor(80,40,40);
+    //QColor color = QColor(80,40,40);
 
     fill_brush = QBrush(get_color(color, Qt::white, 300, 0.3));
     
@@ -439,7 +483,8 @@ void TEMPOAUTOMATION_paint(QPainter *p, float x1, float y1, float x2, float y2, 
   
   TEMPOAUTOMATION_set_length(end_time, false);
 
-  QPen pen(QColor(200,200,200));
+  QColor color = get_qcolor(SEQUENCER_TEMPO_AUTOMATION_COLOR_NUM); //(200,200,200);
+  QPen pen(color);
   pen.setWidth(2.3);
   
   for(int i = 0 ; i < g_tempo_automation.size()-1 ; i++){
@@ -477,10 +522,10 @@ void TEMPOAUTOMATION_paint(QPainter *p, float x1, float y1, float x2, float y2, 
 
     }
     
-    paint_node(p, x_a, y_a, i);
+    paint_node(p, x_a, y_a, i, color);
     
     if(i==g_tempo_automation.size()-2)
-      paint_node(p, x_b, y_b, i+1);
+      paint_node(p, x_b, y_b, i+1, color);
   }
 }
 
