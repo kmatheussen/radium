@@ -1,7 +1,10 @@
 
+#ifndef _RADIUM_COMMON_SEQAUTOMATION_HPP
+#define _RADIUM_COMMON_SEQAUTOMATION_HPP
+
 #include <QVector>
 #include <QPainter>
-
+#include <gc.h>
 
 namespace radium{
 
@@ -24,6 +27,8 @@ private:
 
   const RT *_rt_gc[2] = {NULL};
 
+public:
+  
   SeqAutomation(){
     GC_add_roots(&_rt_gc[0], &_rt_gc[2]);
   }
@@ -31,24 +36,26 @@ private:
     GC_remove_roots(&_rt_gc[0], &_rt_gc[2]);
   }
 
+private:
   
   int get_size(int num_nodes) const{
     return sizeof(struct RT) + num_nodes*sizeof(T);
   }
 
-  struct RT *create_rt(void) const{
-    struct RT *rt = (struct TempoAutomation*)talloc(get_size(_automation.size()));
+  const struct RT *create_rt(void) const{
+    struct RT *rt = (struct RT*)talloc(get_size(_automation.size()));
   
     rt->num_nodes=_automation.size();
     
     for(int i=0 ; i<_automation.size() ; i++)
       rt->nodes[i] = _automation.at(i);
     
-    return rt;
+    return (const struct RT*)rt;
   }
 
-  void set_rt_tempo_automation(void){
-    const struct TempoAutomation *new_rt_tempo_automation = (const struct RT*)create_rt();
+
+  void create_new_rt_data(void){
+    const struct RT *new_rt_tempo_automation = create_rt();
     
     _rt_gc[0] = ATOMIC_GET(_rt); // store previous _rt so it doesn't disappear.
     
@@ -58,26 +65,61 @@ private:
 
 public:
 
+
   int size(void) const{
     return _automation.size();
   }
 
-  const Node &get(int n) const{
+  const T &at(int n) const{
     return _automation.at(n);
   }
 
-  Node &get_mutable(int n){
+  const T &last(void) const{
+    R_ASSERT(size()>0);
+    return at(size()-1);
+  }
+  
+  /*
+  T &get_mutable(int n){
     return _automation.at(n);
   }
-
-  double RT_get_abstime(const T &node) const;
-  double RT_get_value(const T &node) const;
-  double RT_get_value(double abstime, const T &node1, const T &node2) const;
+  */
 
   float get_y(const T &node, float y1, float y2) const;
-  int RT_get_logtype(const T &node) const;
 
-  double RT_get_value(double abstime) const{
+  bool RT_get_value(double abstime, const T *node1, const T *node2, double &value) const {
+    double abstime1 = node1->abstime;
+    double abstime2 = node2->abstime;
+    
+    if (abstime >= abstime1 && abstime < abstime2){
+
+      int logtype1 = node1->logtype;
+      double value1 = node1->value;
+      
+      if (logtype1==LOGTYPE_LINEAR){
+        double value2 = node2->value;
+        
+        if (abstime1==abstime2)
+          value = (value1+value2) / 2.0;
+        else
+          value = scale_double(abstime, abstime1, abstime2, value1, value2);
+
+      }else {
+        
+        value = value1;
+        
+      }
+
+      return true;
+      
+    } else {
+
+      return false;
+      
+    }
+  }
+
+  double RT_get_value(double abstime) {
 
     // Ensure the tempo_automation we are working on won't be gc-ed while using it.
     // It probably never happens though, there shouldn't be time for it to
@@ -88,40 +130,38 @@ public:
     const struct RT *rt = _rt_gc[1];
     
     for(int i = 0 ; i < rt->num_nodes-1 ; i++){
-      const T &node1 = rt->nodes[i];
-      const T &node2 = rt->nodes[i+1];
-      double abstime1 = RT_get_abstime(node1);
-      double abstime2 = RT_get_abstime(node2);
+      const T *node1 = &rt->nodes[i];
+      const T *node2 = &rt->nodes[i+1];
 
-      if (abstime >= abstime1 && abstime < abstime2)
-        return RT_get_value(abstime, node1, node2);
-      /*
-        if (node1.logtype==LOGTYPE_LINEAR)
-          return scale(abstime, abstime1, abstime2, node1.value, node2.value);
-        else
-          return node1.value;
-      */
+      double value;
+      if (RT_get_value(abstime, node1, node2, value))
+        return value;
     }
 
     return 1.0; //rt_tempo_automation->nodes[rt_tempo_automation->num-1].value;
   }
 
 
+  int get_curr_nodenum(void){
+    return _curr_nodenum;
+  }
+  
   void set_curr_nodenum(int nodenum){
     _curr_nodenum = nodenum;
   }
 
   int get_node_num(double abstime) const {
-    double abstime1 = RT_get_abstime(get(0));
-    //R_ASSERT_RETURN_IF_FALSE2(abstime1==0,1);
-    
     int size = _automation.size();
-    if (size==1){
+    if (size==0)
+      return 0;
+    if (size==1)
       return 1;
-    }
     
+    double abstime1 = at(0).abstime;
+    //R_ASSERT_RETURN_IF_FALSE2(abstime1==0,1);
+
     for(int i=1;i<size;i++){
-      double abstime2 = RT_get_abstime(get(i));
+      double abstime2 = at(i).abstime;
       
       if (abstime >= abstime1 && abstime < abstime2)
         return i;
@@ -133,7 +173,7 @@ public:
   }
 
   int add_node(const T &node){
-    double abstime = RT_get_abstime(node);
+    double abstime = node.abstime;
 
     R_ASSERT(abstime >= 0);
 
@@ -143,8 +183,8 @@ public:
     int nodenum = get_node_num(abstime);
     
     _automation.insert(nodenum, node);
-    
-    set_rt_tempo_automation();
+
+    create_new_rt_data();
     
     return nodenum;
   }
@@ -155,34 +195,40 @@ public:
     R_ASSERT_RETURN_IF_FALSE(nodenum < _automation.size());
     
     _automation.remove(nodenum);
-  
-    set_rt_tempo_automation();
+
+    create_new_rt_data();
   }
 
   void replace_node(int nodenum, const T &new_node){
     R_ASSERT_RETURN_IF_FALSE(nodenum >= 0);
     R_ASSERT_RETURN_IF_FALSE(nodenum < _automation.size());
-    
-    _automation.remove(nodenum);
 
-    add_node(new_node);
+    T *node = &_automation[nodenum];
+
+    if (node->abstime != new_node.abstime){
+      _automation.remove(nodenum);
+      add_node(new_node);
+    } else {
+      *node = new_node;
+      create_new_rt_data();
+    }
+            
   }
 
   void reset(void){
     _automation.clear();
-    set_rt_tempo_automation();
+    create_new_rt_data();
   }
-
 
 private:
 
-  QColor get_color(QColor col1, QColor col2, int mix, float alpha){
+  QColor get_color(QColor col1, QColor col2, int mix, float alpha) const {
     QColor ret = mix_colors(col1, col2, (float)mix/1000.0);
     ret.setAlphaF(alpha);
     return ret;
   }
 
-  void paint_node(QPainter *p, float x, float y, int nodenum){ //const TempoAutomationNode &node){
+  void paint_node(QPainter *p, float x, float y, int nodenum, QColor color) const {
     float minnodesize = root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in getHalfOfNodeWidth in api_mouse.c and OpenGL/Render.cpp
     float x1 = x-minnodesize;
     float x2 = x+minnodesize;
@@ -195,7 +241,6 @@ private:
     static bool has_inited = false;
     
     if(has_inited==false){
-      QColor color = QColor(80,40,40);
       
       fill_brush = QBrush(get_color(color, Qt::white, 300, 0.3));
       
@@ -256,20 +301,20 @@ private:
 
 public:
 
-  void paint(QPainter *p, float x1, float y1, float x2, float y2, double start_time, double end_time) const {
+  void paint(QPainter *p, float x1, float y1, float x2, float y2, double start_time, double end_time, QColor color, float (*get_y)(const T &node, float y1, float y2)) const {
   
     QPen pen(QColor(200,200,200));
     pen.setWidth(2.3);
     
     for(int i = 0 ; i < _automation.size()-1 ; i++){
       const T &node1 = _automation.at(i);
-      double abstime1 = RT_get_abstime(node1);
+      double abstime1 = node1.abstime;
 
       if (abstime1 >= end_time)
         break;
       
       const T &node2 = _automation.at(i+1);
-      double abstime2 = RT_get_abstime(node2);
+      double abstime2 = node2.abstime;
 
       if (abstime2 < start_time)
         continue;
@@ -284,7 +329,7 @@ public:
       
       p->setPen(pen);
       
-      if (RT_get_logtype(node1)==LOGTYPE_HOLD){
+      if (node1.logtype==LOGTYPE_HOLD){
         QLineF line1(x_a, y_a, x_b, y_a);
         p->drawLine(line1);
         
@@ -298,13 +343,37 @@ public:
         
       }
       
-      paint_node(p, x_a, y_a, i);
+      paint_node(p, x_a, y_a, i, color);
       
       if(i==_automation.size()-2)
-        paint_node(p, x_b, y_b, i+1);
+        paint_node(p, x_b, y_b, i+1, color);
     }
+  }
+
+
+  void create_from_state(const hash_t *state, T (*create_node_from_state)(hash_t *state)){
+    int size = HASH_get_array_size(state);
+    
+    _automation.clear();
+    
+    for(int i = 0 ; i < size ; i++)
+      add_node(create_node_from_state(HASH_get_hash_at(state, "node", i)));
+  }
+  
+
+  hash_t *get_state(hash_t *(*get_node_state)(const T &node)) const {
+    int size = _automation.size();
+    
+    hash_t *state = HASH_create(size);
+    
+    for(int i = 0 ; i < size ; i++)
+      HASH_put_hash_at(state, "node", i, get_node_state(_automation.at(i)));
+    
+    return state;
   }
 
 };
 
 }
+
+#endif
