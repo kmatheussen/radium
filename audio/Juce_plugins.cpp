@@ -193,9 +193,12 @@ namespace{
 
       } else {
         
-        result.timeInSamples = seqtrack->start_time - latency;
+        result.timeInSamples = pc->absabstime - latency;
         result.timeInSeconds = result.timeInSamples / (double)pc->pfreq;
 
+        //if(ATOMIC_GET(root->editonoff))
+        //  printf("timeInSeconds: %f\n", result.timeInSeconds);
+        
         result.ppqPosition               = RT_LPB_get_beat_position(seqtrack) - latency_beats;
         result.ppqPositionOfLastBarStart = seqtrack->beat_iterator.beat_position_of_last_bar_start;
         

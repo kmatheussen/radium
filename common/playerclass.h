@@ -114,10 +114,12 @@ typedef struct{
 
         DEFINE_ATOMIC(double, song_abstime); // Used by the cursor position in the sequencer. Absolute time, i.e. not seqtime. Is double instead of int64_t since it's incremented by a double value.
 
-        STime reltime; // The argument for PlayerTask. Will usually contain the audio blocksize. Necessary for calculating delta time. (I'm 99% this value is always equal to RADIUM_BLOCKSIZE, i.e. 64)
+        STime reltime; // The argument for PlayerTask. Don't think it's used anymore. All previous usage of it actually required RADIUM_BLOCKSIZE and not reltime, it turned out.
 
         DEFINE_ATOMIC(Player_State, player_state);
 
+        double absabstime; // time in frames when taking song tempo automation into consideration. This is the time sent to the plugins.
+        
         /*
 	DEFINE_ATOMIC (bool, isplaying);
 	DEFINE_ATOMIC (bool, initplaying);
