@@ -22,6 +22,15 @@ private:
 
   AtomicPointerStorage _rt;
 
+public:
+
+  SeqAutomation()
+    : _rt(V_free)
+  {
+  }
+  
+
+private:
   
   int get_size(int num_nodes) const{
     return sizeof(struct RT) + num_nodes*sizeof(T);
@@ -42,7 +51,7 @@ private:
   void create_new_rt_data(void){
     const struct RT *new_rt_tempo_automation = create_rt();
 
-    _rt.set_new_pointer((void*)new_rt_tempo_automation, V_free);
+    _rt.set_new_pointer((void*)new_rt_tempo_automation);
   }
 
 
