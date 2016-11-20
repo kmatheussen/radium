@@ -2837,6 +2837,21 @@
   (get-common-node-box (<ra> :get-seqtemponode-x $num)
                        (<ra> :get-seqtemponode-y $num)))
 
+(define (get-seqtempo-value Y)
+  (define max-tempo (<ra> :get-seqtempo-max-tempo))
+  (define y1 (<ra> :get-seqtempo-area-y1))
+  (define y2 (<ra> :get-seqtempo-area-y2))
+  (define mid (/ (+ y1 y2) 2))
+  ;;(c-display Y y1 y2 max-tempo (<= Y mid))
+  (if (<= Y mid)
+      (scale Y y1 mid max-tempo 1)
+      (scale Y mid y2 1 (/ 1 max-tempo))))
+
+(define (get-highest-seqtemp-value)
+  (apply max (map (lambda (n)
+                    (<ra> :get-seqtempo-value n))
+                  (iota (<ra> :get-num-seqtemponodes)))))
+              
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and (<ra> :seqtempo-visible)
                                              (<ra> :get-box seqtempo-area)))
@@ -2863,7 +2878,7 @@
                                            (define Time (scale X (<ra> :get-seqtempo-area-x1) (<ra> :get-seqtempo-area-x2) (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
                                            (if (not (<ra> :ctrl-pressed))
                                                (set! Time (<ra> :find-closest-seqtrack-bar-start 0 (floor Time))))
-                                           (define TempoMul (scale Y (<ra> :get-seqtempo-area-y1) (<ra> :get-seqtempo-area-y2) 2 0))
+                                           (define TempoMul (get-seqtempo-value Y))
                                            (define Num (<ra> :add-seqtemponode Time TempoMul 0))
                                            (if (= -1 Num)
                                                #f
@@ -2873,7 +2888,7 @@
                         :Release-node (lambda (Num)
                                         (set-grid-type #f))
                         :Move-node (lambda (Num Time Y)
-                                     (define TempoMul (scale Y (<ra> :get-seqtempo-area-y1) (<ra> :get-seqtempo-area-y2) 2 0))
+                                     (define TempoMul (get-seqtempo-value Y))
                                      (define logtype (<ra> :get-seqtempo-logtype Num))
                                      (if (not (<ra> :ctrl-pressed))
                                          (set! Time (<ra> :find-closest-seqtrack-bar-start 0 (floor Time))))
@@ -2898,39 +2913,55 @@
                 (and (= $button *right-button*)
                      (<ra> :seqtempo-visible)                     
                      (inside-box-forgiving (<ra> :get-box seqtempo-area) $x $y)
-                     (match (list (find-node-horizontal $x $y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
-                            (existing-box Num Box) :> (begin
-                                                        (if (<ra> :shift-pressed)
-                                                            (begin
-                                                              ;;(c-display "  Deleting" Num)
-                                                              (<ra> :undo-seqtempo)
-                                                              (<ra> :delete-seqtemponode Num))
-                                                            (popup-menu (list "Delete"
-                                                                              :enabled (and (> Num 0) (< Num (1- (<ra> :get-num-seqtemponodes))))
-                                                                              (lambda ()
-                                                                                (<ra> :undo-seqtempo)
-                                                                                (<ra> :delete-seqtemponode Num)))
-                                                                        (list "Reset (set value to 1.0)"
-                                                                              (lambda ()
-                                                                                (<ra> :undo-seqtempo)
-                                                                                (<ra> :set-seqtemponode
-                                                                                      (<ra> :get-seqtempo-abstime Num)
-                                                                                      1.0
-                                                                                      (<ra> :get-seqtempo-logtype Num)
-                                                                                      Num)))
-                                                                        (list "Glide to next break point"
-                                                                              :check (= (<ra> :get-seqtempo-logtype Num)
-                                                                                        *logtype-linear*)
-                                                                              (lambda (maybe)
-                                                                                (<ra> :undo-seqtempo)
-                                                                                (<ra> :set-seqtemponode
-                                                                                      (<ra> :get-seqtempo-abstime Num)
-                                                                                      (<ra> :get-seqtempo-value Num)
-                                                                                      (if maybe *logtype-linear* *logtype-hold*)
-                                                                                      Num)))))
-                                                        #t)
-                            _                      :> #f)))))
+                     (begin
+                       (define Num (match (list (find-node-horizontal $x $y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
+                                          (existing-box Num Box) :> Num
+                                          _                      :> #f))
+                       (if (<ra> :shift-pressed)
+                           (begin
+                             ;;(c-display "  Deleting" Num)
+                             (<ra> :undo-seqtempo)
+                             (<ra> :delete-seqtemponode Num))
+                           (popup-menu (list "Delete"
+                                             :enabled (and Num (> Num 0) (< Num (1- (<ra> :get-num-seqtemponodes))))
+                                             (lambda ()
+                                               (<ra> :undo-seqtempo)
+                                               (<ra> :delete-seqtemponode Num)))
+                                       (list "Reset (set value to 1.0)"
+                                             :enabled Num
+                                             (lambda ()
+                                               (<ra> :undo-seqtempo)
+                                               (<ra> :set-seqtemponode
+                                                     (<ra> :get-seqtempo-abstime Num)
+                                                     1.0
+                                                     (<ra> :get-seqtempo-logtype Num)
+                                                     Num)))
+                                       (list "Glide to next break point"
+                                             :check (and Num (= (<ra> :get-seqtempo-logtype Num)
+                                                                *logtype-linear*))
+                                             :enabled Num
+                                             (lambda (maybe)
+                                               (<ra> :undo-seqtempo)
+                                               (<ra> :set-seqtemponode
+                                                     (<ra> :get-seqtempo-abstime Num)
+                                                     (<ra> :get-seqtempo-value Num)
+                                                     (if maybe *logtype-linear* *logtype-hold*)
+                                                     Num)))
+                                       (list "Set maximum tempo"
+                                             (lambda ()
+                                               (define highest (get-highest-seqtemp-value))
+                                               (define now (<ra> :get-seqtempo-max-tempo))
+                                               (define new (<ra> :request-float (<-> "Max tempo automation value (now: "
+                                                                                     (two-decimal-string now) " ("
+                                                                                     (two-decimal-string highest) "-1000000): ")
+                                                                                highest
+                                                                                1000000))
+                                               (if (> new highest)
+                                                   (<ra> :set-seqtempo-max-tempo new))))
+                                       ))
+                       #t)))))
 
+ 
 ;; highlight current seqtemponode
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
@@ -2940,6 +2971,7 @@
               (match (list (find-node-horizontal $x $y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
                      (existing-box Num Box) :> (begin
                                                  ;;(c-display "hepp" Num)
+                                                 (<ra> :set-statusbar-text (<-> "Tempo: " (two-decimal-string (<ra> :get-seqtempo-value Num))))
                                                  (<ra> :set-curr-seqtemponode Num)
                                                  ;(set-mouse-track-to-reltempo)
                                                  ;(set-current-temponode Num)
@@ -3565,6 +3597,19 @@
 
 (box-to-string (ra:get-box2 seqtrack 0))
 (box-to-string (ra:get-box2 seqtrack 1))
+
+(let ((time1 5.0)
+      (time2 8.0)
+      (val1 0.8)
+      (val2 20.1))
+  (scale 1.0 val1 val2 time1 time2))
+
+(let ((time1 5.0)
+      (time2 8.0)
+      (val1 2.1)
+      (val2 0.8))
+  (scale 1.0 val1 val2 time1 time2))
+
 
 ||#
 

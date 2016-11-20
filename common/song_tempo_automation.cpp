@@ -32,6 +32,8 @@ struct TempoAutomationNode{
  
 }
 
+static double g_max_tempo = 4.0;
+
 static radium::SeqAutomation<TempoAutomationNode> g_tempo_automation;
 
 
@@ -45,9 +47,33 @@ static TempoAutomationNode create_node(double abstime, double value, int logtype
 
 
 
+static double custom_get_value(double abstime, const TempoAutomationNode *node1, const TempoAutomationNode *node2){
+  const double abstime1 = node1->abstime;
+  const double abstime2 = node2->abstime;
+
+  const double value1 = node1->value;
+  const double value2 = node2->value;
+
+  if (value1<=1.0 && value2<=1.0)
+    return scale_double(abstime, abstime1, abstime2, value1, value2);
+  
+  if (value1>=1.0 && value2>=1.0)
+    return scale_double(abstime, abstime1, abstime2, value1, value2);
+
+  const double midtime = scale_double(1.0, value1, value2, abstime1, abstime2); // FIX. This is not correct.
+  //printf("midtime: %f\n",midtime/44100.0, abstime1, abstime2);
+  
+  if (abstime <= midtime)
+    return scale_double(abstime, abstime1, midtime, value1, 1.0);
+  else
+    return scale_double(abstime, midtime, abstime2, 1.0, value2);
+}
+  
+
+
 // Called from MIXER.cpp in the player thread.
 double RT_TEMPOAUTOMATION_get_value(double abstime){
-  return g_tempo_automation.RT_get_value(abstime);
+  return g_tempo_automation.RT_get_value(abstime, custom_get_value);
 }
 
 double TEMPOAUTOMATION_get_value(int nodenum){
@@ -121,7 +147,7 @@ void TEMPOAUTOMATION_set(int nodenum, double abstime, double value, int logtype)
 
   abstime = R_BOUNDARIES(mintime, abstime, maxtime);
 
-  value = R_BOUNDARIES(0.01, value, 2);
+  value = R_BOUNDARIES(1.0/g_max_tempo, value, g_max_tempo);
 
   node.abstime = abstime;
   node.value = value;
@@ -203,7 +229,7 @@ double TEMPOAUTOMATION_get_absabstime(double goal){
     if (i==size) {
       tempo = 1.0;
     } else {
-      if (!g_tempo_automation.RT_get_value(abstime, node1, node2, tempo)){
+      if (!g_tempo_automation.RT_get_value(abstime, node1, node2, tempo, custom_get_value)){
         i++;
         node1 = node2;
         node2 = &g_tempo_automation.at(i);
@@ -225,6 +251,7 @@ static TempoAutomationNode create_node_from_state(hash_t *state){
 
 
 void TEMPOAUTOMATION_create_from_state(hash_t *state){
+  g_max_tempo = HASH_get_float(state, "max_tempo");
   g_tempo_automation.create_from_state(HASH_get_hash(state, "nodes"), create_node_from_state);
   SEQTEMPO_set_visible(HASH_get_bool(state, "is_visible"));
 }
@@ -245,8 +272,22 @@ hash_t *TEMPOAUTOMATION_get_state(void){
 
   HASH_put_hash(state, "nodes", g_tempo_automation.get_state(get_node_state));
   HASH_put_bool(state, "is_visible", SEQTEMPO_is_visible());
+  HASH_put_float(state, "max_tempo", g_max_tempo);
   
   return state;
+}
+
+double TEMPOAUTOMATION_get_max_tempo(void){
+  return g_max_tempo;
+}
+
+void TEMPOAUTOMATION_set_max_tempo(double new_max_tempo){
+  if (new_max_tempo < 1.0001)
+    g_max_tempo = 1.0001;
+  else
+    g_max_tempo = new_max_tempo;
+
+  SEQUENCER_update();
 }
 
 float TEMPOAUTOMATION_get_node_x(int nodenum){
@@ -262,7 +303,16 @@ float TEMPOAUTOMATION_get_node_x(int nodenum){
 }
 
 static float get_node_y(const TempoAutomationNode &node, float y1, float y2){
-  return scale(node.value, 2, 0, y1, y2);
+  float mid = (y1+y2)/2.0f;
+
+  if (node.value >= 1.0)
+    return scale(node.value,
+                 g_max_tempo, 1.0,
+                 y1, mid);
+  else
+    return scale(node.value,
+                 1.0, 1.0/g_max_tempo,
+                 mid, y2);
 }
 
 float TEMPOAUTOMATION_get_node_y(int nodenum){
@@ -279,6 +329,5 @@ void TEMPOAUTOMATION_paint(QPainter *p, float x1, float y1, float x2, float y2, 
   TEMPOAUTOMATION_set_length(end_time, false);
 
   g_tempo_automation.paint(p, x1, y1, x2, y2, start_time, end_time, get_qcolor(SEQUENCER_TEMPO_AUTOMATION_COLOR_NUM), get_node_y);
-  
 }
 

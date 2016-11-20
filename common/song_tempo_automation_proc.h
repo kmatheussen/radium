@@ -17,7 +17,10 @@ extern LANGSPEC double TEMPOAUTOMATION_get_absabstime(double abstime);
 
 extern LANGSPEC hash_t *TEMPOAUTOMATION_get_state(void);
 extern LANGSPEC void TEMPOAUTOMATION_create_from_state(hash_t *state);
-  
+
+extern LANGSPEC double TEMPOAUTOMATION_get_max_tempo(void);
+extern LANGSPEC void TEMPOAUTOMATION_set_max_tempo(double new_max_tempo);
+
 extern LANGSPEC float TEMPOAUTOMATION_get_node_x(int nodenum);
 extern LANGSPEC float TEMPOAUTOMATION_get_node_y(int nodenum);
 

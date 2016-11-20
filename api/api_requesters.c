@@ -124,7 +124,7 @@ int requestInteger(char *text, int min, int max){
 
 float requestFloat(char *text, float min, float max){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return min-1.0f;
-  return GFX_GetInteger(window, requester, text, min, max);
+  return GFX_GetFloat(window, requester, text, min, max);
 }
 
 char* requestString(char *text){

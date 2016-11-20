@@ -71,34 +71,32 @@ public:
     return at(size()-1);
   }
   
-  /*
-  T &get_mutable(int n){
-    return _automation.at(n);
-  }
-  */
-
-  float get_y(const T &node, float y1, float y2) const;
-
-  bool RT_get_value(double abstime, const T *node1, const T *node2, double &value) const {
+  bool RT_get_value(double abstime, const T *node1, const T *node2, double &value, double (*custom_get_value)(double abstime, const T *node1, const T *node2)) const {
     double abstime1 = node1->abstime;
     double abstime2 = node2->abstime;
     
     if (abstime >= abstime1 && abstime < abstime2){
 
       int logtype1 = node1->logtype;
-      double value1 = node1->value;
-      
-      if (logtype1==LOGTYPE_LINEAR){
-        double value2 = node2->value;
         
-        if (abstime1==abstime2)
-          value = (value1+value2) / 2.0;
-        else
-          value = scale_double(abstime, abstime1, abstime2, value1, value2);
+      if (logtype1==LOGTYPE_LINEAR){
 
+        if (abstime1==abstime2) {
+          
+          value = (node1->value+node2->value) / 2.0;
+          
+        } else {
+
+          if (custom_get_value != NULL)        
+            value = custom_get_value(abstime, node1, node2);
+          else
+            value = scale_double(abstime, abstime1, abstime2, node1->value, node2->value);
+          
+        }
+        
       }else {
         
-        value = value1;
+        value = node1->value;
         
       }
 
@@ -111,7 +109,7 @@ public:
     }
   }
 
-  double RT_get_value(double abstime) {
+  double RT_get_value(double abstime, double (*custom_get_value)(double abstime, const T *node1, const T *node2)){
 
     RT_AtomicPointerStorage_ScopedUsage rt_pointer(&_rt);
       
@@ -124,7 +122,7 @@ public:
         const T *node2 = &rt->nodes[i+1];
         
         double value;
-        if (RT_get_value(abstime, node1, node2, value))
+        if (RT_get_value(abstime, node1, node2, value, custom_get_value))
           return value;
       }
       

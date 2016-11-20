@@ -294,6 +294,13 @@ double getSeqtempoAbsabstime(double abstime){
   return TEMPOAUTOMATION_get_absabstime(abstime);
 }
 
+double getSeqtempoMaxTempo(void){
+  return TEMPOAUTOMATION_get_max_tempo();
+}
+void setSeqtempoMaxTempo(double max_tempo){
+  TEMPOAUTOMATION_set_max_tempo(max_tempo);
+}
+
 
 
 // seqtracks
