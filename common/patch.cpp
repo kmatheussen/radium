@@ -1395,7 +1395,7 @@ void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_
                                       notenum,
                                       TRACK_get_volume(track),
                                       TRACK_get_pan(track),
-                                      0
+                                      ATOMIC_GET(track->midi_channel)
                                       )
                         );
 }
@@ -1408,7 +1408,13 @@ void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,float notenum, int64_t
 	if(patch==NULL || notenum<0 || notenum>127) return;
 
 	PATCH_stop_note(patch,
-                        create_note_t2(NULL, note_id, notenum)
+                        create_note_t(NULL,
+                                      note_id,
+                                      notenum,
+                                      TRACK_get_volume(track),
+                                      TRACK_get_pan(track),
+                                      ATOMIC_GET(track->midi_channel)
+                                      )
                         );
 }
 
