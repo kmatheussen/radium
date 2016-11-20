@@ -295,7 +295,7 @@ public:
 
   void paint(QPainter *p, float x1, float y1, float x2, float y2, double start_time, double end_time, QColor color, float (*get_y)(const T &node, float y1, float y2)) const {
   
-    QPen pen(QColor(200,200,200));
+    QPen pen(color);
     pen.setWidthF(2.3);
     
     for(int i = 0 ; i < _automation.size()-1 ; i++){
