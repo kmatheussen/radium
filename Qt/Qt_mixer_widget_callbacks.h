@@ -37,6 +37,10 @@ public:
     return QRectF( A, B );
   }
 
+  void enterEvent(QEvent *event) override{
+    setCursor(Qt::ArrowCursor);
+  }
+
   void keyPressEvent ( QKeyEvent * event ) override {
     event->ignore();
   }

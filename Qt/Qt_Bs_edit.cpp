@@ -87,7 +87,11 @@ public:
   void keyPressEvent ( QKeyEvent * event ) override {
     event->ignore();
   }
-  
+
+  void enterEvent(QEvent *event) override {
+    setCursor(Qt::ArrowCursor);
+  }
+
   // popup menu
   void mousePressEvent(QMouseEvent *event) override {
     QListWidgetItem *item = itemAt(event->pos());
@@ -510,7 +514,11 @@ public:
     button_width = add_button.width();
   }
 
-  void resizeEvent(QResizeEvent *qresizeevent){
+  void enterEvent(QEvent *event) override {
+    setCursor(Qt::ArrowCursor);
+  }
+
+  void resizeEvent(QResizeEvent *qresizeevent) override {
     //fprintf(stderr,"I am resized\n");
 
     int width = this->width();

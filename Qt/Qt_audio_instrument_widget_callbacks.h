@@ -254,6 +254,10 @@ public:
     is_starting = false;
   }
 
+  void enterEvent(QEvent *event) override{
+    setCursor(Qt::ArrowCursor);
+  }
+  
   void prepare_for_deletion(void){
     _comp_widget->prepare_for_deletion();
     _plugin_widget->prepare_for_deletion();

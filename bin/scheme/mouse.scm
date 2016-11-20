@@ -902,12 +902,17 @@
                 (set-mouse-pointer ra:set-pointing-mouse-pointer)
                 (<ra> :set-statusbar-text (<-> "Select instrument for track " *current-track-num*)))
 
-               ((and (<ra> :get-box sequencer)
-                     (get-seqblock-info X Y))
-                (set-mouse-pointer ra:set-open-hand-mouse-pointer))
-               
-               ((inside-box (get-seqnav-move-box) X Y)
-                (set-mouse-pointer ra:set-open-hand-mouse-pointer))
+               ((inside-box (<ra> :get-box sequencer) X Y)
+                (cond ((get-seqblock-info X Y)
+                       (set-mouse-pointer ra:set-open-hand-mouse-pointer))
+                      ((inside-box (get-seqnav-move-box) X Y)
+                       (set-mouse-pointer ra:set-open-hand-mouse-pointer))
+                      ((inside-box (<ra> :get-box seqnav-left-size-handle) X Y)
+                       (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer))
+                      ((inside-box (<ra> :get-box seqnav-right-size-handle) X Y)
+                       (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer))
+                      (else
+                       (<ra> :set-normal-mouse-pointer))))
                
                ((not *current-track-num*)
                 (set-mouse-pointer ra:set-pointing-mouse-pointer))
