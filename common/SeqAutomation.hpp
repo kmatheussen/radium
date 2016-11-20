@@ -237,16 +237,16 @@ private:
       fill_brush = QBrush(get_color(color, Qt::white, 300, 0.3));
       
       pen1 = QPen(get_color(color, Qt::white, 100, 0.3));
-      pen1.setWidth(width);
+      pen1.setWidthF(width);
       
       pen2 = QPen(get_color(color, Qt::black, 300, 0.3));
-      pen2.setWidth(width);
+      pen2.setWidthF(width);
       
       pen3 = QPen(get_color(color, Qt::black, 400, 0.3));
-      pen3.setWidth(width);
+      pen3.setWidthF(width);
       
       pen4 = QPen(get_color(color, Qt::white, 300, 0.3));
-      pen4.setWidth(width);
+      pen4.setWidthF(width);
       
       has_inited=true;
     }
@@ -296,7 +296,7 @@ public:
   void paint(QPainter *p, float x1, float y1, float x2, float y2, double start_time, double end_time, QColor color, float (*get_y)(const T &node, float y1, float y2)) const {
   
     QPen pen(QColor(200,200,200));
-    pen.setWidth(2.3);
+    pen.setWidthF(2.3);
     
     for(int i = 0 ; i < _automation.size()-1 ; i++){
       const T &node1 = _automation.at(i);
