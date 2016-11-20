@@ -1260,6 +1260,11 @@ protected:
       P2MUpdateSongPosCallBack();
     }
 
+    {
+      struct Tracks *track = window->wblock->wtrack->track;
+      ATOMIC_SET(g_curr_midi_channel, ATOMIC_GET(track->midi_channel));
+    }
+    
     PlayCallVeryOften();
 
     SampleRecorder_called_regularly();

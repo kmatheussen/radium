@@ -494,6 +494,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       else
         record_velocity_off->setChecked(true);
 
+      use_current_track_midi_channel->setChecked(doUseTrackChannelForMidiInput());
+        
       while(midi_input_layout->count() > 0)
         delete midi_input_layout->itemAt(0)->widget();
 
@@ -860,6 +862,10 @@ public slots:
       MIDI_set_record_velocity(val);
   }
 
+  void on_use_current_track_midi_channel_toggled(bool val){
+    if (_initing==false)
+      setUseTrackChannelForMidiInput(val);
+  }
   
   // Faust
 

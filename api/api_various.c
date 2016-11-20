@@ -1633,6 +1633,7 @@ void setLockJuceWhenSwappingOpenGL(bool doit){
 }
 
 
+
 static bool g_native_file_requesters;
 
 bool useNativeFileRequesters(void){

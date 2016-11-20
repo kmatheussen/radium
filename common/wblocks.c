@@ -48,7 +48,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 extern PlayerClass *pc;
 
-DEFINE_ATOMIC(struct Blocks *, g_curr_block);
+DEFINE_ATOMIC(int, g_curr_midi_channel) = 0;
+DEFINE_ATOMIC(struct Blocks *, g_curr_block) = NULL;
 
 
 void CloseWBlock(struct Tracker_Windows *window, NInt blocknum){

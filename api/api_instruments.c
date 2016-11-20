@@ -187,6 +187,26 @@ void setInstrumentForTrack(int64_t instrument_id, int tracknum, int blocknum, in
   (*new_patch->instrument->PP_Update)(new_patch->instrument,new_patch);
 }
 
+
+DEFINE_ATOMIC(bool, g_use_track_channel_for_midi_input) = true;
+
+bool doUseTrackChannelForMidiInput(void){
+  static DEFINE_ATOMIC(bool, has_inited) = false;
+
+  if (ATOMIC_GET(has_inited)==false){
+    ATOMIC_SET(g_use_track_channel_for_midi_input, SETTINGS_read_bool("use_track_channel_for_midi_input", true));
+    ATOMIC_SET(has_inited, true);
+  }
+
+  return ATOMIC_GET(g_use_track_channel_for_midi_input);
+}
+
+void setUseTrackChannelForMidiInput(bool doit){
+  ATOMIC_SET(g_use_track_channel_for_midi_input, doit);
+  SETTINGS_write_bool("use_track_channel_for_midi_input", doit);
+}
+
+
 int64_t createMIDIInstrument(char *name) {
   struct Patch *patch = PATCH_create_midi(name);
   GFX_PP_Update(patch);
@@ -701,14 +721,14 @@ static int note_ids_pos = 0;
 static int64_t note_ids[NUM_IDS] = {0}; // TODO: Change int to int64_t everywhere in the api.
 static float initial_pitches[NUM_IDS] = {0}; // TODO: Change int to int64_t everywhere in the api.
 
-int playNote(float pitch, float velocity, float pan, int64_t instrument_id){
+int playNote(float pitch, float velocity, float pan, int midi_channel, int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;
 
   int ret = note_ids_pos;
 
-  note_ids[ret] = PATCH_play_note(patch, create_note_t(NULL, -1, pitch, velocity, pan, 0));
+  note_ids[ret] = PATCH_play_note(patch, create_note_t(NULL, -1, pitch, velocity, pan, midi_channel));
   initial_pitches[ret] = pitch;
     
   note_ids_pos++;
@@ -718,7 +738,7 @@ int playNote(float pitch, float velocity, float pan, int64_t instrument_id){
   return ret;
 }
 
-void changeNotePitch(float pitch, int note_id, int64_t instrument_id){
+void changeNotePitch(float pitch, int note_id, int midi_channel, int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -729,10 +749,15 @@ void changeNotePitch(float pitch, int note_id, int64_t instrument_id){
   }
 
   //printf("change pitch %f %d %d\n",pitch,note_id,instrument_id);
-  PATCH_change_pitch(patch, create_note_t(NULL, note_ids[note_id], pitch, 0, pitch, 0));
+  PATCH_change_pitch(patch, create_note_t(NULL,
+                                          note_ids[note_id],
+                                          pitch,
+                                          0,
+                                          pitch,
+                                          midi_channel));
 }
 
-void stopNote(int note_id, int64_t instrument_id){
+void stopNote(int note_id, int midi_channel, int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -743,5 +768,11 @@ void stopNote(int note_id, int64_t instrument_id){
   }
 
   //printf("stop note %d %d\n",note_id,instrument_id);
-  PATCH_stop_note(patch, create_note_t2(NULL, note_ids[note_id], initial_pitches[note_id]));
+  PATCH_stop_note(patch, create_note_t(NULL,
+                                       note_ids[note_id],
+                                       initial_pitches[note_id],
+                                       0,
+                                       0,
+                                       midi_channel
+                                       ));
 }

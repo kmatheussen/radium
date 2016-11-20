@@ -1470,6 +1470,8 @@ struct Blocks{
 #define NextBlock(a) (struct Blocks *)((a)->l.next)
 
 
+extern DEFINE_ATOMIC(bool, g_use_track_channel_for_midi_input);
+extern DEFINE_ATOMIC(int, g_curr_midi_channel);
 extern DEFINE_ATOMIC(struct Blocks *, g_curr_block);
 
 

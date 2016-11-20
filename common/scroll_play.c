@@ -73,12 +73,18 @@ static void Scroll_play_down3(
                                           note->note,
                                           VELOCITY_get(note->velocity),
                                           TRACK_get_pan(track),
-                                          0)
+                                          ATOMIC_GET(track->midi_channel))
                             );
           
           if (PlaceIsBetween2(&note->end, p1, p2))
             PATCH_stop_note(patch,
-                            create_note_t2(NULL, note->id, note->note)
+                            create_note_t(NULL,
+                                          note->id,
+                                          note->note,
+                                          0,
+                                          TRACK_get_pan(track),
+                                          ATOMIC_GET(track->midi_channel)
+                                          )
                             );
           
           note = NextNote(note);
@@ -100,7 +106,13 @@ static void stop_all_notes_in_track(struct Tracks *track){
     if (patch!=NULL) {
             
       VECTOR_FOR_EACH(struct Notes *note, &scrollplaying_notes[tracknum]){
-        PATCH_stop_note(patch,create_note_t2(NULL, note->id, note->note));
+        PATCH_stop_note(patch,create_note_t(NULL,
+                                            note->id,
+                                            note->note,
+                                            0,
+                                            0,
+                                            ATOMIC_GET(track->midi_channel)
+                                            ));
       }END_VECTOR_FOR_EACH;
       
     }
@@ -144,7 +156,8 @@ static void Scroll_play_up3(
                                           note->note, 
                                           VELOCITY_get(note->velocity),
                                           TRACK_get_pan(track),
-                                          0)
+                                          ATOMIC_GET(track->midi_channel)
+                                          )
                             );
             VECTOR_push_back(&scrollplaying_notes[track->l.num], note);
           }

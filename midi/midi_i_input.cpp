@@ -763,7 +763,12 @@ void RT_MIDI_handle_play_buffer(void){
     
     if(through_patch!=NULL){
 
-      uint8_t byte[3] = {(uint8_t)MIDI_msg_byte1(msg), (uint8_t)MIDI_msg_byte2(msg), (uint8_t)MIDI_msg_byte3(msg)};
+      uint8_t byte1 = MIDI_msg_byte1(msg);
+      if (ATOMIC_GET(g_use_track_channel_for_midi_input)){
+        byte1 &= 0xf0;
+        byte1 |= ATOMIC_GET(g_curr_midi_channel);
+      }
+      uint8_t byte[3] = {byte1, (uint8_t)MIDI_msg_byte2(msg), (uint8_t)MIDI_msg_byte3(msg)};
 
       RT_MIDI_send_msg_to_patch(RT_get_curr_seqtrack(), (struct Patch*)through_patch, byte, 3, RT_get_curr_seqtrack()->start_time);
     }

@@ -961,6 +961,7 @@ static void set_note_pitch(struct SoundPlugin *plugin, int time, note_t note){
 }
 
 static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
+
   Data *data = (Data*)plugin->data;
 
   //printf("  Sampler_plugin.cpp: Request to stop note %f. Id: %d\n", note.pitch, (int)note.id);

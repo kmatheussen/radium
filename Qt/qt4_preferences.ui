@@ -4611,10 +4611,13 @@ This option should be considered as a lightweight version of  &quot;Only show mo
        <item>
         <widget class="QCheckBox" name="use_current_track_midi_channel">
          <property name="enabled">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
          <property name="text">
           <string>Use MIDI channel in current track when sending MIDI message from MIDI input to current instrument</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
          </property>
         </widget>
        </item>

@@ -1702,6 +1702,7 @@
               (if (<ra> :get-track-pan-on-off *current-track-num*)
                   (<ra> :get-track-pan *current-track-num*)
                   0.0)
+              (<ra> :get-track-midi-channel *current-track-num*)
               instrument-id)
         -1)))
   
@@ -1794,6 +1795,7 @@
                                                (<ra> :change-note-pitch
                                                      (<ra> :get-pianonote-value (pianonote-info :pianonotenum) new-notenum *current-track-num*)
                                                      (pianonote-info :note-id)
+                                                     (<ra> :get-track-midi-channel *current-track-num*)
                                                      instrument-id))))
                                            
                                      (make-pianonote-info :tracknum (pianonote-info :tracknum)
@@ -1808,7 +1810,9 @@
                                         (if (not (= -1 (pianonote-info :note-id)))
                                             (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
                                               (if (>= instrument-id 0)
-                                                  (<ra> :stop-note (pianonote-info :note-id) instrument-id)))))
+                                                  (<ra> :stop-note (pianonote-info :note-id)
+                                                                   (<ra> :get-track-midi-channel *current-track-num*)
+                                                                   instrument-id)))))
                                      
                         :Get-pixels-per-value-unit (lambda (_)
                                                      (<ra> :get-pianoroll-low-key *current-track-num*)
