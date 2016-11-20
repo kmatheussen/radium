@@ -2313,8 +2313,11 @@ static void create_range(const struct Tracker_Windows *window, const struct WBlo
   int y1 = get_realline_y1(window, realline1);
   int y2 = get_realline_y2(window, realline2-1);
 
-
-  GE_Context *c = GE_color_alpha_z(RANGE_COLOR_NUM, 0.6, Z_MAX_SCROLLTRANSFORM, y1);
+  GE_Rgb rgb = GE_get_rgb(RANGE_COLOR_NUM);
+  if (rgb.a==0xff)
+    rgb.a = 0x80;
+  
+  GE_Context *c = GE_z(rgb, Z_MAX_SCROLLTRANSFORM, y1);
 
   GE_filledBox(c, //GE_mix_alpha_z(GE_get_rgb(color), White_rgb(), 300, 0.3, z),
                x1,y1,
