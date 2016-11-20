@@ -25,7 +25,7 @@ private:
 public:
 
   SeqAutomation()
-    : _rt(V_free)
+    : _rt(V_free_function)
   {
   }
   

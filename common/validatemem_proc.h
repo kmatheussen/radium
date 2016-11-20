@@ -90,8 +90,11 @@ static inline void* my_calloc(size_t size1,size_t size2){
 #    define V_strdup(s) strdup(s)
 #    define V_calloc(n, size) my_calloc(n, size)
 #    define V_free(ptr) free((void*)ptr)
+#    define V_free_function free
 #    define V_realloc(ptr, size) realloc(ptr, size);
 #  else
+
+#    define V_free_function V_free
 
 static inline void *V_malloc(size_t size){
   R_ASSERT(!PLAYER_current_thread_has_lock());

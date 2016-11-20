@@ -842,6 +842,8 @@ struct Timeline_widget : public MouseTrackerQWidget {
   void paintEvent ( QPaintEvent * ev ) override {
     QPainter p(this);
 
+    const int t1 = 4;
+
     p.setRenderHints(QPainter::Antialiasing,true);
                    
     QColor border_color = get_qcolor(SEQUENCER_BORDER_COLOR_NUM);
@@ -859,8 +861,11 @@ struct Timeline_widget : public MouseTrackerQWidget {
     // This code is copied from hurtigmixer. (translated from scheme)
 
     p.setBrush(get_qcolor(SEQUENCER_TIMELINE_ARROW_COLOR_NUM));
-    
-    double min_pixels_between_text = 40; //width() / 4;
+
+    const QFontMetrics fn = QFontMetrics(QApplication::font());
+    double min_pixels_between_text = fn.width("00:00:00") + t1*2 + 10;
+
+      //double  = 40; //width() / 4;
 
     double start_time = _start_time / MIXER_get_sample_rate();
     double end_time = _end_time / MIXER_get_sample_rate();
@@ -887,8 +892,6 @@ struct Timeline_widget : public MouseTrackerQWidget {
           inc_time += 30-(inc_time%30);
     }
     //inc_time = 1;
-    
-    const int t1 = 4;
     
     int64_t time = inc_time * int((double)start_time/(double)inc_time);
     
