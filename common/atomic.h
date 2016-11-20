@@ -371,25 +371,36 @@ private:
   DEFINE_ATOMIC(void *, _pointer) = NULL;
   DEFINE_ATOMIC(void *, _old_pointer_to_be_freed) = NULL;
 
+  void (*_free_pointer_function)(void *);
+
+  void maybe_free_something(void *a, void *b){
+    if (_free_pointer_function != NULL){
+      if (a!=NULL)
+        _free_pointer_function(a);
+      if (b!=NULL)
+        _free_pointer_function(b);
+    }
+  }
+
 public:
 
+  AtomicPointerStorage(void (*free_pointer_function)(void *))
+    : _free_pointer_function(free_pointer_function)
+  {
+  }
+
+  ~AtomicPointerStorage(){
+    maybe_free_something(ATOMIC_GET(_pointer), ATOMIC_GET(_old_pointer_to_be_freed));
+  }
+
   // May be called at any time. 'free_pointer_function' may be called 0, 1, or 2 times. (usually 1 time)
-  void set_new_pointer(void *new_pointer, void (*free_pointer_function)(void *)){
+  void set_new_pointer(void *new_pointer){
     void *old_pointer_to_be_freed = ATOMIC_SET_RETURN_OLD(_old_pointer_to_be_freed, NULL);
 
     void *old = ATOMIC_SET_RETURN_OLD(_pointer, new_pointer);
     //printf("Has set. new: %p, old: %p, curr: %p\n", new_pointer, old, ATOMIC_GET(_pointer));
-    
-    if (free_pointer_function != NULL){
-      if (old!=NULL){
-        //printf("Free %p\n", old);
-        free_pointer_function(old);
-      }
-      if (old_pointer_to_be_freed!=NULL){
-        //printf(" AIAI. Free %p\n", old_pointer_to_be_freed);
-        free_pointer_function(old_pointer_to_be_freed);
-      }
-    }
+
+    maybe_free_something(old, old_pointer_to_be_freed);
   }
 };
 
