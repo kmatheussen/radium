@@ -30,9 +30,9 @@ struct TempoAutomationNode{
   int logtype;
 };
  
-static radium::SeqAutomation<TempoAutomationNode> g_tempo_automation;
-
 }
+
+static radium::SeqAutomation<TempoAutomationNode> g_tempo_automation;
 
 
 static TempoAutomationNode create_node(double abstime, double value, int logtype){

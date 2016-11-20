@@ -373,7 +373,7 @@ static DEFINE_ATOMIC(STime, jackblock_seqtime) = 0;
 static DEFINE_ATOMIC(double, jackblock_song_tempo_multiplier) = 1.0;
 
 //static DEFINE_SPINLOCK(jackblock_spinlock); // used by two realtime threads (midi input and audio thread)
-static SetSeveralAtomicVariables jackblock_variables_protector;
+static radium::SetSeveralAtomicVariables jackblock_variables_protector;
 
 static QTime pause_time;
 static bool g_process_plugins = true;

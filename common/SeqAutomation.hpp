@@ -4,7 +4,6 @@
 
 #include <QVector>
 #include <QPainter>
-#include <gc.h>
 
 namespace radium{
 
@@ -20,30 +19,16 @@ private:
   };
 
   int _curr_nodenum = -1;
-  
-  const RT _rt_empty = {0};
 
-  DEFINE_ATOMIC(const RT*, _rt) = &_rt_empty;
+  AtomicPointerStorage _rt;
 
-  const RT *_rt_gc[2] = {NULL};
-
-public:
-  
-  SeqAutomation(){
-    GC_add_roots(&_rt_gc[0], &_rt_gc[2]);
-  }
-  ~SeqAutomation(){
-    GC_remove_roots(&_rt_gc[0], &_rt_gc[2]);
-  }
-
-private:
   
   int get_size(int num_nodes) const{
     return sizeof(struct RT) + num_nodes*sizeof(T);
   }
 
   const struct RT *create_rt(void) const{
-    struct RT *rt = (struct RT*)talloc(get_size(_automation.size()));
+    struct RT *rt = (struct RT*)V_malloc(get_size(_automation.size()));
   
     rt->num_nodes=_automation.size();
     
@@ -56,10 +41,8 @@ private:
 
   void create_new_rt_data(void){
     const struct RT *new_rt_tempo_automation = create_rt();
-    
-    _rt_gc[0] = ATOMIC_GET(_rt); // store previous _rt so it doesn't disappear.
-    
-    ATOMIC_SET(_rt, new_rt_tempo_automation);
+
+    _rt.set_new_pointer((void*)new_rt_tempo_automation, V_free);
   }
 
 
@@ -121,23 +104,23 @@ public:
 
   double RT_get_value(double abstime) {
 
-    // Ensure the tempo_automation we are working on won't be gc-ed while using it.
-    // It probably never happens though, there shouldn't be time for it to
-    // be both found, freed, and reused, in such a short time, but now we
-    // don't have to worry about the possibility.
-    _rt_gc[1] = ATOMIC_GET(_rt);
-    
-    const struct RT *rt = _rt_gc[1];
-    
-    for(int i = 0 ; i < rt->num_nodes-1 ; i++){
-      const T *node1 = &rt->nodes[i];
-      const T *node2 = &rt->nodes[i+1];
+    RT_AtomicPointerStorage_ScopedUsage rt_pointer(&_rt);
+      
+    const struct RT *rt = (const struct RT*)rt_pointer.get_pointer();
 
-      double value;
-      if (RT_get_value(abstime, node1, node2, value))
-        return value;
+    if (rt!=NULL) {
+    
+      for(int i = 0 ; i < rt->num_nodes-1 ; i++){
+        const T *node1 = &rt->nodes[i];
+        const T *node2 = &rt->nodes[i+1];
+        
+        double value;
+        if (RT_get_value(abstime, node1, node2, value))
+          return value;
+      }
+      
     }
-
+    
     return 1.0; //rt_tempo_automation->nodes[rt_tempo_automation->num-1].value;
   }
 
