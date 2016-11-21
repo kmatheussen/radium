@@ -1251,6 +1251,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   bool _song_tempo_automation_was_visible = false;
   
   void call_very_often(void){
+
     if (_song_tempo_automation_was_visible != _songtempoautomation_widget.is_visible){
       _song_tempo_automation_was_visible = _songtempoautomation_widget.is_visible;
       position_widgets();
@@ -1258,7 +1259,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     
     if (is_called_every_ms(15)){  // call each 15 ms. (i.e. more often than vsync)
       _seqtracks_widget.call_very_often();    
-    
       if (g_need_update){
         my_update();
         BS_UpdatePlayList();
@@ -1284,21 +1284,21 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       }
     }
 
-    
-    if (is_playing() && pc->playtype==PLAYSONG) {
-      float x = get_curr_cursor_x(1 + MIXER_get_sample_rate() * 60.0 / 1000.0);
+    if (is_called_every_ms(15)){  // call each 15 ms. (i.e. more often than vsync)
+      if (is_playing() && pc->playtype==PLAYSONG) {
+        float x = get_curr_cursor_x(1 + MIXER_get_sample_rate() * 60.0 / 1000.0);
+        
+        float x_min = R_MIN(x-cursor_width/2.0, _last_painted_cursor_x-cursor_width/2.0) - 2;
+        float x_max = R_MAX(x+cursor_width/2.0, _last_painted_cursor_x+cursor_width/2.0) + 2;
+        
+        //printf("x_min -> x_max: %f -> %f\n",x_min,x_max);
+        float y1 = _songtempoautomation_widget.t_y1;
+        float y2 = _seqtracks_widget.t_y2;
       
-      float x_min = R_MIN(x-cursor_width/2.0, _last_painted_cursor_x-cursor_width/2.0) - 2;
-      float x_max = R_MAX(x+cursor_width/2.0, _last_painted_cursor_x+cursor_width/2.0) + 2;
-      
-      //printf("x_min -> x_max: %f -> %f\n",x_min,x_max);
-      float y1 = _songtempoautomation_widget.t_y1;
-      float y2 = _seqtracks_widget.t_y2;
-      
-      update(x_min, y1, 1+x_max-x_min, y2-y1);
+        update(x_min, y1, 1+x_max-x_min, y2-y1);
+      }
     }
-
-  }
+}
 
 
   void paintGrid(const QRect update_rect, QPainter &p, enum GridType grid_type){
@@ -1429,13 +1429,21 @@ static int update_enabled_counter = 0;
 
 void SEQUENCER_disable_gfx_updates(void){
   update_enabled_counter++;
+
+  // Commented out since it didn't make a difference, plus that the setUpdatesEnabled() function takes a while to execute
+  /*
   if (update_enabled_counter==1 && g_sequencer_widget!=NULL)
     g_sequencer_widget->setUpdatesEnabled(false);
+  */
 }
 void SEQUENCER_enable_gfx_updates(void){
   update_enabled_counter--;
+
+  // Commented out since it didn't make a difference, plus that the setUpdatesEnabled() function takes a while to execute
+  /*
   if (update_enabled_counter==0 && g_sequencer_widget!=NULL)
     g_sequencer_widget->setUpdatesEnabled(true);
+  */
 }
 
 int64_t SEQUENCER_get_visible_start_time(void){
