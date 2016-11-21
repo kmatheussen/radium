@@ -1804,16 +1804,16 @@ QWidget *GL_create_widget(QWidget *parent){
           GFX_Message(NULL,
                       "Old Intel Linux driver detected. Upgrading the GFX driver might prevent Radium from crashing."
                       );
-        }
-        //SETTINGS_write_bool("show_intel_gfx_message4_during_startup", true);
-        //}
+      }
+      //SETTINGS_write_bool("show_intel_gfx_message4_during_startup", true);
+      //}
 #endif
       
       //g_should_do_modal_windows = true;
       g_should_do_modal_windows = false;
-      show_mesa_warning = false;
 #endif
 
+      show_mesa_warning = false;
     }
 
     
