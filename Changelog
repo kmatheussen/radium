@@ -1,3 +1,27 @@
+Changes 4.2.7 -> 4.2.8:
+* Write a warning in capitol letters next to the vsync option in the
+  preferences. (Disabling vsync only makes sense using buggy gfx
+  drivers.)
+* Sequencer looping.
+* Make sure the mouse pointer looks like a pointer when it is
+  supposed to be a pointer.
+* Fix text cluttering in the sequencer timeline when using another
+  system font than the default.
+* Make the range color alpha channel configurable.
+* Assign track MIDI channel to note when: 1. playing using MIDI keyboard,
+  2. Editing notes in piano roll, 3. Scrolling editor up and down with
+  the arrow keys, and 4. When playing using the computer keyboard.
+  Also add option to the preferences to keep original MIDI channel
+  when using MIDI keyboard.
+* Use the system font height to determine sequencer dimensions, not the
+  editor font height.
+* Send actual time to plugins. I.e. remove block tempo multiplication
+  and song tempo automation out of the picture.
+* Add monitor refresh rate to the help->About window
+* Song tempo automation
+
+
+
 Changes 4.2.6 -> 4.2.7:
 * Make fewer undo points when moving sequencer blocks
 * Attempt to lower file requester startup time on windows
