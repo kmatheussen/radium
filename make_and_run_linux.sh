@@ -8,7 +8,19 @@ export ASAN_OPTIONS="detect_leaks=0,allocator_may_return_null=1,suppressions=San
 export UBSAN_OPTIONS="suppressions=`pwd`/SanitizerSuppr.txt:print_stacktrace=1:halt_on_error=1"
 export TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,suppressions=SanitizerSuppr.txt"
 
-BUILDTYPE=DEBUG ./build_linux.sh -j7 && G_DEBUG=fatal-criticals gdb bin/radium # QT_FATAL_WARNINGS=1 causes lots of crashes in qt5
+THIS_DIR=$(dirname $(readlink -f $0))
+XCB_LIB_DIR=$THIS_DIR/bin/packages/libxcb-1.12/src/.libs
+
+if ! file $XCB_LIB_DIR ; then
+    echo "Unable to find directory $XCB_LIB_DIR"
+    exit -1
+fi
+
+export LD_LIBRARY_PATH=$LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+
+
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH BUILDTYPE=DEBUG ./build_linux.sh -j7 && G_DEBUG=fatal-criticals gdb bin/radium_linux.bin # QT_FATAL_WARNINGS=1 causes lots of crashes in qt5
+
 
 #BUILDTYPE=DEBUG ./build_linux.sh -j7 && G_DEBUG=fatal-criticals QT_FATAL_WARNINGS=1 gdb bin/radium
 

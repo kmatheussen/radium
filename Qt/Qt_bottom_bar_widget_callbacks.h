@@ -233,6 +233,10 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     }
   }
 
+  void enterEvent(QEvent *event) override{
+    setCursor(Qt::ArrowCursor);
+  }
+
   void updateWidgets(void){
     signature->setText(Rational(root->signature).toString());
     lpb->setValue(root->lpb);

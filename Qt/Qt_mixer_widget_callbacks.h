@@ -128,6 +128,10 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     g_mixer_widget2 = this;
   }
 
+  void enterEvent(QEvent *event) override{
+    setCursor(Qt::ArrowCursor);
+  }
+
   void set_rotate(qreal rotate){
     _rotate = rotate;
 
