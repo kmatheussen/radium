@@ -992,30 +992,10 @@ private:
   }
 
 
-  // OpenGL thread
-  void swap(void){
-    if (USE_GL_LOCK)
-      mutex.lock();
-
-    void *juce_lock = NULL;
-
-    if (doLockJuceWhenSwappingOpenGL())
-      juce_lock = JUCE_lock();
-    
-    // Swap to the newly rendered buffer
-    if ( openglContext()->hasDoubleBuffer())
-      openglContext()->swapBuffers();
-
-    if (juce_lock != NULL)
-      JUCE_unlock(juce_lock);
-
-    if (USE_GL_LOCK)
-      mutex.unlock();
-  }
-
   int _num_update_event_calls = 0;
   QTime _update_event_counter_timer;
-  
+
+  // OpenGL thread
   void assertHealthyVBlank(void){
     _num_update_event_calls++;
     
@@ -1046,6 +1026,30 @@ private:
     }
   }
   
+
+  // OpenGL thread
+  void swap(void){
+    if (USE_GL_LOCK)
+      mutex.lock();
+
+    void *juce_lock = NULL;
+
+    if (doLockJuceWhenSwappingOpenGL())
+      juce_lock = JUCE_lock();
+    
+    // Swap to the newly rendered buffer
+    if ( openglContext()->hasDoubleBuffer())
+      openglContext()->swapBuffers();
+
+    if (juce_lock != NULL)
+      JUCE_unlock(juce_lock);
+
+    if (USE_GL_LOCK)
+      mutex.unlock();
+
+    //assertHealthyVBlank();
+  }
+
 public:
 
   /** Event generated when the bound OpenGLContext does not have any other message to process 
@@ -1053,8 +1057,6 @@ public:
   // OpenGL thread
   virtual void updateEvent() {
 
-    assertHealthyVBlank();
-    
     bool handle_current = true; // I don't know if there's any point setting this to true.
 
     if (handle_current)

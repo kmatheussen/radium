@@ -14,7 +14,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
 #include "../common/includepython.h"
 
 #include <signal.h>
@@ -1272,6 +1271,7 @@ protected:
     if (is_called_every_ms(50)) // 50ms = 3*1000ms/60 (each third frame)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function    
 
+    
     if(doquit==true) {
       QApplication::quit();
     }
