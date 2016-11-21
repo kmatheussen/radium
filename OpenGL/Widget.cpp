@@ -1612,7 +1612,8 @@ QWidget *GL_create_widget(QWidget *parent){
         
 
     bool show_mesa_warning = true;
-    
+
+#if 0  // Seems like old libxcb library was the cause of the crashes, not the intel driver
 #ifdef FOR_LINUX
     if (!s_version.contains("nvidia", Qt::CaseInsensitive) && SETTINGS_read_bool("show_not_nvidia_warning", true)) {
       GL_set_pause_rendering_on_off(true);
@@ -1630,6 +1631,7 @@ QWidget *GL_create_widget(QWidget *parent){
       
       SETTINGS_write_bool("show_not_nvidia_warning", false);
     }
+#endif
     
     if (s_vendor.contains("ATI")) {
       if (SETTINGS_read_bool("show_catalyst_gfx_message_during_startup", true)) {
@@ -1657,7 +1659,8 @@ QWidget *GL_create_widget(QWidget *parent){
         g_should_do_modal_windows = false;
         
       } else {
-        
+
+#if 0  // Seems like old libxcb library was the cause of the crashes, not the intel driver
         if (SETTINGS_read_bool("show_catalyst_gfx_message3_during_startup", true)) {
 
 #if FOR_LINUX
@@ -1670,7 +1673,8 @@ QWidget *GL_create_widget(QWidget *parent){
           
           SETTINGS_write_bool("show_catalyst_gfx_message3_during_startup", true);
         }
-
+#endif
+        
       }
     }
     
@@ -1698,6 +1702,8 @@ QWidget *GL_create_widget(QWidget *parent){
 
       } else {
 
+#if 0  // Seems like old libxcb library was the cause of the crashes, not the intel driver
+        
         if (SETTINGS_read_bool("show_gallium_gfx_message3_during_startup", true)) {
 
 #if FOR_LINUX
@@ -1711,6 +1717,8 @@ QWidget *GL_create_widget(QWidget *parent){
           SETTINGS_write_bool("show_gallium_gfx_message3_during_startup", true);
         }
 
+#endif
+        
       }
       
       show_mesa_warning = false;
@@ -1771,7 +1779,9 @@ QWidget *GL_create_widget(QWidget *parent){
 #endif
         
       } else if (SETTINGS_read_bool("show_intel_gfx_message3_during_startup", true)) {
-        
+
+#if 0  // Seems like old libxcb library was the cause of the crashes, not the intel driver
+
 #if FOR_LINUX
         GFX_Message(NULL,
                       "Intel Linux driver detected. Turning on the \"Briefly pause rendering when opening windows\" option."
@@ -1781,7 +1791,11 @@ QWidget *GL_create_widget(QWidget *parent){
 #endif
         
         SETTINGS_write_bool("show_intel_gfx_message3_during_startup", true);
+
+#endif
       }
+
+#if 0  // Seems like old libxcb library was the cause of the crashes, not the intel driver
 
 #if FOR_LINUX
       //if (SETTINGS_read_bool("show_intel_gfx_message4_during_startup", true)) {
@@ -1793,12 +1807,13 @@ QWidget *GL_create_widget(QWidget *parent){
         //SETTINGS_write_bool("show_intel_gfx_message4_during_startup", true);
         //}
 #endif
-
+      
       //g_should_do_modal_windows = true;
       g_should_do_modal_windows = false;
       show_mesa_warning = false;
-    }
 #endif
+
+    }
 
     
     if (s_version.contains("mesa", Qt::CaseInsensitive) && show_mesa_warning==true)
