@@ -302,6 +302,46 @@ void setSeqtempoMaxTempo(double max_tempo){
 }
 
 
+// sequencer timeline and looping
+//
+
+float getSeqtimelineAreaX1(void){
+  return SEQTIMELINE_get_x1();
+}
+float getSeqtimelineAreaY1(void){
+  return SEQTIMELINE_get_y1();
+}
+float getSeqtimelineAreaX2(void){
+  return SEQTIMELINE_get_x2();
+}
+float getSeqtimelineAreaY2(void){
+  return SEQTIMELINE_get_y2();
+}
+
+
+void setSeqlooping(bool do_loop){
+  SEQUENCER_set_looping(do_loop);
+}
+
+bool isSeqlooping(void){
+  return SEQUENCER_is_looping();
+}
+
+void setSeqloopingStart(int64_t start){
+  SEQUENCER_set_loop_start(start);
+}
+
+int64_t getSeqloopingStart(void){
+  return SEQUENCER_get_loop_start();
+}
+
+void setSeqloopingEnd(int64_t end){
+  SEQUENCER_set_loop_end(end);
+}
+
+int64_t getSeqloopingEnd(void){
+  return SEQUENCER_get_loop_end();
+}
 
 // seqtracks
 //

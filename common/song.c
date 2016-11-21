@@ -61,8 +61,7 @@ struct Song *SONG_create(void){
   struct Song *song=talloc(sizeof(struct Song));
   VECTOR_push_back(&song->seqtracks, SEQTRACK_create());
 
-  TEMPOAUTOMATION_reset();
-  SEQTRACK_init(&song->block_seqtrack);
+  SEQUENCER_init(song);
   
   return song;
 }

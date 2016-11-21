@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Pd_plugin_proc.h"
 #include "../Qt/Qt_AutoBackups_proc.h"
 #include "scheduler_proc.h"
-
+#include "seqtrack_proc.h"
 
 #include "player_proc.h"
 
@@ -156,7 +156,9 @@ void PlayerTask(double reltime){
         
         if(pc->playtype==PLAYSONG) {
           double song_abstime = ATOMIC_DOUBLE_GET(pc->song_abstime);
-          ATOMIC_DOUBLE_SET(pc->song_abstime, song_abstime + reltime);
+          double new_song_abstime = song_abstime + reltime;
+          ATOMIC_DOUBLE_SET(pc->song_abstime, new_song_abstime);
+
         }
         
 #ifdef WITH_PD
@@ -171,6 +173,13 @@ void PlayerTask(double reltime){
         //printf("num_scheduled: %d. state: %d\n",num_scheduled_events,player_state);
         if(player_state == PLAYER_STATE_PLAYING && is_finished)
           ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
+
+        if(pc->playtype==PLAYSONG){
+          if (SEQUENCER_is_looping()){
+            if (ATOMIC_DOUBLE_GET(pc->song_abstime) >= SEQUENCER_get_loop_end())
+              ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
+          }
+        }
 }
 
 

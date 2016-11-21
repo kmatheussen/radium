@@ -75,6 +75,19 @@ extern LANGSPEC float SEQTEMPO_get_y2(void);
 extern LANGSPEC void SEQTEMPO_set_visible(bool visible);
 extern LANGSPEC bool SEQTEMPO_is_visible(void);
 
+// sequencer timeline and looping
+extern LANGSPEC float SEQTIMELINE_get_x1(void);
+extern LANGSPEC float SEQTIMELINE_get_x2(void);
+extern LANGSPEC float SEQTIMELINE_get_y1(void);
+extern LANGSPEC float SEQTIMELINE_get_y2(void);
+
+extern LANGSPEC void SEQUENCER_set_looping(bool do_loop);
+extern LANGSPEC bool SEQUENCER_is_looping(void);
+extern LANGSPEC void SEQUENCER_set_loop_start(int64_t start);
+extern LANGSPEC int64_t SEQUENCER_get_loop_start(void);
+extern LANGSPEC void SEQUENCER_set_loop_end(int64_t end);
+extern LANGSPEC int64_t SEQUENCER_get_loop_end(void);
+
 // seqblocks gfx
 extern LANGSPEC float SEQBLOCK_get_x1(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_x2(int seqblocknum, int seqtracknum);
@@ -119,6 +132,7 @@ extern LANGSPEC void SEQUENCER_delete_seqtrack(int pos);
 // song
 extern LANGSPEC double SONG_get_length(void);
 extern LANGSPEC double SONG_get_gfx_length(void);
+extern LANGSPEC void SEQUENCER_init(struct Song *song);
 extern LANGSPEC void SONG_init(void);
 
 #endif

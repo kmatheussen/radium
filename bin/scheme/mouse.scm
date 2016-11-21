@@ -819,6 +819,7 @@
                                   :Get-x #f
                                   :Get-value
                                   :Make-undo
+                                  :Release #f
                                   :Move
                                   :Publicize
                                   :Mouse-pointer-func #f)
@@ -851,6 +852,9 @@
                                        (Make-undo (Info :handler-data)))
                           :Create-new-node (lambda (Value Place callback)
                                              #f)
+                          :Release-node (lambda x
+                                          (if Release
+                                              (Release)))
                           :Move-node (lambda (Info Value Place)
                                        (Move (Info :handler-data)
                                              Value)
@@ -2974,16 +2978,104 @@
                                                  ;;(c-display "hepp" Num)
                                                  (<ra> :set-statusbar-text (<-> "Tempo: " (two-decimal-string (<ra> :get-seqtempo-value Num))))
                                                  (<ra> :set-curr-seqtemponode Num)
-                                                 ;(set-mouse-track-to-reltempo)
-                                                 ;(set-current-temponode Num)
-                                                 ;(set-indicator-temponode Num)
-                                                 ;(show-temponode-in-statusbar (<ra> :get-temponode-value Num))
                                                  #t)
                      A                      :> (begin
                                                  ;;(c-display "**Didnt get it:" A)
                                                  (<ra> :set-curr-seqtemponode -1)
                                                  #f)))))
 
+
+
+;; sequencer looping
+;;
+
+
+(define (get-seqloop-start-x)
+  (scale (<ra> :get-seqlooping-start)
+         (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)
+         (<ra> :get-seqtimeline-area-x1) (<ra> :get-seqtimeline-area-x2)))
+
+(define (get-seqloop-end-x)
+  (scale (<ra> :get-seqlooping-end)
+         (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)
+         (<ra> :get-seqtimeline-area-x1) (<ra> :get-seqtimeline-area-x2)))
+
+
+(define (create-seqloop-handler Type)
+  (add-horizontal-handler :Get-handler-data (lambda (X Y)
+                                              (and (inside-box (<ra> :get-box seqtimeline-area) X Y)
+                                                   (let* ((start-x (get-seqloop-start-x))
+                                                          (end-x (get-seqloop-end-x))
+                                                          (mid (average start-x end-x)))
+                                                     (set-grid-type #t)
+                                                     (if (eq? Type 'start)
+                                                         (and (< X mid)
+                                                              (<ra> :get-seqlooping-start))
+                                                         (and (> X mid)
+                                                              (<ra> :get-seqlooping-end))))))
+                          :Get-x1 (lambda (_)
+                                    (<ra> :get-seqtimeline-area-x1))
+                          :Get-x2 (lambda (_)
+                                    (<ra> :get-seqtimeline-area-x2))
+                          :Get-min-value (lambda (_)
+                                           (<ra> :get-sequencer-visible-start-time))
+                          :Get-max-value (lambda (_)
+                                           (<ra> :get-sequencer-visible-end-time))
+                          :Get-value (lambda (Value)
+                                       Value)
+                          :Release (lambda ()
+                                     (set-grid-type #f))
+                          :Make-undo (lambda (_)
+                                       50)
+                          :Move (lambda (_ Value)
+                                  (set! Value (floor Value))
+                                  (if (not (<ra> :ctrl-pressed))
+                                      (set! Value (<ra> :find-closest-seqtrack-bar-start 0 Value)))
+                                  (if (eq? Type 'start)
+                                      (<ra> :set-seqlooping-start Value)
+                                      (<ra> :set-seqlooping-end Value)))
+                          
+                          :Publicize (lambda (Type)
+                                       (if (eq? Type 'start)
+                                           (<ra> :set-statusbar-text (<-> "Loop start: " (two-decimal-string (/ (<ra> :get-seqlooping-start) (<ra> :get-sample-rate)))))
+                                           (<ra> :set-statusbar-text (<-> "Loop end: " (two-decimal-string (/ (<ra> :get-seqlooping-end) (<ra> :get-sample-rate)))))))
+                          
+                          :Mouse-pointer-func ra:set-normal-mouse-pointer
+                          ))
+
+(create-seqloop-handler 'start)
+(create-seqloop-handler 'end)
+  
+;; highlight loop start / loop end
+(add-mouse-move-handler
+ :move (lambda ($button $x $y)
+         (and (inside-box (<ra> :get-box seqtimeline-area) $x $y)
+              (let* ((start-x (get-seqloop-start-x))
+                     (end-x (get-seqloop-end-x))
+                     (mid (average start-x end-x)))
+                (if (< $x mid)
+                    (<ra> :set-statusbar-text (<-> "Loop start: " (two-decimal-string (/ (<ra> :get-seqlooping-start) (<ra> :get-sample-rate)))))
+                    (<ra> :set-statusbar-text (<-> "Loop end: " (two-decimal-string (/ (<ra> :get-seqlooping-end) (<ra> :get-sample-rate))))))
+                #t))))
+
+(add-mouse-cycle (make-mouse-cycle
+                  :press-func (lambda (Button X Y)                                
+                                (if (and (= Button *right-button*)
+                                         (inside-box (<ra> :get-box seqtimeline-area) X Y))
+                                    (begin
+                                      (popup-menu "Play loop"
+                                                  :check (<ra> :is-seqlooping)
+                                                  (lambda (val)
+                                                    (<ra> :set-seqlooping val)))
+                                      #t)
+                                    #f))))
+
+
+#||
+(/ (<ra> :get-seqlooping-start) (<ra> :get-sample-rate))
+(/ (<ra> :get-seqlooping-end) (<ra> :get-sample-rate))
+(<ra> :set-seqlooping-end 500000)
+||#
 
 
 #||
@@ -3318,6 +3410,10 @@
                                                 :check (<ra> :seqtempo-visible)
                                                 (lambda (doit)
                                                   (<ra> :set-seqtempo-visible doit)))
+                                          (list "Play loop"
+                                                :check (<ra> :is-seqlooping)
+                                                (lambda (val)
+                                                  (<ra> :set-seqlooping val)))
                                           "------------------"
 
                                           (list "Clone block"

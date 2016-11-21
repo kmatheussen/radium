@@ -396,12 +396,31 @@ static void PlayHandleRangeLoop(void){
   }
 }
 
+static void PlayHandleSequencerLoop(void){
+  //printf("is_range: %d, is_playing: %d, stopped_manually: %d\n",pc->is_playing_range, is_playing(), g_player_was_stopped_manually);
+  
+  if (!SEQUENCER_is_looping())
+    return;
+
+  if (pc->is_playing_range==true)
+    return;
+  
+  if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED && g_player_was_stopped_manually==false) {
+    StopAllInstruments();
+    if (MIXER_is_saving())
+      PlayStopReally(true);
+    else
+      PlaySong(SEQUENCER_get_loop_start());
+  }
+}
+
 // called very often
 void PlayCallVeryOften(void){
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING)
     EditorFollowsPlayCursorLoop();
   
   PlayHandleRangeLoop();
+  PlayHandleSequencerLoop();
 }
 
 
@@ -450,6 +469,9 @@ void PlaySongCurrPos(void){
 }
 
 void PlaySongFromStart(void){
-  PlaySong(0);
+  if (SEQUENCER_is_looping())
+    PlaySong(SEQUENCER_get_loop_start());
+  else
+    PlaySong(0);
 }
 

@@ -834,7 +834,7 @@ struct Timeline_widget : public MouseTrackerQWidget {
 
     p.drawPolygon(points, 3);
   }
-
+  
   QString seconds_to_timestring(double time){
     return radium::get_time_string(time, false);
   }
@@ -843,9 +843,11 @@ struct Timeline_widget : public MouseTrackerQWidget {
     QPainter p(this);
 
     const int t1 = 4;
+    const double y1 = 4;
+    const double y2 = height() - 4;
 
     p.setRenderHints(QPainter::Antialiasing,true);
-                   
+
     QColor border_color = get_qcolor(SEQUENCER_BORDER_COLOR_NUM);
     //QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
 
@@ -860,15 +862,28 @@ struct Timeline_widget : public MouseTrackerQWidget {
 
     // This code is copied from hurtigmixer. (translated from scheme)
 
-    p.setBrush(get_qcolor(SEQUENCER_TIMELINE_ARROW_COLOR_NUM));
+    QColor timeline_arrow_color = get_qcolor(SEQUENCER_TIMELINE_ARROW_COLOR_NUM);
+    QColor timeline_arrow_color_alpha = timeline_arrow_color;
+    timeline_arrow_color_alpha.setAlpha(20);
 
+    p.setBrush(timeline_arrow_color);
+
+    QColor text_color = get_qcolor(SEQUENCER_TEXT_COLOR_NUM);
+    QColor text_color_alpha = text_color;
+    text_color_alpha.setAlpha(20);
+    
+    p.setPen(text_color);
+        
     const QFontMetrics fn = QFontMetrics(QApplication::font());
-    double min_pixels_between_text = fn.width("00:00:00") + t1*2 + 10;
+    const double min_pixels_between_text = fn.width("00:00:00") + t1*2 + 10;
 
       //double  = 40; //width() / 4;
 
-    double start_time = _start_time / MIXER_get_sample_rate();
-    double end_time = _end_time / MIXER_get_sample_rate();
+    const double loop_start_x = scale_double(SEQUENCER_get_loop_start(), _start_time, _end_time, 0, width());
+    const double loop_end_x = scale_double(SEQUENCER_get_loop_end(), _start_time, _end_time, 0, width());
+
+    const double start_time = _start_time / MIXER_get_sample_rate();
+    const double end_time = _end_time / MIXER_get_sample_rate();
 
     R_ASSERT_RETURN_IF_FALSE(end_time > start_time);
     
@@ -892,6 +907,8 @@ struct Timeline_widget : public MouseTrackerQWidget {
           inc_time += 30-(inc_time%30);
     }
     //inc_time = 1;
+
+    bool did_draw_alpha = false;
     
     int64_t time = inc_time * int((double)start_time/(double)inc_time);
     
@@ -900,19 +917,48 @@ struct Timeline_widget : public MouseTrackerQWidget {
       if (x >= width())
         break;
 
+      bool draw_alpha = false;
+
+      if (loop_start_x >= x-t1 && loop_start_x <= x+t1+min_pixels_between_text)
+        draw_alpha = true;
+      if (loop_end_x >= x-t1 && loop_end_x <= x+t1+min_pixels_between_text)
+        draw_alpha = true;
+
+      if (draw_alpha==true && did_draw_alpha==false){
+        p.setPen(text_color_alpha);
+        p.setBrush(timeline_arrow_color_alpha);
+      }
+
+      if (draw_alpha==false && did_draw_alpha==true){
+        p.setPen(text_color);
+        p.setBrush(timeline_arrow_color);
+      }
+
+      did_draw_alpha = draw_alpha;
+      
       if (x > 20) {
-        const double y1 = 4;
-        const double y2 = height() - 4;
-                
+        
         draw_filled_triangle(p, x-t1, y1, x+t1, y1, x, y2);
         
         QRect rect(x + t1 + 4, 2, width(), height());
         p.drawText(rect, seconds_to_timestring(time), QTextOption(Qt::AlignLeft | Qt::AlignTop));
       }
-      
+
       time += inc_time;
     }
-    
+
+    p.setPen(Qt::black);
+    p.setBrush(QColor(0,0,255,150));
+
+    // loop start
+    {
+      draw_filled_triangle(p, loop_start_x-t1*2, y1, loop_start_x, y1, loop_start_x, y2);
+    }
+
+    // loop end
+    {
+      draw_filled_triangle(p, loop_end_x, y1, loop_end_x+t1*2, y1, loop_end_x, y2);
+    }
   }
 
 };
@@ -1299,6 +1345,29 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     p.drawLine(line);
   }
       
+  void paintSeqloop(const QRect update_rect, QPainter &p){
+    float y1 = _songtempoautomation_widget.t_y1;
+    float y2 = _seqtracks_widget.t_y2;
+
+    float x_start = scale_double(SEQUENCER_get_loop_start(), _start_time, _end_time, 0, width());
+    float x_end = scale_double(SEQUENCER_get_loop_end(), _start_time, _end_time, 0, width());
+
+    QColor grayout_color = get_qcolor(SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM);
+
+    p.setPen(Qt::NoPen);
+    p.setBrush(grayout_color);
+
+    if (x_start > 0){
+      QRectF rect(0, y1, x_start,  y2);
+      p.drawRect(rect);
+    }
+
+    if (x_end < width()){
+      QRectF rect(x_end, y1, width(),  y2);
+      p.drawRect(rect);
+    }
+  }
+      
 
   void paintEvent (QPaintEvent *ev) override {
     QPainter p(this);
@@ -1312,6 +1381,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     paintGrid(ev->rect(), p, _grid_type);
     paintCursor(ev->rect(), p);
+    if (SEQUENCER_is_looping())
+      paintSeqloop(ev->rect(), p);    
   }
 
   
@@ -1435,6 +1506,27 @@ float SEQNAV_get_right_handle_x(void){
 void SEQNAV_update(void){
   g_sequencer_widget->_navigator_widget.update();
 }
+
+
+
+// sequencer looping
+
+float SEQTIMELINE_get_x1(void){
+  return mapToEditorX1(&g_sequencer_widget->_timeline_widget);
+}
+
+float SEQTIMELINE_get_x2(void){
+  return mapToEditorX2(&g_sequencer_widget->_timeline_widget);
+}
+
+float SEQTIMELINE_get_y1(void){
+  return mapToEditorY1(&g_sequencer_widget->_timeline_widget);
+}
+
+float SEQTIMELINE_get_y2(void){
+  return mapToEditorY2(&g_sequencer_widget->_timeline_widget);
+}
+
 
 
 

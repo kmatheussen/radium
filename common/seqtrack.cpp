@@ -769,6 +769,34 @@ void SEQUENCER_delete_seqtrack(int pos){
   
 }
 
+void SEQUENCER_set_looping(bool do_loop){
+  ATOMIC_SET(root->song->looping.enabled, do_loop);
+  SEQUENCER_update();
+}
+
+bool SEQUENCER_is_looping(void){
+  return ATOMIC_GET(root->song->looping.enabled);
+}
+
+void SEQUENCER_set_loop_start(int64_t start){  
+  root->song->looping.start = R_BOUNDARIES(0, start, ATOMIC_GET(root->song->looping.end)-1);
+  SEQUENCER_update();
+}
+
+int64_t SEQUENCER_get_loop_start(void){
+  return root->song->looping.start;
+}
+
+void SEQUENCER_set_loop_end(int64_t end){
+  ATOMIC_SET(root->song->looping.end, R_BOUNDARIES(root->song->looping.start+1, end, SONG_get_gfx_length()*MIXER_get_sample_rate()));
+  //printf("   Set end. %d %d %d\n",(int)(root->song->looping.start+1), (int)end, (int)(SONG_get_length()*MIXER_get_sample_rate()));
+  SEQUENCER_update();
+}
+
+int64_t SEQUENCER_get_loop_end(void){
+  return ATOMIC_GET(root->song->looping.end);
+}
+
 double SONG_get_length(void){
   double len = 0;
   
@@ -792,8 +820,20 @@ double SONG_get_gfx_length(void){
 
   return len + SEQUENCER_EXTRA_SONG_LENGTH;
 }
-  
 
+// Called from SONG_create()
+void SEQUENCER_init(struct Song *song){
+  TEMPOAUTOMATION_reset();
+  SEQTRACK_init(&song->block_seqtrack);
+  song->looping.start = 0;
+
+  if (ATOMIC_GET(is_starting_up))
+    ATOMIC_SET(song->looping.end, 30 * 48000.0);
+  else
+    ATOMIC_SET(song->looping.end, 30 * MIXER_get_sample_rate());
+}
+
+// Only called during program startup
 void SONG_init(void){
   struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
   VECTOR_ensure_space_for_one_more_element(&seqtrack->seqblocks);
@@ -801,6 +841,8 @@ void SONG_init(void){
   VECTOR_ensure_space_for_one_more_element(&root->song->seqtracks);
   
   struct SeqBlock *seqblock = SEQBLOCK_create(root->song->blocks);
+
+  SEQUENCER_init(root->song);
   
   PLAYER_lock();{
     
@@ -829,6 +871,11 @@ hash_t *SEQUENCER_get_state(void){
   // I'm not 100% sure, but I think we need this one since song tempo automation automatically changes length when the song changes length.
   // (modifying song tempo automation is a light operation + that it's atomically real time safe, so it doesn't matter much if we do this)
   HASH_put_hash(state, "song_tempo_automation", TEMPOAUTOMATION_get_state());
+
+  HASH_put_bool(state, "looping_enabled", SEQUENCER_is_looping());
+  HASH_put_int(state, "loop_start", SEQUENCER_get_loop_start());
+  HASH_put_int(state, "loop_end", SEQUENCER_get_loop_end());
+  
 
   return state;
 }
@@ -862,6 +909,16 @@ void SEQUENCER_create_from_state(hash_t *state){
 
     if(HASH_has_key(state, "song_tempo_automation"))
       TEMPOAUTOMATION_create_from_state(HASH_get_hash(state, "song_tempo_automation"));
+
+    if(HASH_has_key(state, "loop_start")) {
+      root->song->looping.start = HASH_get_int(state, "loop_start");
+      ATOMIC_SET(root->song->looping.end, HASH_get_int(state, "loop_end"));
+      SEQUENCER_set_looping(HASH_get_bool(state, "looping_enabled"));
+    } else {
+      root->song->looping.start = 0;
+      ATOMIC_SET(root->song->looping.end, 30 * MIXER_get_sample_rate());
+      SEQUENCER_set_looping(false);
+    }
   }
 
   BS_UpdatePlayList();
