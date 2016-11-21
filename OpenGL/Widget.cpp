@@ -1047,6 +1047,9 @@ private:
     if (USE_GL_LOCK)
       mutex.unlock();
 
+    /*
+    'Remove vsync health check since swapBuffers returns immediately when window is not visible on at least two separate opengl drivers. Instead write a warning in capitol letters to the vsync option in the preferences. If someone still wants to disable vsync, its really their own fault.'
+    */
     //assertHealthyVBlank();
   }
 

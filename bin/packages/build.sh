@@ -190,5 +190,26 @@ then
     cd ../
 fi
 
+if [[ $RADIUM_QT_VERSION == 5 ]]
+then
+
+    rm -fr xcb-proto-1.12/
+    tar xvjf xcb-proto-1.12.tar.bz2
+    cd xcb-proto-1.12/
+    mkdir install
+    make
+    make install
+    cd ..
+    
+    rm -fr libxcb-1.12
+    tar xvjf libxcb-1.12.tar.bz2 
+    cd libxcb-1.12
+    export PKG_CONFIG_PATH=`pwd`/../xcb-proto-1.12/install/lib/pkgconfig:$PKG_CONFIG_PATH
+    ./configure
+    make
+    cd ..
+    
+fi
+
 
 touch deletemetorebuild
