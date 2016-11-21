@@ -1632,6 +1632,7 @@ QWidget *GL_create_widget(QWidget *parent){
       SETTINGS_write_bool("show_not_nvidia_warning", false);
     }
 #endif
+#endif
     
     if (s_vendor.contains("ATI")) {
       if (SETTINGS_read_bool("show_catalyst_gfx_message_during_startup", true)) {
