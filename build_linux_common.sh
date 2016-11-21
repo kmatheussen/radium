@@ -161,6 +161,9 @@ make flagopts.opt
 make radium $@
 #make pluginhost/Builds/Linux/build/libMyPluginHost.a
 
+mv bin/radium bin/radium_linux.bin
+cp bin/run_radium_linux.sh bin/radium
+
 cp -p *.o linux_objs/ 2>/dev/null | true
 
 
