@@ -46,6 +46,96 @@ static TempoAutomationNode create_node(double abstime, double value, int logtype
 }
 
 
+static float get_node_y(const TempoAutomationNode *node, float y1, float y2){
+  float mid = (y1+y2)/2.0f;
+
+  if (node->value >= 1.0)
+    return scale(node->value,
+                 g_max_tempo, 1.0,
+                 y1, mid);
+  else
+    return scale(node->value,
+                 1.0, 1.0/g_max_tempo,
+                 mid, y2);
+}
+
+/*
+faust code for "get_optimized_custom_value":
+"""
+g_max_tempo = hslider("max_tempo", 4.0, 0.001, 10000, 0.001);
+
+scale(x,x1,x2,y1,y2) = y1 + ( ((x-x1)*(y2-y1)) / (x2-x1));
+
+
+get_node_y(value, y1, y2) = ret with {
+    mid = (y1+y2)/2.0f;
+
+    larger = scale(value,
+                   g_max_tempo, 1.0,
+                   y1, mid);
+    smaller = scale(value,
+                    1.0, 1.0/g_max_tempo,
+                    mid, y2);
+
+    ret = select2(value>=1,smaller, larger);
+};
+
+process(abstime, abstime1, abstime2, value1, value2) = ret with{
+    y1 = get_node_y(value1, 0, 2);
+    y2 = get_node_y(value2, 0, 2);
+    midtime = scale(1, y1, y2, abstime1, abstime2);
+    smaller = scale(abstime, abstime1, midtime, value1, 1.0);
+    larger = scale(abstime, midtime, abstime2, 1.0, value2);
+    ret = select2(abstime<=midtime, larger, smaller);
+};
+"""
+ */
+static double get_optimized_custom_value(double input0, double input1, double input2, double input3, double input4){
+  double fHslider0 = g_max_tempo;
+		double fSlow0 = double(fHslider0);
+		double fSlow1 = (1.0 / ((1.0 / fSlow0) - 1.0));
+		double fSlow2 = (1.0 / (1.0 - fSlow0));
+                //		for (int i = 0; (i < count); i = (i + 1)) {
+			double fTemp0 = double(input0);
+			double fTemp1 = double(input3);
+			double fSel0 = 0.0;
+			if ((fTemp1 >= 1.0) != 0) {
+				fSel0 = (fSlow2 * (fTemp1 - fSlow0));
+				
+			} else {
+				fSel0 = (1.0 + (fSlow1 * (fTemp1 - 1.0)));
+				
+			}
+			double fTemp2 = double(input2);
+			double fTemp3 = double(input1);
+			double fTemp4 = ((1.0 - fSel0) * (fTemp2 - fTemp3));
+			double fTemp5 = double(input4);
+			double fTemp6 = (fTemp5 - 1.0);
+			double fSel1 = 0.0;
+			if ((fTemp5 >= 1.0) != 0) {
+				fSel1 = (fSlow2 * (fTemp5 - fSlow0));
+				
+			} else {
+				fSel1 = (1.0 + (fSlow1 * fTemp6));
+				
+			}
+			double fTemp7 = (fSel1 - fSel0);
+			double fTemp8 = ((fTemp4 / fTemp7) + fTemp3);
+			double fSel2 = 0.0;
+			if ((fTemp0 <= fTemp8) != 0) {
+				fSel2 = ((((fTemp7 * (1.0 - fTemp1)) * (fTemp0 - fTemp3)) / fTemp4) + fTemp1);
+				
+			} else {
+				fSel2 = (1.0 + (((0.0 - (fTemp8 - fTemp0)) * fTemp6) / (0.0 - (fTemp8 - fTemp2))));
+				
+			}
+			double output0 = fSel2;
+			
+                        //		}
+
+                        return output0;
+
+}
 
 static double custom_get_value(double abstime, const TempoAutomationNode *node1, const TempoAutomationNode *node2){
   const double abstime1 = node1->abstime;
@@ -60,13 +150,18 @@ static double custom_get_value(double abstime, const TempoAutomationNode *node1,
   if (value1>=1.0 && value2>=1.0)
     return scale_double(abstime, abstime1, abstime2, value1, value2);
 
-  const double midtime = scale_double(1.0, value1, value2, abstime1, abstime2); // FIX. This is not correct.
-  //printf("midtime: %f\n",midtime/44100.0, abstime1, abstime2);
-  
+#if 1
+  return get_optimized_custom_value(abstime, abstime1, abstime2, value1, value2);
+#else
+  const float y1 = get_node_y(*node1, 0, 2);
+  const float y2 = get_node_y(*node2, 0, 2);
+  const double midtime = scale_double(1, y1, y2, abstime1, abstime2);
+                                      
   if (abstime <= midtime)
     return scale_double(abstime, abstime1, midtime, value1, 1.0);
   else
     return scale_double(abstime, midtime, abstime2, 1.0, value2);
+#endif
 }
   
 
@@ -303,16 +398,7 @@ float TEMPOAUTOMATION_get_node_x(int nodenum){
 }
 
 static float get_node_y(const TempoAutomationNode &node, float y1, float y2){
-  float mid = (y1+y2)/2.0f;
-
-  if (node.value >= 1.0)
-    return scale(node.value,
-                 g_max_tempo, 1.0,
-                 y1, mid);
-  else
-    return scale(node.value,
-                 1.0, 1.0/g_max_tempo,
-                 mid, y2);
+  return get_node_y(&node, y1, y2);
 }
 
 float TEMPOAUTOMATION_get_node_y(int nodenum){

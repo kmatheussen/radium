@@ -2861,7 +2861,8 @@
                                                        (match (list (find-node-horizontal X Y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
                                                               (existing-box Num Box) :> (begin
                                                                                           ;;(c-display "EXISTING " Num)
-                                                                                          (define Time (scale X (<ra> :get-seqtempo-area-x1) (<ra> :get-seqtempo-area-x2)
+                                                                                          (define Time (scale X
+                                                                                                              (<ra> :get-seqtempo-area-x1) (<ra> :get-seqtempo-area-x2)
                                                                                                               (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
                                                                                           (set-grid-type #t)
                                                                                           (callback Num Time Y))
