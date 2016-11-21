@@ -197,6 +197,7 @@ then
     tar xvjf xcb-proto-1.12.tar.bz2
     cd xcb-proto-1.12/
     mkdir install
+    ./configure --prefix=`pwd`/install
     make
     make install
     cd ..
