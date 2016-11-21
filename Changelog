@@ -1,3 +1,15 @@
+Changes 4.2.8 -> 4.2.9:
+* More fixes for open hand mouse pointer.
+* Removed some startup warnings about unstable gfx drivers
+  and so forth on Linux. With latest version of libxcb,
+  this will hopefully not be a problem anymore.
+* Linux: Include xcb-proto 1.12 and libxcb 1.12. All versions
+  of xcb before 1.11.1 (which is quite new) are probably
+  unstable if using AMD or Intel gfx drivers.
+* Fix high CPU usage when sequencer window is visible
+
+
+
 Changes 4.2.7 -> 4.2.8:
 * Write a warning in capitol letters next to the vsync option in the
   preferences. (Disabling vsync only makes sense using buggy gfx
