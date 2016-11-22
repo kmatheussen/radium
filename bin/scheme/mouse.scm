@@ -2963,6 +2963,9 @@
                                                                                 1000000))
                                                (if (> new highest)
                                                    (<ra> :set-seqtempo-max-tempo new))))
+                                       (list "Hide song tempo automation"
+                                             (lambda ()
+                                               (<ra> :set-seqtempo-visible #f)))
                                        ))
                        #t)))))
 
