@@ -1,3 +1,10 @@
+Changes 4.2.9 -> 4.3.0:
+* Add "Hide song tempo automation" option to song tempo automation
+  popup menu.
+* Ensure graphics is updated when changing song tempo automation.
+
+
+
 Changes 4.2.8 -> 4.2.9:
 * More fixes for open hand mouse pointer.
 * Removed some startup warnings about unstable gfx drivers
