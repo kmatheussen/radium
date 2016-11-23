@@ -16,7 +16,7 @@ if ! file $XCB_LIB_DIR ; then
     exit -1
 fi
 
-export LD_LIBRARY_PATH=$LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=$XCB_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 
 
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH BUILDTYPE=DEBUG ./build_linux.sh -j7 && G_DEBUG=fatal-criticals gdb bin/radium_linux.bin # QT_FATAL_WARNINGS=1 causes lots of crashes in qt5

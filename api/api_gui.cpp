@@ -260,7 +260,9 @@ void gui_add(int parentnum, int childnum){
   QLayout *layout = parent->_widget->layout();
 
   if(layout==NULL) {
-    
+
+    GFX_Message(NULL, "Warning: Parent gui #%d does not have a layout", parentnum);
+
     child->_widget->setParent(parent->_widget);
     child->_widget->move(0,0);
     
