@@ -1,3 +1,10 @@
+Changes 4.3.0 -> 4.3.1:
+* Linux: Fix use of embedded libxcb.
+* Fix song tempo widget size after loading a song with a visible
+  song tempo widget.
+
+
+
 Changes 4.2.9 -> 4.3.0:
 * Add "Hide song tempo automation" option to song tempo automation
   popup menu.
