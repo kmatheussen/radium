@@ -358,6 +358,8 @@ public:
       , _callback(callback)
       , _initial_color(initial_color)
     {
+      setAttribute(Qt::WA_DeleteOnClose);
+      
       setOption(QColorDialog::DontUseNativeDialog, true);
       setOption(QColorDialog::ShowAlphaChannel, true);
 
@@ -369,6 +371,7 @@ public:
     }
     
     ~MyColorDialog(){
+      s7extra_unprotect(_callback);
       printf("  MyColorDialog deleted\n");
     }
 
@@ -376,11 +379,7 @@ public:
       if (result==QDialog::Rejected)
         s7extra_callFunc_void_charpointer(_callback, _initial_color.name().toUtf8().constData());
       
-      func_t *callback = _callback; // Make local copy in case QColorDialog::done deletes us.
-
       QColorDialog::done(result);
-
-      s7extra_unprotect(callback);
     }
      
   public slots:
