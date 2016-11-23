@@ -117,6 +117,17 @@ func_t *s7extra_func(s7_scheme *s7, s7_pointer func){
   return (func_t*)func;
 }
 
+void s7extra_callFunc_void_void(func_t *func){
+  s7_call(s7,
+          (s7_pointer)func,
+          s7_list(s7, 0)
+          );
+}
+
+void s7extra_callFunc2_void_void(const char *funcname){
+  s7extra_callFunc_void_void((func_t*)s7_name_to_value(s7, funcname));
+}
+
 void s7extra_callFunc_void_int_bool(func_t *func, int64_t arg1, bool arg2){
   s7_call(s7,
           (s7_pointer)func,

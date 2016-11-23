@@ -219,7 +219,7 @@ class Proto:
     def write(self,oh,dodefault):
         #if self.uses_place:
         #    return
-        
+
         self.proc.write(oh,false)
         oh.write("(");
         if self.args!=[]:
@@ -609,8 +609,14 @@ class Protos:
         for lokke in range(len(self.protos)):
             self.protos[lokke].write(oh,true)
     def writeH(self,oh):
+        oh.write("#ifdef __cplusplus\n")
+        oh.write('extern "C" {\n')
+        oh.write("#endif\n")
         for lokke in range(len(self.protos)):
             self.protos[lokke].write(oh,false)
+        oh.write("#ifdef __cplusplus\n")
+        oh.write("}\n")
+        oh.write("#endif\n")
     def writeC(self,oh):
         for lokke in range(len(self.protos)):
             oh.write("\t{\"%s\",%s},\n" % (self.protos[lokke].proc.varname,self.protos[lokke].proc.varname))

@@ -619,6 +619,32 @@ for .emacs:
 (define-expansion (<ra> command . args)
   `( ,(<_> 'ra: (keyword->symbol command)) ,@args))
 
+(define-expansion (<gui> command . args)
+  (c-display "****" command args)
+  ;;`( ,(<_> 'ra:gui_ (keyword->symbol command)) ,@args))
+  (define a1 (gensym "a1"))
+  (define a2 (gensym "a2"))
+  (define a3 (gensym "a3"))
+  (cond ((eq? command :group)
+         `(let* ((,a1 ((,args)))
+                 (,a2 (<ra> :gui_group (car ,a1))))
+            (for-each (lambda (,a3)
+                        (<ra> :gui_add ,a2 ,a3))
+                      (cadr ,a1))
+            ,a2))
+        ((eq? command :empty)
+         `(<ra> :gui_vertical-layout))
+        ((eq? command :table-layout)
+         (if (= 1 (length args))
+             `(<ra> :gui_table-layout ,@args)
+             `(let* ((,a1 ((,args)))
+                     (,a2 (<ra> :gui_table-layout (length (car ,a1)))))
+                (for-each (lambda (,a3)
+                            (<ra> :gui_add ,a2 ,a3))
+                          (apply append ,a1)))))
+        (else
+         `( ,(<_> 'ra:gui_ (keyword->symbol command)) ,@args))))
+
 
 
 (define (my-equal? a b)
