@@ -1671,8 +1671,10 @@ void SEQTRACK_update(struct SeqTrack *seqtrack){
 }
 
 void SEQUENCER_update(void){
-  if (g_sequencer_widget != NULL)
+  if (g_sequencer_widget != NULL){
+    //g_sequencer_widget->position_widgets();
     g_sequencer_widget->update();
+  }
 }
 
 // Only called from the main thread.

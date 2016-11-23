@@ -886,6 +886,11 @@ void SEQUENCER_create_from_state(hash_t *state){
     SEQUENCER_ScopedGfxDisable gfx_disable;
     
     //printf("        CREATING FROM STATE\n");
+
+    // Need to do this first since widgets are not positioned correctly if it's done last. Not quite sure why.
+    if(HASH_has_key(state, "song_tempo_automation"))
+      TEMPOAUTOMATION_create_from_state(HASH_get_hash(state, "song_tempo_automation"));
+
     
     vector_t seqtracks = {0};
   
@@ -906,9 +911,6 @@ void SEQUENCER_create_from_state(hash_t *state){
       root->song->seqtracks = seqtracks;
       root->song->curr_seqtracknum = new_curr_seqtracknum;
     }
-
-    if(HASH_has_key(state, "song_tempo_automation"))
-      TEMPOAUTOMATION_create_from_state(HASH_get_hash(state, "song_tempo_automation"));
 
     if(HASH_has_key(state, "loop_start")) {
       root->song->looping.start = HASH_get_int(state, "loop_start");
