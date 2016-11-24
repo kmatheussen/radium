@@ -5,11 +5,16 @@
 #include <QWidget>
 #include <QCloseEvent>
 #include <QPushButton>
+#include <QCheckBox>
+#include <QRadioButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGroupBox>
 
 #include "../common/nsmtracker.h"
+
+#include "../Qt/FocusSniffers.h"
+
 #include "../common/visual_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
 
@@ -27,7 +32,14 @@ struct Gui;
 
 static QVector<Gui*> g_guis;
 
-
+  /*
+  struct SetValueClass{
+    virtual void setValue(double val){
+      R_ASSERT(false);
+    }
+  };
+  */
+  
   struct Gui {
 
     int _gui_num;
@@ -64,6 +76,9 @@ static QVector<Gui*> g_guis;
         s7extra_unprotect(_callback);
     }
 
+    virtual void setGuiValue(double val){
+      GFX_Message(NULL, "Gui #%d does not have a setValue method", _gui_num);
+    }
   };
   
   
@@ -82,6 +97,52 @@ static QVector<Gui*> g_guis;
   public slots:
     void clicked(bool checked){
       s7extra_callFunc_void_void(_callback);
+    }
+  };
+  
+  struct CheckBox : QCheckBox, Gui{
+    Q_OBJECT;
+    
+  public:
+    
+    CheckBox(const char *text, bool is_checked, func_t *callback)
+      : QCheckBox(text)
+      , Gui(this, callback)
+    {
+      connect(this, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));
+      setChecked(is_checked);
+    }
+
+    virtual void setGuiValue(double val) override {
+      setChecked(val > 0.5);
+    }
+
+  public slots:
+    void toggled(bool checked){
+      s7extra_callFunc_void_bool(_callback, checked);
+    }
+  };
+  
+  struct RadioButton : QRadioButton, Gui{
+    Q_OBJECT;
+    
+  public:
+    
+    RadioButton(const char *text, bool is_checked, func_t *callback)
+      : QRadioButton(text)
+      , Gui(this, callback)
+    {
+      connect(this, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));
+      setChecked(is_checked);
+    }
+
+    virtual void setGuiValue(double val) override {
+      setChecked(val > 0.5);
+    }
+
+  public slots:
+    void toggled(bool checked){
+      s7extra_callFunc_void_bool(_callback, checked);
     }
   };
   
@@ -157,42 +218,196 @@ static QVector<Gui*> g_guis;
       , _min(min)
       , _max(max)
     {
-      connect(this, SIGNAL(valueChanged(int)), this, SLOT(valueChanged(int)));
 
+      R_ASSERT(min!=max);
+
+      if (orientation==Qt::Vertical){ // Weird Qt vertical slider behavor.
+        double temp = max;
+        max = min;
+        min = temp;
+        _max = max;
+        _min = min;
+      }
+        
       if (is_int) {
-        setMinimum(min);
-        setMaximum(max);
+        setMinimum(0);
+        setMaximum(abs(min-max));
         setTickInterval(1);
-        setValue(curr);
       } else {
-        //setTickInterval(1000);
         setMinimum(0);
         setMaximum(10000);
-        setValue(scale(curr, min, max, 0, 1000));
       }
 
+      setGuiValue(curr);
+
+      connect(this, SIGNAL(valueChanged(int)), this, SLOT(valueChanged(int)));
+
+      value_setted(value()); // In case value wasn't changed when calling setValue above.
+    }
+
+    void value_setted(int value){
+      double scaled_value = scale_double(value, minimum(), maximum(), _min, _max);
+      
+      if (_is_int) {
+        SLIDERPAINTER_set_string(_painter, _text + QString::number(scaled_value));
+        s7extra_callFunc_void_int(_callback, scaled_value);
+      } else {
+        SLIDERPAINTER_set_string(_painter, _text + QString::number(scaled_value, 'f', 2));
+        s7extra_callFunc_void_double(_callback, scaled_value);
+      }
+    }
+
+    virtual void setGuiValue(double val) override {
+      setValue(scale_double(val, _min, _max, minimum(), maximum()));
     }
 
   public slots:
     void valueChanged(int value){
-      if (_is_int) {
-        SLIDERPAINTER_set_string(_painter, _text + QString::number(value));
-        s7extra_callFunc_void_int(_callback, value);
-      } else {
-        double fvalue = scale(value, 0, 10000, _min, _max);
-        SLIDERPAINTER_set_string(_painter, _text + QString::number(fvalue, 'f', 2));
-        s7extra_callFunc_void_int(_callback, fvalue);
-      }
+      value_setted(value);
     }
   };
 
   struct Text : QLabel, Gui{
-    Text(const char *text)
-      : QLabel(text)
-      , Gui(this)
-    {}
+    Text(QString text, QString color)
+      : Gui(this)
+    {
+      if (color=="")
+        setText(text);
+      else
+        setText("<span style=\" color:" + color + ";\">" + text + "</span>");
+    }
+  };
+
+  struct Line : FocusSnifferQLineEdit, Gui{
+    Q_OBJECT;
+
+  public:
+    
+    Line(QString content, func_t *callback)
+      : Gui(this, callback)
+    {
+      connect(this, SIGNAL(editingFinished()), this, SLOT(editingFinished()));
+      setText(content);
+      s7extra_callFunc_void_charpointer(callback, content.toUtf8().constData());
+    }
+
+  public slots:
+    
+    void editingFinished(){
+      set_editor_focus();
+
+      GL_lock();{
+        clearFocus();
+      }GL_unlock();
+
+      s7extra_callFunc_void_charpointer(_callback, text().toUtf8().constData());
+    }
+    
+  };
+
+  struct TextEdit : FocusSnifferQTextEdit, Gui{
+    Q_OBJECT;
+
+  public:
+    
+    TextEdit(QString content, func_t *callback)
+      : Gui(this, callback)
+    {
+      connect(this, SIGNAL(textChanged()), this, SLOT(textChanged()));
+      setPlainText(content);
+      s7extra_callFunc_void_charpointer(callback, content.toUtf8().constData());
+    }
+
+  public slots:
+    
+    void textChanged(){
+      s7extra_callFunc_void_charpointer(_callback, toPlainText().toUtf8().constData());
+    }
+    
+  };
+
+
+  struct IntText : FocusSnifferQSpinBox, Gui{
+    Q_OBJECT;
+    int _last_sent;
+    
+  public:
+    
+    IntText(int min, int curr, int max, func_t *callback)
+      : Gui(this, callback)
+      , _last_sent(min-1)
+    {
+      connect(this, SIGNAL(valueChanged(int)), this, SLOT(valueChanged(int)));
+      connect(this, SIGNAL(editingFinished()), this, SLOT(editingFinished()));
+      setMinimum(R_MIN(min, max));
+      setMaximum(R_MAX(min, max));
+      setValue(curr);
+      s7extra_callFunc_void_int(_callback, curr); // In case value wasn't changed when calling setValue above.
+    }
+
+    virtual void setGuiValue(double val) override {
+      setValue(val);
+    }
+
+  public slots:
+    void valueChanged(int val){
+      if (val != _last_sent){
+        s7extra_callFunc_void_int(_callback, val);
+        _last_sent = val;
+      }
+    }
+    void editingFinished(){
+      set_editor_focus();
+
+      GL_lock();{
+        clearFocus();
+      }GL_unlock();
+    }
+
   };
   
+  struct FloatText : FocusSnifferQDoubleSpinBox, Gui{
+    Q_OBJECT;
+    double _last_sent;
+    
+  public:
+    
+    FloatText(double min, double curr, double max, int num_decimals, double step_interval, func_t *callback)
+      : Gui(this, callback)
+      , _last_sent(min-1)
+    {
+      connect(this, SIGNAL(valueChanged(double)), this, SLOT(valueChanged(double)));
+      connect(this, SIGNAL(editingFinished()), this, SLOT(editingFinished()));
+      setMinimum(R_MIN(min, max));
+      setMaximum(R_MAX(min, max));
+      setDecimals(num_decimals);
+      setSingleStep(step_interval);
+      setValue(curr);
+      s7extra_callFunc_void_double(_callback, curr); // In case value wasn't changed when calling setValue above.
+    }
+
+    virtual void setGuiValue(double val) override {
+      setValue(val);
+    }
+
+  public slots:
+    void valueChanged(double val){
+      if (val != _last_sent){
+        s7extra_callFunc_void_double(_callback, val);
+        _last_sent = val;
+      }
+    }
+    void editingFinished(){
+      set_editor_focus();
+
+      GL_lock();{
+        clearFocus();
+      }GL_unlock();
+    }
+
+  };
+  
+
 }
 
 using namespace radium_gui;
@@ -215,16 +430,40 @@ int64_t gui_button(const_char *text, func_t *func){
   return (new PushButton(text, func))->get_gui_num();
 }
 
+int64_t gui_checkbox(const_char *text, bool is_checked, func_t *func){
+  return (new CheckBox(text, is_checked, func))->get_gui_num();
+}
+
+int64_t gui_radiobutton(const_char *text, bool is_checked, func_t *func){
+  return (new RadioButton(text, is_checked, func))->get_gui_num();
+}
+
 int64_t gui_horizontalIntSlider(const_char *text, int min, int curr, int max, func_t *func){
+  if(min==max){
+    GFX_Message(NULL, "Gui slider: minimum and maximum value is the same");
+    return -1;
+  }
   return (new radium_gui::Slider(Qt::Horizontal, text, min, curr, max, true, func))->get_gui_num();
 }
-int64_t gui_horizontalSlider(const_char *text, int min, int curr, int max, func_t *func){
+int64_t gui_horizontalSlider(const_char *text, double min, double curr, double max, func_t *func){
+  if(min==max){
+    GFX_Message(NULL, "Gui slider: minimum and maximum value is the same");
+    return -1;
+  }
   return (new radium_gui::Slider(Qt::Horizontal, text, min, curr, max, false, func))->get_gui_num();
 }
 int64_t gui_verticalIntSlider(const_char *text, int min, int curr, int max, func_t *func){
+  if(min==max){
+    GFX_Message(NULL, "Gui slider: minimum and maximum value is the same");
+    return -1;
+  }
   return (new radium_gui::Slider(Qt::Vertical, text, min, curr, max, true, func))->get_gui_num();
 }
-int64_t gui_verticalSlider(const_char *text, int min, int curr, int max, func_t *func){
+int64_t gui_verticalSlider(const_char *text, double min, double curr, double max, func_t *func){
+  if(min==max){
+    GFX_Message(NULL, "Gui slider: minimum and maximum value is the same");
+    return -1;
+  }
   return (new radium_gui::Slider(Qt::Vertical, text, min, curr, max, false, func))->get_gui_num();
 }
 
@@ -244,8 +483,32 @@ int64_t gui_group(const_char* title){
   return (new GroupBox(title))->get_gui_num();
 }
 
-int64_t gui_text(const_char* text){
-  return (new Text(text))->get_gui_num();
+int64_t gui_text(const_char* text, const_char* color){
+  return (new Text(text, color))->get_gui_num();
+}
+
+int64_t gui_textEdit(const_char* content, func_t *func){
+    return (new TextEdit(content, func))->get_gui_num();
+}
+
+int64_t gui_line(const_char* content, func_t *func){
+    return (new Line(content, func))->get_gui_num();
+}
+
+int64_t gui_intText(int min, int curr, int max, func_t *func){
+  return (new IntText(min, curr, max, func))->get_gui_num();
+}
+
+int64_t gui_floatText(double min, double curr, double max, int num_decimals, double step_interval, func_t *func){
+  return (new FloatText(min, curr, max, num_decimals, step_interval, func))->get_gui_num();
+}
+
+void gui_setValue(int guinum, double value){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->setGuiValue(value);
 }
 
 void gui_add(int parentnum, int childnum){
