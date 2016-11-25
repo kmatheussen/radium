@@ -413,7 +413,7 @@ static QVector<Gui*> g_guis;
 using namespace radium_gui;
 
   
-static Gui *get_gui(int guinum){
+static Gui *get_gui(int64_t guinum){
   if (guinum < 0 || guinum > g_guis.size()){
     GFX_Message(NULL, "No Gui #%d", guinum);
   }
@@ -503,7 +503,7 @@ int64_t gui_floatText(double min, double curr, double max, int num_decimals, dou
   return (new FloatText(min, curr, max, num_decimals, step_interval, func))->get_gui_num();
 }
 
-void gui_setValue(int guinum, double value){
+void gui_setValue(int64_t guinum, double value){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
@@ -511,7 +511,7 @@ void gui_setValue(int guinum, double value){
   gui->setGuiValue(value);
 }
 
-void gui_add(int parentnum, int childnum){
+void gui_add(int64_t parentnum, int64_t childnum){
   Gui *parent = get_gui(parentnum);
   if (parent==NULL)
     return;
@@ -537,7 +537,7 @@ void gui_add(int parentnum, int childnum){
   
 }
 
-bool gui_is_visible(int guinum){
+bool gui_is_visible(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return false;
@@ -545,7 +545,7 @@ bool gui_is_visible(int guinum){
   return gui->_widget->isVisible();
 }
 
-void gui_show(int guinum){
+void gui_show(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
@@ -553,7 +553,7 @@ void gui_show(int guinum){
   gui->_widget->show();
 }
 
-void gui_hide(int guinum){
+void gui_hide(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
@@ -561,7 +561,7 @@ void gui_hide(int guinum){
   gui->_widget->hide();
 }
 
-void gui_close(int guinum){
+void gui_close(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
