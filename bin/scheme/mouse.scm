@@ -1902,8 +1902,8 @@
                                (<ra> :undo-notes (pianonote-info :tracknum))
                                (define Place (get-place-from-y $button $y))
                                (<ra> :cut-note Place
-                                            (pianonote-info :notenum)
-                                            (pianonote-info :tracknum))
+                                               (pianonote-info :notenum)
+                                               (pianonote-info :tracknum))
                                #f)
                              (define (delete-pitch)
                                (<ra> :undo-notes (pianonote-info :tracknum))
@@ -1943,7 +1943,23 @@
                                (define Value (<ra> :get-note-value (pianonote-info :notenum) (pianonote-info :tracknum)))
                                (<ra> :add-pianonote-pitch Value Place (pianonote-info :notenum) (pianonote-info :tracknum))
                                #f)
+
+                             (define (glide-from-here-to-next-note)
+                               (<ra> :undo-notes (pianonote-info :tracknum))
+                               (define Place (get-place-from-y $button $y))
+                               (define Value (<ra> :get-note-value (pianonote-info :notenum) (pianonote-info :tracknum)))
+                               (define next-pitch (<ra> :get-note-value (1+ (pianonote-info :notenum)) (pianonote-info :tracknum)))                                 
+                               (<ra> :add-pianonote-pitch Value Place (pianonote-info :notenum) (pianonote-info :tracknum))
+                               (<ra> :set-note-end-pitch next-pitch (pianonote-info :notenum) (pianonote-info :tracknum))
+                               #f)
                              
+                             (define (can-glide-from-here-to-next-note?)
+                               (and (< (pianonote-info :notenum)
+                                       (1- (<ra> :get-num-notes (pianonote-info :tracknum))))
+                                    (= (pianonote-info :pianonotenum)
+                                       (1- (<ra> :get-num-pianonotes (pianonote-info :notenum)
+                                                                     (pianonote-info :tracknum))))))
+                               
                              (define num-pianonotes (<ra> :get-num-pianonotes (pianonote-info :notenum)
                                                                            (pianonote-info :tracknum)))
                              (let ((portamento-enabled (<ra> :portamento-enabled
@@ -1955,6 +1971,7 @@
                                                      (pianonote-info :tracknum))))
                                
                                (popup-menu "Cut Note at mouse position" cut-note
+                                           "Glide to next note at mouse position" :enabled (can-glide-from-here-to-next-note?) glide-from-here-to-next-note
                                            "Delete Note" delete-note
                                            "--------"
                                            "Delete break point" :enabled (> num-pianonotes 1) delete-pitch
