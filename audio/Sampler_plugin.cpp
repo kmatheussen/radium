@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 #include <sndfile.h>
 
+#include <QFileInfo>
+#include <QDir>
+
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 #include "../common/OS_Player_proc.h"
@@ -2081,6 +2084,8 @@ static void set_loop_data(Data *data, int64_t start, int64_t length, bool set_lo
 }
 
 void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start, int length){
+  R_ASSERT_RETURN_IF_FALSE(!strcmp("Sample Player", plugin->type->type_name));
+  
   Data *data=(Data*)plugin->data;
 
   PLAYER_lock();{  
@@ -2187,24 +2192,79 @@ static bool set_new_sample(struct SoundPlugin *plugin,
 }
 
 
-
 bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), false);
+  
   Data *data=(Data*)plugin->data;
   return set_new_sample(plugin,filename,instrument_number,data->resampler_type,data->loop_start,data->loop_length, true, false);
 }
 
+
+bool SAMPLER_set_random_sample(struct SoundPlugin *plugin, const wchar_t *path){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), false);
+    
+  bool is_default_sound;
+
+  QDir dir;
+  
+  if (path==NULL){
+    
+    const wchar_t *filename = SAMPLER_get_filename(plugin, &is_default_sound);
+    
+    QFileInfo info(STRING_get_qstring(filename));
+  
+    dir = info.absoluteDir();
+    
+  } else {
+    
+    dir = QDir(STRING_get_qstring(path));
+    
+  }
+  
+  
+  if (dir.exists()==false){
+    GFX_Message(NULL, "Directory %s does not exist", dir.absolutePath().toUtf8().constData());
+    return false;
+  }
+  
+  QStringList list = dir.entryList(get_sample_name_filters(), QDir::Files|QDir::NoDotAndDotDot|QDir::Readable);
+
+  if(list.size()==0){
+    GFX_Message(NULL, "No samples found in %s", dir.absolutePath().toUtf8().constData());
+    return false;
+  }
+  
+  QString new_filename = dir.absoluteFilePath(list.at(qrand() % list.size()));
+
+  printf("*********** filename: -%s-\n", new_filename.toUtf8().constData());
+  
+  if (SAMPLER_set_new_sample(plugin, STRING_create(new_filename), 0)==false){
+    //GFX_Message(NULL, "Unable to set sample %s", new_filename.toUtf8().constData()); // SAMPLER_set_new_sample has already given a message.
+    return false;
+  }
+  
+  return true;
+}
+
+
 bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, int resampler_type){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), false);
+  
   Data *data=(Data*)plugin->data;
   return set_new_sample(plugin,data->filename,data->instrument_number,resampler_type,data->loop_start,data->loop_length, data->use_sample_file_middle_note, false);
 }
 
 int SAMPLER_get_resampler_type(struct SoundPlugin *plugin){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), false);
+  
   Data *data=(Data*)plugin->data;
   return data->resampler_type;
 }
 
 // Has been used for debugging. Not sure if I planned to use it for anything else.
 void SAMPLER_save_sample(struct SoundPlugin *plugin, const wchar_t *filename, int sample_number){
+  R_ASSERT_RETURN_IF_FALSE(!strcmp("Sample Player", plugin->type->type_name));
+  
   Data *data = (Data*)plugin->data;
   const Sample *sample = &data->samples[sample_number];
 
@@ -2232,6 +2292,10 @@ void SAMPLER_save_sample(struct SoundPlugin *plugin, const wchar_t *filename, in
 }
 
 void SAMPLER_start_recording(struct SoundPlugin *plugin, const wchar_t *pathdir, int num_channels, bool recording_from_main_input){
+#if !defined(RELEASE)
+  R_ASSERT_RETURN_IF_FALSE(!strcmp("Sample Player", plugin->type->type_name));
+#endif
+  
   R_ASSERT_RETURN_IF_FALSE(num_channels > 0);
   
   Data *data = (Data*)plugin->data;
@@ -2255,6 +2319,10 @@ void SAMPLER_start_recording(struct SoundPlugin *plugin, const wchar_t *pathdir,
 }
 
 const char *SAMPLER_get_recording_status(struct SoundPlugin *plugin){
+#if !defined(RELEASE)
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), NULL);
+#endif
+  
   Data *data = (Data*)plugin->data;
     
   int status = ATOMIC_GET(data->recording_status);
@@ -2399,12 +2467,16 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 }
 
 const wchar_t *SAMPLER_get_filename(struct SoundPlugin *plugin, bool *is_default_sound){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), NULL);  
+
   Data *data=(Data*)plugin->data;
   *is_default_sound = data->using_default_sound;
   return data->filename;
 }
 
 const wchar_t *SAMPLER_get_filename_display(struct SoundPlugin *plugin){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), NULL);
+
   Data *data=(Data*)plugin->data;
   return data->filename;
 }

@@ -102,6 +102,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/audio_instrument_proc.h"
 #include "../audio/Presets_proc.h"
 #include "../audio/CpuUsage.hpp"
+#include "../audio/Sampler_plugin_proc.h"
 
 
 extern EditorWidget *g_editor;
@@ -1012,6 +1013,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int delete_ = -1;
   int save = -1;
   int config_color = -1;
+  int random = -1;
   
   if (chips.size() > 1) {
     
@@ -1023,15 +1025,25 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
   } else if (chips.size() == 1){
 
+    if (QString("Sample Player") == SP_get_plugin(chip_under->_sound_producer)->type->type_name){
+      random = VECTOR_push_back(&v, "Load random sample from folder");
+      VECTOR_push_back(&v, "--------");
+    }
+
     insert = VECTOR_push_back(&v, "Insert sound object");
     replace = VECTOR_push_back(&v, "Replace sound object");
+    
     VECTOR_push_back(&v, "--------");
+    
     copy = VECTOR_push_back(&v, "Copy sound object");
     cut = VECTOR_push_back(&v, "Cut sound object");
     delete_ = VECTOR_push_back(&v, "Delete sound object");
+    
     VECTOR_push_back(&v, "--------");
+    
     save = VECTOR_push_back(&v, "Save preset file (.rec)");
     config_color = VECTOR_push_back(&v, "Configure instrument color");
+    
   }
 
       
@@ -1070,6 +1082,10 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     QString command = QString("(show-instrument-color-dialog ") + QString::number(CHIP_get_patch(chip_under)->id) + ")";
     evalScheme(talloc_strdup(command.toUtf8().constData()));
 
+  } else if (sel==random) {
+
+    SAMPLER_set_random_sample(SP_get_plugin(chip_under->_sound_producer), NULL);
+    
   } else {
     
     R_ASSERT(false);

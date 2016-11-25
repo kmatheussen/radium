@@ -32,7 +32,9 @@ extern LANGSPEC void recreate_instrument_widget_order_from_state(hash_t *state);
 
 #ifdef USE_QT4
 #include <QString>
+#include <QStringList>
 extern bool file_could_be_a_sample(QString filename);
+extern QStringList get_sample_name_filters(void);
 #endif
 
 extern LANGSPEC void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch);

@@ -33,7 +33,52 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern PlayerClass *pc;
 extern QApplication *g_qapplication;
 
+QStringList get_sample_name_filters(void){
+  static bool inited=false;
+  static QStringList list;
+
+  if (inited==false){
+    QStringList a;
+    a
+      << "*.xi"
+      << "*.wav"
+      << "*.aif"
+      << "*.aiff"
+      << "*.ogg"
+      << "*.flac"
+      << "*.caf"
+      << "*.au"
+      << "*.iff"
+      << "*.w64"
+      << "*.wavex"
+      << "*.voc"
+      << "*.mat4"
+      << "*.mat5"
+      << "*.sds"
+      << "*.sd2"
+      << "*.rf64"
+      << "*.wave"
+      << "*.snd"
+      << "*.sound";
+
+    for(auto b : a){
+      list << b;
+      list << b.toUpper();
+    }
+    inited = true;
+  }
+
+  return list;
+}
+
 bool file_could_be_a_sample(QString filename){
+  for(auto filter : get_sample_name_filters())
+    if (filename.endsWith(filter.mid(1)))
+      return true;
+
+  return false;
+  
+  /*
   return false
     || filename.endsWith(".xi",Qt::CaseInsensitive)
     || filename.endsWith(".wav",Qt::CaseInsensitive) 
@@ -55,6 +100,7 @@ bool file_could_be_a_sample(QString filename){
     || filename.endsWith(".wave",Qt::CaseInsensitive)
     || filename.endsWith(".snd",Qt::CaseInsensitive)
     || filename.endsWith(".sound",Qt::CaseInsensitive);
+  */
 }
 
 /*
@@ -576,6 +622,11 @@ class Sample_requester_widget : public QWidget
   
 public slots:
 
+  void on_random_button_clicked(bool){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    SAMPLER_set_random_sample(plugin, STRING_create(_dir.absolutePath()));
+  }
+  
   void on_up_clicked(bool){
     if(_preview_octave>9)
       return;
