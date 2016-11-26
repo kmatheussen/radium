@@ -873,7 +873,7 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
   union SuperType args[7];      
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
-
+    
   int i;
   for(i=0;i<NUM_PATCH_VOICES;i++){
     struct PatchVoice *voice = &patch->voices[i];
@@ -888,6 +888,10 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
       args[2].int_num = voice_id;
       args[3].float_num = voice_velocity;
 
+      // voicenum
+      args[5].int_num &= ~(0xff);
+      args[5].int_num |= i;
+        
       // voice ON
       //printf("___RT_PATCH_play_note. time: %d (%d)\n", (int)time, (int)(time + voice->start*sample_rate/1000));
 
@@ -996,6 +1000,11 @@ void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch *patch, const no
         args[1].float_num = voice_notenum;
         args[2].int_num = voice_id;
 
+        // voicenum
+        args[5].int_num &= ~(0xff);
+        args[5].int_num |= i;
+        
+
         //printf("    remove %d at %d\n", (int)voice_id, (int)((int64_t)time + voice->start*sample_rate/1000));
         SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 7, SCHEDULER_NOTE_OFF_PRIORITY);
       }
@@ -1082,7 +1091,12 @@ void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, co
       args[1].float_num = voice_notenum;
       args[2].int_num = voice_id;
       args[3].float_num = voice_velocity;
+
+      // voicenum
+      args[5].int_num &= ~(0xff);
+      args[5].int_num |= i;
       
+
       SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 7, SCHEDULER_VELOCITY_PRIORITY);
     }
   }
@@ -1154,7 +1168,11 @@ void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch, const
 
       args[1].float_num = voice_notenum;
       args[2].int_num = voice_id;
-      
+
+      // voicenum
+      args[5].int_num &= ~(0xff);
+      args[5].int_num |= i;
+
       SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 7, SCHEDULER_PITCH_PRIORITY);
     }
   }
@@ -1279,7 +1297,8 @@ static void RT_PATCH_turn_voice_on(struct SeqTrack *seqtrack, struct Patch *patc
                                   note.pitch + voice->transpose,
                                   voice_velocity,
                                   note.pan,
-                                  note.midi_channel
+                                  note.midi_channel,
+                                  note.voicenum
                                   ),
                     seqtrack->start_time
                     );
@@ -1304,7 +1323,8 @@ static void RT_PATCH_turn_voice_off(struct SeqTrack *seqtrack, struct Patch *pat
                                   note.pitch + voice->transpose,
                                   note.velocity,
                                   note.pan,
-                                  note.midi_channel
+                                  note.midi_channel,
+                                  note.voicenum
                                   ),
                     seqtrack->start_time
                     );
@@ -1395,7 +1415,8 @@ void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_
                                       notenum,
                                       TRACK_get_volume(track),
                                       TRACK_get_pan(track),
-                                      ATOMIC_GET(track->midi_channel)
+                                      ATOMIC_GET(track->midi_channel),
+                                      0
                                       )
                         );
 }
@@ -1413,7 +1434,8 @@ void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,float notenum, int64_t
                                       notenum,
                                       TRACK_get_volume(track),
                                       TRACK_get_pan(track),
-                                      ATOMIC_GET(track->midi_channel)
+                                      ATOMIC_GET(track->midi_channel),
+                                      0
                                       )
                         );
 }

@@ -161,7 +161,8 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
                                  note->note,
                                  TRACK_get_velocity(track,note->velocity),
                                  TRACK_get_pan(track),
-                                 ATOMIC_GET(track->midi_channel)
+                                 ATOMIC_GET(track->midi_channel),
+                                 0
                                  );
 
     //printf("  scheduler_notes.c. Playing note at %d\n",(int)time);

@@ -73,7 +73,8 @@ static void Scroll_play_down3(
                                           note->note,
                                           VELOCITY_get(note->velocity),
                                           TRACK_get_pan(track),
-                                          ATOMIC_GET(track->midi_channel))
+                                          ATOMIC_GET(track->midi_channel),
+                                          0)
                             );
           
           if (PlaceIsBetween2(&note->end, p1, p2))
@@ -83,7 +84,8 @@ static void Scroll_play_down3(
                                           note->note,
                                           0,
                                           TRACK_get_pan(track),
-                                          ATOMIC_GET(track->midi_channel)
+                                          ATOMIC_GET(track->midi_channel),
+                                          0
                                           )
                             );
           
@@ -111,7 +113,8 @@ static void stop_all_notes_in_track(struct Tracks *track){
                                             note->note,
                                             0,
                                             0,
-                                            ATOMIC_GET(track->midi_channel)
+                                            ATOMIC_GET(track->midi_channel),
+                                            0
                                             ));
       }END_VECTOR_FOR_EACH;
       
@@ -156,7 +159,8 @@ static void Scroll_play_up3(
                                           note->note, 
                                           VELOCITY_get(note->velocity),
                                           TRACK_get_pan(track),
-                                          ATOMIC_GET(track->midi_channel)
+                                          ATOMIC_GET(track->midi_channel),
+                                          0
                                           )
                             );
             VECTOR_push_back(&scrollplaying_notes[track->l.num], note);
