@@ -1428,13 +1428,13 @@ void setLinenumbersVisible(bool doit){
 
 // Disk
 
-static bool g_stop_playing_when_saving_song = true;
+static bool g_stop_playing_when_saving_song = false;
 
 bool doStopPlayingWhenSavingSong(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_stop_playing_when_saving_song = SETTINGS_read_bool("stop_playing_when_saving_song", true);
+    g_stop_playing_when_saving_song = SETTINGS_read_bool("stop_playing_when_saving_song", g_stop_playing_when_saving_song);
     has_inited = true;
   }
 

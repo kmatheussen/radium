@@ -56,6 +56,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define CROSSFADE_BUFFER_LENGTH 128
 #define MAX_CROSSFADE_LENGTH (48000*5) // in samples.
 
+#define MAX_PORTAMENTO 1000
+
 //#define DEFAULT_A 20
 //#define DEFAULT_H 5
 //#define DEFAULT_D 20
@@ -94,6 +96,7 @@ enum{
   EFF_D,
   EFF_S,
   EFF_R,
+  EFF_PORTAMENTO,
   EFF_VIBRATO_SPEED,
   EFF_VIBRATO_DEPTH,
   EFF_TREMOLO_SPEED,
@@ -147,9 +150,12 @@ typedef struct _Voice{
 
   // Same for pitch
   float pitch;
-  float start_pitch;
+  //float start_pitch;
   float end_pitch;
-
+  float pitch_inc; // For portamento.
+  int portamento_channel;
+  bool set_last_end_pitch; // true for all new voices, but is set false after player has been stopped.
+  
   Panvals pan;
 
   int64_t pos;
@@ -183,6 +189,8 @@ typedef struct{
   float note_adjust; // -6 -> +6      (must be float because of conversions)
   //float octave_adjust; // -10 -> +10. (must be float because of conversions)
 
+  float portamento;
+  
   float a,h,d,s,r;
 
   DEFINE_ATOMIC(bool, loop_onoff);
@@ -233,7 +241,8 @@ struct Data{
 
   Voice *voices_playing;
   Voice *voices_not_playing;
-
+  float last_end_pitch[NUM_PATCH_VOICES << 4];
+  
   int num_different_samples;  // not used for anything (important).
 
   Voice voices[POLYPHONY];
@@ -279,7 +288,10 @@ static double get_ratio(int sample_note_num, int play_note_num){
 }
 #endif
 
-
+static int get_portamento_channel(int midi_channel, int voicenum){
+  R_ASSERT_NON_RELEASE(NUM_PATCH_VOICES < 16);
+  return (voicenum << 4) | midi_channel;
+}
 
 
 
@@ -649,19 +661,24 @@ static float get_peak(float *samples, int num_samples){
 static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, float **outputs){
   // portamento
   {
-#if 1
+#if 0
     voice->pitch = voice->end_pitch;
 #else
-    const float how_much = 0.1;
-    if (voice->end_pitch > voice->pitch){
-      voice->pitch += how_much;
-      if (voice->pitch > voice->end_pitch)
-        voice->pitch = voice->end_pitch;
-    } else if (voice->end_pitch < voice->pitch){
-      voice->pitch -= how_much;
-      if (voice->pitch < voice->end_pitch)
-        voice->pitch = voice->end_pitch;
+    if (voice->end_pitch != voice->pitch){
+      voice->pitch += voice->pitch_inc*num_frames_to_produce;
+      if (voice->pitch_inc < 0){
+        if (voice->end_pitch > voice->pitch)
+          voice->pitch = voice->end_pitch;
+      } else {
+        if (voice->end_pitch < voice->pitch)
+          voice->pitch = voice->end_pitch;
+      }
     }
+
+    if (voice->set_last_end_pitch){
+      data->last_end_pitch[voice->portamento_channel] = voice->pitch;
+    }
+    
 #endif
   }
   
@@ -762,8 +779,8 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
   //printf("peak in/out: %.3f - %.3f\n",peak_in,get_peak(outputs[0], num_frames_to_produce));
 
   voice->start_volume = voice->end_volume;
-  voice->start_pitch = voice->end_pitch;
-
+  //voice->start_pitch = voice->end_pitch;
+  
   if(startpos+frames_created_by_envelope < num_frames_to_produce)
     return true;
   else
@@ -870,6 +887,8 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
   
   const Note *note = &data->notes[(int)note2.pitch];
 
+  int portamento_channel = get_portamento_channel(note2.midi_channel, note2.voicenum);
+  
   int i;
   for(i=0;i<note->num_samples;i++){
 
@@ -882,20 +901,35 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
     
     RT_remove_voice(&data->voices_not_playing, voice);
     RT_add_voice(&data->voices_playing, voice);
+
+    voice->set_last_end_pitch = true;
     
     voice->last_finetune_value = data->p.finetune;
     
     voice->note_num = note2.pitch;
     voice->note_id = note2.id;
     voice->seqblock = note2.seqblock;
+    voice->portamento_channel = note2.midi_channel * 16 + note2.voicenum;
     
     voice->start_volume = velocity2gain(note2.velocity);
     voice->end_volume = voice->start_volume;
 
-    voice->pitch       = note2.pitch;
-    voice->start_pitch = note2.pitch;
-    voice->end_pitch   = note2.pitch;
+    const float portamento = data->p.portamento;
 
+    voice->end_pitch = note2.pitch;
+
+    if (portamento < 0.001)
+      voice->pitch = note2.pitch;
+    else {
+      float last_end_pitch = data->last_end_pitch[portamento_channel];
+      if (last_end_pitch <= 0.001) {
+        voice->pitch = note2.pitch;
+      } else {
+        voice->pitch = last_end_pitch;
+        voice->pitch_inc = (voice->end_pitch - voice->pitch) * 1000.0f / (data->samplerate * portamento);
+      }
+    }
+    
     const Sample *sample = note->samples[i];
     
     voice->sample = sample;
@@ -921,6 +955,8 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
     voice->delta_pos_at_end=-1;
     voice->is_fading_out=false;
   }
+
+  data->last_end_pitch[portamento_channel] = note2.pitch;
 }
 
 
@@ -950,12 +986,22 @@ static void set_note_pitch(struct SoundPlugin *plugin, int time, note_t note){
 
   Voice *voice = data->voices_playing;
 
-  //printf("Setting pitch for %d (%f) to %f.\n",(int)note_id,note_num,pitch);
+  //printf("Setting pitch to %f.\n",note.pitch);
 
   while(voice!=NULL){
 
     if(is_note(note, voice->note_id, voice->seqblock)){
+
+      const float portamento = data->p.portamento;
+      
       voice->end_pitch = note.pitch;
+              
+      if (portamento < 0.001)
+        voice->pitch = note.pitch;
+      else
+        voice->pitch_inc = (voice->end_pitch - voice->pitch) * 1000.0f / (data->samplerate * portamento);
+
+      //printf("Pitch. voice->pitch_inc: %f\n", voice->pitch_inc);
       //printf("Got it\n");
     }
 
@@ -1001,6 +1047,19 @@ static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
 
     voice = voice->next;
   }
+}
+
+static void player_is_stopped(struct SoundPlugin *plugin){
+  Data *data = (Data*)plugin->data;
+  PLAYER_lock();{
+    memset(data->last_end_pitch, 0, sizeof(float)*(NUM_PATCH_VOICES << 4));
+    Voice *voice = data->voices_playing;
+    while(voice!=NULL){
+      voice->set_last_end_pitch = false;
+      voice = voice->next;      
+    }
+  }PLAYER_unlock();
+  //printf("********** Player is stopped called\n");
 }
 
 // returns the attack+decay+release value (i.e. A+D+R in ADSR) as number of samples.
@@ -1347,6 +1406,11 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
                         0.0,1.0,
                         0,MAX_R);
       break;
+    case EFF_PORTAMENTO:
+      data->p.portamento = scale(value,
+                                 0,1,
+                                 0,MAX_PORTAMENTO);
+      break;
     case EFF_VIBRATO_SPEED:
       data->p.vibrato_speed = scale(value,
                                   0.0,1.0,
@@ -1472,6 +1536,9 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
     case EFF_R:
       data->p.r = value;
       break;
+    case EFF_PORTAMENTO:
+      data->p.portamento = value;
+      break;
     case EFF_VIBRATO_SPEED:
       data->p.vibrato_speed = value;
       data->p.vibrato_phase_add = data->p.vibrato_speed * 2.0 * M_PI / data->samplerate;
@@ -1548,6 +1615,10 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return scale(data->p.r,
                    0,MAX_R,
                    0.0,1.0);
+    case EFF_PORTAMENTO:
+      return scale(data->p.portamento,
+                   0,MAX_PORTAMENTO,
+                   0,1);      
     case EFF_VIBRATO_SPEED:
       return scale(data->p.vibrato_speed,
                    0,MAX_VIBRATO_SPEED,
@@ -1614,6 +1685,8 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return data->p.s;
     case EFF_R:
       return data->p.r;
+    case EFF_PORTAMENTO:
+      return data->p.portamento;
     case EFF_VIBRATO_SPEED:
       return data->p.vibrato_speed;
     case EFF_VIBRATO_DEPTH:
@@ -1672,6 +1745,9 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     break;
   case EFF_R:
     snprintf(buffer,buffersize-1,"%f ms",data->p.r);
+    break;
+  case EFF_PORTAMENTO:
+    snprintf(buffer,buffersize-1,"%.2fms",data->p.portamento);
     break;
   case EFF_VIBRATO_SPEED:
     snprintf(buffer,buffersize-1,"%.1fHz",data->p.vibrato_speed);
@@ -2359,6 +2435,8 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
     return "Sustain";
   case EFF_R:
     return "Release";
+  case EFF_PORTAMENTO:
+    return "Portamento";
   case EFF_VIBRATO_SPEED:
     return "Vibrato Speed";
   case EFF_VIBRATO_DEPTH:
@@ -2505,6 +2583,8 @@ static void init_plugin_type(void){
  plugin_type.set_note_volume  = set_note_volume;
  plugin_type.set_note_pitch   = set_note_pitch;
  plugin_type.stop_note        = stop_note;
+
+ plugin_type.player_is_stopped = player_is_stopped;
 
  plugin_type.RT_get_audio_tail_length = RT_get_audio_tail_length;
    

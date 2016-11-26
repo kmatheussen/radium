@@ -650,7 +650,8 @@ static void RT_MIDI_send_msg_to_patch_receivers2(struct SeqTrack *seqtrack, stru
                                 message.getNoteNumber(),
                                 message.getVelocity() / 127.0f,
                                 0.0f,
-                                message.getChannel()-1);
+                                message.getChannel()-1,
+                                0);
     RT_PATCH_send_play_note_to_receivers(seqtrack, patch, note, seq_time);
     
   } else if (message.isNoteOff()) {
@@ -660,7 +661,8 @@ static void RT_MIDI_send_msg_to_patch_receivers2(struct SeqTrack *seqtrack, stru
                                 message.getNoteNumber(),
                                 0,
                                 0.0f,
-                                message.getChannel()-1);
+                                message.getChannel()-1,
+                                0);
     RT_PATCH_send_stop_note_to_receivers(seqtrack, patch, note, seq_time);
   
   } else if (message.isAftertouch()) {
@@ -669,7 +671,8 @@ static void RT_MIDI_send_msg_to_patch_receivers2(struct SeqTrack *seqtrack, stru
                                 message.getNoteNumber(),
                                 message.getAfterTouchValue() / 127.0f,                                
                                 0.0f,
-                                message.getChannel()-1);
+                                message.getChannel()-1,
+                                0);
     RT_PATCH_send_change_velocity_to_receivers(seqtrack, patch, note, seq_time);
 
   } else {
@@ -721,7 +724,8 @@ static void RT_MIDI_send_msg_to_patch2(struct SeqTrack *seqtrack, struct Patch *
                                 message.getNoteNumber(),
                                 message.getVelocity() / 127.0f,
                                 0.0f,
-                                message.getChannel()-1);
+                                message.getChannel()-1,
+                                0);
 
     RT_PATCH_play_note(seqtrack, patch, note, seq_time);
   
@@ -731,7 +735,8 @@ static void RT_MIDI_send_msg_to_patch2(struct SeqTrack *seqtrack, struct Patch *
                                 message.getNoteNumber(),
                                 0,
                                 0.0f,
-                                message.getChannel()-1);
+                                message.getChannel()-1,
+                                0);
     RT_PATCH_stop_note(seqtrack, patch, note, seq_time + 1); // We add 1 to the timing here to avoid hanging note if note on and note off are sent simultaneously.
   
   } else if (message.isAftertouch()) {
@@ -740,7 +745,8 @@ static void RT_MIDI_send_msg_to_patch2(struct SeqTrack *seqtrack, struct Patch *
                                 message.getNoteNumber(),
                                 message.getAfterTouchValue() / 127.0f,                                
                                 0.0f,
-                                message.getChannel()-1);
+                                message.getChannel()-1,
+                                0);
     RT_PATCH_change_velocity(seqtrack, patch, note, seq_time);
 
   } else {

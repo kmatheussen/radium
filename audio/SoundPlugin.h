@@ -229,6 +229,8 @@ typedef struct SoundPluginType{
   void (*send_raw_midi_message)(struct SoundPlugin *plugin, int block_delta_time, uint32_t msg);
   void (*stop_note)(struct SoundPlugin *plugin, int block_delta_time, note_t note);
 
+  void (*player_is_stopped)(struct SoundPlugin *plugin); // Called when player is stopped and after all notes in all instruments have been turned off. May be NULL.
+  
   // Used by auto-suspend to determine how long time to wait until suspending. If NULL, the default value will be used instead.
   // * The function can not return a lower value than the actual tail. That may cause an audio tail to suddenly kick in when instrument is brought back from suspension.
   // * The function is allowed to return a higher value than the actual tail.
@@ -265,7 +267,7 @@ typedef struct SoundPluginType{
   void (*set_preset_name)(struct SoundPlugin *plugin, int num, const char* new_name);
 
   void (*set_non_realtime)(struct SoundPlugin *plugin, bool is_non_realtime);
-  
+
   // Free use by the plugin
   void *data;
 

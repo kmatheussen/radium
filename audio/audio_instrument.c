@@ -853,6 +853,11 @@ static int AUDIO_getPatch(struct Tracker_Windows *window,ReqType reqtype,const s
 static void AUDIO_CloseInstrument(struct Instruments *instrument){}
 //static void AUDIO_InitTrack(struct Instruments *instrument,const struct Tracks *track){}
 static void AUDIO_StopPlaying(struct Instruments *instrument){
+  VECTOR_FOR_EACH(struct Patch *patch, &get_audio_instrument()->patches){
+    SoundPlugin *plugin = patch->patchdata;
+    if (plugin!=NULL && plugin->type->player_is_stopped != NULL)
+      plugin->type->player_is_stopped(plugin);
+  }END_VECTOR_FOR_EACH;
 }
 
 static void AUDIO_PP_Update(struct Instruments *instrument,struct Patch *patch){
