@@ -1562,7 +1562,7 @@ QWidget *GL_create_widget(QWidget *parent){
   }
 
   if (GL_get_vsync()==false){
-    GFX_Message(NULL, "Warning: VSync disabled. You probably don't want to do that. You can turn on vsync under Edit -> Preferences -> OpenGL -> Vertical Blank");
+    GFX_Message(NULL, "Warning: VSync disabled. You probably don't want to do that. You can enable vsync under\nEdit -> Preferences -> OpenGL -> Vertical Blank");
   }
   
   if (is_opengl_certainly_too_old_questionmark()){

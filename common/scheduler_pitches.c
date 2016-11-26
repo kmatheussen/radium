@@ -109,12 +109,13 @@ static int64_t RT_scheduled_glide_pitch(struct SeqTrack *seqtrack, int64_t time,
 #if DO_DEBUG
     printf("  Sending pitch %f at %d\n",val,(int)time);
 #endif
-    
-    RT_PATCH_change_pitch(seqtrack,
-                          patch,
-                          create_note_t2(seqblock,note->id, val),
-                          time
-                          );
+
+    if (time==time1 || val1!=val2)
+      RT_PATCH_change_pitch(seqtrack,
+                            patch,
+                            create_note_t2(seqblock,note->id, val),
+                            time
+                            );
   }
   
   if (time >= time2) {
