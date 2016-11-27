@@ -79,6 +79,11 @@ static QVector<Gui*> g_guis;
     virtual void setGuiValue(dyn_t val){
       GFX_Message(NULL, "Gui #%d does not have a setValue method", _gui_num);
     }
+
+    virtual dyn_t getGuiValue(void){
+      GFX_Message(NULL, "Gui #%d does not have a getValue method", _gui_num);
+      return DYN_create_bool(false);
+    }
   };
   
   
@@ -120,6 +125,10 @@ static QVector<Gui*> g_guis;
         GFX_Message(NULL, "Checkbox->setValue received %s, expected BOOL_TYPE", DYN_type_name(val.type));
     }
 
+    virtual dyn_t getGuiValue(void) override {
+      return DYN_create_bool(isChecked());
+    }
+
   public slots:
     void toggled(bool checked){
       s7extra_callFunc_void_bool(_callback, checked);
@@ -144,6 +153,10 @@ static QVector<Gui*> g_guis;
         setChecked(val.bool_number);
       else
         GFX_Message(NULL, "RadioButton->setValue received %s, expected BOOL_TYPE", DYN_type_name(val.type));
+    }
+
+    virtual dyn_t getGuiValue(void) override {
+      return DYN_create_bool(isChecked());
     }
 
   public slots:
@@ -275,6 +288,14 @@ static QVector<Gui*> g_guis;
         setValue(scale_double(val.float_number, _min, _max, minimum(), maximum()));
     }
 
+    virtual dyn_t getGuiValue(void) override {
+      double scaled_value = scale_double(value(), minimum(), maximum(), _min, _max);
+      if (_is_int)
+        return DYN_create_int((int)scaled_value);
+      else
+        return DYN_create_float(scaled_value);
+    }
+
   public slots:
     void valueChanged(int value){
       value_setted(value);
@@ -290,6 +311,18 @@ static QVector<Gui*> g_guis;
       else
         setText("<span style=\" color:" + color + ";\">" + text + "</span>");
     }
+
+    virtual void setGuiValue(dyn_t dyn) override {
+      if(dyn.type==STRING_TYPE)
+        setText(STRING_get_qstring(dyn.string));
+      else
+        GFX_Message(NULL, "Text->setValue received %s, expected STRING_TYPE", DYN_type_name(dyn.type));
+    }
+
+    virtual dyn_t getGuiValue(void) override {
+      return DYN_create_string_from_chars(text().toUtf8().constData());
+    }
+
   };
 
   struct Line : FocusSnifferQLineEdit, Gui{
@@ -303,6 +336,17 @@ static QVector<Gui*> g_guis;
       connect(this, SIGNAL(editingFinished()), this, SLOT(editingFinished()));
       setText(content);
       s7extra_callFunc_void_charpointer(callback, content.toUtf8().constData());
+    }
+
+    virtual void setGuiValue(dyn_t dyn) override {
+      if(dyn.type==STRING_TYPE)
+        setText(STRING_get_qstring(dyn.string));
+      else
+        GFX_Message(NULL, "Text->setValue received %s, expected STRING_TYPE", DYN_type_name(dyn.type));
+    }
+
+    virtual dyn_t getGuiValue(void) override {
+      return DYN_create_string_from_chars(text().toUtf8().constData());
     }
 
   public slots:
@@ -330,6 +374,17 @@ static QVector<Gui*> g_guis;
       connect(this, SIGNAL(textChanged()), this, SLOT(textChanged()));
       setPlainText(content);
       s7extra_callFunc_void_charpointer(callback, content.toUtf8().constData());
+    }
+
+    virtual void setGuiValue(dyn_t dyn) override {
+      if(dyn.type==STRING_TYPE)
+        setPlainText(STRING_get_chars(dyn.string));
+      else
+        GFX_Message(NULL, "Text->setValue received %s, expected STRING_TYPE", DYN_type_name(dyn.type));
+    }
+
+    virtual dyn_t getGuiValue(void) override {
+      return DYN_create_string_from_chars(toPlainText().toUtf8().constData());
     }
 
   public slots:
@@ -364,6 +419,10 @@ static QVector<Gui*> g_guis;
         setValue(val.int_number);
       else
         GFX_Message(NULL, "IntText->setValue received %s, expected INT_TYPE", DYN_type_name(val.type));
+    }
+
+    virtual dyn_t getGuiValue(void) override {
+      return DYN_create_int(value());
     }
 
   public slots:
@@ -409,6 +468,11 @@ static QVector<Gui*> g_guis;
       else
         GFX_Message(NULL, "FloatText->setValue received %s, expected FLOAT_TYPE", DYN_type_name(val.type));
     }
+    
+    virtual dyn_t getGuiValue(void) override {
+      return DYN_create_float(value());
+    }
+
 
   public slots:
     void valueChanged(double val){
@@ -529,6 +593,14 @@ void gui_setValue(int64_t guinum, dyn_t value){
     return;
 
   gui->setGuiValue(value);
+}
+
+dyn_t gui_getValue(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return DYN_create_bool(false);
+
+  return gui->getGuiValue();
 }
 
 void gui_add(int64_t parentnum, int64_t childnum){
