@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "scheduler_proc.h"
 #include "seqtrack_proc.h"
 #include "song_tempo_automation_proc.h"
+#include "../OpenGL/Widget_proc.h"
 
 #include "player_proc.h"
 
@@ -387,12 +388,27 @@ static void PlayHandleRangeLoop(void){
   if (pc->is_playing_range == false)
     return;
 
+  static bool got_lock = false; // Lock editor graphics while stopping and playing to avoid some jumpiness.
+
+  if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPING && g_player_was_stopped_manually==false) {
+    GL_draw_lock();
+    got_lock=true;
+  }
+  
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED && g_player_was_stopped_manually==false) {
+    if(got_lock==false)
+      GL_draw_lock();
+    
     StopAllInstruments();
+    
     if (MIXER_is_saving())
       PlayStopReally(true);
     else
       PlayRangeFromStart(root->song->tracker_windows);
+
+    GL_draw_unlock();
+    
+    got_lock=false;
   }
 }
 
@@ -404,13 +420,28 @@ static void PlayHandleSequencerLoop(void){
 
   if (pc->is_playing_range==true)
     return;
+
+  static bool got_lock = false; // Lock editor graphics while stopping and playing to avoid some jumpiness.
+
+  if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPING && g_player_was_stopped_manually==false) {
+    GL_draw_lock();
+    got_lock=true;
+  }
   
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED && g_player_was_stopped_manually==false) {
+    if(got_lock==false)
+      GL_draw_lock();
+    
     StopAllInstruments();
+    
     if (MIXER_is_saving())
       PlayStopReally(true);
     else
       PlaySong(SEQUENCER_get_loop_start());
+    
+    GL_draw_unlock();
+    
+    got_lock=false;
   }
 }
 

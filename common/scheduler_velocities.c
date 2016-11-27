@@ -104,7 +104,7 @@ static int64_t RT_scheduled_glide_velocity(struct SeqTrack *seqtrack, int64_t ti
     
   if (val != last_val) {
 #if DO_DEBUG
-    //printf("  Sending velocity %x at %d\n",val,(int)time);
+    printf("  Sending velocity %x at %d\n",val,(int)time);
 #endif
     
     RT_PATCH_change_velocity(seqtrack,

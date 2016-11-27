@@ -176,8 +176,9 @@ void PlayerTask(double reltime){
 
         if(pc->playtype==PLAYSONG){
           if (SEQUENCER_is_looping()){
-            if (ATOMIC_DOUBLE_GET(pc->song_abstime) >= SEQUENCER_get_loop_end())
+            if (ATOMIC_DOUBLE_GET(pc->song_abstime) >= SEQUENCER_get_loop_end()){
               ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
+            }
           }
         }
 }
