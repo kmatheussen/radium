@@ -109,8 +109,47 @@ Place s7extra_place(s7_scheme *s7, s7_pointer place){
   return number_to_place(place); // Should we allow floating numbers? (i.e. not give error message for it) Yes, definitely.
 }
 
-s7_pointer s7extra_make_place(s7_scheme *radiums7_sc, Place place){
+s7_pointer s7extra_make_place(s7_scheme *radiums7_sc, const Place place){
   return place_to_ratio(&place);
+}
+
+bool s7extra_is_dyn(s7_pointer dyn){
+  return s7_is_number(dyn) || s7_is_string(dyn) || s7_is_boolean(dyn);
+}
+
+dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s){
+  if (s7_is_integer(s))
+    return DYN_create_int(s7_integer(s));
+  
+  if (s7_is_number(s))
+    return DYN_create_float(s7_number_to_real(s7, s));
+
+  if (s7_is_string(s))
+    return DYN_create_string_from_chars(s7_string(s));
+
+  if (s7_is_boolean(s))
+    return DYN_create_bool(s7_boolean(s7, s));
+
+  RError("s7extra_dyn: Unsupported s7 type");
+  return DYN_create_bool(false);
+}
+
+s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn){
+  switch(dyn.type){
+  case STRING_TYPE:
+    return s7_make_string(radiums7_sc, STRING_get_chars(dyn.string));
+  case INT_TYPE:
+    return s7_make_integer(radiums7_sc, dyn.int_number);
+  case FLOAT_TYPE:
+    return s7_make_real(radiums7_sc, dyn.float_number);
+  case HASH_TYPE:
+    RError("s7extra_make_dyn: HASH_TYPE not supported (yet)");
+    break;
+  case BOOL_TYPE:
+    return s7_make_boolean(radiums7_sc, dyn.bool_number);
+  }
+
+  return s7_make_boolean(radiums7_sc, false);
 }
 
 func_t *s7extra_func(s7_scheme *s7, s7_pointer func){

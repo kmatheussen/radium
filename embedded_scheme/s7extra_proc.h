@@ -5,8 +5,13 @@ extern "C" {
   #ifdef S7_VERSION
   bool s7extra_is_place(s7_pointer place);
   Place s7extra_place(s7_scheme *s7, s7_pointer place);
-  func_t *s7extra_func(s7_scheme *s7, s7_pointer func);  
   s7_pointer s7extra_make_place(s7_scheme *radiums7_sc, Place place);
+
+  bool s7extra_is_dyn(s7_pointer dyn);
+  dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s);
+  s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn);
+
+  func_t *s7extra_func(s7_scheme *s7, s7_pointer func);  
   #endif
 
   void s7extra_callFunc_void_void(func_t *func);

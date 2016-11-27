@@ -70,50 +70,29 @@ unsigned int oat_hash(const char *key, int i_i)
   return h;
 }
 
-enum{
-  STRING_TYPE,
-  INT_TYPE,
-  FLOAT_TYPE,
-  HASH_TYPE
-};
-
-static const char *type_names[4]={"STRING_TYPE","INT_TYPE","FLOAT_TYPE","HASH_TYPE"};
-
-static const char *type_to_typename(int type){
-  return type_names[type];
+static const char *type_to_typename(enum DynType type){
+  return DYN_type_name(type);
 }
 
 static int typename_to_type(const wchar_t *wtype_name){
-  const char *type_name = STRING_get_chars(wtype_name);
-  int i;
-  for(i=0;i<4;i++)
-    if(!strcmp(type_name, type_names[i]))
-      return i;
-  GFX_Message(NULL, "Unknown type_name: \"\%s\"",type_name);
-  return 1;
+  return DYN_get_type_from_name(STRING_get_chars(wtype_name));
 }
 
 typedef struct _hash_element_t{
   struct _hash_element_t *next;
   const char *key;
   int i;
-  int type;
-  union{
-    const wchar_t *string;
-    int64_t int_number;
-    double float_number;
-    hash_t *hash;
-  };
+  dyn_t a;
 } hash_element_t;
 
 static hash_element_t *copy_element(hash_element_t *element){
   hash_element_t *element_copy = tcopy(element, sizeof(hash_element_t));
   //element_copy->key = talloc_strdup(element->key); // is this necessary? The key is already allocated by bdwgc, and it is never changed as far as I know.
   
-  if (element->type==HASH_TYPE)
-    element_copy->hash = HASH_copy(element->hash);
+  if (element->a.type==HASH_TYPE)
+    element_copy->a.hash = HASH_copy(element->a.hash);
   
-  //else if (element->type==STRING_TYPE)
+  //else if (element->a.type==STRING_TYPE)
   //  element_copy->string = STRING_copy(element->string); // This is probably not necessary since strings are copied before inserted into the hash table.
 
   return element_copy;
@@ -123,27 +102,7 @@ static bool elements_are_equal(const hash_element_t *el1, const hash_element_t *
   R_ASSERT_NON_RELEASE(el1->i==el2->i);
   R_ASSERT_NON_RELEASE(!strcmp(el1->key,el2->key));
 
-  if (el1->type!=el2->type)
-    return false;
-  
-  switch(el1->type){
-    case STRING_TYPE:
-      if (el1->string==el2->string)
-        return true;
-      else if (el1->string==NULL || el2->string==NULL)
-        return false;
-      else
-        return !wcscmp(el1->string, el2->string);
-    case INT_TYPE:
-      return el1->int_number==el2->int_number;
-    case FLOAT_TYPE:
-      return el1->float_number==el2->float_number;
-    case HASH_TYPE:
-      return HASH_equal(el1->hash, el2->hash);
-  }
-
-  R_ASSERT(false);
-  return false;
+  return DYN_equal(el1->a, el2->a);
 }
 
 struct _hash_t{
@@ -244,7 +203,8 @@ vector_t *HASH_get_values(const hash_t *hash){
   for(i=0;i<hash->elements_size;i++){
     hash_element_t *element = hash->elements[i];
     while(element!=NULL){
-      VECTOR_push_back(vector, element->hash);
+      R_ASSERT_RETURN_IF_FALSE2(element->a.type==HASH_TYPE, vector);
+      VECTOR_push_back(vector, element->a.hash);
       element=element->next;
     }
   }
@@ -304,32 +264,28 @@ static void put(hash_t *hash, const char *raw_key, int i, hash_element_t *elemen
 
 static void put_string(hash_t *hash, const char *key, int i, const wchar_t *val){
   hash_element_t *element = talloc(sizeof(hash_element_t));
-  element->type=STRING_TYPE;
-  element->string=STRING_copy(val);
+  element->a = DYN_create_string(val);
 
   put(hash,key,i,element);
 }
 
 static void put_chars(hash_t *hash, const char *key, int i, const char *val){
   hash_element_t *element = talloc(sizeof(hash_element_t));
-  element->type=STRING_TYPE;
-  element->string=STRING_create(val);
+  element->a = DYN_create_string_from_chars(val);
 
   put(hash,key,i,element);
 }
 
 static void put_int(hash_t *hash, const char *key, int i, int64_t val){
   hash_element_t *element = talloc(sizeof(hash_element_t));
-  element->type=INT_TYPE;
-  element->int_number=val;
+  element->a = DYN_create_int(val);
 
   put(hash,key,i,element);
 }
 
 static void put_float(hash_t *hash, const char *key, int i, double val){
   hash_element_t *element = talloc(sizeof(hash_element_t));
-  element->type=FLOAT_TYPE;
-  element->float_number=val;
+  element->a = DYN_create_float(val);
 
   put(hash,key,i,element);
 }
@@ -341,8 +297,7 @@ static void put_hash(hash_t *hash, const char *key, int i, hash_t *val){
   }
   
   hash_element_t *element = talloc(sizeof(hash_element_t));
-  element->type=HASH_TYPE;
-  element->hash=val;
+  element->a = DYN_create_hash(val);
 
   put(hash,key,i,element);
 }
@@ -433,7 +388,7 @@ bool HASH_has_key(const hash_t *hash, const char *key){
   return HASH_has_key_at(hash, key, 0);
 }
 
-static hash_element_t *HASH_get(const hash_t *hash, const char *key, int i, int type){
+static hash_element_t *HASH_get(const hash_t *hash, const char *key, int i, enum DynType type){
   hash_element_t *element=HASH_get_no_complaining(hash, key, i);
 
   if(element==NULL){
@@ -441,8 +396,8 @@ static hash_element_t *HASH_get(const hash_t *hash, const char *key, int i, int 
     return NULL;
   }
   
-  if(element->type!=type){
-    RWarning("HASH_get. Element \"%s\"/%d is found, but is wrong type. Requested %d, found %d.",key,i,type,element->type);
+  if(element->a.type!=type){
+    RWarning("HASH_get. Element \"%s\"/%d is found, but is wrong type. Requested %d, found %d.",key,i,type,element->a.type);
     return NULL;
   }
 
@@ -454,7 +409,7 @@ static const wchar_t *get_string(const hash_t *hash, const char *key, int i){
   if(element==NULL)
     return NULL;
 
-  return element->string;
+  return element->a.string;
 }
 
 static const char *get_chars(const hash_t *hash, const char *key, int i){
@@ -462,7 +417,7 @@ static const char *get_chars(const hash_t *hash, const char *key, int i){
   if(element==NULL)
     return NULL;
 
-  return STRING_get_chars(element->string);
+  return STRING_get_chars(element->a.string);
 }
 
 static int64_t get_int(const hash_t *hash, const char *key, int i){
@@ -470,7 +425,7 @@ static int64_t get_int(const hash_t *hash, const char *key, int i){
   if(element==NULL)
     return 0;
 
-  return element->int_number;
+  return element->a.int_number;
 }
 
 static double get_float(const hash_t *hash, const char *key, int i){
@@ -478,7 +433,7 @@ static double get_float(const hash_t *hash, const char *key, int i){
   if(element==NULL)
     return 0.0;
 
-  return element->float_number;
+  return element->a.float_number;
 }
 
 
@@ -487,12 +442,12 @@ static hash_t *get_hash(const hash_t *hash, const char *key, int i){
   if(element==NULL)
     return NULL;
 
-  if (element->hash==NULL){
+  if (element->a.hash==NULL){
     RError("element->hash==NULL. key: %s, i: %d\n", key, i);
     return HASH_create(1);
   }
   
-  return element->hash;
+  return element->a.hash;
 }
 
 const wchar_t *HASH_get_string(const hash_t *hash, const char *key){
@@ -558,8 +513,8 @@ static int compare_hash_elements(const void *a2, const void *b2){
   if(string_cmp !=0 )
     return string_cmp;
 
-  if(a->type != b->type)
-    return a->type - b->type;
+  if(a->a.type != b->a.type)
+    return a->a.type - b->a.type;
 
   return a->i - b->i;
 }
@@ -598,24 +553,26 @@ void HASH_save(hash_t *hash, disk_t *file){
       //DISK_write(file,element->key);DISK_write(file,"\n");
       DISK_printf(file,"%s\n",element->key);
       DISK_printf(file,"%d\n",element->i);
-      DISK_printf(file,"%s\n",type_to_typename(element->type));
-      switch(element->type){
+      DISK_printf(file,"%s\n",type_to_typename(element->a.type));
+      switch(element->a.type){
         case STRING_TYPE:
-          DISK_write_wchar(file, element->string);
+          DISK_write_wchar(file, element->a.string);
           DISK_write(file, "\n");
           break;
         case INT_TYPE:
-          DISK_printf(file,"%" PRId64 "\n",element->int_number);
+          DISK_printf(file,"%" PRId64 "\n",element->a.int_number);
           break;
         case FLOAT_TYPE:
-          DISK_printf(file,"%s\n",OS_get_string_from_double(element->float_number));
+          DISK_printf(file,"%s\n",OS_get_string_from_double(element->a.float_number));
           break;
         case HASH_TYPE:
-          if (element->hash==NULL)
-            RError("element->hash==NULL. i: %d, num_elements: %d, element->key: %s. element->i: %d, typename: %s", i, elements.num_elements, element->key, element->i, type_to_typename(element->type));
-          
-          HASH_save(element->hash, file);
+          if (element->a.hash==NULL)
+            RError("element->hash==NULL. i: %d, num_elements: %d, element->key: %s. element->i: %d, typename: %s", i, elements.num_elements, element->key, element->i, type_to_typename(element->a.type));
+          else
+            HASH_save(element->a.hash, file);
           break;
+        case BOOL_TYPE:
+          RError("Not using bool type in hash");
       }
     }
   }

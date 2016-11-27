@@ -80,6 +80,8 @@ class Argument:
             return "s7extra_make_place"
         elif self.type_string=="func_t*":
             raise "Returning func is not supported"
+        elif self.type_string=="dyn_t":
+            return "s7extra_make_dyn"
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise "Unknown type '"+type_string+"'"
@@ -103,6 +105,8 @@ class Argument:
             return "s7extra_place(radiums7_sc, "
         elif self.type_string=="func_t*":
             return "s7extra_func(radiums7_sc, "
+        elif self.type_string=="dyn_t":
+            return "s7extra_dyn(radiums7_sc, "
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise "Unknown type '"+type_string+"'"
@@ -122,10 +126,12 @@ class Argument:
             return "s7_is_string"
         elif self.type_string=="bool":
             return "s7_is_boolean"
-        elif self.type_string=="func_t*":
-            return "s7_is_procedure"
         elif self.type_string=="Place":
             return "s7extra_is_place"
+        elif self.type_string=="func_t*":
+            return "s7_is_procedure"
+        elif self.type_string=="dyn_t":
+            return "s7extra_is_dyn"
         else:
             sys.stderr.write("Unknown type '"+self.type_string+"'\n")
             sys.stderr.write("varname:"+self.varname+"\n")
@@ -198,6 +204,7 @@ class Proto:
                 break
             self.reqarglen+=1
 
+        #place
         self.uses_place = False
         
         if self.proc.type_string=="Place":
@@ -206,7 +213,18 @@ class Proto:
         for arg in self.args:
             if arg.type_string=="Place":
                 self.uses_place = True
+
+        #dyn
+        self.uses_dyn = False
         
+        if self.proc.type_string=="dyn_t":
+            self.uses_dyn = True
+
+        for arg in self.args:
+            if arg.type_string=="dyn_t":
+                self.uses_dyn = True
+
+        #func
         self.uses_func = False
          
         if self.proc.type_string=="func_t*":
@@ -233,6 +251,8 @@ class Proto:
 
     def write_python_wrap_proc(self,oh):
         if self.uses_place:
+            return
+        if self.uses_dyn:
             return
         if self.uses_func:
             return
@@ -353,6 +373,8 @@ class Proto:
             
     def write_python_wrap_methodstruct(self,oh):
         if self.uses_place:
+            return
+        if self.uses_dyn:
             return
         if self.uses_func:
             return
@@ -709,6 +731,7 @@ class Read:
         oh.write("/*This file is automaticly generated from protos.conf.*/\n");
         oh.write("#define const_char const char\n")
         oh.write("#include \"../common/placement_type.h\"\n")
+        oh.write("#include \"../common/dyn_type.h\"\n")
         self.hs.write(oh)
         self.protos.writeH(oh)
         oh.close()
@@ -735,6 +758,7 @@ class Read:
         oh.write("#include \"Python.h\"\n\n")
         oh.write("#include \"s7.h\"\n\n")
         oh.write("#include \"../common/placement_type.h\"\n\n")
+        oh.write("#include \"../common/dyn_type.h\"\n\n")
         oh.write("#include \"../embedded_scheme/s7extra_proc.h\"\n")
         oh.write("#include \"radium_proc.h\"\n\n")
         oh.write("#include \"../crashreporter/crashreporter_proc.h\"\n\n")

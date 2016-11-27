@@ -116,7 +116,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdint.h>
 #include <stdbool.h>
 
-
 #include "debug_proc.h"
 #include "atomic.h"
 #include "OS_Player_proc.h"
@@ -269,6 +268,7 @@ typedef struct{
       source_pos_t sp = {__FILE__,  __FUNCTION__, __LINE__,a};   \
       sp;                                                       \
     })
+
 
 
 
@@ -492,15 +492,6 @@ struct ListHeaderP{
 
 
 /*********************************************************************
-	hashmap.h
-*********************************************************************/
-
-struct _hash_t;
-typedef struct _hash_t hash_t;
-
-
-
-/*********************************************************************
 	vector.h
 *********************************************************************/
 
@@ -511,6 +502,119 @@ typedef struct{
 } vector_t;
 
 #include "vector_proc.h"
+
+
+
+#include "dyn_type.h"
+
+
+/*********************************************************************
+	hashmap.h
+*********************************************************************/
+
+#include "hashmap_proc.h"
+
+
+
+/*********************************************************************
+	dyn.h
+*********************************************************************/
+
+static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
+  if (a1.type!=a2.type)
+    return false;
+  
+  switch(a1.type){
+    case STRING_TYPE:
+      if (a1.string==a2.string)
+        return true;
+      else if (a1.string==NULL || a2.string==NULL)
+        return false;
+      else
+        return !wcscmp(a1.string, a2.string);
+    case INT_TYPE:
+      return a1.int_number==a2.int_number;
+    case FLOAT_TYPE:
+      return a1.float_number==a2.float_number;
+    case HASH_TYPE:
+      return HASH_equal(a1.hash, a2.hash);
+    case BOOL_TYPE:
+      return a1.bool_number==a2.bool_number;
+  }
+
+  R_ASSERT(false);
+  return false;
+}
+
+static inline dyn_t DYN_create_string_dont_copy(const wchar_t *string){
+  dyn_t a;
+  a.type = STRING_TYPE;
+  a.string = string;
+  return a;
+}
+
+static inline dyn_t DYN_create_string(const wchar_t *string){
+  return DYN_create_string_dont_copy(STRING_copy(string));
+}
+
+static inline dyn_t DYN_create_string_from_chars(const char *chars){
+  return DYN_create_string_dont_copy(STRING_create(chars));
+}
+
+static inline dyn_t DYN_create_int(int64_t int_number){
+  dyn_t a;
+  a.type = INT_TYPE;
+  a.int_number = int_number;
+  return a;
+}
+
+static inline dyn_t DYN_create_bool(bool bool_number){
+  dyn_t a;
+  a.type = BOOL_TYPE;
+  a.bool_number = bool_number;
+  return a;
+}
+
+static inline dyn_t DYN_create_float(double float_number){
+  dyn_t a;
+  a.type = FLOAT_TYPE;
+  a.float_number = float_number;
+  return a;
+}
+
+static inline dyn_t DYN_create_hash(hash_t *hash){
+  dyn_t a;
+  a.type = HASH_TYPE;
+  a.hash = hash;
+  return a;
+}
+
+static inline const char *DYN_type_name(enum DynType type){
+  switch(type){
+  case STRING_TYPE:
+    return "STRING_TYPE";
+  case INT_TYPE:
+    return "INT_TYPE";
+  case FLOAT_TYPE:
+    return "FLOAT_TYPE";
+  case HASH_TYPE:
+    return "HASH_TYPE";
+  case BOOL_TYPE:
+    return "BOOL_TYPE";
+  }
+  RError("Unknown dyn type: %d", type);
+  return "";
+}
+
+static inline enum DynType DYN_get_type_from_name(const char* type_name){
+  for(int i=0;i<NUM_DYNTYPE_TYPES;i++)
+    if(!strcmp(type_name, DYN_type_name((enum DynType)i)))
+      return (enum DynType)i;
+
+  RError("Unknown dyn type name: \"\%s\"",type_name);
+  return INT_TYPE;
+}
+
 
 
 /*********************************************************************

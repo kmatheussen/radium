@@ -76,7 +76,7 @@ static QVector<Gui*> g_guis;
         s7extra_unprotect(_callback);
     }
 
-    virtual void setGuiValue(double val){
+    virtual void setGuiValue(dyn_t val){
       GFX_Message(NULL, "Gui #%d does not have a setValue method", _gui_num);
     }
   };
@@ -113,8 +113,11 @@ static QVector<Gui*> g_guis;
       setChecked(is_checked);
     }
 
-    virtual void setGuiValue(double val) override {
-      setChecked(val > 0.5);
+    virtual void setGuiValue(dyn_t val) override {
+      if(val.type==BOOL_TYPE)
+        setChecked(val.bool_number);
+      else
+        GFX_Message(NULL, "Checkbox->setValue received %s, expected BOOL_TYPE", DYN_type_name(val.type));
     }
 
   public slots:
@@ -136,8 +139,11 @@ static QVector<Gui*> g_guis;
       setChecked(is_checked);
     }
 
-    virtual void setGuiValue(double val) override {
-      setChecked(val > 0.5);
+    virtual void setGuiValue(dyn_t val) override {
+      if(val.type==BOOL_TYPE)
+        setChecked(val.bool_number);
+      else
+        GFX_Message(NULL, "RadioButton->setValue received %s, expected BOOL_TYPE", DYN_type_name(val.type));
     }
 
   public slots:
@@ -238,7 +244,7 @@ static QVector<Gui*> g_guis;
         setMaximum(10000);
       }
 
-      setGuiValue(curr);
+      setGuiValue(DYN_create_float(curr));
 
       connect(this, SIGNAL(valueChanged(int)), this, SLOT(valueChanged(int)));
 
@@ -257,8 +263,16 @@ static QVector<Gui*> g_guis;
       }
     }
 
-    virtual void setGuiValue(double val) override {
-      setValue(scale_double(val, _min, _max, minimum(), maximum()));
+    virtual void setGuiValue(dyn_t val) override {
+      if(val.type!=INT_TYPE && val.type!=FLOAT_TYPE){
+        GFX_Message(NULL, "Slider->setValue received %s, expected INT_TYPE or FLOAT_TYPE", DYN_type_name(val.type));
+        return;
+      }
+
+      if (val.type==INT_TYPE)
+        setValue(scale_double(val.int_number, _min, _max, minimum(), maximum()));
+      else
+        setValue(scale_double(val.float_number, _min, _max, minimum(), maximum()));
     }
 
   public slots:
@@ -345,8 +359,11 @@ static QVector<Gui*> g_guis;
       s7extra_callFunc_void_int(_callback, curr); // In case value wasn't changed when calling setValue above.
     }
 
-    virtual void setGuiValue(double val) override {
-      setValue(val);
+    virtual void setGuiValue(dyn_t val) override {
+      if (val.type==INT_TYPE)
+        setValue(val.int_number);
+      else
+        GFX_Message(NULL, "IntText->setValue received %s, expected INT_TYPE", DYN_type_name(val.type));
     }
 
   public slots:
@@ -386,8 +403,11 @@ static QVector<Gui*> g_guis;
       s7extra_callFunc_void_double(_callback, curr); // In case value wasn't changed when calling setValue above.
     }
 
-    virtual void setGuiValue(double val) override {
-      setValue(val);
+    virtual void setGuiValue(dyn_t val) override {
+      if (val.type==FLOAT_TYPE)
+        setValue(val.float_number);
+      else
+        GFX_Message(NULL, "FloatText->setValue received %s, expected FLOAT_TYPE", DYN_type_name(val.type));
     }
 
   public slots:
@@ -503,7 +523,7 @@ int64_t gui_floatText(double min, double curr, double max, int num_decimals, dou
   return (new FloatText(min, curr, max, num_decimals, step_interval, func))->get_gui_num();
 }
 
-void gui_setValue(int64_t guinum, double value){
+void gui_setValue(int64_t guinum, dyn_t value){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
