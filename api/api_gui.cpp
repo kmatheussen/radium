@@ -45,11 +45,13 @@ static QVector<Gui*> g_guis;
     Q_OBJECT;
 
     func_t *_func;
+    QWidget *_widget;
     
   public:
     
-    Callback(func_t *func)
+    Callback(func_t *func, QWidget *widget)
       : _func(func)
+      , _widget(widget)
     {
       s7extra_protect(_func);
     }
@@ -62,6 +64,20 @@ static QVector<Gui*> g_guis;
     void clicked(bool checked){
       s7extra_callFunc_void_void(_func);
     }
+
+    void editingFinished(){
+      QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget);
+      
+      set_editor_focus();
+
+      GL_lock();{
+        line_edit->clearFocus();
+      }GL_unlock();
+
+      s7extra_callFunc_void_charpointer(_func, line_edit->text().toUtf8().constData());
+    }
+    
+
   };
 
   
@@ -154,23 +170,30 @@ static QVector<Gui*> g_guis;
     }
 
     virtual void addGuiCallback(func_t* func){
-      Callback *callback = new Callback(func);
-      
-      QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget);
-      if (button!=NULL){
-        button->connect(button, SIGNAL(clicked(bool)), callback, SLOT(clicked(bool)));
-        goto gotit;
-      }
-      
-      QAbstractSlider *slider = dynamic_cast<QAbstractSlider*>(_widget);
-      if (slider!=NULL){
-        slider->connect(slider, SIGNAL(valueChanged(int)), callback, SLOT(valueChanged(int)));
-        goto gotit;
+      Callback *callback = new Callback(func, _widget);
+
+      {
+        QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget);
+        if (button!=NULL){
+          button->connect(button, SIGNAL(clicked(bool)), callback, SLOT(clicked(bool)));
+          goto gotit;
+        }
       }
 
-      QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget);
-      if (line_edit!=NULL){
-        line_edit->connect(this, SIGNAL(editingFinished()), this, SLOT(editingFinished()));
+      {
+        QAbstractSlider *slider = dynamic_cast<QAbstractSlider*>(_widget);
+        if (slider!=NULL){
+          slider->connect(slider, SIGNAL(valueChanged(int)), callback, SLOT(valueChanged(int)));
+          goto gotit;
+        }
+      }
+      
+      {
+        QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget);
+        if (line_edit!=NULL){
+          line_edit->connect(line_edit, SIGNAL(editingFinished()), callback, SLOT(editingFinished()));
+          goto gotit;
+        }
       }
 
 #if 0
