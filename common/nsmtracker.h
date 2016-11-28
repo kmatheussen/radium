@@ -557,9 +557,16 @@ static inline dyn_t DYN_create_string(const wchar_t *string){
   return DYN_create_string_dont_copy(STRING_copy(string));
 }
 
+#if USE_QT4
+static inline dyn_t DYN_create_string(QString string){
+  return DYN_create_string_dont_copy(STRING_create(string));
+}
+#endif
+
 static inline dyn_t DYN_create_string_from_chars(const char *chars){
   return DYN_create_string_dont_copy(STRING_create(chars));
 }
+
 
 static inline dyn_t DYN_create_int(int64_t int_number){
   dyn_t a;

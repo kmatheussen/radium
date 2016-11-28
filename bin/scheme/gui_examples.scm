@@ -40,10 +40,15 @@
 
 
 
-(define button (<gui> :button "hello" (lambda (asdf) (c-display "clicked"))))
+(define button (<gui> :button "hello" (lambda () (c-display "clicked"))))
 (define hslider (<gui> :horizontal-int-slider "helloslider: " -5 10 100 (lambda (asdf) (c-display "moved" asdf)) ))
 (define vslider (<gui> :vertical-slider "helloslider: "  -5 10 100 (lambda (asdf) (c-display "moved" asdf))))
+(<gui> :show button)
+(<gui> :add-callback button (lambda () (c-display "clicked 2")))
 (<gui> :show vslider)
+(<gui> :get-value vslider)
+(<gui> :set-value vslider 80)
+       
 (define vbox (<gui> :vertical))
 (<gui> :show vbox)
 (<gui> :add vbox button)
@@ -151,9 +156,28 @@
   )
 
 
+(define ui (<gui> :ui "/home/kjetil/radium/Qt/qt4_preferences.ui"))
+(define ui (<gui> :ui "/home/kjetil/radium/Qt/qt4_soundfilesaver_widget.ui"))
+(define ui (<gui> :ui "/home/kjetil/radium/Qt/qt4_bottom_bar_widget.ui"))
+(define ui (<gui> :ui "/home/kjetil/radium/Qt/test.ui"))
+(<gui> :show ui)
 
+(define push (<gui> :child ui "pushButton"))
+(define check (<gui> :child ui "checkBox"))
+(define radio (<gui> :child ui "radioButton"))
+(define spinbox (<gui> :child ui "spinBox"))
+(define label (<gui> :child ui "label"))
 
+(<gui> :show push)
+(<gui> :hide push)
 
+(<gui> :get-value push)
+(<gui> :get-value check)
+(<gui> :get-value radio)
+(<gui> :get-value spinbox)
+(<gui> :get-value label)
 
+(<gui> :add-callback push (lambda ()
+                            (c-display "Im pressed")))
 
 

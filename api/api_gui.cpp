@@ -10,6 +10,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGroupBox>
+#include <QUiLoader>
 
 #include "../common/nsmtracker.h"
 
@@ -39,12 +40,41 @@ static QVector<Gui*> g_guis;
     }
   };
   */
+
+  struct Callback : QObject {
+    Q_OBJECT;
+
+    func_t *_func;
+    
+  public:
+    
+    Callback(func_t *func)
+      : _func(func)
+    {
+      s7extra_protect(_func);
+    }
+
+    ~Callback(){
+      s7extra_unprotect(_func);
+    }
+
+  public slots:
+    void clicked(bool checked){
+      s7extra_callFunc_void_void(_func);
+    }
+  };
+
   
   struct Gui {
 
+    QVector<Callback*> _callbacks;
+ 
+  public:
     int _gui_num;
     QWidget *_widget;
-    func_t *_callback;
+    func_t *_func;
+
+    QVector<Gui*> children;
     
     int get_gui_num(void){
       return _gui_num;
@@ -52,7 +82,7 @@ static QVector<Gui*> g_guis;
     
     Gui(QWidget *widget, func_t *callback = NULL)
       : _widget(widget)
-      , _callback(callback)
+      , _func(callback)
     {
       R_ASSERT_RETURN_IF_FALSE(!g_guis.contains(this));
       
@@ -60,20 +90,28 @@ static QVector<Gui*> g_guis;
       g_guis.push_back(this);
       _widget->setAttribute(Qt::WA_DeleteOnClose);
       
-      if (_callback != NULL)
-        s7extra_protect(_callback);
+      if (_func != NULL) {
+        s7extra_protect(_func);
+        addGuiCallback(_func);
+      }
     }
 
-    ~Gui(){
+    virtual ~Gui(){
       R_ASSERT_RETURN_IF_FALSE(g_guis.contains(this));
       R_ASSERT_RETURN_IF_FALSE(g_guis[_gui_num] != NULL);
                                
       printf("Deleting Gui %p\n",this);
+
+      for(Gui *child : children)
+        delete child;
+
+      for(Callback *callback : _callbacks)
+        delete callback;
       
       g_guis[_gui_num] = NULL;
 
-      if (_callback != NULL)
-        s7extra_unprotect(_callback);
+      if (_func != NULL)
+        s7extra_unprotect(_func);
     }
 
     virtual void setGuiValue(dyn_t val){
@@ -81,12 +119,90 @@ static QVector<Gui*> g_guis;
     }
 
     virtual dyn_t getGuiValue(void){
+
+      QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget);
+      if (button!=NULL)
+        return DYN_create_bool(button->isChecked());
+
+      QAbstractSlider *slider = dynamic_cast<QAbstractSlider*>(_widget);
+      if (slider!=NULL)
+        return DYN_create_int(slider->value());
+
+      QLabel *label = dynamic_cast<QLabel*>(_widget);
+      if (label!=NULL)
+        return DYN_create_string(label->text().toUtf8().constData());
+
+      QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget);
+      if (line_edit!=NULL)
+        return DYN_create_string(line_edit->text().toUtf8().constData());
+
+      QTextEdit *text_edit = dynamic_cast<QTextEdit*>(_widget);
+      if (text_edit!=NULL)
+        return DYN_create_string(text_edit->toPlainText().toUtf8().constData());
+
+      QSpinBox *spinbox = dynamic_cast<QSpinBox*>(_widget);
+      if (spinbox!=NULL)
+        return DYN_create_int(spinbox->value());
+
+      QDoubleSpinBox *doublespinbox = dynamic_cast<QDoubleSpinBox*>(_widget);
+      if (doublespinbox!=NULL)
+        return DYN_create_float(doublespinbox->value());
+      
+                  
       GFX_Message(NULL, "Gui #%d does not have a getValue method", _gui_num);
       return DYN_create_bool(false);
     }
+
+    virtual void addGuiCallback(func_t* func){
+      Callback *callback = new Callback(func);
+      
+      QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget);
+      if (button!=NULL){
+        button->connect(button, SIGNAL(clicked(bool)), callback, SLOT(clicked(bool)));
+        goto gotit;
+      }
+      
+      QAbstractSlider *slider = dynamic_cast<QAbstractSlider*>(_widget);
+      if (slider!=NULL){
+        slider->connect(slider, SIGNAL(valueChanged(int)), callback, SLOT(valueChanged(int)));
+        goto gotit;
+      }
+
+      QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget);
+      if (line_edit!=NULL){
+        line_edit->connect(this, SIGNAL(editingFinished()), this, SLOT(editingFinished()));
+      }
+
+#if 0
+      QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget);
+      if (line_edit!=NULL)
+        return DYN_create_string(line_edit->text().toUtf8().constData());
+
+      QTextEdit *text_edit = dynamic_cast<QTextEdit*>(_widget);
+      if (text_edit!=NULL)
+        return DYN_create_string(text_edit->toPlainText().toUtf8().constData());
+
+      QSpinBox *spinbox = dynamic_cast<QSpinBox*>(_widget);
+      if (spinbox!=NULL)
+        return DYN_create_int(spinbox->value());
+
+      QDoubleSpinBox *doublespinbox = dynamic_cast<QDoubleSpinBox*>(_widget);
+      if (doublespinbox!=NULL)
+        return DYN_create_float(doublespinbox->value());
+#endif
+
+      GFX_Message(NULL, "Gui #%d does not have a addCallback method", _gui_num);
+      delete callback;
+      return;
+
+    gotit:
+      _callbacks.push_back(callback);
+      return;      
+    }
+    
   };
   
-  
+
   struct PushButton : QPushButton, Gui{
     Q_OBJECT;
     
@@ -96,14 +212,16 @@ static QVector<Gui*> g_guis;
       : QPushButton(text)
       , Gui(this, callback)
     {
-      connect(this, SIGNAL(clicked(bool)), this, SLOT(clicked(bool)));
+      //connect(this, SIGNAL(clicked(bool)), this, SLOT(clicked(bool)));
     }
-
+    /*
   public slots:
     void clicked(bool checked){
       s7extra_callFunc_void_void(_callback);
     }
+    */
   };
+
   
   struct CheckBox : QCheckBox, Gui{
     Q_OBJECT;
@@ -131,7 +249,7 @@ static QVector<Gui*> g_guis;
 
   public slots:
     void toggled(bool checked){
-      s7extra_callFunc_void_bool(_callback, checked);
+      s7extra_callFunc_void_bool(_func, checked);
     }
   };
   
@@ -161,7 +279,7 @@ static QVector<Gui*> g_guis;
 
   public slots:
     void toggled(bool checked){
-      s7extra_callFunc_void_bool(_callback, checked);
+      s7extra_callFunc_void_bool(_func, checked);
     }
   };
   
@@ -269,10 +387,10 @@ static QVector<Gui*> g_guis;
       
       if (_is_int) {
         SLIDERPAINTER_set_string(_painter, _text + QString::number(scaled_value));
-        s7extra_callFunc_void_int(_callback, scaled_value);
+        s7extra_callFunc_void_int(_func, scaled_value);
       } else {
         SLIDERPAINTER_set_string(_painter, _text + QString::number(scaled_value, 'f', 2));
-        s7extra_callFunc_void_double(_callback, scaled_value);
+        s7extra_callFunc_void_double(_func, scaled_value);
       }
     }
 
@@ -320,7 +438,7 @@ static QVector<Gui*> g_guis;
     }
 
     virtual dyn_t getGuiValue(void) override {
-      return DYN_create_string_from_chars(text().toUtf8().constData());
+      return DYN_create_string(text());
     }
 
   };
@@ -346,7 +464,7 @@ static QVector<Gui*> g_guis;
     }
 
     virtual dyn_t getGuiValue(void) override {
-      return DYN_create_string_from_chars(text().toUtf8().constData());
+      return DYN_create_string(text());
     }
 
   public slots:
@@ -358,7 +476,7 @@ static QVector<Gui*> g_guis;
         clearFocus();
       }GL_unlock();
 
-      s7extra_callFunc_void_charpointer(_callback, text().toUtf8().constData());
+      s7extra_callFunc_void_charpointer(_func, text().toUtf8().constData());
     }
     
   };
@@ -384,13 +502,13 @@ static QVector<Gui*> g_guis;
     }
 
     virtual dyn_t getGuiValue(void) override {
-      return DYN_create_string_from_chars(toPlainText().toUtf8().constData());
+      return DYN_create_string(toPlainText());
     }
 
   public slots:
     
     void textChanged(){
-      s7extra_callFunc_void_charpointer(_callback, toPlainText().toUtf8().constData());
+      s7extra_callFunc_void_charpointer(_func, toPlainText().toUtf8().constData());
     }
     
   };
@@ -411,7 +529,7 @@ static QVector<Gui*> g_guis;
       setMinimum(R_MIN(min, max));
       setMaximum(R_MAX(min, max));
       setValue(curr);
-      s7extra_callFunc_void_int(_callback, curr); // In case value wasn't changed when calling setValue above.
+      s7extra_callFunc_void_int(_func, curr); // In case value wasn't changed when calling setValue above.
     }
 
     virtual void setGuiValue(dyn_t val) override {
@@ -428,7 +546,7 @@ static QVector<Gui*> g_guis;
   public slots:
     void valueChanged(int val){
       if (val != _last_sent){
-        s7extra_callFunc_void_int(_callback, val);
+        s7extra_callFunc_void_int(_func, val);
         _last_sent = val;
       }
     }
@@ -459,7 +577,7 @@ static QVector<Gui*> g_guis;
       setDecimals(num_decimals);
       setSingleStep(step_interval);
       setValue(curr);
-      s7extra_callFunc_void_double(_callback, curr); // In case value wasn't changed when calling setValue above.
+      s7extra_callFunc_void_double(_func, curr); // In case value wasn't changed when calling setValue above.
     }
 
     virtual void setGuiValue(dyn_t val) override {
@@ -477,7 +595,7 @@ static QVector<Gui*> g_guis;
   public slots:
     void valueChanged(double val){
       if (val != _last_sent){
-        s7extra_callFunc_void_double(_callback, val);
+        s7extra_callFunc_void_double(_func, val);
         _last_sent = val;
       }
     }
@@ -490,7 +608,6 @@ static QVector<Gui*> g_guis;
     }
 
   };
-  
 
 }
 
@@ -500,6 +617,7 @@ using namespace radium_gui;
 static Gui *get_gui(int64_t guinum){
   if (guinum < 0 || guinum > g_guis.size()){
     GFX_Message(NULL, "No Gui #%d", guinum);
+    return NULL;
   }
 
   Gui *gui = g_guis[guinum];
@@ -510,16 +628,80 @@ static Gui *get_gui(int64_t guinum){
   return gui;
 }
 
+int64_t gui_ui(const_char *filename){
+  QUiLoader loader;
+  loader.clearPluginPaths();
+  
+  QFile file(filename);
+  if (file.open(QFile::ReadOnly)==false){
+    GFX_Message(NULL, "Unable to open \"%s\": %s", filename, file.errorString().toUtf8().constData());
+    return -1;
+  }
+  
+  QWidget *widget = loader.load(&file);
+  file.close();
+
+  if (widget==NULL){
+    GFX_Message(NULL, "Unable to open \"%s\": %s", filename, loader.errorString().toUtf8().constData());
+    return -1;
+  }
+  
+  Gui *gui = new VerticalLayout();
+  gui->_widget->layout()->addWidget(widget);
+  
+  return gui->get_gui_num();
+}
+
+int64_t gui_child(int64_t guinum, const_char* childname){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL){
+    GFX_Message(NULL, "Gui #%d has been closed and can not be used.", guinum);
+    return -1;
+  }
+  
+  QWidget *child = gui->_widget->findChild<QWidget*>(childname);
+
+  if (child==NULL){
+    GFX_Message(NULL, "Could not find child \"%s\" in gui #%d.", childname, guinum);
+  }
+
+  for(Gui *existing_child : gui->children){
+    if (existing_child->_widget==child)
+      return existing_child->get_gui_num();
+  }
+  
+  Gui *child_gui = new Gui(child);
+  gui->children.push_back(child_gui);
+  
+  return child_gui->get_gui_num();
+}
+
+void gui_addCallback(int64_t guinum, func_t* func){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL){
+    GFX_Message(NULL, "Gui #%d has been closed and can not be used.", guinum);
+    return;
+  }
+
+  gui->addGuiCallback(func);
+}
+
+
 int64_t gui_button(const_char *text, func_t *func){
+  //return -1;
   return (new PushButton(text, func))->get_gui_num();
 }
 
 int64_t gui_checkbox(const_char *text, bool is_checked, func_t *func){
+  //return -1;
   return (new CheckBox(text, is_checked, func))->get_gui_num();
 }
 
 int64_t gui_radiobutton(const_char *text, bool is_checked, func_t *func){
-  return (new RadioButton(text, is_checked, func))->get_gui_num();
+  return -1;
+  //return (new RadioButton(text, is_checked, func))->get_gui_num();
 }
 
 int64_t gui_horizontalIntSlider(const_char *text, int min, int curr, int max, func_t *func){
@@ -527,6 +709,7 @@ int64_t gui_horizontalIntSlider(const_char *text, int min, int curr, int max, fu
     GFX_Message(NULL, "Gui slider: minimum and maximum value is the same");
     return -1;
   }
+  //return -1;
   return (new radium_gui::Slider(Qt::Horizontal, text, min, curr, max, true, func))->get_gui_num();
 }
 int64_t gui_horizontalSlider(const_char *text, double min, double curr, double max, func_t *func){
@@ -534,6 +717,7 @@ int64_t gui_horizontalSlider(const_char *text, double min, double curr, double m
     GFX_Message(NULL, "Gui slider: minimum and maximum value is the same");
     return -1;
   }
+  //return -1;
   return (new radium_gui::Slider(Qt::Horizontal, text, min, curr, max, false, func))->get_gui_num();
 }
 int64_t gui_verticalIntSlider(const_char *text, int min, int curr, int max, func_t *func){
@@ -541,6 +725,7 @@ int64_t gui_verticalIntSlider(const_char *text, int min, int curr, int max, func
     GFX_Message(NULL, "Gui slider: minimum and maximum value is the same");
     return -1;
   }
+  //return -1;
   return (new radium_gui::Slider(Qt::Vertical, text, min, curr, max, true, func))->get_gui_num();
 }
 int64_t gui_verticalSlider(const_char *text, double min, double curr, double max, func_t *func){
@@ -548,42 +733,52 @@ int64_t gui_verticalSlider(const_char *text, double min, double curr, double max
     GFX_Message(NULL, "Gui slider: minimum and maximum value is the same");
     return -1;
   }
+  //return -1;
   return (new radium_gui::Slider(Qt::Vertical, text, min, curr, max, false, func))->get_gui_num();
 }
 
 int64_t gui_verticalLayout(void){
+  //return -1;
   return (new VerticalLayout())->get_gui_num();
 }
 
 int64_t gui_horizontalLayout(void){
+  //return -1;
   return (new HorizontalLayout())->get_gui_num();
 }
 
 int64_t gui_tableLayout(int num_columns){
+  //return -1;
   return (new TableLayout(num_columns))->get_gui_num();
 }
 
 int64_t gui_group(const_char* title){
+  //return -1;
   return (new GroupBox(title))->get_gui_num();
 }
 
 int64_t gui_text(const_char* text, const_char* color){
+  //return -1;
   return (new Text(text, color))->get_gui_num();
 }
 
 int64_t gui_textEdit(const_char* content, func_t *func){
-    return (new TextEdit(content, func))->get_gui_num();
+  //return -1;
+  return (new TextEdit(content, func))->get_gui_num();
 }
 
 int64_t gui_line(const_char* content, func_t *func){
-    return (new Line(content, func))->get_gui_num();
+  //return -1;
+  return (new Line(content, func))->get_gui_num();
 }
 
 int64_t gui_intText(int min, int curr, int max, func_t *func){
+  //return -1;
   return (new IntText(min, curr, max, func))->get_gui_num();
 }
 
 int64_t gui_floatText(double min, double curr, double max, int num_decimals, double step_interval, func_t *func){
+  //return -1;
   return (new FloatText(min, curr, max, num_decimals, step_interval, func))->get_gui_num();
 }
 
@@ -629,7 +824,7 @@ void gui_add(int64_t parentnum, int64_t childnum){
   
 }
 
-bool gui_is_visible(int64_t guinum){
+bool gui_isVisible(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return false;
