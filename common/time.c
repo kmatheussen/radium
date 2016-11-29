@@ -85,11 +85,13 @@ static double Place2STime_from_times2(
           return time1;
 
 	const struct STimeChanges *stc = stime->timechanges;
-	if(stc!=NULL){
+        
+	if(stc!=NULL && stc->l.p.counter==0){ // The stc->l.p.counter==0 test is to work around a bug in the STimeChanges generation. Timing will probably not be quite correct, but it's better than crashing.
 
 		double orgfp2 = fp2;
 
 		struct STimeChanges *next=NextSTimeChange(stc);
+
 		while(next!=NULL){
                         double maybe_new_fp2 = GetDoubleFromPlace(&next->l.p);
                         if (maybe_new_fp2 >= fp) {
@@ -717,14 +719,13 @@ static void STP_Constructor(STimePlace *stp,struct Blocks *block, int default_bp
 
 
 static void STP_fillinSTimeTempos(STimePlace *stp){
-	int line;
-	Place p1,p2;
 
 	if(stp->p2->line == stp->p1->line){
 
 		STP_fillinSTimes2(stp,stp->p1,stp->p2);
 
 	}else{
+                Place p1,p2;
 
 		p1.counter=p2.counter=0;
 		p1.dividor=p2.dividor=1;
@@ -732,7 +733,7 @@ static void STP_fillinSTimeTempos(STimePlace *stp){
 		p2.line=stp->p1->line+1;
 		STP_fillinSTimes2(stp,stp->p1,&p2);
 
-		for(line=p2.line;line<stp->p2->line;line++){
+		for(int line=p2.line;line<stp->p2->line;line++){
 			p1.line=line;
 			p2.line=line+1;
 			STP_fillinSTimes2(stp,&p1,&p2);

@@ -2283,8 +2283,11 @@ void processEventsALittleBit(void){
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents, 1);
 }
 
-int main(int argc, char **argv){  
+//extern LANGSPEC void testme(void);
 
+int main(int argc, char **argv){  
+  //  testme();
+  
 #if defined(FOR_WINDOWS)
   GC_set_no_dls(1);
 #endif

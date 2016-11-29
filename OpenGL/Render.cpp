@@ -1748,9 +1748,19 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
         last_c = c;
       }
       
-      STime time1 = Place2STime(wblock->block, &ns->element1->p) - note_time;
-      STime time2 = Place2STime(wblock->block, &ns->element2->p) - note_time;
-      
+      const STime time1 = Place2STime(wblock->block, &ns->element1->p) - note_time;
+      const STime time2 = Place2STime(wblock->block, &ns->element2->p) - note_time;
+
+      if (time1==time2)
+        continue;
+          
+      if (time2 < time1){
+#if !defined(RELEASE)
+        abort();
+#endif
+        continue;
+      }
+          
       float velocity1 = scale(x1, subtrack_x1, subtrack_x2, 0, 1);
       float velocity2 = scale(x2, subtrack_x1, subtrack_x2, 0, 1);
       
@@ -1767,11 +1777,6 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
 
         float min,max;
 
-        if (time1==time2)
-          break;
-
-        R_ASSERT(time2 > time1);
-          
         int64_t start_time = scale(n,
                                    0,num_peaks,
                                    time1,time2
