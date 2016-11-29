@@ -144,6 +144,83 @@ static QVector<Gui*> g_guis;
     }
 
     virtual void setGuiValue(dyn_t val){
+      {
+        QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget);
+        if (button!=NULL){
+          if(val.type==BOOL_TYPE)
+            button->setChecked(val.bool_number);
+          else
+            GFX_Message(NULL, "Button->setValue received %s, expected BOOL_TYPE", DYN_type_name(val.type));
+          return;
+        }
+      }
+
+      {
+        QAbstractSlider *slider = dynamic_cast<QAbstractSlider*>(_widget);
+        if (slider!=NULL){
+          if(val.type==INT_TYPE)
+            slider->setValue(val.bool_number);
+          else
+            GFX_Message(NULL, "Slider->setValue received %s, expected INT_TYPE", DYN_type_name(val.type));
+          return;
+        }
+      }
+
+      {
+        QLabel *label = dynamic_cast<QLabel*>(_widget);
+        if (label!=NULL){
+          if(val.type==STRING_TYPE)
+            label->setText(STRING_get_qstring(val.string));
+          else
+            GFX_Message(NULL, "Text->setValue received %s, expected STRING_TYPE", DYN_type_name(val.type));
+          return;
+        }
+      }
+
+      {
+        QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget);
+        if (line_edit!=NULL){
+          if(val.type==STRING_TYPE)
+            line_edit->setText(STRING_get_qstring(val.string));
+          else
+            GFX_Message(NULL, "Line->setValue received %s, expected STRING_TYPE", DYN_type_name(val.type));
+          return;
+        }
+      }
+
+      {
+        QTextEdit *text_edit = dynamic_cast<QTextEdit*>(_widget);
+        if (text_edit!=NULL){ 
+          if(val.type==STRING_TYPE)
+            text_edit->setPlainText(STRING_get_chars(val.string));
+          else
+            GFX_Message(NULL, "Text->setValue received %s, expected STRING_TYPE", DYN_type_name(val.type));
+          return;
+        }
+      }
+
+      {
+        QSpinBox *spinbox = dynamic_cast<QSpinBox*>(_widget);
+        if (spinbox!=NULL){
+          if (val.type==INT_TYPE)
+            spinbox->setValue(val.int_number);
+          else
+            GFX_Message(NULL, "IntText->setValue received %s, expected INT_TYPE", DYN_type_name(val.type));
+          return;
+        }
+      }
+
+      {
+        QDoubleSpinBox *doublespinbox = dynamic_cast<QDoubleSpinBox*>(_widget);
+        if (doublespinbox!=NULL){
+          if (val.type==FLOAT_TYPE)
+            doublespinbox->setValue(val.float_number);
+          else
+            GFX_Message(NULL, "FloatText->setValue received %s, expected FLOAT_TYPE", DYN_type_name(val.type));
+          return;
+        }
+      }
+                  
       GFX_Message(NULL, "Gui #%d does not have a setValue method", _gui_num);
     }
 
@@ -159,15 +236,15 @@ static QVector<Gui*> g_guis;
 
       QLabel *label = dynamic_cast<QLabel*>(_widget);
       if (label!=NULL)
-        return DYN_create_string(label->text().toUtf8().constData());
+        return DYN_create_string(label->text());
 
       QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget);
       if (line_edit!=NULL)
-        return DYN_create_string(line_edit->text().toUtf8().constData());
+        return DYN_create_string(line_edit->text());
 
       QTextEdit *text_edit = dynamic_cast<QTextEdit*>(_widget);
       if (text_edit!=NULL)
-        return DYN_create_string(text_edit->toPlainText().toUtf8().constData());
+        return DYN_create_string(text_edit->toPlainText());
 
       QSpinBox *spinbox = dynamic_cast<QSpinBox*>(_widget);
       if (spinbox!=NULL)
@@ -301,13 +378,6 @@ static QVector<Gui*> g_guis;
     {
       setChecked(is_checked);
     }
-
-    virtual void setGuiValue(dyn_t val) override {
-      if(val.type==BOOL_TYPE)
-        setChecked(val.bool_number);
-      else
-        GFX_Message(NULL, "Checkbox->setValue received %s, expected BOOL_TYPE", DYN_type_name(val.type));
-    }
   };
   
   struct RadioButton : QRadioButton, Gui{
@@ -320,17 +390,6 @@ static QVector<Gui*> g_guis;
       , Gui(this)
     {
       setChecked(is_checked);
-    }
-
-    virtual void setGuiValue(dyn_t val) override {
-      if(val.type==BOOL_TYPE)
-        setChecked(val.bool_number);
-      else
-        GFX_Message(NULL, "RadioButton->setValue received %s, expected BOOL_TYPE", DYN_type_name(val.type));
-    }
-
-    virtual dyn_t getGuiValue(void) override {
-      return DYN_create_bool(isChecked());
     }
   };
   
@@ -361,7 +420,6 @@ static QVector<Gui*> g_guis;
     {}
 
     void addItem(QLayoutItem *item) override {
-      printf("gakk\n");      
       QGridLayout::addItem(item, _y, _x);
       _x++;
       if (_x==_num_columns){
@@ -493,18 +551,6 @@ static QVector<Gui*> g_guis;
       else
         setText("<span style=\" color:" + color + ";\">" + text + "</span>");
     }
-
-    virtual void setGuiValue(dyn_t dyn) override {
-      if(dyn.type==STRING_TYPE)
-        setText(STRING_get_qstring(dyn.string));
-      else
-        GFX_Message(NULL, "Text->setValue received %s, expected STRING_TYPE", DYN_type_name(dyn.type));
-    }
-
-    virtual dyn_t getGuiValue(void) override {
-      return DYN_create_string(text());
-    }
-
   };
 
   struct MyFocusSnifferQLineEdit : FocusSnifferQLineEdit{
@@ -536,17 +582,6 @@ static QVector<Gui*> g_guis;
     {
       setText(content);
     }
-
-    virtual void setGuiValue(dyn_t dyn) override {
-      if(dyn.type==STRING_TYPE)
-        setText(STRING_get_qstring(dyn.string));
-      else
-        GFX_Message(NULL, "Text->setValue received %s, expected STRING_TYPE", DYN_type_name(dyn.type));
-    }
-
-    virtual dyn_t getGuiValue(void) override {
-      return DYN_create_string(text());
-    }
   };
 
   struct TextEdit : FocusSnifferQTextEdit, Gui{
@@ -558,17 +593,6 @@ static QVector<Gui*> g_guis;
       : Gui(this)
     {
       setPlainText(content);
-    }
-
-    virtual void setGuiValue(dyn_t dyn) override {
-      if(dyn.type==STRING_TYPE)
-        setPlainText(STRING_get_chars(dyn.string));
-      else
-        GFX_Message(NULL, "Text->setValue received %s, expected STRING_TYPE", DYN_type_name(dyn.type));
-    }
-
-    virtual dyn_t getGuiValue(void) override {
-      return DYN_create_string(toPlainText());
     }
   };
 
@@ -607,17 +631,6 @@ static QVector<Gui*> g_guis;
       setMaximum(R_MAX(min, max));
       setValue(curr);
     }
-
-    virtual void setGuiValue(dyn_t val) override {
-      if (val.type==INT_TYPE)
-        setValue(val.int_number);
-      else
-        GFX_Message(NULL, "IntText->setValue received %s, expected INT_TYPE", DYN_type_name(val.type));
-    }
-
-    virtual dyn_t getGuiValue(void) override {
-      return DYN_create_int(value());
-    }
   };
   
   struct MyFocusSnifferQDoubleSpinBox : FocusSnifferQDoubleSpinBox{
@@ -655,17 +668,6 @@ static QVector<Gui*> g_guis;
       setDecimals(num_decimals);
       setSingleStep(step_interval);
       setValue(curr);
-    }
-
-    virtual void setGuiValue(dyn_t val) override {
-      if (val.type==FLOAT_TYPE)
-        setValue(val.float_number);
-      else
-        GFX_Message(NULL, "FloatText->setValue received %s, expected FLOAT_TYPE", DYN_type_name(val.type));
-    }
-    
-    virtual dyn_t getGuiValue(void) override {
-      return DYN_create_float(value());
     }
   };
 

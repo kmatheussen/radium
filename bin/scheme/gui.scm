@@ -4,7 +4,6 @@
 (define (gui-create-layout create-layout-func layout-args guis)
   (define layout (apply create-layout-func layout-args))
   (for-each (lambda (gui)
-              (c-display "layout/gui:" layout gui)
               (<ra> :gui_add layout gui))
             guis)
   layout)
@@ -33,7 +32,7 @@
         table)))
 
 (define (<gui> command . args)
-  (c-display "****" command args)
+  ;;(c-display "****" command args)
   (cond ((eq? command :group)
          (gui-create-layout ra:gui_group (list (car args)) (cdr args)))
         
@@ -79,7 +78,6 @@
                              (<gui> :horizontal-layout)
                              (<gui> :vertical-layout)))
           (define slider-callback (lambda (val)
-                                    (c-display "slider: " val)
                                     (when can-modify
                                       (set! can-modify #f)
                                       (<gui> :set-value text-input val)
