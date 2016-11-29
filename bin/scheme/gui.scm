@@ -1,38 +1,24 @@
 (provide 'gui.scm)
 
 
-(define-macro (<gui> command . args)
-  (c-display "****" command args)
-  (cond ((eq? command :group)
-         `(gui-create-layout ra:gui_group (list ,(car args)) ,@(cdr args)))
-        ((eq? command :vertical-layout)
-         `(gui-create-layout ra:gui_vertical-layout '() ,@args))
-        ((eq? command :horizontal-layout)
-         `(gui-create-layout ra:gui_horizontal-layout '() ,@args))
-        ((eq? command :empty)
-         `(<ra> :gui_vertical-layout))
-        ((eq? command :table-layout)
-         `(my-gui_tablelayout ,@args))
-        (else
-         `( ,(<_> 'ra:gui_ (keyword->symbol command)) ,@args))))
-
-(define (gui-create-layout create-layout-func layout-args . guis)
+(define (gui-create-layout create-layout-func layout-args guis)
   (define layout (apply create-layout-func layout-args))
   (for-each (lambda (gui)
+              (c-display "layout/gui:" layout gui)
               (<ra> :gui_add layout gui))
             guis)
   layout)
   
-(define (my-gui_group title . args)
+(define (my-gui_group title args)
   (define group (<ra> :gui_group title))
   (for-each (lambda (gui)
               (<ra> :gui_add group gui))
             args)
   group)
 
-(define (my-gui_tablelayout . args)
+(define (my-gui_tablelayout args)
   (if (= 1 (length args))
-      (<ra> :gui_table-layout ,@args)
+      (<ra> :gui_table-layout (car args))
       (let* ((rows args)
              (max-num-columns (apply max (map length rows)))
              (table (<ra> :gui_table-layout max-num-columns)))
@@ -46,6 +32,37 @@
                   rows)
         table)))
 
+(define (<gui> command . args)
+  (c-display "****" command args)
+  (cond ((eq? command :group)
+         (gui-create-layout ra:gui_group (list (car args)) (cdr args)))
+        
+        ((eq? command :vertical-layout)
+         (gui-create-layout ra:gui_vertical-layout '() args))
+        
+        ((eq? command :horizontal-layout)
+         (gui-create-layout ra:gui_horizontal-layout '() args))
+        
+        ((eq? command :empty)
+         (<ra> :gui_vertical-layout))
+        
+        ((eq? command :table-layout)
+         (my-gui_tablelayout args))
+
+        ((eq? command :add-callback)
+         (<ra> :gui_add-callback (car args) (cadr args)))
+        
+        (else
+         (let* ((func (eval (<_> 'ra:gui_ (keyword->symbol command))))
+                (last-arg (last args))
+                (gui (if (procedure? last-arg)
+                         (apply func (butlast args))
+                         (apply func args))))
+           (when (procedure? last-arg)
+             (<ra> :gui_add-callback gui last-arg))
+           gui))))
+               
+                           
 (delafina (<gui-number-input> :text text
                               :input-type 'float ;; float or int
                               :direction 'horizontal ;; horizontal or vertical

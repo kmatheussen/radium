@@ -52,4 +52,7 @@
 
 (my-require 'quantitize.scm)
 
+(my-require 'gui.scm)
+
+
 ;;(gc #f)

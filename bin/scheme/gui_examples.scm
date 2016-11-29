@@ -1,24 +1,4 @@
 
-
-
-(define layout (create-vertical-layout))
-
-(define slider1 (create-vslider "int" 0 5 10 1 (lambda (i) (c-display "int" i))))
-(define slider2 (create-vslider "float" 0.0 5.0 10.0 (lambda (f) (c-display "float" f))))
-
-(layout :add slider1)
-(layout :add slider2)
-
-
-(vertical-layout "stuff"
-                 slider1
-                 slider2
-                 (horizontal-layout ""
-                                    checkbox1
-                                    checkbox2)
-                 slider3)
-
-
 (<gui> :group "stuff"
        (<gui> :vertical-layout
               slider1
@@ -39,36 +19,38 @@
 
 
 
-
+(define checkbox (<gui> :checkbox "hello" #f (lambda (val) (c-display "checkbox" val))))
 (define button (<gui> :button "hello" (lambda () (c-display "clicked"))))
 (define hslider (<gui> :horizontal-int-slider "helloslider: " -5 10 100 (lambda (asdf) (c-display "moved" asdf)) ))
 (define vslider (<gui> :vertical-slider "helloslider: "  -5 10 100 (lambda (asdf) (c-display "moved" asdf))))
+(<gui> :show checkbox)
 (<gui> :show button)
 (<gui> :add-callback button (lambda () (c-display "clicked 2")))
 (<gui> :show vslider)
+(<gui> :show hslider)
 (<gui> :get-value vslider)
 (<gui> :set-value vslider 80)
        
-(define vbox (<gui> :vertical))
+(define vbox (<gui> :vertical-layout))
 (<gui> :show vbox)
 (<gui> :add vbox button)
 (<gui> :add vbox (<gui> :button "hello2" (lambda () (c-display "clicked2"))))
 (<gui> :close button)
 
-(define hbox (<gui> :horizontal))
+(define hbox (<gui> :horizontal-layout))
 (<gui> :add hbox (<gui> :button "hello3" (lambda () (c-display "clicked3"))))
 (<gui> :add hbox (<gui> :button "hello4" (lambda () (c-display "clicked4"))))
 
 (define group (<gui> :group "dasgroupbox"))
-(<gui> ::show group)
+(<gui> :show group)
 (<gui> :add group vbox)
 (<gui> :add group hbox)
 
-(<gui> :show guinum)
-(<gui> :hide guinum)
-(<gui> :close guinum)
+(<gui> :show group)
+(<gui> :hide group)
+(<gui> :close group)
 
-(define hbox2 (<gui> :horizontal))
+(define hbox2 (<gui> :horizontal-layout))
 (<gui> :add hbox2 group)
 (<gui> :add hbox2 (<gui> :button "hello5" (lambda () (c-display "clicked5"))))
 (<gui> :show hbox2)
@@ -166,8 +148,10 @@
 (define check (<gui> :child ui "checkBox"))
 (define radio (<gui> :child ui "radioButton"))
 (define spinbox (<gui> :child ui "spinBox"))
+(define doublespinbox (<gui> :child ui "doubleSpinBox"))
 (define label (<gui> :child ui "label"))
-
+(define plainTextEdit (<gui> :child ui "plainTextEdit"))
+(define lineEdit (<gui> :child ui "lineEdit"))
 (<gui> :show push)
 (<gui> :hide push)
 
@@ -176,8 +160,32 @@
 (<gui> :get-value radio)
 (<gui> :get-value spinbox)
 (<gui> :get-value label)
+(<gui> :get-value plainTextEdit)
+(<gui> :get-value lineEdit)
 
 (<gui> :add-callback push (lambda ()
                             (c-display "Im pressed")))
 
+(<gui> :add-callback check (lambda (val)
+                            (c-display "check called" val)))
+
+(<gui> :add-callback radio (lambda (val)
+                             (c-display "radio called" val)))
+
+(<gui> :add-callback lineEdit (lambda (val)
+                                (c-display "lineEdit2:" val)))
+
+(<gui> :add-callback spinbox (lambda (val)
+                               (c-display "spinBox:" val)))
+
+(<gui> :add-callback doublespinbox (lambda (val)
+                                     (c-display "doubleSpinBox:" val)))
+
+
+
+(define line (<gui> :line "hello" (lambda (val)
+                                    (c-display "line" val))))
+
+
+(<gui> :show line)
 
