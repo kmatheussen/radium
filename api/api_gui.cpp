@@ -743,10 +743,8 @@ int64_t gui_ui(const_char *filename){
 int64_t gui_child(int64_t guinum, const_char* childname){
   Gui *gui = get_gui(guinum);
 
-  if (gui==NULL){
-    GFX_Message(NULL, "Gui #%d has been closed and can not be used.", guinum);
+  if (gui==NULL)
     return -1;
-  }
   
   QWidget *child = gui->_widget->findChild<QWidget*>(childname);
 
@@ -768,10 +766,8 @@ int64_t gui_child(int64_t guinum, const_char* childname){
 void gui_addCallback(int64_t guinum, func_t* func){
   Gui *gui = get_gui(guinum);
 
-  if (gui==NULL){
-    GFX_Message(NULL, "Gui #%d has been closed and can not be used.", guinum);
+  if (gui==NULL)
     return;
-  }
 
   gui->addGuiCallback(func);
 }
