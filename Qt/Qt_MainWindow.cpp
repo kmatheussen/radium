@@ -672,10 +672,11 @@ const wchar_t *GFX_GetLoadFileName(
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, NULL);
-  g_radium_runs_custom_exec = true;
-  
+
   obtain_keyboard_focus();
 
+  g_radium_runs_custom_exec = true;
+  
   QString filename;
   
   GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
@@ -691,10 +692,10 @@ const wchar_t *GFX_GetLoadFileName(
     
   }GL_unlock();
 
-  release_keyboard_focus();
-
   g_radium_runs_custom_exec = false;
     
+  release_keyboard_focus();
+
   if(filename == "")
     return NULL;
   else
@@ -711,10 +712,11 @@ const wchar_t *GFX_GetSaveFileName(
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, NULL);
-  g_radium_runs_custom_exec = true;
-  
+
   obtain_keyboard_focus();
 
+  g_radium_runs_custom_exec = true;
+  
   QString filename;
   
   GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
@@ -729,10 +731,10 @@ const wchar_t *GFX_GetSaveFileName(
                                             );
   }GL_unlock();
 
-  release_keyboard_focus();
-
   g_radium_runs_custom_exec = false;
     
+  release_keyboard_focus();
+
   if (filename == "")
     return NULL;
 

@@ -81,9 +81,10 @@ static QString request_load_preset_filename_from_requester(void){
   QString filename;
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, "");
-  g_radium_runs_custom_exec = true;
-
+  
   obtain_keyboard_focus();{
+
+    g_radium_runs_custom_exec = true;
 
     GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
       filename = QFileDialog::getOpenFileName(
@@ -100,10 +101,11 @@ static QString request_load_preset_filename_from_requester(void){
                                               );
     }GL_unlock();
     
+    g_radium_runs_custom_exec = false;
+
   }release_keyboard_focus();
 
-  g_radium_runs_custom_exec = false;
-  
+
   return filename;
 }
 

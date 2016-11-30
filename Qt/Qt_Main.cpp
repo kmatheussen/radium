@@ -154,20 +154,26 @@ bool g_radium_runs_custom_exec = false;
 bool g_gc_is_incremental = false;
 
 void obtain_keyboard_focus_without_greying(void){
-  editor_has_keyboard = false;
-  g_do_grey_editor = false;
+  if (g_radium_runs_custom_exec==false){
+    editor_has_keyboard = false;
+    g_do_grey_editor = false;
+  }
   GFX_ScheduleEditorRedraw();
 }
 
 void obtain_keyboard_focus(void){
-  editor_has_keyboard = false;
-  g_do_grey_editor = true;
+  if (g_radium_runs_custom_exec==false){
+    editor_has_keyboard = false;
+    g_do_grey_editor = true;
+  }
   GFX_ScheduleEditorRedraw();
 }
 
 void release_keyboard_focus(void){
-  editor_has_keyboard = true;
-  g_do_grey_editor = false;
+  if (g_radium_runs_custom_exec==false){
+    editor_has_keyboard = true;
+    g_do_grey_editor = false;
+  }
   GFX_ScheduleEditorRedraw();
 }
 

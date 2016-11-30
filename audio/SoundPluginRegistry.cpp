@@ -92,10 +92,11 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
       if (ret==select_plugin_file) {
 
         R_ASSERT(g_radium_runs_custom_exec==false);
-        g_radium_runs_custom_exec = true;
-      
+        
         obtain_keyboard_focus();
 
+        g_radium_runs_custom_exec = true;
+      
         QString filename;
 
         GL_lock();{
@@ -108,9 +109,9 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
                                                   );
         }GL_unlock();
         
-        release_keyboard_focus();
-
         g_radium_runs_custom_exec = false;
+
+        release_keyboard_focus();
 
         QFileInfo info(filename);
 

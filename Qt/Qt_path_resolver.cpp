@@ -161,8 +161,6 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
       struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
       EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
 
-      obtain_keyboard_focus();
-
       MyQMessageBox msgBox;
 
       msgBox.setText(QString("Could not find "+info.fileName()+" in "+dir.path()+".\nPlease select new file."));
@@ -172,6 +170,9 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
       safeExec(msgBox);
 
       R_ASSERT(g_radium_runs_custom_exec==false);
+
+      obtain_keyboard_focus();
+
       g_radium_runs_custom_exec = true;      
 
       QString filename;
@@ -195,10 +196,10 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
                                                 );
       }GL_unlock();
 
-      release_keyboard_focus();
-
       g_radium_runs_custom_exec = false;
         
+      release_keyboard_focus();
+
       if(filename == "")
         return NULL;
 

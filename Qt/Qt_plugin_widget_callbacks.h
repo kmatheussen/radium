@@ -464,9 +464,10 @@ private:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
     R_ASSERT(g_radium_runs_custom_exec==false);
-    g_radium_runs_custom_exec = true;      
 
     obtain_keyboard_focus();
+
+    g_radium_runs_custom_exec = true;      
 
     QString filename;
     
@@ -485,10 +486,10 @@ private:
                                               );
     }GL_unlock();
 
-    release_keyboard_focus();
-
     g_radium_runs_custom_exec = false;
     
+    release_keyboard_focus();
+
     if(filename=="")
       return;
     
@@ -504,9 +505,10 @@ private:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     
     R_ASSERT(g_radium_runs_custom_exec==false);
-    g_radium_runs_custom_exec = true;      
-
+    
     obtain_keyboard_focus();
+
+    g_radium_runs_custom_exec = true;      
 
     QString filename;
     
@@ -525,10 +527,10 @@ private:
                                               );
     }GL_unlock();
 
-    release_keyboard_focus();
-
     g_radium_runs_custom_exec = false;
     
+    release_keyboard_focus();
+
     if(filename=="")
       return;
     
@@ -669,9 +671,10 @@ public slots:
       QString filename;
 
       R_ASSERT(g_radium_runs_custom_exec==false);
-      g_radium_runs_custom_exec = true;      
-
+      
       obtain_keyboard_focus();
+
+      g_radium_runs_custom_exec = true;      
 
       GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
         
@@ -685,10 +688,10 @@ public slots:
         
       }GL_unlock();
       
-      release_keyboard_focus();
-
       g_radium_runs_custom_exec = false;
       
+      release_keyboard_focus();
+
       if(filename != "")
         _faust_plugin_widget->load_source(filename);
     }
@@ -702,9 +705,10 @@ public slots:
       QString filename;
 
       R_ASSERT(g_radium_runs_custom_exec==false);
-      g_radium_runs_custom_exec = true;      
-
+      
       obtain_keyboard_focus();
+
+      g_radium_runs_custom_exec = true;      
 
       GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
         
@@ -718,10 +722,10 @@ public slots:
         
       }GL_unlock();
       
-      release_keyboard_focus();
-
       g_radium_runs_custom_exec = false;
             
+      release_keyboard_focus();
+
       if(filename != "")
         _faust_plugin_widget->save_source(filename);      
     }

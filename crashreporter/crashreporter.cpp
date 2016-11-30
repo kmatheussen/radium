@@ -137,7 +137,7 @@ void EVENTLOG_add_event(const char *log_entry){
 }
 
 QString get_event_string(int pos, double time_now){
-  return QString(QString::number(time_now - g_time_log[pos], 'f', 2) + ": " + g_event_log[pos]) + "\n";
+  return QString(QString::number((time_now - g_time_log[pos])/1000.0, 'f', 6) + ": " + g_event_log[pos]) + "\n";
 }
 
 #endif

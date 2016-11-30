@@ -221,10 +221,10 @@ static inline int safeExec(QMessageBox *widget){
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
 
-  g_radium_runs_custom_exec = true;
-  
   obtain_keyboard_focus();
 
+  g_radium_runs_custom_exec = true;
+  
   GFX_HideProgress();
   
   GL_lock();{
@@ -233,10 +233,10 @@ static inline int safeExec(QMessageBox *widget){
 
   GFX_ShowProgress();
     
-  release_keyboard_focus();
-
   g_radium_runs_custom_exec = false;
   
+  release_keyboard_focus();
+
   return ret;
 }
 
@@ -245,10 +245,10 @@ static inline int safeExec(QMessageBox &widget){
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
 
-  g_radium_runs_custom_exec = true;
-    
   obtain_keyboard_focus();
 
+  g_radium_runs_custom_exec = true;
+    
   GFX_HideProgress();
   
   GL_lock();{
@@ -257,10 +257,10 @@ static inline int safeExec(QMessageBox &widget){
 
   GFX_ShowProgress();
     
-  release_keyboard_focus();
-
   g_radium_runs_custom_exec = false;
   
+  release_keyboard_focus();
+
   return ret;
 }
 
@@ -269,10 +269,10 @@ static inline int safeExec(QDialog *widget){
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
 
-  g_radium_runs_custom_exec = true;
-  
   obtain_keyboard_focus();
 
+  g_radium_runs_custom_exec = true;
+  
   GFX_HideProgress();
   
   GL_lock();{
@@ -281,10 +281,10 @@ static inline int safeExec(QDialog *widget){
 
   GFX_ShowProgress();
     
-  release_keyboard_focus();
-
   g_radium_runs_custom_exec = false;
   
+  release_keyboard_focus();
+
   return ret;
 }
 
@@ -297,10 +297,10 @@ static inline QAction *safeExec(QMenu *widget){
     GFX_Message(NULL, "Already runs custom exec");
 #endif
   
-  g_radium_runs_custom_exec = true;
-    
   obtain_keyboard_focus();
 
+  g_radium_runs_custom_exec = true;
+    
   GFX_HideProgress();
   
   if (doModalWindows()) {
@@ -316,10 +316,10 @@ static inline QAction *safeExec(QMenu *widget){
 
   GFX_ShowProgress();
   
-  release_keyboard_focus();
-
   g_radium_runs_custom_exec = false;
   
+  release_keyboard_focus();
+
   return ret;
 }
 

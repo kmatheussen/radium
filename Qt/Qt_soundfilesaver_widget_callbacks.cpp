@@ -227,9 +227,12 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
       QDialog::keyPressEvent(evt);
   }
 
+
 public slots:
+  
   void on_buttonBox_clicked(QAbstractButton * button){
-    if(button->text() == QString("Save")){
+    
+    if(button->text().contains(QString("Save"))){
       printf("Save\n");
 
 #if FULL_VERSION==0
@@ -264,6 +267,8 @@ public slots:
             
       ATOMIC_SET(_timer.async_message, NULL);
 
+      plugins_to_save.clear(); // In case we were interrupted earlier.
+      
       if (save_multi){
 
         QFileInfo info(filename_edit->text());
@@ -298,8 +303,6 @@ public slots:
           
         }
         
-        plugins_to_save.clear(); // In case we were interrupted earlier.
-
         const radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
         for (auto sp : *sp_all){
           if (!SP_has_input_links(sp)){
@@ -355,8 +358,14 @@ public slots:
         
     } else {
 
+      R_ASSERT_RETURN_IF_FALSE(g_radium_runs_custom_exec==false);
+      
       obtain_keyboard_focus();
 
+      g_radium_runs_custom_exec = true;
+
+      GFX_HideProgress();
+      
       QString filename;
 
       GL_lock();{
@@ -369,9 +378,11 @@ public slots:
                                                 );
       }GL_unlock();
 
-      release_keyboard_focus();
-
+      GFX_ShowProgress();
+        
       g_radium_runs_custom_exec = false;
+
+      release_keyboard_focus();
 
       filename_edit->setText(filename);
     }
@@ -388,8 +399,8 @@ extern "C"{
     if(widget==NULL)
       widget = new Soundfilesaver_widget(NULL);
 
-#if 0
-    widget->show();
+#if 1
+    safeShow(widget);
 #else
     safeExec(widget);
 #endif
