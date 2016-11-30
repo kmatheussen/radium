@@ -1736,9 +1736,10 @@ QWidget *GL_create_widget(QWidget *parent){
                   "<p>"
                   "Nouveau OpenGL driver detected."
                   "<p>"
-                  "The Nouveau driver currently performes worse than the Nvidia driver."
+                  "There has been reports of Radium crashing when using the Nouveau driver.<br>"
+                  "The Nouveau driver also performs worse than the Nvidia driver."
                   "<p>"
-                  "The Nvidia driver can be installed to get faster / smoother graphics. It can be downloaded here: <a href=\"http://www.nvidia.com/object/unix.html\">http://www.nvidia.com/object/unix.html</a>"
+                  "The Nvidia driver can be installed to get faster and smoother graphics. It can be downloaded here: <a href=\"http://www.nvidia.com/object/unix.html\">http://www.nvidia.com/object/unix.html</a>"
                   );
       show_mesa_warning = false;
     }
