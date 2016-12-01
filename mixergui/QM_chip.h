@@ -271,7 +271,7 @@ public:
     //setVisible(false);
   }
 
-  void setSelected(bool selected){
+  void mySetSelected(bool selected){
     if (is_selected != selected){
       update_colors();
       is_selected = selected;
@@ -379,14 +379,18 @@ public:
     return !has_output_slider() && plugin->type->num_inputs>0;
   }
 
-  void setSelected(bool selected){
+  void mySetSelected(bool selected) {
     for(auto audio_connection : audio_connections)
-      audio_connection->setSelected(selected);
+      audio_connection->mySetSelected(selected);
     
     for(auto event_connection : event_connections)
-      event_connection->setSelected(selected);
+      event_connection->mySetSelected(selected);
     
-    QGraphicsItem::setSelected(selected);    
+    QGraphicsItem::setSelected(selected);
+
+    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+    if (plugin!=NULL)
+      ATOMIC_SET(plugin->is_selected, selected);
   }
 };
 

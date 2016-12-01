@@ -354,9 +354,9 @@ void MW_set_selected_chip(Chip *chip){
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip2 = dynamic_cast<Chip*>(das_items.at(i));
     if(chip2!=NULL && chip2!=chip)
-      chip2->setSelected(false);
+      chip2->mySetSelected(false);
   }
-  chip->setSelected(true);
+  chip->mySetSelected(true);
 }
 
 void MW_update_all_chips(void){
@@ -372,7 +372,7 @@ static void handle_chip_selection(MyScene *myscene, QGraphicsSceneMouseEvent * e
   bool was_selected = chip->isSelected();
 
   if(event->modifiers() & Qt::ControlModifier)
-    chip->setSelected(!was_selected);
+    chip->mySetSelected(!was_selected);
 
   if(was_selected==false)
     MW_set_selected_chip(chip);
@@ -1347,7 +1347,9 @@ namespace{
                 if (cpu_usage==NULL || cpu_usage->should_update() || chip->_name_text!=cpu_usage->_last_cpu_text)
                   chip->update();
               }
-                                
+
+              ATOMIC_SET(plugin->is_selected, chip->isSelected()); // Ensurance. Unfortunately QGraphicsItem::setSelected is not virtual
+
               volatile struct Patch *patch = plugin->patch;
               
               if(patch!=NULL){
@@ -1772,7 +1774,6 @@ SoundPluginType *MW_popup_plugin_type_selector(void){
 
   return type;
 }
-
 
 void MW_connect(Patch *source, Patch *dest){
   Chip *chip_source = CHIP_get(&g_mixer_widget->scene, source);

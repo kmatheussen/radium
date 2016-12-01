@@ -257,9 +257,18 @@ struct SoundProducerLink {
 
       if (ATOMIC_GET(plugin->solo_is_on) == false) {
 
-        if (SP_has_audio_input_link(source)==false)
-          if (SP_get_bus_num(source) == -1)            
+        if (MIXER_at_least_two_soundproducers_are_selected()){
+
+          if (ATOMIC_GET(plugin->is_selected))
             return true;
+
+        } else {
+
+          if (SP_has_audio_input_link(source)==false)
+            if (SP_get_bus_num(source) == -1)            
+              return true;
+
+        }
         
       }      
     }
