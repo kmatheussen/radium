@@ -842,9 +842,9 @@ struct Timeline_widget : public MouseTrackerQWidget {
   void paintEvent ( QPaintEvent * ev ) override {
     QPainter p(this);
 
-    const int t1 = 4;
     const double y1 = 4;
     const double y2 = height() - 4;
+    const double t1 = (y2-y1) / 2.0;
 
     p.setRenderHints(QPainter::Antialiasing,true);
 
