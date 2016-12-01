@@ -951,10 +951,11 @@ void Chip::init_new_plugin(void){
     SLIDERPAINTER_set_num_channels(_output_slider, _num_outputs);
   }
   
-  if(_num_outputs>0)
+  if (has_output_slider())
     SLIDERPAINTER_set_peak_value_pointers(_output_slider, _num_outputs, plugin->output_volume_peak_values_for_chip, false);
   //ATOMIC_SET(plugin->volume_peak_values_for_chip, SLIDERPAINTER_obtain_peak_value_pointers(_output_slider,_num_outputs));
-  else if(_num_inputs>0)
+
+  if (has_input_slider())
     SLIDERPAINTER_set_peak_value_pointers(_input_slider, _num_inputs, plugin->input_volume_peak_values, false);
   //ATOMIC_SET(plugin->input_volume_peak_values_for_chip, SLIDERPAINTER_obtain_peak_value_pointers(_input_slider,_num_inputs));
   
@@ -1122,14 +1123,14 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }
 
     // input slider
-    if(plugin->type->num_outputs==0 && plugin->type->num_inputs>0){
+    if(has_input_slider()){
       painter->translate(x1,y1);
       SLIDERPAINTER_paint(_input_slider, painter);
       painter->translate(-x1,-y1);
     }
 
     // output slider (not painted if input slider is painted)
-    if(plugin->type->num_outputs>0){
+    if(has_output_slider()){
       painter->translate(x1,y1);
       SLIDERPAINTER_paint(_output_slider, painter);
       painter->translate(-x1,-y1);
@@ -1379,11 +1380,6 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
     struct Instruments *instrument = get_audio_instrument();
     instrument->PP_Update(instrument,(struct Patch*)patch);
 
-    if(event->modifiers() & Qt::ControlModifier)
-      setSelected(true);
-    else
-      MW_set_selected_chip(this); //i.e. only set this one as the selected.
-
     // solo onoff
     {
       int x1,y1,x2,y2;
@@ -1422,7 +1418,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       }
     }
 
-    // effects onoff
+    // effects onoff (i.e. bypass)
     {
       int x1,y1,x2,y2;
       get_effects_onoff_coordinates(x1,y1,x2,y2);
@@ -1441,6 +1437,13 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
     }
 
     for(int i=0;i<2;i++){
+
+      if (i==0 && !has_input_slider())
+        continue;
+
+      if (i==1 && !has_output_slider())
+        continue;
+
       int x1,y1,x2,y2;
       if(i==0)
         get_slider1_coordinates(x1,y1,x2,y2);      
@@ -1451,11 +1454,6 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
         int effect_num;
-
-        if(i==0 && plugin->type->num_inputs==0)
-          continue;
-        if(i==1 && plugin->type->num_outputs==0)
-          continue;
 
         if(i==0)
           effect_num = num_effects+EFFNUM_INPUT_VOLUME;
@@ -1475,8 +1473,25 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         GFX_update_instrument_widget((struct Patch*)patch);
         */
         _slider_being_edited = i+1;
+
+        //printf("          RETURNING\n");
+        event->accept();
+        return;
       }
     }
+
+    /*
+      This stuff is handled in handle_chip_selection in QM_MixerWidget.cpp.
+
+    // no slider or button selected.
+    //
+    if(event->modifiers() & Qt::ControlModifier) {
+      printf(" *********** Setting selected to %d\n", !isSelected());
+      setSelected(!isSelected());
+    } else {
+      MW_set_selected_chip(this); //i.e. only set this one as the selected.
+    }
+    */
 
   }
 

@@ -357,8 +357,27 @@ public:
   float _slider_start_pos;
   int _slider_being_edited;
 
+  QPointF _moving_start_pos;
   float _moving_x_offset;
   float _moving_y_offset;
+
+  bool has_output_slider(void){
+    if (_sound_producer==NULL)
+      return false;
+    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+    if (plugin==NULL)
+      return false;
+    return plugin->type->num_outputs > 0;
+  }
+
+  bool has_input_slider(void){
+    if (_sound_producer==NULL)
+      return false;
+    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+    if (plugin==NULL)
+      return false;
+    return !has_output_slider() && plugin->type->num_inputs>0;
+  }
 
   void setSelected(bool selected){
     for(auto audio_connection : audio_connections)

@@ -369,12 +369,13 @@ void MW_update_all_chips(void){
 }
 
 static void handle_chip_selection(MyScene *myscene, QGraphicsSceneMouseEvent * event, Chip *chip){
-  if(chip->isSelected()==false){
-    if(event->modifiers() & Qt::ControlModifier)
-      chip->setSelected(true);
-    else
-      MW_set_selected_chip(chip);
-  }
+  bool was_selected = chip->isSelected();
+
+  if(event->modifiers() & Qt::ControlModifier)
+    chip->setSelected(!was_selected);
+
+  if(was_selected==false)
+    MW_set_selected_chip(chip);
 
   myscene->_moving_chips.push_back(chip);
 }
@@ -384,7 +385,7 @@ static void start_moving_chips(MyScene *myscene, QGraphicsSceneMouseEvent * even
 
   handle_chip_selection(myscene, event, main_chip);
 
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer_widget->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
@@ -394,8 +395,10 @@ static void start_moving_chips(MyScene *myscene, QGraphicsSceneMouseEvent * even
       volatile struct Patch *patch = plugin->patch;
       R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
+      printf("               ADDING CHIP POS UNDO\n");
       ADD_UNDO(ChipPos_CurrPos((struct Patch*)patch));
-
+      
+      chip->_moving_start_pos = chip->pos();
       chip->_moving_x_offset = chip->scenePos().x() - mouse_x;
       chip->_moving_y_offset = chip->scenePos().y() - mouse_y;
 
@@ -420,12 +423,11 @@ static void get_slotted_x_y(float from_x, float from_y, float &x, float &y){
 static bool move_chip_to_slot(Chip *chip, float from_x, float from_y){
   float x,y;
   get_slotted_x_y(from_x, from_y, x, y);
-
-  if (chip->pos().x()==x && chip->pos().y()==y)
-    return false;
+  //printf("   %f/%f,  %f/%f\n",chip->pos().x(),x, chip->pos().y(),y);
 
   chip->setPos(x,y);
-  return true;
+
+  return chip->_moving_start_pos!=chip->pos();
 }
 
 bool MW_move_chip_to_slot(Chip *chip, float x, float y){
@@ -508,7 +510,10 @@ static void cleanup_chip_positions(MyScene *myscene){
   while(cleanup_a_chip_position(myscene)==true);
 }
 
-static bool stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
+static bool stop_moving_chips(MyScene *myscene, const QPointF &mouse_pos){
+
+  float mouse_x = mouse_pos.x();
+  float mouse_y = mouse_pos.y();
 
   //myscene->removeItem(_slot_indicator);
   myscene->_parent->setCursor(QCursor(Qt::ArrowCursor));
@@ -519,7 +524,7 @@ static bool stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
 
   int size = (int)myscene->_moving_chips.size();
   bool has_updated = false;
-  
+
   for(int i=0;i<size;i++){
     Chip *chip = myscene->_moving_chips.at(i);
     //float x = chip->_moving_x_offset+mouse_x;
@@ -534,18 +539,23 @@ static bool stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
         has_updated=true;
   }
 
-  cleanup_chip_positions(myscene);
+  if (has_updated==true)
+    cleanup_chip_positions(myscene);
 
-  Undo_Close();
+  bool created_undo = Undo_Close();
 
   // TODO: has_updated returns true if the chip was just moved around a bit. Need to store original position for has_updated to get correct value.
-  if (has_updated==false)
+  if (has_updated==false && created_undo==true)
     Undo_CancelLastUndo();
 
   myscene->_moving_chips.clear();
 
-  // TODO: the function currently returns correct value, but it can not return 'has_updated' when 'has_updated' gets correct value, since we don't want to ask user to replace chip after moving it around a bit.
-  return has_updated;
+  if (has_updated)
+    return true;
+  else if (myscene->_start_mouse_pos != mouse_pos)
+    return true;
+  else
+    return false;
 }
 
 void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
@@ -1148,6 +1158,8 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
   float mouse_x = pos.x();
   float mouse_y = pos.y();
 
+  _start_mouse_pos = pos;
+
   QGraphicsItem *item = itemAt(event->scenePos(), QTransform());
 
   printf("mouse button: %d %d\n",event->button(),Qt::MiddleButton);
@@ -1262,9 +1274,9 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
     _ecurrent_to_chip = NULL;
     event->accept();
     
-  }else if(_moving_chips.size()>0 && stop_moving_chips(this,mouse_x,mouse_y)==true){
+  }else if(_moving_chips.size()>0 && stop_moving_chips(this, pos)) {
 
-    event->accept();
+    event->accept();    
 
   }else{
 

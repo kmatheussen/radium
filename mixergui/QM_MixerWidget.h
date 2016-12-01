@@ -134,6 +134,8 @@ class MyScene : public QGraphicsScene{
 
   std::vector<Chip*>_moving_chips;
 
+  QPointF _start_mouse_pos;
+
 #if 0
   public slots:
     void on_scene_changed ( const QList<QRectF> & region ){

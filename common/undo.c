@@ -159,7 +159,8 @@ void ResetUndo(void){
   memset(&UndoRoot,0,sizeof(struct Undo));
 
   CurrUndo=&UndoRoot;
-         
+  
+  //printf("        UNDO ResetUndo(). num_undos=0\n");
   num_undos=0;
   undo_pos_at_last_saving=0;
   update_gfx();
@@ -220,6 +221,9 @@ bool Undo_Is_Open(void){
 }
 
 void Undo_Open_rec(void){
+  //printf("        UNDO OPEN\n");
+
+
   if (ignore()) return;
 
   if(currently_undoing){
@@ -269,6 +273,9 @@ bool Undo_Close(void){
 
   if (ignore()) return false;
 
+  //printf("        UNDO CLOSE\n");
+
+
   if(currently_undoing){
     //RError("Can not call Undo_Close from Undo()\n");    
     return false;
@@ -300,6 +307,7 @@ bool Undo_Close(void){
     CurrUndo=undo;
     
     num_undos++;
+    //printf("        UNDO Undo_Close(). num_undos++: %d\n", num_undos);
 
     update_gfx();
     
@@ -324,6 +332,7 @@ void Undo_ReopenLast(void){
 
   undo_is_open++;
   num_undos--;
+  //printf("        UNDO Reopenlast. num_undos--: %d\n", num_undos);
 }
 
 void Undo_CancelLastUndo(void){
@@ -331,11 +340,15 @@ void Undo_CancelLastUndo(void){
 
   R_ASSERT_RETURN_IF_FALSE(currently_undoing==false);
   R_ASSERT_RETURN_IF_FALSE(Undo_Is_Open()==false);
+  R_ASSERT_RETURN_IF_FALSE(num_undos>0);
+  R_ASSERT_RETURN_IF_FALSE(CurrUndo!=NULL);
+  R_ASSERT_RETURN_IF_FALSE(CurrUndo->prev!=NULL);
 
   CurrUndo=CurrUndo->prev;
   CurrUndo->next=NULL;
 
   num_undos--;
+  //printf("        UNDO CancelLast. num_undos++: %d\n", num_undos);
 
   update_gfx();
 }
@@ -545,6 +558,7 @@ currently_undoing = true;
        CurrUndo=undo->prev;
 
        num_undos--;
+       //printf("        UNDO Undo(). num_undos--: %d\n", num_undos);
 
        //if (!is_playing())  // <- Not sure if this is safe.
        {
@@ -609,6 +623,7 @@ void Redo(void){
         EVENTLOG_add_event("   Redoing Finished");
                 
 	num_undos+=2;
+        //printf("        UNDO Redo(). num_undos--: %d\n", num_undos);
 
         update_gfx();
 }
