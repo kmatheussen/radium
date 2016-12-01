@@ -384,64 +384,81 @@ static void EditorFollowsPlayCursorLoop(void){
 // called very often
 static void PlayHandleRangeLoop(void){
   //printf("is_range: %d, is_playing: %d, stopped_manually: %d\n",pc->is_playing_range, is_playing(), g_player_was_stopped_manually);
-  
-  if (pc->is_playing_range == false)
-    return;
 
   static bool got_lock = false; // Lock editor graphics while stopping and playing to avoid some jumpiness.
+  
+  if (pc->is_playing_range == false){
+    if (got_lock==true){
+      GL_draw_unlock();
+      got_lock=false;
+    }
+    return;
+  }
 
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPING && g_player_was_stopped_manually==false) {
     GL_draw_lock();
     got_lock=true;
   }
   
-  if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED && g_player_was_stopped_manually==false) {
-    if(got_lock==false)
-      GL_draw_lock();
-    
-    StopAllInstruments();
-    
-    if (MIXER_is_saving())
-      PlayStopReally(true);
-    else
-      PlayRangeFromStart(root->song->tracker_windows);
+  if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED) {
+    if (g_player_was_stopped_manually==false) {
+      if(got_lock==false){
+        GL_draw_lock();
+        got_lock=true;
+      }
 
-    GL_draw_unlock();
-    
-    got_lock=false;
+      StopAllInstruments();
+      
+      if (MIXER_is_saving())
+        PlayStopReally(true);
+      else
+        PlayRangeFromStart(root->song->tracker_windows);
+    }
+
+    if (got_lock==true){
+      GL_draw_unlock();    
+      got_lock=false;
+    }
   }
 }
 
 static void PlayHandleSequencerLoop(void){
   //printf("is_range: %d, is_playing: %d, stopped_manually: %d\n",pc->is_playing_range, is_playing(), g_player_was_stopped_manually);
-  
-  if (!SEQUENCER_is_looping())
-    return;
-
-  if (pc->is_playing_range==true)
-    return;
 
   static bool got_lock = false; // Lock editor graphics while stopping and playing to avoid some jumpiness.
+  
+  if (!SEQUENCER_is_looping() || pc->is_playing_range==true) {
+    if (got_lock==true){
+      GL_draw_unlock();
+      got_lock=false;
+    }
+    return;
+  }
 
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPING && g_player_was_stopped_manually==false) {
     GL_draw_lock();
     got_lock=true;
   }
   
-  if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED && g_player_was_stopped_manually==false) {
-    if(got_lock==false)
-      GL_draw_lock();
-    
-    StopAllInstruments();
-    
-    if (MIXER_is_saving())
-      PlayStopReally(true);
-    else
-      PlaySong(SEQUENCER_get_loop_start());
-    
-    GL_draw_unlock();
-    
-    got_lock=false;
+  if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED) {
+    if (g_player_was_stopped_manually==false) {
+      if(got_lock==false){
+        GL_draw_lock();
+        got_lock=true;
+      }
+
+      StopAllInstruments();
+      
+      if (MIXER_is_saving())
+        PlayStopReally(true);
+      else
+        PlaySong(SEQUENCER_get_loop_start());
+    }
+
+    if (got_lock==true){
+      GL_draw_unlock();
+      got_lock=false;
+    }
   }
 }
 
