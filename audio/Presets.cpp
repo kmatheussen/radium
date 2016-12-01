@@ -78,35 +78,22 @@ static QVector<QString> get_all_presets_in_path(QString path){
 
 
 static QString request_load_preset_filename_from_requester(void){
-  QString filename;
-
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, "");
   
-  obtain_keyboard_focus();{
+  radium::ScopedExec scopedExec;
 
-    g_radium_runs_custom_exec = true;
-
-    GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-      filename = QFileDialog::getOpenFileName(
-                                              g_main_window,
-                                              "Load Effect configuration",
-                                              g_last_preset_path,
+  return QFileDialog::getOpenFileName(
+                                      g_main_window,
+                                      "Load Effect configuration",
+                                      g_last_preset_path,
 #if FOR_WINDOWS
-                                              "*.rec *.mrec ;; *.rec ;; *.mrec ;; All files (*)",
+                                      "*.rec *.mrec ;; *.rec ;; *.mrec ;; All files (*)",
 #else
-                                              "Radium Effect Configuration (*.rec *.mrec) ;; Radium Single Effect Configuration (*.rec) ;; Radium Multi Effect Configuration (*.mrec) ;; All files (*)",
+                                      "Radium Effect Configuration (*.rec *.mrec) ;; Radium Single Effect Configuration (*.rec) ;; Radium Multi Effect Configuration (*.mrec) ;; All files (*)",
 #endif
-                                              0,
-                                              QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
-                                              );
-    }GL_unlock();
-    
-    g_radium_runs_custom_exec = false;
-
-  }release_keyboard_focus();
-
-
-  return filename;
+                                      0,
+                                      QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
+                                      );
 }
 
 static QString request_load_preset_filename(void){

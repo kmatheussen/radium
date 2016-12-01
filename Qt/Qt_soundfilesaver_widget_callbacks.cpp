@@ -359,31 +359,16 @@ public slots:
     } else {
 
       R_ASSERT_RETURN_IF_FALSE(g_radium_runs_custom_exec==false);
+
+      radium::ScopedExec scopedExec;
       
-      obtain_keyboard_focus();
-
-      g_radium_runs_custom_exec = true;
-
-      GFX_HideProgress();
-      
-      QString filename;
-
-      GL_lock();{
-        filename = QFileDialog::getSaveFileName(this, 
-                                                QString("Select file"),
-                                                QString(),
-                                                QString(),
-                                                0,
-                                                options
-                                                );
-      }GL_unlock();
-
-      GFX_ShowProgress();
-        
-      g_radium_runs_custom_exec = false;
-
-      release_keyboard_focus();
-
+      QString filename = QFileDialog::getSaveFileName(this, 
+                                                      QString("Select file"),
+                                                      QString(),
+                                                      QString(),
+                                                      0,
+                                                      options
+                                                      );
       filename_edit->setText(filename);
     }
   }

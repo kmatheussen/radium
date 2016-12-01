@@ -161,55 +161,49 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
       struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
       EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
 
-      MyQMessageBox msgBox;
+      {
+        MyQMessageBox msgBox;
+        
+        msgBox.setText(QString("Could not find "+info.fileName()+" in "+dir.path()+".\nPlease select new file."));
+        //msgBox.setInformativeText("Could not find "+info.fileName()+" in"+dir.path()+". Please select new file."
+        msgBox.setStandardButtons(QMessageBox::Ok);
+        
+        safeExec(msgBox);
+      }
 
-      msgBox.setText(QString("Could not find "+info.fileName()+" in "+dir.path()+".\nPlease select new file."));
-      //msgBox.setInformativeText("Could not find "+info.fileName()+" in"+dir.path()+". Please select new file."
-      msgBox.setStandardButtons(QMessageBox::Ok);
-      
-      safeExec(msgBox);
+      {
+        R_ASSERT(g_radium_runs_custom_exec==false);
 
-      R_ASSERT(g_radium_runs_custom_exec==false);
+        radium::ScopedExec scopedExec;
 
-      obtain_keyboard_focus();
-
-      g_radium_runs_custom_exec = true;      
-
-      QString filename;
 
 #if 0
-      QStringList QFileDialog::getOpenFileNames(QWidget * parent = 0,
-                                                const QString & caption = QString(),
-                                                const QString & dir = QString(),
-                                                const QString & filter = QString(),
-                                                QString * selectedFilter = 0,
-                                                Options options = 0)
+        QStringList QFileDialog::getOpenFileNames(QWidget * parent = 0,
+                                                  const QString & caption = QString(),
+                                                  const QString & dir = QString(),
+                                                  const QString & filter = QString(),
+                                                  QString * selectedFilter = 0,
+                                                  Options options = 0)
 #endif
+          
+          QString filename = QFileDialog::getOpenFileName(editor, 
+                                                          QString("Select file to replace ")+info.fileName(),
+                                                          QString(),
+                                                          QString(),
+                                                          0,
+                                                          QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
+                                                          );
+
+        if(filename == "")
+          return NULL;
         
-      GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-        filename = QFileDialog::getOpenFileName(editor, 
-                                                QString("Select file to replace ")+info.fileName(),
-                                                QString(),
-                                                QString(),
-                                                0,
-                                                QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
-                                                );
-      }GL_unlock();
-
-      g_radium_runs_custom_exec = false;
-        
-      release_keyboard_focus();
-
-      if(filename == "")
-        return NULL;
-
-      info3 = QFileInfo(filename);
-
+        info3 = QFileInfo(filename);
+      }
     }while(info3.exists()==false);
 
     if(info3.fileName() == info.fileName())
       ask_to_add_resolved_path(dir, info3.dir());
-
+    
     return STRING_create(info3.filePath());
   }
 }

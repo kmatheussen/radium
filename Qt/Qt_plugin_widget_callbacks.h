@@ -465,36 +465,31 @@ private:
 
     R_ASSERT(g_radium_runs_custom_exec==false);
 
-    obtain_keyboard_focus();
-
-    g_radium_runs_custom_exec = true;      
-
     QString filename;
-    
-    GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-      filename = QFileDialog::getSaveFileName(
-                                              g_mixer_widget,
-                                              is_fxb ? "Save VST FXB file" : "Save VST FXP file",
-                                              last_fxb_preset_path,
+
+    {
+      radium::ScopedExec scopedExec;
+
+      
+      QString filename = QFileDialog::getSaveFileName(
+                                                      g_mixer_widget,
+                                                      is_fxb ? "Save VST FXB file" : "Save VST FXP file",
+                                                      last_fxb_preset_path,
 #if FOR_WINDOWS
-                                              is_fxb ? "*.fxb ;; All files (*)" : "*.fxp ;; All files (*)",
+                                                      is_fxb ? "*.fxb ;; All files (*)" : "*.fxp ;; All files (*)",
 #else
-                                              is_fxb ? "VST FXB (*.fxb) ;; All files (*)" : "VST FXP (*.fxp) ;; All files (*)",
+                                                      is_fxb ? "VST FXB (*.fxb) ;; All files (*)" : "VST FXP (*.fxp) ;; All files (*)",
 #endif
-                                              0,
-                                              QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
-                                              );
-    }GL_unlock();
+                                                      0,
+                                                      QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
+                                                      );
+      
+      if(filename=="")
+        return;
+    }
 
-    g_radium_runs_custom_exec = false;
-    
-    release_keyboard_focus();
-
-    if(filename=="")
-      return;
-    
     last_fxb_preset_path = QFileInfo(filename).absoluteDir().path();
-
+    
     if (is_fxb)
       PLUGINHOST_save_fxb(plugin, STRING_create(filename));
     else
@@ -505,14 +500,12 @@ private:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     
     R_ASSERT(g_radium_runs_custom_exec==false);
-    
-    obtain_keyboard_focus();
-
-    g_radium_runs_custom_exec = true;      
 
     QString filename;
+
+    {
+      radium::ScopedExec scopedExec;
     
-    GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
       filename = QFileDialog::getOpenFileName(
                                               g_mixer_widget,
                                               "Load VST FXB or FXP file",
@@ -525,15 +518,11 @@ private:
                                               0,
                                               QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                               );
-    }GL_unlock();
+      
+      if(filename=="")
+        return;
+    }
 
-    g_radium_runs_custom_exec = false;
-    
-    release_keyboard_focus();
-
-    if(filename=="")
-      return;
-    
     last_fxb_preset_path = QFileInfo(filename).absoluteDir().path();
     
     PLUGINHOST_load_fxbp(plugin, STRING_create(filename));
@@ -671,13 +660,10 @@ public slots:
       QString filename;
 
       R_ASSERT(g_radium_runs_custom_exec==false);
-      
-      obtain_keyboard_focus();
 
-      g_radium_runs_custom_exec = true;      
+      {
+        radium::ScopedExec scopedExec;
 
-      GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-        
         filename = QFileDialog::getOpenFileName(this,
                                                 "Load Faust source code",
                                                 "",
@@ -685,13 +671,8 @@ public slots:
                                                 0,
                                                 QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                                 );
+      }
         
-      }GL_unlock();
-      
-      g_radium_runs_custom_exec = false;
-      
-      release_keyboard_focus();
-
       if(filename != "")
         _faust_plugin_widget->load_source(filename);
     }
@@ -705,13 +686,10 @@ public slots:
       QString filename;
 
       R_ASSERT(g_radium_runs_custom_exec==false);
-      
-      obtain_keyboard_focus();
 
-      g_radium_runs_custom_exec = true;      
+      {
+        radium::ScopedExec scopedExec;
 
-      GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-        
         filename = QFileDialog::getSaveFileName(this,
                                                 "Save Faust source code",
                                                 "",
@@ -720,11 +698,7 @@ public slots:
                                                 QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                                 );
         
-      }GL_unlock();
-      
-      g_radium_runs_custom_exec = false;
-            
-      release_keyboard_focus();
+      }
 
       if(filename != "")
         _faust_plugin_widget->save_source(filename);      

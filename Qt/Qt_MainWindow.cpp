@@ -673,29 +673,16 @@ const wchar_t *GFX_GetLoadFileName(
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, NULL);
 
-  obtain_keyboard_focus();
+  radium::ScopedExec scopedExec;
 
-  g_radium_runs_custom_exec = true;
-  
-  QString filename;
-  
-  GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-  
-    QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
-    filename = QFileDialog::getOpenFileName(editor,
-                                            seltext,
-                                            dir,
-                                            get_postfixes_filter(postfixes),
-                                            0,
-                                            QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
-                                            );
-    
-  }GL_unlock();
-
-  g_radium_runs_custom_exec = false;
-    
-  release_keyboard_focus();
-
+  QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
+  QString filename = QFileDialog::getOpenFileName(editor,
+                                                  seltext,
+                                                  dir,
+                                                  get_postfixes_filter(postfixes),
+                                                  0,
+                                                  QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
+                                                  );
   if(filename == "")
     return NULL;
   else
@@ -713,32 +700,20 @@ const wchar_t *GFX_GetSaveFileName(
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, NULL);
 
-  obtain_keyboard_focus();
+  radium::ScopedExec scopedExec;
 
-  g_radium_runs_custom_exec = true;
-  
-  QString filename;
-  
-  GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-
-    QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
-    filename = QFileDialog::getSaveFileName(editor,
-                                            seltext,
-                                            "",
-                                            get_postfixes_filter(postfixes),
-                                            0,
-                                            QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
-                                            );
-  }GL_unlock();
-
-  g_radium_runs_custom_exec = false;
-    
-  release_keyboard_focus();
-
+  QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
+  QString filename = QFileDialog::getSaveFileName(editor,
+                                                  seltext,
+                                                  "",
+                                                  get_postfixes_filter(postfixes),
+                                                  0,
+                                                  QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
+                                                  );
   if (filename == "")
     return NULL;
-
-  return STRING_create(filename);
+  else
+    return STRING_create(filename);
 }
 
 

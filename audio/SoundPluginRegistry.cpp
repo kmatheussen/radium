@@ -91,15 +91,12 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
 
       if (ret==select_plugin_file) {
 
-        R_ASSERT(g_radium_runs_custom_exec==false);
-        
-        obtain_keyboard_focus();
-
-        g_radium_runs_custom_exec = true;
-      
         QString filename;
+        
+        {
+          R_ASSERT(g_radium_runs_custom_exec==false);
 
-        GL_lock();{
+          radium::ScopedExec scopedExec;
           filename = QFileDialog::getOpenFileName(NULL,
                                                   plugin_name,
                                                   QString(),
@@ -107,11 +104,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
                                                   0,
                                                   QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                                   );
-        }GL_unlock();
-        
-        g_radium_runs_custom_exec = false;
-
-        release_keyboard_focus();
+        }
 
         QFileInfo info(filename);
 

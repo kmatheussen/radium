@@ -203,6 +203,7 @@ public:
 
     QDialog::setVisible(visible);    
   }
+
 };
 
 struct GL_PauseCaller{
@@ -215,77 +216,62 @@ struct GL_PauseCaller{
 };
 
 
+namespace radium{
+struct ScopedExec{
+  bool _lock;
+  
+  ScopedExec(bool lock=true)
+    : _lock(lock)
+  {      
+    obtain_keyboard_focus();
+    
+    g_radium_runs_custom_exec = true;
+    
+    GFX_HideProgress();
+    
+    if (_lock)  // GL_lock <strike>is</strike> was needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+      GL_lock();
+  }
+  
+  ~ScopedExec(){
+    if (_lock)
+      GL_unlock();
+    
+    GFX_ShowProgress();
+    
+    g_radium_runs_custom_exec = false;
+    
+    release_keyboard_focus();
+  }
+};
+}
+
+
+
+
 
 static inline int safeExec(QMessageBox *widget){
-  int ret;
-
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
+      
+  radium::ScopedExec scopedExec;
 
-  obtain_keyboard_focus();
-
-  g_radium_runs_custom_exec = true;
-  
-  GFX_HideProgress();
-  
-  GL_lock();{
-    ret = widget->exec();
-  }GL_unlock();
-
-  GFX_ShowProgress();
-    
-  g_radium_runs_custom_exec = false;
-  
-  release_keyboard_focus();
-
-  return ret;
+  return widget->exec();
 }
 
 static inline int safeExec(QMessageBox &widget){
-  int ret;
-
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
 
-  obtain_keyboard_focus();
+  radium::ScopedExec scopedExec;
 
-  g_radium_runs_custom_exec = true;
-    
-  GFX_HideProgress();
-  
-  GL_lock();{
-    ret = widget.exec();
-  }GL_unlock();
-
-  GFX_ShowProgress();
-    
-  g_radium_runs_custom_exec = false;
-  
-  release_keyboard_focus();
-
-  return ret;
+  return widget.exec();
 }
 
 static inline int safeExec(QDialog *widget){
-  int ret;
-
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
 
-  obtain_keyboard_focus();
+  radium::ScopedExec scopedExec;
 
-  g_radium_runs_custom_exec = true;
-  
-  GFX_HideProgress();
-  
-  GL_lock();{
-    ret = widget->exec();
-  }GL_unlock();
-
-  GFX_ShowProgress();
-    
-  g_radium_runs_custom_exec = false;
-  
-  release_keyboard_focus();
-
-  return ret;
+  return widget->exec();
 }
 
 static inline QAction *safeExec(QMenu *widget){
@@ -297,29 +283,16 @@ static inline QAction *safeExec(QMenu *widget){
     GFX_Message(NULL, "Already runs custom exec");
 #endif
   
-  obtain_keyboard_focus();
-
-  g_radium_runs_custom_exec = true;
-    
-  GFX_HideProgress();
-  
   if (doModalWindows()) {
-    GL_lock();{
-      ret = widget->exec(QCursor::pos());
-    }GL_unlock();
+    radium::ScopedExec scopedExec;
+    return widget->exec(QCursor::pos());
   }else{
+    radium::ScopedExec scopedExec(false);
     GL_lock();{
       GL_pause_gl_thread_a_short_while();
     }GL_unlock();    
-    ret = widget->exec(QCursor::pos());
+    return widget->exec(QCursor::pos());
   }
-
-  GFX_ShowProgress();
-  
-  g_radium_runs_custom_exec = false;
-  
-  release_keyboard_focus();
-
   return ret;
 }
 
