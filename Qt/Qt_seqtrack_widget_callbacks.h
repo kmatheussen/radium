@@ -34,6 +34,10 @@ static bool g_need_update = false;
 
 static void g_position_widgets(void);
 
+static QPoint mapFromEditor(QWidget *widget, QPoint point){
+  QPoint global = g_editor->mapToGlobal(point);
+  return widget->mapFromGlobal(global);
+}
 
 static QPoint mapToEditor(QWidget *widget, QPoint point){
   //return widget->mapTo(g_editor, point); (g_editor must be a parent, for some reason)
@@ -294,6 +298,32 @@ public:
     return get_seqblock_x2((struct SeqBlock*)_seqtrack->seqblocks.elements[seqblocknum], start_time, end_time);
   }
 
+  void set_seqblocks_is_selected(const QRect &selection_rect){
+    double sample_rate = MIXER_get_sample_rate();
+    //double song_length = get_visible_song_length()*sample_rate;
+  
+    SEQTRACK_update_all_seqblock_gfx_start_and_end_times(_seqtrack);
+
+    double start_time = _start_time / sample_rate;
+    double end_time = _end_time / sample_rate;
+
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &_seqtrack->seqblocks){
+
+      if (seqblock->start_time < end_time && seqblock->end_time >= start_time) {
+        float x1 = get_seqblock_x1(seqblock, start_time, end_time);
+        float x2 = get_seqblock_x2(seqblock, start_time, end_time);
+        
+        QRect rect(x1,t_y1+1,x2-x1,height-2);
+        
+        seqblock->is_selected = rect.intersects(selection_rect);
+      } else {
+        seqblock->is_selected = false;
+      }
+
+    }END_VECTOR_FOR_EACH;
+     
+  }
+
   void paintTrack(QPainter &p, float x1, float y1, float x2, float y2, const struct Blocks *block, const struct Tracks *track, int64_t blocklen) const {
     QColor color1 = get_qcolor(SEQUENCER_NOTE_COLOR_NUM);
     QColor color2 = get_qcolor(SEQUENCER_NOTE_START_COLOR_NUM);
@@ -356,7 +386,8 @@ public:
     }
   }
   
-  void paintBlock(QPainter &p, const QRectF &rect, const struct Blocks *block){
+  void paintBlock(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock){
+    const struct Blocks *block = seqblock->block;
 
     const int header_height = root->song->tracker_windows->systemfontheight*1.3;
     
@@ -457,9 +488,21 @@ public:
         beat = NextBeat(beat);
       }
     }
+
+    //printf("Seqblock: %p, %d\n", seqblock, seqblock->is_selected);
+    if (seqblock->is_selected){
+      QColor grayout_color = get_qcolor(SEQUENCER_BLOCK_SELECTED_COLOR_NUM);
+      
+      p.setPen(Qt::NoPen);
+      p.setBrush(grayout_color);
+      
+      p.drawRect(rect);
+
+      p.setBrush(Qt::NoBrush);
+    }
   }
   
-  void paint(const QRect update_rect, QPainter &p){ // QPaintEvent * ev ) override {
+  void paint(const QRect &update_rect, QPainter &p){ // QPaintEvent * ev ) override {
 
     //printf("  PAINTING %d %d -> %d %d\n",t_x1,t_y1,t_x2,t_y2);
 
@@ -485,7 +528,7 @@ public:
         QRectF rect(x1,t_y1+1,x2-x1,height-2);
 
         if (update_rect.intersects(rect.toAlignedRect()))
-          paintBlock(p, rect, seqblock->block);
+          paintBlock(p, rect, seqblock);
         
       }
       
@@ -610,7 +653,11 @@ class Seqtrack_widget : public QWidget, public Ui::Seqtrack_widget {
     _seqblocks_widget->position_widgets(x1_b, y1, x2, y2);
   }
 
-  void paint(const QRect update_rect, QPainter &p){
+  void set_seqblocks_is_selected(const QRect &selection_rect){
+    _seqblocks_widget->set_seqblocks_is_selected(selection_rect);
+  }
+
+  void paint(const QRect &update_rect, QPainter &p){
     _seqblocks_widget->paint(update_rect, p);
   }
   
@@ -691,7 +738,12 @@ public:
 
   }  
 
-  void paint(const QRect update_rect, QPainter &p){
+  void set_seqblocks_is_selected(const QRect &selection_rect){
+    for(auto *seqtrack_widget : _seqtrack_widgets)
+      seqtrack_widget->set_seqblocks_is_selected(selection_rect);
+  }
+
+  void paint(const QRect &update_rect, QPainter &p){
     position_widgets(t_x1, t_y1, t_x2, t_y2);
 
     // seqtracks
@@ -801,7 +853,7 @@ struct SongTempoAutomation_widget { //: public MouseTrackerQWidget {
     _rect = QRect(t_x1, t_y1, width, height);
   }
 
-  void paint(const QRect update_rect, QPainter &p){
+  void paint(const QRect &update_rect, QPainter &p){
 
     p.fillRect(_rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
     
@@ -1115,6 +1167,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   Seqtracks_navigator_widget _navigator_widget;
   //MyQSlider _main_reltempo;
 
+  bool _has_selection_rectangle = false;
+  QRect _selection_rectangle;
+
   Sequencer_widget(QWidget *parent)
     : MouseTrackerQWidget(parent)
     , _end_time(SONG_get_gfx_length()*MIXER_get_sample_rate())
@@ -1245,7 +1300,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   const float cursor_width = 2.7;
   float _last_painted_cursor_x = 0.0f;
   
-  float get_curr_cursor_x(int frames_to_add){
+  float get_curr_cursor_x(int frames_to_add) const {
     return scale_double(ATOMIC_DOUBLE_GET(pc->song_abstime)+frames_to_add, _start_time, _end_time, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2);
   }
 
@@ -1299,10 +1354,14 @@ struct Sequencer_widget : public MouseTrackerQWidget {
         update(x_min, y1, 1+x_max-x_min, y2-y1);
       }
     }
-}
+  }
+
+  void set_seqblocks_is_selected(void){
+    _seqtracks_widget.set_seqblocks_is_selected(_selection_rectangle);
+  }
 
 
-  void paintGrid(const QRect update_rect, QPainter &p, enum GridType grid_type){
+  void paintGrid(const QRect &update_rect, QPainter &p, enum GridType grid_type) const {
     float x1 = _seqtracks_widget.t_x1;
     float x2 = _seqtracks_widget.t_x2;
     float width = x2-x1;
@@ -1331,7 +1390,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     }
   }
       
-  void paintCursor(const QRect update_rect, QPainter &p){
+  void paintCursor(const QRect &update_rect, QPainter &p){
     float y1 = _songtempoautomation_widget.t_y1;
     float y2 = _seqtracks_widget.t_y2;
     
@@ -1346,7 +1405,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     p.drawLine(line);
   }
       
-  void paintSeqloop(const QRect update_rect, QPainter &p){
+  void paintSeqloop(const QRect &update_rect, QPainter &p) const {
     float y1 = _songtempoautomation_widget.t_y1;
     float y2 = _seqtracks_widget.t_y2;
 
@@ -1369,6 +1428,14 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     }
   }
       
+  void paintSelectionRectangle(const QRect &update_rect, QPainter &p) const {
+    QColor grayout_color = QColor(220,220,220,0x40); //get_qcolor(SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM);
+
+    p.setPen(Qt::black);
+    p.setBrush(grayout_color);
+
+    p.drawRect(_selection_rectangle);
+  }
 
   void paintEvent (QPaintEvent *ev) override {
     QPainter p(this);
@@ -1384,6 +1451,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     paintCursor(ev->rect(), p);
     if (SEQUENCER_is_looping())
       paintSeqloop(ev->rect(), p);    
+
+    if (_has_selection_rectangle)
+      paintSelectionRectangle(ev->rect(), p);
   }
 
   
@@ -1483,6 +1553,52 @@ void SEQUENCER_set_visible_end_time(int64_t val){
 
 void SEQUENCER_set_grid_type(enum GridType grid_type){
   g_sequencer_widget->_grid_type = grid_type;
+}
+
+void SEQUENCER_set_selection_rectangle(float x1, float y1, float x2, float y2){
+  g_sequencer_widget->_has_selection_rectangle = true;
+  QPoint p1 = mapFromEditor(g_sequencer_widget, QPoint(x1, y1));
+  QPoint p2 = mapFromEditor(g_sequencer_widget, QPoint(x2, y2));
+
+  // legalize values
+  //
+  int &_x1 = p1.rx();
+  int &_y1 = p1.ry();
+  int &_x2 = p2.rx();
+  int &_y2 = p2.ry();
+
+  if (_x1 < g_sequencer_widget->_seqtracks_widget.t_x1)
+    _x1 = g_sequencer_widget->_seqtracks_widget.t_x1;
+  if (_x2 < _x1)
+    _x2 = _x1;
+
+  if (_x2 > g_sequencer_widget->_seqtracks_widget.t_x2)
+    _x2 = g_sequencer_widget->_seqtracks_widget.t_x2;
+  if (_x1 > _x2)
+    _x1 = _x2;
+
+  if (_y1 < g_sequencer_widget->_seqtracks_widget.t_y1)
+    _y1 = g_sequencer_widget->_seqtracks_widget.t_y1;
+  if (_y2 < _y1)
+    _y2 = _y1;
+
+  if (_y2 > g_sequencer_widget->_seqtracks_widget.t_y2)
+    _y2 = g_sequencer_widget->_seqtracks_widget.t_y2;
+  if (_y1 > _y2)
+    _y1 = _y2;
+
+
+  g_sequencer_widget->_selection_rectangle = QRect(p1, p2);
+
+  g_sequencer_widget->set_seqblocks_is_selected();
+
+  g_sequencer_widget->update();
+}
+
+void SEQUENCER_unset_selection_rectangle(void){
+  g_sequencer_widget->_has_selection_rectangle = false;
+
+  g_sequencer_widget->update();
 }
 
 

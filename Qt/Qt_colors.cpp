@@ -157,11 +157,14 @@ static const ColorConfig g_colorconfig[] = {
   {SEQUENCER_TEXT_COLOR_NUM, "sequencer_text_color", "Sequencer text color"},
   {SEQUENCER_NOTE_COLOR_NUM, "sequencer_note_color", "Sequencer note color"},
   {SEQUENCER_NOTE_START_COLOR_NUM, "sequencer_note_start_color", "Sequencer note start color"},
+
   {SEQUENCER_BLOCK_HEADER_BACKGROUND_COLOR_NUM, "sequencer_block_header_background_color", "Sequencer block header background color"},
   {SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, "sequencer_block_background_color", "Sequencer block background color"},
   {SEQUENCER_BLOCK_BORDER_COLOR_NUM, "sequencer_block_border_color", "Sequencer block border color"},
   {SEQUENCER_BLOCK_BAR_COLOR_NUM, "sequencer_block_bar_color", "Sequencer block bar color"},
   {SEQUENCER_BLOCK_BEAT_COLOR_NUM, "sequencer_block_beat_color", "Sequencer block beat color"},
+  {SEQUENCER_BLOCK_SELECTED_COLOR_NUM, "sequencer_block_selected_color", "Sequencer block selected color"},
+
   {SEQUENCER_GRID_COLOR_NUM, "sequencer_grid_color", "Sequencer grid color"},
   {SEQUENCER_TRACK_BORDER1_COLOR_NUM, "sequencer_track_border1_color", "Sequencer track border color (first)"},
   {SEQUENCER_TRACK_BORDER2_COLOR_NUM, "sequencer_track_border2_color", "Sequencer track border color"},
@@ -255,11 +258,14 @@ static ReplacementColor g_replacement_color[] = {
   {SEQUENCER_TEXT_COLOR_NUM, QColor("#ff010101")},
   {SEQUENCER_NOTE_COLOR_NUM, QColor("#960101c8")},
   {SEQUENCER_NOTE_START_COLOR_NUM, QColor("#ff000000")},
+
   {SEQUENCER_BLOCK_HEADER_BACKGROUND_COLOR_NUM, QColor("#ffaa9ca0")},
   {SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, QColor("#ff8c8c8c")},
   {SEQUENCER_BLOCK_BORDER_COLOR_NUM, QColor("#ff321423")},
   {SEQUENCER_BLOCK_BAR_COLOR_NUM, QColor("#d2000000")},
   {SEQUENCER_BLOCK_BEAT_COLOR_NUM, QColor("#460a1e17")},
+  {SEQUENCER_BLOCK_SELECTED_COLOR_NUM, QColor("#00801d80")},
+
   {SEQUENCER_GRID_COLOR_NUM, QColor("#99281980")},
   {SEQUENCER_TRACK_BORDER1_COLOR_NUM, QColor("#ff141414")},
   {SEQUENCER_TRACK_BORDER2_COLOR_NUM, QColor("#80141414")},

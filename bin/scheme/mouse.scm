@@ -2928,6 +2928,7 @@
                         :Get-pixels-per-value-unit #f
                         )                        
 
+
 ;; delete seqtemponode / popupmenu
 (add-mouse-cycle
  (make-mouse-cycle
@@ -3163,6 +3164,15 @@
       (<ra> :set-sequencer-grid-type 1)
       (<ra> :set-sequencer-grid-type 0)))
       
+(define (only-select-one-seqblock dasseqblocknum dasseqtracknum)
+  (for-each (lambda (seqtracknum)
+              (for-each (lambda (seqblocknum)
+                          (define should-be-selected (and (= seqtracknum dasseqtracknum)
+                                                          (= seqblocknum dasseqblocknum)))
+                          (<ra> :select-seqblock should-be-selected seqblocknum seqtracknum))
+                        (iota (<ra> :get-num-seqblocks seqtracknum))))
+            (iota (<ra> :get-num-seqtracks))))
+
 
 ;; seqblock move
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -3178,13 +3188,16 @@
                                                            (let ((seqblock-info (get-seqblock-info X Y)))
                                                              ;;(c-display "get-existing " seqblock-info X Y)
                                                              (and seqblock-info
-                                                                  (begin
+                                                                  (let* ((seqtracknum (and seqblock-info (seqblock-info :seqtracknum)))
+                                                                         (seqblocknum (and seqblock-info (seqblock-info :seqblocknum)))
+                                                                         (is-selected (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
                                                                     (if (not (<ra> :is-playing-song))
-                                                                        (<ra> :select-block (<ra> :get-seqblock-blocknum (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))))
+                                                                        (<ra> :select-block (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
+                                                                    (if (not is-selected)
+                                                                        (only-select-one-seqblock seqblocknum seqtracknum))
                                                                     (set-grid-type #t)
                                                                     (set! has-made-undo #f)
-                                                                    (callback seqblock-info (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum)
-                                                                                                                           (seqblock-info :seqtracknum))
+                                                                    (callback seqblock-info (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
                                                                               Y))))))))
                         :Get-min-value (lambda (seqblock-info)
                                          (define seqtracknum (seqblock-info :seqtracknum))
@@ -3235,7 +3248,6 @@
                                         (set-grid-type #f)                                        
                                         seqblock-info)
 
-                        ;; TODO/FIX: Only change graphics here.
                         :Move-node (lambda (seqblock-info Value Y)
                                      ;;(c-display "  MOVING GFX " (/ new-pos 44100.0))
                                      (define new-seqtracknum (or (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y) (seqblock-info :seqtracknum)))
@@ -3254,6 +3266,7 @@
                                            (define (doit)
                                              (<ra> :delete-seqblock (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))
                                              (define new-seqblocknum (<ra> :add-block-to-seqtrack new-seqtracknum blocknum new-pos))
+                                             (<ra> :select-seqblock #t new-seqblocknum new-seqtracknum)
                                              (make-seqblock-info :seqtracknum new-seqtracknum
                                                                  :seqblocknum new-seqblocknum))
                                            (when (not has-made-undo)
@@ -3276,6 +3289,33 @@
                                                            (<ra> :get-sequencer-visible-start-time))))
 
                         )
+
+;; selection rectangle
+(add-mouse-cycle
+ (let* ((*selection-rectangle-start-x* #f)
+        (*selection-rectangle-start-y* #f))
+   (define (set-rect! $x $y)
+     (define min-x (min $x *selection-rectangle-start-x*))
+     (define min-y (min $y *selection-rectangle-start-y*))
+     (define max-x (max $x *selection-rectangle-start-x*))
+     (define max-y (max $y *selection-rectangle-start-y*))
+     ;;(c-display min-x min-y max-x max-y)
+     (<ra> :set-sequencer-selection-rectangle min-x min-y max-x max-y))
+
+ (make-mouse-cycle
+  :press-func (lambda ($button $x $y)
+                (and (= $button *left-button*)
+                     (begin
+                       (set! *selection-rectangle-start-x* $x)
+                       (set! *selection-rectangle-start-y* $y)
+                       #t)))
+
+  :drag-func  (lambda ($button $x $y)
+                (set-rect! $x $y))
+
+  :release-func (lambda ($button $x $y)
+                  (set-rect! $x $y)
+                  (<ra> :unset-sequencer-selection-rectangle)))))
 
 ;; delete seqblock
 (add-mouse-cycle

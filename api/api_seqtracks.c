@@ -81,6 +81,13 @@ void setSequencerGridType(int grid_type){
   SEQUENCER_set_grid_type(grid_type);
 }
 
+void setSequencerSelectionRectangle(float x1, float y1, float x2, float y2){
+  SEQUENCER_set_selection_rectangle(x1, y1, x2, y2);
+}
+
+void unsetSequencerSelectionRectangle(void){
+  SEQUENCER_unset_selection_rectangle();
+}
 
 
 
@@ -552,8 +559,18 @@ void selectSeqblock(bool is_selected, int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return;
 
-  seqblock->is_selected = is_selected;
+  if (  seqblock->is_selected != is_selected){
+    seqblock->is_selected = is_selected;
+    SEQUENCER_update();
+  }
+}
 
-  SEQUENCER_update();
+bool isSeqblockSelected(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return false;
+
+  return seqblock->is_selected;
 }
 
