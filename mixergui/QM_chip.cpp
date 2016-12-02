@@ -1365,7 +1365,8 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
   if (g_radium_runs_custom_exec==true)
     return;
 
-
+  bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
+    
   if(event->button()==Qt::LeftButton){
 
     SoundPlugin *plugin = SP_get_plugin(_sound_producer);
@@ -1385,14 +1386,34 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       int x1,y1,x2,y2;
       get_solo_onoff_coordinates(x1,y1,x2,y2);
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
-        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
 
         //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
         float new_value = ATOMIC_GET(plugin->solo_is_on)?0.0f:1.0f;
 
-        PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-        CHIP_update(plugin);
-        GFX_update_instrument_widget((struct Patch*)patch);
+        Undo_Open();{
+          
+          // Turn off all other solos if ctrl is pressed.
+          if (ctrl_pressed){
+            vector_t *patches = &get_audio_instrument()->patches;
+            for(int i=0;i<patches->num_elements;i++){
+              struct Patch *thispatch = (struct Patch*)patches->elements[i];
+              SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
+              if (thispatch != patch && plugin!=NULL && ATOMIC_GET(plugin->solo_is_on)) {
+                int num_effects = plugin->type->num_effects;
+                ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_SOLO_ONOFF));
+                PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, 0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+                CHIP_update(plugin);
+              }
+            }
+          }
+          
+          ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
+          
+          PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+          CHIP_update(plugin);
+          GFX_update_instrument_widget((struct Patch*)patch);
+          
+        }Undo_Close();        
 
         event->accept();
         return;
@@ -1404,15 +1425,35 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       int x1,y1,x2,y2;
       get_volume_onoff_coordinates(x1,y1,x2,y2);
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
-        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_VOLUME_ONOFF));
 
         //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
         float new_value = ATOMIC_GET(plugin->volume_is_on)?0.0f:1.0f;
 
-        PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-        CHIP_update(plugin);
-        GFX_update_instrument_widget((struct Patch*)patch);
+        Undo_Open();{
+          
+          // Turn off all other mutes if ctrl is pressed.
+          if (ctrl_pressed){
+            vector_t *patches = &get_audio_instrument()->patches;
+            for(int i=0;i<patches->num_elements;i++){
+              struct Patch *thispatch = (struct Patch*)patches->elements[i];
+              SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
+              if (thispatch != patch && plugin!=NULL && !ATOMIC_GET(plugin->volume_is_on)) {
+                int num_effects = plugin->type->num_effects;
+                ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_VOLUME_ONOFF));
+                PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, 1, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+                CHIP_update(plugin);
+              }
+            }
+          }
+          
+          ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_VOLUME_ONOFF));
+          
+          PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+          CHIP_update(plugin);
+          GFX_update_instrument_widget((struct Patch*)patch);
 
+        }Undo_Close();
+        
         event->accept();
         return;
       }
@@ -1423,14 +1464,34 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       int x1,y1,x2,y2;
       get_effects_onoff_coordinates(x1,y1,x2,y2);
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
-        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF));
-
+        
         float new_value = ATOMIC_GET(plugin->effects_are_on)?0.0f:1.0f;
 
-        PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-        CHIP_update(plugin);
-        GFX_update_instrument_widget((struct Patch*)patch);
+        Undo_Open();{
+          
+          // Turn off all other bypasses if ctrl is pressed.
+          if (ctrl_pressed){
+            vector_t *patches = &get_audio_instrument()->patches;
+            for(int i=0;i<patches->num_elements;i++){
+              struct Patch *thispatch = (struct Patch*)patches->elements[i];
+              SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
+              if (thispatch != patch && plugin!=NULL && !ATOMIC_GET(plugin->effects_are_on)) {
+                int num_effects = plugin->type->num_effects;
+                ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_EFFECTS_ONOFF));
+                PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, 1, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+                CHIP_update(plugin);
+              }
+            }
+          }
+          
+          ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF));
+          
+          PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+          CHIP_update(plugin);
+          GFX_update_instrument_widget((struct Patch*)patch);
 
+        }Undo_Close();
+        
         event->accept();
         return;
       }

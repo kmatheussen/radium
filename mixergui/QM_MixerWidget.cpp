@@ -395,7 +395,6 @@ static void start_moving_chips(MyScene *myscene, QGraphicsSceneMouseEvent * even
       volatile struct Patch *patch = plugin->patch;
       R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
-      printf("               ADDING CHIP POS UNDO\n");
       ADD_UNDO(ChipPos_CurrPos((struct Patch*)patch));
       
       chip->_moving_start_pos = chip->pos();
@@ -446,7 +445,7 @@ static bool autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
   bool do_autoconnect = chip->audio_connections.size()==0; // don't autoconnect if the chip already has connections.  
   
   Chip *chip_under = MW_get_chip_at(x,y,chip);
-  printf("   do_autocnn: %d. chip_under: %p\n",do_autoconnect,chip_under);
+  //printf("   do_autocnn: %d. chip_under: %p\n",do_autoconnect,chip_under);
  
   if(chip_under != NULL){
     if(x_is_placed_on_left_side(x)){

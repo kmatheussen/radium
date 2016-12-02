@@ -666,7 +666,10 @@ static QVector<Gui*> g_guis;
       setMinimum(R_MIN(min, max));
       setMaximum(R_MAX(min, max));
       setDecimals(num_decimals);
-      setSingleStep(step_interval);
+      if (step_interval <= 0)
+        setSingleStep(fabs(max-min) / 20.0);
+      else
+        setSingleStep(step_interval);
       setValue(curr);
     }
   };
