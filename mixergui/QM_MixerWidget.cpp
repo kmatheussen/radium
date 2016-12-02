@@ -374,7 +374,7 @@ static void handle_chip_selection(MyScene *myscene, QGraphicsSceneMouseEvent * e
   if(event->modifiers() & Qt::ControlModifier)
     chip->mySetSelected(!was_selected);
 
-  if(was_selected==false)
+  else if(was_selected==false)
     MW_set_selected_chip(chip);
 
   myscene->_moving_chips.push_back(chip);

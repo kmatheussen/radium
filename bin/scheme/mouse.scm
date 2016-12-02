@@ -3227,12 +3227,12 @@
                                         ;;(c-display "  Y" Y (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y))
                                         (if (not (= old-pos new-pos))
                                             (begin
-                                              (if (not has-made-undo)
-                                                  (<ra> :undo-sequencer))
+                                              (when (not has-made-undo)
+                                                (<ra> :undo-sequencer)
+                                                (set! has-made-undo #f))
                                               (<ra> :move-seqblock (seqblock-info :seqblocknum) new-pos (seqblock-info :seqtracknum)))
                                             (<ra> :move-seqblock-gfx (seqblock-info :seqblocknum) old-pos (seqblock-info :seqtracknum)))
-                                        (set-grid-type #f)
-                                        (set! has-made-undo #f)
+                                        (set-grid-type #f)                                        
                                         seqblock-info)
 
                         ;; TODO/FIX: Only change graphics here.
