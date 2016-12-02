@@ -575,8 +575,8 @@ class Seqtrack_widget : public QWidget, public Ui::Seqtrack_widget {
   Seqtrack_widget(QWidget *parent, SeqTrack *seqtrack, const int64_t &start_time, const int64_t &end_time)
     : QWidget(parent)
     , _seqblocks_widget(new Seqblocks_widget(parent, seqtrack, start_time, end_time))
-    , _seqtrack(add_gc_root(seqtrack))
-  {
+    , _seqtrack(seqtrack)
+  {    
     setupUi(this);
 
     // Remove widget we don't use yet
@@ -584,8 +584,9 @@ class Seqtrack_widget : public QWidget, public Ui::Seqtrack_widget {
     header_widget->hide();
 #endif
     
-
     //main_layout->addWidget(_seqblocks_widget);
+
+    add_gc_root(_seqtrack);
   }
 
   ~Seqtrack_widget(){

@@ -3256,9 +3256,11 @@
                                              (define new-seqblocknum (<ra> :add-block-to-seqtrack new-seqtracknum blocknum new-pos))
                                              (make-seqblock-info :seqtracknum new-seqtracknum
                                                                  :seqblocknum new-seqblocknum))
-                                           (begin
-                                             (set! has-made-undo #t)
-                                             (undo-block doit)))
+                                           (if (not has-made-undo)
+                                               (begin
+                                                 (set! has-made-undo #t)
+                                                 (undo-block doit))
+                                               (ignore-undo-block doit)))
                                          (begin
                                            (<ra> :move-seqblock-gfx (seqblock-info :seqblocknum) new-pos (seqblock-info :seqtracknum))
                                            seqblock-info)))

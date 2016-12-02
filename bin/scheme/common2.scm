@@ -1006,4 +1006,15 @@ for .emacs:
     (<ra> :close-undo)
     ret))
 
+(define (ignore-undo-block block)
+  (<ra> :start-ignoring-undo)
+  (let ((ret (catch #t
+                    block
+                    (lambda args ;; Catch exceptions to ensure (<ra> :cose-undo) will be called
+                      (display "args")(display args)(newline)
+                      (apply format #t (cadr args))
+                      (display (ow!))))))
+    (<ra> :stop-ignoring-undo)
+    ret))
+
 
