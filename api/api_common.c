@@ -119,9 +119,10 @@ struct Tracks *getTrackFromNum(int blocknum,int tracknum){
 	struct Blocks *block=getBlockFromNum(blocknum);
 	if(block==NULL) return NULL;
 
-	struct Tracks *ret = ListFindElement1_num(&block->tracks->l,(NInt)tracknum);
+	struct Tracks *ret = ListFindElement1_num_r0(&block->tracks->l,(NInt)tracknum);
         if (ret==NULL)
           GFX_Message(NULL, "Track #%d in Block #%d does not exist",tracknum,blocknum);
+        
         return ret;
 }
 
@@ -133,7 +134,7 @@ struct WTracks *getWTrackFromNum(
 	struct WBlocks *wblock=getWBlockFromNum(windownum,wblocknum);
 	if(wblock==NULL) return NULL;
 	if(wtracknum==-1) return wblock->wtrack;
-	struct WTracks *ret = ListFindElement1_num(&wblock->wtracks->l,(NInt)wtracknum);
+	struct WTracks *ret = ListFindElement1_num_r0(&wblock->wtracks->l,(NInt)wtracknum);
         if (ret==NULL)
           GFX_Message(NULL, "WTrack #%d in WBlock #%d in window #%d does not exist",wtracknum, wblocknum, windownum);
         return ret;
@@ -159,7 +160,7 @@ struct WTracks *getWTrackFromNumA(
           
 	if(wtracknum==-1) return (*wblock)->wtrack;
 //	printf("So far.. %d,%d\n",wblocknum,wtracknum);
-	struct WTracks *ret = ListFindElement1_num(&(*wblock)->wtracks->l,(NInt)wtracknum);
+	struct WTracks *ret = ListFindElement1_num_r0(&(*wblock)->wtracks->l,(NInt)wtracknum);
         if (ret==NULL)
           GFX_Message(NULL, "WTrack #%d in WBlock %d does not exist",wtracknum, wblocknum);
         return ret;
@@ -183,7 +184,7 @@ struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int
   }else{
     
     struct Tracks *track = (*wtrack)->track;
-    struct Notes *ret = ListFindElement3_num(&track->notes->l,(NInt)notenum);
+    struct Notes *ret = ListFindElement3_num_r0(&track->notes->l,(NInt)notenum);
     if (ret==NULL)
       GFX_Message(NULL, "Note #%d in track #%d in block #%d does not exist",notenum,tracknum,blocknum);
     
@@ -205,7 +206,7 @@ struct Signatures *getSignatureFromNumA(int windownum,struct Tracker_Windows **w
 
   struct Blocks *block = (*wblock)->block;
   
-  struct Signatures *ret = ListFindElement3_num(&block->signatures->l,(NInt)num);
+  struct Signatures *ret = ListFindElement3_num_r0(&block->signatures->l,(NInt)num);
   if (ret==NULL)
       GFX_Message(NULL, "Signature #%d in block #%d does not exist",num,blocknum);
     
@@ -225,7 +226,7 @@ struct LPBs *getLPBFromNumA(int windownum,struct Tracker_Windows **window, int b
 
   struct Blocks *block = (*wblock)->block;
   
-  struct LPBs *ret = ListFindElement3_num(&block->signatures->l,(NInt)num);
+  struct LPBs *ret = ListFindElement3_num_r0(&block->signatures->l,(NInt)num);
   if (ret==NULL)
       GFX_Message(NULL, "LPB #%d in block #%d does not exist",num,blocknum);
     
@@ -245,7 +246,7 @@ struct BPMs *getBPMFromNumA(int windownum,struct Tracker_Windows **window, int b
 
   struct Blocks *block = (*wblock)->block;
   
-  struct BPMs *ret = ListFindElement3_num(&block->tempos->l,(NInt)bpmnum);
+  struct BPMs *ret = ListFindElement3_num_r0(&block->tempos->l,(NInt)bpmnum);
   if (ret==NULL)
       GFX_Message(NULL, "BPM #%d in block #%d does not exist",bpmnum,blocknum);
     
@@ -264,7 +265,7 @@ struct FXs *getFXsFromNumA(int windownum,struct Tracker_Windows **window, int bl
     return NULL;
 
   struct Tracks *track = (*wtrack)->track;
-  struct FXs *ret = VECTOR_get_r0(&track->fxs,fxnum,"fxs");
+  struct FXs *ret = fxnum < 0 ? NULL : VECTOR_get_r0(&track->fxs,fxnum,"fxs");
   if (ret==NULL)
     GFX_Message(NULL, "FX #%d in track #%d in block #%d does not exist",fxnum,tracknum,blocknum);
   
@@ -302,7 +303,7 @@ struct Patch *getAudioPatchFromNum(int64_t instrument_id){
 }
 
 struct SeqTrack *getSeqtrackFromNum(int seqtracknum){
-  if (seqtracknum >= root->song->seqtracks.num_elements){
+  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
     GFX_Message(NULL, "Sequencer track %d not found", seqtracknum);
     return NULL;
   }
@@ -315,8 +316,8 @@ struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum){
   if (seqtrack==NULL)
     return NULL;
 
-  if (seqblocknum >= seqtrack->seqblocks.num_elements){
-    GFX_Message(NULL, "Block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
+  if (seqblocknum < 0 || seqblocknum >= seqtrack->seqblocks.num_elements){
+    GFX_Message(NULL, "Sequencer block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
     return NULL;
   }
 
@@ -328,8 +329,8 @@ struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct Se
   if ((*seqtrack)==NULL)
     return NULL;
 
-  if (seqblocknum >= (*seqtrack)->seqblocks.num_elements){
-    GFX_Message(NULL, "Block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
+  if (seqblocknum < 0 || seqblocknum >= (*seqtrack)->seqblocks.num_elements){
+    GFX_Message(NULL, "Sequencer block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
     return NULL;
   }
 
