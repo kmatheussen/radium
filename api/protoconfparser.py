@@ -533,6 +533,8 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
         if "PyObject*" in map(lambda arg: arg.type_string, self.args):
             return
 
+        s7funcname = self.proc.get_scheme_varname()
+        
         oh.write("static s7_pointer radium_s7_"+self.proc.varname+"(s7_scheme *radiums7_sc, s7_pointer radiums7_args){\n")
         oh.write("  s7_pointer org_radiums7_args = radiums7_args;\n")
         self.write_s7_args(oh) # int arg1; s7_pointer arg1_s7; int arg2; s7_pointer arg2_s7;
@@ -549,7 +551,7 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
                  oh.write("  }\n")
 
             oh.write("  if (!s7_is_pair(radiums7_args))\n")
-            oh.write('    return (s7_wrong_number_of_args_error(radiums7_sc, "'+self.proc.varname+': wrong number of args: ~A", org_radiums7_args));\n')
+            oh.write('    return (s7_wrong_number_of_args_error(radiums7_sc, "'+s7funcname+': wrong number of args: ~A", org_radiums7_args));\n')
             oh.write('\n')
             oh.write("  "+arg.varname+"_s7 = s7_car(radiums7_args);\n")
             oh.write("  if (!"+arg.get_s7_variable_check_function()+"("+arg.varname+"_s7))\n")
@@ -560,7 +562,7 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
             oh.write("\n")
 
         oh.write("  if (!s7_is_null(radiums7_sc, radiums7_args))\n")
-        oh.write('    return s7_wrong_number_of_args_error(radiums7_sc, "'+self.proc.varname+': wrong number of args: ~A", org_radiums7_args);\n')
+        oh.write('    return s7_wrong_number_of_args_error(radiums7_sc, "'+s7funcname+': wrong number of args: ~A", org_radiums7_args);\n')
         oh.write("\n")
         self.write_s7_call_c_function(oh) # return s7_make_integer(radiums7_sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
         oh.write("}\n")
