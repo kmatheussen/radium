@@ -3202,14 +3202,14 @@
                         :Get-min-value (lambda (seqblock-info)
                                          (define seqtracknum (seqblock-info :seqtracknum))
                                          (define seqblocknum (seqblock-info :seqblocknum))
-                                         (if (= 0 seqblocknum)
+                                         (if (or #t (= 0 seqblocknum))
                                              0
                                              (<ra> :get-seqblock-end-time (1- seqblocknum) seqtracknum)))
                         :Get-max-value (lambda (seqblock-info)
                                          (define seqtracknum (seqblock-info :seqtracknum))
                                          (define seqblocknum (seqblock-info :seqblocknum))
                                          (define num-seqblocks (<ra> :get-num-seqblocks (seqblock-info :seqtracknum)))
-                                         (if (= (1- num-seqblocks) seqblocknum)
+                                         (if (or #t (= (1- num-seqblocks) seqblocknum))
                                              (+ 10000000000 (<ra> :get-seqblock-end-time (seqblock-info :seqblocknum) seqtracknum))
                                              (<ra> :get-seqblock-start-time (1+ seqblocknum) seqtracknum)))
                         :Get-x (lambda (info) #f) ;;(/ (+ (<ra> :get-seqblock-x1 (info :seqblocknum)
@@ -3249,8 +3249,11 @@
                                         seqblock-info)
 
                         :Move-node (lambda (seqblock-info Value Y)
+                                     (define seqtracknum (seqblock-info :seqtracknum))
+                                     (define seqblocknum (seqblock-info :seqblocknum))
+
                                      ;;(c-display "  MOVING GFX " (/ new-pos 44100.0))
-                                     (define new-seqtracknum (or (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y) (seqblock-info :seqtracknum)))
+                                     (define new-seqtracknum (or (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y) seqtracknum))
                                      ;;(c-display "  Y" Y new-seqtracknum)
 
                                      (define new-pos (if (or (= 1 (num-seqblocks-in-sequencer))
@@ -3262,9 +3265,9 @@
                                      (set-grid-type #t)
                                      
                                      (if (not (= (seqblock-info :seqtracknum) new-seqtracknum))
-                                         (let ((blocknum (<ra> :get-seqblock-blocknum (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))))
+                                         (let ((blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
                                            (define (doit)
-                                             (<ra> :delete-seqblock (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))
+                                             (<ra> :delete-seqblock seqblocknum seqtracknum)
                                              (define new-seqblocknum (<ra> :add-block-to-seqtrack new-seqtracknum blocknum new-pos))
                                              (<ra> :select-seqblock #t new-seqblocknum new-seqtracknum)
                                              (make-seqblock-info :seqtracknum new-seqtracknum
@@ -3274,8 +3277,24 @@
                                              (set! has-made-undo #t))
                                            (ignore-undo-block doit))
                                          (begin
-                                           (<ra> :move-seqblock-gfx (seqblock-info :seqblocknum) new-pos (seqblock-info :seqtracknum))
-                                           seqblock-info)))
+                                           (define prev-pos (and (> seqblocknum 0) (<ra> :get-seqblock-start-time (1- seqblocknum) seqtracknum)))
+                                           (c-display prev-pos new-pos Value)
+                                           (if (and prev-pos (<= new-pos prev-pos))
+                                               (let ((blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
+                                                 (define (doit)
+                                                   (<ra> :delete-seqblock seqblocknum seqtracknum)
+                                                   (<ra> :move-seqblock (1- seqblocknum) (<ra> :get-seqblock-end-time (1- seqblocknum) seqtracknum) seqtracknum)
+                                                   (define new-seqblocknum (<ra> :add-block-to-seqtrack new-seqtracknum blocknum new-pos))
+                                                   (<ra> :select-seqblock #t new-seqblocknum new-seqtracknum)
+                                                   (make-seqblock-info :seqtracknum new-seqtracknum
+                                                                       :seqblocknum new-seqblocknum))
+                                                 (when (not has-made-undo)
+                                                   (<ra> :undo-sequencer)
+                                                   (set! has-made-undo #t))
+                                                 (ignore-undo-block doit))
+                                               (begin
+                                                 (<ra> :move-seqblock-gfx seqblocknum new-pos seqtracknum)
+                                                 seqblock-info)))))
 
                         :Use-Place #f
 
