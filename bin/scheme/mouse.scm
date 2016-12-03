@@ -3263,38 +3263,39 @@
                                      (set! gakklast-value new-pos)
                                      
                                      (set-grid-type #t)
+
+                                     (define (replace-seqblock new-pos dosomething)
+                                       (let ((blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
+                                         (when (not has-made-undo)
+                                           (<ra> :undo-sequencer)
+                                           (set! has-made-undo #t))
+                                         (ignore-undo-block (lambda ()
+                                                              (<ra> :delete-seqblock seqblocknum seqtracknum)
+                                                              (if dosomething
+                                                                  (dosomething))
+                                                              (define new-seqblocknum (<ra> :add-block-to-seqtrack new-seqtracknum blocknum new-pos))
+                                                              (<ra> :select-seqblock #t new-seqblocknum new-seqtracknum)
+                                                              (make-seqblock-info :seqtracknum new-seqtracknum
+                                                                                  :seqblocknum new-seqblocknum)))))                     
                                      
                                      (if (not (= (seqblock-info :seqtracknum) new-seqtracknum))
-                                         (let ((blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
-                                           (define (doit)
-                                             (<ra> :delete-seqblock seqblocknum seqtracknum)
-                                             (define new-seqblocknum (<ra> :add-block-to-seqtrack new-seqtracknum blocknum new-pos))
-                                             (<ra> :select-seqblock #t new-seqblocknum new-seqtracknum)
-                                             (make-seqblock-info :seqtracknum new-seqtracknum
-                                                                 :seqblocknum new-seqblocknum))
-                                           (when (not has-made-undo)
-                                             (<ra> :undo-sequencer)
-                                             (set! has-made-undo #t))
-                                           (ignore-undo-block doit))
+                                         (replace-seqblock new-pos #f)
                                          (begin
+                                           (define next-pos (and (< seqblocknum (1- (<ra> :get-num-seqblocks seqtracknum))) (<ra> :get-seqblock-start-time (1+ seqblocknum) seqtracknum)))
                                            (define prev-pos (and (> seqblocknum 0) (<ra> :get-seqblock-start-time (1- seqblocknum) seqtracknum)))
-                                           (c-display prev-pos new-pos Value)
-                                           (if (and prev-pos (<= new-pos prev-pos))
-                                               (let ((blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
-                                                 (define (doit)
-                                                   (<ra> :delete-seqblock seqblocknum seqtracknum)
-                                                   (<ra> :move-seqblock (1- seqblocknum) (<ra> :get-seqblock-end-time (1- seqblocknum) seqtracknum) seqtracknum)
-                                                   (define new-seqblocknum (<ra> :add-block-to-seqtrack new-seqtracknum blocknum new-pos))
-                                                   (<ra> :select-seqblock #t new-seqblocknum new-seqtracknum)
-                                                   (make-seqblock-info :seqtracknum new-seqtracknum
-                                                                       :seqblocknum new-seqblocknum))
-                                                 (when (not has-made-undo)
-                                                   (<ra> :undo-sequencer)
-                                                   (set! has-made-undo #t))
-                                                 (ignore-undo-block doit))
-                                               (begin
-                                                 (<ra> :move-seqblock-gfx seqblocknum new-pos seqtracknum)
-                                                 seqblock-info)))))
+                                           ;;(c-display prev-pos new-pos next-pos Value)
+                                           (cond ((and prev-pos (<= new-pos prev-pos))
+                                                  (replace-seqblock prev-pos
+                                                                    (lambda ()
+                                                                      (<ra> :move-seqblock (1- seqblocknum) (<ra> :get-seqblock-end-time (1- seqblocknum) seqtracknum) seqtracknum))))
+                                                 ((and next-pos (>= new-pos next-pos))
+                                                  (define pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+                                                  (replace-seqblock next-pos
+                                                                    (lambda ()
+                                                                      (<ra> :move-seqblock seqblocknum pos seqtracknum))))
+                                                 (else
+                                                  (<ra> :move-seqblock-gfx seqblocknum new-pos seqtracknum)
+                                                  seqblock-info)))))
 
                         :Use-Place #f
 
