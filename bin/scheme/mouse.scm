@@ -3467,7 +3467,7 @@
                            (+ time (clipboard-seqblock :time)))))
                *seqblock-clipboard*))))
   
-(define (delete-all-selected-seqblock)
+(define (delete-all-selected-seqblocks)
   (undo-block
    (lambda ()
      (let loop ((seqblocknum 0)
