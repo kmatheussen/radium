@@ -1238,7 +1238,10 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     const int x1 = 0; //p.x() + mute_button->width();
     const int x1_width = width() - x1;
 
-    const int timeline_widget_height = root->song->tracker_windows->systemfontheight*1.3 + 2;
+    QFontMetrics fm(QApplication::font());
+    float systemfontheight = fm.height();
+      
+    const int timeline_widget_height = systemfontheight*1.3 + 2;
  
     int y1 = 0;
     
@@ -1255,7 +1258,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     // song tempo automation
     //
     {
-      const int songtempoautomation_widget_height = root->song->tracker_windows->systemfontheight*1.3*3.5;
+      const int songtempoautomation_widget_height = systemfontheight*1.3*3.5;
 
       int y2 = y1 + songtempoautomation_widget_height;
 

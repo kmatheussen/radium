@@ -3308,8 +3308,8 @@
                                                                                 (<ra> :get-seqblock-start-time (1+ seqblocknum) seqtracknum))))
 
                                  
-                                           (cond ((#f #f))
-
+                                           (cond (#f #f)
+                                                 
                                                  ;; Swap with previous block
                                                  ((and prev-pos (<= new-pos prev-pos))
                                                   (replace-seqblock prev-pos
