@@ -415,7 +415,9 @@ int addBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos){
 
   ADD_UNDO(Sequencer());
 
-  return SEQTRACK_insert_block(seqtrack, block, pos);
+  int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, pos);
+                           
+  return SEQTRACK_insert_block(seqtrack, block, seqtime);
 }
 
 // seqblocks
