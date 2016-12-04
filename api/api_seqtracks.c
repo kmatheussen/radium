@@ -555,6 +555,18 @@ void selectSeqblock(int seqblocknum, int seqtracknum){
 }
 */
 
+int getNumSelectedSeqblocks(void){
+  int ret = 0;
+  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
+    VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
+      if (seqblock->is_selected)
+        ret++;
+    }END_VECTOR_FOR_EACH;
+  }END_VECTOR_FOR_EACH;
+
+  return ret;
+}
+
 void selectSeqblock(bool is_selected, int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
