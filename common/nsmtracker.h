@@ -1414,7 +1414,10 @@ struct Signatures{
 
 #if USE_QT4
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
 #include <QVector>
+#pragma clang diagnostic pop
 
 #define SIGNATURE_NORMAL 0
 #define SIGNATURE_BELOW 1

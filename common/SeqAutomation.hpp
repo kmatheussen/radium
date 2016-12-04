@@ -2,7 +2,12 @@
 #ifndef _RADIUM_COMMON_SEQAUTOMATION_HPP
 #define _RADIUM_COMMON_SEQAUTOMATION_HPP
 
-#include <QVector>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
+#include <QVector> // Shortening warning in the QVector header. Temporarily turned off by the surrounding pragmas.
+#pragma clang diagnostic pop
+
+
 #include <QPainter>
 
 namespace radium{

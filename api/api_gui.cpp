@@ -203,7 +203,7 @@ static QVector<Gui*> g_guis;
         QSpinBox *spinbox = dynamic_cast<QSpinBox*>(_widget);
         if (spinbox!=NULL){
           if (val.type==INT_TYPE)
-            spinbox->setValue(val.int_number);
+            spinbox->setValue((int)val.int_number);
           else
             GFX_Message(NULL, "IntText->setValue received %s, expected INT_TYPE", DYN_type_name(val.type));
           return;
@@ -478,7 +478,7 @@ static QVector<Gui*> g_guis;
         
       if (is_int) {
         setMinimum(0);
-        setMaximum(abs(min-max));
+        setMaximum(fabs(min-max));
         setTickInterval(1);
       } else {
         setMinimum(0);
@@ -619,17 +619,14 @@ static QVector<Gui*> g_guis;
 
   struct IntText : MyFocusSnifferQSpinBox, Gui{
     Q_OBJECT;
-    int _last_sent;
     
   public:
     
     IntText(int min, int curr, int max)
       : Gui(this)
-      , _last_sent(min-1)
     {
       setMinimum(R_MIN(min, max));
       setMaximum(R_MAX(min, max));
-      setValue(curr);
     }
   };
   
@@ -655,13 +652,11 @@ static QVector<Gui*> g_guis;
 
   struct FloatText : MyFocusSnifferQDoubleSpinBox, Gui{
     Q_OBJECT;
-    double _last_sent;
     
   public:
     
     FloatText(double min, double curr, double max, int num_decimals, double step_interval)
       : Gui(this)
-      , _last_sent(min-1)
     {
       setMinimum(R_MIN(min, max));
       setMaximum(R_MAX(min, max));
@@ -713,7 +708,7 @@ static Gui *get_gui(int64_t guinum){
     return NULL;
   }
 
-  Gui *gui = g_guis[guinum];
+  Gui *gui = g_guis[(int)guinum];
 
   if (gui==NULL)
     GFX_Message(NULL, "Gui #%d has been closed and can not be used.", guinum);

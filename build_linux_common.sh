@@ -65,10 +65,10 @@ export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.
 #export QT_CFLAGS="-DQT_STATIC -DQT3_SUPPORT -I$RQTDIR/include/Qt3Support -I$RQTDIR/include/QtCore -I$RQTDIR/include/QtGui -I$RQTDIR/include/QtNetwork -I$RQTDIR/include/QtSql -I$RQTDIR/include/QtOpenGL -Ibin/packages/qhttpserver-master/src"
 #export QT_LDFLAGS="$RQTDIR/lib/libQt3Support.a $RQTDIR/lib/libQtSql.a $RQTDIR/lib/libQtOpenGL.a $RQTDIR/lib/libQtGui.a $RQTDIR/lib/libQtNetwork.a $RQTDIR/lib/libQtCore.a -lSM -lICE -lfreetype -lfontconfig -lXrender -lpng -lglib-2.0 -lgobject-2.0"
 
-QT_QMAKE_BIN_PATH ?= $(shell ./find_moc_and_uic_paths.sh qmake)
-QT_INCLUDE_PATH ?= `$(QT_QMAKE_BIN_PATH) -query QT_INSTALL_HEADERS`
-export QT_UI_CFLAGS="-I $(QT_INCLUDE_PATH)/QtUiTools" # Doing this instead of using pkg since there are bugs in the dependencies of the pkg file in some versions of Qt. (same with the lib file below)
-export QT_UI_LDFLAGS="`$(QT_QMAKE_BIN_PATH) -query QT_INSTALL_LIBS`/libQt5UiTools.a"
+QT_QMAKE_BIN_PATH=`./find_moc_and_uic_paths.sh qmake`
+QT_INCLUDE_PATH=`$QT_QMAKE_BIN_PATH -query QT_INSTALL_HEADERS`
+export QT_UI_CFLAGS="-I $QT_INCLUDE_PATH/QtUiTools" # Doing this instead of using pkg since there are bugs in the dependencies of the pkg file in some versions of Qt. (same with the lib file below)
+export QT_UI_LDFLAGS="`$QT_QMAKE_BIN_PATH -query QT_INSTALL_LIBS`/libQt5UiTools.a"
 
 
 VL_PATH="bin/packages/Visualization-Library-master"
