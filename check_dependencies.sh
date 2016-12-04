@@ -104,6 +104,31 @@ if [ `uname` == "Linux" ] ; then
     rm temp$$.c
 fi
 
+if $(./find_moc_and_uic_paths.sh qmake) --version|grep 5.0 ; then
+    echo "Qt 5.6 or later not found"
+    exit 5
+fi
+
+if $(./find_moc_and_uic_paths.sh qmake) --version|grep 5.1 ; then
+    echo "Qt 5.6 or later not found"
+    exit 5
+fi
+
+if $(./find_moc_and_uic_paths.sh qmake) --version|grep 5.2 ; then
+    echo "Qt 5.6 or later not found"
+    exit 5
+fi
+
+if $(./find_moc_and_uic_paths.sh qmake) --version|grep 5.4 ; then
+    echo "Qt 5.6 or later not found"
+    exit 5
+fi
+
+if $(./find_moc_and_uic_paths.sh qmake) --version|grep 5.5 ; then
+    echo "Qt 5.6 or later not found"
+    exit 5
+fi
+
 
 if ! pkg-config --cflags sndfile >/dev/null 2>/dev/null ; then
     echo "libsndfile not found"
