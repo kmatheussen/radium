@@ -3645,7 +3645,7 @@
                                                   (<ra> :delete-seqtrack seqtracknum)))
                                           "Append sequencer track" (lambda ()
                                                                      (<ra> :append-seqtrack))
-                                          (list "  Song tempo automation visible"
+                                          (list "Song tempo automation visible"
                                                 :check (<ra> :seqtempo-visible)
                                                 (lambda (doit)
                                                   (<ra> :set-seqtempo-visible doit)))
