@@ -546,10 +546,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 public slots:
 
   void on_buttonBox_clicked(QAbstractButton * button){
-    if (button->text() == QString("Close")){
-      printf("close\n");
+    //printf("button text: -%s-\n", button->text().toUtf8().constData());
+    //if (button->text() == QString("Close")){
+    //  printf("close\n");
       this->hide();
-    }// else
+      //}// else
     //RError("Unknown button \"%s\"\n",button->text().toUtf8().constData());
   }
 
