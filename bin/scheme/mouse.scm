@@ -3176,11 +3176,13 @@
 
 ;; seqblock move
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define gakklast-value 0) ;; TODO: Fix.
-(define has-made-undo #f)
+(define gakkgakk-last-value 0) ;; TODO: Fix.
+(define gakkgakk-has-made-undo #f)
+(define gakkgakk-start-pos 0)
+(define gakkgakk-was-selected #f)
 (add-node-mouse-handler :Get-area-box (lambda()
                                         (<ra> :get-box sequencer))
-                        :Get-existing-node-info (lambda (X Y callback)
+                        :Get-existing-node-info (lambda (X Y callback)                                                  
                                                   (let ((seqtracknum (get-seqtracknum X Y)))
                                                     (and seqtracknum
                                                          (begin
@@ -3193,11 +3195,19 @@
                                                                          (is-selected (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
                                                                     (if (not (<ra> :is-playing-song))
                                                                         (<ra> :select-block (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
-                                                                    (if (not is-selected)
-                                                                        (only-select-one-seqblock seqblocknum seqtracknum))
+                                                                    (cond ((and (not is-selected)
+                                                                                (not (<ra> :ctrl-pressed)))
+                                                                           (only-select-one-seqblock seqblocknum seqtracknum))
+                                                                          (else
+                                                                           (<ra> :select-seqblock #t seqblocknum seqtracknum)))
+                                                                          
                                                                     (set-grid-type #t)
-                                                                    (set! has-made-undo #f)
-                                                                    (callback seqblock-info (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
+                                                                    
+                                                                    (set! gakkgakk-has-made-undo #f)                                                                    
+                                                                    (set! gakkgakk-start-pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+                                                                    (set! gakkgakk-was-selected is-selected)
+                                                                    
+                                                                    (callback seqblock-info gakkgakk-start-pos
                                                                               Y))))))))
                         :Get-min-value (lambda (seqblock-info)
                                          (define seqtracknum (seqblock-info :seqtracknum))
@@ -3230,25 +3240,32 @@
                                      (<ra> :set-statusbar-text (<-> (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum) (seqblock-info :seqtracknum)))))
 
                         :Release-node (lambda (seqblock-info)
-                                        (define old-pos (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum)
-                                                                (seqblock-info :seqtracknum)))
-                                        (define new-pos gakklast-value) ;(if (or (= 1 (num-seqblocks-in-sequencer))
+                                        (define has-moved (not (= gakkgakk-start-pos gakkgakk-last-value)))
+                                        (define seqtracknum (seqblock-info :seqtracknum))
+                                        (define seqblocknum (seqblock-info :seqblocknum))
+
+                                        (define old-pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+                                        (define new-pos gakkgakk-last-value) ;(if (or (= 1 (num-seqblocks-in-sequencer))
                                                          ;       (<ra> :ctrl-pressed))
-                                                         ;   (floor gakklast-value)
-                                                         ;   (<ra> :find-closest-seqtrack-bar-start (seqblock-info :seqtracknum) (floor gakklast-value))))
+                                                         ;   (floor gakkgakk-last-value)
+                                                         ;   (<ra> :find-closest-seqtrack-bar-start (seqblock-info :seqtracknum) (floor gakkgakk-last-value))))
                                         ;;(c-display "  RELEASING GFX " old-pos new-pos)
                                         ;;(c-display "  Y" Y (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y))
                                         (if (not (= old-pos new-pos))
                                             (begin
-                                              (when (not has-made-undo)
+                                              (when (not gakkgakk-has-made-undo)
                                                 (<ra> :undo-sequencer)
-                                                (set! has-made-undo #f))
-                                              (<ra> :move-seqblock (seqblock-info :seqblocknum) new-pos (seqblock-info :seqtracknum)))
-                                            (<ra> :move-seqblock-gfx (seqblock-info :seqblocknum) old-pos (seqblock-info :seqtracknum)))
-                                        (set-grid-type #f)                                        
+                                                (set! gakkgakk-has-made-undo #f))
+                                              (<ra> :move-seqblock seqblocknum new-pos seqtracknum))
+                                            (<ra> :move-seqblock-gfx seqblocknum old-pos seqtracknum))
+                                        (set-grid-type #f)
+                                        (if (and (<ra> :ctrl-pressed)
+                                                 (not has-moved))
+                                            (<ra> :select-seqblock (not gakkgakk-was-selected) seqblocknum seqtracknum))
                                         seqblock-info)
 
                         :Move-node (lambda (seqblock-info Value Y)
+                                     (set! has-moved #t)
                                      (define seqtracknum (seqblock-info :seqtracknum))
                                      (define seqblocknum (seqblock-info :seqblocknum))
 
@@ -3260,15 +3277,15 @@
                                                              (<ra> :ctrl-pressed))
                                                          (floor Value)
                                                          (<ra> :find-closest-seqtrack-bar-start new-seqtracknum (floor Value))))
-                                     (set! gakklast-value new-pos)
+                                     (set! gakkgakk-last-value new-pos)
                                      
                                      (set-grid-type #t)
 
                                      (define (replace-seqblock new-pos dosomething)
                                        (let ((blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
-                                         (when (not has-made-undo)
+                                         (when (not gakkgakk-has-made-undo)
                                            (<ra> :undo-sequencer)
-                                           (set! has-made-undo #t))
+                                           (set! gakkgakk-has-made-undo #t))
                                          (ignore-undo-block (lambda ()
                                                               (<ra> :delete-seqblock seqblocknum seqtracknum)
                                                               (if dosomething
@@ -3283,9 +3300,9 @@
                                              (blocknum2 (<ra> :get-seqblock-blocknum num2 seqtracknum))
                                              (pos1 (<ra> :get-seqblock-start-time num1 seqtracknum))
                                              (pos2 (<ra> :get-seqblock-start-time num2 seqtracknum)))
-                                         (when (not has-made-undo)
+                                         (when (not gakkgakk-has-made-undo)
                                            (<ra> :undo-sequencer)
-                                           (set! has-made-undo #t))
+                                           (set! gakkgakk-has-made-undo #t))
                                          (ignore-undo-block (lambda ()
                                                               (<ra> :delete-seqblock num1 seqtracknum)
                                                               (<ra> :delete-seqblock num1 seqtracknum)
@@ -3328,9 +3345,9 @@
                                                          (blocknum2 (<ra> :get-seqblock-blocknum num2 seqtracknum))
                                                          (new-pos2 (- next-pos curr-length))
                                                          (new-pos1 (+ new-pos2 next-length)))
-                                                    (when (not has-made-undo)
+                                                    (when (not gakkgakk-has-made-undo)
                                                       (<ra> :undo-sequencer)
-                                                      (set! has-made-undo #t))
+                                                      (set! gakkgakk-has-made-undo #t))
                                                     (ignore-undo-block (lambda ()
                                                                          (<ra> :delete-seqblock num1 seqtracknum)
                                                                          (<ra> :delete-seqblock num1 seqtracknum)
