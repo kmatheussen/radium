@@ -104,27 +104,32 @@ if [ `uname` == "Linux" ] ; then
     rm temp$$.c
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep 5.0 ; then
+if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.0\." ; then
     echo "Qt 5.6 or later not found"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep 5.1 ; then
+if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.1\." ; then
     echo "Qt 5.6 or later not found"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep 5.2 ; then
+if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.2\." ; then
     echo "Qt 5.6 or later not found"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep 5.4 ; then
+if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.3\." ; then
     echo "Qt 5.6 or later not found"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep 5.5 ; then
+if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.4\." ; then
+    echo "Qt 5.6 or later not found"
+    exit 5
+fi
+
+if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.5\." ; then
     echo "Qt 5.6 or later not found"
     exit 5
 fi
