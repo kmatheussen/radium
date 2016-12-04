@@ -1,3 +1,47 @@
+Changes 4.3.2 -> 4.3.3:
+* Add Cut/Copy/Paste/Delete options to sequencer popup menu
+* Make ctrl-click select/unselect sequencer block
+* Ensure sequencer timeline isn't hidden after loading song
+* Make it possible to move sequencer blocks before previous
+  blocks and after later blocks.
+* Disallow building Radium with Qt 5.5 on Linux because of
+  a buggy KDE library which is automatically loaded.
+* Make mixer selection color configurable.
+* Update s7 scheme interpreter.
+* API: Various fixes for crashing or showing assertion reporter
+  when providing an illegal index value.
+* s7: Write scheme function name in error messages, not the C
+  function name
+* Select multiple sequencer blocks using selection rectangle
+  to select several blocks at once, or ctrl-clicking to
+  select/unselect.
+* Exclusively select when ctrl-clicking a mute/solo/bypass
+  button in the mixer.
+* Only create one undo when moving a sequencer block between
+  sequencer tracks.
+* Change solo behavior if two or more sound objects are selected.
+  If two ore more sound objects are selected, solo will work
+  on those objects instead of the instrument objects.
+* Ctrl+click an already selected sound object unselects it in
+  the mixer.
+* Moving a sound object to the same position in the mixer
+  doesn't create undo.
+* Clicking on a sound object button or slider doesn't make the
+  object selected.
+* Moving a sound object to the same place doesn't cause
+  assertion reporter to pop up in some situations.
+* Always let timeline triangles in the sequencer have the
+  same width as height.
+* Fix various issues with sound file saver.
+* Show more warning information about the nouveau GFX driver.
+* API: Finish up the new gui functions.
+* Workaround for crash/etc. that could happen when using
+  tempo automation on a splitted line.
+* Avoid some graphical glitches in the editor when
+  restarting a loop.
+
+
+
 Changes 4.3.1 -> 4.3.2:
 * Don't send pitch change messages when the value is the same as
   last time. Minor optimization + that it screwed up automatic
