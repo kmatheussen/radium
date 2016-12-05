@@ -3649,6 +3649,10 @@
              (else
               (loop (1+ seqblocknum) seqtracknum)))))))
 
+(define (cut-all-selected-seqblocks)
+  (copy-all-selected-seqblocks)
+  (delete-all-selected-seqblocks))
+
 
 ;; seqblock menu
 (add-mouse-cycle
@@ -3703,21 +3707,19 @@
                                                     "Copy sequencer blocks"
                                                     "Copy sequencer block")
                                                 :enabled seqblock-info
-                                                copy-all-selected-seqblocks)
+                                                ra:copy-selected-seqblocks)
                                           
                                           (list (if (> (<ra> :get-num-selected-seqblocks) 1)
                                                     "Cut sequencer blocks"
                                                     "Cut sequencer block")
                                                 :enabled seqblock-info
-                                                (lambda ()
-                                                  (copy-all-selected-seqblocks)
-                                                  (delete-all-selected-seqblocks)))
+                                                ra:cut-selected-seqblocks)
                                           
                                           (list (if (> (<ra> :get-num-selected-seqblocks) 1)
                                                     "Delete sequencer blocks"
                                                     "Delete sequencer block")
                                                 :enabled seqblock-info
-                                                delete-all-selected-seqblocks)
+                                                ra:delete-selected-seqblocks)
                                           
                                           (list (if (> (<ra> :get-num-selected-seqblocks) 1)
                                                     "Paste sequencer blocks"
@@ -3725,7 +3727,7 @@
                                                 :enabled (not (empty? *seqblock-clipboard*))
                                                 (lambda ()
                                                   (let ((pos (<ra> :find-closest-seqtrack-bar-start seqtracknum (get-sequencer-pos-from-x X))))
-                                                    (paste-sequencer-blocks seqtracknum pos))))
+                                                    (<ra> :paste-seqblocks seqtracknum pos))))
                                           
                                           
                                           "--------------------"

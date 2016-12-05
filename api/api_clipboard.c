@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../mixergui/QM_MixerWidget.h"
 #include "../common/undo_tracks_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/seqtrack_proc.h"
 #include "../config/config.h"
 
 #include "api_common_proc.h"
@@ -202,11 +203,15 @@ int64_t pasteMixerObjects(float x, float y){
 void cutGeneral(void){
   if (MW_has_mouse_pointer())
     cutSelectedMixerObjects();
+  else if (SEQUENCER_has_mouse_pointer())
+    cutSelectedSeqblocks();
 }
 
 void copyGeneral(void){
   if (MW_has_mouse_pointer())
     copySelectedMixerObjects();
+  else if (SEQUENCER_has_mouse_pointer())
+    copySelectedSeqblocks();
   else
     copyBlock(-1);
 }
@@ -214,6 +219,8 @@ void copyGeneral(void){
 void pasteGeneral(void){
   if (MW_has_mouse_pointer())
     pasteMixerObjects(-10000,-10000);
+  else if (SEQUENCER_has_mouse_pointer())
+    pasteSeqblocks(-1,-1);
   else
     pasteBlock(-1);
 }

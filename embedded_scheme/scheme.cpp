@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_proc.h"
 
 
-extern struct Root *root;
+extern struct TEvent tevent;
 
 
 extern "C" {
@@ -430,6 +430,8 @@ const char *SCHEME_get_backtrace(void){
 
 
 bool SCHEME_mousepress(int button, float x, float y){
+  tevent.x  = x;
+  tevent.y  = y;
 
   return s7_boolean(s7,
                     s7_call(s7, 
@@ -446,6 +448,9 @@ bool SCHEME_mousepress(int button, float x, float y){
 }
 
 bool SCHEME_mousemove(int button, float x, float y){
+  tevent.x  = x;
+  tevent.y  = y;
+
   return s7_boolean(s7,
                     s7_call(s7, 
                             s7_name_to_value(s7, "radium-mouse-move"), // [1]
@@ -461,6 +466,9 @@ bool SCHEME_mousemove(int button, float x, float y){
 }
 
 bool SCHEME_mouserelease(int button, float x, float y){
+  tevent.x  = x;
+  tevent.y  = y;
+
   return s7_boolean(s7,
                     s7_call(s7, 
                             s7_name_to_value(s7, "radium-mouse-release"), // [1]

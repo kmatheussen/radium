@@ -31,6 +31,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "radium_proc.h"
 
+extern struct TEvent tevent;
+
+
 
 // sequencer
 
@@ -385,6 +388,18 @@ float getSeqtrackY2(int seqtracknum){
   return SEQTRACK_get_y2(seqtracknum);
 }
 
+int getSeqtrackFromY(int y){
+  for(int seqtracknum=0;seqtracknum<getNumSeqtracks();seqtracknum++){
+    float y1 = getSeqtrackY1(seqtracknum);
+    float y2 = getSeqtrackY2(seqtracknum);
+    //printf("y1: %f / %f,%d / %f\n", y1, tevent.x, y, y2);
+    if (y>=y1 && y <= y2)
+      return seqtracknum;
+  }
+
+  return -1;
+}
+
 int64_t findClosestSeqtrackBarStart(int seqtracknum, int64_t pos){
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
     GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
@@ -639,4 +654,39 @@ bool isSeqblockSelected(int seqblocknum, int seqtracknum){
 
   return seqblock->is_selected;
 }
+
+void cutSelectedSeqblocks(void){
+  evalScheme("(cut-all-selected-seqblocks)");      
+}
+
+void pasteSeqblocks(int seqtracknum, int64_t abstime){
+  if (seqtracknum==-1)
+    seqtracknum = getSeqtrackFromY(tevent.y);
+
+  printf("seqtracknum: %d\n", seqtracknum);
+
+  if (seqtracknum==-1)
+    return;
+
+  printf("abstime: %d\n", (int)abstime);
+
+  if (abstime < 0){
+    abstime = scale_int64(tevent.x, getSequencerX1(), getSequencerX2(), getSequencerVisibleStartTime(), getSequencerVisibleEndTime());
+  }
+  if (abstime < 0)
+    return;
+
+  evalScheme(talloc_format("(paste-sequencer-blocks %d %" PRId64 ")", seqtracknum, abstime));
+}
+
+
+void copySelectedSeqblocks(void){
+  evalScheme("(copy-all-selected-seqblocks)");
+}
+
+
+void deleteSelectedSeqblocks(void){
+  evalScheme("(delete-all-selected-seqblocks)");
+}
+
 

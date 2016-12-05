@@ -989,6 +989,9 @@ int64_t MW_paste(float x, float y){
 }
 
 bool MW_has_mouse_pointer(void){
+  if (g_mixer_widget->isVisible()==false)
+    return false;
+
   QPoint p = g_mixer_widget->mapFromGlobal(QCursor::pos());
   if (true
       && p.x() >= 0

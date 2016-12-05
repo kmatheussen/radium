@@ -28,8 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/song_tempo_automation_proc.h"
 #include "../common/seqtrack_proc.h"
 
-
-
 static bool g_need_update = false;
 
 static void g_position_widgets(void);
@@ -1889,3 +1887,18 @@ void SEQUENCER_show_because_instrument_widget_is_large(void){
   g_sequencer_hidden_because_instrument_widget_is_large = false; 
 }
 
+bool SEQUENCER_has_mouse_pointer(void){
+  if (g_sequencer_widget->isVisible()==false)
+    return false;
+
+  QPoint p = g_sequencer_widget->mapFromGlobal(QCursor::pos());
+  if (true
+      && p.x() >= 0
+      && p.x() <  g_sequencer_widget->width()
+      && p.y() >= 0
+      && p.y() <  g_sequencer_widget->height()
+      )
+    return true;
+  else
+    return false;
+}

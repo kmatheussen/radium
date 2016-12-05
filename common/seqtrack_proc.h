@@ -46,6 +46,7 @@ extern LANGSPEC void SEQUENCER_set_grid_type(enum GridType grid_type);
 
 extern LANGSPEC void SEQUENCER_hide_because_instrument_widget_is_large(void);
 extern LANGSPEC void SEQUENCER_show_because_instrument_widget_is_large(void);
+extern LANGSPEC bool SEQUENCER_has_mouse_pointer(void);
 
 extern LANGSPEC void SEQUENCER_set_selection_rectangle(float x1, float y1, float x2, float y2);
 extern LANGSPEC void SEQUENCER_unset_selection_rectangle(void);
