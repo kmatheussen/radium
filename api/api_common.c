@@ -337,3 +337,16 @@ struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct Se
   return (*seqtrack)->seqblocks.elements[seqblocknum];
 }
 
+struct SeqBlock *getGfxGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack){
+  (*seqtrack) = getSeqtrackFromNum(seqtracknum);
+  if ((*seqtrack)==NULL)
+    return NULL;
+
+  if (seqblocknum < 0 || seqblocknum >= (*seqtrack)->gfx_gfx_seqblocks.num_elements){
+    GFX_Message(NULL, "Sequencer gfx block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
+    return NULL;
+  }
+
+  return (*seqtrack)->gfx_gfx_seqblocks.elements[seqblocknum];
+}
+

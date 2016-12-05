@@ -1943,9 +1943,8 @@ struct _scheduler_t;
 typedef struct _scheduler_t scheduler_t;
 
 struct SeqTrack{
-  //int num_seqblocks;
-  //struct SeqBlock **seqblocks; // Player must be stopped when modifying this variable
-  vector_t seqblocks;
+  vector_t seqblocks; // Player must be stopped when modifying this variable
+  vector_t gfx_gfx_seqblocks; // Just for graphics. Player does not have to be stopped when modifying this variable
 
   struct SeqBlock *curr_seqblock; // curr_seqblock->block and curr_seqblock->time contains the same values as pc->block and pc->seqtime did before introducing seqtrack/seqblock.
   

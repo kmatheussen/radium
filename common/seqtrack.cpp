@@ -168,32 +168,36 @@ static void update_all_seqblock_start_and_end_times(struct SeqTrack *seqtrack, b
 
   double sample_rate = MIXER_get_sample_rate();
   
-  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-    struct Blocks *block            = seqblock->block;
-    double         tempo_multiplier = ATOMIC_DOUBLE_GET(block->reltempo);
+  for(int i=0 ; i < 2 ; i++){
+    vector_t *seqblocks = i==0 ? &seqtrack->seqblocks : &seqtrack->gfx_gfx_seqblocks ;
 
-    int64_t seq_block_start = is_gfx ? seqblock->gfx_time : seqblock->time;
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks){
+      struct Blocks *block            = seqblock->block;
+      double         tempo_multiplier = ATOMIC_DOUBLE_GET(block->reltempo);
+      
+      int64_t seq_block_start = is_gfx ? seqblock->gfx_time : seqblock->time;
+      
+      int64_t seq_block_pause = seq_block_start - last_end_time; // (reltempo is not applied to pauses)
+      double  abs_block_pause = seq_block_pause / sample_rate;
+      
+      double abs_block_start = last_abs_end_time + abs_block_pause;
+      
+      int64_t seq_block_duration = getBlockSTimeLength(seqblock->block);
+      double  abs_block_duration = ((double)seq_block_duration / tempo_multiplier) / sample_rate;
+      
+      int64_t seq_end_time = seq_block_start + seq_block_duration;
+      double  abs_end_time = abs_block_start + abs_block_duration;
+      
+      seqblock->start_time = abs_block_start;
+      seqblock->end_time = abs_end_time;
+      
+      last_abs_end_time = abs_end_time;
+      last_end_time = seq_end_time;
+      
+      //printf("  start/end: %f  ->   %f\n",seqblock->start_time,seqblock->end_time);
+    }END_VECTOR_FOR_EACH;
+  }
 
-    int64_t seq_block_pause = seq_block_start - last_end_time; // (reltempo is not applied to pauses)
-    double  abs_block_pause = seq_block_pause / sample_rate;
-    
-    double abs_block_start = last_abs_end_time + abs_block_pause;
-    
-    int64_t seq_block_duration = getBlockSTimeLength(seqblock->block);
-    double  abs_block_duration = ((double)seq_block_duration / tempo_multiplier) / sample_rate;
-
-    int64_t seq_end_time = seq_block_start + seq_block_duration;
-    double  abs_end_time = abs_block_start + abs_block_duration;
-
-    seqblock->start_time = abs_block_start;
-    seqblock->end_time = abs_end_time;
-    
-    last_abs_end_time = abs_end_time;
-    last_end_time = seq_end_time;
-
-    //printf("  start/end: %f  ->   %f\n",seqblock->start_time,seqblock->end_time);
-  }END_VECTOR_FOR_EACH;
-  
 }
 
 void SEQTRACK_update_all_seqblock_start_and_end_times(struct SeqTrack *seqtrack){
@@ -484,6 +488,10 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
   RT_SEQUENCER_update_sequencer_and_playlist();
 }
 
+void SEQTRACK_delete_gfx_gfx_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+  VECTOR_remove(&seqtrack->gfx_gfx_seqblocks, seqblock);
+}
+
 static const struct SeqBlock *get_prev_seqblock(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
   int pos = VECTOR_find_pos(&seqtrack->seqblocks, seqblock);
   R_ASSERT_RETURN_IF_FALSE2(pos!=-1, NULL);
@@ -601,6 +609,18 @@ void SEQTRACK_move_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqb
   move_seqblock(seqtrack, seqblock, new_abs_time, true);
 }
 
+void SEQTRACK_move_gfx_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_abs_time){
+  int64_t new_seqblock_time = get_seqtime_from_abstime(seqtrack, seqblock, new_abs_time);
+  
+  if (new_seqblock_time < 0)
+    new_seqblock_time = 0;
+
+  seqblock->time = new_seqblock_time;
+  seqblock->gfx_time = seqblock->time;
+
+  SEQUENCER_update();
+}
+
 void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t length){
 
   {
@@ -623,6 +643,18 @@ void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t
   BS_UpdatePlayList();
 }
 
+static int get_seqblock_pos(vector_t *seqblocks, int64_t seqtime){  
+
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks){
+
+    if (seqblock->time >= seqtime)
+      return iterator666;
+    
+  }END_VECTOR_FOR_EACH;
+
+  return seqblocks->num_elements;
+}
+
 int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime){
 
   // Assert that the seqblock is not in a seqtrack already.
@@ -631,20 +663,7 @@ int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqbloc
   }END_VECTOR_FOR_EACH;
 
   
-  int pos = 0;
-  
-  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-
-    pos = iterator666;
-
-    if (seqblock->time >= seqtime)
-      goto gotit;
-    
-  }END_VECTOR_FOR_EACH;
-
-  pos = seqtrack->seqblocks.num_elements;
-  
- gotit:
+  int pos = get_seqblock_pos(&seqtrack->seqblocks, seqtime);
     
   VECTOR_ensure_space_for_one_more_element(&seqtrack->seqblocks);
 
@@ -668,6 +687,20 @@ int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqbloc
 int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime){
   struct SeqBlock *seqblock = SEQBLOCK_create(block);
   return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime);
+}
+
+int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime){
+  struct SeqBlock *seqblock = SEQBLOCK_create(block);
+  seqblock->time = seqtime;
+  seqblock->gfx_time = seqblock->time;
+  seqblock->is_selected = true;
+
+  vector_t *seqblocks = &seqtrack->gfx_gfx_seqblocks;
+
+  int pos = get_seqblock_pos(seqblocks, seqtime);
+  VECTOR_insert(seqblocks, seqblock, pos);
+
+  return pos;
 }
 
 double SEQTRACK_get_length(struct SeqTrack *seqtrack){

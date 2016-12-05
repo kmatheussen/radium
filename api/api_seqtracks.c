@@ -420,6 +420,20 @@ int addBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos){
   return SEQTRACK_insert_block(seqtrack, block, seqtime);
 }
 
+int addGfxGfxBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return -1;
+
+  struct Blocks *block = getBlockFromNum(blocknum);
+  if (block==NULL)
+    return -1;
+
+  int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, pos);
+                           
+  return SEQTRACK_insert_gfx_gfx_block(seqtrack, block, seqtime);
+}
+
 // seqblocks
 
 int getNumSeqblocks(int seqtracknum){
@@ -428,6 +442,14 @@ int getNumSeqblocks(int seqtracknum){
     return 0;
   else
     return seqtrack->seqblocks.num_elements;
+}
+
+int getNumGfxGfxSeqblocks(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return 0;
+  else
+    return seqtrack->gfx_gfx_seqblocks.num_elements;
 }
 
 int64_t getSeqblockStartTime(int seqblocknum, int seqtracknum){
@@ -519,6 +541,25 @@ void moveSeqblockGfx(int seqblocknum, int64_t abstime, int seqtracknum, int new_
   SEQTRACK_move_gfx_seqblock(seqtrack, seqblock, abstime);
 }
 
+void moveSeqblockGfxGfx(int seqblocknum, int64_t abstime, int seqtracknum, int new_seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getGfxGfxSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return;
+
+  if (new_seqtracknum==-1)
+    new_seqtracknum = seqtracknum;
+
+  struct SeqTrack *new_seqtrack = getSeqtrackFromNum(new_seqtracknum);
+  if (new_seqtrack==NULL)
+    return;
+  
+  //root->song->curr_seqtracknum = new_seqtracknum;
+  
+  //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
+  SEQTRACK_move_gfx_gfx_seqblock(seqtrack, seqblock, abstime);
+}
+
 void deleteSeqblock(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
@@ -531,6 +572,17 @@ void deleteSeqblock(int seqblocknum, int seqtracknum){
 
   root->song->curr_seqtracknum = R_MAX(seqtracknum -1, 0);
   BS_UpdatePlayList();
+}
+
+void deleteGfxGfxSeqblock(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getGfxGfxSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return;
+
+  SEQTRACK_delete_gfx_gfx_seqblock(seqtrack, seqblock);
+
+  SEQUENCER_update();
 }
 
 int getSeqblockBlocknum(int seqblocknum, int seqtracknum){
