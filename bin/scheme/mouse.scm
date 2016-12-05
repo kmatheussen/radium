@@ -3294,22 +3294,6 @@
                                                               (make-seqblock-info :seqtracknum new-seqtracknum
                                                                                   :seqblocknum new-seqblocknum)))))                     
                                      
-                                     (define (swap-seqblocks num1 num2 num-to-return)
-                                       (let ((blocknum1 (<ra> :get-seqblock-blocknum num1 seqtracknum))
-                                             (blocknum2 (<ra> :get-seqblock-blocknum num2 seqtracknum))
-                                             (pos1 (<ra> :get-seqblock-start-time num1 seqtracknum))
-                                             (pos2 (<ra> :get-seqblock-start-time num2 seqtracknum)))
-                                         (when (not gakkgakk-has-made-undo)
-                                           (<ra> :undo-sequencer)
-                                           (set! gakkgakk-has-made-undo #t))
-                                         (ignore-undo-block (lambda ()
-                                                              (<ra> :delete-seqblock num1 seqtracknum)
-                                                              (<ra> :delete-seqblock num1 seqtracknum)
-                                                              (<ra> :add-block-to-seqtrack seqtracknum blocknum1 pos2)
-                                                              (<ra> :add-block-to-seqtrack seqtracknum blocknum2 pos1)
-                                                              (<ra> :select-seqblock #t num-to-return new-seqtracknum)
-                                                              (make-seqblock-info :seqtracknum new-seqtracknum
-                                                                                  :seqblocknum num-to-return)))))
                                      
                                      (if (not (= (seqblock-info :seqtracknum) new-seqtracknum))
                                          (replace-seqblock new-pos #f)
@@ -3327,12 +3311,25 @@
                                            (cond (#f #f)
                                                  
                                                  ;; Swap with previous block
-                                                 ((and prev-pos (<= new-pos prev-pos))
-                                                  (replace-seqblock prev-pos
-                                                                    (lambda ()
-                                                                      (<ra> :move-seqblock (1- seqblocknum) (<ra> :get-seqblock-end-time (1- seqblocknum) seqtracknum) seqtracknum))))
-
-
+                                                 ((and prev-pos
+                                                       (<= new-pos prev-pos))
+                                                  (let* ((num1 (1- seqblocknum))
+                                                         (num2 seqblocknum)
+                                                         (blocknum1 (<ra> :get-seqblock-blocknum num1 seqtracknum))
+                                                         (blocknum2 (<ra> :get-seqblock-blocknum num2 seqtracknum))
+                                                         (new-pos2 prev-pos)
+                                                         (new-pos1 (+ new-pos2 curr-length)))
+                                                    (when (not gakkgakk-has-made-undo)
+                                                      (<ra> :undo-sequencer)
+                                                      (set! gakkgakk-has-made-undo #t))
+                                                    (ignore-undo-block (lambda ()
+                                                                         (<ra> :delete-seqblock num1 seqtracknum)
+                                                                         (<ra> :delete-seqblock num1 seqtracknum)
+                                                                         (<ra> :add-block-to-seqtrack seqtracknum blocknum2 new-pos2)
+                                                                         (<ra> :add-block-to-seqtrack seqtracknum blocknum1 new-pos1)
+                                                                         (<ra> :select-seqblock #t num1 new-seqtracknum)
+                                                                         (make-seqblock-info :seqtracknum new-seqtracknum
+                                                                                             :seqblocknum num1)))))
                                                  ;; Swap with next block
                                                  ((and next-pos
                                                        (>= (+ new-pos curr-length)
