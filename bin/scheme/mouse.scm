@@ -3272,15 +3272,17 @@
                                                                   (let* ((seqtracknum (and seqblock-info (seqblock-info :seqtracknum)))
                                                                          (seqblocknum (and seqblock-info (seqblock-info :seqblocknum)))
                                                                          (is-selected (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
-                                                                    (if (not (<ra> :is-playing-song))
-                                                                        (<ra> :select-block (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
-                                                                    (cond ((and (not is-selected)
-                                                                                (not (<ra> :ctrl-pressed)))
-                                                                           (only-select-one-seqblock seqblocknum seqtracknum))
-                                                                          (else
-                                                                           (<ra> :select-seqblock #t seqblocknum seqtracknum)))
 
-                                                                    (cond ((= (<ra> :get-num-selected-seqblocks) 1)
+                                                                    (cond ((<= (<ra> :get-num-selected-seqblocks) 1)
+
+                                                                           (if (not (<ra> :is-playing-song))
+                                                                               (<ra> :select-block (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
+                                                                           (cond ((and (not is-selected)
+                                                                                       (not (<ra> :ctrl-pressed)))
+                                                                                  (only-select-one-seqblock seqblocknum seqtracknum))
+                                                                                 (else
+                                                                                  (<ra> :select-seqblock #t seqblocknum seqtracknum)))
+
                                                                            (set-grid-type #t)
                                                                            
                                                                            (set! gakkgakk-has-made-undo #f)                                                                    
@@ -3339,7 +3341,9 @@
                                         (set-grid-type #f)
                                         (if (and (<ra> :ctrl-pressed)
                                                  (not has-moved))
-                                            (<ra> :select-seqblock (not gakkgakk-was-selected) seqblocknum seqtracknum))
+                                            (<ra> :select-seqblock (not gakkgakk-was-selected) seqblocknum seqtracknum)
+                                            (<ra> :select-seqblock #f seqblocknum seqtracknum))
+
                                         seqblock-info)
 
                         :Move-node (lambda (seqblock-info Value Y)
@@ -3440,6 +3444,7 @@
 
 
 (define gakkgakk-startseqtracknum 0)
+(define gakkgakk-startseqblocknum 0)
 
 ;; Move multiple seqblocks
 (add-node-mouse-handler :Get-area-box (lambda()
@@ -3464,7 +3469,7 @@
                                                                            (only-select-one-seqblock seqblocknum seqtracknum))
                                                                           (else
                                                                            (<ra> :select-seqblock #t seqblocknum seqtracknum)))
-
+                                                                    
                                                                     
                                                                     (cond ((> (<ra> :get-num-selected-seqblocks) 1)
                                                                            (set-grid-type #t)
@@ -3473,13 +3478,16 @@
                                                                            (set! gakkgakk-start-pos 0);;(<ra> :get-seqblock-start-time seqblocknum seqtracknum))
                                                                            (set! gakkgakk-was-selected is-selected)
                                                                            (set! gakkgakk-startseqtracknum seqtracknum)
+                                                                           (set! gakkgakk-startseqblocknum seqblocknum)
 
                                                                            (define seqblock-infos (get-selected-seqblock-infos))
 
                                                                            (create-gfx-gfx-seqblocks seqblock-infos 0 0)
 
-                                                                           (callback seqblock-infos gakkgakk-start-pos
-                                                                                     Y))
+                                                                           (set! gakkgakk-start-pos (list 0 Y))
+
+                                                                           (callback seqblock-infos 0 Y))
+
                                                                           (else
                                                                            #f)))))))))
                         
@@ -3515,12 +3523,25 @@
                         :Publicize (lambda (seqblock-infos)
                                      #f)
                                      ;;(<ra> :set-statusbar-text (<-> (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum) (seqblock-info :seqtracknum)))))
-
+                        
                         :Release-node (lambda (seqblock-infos)
+                                        (define has-moved (not (morally-equal? gakkgakk-start-pos gakkgakk-last-value)))
                                         (delete-all-gfx-gfx-seqblocks)
-                                        (apply-gfx-gfx-seqblocks seqblock-infos))
+                                        ;;(c-display "has-moved:" has-moved gakkgakk-start-pos gakkgakk-last-value gakkgakk-was-selected)
+                                        (if has-moved
+                                            (apply-gfx-gfx-seqblocks seqblock-infos))
+
+                                        (if (and (not has-moved)
+                                                 (<ra> :ctrl-pressed))
+                                            (<ra> :select-seqblock (not gakkgakk-was-selected) gakkgakk-startseqblocknum gakkgakk-startseqtracknum))
+                                        
+                                        (set-grid-type #f)
+
+                                        seqblock-infos)
 
                         :Move-node (lambda (seqblock-infos Value Y)
+                                     (set! gakkgakk-last-value (list Value Y))
+
                                      (define new-seqtracknum (or (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y)
                                                                  (if (<= Y (<ra> :get-seqtrack-y1 0))
                                                                      0
