@@ -3374,7 +3374,9 @@
                                            (<ra> :undo-sequencer)
                                            (set! gakkgakk-has-made-undo #t))
                                          (ignore-undo-block (lambda ()
+                                                              ;;(c-display "bef:" (/ (<ra> :get-seqblock-start-time (1+ seqblocknum) seqtracknum) 44100.0))
                                                               (<ra> :delete-seqblock seqblocknum seqtracknum)
+                                                              ;;(c-display "aft:" (/ (<ra> :get-seqblock-start-time seqblocknum seqtracknum) 44100.0))
                                                               (if dosomething
                                                                   (dosomething))
                                                               (define new-seqblocknum (<ra> :add-block-to-seqtrack new-seqtracknum blocknum new-pos))
