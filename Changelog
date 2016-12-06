@@ -1,3 +1,31 @@
+Changes 4.3.3 -> 4.3.4:
+* Linux: Check during runtime that we are not linking to another
+  version of libxcb than the one included in bin/packages.
+* Switch keybindings for F8 and F9.
+* Don't show instrument widget when starting up.
+* Let F8 show/hide sequencer instead of playlist.
+* Don't show playlist window when starting up.
+* Don't allow moving sequencer blocks before time 0.
+* Sequencer: Let moving blocks have a different color
+  than the selected blocks.
+* Sequencer: Make sure block positions stays the same
+  when removing or adding a block that has a different
+  tempo multiplier value than 1.0.
+* Sequencer: Fix moving several blocks when at least
+  one of them has a tempo multiplier value other than 1.0,
+  plus use the same skew value for all moving blocks.
+* Sequencer: Adjust when to swap the position of two blocks.
+* Fix ctrl-click to select/unselect sequencer block.
+* Always unselect seqblocks when finished moving.
+* Support Ctrl+X/C/V keyboard shortcuts in the sequencer.
+* Move several sequencer blocks simultaneously.
+* Fix swapping a seqblock when moving it to the
+  left of a sequencer block with a size less than half
+  than the one being moved.
+
+
+
+
 Changes 4.3.2 -> 4.3.3:
 * Add Cut/Copy/Paste/Delete options to sequencer popup menu
 * Make ctrl-click select/unselect sequencer block
