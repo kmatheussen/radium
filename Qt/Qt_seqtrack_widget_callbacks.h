@@ -421,7 +421,7 @@ public:
       QRectF rect1(x1, y1, x2-x1, header_height);
       QRectF rect2(x1, y1+header_height, x2-x1, y2-(y1+header_height));
       p.fillRect(rect1, half_alpha(get_block_color(block), is_gfx));
-      p.fillRect(rect2, get_block_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, is_gfx));
+      p.fillRect(rect2, get_block_qcolor(is_gfx ? SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM : SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, is_gfx));
     } else {
       p.fillRect(rect, get_block_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, is_gfx));
     }

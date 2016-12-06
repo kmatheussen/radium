@@ -161,6 +161,7 @@ static const ColorConfig g_colorconfig[] = {
 
   {SEQUENCER_BLOCK_HEADER_BACKGROUND_COLOR_NUM, "sequencer_block_header_background_color", "Sequencer block header background color"},
   {SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, "sequencer_block_background_color", "Sequencer block background color"},
+  {SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM, "sequencer_multiselect_block_background_color", "Sequencer block multiselected background color"},
   {SEQUENCER_BLOCK_BORDER_COLOR_NUM, "sequencer_block_border_color", "Sequencer block border color"},
   {SEQUENCER_BLOCK_BAR_COLOR_NUM, "sequencer_block_bar_color", "Sequencer block bar color"},
   {SEQUENCER_BLOCK_BEAT_COLOR_NUM, "sequencer_block_beat_color", "Sequencer block beat color"},
@@ -267,6 +268,7 @@ static ReplacementColor g_replacement_color[] = {
   {SEQUENCER_BLOCK_BAR_COLOR_NUM, QColor("#d2000000")},
   {SEQUENCER_BLOCK_BEAT_COLOR_NUM, QColor("#460a1e17")},
   {SEQUENCER_BLOCK_SELECTED_COLOR_NUM, QColor("#5400801d")},
+  {SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM, QColor("#ff1c1cbc")},
 
   {SEQUENCER_GRID_COLOR_NUM, QColor("#99281980")},
   {SEQUENCER_TRACK_BORDER1_COLOR_NUM, QColor("#ff141414")},
