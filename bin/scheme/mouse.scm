@@ -3226,6 +3226,8 @@
                                            (<ra> :ctrl-pressed))
                                        new-pos
                                        (<ra> :find-closest-seqtrack-bar-start new-seqtracknum new-pos)))
+                  (if (< new-pos2 0)
+                      (set! new-pos2 0))
                   (set! skew (- new-pos2 new-pos)))
 
                 ;;(c-display "start-time/inc-time:" start-time inc-time)
@@ -3237,6 +3239,9 @@
        seqblock-infos))
   
 (define (create-gfx-gfx-seqblocks seqblock-infos inc-time inc-track)
+  (if (< (+ gakkgakk-smallest-time inc-time) 0)
+      (set! inc-time (- gakkgakk-smallest-time)))
+
   (set! gakkgakk-last-inc-time inc-time)
   (set! gakkgakk-last-inc-track inc-track)
   (for-each (lambda (data)
@@ -3461,6 +3466,7 @@
 
 (define gakkgakk-startseqtracknum 0)
 (define gakkgakk-startseqblocknum 0)
+(define gakkgakk-smallest-time 0)
 
 ;; Move multiple seqblocks
 (add-node-mouse-handler :Get-area-box (lambda()
@@ -3497,6 +3503,12 @@
                                                                            (set! gakkgakk-startseqblocknum seqblocknum)
 
                                                                            (define seqblock-infos (get-selected-seqblock-infos))
+
+                                                                           (set! gakkgakk-smallest-time (apply min (map (lambda (seqblock-info)
+                                                                                                                          (<ra> :get-seqblock-start-time
+                                                                                                                                (seqblock-info :seqblocknum)
+                                                                                                                                (seqblock-info :seqtracknum)))
+                                                                                                                        seqblock-infos)))
 
                                                                            (create-gfx-gfx-seqblocks seqblock-infos 0 0)
 
