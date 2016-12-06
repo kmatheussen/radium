@@ -886,6 +886,7 @@ QWidget *create_blockselector(){
   ScopedVisitors v;
 
   bs = new BlockSelector (NULL);
+
   return bs;
 }
 
@@ -1060,7 +1061,7 @@ void GFX_PlayListWindowToFront(void){
 
   //set_widget_width(bs->last_shown_width > 30 ? bs->last_shown_width : 200);
   bs->show();
-
+  
 #if 0
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   QSplitter *splitter = editor->xsplitter;
