@@ -2287,7 +2287,7 @@ static int gc_has_static_roots_func(
     }
 #endif
 
-
+ 
   printf("   ===== has_static_roots: -%s-, %fMB (%f). is_main: %d.  (%p). argv0: -%s-\n", dlpi_name, (double)total / (1024*1024.0), (double)size / (1024*1024.0), is_main_root, p, executable_path);
   //getchar();
   //abort();
