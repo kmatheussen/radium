@@ -2861,14 +2861,15 @@
            (loop 0 (1+ seqtracknum)))
           (else
            (define ret (func seqtracknum seqblocknum))
-           (if (and (pair? ret) (pair? (cdr ret)) (null? (cddr ret)))
+           (if (and (pair? ret) (pair? (cdr ret)) (eq? 'stop (car ret)) (null? (cddr ret)))
                (cadr ret)
                (loop (1+ seqblocknum) seqtracknum))))))
 
 (define (for-each-selected-seqblock func)
   (for-each-seqblock (lambda (seqtracknum seqblocknum)
-                       (if (<ra> :is-seqblock-selected seqblocknum seqtracknum)
-                           (func seqtracknum seqblocknum)))))
+                       (when (<ra> :is-seqblock-selected seqblocknum seqtracknum)
+                         ;;(c-display "funcing" seqtracknum seqblocknum)
+                         (func seqtracknum seqblocknum)))))
   
 
 
@@ -3209,7 +3210,7 @@
   (define num-seqtracks (<ra> :get-num-seqtracks))
 
   (define skew #f) ;; We want the same skew for all blocks. Use skew for the first block, i.e. the uppermost leftmost one.
-
+  
   (map (lambda (seqblock-info)
          (define seqtracknum (seqblock-info :seqtracknum))
          (define seqblocknum (seqblock-info :seqblocknum))
