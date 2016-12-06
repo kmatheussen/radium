@@ -382,7 +382,7 @@ aasS'ra.showHideSequencer()'
 p229
 (lp230
 (lp231
-S'F8'
+S'F9'
 p232
 aa(lp233
 asS'ra.polyKeyDownPlay(28)'
@@ -700,7 +700,7 @@ asS'ra.showHideMixerWidget()'
 p418
 (lp419
 (lp420
-S'F9'
+S'F8'
 p421
 aa(lp422
 asS'ra.invertBlock()'
