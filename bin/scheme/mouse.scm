@@ -3394,7 +3394,10 @@
 
                                      
                                      (if (not (= (seqblock-info :seqtracknum) new-seqtracknum))
+
+                                         ;; change track
                                          (replace-seqblock new-pos #f)
+
                                          (begin
                                            (define prev-pos (and (> seqblocknum 0) (<ra> :get-seqblock-start-time (1- seqblocknum) seqtracknum)))
                                            (define curr-pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
