@@ -14,6 +14,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#define __STDC_FORMAT_MACROS 1
+#include <inttypes.h>
+
+
 #include "../common/includepython.h"
 
 #include "../common/nsmtracker.h"
@@ -676,7 +680,7 @@ void pasteSeqblocks(int seqtracknum, int64_t abstime){
   if (abstime < 0)
     return;
 
-  evalScheme(talloc_format("(paste-sequencer-blocks %d %" PRId64 ")", seqtracknum, abstime));
+  evalScheme(talloc_format("(paste-sequencer-blocks %d " "%" PRId64 ")", seqtracknum, abstime));
 }
 
 
