@@ -2861,7 +2861,7 @@
            (loop 0 (1+ seqtracknum)))
           (else
            (define ret (func seqtracknum seqblocknum))
-           (if (and (pair? ret) (list? ret) (eq? 'stop (car ret)))
+           (if (and (pair? ret) (pair? (cdr ret)) (null? (cddr ret)))
                (cadr ret)
                (loop (1+ seqblocknum) seqtracknum))))))
 
@@ -3207,6 +3207,9 @@
 
 (define (get-data-for-seqblock-moving seqblock-infos inc-time inc-track)
   (define num-seqtracks (<ra> :get-num-seqtracks))
+
+  (define skew #f) ;; We want the same skew for all blocks. Use skew for the first block, i.e. the uppermost leftmost one.
+
   (map (lambda (seqblock-info)
          (define seqtracknum (seqblock-info :seqtracknum))
          (define seqblocknum (seqblock-info :seqblocknum))
@@ -3217,13 +3220,17 @@
                      (< new-seqtracknum num-seqtracks))
                 (define new-pos (floor (+ inc-time start-time)))
                 
-                (set! new-pos (if (or (= 1 (num-seqblocks-in-sequencer))
-                                      (<ra> :ctrl-pressed))
-                                  new-pos
-                                  (<ra> :find-closest-seqtrack-bar-start new-seqtracknum new-pos)))
-                
+                (when (not skew)
+                  (define new-pos2 (if (or (= 1 (num-seqblocks-in-sequencer))
+                                           (<ra> :ctrl-pressed))
+                                       new-pos
+                                       (<ra> :find-closest-seqtrack-bar-start new-seqtracknum new-pos)))
+                  (set! skew (- new-pos2 new-pos)))
+
                 ;;(c-display "start-time/inc-time:" start-time inc-time)
-                (list new-seqtracknum blocknum new-pos))
+                (list new-seqtracknum
+                      blocknum
+                      (+ skew new-pos)))
                (else
                 #f)))
        seqblock-infos))

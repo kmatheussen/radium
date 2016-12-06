@@ -167,37 +167,45 @@ static void update_all_seqblock_start_and_end_times(struct SeqTrack *seqtrack, b
   int64_t last_end_time = 0;
 
   double sample_rate = MIXER_get_sample_rate();
+
+  // seqtrack->seqblocks
+  //
+  vector_t *seqblocks = &seqtrack->seqblocks;
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks){
+    struct Blocks *block            = seqblock->block;
+    double         tempo_multiplier = ATOMIC_DOUBLE_GET(block->reltempo);
+    
+    int64_t seq_block_start = is_gfx ? seqblock->gfx_time : seqblock->time;
+    
+    int64_t seq_block_pause = seq_block_start - last_end_time; // (reltempo is not applied to pauses)
+    double  abs_block_pause = seq_block_pause / sample_rate;
+    
+    double abs_block_start = last_abs_end_time + abs_block_pause;
+    
+    int64_t seq_block_duration = getBlockSTimeLength(seqblock->block);
+    double  abs_block_duration = ((double)seq_block_duration / tempo_multiplier) / sample_rate;
+    
+    int64_t seq_end_time = seq_block_start + seq_block_duration;
+    double  abs_end_time = abs_block_start + abs_block_duration;
+    
+    seqblock->start_time = abs_block_start;
+    seqblock->end_time = abs_end_time;
+    
+    last_abs_end_time = abs_end_time;
+    last_end_time = seq_end_time;
+    
+    //printf("  start/end: %f  ->   %f\n",seqblock->start_time,seqblock->end_time);
+  }END_VECTOR_FOR_EACH;
   
-  for(int i=0 ; i < 2 ; i++){
-    vector_t *seqblocks = i==0 ? &seqtrack->seqblocks : &seqtrack->gfx_gfx_seqblocks ;
 
-    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks){
-      struct Blocks *block            = seqblock->block;
-      double         tempo_multiplier = ATOMIC_DOUBLE_GET(block->reltempo);
-      
-      int64_t seq_block_start = is_gfx ? seqblock->gfx_time : seqblock->time;
-      
-      int64_t seq_block_pause = seq_block_start - last_end_time; // (reltempo is not applied to pauses)
-      double  abs_block_pause = seq_block_pause / sample_rate;
-      
-      double abs_block_start = last_abs_end_time + abs_block_pause;
-      
-      int64_t seq_block_duration = getBlockSTimeLength(seqblock->block);
-      double  abs_block_duration = ((double)seq_block_duration / tempo_multiplier) / sample_rate;
-      
-      int64_t seq_end_time = seq_block_start + seq_block_duration;
-      double  abs_end_time = abs_block_start + abs_block_duration;
-      
-      seqblock->start_time = abs_block_start;
-      seqblock->end_time = abs_end_time;
-      
-      last_abs_end_time = abs_end_time;
-      last_end_time = seq_end_time;
-      
-      //printf("  start/end: %f  ->   %f\n",seqblock->start_time,seqblock->end_time);
-    }END_VECTOR_FOR_EACH;
-  }
-
+  // seqtrack->gfx_gfx_seqblocks
+  //
+  seqblocks = &seqtrack->gfx_gfx_seqblocks;
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks){
+    seqblock->start_time = get_abstime_from_seqtime(seqtrack, NULL, seqblock->time) / sample_rate;
+    seqblock->end_time = get_abstime_from_seqtime(seqtrack, NULL, seqblock->time + getBlockSTimeLength(seqblock->block)) / sample_rate;
+    //printf("   %d: %f %f\n", iterator666, seqblock->start_time / 44100.0, seqblock->end_time / 44100.0);
+  }END_VECTOR_FOR_EACH;
 }
 
 void SEQTRACK_update_all_seqblock_start_and_end_times(struct SeqTrack *seqtrack){
@@ -699,6 +707,8 @@ int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, struct Blocks *bloc
 
   int pos = get_seqblock_pos(seqblocks, seqtime);
   VECTOR_insert(seqblocks, seqblock, pos);
+
+  SEQUENCER_update();
 
   return pos;
 }
