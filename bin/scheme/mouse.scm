@@ -3244,7 +3244,7 @@
 
   (undo-block
    (lambda ()
-     (delete-all-selected-seqblocks) ;; Hack. This will only work if seqblock-infos contains the current set of selected blocks. (deleting from seqblock-infos is a little bit tricky)
+     (delete-all-selected-seqblocks) ;; Hack. This will only work if seqblock-infos contains the current set of selected blocks. (deleting from seqblock-infos is a little bit tricky since the seqblock indexes changes)
      (for-each (lambda (data)
                  (if data
                   (apply ra:add-block-to-seqtrack data)))
@@ -3403,17 +3403,21 @@
                                            (define curr-pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
                                            (define next-pos (and (< seqblocknum (1- (<ra> :get-num-seqblocks seqtracknum)))
                                                                  (<ra> :get-seqblock-start-time (1+ seqblocknum) seqtracknum)))
+                                           (define prev-length (and prev-pos (- (<ra> :get-seqblock-end-time (1- seqblocknum) seqtracknum)
+                                                                                prev-pos)))
                                            (define curr-length (- (<ra> :get-seqblock-end-time seqblocknum seqtracknum)
                                                                   (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
                                            (define next-length (and next-pos (- (<ra> :get-seqblock-end-time (1+ seqblocknum) seqtracknum)
-                                                                                (<ra> :get-seqblock-start-time (1+ seqblocknum) seqtracknum))))
+                                                                                next-pos)))
 
                                  
                                            (cond (#f #f)
                                                  
                                                  ;; Swap with previous block
                                                  ((and prev-pos
-                                                       (<= new-pos prev-pos))
+                                                       (<= new-pos
+                                                           (twofifths prev-pos (+ prev-pos prev-length))))
+                                                  ;;(<= new-pos prev-pos))
                                                   (let* ((new-pos2 prev-pos)
                                                          (new-pos1 (+ new-pos2 curr-length)))
                                                     (swap-blocks (1- seqblocknum) (1- seqblocknum) new-pos1 new-pos2)))
@@ -3421,8 +3425,7 @@
                                                  ;; Swap with next block
                                                  ((and next-pos
                                                        (>= (+ new-pos curr-length)
-                                                           (average next-pos (+ next-pos next-length)))) ;;- (+ next-pos next-length) curr-length 48000)))
-                                                  
+                                                           (threefifths next-pos (+ next-pos next-length))))
                                                   (let* ((new-pos2 (- next-pos curr-length))
                                                          (new-pos1 (+ new-pos2 next-length)))
                                                     (swap-blocks seqblocknum (1+ seqblocknum) new-pos1 new-pos2)))
