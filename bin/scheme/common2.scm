@@ -74,6 +74,20 @@
   (/ (apply + numbers)
      (length numbers)))
 
+(define (X/Y a b x y)
+  (+ a (/ (* x (- b a))
+          y)))
+
+(define (onethird a b)
+  (X/Y a b 1 3))
+(define (twothirds a b)
+  (X/Y a b 2 3))
+         
+(define (twofifths a b)
+  (X/Y a b 2 5))
+(define (threefifths a b)
+  (X/Y a b 3 5))
+         
 ;; fix max, which is buggy in s7 (the bug is most likely fixed now if you read this though)
 (define (max a . rest)
   (if (null? rest)
