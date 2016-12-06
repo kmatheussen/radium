@@ -2275,25 +2275,26 @@ static int gc_has_static_roots_func(
     const char *executable_path = "";
   #endif
 
-#if defined(FOR_LINUX)
-    {
-      QString name(dlpi_name);
-      if (name.contains("libxcb.so")){
-        if (!name.contains("bin/packages/libxcb-1.13/src/.libs/")){
-          fprintf(stderr,"\n\n%c[31mError. A version of libxcb not included with Radium has been dynamically linked into the program. Something is wrong the installation of Radium.\nOlder versions of libxcb (probably before 1.11.1) are unstable with Radium.%c[0m\n\n", 0x1b, 0x1b);
-          abort();
-        }
-      }
-    }
-#endif
- 
- 
   printf("   ===== has_static_roots: -%s-, %fMB (%f). is_main: %d.  (%p). argv0: -%s-\n", dlpi_name, (double)total / (1024*1024.0), (double)size / (1024*1024.0), is_main_root, p, executable_path);
   //getchar();
   //abort();
-  
+
 #endif // !defined(RELEASE)
-  
+
+#if defined(FOR_LINUX)
+  {
+    QString name(dlpi_name);
+    if (name.contains("libxcb.so")){
+      if (!name.contains("bin/packages/libxcb-1.12/src/.libs/")){
+        fprintf(stderr,"\n\n%c[31mError. A version of libxcb not included with Radium has been dynamically linked into the program. Something is wrong the installation of Radium.\nOlder versions of libxcb (probably before 1.11.1) are unstable with Radium.%c[0m\n\n", 0x1b, 0x1b);
+        abort();
+      }
+    }
+  }
+#endif
+ 
+ 
+
   if (is_main_root)
     return 1;
   else
