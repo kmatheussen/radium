@@ -486,31 +486,31 @@ struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len){
 }
 
 void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
-  int64_t prev_seqendtime = seqblock->time + getBlockSTimeLength(seqblock->block);
-  int64_t absendtime = get_abstime_from_seqtime(seqtrack, NULL, prev_seqendtime);
+  int pos = VECTOR_find_pos(&seqtrack->seqblocks, seqblock);
+  R_ASSERT_RETURN_IF_FALSE(pos>=0);
+
+  int64_t abstimes[seqtrack->seqblocks.num_elements];
+
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+    abstimes[iterator666] = get_abstime_from_seqtime(seqtrack, NULL, seqblock->time);
+    //printf("bef %d: %f\n", iterator666, abstimes[iterator666] / 44100.0);
+  }END_VECTOR_FOR_EACH;
 
   {
     radium::PlayerPause pause;
     radium::PlayerRecursiveLock lock;
       
-    VECTOR_remove(&seqtrack->seqblocks, seqblock);
+    VECTOR_delete(&seqtrack->seqblocks, pos);
 
-    int64_t aft_seqendtime = get_seqtime_from_abstime(seqtrack, NULL, absendtime);
-    int64_t skew = aft_seqendtime - prev_seqendtime;
-    //printf("skew: %d\n",(int)skew);
-    
-    if (skew != 0){
-      VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-        int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, seqblock->time);
-        if (abstime >= absendtime){
-          seqblock->time += skew;
-          seqblock->gfx_time = seqblock->time;
-          //printf("Skewing %f -> %f\n", (seqblock->time-skew) / 44100.0, seqblock->time / 44100.0);
-        }
-      }END_VECTOR_FOR_EACH;
-    }
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+      if (iterator666 >= pos){
+        seqblock->time = get_seqtime_from_abstime(seqtrack, seqblock, abstimes[iterator666+1]);
+        seqblock->gfx_time = seqblock->time;
+        //printf("Skewing %f -> %f\n", (seqblock->time-skew) / 44100.0, seqblock->time / 44100.0);
+      }
+    }END_VECTOR_FOR_EACH;
 
-    RT_legalize_seqtrack_timing(seqtrack);  // Shouldn't be necessary though
+    RT_legalize_seqtrack_timing(seqtrack);  // Shouldn't be necessary, but we call it just in case.
   }
 
   RT_SEQUENCER_update_sequencer_and_playlist();
@@ -684,15 +684,18 @@ static int get_seqblock_pos(vector_t *seqblocks, int64_t seqtime){
 }
 
 int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime){
-
   // Assert that the seqblock is not in a seqtrack already.
   VECTOR_FOR_EACH(struct SeqTrack *, seqtrack_here, &root->song->seqtracks){
     R_ASSERT_RETURN_IF_FALSE2(!VECTOR_is_in_vector(&seqtrack_here->seqblocks, seqblock), 0);
   }END_VECTOR_FOR_EACH;
 
-  int64_t bef_seqtime = seqtime + getBlockSTimeLength(seqblock->block);
-  int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, bef_seqtime);
-  
+  int64_t abstimes[seqtrack->seqblocks.num_elements];
+
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+    abstimes[iterator666] = get_abstime_from_seqtime(seqtrack, NULL, seqblock->time);
+    //printf("bef %d: %f\n", iterator666, abstimes[iterator666] / 44100.0);
+  }END_VECTOR_FOR_EACH;
+
   int pos = get_seqblock_pos(&seqtrack->seqblocks, seqtime);
     
   VECTOR_ensure_space_for_one_more_element(&seqtrack->seqblocks);
@@ -706,19 +709,12 @@ int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqbloc
     
     VECTOR_insert(&seqtrack->seqblocks, seqblock, pos);
 
-    int64_t aft_seqtime = get_seqtime_from_abstime(seqtrack, NULL, abstime);
-
-    int64_t skew = aft_seqtime - bef_seqtime;
-    //printf("skew: %f\n",(double)skew/44100.0);
-    
-    if (skew != 0){
-      for(int i=pos+1;i<seqtrack->seqblocks.num_elements;i++){
-        struct SeqBlock *seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[i];
-        //printf("Skewing %d from %f to %f\n", i, (double)seqblock->time/44100.0, (double(seqblock->time+skew)/44100.0));
-        seqblock->time += skew;
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+      if (iterator666 > pos){
+        seqblock->time = get_seqtime_from_abstime(seqtrack, seqblock, abstimes[iterator666-1]);
         seqblock->gfx_time = seqblock->time;
       }
-    }
+    }END_VECTOR_FOR_EACH;
 
     RT_legalize_seqtrack_timing(seqtrack);
   }
