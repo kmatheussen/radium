@@ -900,13 +900,13 @@ struct Comp
         p->drawLine(x1,y1,x2,y2);
       }
 #else
-    for(int x=x1;x<x2;x++){
-      int y1=scale(x,x1,x2,y1_1,y2_1);
-      int y2=scale(x,x1,x2,y1_2,y2_2);
+    for(float x=x1;x<x2;x+=0.2){
+      float y1=scale(x,x1,x2,y1_1,y2_1) + 0.1;
+      float y2=scale(x,x1,x2,y1_2,y2_2);
 
       p->setGradient(x,y1,x,y2,c1,c2);
       //p->drawLine(x,R_BOUNDARIES(min_y,y1,max_y),x,R_BOUNDARIES(min_y,y2,max_y),c1);
-      p->fillRect(x,y1,x+1,y2,c1); // using fillRect since gradient drawLine doesn't seem to work with juce.
+      p->fillRect(x,y1,x+0.2,y2,c1); // using fillRect since gradient drawLine doesn't seem to work with juce.
     }
     p->unsetGradient();
 #endif

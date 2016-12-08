@@ -102,6 +102,7 @@ namespace cvs{
       , use_gradient(false)
       , _thickness(1)
     {
+      p->setRenderHints(QPainter::Antialiasing,true); // This line makes no difference. Qt turns it off at some point in the program.
       p->setPen(pen);
     }
 
@@ -145,11 +146,30 @@ namespace cvs{
     }
 
 
-    void fillRect(const int x1,const int y1,const int x2,const int y2, const MyColor &col){
+    void fillRect(const float x1,const float y1,const float x2,const float y2, const MyColor &col){
+      QRectF rect(x1,y1,x2-x1,y2-y1);
+
+
+      if(use_gradient==false)
+        p->setBrush(col.col);
+      else
+        p->setBrush(gradient);
+
+      QPen old_pen = p->pen();
+
+      p->setPen(Qt::NoPen);
+      p->drawRect(rect);
+
+      p->setPen(old_pen);
+      p->setBrush(Qt::NoBrush);
+
+          /*
+
       if(use_gradient==false)
         p->fillRect(x1,y1,x2-x1,y2-y1,col.col);
       else
         p->fillRect(x1,y1,x2-x1,y2-y1,QBrush(gradient));
+          */
     }
 
     void fillRect(const MyRect &rect,const MyColor &col){
@@ -161,21 +181,21 @@ namespace cvs{
       pen.setWidth(thickness);
     }
 
-    void drawLine(const int x1,const int y1,const int x2,const int y2, const MyColor &col){
+    void drawLine(const float x1,const float y1,const float x2,const float y2, const MyColor &col){
       if(use_gradient==false){
         pen.setColor(col.col);
         p->setPen(pen);
       }
 
-      bool anti = x1!=x2 && y1!=y2;
+      //bool anti = x1!=x2 && y1!=y2;
 
-      if(anti)
-        p->setRenderHints(QPainter::Antialiasing,true);
+      //if(anti)
+      p->setRenderHints(QPainter::Antialiasing,true); // I have no idea why, but antialiasing is turned off at some point. Must be a bug in Qt.
 
       p->drawLine(x1,y1,x2,y2);
 
-      if(anti)
-        p->setRenderHints(QPainter::Antialiasing,false);
+      //if(anti)
+      //p->setRenderHints(QPainter::Antialiasing,false);
     }
 
     void drawLine(const MyLine &l, const MyColor &col){
@@ -205,6 +225,7 @@ namespace cvs{
     }
 
     void drawVerticalText(int x, int y, std::string text, const MyColor &col){
+      
       if(use_gradient==false){
         pen.setColor(col.col);
         p->setPen(pen);
@@ -217,6 +238,7 @@ namespace cvs{
       //point = p->xFormDev(point);
       p->drawText(5,-5,QString::fromStdString(text));
       p->restore();
+      
     }
   };
 
@@ -242,6 +264,9 @@ namespace cvs{
       void paintEvent ( QPaintEvent * ev ){
         QPainter qp(this);
         MyPainter p(&qp);
+
+        //qp.setRenderHints(QPainter::Antialiasing,true);
+
         mywidget->repaint(&p);
       }
       virtual void resizeEvent ( QResizeEvent * event ){
