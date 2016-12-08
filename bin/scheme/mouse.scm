@@ -3077,17 +3077,20 @@
                                       (<ra> :set-seqlooping-start Value)
                                       (<ra> :set-seqlooping-end Value)))
                           
-                          :Publicize (lambda (Type)
-                                       (if (eq? Type 'start)
-                                           (<ra> :set-statusbar-text (<-> "Loop start: " (two-decimal-string (/ (<ra> :get-seqlooping-start) (<ra> :get-sample-rate)))))
-                                           (<ra> :set-statusbar-text (<-> "Loop end: " (two-decimal-string (/ (<ra> :get-seqlooping-end) (<ra> :get-sample-rate)))))))
+                          :Publicize (lambda (Value)
+                                       (set-statusbar-loop-info Type))
                           
                           :Mouse-pointer-func ra:set-normal-mouse-pointer
                           ))
 
 (create-seqloop-handler 'start)
 (create-seqloop-handler 'end)
-  
+
+(define (set-statusbar-loop-info Type)
+  (if (eq? Type 'start)
+      (<ra> :set-statusbar-text (<-> "Loop start: " (two-decimal-string (/ (<ra> :get-seqlooping-start) (<ra> :get-sample-rate)))))
+      (<ra> :set-statusbar-text (<-> "Loop end: " (two-decimal-string (/ (<ra> :get-seqlooping-end) (<ra> :get-sample-rate)))))))
+
 ;; highlight loop start / loop end
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
@@ -3095,9 +3098,7 @@
               (let* ((start-x (get-seqloop-start-x))
                      (end-x (get-seqloop-end-x))
                      (mid (average start-x end-x)))
-                (if (< $x mid)
-                    (<ra> :set-statusbar-text (<-> "Loop start: " (two-decimal-string (/ (<ra> :get-seqlooping-start) (<ra> :get-sample-rate)))))
-                    (<ra> :set-statusbar-text (<-> "Loop end: " (two-decimal-string (/ (<ra> :get-seqlooping-end) (<ra> :get-sample-rate))))))
+                (set-statusbar-loop-info (if (< $x mid) 'start 'end))
                 #t))))
 
 (add-mouse-cycle (make-mouse-cycle
@@ -3204,6 +3205,7 @@
             (iota (<ra> :get-num-seqtracks))))
 
 (define gakkgakk-last-inc-time 0)
+(define gakkgakk-really-last-inc-time 0)
 (define gakkgakk-last-inc-track 0)
 
 (define (get-data-for-seqblock-moving seqblock-infos inc-time inc-track)
@@ -3228,7 +3230,8 @@
                                        (<ra> :find-closest-seqtrack-bar-start new-seqtracknum new-pos)))
                   (if (< new-pos2 0)
                       (set! new-pos2 0))
-                  (set! skew (- new-pos2 new-pos)))
+                  (set! skew (- new-pos2 new-pos))
+                  (set! gakkgakk-really-last-inc-time (- new-pos2 start-time)))
 
                 ;;(c-display "start-time/inc-time:" start-time inc-time)
                 (list new-seqtracknum
@@ -3334,7 +3337,9 @@
                         :Create-new-node (lambda (X seqtracknum callback)
                                            #f)
                         :Publicize (lambda (seqblock-info)
-                                     (<ra> :set-statusbar-text (<-> (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum) (seqblock-info :seqtracknum)))))
+                                     (if (number? gakkgakk-last-value)
+                                         (<ra> :set-statusbar-text (two-decimal-string (/ gakkgakk-last-value
+                                                                                          (<ra> :get-sample-rate))))))
 
                         :Release-node (lambda (seqblock-info)
                                         (define has-moved (not (= gakkgakk-start-pos gakkgakk-last-value)))
@@ -3548,9 +3553,11 @@
                                      #f)
                         :Create-new-node (lambda (X seqtracknum callback)
                                            #f)
-                        :Publicize (lambda (seqblock-infos)
-                                     #f)
-                                     ;;(<ra> :set-statusbar-text (<-> (<ra> :get-seqblock-start-time (seqblock-info :seqblocknum) (seqblock-info :seqtracknum)))))
+
+                        :Publicize (lambda (seqblock-info)
+                                     (<ra> :set-statusbar-text (two-decimal-string (/ gakkgakk-really-last-inc-time
+                                                                                      (<ra> :get-sample-rate)))))
+
                         
                         :Release-node (lambda (seqblock-infos)
                                         (define has-moved (not (morally-equal? gakkgakk-start-pos gakkgakk-last-value)))

@@ -1358,7 +1358,7 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
 }
 
 static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool last_legal_may_be_next_note);
-static int getPitchLogtype(int pitchnum, struct Tracks *track);
+static int getPitchLogtype_internal(int pitchnum, struct Tracks *track);
 static void setPitchLogtype(bool is_holding, int pitchnum, struct Tracks *track);
   
 bool isPianonoteLogtypeHolding(int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
@@ -1372,7 +1372,7 @@ bool isPianonoteLogtypeHolding(int pianonotenum, int notenum, int tracknum, int 
   struct Tracks *track = wtrack->track;
 
   int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum);
-  return getPitchLogtype(pitchnum, track) == LOGTYPE_HOLD;
+  return getPitchLogtype_internal(pitchnum, track) == LOGTYPE_HOLD;
 }
 
 void setPianonoteLogtypeHolding(bool is_holding, int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
@@ -1405,7 +1405,7 @@ int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenu
   if (note->pitches != NULL) {
     
     int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum);
-    int logtype  = getPitchLogtype(pitchnum, track);    
+    int logtype  = getPitchLogtype_internal(pitchnum, track);    
              
     // 1. Change pitch value
     setPitch2(logtype==LOGTYPE_HOLD ? pitchnum : pitchnum + 1,
@@ -1747,7 +1747,30 @@ static bool getPitch(int pitchnum, struct Pitches **pitch, struct Notes **note, 
   return false;
 }
 
-static int getPitchLogtype(int pitchnum, struct Tracks *track){
+/*
+Place getPitchStart(int pitchnum,  int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return place(0,0,1);
+
+  bool is_end_pitch = false;
+  struct Notes *note = NULL;
+  struct Pitches *pitch = NULL;
+  getPitch(pitchnum, &pitch, &note, &is_end_pitch, wtrack->track);
+
+  if (is_end_pitch)
+    return note->end;
+  if (pitch==NULL)
+    return note->l.p;
+  else
+    return pitch->l.p;
+}
+*/
+
+static int getPitchLogtype_internal(int pitchnum, struct Tracks *track){
   bool is_end_pitch = false;
   struct Notes *note = NULL;
   struct Pitches *pitch = NULL;
@@ -1760,6 +1783,19 @@ static int getPitchLogtype(int pitchnum, struct Tracks *track){
   else
     return pitch->logtype;
 }
+
+/*
+Place getPitchLogtype(int num,  int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return place(0,0,1);
+
+  return getPitchlogtype_internal(num, wtrack->track);
+}
+*/
 
 static void setPitchLogtype(bool is_holding, int pitchnum, struct Tracks *track){
   bool is_end_pitch = false;
@@ -2315,7 +2351,7 @@ Place getNoteStart(int notenum, int tracknum, int blocknum, int windownum){
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
 
   if(note==NULL)
-    return -1.0f;
+    return place(0,0,1);
 
   return note->l.p;
 }
@@ -2324,7 +2360,7 @@ Place getNoteEnd(int notenum, int tracknum, int blocknum, int windownum){
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
 
   if(note==NULL)
-    return -1.0f;
+    return place(1,0,1);
 
   return note->end;
 }

@@ -231,6 +231,9 @@
 
 (define *my-gensym-N* 0)
 
+(define (identity a)
+  a)
+
 (define (nth n list)
   (list-ref list (- n 1)))
 
