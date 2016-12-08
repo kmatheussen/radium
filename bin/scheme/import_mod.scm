@@ -3288,10 +3288,10 @@ The behavior for these three tests are not needed since break events are always 
   (list (car ab)
         (ungroup-patterns-into-events (cadr ab))))
 
-(define *test-instruments*
-  (list->vector (map (lambda (i)
-                       (vector "aa" "adf" 14213 0 40 0 0 0))
-                     (iota 20))))
+(set! *test-instruments*
+      (list->vector (map (lambda (i)
+                           (vector "aa" "adf" 14213 0 40 0 0 0))
+                         (iota 20))))
 #||
 ;; Test break and position-jump
 (let ((hepp (run-through-patterns '(0)
