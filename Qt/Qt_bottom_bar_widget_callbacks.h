@@ -86,6 +86,9 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     Bottom_bar_widget *bottom_bar_widget;
     
     void timerEvent(QTimerEvent * e){
+
+      if (g_radium_runs_custom_exec==true)
+        return;
       
       if (bottom_bar_widget->edit_onoff->isChecked() != ATOMIC_GET(root->editonoff))
         bottom_bar_widget->edit_onoff->setChecked(ATOMIC_GET(root->editonoff));

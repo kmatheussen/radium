@@ -1,5 +1,6 @@
 (provide 'common1.scm)
 
+
 ;; redefine 'ow!'
 (define (ow!)
   (call-with-output-string
@@ -233,11 +234,13 @@
 (define (nth n list)
   (list-ref list (- n 1)))
 
+#||
 (define (1+ n)
   (+ n 1))
 
 (define (1- n)
   (- n 1))
+||#
 
 (define (yppla l c)
   (apply c l))
