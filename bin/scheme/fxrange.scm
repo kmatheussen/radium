@@ -59,7 +59,6 @@
             (cons fx
                   (remove-fx (cdr fxs) name))))))
 
-
 ;; A list of fxs, one fxs for each track
 (define *clipboard-fxs* '())
 

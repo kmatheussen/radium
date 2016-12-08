@@ -89,6 +89,7 @@
   (X/Y a b 3 5))
          
 ;; fix max, which is buggy in s7 (the bug is most likely fixed now if you read this though)
+#||
 (define (max a . rest)
   (if (null? rest)
       a
@@ -96,6 +97,7 @@
         (if (< a b)
             b
             a))))
+||#
 
 (assert (= 0 (max 0 -1/2)))
 
