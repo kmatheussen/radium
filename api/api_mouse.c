@@ -2311,22 +2311,22 @@ void undoNotes(int tracknum, int blocknum){
   ADD_UNDO(Notes(window,window->wblock->block,wtrack->track,window->wblock->curr_realline));
 }
 
-float getNoteStart(int notenum, int tracknum, int blocknum, int windownum){
+Place getNoteStart(int notenum, int tracknum, int blocknum, int windownum){
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
 
   if(note==NULL)
     return -1.0f;
 
-  return GetfloatFromPlace(&note->l.p);
+  return note->l.p;
 }
 
-float getNoteEnd(int notenum, int tracknum, int blocknum, int windownum){
+Place getNoteEnd(int notenum, int tracknum, int blocknum, int windownum){
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
 
   if(note==NULL)
     return -1.0f;
 
-  return GetfloatFromPlace(&note->end);
+  return note->end;
 }
 
 float getNoteValue(int notenum, int tracknum, int blocknum, int windownum){
