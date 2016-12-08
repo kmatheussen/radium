@@ -32,6 +32,13 @@ struct MyQButton : public QToolButton{
     setText(text);
   }
 
+  /*
+  void mousePressEvent ( QMouseEvent * event ) override
+  {
+    printf("PRESSED %d\n", event->button() == Qt::LeftButton);
+    QToolButton::mousePressEvent(event);
+  }    
+  */
 
   void paintEvent ( QPaintEvent * ev ){
     //QToolButton::paintEvent(ev);

@@ -1148,7 +1148,7 @@ public:
           
           else if (g_safe_mode || !sleep_when_not_painting) // probably doesn't make any sense setting sleep_when_not_painting to false. Besides, setting it to false may cause 100% CPU usage (intel gfx) or very long calls to GL_lock() (nvidia gfx).
             swap();
-          
+
           else
             //usleep(20); // Don't want to buzy-loop
             usleep(1000 * time_estimator.get_vblank());
@@ -1736,7 +1736,7 @@ QWidget *GL_create_widget(QWidget *parent){
                   "<p>"
                   "Nouveau OpenGL driver detected."
                   "<p>"
-                  "There has been reports of Radium crashing when using the Nouveau driver.<br>"
+                  "There have been reports of Nouveau code crashing when running Radium.<br>"
                   "The Nouveau driver also performs worse than the Nvidia driver."
                   "<p>"
                   "The Nvidia driver can be installed to get faster and smoother graphics. It can be downloaded here: <a href=\"http://www.nvidia.com/object/unix.html\">http://www.nvidia.com/object/unix.html</a>"

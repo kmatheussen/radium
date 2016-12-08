@@ -90,6 +90,10 @@ public:
       
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
+    
+    solo_checkbox->_patch = _patch;
+    solo_checkbox->_effect_num = type->num_effects + EFFNUM_SOLO_ONOFF;
+    solo_checkbox->_add_undo_when_clicked = false;
 
     bool will_always_autosuspend = type->will_always_autosuspend;
 

@@ -132,7 +132,7 @@ struct MyQCheckBox : public QCheckBox{
   struct Patch *_patch;
   int _effect_num;
   bool _is_patchvoice_onoff_button;
-
+  bool _add_undo_when_clicked = true;
   bool _is_a_pd_slider;
 
   QString vertical_text;
@@ -156,10 +156,12 @@ struct MyQCheckBox : public QCheckBox{
     if (event->button() == Qt::LeftButton){      
       //setSliderDown(true);    
 #ifdef COMPILING_RADIUM
-      if(_is_patchvoice_onoff_button==true)
-        ADD_UNDO(PatchVoice_CurrPos(_patch,_effect_num));
-      else if(_patch!=NULL  && _patch->instrument==get_audio_instrument())
-        ADD_UNDO(AudioEffect_CurrPos(_patch, _effect_num));
+      if (_add_undo_when_clicked){
+        if(_is_patchvoice_onoff_button==true)
+          ADD_UNDO(PatchVoice_CurrPos(_patch,_effect_num));
+        else if(_patch!=NULL  && _patch->instrument==get_audio_instrument())
+          ADD_UNDO(AudioEffect_CurrPos(_patch, _effect_num));
+      }
 #endif
       //handle_mouse_event(event);
       _has_mouse = true;
@@ -171,6 +173,7 @@ struct MyQCheckBox : public QCheckBox{
       if (_is_patchvoice_onoff_button==true)
         return;
 
+      //printf("patch: %p, patchdata: %p\n",_patch,_patch==NULL?NULL:_patch->patchdata);
       if(_patch==NULL || _patch->instrument!=get_audio_instrument() || _patch->patchdata == NULL) {
         emit clicked();//rightClicked();
         return;
