@@ -4857,10 +4857,10 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
            
           (for-each (lambda (pitch)  ;; TODO: Fix.
                       (assert (< (car pitch) last-pitch-pos))
-                      (<ra> :create-pitch
+                      (<ra> :create-pitchnum
                             (+ *pitch-transpose* (cadr pitch))  ;; value
                             (car pitch) ;; place
-                            ;; ra:create-pitch doesn't need a 'radium-notenum' argument. It's not really needed either unless you have polyphonic tracks, which is not the case for MOD.
+                            ;; ra:create-pitchnum doesn't need a 'radium-notenum' argument. It's not really needed either unless you have polyphonic tracks, which is not the case for MOD.
                             channelnum))
                     (butlast (cdr pitches)))
 
