@@ -719,14 +719,26 @@ const wchar_t *GFX_GetSaveFileName(
 
 static int GFX_Message(vector_t *buttons, QString message){
   R_ASSERT(THREADING_is_main_thread());
+
+  static double ignore_until = -1;
+  static double last_time = -1;
+  double time_now = TIME_get_ms();
+
+  if (buttons==NULL && time_now <= ignore_until)
+    return 0;
   
   MyQMessageBox msgBox(g_editor);
   
   msgBox.setText(message);
 
+  QString wait_message = "Ignore messages for two seconds";
+
   if(buttons==NULL){
 
     msgBox.setStandardButtons(QMessageBox::Ok);
+
+    if ( (time_now - last_time) < 2000)
+      msgBox.addButton(wait_message, QMessageBox::AcceptRole);  
 
   } else {
 
@@ -739,15 +751,29 @@ static int GFX_Message(vector_t *buttons, QString message){
   RememberGeometryQDialog::num_open_dialogs++;
   safeExec(msgBox);
   RememberGeometryQDialog::num_open_dialogs--;
-  
+
   QAbstractButton *clicked_button = msgBox.clickedButton();
 
   if (buttons != NULL) {
     for(int i=0;i<buttons->num_elements;i++)
-      if(QString((char*)buttons->elements[i])==clicked_button->text())
+      if(QString((char*)buttons->elements[i])==clicked_button->text()) // This will probably fail if that buggy KDE library is loaded.
+        return i;
+
+    for(int i=0;i<buttons->num_elements;i++)
+      if(QString((char*)buttons->elements[i]).contains(clicked_button->text())) // Workaround for buggy KDE library. Not a good workaround though.
         return i;
 
     fprintf(stderr,"******************** \n\n\n\n  ******************* \n\n\n ******** Somethings not working in GFX_Message *************** \n\n\n");
+
+  } else {
+
+    last_time = TIME_get_ms();
+
+    //printf("clicked_button->text(): %s (%d)\n",clicked_button->text().toUtf8().constData(),clicked_button->text()==wait_message);
+    
+    if (clicked_button->text().contains(wait_message)) // Use 'contains' instead of '==' because of KDE library bug. (have not found a way to disable loading that %!#$!#$% library)
+      ignore_until = last_time + 2000;
+
   }
   
   return 0;
