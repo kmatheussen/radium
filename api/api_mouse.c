@@ -1300,7 +1300,7 @@ int movePianonote(int pianonotenum, float value, float floatplace, int notenum, 
   return ListPosition3(&track->notes->l, &note->l);
 }
 
-static int setPitch2(int num, float value, float floatplace, int tracknum, int blocknum, int windownum, bool replace_note_ends);
+static int setPitchnum2(int num, float value, float floatplace, int tracknum, int blocknum, int windownum, bool replace_note_ends);
   
 int movePianonoteStart(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
@@ -1314,11 +1314,11 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
   struct Tracks *track = wtrack->track;
 
   if (note->pitches!=NULL) {
-    setPitch2(getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum),
-              value, floatplace,
-              tracknum, blocknum, windownum,
-              false
-             );
+    setPitchnum2(getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum),
+                 value, floatplace,
+                 tracknum, blocknum, windownum,
+                 false
+                 );
     return ListPosition3(&track->notes->l, &note->l);
   }
 
@@ -1358,8 +1358,8 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
 }
 
 static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool last_legal_may_be_next_note);
-static int getPitchLogtype_internal(int pitchnum, struct Tracks *track);
-static void setPitchLogtype(bool is_holding, int pitchnum, struct Tracks *track);
+static int getPitchnumLogtype_internal(int pitchnum, struct Tracks *track);
+static void setPitchnumLogtype(bool is_holding, int pitchnum, struct Tracks *track);
   
 bool isPianonoteLogtypeHolding(int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
@@ -1372,7 +1372,7 @@ bool isPianonoteLogtypeHolding(int pianonotenum, int notenum, int tracknum, int 
   struct Tracks *track = wtrack->track;
 
   int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum);
-  return getPitchLogtype_internal(pitchnum, track) == LOGTYPE_HOLD;
+  return getPitchnumLogtype_internal(pitchnum, track) == LOGTYPE_HOLD;
 }
 
 void setPianonoteLogtypeHolding(bool is_holding, int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
@@ -1388,7 +1388,7 @@ void setPianonoteLogtypeHolding(bool is_holding, int pianonotenum, int notenum, 
   window->must_redraw_editor=true;
   
   int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum);
-  setPitchLogtype(is_holding, pitchnum, track);
+  setPitchnumLogtype(is_holding, pitchnum, track);
 }
   
 int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
@@ -1405,21 +1405,21 @@ int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenu
   if (note->pitches != NULL) {
     
     int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum);
-    int logtype  = getPitchLogtype_internal(pitchnum, track);    
+    int logtype  = getPitchnumLogtype_internal(pitchnum, track);    
              
     // 1. Change pitch value
-    setPitch2(logtype==LOGTYPE_HOLD ? pitchnum : pitchnum + 1,
-              value, -1,
-              tracknum, blocknum, windownum,
-              false
-              );
+    setPitchnum2(logtype==LOGTYPE_HOLD ? pitchnum : pitchnum + 1,
+                 value, -1,
+                 tracknum, blocknum, windownum,
+                 false
+                 );
 
     // 2. Change place of the next pianonote
-    setPitch2(pitchnum+1,
-              -1, floatplace,
-              tracknum, blocknum, windownum,
-              false
-              );
+    setPitchnum2(pitchnum+1,
+                 -1, floatplace,
+                 tracknum, blocknum, windownum,
+                 false
+                 );
     
   } else {
   
@@ -1520,7 +1520,7 @@ void deletePianonote(int pianonotenum, int notenum, int tracknum, int blocknum, 
 
   int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum,  blocknum, windownum);
 
-  deletePitch(pitchnum, tracknum, blocknum);      
+  deletePitchnum(pitchnum, tracknum, blocknum);      
 }
 
 
@@ -1610,7 +1610,7 @@ static int getPitchNum(struct Tracks *track, struct Notes *note, struct Pitches 
   return 0;
 }
 
-int getNumPitches(int tracknum, int blocknum, int windownum){
+int getNumPitchnums(int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
 
   if (wtrack==NULL)
@@ -1640,7 +1640,7 @@ int getNumPitches(int tracknum, int blocknum, int windownum){
   return num;
 }
 
-void deletePitch(int pitchnum, int tracknum, int blocknum){
+void deletePitchnum(int pitchnum, int tracknum, int blocknum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(-1, &window, blocknum, &wblock, tracknum);
@@ -1770,7 +1770,7 @@ Place getPitchStart(int pitchnum,  int notenum, int tracknum, int blocknum, int 
 }
 */
 
-static int getPitchLogtype_internal(int pitchnum, struct Tracks *track){
+static int getPitchnumLogtype_internal(int pitchnum, struct Tracks *track){
   bool is_end_pitch = false;
   struct Notes *note = NULL;
   struct Pitches *pitch = NULL;
@@ -1785,7 +1785,7 @@ static int getPitchLogtype_internal(int pitchnum, struct Tracks *track){
 }
 
 /*
-Place getPitchLogtype(int num,  int tracknum, int blocknum, int windownum){
+Place getPitchnumLogtype(int num,  int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -1793,11 +1793,11 @@ Place getPitchLogtype(int num,  int tracknum, int blocknum, int windownum){
   if (note==NULL)
     return place(0,0,1);
 
-  return getPitchlogtype_internal(num, wtrack->track);
+  return getPitchnumLogtype_internal(num, wtrack->track);
 }
 */
 
-static void setPitchLogtype(bool is_holding, int pitchnum, struct Tracks *track){
+static void setPitchnumLogtype(bool is_holding, int pitchnum, struct Tracks *track){
   bool is_end_pitch = false;
   struct Notes *note = NULL;
   struct Pitches *pitch = NULL;
@@ -1818,7 +1818,7 @@ static void setPitchLogtype(bool is_holding, int pitchnum, struct Tracks *track)
 }
 
 
-void setPitchLogtypeHolding(bool is_holding, int pitchnum, int tracknum, int blocknum, int windownum){
+void setPitchnumLogtypeHolding(bool is_holding, int pitchnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -1826,7 +1826,7 @@ void setPitchLogtypeHolding(bool is_holding, int pitchnum, int tracknum, int blo
   if (wtrack==NULL)
     return;
 
-  setPitchLogtype(is_holding, pitchnum, wtrack->track);
+  setPitchnumLogtype(is_holding, pitchnum, wtrack->track);
 }
 
 
@@ -1881,20 +1881,20 @@ static float getPitchInfo(enum PitchInfoWhatToGet what_to_get, int pitchnum, int
   return 0;
 }
 
-float getPitchY1(int pitchnum, int tracknum, int blocknum, int windownum){
+float getPitchnumY1(int pitchnum, int tracknum, int blocknum, int windownum){
   return getPitchInfo(PITCH_INFO_Y1, pitchnum, tracknum, blocknum, windownum);
 }
 
-float getPitchY2(int pitchnum, int tracknum, int blocknum, int windownum){
+float getPitchnumY2(int pitchnum, int tracknum, int blocknum, int windownum){
   return getPitchInfo(PITCH_INFO_Y2, pitchnum, tracknum, blocknum, windownum);
 }
 
-float getPitchX1(int pitchnum, int tracknum, int blocknum, int windownum){
+float getPitchnumX1(int pitchnum, int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   return wtrack==NULL ? 0.0f : wtrack->notearea.x;
 }
 
-float getPitchX2(int pitchnum, int tracknum, int blocknum, int windownum){
+float getPitchnumX2(int pitchnum, int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   return wtrack==NULL ? 0.0f : wtrack->notearea.x2;
 }
@@ -1929,7 +1929,7 @@ static struct Node *get_pitchnodeline(int pitchnum, int tracknum, int blocknum, 
 }
 
 
-float getPitchX(int num,  int tracknum, int blocknum, int windownum){
+float getPitchnumX(int num,  int tracknum, int blocknum, int windownum){
   bool is_end_pitch;
   struct Node *nodeline = get_pitchnodeline(num, tracknum, blocknum, windownum, &is_end_pitch);
   if (nodeline==NULL)
@@ -1938,7 +1938,7 @@ float getPitchX(int num,  int tracknum, int blocknum, int windownum){
   return nodeline->x;
 }
 
-float getPitchY(int num, int tracknum, int blocknum, int windownum){
+float getPitchnumY(int num, int tracknum, int blocknum, int windownum){
   bool is_end_pitch;
   struct Node *nodeline = get_pitchnodeline(num, tracknum, blocknum, windownum, &is_end_pitch);
   if (nodeline==NULL)
@@ -1951,11 +1951,11 @@ float getPitchY(int num, int tracknum, int blocknum, int windownum){
 }
 
 
-float getPitchValue(int pitchnum, int tracknum, int blocknum, int windownum){
+float getPitchnumValue(int pitchnum, int tracknum, int blocknum, int windownum){
   return getPitchInfo(PITCH_INFO_VALUE, pitchnum, tracknum, blocknum, windownum);
 }
 
-void setCurrentPitch(int num, int tracknum, int blocknum){
+void setCurrentPitchnum(int num, int tracknum, int blocknum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(-1, &window, blocknum, &wblock, tracknum);
@@ -1972,7 +1972,7 @@ void setCurrentPitch(int num, int tracknum, int blocknum){
   setCurrentNode(listHeader3);
 }
 
-void setIndicatorPitch(int num, int tracknum, int blocknum){
+void setIndicatorPitchnum(int num, int tracknum, int blocknum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(-1, &window, blocknum, &wblock, tracknum);
@@ -2099,7 +2099,7 @@ static int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *no
   return ListPosition3(&track->notes->l, &note->l);
 }
 
-static int setPitch2(int num, float value, float floatplace, int tracknum, int blocknum, int windownum, bool replace_note_ends){
+static int setPitchnum2(int num, float value, float floatplace, int tracknum, int blocknum, int windownum, bool replace_note_ends){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -2164,8 +2164,8 @@ static int setPitch2(int num, float value, float floatplace, int tracknum, int b
   return num;
 }
 
-int setPitch(int num, float value, float floatplace, int tracknum, int blocknum, int windownum){
-  return setPitch2(num, value, floatplace, tracknum, blocknum, windownum, true);
+int setPitchnum(int num, float value, float floatplace, int tracknum, int blocknum, int windownum){
+  return setPitchnum2(num, value, floatplace, tracknum, blocknum, windownum, true);
 }
   
 static struct Notes *getNoteAtPlace(struct Tracks *track, Place *place){
@@ -2205,7 +2205,7 @@ static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, stru
   return getPitchNum(wtrack->track, note, pitch, false);
 }
 
-int createPitch(float value, Place place, int tracknum, int blocknum, int windownum){
+int createPitchnum(float value, Place place, int tracknum, int blocknum, int windownum){
 
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -2234,10 +2234,10 @@ int createPitch(float value, Place place, int tracknum, int blocknum, int window
   return ret;
 }
 
-int createPitchF(float value, float floatplace, int tracknum, int blocknum, int windownum){
+int createPitchnumF(float value, float floatplace, int tracknum, int blocknum, int windownum){
   Place place;
   Float2Placement(floatplace, &place);
-  return createPitch(value, place, tracknum, blocknum, windownum);
+  return createPitchnum(value, place, tracknum, blocknum, windownum);
 }
 
 bool portamentoEnabled(int notenum, int tracknum, int blocknum, int windownum){

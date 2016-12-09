@@ -329,9 +329,9 @@
 (define (set-indicator-temponode num)
   (set! indicator-node-has-been-set #t)
   (<ra> :set-indicator-temponode num))
-(define (set-indicator-pitch num tracknum)
+(define (set-indicator-pitchnum num tracknum)
   (set! indicator-node-has-been-set #t)
-  (<ra> :set-indicator-pitch num tracknum))
+  (<ra> :set-indicator-pitchnum num tracknum))
 (define (set-indicator-velocity-node velocitynum notenum tracknum)
   (set! indicator-node-has-been-set #t)
   (<ra> :set-indicator-velocity-node velocitynum notenum tracknum))
@@ -351,16 +351,16 @@
   (set! current-node-has-been-set #t)
   (<ra> :set-statusbar-text (<ra> :get-fx-string fxnodenum fxnum tracknum))
   (<ra> :set-current-fxnode fxnodenum fxnum tracknum))
-(define (set-current-pitch pitchnum tracknum)
+(define (set-current-pitchnum pitchnum tracknum)
   (set! current-node-has-been-set #t)
-  (<ra> :set-current-pitch pitchnum tracknum)
-  (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitch-value pitchnum tracknum)))))
+  (<ra> :set-current-pitchnum pitchnum tracknum)
+  (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value pitchnum tracknum)))))
 
 (define current-pianonote-has-been-set #f)
 (define (set-current-pianonote pianonotenum notenum tracknum)
   (set! current-pianonote-has-been-set #t)
   (<ra> :set-current-pianonote pianonotenum notenum tracknum))
-;;  (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitch-value pianonotenum tracknum)))))
+;;  (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value pianonotenum tracknum)))))
 
 (define mouse-pointer-has-been-set #f)
 (define (set-mouse-pointer func)
@@ -1400,12 +1400,12 @@
 ;; pitches
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (get-pitch-box $num)
-  ;;(c-display "get-pitch-box" $num)
-  (make-box2 (<ra> :get-pitch-x1 $num *current-track-num*)
-             (<ra> :get-pitch-y1 $num *current-track-num*)
-             (<ra> :get-pitch-x2 $num *current-track-num*)
-             (<ra> :get-pitch-y2 $num *current-track-num*)))
+(define (get-pitchnum-box $num)
+  ;;(c-display "get-pitchnum-box" $num)
+  (make-box2 (<ra> :get-pitchnum-x1 $num *current-track-num*)
+             (<ra> :get-pitchnum-y1 $num *current-track-num*)
+             (<ra> :get-pitchnum-x2 $num *current-track-num*)
+             (<ra> :get-pitchnum-y2 $num *current-track-num*)))
 
 (define (todofunc funcname . $returnvalue)
   (lambda x
@@ -1416,9 +1416,9 @@
   
 #||
 (set! *current-track-num* 0)
-(box-to-string (get-pitch-box 1))
-(<ra> :get-num-pitches 0)
-(<ra> :get-pitch-value 1 0)
+(box-to-string (get-pitchnum-box 1))
+(<ra> :get-num-pitchnum 0)
+(<ra> :get-pitchnum-value 1 0)
 ||#
 
 #||
@@ -1434,15 +1434,15 @@
   N N   Least-So-Far :> Least-So-Far
   N Max #f           :> (get-min-pitch-in-current-track-0 (1+ N)
                                                           Max
-                                                          (<ra> :get-pitch-value N *current-track-num*))
+                                                          (<ra> :get-pitchnum-value N *current-track-num*))
   N Max Least-So-Far :> (get-min-pitch-in-current-track-0 (1+ N)
                                                           Max
                                                           (min Least-So-Far
-                                                               (<ra> :get-pitch-value N *current-track-num*))))
+                                                               (<ra> :get-pitchnum-value N *current-track-num*))))
   
 (define (get-min-pitch-in-current-track)
   (1- (get-min-pitch-in-current-track-0 0
-                                        (<ra> :get-num-pitches *current-track-num*)
+                                        (<ra> :get-num-pitchnums *current-track-num*)
                                         #f)))
        
 (define-match get-max-pitch-in-current-track-0
@@ -1450,15 +1450,15 @@
   N N   Least-So-Far :> Least-So-Far
   N Max #f           :> (get-max-pitch-in-current-track-0 (1+ N)
                                                           Max
-                                                          (<ra> :get-pitch-value N *current-track-num*))
+                                                          (<ra> :get-pitchnum-value N *current-track-num*))
   N Max Least-So-Far :> (get-max-pitch-in-current-track-0 (1+ N)
                                                           Max
                                                           (max Least-So-Far
-                                                               (<ra> :get-pitch-value N *current-track-num*))))
+                                                               (<ra> :get-pitchnum-value N *current-track-num*))))
   
 (define (get-max-pitch-in-current-track)
   (1+ (get-max-pitch-in-current-track-0 0
-                                        (<ra> :get-num-pitches *current-track-num*)
+                                        (<ra> :get-num-pitchnums *current-track-num*)
                                         #f)))
 
 ;; add and move pitch
@@ -1468,11 +1468,11 @@
                         :Get-existing-node-info (lambda (X Y callback)
                                                   '(c-display "hepp"
                                                               (may-be-a-resize-point-in-track X Y *current-track-num*)
-                                                              (list (find-node X Y get-pitch-box (<ra> :get-num-pitches *current-track-num*))))
+                                                              (list (find-node X Y get-pitchnum-box (<ra> :get-num-pitchnums *current-track-num*))))
                                                   (and *current-track-num*
                                                        (not (may-be-a-resize-point-in-track X Y *current-track-num*))
-                                                       (match (list (find-node X Y get-pitch-box (<ra> :get-num-pitches *current-track-num*)))
-                                                              (existing-box Num Box) :> (callback Num (<ra> :get-pitch-value Num *current-track-num*) (Box :y))
+                                                       (match (list (find-node X Y get-pitchnum-box (<ra> :get-num-pitchnums *current-track-num*)))
+                                                              (existing-box Num Box) :> (callback Num (<ra> :get-pitchnum-value Num *current-track-num*) (Box :y))
                                                               _                      :> #f)))
                         :Get-min-value (lambda (_)
                                          (get-min-pitch-in-current-track))
@@ -1480,9 +1480,9 @@
                                          (get-max-pitch-in-current-track))
                         :Get-x (lambda (Num)
                                  ;;(c-display "    NUM----> " Num)
-                                 (<ra> :get-pitch-x Num *current-track-num*))
+                                 (<ra> :get-pitchnum-x Num *current-track-num*))
                         :Get-y (lambda (Num)
-                                 (<ra> :get-pitch-y Num *current-track-num*))
+                                 (<ra> :get-pitchnum-y Num *current-track-num*))
                         :Make-undo (lambda (_) (<ra> :undo-notes *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
                                            (if (place-is-last-place Place)
@@ -1491,20 +1491,20 @@
                                                  (define Value (scale X
                                                                       (<ra> :get-track-notes-x1 *current-track-num*) (<ra> :get-track-notes-x2 *current-track-num*) 
                                                                       (get-min-pitch-in-current-track) (get-max-pitch-in-current-track)))
-                                                 (define Num (<ra> :create-pitch Value Place *current-track-num*))
+                                                 (define Num (<ra> :create-pitchnum Value Place *current-track-num*))
                                                  (if (= -1 Num)
                                                      #f
-                                                     (callback Num (<ra> :get-pitch-value Num *current-track-num*))))))
+                                                     (callback Num (<ra> :get-pitchnum-value Num *current-track-num*))))))
                         :Move-node (lambda (Num Value Place)                                     
-                                     (<ra> :set-pitch Num
+                                     (<ra> :set-pitchnum Num
                                                    (if (<ra> :ctrl-pressed)
                                                        Value
                                                        (round Value))
                                                    (or Place -1)
                                                    *current-track-num*))
                         :Publicize (lambda (Num)
-                                     (set-indicator-pitch Num *current-track-num*)
-                                     (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitch-value Num *current-track-num*)))))
+                                     (set-indicator-pitchnum Num *current-track-num*)
+                                     (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value Num *current-track-num*)))))
                         :Get-pixels-per-value-unit (lambda (_)
                                                      5.0)
                         )
@@ -1518,10 +1518,10 @@
                      (<ra> :shift-pressed)
                      *current-track-num*
                      (inside-box (<ra> :get-box track-notes *current-track-num*) $x $y)
-                     (match (list (find-node $x $y get-pitch-box (<ra> :get-num-pitches *current-track-num*)))
+                     (match (list (find-node $x $y get-pitchnum-box (<ra> :get-num-pitchnums *current-track-num*)))
                             (existing-box Num Box) :> (begin
                                                         (<ra> :undo-notes *current-track-num*)
-                                                        (<ra> :delete-pitch Num *current-track-num*)
+                                                        (<ra> :delete-pitchnum Num *current-track-num*)
                                                         #t)
                             _                      :> #f)))))
 
@@ -1533,11 +1533,11 @@
                 (and (= $button *right-button*)
                      *current-track-num*
                      (inside-box (<ra> :get-box track-notes *current-track-num*) $x $y)
-                     (match (list (find-node $x $y get-pitch-box (<ra> :get-num-pitches *current-track-num*)))
+                     (match (list (find-node $x $y get-pitchnum-box (<ra> :get-num-pitchnums *current-track-num*)))
                             (existing-box Num Box) :> (begin
                                                         (define (delete-pitch)
                                                           (<ra> :undo-notes *current-track-num*)
-                                                          (<ra> :delete-pitch Num *current-track-num*))
+                                                          (<ra> :delete-pitchnum Num *current-track-num*))
 
                                                         (popup-menu "Delete pitch" delete-pitch)
                                                         (list "Glide to next pitch"
@@ -1552,10 +1552,10 @@
  :move (lambda ($button $x $y)
          (and *current-track-num*
               (inside-box (<ra> :get-box track-notes *current-track-num*) $x $y)
-              (match (list (find-node $x $y get-pitch-box (<ra> :get-num-pitches *current-track-num*)))
+              (match (list (find-node $x $y get-pitchnum-box (<ra> :get-num-pitchnums *current-track-num*)))
                      (existing-box Num Box) :> (begin
-                                                 (set-indicator-pitch Num *current-track-num*)
-                                                 (set-current-pitch Num  *current-track-num*)
+                                                 (set-indicator-pitchnum Num *current-track-num*)
+                                                 (set-current-pitchnum Num  *current-track-num*)
                                                  #t)
                      _                      :> #f))))
 
@@ -1598,7 +1598,7 @@
 
          
 (define (get-pianonote-box $tracknum $notenum $num)
-  ;;(c-display "get-pitch-box" $num)
+  ;;(c-display "get-pitchnum-box" $num)
   (make-box2 (<ra> :get-pianonote-x1 $num $notenum $tracknum)
              (<ra> :get-pianonote-y1 $num $notenum $tracknum)
              (+ 2 (<ra> :get-pianonote-x2 $num $notenum $tracknum))
