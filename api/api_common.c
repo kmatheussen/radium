@@ -199,6 +199,74 @@ struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,int notenum
   return getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
 }
 
+struct Pitches *getPitchFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum, struct Notes **note, int pitchnum){
+  (*note) = getNoteFromNumA(windownum, window, blocknum, wblock, tracknum, wtrack, notenum);
+  if ((*note)==NULL)
+    return NULL;
+
+  if (pitchnum==0)
+    return NULL; // pitch 0 is the note itself.
+
+  int num_pitches = ListFindNumElements3(&(*note)->velocities->l);
+  if (pitchnum==num_pitches+1)
+    return NULL; // last pitch
+      
+  struct Pitches *pitch = ListFindElement3_num_r0(&(*note)->pitches->l, pitchnum-1);
+  if (pitch==NULL){
+    GFX_Message(NULL, "There is no pitch %d in note %d in track %d in block %d",pitchnum,notenum,tracknum,blocknum);
+    return NULL;
+  }
+
+  return pitch;
+  
+  (*wtrack) = getWTrackFromNumA(windownum, window, blocknum, wblock, tracknum);
+  if ((*wtrack)==NULL)
+    return NULL;
+}
+
+struct Pitches *getPitchFromNum(int windownum,int blocknum,int tracknum,int notenum,int pitchnum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note;
+  return getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, pitchnum);
+}
+
+
+struct Velocities *getVelocityFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum, struct Notes **note, int velocitynum){
+  (*note) = getNoteFromNumA(windownum, window, blocknum, wblock, tracknum, wtrack, notenum);
+  if ((*note)==NULL)
+    return NULL;
+
+  if (velocitynum==0)
+    return NULL; // velocity 0 is the note itself.
+
+  int num_velocities = ListFindNumElements3(&(*note)->velocities->l);
+  if (velocitynum==num_velocities+1)
+    return NULL; // last velocity
+      
+  struct Velocities *velocity = ListFindElement3_num_r0(&(*note)->velocities->l, velocitynum-1);
+  if (velocity==NULL){
+    GFX_Message(NULL, "There is no velocity %d in note %d in track %d in block %d",velocitynum,notenum,tracknum,blocknum);
+    return NULL;
+  }
+
+  return velocity;
+  
+  (*wtrack) = getWTrackFromNumA(windownum, window, blocknum, wblock, tracknum);
+  if ((*wtrack)==NULL)
+    return NULL;
+}
+
+struct Velocities *getVelocityFromNum(int windownum,int blocknum,int tracknum,int notenum,int velocitynum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note;
+  return getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, velocitynum);
+}
+
+
 struct Signatures *getSignatureFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int num){
   (*wblock) = getWBlockFromNumA(windownum, window, blocknum);
   if ((*wblock)==NULL)

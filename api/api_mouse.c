@@ -1003,6 +1003,105 @@ int createTemponode(float value, Place place, int blocknum, int windownum){
 }
 
 
+
+// pitches
+//////////////////////////////////////////////////
+
+float getPitchValue(int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = NULL;
+
+  struct Pitches *pitch = getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, pitchnum);
+
+  if (pitch==NULL){
+    if (note==NULL)
+      return 0;
+
+    else if (pitchnum==0)
+      return note->note;
+
+    else if (note->pitch_end==0 && note->pitches==NULL)
+      return note->note;
+
+    else
+      return note->pitch_end;
+  }
+
+  return pitch->note;
+}
+
+Place getPitchPlace(int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = NULL;
+
+  struct Pitches *pitch = getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, pitchnum);
+
+  if (pitch==NULL){
+
+    if (note==NULL)
+      return place(0,0,1);
+
+    else if (pitchnum==0)
+      return note->l.p;
+
+    else
+      return note->end;
+
+  }
+
+  return pitch->l.p;
+}
+
+int getPitchLogtype(int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = NULL;
+
+  struct Pitches *pitch = getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, pitchnum);
+
+  if (pitch==NULL){
+
+    if (note==NULL)
+      return 0;
+
+    else if (pitchnum==0)
+      return note->pitch_first_logtype;
+
+    else
+      return 0; // Last logtype. Always 0. Irrelevant.
+  }
+
+  return pitch->logtype;
+}
+
+int getNumPitches(int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return 0;
+
+  return 2+ListFindNumElements3(&note->pitches->l);
+}
+
+void deletePitch(int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
+  deletePianonote(pitchnum, notenum, tracknum, blocknum, windownum); // Think this is correct.
+}
+
+void setPitchLogtypeHolding(bool is_holding, int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
+  setPianonoteLogtypeHolding(is_holding, pitchnum, notenum, tracknum, blocknum, windownum); // Think this is correct
+}
+
+
+
+
+
 // pianoroll
 //////////////////////////////////////////////////
 
@@ -2455,29 +2554,73 @@ float getVelocityY(int num, int notenum, int tracknum, int blocknum, int windown
 
 
 float getVelocityValue(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
-  struct Node *node = get_velocitynode(velocitynum, notenum, tracknum, blocknum, windownum);
-  if (node==NULL)
-    return 0;
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = NULL;
 
-  struct Velocities *velocity = (struct Velocities*)node->element;
-  return velocity->velocity / (float)MAX_VELOCITY;
+  struct Velocities *velocity = getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, velocitynum);
+
+  if (velocity==NULL){
+
+    if (note==NULL)
+      return 0;
+
+    else if (velocitynum==0)
+      return (double)note->velocity / (double)MAX_VELOCITY;
+
+    else
+      return (double)note->velocity_end / (double)MAX_VELOCITY;
+
+  }
+
+  return (double)velocity->velocity / (double)MAX_VELOCITY;
 }
 
 Place getVelocityPlace(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
-  struct Node *node = get_velocitynode(velocitynum, notenum, tracknum, blocknum, windownum);
-  if (node==NULL)
-    return place(0,0,1);
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = NULL;
 
-  struct Velocities *velocity = (struct Velocities*)node->element;
+  struct Velocities *velocity = getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, velocitynum);
+
+  if (velocity==NULL){
+
+    if (note==NULL)
+      return place(0,0,1);
+
+    else if (velocitynum==0)
+      return note->l.p;
+
+    else
+      return note->end;
+
+  }
+
   return velocity->l.p;
 }
 
 int getVelocityLogtype(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
-  struct Node *node = get_velocitynode(velocitynum, notenum, tracknum, blocknum, windownum);
-  if (node==NULL)
-    return 0;
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = NULL;
 
-  struct Velocities *velocity = (struct Velocities*)node->element;
+  struct Velocities *velocity = getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, velocitynum);
+
+  if (velocity==NULL){
+
+    if (note==NULL)
+      return 0;
+
+    else if (velocitynum==0)
+      return note->velocity_first_logtype;
+
+    else
+      return 0; // Last logtype. Always 0. Irrelevant.
+  }
+
   return velocity->logtype;
 }
 
@@ -2489,9 +2632,7 @@ int getNumVelocities(int notenum, int tracknum, int blocknum, int windownum){
   if (note==NULL)
     return 0;
 
-  const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
-
-  return nodes->num_elements;
+  return 2+ListFindNumElements3(&note->velocities->l);
 }
 
 int createVelocity(float value, Place place, int notenum, int tracknum, int blocknum, int windownum){

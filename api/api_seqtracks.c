@@ -76,7 +76,7 @@ int64_t getSequencerVisibleEndTime(void){
 }
 
 void setSequencerVisibleStartTime(int64_t value){
-  printf("                   Set: %f\n", value/48000.0);
+  //printf("                   Set: %f\n", value/48000.0);
   SEQUENCER_set_visible_start_time(value);
 }
 

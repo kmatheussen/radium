@@ -51,6 +51,12 @@ extern LANGSPEC struct WTracks *getWTrackFromNumA(
 extern LANGSPEC struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,int notenum);
 extern LANGSPEC struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum);
 
+extern LANGSPEC struct Pitches *getPitchFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum, struct Notes **note, int pitchnum);
+extern LANGSPEC struct Pitches *getPitchFromNum(int windownum,int blocknum,int tracknum,int notenum,int pitchnum);
+
+extern LANGSPEC struct Velocities *getVelocityFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum, struct Notes **note, int velocitynum);
+extern LANGSPEC struct Velocities *getVelocityFromNum(int windownum,int blocknum,int tracknum,int notenum,int velocitynum);
+
 extern LANGSPEC struct Signatures *getSignatureFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int num);
 extern LANGSPEC struct Signatures *getSignatureFromNum(int windownum,int blocknum,int num);
 
