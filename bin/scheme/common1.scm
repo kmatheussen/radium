@@ -2,7 +2,7 @@
 
 
 ;; redefine 'ow!'
-(define (ow!)
+(set! ow! (lambda ()      
   (call-with-output-string
    (lambda (p)
      (let ((ow (owlet))
@@ -60,6 +60,7 @@
 	   (if (> (length e) 0)
 	       (format p "~%~{~A~| ~}~%" e))
 	   (set! elist (cons e elist))))))))
+      )
 
 (define (assert something)
   (if (not something)

@@ -8,15 +8,9 @@
         #t ;; whether the entire output should be displayed as a comment
         ))
 
-(require stuff.scm)
-(require write.scm)
-
-(set! (hook-functions *error-hook*) 
-      (list (lambda (hook)
-              (display (ow!)))))
-
 (set! (*s7* 'history-size) 40)
 
+(define *is-initializing* #t)
 
 
 ;;(set! (*stacktrace* 'max-frames) 1000)
@@ -38,21 +32,29 @@
 
 (set! (hook-functions *rootlet-redefinition-hook*)
       (list (lambda (hook)
-              (if (eq? 'ow! (hook 'symbol))
-                  #t
-                  (let ((message (string-append "Warning: Redefining "
-                                                (symbol->string (hook 'symbol))
-                                                (if *currently-loading-file*
-                                                    (string-append " while loading " *currently-loading-file*)
-                                                    "."))))
-                    (if (and *currently-loading-file*
-                             (not *currently-reloading-file*))
-                        (if (defined? 'ra:show-message (rootlet))
-                            (ra:show-message message)
-                            (begin (display "While loading a file for the first time: ")(display message)(newline)))
-                        (if (defined? 'c-display (rootlet))
-                            (c-display message)
-                            (begin (display message)(newline)))))))))
+              (let ((message (string-append "Warning: Redefining "
+                                            (symbol->string (hook 'symbol))
+                                            (if *currently-loading-file*
+                                                (string-append " while loading " *currently-loading-file*)
+                                                "."))))
+                (cond (*is-initializing*
+                       (display "Error during initializationg: ")
+                       (display message)
+                       (newline)
+                       (catch #t
+                              (lambda ()
+                                (ra:show-message message))
+                              (lambda args
+                                #t))
+                       (exit))
+                      ((and *currently-loading-file*
+                            (not *currently-reloading-file*))
+                       (ra:show-message message))
+                      ((defined? 'c-display (rootlet))
+                       (c-display message))
+                      (else
+                       (display message)
+                       (newline)))))))
 
 
 ;; Redefine load so that we can show a warning window if redefining a symbol when loading a file for the first time
@@ -81,13 +83,23 @@
 
 
 
+(require stuff.scm)
+(require write.scm)
+
+
+(set! (hook-functions *error-hook*) 
+      (list (lambda (hook)
+              (display (ow!)))))
+
+
+
 (load "common1.scm")
 
 (define (my-require what)
   (if (provided? what)
       (c-display what "already provided")
       (load (get-full-path-of-scm-file (symbol->string what)))))
-                      
+
 (my-require 'define-match.scm)
 
 (my-require 'common2.scm)
@@ -106,5 +118,7 @@
 
 (my-require 'gui.scm)
 
+
+(set! *is-initializing* #f)
 
 ;;(gc #f)
