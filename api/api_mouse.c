@@ -1361,7 +1361,7 @@ static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes
 static int getPitchnumLogtype_internal(int pitchnum, struct Tracks *track);
 static void setPitchnumLogtype(bool is_holding, int pitchnum, struct Tracks *track);
   
-bool isPianonoteLogtypeHolding(int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
+int getPianonoteLogtype(int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -1372,7 +1372,7 @@ bool isPianonoteLogtypeHolding(int pianonotenum, int notenum, int tracknum, int 
   struct Tracks *track = wtrack->track;
 
   int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum);
-  return getPitchnumLogtype_internal(pitchnum, track) == LOGTYPE_HOLD;
+  return getPitchnumLogtype_internal(pitchnum, track);
 }
 
 void setPianonoteLogtypeHolding(bool is_holding, int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){

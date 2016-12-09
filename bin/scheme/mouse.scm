@@ -1663,9 +1663,9 @@
   (define num-pianonotes (<ra> :get-num-pianonotes (info :notenum) (info :tracknum)))
   (define pianonotenum (info :pianonotenum))
 
-  (define logtype-holding (<ra> :is-pianonote-logtype-holding (info :pianonotenum)
-                                                           (info :notenum)
-                                                           (info :tracknum)))
+  (define logtype-holding (= *logtype-hold* (<ra> :get-pianonote-logtype (info :pianonotenum)
+                                                                         (info :notenum)
+                                                                         (info :tracknum))))
 
 
   (define portamento-enabled (<ra> :portamento-enabled (info :notenum)
@@ -1965,10 +1965,10 @@
                              (let ((portamento-enabled (<ra> :portamento-enabled
                                                              (pianonote-info :notenum)
                                                              (pianonote-info :tracknum)))
-                                   (is-holding (<ra> :is-pianonote-logtype-holding
-                                                     (pianonote-info :pianonotenum)
-                                                     (pianonote-info :notenum)
-                                                     (pianonote-info :tracknum))))
+                                   (is-holding (= *logtype-hold* (<ra> :get-pianonote-logtype
+                                                                       (pianonote-info :pianonotenum)
+                                                                       (pianonote-info :notenum)
+                                                                       (pianonote-info :tracknum)))))
                                
                                (popup-menu "Cut Note at mouse position" cut-note
                                            "Glide to next note at mouse position" :enabled (can-glide-from-here-to-next-note?) glide-from-here-to-next-note
