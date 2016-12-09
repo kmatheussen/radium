@@ -3938,8 +3938,9 @@
                                 (define end-time (<ra> :get-sequencer-visible-end-time))
                                 (<ra> :set-sequencer-visible-start-time (max 0 (min (1- end-time) new-start-time))))
                         :Publicize (lambda (_)
-                                     (<ra> :set-statusbar-text (<-> (/ (<ra> :get-sequencer-visible-start-time) (<ra> :get-sample-rate)))))
-
+                                     (<ra> :set-statusbar-text (<-> (two-decimal-string (/ (<ra> :get-sequencer-visible-start-time) (<ra> :get-sample-rate)))
+                                                                    " -> "
+                                                                    (two-decimal-string (/ (<ra> :get-sequencer-visible-end-time) (<ra> :get-sample-rate))))))
                         :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
                         )
 
@@ -3976,8 +3977,9 @@
                                 ;;(c-display "new-end-time:" (/ new-end-time 48000.0) Value)
                                 (<ra> :set-sequencer-visible-end-time (min song-length (max (1+ start-time) new-end-time))))
                         :Publicize (lambda (_)
-                                     (<ra> :set-statusbar-text (<-> (/ (<ra> :get-sequencer-visible-end-time) (<ra> :get-sample-rate)))))
-
+                                     (<ra> :set-statusbar-text (<-> (two-decimal-string (/ (<ra> :get-sequencer-visible-start-time) (<ra> :get-sample-rate)))
+                                                                    " -> "
+                                                                    (two-decimal-string (/ (<ra> :get-sequencer-visible-end-time) (<ra> :get-sample-rate))))))
                         :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
                         )
 
@@ -4036,7 +4038,7 @@
                                 (define new-start-time (floor (scale Value
                                                                      (<ra> :get-seqnav-x1) (<ra> :get-seqnav-x2);; (<ra> :get-seqnav-right-size-handle-x1)
                                                                      0 song-length)))
-                                (c-display "       Move" Value (/ new-start-time 48000.0) "x1:" (<ra> :get-seqnav-x1) "x2:" (<ra> :get-seqnav-x2) "end:" (/ (<ra> :get-sequencer-visible-end-time) 48000.0))
+                                ;;(c-display "       Move" Value (/ new-start-time 48000.0) "x1:" (<ra> :get-seqnav-x1) "x2:" (<ra> :get-seqnav-x2) "end:" (/ (<ra> :get-sequencer-visible-end-time) 48000.0))
                                 (define end-time (<ra> :get-sequencer-visible-end-time))
                                 (define new-start-time2 (max 0 (min (1- end-time) new-start-time)))
                                 
@@ -4048,7 +4050,9 @@
                                 (<ra> :set-sequencer-visible-end-time new-end-time2))
                                 
                         :Publicize (lambda (_)
-                                     (<ra> :set-statusbar-text (<-> (/ (<ra> :get-sequencer-visible-end-time) (<ra> :get-sample-rate)))))
+                                     (<ra> :set-statusbar-text (<-> (two-decimal-string (/ (<ra> :get-sequencer-visible-start-time) (<ra> :get-sample-rate)))
+                                                                    " -> "
+                                                                    (two-decimal-string (/ (<ra> :get-sequencer-visible-end-time) (<ra> :get-sample-rate))))))
                         
                         :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
                         )
