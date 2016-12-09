@@ -243,6 +243,7 @@ static ReplacementColor g_replacement_color[] = {
 
   {RANGE_COLOR_NUM, QColor("#3e4e4790")},
 
+  {TRACK_SEPARATOR1_COLOR_NUM, QColor("#ff0b186c")},
   {TRACK_SEPARATOR2A_COLOR_NUM, QColor("#ff303030")},
 
   {BUTTONS_TEXT_COLOR_NUM, QColor(1,1,1)},
