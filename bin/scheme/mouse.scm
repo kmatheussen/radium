@@ -3909,7 +3909,7 @@
 ;; left size handle in navigator
 (add-horizontal-handler :Get-handler-data (lambda (X Y)
                                             (define box (<ra> :get-box seqnav-left-size-handle))
-                                            (c-display "box" box)
+                                            ;;(c-display "box" box)
                                             (and (inside-box box X Y)
                                                  (<ra> :get-seqnav-left-size-handle-x1)))
                         :Get-x1 (lambda (_)

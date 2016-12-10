@@ -1853,7 +1853,7 @@ The behavior for these three tests are not needed since break events are always 
 ;; TODO: Make process events instead of pattern.
 (define (remove-pattern-delay-effects pattern-events)
   (let ((pattern-delay-event (find-first pattern-events (lambda (event)
-                                                   (eq? (event :type) :pattern-delay)))))
+                                                          (eq? (event :type) :pattern-delay)))))
     (if (not pattern-delay-event)
         pattern-events
         (remove-pattern-delay-effects (apply-pattern-delay pattern-events

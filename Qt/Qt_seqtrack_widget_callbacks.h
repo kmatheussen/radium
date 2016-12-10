@@ -587,16 +587,20 @@ public:
         if (unequal_undos) {
           _last_num_undos = num_undos;
 
-          double sample_rate = MIXER_get_sample_rate();
-          double start_time = _start_time / sample_rate;
-          double end_time = _end_time / sample_rate;
-
-          // Not sure if this makes a difference (rather than just calling update()).
-          VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &_seqtrack->seqblocks){
-            float x1 = get_seqblock_x1(seqblock, start_time, end_time);
-            float x2 = get_seqblock_x2(seqblock, start_time, end_time);
-            _sequencer_widget->update(x1-1, t_y1, x2-x1+1, height);
-          }END_VECTOR_FOR_EACH;
+          if(false){
+            _sequencer_widget->update();
+          }else{
+            double sample_rate = MIXER_get_sample_rate();
+            double start_time = _start_time / sample_rate;
+            double end_time = _end_time / sample_rate;
+            
+            // Not sure if this makes a difference (rather than just calling update()).
+            VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &_seqtrack->seqblocks){
+              float x1 = get_seqblock_x1(seqblock, start_time, end_time);
+              float x2 = get_seqblock_x2(seqblock, start_time, end_time);
+              _sequencer_widget->update(x1-1, t_y1, x2-x1+1, height);
+            }END_VECTOR_FOR_EACH;
+          }
           
         } else {
           _sequencer_widget->update();

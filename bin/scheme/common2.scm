@@ -217,7 +217,7 @@
 ||#
 
 
-(define (copy-struct-helper original struct-name keys arguments)
+(define (copy-struct-helper original struct-name keys arguments mapper)
 
   ;; check that new data is valid
   (let loop ((arguments arguments))
@@ -228,8 +228,8 @@
               (throw (<-displayable-> "key '" key (<-> "' not found in struct '" struct-name "'") ". keys: " (map symbol->keyword keys))))
           (loop (cddr arguments)))))
 
-  (define old-table (original :dir))
-  (define new-table (make-hash-table 32 eq?))
+  (define old-table original)
+  (define new-table (make-hash-table 32 mapper))
 
   ;; copy old
   (for-each (lambda (key)
@@ -258,50 +258,55 @@
                                 define-args))
   (define table (gensym "table"))
   (define key (gensym "key"))
+  (define keysym (gensym "keysym"))
   (define ret (gensym "ret"))
   (define keysvar (gensym "keys"))
+  (define keysvar2 (gensym "keys2"))
   (define original (gensym "original"))
   (define arguments (gensym "arguments"))
+  (define loop (gensym "loop"))
+  (define n (gensym "n"))
   
   `(begin
-     (define (,(<_> 'make- name '-internal) ,table)
-       (let ((,keysvar (quote ,keys)))
-         (lambda (,key)
-           (cond ((eq? ,key :dir)
-                  ,table)
-                 (else
-                  (let ((,ret (,table ,key)))
-                    (if (and (not ,ret)
-                             (not (memq (keyword->symbol ,key) ,keysvar)))
-                        (throw (<-displayable-> "key '" ,key ,(<-> "' not found in struct '" name "'") ". keys: " (map symbol->keyword ,keysvar)))
-                        ,ret)))))))
-
-     (define (,(<_> 'old-copy- name) ,original new-key new-value)
-       (if (not (memq (keyword->symbol new-key) (quote ,keys)))
-           (throw (<-displayable-> "key '" new-key ,(<-> "' not found in struct '" name "'") ". keys: " (map symbol->keyword (quote ,keys)))))
-       ;;(c-display "copy-" new-key new-value)
-       (define ,table (make-hash-table 32 eq?))
-       ,@(map (lambda (key)                
-                `(hash-table-set! ,table ,(symbol->keyword key) (,original ,(symbol->keyword key))))
-              keys)
-       (hash-table-set! ,table new-key new-value)
-       (,(<_> 'make- name '-internal) ,table))
+     (define (,(<_> name '-struct-mapper) ,key)
+       (let ((,keysvar (quote ,keys))
+             (,keysym (keyword->symbol ,key)))
+         (let ,loop ((,keysvar2 (quote ,keys))
+                     (,n 0))
+              (cond ((null? ,keysvar2)
+                     (throw (<-displayable-> "key " ,keysym ,(<-> " not found in struct '" name "'") ". keys: " ,keysvar)))
+                    ((eq? (car ,keysvar2) ,keysym)
+                     ,n)
+                    (else
+                     (,loop (cdr ,keysvar2)
+                            (1+ ,n)))))))
+       
+     ;;(define (,(<_> 'old-copy- name) ,original new-key new-value)
+     ;;  (if (not (memq (keyword->symbol new-key) (quote ,keys)))
+     ;;      (throw (<-displayable-> "key '" new-key ,(<-> "' not found in struct '" name "'") ". keys: " (map symbol->keyword (quote ,keys)))))
+     ;;  ;;(c-display "copy-" new-key new-value)
+     ;;  (define ,table (make-hash-table 32 eq?))
+     ;;  ,@(map (lambda (key)                
+     ;;           `(hash-table-set! ,table ,(symbol->keyword key) (,original ,(symbol->keyword key))))
+     ;;         keys)
+     ;;  (hash-table-set! ,table new-key new-value)
+     ;;  (,(<_> 'make- name '-internal) ,table))
 
      (define (,(<_> 'copy- name) ,original . ,arguments)
-       (let ((,table (copy-struct-helper ,original (quote ,name) (quote ,keys) ,arguments)))
-         (,(<_> 'make- name '-internal) ,table)))
+       (copy-struct-helper ,original (quote ,name) (quote ,keys) ,arguments (cons eq? ,(<_> name '-struct-mapper))))
                      
      (define* (,(<_> 'make- name) ,@(keyvalues-to-define-args args))
        ,@(map (lambda (must-be-defined)
                 `(if (eq? ,(car must-be-defined) 'must-be-defined)
                      (throw ,(<-> "key '" (car must-be-defined) "' not defined when making struct '" name "'"))))
               must-be-defined)
-       (let* ((,table (make-hash-table 32 eq?))
+       (let* ((,table (make-hash-table 32 (cons eq? ,(<_> name '-struct-mapper))))
               (,keysvar (quote ,keys)))
          ,@(map (lambda (key)
                   `(hash-table-set! ,table ,(symbol->keyword key) ,key))
                 keys)
-         (,(<_> 'make- name '-internal) ,table)))))
+         ,table))))
+
 #||
 (define-struct test
   :b 59
@@ -349,10 +354,12 @@
 
 ||#
 
-;; doesn't "(morally-equal? hash-table1 hash-tabl2)" work?
+;; doesn't "(morally-equal? hash-table1 hash-tabl2)" work? (not always, morally-equal? doesn't call my-equal?).
 (define (structs-equal? a b)
-  (define alist-a (hash-table->alist (a :dir)))
-  (define alist-b (hash-table->alist (b :dir)))
+  (morally-equal? a b))
+#||
+  (define alist-a a)
+  (define alist-b b)
   (define keys-a (map car alist-a))
   
   (and (= (length keys-a)
@@ -363,6 +370,7 @@
              (and (my-equal? (a (car keys-a))
                              (b (car keys-a)))
                   (loop (cdr keys-a)))))))
+||#
 
 
 
@@ -637,6 +645,8 @@ for .emacs:
 
                               
 (define (my-equal? a b)
+  (morally-equal? a b))
+#||
   ;;(c-display "my-equal?" a b)
   (cond ((and (pair? a)
               (pair? b))
@@ -653,7 +663,8 @@ for .emacs:
          (structs-equal? a b))
         (else
          (morally-equal? a b))))
-           
+||#
+
 
 (define (***assert*** a b)
   (define (test -__Arg1 -__Arg2)

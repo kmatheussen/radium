@@ -75,6 +75,14 @@
   (newline))
 ||#
 
+#||
+(define (hash-table-to-string table)
+  (<-> "hash:(map values (hash-table* 'b 2 'c 3))
+  (values table))
+
+(hash-table-to-string (hash-table* 'b 2 'c 3))
+||#
+
 (define (to-displayable-string a)
   ;;(display "____ a: ")(display a)(newline)
   (cond ((keyword? a)
@@ -95,6 +103,8 @@
          (<-> "(" (to-displayable-string (car a)) " . " (to-displayable-string (cdr a)) ")"))
         ((vector? a)
          (<-> "[" (apply <-> (map (lambda (b) (<-> (to-displayable-string b) " ")) (vector->list a))) "]"))
+        ;;((hash-table? a)
+        ;; (<-> 
         ((procedure? a)
          (if #f
              "something"
@@ -106,12 +116,20 @@
                              (lambda ()
                                (cloned-instrument-to-string a))
                              (lambda args
-                               (with-output-to-string
-                                 (lambda ()
-                                   (display a)))))))))
-        
-         ;;(<-> "function [ " (to-displayable-string (procedure-source a)) " ]"))))))
-         (else
+                               (catch #t
+                                      (lambda ()
+                                        (to-displayable-string (a :dir)))
+                                      (lambda args
+                                        (with-output-to-string
+                                          (lambda ()
+                                            (display a)))))))))))
+        ((hash-table? a)
+         (with-output-to-string
+           (lambda ()
+             (display a))))
+        ;;(<-> "{ " (to-displayable-string (map values a)) " }"))
+        ;;(<-> "function [ " (to-displayable-string (procedure-source a)) " ]"))))))
+        (else
          "#unknown type")))
 
 

@@ -75,8 +75,7 @@
                                     (org-load filename env)
                                     (org-load filename)))
                               (lambda args
-                                (display (ow!))
-                                (throw (car args))))))
+                                (display (ow!))))))
               (set! *currently-reloading-file* old-reloading)
               (set! *currently-loading-file* old-loading-filename)
               ret)))))
