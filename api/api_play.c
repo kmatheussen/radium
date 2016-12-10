@@ -108,12 +108,12 @@ float lineDuration(int line, int tracknum, int blocknum, int windownum){
   struct Blocks *block = wblock->block;
   
   if (line < 0){
-    RError("lineDuration: Line must be 0 or larger: %d",line);
+    handleError("lineDuration: Line must be 0 or larger: %d",line);
     return 1.0;
   }
 
   if (line >= block->num_lines){
-    RError("lineDuration: Line must be less than the number of lines: %d >= %d or larger: %d",line, block->num_lines);
+    handleError("lineDuration: Line must be less than the number of lines: %d >= %d or larger: %d",line, block->num_lines);
     return 1.0;
   }
   

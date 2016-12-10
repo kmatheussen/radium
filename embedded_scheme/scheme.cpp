@@ -47,6 +47,20 @@ extern "C" {
   void init_radium_s7(s7_scheme *s7);
 }
 
+namespace{
+  static int g_evals = 0;
+  
+  struct ScopedEvalTracker{
+    ScopedEvalTracker(){
+      g_evals++;
+    }
+    ~ScopedEvalTracker(){
+      g_evals--;
+    }
+  };
+  
+}
+
 static s7_scheme *s7;
 static s7webserver_t *s7webserver;
 
@@ -152,11 +166,14 @@ s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn){
   return s7_make_boolean(radiums7_sc, false);
 }
 
+
 func_t *s7extra_func(s7_scheme *s7, s7_pointer func){
   return (func_t*)func;
 }
 
 void s7extra_callFunc_void_void(func_t *func){
+  ScopedEvalTracker eval_tracker;
+  
   s7_call(s7,
           (s7_pointer)func,
           s7_list(s7, 0)
@@ -168,6 +185,8 @@ void s7extra_callFunc2_void_void(const char *funcname){
 }
 
 void s7extra_callFunc_void_int_bool(func_t *func, int64_t arg1, bool arg2){
+  ScopedEvalTracker eval_tracker;
+    
   s7_call(s7,
           (s7_pointer)func,
           s7_list(s7,
@@ -183,6 +202,8 @@ void s7extra_callFunc2_void_int_bool(const char *funcname, int64_t arg1, bool ar
 }
 
 void s7extra_callFunc_void_int(func_t *func, int64_t arg1){
+  ScopedEvalTracker eval_tracker;
+  
   s7_call(s7,
           (s7_pointer)func,
           s7_list(s7, 1, s7_make_integer(s7, arg1))
@@ -194,6 +215,8 @@ void s7extra_callFunc2_void_int(const char *funcname, int64_t arg1){
 }
 
 void s7extra_callFunc_void_double(func_t *func, double arg1){
+  ScopedEvalTracker eval_tracker;
+  
   s7_call(s7,
           (s7_pointer)func,
           s7_list(s7, 1, s7_make_real(s7, arg1))
@@ -205,6 +228,8 @@ void s7extra_callFunc2_void_double(const char *funcname, double arg1){
 }
 
 void s7extra_callFunc_void_bool(func_t *func, bool arg1){
+  ScopedEvalTracker eval_tracker;
+  
   s7_call(s7,
           (s7_pointer)func,
           s7_list(s7, 1, s7_make_boolean(s7, arg1))
@@ -216,6 +241,8 @@ void s7extra_callFunc2_void_bool(const char *funcname, bool arg1){
 }
 
 void s7extra_callFunc_void_int_charpointer(func_t *func, int64_t arg1, const char* arg2){
+  ScopedEvalTracker eval_tracker;
+  
   s7_call(s7,
           (s7_pointer)func,
           s7_list(s7,
@@ -231,6 +258,8 @@ void s7extra_callFunc2_void_int_charpointer(const char *funcname, int64_t arg1, 
 }
 
 void s7extra_callFunc_void_charpointer(func_t *func, const char* arg1){
+  ScopedEvalTracker eval_tracker;
+  
   s7_call(s7,
           (s7_pointer)func,
           s7_list(s7,
@@ -259,6 +288,8 @@ Place placetest2(int a, int b, int c){
 
 
 Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2) {
+  ScopedEvalTracker eval_tracker;
+  
   static s7_pointer scheme_func = s7_name_to_value(s7, "scale");
   
   s7_pointer result = s7_call(s7,
@@ -290,6 +321,8 @@ Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place 
 
 
 bool quantitize_note(const struct Blocks *block, struct Notes *note) {
+  ScopedEvalTracker eval_tracker;
+  
   s7_pointer scheme_func = s7_name_to_value(s7, "quantitize-note");
   
   Place last_place = p_Last_Pos(block);
@@ -328,6 +361,8 @@ bool quantitize_note(const struct Blocks *block, struct Notes *note) {
 
 
 static void place_operation_void_p1_p2(s7_pointer scheme_func, Place *p1,  const Place *p2){
+  ScopedEvalTracker eval_tracker;
+  
   R_ASSERT(p1->dividor > 0);
   R_ASSERT(p2->dividor > 0);
   
@@ -375,6 +410,8 @@ void PlaceDiv(Place *p1,  const Place *p2){
 
 
 static Place place_operation_place_p1_p2(s7_pointer scheme_func, const Place p1,  const Place p2){
+  ScopedEvalTracker eval_tracker;
+  
   s7_pointer result = s7_call(s7,
                               scheme_func,
                               s7_list(s7,
@@ -414,7 +451,22 @@ Place p_Quantitize(const Place p, const Place q){
   return place_operation_place_p1_p2(scheme_func, p, q);
 }
 
+void SCHEME_throw(const char *symbol, const char *message){
+  //printf("SCHEME_THROW %d\n", g_evals);
+  //if(g_evals>0){
+    s7_error(s7,
+             s7_make_symbol(s7, symbol),
+             s7_list(s7,
+                     1,
+                     s7_make_string(s7, message))
+             );
+    //}
+}
+
+
 const char *SCHEME_get_backtrace(void){
+  ScopedEvalTracker eval_tracker;
+  
   SCHEME_eval("(throw \'get-backtrace)"); // Fill in error-lines and so forth into s7.
   
   const char *ret = s7_string(
@@ -430,6 +482,8 @@ const char *SCHEME_get_backtrace(void){
 
 
 bool SCHEME_mousepress(int button, float x, float y){
+  ScopedEvalTracker eval_tracker;
+  
   tevent.x  = x;
   tevent.y  = y;
 
@@ -448,6 +502,8 @@ bool SCHEME_mousepress(int button, float x, float y){
 }
 
 bool SCHEME_mousemove(int button, float x, float y){
+  ScopedEvalTracker eval_tracker;
+  
   tevent.x  = x;
   tevent.y  = y;
 
@@ -466,6 +522,8 @@ bool SCHEME_mousemove(int button, float x, float y){
 }
 
 bool SCHEME_mouserelease(int button, float x, float y){
+  ScopedEvalTracker eval_tracker;
+  
   tevent.x  = x;
   tevent.y  = y;
 
@@ -484,6 +542,8 @@ bool SCHEME_mouserelease(int button, float x, float y){
 }
 
 void SCHEME_eval(const char *code){
+  ScopedEvalTracker eval_tracker;
+  
   s7_eval_c_string(s7, code);
 }
 
@@ -492,7 +552,8 @@ int SCHEME_get_webserver_port(void){
 }
 
 void SCHEME_start(void){
-
+  ScopedEvalTracker eval_tracker;
+  
   s7 = s7_init();
   if (s7==NULL) {
     RError("Can't start s7 scheme");

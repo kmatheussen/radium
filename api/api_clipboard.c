@@ -260,7 +260,7 @@ void saveBlock(const char *filename, int blocknum, int windownum){
   SaveBlock(wblock->block);
 
   if( ! dc.success){
-    GFX_Message(NULL, "Problems writing to file.\n");
+    handleError("Problems writing to file.\n");
   }
   
   DISK_close_and_delete(dc.file);
@@ -285,7 +285,7 @@ void loadBlock(const char *filename_c){
   }
         
   if(strcmp(dc.ls,"WBLOCK")){
-    GFX_Message(NULL, "Loading failed.\nExpected \"WBLOCK\", but found instead: '%s'.\nFile: '%s'\n",dc.ls,STRING_get_chars(filename));
+    handleError("Loading failed.\nExpected \"WBLOCK\", but found instead: '%s'.\nFile: '%s'\n",dc.ls,STRING_get_chars(filename));
     DISK_close_and_delete(dc.file);
     goto exit;
     return;
@@ -296,7 +296,7 @@ void loadBlock(const char *filename_c){
 
   DC_Next();
   if(strcmp(dc.ls,"BLOCK")){
-    GFX_Message(NULL, "Loading failed.\nExpected \"BLOCK\", but found instead: '%s'.\nFile: '%s'\n",dc.ls,STRING_get_chars(filename));
+    handleError("Loading failed.\nExpected \"BLOCK\", but found instead: '%s'.\nFile: '%s'\n",dc.ls,STRING_get_chars(filename));
     DISK_close_and_delete(dc.file);
     goto exit;
   }
@@ -307,7 +307,7 @@ void loadBlock(const char *filename_c){
   DISK_close_and_delete(dc.file);
 
   if(!dc.success){
-    GFX_Message(NULL, "Loading failed.\n");
+    handleError("Loading failed.\n");
     goto exit;
   }
   

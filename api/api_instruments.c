@@ -251,7 +251,7 @@ int64_t createAudioInstrumentFromDescription(const char *instrument_description,
     int sep_pos = 1;
     while(descr[sep_pos]!=':'){
       if(descr[sep_pos]==0){
-        GFX_Message(NULL, "Illegal instrument_description: %s (missing colon separator)",instrument_description);
+        handleError("Illegal instrument_description: %s (missing colon separator)",instrument_description);
         return -1;
       }
       sep_pos++;
@@ -274,7 +274,7 @@ int64_t createAudioInstrumentFromDescription(const char *instrument_description,
         
   } else {
 
-    GFX_Message(NULL, "Illegal instrument_description: %s (string doesn't start with '1', '2' or '3')",instrument_description);
+    handleError("Illegal instrument_description: %s (string doesn't start with '1', '2' or '3')",instrument_description);
     return -1;
 
   }
@@ -350,7 +350,7 @@ void setInstrumentSample(int64_t instrument_id, char *filename){
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
 
   if (strcmp(plugin->type->name, "Sample Player")) {
-    GFX_Message(NULL, "instrument %d is not a Sample Player", instrument_id);
+    handleError("instrument %d is not a Sample Player", instrument_id);
     return;
   }
 
@@ -366,7 +366,7 @@ void setInstrumentLoopData(int64_t instrument_id, int start, int length){
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
 
   if (strcmp(plugin->type->name, "Sample Player")) {
-    GFX_Message(NULL, "instrument %d is not a Sample Player", instrument_id);
+    handleError("instrument %d is not a Sample Player", instrument_id);
     return;
   }
 
@@ -434,7 +434,7 @@ void setInstrumentEffect(int64_t instrument_id, char *effect_name, float value){
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   /*
   if (strcmp(plugin->type->name, "Sample Player")) {
-    GFX_Message(NULL, "instrument %d is not a Sample Player plugin", instrument_id);
+    handleError("instrument %d is not a Sample Player plugin", instrument_id);
     return;
   }
   */
@@ -744,7 +744,7 @@ void changeNotePitch(float pitch, int note_id, int midi_channel, int64_t instrum
     return;
 
   if (note_id < 0 || note_id >= NUM_IDS) {
-    GFX_Message(NULL, "note_id %d not found", note_id);
+    handleError("note_id %d not found", note_id);
     return;
   }
 
@@ -765,7 +765,7 @@ void stopNote(int note_id, int midi_channel, int64_t instrument_id){
     return;
 
   if (note_id < 0 || note_id >= NUM_IDS) {
-    GFX_Message(NULL, "note_id %d not found", note_id);
+    handleError("note_id %d not found", note_id);
     return;
   }
 

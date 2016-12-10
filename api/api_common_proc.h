@@ -14,33 +14,37 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern void callMeBeforeReturningToS7(void);
+extern void handleError(const char *fmt,...);
+
+extern struct Tracker_Windows *getWindowFromNum(int windownum);
 
 
-
-extern LANGSPEC struct Tracker_Windows *getWindowFromNum(int windownum);
-
-
-extern LANGSPEC struct WBlocks *getWBlockFromNum(int windownum,int wblocknum);
+extern struct WBlocks *getWBlockFromNum(int windownum,int wblocknum);
 
 
-extern LANGSPEC struct WBlocks *getWBlockFromNumA(
+extern struct WBlocks *getWBlockFromNumA(
 	int windownum,
 	struct Tracker_Windows **window,
 	int blocknum
 );
 
-extern LANGSPEC struct Blocks *getBlockFromNum(int blocknum);
+extern struct Blocks *getBlockFromNum(int blocknum);
 
-extern LANGSPEC struct Tracks *getTrackFromNum(int blocknum,int tracknum);
+extern struct Tracks *getTrackFromNum(int blocknum,int tracknum);
 
-extern LANGSPEC struct WTracks *getWTrackFromNum(
+extern struct WTracks *getWTrackFromNum(
 	int windownum,
 	int blocknum,
 	int wtracknum
 );
 
 
-extern LANGSPEC struct WTracks *getWTrackFromNumA(
+extern struct WTracks *getWTrackFromNumA(
 	int windownum,
 	struct Tracker_Windows **window,
 	int wblocknum,
@@ -48,31 +52,35 @@ extern LANGSPEC struct WTracks *getWTrackFromNumA(
 	int wtracknum
 );
 
-extern LANGSPEC struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,int notenum);
-extern LANGSPEC struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum);
+extern struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,int notenum);
+extern struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum);
 
-extern LANGSPEC struct Pitches *getPitchFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum, struct Notes **note, int pitchnum);
-extern LANGSPEC struct Pitches *getPitchFromNum(int windownum,int blocknum,int tracknum,int notenum,int pitchnum);
+extern struct Pitches *getPitchFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum, struct Notes **note, int pitchnum);
+extern struct Pitches *getPitchFromNum(int windownum,int blocknum,int tracknum,int notenum,int pitchnum);
 
-extern LANGSPEC struct Velocities *getVelocityFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum, struct Notes **note, int velocitynum);
-extern LANGSPEC struct Velocities *getVelocityFromNum(int windownum,int blocknum,int tracknum,int notenum,int velocitynum);
+extern struct Velocities *getVelocityFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum, struct Notes **note, int velocitynum);
+extern struct Velocities *getVelocityFromNum(int windownum,int blocknum,int tracknum,int notenum,int velocitynum);
 
-extern LANGSPEC struct Signatures *getSignatureFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int num);
-extern LANGSPEC struct Signatures *getSignatureFromNum(int windownum,int blocknum,int num);
+extern struct Signatures *getSignatureFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int num);
+extern struct Signatures *getSignatureFromNum(int windownum,int blocknum,int num);
 
-extern LANGSPEC struct LPBs *getLPBFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int num);
-extern LANGSPEC struct LPBs *getLPBFromNum(int windownum,int blocknum,int num);
+extern struct LPBs *getLPBFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int num);
+extern struct LPBs *getLPBFromNum(int windownum,int blocknum,int num);
 
-extern LANGSPEC struct BPMs *getBPMFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int bpmnum);
-extern LANGSPEC struct BPMs *getBPMFromNum(int windownum,int blocknum,int bpmnum);
+extern struct BPMs *getBPMFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int bpmnum);
+extern struct BPMs *getBPMFromNum(int windownum,int blocknum,int bpmnum);
 
-extern LANGSPEC struct FXs *getFXsFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int fxnum);
-extern LANGSPEC struct FXs *getFXsFromNum(int windownum,int blocknum,int tracknum,int fxnum);
+extern struct FXs *getFXsFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int fxnum);
+extern struct FXs *getFXsFromNum(int windownum,int blocknum,int tracknum,int fxnum);
 
-extern LANGSPEC struct Patch *getPatchFromNum(int64_t instrument_id);
-extern LANGSPEC struct Patch *getAudioPatchFromNum(int64_t instrument_id);
+extern struct Patch *getPatchFromNum(int64_t instrument_id);
+extern struct Patch *getAudioPatchFromNum(int64_t instrument_id);
 
-extern LANGSPEC struct SeqTrack *getSeqtrackFromNum(int seqtracknum);
-extern LANGSPEC struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum);
-extern LANGSPEC struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack);
-extern LANGSPEC struct SeqBlock *getGfxGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack);
+extern struct SeqTrack *getSeqtrackFromNum(int seqtracknum);
+extern struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum);
+extern struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack);
+extern struct SeqBlock *getGfxGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack);
+
+#ifdef __cplusplus
+}
+#endif

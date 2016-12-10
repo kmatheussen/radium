@@ -51,7 +51,7 @@ void expandRange(int blocknum, int windownum){
     return;
 
   if (wblock->isranged==false){
-    GFX_Message(NULL, "No range in block. Select range by pressing Left Meta + b");
+    handleError("No range in block. Select range by pressing Left Meta + b");
     return;
   }
 

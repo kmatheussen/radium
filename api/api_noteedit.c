@@ -343,12 +343,12 @@ int addSignature(int numerator, int denominator,
   struct Tracker_Windows *window;
   struct WBlocks *wblock=getWBlockFromNumA(-1,&window,blocknum);
   if(wblock==NULL) {
-    GFX_Message(NULL, "unknown block(%p)",blocknum);
+    handleError("unknown block(%p)",blocknum);
     return -1;
   }
 
   if (!PlaceLegal(wblock->block, &place)) {
-    GFX_Message(NULL, "Place %s is not legal", PlaceToString(&place));
+    handleError("Place %s is not legal", PlaceToString(&place));
     return -1;
   }
 
@@ -424,7 +424,7 @@ int addLPB(int lpb_value,
     return -1;
 
   if (!PlaceLegal(wblock->block, &place)) {
-    GFX_Message(NULL, "Place %s is not legal", PlaceToString(&place));
+    handleError("Place %s is not legal", PlaceToString(&place));
     return -1;
   }
 
@@ -499,7 +499,7 @@ int addBPM(int bpm,
     return -1;
 
   if (!PlaceLegal(wblock->block, &place)) {
-    GFX_Message(NULL, "Place %s is not legal", PlaceToString(&place));
+    handleError("Place %s is not legal", PlaceToString(&place));
     return -1;
   }
 
@@ -590,7 +590,7 @@ void setNoteEndPlace(int line,int counter,int dividor,int windownum,int blocknum
   Place *place = PlaceCreate(line,counter,dividor);
 
   if (!PlaceLegal(wblock->block, place)) {
-    GFX_Message(NULL, "Place %d + %d/%d is not legal", line, counter, dividor);
+    handleError("Place %d + %d/%d is not legal", line, counter, dividor);
     return;
   }
 
@@ -635,7 +635,7 @@ int addNote2(float notenum,int velocity,
   struct WBlocks *wblock=getWBlockFromNumA(-1,&window,blocknum);
   struct WTracks *wtrack=getWTrackFromNum(windownum,blocknum,tracknum);
   if(wblock==NULL || wtrack==NULL) {
-    GFX_Message(NULL, "unknown wblock(%p) or wtrack(%p) %d/%d/%d\n",wblock,wtrack,windownum,blocknum,tracknum);
+    handleError("unknown wblock(%p) or wtrack(%p) %d/%d/%d\n",wblock,wtrack,windownum,blocknum,tracknum);
     return -1;
   }
 
@@ -644,7 +644,7 @@ int addNote2(float notenum,int velocity,
   ValidatePlace(place);
 
   if (!PlaceLegal(wblock->block, place)) {
-    GFX_Message(NULL, "Place %d + %d/%d is not legal", line, counter, dividor);
+    handleError("Place %d + %d/%d is not legal", line, counter, dividor);
     return -1;
   }
 
@@ -653,7 +653,7 @@ int addNote2(float notenum,int velocity,
   ValidatePlace(end_place);
 
   if (end_place != NULL && !PlaceLegal(wblock->block, end_place)) {
-    GFX_Message(NULL, "Place %d + %d/%d is not legal", end_line, end_counter, end_dividor);
+    handleError("Place %d + %d/%d is not legal", end_line, end_counter, end_dividor);
     return -1;
   }
 

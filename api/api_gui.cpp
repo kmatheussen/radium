@@ -150,7 +150,7 @@ static QVector<Gui*> g_guis;
           if(val.type==BOOL_TYPE)
             button->setChecked(val.bool_number);
           else
-            GFX_Message(NULL, "Button->setValue received %s, expected BOOL_TYPE", DYN_type_name(val.type));
+            handleError("Button->setValue received %s, expected BOOL_TYPE", DYN_type_name(val.type));
           return;
         }
       }
@@ -161,7 +161,7 @@ static QVector<Gui*> g_guis;
           if(val.type==INT_TYPE)
             slider->setValue(val.bool_number);
           else
-            GFX_Message(NULL, "Slider->setValue received %s, expected INT_TYPE", DYN_type_name(val.type));
+            handleError("Slider->setValue received %s, expected INT_TYPE", DYN_type_name(val.type));
           return;
         }
       }
@@ -172,7 +172,7 @@ static QVector<Gui*> g_guis;
           if(val.type==STRING_TYPE)
             label->setText(STRING_get_qstring(val.string));
           else
-            GFX_Message(NULL, "Text->setValue received %s, expected STRING_TYPE", DYN_type_name(val.type));
+            handleError("Text->setValue received %s, expected STRING_TYPE", DYN_type_name(val.type));
           return;
         }
       }
@@ -183,7 +183,7 @@ static QVector<Gui*> g_guis;
           if(val.type==STRING_TYPE)
             line_edit->setText(STRING_get_qstring(val.string));
           else
-            GFX_Message(NULL, "Line->setValue received %s, expected STRING_TYPE", DYN_type_name(val.type));
+            handleError("Line->setValue received %s, expected STRING_TYPE", DYN_type_name(val.type));
           return;
         }
       }
@@ -194,7 +194,7 @@ static QVector<Gui*> g_guis;
           if(val.type==STRING_TYPE)
             text_edit->setPlainText(STRING_get_chars(val.string));
           else
-            GFX_Message(NULL, "Text->setValue received %s, expected STRING_TYPE", DYN_type_name(val.type));
+            handleError("Text->setValue received %s, expected STRING_TYPE", DYN_type_name(val.type));
           return;
         }
       }
@@ -205,7 +205,7 @@ static QVector<Gui*> g_guis;
           if (val.type==INT_TYPE)
             spinbox->setValue((int)val.int_number);
           else
-            GFX_Message(NULL, "IntText->setValue received %s, expected INT_TYPE", DYN_type_name(val.type));
+            handleError("IntText->setValue received %s, expected INT_TYPE", DYN_type_name(val.type));
           return;
         }
       }
@@ -216,12 +216,12 @@ static QVector<Gui*> g_guis;
           if (val.type==FLOAT_TYPE)
             doublespinbox->setValue(val.float_number);
           else
-            GFX_Message(NULL, "FloatText->setValue received %s, expected FLOAT_TYPE", DYN_type_name(val.type));
+            handleError("FloatText->setValue received %s, expected FLOAT_TYPE", DYN_type_name(val.type));
           return;
         }
       }
                   
-      GFX_Message(NULL, "Gui #%d does not have a setValue method", _gui_num);
+      handleError("Gui #%d does not have a setValue method", _gui_num);
     }
 
     virtual dyn_t getGuiValue(void){
@@ -255,7 +255,7 @@ static QVector<Gui*> g_guis;
         return DYN_create_float(doublespinbox->value());
       
                   
-      GFX_Message(NULL, "Gui #%d does not have a getValue method", _gui_num);
+      handleError("Gui #%d does not have a getValue method", _gui_num);
       return DYN_create_bool(false);
     }
 
@@ -342,7 +342,7 @@ static QVector<Gui*> g_guis;
         }
       }
             
-      GFX_Message(NULL, "Gui #%d does not have a addCallback method", _gui_num);
+      handleError("Gui #%d does not have a addCallback method", _gui_num);
       delete callback;
       return;
 
@@ -518,7 +518,7 @@ static QVector<Gui*> g_guis;
     
     virtual void setGuiValue(dyn_t val) override {
       if(val.type!=INT_TYPE && val.type!=FLOAT_TYPE){
-        GFX_Message(NULL, "Slider->setValue received %s, expected INT_TYPE or FLOAT_TYPE", DYN_type_name(val.type));
+        handleError("Slider->setValue received %s, expected INT_TYPE or FLOAT_TYPE", DYN_type_name(val.type));
         return;
       }
 
@@ -704,14 +704,14 @@ using namespace radium_gui;
   
 static Gui *get_gui(int64_t guinum){
   if (guinum < 0 || guinum > g_guis.size()){
-    GFX_Message(NULL, "No Gui #%d", guinum);
+    handleError("No Gui #%d", guinum);
     return NULL;
   }
 
   Gui *gui = g_guis[(int)guinum];
 
   if (gui==NULL)
-    GFX_Message(NULL, "Gui #%d has been closed and can not be used.", guinum);
+    handleError("Gui #%d has been closed and can not be used.", guinum);
 
   return gui;
 }
@@ -720,7 +720,7 @@ int64_t gui_ui(const_char *filename){
   
   QFile file(filename);
   if (file.open(QFile::ReadOnly)==false){
-    GFX_Message(NULL, "Unable to open \"%s\": %s", filename, file.errorString().toUtf8().constData());
+    handleError("Unable to open \"%s\": %s", filename, file.errorString().toUtf8().constData());
     return -1;
   }
   
@@ -728,7 +728,7 @@ int64_t gui_ui(const_char *filename){
   file.close();
 
   if (widget==NULL){
-    GFX_Message(NULL, "Unable to open \"%s\": %s", filename, g_uiloader.errorString().toUtf8().constData());
+    handleError("Unable to open \"%s\": %s", filename, g_uiloader.errorString().toUtf8().constData());
     return -1;
   }
   
@@ -747,7 +747,7 @@ int64_t gui_child(int64_t guinum, const_char* childname){
   QWidget *child = gui->_widget->findChild<QWidget*>(childname);
 
   if (child==NULL){
-    GFX_Message(NULL, "Could not find child \"%s\" in gui #%d.", childname, guinum);
+    handleError("Could not find child \"%s\" in gui #%d.", childname, guinum);
   }
 
   for(Gui *existing_child : gui->children){
@@ -787,7 +787,7 @@ int64_t gui_radiobutton(const_char *text, bool is_checked){
 
 int64_t gui_horizontalIntSlider(const_char *text, int min, int curr, int max){
   if(min==max){
-    GFX_Message(NULL, "Gui slider: minimum and maximum value is the same");
+    handleError("Gui slider: minimum and maximum value is the same");
     return -1;
   }
   //return -1;
@@ -795,7 +795,7 @@ int64_t gui_horizontalIntSlider(const_char *text, int min, int curr, int max){
 }
 int64_t gui_horizontalSlider(const_char *text, double min, double curr, double max){
   if(min==max){
-    GFX_Message(NULL, "Gui slider: minimum and maximum value is the same");
+    handleError("Gui slider: minimum and maximum value is the same");
     return -1;
   }
   //return -1;
@@ -803,7 +803,7 @@ int64_t gui_horizontalSlider(const_char *text, double min, double curr, double m
 }
 int64_t gui_verticalIntSlider(const_char *text, int min, int curr, int max){
   if(min==max){
-    GFX_Message(NULL, "Gui slider: minimum and maximum value is the same");
+    handleError("Gui slider: minimum and maximum value is the same");
     return -1;
   }
   //return -1;
@@ -811,7 +811,7 @@ int64_t gui_verticalIntSlider(const_char *text, int min, int curr, int max){
 }
 int64_t gui_verticalSlider(const_char *text, double min, double curr, double max){
   if(min==max){
-    GFX_Message(NULL, "Gui slider: minimum and maximum value is the same");
+    handleError("Gui slider: minimum and maximum value is the same");
     return -1;
   }
   //return -1;
@@ -892,7 +892,7 @@ void gui_add(int64_t parentnum, int64_t childnum){
 
   if(layout==NULL) {
 
-    GFX_Message(NULL, "Warning: Parent gui #%d does not have a layout", parentnum);
+    handleError("Warning: Parent gui #%d does not have a layout", parentnum);
 
     child->_widget->setParent(parent->_widget);
     child->_widget->move(0,0);

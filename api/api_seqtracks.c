@@ -160,7 +160,7 @@ void insertSeqtrack(int pos){
     pos = root->song->curr_seqtracknum;
   
   if (pos < 0 || pos > root->song->seqtracks.num_elements){
-    GFX_Message(NULL, "Position #%d not legal", pos);
+    handleError("Position #%d not legal", pos);
     return;
   }
 
@@ -176,12 +176,12 @@ void deleteSeqtrack(int seqtracknum){
     seqtracknum = root->song->curr_seqtracknum;
   
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
-    GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
+    handleError("Sequencer track #%d does not exist", seqtracknum);
     return;
   }
 
   if (root->song->seqtracks.num_elements==1){
-    GFX_Message(NULL, "Must have at least one sequencer track");
+    handleError("Must have at least one sequencer track");
     return;
   }    
   
@@ -191,7 +191,7 @@ void deleteSeqtrack(int seqtracknum){
 
 void selectSeqtrack(int seqtracknum){
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
-    GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
+    handleError("Sequencer track #%d does not exist", seqtracknum);
     return;
   }
 
@@ -231,14 +231,14 @@ float getSeqtempoAreaY2(void){
 }
 float getSeqtemponodeX(int nodenum){
   if (nodenum < 0 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
-    GFX_Message(NULL, "There is no tempo node #%d", nodenum);
+    handleError("There is no tempo node #%d", nodenum);
     return 0.0;
   }
   return TEMPOAUTOMATION_get_node_x(nodenum);
 }
 float getSeqtemponodeY(int nodenum){
   if (nodenum < 0 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
-    GFX_Message(NULL, "There is no tempo node #%d", nodenum);
+    handleError("There is no tempo node #%d", nodenum);
     return 0.0;
   }
   return TEMPOAUTOMATION_get_node_y(nodenum);
@@ -252,21 +252,21 @@ bool seqtempoVisible(void){
 
 double getSeqtempoValue(int nodenum){
   if (nodenum < 0 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
-    GFX_Message(NULL, "There is no tempo node #%d", nodenum);
+    handleError("There is no tempo node #%d", nodenum);
     return 0.0;
   }
   return TEMPOAUTOMATION_get_value(nodenum);
 }
 double getSeqtempoAbstime(int nodenum){
   if (nodenum < 0 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
-    GFX_Message(NULL, "There is no tempo node #%d", nodenum);
+    handleError("There is no tempo node #%d", nodenum);
     return 0.0;
   }
   return TEMPOAUTOMATION_get_abstime(nodenum);
 }
 int getSeqtempoLogtype(int nodenum){
   if (nodenum < 0 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
-    GFX_Message(NULL, "There is no tempo node #%d", nodenum);
+    handleError("There is no tempo node #%d", nodenum);
     return 0;
   }
   return TEMPOAUTOMATION_get_logtype(nodenum);
@@ -286,14 +286,14 @@ void deleteSeqtemponode(int nodenum){
 }
 void setCurrSeqtemponode(int nodenum){
   if (nodenum < -1 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
-    GFX_Message(NULL, "There is no tempo node #%d", nodenum);
+    handleError("There is no tempo node #%d", nodenum);
     return;
   }
   TEMPOAUTOMATION_set_curr_node(nodenum);
 }
 void setSeqtemponode(double abstime, double value, int logtype, int nodenum){
   if (nodenum < 0 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
-    GFX_Message(NULL, "There is no tempo node #%d", nodenum);
+    handleError("There is no tempo node #%d", nodenum);
     return;
   }
   return TEMPOAUTOMATION_set(nodenum, abstime, value, logtype);
@@ -362,7 +362,7 @@ int64_t getSeqloopingEnd(void){
 
 float getSeqtrackX1(int seqtracknum){
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
-    GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
+    handleError("Sequencer track #%d does not exist", seqtracknum);
     return 0;
   }
   return SEQTRACK_get_x1(seqtracknum);
@@ -370,7 +370,7 @@ float getSeqtrackX1(int seqtracknum){
 
 float getSeqtrackX2(int seqtracknum){
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
-    GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
+    handleError("Sequencer track #%d does not exist", seqtracknum);
     return 0;
   }
   return SEQTRACK_get_x2(seqtracknum);
@@ -378,7 +378,7 @@ float getSeqtrackX2(int seqtracknum){
 
 float getSeqtrackY1(int seqtracknum){
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
-    GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
+    handleError("Sequencer track #%d does not exist", seqtracknum);
     return 0;
   }
   return SEQTRACK_get_y1(seqtracknum);
@@ -386,7 +386,7 @@ float getSeqtrackY1(int seqtracknum){
 
 float getSeqtrackY2(int seqtracknum){
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
-    GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
+    handleError("Sequencer track #%d does not exist", seqtracknum);
     return 0;
   }
   return SEQTRACK_get_y2(seqtracknum);
@@ -406,7 +406,7 @@ int getSeqtrackFromY(int y){
 
 int64_t findClosestSeqtrackBarStart(int seqtracknum, int64_t pos){
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
-    GFX_Message(NULL, "Sequencer track #%d does not exist", seqtracknum);
+    handleError("Sequencer track #%d does not exist", seqtracknum);
     return 0;
   }
   
