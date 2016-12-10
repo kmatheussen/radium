@@ -268,19 +268,19 @@
   (define n (gensym "n"))
   
   `(begin
-     (define (,(<_> name '-struct-mapper) ,key)
-       (let ((,keysvar (quote ,keys))
-             (,keysym (keyword->symbol ,key)))
-         (let ,loop ((,keysvar2 (quote ,keys))
-                     (,n 0))
-              (cond ((null? ,keysvar2)
-                     (throw (<-displayable-> "key " ,keysym ,(<-> " not found in struct '" name "'") ". keys: " ,keysvar)))
-                    ((eq? (car ,keysvar2) ,keysym)
-                     ,n)
-                    (else
-                     (,loop (cdr ,keysvar2)
-                            (1+ ,n)))))))
-       
+     
+     (define ,(<_> name '-struct-mapper)
+       (let ((keytablemapper (make-hash-table (length (quote ,keys)) eq?)))
+         (for-each (lambda (key n)
+                     (hash-table-set! keytablemapper (symbol->keyword key) n))
+                   (quote ,keys)
+                   (iota (length (quote ,keys))))
+         (lambda (key)
+           (let ((ret (keytablemapper key)))
+             (if (not ret)
+                 (throw (<-displayable-> "key " (keyword->symbol key) ,(<-> " not found in struct '" name "'") ". keys: " (quote ,keys)))
+                 ret)))))
+     
      ;;(define (,(<_> 'old-copy- name) ,original new-key new-value)
      ;;  (if (not (memq (keyword->symbol new-key) (quote ,keys)))
      ;;      (throw (<-displayable-> "key '" new-key ,(<-> "' not found in struct '" name "'") ". keys: " (map symbol->keyword (quote ,keys)))))
