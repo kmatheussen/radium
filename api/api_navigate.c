@@ -197,9 +197,20 @@ void cursorPercentLine(int percent,int windownum){
 }
 
 static int get_realline_from_line(struct WBlocks *wblock, int line){
+  if (line<0)
+    return 0;
+  
   int realline=0;
-  while(wblock->reallines[realline]->Tline!=line)
+  do{
+    if (realline==wblock->num_reallines-1)
+      return realline;
+    
+    if (wblock->reallines[realline]->Tline >= line)
+      return realline;
+    
     realline++;
+  }while(true);
+  
   return realline;
 }
 
@@ -230,23 +241,84 @@ static int get_realline_from_beat(struct WBlocks *wblock, int barnum, int beatnu
   return FindRealLineFor(wblock, 0, &beat->l.p);
 }
 
-void cursorUserInputBeat(void){
+static int string_charpos(char *s, char c){
+  int pos=0;
+  while(s[pos]!=0){
+    if(s[pos]==c)
+      return pos;
+    pos++;
+  }
+  return -1;
+}
+
+void requestCursorMove(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);
   struct WBlocks *wblock = window->wblock;
+
+  ReqType reqtype = GFX_OpenReq(window, 50, 4, "title");
   
-  char *line = GFX_GetString(window,NULL,"Jump to Bar/Beat (e.g. \"2/1\" or just \"2\"): >");
+  char *line = GFX_GetString(window,reqtype,"Move cursor (write \"h\" to get examples): >");
+  //char *line = GFX_GetString(window,NULL,"'2' jumps to bar 2. '2/3' jumps to bar 2, beat 3. '2/3,4' jumps to bar 2, beat 3, track 4: >");
   if (line==NULL)
-    return;
+    goto exit;
 
-  Place p = get_rational_from_string(line);
-  if (p.dividor==0)
-    return;
+  if (line[0]=='h'){
+    GFX_WriteString(reqtype, " To move cursor to bar 2, write \"2\"\n");
+    GFX_WriteString(reqtype, " To move cursor to bar 2, beat 3, write \"2/3\"\n");
+    GFX_WriteString(reqtype, " To move cursor to bar 2, beat 3, track 4, write \"2/3,4\"\n");
+    GFX_WriteString(reqtype, "\n");
+    GFX_WriteString(reqtype, " To move cursor to track 4, write \",4\"\n");
+    GFX_WriteString(reqtype, "\n");
+    GFX_WriteString(reqtype, " To move cursor to line 5, write \"l5\"\n");
+    GFX_WriteString(reqtype, " To move cursor to line 5, track 6, write \"l5,6\"\n");
+    GFX_WriteString(reqtype, "\n");
+    line = GFX_GetString(window,reqtype,">");
+    if (line==NULL)
+      goto exit;
+  }
+  
+  int len = (int)strlen(line);
+  if (len==0)
+    goto exit;
+  
+  int split_pos = string_charpos(line,',');
+  printf("split_pos: %d, len: %d, string: -%s-\n",split_pos, len, line);
+  
+  if (split_pos != -1){
+    if (split_pos>=len-1)
+      goto exit;
+    
+    char *trackstring = &line[split_pos+1];
+    line[split_pos] = 0;
+    
+    int tracknum = atoi(trackstring);
+    if (tracknum >= 0)
+      SetCursorPosConcrete_CurrPos(window,(NInt)tracknum);
+  }
 
-  int realline = get_realline_from_beat(wblock, p.counter, p.dividor);
-  if (realline==-1)
-    return;
+  if (line[0]=='l'){
 
-  ScrollEditorToRealLine(window, wblock, realline);
+    if(len>1){
+      int linenum = atoi(&line[1]);
+      if (linenum >= 0)
+        ScrollEditorToRealLine(window, wblock, get_realline_from_line(wblock, linenum));
+    }
+    
+  } else {
+  
+    Place p = get_rational_from_string(line);
+    if (p.dividor==0)
+      goto exit;
+    
+    int realline = get_realline_from_beat(wblock, p.counter, p.dividor);
+    if (realline==-1)
+      goto exit;
+
+    ScrollEditorToRealLine(window, wblock, realline);
+  }
+  
+ exit:
+  GFX_CloseReq(window, reqtype);
 }
 
 void selectNextBlock(int windownum){
