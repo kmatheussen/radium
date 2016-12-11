@@ -10,9 +10,9 @@ It's inspired by trackers, but has fewer limitations and uses graphics to show m
 
 ### Overview
 
-1. Get the Source. For stable releases (advised) go [here](https://github.com/kmatheussen/radium/releases). Otherwise see [Get The Source From Git](#get-the-source-from-git).
+1. Get the Source. For stable releases (advised) go [here](https://github.com/kmatheussen/radium/releases). Otherwise see [Get Source From Git](#get-source-from-git).
 2. Install dependencies. See [Build Dependencies](#build-dependencies).
-3. Do this:
+3. Finally do:
 ```bash
 export RADIUM_QT_VERSION=5
 make packages
@@ -20,13 +20,13 @@ BUILDTYPE=RELEASE ./build_linux.sh -j7
 QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS` bin/radium
 ```
 
-### Get The Source From Git
+### Get Source From Git
 
 WARNING: Only release-tagged commits should be considered stable.  If
-you only "git clone" and compile that version of Radium, there's a
-good chance the program won't compile, or will crash.
+you only `git clone` and compile there's a good chance the program
+won't compile, or will crash.
 
-To clone the git repository:
+To clone the git repository, do:
 ```bash
 git clone git@github.com:kmatheussen/radium.git
 ```
@@ -37,7 +37,7 @@ make very_clean
 ```
 since not all dependencies are tracked in the makefile.
 
-### Debug Build (For Developing Radium)
+### Debug Build (For Developers)
 
 To debug build (lots of assertions and very slow, don't build in debug mode if you are just testing the program), do:
 ```bash
