@@ -31,13 +31,13 @@ To clone the git repository:
 git clone git@github.com:kmatheussen/radium.git
 ```
 
-Note that after a `git pull` you may want to
+Note that after a `git pull` you may want to:
 ```bash
 make very_clean
 ```
 since not all dependencies are tracked in the makefile.
 
-### If You Are Developing Radium
+### Debug Build (For Developing Radium)
 
 To debug build (lots of assertions and very slow, don't build in debug mode if you are just testing the program), do:
 ```bash
