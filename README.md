@@ -10,8 +10,9 @@ It's inspired by trackers, but has fewer limitations and uses graphics to show m
 
 ### Overview
 
-1. Install dependencies. See [Build Dependencies](#build-dependencies) below in this file.
-2. Do this:
+1. Get the Source. For stable releases (advised) go [here](https://github.com/kmatheussen/radium/releases). Otherwise see [Get The Source From Git](#get-the-source-from-git).
+2. Install dependencies. See [Build Dependencies](#build-dependencies).
+3. Do this:
 ```bash
 export RADIUM_QT_VERSION=5
 make packages
@@ -19,29 +20,26 @@ BUILDTYPE=RELEASE ./build_linux.sh -j7
 QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS` bin/radium
 ```
 
-### If You Got The Source From Git
+### Get The Source From Git
 
-WARNING: Only release-tagged commits should be considered stable.
-If you only do "git clone" and compile that version of Radium, there's
-a good chance the program won't compile, or will crash.
+WARNING: Only release-tagged commits should be considered stable.  If
+you only "git clone" and compile that version of Radium, there's a
+good chance the program won't compile, or will crash.
 
-You can download a stable version of the source by doing:
-
+To clone the git repository:
 ```bash
-wget https://github.com/kmatheussen/radium/archive/<version>.tar.gz
+git clone git@github.com:kmatheussen/radium.git
 ```
 
-However, if you still want to use GIT, you sometime have to
-
+Note that after a `git pull` you may want to
 ```bash
 make very_clean
 ```
-
-...after a git pull, since not all dependencies are tracked in the makefile.
+since not all dependencies are tracked in the makefile.
 
 ### If You Are Developing Radium
 
-Debug build. Lots of assertions. Very slow. Don't build this version if you are just testing the program.
+To debug build (lots of assertions and very slow, don't build in debug mode if you are just testing the program), do:
 ```bash
 export RADIUM_QT_VERSION=5
 export QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS`
@@ -52,12 +50,12 @@ export QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query 
 
 #### All Platforms
 
-* VST headers from steinberg. The necessary files should be incuded in
-  "VST Audio Plug-Ins SDK", which you can download here:
+VST headers from steinberg. The necessary files should be incuded in
+"VST Audio Plug-Ins SDK", which you can download here:
 
   http://www.steinberg.net/en/company/developers.html
 
-  After downloading the VST SDK, unpack it into your ~/SDKs folder.
+After downloading the VST SDK, unpack it into your ~/SDKs folder.
 
 #### Fedora
 
