@@ -143,10 +143,11 @@ BUILD DEPENDENCIES, ubuntu/debian/etc.:
       qt5webkit-dev
       qt5x11extras-dev
       qt5-qttools-static-dev
+      qtbase5-private-dev
 
       * Or in one line:
 
-      sudo apt-get install python2-dev       libasound2-dev       libjack-jackd2-dev     libsamplerate-dev       liblrdf-dev       libsndfile-dev      ladspa-sdk      glib2-dev      calf-plugins      binutils-dev      libc6-dev      tk8.5 libogg-dev libvorbis-dev libspeex-dev fftw-dev fftw3-dev guile libxkbfile-dev xorg-x11-util-macros cmake libfreetype6-dev libxinerama-dev libxcursor-dev libxrandr-dev libqtwebkit-dev llvm-dev libboost-all-dev libssl-dev ncurses-dev libxcb-keysyms1-dev qt5-dev qt5webkit-dev qt5x11extras-dev qt5-qttools-static-dev
+      sudo apt-get install python2-dev       libasound2-dev       libjack-jackd2-dev     libsamplerate-dev       liblrdf-dev       libsndfile-dev      ladspa-sdk      glib2-dev      calf-plugins      binutils-dev      libc6-dev      tk8.5 libogg-dev libvorbis-dev libspeex-dev fftw-dev fftw3-dev guile libxkbfile-dev xorg-x11-util-macros cmake libfreetype6-dev libxinerama-dev libxcursor-dev libxrandr-dev libqtwebkit-dev llvm-dev libboost-all-dev libssl-dev ncurses-dev libxcb-keysyms1-dev qt5-dev qt5webkit-dev qt5x11extras-dev qt5-qttools-static-dev qtbase5-private-dev
 
 
       * Ubuntu LTS: I needed glib-2.0-dev instead of glib2-dev, plus a package called libglib2.0-dev.
