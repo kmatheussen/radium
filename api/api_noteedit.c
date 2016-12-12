@@ -636,3 +636,14 @@ void cutNote(Place place, int notenum, int tracknum, int blocknum, int windownum
   
 }
 
+void deleteAllNotesInTrack(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0;
+
+  wtrack->track->notes = NULL;
+  
+  window->must_redraw=true;
+}
