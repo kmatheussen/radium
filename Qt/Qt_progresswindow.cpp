@@ -7,6 +7,7 @@
 #include <QFile>
 #include <QProcess>
 #include <QTimer>
+#include <QDesktopWidget>
 
 static const QString message_hide = "_MESSAGE_HIDE";
 static const QString message_show = "_MESSAGE_SHOW";
@@ -40,7 +41,7 @@ public:
 
 static MyTimer mytimer;
 
-void process_OpenProgress(QString message){
+void process_OpenProgress(QString message, int fontsize){
   delete progressBox;
 
   progressBox = new QMessageBox;
@@ -49,14 +50,30 @@ void process_OpenProgress(QString message){
 #else
   progressBox->setWindowFlags(progressBox->windowFlags() | Qt::Popup);//Qt::WindowStaysOnTopHint|Qt::SplashScreen|Qt::Window | Qt::FramelessWindowHint|Qt::Popup);
 #endif
-  
-  progressBox->setMinimumWidth(600);
-  progressBox->setMinimumHeight(300);
+
+  int width = fontsize*600/8;
+  int height = fontsize*300/8;
   
   progressBox->setStandardButtons(0);
   progressBox->setText(message + "                                                                                                                " + "\n\n\n\n                                                                                                                ");
   progressBox->setInformativeText("             \n            \n              \n                \n               \n");
+
+
+  progressBox->setMinimumWidth(width);
+  progressBox->setMinimumHeight(height);
+  progressBox->setMaximumWidth(width);
+  progressBox->setMaximumHeight(height);
+
+  QRect screenGeometry = QApplication::desktop()->screenGeometry();
+  int x = (screenGeometry.width()-width) / 2;
+  int y = (screenGeometry.height()-height) / 2;
+  progressBox->move(x, y);
+  
   progressBox->show();
+
+  progressBox->setMinimumWidth(width);
+  progressBox->setMinimumHeight(height);
+
   for(int i=0; i < 10 ; i++){
     progressBox->repaint();
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -65,9 +82,9 @@ void process_OpenProgress(QString message){
 
 }
 
-void process_ShowProgressMessage(QString message){
+void process_ShowProgressMessage(QString message, int fontsize){
   if (progressBox == NULL)
-    process_OpenProgress("...");
+    process_OpenProgress("...", fontsize);
 
   // Some ridiculous code to try to work around QMessageBox window size jumping
   {
@@ -90,7 +107,10 @@ void process_ShowProgressMessage(QString message){
       
     progressBox->setInformativeText(out);
   }
-  
+
+  progressBox->setMinimumWidth(fontsize*600/8);
+  progressBox->setMinimumHeight(fontsize*300/8);
+
   for(int i=0; i < 10 ; i++){
     progressBox->repaint();
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -107,10 +127,17 @@ int main(int argc, char **argv){
   
   QApplication app(argc, argv);
 
+  int fontsize = atoi(argv[1]);
+    
+  QFont font = QApplication::font();
+  font.setPointSize(fontsize);
+  QApplication::setFont(font);
+  
+
   mytimer.start();
 
-  QString header = QByteArray::fromBase64(argv[1]).constData();
-  process_OpenProgress(header);
+  QString header = QByteArray::fromBase64(argv[2]).constData();
+  process_OpenProgress(header, fontsize);
 
   QFile in;
   in.open(stdin, QIODevice::ReadOnly);
@@ -129,7 +156,7 @@ int main(int argc, char **argv){
       progressBox->show();
       progressBox->raise();
     } else if (progressBox->isVisible())
-      process_ShowProgressMessage(line);
+      process_ShowProgressMessage(line, fontsize);
   }
 
   process_CloseProgress();
@@ -164,8 +191,11 @@ void GFX_OpenProgress(const char *message){
   g_process->setProcessEnvironment(env);
 #endif
 
-  g_process->start(program+" "+QString(QString(message).toUtf8().toBase64().constData()), QIODevice::WriteOnly | QIODevice::Text | QIODevice::Unbuffered | QIODevice::Append);
- 
+  g_process->start(program+" "+QString::number(QApplication::font().pointSize()) + " " + QString(QString(message).toUtf8().toBase64().constData()), QIODevice::WriteOnly | QIODevice::Text | QIODevice::Unbuffered | QIODevice::Append);
+
+  //printf("POINGSIZE: %d\n", QApplication::font().pointSize());
+  //getchar();
+  
   if (g_process->waitForStarted()==false){
     printf("Unable to start process\n");
     delete g_process;
