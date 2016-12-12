@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Python.h"
 
 #include "../common/nsmtracker.h"
+#include "../common/placement_proc.h"
 #include "../common/transpose_proc.h"
 #include "../common/quantitize_proc.h"
 #include "../common/fxtext_proc.h"
@@ -182,12 +183,12 @@ void quantitizeRange(int windownum){
   window->must_redraw = true;
 }
 
-float getQuantitize(void){
-  return (double)root->quantitize_options.quant.numerator / (double)root->quantitize_options.quant.denominator;
+Place getQuantitize(void){
+  return place(0, root->quantitize_options.quant.numerator, root->quantitize_options.quant.denominator);
 }
 
-float getGrid(void){
-  return (double)root->grid_numerator / (double)root->grid_denominator;
+Place getGrid(void){
+  return place(0, root->grid_numerator, root->grid_denominator);
 }
 
 void configQuantitize(int windownum){
