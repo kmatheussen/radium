@@ -1337,7 +1337,7 @@
                         :Make-undo (lambda (_) (ra:undo-temponodes))
                         :Create-new-node (lambda (X Place callback)
                                            (define Value (scale X (<ra> :get-temponode-area-x1) (<ra> :get-temponode-area-x2) 0 1))
-                                           (define Num (<ra> :create-temponode (01->temponodeval Value) Place))
+                                           (define Num (<ra> :add-temponode (01->temponodeval Value) Place))
                                            (if (= -1 Num)
                                                #f
                                                (callback Num (temponodeval->01 (<ra> :get-temponode-value Num)))))
@@ -1491,7 +1491,7 @@
                                                  (define Value (scale X
                                                                       (<ra> :get-track-notes-x1 *current-track-num*) (<ra> :get-track-notes-x2 *current-track-num*) 
                                                                       (get-min-pitch-in-current-track) (get-max-pitch-in-current-track)))
-                                                 (define Num (<ra> :create-pitchnum Value Place *current-track-num*))
+                                                 (define Num (<ra> :add-pitchnum Value Place *current-track-num*))
                                                  (if (= -1 Num)
                                                      #f
                                                      (callback Num (<ra> :get-pitchnum-value Num *current-track-num*))))))
@@ -1756,7 +1756,7 @@
                                                                 (<ra> :get-pianoroll-low-key *current-track-num*)
                                                                 (<ra> :get-pianoroll-high-key *current-track-num*)))
                                            (define Next-Place (get-next-place-from-y *left-button* (<ra> :get-mouse-pointer-y)))
-                                           (define Num (<ra> :create-pianonote Value Place Next-Place *current-track-num*))
+                                           (define Num (<ra> :add-pianonote Value Place Next-Place *current-track-num*))
                                            (if (= -1 Num)
                                                #f
                                                (callback (make-pianonote-info :tracknum *current-track-num*
@@ -2190,7 +2190,7 @@
                                                                        (<ra> :get-subtrack-x1 *current-subtrack-num* *current-track-num*)
                                                                        (<ra> :get-subtrack-x2 *current-subtrack-num* *current-track-num*)
                                                                        0 1))
-                                                  (define Num (<ra> :create-velocity Value Place *current-note-num* *current-track-num*))
+                                                  (define Num (<ra> :add-velocity Value Place *current-note-num* *current-track-num*))
                                                   (if (= -1 Num)
                                                       #f
                                                       (callback (make-velocity-info :tracknum *current-track-num*
@@ -2612,7 +2612,7 @@
                                                   (define Value (scale X
                                                                        (<ra> :get-track-fx-x1 *current-track-num*) (<ra> :get-track-fx-x2 *current-track-num*)
                                                                        (<ra> :get-fx-min-value Fxnum) (<ra> :get-fx-max-value Fxnum)))
-                                                  (define Nodenum (<ra> :create-fxnode Value Place Fxnum *current-track-num*))
+                                                  (define Nodenum (<ra> :add-fxnode Value Place Fxnum *current-track-num*))
                                                   (if (= -1 Nodenum)
                                                       #f
                                                       (callback (make-fxnode-info :tracknum *current-track-num*
@@ -4070,7 +4070,7 @@
 (define *report-minor-stuff* #t)                          ; let*, docstring checks, (= 1.5 x), numerical and boolean simplification
 (lint "/home/kjetil/radium/bin/scheme/mouse/mouse.scm")
 
-(c-display (<ra> :create-temponode 2.1 -5.0))
+(c-display (<ra> :add-temponode 2.1 -5.0))
 
 (box-to-string (find-temponode 210 1210))
 

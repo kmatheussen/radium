@@ -55,8 +55,8 @@ class RadiumMock:
         print "addLPB3", str(linenum) + ": "+hex(lpb)
     def addBPM3(self, bpm, linenum, counter, dividor):
         print "addBPM3", str(linenum) + ": "+hex(bpm)
-    def createVelocityF(self, value, floatplace, notenum, tracknum):
-        print "   createVelocityF",floatplace,value
+    def addVelocityF(self, value, floatplace, notenum, tracknum):
+        print "   addVelocityF",floatplace,value
 
     def setPlaylistBlock(self, pos, blocknum):
         print "Playlist ",pos,blocknum

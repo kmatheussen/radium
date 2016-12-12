@@ -131,7 +131,7 @@ int getNumVelocities(int notenum, int tracknum, int blocknum, int windownum){
   return 2+ListFindNumElements3(&note->velocities->l);
 }
 
-int createVelocity(float value, Place place, int notenum, int tracknum, int blocknum, int windownum){
+int addVelocity(float value, Place place, int notenum, int tracknum, int blocknum, int windownum){
 
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -142,12 +142,12 @@ int createVelocity(float value, Place place, int notenum, int tracknum, int bloc
 
   if (PlaceLessOrEqual(&place, &note->l.p)) {
     //if (notenum>0)
-    //  handleError("createVelocity: placement before note start for note #%d", notenum);
+    //  handleError("addVelocity: placement before note start for note #%d", notenum);
     return -1;
   }
 
   if (PlaceGreaterOrEqual(&place, &note->end)) {
-    //handleError("createVelocity: placement after note end for note #%d", notenum);
+    //handleError("addVelocity: placement after note end for note #%d", notenum);
     return -1;
   }
 
@@ -156,7 +156,7 @@ int createVelocity(float value, Place place, int notenum, int tracknum, int bloc
   int ret = AddVelocity(value*MAX_VELOCITY, &place, note);
 
   if (ret==-1){
-    //handleError("createVelocity: Can not create new velocity with the same position as another velocity");
+    //handleError("addVelocity: Can not create new velocity with the same position as another velocity");
     return -1;
   }
 
@@ -166,10 +166,10 @@ int createVelocity(float value, Place place, int notenum, int tracknum, int bloc
   return ret+1;
 }
 
-int createVelocityF(float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+int addVelocityF(float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
   Place place;
   Float2Placement(floatplace, &place);
-  return createVelocity(value, place, notenum, tracknum, blocknum, windownum);
+  return addVelocity(value, place, notenum, tracknum, blocknum, windownum);
 }
 
 int setVelocity(int velocitynum, float value, Place place, int notenum, int tracknum, int blocknum, int windownum){

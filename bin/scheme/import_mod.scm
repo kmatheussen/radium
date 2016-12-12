@@ -4830,7 +4830,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                           (c-display "num-lines" num-lines)
                           (print-events events)
                           (assert #f))
-                    (<ra> :create-velocity
+                    (<ra> :add-velocity
                           (/ (cadr velocity) 64) ;; value
                           (car velocity) ;; place
                           radium-notenum
@@ -4853,10 +4853,10 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
            
           (for-each (lambda (pitch)  ;; TODO: Fix.
                       (assert (< (car pitch) last-pitch-pos))
-                      (<ra> :create-pitchnum
+                      (<ra> :add-pitchnum
                             (+ *pitch-transpose* (cadr pitch))  ;; value
                             (car pitch) ;; place
-                            ;; ra:create-pitchnum doesn't need a 'radium-notenum' argument. It's not really needed either unless you have polyphonic tracks, which is not the case for MOD.
+                            ;; ra:add-pitchnum doesn't need a 'radium-notenum' argument. It finds note automatically, which works fine as long as the track is monophonic.
                             channelnum))
                     (butlast (cdr pitches)))
 
@@ -4910,7 +4910,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (assert (<= first-value 1))
   (assert (>= first-value 0))
 
-  (define fx-num (<ra> :create-fx first-value first-pos fx-name tracknum))
+  (define fx-num (<ra> :add-fx first-value first-pos fx-name tracknum))
   
   (<ra> :set-fxnode-logtype-holding #t 0 fx-num tracknum)
 
@@ -4936,7 +4936,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                 (assert (not (caddr gliding))) ;; Always HOLD glide mode. Can't do it any other way in protracker. (volume and pitch can glide linearly, but not vibrato/tremolo/finetune/startoffset)
                 (assert (<= value 1))
                 (assert (>= value 0))
-                (define fxnode-num (<ra> :create-fxnode value place fx-num tracknum))
+                (define fxnode-num (<ra> :add-fxnode value place fx-num tracknum))
                 (<ra> :set-fxnode-logtype-holding #t fxnode-num fx-num tracknum)
                 )
               )
@@ -5037,7 +5037,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 ||#
 
 #||
-(define id_depth (<ra> :create-fx 0.1 1 "Vibrato Depth" 0))
+(define id_depth (<ra> :add-fx 0.1 1 "Vibrato Depth" 0))
 (<ra> :set-fxnode 1
                0.3
                4
@@ -5045,14 +5045,14 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                0)
 
 
-(define id_speed (<ra> :create-fx 0.5 5 "Vibrato Speed" 0))
+(define id_speed (<ra> :add-fx 0.5 5 "Vibrato Speed" 0))
 (<ra> :set-fxnode 1
                0.8
                9
                id_speed
                0)
 
-(define id_speed (<ra> :create-fx 0.5 53 "Vibrato Speed" 0))
+(define id_speed (<ra> :add-fx 0.5 53 "Vibrato Speed" 0))
 (<ra> :set-fxnode 1
                0
                54
@@ -5176,7 +5176,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 ||#
 
 #||
-(define id_depth (<ra> :create-fx 0.1 1 "Tremolo Depth" 0))
+(define id_depth (<ra> :add-fx 0.1 1 "Tremolo Depth" 0))
 (<ra> :set-fxnode 1
                0.3
                4
@@ -5184,14 +5184,14 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                0)
 
 
-(define id_speed (<ra> :create-fx 0.5 5 "Tremolo Speed" 0))
+(define id_speed (<ra> :add-fx 0.5 5 "Tremolo Speed" 0))
 (<ra> :set-fxnode 1
                0.8
                9
                id_speed
                0)
 
-(define id_speed (<ra> :create-fx 0.5 53 "Tremolo Speed" 0))
+(define id_speed (<ra> :add-fx 0.5 53 "Tremolo Speed" 0))
 (<ra> :set-fxnode 1
                0
                54
@@ -5237,7 +5237,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 
 
 #||
-(define id_depth (<ra> :create-fx 0.1 1 "Sampleoffset Depth" 0))
+(define id_depth (<ra> :add-fx 0.1 1 "Sampleoffset Depth" 0))
 (<ra> :set-fxnode 1
                0.3
                4
@@ -5245,14 +5245,14 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                0)
 
 
-(define id_speed (<ra> :create-fx 0.5 5 "Sampleoffset Speed" 0))
+(define id_speed (<ra> :add-fx 0.5 5 "Sampleoffset Speed" 0))
 (<ra> :set-fxnode 1
                0.8
                9
                id_speed
                0)
 
-(define id_speed (<ra> :create-fx 0.5 53 "Sampleoffset Speed" 0))
+(define id_speed (<ra> :add-fx 0.5 53 "Sampleoffset Speed" 0))
 (<ra> :set-fxnode 1
                0
                54

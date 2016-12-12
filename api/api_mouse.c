@@ -963,11 +963,11 @@ void deleteTemponode(int num, int blocknum){
   window->must_redraw_editor = true;
 }
 
-int createTemponode(float value, Place place, int blocknum, int windownum){
+int addTemponode(float value, Place place, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL) {
-    handleError("createTemponode: No block %d in window %d",blocknum,windownum);
+    handleError("addTemponode: No block %d in window %d",blocknum,windownum);
     return -1;
   }
 
@@ -1456,7 +1456,7 @@ int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenu
   return notenum;
 }
 
-int createPianonote(float value, Place place, Place endplace, int tracknum, int blocknum, int windownum){
+int addPianonote(float value, Place place, Place endplace, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -1478,7 +1478,7 @@ int createPianonote(float value, Place place, Place endplace, int tracknum, int 
     endplace = lastplace;
   
   if (p_Greater_Or_Equal(place, endplace)){
-    //handleError("Illegal parameters for createPianonote. start: %f, end: %f",floatplace, endfloatplace);
+    //handleError("Illegal parameters for addPianonote. start: %f, end: %f",floatplace, endfloatplace);
     return -1;
   }
 
@@ -2097,7 +2097,7 @@ static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, stru
   return getPitchNum(wtrack->track, note, pitch, false);
 }
 
-int createPitchnum(float value, Place place, int tracknum, int blocknum, int windownum){
+int addPitchnum(float value, Place place, int tracknum, int blocknum, int windownum){
 
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -2126,10 +2126,10 @@ int createPitchnum(float value, Place place, int tracknum, int blocknum, int win
   return ret;
 }
 
-int createPitchnumF(float value, float floatplace, int tracknum, int blocknum, int windownum){
+int addPitchnumF(float value, float floatplace, int tracknum, int blocknum, int windownum){
   Place place;
   Float2Placement(floatplace, &place);
-  return createPitchnum(value, place, tracknum, blocknum, windownum);
+  return addPitchnum(value, place, tracknum, blocknum, windownum);
 }
 
 bool portamentoEnabled(int notenum, int tracknum, int blocknum, int windownum){
@@ -2316,7 +2316,7 @@ int getFx(const char* fx_name, int tracknum, int64_t instrument_id, int blocknum
   return -2;
 }
 
-int createFx(float value, Place place, const char* fx_name, int tracknum, int64_t instrument_id, int blocknum, int windownum){
+int addFx(float value, Place place, const char* fx_name, int tracknum, int64_t instrument_id, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -2391,11 +2391,11 @@ int createFx(float value, Place place, const char* fx_name, int tracknum, int64_
   }
 }
 
-int createFxF(float value, float floatplace, const char* fx_name, int tracknum, int64_t instrument_id, int blocknum, int windownum){
+int addFxF(float value, float floatplace, const char* fx_name, int tracknum, int64_t instrument_id, int blocknum, int windownum){
   Place place;
   Float2Placement(floatplace, &place);
 
-  return createFx(value, place, fx_name, tracknum, instrument_id, blocknum, windownum);
+  return addFx(value, place, fx_name, tracknum, instrument_id, blocknum, windownum);
 }
 
 static struct Node *get_fxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
@@ -2589,7 +2589,7 @@ float getFxMaxValue(int fxnum, int tracknum, int blocknum, int windownum){
 #endif
 }
 
-int createFxnode(float value, Place place, int fxnum, int tracknum, int blocknum, int windownum){
+int addFxnode(float value, Place place, int fxnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -2604,12 +2604,12 @@ int createFxnode(float value, Place place, int fxnum, int tracknum, int blocknum
   PlaceSetLastPos(wblock->block, &lastplace);
 
   if (PlaceLessThan(&place, PlaceGetFirstPos())){
-    handleError("createFxnode: placement before top of block for fx #%d. (%s)", fxnum, PlaceToString(&place));
+    handleError("addFxnode: placement before top of block for fx #%d. (%s)", fxnum, PlaceToString(&place));
     place = *PlaceGetFirstPos();
   }
 
   if (PlaceGreaterThan(&place, &lastplace)) {    
-    handleError("createFxnode: placement after fx end for fx #%d (%s). num_lines: #%d", fxnum, PlaceToString(&place), wblock->block->num_lines);
+    handleError("addFxnode: placement after fx end for fx #%d (%s). num_lines: #%d", fxnum, PlaceToString(&place), wblock->block->num_lines);
     place = lastplace;
   }
 
@@ -2628,7 +2628,7 @@ int createFxnode(float value, Place place, int fxnum, int tracknum, int blocknum
                           );
 
   if (ret==-1){
-    //handleError("createFxnode: Can not create new fx with the same position as another fx");
+    //handleError("addFxnode: Can not create new fx with the same position as another fx");
     Undo_CancelLastUndo();
     return -1;
   }
@@ -2638,11 +2638,11 @@ int createFxnode(float value, Place place, int fxnum, int tracknum, int blocknum
   return ret;
 }
 
-int createFxnodeF(float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
+int addFxnodeF(float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
   Place place;
   Float2Placement(floatplace, &place);
 
-  return createFxnode(value, place, fxnum, tracknum, blocknum, windownum);
+  return addFxnode(value, place, fxnum, tracknum, blocknum, windownum);
 }
   
 void setFxnode(int fxnodenum, float value, Place place, int fxnum, int tracknum, int blocknum, int windownum){

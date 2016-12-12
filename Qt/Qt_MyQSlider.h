@@ -335,23 +335,23 @@ struct MyQSlider : public QSlider {
 
           if (fxnum >= 0){
 
-            createFxnode(value,
-                         p_Create(currentLine(blocknum, -1), 0, 1),
-                         fxnum,
-                         tracknum,
-                         blocknum,
-                         -1);
+            addFxnode(value,
+                      p_Create(currentLine(blocknum, -1), 0, 1),
+                      fxnum,
+                      tracknum,
+                      blocknum,
+                      -1);
             
             
           } else {
                             
-            createFx(value,
-                     p_Create(currentLine(blocknum, -1), 0, 1),
-                     fxname,
-                     tracknum,
-                     _patch->id,
-                     blocknum,
-                     -1);
+            addFx(value,
+                  p_Create(currentLine(blocknum, -1), 0, 1),
+                  fxname,
+                  tracknum,
+                  _patch->id,
+                  blocknum,
+                  -1);
           }
         }
       }

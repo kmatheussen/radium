@@ -451,11 +451,11 @@ static void add_recorded_fx(struct Tracker_Windows *window, struct WBlocks *wblo
   Undo_start_ignoring_undo_operations();
   
   if (fxnum==-2){
-    fxnum = createFx(value, place, effect_name, tracknum, patch->id, blocknum, -1);
+    fxnum = addFx(value, place, effect_name, tracknum, patch->id, blocknum, -1);
     setFxnodeLogtype(LOGTYPE_HOLD, 0, fxnum, tracknum, blocknum, -1);
     next_node_must_be_set = true;
   }else{
-    int nodenum = createFxnode(value, place, fxnum, tracknum, blocknum, -1);
+    int nodenum = addFxnode(value, place, fxnum, tracknum, blocknum, -1);
     setFxnodeLogtype(LOGTYPE_HOLD, nodenum, fxnum, tracknum, blocknum, -1);
   }
   
@@ -488,7 +488,7 @@ static void add_recorded_fx(struct Tracker_Windows *window, struct WBlocks *wblo
       setFxnode(nodenum, value, place, fxnum, tracknum, blocknum, -1);
       next_node_must_be_set = false;
     } else {
-      nodenum = createFxnode(value, place, fxnum, tracknum, blocknum, -1);
+      nodenum = addFxnode(value, place, fxnum, tracknum, blocknum, -1);
     }
 
     if (nodenum != -1)

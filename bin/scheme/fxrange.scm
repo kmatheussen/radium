@@ -862,7 +862,7 @@
                     (when (and is-legal-effect
                                (>= (length fx-nodes) 2))
                           (define fx-node (car fx-nodes))
-                          (define fxnum (<ra> :create-fx
+                          (define fxnum (<ra> :add-fx
                                               (fxnode-value fx-node)
                                               (legal-place (fxnode-place fx-node))
                                               (<-> name)
@@ -884,7 +884,7 @@
                                 (<ra> :set-fxnode-logtype (fxnode-logtype fx-node2) 1 fxnum tracknum blocknum)
                                 
                                 (for-each (lambda (fxnode)
-                                            (define nodenum (<ra> :create-fxnode
+                                            (define nodenum (<ra> :add-fxnode
                                                                   (fxnode-value fxnode)
                                                                   (legal-place (fxnode-place fxnode))
                                                                   fxnum
