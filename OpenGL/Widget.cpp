@@ -508,7 +508,7 @@ static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
                      );
 }
 
-#define TEST_TIME 0
+#define TEST_TIME 1
 
 #if defined(RELEASE) && TEST_TIME==1
 #error "oops"
@@ -967,7 +967,7 @@ private:
     double dur6 = TIME_get_ms();
     double total = dur6-start1;
 
-    if (total>15)// || new_t2_data != NULL)
+    if (false && total>15)// || new_t2_data != NULL)
       printf("%f: mask: %s  Total: %f. s-1: %f, 1-2: %f, 2-3: %f - %f, 3-4: %f, 4-5: %f, 5-6: %f. Num actors: %d\n",
              scroll_pos,
              std::bitset<32>(_rendering->enableMask()).to_string().c_str(),
