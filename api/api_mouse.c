@@ -1456,7 +1456,7 @@ int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenu
   return notenum;
 }
 
-int createPianonote(float value, float floatplace, float endfloatplace, int tracknum, int blocknum, int windownum){
+int createPianonote(float value, Place place, Place endplace, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -1470,28 +1470,22 @@ int createPianonote(float value, float floatplace, float endfloatplace, int trac
 
   Place lastplace;
   PlaceSetLastPos(block, &lastplace);
-  float lastfloatplace = GetFloatFromPlace(&lastplace);
+
+  if (p_Less_Than(place, p_Create(0,0,1)))
+    place = p_Create(0,0,1);
+
+  if (p_Greater_Or_Equal(endplace, lastplace))
+    endplace = lastplace;
   
-  if (floatplace < 0)
-    floatplace = 0;
-
-  if (endfloatplace > lastfloatplace)
-    endfloatplace = lastfloatplace;
-
-  if (floatplace >= endfloatplace) {
+  if (p_Greater_Or_Equal(place, endplace)){
     //handleError("Illegal parameters for createPianonote. start: %f, end: %f",floatplace, endfloatplace);
     return -1;
   }
 
-  Place startplace;
-  Float2Placement(floatplace, &startplace);
-
-  Place endplace;
-  Float2Placement(endfloatplace, &endplace);
-
   ADD_UNDO(Notes(window,block,track,window->wblock->curr_realline));
 
-  struct Notes *note = InsertNote(wblock, wtrack, &startplace, &endplace, value, NOTE_get_velocity(track), true);
+  printf("  Place: %d %d/%d\n",place.line,place.counter,place.dividor);
+  struct Notes *note = InsertNote(wblock, wtrack, &place, &endplace, value, NOTE_get_velocity(track), true);
   
   window->must_redraw_editor = true;
 
