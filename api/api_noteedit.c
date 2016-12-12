@@ -42,11 +42,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "api_common_proc.h"
 #include "api_support_proc.h"
+#include "radium_proc.h"
 
 
-
-
-extern struct Root *root;
 
 extern char *NotesTexts2[];
 extern char *NotesTexts3[];
@@ -641,9 +639,96 @@ void deleteAllNotesInTrack(int tracknum, int blocknum, int windownum){
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
   if (wtrack==NULL)
-    return 0;
+    return;
 
   wtrack->track->notes = NULL;
   
   window->must_redraw=true;
 }
+
+// notes
+//////////////////////////////////////////////////
+
+void undoNotes(int tracknum, int blocknum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(-1, &window, blocknum, &wblock, tracknum);
+  if(wtrack==NULL)
+    return;
+  ADD_UNDO(Notes(window,window->wblock->block,wtrack->track,window->wblock->curr_realline));
+}
+
+Place getNoteStart(int notenum, int tracknum, int blocknum, int windownum){
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
+
+  if(note==NULL)
+    return place(0,0,1);
+
+  return note->l.p;
+}
+
+Place getNoteEnd(int notenum, int tracknum, int blocknum, int windownum){
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
+
+  if(note==NULL)
+    return place(1,0,1);
+
+  return note->end;
+}
+
+float getNoteValue(int notenum, int tracknum, int blocknum, int windownum){
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
+
+  if(note==NULL)
+    return 64.0f;
+
+  return note->note;
+}
+
+float getNoteEndPitch(int notenum, int tracknum, int blocknum, int windownum){
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
+
+  if(note==NULL)
+    return 0;
+
+  return note->pitch_end;
+}
+
+int getNoteSubtrack(int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return 0;
+
+  return GetNoteSubtrack(wtrack, note);
+}
+
+void setNoMouseNote(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return;
+  
+  if (wblock->mouse_note != NULL){
+    wblock->mouse_note = NULL;
+    window->must_redraw_editor = true;
+    //printf("no mouse note dirty\n");
+  }
+}
+
+void setMouseNote(int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+  else if (wblock->mouse_note != note){
+    wblock->mouse_note = note;
+    window->must_redraw_editor = true;
+    //printf("mouse note dirty\n");
+  }
+}
+

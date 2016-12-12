@@ -441,3 +441,107 @@ struct SeqBlock *getGfxGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, str
   return (*seqtrack)->gfx_gfx_seqblocks.elements[seqblocknum];
 }
 
+
+// NOTES
+
+static Place *getPrevLegalNotePlace(struct Tracks *track, struct Notes *note){
+  Place *end = PlaceGetFirstPos(); // small bug here, cant move pitch to first position, only almost to first position.
+
+  struct Notes *prev = FindPrevNoteOnSameSubTrack(track, note);
+  //printf("prev: %p. next(prev): %p, note: %p, next(note): %p\n",prev,prev!=NULL?NextNote(prev):NULL,note,NextNote(note));
+  
+  if (prev != NULL) {
+    end = &prev->l.p;
+    if (prev->velocities!=NULL)
+      end = ListLastPlace3(&prev->velocities->l);
+    if (prev->pitches!=NULL)
+      end = PlaceMax(end, ListLastPlace3(&prev->pitches->l));
+  }
+  
+  return end;
+}
+
+static Place *getNextLegalNotePlace(struct Notes *note){
+  Place *end = &note->end;
+
+  if (note->velocities != NULL)
+    end = PlaceMin(end, &note->velocities->l.p);
+
+  if (note->pitches != NULL)
+    end = PlaceMin(end, &note->pitches->l.p);
+
+  return end;
+}
+
+
+void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool last_legal_may_be_next_note){
+  Place firstLegal, lastLegal;
+
+  if (last_legal_may_be_next_note && !CtrlPressed()){
+    
+    struct Notes *next = FindNextNoteOnSameSubtrack(note);
+  
+    if (next!=NULL)
+      PlaceCopy(&lastLegal, &next->l.p);
+    else
+      PlaceSetLastPos(block, &lastLegal);
+
+  }else{
+    
+    PlaceSetLastPos(block, &lastLegal);
+    
+  }
+
+  
+  Place *last_pitch = ListLastPlace3(&note->pitches->l);
+  Place *last_velocity = ListLastPlace3(&note->velocities->l);
+  Place *startPlace = &note->l.p;
+
+  if (last_pitch==NULL)
+    last_pitch = startPlace;
+  if (last_velocity==NULL)
+    last_velocity = startPlace;
+
+  Place *firstLegalConst = PlaceMax(last_pitch, last_velocity);
+  PlaceFromLimit(&firstLegal, firstLegalConst);
+
+  PLAYER_lock();{
+    note->end = *PlaceBetween(&firstLegal, place, &lastLegal);
+    NOTE_validate(block, track, note);
+  }PLAYER_unlock();
+    
+  R_ASSERT(PlaceLessOrEqual(&note->end, &lastLegal));
+}
+
+int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool replace_note_ends){
+  Place old_place = note->l.p;
+
+  if (!PlaceEqual(&old_place, place)) {
+
+    //printf("MoveNote. old: %f, new: %f\n", GetfloatFromPlace(&old_place), GetfloatFromPlace(place));
+         
+    if (PlaceLessThan(place, &old_place)) {
+      Place *prev_legal = getPrevLegalNotePlace(track, note);
+      //printf("prev_legal: %f\n",GetfloatFromPlace(prev_legal));
+      if (PlaceLessOrEqual(place, prev_legal))
+        PlaceFromLimit(place, prev_legal);
+    } else {
+      Place *next_legal = getNextLegalNotePlace(note);
+      if (PlaceGreaterOrEqual(place, next_legal))
+        PlaceTilLimit(place, next_legal);
+    }
+    
+    PLAYER_lock();{
+      ListRemoveElement3(&track->notes, &note->l);
+      note->l.p = *place;
+      ListAddElement3(&track->notes, &note->l);
+      if (replace_note_ends && !CtrlPressed())
+        ReplaceNoteEnds(block, track, &old_place, place, note->polyphony_num);
+      NOTE_validate(block, track, note);
+    }PLAYER_unlock();
+
+  }
+  
+  return ListPosition3(&track->notes->l, &note->l);
+}
+

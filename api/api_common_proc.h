@@ -81,6 +81,9 @@ extern struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum);
 extern struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack);
 extern struct SeqBlock *getGfxGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack);
 
+extern void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool last_legal_may_be_next_note);
+extern int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool replace_note_ends);
+  
 #ifdef __cplusplus
 }
 #endif
