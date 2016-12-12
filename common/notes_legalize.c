@@ -51,7 +51,7 @@ void LegalizeNotes(struct Blocks *block,struct Tracks *track){
 	PlaceSetLastPos(block,&endplace);
 
 	while(note!=NULL){
-		p1=&note->l.p;
+                p1=&note->l.p;
 		p2=&note->end;
 
 		if(PlaceGreaterOrEqual(p2,&endplace)){
@@ -81,6 +81,9 @@ void LegalizeNotes(struct Blocks *block,struct Tracks *track){
 			velocity=NextVelocity(velocity);
 		}
 
+                p1=&note->l.p;
+		p2=&note->end;
+                
 		struct Pitches *pitch=note->pitches;
 		while(pitch!=NULL){
 			p=&pitch->l.p;
