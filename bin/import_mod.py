@@ -1040,7 +1040,7 @@ class Playlist:
         #radium.setPlaylistLength(len(self.patternnums))
         #pos = 0
         for patternnum in self.patternnums:
-            radium.addBlockToSeqTrack(0, patternnum, radium.getSongLengthInFrames())
+            radium.addBlockToSeqtrack(0, patternnum, radium.getSongLengthInFrames())
             #radium.setPlaylistBlock(pos, patternnum)
             #pos += 1
 
