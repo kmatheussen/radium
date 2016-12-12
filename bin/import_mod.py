@@ -208,7 +208,7 @@ class Note:
 
         # 1. create note
         radium_notenum = radium.addNote3(
-            self.notenum, self.velocities[0].value * (65536 // 64),
+            self.notenum, self.velocities[0].value / 64.0,
             self.linenum, self.counter, self.dividor,
             end_line, end_counter, end_dividor,
             self.radium_tracknum, -1, -1

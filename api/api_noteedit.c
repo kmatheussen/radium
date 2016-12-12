@@ -268,10 +268,6 @@ int getNoteScrollLength(void){
   return g_downscroll;
 }
 
-int getMaxVolume(){
-  return MAX_VELOCITY;
-}
-
 
 
 /********** Signatures  **********/
@@ -558,8 +554,10 @@ void setNoteContinueNextBlock(bool continuenextblock, int notenum, int tracknum,
   note->noend = continuenextblock?1:0;
 }
 
-int addNote(float notenum,int velocity,
-            Place start, Place end,
+int addNote(float notenum,
+            float velocity,
+            Place start,
+            Place end,
             int tracknum, int blocknum, int windownum)
 {
   struct Tracker_Windows *window;
@@ -594,7 +592,7 @@ int addNote(float notenum,int velocity,
                                   &start,
                                   end_place,
                                   notenum,
-                                  velocity,
+                                  MAX_VELOCITY*velocity,
                                   true);
 
   window->must_redraw=true;
@@ -602,7 +600,7 @@ int addNote(float notenum,int velocity,
   return ListFindElementPos3(&wtrack->track->notes->l,&note->l);
 }
 
-int addNote3(float notenum,int velocity,
+int addNote3(float notenum,float velocity,
              int line,int counter,int dividor,
              int end_line,int end_counter,int end_dividor,
              int tracknum, int blocknum, int windownum)

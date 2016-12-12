@@ -4805,7 +4805,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
       (assert #f))      
     
     (let ((radium-notenum (<ra> :add-note (+ *pitch-transpose* first-pitch-value)
-                                          (* first-velocity-value (/ 65536 64))
+                                          (/ first-velocity-value 64)
                                           start-place
                                           stop-place
                                           channelnum -1 -1)))

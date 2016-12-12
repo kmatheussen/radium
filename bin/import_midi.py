@@ -57,8 +57,6 @@ class RadiumMock:
         print "addBPM3", str(linenum) + ": "+hex(bpm)
     def createVelocityF(self, value, floatplace, notenum, tracknum):
         print "   createVelocityF",floatplace,value
-    def getMaxVolume(self):
-        return 127
 
     def setPlaylistBlock(self, pos, blocknum):
         print "Playlist ",pos,blocknum
@@ -563,7 +561,7 @@ def send_notes_to_radium_track(notes, tracknum, resolution, lpb):
         startplace = tick_to_place(note.start_tick, resolution, lpb)
         endplace   = tick_to_place(note.end_tick, resolution, lpb)
 
-        radium.addNote3(note.notenum, note.velocity*radium.getMaxVolume() / 128,
+        radium.addNote3(note.notenum, note.velocity / 128.0,
                         startplace[0], startplace[1], startplace[2],
                         endplace[0], endplace[1], endplace[2],
                         tracknum, -1, -1)
