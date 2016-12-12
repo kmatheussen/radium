@@ -175,7 +175,7 @@ else
 endif
 
 ifneq (,$(findstring FOR_LINUX,$(OS_OPTS)))
-	DEBUG_BUILD_OPTS += -ftree-vrp -Warray-bounds=2
+#	DEBUG_BUILD_OPTS += -ftree-vrp -Warray-bounds=2
 endif
 
 RELEASE_BUILD_OPTS_WITHOUT_NDEBUG = -DRELEASE -Wall -g $(OPTIMIZE)
@@ -1625,7 +1625,7 @@ Pd_plugin.o: audio/Pd_plugin.cpp
 	$(CCC) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
 FAUST_DEPENDENCIES = $(WHICHFAUST) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
-FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture  -fno-sanitize=signed-integer-overflow 
+FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture # -fno-sanitize=signed-integer-overflow 
 
 Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES)
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
@@ -2041,8 +2041,8 @@ moc_Qt${RADIUM_QT_VERSION}Widget.o: bin/packages/Visualization-Library-master/sr
 # embedded scheme
 
 ifeq ($(TARGET_OS),linux)
-#S7AlignmentSanitize=
-S7AlignmentSanitize=-fno-sanitize=alignment
+S7AlignmentSanitize=
+#S7AlignmentSanitize=-fno-sanitize=alignment
 else
 S7AlignmentSanitize=
 endif
@@ -2066,7 +2066,7 @@ bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 scheme.o: embedded_scheme/scheme.cpp $(API)radium_proc.h
 	$(CCC) -c embedded_scheme/scheme.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src -Ibin/packages/s7
 
-QHTTPSERVERFLAGS = $(CPPOPT) $(QT_CFLAGS) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT -fno-sanitize=undefined
+QHTTPSERVERFLAGS = $(CPPOPT) $(QT_CFLAGS) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT #-fno-sanitize=undefined
 
 qhttpconnection.o: bin/packages/qhttpserver-master/src/qhttpconnection.cpp
 	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpconnection.cpp $(QHTTPSERVERFLAGS)

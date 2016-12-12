@@ -153,6 +153,7 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
 
   void calledRegularlyByParent(void){
     comp->calledRegularlyByParent();
+    attack_slider->update();
   }
   
   float get_exp_value(double val, double max_val, double y1, double y2){
