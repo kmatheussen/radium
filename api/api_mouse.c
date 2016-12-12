@@ -2232,7 +2232,7 @@ float getSubtrackX2(int subtracknum, int tracknum, int blocknum, int windownum){
 // fxs
 //////////////////////////////////////////////////
 
-void addFX(int tracknum, int blocknum, int windownum){
+void requestFX(int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
   struct WBlocks *wblock;
@@ -2252,7 +2252,7 @@ void addFX(int tracknum, int blocknum, int windownum){
   AddFXNodeLineCurrPos(window, wblock, wtrack);
 }
 
-void addFXMousePos(int windownum){
+void requestFXMousePos(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL)
     return;

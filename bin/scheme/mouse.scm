@@ -2714,7 +2714,7 @@
                      *current-track-num*
                      (inside-box (<ra> :get-box track-fx *current-track-num*) X Y)
                      (<ra> :select-track *current-track-num*)
-                     (<ra> :add-fx-mouse-pos)
+                     (<ra> :request-fx-mouse-pos)
                      #t))))
 
 
