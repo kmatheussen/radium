@@ -35,8 +35,10 @@ float getPitchValue(int pitchnum, int notenum, int tracknum, int blocknum, int w
     else if (pitchnum==0)
       return note->note;
 
-    else if (note->pitch_end==0 && note->pitches==NULL)
-      return note->note;
+    // No, we do return 0 for pitch_end if pitch_end is actually 0.
+    //
+    //else if (note->pitch_end==0 && note->pitches==NULL)
+    //  return note->note;
 
     else
       return note->pitch_end;
