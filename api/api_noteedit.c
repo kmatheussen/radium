@@ -522,27 +522,6 @@ int getNoteVolume(int windownum,int blocknum,int tracknum,int notenum){
   return note->velocity;
 }
 
-// deprecated
-float getNotePlace(int windownum,int blocknum,int tracknum,int notenum){
-  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
-
-  if(note==NULL)
-    return -1.0f;
-
-  return GetfloatFromPlace(&note->l.p);
-}
-
-// deprecated
-float getNoteEndPlace(int windownum,int blocknum,int tracknum,int notenum){
-  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
-
-  if(note==NULL)
-    return -1.0f;
-
-  return GetfloatFromPlace(&note->end);
-}
-
-
 int getNumNotes(int tracknum,int blocknum,int windownum){
 	struct WTracks *wtrack=getWTrackFromNum(windownum,blocknum,tracknum);
 
@@ -550,24 +529,6 @@ int getNumNotes(int tracknum,int blocknum,int windownum){
 	if(wtrack->track->notes==NULL) return 0;
 
 	return ListFindNumElements3(&wtrack->track->notes->l);
-}
-
-void setNoteEndPlace(int line,int counter,int dividor,int windownum,int blocknum,int tracknum,int notenum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
-  if (note==NULL)
-    return;
-
-  Place *place = PlaceCreate(line,counter,dividor);
-
-  if (!PlaceLegal(wblock->block, place)) {
-    handleError("Place %d + %d/%d is not legal", line, counter, dividor);
-    return;
-  }
-
-  PlaceCopy(&note->end, place);
 }
 
 bool noteContinuesNextBlock(int notenum, int tracknum, int blocknum, int windownum){

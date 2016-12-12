@@ -2303,7 +2303,7 @@ static struct Notes *getNoteAtPlace(struct Tracks *track, Place *place){
   return NULL;
 }
 
-static int addNote3(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, Place *place, float value){
+static int addNote4(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, Place *place, float value){
 
   struct Notes *note = InsertNote(wblock, wtrack, place, NULL, value, NOTE_get_velocity(wtrack->track), false);
 
@@ -2345,7 +2345,7 @@ int createPitchnum(float value, Place place, int tracknum, int blocknum, int win
   int ret;
   
   if(note==NULL)
-    ret = addNote3(window, wblock, wtrack, &place, value);
+    ret = addNote4(window, wblock, wtrack, &place, value);
   else
     ret = addPitch(window, wblock, wtrack, note, &place, value);
 
