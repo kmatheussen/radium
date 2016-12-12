@@ -168,7 +168,7 @@ class Argument:
         
         result = ""
         for element in loop(string.capitalize(self.varname[0]),self.varname[1:]+" ", True):
-            processed = string.strip(string.lower(element))
+            processed = string.strip(string.lower(element)).replace('_','-')
             if processed != "":
                 if result=="":
                     result = "ra:" + processed
