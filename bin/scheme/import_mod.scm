@@ -449,6 +449,7 @@
                     (m-e :break :line 128 :pattern 2)))
 
 
+
 (define (add-new-merged-pattern-to-events playlist events from-patternnum1 from-patternnum2)
   (define to-patternnum (find-num-patterns events))
   (define new-pattern (append-patterns events from-patternnum1 from-patternnum2))
@@ -1815,8 +1816,6 @@ The behavior for these three tests are not needed since break events are always 
                       (m-e :note  :pattern 3 :line 1 :value 11)
                       (m-e :break :pattern 3 :line 2)))
   )
-
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

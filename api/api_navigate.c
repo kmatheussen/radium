@@ -282,7 +282,7 @@ void requestCursorMove(void){
     goto exit;
   
   int split_pos = string_charpos(line,',');
-  printf("split_pos: %d, len: %d, string: -%s-\n",split_pos, len, line);
+  //printf("split_pos: %d, len: %d, string: -%s-\n",split_pos, len, line);
   
   if (split_pos != -1){
     if (split_pos>=len-1)

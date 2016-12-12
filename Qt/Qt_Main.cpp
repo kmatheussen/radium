@@ -1648,7 +1648,7 @@ int radium_main(char *arg){
           QApplication::setStyle(style);
         
 #else // USE_QT5
-        
+
         QApplication::setStyle( new QPlastiqueStyle());
         
 #endif
