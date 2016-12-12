@@ -105,8 +105,13 @@ if [ `uname` == "Linux" ] ; then
 fi
 
 if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.5\." ; then
-    echo "Qt 5.5 is not supported (because of a buggy KDE qt library)"
-    exit 5
+    QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS`
+    if grep -r kf5deprecatedwidgets.so $QT_QPA_PLATFORM_PLUGIN_PATH ; then
+        echo
+        echo "The file $QT_QPA_PLATFORM_PLUGIN_PATH/*/kf5deprecatedwidgets.so in Qt 5.5 makes Radium not behave as it should. Please delete this file or use a different version of Qt."
+        echo
+        exit 5
+    fi
 fi
 
 
