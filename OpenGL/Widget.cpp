@@ -508,7 +508,7 @@ static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
                      );
 }
 
-#define TEST_TIME 1
+#define TEST_TIME 0
 
 #if defined(RELEASE) && TEST_TIME==1
 #error "oops"
