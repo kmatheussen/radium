@@ -1536,7 +1536,7 @@ void cancelCurrentPianonote(void){
   setCurrentPianonote(-1, -1, -1);
 }
 
-static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value);
+static int addPitch2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value);
   
 void addPianonotePitch(float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
@@ -1555,7 +1555,7 @@ void addPianonotePitch(float value, float floatplace, int notenum, int tracknum,
   Place place;
   Float2Placement(floatplace, &place);
 
-  addPitch(window, wblock, wtrack, note, &place, value);
+  addPitch2(window, wblock, wtrack, note, &place, value);
 }
 
 
@@ -2082,7 +2082,7 @@ static int addNote4(struct Tracker_Windows *window, struct WBlocks *wblock, stru
   return getPitchNum(wtrack->track, note, NULL, false);
 }
 
-static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value){
+static int addPitch2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value){
 
   struct Pitches *pitch = AddPitch(window, wblock, wtrack, note, place, value);
 
@@ -2117,7 +2117,7 @@ int addPitchnum(float value, Place place, int tracknum, int blocknum, int window
   if(note==NULL)
     ret = addNote4(window, wblock, wtrack, &place, value);
   else
-    ret = addPitch(window, wblock, wtrack, note, &place, value);
+    ret = addPitch2(window, wblock, wtrack, note, &place, value);
 
   if (ret==-1)
     Undo_CancelLastUndo();
