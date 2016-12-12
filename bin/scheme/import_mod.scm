@@ -4768,13 +4768,13 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
          (last-velocity-pos (legal-pos (car last-velocity)))
          (last-velocity-value (cadr last-velocity))
          
-         (start-place (place-list first-velocity-pos))
-         (stop-place (place-list last-velocity-pos)))
+         (start-place first-velocity-pos) ;;(place-list first-velocity-pos))
+         (stop-place last-velocity-pos)) ;;(place-list last-velocity-pos)))
     
 
     (when (null? (cdr velocities))
-          (c-display "velocities" (event-to-string note) start-place stop-place velocities)
-          (print-events events))
+      (c-display "velocities" (event-to-string note) start-place stop-place velocities)
+      (print-events events))
     
     (assert (= last-pitch-pos last-velocity-pos))
     (assert (= first-pitch-pos first-velocity-pos))
@@ -4804,14 +4804,11 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
       (print-events events)
       (assert #f))      
     
-    (let ((radium-notenum (<ra> :add-note2 (+ *pitch-transpose* first-pitch-value)
-                                           (* first-velocity-value (/ 65536 64))
-
-                                           (car start-place) (cadr start-place) (caddr start-place)
-                                           
-                                           (car stop-place) (cadr stop-place) (caddr stop-place)
-                                           
-                                           -1 -1 channelnum)))
+    (let ((radium-notenum (<ra> :add-note (+ *pitch-transpose* first-pitch-value)
+                                          (* first-velocity-value (/ 65536 64))
+                                          start-place
+                                          stop-place
+                                          channelnum -1 -1)))
       (when (not (= -1 radium-notenum))
 
         ;; set end velocity value

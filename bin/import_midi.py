@@ -38,13 +38,13 @@ import src as midi
 import fractions
 
 class RadiumMock:
-    def addNote(self,
+    def addNote3(self,
                 notenum, velocity,
                 line, counter, dividor,
                 end_line, end_counter, end_dividor,
-                windownum, blocknum, tracknum):
+                tracknum, blocknum, windownum):
 #        return
-        print "addNote",tracknum,line,end_line,notenum,velocity
+        print "addNote3",tracknum,line,end_line,notenum,velocity
     def setMainLPB(self,lpb):
         pass
     def setMainBPM(self,pbm):
@@ -75,8 +75,7 @@ class RadiumMock:
 
 def get_radium_mock():
     radium = RadiumMock()
-    radium.addNote = radium.addNote
-    radium.addNote2 = radium.addNote
+    radium.addNote3 = radium.addNote3
     radium.setMainLPB = radium.setLPB
     radium.setMainBPM = radium.setMainBPM
     radium.setNumLines = radium.dummy
@@ -564,10 +563,10 @@ def send_notes_to_radium_track(notes, tracknum, resolution, lpb):
         startplace = tick_to_place(note.start_tick, resolution, lpb)
         endplace   = tick_to_place(note.end_tick, resolution, lpb)
 
-        radium.addNote(note.notenum, note.velocity*radium.getMaxVolume() / 128,
-                       startplace[0], startplace[1], startplace[2],
-                       endplace[0], endplace[1], endplace[2],
-                       -1, -1, tracknum)
+        radium.addNote3(note.notenum, note.velocity*radium.getMaxVolume() / 128,
+                        startplace[0], startplace[1], startplace[2],
+                        endplace[0], endplace[1], endplace[2],
+                        tracknum, -1, -1)
 
 
 def handle_radium_instruments(tracks, port=""):

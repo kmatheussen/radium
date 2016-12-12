@@ -560,40 +560,40 @@ void setNoteContinueNextBlock(bool continuenextblock, int notenum, int tracknum,
   note->noend = continuenextblock?1:0;
 }
 
-int addNote2(float notenum,int velocity,
-             int line,int counter,int dividor,
-             int end_line,int end_counter,int end_dividor, 
-             int windownum, int blocknum, int tracknum)
+int addNote(float notenum,int velocity,
+            Place start, Place end,
+            int tracknum, int blocknum, int windownum)
 {
   struct Tracker_Windows *window;
-  struct WBlocks *wblock=getWBlockFromNumA(-1,&window,blocknum);
-  struct WTracks *wtrack=getWTrackFromNum(windownum,blocknum,tracknum);
-  if(wblock==NULL || wtrack==NULL) {
-    handleError("unknown wblock(%p) or wtrack(%p) %d/%d/%d\n",wblock,wtrack,windownum,blocknum,tracknum);
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+
+  if(wtrack==NULL)
+    return -1;
+
+  ValidatePlace(&start);
+
+  if (!PlaceLegal(wblock->block, &start)) {
+    handleError("addNote: Start place %d + %d/%d is not legal", start.line, start.counter, start.dividor);
     return -1;
   }
 
-  Place *place = PlaceCreate(line,counter,dividor);
+  Place *end_place = NULL;
 
-  ValidatePlace(place);
-
-  if (!PlaceLegal(wblock->block, place)) {
-    handleError("Place %d + %d/%d is not legal", line, counter, dividor);
+  if (end.line >=0) {
+    end_place = &end;
+    
+    ValidatePlace(end_place);
+    
+    if (!PlaceLegal(wblock->block, end_place)) {
+      handleError("addNote: End place %d + %d/%d is not legal", end.line, end.counter, end.dividor);
     return -1;
-  }
-
-  Place *end_place = end_line==-1 ? NULL : PlaceCreate(end_line,end_counter,end_dividor);
-
-  ValidatePlace(end_place);
-
-  if (end_place != NULL && !PlaceLegal(wblock->block, end_place)) {
-    handleError("Place %d + %d/%d is not legal", end_line, end_counter, end_dividor);
-    return -1;
+    }
   }
 
   struct Notes *note = InsertNote(wblock,
                                   wtrack,
-                                  place,
+                                  &start,
                                   end_place,
                                   notenum,
                                   velocity,
@@ -604,16 +604,16 @@ int addNote2(float notenum,int velocity,
   return ListFindElementPos3(&wtrack->track->notes->l,&note->l);
 }
 
-int addNote(int notenum,int velocity,
+int addNote3(float notenum,int velocity,
              int line,int counter,int dividor,
-             int end_line,int end_counter,int end_dividor, 
-             int windownum, int blocknum, int tracknum)
+             int end_line,int end_counter,int end_dividor,
+             int tracknum, int blocknum, int windownum)
 {
-  return addNote2(notenum, velocity,
-                  line, counter, dividor,
-                  end_line, end_counter, end_dividor,
-                  windownum, blocknum, tracknum
-                  );
+  Place start = place(line,counter,dividor);
+
+  Place end = place(end_line, end_counter, end_dividor);
+
+  return addNote(notenum, velocity, start, end, tracknum, blocknum, windownum);
 }
 
 void cutNote(Place place, int notenum, int tracknum, int blocknum, int windownum){

@@ -193,11 +193,11 @@ class Note:
         assert(self.end_counter >= 0)
 
         # 1. create note
-        radium_notenum = radium.addNote2(
+        radium_notenum = radium.addNote3(
             self.notenum, self.velocities[0].value * (65536 // 64),
             self.linenum, self.counter, self.dividor,
             end_line, end_counter, end_dividor,
-            -1, -1, self.radium_tracknum
+            self.radium_tracknum, -1, -1
         )
 
         # comment out. tracks often don't match from block to block, so it creates hanging notes.
