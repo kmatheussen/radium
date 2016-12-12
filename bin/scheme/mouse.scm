@@ -1491,17 +1491,19 @@
                                                  (define Value (scale X
                                                                       (<ra> :get-track-notes-x1 *current-track-num*) (<ra> :get-track-notes-x2 *current-track-num*) 
                                                                       (get-min-pitch-in-current-track) (get-max-pitch-in-current-track)))
+                                                 (if (not (<ra> :ctrl-pressed))
+                                                     (set! Value (round Value)))
                                                  (define Num (<ra> :add-pitchnum Value Place *current-track-num*))
                                                  (if (= -1 Num)
                                                      #f
                                                      (callback Num (<ra> :get-pitchnum-value Num *current-track-num*))))))
                         :Move-node (lambda (Num Value Place)                                     
                                      (<ra> :set-pitchnum Num
-                                                   (if (<ra> :ctrl-pressed)
-                                                       Value
-                                                       (round Value))
-                                                   (or Place -1)
-                                                   *current-track-num*))
+                                                        (if (<ra> :ctrl-pressed)
+                                                            Value
+                                                            (round Value))
+                                                        (or Place -1)
+                                                        *current-track-num*))
                         :Publicize (lambda (Num)
                                      (set-indicator-pitchnum Num *current-track-num*)
                                      (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value Num *current-track-num*)))))

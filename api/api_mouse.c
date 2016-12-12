@@ -2089,8 +2089,8 @@ static int addPitch2(struct Tracker_Windows *window, struct WBlocks *wblock, str
   if(pitch==NULL)
     return -1;
 
-  if (note->pitch_end==0)
-    note->pitch_end = value;
+  //if (note->pitch_end==0)
+  //  note->pitch_end = value;
   
   window->must_redraw_editor = true;
 
