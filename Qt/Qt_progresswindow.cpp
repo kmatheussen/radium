@@ -8,6 +8,7 @@
 #include <QProcess>
 #include <QTimer>
 #include <QDesktopWidget>
+#include <QMainWindow>
 
 static const QString message_hide = "_MESSAGE_HIDE";
 static const QString message_show = "_MESSAGE_SHOW";
@@ -41,7 +42,7 @@ public:
 
 static MyTimer mytimer;
 
-void process_OpenProgress(QString message, int fontsize){
+void process_OpenProgress(QString message, QRect rect){
   delete progressBox;
 
   progressBox = new QMessageBox;
@@ -51,28 +52,22 @@ void process_OpenProgress(QString message, int fontsize){
   progressBox->setWindowFlags(progressBox->windowFlags() | Qt::Popup);//Qt::WindowStaysOnTopHint|Qt::SplashScreen|Qt::Window | Qt::FramelessWindowHint|Qt::Popup);
 #endif
 
-  int width = fontsize*600/8;
-  int height = fontsize*300/8;
-  
   progressBox->setStandardButtons(0);
   progressBox->setText(message + "                                                                                                                " + "\n\n\n\n                                                                                                                ");
   progressBox->setInformativeText("             \n            \n              \n                \n               \n");
 
 
-  progressBox->setMinimumWidth(width);
-  progressBox->setMinimumHeight(height);
-  progressBox->setMaximumWidth(width);
-  progressBox->setMaximumHeight(height);
+  progressBox->setMinimumWidth(rect.width());
+  progressBox->setMinimumHeight(rect.height());
+  progressBox->setMaximumWidth(rect.width());
+  progressBox->setMaximumHeight(rect.height());
 
-  QRect screenGeometry = QApplication::desktop()->screenGeometry();
-  int x = (screenGeometry.width()-width) / 2;
-  int y = (screenGeometry.height()-height) / 2;
-  progressBox->move(x, y);
+  progressBox->move(rect.x(), rect.y());
   
   progressBox->show();
 
-  progressBox->setMinimumWidth(width);
-  progressBox->setMinimumHeight(height);
+  progressBox->setMinimumWidth(rect.width());
+  progressBox->setMinimumHeight(rect.height());
 
   for(int i=0; i < 10 ; i++){
     progressBox->repaint();
@@ -82,9 +77,9 @@ void process_OpenProgress(QString message, int fontsize){
 
 }
 
-void process_ShowProgressMessage(QString message, int fontsize){
+void process_ShowProgressMessage(QString message, QRect rect){
   if (progressBox == NULL)
-    process_OpenProgress("...", fontsize);
+    process_OpenProgress("...", rect);
 
   // Some ridiculous code to try to work around QMessageBox window size jumping
   {
@@ -108,8 +103,8 @@ void process_ShowProgressMessage(QString message, int fontsize){
     progressBox->setInformativeText(out);
   }
 
-  progressBox->setMinimumWidth(fontsize*600/8);
-  progressBox->setMinimumHeight(fontsize*300/8);
+  progressBox->setMinimumWidth(rect.width());
+  progressBox->setMinimumHeight(rect.height());
 
   for(int i=0; i < 10 ; i++){
     progressBox->repaint();
@@ -128,6 +123,8 @@ int main(int argc, char **argv){
   QApplication app(argc, argv);
 
   int fontsize = atoi(argv[1]);
+
+  QRect rect(atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
     
   QFont font = QApplication::font();
   font.setPointSize(fontsize);
@@ -136,8 +133,8 @@ int main(int argc, char **argv){
 
   mytimer.start();
 
-  QString header = QByteArray::fromBase64(argv[2]).constData();
-  process_OpenProgress(header, fontsize);
+  QString header = QByteArray::fromBase64(argv[6]).constData();
+  process_OpenProgress(header, rect);
 
   QFile in;
   in.open(stdin, QIODevice::ReadOnly);
@@ -156,7 +153,7 @@ int main(int argc, char **argv){
       progressBox->show();
       progressBox->raise();
     } else if (progressBox->isVisible())
-      process_ShowProgressMessage(line, fontsize);
+      process_ShowProgressMessage(line, rect);
   }
 
   process_CloseProgress();
@@ -173,7 +170,26 @@ int main(int argc, char **argv){
 #include "../common/visual_proc.h"
 #include "../common/OS_settings_proc.h"
 
+extern QMainWindow *g_main_window;
+
 static QProcess *g_process = NULL;
+
+static QRect get_rect(int fontsize){
+    
+  QRect rect = g_main_window->rect();
+  QPoint pos = g_main_window->mapToGlobal(QPoint(0,0));
+
+  int middle_x = pos.x() + rect.width()/2;
+  int middle_y = pos.y() + rect.height()/2;
+  
+  int width = fontsize*600/8;
+  int height = fontsize*300/8;
+
+  int x = middle_x - width/2;
+  int y = middle_y - height/2;
+
+  return QRect(x,y,width,height);
+}
 
 void GFX_OpenProgress(const char *message){
   delete g_process;
@@ -191,7 +207,22 @@ void GFX_OpenProgress(const char *message){
   g_process->setProcessEnvironment(env);
 #endif
 
-  g_process->start(program+" "+QString::number(QApplication::font().pointSize()) + " " + QString(QString(message).toUtf8().toBase64().constData()), QIODevice::WriteOnly | QIODevice::Text | QIODevice::Unbuffered | QIODevice::Append);
+  int fontsize = QApplication::font().pointSize();
+
+  QRect rect = get_rect(fontsize);
+
+  printf("   %d %d %d %d\n", rect.x(),rect.y(),rect.width(),rect.height());
+  //getchar();
+
+  g_process->start(program+" "+
+                   QString::number(fontsize) + " " +
+                   QString::number(rect.x()) + " " +
+                   QString::number(rect.y()) + " " +
+                   QString::number(rect.width()) + " " +
+                   QString::number(rect.height()) + " " +
+                   QString(QString(message).toUtf8().toBase64().constData()),
+                   QIODevice::WriteOnly | QIODevice::Text | QIODevice::Unbuffered | QIODevice::Append
+                   );
 
   //printf("POINGSIZE: %d\n", QApplication::font().pointSize());
   //getchar();
@@ -250,7 +281,7 @@ void GFX_ShowProgress(void){
 cd ..
 BUILDTYPE=DEBUG ./build_linux.sh
 cd Qt
-g++ Qt_progresswindow.cpp -DTEST_MAIN `pkg-config --libs Qt5Gui --cflags Qt5Gui --cflags Qt5Widgets` -std=gnu++11 -DNDEBUG -DP_SERVER -I../Qt -DFOR_LINUX -DUSE_QT4 -DUSE_QT5 `cat ../flagopts.opt`
+g++ Qt_progresswindow.cpp -DTEST_MAIN `pkg-config --libs Qt5Gui --cflags Qt5Gui --cflags Qt5Widgets` -std=gnu++11 -DNDEBUG -DP_SERVER -I../Qt -DFOR_LINUX -DUSE_QT4 -DUSE_QT5 `cat ../flagopts.opt` -fPIC
 ./a.out
 */
 
