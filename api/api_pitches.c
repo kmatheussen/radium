@@ -168,7 +168,7 @@ int addPitchF(float value, float floatplace, int notenum, int tracknum, int bloc
 }
 
 
-int setPitch(int pitchnum, float value, Place place, int notenum, int tracknum, int blocknum, int windownum){
+int setPitch(float value, Place place, int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
   
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -225,7 +225,7 @@ int setPitch(int pitchnum, float value, Place place, int notenum, int tracknum, 
   return notenum;
 }
 
-int setPitchF(int pitchnum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+int setPitchF(float value, float floatplace, int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
   Place place;
   
   if (floatplace < 0) {
@@ -240,7 +240,7 @@ int setPitchF(int pitchnum, float value, float floatplace, int notenum, int trac
     
   }
   
-  return setPitch(pitchnum, value, place, notenum, tracknum, blocknum, windownum);
+  return setPitch(value, place, pitchnum, notenum, tracknum, blocknum, windownum);
 }
 
 
