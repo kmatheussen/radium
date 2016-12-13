@@ -229,11 +229,17 @@ int setPitchF(int pitchnum, float value, float floatplace, int notenum, int trac
   Place place;
   
   if (floatplace < 0) {
+    
     place.line=-1;
     place.counter=0;
     place.dividor=1;
-  }else
+    
+  }else {
+    
     Float2Placement(floatplace, &place);
+    
+  }
+  
   return setPitch(pitchnum, value, place, notenum, tracknum, blocknum, windownum);
 }
 
@@ -242,8 +248,8 @@ void deletePitch(int pitchnum, int notenum, int tracknum, int blocknum, int wind
   deletePianonote(pitchnum, notenum, tracknum, blocknum, windownum); // Think this is correct.
 }
 
-void setPitchLogtypeHolding(bool is_holding, int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
-  setPianonoteLogtypeHolding(is_holding, pitchnum, notenum, tracknum, blocknum, windownum); // Think this is correct
+void setPitchLogtype(int logtype, int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
+  setPianonoteLogtype(logtype, pitchnum, notenum, tracknum, blocknum, windownum); // Think this is correct
 }
 
 

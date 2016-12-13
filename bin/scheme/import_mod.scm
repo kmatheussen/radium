@@ -4839,7 +4839,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 
         ;; set velocity logtypes
         (for-each (lambda (velocity velocitynum)
-                    (<ra> :set-velocity-logtype-holding (not (caddr velocity)) velocitynum  radium-notenum channelnum))
+                    (<ra> :set-velocity-logtype (if (caddr velocity) *logtype-linear* *logtype-hold*) velocitynum  radium-notenum channelnum))
                   (butlast velocities)
                   (iota (1- (length velocities))))
 
@@ -4862,7 +4862,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 
           ;; set pitch logtypes
           (for-each (lambda (pitch pianonotenum)
-                      (<ra> :set-pianonote-logtype-holding (not (caddr pitch)) pianonotenum  radium-notenum channelnum))
+                      (<ra> :set-pianonote-logtype (if (caddr pitch) *logtype-linear* *logtype-hold*) pianonotenum  radium-notenum channelnum))
                     (butlast pitches)
                     (iota (1- (length pitches))))
           
@@ -4912,7 +4912,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 
   (define fx-num (<ra> :add-fx first-value first-pos fx-name tracknum))
   
-  (<ra> :set-fxnode-logtype-holding #t 0 fx-num tracknum)
+  (<ra> :set-fxnode-logtype *logtype-hold* 0 fx-num tracknum)
 
   (define second-gliding (cadr glidings))  
   (define second-pos (legal-pos (car second-gliding)))
@@ -4922,7 +4922,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (assert (>= second-value 0))
 
   (<ra> :set-fxnode 1 second-value second-pos fx-num tracknum)
-  (<ra> :set-fxnode-logtype-holding #t 1 fx-num tracknum)
+  (<ra> :set-fxnode-logtype *logtype-hold* 1 fx-num tracknum)
 
   (if (and (= tracknum 1)
            (> first-value 1))
@@ -4937,7 +4937,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                 (assert (<= value 1))
                 (assert (>= value 0))
                 (define fxnode-num (<ra> :add-fxnode value place fx-num tracknum))
-                (<ra> :set-fxnode-logtype-holding #t fxnode-num fx-num tracknum)
+                (<ra> :set-fxnode-logtype *logtype-hold* fxnode-num fx-num tracknum)
                 )
               )
             (cddr glidings)))

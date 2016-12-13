@@ -1,8 +1,5 @@
 (provide 'mouse.scm)
 
-(define *logtype-hold* (<ra> :get-logtype-hold))
-(define *logtype-linear* 0)
-
 (define *left-button* 1)
 (define *middle-button* 3)
 (define *right-button* 5)
@@ -1926,17 +1923,17 @@
                                                       (pianonote-info :tracknum))
                                #f)
                              (define (set-linear!)
-                               (<ra> :set-pianonote-logtype-holding #f
-                                                                 (pianonote-info :pianonotenum)
-                                                                 (pianonote-info :notenum)
-                                                                 (pianonote-info :tracknum))
+                               (<ra> :set-pianonote-logtype *logtype-linear*
+                                                            (pianonote-info :pianonotenum)
+                                                            (pianonote-info :notenum)
+                                                            (pianonote-info :tracknum))
                                #f
                                )
                              (define (set-hold!)
-                               (<ra> :set-pianonote-logtype-holding #t
-                                                                 (pianonote-info :pianonotenum)
-                                                                 (pianonote-info :notenum)
-                                                                 (pianonote-info :tracknum))
+                               (<ra> :set-pianonote-logtype *logtype-hold*
+                                                            (pianonote-info :pianonotenum)
+                                                            (pianonote-info :notenum)
+                                                            (pianonote-info :tracknum))
                                #f
                                )
                              (define (add-pitch)
@@ -2259,15 +2256,15 @@
                                      (velocity-info :tracknum)))
                              (define (set-hold!)
                                (<ra> :undo-notes (velocity-info :tracknum))
-                               (<ra> :set-velocity-logtype-holding
-                                     #t
+                               (<ra> :set-velocity-logtype
+                                     *logtype-hold*
                                      (velocity-info :velocitynum)
                                      (velocity-info :notenum)
                                      (velocity-info :tracknum)))
                              (define (set-linear!)
                                (<ra> :undo-notes (velocity-info :tracknum))
-                               (<ra> :set-velocity-logtype-holding
-                                     #f
+                               (<ra> :set-velocity-logtype
+                                     *logtype-linear*
                                      (velocity-info :velocitynum)
                                      (velocity-info :notenum)
                                      (velocity-info :tracknum)))

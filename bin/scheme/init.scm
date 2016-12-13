@@ -88,8 +88,13 @@
 
 (set! (hook-functions *error-hook*) 
       (list (lambda (hook)
-              (display (ow!)))))
+              (display (ow!))
+              (if *is-initializing*
+                  (exit)))))
 
+
+(define *logtype-hold* (ra:get-logtype-hold))
+(define *logtype-linear* 0)
 
 
 (load "common1.scm")

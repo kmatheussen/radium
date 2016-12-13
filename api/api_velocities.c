@@ -287,7 +287,7 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
   window->must_redraw_editor = true;
 }
 
-void setVelocityLogtypeHolding(bool is_holding, int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+void setVelocityLogtype(int logtype, int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -311,8 +311,6 @@ void setVelocityLogtypeHolding(bool is_holding, int velocitynum, int notenum, in
     handleError("Can not set logtype for last velocity (doesn't make any sense)");
     return;
   }
-
-  int logtype = is_holding ? LOGTYPE_HOLD : LOGTYPE_LINEAR;
 
   if (is_first)
     note->velocity_first_logtype = logtype;

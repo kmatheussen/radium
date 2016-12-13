@@ -1357,7 +1357,7 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
 }
 
 static int getPitchnumLogtype_internal(int pitchnum, struct Tracks *track);
-static void setPitchnumLogtype(bool is_holding, int pitchnum, struct Tracks *track);
+static void setPitchnumLogtype2(int logtype, int pitchnum, struct Tracks *track);
   
 int getPianonoteLogtype(int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
@@ -1373,7 +1373,7 @@ int getPianonoteLogtype(int pianonotenum, int notenum, int tracknum, int blocknu
   return getPitchnumLogtype_internal(pitchnum, track);
 }
 
-void setPianonoteLogtypeHolding(bool is_holding, int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
+void setPianonoteLogtype(int logtype, int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -1386,7 +1386,7 @@ void setPianonoteLogtypeHolding(bool is_holding, int pianonotenum, int notenum, 
   window->must_redraw_editor=true;
   
   int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum);
-  setPitchnumLogtype(is_holding, pitchnum, track);
+  setPitchnumLogtype2(logtype, pitchnum, track);
 }
   
 int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
@@ -1789,15 +1789,13 @@ Place getPitchnumLogtype(int num,  int tracknum, int blocknum, int windownum){
 }
 */
 
-static void setPitchnumLogtype(bool is_holding, int pitchnum, struct Tracks *track){
+static void setPitchnumLogtype2(int logtype, int pitchnum, struct Tracks *track){
   bool is_end_pitch = false;
   struct Notes *note = NULL;
   struct Pitches *pitch = NULL;
 
   getPitch(pitchnum, &pitch, &note, &is_end_pitch, track);
 
-  int logtype = is_holding ? LOGTYPE_HOLD : LOGTYPE_LINEAR;
-  
   if (is_end_pitch) {
     RError("Can not set hold type of end pitch. pitchnum: %d, tracknum: %d",pitchnum,track->l.num);
     return;
@@ -1810,7 +1808,7 @@ static void setPitchnumLogtype(bool is_holding, int pitchnum, struct Tracks *tra
 }
 
 
-void setPitchnumLogtypeHolding(bool is_holding, int pitchnum, int tracknum, int blocknum, int windownum){
+void setPitchnumLogtype(int logtype, int pitchnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -1818,7 +1816,7 @@ void setPitchnumLogtypeHolding(bool is_holding, int pitchnum, int tracknum, int 
   if (wtrack==NULL)
     return;
 
-  setPitchnumLogtype(is_holding, pitchnum, wtrack->track);
+  setPitchnumLogtype2(logtype, pitchnum, wtrack->track);
 }
 
 
@@ -2717,10 +2715,6 @@ void setFxnodeLogtype(int logtype, int fxnodenum, int fxnum, int tracknum, int b
   fxnodeline->logtype = logtype;
 
   window->must_redraw_editor = true;
-}
-void setFxnodeLogtypeHolding(bool is_holding, int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
-  int logtype = is_holding ? LOGTYPE_HOLD : LOGTYPE_LINEAR;
-  setFxnodeLogtype(logtype, fxnodenum, fxnum, tracknum, blocknum, windownum);
 }
 
 void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
