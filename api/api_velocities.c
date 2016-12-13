@@ -172,7 +172,7 @@ int addVelocityF(float value, float floatplace, int notenum, int tracknum, int b
   return addVelocity(value, place, notenum, tracknum, blocknum, windownum);
 }
 
-int setVelocity(int velocitynum, float value, Place place, int notenum, int tracknum, int blocknum, int windownum){
+int setVelocity(float value, Place place, int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
   
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -229,7 +229,7 @@ int setVelocity(int velocitynum, float value, Place place, int notenum, int trac
   return notenum;
 }
 
-int setVelocityF(int velocitynum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+int setVelocityF(float value, float floatplace, int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
   Place place;
   
   if (floatplace < 0) {
@@ -238,7 +238,7 @@ int setVelocityF(int velocitynum, float value, float floatplace, int notenum, in
     place.dividor=1;
   }else
     Float2Placement(floatplace, &place);
-  return setVelocity(velocitynum, value, place, notenum, tracknum, blocknum, windownum);
+  return setVelocity(value, place, velocitynum, notenum, tracknum, blocknum, windownum);
 }
 
 void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){

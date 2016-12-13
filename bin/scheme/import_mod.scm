@@ -4812,9 +4812,9 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
       (when (not (= -1 radium-notenum))
 
         ;; set end velocity value
-        (<ra> :set-velocity 1
-                            (/ last-velocity-value 64)
+        (<ra> :set-velocity (/ last-velocity-value 64)
                             -1 ;; i.e. don't change time position
+                            1
                             radium-notenum
                             channelnum)
         

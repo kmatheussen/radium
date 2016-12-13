@@ -2208,7 +2208,7 @@
                                                                                    (velocity-info :tracknum)))
                                               (set-velocity-statusbar-text value))
                         :Move-node (lambda (velocity-info Value Place)
-                                     (define note-num (<ra> :set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
+                                     (define note-num (<ra> :set-velocity Value (or Place -1) (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
                                      (make-velocity-info :tracknum (velocity-info :tracknum)
                                                          :notenum note-num
                                                          :velocitynum (velocity-info :velocitynum)
