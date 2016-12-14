@@ -104,7 +104,7 @@ void THREADING_set_priority(priority_t priority){
   int success = pthread_setschedparam(pthread_self(), priority.policy, &priority.param);
 
   if (success!=0) {
-    GFX_Message(NULL, "pthread_getschedparam returned %d (%s)",
+    GFX_Message(NULL, "pthread_setschedparam returned %d (%s)",
                 success,
                 success==EINVAL ? "policy is not a recognized policy, or param does not make sense for the policy."
                 : success==EPERM ? "The caller does not have appropriate privileges to set the specified scheduling policy and parameters."

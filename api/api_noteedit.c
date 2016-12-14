@@ -554,7 +554,7 @@ void setNoteContinueNextBlock(bool continuenextblock, int notenum, int tracknum,
   note->noend = continuenextblock?1:0;
 }
 
-int addNote(float notenum,
+int addNote(float notevalue,
             float velocity,
             Place start,
             Place end,
@@ -567,6 +567,11 @@ int addNote(float notenum,
   if(wtrack==NULL)
     return -1;
 
+  if (notevalue < 0.001){
+    handleError("addNote: Pitch less than 0.001: %f\n", notevalue);
+    return -1;
+  }
+  
   ValidatePlace(&start);
 
   if (!PlaceLegal(wblock->block, &start)) {
@@ -591,7 +596,7 @@ int addNote(float notenum,
                                   wtrack,
                                   &start,
                                   end_place,
-                                  notenum,
+                                  notevalue,
                                   MAX_VELOCITY*velocity,
                                   true);
 
@@ -600,7 +605,7 @@ int addNote(float notenum,
   return ListFindElementPos3(&wtrack->track->notes->l,&note->l);
 }
 
-int addNote3(float notenum,float velocity,
+int addNote3(float notevalue,float velocity,
              int line,int counter,int dividor,
              int end_line,int end_counter,int end_dividor,
              int tracknum, int blocknum, int windownum)
@@ -609,7 +614,7 @@ int addNote3(float notenum,float velocity,
 
   Place end = place(end_line, end_counter, end_dividor);
 
-  return addNote(notenum, velocity, start, end, tracknum, blocknum, windownum);
+  return addNote(notevalue, velocity, start, end, tracknum, blocknum, windownum);
 }
 
 void cutNote(Place place, int notenum, int tracknum, int blocknum, int windownum){
