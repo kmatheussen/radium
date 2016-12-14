@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QApplication>
 #include <QFile>
 #include <QTextStream>
-#include <QTextEdit>
+#include <QPlainTextEdit>
 #include <QLabel>
 #include <QLayout>
 
@@ -246,7 +246,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     layout.addWidget(&buttons);
     */
 
-    QTextEdit details("<pre>"+message+"</pre>");
+    QPlainTextEdit details(message);
     layout.addWidget(&details);
     details.hide();
     
@@ -695,6 +695,9 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
     if (dosave)
       emergency_save_file.open();
+
+    //printf("tosend: -%s-. Filename: %s\n",tosend.toUtf8().constData(),file->fileName().toUtf8().constData());
+    //getchar();
     
     run_program(program,
                 local::toBase64(file->fileName()),
