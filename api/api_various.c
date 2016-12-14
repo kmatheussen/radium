@@ -594,6 +594,7 @@ static void import_importmod_file(void){
 void importMod(void){
   //import_importmod_file();
   //PyRun_SimpleString("import_mod.import_mod()");
+  //SCHEME_eval("(let () (load \"import_mod.scm\" (curlet)) (load-protracker-module))");
   SCHEME_eval("(my-require 'import_mod.scm)");
   SCHEME_eval("(load-protracker-module)");
   GL_create_all(root->song->tracker_windows);
