@@ -158,11 +158,18 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 #else
     setStyle(new QCleanlooksStyle());
 #endif
-    
+
+    QFontMetrics fm(QApplication::font());
+        
     if(g_bottom_bar_widget != NULL)
       RError("g_bottom_bar_widget!=NULL");
 
     g_bottom_bar_widget = this;
+
+    setMinimumHeight(fm.height()*3/2);
+    setMaximumHeight(fm.height()*3/2);
+    frame->setMinimumHeight(fm.height()*3/2);
+    frame->setMaximumHeight(fm.height()*3/2);
 
     min_velocity_slider->setValue(4000);
     velocity_slider->setValue(8000);
