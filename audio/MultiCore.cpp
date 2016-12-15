@@ -139,11 +139,24 @@ public:
 
     touch_stack();
 
+#ifdef FOR_MACOSX
+    printf("  Trying to call setPriority(QThread::TimeCriticalPriority);\n");
+#endif
     setPriority(QThread::TimeCriticalPriority); // shouldn't matter, but just in case the call below is not working, for some reason.
   
+#ifdef FOR_MACOSX
+    printf("  Trying to call THREADING_acquire_player_thread_priority();\n");
+#endif
     THREADING_acquire_player_thread_priority();
 
+#ifdef FOR_MACOSX
+    printf("  Trying to call can_start_main_loop.wait();\n");
+#endif
     can_start_main_loop.wait();
+
+#ifdef FOR_MACOSX
+    printf("  Success. Running Runner thread main loop\n");
+#endif
 
     while(true){
 
