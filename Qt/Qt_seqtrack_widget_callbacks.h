@@ -220,14 +220,14 @@ public:
   
   SeqTrack *_seqtrack;
 
-  const int64_t &_start_time;
-  const int64_t &_end_time;
+  const double &_start_time;
+  const double &_end_time;
   QTime _time;
   QRect _rect;
 
   int t_x1,t_y1,t_x2,t_y2,width,height;
     
-  Seqblocks_widget(QWidget *_sequencer_widget, SeqTrack *seqtrack, const int64_t &start_time, const int64_t &end_time)
+  Seqblocks_widget(QWidget *_sequencer_widget, SeqTrack *seqtrack, const double &start_time, const double &end_time)
     : _sequencer_widget(_sequencer_widget)
     , _seqtrack(add_gc_root(seqtrack))
     , _start_time(start_time)
@@ -634,7 +634,7 @@ class Seqtrack_widget : public QWidget, public Ui::Seqtrack_widget {
   Seqblocks_widget *_seqblocks_widget; // deleted automatically when 'this' is deleted.
   SeqTrack *_seqtrack;
 
-  Seqtrack_widget(QWidget *parent, SeqTrack *seqtrack, const int64_t &start_time, const int64_t &end_time)
+  Seqtrack_widget(QWidget *parent, SeqTrack *seqtrack, const double &start_time, const double &end_time)
     : QWidget(parent)
     , _seqblocks_widget(new Seqblocks_widget(parent, seqtrack, start_time, end_time))
     , _seqtrack(seqtrack)
@@ -702,10 +702,10 @@ public:
   
   QVector<Seqtrack_widget*> _seqtrack_widgets;
 
-  const int64_t &_start_time;
-  const int64_t &_end_time;
+  const double &_start_time;
+  const double &_end_time;
   
-  Seqtracks_widget(QWidget *sequencer_widget, const int64_t &start_time, const int64_t &end_time)
+  Seqtracks_widget(QWidget *sequencer_widget, const double &start_time, const double &end_time)
     : radium::VerticalScroll(sequencer_widget)
     , _sequencer_widget(sequencer_widget)
     ,_start_time(start_time)
@@ -847,13 +847,13 @@ public:
 struct SongTempoAutomation_widget { //: public MouseTrackerQWidget {
   bool is_visible = false;
    
-  const int64_t &_start_time;
-  const int64_t &_end_time;
+  const double &_start_time;
+  const double &_end_time;
    
   int t_x1,t_y1,t_x2,t_y2,width,height;
   QRectF _rect;
    
-  SongTempoAutomation_widget(QWidget *parent, const int64_t &start_time, const int64_t &end_time)
+  SongTempoAutomation_widget(QWidget *parent, const double &start_time, const double &end_time)
   //: MouseTrackerQWidget(parent)
     : _start_time(start_time)
     , _end_time(end_time)
@@ -883,10 +883,10 @@ struct SongTempoAutomation_widget { //: public MouseTrackerQWidget {
 };
 
 struct Timeline_widget : public MouseTrackerQWidget {
-  const int64_t &_start_time;
-  const int64_t &_end_time;
+  const double &_start_time;
+  const double &_end_time;
   
-  Timeline_widget(QWidget *parent, const int64_t &start_time, const int64_t &end_time)
+  Timeline_widget(QWidget *parent, const double &start_time, const double &end_time)
     :MouseTrackerQWidget(parent)
     ,_start_time(start_time)
     ,_end_time(end_time)
@@ -957,6 +957,8 @@ struct Timeline_widget : public MouseTrackerQWidget {
     const double start_time = _start_time / MIXER_get_sample_rate();
     const double end_time = _end_time / MIXER_get_sample_rate();
 
+    //if (end_time >= start_time)
+    //  return;
     R_ASSERT_RETURN_IF_FALSE(end_time > start_time);
     
     int inc_time = R_MAX(1, ceil(scale(min_pixels_between_text, 0, width(), 0, end_time-start_time)));
@@ -1036,11 +1038,11 @@ struct Timeline_widget : public MouseTrackerQWidget {
 };
 
 struct Seqtracks_navigator_widget : public MouseTrackerQWidget {
-  const int64_t &_start_time;
-  const int64_t &_end_time;
+  const double &_start_time;
+  const double &_end_time;
   Seqtracks_widget &_seqtracks_widget;
   
-  Seqtracks_navigator_widget(QWidget *parent, const int64_t &start_time, const int64_t &end_time, Seqtracks_widget &seqtracks_widget)
+  Seqtracks_navigator_widget(QWidget *parent, const double &start_time, const double &end_time, Seqtracks_widget &seqtracks_widget)
     : MouseTrackerQWidget(parent)
     , _start_time(start_time)
     , _end_time(end_time)
@@ -1173,8 +1175,8 @@ public:
 struct Sequencer_widget : public MouseTrackerQWidget {
 
   int _old_width = 600;
-  int64_t _start_time = 0;
-  int64_t _end_time = 600;
+  double _start_time = 0;
+  double _end_time = 600;
   double _samples_per_pixel;
 
   enum GridType _grid_type;
@@ -1344,6 +1346,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       }
     }
 
+    // Check if the number of seqtracks have changed
+    //
     if (is_called_every_ms(50)){
       bool do_update = _seqtracks_widget._seqtrack_widgets.size() != _last_num_seqtracks;
       
@@ -1362,6 +1366,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       }
     }
 
+    // Update cursor
+    //
     if (is_called_every_ms(15)){  // call each 15 ms. (i.e. more often than vsync)
       if (is_playing() && pc->playtype==PLAYSONG) {
         float x = get_curr_cursor_x(1 + MIXER_get_sample_rate() * 60.0 / 1000.0);
@@ -1374,6 +1380,33 @@ struct Sequencer_widget : public MouseTrackerQWidget {
         float y2 = _seqtracks_widget.t_y2;
       
         update(x_min, y1, 1+x_max-x_min, y2-y1);
+
+        double song_abstime = ATOMIC_DOUBLE_GET(pc->song_abstime);
+        double middle = (_start_time+_end_time) / 2.0;
+
+#if 0
+        // Smooth sequencer scrolling...
+        if (song_abstime != middle){
+          double diff = song_abstime - middle;
+          _start_time += diff;
+          _end_time += diff;
+          update();
+        }
+
+#else
+
+        if (song_abstime < _start_time) {
+          int64_t diff = _start_time - song_abstime;
+          _start_time -= diff;
+          _end_time -= diff;
+          update();
+        } else if (song_abstime > _end_time){
+          double diff = song_abstime - middle;
+          _start_time += diff;
+          _end_time += diff;
+          update();
+        }
+#endif
       }
     }
   }

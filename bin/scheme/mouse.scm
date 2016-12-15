@@ -2183,9 +2183,11 @@
                                                                  (info :tracknum)))
                         :Make-undo (lambda (_) (<ra> :undo-notes *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
+                                           ;;(c-display "a" Place)
                                            (and *current-note-num*
                                                 (not (get-current-fxnum))
                                                 (begin
+                                                  ;;(c-display "b" Place)
                                                   (define Value (scale X
                                                                        (<ra> :get-subtrack-x1 *current-subtrack-num* *current-track-num*)
                                                                        (<ra> :get-subtrack-x2 *current-subtrack-num* *current-track-num*)
