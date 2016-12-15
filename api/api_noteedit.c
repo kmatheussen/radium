@@ -572,8 +572,12 @@ int addNote(float notevalue,
     return -1;
   }
   
+  if (start.line==0 && start.counter==1 && start.dividor==MAX_UINT32)
+    start.counter = 0;
+      
   ValidatePlace(&start);
 
+        
   if (!PlaceLegal(wblock->block, &start)) {
     handleError("addNote: Start place %d + %d/%d is not legal", start.line, start.counter, start.dividor);
     return -1;
@@ -585,6 +589,9 @@ int addNote(float notevalue,
     end_place = &end;
     
     ValidatePlace(end_place);
+
+    if (end.line==wblock->block->num_lines && end.counter==0)
+      PlaceSetLastPos(wblock->block, end_place);
     
     if (!PlaceLegal(wblock->block, end_place)) {
       handleError("addNote: End place %d + %d/%d is not legal", end.line, end.counter, end.dividor);
