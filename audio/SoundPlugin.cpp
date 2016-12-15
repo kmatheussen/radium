@@ -319,6 +319,14 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
   "System Sample Browser On/Off",
   "System Controls On/Off",
 
+  "System On/Off Voice 1",
+  "System On/Off Voice 2",
+  "System On/Off Voice 3",
+  "System On/Off Voice 4",
+  "System On/Off Voice 5",
+  "System On/Off Voice 6",
+  "System On/Off Voice 7",
+  
   "System Chance Voice 1",
   "System Chance Voice 2",
   "System Chance Voice 3",
@@ -852,6 +860,24 @@ static void update_instrument_gui(struct SoundPlugin *plugin){
   }
 }
 
+static void set_voice_onoff(struct SoundPlugin *plugin, int num, float value){
+  if (plugin->patch != NULL) {
+    if (value>=0.5)
+      plugin->patch->voices[num].is_on = true;
+    else
+      plugin->patch->voices[num].is_on = false;
+    
+    update_instrument_gui(plugin);
+  }
+}
+                      
+static bool get_voice_onoff(struct SoundPlugin *plugin, int num){
+  if (plugin->patch != NULL) {
+    return plugin->patch->voices[num].is_on;
+  } else
+    return num==0;
+}
+                      
 static void set_chance(struct SoundPlugin *plugin, int num, float value){
   if (plugin->patch != NULL) {
     if (value>=1)
@@ -1161,6 +1187,28 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
       update_instrument_gui(plugin);
       break;
       
+    case EFFNUM_VOICE1_ONOFF:
+      set_voice_onoff(plugin, 0, store_value);
+      break;
+    case EFFNUM_VOICE2_ONOFF:
+      set_voice_onoff(plugin, 1, store_value);
+      break;
+    case EFFNUM_VOICE3_ONOFF:
+      set_voice_onoff(plugin, 2, store_value);
+      break;
+    case EFFNUM_VOICE4_ONOFF:
+      set_voice_onoff(plugin, 3, store_value);
+      break;
+    case EFFNUM_VOICE5_ONOFF:
+      set_voice_onoff(plugin, 4, store_value);
+      break;
+    case EFFNUM_VOICE6_ONOFF:
+      set_voice_onoff(plugin, 5, store_value);
+      break;
+    case EFFNUM_VOICE7_ONOFF:
+      set_voice_onoff(plugin, 6, store_value);
+      break;
+      
     case EFFNUM_CHANCE1:
       set_chance(plugin, 0, store_value);
       break;
@@ -1413,6 +1461,21 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
   case EFFNUM_CONTROLS_SHOW_GUI:
     return plugin->show_controls_gui==true ? 1.0 : 0.0f;
 
+  case EFFNUM_VOICE1_ONOFF:
+    return get_voice_onoff(plugin, 0);
+  case EFFNUM_VOICE2_ONOFF:
+    return get_voice_onoff(plugin, 1);
+  case EFFNUM_VOICE3_ONOFF:
+    return get_voice_onoff(plugin, 2);
+  case EFFNUM_VOICE4_ONOFF:
+    return get_voice_onoff(plugin, 3);
+  case EFFNUM_VOICE5_ONOFF:
+    return get_voice_onoff(plugin, 4);
+  case EFFNUM_VOICE6_ONOFF:
+    return get_voice_onoff(plugin, 5);
+  case EFFNUM_VOICE7_ONOFF:
+    return get_voice_onoff(plugin, 6);
+    
   case EFFNUM_CHANCE1:
     return get_chance(plugin, 0);
   case EFFNUM_CHANCE2:
