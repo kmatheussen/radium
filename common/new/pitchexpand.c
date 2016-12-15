@@ -104,8 +104,8 @@ void PExpandRange(
 
 	if( ! wblock->isranged) return;
 
-	p1=getRangeStartPlace(wblock);
-	p2=getRangeEndPlace(wblock);
+	p1=GetRangeStartPlace(wblock);
+	p2=GetRangeEndPlace(wblock);
 
 	track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
 

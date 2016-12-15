@@ -17,20 +17,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
-extern Place *getRangeStartPlace(
+extern Place *GetRangeStartPlace(
 	struct WBlocks *wblock
 );
 
-extern Place *getRangeEndPlace(
+extern Place *GetRangeEndPlace(
 	struct WBlocks *wblock
 );
 
-extern bool isPlaceRanged(
+extern bool IsPlaceRanged(
 	struct WBlocks *wblock,
 	Place *p
 );
 
-extern void getRangePlaceLength(
+extern void GetRangePlaceLength(
 	Place *place,
 	struct WBlocks *wblock
 );

@@ -178,6 +178,111 @@ Place getRangeLength(void){
   return range->length;
 }
 
+
+// # These functions works on the currently marked range, not the clipboard. The functions above works on the range copied into the clipboard.
+
+bool hasRange(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+
+  wblock=getWBlockFromNumA(
+                           windownum,
+                           &window,
+                           blocknum
+                           );
+
+  if(wblock==NULL)
+    return false;
+
+  return wblock->isranged;
+}
+
+int getRangeStartTrack(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+
+  wblock=getWBlockFromNumA(
+                           windownum,
+                           &window,
+                           blocknum
+                           );
+
+  if(wblock==NULL)
+    return 0;
+
+  if (wblock->rangex1 < 0)
+    return 0;
+  if (wblock->rangex1 >= wblock->block->num_tracks)
+    return wblock->block->num_tracks-1;
+
+  return wblock->rangex1;
+}
+
+int getRangeEndTrack(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+
+  wblock=getWBlockFromNumA(
+                           windownum,
+                           &window,
+                           blocknum
+                           );
+
+  if(wblock==NULL)
+    return wblock->block->num_tracks;
+
+  if (wblock->rangex1 < 0)
+    return 0;
+  if (wblock->rangex1 >= wblock->block->num_tracks)
+    return wblock->block->num_tracks-1;
+
+  return wblock->rangex2+1;
+}
+
+Place getRangeStartPlace(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+
+  wblock=getWBlockFromNumA(
+                           windownum,
+                           &window,
+                           blocknum
+                           );
+
+  if(wblock==NULL)
+    return place(0,0,1);
+
+  int realline = wblock->rangey1;
+  if (realline < 0 || realline >= wblock->num_reallines)
+    return place(0,0,1);
+
+  return wblock->reallines[realline]->l.p;
+}
+
+Place getRangeEndPlace(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+
+  wblock=getWBlockFromNumA(
+                           windownum,
+                           &window,
+                           blocknum
+                           );
+
+  if(wblock==NULL)
+    return place(1,0,1);
+
+  int realline = wblock->rangey2;
+  if (realline < 0 || realline >= wblock->num_reallines)
+    return place(wblock->block->num_lines,0,1);
+
+  return wblock->reallines[realline]->l.p;
+}
+
+
+
+// Mixer
+
 void copySelectedMixerObjects(void){
   MW_copy();
 }

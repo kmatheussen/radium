@@ -40,7 +40,7 @@ vector_t *get_all_ranged_notes(struct WBlocks *wblock){
     if(is_track_ranged(wblock,wtrack)){
       struct Notes *note = track->notes;
       while(note!=NULL){
-        if(isPlaceRanged(wblock,&note->l.p))
+        if(IsPlaceRanged(wblock,&note->l.p))
           VECTOR_push_back(v, note);
         note=NextNote(note);
       }

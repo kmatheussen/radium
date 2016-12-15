@@ -289,8 +289,8 @@ void PlayBlockCurrPos(struct Tracker_Windows *window){
 static void PlayRange(struct Tracker_Windows *window, Place *place){
   struct WBlocks *wblock = window->wblock;
   
-  //Place *place_start = getRangeStartPlace(wblock);
-  Place *place_end   = getRangeEndPlace(wblock);
+  //Place *place_start = GetRangeStartPlace(wblock);
+  Place *place_end   = GetRangeEndPlace(wblock);
   pc->range_duration = Place2STime(wblock->block, place_end) - Place2STime(wblock->block, place);
   
   pc->is_playing_range = true;
@@ -305,7 +305,7 @@ void PlayRangeFromStart(struct Tracker_Windows *window){
 
 	if( ! wblock->isranged) return;
 
-        Place *place = getRangeStartPlace(wblock);
+        Place *place = GetRangeStartPlace(wblock);
           
         PlayRange(window, place);
 }
@@ -321,8 +321,8 @@ void PlayRangeCurrPos2(struct Tracker_Windows *window, Place *place){
     place = &wblock->reallines[wblock->curr_realline]->l.p;
 
   /*
-  Place *start_place=getRangeStartPlace(wblock);
-  Place *end_place=getRangeEndPlace(wblock);
+  Place *start_place=GetRangeStartPlace(wblock);
+  Place *end_place=GetRangeEndPlace(wblock);
   */
   
   PlayRange(window, place);

@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   FUNCTION
     Returns the place where the range starts.
 ********************************************************/
-Place *getRangeStartPlace(
+Place *GetRangeStartPlace(
 	struct WBlocks *wblock
 ){
 	struct LocalZooms **reallines=wblock->reallines;
@@ -51,7 +51,7 @@ Place *getRangeStartPlace(
   FUNCTION
     Returns the place where the range ends.
 ********************************************************/
-Place *getRangeEndPlace(
+Place *GetRangeEndPlace(
 	struct WBlocks *wblock
 ){
 	Place *place;
@@ -82,12 +82,12 @@ Place *getRangeEndPlace(
     Returns true if the place is within the range of
     the wblock. (Does not check track)
 ********************************************************/
-bool isPlaceRanged(
+bool IsPlaceRanged(
 	struct WBlocks *wblock,
 	Place *p
 ){
-	Place *p1= getRangeStartPlace(wblock);
-	Place *p2= getRangeEndPlace(wblock);
+	Place *p1= GetRangeStartPlace(wblock);
+	Place *p2= GetRangeEndPlace(wblock);
 
 	if(PlaceLessThan(p,p1)) return false;
 	if(PlaceGreaterOrEqual(p,p2)) return false;
@@ -102,12 +102,12 @@ bool isPlaceRanged(
     Returns the length of the range represented as Place,
     into the place
 ********************************************************/
-void getRangePlaceLength(
+void GetRangePlaceLength(
 	Place *place,
 	struct WBlocks *wblock
 ){
-	Place *p1= getRangeStartPlace(wblock);
-	Place *p2= getRangeEndPlace(wblock);
+	Place *p1= GetRangeStartPlace(wblock);
+	Place *p2= GetRangeEndPlace(wblock);
 
 	PlaceCopy(place,p2);
 	PlaceSub(place,p1);

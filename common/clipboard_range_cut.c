@@ -137,8 +137,8 @@ void CutRangedRange(
 
 	if(!wblock->isranged) return;
 
-	p1=getRangeStartPlace(wblock);
-	p2=getRangeEndPlace(wblock);
+	p1=GetRangeStartPlace(wblock);
+	p2=GetRangeEndPlace(wblock);
 
 	CutRange(wblock->block,wblock->rangex1,wblock->rangex2,p1,p2);
         

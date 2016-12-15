@@ -87,8 +87,8 @@ void BackWardsRange(
 
 	if( ! wblock->isranged) return;
 
-	p1=getRangeStartPlace(wblock);
-	p2=getRangeEndPlace(wblock);
+	p1=GetRangeStartPlace(wblock);
+	p2=GetRangeEndPlace(wblock);
 
 	wtrack=ListFindElement1(&wblock->wtracks->l,wblock->rangex1);
 

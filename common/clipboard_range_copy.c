@@ -271,9 +271,9 @@ void CopyRange(
 	//range->instruments=talloc((size_t)(sizeof(struct Instruments *)*num_tracks));
 	range->fxs=talloc((int)sizeof(vector_t)*num_tracks);
 
-	p1=getRangeStartPlace(wblock);
-	p2=getRangeEndPlace(wblock);
-	getRangePlaceLength(&range->length,wblock);
+	p1=GetRangeStartPlace(wblock);
+	p2=GetRangeEndPlace(wblock);
+	GetRangePlaceLength(&range->length,wblock);
         range->num_lines = wblock->rangey2 - wblock->rangey1;
         
 	track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
