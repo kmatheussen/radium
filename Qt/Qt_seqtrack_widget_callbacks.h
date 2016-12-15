@@ -17,6 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 
 #include <QColor>
+#include <QRawFont>
+#include <QApplication>
 
 #include "Qt_MyQCheckBox.h"
 #include "Qt_MyQSlider.h"
@@ -29,6 +31,81 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/seqtrack_proc.h"
 
 static bool g_need_update = false;
+
+static bool smooth_scrolling(void){
+  return true;
+}
+
+namespace{
+  struct GlyphpathAndWidth{
+    QPainterPath path;
+    float width;
+    QFontMetricsF fn;
+    GlyphpathAndWidth(QPainterPath _path, float _width, const QFontMetricsF &_fn)
+      : path(_path)
+      , width(_width)
+      , fn(_fn)
+    {}
+    GlyphpathAndWidth()
+      : width(0.0f)
+      , fn(QFontMetricsF(QApplication::font()))
+    {}
+  };
+}
+
+static GlyphpathAndWidth getGlyphpathAndWidth(const QFont &font, const QChar c){
+  static QFont cacheFont = font;
+  static QRawFont rawFont = QRawFont::fromFont(font);
+  static QHash<QChar,GlyphpathAndWidth> glyphpathCache;
+  static QFontMetricsF fn(font);
+
+  if (font != cacheFont){
+    glyphpathCache.clear();
+    cacheFont = font;
+    rawFont = QRawFont::fromFont(font);
+    fn = QFontMetrics(font);
+  }
+
+  if (glyphpathCache.contains(c))
+    return glyphpathCache[c];
+
+
+  QVector<quint32> indexes = rawFont.glyphIndexesForString(c);
+
+  GlyphpathAndWidth g(rawFont.pathForGlyph(indexes[0]), fn.width(c), fn);
+  
+  glyphpathCache[c] = g;
+
+  return g;
+}
+
+// QPainter::drawText doesn't have floating point precision.
+//
+static void myDrawText(QPainter &painter, QRectF rect, QString text, QTextOption option = QTextOption(Qt::AlignLeft | Qt::AlignTop)){
+  if (is_playing() && pc->playtype==PLAYSONG && smooth_scrolling() && smooth_scrolling()){
+    int len=text.length();
+
+    float x = rect.x();
+    float y = -1;
+    
+    QBrush brush = painter.pen().brush();
+    
+    for(int i=0; i<len; i++){
+      GlyphpathAndWidth g = getGlyphpathAndWidth(painter.font(), text.at(i));
+      if (y < 0)
+        y = rect.y()+g.fn.ascent();//+g.fn.descent();//height();//2+rect.height()/2;      
+      painter.save();
+      painter.translate(x, y);
+      painter.fillPath(g.path,brush);
+      painter.restore();
+      
+      x += g.width;
+    }
+  } else {
+    painter.drawText(rect, text, option);
+  } 
+}
+
 
 static void g_position_widgets(void);
 
@@ -429,7 +506,7 @@ public:
     //if (x1 > -5000) { // avoid integer overflow error.
     p.setPen(text_color);
     //p.drawText(x1+4,2,x2-x1-6,height()-4, Qt::AlignLeft, QString::number(seqblock->block->l.num) + ": " + seqblock->block->name);
-    p.drawText(rect.adjusted(2,1,-4,-(rect.height()-header_height)), QString::number(block->l.num) + ": " + block->name, QTextOption(Qt::AlignLeft | Qt::AlignTop));
+    myDrawText(p, rect.adjusted(2,1,-4,-(rect.height()-header_height)), QString::number(block->l.num) + ": " + block->name);
     //}
 
     if (is_current_block){
@@ -1014,8 +1091,8 @@ struct Timeline_widget : public MouseTrackerQWidget {
         
         draw_filled_triangle(p, x-t1, y1, x+t1, y1, x, y2);
         
-        QRect rect(x + t1 + 4, 2, width(), height());
-        p.drawText(rect, seconds_to_timestring(time), QTextOption(Qt::AlignLeft | Qt::AlignTop));
+        QRectF rect(x + t1 + 4, 2, width(), height());
+        myDrawText(p, rect, seconds_to_timestring(time));
       }
 
       time += inc_time;
@@ -1121,6 +1198,7 @@ public:
 
           if(rect.height() > root->song->tracker_windows->systemfontheight*1.3){
             p.setPen(text_color);
+            //myDrawText(p, rect.adjusted(2,1,-1,-1), QString::number(block->l.num) + ": " + block->name);
             p.drawText(rect.adjusted(2,1,-1,-1), QString::number(block->l.num) + ": " + block->name, QTextOption(Qt::AlignLeft | Qt::AlignTop));
           }
           
@@ -1325,7 +1403,10 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   float _last_painted_cursor_x = 0.0f;
   
   float get_curr_cursor_x(int frames_to_add) const {
-    return scale_double(ATOMIC_DOUBLE_GET(pc->song_abstime)+frames_to_add, _start_time, _end_time, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2);
+    if (is_playing() && pc->playtype==PLAYSONG && smooth_scrolling())
+      return (_seqtracks_widget.t_x1 + _seqtracks_widget.t_x2) / 2.0;
+    else
+      return scale_double(ATOMIC_DOUBLE_GET(pc->song_abstime)+frames_to_add, _start_time, _end_time, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2);
   }
 
   bool _song_tempo_automation_was_visible = false;
@@ -1370,43 +1451,45 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     //
     if (is_called_every_ms(15)){  // call each 15 ms. (i.e. more often than vsync)
       if (is_playing() && pc->playtype==PLAYSONG) {
-        float x = get_curr_cursor_x(1 + MIXER_get_sample_rate() * 60.0 / 1000.0);
-        
-        float x_min = R_MIN(x-cursor_width/2.0, _last_painted_cursor_x-cursor_width/2.0) - 2;
-        float x_max = R_MAX(x+cursor_width/2.0, _last_painted_cursor_x+cursor_width/2.0) + 2;
-        
-        //printf("x_min -> x_max: %f -> %f\n",x_min,x_max);
-        float y1 = _songtempoautomation_widget.t_y1;
-        float y2 = _seqtracks_widget.t_y2;
-      
-        update(x_min, y1, 1+x_max-x_min, y2-y1);
 
         double song_abstime = ATOMIC_DOUBLE_GET(pc->song_abstime);
         double middle = (_start_time+_end_time) / 2.0;
+        
+        if (!smooth_scrolling()){
+          float x = get_curr_cursor_x(1 + MIXER_get_sample_rate() * 60.0 / 1000.0);
+          
+          float x_min = R_MIN(x-cursor_width/2.0, _last_painted_cursor_x-cursor_width/2.0) - 2;
+          float x_max = R_MAX(x+cursor_width/2.0, _last_painted_cursor_x+cursor_width/2.0) + 2;
+          
+          //printf("x_min -> x_max: %f -> %f\n",x_min,x_max);
+          float y1 = _songtempoautomation_widget.t_y1;
+          float y2 = _seqtracks_widget.t_y2;
+          
+          update(x_min, y1, 1+x_max-x_min, y2-y1);
+          
+          if (song_abstime < _start_time) {
+            int64_t diff = _start_time - song_abstime;
+            _start_time -= diff;
+            _end_time -= diff;
+            update();
+          } else if (song_abstime > _end_time){
+            double diff = song_abstime - middle;
+            _start_time += diff;
+            _end_time += diff;
+            update();
+          }
 
-#if 0
-        // Smooth sequencer scrolling...
-        if (song_abstime != middle){
-          double diff = song_abstime - middle;
-          _start_time += diff;
-          _end_time += diff;
-          update();
+        } else {
+          
+          // Smooth scrolling
+          if (song_abstime != middle){
+            double diff = song_abstime - middle;
+            _start_time += diff;
+            _end_time += diff;
+            update();
+          }
+
         }
-
-#else
-
-        if (song_abstime < _start_time) {
-          int64_t diff = _start_time - song_abstime;
-          _start_time -= diff;
-          _end_time -= diff;
-          update();
-        } else if (song_abstime > _end_time){
-          double diff = song_abstime - middle;
-          _start_time += diff;
-          _end_time += diff;
-          update();
-        }
-#endif
       }
     }
   }
