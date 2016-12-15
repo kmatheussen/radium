@@ -155,15 +155,23 @@ public:
     can_start_main_loop.wait();
 
 #ifdef FOR_MACOSX
-    printf("  Success. Running Runner thread main loop\n");
+    bool started = false;
+    printf("  Trying to call soundproducer_queue.get();\n");
 #endif
 
     while(true){
-
+      
       //printf("  > mc: getting %d (%d)\n",ATOMIC_GET(num_sp_left),soundproducer_queue.size());
       SoundProducer *sp = soundproducer_queue.get();
       //printf("  < mc: got %d (%d)\n",ATOMIC_GET(num_sp_left),soundproducer_queue.size());
-      
+
+#ifdef FOR_MACOSX
+      if (started==false){
+        printf("  Success. Running Runner thread main loop started.\n");
+        started = true;
+      }
+#endif
+
       if (ATOMIC_GET(must_exit)) {
         soundproducer_queue.put(sp);
         break;
