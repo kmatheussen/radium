@@ -2168,6 +2168,7 @@
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (and *current-track-num*
                                                        (let ((velocity-info (get-velocity-info X Y *current-track-num*)))
+                                                         ;;(c-display "vel-info:" velocity-info)
                                                          (and velocity-info
                                                               (callback velocity-info
                                                                         (velocity-info :value)

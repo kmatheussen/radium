@@ -110,7 +110,7 @@ void InsertPlace_temponodes(
 ){
 	List_InsertPlaceLen3(block,&block->temponodes,&block->temponodes->l,place,toplace,NULL);
 	if(toplace>0.0f){
-		ListAddElement3(&block->temponodes,&block->lasttemponode->l);
+		ListAddElement3_a(&block->temponodes,&block->lasttemponode->l);
 	}
 	LegalizeTempoNodes(block);
 }

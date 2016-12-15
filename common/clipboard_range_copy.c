@@ -46,12 +46,11 @@ void CopyRange_velocities(
 
 	if(PlaceGreaterOrEqual(&fromvelocity->l.p,p2)) return;
 
-	velocity=talloc(sizeof(struct Velocities));
-        memcpy(velocity, fromvelocity, sizeof(struct Velocities));
+	velocity=tcopy(fromvelocity, sizeof(struct Velocities));
 
 	PlaceSub(&velocity->l.p,p1);
 
-	ListAddElement3(tovelocity,&velocity->l);
+	ListAddElement3_a(tovelocity,&velocity->l);
 
 	CopyRange_velocities(tovelocity,NextVelocity(fromvelocity),p1,p2);
 }
@@ -73,7 +72,7 @@ void CopyRange_pitches(
 
 	PlaceSub(&pitch->l.p,p1);
 
-	ListAddElement3(topitch,&pitch->l);
+	ListAddElement3_a(topitch,&pitch->l);
 
 	CopyRange_pitches(topitch,NextPitch(frompitch),p1,p2);
 }
@@ -108,7 +107,7 @@ void CopyRange_notes(
 	PlaceSub(&note->l.p,p1);
 	PlaceSub(&note->end,p1);
 
-	ListAddElement3(tonote,&note->l);
+	ListAddElement3_a(tonote,&note->l);
 
 	CopyRange_velocities(&note->velocities,fromnote->velocities,p1,p2);
 	CopyRange_pitches(&note->pitches,fromnote->pitches,p1,p2);
@@ -123,8 +122,6 @@ void CopyRange_stops(
 	Place *p1,
 	Place *p2
 ){
-	struct Stops *stop;
-
 	if(fromstop==NULL) return;
 
 	if(PlaceLessThan(&fromstop->l.p,p1)){
@@ -134,11 +131,10 @@ void CopyRange_stops(
 
 	if(PlaceGreaterOrEqual(&fromstop->l.p,p2)) return;
 
-	stop=talloc(sizeof(struct Stops));
-        memcpy(stop, fromstop, sizeof(struct Stops));
+	struct Stops *stop=tcopy(fromstop, sizeof(struct Stops));
 	PlaceSub(&stop->l.p,p1);
 
-	ListAddElement3(tostop,&stop->l);
+	ListAddElement3_a(tostop,&stop->l);
 
 	CopyRange_stops(tostop,NextStop(fromstop),p1,p2);
 
@@ -149,12 +145,11 @@ static void add_fxnodeline(
                            struct FXNodeLines *fromfxnodeline,
                            Place subtract
 ){               
-  struct FXNodeLines *fxnodeline=talloc(sizeof(struct FXNodeLines));
-  memcpy(fxnodeline, fromfxnodeline, sizeof(struct FXNodeLines));
+  struct FXNodeLines *fxnodeline=tcopy(fromfxnodeline, sizeof(struct FXNodeLines));
   
   fxnodeline->l.p = p_Sub(fxnodeline->l.p, subtract);
   
-  ListAddElement3(tofxnodeline,&fxnodeline->l);
+  ListAddElement3_a(tofxnodeline,&fxnodeline->l);
 }
 
 

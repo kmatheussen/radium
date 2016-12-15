@@ -55,7 +55,7 @@ void LoadLPBs(struct LPBs **to){
 		lpb->Tcounter=DC_LoadU32();
 		lpb->Tdividor=DC_LoadU32();
 		lpb->lpb=DC_LoadI();
-		ListAddElement3(to,&lpb->l);
+		ListAddElement3_a(to,&lpb->l);
 	}
 
 error:

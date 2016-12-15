@@ -42,7 +42,7 @@ struct Signatures *CB_CopySignatures(
 		new=talloc(sizeof(struct Signatures));
 		PlaceCopy(&new->l.p,&signature->l.p);
 		new->signature=signature->signature;
-		ListAddElement3(&to,&new->l);
+		ListAddElement3_a(&to,&new->l);
 		signature=NextSignature(signature);
 	}
 	return to;
@@ -59,7 +59,7 @@ struct LPBs *CB_CopyLPBs(
 		new=talloc(sizeof(struct LPBs));
 		PlaceCopy(&new->l.p,&lpb->l.p);
 		new->lpb=lpb->lpb;
-		ListAddElement3(&to,&new->l);
+		ListAddElement3_a(&to,&new->l);
 		lpb=NextLPB(lpb);
 	}
 	return to;
@@ -75,7 +75,7 @@ struct Tempos *CB_CopyTempos(
 		new=talloc(sizeof(struct Tempos));
 		PlaceCopy(&new->l.p,&tempo->l.p);
 		new->tempo=tempo->tempo;
-		ListAddElement3(&to,&new->l);
+		ListAddElement3_a(&to,&new->l);
 		tempo=NextTempo(tempo);
 	}
 	return to;
@@ -92,7 +92,7 @@ struct TempoNodes *CB_CopyTempoNodes(
 		new=talloc(sizeof(struct TempoNodes));
 		PlaceCopy(&new->l.p,&temponode->l.p);
 		new->reltempo=temponode->reltempo;
-		ListAddElement3(&to,&new->l);
+		ListAddElement3_a(&to,&new->l);
 		temponode=NextTempoNode(temponode);
 	}
 	return to;

@@ -58,7 +58,7 @@ static void PasteRange_velocities(
         if(PlaceGreaterThan(&velocity->l.p,&lastplace))
           return;
 
-	ListAddElement3(tovelocity,&velocity->l);
+	ListAddElement3_a(tovelocity,&velocity->l);
 
 	PasteRange_velocities(block,tovelocity,NextVelocity(fromvelocity),place);
 }
@@ -108,7 +108,7 @@ void PasteRange_pitches(
 	if(PlaceGreaterThan(&pitch->l.p,&lastplace))
           return;
 
-	ListAddElement3(topitch,&pitch->l);
+	ListAddElement3_a(topitch,&pitch->l);
 
 	PasteRange_pitches(block,topitch,NextPitch(frompitch),place);
 }
@@ -137,7 +137,7 @@ void PasteRange_notes(
           note->noend=1;
 	}
 
-	ListAddElement3(&track->notes,&note->l);
+	ListAddElement3_a(&track->notes,&note->l);
         
 	PasteRange_velocities(block,&note->velocities,fromnote->velocities,place);
 	PasteRange_pitches(block,&note->pitches,fromnote->pitches,place);
@@ -163,7 +163,7 @@ void PasteRange_stops(
 	if(PlaceGreaterThan(&stop->l.p,&lastplace))
           return;
 
-	ListAddElement3(&track->stops,&stop->l);
+	ListAddElement3_a(&track->stops,&stop->l);
 
 	PasteRange_stops(block,track,NextStop(fromstop),place);
 }

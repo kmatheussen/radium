@@ -380,7 +380,7 @@ static void add_recorded_stp(struct Blocks *block, struct Tracks *track, const S
   struct Stops *stop=(struct Stops*)talloc(sizeof(struct Stops));
   PlaceCopy(&stop->l.p,&place);
           
-  ListAddElement3(&track->stops,&stop->l);
+  ListAddElement3_ns(&track->stops,&stop->l);
 }
 
 

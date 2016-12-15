@@ -109,7 +109,7 @@ static void Quantitize_Note(
   bool do_add = quantitize_note(block, note);
 
   if (do_add)
-    ListAddElement3(notes,&note->l);        
+    ListAddElement3_a(notes,&note->l);        
 }
 
 static void Quantitize_range(
@@ -142,7 +142,7 @@ static void Quantitize_range(
             if( p_Greater_Or_Equal(note->l.p, realline1->l.p) && p_Less_Than(note->l.p, realline2->l.p))
               Quantitize_Note(wblock->block,&new_notes,note);
             else
-              ListAddElement3(&new_notes,&note->l);
+              ListAddElement3_a(&new_notes,&note->l);
             
             note=next;
           }

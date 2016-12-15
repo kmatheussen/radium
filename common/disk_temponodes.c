@@ -60,12 +60,12 @@ void LoadTempoNodes(struct TempoNodes **to){
 
 	PlaceSetFirstPos(&temponode->l.p);
 	temponode->reltempo=DC_LoadF();
-	DC_ListAdd3(to,temponode);
+	DC_ListAdd3_a(to,temponode);
 
 	temponode=DC_alloc(sizeof(struct TempoNodes));
 	temponode->reltempo=DC_LoadF();
 	LoadPlace(&temponode->l.p);
-	DC_ListAdd3(to,temponode);
+	DC_ListAdd3_a(to,temponode);
 
 	if(DC_Next()==LS_OBJECT){
 		while(dc.success){
@@ -79,7 +79,7 @@ void LoadTempoNodes(struct TempoNodes **to){
 			temponode->Tcounter=DC_LoadU32();
 			temponode->Tdividor=DC_LoadU32();
 			temponode->reltempo=DC_LoadF();
-			DC_ListAdd3(to,temponode);
+			DC_ListAdd3_a(to,temponode);
 		}
 	}
 

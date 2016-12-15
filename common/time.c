@@ -495,7 +495,7 @@ static void STP_fillinSTimes2(
 
 	if(tchange){
 		PlaceCopy(&timechange->l.p,p1);
-		ListAddElement3(&stp->times[p1->line].timechanges,&timechange->l);
+		ListAddElement3(&stp->times[p1->line].timechanges,&timechange->l); // Should this be ListAddElement3_a ?
 	}
 }
 

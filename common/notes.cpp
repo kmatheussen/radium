@@ -553,7 +553,7 @@ static void InsertStop(
 
         PLAYER_lock();{
           StopAllNotesAtPlace(wblock->block,wtrack->track,placement);
-  	  ListAddElement3(&wtrack->track->stops,&stop->l);
+  	  ListAddElement3_ns(&wtrack->track->stops,&stop->l);
         }PLAYER_unlock();
 }
 

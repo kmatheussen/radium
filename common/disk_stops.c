@@ -54,7 +54,7 @@ void LoadStops(struct Stops **to){
 		stop->Tline=atoi(dc.ret);
 		stop->Tcounter=DC_LoadU32();
 		stop->Tdividor=DC_LoadU32();
-		ListAddElement3(to,&stop->l);
+		ListAddElement3_a(to,&stop->l);
 	}
 
 error:

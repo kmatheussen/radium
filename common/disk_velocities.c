@@ -61,7 +61,7 @@ void LoadVelocities(struct Velocities **to){
                 if (disk_load_version >= 0.775)
                   velocity->logtype = LoadLogType();
                     
-		ListAddElement3(to,&velocity->l);
+		ListAddElement3_a(to,&velocity->l);
 	}
 
 
@@ -107,7 +107,7 @@ void LoadPitches(struct Pitches **to){
                 else
                   pitch->chance = 0x100;
                 
-		ListAddElement3(to,&pitch->l);
+		ListAddElement3_a(to,&pitch->l);
 	}
 
 

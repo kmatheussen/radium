@@ -62,7 +62,7 @@ void LoadFXNodeLines(struct FXNodeLines **to){
                 if (disk_load_version >= 0.775)
                   fxnodeline->logtype = LoadLogType();
 
-		ListAddElement3(to,&fxnodeline->l);
+		ListAddElement3_a(to,&fxnodeline->l);
 	}
 
 	printf("\t\tLoadFXNodeLines_error_end\n");

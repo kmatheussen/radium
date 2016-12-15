@@ -1264,7 +1264,7 @@ static void moveNote(struct Blocks *block, struct Tracks *track, struct Notes *n
       pitch = NextPitch(pitch);
     }
     
-    ListAddElement3(&track->notes, &note->l);
+    ListAddElement3_a(&track->notes, &note->l);
 
     NOTE_validate(block, track, note);
   }PLAYER_unlock();
@@ -1347,7 +1347,7 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
     
     Float2Placement(floatplace, &note->l.p);
     
-    ListAddElement3(&track->notes, &note->l);
+    ListAddElement3_a(&track->notes, &note->l);
 
     NOTE_validate(block, track, note);
   }PLAYER_unlock();

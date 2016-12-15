@@ -466,7 +466,7 @@ static void PlayHandleSequencerLoop(void){
 void PlayCallVeryOften(void){
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING)
     EditorFollowsPlayCursorLoop();
-  
+
   PlayHandleRangeLoop();
   PlayHandleSequencerLoop();
 }

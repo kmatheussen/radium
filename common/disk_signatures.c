@@ -57,7 +57,7 @@ void LoadSignatures(struct Signatures **to){
 		signature->Tdividor=DC_LoadU32();
 		signature->signature.numerator=DC_LoadI();
                 signature->signature.denominator=DC_LoadI();
-		ListAddElement3(to,&signature->l);
+		ListAddElement3_a(to,&signature->l);
 	}
 
 error:
