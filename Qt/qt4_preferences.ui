@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1133</width>
-    <height>650</height>
+    <height>664</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>8</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -117,11 +117,6 @@
            <width>16777215</width>
            <height>16777215</height>
           </size>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>9</pointsize>
-          </font>
          </property>
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Warning: Selecting a value of 16X or 32X is likely to run MSAA off.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -255,11 +250,6 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </item>
        <item>
         <widget class="QGroupBox" name="horizontalGroupBox">
-         <property name="font">
-          <font>
-           <pointsize>9</pointsize>
-          </font>
-         </property>
          <property name="title">
           <string>Vertical Blank</string>
          </property>
@@ -365,11 +355,6 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </item>
        <item>
         <widget class="QGroupBox" name="horizontalGroupBox_2">
-         <property name="font">
-          <font>
-           <pointsize>9</pointsize>
-          </font>
-         </property>
          <property name="title">
           <string>Various</string>
          </property>
@@ -525,14 +510,6 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="font">
-          <font>
-           <pointsize>9</pointsize>
-           <weight>50</weight>
-           <bold>false</bold>
-           <kerning>true</kerning>
-          </font>
-         </property>
          <property name="title">
           <string>Multi Core</string>
          </property>
@@ -623,13 +600,6 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>9</pointsize>
-           <weight>50</weight>
-           <bold>false</bold>
-          </font>
          </property>
          <property name="title">
           <string>Auto-suspend</string>
@@ -741,13 +711,6 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </item>
        <item>
         <widget class="QGroupBox" name="groupBox_5">
-         <property name="font">
-          <font>
-           <pointsize>9</pointsize>
-           <weight>50</weight>
-           <bold>false</bold>
-          </font>
-         </property>
          <property name="title">
           <string>Recalculate latency on the fly when turning on/off a bus connection</string>
          </property>
@@ -833,11 +796,6 @@ CPU usage caused by mixing sound for all the buses.
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>9</pointsize>
-          </font>
          </property>
          <property name="title">
           <string>Directory to store embedded audio files</string>
@@ -3027,7 +2985,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
             <x>0</x>
             <y>0</y>
             <width>829</width>
-            <height>556</height>
+            <height>570</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -5135,7 +5093,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
                <x>0</x>
                <y>0</y>
                <width>983</width>
-               <height>325</height>
+               <height>339</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -5194,11 +5152,6 @@ This option should be considered as a lightweight version of  &quot;Only show mo
          <width>431</width>
          <height>131</height>
         </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
        </property>
        <property name="title">
         <string>GUI Style</string>
