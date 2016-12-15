@@ -1148,7 +1148,7 @@ enum RT_MESSAGE_STATUS {
   RT_MESSAGE_SHOWING
 };
 
-static DEFINE_ATOMIC(RT_MESSAGE_STATUS, rt_message_status) = RT_MESSAGE_READY;
+static DEFINE_ATOMIC(int, rt_message_status) = RT_MESSAGE_READY;
 static const int rt_message_length = 1024;
 static char rt_message[rt_message_length];
 
@@ -1371,7 +1371,7 @@ bool RT_message_will_be_sent(void){
 void RT_message(const char *fmt,...){
   va_list argp;
 
-  if (!atomic_compare_and_set_int((int*)&ATOMIC_NAME(rt_message_status), RT_MESSAGE_READY, RT_MESSAGE_FILLING_UP))
+  if (!atomic_compare_and_set_int(&ATOMIC_NAME(rt_message_status), RT_MESSAGE_READY, RT_MESSAGE_FILLING_UP))
     return;
   
   va_start(argp,fmt);
