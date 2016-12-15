@@ -2303,8 +2303,8 @@ static void create_range(const struct Tracker_Windows *window, const struct WBlo
   int tracknum1 = R_MIN(wblock->block->num_tracks-1, wblock->rangex1);
   int tracknum2 = R_MIN(wblock->block->num_tracks-1, wblock->rangex2);
 
-  int realline1 = R_MIN(wblock->block->num_lines-1, wblock->rangey1);
-  int realline2 = R_MIN(wblock->block->num_lines-1, wblock->rangey2);
+  int realline1 = R_MIN(wblock->block->num_lines, wblock->rangey1);
+  int realline2 = R_MIN(wblock->block->num_lines, wblock->rangey2);
 
   struct WTracks *wtrack1=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,tracknum1);
   struct WTracks *wtrack2=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,tracknum2);
