@@ -644,6 +644,10 @@ void cutNote(Place place, int notenum, int tracknum, int blocknum, int windownum
   
 }
 
+void deleteNote(int notenum, int tracknum, int blocknum, int windownum){
+  deletePianonote(0, notenum, tracknum, blocknum, windownum);
+}
+
 void deleteAllNotesInTrack(int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
