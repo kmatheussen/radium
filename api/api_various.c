@@ -1428,6 +1428,29 @@ void setLinenumbersVisible(bool doit){
 }
 
 
+static bool g_smooth_sequencer_scrolling_enabled = false;
+
+bool smoothSequencerScrollingEnabled(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_smooth_sequencer_scrolling_enabled = SETTINGS_read_bool("smooth_sequencer_scrolling_enabled", g_smooth_sequencer_scrolling_enabled);
+    has_inited = true;
+  }
+
+  return g_smooth_sequencer_scrolling_enabled;
+}
+
+void setSmoothSequencerScrollingEnabled(bool doit){
+  if (doit != g_smooth_sequencer_scrolling_enabled){
+    g_smooth_sequencer_scrolling_enabled = doit;
+    SETTINGS_write_bool("smooth_sequencer_scrolling_enabled", doit);
+    PREFERENCES_update();
+  }
+}
+
+
+
 // Disk
 
 static bool g_stop_playing_when_saving_song = false;

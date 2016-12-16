@@ -410,6 +410,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     // Various
     {
             
+      smooth_sequencer_scrolling->setChecked(smoothSequencerScrollingEnabled());
+
       pauseRenderingOnoff->setChecked(GL_get_pause_rendering_on_off());
       showKeyCodesOnoff->setChecked(false);
 
@@ -581,6 +583,11 @@ public slots:
   void on_safeModeOnoff_toggled(bool val){
     if (_initing==false)
       GL_set_safe_mode(val);
+  }
+
+  void on_smooth_sequencer_scrolling_toggled(bool val){
+    if (_initing==false)
+      setSmoothSequencerScrollingEnabled(val);
   }
 
   void on_pauseRenderingOnoff_toggled(bool val){

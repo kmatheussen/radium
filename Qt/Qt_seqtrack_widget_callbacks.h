@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 static bool g_need_update = false;
 
 static bool smooth_scrolling(void){
-  return true;
+  return smoothSequencerScrollingEnabled();
 }
 
 namespace{
@@ -1426,7 +1426,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
   bool _song_tempo_automation_was_visible = false;
 
-  bool _was_playing_song = false;
+  bool _was_playing_smooth_song = false;
 
   void call_very_often(void){
 
@@ -1469,8 +1469,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     if (is_called_every_ms(15)){  // call each 15 ms. (i.e. more often than vsync)
       if (is_playing() && pc->playtype==PLAYSONG) {
 
-        _was_playing_song = true;
-
         double song_abstime = ATOMIC_DOUBLE_GET(pc->song_abstime);
         double middle = (_start_time+_end_time) / 2.0;
         
@@ -1501,6 +1499,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
         } else {
           
           // Smooth scrolling
+
+          _was_playing_smooth_song = true;
+
           if (song_abstime != middle){
             double diff = song_abstime - middle;
             _start_time += diff;
@@ -1508,14 +1509,18 @@ struct Sequencer_widget : public MouseTrackerQWidget {
             update();
           }
 
+          return;
+
         }
-      } else if (_was_playing_song==true){
+      }
+
+      if (_was_playing_smooth_song==true){
         if (_start_time < 0){
           _end_time -= _start_time;
           _start_time = 0;
         }
         update();
-        _was_playing_song = false;
+        _was_playing_smooth_song = false;
       }
     }
   }
