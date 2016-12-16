@@ -242,7 +242,10 @@ bool HASH_remove(hash_t *hash, const char *raw_key){
 }
 
 static void put2(hash_t *hash, const char *key, int i, hash_element_t *element){
-  R_ASSERT_NON_RELEASE(!HASH_has_key_at(hash, key, i));
+#if !defined(RELEASE)
+  if (strcmp("NOTUSED", key)) // <- The pd and faust instruments create effect names called "NOTUSED" for unused effects.
+    R_ASSERT(!HASH_has_key_at(hash, key, i)); // NOTE. Hitting this one is not necessarily a bug. But since it's so seldom that we overwrite hash table elements, it seems like a good idea to have this line here.
+#endif
   
   unsigned int index = oat_hash(key,i) % hash->elements_size;
   //fprintf(stderr,"put %p. index: %u\n",hash,index);
@@ -645,6 +648,7 @@ hash_t *HASH_load(disk_t *file){
     
     int type = typename_to_type(line);
 
+    //printf("           Putting %d / %s\n",i, key);
     switch(type){
 
     case STRING_TYPE:
