@@ -1835,7 +1835,14 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
           
           hash_t *values_state = HASH_get_hash_at(ab_state, "ab_values", i);
           for(int n=0;n<num_effects;n++)
-            plugin->ab_values[i][n] = HASH_get_float_at(values_state,"value",n);
+            if (HASH_has_key_at(values_state,"value",n)){
+                plugin->ab_values[i][n] = HASH_get_float_at(values_state,"value",n);
+            }
+#if !defined(RELEASE)
+            else{
+              RError("Non-release: Unknown key %s / %d while loading A/B values.\n", "value", n);
+            }
+#endif
         }
       }
       
