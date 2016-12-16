@@ -3660,19 +3660,33 @@
   (define minseqtrack #f)
   (define mintime #f)
   (set! *seqblock-clipboard* '())
+
+  (define (add-seqblock! seqtracknum seqblocknum)
+    (define time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+    (push-back! *seqblock-clipboard*
+                (make-clipboard-seqblock :seqtracknum seqtracknum
+                                         :blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)
+                                         :time time))
+    (if (not minseqtrack)
+        (set! minseqtrack seqtracknum)
+        (set! minseqtrack (min seqtracknum minseqtrack)))
+    (if (not mintime)
+        (set! mintime time)
+        (set! mintime (min time mintime))))
+
+  ;; Find all selected seqblocks
   (for-each-seqblock (lambda (seqtracknum seqblocknum)
                        (when (<ra> :is-seqblock-selected seqblocknum seqtracknum)
-                         (define time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
-                         (push-back! *seqblock-clipboard*
-                                     (make-clipboard-seqblock :seqtracknum seqtracknum
-                                                              :blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)
-                                                              :time time))
-                         (if (not minseqtrack)
-                             (set! minseqtrack seqtracknum)
-                             (set! minseqtrack (min seqtracknum minseqtrack)))
-                         (if (not mintime)
-                             (set! mintime time)
-                             (set! mintime (min time mintime))))))
+                         (add-seqblock! seqtracknum seqblocknum))))
+
+  (when (null? *seqblock-clipboard*)
+    (define x (<ra> :get-mouse-pointer-x))
+    (define y (<ra> :get-mouse-pointer-y))
+    (for-each-seqblock (lambda (seqtracknum seqblocknum)
+                         (if (inside-box (<ra> :get-box seqblock seqblocknum seqtracknum) x y)
+                             (add-seqblock! seqtracknum seqblocknum)))))
+
+  ;; Scale time
   (set! *seqblock-clipboard*
         (map (lambda (clipboard-seqblock)
                (make-clipboard-seqblock :seqtracknum (- (clipboard-seqblock :seqtracknum) minseqtrack)

@@ -424,12 +424,11 @@
             :width (- $x2 $x1)
             :height (- $y2 $y1)))
   
-(define-expansion (ra:get-box prefix . rest)
-  (eval `(make-box2 ( ,(<_> 'ra:get- prefix '-x1) ,@rest)
-                    ( ,(<_> 'ra:get- prefix '-y1) ,@rest)
-                    ( ,(<_> 'ra:get- prefix '-x2) ,@rest)
-                    ( ,(<_> 'ra:get- prefix '-y2) ,@rest)))
-  )
+(define-macro (ra:get-box prefix . rest)
+  `(make-box2 ( ,(<_> 'ra:get- prefix '-x1) ,@rest)
+              ( ,(<_> 'ra:get- prefix '-y1) ,@rest)
+              ( ,(<_> 'ra:get- prefix '-x2) ,@rest)
+              ( ,(<_> 'ra:get- prefix '-y2) ,@rest)))
 
 (define-expansion (ra:get-box2 prefix . rest)
   `(make-box2 ( ,(<_> 'ra:get- prefix '-x1) ,@rest)
