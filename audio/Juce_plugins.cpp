@@ -352,6 +352,7 @@ namespace{
     const wchar_t *file_or_identifier; // used by Juce
     PluginDescription description;
     const char **effect_names = NULL; // set the first time the plugin is loaded
+    bool has_shown_noncompatible_warning = false; // TODO: recreate_from_state is called twice when loading preset.
     TypeData(const wchar_t *file_or_identifier,
              PluginDescription description
              )
@@ -1181,25 +1182,43 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
   
   AudioPluginInstance *audio_instance = data->audio_instance;
 
-  if (HASH_has_key(state, "audio_instance_state")) {
-    const char *stateAsString = HASH_get_chars(state, "audio_instance_state");
-    MemoryBlock sourceData;
-    sourceData.fromBase64Encoding(stateAsString);
-    audio_instance->setStateInformation(sourceData.getData(), sourceData.getSize());
+  TypeData *type_data = (struct TypeData*)plugin->type->data;
+
+  bool is_compatible = true;
+
+  if (HASH_has_key(state, "identifier_string")){
+    String identifier_string = HASH_get_chars(state, "identifier_string");
+    if (!type_data->description.matchesIdentifierString(identifier_string)){
+      if (type_data->has_shown_noncompatible_warning == false){
+        GFX_Message(NULL, "Warning: Saved state is not compatible with \"%s\" / \"%s\".\n\nThe state was probably saved for a different plugin with the same name.", plugin->type->type_name, plugin->type->name);
+        type_data->has_shown_noncompatible_warning = true;
+      }
+      is_compatible = false;
+    }
   }
 
-  
-  if (HASH_has_key(state, "audio_instance_current_program")) {
-    int current_program = HASH_get_int(state, "audio_instance_current_program");
-    audio_instance->setCurrentProgram(current_program);
-  }
+  if (is_compatible) {
 
-  if (HASH_has_key(state, "audio_instance_program_state")){
-    const char *programStateAsString = HASH_get_chars(state, "audio_instance_program_state");
-    MemoryBlock sourceData;
-    sourceData.fromBase64Encoding(programStateAsString);
+    if (HASH_has_key(state, "audio_instance_state")) {
+      const char *stateAsString = HASH_get_chars(state, "audio_instance_state");
+      MemoryBlock sourceData;
+      sourceData.fromBase64Encoding(stateAsString);
+      audio_instance->setStateInformation(sourceData.getData(), sourceData.getSize());
+    }
     
-    audio_instance->setCurrentProgramStateInformation(sourceData.getData(), sourceData.getSize());
+    
+    if (HASH_has_key(state, "audio_instance_current_program")) {
+      int current_program = HASH_get_int(state, "audio_instance_current_program");
+      audio_instance->setCurrentProgram(current_program);
+    }
+    
+    if (HASH_has_key(state, "audio_instance_program_state")){
+      const char *programStateAsString = HASH_get_chars(state, "audio_instance_program_state");
+      MemoryBlock sourceData;
+      sourceData.fromBase64Encoding(programStateAsString);
+      
+      audio_instance->setCurrentProgramStateInformation(sourceData.getData(), sourceData.getSize());
+    }
   }
   
   if (HASH_has_key(state, "x_pos"))
@@ -1290,6 +1309,10 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 
   HASH_put_int(state, "x_pos", data->x);
   HASH_put_int(state, "y_pos", data->y);
+
+  TypeData *type_data = (struct TypeData*)plugin->type->data;
+
+  HASH_put_chars(state, "identifier_string", type_data->description.createIdentifierString().toRawUTF8());
 }
 
 
