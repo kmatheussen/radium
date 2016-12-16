@@ -133,7 +133,7 @@ public:
     QObject::connect(this, SIGNAL(finished()), this, SLOT(onFinished()));
     start(QThread::NormalPriority); //QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
   }
-
+  //#define FOR_MACOSX
   void run() override {
     AVOIDDENORMALS;
 

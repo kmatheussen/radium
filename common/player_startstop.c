@@ -396,8 +396,10 @@ static void PlayHandleRangeLoop(void){
   }
 
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPING && g_player_was_stopped_manually==false) {
-    GL_draw_lock();
-    got_lock=true;
+    if(got_lock==false){
+      GL_draw_lock();
+      got_lock=true;
+    }
   }
   
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED) {
@@ -436,8 +438,10 @@ static void PlayHandleSequencerLoop(void){
   }
 
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPING && g_player_was_stopped_manually==false) {
-    GL_draw_lock();
-    got_lock=true;
+    if(got_lock==false){
+      GL_draw_lock();
+      got_lock=true;
+    }
   }
   
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED) {
