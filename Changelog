@@ -1,3 +1,93 @@
+Changes 4.3.4 -> 4.3.5:
+* Smooth sequencer scrolling. (can be enabled in the preferences)
+* If no sequencer block is selected, Ctrl+C copies the sequencer
+  block under the mouse.
+* Protect statically stored scheme functions from disappearing
+* Plugins: Show warning window instead of trying to load
+  incompatible plugin state, if state is incompatible.
+* Don't load invalid a/b state information from plugin state.
+  (This means that previously saved a/b state information can
+  be lost now and then when upgrading or downgrading Radium)
+* Fix a general program freeze introduced a couple of releases
+  ago.
+* Fix memory leak. Very little memory was freed when loading
+  or creating new song. (bug introduced a few releases ago)
+* Possible to automate note duplicator voice on/off.
+* Make sure sequencer cursor is always visible when playing song.
+* Loading/saving, copy/pasting, and undo/redo: Always keep same
+  order for various types of editor nodes (e.g. notes, fx,
+  velocities, etc.) when two or more nodes have the same time, 
+* Fix unnecessary deletion in various situations when two
+  or more velocity or pitch nodes
+  have the same time position.
+* Scale bottom bar height based on system font height
+* Render last line as ranged when it is ranged
+* Fix a few usages of non-system font in the preferences dialog
+* OSX: Add some debug printing to track down why program doesn't
+  start on sierra
+* Reorganize Window menu a little bit
+* Crashreporter: Send edited text, not original text.
+* Always position progress window on top of main window
+* Use system font size in the progress window
+* Allow use of Qt 5.5 on Linux if the file
+  "kf5deprecatedwidgets.so" is deleted from the system.
+* Fix end pitch value when adding pitch to note
+* Only create whole note pitch values unless ctrl is pressed
+  when adding a new pitch node to a note
+* Fix bug that in some situtaions caused pitch automation
+  points to be deleted when moving a note up or down that
+  contained both velocity automation and pitch automation
+* Fix import xm
+* Add qtbase5-private-dev to the list of ubuntu packages
+* Ctrl+J: Add options to move cursor to line and/or track
+* Various build and documentation fixes (Nil Geisweiller)
+* Fix status tex bar text when moving sequencer navigator
+* Option to ignore message windows for 2 seconds if a new
+  message window pops up immediately after closing a message
+  window
+* Fix the default track separator colors
+* S7: Don't allow any redefinition of global symbol during
+  initialization
+* Improve compressor graphics rendering a tiny bit
+* Fix MIDI learn for solo
+* Fix statusbar text for sequencer
+* scheme: Show warning if redefining a global symbol
+* Upgrade s7
+* API changes:
+  * deleteNote (same as deletePianonote 0)
+  * hasRange/getRangeStartTrack/getRangeEndTrack/
+    getRangeStartPlace/getRangeEndPlace
+  * handle error when note value is less than 0.001
+  * Change order of arguments for setPitch
+  * Change order of arguments for setVelocity
+  * Replace all set*LogtypeHolding functions with set*Logtype
+    functions
+  * Let getPitchValue return 0 if pitch_end is 0
+  * rename addFx to requestFx (because of nameclash)
+  * addPitch/addPitchF/setPitch/setPitchF
+  * Rename various create* functions into add*
+  * Let createPianonote take Place as placement types instead
+    of float
+  * Let the velocity argument for addNote be a float and not
+    an int
+  * Remove getMaxVolume function.
+  * deleteAllNotesInTrack
+  * Let getGrid and getQuantitize return a Place and not a float
+  * Removed deprecated functions getNotePlace, getNoteEndPlace,
+    and setNoteEndPlace
+  * let first argument to cutNote be a Place and not a float
+  * Throw s7 exception in api functions. Get backtrace from where
+    the error happened, and avoid getting several message windows
+    popping up if something goes wrong.
+  * getPitchValue/getPitchPlace/getPitchLogtype/deletePitch/
+    setPitchLogtypeHolding.
+  * Replace isPianonoteLogtypeHolding with getPianonoteLogtype
+  * Rename lots of *pitch* functions into *pitchnum*
+  * Let getNoteStart and getNoteEnd return Place and not float
+
+
+
+
 Changes 4.3.3 -> 4.3.4:
 * Linux: Check during runtime that we are not linking to another
   version of libxcb than the one included in bin/packages.
