@@ -284,7 +284,7 @@ static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play
 
   } else {
 
-    int64_t pos = scale(e->x(), x1, x2, start_play_time, end_play_time);
+    int64_t pos = R_MAX(0, scale(e->x(), x1, x2, start_play_time, end_play_time));
     if (e->delta() > 0)
       PlaySong(pos);
     else {
@@ -1425,7 +1425,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   bool _song_tempo_automation_was_visible = false;
-  
+
+  bool _was_playing_song = false;
+
   void call_very_often(void){
 
     if (_song_tempo_automation_was_visible != _songtempoautomation_widget.is_visible){
@@ -1467,6 +1469,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     if (is_called_every_ms(15)){  // call each 15 ms. (i.e. more often than vsync)
       if (is_playing() && pc->playtype==PLAYSONG) {
 
+        _was_playing_song = true;
+
         double song_abstime = ATOMIC_DOUBLE_GET(pc->song_abstime);
         double middle = (_start_time+_end_time) / 2.0;
         
@@ -1505,6 +1509,13 @@ struct Sequencer_widget : public MouseTrackerQWidget {
           }
 
         }
+      } else if (_was_playing_song==true){
+        if (_start_time < 0){
+          _end_time -= _start_time;
+          _start_time = 0;
+        }
+        update();
+        _was_playing_song = false;
       }
     }
   }

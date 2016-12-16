@@ -3616,7 +3616,10 @@
 
  (make-mouse-cycle
   :press-func (lambda ($button $x $y)
+                ;;(c-display "in-sequencer: " (inside-box (<ra> :get-box sequencer) $x $y) (< $y (<ra> :get-seqnav-y1)))
                 (and (= $button *left-button*)
+                     (inside-box (<ra> :get-box sequencer) $x $y)
+                     (< $y (<ra> :get-seqnav-y1))
                      (begin
                        (set! *selection-rectangle-start-x* $x)
                        (set! *selection-rectangle-start-y* $y)
