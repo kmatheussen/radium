@@ -1589,6 +1589,8 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
 
   hash_t *state=HASH_create(5);
 
+  HASH_put_int(state, "plugin_type_version", type->version);
+
   // type name / name / container name
   {
     HASH_put_chars(state, "type_name", type->type_name);
@@ -1792,6 +1794,9 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   if(plugin==NULL)
     return NULL;
 
+  int state_version = HASH_has_key(state, "plugin_type_version") ? HASH_get_int32(state, "plugin_type_version") : -1;
+  int plugin_type_version = type->version;
+
   // effects state
   hash_t *effects = HASH_get_hash(state, "effects");
   PLUGIN_set_effects_from_state(plugin, effects);
@@ -1819,12 +1824,13 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   }
 
   // A/B
-  {
+  if (state_version==plugin_type_version) {
     if (HASH_has_key(state, "ab")){
 
       int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
       
       hash_t *ab_state=HASH_get_hash(state, "ab");
+
       plugin->curr_ab_num = HASH_get_int32(ab_state, "curr_ab_num");
       
       for(int i=0;i<NUM_AB;i++){
@@ -1836,13 +1842,10 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
           hash_t *values_state = HASH_get_hash_at(ab_state, "ab_values", i);
           for(int n=0;n<num_effects;n++)
             if (HASH_has_key_at(values_state,"value",n)){
-                plugin->ab_values[i][n] = HASH_get_float_at(values_state,"value",n);
-            }
-#if !defined(RELEASE)
-            else{
+              plugin->ab_values[i][n] = HASH_get_float_at(values_state,"value",n);
+            } else{
               RError("Non-release: Unknown key %s / %d while loading A/B values.\n", "value", n);
             }
-#endif
         }
       }
       

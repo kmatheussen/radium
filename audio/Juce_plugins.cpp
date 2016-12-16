@@ -1103,7 +1103,7 @@ static AudioPluginInstance *create_audio_instance(const TypeData *type_data, flo
   printf("  Trying to load -%s-. Exists? %d. Identifier: -%s-\n", STRING_get_chars(type_data->file_or_identifier),exists?1:0,description.createIdentifierString().toRawUTF8());
   //getchar();
 
-  AudioPluginInstance *instance = formatManager.createPluginInstance (description,sample_rate,block_size,errorMessage);
+  AudioPluginInstance *instance = formatManager.createPluginInstance(description, sample_rate, block_size, errorMessage);
   
   if (instance==NULL){
     GFX_Message(NULL, "Unable to open %s plugin %s: %s\n",description.pluginFormatName.toRawUTF8(), description.fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());

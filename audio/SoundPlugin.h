@@ -184,6 +184,8 @@ typedef struct SoundPluginType{
 
   struct SoundPluginTypeContainer *container; // In case it is loaded from a container. (for instance a vst shell plugin)
 
+  int version; // Must be increased if either: name of a parameter changes, parameter is added, parameter is removed, parameters changes order, or scaling between native and 0-1 changes (change in max/min native range).
+
   const char *info;     // Contains text inside the info box which appear when pressing the button with the name of the plugin. Can be NULL.                               
 
   int num_inputs;
