@@ -64,6 +64,12 @@ namespace{
 static s7_scheme *s7;
 static s7webserver_t *s7webserver;
 
+static s7_pointer find_and_protect_scheme_func(const char *funcname){
+  s7_pointer scheme_func = s7_name_to_value(s7, funcname);
+  s7_gc_protect(s7, scheme_func);
+  return scheme_func;
+}
+
 static s7_pointer place_to_ratio(const Place *p){
   R_ASSERT(p->dividor != 0);
 
@@ -290,8 +296,8 @@ Place placetest2(int a, int b, int c){
 Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2) {
   ScopedEvalTracker eval_tracker;
   
-  static s7_pointer scheme_func = s7_name_to_value(s7, "scale");
-  
+  static s7_pointer scheme_func = find_and_protect_scheme_func("scale");
+
   s7_pointer result = s7_call(s7,
                               scheme_func,
                               s7_list(s7,
@@ -389,22 +395,22 @@ static void place_operation_void_p1_p2(s7_pointer scheme_func, Place *p1,  const
 }
                             
 void PlaceAdd(Place *p1,  const Place *p2){
-  static s7_pointer scheme_func = s7_name_to_value(s7, "+");
+  static s7_pointer scheme_func = find_and_protect_scheme_func("+");
   place_operation_void_p1_p2(scheme_func, p1,p2);
 }
 
 void PlaceSub(Place *p1,  const Place *p2){
-  static s7_pointer scheme_func = s7_name_to_value(s7, "-");
+  static s7_pointer scheme_func = find_and_protect_scheme_func("-");
   place_operation_void_p1_p2(scheme_func, p1,p2);
 }
 
 void PlaceMul(Place *p1,  const Place *p2){
-  static s7_pointer scheme_func = s7_name_to_value(s7, "*");
+  static s7_pointer scheme_func = find_and_protect_scheme_func("*");
   place_operation_void_p1_p2(scheme_func, p1,p2);
 }
 
 void PlaceDiv(Place *p1,  const Place *p2){
-  static s7_pointer scheme_func = s7_name_to_value(s7, "/");
+  static s7_pointer scheme_func = find_and_protect_scheme_func("/");
   place_operation_void_p1_p2(scheme_func, p1,p2);
 }
 
@@ -427,27 +433,27 @@ static Place place_operation_place_p1_p2(s7_pointer scheme_func, const Place p1,
 Place p_Add(const Place p1, const Place p2){
   //PrintPlace("p1: ",&p1);
   //PrintPlace("p2: ",&p2);
-  static s7_pointer scheme_func = s7_name_to_value(s7, "+");
+  static s7_pointer scheme_func = find_and_protect_scheme_func("+");
   return place_operation_place_p1_p2(scheme_func, p1,p2);
 }
 
 Place p_Sub(const Place p1, const Place p2){
-  static s7_pointer scheme_func = s7_name_to_value(s7, "-");
+  static s7_pointer scheme_func = find_and_protect_scheme_func("-");
   return place_operation_place_p1_p2(scheme_func, p1,p2);
 }
 
 Place p_Mul(const Place p1, const Place p2){
-  static s7_pointer scheme_func = s7_name_to_value(s7, "*");
+  static s7_pointer scheme_func = find_and_protect_scheme_func("*");
   return place_operation_place_p1_p2(scheme_func, p1,p2);
 }
 
 Place p_Div(const Place p1, const Place p2){
-  static s7_pointer scheme_func = s7_name_to_value(s7, "/");
+  static s7_pointer scheme_func = find_and_protect_scheme_func("/");
   return place_operation_place_p1_p2(scheme_func, p1,p2);
 }
 
 Place p_Quantitize(const Place p, const Place q){
-  static s7_pointer scheme_func = s7_name_to_value(s7, "quantitize");
+  static s7_pointer scheme_func = find_and_protect_scheme_func("quantitize");
   return place_operation_place_p1_p2(scheme_func, p, q);
 }
 
