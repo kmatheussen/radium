@@ -106,6 +106,14 @@ static void myDrawText(QPainter &painter, QRectF rect, QString text, QTextOption
   } 
 }
 
+static void myFillRect(QPainter &p, QRectF rect, const QColor &color){
+  QPen pen = p.pen();
+  p.setPen(Qt::NoPen);
+  p.setBrush(color);
+  p.drawRect(rect);
+  p.setBrush(Qt::NoBrush);
+  p.setPen(pen);
+}
 
 static void g_position_widgets(void);
 
@@ -288,22 +296,22 @@ static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play
 }
 
 
-class Seqblocks_widget { //: public MouseTrackerQWidget {
+class Seqblocks_widget {
 public:
 
   //QVector<Seqblock_widget*> _seqblock_widgets; // deleted automatically when 'this' is deleted.
-
+  
   QWidget *_sequencer_widget;
   
   SeqTrack *_seqtrack;
-
+  
   const double &_start_time;
   const double &_end_time;
   QTime _time;
-  QRect _rect;
+  QRectF _rect;
 
-  int t_x1,t_y1,t_x2,t_y2,width,height;
-    
+  float t_x1,t_y1,t_x2,t_y2,width,height;
+  
   Seqblocks_widget(QWidget *_sequencer_widget, SeqTrack *seqtrack, const double &start_time, const double &end_time)
     : _sequencer_widget(_sequencer_widget)
     , _seqtrack(add_gc_root(seqtrack))
@@ -315,14 +323,15 @@ public:
     //create_seqblock_widgets();
     _time.start();
   }
-
+  
   ~Seqblocks_widget(){
     remove_gc_root(_seqtrack);
 
     printf("Seqblocks widget deleted\n");
+    //getchar();
   }
 
-  void position_widgets(int x1, int y1, int x2, int y2){
+  void position_widgets(float x1, float y1, float x2, float y2){
     t_x1 = x1;
     t_y1 = y1;
     t_x2 = x2;
@@ -330,7 +339,7 @@ public:
     height = t_y2-t_y1;
     width = t_x2-t_x1;
     
-    _rect = QRect(t_x1, t_y1, width, height);
+    _rect = QRectF(t_x1, t_y1, width, height);
   }
   
   /*
@@ -339,15 +348,15 @@ public:
   }
   */
   
-  float get_seqblock_x1(struct SeqBlock *seqblock, double start_time, double end_time){
+  float get_seqblock_x1(struct SeqBlock *seqblock, double start_time, double end_time) const {
     return scale(seqblock->start_time, start_time, end_time, t_x1, t_x2);
   }
   
-  float get_seqblock_x2(struct SeqBlock *seqblock, double start_time, double end_time){
+  float get_seqblock_x2(struct SeqBlock *seqblock, double start_time, double end_time) const {
     return scale(seqblock->end_time, start_time, end_time, t_x1, t_x2);
   }
 
-  float get_seqblock_x1(int seqblocknum){
+  float get_seqblock_x1(int seqblocknum) const {
     R_ASSERT_RETURN_IF_FALSE2(seqblocknum>=0, 0);
 
     // This can happen while the sequencer is updated.
@@ -360,7 +369,7 @@ public:
     return get_seqblock_x1((struct SeqBlock*)_seqtrack->seqblocks.elements[seqblocknum], start_time, end_time);
   }
 
-  float get_seqblock_x2(int seqblocknum){
+  float get_seqblock_x2(int seqblocknum) const {
     R_ASSERT_RETURN_IF_FALSE2(seqblocknum>=0, 0);
 
     // This can happen while the sequencer is updated.
@@ -461,13 +470,13 @@ public:
     }
   }
   
-  QColor half_alpha(QColor c, bool is_gfx){
+  QColor half_alpha(QColor c, bool is_gfx) const {
     if (is_gfx)
       c.setAlpha(c.alpha() / 4);      
     return c;
   }
 
-  QColor get_block_qcolor(enum ColorNums colornum, bool is_gfx){
+  QColor get_block_qcolor(enum ColorNums colornum, bool is_gfx) const {
     QColor c = get_qcolor(colornum);
     return half_alpha(c, is_gfx);
   }
@@ -497,10 +506,12 @@ public:
     if (true || is_current_block) {
       QRectF rect1(x1, y1, x2-x1, header_height);
       QRectF rect2(x1, y1+header_height, x2-x1, y2-(y1+header_height));
-      p.fillRect(rect1, half_alpha(get_block_color(block), is_gfx));
-      p.fillRect(rect2, get_block_qcolor(is_gfx ? SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM : SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, is_gfx));
+
+      myFillRect(p, rect1, half_alpha(get_block_color(block), is_gfx));
+      myFillRect(p, rect2, get_block_qcolor(is_gfx ? SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM : SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, is_gfx));
+      
     } else {
-      p.fillRect(rect, get_block_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, is_gfx));
+      myFillRect(p, rect, get_block_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, is_gfx));
     }
 
     //if (x1 > -5000) { // avoid integer overflow error.
@@ -545,17 +556,21 @@ public:
     }
 
     // Bar and beats
-    {
+    if(1){
       struct Beats *beat = block->beats;
       QColor bar_color = get_block_qcolor(SEQUENCER_BLOCK_BAR_COLOR_NUM, is_gfx);
       QColor beat_color = get_block_qcolor(SEQUENCER_BLOCK_BEAT_COLOR_NUM, is_gfx);
       QPen bar_pen(bar_color);
       QPen beat_pen(beat_color);
 
-      //bar_pen.setWidth(1.0);
-      //beat_pen.setWidth(1.0);
+      bar_pen.setWidth(1.3);
+      beat_pen.setWidth(1.3);
+
+      if (beat!=NULL)
+        beat = NextBeat(beat);
       
       while(beat != NULL){
+        
         float b_y1 = y1+header_height;
         float b_y2 = y2;
 
@@ -592,7 +607,7 @@ public:
 
     //printf("  PAINTING %d %d -> %d %d\n",t_x1,t_y1,t_x2,t_y2);
 
-    p.fillRect(_rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
+    myFillRect(p, _rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
       
     double sample_rate = MIXER_get_sample_rate();
     //double song_length = get_visible_song_length()*sample_rate;
@@ -640,7 +655,7 @@ public:
       }else{
         QColor color(0,0,0,35);
         //QColor color = get_qcolor(SEQUENCER_CURRTRACK_BORDER_COLOR_NUM);
-        p.fillRect(t_x1,t_y1,width,height, color);
+        myFillRect(p, QRectF(t_x1,t_y1,width,height), color);
       }
     }
 
@@ -708,12 +723,12 @@ class Seqtrack_widget : public QWidget, public Ui::Seqtrack_widget {
 
  public:
 
-  Seqblocks_widget *_seqblocks_widget; // deleted automatically when 'this' is deleted.
+  Seqblocks_widget _seqblocks_widget;
   SeqTrack *_seqtrack;
 
   Seqtrack_widget(QWidget *parent, SeqTrack *seqtrack, const double &start_time, const double &end_time)
     : QWidget(parent)
-    , _seqblocks_widget(new Seqblocks_widget(parent, seqtrack, start_time, end_time))
+    , _seqblocks_widget(parent, seqtrack, start_time, end_time)
     , _seqtrack(seqtrack)
   {    
     setupUi(this);
@@ -735,9 +750,9 @@ class Seqtrack_widget : public QWidget, public Ui::Seqtrack_widget {
 
 
 
-  int t_x1,t_y1,t_x2,t_y2,t_width,t_height;
+  float t_x1,t_y1,t_x2,t_y2,t_width,t_height;
   
-  void position_widgets(int x1, int y1, int x2, int y2){
+  void position_widgets(float x1, float y1, float x2, float y2){
     t_x1 = x1;
     t_y1 = y1;
     t_x2 = x2;
@@ -745,24 +760,24 @@ class Seqtrack_widget : public QWidget, public Ui::Seqtrack_widget {
     t_height = t_y2-t_y1;
     t_width = t_x2-t_x1;
     
-    int x1_b = x1;// + width();
-    _seqblocks_widget->position_widgets(x1_b, y1, x2, y2);
+    float x1_b = x1;// + width();
+    _seqblocks_widget.position_widgets(x1_b, y1, x2, y2);
   }
 
   void set_seqblocks_is_selected(const QRect &selection_rect){
-    _seqblocks_widget->set_seqblocks_is_selected(selection_rect);
+    _seqblocks_widget.set_seqblocks_is_selected(selection_rect);
   }
 
   void paint(const QRect &update_rect, QPainter &p){
-    _seqblocks_widget->paint(update_rect, p);
+    _seqblocks_widget.paint(update_rect, p);
   }
   
   void my_update(void){
-    //_seqblocks_widget->update();
+    //_seqblocks_widget.update();
   }
 
   void call_very_often(void){
-    _seqblocks_widget->call_very_often();
+    _seqblocks_widget.call_very_often();
   }
 
 public slots:
@@ -797,10 +812,10 @@ public:
   }
 
 
-  int t_x1=0,t_y1=0,t_x2=50,t_y2=50;
-  int width=0,height=0;
+  float t_x1=0,t_y1=0,t_x2=50,t_y2=50;
+  float width=0,height=0;
   
-  void position_widgets(int x1, int y1, int x2, int y2){
+  void position_widgets(float x1, float y1, float x2, float y2){
     t_x1 = x1;
     t_y1 = y1;
     t_x2 = x2;
@@ -827,8 +842,8 @@ public:
 #endif
     
     for(auto *seqtrack_widget : _seqtrack_widgets){
-      int y1_b = y1+seqtrack_widget->y();
-      int y2_b = y1_b + seqtrack_widget->height();
+      float y1_b = y1+seqtrack_widget->y();
+      float y2_b = y1_b + seqtrack_widget->height();
       seqtrack_widget->position_widgets(x1, y1_b, x2, y2_b);
     }
 
@@ -927,7 +942,7 @@ struct SongTempoAutomation_widget { //: public MouseTrackerQWidget {
   const double &_start_time;
   const double &_end_time;
    
-  int t_x1,t_y1,t_x2,t_y2,width,height;
+  float t_x1,t_y1,t_x2,t_y2,width,height;
   QRectF _rect;
    
   SongTempoAutomation_widget(QWidget *parent, const double &start_time, const double &end_time)
@@ -938,7 +953,7 @@ struct SongTempoAutomation_widget { //: public MouseTrackerQWidget {
     position_widgets(0,0,100,100);
   }
 
-  void position_widgets(int x1, int y1, int x2, int y2){
+  void position_widgets(float x1, float y1, float x2, float y2){
     t_x1 = x1;
     t_y1 = y1;
     t_x2 = x2;
@@ -946,12 +961,12 @@ struct SongTempoAutomation_widget { //: public MouseTrackerQWidget {
     height = t_y2-t_y1;
     width = t_x2-t_x1;
     
-    _rect = QRect(t_x1, t_y1, width, height);
+    _rect = QRectF(t_x1, t_y1, width, height);
   }
 
   void paint(const QRect &update_rect, QPainter &p){
 
-    p.fillRect(_rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
+    myFillRect(p, _rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
     
     //printf("height: %d\n",height());
     TEMPOAUTOMATION_paint(&p, t_x1, t_y1, t_x2, t_y2, _start_time, _end_time);
@@ -1194,7 +1209,7 @@ public:
           float x2 = scale(seqblock->end_time, 0, total_seconds, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x2(seqblock, start_time, end_time);
           
           QRectF rect(x1,y1+1,x2-x1,y2-y1-2);
-          p.fillRect(rect, block_color);
+          myFillRect(p, rect, block_color);
 
           if(rect.height() > root->song->tracker_windows->systemfontheight*1.3){
             p.setPen(text_color);
@@ -1833,9 +1848,9 @@ float SEQBLOCK_get_x1(int seqblocknum, int seqtracknum){
   if (w0==NULL)
     return 0.0;
   
-  auto *w = w0->_seqblocks_widget;
+  const auto &w = w0->_seqblocks_widget;
 
-  return mapToEditorX(g_sequencer_widget, 0) + w->get_seqblock_x1(seqblocknum);
+  return mapToEditorX(g_sequencer_widget, 0) + w.get_seqblock_x1(seqblocknum);
 }
 
 float SEQBLOCK_get_x2(int seqblocknum, int seqtracknum){
@@ -1843,11 +1858,9 @@ float SEQBLOCK_get_x2(int seqblocknum, int seqtracknum){
   if (w0==NULL)
     return 0.0;
   
-  auto *w = w0->_seqblocks_widget;
-  if (w==NULL)
-    return 0.0;
+  const auto &w = w0->_seqblocks_widget;
 
-  return mapToEditorX(g_sequencer_widget, 0) + w->get_seqblock_x2(seqblocknum);
+  return mapToEditorX(g_sequencer_widget, 0) + w.get_seqblock_x2(seqblocknum);
 }
 
 float SEQBLOCK_get_y1(int seqblocknum, int seqtracknum){
@@ -1855,11 +1868,9 @@ float SEQBLOCK_get_y1(int seqblocknum, int seqtracknum){
   if (w0==NULL)
     return 0.0;
   
-  auto *w = w0->_seqblocks_widget;
-  if (w==NULL)
-    return 0.0;
+  const auto &w = w0->_seqblocks_widget;
 
-  return mapToEditorY(g_sequencer_widget, w->t_y1);
+  return mapToEditorY(g_sequencer_widget, w.t_y1);
 }
 
 float SEQBLOCK_get_y2(int seqblocknum, int seqtracknum){
@@ -1867,11 +1878,9 @@ float SEQBLOCK_get_y2(int seqblocknum, int seqtracknum){
   if (w0==NULL)
     return 0.0;
   
-  auto *w = w0->_seqblocks_widget;
-  if (w==NULL)
-    return 0.0;
+  const auto &w = w0->_seqblocks_widget;
 
-  return mapToEditorY(g_sequencer_widget, w->t_y2);
+  return mapToEditorY(g_sequencer_widget, w.t_y2);
 }
 
 
