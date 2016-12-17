@@ -426,7 +426,19 @@ public:
 
     QPen pen2(pen1);
     pen2.setColor(color2);
-    
+
+    struct Patch *patch=track->patch;
+    if (patch!=NULL){
+      QColor patchcolor(patch->color);
+      p.setPen(Qt::NoPen);
+      p.setBrush(patchcolor);
+      
+      QRectF rect(x1,y1,x2-x1,y2-y1);
+      p.drawRect(rect);
+      
+      p.setBrush(Qt::NoBrush);
+    }
+
 #endif
     
     struct Notes *note = track->notes;
