@@ -92,7 +92,7 @@ priority_t THREADING_get_priority(void){
 
 void THREADING_set_priority(priority_t priority){
 #if defined(FOR_WINDOWS)
-
+  
   int success = SetThreadPriority(GetCurrentThread(), priority.priority);
 
   if (success==0) {
@@ -100,11 +100,13 @@ void THREADING_set_priority(priority_t priority){
   }
   
 #elif defined(__linux__) || defined(FOR_MACOSX)
-    
+
   int success = pthread_setschedparam(pthread_self(), priority.policy, &priority.param);
 
   if (success!=0) {
-    GFX_Message(NULL, "pthread_setschedparam returned %d (%s)",
+    GFX_Message(NULL, "pthread_setschedparam(,%d,%d) returned %d (%s)",
+                priority.policy,
+                priority.param.sched_priority,
                 success,
                 success==EINVAL ? "policy is not a recognized policy, or param does not make sense for the policy."
                 : success==EPERM ? "The caller does not have appropriate privileges to set the specified scheduling policy and parameters."
@@ -112,7 +114,7 @@ void THREADING_set_priority(priority_t priority){
                 : "Unknown error type... (really strange)"
                 );
   }
-  
+
 #else
   #error "unkwnonw architantaiehnr"
 #endif

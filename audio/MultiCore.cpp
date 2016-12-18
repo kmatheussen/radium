@@ -142,6 +142,7 @@ public:
 #ifdef FOR_MACOSX
     printf("  Trying to call setPriority(QThread::TimeCriticalPriority);\n");
 #endif
+    
     setPriority(QThread::TimeCriticalPriority); // shouldn't matter, but just in case the call below is not working, for some reason.
   
 #ifdef FOR_MACOSX
@@ -206,6 +207,7 @@ static void process_single_core(int64_t time, int num_frames, bool process_plugi
   
   all_sp_finished.wait();
 }
+
 
 
 static int g_num_runners = 0;

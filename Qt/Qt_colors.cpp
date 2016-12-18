@@ -477,7 +477,7 @@ static QColor get_next_color(void){
 }
 
 unsigned int GFX_MakeRandomColor(void){//int blendcolornum, float blendfactor){
-  QColor color = get_next_color();//mix_colors(get_next_color(), get_qcolor(blendcolornum), blendfactor);
+  QColor color = get_next_color().darker();//mix_colors(get_next_color(), get_qcolor(blendcolornum), blendfactor);
   //QColor color = mix_colors(get_next_color(), get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.12f);
   return color.rgb();
 }

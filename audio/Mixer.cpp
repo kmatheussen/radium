@@ -104,11 +104,12 @@ bool PLAYER_is_running(void){
 }
 
 void THREADING_acquire_player_thread_priority(void){
+#if 1
   static bool has_shown_warning = false;
 
   int err = jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(), g_jack_client_priority);
   if (err != 0 && has_shown_warning==false) {
-#ifdef FOR_MACOSX
+#if 0 //def FOR_MACOSX
     printf("jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(), g_jack_client_priority); failed: %d\n", err);
 #endif
     has_shown_warning=true;
@@ -128,6 +129,7 @@ void THREADING_acquire_player_thread_priority(void){
                , err);
     
   }
+#endif
 }
 
 static void PLAYER_acquire_same_priority(void){
