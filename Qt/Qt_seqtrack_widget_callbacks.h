@@ -587,8 +587,8 @@ public:
       QPen bar_pen(bar_color);
       QPen beat_pen(beat_color);
 
-      bar_pen.setWidth(1.3);
-      beat_pen.setWidth(1.3);
+      bar_pen.setWidthF(1.3);
+      beat_pen.setWidthF(1.3);
 
       if (beat!=NULL)
         beat = NextBeat(beat);
