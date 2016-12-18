@@ -28,6 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../embedded_scheme/scheme_proc.h"
 #include "../common/undo.h"
 #include "../common/song_tempo_automation_proc.h"
+#include "../common/tracks_proc.h"
+
+
 #include "../common/seqtrack_proc.h"
 
 static bool g_need_update = false;
@@ -440,6 +443,10 @@ public:
     }
 
 #endif
+
+    float track_pitch_min;
+    float track_pitch_max;
+    TRACK_get_min_and_max_pitches(track, &track_pitch_min, &track_pitch_max);
     
     struct Notes *note = track->notes;
     while(note != NULL){
@@ -460,7 +467,7 @@ public:
       p.drawRect(rect);
       
 #else
-      float n_y = scale(note->note+0.5, 127, 0, y1, y2);
+      float n_y = track_pitch_max==track_pitch_min ? (y1+y2)/2.0 : scale(note->note+0.5, track_pitch_max, track_pitch_min, y1, y2);
 
       {
         float x2 = R_MIN(n_x2, n_x1+bar_header_length);
