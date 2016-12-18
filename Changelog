@@ -18,8 +18,7 @@ Changes 4.3.4 -> 4.3.5:
   order for various types of editor nodes (e.g. notes, fx,
   velocities, etc.) when two or more nodes have the same time, 
 * Fix unnecessary deletion in various situations when two
-  or more velocity or pitch nodes
-  have the same time position.
+  or more velocity or pitch nodes have the same time position.
 * Scale bottom bar height based on system font height
 * Render last line as ranged when it is ranged
 * Fix a few usages of non-system font in the preferences dialog

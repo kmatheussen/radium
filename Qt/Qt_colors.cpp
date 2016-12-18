@@ -516,7 +516,7 @@ static const ColorConfig get_color_config(enum ColorNums colornum){
     i++;
   }
 
-  RError("Unknown color %s", colornum);
+  RError("Unknown color %d", colornum);
   return g_colorconfig[0];
 }
 

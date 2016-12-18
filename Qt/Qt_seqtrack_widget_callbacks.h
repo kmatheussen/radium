@@ -39,6 +39,8 @@ static bool smooth_scrolling(void){
   return smoothSequencerScrollingEnabled();
 }
 
+static bool g_draw_colored_seqblock_tracks = true;
+
 namespace{
   struct GlyphpathAndWidth{
     QPainterPath path;
@@ -411,7 +413,7 @@ public:
      
   }
 
-  void paintTrack(QPainter &p, float x1, float y1, float x2, float y2, const struct Blocks *block, const struct Tracks *track, int64_t blocklen) const {
+  void paintTrack(QPainter &p, float x1, float y1, float x2, float y2, const struct Blocks *block, const struct Tracks *track, int64_t blocklen, bool is_multiselected) const {
     QColor color1 = get_qcolor(SEQUENCER_NOTE_COLOR_NUM);
     QColor color2 = get_qcolor(SEQUENCER_NOTE_START_COLOR_NUM);
     
@@ -430,18 +432,28 @@ public:
     QPen pen2(pen1);
     pen2.setColor(color2);
 
-    struct Patch *patch=track->patch;
-    if (patch!=NULL){
-      QColor patchcolor(patch->color);
-      p.setPen(Qt::NoPen);
-      p.setBrush(patchcolor);
+    {
+      QColor color;
+
+      if (is_multiselected)
+        color = get_block_qcolor(SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM, true);
+
+      else if (!g_draw_colored_seqblock_tracks)
+        color = get_block_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, false);
+      
+      else if (track->patch!=NULL)
+        color = QColor(track->patch->color);
+
+      else
+        goto no_track_background;
       
       QRectF rect(x1,y1,x2-x1,y2-y1);
-      p.drawRect(rect);
-      
-      p.setBrush(Qt::NoBrush);
-    }
 
+      myFillRect(p, rect, color);
+    }
+    
+  no_track_background:
+    
 #endif
 
     float track_pitch_min;
@@ -524,13 +536,13 @@ public:
 
     if (true || is_current_block) {
       QRectF rect1(x1, y1, x2-x1, header_height);
-      QRectF rect2(x1, y1+header_height, x2-x1, y2-(y1+header_height));
+      //QRectF rect2(x1, y1+header_height, x2-x1, y2-(y1+header_height));
 
       myFillRect(p, rect1, half_alpha(get_block_color(block), is_gfx));
-      myFillRect(p, rect2, get_block_qcolor(is_gfx ? SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM : SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, is_gfx));
+      //myFillRect(p, rect2, get_block_qcolor(is_gfx ? SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM : SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, is_gfx));
       
     } else {
-      myFillRect(p, rect, get_block_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, is_gfx));
+      //myFillRect(p, rect, get_block_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, is_gfx));
     }
 
     //if (x1 > -5000) { // avoid integer overflow error.
@@ -568,7 +580,7 @@ public:
         }
         
         // Draw track
-        paintTrack(p, x1, t_y1, x2, t_y2, block, track, blocklen);
+        paintTrack(p, x1, t_y1, x2, t_y2, block, track, blocklen, is_gfx);
         
         track = NextTrack(track);
       }

@@ -93,7 +93,6 @@ CFLAGS="$MYFLAGS" CPPFLAGS="$MYFLAGS" CXX="g++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS
 VERBOSE=1 make -j `nproc`
 cd ..
 
-
 rm -fr libpd-master
 tar xvzf libpd-master.tar.gz
 cd libpd-master/
