@@ -1,6 +1,6 @@
 settings_version = 0.72 # dont change this one
 
-color0 = #ff313837
+color0 = #ff505b59
 color1 = #ffffffff
 color2 = #ff090909
 color3 = #ffffffff
@@ -9,7 +9,7 @@ color5 = #ff1e211e
 color6 = #ffab8d5c
 color7 = #ff0b186c
 color8 = #fffdfec8
-color9 = #ff616b74
+color9 = #ff63696a
 color10 = #fff4ff23
 color11 = #ff384348
 color12 = #ff96a3a7

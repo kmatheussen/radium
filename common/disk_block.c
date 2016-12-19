@@ -84,7 +84,7 @@ struct Blocks *LoadBlock(void){
 	ATOMIC_DOUBLE_SET(block->reltempo, 1.0);
 
 	block->l.num=DC_LoadN();
-        block->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.12f);
+        block->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.82f);
         
 	GENERAL_LOAD(5,5)
 

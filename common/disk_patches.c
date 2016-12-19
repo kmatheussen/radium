@@ -227,7 +227,7 @@ struct Patch *LoadPatch(void){
         patch->is_usable = true;
         patch->forward_events = true; // default value
         patch->name_is_edited = true; // compatibility value when loading older songs
-        patch->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.12f);
+        patch->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.52f);
         
         PATCH_init_voices(patch);
 
