@@ -192,7 +192,7 @@
       </layout>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
+      <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,1">
        <item>
         <widget class="QWidget" name="horizontalWidget" native="true">
          <property name="sizePolicy">
@@ -204,14 +204,23 @@
          <property name="maximumSize">
           <size>
            <width>16777215</width>
-           <height>18</height>
+           <height>180</height>
           </size>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <property name="spacing">
            <number>0</number>
           </property>
-          <property name="margin">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
            <number>0</number>
           </property>
           <item>

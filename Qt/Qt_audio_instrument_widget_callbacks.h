@@ -429,11 +429,6 @@ public:
 
     checkwidget->setChecked(val);
 
-    show_compressor->setFixedWidth(controlsArrow->width());
-    show_equalizer->setFixedWidth(controlsArrow->width());
-    show_browser->setFixedWidth(browserArrow->width());
-    show_controls->setFixedWidth(controlsArrow->width());
-
     if(system_effect==EFFNUM_INPUT_VOLUME_ONOFF)
       input_volume_slider->setEnabled(val);
     if(system_effect==EFFNUM_VOLUME_ONOFF)
@@ -638,6 +633,28 @@ public:
     set_arrow_style(browserArrow, false);
     if(pipe_label!=NULL)
       set_arrow_style(pipe_label,false);
+
+    QFontMetrics fm(QApplication::font());
+    int fontheight = fm.height() + 3;
+
+    browserWidget->setFixedWidth(fontheight);
+    controlsWidget->setFixedWidth(fontheight);
+    compressorWidget->setFixedWidth(fontheight);
+    equalizerWidget->setFixedWidth(fontheight);
+    
+    /*
+    show_compressor->setFixedWidth(fontheight);
+    show_equalizer->setFixedWidth(fontheight);
+    show_browser->setFixedWidth(fontheight);
+    show_controls->setFixedWidth(fontheight);
+    */
+    /*
+    show_compressor->setFixedWidth(controlsArrow->width());
+    show_equalizer->setFixedWidth(controlsArrow->width());
+    show_browser->setFixedWidth(browserArrow->width());
+    show_controls->setFixedWidth(controlsArrow->width());
+    */
+    
 
     updateSlider(EFFNUM_BUS1);
     updateSlider(EFFNUM_BUS2);

@@ -111,7 +111,7 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
       if(text.endsWith("Loop"))
         text = text + " " + QChar(8634);
 
-      if(height>width){
+      if(height>width && text.size()>2){
         painter->save();
         painter->translate(0,0);
         painter->rotate(90);

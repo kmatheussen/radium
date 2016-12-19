@@ -195,9 +195,21 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     QString text = l->text();
     int pos = text.indexOf("#");
     l->setText(text.replace(pos, 7, get_qcolor(TEXT_COLOR_NUM).name()));
+
+    QFontMetrics fm(QApplication::font());
+    int fontsize = fm.height() / 2;
+
+    int pos1 = text.indexOf("font-size:") + QString("font-size:").size();
+    int pos2 = text.indexOf("pt;");
+    l->setText(text.replace(pos1, pos2-pos1, QString::number(fontsize)));
   }
   
   void updateWidgets(){
+
+    QFontMetrics fm(QApplication::font());
+    int header_height = fm.height() * 4 / 3;
+    header->setMinimumHeight(header_height);
+    header->setMaximumHeight(header_height);
 
     for(int i=0;i<NUM_PATCH_VOICES;i++){
       PatchVoice *voice=&_voices[i];

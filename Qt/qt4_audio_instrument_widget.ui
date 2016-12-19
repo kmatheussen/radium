@@ -495,7 +495,7 @@
            </property>
            <property name="maximumSize">
             <size>
-             <width>18</width>
+             <width>180</width>
              <height>16777215</height>
             </size>
            </property>
@@ -619,7 +619,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QWidget" name="widget_4" native="true">
+          <widget class="QWidget" name="controlsWidget" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -634,7 +634,7 @@
            </property>
            <property name="maximumSize">
             <size>
-             <width>18</width>
+             <width>180</width>
              <height>16777215</height>
             </size>
            </property>
@@ -820,7 +820,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QWidget" name="widget_2" native="true">
+          <widget class="QWidget" name="compressorWidget" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -835,7 +835,7 @@
            </property>
            <property name="maximumSize">
             <size>
-             <width>18</width>
+             <width>180</width>
              <height>16777215</height>
             </size>
            </property>
@@ -959,7 +959,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QWidget" name="widget_3" native="true">
+          <widget class="QWidget" name="equalizerWidget" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -974,7 +974,7 @@
            </property>
            <property name="maximumSize">
             <size>
-             <width>18</width>
+             <width>180</width>
              <height>16777215</height>
             </size>
            </property>

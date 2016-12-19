@@ -316,6 +316,11 @@ class Sample_requester_widget : public QWidget
     }else{
       update_sample_name_label(STRING_get_qstring(FLUIDSYNTH_get_filename_display(plugin)));
     }
+
+    QFontMetrics fm(QApplication::font());
+    int header_height = fm.height() * 4 / 3;
+    horizontalWidget->setMinimumHeight(header_height);
+    horizontalWidget->setMaximumHeight(header_height);
   }
 
   void update_file_list(){

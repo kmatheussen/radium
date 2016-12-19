@@ -407,6 +407,11 @@ public:
     if(_faust_plugin_widget != NULL)
       _faust_plugin_widget->update_gui();
 #endif
+
+    QFontMetrics fm(QApplication::font());
+    int header_height = fm.height() * 4 / 3;
+    header->setMinimumHeight(header_height);
+    header->setMaximumHeight(header_height);
     
     update_preset_widgets();
 
