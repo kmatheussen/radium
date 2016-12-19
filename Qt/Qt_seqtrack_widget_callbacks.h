@@ -423,6 +423,7 @@ public:
      
   }
 
+  
   void paintTrack(QPainter &p, float x1, float y1, float x2, float y2, const struct Blocks *block, const struct Tracks *track, int64_t blocklen, bool is_multiselected) const {
     QColor color1 = get_qcolor(SEQUENCER_NOTE_COLOR_NUM);
     QColor color2 = get_qcolor(SEQUENCER_NOTE_START_COLOR_NUM);
@@ -473,38 +474,83 @@ public:
     struct Notes *note = track->notes;
     while(note != NULL){
 
-      int64_t start = Place2STime(block, &note->l.p);
-      int64_t end = Place2STime(block, &note->end);
-
-      float n_x1 = scale(start, 0, blocklen, x1, x2);
-      float n_x2 = scale(end, 0, blocklen, x1, x2);
-
-      p.setPen(pen1);
-
-#if SHOW_BARS
-      float n_y1 = scale(note->note, 127, 0, y1, y2);
-      float n_y2 = y2;
+      struct Pitches last_pitch;
+      last_pitch.l.p = note->end;
+      last_pitch.note = note->pitch_end;
       
-      QRectF rect(n_x1, n_y1, n_x2-n_x1, n_y2-n_y1);
-      p.drawRect(rect);
+      struct Pitches first_pitch;
+      first_pitch.l.p = note->l.p;
+      first_pitch.l.next = &note->pitches->l;
+      first_pitch.note = note->note;
+      first_pitch.logtype = note->pitch_first_logtype;
       
-#else
-      float n_y = track_pitch_max==track_pitch_min ? (y1+y2)/2.0 : scale(note->note+0.5, track_pitch_max, track_pitch_min, y1, y2);
+      struct Pitches *pitch = &first_pitch;
 
-      {
-        float x2 = R_MIN(n_x2, n_x1+bar_header_length);
+      const float init_last_y = -10000;
+      float last_y = init_last_y;
+      
+      while(true){
+
+        struct Pitches *next_pitch = NextPitch(pitch);
+        if(next_pitch==NULL)
+          next_pitch = &last_pitch;
         
-        QLineF line(n_x1,n_y,x2,n_y);
-        p.setPen(pen2);
-        p.drawLine(line);
+        int64_t start = Place2STime(block, &pitch->l.p);
+        int64_t end = Place2STime(block, &next_pitch->l.p);
+        
+        float n_x1 = scale(start, 0, blocklen, x1, x2);
+        float n_x2 = scale(end, 0, blocklen, x1, x2);
+        
+        p.setPen(pen1);
+        
+        float n_y1 = track_pitch_max==track_pitch_min ? (y1+y2)/2.0 : scale(pitch->note+0.5, track_pitch_max, track_pitch_min, y1, y2);
+        float n_y2;
 
-        if (n_x2 > x2){
-          QLineF line(x2,n_y,n_x2,n_y);
+        if(track_pitch_max==track_pitch_min)
+          n_y2 = (y1+y2)/2.0;
+        else if (next_pitch==&last_pitch && next_pitch->note==0)
+          n_y2 = scale(note->note+0.5, track_pitch_max, track_pitch_min, y1, y2);
+        else if (pitch->logtype==LOGTYPE_HOLD)
+          n_y2 = n_y1;
+        else
+          n_y2 = scale(next_pitch->note+0.5, track_pitch_max, track_pitch_min, y1, y2);
+                 
+
+        if (last_y == init_last_y){
+          
+          float x2 = R_MIN(n_x2, n_x1+bar_header_length);
+          
+          QLineF line(n_x1,n_y1,x2,n_y1);
+          p.setPen(pen2);
+          p.drawLine(line);
+          
+          if (n_x2 > x2){
+            QLineF line(x2,n_y1,n_x2,n_y2);
+            p.setPen(pen1);
+            p.drawLine(line);
+          }
+          
+        } else {
+          
           p.setPen(pen1);
+          
+          if (fabs(last_y-n_y1) > 0.5){
+            QLineF line(n_x1,last_y, n_x1, n_y1);
+            p.drawLine(line);
+          }
+          
+          QLineF line(n_x1,n_y1,n_x2,n_y2);
           p.drawLine(line);
         }
+
+        last_y = n_y2;
+        
+        if (next_pitch==&last_pitch)
+          break;
+        else
+          pitch = next_pitch;
       }
-#endif
+      
 #undef SHOW_BARS
       
       note = NextNote(note);
