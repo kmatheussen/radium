@@ -53,8 +53,11 @@ static void DrawOnOffBox(
   int y1=box.y1+1;
   int y2=box.y2-1;
 
+  if (onoff)
+    GFX_SetMixColor(window,BLACK_COLOR_NUM,LOW_EDITOR_BACKGROUND_COLOR_NUM,200);
+  
   GFX_T_FilledBox(
-                  window,onoff?VELOCITY1_COLOR_NUM:HIGH_EDITOR_BACKGROUND_COLOR_NUM,
+                  window,HIGH_EDITOR_BACKGROUND_COLOR_NUM,
                   x1,y1,
                   x2,y2,
                   PAINT_BUFFER
