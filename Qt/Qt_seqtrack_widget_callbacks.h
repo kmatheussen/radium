@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_seqtrack_widget.h"
 
 #include "../embedded_scheme/scheme_proc.h"
-#include "../common/undo.h"
 #include "../common/song_tempo_automation_proc.h"
 #include "../common/tracks_proc.h"
 
@@ -750,7 +749,6 @@ public:
   }
 
   int _last_num_seqblocks = 0;
-  int _last_num_undos = -1;
   
   void call_very_often(void){
     if (_last_num_seqblocks != _seqtrack->seqblocks.num_elements) {
@@ -759,31 +757,8 @@ public:
     }
 
     {
-      int num_undos = Undo_num_undos();
-      bool unequal_undos = _last_num_undos != num_undos;
-      
-      if (unequal_undos || _time.elapsed() > 5000) { // Update at least every five seconds.
-        if (unequal_undos) {
-          _last_num_undos = num_undos;
-
-          if(false){
-            _sequencer_widget->update();
-          }else{
-            double sample_rate = MIXER_get_sample_rate();
-            double start_time = _start_time / sample_rate;
-            double end_time = _end_time / sample_rate;
-            
-            // Not sure if this makes a difference (rather than just calling update()).
-            VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &_seqtrack->seqblocks){
-              float x1 = get_seqblock_x1(seqblock, start_time, end_time);
-              float x2 = get_seqblock_x2(seqblock, start_time, end_time);
-              _sequencer_widget->update(x1-1, t_y1, x2-x1+1, height);
-            }END_VECTOR_FOR_EACH;
-          }
-          
-        } else {
-          _sequencer_widget->update();
-        }
+      if (_time.elapsed() > 5000) { // Update at least every five seconds.
+        _sequencer_widget->update();
         _time.restart();
       }
     }

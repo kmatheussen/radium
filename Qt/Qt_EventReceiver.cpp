@@ -52,6 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Bs_edit_proc.h"
 #include "../common/cursor_updown_proc.h"
 #include "../common/player_pause_proc.h"
+#include "../common/seqtrack_proc.h"
 
 #include "../embedded_scheme/scheme_proc.h"
 
@@ -178,7 +179,7 @@ void EditorWidget::updateEditor(){
     UpdateWBlockCoordinates(this->window, this->window->wblock);
     GFX_UpdateUpperLeft(window, window->wblock);
     UpdateAllPianoRollHeaders(window, window->wblock);
-
+    SEQUENCER_update();
     
     update();
 
@@ -188,6 +189,8 @@ void EditorWidget::updateEditor(){
 
   if (this->window->must_redraw_editor==true){
     GL_create(this->window, this->window->wblock);
+    if (!is_playing())
+      SEQUENCER_update();
     this->window->must_redraw_editor=false;
   }
 }
