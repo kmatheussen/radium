@@ -122,12 +122,22 @@ static void myFillRect(QPainter &p, QRectF rect, const QColor &color){
 
 static void g_position_widgets(void);
 
+static QPoint skewedPoint(const QPoint &p, int dx, int dy){
+  return QPoint(p.x()+dx, p.y()+dy);
+}
+
 static QPoint mapFromEditor(QWidget *widget, QPoint point){
+  if (!g_editor->isVisible())
+    return skewedPoint(point, -10000, -10000);
+      
   QPoint global = g_editor->mapToGlobal(point);
   return widget->mapFromGlobal(global);
 }
 
 static QPoint mapToEditor(QWidget *widget, QPoint point){
+  if (!g_editor->isVisible())
+    return skewedPoint(point, 10000, 10000);
+  
   //return widget->mapTo(g_editor, point); (g_editor must be a parent, for some reason)
   QPoint global = widget->mapToGlobal(point);
   return g_editor->mapFromGlobal(global);
