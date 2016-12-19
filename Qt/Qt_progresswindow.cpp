@@ -42,6 +42,15 @@ public:
 
 static MyTimer mytimer;
 
+static void positionWindow(const QRect &rect, QWidget *widget){
+  widget->setMinimumWidth(rect.width());
+  widget->setMinimumHeight(rect.height());
+  widget->setMaximumWidth(rect.width());
+  widget->setMaximumHeight(rect.height());
+
+  widget->move(rect.x(), rect.y());
+}
+
 void process_OpenProgress(QString message, QRect rect){
   delete progressBox;
 
@@ -57,18 +66,12 @@ void process_OpenProgress(QString message, QRect rect){
   progressBox->setInformativeText("             \n            \n              \n                \n               \n");
 
 
-  progressBox->setMinimumWidth(rect.width());
-  progressBox->setMinimumHeight(rect.height());
-  progressBox->setMaximumWidth(rect.width());
-  progressBox->setMaximumHeight(rect.height());
-
-  progressBox->move(rect.x(), rect.y());
+  positionWindow(rect, progressBox);
   
   progressBox->show();
 
-  progressBox->setMinimumWidth(rect.width());
-  progressBox->setMinimumHeight(rect.height());
-
+  positionWindow(rect, progressBox);
+  
   for(int i=0; i < 10 ; i++){
     progressBox->repaint();
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -103,8 +106,7 @@ void process_ShowProgressMessage(QString message, QRect rect){
     progressBox->setInformativeText(out);
   }
 
-  progressBox->setMinimumWidth(rect.width());
-  progressBox->setMinimumHeight(rect.height());
+  positionWindow(rect, progressBox);
 
   for(int i=0; i < 10 ; i++){
     progressBox->repaint();
@@ -152,6 +154,7 @@ int main(int argc, char **argv){
     } else if (line==message_show) {
       progressBox->show();
       progressBox->raise();
+      positionWindow(rect, progressBox);
     } else if (progressBox->isVisible())
       process_ShowProgressMessage(line, rect);
   }
