@@ -203,3 +203,6 @@ void showVelocityHelpWindow(void){
 void showFXHelpWindow(void){
   GFX_showFXHelpWidget();
 }
+void showKeybindingsHelpWindow(void){
+  GFX_showKeybindingsHelpWindow();
+}

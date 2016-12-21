@@ -1,0 +1,31 @@
+<html>
+<body bgcolor="#ffffff">
+<h1>Custom keybindings</h1>
+ 
+By editing $HOME/.radium/keybindings.conf, you can add custom keybindings.
+<p>
+
+  
+Example:
+
+<blockquote>
+<pre>
+*
+import radium as ra
+*
+
+Z CTRL_L : ra.openAboutWindow
+</pre>
+</blockquote>
+
+...will change left ctrl + z into open the about window instead of undoing.
+<p>
+
+Note that Radium needs to be restarted for the new keybindings to take effect.
+
+<p>
+  
+For more examples, look at the file "bin/keybindings.conf" in the Radium distribution.
+
+</body>
+ </html>

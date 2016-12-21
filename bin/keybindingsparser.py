@@ -166,9 +166,9 @@ class LineParser:
         return line
 
 class Parser:
-    def __init__(self,filehandle, filehandle2 = None):
+    def __init__(self, filehandle1, filehandle2 = None):
         self.linetype="NORMAL"
-        self.ih=filehandle
+        self.filehandle1=filehandle1
         self.filehandle2=filehandle2
         self.linenum=0
         self.keys=[]
@@ -182,7 +182,7 @@ class Parser:
     def readLine(self):
         self.linenum+=1
 #        print "----------------line: %d " % self.linenum
-        return self.ih.readline()
+        return self.filehandle1.readline()
     
     def readNextLine(self):
         if self.nextline!="":
@@ -192,15 +192,15 @@ class Parser:
             self.currline=self.readLine()
 
         if self.currline=='':
-            self.ih.close()
+            self.filehandle1.close()
             
-            if self.ih == self.filehandle2:
+            if self.filehandle1 == self.filehandle2:
                 return False
 
             if self.filehandle2 is None:
                 return False
 
-            self.ih = self.filehandle2
+            self.filehandle1 = self.filehandle2
             self.linenum = 0
             return self.readNextLine()
 

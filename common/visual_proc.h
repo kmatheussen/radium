@@ -42,6 +42,7 @@ extern LANGSPEC void GFX_showMixerHelpWindow(void);
 extern LANGSPEC void GFX_showFXHelpWidget(void);
 extern LANGSPEC void GFX_showVelocityHelpWidget(void);
 extern LANGSPEC void GFX_showChanceHelpWidget(void);
+extern LANGSPEC void GFX_showKeybindingsHelpWindow(void);
 
 extern LANGSPEC void GFX_OpenProgress(const char *message);
 extern LANGSPEC void GFX_ShowProgressMessage(const char *message);
