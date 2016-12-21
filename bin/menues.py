@@ -17,7 +17,8 @@
 import sys
 import platform
 
-import string,sys,os,cPickle
+import string,sys,os
+
 
 if __name__!="__main__":
   import radium as ra
@@ -25,6 +26,8 @@ else:
   class Mock:
     def getConfPath(self, key):
       return os.path.join(os.getenv("HOME"),".radium",key)
+    def hasConfPath(self, key):
+      return True
   ra = Mock()
   sys.g_program_path = ""
 
@@ -90,15 +93,20 @@ def get_key_name(code):
   else:
     return code
 
+
 class LineParser:
   def __init__(self,filename):
+    if not '_keybindingsdict' in dir(ra):
+      radium.showMessage("Error. Unable to generate menues.");
+      
     try:
-      file=open("keybindings.cPickle","r")
+      keybindingsdict = ra._keybindingsdict
     except:
-      file=open(os.path.join(sys.g_program_path,"keybindings.cPickle"),"r")
-    keybindingsdict=cPickle.load(file)
-    file.close()
+      print sys.exc_info()
+      radium.showMessage("Unable to generate menues. ("+str(sys.exc_info())+")")
 
+    #print "AAAAAAAAAAAA",keybindingsdict
+    
     file=open(filename,'r')
 
     self.lines=map(lambda x: self.constructmenuitemstring(string.split(x,"|"),keybindingsdict),

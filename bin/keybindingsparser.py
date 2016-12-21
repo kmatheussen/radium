@@ -495,17 +495,12 @@ def start(keyhandles,filehandle,filehandle2,outfilehandle):
                         return False
 
 
-    import cPickle
-
     try:
-        keybindingsfile=open("keybindings.cPickle","w")
-        keybindingsfile.write(cPickle.dumps(keybindingsdict))
-        keybindingsfile.close()
-        #print keybindingsdict
+        radium._keybindingsdict = keybindingsdict
     except:
-        print "Couldn't create keybindings.cPickle. Using default."
+        print sys.exc_info()
+        radium.showMessage("Couldn't create keybindings dict. ("+str(sys.exc_info())+")")
 
-    return true
-
-
+    #print "BBBBBB",radium._keybindingsdict
+    return True
 
