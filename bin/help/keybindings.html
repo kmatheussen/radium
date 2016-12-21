@@ -25,7 +25,26 @@ Note that Radium needs to be restarted for the new keybindings to take effect.
 
 <p>
   
-For more examples, look at the file "bin/keybindings.conf" in the Radium distribution.
+  For more examples, look at <A href="https://raw.githubusercontent.com/kmatheussen/radium/master/bin/keybindings.conf">the default keybindings.conf file</A>,
+  and look at <A href="https://raw.githubusercontent.com/kmatheussen/radium/master/api/protos.conf">protos.conf</A> for a complete list of available functions.
 
+<p>
+  If you want to run <A href="https://ccrma.stanford.edu/software/snd/snd/s7e.html">S7 Scheme</A> code, or <A href="http://www.python.org">Python</A> code, use the functions ra.evalScheme or ra.evalPython:
+  
+
+<blockquote>
+<pre>
+*
+import radium as ra
+*
+
+X CTRL_L : ra.evalPython "ra.openAboutWindow()"
+C CTRL_L : ra.evalScheme "(ra:open-about-window)"
+</pre>
+</blockquote>
+
+<p>
+  Note that any code between the asterisks are executed as python code when Radium starts up. ("import radium as ra" is pure python code). This makes it posssible to add custom functions and classes in a convenient way.
+  
 </body>
  </html>
