@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMimeData>
 #include <QFileDialog>
 
-extern bool g_qt_is_running;
+extern bool g_qtgui_has_started,g_qtgui_has_stopped;
 
 #if USE_GTK_VISUAL
 #  ifdef __linux__
@@ -791,7 +791,7 @@ int GFX_Message(vector_t *buttons, const char *fmt,...){
   vsprintf(message,fmt,argp);
   va_end(argp);
 
-  if (g_qt_is_running==false || !THREADING_is_main_thread() || g_radium_runs_custom_exec) {
+  if (g_qtgui_has_started==false || g_qtgui_has_stopped==true || !THREADING_is_main_thread() || g_radium_runs_custom_exec) {
 
     SYSTEM_show_message(message);
     return -1;

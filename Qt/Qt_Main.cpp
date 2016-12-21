@@ -199,6 +199,9 @@ void call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_event
 
 DEFINE_ATOMIC(bool, is_starting_up) = true;
 bool g_qt_is_running = false;
+bool g_qtgui_has_started = false;
+bool g_qtgui_has_stopped = false;
+
 //void gakk();
 
 extern void set_editor_focus(void);
@@ -1669,7 +1672,8 @@ int radium_main(char *arg){
 
   setApplicationColors(qapplication);
 
-  g_qt_is_running = true;
+  g_qtgui_has_started = true;
+
 
 #if 0
     vector_t v = {0};
@@ -1932,13 +1936,16 @@ int radium_main(char *arg){
   //QApplication::processEvents(); // Windows spends some time to initialize proxy, or something like that (there are numerous QTBUG entries on this). We trigger that work here while the splash screen is still open. If not it seems like the program have hanged right after startup. (No, it didnt make a difference. Qt has screwed up network initialization on windows since it blocks the main thread for a few seconds when doing the first request. Qt should have done this in a separate thread. Seems like the simplest solution is to use libcurl.)
     
   
-       
+  g_qtgui_has_started = true;
+ 
 #if USE_QT_VISUAL
   qapplication->exec();
 #else
   GTK_MainLoop();
 #endif
-      
+
+  g_qtgui_has_stopped = true;
+  
   // We don't want the crashreporter to pop up if there is something wrong when program exits. Not so important, and it looks unprofessional.
   CRASHREPORTER_dont_report_more();
 
@@ -1946,7 +1953,7 @@ int radium_main(char *arg){
       
   fprintf(stderr,"          ENDING 1\n");
   
-  g_qt_is_running = false;
+  //g_qt_is_running = false;
 
   if (editor->gl_widget != NULL)
     GL_stop_widget(editor->gl_widget);
@@ -2070,8 +2077,10 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
 #ifdef USE_QT5
   QByteArray localMsg = msg.toLocal8Bit();
 #endif
+
+  bool old_g_qtgui_has_started = g_qtgui_has_started;
   
-  g_qt_is_running=false;
+  g_qtgui_has_started=false;
     
   switch (type) {
     case QtDebugMsg:
@@ -2105,7 +2114,7 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
       fprintf(stderr, "Unkwon qt: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
   }
 
-  g_qt_is_running=true;
+  g_qtgui_has_started=old_g_qtgui_has_started;
 }
  
 void MONOTONIC_TIMER_init(void);
@@ -2390,7 +2399,9 @@ int main(int argc, char **argv){
   OS_set_argv0(argv[0]);
 
   R_ASSERT(THREADING_is_main_thread());
-
+  
+  g_qt_is_running = true;
+    
   CRASHREPORTER_init();
 
   bool try_incremental_gc = SETTINGS_read_bool("try_incremental_gc",false);

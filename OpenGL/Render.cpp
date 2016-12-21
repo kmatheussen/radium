@@ -2533,12 +2533,12 @@ static void gl_create_thread(){
 #include <gc.h>
 
 extern void processEventsALittleBit(void);
-extern bool g_qt_is_running;
+extern bool g_qtgui_has_started,g_qtgui_has_stopped;
 
 void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
   static std::thread t1(gl_create_thread);
 
-  if (g_qt_is_running==false)
+  if (g_qtgui_has_started==false || g_qtgui_has_stopped==true)
     return;
 
   Threadsafe_GC_disable(); // Could also turn on thread support in gc for the worker thread, but this is simpler, and perhaps faster too.

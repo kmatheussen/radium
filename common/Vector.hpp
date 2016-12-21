@@ -13,7 +13,7 @@
  **/
 
 
-extern bool g_qt_is_running;
+extern bool g_qtgui_has_stopped;
 
 
 // NOTE: Can not use radium::Vector if any of the fields in T uses a custom copy constructor (is there any way to detect that before getting a random crash?)
@@ -62,7 +62,7 @@ public:
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
     // Don't want to free static global memory during shut down since it may be used by threads which are not shut down.
-    if (g_qt_is_running) {
+    if (g_qtgui_has_stopped==false){
       V_free(elements);      
       elements = NULL; // For debugging
     }
