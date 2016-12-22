@@ -5,6 +5,9 @@ Changes 4.3.5 -> 4.3.6:
   in the menues if binary directory doesn't have write permission.
 * Add info about how to change keybindings to the help menu.
 * Always write "0.00 dB", not "-0.00 dB" or "+0.00 dB".
+* Make sure progress window positions and resizes properly.
+* Various tweaks to ensure Radium works and looks properly
+  with larger system fonts.
 * Update sequencer immediately when editing notes.
 * Draw all pitch values in the sequencer.
 * Fix sequencer mouse handling when editor is invisible.
@@ -14,7 +17,7 @@ Changes 4.3.5 -> 4.3.6:
 * Use instrument color to paint sequencer block track background,
   and don't paint default sequencer block track background
   anymore.
-
+* 
 
 Changes 4.3.4 -> 4.3.5:
 * Smooth sequencer scrolling. (can be enabled in the preferences)
