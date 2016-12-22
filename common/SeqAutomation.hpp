@@ -1,3 +1,20 @@
+/* Copyright 2016 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+
 
 #ifndef _RADIUM_COMMON_SEQAUTOMATION_HPP
 #define _RADIUM_COMMON_SEQAUTOMATION_HPP
@@ -76,61 +93,93 @@ public:
     return at(size()-1);
   }
   
-  bool RT_get_value(double abstime, const T *node1, const T *node2, double &value, double (*custom_get_value)(double abstime, const T *node1, const T *node2)) const {
-    double abstime1 = node1->abstime;
-    double abstime2 = node2->abstime;
+  double RT_get_value(double abstime, const T *node1, const T *node2, double (*custom_get_value)(double abstime, const T *node1, const T *node2) = NULL) const {
+    const double abstime1 = node1->abstime;
+    const double abstime2 = node2->abstime;
     
-    if (abstime >= abstime1 && abstime < abstime2){
-
-      int logtype1 = node1->logtype;
+    const int logtype1 = node1->logtype;
+    
+    if (logtype1==LOGTYPE_LINEAR){
+      
+      if (abstime1==abstime2) {
         
-      if (logtype1==LOGTYPE_LINEAR){
-
-        if (abstime1==abstime2) {
-          
-          value = (node1->value+node2->value) / 2.0;
-          
-        } else {
-
-          if (custom_get_value != NULL)        
-            value = custom_get_value(abstime, node1, node2);
-          else
-            value = scale_double(abstime, abstime1, abstime2, node1->value, node2->value);
-          
-        }
+        return (node1->value+node2->value) / 2.0;
         
-      }else {
+      } else {
         
-        value = node1->value;
+        if (custom_get_value != NULL)        
+          return custom_get_value(abstime, node1, node2);
+        else
+          return scale_double(abstime, abstime1, abstime2, node1->value, node2->value);
         
       }
-
-      return true;
       
-    } else {
-
-      return false;
+    }else {
+      
+      return node1->value;
       
     }
   }
 
-  double RT_get_value(double abstime, double (*custom_get_value)(double abstime, const T *node1, const T *node2)){
+  bool RT_get_value(double abstime, const T *node1, const T *node2, double &value, double (*custom_get_value)(double abstime, const T *node1, const T *node2)) const {
+    const double abstime1 = node1->abstime;
+    const double abstime2 = node2->abstime;
+    
+    if (abstime >= abstime1 && abstime < abstime2){
+      value = RT_get_value(abstime, node1, node2, custom_get_value);
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
+private:
+  
+
+  // Based on pseudocode for the function BinarySearch_Left found at https://rosettacode.org/wiki/Binary_search
+  int BinarySearch_Left(const struct RT *rt, double value, int low, int high) {   // initially called with low = 0, high = N - 1
+      // invariants: value  > A[i] for all i < low
+      //             value <= A[i] for all i > high
+      if (high < low)
+        return low;
+      
+      int mid = (low + high) / 2;
+        
+      if (rt->nodes[mid].abstime >= value)
+        return BinarySearch_Left(rt, value, low, mid-1);
+      else
+        return BinarySearch_Left(rt, value, mid+1, high);
+  }
+  
+public:
+  
+  double RT_get_value(double abstime, double (*custom_get_value)(double abstime, const T *node1, const T *node2) = NULL){
 
     RT_AtomicPointerStorage_ScopedUsage rt_pointer(&_rt);
       
     const struct RT *rt = (const struct RT*)rt_pointer.get_pointer();
 
     if (rt!=NULL) {
-    
-      for(int i = 0 ; i < rt->num_nodes-1 ; i++){
-        const T *node1 = &rt->nodes[i];
-        const T *node2 = &rt->nodes[i+1];
-        
-        double value;
-        if (RT_get_value(abstime, node1, node2, value, custom_get_value))
-          return value;
-      }
+
+      if (rt->num_nodes<=1)
+        return 1.0;
       
+      if (abstime < rt->nodes[0].abstime)
+        return 1.0;
+      
+      if (abstime == rt->nodes[0].abstime)
+        return rt->nodes[0].value;
+      
+      if (abstime > rt->nodes[rt->num_nodes-1].abstime)
+        return 1.0;
+      
+      int i = BinarySearch_Left(rt, abstime, 0, rt->num_nodes-1);
+      R_ASSERT_NON_RELEASE(i>0);
+      
+      const T *node1 = &rt->nodes[i-1];
+      const T *node2 = &rt->nodes[i];
+      
+      return RT_get_value(abstime, node1, node2, custom_get_value);
     }
     
     return 1.0; //rt_tempo_automation->nodes[rt_tempo_automation->num-1].value;
