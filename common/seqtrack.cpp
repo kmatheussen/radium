@@ -1,5 +1,6 @@
 
 #include <math.h>
+#include <gc.h>
 
 #include "nsmtracker.h"
 #include "player_proc.h"
@@ -13,6 +14,7 @@
 #include "../audio/Mixer_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "song_tempo_automation_proc.h"
+#include "seqtrack_automation_proc.h"
 
 #include "seqtrack_proc.h"
 
@@ -434,9 +436,20 @@ struct SeqBlock *SEQBLOCK_create_from_state(const hash_t *state){
   return seqblock;
 }
 
+static void seqtrackgcfinalizer(void *actual_mem_start, void *user_data){
+  struct SeqTrack *seqtrack = (struct SeqTrack*)user_data;
+  //printf("FINALIZING seqtrack\n");
+  //getchar();
+  SEQTRACK_AUTOMATION_free(seqtrack->seqtrackautomation);
+}
+
+
 void SEQTRACK_init(struct SeqTrack *seqtrack){
   memset(seqtrack, 0, sizeof(struct SeqTrack));
   seqtrack->scheduler = SCHEDULER_create();
+  seqtrack->seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack);
+  
+  GC_register_finalizer(seqtrack, seqtrackgcfinalizer, seqtrack, NULL, NULL);
 }
 
 struct SeqTrack *SEQTRACK_create(void){
@@ -911,6 +924,8 @@ void SEQUENCER_init(struct Song *song){
 // Only called during program startup
 void SONG_init(void){
   struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
+  SEQTRACK_init(seqtrack);
+
   VECTOR_ensure_space_for_one_more_element(&seqtrack->seqblocks);
   
   VECTOR_ensure_space_for_one_more_element(&root->song->seqtracks);

@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/seqtrack_proc.h"
+#include "../common/seqtrack_automation_proc.h"
 #include "../common/song_tempo_automation_proc.h"
 #include "../common/time_proc.h"
 #include "../common/undo_sequencer_proc.h"
@@ -210,8 +211,186 @@ int getNumSeqtracks(void){
 
 
 
+
+// Sequencer track automation
+//////////////////////////////////////////
+
+int addSeqAutomation(int64_t time1, float value1, int64_t time2, float value2, int effect_num, int instrument_id, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return -1;
+
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return -1;
+
+  int64_t seqtime1 = get_seqtime_from_abstime(seqtrack, NULL, time1);
+  int64_t seqtime2 = get_seqtime_from_abstime(seqtrack, NULL, time2);
+
+  return SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, patch, effect_num, seqtime1, value1, LOGTYPE_LINEAR, seqtime2, value2);
+}
+
+int getNumSeqAutomations(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return 0;
+
+  return SEQTRACK_AUTOMATION_get_num_automations(seqtrack->seqtrackautomation);
+}
+
+#define VALIDATE_AUTOMATIONNUM(ret)                                     \
+  if (automationnum < 0 || automationnum >= SEQTRACK_AUTOMATION_get_num_automations(seqtrack->seqtrackautomation)){ \
+    handleError("There is no automation #%d in sequencer track #%d", automationnum, seqtracknum); \
+    return ret;                                                         \
+  }
+
+
+#define VALIDATE_NODENUM(ret)                                           \
+  if (nodenum < 0 || nodenum >= SEQTRACK_AUTOMATION_get_num_nodes(seqtrack->seqtrackautomation, automationnum)){ \
+    handleError("There is no node #%d in automation #%d in sequencer track #%d", nodenum, automationnum, seqtracknum); \
+    return ret;                                                          \
+  }
+
+int64_t getSeqAutomationInstrumentId(int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return -1;
+
+  VALIDATE_AUTOMATIONNUM(-1);
+
+  struct Patch *patch = SEQTRACK_AUTOMATION_get_patch(seqtrack->seqtrackautomation, automationnum);
+  if (patch==NULL)
+    return 0;
+
+  return patch->id;
+}
+
+int getSeqAutomationEffectNum(int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return -1;
+
+  VALIDATE_AUTOMATIONNUM(-1);
+
+  return SEQTRACK_AUTOMATION_get_effect_num(seqtrack->seqtrackautomation, automationnum);
+}
+
+float getSeqAutomationValue(int nodenum, int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return -1;
+
+  VALIDATE_AUTOMATIONNUM(-1);
+  VALIDATE_NODENUM(-1);
+
+  return SEQTRACK_AUTOMATION_get_value(seqtrack->seqtrackautomation, automationnum, nodenum);
+}
+
+int64_t getSeqAutomationTime(int nodenum, int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return -1;
+
+  VALIDATE_AUTOMATIONNUM(-1);
+  VALIDATE_NODENUM(-1);
+
+  int64_t seqtime = SEQTRACK_AUTOMATION_get_seqtime(seqtrack->seqtrackautomation, automationnum, nodenum);
+
+  return get_abstime_from_seqtime(seqtrack, NULL, seqtime);
+}
+
+int getSeqAutomationLogtype(int nodenum, int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return -1;
+
+  VALIDATE_AUTOMATIONNUM(-1);
+  VALIDATE_NODENUM(-1);
+
+  return SEQTRACK_AUTOMATION_get_logtype(seqtrack->seqtrackautomation, automationnum, nodenum);
+}
+
+int getNumSeqAutomationNodes(int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return -1;
+
+  VALIDATE_AUTOMATIONNUM(-1);
+
+  return SEQTRACK_AUTOMATION_get_num_nodes(seqtrack->seqtrackautomation, automationnum);
+}
+
+int addSeqAutomationNode(int64_t time, float value, int logtype, int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return -1;
+
+  VALIDATE_AUTOMATIONNUM(-1);
+
+  int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, time);
+  return SEQTRACK_AUTOMATION_add_node(seqtrack->seqtrackautomation, automationnum, seqtime, value, logtype);
+}
+
+void deleteSeqAutomationNode(int nodenum, int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  VALIDATE_AUTOMATIONNUM();
+  VALIDATE_NODENUM();
+
+  SEQTRACK_AUTOMATION_delete_node(seqtrack->seqtrackautomation, automationnum, nodenum);
+}
+
+void setCurrSeqAutomationNode(int nodenum, int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  VALIDATE_AUTOMATIONNUM();
+  VALIDATE_NODENUM();
+
+  SEQTRACK_AUTOMATION_set_curr_node(seqtrack->seqtrackautomation, automationnum, nodenum);
+}
+
+void setSeqAutomationNode(int64_t time, float value, int logtype, int nodenum, int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  VALIDATE_AUTOMATIONNUM();
+  VALIDATE_NODENUM();
+
+  int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, time);
+  SEQTRACK_AUTOMATION_set(seqtrack->seqtrackautomation, automationnum, nodenum, seqtime, R_BOUNDARIES(0, value, 1), logtype);
+}
+
+float getSeqAutomationNodeX(int nodenum, int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return 0;
+
+  VALIDATE_AUTOMATIONNUM(0);
+  VALIDATE_NODENUM(0);
+
+  return SEQTRACK_AUTOMATION_get_node_x(seqtrack->seqtrackautomation, seqtrack, automationnum, nodenum);
+}
+
+float getSeqAutomationNodeY(int nodenum, int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return 0;
+
+  VALIDATE_AUTOMATIONNUM(0);
+  VALIDATE_NODENUM(0);
+
+  return SEQTRACK_AUTOMATION_get_node_y(seqtrack->seqtrackautomation, seqtracknum, automationnum, nodenum);
+}
+
+
+
 // sequencer tempo automation
-//
+//////////////////////////////////////////
 
 void undoSeqtempo(void){
   ADD_UNDO(SongTempoAutomation());

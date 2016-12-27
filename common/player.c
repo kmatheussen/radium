@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_AutoBackups_proc.h"
 #include "scheduler_proc.h"
 #include "seqtrack_proc.h"
+#include "seqtrack_automation_proc.h"
 
 #include "player_proc.h"
 
@@ -149,8 +150,10 @@ void PlayerTask(double reltime){
 
         
         
-        if (player_state==PLAYER_STATE_STOPPED)
-          return;        
+        if (player_state==PLAYER_STATE_STOPPED) {
+          RT_SEQTRACK_AUTOMATION_called_when_player_stopped();
+          return;
+        }
 
         pc->absabstime += RADIUM_BLOCKSIZE;
         

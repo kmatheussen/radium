@@ -948,7 +948,8 @@ typedef enum {
   FX_start = 0,   // Exclusively used for automation
   FX_middle = 1,  // Exclusively used for automation
   FX_end = 2,     // Exclusively used for automation
-  FX_single = 3
+  FX_single = 3,
+  //FX_no_fx = 4; // No effect must be sent out. Used by seqtrack automation.
 } FX_when;
 
 struct FX{
@@ -1943,6 +1944,8 @@ static inline double get_note_reltempo(note_t note){
 struct _scheduler_t;
 typedef struct _scheduler_t scheduler_t;
 
+struct SeqtrackAutomation;
+
 struct SeqTrack{
   vector_t seqblocks; // Player must be stopped when modifying this variable
   vector_t gfx_gfx_seqblocks; // Just for graphics. Player does not have to be stopped when modifying this variable
@@ -1962,6 +1965,8 @@ struct SeqTrack{
   LPB_Iterator lpb_iterator; // Used by scheduler_LPB.c to keep track of timing (PPQ and BPM)
   Beat_Iterator beat_iterator;
   Signature_Iterator signature_iterator;
+
+  struct SeqtrackAutomation *seqtrackautomation;
 
   scheduler_t *scheduler;
 };

@@ -3729,6 +3729,15 @@
   (delete-all-selected-seqblocks))
 
 
+(define (create-sequencer-automation)
+  (<ra> :add-seq-automation
+        48000 0.5
+        (* 3 48000) 0.8
+        5
+        0
+        0))
+
+
 ;; seqblock menu
 (add-mouse-cycle
  (make-mouse-cycle
@@ -3873,30 +3882,6 @@
                                                     (<ra> :select-block blocknum))))
                                           
                                           ;;"-----------------"
-                                          ;;
-                                          ;;(list "Remove pause"
-                                          ;;      :enabled #f
-                                          ;;      (lambda ()
-                                          ;;        #f))
-
-                                          "-----------------"
-                                          
-                                          "Insert sequencer track" (lambda ()
-                                                                     (<ra> :insert-seqtrack seqtracknum))
-                                          (list "Delete sequencer track"
-                                                :enabled (> (<ra> :get-num-seqtracks) 1)
-                                                (lambda ()
-                                                  (<ra> :delete-seqtrack seqtracknum)))
-                                          "Append sequencer track" (lambda ()
-                                                                     (<ra> :append-seqtrack))
-                                          (list "Song tempo automation visible"
-                                                :check (<ra> :seqtempo-visible)
-                                                (lambda (doit)
-                                                  (<ra> :set-seqtempo-visible doit)))
-                                          (list "Play loop"
-                                                :check (<ra> :is-seqlooping)
-                                                (lambda (val)
-                                                  (<ra> :set-seqlooping val)))
                                           "------------------"
 
                                           (list "Clone block"
@@ -3921,7 +3906,39 @@
                                                 (lambda ()
                                                   (<ra> :color-dialog (<ra> :get-block-color blocknum)
                                                                       (lambda (color)
-                                                                        (<ra> :set-block-color color blocknum)))))))))))))
+                                                                        (<ra> :set-block-color color blocknum)))))
+                                          ;;
+                                          ;;(list "Remove pause"
+                                          ;;      :enabled #f
+                                          ;;      (lambda ()
+                                          ;;        #f))
+
+                                          "-----------------"
+
+                                          "New automation" create-sequencer-automation
+
+                                          "-----------------"
+                                          
+                                          "Insert sequencer track" (lambda ()
+                                                                     (<ra> :insert-seqtrack seqtracknum))
+                                          (list "Delete sequencer track"
+                                                :enabled (> (<ra> :get-num-seqtracks) 1)
+                                                (lambda ()
+                                                  (<ra> :delete-seqtrack seqtracknum)))
+                                          "Append sequencer track" (lambda ()
+                                                                     (<ra> :append-seqtrack))
+
+                                          "-----------------"
+
+                                          (list "Song tempo automation visible"
+                                                :check (<ra> :seqtempo-visible)
+                                                (lambda (doit)
+                                                  (<ra> :set-seqtempo-visible doit)))
+                                          (list "Play loop"
+                                                :check (<ra> :is-seqlooping)
+                                                (lambda (val)
+                                                  (<ra> :set-seqlooping val)))
+                                          ))))))))
                                                                                  
 
 

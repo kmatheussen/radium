@@ -1,13 +1,33 @@
+/* Copyright 2016 Kjetil S. Matheussen
 
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
 #include "nsmtracker.h"
 #include "hashmap_proc.h"
+#include "patch_proc.h"
 #include "seqtrack_proc.h"
+#include "instruments_proc.h"
+#include "Vector.hpp"
 #include "../Qt/Qt_mix_colors.h"
 #include "../Qt/Qt_colors_proc.h"
 #include "SeqAutomation.hpp"
+#include "../audio/SoundPlugin.h"
+#include "../audio/SoundPlugin_proc.h"
+#include "../audio/SoundProducer_proc.h"
 
 #include "song_tempo_automation_proc.h"
 
@@ -19,66 +39,136 @@
 #pragma clang diagnostic pop
 
 
-// The sequencer tempo automation. It maps between abstime and absabstime.
-//
+#include "seqtrack_automation_proc.h"
+
 
 namespace{
 
 struct AutomationNode{
-  double abstime;
+  double time; // seqtime format
   double value;
   int logtype;
 
-  AutomationNode(double abstime, double value, int logtype)
-    : abstime(abstime)
-    , value(value)
-    , logtype(logtype)
-  {
-  }
 };
+
+static AutomationNode create_node(double seqtime, double value, int logtype){
+  AutomationNode node = {
+    .time = seqtime,
+    .value = value,
+    .logtype = logtype
+  };
+  return node;
+}
+
+static hash_t *get_node_state(const AutomationNode &node){
+  hash_t *state = HASH_create(5);
+  
+  HASH_put_float(state, "seqtime", node.time);
+  HASH_put_float(state, "value", node.value);
+  HASH_put_int(state, "logtype", node.logtype);
+
+  return state;
+}
+
+static AutomationNode create_node_from_state(hash_t *state){
+  return create_node(HASH_get_float(state, "seqtime"),
+                     HASH_get_float(state, "value"),
+                     HASH_get_int32(state, "logtype"));
+}
+
 
 struct Automation{
   radium::SeqAutomation<AutomationNode> automation;
   struct Patch *patch; // I'm pretty sure we can use SoundPlugin directly now... I don't think patch->patchdata changes anymore.
   int effect_num;
-};
+  double last_value = -1.0;
 
-class SeqtrackAutomation{
-  
-private:
-  
-  struct SeqTrack *_seqtrack;
-  Radium::Vector<Automation*> _automations;
-  
-public:
-  
-  SeqTrackAutomation(struct SeqTrack *seqtrack)
-    :_seqtrack(add_gc_root(seqtrack))
+  bool islegalnodenum(int nodenum){
+    return nodenum>=0 && (nodenum<=automation.size()-1);
+  }
+
+  hash_t *get_state(void) const {
+    hash_t *state = HASH_create(3);
+    HASH_put_int(state, "patch", patch->id);
+    HASH_put_int(state, "effect_num'", effect_num);
+    HASH_put_hash(state, "automation", automation.get_state(get_node_state));
+    return state;
+  }
+
+  Automation(struct Patch *patch, int effect_num)
+    : patch(patch)
+    , effect_num(effect_num)
   {
   }
 
-  ~SeqTrackAutomation(){
-    for(auto *automation : _automations)
-      delete automation;
-    
-    remove_gc_root(_seqtrack);
+  Automation(hash_t *state){
+    patch = PATCH_get_from_id(HASH_get_int(state, "patch"));
+    effect_num = HASH_get_int32(state, "effect_num");
+    automation.create_from_state(HASH_get_hash(state, "automation"), create_node_from_state);
+  }
+};
+
+}
+
+
+struct SeqtrackAutomation {
+  
+private:
+  
+  struct SeqTrack *_seqtrack; // Not used, but can be practical when debugging.
+
+#if !defined(RELEASE)
+  int magic = 918345; // Check that we are freeing the correct data.
+#endif
+
+  
+public:
+
+  radium::Vector<Automation*> _automations;
+  
+  SeqtrackAutomation(struct SeqTrack *seqtrack, hash_t *state = NULL)
+    :_seqtrack(seqtrack)
+  {
+    if (state != NULL) {
+      int size = HASH_get_array_size(state);
+      
+      for(int i = 0 ; i < size ; i++)
+        _automations.push_back(new Automation(HASH_get_hash_at(state, "automation", i)));
+    }
   }
 
-  void add_automation(struct Patch *patch, int effect_num, double abstime1, double value1, int logtype, double abstime2, double value2){
+  ~SeqtrackAutomation(){
+#if !defined(RELEASE)
+    if (magic != 918345)
+      abort();
+#endif
+    for(auto *automation : _automations)
+      delete automation;
+  }
+
+  hash_t *get_state(void) const {
+    hash_t *state = HASH_create(_automations.size());
+    for(int i = 0 ; i < _automations.size() ; i++)
+      HASH_put_hash_at(state, "automation", i, _automations.at(i)->get_state());
+    return state;
+  }
+
+  int add_automation(struct Patch *patch, int effect_num, double seqtime1, double value1, int logtype, double seqtime2, double value2){
     Automation *automation = new Automation(patch, effect_num);
 
-    automation.automation.add_node(AutomationNode(abstime1, value1, logtype));
-    automation.automation.add_node(AutomationNode(abstime2, value2, logtype));
+    automation->automation.add_node(create_node(seqtime1, value1, logtype));
+    automation->automation.add_node(create_node(seqtime2, value2, logtype));
 
     {
       _automations.ensure_there_is_room_for_one_more_without_having_to_allocate_memory();
       {
         radium::PlayerLock lock;    
-        _automations.push_back(_automation);
+        _automations.push_back(automation);
       }  
       _automations.post_add();
     }
     
+    return _automations.size()-1;
   }
 
 private:
@@ -88,17 +178,17 @@ private:
       if (automation->patch==patch && automation->effect_num==effect_num)
         return automation;
 
-    RError("SeqTrackAutomation::find_automation: Could not find %s / %d", patch->name, effect_num);
+    RError("SeqtrackAutomation::find_automation: Could not find %s / %d", patch->name, effect_num);
     return NULL;    
   }
   
 public:
   
-  void remove_automation(struct Patch *patch, int effect_num){
-    Automation *automation = find_automation(patch, effect_num);
-    if (automation==NULL)
-      return;
+  bool islegalautomation(int automationnum){
+    return automationnum>=0 && (automationnum<=_automations.size()-1);
+  }
 
+  void remove_automation(Automation *automation){
     {
       radium::PlayerLock lock;    
       _automations.remove(automation);
@@ -107,301 +197,266 @@ public:
     delete automation;
   }
 
-  void add_automation_node(struct Patch *patch, int effect_num, double abstime, double value, int logtype){
+  void remove_automation(struct Patch *patch, int effect_num){
     Automation *automation = find_automation(patch, effect_num);
     if (automation==NULL)
       return;
 
-    automation->add_node(AutomationNode(abstime, value, logtype));
-  }
-  
-  void remove_automation_node(struct Patch *patch, int effect_num, int nodenum){
-    Automation *automation = find_automation(patch, effect_num);
-    if (automation==NULL)
-      return;
-
-    automation->delete_node(nodenum);
+    remove_automation(automation);
   }
 
-  void change_automation_node(struct Patch *patch, int effect_num, int nodenum, double abstime, double value, int logtype){
-    Automation *automation = find_automation(patch, effect_num);
-    if (automation==NULL)
-      return;
-
-    automation->replace_node(nodenum, AutomationNode(abstime, value, logtype));
-  }
 };
  
-}
 
 struct SeqtrackAutomation *SEQTRACK_AUTOMATION_create(struct SeqTrack *seqtrack){
   return new SeqtrackAutomation(seqtrack);
 }
 
-void SEQTRACK_AUTOMATION_add_automation(struct SeqTrack *seqtrack, struct Patch *patch, int effect_num){
+void SEQTRACK_AUTOMATION_free(struct SeqtrackAutomation *seqtrackautomation){
+  delete seqtrackautomation;
+}
+
+int SEQTRACK_AUTOMATION_add_automation(struct SeqtrackAutomation *seqtrackautomation, struct Patch *patch, int effect_num, double seqtime1, double value1, int logtype, double seqtime2, double value2){
+  return seqtrackautomation->add_automation(patch, effect_num, seqtime1, value1, logtype, seqtime2, value2);
+}
+
+int SEQTRACK_AUTOMATION_get_num_automations(struct SeqtrackAutomation *seqtrackautomation){
+  return seqtrackautomation->_automations.size();
+}
+
+struct Patch *SEQTRACK_AUTOMATION_get_patch(struct SeqtrackAutomation *seqtrackautomation, int automationnum){
+  R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), (struct Patch*)get_audio_instrument()->patches.elements[0]);
+  return seqtrackautomation->_automations[automationnum]->patch;
+}
+
+int SEQTRACK_AUTOMATION_get_effect_num(struct SeqtrackAutomation *seqtrackautomation, int automationnum){
+  R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0);
+  return seqtrackautomation->_automations[automationnum]->effect_num;
+}
+
+double SEQTRACK_AUTOMATION_get_value(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum){
+  R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0.5);
+
+  struct Automation *automation = seqtrackautomation->_automations[automationnum];
+  R_ASSERT_RETURN_IF_FALSE2(automation->islegalnodenum(nodenum), 0.5);
+
+  return automation->automation.at(nodenum).value;
+}
+
+double SEQTRACK_AUTOMATION_get_seqtime(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum){
+  R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0.5);
+
+  struct Automation *automation = seqtrackautomation->_automations[automationnum];
+  R_ASSERT_RETURN_IF_FALSE2(automation->islegalnodenum(nodenum), 0.5);
+
+  return automation->automation.at(nodenum).time;
+}
+
+int SEQTRACK_AUTOMATION_get_logtype(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum){
+  R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0.5);
+
+  struct Automation *automation = seqtrackautomation->_automations[automationnum];
+  R_ASSERT_RETURN_IF_FALSE2(automation->islegalnodenum(nodenum), 0.5);
+
+  return automation->automation.at(nodenum).logtype;
+}
+
+int SEQTRACK_AUTOMATION_get_num_nodes(struct SeqtrackAutomation *seqtrackautomation, int automationnum){
+  R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0.5);
+
+  struct Automation *automation = seqtrackautomation->_automations[automationnum];
+  return automation->automation.size();
+}
   
-}
 
+int SEQTRACK_AUTOMATION_add_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum, double seqtime, double value, int logtype){
+  if (seqtime < 0)
+    seqtime = 0;
 
-// Called from MIXER.cpp in the player thread.
-double RT_SEQTRACK_AUTOMATION_get_value(double abstime){
-  return g_tempo_automation.RT_get_value(abstime);
-}
+  R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0);
 
-double SEQTRACK_AUTOMATION_get_value(int nodenum){
-  R_ASSERT_RETURN_IF_FALSE2(nodenum>=0, 1.0);
-  R_ASSERT_RETURN_IF_FALSE2(nodenum<g_tempo_automation.size(), 1.0);
+  struct Automation *automation = seqtrackautomation->_automations[automationnum];
 
-  return g_tempo_automation.at(nodenum).value;
-}
+  value = R_BOUNDARIES(0.0, value, 1.0);
 
-double SEQTRACK_AUTOMATION_get_abstime(int nodenum){
-  R_ASSERT_RETURN_IF_FALSE2(nodenum>=0, 0);
-  R_ASSERT_RETURN_IF_FALSE2(nodenum<g_tempo_automation.size(), 0);
-
-  return g_tempo_automation.at(nodenum).abstime;
-}
-
-int SEQTRACK_AUTOMATION_get_logtype(int nodenum){
-  R_ASSERT_RETURN_IF_FALSE2(nodenum>=0, LOGTYPE_LINEAR);
-  R_ASSERT_RETURN_IF_FALSE2(nodenum<g_tempo_automation.size(), LOGTYPE_LINEAR);
-
-  return g_tempo_automation.at(nodenum).logtype;
-}
-
-int SEQTRACK_AUTOMATION_get_num_nodes(void){
-  return g_tempo_automation.size();
-}
+  int ret = automation->automation.add_node(create_node(seqtime, value, logtype));
   
-int SEQTRACK_AUTOMATION_add_node(double abstime, double value, int logtype){
-  if (abstime < 0)
-    abstime = 0;
-  
-  int ret = g_tempo_automation.add_node(create_node(abstime, value, logtype));
-
   SEQUENCER_update();
   
   return ret;
 }
                               
-void SEQTRACK_AUTOMATION_delete_node(int nodenum){
-  R_ASSERT_RETURN_IF_FALSE(nodenum >= 0);
-  R_ASSERT_RETURN_IF_FALSE(nodenum < g_tempo_automation.size());
+void SEQTRACK_AUTOMATION_delete_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum){
+  R_ASSERT_RETURN_IF_FALSE(seqtrackautomation->islegalautomation(automationnum));
 
-  if (nodenum==0 || nodenum==g_tempo_automation.size()-1) {
+  struct Automation *automation = seqtrackautomation->_automations[automationnum];
+  R_ASSERT_RETURN_IF_FALSE(automation->islegalnodenum(nodenum));
 
-    AutomationNode node = g_tempo_automation.at(nodenum);
-    node.value = 1.0;
-    g_tempo_automation.replace_node(nodenum, node);
-    
+  if (automation->automation.size()<=2) {
+    seqtrackautomation->remove_automation(automation);
   } else {
-  
-    g_tempo_automation.delete_node(nodenum);
-    
+    automation->automation.delete_node(nodenum);
   }
 
   SEQUENCER_update();
 }
 
-void SEQTRACK_AUTOMATION_set_curr_node(int nodenum){
-  if (g_tempo_automation.get_curr_nodenum() != nodenum){
-    g_tempo_automation.set_curr_nodenum(nodenum);
+void SEQTRACK_AUTOMATION_set_curr_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum){
+  R_ASSERT_RETURN_IF_FALSE(seqtrackautomation->islegalautomation(automationnum));
+
+  struct Automation *automation = seqtrackautomation->_automations[automationnum];
+  R_ASSERT_RETURN_IF_FALSE(automation->islegalnodenum(nodenum));
+
+  if (automation->automation.get_curr_nodenum() != nodenum){
+    automation->automation.set_curr_nodenum(nodenum);
     SEQUENCER_update();
   }
 }
 
-void SEQTRACK_AUTOMATION_set(int nodenum, double abstime, double value, int logtype){
-  int size = g_tempo_automation.size();
 
-  R_ASSERT_RETURN_IF_FALSE(nodenum >= 0);
-  R_ASSERT_RETURN_IF_FALSE(nodenum < size);
+void SEQTRACK_AUTOMATION_set(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum, double seqtime, double value, int logtype){
+  R_ASSERT_RETURN_IF_FALSE(seqtrackautomation->islegalautomation(automationnum));
 
-  const AutomationNode *prev = nodenum==0 ? NULL : &g_tempo_automation.at(nodenum-1);
-  AutomationNode node = g_tempo_automation.at(nodenum);
-  const AutomationNode *next = nodenum==size-1 ? NULL : &g_tempo_automation.at(nodenum+1);
+  struct Automation *automation = seqtrackautomation->_automations[automationnum];
+  R_ASSERT_RETURN_IF_FALSE(automation->islegalnodenum(nodenum));
 
-  double mintime = prev==NULL ? 0 : next==NULL ? R_MAX(R_MAX(node.abstime, abstime), SONG_get_length()) : prev->abstime;
-  double maxtime = (prev==NULL || next==NULL) ? mintime : next->abstime;
+  int size = automation->automation.size();
 
-  abstime = R_BOUNDARIES(mintime, abstime, maxtime);
+  const AutomationNode *prev = nodenum==0 ? NULL : &automation->automation.at(nodenum-1);
+  AutomationNode node = automation->automation.at(nodenum);
+  const AutomationNode *next = nodenum==size-1 ? NULL : &automation->automation.at(nodenum+1);
 
-  value = R_BOUNDARIES(1.0/g_max_tempo, value, g_max_tempo);
+  double mintime = prev==NULL ? 0 : next==NULL ? R_MAX(R_MAX(node.time, seqtime), SONG_get_length()) : prev->time;
+  double maxtime = (prev==NULL || next==NULL) ? mintime : next->time;
 
-  node.abstime = abstime;
+  seqtime = R_BOUNDARIES(mintime, seqtime, maxtime);
+
+  value = R_BOUNDARIES(0.0, value, 1.0);
+
+  node.time = seqtime;
   node.value = value;
   node.logtype = logtype;
 
-  g_tempo_automation.replace_node(nodenum, node);
+  automation->automation.replace_node(nodenum, node);
 
   SEQUENCER_update();
 }
 
 
-// Does nothing if end_time < length and do_shrink==false.
-// Don't shrinks below second last node. (i.e. we don't change a manually created node)
-//
-void SEQTRACK_AUTOMATION_set_length(double end_time, bool do_shrink){
+// Called from scheduler.c
+void RT_SEQTRACK_AUTOMATION_called_per_block(struct SeqTrack *seqtrack){
 
-  R_ASSERT_RETURN_IF_FALSE(end_time >= 0);
-  
-  int size = g_tempo_automation.size();
-  
-  if (size==0){
+  if (!is_playing() || pc->playtype!=PLAYSONG)
+    return;
+
+  int64_t seqtime = seqtrack->end_time; // use end_time instead of start_time to ensure automation is sent out before note start. (causes slightly inaccurate automation, but it probably doesn't matter)
     
-    g_tempo_automation.add_node(create_node(0,        1, LOGTYPE_LINEAR));
-    g_tempo_automation.add_node(create_node(end_time, 1, LOGTYPE_LINEAR));
+  R_ASSERT_RETURN_IF_FALSE(seqtrack->seqtrackautomation!=NULL);
+
+  for(auto *automation : seqtrack->seqtrackautomation->_automations){
+    struct Patch *patch = automation->patch;
+    int effect_num = automation->effect_num;
+
+    R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
     
-  } else {
+    SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+    R_ASSERT_NON_RELEASE(plugin!=NULL);
 
-    const auto &second_last = g_tempo_automation.at(size-2);
-    auto last = g_tempo_automation.last();
+    if (plugin!=NULL){
+      
+      double latency = RT_SP_get_input_latency(plugin->sp);
+      if (latency!=0){
+        struct SeqBlock *seqblock = seqtrack->curr_seqblock;
+        if (seqblock != NULL){
+          latency *= ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
+          latency = ceil(latency); // Ensure automation is sent out before note start. (probably not necessary)
+        }
+      }
 
-    if (end_time <= last.abstime && do_shrink==false)
-      return;
+      double value;
+      if (automation->automation.RT_get_value(seqtime+latency, value)){
+        if (value != automation->last_value){
+          FX_when when;
+          if (automation->last_value==-1.0)
+            when = FX_start;
+          else
+            when = FX_middle;
 
-    if (end_time <= second_last.abstime)
-      return;
-    
-    if (last.value==1.0 && second_last.value==1.0){
-      last.abstime = end_time;
-      g_tempo_automation.replace_node(size-1, last);
-    } else {
-      g_tempo_automation.add_node(create_node(end_time,1,LOGTYPE_LINEAR));
-    }
+          RT_PLUGIN_touch(plugin);
 
-  }
+          plugin->automation_values[effect_num] = value;
 
-  SEQUENCER_update();
-}
+          PLUGIN_set_effect_value(plugin,0,effect_num,value, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, when);
+          automation->last_value = value;
+        }
+      } else {
+        if (automation->last_value != -1.0) {
+          RT_PLUGIN_touch(plugin);
 
-double SEQTRACK_AUTOMATION_get_length(void){
-  if (g_tempo_automation.size()==0)
-    return 1.0;
-  
-  return g_tempo_automation.last().abstime;
-}
-
-void SEQTRACK_AUTOMATION_reset(void){
-  g_tempo_automation.reset();
-  SEQTEMPO_set_visible(false);
-  //SEQTRACK_AUTOMATION_set_length(SONG_get_length(), true);
-}
-
-
-// A little bit tricky to calculate this more efficiently when we want a very accurate value. Fortunately, the song needs to be several hours long before noticing that this function is slow.
-double SEQTRACK_AUTOMATION_get_absabstime(double goal){
-  int64_t absabstime = 0;
-  double abstime = 0.0;
-
-  int size = g_tempo_automation.size();
-
-  if (size < 2)
-    return goal;
-  
-  const AutomationNode *node1 = &g_tempo_automation.at(0);
-  const AutomationNode *node2 = &g_tempo_automation.at(1);
-  int i = 1;
-  
-  while(true){
-    if (abstime >= goal)
-      return absabstime;
-    
-    double tempo;
-    
-    if (i==size) {
-      tempo = 1.0;
-    } else {
-      if (!g_tempo_automation.RT_get_value(abstime, node1, node2, tempo, custom_get_value)){
-        i++;
-        node1 = node2;
-        node2 = &g_tempo_automation.at(i);
-        continue;
+          PLUGIN_set_effect_value(plugin,0,effect_num, automation->last_value, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, FX_end); // Send out the same value again, but with a different FX_when value. Slightly inefficient, but trying to predict when we need FX_end above is too complicated to be worth the effort.
+          automation->last_value = -1.0;
+        }
       }
     }
-
-    abstime += (double)RADIUM_BLOCKSIZE * tempo;
-    absabstime += RADIUM_BLOCKSIZE;
+      
   }
+
+}
+
+void RT_SEQTRACK_AUTOMATION_called_when_player_stopped(void){
+  ALL_SEQTRACKS_FOR_EACH(){
+
+    for(auto *automation : seqtrack->seqtrackautomation->_automations)
+      automation->last_value = -1.0;
+
+  }END_ALL_SEQTRACKS_FOR_EACH;
 }
 
 
-static AutomationNode create_node_from_state(hash_t *state){
-  return create_node(HASH_get_float(state, "abstime"),
-                     HASH_get_float(state, "value"),
-                     HASH_get_int32(state, "logtype"));
+
+hash_t *SEQTRACK_AUTOMATION_get_state(struct SeqtrackAutomation *seqtrackautomation){
+  return seqtrackautomation->get_state();
 }
 
 
-void SEQTRACK_AUTOMATION_create_from_state(hash_t *state){
-  g_max_tempo = HASH_get_float(state, "max_tempo");
-  g_tempo_automation.create_from_state(HASH_get_hash(state, "nodes"), create_node_from_state);
-  SEQTEMPO_set_visible(HASH_get_bool(state, "is_visible"));
-  SEQUENCER_update();
-}
 
-static hash_t *get_node_state(const AutomationNode &node){
-  hash_t *state = HASH_create(5);
+float SEQTRACK_AUTOMATION_get_node_x(struct SeqtrackAutomation *seqtrackautomation, struct SeqTrack *seqtrack, int automationnum, int nodenum){
+  R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0);
+
+  struct Automation *automation = seqtrackautomation->_automations[automationnum];
+  R_ASSERT_RETURN_IF_FALSE2(automation->islegalnodenum(nodenum), 0);
+
+
+  double start_time = SEQUENCER_get_visible_start_time();
+  double end_time = SEQUENCER_get_visible_end_time();
+
+  float x1 = SEQUENCER_get_x1();
+  float x2 = SEQUENCER_get_x2();
   
-  HASH_put_float(state, "abstime", node.abstime);
-  HASH_put_float(state, "value", node.value);
-  HASH_put_int(state, "logtype", node.logtype);
+  const AutomationNode &node = automation->automation.at(nodenum);
+  int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, node.time);
 
-  return state;
-}
-
-
-hash_t *SEQTRACK_AUTOMATION_get_state(void){
-  hash_t *state = HASH_create(2);
-
-  HASH_put_hash(state, "nodes", g_tempo_automation.get_state(get_node_state));
-  HASH_put_bool(state, "is_visible", SEQTEMPO_is_visible());
-  HASH_put_float(state, "max_tempo", g_max_tempo);
-  
-  return state;
-}
-
-double SEQTRACK_AUTOMATION_get_max_tempo(void){
-  return g_max_tempo;
-}
-
-void SEQTRACK_AUTOMATION_set_max_tempo(double new_max_tempo){
-  if (new_max_tempo < 1.0001)
-    g_max_tempo = 1.0001;
-  else
-    g_max_tempo = new_max_tempo;
-
-  SEQUENCER_update();
-}
-
-float SEQTRACK_AUTOMATION_get_node_x(int nodenum){
-  int64_t start_time = SEQUENCER_get_visible_start_time();
-  int64_t end_time = SEQUENCER_get_visible_end_time();
-
-  float x1 = SEQTEMPO_get_x1();
-  float x2 = SEQTEMPO_get_x2();
-  
-  const AutomationNode &node1 = g_tempo_automation.at(nodenum);
-  
-  return scale(node1.abstime, start_time, end_time, x1, x2);
+  return scale(abstime, start_time, end_time, x1, x2);
 }
 
 static float get_node_y(const AutomationNode &node, float y1, float y2){
-  return get_node_y(&node, y1, y2);
+  return scale(node.value, 0, 1, y2, y1);
 }
 
-float SEQTRACK_AUTOMATION_get_node_y(int nodenum){
-  float y1 = SEQTEMPO_get_y1();
-  float y2 = SEQTEMPO_get_y2();
+float SEQTRACK_AUTOMATION_get_node_y(struct SeqtrackAutomation *seqtrackautomation, int seqtracknum, int automationnum, int nodenum){
+  float y1 = SEQTRACK_get_y1(seqtracknum);
+  float y2 = SEQTRACK_get_y2(seqtracknum);
   
-  const AutomationNode &node1 = g_tempo_automation.at(nodenum);
-  
-  return get_node_y(node1, y1, y2);
+  R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0);
+
+  struct Automation *automation = seqtrackautomation->_automations[automationnum];
+  R_ASSERT_RETURN_IF_FALSE2(automation->islegalnodenum(nodenum), 0);
+
+  return get_node_y(automation->automation.at(nodenum), y1, y2);
 }
 
-void SEQTRACK_AUTOMATION_paint(QPainter *p, float x1, float y1, float x2, float y2, double start_time, double end_time){
+void SEQTRACK_AUTOMATION_paint(QPainter *p, struct SeqtrackAutomation *seqtrackautomation, float x1, float y1, float x2, float y2, double start_time, double end_time){
   
-  SEQTRACK_AUTOMATION_set_length(end_time, false);
-
-  g_tempo_automation.paint(p, x1, y1, x2, y2, start_time, end_time, get_qcolor(SEQUENCER_TEMPO_AUTOMATION_COLOR_NUM), get_node_y);
+  for(auto *automation : seqtrackautomation->_automations)
+    automation->automation.paint(p, x1, y1, x2, y2, start_time, end_time, Qt::black, get_node_y);
 }
-

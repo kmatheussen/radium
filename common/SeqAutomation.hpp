@@ -93,24 +93,24 @@ public:
     return at(size()-1);
   }
   
-  double RT_get_value(double abstime, const T *node1, const T *node2, double (*custom_get_value)(double abstime, const T *node1, const T *node2) = NULL) const {
-    const double abstime1 = node1->abstime;
-    const double abstime2 = node2->abstime;
+  double RT_get_value(double time, const T *node1, const T *node2, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL) const {
+    const double time1 = node1->time;
+    const double time2 = node2->time;
     
     const int logtype1 = node1->logtype;
     
     if (logtype1==LOGTYPE_LINEAR){
       
-      if (abstime1==abstime2) {
+      if (time1==time2) {
         
         return (node1->value+node2->value) / 2.0;
         
       } else {
         
         if (custom_get_value != NULL)        
-          return custom_get_value(abstime, node1, node2);
+          return custom_get_value(time, node1, node2);
         else
-          return scale_double(abstime, abstime1, abstime2, node1->value, node2->value);
+          return scale_double(time, time1, time2, node1->value, node2->value);
         
       }
       
@@ -121,18 +121,19 @@ public:
     }
   }
 
-  bool RT_get_value(double abstime, const T *node1, const T *node2, double &value, double (*custom_get_value)(double abstime, const T *node1, const T *node2)) const {
-    const double abstime1 = node1->abstime;
-    const double abstime2 = node2->abstime;
+  bool RT_get_value(double time, const T *node1, const T *node2, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2)) const {
+    const double time1 = node1->time;
+    const double time2 = node2->time;
     
-    if (abstime >= abstime1 && abstime < abstime2){
-      value = RT_get_value(abstime, node1, node2, custom_get_value);
+    if (time >= time1 && time < time2){
+      value = RT_get_value(time, node1, node2, custom_get_value);
       return true;
     } else {
       return false;
     }
   }
-  
+
+
 private:
   
 
@@ -145,16 +146,16 @@ private:
       
       int mid = (low + high) / 2;
         
-      if (rt->nodes[mid].abstime >= value)
+      if (rt->nodes[mid].time >= value)
         return BinarySearch_Left(rt, value, low, mid-1);
       else
         return BinarySearch_Left(rt, value, mid+1, high);
   }
   
 public:
-  
-  double RT_get_value(double abstime, double (*custom_get_value)(double abstime, const T *node1, const T *node2) = NULL){
 
+  bool RT_get_value(double time, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL){
+    
     RT_AtomicPointerStorage_ScopedUsage rt_pointer(&_rt);
       
     const struct RT *rt = (const struct RT*)rt_pointer.get_pointer();
@@ -162,29 +163,41 @@ public:
     if (rt!=NULL) {
 
       if (rt->num_nodes<=1)
-        return 1.0;
+        return false;
       
-      if (abstime < rt->nodes[0].abstime)
-        return 1.0;
+      if (time < rt->nodes[0].time)
+        return false;
       
-      if (abstime == rt->nodes[0].abstime)
-        return rt->nodes[0].value;
+      if (time == rt->nodes[0].time){
+        value = rt->nodes[0].value;
+        return true;
+      }
+
+      if (time > rt->nodes[rt->num_nodes-1].time)
+        return false;
       
-      if (abstime > rt->nodes[rt->num_nodes-1].abstime)
-        return 1.0;
-      
-      int i = BinarySearch_Left(rt, abstime, 0, rt->num_nodes-1);
+      int i = BinarySearch_Left(rt, time, 0, rt->num_nodes-1);
       R_ASSERT_NON_RELEASE(i>0);
       
       const T *node1 = &rt->nodes[i-1];
       const T *node2 = &rt->nodes[i];
       
-      return RT_get_value(abstime, node1, node2, custom_get_value);
+      value = RT_get_value(time, node1, node2, custom_get_value);
+      return true;
     }
     
-    return 1.0; //rt_tempo_automation->nodes[rt_tempo_automation->num-1].value;
+    return false; //rt_tempo_automation->nodes[rt_tempo_automation->num-1].value;
   }
 
+  /*
+  double RT_get_value(double time, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL){
+    double ret;
+    if(RT_get_value(time, ret, custom_get_value))
+      return ret;
+    else
+      return 1.0;
+  }
+  */
 
   int get_curr_nodenum(void){
     return _curr_nodenum;
@@ -194,37 +207,37 @@ public:
     _curr_nodenum = nodenum;
   }
 
-  int get_node_num(double abstime) const {
+  int get_node_num(double time) const {
     int size = _automation.size();
     if (size==0)
       return 0;
     if (size==1)
       return 1;
     
-    double abstime1 = at(0).abstime;
-    //R_ASSERT_RETURN_IF_FALSE2(abstime1==0,1);
+    double time1 = at(0).time;
+    //R_ASSERT_RETURN_IF_FALSE2(time1==0,1);
 
     for(int i=1;i<size;i++){
-      double abstime2 = at(i).abstime;
+      double time2 = at(i).time;
       
-      if (abstime >= abstime1 && abstime < abstime2)
+      if (time >= time1 && time < time2)
         return i;
       
-      abstime1 = abstime2;
+      time1 = time2;
     }
     
     return size;
   }
 
   int add_node(const T &node){
-    double abstime = node.abstime;
+    double time = node.time;
 
-    R_ASSERT(abstime >= 0);
+    R_ASSERT(time >= 0);
 
-    if (abstime < 0)
-      abstime = 0;
+    if (time < 0)
+      time = 0;
     
-    int nodenum = get_node_num(abstime);
+    int nodenum = get_node_num(time);
     
     _automation.insert(nodenum, node);
 
@@ -249,7 +262,7 @@ public:
 
     T *node = &_automation[nodenum];
 
-    if (node->abstime != new_node.abstime){
+    if (node->time != new_node.time){
       _automation.remove(nodenum);
       add_node(new_node);
     } else {
@@ -352,19 +365,19 @@ public:
     
     for(int i = 0 ; i < _automation.size()-1 ; i++){
       const T &node1 = _automation.at(i);
-      double abstime1 = node1.abstime;
+      double time1 = node1.time;
 
-      if (abstime1 >= end_time)
+      if (time1 >= end_time)
         break;
       
       const T &node2 = _automation.at(i+1);
-      double abstime2 = node2.abstime;
+      double time2 = node2.time;
 
-      if (abstime2 < start_time)
+      if (time2 < start_time)
         continue;
       
-      float x_a = scale(abstime1, start_time, end_time, x1, x2);
-      float x_b = scale(abstime2, start_time, end_time, x1, x2);
+      float x_a = scale(time1, start_time, end_time, x1, x2);
+      float x_b = scale(time2, start_time, end_time, x1, x2);
       
       float y_a = get_y(node1, y1, y2);
       float y_b = get_y(node2, y1, y2);

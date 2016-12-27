@@ -41,7 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 namespace{
 
 struct TempoAutomationNode{
-  double abstime;
+  double time; // abstime format
   double value;
   int logtype;
 };
@@ -54,7 +54,7 @@ static radium::SeqAutomation<TempoAutomationNode> g_tempo_automation;
 
 
 static TempoAutomationNode create_node(double abstime, double value, int logtype){
-  TempoAutomationNode node = {.abstime = abstime,
+  TempoAutomationNode node = {.time = abstime,
                               .value = value,
                               .logtype = logtype};
 
@@ -154,8 +154,8 @@ static double get_optimized_custom_value(double input0, double input1, double in
 }
 
 static double custom_get_value(double abstime, const TempoAutomationNode *node1, const TempoAutomationNode *node2){
-  const double abstime1 = node1->abstime;
-  const double abstime2 = node2->abstime;
+  const double abstime1 = node1->time;
+  const double abstime2 = node2->time;
 
   const double value1 = node1->value;
   const double value2 = node2->value;
@@ -184,7 +184,9 @@ static double custom_get_value(double abstime, const TempoAutomationNode *node1,
 
 // Called from MIXER.cpp in the player thread.
 double RT_TEMPOAUTOMATION_get_value(double abstime){
-  return g_tempo_automation.RT_get_value(abstime, custom_get_value);
+  double ret = 1.0;
+  g_tempo_automation.RT_get_value(abstime, ret, custom_get_value);
+  return ret;
 }
 
 double TEMPOAUTOMATION_get_value(int nodenum){
@@ -198,7 +200,7 @@ double TEMPOAUTOMATION_get_abstime(int nodenum){
   R_ASSERT_RETURN_IF_FALSE2(nodenum>=0, 0);
   R_ASSERT_RETURN_IF_FALSE2(nodenum<g_tempo_automation.size(), 0);
 
-  return g_tempo_automation.at(nodenum).abstime;
+  return g_tempo_automation.at(nodenum).time;
 }
 
 int TEMPOAUTOMATION_get_logtype(int nodenum){
@@ -259,14 +261,14 @@ void TEMPOAUTOMATION_set(int nodenum, double abstime, double value, int logtype)
   TempoAutomationNode node = g_tempo_automation.at(nodenum);
   const TempoAutomationNode *next = nodenum==size-1 ? NULL : &g_tempo_automation.at(nodenum+1);
 
-  double mintime = prev==NULL ? 0 : next==NULL ? R_MAX(R_MAX(node.abstime, abstime), SONG_get_length()) : prev->abstime;
-  double maxtime = (prev==NULL || next==NULL) ? mintime : next->abstime;
+  double mintime = prev==NULL ? 0 : next==NULL ? R_MAX(R_MAX(node.time, abstime), SONG_get_length()) : prev->time;
+  double maxtime = (prev==NULL || next==NULL) ? mintime : next->time;
 
   abstime = R_BOUNDARIES(mintime, abstime, maxtime);
 
   value = R_BOUNDARIES(1.0/g_max_tempo, value, g_max_tempo);
 
-  node.abstime = abstime;
+  node.time = abstime;
   node.value = value;
   node.logtype = logtype;
 
@@ -295,14 +297,14 @@ void TEMPOAUTOMATION_set_length(double end_time, bool do_shrink){
     const auto &second_last = g_tempo_automation.at(size-2);
     auto last = g_tempo_automation.last();
 
-    if (end_time <= last.abstime && do_shrink==false)
+    if (end_time <= last.time && do_shrink==false)
       return;
 
-    if (end_time <= second_last.abstime)
+    if (end_time <= second_last.time)
       return;
     
     if (last.value==1.0 && second_last.value==1.0){
-      last.abstime = end_time;
+      last.time = end_time;
       g_tempo_automation.replace_node(size-1, last);
     } else {
       g_tempo_automation.add_node(create_node(end_time,1,LOGTYPE_LINEAR));
@@ -317,7 +319,7 @@ double TEMPOAUTOMATION_get_length(void){
   if (g_tempo_automation.size()==0)
     return 1.0;
   
-  return g_tempo_automation.last().abstime;
+  return g_tempo_automation.last().time;
 }
 
 void TEMPOAUTOMATION_reset(void){
@@ -381,7 +383,7 @@ void TEMPOAUTOMATION_create_from_state(hash_t *state){
 static hash_t *get_node_state(const TempoAutomationNode &node){
   hash_t *state = HASH_create(5);
   
-  HASH_put_float(state, "abstime", node.abstime);
+  HASH_put_float(state, "abstime", node.time);
   HASH_put_float(state, "value", node.value);
   HASH_put_int(state, "logtype", node.logtype);
 
@@ -421,7 +423,7 @@ float TEMPOAUTOMATION_get_node_x(int nodenum){
   
   const TempoAutomationNode &node1 = g_tempo_automation.at(nodenum);
   
-  return scale(node1.abstime, start_time, end_time, x1, x2);
+  return scale(node1.time, start_time, end_time, x1, x2);
 }
 
 static float get_node_y(const TempoAutomationNode &node, float y1, float y2){

@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_seqtrack_widget.h"
 
 #include "../embedded_scheme/scheme_proc.h"
+#include "../common/seqtrack_automation_proc.h"
 #include "../common/song_tempo_automation_proc.h"
 #include "../common/tracks_proc.h"
 
@@ -340,7 +341,6 @@ public:
   
   ~Seqblocks_widget(){
     remove_gc_root(_seqtrack);
-
     printf("Seqblocks widget deleted\n");
     //getchar();
   }
@@ -422,8 +422,7 @@ public:
      
   }
 
-  
-  void paintTrack(QPainter &p, float x1, float y1, float x2, float y2, const struct Blocks *block, const struct Tracks *track, int64_t blocklen, bool is_multiselected) const {
+  void paintEditorTrack(QPainter &p, float x1, float y1, float x2, float y2, const struct Blocks *block, const struct Tracks *track, int64_t blocklen, bool is_multiselected) const {
     QColor color1 = get_qcolor(SEQUENCER_NOTE_COLOR_NUM);
     QColor color2 = get_qcolor(SEQUENCER_NOTE_START_COLOR_NUM);
     
@@ -635,7 +634,7 @@ public:
         }
         
         // Draw track
-        paintTrack(p, x1, t_y1, x2, t_y2, block, track, blocklen, is_gfx);
+        paintEditorTrack(p, x1, t_y1, x2, t_y2, block, track, blocklen, is_gfx);
         
         track = NextTrack(track);
       }
@@ -727,6 +726,9 @@ public:
       }END_VECTOR_FOR_EACH;
     }
 
+    // Automation
+    SEQTRACK_AUTOMATION_paint(&p, _seqtrack->seqtrackautomation, t_x1, t_y1, t_x2, t_y2, _start_time, _end_time);
+
 
     // Current track border and non-current track shadowing
     {
@@ -744,7 +746,6 @@ public:
         myFillRect(p, QRectF(t_x1,t_y1,width,height), color);
       }
     }
-
     
   }
 
@@ -1748,11 +1749,11 @@ void SEQUENCER_enable_gfx_updates(void){
   */
 }
 
-int64_t SEQUENCER_get_visible_start_time(void){
+double SEQUENCER_get_visible_start_time(void){
   return g_sequencer_widget->_start_time;
 }
 
-int64_t SEQUENCER_get_visible_end_time(void){
+double SEQUENCER_get_visible_end_time(void){
   return g_sequencer_widget->_end_time;
 }
 
