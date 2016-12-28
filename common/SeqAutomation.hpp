@@ -186,7 +186,7 @@ public:
       if (i<rt->num_nodes){
         node1 = &rt->nodes[i-1];
         node2 = &rt->nodes[i];
-        if (time >= node1->time && time <= node2->time)
+        if (time >= node1->time && time <= node2->time) // This is the path we usually take.
           goto gotit;
       }
 

@@ -286,6 +286,13 @@ namespace radium{
   // Note: "static inline QString get_time_string(int64_t frames, bool include_centiseconds = true)" is available by including audio/Mixer_proc.h
   //
   static inline QString get_time_string(double seconds, bool include_centiseconds = true){
+    bool is_negative = false;
+
+    if (seconds < 0){
+      is_negative = true;
+      seconds = -seconds;
+    }
+
     int i_seconds = seconds;
     int minutes = i_seconds / 60;
     int hours = minutes / 60;
@@ -296,7 +303,8 @@ namespace radium{
     minutes = minutes % 60;
     
     
-    QString base((minutes < 10 ? "0" : "") +
+    QString base((is_negative ? QString("-") : QString()) +
+                 (minutes < 10 ? "0" : "") +
                  QString::number(minutes) +
                  ":" +
                  (i_seconds < 10 ? "0" : "") +
