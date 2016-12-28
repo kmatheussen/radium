@@ -54,11 +54,11 @@ public:
 
 private:
   
-  int get_size(int num_nodes) const{
+  int get_size(int num_nodes) const {
     return sizeof(struct RT) + num_nodes*sizeof(T);
   }
 
-  const struct RT *create_rt(void) const{
+  const struct RT *create_rt(void) const {
     struct RT *rt = (struct RT*)V_malloc(get_size(_automation.size()));
   
     rt->num_nodes=_automation.size();
@@ -80,15 +80,15 @@ private:
 public:
 
 
-  int size(void) const{
+  int size(void) const {
     return _automation.size();
   }
 
-  const T &at(int n) const{
+  const T &at(int n) const {
     return _automation.at(n);
   }
 
-  const T &last(void) const{
+  const T &last(void) const {
     R_ASSERT(size()>0);
     return at(size()-1);
   }
@@ -135,7 +135,6 @@ public:
 
 
 private:
-  
 
   // Based on pseudocode for the function BinarySearch_Left found at https://rosettacode.org/wiki/Binary_search
   int BinarySearch_Left(const struct RT *rt, double value, int low, int high) {   // initially called with low = 0, high = N - 1
@@ -152,10 +151,14 @@ private:
         return BinarySearch_Left(rt, value, mid+1, high);
   }
   
+  int last_search_pos = 1;
+
 public:
 
   bool RT_get_value(double time, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL){
-    
+
+    R_ASSERT_NON_RELEASE(last_search_pos > 0);
+
     RT_AtomicPointerStorage_ScopedUsage rt_pointer(&_rt);
       
     const struct RT *rt = (const struct RT*)rt_pointer.get_pointer();
@@ -176,12 +179,25 @@ public:
       if (time > rt->nodes[rt->num_nodes-1].time)
         return false;
       
-      int i = BinarySearch_Left(rt, time, 0, rt->num_nodes-1);
+      const T *node1;
+      const T *node2;
+      int i = last_search_pos;
+
+      if (i<rt->num_nodes){
+        node1 = &rt->nodes[i-1];
+        node2 = &rt->nodes[i];
+        if (time >= node1->time && time <= node2->time)
+          goto gotit;
+      }
+
+      i = BinarySearch_Left(rt, time, 0, rt->num_nodes-1);
       R_ASSERT_NON_RELEASE(i>0);
       
-      const T *node1 = &rt->nodes[i-1];
-      const T *node2 = &rt->nodes[i];
-      
+      last_search_pos = i;
+      node1 = &rt->nodes[i-1];
+      node2 = &rt->nodes[i];
+
+    gotit:      
       value = RT_get_value(time, node1, node2, custom_get_value);
       return true;
     }
@@ -199,7 +215,7 @@ public:
   }
   */
 
-  int get_curr_nodenum(void){
+  int get_curr_nodenum(void) const {
     return _curr_nodenum;
   }
   
