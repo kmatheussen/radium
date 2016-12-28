@@ -50,7 +50,7 @@ extern LANGSPEC int PLUGIN_get_num_visible_effects(SoundPlugin *plugin);
 extern LANGSPEC int PLUGIN_get_effect_format(struct SoundPlugin *plugin, int effect_num);
 extern LANGSPEC const char *PLUGIN_get_new_name_if_name_has_changed(struct SoundPlugin *plugin, const char *effect_name);
 extern LANGSPEC int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name);
-extern LANGSPEC const char *PLUGIN_get_effect_name(struct SoundPlugin *plugin, int effect_num);
+extern LANGSPEC const char *PLUGIN_get_effect_name(SoundPlugin *plugin, int effect_num);
 extern LANGSPEC const char *PLUGIN_get_effect_description(const struct SoundPluginType *plugin_type, int effect_num);
 extern LANGSPEC void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
 extern LANGSPEC void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum PlayerLockRequired, enum ValueFormat value_format, bool sent_from_midi_learn);

@@ -731,7 +731,7 @@ int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name){
   return -1;
 }
 
-const char *PLUGIN_get_effect_name(struct SoundPlugin *plugin, int effect_num){
+const char *PLUGIN_get_effect_name(SoundPlugin *plugin, int effect_num){
   const struct SoundPluginType *plugin_type = plugin->type;
 
   if(effect_num<plugin_type->num_effects)

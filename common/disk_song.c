@@ -204,10 +204,6 @@ void DLoadSong(struct Root *newroot,struct Song *song){
 
         if (disk_load_version<0.875)
           DLoadPlayList(newroot,song);
-        else {
-          SEQUENCER_create_from_state(g_sequencer_state);
-          g_sequencer_state = NULL;
-        }
         
 	DLoadWindows(newroot,song->tracker_windows);
 
@@ -221,6 +217,11 @@ void DLoadSong(struct Root *newroot,struct Song *song){
         song->mixerwidget_state=NULL; // release memory.
 
         DLoadAudioInstrument(); // Sets correct effect_num for fx, since mapping between fx name and effect_num was not available when loading fx. (The MIDI instrument doesn't map between name and number since the MIDI standard is not going to change, and therefore it's safe to use the numbers directly.)
+
+        if (disk_load_version>=0.875){
+          SEQUENCER_create_from_state(g_sequencer_state);
+          g_sequencer_state = NULL;
+        }
 
         DLoadInstrumentGUI(get_MIDI_instrument());
         DLoadInstrumentGUI(get_audio_instrument());

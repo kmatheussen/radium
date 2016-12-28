@@ -59,7 +59,7 @@ bool NewSong(void){
 
 struct Song *SONG_create(void){
   struct Song *song=talloc(sizeof(struct Song));
-  VECTOR_push_back(&song->seqtracks, SEQTRACK_create());
+  VECTOR_push_back(&song->seqtracks, SEQTRACK_create(NULL));
 
   SEQUENCER_init(song);
   

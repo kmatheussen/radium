@@ -444,17 +444,17 @@ static void seqtrackgcfinalizer(void *actual_mem_start, void *user_data){
 }
 
 
-void SEQTRACK_init(struct SeqTrack *seqtrack){
+void SEQTRACK_init(struct SeqTrack *seqtrack, const hash_t *automation_state){
   memset(seqtrack, 0, sizeof(struct SeqTrack));
   seqtrack->scheduler = SCHEDULER_create();
-  seqtrack->seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack);
+  seqtrack->seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, automation_state);
   
   GC_register_finalizer(seqtrack, seqtrackgcfinalizer, seqtrack, NULL, NULL);
 }
 
-struct SeqTrack *SEQTRACK_create(void){
+struct SeqTrack *SEQTRACK_create(const hash_t *automation_state){
   struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
-  SEQTRACK_init(seqtrack);
+  SEQTRACK_init(seqtrack, automation_state);
 
   return seqtrack;
 }
@@ -465,11 +465,17 @@ hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack){
   for(int i=0;i<seqtrack->seqblocks.num_elements;i++)
     HASH_put_hash_at(state, "seqblock", i, SEQBLOCK_get_state((struct SeqBlock*)seqtrack->seqblocks.elements[i]));
 
+  HASH_put_hash(state, "automation", SEQTRACK_AUTOMATION_get_state(seqtrack->seqtrackautomation));
+                
   return state;
 }
 
 struct SeqTrack *SEQTRACK_create_from_state(const hash_t *state){
-  struct SeqTrack *seqtrack = SEQTRACK_create();
+  const hash_t *automation_state = NULL;
+  if (HASH_has_key(state, "automation"))
+    automation_state = HASH_get_hash(state, "automation");
+
+  struct SeqTrack *seqtrack = SEQTRACK_create(automation_state);
 
   int num_seqblocks = HASH_get_array_size(state);
 
@@ -486,7 +492,7 @@ struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len){
   for(int pos=0;pos<len;pos++)
     VECTOR_push_back(&seqblocks, SEQBLOCK_create((struct Blocks *)ListFindElement1(&root->song->blocks->l,playlist[pos])));
   
-  struct SeqTrack *seqtrack = SEQTRACK_create();
+  struct SeqTrack *seqtrack = SEQTRACK_create(NULL);
     
   seqtrack->seqblocks = seqblocks;
 
@@ -808,7 +814,7 @@ void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block){
 void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos){
 
   if (new_seqtrack==NULL)
-    new_seqtrack = SEQTRACK_create();
+    new_seqtrack = SEQTRACK_create(NULL);
   
   VECTOR_ensure_space_for_one_more_element(&root->song->seqtracks);
 
@@ -912,7 +918,7 @@ double SONG_get_gfx_length(void){
 // Called from SONG_create()
 void SEQUENCER_init(struct Song *song){
   TEMPOAUTOMATION_reset();
-  SEQTRACK_init(&song->block_seqtrack);
+  SEQTRACK_init(&song->block_seqtrack, NULL);
   song->looping.start = 0;
 
   if (ATOMIC_GET(is_starting_up))
@@ -924,7 +930,7 @@ void SEQUENCER_init(struct Song *song){
 // Only called during program startup
 void SONG_init(void){
   struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
-  SEQTRACK_init(seqtrack);
+  SEQTRACK_init(seqtrack, NULL);
 
   VECTOR_ensure_space_for_one_more_element(&seqtrack->seqblocks);
   
@@ -966,7 +972,6 @@ hash_t *SEQUENCER_get_state(void){
   HASH_put_int(state, "loop_start", SEQUENCER_get_loop_start());
   HASH_put_int(state, "loop_end", SEQUENCER_get_loop_end());
   
-
   return state;
 }
 

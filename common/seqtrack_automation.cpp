@@ -80,7 +80,7 @@ static AutomationNode create_node_from_state(hash_t *state){
 struct Automation{
   radium::SeqAutomation<AutomationNode> automation;
   struct Patch *patch; // I'm pretty sure we can use SoundPlugin directly now... I don't think patch->patchdata changes anymore.
-  int effect_num;
+  int effect_num = -1;
   double last_value = -1.0;
 
   bool islegalnodenum(int nodenum){
@@ -88,9 +88,11 @@ struct Automation{
   }
 
   hash_t *get_state(void) const {
+    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+
     hash_t *state = HASH_create(3);
     HASH_put_int(state, "patch", patch->id);
-    HASH_put_int(state, "effect_num'", effect_num);
+    HASH_put_chars(state, "effect_name", PLUGIN_get_effect_name(plugin, effect_num));
     HASH_put_hash(state, "automation", automation.get_state(get_node_state));
     return state;
   }
@@ -103,8 +105,25 @@ struct Automation{
 
   Automation(hash_t *state){
     patch = PATCH_get_from_id(HASH_get_int(state, "patch"));
-    effect_num = HASH_get_int32(state, "effect_num");
     automation.create_from_state(HASH_get_hash(state, "automation"), create_node_from_state);
+
+    const char *effect_name = HASH_get_chars(state, "effect_name");
+
+    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+
+    const SoundPluginType *type=plugin->type;
+    int i;
+    
+    for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+      if (!strcmp(PLUGIN_get_effect_name(plugin, i), effect_name))
+        break;
+    }
+    
+    if (i==type->num_effects+NUM_SYSTEM_EFFECTS)
+      GFX_Message(NULL, "Sequencer automation: Could not find a effect named \"%s\" in %s/%s", effect_name, type->type_name, type->name);
+    else
+      effect_num = i;//HASH_get_int32(state, "effect_num");
   }
 };
 
@@ -126,14 +145,17 @@ public:
 
   radium::Vector<Automation*> _automations;
   
-  SeqtrackAutomation(struct SeqTrack *seqtrack, hash_t *state = NULL)
+  SeqtrackAutomation(struct SeqTrack *seqtrack, const hash_t *state = NULL)
     :_seqtrack(seqtrack)
   {
     if (state != NULL) {
       int size = HASH_get_array_size(state);
       
-      for(int i = 0 ; i < size ; i++)
-        _automations.push_back(new Automation(HASH_get_hash_at(state, "automation", i)));
+      for(int i = 0 ; i < size ; i++){
+        Automation *automation = new Automation(HASH_get_hash_at(state, "automation", i));
+        if (automation->effect_num >= 0)
+          _automations.push_back(automation);
+      }
     }
   }
 
@@ -208,8 +230,8 @@ public:
 };
  
 
-struct SeqtrackAutomation *SEQTRACK_AUTOMATION_create(struct SeqTrack *seqtrack){
-  return new SeqtrackAutomation(seqtrack);
+struct SeqtrackAutomation *SEQTRACK_AUTOMATION_create(struct SeqTrack *seqtrack, const hash_t *automation_state){
+  return new SeqtrackAutomation(seqtrack, automation_state);
 }
 
 void SEQTRACK_AUTOMATION_free(struct SeqtrackAutomation *seqtrackautomation){
