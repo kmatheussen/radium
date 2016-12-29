@@ -2920,11 +2920,14 @@
                         :Make-undo (lambda (_)
                                      (<ra> :undo-seqtempo))
                         :Create-new-node (lambda (X Y callback)
-                                           (define Time (scale X (<ra> :get-seqtempo-area-x1) (<ra> :get-seqtempo-area-x2) (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
-                                           (if (not (<ra> :ctrl-pressed))
-                                               (set! Time (<ra> :find-closest-seqtrack-bar-start 0 (floor Time))))
+                                           (define Time (scale X
+                                                               (<ra> :get-seqtempo-area-x1) (<ra> :get-seqtempo-area-x2)
+                                                               (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+                                           (define PositionTime (if (<ra> :ctrl-pressed)
+                                                                    Time
+                                                                    (<ra> :find-closest-seqtrack-bar-start 0 (floor Time))))
                                            (define TempoMul (get-seqtempo-value Y))
-                                           (define Num (<ra> :add-seqtemponode Time TempoMul 0))
+                                           (define Num (<ra> :add-seqtemponode PositionTime TempoMul 0))
                                            (if (= -1 Num)
                                                #f
                                                (begin
