@@ -606,7 +606,7 @@ static vector_t *AUDIO_getFxNames(const struct Patch *patch){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   const SoundPluginType *plugin_type = plugin->type;
 
-  PLUGIN_touch(plugin);
+  //PLUGIN_touch(plugin);
   
   int num_effects = plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
   vector_t *v=talloc(sizeof(vector_t));

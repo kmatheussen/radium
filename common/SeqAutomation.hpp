@@ -40,6 +40,7 @@ private:
     T nodes[];
   };
 
+  bool _paint_nodes = false;
   int _curr_nodenum = -1;
 
   AtomicPointerStorage _rt;
@@ -79,6 +80,13 @@ private:
 
 public:
 
+  bool do_paint_nodes(void) const {
+    return _paint_nodes;
+  }
+
+  void set_do_paint_nodes(bool do_paint_nodes){
+    _paint_nodes = do_paint_nodes;
+  }
 
   int size(void) const {
     return _automation.size();
@@ -99,11 +107,11 @@ public:
     
     const int logtype1 = node1->logtype;
     
-    if (logtype1==LOGTYPE_LINEAR){
+    if (logtype1==LOGTYPE_LINEAR) {
       
       if (time1==time2) {
         
-        return (node1->value+node2->value) / 2.0;
+        return (node1->value + node2->value) / 2.0;
         
       } else {
         
@@ -114,7 +122,7 @@ public:
         
       }
       
-    }else {
+    } else {
       
       return node1->value;
       
@@ -416,10 +424,12 @@ public:
         
       }
       
-      paint_node(p, x_a, y_a, i, color);
+      if (_paint_nodes){
+        paint_node(p, x_a, y_a, i, color);
       
-      if(i==_automation.size()-2)
-        paint_node(p, x_b, y_b, i+1, color);
+        if(i==_automation.size()-2)
+          paint_node(p, x_b, y_b, i+1, color);
+      }
     }
   }
 

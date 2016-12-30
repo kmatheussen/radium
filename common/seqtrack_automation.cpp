@@ -335,6 +335,56 @@ void SEQTRACK_AUTOMATION_set_curr_node(struct SeqtrackAutomation *seqtrackautoma
   }
 }
 
+void SEQTRACK_AUTOMATION_cancel_curr_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum){
+  R_ASSERT_RETURN_IF_FALSE(seqtrackautomation->islegalautomation(automationnum));
+
+  struct Automation *automation = seqtrackautomation->_automations[automationnum];
+
+  automation->automation.set_curr_nodenum(-1);
+  SEQUENCER_update();
+}
+
+void SEQTRACK_AUTOMATION_set_curr_automation(struct SeqtrackAutomation *seqtrackautomation, int automationnum){
+  R_ASSERT_RETURN_IF_FALSE(seqtrackautomation->islegalautomation(automationnum));
+
+  struct Automation *curr_automation = seqtrackautomation->_automations[automationnum];
+  if (curr_automation->automation.do_paint_nodes())
+    return;
+
+  curr_automation->automation.set_do_paint_nodes(true);
+
+  ALL_SEQTRACKS_FOR_EACH(){
+    for(auto *automation : seqtrack->seqtrackautomation->_automations){
+      if (automation != curr_automation)
+        automation->automation.set_do_paint_nodes(false);
+    }
+  }END_ALL_SEQTRACKS_FOR_EACH;
+
+  SEQUENCER_update();
+}
+
+void SEQTRACK_AUTOMATION_cancel_curr_automation(void){
+  ALL_SEQTRACKS_FOR_EACH(){
+    for(auto *automation : seqtrack->seqtrackautomation->_automations)
+      automation->automation.set_do_paint_nodes(false);
+  }END_ALL_SEQTRACKS_FOR_EACH;
+
+  SEQUENCER_update();
+}
+
+
+int SEQTRACK_AUTOMATION_get_curr_automation(struct SeqtrackAutomation *seqtrackautomation){
+  int ret = 0;
+
+  for(auto *automation : seqtrackautomation->_automations){
+    if (automation->automation.do_paint_nodes())
+      return ret;
+
+    ret++;
+  }
+
+  return -1;
+}
 
 void SEQTRACK_AUTOMATION_set(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum, double seqtime, double value, int logtype){
   R_ASSERT_RETURN_IF_FALSE(seqtrackautomation->islegalautomation(automationnum));

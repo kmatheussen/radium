@@ -110,7 +110,7 @@
 
 (my-require 'nodes.scm)
 
-(my-require 'mouse.scm)
+;;(my-require 'mouse.scm)
 
 (my-require 'instruments.scm)
 
@@ -123,6 +123,15 @@
 (my-require 'gui.scm)
 
 
+(define (init-step-2)
+  (set! *is-initializing* #t)
+  (my-require 'mouse.scm)
+  (set! *is-initializing* #f))
+
+
 (set! *is-initializing* #f)
+
+
+
 
 ;;(gc #f)

@@ -15,6 +15,10 @@ extern LANGSPEC int SEQTRACK_AUTOMATION_get_num_nodes(struct SeqtrackAutomation 
 extern LANGSPEC int SEQTRACK_AUTOMATION_add_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum, double seqtime, double value, int logtype);
 extern LANGSPEC void SEQTRACK_AUTOMATION_delete_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum);
 extern LANGSPEC void SEQTRACK_AUTOMATION_set_curr_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum);
+extern LANGSPEC void SEQTRACK_AUTOMATION_cancel_curr_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum);
+extern LANGSPEC void SEQTRACK_AUTOMATION_set_curr_automation(struct SeqtrackAutomation *seqtrackautomation, int automationnum);
+extern LANGSPEC void SEQTRACK_AUTOMATION_cancel_curr_automation(void);
+extern LANGSPEC int SEQTRACK_AUTOMATION_get_curr_automation(struct SeqtrackAutomation *seqtrackautomation);
 extern LANGSPEC void SEQTRACK_AUTOMATION_set(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum, double seqtime, double value, int logtype);
 extern LANGSPEC void RT_SEQTRACK_AUTOMATION_called_per_block(struct SeqTrack *seqtrack);
 extern LANGSPEC void RT_SEQTRACK_AUTOMATION_called_when_player_stopped(void);

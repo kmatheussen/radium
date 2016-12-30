@@ -353,6 +353,59 @@ void setCurrSeqAutomationNode(int nodenum, int automationnum, int seqtracknum){
   SEQTRACK_AUTOMATION_set_curr_node(seqtrack->seqtrackautomation, automationnum, nodenum);
 }
 
+void cancelCurrSeqAutomationNode(int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  VALIDATE_AUTOMATIONNUM();
+
+  SEQTRACK_AUTOMATION_cancel_curr_node(seqtrack->seqtrackautomation, automationnum);
+}
+
+void setCurrSeqAutomation(int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  VALIDATE_AUTOMATIONNUM();
+
+  SEQTRACK_AUTOMATION_set_curr_automation(seqtrack->seqtrackautomation, automationnum);
+}
+
+void cancelCurrSeqAutomation(void){
+  SEQTRACK_AUTOMATION_cancel_curr_automation();
+}
+
+int getCurrSeqAutomationSeqtrack(void){
+  int ret = 0;
+
+  ALL_SEQTRACKS_FOR_EACH(){
+
+    if (SEQTRACK_AUTOMATION_get_curr_automation(seqtrack->seqtrackautomation) != -1)
+      return ret;
+
+    ret++;
+
+  }END_ALL_SEQTRACKS_FOR_EACH;
+
+  return -1;
+
+}
+
+int getCurrSeqAutomation(void){
+  ALL_SEQTRACKS_FOR_EACH(){
+
+    int maybe = SEQTRACK_AUTOMATION_get_curr_automation(seqtrack->seqtrackautomation);
+
+    if (maybe != -1)
+      return maybe;
+
+  }END_ALL_SEQTRACKS_FOR_EACH;
+
+  return -1;
+}
+
 void setSeqAutomationNode(int64_t time, float value, int logtype, int nodenum, int automationnum, int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)

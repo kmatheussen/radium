@@ -324,6 +324,7 @@ double TEMPOAUTOMATION_get_length(void){
 
 void TEMPOAUTOMATION_reset(void){
   g_tempo_automation.reset();
+  g_tempo_automation.set_do_paint_nodes(true);
   SEQTEMPO_set_visible(false);
   //TEMPOAUTOMATION_set_length(SONG_get_length(), true);
 }

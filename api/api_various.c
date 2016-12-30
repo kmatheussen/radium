@@ -1585,11 +1585,11 @@ void eraseEstimatedVblank(void){
 #endif
 }
 
-void evalScheme(char *code){
+void evalScheme(const_char *code){
   SCHEME_eval(code);
 }
 
-void evalPython(char *code){
+void evalPython(const_char *code){
   PyRun_SimpleString(code);
 }
 

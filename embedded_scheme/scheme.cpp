@@ -557,7 +557,7 @@ int SCHEME_get_webserver_port(void){
   return s7webserver_get_portnumber(s7webserver);
 }
 
-void SCHEME_start(void){
+void SCHEME_init1(void){
   ScopedEvalTracker eval_tracker;
   
   s7 = s7_init();
@@ -578,4 +578,8 @@ void SCHEME_start(void){
 
   s7webserver = s7webserver_create(s7, 5080, true);
   s7webserver_set_verbose(s7webserver, true);
+}
+
+void SCHEME_init2(void){
+  SCHEME_eval("(init-step-2)");
 }
