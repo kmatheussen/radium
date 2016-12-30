@@ -1011,7 +1011,8 @@ void GFX_showMixerHelpWindow(void){
 
 void GFX_showKeybindingsHelpWindow(void){
   QWebView *view = new QWebView; //(g_editor->main_window);
-  view->load(QUrl(QString("file://") + OS_get_full_program_file_path("help/keybindings.html")));
+  view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path("help/keybindings.html"))));
+  //view->load(QUrl(QString("file://") + OS_get_full_program_file_path("help/keybindings.html")));
   view->show();
 }
  
