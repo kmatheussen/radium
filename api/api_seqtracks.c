@@ -645,6 +645,15 @@ int64_t findClosestSeqtrackBarStart(int seqtracknum, int64_t pos){
   return SEQUENCER_find_closest_bar_start(seqtracknum, pos);
 }
 
+int64_t findClosestSeqtrackBeatStart(int seqtracknum, int64_t pos){
+  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
+    handleError("Sequencer track #%d does not exist", seqtracknum);
+    return 0;
+  }
+  
+  return SEQUENCER_find_closest_beat_start(seqtracknum, pos);
+}
+
 void insertSilenceToSeqtrack(int seqtracknum, int64_t pos, int64_t duration){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)

@@ -232,7 +232,7 @@ void SEQUENCER_update_all_seqblock_start_and_end_times(void){
  * Find closest bar start, start
  */
 
-struct SeqTrack *find_closest_seqtrack_with_bar_start(int seqtracknum){
+static struct SeqTrack *find_closest_seqtrack_with_barorbeat_start(int seqtracknum){
 #if 1
   return (struct SeqTrack*)root->song->seqtracks.elements[0];
 #else
@@ -275,7 +275,7 @@ static int64_t find_bar_start_before(struct SeqBlock *seqblock, int64_t seqtime)
 }
 */
 
-static int64_t find_bar_start_inside(struct SeqBlock *seqblock, int64_t seqtime){
+static int64_t find_barorbeat_start_inside(struct SeqBlock *seqblock, int64_t seqtime, bool find_beat){
   struct Blocks *block = seqblock->block;
 
   int64_t ret = seqblock->time;
@@ -284,15 +284,15 @@ static int64_t find_bar_start_inside(struct SeqBlock *seqblock, int64_t seqtime)
   struct Beats *beat = block->beats;
 
   while (beat != NULL){
-    if (beat->beat_num==1){
-      int64_t bartime = seqblock->time + Place2STime(block, &beat->l.p);
-      int64_t dist = R_ABS(bartime-seqtime);
+    if (beat->beat_num==1 || find_beat){
+      int64_t beattime = seqblock->time + Place2STime(block, &beat->l.p);
+      int64_t dist = R_ABS(beattime-seqtime);
       //printf("bar/beat: %d/%d. seqtime: %f. bartime: %f. dist: %f\n",beat->bar_num,beat->beat_num,(double)seqtime/44100.0, (double)bartime/44100.0,(double)dist/44100.0);
       if (dist < mindist){
         mindist = dist;
-        ret = bartime;
+        ret = beattime;
       }
-      if (bartime >= seqtime)
+      if (beattime >= seqtime)
         break;
     }
     beat = NextBeat(beat);
@@ -302,32 +302,32 @@ static int64_t find_bar_start_inside(struct SeqBlock *seqblock, int64_t seqtime)
   return ret;
 }
 
-static int64_t find_bar_start_after(struct SeqBlock *seqblock, int64_t seqtime, int64_t maxtime){
+static int64_t find_barorbeat_start_after(struct SeqBlock *seqblock, int64_t seqtime, int64_t maxtime, bool find_beat){
   struct Blocks *block = seqblock->block;
 
-  struct Beats *last_bar = NULL;
+  struct Beats *last_barorbeat = NULL;
   
   struct Beats *beat = NextBeat(block->beats);
   while (beat != NULL){
-    if (beat->beat_num==1)
-      last_bar = beat;
+    if (beat->beat_num==1 || find_beat)
+      last_barorbeat = beat;
     beat = NextBeat(beat);
   }
 
   int64_t blocklen = getBlockSTimeLength(block); // / ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
   
-  int64_t bar_length;
+  int64_t barorbeat_length;
   
-  if (last_bar==NULL)
-    bar_length = blocklen / ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
+  if (last_barorbeat==NULL)
+    barorbeat_length = blocklen / ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
   else
-    bar_length = (blocklen - Place2STime(block, &last_bar->l.p)) / ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
+    barorbeat_length = (blocklen - Place2STime(block, &last_barorbeat->l.p)) / ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
 
   int64_t ret = seqblock->time + blocklen;
   int64_t mindiff = R_ABS(ret-seqtime);
   int64_t lastdiff = mindiff;
   
-  int64_t maybe = ret + bar_length;
+  int64_t maybe = ret + barorbeat_length;
   while(maybe < maxtime){
     int64_t diff = R_ABS(maybe-seqtime);
     if (diff > lastdiff)
@@ -339,21 +339,22 @@ static int64_t find_bar_start_after(struct SeqBlock *seqblock, int64_t seqtime, 
     }
 
     lastdiff = diff;
-    maybe += bar_length;
+    maybe += barorbeat_length;
   }
   
   return ret;
 }
 
-int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_abstime){
+int64_t find_closest_barorbeat_start(int seqtracknum, int64_t pos_abstime, bool find_beat){
+
   //struct SeqTrack *pos_seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
-  struct SeqTrack *seqtrack = find_closest_seqtrack_with_bar_start(seqtracknum);
+  struct SeqTrack *seqtrack = find_closest_seqtrack_with_barorbeat_start(seqtracknum);
 
   //printf("pos_seqtime: %f\n",(double)pos_seqtime/44100.0);
   //int64_t seqtime = convert_seqtime(pos_seqtrack, seqtrack, pos_seqtime);
   int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, pos_abstime);
                          
-  int64_t bar_start_time = 0;
+  int64_t barorbeat_start_time = 0;
 
   struct SeqBlock *last_seqblock = NULL;
   
@@ -363,7 +364,7 @@ int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_abstime){
     int64_t endtime = seqblock->time + getBlockSTimeLength(seqblock->block);
     
     if (seqtime >= starttime && seqtime < endtime) {
-      bar_start_time = find_bar_start_inside(seqblock, seqtime);
+      barorbeat_start_time = find_barorbeat_start_inside(seqblock, seqtime, find_beat);
       goto gotit;
     }
     
@@ -374,7 +375,7 @@ int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_abstime){
     }
     
     if (seqtime < starttime) {
-      bar_start_time = find_bar_start_after(last_seqblock, seqtime, starttime);
+      barorbeat_start_time = find_barorbeat_start_after(last_seqblock, seqtime, starttime, find_beat);
       goto gotit;
     }
     
@@ -384,13 +385,21 @@ int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_abstime){
   if (last_seqblock==NULL)
     return pos_abstime;
   else
-    bar_start_time = find_bar_start_after(last_seqblock, seqtime, INT64_MAX);
+    barorbeat_start_time = find_barorbeat_start_after(last_seqblock, seqtime, INT64_MAX, find_beat);
   
  gotit:
 
   //printf("Converting %f to %f\n",(double)bar_start_time/44100.0, (double)convert_seqtime(seqtrack, pos_seqtrack, bar_start_time)/44100.0);
   //return convert_seqtime(seqtrack, pos_seqtrack, bar_start_time);
-  return get_abstime_from_seqtime(seqtrack, NULL, bar_start_time);
+  return get_abstime_from_seqtime(seqtrack, NULL, barorbeat_start_time);
+}
+
+int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_abstime){
+  return find_closest_barorbeat_start(seqtracknum, pos_abstime, false);
+}
+
+int64_t SEQUENCER_find_closest_beat_start(int seqtracknum, int64_t pos_abstime){
+  return find_closest_barorbeat_start(seqtracknum, pos_abstime, true);
 }
 
 /**

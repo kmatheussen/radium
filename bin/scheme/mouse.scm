@@ -2917,7 +2917,7 @@
                                          (<ra> :get-sequencer-visible-end-time))
                         :Get-x (lambda (Num) (<ra> :get-seqtemponode-x Num))
                         :Get-y (lambda (Num) (<ra> :get-seqtemponode-y Num))
-                        :Make-undo (lambda (_)
+                        :Make-undo (lambda (_)              
                                      (<ra> :undo-seqtempo))
                         :Create-new-node (lambda (X Y callback)
                                            (define Time (scale X
@@ -2925,9 +2925,9 @@
                                                                (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
                                            (define PositionTime (if (<ra> :ctrl-pressed)
                                                                     Time
-                                                                    (<ra> :find-closest-seqtrack-bar-start 0 (floor Time))))
+                                                                    (<ra> :find-closest-seqtrack-beat-start 0 (floor Time))))
                                            (define TempoMul (get-seqtempo-value Y))
-                                           (define Num (<ra> :add-seqtemponode PositionTime TempoMul 0))
+                                           (define Num (<ra> :add-seqtemponode PositionTime TempoMul *logtype-linear*))
                                            (if (= -1 Num)
                                                #f
                                                (begin
@@ -2939,7 +2939,7 @@
                                      (define TempoMul (get-seqtempo-value Y))
                                      (define logtype (<ra> :get-seqtempo-logtype Num))
                                      (if (not (<ra> :ctrl-pressed))
-                                         (set! Time (<ra> :find-closest-seqtrack-bar-start 0 (floor Time))))
+                                         (set! Time (<ra> :find-closest-seqtrack-beat-start 0 (floor Time))))
                                      (<ra> :set-seqtemponode Time TempoMul logtype Num)
                                      ;;(c-display "NUM:" Num ", Time:" Time ", TempoMul:" TempoMul)
                                      Num
@@ -3077,7 +3077,7 @@
                           :Move (lambda (_ Value)
                                   (set! Value (floor Value))
                                   (if (not (<ra> :ctrl-pressed))
-                                      (set! Value (<ra> :find-closest-seqtrack-bar-start 0 Value)))
+                                      (set! Value (<ra> :find-closest-seqtrack-beat-start 0 Value)))
                                   (if (eq? Type 'start)
                                       (<ra> :set-seqlooping-start Value)
                                       (<ra> :set-seqlooping-end Value)))
