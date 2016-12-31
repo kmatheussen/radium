@@ -3865,6 +3865,51 @@
 
 
 
+;; delete seqautomation / popupmenu
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda ($button $x $y)
+                (and (= $button *right-button*)
+                     *current-seqautomation/distance*
+                     (let ((automationnum (*current-seqautomation/distance* :seqautomation))
+                           (seqtracknum (*current-seqautomation/distance* :seqtrack)))
+                       (define (get-nodebox $num)
+                         (get-common-node-box (<ra> :get-seq-automation-node-x $num automationnum seqtracknum)
+                                              (<ra> :get-seq-automation-node-y $num automationnum seqtracknum)))
+                       (define Num (match (list (find-node-horizontal $x $y get-nodebox (<ra> :get-num-seq-automation-nodes automationnum seqtracknum)))
+                                          (existing-box Num Box) :> Num
+                                          A                      :> #f))
+                       (if (<ra> :shift-pressed)
+                           (<ra> :delete-seq-automation-node Num automationnum seqtracknum)
+                           (popup-menu (list "Delete"
+                                             :enabled Num
+                                             (lambda ()
+                                               (<ra> :delete-seq-automation-node Num automationnum seqtracknum)))
+                                       ;;(list "Reset (set value to 0.5)"
+                                       ;;     :enabled Num
+                                       ;;      (lambda ()
+                                       ;;        (<ra> :undo-seqtempo)
+                                       ;;        (<ra> :set-seqtemponode
+                                       ;;              (<ra> :get-seqtempo-abstime Num)
+                                       ;;              1.0
+                                       ;;              (<ra> :get-seqtempo-logtype Num)
+                                       ;;              Num)))
+                                       (list "Glide to next break point"
+                                             :check (and Num (= (<ra> :get-seq-automation-logtype Num automationnum seqtracknum)
+                                                                *logtype-linear*))
+                                             :enabled Num
+                                             (lambda (maybe)
+                                               (<ra> :undo-sequencer)
+                                               (<ra> :set-seq-automation-node
+                                                     (<ra> :get-seq-automation-time Num automationnum seqtracknum)
+                                                     (<ra> :get-seq-automation-value Num automationnum seqtracknum)
+                                                     (if maybe *logtype-linear* *logtype-hold*)
+                                                     Num
+                                                     automationnum
+                                                     seqtracknum)))
+                                       ))
+                       #t)))))
+
 ;; highlight current seq automation node
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
@@ -3986,13 +4031,32 @@
   (delete-all-selected-seqblocks))
 
 
-(define (create-sequencer-automation)
-  (<ra> :add-seq-automation
-        48000 0.5
-        (* 3 48000) 0.8
-        5
-        0
-        0))
+(define (create-sequencer-automation seqtracknum X Y)
+  (define all-instruments (get-all-audio-instruments))
+  (popup-menu
+   (map (lambda (num instrument-id)
+          (list (<-> num ". " (<ra> :get-instrument-name instrument-id))
+                (lambda ()
+                  (popup-menu (map (lambda (effectnum)
+                                     (list (<-> effectnum ". " (<ra> :get-instrument-effect-name effectnum instrument-id))
+                                           (lambda ()
+                                             (define Time1 (scale X
+                                                                 (<ra> :get-seqtrack-x1 seqtracknum) (<ra> :get-seqtrack-x2 seqtracknum)
+                                                                 (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+                                             (define Time2 (scale (+ X (* 5 *seqnode-min-distance*))
+                                                                  (<ra> :get-seqtrack-x1 seqtracknum) (<ra> :get-seqtrack-x2 seqtracknum)
+                                                                  (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+                                             (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
+                                             (c-display num effectnum)
+                                             (<ra> :add-seq-automation
+                                                   (floor Time1) Value
+                                                   (floor Time2) Value
+                                                   effectnum
+                                                   instrument-id
+                                                   seqtracknum))))
+                                   (iota (<ra> :get-num-instrument-effects instrument-id)))))))
+        (iota (length all-instruments))
+        all-instruments)))
 
 
 ;; seqblock menu
@@ -4172,7 +4236,8 @@
 
                                           "-----------------"
 
-                                          "New automation" create-sequencer-automation
+                                          "New automation" (lambda ()
+                                                             (create-sequencer-automation seqtracknum X Y))
 
                                           "-----------------"
                                           

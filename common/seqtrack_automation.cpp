@@ -127,8 +127,10 @@ struct Automation{
     
     if (i==type->num_effects+NUM_SYSTEM_EFFECTS)
       GFX_Message(NULL, "Sequencer automation: Could not find a effect named \"%s\" in %s/%s", effect_name, type->type_name, type->name);
-    else
+    else{
       effect_num = i;//HASH_get_int32(state, "effect_num");
+      color = get_qcolor(get_effect_color(plugin, effect_num));
+    }
   }
 };
 
@@ -181,12 +183,18 @@ public:
   }
 
   int add_automation(struct Patch *patch, int effect_num, double seqtime1, double value1, int logtype, double seqtime2, double value2){
-    Automation *automation = new Automation(patch, effect_num);
+    bool already_here = true;
+    Automation *automation = find_automation(patch, effect_num, true);
+
+    if (automation == NULL){
+      already_here = false;
+      automation = new Automation(patch, effect_num);
+    }
 
     automation->automation.add_node(create_node(seqtime1, value1, logtype));
-    automation->automation.add_node(create_node(seqtime2, value2, logtype));
-
-    {
+    int ret = automation->automation.add_node(create_node(seqtime2, value2, logtype));
+    
+    if (already_here==false){
       _automations.ensure_there_is_room_for_one_more_without_having_to_allocate_memory();
       {
         radium::PlayerLock lock;    
@@ -194,18 +202,22 @@ public:
       }  
       _automations.post_add();
     }
+
+    SEQUENCER_update();
     
-    return _automations.size()-1;
+    return ret;
   }
 
 private:
   
-  Automation *find_automation(struct Patch *patch, int effect_num){
+  Automation *find_automation(struct Patch *patch, int effect_num, bool may_return_null=false){
     for(auto *automation : _automations)
       if (automation->patch==patch && automation->effect_num==effect_num)
         return automation;
 
-    RError("SeqtrackAutomation::find_automation: Could not find %s / %d", patch->name, effect_num);
+    if (may_return_null==false)
+      RError("SeqtrackAutomation::find_automation: Could not find %s / %d", patch->name, effect_num);
+
     return NULL;    
   }
   
