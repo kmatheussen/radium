@@ -286,7 +286,7 @@ public:
 
     T *node = &_automation[nodenum];
 
-    if (node->time != new_node.time){
+    if (false && node->time != new_node.time){
       _automation.remove(nodenum);
       add_node(new_node);
     } else {
@@ -382,7 +382,11 @@ private:
 
 public:
 
-  void paint(QPainter *p, float x1, float y1, float x2, float y2, double start_time, double end_time, QColor color, float (*get_y)(const T &node, float y1, float y2)) const {
+  void paint(QPainter *p, float x1, float y1, float x2, float y2, double start_time, double end_time, const QColor &color,
+             float (*get_y)(const T &node, float y1, float y2),
+             float (*get_x)(const T &node, double start_time, double end_time, float x1, float x2, void *data) = NULL,
+             void *data = NULL
+             ) const {
   
     QPen pen(color);
     pen.setWidthF(2.3);
@@ -400,9 +404,17 @@ public:
       if (time2 < start_time)
         continue;
       
-      float x_a = scale(time1, start_time, end_time, x1, x2);
-      float x_b = scale(time2, start_time, end_time, x1, x2);
+      float x_a;
+      float x_b;
       
+      if (get_x != NULL){
+        x_a = get_x(node1, start_time, end_time, x1, x2, data);
+        x_b = get_x(node2, start_time, end_time, x1, x2, data);
+      } else {
+        x_a = scale(time1, start_time, end_time, x1, x2);
+        x_b = scale(time2, start_time, end_time, x1, x2);
+      }
+
       float y_a = get_y(node1, y1, y2);
       float y_b = get_y(node2, y1, y2);
       

@@ -727,7 +727,7 @@ public:
     }
 
     // Automation
-    SEQTRACK_AUTOMATION_paint(&p, _seqtrack->seqtrackautomation, t_x1, t_y1, t_x2, t_y2, _start_time, _end_time);
+    SEQTRACK_AUTOMATION_paint(&p, _seqtrack, t_x1, t_y1, t_x2, t_y2, _start_time, _end_time);
 
 
     // Current track border and non-current track shadowing
@@ -1331,8 +1331,8 @@ public:
 struct Sequencer_widget : public MouseTrackerQWidget {
 
   int _old_width = 600;
-  double _start_time = 0;
-  double _end_time = 600;
+  double _start_time = 0; // abstime
+  double _end_time = 600; // abstime
   double _samples_per_pixel;
 
   enum GridType _grid_type;

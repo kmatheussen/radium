@@ -80,7 +80,23 @@
                               distance12))
 
         (min distance distance1 distance2))))
+
+
+(define (distance point1 point2)
+  (sqrt (+ (square (- (point-x point1)
+                      (point-x point2)))
+           (square (- (point-y point1)
+                      (point-y point2))))))
+(define point-x car)
+(define point-y cadr)
+(define create-point list)
+(define vector-point1 car)
+(define vector-point2 cadr)
+(define (get-distance2 x y x1 y1 x2 y2)
+  (distance-to-vector x y (list (create-point x1 y1) (create-point x2 y2))))
+
 ||#
+
 
 ;; shortest distance between a point and a non-infinite line. Can be optimized (a lot).
 (define (get-distance x y x1 y1 x2 y2)
@@ -122,6 +138,9 @@
                         (* (- x1 x)
                            (- y2 y1))))
                 dist-1-to-2)))))
+
+(define (get-distance-vertical x y x1 y1 x2 y2)
+  (get-distance y x y1 x1 y2 x2))
 
 #||
 (test (get-distance 0 0
@@ -2902,7 +2921,7 @@
   (apply max (map (lambda (n)
                     (<ra> :get-seqtempo-value n))
                   (iota (<ra> :get-num-seqtemponodes)))))
-              
+
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and (<ra> :seqtempo-visible)
                                              (<ra> :get-box seqtempo-area)))
@@ -2927,6 +2946,7 @@
                         :Make-undo (lambda (_)              
                                      (<ra> :undo-seqtempo))
                         :Create-new-node (lambda (X Y callback)
+
                                            (define Time (scale X
                                                                (<ra> :get-seqtempo-area-x1) (<ra> :get-seqtempo-area-x2)
                                                                (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
@@ -3165,7 +3185,16 @@
 
 (add-mouse-move-handler
  :move (lambda (Button X Y)
-         (set! *current-seqtrack-num* (get-seqtracknum X Y))))
+         (let ((old *current-seqtrack-num*)
+               (new (get-seqtracknum X Y)))
+           (cond ((and old (not new))
+                  (set! *current-seqtrack-num* new))
+                 ((and new (not old))
+                  ;;(c-display "set-normal")
+                  ;;(<ra> :set-normal-mouse-pointer)
+                  (set! *current-seqtrack-num* new))
+                 (else
+                  #f)))))
 
 
              
@@ -3296,7 +3325,7 @@
 ;; Move single seqblock
 (add-node-mouse-handler :Get-area-box (lambda()
                                         (<ra> :get-box sequencer))
-                        :Get-existing-node-info (lambda (X Y callback)                                                  
+                        :Get-existing-node-info (lambda (X Y callback)
                                                   (let ((seqtracknum *current-seqtrack-num*))
                                                     (and (not *current-seqautomation/distance*)
                                                          seqtracknum
@@ -3663,7 +3692,7 @@
   :seqautomation
   :distance)
 
-(define *seqnode-min-distance* (* 3 (<ra> :get-half-of-node-width)))
+(define *seqnode-min-distance* (* 1 (<ra> :get-half-of-node-width)))
 
 (define *current-seqautomation/distance* #f)
 
@@ -3684,21 +3713,26 @@
          A)
         (else
          B)))
-          
-(define-match get-closest-seqautomation-1
-  _______ ___________ Seqautomation X Y X1 Y1 X2 Y2 :> (make-seqautomation/distance :seqtrack *current-seqtrack-num*
-                                                                                    :seqautomation Seqautomation
-                                                                                    :distance (get-distance X Y X1 Y1 X2 Y2))
-                                                       :where (and (>= (+ *seqnode-min-distance* X) X1)
-                                                                   (<= (- X *seqnode-min-distance*) X2))
-  Nodenum Nodenum     __ _ _ __ __ __ __            :> #f
-  Nodenum Total-Nodes Seqautomation X Y __ __ X2 Y2 :> (get-closest-seqautomation-1 (1+ Nodenum)
-                                                                                    Total-Nodes
-                                                                                    Seqautomation
-                                                                                    X Y
-                                                                                    X2 Y2
-                                                                                    (<ra> :get-seq-automation-node-x Nodenum Seqautomation *current-seqtrack-num*)
-                                                                                    (<ra> :get-seq-automation-node-y Nodenum Seqautomation *current-seqtrack-num*)))
+
+(define (get-closest-seqautomation-1 Nodenum Total-Nodes Seqautomation X Y X1 Y1 X2 Y2)
+  (define this (and (>= X (- X1 *seqnode-min-distance*))
+                    (<= X (+ X2 *seqnode-min-distance*))
+                    (make-seqautomation/distance :seqtrack *current-seqtrack-num*
+                                                 :seqautomation Seqautomation
+                                                 :distance (let ((dist (get-distance-vertical X Y X1 Y1 X2 Y2)))
+                                                             ;;(c-display "dist" dist)
+                                                             dist))))
+
+  (define next (and (< Nodenum Total-Nodes)
+                    (get-closest-seqautomation-1 (1+ Nodenum)
+                                                 Total-Nodes
+                                                 Seqautomation
+                                                 X Y
+                                                 X2 Y2
+                                                 (<ra> :get-seq-automation-node-x Nodenum Seqautomation *current-seqtrack-num*)
+                                                 (<ra> :get-seq-automation-node-y Nodenum Seqautomation *current-seqtrack-num*))))
+  (min-seqautomation/distance this
+                              next))
 
 (define-match get-closest-seqautomation-0
   Seqautomation Seqautomation        _ _ :> #f
@@ -3725,6 +3759,16 @@
 (get-closest-seqautomation (<ra> :get-mouse-pointer-x) (<ra> :get-mouse-pointer-y))
 ||#
 
+(define (set-seqnode-statusbar-text Num)
+  (let* ((automationnum (*current-seqautomation/distance* :seqautomation))
+         (seqtracknum (*current-seqautomation/distance* :seqtrack))
+         (instrument-id (<ra> :get-seq-automation-instrument-id automationnum seqtracknum))
+         ;;(instrument-name (<ra> :get-instrument-name instrument-id))
+         (effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
+         (effect-name (<ra> :get-instrument-effect-name effect-num instrument-id)))
+    (<ra> :set-statusbar-text (<-> effect-name ": "
+                                   (two-decimal-string (<ra> :get-seq-automation-value Num automationnum seqtracknum))))))
+  
 ;; Highlight current seq automation
 (add-mouse-move-handler
  :move (lambda (Button X Y)
@@ -3739,10 +3783,85 @@
                       (instrument-name (<ra> :get-instrument-name instrument-id))
                       (effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
                       (effect-name (<ra> :get-instrument-effect-name effect-num instrument-id)))
+                 (<ra> :set-normal-mouse-pointer)
                  (<ra> :set-statusbar-text (<-> instrument-name "/" effect-name))
                  (<ra> :set-curr-seq-automation (*current-seqautomation/distance* :seqautomation)
                                                 (*current-seqautomation/distance* :seqtrack)))
                (<ra> :cancel-curr-seq-automation)))))
+
+
+
+;; move and create
+(add-node-mouse-handler :Get-area-box (lambda ()
+                                        (and *current-seqautomation/distance*
+                                             (<ra> :get-box sequencer)))
+
+                        :Get-existing-node-info (lambda (X Y callback)
+                                                  (let ((automationnum (*current-seqautomation/distance* :seqautomation))
+                                                        (seqtracknum (*current-seqautomation/distance* :seqtrack)))
+                                                    (define (get-nodebox $num)
+                                                      (get-common-node-box (<ra> :get-seq-automation-node-x $num automationnum seqtracknum)
+                                                                           (<ra> :get-seq-automation-node-y $num automationnum seqtracknum)))
+                                                    (match (list (find-node-horizontal X Y get-nodebox (<ra> :get-num-seq-automation-nodes automationnum seqtracknum)))
+                                                           (existing-box Num Box) :> (begin
+                                                                                       (define Time (scale X
+                                                                                                           (<ra> :get-seqtrack-x1 seqtracknum) (<ra> :get-seqtrack-x2 seqtracknum)
+                                                                                                           (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+                                                                                       (set-grid-type #t)
+                                                                                       (callback Num Time Y))
+                                                           _                      :> #f)))
+                        :Get-min-value (lambda (_)
+                                         (<ra> :get-sequencer-visible-start-time))
+                        :Get-max-value (lambda (_)
+                                         (<ra> :get-sequencer-visible-end-time))
+                        :Get-x (lambda (Num)
+                                 (let ((automationnum (*current-seqautomation/distance* :seqautomation))
+                                       (seqtracknum (*current-seqautomation/distance* :seqtrack)))
+                                   (<ra> :get-seq-automation-node-x Num automationnum seqtracknum)))
+                        :Get-y (lambda (Num)
+                                 (let ((automationnum (*current-seqautomation/distance* :seqautomation))
+                                       (seqtracknum (*current-seqautomation/distance* :seqtrack)))
+                                   (<ra> :get-seq-automation-node-y Num automationnum seqtracknum)))
+                        :Make-undo (lambda (_)
+                                     (<ra> :undo-sequencer))
+                        :Create-new-node (lambda (X Y callback)
+                                           (let ((automationnum (*current-seqautomation/distance* :seqautomation))
+                                                 (seqtracknum (*current-seqautomation/distance* :seqtrack)))
+                                             (define Time (scale X
+                                                                 (<ra> :get-seqtrack-x1 seqtracknum) (<ra> :get-seqtrack-x2 seqtracknum)
+                                                                 (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+                                             (define PositionTime (if (<ra> :ctrl-pressed)
+                                                                      Time
+                                                                      (<ra> :find-closest-seqtrack-beat-start 0 (floor Time))))
+                                             (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
+                                             (define Num (<ra> :add-seq-automation-node PositionTime Value *logtype-linear* automationnum seqtracknum))
+                                             (if (= -1 Num)
+                                               #f
+                                               (begin
+                                                 (set-grid-type #t)
+                                                 (callback Num Time)))))
+                        :Release-node (lambda (Num)
+                                        (set-grid-type #f))
+                        :Move-node (lambda (Num Time Y)
+                                     (let ((automationnum (*current-seqautomation/distance* :seqautomation))
+                                           (seqtracknum (*current-seqautomation/distance* :seqtrack)))
+                                       (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
+                                       (define logtype (<ra> :get-seq-automation-logtype Num automationnum seqtracknum))
+                                       (set! Time (floor Time))
+                                       (if (not (<ra> :ctrl-pressed))
+                                           (set! Time (<ra> :find-closest-seqtrack-beat-start 0 Time)))
+                                       (<ra> :set-seq-automation-node Time Value logtype Num automationnum seqtracknum)
+                                       ;;(c-display "NUM:" Num ", Time:" Time ", Value:" Value)
+                                       Num))
+                        :Publicize (lambda (Num)
+                                     (set-seqnode-statusbar-text Num)
+                                     ;;(<ra> :set-curr-seqtemponode Num)
+                                     #f)
+                        
+                        :Use-Place #f
+                        :Mouse-pointer-func ra:set-normal-mouse-pointer
+                        :Get-pixels-per-value-unit #f
+                        )         
 
 
 
@@ -3757,18 +3876,14 @@
                                        (<ra> :get-seq-automation-node-y $num automationnum seqtracknum)))
                 (match (list (find-node-horizontal $x $y get-nodebox (<ra> :get-num-seq-automation-nodes automationnum seqtracknum)))
                        (existing-box Num Box) :> (begin
-                                                   ;;(c-display "hepp" Num)
-                                                   (let* ((instrument-id (<ra> :get-seq-automation-instrument-id automationnum seqtracknum))
-                                                          (effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
-                                                          (effect-name (<ra> :get-instrument-effect-name effect-num instrument-id)))
-                                                     (<ra> :set-statusbar-text (<-> effect-name ": "
-                                                                                    (two-decimal-string (<ra> :get-seq-automation-value Num automationnum seqtracknum))))
-                                                     (<ra> :set-curr-seq-automation-node Num automationnum seqtracknum)
-                                                     #t))
+                                                   (set-seqnode-statusbar-text Num)
+                                                   (<ra> :set-curr-seq-automation-node Num automationnum seqtracknum)
+                                                   #t)
                        A                      :> (begin
                                                    ;;(c-display "**Didnt get it:" A)
                                                    (<ra> :cancel-curr-seq-automation-node automationnum seqtracknum)
                                                    #f))))))
+
 
  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

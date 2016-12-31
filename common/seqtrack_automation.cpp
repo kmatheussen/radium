@@ -82,6 +82,7 @@ struct Automation{
   struct Patch *patch; // I'm pretty sure we can use SoundPlugin directly now... I don't think patch->patchdata changes anymore.
   int effect_num = -1;
   double last_value = -1.0;
+  QColor color;
 
   bool islegalnodenum(int nodenum){
     return nodenum>=0 && (nodenum<=automation.size()-1);
@@ -101,6 +102,10 @@ struct Automation{
     : patch(patch)
     , effect_num(effect_num)
   {
+    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+
+    color = get_qcolor(get_effect_color(plugin, effect_num));
   }
 
   Automation(hash_t *state){
@@ -398,9 +403,10 @@ void SEQTRACK_AUTOMATION_set(struct SeqtrackAutomation *seqtrackautomation, int 
   AutomationNode node = automation->automation.at(nodenum);
   const AutomationNode *next = nodenum==size-1 ? NULL : &automation->automation.at(nodenum+1);
 
-  double mintime = prev==NULL ? 0 : next==NULL ? R_MAX(R_MAX(node.time, seqtime), SONG_get_length()) : prev->time;
-  double maxtime = (prev==NULL || next==NULL) ? mintime : next->time;
+  double mintime = prev==NULL ? 0 : prev->time; //next==NULL ? R_MAX(R_MAX(node.time, seqtime), SONG_get_length()) : prev->time;
+  double maxtime = next==NULL ? SONG_get_gfx_length()*MIXER_get_sample_rate() : next->time;
 
+  //printf("mintime: %f, seqtime: %f, maxtime: %f\n",mintime,seqtime,maxtime);
   seqtime = R_BOUNDARIES(mintime, seqtime, maxtime);
 
   value = R_BOUNDARIES(0.0, value, 1.0);
@@ -491,6 +497,15 @@ hash_t *SEQTRACK_AUTOMATION_get_state(struct SeqtrackAutomation *seqtrackautomat
 }
 
 
+static float get_node_x2(const struct SeqTrack *seqtrack, const AutomationNode &node, double start_time, double end_time, float x1, float x2){
+  int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, node.time);
+
+  return scale(abstime, start_time, end_time, x1, x2);
+}
+
+static float get_node_x(const AutomationNode &node, double start_time, double end_time, float x1, float x2, void *data){
+  return get_node_x2((const struct SeqTrack*)data, node, start_time, end_time, x1, x2);
+}
 
 float SEQTRACK_AUTOMATION_get_node_x(struct SeqtrackAutomation *seqtrackautomation, struct SeqTrack *seqtrack, int automationnum, int nodenum){
   R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0);
@@ -498,17 +513,15 @@ float SEQTRACK_AUTOMATION_get_node_x(struct SeqtrackAutomation *seqtrackautomati
   struct Automation *automation = seqtrackautomation->_automations[automationnum];
   R_ASSERT_RETURN_IF_FALSE2(automation->islegalnodenum(nodenum), 0);
 
-
   double start_time = SEQUENCER_get_visible_start_time();
   double end_time = SEQUENCER_get_visible_end_time();
 
-  float x1 = SEQUENCER_get_x1();
-  float x2 = SEQUENCER_get_x2();
+  float x1 = SEQTRACK_get_x1(0);
+  float x2 = SEQTRACK_get_x2(0);
   
   const AutomationNode &node = automation->automation.at(nodenum);
-  int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, node.time);
 
-  return scale(abstime, start_time, end_time, x1, x2);
+  return get_node_x2(seqtrack, node, start_time, end_time, x1, x2);
 }
 
 static float get_node_y(const AutomationNode &node, float y1, float y2){
@@ -527,8 +540,8 @@ float SEQTRACK_AUTOMATION_get_node_y(struct SeqtrackAutomation *seqtrackautomati
   return get_node_y(automation->automation.at(nodenum), y1, y2);
 }
 
-void SEQTRACK_AUTOMATION_paint(QPainter *p, struct SeqtrackAutomation *seqtrackautomation, float x1, float y1, float x2, float y2, double start_time, double end_time){
+void SEQTRACK_AUTOMATION_paint(QPainter *p, struct SeqTrack *seqtrack, float x1, float y1, float x2, float y2, double start_time, double end_time){
   
-  for(auto *automation : seqtrackautomation->_automations)
-    automation->automation.paint(p, x1, y1, x2, y2, start_time, end_time, Qt::black, get_node_y);
+  for(auto *automation : seqtrack->seqtrackautomation->_automations)
+    automation->automation.paint(p, x1, y1, x2, y2, start_time, end_time, automation->color, get_node_y, get_node_x, seqtrack);
 }

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_mix_colors.h"
 #include "../Qt/Qt_colors_proc.h"
 #include "SeqAutomation.hpp"
+#include "../audio/Mixer_proc.h"
 
 #include "song_tempo_automation_proc.h"
 
@@ -261,7 +262,7 @@ void TEMPOAUTOMATION_set(int nodenum, double abstime, double value, int logtype)
   TempoAutomationNode node = g_tempo_automation.at(nodenum);
   const TempoAutomationNode *next = nodenum==size-1 ? NULL : &g_tempo_automation.at(nodenum+1);
 
-  double mintime = prev==NULL ? 0 : next==NULL ? R_MAX(R_MAX(node.time, abstime), SONG_get_length()) : prev->time;
+  double mintime = prev==NULL ? 0 : next==NULL ? R_MAX(R_MAX(node.time, abstime), SONG_get_gfx_length()*MIXER_get_sample_rate()) : prev->time;
   double maxtime = (prev==NULL || next==NULL) ? mintime : next->time;
 
   abstime = R_BOUNDARIES(mintime, abstime, maxtime);

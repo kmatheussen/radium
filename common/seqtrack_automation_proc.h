@@ -27,7 +27,7 @@ extern LANGSPEC float SEQTRACK_AUTOMATION_get_node_x(struct SeqtrackAutomation *
 extern LANGSPEC float SEQTRACK_AUTOMATION_get_node_y(struct SeqtrackAutomation *seqtrackautomation, int seqtracknum, int automationnum, int nodenum);
 
 #ifdef USE_QT4
-extern void SEQTRACK_AUTOMATION_paint(QPainter *p, struct SeqtrackAutomation *seqtrackautomation, float x1, float y1, float x2, float y2, double start_time, double end_time);
+extern void SEQTRACK_AUTOMATION_paint(QPainter *p, struct SeqTrack *seqtrack, float x1, float y1, float x2, float y2, double start_time, double end_time);
 #endif
 
 #endif
