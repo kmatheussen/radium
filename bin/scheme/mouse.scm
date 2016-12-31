@@ -697,7 +697,7 @@
   
   (define-struct node
     :node-info
-    :value
+    :value    
     :y)
 
   (define (press-existing-node Button X Y)
@@ -769,16 +769,23 @@
                                       (+ 2 (<ra> :get-bot-visible-y)))))
                       (+ Dy (Node :y))))
 
-    (let ((node-info (Move-node node-info new-value
-                                (if (not Use-Place)
-                                    new-y
-                                    (and new-y
-                                         (get-place-from-y Button new-y))))))
-      (Publicize node-info)
-      (make-node :node-info node-info
-                 :value new-value
-                 :y (or new-y (Node :y)))))
+    (define same-pos (and (morally-equal? new-y (Node :y))
+                          (morally-equal? new-value (Node :value))))
     
+    ;;(c-display "same-pos" same-pos new-y (Node :y) new-value (Node :value))
+
+    (if same-pos
+        Node
+        (let ((node-info (Move-node node-info new-value
+                                    (if (not Use-Place)
+                                        new-y
+                                        (and new-y
+                                             (get-place-from-y Button new-y))))))
+          (Publicize node-info)
+          (make-node :node-info node-info
+                     :value new-value
+                     :y (or new-y (Node :y))))))
+  
   (define (move-and-release Button Dx Dy Node)
     (move-or-release Button Dx Dy Node))
   
