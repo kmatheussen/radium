@@ -3961,6 +3961,13 @@
   :time
   )
 
+(define (seqblock-selected?)
+  (call/cc (lambda (return)
+             (for-each-seqblock (lambda (seqtracknum seqblocknum)
+                                  (if (<ra> :is-seqblock-selected seqblocknum seqtracknum)
+                                      (return #t))))
+             (return #f))))
+
 (define (copy-all-selected-seqblocks)
   (define minseqtrack #f)
   (define mintime #f)
@@ -4129,19 +4136,19 @@
                                           (list (if (> (<ra> :get-num-selected-seqblocks) 1)
                                                     "Copy sequencer blocks"
                                                     "Copy sequencer block")
-                                                :enabled seqblock-info
+                                                :enabled (seqblock-selected?)
                                                 ra:copy-selected-seqblocks)
                                           
                                           (list (if (> (<ra> :get-num-selected-seqblocks) 1)
                                                     "Cut sequencer blocks"
                                                     "Cut sequencer block")
-                                                :enabled seqblock-info
+                                                :enabled (seqblock-selected?)
                                                 ra:cut-selected-seqblocks)
                                           
                                           (list (if (> (<ra> :get-num-selected-seqblocks) 1)
                                                     "Delete sequencer blocks"
                                                     "Delete sequencer block")
-                                                :enabled seqblock-info
+                                                :enabled (seqblock-selected?)
                                                 ra:delete-selected-seqblocks)
                                           
                                           (list (if (> (<ra> :get-num-selected-seqblocks) 1)
