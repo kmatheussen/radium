@@ -4012,6 +4012,8 @@
                *seqblock-clipboard*))))
 
 (define (delete-all-selected-seqblocks)
+  (define deleted-something #f)
+
   (undo-block
    (lambda ()
      (let loop ((seqblocknum 0)
@@ -4022,9 +4024,25 @@
               (loop 0 (1+ seqtracknum)))
              ((<ra> :is-seqblock-selected seqblocknum seqtracknum)
               (<ra> :delete-seqblock seqblocknum seqtracknum)
+              (set! deleted-something #t)
               (loop seqblocknum seqtracknum))
              (else
-              (loop (1+ seqblocknum) seqtracknum)))))))
+              (loop (1+ seqblocknum) seqtracknum))))
+     
+     (when (not deleted-something)
+       (define x (<ra> :get-mouse-pointer-x))
+       (define y (<ra> :get-mouse-pointer-y))
+       (let loop ((seqblocknum 0)
+                  (seqtracknum 0))
+         (cond ((= seqtracknum (<ra> :get-num-seqtracks))
+                #t)
+               ((= seqblocknum (<ra> :get-num-seqblocks seqtracknum))
+                (loop 0 (1+ seqtracknum)))
+               ((inside-box (<ra> :get-box seqblock seqblocknum seqtracknum) x y)
+                (<ra> :delete-seqblock seqblocknum seqtracknum)
+                (loop seqblocknum seqtracknum))
+               (else
+                (loop (1+ seqblocknum) seqtracknum))))))))
 
 (define (cut-all-selected-seqblocks)
   (copy-all-selected-seqblocks)

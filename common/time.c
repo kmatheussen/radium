@@ -305,10 +305,13 @@ Place STime2Place(
 }
 
 STime getBlockSTimeLength(const struct Blocks *block){
+  if (block==NULL){
 #if !defined(RELEASE)
-  if (block==NULL)
     abort();
+#else
+    return 48000; // This should never happened, and it has never happened.
 #endif
+  }
   if (block->num_lines != block->num_time_lines)
     RWarning("block->num_lines != block->num_time_lines: %d != %d",block->num_lines, block->num_time_lines);
     
