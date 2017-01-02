@@ -275,16 +275,43 @@ static int64_t find_bar_start_before(struct SeqBlock *seqblock, int64_t seqtime)
 }
 */
 
-static int64_t find_barorbeat_start_inside(struct SeqBlock *seqblock, int64_t seqtime, bool find_beat){
+namespace{
+  enum class WhatToFind{
+    NOTHING,
+    LINE,
+    BEAT,
+    BAR
+  };
+}
+
+static int64_t find_barorbeat_start_inside(struct SeqBlock *seqblock, int64_t seqtime, WhatToFind what){
   struct Blocks *block = seqblock->block;
 
   int64_t ret = seqblock->time;
   int64_t mindist = INT64_MAX;
   
+  if (what==WhatToFind::NOTHING)
+    return seqtime;
+  
+  if (what==WhatToFind::LINE){
+    for(int line=0;line<block->num_lines;line++){
+      int64_t stime = seqblock->time + block->times[line].time;
+      int64_t dist = R_ABS(stime-seqtime);
+      //printf("bar/beat: %d/%d. seqtime: %f. bartime: %f. dist: %f\n",beat->bar_num,beat->beat_num,(double)seqtime/44100.0, (double)bartime/44100.0,(double)dist/44100.0);
+      if (dist < mindist){
+        mindist = dist;
+        ret = stime;
+      }
+      if (stime >= seqtime)
+        break;
+    }
+    return ret;
+  }
+
   struct Beats *beat = block->beats;
 
   while (beat != NULL){
-    if (beat->beat_num==1 || find_beat){
+    if (beat->beat_num==1 || what==WhatToFind::BEAT){
       int64_t beattime = seqblock->time + Place2STime(block, &beat->l.p);
       int64_t dist = R_ABS(beattime-seqtime);
       //printf("bar/beat: %d/%d. seqtime: %f. bartime: %f. dist: %f\n",beat->bar_num,beat->beat_num,(double)seqtime/44100.0, (double)bartime/44100.0,(double)dist/44100.0);
@@ -302,32 +329,43 @@ static int64_t find_barorbeat_start_inside(struct SeqBlock *seqblock, int64_t se
   return ret;
 }
 
-static int64_t find_barorbeat_start_after(struct SeqBlock *seqblock, int64_t seqtime, int64_t maxtime, bool find_beat){
+static int64_t find_barorbeat_start_after(struct SeqBlock *seqblock, int64_t seqtime, int64_t maxtime, WhatToFind what){
   struct Blocks *block = seqblock->block;
+  int64_t blocklen = getBlockSTimeLength(block);
+  int64_t interval_length;
 
-  struct Beats *last_barorbeat = NULL;
+  if (what==WhatToFind::NOTHING) {
+
+    return seqtime;
   
-  struct Beats *beat = NextBeat(block->beats);
-  while (beat != NULL){
-    if (beat->beat_num==1 || find_beat)
-      last_barorbeat = beat;
-    beat = NextBeat(beat);
+  } else if (what==WhatToFind::LINE){
+    
+    interval_length = blocklen - block->times[block->num_lines-1].time;
+
+  } else {
+
+    struct Beats *last_barorbeat = NULL;
+    
+    struct Beats *beat = NextBeat(block->beats);
+    while (beat != NULL){
+      if (beat->beat_num==1 || what==WhatToFind::BEAT)
+        last_barorbeat = beat;
+      beat = NextBeat(beat);
+    }
+    
+    if (last_barorbeat==NULL)
+      interval_length = blocklen;
+    else
+      interval_length = blocklen - Place2STime(block, &last_barorbeat->l.p);
   }
 
-  int64_t blocklen = getBlockSTimeLength(block); // / ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
-  
-  int64_t barorbeat_length;
-  
-  if (last_barorbeat==NULL)
-    barorbeat_length = blocklen / ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
-  else
-    barorbeat_length = (blocklen - Place2STime(block, &last_barorbeat->l.p)) / ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
+  interval_length /= ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
 
   int64_t ret = seqblock->time + blocklen;
   int64_t mindiff = R_ABS(ret-seqtime);
   int64_t lastdiff = mindiff;
   
-  int64_t maybe = ret + barorbeat_length;
+  int64_t maybe = ret + interval_length;
   while(maybe < maxtime){
     int64_t diff = R_ABS(maybe-seqtime);
     if (diff > lastdiff)
@@ -339,13 +377,13 @@ static int64_t find_barorbeat_start_after(struct SeqBlock *seqblock, int64_t seq
     }
 
     lastdiff = diff;
-    maybe += barorbeat_length;
+    maybe += interval_length;
   }
   
   return ret;
 }
 
-int64_t find_closest_barorbeat_start(int seqtracknum, int64_t pos_abstime, bool find_beat){
+int64_t find_closest_barorbeat_start(int seqtracknum, int64_t pos_abstime, WhatToFind what){
 
   //struct SeqTrack *pos_seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
   struct SeqTrack *seqtrack = find_closest_seqtrack_with_barorbeat_start(seqtracknum);
@@ -364,7 +402,7 @@ int64_t find_closest_barorbeat_start(int seqtracknum, int64_t pos_abstime, bool 
     int64_t endtime = seqblock->time + getBlockSTimeLength(seqblock->block);
     
     if (seqtime >= starttime && seqtime < endtime) {
-      barorbeat_start_time = find_barorbeat_start_inside(seqblock, seqtime, find_beat);
+      barorbeat_start_time = find_barorbeat_start_inside(seqblock, seqtime, what);
       goto gotit;
     }
     
@@ -375,7 +413,7 @@ int64_t find_closest_barorbeat_start(int seqtracknum, int64_t pos_abstime, bool 
     }
     
     if (seqtime < starttime) {
-      barorbeat_start_time = find_barorbeat_start_after(last_seqblock, seqtime, starttime, find_beat);
+      barorbeat_start_time = find_barorbeat_start_after(last_seqblock, seqtime, starttime, what);
       goto gotit;
     }
     
@@ -385,7 +423,7 @@ int64_t find_closest_barorbeat_start(int seqtracknum, int64_t pos_abstime, bool 
   if (last_seqblock==NULL)
     return pos_abstime;
   else
-    barorbeat_start_time = find_barorbeat_start_after(last_seqblock, seqtime, INT64_MAX, find_beat);
+    barorbeat_start_time = find_barorbeat_start_after(last_seqblock, seqtime, INT64_MAX, what);
   
  gotit:
 
@@ -395,11 +433,16 @@ int64_t find_closest_barorbeat_start(int seqtracknum, int64_t pos_abstime, bool 
 }
 
 int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_abstime){
-  return find_closest_barorbeat_start(seqtracknum, pos_abstime, false);
+  return find_closest_barorbeat_start(seqtracknum, pos_abstime, WhatToFind::BAR);
 }
 
 int64_t SEQUENCER_find_closest_beat_start(int seqtracknum, int64_t pos_abstime){
-  return find_closest_barorbeat_start(seqtracknum, pos_abstime, true);
+  return find_closest_barorbeat_start(seqtracknum, pos_abstime, WhatToFind::BEAT);
+}
+
+
+int64_t SEQUENCER_find_closest_line_start(int seqtracknum, int64_t pos_abstime){
+  return find_closest_barorbeat_start(seqtracknum, pos_abstime, WhatToFind::LINE);
 }
 
 /**

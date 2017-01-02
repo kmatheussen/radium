@@ -29,6 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_song_tempo_automation_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
+#include "../common/settings_proc.h"
+#include "../common/visual_proc.h"
 
 #include "../audio/Mixer_proc.h"
 
@@ -642,6 +644,23 @@ int getSeqtrackFromY(int y){
   return -1;
 }
 
+int64_t getSeqGriddedTime(int64_t pos, int seqtracknum, const_char* type){
+  if (!strcmp(type, "no"))
+    return pos;
+  
+  else if (!strcmp(type, "line"))
+    return findClosestSeqtrackLineStart(seqtracknum, pos);
+
+  else if (!strcmp(type, "beat"))
+    return findClosestSeqtrackBeatStart(seqtracknum, pos);
+
+  else if (!strcmp(type, "bar"))
+    return findClosestSeqtrackBarStart(seqtracknum, pos);
+
+  handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", or \"bar\". (\"%s\")", type);
+  return pos;
+}
+
 int64_t findClosestSeqtrackBarStart(int seqtracknum, int64_t pos){
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
     handleError("Sequencer track #%d does not exist", seqtracknum);
@@ -659,6 +678,95 @@ int64_t findClosestSeqtrackBeatStart(int seqtracknum, int64_t pos){
   
   return SEQUENCER_find_closest_beat_start(seqtracknum, pos);
 }
+
+int64_t findClosestSeqtrackLineStart(int seqtracknum, int64_t pos){
+  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
+    handleError("Sequencer track #%d does not exist", seqtracknum);
+    return 0;
+  }
+  
+  return SEQUENCER_find_closest_line_start(seqtracknum, pos);
+}
+
+
+static const char *g_block_grid = NULL;
+
+const_char *getSeqBlockGridType(void){
+  if (g_block_grid==NULL)
+    g_block_grid = SETTINGS_read_string("seq_block_grid_type", "bar");
+
+  return g_block_grid;
+}
+
+void setSeqBlockGridType(const_char *type){
+  if (!strcmp(type, "no") && !strcmp(type, "line") && !strcmp(type, "beat") && !strcmp(type, "bar")){
+    handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", or \"bar\". (\"%s\")", type);
+    return;
+  }
+
+  g_block_grid = talloc_strdup(type);
+  SETTINGS_write_string("seq_block_grid_type", g_block_grid);
+}
+
+static const char *g_automation_grid = NULL;
+
+const_char *getSeqAutomationGridType(void){
+  if (g_automation_grid==NULL)
+    g_automation_grid = SETTINGS_read_string("seq_automation_grid_type", "bar");
+
+  return g_automation_grid;
+}
+
+void setSeqAutomationGridType(const_char *type){
+  if (!strcmp(type, "no") && !strcmp(type, "line") && !strcmp(type, "beat") && !strcmp(type, "bar")){
+    handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", or \"bar\". (\"%s\")", type);
+    return;
+  }
+
+  g_automation_grid = talloc_strdup(type);
+  SETTINGS_write_string("seq_automation_grid_type", g_automation_grid);
+}
+
+static const char *g_tempo_grid = NULL;
+
+const_char *getSeqTempoGridType(void){
+  if (g_tempo_grid==NULL)
+    g_tempo_grid = SETTINGS_read_string("seq_tempo_grid_type", "bar");
+
+  return g_tempo_grid;
+}
+
+void setSeqTempoGridType(const_char *type){
+  if (!strcmp(type, "no") && !strcmp(type, "line") && !strcmp(type, "beat") && !strcmp(type, "bar")){
+    handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", or \"bar\". (\"%s\")", type);
+    return;
+  }
+
+  g_tempo_grid = talloc_strdup(type);
+  SETTINGS_write_string("seq_tempo_grid_type", g_tempo_grid);
+}
+
+
+static const char *g_loop_grid = NULL;
+
+const_char *getSeqLoopGridType(void){
+  if (g_loop_grid==NULL)
+    g_loop_grid = SETTINGS_read_string("seq_loop_grid_type", "bar");
+
+  return g_loop_grid;
+}
+
+void setSeqLoopGridType(const_char *type){
+  if (!strcmp(type, "no") && !strcmp(type, "line") && !strcmp(type, "beat") && !strcmp(type, "bar")){
+    handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", or \"bar\". (\"%s\")", type);
+    return;
+  }
+
+  g_loop_grid = talloc_strdup(type);
+  SETTINGS_write_string("seq_loop_grid_type", g_loop_grid);
+}
+
+
 
 void insertSilenceToSeqtrack(int seqtracknum, int64_t pos, int64_t duration){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);

@@ -83,8 +83,8 @@ class Argument:
         elif self.type_string=="dyn_t":
             return "s7extra_make_dyn"
         else:
-            sys.stderr.write("Unknown type '"+type_string+"'")
-            raise "Unknown type '"+type_string+"'"
+            sys.stderr.write("Unknown type '"+self.type_string+"'")
+            raise "Unknown type '"+self.type_string+"'"
 
     def get_s7_get_type_function(self):
         if self.type_string=="int":
