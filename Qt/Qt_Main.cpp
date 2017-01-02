@@ -212,6 +212,11 @@ bool tevent_autorepeat = false;
 
 static bool g_up_downs[EVENT_DASMAX];
 
+static void set_mouse_keyswitches(void){
+  if (SEQUENCER_has_mouse_pointer())
+    tevent.keyswitch |= 
+}
+
 #ifdef FOR_WINDOWS
 
 // W_Keyboars.c updates tevent.keyswitch in it's own way. Has to be that way since we don't register the left windows key the normal way, since that causes the windows menu to appear.
