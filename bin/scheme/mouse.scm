@@ -3172,7 +3172,8 @@
                (new (get-seqtracknum X Y)))
            (cond ((and old (not new))
                   (set! *current-seqtrack-num* new))
-                 ((and new (not old))
+                 ((or (and new (not old))
+                      (not (morally-equal? new old)))
                   ;;(c-display "set-normal")
                   ;;(<ra> :set-normal-mouse-pointer)
                   (set! *current-seqtrack-num* new))
@@ -3315,7 +3316,7 @@
                                                          (begin
                                                            (<ra> :select-seqtrack seqtracknum)
                                                            (let ((seqblock-info (get-seqblock-info X Y)))
-                                                             ;;(c-display "get-existing " seqblock-info X Y)
+                                                             ;;(c-display "get-existing " seqblock-info X Y seqtracknum)
                                                              (and seqblock-info
                                                                   (let* ((seqtracknum (and seqblock-info (seqblock-info :seqtracknum)))
                                                                          (seqblocknum (and seqblock-info (seqblock-info :seqblocknum)))
