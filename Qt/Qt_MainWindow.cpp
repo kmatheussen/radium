@@ -871,7 +871,7 @@ const char *GFX_qVersion(void){
 
 
   
-void GFX_showChanceHelpWidget(void){
+void GFX_showChanceHelpWindow(void){
     static MyQMessageBox *msgBox = new MyQMessageBox;
         
     msgBox->setText("Chance text");
@@ -908,7 +908,7 @@ void GFX_showChanceHelpWidget(void){
 
   
 
-void GFX_showVelocityHelpWidget(void){
+void GFX_showVelocityHelpWindow(void){
     static MyQMessageBox *msgBox = new MyQMessageBox;
         
     msgBox->setText("Velocity text");
@@ -940,7 +940,7 @@ void GFX_showVelocityHelpWidget(void){
 }
 
   
-
+#if 0
 void GFX_showFXHelpWidget(void){
     static MyQMessageBox *msgBox = new MyQMessageBox;
         
@@ -974,11 +974,18 @@ void GFX_showFXHelpWidget(void){
      
     safeShowOrExec(msgBox);
 }
-
+#endif
 
 #include <QtWebKitWidgets/QWebView>
 #include <QtWebKitWidgets/QWebFrame>
 
+void GFX_showFXHelpWindow(void){
+  static QWebView *view = new QWebView; //(g_editor->main_window);
+  view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path("help/fxtext.html"))));
+  //view->load(QUrl(QString("file://") + OS_get_full_program_file_path("help/keybindings.html")));
+  safeShow(view);
+}
+ 
 void GFX_showMixerHelpWindow(void){
   static QWebView *view = new QWebView; //(g_editor->main_window);
   view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path("help/mixer.html"))));

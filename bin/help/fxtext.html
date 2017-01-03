@@ -1,0 +1,42 @@
+<html>
+<body bgcolor="#ffffff">
+<h1>FX text</h1>
+
+FX text is an alternative way to edit effects (automation) in the editor.
+Editing text is often quicker than editing effects graphically.
+<p>
+You enable FX text by right clicking a track header and select "FX text".
+
+
+<p>
+
+  FX text format: <b>xxt</b>, where
+  
+<p>
+  <blockquote>
+    <pre>
+<b>xx</b> = effect value. 0 = lowest value, ff = highest value. (hex format)
+ <b>t</b> = Whether to glide to the next effect or not (denoted by '|').
+    </pre>
+  </blockquote>
+<p>
+  
+  A special situation:
+  <blockquote>
+  Let's say you have an fx with two nodes.
+  The first node has the value '<b>6e|</b>', and the second node has the value '<b>28 </b>'.<br>
+  Q: Will the value 28 be sent to the instrument?<br>
+  A: Yes.
+  </blockquote>
+
+<p>
+
+  Tips:
+  <UL>
+    <LI>To quickly add an <ff> node, press 'G'.
+    <LI>To switch glide mode (i.e. add or remove the <b>|</b> character), press 'T'.
+  </UL>
+
+  
+</body>
+</html>

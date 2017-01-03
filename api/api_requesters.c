@@ -195,13 +195,13 @@ void showMixerHelpWindow(void){
 }
 
 void showChanceHelpWindow(void){
-  GFX_showChanceHelpWidget();
+  GFX_showChanceHelpWindow();
 }
 void showVelocityHelpWindow(void){
-  GFX_showVelocityHelpWidget();
+  GFX_showVelocityHelpWindow();
 }
 void showFXHelpWindow(void){
-  GFX_showFXHelpWidget();
+  GFX_showFXHelpWindow();
 }
 void showKeybindingsHelpWindow(void){
   GFX_showKeybindingsHelpWindow();
