@@ -178,6 +178,9 @@ class Parser:
         self.parts=[]
         self.parser=0
         self.outlinenum=0
+        self.mouseEditorKey = tuple_has_key(keysub,"MOUSE_EDITOR")
+        self.mouseMixerKey = tuple_has_key(keysub,"MOUSE_MIXER")
+        self.mouseSequencerKey = tuple_has_key(keysub,"MOUSE_SEQUENCER")
         
     def readLine(self):
         self.linenum+=1
@@ -365,7 +368,18 @@ class Parser:
     def getKeys(self):
         return self.keys[:]
 
+    def mouseInQualifiers(self):
+        if self.mouseEditorKey in self.qualifiers:
+            return True
+        elif self.mouseMixerKey in self.qualifiers:
+            return True
+        elif self.mouseSequencerKey in self.qualifiers:
+            return True
+        else:
+            return False;
+        
     def getQualifiers(self):
+        #print "qualifiers:", self.qualifiers
         return self.qualifiers[:]
 
     def getCommands(self):
@@ -375,8 +389,8 @@ class Parser:
         return self.linenum
         
 
-def putCode(keyhandles,parser,codestring):
-    keys=parser.getKeys()+parser.getQualifiers() 
+def putCode(keyhandles,parser,codestring,added_qualifiers):
+    keys=parser.getKeys()+parser.getQualifiers()+added_qualifiers
     firstkey=keys.pop(0)
     #print "adding \"%s\", line: %d, firstkey: %d, keys: %s" % (codestring,parser.getCurrLineNum(),firstkey,keys)
 
@@ -394,7 +408,7 @@ def putCode(keyhandles,parser,codestring):
 
 def printsak(file,keyhandles,parser,codestring):
     if 1:
-        keys=parser.getKeys()+parser.getQualifiers() 
+        keys=parser.getKeys()+parser.getQualifiers()
         firstkey=keys.pop(0)
         print "Putting code for '"+codestring+"', with key "+keysub[firstkey]
         if len(keys)>0:
@@ -404,7 +418,29 @@ def printsak(file,keyhandles,parser,codestring):
     print parser.getQualifiers()
     print
 
-    
+
+def addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, added_qualifiers):
+
+    if ccommand==False:
+        if putCode(keyhandles,parser,command, added_qualifiers)==False:
+            print "false"
+            return False
+    else:
+         # Optimization. It always works to call putCode instead. (that's what originally happened).
+        success,intercommands2=reader.getUnfoldedCall(commandname,ercommands)
+        if not success:
+            message = "Error at line %d: \"%s\"" % (parser.getCurrLineNum(),parser.getCurrLine())+"\n"+command+"\n"+str(intercommands2[0])
+            print message
+            radium.showMessage(message)
+            return False
+        else:
+            retstring=radium.ER_keyAdd(firstkey,commandname,keys+added_qualifiers,intercommands2);
+            if retstring!="OK":
+                message = "Error at line %d: \"%s\"" % (parser.getCurrLineNum(),parser.getCurrLine())+"\n"+str(intercommands2[0])
+                print message
+                radium.showMessage(message)
+                return False
+
 def start(keyhandles,filehandle,filehandle2,outfilehandle):
     keybindingsdict={} # Note: Latest E-radium version has just removed everything related to keybindingsdict from this function. Could be unnecessary.
     
@@ -450,6 +486,7 @@ def start(keyhandles,filehandle,filehandle2,outfilehandle):
                     commands[lokke-1]="%d" % (int(commands[lokke-1])/add)
                 lokke+=1
 
+            #print "commands", commands
             ercommands=commands[:]
                       
             intercommands=range(len(ercommands))
@@ -463,37 +500,36 @@ def start(keyhandles,filehandle,filehandle2,outfilehandle):
             command+=")"
             keys=parser.getKeys()+parser.getQualifiers() 
             firstkey=keys.pop(0)
-            ccommand=false
+            ccommand=False
             if dascommand[:3]=="ra.":
-                ccommand=true
+                ccommand=True
                 for lokke in range(len(ercommands)):
                     if ercommands[lokke][0]!="\"":
                         intercommands[lokke]=ercommands[lokke]
                     else:
-                        ccommand=false
+                        ccommand=False
+                        break
+
+                commandname = dascommand[3:] # Cut ".ra" from beginning of function name
+            else:
+                commandname = dascommand
+                
+            # Check that all arguments are integers. If not we can't go through C. (probably no point going through C anymore though, but it made a significant difference when using a 50MHz amiga).
+            if ccommand:
+                for arg in reader.protos.getProto(commandname).args:
+                    if arg.type_string != "int":
+                        ccommand=False
                         break
 
             keybindingsdict[command]=[map(lambda x:keysub[x],parser.getKeys()),map(lambda x:keysub[x],parser.getQualifiers())]
             #printsak(0,keyhandles,parser,command)
             
-            if ccommand==false:
-                if putCode(keyhandles,parser,command)==false:
-                    print "false"
-                    return False
+            if not parser.mouseInQualifiers():
+                addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, [parser.mouseEditorKey])
+                addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, [parser.mouseMixerKey])
+                addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, [parser.mouseSequencerKey])
             else:
-                success,intercommands2=reader.getUnfoldedCall(dascommand[3:],ercommands)
-                if not success:
-                    message = "Error at line %d: \"%s\"" % (parser.getCurrLineNum(),parser.getCurrLine())+"\n"+command+"\n"+str(intercommands2[0])
-                    print message
-                    radium.showMessage(message)
-                    return False
-                else:
-                    retstring=radium.ER_keyAdd(firstkey,dascommand[3:],keys,intercommands2);
-                    if retstring!="OK":
-                        message = "Error at line %d: \"%s\"" % (parser.getCurrLineNum(),parser.getCurrLine())+"\n"+str(intercommands2[0])
-                        print message
-                        radium.showMessage(message)
-                        return False
+                addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, [])
 
 
     try:
@@ -502,6 +538,8 @@ def start(keyhandles,filehandle,filehandle2,outfilehandle):
         print sys.exc_info()
         radium.showMessage("Couldn't create keybindings dict. ("+str(sys.exc_info())+")")
 
+    #sys.exit(1)
+    
     #print "BBBBBB",radium._keybindingsdict
     return True
 

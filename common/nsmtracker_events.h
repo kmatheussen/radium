@@ -57,6 +57,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define EVENT_RIGHTEXTRA1 (1<<EVENT_EXTRA_R) /*Amiga: Amiga, PC: "Meta"/Windows key */
 #define EVENT_UP2 (1<<EVENT_UP) /* Up key, i.e. key is released. */
 
+#define EVENT_MOUSE_SEQUENCER2 (1<<EVENT_MOUSE_SEQUENCER)
+#define EVENT_MOUSE_MIXER2 (1<<EVENT_MOUSE_MIXER)
+#define EVENT_MOUSE_EDITOR2 (1<<EVENT_MOUSE_EDITOR)
+
 #define NoSwitch(a) (a==0)
 
 #define LeftCtrl(a) (a&EVENT_LEFTCTRL)

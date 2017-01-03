@@ -1019,6 +1019,10 @@ void cutSelectedSeqblocks(void){
 }
 
 void pasteSeqblocks(int seqtracknum, int64_t abstime){
+  //printf(" pasteSeqblocks. seqtracknum: %d, abstime: %f\n", seqtracknum, (double)abstime);
+
+  //abort();
+  
   if (seqtracknum==-1)
     seqtracknum = getSeqtrackFromY(tevent.y);
 

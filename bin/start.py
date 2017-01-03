@@ -60,7 +60,9 @@ class KeyHandler:
             
 # keys is a constant!
     def exe(self,windownum,keys):
+        #print "keys",keys
         for lokke in range(len(self.keyslist)):
+            #print "keyslist[lokke]",self.keyslist[lokke]
             if self.keyslist[lokke]==keys:
                 try:
                     eval(self.handlers[lokke])

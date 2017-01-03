@@ -297,7 +297,8 @@ void cutSelectedMixerObjects(void){
 
 int64_t pasteMixerObjects(float x, float y){
   int64_t ret;
-  
+
+  //printf("   X: %f,    Y: %f\n", x,  y);
   Undo_Open();{
     ret = MW_paste(x, y);
   }Undo_Close();

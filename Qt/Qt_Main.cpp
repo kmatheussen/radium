@@ -213,14 +213,22 @@ bool tevent_autorepeat = false;
 static bool g_up_downs[EVENT_DASMAX];
 
 static void set_mouse_keyswitches(void){
+  if(ATOMIC_GET(is_starting_up)==true)
+    return;
+
   if (SEQUENCER_has_mouse_pointer())
-    tevent.keyswitch |= 
+    tevent.keyswitch |= EVENT_MOUSE_SEQUENCER2;
+  else if (MW_has_mouse_pointer())
+    tevent.keyswitch |= EVENT_MOUSE_MIXER2;
+  else
+    tevent.keyswitch |= EVENT_MOUSE_EDITOR2;
 }
 
 #ifdef FOR_WINDOWS
 
 // W_Keyboars.c updates tevent.keyswitch in it's own way. Has to be that way since we don't register the left windows key the normal way, since that causes the windows menu to appear.
 static void set_keyswitch(void){
+  set_mouse_keyswitches();
 }
 
 #else
@@ -249,6 +257,8 @@ static void set_keyswitch(void){
     }
   }
 
+  set_mouse_keyswitches();
+  
   //printf("keyswtich: %x\n",tevent.keyswitch);
 }
 #endif

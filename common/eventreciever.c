@@ -194,7 +194,7 @@ static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window
 	static bool isPyObjects=false;
 	int lokke;
 
-	int places[12];
+	int places[22];
 
 //	PyObject *Tuple_py;
 	PyObject *result,*arglist;
@@ -259,6 +259,18 @@ static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window
 				places[len]=EVENT_EXTRA_R;
 				len++;
 			}
+			if(a&EVENT_MOUSE_EDITOR2){
+                          places[len]=EVENT_MOUSE_EDITOR;
+                          len++;
+			}
+			if(a&EVENT_MOUSE_MIXER2){
+                          places[len]=EVENT_MOUSE_MIXER;
+                          len++;
+			}
+			if(a&EVENT_MOUSE_SEQUENCER2){
+                          places[len]=EVENT_MOUSE_SEQUENCER;
+                          len++;
+			}
 			//if(a&EVENT_AUTOREPEAT2){
 			//	places[len]=EVENT_AUTOREPEAT;
 			//	len++;
@@ -288,7 +300,7 @@ static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window
 				arglist=Py_BuildValue("llO",window->l.num,in_tevent->SubID,list);
 
 				/* Executing python-code */
-				//printf("EVALING!!!\n");
+				//printf("EVALING gotkeyfunc\n");
 				result=PyEval_CallObject(gotkeyFunc,arglist);
           
 				Py_DECREF(arglist);
