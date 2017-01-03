@@ -380,7 +380,8 @@ def putCode(keyhandles,parser,codestring):
     firstkey=keys.pop(0)
     #print "adding \"%s\", line: %d, firstkey: %d, keys: %s" % (codestring,parser.getCurrLineNum(),firstkey,keys)
 
-    if keyhandles[firstkey].addHandle(keys,compile(codestring,'<string>','single'))==false:
+    if keyhandles[firstkey].addHandle(keys,compile(codestring,'<string>','single'))==False:
+        # Note. This doesn't happen anymore. Redefining a keybinding is allowed.
         message = "Keybindings for command \"%s\" in line %d is already used" % (codestring , parser.getCurrLineNum())
         print message
         radium.showMessage(message)
@@ -478,7 +479,7 @@ def start(keyhandles,filehandle,filehandle2,outfilehandle):
             if ccommand==false:
                 if putCode(keyhandles,parser,command)==false:
                     print "false"
-                    return false
+                    return False
             else:
                 success,intercommands2=reader.getUnfoldedCall(dascommand[3:],ercommands)
                 if not success:

@@ -51,11 +51,12 @@ class KeyHandler:
     def addHandle(self,keys,handle):
         for lokke in range(len(self.keyslist)):
             if self.keyslist[lokke]==keys:
-                return false
+                print "NOTE. Overriding",self.keyslist,"keybinding."
+                #return False
 
-        self.keyslist.append(keys)
-        self.handlers.append(handle)
-        return true
+        self.keyslist.insert(0,keys)
+        self.handlers.insert(0,handle)
+        return True
             
 # keys is a constant!
     def exe(self,windownum,keys):
