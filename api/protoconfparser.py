@@ -18,7 +18,17 @@
 
 
 import sys,string,os
-from common import *
+
+true=1
+false=0
+
+def makeemptylist(len):
+    ret=[]
+    for lokke in range(len):
+        ret.append([])
+    return ret
+
+
         
 class Radium_hs:
     def __init__(self):

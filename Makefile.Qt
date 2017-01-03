@@ -337,7 +337,7 @@ OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7)
 
 BUILD_DEPENDENCIES = $(API)radium_proc.h buildtype.opt flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
 
-PROGRAM_MODULES = bin/radium bin/crashreporter bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py bin/radium_error_message bin/radium_progress_window bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so
+PROGRAM_MODULES = bin/radium bin/crashreporter bin/protoconfparser.py bin/protos.conf bin/X11_Qtstuff.py bin/radium_error_message bin/radium_progress_window bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
 
 all:
@@ -358,7 +358,7 @@ very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean:
-	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt flagopts.opt bin/crashreporter bin/crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp
+	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protos.conf bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt flagopts.opt bin/crashreporter bin/crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
 
 dependencies_ok: check_dependencies.sh #Makefile
@@ -518,19 +518,10 @@ pluginhost/Builds/Linux/build/libMyPluginHost.a: audio/Juce_plugins.cpp midi/mid
 $(CD)keyboard_sub_ids.h: bin/generate_keyboard_sub_ids.py bin/keysubids.py
 	cd bin && $(PYTHONEXE) generate_keyboard_sub_ids.py >../$(CD)keyboard_sub_ids.h
 
-bin/protoconfparser.py: $(API)protoconfparser.py
-	echo "#This file is copied from ../api/ during make-process" >bin/protoconfparser.py
-	cat $(API)protoconfparser.py >>bin/protoconfparser.py
-
 bin/protos.conf: $(API)protos.conf
 	echo "#Warning! Strange things may happen if this file is changed." >bin/protos.conf
 	echo "#The file is copied from ../python/ during make-process." >>bin/protos.conf
 	cat $(API)protos.conf >>bin/protos.conf
-
-bin/common.py: $(API)common.py
-	echo "#This file is copied from ../python/ during make-process." >bin/common.py
-	cat $(API)common.py >>bin/common.py
-
 
 bin/X11_Qtstuff.py: X11/X11_Qtstuff.py Makefile
 	rm -f bin/X11_Qtstuff.py
@@ -1469,7 +1460,7 @@ radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c $(API)radium_proc.h
 	$(CC)  $(API)radium_wrap.c $(OPT) -w
 
 
-$(API)radium_wrap.c: $(BUILD_DEPENDENCIES) $(API)protos.conf $(API)protoconfparser.py $(API)/radium_wrap/radium_wrap_1.c $(API)/radium_wrap/radium_wrap_3.c $(API)makeradiumwrap_c.sh $(API)makeradiumwrap_c.sh
+$(API)radium_wrap.c: $(BUILD_DEPENDENCIES) $(API)protos.conf bin/protoconfparser.py $(API)/radium_wrap/radium_wrap_1.c $(API)/radium_wrap/radium_wrap_3.c $(API)makeradiumwrap_c.sh $(API)makeradiumwrap_c.sh
 	cd $(API) ; bash makeradiumwrap_c.sh $(PYTHONEXE) ; cd ..
 
 # # The following two lines can be uses instead of the two previous.
@@ -1485,17 +1476,17 @@ api_support.o:  $(BUILD_DEPENDENCIES)  $(API)api_support.c
 wrapfunclist.o:  $(BUILD_DEPENDENCIES) $(API)wrapfunclist.c
 	$(CC) $(API)wrapfunclist.c $(OPT)
 
-$(API)wrapfunclist.c: $(BUILD_DEPENDENCIES) $(API)protos.conf $(API)protoconfparser.py
-	@echo "$(PYTHONEXE) protoconfparser.py wrapfunclist.c"
-	cd $(API) ; $(PYTHONEXE) protoconfparser.py wrapfunclist.c ; cd ..
+$(API)wrapfunclist.c: $(BUILD_DEPENDENCIES) $(API)protos.conf bin/protoconfparser.py
+	@echo "$(PYTHONEXE) ../bin/protoconfparser.py wrapfunclist.c"
+	cd $(API) ; $(PYTHONEXE) ../bin/protoconfparser.py wrapfunclist.c ; cd ..
 
-$(API)radium.i: $(BUILD_DEPENDENCIES) $(API)protos.conf $(API)protoconfparser.py
-	@echo "$(PYTHONEXE) protoconfparser.py radium.i"
-	cd $(API) ; $(PYTHONEXE) protoconfparser.py radium.i ; cd ..
+$(API)radium.i: $(BUILD_DEPENDENCIES) $(API)protos.conf bin/protoconfparser.py
+	@echo "$(PYTHONEXE) ../bin/protoconfparser.py radium.i"
+	cd $(API) ; $(PYTHONEXE) ../bin/protoconfparser.py radium.i ; cd ..
 
-$(API)radium_proc.h: $(API)protos.conf $(API)protoconfparser.py
-	@echo "$(PYTHONEXE) protoconfparser.py radium_proc.h"
-	cd $(API) ; $(PYTHONEXE) protoconfparser.py radium_proc.h ; cd ..
+$(API)radium_proc.h: $(API)protos.conf bin/protoconfparser.py
+	@echo "$(PYTHONEXE) ../bin/protoconfparser.py radium_proc.h"
+	cd $(API) ; $(PYTHONEXE) ../bin/protoconfparser.py radium_proc.h ; cd ..
 
 gfx_request.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_request.c
 	$(CC)  $(CD)gfx_request.c $(OPT)
@@ -2095,8 +2086,8 @@ http_parser.o: bin/packages/qhttpserver-master/http-parser/http_parser.c
 radium_s7_wrap.o: api/radium_s7_wrap.c $(API)radium_proc.h
 	$(CC) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7
 
-api/radium_s7_wrap.c: api/protoconfparser.py api/protos.conf
-	cd api && $(PYTHONEXE) protoconfparser.py radium_s7_wrap.c >radium_s7_wrap.c
+api/radium_s7_wrap.c: bin/protoconfparser.py api/protos.conf
+	cd api && $(PYTHONEXE) ../bin/protoconfparser.py radium_s7_wrap.c >radium_s7_wrap.c
 
 #bin/zita_rev_ladspa.so: audio/zita_rev.dsp
 #	cd audio && $(FAUST) -a ladspa.cpp -cn zita_rev_radium zita_rev.dsp >zita_rev_ladspa.cpp

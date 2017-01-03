@@ -59,7 +59,16 @@ RAO_SetKeyOctave(24)
 
 import sys,string,radium,protoconfparser
 from types import *
-from common import *
+
+
+true=1
+false=0
+
+def makeemptylist(len):
+    ret=[]
+    for lokke in range(len):
+        ret.append([])
+    return ret
 
 
 #import profile

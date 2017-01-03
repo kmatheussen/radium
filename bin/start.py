@@ -38,7 +38,16 @@ import traceback
 import radium,keybindingsparser
 #import keybindingsparser
 
-from common import *
+
+true=1
+false=0
+
+def makeemptylist(len):
+    ret=[]
+    for lokke in range(len):
+        ret.append([])
+    return ret
+
 
 ra=radium
 
