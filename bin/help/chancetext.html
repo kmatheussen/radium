@@ -1,0 +1,39 @@
+<html>
+<body bgcolor="#ffffff">
+<h1>Chance text</h1>
+
+Chance text lets you set the probability for this note or pitch to play.
+
+<p>
+
+  Chance text format: <b>xx</b>, where
+  
+<p>
+  <blockquote>
+    <pre>
+0 = lowest velocity, ff = highest velocity. (hex format)
+    </pre>
+  </blockquote>
+<p>
+
+  Examples:
+  <UL>
+    <LI>xx = 80: 50% chance of this note playing
+    <LI>xx =  0: 0% chance of this note playing
+    <LI>xx = ff: 255/256 chance of this note playing
+  </UL>
+
+<p>
+
+  To remove a chance text (to make sure the note is always played), press DEL.
+<p>
+  
+  To control the chance of individual voices in the note duplicator,
+  you can automate the <b>System Chance 1</b>, <b>System Chance 2</b>, etc. effects instead.
+  (Note that the value <b>ff</b> is interpreted as 256 when automating the chance
+  of individual voices in the note duplicator so you don't have to worry about
+  the voices not always playing.)
+                                 
+  
+</body>
+</html>

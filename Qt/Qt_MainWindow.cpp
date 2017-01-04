@@ -870,7 +870,7 @@ const char *GFX_qVersion(void){
 }
 
 
-  
+#if 0  
 void GFX_showChanceHelpWindow(void){
     static MyQMessageBox *msgBox = new MyQMessageBox;
         
@@ -905,46 +905,19 @@ void GFX_showChanceHelpWindow(void){
      
     safeShowOrExec(msgBox);
 }
-
-  
-#if 0
-void GFX_showVelocityHelpWindow(void){
-    static MyQMessageBox *msgBox = new MyQMessageBox;
-        
-    msgBox->setText("Velocity text");
-    msgBox->setInformativeText(
-                               QString(talloc_format("<pre><span class=\"inner-pre\" style=\"font-size: %dpx\">", QApplication::font().pointSize()*2)) +
-                               "Velocity text is an alternative way to edit the velocities of a note.\n"
-                               "Editing text is often quicker than editing velocities graphically.\n"
-                               "\n"
-                               "Key bindings:\n"
-                               "\n"
-                               "  Left Alt  + Y: Turn on/off velocity text for track\n"
-                               "  Left Ctrl + Y: Turn on/off velocity text for all tracks in block\n"
-                               "\n"
-                               "Velocity text format: \"xxt\"\n"
-                               "\n"
-                               "  xx = Velocity value. 0 = lowest velocity, ff = highest velocity. (hex format)\n"
-                               "   t = Whether to glide to the next velocity or not.\n"
-                               "\n"
-                               "  Tips: -To quickly add an \"ff\" velocity, press 'G'.\n"
-                               "        -To switch glide mode, press 'T'.\n"
-                               "\n"                               
-                               "</scan></pre>"                               
-                               );
-    msgBox->setStandardButtons(QMessageBox::Ok);
-
-    msgBox->setModal(false);
-     
-    safeShowOrExec(msgBox);
-}
 #endif
-  
 
 
 #include <QtWebKitWidgets/QWebView>
 #include <QtWebKitWidgets/QWebFrame>
 
+void GFX_showChanceHelpWindow(void){
+  static QWebView *view = new QWebView; //(g_editor->main_window);
+  view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path("help/chancetext.html"))));
+  //view->load(QUrl(QString("file://") + OS_get_full_program_file_path("help/keybindings.html")));
+  safeShow(view);
+}
+ 
 void GFX_showVelocityHelpWindow(void){
   static QWebView *view = new QWebView; //(g_editor->main_window);
   view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path("help/velocitytext.html"))));
