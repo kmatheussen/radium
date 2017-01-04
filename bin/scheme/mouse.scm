@@ -2952,7 +2952,7 @@
                                                                (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
                                            (define PositionTime (if (<ra> :ctrl-pressed)
                                                                     Time
-                                                                    (<ra> :get-seq-gridded-time (floor Value) 0 (<ra> :get-seq-tempo-grid-type))))
+                                                                    (<ra> :get-seq-gridded-time (floor Time) 0 (<ra> :get-seq-tempo-grid-type))))
                                            (define TempoMul (get-seqtempo-value Y))
                                            (define Num (<ra> :add-seqtemponode PositionTime TempoMul *logtype-linear*))
                                            (if (= -1 Num)
@@ -3819,7 +3819,7 @@
                                                                       Time
                                                                       (<ra> :get-seq-gridded-time (floor Time) 0 (<ra> :get-seq-automation-grid-type))))
                                              (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
-                                             (define Num (<ra> :add-seq-automation-node PositionTime Value *logtype-linear* automationnum seqtracknum))
+                                             (define Num (<ra> :add-seq-automation-node (floor PositionTime) Value *logtype-linear* automationnum seqtracknum))
                                              (if (= -1 Num)
                                                #f
                                                (begin

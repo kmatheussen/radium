@@ -712,7 +712,7 @@ static const char *g_automation_grid = NULL;
 
 const_char *getSeqAutomationGridType(void){
   if (g_automation_grid==NULL)
-    g_automation_grid = SETTINGS_read_string("seq_automation_grid_type", "bar");
+    g_automation_grid = SETTINGS_read_string("seq_automation_grid_type", "beat");
 
   return g_automation_grid;
 }
@@ -731,7 +731,7 @@ static const char *g_tempo_grid = NULL;
 
 const_char *getSeqTempoGridType(void){
   if (g_tempo_grid==NULL)
-    g_tempo_grid = SETTINGS_read_string("seq_tempo_grid_type", "bar");
+    g_tempo_grid = SETTINGS_read_string("seq_tempo_grid_type", "beat");
 
   return g_tempo_grid;
 }
@@ -751,7 +751,7 @@ static const char *g_loop_grid = NULL;
 
 const_char *getSeqLoopGridType(void){
   if (g_loop_grid==NULL)
-    g_loop_grid = SETTINGS_read_string("seq_loop_grid_type", "bar");
+    g_loop_grid = SETTINGS_read_string("seq_loop_grid_type", "beat");
 
   return g_loop_grid;
 }
