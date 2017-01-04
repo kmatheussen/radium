@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>5</number>
+      <number>7</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -189,7 +189,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximumSize">
              <size>
-              <width>200</width>
+              <width>300</width>
               <height>16777215</height>
              </size>
             </property>
@@ -273,7 +273,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximumSize">
              <size>
-              <width>200</width>
+              <width>300</width>
               <height>16777215</height>
              </size>
             </property>
@@ -381,7 +381,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximumSize">
              <size>
-              <width>200</width>
+              <width>300</width>
               <height>16777215</height>
              </size>
             </property>
@@ -415,7 +415,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
           <item row="0" column="3">
            <widget class="QLabel" name="label_10">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;This is currently an experimental feature. Strange behavor has been observed.&lt;br/&gt;The feature improves graphical performance by drawing in a separate process.&lt;br/&gt;Note that this mode might make the program crash, depending on&lt;br/&gt;which GFX driver you are using. If you are using an NVIDIA card, or if you&lt;br/&gt;are creating a video, and you are not using Windows, it could be a good idea&lt;br/&gt; to enable this option.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Also note that unless you have at least three CPU cores, enabling&lt;br/&gt;&amp;quot;Draw in separate process&amp;quot; could lower graphical performance instead of&lt;br/&gt;improving it.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;This feature improves graphical performance by drawing in a separate process.&lt;br&gt;Beware that on Windows, this option very often destroys text rendering in the&lt;br&gt;editor (you notice this immediately after restarting). Also note that unless you&lt;br&gt; have at least two CPU cores, enabling &amp;quot;Draw in separate process&amp;quot; could lower&lt;br&gt; graphical performance instead of improving it. If you have more than one CPU&lt;br&gt;core, and text rendering is not destroyed, you should enable this option.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -461,7 +461,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximumSize">
              <size>
-              <width>200</width>
+              <width>300</width>
               <height>16777215</height>
              </size>
             </property>
