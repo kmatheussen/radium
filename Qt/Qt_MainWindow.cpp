@@ -907,7 +907,7 @@ void GFX_showChanceHelpWindow(void){
 }
 
   
-
+#if 0
 void GFX_showVelocityHelpWindow(void){
     static MyQMessageBox *msgBox = new MyQMessageBox;
         
@@ -938,48 +938,20 @@ void GFX_showVelocityHelpWindow(void){
      
     safeShowOrExec(msgBox);
 }
-
-  
-#if 0
-void GFX_showFXHelpWidget(void){
-    static MyQMessageBox *msgBox = new MyQMessageBox;
-        
-    msgBox->setText("FX text");
-    msgBox->setInformativeText(
-                               QString(talloc_format("<pre><span class=\"inner-pre\" style=\"font-size: %dpx\">", QApplication::font().pointSize()*2)) +
-                               "FX text is an alternative way to edit effects.\n"
-                               "Editing text is often quicker than editing effects graphically.\n"
-                               "\n"
-                               "FX text format: \"xxt\"\n"
-                               "\n"
-                               "  xx = effect value. 0 = lowest value, ff = highest value. (hex format)\n"
-                               "   t = Whether to glide to the next effect or not (denoted by '|').\n"
-                               "\n"
-                               "A special situation:\n"
-                               "  Let's say you have an fx with two nodes.\n"
-                               "  The first node has the value '6e|', and the second node has the value '28 '.\n"
-                               "  Q: Will the value 28 be sent to the instrument?\n"
-                               "  A: Yes.\n"
-                               "\n"
-                               "\n"
-                               "Tips:\n"
-                               "  -To quickly add an \"ff\" velocity, press 'G'.\n"
-                               "  -To switch glide mode, press 'T'.\n"
-                               "\n"                               
-                               "</scan></pre>"                               
-                               );
-    msgBox->setStandardButtons(QMessageBox::Ok);
-
-    msgBox->setModal(false);
-     
-    safeShowOrExec(msgBox);
-}
 #endif
+  
 
 
 #include <QtWebKitWidgets/QWebView>
 #include <QtWebKitWidgets/QWebFrame>
 
+void GFX_showVelocityHelpWindow(void){
+  static QWebView *view = new QWebView; //(g_editor->main_window);
+  view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path("help/velocitytext.html"))));
+  //view->load(QUrl(QString("file://") + OS_get_full_program_file_path("help/keybindings.html")));
+  safeShow(view);
+}
+ 
 void GFX_showFXHelpWindow(void){
   static QWebView *view = new QWebView; //(g_editor->main_window);
   view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path("help/fxtext.html"))));
