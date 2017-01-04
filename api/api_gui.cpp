@@ -143,6 +143,18 @@ static QVector<Gui*> g_guis;
       g_guis[_gui_num] = NULL;
     }
 
+    virtual void drawLine(int64_t color, float x1, float y1, float x2, float y2, float width){
+      handleError("gui %d doesn't have drawLine method.", _gui_num);
+    }
+
+    virtual void filledBox(int64_t color, float x1, float y1, float x2, float y2){
+      handleError("gui %d doesn't have filledBox method.", _gui_num);
+    }
+
+    virtual void drawText(int64_t color, const_char *text, float x1, float y1, float x2, float y2){
+      handleError("gui %d doesn't have drawText method.", _gui_num);
+    }
+    
     virtual void setGuiValue(dyn_t val){
       {
         QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget);
@@ -354,6 +366,117 @@ static QVector<Gui*> g_guis;
   };
   
 
+  struct Canvas : QWidget, Gui{
+    Q_OBJECT;
+
+    QImage *image = NULL;
+    QPainter *image_painter = NULL;
+
+  public:
+    
+    Canvas(int width, int height)
+      : Gui(this)
+    {
+      setSize(width, height);
+
+      setAttribute(Qt::WA_OpaquePaintEvent);
+    }
+
+    ~Canvas(){
+      delete image_painter;
+      delete image;
+    }
+    
+    void setSize(int width, int height){
+      delete image_painter;
+      delete image;
+
+      image = new QImage(width, height, QImage::Format_ARGB32);
+      image_painter = new QPainter(image);
+
+      image_painter->setRenderHints(QPainter::Antialiasing,true);
+
+      image_painter->fillRect(QRect(0,0,width,height), get_qcolor(LOW_BACKGROUND_COLOR_NUM));
+      setFixedSize(width, height);
+    }
+
+    void paintEvent ( QPaintEvent * ev ) override {
+      QPainter p(this);
+
+      p.drawImage(ev->rect(), *image, ev->rect());
+    }
+
+    QColor getQColor(int64_t color){
+#if QT_VERSION >= 0x056000
+      return QColor(QRgba64::fromRgba64(color));
+#else
+      QColor col(color);
+      col.setAlpha(color>>24);
+      return col;
+#endif
+    }
+
+    QPen getPen(int64_t color){
+      QPen pen(getQColor(color));
+      
+      return pen;
+    }
+
+    void setPen(int64_t color){
+      image_painter->setPen(getQColor(color));
+    }
+
+    void myupdate(float x1, float y1, float x2, float y2, float extra=0.0f){
+      float min_x = R_MIN(x1, x2) - extra;
+      float max_x = R_MAX(x1, x2) + extra;
+      float min_y = R_MIN(y1, y2) - extra;
+      float max_y = R_MAX(y1, y2) + extra;
+      update(min_x, min_y, max_x-min_x, max_y-min_y);
+    }
+
+    void drawLine(int64_t color, float x1, float y1, float x2, float y2, float width) override {
+      QLineF line(x1, y1, x2, y2);
+
+      QPen pen = getPen(color);
+      pen.setWidthF(width);
+      image_painter->setPen(pen);
+      
+      //printf("Color: %x, %s\n", (unsigned int)color, pen.color().name(QColor::HexArgb).toUtf8().constData());
+
+      image_painter->drawLine(line);
+
+      myupdate(x1, y1, x2, y2, width);
+    }
+
+    void filledBox(int64_t color, float x1, float y1, float x2, float y2) override {
+      QRectF rect(x1, y1, x2-x1, y2-y1);
+
+      QColor qcolor = getQColor(color);
+
+      //QPen pen = image_rect.pen();
+
+      image_painter->setPen(Qt::NoPen);
+      image_painter->setBrush(qcolor);
+      image_painter->drawRect(rect);
+      image_painter->setBrush(Qt::NoBrush);
+      //image_painter->setPen(pen);
+
+      myupdate(x1, y1, x2, y2);
+    }
+
+    void drawText(int64_t color, const_char *text, float x1, float y1, float x2, float y2) override {
+      QRectF rect(x1, y1, x2-x1, y2-y1);
+
+      setPen(color);
+
+      image_painter->drawText(rect, text);
+
+      myupdate(x1, y1, x2, y2);
+    }
+
+  };
+
+  
   struct PushButton : QPushButton, Gui{
     Q_OBJECT;
     
@@ -770,7 +893,6 @@ void gui_addCallback(int64_t guinum, func_t* func){
   gui->addGuiCallback(func);
 }
 
-
 int64_t gui_button(const_char *text){
   return (new PushButton(text))->get_gui_num();
 }
@@ -935,6 +1057,54 @@ void gui_close(int64_t guinum){
     return;
 
   gui->_widget->close();
+}
+
+int gui_width(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return 0;
+
+  return gui->_widget->width();
+}
+
+int gui_height(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return 0;
+
+  return gui->_widget->height();
+}
+
+
+// canvas
+///////////
+
+int64_t gui_canvas(int width, int height){
+  return (new Canvas(width, height))->get_gui_num();
+}
+
+void gui_drawLine(int64_t guinum, int64_t color, float x1, float y1, float x2, float y2, float width){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->drawLine(color, x1, y1, x2, y2, width);
+}
+
+void gui_filledBox(int64_t guinum, int64_t color, float x1, float y1, float x2, float y2){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->filledBox(color, x1, y1, x2, y2);
+}
+
+void gui_drawText(int64_t guinum, int64_t color, const_char *text, float x1, float y1, float x2, float y2) {
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->drawText(color, text, x1, y1, x2, y2);
 }
 
 

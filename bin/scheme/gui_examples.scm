@@ -189,3 +189,19 @@
 
 (<gui> :show line)
 
+(define canvas (<gui> :canvas 200 200))
+(<gui> :show canvas)
+
+(<gui> :draw-line canvas #xff0000 5 10 100 150 2.0)
+(<gui> :draw-line canvas #x00ff00 59 60 150 190 2.0)
+(<gui> :draw-line canvas #x80ff0060 159 60 150 190 2.0)
+(<gui> :draw-line canvas #xffff0060 59 60 150 190 2.0)
+(<gui> :draw-line canvas #x00ff0060 9 60 150 190 2.0)
+
+(<gui> :draw-line canvas  #x80ff0000 30 60 150 190 40.0)
+(<gui> :filled-box canvas #x800000ff 20 20 180 190)
+
+(<gui> :draw-text canvas #x80000050 "hello" 50 50 100 120)
+
+(begin
+  #xf)
