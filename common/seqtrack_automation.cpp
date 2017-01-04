@@ -141,7 +141,7 @@ struct SeqtrackAutomation {
   
 private:
   
-  struct SeqTrack *_seqtrack; // Not used, but can be practical when debugging.
+  //struct SeqTrack *_seqtrack; // Not used, but can be practical when debugging.
 
 #if !defined(RELEASE)
   int magic = 918345; // Check that we are freeing the correct data.
@@ -153,7 +153,7 @@ public:
   radium::Vector<Automation*> _automations;
   
   SeqtrackAutomation(struct SeqTrack *seqtrack, const hash_t *state = NULL)
-    :_seqtrack(seqtrack)
+  //:_seqtrack(seqtrack)
   {
     if (state != NULL) {
       int size = HASH_get_array_size(state);
@@ -292,16 +292,16 @@ double SEQTRACK_AUTOMATION_get_seqtime(struct SeqtrackAutomation *seqtrackautoma
 }
 
 int SEQTRACK_AUTOMATION_get_logtype(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum){
-  R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0.5);
+  R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0);
 
   struct Automation *automation = seqtrackautomation->_automations[automationnum];
-  R_ASSERT_RETURN_IF_FALSE2(automation->islegalnodenum(nodenum), 0.5);
+  R_ASSERT_RETURN_IF_FALSE2(automation->islegalnodenum(nodenum), 0);
 
   return automation->automation.at(nodenum).logtype;
 }
 
 int SEQTRACK_AUTOMATION_get_num_nodes(struct SeqtrackAutomation *seqtrackautomation, int automationnum){
-  R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0.5);
+  R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0);
 
   struct Automation *automation = seqtrackautomation->_automations[automationnum];
   return automation->automation.size();
@@ -382,8 +382,11 @@ void SEQTRACK_AUTOMATION_set_curr_automation(struct SeqtrackAutomation *seqtrack
 
 void SEQTRACK_AUTOMATION_cancel_curr_automation(void){
   ALL_SEQTRACKS_FOR_EACH(){
-    for(auto *automation : seqtrack->seqtrackautomation->_automations)
+    R_ASSERT_RETURN_IF_FALSE(seqtrack->seqtrackautomation != NULL);
+    for(auto *automation : seqtrack->seqtrackautomation->_automations){
+      R_ASSERT_RETURN_IF_FALSE(automation!=NULL);
       automation->automation.set_do_paint_nodes(false);
+    }
   }END_ALL_SEQTRACKS_FOR_EACH;
 
   SEQUENCER_update();
@@ -493,11 +496,16 @@ void RT_SEQTRACK_AUTOMATION_called_per_block(struct SeqTrack *seqtrack){
 
 }
 
+denne blir kalt når radium::pause blir kalt.
 void RT_SEQTRACK_AUTOMATION_called_when_player_stopped(void){
   ALL_SEQTRACKS_FOR_EACH(){
 
-    for(auto *automation : seqtrack->seqtrackautomation->_automations)
+    R_ASSERT_RETURN_IF_FALSE(seqtrack->seqtrackautomation != NULL);
+    
+    for(auto *automation : seqtrack->seqtrackautomation->_automations){
+      R_ASSERT_RETURN_IF_FALSE(automation!=NULL);
       automation->last_value = -1.0;
+    }
 
   }END_ALL_SEQTRACKS_FOR_EACH;
 }
