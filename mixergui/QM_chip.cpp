@@ -1316,6 +1316,9 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
 bool Chip::myMouseDoubleClickEvent (float x, float y) {
 
+  if(showInstrumentWidgetWhenDoubleClickingSoundObject())
+    GFX_InstrumentWindowToFront();
+  
   if(SP_get_plugin(_sound_producer)->type->show_gui != NULL) {
     
     int x1,y1,x2,y2;

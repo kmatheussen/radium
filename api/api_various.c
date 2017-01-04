@@ -90,6 +90,24 @@ void setMixerRotate(float rotate){
   MW_set_rotate(rotate);
 }
 
+static bool g_showInstrumentWidgetWhenDoubleClickingSoundObject = true;
+
+bool showInstrumentWidgetWhenDoubleClickingSoundObject(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_showInstrumentWidgetWhenDoubleClickingSoundObject = SETTINGS_read_bool("show_instrument_widget_when_double_clicking_sound_object", true);
+    has_inited = true;
+  }
+
+  return g_showInstrumentWidgetWhenDoubleClickingSoundObject;
+}
+
+void setShowInstrumentWidgetWhenDoubleClickingSoundObject(bool val){
+  g_showInstrumentWidgetWhenDoubleClickingSoundObject = val;
+  SETTINGS_write_bool("show_instrument_widget_when_double_clicking_sound_object", val);
+}
+
 
 void maximizeEditorWindow(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;

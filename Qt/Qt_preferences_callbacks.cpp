@@ -409,14 +409,9 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     
     // Various
     {
-            
-      smooth_sequencer_scrolling->setChecked(smoothSequencerScrollingEnabled());
 
-      pauseRenderingOnoff->setChecked(GL_get_pause_rendering_on_off());
-      showKeyCodesOnoff->setChecked(false);
-
-      colorTracksOnoff->setChecked(GL_get_colored_tracks());
-
+      show_instrument_widget_when_double_clicking->setChecked(showInstrumentWidgetWhenDoubleClickingSoundObject());
+        
       gcOnOff->setChecked(true);
 
       bool incremental_gc = SETTINGS_read_bool("incremental_gc",false);
@@ -456,6 +451,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     
     // Editor
     {
+      pauseRenderingOnoff->setChecked(GL_get_pause_rendering_on_off());
+      showKeyCodesOnoff->setChecked(false);
+
+      colorTracksOnoff->setChecked(GL_get_colored_tracks());
+
       scrollplay_onoff->setChecked(doScrollPlay());
 
       multiplyscrollbutton->setChecked(doScrollEditLines());
@@ -474,6 +474,9 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
     // Sequencer
     {
+
+      smooth_sequencer_scrolling->setChecked(smoothSequencerScrollingEnabled());
+
       if (!strcmp(getSeqBlockGridType(), "no"))
         block_no_grid->setChecked(true);
       else if (!strcmp(getSeqBlockGridType(), "line"))
@@ -645,6 +648,11 @@ public slots:
   void on_colorTracksOnoff_toggled(bool val){
     if (_initing==false)
       GL_set_colored_tracks(val);
+  }
+  
+  void on_show_instrument_widget_when_double_clicking_toggled(bool val){
+    if (_initing==false)
+      setShowInstrumentWidgetWhenDoubleClickingSoundObject(val);
   }
 
   void on_gcOnOff_toggled(bool val){
