@@ -212,16 +212,23 @@ bool tevent_autorepeat = false;
 
 static bool g_up_downs[EVENT_DASMAX];
 
+extern "C" uint32_t add_mouse_keyswitches(uint32_t keyswitch);
+uint32_t add_mouse_keyswitches(uint32_t keyswitch){
+  if (SEQUENCER_has_mouse_pointer())
+    keyswitch |= EVENT_MOUSE_SEQUENCER2;
+  else if (MW_has_mouse_pointer())
+    keyswitch |= EVENT_MOUSE_MIXER2;
+  else
+    keyswitch |= EVENT_MOUSE_EDITOR2;
+
+  return keyswitch;
+}
+
 static void set_mouse_keyswitches(void){
   if(ATOMIC_GET(is_starting_up)==true)
     return;
-
-  if (SEQUENCER_has_mouse_pointer())
-    tevent.keyswitch |= EVENT_MOUSE_SEQUENCER2;
-  else if (MW_has_mouse_pointer())
-    tevent.keyswitch |= EVENT_MOUSE_MIXER2;
-  else
-    tevent.keyswitch |= EVENT_MOUSE_EDITOR2;
+  
+  tevent.keyswitch = add_mouse_keyswitches(tevent.keyswitch);
 }
 
 #ifdef FOR_WINDOWS
