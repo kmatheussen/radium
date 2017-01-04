@@ -976,6 +976,7 @@ void GFX_showFXHelpWidget(void){
 }
 #endif
 
+
 #include <QtWebKitWidgets/QWebView>
 #include <QtWebKitWidgets/QWebFrame>
 

@@ -185,8 +185,8 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
 
   if (subtrack < 0 || subtrack >= WTRACK_num_non_polyphonic_subtracks(wtrack)) // subtrack -1 = note text
     return false;
-
-  if (tevent.keyswitch != 0)
+  
+  if (tevent.keyswitch != 0 && tevent.keyswitch!=EVENT_MOUSE_SEQUENCER2 && tevent.keyswitch!=EVENT_MOUSE_MIXER2 && tevent.keyswitch!=EVENT_MOUSE_EDITOR2)
     return false;
   
   if (get_val_from_key(key)==-1)
