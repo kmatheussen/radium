@@ -466,7 +466,7 @@ def start(keyhandles,filehandle,filehandle2,outfilehandle):
                 outfilehandle.write(parser.getCurrLine()+"\n")
             if parser.getLineType()=="INSERTCODELAST":
                 outfilehandle.write("\treturn\n")
-                if putCode(keyhandles,parser,"eventreceiverparser_generated.keycodedef%d()" % defnum)==false:
+                if putCode(keyhandles,parser,"eventreceiverparser_generated.keycodedef%d()" % defnum, [])==false:
                     return False
                 defnum+=1
             if parser.getLineType()=="INSERTCLEANCODE":
