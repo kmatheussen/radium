@@ -32,6 +32,9 @@ extern "C" {
 
   void s7extra_callFunc2_void_int_charpointer(const char *funcname, int64_t arg1, const char* arg2);
 
+  void s7extra_callFunc_void_int_float_float(func_t *func, int64_t arg1, float arg2, float arg3);
+  void s7extra_callFunc2_void_int_float_float(const char *funcname, int64_t arg1, float arg2, float arg3);
+
   void s7extra_callFunc_void_charpointer(func_t *func, const char* arg1);
 
   void s7extra_protect(void *v);
