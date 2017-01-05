@@ -732,7 +732,7 @@ public:
 
     // Current track border and non-current track shadowing
     {
-      if (_seqtrack==(struct SeqTrack*)root->song->seqtracks.elements[root->song->curr_seqtracknum]){
+      if (_seqtrack==(struct SeqTrack*)root->song->seqtracks.elements[ATOMIC_GET(root->song->curr_seqtracknum)]){
         if (root->song->seqtracks.num_elements > 1){
           QPen pen(get_qcolor(SEQUENCER_CURRTRACK_BORDER_COLOR_NUM));
           //pen.setWidthF(1);

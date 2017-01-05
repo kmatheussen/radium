@@ -2022,10 +2022,10 @@ struct Song{
 	struct Tracker_Windows *tracker_windows;
 	struct Blocks *blocks;
 
-        struct SeqTrack block_seqtrack; // Used when playing block.
+        struct SeqTrack *block_seqtrack; // Used when playing block.
 
         struct Looping looping;
-        int curr_seqtracknum;
+        DEFINE_ATOMIC(int, curr_seqtracknum);
         vector_t seqtracks; // New playlist. Player must both be stopped and locked when modifying this variable, or any of the contents.
 
 	NInt num_blocks;

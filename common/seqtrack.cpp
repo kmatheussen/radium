@@ -907,8 +907,9 @@ void SEQUENCER_delete_seqtrack(int pos){
     
     VECTOR_delete(&root->song->seqtracks, pos);
 
-    if (root->song->curr_seqtracknum >= root->song->seqtracks.num_elements)
-      root->song->curr_seqtracknum = root->song->seqtracks.num_elements -1;
+    int curr_seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);
+    if (curr_seqtracknum >= root->song->seqtracks.num_elements)
+      ATOMIC_SET(root->song->curr_seqtracknum, root->song->seqtracks.num_elements -1);
     
     RT_SEQUENCER_update_sequencer_and_playlist();      
   }
@@ -1014,7 +1015,7 @@ hash_t *SEQUENCER_get_state(void){
     HASH_put_hash_at(state, "seqtracks", iterator666, seqtrack_state);
   }END_VECTOR_FOR_EACH;
 
-  HASH_put_int(state, "curr_seqtracknum", root->song->curr_seqtracknum);
+  HASH_put_int(state, "curr_seqtracknum", ATOMIC_GET(root->song->curr_seqtracknum));
 
   // I'm not 100% sure, but I think we need this one since song tempo automation automatically changes length when the song changes length.
   // (modifying song tempo automation is a light operation + that it's atomically real time safe, so it doesn't matter much if we do this)
@@ -1056,7 +1057,7 @@ void SEQUENCER_create_from_state(hash_t *state){
       radium::PlayerLock lock;
       
       root->song->seqtracks = seqtracks;
-      root->song->curr_seqtracknum = new_curr_seqtracknum;
+      ATOMIC_SET(root->song->curr_seqtracknum, new_curr_seqtracknum);
     }
 
     if(HASH_has_key(state, "loop_start")) {

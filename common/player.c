@@ -133,10 +133,10 @@ void PlayerTask(double reltime){
                 
                 bool set_player_time = false;
 
-                if (pc->playtype==PLAYBLOCK && seqtrack==&root->song->block_seqtrack)
+                if (pc->playtype==PLAYBLOCK && seqtrack==root->song->block_seqtrack)
                   set_player_time = true;
 
-                else if (pc->playtype==PLAYSONG && seqtrack==root->song->seqtracks.elements[root->song->curr_seqtracknum])
+                else if (pc->playtype==PLAYSONG && seqtrack==root->song->seqtracks.elements[ATOMIC_GET(root->song->curr_seqtracknum)])
                   set_player_time = true;
                   
                 if (set_player_time)

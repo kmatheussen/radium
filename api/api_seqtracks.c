@@ -154,13 +154,13 @@ void appendSeqtrack(void){
   undoSequencer();
   SEQUENCER_append_seqtrack(NULL);
 
-  root->song->curr_seqtracknum = root->song->seqtracks.num_elements -1;
+  ATOMIC_SET(root->song->curr_seqtracknum, root->song->seqtracks.num_elements -1);
   BS_UpdatePlayList();
 }
 
 void insertSeqtrack(int pos){
   if (pos==-1)
-    pos = root->song->curr_seqtracknum;
+    pos = ATOMIC_GET(root->song->curr_seqtracknum);
   
   if (pos < 0 || pos > root->song->seqtracks.num_elements){
     handleError("Position #%d not legal", pos);
@@ -170,13 +170,13 @@ void insertSeqtrack(int pos){
   undoSequencer();
   SEQUENCER_insert_seqtrack(NULL, pos);
 
-  root->song->curr_seqtracknum = pos;
+  ATOMIC_SET(root->song->curr_seqtracknum, pos);
   BS_UpdatePlayList();
 }
 
 void deleteSeqtrack(int seqtracknum){
   if (seqtracknum==-1)
-    seqtracknum = root->song->curr_seqtracknum;
+    seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);
   
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
     handleError("Sequencer track #%d does not exist", seqtracknum);
@@ -198,13 +198,13 @@ void selectSeqtrack(int seqtracknum){
     return;
   }
 
-  root->song->curr_seqtracknum = seqtracknum;
+  ATOMIC_SET(root->song->curr_seqtracknum, seqtracknum);
   BS_UpdatePlayList();
   SEQUENCER_update();
 }
 
 int getCurrSeqtrack(void){
-  return root->song->curr_seqtracknum;
+  return ATOMIC_GET(root->song->curr_seqtracknum);
 }
 
 int getNumSeqtracks(void){
@@ -890,7 +890,7 @@ void moveSeqblock(int seqblocknum, int64_t abstime, int seqtracknum, int new_seq
   if (new_seqtrack==NULL)
     return;
   
-  root->song->curr_seqtracknum = new_seqtracknum;
+  ATOMIC_SET(root->song->curr_seqtracknum, new_seqtracknum);
   
   //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
   SEQTRACK_move_seqblock(seqtrack, seqblock, abstime);
@@ -909,7 +909,7 @@ void moveSeqblockGfx(int seqblocknum, int64_t abstime, int seqtracknum, int new_
   if (new_seqtrack==NULL)
     return;
   
-  root->song->curr_seqtracknum = new_seqtracknum;
+  ATOMIC_SET(root->song->curr_seqtracknum, new_seqtracknum);
   
   //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
   SEQTRACK_move_gfx_seqblock(seqtrack, seqblock, abstime);
@@ -928,7 +928,7 @@ void moveSeqblockGfxGfx(int seqblocknum, int64_t abstime, int seqtracknum, int n
   if (new_seqtrack==NULL)
     return;
   
-  //root->song->curr_seqtracknum = new_seqtracknum;
+  //ATOMIC_SET(root->song->curr_seqtracknum, new_seqtracknum);
   
   //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
   SEQTRACK_move_gfx_gfx_seqblock(seqtrack, seqblock, abstime);
@@ -944,7 +944,7 @@ void deleteSeqblock(int seqblocknum, int seqtracknum){
   
   SEQTRACK_delete_seqblock(seqtrack, seqblock);
 
-  root->song->curr_seqtracknum = R_MAX(seqtracknum -1, 0);
+  ATOMIC_SET(root->song->curr_seqtracknum, R_MAX(seqtracknum -1, 0));
   BS_UpdatePlayList();
 }
 
