@@ -496,17 +496,14 @@ static void seqtrackgcfinalizer(void *actual_mem_start, void *user_data){
 }
 
 
-void SEQTRACK_init(struct SeqTrack *seqtrack, const hash_t *automation_state){
+struct SeqTrack *SEQTRACK_create(const hash_t *automation_state){
+  struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
+
   memset(seqtrack, 0, sizeof(struct SeqTrack));
   seqtrack->scheduler = SCHEDULER_create();
   seqtrack->seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, automation_state);
   
   GC_register_finalizer(seqtrack, seqtrackgcfinalizer, seqtrack, NULL, NULL);
-}
-
-struct SeqTrack *SEQTRACK_create(const hash_t *automation_state){
-  struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
-  SEQTRACK_init(seqtrack, automation_state);
 
   return seqtrack;
 }
@@ -971,7 +968,7 @@ double SONG_get_gfx_length(void){
 // Called from SONG_create()
 void SEQUENCER_init(struct Song *song){
   TEMPOAUTOMATION_reset();
-  SEQTRACK_init(&song->block_seqtrack, NULL);
+  song->block_seqtrack = SEQTRACK_create(NULL);
   song->looping.start = 0;
 
   if (ATOMIC_GET(is_starting_up))
@@ -982,8 +979,7 @@ void SEQUENCER_init(struct Song *song){
 
 // Only called during program startup
 void SONG_init(void){
-  struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
-  SEQTRACK_init(seqtrack, NULL);
+  struct SeqTrack *seqtrack = SEQTRACK_create(NULL);
 
   VECTOR_ensure_space_for_one_more_element(&seqtrack->seqblocks);
   

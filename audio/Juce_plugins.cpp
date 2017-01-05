@@ -159,7 +159,7 @@ namespace{
       const struct SeqTrack *seqtrack;
 
       if (pc->playtype==PLAYBLOCK)
-        seqtrack = &root->song->block_seqtrack;
+        seqtrack = root->song->block_seqtrack;
       else
         seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[0]; // FIX.
 

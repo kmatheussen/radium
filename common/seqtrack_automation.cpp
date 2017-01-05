@@ -496,10 +496,11 @@ void RT_SEQTRACK_AUTOMATION_called_per_block(struct SeqTrack *seqtrack){
 
 }
 
-denne blir kalt når radium::pause blir kalt.
 void RT_SEQTRACK_AUTOMATION_called_when_player_stopped(void){
   ALL_SEQTRACKS_FOR_EACH(){
 
+    //fprintf(stderr, "seqiterator: %d, num_seqtracks: %d\n", seqiterator666, root->song->seqtracks.num_elements);
+    
     R_ASSERT_RETURN_IF_FALSE(seqtrack->seqtrackautomation != NULL);
     
     for(auto *automation : seqtrack->seqtrackautomation->_automations){

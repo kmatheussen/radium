@@ -181,7 +181,7 @@ static inline void VECTOR_delete_last(vector_t *v){
 
 #define ALL_SEQTRACKS_FOR_EACH()                                        \
   for(int seqiterator666=-1 ; seqiterator666<root->song->seqtracks.num_elements ; seqiterator666++){ \
-    struct SeqTrack *seqtrack = seqiterator666==-1 ? &root->song->block_seqtrack : (struct SeqTrack*)root->song->seqtracks.elements[seqiterator666];
+    struct SeqTrack *seqtrack = seqiterator666==-1 ? root->song->block_seqtrack : (struct SeqTrack*)root->song->seqtracks.elements[seqiterator666];
 
 #define END_ALL_SEQTRACKS_FOR_EACH }
 

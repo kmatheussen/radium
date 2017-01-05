@@ -778,7 +778,7 @@ private:
 
     SharedVariables *sv = GE_get_shared_variables(t2_data->painting_data);
 
-    const struct SeqTrack *seqtrack = is_playing && pc->playtype==PLAYBLOCK ? &root->song->block_seqtrack : SEQUENCER_get_curr_seqtrack();
+    const struct SeqTrack *seqtrack = is_playing && pc->playtype==PLAYBLOCK ? root->song->block_seqtrack : SEQUENCER_get_curr_seqtrack();
     R_ASSERT_RETURN_IF_FALSE2(seqtrack!=NULL, false);
     
     const struct SeqBlock *seqblock = seqtrack->curr_seqblock;
