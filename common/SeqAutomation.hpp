@@ -51,7 +51,7 @@ public:
     : _rt(V_free_function)
   {
   }
-  
+
 
 private:
   

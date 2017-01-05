@@ -410,8 +410,8 @@ static QVector<Gui*> g_guis;
 #if QT_VERSION >= 0x056000
       return QColor(QRgba64::fromRgba64(color));
 #else
-      QColor col(color);
-      col.setAlpha(color>>24);
+      QColor col((uint32_t)color);
+      col.setAlpha(int(color>>24));
       return col;
 #endif
     }

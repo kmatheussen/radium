@@ -2039,10 +2039,10 @@ struct Song{
 	struct Tracker_Windows *tracker_windows;
 	struct Blocks *blocks;
 
-        struct SeqTrack block_seqtrack; // Used when playing block.
+        struct SeqTrack *block_seqtrack; // Used when playing block.
 
         struct Looping looping;
-        int curr_seqtracknum;
+        DEFINE_ATOMIC(int, curr_seqtracknum);
         vector_t seqtracks; // New playlist. Player must both be stopped and locked when modifying this variable, or any of the contents.
 
 	NInt num_blocks;
@@ -2087,24 +2087,27 @@ extern DEFINE_ATOMIC(bool, is_starting_up);
 extern bool g_embed_samples;
 
 static inline struct SeqTrack *SEQUENCER_get_curr_seqtrack(void){
-  R_ASSERT_NON_RELEASE(root->song->curr_seqtracknum < root->song->seqtracks.num_elements);
+  int curr_seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);
+  
+  R_ASSERT_NON_RELEASE(curr_seqtracknum < root->song->seqtracks.num_elements);
+  
   vector_t *seqtracks = &root->song->seqtracks;
   if (seqtracks->num_elements==0)
     return NULL;
   else
-    return (struct SeqTrack*)seqtracks->elements[root->song->curr_seqtracknum];
+    return (struct SeqTrack*)seqtracks->elements[curr_seqtracknum];
 }
 
 static inline struct SeqTrack *RT_get_curr_seqtrack(void){
   if (pc->playtype==PLAYSONG){// && is_playing()) {
     return SEQUENCER_get_curr_seqtrack();
   } else {
-    return &root->song->block_seqtrack;
+    return root->song->block_seqtrack;
   }
 }
 
 static inline struct SeqTrack *RT_get_aux_seqtrack(void){
-  return &root->song->block_seqtrack;
+  return root->song->block_seqtrack;
 }
 
 static inline struct SeqBlock *RT_get_curr_seqblock(void){

@@ -496,17 +496,14 @@ static void seqtrackgcfinalizer(void *actual_mem_start, void *user_data){
 }
 
 
-void SEQTRACK_init(struct SeqTrack *seqtrack, const hash_t *automation_state){
+struct SeqTrack *SEQTRACK_create(const hash_t *automation_state){
+  struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
+
   memset(seqtrack, 0, sizeof(struct SeqTrack));
   seqtrack->scheduler = SCHEDULER_create();
   seqtrack->seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, automation_state);
   
   GC_register_finalizer(seqtrack, seqtrackgcfinalizer, seqtrack, NULL, NULL);
-}
-
-struct SeqTrack *SEQTRACK_create(const hash_t *automation_state){
-  struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
-  SEQTRACK_init(seqtrack, automation_state);
 
   return seqtrack;
 }
@@ -907,8 +904,9 @@ void SEQUENCER_delete_seqtrack(int pos){
     
     VECTOR_delete(&root->song->seqtracks, pos);
 
-    if (root->song->curr_seqtracknum >= root->song->seqtracks.num_elements)
-      root->song->curr_seqtracknum = root->song->seqtracks.num_elements -1;
+    int curr_seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);
+    if (curr_seqtracknum >= root->song->seqtracks.num_elements)
+      ATOMIC_SET(root->song->curr_seqtracknum, root->song->seqtracks.num_elements -1);
     
     RT_SEQUENCER_update_sequencer_and_playlist();      
   }
@@ -970,7 +968,7 @@ double SONG_get_gfx_length(void){
 // Called from SONG_create()
 void SEQUENCER_init(struct Song *song){
   TEMPOAUTOMATION_reset();
-  SEQTRACK_init(&song->block_seqtrack, NULL);
+  song->block_seqtrack = SEQTRACK_create(NULL);
   song->looping.start = 0;
 
   if (ATOMIC_GET(is_starting_up))
@@ -981,8 +979,7 @@ void SEQUENCER_init(struct Song *song){
 
 // Only called during program startup
 void SONG_init(void){
-  struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
-  SEQTRACK_init(seqtrack, NULL);
+  struct SeqTrack *seqtrack = SEQTRACK_create(NULL);
 
   VECTOR_ensure_space_for_one_more_element(&seqtrack->seqblocks);
   
@@ -1014,7 +1011,7 @@ hash_t *SEQUENCER_get_state(void){
     HASH_put_hash_at(state, "seqtracks", iterator666, seqtrack_state);
   }END_VECTOR_FOR_EACH;
 
-  HASH_put_int(state, "curr_seqtracknum", root->song->curr_seqtracknum);
+  HASH_put_int(state, "curr_seqtracknum", ATOMIC_GET(root->song->curr_seqtracknum));
 
   // I'm not 100% sure, but I think we need this one since song tempo automation automatically changes length when the song changes length.
   // (modifying song tempo automation is a light operation + that it's atomically real time safe, so it doesn't matter much if we do this)
@@ -1056,7 +1053,7 @@ void SEQUENCER_create_from_state(hash_t *state){
       radium::PlayerLock lock;
       
       root->song->seqtracks = seqtracks;
-      root->song->curr_seqtracknum = new_curr_seqtracknum;
+      ATOMIC_SET(root->song->curr_seqtracknum, new_curr_seqtracknum);
     }
 
     if(HASH_has_key(state, "loop_start")) {

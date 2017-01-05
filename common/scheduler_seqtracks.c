@@ -212,8 +212,8 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
 
     R_ASSERT(SCHEDULER_num_events(RT_get_curr_seqtrack()->scheduler)==0);
 
-    SCHEDULER_set_seqtrack_timing(&root->song->block_seqtrack, 0, 0);
-    RT_LPB_call_when_start_playing(&root->song->block_seqtrack);
+    SCHEDULER_set_seqtrack_timing(root->song->block_seqtrack, 0, 0);
+    RT_LPB_call_when_start_playing(root->song->block_seqtrack);
         
     ATOMIC_DOUBLE_SET(pc->song_abstime, abs_start_time);
 
@@ -275,7 +275,7 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place){
               
   PLAYER_lock();{
 
-    struct SeqTrack *seqtrack = &root->song->block_seqtrack;
+    struct SeqTrack *seqtrack = root->song->block_seqtrack;
 
     SCHEDULER_set_seqtrack_timing(seqtrack, seq_start_time, seq_start_time);
     RT_LPB_call_when_start_playing(seqtrack);

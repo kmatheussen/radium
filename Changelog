@@ -1,3 +1,39 @@
+Changes 4.3.6 -> 4.3.7:
+* API: Functions to create a canvas and paint on it
+* Convert chance help to html
+* Convert velocity help to html
+* Update help text for the "draw in separate process" OpenGL option.
+  (in general, it should be enabled)
+* Adjust various things in the preferences window.
+* Automatically show instrument widget when double clicking a sound
+  object, plus option to turn this feature off/on.
+* Convert all help texts to html
+* Updated the keybinding documentation with the new MOUSE_* qualifiers
+* Add EVENT_MOUSE_EDITOR, EVENT_MOUSE_MIXER, and EVENT_MOUSE_SEQUENCER
+  qualifier "keys".
+* Fix keybinding for functions that doesn"t only take integers as
+  arguments (an ugly bug).
+* Fix redefining keybinding for functions that takes non-integer
+  arguments.
+* Options to change sequencer grid for tempo/block/loop/automation.
+  The grid can be changed to "no", "line", "beat", or "bar".
+* Make sure copy/cut/delete in the seqblocks popup menu is enabled
+  when right clicking outside a sequencer block.
+* Fix Ctrl+X in sequencer when no block is selected.
+* Support sequencer effect automations. (i.e. horizontal automations
+  in the sequencer)
+* Fix jumping mouse when releasing ctrl before releasing left mouse
+  button when moving a node.
+* Fix custom keybindings help on windows.
+* Correct song tempo node position when creating new node when ctrl
+  is not pressed.
+* Display negative time correctly
+* Reorganize sequencer popup menu a little bit
+* Optimize sequencer automation by using binary search instead of
+  linear search.
+
+
+
 Changes 4.3.5 -> 4.3.6:
 * Show message windows during startup, if necessary. Fixes apparent
   missing information about errors in keyboard configuration.
@@ -17,7 +53,8 @@ Changes 4.3.5 -> 4.3.6:
 * Use instrument color to paint sequencer block track background,
   and don't paint default sequencer block track background
   anymore.
-* 
+
+
 
 Changes 4.3.4 -> 4.3.5:
 * Smooth sequencer scrolling. (can be enabled in the preferences)

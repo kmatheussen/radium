@@ -781,7 +781,7 @@ struct Mixer{
 
         if (is_playing()) {
           if (pc->playtype==PLAYBLOCK)
-            RT_LPB_set_beat_position(&root->song->block_seqtrack, RADIUM_BLOCKSIZE);
+            RT_LPB_set_beat_position(root->song->block_seqtrack, RADIUM_BLOCKSIZE);
           else
             VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
               RT_LPB_set_beat_position(seqtrack, RADIUM_BLOCKSIZE);
