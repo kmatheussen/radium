@@ -143,15 +143,19 @@ static QVector<Gui*> g_guis;
       g_guis[_gui_num] = NULL;
     }
 
-    virtual void drawLine(int64_t color, float x1, float y1, float x2, float y2, float width){
+    virtual void addMouseCallback(func_t* func){
+      handleError("gui %d doesn't have addMouseCallback method.", _gui_num);
+    }
+
+    virtual void drawLine(const_char* color, float x1, float y1, float x2, float y2, float width){
       handleError("gui %d doesn't have drawLine method.", _gui_num);
     }
 
-    virtual void filledBox(int64_t color, float x1, float y1, float x2, float y2){
+    virtual void filledBox(const_char* color, float x1, float y1, float x2, float y2){
       handleError("gui %d doesn't have filledBox method.", _gui_num);
     }
 
-    virtual void drawText(int64_t color, const_char *text, float x1, float y1, float x2, float y2){
+    virtual void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2){
       handleError("gui %d doesn't have drawText method.", _gui_num);
     }
     
@@ -362,15 +366,16 @@ static QVector<Gui*> g_guis;
       _callbacks.push_back(callback);
       return;      
     }
-    
   };
   
 
   struct Canvas : QWidget, Gui{
     Q_OBJECT;
 
-    QImage *image = NULL;
-    QPainter *image_painter = NULL;
+    QImage *_image = NULL;
+    QPainter *_image_painter = NULL;
+
+    func_t *_mouse_callback = NULL;
 
   public:
     
@@ -383,27 +388,87 @@ static QVector<Gui*> g_guis;
     }
 
     ~Canvas(){
-      delete image_painter;
-      delete image;
+      if (_mouse_callback!=NULL)
+        s7extra_unprotect(_mouse_callback);
+      delete _image_painter;
+      delete _image;
     }
     
+    int _currentButton = 0;
+
+    int getMouseButtonEventID( QMouseEvent *qmouseevent){
+      if(qmouseevent->button()==Qt::LeftButton)
+        return TR_LEFTMOUSEDOWN;
+      else if(qmouseevent->button()==Qt::RightButton)
+        return TR_RIGHTMOUSEDOWN;
+      else if(qmouseevent->button()==Qt::MiddleButton)
+        return TR_MIDDLEMOUSEDOWN;
+      else
+        return 0;
+    }
+
+    void mousePressEvent(QMouseEvent *event) override{
+      event->accept();
+      if (_mouse_callback==NULL)
+        return;
+
+      _currentButton = getMouseButtonEventID(event);
+      const QPoint &point = event->pos();
+
+      s7extra_callFunc_void_int_float_float(_mouse_callback, _currentButton, point.x(), point.y());
+      printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+    }
+
+    void mouseReleaseEvent(QMouseEvent *event) override{
+      event->accept();
+      if (_mouse_callback==NULL)
+        return;
+
+      const QPoint &point = event->pos();
+      s7extra_callFunc_void_int_float_float(_mouse_callback, _currentButton, point.x(), point.y());
+
+      _currentButton = 0;
+      printf("  Release. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+    }
+
+    void mouseMoveEvent(QMouseEvent *event) override{
+      event->accept();
+      if (_mouse_callback==NULL)
+        return;
+
+      const QPoint &point = event->pos();
+      s7extra_callFunc_void_int_float_float(_mouse_callback, _currentButton, point.x(), point.y());
+      printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+    }
+
+    void addMouseCallback(func_t* func) override{      
+      if (_mouse_callback!=NULL){
+        handleError("Canvas gui %d already has a mouse callback.", _gui_num);
+        return;
+      }
+
+      _mouse_callback = func;
+      s7extra_unprotect(_mouse_callback);
+      setMouseTracking(true);
+    }
+
     void setSize(int width, int height){
-      delete image_painter;
-      delete image;
+      delete _image_painter;
+      delete _image;
 
-      image = new QImage(width, height, QImage::Format_ARGB32);
-      image_painter = new QPainter(image);
+      _image = new QImage(width, height, QImage::Format_ARGB32);
+      _image_painter = new QPainter(_image);
 
-      image_painter->setRenderHints(QPainter::Antialiasing,true);
+      _image_painter->setRenderHints(QPainter::Antialiasing,true);
 
-      image_painter->fillRect(QRect(0,0,width,height), get_qcolor(LOW_BACKGROUND_COLOR_NUM));
+      _image_painter->fillRect(QRect(0,0,width,height), get_qcolor(LOW_BACKGROUND_COLOR_NUM));
       setFixedSize(width, height);
     }
 
     void paintEvent ( QPaintEvent * ev ) override {
       QPainter p(this);
 
-      p.drawImage(ev->rect(), *image, ev->rect());
+      p.drawImage(ev->rect(), *_image, ev->rect());
     }
 
     QColor getQColor(int64_t color){
@@ -416,14 +481,18 @@ static QVector<Gui*> g_guis;
 #endif
     }
 
-    QPen getPen(int64_t color){
+    QColor getQColor(const_char* color){
+      return QColor(color);
+    }
+
+    QPen getPen(const_char* color){
       QPen pen(getQColor(color));
       
       return pen;
     }
 
-    void setPen(int64_t color){
-      image_painter->setPen(getQColor(color));
+    void setPen(const_char* color){
+      _image_painter->setPen(getQColor(color));
     }
 
     void myupdate(float x1, float y1, float x2, float y2, float extra=0.0f){
@@ -434,42 +503,42 @@ static QVector<Gui*> g_guis;
       update(min_x, min_y, max_x-min_x, max_y-min_y);
     }
 
-    void drawLine(int64_t color, float x1, float y1, float x2, float y2, float width) override {
+    void drawLine(const_char* color, float x1, float y1, float x2, float y2, float width) override {
       QLineF line(x1, y1, x2, y2);
 
       QPen pen = getPen(color);
       pen.setWidthF(width);
-      image_painter->setPen(pen);
+      _image_painter->setPen(pen);
       
       //printf("Color: %x, %s\n", (unsigned int)color, pen.color().name(QColor::HexArgb).toUtf8().constData());
 
-      image_painter->drawLine(line);
+      _image_painter->drawLine(line);
 
       myupdate(x1, y1, x2, y2, width);
     }
 
-    void filledBox(int64_t color, float x1, float y1, float x2, float y2) override {
+    void filledBox(const_char* color, float x1, float y1, float x2, float y2) override {
       QRectF rect(x1, y1, x2-x1, y2-y1);
 
       QColor qcolor = getQColor(color);
 
-      //QPen pen = image_rect.pen();
+      //QPen pen = _image_rect.pen();
 
-      image_painter->setPen(Qt::NoPen);
-      image_painter->setBrush(qcolor);
-      image_painter->drawRect(rect);
-      image_painter->setBrush(Qt::NoBrush);
-      //image_painter->setPen(pen);
+      _image_painter->setPen(Qt::NoPen);
+      _image_painter->setBrush(qcolor);
+      _image_painter->drawRect(rect);
+      _image_painter->setBrush(Qt::NoBrush);
+      //_image_painter->setPen(pen);
 
       myupdate(x1, y1, x2, y2);
     }
 
-    void drawText(int64_t color, const_char *text, float x1, float y1, float x2, float y2) override {
+    void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2) override {
       QRectF rect(x1, y1, x2-x1, y2-y1);
 
       setPen(color);
 
-      image_painter->drawText(rect, text);
+      _image_painter->drawText(rect, text);
 
       myupdate(x1, y1, x2, y2);
     }
@@ -893,6 +962,15 @@ void gui_addCallback(int64_t guinum, func_t* func){
   gui->addGuiCallback(func);
 }
 
+void gui_addMouseCallback(int64_t guinum, func_t* func){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  gui->addMouseCallback(func);
+}
+
 int64_t gui_button(const_char *text){
   return (new PushButton(text))->get_gui_num();
 }
@@ -1001,7 +1079,7 @@ dyn_t gui_getValue(int64_t guinum){
   return gui->getGuiValue();
 }
 
-void gui_add(int64_t parentnum, int64_t childnum){
+void gui_add(int64_t parentnum, int64_t childnum, int x1, int y1, int x2, int y2){
   Gui *parent = get_gui(parentnum);
   if (parent==NULL)
     return;
@@ -1012,13 +1090,25 @@ void gui_add(int64_t parentnum, int64_t childnum){
 
   QLayout *layout = parent->_widget->layout();
 
-  if(layout==NULL) {
+  if(layout==NULL || x1!=-1) {
 
-    handleError("Warning: Parent gui #%d does not have a layout", parentnum);
+    if (layout==NULL && x1==-1){
+      handleError("Warning: Parent gui #%d does not have a layout", parentnum);
+      x1 = 0;
+      y1 = 0;
+    }
+
+    if (x1<0)
+      x1 = 0;
+    if (y1<0)
+      y1 = 0;
 
     child->_widget->setParent(parent->_widget);
-    child->_widget->move(0,0);
+    child->_widget->move(x1,y1);
     
+    if (x2>x1 && y2 > y1)
+      child->_widget->resize(x2-x1, y2-y1);
+
   } else {
     
     layout->addWidget(child->_widget);
@@ -1075,6 +1165,17 @@ int gui_height(int64_t guinum){
   return gui->_widget->height();
 }
 
+void gui_setBackgroundColor(int64_t guinum, const_char* color){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  QPalette pal = gui->_widget->palette();
+  pal.setColor(QPalette::Background, QColor(color));
+  pal.setColor(QPalette::Base, QColor(color));
+  gui->_widget->setAutoFillBackground(true);
+  gui->_widget->setPalette(pal);
+}
 
 // canvas
 ///////////
@@ -1083,7 +1184,7 @@ int64_t gui_canvas(int width, int height){
   return (new Canvas(width, height))->get_gui_num();
 }
 
-void gui_drawLine(int64_t guinum, int64_t color, float x1, float y1, float x2, float y2, float width){
+void gui_drawLine(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2, float width){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
@@ -1091,7 +1192,7 @@ void gui_drawLine(int64_t guinum, int64_t color, float x1, float y1, float x2, f
   gui->drawLine(color, x1, y1, x2, y2, width);
 }
 
-void gui_filledBox(int64_t guinum, int64_t color, float x1, float y1, float x2, float y2){
+void gui_filledBox(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
@@ -1099,7 +1200,7 @@ void gui_filledBox(int64_t guinum, int64_t color, float x1, float y1, float x2, 
   gui->filledBox(color, x1, y1, x2, y2);
 }
 
-void gui_drawText(int64_t guinum, int64_t color, const_char *text, float x1, float y1, float x2, float y2) {
+void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2) {
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;

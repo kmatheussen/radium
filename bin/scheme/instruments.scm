@@ -1,5 +1,12 @@
 (provide 'instruments.scm)
 
+#||
+  * Sends should be slightly skewed to the left, so that we see that they go in parallel. Arrows indicating this might help too.
+
+  * What if the last sound object in the sequence isn't connected to the main pipe? How should this be visualized?
+    Ardour seems to visualize this with a button under the volume slider ("Master"). (that makes sense)
+
+||#
 
 (define (for-all-tracks func)
   (for-each (lambda (blocknum)

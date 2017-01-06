@@ -51,6 +51,22 @@
         ((eq? command :add-callback)
          (<ra> :gui_add-callback (car args) (cadr args)))
         
+        ((eq? command :add-mouse-callback)
+         (<ra> :gui_add-mouse-callback (car args) (cadr args)))
+        
+        ((eq? command :draw-box)
+         (let ((gui (list-ref args 0))
+               (color (list-ref args 1))
+               (x1 (list-ref args 2))
+               (y1 (list-ref args 3))
+               (x2 (list-ref args 4))
+               (y2 (list-ref args 5))
+               (width (list-ref args 6)))
+           (<ra> :gui_draw-line gui color x1 y1 x2 y1 width)
+           (<ra> :gui_draw-line gui color x2 y1 x2 y2 width)
+           (<ra> :gui_draw-line gui color x2 y2 x1 y2 width)
+           (<ra> :gui_draw-line gui color x1 y2 x1 y1 width)))
+
         (else
          (let* ((func (eval (<_> 'ra:gui_ (keyword->symbol command))))
                 (last-arg (last args))

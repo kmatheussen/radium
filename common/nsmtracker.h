@@ -1540,6 +1540,22 @@ struct TempoNodes{
 
 
 
+
+/*********************************************************************
+	swing.h
+*********************************************************************/
+
+// // There's one Swing element for each line.
+// Swings can be placed at beats.
+struct Swing {
+  struct ListHeader3 l;
+  Ratio ratio; // Example: 5/4 means that this beat is 1.25 times longer than the other beats.
+
+  //int value; // If 0, then ignore.
+  //bool is_inherited; // I.e. not set explicitly by the user.
+};
+
+
 /*********************************************************************
 	time.h
 *********************************************************************/
@@ -1582,6 +1598,7 @@ struct Blocks{
 	struct Tempos *tempos;
 	struct TempoNodes *temponodes;
 	struct TempoNodes *lasttemponode;
+        struct Swing *swings; // Array of swings. num_lines elements.
 
         int num_time_lines; // Contains number of lines in 'times' minus one (same as num_lines, normally). Only for validation.
         const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. */
