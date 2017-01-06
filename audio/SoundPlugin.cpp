@@ -1690,7 +1690,7 @@ void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, f
     return;
   }
 
-  //GFX_Message(NULL, "Going to set %s to %f\n",effect_name,value);
+  //printf("      Going to set %s to %f\n",effect_name,value);
   PLAYER_lock();{
     PLUGIN_set_native_effect_value(plugin, -1, i, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
   }PLAYER_unlock();

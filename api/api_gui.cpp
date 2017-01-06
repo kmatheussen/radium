@@ -47,16 +47,18 @@
       classname::mouseMoveEvent(event);                   \
     else                                                                \
       Gui::mouseMoveEvent(event);                                       \
-  }                                                                     \
-                                                                        \
-  void resizeEvent( QResizeEvent *event){                               \
-    if (_resize_callback==NULL)                                         \
-      classname::resizeEvent(event);                                    \
-    else\
-      Gui::resizeEvent(event);                  \
   }
 
-
+  
+#define OVERRIDERS(classname)                                           \
+  MOUSE_OVERRIDERS(classname)                                           \
+  void resizeEvent( QResizeEvent *event) override {                     \
+    if (_resize_callback==NULL)                                         \
+      classname::resizeEvent(event);                                    \
+    else                                                                \
+      Gui::resizeEvent(event);                                          \
+  }
+  
 namespace radium_gui{
 
 struct Gui;
@@ -507,6 +509,14 @@ static QVector<Gui*> g_guis;
 
     MOUSE_OVERRIDERS(QWidget);
 
+    void resizeEvent( QResizeEvent *event) override {
+      setSize(event->size().width(), event->size().height());
+      if (_resize_callback==NULL)
+        QWidget::resizeEvent(event);
+      else
+        Gui::resizeEvent(event);
+    }
+
     void setSize(int width, int height){
       delete _image_painter;
       delete _image;
@@ -614,7 +624,7 @@ static QVector<Gui*> g_guis;
     {
     }
 
-    MOUSE_OVERRIDERS(QPushButton);
+    OVERRIDERS(QPushButton);
   };
 
   
@@ -630,7 +640,7 @@ static QVector<Gui*> g_guis;
       setChecked(is_checked);
     }
 
-    MOUSE_OVERRIDERS(QCheckBox);
+    OVERRIDERS(QCheckBox);
   };
   
   struct RadioButton : QRadioButton, Gui{
@@ -645,7 +655,7 @@ static QVector<Gui*> g_guis;
       setChecked(is_checked);
     }
 
-    MOUSE_OVERRIDERS(QRadioButton);
+    OVERRIDERS(QRadioButton);
   };
   
   struct VerticalLayout : QWidget, Gui{
@@ -656,7 +666,7 @@ static QVector<Gui*> g_guis;
       setLayout(mainLayout);
     }
 
-    MOUSE_OVERRIDERS(QWidget);
+    OVERRIDERS(QWidget);
   };
   
   struct HorizontalLayout : QWidget, Gui{
@@ -667,7 +677,7 @@ static QVector<Gui*> g_guis;
       setLayout(mainLayout);
     }
 
-    MOUSE_OVERRIDERS(QWidget);
+    OVERRIDERS(QWidget);
   };
 
   struct MyGridLayout : QGridLayout{
@@ -696,7 +706,7 @@ static QVector<Gui*> g_guis;
     }    
 
 
-    MOUSE_OVERRIDERS(QWidget);
+    OVERRIDERS(QWidget);
   };
   
   struct GroupBox : QGroupBox, Gui{
@@ -708,7 +718,7 @@ static QVector<Gui*> g_guis;
       setLayout(mainLayout);
     }
 
-    MOUSE_OVERRIDERS(QGroupBox);
+    OVERRIDERS(QGroupBox);
   };
 
   struct ScrollArea : QScrollArea, Gui{
@@ -738,7 +748,7 @@ static QVector<Gui*> g_guis;
       setWidget(contents);
     }
 
-    MOUSE_OVERRIDERS(QScrollArea);
+    OVERRIDERS(QScrollArea);
   };
 
   struct VerticalScroll : QScrollArea, Gui{
@@ -767,7 +777,7 @@ static QVector<Gui*> g_guis;
       return mylayout;
     }
 
-    MOUSE_OVERRIDERS(QScrollArea);
+    OVERRIDERS(QScrollArea);
   };
 
   struct Slider : MyQSlider, Gui{
@@ -819,7 +829,7 @@ static QVector<Gui*> g_guis;
         s7extra_unprotect(func);
     }
 
-    MOUSE_OVERRIDERS(MyQSlider);
+    OVERRIDERS(MyQSlider);
     
     void value_setted(int value){
       double scaled_value = scale_double(value, minimum(), maximum(), _min, _max);
@@ -877,7 +887,7 @@ static QVector<Gui*> g_guis;
         setText("<span style=\" color:" + color + ";\">" + text + "</span>");
     }
 
-    MOUSE_OVERRIDERS(QLabel);
+    OVERRIDERS(QLabel);
   };
 
   struct MyFocusSnifferQLineEdit : FocusSnifferQLineEdit{
@@ -910,7 +920,7 @@ static QVector<Gui*> g_guis;
       setText(content);
     }
 
-    MOUSE_OVERRIDERS(MyFocusSnifferQLineEdit);
+    OVERRIDERS(MyFocusSnifferQLineEdit);
   };
 
   struct TextEdit : FocusSnifferQTextEdit, Gui{
@@ -924,7 +934,7 @@ static QVector<Gui*> g_guis;
       setPlainText(content);
     }
 
-    MOUSE_OVERRIDERS(FocusSnifferQTextEdit);
+    OVERRIDERS(FocusSnifferQTextEdit);
   };
 
 
@@ -960,7 +970,7 @@ static QVector<Gui*> g_guis;
       setMaximum(R_MAX(min, max));
     }
 
-    MOUSE_OVERRIDERS(MyFocusSnifferQSpinBox);
+    OVERRIDERS(MyFocusSnifferQSpinBox);
   };
   
   struct MyFocusSnifferQDoubleSpinBox : FocusSnifferQDoubleSpinBox{
@@ -1001,7 +1011,7 @@ static QVector<Gui*> g_guis;
       setValue(curr);
     }
 
-    MOUSE_OVERRIDERS(MyFocusSnifferQDoubleSpinBox);
+    OVERRIDERS(MyFocusSnifferQDoubleSpinBox);
   };
 
 
@@ -1383,6 +1393,38 @@ void gui_setSizePolicy(int64_t guinum, bool grow_horizontally, bool grow_vertica
   gui->_widget->setSizePolicy(grow_horizontally ? QSizePolicy::Expanding : QSizePolicy::Fixed,
                               grow_vertically ? QSizePolicy::Expanding : QSizePolicy::Fixed);
                               
+}
+
+void gui_setMinWidth(int64_t guinum, int minwidth){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->setMinimumWidth(minwidth);
+}
+
+void gui_setMinHeight(int64_t guinum, int minheight){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->setMinimumHeight(minheight);
+}
+
+void gui_setMaxWidth(int64_t guinum, int minwidth){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->setMaximumWidth(minwidth);
+}
+
+void gui_setMaxHeight(int64_t guinum, int minheight){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->setMaximumHeight(minheight);
 }
 
 // canvas

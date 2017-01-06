@@ -54,6 +54,9 @@
         ((eq? command :add-mouse-callback)
          (<ra> :gui_add-mouse-callback (car args) (cadr args)))
         
+        ((eq? command :add-resize-callback)
+         (<ra> :gui_add-resize-callback (car args) (cadr args)))
+        
         ((eq? command :draw-box)
          (let ((gui (list-ref args 0))
                (color (list-ref args 1))
