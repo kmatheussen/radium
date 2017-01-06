@@ -1,3 +1,12 @@
+Changes 4.3.7 -> 4.3.8:
+* Fix crash when song tempo automation has been visible (but is hidden
+  now), and a block was moved past the end of the song while playing,
+  and the cursor is now past the previous end of the song, and a
+  sequencer track was added.
+* API: gui_setBackgroundColor and gui_addMouseCallback.
+
+
+
 Changes 4.3.6 -> 4.3.7:
 * API: Functions to create a canvas and paint on it
 * Convert chance help to html
