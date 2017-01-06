@@ -344,6 +344,7 @@ double TEMPOAUTOMATION_get_absabstime(double goal){
   const TempoAutomationNode *node1 = &g_tempo_automation.at(0);
   const TempoAutomationNode *node2 = &g_tempo_automation.at(1);
   int i = 1;
+  //fprintf(stderr,"************** time node2: %f\n", node2->time / 44100.0);
   
   while(true){
     if (abstime >= goal)
@@ -356,8 +357,10 @@ double TEMPOAUTOMATION_get_absabstime(double goal){
     } else {
       if (!g_tempo_automation.RT_get_value(abstime, node1, node2, tempo, custom_get_value)){
         i++;
-        node1 = node2;
-        node2 = &g_tempo_automation.at(i);
+        if (i<size){          
+          node1 = node2;
+          node2 = &g_tempo_automation.at(i);
+        }
         continue;
       }
     }
