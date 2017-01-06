@@ -327,7 +327,7 @@ const_char* getInstrumentEffectName(int effect_num, int64_t instrument_id){
   vector_t *elements = patch->instrument->getFxNames(patch);
   
   if (effect_num >= elements->num_elements){
-    RError("effect_num >= num_effects: %d >= %d",effect_num, elements->num_elements);
+    handleError("effect_num >= num_effects: %d >= %d",effect_num, elements->num_elements);
     return "";
   }
     
@@ -426,6 +426,16 @@ const char *getInstrumentColor(int64_t instrument_id){
   return GFX_get_colorname_from_color(patch->color);
 }
 
+float getInstrumentEffect(int64_t instrument_id, const_char* effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  return PLUGIN_get_effect_from_name(plugin, effect_name);
+}
+
+
 void setInstrumentEffect(int64_t instrument_id, char *effect_name, float value){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -483,7 +493,7 @@ int getNumMIDIInstruments(void){
 
 int64_t getMIDIInstrumentId(int instrument_num){
   if (instrument_num>=getNumMIDIInstruments()){
-    RError("No instrument #%d",instrument_num);
+    handleError("No instrument #%d",instrument_num);
     return -1;
   }
   struct Patch *patch = get_MIDI_instrument()->patches.elements[instrument_num];
@@ -496,10 +506,23 @@ int getNumAudioInstruments(void){
 
 int64_t getAudioInstrumentId(int instrument_num){
   if (instrument_num>=getNumAudioInstruments()){
-    RError("No instrument #%d",instrument_num);
+    handleError("No instrument #%d",instrument_num);
     return -1;
   }
   struct Patch *patch = get_audio_instrument()->patches.elements[instrument_num];
+  return patch->id;
+}
+
+int64_t getAudioBusId(int bus_num){
+  if (bus_num < 0 || bus_num>=5){
+    handleError("There is no bus %d", bus_num);
+    return -1;
+  }
+
+  struct Patch *patch = MIXER_get_bus(bus_num);
+  if (patch==NULL)
+    return -1; // never happens
+  
   return patch->id;
 }
 

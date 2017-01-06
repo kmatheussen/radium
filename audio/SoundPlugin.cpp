@@ -1659,6 +1659,23 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
   return state;
 }
 
+float PLUGIN_get_effect_from_name(SoundPlugin *plugin, const char *effect_name){
+  const SoundPluginType *type=plugin->type;
+  int i;
+
+  for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+    if (!strcmp(PLUGIN_get_effect_name(plugin, i), effect_name))
+      break;
+  }
+
+  if (i==type->num_effects+NUM_SYSTEM_EFFECTS) {
+    GFX_Message(NULL, "No effect named \"%s\" in %s/%s", effect_name, type->type_name, type->name);
+    return 0;
+  }
+
+  return PLUGIN_get_effect_value(plugin, i, VALUE_FROM_STORAGE);
+}
+
 void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, float value){
   const SoundPluginType *type=plugin->type;
   int i;

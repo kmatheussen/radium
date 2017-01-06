@@ -1241,6 +1241,17 @@ struct SoundPlugin *MIXER_get_soundplugin(const char *type_name, const char *nam
   return NULL;
 }
 
+struct Patch *MIXER_get_bus(int bus_num){
+  R_ASSERT_RETURN_IF_FALSE2(bus_num>=0 && bus_num < 5, NULL);
+
+  SoundProducer *producer = g_mixer->_bus[bus_num];
+  if(producer==NULL)
+    return NULL;
+
+  struct SoundPlugin *plugin = SP_get_plugin(producer);
+  
+  return (struct Patch*)plugin->patch;
+}
 
 static bool g_someone_has_solo = false;
 static bool g_someone_is_selected = false;

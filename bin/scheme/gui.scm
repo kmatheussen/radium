@@ -69,11 +69,11 @@
 
         (else
          (let* ((func (eval (<_> 'ra:gui_ (keyword->symbol command))))
-                (last-arg (last args))
-                (gui (if (procedure? last-arg)
+                (last-arg (and (not (null? args)) (last args)))
+                (gui (if (and last-arg (procedure? last-arg))
                          (apply func (butlast args))
                          (apply func args))))
-           (when (procedure? last-arg)
+           (when (and last-arg (procedure? last-arg))
              (<ra> :gui_add-callback gui last-arg))
            gui))))
                

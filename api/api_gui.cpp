@@ -11,6 +11,7 @@
 #include <QHBoxLayout>
 #include <QGroupBox>
 #include <QPlainTextEdit>
+#include <QScrollArea>
 #include <QUiLoader>
 
 #include "../common/nsmtracker.h"
@@ -126,6 +127,7 @@ static QVector<Gui*> g_guis;
       _gui_num = g_guis.size();
       g_guis.push_back(this);
       _widget->setAttribute(Qt::WA_DeleteOnClose);
+      //_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     }
 
     virtual ~Gui(){
@@ -141,6 +143,10 @@ static QVector<Gui*> g_guis;
         delete callback;
       
       g_guis[_gui_num] = NULL;
+    }
+
+    virtual QLayout *getLayout(void){
+      return _widget->layout();
     }
 
     virtual void addMouseCallback(func_t* func){
@@ -639,6 +645,61 @@ static QVector<Gui*> g_guis;
     }
   };
 
+  struct ScrollArea : QScrollArea, Gui{
+    QWidget *contents;
+    const char *magic = "magic";
+
+    ScrollArea(bool scroll_horizontal, bool scroll_vertical)
+      : Gui(this)        
+    {
+      if (!scroll_horizontal)
+        setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+      //else
+      //  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+
+      if (!scroll_vertical)
+        setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+      //else
+      //  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+
+      //setWidgetResizable(true);
+
+      contents = new QWidget;//(this);
+      //contents->resize(500,500);
+      //contents->show();
+      //contents->setLayout(new QVBoxLayout);
+
+      setWidget(contents);
+    }
+  };
+
+  struct VerticalScroll : QScrollArea, Gui{
+    QWidget *contents;
+    const char *magic = "magic2";
+    QLayout *mylayout;
+
+    VerticalScroll(void)
+      : Gui(this)        
+    {
+      setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+      setWidgetResizable(true);
+
+      QWidget *contents = new QWidget(this);
+
+      mylayout = new QVBoxLayout(contents);
+      mylayout->setSpacing(1);
+      //mylayout->setContentsMargins(1,1,1,1);
+
+      contents->setLayout(mylayout);
+      
+      setWidget(contents);    
+    }
+
+    QLayout *getLayout(void) override {
+      return mylayout;
+    }
+  };
+
   struct Slider : MyQSlider, Gui{
     Q_OBJECT;
 
@@ -1038,6 +1099,14 @@ int64_t gui_group(const_char* title){
   return (new GroupBox(title))->get_gui_num();
 }
 
+int64_t gui_scrollArea(bool scroll_horizontal, bool scroll_vertical){
+  return (new ScrollArea(scroll_horizontal, scroll_vertical))->get_gui_num();
+}
+
+int64_t gui_verticalScroll(void){
+  return (new VerticalScroll())->get_gui_num();
+}
+
 int64_t gui_text(const_char* text, const_char* color){
   //return -1;
   return (new Text(text, color))->get_gui_num();
@@ -1088,7 +1157,7 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1, int y1, int x2, int y2
   if (child==NULL)
     return;
 
-  QLayout *layout = parent->_widget->layout();
+  QLayout *layout = parent->getLayout();
 
   if(layout==NULL || x1!=-1) {
 
@@ -1102,12 +1171,35 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1, int y1, int x2, int y2
       x1 = 0;
     if (y1<0)
       y1 = 0;
-
-    child->_widget->setParent(parent->_widget);
-    child->_widget->move(x1,y1);
     
+    ScrollArea *scroll_area = dynamic_cast<ScrollArea*>(parent);
+    if (scroll_area != NULL){
+      printf("      Adding to scroll child\n");
+      child->_widget->setParent(scroll_area->contents);
+      child->_widget->move(x1,y1);
+      child->_widget->show();
+
+      int new_width = R_MAX(parent->_widget->width(), x2);
+      int new_height = R_MAX(parent->_widget->height(), y2);
+      
+      //parent->_widget->resize(new_width, new_height);
+      scroll_area->contents->resize(new_width, new_height);
+
+    }else{
+      child->_widget->setParent(parent->_widget);
+      child->_widget->move(x1,y1);
+    }
+
     if (x2>x1 && y2 > y1)
       child->_widget->resize(x2-x1, y2-y1);
+
+
+    /*
+    int new_width = R_MAX(parent->_widget->width(), x2);
+    int new_height = R_MAX(parent->_widget->height(), y2);
+
+    parent->_widget->resize(new_width, new_height);
+    */
 
   } else {
     
@@ -1175,6 +1267,31 @@ void gui_setBackgroundColor(int64_t guinum, const_char* color){
   pal.setColor(QPalette::Base, QColor(color));
   gui->_widget->setAutoFillBackground(true);
   gui->_widget->setPalette(pal);
+}
+
+void gui_setLayoutSpacing(int64_t guinum, int spacing, int left, int top, int right, int bottom){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  QLayout *layout = gui->getLayout();
+  if (layout==NULL){
+    handleError("Gui #%d doesn't have a layout", guinum);
+    return;
+  }
+
+  layout->setSpacing(spacing);
+  layout->setContentsMargins(left, top, right, bottom);
+}
+
+void gui_setSizePolicy(int64_t guinum, bool grow_horizontally, bool grow_vertically){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->setSizePolicy(grow_horizontally ? QSizePolicy::Expanding : QSizePolicy::Fixed,
+                              grow_vertically ? QSizePolicy::Expanding : QSizePolicy::Fixed);
+                              
 }
 
 // canvas

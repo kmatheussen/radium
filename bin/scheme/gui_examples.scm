@@ -212,5 +212,23 @@
 
 (<gui> :show hslider)
 
+(define scroll-area (<gui> :scroll-area #t #t))
+(<gui> :show scroll-area)
+(<gui> :hide scroll-area)
+(<gui> :add scroll-area
+       (<gui> :horizontal-int-slider "helloslider: " -5 10 100 (lambda (asdf) (c-display "moved" asdf)) )
+       10 10 100 100)
+(<gui> :add scroll-area
+       (<gui> :horizontal-int-slider "2helloslider: " -5 10 100 (lambda (asdf) (c-display "moved" asdf)) )
+       110 110 100 200)
+
+
+(define scroll-area (<gui> :vertical-scroll))
+
+(<gui> :show scroll-area)
+
+(<gui> :add scroll-area (<gui> :horizontal-int-slider "2helloslider: " -5 10 100 (lambda (asdf) (c-display "moved" asdf))))
+
 (begin
   #xf)
+

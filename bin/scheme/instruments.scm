@@ -8,6 +8,12 @@
 
 ||#
 
+(define *bus-effect-names* (list "System Reverb On/Off"
+                                 "System Chorus On/Off"
+                                 "System Aux 1 On/Off"
+                                 "System Aux 2 On/Off"
+                                 "System Aux 3 On/Off"))
+
 (define (for-all-tracks func)
   (for-each (lambda (blocknum)
               (for-each (lambda (tracknum)
@@ -25,9 +31,27 @@
          (<ra> :get-audio-instrument-id instrument-num))
        (iota (<ra> :get-num-audio-instruments))))
 
+(define (get-instrument-from-name name)
+  (let loop ((instruments (append (get-all-midi-instruments)
+                                  (get-all-audio-instruments))))
+    (if (null? instruments)
+        #f
+        (if (string=? name (<ra> :get-instrument-name (car instruments)))
+            (car instruments)
+            (loop (cdr instruments))))))
+
 #||
 (for-each (lambda (i) (<ra> :set-instrument-effect i "System Solo On/Off" 0)) (get-all-audio-instruments))
 ||#
+
+(define (get-buses-connecting-from-instrument id-instrument)
+  (keep identity
+        (map (lambda (bus-num effect-name)
+               (if (>= (<ra> :get-instrument-effect id-instrument effect-name) 0.5)
+                   (<ra> :get-audio-bus-id bus-num)
+                   #f))
+             (iota (length *bus-effect-names*))
+             *bus-effect-names*)))
 
 (define (get-instruments-connecting-to-instrument id-instrument)
   (map (lambda (in-connection)

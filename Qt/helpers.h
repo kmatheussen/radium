@@ -76,7 +76,7 @@ namespace radium{
       
       layout = new QVBoxLayout(contents);
       layout->setSpacing(1);
-      
+
       contents->setLayout(layout);
       
       setWidget(contents);    
