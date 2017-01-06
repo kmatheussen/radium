@@ -27,7 +27,7 @@
 
 #include "radium_proc.h"
 
-#define MOUSE_OVERRIDERS(classname) \
+#define MOUSE_OVERRIDERS(classname)                     \
   void mousePressEvent(QMouseEvent *event) override{    \
     if (_mouse_callback==NULL)                          \
       classname::mousePressEvent(event);                \
@@ -36,7 +36,7 @@
   }                                                     \
                                                         \
   void mouseReleaseEvent(QMouseEvent *event) override { \
-    if (_mouse_callback==NULL)                          \
+    if (_mouse_callback==NULL)                            \
       classname::mouseReleaseEvent(event);                \
     else                                                  \
       Gui::mouseReleaseEvent(event);                      \
@@ -45,8 +45,15 @@
   void mouseMoveEvent(QMouseEvent *event) override{       \
     if (_mouse_callback==NULL)                            \
       classname::mouseMoveEvent(event);                   \
-    else                                                  \
-      Gui::mouseMoveEvent(event);                         \
+    else                                                                \
+      Gui::mouseMoveEvent(event);                                       \
+  }                                                                     \
+                                                                        \
+  void resizeEvent( QResizeEvent *event){                               \
+    if (_resize_callback==NULL)                                         \
+      classname::resizeEvent(event);                                    \
+    else\
+      Gui::resizeEvent(event);                  \
   }
 
 
@@ -157,15 +164,18 @@ static QVector<Gui*> g_guis;
                                
       printf("Deleting Gui %p\n",this);
 
-      if (_mouse_callback!=NULL)
-        s7extra_unprotect(_mouse_callback);
-
       for(Gui *child : children)
         delete child;
 
       for(Callback *callback : _callbacks)
         delete callback;
       
+      if (_mouse_callback!=NULL)
+        s7extra_unprotect(_mouse_callback);
+
+      if (_resize_callback!=NULL)
+        s7extra_unprotect(_resize_callback);
+
       g_guis[_gui_num] = NULL;
     }
 
@@ -219,7 +229,7 @@ static QVector<Gui*> g_guis;
 
     void addMouseCallback(func_t* func){      
       if (_mouse_callback!=NULL){
-        handleError("Canvas gui %d already has a mouse callback.", _gui_num);
+        handleError("Gui %d already has a mouse callback.", _gui_num);
         return;
       }
 
@@ -228,6 +238,25 @@ static QVector<Gui*> g_guis;
       _widget->setMouseTracking(true);
     }
 
+    func_t *_resize_callback = NULL;
+    
+    void resizeEvent(QResizeEvent *event){
+      R_ASSERT_RETURN_IF_FALSE(_resize_callback!=NULL);
+
+      event->accept();
+
+      s7extra_callFunc_void_int_int(_resize_callback, event->size().width(), event->size().height());
+    }
+
+    void addResizeCallback(func_t* func){
+      if (_resize_callback!=NULL){
+        handleError("Gui %d already has a resize callback.", _gui_num);
+        return;
+      }
+
+      _resize_callback = func;
+      s7extra_protect(_resize_callback);
+    }
 
     virtual QLayout *getLayout(void){
       return _widget->layout();
@@ -488,7 +517,9 @@ static QVector<Gui*> g_guis;
       _image_painter->setRenderHints(QPainter::Antialiasing,true);
 
       _image_painter->fillRect(QRect(0,0,width,height), get_qcolor(LOW_BACKGROUND_COLOR_NUM));
-      setFixedSize(width, height);
+
+      resize(width, height);
+      //setFixedSize(width, height);
     }
 
     void paintEvent ( QPaintEvent * ev ) override {
@@ -1081,6 +1112,15 @@ void gui_addMouseCallback(int64_t guinum, func_t* func){
     return;
 
   gui->addMouseCallback(func);
+}
+
+void gui_addResizeCallback(int64_t guinum, func_t* func){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  gui->addResizeCallback(func);
 }
 
 int64_t gui_button(const_char *text){
