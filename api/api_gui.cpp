@@ -27,17 +27,26 @@
 
 #include "radium_proc.h"
 
-#define MOUSE_OVERRIDERS() \
+#define MOUSE_OVERRIDERS(classname) \
   void mousePressEvent(QMouseEvent *event) override{    \
-    Gui::mousePressEvent(event);                        \
+    if (_mouse_callback==NULL)                          \
+      classname::mousePressEvent(event);                \
+    else                                                \
+      Gui::mousePressEvent(event);                      \
   }                                                     \
                                                         \
   void mouseReleaseEvent(QMouseEvent *event) override { \
-    Gui::mouseReleaseEvent(event);                      \
-  }                                                     \
-                                                        \
-  void mouseMoveEvent(QMouseEvent *event) override{     \
-    Gui::mouseMoveEvent(event);                         \
+    if (_mouse_callback==NULL)                          \
+      classname::mouseReleaseEvent(event);                \
+    else                                                  \
+      Gui::mouseReleaseEvent(event);                      \
+  }                                                       \
+                                                          \
+  void mouseMoveEvent(QMouseEvent *event) override{       \
+    if (_mouse_callback==NULL)                            \
+      classname::mouseMoveEvent(event);                   \
+    else                                                  \
+      Gui::mouseMoveEvent(event);                         \
   }
 
 
@@ -175,9 +184,9 @@ static QVector<Gui*> g_guis;
     }
 
     void mousePressEvent(QMouseEvent *event){
+      R_ASSERT_RETURN_IF_FALSE(_mouse_callback!=NULL);
+
       event->accept();
-      if (_mouse_callback==NULL)
-        return;
 
       _currentButton = getMouseButtonEventID(event);
       const QPoint &point = event->pos();
@@ -187,9 +196,9 @@ static QVector<Gui*> g_guis;
     }
 
     void mouseReleaseEvent(QMouseEvent *event) {
+      R_ASSERT_RETURN_IF_FALSE(_mouse_callback!=NULL);
+
       event->accept();
-      if (_mouse_callback==NULL)
-        return;
 
       const QPoint &point = event->pos();
       s7extra_callFunc_void_int_float_float(_mouse_callback, _currentButton, point.x(), point.y());
@@ -199,9 +208,9 @@ static QVector<Gui*> g_guis;
     }
 
     void mouseMoveEvent(QMouseEvent *event){
+      R_ASSERT_RETURN_IF_FALSE(_mouse_callback!=NULL);
+
       event->accept();
-      if (_mouse_callback==NULL)
-        return;
 
       const QPoint &point = event->pos();
       s7extra_callFunc_void_int_float_float(_mouse_callback, _currentButton, point.x(), point.y());
@@ -467,7 +476,7 @@ static QVector<Gui*> g_guis;
       delete _image;
     }
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(QWidget);
 
     void setSize(int width, int height){
       delete _image_painter;
@@ -574,7 +583,7 @@ static QVector<Gui*> g_guis;
     {
     }
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(QPushButton);
   };
 
   
@@ -590,7 +599,7 @@ static QVector<Gui*> g_guis;
       setChecked(is_checked);
     }
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(QCheckBox);
   };
   
   struct RadioButton : QRadioButton, Gui{
@@ -605,7 +614,7 @@ static QVector<Gui*> g_guis;
       setChecked(is_checked);
     }
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(QRadioButton);
   };
   
   struct VerticalLayout : QWidget, Gui{
@@ -616,7 +625,7 @@ static QVector<Gui*> g_guis;
       setLayout(mainLayout);
     }
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(QWidget);
   };
   
   struct HorizontalLayout : QWidget, Gui{
@@ -627,7 +636,7 @@ static QVector<Gui*> g_guis;
       setLayout(mainLayout);
     }
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(QWidget);
   };
 
   struct MyGridLayout : QGridLayout{
@@ -656,7 +665,7 @@ static QVector<Gui*> g_guis;
     }    
 
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(QWidget);
   };
   
   struct GroupBox : QGroupBox, Gui{
@@ -668,7 +677,7 @@ static QVector<Gui*> g_guis;
       setLayout(mainLayout);
     }
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(QGroupBox);
   };
 
   struct ScrollArea : QScrollArea, Gui{
@@ -698,7 +707,7 @@ static QVector<Gui*> g_guis;
       setWidget(contents);
     }
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(QScrollArea);
   };
 
   struct VerticalScroll : QScrollArea, Gui{
@@ -727,7 +736,7 @@ static QVector<Gui*> g_guis;
       return mylayout;
     }
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(QScrollArea);
   };
 
   struct Slider : MyQSlider, Gui{
@@ -779,7 +788,7 @@ static QVector<Gui*> g_guis;
         s7extra_unprotect(func);
     }
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(MyQSlider);
     
     void value_setted(int value){
       double scaled_value = scale_double(value, minimum(), maximum(), _min, _max);
@@ -837,7 +846,7 @@ static QVector<Gui*> g_guis;
         setText("<span style=\" color:" + color + ";\">" + text + "</span>");
     }
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(QLabel);
   };
 
   struct MyFocusSnifferQLineEdit : FocusSnifferQLineEdit{
@@ -870,7 +879,7 @@ static QVector<Gui*> g_guis;
       setText(content);
     }
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(MyFocusSnifferQLineEdit);
   };
 
   struct TextEdit : FocusSnifferQTextEdit, Gui{
@@ -884,7 +893,7 @@ static QVector<Gui*> g_guis;
       setPlainText(content);
     }
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(FocusSnifferQTextEdit);
   };
 
 
@@ -920,7 +929,7 @@ static QVector<Gui*> g_guis;
       setMaximum(R_MAX(min, max));
     }
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(MyFocusSnifferQSpinBox);
   };
   
   struct MyFocusSnifferQDoubleSpinBox : FocusSnifferQDoubleSpinBox{
@@ -961,7 +970,7 @@ static QVector<Gui*> g_guis;
       setValue(curr);
     }
 
-    MOUSE_OVERRIDERS();
+    MOUSE_OVERRIDERS(MyFocusSnifferQDoubleSpinBox);
   };
 
 
