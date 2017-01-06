@@ -9,47 +9,69 @@
 
 
 (define (create-mixer-strip-name gui instrument-id x1 y1 x2 y2)
-  '(<gui> :filled-box
-         gui
-         (<ra> :get-instrument-color instrument-id)
-         x1 y1
-         x2 y2)
-  '(<gui> :draw-text
-         gui
-         "black"
-         (<ra> :get-instrument-name instrument-id)
-         x1 y1
-         x2 y2)
   (define name (<gui> :line (<ra> :get-instrument-name instrument-id) (lambda (edited)
                                                                         (c-display "edited to" edited))))
   (<gui> :set-background-color name (<ra> :get-instrument-color instrument-id))
   (<gui> :add gui name x1 y1 x2 y2))
 
-(define (create-mixer-strip-send gui instrument-id send-id x1 y1 x2 y2)
+
+
+(define (create-mixer-strip-plugin gui instrument-id send-id)
+  (define fontheight (get-fontheight))
   (define slider (<gui> :horizontal-int-slider
                         (<-> (<ra> :get-instrument-name send-id) ": ")
                         0 0 100
                         (lambda (percentage)
                           (c-display "moved" percentage))))
-  (<gui> :add gui slider x1 y1 x2 y2))
+  (<gui> :set-size-policy slider #t #t)
+  (<gui> :set-background-color slider (<ra> :get-instrument-color send-id))
+  (<gui> :add gui slider))
+
+(define (create-mixer-strip-send gui instrument-id send-id)
+  (define horiz (<gui> :horizontal-layout))
+  (<gui> :set-layout-spacing horiz 1 1 0 1 0)
+
+  (define text (<gui> :text "↳"))
+  (<gui> :set-size-policy text #f #t)
+  (<gui> :add horiz text)
+
+  (<gui> :add gui horiz)
+  (create-mixer-strip-plugin horiz instrument-id send-id))
 
 
-(define (get-instrument-sends instrument-id)
-  (list 1))
 
-(define (create-mixer-strip-sends gui instrument-id x1 y1 x2 y2)
+(define (create-mixer-strip-path gui instrument-id)
   (define fontheight (get-fontheight))
   (define send-height fontheight)
-  (define send-instrument-ids (get-instrument-sends instrument-id))
-  (for-each (lambda (i send-id)
-              (let ((send-y1 (+ y1 (* i send-height))))
+
+  (define (add-bus-sends instrument-id)
+    (for-each (lambda (send-id)
                 (create-mixer-strip-send gui
                                          instrument-id
-                                         send-id
-                                         x1 send-y1
-                                         x2  (+ send-y1 send-height))))
-            (iota (length send-instrument-ids))
-            send-instrument-ids))
+                                         send-id))
+              (get-buses-connecting-from-instrument instrument-id)))
+
+  (add-bus-sends instrument-id)
+    
+  (define out-instruments (get-instruments-connecting-from-instrument instrument-id))
+  (define plugin-instrument #f)
+  
+  (for-each (lambda (out-instrument)
+              (define inputs (get-instruments-connecting-to-instrument out-instrument))
+              (if (and (not plugin-instrument)
+                       (= 1 (length inputs)))
+                  (set! plugin-instrument out-instrument)
+                  (create-mixer-strip-send gui
+                                           out-instrument
+                                           out-instrument)))
+            out-instruments)
+  
+  (when plugin-instrument
+    (create-mixer-strip-plugin gui
+                               plugin-instrument
+                               plugin-instrument)
+    (create-mixer-strip-path gui plugin-instrument)))
+
 
 (define (create-mixer-strip-pan gui instrument-id x1 y1 x2 y2)
   (define slider (<gui> :horizontal-int-slider
@@ -146,8 +168,14 @@
   (define volume_y1 mutesolo_y2)
   (define volume_y2 comment_y1)
 
+
   (create-mixer-strip-name gui instrument-id x1 name_y1 x2 name_y2)
-  (create-mixer-strip-sends gui instrument-id x1 sends_y1 x2 sends_y2)
+
+  (define mixer-strip-path-gui (<gui> :vertical-scroll))
+  (<gui> :set-layout-spacing mixer-strip-path-gui 1 1 0 1 0)
+  (<gui> :add gui mixer-strip-path-gui x1 sends_y1 x2 sends_y2)
+  (create-mixer-strip-path mixer-strip-path-gui instrument-id)
+
   (create-mixer-strip-pan gui instrument-id x1 pan_y1 x2 pan_y2)
   (create-mixer-strip-mutesolo gui instrument-id x1 mutesolo_y1 x2 mutesolo_y2)
   (create-mixer-strip-volume gui instrument-id x1 volume_y1 x2 volume_y2)
@@ -156,21 +184,27 @@
   (<gui> :draw-box gui "black" x1 y1 x2 y2 1.0)
   )
 
-#!
+;;#!
 (begin
   (define mixer-strips (<gui> :canvas 300 800))
-  (create-mixer-strip mixer-strips 0 20 20 220 700)
+  (create-mixer-strip mixer-strips (get-instrument-from-name "Sample Player 1") 20 20 220 700)
   (<gui> :show mixer-strips))
-!#
+;;!#
 
 
 
 (define (create-mixer-strips gui)
-  
+  #f
   )
 
 
 #!
+
+(get-instrument-from-name "Sample Player 1")
+(get-buses-connecting-from-instrument (get-instrument-from-name "Sample Player 1"))
+
+
+(get-all-audio-instruments)
 (define canvas (<gui> :canvas 200 200))
 (<gui> :show canvas)
 !#
