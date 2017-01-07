@@ -229,6 +229,12 @@
 
 (<gui> :add scroll-area (<gui> :horizontal-int-slider "2helloslider: " -5 10 100 (lambda (asdf) (c-display "moved" asdf))))
 
+(define scroll-area (<gui> :horizontal-scroll))
+
+(<gui> :show scroll-area)
+
+(<gui> :add scroll-area (<gui> :vertical-int-slider "s:" -5 10 100 (lambda (asdf) (c-display "moved" asdf))))
+
 (begin
   #xf)
 

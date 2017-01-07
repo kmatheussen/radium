@@ -790,6 +790,35 @@ static QVector<Gui*> g_guis;
     OVERRIDERS(QScrollArea);
   };
 
+  struct HorizontalScroll : QScrollArea, Gui{
+    QWidget *contents;
+    const char *magic = "magic3";
+    QLayout *mylayout;
+
+    HorizontalScroll(void)
+      : Gui(this)        
+    {
+      setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+      setWidgetResizable(true);
+
+      QWidget *contents = new QWidget(this);
+
+      mylayout = new QHBoxLayout(contents);
+      mylayout->setSpacing(1);
+      //mylayout->setContentsMargins(1,1,1,1);
+
+      contents->setLayout(mylayout);
+      
+      setWidget(contents);    
+    }
+
+    QLayout *getLayout(void) override {
+      return mylayout;
+    }
+
+    OVERRIDERS(QScrollArea);
+  };
+
   struct Slider : MyQSlider, Gui{
     Q_OBJECT;
 
@@ -1220,6 +1249,10 @@ int64_t gui_scrollArea(bool scroll_horizontal, bool scroll_vertical){
 
 int64_t gui_verticalScroll(void){
   return (new VerticalScroll())->get_gui_num();
+}
+
+int64_t gui_horizontalScroll(void){
+  return (new HorizontalScroll())->get_gui_num();
 }
 
 int64_t gui_text(const_char* text, const_char* color){
