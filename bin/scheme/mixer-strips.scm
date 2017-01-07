@@ -182,7 +182,16 @@
   (define comment-edit (<gui> :line "Comment"))
   (<gui> :add gui comment-edit x1 y1 x2 y2))
 
-(define (create-mixer-strip gui instrument-id x1 y1 x2 y2)
+(define (create-mixer-strip instrument-id width height)
+  (define gui (<gui> :canvas width height))
+  (<gui> :set-min-width gui width)
+  (<gui> :set-max-width gui width)
+  (<gui> :set-size-policy gui #f #t)
+  
+  (define y1 0)
+  (define x1 0)
+  (define x2 width)
+  (define y2 height)
   (define top-y y1)
   
   (define fontheight (get-fontheight))
@@ -221,7 +230,7 @@
     
     ;;(<gui> :draw-box gui "#010101" x1 top-y (1- x2) y2 0.2)
     
-    returned-plugin-buses
+    (list gui returned-plugin-buses)
     ))
 
 #!
@@ -250,29 +259,42 @@
 
 
 (define (create-mixer-strips)
-  (define mixer-strips (<gui> :canvas 800 800))
-  (define x1 0)
+  ;;(define mixer-strips (<gui> :canvas 800 800))
+  (define mixer-strips (<gui> :horizontal-scroll)) ;;canvas 800 800))  
+  ;;(define x1 0)
   (define mixer-strip-width 110)
   (define plugin-buses '())
 
   ;; no-input instruments
   (for-each (lambda (instrument-id)
-              (set! plugin-buses (append plugin-buses
-                                         (create-mixer-strip mixer-strips instrument-id x1 0 (+ x1 mixer-strip-width) 780)))
-              (set! x1 (+ x1 mixer-strip-width)))
+              (let* ((gakk (create-mixer-strip instrument-id mixer-strip-width 780))
+                     (mixer-strip (car gakk))
+                     (returned-plugin-buses (cadr gakk)))
+                (<gui> :add mixer-strips mixer-strip)
+                (set! plugin-buses (append plugin-buses))))
             (sort-instruments-by-mixer-position
              (get-all-instruments-with-no-input-connections)))
 
-  (set! x1 (+ x1 40))
+  ;;(set! x1 (+ x1 40))
+
+  (<gui> :add-layout-space mixer-strips (* (get-fontheight) 2) 10)
   
   ;; buses
-  (for-each (lambda (instrument-id)
-              (create-mixer-strip mixer-strips instrument-id x1 0 (+ x1 mixer-strip-width) 780)
-              (set! x1 (+ x1 mixer-strip-width)))
-            (sort-instruments-by-mixer-position
-             (append plugin-buses
-                     (get-all-instruments-with-at-least-two-input-connections)
-                     (get-buses))))
+  (let loop ((bus-instruments (sort-instruments-by-mixer-position
+                               (append plugin-buses
+                                       (get-all-instruments-with-at-least-two-input-connections)
+                                       (get-buses)))))
+    (when (not (null? bus-instruments))
+      (let* ((instrument-id (car bus-instruments))
+             (gakk (create-mixer-strip instrument-id mixer-strip-width 780))
+             (mixer-strip (car gakk))
+             (returned-plugin-buses (cadr gakk)))
+        (<gui> :add mixer-strips mixer-strip)
+        (if (null? returned-plugin-buses)
+            (loop (cdr bus-instruments))
+            (sort-instruments-by-mixer-position (append (cdr bus-instruments)
+                                                        returned-plugin-buses))))))
+  
 
   (<gui> :show mixer-strips)
   )
