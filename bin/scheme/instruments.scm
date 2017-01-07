@@ -44,6 +44,22 @@
 (for-each (lambda (i) (<ra> :set-instrument-effect i "System Solo On/Off" 0)) (get-all-audio-instruments))
 ||#
 
+(define (sort-instruments-by-mixer-position instruments)
+  (sort! (copy instruments)
+         (lambda (i1 i2)
+           (define x1 (<ra> :get-instrument-x i1))
+           (define x2 (<ra> :get-instrument-x i2))
+           (define y1 (<ra> :get-instrument-y i1))
+           (define y2 (<ra> :get-instrument-y i2))
+           (cond ((< x1 x2)
+                  #t)
+                 ((> x1 x2)
+                  #f)
+                 ((< y1 y2)
+                  #t)
+                 (else
+                  #f)))))
+  
 (define (get-buses-connecting-from-instrument id-instrument)
   (keep identity
         (map (lambda (bus-num effect-name)
@@ -52,6 +68,11 @@
                    #f))
              (iota (length *bus-effect-names*))
              *bus-effect-names*)))
+
+(define (get-buses)
+  (map (lambda (bus-num)
+         (<ra> :get-audio-bus-id bus-num))
+       (iota (length *bus-effect-names*))))
 
 (define (get-instruments-connecting-to-instrument id-instrument)
   (map (lambda (in-connection)
@@ -72,6 +93,21 @@
   (map (lambda (in-connection)
          (<ra> :get-event-connection-dest-instrument in-connection id-instrument))
        (iota (<ra> :get-num-out-event-connections id-instrument))))
+
+(define (get-all-instruments-with-no-input-connections)
+  (define buses (get-buses))
+  (keep (lambda (id-instrument)
+          (and (not (member id-instrument buses))
+               (null? (get-instruments-connecting-to-instrument id-instrument))))
+        (get-all-audio-instruments)))
+
+(define (get-all-instruments-with-at-least-two-input-connections)
+  (define buses (get-buses))
+  (keep (lambda (id-instrument)
+          (and (not (member id-instrument buses))
+               (>= (length (get-instruments-connecting-to-instrument id-instrument))
+                   2)))
+        (get-all-audio-instruments)))
 
 (define (duplicate-connections id-old-instrument id-new-instrument)
   ;; in audio

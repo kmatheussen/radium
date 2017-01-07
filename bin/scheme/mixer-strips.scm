@@ -1,7 +1,6 @@
 
 (define (get-fontheight)
-  35)
-
+  (+ 4 (<gui> :get-system-fontheight)))
 
 
 (define (create-mixer-gui)
@@ -15,16 +14,46 @@
   (<gui> :add gui name x1 y1 x2 y2))
 
 
+(define (strip-slider instrument-id effect-name)
+  (define instrument-name (<ra> :get-instrument-name instrument-id))
+  (define canvas (<gui> :canvas 100 (get-fontheight)))
+  (<gui> :set-min-height canvas (get-fontheight))
+
+  (define (paintit width height)
+    (define color (<ra> :get-instrument-color instrument-id))
+    (define value (<ra> :get-instrument-effect instrument-id effect-name))
+    (c-display "value: " value)
+    (define pos (scale value 0 1 0 width))
+    (<gui> :filled-box canvas color 0 0 pos height)
+    (<gui> :filled-box canvas "black" pos 0 width height)
+    (<gui> :draw-box canvas "gray" 0 0 width height 0.8)
+    (<gui> :draw-text canvas "white" (<-> instrument-name ": " (floor (scale value 0 1 0 100)))
+           4 2 width height))
+
+  (<gui> :add-resize-callback canvas paintit)
+
+  (<gui> :add-mouse-callback canvas (lambda (button x y)
+                                      (when (= button *left-button*)
+                                        (c-display "  m" button x y (scale x 0 (<gui> :width canvas) 0 1.0))
+                                        (<ra> :set-instrument-effect instrument-id effect-name (scale x 0 (<gui> :width canvas) 0 1))
+                                        (paintit (<gui> :width canvas)
+                                                 (<gui> :height canvas)))))
+
+  (paintit (<gui> :width canvas)
+           (<gui> :height canvas))
+
+  canvas)
 
 (define (create-mixer-strip-plugin gui instrument-id send-id)
   (define fontheight (get-fontheight))
-  (define slider (<gui> :horizontal-int-slider
+  '(define slider (<gui> :horizontal-int-slider
                         (<-> (<ra> :get-instrument-name send-id) ": ")
                         0 0 100
                         (lambda (percentage)
                           (c-display "moved" percentage))))
+  (define slider (strip-slider send-id "System Volume"))
   (<gui> :set-size-policy slider #t #t)
-  (<gui> :set-background-color slider (<ra> :get-instrument-color send-id))
+  ;;(<gui> :set-background-color slider (<ra> :get-instrument-color send-id))
   (<gui> :add gui slider))
 
 (define (create-mixer-strip-send gui instrument-id send-id)
@@ -39,21 +68,24 @@
   (create-mixer-strip-plugin horiz instrument-id send-id))
 
 
-
+;; Returns a list of parallel plugins that needs their own mixer strip.
 (define (create-mixer-strip-path gui instrument-id)
   (define fontheight (get-fontheight))
   (define send-height fontheight)
+
+  (define returned-plugin-buses '())
 
   (define (add-bus-sends instrument-id)
     (for-each (lambda (send-id)
                 (create-mixer-strip-send gui
                                          instrument-id
-                                         send-id))
+                                         send-id))              
               (get-buses-connecting-from-instrument instrument-id)))
 
   (add-bus-sends instrument-id)
     
-  (define out-instruments (get-instruments-connecting-from-instrument instrument-id))
+  (define out-instruments (sort-instruments-by-mixer-position
+                           (get-instruments-connecting-from-instrument instrument-id)))
   (define plugin-instrument #f)
   
   (for-each (lambda (out-instrument)
@@ -61,16 +93,21 @@
               (if (and (not plugin-instrument)
                        (= 1 (length inputs)))
                   (set! plugin-instrument out-instrument)
-                  (create-mixer-strip-send gui
-                                           out-instrument
-                                           out-instrument)))
+                  (begin
+                    (if (= 1 (length inputs))
+                        (push-back! returned-plugin-buses out-instrument))
+                    (create-mixer-strip-send gui
+                                             out-instrument
+                                             out-instrument))))
             out-instruments)
   
   (when plugin-instrument
     (create-mixer-strip-plugin gui
                                plugin-instrument
                                plugin-instrument)
-    (create-mixer-strip-path gui plugin-instrument)))
+    (create-mixer-strip-path gui plugin-instrument))
+
+  returned-plugin-buses)
 
 
 (define (create-mixer-strip-pan gui instrument-id x1 y1 x2 y2)
@@ -146,6 +183,8 @@
   (<gui> :add gui comment-edit x1 y1 x2 y2))
 
 (define (create-mixer-strip gui instrument-id x1 y1 x2 y2)
+  (define top-y y1)
+  
   (define fontheight (get-fontheight))
   (define fontheight-and-borders (+ 4 fontheight))
   (define pan-height fontheight-and-borders)
@@ -168,35 +207,77 @@
   (define volume_y1 mutesolo_y2)
   (define volume_y2 comment_y1)
 
-
   (create-mixer-strip-name gui instrument-id x1 name_y1 x2 name_y2)
 
   (define mixer-strip-path-gui (<gui> :vertical-scroll))
-  (<gui> :set-layout-spacing mixer-strip-path-gui 1 1 0 1 0)
+  (<gui> :set-layout-spacing mixer-strip-path-gui 5 1 0 1 0)
   (<gui> :add gui mixer-strip-path-gui x1 sends_y1 x2 sends_y2)
-  (create-mixer-strip-path mixer-strip-path-gui instrument-id)
+  (let ((returned-plugin-buses (create-mixer-strip-path mixer-strip-path-gui instrument-id)))
 
-  (create-mixer-strip-pan gui instrument-id x1 pan_y1 x2 pan_y2)
-  (create-mixer-strip-mutesolo gui instrument-id x1 mutesolo_y1 x2 mutesolo_y2)
-  (create-mixer-strip-volume gui instrument-id x1 volume_y1 x2 volume_y2)
-  (create-mixer-strip-comment gui instrument-id x1 comment_y1 x2 comment_y2)
+    (create-mixer-strip-pan gui instrument-id x1 pan_y1 x2 pan_y2)
+    (create-mixer-strip-mutesolo gui instrument-id x1 mutesolo_y1 x2 mutesolo_y2)
+    (create-mixer-strip-volume gui instrument-id x1 volume_y1 x2 volume_y2)
+    (create-mixer-strip-comment gui instrument-id x1 comment_y1 x2 comment_y2)
+    
+    ;;(<gui> :draw-box gui "#010101" x1 top-y (1- x2) y2 0.2)
+    
+    returned-plugin-buses
+    ))
 
-  (<gui> :draw-box gui "black" x1 y1 x2 y2 1.0)
-  )
-
-;;#!
+#!
 (begin
+  (define pos-x (or (and (defined? 'mixer-strips) (<gui> :get-x mixer-strips))
+                    400))
+  (define pos-y (or (and (defined? 'mixer-strips) (<gui> :get-y mixer-strips))
+                    50))
+  (if (defined? 'mixer-strips)
+      (<gui> :close mixer-strips))
   (define mixer-strips (<gui> :canvas 300 800))
+  ;;(<gui> :draw-box mixer-strips "black" (- 20 1) (- 20 1) (1+ 220) (1+ 700) 1.0)
+  ;;(<gui> :filled-box mixer-strips "black" (- 20 1) (- 20 1) (1+ 220) (1+ 700))
   (create-mixer-strip mixer-strips (get-instrument-from-name "Sample Player 1") 20 20 220 700)
-  (<gui> :show mixer-strips))
+  (<gui> :show mixer-strips)
+
+  (<gui> :set-pos mixer-strips pos-x pos-y)
+  )
+!#
+
+#!
+(define mixer-strips (<gui> :canvas 300 800))
+!#
+
 ;;!#
 
 
+(define (create-mixer-strips)
+  (define mixer-strips (<gui> :canvas 800 800))
+  (define x1 0)
+  (define mixer-strip-width 110)
+  (define plugin-buses '())
 
-(define (create-mixer-strips gui)
-  #f
+  ;; no-input instruments
+  (for-each (lambda (instrument-id)
+              (set! plugin-buses (append plugin-buses
+                                         (create-mixer-strip mixer-strips instrument-id x1 0 (+ x1 mixer-strip-width) 780)))
+              (set! x1 (+ x1 mixer-strip-width)))
+            (sort-instruments-by-mixer-position
+             (get-all-instruments-with-no-input-connections)))
+
+  (set! x1 (+ x1 40))
+  
+  ;; buses
+  (for-each (lambda (instrument-id)
+              (create-mixer-strip mixer-strips instrument-id x1 0 (+ x1 mixer-strip-width) 780)
+              (set! x1 (+ x1 mixer-strip-width)))
+            (sort-instruments-by-mixer-position
+             (append plugin-buses
+                     (get-all-instruments-with-at-least-two-input-connections)
+                     (get-buses))))
+
+  (<gui> :show mixer-strips)
   )
 
+(create-mixer-strips)
 
 #!
 

@@ -195,16 +195,16 @@
 (<gui> :add-mouse-callback canvas (lambda (button x y)
                                     (c-display "button:" button "x/y:" x y)))
 
-(<gui> :draw-line canvas #xff0000 5 10 100 150 2.0)
+(<gui> :draw-line canvas "#xff0000" 5 10 100 150 2.0)
 (<gui> :draw-line canvas #x00ff00 59 60 150 190 2.0)
 (<gui> :draw-line canvas #x80ff0060 159 60 150 190 2.0)
 (<gui> :draw-line canvas #xffff0060 59 60 150 190 2.0)
 (<gui> :draw-line canvas #x00ff0060 9 60 150 190 2.0)
 
 (<gui> :draw-line canvas  #x80ff0000 30 60 150 190 40.0)
-(<gui> :filled-box canvas #x800000ff 20 20 180 190)
+(<gui> :filled-box canvas "#800000ff" 20 20 180 190)
 
-(<gui> :draw-text canvas #x80000050 "hello" 50 50 100 120)
+(<gui> :draw-text canvas "#80000050" "hello" 50 50 100 120)
 
 (define hslider (<gui> :horizontal-int-slider "helloslider: " -5 10 100 (lambda (asdf) (c-display "moved" asdf)) ))
 
