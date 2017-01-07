@@ -522,13 +522,13 @@ static QVector<Gui*> g_guis;
       auto *new_image = new QImage(width, height, QImage::Format_ARGB32);
       auto *new_image_painter = new QPainter(new_image);
 
-      new_image_painter->setRenderHints(QPainter::Antialiasing,true);
-
       new_image_painter->fillRect(QRect(0,0,width,height), get_qcolor(LOW_BACKGROUND_COLOR_NUM));
       
       if (_image!=NULL)
-        new_image_painter->drawImage(QRect(0,0,width, height), *_image, QRect(0,0,_image->width(), _image->height()));
+        new_image_painter->drawImage(QPoint(0,0), *_image);
       
+      new_image_painter->setRenderHints(QPainter::Antialiasing,true);
+
       delete _image_painter;
       delete _image;
       _image_painter = new_image_painter;
@@ -577,7 +577,7 @@ static QVector<Gui*> g_guis;
       float max_x = R_MAX(x1, x2) + extra;
       float min_y = R_MIN(y1, y2) - extra;
       float max_y = R_MAX(y1, y2) + extra;
-      update(min_x, min_y, max_x-min_x, max_y-min_y);
+      update(min_x-1, min_y-1, max_x-min_x+2, max_y-min_y+2);
     }
 
     void drawLine(const_char* color, float x1, float y1, float x2, float y2, float width) override {

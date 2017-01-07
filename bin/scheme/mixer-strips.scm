@@ -261,7 +261,9 @@
 
 (define (create-mixer-strips)
   ;;(define mixer-strips (<gui> :canvas 800 800))
-  (define mixer-strips (<gui> :horizontal-scroll)) ;;canvas 800 800))  
+  (define mixer-strips (<gui> :horizontal-scroll)) ;;canvas 800 800))
+  (<gui> :set-layout-spacing mixer-strips 5 0 0 0 0)
+  
   ;;(define x1 0)
   (define mixer-strip-width 110)
   (define plugin-buses '())
