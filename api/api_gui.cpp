@@ -497,6 +497,7 @@ static QVector<Gui*> g_guis;
     Canvas(int width, int height)
       : Gui(this)
     {
+      setNewImage(width, height);
       setSize(width, height);
 
       setAttribute(Qt::WA_OpaquePaintEvent);
@@ -510,27 +511,35 @@ static QVector<Gui*> g_guis;
     MOUSE_OVERRIDERS(QWidget);
 
     void resizeEvent( QResizeEvent *event) override {
-      setSize(event->size().width(), event->size().height());
+      setNewImage(event->size().width(), event->size().height());
       if (_resize_callback==NULL)
         QWidget::resizeEvent(event);
       else
         Gui::resizeEvent(event);
     }
 
-    void setSize(int width, int height){
+    void setNewImage(int width, int height){
+      auto *new_image = new QImage(width, height, QImage::Format_ARGB32);
+      auto *new_image_painter = new QPainter(new_image);
+
+      new_image_painter->setRenderHints(QPainter::Antialiasing,true);
+
+      new_image_painter->fillRect(QRect(0,0,width,height), get_qcolor(LOW_BACKGROUND_COLOR_NUM));
+      
+      if (_image!=NULL)
+        new_image_painter->drawImage(QRect(0,0,width, height), *_image, QRect(0,0,_image->width(), _image->height()));
+      
       delete _image_painter;
       delete _image;
-
-      _image = new QImage(width, height, QImage::Format_ARGB32);
-      _image_painter = new QPainter(_image);
-
-      _image_painter->setRenderHints(QPainter::Antialiasing,true);
-
-      _image_painter->fillRect(QRect(0,0,width,height), get_qcolor(LOW_BACKGROUND_COLOR_NUM));
-
+      _image_painter = new_image_painter;
+      _image = new_image;      
+    }
+    
+    void setSize(int width, int height){      
       resize(width, height);
       //setFixedSize(width, height);
     }
+
 
     void paintEvent ( QPaintEvent * ev ) override {
       QPainter p(this);
@@ -538,6 +547,7 @@ static QVector<Gui*> g_guis;
       p.drawImage(ev->rect(), *_image, ev->rect());
     }
 
+    
     QColor getQColor(int64_t color){
 #if QT_VERSION >= 0x056000
       return QColor(QRgba64::fromRgba64(color));
