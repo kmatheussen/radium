@@ -1458,6 +1458,20 @@ void gui_setLayoutSpacing(int64_t guinum, int spacing, int left, int top, int ri
   layout->setContentsMargins(left, top, right, bottom);
 }
 
+void gui_addLayoutSpace(int64_t guinum, int width, int height){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  QLayout *layout = gui->getLayout();
+  if (layout==NULL){
+    handleError("Gui #%d doesn't have a layout", guinum);
+    return;
+  }
+
+  layout->addItem(new QSpacerItem(width,height,QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding));
+}
+
 void gui_setSizePolicy(int64_t guinum, bool grow_horizontally, bool grow_vertically){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
