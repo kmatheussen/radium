@@ -1054,8 +1054,12 @@ static QVector<Gui*> g_guis;
   static MyUiLoader g_uiloader;
 }
 
+
 using namespace radium_gui;
 
+int gui_getSystemFontheight(void){
+  return root->song->tracker_windows->systemfontheight;
+}
   
 static Gui *get_gui(int64_t guinum){
   if (guinum < 0 || guinum > g_guis.size()){
@@ -1368,6 +1372,32 @@ int gui_height(int64_t guinum){
   return gui->_widget->height();
 }
 
+int gui_getX(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return 0;
+
+  return gui->_widget->x();
+}
+
+int gui_getY(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return 0;
+
+  return gui->_widget->y();
+}
+
+void gui_setPos(int64_t guinum, int x, int y){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->move(x,y);
+}
+
+  
+  
 void gui_setBackgroundColor(int64_t guinum, const_char* color){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
