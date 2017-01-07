@@ -1649,6 +1649,14 @@ struct SoundPlugin *SP_get_plugin(const SoundProducer *producer){
   return producer->_plugin;
 }
 
+struct SoundProducer *SP_get_sound_producer(struct SoundPlugin *plugin){
+  for(auto *sp : *MIXER_get_all_SoundProducers())
+    if (sp->_plugin==plugin)
+      return sp;
+
+  return NULL;
+}
+
 int SP_get_bus_num(const SoundProducer *sp){
   return sp->_bus_num;
 }

@@ -526,6 +526,21 @@ int64_t getAudioBusId(int bus_num){
   return patch->id;
 }
 
+bool instrumentIsBusDescendant(int64_t instrument_id){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  if (patch->instrument == get_audio_instrument()){
+    struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+    R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, false);
+    struct SoundProducer *sp = SP_get_sound_producer(plugin);
+    R_ASSERT_RETURN_IF_FALSE2(sp!=NULL, false);
+    return SP_get_bus_descendant_type(sp)==IS_BUS_DESCENDANT;
+  }else
+    return false; // Can not delete midi instruments.
+}
+
 bool instrumentIsPermanent(int64_t instrument_id){  
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)

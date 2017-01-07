@@ -77,7 +77,6 @@ void SP_RT_clean_output(SoundProducer *producer, int num_frames);
 void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_num, bool process_plugins);
 void SP_RT_set_bus_descendant_type_for_plugin(SoundProducer *producer);
 int SP_get_bus_num(const SoundProducer *sp);
-enum BusDescendantType SP_get_bus_descendant_type(const SoundProducer *sp);
 float SP_get_input_peak(SoundProducer *producer, int ch);
 float SP_get_output_peak(SoundProducer *producer, int ch);
 void SP_set_buffer_size(SoundProducer *producer,int buffer_size);
@@ -95,6 +94,9 @@ struct SoundPlugin;
 #endif
 
 extern LANGSPEC struct SoundPlugin *SP_get_plugin(const struct SoundProducer *producer);
+extern LANGSPEC struct SoundProducer *SP_get_sound_producer(struct SoundPlugin *plugin);
+
+extern LANGSPEC enum BusDescendantType SP_get_bus_descendant_type(const struct SoundProducer *sp);
 
 extern LANGSPEC struct SoundProducer *SP_create(struct SoundPlugin *plugin, Buses buses);
 extern LANGSPEC void SP_delete(struct SoundProducer *producer);
