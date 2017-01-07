@@ -76,11 +76,12 @@
   (define returned-plugin-buses '())
 
   (define (add-bus-sends instrument-id)
-    (for-each (lambda (send-id)
-                (create-mixer-strip-send gui
-                                         instrument-id
-                                         send-id))              
-              (get-buses-connecting-from-instrument instrument-id)))
+    (if (not (<ra> :instrument-is-bus-descendant instrument-id))
+        (for-each (lambda (send-id)
+                    (create-mixer-strip-send gui
+                                             instrument-id
+                                             send-id))              
+                  (get-buses-connecting-from-instrument instrument-id))))
 
   (add-bus-sends instrument-id)
     
@@ -271,7 +272,7 @@
                      (mixer-strip (car gakk))
                      (returned-plugin-buses (cadr gakk)))
                 (<gui> :add mixer-strips mixer-strip)
-                (set! plugin-buses (append plugin-buses))))
+                (set! plugin-buses (append plugin-buses returned-plugin-buses))))
             (sort-instruments-by-mixer-position
              (get-all-instruments-with-no-input-connections)))
 
@@ -292,8 +293,8 @@
         (<gui> :add mixer-strips mixer-strip)
         (if (null? returned-plugin-buses)
             (loop (cdr bus-instruments))
-            (sort-instruments-by-mixer-position (append (cdr bus-instruments)
-                                                        returned-plugin-buses))))))
+            (loop (sort-instruments-by-mixer-position (append (cdr bus-instruments)
+                                                              returned-plugin-buses)))))))
   
 
   (<gui> :show mixer-strips)
