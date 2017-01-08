@@ -26,6 +26,8 @@
 #include "api_common_proc.h"
 
 #include "radium_proc.h"
+#include "api_gui_proc.h"
+
 
 #define MOUSE_OVERRIDERS(classname)                     \
   void mousePressEvent(QMouseEvent *event) override{    \
@@ -49,9 +51,7 @@
       Gui::mouseMoveEvent(event);                                       \
   }
 
-  
-#define OVERRIDERS(classname)                                           \
-  MOUSE_OVERRIDERS(classname)                                           \
+#define RESIZE_OVERRIDER(classname)                                     \
   void resizeEvent( QResizeEvent *event) override {                     \
     if (_image!=NULL)                                                   \
       setNewImage(event->size().width(), event->size().height());       \
@@ -59,15 +59,38 @@
       classname::resizeEvent(event);                                    \
     else                                                                \
       Gui::resizeEvent(event);                                          \
-  }                                                                     \
+  }                                                                     
+
+#define PAINT_OVERRIDER(classname)                                      \
   void paintEvent(QPaintEvent *ev) override {                           \
     if(_image!=NULL){                                                   \
       QPainter p(this);                                                 \
-      p.drawImage(ev->rect(), *_image, ev->rect());                     \
+      p.drawImage(ev->rect().topLeft(), *_image, ev->rect());           \
     }else                                                               \
       classname::paintEvent(ev);                                        \
   }                                                                     
 
+#define OVERRIDERS(classname)                                           \
+  MOUSE_OVERRIDERS(classname)                                           \
+  RESIZE_OVERRIDER(classname)                                           \
+  PAINT_OVERRIDER(classname)
+
+
+static float gain2db(float val){
+  if(val<=0.0f)
+    return -100.0f;
+
+  return 20*log10(val);
+}
+
+static float db2linear(float db, float min, float max){
+  if(db<-70)
+    return min;
+  else if(db>40)
+    return max;
+  else
+    return scale(db,-70.0f,40.0f,min,max);
+}
 
 namespace radium_gui{
 
@@ -75,13 +98,8 @@ struct Gui;
 
 static QVector<Gui*> g_guis;
 
-  /*
-  struct SetValueClass{
-    virtual void setValue(double val){
-      R_ASSERT(false);
-    }
-  };
-  */
+struct VerticalAudioMeter;
+static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
   struct Callback : QObject {
     Q_OBJECT;
@@ -625,6 +643,90 @@ static QVector<Gui*> g_guis;
     }
 
     OVERRIDERS(QWidget);
+  };
+
+  
+  struct VerticalAudioMeter : QWidget, Gui{
+    Q_OBJECT;
+
+    struct Patch *_patch;
+    float _pos = 0;
+    
+  public:
+    
+    VerticalAudioMeter(struct Patch *patch)
+      : Gui(this)
+      , _patch(patch)
+    {
+      R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
+
+      g_active_vertical_audio_meters.push_back(this);
+    }
+
+    ~VerticalAudioMeter(){
+      R_ASSERT(g_active_vertical_audio_meters.removeOne(this));
+    }
+    
+    MOUSE_OVERRIDERS(QWidget);
+    RESIZE_OVERRIDER(QWidget);
+
+    void call_regularly(void){
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      if(plugin==NULL)
+        return;
+
+      float prev_pos = _pos;
+
+      float gain;
+
+      if(plugin->type->num_outputs==0){
+        if(plugin->type->num_inputs==0){          
+          _pos = height()-1;
+          if (prev_pos != _pos)
+            update();
+          return;
+        }else{
+          gain = plugin->input_volume_peak_values[0];
+        }
+      }else{
+        gain = plugin->volume_peak_values[0];
+      }
+      
+      float db = gain2db(gain);
+
+      _pos = db2linear(db, height()-1, 1);
+
+      if (_pos < prev_pos){
+        update(1, floor(_pos),     width()-1, floor(prev_pos)+1);
+      } else if (_pos > prev_pos){
+        update(1, floor(prev_pos), width()-1, floor(_pos)+1);
+      }
+    }
+    
+    void paintEvent(QPaintEvent *ev) override {
+      QPainter p(this);
+
+      QRectF rect1(1, 1, width()-2, _pos-1);
+      QRectF rect2(1, _pos, width()-2, height()-_pos-1);
+                  
+      QColor qcolor1("black");
+      QColor qcolor2("green");
+
+      p.setPen(Qt::NoPen);
+                   
+      p.setBrush(qcolor1);
+      p.drawRect(rect1);
+                   
+      p.setBrush(qcolor2);
+      p.drawRect(rect2);
+
+      p.setBrush(Qt::NoBrush);
+      
+      //border
+      p.setPen(QColor("gray"));
+      p.drawRect(0,0,width()-1,height()-1);
+    }
+
   };
 
   
@@ -1526,6 +1628,14 @@ int64_t gui_widget(int width, int height){
   return (new Widget(width, height))->get_gui_num();
 }
 
+int64_t gui_verticalAudioMeter(int instrument_id){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return -1;
+
+  return (new VerticalAudioMeter(patch))->get_gui_num();
+}
+
 void gui_drawLine(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2, float width){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -1550,6 +1660,10 @@ void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1,
   gui->drawText(color, text, x1, y1, x2, y2);
 }
 
+void API_gui_call_regularly(void){
+  for(auto *meter : g_active_vertical_audio_meters)
+    meter->call_regularly();
+}
 
 #include "mapi_gui.cpp"
 

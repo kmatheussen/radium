@@ -181,10 +181,13 @@
                              (c-display "volslider set to" val)
                              (<gui> :set-value voltext val))))
 
+  (define volmeter (<gui> :vertical-audio-meter instrument-id))
+  
   (<gui> :add gui voltext x1 y1 middle voltext_y2)
   (<gui> :add gui peaktext peaktext_x1 y1 peaktext_x2 peaktext_y2)
 
   (<gui> :add gui volslider volslider_x1 volslider_y1 volslider_x2 volslider_y2)
+  (<gui> :add gui volmeter peak_x1 peak_y1 peak_x2 peak_y2)
   )
   
 
@@ -274,7 +277,7 @@
   (<gui> :set-layout-spacing mixer-strips 5 0 0 0 0)
   
   ;;(define x1 0)
-  (define mixer-strip-width 110)
+  (define mixer-strip-width 65)
   (define plugin-buses '())
 
   ;; no-input instruments
@@ -323,6 +326,8 @@
 (define widget (<gui> :widget 200 200))
 (<gui> :show widget)
 !#
+
+;;option to select +35 or +6
 
 
 

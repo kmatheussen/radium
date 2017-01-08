@@ -17,7 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/includepython.h"
 #include "../api/api_proc.h"
 
-#include <unistd.h>
+#include <unistd.h> // Must be placed after includepyton/api_proc to avoid compilation error.
 
 #include <QApplication>
 #include <QMainWindow>
