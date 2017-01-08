@@ -90,10 +90,17 @@ void handleError(const char *fmt,...){
   vsprintf(message,fmt,argp);
   va_end(argp);
 
+  vector_t v = {0};
+
+  int ok = VECTOR_push_back(&v, "Ok");
+  (void)ok;
+  int continue_ = VECTOR_push_back(&v, "Continue");
+
+  int ret = GFX_Message(&v, message);
+
   // We don't want to throw here since the api code is not written with that in mind. Instead, we throw in 'callMeBeforeReturningToExtensionLanguage' above.
-  g_error_message = talloc_strdup(message);
-  
-  GFX_Message(NULL, message);
+  if (ret!=continue_)
+    g_error_message = talloc_strdup(message);  
 }
 
 struct Tracker_Windows *getWindowFromNum(int windownum){
