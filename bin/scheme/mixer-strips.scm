@@ -4,7 +4,7 @@
 
 
 (define (create-mixer-gui)
-  (<gui> :canvas 800 400))
+  (<gui> :widget 800 400))
 
 
 (define (create-mixer-strip-name gui instrument-id x1 y1 x2 y2)
@@ -16,33 +16,42 @@
 
 (define (strip-slider instrument-id effect-name)
   (define instrument-name (<ra> :get-instrument-name instrument-id))
-  (define canvas (<gui> :canvas 100 (get-fontheight)))
-  (<gui> :set-min-height canvas (get-fontheight))
-
+  ;;(define widget (<gui> :widget 100 (get-fontheight)))
+  (define widget #f)
+  
   (define (paintit width height)
     (define color (<ra> :get-instrument-color instrument-id))
     (define value (<ra> :get-instrument-effect instrument-id effect-name))
     (c-display "value: " value)
     (define pos (scale value 0 1 0 width))
-    (<gui> :filled-box canvas color 0 0 pos height)
-    (<gui> :filled-box canvas "black" pos 0 width height)
-    (<gui> :draw-box canvas "gray" 0 0 width height 0.8)
-    (<gui> :draw-text canvas "white" (<-> instrument-name ": " (floor (scale value 0 1 0 100)))
+    (<gui> :filled-box widget color 0 0 pos height)
+    (<gui> :filled-box widget "black" pos 0 width height)
+    (<gui> :draw-box widget "gray" 0 0 width height 0.8)
+    (<gui> :draw-text widget "white" (<-> instrument-name ": " (floor (scale value 0 1 0 100)))
            4 2 width height))
 
-  (<gui> :add-resize-callback canvas paintit)
+  (set! widget (<gui> :horizontal-slider "" 0 0.5 1.0
+                      (lambda (val)
+                        (<ra> :set-instrument-effect instrument-id effect-name val)
+                        (if widget
+                            (paintit (<gui> :width widget)
+                                     (<gui> :height widget))))))
+  
+  (<gui> :set-min-height widget (get-fontheight))
 
-  (<gui> :add-mouse-callback canvas (lambda (button x y)
+  (<gui> :add-resize-callback widget paintit)
+
+  '(<gui> :add-mouse-callback widget (lambda (button x y)
                                       (when (= button *left-button*)
-                                        (c-display "  m" button x y (scale x 0 (<gui> :width canvas) 0 1.0))
-                                        (<ra> :set-instrument-effect instrument-id effect-name (scale x 0 (<gui> :width canvas) 0 1))
-                                        (paintit (<gui> :width canvas)
-                                                 (<gui> :height canvas)))))
+                                        (c-display "  m" button x y (scale x 0 (<gui> :width widget) 0 1.0))
+                                        (<ra> :set-instrument-effect instrument-id effect-name (scale x 0 (<gui> :width widget) 0 1))
+                                        (paintit (<gui> :width widget)
+                                                 (<gui> :height widget)))))
 
-  (paintit (<gui> :width canvas)
-           (<gui> :height canvas))
+  (paintit (<gui> :width widget)
+           (<gui> :height widget))
 
-  canvas)
+  widget)
 
 (define (create-mixer-strip-plugin gui instrument-id send-id)
   (define fontheight (get-fontheight))
@@ -184,7 +193,7 @@
   (<gui> :add gui comment-edit x1 y1 x2 y2))
 
 (define (create-mixer-strip instrument-id width height)
-  (define gui (<gui> :canvas width height))
+  (define gui (<gui> :widget width height))
   (<gui> :set-min-width gui width)
   (<gui> :set-max-width gui width)
   (<gui> :set-size-policy gui #f #t)
@@ -242,7 +251,7 @@
                     50))
   (if (defined? 'mixer-strips)
       (<gui> :close mixer-strips))
-  (define mixer-strips (<gui> :canvas 300 800))
+  (define mixer-strips (<gui> :widget 300 800))
   ;;(<gui> :draw-box mixer-strips "black" (- 20 1) (- 20 1) (1+ 220) (1+ 700) 1.0)
   ;;(<gui> :filled-box mixer-strips "black" (- 20 1) (- 20 1) (1+ 220) (1+ 700))
   (create-mixer-strip mixer-strips (get-instrument-from-name "Sample Player 1") 20 20 220 700)
@@ -253,15 +262,15 @@
 !#
 
 #!
-(define mixer-strips (<gui> :canvas 300 800))
+(define mixer-strips (<gui> :widget 300 800))
 !#
 
 ;;!#
 
 
 (define (create-mixer-strips)
-  ;;(define mixer-strips (<gui> :canvas 800 800))
-  (define mixer-strips (<gui> :horizontal-scroll)) ;;canvas 800 800))
+  ;;(define mixer-strips (<gui> :widget 800 800))
+  (define mixer-strips (<gui> :horizontal-scroll)) ;;widget 800 800))
   (<gui> :set-layout-spacing mixer-strips 5 0 0 0 0)
   
   ;;(define x1 0)
@@ -311,8 +320,8 @@
 
 
 (get-all-audio-instruments)
-(define canvas (<gui> :canvas 200 200))
-(<gui> :show canvas)
+(define widget (<gui> :widget 200 200))
+(<gui> :show widget)
 !#
 
 

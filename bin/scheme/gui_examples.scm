@@ -189,26 +189,26 @@
 
 (<gui> :show line)
 
-(define canvas (<gui> :canvas 300 300))
-(<gui> :show canvas)
+(define widget (<gui> :widget 300 300))
+(<gui> :show widget)
 
-(<gui> :add-mouse-callback canvas (lambda (button x y)
+(<gui> :add-mouse-callback widget (lambda (button x y)
                                     (c-display "button:" button "x/y:" x y)))
 
-(<gui> :draw-line canvas "#xff0000" 5 10 100 150 2.0)
-(<gui> :draw-line canvas #x00ff00 59 60 150 190 2.0)
-(<gui> :draw-line canvas #x80ff0060 159 60 150 190 2.0)
-(<gui> :draw-line canvas #xffff0060 59 60 150 190 2.0)
-(<gui> :draw-line canvas #x00ff0060 9 60 150 190 2.0)
+(<gui> :draw-line widget "#xff0000" 5 10 100 150 2.0)
+(<gui> :draw-line widget #x00ff00 59 60 150 190 2.0)
+(<gui> :draw-line widget #x80ff0060 159 60 150 190 2.0)
+(<gui> :draw-line widget #xffff0060 59 60 150 190 2.0)
+(<gui> :draw-line widget #x00ff0060 9 60 150 190 2.0)
 
-(<gui> :draw-line canvas  #x80ff0000 30 60 150 190 40.0)
-(<gui> :filled-box canvas "#800000ff" 20 20 180 190)
+(<gui> :draw-line widget  #x80ff0000 30 60 150 190 40.0)
+(<gui> :filled-box widget "#800000ff" 20 20 180 190)
 
-(<gui> :draw-text canvas "#80000050" "hello" 50 50 100 120)
+(<gui> :draw-text widget "#80000050" "hello" 50 50 100 120)
 
 (define hslider (<gui> :horizontal-int-slider "helloslider: " -5 10 100 (lambda (asdf) (c-display "moved" asdf)) ))
 
-(<gui> :add canvas hslider 50 50 290 100)
+(<gui> :add widget hslider 50 50 290 100)
 
 (<gui> :show hslider)
 

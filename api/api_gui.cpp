@@ -53,12 +53,22 @@
 #define OVERRIDERS(classname)                                           \
   MOUSE_OVERRIDERS(classname)                                           \
   void resizeEvent( QResizeEvent *event) override {                     \
-    if (_resize_callback==NULL)                                         \
+    if (_image!=NULL)                                                   \
+      setNewImage(event->size().width(), event->size().height());       \
+    if (_resize_callback==NULL && _image==NULL)                         \
       classname::resizeEvent(event);                                    \
     else                                                                \
       Gui::resizeEvent(event);                                          \
-  }
-  
+  }                                                                     \
+  void paintEvent(QPaintEvent *ev) override {                           \
+    if(_image!=NULL){                                                   \
+      QPainter p(this);                                                 \
+      p.drawImage(ev->rect(), *_image, ev->rect());                     \
+    }else                                                               \
+      classname::paintEvent(ev);                                        \
+  }                                                                     
+
+
 namespace radium_gui{
 
 struct Gui;
@@ -171,7 +181,10 @@ static QVector<Gui*> g_guis;
 
       for(Callback *callback : _callbacks)
         delete callback;
-      
+
+      delete _image_painter;
+      delete _image;
+
       if (_mouse_callback!=NULL)
         s7extra_unprotect(_mouse_callback);
 
@@ -181,6 +194,9 @@ static QVector<Gui*> g_guis;
       g_guis[_gui_num] = NULL;
     }
 
+    
+    /************ MOUSE *******************/
+    
     func_t *_mouse_callback = NULL;
     int _currentButton = 0;
 
@@ -240,6 +256,9 @@ static QVector<Gui*> g_guis;
       _widget->setMouseTracking(true);
     }
 
+
+    /************ RESIZE *******************/
+    
     func_t *_resize_callback = NULL;
     
     void resizeEvent(QResizeEvent *event){
@@ -260,22 +279,121 @@ static QVector<Gui*> g_guis;
       s7extra_protect(_resize_callback);
     }
 
+
+    
+    /************ DRAWING *******************/
+
+    QImage *_image = NULL;
+    QPainter *_image_painter = NULL;
+
+    void setNewImage(int width, int height){
+      auto *new_image = new QImage(width, height, QImage::Format_ARGB32);
+      auto *new_image_painter = new QPainter(new_image);
+
+      new_image_painter->fillRect(QRect(0,0,width,height), get_qcolor(LOW_BACKGROUND_COLOR_NUM));
+      
+      if (_image!=NULL)
+        new_image_painter->drawImage(QPoint(0,0), *_image);
+      
+      new_image_painter->setRenderHints(QPainter::Antialiasing,true);
+
+      delete _image_painter;
+      delete _image;
+      _image_painter = new_image_painter;
+      _image = new_image;
+
+      _widget->setAttribute(Qt::WA_OpaquePaintEvent);
+    }
+    
+    
+    QColor getQColor(int64_t color){
+#if QT_VERSION >= 0x056000
+      return QColor(QRgba64::fromRgba64(color));
+#else
+      QColor col((uint32_t)color);
+      col.setAlpha(int(color>>24));
+      return col;
+#endif
+    }
+
+    QColor getQColor(const_char* color){
+      return QColor(color);
+    }
+
+    QPen getPen(const_char* color){
+      QPen pen(getQColor(color));
+      
+      return pen;
+    }
+
+    void setPen(const_char* color){
+      _image_painter->setPen(getQColor(color));
+    }
+
+    void myupdate(float x1, float y1, float x2, float y2, float extra=0.0f){
+      float min_x = R_MIN(x1, x2) - extra;
+      float max_x = R_MAX(x1, x2) + extra;
+      float min_y = R_MIN(y1, y2) - extra;
+      float max_y = R_MAX(y1, y2) + extra;
+      _widget->update(min_x-1, min_y-1, max_x-min_x+2, max_y-min_y+2);
+    }
+
+    void drawLine(const_char* color, float x1, float y1, float x2, float y2, float width) {
+      if (_image==NULL)
+        setNewImage(_widget->width(), _widget->height());
+      
+      QLineF line(x1, y1, x2, y2);
+
+      QPen pen = getPen(color);
+      pen.setWidthF(width);
+      _image_painter->setPen(pen);
+      
+      //printf("Color: %x, %s\n", (unsigned int)color, pen.color().name(QColor::HexArgb).toUtf8().constData());
+
+      _image_painter->drawLine(line);
+
+      myupdate(x1, y1, x2, y2, width);
+    }
+
+    void filledBox(const_char* color, float x1, float y1, float x2, float y2) {
+      if (_image==NULL)
+        setNewImage(_widget->width(), _widget->height());
+      
+      QRectF rect(x1, y1, x2-x1, y2-y1);
+
+      QColor qcolor = getQColor(color);
+
+      //QPen pen = _image_rect.pen();
+
+      _image_painter->setPen(Qt::NoPen);
+      _image_painter->setBrush(qcolor);
+      _image_painter->drawRect(rect);
+      _image_painter->setBrush(Qt::NoBrush);
+      //_image_painter->setPen(pen);
+
+      myupdate(x1, y1, x2, y2);
+    }
+
+    void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2) {
+      if (_image==NULL)
+        setNewImage(_widget->width(), _widget->height());
+      
+      QRectF rect(x1, y1, x2-x1, y2-y1);
+
+      setPen(color);
+
+      _image_painter->drawText(rect, text);
+
+      myupdate(x1, y1, x2, y2);
+    }
+
+
+    /************ VIRTUAL METHODS *******************/
+    
     virtual QLayout *getLayout(void){
       return _widget->layout();
     }
 
-    virtual void drawLine(const_char* color, float x1, float y1, float x2, float y2, float width){
-      handleError("gui %d doesn't have drawLine method.", _gui_num);
-    }
-
-    virtual void filledBox(const_char* color, float x1, float y1, float x2, float y2){
-      handleError("gui %d doesn't have filledBox method.", _gui_num);
-    }
-
-    virtual void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2){
-      handleError("gui %d doesn't have drawText method.", _gui_num);
-    }
-    
     virtual void setGuiValue(dyn_t val){
       {
         QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget);
@@ -486,140 +604,27 @@ static QVector<Gui*> g_guis;
   };
   
 
-  struct Canvas : QWidget, Gui{
+  struct Widget : QWidget, Gui{
     Q_OBJECT;
-
-    QImage *_image = NULL;
-    QPainter *_image_painter = NULL;
 
   public:
     
-    Canvas(int width, int height)
+    Widget(int width, int height)
       : Gui(this)
     {
-      setNewImage(width, height);
-      setSize(width, height);
-
-      setAttribute(Qt::WA_OpaquePaintEvent);
+      if (width>=0 || height>=0){
+        if(width<=0)
+          width=QWidget::width();
+        if(height<=0)
+          height=QWidget::height();
+        resize(width,height);
+      }
     }
 
-    ~Canvas(){
-      delete _image_painter;
-      delete _image;
+    ~Widget(){
     }
 
-    MOUSE_OVERRIDERS(QWidget);
-
-    void resizeEvent( QResizeEvent *event) override {
-      setNewImage(event->size().width(), event->size().height());
-      if (_resize_callback==NULL)
-        QWidget::resizeEvent(event);
-      else
-        Gui::resizeEvent(event);
-    }
-
-    void setNewImage(int width, int height){
-      auto *new_image = new QImage(width, height, QImage::Format_ARGB32);
-      auto *new_image_painter = new QPainter(new_image);
-
-      new_image_painter->fillRect(QRect(0,0,width,height), get_qcolor(LOW_BACKGROUND_COLOR_NUM));
-      
-      if (_image!=NULL)
-        new_image_painter->drawImage(QPoint(0,0), *_image);
-      
-      new_image_painter->setRenderHints(QPainter::Antialiasing,true);
-
-      delete _image_painter;
-      delete _image;
-      _image_painter = new_image_painter;
-      _image = new_image;      
-    }
-    
-    void setSize(int width, int height){      
-      resize(width, height);
-      //setFixedSize(width, height);
-    }
-
-
-    void paintEvent ( QPaintEvent * ev ) override {
-      QPainter p(this);
-
-      p.drawImage(ev->rect(), *_image, ev->rect());
-    }
-
-    
-    QColor getQColor(int64_t color){
-#if QT_VERSION >= 0x056000
-      return QColor(QRgba64::fromRgba64(color));
-#else
-      QColor col((uint32_t)color);
-      col.setAlpha(int(color>>24));
-      return col;
-#endif
-    }
-
-    QColor getQColor(const_char* color){
-      return QColor(color);
-    }
-
-    QPen getPen(const_char* color){
-      QPen pen(getQColor(color));
-      
-      return pen;
-    }
-
-    void setPen(const_char* color){
-      _image_painter->setPen(getQColor(color));
-    }
-
-    void myupdate(float x1, float y1, float x2, float y2, float extra=0.0f){
-      float min_x = R_MIN(x1, x2) - extra;
-      float max_x = R_MAX(x1, x2) + extra;
-      float min_y = R_MIN(y1, y2) - extra;
-      float max_y = R_MAX(y1, y2) + extra;
-      update(min_x-1, min_y-1, max_x-min_x+2, max_y-min_y+2);
-    }
-
-    void drawLine(const_char* color, float x1, float y1, float x2, float y2, float width) override {
-      QLineF line(x1, y1, x2, y2);
-
-      QPen pen = getPen(color);
-      pen.setWidthF(width);
-      _image_painter->setPen(pen);
-      
-      //printf("Color: %x, %s\n", (unsigned int)color, pen.color().name(QColor::HexArgb).toUtf8().constData());
-
-      _image_painter->drawLine(line);
-
-      myupdate(x1, y1, x2, y2, width);
-    }
-
-    void filledBox(const_char* color, float x1, float y1, float x2, float y2) override {
-      QRectF rect(x1, y1, x2-x1, y2-y1);
-
-      QColor qcolor = getQColor(color);
-
-      //QPen pen = _image_rect.pen();
-
-      _image_painter->setPen(Qt::NoPen);
-      _image_painter->setBrush(qcolor);
-      _image_painter->drawRect(rect);
-      _image_painter->setBrush(Qt::NoBrush);
-      //_image_painter->setPen(pen);
-
-      myupdate(x1, y1, x2, y2);
-    }
-
-    void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2) override {
-      QRectF rect(x1, y1, x2-x1, y2-y1);
-
-      setPen(color);
-
-      _image_painter->drawText(rect, text);
-
-      myupdate(x1, y1, x2, y2);
-    }
-
+    OVERRIDERS(QWidget);
   };
 
   
@@ -1517,8 +1522,8 @@ void gui_setMaxHeight(int64_t guinum, int minheight){
 // canvas
 ///////////
 
-int64_t gui_canvas(int width, int height){
-  return (new Canvas(width, height))->get_gui_num();
+int64_t gui_widget(int width, int height){
+  return (new Widget(width, height))->get_gui_num();
 }
 
 void gui_drawLine(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2, float width){
