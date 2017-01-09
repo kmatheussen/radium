@@ -650,7 +650,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     Q_OBJECT;
 
     struct Patch *_patch;
-    float _pos = 0;
+    float *_pos = NULL;
+    
+    int _num_channels = 0;
+    bool _is_input = false;
+    bool _is_output = false;
     
   public:
     
@@ -660,11 +664,28 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     {
       R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
 
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+
+      if(plugin->type->num_outputs > 0)
+        _is_output = true;
+      else if(plugin->type->num_inputs > 0)
+        _is_input = true;
+
+      if (_is_output)
+        _num_channels = plugin->type->num_outputs;
+      else if (_is_input)
+        _num_channels = plugin->type->num_inputs;
+
+      if (_num_channels > 0)
+        _pos = calloc(_num_channels, sizeof(float));
+
       g_active_vertical_audio_meters.push_back(this);
     }
 
     ~VerticalAudioMeter(){
       R_ASSERT(g_active_vertical_audio_meters.removeOne(this));
+      free(_pos);
     }
     
     MOUSE_OVERRIDERS(QWidget);
