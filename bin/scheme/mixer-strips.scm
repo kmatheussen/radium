@@ -146,20 +146,51 @@
                           (c-display "pan moved" degree))))
   (<gui> :add gui slider x1 y1 x2 y2))
 
+;;(define (create-mixer-strip-checkbox text sel-color unsel-color width height callback)
+;;  (define button (<gui> :widget width height))
+  
+
 (define (create-mixer-strip-mutesolo gui instrument-id x1 y1 x2 y2)
   (define middle (floor (average x1 x2)))
-  (define mute (<gui> :checkbox 
-                      "M"
-                      #f
-                      (lambda (val)
-                        (c-display "mute?" val))))
-  (define solo (<gui> :checkbox 
-                      "S"
-                      #f
-                      (lambda (val)
-                        (c-display "solo?" val))))
+
+  (define mute #f)
+  (define solo #f)
+
+  (define (paint-mute)
+    (when mute
+      (define width (<gui> :width mute))
+      (define height (<gui> :height mute))
+      (<gui> :filled-box
+             mute
+             (if (<gui> :get-value mute)
+                 "yellow"
+                 "black")
+             0 0 width height)
+      (<gui> :draw-text
+             mute
+             "white"
+             "Mute"
+             0 0 width height
+             #f
+             )))
+           
+  (set! mute (<gui> :checkbox 
+                    "M"
+                    #f
+                    (lambda (val)
+                      (paint-mute)
+                      (c-display "mute?" val))))
+  (set! solo (<gui> :checkbox 
+                    "S"
+                    #f
+                    (lambda (val)
+                      (c-display "solo?" val))))
+  
   (<gui> :add gui mute x1 y1 middle y2)
-  (<gui> :add gui solo middle y1 x2 y2))
+  (<gui> :add gui solo middle y1 x2 y2)
+
+  (paint-mute)
+  )
 
 (define (create-mixer-strip-volume gui instrument-id x1 y1 x2 y2)
   (define min-volume -40)
@@ -414,8 +445,9 @@
            (<gui> :enable-updates parent)))
 
   (<gui> :add parent mixer-strips)
+  (<gui> :set-size parent 1000 800)
+  (<gui> :set-pos parent 600 50)
   (<gui> :show parent)
-
   )
 
 
@@ -435,6 +467,8 @@
 (<gui> :show widget)
 !#
 
+;; Option to have two rows
+;; Options to turn on/off instruments
 ;;option to select +35 or +6
 
 

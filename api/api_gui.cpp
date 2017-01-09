@@ -55,7 +55,7 @@
   void resizeEvent( QResizeEvent *event) override {                     \
     if (_image!=NULL)                                                   \
       setNewImage(event->size().width(), event->size().height());       \
-    if (_resize_callback==NULL && _image==NULL)                         \
+    if (_resize_callback==NULL)                                         \
       classname::resizeEvent(event);                                    \
     else                                                                \
       Gui::resizeEvent(event);                                          \
@@ -392,7 +392,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       myupdate(x1, y1, x2, y2);
     }
 
-    void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2) {
+    void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool align_top_left) {
       if (_image==NULL)
         setNewImage(_widget->width(), _widget->height());
       
@@ -400,7 +400,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       setPen(color);
 
-      _image_painter->drawText(rect, text);
+      if (align_top_left)
+        _image_painter->drawText(rect, text);
+      else
+        _image_painter->drawText(rect, text, QTextOption(Qt::AlignCenter));
 
       myupdate(x1, y1, x2, y2);
     }
@@ -1609,6 +1612,14 @@ void gui_setPos(int64_t guinum, int x, int y){
   gui->_widget->move(x,y);
 }
 
+void gui_setSize(int64_t guinum, int width, int height){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->resize(width, height);
+}
+
   
   
 void gui_setBackgroundColor(int64_t guinum, const_char* color){
@@ -1725,12 +1736,12 @@ void gui_filledBox(int64_t guinum, const_char* color, float x1, float y1, float 
   gui->filledBox(color, x1, y1, x2, y2);
 }
 
-void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2) {
+void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool align_top_left) {
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
 
-  gui->drawText(color, text, x1, y1, x2, y2);
+  gui->drawText(color, text, x1, y1, x2, y2, align_top_left);
 }
 
 void API_gui_call_regularly(void){
