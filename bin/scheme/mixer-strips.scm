@@ -195,6 +195,7 @@
   (define comment-edit (<gui> :line "Comment"))
   (<gui> :add gui comment-edit x1 y1 x2 y2))
 
+
 (define (create-mixer-strip instrument-id width height)
   (define gui (<gui> :widget width height))
   (<gui> :set-min-width gui width)
@@ -271,18 +272,18 @@
 ;;!#
 
 
-(define (create-mixer-strips)
+(define (create-mixer-strips height)
   ;;(define mixer-strips (<gui> :widget 800 800))
   (define mixer-strips (<gui> :horizontal-scroll)) ;;widget 800 800))
   (<gui> :set-layout-spacing mixer-strips 5 0 0 0 0)
   
   ;;(define x1 0)
-  (define mixer-strip-width 65)
+  (define mixer-strip-width 160)
   (define plugin-buses '())
 
   ;; no-input instruments
   (for-each (lambda (instrument-id)
-              (let* ((gakk (create-mixer-strip instrument-id mixer-strip-width 780))
+              (let* ((gakk (create-mixer-strip instrument-id mixer-strip-width height))
                      (mixer-strip (car gakk))
                      (returned-plugin-buses (cadr gakk)))
                 (<gui> :add mixer-strips mixer-strip)
@@ -301,7 +302,7 @@
                                        (get-buses)))))
     (when (not (null? bus-instruments))
       (let* ((instrument-id (car bus-instruments))
-             (gakk (create-mixer-strip instrument-id mixer-strip-width 780))
+             (gakk (create-mixer-strip instrument-id mixer-strip-width height))
              (mixer-strip (car gakk))
              (returned-plugin-buses (cadr gakk)))
         (<gui> :add mixer-strips mixer-strip)
@@ -311,10 +312,37 @@
                                                               returned-plugin-buses)))))))
   
 
-  (<gui> :show mixer-strips)
+  mixer-strips
   )
 
+#!
 (create-mixer-strips)
+!#
+
+(define (create-mixer-strips-gui)
+  (define parent (<gui> :horizontal-layout))
+  (<gui> :set-layout-spacing parent 0 0 0 0 0)
+
+  (define mixer-strips (create-mixer-strips (<gui> :height parent)))
+
+  (<gui> :add-resize-callback parent
+         (lambda (width height)
+           (<gui> :disable-updates parent)
+           (define new-mixer-strips (create-mixer-strips height))
+           (<gui> :close mixer-strips)
+           (<gui> :add parent new-mixer-strips)
+           (<gui> :show new-mixer-strips)
+           (<gui> :enable-updates parent)
+           (set! mixer-strips new-mixer-strips)))
+
+  (<gui> :add parent mixer-strips)
+  (<gui> :show parent))
+
+
+(create-mixer-strips-gui)
+
+
+
 
 #!
 

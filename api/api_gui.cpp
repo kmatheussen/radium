@@ -678,7 +678,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         _num_channels = plugin->type->num_inputs;
 
       if (_num_channels > 0)
-        _pos = calloc(_num_channels, sizeof(float));
+        _pos = (float*)calloc(_num_channels, sizeof(float));
+
+      call_regularly(); // Set meter positions.
 
       g_active_vertical_audio_meters.push_back(this);
     }
@@ -691,55 +693,67 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     MOUSE_OVERRIDERS(QWidget);
     RESIZE_OVERRIDER(QWidget);
 
+    float get_x1(int ch){
+      return scale(ch, 0, _num_channels, 1, width()-2);
+    }
+
+    float get_x2(int ch){
+      return scale(ch+1, 0, _num_channels, 1, width()-2);
+    }
+
     void call_regularly(void){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       if(plugin==NULL)
         return;
 
-      float prev_pos = _pos;
+      for(int ch=0 ; ch < _num_channels ; ch++){
+        float prev_pos = _pos[ch];
 
-      float gain;
+        float gain;
 
-      if(plugin->type->num_outputs==0){
-        if(plugin->type->num_inputs==0){          
-          _pos = height()-1;
-          if (prev_pos != _pos)
-            update();
-          return;
-        }else{
-          gain = plugin->input_volume_peak_values[0];
-        }
-      }else{
-        gain = plugin->volume_peak_values[0];
-      }
+        if (_is_output)
+          gain = plugin->volume_peak_values[ch];
+        else if (_is_input)
+          gain = plugin->input_volume_peak_values[ch];
+        else
+          R_ASSERT(false);
       
-      float db = gain2db(gain);
+        float db = gain2db(gain);
 
-      _pos = db2linear(db, height()-1, 1);
+        float pos = db2linear(db, height()-1, 1);
+        _pos[ch] = pos;
 
-      if (_pos < prev_pos){
-        update(1, floor(_pos),     width()-1, floor(prev_pos)+1);
-      } else if (_pos > prev_pos){
-        update(1, floor(prev_pos), width()-1, floor(_pos)+1);
+        if (pos < prev_pos){
+          update(get_x1(ch),   floorf(pos),
+                 get_x2(ch),   floorf(prev_pos)+1);
+        } else if (pos > prev_pos){
+          update(get_x1(ch),   floorf(prev_pos),
+                 get_x2(ch),   floorf(pos)+1);
+        }
       }
     }
     
     void paintEvent(QPaintEvent *ev) override {
       QPainter p(this);
 
-      QRectF rect1(1, 1, width()-2, _pos-1);
-      QRectF rect2(1, _pos, width()-2, height()-_pos-1);
-                  
       QColor qcolor1("black");
       QColor qcolor2("green");
 
       p.setPen(Qt::NoPen);
-                   
-      p.setBrush(qcolor1);
-      p.drawRect(rect1);
-                   
-      p.setBrush(qcolor2);
-      p.drawRect(rect2);
+        
+      for(int ch=0 ; ch < _num_channels ; ch++){
+        float pos = _pos[ch];
+        QRectF rect1(get_x1(ch),  1,
+                     get_x2(ch),  pos-1);
+        QRectF rect2(get_x1(ch),  pos,
+                     get_x2(ch),  height()-pos-1);
+        
+        p.setBrush(qcolor1);
+        p.drawRect(rect1);
+        
+        p.setBrush(qcolor2);
+        p.drawRect(rect2);
+      }
 
       p.setBrush(Qt::NoBrush);
       
@@ -897,7 +911,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     VerticalScroll(void)
       : Gui(this)        
     {
-      setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+      //setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
       setWidgetResizable(true);
 
       QWidget *contents = new QWidget(this);
@@ -926,7 +940,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     HorizontalScroll(void)
       : Gui(this)        
     {
-      setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+      //setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
       setWidgetResizable(true);
 
       QWidget *contents = new QWidget(this);
@@ -1515,6 +1529,22 @@ void gui_close(int64_t guinum){
     return;
 
   gui->_widget->close();
+}
+
+void gui_disableUpdates(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->setUpdatesEnabled(false);
+}
+
+void gui_enableUpdates(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->setUpdatesEnabled(true);
 }
 
 int gui_width(int64_t guinum){
