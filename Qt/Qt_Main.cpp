@@ -1841,7 +1841,7 @@ int radium_main(char *arg){
     GFX_InstrumentWindowToBack();
 
     //qapplication->setMainWidget(main_window);
-    //GFX_PlayListWindowToFront(); // To provoce setting width to 'blocklist_width'
+    GFX_PlayListWindowToFront(); // To provoce setting width to 'blocklist_width'
     main_window->show();
   }
 
