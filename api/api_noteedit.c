@@ -595,7 +595,12 @@ int addNote(float notevalue,
     
     if (!PlaceLegal(wblock->block, end_place)) {
       handleError("addNote: End place %d + %d/%d is not legal", end.line, end.counter, end.dividor);
-    return -1;
+      return -1;
+    }
+
+    if (PlaceLessOrEqual(end_place, &start)){
+      handleError("addNote: Note end (%s) positioned before or at note start (%s)", PlaceToString(end_place), PlaceToString(&start));
+      return -1;
     }
   }
 
