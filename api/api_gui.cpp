@@ -191,8 +191,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     virtual ~Gui(){
       R_ASSERT_RETURN_IF_FALSE(g_guis.contains(this));
       R_ASSERT_RETURN_IF_FALSE(g_guis[_gui_num] != NULL);
-                               
-      printf("Deleting Gui %p\n",this);
+      
+      //printf("Deleting Gui %p\n",this);
 
       for(Gui *child : children)
         delete child;
@@ -880,6 +880,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     ScrollArea(bool scroll_horizontal, bool scroll_vertical)
       : Gui(this)        
     {
+      horizontalScrollBar()->setObjectName("horizontalScrollBar");
+      verticalScrollBar()->setObjectName("verticalScrollBar");
+
       if (!scroll_horizontal)
         setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
       //else
@@ -911,6 +914,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     VerticalScroll(void)
       : Gui(this)        
     {
+      horizontalScrollBar()->setObjectName("horizontalScrollBar");
+      verticalScrollBar()->setObjectName("verticalScrollBar");
+
       //setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
       setWidgetResizable(true);
 
@@ -940,6 +946,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     HorizontalScroll(void)
       : Gui(this)        
     {
+      horizontalScrollBar()->setObjectName("horizontalScrollBar");
+      verticalScrollBar()->setObjectName("verticalScrollBar");
+
       //setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
       setWidgetResizable(true);
 
@@ -1560,7 +1569,20 @@ int gui_height(int64_t guinum){
   if (gui==NULL)
     return 0;
 
-  return gui->_widget->height();
+  QScrollArea *area = dynamic_cast<QScrollArea*>(gui->_widget);
+  if (area!=NULL){
+    QScrollBar *scrollbar = area->horizontalScrollBar();
+    if (scrollbar->isVisible()){
+      //printf("  IS VISIBLE %d\n",scrollbar->height());
+      return area->widget()->height() - scrollbar->height();
+    }else{
+      //printf("    NOT NOTNOT IS VISIBLE\n");
+      return area->widget()->height();
+    }
+  }else{
+    //printf("   NOT A SCROLL AREA\n");
+    return gui->_widget->height();
+  }
 }
 
 int gui_getX(int64_t guinum){

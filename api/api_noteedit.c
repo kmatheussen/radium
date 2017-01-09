@@ -585,7 +585,7 @@ int addNote(float notevalue,
 
   Place *end_place = NULL;
 
-  if (end.line >=0) {
+  if (end.line >=0 ) {
     end_place = &end;
     
     ValidatePlace(end_place);

@@ -78,11 +78,33 @@
 
 
 ;; Returns a list of parallel plugins that needs their own mixer strip.
+(define (get-returned-plugin-buses instrument-id)
+  (define returned-plugin-buses '())
+
+  (define out-instruments (sort-instruments-by-mixer-position ;; Needs to be sorted.
+                           (get-instruments-connecting-from-instrument instrument-id)))
+
+  (define plugin-instrument #f)
+
+  (define ret (keep (lambda (out-instrument)
+                      (define inputs (get-instruments-connecting-to-instrument out-instrument))
+                      (if (and (not plugin-instrument)
+                               (= 1 (length inputs)))
+                          (begin
+                            (set! plugin-instrument out-instrument)
+                            #f)
+                          (= 1 (length inputs))))
+                    out-instruments))
+
+  (if plugin-instrument
+      (append ret 
+              (get-returned-plugin-buses plugin-instrument))
+      ret))
+
+
 (define (create-mixer-strip-path gui instrument-id)
   (define fontheight (get-fontheight))
   (define send-height fontheight)
-
-  (define returned-plugin-buses '())
 
   (define (add-bus-sends instrument-id)
     (if (not (<ra> :instrument-is-bus-descendant instrument-id))
@@ -104,8 +126,6 @@
                        (= 1 (length inputs)))
                   (set! plugin-instrument out-instrument)
                   (begin
-                    (if (= 1 (length inputs))
-                        (push-back! returned-plugin-buses out-instrument))
                     (create-mixer-strip-send gui
                                              out-instrument
                                              out-instrument))))
@@ -115,9 +135,7 @@
     (create-mixer-strip-plugin gui
                                plugin-instrument
                                plugin-instrument)
-    (create-mixer-strip-path gui plugin-instrument))
-
-  returned-plugin-buses)
+    (create-mixer-strip-path gui plugin-instrument)))
 
 
 (define (create-mixer-strip-pan gui instrument-id x1 y1 x2 y2)
@@ -210,42 +228,57 @@
   
   (define fontheight (get-fontheight))
   (define fontheight-and-borders (+ 4 fontheight))
+
+  (define name-height fontheight-and-borders)
   (define pan-height fontheight-and-borders)
+  (define mutesolo-height fontheight-and-borders)
+  (define comment-height fontheight-and-borders)
+
+  (define min-send-height (* 2 fontheight-and-borders))
+  (define min-volume-height (* 3 fontheight-and-borders))
+
+  (define height-left (- height
+                         (+ name-height pan-height mutesolo-height comment-height)))
+
+  (define sends-height (max min-send-height
+                            (floor (/ height-left 2))))
+  (define volume-height (max min-volume-height
+                             (1+ (floor (/ height-left 2)))))
+
 
   (define name_y1 y1)
-  (define name_y2 (+ y1 fontheight-and-borders))
-
-  (define comment_y1 (- y2 fontheight-and-borders))
-  (define comment_y2 y2)
-
-  (define mutesolo_y1 (floor (- (average name_y2 comment_y1) (/ fontheight-and-borders 2))))
-  (define mutesolo_y2 (+ mutesolo_y1 fontheight-and-borders))
-
-  (define pan_y1 (- mutesolo_y1 pan-height))
-  (define pan_y2 mutesolo_y1)
+  (define name_y2 (+ y1 name-height))
 
   (define sends_y1 name_y2)
-  (define sends_y2 pan_y1)
+  (define sends_y2 (+ sends_y1 sends-height))
+
+  (define pan_y1 sends_y2)
+  (define pan_y2 (+ pan_y1 pan-height))
+
+  (define mutesolo_y1 pan_y2)
+  (define mutesolo_y2 (+ mutesolo_y1 mutesolo-height))
 
   (define volume_y1 mutesolo_y2)
-  (define volume_y2 comment_y1)
+  (define volume_y2 (+ volume_y1 volume-height))
+
+  (define comment_y1 volume_y2)
+  (define comment_y2 (+ comment_y1 comment-height))
 
   (create-mixer-strip-name gui instrument-id x1 name_y1 x2 name_y2)
 
   (define mixer-strip-path-gui (<gui> :vertical-scroll))
   (<gui> :set-layout-spacing mixer-strip-path-gui 5 1 0 1 0)
   (<gui> :add gui mixer-strip-path-gui x1 sends_y1 x2 sends_y2)
-  (let ((returned-plugin-buses (create-mixer-strip-path mixer-strip-path-gui instrument-id)))
+  
+  (create-mixer-strip-path mixer-strip-path-gui instrument-id)
 
-    (create-mixer-strip-pan gui instrument-id x1 pan_y1 x2 pan_y2)
-    (create-mixer-strip-mutesolo gui instrument-id x1 mutesolo_y1 x2 mutesolo_y2)
-    (create-mixer-strip-volume gui instrument-id x1 volume_y1 x2 volume_y2)
-    (create-mixer-strip-comment gui instrument-id x1 comment_y1 x2 comment_y2)
-    
-    ;;(<gui> :draw-box gui "#010101" x1 top-y (1- x2) y2 0.2)
-    
-    (list gui returned-plugin-buses)
-    ))
+  (create-mixer-strip-pan gui instrument-id x1 pan_y1 x2 pan_y2)
+  (create-mixer-strip-mutesolo gui instrument-id x1 mutesolo_y1 x2 mutesolo_y2)
+  (create-mixer-strip-volume gui instrument-id x1 volume_y1 x2 volume_y2)
+  (create-mixer-strip-comment gui instrument-id x1 comment_y1 x2 comment_y2)
+
+  gui)
+
 
 #!
 (begin
@@ -271,41 +304,82 @@
 
 ;;!#
 
+(define (create-mixer-strips width height)
 
-(define (create-mixer-strips height)
+  (define strip-separator-width 5)
+
   ;;(define mixer-strips (<gui> :widget 800 800))
   (define mixer-strips (<gui> :horizontal-scroll)) ;;widget 800 800))
-  (<gui> :set-layout-spacing mixer-strips 5 0 0 0 0)
+  (<gui> :set-layout-spacing mixer-strips strip-separator-width 0 0 0 0)
   
   ;;(define x1 0)
   (define mixer-strip-width 160)
-  (define plugin-buses '())
+  (define instruments-buses-separator-width (* (get-fontheight) 2))
+
+  (define instruments (get-all-instruments-with-no-input-connections))
+
+  (define instrument-plugin-buses (apply append (map (lambda (instrument-id)
+                                                       (get-returned-plugin-buses instrument-id))
+                                                     instruments)))
+
+  (define buses (append (get-all-instruments-with-at-least-two-input-connections)
+                        (get-buses)))
+
+  (define buses-plugin-buses (apply append (map (lambda (instrument-id)
+                                                  (get-returned-plugin-buses instrument-id))
+                                                (append buses
+                                                        instrument-plugin-buses))))
+
+  (define all-buses (append instrument-plugin-buses
+                            buses
+                            buses-plugin-buses))
+
+  (define fit-vertically? (<= (+ 0
+                                 (* (+ (length instruments)
+                                       (length all-buses))
+                                   strip-separator-width)
+                                 (* mixer-strip-width (+ (length instruments)
+                                                         (length all-buses)))
+                                 instruments-buses-separator-width)
+                              width))
+
+  (when (not fit-vertically?)
+    (define scroll-bar-height (<gui> :height
+                                     (<gui> :child mixer-strips "horizontalScrollBar")))
+    (set! height (- height
+                    (1+ (floor (/ scroll-bar-height 2))))))
+
+  '(c-display "       buses-plugin-buses:"
+             (map (lambda (i)
+                    (<ra> :get-instrument-name i))
+                  buses-plugin-buses))
 
   ;; no-input instruments
   (for-each (lambda (instrument-id)
-              (let* ((gakk (create-mixer-strip instrument-id mixer-strip-width height))
-                     (mixer-strip (car gakk))
-                     (returned-plugin-buses (cadr gakk)))
-                (<gui> :add mixer-strips mixer-strip)
-                (set! plugin-buses (append plugin-buses returned-plugin-buses))))
+              (<gui> :add mixer-strips (create-mixer-strip instrument-id mixer-strip-width height)))
             (sort-instruments-by-mixer-position
-             (get-all-instruments-with-no-input-connections)))
+             instruments))
 
   ;;(set! x1 (+ x1 40))
 
-  (<gui> :add-layout-space mixer-strips (* (get-fontheight) 2) 10)
+  (<gui> :add-layout-space mixer-strips instruments-buses-separator-width 10)
   
   ;; buses
-  (let loop ((bus-instruments (sort-instruments-by-mixer-position
-                               (append plugin-buses
+  (for-each (lambda (instrument-id)
+              (<gui> :add mixer-strips (create-mixer-strip instrument-id mixer-strip-width height)))
+            (sort-instruments-by-mixer-position
+             all-buses))
+
+  '(let loop ((bus-instruments (sort-instruments-by-mixer-position
+                                (append plugin-buses
                                        (get-all-instruments-with-at-least-two-input-connections)
                                        (get-buses)))))
-    (when (not (null? bus-instruments))
-      (let* ((instrument-id (car bus-instruments))
-             (gakk (create-mixer-strip instrument-id mixer-strip-width height))
-             (mixer-strip (car gakk))
-             (returned-plugin-buses (cadr gakk)))
-        (<gui> :add mixer-strips mixer-strip)
+     (when (not (null? bus-instruments))
+       (let* ((instrument-id (car bus-instruments))
+              (gakk (create-mixer-strip instrument-id mixer-strip-width height))
+              (mixer-strip (car gakk))
+              (returned-plugin-buses (cadr gakk)))
+         (<gui> :add mixer-strips mixer-strip)
         (if (null? returned-plugin-buses)
             (loop (cdr bus-instruments))
             (loop (sort-instruments-by-mixer-position (append (cdr bus-instruments)
@@ -323,20 +397,26 @@
   (define parent (<gui> :horizontal-layout))
   (<gui> :set-layout-spacing parent 0 0 0 0 0)
 
-  (define mixer-strips (create-mixer-strips (<gui> :height parent)))
+  (define mixer-strips (create-mixer-strips (<gui> :width parent) (<gui> :height parent)))
 
   (<gui> :add-resize-callback parent
          (lambda (width height)
-           (<gui> :disable-updates parent)
-           (define new-mixer-strips (create-mixer-strips height))
-           (<gui> :close mixer-strips)
-           (<gui> :add parent new-mixer-strips)
-           (<gui> :show new-mixer-strips)
-           (<gui> :enable-updates parent)
-           (set! mixer-strips new-mixer-strips)))
+           (catch #t
+                  (lambda ()
+                    (<gui> :disable-updates parent)
+                    (define new-mixer-strips (create-mixer-strips width height))
+                    (<gui> :close mixer-strips)
+                    (<gui> :add parent new-mixer-strips)
+                    (<gui> :show new-mixer-strips)
+                    (set! mixer-strips new-mixer-strips))
+                  (lambda args
+                    (display (ow!))))
+           (<gui> :enable-updates parent)))
 
   (<gui> :add parent mixer-strips)
-  (<gui> :show parent))
+  (<gui> :show parent)
+
+  )
 
 
 (create-mixer-strips-gui)
