@@ -44,7 +44,7 @@ class RadiumMock:
                 end_line, end_counter, end_dividor,
                 tracknum, blocknum, windownum):
 #        return
-        print "addNote3",tracknum,line,end_line,notenum,velocity
+        print "addNote3",tracknum,line,counter,dividor,end_line,end_counter,end_dividor,notenum,velocity
     def setMainLPB(self,lpb):
         pass
     def setMainBPM(self,pbm):
@@ -74,7 +74,7 @@ class RadiumMock:
 def get_radium_mock():
     radium = RadiumMock()
     radium.addNote3 = radium.addNote3
-    radium.setMainLPB = radium.setLPB
+    radium.setMainLPB = radium.setMainLPB
     radium.setMainBPM = radium.setMainBPM
     radium.setNumLines = radium.dummy
     radium.setNumTracks = radium.dummy
@@ -557,7 +557,6 @@ if 0:
 
 def send_notes_to_radium_track(notes, tracknum, resolution, lpb):
     for note in notes:
-        #print "add note",note,tracknum
         startplace = tick_to_place(note.start_tick, resolution, lpb)
         endplace   = tick_to_place(note.end_tick, resolution, lpb)
 
@@ -719,7 +718,8 @@ def import_midi(filename="", lpb=0, midi_port="", polyphonic="not set"):
 
 
 if __name__ == "__main__":
-    filename = "sinclair.MID"
+    filename = "/home/kjetil/Downloads/reich.mid"
+    #filename = "sinclair.MID"
     #filename = "/gammelhd/gammelhd/gammelhd/home/kjetil/bmod54.mid"
     for channel in import_midi(filename, 4, "port", False):
         print "new channel"
