@@ -1,3 +1,6 @@
+set -e
+set -x
+
 echo "Making radium_wrap.c"
 
 echo "// Radium-spesific parts was automaticly generated from protos.conf by protoconfparser.py." >radium_wrap.c

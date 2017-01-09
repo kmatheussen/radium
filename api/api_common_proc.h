@@ -19,6 +19,7 @@ extern "C" {
 #endif
 
 extern void callMeBeforeReturningToS7(void);
+extern char *pullErrorMessage(void);
 extern void handleError(const char *fmt,...);
 
 extern struct Tracker_Windows *getWindowFromNum(int windownum);

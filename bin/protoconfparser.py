@@ -1,4 +1,3 @@
-#This file is copied from ../api/ during make-process
 #/* Copyright 2001 Kjetil S. Matheussen
 #
 #This program is free software; you can redistribute it and/or
@@ -352,6 +351,9 @@ class Proto:
             if lokke<self.arglen-1:
                 oh.write(",")
         oh.write(");\n")
+
+        oh.write("const char *error_message = pullErrorMessage();\n");
+        oh.write("if(error_message!=NULL) { PyErr_SetString(PyExc_Exception, error_message); return NULL; }\n");
 
         if len(self.proc.qualifiers)==1 and self.proc.qualifiers[len(self.proc.qualifiers)-1]=="void":
             oh.write("Py_INCREF(Py_None);\n")

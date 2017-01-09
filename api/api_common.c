@@ -82,6 +82,12 @@ void callMeBeforeReturningToS7(void){
   }
 }
 
+char *pullErrorMessage(void){
+  char *message = g_error_message;
+  g_error_message = NULL;
+  return message;
+}
+
 void handleError(const char *fmt,...){
   char message[1000];
   va_list argp;

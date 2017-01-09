@@ -409,7 +409,7 @@ static inline Place p_Last_Pos(const struct Blocks *block){
   }while(0)
 
 static inline const char* PlaceToString(const Place *a){
-  return talloc_format("%d + %d/%d\n",(a)->line,(a)->counter,(a)->dividor);
+  return talloc_format("%d + %d/%d",(a)->line,(a)->counter,(a)->dividor);
 }
 
 #define PrintPlace(title,a) printf(title ": %d + %d/%d\n",(a)->line,(a)->counter,(a)->dividor);
