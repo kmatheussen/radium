@@ -151,6 +151,8 @@
   
 
 (define (create-mixer-strip-mutesolo gui instrument-id x1 y1 x2 y2)
+  (define background-color (<ra> :get-instrument-color instrument-id))
+
   (define middle (floor (average x1 x2)))
 
   (define mute #f)
@@ -164,7 +166,7 @@
              mute
              (if (<gui> :get-value mute)
                  "yellow"
-                 "black")
+                 background-color)
              0 0 width height)
       (<gui> :draw-text
              mute
@@ -173,7 +175,7 @@
              0 0 width height
              #f
              )))
-           
+  
   (set! mute (<gui> :checkbox 
                     "M"
                     #f
@@ -242,6 +244,7 @@
 
 (define (create-mixer-strip-comment gui instrument-id x1 y1 x2 y2)
   (define comment-edit (<gui> :line "Comment"))
+  (<gui> :set-background-color comment-edit (<ra> :get-instrument-color instrument-id))
   (<gui> :add gui comment-edit x1 y1 x2 y2))
 
 
@@ -250,6 +253,7 @@
   (<gui> :set-min-width gui width)
   (<gui> :set-max-width gui width)
   (<gui> :set-size-policy gui #f #t)
+  (<gui> :set-background-color gui (<ra> :get-instrument-color instrument-id))
   
   (define y1 0)
   (define x1 0)
@@ -260,7 +264,7 @@
   (define fontheight (get-fontheight))
   (define fontheight-and-borders (+ 4 fontheight))
 
-  (define name-height fontheight-and-borders)
+  (define name-height (floor (* 1.5 fontheight-and-borders)))
   (define pan-height fontheight-and-borders)
   (define mutesolo-height fontheight-and-borders)
   (define comment-height fontheight-and-borders)
@@ -298,7 +302,7 @@
   (create-mixer-strip-name gui instrument-id x1 name_y1 x2 name_y2)
 
   (define mixer-strip-path-gui (<gui> :vertical-scroll))
-  (<gui> :set-layout-spacing mixer-strip-path-gui 5 1 0 1 0)
+  (<gui> :set-layout-spacing mixer-strip-path-gui 5 5 5 5 5)
   (<gui> :add gui mixer-strip-path-gui x1 sends_y1 x2 sends_y2)
   
   (create-mixer-strip-path mixer-strip-path-gui instrument-id)
@@ -344,7 +348,7 @@
   (<gui> :set-layout-spacing mixer-strips strip-separator-width 0 0 0 0)
   
   ;;(define x1 0)
-  (define mixer-strip-width 160)
+  (define mixer-strip-width 140)
   (define instruments-buses-separator-width (* (get-fontheight) 2))
 
   (define instruments (get-all-instruments-with-no-input-connections))
@@ -472,4 +476,5 @@
 ;;option to select +35 or +6
 
 
-
+;; Background color should probably be a mix between system background color and instrument color.
+;; Color type should probably be int64_t, not string. Don't see any advantages using string.
