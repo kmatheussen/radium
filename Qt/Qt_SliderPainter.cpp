@@ -24,11 +24,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "EditorWidget.h"
 #include "../common/threading.h"
 
+#include "../audio/SoundPlugin.h"
+
 #include "Qt_SliderPainter_proc.h"
 
 #include "Qt_MyWidget.h"
 #include "MySliderPainterPainter.h"
-
 
 static int scale_int(int x, int x1, int x2, int y1, int y2){
   return (int)scale((float)x,(float)x1,(float)x2,(float)y1,(float)y2);
@@ -42,12 +43,12 @@ static float gain2db(float val){
 }
 
 static float db2linear(float db){
-  if(db<-70)
+  if(db<MIN_DB)
     return 0.0f;
-  else if(db>40)
+  else if(db>MAX_DB)
     return 1.0f;
   else
-    return scale(db,-70.0f,40.0f,0.0f,1.0f);
+    return scale(db,MIN_DB,MAX_DB,0.0f,1.0f);
 }
 
 #if 0
