@@ -32,7 +32,7 @@
 
   (set! widget (<gui> :horizontal-slider "" 0 0.5 1.0
                       (lambda (val)
-                        (<ra> :set-instrument-effect instrument-id effect-name val)
+                        ;;(<ra> :set-instrument-effect instrument-id effect-name val)
                         (if widget
                             (paintit (<gui> :width widget)
                                      (<gui> :height widget))))))
@@ -193,9 +193,6 @@
   )
 
 (define (create-mixer-strip-volume gui instrument-id x1 y1 x2 y2)
-  (define min-volume -40)
-  (define max-volume 35)
-
   (define fontheight (get-fontheight))
   (define middle (floor (average x1 x2)))
 
@@ -216,25 +213,51 @@
   (define peak_x2 peaktext_x2)
   (define peak_y2 y2)
 
+  (define (get-volume)
+    (c-display "           got"
+               (<ra> :get-instrument-effect instrument-id "System Volume")
+               (scale (<ra> :get-instrument-effect instrument-id "System Volume")
+                      0 1
+                      *min-db* *max-db*)
+               " for " (<ra> :get-instrument-name instrument-id))
+    (scale (<ra> :get-instrument-effect instrument-id "System Volume")
+           0 1
+           *min-db* *max-db*))
+  
   (define voltext (<gui> :float-text 
-                         min-volume 0 max-volume
+                         *min-db* (get-volume) *max-db*
                          (lambda (val)
                            (c-display "new-vol" val))))
   (define peaktext (<gui> :text
                           "-inf"))
 
+  (define doit #t)
+  (define last-vol-slider (get-volume))
+  
   (define volslider (<gui> :vertical-slider
                            ""
-                           min-volume 0 max-volume
+                           *min-db* (get-volume) *max-db*
                            (lambda (val)
-                             (c-display "volslider set to" val)
-                             (<gui> :set-value voltext val))))
+                             (when (and doit (not (= last-vol-slider val)))
+                               (set! last-vol-slider val)
+                               (<ra> :set-instrument-effect instrument-id "System Volume" (scale val *min-db* *max-db* 0 1))
+                               (<gui> :set-value voltext val)))))
 
   (define volmeter (<gui> :vertical-audio-meter instrument-id))
   
   (<gui> :add gui voltext x1 y1 middle voltext_y2)
   (<gui> :add gui peaktext peaktext_x1 y1 peaktext_x2 peaktext_y2)
 
+  (define effect-monitor (<ra> :add-effect-monitor "System Volume" instrument-id
+                               (lambda ()
+                                 (set! doit #f)
+                                 (<gui> :set-value volslider (get-volume))
+                                 (set! doit #t))))
+
+  (<gui> :add-close-callback volslider
+         (lambda ()
+           (<ra> :remove-effect-monitor effect-monitor)))
+  
   (<gui> :add gui volslider volslider_x1 volslider_y1 volslider_x2 volslider_y2)
   (<gui> :add gui volmeter peak_x1 peak_y1 peak_x2 peak_y2)
   )
@@ -298,7 +321,7 @@
   (create-mixer-strip-name gui instrument-id x1 name_y1 x2 name_y2)
 
   (define mixer-strip-path-gui (<gui> :vertical-scroll))
-  (<gui> :set-layout-spacing mixer-strip-path-gui 5 1 0 1 0)
+  (<gui> :set-layout-spacing mixer-strip-path-gui 5 5 5 5 5)
   (<gui> :add gui mixer-strip-path-gui x1 sends_y1 x2 sends_y2)
   
   (create-mixer-strip-path mixer-strip-path-gui instrument-id)

@@ -51,9 +51,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "SoundPlugin_proc.h"
 
-#define MIN_DB -40
-#define MAX_DB 35
-
 #define FILTER_MIN_DB -35
 #define FILTER_MAX_DB 35
 

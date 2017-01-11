@@ -43,6 +43,11 @@ extern "C"{
   
 #define NOTUSED_EFFECT_NAME "NOTUSED"
 
+// Used by the volume sliders and peak meters.
+#define MIN_DB -40
+#define MAX_DB 35
+
+
 #define NUM_AB 8
   
 enum{
