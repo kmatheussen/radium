@@ -1,5 +1,7 @@
 (provide 'gui.scm)
 
+(define *min-db* (<ra> :get-min-db))
+(define *max-db* (<ra> :get-max-db))
 
 (define (gui-create-layout create-layout-func layout-args guis)
   (define layout (apply create-layout-func layout-args))
@@ -56,6 +58,9 @@
         
         ((eq? command :add-resize-callback)
          (<ra> :gui_add-resize-callback (car args) (cadr args)))
+        
+        ((eq? command :add-close-callback)
+         (<ra> :gui_add-close-callback (car args) (cadr args)))
         
         ((eq? command :draw-box)
          (let ((gui (list-ref args 0))

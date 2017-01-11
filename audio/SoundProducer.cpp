@@ -1230,7 +1230,7 @@ public:
                      "\n"
                      "This warning will pop up as long as the instrument does so.\n",
                      patch==NULL?"<no name>":patch->name,
-                     _plugin->type->type_name, _plugin->type->name,
+                     //_plugin->type->type_name, _plugin->type->name,
                      ch,peak,
                      out[0], out[1],out[2],out[2],out[3],out[4],out[5],out[6],out[7],out[8],out[9],
                      SMOOTH_get_target_value(&_plugin->input_volume)

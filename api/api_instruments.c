@@ -453,7 +453,6 @@ void setInstrumentEffect(int64_t instrument_id, char *effect_name, float value){
   GFX_update_instrument_widget(patch);
 }
 
-
 #if 0
 void setInstrumentVolume(int64_t instrument_id, float volume) {
   struct Instruments *instrument = getInstrumentFromNum(instrument_id);
@@ -467,6 +466,15 @@ float getInstrumentVolume(int64_t instrument_id) {
   return 0.0f;
 }
 #endif
+
+float getMinDb(void){
+  return MIN_DB;
+}
+
+float getMaxDb(void){
+  return MAX_DB;
+}
+
 
 void setInstrumentData(int64_t instrument_id, char *key, char *value) {
   struct Patch *patch = getPatchFromNum(instrument_id);
@@ -816,4 +824,115 @@ void stopNote(int note_id, int midi_channel, int64_t instrument_id){
                                        midi_channel,
                                        0
                                        ));
+}
+
+
+/******** Effect monitors ************/
+
+struct EffectMonitor{
+  int64_t id;
+
+  struct Patch *patch;
+  
+  int64_t instrument_id;
+  int effect_num;
+  func_t *func;
+
+  float last_value;
+};
+
+static int64_t g_effect_monitor_id = 0;
+static vector_t g_effect_monitors = {0};
+
+static struct EffectMonitor *find_effect_monitor_from_id(int64_t id){
+  VECTOR_FOR_EACH(struct EffectMonitor *effect_monitor, &g_effect_monitors){
+    if (effect_monitor->id==id)
+      return effect_monitor;
+  }END_VECTOR_FOR_EACH;
+
+  return NULL;
+}
+
+/*
+static struct EffectMonitor *find_effect_monitor(int effect_num, int64_t instrument_id){
+  VECTOR_FOR_EACH(struct EffectMonitor *effect_monitor, &g_effect_monitors){
+    if (effect_monitor->effect_num==effect_num && effect_monitor->instrument_id==instrument_id)
+      return effect_monitor;
+  }END_VECTOR_FOR_EACH;
+
+  return NULL;
+}
+*/
+
+int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, func_t *func){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL){
+    handleError("There is no instrument #%d", instrument_id);
+    return -1;
+  }
+
+  if (patch->instrument!=get_audio_instrument()){
+    handleError("Can only call addEffectMonitor for audio instruments");
+    return -1;
+  }
+      
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+
+  int effect_num = PLUGIN_get_effect_num(plugin, effect_name);
+
+  if (effect_num==-1){
+    handleError("");
+    return -1;
+  }
+  
+    /*
+  if (find_effect_monitor(effect_num, instrument_id) != NULL){
+    handleError("There is already an effect monitor for %s / %d", getInstrumentName(instrument_id), effect_num);
+    return -1;
+  }
+    */
+    
+  struct EffectMonitor *effect_monitor = talloc(sizeof(struct EffectMonitor));
+
+  effect_monitor->id = g_effect_monitor_id++;
+  effect_monitor->patch = patch;
+  
+  effect_monitor->effect_num = effect_num;
+  effect_monitor->instrument_id = instrument_id;
+  effect_monitor->func = func;
+
+  effect_monitor->last_value = 0;
+
+  VECTOR_push_back(&g_effect_monitors, effect_monitor);
+
+  s7extra_protect(effect_monitor->func);  
+
+  return effect_monitor->id;
+}
+
+void removeEffectMonitor(int64_t effect_monitor_id){
+  struct EffectMonitor *effect_monitor = find_effect_monitor_from_id(effect_monitor_id);
+  if (effect_monitor==NULL){
+    handleError("No effect monitor #%d", (int)effect_monitor_id);
+    return;
+  }
+
+  s7extra_unprotect(effect_monitor->func);
+    
+  VECTOR_remove(&g_effect_monitors, effect_monitor);
+}
+
+
+void API_instruments_call_regularly(void){
+  VECTOR_FOR_EACH(struct EffectMonitor *effect_monitor, &g_effect_monitors){
+    struct Patch *patch = effect_monitor->patch;
+    struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+    if(plugin!=NULL){
+      float now = plugin->savable_effect_values[effect_monitor->effect_num];
+      if (now != effect_monitor->last_value){
+        effect_monitor->last_value = now;
+        s7extra_callFunc_void_void(effect_monitor->func);
+      }
+    }
+  }END_VECTOR_FOR_EACH;
 }

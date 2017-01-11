@@ -76,6 +76,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_proc.h"
 #include "../api/api_gui_proc.h"
+#include "../api/api_instruments_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -1302,6 +1303,7 @@ protected:
     
     if (is_called_every_ms(50)){ // 50ms = 3*1000ms/60 (each third frame)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function
+      API_instruments_call_regularly();
       API_gui_call_regularly();
     }
     

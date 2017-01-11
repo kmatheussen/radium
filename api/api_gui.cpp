@@ -171,7 +171,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     int _gui_num;
     QWidget *_widget;
 
-    QVector<Gui*> children;
+    QVector<Gui*> _children;
+    QVector<func_t*> _close_callbacks;
     
     int get_gui_num(void){
       return _gui_num;
@@ -194,7 +195,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       
       //printf("Deleting Gui %p\n",this);
 
-      for(Gui *child : children)
+      for(func_t *func : _close_callbacks){
+        s7extra_callFunc_void_void(func);
+        s7extra_unprotect(func);
+      }
+      
+      for(Gui *child : _children)
         delete child;
 
       for(Callback *callback : _callbacks)
@@ -1292,17 +1298,27 @@ int64_t gui_child(int64_t guinum, const_char* childname){
     handleError("Could not find child \"%s\" in gui #%d.", childname, guinum);
   }
 
-  for(Gui *existing_child : gui->children){
+  for(Gui *existing_child : gui->_children){
     if (existing_child->_widget==child)
       return existing_child->get_gui_num();
   }
   
   Gui *child_gui = new Gui(child);
-  gui->children.push_back(child_gui);
+  gui->_children.push_back(child_gui);
   
   return child_gui->get_gui_num();
 }
 
+void gui_addCloseCallback(int64_t guinum, func_t* func){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  s7extra_protect(func);
+  gui->_close_callbacks.push_back(func);
+}
+                      
 void gui_addCallback(int64_t guinum, func_t* func){
   Gui *gui = get_gui(guinum);
 
