@@ -368,7 +368,6 @@
                            ""
                            0 (db-to-slider (get-volume)) 1
                            (lambda (val)
-                             (c-display "hepp " val)
                              (define db (slider-to-db val))
                              (when (and doit (not (= last-vol-slider db)))
                                (set! last-vol-slider db)
@@ -448,7 +447,7 @@
   (define effect-monitor (<ra> :add-effect-monitor "System Volume" instrument-id
                                (lambda ()
                                  (set! doit #f)
-                                 (<gui> :set-value volslider (get-volume))
+                                 (<gui> :set-value volslider (db-to-slider (get-volume)))
                                  ;;(<gui> :set-value voltext (get-volume))
                                  (paint-voltext)
                                  (paint-slider)
