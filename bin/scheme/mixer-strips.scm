@@ -139,39 +139,70 @@
 
 
 (define (create-mixer-strip-pan gui instrument-id x1 y1 x2 y2)
+  (define (get-pan)
+    (floor (scale (<ra> :get-instrument-effect instrument-id "System Pan")
+                  0 1
+                  -90 90)))
+  (define doit #t)
+
   (define paint #f)
 
+  (define last-slider-val (get-pan))
   (define slider (<gui> :horizontal-int-slider
                         "pan: "
-                        -90 0 90
+                        -90 (get-pan) 90
                         (lambda (degree)
-                          (if paint
-                              (paint)))))
-
+                          (when (and doit (not (= last-slider-val degree)))
+                            (set! last-slider-val degree)
+                            (<ra> :set-instrument-effect instrument-id "System Pan On/Off" 1.0)
+                            (<ra> :set-instrument-effect instrument-id "System Pan" (scale degree -90 90 0 1))
+                            (if paint
+                                (paint))))))
 
   (set! paint
         (lambda ()
-  (define background (<gui> :get-background-color gui))
-
-  (define col1 (<gui> :mix-colors "white" background 0.4))
-  (define col2 (<gui> :mix-colors "#010101" background 0.5))
           (define width (<gui> :width slider))
           (define height (<gui> :height slider))
-          (define value (<gui> :get-value slider))
-          ;;(<gui> :filled-box slider (<gui> :get-background-color slider) 0 1 width (1- height))
-          (<gui> :filled-box slider (<gui> :get-background-color gui) 0 0 width (1- height))
+          (define value (get-pan))
+          (define is-on (>= (<ra> :get-instrument-effect instrument-id "System Pan On/Off") 0.5))
+          (define background (if is-on
+                                 (<gui> :get-background-color gui)
+                                 (<gui> :mix-colors (<gui> :get-background-color gui) "white" 0.95)))
+          (define col1 (<gui> :mix-colors "white" background 0.4))
+          (define col2 (<gui> :mix-colors "#010101" background 0.5))
+          (<gui> :filled-box slider background 0 1 width height)
           (define middle (scale value -90 90 0 width))
           (define inner-width/2 1)
           (define outer-width/2 2)
-          (<gui> :filled-box slider col1 (- middle inner-width/2) 1 (+ middle inner-width/2) (1- height))
-          (<gui> :filled-box slider col2 (- middle inner-width/2 outer-width/2) 1 (- middle inner-width/2) (1- height))
-          (<gui> :filled-box slider col2 (+ middle inner-width/2) 1 (+ middle inner-width/2 outer-width/2) (1- height))
+          (<gui> :filled-box slider col1 (- middle inner-width/2) 2 (+ middle inner-width/2) (- height 3))
+          (<gui> :filled-box slider col2 (- middle inner-width/2 outer-width/2) 2 (- middle inner-width/2) (- height 3))
+          (<gui> :filled-box slider col2 (+ middle inner-width/2) 2 (+ middle inner-width/2 outer-width/2) (- height 3))
           ;;(<gui> :draw-text slider "white" (<-> value "o") 0 0 width height #t)
           ))
 
   (<gui> :add-resize-callback slider (lambda x (paint)))
 
   (paint)
+
+  (define effect-monitor (<ra> :add-effect-monitor "System Pan" instrument-id
+                               (lambda ()
+                                 (set! doit #f)
+                                 (<gui> :set-value slider (get-pan))
+                                 (paint)
+                                 (set! doit #t))))
+  (define effect-monitor2 (<ra> :add-effect-monitor "System Pan On/Off" instrument-id paint))
+
+  (<gui> :add-close-callback slider
+         (lambda ()
+           (<ra> :remove-effect-monitor effect-monitor)
+           (<ra> :remove-effect-monitor effect-monitor2)))
+
+  (<gui> :add-mouse-callback slider
+         (lambda (button state x y)
+           (if (and (= button *left-button*)
+                    (= state *is-pressing*))
+               (<ra> :undo-instrument-effect instrument-id "System Pan"))
+           #f))
 
   (<gui> :add gui slider x1 y1 x2 y2))
 
