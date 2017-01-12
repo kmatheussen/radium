@@ -143,6 +143,9 @@
 
 
 (define (create-mixer-strip-pan gui system-background-color instrument-id x1 y1 x2 y2)
+  (define (pan-enabled?)
+    (>= (<ra> :get-instrument-effect instrument-id "System Pan On/Off") 0.5))
+  
   (define (get-pan)
     (floor (scale (<ra> :get-instrument-effect instrument-id "System Pan")
                   0 1
@@ -156,7 +159,7 @@
                         "pan: "
                         -90 (get-pan) 90
                         (lambda (degree)
-                          (when (and doit (not (= last-slider-val degree)))
+                          (when (and doit (not (= last-slider-val degree)) (pan-enabled?))
                             (set! last-slider-val degree)
                             ;;(<ra> :set-instrument-effect instrument-id "System Pan On/Off" 1.0)
                             (<ra> :set-instrument-effect instrument-id "System Pan" (scale degree -90 90 0 1))
@@ -168,7 +171,7 @@
           (define width (<gui> :width slider))
           (define height (<gui> :height slider))
           (define value (get-pan))
-          (define is-on (>= (<ra> :get-instrument-effect instrument-id "System Pan On/Off") 0.5))
+          (define is-on (pan-enabled?))
           (<gui> :filled-box slider system-background-color 0 0 width height)
           (define background (if is-on
                                  (<gui> :mix-colors (<gui> :get-background-color gui) "black" 0.39)
@@ -218,7 +221,7 @@
                                         (<ra> :undo-instrument-effect instrument-id "System Pan")
                                         (<ra> :set-instrument-effect instrument-id "System Pan" 0.5))
                               (list "Enabled"
-                                    :check (>= (<ra> :get-instrument-effect instrument-id "System Pan On/Off") 0.5)
+                                    :check (pan-enabled?)
                                     (lambda (onoff)
                                       (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
                                       (<ra> :set-instrument-effect instrument-id "System Pan On/Off" (if onoff 1.0 0.0)))))))
@@ -251,7 +254,10 @@
 
   (repaint)
 
-  checkbox)
+  (list (lambda (new-value)
+          (set! is-selected new-value)
+          (repaint))
+        checkbox))
 
   
 
@@ -284,25 +290,48 @@
            2 2 (- width 2) (- height 2)
            1.0
            0 0))
-  
+
+  (define (get-muted)
+    (< (<ra> :get-instrument-effect instrument-id "System Volume On/Off") 0.5))
+  (define (get-soloed)
+    (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
+           
   (define mute (custom-checkbox (lambda (mute is-muted width height)
-                                  (draw-mutesolo mute is-muted "Mute" "yellow" width height))
+                                  (draw-mutesolo mute is-muted "Mute" "green" width height))
                                 (lambda (is-muted)
-                                  (c-display "mute: " is-muted)
+                                  (<ra> :undo-instrument-effect instrument-id "System Volume On/Off")
+                                  (<ra> :set-instrument-effect instrument-id "System Volume On/Off" (if is-muted 0.0 1.0))
+                                  ;;(c-display "mute: " is-muted)
                                   )
-                                #f))
+                                (get-muted)))
                                
   (define solo (custom-checkbox (lambda (solo is-soloed width height)
-                                  (draw-mutesolo solo is-soloed "Solo" "red" width height))
+                                  (draw-mutesolo solo is-soloed "Solo" "yellow" width height))
                                 (lambda (is-selected)
-                                  (c-display "solo: " is-selected)
+                                  (<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
+                                  (<ra> :set-instrument-effect instrument-id "System Solo On/Off" (if is-selected 1.0 0.0))
+                                  ;;(c-display "solo: " is-selected)
                                   )
-                                #f))
+                                (get-soloed)))
 
+  (define mute-monitor (<ra> :add-effect-monitor "System Volume On/Off" instrument-id
+                             (lambda ()
+                               ((car mute) (get-muted)))))
 
+  (define solo-monitor (<ra> :add-effect-monitor "System Solo On/Off" instrument-id
+                             (lambda ()
+                               ((car solo) (get-soloed)))))
 
-  (<gui> :add gui mute x1 y1 middle y2)
-  (<gui> :add gui solo middle y1 x2 y2)
+  (<gui> :add-close-callback (cadr mute)
+         (lambda ()
+           (<ra> :remove-effect-monitor mute-monitor)))
+  
+  (<gui> :add-close-callback (cadr solo)
+         (lambda ()
+           (<ra> :remove-effect-monitor solo-monitor)))
+
+  (<gui> :add gui (cadr mute) x1 y1 middle y2)
+  (<gui> :add gui (cadr solo) middle y1 x2 y2)
   )
 
 (define (create-mixer-strip-volume gui instrument-id x1 y1 x2 y2)
