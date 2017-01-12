@@ -35,26 +35,20 @@
 #include "api_gui_proc.h"
 
 
-#define MOUSE_OVERRIDERS(classname)                     \
-  void mousePressEvent(QMouseEvent *event) override{    \
-    if (_mouse_callback==NULL)                          \
-      classname::mousePressEvent(event);                \
-    else                                                \
-      Gui::mousePressEvent(event);                      \
-  }                                                     \
-                                                        \
-  void mouseReleaseEvent(QMouseEvent *event) override { \
-    if (_mouse_callback==NULL)                            \
-      classname::mouseReleaseEvent(event);                \
-    else                                                  \
-      Gui::mouseReleaseEvent(event);                      \
-  }                                                       \
-                                                          \
-  void mouseMoveEvent(QMouseEvent *event) override{       \
-    if (_mouse_callback==NULL)                            \
-      classname::mouseMoveEvent(event);                   \
-    else                                                                \
-      Gui::mouseMoveEvent(event);                                       \
+#define MOUSE_OVERRIDERS(classname)                                     \
+  void mousePressEvent(QMouseEvent *event) override{                    \
+    if (_mouse_callback==NULL || !Gui::mousePressEvent(event))          \
+      classname::mousePressEvent(event);                                \
+  }                                                                     \
+                                                                        \
+  void mouseReleaseEvent(QMouseEvent *event) override {                 \
+    if (_mouse_callback==NULL || !Gui::mouseReleaseEvent(event))        \
+      classname::mouseReleaseEvent(event);                              \
+  }                                                                     \
+                                                                        \
+  void mouseMoveEvent(QMouseEvent *event) override{                     \
+    if (_mouse_callback==NULL || !Gui::mouseMoveEvent(event))           \
+      classname::mouseMoveEvent(event);                                 \
   }
 
 #define RESIZE_OVERRIDER(classname)                                     \
@@ -108,8 +102,12 @@ static QColor getQColor(int64_t color){
 #endif
 }
 
-static QColor getQColor(const_char* color){
-  return QColor(color);
+static QColor getQColor(const_char* colorname){
+  QColor color = get_config_qcolor(colorname);
+  if (!color.isValid())
+    handleError("Color \"%s\" is not valid");
+  //return QColor(color);
+  return color;
 }
 
 static QPen getPen(const_char* color){
@@ -251,7 +249,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     func_t *_mouse_callback = NULL;
     int _currentButton = 0;
 
-    int getMouseButtonEventID( QMouseEvent *qmouseevent){
+    int getMouseButtonEventID(QMouseEvent *qmouseevent){
       if(qmouseevent->button()==Qt::LeftButton)
         return TR_LEFTMOUSEDOWN;
       else if(qmouseevent->button()==Qt::RightButton)
@@ -262,38 +260,40 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         return 0;
     }
 
-    void mousePressEvent(QMouseEvent *event){
-      R_ASSERT_RETURN_IF_FALSE(_mouse_callback!=NULL);
+    bool mousePressEvent(QMouseEvent *event){
+      R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
 
       event->accept();
 
       _currentButton = getMouseButtonEventID(event);
       const QPoint &point = event->pos();
 
-      s7extra_callFunc_void_int_float_float(_mouse_callback, _currentButton, point.x(), point.y());
-      printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+      return s7extra_callFunc_bool_int_int_float_float(_mouse_callback, _currentButton, API_MOUSE_PRESSING, point.x(), point.y());
+      //printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
     }
 
-    void mouseReleaseEvent(QMouseEvent *event) {
-      R_ASSERT_RETURN_IF_FALSE(_mouse_callback!=NULL);
+    bool mouseReleaseEvent(QMouseEvent *event) {
+      R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
 
       event->accept();
 
       const QPoint &point = event->pos();
-      s7extra_callFunc_void_int_float_float(_mouse_callback, _currentButton, point.x(), point.y());
-
+      bool ret = s7extra_callFunc_bool_int_int_float_float(_mouse_callback, _currentButton, API_MOUSE_RELEASING, point.x(), point.y());
+      
       _currentButton = 0;
-      printf("  Release. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+      //printf("  Release. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+      return ret;
     }
 
-    void mouseMoveEvent(QMouseEvent *event){
-      R_ASSERT_RETURN_IF_FALSE(_mouse_callback!=NULL);
+    bool mouseMoveEvent(QMouseEvent *event){
+      R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
 
       event->accept();
 
       const QPoint &point = event->pos();
-      s7extra_callFunc_void_int_float_float(_mouse_callback, _currentButton, point.x(), point.y());
-      printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+      return s7extra_callFunc_bool_int_int_float_float(_mouse_callback, _currentButton, API_MOUSE_MOVING, point.x(), point.y());
+
+      //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
     }
 
     void addMouseCallback(func_t* func){      

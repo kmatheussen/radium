@@ -22,6 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 /* Event IDs: */
 
+#define API_MOUSE_PRESSING 1
+#define API_MOUSE_MOVING 2
+#define API_MOUSE_RELEASING 3
+
 #define TR_MOUSEMOVE 0
 #define TR_LEFTMOUSEDOWN 1
 #define TR_LEFTMOUSEUP 2

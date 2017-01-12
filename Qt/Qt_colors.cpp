@@ -667,6 +667,29 @@ QColor get_qcolor(enum ColorNums colornum){
   return get_custom_qcolor((int)colornum);
 }
 
+QColor get_config_qcolor(QString colorname){
+  static bool has_inited = false;
+
+  static QHash<QString,enum ColorNums> colors;
+
+  if (has_inited==false){
+    int i=0;
+    for(;;){
+      const ColorConfig &config = g_colorconfig[i];
+      if(config.num == END_CONFIG_COLOR_NUM)
+        break;
+      colors[config.config_name] = config.num;
+      i++;
+    }
+    has_inited = true;
+  }
+
+  if (colors.contains(colorname))
+    return get_qcolor_really(colors[colorname]);
+  else
+    return QColor(colorname);
+}
+
 static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pal){
   
   if(system_color==NULL){

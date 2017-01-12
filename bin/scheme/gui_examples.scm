@@ -192,8 +192,9 @@
 (define widget (<gui> :widget 300 300))
 (<gui> :show widget)
 
-(<gui> :add-mouse-callback widget (lambda (button x y)
-                                    (c-display "button:" button "x/y:" x y)))
+(<gui> :add-mouse-callback widget (lambda (button state x y)
+                                    (c-display "button:" button "x/y:" x y)
+                                    #t))
 
 (<gui> :draw-line widget "#xff0000" 5 10 100 150 2.0)
 (<gui> :draw-line widget #x00ff00 59 60 150 190 2.0)

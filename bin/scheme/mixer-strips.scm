@@ -41,7 +41,7 @@
 
   (<gui> :add-resize-callback widget paintit)
 
-  '(<gui> :add-mouse-callback widget (lambda (button x y)
+  '(<gui> :add-mouse-callback widget (lambda (button state x y)
                                       (when (= button *left-button*)
                                         (c-display "  m" button x y (scale x 0 (<gui> :width widget) 0 1.0))
                                         (<ra> :set-instrument-effect instrument-id effect-name (scale x 0 (<gui> :width widget) 0 1))
@@ -139,59 +139,113 @@
 
 
 (define (create-mixer-strip-pan gui instrument-id x1 y1 x2 y2)
+  (define paint #f)
+
   (define slider (<gui> :horizontal-int-slider
                         "pan: "
                         -90 0 90
                         (lambda (degree)
-                          (c-display "pan moved" degree))))
+                          (if paint
+                              (paint)))))
+
+
+  (set! paint
+        (lambda ()
+  (define background (<gui> :get-background-color gui))
+
+  (define col1 (<gui> :mix-colors "white" background 0.4))
+  (define col2 (<gui> :mix-colors "#010101" background 0.5))
+          (define width (<gui> :width slider))
+          (define height (<gui> :height slider))
+          (define value (<gui> :get-value slider))
+          ;;(<gui> :filled-box slider (<gui> :get-background-color slider) 0 1 width (1- height))
+          (<gui> :filled-box slider (<gui> :get-background-color gui) 0 0 width (1- height))
+          (define middle (scale value -90 90 0 width))
+          (define inner-width/2 1)
+          (define outer-width/2 2)
+          (<gui> :filled-box slider col1 (- middle inner-width/2) 1 (+ middle inner-width/2) (1- height))
+          (<gui> :filled-box slider col2 (- middle inner-width/2 outer-width/2) 1 (- middle inner-width/2) (1- height))
+          (<gui> :filled-box slider col2 (+ middle inner-width/2) 1 (+ middle inner-width/2 outer-width/2) (1- height))
+          ;;(<gui> :draw-text slider "white" (<-> value "o") 0 0 width height #t)
+          ))
+
+  (<gui> :add-resize-callback slider (lambda x (paint)))
+
+  (paint)
+
   (<gui> :add gui slider x1 y1 x2 y2))
 
 ;;(define (create-mixer-strip-checkbox text sel-color unsel-color width height callback)
 ;;  (define button (<gui> :widget width height))
+
+(define (custom-checkbox paint-func value-changed is-selected)
+  (define checkbox (<gui> :widget))
+  (define width (<gui> :width checkbox))
+  (define height (<gui> :height checkbox))
+  (define (repaint)
+    (paint-func checkbox is-selected width height))
+  (<gui> :add-mouse-callback checkbox (lambda (button state x y)
+                                        ;;(c-display "state" state)
+                                        (when (and (= button *left-button*)
+                                                   (= state *is-pressing*))
+                                          (set! is-selected (not is-selected))
+                                          (value-changed is-selected)
+                                          (repaint))
+                                        #t))
+  (<gui> :add-resize-callback checkbox
+         (lambda (newwidth newheight)
+           (set! width newwidth)
+           (set! height newheight)
+           (repaint)))
+
+  (repaint)
+
+  checkbox)
+
   
 
 (define (create-mixer-strip-mutesolo gui instrument-id x1 y1 x2 y2)
-  (define background-color (<ra> :get-instrument-color instrument-id))
+  (define background-color (<gui> :get-background-color gui));(<ra> :get-instrument-color instrument-id))
 
   (define middle (floor (average x1 x2)))
-
-  (define mute #f)
-  (define solo #f)
-
-  (define (paint-mute)
-    (when mute
-      (define width (<gui> :width mute))
-      (define height (<gui> :height mute))
-      (<gui> :filled-box
-             mute
-             (if (<gui> :get-value mute)
-                 "yellow"
-                 background-color)
-             0 0 width height)
-      (<gui> :draw-text
-             mute
-             "white"
-             "Mute"
-             0 0 width height
-             #f
-             )))
   
-  (set! mute (<gui> :checkbox 
-                    "M"
-                    #f
-                    (lambda (val)
-                      (paint-mute)
-                      (c-display "mute?" val))))
-  (set! solo (<gui> :checkbox 
-                    "S"
-                    #f
-                    (lambda (val)
-                      (c-display "solo?" val))))
+  (define (draw-mutesolo checkbox is-selected text color width height)
+    (<gui> :filled-box
+           checkbox
+           (if is-selected
+               color
+               background-color)
+           2 2 (- width 2) (- height 2))
+    (<gui> :draw-text
+           checkbox
+           "black"
+           text
+           0 0 width height
+           #f)
+    (<gui> :draw-box
+           checkbox
+           "#404040"
+           2 2 (- width 2) (- height 2)
+           1.0))
   
+  (define mute (custom-checkbox (lambda (mute is-muted width height)
+                                  (draw-mutesolo mute is-muted "Mute" "yellow" width height))
+                                (lambda (is-muted)
+                                  (c-display "mute: " is-muted)
+                                  )
+                                #f))
+                               
+  (define solo (custom-checkbox (lambda (solo is-soloed width height)
+                                  (draw-mutesolo solo is-soloed "Solo" "red" width height))
+                                (lambda (is-selected)
+                                  (c-display "solo: " is-selected)
+                                  )
+                                #f))
+
+
+
   (<gui> :add gui mute x1 y1 middle y2)
   (<gui> :add gui solo middle y1 x2 y2)
-
-  (paint-mute)
   )
 
 (define (create-mixer-strip-volume gui instrument-id x1 y1 x2 y2)
@@ -263,7 +317,14 @@
   (<gui> :add-close-callback volslider
          (lambda ()
            (<ra> :remove-effect-monitor effect-monitor)))
-  
+
+  (<gui> :add-mouse-callback volslider
+         (lambda (button state x y)
+           (if (and (= button *left-button*)
+                    (= state *is-pressing*))
+               (<ra> :undo-instrument-effect instrument-id "System Volume"))
+           #f))
+
   (<gui> :add gui volslider volslider_x1 volslider_y1 volslider_x2 volslider_y2)
   (<gui> :add gui volmeter peak_x1 peak_y1 peak_x2 peak_y2)
   )

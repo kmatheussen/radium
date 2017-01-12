@@ -26,6 +26,7 @@ class QApplication;
 extern const char *get_color_display_name(enum ColorNums colornum);
 extern QColor get_qcolor(enum ColorNums colornum);
 extern QColor get_custom_qcolor(int colornum);
+extern QColor get_config_qcolor(QString colorname);
 extern void setWidgetColors(QWidget *widget);
 extern void setApplicationColors(QApplication *app);
 //extern void setEditorColors(EditorWidget *editor);

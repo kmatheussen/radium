@@ -1,8 +1,12 @@
 (provide 'mouse.scm)
 
-(define *left-button* 1)
-(define *middle-button* 3)
-(define *right-button* 5)
+(define *left-button* 1) ;; TR_LEFTMOUSE
+(define *middle-button* 3) ;; TR_MIDDLEMOUSE
+(define *right-button* 5) ;; TR_RIGHTMOUSE
+
+(define *is-pressing* 1) ;; API_MOUSE_PRESSING
+(define *is-moving* 2) ;; API_MOUSE_MOVING
+(define *is-releasing* 3)  ;; API_MOUSE_RELEASING
 
 (define (select-button Button)
   (= *left-button* Button))

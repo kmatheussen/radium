@@ -89,6 +89,9 @@ char *pullErrorMessage(void){
 }
 
 void handleError(const char *fmt,...){
+  if (g_error_message != NULL)
+    return;
+
   char message[1000];
   va_list argp;
   

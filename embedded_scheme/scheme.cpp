@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "scheme_proc.h"
 #include "s7extra_proc.h"
 
+#include "../api/api_common_proc.h"
 #include "../api/api_proc.h"
 
 
@@ -296,6 +297,50 @@ void s7extra_callFunc_void_int_float_float(func_t *func, int64_t arg1, float arg
 
 void s7extra_callFunc2_void_int_float_float(const char *funcname, int64_t arg1, float arg2, float arg3){
   s7extra_callFunc_void_int_float_float((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3);
+}
+
+void s7extra_callFunc_void_int_int_float_float(func_t *func, int64_t arg1, int64_t arg2, float arg3, float arg4){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_call(s7,
+          (s7_pointer)func,
+          s7_list(s7,
+                  4,
+                  s7_make_integer(s7, arg1),
+                  s7_make_integer(s7, arg2),
+                  s7_make_real(s7, arg3),
+                  s7_make_real(s7, arg4)
+                  )
+          );
+}
+
+void s7extra_callFunc2_void_int_int_float_float(const char *funcname, int64_t arg1, int64_t arg2, float arg3, float arg4){
+  s7extra_callFunc_void_int_int_float_float((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
+}
+
+bool s7extra_callFunc_bool_int_int_float_float(func_t *func, int64_t arg1, int64_t arg2, float arg3, float arg4){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = s7_call(s7,
+                           (s7_pointer)func,
+                           s7_list(s7,
+                                   4,
+                                   s7_make_integer(s7, arg1),
+                                   s7_make_integer(s7, arg2),
+                                   s7_make_real(s7, arg3),
+                                   s7_make_real(s7, arg4)
+                                   )
+                           );
+  if(!s7_is_boolean(ret)){
+    handleError("Callback did not return a boolean");
+    return false;
+  }else{
+    return s7_boolean(s7, ret);
+  }
+}
+
+bool s7extra_callFunc2_bool_int_int_float_float(const char *funcname, int64_t arg1, int64_t arg2, float arg3, float arg4){
+  return s7extra_callFunc_bool_int_int_float_float((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
 }
 
 void s7extra_callFunc_void_charpointer(func_t *func, const char* arg1){

@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Sampler_plugin_proc.h"
 #include "../audio/audio_instrument_proc.h"
 #include "../audio/Presets_proc.h"
+#include "../audio/undo_audio_effect_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../mixergui/QM_chip.h"
@@ -436,7 +437,7 @@ float getInstrumentEffect(int64_t instrument_id, const_char* effect_name){
 }
 
 
-void setInstrumentEffect(int64_t instrument_id, char *effect_name, float value){
+void setInstrumentEffect(int64_t instrument_id, const char *effect_name, float value){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -448,9 +449,27 @@ void setInstrumentEffect(int64_t instrument_id, char *effect_name, float value){
     return;
   }
   */
+
   PLUGIN_set_effect_from_name(plugin, effect_name, value);
 
   GFX_update_instrument_widget(patch);
+}
+
+void undoInstrumentEffect(int64_t instrument_id, const char *effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+
+  int effect_num = PLUGIN_get_effect_num(plugin, effect_name);
+
+  if (effect_num==-1){
+    handleError("");
+    return;
+  }
+  
+  ADD_UNDO(AudioEffect_CurrPos(patch, effect_num));
 }
 
 #if 0
