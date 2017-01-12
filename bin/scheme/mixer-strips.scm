@@ -2,6 +2,7 @@
 (define (get-fontheight)
   (+ 4 (<gui> :get-system-fontheight)))
 
+(define *text-color* "#cccccc")
 
 (define (create-mixer-gui)
   (<gui> :widget 800 400))
@@ -24,18 +25,20 @@
     (define value (<ra> :get-instrument-effect instrument-id effect-name))
     (c-display "value: " value)
     (define pos (scale value 0 1 0 width))
-    (<gui> :filled-box widget color 0 0 pos height)
-    (<gui> :filled-box widget "black" pos 0 width height)
+    (<gui> :filled-box widget (<gui> :get-background-color widget) 0 0 width height)
+    (<gui> :filled-box widget "black" 1 1 (1- width) (1- height) 5 5)
+    (<gui> :filled-box widget color 0 0 pos height 5 5)
     (<gui> :draw-box widget "gray" 0 0 width height 0.8)
-    (<gui> :draw-text widget "white" (<-> instrument-name ": " (floor (scale value 0 1 0 100)))
+    (<gui> :draw-text widget *text-color* (<-> instrument-name ": " (floor (scale value 0 1 0 100)))
            4 2 width height))
 
   (set! widget (<gui> :horizontal-slider "" 0 0.5 1.0
                       (lambda (val)
                         ;;(<ra> :set-instrument-effect instrument-id effect-name val)
-                        (if widget
-                            (paintit (<gui> :width widget)
-                                     (<gui> :height widget))))))
+                        (when widget
+                          (<ra> :set-instrument-effect instrument-id effect-name val)
+                          (paintit (<gui> :width widget)
+                                   (<gui> :height widget))))))
   
   (<gui> :set-min-height widget (get-fontheight))
 
@@ -46,7 +49,8 @@
                                         (c-display "  m" button x y (scale x 0 (<gui> :width widget) 0 1.0))
                                         (<ra> :set-instrument-effect instrument-id effect-name (scale x 0 (<gui> :width widget) 0 1))
                                         (paintit (<gui> :width widget)
-                                                 (<gui> :height widget)))))
+                                                 (<gui> :height widget)))
+                                      #t))
 
   (paintit (<gui> :width widget)
            (<gui> :height widget))
@@ -138,7 +142,7 @@
     (create-mixer-strip-path gui plugin-instrument)))
 
 
-(define (create-mixer-strip-pan gui instrument-id x1 y1 x2 y2)
+(define (create-mixer-strip-pan gui system-background-color instrument-id x1 y1 x2 y2)
   (define (get-pan)
     (floor (scale (<ra> :get-instrument-effect instrument-id "System Pan")
                   0 1
@@ -154,7 +158,7 @@
                         (lambda (degree)
                           (when (and doit (not (= last-slider-val degree)))
                             (set! last-slider-val degree)
-                            (<ra> :set-instrument-effect instrument-id "System Pan On/Off" 1.0)
+                            ;;(<ra> :set-instrument-effect instrument-id "System Pan On/Off" 1.0)
                             (<ra> :set-instrument-effect instrument-id "System Pan" (scale degree -90 90 0 1))
                             (if paint
                                 (paint))))))
@@ -165,19 +169,24 @@
           (define height (<gui> :height slider))
           (define value (get-pan))
           (define is-on (>= (<ra> :get-instrument-effect instrument-id "System Pan On/Off") 0.5))
+          (<gui> :filled-box slider system-background-color 0 0 width height)
           (define background (if is-on
-                                 (<gui> :get-background-color gui)
+                                 (<gui> :mix-colors (<gui> :get-background-color gui) "black" 0.39)
                                  (<gui> :mix-colors (<gui> :get-background-color gui) "white" 0.95)))
+          (<gui> :filled-box slider background 0 0 width height 5 5)
           (define col1 (<gui> :mix-colors "white" background 0.4))
           (define col2 (<gui> :mix-colors "#010101" background 0.5))
-          (<gui> :filled-box slider background 0 1 width height)
-          (define middle (scale value -90 90 0 width))
-          (define inner-width/2 1)
-          (define outer-width/2 2)
+
+          (define inner-width/2 (scale 1 0 18 0 (get-fontheight)))
+          (define outer-width/2 (* inner-width/2 2))
+
+          (define middle (scale value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
+
           (<gui> :filled-box slider col1 (- middle inner-width/2) 2 (+ middle inner-width/2) (- height 3))
           (<gui> :filled-box slider col2 (- middle inner-width/2 outer-width/2) 2 (- middle inner-width/2) (- height 3))
           (<gui> :filled-box slider col2 (+ middle inner-width/2) 2 (+ middle inner-width/2 outer-width/2) (- height 3))
           ;;(<gui> :draw-text slider "white" (<-> value "o") 0 0 width height #t)
+          (<gui> :draw-box slider "#404040" 0 0 width height 2)
           ))
 
   (<gui> :add-resize-callback slider (lambda x (paint)))
@@ -199,9 +208,20 @@
 
   (<gui> :add-mouse-callback slider
          (lambda (button state x y)
-           (if (and (= button *left-button*)
-                    (= state *is-pressing*))
-               (<ra> :undo-instrument-effect instrument-id "System Pan"))
+           (cond ((and (= button *left-button*)
+                       (= state *is-pressing*))
+                  (<ra> :undo-instrument-effect instrument-id "System Pan"))
+                 ((and (= button *right-button*)
+                       (= state *is-releasing*))
+                  
+                  (popup-menu "Reset" (lambda ()
+                                        (<ra> :undo-instrument-effect instrument-id "System Pan")
+                                        (<ra> :set-instrument-effect instrument-id "System Pan" 0.5))
+                              (list "Enabled"
+                                    :check (>= (<ra> :get-instrument-effect instrument-id "System Pan On/Off") 0.5)
+                                    (lambda (onoff)
+                                      (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
+                                      (<ra> :set-instrument-effect instrument-id "System Pan On/Off" (if onoff 1.0 0.0)))))))
            #f))
 
   (<gui> :add gui slider x1 y1 x2 y2))
@@ -243,10 +263,15 @@
   (define (draw-mutesolo checkbox is-selected text color width height)
     (<gui> :filled-box
            checkbox
+           background-color
+           0 0 width height)
+    (<gui> :filled-box
+           checkbox
            (if is-selected
                color
                background-color)
-           2 2 (- width 2) (- height 2))
+           2 2 (- width 2) (- height 2)
+           5 5)
     (<gui> :draw-text
            checkbox
            "black"
@@ -257,7 +282,8 @@
            checkbox
            "#404040"
            2 2 (- width 2) (- height 2)
-           1.0))
+           1.0
+           0 0))
   
   (define mute (custom-checkbox (lambda (mute is-muted width height)
                                   (draw-mutesolo mute is-muted "Mute" "yellow" width height))
@@ -283,22 +309,29 @@
   (define fontheight (get-fontheight))
   (define middle (floor (average x1 x2)))
 
-  (define voltext_x2 (+ x1 middle))
-  (define voltext_y2 (+ y1 fontheight))
+  (define border-size (scale 0.05 0 1 0 (- x2 x1)))
+  (define border-size/2 (round (/ border-size 2)))
 
+  (define voltext_x2 (+ x1 middle))
+  (define voltext_y1 (round (+ y1 border-size/2)))
+  (define voltext_y2 (+ voltext_y1 fontheight))
+
+  (define peaktext_y1 voltext_y1)
   (define peaktext_x1 middle)
   (define peaktext_x2 x2)
   (define peaktext_y2 voltext_y2)
 
   (define volslider_x1 x1)
-  (define volslider_y1 voltext_y2)
+  (define volslider_y1 (round (+ border-size/2 voltext_y2)))
   (define volslider_x2 middle)
-  (define volslider_y2 y2)
+  (define volslider_y2 (round (- y2 border-size)))
 
   (define peak_x1 peaktext_x1)
-  (define peak_y1 peaktext_y2)
+  (define peak_y1 volslider_y1)
   (define peak_x2 peaktext_x2)
-  (define peak_y2 y2)
+  (define peak_y2 volslider_y2)
+
+  (define peaktexttext "-inf")
 
   (define (get-volume)
     (c-display "           got"
@@ -310,39 +343,115 @@
     (scale (<ra> :get-instrument-effect instrument-id "System Volume")
            0 1
            *min-db* *max-db*))
-  
+
   (define doit #t)
 
+  (define paint-voltext #f)
+  (define paint-peaktext #f)
+
   (define last-voltext (get-volume))
-  (define voltext (<gui> :float-text 
-                         *min-db* (get-volume) *max-db*
-                         (lambda (val)
-                           (when (and doit (not (= last-voltext val)))
-                             (set! last-voltext val)
-                             (<ra> :set-instrument-effect instrument-id "System Volume" (scale val *min-db* *max-db* 0 1))))))
-  
-  (define peaktext (<gui> :text
-                          "-inf"))
+  (define voltext (<gui> :widget))
+  (define peaktext (<gui> :widget))
+
+  (define paint-slider #f)
+
+  (define (db-to-slider db)
+    (define scaled (scale db *min-db* *max-mixer-db* 0 1))
+    (* scaled scaled))
+
+  (define (slider-to-db slider)
+    (define scaled (sqrt slider))
+    (scale scaled 0 1 *min-db* *max-mixer-db*))
 
   (define last-vol-slider (get-volume))
   (define volslider (<gui> :vertical-slider
                            ""
-                           *min-db* (get-volume) *max-db*
+                           0 (db-to-slider (get-volume)) 1
                            (lambda (val)
-                             (when (and doit (not (= last-vol-slider val)))
-                               (set! last-vol-slider val)
-                               (<ra> :set-instrument-effect instrument-id "System Volume" (scale val *min-db* *max-db* 0 1))
-                               (<gui> :set-value voltext val)))))
+                             (c-display "hepp " val)
+                             (define db (slider-to-db val))
+                             (when (and doit (not (= last-vol-slider db)))
+                               (set! last-vol-slider db)
+                               (<ra> :set-instrument-effect instrument-id "System Volume" (scale db *min-db* *max-db* 0 1))
+                               (if paint-voltext
+                                   (paint-voltext))
+                               ;;(<gui> :set-value voltext val)
+                               (if paint-slider
+                                   (paint-slider))))))
+    
+  (define background (<gui> :get-background-color gui))
+
+  (define (paint-text gui text)
+    (define width (<gui> :width gui))
+    (define height (<gui> :height gui))
+    
+    (define col1 (<gui> :mix-colors "#010101" background 0.7))
+    
+    ;; background
+    (<gui> :filled-box gui background 0 0 width height)
+    
+    ;; rounded
+    (<gui> :filled-box gui col1 border-size 0 (- width border-size) height 5 5)
+    
+    ;; text
+    (<gui> :draw-text gui *text-color* text 0 0 width height))
+
+    
+  (set! paint-voltext
+        (lambda ()
+          (paint-text voltext (one-decimal-string (get-volume)))))
+
+  (<gui> :add-resize-callback voltext (lambda x (paint-voltext)))
+  (paint-voltext)
+
+  (set! paint-peaktext
+        (lambda ()
+          (paint-text peaktext peaktexttext)))
+
+  (<gui> :add-resize-callback peaktext (lambda x (paint-peaktext)))
+  (paint-peaktext)
+
+  (set! paint-slider
+        (lambda ()
+          (define width (<gui> :width volslider))
+          (define height (<gui> :height volslider))
+          (define x1 border-size) ;;(scale 0.1 0 1 0 width))
+          (define x2 (- width border-size)) ;;(scale 0.9 0 1 0 width))
+          (define middle_y (scale (db-to-slider (get-volume)) 0 1 height 0))
+          
+          ;; background
+          (<gui> :filled-box volslider background 0 0 width height)
+          
+          (define col1 (<gui> :mix-colors "#010101" background 0.2)) ;; down
+          (define col2 (<gui> :mix-colors "#010101" background 0.9)) ;; up
+
+          ;; slider
+          (<gui> :filled-box volslider col2 x1 0 x2 height 5 5) ;; up (fill everything)
+          (<gui> :filled-box volslider col1 x1 middle_y x2 height 5 5) ;; down
+
+          ;; slider border
+          (<gui> :draw-box volslider "black" x1 0 x2 height 1.0)
+
+          ;; slider 0db, white line
+          (define middle_0db (scale (db-to-slider 0) 0 1 height 0))
+          (<gui> :draw-line volslider "#eeeeee" (1+ x1) middle_0db (1- x2) middle_0db 0.3)
+          ))
+
+  (<gui> :add-resize-callback volslider (lambda x (paint-slider)))
+
 
   (define volmeter (<gui> :vertical-audio-meter instrument-id))
   
-  (<gui> :add gui voltext x1 y1 middle voltext_y2)
-  (<gui> :add gui peaktext peaktext_x1 y1 peaktext_x2 peaktext_y2)
+  (<gui> :add gui voltext x1 voltext_y1 middle voltext_y2)
+  (<gui> :add gui peaktext peaktext_x1 peaktext_y1 peaktext_x2 peaktext_y2)
 
   (define effect-monitor (<ra> :add-effect-monitor "System Volume" instrument-id
                                (lambda ()
                                  (set! doit #f)
                                  (<gui> :set-value volslider (get-volume))
+                                 ;;(<gui> :set-value voltext (get-volume))
+                                 (paint-voltext)
+                                 (paint-slider)
                                  (set! doit #t))))
 
   (<gui> :add-close-callback volslider
@@ -351,15 +460,42 @@
 
   (<gui> :add-mouse-callback volslider
          (lambda (button state x y)
-           (if (and (= button *left-button*)
-                    (= state *is-pressing*))
-               (<ra> :undo-instrument-effect instrument-id "System Volume"))
+           (cond ((and (= button *left-button*)
+                       (= state *is-pressing*))
+                  (<ra> :undo-instrument-effect instrument-id "System Volume"))
+                 ((and (= button *right-button*)
+                       (= state *is-releasing*))
+                  (popup-menu "Reset" (lambda ()
+                                        (<ra> :undo-instrument-effect instrument-id "System Volume")
+                                        (<ra> :set-instrument-effect instrument-id "System Volume" (scale 0 *min-db* *max-db* 0 1))))))
            #f))
 
+  (<gui> :add-mouse-callback voltext (lambda (button state x y)
+                                        (when (and (= button *left-button*)
+                                                   (= state *is-pressing*))
+                                          (let ((maybe (<ra> :request-float "" *min-db* *max-db* #t)))
+                                            (when (>= maybe *min-db*)
+                                              (<ra> :undo-instrument-effect instrument-id "System Volume")
+                                              (<ra> :set-instrument-effect instrument-id "System Volume" (scale maybe *min-db* *max-db* 0 1)))))
+                                        #t))
+                                                
+
+  (<gui> :add-audio-meter-peak-callback volmeter (lambda (text)
+                                                   (set! peaktexttext text)
+                                                   (paint-peaktext)))
+
+  (<gui> :add-mouse-callback peaktext (lambda (button state x y)
+                                        (when (and (= button *left-button*)
+                                                   (= state *is-pressing*))
+                                          (set! peaktexttext "-inf")
+                                          (<gui> :reset-audio-meter-peak volmeter)
+                                          (paint-peaktext))
+                                        #t))
+  
   (<gui> :add gui volslider volslider_x1 volslider_y1 volslider_x2 volslider_y2)
   (<gui> :add gui volmeter peak_x1 peak_y1 peak_x2 peak_y2)
   )
-  
+
 
 (define (get-mixer-strip-background-color gui instrument-id)
   (<gui> :mix-colors
@@ -379,6 +515,7 @@
   (<gui> :set-min-width gui width)
   (<gui> :set-max-width gui width)
   (<gui> :set-size-policy gui #f #t)
+  (define system-background-color (<gui> :get-background-color gui))
   (c-display "               backgroudn: " (<gui> :get-background-color gui))
   (<gui> :set-background-color gui (get-mixer-strip-background-color gui instrument-id)) ;;(<ra> :get-instrument-color instrument-id))
   
@@ -434,7 +571,7 @@
   
   (create-mixer-strip-path mixer-strip-path-gui instrument-id)
 
-  (create-mixer-strip-pan gui instrument-id x1 pan_y1 x2 pan_y2)
+  (create-mixer-strip-pan gui system-background-color instrument-id x1 pan_y1 x2 pan_y2)
   (create-mixer-strip-mutesolo gui instrument-id x1 mutesolo_y1 x2 mutesolo_y2)
   (create-mixer-strip-volume gui instrument-id x1 volume_y1 x2 volume_y2)
   (create-mixer-strip-comment gui instrument-id x1 comment_y1 x2 comment_y2)

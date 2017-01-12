@@ -386,7 +386,25 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       myupdate(x1, y1, x2, y2, width);
     }
 
-    void filledBox(const_char* color, float x1, float y1, float x2, float y2) {
+    void drawBox(const_char* color, float x1, float y1, float x2, float y2, float width, float round_x, float round_y) {
+      if (_image==NULL)
+        setNewImage(_widget->width(), _widget->height());
+      
+      QRectF rect(x1, y1, x2-x1, y2-y1);
+
+      QPen pen = getPen(color);
+      pen.setWidthF(width);
+      _image_painter->setPen(pen);
+
+      if (round_x>0 && round_y>0)
+        _image_painter->drawRoundedRect(rect, round_x, round_y);
+      else
+        _image_painter->drawRect(rect);
+
+      myupdate(x1, y1, x2, y2);
+    }
+
+    void filledBox(const_char* color, float x1, float y1, float x2, float y2, float round_x, float round_y) {
       if (_image==NULL)
         setNewImage(_widget->width(), _widget->height());
       
@@ -398,7 +416,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       _image_painter->setPen(Qt::NoPen);
       _image_painter->setBrush(qcolor);
-      _image_painter->drawRect(rect);
+      if (round_x>0 && round_y>0)
+        _image_painter->drawRoundedRect(rect, round_x, round_y);
+      else
+        _image_painter->drawRect(rect);
       _image_painter->setBrush(Qt::NoBrush);
       //_image_painter->setPen(pen);
 
@@ -671,7 +692,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     int _num_channels = 0;
     bool _is_input = false;
     bool _is_output = false;
-    
+
+    float _peak = -100.0f;
+    func_t *_peak_callback = NULL;
+
   public:
     
     VerticalAudioMeter(struct Patch *patch)
@@ -703,18 +727,64 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     ~VerticalAudioMeter(){
       R_ASSERT(g_active_vertical_audio_meters.removeOne(this));
+      if (_peak_callback!=NULL)
+        s7extra_unprotect(_peak_callback);
       free(_pos);
     }
     
     MOUSE_OVERRIDERS(QWidget);
     RESIZE_OVERRIDER(QWidget);
 
+    void addPeakCallback(func_t *func, int guinum){
+      if (_peak_callback != NULL){
+        handleError("Audio Meter #%d already have a peak callback", guinum);
+        return;
+      }
+
+      _peak_callback = func;
+
+      s7extra_protect(_peak_callback);
+    }
+
+    void resetPeak(void){
+      _peak = -100;
+    }
+
+    float get_width(void){
+      return width() / (1.5*_num_channels);
+    }
+
+    float get_half_width(void){
+      return get_width()/2.0;
+    }
+
+    float get_middle(int ch){
+      return (scale(ch, 0, _num_channels, 0, width()) + scale(ch+1, 0, _num_channels, 0, width())) / 2.0;
+    }
+
     float get_x1(int ch){
-      return scale(ch, 0, _num_channels, 1, width()-2);
+      return get_middle(ch) - get_half_width();
+      //return scale(ch, 0, _num_channels, 1, width()-2);
     }
 
     float get_x2(int ch){
-      return scale(ch+1, 0, _num_channels, 1, width()-2);
+      return get_middle(ch) + get_half_width();
+      //return scale(ch+1, 0, _num_channels, 1, width()-2);
+    }
+
+    const float upper_border = 5;
+    const float down_border = 5;
+
+    float get_pos_y1(void) const {
+      return upper_border;
+    }
+    
+    float get_pos_y2(void) const {
+      return height() - down_border;
+    }
+    
+    float get_pos_height(void) const {
+      return height() - upper_border - down_border;
     }
 
     void call_regularly(void){
@@ -737,22 +807,37 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         }
         
         float db = gain2db(gain);
+        
+        if (db>_peak){
+          _peak =db;
+          if (_peak_callback != NULL){
+            if (_peak<=-100.0)
+              s7extra_callFunc_void_charpointer(_peak_callback, "-inf");
+            else
+              s7extra_callFunc_void_charpointer(_peak_callback, talloc_format("%.1f", _peak));
+          }
+        }
 
-        float pos = db2linear(db, height()-1, 1);
+        float pos = db2linear(db, get_pos_y2(), get_pos_y1());
         _pos[ch] = pos;
 
+        float x1 = get_x1(ch);
+        float x2 = get_x2(ch);
+
         if (pos < prev_pos){
-          update(get_x1(ch),   floorf(pos),
-                 get_x2(ch),   floorf(prev_pos)+1);
+          update(x1-1,      floorf(pos)-1,
+                 x2-x1+2,   floorf(prev_pos-pos)+3);
         } else if (pos > prev_pos){
-          update(get_x1(ch),   floorf(prev_pos),
-                 get_x2(ch),   floorf(pos)+1);
+          update(x1-1,      floorf(prev_pos)-1,
+                 x2-x1+2,   floorf(pos-prev_pos)+3);
         }
       }
     }
     
     void paintEvent(QPaintEvent *ev) override {
       QPainter p(this);
+
+      p.setRenderHints(QPainter::Antialiasing,true);
 
       QColor qcolor1("black");
       QColor qcolor2("green");
@@ -761,23 +846,36 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         
       for(int ch=0 ; ch < _num_channels ; ch++){
         float pos = _pos[ch];
-        QRectF rect1(get_x1(ch),  1,
-                     get_x2(ch),  pos-1);
-        QRectF rect2(get_x1(ch),  pos,
-                     get_x2(ch),  height()-pos-1);
-        
+        float x1 = get_x1(ch);
+        float x2 = get_x2(ch);
+        QRectF rect1(x1,  get_pos_y1(),
+                     x2-x1,  pos-get_pos_y1());
+        QRectF rect2(x1,  pos,
+                     x2-x1,  get_pos_y2()-pos);
+
         p.setBrush(qcolor1);
         p.drawRect(rect1);
-        
         p.setBrush(qcolor2);
         p.drawRect(rect2);
+
+        /*        
+        p.setBrush(qcolor1);
+        p.drawRoundedRect(QRectF(get_x1(ch), 1,
+                                 get_x2(ch), height()-1),
+                          5,5);
+
+        p.setBrush(qcolor2);
+        p.drawRoundedRect(rect2,5,5);
+        */
       }
 
       p.setBrush(Qt::NoBrush);
       
       //border
-      p.setPen(QColor("gray"));
-      p.drawRect(0,0,width()-1,height()-1);
+      QPen pen(QColor("#202020"));
+      pen.setWidth(2.0);
+      p.setPen(pen);
+      p.drawRoundedRect(0,0,width()-1,height()-1, 5, 5);
     }
 
   };
@@ -1759,6 +1857,34 @@ int64_t gui_verticalAudioMeter(int instrument_id){
   return (new VerticalAudioMeter(patch))->get_gui_num();
 }
 
+void gui_addAudioMeterPeakCallback(int guinum, func_t* func){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+  
+  VerticalAudioMeter *meter = dynamic_cast<VerticalAudioMeter*>(gui->_widget);
+  if (meter==NULL){
+    handleError("Gui #%d is not an audio meter", guinum);
+    return;
+  }
+
+  meter->addPeakCallback(func, guinum);
+}
+
+void gui_resetAudioMeterPeak(int guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+  
+  VerticalAudioMeter *meter = dynamic_cast<VerticalAudioMeter*>(gui->_widget);
+  if (meter==NULL){
+    handleError("Gui #%d is not an audio meter", guinum);
+    return;
+  }
+
+  meter->resetPeak();
+}
+
 void gui_drawLine(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2, float width){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -1767,12 +1893,20 @@ void gui_drawLine(int64_t guinum, const_char* color, float x1, float y1, float x
   gui->drawLine(color, x1, y1, x2, y2, width);
 }
 
-void gui_filledBox(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2){
+void gui_drawBox(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2, float width, float round_x, float round_y){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
 
-  gui->filledBox(color, x1, y1, x2, y2);
+  gui->drawBox(color, x1, y1, x2, y2, width, round_x, round_y);
+}
+
+void gui_filledBox(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2, float round_x, float round_y){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->filledBox(color, x1, y1, x2, y2, round_x, round_y);
 }
 
 void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool align_top_left) {

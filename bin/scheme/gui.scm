@@ -2,6 +2,7 @@
 
 (define *min-db* (<ra> :get-min-db))
 (define *max-db* (<ra> :get-max-db))
+(define *max-mixer-db* 6)
 
 (define (gui-create-layout create-layout-func layout-args guis)
   (define layout (apply create-layout-func layout-args))
@@ -62,19 +63,9 @@
         ((eq? command :add-close-callback)
          (<ra> :gui_add-close-callback (car args) (cadr args)))
         
-        ((eq? command :draw-box)
-         (let ((gui (list-ref args 0))
-               (color (list-ref args 1))
-               (x1 (list-ref args 2))
-               (y1 (list-ref args 3))
-               (x2 (list-ref args 4))
-               (y2 (list-ref args 5))
-               (width (list-ref args 6)))
-           (<ra> :gui_draw-line gui color x1 y1 x2 y1 width)
-           (<ra> :gui_draw-line gui color x2 y1 x2 y2 width)
-           (<ra> :gui_draw-line gui color x2 y2 x1 y2 width)
-           (<ra> :gui_draw-line gui color x1 y2 x1 y1 width)))
-
+        ((eq? command :add-audio-meter-peak-callback)
+         (<ra> :gui_add-audio-meter-peak-callback (car args) (cadr args)))
+        
         (else
          (let* ((func (eval (<_> 'ra:gui_ (keyword->symbol command))))
                 (last-arg (and (not (null? args)) (last args)))

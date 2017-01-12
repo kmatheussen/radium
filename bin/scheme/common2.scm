@@ -118,6 +118,9 @@
   (/ (roundup (* val 100))
      100.0))
 
+(define (one-decimal-string number)
+  (format #f "~,1F" (* 1.0 number)))
+
 (define (two-decimal-string number)
   (format #f "~,2F" (* 1.0 number)))
 

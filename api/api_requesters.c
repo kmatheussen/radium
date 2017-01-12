@@ -117,19 +117,32 @@ void closeRequester(void){
   }
 }
 
-int requestInteger(char *text, int min, int max){
+int requestInteger(char *text, int min, int max, bool standalone){
+  if (standalone)
+    return GFX_GetInteger(NULL, requester, text, min, max);
+
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return min-1;
   return GFX_GetInteger(window, requester, text, min, max);
 }
 
-float requestFloat(char *text, float min, float max){
+float requestFloat(char *text, float min, float max, bool standalone){
+  if (standalone)
+    return GFX_GetFloat(NULL, requester, text, min, max);
+
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return min-1.0f;
   return GFX_GetFloat(window, requester, text, min, max);
 }
 
-char* requestString(char *text){
-  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-  char *ret = GFX_GetString(window, requester, text);
+char* requestString(char *text, bool standalone){
+  char *ret;
+
+  if (standalone)
+    ret = GFX_GetString(NULL, requester, text);
+  else {
+    struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
+    ret = GFX_GetString(window, requester, text);
+  }
+
   if(ret==NULL)
     ret="";
   return ret;
