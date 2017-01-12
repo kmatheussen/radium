@@ -226,16 +226,20 @@
            0 1
            *min-db* *max-db*))
   
+  (define doit #t)
+
+  (define last-voltext (get-volume))
   (define voltext (<gui> :float-text 
                          *min-db* (get-volume) *max-db*
                          (lambda (val)
-                           (c-display "new-vol" val))))
+                           (when (and doit (not (= last-voltext val)))
+                             (set! last-voltext val)
+                             (<ra> :set-instrument-effect instrument-id "System Volume" (scale val *min-db* *max-db* 0 1))))))
+  
   (define peaktext (<gui> :text
                           "-inf"))
 
-  (define doit #t)
   (define last-vol-slider (get-volume))
-  
   (define volslider (<gui> :vertical-slider
                            ""
                            *min-db* (get-volume) *max-db*
@@ -265,6 +269,13 @@
   )
   
 
+(define (get-mixer-strip-background-color gui instrument-id)
+  (<gui> :mix-colors
+         (<ra> :get-instrument-color instrument-id)
+         (<gui> :get-background-color gui)
+         0.3))
+
+
 (define (create-mixer-strip-comment gui instrument-id x1 y1 x2 y2)
   (define comment-edit (<gui> :line "Comment"))
   (<gui> :set-background-color comment-edit (<ra> :get-instrument-color instrument-id))
@@ -276,7 +287,8 @@
   (<gui> :set-min-width gui width)
   (<gui> :set-max-width gui width)
   (<gui> :set-size-policy gui #f #t)
-  (<gui> :set-background-color gui (<ra> :get-instrument-color instrument-id))
+  (c-display "               backgroudn: " (<gui> :get-background-color gui))
+  (<gui> :set-background-color gui (get-mixer-strip-background-color gui instrument-id)) ;;(<ra> :get-instrument-color instrument-id))
   
   (define y1 0)
   (define x1 0)

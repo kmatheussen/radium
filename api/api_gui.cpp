@@ -1,6 +1,11 @@
 
 #include "../common/includepython.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
+#include <QVector> // Shortening warning in the QVector header. Temporarily turned off by the surrounding pragmas.
+#pragma clang diagnostic pop
+
 
 #include <QWidget>
 #include <QCloseEvent>
@@ -22,6 +27,7 @@
 #include "../embedded_scheme/s7extra_proc.h"
 
 #include "../Qt/Qt_MyQSlider.h"
+#include "../Qt/Qt_mix_colors.h"
 
 #include "api_common_proc.h"
 
@@ -91,6 +97,27 @@ static float db2linear(float db, float min, float max){
   else
     return scale(db,-70.0f,40.0f,min,max);
 }
+
+static QColor getQColor(int64_t color){
+#if QT_VERSION >= 0x056000
+  return QColor(QRgba64::fromRgba64(color));
+#else
+  QColor col((uint32_t)color);
+  col.setAlpha(int(color>>24));
+  return col;
+#endif
+}
+
+static QColor getQColor(const_char* color){
+  return QColor(color);
+}
+
+static QPen getPen(const_char* color){
+  QPen pen(getQColor(color));
+  
+  return pen;
+}
+
 
 namespace radium_gui{
 
@@ -330,26 +357,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
     
     
-    QColor getQColor(int64_t color){
-#if QT_VERSION >= 0x056000
-      return QColor(QRgba64::fromRgba64(color));
-#else
-      QColor col((uint32_t)color);
-      col.setAlpha(int(color>>24));
-      return col;
-#endif
-    }
-
-    QColor getQColor(const_char* color){
-      return QColor(color);
-    }
-
-    QPen getPen(const_char* color){
-      QPen pen(getQColor(color));
-      
-      return pen;
-    }
-
     void setPen(const_char* color){
       _image_painter->setPen(getQColor(color));
     }
@@ -724,9 +731,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
           gain = plugin->volume_peak_values[ch];
         else if (_is_input)
           gain = plugin->input_volume_peak_values[ch];
-        else
+        else{
+          gain = 0.0f;
           R_ASSERT(false);
-      
+        }
+        
         float db = gain2db(gain);
 
         float pos = db2linear(db, height()-1, 1);
@@ -1249,7 +1258,13 @@ using namespace radium_gui;
 int gui_getSystemFontheight(void){
   return root->song->tracker_windows->systemfontheight;
 }
-  
+
+const_char* gui_mixColors(const_char* color1, const_char* color2, float how_much_color1){
+  QColor col1 = getQColor(color1);
+  QColor col2 = getQColor(color2);
+  return talloc_strdup(mix_colors(col1, col2, how_much_color1).name().toUtf8().constData());
+}
+
 static Gui *get_gui(int64_t guinum){
   if (guinum < 0 || guinum > g_guis.size()){
     handleError("No Gui #%d", guinum);
@@ -1648,6 +1663,14 @@ void gui_setBackgroundColor(int64_t guinum, const_char* color){
   pal.setColor(QPalette::Base, QColor(color));
   gui->_widget->setAutoFillBackground(true);
   gui->_widget->setPalette(pal);
+}
+
+const_char* gui_getBackgroundColor(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return "black";
+
+  return talloc_strdup(gui->_widget->palette().color(gui->_widget->backgroundRole()).name().toUtf8().constData());
 }
 
 void gui_setLayoutSpacing(int64_t guinum, int spacing, int left, int top, int right, int bottom){
