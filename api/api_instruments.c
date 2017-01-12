@@ -300,8 +300,14 @@ void connectAudioInstrumentToMainPipe(int64_t instrument_id){
   if(patch==NULL)
     return;
 
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #d has been closed", (int)instrument_id);
+    return;
+  }
+
   ADD_UNDO(MixerConnections_CurrPos());
-  MW_autoconnect_plugin((SoundPlugin *)patch->patchdata);
+  MW_autoconnect_plugin(plugin);
 }
 
 const_char* instrumentDescriptionPopupMenu(void){
@@ -349,6 +355,10 @@ void setInstrumentSample(int64_t instrument_id, char *filename){
     return;
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #d has been closed", (int)instrument_id);
+    return;
+  }
 
   if (strcmp(plugin->type->name, "Sample Player")) {
     handleError("instrument %d is not a Sample Player", instrument_id);
@@ -365,6 +375,10 @@ void setInstrumentLoopData(int64_t instrument_id, int start, int length){
     return;
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #d has been closed", (int)instrument_id);
+    return;
+  }
 
   if (strcmp(plugin->type->name, "Sample Player")) {
     handleError("instrument %d is not a Sample Player", instrument_id);
@@ -413,8 +427,14 @@ void setInstrumentColor(const_char *colorname, int64_t instrument_id){
   unsigned int color = GFX_get_color_from_colorname(colorname);
   patch->color = color;
 
-  if (patch->instrument==get_audio_instrument())
-    CHIP_update((SoundPlugin*)patch->patchdata);
+  if (patch->instrument==get_audio_instrument()){
+    struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+    if (plugin==NULL){
+      handleError("Instrument #d has been closed", (int)instrument_id);
+      return;
+    }
+    CHIP_update(plugin);
+  }
 
   GFX_ScheduleRedraw();
 }
@@ -433,6 +453,11 @@ float getInstrumentEffect(int64_t instrument_id, const_char* effect_name){
     return 0;
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #d has been closed", (int)instrument_id);
+    return 0.0;
+  }
+
   return PLUGIN_get_effect_from_name(plugin, effect_name);
 }
 
@@ -443,6 +468,11 @@ void setInstrumentEffect(int64_t instrument_id, const char *effect_name, float v
     return;
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #d has been closed", (int)instrument_id);
+    return;
+  }
+
   /*
   if (strcmp(plugin->type->name, "Sample Player")) {
     handleError("instrument %d is not a Sample Player plugin", instrument_id);
@@ -452,6 +482,13 @@ void setInstrumentEffect(int64_t instrument_id, const char *effect_name, float v
 
   PLUGIN_set_effect_from_name(plugin, effect_name, value);
 
+  if (!strcmp(effect_name, "System Volume") ||
+      !strcmp(effect_name, "System In") ||
+      !strcmp(effect_name, "System Solo On/Off") ||
+      !strcmp(effect_name, "System Volume On/Off") ||
+      !strcmp(effect_name, "System Effects On/Off"))
+    CHIP_update(plugin);
+      
   GFX_update_instrument_widget(patch);
 }
 
@@ -461,6 +498,10 @@ void undoInstrumentEffect(int64_t instrument_id, const char *effect_name){
     return;
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #d has been closed", (int)instrument_id);
+    return;
+  }
 
   int effect_num = PLUGIN_get_effect_num(plugin, effect_name);
 
@@ -560,7 +601,11 @@ bool instrumentIsBusDescendant(int64_t instrument_id){
 
   if (patch->instrument == get_audio_instrument()){
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
-    R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, false);
+    if (plugin==NULL){
+      handleError("Instrument #d has been closed", (int)instrument_id);
+      return true;
+    }
+
     struct SoundProducer *sp = SP_get_sound_producer(plugin);
     R_ASSERT_RETURN_IF_FALSE2(sp!=NULL, false);
     return SP_get_bus_descendant_type(sp)==IS_BUS_DESCENDANT;
@@ -896,6 +941,10 @@ int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, func_t 
   }
       
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #d has been closed", (int)instrument_id);
+    return -1;
+  }
 
   int effect_num = PLUGIN_get_effect_num(plugin, effect_name);
 
