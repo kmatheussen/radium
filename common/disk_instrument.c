@@ -2,6 +2,7 @@
 #include "nsmtracker.h"
 #include "instruments_proc.h"
 #include "vector_proc.h"
+#include "patch_proc.h"
 
 #include "disk.h"
 #include "disk_patches_proc.h"
@@ -48,7 +49,7 @@ obj0:
           instrument = get_MIDI_instrument();
         }
           
-	VECTOR_push_back(&instrument->patches,LoadPatch());
+        PATCH_add_to_instrument(LoadPatch());
 	goto start;
 
 var1:

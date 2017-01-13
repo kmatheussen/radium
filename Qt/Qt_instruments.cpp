@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include "../mixergui/undo_chip_addremove_proc.h"
 #include "../mixergui/undo_mixer_connections_proc.h"
 #include "undo_instruments_widget_proc.h"
-#include "../common/undo_patchlist_proc.h"
+//#include "../common/undo_patchlist_proc.h"
 #include "../common/undo_tracks_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/gfx_proc.h"

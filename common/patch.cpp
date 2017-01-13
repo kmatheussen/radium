@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define __STDC_FORMAT_MACROS 1
 #include <inttypes.h>
 
+#include <QHash>
+
 
 #include "nsmtracker.h"
 #include "visual_proc.h"
@@ -35,7 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "undo.h"
 #include "undo_tracks_proc.h"
-#include "undo_patchlist_proc.h"
+//#include "undo_patchlist_proc.h"
 #include "undo_audio_patch_addremove_proc.h"
 #include "windows_proc.h"
 #include "notes_proc.h"
@@ -53,11 +55,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 #include "../Qt/Qt_instruments_proc.h"
 
+
 #include "patch_proc.h"
 
 
 // A Major cleanup is needed for the patch/instrument system.
 // (introduction of id numbers helped though)
+
+static QHash<int64_t, struct Patch*> g_patchhash;
 
 struct Patch *g_currpatch=NULL;
 
@@ -78,12 +83,16 @@ void PATCH_remove_from_instrument(struct Patch *patch){
   //R_ASSERT(patch->patchdata == NULL); (not true for MIDI)
   VECTOR_remove(&patch->instrument->patches, patch);
   VECTOR_push_back(&g_unused_patches, patch);
+  R_ASSERT(g_patchhash.remove(patch->id)==1);
 }
 
-static void PATCH_add_to_instrument(struct Patch *patch){
+void PATCH_add_to_instrument(struct Patch *patch){
+  R_ASSERT(patch->instrument==get_audio_instrument() || patch->instrument==get_MIDI_instrument());
+
   if (VECTOR_is_in_vector(&g_unused_patches, patch))
     VECTOR_remove(&g_unused_patches, patch);
   VECTOR_push_back(&patch->instrument->patches, patch);
+  g_patchhash[patch->id] = patch;
 }
 
 static vector_t *get_all_patches(void){
@@ -113,14 +122,23 @@ int64_t PATCH_get_new_id(void){
 }
 
 struct Patch *PATCH_get_from_id(int64_t id){
+  //static int num_calls = 0;printf("        num_calls: %d\n",num_calls++);
+
+#if 1
+  return g_patchhash[id];
+#else
+
   vector_t *v=get_all_patches();
   int i;
   for(i=0;i<v->num_elements;i++){
     struct Patch *patch=(struct Patch*)v->elements[i];
-    if(patch->id==id)
+    if(patch->id==id){
+      g_patchhash[id] = patch;
       return patch;
+    }
   }
   return NULL;
+#endif
 }
 
 void handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){

@@ -10,7 +10,9 @@
 
 (define (create-mixer-strip-name gui instrument-id x1 y1 x2 y2)
   (define name (<gui> :line (<ra> :get-instrument-name instrument-id) (lambda (edited)
-                                                                        (c-display "edited to" edited))))
+                                                                        ;;(c-display "edited to" edited)
+                                                                        #t
+                                                                        )))
   (<gui> :set-background-color name (<ra> :get-instrument-color instrument-id))
   (<gui> :add gui name x1 y1 x2 y2))
 
@@ -23,7 +25,7 @@
   (define (paintit width height)
     (define color (<ra> :get-instrument-color instrument-id))
     (define value (<ra> :get-instrument-effect instrument-id effect-name))
-    (c-display "value: " value)
+    ;;(c-display "value: " value)
     (define pos (scale value 0 1 0 width))
     (<gui> :filled-box widget (<gui> :get-background-color widget) 0 0 width height)
     (<gui> :filled-box widget "black" 1 1 (1- width) (1- height) 5 5)
@@ -46,7 +48,7 @@
 
   '(<gui> :add-mouse-callback widget (lambda (button state x y)
                                       (when (= button *left-button*)
-                                        (c-display "  m" button x y (scale x 0 (<gui> :width widget) 0 1.0))
+                                        ;;(c-display "  m" button x y (scale x 0 (<gui> :width widget) 0 1.0))
                                         (<ra> :set-instrument-effect instrument-id effect-name (scale x 0 (<gui> :width widget) 0 1))
                                         (paintit (<gui> :width widget)
                                                  (<gui> :height widget)))
@@ -63,7 +65,8 @@
                         (<-> (<ra> :get-instrument-name send-id) ": ")
                         0 0 100
                         (lambda (percentage)
-                          (c-display "moved" percentage))))
+                          ;;(c-display "moved" percentage)
+                          )))
   (define slider (strip-slider send-id "System Volume"))
   (<gui> :set-size-policy slider #t #t)
   ;;(<gui> :set-background-color slider (<ra> :get-instrument-color send-id))
@@ -363,12 +366,12 @@
   (define peaktexttext "-inf")
 
   (define (get-volume)
-    (c-display "           got"
-               (<ra> :get-instrument-effect instrument-id "System Volume")
-               (scale (<ra> :get-instrument-effect instrument-id "System Volume")
-                      0 1
-                      *min-db* *max-db*)
-               " for " (<ra> :get-instrument-name instrument-id))
+    ;(c-display "           got"
+    ;           (<ra> :get-instrument-effect instrument-id "System Volume")
+    ;           (scale (<ra> :get-instrument-effect instrument-id "System Volume")
+    ;                  0 1
+    ;                  *min-db* *max-db*)
+    ;           " for " (<ra> :get-instrument-name instrument-id))
     (scale (<ra> :get-instrument-effect instrument-id "System Volume")
            0 1
            *min-db* *max-db*))
@@ -544,7 +547,7 @@
   (<gui> :set-max-width gui width)
   (<gui> :set-size-policy gui #f #t)
   (define system-background-color (<gui> :get-background-color gui))
-  (c-display "               backgroudn: " (<gui> :get-background-color gui))
+  ;;(c-display "               backgroudn: " (<gui> :get-background-color gui))
   (<gui> :set-background-color gui (get-mixer-strip-background-color gui instrument-id)) ;;(<ra> :get-instrument-color instrument-id))
   
   (define y1 0)
@@ -697,34 +700,25 @@
             (sort-instruments-by-mixer-position
              all-buses))
 
-  '(let loop ((bus-instruments (sort-instruments-by-mixer-position
-                                (append plugin-buses
-                                       (get-all-instruments-with-at-least-two-input-connections)
-                                       (get-buses)))))
-     (when (not (null? bus-instruments))
-       (let* ((instrument-id (car bus-instruments))
-              (gakk (create-mixer-strip instrument-id mixer-strip-width height))
-              (mixer-strip (car gakk))
-              (returned-plugin-buses (cadr gakk)))
-         (<gui> :add mixer-strips mixer-strip)
-        (if (null? returned-plugin-buses)
-            (loop (cdr bus-instruments))
-            (loop (sort-instruments-by-mixer-position (append (cdr bus-instruments)
-                                                              returned-plugin-buses)))))))
-  
-
   mixer-strips
   )
 
 #!
-(create-mixer-strips)
+(<gui> :show (create-mixer-strips 1000 800))
 !#
 
 (define (create-mixer-strips-gui)
   (define parent (<gui> :horizontal-layout))
+
+  (<gui> :set-size parent 1000 800)
+  (<gui> :set-pos parent 600 50)
+  (<gui> :show parent)
+
   (<gui> :set-layout-spacing parent 0 0 0 0 0)
 
   (define mixer-strips (create-mixer-strips (<gui> :width parent) (<gui> :height parent)))
+
+  (<gui> :add parent mixer-strips)
 
   (<gui> :add-resize-callback parent
          (lambda (width height)
@@ -740,14 +734,13 @@
                     (display (ow!))))
            (<gui> :enable-updates parent)))
 
-  (<gui> :add parent mixer-strips)
-  (<gui> :set-size parent 1000 800)
-  (<gui> :set-pos parent 600 50)
-  (<gui> :show parent)
+
   )
 
 
-(create-mixer-strips-gui)
+(let ((start (time)))
+  (create-mixer-strips-gui)
+  (c-display "   Time used to open mixer:" (- (time) start)))
 
 
 

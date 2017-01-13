@@ -40,6 +40,10 @@
 
 !!#
 
+(define (time)
+  (*s7* 'cpu-time))
+
+
 (define (keep func list)
   (if (null? list)
       '()

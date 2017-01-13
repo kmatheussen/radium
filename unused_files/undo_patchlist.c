@@ -16,6 +16,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#if 0
+
+No need to worry. This code is not used anymore.
 
 
 #include <string.h>
@@ -95,4 +98,7 @@ static void *Undo_Do_Patches(
   return ret;
 }
 
+
+
+#endif
 

@@ -427,9 +427,7 @@ static void MMD_LoadInstruments(disk_t *file,ULONG mmd0song){
           	struct Patch *patch=instrument->patches.num_elements>=lokke ? NULL : instrument->patches.elements[lokke];
 		//patch=ListFindElement1_r0(&instrument->patches->l,lokke);
 		if(patch==NULL){
-                        patch=PATCH_alloc();
-			patch->id=lokke;
-			VECTOR_push_back(&instrument->patches,patch);
+                  patch=PATCH_create_midi("name");
 		}
 
 		PATCH_set_name(patch, MMD_GetInstrumentName(file,lokke));
