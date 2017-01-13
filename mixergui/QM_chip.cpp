@@ -952,11 +952,11 @@ void Chip::init_new_plugin(void){
   }
   
   if (has_output_slider())
-    SLIDERPAINTER_set_peak_value_pointers(_output_slider, _num_outputs, plugin->output_volume_peak_values_for_chip, false);
+    SLIDERPAINTER_set_peak_value_pointers(_output_slider, _num_outputs, plugin->output_volume_peaks.decaying_dbs, false);
   //ATOMIC_SET(plugin->volume_peak_values_for_chip, SLIDERPAINTER_obtain_peak_value_pointers(_output_slider,_num_outputs));
 
   if (has_input_slider())
-    SLIDERPAINTER_set_peak_value_pointers(_input_slider, _num_inputs, plugin->input_volume_peak_values, false);
+    SLIDERPAINTER_set_peak_value_pointers(_input_slider, _num_inputs, plugin->input_volume_peaks.decaying_dbs, false);
   //ATOMIC_SET(plugin->input_volume_peak_values_for_chip, SLIDERPAINTER_obtain_peak_value_pointers(_input_slider,_num_inputs));
   
   CHIP_update(plugin);

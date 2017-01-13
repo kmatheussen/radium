@@ -35,12 +35,14 @@ static int scale_int(int x, int x1, int x2, int y1, int y2){
   return (int)scale((float)x,(float)x1,(float)x2,(float)y1,(float)y2);
 }
 
+/*
 static float gain2db(float val){
   if(val<=0.0f)
     return -100.0f;
 
   return 20*log10(val);
 }
+*/
 
 static float db2linear(float db){
   if(db<MIN_DB)
@@ -103,7 +105,7 @@ public:
   {}
 
   float get_automation_or_peak_value(void){
-    return safe_float_read(value);
+    return *value;
   }
   
   float requested_pos;
@@ -271,14 +273,14 @@ struct SliderPainter{
 
       float value = data->get_automation_or_peak_value();
 
-      if (value >= 0.0f && value != data->last_value) {
+      if (value != data->last_value) {
 
         float gain;
 
         if(data->is_automation) {
           gain = value;
         } else{
-          float db = gain2db(value);
+          float db = value; //gain2db(value);
           if(db>4.0f)
             data->color = PEAKS_4DB_COLOR_NUM;
           else if(db>0.0f)
@@ -426,7 +428,7 @@ struct SliderPainter{
     for(int i=0;i<(int)_data.size();i++){
       AutomationOrPeakData *data = _data.at(i);
 
-      if ( (data->single_line_style==single_line_style) && data->last_value >= 0.0f){
+      if ( (data->single_line_style==single_line_style) && data->last_value >= -100.0f){
         
         //printf("%s: sp: %p, i: %d, size: %d (%d/%d)\n",_display_string.toUtf8().constData(),this,(int)i,(int)_data.size(),sizeof(float),sizeof(float*));
         

@@ -100,6 +100,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/MultiCore_proc.h"
 #include "../audio/Faust_plugins_proc.h"
 #include "../audio/SampleRecorder_proc.h"
+#include "../audio/AudioMeterPeaks_proc.h"
 
 
 #ifdef __linux__
@@ -1219,6 +1220,11 @@ protected:
     GC_gcollect();
 #endif
 
+    if (is_called_every_ms(15)){
+      AUDIOMETERPEAKS_call_very_often(15);
+      API_gui_call_regularly();
+    }
+
     if (g_radium_runs_custom_exec==true)
       return;
 
@@ -1304,7 +1310,6 @@ protected:
     if (is_called_every_ms(50)){ // 50ms = 3*1000ms/60 (each third frame)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function
       API_instruments_call_regularly();
-      API_gui_call_regularly();
     }
     
     if(doquit==true) {

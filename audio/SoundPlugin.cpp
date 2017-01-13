@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/undo_instruments_widget_proc.h"
 
 #include "SoundPlugin.h"
+#include "AudioMeterPeaks_proc.h"
 #include "Mixer_proc.h"
 #include "SoundPluginRegistry_proc.h"
 #include "SoundProducer_proc.h"
@@ -384,21 +385,20 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   ATOMIC_NAME(plugin->is_recording_automation) = (bool*) V_calloc(sizeof(bool), plugin_type->num_effects+NUM_SYSTEM_EFFECTS); // plugin_type->num_effects might be set after calling create_plugin_data.
 
   // peak and automation pointers (for displaying in the sliders)
-  plugin->volume_peak_values = (float*)V_calloc(sizeof(float),plugin_type->num_outputs);
+  plugin->volume_peaks = AUDIOMETERPEAKS_create(plugin_type->num_outputs);
 
-  plugin->output_volume_peak_values = (float*)V_calloc(sizeof(float),plugin_type->num_outputs);
-  plugin->output_volume_peak_values_for_chip = (float*)V_calloc(sizeof(float),plugin_type->num_outputs);
+  plugin->output_volume_peaks = AUDIOMETERPEAKS_create(plugin_type->num_outputs);
 
   if (plugin_type->num_inputs==0)
-    plugin->input_volume_peak_values = (float*)V_calloc(sizeof(float),plugin_type->num_outputs);
+    plugin->input_volume_peaks = AUDIOMETERPEAKS_create(plugin_type->num_outputs);
   else
-    plugin->input_volume_peak_values = (float*)V_calloc(sizeof(float),plugin_type->num_inputs);
+    plugin->input_volume_peaks = AUDIOMETERPEAKS_create(plugin_type->num_inputs);
   
-  plugin->bus_volume_peak_values0 = (float*)V_calloc(sizeof(float),2);
-  plugin->bus_volume_peak_values1 = (float*)V_calloc(sizeof(float),2);
-  plugin->bus_volume_peak_values2 = (float*)V_calloc(sizeof(float),2);
-  plugin->bus_volume_peak_values3 = (float*)V_calloc(sizeof(float),2);
-  plugin->bus_volume_peak_values4 = (float*)V_calloc(sizeof(float),2);
+  plugin->bus0_volume_peaks = AUDIOMETERPEAKS_create(2);
+  plugin->bus1_volume_peaks = AUDIOMETERPEAKS_create(2);
+  plugin->bus2_volume_peaks = AUDIOMETERPEAKS_create(2);
+  plugin->bus3_volume_peaks = AUDIOMETERPEAKS_create(2);
+  plugin->bus4_volume_peaks = AUDIOMETERPEAKS_create(2);
 
   plugin->automation_values = (float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
   for(int e = 0 ; e<plugin_type->num_effects+NUM_SYSTEM_EFFECTS ; e++)
@@ -545,18 +545,17 @@ void PLUGIN_delete(SoundPlugin *plugin){
   // peak and automation pointers (for displaying in the sliders)
   V_free(plugin->automation_values);
 
-  V_free(plugin->volume_peak_values);
+  AUDIOMETERPEAKS_delete(plugin->volume_peaks);
 
-  V_free(plugin->output_volume_peak_values);
-  V_free(plugin->output_volume_peak_values_for_chip);
+  AUDIOMETERPEAKS_delete(plugin->output_volume_peaks);
 
-  V_free(plugin->input_volume_peak_values);
+  AUDIOMETERPEAKS_delete(plugin->input_volume_peaks);
   
-  V_free(plugin->bus_volume_peak_values0);
-  V_free(plugin->bus_volume_peak_values1);
-  V_free(plugin->bus_volume_peak_values2);
-  V_free(plugin->bus_volume_peak_values3);
-  V_free(plugin->bus_volume_peak_values4);
+  AUDIOMETERPEAKS_delete(plugin->bus0_volume_peaks);
+  AUDIOMETERPEAKS_delete(plugin->bus1_volume_peaks);
+  AUDIOMETERPEAKS_delete(plugin->bus2_volume_peaks);
+  AUDIOMETERPEAKS_delete(plugin->bus3_volume_peaks);
+  AUDIOMETERPEAKS_delete(plugin->bus4_volume_peaks);
 
   CpuUsage_delete(ATOMIC_GET(plugin->cpu_usage));
 

@@ -4,8 +4,11 @@
 
 (define *text-color* "#cccccc")
 
-(define (create-mixer-gui)
-  (<gui> :widget 800 400))
+(define (add-gui-effect-monitor gui instrument-id effect-name callback)
+  (define effect-monitor (<ra> :add-effect-monitor effect-name instrument-id callback))
+  (<gui> :add-close-callback gui
+         (lambda ()
+           (<ra> :remove-effect-monitor effect-monitor))))
 
 
 (define (create-mixer-strip-name gui instrument-id x1 y1 x2 y2)
@@ -162,9 +165,9 @@
                         "pan: "
                         -90 (get-pan) 90
                         (lambda (degree)
-                          (when (and doit (not (= last-slider-val degree)) (pan-enabled?))
+                          (when (and doit (not (= last-slider-val degree))) ;; (pan-enabled?))
                             (set! last-slider-val degree)
-                            ;;(<ra> :set-instrument-effect instrument-id "System Pan On/Off" 1.0)
+                            (<ra> :set-instrument-effect instrument-id "System Pan On/Off" 1.0)
                             (<ra> :set-instrument-effect instrument-id "System Pan" (scale degree -90 90 0 1))
                             (if paint
                                 (paint))))))
@@ -199,18 +202,14 @@
 
   ;;(paint)
 
-  (define effect-monitor (<ra> :add-effect-monitor "System Pan" instrument-id
-                               (lambda ()
-                                 (set! doit #f)
-                                 (<gui> :set-value slider (get-pan))
-                                 (paint)
-                                 (set! doit #t))))
-  (define effect-monitor2 (<ra> :add-effect-monitor "System Pan On/Off" instrument-id paint))
-
-  (<gui> :add-close-callback slider
-         (lambda ()
-           (<ra> :remove-effect-monitor effect-monitor)
-           (<ra> :remove-effect-monitor effect-monitor2)))
+  (add-gui-effect-monitor slider instrument-id "System Pan"
+                          (lambda ()
+                            (set! doit #f)
+                            (<gui> :set-value slider (get-pan))
+                            (paint)
+                            (set! doit #t)))
+  
+  (add-gui-effect-monitor slider instrument-id "System Pan On/Off" paint)
 
   (<gui> :add-mouse-callback slider
          (lambda (button state x y)
@@ -317,21 +316,13 @@
                                   )
                                 (get-soloed)))
 
-  (define mute-monitor (<ra> :add-effect-monitor "System Volume On/Off" instrument-id
-                             (lambda ()
-                               ((car mute) (get-muted)))))
-
-  (define solo-monitor (<ra> :add-effect-monitor "System Solo On/Off" instrument-id
-                             (lambda ()
-                               ((car solo) (get-soloed)))))
-
-  (<gui> :add-close-callback (cadr mute)
-         (lambda ()
-           (<ra> :remove-effect-monitor mute-monitor)))
+  (add-gui-effect-monitor (cadr mute) instrument-id "System Volume On/Off"
+                          (lambda ()
+                            ((car mute) (get-muted))))
   
-  (<gui> :add-close-callback (cadr solo)
-         (lambda ()
-           (<ra> :remove-effect-monitor solo-monitor)))
+  (add-gui-effect-monitor (cadr solo) instrument-id "System Solo On/Off"
+                          (lambda ()
+                            ((car solo) (get-soloed))))
 
   (<gui> :add gui (cadr mute) x1 y1 middle y2)
   (<gui> :add gui (cadr solo) middle y1 x2 y2)
@@ -476,18 +467,14 @@
   (<gui> :add gui voltext x1 voltext_y1 middle voltext_y2)
   (<gui> :add gui peaktext peaktext_x1 peaktext_y1 peaktext_x2 peaktext_y2)
 
-  (define effect-monitor (<ra> :add-effect-monitor "System Volume" instrument-id
-                               (lambda ()
-                                 (set! doit #f)
-                                 (<gui> :set-value volslider (db-to-slider (get-volume)))
-                                 ;;(<gui> :set-value voltext (get-volume))
-                                 (paint-voltext)
-                                 (paint-slider)
-                                 (set! doit #t))))
-
-  (<gui> :add-close-callback volslider
-         (lambda ()
-           (<ra> :remove-effect-monitor effect-monitor)))
+  (add-gui-effect-monitor volslider instrument-id "System Volume"
+                          (lambda ()
+                            (set! doit #f)
+                            (<gui> :set-value volslider (db-to-slider (get-volume)))
+                            ;;(<gui> :set-value voltext (get-volume))
+                            (paint-voltext)
+                            (paint-slider)
+                            (set! doit #t)))
 
   (<gui> :add-mouse-callback volslider
          (lambda (button state x y)
@@ -636,6 +623,7 @@
 
 (define (create-mixer-strips width height)
 
+  (define mixer-strip-width (1+ (floor (<gui> :text-width "-14.2 -23.5 ----"))))
   (define strip-separator-width 5)
 
   ;;(define mixer-strips (<gui> :widget 800 800))
@@ -643,7 +631,6 @@
   (<gui> :set-layout-spacing mixer-strips strip-separator-width 0 0 0 0)
   
   ;;(define x1 0)
-  (define mixer-strip-width 140)
   (define instruments-buses-separator-width (* (get-fontheight) 2))
 
   (define instruments (get-all-instruments-with-no-input-connections))

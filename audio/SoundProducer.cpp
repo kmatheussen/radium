@@ -61,6 +61,7 @@ static inline int myisinf(float val){
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
+#include "AudioMeterPeaks_proc.h"
 #include "system_compressor_wrapper_proc.h"
 #include "Juce_plugins_proc.h"
 
@@ -1237,8 +1238,10 @@ public:
                      );        
         }
       }
+
+      RT_AUDIOMETERPEAKS_add(_plugin->input_volume_peaks, ch, peak);
       
-      safe_float_write(&_plugin->input_volume_peak_values[ch], peak);
+      //safe_float_write(&_plugin->input_volume_peak_values[ch], peak);
       
       //        if (ch<2)
       //          safe_volatile_float_write(&_plugin->system_volume_peak_values[ch], peak); // Value only used by the slider at the bottom bar.
@@ -1276,27 +1279,37 @@ public:
         }
           
         // "Volume"
-        safe_float_write(&_plugin->volume_peak_values[ch], volume_peak);
-        
+        //safe_float_write(&_plugin->volume_peak_values[ch], volume_peak);
+        RT_AUDIOMETERPEAKS_add(_plugin->volume_peaks, ch, volume_peak);
+          
         // "Reverb Bus" and "Chorus Bus"
         if (ch < 2) { // buses only have two channels
+          RT_AUDIOMETERPEAKS_add(_plugin->bus0_volume_peaks,ch, volume_peak * _plugin->bus_volume[0]);
+          RT_AUDIOMETERPEAKS_add(_plugin->bus1_volume_peaks,ch, volume_peak * _plugin->bus_volume[1]);
+          RT_AUDIOMETERPEAKS_add(_plugin->bus2_volume_peaks,ch, volume_peak * _plugin->bus_volume[2]);
+          RT_AUDIOMETERPEAKS_add(_plugin->bus3_volume_peaks,ch, volume_peak * _plugin->bus_volume[3]);
+          RT_AUDIOMETERPEAKS_add(_plugin->bus4_volume_peaks,ch, volume_peak * _plugin->bus_volume[4]);
+          /*
           safe_float_write(&_plugin->bus_volume_peak_values0[ch], volume_peak * _plugin->bus_volume[0]);
           safe_float_write(&_plugin->bus_volume_peak_values1[ch], volume_peak * _plugin->bus_volume[1]);
           safe_float_write(&_plugin->bus_volume_peak_values2[ch], volume_peak * _plugin->bus_volume[2]);
           safe_float_write(&_plugin->bus_volume_peak_values3[ch], volume_peak * _plugin->bus_volume[3]);
           safe_float_write(&_plugin->bus_volume_peak_values4[ch], volume_peak * _plugin->bus_volume[4]);
+          */
         }
         
         // "Out" and Chip volume  (same value)
         {
           float output_volume_peak = volume_peak * _plugin->output_volume;
           
-          safe_float_write(&_plugin->output_volume_peak_values[ch], output_volume_peak);
-          
+          RT_AUDIOMETERPEAKS_add(_plugin->output_volume_peaks, ch, output_volume_peak);
+
+          /*
           if (ATOMIC_GET(_plugin->output_volume_is_on))
             safe_float_write(&_plugin->output_volume_peak_values_for_chip[ch], output_volume_peak);
           else
             safe_float_write(&_plugin->output_volume_peak_values_for_chip[ch], 0.0f); // The chip volume slider is not grayed out, like the out "out" slider.
+          */
         }
       }
     }

@@ -562,22 +562,22 @@ public:
     int num_outputs = type->num_outputs;
 
     if(num_outputs>0){
-      SLIDERPAINTER_set_peak_value_pointers(volume_slider->_painter, num_outputs, plugin->volume_peak_values, true);
+      SLIDERPAINTER_set_peak_value_pointers(volume_slider->_painter, num_outputs, plugin->volume_peaks.decaying_dbs, true);
 
-      SLIDERPAINTER_set_peak_value_pointers(output_volume_slider->_painter, num_outputs, plugin->output_volume_peak_values, true);
+      SLIDERPAINTER_set_peak_value_pointers(output_volume_slider->_painter, num_outputs, plugin->output_volume_peaks.decaying_dbs, true);
 
-      SLIDERPAINTER_set_peak_value_pointers(bus1_slider->_painter,2, plugin->bus_volume_peak_values0, true);
-      SLIDERPAINTER_set_peak_value_pointers(bus2_slider->_painter,2, plugin->bus_volume_peak_values1, true);
-      SLIDERPAINTER_set_peak_value_pointers(bus3_slider->_painter,2, plugin->bus_volume_peak_values2, true);
-      SLIDERPAINTER_set_peak_value_pointers(bus4_slider->_painter,2, plugin->bus_volume_peak_values3, true);
-      SLIDERPAINTER_set_peak_value_pointers(bus5_slider->_painter,2, plugin->bus_volume_peak_values4, true);
+      SLIDERPAINTER_set_peak_value_pointers(bus1_slider->_painter,2, plugin->bus0_volume_peaks.decaying_dbs, true);
+      SLIDERPAINTER_set_peak_value_pointers(bus2_slider->_painter,2, plugin->bus1_volume_peaks.decaying_dbs, true);
+      SLIDERPAINTER_set_peak_value_pointers(bus3_slider->_painter,2, plugin->bus2_volume_peaks.decaying_dbs, true);
+      SLIDERPAINTER_set_peak_value_pointers(bus4_slider->_painter,2, plugin->bus3_volume_peaks.decaying_dbs, true);
+      SLIDERPAINTER_set_peak_value_pointers(bus5_slider->_painter,2, plugin->bus4_volume_peaks.decaying_dbs, true);
     }
 
     if(num_inputs>0 || num_outputs>0){//plugin->input_volume_peak_values==NULL){
       if(num_inputs>0)
-        SLIDERPAINTER_set_peak_value_pointers(input_volume_slider->_painter, num_inputs, plugin->input_volume_peak_values, true);
+        SLIDERPAINTER_set_peak_value_pointers(input_volume_slider->_painter, num_inputs, plugin->input_volume_peaks.decaying_dbs, true);
       else
-        SLIDERPAINTER_set_peak_value_pointers(input_volume_slider->_painter, num_outputs, plugin->input_volume_peak_values, true);
+        SLIDERPAINTER_set_peak_value_pointers(input_volume_slider->_painter, num_outputs, plugin->input_volume_peaks.decaying_dbs, true);
     }
 
     // automation

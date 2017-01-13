@@ -75,21 +75,47 @@
   RESIZE_OVERRIDER(classname)                                           \
   PAINT_OVERRIDER(classname)
 
-
+/*
 static float gain2db(float val){
   if(val<=0.0f)
     return -100.0f;
 
   return 20*log10(val);
 }
+*/
 
-static float db2linear(float db, float min, float max){
-  if(db<-70)
-    return min;
-  else if(db>40)
-    return max;
-  else
-    return scale(db,-70.0f,40.0f,min,max);
+static float db2linear(float db, float y1, float y2){
+
+  if(db<MIN_DB)
+    return y2;
+
+  else if(db>6)
+    return y1;
+
+  else if (db < -30) {
+    float pos_m_30 = scale(0.9, 0, 1, y1, y2);
+    return scale(db, -30, MIN_DB, pos_m_30, y2);
+
+  } else if (db < -20) {
+    float pos_m_20 = scale(0.8, 0, 1, y1, y2);
+    float pos_m_30 = scale(0.9, 0, 1, y1, y2);
+    return scale(db, -20, -30, pos_m_20, pos_m_30);
+
+  } else if (db < -10) {
+    float pos_m_10 = scale(0.6, 0, 1, y1, y2);
+    float pos_m_20 = scale(0.8, 0, 1, y1, y2);
+    return scale(db, -10, -20, pos_m_10, pos_m_20);
+
+  } else if (db < 0) {
+    float pos_0  = scale(0.3, 0, 1, y1, y2);
+    float pos_m_10 = scale(0.6, 0, 1, y1, y2);
+    return scale(db, 0, -10, pos_0, pos_m_10);
+
+  } else {
+    float pos_0  = scale(0.3, 0, 1, y1, y2);
+    float pos_6  = y1;
+    return scale(db, 6, 0, pos_6, pos_0);
+  }
 }
 
 static QColor getQColor(int64_t color){
@@ -688,7 +714,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     struct Patch *_patch;
     float *_pos = NULL;
-    
+    float *_falloff_pos = NULL;
+
     int _num_channels = 0;
     bool _is_input = false;
     bool _is_output = false;
@@ -717,8 +744,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       else if (_is_input)
         _num_channels = plugin->type->num_inputs;
 
-      if (_num_channels > 0)
+      if (_num_channels > 0){
         _pos = (float*)calloc(_num_channels, sizeof(float));
+        _falloff_pos = (float*)calloc(_num_channels, sizeof(float));
+      }
 
       call_regularly(); // Set meter positions.
 
@@ -730,6 +759,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (_peak_callback!=NULL)
         s7extra_unprotect(_peak_callback);
       free(_pos);
+      free(_falloff_pos);
     }
     
     MOUSE_OVERRIDERS(QWidget);
@@ -787,6 +817,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return height() - upper_border - down_border;
     }
 
+    const float falloff_height = 1.5;
+
     void call_regularly(void){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       if(plugin==NULL)
@@ -794,22 +826,27 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       for(int ch=0 ; ch < _num_channels ; ch++){
         float prev_pos = _pos[ch];
+        float prev_falloff_pos = _falloff_pos[ch];
 
-        float gain;
+        float db;
+        float db_falloff;
 
-        if (_is_output)
-          gain = plugin->volume_peak_values[ch];
-        else if (_is_input)
-          gain = plugin->input_volume_peak_values[ch];
-        else{
-          gain = 0.0f;
+        if (_is_output) {
+          db = plugin->volume_peaks.decaying_dbs[ch];
+          db_falloff = plugin->volume_peaks.falloff_dbs[ch];
+        } else if (_is_input) {
+          db = plugin->input_volume_peaks.decaying_dbs[ch];
+          db_falloff = plugin->input_volume_peaks.falloff_dbs[ch];
+        } else{
+          db = 0.0f;
+          db_falloff = 0.0f;
           R_ASSERT(false);
         }
         
-        float db = gain2db(gain);
+        //float db = gain2db(gain);
         
-        if (db>_peak){
-          _peak =db;
+        if (db > _peak){
+          _peak = db;
           if (_peak_callback != NULL){
             if (_peak<=-100.0)
               s7extra_callFunc_void_charpointer(_peak_callback, "-inf");
@@ -818,7 +855,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
           }
         }
 
-        float pos = db2linear(db, get_pos_y2(), get_pos_y1());
+        float pos = db2linear(db, get_pos_y1(), get_pos_y2());
         _pos[ch] = pos;
 
         float x1 = get_x1(ch);
@@ -831,6 +868,24 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
           update(x1-1,      floorf(prev_pos)-1,
                  x2-x1+2,   floorf(pos-prev_pos)+3);
         }
+
+
+        float falloff_pos = db2linear(db_falloff, get_pos_y1(), get_pos_y2());
+        _falloff_pos[ch] = falloff_pos;
+
+#if 1
+        if (falloff_pos != prev_falloff_pos)
+          update();
+#else
+        // don't know what's wrong here...
+        if (falloff_pos < prev_falloff_pos){
+          update(x1-1,      floorf(falloff_pos)-1-falloff_height,
+                 x2-x1+2,   floorf(prev_falloff_pos-falloff_pos)+3+falloff_height*2);
+        } else if (pos > prev_pos){
+          update(x1-1,      floorf(prev_falloff_pos)-1-falloff_height,
+                 x2-x1+2,   floorf(falloff_pos-prev_falloff_pos)+3+falloff_height*2);
+        }
+#endif
       }
     }
     
@@ -840,23 +895,99 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       p.setRenderHints(QPainter::Antialiasing,true);
 
       QColor qcolor1("black");
-      QColor qcolor2("green");
+      QColor color4db = get_qcolor(PEAKS_4DB_COLOR_NUM);
+      QColor color0db = get_qcolor(PEAKS_0DB_COLOR_NUM);
+      QColor colorgreen  = get_qcolor(PEAKS_COLOR_NUM);
+      QColor colordarkgreen  = get_qcolor(PEAKS_COLOR_NUM).darker(150);
+
+      float posm20db = db2linear(-20, get_pos_y1(), get_pos_y2());
+      float pos0db = db2linear(0, get_pos_y1(), get_pos_y2());
+      float pos4db = db2linear(4, get_pos_y1(), get_pos_y2());
 
       p.setPen(Qt::NoPen);
         
       for(int ch=0 ; ch < _num_channels ; ch++){
-        float pos = _pos[ch];
         float x1 = get_x1(ch);
         float x2 = get_x2(ch);
-        QRectF rect1(x1,  get_pos_y1(),
-                     x2-x1,  pos-get_pos_y1());
-        QRectF rect2(x1,  pos,
-                     x2-x1,  get_pos_y2()-pos);
 
-        p.setBrush(qcolor1);
-        p.drawRect(rect1);
-        p.setBrush(qcolor2);
-        p.drawRect(rect2);
+        float pos = _pos[ch];
+
+        // Background
+        {
+          QRectF rect1(x1,  get_pos_y1(),
+                       x2-x1,  pos-get_pos_y1());
+          p.setBrush(qcolor1);
+          p.drawRect(rect1);
+        }
+
+        // decaying meter
+        {
+
+            // Do the dark green
+            {
+              float dark_green_pos = R_MAX(pos, posm20db);
+              QRectF rect(x1, dark_green_pos,
+                           x2-x1,  get_pos_y2()-dark_green_pos);
+              
+              p.setBrush(colordarkgreen);
+              p.drawRect(rect);
+            }
+
+            // Do the green
+            if (pos <= posm20db){
+              float green_pos = R_MAX(pos, pos0db);
+              QRectF rect(x1, green_pos,
+                          x2-x1,  posm20db-green_pos);
+              
+              p.setBrush(colorgreen);
+              p.drawRect(rect);
+            }
+
+            // Do the yellow
+            if (pos <= pos0db){
+              float yellow_pos = R_MAX(pos, pos4db);
+              QRectF rect(x1, yellow_pos,
+                           x2-x1,  pos0db-yellow_pos);
+              
+              p.setBrush(color0db);
+              p.drawRect(rect);
+            }
+
+            // Do the red
+            if (pos <= pos4db){
+              float red_pos = pos;
+              QRectF rect(x1, red_pos,
+                           x2-x1,  pos4db-red_pos);
+              
+              p.setBrush(color4db);
+              p.drawRect(rect);
+            }
+        }
+
+        // falloff meter
+        {
+          //SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+          //if(plugin!=NULL)
+          //  printf("Fallof pos: %f, y2: %f, falloffdb: %f\n", _falloff_pos[ch], get_pos_y2(), plugin->volume_peaks.falloff_dbs[ch]);
+          
+          if (_falloff_pos[ch] < get_pos_y2()){
+            float falloff_pos = _falloff_pos[ch];
+            
+            QRectF falloff_rect(x1, falloff_pos-falloff_height/2.0,
+                                x2-x1, falloff_height);
+
+            if (falloff_pos > posm20db)
+              p.setBrush(colordarkgreen);
+            else if (falloff_pos > pos0db)
+              p.setBrush(colorgreen);
+            else if (falloff_pos > pos4db)
+              p.setBrush(color0db);
+            else
+              p.setBrush(color4db);
+
+            p.drawRect(falloff_rect);
+          }
+        }
 
         /*        
         p.setBrush(qcolor1);
@@ -1363,6 +1494,10 @@ const_char* gui_mixColors(const_char* color1, const_char* color2, float how_much
   return talloc_strdup(mix_colors(col1, col2, how_much_color1).name().toUtf8().constData());
 }
 
+float gui_textWidth(const_char* text){
+  return GFX_get_text_width(root->song->tracker_windows, text);
+}
+
 static Gui *get_gui(int64_t guinum){
   if (guinum < 0 || guinum > g_guis.size()){
     handleError("No Gui #%d", guinum);
@@ -1422,6 +1557,12 @@ int64_t gui_child(int64_t guinum, const_char* childname){
   return child_gui->get_gui_num();
 }
 
+
+
+/////// Callbacks
+//////////////////////////
+
+
 void gui_addCloseCallback(int64_t guinum, func_t* func){
   Gui *gui = get_gui(guinum);
 
@@ -1457,6 +1598,15 @@ void gui_addResizeCallback(int64_t guinum, func_t* func){
     return;
 
   gui->addResizeCallback(func);
+}
+
+
+
+/////// Widgets
+//////////////////////////
+
+int64_t gui_widget(int width, int height){
+  return (new Widget(width, height))->get_gui_num();
 }
 
 int64_t gui_button(const_char *text){
@@ -1842,12 +1992,9 @@ void gui_setMaxHeight(int64_t guinum, int minheight){
   gui->_widget->setMaximumHeight(minheight);
 }
 
+
 // canvas
 ///////////
-
-int64_t gui_widget(int width, int height){
-  return (new Widget(width, height))->get_gui_num();
-}
 
 int64_t gui_verticalAudioMeter(int instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
@@ -1884,6 +2031,10 @@ void gui_resetAudioMeterPeak(int guinum){
 
   meter->resetPeak();
 }
+
+
+///////////////// Drawing
+/////////////////////////////
 
 void gui_drawLine(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2, float width){
   Gui *gui = get_gui(guinum);

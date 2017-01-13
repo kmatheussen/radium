@@ -325,7 +325,15 @@ enum AutoSuspendBehavior{ // The numbers below can not be changed since they are
 };
 
 struct SoundProducer;
-  
+
+typedef struct {
+  int num_channels;
+  float *RT_max_gains;   // Gain format. Written to by the realtime thread. Only read from the AudioMeterPeakTreater.  
+  float *max_dbs;        // Db format. Contains last max peaks. Read by the gui. Written by the AudioMeterPeakTreater.
+  float *decaying_dbs;    // Db format. Contains decaying peaks. Read by the gui. Written by the AudioMeterPeakTreater.
+  float *falloff_dbs;    // Db format. Contains maximum peak values the last x seconds. Read by the gui. Written by the AudioMeterPeakTreater.
+} AudioMeterPeaks;
+
 typedef struct SoundPlugin{
 
 #ifdef __cplusplus
@@ -417,6 +425,7 @@ typedef struct SoundPlugin{
   
   // peaks
   //
+  /*
   float *volume_peak_values;
 
   float *output_volume_peak_values;
@@ -429,6 +438,19 @@ typedef struct SoundPlugin{
   float *bus_volume_peak_values2;
   float *bus_volume_peak_values3;
   float *bus_volume_peak_values4;
+  */
+
+  AudioMeterPeaks volume_peaks;
+
+  AudioMeterPeaks output_volume_peaks;
+
+  AudioMeterPeaks input_volume_peaks;
+  
+  AudioMeterPeaks bus0_volume_peaks;
+  AudioMeterPeaks bus1_volume_peaks;
+  AudioMeterPeaks bus2_volume_peaks;
+  AudioMeterPeaks bus3_volume_peaks;
+  AudioMeterPeaks bus4_volume_peaks;
 
   DEFINE_ATOMIC(void *, cpu_usage);
   

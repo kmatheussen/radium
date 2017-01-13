@@ -444,7 +444,7 @@ extern "C"{
 
       const SoundPluginType *type = plugin->type;
 
-      SLIDERPAINTER_set_peak_value_pointers(g_bottom_bar_widget->system_volume_slider->_painter, type->num_inputs, plugin->input_volume_peak_values, true);
+      SLIDERPAINTER_set_peak_value_pointers(g_bottom_bar_widget->system_volume_slider->_painter, type->num_inputs, plugin->input_volume_peaks.decaying_dbs, true);
       
     }    
   }

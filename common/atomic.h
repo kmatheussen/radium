@@ -72,6 +72,8 @@
    }
  */
 
+
+
 static inline bool atomic_compare_and_set_bool(bool *variable, bool old_value, bool new_value){
   return __atomic_compare_exchange_n (variable, &old_value, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
@@ -88,6 +90,31 @@ static inline bool atomic_compare_and_set_pointer(void **variable, void *old_val
   return __atomic_compare_exchange_n (variable, &old_value, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
+#ifdef __cplusplus
+// Were doing type punning of float below.
+static_assert (sizeof(float) == 4, "Size of float is not correct");
+
+// Why doesn't gcc allow float when using __atomic_compare_exchange_n ?
+static inline bool atomic_compare_and_set_float(float *variable, float old_value, float new_value){
+  union{
+    float old_float;
+    uint32_t old_uint32;
+  };
+  
+  old_float = old_value;
+
+  union{
+    float new_float;
+    uint32_t new_uint32;
+  };
+  
+  new_float = new_value;
+
+  return atomic_compare_and_set_uint32((uint32_t*)variable, old_uint32, new_uint32);
+}
+#endif
+
+                          
 #define ATOMIC_COMPARE_AND_SET_BOOL(name, old_value, new_value) \
   atomic_compare_and_set_bool(&ATOMIC_NAME(name), old_value, new_value)
 
