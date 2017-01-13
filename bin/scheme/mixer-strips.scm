@@ -54,8 +54,8 @@
                                                  (<gui> :height widget)))
                                       #t))
 
-  (paintit (<gui> :width widget)
-           (<gui> :height widget))
+  ;;(paintit (<gui> :width widget)
+  ;;         (<gui> :height widget))
 
   widget)
 
@@ -197,7 +197,7 @@
 
   (<gui> :add-resize-callback slider (lambda x (paint)))
 
-  (paint)
+  ;;(paint)
 
   (define effect-monitor (<ra> :add-effect-monitor "System Pan" instrument-id
                                (lambda ()
@@ -255,7 +255,7 @@
            (set! height newheight)
            (repaint)))
 
-  (repaint)
+  ;;(repaint)
 
   (list (lambda (new-value)
           (set! is-selected new-value)
@@ -263,7 +263,6 @@
         checkbox))
 
   
-
 (define (create-mixer-strip-mutesolo gui instrument-id x1 y1 x2 y2)
   (define background-color (<gui> :get-background-color gui));(<ra> :get-instrument-color instrument-id))
 
@@ -292,7 +291,8 @@
            "#404040"
            2 2 (- width 2) (- height 2)
            1.0
-           0 0))
+           0 0)
+    )
 
   (define (get-muted)
     (< (<ra> :get-instrument-effect instrument-id "System Volume On/Off") 0.5))
@@ -433,14 +433,14 @@
           (paint-text voltext (one-decimal-string (get-volume)))))
 
   (<gui> :add-resize-callback voltext (lambda x (paint-voltext)))
-  (paint-voltext)
+  ;;(paint-voltext)
 
   (set! paint-peaktext
         (lambda ()
           (paint-text peaktext peaktexttext)))
 
   (<gui> :add-resize-callback peaktext (lambda x (paint-peaktext)))
-  (paint-peaktext)
+  ;;(paint-peaktext)
 
   (set! paint-slider
         (lambda ()
@@ -710,31 +710,43 @@
 (define (create-mixer-strips-gui)
   (define parent (<gui> :horizontal-layout))
 
-  (<gui> :set-size parent 1000 800)
-  (<gui> :set-pos parent 600 50)
-  (<gui> :show parent)
+  (define width 1000)
+  (define height 800)
 
+  (<gui> :set-size parent width height)
+  (<gui> :set-pos parent 600 50)
   (<gui> :set-layout-spacing parent 0 0 0 0 0)
 
-  (define mixer-strips (create-mixer-strips (<gui> :width parent) (<gui> :height parent)))
+  (<gui> :show parent)
 
-  (<gui> :add parent mixer-strips)
+  (define mixer-strips #f)
 
-  (<gui> :add-resize-callback parent
-         (lambda (width height)
-           (catch #t
-                  (lambda ()
-                    (<gui> :disable-updates parent)
-                    (define new-mixer-strips (create-mixer-strips width height))
-                    (<gui> :close mixer-strips)
-                    (<gui> :add parent new-mixer-strips)
-                    (<gui> :show new-mixer-strips)
-                    (set! mixer-strips new-mixer-strips))
-                  (lambda args
-                    (display (ow!))))
-           (<gui> :enable-updates parent)))
+  (define (add-new-mixer-strips width height)
+    (catch #t
+           (lambda ()
+             (<gui> :disable-updates parent)
+             
+             (define new-mixer-strips (create-mixer-strips width height))
+             
+             (if mixer-strips
+                 (<gui> :close mixer-strips))
+
+             (<gui> :add parent new-mixer-strips)
+             
+             (<gui> :show new-mixer-strips)
+             (set! mixer-strips new-mixer-strips)
+             )
+
+           (lambda args
+             (display (ow!))))
+    (<gui> :enable-updates parent))
 
 
+  (add-new-mixer-strips width height)
+
+  (<gui> :add-resize-callback parent add-new-mixer-strips)
+
+  parent
   )
 
 
