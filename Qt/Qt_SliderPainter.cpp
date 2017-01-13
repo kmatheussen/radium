@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/threading.h"
 
 #include "../audio/SoundPlugin.h"
+#include "../audio/AudioMeterPeaks_proc.h"
 
 #include "Qt_SliderPainter_proc.h"
 
@@ -44,6 +45,7 @@ static float gain2db(float val){
 }
 */
 
+/*
 static float db2linear(float db){
   if(db<MIN_DB)
     return 0.0f;
@@ -52,6 +54,7 @@ static float db2linear(float db){
   else
     return scale(db,MIN_DB,MAX_DB,0.0f,1.0f);
 }
+*/
 
 #if 0
 // Function iec_scale picked from meterbridge by Steve Harris.
@@ -288,7 +291,7 @@ struct SliderPainter{
           else
             data->color = PEAKS_COLOR_NUM;
           
-          gain = db2linear(db);
+          gain = db2linear(db, 1, 0);
         }
 
         if (data->single_line_style)
@@ -390,8 +393,8 @@ struct SliderPainter{
     float x1 = 0.0f;
     float x4 = width();
     
-    float x2 = scale(db2linear(0.0f), 0, 1, x1, x4);
-    float x3 = scale(db2linear(4.0f), 0, 1, x1, x4);
+    float x2 = db2linear(0.0f, x4, x1);
+    float x3 = db2linear(4.0f, x4, x1);
 
     float x = data->requested_pos;
 
