@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
+#include "../audio/AudioMeterPeaks_proc.h"
 #include "../audio/SoundProducer_proc.h"
 #include "../audio/SoundPluginRegistry_proc.h"
 #include "../audio/Mixer_proc.h"
@@ -42,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/audio_instrument_proc.h"
 #include "../audio/Presets_proc.h"
 #include "../audio/undo_audio_effect_proc.h"
+#include "../audio/undo_audio_connection_volume_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../mixergui/QM_chip.h"
@@ -774,7 +776,88 @@ void createAudioConnection(int64_t source_id, int64_t dest_id){
 
   MW_connect(source, dest); 
 }
-                           
+
+float getAudioConnectionVolume(int64_t source_id, int64_t dest_id){
+  struct Patch *source = getAudioPatchFromNum(source_id);
+  if(source==NULL)
+    return 0.0;
+
+  struct Patch *dest = getAudioPatchFromNum(dest_id);
+  if(dest==NULL)
+    return 0.0;
+
+  struct SoundPlugin *source_plugin = (struct SoundPlugin*)source->patchdata;
+  if (source_plugin==NULL){
+    handleError("Instrument #d has been closed", (int)source_id);
+    return 0.0;
+  }
+
+  struct SoundPlugin *dest_plugin = (struct SoundPlugin*)dest->patchdata;
+  if (dest_plugin==NULL){
+    handleError("Instrument #d has been closed", (int)dest_id);
+    return 0.0;
+  }
+
+  struct SoundProducer *source_sp = SP_get_sound_producer(source_plugin);
+  struct SoundProducer *dest_sp = SP_get_sound_producer(dest_plugin);
+
+  char *error = NULL;
+
+  float ret = SP_get_link_volume(dest_sp, source_sp, &error);
+
+  if (error!=NULL)
+    handleError("Could not find audio connection between instrument %d and instrument %d", source_id, dest_id);
+  
+  return gain2db(ret);
+}
+
+void setAudioConnectionVolume(int64_t source_id, int64_t dest_id, float db){
+  struct Patch *source = getAudioPatchFromNum(source_id);
+  if(source==NULL)
+    return;
+
+  struct Patch *dest = getAudioPatchFromNum(dest_id);
+  if(dest==NULL)
+    return;
+
+  struct SoundPlugin *source_plugin = (struct SoundPlugin*)source->patchdata;
+  if (source_plugin==NULL){
+    handleError("Instrument #d has been closed", (int)source_id);
+    return;
+  }
+
+  struct SoundPlugin *dest_plugin = (struct SoundPlugin*)dest->patchdata;
+  if (dest_plugin==NULL){
+    handleError("Instrument #d has been closed", (int)dest_id);
+    return;
+  }
+
+  struct SoundProducer *source_sp = SP_get_sound_producer(source_plugin);
+  struct SoundProducer *dest_sp = SP_get_sound_producer(dest_plugin);
+
+  char *error = NULL;
+
+  float gain = db2gain(db);
+  SP_set_link_volume(dest_sp, source_sp, gain, &error);
+
+  if (error!=NULL)
+    handleError("Could not find audio connection between instrument %d and instrument %d", source_id, dest_id);
+}
+
+
+void undoAudioConnectionVolume(int64_t source_id, int64_t dest_id){
+  struct Patch *source = getAudioPatchFromNum(source_id);
+  if(source==NULL)
+    return;
+
+  struct Patch *dest = getAudioPatchFromNum(dest_id);
+  if(dest==NULL)
+    return;
+
+  ADD_UNDO(AudioConnectionVolume_CurrPos(source, dest));
+}
+
+
 void createEventConnection(int64_t source_id, int64_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
@@ -787,6 +870,34 @@ void createEventConnection(int64_t source_id, int64_t dest_id){
   MW_econnect(source, dest); 
 }
                            
+int getNumInputChannels(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #d has been closed", (int)instrument_id);
+    return 0;
+  }
+
+  return plugin->type->num_inputs;
+}
+
+int getNumOutputChannels(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #d has been closed", (int)instrument_id);
+    return 0;
+  }
+
+  return plugin->type->num_outputs;
+}
+
 void deleteInstrument(int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)

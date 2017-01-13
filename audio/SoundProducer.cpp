@@ -299,7 +299,7 @@ struct SoundProducerLink {
     } else {
     
       if (ATOMIC_GET(source_plugin->output_volume_is_on))
-        return source_plugin->output_volume * plugin_volume; // * link_volume (Not included since there currently isn't an interface to set the link volume.)
+        return source_plugin->output_volume * plugin_volume * link_volume; // * link_volume (Not included since there currently isn't an interface to set the link volume.)
       else
         return 0.0f;
 
@@ -1537,6 +1537,32 @@ void SP_remove_all_links(const radium::Vector<SoundProducer*> &soundproducers){
   SoundProducer::remove_links(links_to_delete);
 }
 
+float SP_get_link_volume(SoundProducer *target, SoundProducer *source, char **error){
+  for (SoundProducerLink *link : target->_input_links) {
+    if(link->is_bus_link==false && link->is_event_link==false && link->source==source){
+      //printf("   Found %f (%p)\n", safe_float_read(&link->link_volume), link);
+      return safe_float_read(&link->link_volume);
+    }
+  }
+
+  *error = talloc_strdup("Could not find link");
+  return 0.0;
+}
+
+void SP_set_link_volume(SoundProducer *target, SoundProducer *source, float volume, char **error){
+  bool found = false;
+
+  for (SoundProducerLink *link : target->_input_links) {
+    if(link->is_bus_link==false && link->is_event_link==false && link->source==source){
+      found=true;
+      //printf("   Setting to %f (%p)\n", volume, link);
+      safe_float_write(&link->link_volume, volume);
+    }
+  }
+
+  if (!found)
+    *error = talloc_strdup("Could not find link");
+}
 
 // Called by main mixer thread before starting multicore.
 void SP_RT_called_for_each_soundcard_block1(SoundProducer *producer, int64_t time){

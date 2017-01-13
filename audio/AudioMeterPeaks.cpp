@@ -10,13 +10,6 @@
 #include "AudioMeterPeaks_proc.h"
 
 
-static float gain2db(float val){
-  if(val<=0.0f)
-    return -100.0f;
-
-  return 20*log10(val);
-}
-
 
 
 

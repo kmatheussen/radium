@@ -1,4 +1,24 @@
 
+static inline float gain2db(float val){
+  if(val<=0.0f)
+    return -100.0f;
+
+  return 20*log10(val);
+}
+
+static inline float db2gain(float db){
+  if (db < 0)
+    db = 0;
+  if (db < -35){ // do linear scale down to zero when db is less than -35
+    const float threshold_db  = powf(10,
+                                       -35 / 20.0f);
+    
+    return scale(db, MIN_DB, MAX_DB, 0, threshold_db);
+  }else
+    return powf(10, db / 20.0f);
+}
+
+
 static inline float db2linear(float db, float y1, float y2){
 
   if(db<MIN_DB)

@@ -4,6 +4,15 @@
 
 (define *text-color* "#cccccc")
 
+(define (db-to-slider db)
+  (define scaled (scale db *min-db* *max-mixer-db* 0 1))
+  (* scaled scaled))
+
+(define (slider-to-db slider)
+  (define scaled (sqrt slider))
+  (scale scaled 0 1 *min-db* *max-mixer-db*))
+
+
 (define (add-gui-effect-monitor gui instrument-id effect-name callback)
   (define effect-monitor (<ra> :add-effect-monitor effect-name instrument-id callback))
   (<gui> :add-close-callback gui
@@ -13,35 +22,33 @@
 
 (define (create-mixer-strip-name gui instrument-id x1 y1 x2 y2)
   (define name (<gui> :line (<ra> :get-instrument-name instrument-id) (lambda (edited)
-                                                                        ;;(c-display "edited to" edited)
-                                                                        #t
-                                                                        )))
+                                                                        (<ra> :set-instrument-name edited instrument-id))))
   (<gui> :set-background-color name (<ra> :get-instrument-color instrument-id))
   (<gui> :add gui name x1 y1 x2 y2))
 
 
-(define (strip-slider instrument-id effect-name)
+(define (strip-slider instrument-id make-undo get-scaled-value get-value-text set-value)
   (define instrument-name (<ra> :get-instrument-name instrument-id))
   ;;(define widget (<gui> :widget 100 (get-fontheight)))
   (define widget #f)
   
   (define (paintit width height)
     (define color (<ra> :get-instrument-color instrument-id))
-    (define value (<ra> :get-instrument-effect instrument-id effect-name))
+    (define value (get-scaled-value))
     ;;(c-display "value: " value)
     (define pos (scale value 0 1 0 width))
     (<gui> :filled-box widget (<gui> :get-background-color widget) 0 0 width height)
     (<gui> :filled-box widget "black" 1 1 (1- width) (1- height) 5 5)
     (<gui> :filled-box widget color 0 0 pos height 5 5)
     (<gui> :draw-box widget "gray" 0 0 width height 0.8)
-    (<gui> :draw-text widget *text-color* (<-> instrument-name ": " (floor (scale value 0 1 0 100)))
+    (<gui> :draw-text widget *text-color* (<-> instrument-name ": " (get-value-text value))
            4 2 width height))
 
   (set! widget (<gui> :horizontal-slider "" 0 0.5 1.0
                       (lambda (val)
                         ;;(<ra> :set-instrument-effect instrument-id effect-name val)
                         (when widget
-                          (<ra> :set-instrument-effect instrument-id effect-name val)
+                          (set-value val)
                           (paintit (<gui> :width widget)
                                    (<gui> :height widget))))))
   
@@ -49,33 +56,45 @@
 
   (<gui> :add-resize-callback widget paintit)
 
-  '(<gui> :add-mouse-callback widget (lambda (button state x y)
-                                      (when (= button *left-button*)
-                                        ;;(c-display "  m" button x y (scale x 0 (<gui> :width widget) 0 1.0))
-                                        (<ra> :set-instrument-effect instrument-id effect-name (scale x 0 (<gui> :width widget) 0 1))
-                                        (paintit (<gui> :width widget)
-                                                 (<gui> :height widget)))
-                                      #t))
+  (<gui> :add-mouse-callback widget (lambda (button state x y)
+                                      (when (and (= button *left-button*)
+                                                 (= state *is-pressing*))
+                                        (make-undo))
+                                      #f))
 
   ;;(paintit (<gui> :width widget)
   ;;         (<gui> :height widget))
 
+  (<gui> :set-size-policy widget #t #t)
+
   widget)
 
-(define (create-mixer-strip-plugin gui instrument-id send-id)
-  (define fontheight (get-fontheight))
-  '(define slider (<gui> :horizontal-int-slider
-                        (<-> (<ra> :get-instrument-name send-id) ": ")
-                        0 0 100
-                        (lambda (percentage)
-                          ;;(c-display "moved" percentage)
-                          )))
-  (define slider (strip-slider send-id "System Volume"))
-  (<gui> :set-size-policy slider #t #t)
-  ;;(<gui> :set-background-color slider (<ra> :get-instrument-color send-id))
+
+(define (create-mixer-strip-plugin gui instrument-id)
+  (define (get-drywet)
+    (<ra> :get-instrument-effect instrument-id "System Dry/Wet"))
+    
+  (define doit #t)
+  (define slider (strip-slider instrument-id
+                               (lambda ()
+                                 (<ra> :undo-instrument-effect instrument-id "System Dry/Wet"))
+                               get-drywet
+                               (lambda (scaled-value)
+                                 (<-> (round (* 100 scaled-value)) "%"))
+                               (lambda (new-scaled-value)
+                                 (if (and doit (not (= new-scaled-value (get-drywet))))                                     
+                                     (<ra> :set-instrument-effect instrument-id "System Dry/Wet" new-scaled-value)))))
+
+  (add-gui-effect-monitor slider instrument-id "System Dry/Wet"
+                          (lambda ()
+                            (set! doit #f)
+                            (<gui> :set-value slider (get-drywet))
+                            (set! doit #t)))
+
   (<gui> :add gui slider))
 
-(define (create-mixer-strip-send gui instrument-id send-id)
+
+(define (get-mixer-strip-send-horiz gui)
   (define horiz (<gui> :horizontal-layout))
   (<gui> :set-layout-spacing horiz 1 1 0 1 0)
 
@@ -84,7 +103,94 @@
   (<gui> :add horiz text)
 
   (<gui> :add gui horiz)
-  (create-mixer-strip-plugin horiz instrument-id send-id))
+
+  horiz)
+
+(define (create-mixer-strip-send gui target-instrument-id make-undo get-db-value set-db-value add-monitor)
+  (define horiz (get-mixer-strip-send-horiz gui))
+
+  (define doit #t)
+
+  (define last-value (get-db-value))
+
+  (define slider (strip-slider target-instrument-id
+                               make-undo
+                               (lambda ()
+                                 (db-to-slider (get-db-value)))
+                               (lambda (slider-value)                                 
+                                 (<-> (one-decimal-string (slider-to-db slider-value)) "dB"))
+                               (lambda (new-slider-value)
+                                 (define db (slider-to-db new-slider-value))
+                                 (when (and doit (not (= last-value db)))
+                                   (set! last-value db)
+                                   (set-db-value db)))))
+  (if add-monitor
+      (add-monitor slider
+                   (lambda ()
+                     (define new-value (db-to-slider (get-db-value)))
+                     (when (not (= new-value (<gui> :get-value slider)))
+                       (set! doit #f)
+                       (<gui> :set-value slider new-value)
+                       (set! doit #t)))))
+  
+  (<gui> :add horiz slider))
+
+
+(define (create-mixer-strip-bus-send gui instrument-id bus-num)
+  (define effect-name (list-ref '("System Reverb"
+                                  "System Chorus"
+                                  "System Aux 1"
+                                  "System Aux 2"
+                                  "System Aux 3")
+                                bus-num))
+
+  (define bus-id (<ra> :get-audio-bus-id bus-num))
+
+  (define (make-undo)
+    (<ra> :undo-instrument-effect instrument-id effect-name))
+
+  (define (get-db-value)
+    (scale (<ra> :get-instrument-effect instrument-id effect-name)
+           0 1
+           *min-db* *max-db*))
+
+  (define (set-db-value db)
+    (<ra> :set-instrument-effect instrument-id effect-name (scale db *min-db* *max-db* 0 1)))
+
+  (define (add-monitor slider callback)
+    (add-gui-effect-monitor slider instrument-id effect-name callback))
+
+  (create-mixer-strip-send gui
+                           bus-id
+                           make-undo
+                           get-db-value
+                           set-db-value
+                           add-monitor))
+
+
+(define (create-mixer-strip-audio-connection-send gui source-id target-id)
+  (define (make-undo)
+    (<ra> :undo-audio-connection-volume source-id target-id))
+
+  (define (get-db-value)
+    (define value (<ra> :get-audio-connection-volume source-id target-id))
+    (c-display "getting " value)
+    (scale value
+           0 1
+           *min-db* *max-db*))
+
+  (define (set-db-value db)
+    (c-display "setting db to" db)
+    (<ra> :set-audio-connection-volume source-id target-id (scale db *min-db* *max-db* 0 1)))
+
+  (define add-monitor #f)
+
+  (create-mixer-strip-send gui
+                           target-id
+                           make-undo 
+                           get-db-value
+                           set-db-value
+                           add-monitor))
 
 
 ;; Returns a list of parallel plugins that needs their own mixer strip.
@@ -111,19 +217,19 @@
               (get-returned-plugin-buses plugin-instrument))
       ret))
 
-
+;; Returns the last plugin.
 (define (create-mixer-strip-path gui instrument-id)
   (define fontheight (get-fontheight))
   (define send-height fontheight)
 
   (define (add-bus-sends instrument-id)
     (if (not (<ra> :instrument-is-bus-descendant instrument-id))
-        (for-each (lambda (send-id)
-                    (create-mixer-strip-send gui
-                                             instrument-id
-                                             send-id))              
+        (for-each (lambda (bus-num)
+                    (create-mixer-strip-bus-send gui
+                                                 instrument-id
+                                                 bus-num))              
                   (get-buses-connecting-from-instrument instrument-id))))
-
+  
   (add-bus-sends instrument-id)
     
   (define out-instruments (sort-instruments-by-mixer-position
@@ -136,16 +242,16 @@
                        (= 1 (length inputs)))
                   (set! plugin-instrument out-instrument)
                   (begin
-                    (create-mixer-strip-send gui
-                                             out-instrument
-                                             out-instrument))))
+                    (create-mixer-strip-audio-connection-send gui
+                                                              instrument-id
+                                                              out-instrument))))
             out-instruments)
   
-  (when plugin-instrument
-    (create-mixer-strip-plugin gui
-                               plugin-instrument
-                               plugin-instrument)
-    (create-mixer-strip-path gui plugin-instrument)))
+  (if plugin-instrument
+      (begin
+        (create-mixer-strip-plugin gui plugin-instrument)
+        (create-mixer-strip-path gui plugin-instrument))
+      instrument-id))
 
 
 (define (create-mixer-strip-pan gui system-background-color instrument-id x1 y1 x2 y2)
@@ -328,7 +434,7 @@
   (<gui> :add gui (cadr solo) middle y1 x2 y2)
   )
 
-(define (create-mixer-strip-volume gui instrument-id x1 y1 x2 y2)
+(define (create-mixer-strip-volume gui instrument-id meter-instrument-id x1 y1 x2 y2)
   (define fontheight (get-fontheight))
   (define middle (floor (average x1 x2)))
 
@@ -377,14 +483,6 @@
   (define peaktext (<gui> :widget))
 
   (define paint-slider #f)
-
-  (define (db-to-slider db)
-    (define scaled (scale db *min-db* *max-mixer-db* 0 1))
-    (* scaled scaled))
-
-  (define (slider-to-db slider)
-    (define scaled (sqrt slider))
-    (scale scaled 0 1 *min-db* *max-mixer-db*))
 
   (define last-vol-slider (get-volume))
   (define volslider (<gui> :vertical-slider
@@ -462,7 +560,7 @@
   (<gui> :add-resize-callback volslider (lambda x (paint-slider)))
 
 
-  (define volmeter (<gui> :vertical-audio-meter instrument-id))
+  (define volmeter (<gui> :vertical-audio-meter meter-instrument-id))
   
   (<gui> :add gui voltext x1 voltext_y1 middle voltext_y2)
   (<gui> :add gui peaktext peaktext_x1 peaktext_y1 peaktext_x2 peaktext_y2)
@@ -589,11 +687,11 @@
   (<gui> :set-layout-spacing mixer-strip-path-gui 5 5 5 5 5)
   (<gui> :add gui mixer-strip-path-gui x1 sends_y1 x2 sends_y2)
   
-  (create-mixer-strip-path mixer-strip-path-gui instrument-id)
+  (define meter-instrument-id (create-mixer-strip-path mixer-strip-path-gui instrument-id))
 
   (create-mixer-strip-pan gui system-background-color instrument-id x1 pan_y1 x2 pan_y2)
   (create-mixer-strip-mutesolo gui instrument-id x1 mutesolo_y1 x2 mutesolo_y2)
-  (create-mixer-strip-volume gui instrument-id x1 volume_y1 x2 volume_y2)
+  (create-mixer-strip-volume gui instrument-id meter-instrument-id x1 volume_y1 x2 volume_y2)
   (create-mixer-strip-comment gui instrument-id x1 comment_y1 x2 comment_y2)
 
   gui)
@@ -635,7 +733,12 @@
   ;;(define x1 0)
   (define instruments-buses-separator-width (* (get-fontheight) 2))
 
-  (define instruments (get-all-instruments-with-no-input-connections))
+  (define instruments (keep (lambda (id)
+                              (or (> (<ra> :get-num-input-channels id)
+                                     0)
+                                  (> (<ra> :get-num-output-channels id)
+                                     0)))
+                            (get-all-instruments-with-no-input-connections)))
 
   (define instrument-plugin-buses (apply append (map (lambda (instrument-id)
                                                        (get-returned-plugin-buses instrument-id))

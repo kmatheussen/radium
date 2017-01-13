@@ -904,7 +904,6 @@ static float get_chance(struct SoundPlugin *plugin, int num){
     }                                                           \
   }
 
-
 void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum PlayerLockRequired player_lock_required, enum ValueFormat value_format, bool sent_from_midi_learn){
   float store_value = value;
   //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);

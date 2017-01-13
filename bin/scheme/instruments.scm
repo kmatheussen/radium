@@ -64,7 +64,7 @@
   (keep identity
         (map (lambda (bus-num effect-name)
                (if (>= (<ra> :get-instrument-effect id-instrument effect-name) 0.5)
-                   (<ra> :get-audio-bus-id bus-num)
+                   bus-num ;;(<ra> :get-audio-bus-id bus-num)
                    #f))
              (iota (length *bus-effect-names*))
              *bus-effect-names*)))
