@@ -523,7 +523,9 @@
 
 
 (define (create-mixer-strip-comment gui instrument-id x1 y1 x2 y2)
-  (define comment-edit (<gui> :line "Comment"))
+  (define comment-edit (<gui> :line (<ra> :get-instrument-comment instrument-id)
+                              (lambda (new-name)
+                                (<ra> :set-instrument-comment new-name instrument-id))))    
   (<gui> :set-background-color comment-edit (<ra> :get-instrument-color instrument-id))
   (<gui> :add gui comment-edit x1 y1 x2 y2))
 

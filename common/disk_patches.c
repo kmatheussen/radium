@@ -194,7 +194,8 @@ void SavePatches(vector_t *v){
       DC_SSB("name_is_edited", patch->name_is_edited);
 
       DC_SSS("color", GFX_get_colorname_from_color(patch->color));
-      
+      DC_SSS("comment", patch->comment);
+
       if(patch->instrument==get_MIDI_instrument())
         SaveMIDIPatchData(patch->patchdata);
       
@@ -212,14 +213,15 @@ struct Patch *LoadPatch(void){
           "PATCHDATA",
           "VOICES"
 	};
-	static char *vars[7]={
+	static char *vars[8]={
 		"name",
 		"minvel",
 		"maxvel",
 		"standardvel",
                 "forward_events",
                 "name_is_edited",
-                "color"
+                "color",
+                "comment"
 	};
 
 	struct Patch *patch=PATCH_alloc();
@@ -228,10 +230,11 @@ struct Patch *LoadPatch(void){
         patch->forward_events = true; // default value
         patch->name_is_edited = true; // compatibility value when loading older songs
         patch->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.52f);
-        
+        patch->comment = "Comment";
+
         PATCH_init_voices(patch);
 
-	GENERAL_LOAD(2,7)
+	GENERAL_LOAD(2,8)
 
 
 var0:
@@ -261,7 +264,11 @@ var5:
 var6:
         patch->color = GFX_get_color_from_colorname(DC_LoadS());
         goto start;
-        
+
+var7:
+        patch->comment = DC_LoadS();
+        goto start;
+
 obj0:
         is_MIDI_instrument = true;
         MIDI_InitPatch(patch);
@@ -276,7 +283,6 @@ obj1:
         //printf("---Finihsed Load Patch Voices\n");
         goto start;
 
-var7:
 var8:
 var9:
 var10:

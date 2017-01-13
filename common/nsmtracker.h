@@ -895,6 +895,8 @@ struct Patch{
   const char *name;
   const symbol_t *midi_learn_port_name;
   
+  const char *comment;
+
   unsigned int color;
   //int colornum;
 
