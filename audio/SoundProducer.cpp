@@ -1537,7 +1537,7 @@ void SP_remove_all_links(const radium::Vector<SoundProducer*> &soundproducers){
   SoundProducer::remove_links(links_to_delete);
 }
 
-float SP_get_link_volume(SoundProducer *target, SoundProducer *source, char **error){
+float SP_get_link_gain(SoundProducer *target, SoundProducer *source, char **error){
   for (SoundProducerLink *link : target->_input_links) {
     if(link->is_bus_link==false && link->is_event_link==false && link->source==source){
       //printf("   Found %f (%p)\n", safe_float_read(&link->link_volume), link);
@@ -1549,7 +1549,7 @@ float SP_get_link_volume(SoundProducer *target, SoundProducer *source, char **er
   return 0.0;
 }
 
-void SP_set_link_volume(SoundProducer *target, SoundProducer *source, float volume, char **error){
+void SP_set_link_gain(SoundProducer *target, SoundProducer *source, float volume, char **error){
   bool found = false;
 
   for (SoundProducerLink *link : target->_input_links) {

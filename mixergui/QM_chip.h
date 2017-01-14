@@ -77,6 +77,8 @@ struct SoundPlugin;
 #include "../Qt/Qt_SliderPainter_proc.h"
 #include "../Qt/Qt_colors_proc.h"
 
+#include "../api/api_proc.h"
+
 
 
 class Chip;
@@ -156,6 +158,10 @@ public:
     */
   }
 
+  ~SuperConnection(){
+    remakeMixerStrips();
+  }
+      
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
              QWidget *widget)
     override

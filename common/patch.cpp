@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "windows_proc.h"
 #include "notes_proc.h"
 #include "../api/api_common_proc.h"
+#include "../api/api_proc.h"
 #include "../midi/midi_i_plugin_proc.h"
 #include "../midi/midi_i_input_proc.h"
 #include "../audio/audio_instrument_proc.h"
@@ -350,6 +351,8 @@ struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name,
 
   if (PATCH_make_active_audio(patch, type_name, plugin_name, state, x, y)==false)
     return NULL;
+
+  remakeMixerStrips();
   
   return patch;
 }
@@ -531,6 +534,8 @@ static void make_inactive(struct Patch *patch, bool force_removal){
   PATCH_stop_all_notes(patch);
 
   PATCH_remove_from_instrument(patch);
+
+  remakeMixerStrips();
 }
 
 void PATCH_make_inactive(struct Patch *patch){

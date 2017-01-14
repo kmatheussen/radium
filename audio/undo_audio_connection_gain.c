@@ -25,20 +25,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_proc.h"
 
-#include "undo_audio_connectino_volume_proc.h"
+#include "undo_audio_connection_gain_proc.h"
 
 
 extern struct Root *root;
 
-struct Undo_AudioConnectionVolume{
+struct Undo_AudioConnectionGain{
   struct Patch *source;
   struct Patch *target;
 
-  float volume;
+  float gain;
 };
 
 
-static void *Undo_Do_AudioConnectionVolume(
+static void *Undo_Do_AudioConnectionGain(
                                  struct Tracker_Windows *window,
                                  struct WBlocks *wblock,
                                  struct WTracks *wtrack,
@@ -46,19 +46,19 @@ static void *Undo_Do_AudioConnectionVolume(
                                  void *pointer
                                  );
 
-static void Undo_AudioConnectionVolume(
+static void Undo_AudioConnectionGain(
                                        struct Tracker_Windows *window,
                                        struct WBlocks *wblock,
                                        struct Patch *source,
                                        struct Patch *target
                                        )
 {
-  struct Undo_AudioConnectionVolume *undo_ae=talloc(sizeof(struct Undo_AudioConnectionVolume));
+  struct Undo_AudioConnectionGain *undo_ae=talloc(sizeof(struct Undo_AudioConnectionGain));
   
   undo_ae->source = source;
   undo_ae->target = target;
 
-  undo_ae->volume = getAudioConnectionVolume(source->id, target->id);
+  undo_ae->gain = getAudioConnectionGain(source->id, target->id);
 
 
   //printf("********* Storing eff undo. value: %f %d\n",undo_ae->value,plugin->comp.is_on);
@@ -69,19 +69,19 @@ static void Undo_AudioConnectionVolume(
                              wblock->wtrack->l.num,
                              wblock->curr_realline,
                              undo_ae,
-                             Undo_Do_AudioConnectionVolume,
-                             talloc_format("Undo audio connection volume %s -> %s",source->name, target->name)
+                             Undo_Do_AudioConnectionGain,
+                             talloc_format("Undo audio connection gain %s -> %s",source->name, target->name)
                              );
 
 }
 
-void ADD_UNDO_FUNC(AudioConnectionVolume_CurrPos(struct Patch *source, struct Patch *target)){
+void ADD_UNDO_FUNC(AudioConnectionGain_CurrPos(struct Patch *source, struct Patch *target)){
   struct Tracker_Windows *window = root->song->tracker_windows;
-  //printf("Undo_AudioConnectionVolume_CurrPos\n");
-  Undo_AudioConnectionVolume(window,window->wblock, source, target);
+  //printf("Undo_AudioConnectionGain_CurrPos\n");
+  Undo_AudioConnectionGain(window,window->wblock, source, target);
 }
 
-static void *Undo_Do_AudioConnectionVolume(
+static void *Undo_Do_AudioConnectionGain(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -89,13 +89,13 @@ static void *Undo_Do_AudioConnectionVolume(
 	void *pointer
 ){
 
-  struct Undo_AudioConnectionVolume *undo_ae=pointer;
+  struct Undo_AudioConnectionGain *undo_ae=pointer;
 
-  float now_volume = getAudioConnectionVolume(undo_ae->source->id, undo_ae->target->id);
+  float now_gain = getAudioConnectionGain(undo_ae->source->id, undo_ae->target->id);
 
-  setAudioConnectionVolume(undo_ae->source->id, undo_ae->target->id, undo_ae->volume);
+  setAudioConnectionGain(undo_ae->source->id, undo_ae->target->id, undo_ae->gain, true);
 
-  undo_ae->volume = now_volume;
+  undo_ae->gain = now_gain;
 
   return undo_ae;
 }

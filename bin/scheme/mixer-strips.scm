@@ -3,14 +3,52 @@
   (+ 4 (<gui> :get-system-fontheight)))
 
 (define *text-color* "#cccccc")
+(define *arrow-text* "↳")
 
 (define (db-to-slider db)
-  (define scaled (scale db *min-db* *max-mixer-db* 0 1))
-  (* scaled scaled))
+  (if (<= db *min-db*)
+      0
+      (let ((scaled (scale db *min-db* *max-mixer-db* 0 1)))
+        (* scaled scaled))))
 
 (define (slider-to-db slider)
   (define scaled (sqrt slider))
   (scale scaled 0 1 *min-db* *max-mixer-db*))
+
+(define (db-to-text db add-dB-string)
+  (cond ((<= db *min-db*)
+         "-inf")
+        (add-dB-string
+         (<-> (one-decimal-string db) "dB"))
+        (else
+         (one-decimal-string db))))
+
+(define (create-custom-checkbox paint-func value-changed is-selected)
+  (define checkbox (<gui> :widget))
+  (define width (<gui> :width checkbox))
+  (define height (<gui> :height checkbox))
+  (define (repaint)
+    (paint-func checkbox is-selected width height))
+  (<gui> :add-mouse-callback checkbox (lambda (button state x y)
+                                        ;;(c-display "state" state)
+                                        (when (and (= button *left-button*)
+                                                   (= state *is-pressing*))
+                                          (set! is-selected (not is-selected))
+                                          (value-changed is-selected)
+                                          (repaint))
+                                        #t))
+  (<gui> :add-resize-callback checkbox
+         (lambda (newwidth newheight)
+           (set! width newwidth)
+           (set! height newheight)
+           (repaint)))
+
+  ;;(repaint)
+
+  (list (lambda (new-value)
+          (set! is-selected new-value)
+          (repaint))
+        checkbox))
 
 
 (define (add-gui-effect-monitor gui instrument-id effect-name callback)
@@ -44,7 +82,7 @@
     (<gui> :draw-text widget *text-color* (<-> instrument-name ": " (get-value-text value))
            4 2 width height))
 
-  (set! widget (<gui> :horizontal-slider "" 0 0.5 1.0
+  (set! widget (<gui> :horizontal-slider "" 0 (get-scaled-value) 1.0
                       (lambda (val)
                         ;;(<ra> :set-instrument-effect instrument-id effect-name val)
                         (when widget
@@ -94,13 +132,86 @@
   (<gui> :add gui slider))
 
 
+;; A sink plugin. For instance "System Out".
+(define (create-mixer-strip-sink-plugin gui instrument-id)
+  
+  (define (get-db-value)
+    (scale (<ra> :get-instrument-effect instrument-id "System In")
+           0 1
+           *min-db* *max-db*))
+
+  (define last-value (get-db-value))
+  
+  (define doit #t)
+  (define slider (strip-slider instrument-id
+
+                               ;; make-undo
+                               (lambda ()
+                                 (<ra> :undo-instrument-effect instrument-id "System In"))
+
+                               ;; get-scaled-value
+                               (lambda ()
+                                 (db-to-slider (get-db-value)))
+                               
+                               ;; get-value-text
+                               (lambda (slider-value)
+                                 (db-to-text (slider-to-db slider-value) #t))
+
+                               ;; set-value
+                               (lambda (new-slider-value)
+                                 (define db (slider-to-db new-slider-value))
+                                 ;;(c-display "new-db:" db ", old-db:" last-value)
+                                 (when (and doit (not (= last-value db)))
+                                   (set! last-value db)
+                                   (<ra> :set-instrument-effect instrument-id "System In" (scale db *min-db* *max-db* 0 1))))))
+                                     
+
+  (add-gui-effect-monitor slider instrument-id "System In"
+                          (lambda ()
+                            (define new-value (db-to-slider (get-db-value)))
+                            (when (not (= new-value (<gui> :get-value slider)))
+                              (set! doit #f)
+                              (<gui> :set-value slider new-value)
+                              (set! doit #t))))
+
+  (<gui> :add gui slider))
+
+
 (define (get-mixer-strip-send-horiz gui)
   (define horiz (<gui> :horizontal-layout))
   (<gui> :set-layout-spacing horiz 1 1 0 1 0)
 
-  (define text (<gui> :text "↳"))
-  (<gui> :set-size-policy text #f #t)
-  (<gui> :add horiz text)
+  (define text-gui #f)
+
+  (define background-color (<gui> :get-background-color gui))
+  
+  (define text-gui (<gui> :text *arrow-text*))
+  (define width (floor (* 1.5 (<gui> :text-width *arrow-text*))))
+  
+  #||
+  (define text-checkbox (create-custom-checkbox (lambda (gui is-selected with height)
+                                                  (<gui> :filled-box
+                                                         gui
+                                                         background-color
+                                                         0 0 width height)
+                                                  (<gui> :draw-text gui *text-color* *arrow-text* 0 0 width height #f))
+                                                (lambda (is-selected)
+                                                  #t)
+                                                (lambda ()
+                                                  #t)))
+  
+  (define width (floor (* 2 (<gui> :text-width *arrow-text*))))
+  
+  (set! text-gui (cadr text-checkbox))
+  (define set-text-func (car text-checkbox)) 
+
+ ||#
+  
+  (<gui> :set-min-width text-gui width)
+  (<gui> :set-max-width text-gui width)
+  
+  (<gui> :set-size-policy text-gui #f #t)
+  (<gui> :add horiz text-gui)
 
   (<gui> :add gui horiz)
 
@@ -114,13 +225,23 @@
   (define last-value (get-db-value))
 
   (define slider (strip-slider target-instrument-id
+                               
                                make-undo
+
+                               ;; get-scaled-value
                                (lambda ()
-                                 (db-to-slider (get-db-value)))
+                                 (db-to-slider (if add-monitor ;; minor optimization.
+                                                   (get-db-value)
+                                                   last-value)))
+
+                               ;; get-value-text
                                (lambda (slider-value)                                 
-                                 (<-> (one-decimal-string (slider-to-db slider-value)) "dB"))
+                                 (db-to-text (slider-to-db slider-value) #t))
+
+                               ;; set-value
                                (lambda (new-slider-value)
                                  (define db (slider-to-db new-slider-value))
+                                 (c-display "new-db:" db ", old-db:" last-value)
                                  (when (and doit (not (= last-value db)))
                                    (set! last-value db)
                                    (set-db-value db)))))
@@ -150,9 +271,10 @@
     (<ra> :undo-instrument-effect instrument-id effect-name))
 
   (define (get-db-value)
-    (scale (<ra> :get-instrument-effect instrument-id effect-name)
-           0 1
-           *min-db* *max-db*))
+    (let ((db (<ra> :get-instrument-effect instrument-id effect-name)))
+      (scale db
+             0 1
+             *min-db* *max-db*)))
 
   (define (set-db-value db)
     (<ra> :set-instrument-effect instrument-id effect-name (scale db *min-db* *max-db* 0 1)))
@@ -170,18 +292,16 @@
 
 (define (create-mixer-strip-audio-connection-send gui source-id target-id)
   (define (make-undo)
-    (<ra> :undo-audio-connection-volume source-id target-id))
+    (<ra> :undo-audio-connection-gain source-id target-id))
 
   (define (get-db-value)
-    (define value (<ra> :get-audio-connection-volume source-id target-id))
-    (c-display "getting " value)
-    (scale value
-           0 1
-           *min-db* *max-db*))
+    (define db (<ra> :gain-to-db (<ra> :get-audio-connection-gain source-id target-id)))
+    ;;(c-display "getting " db)
+    db)
 
   (define (set-db-value db)
-    (c-display "setting db to" db)
-    (<ra> :set-audio-connection-volume source-id target-id (scale db *min-db* *max-db* 0 1)))
+    ;;(c-display "setting db to" db)
+    (<ra> :set-audio-connection-gain source-id target-id (<ra> :db-to-gain db) #f))
 
   (define add-monitor #f)
 
@@ -249,7 +369,9 @@
   
   (if plugin-instrument
       (begin
-        (create-mixer-strip-plugin gui plugin-instrument)
+        (if (= 0 (<ra> :get-num-output-channels plugin-instrument))
+            (create-mixer-strip-sink-plugin gui plugin-instrument)
+            (create-mixer-strip-plugin gui plugin-instrument))
         (create-mixer-strip-path gui plugin-instrument))
       instrument-id))
 
@@ -340,34 +462,6 @@
 ;;(define (create-mixer-strip-checkbox text sel-color unsel-color width height callback)
 ;;  (define button (<gui> :widget width height))
 
-(define (custom-checkbox paint-func value-changed is-selected)
-  (define checkbox (<gui> :widget))
-  (define width (<gui> :width checkbox))
-  (define height (<gui> :height checkbox))
-  (define (repaint)
-    (paint-func checkbox is-selected width height))
-  (<gui> :add-mouse-callback checkbox (lambda (button state x y)
-                                        ;;(c-display "state" state)
-                                        (when (and (= button *left-button*)
-                                                   (= state *is-pressing*))
-                                          (set! is-selected (not is-selected))
-                                          (value-changed is-selected)
-                                          (repaint))
-                                        #t))
-  (<gui> :add-resize-callback checkbox
-         (lambda (newwidth newheight)
-           (set! width newwidth)
-           (set! height newheight)
-           (repaint)))
-
-  ;;(repaint)
-
-  (list (lambda (new-value)
-          (set! is-selected new-value)
-          (repaint))
-        checkbox))
-
-  
 (define (create-mixer-strip-mutesolo gui instrument-id x1 y1 x2 y2)
   (define background-color (<gui> :get-background-color gui));(<ra> :get-instrument-color instrument-id))
 
@@ -404,24 +498,24 @@
   (define (get-soloed)
     (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
            
-  (define mute (custom-checkbox (lambda (mute is-muted width height)
-                                  (draw-mutesolo mute is-muted "Mute" "green" width height))
-                                (lambda (is-muted)
-                                  (<ra> :undo-instrument-effect instrument-id "System Volume On/Off")
-                                  (<ra> :set-instrument-effect instrument-id "System Volume On/Off" (if is-muted 0.0 1.0))
-                                  ;;(c-display "mute: " is-muted)
-                                  )
-                                (get-muted)))
-                               
-  (define solo (custom-checkbox (lambda (solo is-soloed width height)
-                                  (draw-mutesolo solo is-soloed "Solo" "yellow" width height))
-                                (lambda (is-selected)
-                                  (<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
-                                  (<ra> :set-instrument-effect instrument-id "System Solo On/Off" (if is-selected 1.0 0.0))
-                                  ;;(c-display "solo: " is-selected)
-                                  )
-                                (get-soloed)))
-
+  (define mute (create-custom-checkbox (lambda (mute is-muted width height)
+                                         (draw-mutesolo mute is-muted "Mute" "green" width height))
+                                       (lambda (is-muted)
+                                         (<ra> :undo-instrument-effect instrument-id "System Volume On/Off")
+                                         (<ra> :set-instrument-effect instrument-id "System Volume On/Off" (if is-muted 0.0 1.0))
+                                         ;;(c-display "mute: " is-muted)
+                                         )
+                                       (get-muted)))
+  
+  (define solo (create-custom-checkbox (lambda (solo is-soloed width height)
+                                         (draw-mutesolo solo is-soloed "Solo" "yellow" width height))
+                                       (lambda (is-selected)
+                                         (<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
+                                         (<ra> :set-instrument-effect instrument-id "System Solo On/Off" (if is-selected 1.0 0.0))
+                                         ;;(c-display "solo: " is-selected)
+                                         )
+                                       (get-soloed)))
+  
   (add-gui-effect-monitor (cadr mute) instrument-id "System Volume On/Off"
                           (lambda ()
                             ((car mute) (get-muted))))
@@ -478,7 +572,6 @@
   (define paint-voltext #f)
   (define paint-peaktext #f)
 
-  (define last-voltext (get-volume))
   (define voltext (<gui> :widget))
   (define peaktext (<gui> :widget))
 
@@ -519,7 +612,7 @@
     
   (set! paint-voltext
         (lambda ()
-          (paint-text voltext (one-decimal-string (get-volume)))))
+          (paint-text voltext (db-to-text (get-volume) #f))))
 
   (<gui> :add-resize-callback voltext (lambda x (paint-voltext)))
   ;;(paint-voltext)
@@ -723,16 +816,14 @@
 
 (define (create-mixer-strips width height)
 
-  (define mixer-strip-width (1+ (floor (<gui> :text-width "-14.2 -23.5 ----"))))
   (define strip-separator-width 5)
+  (define instruments-buses-separator-width (* (get-fontheight) 2))
 
   ;;(define mixer-strips (<gui> :widget 800 800))
   (define mixer-strips (<gui> :horizontal-scroll)) ;;widget 800 800))
   (<gui> :set-layout-spacing mixer-strips strip-separator-width 0 0 0 0)
   
   ;;(define x1 0)
-  (define instruments-buses-separator-width (* (get-fontheight) 2))
-
   (define instruments (keep (lambda (id)
                               (or (> (<ra> :get-num-input-channels id)
                                      0)
@@ -755,6 +846,16 @@
   (define all-buses (append instrument-plugin-buses
                             buses
                             buses-plugin-buses))
+
+
+  (define min-mixer-strip-width (1+ (floor (<gui> :text-width "-14.2-23.5"))))
+  ;;(define mixer-strip-width (1+ (floor (<gui> :text-width "-14.2 -23.5 ----"))))
+  (define mixer-strip-width (- (max min-mixer-strip-width
+                                    (floor (/ (- width
+                                                 instruments-buses-separator-width)
+                                              (+ (length instruments)
+                                                 (length all-buses)))))
+                               strip-separator-width))
 
   (define fit-vertically? (<= (+ 0
                                  (* (+ (length instruments)
@@ -799,6 +900,14 @@
 (<gui> :show (create-mixer-strips 1000 800))
 !#
 
+(define-struct mixer-strips
+  :gui
+  :remake
+  :width
+  :height)
+
+(define *mixer-strips* '())
+
 (define (create-mixer-strips-gui)
   (define parent (<gui> :horizontal-layout))
 
@@ -811,38 +920,50 @@
 
   (<gui> :show parent)
 
-  (define mixer-strips #f)
-
-  (define (add-new-mixer-strips width height)
+  (define das-mixer-strips #f)
+  
+  (define (remake width height)
     (catch #t
            (lambda ()
              (<gui> :disable-updates parent)
              
              (define new-mixer-strips (create-mixer-strips width height))
              
-             (if mixer-strips
-                 (<gui> :close mixer-strips))
+             (if das-mixer-strips
+                 (<gui> :close das-mixer-strips))
 
              (<gui> :add parent new-mixer-strips)
              
              (<gui> :show new-mixer-strips)
-             (set! mixer-strips new-mixer-strips)
+             (set! das-mixer-strips new-mixer-strips)
              )
 
            (lambda args
              (display (ow!))))
     (<gui> :enable-updates parent))
 
+  (define mixer-strips (make-mixer-strips :gui parent
+                                          :remake (lambda ()
+                                                    (remake (<gui> :width parent) (<gui> :height parent)))
+                                          :width width
+                                          :height height))
+  
+  (remake width height)
 
-  (add-new-mixer-strips width height)
+  (<gui> :add-resize-callback parent remake)
 
-  (<gui> :add-resize-callback parent add-new-mixer-strips)
+  (push-back! *mixer-strips* mixer-strips)
 
-  parent
+  mixer-strips
   )
 
+(define (remake-mixer-strips)
+  (for-each (lambda (mixer-strips)
+              ((mixer-strips :remake)))
+            *mixer-strips*))
 
 (let ((start (time)))
+  (set! *mixer-strips* '())
   (create-mixer-strips-gui)
   (c-display "   Time used to open mixer:" (- (time) start)))
 
@@ -850,6 +971,7 @@
 
 
 #!
+(remake-mixer-strips)
 
 (get-instrument-from-name "Sample Player 1")
 (get-buses-connecting-from-instrument (get-instrument-from-name "Sample Player 1"))

@@ -459,10 +459,15 @@ float CHIP_get_pos_y(const struct Patch *patch){
   return chip->y();
 }
 
+void CHIP_set_pos(Chip *chip, float x, float y){
+  chip->setPos(x,y);
+  remakeMixerStrips();
+}
+
 void CHIP_set_pos(struct Patch *patch,float x,float y){
   Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, (SoundPlugin*)patch->patchdata);
   if (chip!=NULL)
-    chip->setPos(x,y);
+    CHIP_set_pos(chip, x, y);
 }
 
 static void CHIP_kick_left_rec(Chip *chip, std::set<Chip*> &kicks){
@@ -504,6 +509,8 @@ void CHIP_kick_left(Chip *chip){
     ADD_UNDO(ChipPos_CurrPos((struct Patch*)patch));
     (*chip)->setPos(pos.x()-grid_width, pos.y());
   }
+
+  remakeMixerStrips();
 }
 
 static void CHIP_kick_right_rec(Chip *chip, std::set<Chip*> &kicks){
@@ -546,6 +553,8 @@ void CHIP_kick_right(Chip *chip){
     ADD_UNDO(ChipPos_CurrPos((struct Patch*)patch));
     (*chip)->setPos(pos.x()+grid_width, pos.y());
   }
+  
+  remakeMixerStrips();
 }
 
 static bool connect(QGraphicsScene *scene, Chip *from, int from_portnum, Chip *to, int to_portnum){
@@ -629,6 +638,8 @@ void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   
   connection->update_position();
   scene->addItem(connection);
+
+  remakeMixerStrips();
 }
 
 void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to){
@@ -1686,9 +1697,14 @@ static int64_t get_saving_patch_id(struct Patch *patch, const vector_t *patches)
 hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *patches){
   hash_t *state=HASH_create(4);
 
-  HASH_put_int(state, "from_patch", get_saving_patch_id(CHIP_get_patch(connection->from), patches));
-  HASH_put_int(state, "to_patch",   get_saving_patch_id(CHIP_get_patch(connection->to),   patches));
+  struct Patch *from = CHIP_get_patch(connection->from);
+  struct Patch *to = CHIP_get_patch(connection->to);
+  
+  HASH_put_int(state, "from_patch", get_saving_patch_id(from, patches));
+  HASH_put_int(state, "to_patch",   get_saving_patch_id(to,   patches));
   HASH_put_bool(state, "is_event_connection", connection->is_event_connection);
+  if (!connection->is_event_connection)
+    HASH_put_float(state, "gain", getAudioConnectionGain(from->id, to->id));
 
   return state;
 }
@@ -1719,8 +1735,13 @@ void CONNECTION_create_from_state2(QGraphicsScene *scene, hash_t *state, int64_t
 
   if(HASH_has_key(state, "is_event_connection") && HASH_get_bool(state, "is_event_connection")) // .rad files before 1.9.31 did not have even connections.
     CHIP_econnect_chips(scene, from_chip, to_chip);
-  else
+  else {
     CHIP_connect_chips(scene, from_chip, to_chip);
+    if (HASH_has_key(state, "gain")){
+      float gain = HASH_get_float(state, "gain");
+      setAudioConnectionGain(id_from, id_to, gain, false);
+    }
+  }
 }
 
 void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new){

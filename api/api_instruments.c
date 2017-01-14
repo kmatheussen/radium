@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/audio_instrument_proc.h"
 #include "../audio/Presets_proc.h"
 #include "../audio/undo_audio_effect_proc.h"
-#include "../audio/undo_audio_connection_volume_proc.h"
+#include "../audio/undo_audio_connection_gain_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../mixergui/QM_chip.h"
@@ -407,10 +407,12 @@ void setInstrumentName(char *name, int64_t instrument_id) {
   if(patch==NULL)
     return;
 
-  PATCH_set_name(patch, name);
-  patch->name_is_edited = true;
-  
-  (*patch->instrument->PP_Update)(patch->instrument,patch);
+  if (strcmp(name, patch->name)){
+    PATCH_set_name(patch, name);
+    patch->name_is_edited = true;
+    
+    (*patch->instrument->PP_Update)(patch->instrument,patch);
+  }
 }
 
 const_char* getInstrumentComment(int64_t instrument_id) {
@@ -553,6 +555,13 @@ float getMaxDb(void){
   return MAX_DB;
 }
 
+float dbToGain(float db){
+  return db2gain(db);
+}
+
+float gainToDb(float gain){
+  return gain2db(gain);
+}
 
 void setInstrumentData(int64_t instrument_id, char *key, char *value) {
   struct Patch *patch = getPatchFromNum(instrument_id);
@@ -777,7 +786,7 @@ void createAudioConnection(int64_t source_id, int64_t dest_id){
   MW_connect(source, dest); 
 }
 
-float getAudioConnectionVolume(int64_t source_id, int64_t dest_id){
+float getAudioConnectionGain(int64_t source_id, int64_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return 0.0;
@@ -803,15 +812,15 @@ float getAudioConnectionVolume(int64_t source_id, int64_t dest_id){
 
   char *error = NULL;
 
-  float ret = SP_get_link_volume(dest_sp, source_sp, &error);
+  float ret = SP_get_link_gain(dest_sp, source_sp, &error);
 
   if (error!=NULL)
     handleError("Could not find audio connection between instrument %d and instrument %d", source_id, dest_id);
   
-  return gain2db(ret);
+  return ret;
 }
 
-void setAudioConnectionVolume(int64_t source_id, int64_t dest_id, float db){
+void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool remake_mixer_strips){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -837,15 +846,17 @@ void setAudioConnectionVolume(int64_t source_id, int64_t dest_id, float db){
 
   char *error = NULL;
 
-  float gain = db2gain(db);
-  SP_set_link_volume(dest_sp, source_sp, gain, &error);
+  SP_set_link_gain(dest_sp, source_sp, gain, &error);
 
   if (error!=NULL)
     handleError("Could not find audio connection between instrument %d and instrument %d", source_id, dest_id);
+  else
+    if (remake_mixer_strips)
+      remakeMixerStrips();
 }
 
 
-void undoAudioConnectionVolume(int64_t source_id, int64_t dest_id){
+void undoAudioConnectionGain(int64_t source_id, int64_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -854,7 +865,7 @@ void undoAudioConnectionVolume(int64_t source_id, int64_t dest_id){
   if(dest==NULL)
     return;
 
-  ADD_UNDO(AudioConnectionVolume_CurrPos(source, dest));
+  ADD_UNDO(AudioConnectionGain_CurrPos(source, dest));
 }
 
 
@@ -1130,4 +1141,11 @@ void API_instruments_call_regularly(void){
       }
     }
   }END_VECTOR_FOR_EACH;
+}
+
+
+// Mixer strips
+
+void remakeMixerStrips(void){
+  RT_schedule_mixer_strips_redraw(); // We don't want to redraw immediately in case we remake when a connection is being deleted or created, and we don't want to remake several times in a row either, or too often.
 }

@@ -113,4 +113,7 @@ extern LANGSPEC void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num
 
 extern LANGSPEC void PLUGIN_random(SoundPlugin *plugin);
 
+// Defined in Qt/Qt_Main.cpp
+extern LANGSPEC void RT_schedule_mixer_strips_redraw(void);
+
 #endif // AUDIO_SOUNDPLUGIN_PROC_H

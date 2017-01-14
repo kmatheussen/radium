@@ -156,6 +156,12 @@ bool g_radium_runs_custom_exec = false;
 
 bool g_gc_is_incremental = false;
 
+
+DEFINE_ATOMIC(bool, g_mixer_strips_needs_redraw) = false;
+void RT_schedule_mixer_strips_redraw(void){
+  ATOMIC_SET(g_mixer_strips_needs_redraw, true);
+}
+
 void obtain_keyboard_focus_without_greying(void){
   if (g_radium_runs_custom_exec==false){
     editor_has_keyboard = false;
@@ -1386,6 +1392,11 @@ protected:
     if(g_pausing_level != 0){
       RError("Qt_Main. g_pausing_level: %d", g_pausing_level);
       g_pausing_level = 0;
+    }
+
+    if (is_called_every_ms(50)){
+      if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false))
+        evalScheme("(remake-mixer-strips)");
     }
     
 #if 0

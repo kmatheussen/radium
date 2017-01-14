@@ -93,8 +93,8 @@ void SP_write_mixer_tree_to_disk(QFile *file);
 struct SoundPlugin;
 #endif
 
-extern LANGSPEC float SP_get_link_volume(struct SoundProducer *target, struct SoundProducer *source, char **error);
-extern LANGSPEC void SP_set_link_volume(struct SoundProducer *target, struct SoundProducer *source, float volume, char **error);
+extern LANGSPEC float SP_get_link_gain(struct SoundProducer *target, struct SoundProducer *source, char **error); // Don't use this one. Use getAudioConnectionGain instead.
+extern LANGSPEC void SP_set_link_gain(struct SoundProducer *target, struct SoundProducer *source, float volume, char **error); // Don't use this one. Use setAudioConnectionGain instead.
 
 extern LANGSPEC struct SoundPlugin *SP_get_plugin(const struct SoundProducer *producer);
 extern LANGSPEC struct SoundProducer *SP_get_sound_producer(struct SoundPlugin *plugin);

@@ -338,6 +338,8 @@
 (t :bc)
 (t :b)
 
+(hash-table-set! t :b 8)
+
 (define t2 (t :copy :b 2))
 
 (define tab (make-hash-table 32 eq?))
