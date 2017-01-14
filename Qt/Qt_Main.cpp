@@ -223,11 +223,14 @@ static bool g_up_downs[EVENT_DASMAX];
 
 extern "C" uint32_t add_mouse_keyswitches(uint32_t keyswitch);
 uint32_t add_mouse_keyswitches(uint32_t keyswitch){
+  
   if (SEQUENCER_has_mouse_pointer())
     keyswitch |= EVENT_MOUSE_SEQUENCER2;
   else if (MW_has_mouse_pointer())
     keyswitch |= EVENT_MOUSE_MIXER2;
-  else
+  else if (MIXERSTRIPS_has_mouse_pointer()){
+    keyswitch |= EVENT_MOUSE_MIXERSTRIPS2;
+  }else
     keyswitch |= EVENT_MOUSE_EDITOR2;
 
   return keyswitch;

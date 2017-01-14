@@ -1,3 +1,5 @@
+(provide 'mixer-strips.scm)
+
 
 (define (get-fontheight)
   (+ 4 (<gui> :get-system-fontheight)))
@@ -556,14 +558,20 @@
 
   (define peaktexttext "-inf")
 
+  (define is-sink? (= 0 (<ra> :get-num-output-channels instrument-id)))
+
+  (define effect-name (if is-sink?
+                          "System In"
+                          "System Volume"))
+  
   (define (get-volume)
     ;(c-display "           got"
-    ;           (<ra> :get-instrument-effect instrument-id "System Volume")
-    ;           (scale (<ra> :get-instrument-effect instrument-id "System Volume")
+    ;           (<ra> :get-instrument-effect instrument-id effect-name)
+    ;           (scale (<ra> :get-instrument-effect instrument-id effect-name)
     ;                  0 1
     ;                  *min-db* *max-db*)
     ;           " for " (<ra> :get-instrument-name instrument-id))
-    (scale (<ra> :get-instrument-effect instrument-id "System Volume")
+    (scale (<ra> :get-instrument-effect instrument-id effect-name)
            0 1
            *min-db* *max-db*))
 
@@ -585,7 +593,7 @@
                              (define db (slider-to-db val))
                              (when (and doit (not (= last-vol-slider db)))
                                (set! last-vol-slider db)
-                               (<ra> :set-instrument-effect instrument-id "System Volume" (scale db *min-db* *max-db* 0 1))
+                               (<ra> :set-instrument-effect instrument-id effect-name (scale db *min-db* *max-db* 0 1))
                                (if paint-voltext
                                    (paint-voltext))
                                ;;(<gui> :set-value voltext val)
@@ -635,7 +643,9 @@
           ;; background
           (<gui> :filled-box volslider background 0 0 width height)
           
-          (define col1 (<gui> :mix-colors "#010101" background 0.2)) ;; down
+          (define col1 (<gui> :mix-colors
+                              (if is-sink? "#f0f0f0" "#010101")
+                              background 0.2)) ;; down
           (define col2 (<gui> :mix-colors "#010101" background 0.9)) ;; up
 
           ;; slider
@@ -658,7 +668,7 @@
   (<gui> :add gui voltext x1 voltext_y1 middle voltext_y2)
   (<gui> :add gui peaktext peaktext_x1 peaktext_y1 peaktext_x2 peaktext_y2)
 
-  (add-gui-effect-monitor volslider instrument-id "System Volume"
+  (add-gui-effect-monitor volslider instrument-id effect-name
                           (lambda ()
                             (set! doit #f)
                             (<gui> :set-value volslider (db-to-slider (get-volume)))
@@ -671,12 +681,12 @@
          (lambda (button state x y)
            (cond ((and (= button *left-button*)
                        (= state *is-pressing*))
-                  (<ra> :undo-instrument-effect instrument-id "System Volume"))
+                  (<ra> :undo-instrument-effect instrument-id effect-name))
                  ((and (= button *right-button*)
                        (= state *is-releasing*))
                   (popup-menu "Reset" (lambda ()
-                                        (<ra> :undo-instrument-effect instrument-id "System Volume")
-                                        (<ra> :set-instrument-effect instrument-id "System Volume" (scale 0 *min-db* *max-db* 0 1))))))
+                                        (<ra> :undo-instrument-effect instrument-id effect-name)
+                                        (<ra> :set-instrument-effect instrument-id effect-name (scale 0 *min-db* *max-db* 0 1))))))
            #f))
 
   (<gui> :add-mouse-callback voltext (lambda (button state x y)
@@ -684,8 +694,8 @@
                                                    (= state *is-pressing*))
                                           (let ((maybe (<ra> :request-float "" *min-db* *max-db* #t)))
                                             (when (>= maybe *min-db*)
-                                              (<ra> :undo-instrument-effect instrument-id "System Volume")
-                                              (<ra> :set-instrument-effect instrument-id "System Volume" (scale maybe *min-db* *max-db* 0 1)))))
+                                              (<ra> :undo-instrument-effect instrument-id effect-name)
+                                              (<ra> :set-instrument-effect instrument-id effect-name (scale maybe *min-db* *max-db* 0 1)))))
                                         #t))
                                                 
 
@@ -814,14 +824,16 @@
 
 ;;!#
 
-(define (create-mixer-strips width height)
+(define (create-mixer-strips width height num-rows)
 
   (define strip-separator-width 5)
   (define instruments-buses-separator-width (* (get-fontheight) 2))
 
   ;;(define mixer-strips (<gui> :widget 800 800))
-  (define mixer-strips (<gui> :horizontal-scroll)) ;;widget 800 800))
-  (<gui> :set-layout-spacing mixer-strips strip-separator-width 0 0 0 0)
+  ;;(define mixer-strips (<gui> :horizontal-scroll)) ;;widget 800 800))
+  (define mixer-strips (<gui> :scroll-area #t #t))
+  
+  ;;(<gui> :set-layout-spacing mixer-strips strip-separator-width 0 0 0 0)
   
   ;;(define x1 0)
   (define instruments (keep (lambda (id)
@@ -847,26 +859,28 @@
                             buses
                             buses-plugin-buses))
 
+  (define num-strips (+ (length instruments)
+                        (length all-buses)))
+
 
   (define min-mixer-strip-width (1+ (floor (<gui> :text-width "-14.2-23.5"))))
   ;;(define mixer-strip-width (1+ (floor (<gui> :text-width "-14.2 -23.5 ----"))))
   (define mixer-strip-width (- (max min-mixer-strip-width
                                     (floor (/ (- width
                                                  instruments-buses-separator-width)
-                                              (+ (length instruments)
-                                                 (length all-buses)))))
-                               strip-separator-width))
+                                              num-strips)))
+                               strip-separator-width
+                               0))
 
   (define fit-vertically? (<= (+ 0
                                  (* (+ (length instruments)
                                        (length all-buses))
-                                   strip-separator-width)
-                                 (* mixer-strip-width (+ (length instruments)
-                                                         (length all-buses)))
+                                    strip-separator-width)
+                                 (* mixer-strip-width num-strips)
                                  instruments-buses-separator-width)
                               width))
 
-  (when (not fit-vertically?)
+  '(when (not fit-vertically?)
     (define scroll-bar-height (<gui> :height
                                      (<gui> :child mixer-strips "horizontalScrollBar")))
     (set! height (- height
@@ -877,19 +891,46 @@
                     (<ra> :get-instrument-name i))
                   buses-plugin-buses))
 
+  (define mixer-strip-num 0)
+  (define num-strips-per-row (floor (/ num-strips num-rows)))
+  (define x1 0)
+  (define y1 0)
+  (define y2 (floor (/ (- height 5) num-rows)))
+  
   ;; no-input instruments
-  (for-each (lambda (instrument-id)
-              (<gui> :add mixer-strips (create-mixer-strip instrument-id mixer-strip-width height)))
+  (for-each (lambda (instrument-id)              
+              (define x2 (+ x1 mixer-strip-width))
+              (<gui> :add mixer-strips (create-mixer-strip instrument-id mixer-strip-width (- y2 y1)) x1 y1 x2 y2)
+              (set! mixer-strip-num (1+ mixer-strip-num))
+              (if (= num-strips-per-row mixer-strip-num)
+                  (begin
+                    (set! x1 0)
+                    (set! y1 y2)
+                    (set! y2 (+ y2 (floor (/ (- heigth 5) num-rows))))
+                    (set! mixer-strip-num 0))
+                  (set! x1 (+ x2 strip-separator-width))))
             (sort-instruments-by-mixer-position
              instruments))
 
   ;;(set! x1 (+ x1 40))
 
-  (<gui> :add-layout-space mixer-strips instruments-buses-separator-width 10)
+  ;;(<gui> :add-layout-space mixer-strips instruments-buses-separator-width 10)
+  (if (> x1 0)
+      (set! x1 (+ x1 instruments-buses-separator-width)))
   
   ;; buses
   (for-each (lambda (instrument-id)
-              (<gui> :add mixer-strips (create-mixer-strip instrument-id mixer-strip-width height)))
+              (define x2 (+ x1 mixer-strip-width))
+              (<gui> :add mixer-strips (create-mixer-strip instrument-id mixer-strip-width (- y2 y1)) x1 y1 x2 y2)
+              (c-display "x1/x2" x1 x2 ",   (= num-strips-per-row mixer-strip-num)" num-strips-per-row mixer-strip-num num-rows num-strips)
+              (set! mixer-strip-num (1+ mixer-strip-num))
+              (if (= num-strips-per-row mixer-strip-num)
+                  (begin
+                    (set! x1 0)
+                    (set! y1 y2)
+                    (set! y2 (+ y2 (floor (/ (- height 5) num-rows))))
+                    (set! mixer-strip-num 0))
+                  (set! x1 (+ x2 strip-separator-width))))              
             (sort-instruments-by-mixer-position
              all-buses))
 
@@ -908,17 +949,20 @@
 
 (define *mixer-strips* '())
 
-(define (create-mixer-strips-gui)
-  (define parent (<gui> :horizontal-layout))
+(define (create-mixer-strips-gui num-rows)
+  ;;(define parent (<gui> :horizontal-layout))
+  ;;(define parent (<gui> :scroll-area #t #t))
+  (define parent (<gui> :widget))
 
   (define width 1000)
   (define height 800)
 
   (<gui> :set-size parent width height)
   (<gui> :set-pos parent 600 50)
-  (<gui> :set-layout-spacing parent 0 0 0 0 0)
+  ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
 
   (<gui> :show parent)
+  ;;(<gui> :set-full-screen parent)
 
   (define das-mixer-strips #f)
   
@@ -927,12 +971,12 @@
            (lambda ()
              (<gui> :disable-updates parent)
              
-             (define new-mixer-strips (create-mixer-strips width height))
+             (define new-mixer-strips (create-mixer-strips width height num-rows))
              
              (if das-mixer-strips
                  (<gui> :close das-mixer-strips))
 
-             (<gui> :add parent new-mixer-strips)
+             (<gui> :add parent new-mixer-strips 0 0 width height)
              
              (<gui> :show new-mixer-strips)
              (set! das-mixer-strips new-mixer-strips)
@@ -952,6 +996,7 @@
 
   (<gui> :add-resize-callback parent remake)
 
+  (<ra> :inform-about-gui-being-a-mixer-strips parent)
   (push-back! *mixer-strips* mixer-strips)
 
   mixer-strips
@@ -962,10 +1007,22 @@
               ((mixer-strips :remake)))
             *mixer-strips*))
 
-(let ((start (time)))
-  (set! *mixer-strips* '())
-  (create-mixer-strips-gui)
-  (c-display "   Time used to open mixer:" (- (time) start)))
+(define (toggle-mixer-strips-fullscreen)
+  (define set-to 0)
+  (for-each (lambda (mixer-strips)
+              (if (number? set-to)
+                  (set! set-to (not (<gui> :is-full-screen (mixer-strips :gui)))))
+              (<gui> :set-full-screen (mixer-strips :gui) set-to))
+            *mixer-strips*))
+
+
+;; main
+(when (not *is-initializing*)
+  (let ((start (time)))
+    (set! *mixer-strips* '())
+    (create-mixer-strips-gui 1)
+    (c-display "   Time used to open mixer:" (- (time) start))))
+
 
 
 

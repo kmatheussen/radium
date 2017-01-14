@@ -1868,7 +1868,24 @@ void gui_setSize(int64_t guinum, int width, int height){
   gui->_widget->resize(width, height);
 }
 
+void gui_setFullScreen(int64_t guinum, bool enable){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  if(enable)
+    gui->_widget->showFullScreen();
+  else
+    gui->_widget->showNormal();
+}
   
+bool gui_isFullScreen(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return false;
+
+  return gui->_widget->isFullScreen();
+}
   
 void gui_setBackgroundColor(int64_t guinum, const_char* color){
   Gui *gui = get_gui(guinum);
@@ -1962,8 +1979,8 @@ void gui_setMaxHeight(int64_t guinum, int minheight){
 }
 
 
-// canvas
-///////////
+// audio meter
+////////////////
 
 int64_t gui_verticalAudioMeter(int instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
@@ -2001,6 +2018,58 @@ void gui_resetAudioMeterPeak(int guinum){
   meter->resetPeak();
 }
 
+
+///////////////// Mixer strips
+///////////////////////////////
+
+static QVector<int64_t> g_mixerstrip_guinums;
+void informAboutGuiBeingAMixerStrips(int64_t guinum){
+  g_mixerstrip_guinums.push_back(guinum);
+}
+
+void showMixerStrips(int num_rows){
+  evalScheme("(create-mixer-strips-gui 1)");
+}
+
+bool MIXERSTRIPS_has_mouse_pointer(void){
+  QVector<int64_t> to_remove;
+
+  bool ret = false;
+  
+  for(int64_t guinum : g_mixerstrip_guinums){
+
+    Gui *gui = g_guis[(int)guinum];
+    
+    if (gui==NULL) {
+     
+      to_remove.push_back(guinum);
+
+    } else {
+
+      QWidget *widget = gui->_widget;
+      
+      QPoint p = widget->mapFromGlobal(QCursor::pos());
+      int x = p.x();
+      int y = p.y();
+
+      if (true
+          && x >= 0
+          && x <  widget->width()
+          && y >= 0
+          && y <  widget->height()
+          )
+        {
+          ret = true;
+          break;
+        }
+    }
+  }
+
+  for(int64_t guinum : to_remove)
+    g_mixerstrip_guinums.removeOne(guinum);
+  
+  return ret;
+}
 
 ///////////////// Drawing
 /////////////////////////////

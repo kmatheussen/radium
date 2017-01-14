@@ -126,6 +126,7 @@
 (define (init-step-2)
   (set! *is-initializing* #t)
   (my-require 'mouse.scm)
+  (my-require 'mixer-strips.scm)
   (set! *is-initializing* #f))
 
 

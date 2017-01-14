@@ -189,6 +189,7 @@ class Parser:
         self.outlinenum=0
         self.mouseEditorKey = tuple_has_key(keysub,"MOUSE_EDITOR")
         self.mouseMixerKey = tuple_has_key(keysub,"MOUSE_MIXER")
+        self.mouseMixerStripsKey = tuple_has_key(keysub,"MOUSE_MIXERSTRIPS")
         self.mouseSequencerKey = tuple_has_key(keysub,"MOUSE_SEQUENCER")
         
     def readLine(self):
@@ -382,6 +383,8 @@ class Parser:
             return True
         elif self.mouseMixerKey in self.qualifiers:
             return True
+        elif self.mouseMixerStripsKey in self.qualifiers:
+            return True
         elif self.mouseSequencerKey in self.qualifiers:
             return True
         else:
@@ -536,6 +539,7 @@ def start(keyhandles,filehandle,filehandle2,outfilehandle):
             if not parser.mouseInQualifiers():
                 addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, [parser.mouseEditorKey])
                 addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, [parser.mouseMixerKey])
+                addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, [parser.mouseMixerStripsKey])
                 addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, [parser.mouseSequencerKey])
             else:
                 addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, [])
