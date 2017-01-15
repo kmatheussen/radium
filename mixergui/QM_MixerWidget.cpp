@@ -1326,8 +1326,12 @@ MixerWidget *g_mixer_widget = NULL;
 
 namespace{
   class MixerWidgetTimer : public QTimer{
+
+    int64_t counter = 0;
     
     void 	timerEvent ( QTimerEvent * e ){
+      counter++;
+      
       if (g_mixer_widget->isVisible()){
 
         //printf("UPDATING mixer\n");
@@ -1392,12 +1396,26 @@ namespace{
                   chip->update();
                   chip->_last_updated_recording = is_recording;
                 }
-                
-                if (chip->_last_updated_autosuspending != is_autosuspending){
+
+                // turn on is_autosuspending (only gfx)
+                if (chip->_last_updated_autosuspending==true &&  is_autosuspending==false){
+                  chip->_last_updated_autosuspending = false;
                   chip->update();
-                  chip->_last_updated_autosuspending = is_autosuspending;
+                  //printf("Turned off autosuspending for %s\n", patch->name);
                 }
-                
+
+                if (is_autosuspending==false)
+                  chip->_autosuspend_on_time = counter;
+                                  
+                // turn off is_autosuspending (only gfx) (wait at least one second to turn if on, to avoid flickering)
+                if (chip->_last_updated_autosuspending==false && is_autosuspending==true){
+                  //printf("Turned on autosuspending for %s (%f)\n", patch->name, (TIME_get_ms() - _autosuspend_on_time));
+                  if ( (counter - chip->_autosuspend_on_time) > (1000 / interval())){
+                    chip->_last_updated_autosuspending = true;
+                    chip->update();
+                  }
+                }
+
                 
                 if (chip->_input_slider != NULL)
                   SLIDERPAINTER_call_regularly(chip->_input_slider);

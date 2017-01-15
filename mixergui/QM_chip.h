@@ -358,6 +358,7 @@ public:
   bool _last_updated_bypass;
   bool _last_updated_recording;
   bool _last_updated_autosuspending;
+  int64_t _autosuspend_on_time = 0;
   
   float _slider_start_value;
   float _slider_start_pos;

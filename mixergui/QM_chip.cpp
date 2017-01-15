@@ -1285,7 +1285,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }
     
     // Bluing if autosuspending
-    if (SP_is_autosuspending(plugin->sp)){
+    if (_last_updated_autosuspending) { //SP_is_autosuspending(plugin->sp)){
       //QColor c(0,0,60,80);
       QColor c = get_qcolor(MIXER_AUTOSUSPENSION_COLOR_NUM);
       //c.setAlpha(35);
