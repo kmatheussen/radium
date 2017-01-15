@@ -460,6 +460,8 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
 
   // Create mixer object
   CHIP_create(sound_producer, x, y);
+  //MW_move_chip_to_slot(patch, x, y);
+  MW_cleanup_chip_positions();
   
   // Create instrument widget
   InstrumentWidget_create_audio_instrument_widget(patch);

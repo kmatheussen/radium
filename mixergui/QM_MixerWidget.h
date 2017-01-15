@@ -194,11 +194,16 @@ extern LANGSPEC void MW_autoconnect_plugin(SoundPlugin *plugin);
 extern LANGSPEC void MW_connect(struct Patch *source, struct Patch *dest);
 extern LANGSPEC void MW_econnect(struct Patch *source, struct Patch *dest);
 
+extern LANGSPEC bool MW_disconnect(struct Patch *source, struct Patch *dest);
+extern LANGSPEC bool MW_edisconnect(struct Patch *source, struct Patch *dest);
+
 extern LANGSPEC bool MW_move_chip_to_slot(struct Patch *patch, float x, float y);
 
 extern LANGSPEC void MW_update_all_chips(void);
 
-extern LANGSPEC void MW_cleanup(bool is_loading);
+extern LANGSPEC void MW_cleanup(bool is_loading); // Deletes all chips
+extern LANGSPEC void MW_cleanup_chip_positions(void); // Cleans up chip positions.
+extern LANGSPEC void MW_get_slotted_x_y(float from_x, float from_y, float *x, float *y); // Workaround.
 
 extern LANGSPEC hash_t *MW_get_connections_state(const vector_t *patches);
 extern LANGSPEC hash_t *MW_get_state(const vector_t *patches, bool include_ab);

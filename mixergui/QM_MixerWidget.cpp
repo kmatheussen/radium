@@ -419,6 +419,13 @@ static void get_slotted_x_y(float from_x, float from_y, float &x, float &y){
   y = y1;
 }
 
+void MW_get_slotted_x_y(float from_x, float from_y, float *x, float *y){
+  float to_x, to_y;
+  get_slotted_x_y(from_x, from_y, to_x, to_y);
+  *x = to_x;
+  *y = to_y;
+}
+
 static bool move_chip_to_slot(Chip *chip, float from_x, float from_y){
   float x,y;
   get_slotted_x_y(from_x, from_y, x, y);
@@ -509,6 +516,10 @@ static bool cleanup_a_chip_position(MyScene *myscene){
 // Make sure no chips are placed in the same slot
 static void cleanup_chip_positions(MyScene *myscene){
   while(cleanup_a_chip_position(myscene)==true);
+}
+
+void MW_cleanup_chip_positions(void){
+  cleanup_chip_positions(&g_mixer_widget->scene);
 }
 
 static bool stop_moving_chips(MyScene *myscene, const QPointF &mouse_pos){
@@ -1808,6 +1819,23 @@ void MW_connect(Patch *source, Patch *dest){
   CHIP_connect_chips(&g_mixer_widget->scene, chip_source, chip_dest);
 }
 
+bool MW_disconnect(Patch *source, Patch *dest){
+  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  for (int i = 0; i < das_items.size(); ++i) {
+    AudioConnection *connection = dynamic_cast<AudioConnection*>(das_items.at(i));
+    if(connection!=NULL){
+      Patch *a = CHIP_get_patch(connection->from);
+      Patch *b = CHIP_get_patch(connection->to);
+      if (a==source && b==dest) {
+        CONNECTION_delete_audio_connection(connection);
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 void MW_econnect(Patch *source, Patch *dest){
   Chip *chip_source = CHIP_get(&g_mixer_widget->scene, source);
   R_ASSERT_RETURN_IF_FALSE(chip_source!=NULL);
@@ -1816,6 +1844,23 @@ void MW_econnect(Patch *source, Patch *dest){
   R_ASSERT_RETURN_IF_FALSE(chip_dest!=NULL);
 
   CHIP_econnect_chips(&g_mixer_widget->scene, chip_source, chip_dest);
+}
+
+bool MW_edisconnect(Patch *source, Patch *dest){
+  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  for (int i = 0; i < das_items.size(); ++i) {
+    EventConnection *connection = dynamic_cast<EventConnection*>(das_items.at(i));
+    if(connection!=NULL){
+      Patch *a = CHIP_get_patch(connection->from);
+      Patch *b = CHIP_get_patch(connection->to);
+      if (a==source && b==dest) {
+        CONNECTION_delete_event_connection(connection);
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 #if 0

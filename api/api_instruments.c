@@ -676,14 +676,32 @@ float getInstrumentY(int64_t instrument_id){
   return CHIP_get_pos_y(patch);
 }
 
-void setInstrumentPosition(float x, float y, int64_t instrument_id){
+// workaround
+/*
+float getMixerSlottedX(float from_x){
+  float from_y=0,x,y;
+  MW_get_slotted_x_y(from_x, from_y, &x, &y);
+  return x;
+}
+
+// workaround
+float getMixerSlottedY(float from_y){
+  float from_x=0,x,y;
+  MW_get_slotted_x_y(from_x, from_y, &x, &y);
+  return y;
+}
+*/
+
+void setInstrumentPosition(float x, float y, int64_t instrument_id, bool auto_slot){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
 
   ADD_UNDO(ChipPos_CurrPos(patch));
-  
-  CHIP_set_pos(patch,x,y);
+
+  float to_x,to_y;
+  MW_get_slotted_x_y(x, y, &to_x, &to_y);
+  CHIP_set_pos(patch,to_x,to_y);
 }
 
 void autopositionInstrument(int64_t instrument_id){
@@ -774,6 +792,10 @@ int64_t getEventConnectionDestInstrument(int connectionnum, int64_t instrument_i
   return dest->id;
 }
 
+void undoMixerConnections(void){
+  ADD_UNDO(MixerConnections_CurrPos());  
+}
+
 void createAudioConnection(int64_t source_id, int64_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
@@ -784,6 +806,44 @@ void createAudioConnection(int64_t source_id, int64_t dest_id){
     return;
 
   MW_connect(source, dest); 
+}
+
+void deleteAudioConnection(int64_t source_id, int64_t dest_id){
+  struct Patch *source = getAudioPatchFromNum(source_id);
+  if(source==NULL)
+    return;
+
+  struct Patch *dest = getAudioPatchFromNum(dest_id);
+  if(dest==NULL)
+    return;
+
+  if (MW_disconnect(source, dest)==false)
+    handleError("Could not find audio connection between \"%s\" and \"%s\"", source->name, dest->name);
+}
+
+void createEventConnection(int64_t source_id, int64_t dest_id){
+  struct Patch *source = getAudioPatchFromNum(source_id);
+  if(source==NULL)
+    return;
+
+  struct Patch *dest = getAudioPatchFromNum(dest_id);
+  if(dest==NULL)
+    return;
+
+  MW_econnect(source, dest); 
+}
+                           
+void deleteEventConnection(int64_t source_id, int64_t dest_id){
+  struct Patch *source = getAudioPatchFromNum(source_id);
+  if(source==NULL)
+    return;
+
+  struct Patch *dest = getAudioPatchFromNum(dest_id);
+  if(dest==NULL)
+    return;
+
+  if (MW_edisconnect(source, dest)==false)
+    handleError("Could not find audio connection between \"%s\" and \"%s\"", source->name, dest->name);
 }
 
 float getAudioConnectionGain(int64_t source_id, int64_t dest_id){
@@ -869,18 +929,6 @@ void undoAudioConnectionGain(int64_t source_id, int64_t dest_id){
 }
 
 
-void createEventConnection(int64_t source_id, int64_t dest_id){
-  struct Patch *source = getAudioPatchFromNum(source_id);
-  if(source==NULL)
-    return;
-
-  struct Patch *dest = getAudioPatchFromNum(dest_id);
-  if(dest==NULL)
-    return;
-
-  MW_econnect(source, dest); 
-}
-                           
 int getNumInputChannels(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -1028,6 +1076,31 @@ void stopNote(int note_id, int midi_channel, int64_t instrument_id){
                                        ));
 }
 
+bool showInstrumentGui(int64_t instrument_id, bool show_instrument_window_if_not_visible){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  //if(showInstrumentWidgetWhenDoubleClickingSoundObject())
+  if(show_instrument_window_if_not_visible)
+    GFX_InstrumentWindowToFront();
+
+  struct Instruments *instrument = get_audio_instrument();
+  instrument->PP_Update(instrument,patch);
+  
+  struct SoundPlugin *plugin = patch->patchdata;
+  if (plugin != NULL){
+    
+    if(plugin->type->show_gui != NULL) {
+    
+      plugin->type->show_gui(plugin);
+      return true;
+      
+    }
+  }
+
+  return false;
+}
 
 /******** Effect monitors ************/
 

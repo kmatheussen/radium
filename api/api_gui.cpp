@@ -54,6 +54,16 @@
       classname::mouseMoveEvent(event);                                 \
   }
 
+
+#define DOUBLECLICK_OVERRIDER(classname)                                \
+  void mouseDoubleClickEvent(QMouseEvent *event) override{              \
+    if (_doubleclick_callback==NULL)                                    \
+      classname::mouseDoubleClickEvent(event);                          \
+    else                                                                \
+      Gui::mouseDoubleClickEvent(event);                                \
+  }                                                                     
+
+
 #define RESIZE_OVERRIDER(classname)                                     \
   void resizeEvent( QResizeEvent *event) override {                     \
     if (_image!=NULL)                                                   \
@@ -75,6 +85,7 @@
 
 #define OVERRIDERS(classname)                                           \
   MOUSE_OVERRIDERS(classname)                                           \
+  DOUBLECLICK_OVERRIDER(classname)                                      \
   RESIZE_OVERRIDER(classname)                                           \
   PAINT_OVERRIDER(classname)
 
@@ -232,6 +243,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (_mouse_callback!=NULL)
         s7extra_unprotect(_mouse_callback);
 
+      if (_doubleclick_callback!=NULL)
+        s7extra_unprotect(_doubleclick_callback);
+
       if (_resize_callback!=NULL)
         s7extra_unprotect(_resize_callback);
 
@@ -303,6 +317,28 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
 
 
+    /************ DOUBLECLICK *******************/
+
+    func_t *_doubleclick_callback = NULL;
+
+    void mouseDoubleClickEvent(QMouseEvent *event){
+      R_ASSERT_RETURN_IF_FALSE(_doubleclick_callback!=NULL);
+      event->accept();
+
+      s7extra_callFunc_void_void(_doubleclick_callback);
+    }
+
+    void addDoubleClickCallback(func_t* func){      
+      if (_doubleclick_callback!=NULL){
+        handleError("Gui %d already has a doubleclick callback.", _gui_num);
+        return;
+      }
+
+      _doubleclick_callback = func;
+      s7extra_protect(_doubleclick_callback);
+    }
+
+    
     /************ RESIZE *******************/
     
     func_t *_resize_callback = NULL;
@@ -732,6 +768,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
     
     MOUSE_OVERRIDERS(QWidget);
+    DOUBLECLICK_OVERRIDER(QWidget);
     RESIZE_OVERRIDER(QWidget);
 
     void addPeakCallback(func_t *func, int guinum){
@@ -1558,6 +1595,15 @@ void gui_addMouseCallback(int64_t guinum, func_t* func){
     return;
 
   gui->addMouseCallback(func);
+}
+
+void gui_addDoubleClickCallback(int64_t guinum, func_t* func){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  gui->addDoubleClickCallback(func);
 }
 
 void gui_addResizeCallback(int64_t guinum, func_t* func){

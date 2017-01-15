@@ -51,11 +51,11 @@
            (define x2 (<ra> :get-instrument-x i2))
            (define y1 (<ra> :get-instrument-y i1))
            (define y2 (<ra> :get-instrument-y i2))
-           (cond ((< x1 x2)
+           (cond ((< y1 y2)
                   #t)
-                 ((> x1 x2)
+                 ((> y1 y2)
                   #f)
-                 ((< y1 y2)
+                 ((< x1 x2)
                   #t)
                  (else
                   #f)))))
@@ -218,6 +218,47 @@
 
 
 !!#
+
+;; instrument-id2 can also be list of instrument-ids.
+(define (insert-new-instrument-between instrument-id1 instrument-id2 position-at-instrument-1?)
+  (if (not instrument-id2)
+      (assert position-at-instrument-1?))
+  (if (list? instrument-id2)
+      (assert position-at-instrument-1?))              
+  (define instrument-description (<ra> :instrument-description-popup-menu))
+  (if (not (string=? "" instrument-description))
+      (begin
+        (define position-instrument (or (if position-at-instrument-1?
+                                            instrument-id1
+                                            instrument-id2)
+                                        instrument-id2
+                                        instrument-id1))
+        (define x (+ (<ra> :get-instrument-x position-instrument) 0))
+        (define y (+ (<ra> :get-instrument-y position-instrument) 0))
+        
+        (undo-block
+         (lambda ()
+           (define new-instrument (<ra> :create-audio-instrument-from-description instrument-description "" x y))
+           (if (not (= -1 new-instrument))
+               (begin
+                 (<ra> :set-instrument-position (+ 5 x) (+ 5 y) new-instrument #t)
+                 
+                 (<ra> :undo-mixer-connections)
+
+                 (if (and instrument-id1 instrument-id2)
+                     (<ra> :delete-audio-connection instrument-id1 instrument-id2))
+
+                 (if instrument-id1
+                     (<ra> :create-audio-connection instrument-id1 new-instrument))
+
+                 (if instrument-id2
+                     (<ra> :create-audio-connection new-instrument instrument-id2))
+
+                 new-instrument)
+
+               #f))))
+      #f))
+
 
 
 

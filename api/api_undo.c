@@ -62,6 +62,10 @@ void stopIgnoringUndo(void){
   Undo_stop_ignoring_undo_operations();
 }
 
+void cancelLastUndo(void){
+  Undo_CancelLastUndo();
+}
+
 void addUndoBlock(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   ADD_UNDO(Block_CurrPos(window));

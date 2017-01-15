@@ -67,7 +67,8 @@
   (<gui> :add gui name x1 y1 x2 y2))
 
 
-(define (strip-slider instrument-id make-undo get-scaled-value get-value-text set-value)
+
+(define (strip-slider instrument-id make-undo get-scaled-value get-value-text set-value popup-menu-func delete-instrument)
   (define instrument-name (<ra> :get-instrument-name instrument-id))
   ;;(define widget (<gui> :widget 100 (get-fontheight)))
   (define widget #f)
@@ -95,12 +96,24 @@
   (<gui> :set-min-height widget (get-fontheight))
 
   (<gui> :add-resize-callback widget paintit)
-
+  
   (<gui> :add-mouse-callback widget (lambda (button state x y)
                                       (when (and (= button *left-button*)
                                                  (= state *is-pressing*))
                                         (make-undo))
+                                      (when (and (= button *right-button*)
+                                                 (= state *is-releasing*))
+                                        (popup-menu-func (< y (/ (<gui> :height widget) 2))))
+                                      (when (and (= button *right-button*)
+                                                 (= state *is-pressing*)
+                                                 (<ra> :shift-pressed))
+                                        (delete-instrument))
                                       #f))
+
+  (<gui> :add-double-click-callback widget (lambda ()
+                                             (<ra> :cancel-last-undo)
+                                             (<ra> :show-instrument-gui instrument-id (<ra> :show-instrument-widget-when-double-clicking-sound-object))
+                                             ))
 
   ;;(paintit (<gui> :width widget)
   ;;         (<gui> :height widget))
@@ -110,10 +123,55 @@
   widget)
 
 
-(define (create-mixer-strip-plugin gui instrument-id)
+
+;; Finds the next plugin in a plugin path. 'instrument-id' is the plugin to start searching from.
+(define (find-next-plugin-instrument instrument-id)
+  (let loop ((out-instruments (reverse (sort-instruments-by-mixer-position
+                                        (get-instruments-connecting-from-instrument instrument-id)))))
+    (if (null? out-instruments)
+        #f
+        (let* ((out-instrument (car out-instruments))
+               (inputs (get-instruments-connecting-to-instrument out-instrument)))
+          (if (= 1 (length inputs))
+              out-instrument
+              (loop (cdr out-instruments)))))))
+
+
+(define (create-mixer-strip-plugin gui parent-instrument-id instrument-id)
   (define (get-drywet)
     (<ra> :get-instrument-effect instrument-id "System Dry/Wet"))
-    
+
+  (define (delete-instrument)
+    (define ids (get-instruments-connecting-from-instrument instrument-id))
+    (undo-block
+     (lambda ()
+       (<ra> :delete-instrument instrument-id)
+       (for-each (lambda (id)
+                   (<ra> :create-audio-connection parent-instrument-id id))
+                 ids)))
+    (remake-mixer-strips))
+
+
+  (define (popup-menu-func upper-half)
+    (c-display "upper" upper-half)
+    (popup-menu "Delete" delete-instrument                
+                "Replace" (lambda ()
+                            (replace-instrument instrument-id "")
+                            #t)
+                "-----------"
+                "Insert Plugin" (lambda ()
+                                  (if upper-half
+                                      (insert-new-instrument-between parent-instrument-id instrument-id #t) ;; before
+                                      (insert-new-instrument-between instrument-id (find-next-plugin-instrument instrument-id) #f)) ;; after
+                                  #t)
+                "Insert Send" (lambda ()
+                                #t)
+                "----------"
+                "Reset value" (lambda ()
+                                #t)
+                )
+    )
+
   (define doit #t)
   (define slider (strip-slider instrument-id
                                (lambda ()
@@ -123,7 +181,10 @@
                                  (<-> (round (* 100 scaled-value)) "%"))
                                (lambda (new-scaled-value)
                                  (if (and doit (not (= new-scaled-value (get-drywet))))                                     
-                                     (<ra> :set-instrument-effect instrument-id "System Dry/Wet" new-scaled-value)))))
+                                     (<ra> :set-instrument-effect instrument-id "System Dry/Wet" new-scaled-value)))
+                               popup-menu-func
+                               delete-instrument
+                               ))
 
   (add-gui-effect-monitor slider instrument-id "System Dry/Wet"
                           (lambda ()
@@ -136,7 +197,13 @@
 
 ;; A sink plugin. For instance "System Out".
 (define (create-mixer-strip-sink-plugin gui instrument-id)
+
+  (define (delete-instrument)
+    #f)
   
+  (define (popup-menu-func upper-half)
+    #f)
+
   (define (get-db-value)
     (scale (<ra> :get-instrument-effect instrument-id "System In")
            0 1
@@ -165,7 +232,11 @@
                                  ;;(c-display "new-db:" db ", old-db:" last-value)
                                  (when (and doit (not (= last-value db)))
                                    (set! last-value db)
-                                   (<ra> :set-instrument-effect instrument-id "System In" (scale db *min-db* *max-db* 0 1))))))
+                                   (<ra> :set-instrument-effect instrument-id "System In" (scale db *min-db* *max-db* 0 1))))
+
+                               popup-menu-func
+                               delete-instrument
+                               ))
                                      
 
   (add-gui-effect-monitor slider instrument-id "System In"
@@ -222,6 +293,12 @@
 (define (create-mixer-strip-send gui target-instrument-id make-undo get-db-value set-db-value add-monitor)
   (define horiz (get-mixer-strip-send-horiz gui))
 
+  (define (delete-instrument)
+    #f)
+  
+  (define (popup-menu-func upper-half)
+    #f)
+
   (define doit #t)
 
   (define last-value (get-db-value))
@@ -246,7 +323,11 @@
                                  (c-display "new-db:" db ", old-db:" last-value)
                                  (when (and doit (not (= last-value db)))
                                    (set! last-value db)
-                                   (set-db-value db)))))
+                                   (set-db-value db)))
+
+                               popup-menu-func
+                               delete-instrument))
+  
   (if add-monitor
       (add-monitor slider
                    (lambda ()
@@ -322,21 +403,22 @@
   (define out-instruments (sort-instruments-by-mixer-position ;; Needs to be sorted.
                            (get-instruments-connecting-from-instrument instrument-id)))
 
-  (define plugin-instrument #f)
+  (define next-plugin-instrument (find-next-plugin-instrument instrument-id))
 
   (define ret (keep (lambda (out-instrument)
-                      (define inputs (get-instruments-connecting-to-instrument out-instrument))
-                      (if (and (not plugin-instrument)
-                               (= 1 (length inputs)))
-                          (begin
-                            (set! plugin-instrument out-instrument)
-                            #f)
-                          (= 1 (length inputs))))
+                      (if (= 1 (length (get-instruments-connecting-to-instrument out-instrument)))
+                          (if (not next-plugin-instrument)
+                              #t
+                              (if (= next-plugin-instrument out-instrument)
+                                  #f
+                                  #t))
+                          #f))
+                               
                     out-instruments))
 
-  (if plugin-instrument
+  (if next-plugin-instrument
       (append ret 
-              (get-returned-plugin-buses plugin-instrument))
+              (get-returned-plugin-buses next-plugin-instrument))
       ret))
 
 ;; Returns the last plugin.
@@ -356,25 +438,23 @@
     
   (define out-instruments (sort-instruments-by-mixer-position
                            (get-instruments-connecting-from-instrument instrument-id)))
-  (define plugin-instrument #f)
-  
+  (define next-plugin-instrument (find-next-plugin-instrument instrument-id))
+
+  ;; create plugin sends (i.e. non-bus sends)
   (for-each (lambda (out-instrument)
-              (define inputs (get-instruments-connecting-to-instrument out-instrument))
-              (if (and (not plugin-instrument)
-                       (= 1 (length inputs)))
-                  (set! plugin-instrument out-instrument)
-                  (begin
-                    (create-mixer-strip-audio-connection-send gui
-                                                              instrument-id
-                                                              out-instrument))))
+              (if (or (not next-plugin-instrument)
+                      (not (= next-plugin-instrument out-instrument)))
+                  (create-mixer-strip-audio-connection-send gui
+                                                            instrument-id
+                                                            out-instrument)))
             out-instruments)
   
-  (if plugin-instrument
+  (if next-plugin-instrument
       (begin
-        (if (= 0 (<ra> :get-num-output-channels plugin-instrument))
-            (create-mixer-strip-sink-plugin gui plugin-instrument)
-            (create-mixer-strip-plugin gui plugin-instrument))
-        (create-mixer-strip-path gui plugin-instrument))
+        (if (= 0 (<ra> :get-num-output-channels next-plugin-instrument))
+            (create-mixer-strip-sink-plugin gui next-plugin-instrument)
+            (create-mixer-strip-plugin gui instrument-id next-plugin-instrument))
+        (create-mixer-strip-path gui next-plugin-instrument))
       instrument-id))
 
 
@@ -998,6 +1078,14 @@
 
   (<ra> :inform-about-gui-being-a-mixer-strips parent)
   (push-back! *mixer-strips* mixer-strips)
+
+  (<gui> :add-close-callback parent
+         (lambda ()
+           (set! *mixer-strips*
+                 (remove (lambda (a-mixer-strip)
+                           (= (a-mixer-strip :gui)
+                              parent))
+                         *mixer-strips*))))
 
   mixer-strips
   )

@@ -1327,22 +1327,16 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
 bool Chip::myMouseDoubleClickEvent (float x, float y) {
 
-  if(showInstrumentWidgetWhenDoubleClickingSoundObject())
-    GFX_InstrumentWindowToFront();
+  int x1,y1,x2,y2;
+  get_name_coordinates(x1,y1,x2,y2);
   
-  if(SP_get_plugin(_sound_producer)->type->show_gui != NULL) {
-    
-    int x1,y1,x2,y2;
-    get_name_coordinates(x1,y1,x2,y2);
+  //printf("I'm double clicked! %f,%f (%d,%d -> %d, %d)\n",x,y,x1,y1,x2,y2);
 
-    printf("I'm double clicked! %f,%f (%d,%d -> %d, %d)\n",x,y,x1,y1,x2,y2);
-
-    if(x>x1 && x<x2 && y>y1 && y<y2){
-      SP_get_plugin(_sound_producer)->type->show_gui(SP_get_plugin(_sound_producer));
-      return true;
-    }
-
+  if(x>x1 && x<x2 && y>y1 && y<y2){
+    struct Patch *patch = CHIP_get_patch(this);
+    return showInstrumentGui(patch->id, showInstrumentWidgetWhenDoubleClickingSoundObject());
   }
+
   //QGraphicsItem::mouseDoubleClickEvent(event);
 
   return false;
