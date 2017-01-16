@@ -796,7 +796,7 @@ void undoMixerConnections(void){
   ADD_UNDO(MixerConnections_CurrPos());  
 }
 
-void createAudioConnection(int64_t source_id, int64_t dest_id){
+void createAudioConnection(int64_t source_id, int64_t dest_id, float gain){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -804,8 +804,11 @@ void createAudioConnection(int64_t source_id, int64_t dest_id){
   struct Patch *dest = getAudioPatchFromNum(dest_id);
   if(dest==NULL)
     return;
-
+  
   MW_connect(source, dest); 
+
+  if (gain != 1.0)
+    setAudioConnectionGain(source_id, dest_id, gain, true);
 }
 
 void deleteAudioConnection(int64_t source_id, int64_t dest_id){
@@ -819,6 +822,18 @@ void deleteAudioConnection(int64_t source_id, int64_t dest_id){
 
   if (MW_disconnect(source, dest)==false)
     handleError("Could not find audio connection between \"%s\" and \"%s\"", source->name, dest->name);
+}
+
+bool hasAudioConnection(int64_t source_id, int64_t dest_id){
+  struct Patch *source = getAudioPatchFromNum(source_id);
+  if(source==NULL)
+    return false;
+
+  struct Patch *dest = getAudioPatchFromNum(dest_id);
+  if(dest==NULL)
+    return false;
+
+  return MW_are_connected(source, dest);
 }
 
 void createEventConnection(int64_t source_id, int64_t dest_id){
@@ -844,6 +859,18 @@ void deleteEventConnection(int64_t source_id, int64_t dest_id){
 
   if (MW_edisconnect(source, dest)==false)
     handleError("Could not find audio connection between \"%s\" and \"%s\"", source->name, dest->name);
+}
+
+bool hasEventConnection(int64_t source_id, int64_t dest_id){
+  struct Patch *source = getAudioPatchFromNum(source_id);
+  if(source==NULL)
+    return false;
+
+  struct Patch *dest = getAudioPatchFromNum(dest_id);
+  if(dest==NULL)
+    return false;
+
+  return MW_are_econnected(source, dest);
 }
 
 float getAudioConnectionGain(int64_t source_id, int64_t dest_id){

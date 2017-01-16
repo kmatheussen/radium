@@ -410,6 +410,8 @@ extern void CHIP_kick_right(Chip *chip);
 extern Chip *find_chip_for_plugin(QGraphicsScene *scene, SoundPlugin *plugin);
 extern void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
 extern void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to);
+extern bool CHIPS_are_connected(Chip *from, Chip *to);
+extern bool CHIPS_are_econnected(Chip *from, Chip *to);
 
 extern void CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(AudioConnection *connection);
 extern void CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(EventConnection *connection);

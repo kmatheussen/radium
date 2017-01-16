@@ -586,7 +586,7 @@ static bool econnect(QGraphicsScene *scene, Chip *from, Chip *to){
   return true;
 }
 
-static bool chips_are_connected(Chip *from, Chip *to){
+bool CHIPS_are_connected(Chip *from, Chip *to){
   for(AudioConnection *connection : from->audio_connections)
     if(connection->from==from && connection->to==to)
       return true;
@@ -594,7 +594,7 @@ static bool chips_are_connected(Chip *from, Chip *to){
   return false;
 }
 
-static bool chips_are_econnected(Chip *from, Chip *to){
+bool CHIPS_are_econnected(Chip *from, Chip *to){
   for(EventConnection *connection : from->event_connections)
     if(connection->from==from && connection->to==to)
       return true;
@@ -606,7 +606,7 @@ void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   if(from->_num_outputs==0 || to->_num_inputs==0)
     return;
 
-  if(chips_are_connected(from,to)==true)
+  if(CHIPS_are_connected(from,to)==true)
     return;
 
   bool from_is_mono = from->_num_outputs==1;
@@ -647,7 +647,7 @@ void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *t
 }
 
 void CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
-  if(chips_are_econnected(from,to)==true){
+  if(CHIPS_are_econnected(from,to)==true){
     printf("Chips are already econnected\n");
     return;
   }

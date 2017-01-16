@@ -1,5 +1,14 @@
 (provide 'mixer-strips.scm)
 
+;; TOPIC: Should the pan slider work for the last instrument in the path?
+;; In case, we need to copy pan values when deleting / removing plulgins.
+;;
+;; TOPIC: Perhaps add an option to make a plugin always be a standalone strip. (probably a good idea)
+;;
+;; TOPIC: The peak text values are resetted when remaking the mixer strips. This can be avoided.
+;;
+;; When adding a new mixer strip, we could slice the various mixer strips windows.
+
 
 (define (get-fontheight)
   (+ 4 (<gui> :get-system-fontheight)))
@@ -64,11 +73,70 @@
   (define name (<gui> :line (<ra> :get-instrument-name instrument-id) (lambda (edited)
                                                                         (<ra> :set-instrument-name edited instrument-id))))
   (<gui> :set-background-color name (<ra> :get-instrument-color instrument-id))
+  (<gui> :add-mouse-callback name (lambda (button state x y)
+                                    (if (and (= button *right-button*)
+                                             (= state *is-pressing*))
+                                        (popup-menu "hello" (lambda () #t)
+                                                    "aiai" (lambda () #t)))
+                                    #f))
   (<gui> :add gui name x1 y1 x2 y2))
 
 
+(define (request-send-instrument instrument-id callback)
+  (define is-bus-descendant (<ra> :instrument-is-bus-descendant instrument-id))
+  (define buses (get-buses))
 
-(define (strip-slider instrument-id make-undo get-scaled-value get-value-text set-value popup-menu-func delete-instrument)
+  (define (create-entry-text instrument-id)
+    (<-> *arrow-text* " " (<ra> :get-instrument-name instrument-id)))
+    
+  (popup-menu
+
+   ;; buses
+   (map (lambda (bus-effect-name bus-onoff-effect-name bus-id)
+          (list (create-entry-text bus-id)
+                :enabled (and (not is-bus-descendant)
+                              (< (<ra> :get-instrument-effect instrument-id bus-onoff-effect-name) 0.5))
+                (lambda ()
+                  (callback (lambda (gain)
+                              (undo-block (lambda ()
+                                            (<ra> :undo-instrument-effect instrument-id bus-onoff-effect-name)
+                                            (if gain
+                                                (<ra> :undo-instrument-effect instrument-id bus-effect-name))
+                                            (<ra> :set-instrument-effect instrument-id bus-onoff-effect-name 1.0)
+                                            (if gain
+                                                (<ra> :set-instrument-effect instrument-id bus-effect-name (scale (<ra> :gain-to-db gain)
+                                                                                                                  *min-db* *max-db*
+                                                                                                                  0 1))))))))))
+        *bus-effect-names*
+        *bus-effect-onoff-names*
+        buses)
+
+   "------------"
+
+   ;; audio connections
+   (map (lambda (send-id)
+          (list (create-entry-text send-id)
+                (lambda ()
+                  (callback (lambda (gain)
+                              (<ra> :undo-mixer-connections)
+                              (<ra> :create-audio-connection instrument-id send-id gain))))))
+        (sort-instruments-by-mixer-position
+         (keep (lambda (id)
+                 (not (member id buses)))
+               (get-all-instruments-that-we-can-send-to instrument-id))))))
+          
+
+(define (strip-slider parent-instrument-id
+                      instrument-id
+                      is-send?
+                      is-sink?
+                      make-undo
+                      get-scaled-value
+                      get-value-text
+                      set-value
+                      delete-func
+                      replace-func
+                      reset-func)
   (define instrument-name (<ra> :get-instrument-name instrument-id))
   ;;(define widget (<gui> :widget 100 (get-fontheight)))
   (define widget #f)
@@ -92,7 +160,45 @@
                           (set-value val)
                           (paintit (<gui> :width widget)
                                    (<gui> :height widget))))))
-  
+
+  (define (create-popup-menu upper-half?)
+    (popup-menu "Delete" delete-func
+                "Replace" replace-func
+                "-----------"
+                (list "Insert Plugin"
+                      :enabled (or upper-half?
+                                   (not is-sink?))
+                      (lambda ()
+                                  (cond (is-send? 
+                                         (insert-new-instrument-between parent-instrument-id
+                                                                        (get-instruments-connecting-from-instrument parent-instrument-id)
+                                                                        #t))
+                                        (upper-half?
+                                         (insert-new-instrument-between parent-instrument-id instrument-id #t)) ;; before
+                                        (else
+                                         (insert-new-instrument-between instrument-id
+                                                                        (get-instruments-connecting-from-instrument instrument-id)
+                                                                        #t))) ;; after
+                                  ))
+                (list "Insert Send"
+                      :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
+                      (lambda ()
+                        (let ((instrument-id (cond (is-send?
+                                                    parent-instrument-id)
+                                                   (upper-half?
+                                                    parent-instrument-id)
+                                                   (else
+                                                    instrument-id))))
+                          (request-send-instrument instrument-id
+                                                   (lambda (create-send-func)
+                                                     (create-send-func 0))))))
+                "----------"
+                "Reset value" reset-func
+                ;;"----------"
+                ;;"Convert to standalone strip" (lambda ()
+                ;;                                #t)
+                ))
+
   (<gui> :set-min-height widget (get-fontheight))
 
   (<gui> :add-resize-callback widget paintit)
@@ -102,18 +208,18 @@
                                                  (= state *is-pressing*))
                                         (make-undo))
                                       (when (and (= button *right-button*)
-                                                 (= state *is-releasing*))
-                                        (popup-menu-func (< y (/ (<gui> :height widget) 2))))
-                                      (when (and (= button *right-button*)
-                                                 (= state *is-pressing*)
-                                                 (<ra> :shift-pressed))
-                                        (delete-instrument))
+                                                 (= state *is-pressing*))
+                                        (if (<ra> :shift-pressed)
+                                            (delete-func)
+                                            (create-popup-menu (< y (/ (<gui> :height widget) 2)))))
                                       #f))
 
-  (<gui> :add-double-click-callback widget (lambda ()
-                                             (<ra> :cancel-last-undo)
-                                             (<ra> :show-instrument-gui instrument-id (<ra> :show-instrument-widget-when-double-clicking-sound-object))
-                                             ))
+  (<gui> :add-double-click-callback widget (lambda (button x y)
+                                             (when (= button *left-button*)
+                                               ;;(c-display " Double clicking" button)
+                                               (<ra> :cancel-last-undo) ;; Undo the added undo made at th mouse callback above.
+                                               (<ra> :show-instrument-gui instrument-id (<ra> :show-instrument-widget-when-double-clicking-sound-object))
+                                               )))
 
   ;;(paintit (<gui> :width widget)
   ;;         (<gui> :height widget))
@@ -125,7 +231,7 @@
 
 
 ;; Finds the next plugin in a plugin path. 'instrument-id' is the plugin to start searching from.
-(define (find-next-plugin-instrument instrument-id)
+(define (find-next-plugin-instrument-in-path instrument-id)
   (let loop ((out-instruments (reverse (sort-instruments-by-mixer-position
                                         (get-instruments-connecting-from-instrument instrument-id)))))
     (if (null? out-instruments)
@@ -143,37 +249,30 @@
 
   (define (delete-instrument)
     (define ids (get-instruments-connecting-from-instrument instrument-id))
+    (define gains (map (lambda (to)
+                         (<ra> :get-audio-connection-gain instrument-id to))
+                       ids))
     (undo-block
      (lambda ()
        (<ra> :delete-instrument instrument-id)
-       (for-each (lambda (id)
-                   (<ra> :create-audio-connection parent-instrument-id id))
-                 ids)))
-    (remake-mixer-strips))
-
-
-  (define (popup-menu-func upper-half)
-    (c-display "upper" upper-half)
-    (popup-menu "Delete" delete-instrument                
-                "Replace" (lambda ()
-                            (replace-instrument instrument-id "")
-                            #t)
-                "-----------"
-                "Insert Plugin" (lambda ()
-                                  (if upper-half
-                                      (insert-new-instrument-between parent-instrument-id instrument-id #t) ;; before
-                                      (insert-new-instrument-between instrument-id (find-next-plugin-instrument instrument-id) #f)) ;; after
-                                  #t)
-                "Insert Send" (lambda ()
-                                #t)
-                "----------"
-                "Reset value" (lambda ()
-                                #t)
-                )
+       (for-each (lambda (id gain)
+                   (<ra> :create-audio-connection parent-instrument-id id gain))
+                 ids
+                 gains)))
+    ;;(remake-mixer-strips) ;; (makes very little difference in snappiness, and it also causes mixer strips to be remade twice)
     )
 
+
+  (define (das-replace-instrument)
+    (replace-instrument instrument-id ""))
+
+  (define (reset)
+    (<ra> :set-instrument-effect instrument-id "System Dry/Wet" 1))
+
   (define doit #t)
-  (define slider (strip-slider instrument-id
+  (define slider (strip-slider parent-instrument-id
+                               instrument-id
+                               #f #f
                                (lambda ()
                                  (<ra> :undo-instrument-effect instrument-id "System Dry/Wet"))
                                get-drywet
@@ -182,8 +281,9 @@
                                (lambda (new-scaled-value)
                                  (if (and doit (not (= new-scaled-value (get-drywet))))                                     
                                      (<ra> :set-instrument-effect instrument-id "System Dry/Wet" new-scaled-value)))
-                               popup-menu-func
                                delete-instrument
+                               das-replace-instrument
+                               reset
                                ))
 
   (add-gui-effect-monitor slider instrument-id "System Dry/Wet"
@@ -196,13 +296,23 @@
 
 
 ;; A sink plugin. For instance "System Out".
-(define (create-mixer-strip-sink-plugin gui instrument-id)
+(define (create-mixer-strip-sink-plugin gui parent-instrument-id instrument-id)
 
-  (define (delete-instrument)
+  (define (make-undo)
+    (<ra> :undo-instrument-effect instrument-id "System In"))
+    
+  (define (delete)
+    (<ra> :delete-instrument instrument-id))
+
+  (define (replace)
     #f)
+
+  (define (set-db-value db)
+    (<ra> :set-instrument-effect instrument-id "System In" (scale db *min-db* *max-db* 0 1)))
   
-  (define (popup-menu-func upper-half)
-    #f)
+  (define (reset)
+    (make-undo)
+    (set-db-value 0))
 
   (define (get-db-value)
     (scale (<ra> :get-instrument-effect instrument-id "System In")
@@ -212,11 +322,11 @@
   (define last-value (get-db-value))
   
   (define doit #t)
-  (define slider (strip-slider instrument-id
+  (define slider (strip-slider parent-instrument-id
+                               instrument-id
+                               #f #t
 
-                               ;; make-undo
-                               (lambda ()
-                                 (<ra> :undo-instrument-effect instrument-id "System In"))
+                               make-undo
 
                                ;; get-scaled-value
                                (lambda ()
@@ -232,10 +342,11 @@
                                  ;;(c-display "new-db:" db ", old-db:" last-value)
                                  (when (and doit (not (= last-value db)))
                                    (set! last-value db)
-                                   (<ra> :set-instrument-effect instrument-id "System In" (scale db *min-db* *max-db* 0 1))))
+                                   (set-db-value db)))
 
-                               popup-menu-func
-                               delete-instrument
+                               delete
+                               replace
+                               reset
                                ))
                                      
 
@@ -290,21 +401,31 @@
 
   horiz)
 
-(define (create-mixer-strip-send gui target-instrument-id make-undo get-db-value set-db-value add-monitor)
+(define (create-mixer-strip-send gui
+                                 parent-instrument-id
+                                 target-instrument-id
+                                 make-undo
+                                 get-db-value
+                                 set-db-value
+                                 add-monitor
+                                 delete
+                                 replace)
+
   (define horiz (get-mixer-strip-send-horiz gui))
 
-  (define (delete-instrument)
-    #f)
-  
-  (define (popup-menu-func upper-half)
-    #f)
+  (define (reset)
+    (make-undo)
+    (set-db-value 0)
+    (remake-mixer-strips))
 
   (define doit #t)
 
   (define last-value (get-db-value))
 
-  (define slider (strip-slider target-instrument-id
-                               
+  (define slider (strip-slider parent-instrument-id
+                               target-instrument-id
+                               #t #f
+
                                make-undo
 
                                ;; get-scaled-value
@@ -324,9 +445,10 @@
                                  (when (and doit (not (= last-value db)))
                                    (set! last-value db)
                                    (set-db-value db)))
-
-                               popup-menu-func
-                               delete-instrument))
+                               
+                               delete
+                               replace
+                               reset))
   
   (if add-monitor
       (add-monitor slider
@@ -341,18 +463,27 @@
 
 
 (define (create-mixer-strip-bus-send gui instrument-id bus-num)
-  (define effect-name (list-ref '("System Reverb"
-                                  "System Chorus"
-                                  "System Aux 1"
-                                  "System Aux 2"
-                                  "System Aux 3")
-                                bus-num))
+  (define effect-name (list-ref *bus-effect-names* bus-num))
+  (define on-off-effect-name (list-ref *bus-effect-onoff-names* bus-num))
 
   (define bus-id (<ra> :get-audio-bus-id bus-num))
 
   (define (make-undo)
     (<ra> :undo-instrument-effect instrument-id effect-name))
 
+  (define (delete)
+    (<ra> :undo-instrument-effect instrument-id on-off-effect-name)
+    (<ra> :set-instrument-effect instrument-id on-off-effect-name 0))
+
+  (define (replace)
+    (request-send-instrument instrument-id
+                             (lambda (create-send-func)
+                               (undo-block
+                                (lambda ()
+                                  (define db (get-db-value))
+                                  (define gain (<ra> :db-to-gain db))
+                                  (delete)
+                                  (create-send-func gain))))))
   (define (get-db-value)
     (let ((db (<ra> :get-instrument-effect instrument-id effect-name)))
       (scale db
@@ -366,17 +497,33 @@
     (add-gui-effect-monitor slider instrument-id effect-name callback))
 
   (create-mixer-strip-send gui
+                           instrument-id
                            bus-id
                            make-undo
                            get-db-value
                            set-db-value
-                           add-monitor))
+                           add-monitor
+                           delete
+                           replace))
 
 
 (define (create-mixer-strip-audio-connection-send gui source-id target-id)
   (define (make-undo)
     (<ra> :undo-audio-connection-gain source-id target-id))
 
+  (define (delete)
+    (<ra> :undo-mixer-connections)
+    (<ra> :delete-audio-connection source-id target-id))
+
+  (define (replace)
+    (request-send-instrument source-id
+                             (lambda (create-send-func)
+                               (define gain (<ra> :get-audio-connection-gain source-id target-id))
+                               (undo-block
+                                (lambda ()
+                                  (delete)
+                                  (create-send-func gain))))))
+  
   (define (get-db-value)
     (define db (<ra> :gain-to-db (<ra> :get-audio-connection-gain source-id target-id)))
     ;;(c-display "getting " db)
@@ -389,11 +536,14 @@
   (define add-monitor #f)
 
   (create-mixer-strip-send gui
+                           source-id
                            target-id
                            make-undo 
                            get-db-value
                            set-db-value
-                           add-monitor))
+                           add-monitor
+                           delete
+                           replace))
 
 
 ;; Returns a list of parallel plugins that needs their own mixer strip.
@@ -403,7 +553,7 @@
   (define out-instruments (sort-instruments-by-mixer-position ;; Needs to be sorted.
                            (get-instruments-connecting-from-instrument instrument-id)))
 
-  (define next-plugin-instrument (find-next-plugin-instrument instrument-id))
+  (define next-plugin-instrument (find-next-plugin-instrument-in-path instrument-id))
 
   (define ret (keep (lambda (out-instrument)
                       (if (= 1 (length (get-instruments-connecting-to-instrument out-instrument)))
@@ -438,7 +588,7 @@
     
   (define out-instruments (sort-instruments-by-mixer-position
                            (get-instruments-connecting-from-instrument instrument-id)))
-  (define next-plugin-instrument (find-next-plugin-instrument instrument-id))
+  (define next-plugin-instrument (find-next-plugin-instrument-in-path instrument-id))
 
   ;; create plugin sends (i.e. non-bus sends)
   (for-each (lambda (out-instrument)
@@ -452,7 +602,7 @@
   (if next-plugin-instrument
       (begin
         (if (= 0 (<ra> :get-num-output-channels next-plugin-instrument))
-            (create-mixer-strip-sink-plugin gui next-plugin-instrument)
+            (create-mixer-strip-sink-plugin gui instrument-id next-plugin-instrument)
             (create-mixer-strip-plugin gui instrument-id next-plugin-instrument))
         (create-mixer-strip-path gui next-plugin-instrument))
       instrument-id))
@@ -525,7 +675,11 @@
          (lambda (button state x y)
            (cond ((and (= button *left-button*)
                        (= state *is-pressing*))
-                  (<ra> :undo-instrument-effect instrument-id "System Pan"))
+                  (undo-block
+                   (lambda ()
+                     (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
+                     (<ra> :undo-instrument-effect instrument-id "System Pan"))))
+
                  ((and (= button *right-button*)
                        (= state *is-releasing*))
                   

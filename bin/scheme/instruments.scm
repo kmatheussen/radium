@@ -8,11 +8,15 @@
 
 ||#
 
-(define *bus-effect-names* (list "System Reverb On/Off"
-                                 "System Chorus On/Off"
-                                 "System Aux 1 On/Off"
-                                 "System Aux 2 On/Off"
-                                 "System Aux 3 On/Off"))
+(define *bus-effect-names* (list "System Reverb"
+                                 "System Chorus"
+                                 "System Aux 1"
+                                 "System Aux 2"
+                                 "System Aux 3"))
+
+(define *bus-effect-onoff-names* (map (lambda (bus-effect-name)
+                                        (<-> bus-effect-name " On/Off"))
+                                      *bus-effect-names*))
 
 (define (for-all-tracks func)
   (for-each (lambda (blocknum)
@@ -61,13 +65,15 @@
                   #f)))))
   
 (define (get-buses-connecting-from-instrument id-instrument)
-  (keep identity
-        (map (lambda (bus-num effect-name)
-               (if (>= (<ra> :get-instrument-effect id-instrument effect-name) 0.5)
-                   bus-num ;;(<ra> :get-audio-bus-id bus-num)
+  (if (= 0 (<ra> :get-num-output-channels id-instrument))
+      '()
+      (keep identity
+            (map (lambda (bus-num effect-name)
+                   (if (>= (<ra> :get-instrument-effect id-instrument effect-name) 0.5)
+                       bus-num ;;(<ra> :get-audio-bus-id bus-num)
                    #f))
-             (iota (length *bus-effect-names*))
-             *bus-effect-names*)))
+                 (iota (length *bus-effect-onoff-names*))
+                 *bus-effect-onoff-names*))))
 
 (define (get-buses)
   (map (lambda (bus-num)
@@ -109,18 +115,39 @@
                    2)))
         (get-all-audio-instruments)))
 
+
+(define (recursive-connection? start-id to-id)
+  (if (= start-id to-id)
+      #t
+      (any? (lambda (id)
+              (recursive-connection? start-id id))
+            (append (get-instruments-connecting-from-instrument to-id)
+                    (if (<ra> :instrument-is-bus-descendant to-id)
+                        '()
+                        (get-buses))))))
+;;(get-buses-connecting-from-instrument to-id)
+        
+
+(define (get-all-instruments-that-we-can-send-to from-id)
+  (remove (lambda (to-id)
+            (or (<ra> :has-audio-connection from-id to-id)
+                (recursive-connection? from-id to-id)))
+          (get-all-audio-instruments)))
+
 (define (duplicate-connections id-old-instrument id-new-instrument)
   ;; in audio
   (for-each (lambda (from-instrument)
               (<ra> :create-audio-connection
                     from-instrument
-                    id-new-instrument))
+                    id-new-instrument
+                    (<ra> :get-audio-connection-gain from-instrument id-old-instrument)))
             (get-instruments-connecting-to-instrument id-old-instrument))
   ;; out audio
   (for-each (lambda (to-instrument)
               (<ra> :create-audio-connection
                     id-new-instrument
-                    to-instrument))
+                    to-instrument
+                    (<ra> :get-audio-connection-gain id-old-instrument to-instrument)))
             (get-instruments-connecting-from-instrument id-old-instrument))
   ;; in event
   (for-each (lambda (from-instrument)
@@ -164,6 +191,9 @@
                                     (<ra> :get-instrument-name id-old-instrument)))
              (define id-new-instrument (<ra> :create-audio-instrument-from-description instrument-description patch-name))
              (when (not (= -1 id-new-instrument))
+               (<ra> :set-instrument-effect
+                     id-new-instrument "System Dry/Wet"
+                     (<ra> :get-instrument-effect id-old-instrument "System Dry/Wet"))
                (duplicate-connections id-old-instrument id-new-instrument)
                (replace-instrument-in-all-tracks! id-old-instrument id-new-instrument)
                (replace-instrument-in-mixer id-old-instrument id-new-instrument)
@@ -221,10 +251,27 @@
 
 ;; instrument-id2 can also be list of instrument-ids.
 (define (insert-new-instrument-between instrument-id1 instrument-id2 position-at-instrument-1?)
+  (assert (or instrument-id1 instrument-id2))
   (if (not instrument-id2)
       (assert position-at-instrument-1?))
+  (if (not instrument-id1)
+      (assert (not position-at-instrument-1?)))
   (if (list? instrument-id2)
-      (assert position-at-instrument-1?))              
+      (assert position-at-instrument-1?))
+
+  (define out-list (cond ((not instrument-id2)
+                          '())
+                         ((list? instrument-id2)
+                          instrument-id2)
+                         (else
+                          (list instrument-id2))))                       
+  
+  (define gain-list (map (lambda (out-id)
+                           (<ra> :get-audio-connection-gain instrument-id1 out-id))
+                         out-list))
+
+  (define has-instrument2 (not (null? out-list)))
+
   (define instrument-description (<ra> :instrument-description-popup-menu))
   (if (not (string=? "" instrument-description))
       (begin
@@ -236,27 +283,56 @@
         (define x (+ (<ra> :get-instrument-x position-instrument) 0))
         (define y (+ (<ra> :get-instrument-y position-instrument) 0))
         
-        (undo-block
-         (lambda ()
-           (define new-instrument (<ra> :create-audio-instrument-from-description instrument-description "" x y))
-           (if (not (= -1 new-instrument))
-               (begin
-                 (<ra> :set-instrument-position (+ 5 x) (+ 5 y) new-instrument #t)
+        (define do-undo #f)
+
+        (define result
+          (undo-block
+           (lambda ()
+             (define new-instrument (<ra> :create-audio-instrument-from-description instrument-description "" x y))
+             (if (not (= -1 new-instrument))
+                 (begin
+                   
+                   (define num-inputs (<ra> :get-num-input-channels new-instrument))
+                   (define num-outputs (<ra> :get-num-output-channels new-instrument))
+                   
+                   (cond ((and instrument-id1
+                               (= 0 num-inputs))
+                          (<ra> :show-message (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no input channels"))
+                          (set! do-undo #t)
+                          #f)
+
+                         ((and (= 0 num-outputs)
+                               has-instrument2)
+                          (<ra> :show-message (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no output channels"))
+                          (set! do-undo #t)
+                          #f)
+
+                         (else
+                          
+                          (<ra> :set-instrument-position (+ 5 x) (+ 5 y) new-instrument #t)
+                          
+                          (<ra> :undo-mixer-connections)
+                          
+                          (when instrument-id1
+                            (for-each (lambda (to)
+                                        (<ra> :delete-audio-connection instrument-id1 to))
+                                      out-list)
+                            (<ra> :create-audio-connection instrument-id1 new-instrument))
+                          
+                          (for-each (lambda (out-id gain)
+                                      (<ra> :create-audio-connection new-instrument out-id gain))
+                                    out-list
+                                    gain-list)
+                          
+                          new-instrument)))
                  
-                 (<ra> :undo-mixer-connections)
+                 #f))))
 
-                 (if (and instrument-id1 instrument-id2)
-                     (<ra> :delete-audio-connection instrument-id1 instrument-id2))
+        (if do-undo
+            (<ra> :undo))
 
-                 (if instrument-id1
-                     (<ra> :create-audio-connection instrument-id1 new-instrument))
-
-                 (if instrument-id2
-                     (<ra> :create-audio-connection new-instrument instrument-id2))
-
-                 new-instrument)
-
-               #f))))
+        result)
+      
       #f))
 
 

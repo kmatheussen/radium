@@ -204,6 +204,8 @@ void PATCH_set_name(struct Patch *patch, const char *name){
     patch->midi_learn_port_name = get_symbol(new_name);
   else
     set_symbol_name(patch->midi_learn_port_name, new_name);
+
+  remakeMixerStrips();
 }
 
 static struct Patch *create_new_patch(const char *name){

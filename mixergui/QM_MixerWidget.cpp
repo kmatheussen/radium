@@ -1863,6 +1863,21 @@ bool MW_edisconnect(Patch *source, Patch *dest){
   return false;
 }
 
+bool MW_are_connected(Patch *source, Patch *dest){
+  Chip *a = CHIP_get(&g_mixer_widget->scene, source);
+  Chip *b = CHIP_get(&g_mixer_widget->scene, dest);
+
+  return CHIPS_are_connected(a, b);
+}
+
+bool MW_are_econnected(Patch *source, Patch *dest){
+  Chip *a = CHIP_get(&g_mixer_widget->scene, source);
+  Chip *b = CHIP_get(&g_mixer_widget->scene, dest);
+
+  return CHIPS_are_econnected(a, b);
+}
+
+
 #if 0
 static bool delete_a_connection(){
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();

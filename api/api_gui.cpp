@@ -325,7 +325,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       R_ASSERT_RETURN_IF_FALSE(_doubleclick_callback!=NULL);
       event->accept();
 
-      s7extra_callFunc_void_void(_doubleclick_callback);
+      const QPoint &point = event->pos();
+
+      s7extra_callFunc_void_int_float_float(_doubleclick_callback, getMouseButtonEventID(event), point.x(), point.y());
     }
 
     void addDoubleClickCallback(func_t* func){      
@@ -1361,6 +1363,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       : Gui(this)
     {
       setText(content);
+      setContextMenuPolicy(Qt::NoContextMenu);
     }
 
     OVERRIDERS(MyFocusSnifferQLineEdit);

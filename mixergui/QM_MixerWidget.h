@@ -197,6 +197,9 @@ extern LANGSPEC void MW_econnect(struct Patch *source, struct Patch *dest);
 extern LANGSPEC bool MW_disconnect(struct Patch *source, struct Patch *dest);
 extern LANGSPEC bool MW_edisconnect(struct Patch *source, struct Patch *dest);
 
+extern LANGSPEC bool MW_are_connected(struct Patch *source, struct Patch *dest);
+extern LANGSPEC bool MW_are_econnected(struct Patch *source, struct Patch *dest);
+
 extern LANGSPEC bool MW_move_chip_to_slot(struct Patch *patch, float x, float y);
 
 extern LANGSPEC void MW_update_all_chips(void);
