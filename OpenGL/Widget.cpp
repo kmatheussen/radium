@@ -1026,6 +1026,29 @@ private:
     }
   }
   
+  QTime _swap_timer;
+  int64_t _swap_timer_counter = 0;
+
+  void prevent_high_cpu_in_swap(void){
+    int time = _swap_timer.elapsed();
+    _swap_timer_counter++;
+
+    double vblank = GL_get_vblank();
+    if (vblank==-1)
+      vblank = time_estimator.get_vblank();
+
+    if (time < vblank/2){
+      if (_swap_timer_counter > 4){
+        usleep(40*1000 * vblank);
+        //printf("sleeping. Counter: %d. Time: %d. Vblank: %f\n",(int)_swap_timer_counter, time, vblank);
+        _swap_timer_counter = 0;
+      }
+    }else{
+      _swap_timer_counter = 0;
+    }
+
+    _swap_timer.restart();    
+  }
 
   // OpenGL thread
   void swap(void){
@@ -1038,8 +1061,11 @@ private:
       juce_lock = JUCE_lock();
     
     // Swap to the newly rendered buffer
-    if ( openglContext()->hasDoubleBuffer())
+    if ( openglContext()->hasDoubleBuffer()) {
       openglContext()->swapBuffers();
+
+      prevent_high_cpu_in_swap();
+    }
 
     if (juce_lock != NULL)
       JUCE_unlock(juce_lock);
