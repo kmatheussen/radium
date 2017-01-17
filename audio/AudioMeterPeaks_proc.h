@@ -10,7 +10,7 @@ static inline float gain2db(float gain){
 
   if (gain <= threshold_gain) {
 
-    // We need to do linear conversion below MIN_DB_THRESHOLD here in order to convert back and forth between gain2db and db2gain. (that's probably the only reason)
+    // We need to do linear conversion below MIN_DB_THRESHOLD here in order to convert back and forth between gain2db and db2gain correctly. (that's probably the only reason)
     
     return scale(gain, 0, threshold_gain, MIN_DB, MIN_DB_THRESHOLD);
     
@@ -24,7 +24,7 @@ static inline float gain2db(float gain){
 static inline float db2gain(float db){
   if (db <= MIN_DB_THRESHOLD){
 
-    // do linear scale down to zero when db is less than -35 (if not, we won't get 0)
+    // do linear scale down to zero when db is less than -35 (if not, we will never get 0 gain)
     
     if (db <= MIN_DB)
       return 0.0f;

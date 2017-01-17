@@ -727,7 +727,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     bool _is_input = false;
     bool _is_output = false;
 
-    float _peak = -100.0f;
+    float _last_peak = -100.0f;
     func_t *_peak_callback = NULL;
 
   public:
@@ -756,6 +756,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         _falloff_pos = (float*)calloc(_num_channels, sizeof(float));
       }
 
+      R_ASSERT_RETURN_IF_FALSE(get_audio_meter_peaks().num_channels == _num_channels);
+
       call_regularly(); // Set meter positions.
 
       g_active_vertical_audio_meters.push_back(this);
@@ -782,10 +784,42 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       _peak_callback = func;
 
       s7extra_protect(_peak_callback);
+
+      callPeakCallback();
+    }
+
+    AudioMeterPeaks _fallback_peaks = {0};
+
+    AudioMeterPeaks &get_audio_meter_peaks(void){
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
+      if(plugin==NULL)
+        return _fallback_peaks;
+
+      if (_is_output)
+        return plugin->volume_peaks;
+
+      if (_is_input)
+        return plugin->input_volume_peaks;
+
+      R_ASSERT(false);
+      return _fallback_peaks;
+    }
+
+    void callPeakCallback(void){
+      if (_peak_callback != NULL){
+        if (_last_peak<=-100.0)
+          s7extra_callFunc_void_charpointer(_peak_callback, "-inf");
+        else
+          s7extra_callFunc_void_charpointer(_peak_callback, talloc_format("%.1f", _last_peak));
+      }
     }
 
     void resetPeak(void){
-      _peak = -100;
+      _last_peak = -100;
+      const AudioMeterPeaks &peaks = get_audio_meter_peaks();
+      for(int ch = 0 ; ch < _num_channels ; ch++)
+        peaks.peaks[ch] = -100;
     }
 
     float get_width(void){
@@ -838,29 +872,19 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
         float db;
         float db_falloff;
+        float db_peak;
 
-        if (_is_output) {
-          db = plugin->volume_peaks.decaying_dbs[ch];
-          db_falloff = plugin->volume_peaks.falloff_dbs[ch];
-        } else if (_is_input) {
-          db = plugin->input_volume_peaks.decaying_dbs[ch];
-          db_falloff = plugin->input_volume_peaks.falloff_dbs[ch];
-        } else{
-          db = 0.0f;
-          db_falloff = 0.0f;
-          R_ASSERT(false);
-        }
+        const AudioMeterPeaks &peaks = get_audio_meter_peaks();
+
+        db = peaks.decaying_dbs[ch];
+        db_falloff = peaks.falloff_dbs[ch];
+        db_peak = peaks.peaks[ch];
         
         //float db = gain2db(gain);
         
-        if (db > _peak){
-          _peak = db;
-          if (_peak_callback != NULL){
-            if (_peak<=-100.0)
-              s7extra_callFunc_void_charpointer(_peak_callback, "-inf");
-            else
-              s7extra_callFunc_void_charpointer(_peak_callback, talloc_format("%.1f", _peak));
-          }
+        if (db_peak > _last_peak){
+          _last_peak = db_peak;
+          callPeakCallback();
         }
 
         float pos = db2linear(db, get_pos_y1(), get_pos_y2());

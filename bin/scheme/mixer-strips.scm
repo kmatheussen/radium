@@ -5,8 +5,6 @@
 ;;
 ;; TOPIC: Perhaps add an option to make a plugin always be a standalone strip. (probably a good idea)
 ;;
-;; TOPIC: The peak text values are resetted when remaking the mixer strips. This can be avoided.
-;;
 ;; When adding a new mixer strip, we could slice the various mixer strips windows.
 
 
@@ -1189,7 +1187,8 @@
                         (length all-buses)))
 
 
-  (define min-mixer-strip-width (1+ (floor (<gui> :text-width "-14.2-23.5"))))
+  (define min-mixer-strip-width (1+ (floor (max (<gui> :text-width " -14.2 -23.5 ")
+                                                (<gui> :text-width " Mute Solo ")))))
   ;;(define mixer-strip-width (1+ (floor (<gui> :text-width "-14.2 -23.5 ----"))))
   (define mixer-strip-width (- (max min-mixer-strip-width
                                     (floor (/ (- width

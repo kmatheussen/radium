@@ -44,6 +44,9 @@ static void call_very_often(AudioMeterPeaks &peaks, bool reset_falloff, float ms
     // falloff db
     if (reset_falloff || max_db > peaks.falloff_dbs[ch])
       peaks.falloff_dbs[ch] = max_db;
+
+    if (max_db > peaks.peaks[ch])
+      peaks.peaks[ch] = max_db;
   }
 }
 
@@ -94,11 +97,13 @@ AudioMeterPeaks AUDIOMETERPEAKS_create(int num_channels){
   peaks.max_dbs = (float*)V_calloc(num_channels, sizeof(float));
   peaks.decaying_dbs = (float*)V_calloc(num_channels, sizeof(float));
   peaks.falloff_dbs = (float*)V_calloc(num_channels, sizeof(float));  
+  peaks.peaks = (float*)V_calloc(num_channels, sizeof(float));  
 
   for(int ch=0;ch<num_channels;ch++){
     peaks.max_dbs[ch] = -100;
     peaks.decaying_dbs[ch] = -100;
     peaks.falloff_dbs[ch] = -100;
+    peaks.peaks[ch] = -100;
   }
 
   return peaks;
@@ -109,4 +114,5 @@ void AUDIOMETERPEAKS_delete(AudioMeterPeaks peaks){
   V_free(peaks.max_dbs);
   V_free(peaks.decaying_dbs);
   V_free(peaks.falloff_dbs);
+  V_free(peaks.peaks);
 }
