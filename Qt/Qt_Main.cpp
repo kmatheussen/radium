@@ -1451,7 +1451,11 @@ void RT_request_to_stop_playing(void){
 int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y){return 0;}
 
 bool CtrlPressed(void){
+#if FOR_MACOSX
+  return QApplication::keyboardModifiers() & Qt::MetaModifier;
+#else
   return QApplication::keyboardModifiers() & Qt::ControlModifier;
+#endif
 }
 
 bool ShiftPressed(void){
