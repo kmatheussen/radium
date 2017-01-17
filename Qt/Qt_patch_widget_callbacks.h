@@ -212,18 +212,18 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     header->setMaximumHeight(header_height);
 
     for(int i=0;i<NUM_PATCH_VOICES;i++){
-      PatchVoice *voice=&_voices[i];
+      const PatchVoice &voice=_patch->voices[i];
 
-      get_o(i)->setChecked(voice->is_on);
+      get_o(i)->setChecked(voice.is_on);
       get_o(i)->_patch = _patch;
       get_o(i)->_effect_num = i;
       get_o(i)->_is_patchvoice_onoff_button = true;
 
-      get_t(i)->setValue(voice->transpose);
-      get_v(i)->setValue(voice->volume);
-      get_s(i)->setValue(voice->start);
-      get_l(i)->setValue(voice->length);
-      get_c(i)->setValue(voice->chance);
+      get_t(i)->setValue(voice.transpose);
+      get_v(i)->setValue(voice.volume);
+      get_s(i)->setValue(voice.start);
+      get_l(i)->setValue(voice.length);
+      get_c(i)->setValue(voice.chance);
     }
 
     // bad 1

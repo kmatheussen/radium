@@ -1303,6 +1303,14 @@ void FX_treat_fx(struct FX *fx,int val,int skip){
 ////////////////////////////////////
 //
 
+static const int voice_on_off_effs[] = {EFFNUM_VOICE1_ONOFF,
+                                        EFFNUM_VOICE2_ONOFF,
+                                        EFFNUM_VOICE3_ONOFF,
+                                        EFFNUM_VOICE4_ONOFF,
+                                        EFFNUM_VOICE5_ONOFF,
+                                        EFFNUM_VOICE6_ONOFF,
+                                        EFFNUM_VOICE7_ONOFF};
+
 static void RT_PATCH_turn_voice_on(struct SeqTrack *seqtrack, struct Patch *patch, int voicenum){ 
 
   struct PatchVoice *voice = &patch->voices[voicenum];
@@ -1327,8 +1335,22 @@ static void RT_PATCH_turn_voice_on(struct SeqTrack *seqtrack, struct Patch *patc
                                   ),
                     seqtrack->start_time
                     );
-  }    
-    voice->is_on = true;
+    }    
+
+    if (patch->instrument==get_audio_instrument()){
+
+      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      if (plugin != NULL){
+        SoundPluginType *type = plugin->type;
+        PLUGIN_set_effect_value(plugin, 0, type->num_effects+voice_on_off_effs[voicenum], 1, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      }
+
+    }else{
+
+      voice->is_on = true;
+
+    }
+
   }
 }
 
@@ -1354,7 +1376,21 @@ static void RT_PATCH_turn_voice_off(struct SeqTrack *seqtrack, struct Patch *pat
                     seqtrack->start_time
                     );
     }
-    voice->is_on = false;
+
+    if (patch->instrument==get_audio_instrument()){
+
+      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      if (plugin != NULL){
+        SoundPluginType *type = plugin->type;
+        PLUGIN_set_effect_value(plugin, 0, type->num_effects+voice_on_off_effs[voicenum], 0, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      }
+
+    }else{
+
+      voice->is_on = false;
+
+    }
+
   }
 }
 

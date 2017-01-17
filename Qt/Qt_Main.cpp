@@ -209,6 +209,7 @@ void call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_event
 DEFINE_ATOMIC(bool, is_starting_up) = true;
 bool g_qt_is_running = false;
 bool g_qtgui_has_started = false;
+bool g_qtgui_exec_has_started = false;
 bool g_qtgui_has_stopped = false;
 
 //void gakk();
@@ -1987,7 +1988,7 @@ int radium_main(char *arg){
   //QApplication::processEvents(); // Windows spends some time to initialize proxy, or something like that (there are numerous QTBUG entries on this). We trigger that work here while the splash screen is still open. If not it seems like the program have hanged right after startup. (No, it didnt make a difference. Qt has screwed up network initialization on windows since it blocks the main thread for a few seconds when doing the first request. Qt should have done this in a separate thread. Seems like the simplest solution is to use libcurl.)
     
   
-  g_qtgui_has_started = true;
+  g_qtgui_exec_has_started = true;
  
 #if USE_QT_VISUAL
   qapplication->exec();

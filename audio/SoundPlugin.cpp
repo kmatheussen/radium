@@ -864,6 +864,8 @@ static void set_voice_onoff(struct SoundPlugin *plugin, int num, float value){
       plugin->patch->voices[num].is_on = true;
     else
       plugin->patch->voices[num].is_on = false;
+
+    //printf("      Setting voice %d to %d\n", num, plugin->patch->voices[num].is_on );
     
     update_instrument_gui(plugin);
   }
@@ -1888,7 +1890,7 @@ void PLUGIN_change_ab(SoundPlugin *plugin, int ab_num){
   // Save old data
   {
     memcpy(plugin->ab_values[old_ab_num], plugin->savable_effect_values, sizeof(float)*num_effects);
-    
+
     if(type->create_state!=NULL) {
       HASH_clear(plugin->ab_states[old_ab_num]);
       type->create_state(plugin, plugin->ab_states[old_ab_num]);

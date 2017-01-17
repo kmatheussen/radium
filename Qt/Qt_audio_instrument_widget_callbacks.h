@@ -979,12 +979,16 @@ public:
 
       arrgh=true;
       
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      //printf("   AB_PRESSED. Num: %d. Val: %d\n", num, val);
 
       if (val==true){
+
+        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
         PLUGIN_change_ab(plugin, num);
+
         if (_plugin_widget != NULL){
-          _plugin_widget->_ignore_checkbox_stateChanged = true; { // 'setChecked' should have an optional arguments whether to send signal to callbacks.
+          _plugin_widget->_ignore_checkbox_stateChanged = true; { // Note to Qt developers: 'setChecked' should have an optional arguments whether to send signal to callbacks.
             
             _plugin_widget->ab_a->setChecked(num==0);
             _plugin_widget->ab_b->setChecked(num==1);
