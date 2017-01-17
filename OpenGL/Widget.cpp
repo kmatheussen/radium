@@ -1040,7 +1040,9 @@ private:
     if (time < vblank/2){
       if (_swap_timer_counter > 4){
         usleep(40*1000 * vblank);
-        //printf("sleeping. Counter: %d. Time: %d. Vblank: %f\n",(int)_swap_timer_counter, time, vblank);
+#if !defined(RELEASE)
+        printf("OpenGL quickswapsleeping. Counter: %d. Time: %d. Vblank: %f\n",(int)_swap_timer_counter, time, vblank);
+#endif
         _swap_timer_counter = 0;
       }
     }else{
