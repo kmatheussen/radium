@@ -1,3 +1,60 @@
+Changes 4.3.8 -> 4.4.0:
+* Fix velocity pitch gradient colors when notes text is off.
+* Let chance 0 mean using previous chance for that instrument.
+* Add preferences option about whether to show playlist window during
+  startup
+* Fix patch voice on/off when changing a/b/c/d/e/f/g/h
+* Fix Ctrl-key modifier on OSX. (I.e. don't use Cmd when slowing down
+  mouse movement)
+* Sequencer menu: Make replace/clone also work on selected sequencer
+  blocks
+* Sequencer: Fix moving blocks
+* Sequencer: Fix selecting/unselecting single blocks
+* Fix high CPU usage when using Intel GFX driver and Radium window is
+  not visible.
+  May fix high CPU usage if using AMD GFX card too.
+* Wait at least 1 second before turning off autosuspension graying for
+  the mixer objects, to avoid flickering
+* Use same db2linear function in the mixer and sliders as in the mixer
+  strips
+* Add decaying values to the audio meters
+* Change volume meter range from -70 -> +40 to -40 -> +35
+* Fix this information text: "a signal of at least 50db".
+* Linux: Fix running Radium if the full path contains space
+* Mixer strips window. A traditional mixer interface.
+* Add MOUSE_MIXERSTRIPS keyboard qualifier
+* Show playlist window by default when starting the program. It might
+  make block handling less confusing for new users
+* Update mixer object graphics (if necessary) when calling changing
+  instrument effects from the API.
+* API: Fix checking error and throwing exception when running Python.
+* Don't show assertion reporter if trying to add a note with illegal
+  start and end values
+* API: Option to continue instead of throwing exception
+* API: Make it possible to paint on all types of gui, and rename canvas
+  to widget.
+* API: make gui_addMouseCallback work on all gui types
+* New Api functions:
+  gui_textWidth, hasAudioConnection, hasEventConnection, cancelLastUndo,
+  showInstrumentGui, undoMixerConnections, deleteAudioConnection,
+  deleteEventConnection, gui_addDoubleClickCallback,
+  informAboutGuiBeingAMixerStrips, showMixerStrips, gui_setFullScreen,
+  gui_isFullScreen, dbToGain, gainToDb, remakeMixerStrips,
+  getAudioConnectionVolume, setAudioConnectionVolume,
+  undoAudioConnectionVolume, getNumInputChannels, getNumOutputChannels,
+  getInstrumentComment, setInstrumentComment, addAudioMeterPeakCallback,
+  resetAudioMeterPeak, undoInstrumentEffect, gui_mixColors,
+  gui_getBackgroundColor, getMinDb, getMaxDb, addEffectMonitor,
+  removeEffectMonitor, gui_addCloseCallback, gui_setSize,
+  gui_disableUpdates, gui_enableUpdates, gui_verticalAudioMeter,
+  instrumentIsBusDescendant, gui_addLayoutSpace, gui_getX, gui_getY,
+  gui_setPos, gui_getSystemFontheight, gui_horizontalScroll,
+  gui_setMinWidth, gui_addResizeCallback, getInstrumentEffect,
+  getAudioBusId, gui_scrollArea, gui_verticalScroll,
+  gui_setLayoutSpacing, gui_setSizePolicy
+
+
+
 Changes 4.3.7 -> 4.3.8:
 * Fix crash when song tempo automation has been visible (but is hidden
   now), and a block was moved past the end of the song while playing,
