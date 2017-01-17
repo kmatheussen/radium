@@ -881,9 +881,9 @@ for .emacs:
                       (cons text
                             (cons (lambda _ #t)
                                   (parse-popup-menu-options (cdr args)))))
-                     ((procedure? (cadr args))
+                     ((procedure? arg2)
                       (cons text
-                            (cons (cadr args)
+                            (cons arg2
                                   (parse-popup-menu-options (cddr args)))))
                      ((list? arg2)
                       (append (list (<-> "[submenu start]" text)

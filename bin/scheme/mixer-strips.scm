@@ -69,15 +69,16 @@
            (<ra> :remove-effect-monitor effect-monitor))))
 
 
+
 (define (create-mixer-strip-name gui instrument-id x1 y1 x2 y2)
   (define name (<gui> :line (<ra> :get-instrument-name instrument-id) (lambda (edited)
                                                                         (<ra> :set-instrument-name edited instrument-id))))
   (<gui> :set-background-color name (<ra> :get-instrument-color instrument-id))
+
   (<gui> :add-mouse-callback name (lambda (button state x y)
                                     (if (and (= button *right-button*)
                                              (= state *is-pressing*))
-                                        (popup-menu "hello" (lambda () #t)
-                                                    "aiai" (lambda () #t)))
+                                        (create-default-mixer-path-popup instrument-id))
                                     #f))
   (<gui> :add gui name x1 y1 x2 y2))
 
@@ -126,6 +127,84 @@
                (get-all-instruments-that-we-can-send-to instrument-id))))))
           
 
+(define (show-mixer-path-popup parent-instrument-id
+                               instrument-id
+
+                               is-send?
+                               is-sink?
+                               upper-half?
+
+                               delete-func
+                               replace-func
+                               reset-func
+                               )
+
+  (popup-menu (list "Delete"
+                     :enabled delete-func
+                    (lambda ()
+                      (delete-func)))
+              (list "Replace"
+                    :enabled replace-func
+                    (lambda ()
+                      (replace-func)))
+              "-----------"
+              (list "Insert Plugin"
+                    :enabled (or upper-half?
+                                 (not is-sink?))
+                    (lambda ()
+                      (cond (is-send? 
+                             (insert-new-instrument-between parent-instrument-id
+                                                            (get-instruments-connecting-from-instrument parent-instrument-id)
+                                                            #t))
+                            (upper-half?
+                             (insert-new-instrument-between parent-instrument-id instrument-id #t)) ;; before
+                            (else
+                             (insert-new-instrument-between instrument-id
+                                                            (get-instruments-connecting-from-instrument instrument-id)
+                                                            #t))) ;; after
+                      ))
+              (list "Insert Send"
+                    :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
+                    (lambda ()
+                      (let ((instrument-id (cond (is-send?
+                                                  parent-instrument-id)
+                                                 (upper-half?
+                                                  parent-instrument-id)
+                                                 (else
+                                                  instrument-id))))
+                        (request-send-instrument instrument-id
+                                                 (lambda (create-send-func)
+                                                   (create-send-func 0))))))
+              "----------"
+
+              (list "Reset value"
+                    :enabled reset-func
+                    (lambda ()
+                      (reset-func)))
+
+              ;;"----------"
+              ;;"Convert to standalone strip" (lambda ()
+              ;;                                #t)
+              ))
+
+(define (create-default-mixer-path-popup instrument-id)
+  (define is-permanent? (<ra> :instrument-is-permanent instrument-id))
+
+  (define (delete)
+    (<ra> :delete-instrument instrument-id))
+  (define (replace)
+    (replace-instrument instrument-id ""))
+  (define reset #f)
+
+  (show-mixer-path-popup instrument-id
+                         instrument-id
+                         #f
+                         (= 0 (<ra> :get-num-output-channels instrument-id))
+                         #f
+                         (if is-permanent? #f delete)
+                         (if is-permanent? #f replace)
+                         reset))
+  
 (define (strip-slider parent-instrument-id
                       instrument-id
                       is-send?
@@ -211,7 +290,14 @@
                                                  (= state *is-pressing*))
                                         (if (<ra> :shift-pressed)
                                             (delete-func)
-                                            (create-popup-menu (< y (/ (<gui> :height widget) 2)))))
+                                            (show-mixer-path-popup parent-instrument-id
+                                                                   instrument-id
+                                                                   is-send?
+                                                                   is-sink?
+                                                                   (< y (/ (<gui> :height widget) 2))
+                                                                   delete-func
+                                                                   replace-func
+                                                                   reset-func)))
                                       #f))
 
   (<gui> :add-double-click-callback widget (lambda (button x y)
@@ -1024,6 +1110,12 @@
   (<gui> :set-layout-spacing mixer-strip-path-gui 5 5 5 5 5)
   (<gui> :add gui mixer-strip-path-gui x1 sends_y1 x2 sends_y2)
   
+  (<gui> :add-mouse-callback mixer-strip-path-gui (lambda (button state x y)
+                                                    (if (and (= button *right-button*)
+                                                             (= state *is-pressing*))
+                                                        (create-default-mixer-path-popup instrument-id))
+                                                    #f))
+
   (define meter-instrument-id (create-mixer-strip-path mixer-strip-path-gui instrument-id))
 
   (create-mixer-strip-pan gui system-background-color instrument-id x1 pan_y1 x2 pan_y2)
