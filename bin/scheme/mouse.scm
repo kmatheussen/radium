@@ -4091,7 +4091,8 @@
                      (not (<ra> :shift-pressed))
                      (let ((seqtracknum *current-seqtrack-num*))
                        (and seqtracknum
-                            (let ((seqblock-info (get-seqblock-info X Y)))
+                            (let ((seqblock-infos (get-selected-seqblock-infos))
+                                  (seqblock-info (get-seqblock-info X Y)))
                               (define seqblocknum (and seqblock-info
                                                        (seqblock-info :seqblocknum)))
                               (define blocknum (and seqblock-info
@@ -4169,23 +4170,28 @@
                                           ;;           (define pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
                                           ;;           (<ra> :delete-seqblock seqblocknum seqtracknum)                 
                                           ;;           (<ra> :add-block-to-seqtrack seqtracknum (<ra> :current-block) pos)))))
-
-
+                                          
                                           (list "Replace with existing block"
-                                                :enabled seqblock-info
+                                                :enabled (or seqblock-info seqblock-infos)
                                                 (lambda ()
                                                   (apply popup-menu
-                                                         (let ((pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
-                                                           (map (lambda (blocknum)
-                                                                  (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
-                                                                        (lambda ()
-                                                                          (undo-block
-                                                                           (lambda ()
-                                                                             (<ra> :delete-seqblock seqblocknum seqtracknum)
-                                                                             (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
-                                                                          (<ra> :select-block blocknum))))                                                         
-                                                                (iota (<ra> :get-num-blocks)))))))
-
+                                                         (map (lambda (blocknum)
+                                                                (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
+                                                                      (lambda ()
+                                                                        (undo-block
+                                                                         (lambda ()
+                                                                           (for-each (lambda (seqblock-info)
+                                                                                       (let* ((seqblocknum (seqblock-info :seqblocknum))
+                                                                                              (seqtracknum (seqblock-info :seqtracknum))
+                                                                                              (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+                                                                                         (<ra> :delete-seqblock seqblocknum seqtracknum)
+                                                                                         (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
+                                                                                     (if (null? seqblock-infos)
+                                                                                         (list seqblock-info)
+                                                                                         seqblock-infos))))
+                                                                        (<ra> :select-block blocknum))))                                                         
+                                                              (iota (<ra> :get-num-blocks))))))
+                                                
                                           ;;   Sub menues version. It looks better, but it is less convenient.
                                           ;;(list "Replace with existing block"
                                           ;;      :enabled seqblock-info
@@ -4216,29 +4222,40 @@
                                           ;;          (<ra> :select-block blocknum))))
                                           
                                           (list "Replace with new block"
-                                                :enabled seqblock-info
+                                                :enabled (or seqblock-infos seqblock-info)
                                                 (lambda ()
-                                                  (let ((pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
-                                                        (blocknum (<ra> :append-block)))
+                                                  (let ((blocknum (<ra> :append-block)))
                                                     (undo-block
                                                      (lambda ()
-                                                       (<ra> :delete-seqblock seqblocknum seqtracknum)
-                                                       (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
+                                                       (for-each (lambda (seqblock-info)
+                                                                   (let* ((seqblocknum (seqblock-info :seqblocknum))
+                                                                          (seqtracknum (seqblock-info :seqtracknum))
+                                                                          (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+                                                                     (<ra> :delete-seqblock seqblocknum seqtracknum)
+                                                                     (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
+                                                                 (if (null? seqblock-infos)
+                                                                     (list seqblock-info)
+                                                                     seqblock-infos))))
                                                     (<ra> :select-block blocknum))))
                                           
                                           ;;"-----------------"
                                           "------------------"
 
-                                          (list "Clone block"
-                                                :enabled (and seqblock-info (not (<ra> :is-playing-song)))
+                                          (list (if seqblock-infos "Clone blocks" "Clone block")
+                                                :enabled (and (or seqblock-infos seqblock-info)
+                                                              (not (<ra> :is-playing-song)))
                                                 (lambda ()
                                                   (<ra> :select-block blocknum)
                                                   (<ra> :copy-block)
                                                   (undo-block
                                                    (lambda ()
-                                                     (define new-blocknum (<ra> :append-block))
-                                                     (<ra> :select-block new-blocknum)
-                                                     (<ra> :paste-block)))))
+                                                     (for-each (lambda (seqblock-info)
+                                                                 (define new-blocknum (<ra> :append-block))
+                                                                 (<ra> :select-block new-blocknum)
+                                                                 (<ra> :paste-block))
+                                                               (if (null? seqblock-infos)
+                                                                   (list seqblock-info)
+                                                                   seqblock-infos))))))
                                           
                                           (list "Configure block"
                                                 :enabled (and seqblock-info (not (<ra> :is-playing-song)))
