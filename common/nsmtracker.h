@@ -925,6 +925,8 @@ struct Patch{
   int num_event_receivers;
   struct Patch *event_receivers[MAX_NUM_EVENT_RECEIVERS];
 
+  bool last_chance_decision_value; // Used when chance==0. Only accessed by the main player thread.
+
   DEFINE_ATOMIC(int, visual_note_intencity); // Used by the mixer to keep track of how bright the note indicator should light up.
 
   DEFINE_ATOMIC(bool, widget_needs_to_be_updated);

@@ -11,16 +11,16 @@ Chance text lets you set the probability for this note or pitch to play.
 <p>
   <blockquote>
     <pre>
-0 = lowest velocity, ff = highest velocity. (hex format)
+1 = lowest velocity, ff = highest velocity. (hex format)
     </pre>
   </blockquote>
 <p>
 
   Examples:
   <UL>
-    <LI>xx = 80: 50% chance of this note playing
-    <LI>xx =  0: 0% chance of this note playing
-    <LI>xx = ff: 255/256 chance of this note playing
+    <LI>xx = 80: 128/256 (50%) chance of this note playing
+    <LI>xx =  0: Only play if the previous note played. For instance if wanting to play a chord with same chance.
+    <LI>xx = ff: 255/256 (99.6%) chance of this note playing
   </UL>
 
 <p>

@@ -152,7 +152,29 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
   
   struct Patch *patch = track->patch;
 
-  bool doit = note->chance==0x100 || note->chance > rnd(0x100); // Check this here, and not in RT_schedule_note, since note->chance might change between RT_schedule_note and RT_scheduled_note.
+  bool doit;  // Set this here, and not in RT_schedule_note, since note->chance might change between RT_schedule_note and RT_scheduled_note.
+
+  if (patch==NULL){
+    
+    doit = true;
+
+  } else if (note->chance==0){
+
+    doit = patch->last_chance_decision_value;
+    //printf("   track: %d. Using last decision %d\n", track->l.num, doit);
+
+  } else {
+
+    if (note->chance==0x100)
+      doit = true;
+    else if (note->chance > rnd(0x100))
+      doit = true;
+    else
+      doit = false;
+
+    patch->last_chance_decision_value = doit;
+    //printf("   track: %d. Setting last decision to %d\n", track->l.num, doit);
+  }
     
   if(doit && track->onoff==1 && patch!=NULL){
     
@@ -195,11 +217,34 @@ static void RT_schedule_note(struct SeqTrack *seqtrack,
   args[2].const_pointer = note;
   
   int64_t time = get_seqblock_place_time(seqblock, note->l.p);
-    
-  //printf(" Scheduling note at %d. seqblock->time: %d\n",(int)time, (int)seqblock->time);
+  
+  if (note->chance==0)
+    time++;
+
+  //printf(" Scheduling note at %d. seqblock->time: %d, track %d\n",(int)time, (int)seqblock->time, track->l.num);
   SCHEDULER_add_event(seqtrack, time, RT_scheduled_note, &args[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
 }
 
+// Must add tracks backwards to keep order.
+static void schedule_notes(struct SeqTrack *seqtrack,
+                           const struct SeqBlock *seqblock,
+                           int64_t start_time,
+                           const Place *start_place,
+                           struct Tracks *track)
+{
+  if (track==NULL)
+    return;
+
+  schedule_notes(seqtrack, seqblock, start_time, start_place, NextTrack(track));
+
+  struct Notes *note=track->notes;
+    
+  while(note != NULL && PlaceLessThan(&note->l.p,start_place))
+    note=NextNote(note);
+  
+  if(note!=NULL)
+    RT_schedule_note(seqtrack,seqblock,track,note);  
+}
 
 void RT_schedule_notes_newblock(struct SeqTrack *seqtrack,
                                 const struct SeqBlock *seqblock,
@@ -207,18 +252,6 @@ void RT_schedule_notes_newblock(struct SeqTrack *seqtrack,
                                 Place start_place)
 {
   struct Tracks *track=seqblock->block->tracks;
-  
-  while(track!=NULL){
-    
-    struct Notes *note=track->notes;
-    
-    while(note != NULL && PlaceLessThan(&note->l.p,&start_place))
-      note=NextNote(note);
-        
-    if(note!=NULL)
-      RT_schedule_note(seqtrack,seqblock,track,note);
-  
-    track=NextTrack(track);   
-  }
 
+  schedule_notes(seqtrack, seqblock, start_time, &start_place, track);
 }

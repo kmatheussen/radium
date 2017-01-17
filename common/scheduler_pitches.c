@@ -55,18 +55,42 @@ static void RT_scheduled_hold_pitch_do(struct SeqTrack *seqtrack,
     RT_schedule_pitch(seqtrack, time, seqblock, track, note, pitch2, false);
 }
 
+static bool get_doit(struct Patch *patch, const struct Pitches *pitch){
+  bool doit;
+
+  if (pitch==NULL || patch==NULL) {
+
+    doit = true; // Not quite sure what's happening here.
+
+  } else if (pitch->chance==0){
+
+    doit = patch->last_chance_decision_value;
+
+  } else {
+
+    if (pitch->chance==0x100)
+      doit = true;
+    else if (pitch->chance > rnd(0x100))
+      doit = true;
+    else
+      doit = false;
+
+    patch->last_chance_decision_value = doit;
+
+  }
+
+  return doit;
+}
+
 static int64_t RT_scheduled_hold_pitch(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   const struct SeqBlock   *seqblock  = args[0].const_pointer;
   const struct Tracks     *track     = args[1].const_pointer;
   const struct Notes      *note      = args[2].pointer;
   const struct Pitches    *pitch1    = args[3].pointer;
 
-  bool doit;
-  
-  if (pitch1==NULL)
-    doit = true;
-  else
-    doit = pitch1->chance==0x100 || pitch1->chance > rnd(0x100);
+  struct Patch *patch = track->patch;
+
+  bool doit = get_doit(patch, pitch1);
 
   RT_scheduled_hold_pitch_do(seqtrack, time, seqblock, track, note, pitch1, doit);
   
@@ -159,6 +183,12 @@ static void RT_schedule_pitch(struct SeqTrack *seqtrack,
   else
     R_ASSERT(time2 >= time1);
 #endif
+
+  if (pitch1!=NULL && pitch1->chance==0)
+    time1++;
+    
+  if (pitch2!=NULL && pitch2->chance==0)
+    time2++;
     
   if (time2 < time1)
     return;
@@ -188,12 +218,7 @@ static void RT_schedule_pitch(struct SeqTrack *seqtrack,
 
     //int64_t time = R_MIN(time2, time1 + RADIUM_BLOCKSIZE);
 
-    bool doit;
-
-    if (pitch1==NULL)
-      doit = true;
-    else
-      doit = pitch1->chance==0x100 || pitch1->chance > rnd(0x100);
+    bool doit = get_doit(track->patch, pitch1);
 
     union SuperType args[g_num_pitches_args];
     args[0].const_pointer = seqblock;

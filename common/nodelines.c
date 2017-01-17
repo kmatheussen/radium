@@ -257,7 +257,7 @@ static float get_pitch_x(const struct WBlocks *wblock, const struct ListHeader3 
     R_ASSERT_NON_RELEASE(track_pitch_min==pitch->note);
     return (track_notearea_x1 + track_notearea_x2) / 2.0f;
   }
-    
+
   return scale(pitch->note,
                track_pitch_min, track_pitch_max,
                track_notearea_x1, track_notearea_x2
