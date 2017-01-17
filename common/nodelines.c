@@ -269,7 +269,12 @@ const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, c
     
   track_notearea_x1 = wtrack->notearea.x;
   track_notearea_x2 = wtrack->notearea.x2;
-  
+
+  if (track_notearea_x1 == track_notearea_x2){
+    track_notearea_x1 = 0;
+    track_notearea_x2 = 1;
+  }
+    
   TRACK_get_min_and_max_pitches(wtrack->track, &track_pitch_min, &track_pitch_max);
 
   struct Pitches *first_pitch = talloc(sizeof(struct Pitches));

@@ -1921,8 +1921,16 @@ static void create_velocities_gradient_background(
     float y1 = nodeline->y1;
     float y2 = nodeline->y2;
 
-    float start_note = scale(x1, track_notearea_x1, track_notearea_x2, track_pitch_min, track_pitch_max);
-    float end_note   = scale(x2, track_notearea_x1, track_notearea_x2, track_pitch_min, track_pitch_max);
+    float start_note;
+    float end_note;
+
+    if (track_notearea_x1==track_notearea_x2){
+      start_note = scale(x1, 0, 1, track_pitch_min, track_pitch_max);
+      end_note   = scale(x2, 0, 1, track_pitch_min, track_pitch_max);
+    } else {
+      start_note = scale(x1, track_notearea_x1, track_notearea_x2, track_pitch_min, track_pitch_max);
+      end_note   = scale(x2, track_notearea_x1, track_notearea_x2, track_pitch_min, track_pitch_max);
+    }
 
     float split1 = pitch_split_color_1;
     float split2 = pitch_split_color_2;
@@ -2024,7 +2032,6 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
         GE_trianglestrip_end(last_c);
 
     }else{
-
       TRACK_get_min_and_max_pitches(wtrack->track, &track_pitch_min, &track_pitch_max);
       track_notearea_x1 = wtrack->notearea.x;
       track_notearea_x2 = wtrack->notearea.x2;
@@ -2034,7 +2041,7 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
       create_velocities_gradient_background(
                                             pitch_nodelines,
                                             nodelines
-                                            );
+                                          );
     }
   }
 
