@@ -3305,15 +3305,21 @@
 
 ;; seqblock move
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define gakkgakk-last-value 0) ;; TODO: Fix.
+(define gakkgakk-last-value #f) ;; TODO: Fix.
 (define gakkgakk-has-made-undo #f)
 (define gakkgakk-start-pos 0)
 (define gakkgakk-was-selected #f)
-
+(define (reset-gakkgakk-values)
+  (set! gakkgakk-last-value #f)
+  (set! gakkgakk-has-made-undo #f)
+  (set! gakkgakk-start-pos 0)
+  (set! gakkgakk-was-selected #f))
+  
 ;; Move single seqblock
 (add-node-mouse-handler :Get-area-box (lambda()
                                         (<ra> :get-box sequencer))
                         :Get-existing-node-info (lambda (X Y callback)
+                                                  (reset-gakkgakk-values)
                                                   (let ((seqtracknum *current-seqtrack-num*))
                                                     (and (not *current-seqautomation/distance*)
                                                          seqtracknum
@@ -3379,20 +3385,24 @@
                                                                                           (<ra> :get-sample-rate))))))
 
                         :Release-node (lambda (seqblock-info)
-                                        (define has-moved (not (= gakkgakk-start-pos gakkgakk-last-value)))
+                                        (define has-moved (and gakkgakk-last-value (not (= gakkgakk-start-pos gakkgakk-last-value))))
                                         (define seqtracknum (seqblock-info :seqtracknum))
                                         (define seqblocknum (seqblock-info :seqblocknum))
 
                                         (define old-pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
-                                        (define new-pos gakkgakk-last-value)
+                                        (define new-pos (or gakkgakk-last-value old-pos))
 
                                         (if (not (= old-pos new-pos))
                                             (begin
                                               (when (not gakkgakk-has-made-undo)
                                                 (<ra> :undo-sequencer)
                                                 (set! gakkgakk-has-made-undo #f))
-                                              (<ra> :move-seqblock seqblocknum new-pos seqtracknum))
-                                            (<ra> :move-seqblock-gfx seqblocknum old-pos seqtracknum))
+                                              (begin
+                                                (<ra> :move-seqblock seqblocknum new-pos seqtracknum)
+                                                (c-display "moving 1")))
+                                            (begin
+                                              (<ra> :move-seqblock-gfx seqblocknum old-pos seqtracknum)
+                                              (c-display "moving 2")))
                                         (set-grid-type #f)
                                         (if (and (<ra> :ctrl-pressed)
                                                  (not has-moved))
@@ -3599,7 +3609,7 @@
 
                         
                         :Release-node (lambda (seqblock-infos)
-                                        (define has-moved (not (morally-equal? gakkgakk-start-pos gakkgakk-last-value)))
+                                        (define has-moved (and gakkgakk-last-value (not (morally-equal? gakkgakk-start-pos gakkgakk-last-value))))
                                         (delete-all-gfx-gfx-seqblocks)
                                         ;;(c-display "has-moved:" has-moved gakkgakk-start-pos gakkgakk-last-value gakkgakk-was-selected)
                                         (if has-moved
