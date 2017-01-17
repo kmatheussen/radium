@@ -109,6 +109,25 @@ void setShowInstrumentWidgetWhenDoubleClickingSoundObject(bool val){
 }
 
 
+static bool g_showPlaylistDuringStartup = true;
+
+bool showPlaylistDuringStartup(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_showPlaylistDuringStartup = SETTINGS_read_bool("show_playlist_during_startup", true);
+    has_inited = true;
+  }
+
+  return g_showPlaylistDuringStartup;
+}
+
+void setShowPlaylistDuringStartup(bool val){
+  g_showPlaylistDuringStartup = val;
+  SETTINGS_write_bool("show_playlist_during_startup", val);
+}
+
+
 void maximizeEditorWindow(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_MaximizeEditorWindow(window);

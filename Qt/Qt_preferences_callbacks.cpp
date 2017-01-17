@@ -411,6 +411,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     {
 
       show_instrument_widget_when_double_clicking->setChecked(showInstrumentWidgetWhenDoubleClickingSoundObject());
+
+      show_playlist_during_startup->setChecked(showPlaylistDuringStartup());
         
       gcOnOff->setChecked(true);
 
@@ -653,6 +655,11 @@ public slots:
   void on_show_instrument_widget_when_double_clicking_toggled(bool val){
     if (_initing==false)
       setShowInstrumentWidgetWhenDoubleClickingSoundObject(val);
+  }
+
+  void on_show_playlist_during_startup_toggled(bool val){
+    if (_initing==false)
+      setShowPlaylistDuringStartup(val);
   }
 
   void on_gcOnOff_toggled(bool val){
