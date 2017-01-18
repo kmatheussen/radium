@@ -1256,7 +1256,7 @@
                     (set! y2 (+ y2 (floor (/ (- height 5) num-rows))))
                     (set! mixer-strip-num 0))
                   (set! x1 (+ x2 strip-separator-width))))              
-            (sort-instruments-by-mixer-position
+            (sort-instruments-by-mixer-position-and-connections
              all-buses))
 
   mixer-strips

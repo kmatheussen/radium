@@ -63,6 +63,35 @@
                   #t)
                  (else
                   #f)))))
+
+(define (instrument-eventually-connects-to i1 i2)
+  (any? (lambda (to)
+          (if (= to i2)
+              #t
+              (instrument-eventually-connects-to to i2)))
+       (get-instruments-connecting-from-instrument i1)))
+  
+(define (sort-instruments-by-mixer-position-and-connections instruments)
+  (sort! (copy instruments)
+         (lambda (i1 i2)
+           (cond ((instrument-eventually-connects-to i1 i2)
+                  #t)
+                 ((instrument-eventually-connects-to i2 i1)
+                  #f)
+                 (else
+                  (define x1 (<ra> :get-instrument-x i1))
+                  (define x2 (<ra> :get-instrument-x i2))
+                  (define y1 (<ra> :get-instrument-y i1))
+                  (define y2 (<ra> :get-instrument-y i2))
+                  (cond ((< y1 y2)
+                         #t)
+                        ((> y1 y2)
+                         #f)
+                        ((< x1 x2)
+                         #t)
+                        (else
+                         #f)))))))
+  
   
 (define (get-buses-connecting-from-instrument id-instrument)
   (if (= 0 (<ra> :get-num-output-channels id-instrument))
