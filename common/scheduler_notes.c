@@ -225,26 +225,6 @@ static void RT_schedule_note(struct SeqTrack *seqtrack,
   SCHEDULER_add_event(seqtrack, time, RT_scheduled_note, &args[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
 }
 
-// Must add tracks backwards to keep order.
-static void schedule_notes(struct SeqTrack *seqtrack,
-                           const struct SeqBlock *seqblock,
-                           int64_t start_time,
-                           const Place *start_place,
-                           struct Tracks *track)
-{
-  if (track==NULL)
-    return;
-
-  schedule_notes(seqtrack, seqblock, start_time, start_place, NextTrack(track));
-
-  struct Notes *note=track->notes;
-    
-  while(note != NULL && PlaceLessThan(&note->l.p,start_place))
-    note=NextNote(note);
-  
-  if(note!=NULL)
-    RT_schedule_note(seqtrack,seqblock,track,note);  
-}
 
 void RT_schedule_notes_newblock(struct SeqTrack *seqtrack,
                                 const struct SeqBlock *seqblock,
@@ -253,5 +233,16 @@ void RT_schedule_notes_newblock(struct SeqTrack *seqtrack,
 {
   struct Tracks *track=seqblock->block->tracks;
 
-  schedule_notes(seqtrack, seqblock, start_time, &start_place, track);
+  while(track!=NULL){
+    
+    struct Notes *note=track->notes;
+    
+    while(note != NULL && PlaceLessThan(&note->l.p,&start_place))
+      note=NextNote(note);
+    
+    if(note!=NULL)
+      RT_schedule_note(seqtrack,seqblock,track,note);
+    
+    track=NextTrack(track);   
+  }
 }

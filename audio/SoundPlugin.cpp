@@ -412,8 +412,8 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
 
   ATOMIC_SET(plugin->input_volume_is_on, true);
   ATOMIC_SET(plugin->output_volume_is_on, true);
-  ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 0, true);
-  ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 1, true);
+  ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 0, false);
+  ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 1, false);
   ATOMIC_SET(plugin->effects_are_on, true);
              
   plugin->volume = 1.0f;
