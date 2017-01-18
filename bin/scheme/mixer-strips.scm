@@ -76,7 +76,9 @@
   (<gui> :add-mouse-callback name (lambda (button state x y)
                                     (if (and (= button *right-button*)
                                              (= state *is-pressing*))
-                                        (create-default-mixer-path-popup instrument-id))
+                                        (if (<ra> :shift-pressed)
+                                            (<ra> :delete-instrument instrument-id)
+                                            (create-default-mixer-path-popup instrument-id)))
                                     #f))
   (<gui> :add gui name x1 y1 x2 y2))
 
@@ -1078,7 +1080,9 @@
   (<gui> :add-mouse-callback mixer-strip-path-gui (lambda (button state x y)
                                                     (if (and (= button *right-button*)
                                                              (= state *is-pressing*))
-                                                        (create-default-mixer-path-popup instrument-id))
+                                                        (if (<ra> :shift-pressed)
+                                                            (<ra> :delete-instrument instrument-id)
+                                                            (create-default-mixer-path-popup instrument-id)))
                                                     #f))
 
   (define meter-instrument-id (create-mixer-strip-path mixer-strip-path-gui instrument-id))
