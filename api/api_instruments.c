@@ -456,6 +456,8 @@ void setInstrumentColor(const_char *colorname, int64_t instrument_id){
     CHIP_update(plugin);
   }
 
+  remakeMixerStrips();
+
   GFX_ScheduleRedraw();
 }
 

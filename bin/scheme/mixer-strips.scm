@@ -183,6 +183,11 @@
               ;;"----------"
               ;;"Convert to standalone strip" (lambda ()
               ;;                                #t)
+
+                "----------"
+                "Configure instrument color" (lambda ()
+                                               (show-instrument-color-dialog instrument-id))
+
               ))
 
 (define (create-default-mixer-path-popup instrument-id)
@@ -237,44 +242,6 @@
                           (set-value val)
                           (paintit (<gui> :width widget)
                                    (<gui> :height widget))))))
-
-  (define (create-popup-menu upper-half?)
-    (popup-menu "Delete" delete-func
-                "Replace" replace-func
-                "-----------"
-                (list "Insert Plugin"
-                      :enabled (or upper-half?
-                                   (not is-sink?))
-                      (lambda ()
-                                  (cond (is-send? 
-                                         (insert-new-instrument-between parent-instrument-id
-                                                                        (get-instruments-connecting-from-instrument parent-instrument-id)
-                                                                        #t))
-                                        (upper-half?
-                                         (insert-new-instrument-between parent-instrument-id instrument-id #t)) ;; before
-                                        (else
-                                         (insert-new-instrument-between instrument-id
-                                                                        (get-instruments-connecting-from-instrument instrument-id)
-                                                                        #t))) ;; after
-                                  ))
-                (list "Insert Send"
-                      :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
-                      (lambda ()
-                        (let ((instrument-id (cond (is-send?
-                                                    parent-instrument-id)
-                                                   (upper-half?
-                                                    parent-instrument-id)
-                                                   (else
-                                                    instrument-id))))
-                          (request-send-instrument instrument-id
-                                                   (lambda (create-send-func)
-                                                     (create-send-func 0))))))
-                "----------"
-                "Reset value" reset-func
-                ;;"----------"
-                ;;"Convert to standalone strip" (lambda ()
-                ;;                                #t)
-                ))
 
   (<gui> :set-min-height widget (get-fontheight))
 
