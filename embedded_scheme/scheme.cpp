@@ -343,6 +343,55 @@ bool s7extra_callFunc2_bool_int_int_float_float(const char *funcname, int64_t ar
   return s7extra_callFunc_bool_int_int_float_float((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
 }
 
+int64_t s7extra_callFunc_int_int_int_int(func_t *func, int64_t arg1, int64_t arg2, int64_t arg3){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = s7_call(s7,
+                           (s7_pointer)func,
+                           s7_list(s7,
+                                   3,
+                                   s7_make_integer(s7, arg1),
+                                   s7_make_integer(s7, arg2),
+                                   s7_make_integer(s7, arg3)
+                                   )
+                           );
+  if(!s7_is_integer(ret)){
+    handleError("Callback did not return a boolean");
+    return -1;
+  }else{
+    return s7_integer(ret);
+  }
+}
+
+int64_t s7extra_callFunc2_int_int_int_int(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3){
+  return s7extra_callFunc_int_int_int_int((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3);
+}
+
+int64_t s7extra_callFunc_int_int_int_int_bool(func_t *func, int64_t arg1, int64_t arg2, int64_t arg3, bool arg4){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = s7_call(s7,
+                           (s7_pointer)func,
+                           s7_list(s7,
+                                   4,
+                                   s7_make_integer(s7, arg1),
+                                   s7_make_integer(s7, arg2),
+                                   s7_make_integer(s7, arg3),
+                                   s7_make_boolean(s7, arg4)
+                                   )
+                           );
+  if(!s7_is_integer(ret)){
+    handleError("Callback did not return a boolean");
+    return -1;
+  }else{
+    return s7_integer(ret);
+  }
+}
+
+int64_t s7extra_callFunc2_int_int_int_int_bool(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3, bool arg4){
+  return s7extra_callFunc_int_int_int_int_bool((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
+}
+
 void s7extra_callFunc_void_charpointer(func_t *func, const char* arg1){
   ScopedEvalTracker eval_tracker;
   

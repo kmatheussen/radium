@@ -156,6 +156,7 @@ bool g_radium_runs_custom_exec = false;
 
 bool g_gc_is_incremental = false;
 
+QHBoxLayout *g_mixerwidgetlayout = NULL;
 
 DEFINE_ATOMIC(bool, g_mixer_strips_needs_redraw) = false;
 void RT_schedule_mixer_strips_redraw(void){
@@ -434,7 +435,7 @@ protected:
 
     if (MIXER_is_saving())
       return false;
-      
+
     struct Tracker_Windows *window = root->song->tracker_windows;
 
     bool ignore_autorepeat = !doAutoRepeat() && editor_has_keyboard == true;
@@ -1402,6 +1403,9 @@ protected:
       if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false))
         evalScheme("(remake-mixer-strips)");
     }
+
+    if (is_called_every_ms(100))
+      MIXER_MIXERSTRIPWIDGET_call_regularly();
     
 #if 0
     // Update graphics when playing
@@ -1857,8 +1861,20 @@ int radium_main(char *arg){
 
       }
 
-      //MixerWidget *mixer_widget = 
       new MixerWidget(xsplitter);
+      
+      //MixerWidget *mixer_widget =
+      QWidget *mixerstripparent = new QWidget(xsplitter);
+      //mixerwidgetandmixerstrip->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+      g_mixerwidgetlayout = new QHBoxLayout;
+      g_mixerwidgetlayout->setSpacing(0);
+      g_mixerwidgetlayout->setContentsMargins(0,0,0,0);
+      mixerstripparent->setLayout(g_mixerwidgetlayout);
+      
+      //QWidget *gakk = new MixerWidget(mixerwidgetandmixerstrip);
+      //g_mixerwidgetlayout->addWidget(gakk);
+      
+      //gakk->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
       //mixer_widget->resize(300,mixer_widget->height());
 
     }

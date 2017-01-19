@@ -1000,6 +1000,10 @@ void deleteInstrument(int64_t instrument_id){
   root->song->tracker_windows->must_redraw=true;
 }
 
+bool instrumentActive(int64_t instrument_id){
+  return PATCH_get_from_id(instrument_id) != NULL;
+}
+
 const_char* getSampleBookmarks(int num){
   return SETTINGS_read_string(talloc_format("sample_bookmarks%d",num), "/");
 }

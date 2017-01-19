@@ -58,6 +58,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPluginRegistry_proc.h"
 #include "../audio/Mixer_proc.h"
 
+#include "../api/api_gui_proc.h"
 #include "Qt_instruments_proc.h"
 
 
@@ -69,6 +70,8 @@ extern QApplication *qapplication;
 #include "EditorWidget.h"
 #include "../GTK/GTK_visual_proc.h"
 #include "../OpenGL/Widget_proc.h"
+
+extern QHBoxLayout *g_mixerwidgetlayout;
 
 void set_editor_focus(void){
   if(root==NULL)
@@ -872,6 +875,68 @@ struct Patch *get_current_instruments_gui_patch(void){
 
   return NULL;
 }
+
+void MIXER_MIXERSTRIPWIDGET_call_regularly(void){
+  static struct Patch *last_patch = NULL;
+  static int64_t guinum = -1;
+  
+  if (g_currpatch!=NULL && g_currpatch != last_patch){
+
+    last_patch = NULL;
+
+    int64_t old_guinum = guinum;
+    int64_t new_guinum = gui_createSingleMixerStrip(g_currpatch->id, 100,600);
+    //R_ASSERT(new_guinum != -1);
+    
+    if(new_guinum != -1){
+
+      QWidget *old_mixerstrip_widget = old_guinum==-1 ? NULL : API_gui_get_widget(old_guinum);
+      R_ASSERT(old_guinum==-1 || old_mixerstrip_widget!=NULL);
+      
+      QWidget *new_mixerstrip_widget = API_gui_get_widget(new_guinum);
+      R_ASSERT(new_mixerstrip_widget!=NULL);
+      
+      if(new_mixerstrip_widget==NULL){
+
+        gui_close(new_guinum);
+
+      } else {
+         
+        if (old_mixerstrip_widget==NULL){
+          
+          g_mixerwidgetlayout->addWidget(new_mixerstrip_widget);
+          last_patch = g_currpatch;
+          
+        } else {
+          
+          QLayoutItem *old_item = g_mixerwidgetlayout->replaceWidget(old_mixerstrip_widget, new_mixerstrip_widget, Qt::FindDirectChildrenOnly);
+          R_ASSERT(old_item!=NULL);
+          
+          if (old_item != NULL) {
+            delete old_item;
+            last_patch = g_currpatch;
+            old_mixerstrip_widget = NULL;
+          }
+        
+        }
+
+        guinum = new_guinum;
+        
+        if(old_mixerstrip_widget!=NULL)
+          g_mixerwidgetlayout->removeWidget(old_mixerstrip_widget);
+
+        printf("Closing old gui %d\n", (int)old_guinum);
+        
+        if(old_guinum != -1)
+          gui_close(old_guinum);
+      
+      }
+
+    }
+
+  }
+}
+      
 
 #if 0
 hash_t *create_instrument_widget_order_state(void){

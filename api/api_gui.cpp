@@ -350,7 +350,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       event->accept();
 
-      s7extra_callFunc_void_int_int(_resize_callback, event->size().width(), event->size().height());
+      if(gui_is_open(_gui_num))
+        s7extra_callFunc_void_int_int(_resize_callback, event->size().width(), event->size().height());
     }
 
     void addResizeCallback(func_t* func){
@@ -1195,7 +1196,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       //setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
       setWidgetResizable(true);
-
+      
       QWidget *contents = new QWidget(this);
 
       mylayout = new QVBoxLayout(contents);
@@ -1528,13 +1529,17 @@ float gui_textWidth(const_char* text){
   return GFX_get_text_width(root->song->tracker_windows, text);
 }
 
-static Gui *get_gui(int64_t guinum){
+static Gui *get_gui_maybeclosed(int64_t guinum){
   if (guinum < 0 || guinum > g_guis.size()){
     handleError("No Gui #%d", guinum);
     return NULL;
   }
 
-  Gui *gui = g_guis[(int)guinum];
+  return g_guis[(int)guinum];
+}
+
+static Gui *get_gui(int64_t guinum){
+  Gui *gui = get_gui_maybeclosed(guinum);
 
   if (gui==NULL)
     handleError("Gui #%d has been closed and can not be used.", guinum);
@@ -1861,6 +1866,10 @@ void gui_close(int64_t guinum){
   gui->_widget->close();
 }
 
+bool gui_is_open(int64_t guinum){
+  return get_gui_maybeclosed(guinum)!=NULL;
+}
+
 void gui_disableUpdates(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -2053,7 +2062,7 @@ void gui_setMaxHeight(int64_t guinum, int minheight){
 ////////////////
 
 int64_t gui_verticalAudioMeter(int instrument_id){
-  struct Patch *patch = getPatchFromNum(instrument_id);
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;
 
@@ -2183,6 +2192,29 @@ void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1,
 void API_gui_call_regularly(void){
   for(auto *meter : g_active_vertical_audio_meters)
     meter->call_regularly();
+}
+
+QWidget *API_gui_get_widget(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return NULL;
+
+  return gui->_widget;
+}
+  
+                         
+
+
+///////////////// Mixer strips
+//////////////////////////////
+
+
+int64_t gui_createSingleMixerStrip(int64_t instrument_id, int width, int height){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return -1;
+
+  return s7extra_callFunc2_int_int_int_int("create-standalone-mixer-strip", instrument_id, width, height);
 }
 
 #include "mapi_gui.cpp"

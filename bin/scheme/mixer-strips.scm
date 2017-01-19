@@ -191,7 +191,17 @@
                                                (show-instrument-color-dialog instrument-id))
                 "Instrument information" (lambda ()
                                            (<ra> :show-instrument-info instrument-id))
-
+                "Show GUI" (lambda ()
+                             (<ra> :show-instrument-gui instrument-id #f))
+                "----------"
+                "Set current instrument" (lambda ()
+                                           (popup-menu (map (lambda (instrument-id)
+                                                              (list (<ra> :get-instrument-name instrument-id)
+                                                                    (lambda ()
+                                                                      (<ra> :show-instrument-gui instrument-id #f)
+                                                                      )))
+                                                            (sort-instruments-by-mixer-position-and-connections 
+                                                             (get-all-audio-instruments)))))
               ))
 
 (define (create-default-mixer-path-popup instrument-id)
@@ -1105,8 +1115,68 @@
   (create-mixer-strip-mutesolo gui instrument-id x1 mutesolo_y1 x2 mutesolo_y2)
   (create-mixer-strip-volume gui instrument-id meter-instrument-id x1 volume_y1 x2 volume_y2)
   (create-mixer-strip-comment gui instrument-id x1 comment_y1 x2 comment_y2)
-
+    
   gui)
+
+
+(define (create-standalone-mixer-strip instrument-id width height)
+  (define parent (<gui> :widget width height))
+
+  (define width (floor (* 2 (<gui> :text-width "MUTE SOLO"))))
+
+  (<gui> :set-min-width parent 100)
+  (<gui> :set-max-width parent 100)
+  
+  (define das-mixer-strip-gui #f)
+
+  (define (remake width height)
+    (define instrument-is-active (<ra> :instrument-active instrument-id))
+    
+    (c-display "    remaking mixer-strip" instrument-id parent width height)
+    (catch #t
+           (lambda ()
+             (<gui> :disable-updates parent)
+             
+             (define new-mixer-strip (and instrument-is-active (create-mixer-strip instrument-id width height)))
+             
+             (when das-mixer-strip-gui
+               (<gui> :close das-mixer-strip-gui)
+               (set! das-mixer-strip-gui #f))
+
+             (when instrument-is-active
+               (<gui> :add parent new-mixer-strip 0 0 width height)
+               (<gui> :show new-mixer-strip)             
+               (set! das-mixer-strip-gui new-mixer-strip))
+             )
+           
+           (lambda args
+             (display (ow!))))
+  
+    (<gui> :enable-updates parent))
+
+  ;;(remake width height)
+
+  (<gui> :add-resize-callback parent remake)
+  
+  (define mixer-strips (make-mixer-strips :gui parent
+                                          :remake (lambda()
+                                                    (remake (<gui> :width parent) (<gui> :height parent)))
+                                          :width width
+                                          :height height))
+  
+  (<ra> :inform-about-gui-being-a-mixer-strips parent)
+  (push-back! *mixer-strips* mixer-strips)
+  
+  (<gui> :add-close-callback parent
+         (lambda ()
+           (set! *mixer-strips*
+                 (remove (lambda (a-mixer-strip)
+                           (= (a-mixer-strip :gui)
+                              parent))
+                         *mixer-strips*))))
+
+  parent)
+
 
 
 #!
@@ -1312,8 +1382,8 @@
   (<gui> :add-close-callback parent
          (lambda ()
            (set! *mixer-strips*
-                 (remove (lambda (a-mixer-strip)
-                           (= (a-mixer-strip :gui)
+                 (remove (lambda (a-mixer-strips)
+                           (= (a-mixer-strips :gui)
                               parent))
                          *mixer-strips*))))
 
