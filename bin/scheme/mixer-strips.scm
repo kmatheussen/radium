@@ -358,7 +358,18 @@
     (<ra> :delete-instrument instrument-id))
 
   (define (replace)
-    #f)
+    (c-display "   name: " (<ra> :get-instrument-name parent-instrument-id))
+    (for-each (lambda (id)
+                (c-display "      " (<ra> :get-instrument-name id)))
+              (get-all-instruments-that-we-can-send-to parent-instrument-id))
+    (request-send-instrument parent-instrument-id
+                             (lambda (create-send-func)
+                               (undo-block
+                                (lambda ()
+                                  (define db (get-db-value))
+                                  (define gain (<ra> :db-to-gain db))
+                                  (delete)
+                                  (create-send-func gain))))))
 
   (define (set-db-value db)
     (<ra> :set-instrument-effect instrument-id "System In" (scale db *min-db* *max-db* 0 1)))
