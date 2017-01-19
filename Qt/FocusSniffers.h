@@ -374,5 +374,6 @@ class FocusSnifferQTableWidget : public QTableWidget{
 
 #define FocusSnifferQTableWidgetItem QTableWidgetItem
 
+
 #endif
 

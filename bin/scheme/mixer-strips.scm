@@ -189,6 +189,8 @@
                 "----------"
                 "Configure instrument color" (lambda ()
                                                (show-instrument-color-dialog instrument-id))
+                "Instrument information" (lambda ()
+                                           (<ra> :show-instrument-info instrument-id))
 
               ))
 

@@ -37,6 +37,13 @@ void OS_OSX_show_icon_in_dock(void){
     }
 }
 
+/*
+void OS_OSX_get_os_version(void){
+  //[[NSProcessInfo processInfo] operatingSystemVersion];
+  [[NSProcessInfo processInfo] operatingSystem];
+}
+*/
+
 extern struct TEvent tevent;
 extern struct Root *root;
 

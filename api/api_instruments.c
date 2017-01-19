@@ -1131,6 +1131,17 @@ bool showInstrumentGui(int64_t instrument_id, bool show_instrument_window_if_not
   return false;
 }
 
+void showInstrumentInfo(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+  
+  struct SoundPlugin *plugin = patch->patchdata;
+  if (plugin != NULL)
+    PLUGIN_show_info_window(plugin);
+}
+
+
 /******** Effect monitors ************/
 
 struct EffectMonitor{

@@ -1038,6 +1038,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int delete_ = -1;
   int save = -1;
   int config_color = -1;
+  int instrument_info = -1;
   int random = -1;
   
   if (chips.size() > 1) {
@@ -1068,7 +1069,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
     save = VECTOR_push_back(&v, "Save preset file (.rec)");
     config_color = VECTOR_push_back(&v, "Configure instrument color");
-    
+    instrument_info = VECTOR_push_back(&v, "Show instrument info");
   }
 
       
@@ -1106,6 +1107,10 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
 
     QString command = QString("(show-instrument-color-dialog ") + QString::number(CHIP_get_patch(chip_under)->id) + ")";
     evalScheme(talloc_strdup(command.toUtf8().constData()));
+
+  } else if (sel==instrument_info) {
+
+    showInstrumentInfo(CHIP_get_patch(chip_under)->id);
 
   } else if (sel==random) {
 

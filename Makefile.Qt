@@ -1941,7 +1941,7 @@ SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_e
 SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegistry_proc.h
 	$(CCC) audio/SoundPluginRegistry.cpp  $(QTOPT)
 
-SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp midi/midi_i_input_proc.h
+SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp midi/midi_i_input_proc.h Qt/helpers.h
 	$(CCC) audio/SoundPlugin.cpp $(QTOPT)
 ### $(CPUOPT)
 

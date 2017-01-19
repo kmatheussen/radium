@@ -10,7 +10,6 @@
 
 #include "../common/nsmtracker.h"
 
-
 #include "helpers.h"
 
 #ifndef TEST_MAIN
@@ -65,6 +64,12 @@ static int show_message(const char *message){
 QMainWindow *g_main_window = NULL; // referenced by helpers.h
 QSplashScreen *g_splashscreen = NULL; // referenced by helpers.h
 bool g_radium_runs_custom_exec = false; // used by helpers.h
+QWidget *MIXERSTRIPS_get_curr_widget(void){
+  return NULL;
+}
+bool MIXERSTRIPS_has_mouse_pointer(void){  // used by helpers.h
+  return false;
+}
 
 int main(int argc, char **argv){
   QCoreApplication::setLibraryPaths(QStringList());

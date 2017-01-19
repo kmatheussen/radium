@@ -16,6 +16,7 @@
 #include "../common/keyboard_focus_proc.h"
 #include "../common/visual_proc.h"
 
+#include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
 
 #define PUT_ON_TOP 0
@@ -26,6 +27,15 @@ extern void set_editor_focus(void);
 
 extern QMainWindow *g_main_window;
 extern QSplashScreen *g_splashscreen;
+
+static QWidget *get_current_parent(void){
+  QWidget *mixer_strips_widget = MIXERSTRIPS_get_curr_widget();
+
+  if (mixer_strips_widget!=NULL)
+    return mixer_strips_widget;
+  else
+    return g_main_window;
+}
 
 namespace radium{
   struct ASMTimer : public QTimer{
@@ -94,14 +104,14 @@ namespace radium{
 
 }
 
-
 struct MyQMessageBox : public QMessageBox {
   bool _splashscreen_visible;
   
   MyQMessageBox(QWidget *parent = NULL)
-    : QMessageBox(parent!=NULL ? parent : g_main_window)
+    : QMessageBox(parent!=NULL ? parent : get_current_parent())
   {
     setWindowModality(Qt::ApplicationModal);
+    //setWindowModality(Qt::NonModal);
     setWindowFlags(Qt::Window | Qt::Tool);
   }
   
@@ -177,7 +187,7 @@ struct RememberGeometryQDialog : public QDialog {
   
 public:
   RememberGeometryQDialog(QWidget *parent)
-    : QDialog(parent!=NULL ? parent : g_main_window, Qt::Window | Qt::Tool)
+    : QDialog(parent!=NULL ? parent : get_current_parent(), Qt::Window | Qt::Tool)
     , has_stored_geometry(false)
 #if PUT_ON_TOP
     , timer(this)

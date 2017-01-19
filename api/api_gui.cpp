@@ -2104,10 +2104,10 @@ void showMixerStrips(int num_rows){
   evalScheme("(create-mixer-strips-gui 1)");
 }
 
-bool MIXERSTRIPS_has_mouse_pointer(void){
+QWidget *MIXERSTRIPS_get_curr_widget(void){
   QVector<int64_t> to_remove;
 
-  bool ret = false;
+  QWidget *ret = NULL;
   
   for(int64_t guinum : g_mixerstrip_guinums){
 
@@ -2132,7 +2132,7 @@ bool MIXERSTRIPS_has_mouse_pointer(void){
           && y <  widget->height()
           )
         {
-          ret = true;
+          ret = widget;
           break;
         }
     }
@@ -2141,7 +2141,11 @@ bool MIXERSTRIPS_has_mouse_pointer(void){
   for(int64_t guinum : to_remove)
     g_mixerstrip_guinums.removeOne(guinum);
   
-  return ret;
+  return ret;  
+}
+
+bool MIXERSTRIPS_has_mouse_pointer(void){
+  return MIXERSTRIPS_get_curr_widget() != NULL;  
 }
 
 ///////////////// Drawing
