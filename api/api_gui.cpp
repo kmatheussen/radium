@@ -822,37 +822,31 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         peaks.peaks[ch] = -100;
     }
 
-    float get_width(void){
-      return width() / (1.5*_num_channels);
+    void get_x1_x2(int ch, float &x1, float &x2){
+      
+      int num_borders = _num_channels + 1;
+      float border_width = 0;
+
+      float meter_area_width = width() - 2;
+      float start_x = 1;
+
+      float total_meter_space = meter_area_width - num_borders * border_width;
+
+      float meter_width = total_meter_space / _num_channels;
+
+      x1 = start_x + border_width + (ch * (border_width+meter_width));
+      x2 = start_x + border_width + (ch * (border_width+meter_width)) + meter_width;
     }
 
-    float get_half_width(void){
-      return get_width()/2.0;
-    }
-
-    float get_middle(int ch){
-      return (scale(ch, 0, _num_channels, 0, width()) + scale(ch+1, 0, _num_channels, 0, width())) / 2.0;
-    }
-
-    float get_x1(int ch){
-      return get_middle(ch) - get_half_width();
-      //return scale(ch, 0, _num_channels, 1, width()-2);
-    }
-
-    float get_x2(int ch){
-      return get_middle(ch) + get_half_width();
-      //return scale(ch+1, 0, _num_channels, 1, width()-2);
-    }
-
-    const float upper_border = 5;
-    const float down_border = 5;
+    const float upper_border = 2;
+    const float down_border = 2;
 
     float get_pos_y1(void) const {
-      return upper_border;
+      return upper_border - 1;
     }
     
     float get_pos_y2(void) const {
-      return height() - down_border;
+      return height() - down_border + 2;
     }
     
     float get_pos_height(void) const {
@@ -890,17 +884,18 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         float pos = db2linear(db, get_pos_y1(), get_pos_y2());
         _pos[ch] = pos;
 
-        float x1 = get_x1(ch);
-        float x2 = get_x2(ch);
+        float x1,x2;
+        get_x1_x2(ch, x1,x2);
 
         if (pos < prev_pos){
           update(x1-1,      floorf(pos)-1,
-                 x2-x1+2,   floorf(prev_pos-pos)+3);
+                 x2-x1+3,   floorf(prev_pos-pos)+3);
         } else if (pos > prev_pos){
           update(x1-1,      floorf(prev_pos)-1,
-                 x2-x1+2,   floorf(pos-prev_pos)+3);
+                 x2-x1+3,   floorf(pos-prev_pos)+3);
         }
 
+        //update();
 
         float falloff_pos = db2linear(db_falloff, get_pos_y1(), get_pos_y2());
         _falloff_pos[ch] = falloff_pos;
@@ -939,8 +934,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       p.setPen(Qt::NoPen);
         
       for(int ch=0 ; ch < _num_channels ; ch++){
-        float x1 = get_x1(ch);
-        float x2 = get_x2(ch);
+        float x1,x2;
+        get_x1_x2(ch, x1,x2);
 
         float pos = _pos[ch];
 
@@ -959,7 +954,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
             {
               float dark_green_pos = R_MAX(pos, posm20db);
               QRectF rect(x1, dark_green_pos,
-                           x2-x1,  get_pos_y2()-dark_green_pos);
+                          x2-x1,  get_pos_y2()-dark_green_pos);
               
               p.setBrush(colordarkgreen);
               p.drawRect(rect);
@@ -1035,10 +1030,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       p.setBrush(Qt::NoBrush);
       
       //border
+#if 0
       QPen pen(QColor("#202020"));
       pen.setWidth(2.0);
       p.setPen(pen);
       p.drawRoundedRect(0,0,width()-1,height()-1, 5, 5);
+#endif
     }
 
   };
