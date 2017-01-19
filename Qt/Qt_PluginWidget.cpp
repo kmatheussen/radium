@@ -149,7 +149,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch, SizeType
 #endif
   }
 
-  QGridLayout *pGridLayout = new QGridLayout(widget);
+  QGridLayout *pGridLayout = new QGridLayout; //(widget);
   pGridLayout->setMargin(0);
   pGridLayout->setSpacing(0);
 
@@ -196,7 +196,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch, SizeType
       if (++iX >= iXsPerPage) {
         iX = 0;
         if (widget->pTabWidget && iPage < iPages) {
-          pGridLayout = new QGridLayout(widget);
+          pGridLayout = new QGridLayout; //(widget);
           pGridLayout->setMargin(0);
           pGridLayout->setSpacing(0);
           pPageWidget = new QWidget(widget);
