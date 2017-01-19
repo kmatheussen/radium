@@ -414,6 +414,7 @@
   (<gui> :add gui slider))
 
 
+
 (define (get-mixer-strip-send-horiz gui)
   (define horiz (<gui> :horizontal-layout))
   (<gui> :set-layout-spacing horiz 1 1 0 1 0)
@@ -635,7 +636,7 @@
                     (create-mixer-strip-bus-send gui
                                                  instrument-id
                                                  bus-num))              
-                  (get-buses-connecting-from-instrument instrument-id))))
+                  (get-buses-connecting-from-instrument instrument-id #t))))
   
   (add-bus-sends instrument-id)
     
@@ -1335,7 +1336,7 @@
 (remake-mixer-strips)
 
 (get-instrument-from-name "Sample Player 1")
-(get-buses-connecting-from-instrument (get-instrument-from-name "Sample Player 1"))
+(get-buses-connecting-from-instrument (get-instrument-from-name "Sample Player 1") #t)
 
 
 (get-all-audio-instruments)

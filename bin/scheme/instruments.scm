@@ -65,44 +65,49 @@
                   #f)))))
 
 (define (instrument-eventually-connects-to i1 i2)
+  ;;(c-display "  instrument-eventually" (<ra> :get-instrument-name i1) "->" (<ra> :get-instrument-name i2))
   (any? (lambda (to)
           (if (= to i2)
               #t
               (instrument-eventually-connects-to to i2)))
-       (get-instruments-connecting-from-instrument i1)))
-  
+        (get-instruments-and-buses-connecting-from-instrument i1)))
+
 (define (sort-instruments-by-mixer-position-and-connections instruments)
-  (sort! (copy instruments)
-         (lambda (i1 i2)
-           (cond ((instrument-eventually-connects-to i1 i2)
-                  #t)
-                 ((instrument-eventually-connects-to i2 i1)
-                  #f)
-                 (else
-                  (define x1 (<ra> :get-instrument-x i1))
-                  (define x2 (<ra> :get-instrument-x i2))
-                  (define y1 (<ra> :get-instrument-y i1))
-                  (define y2 (<ra> :get-instrument-y i2))
-                  (cond ((< y1 y2)
-                         #t)
-                        ((> y1 y2)
-                         #f)
-                        ((< x1 x2)
-                         #t)
-                        (else
-                         #f)))))))
+  (sort instruments
+        (lambda (i1 i2)
+          (cond ((instrument-eventually-connects-to i1 i2)
+                 #t)
+                ((instrument-eventually-connects-to i2 i1)
+                 #f)
+                (else
+                 (define x1 (<ra> :get-instrument-x i1))
+                 (define x2 (<ra> :get-instrument-x i2))
+                 (define y1 (<ra> :get-instrument-y i1))
+                 (define y2 (<ra> :get-instrument-y i2))
+                 (cond ((< y1 y2)
+                        #t)
+                       ((> y1 y2)
+                        #f)
+                       ((< x1 x2)
+                        #t)
+                       (else
+                        #f)))))))
   
   
-(define (get-buses-connecting-from-instrument id-instrument)
+(define (get-buses-connecting-from-instrument id-instrument include-0db-buses?)
   (if (= 0 (<ra> :get-num-output-channels id-instrument))
       '()
       (keep identity
-            (map (lambda (bus-num effect-name)
-                   (if (>= (<ra> :get-instrument-effect id-instrument effect-name) 0.5)
+            (map (lambda (bus-num effect-on-off-name effect-name)
+                   (if (and (>= (<ra> :get-instrument-effect id-instrument effect-on-off-name) 0.5)
+                            (if include-0db-buses?
+                                #t
+                                (> (<ra> :get-instrument-effect id-instrument effect-name) 0)))
                        bus-num ;;(<ra> :get-audio-bus-id bus-num)
-                   #f))
+                       #f))
                  (iota (length *bus-effect-onoff-names*))
-                 *bus-effect-onoff-names*))))
+                 *bus-effect-onoff-names*
+                 *bus-effect-names*))))
 
 (define (get-buses)
   (map (lambda (bus-num)
@@ -119,6 +124,12 @@
          (<ra> :get-audio-connection-dest-instrument in-connection id-instrument))
        (iota (<ra> :get-num-out-audio-connections id-instrument))))
 
+(define (get-instruments-and-buses-connecting-from-instrument id-instrument)
+  (append (map (lambda (in-connection)
+                 (<ra> :get-audio-connection-dest-instrument in-connection id-instrument))
+               (iota (<ra> :get-num-out-audio-connections id-instrument)))
+          (map ra:get-audio-bus-id (get-buses-connecting-from-instrument id-instrument #f))))
+  
 (define (get-instruments-econnecting-to-instrument id-instrument)
   (map (lambda (in-connection)
          (<ra> :get-event-connection-source-instrument in-connection id-instrument))
@@ -145,22 +156,21 @@
         (get-all-audio-instruments)))
 
 
-(define (recursive-connection? start-id to-id)
-  (if (= start-id to-id)
+(define (would-this-create-a-recursive-connection? goal-id id)
+  (if (= goal-id id)
       #t
       (any? (lambda (id)
-              (recursive-connection? start-id id))
-            (append (get-instruments-connecting-from-instrument to-id)
-                    (if (<ra> :instrument-is-bus-descendant to-id)
-                        '()
-                        (get-buses))))))
-;;(get-buses-connecting-from-instrument to-id)
+              (would-this-create-a-recursive-connection? goal-id id))
+            (get-instruments-and-buses-connecting-from-instrument id))))
         
 
 (define (get-all-instruments-that-we-can-send-to from-id)
   (remove (lambda (to-id)
-            (or (<ra> :has-audio-connection from-id to-id)
-                (recursive-connection? from-id to-id)))
+            ;;(c-display "      " (<ra> :get-instrument-name from-id) "->" (<ra> :get-instrument-name to-id)
+            ;;           ". has_audio_connection:" (<ra> :has-audio-connection from-id to-id)
+            ;;           ". is_recursive:" (would-this-create-a-recursive-connection? from-id to-id))
+            (or ;;(<ra> :has-audio-connection from-id to-id)
+                (would-this-create-a-recursive-connection? from-id to-id)))
           (get-all-audio-instruments)))
 
 (define (duplicate-connections id-old-instrument id-new-instrument)

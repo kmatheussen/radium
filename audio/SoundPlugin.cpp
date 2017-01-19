@@ -906,6 +906,11 @@ static float get_chance(struct SoundPlugin *plugin, int num){
     }                                                           \
   }
 
+#define SET_BUS_VOLUME(busnum)                                          \
+  store_value = get_gain_store_value(value,value_type);                 \
+  safe_float_write(&plugin->bus_volume[busnum], store_value);           \
+  break;
+
 void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum PlayerLockRequired player_lock_required, enum ValueFormat value_format, bool sent_from_midi_learn){
   float store_value = value;
   //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
@@ -994,25 +999,15 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
       break;
 
     case EFFNUM_BUS1:
-      store_value = get_gain_store_value(value,value_type);
-      safe_float_write(&plugin->bus_volume[0], store_value);
-      break;
+      SET_BUS_VOLUME(0);
     case EFFNUM_BUS2:
-      store_value = get_gain_store_value(value,value_type);
-      safe_float_write(&plugin->bus_volume[1], store_value);
-      break;
+      SET_BUS_VOLUME(1);
     case EFFNUM_BUS3:
-      store_value = get_gain_store_value(value,value_type);
-      safe_float_write(&plugin->bus_volume[2], store_value);
-      break;
+      SET_BUS_VOLUME(2);
     case EFFNUM_BUS4:
-      store_value = get_gain_store_value(value,value_type);
-      safe_float_write(&plugin->bus_volume[3], store_value);
-      break;
+      SET_BUS_VOLUME(3);
     case EFFNUM_BUS5:
-      store_value = get_gain_store_value(value,value_type);
-      safe_float_write(&plugin->bus_volume[4], store_value);
-      break;
+      SET_BUS_VOLUME(4);
       
     case EFFNUM_BUS1_ONOFF:
       if (value > 0.5f)
