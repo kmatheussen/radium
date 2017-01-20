@@ -1164,7 +1164,8 @@
                                           :width width
                                           :height height))
   
-  (<ra> :inform-about-gui-being-a-mixer-strips parent)
+  ;;(<ra> :inform-about-gui-being-a-mixer-strips parent) // Must only be called for standalone windows.
+
   (push-back! *mixer-strips* mixer-strips)
   
   (<gui> :add-close-callback parent

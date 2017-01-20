@@ -875,8 +875,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         db_falloff = peaks.falloff_dbs[ch];
         db_peak = peaks.peaks[ch];
         
-        //float db = gain2db(gain);
-        
         if (db_peak > _last_peak){
           _last_peak = db_peak;
           callPeakCallback();
