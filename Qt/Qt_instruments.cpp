@@ -876,11 +876,28 @@ struct Patch *get_current_instruments_gui_patch(void){
   return NULL;
 }
 
+static bool patch_can_be_used_for_mixer_strip(struct Patch *patch){
+  if (patch==NULL)
+    return false;
+
+  if (patch->instrument!=get_audio_instrument())
+    return false;
+
+  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  if (plugin==NULL)
+    return false;
+
+  if (plugin->type->num_inputs==0 && plugin->type->num_outputs==0)
+    return false;
+
+  return true;
+}
+
 void MIXER_MIXERSTRIPWIDGET_call_regularly(void){
   static struct Patch *last_patch = NULL;
   static int64_t guinum = -1;
   
-  if (g_currpatch!=NULL && g_currpatch != last_patch && g_currpatch->instrument==get_audio_instrument()){
+  if (g_currpatch != last_patch && patch_can_be_used_for_mixer_strip(g_currpatch)){
 
     last_patch = NULL;
 
