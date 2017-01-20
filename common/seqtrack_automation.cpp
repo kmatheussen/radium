@@ -126,7 +126,7 @@ struct Automation{
     }
     
     if (i==type->num_effects+NUM_SYSTEM_EFFECTS)
-      GFX_Message(NULL, "Sequencer automation: Could not find a effect named \"%s\" in %s/%s", effect_name, type->type_name, type->name);
+      GFX_Message(NULL, "Sequencer automation: Could not find effect named \"%s\" in %s/%s", effect_name, type->type_name, type->name);
     else{
       effect_num = i;//HASH_get_int32(state, "effect_num");
       color = get_qcolor(get_effect_color(plugin, effect_num));
@@ -244,6 +244,88 @@ public:
     remove_automation(automation);
   }
 
+  void remove_all_automations(struct Patch *patch){
+    QVector<Automation*> to_remove;
+
+    for(auto *automation : _automations)
+      if (automation->patch==patch)
+        to_remove.push_back(automation);
+
+    if(to_remove.size()>0){
+      {
+        radium::PlayerLock lock;
+        for(auto *automation : to_remove)
+          _automations.remove(automation);
+      }
+      for(auto *automation : to_remove)
+        delete automation;
+    }
+  }
+
+  void replace_all_automations(struct Patch *old_patch, struct Patch *new_patch){
+    R_ASSERT(old_patch!=NULL);
+    R_ASSERT(new_patch!=NULL);
+
+    QVector<Automation*> to_remove;
+
+    SoundPlugin *old_plugin = (SoundPlugin*) old_patch->patchdata;
+    R_ASSERT_RETURN_IF_FALSE(old_plugin!=NULL);
+    
+    const SoundPluginType *old_type = old_plugin->type;
+    int num_old_effects = old_type->num_effects;
+    
+    SoundPlugin *new_plugin = (SoundPlugin*) new_patch->patchdata;
+    const SoundPluginType *new_type = new_plugin->type;
+    int num_new_effects = new_type->num_effects;
+    
+    bool same_instrument_type = false;
+  
+    if(true
+       && !strcmp(old_type->type_name, new_type->type_name)
+       && !strcmp(old_type->name,      new_type->name)
+       )
+      same_instrument_type = true;
+    
+    for(auto *automation : _automations) {
+
+      if (automation->patch==old_patch) {
+        
+        if (same_instrument_type){
+
+          radium::PlayerLock lock;
+          automation->patch = new_patch;
+
+        } else if (automation->effect_num >= num_old_effects) {
+
+          automation->color = get_qcolor(get_effect_color(new_plugin, automation->effect_num));
+
+          {
+            radium::PlayerLock lock;
+            automation->effect_num = num_new_effects + (automation->effect_num - num_old_effects);
+            automation->patch = new_patch;
+          }
+
+        } else {
+
+          to_remove.push_back(automation);
+
+        }
+        
+      }
+
+    }
+
+    if(to_remove.size()>0){
+      {
+        radium::PlayerLock lock;
+        for(auto *automation : to_remove)
+          _automations.remove(automation);
+      }
+      for(auto *automation : to_remove)
+        delete automation;
+    }
+
+  }
 };
  
 
@@ -253,6 +335,17 @@ struct SeqtrackAutomation *SEQTRACK_AUTOMATION_create(struct SeqTrack *seqtrack,
 
 void SEQTRACK_AUTOMATION_free(struct SeqtrackAutomation *seqtrackautomation){
   delete seqtrackautomation;
+}
+
+void SEQTRACK_AUTOMATION_replace_all_automations(struct Patch *old_patch, struct Patch *new_patch){
+  ALL_SEQTRACKS_FOR_EACH(){
+    if(new_patch==NULL)
+      seqtrack->seqtrackautomation->remove_all_automations(old_patch);
+    else
+      seqtrack->seqtrackautomation->replace_all_automations(old_patch, new_patch);
+  }END_ALL_SEQTRACKS_FOR_EACH;
+
+  SEQUENCER_update();
 }
 
 int SEQTRACK_AUTOMATION_add_automation(struct SeqtrackAutomation *seqtrackautomation, struct Patch *patch, int effect_num, double seqtime1, double value1, int logtype, double seqtime2, double value2){

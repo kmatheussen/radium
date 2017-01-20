@@ -233,6 +233,7 @@
                (<ra> :set-instrument-effect
                      id-new-instrument "System Dry/Wet"
                      (<ra> :get-instrument-effect id-old-instrument "System Dry/Wet"))
+               (<ra> :replace-all-seq-automation id-old-instrument id-new-instrument)
                (duplicate-connections id-old-instrument id-new-instrument)
                (replace-instrument-in-all-tracks! id-old-instrument id-new-instrument)
                (replace-instrument-in-mixer id-old-instrument id-new-instrument)

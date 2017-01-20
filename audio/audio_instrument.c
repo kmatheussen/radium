@@ -884,7 +884,7 @@ static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *tra
 
   R_ASSERT_RETURN_IF_FALSE(old_patch != NULL);
   R_ASSERT_RETURN_IF_FALSE(new_patch != NULL);
-    
+
   SoundPlugin *old_plugin = (SoundPlugin*) old_patch->patchdata;
   R_ASSERT_RETURN_IF_FALSE(old_plugin!=NULL);
 

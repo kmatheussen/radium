@@ -217,12 +217,12 @@ int getNumSeqtracks(void){
 // Sequencer track automation
 //////////////////////////////////////////
 
-int addSeqAutomation(int64_t time1, float value1, int64_t time2, float value2, int effect_num, int instrument_id, int seqtracknum){
+int addSeqAutomation(int64_t time1, float value1, int64_t time2, float value2, int effect_num, int64_t instrument_id, int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
 
-  struct Patch *patch = getPatchFromNum(instrument_id);
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;
 
@@ -232,6 +232,20 @@ int addSeqAutomation(int64_t time1, float value1, int64_t time2, float value2, i
   int64_t seqtime2 = get_seqtime_from_abstime(seqtrack, NULL, time2);
 
   return SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, patch, effect_num, seqtime1, value1, LOGTYPE_LINEAR, seqtime2, value2);
+}
+
+void replaceAllSeqAutomation(int64_t old_instrument, int64_t new_instrument){
+  struct Patch *old_patch = getAudioPatchFromNum(old_instrument);
+  if(old_patch==NULL)
+    return;
+
+  struct Patch *new_patch = getAudioPatchFromNum(new_instrument);
+  if(new_patch==NULL)
+    return;
+
+  undoSequencer();
+
+  SEQTRACK_AUTOMATION_replace_all_automations(old_patch, new_patch);
 }
 
 int getNumSeqAutomations(int seqtracknum){

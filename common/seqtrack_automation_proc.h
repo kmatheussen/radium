@@ -4,6 +4,7 @@
 
 extern LANGSPEC struct SeqtrackAutomation *SEQTRACK_AUTOMATION_create(struct SeqTrack *seqtrack, const hash_t *automation_state);
 extern LANGSPEC void SEQTRACK_AUTOMATION_free(struct SeqtrackAutomation *seqtrackautomation);
+extern LANGSPEC void SEQTRACK_AUTOMATION_replace_all_automations(struct Patch *old_patch, struct Patch *new_patch); // new_patch can be NULL.
 extern LANGSPEC int SEQTRACK_AUTOMATION_add_automation(struct SeqtrackAutomation *seqtrackautomation, struct Patch *patch, int effect_num, double seqtime1, double value1, int logtype, double seqtime2, double value2);
 extern LANGSPEC int SEQTRACK_AUTOMATION_get_num_automations(struct SeqtrackAutomation *seqtrackautomation);
 extern LANGSPEC struct Patch *SEQTRACK_AUTOMATION_get_patch(struct SeqtrackAutomation *seqtrackautomation, int automationnum);
@@ -27,6 +28,7 @@ extern LANGSPEC float SEQTRACK_AUTOMATION_get_node_x(struct SeqtrackAutomation *
 extern LANGSPEC float SEQTRACK_AUTOMATION_get_node_y(struct SeqtrackAutomation *seqtrackautomation, int seqtracknum, int automationnum, int nodenum);
 
 #ifdef USE_QT4
+class QPainter;
 extern void SEQTRACK_AUTOMATION_paint(QPainter *p, struct SeqTrack *seqtrack, float x1, float y1, float x2, float y2, double start_time, double end_time);
 #endif
 

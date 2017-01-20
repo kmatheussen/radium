@@ -34,6 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "player_pause_proc.h"
 #include "scheduler_proc.h"
+#include "seqtrack_automation_proc.h"
+#include "undo_sequencer_proc.h"
 
 #include "undo.h"
 #include "undo_tracks_proc.h"
@@ -41,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_audio_patch_addremove_proc.h"
 #include "windows_proc.h"
 #include "notes_proc.h"
+
 #include "../api/api_common_proc.h"
 #include "../api/api_proc.h"
 #include "../midi/midi_i_plugin_proc.h"
@@ -445,6 +448,9 @@ void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *patch){
 void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patch){
   R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Undoing() || Undo_Is_Currently_Ignoring());
 
+  ADD_UNDO(Sequencer());
+  SEQTRACK_AUTOMATION_replace_all_automations(old_patch, new_patch);
+
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblocks;
 
@@ -498,6 +504,7 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
     }
     wblock = NextWBlock(wblock);
   }
+
 
   if (has_paused)
     PC_StopPause(window);
