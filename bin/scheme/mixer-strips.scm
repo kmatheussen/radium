@@ -1261,7 +1261,8 @@
                                  instruments-buses-separator-width)
                               width))
 
-  '(when (not fit-vertically?)
+  ;; Sometimes I uncomment this block. Next time: Remember to comment why.
+  (when (not fit-vertically?)
     (define scroll-bar-height (<gui> :height
                                      (<gui> :child mixer-strips "horizontalScrollBar")))
     (set! height (- height
