@@ -338,6 +338,14 @@ void SEQTRACK_AUTOMATION_free(struct SeqtrackAutomation *seqtrackautomation){
 }
 
 void SEQTRACK_AUTOMATION_replace_all_automations(struct Patch *old_patch, struct Patch *new_patch){
+  R_ASSERT_RETURN_IF_FALSE(old_patch!=NULL);
+
+  if (old_patch->instrument==get_MIDI_instrument())
+    return;
+
+  if (new_patch!=NULL && new_patch->instrument==get_MIDI_instrument())
+    new_patch = NULL;
+
   ALL_SEQTRACKS_FOR_EACH(){
     if(new_patch==NULL)
       seqtrack->seqtrackautomation->remove_all_automations(old_patch);
