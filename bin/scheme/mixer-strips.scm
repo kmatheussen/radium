@@ -117,6 +117,9 @@
    ;; audio connections
    (map (lambda (send-id)
           (list (create-entry-text send-id)
+                :enabled (and (not (= send-id instrument-id))
+                              (not (<ra> :has-audio-connection instrument-id send-id))
+                              (> (<ra> :get-num-input-channels send-id) 0))
                 (lambda ()
                   (callback (lambda (gain)
                               (<ra> :undo-mixer-connections)
@@ -380,7 +383,9 @@
                                 (lambda ()
                                   (define db (get-db-value))
                                   (define gain (<ra> :db-to-gain db))
-                                  (delete)
+                                  ;;(delete)
+                                  (<ra> :undo-mixer-connections)
+                                  (<ra> :delete-audio-connection parent-instrument-id instrument-id)
                                   (create-send-func gain))))))
 
   (define (set-db-value db)
