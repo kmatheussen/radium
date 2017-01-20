@@ -191,6 +191,7 @@ void s7extra_callFunc2_void_void(const char *funcname){
   s7extra_callFunc_void_void((func_t*)s7_name_to_value(s7, funcname));
 }
 
+
 void s7extra_callFunc_void_int_bool(func_t *func, int64_t arg1, bool arg2){
   ScopedEvalTracker eval_tracker;
     

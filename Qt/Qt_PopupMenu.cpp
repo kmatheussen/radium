@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
+#include "../embedded_scheme/s7extra_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -55,11 +56,21 @@ namespace{
       , num(num)
       , callback(callback)
     {
-      QCheckBox *checkBox = new QCheckBox(text, qmenu);
-      setDefaultWidget(checkBox);
+      QWidget *widget = new QWidget;
+      QHBoxLayout *layout = new QHBoxLayout;
+      layout->setSpacing(0);
+      layout->setContentsMargins(0,0,0,0);
+
+      layout->addItem(new QSpacerItem(gui_textWidth("F"), 10, QSizePolicy::Fixed, QSizePolicy::MinimumExpanding));
       
+      QCheckBox *checkBox = new QCheckBox(text, qmenu);
       checkBox->setChecked(is_on);
+
+      layout->addWidget(checkBox);
             
+      widget->setLayout(layout);
+      setDefaultWidget(widget);
+
       connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));      
     }
 
@@ -73,6 +84,42 @@ namespace{
       //delete parent;
     }
   };
+
+  class ClickableAction : public QAction
+  {
+    Q_OBJECT
+
+    QString text;
+    QMenu *qmenu;
+    int num;
+    func_t *callback;
+
+  public:
+
+    ~ClickableAction(){
+      printf("I was deleted: %s\n",text.toUtf8().constData());
+    }
+    
+    ClickableAction(const QString & text, QMenu *qmenu, int num, func_t *callback)
+      : QAction(text, qmenu)
+      , text(text)
+      , qmenu(qmenu)
+      , num(num)
+      , callback(callback)
+    {
+      connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
+    }
+
+  public slots:
+    void triggered(){
+    //void clicked(bool checked){
+      printf("CLICKED clickable\n");
+      if (callback!=NULL)
+        s7extra_callFunc_void_int(callback, num);
+      qmenu->close();
+      //delete parent;
+    }
+  };
 }
 
 int GFX_Menu2(
@@ -80,13 +127,19 @@ int GFX_Menu2(
               ReqType reqtype,
               const char *seltext,
               vector_t *v,
-              func_t *callback
+              func_t *callback,
+              bool is_async
               )
 {
-  if(reqtype==NULL || v->num_elements>20){
+  if(is_async)
+    R_ASSERT(callback!=NULL);
+
+  if(reqtype==NULL || v->num_elements>20 || is_async || callback!=NULL){
    
-    QMenu menu(0);
-    QMenu *curr_menu = &menu;
+    QMenu *menu = new QMenu(NULL);
+    menu->setAttribute(Qt::WA_DeleteOnClose);
+
+    QMenu *curr_menu = menu;
 
     QStack<QMenu*> parents;
     QStack<int> n_submenuess;
@@ -95,7 +148,7 @@ int GFX_Menu2(
     for(int i=0;i<v->num_elements;i++) {
       QString text = (const char*)v->elements[i];
       if (text.startsWith("----"))
-        menu.addSeparator();
+        menu->addSeparator();
       else {
         
         if (n_submenues==max_submenues){
@@ -140,7 +193,7 @@ int GFX_Menu2(
           
         } else {
           
-          action = new QAction(text, curr_menu);
+          action = new ClickableAction(text, curr_menu, i, callback);
 
         }
         
@@ -157,7 +210,15 @@ int GFX_Menu2(
     }
 
 
-    QAction *action = safeExec(&menu);
+    if (is_async) {
+      //QMenu *dasmenu = new QMenu(menu);
+      //dasmenu->setAttribute(Qt::WA_DeleteOnClose);
+      //safeShow(menu);
+      menu->popup(QCursor::pos());
+      return -1;
+    }
+
+    QAction *action = safeExec(menu);
 
     if(action==NULL)
       return -1;
@@ -190,7 +251,7 @@ int GFX_Menu(
              vector_t *v
              )
 {
-  return GFX_Menu2(tvisual, reqtype, seltext, v, NULL);
+  return GFX_Menu2(tvisual, reqtype, seltext, v, NULL, false);
 }
 
 // The returned vector can be used as argument for GFX_Menu.

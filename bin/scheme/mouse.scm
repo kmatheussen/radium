@@ -1106,7 +1106,7 @@
         (lambda (color)
           (<ra> :set-instrument-color color instrument-id))))
 
-(define (track-configuration-popup X Y)
+(define (track-configuration-popup-async X Y)
   (c-display "TRACK " *current-track-num*)
   (popup-menu "Pianoroll     (left alt + p)" :check (<ra> :pianoroll-visible *current-track-num*) (lambda (onoff)
                                                                                                     (<ra> :show-pianoroll onoff *current-track-num*))
@@ -1181,7 +1181,7 @@
                                        (if (= Button *right-button*)
                                            (if (<ra> :shift-pressed)
                                                (<ra> :delete-track *current-track-num*)
-                                               (track-configuration-popup X Y))
+                                               (track-configuration-popup-async X Y))
                                            (select-track-instrument *current-track-num*))
                                        #t)
                                       (else

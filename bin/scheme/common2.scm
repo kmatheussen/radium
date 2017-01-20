@@ -71,6 +71,10 @@
 (define (sort sequence less?)
   (sort! (copy sequence) less?))
 
+(define (get-bool something)
+  (if something
+      #t
+      #f))
 
 (define (scale x x1 x2 y1 y2)
   (+ y1 (/ (* (- x x1)
@@ -925,7 +929,7 @@ for .emacs:
                                            (c-display "hepp4"))))
 ||#
 
-(define (popup-menu . args)
+(define (___popup-menu is-async? . args)
   (define options (parse-popup-menu-options args))
   ;;(c-display "optinos:" options)
   (define relations (make-assoc-from-flat-list options))
@@ -948,16 +952,24 @@ for .emacs:
     ;;(cadr (assoc result-string relations))
     (cadr (list-ref relations n))
     )
-  
-  (define result-num (<ra> :popup-menu2 popup-arg (lambda (n val)
-                                                    (define result-string (vector-ref strings n))
-                                                    ;;(c-display "n: " n ", val:" val)
-                                                    ((get-func n) val))))
-  ;;(c-display "     RESULT-NUM" result-num)
 
-  (if (not (= -1 result-num))
-      ((get-func result-num)))
-  )
+  (define popup-menu-func (if is-async? ra:async-popup-menu ra:popup-menu2))
+
+  (define ret #f)
+
+  (popup-menu-func popup-arg (lambda (n . checkboxval)
+                               (define result-string (vector-ref strings n))
+                               (if (null? checkboxval)
+                                   (set! ret ((get-func n)))
+                                   (set! ret ((get-func n) (car checkboxval))))))
+
+  ret)
+
+(define (popup-menu-sync . args)
+  (apply ___popup-menu (cons #f args)))
+
+(define (popup-menu . args)
+  (apply ___popup-menu (cons #t args)))
 
 
 #||

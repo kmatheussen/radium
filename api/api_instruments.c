@@ -304,7 +304,7 @@ void connectAudioInstrumentToMainPipe(int64_t instrument_id){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("Instrument #d has been closed", (int)instrument_id);
+    handleError("Instrument #%d has been closed", (int)instrument_id);
     return;
   }
 
@@ -358,7 +358,7 @@ void setInstrumentSample(int64_t instrument_id, char *filename){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("Instrument #d has been closed", (int)instrument_id);
+    handleError("Instrument #%d has been closed", (int)instrument_id);
     return;
   }
 
@@ -378,7 +378,7 @@ void setInstrumentLoopData(int64_t instrument_id, int start, int length){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("Instrument #d has been closed", (int)instrument_id);
+    handleError("Instrument #%d has been closed", (int)instrument_id);
     return;
   }
 
@@ -453,7 +453,7 @@ void setInstrumentColor(const_char *colorname, int64_t instrument_id){
   if (patch->instrument==get_audio_instrument()){
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
     if (plugin==NULL){
-      handleError("Instrument #d has been closed", (int)instrument_id);
+      handleError("Instrument #%d has been closed", (int)instrument_id);
       return;
     }
     CHIP_update(plugin);
@@ -479,7 +479,7 @@ float getInstrumentEffect(int64_t instrument_id, const_char* effect_name){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("Instrument #d has been closed", (int)instrument_id);
+    handleError("Instrument #%d has been closed", (int)instrument_id);
     return 0.0;
   }
 
@@ -494,7 +494,7 @@ void setInstrumentEffect(int64_t instrument_id, const char *effect_name, float v
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("Instrument #d has been closed", (int)instrument_id);
+    handleError("Instrument #%d has been closed", (int)instrument_id);
     return;
   }
 
@@ -524,7 +524,7 @@ void undoInstrumentEffect(int64_t instrument_id, const char *effect_name){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("Instrument #d has been closed", (int)instrument_id);
+    handleError("Instrument #%d has been closed", (int)instrument_id);
     return;
   }
 
@@ -634,7 +634,7 @@ bool instrumentIsBusDescendant(int64_t instrument_id){
   if (patch->instrument == get_audio_instrument()){
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
     if (plugin==NULL){
-      handleError("Instrument #d has been closed", (int)instrument_id);
+      handleError("Instrument #%d has been closed", (int)instrument_id);
       return true;
     }
 
@@ -893,13 +893,13 @@ float getAudioConnectionGain(int64_t source_id, int64_t dest_id){
 
   struct SoundPlugin *source_plugin = (struct SoundPlugin*)source->patchdata;
   if (source_plugin==NULL){
-    handleError("Instrument #d has been closed", (int)source_id);
+    handleError("Instrument #%d has been closed", (int)source_id);
     return 0.0;
   }
 
   struct SoundPlugin *dest_plugin = (struct SoundPlugin*)dest->patchdata;
   if (dest_plugin==NULL){
-    handleError("Instrument #d has been closed", (int)dest_id);
+    handleError("Instrument #%d has been closed", (int)dest_id);
     return 0.0;
   }
 
@@ -927,13 +927,13 @@ void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool
 
   struct SoundPlugin *source_plugin = (struct SoundPlugin*)source->patchdata;
   if (source_plugin==NULL){
-    handleError("Instrument #d has been closed", (int)source_id);
+    handleError("Instrument #%d has been closed", (int)source_id);
     return;
   }
 
   struct SoundPlugin *dest_plugin = (struct SoundPlugin*)dest->patchdata;
   if (dest_plugin==NULL){
-    handleError("Instrument #d has been closed", (int)dest_id);
+    handleError("Instrument #%d has been closed", (int)dest_id);
     return;
   }
 
@@ -972,7 +972,7 @@ int getNumInputChannels(int64_t instrument_id){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("Instrument #d has been closed", (int)instrument_id);
+    handleError("Instrument #%d has been closed", (int)instrument_id);
     return 0;
   }
 
@@ -986,7 +986,7 @@ int getNumOutputChannels(int64_t instrument_id){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("Instrument #d has been closed", (int)instrument_id);
+    handleError("Instrument #%d has been closed", (int)instrument_id);
     return 0;
   }
 
@@ -1204,7 +1204,7 @@ int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, func_t 
       
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("Instrument #d has been closed", (int)instrument_id);
+    handleError("Instrument #%d has been closed", (int)instrument_id);
     return -1;
   }
 

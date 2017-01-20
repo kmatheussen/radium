@@ -162,8 +162,15 @@ int popupMenu(const char *texts){
 int popupMenu2(const char *texts, func_t* callback){
   struct Tracker_Windows *window=getWindowFromNum(-1);
   vector_t *vec = GFX_MenuParser(texts, "%");
-  return GFX_Menu2(window, NULL,"",vec, callback);
+  return GFX_Menu2(window, NULL, "", vec, callback, false);
 }
+
+void asyncPopupMenu(const char *texts, func_t* callback){
+  struct Tracker_Windows *window=getWindowFromNum(-1);
+  vector_t *vec = GFX_MenuParser(texts, "%");
+  GFX_Menu2(window, NULL, "", vec, callback, true);
+}
+
 
 void colorDialog(const char *initial_color, func_t* callback){
   GFX_color_dialog(initial_color, callback);

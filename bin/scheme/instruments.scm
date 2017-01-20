@@ -311,7 +311,7 @@
 
   (define has-instrument2 (not (null? out-list)))
 
-  (define instrument-description (<ra> :instrument-description-popup-menu instrument-id1 has-instrument2))
+  (define instrument-description (<ra> :instrument-description-popup-menu (get-bool instrument-id1) has-instrument2))
   (if (not (string=? "" instrument-description))
       (begin
         (define position-instrument (or (if position-at-instrument-1?
@@ -390,7 +390,7 @@
      (define midi-instruments (get-all-midi-instruments))
      (define instruments-before (get-all-audio-instruments))
      (define id-instrument
-       (popup-menu
+       (popup-menu-sync
         "<New MIDI Instrument>" (lambda ()
                                   (<ra> :create-midi-instrument "Unnamed"))
         "<New Sample Player>" (lambda ()

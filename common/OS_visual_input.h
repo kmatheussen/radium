@@ -78,7 +78,8 @@ extern LANGSPEC int GFX_Menu2(
                               ReqType reqtype,
                               const char *seltext,
                               vector_t *v,
-                              func_t *callback
+                              func_t *callback,
+                              bool is_async
                               );
 
 extern LANGSPEC int GFX_Menu(
