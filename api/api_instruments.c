@@ -704,9 +704,13 @@ void setInstrumentPosition(float x, float y, int64_t instrument_id, bool auto_sl
 
   ADD_UNDO(ChipPos_CurrPos(patch));
 
+#if 0
+  CHIP_set_pos(patch,x,y);
+#else
   float to_x,to_y;
   MW_get_slotted_x_y(x, y, &to_x, &to_y);
   CHIP_set_pos(patch,to_x,to_y);
+#endif
 }
 
 void autopositionInstrument(int64_t instrument_id){

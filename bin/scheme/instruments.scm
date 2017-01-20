@@ -208,8 +208,8 @@
          (<ra> :set-instrument-for-track id-new-instrument tracknum blocknum)))))
 
 (define (replace-instrument-in-mixer id-old-instrument id-new-instrument)
-  (define x (<ra> :get-instrument-x id-old-instrument))
-  (define y (<ra> :get-instrument-y id-old-instrument))
+  (define x (+ 0 (<ra> :get-instrument-x id-old-instrument)))
+  (define y (+ 0 (<ra> :get-instrument-y id-old-instrument)))
   (<ra> :delete-instrument id-old-instrument)
   (<ra> :set-instrument-position x y id-new-instrument)
   )
@@ -348,7 +348,7 @@
 
                          (else
                           
-                          (<ra> :set-instrument-position (+ 5 x) (+ 5 y) new-instrument #t)
+                          (<ra> :set-instrument-position x y new-instrument #t)
                           
                           (<ra> :undo-mixer-connections)
                           

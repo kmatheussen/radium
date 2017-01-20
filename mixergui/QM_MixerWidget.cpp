@@ -208,6 +208,7 @@ static void get_slot_coordinates(int slot_x, int slot_y, float &x1, float &y1, f
 }
 
 static int get_slot_x(int x){
+  x++;
   if(x<0)
     return x/grid_width - 1;
   else
@@ -215,6 +216,7 @@ static int get_slot_x(int x){
 }
 
 static int get_slot_y(int y){
+  y++;
   if(y<0)
     return y/grid_height - 1;
   else
