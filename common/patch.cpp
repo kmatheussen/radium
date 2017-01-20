@@ -192,6 +192,8 @@ struct Patch *PATCH_alloc(void){
   // lots of atomic data
   patch->voices = (struct PatchVoice*)talloc_atomic_clean(sizeof(struct PatchVoice) * NUM_PATCH_VOICES);
   
+  patch->comment = "Comment";
+
   return patch;
 }
 

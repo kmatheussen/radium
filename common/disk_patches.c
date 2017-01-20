@@ -194,7 +194,7 @@ void SavePatches(vector_t *v){
       DC_SSB("name_is_edited", patch->name_is_edited);
 
       DC_SSS("color", GFX_get_colorname_from_color(patch->color));
-      DC_SSS("comment", patch->comment);
+      DC_SSS("comment", patch->comment==NULL ? "" : patch->comment);
 
       if(patch->instrument==get_MIDI_instrument())
         SaveMIDIPatchData(patch->patchdata);
@@ -230,7 +230,6 @@ struct Patch *LoadPatch(void){
         patch->forward_events = true; // default value
         patch->name_is_edited = true; // compatibility value when loading older songs
         patch->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.52f);
-        patch->comment = "Comment";
 
         PATCH_init_voices(patch);
 

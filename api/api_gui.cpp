@@ -1385,6 +1385,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       : Gui(this)
     {
       setText(content);
+      setCursorPosition(0);
       setContextMenuPolicy(Qt::NoContextMenu);
     }
 

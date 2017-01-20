@@ -420,6 +420,9 @@ const_char* getInstrumentComment(int64_t instrument_id) {
   if(patch==NULL)
     return "";
 
+  if (patch->comment==NULL)
+    return "";
+
   return patch->comment;
 }
 
