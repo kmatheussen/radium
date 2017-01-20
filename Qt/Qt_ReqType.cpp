@@ -73,7 +73,7 @@ extern EditorWidget *g_editor;
 
 // tvisual might be NULL
 ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const char *title){
-  obtain_keyboard_focus(); // disable X11 keyboard sniffer
+  obtain_keyboard_focus_counting(); // disable X11 keyboard sniffer
 
   MyReqType *reqtype = new MyReqType();
   
@@ -114,7 +114,7 @@ void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
 
   delete reqtype->frame;
 
-  release_keyboard_focus();
+  release_keyboard_focus_counting();
 
   OS_SYSTEM_ResetKeysUpDowns(); // Since we disabled X11 events, the X11 event sniffer didn't notice that we changed focus.
 

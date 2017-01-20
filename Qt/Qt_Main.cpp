@@ -152,6 +152,7 @@ extern bool g_show_key_codes;
 
 bool g_do_grey_editor = false;
 static bool editor_has_keyboard = true;
+static int someone_else_has_keyboard_counting = 0;
 bool g_radium_runs_custom_exec = false;
 
 bool g_gc_is_incremental = false;
@@ -161,6 +162,10 @@ QHBoxLayout *g_mixerwidgetlayout = NULL;
 DEFINE_ATOMIC(bool, g_mixer_strips_needs_redraw) = false;
 void RT_schedule_mixer_strips_redraw(void){
   ATOMIC_SET(g_mixer_strips_needs_redraw, true);
+}
+
+bool editor_has_keyboard_focus(void){
+  return editor_has_keyboard && someone_else_has_keyboard_counting==0;
 }
 
 void obtain_keyboard_focus_without_greying(void){
@@ -174,7 +179,7 @@ void obtain_keyboard_focus_without_greying(void){
 void obtain_keyboard_focus(void){
   if (g_radium_runs_custom_exec==false){
     editor_has_keyboard = false;
-    g_do_grey_editor = true;
+    g_do_grey_editor = !editor_has_keyboard_focus();
   }
   GFX_ScheduleEditorRedraw();
 }
@@ -182,13 +187,25 @@ void obtain_keyboard_focus(void){
 void release_keyboard_focus(void){
   if (g_radium_runs_custom_exec==false){
     editor_has_keyboard = true;
-    g_do_grey_editor = false;
+    g_do_grey_editor = !editor_has_keyboard_focus();
   }
   GFX_ScheduleEditorRedraw();
 }
 
-bool editor_has_keyboard_focus(void){
-  return editor_has_keyboard;
+void obtain_keyboard_focus_counting(void){
+  if (g_radium_runs_custom_exec==false){
+    someone_else_has_keyboard_counting++;
+    g_do_grey_editor = !editor_has_keyboard_focus();
+  }
+  GFX_ScheduleEditorRedraw();
+}
+
+void release_keyboard_focus_counting(void){
+  if (g_radium_runs_custom_exec==false){
+    someone_else_has_keyboard_counting--;
+    g_do_grey_editor = !editor_has_keyboard_focus();
+  }
+  GFX_ScheduleEditorRedraw();
 }
 
 
@@ -438,7 +455,7 @@ protected:
 
     struct Tracker_Windows *window = root->song->tracker_windows;
 
-    bool ignore_autorepeat = !doAutoRepeat() && editor_has_keyboard == true;
+    bool ignore_autorepeat = !doAutoRepeat() && editor_has_keyboard_focus() == true;
     
     int type = OS_SYSTEM_get_event_type(event, ignore_autorepeat);
 
@@ -521,7 +538,7 @@ protected:
         
         // key release:
 
-        if (editor_has_keyboard==true) {
+        if (editor_has_keyboard_focus()==true) {
           if( (time_now - last_pressed_key_time) < 1000/4){ // i.e. only play if holding the key less than 0.25 seconds.
             if(modifier==last_pressed_key && modifier==EVENT_ALT_R) {
               PlayBlockFromStart(window,true); // true == do_loop
@@ -552,7 +569,7 @@ protected:
       return true; // swallow the general qt menu popup menu. Sometimes it pops up when configuring block. If you need it, just press right mouse button.
 #endif
     
-    if (editor_has_keyboard==false)
+    if (editor_has_keyboard_focus()==false)
       return false;
 
     int keynum = OS_SYSTEM_get_keynum(event);
@@ -641,7 +658,7 @@ protected:
     if (MIXER_is_saving())
       return false;
       
-    if (editor_has_keyboard==false)
+    if (editor_has_keyboard_focus()==false)
       return false;
 
     static bool last_autorepeat = false;
@@ -789,7 +806,7 @@ protected:
       
     struct Tracker_Windows *window = root->song->tracker_windows;
 
-    //bool ignore_autorepeat = !doAutoRepeat() && editor_has_keyboard == true;
+    //bool ignore_autorepeat = !doAutoRepeat() && editor_has_keyboard_focus() == true;
 
     //bool tevent_autorepeat = false;
     
@@ -888,7 +905,7 @@ protected:
         
         // key release:
 
-        if (editor_has_keyboard==true) {
+        if (editor_has_keyboard_focus()==true) {
           if( (time_now - last_pressed_key_time) < 1000/4){ // i.e. only play if holding the key less than 0.25 seconds.
             if(modifier==last_pressed_key && modifier==EVENT_ALT_R) {
               PlayBlockFromStart(window,true); // true == do_loop
@@ -926,7 +943,7 @@ protected:
       return true; // swallow the general qt menu popup menu. Sometimes it pops up when configuring block. If you need it, just press right mouse button.
 #endif
     
-    if (editor_has_keyboard==false)
+    if (editor_has_keyboard_focus()==false)
       return false;
 
     _last_keynum = OS_SYSTEM_get_keynum(event);
@@ -1464,7 +1481,7 @@ bool CtrlPressed(void){
 }
 
 bool ShiftPressed(void){
-  if (editor_has_keyboard==true && QGuiApplication::mouseButtons()==Qt::NoButton)
+  if (editor_has_keyboard_focus()==true && QGuiApplication::mouseButtons()==Qt::NoButton)
     return AnyShift(tevent.keyswitch);
   else
     return QApplication::keyboardModifiers() & Qt::ShiftModifier;

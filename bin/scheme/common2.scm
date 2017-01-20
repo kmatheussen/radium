@@ -69,7 +69,7 @@
   `(set! ,list (append ,list (list ,el))))
 
 (define (sort sequence less?)
-  (sort! (map identity sequence) less?))
+  (sort! (copy sequence) less?))
 
 
 (define (scale x x1 x2 y1 y2)
