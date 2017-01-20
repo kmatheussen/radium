@@ -1116,6 +1116,22 @@ void stopNote(int note_id, int midi_channel, int64_t instrument_id){
                                        ));
 }
 
+bool hasNativeInstrumentGui(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = patch->patchdata;
+
+  if (plugin != NULL){
+    
+    if(plugin->type->show_gui != NULL)
+      return true;
+  }
+
+  return false;
+}
+
 bool showInstrumentGui(int64_t instrument_id, bool show_instrument_window_if_not_visible){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -1140,6 +1156,24 @@ bool showInstrumentGui(int64_t instrument_id, bool show_instrument_window_if_not
   }
 
   return false;
+}
+
+int64_t getCurrentInstrument(void){
+  if (g_currpatch==NULL)
+    return -1;
+  return g_currpatch->id;
+}
+
+void setCurrentInstrument(int64_t instrument_id, bool show_instrument_window_if_not_visible){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  //if(showInstrumentWidgetWhenDoubleClickingSoundObject())
+  if(show_instrument_window_if_not_visible)
+    GFX_InstrumentWindowToFront();
+
+  patch->instrument->PP_Update(patch->instrument, patch);
 }
 
 void showInstrumentInfo(int64_t instrument_id){

@@ -130,7 +130,8 @@
                (get-all-instruments-that-we-can-send-to instrument-id))))))
           
 
-(define (show-mixer-path-popup parent-instrument-id
+(define (show-mixer-path-popup first-instrument-id
+                               parent-instrument-id
                                instrument-id
 
                                is-send?
@@ -165,7 +166,10 @@
                              (insert-new-instrument-between instrument-id
                                                             (get-instruments-connecting-from-instrument instrument-id)
                                                             #t))) ;; after
+                      (c-display "             first: " (<ra> :get-instrument-name first-instrument-id))                      
+                      (<ra> :set-current-instrument first-instrument-id)
                       ))
+                    
               (list "Insert Send"
                     :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
                     (lambda ()
@@ -177,7 +181,8 @@
                                                   instrument-id))))
                         (request-send-instrument instrument-id
                                                  (lambda (create-send-func)
-                                                   (create-send-func 0))))))
+                                                   (create-send-func 0)
+                                                   (<ra> :set-current-instrument first-instrument-id))))))
               "----------"
 
               (list "Reset value"
@@ -194,14 +199,15 @@
                                                (show-instrument-color-dialog instrument-id))
                 "Instrument information" (lambda ()
                                            (<ra> :show-instrument-info instrument-id))
-                "Show GUI" (lambda ()
-                             (<ra> :show-instrument-gui instrument-id #f))
+                "Show GUI" :enabled (<ra> :has-native-instrument-gui instrument-id)
+                (lambda ()
+                  (<ra> :show-instrument-gui instrument-id #f))
                 "----------"
                 "Set current instrument" (lambda ()
                                            (popup-menu (map (lambda (instrument-id)
                                                               (list (<ra> :get-instrument-name instrument-id)
                                                                     (lambda ()
-                                                                      (<ra> :show-instrument-gui instrument-id #f)
+                                                                      (<ra> :set-current-instrument instrument-id #f)
                                                                       )))
                                                             (sort-instruments-by-mixer-position-and-connections 
                                                              (get-all-audio-instruments)))))
@@ -218,6 +224,7 @@
 
   (show-mixer-path-popup instrument-id
                          instrument-id
+                         instrument-id
                          #f
                          (= 0 (<ra> :get-num-output-channels instrument-id))
                          #f
@@ -225,7 +232,8 @@
                          (if is-permanent? #f replace)
                          reset))
   
-(define (strip-slider parent-instrument-id
+(define (strip-slider first-instrument-id
+                      parent-instrument-id
                       instrument-id
                       is-send?
                       is-sink?
@@ -272,7 +280,8 @@
                                                  (= state *is-pressing*))
                                         (if (<ra> :shift-pressed)
                                             (delete-func)
-                                            (show-mixer-path-popup parent-instrument-id
+                                            (show-mixer-path-popup first-instrument-id
+                                                                   parent-instrument-id
                                                                    instrument-id
                                                                    is-send?
                                                                    is-sink?
@@ -311,7 +320,7 @@
               (loop (cdr out-instruments)))))))
 
 
-(define (create-mixer-strip-plugin gui parent-instrument-id instrument-id)
+(define (create-mixer-strip-plugin gui first-instrument-id parent-instrument-id instrument-id)
   (define (get-drywet)
     (<ra> :get-instrument-effect instrument-id "System Dry/Wet"))
 
@@ -338,7 +347,8 @@
     (<ra> :set-instrument-effect instrument-id "System Dry/Wet" 1))
 
   (define doit #t)
-  (define slider (strip-slider parent-instrument-id
+  (define slider (strip-slider first-instrument-id
+                               parent-instrument-id
                                instrument-id
                                #f #f
                                (lambda ()
@@ -364,7 +374,7 @@
 
 
 ;; A sink plugin. For instance "System Out".
-(define (create-mixer-strip-sink-plugin gui parent-instrument-id instrument-id)
+(define (create-mixer-strip-sink-plugin gui first-instrument-id parent-instrument-id instrument-id)
 
   (define (make-undo)
     (<ra> :undo-instrument-effect instrument-id "System In"))
@@ -403,7 +413,8 @@
   (define last-value (get-db-value))
   
   (define doit #t)
-  (define slider (strip-slider parent-instrument-id
+  (define slider (strip-slider first-instrument-id
+                               parent-instrument-id
                                instrument-id
                                #f #t
 
@@ -484,6 +495,7 @@
   horiz)
 
 (define (create-mixer-strip-send gui
+                                 first-instrument-id
                                  parent-instrument-id
                                  target-instrument-id
                                  make-undo
@@ -504,7 +516,8 @@
 
   (define last-value (get-db-value))
 
-  (define slider (strip-slider parent-instrument-id
+  (define slider (strip-slider first-instrument-id
+                               parent-instrument-id
                                target-instrument-id
                                #t #f
 
@@ -544,7 +557,7 @@
   (<gui> :add horiz slider))
 
 
-(define (create-mixer-strip-bus-send gui instrument-id bus-num)
+(define (create-mixer-strip-bus-send gui first-instrument-id instrument-id bus-num)
   (define effect-name (list-ref *bus-effect-names* bus-num))
   (define on-off-effect-name (list-ref *bus-effect-onoff-names* bus-num))
 
@@ -579,6 +592,7 @@
     (add-gui-effect-monitor slider instrument-id effect-name callback))
 
   (create-mixer-strip-send gui
+                           first-instrument-id
                            instrument-id
                            bus-id
                            make-undo
@@ -589,7 +603,7 @@
                            replace))
 
 
-(define (create-mixer-strip-audio-connection-send gui source-id target-id)
+(define (create-mixer-strip-audio-connection-send gui first-instrument-id source-id target-id)
   (define (make-undo)
     (<ra> :undo-audio-connection-gain source-id target-id))
 
@@ -618,6 +632,7 @@
   (define add-monitor #f)
 
   (create-mixer-strip-send gui
+                           first-instrument-id
                            source-id
                            target-id
                            make-undo 
@@ -654,7 +669,7 @@
       ret))
 
 ;; Returns the last plugin.
-(define (create-mixer-strip-path gui instrument-id)
+(define (create-mixer-strip-path gui first-instrument-id instrument-id)
   (define fontheight (get-fontheight))
   (define send-height fontheight)
 
@@ -662,6 +677,7 @@
     (if (not (<ra> :instrument-is-bus-descendant instrument-id))
         (for-each (lambda (bus-num)
                     (create-mixer-strip-bus-send gui
+                                                 instrument-id
                                                  instrument-id
                                                  bus-num))              
                   (get-buses-connecting-from-instrument instrument-id #t))))
@@ -677,6 +693,7 @@
               (if (or (not next-plugin-instrument)
                       (not (= next-plugin-instrument out-instrument)))
                   (create-mixer-strip-audio-connection-send gui
+                                                            first-instrument-id
                                                             instrument-id
                                                             out-instrument)))
             out-instruments)
@@ -684,9 +701,9 @@
   (if next-plugin-instrument
       (begin
         (if (= 0 (<ra> :get-num-output-channels next-plugin-instrument))
-            (create-mixer-strip-sink-plugin gui instrument-id next-plugin-instrument)
-            (create-mixer-strip-plugin gui instrument-id next-plugin-instrument))
-        (create-mixer-strip-path gui next-plugin-instrument))
+            (create-mixer-strip-sink-plugin gui instrument-id instrument-id next-plugin-instrument)
+            (create-mixer-strip-plugin gui first-instrument-id instrument-id next-plugin-instrument))
+        (create-mixer-strip-path gui first-instrument-id next-plugin-instrument))
       instrument-id))
 
 
@@ -1114,7 +1131,7 @@
                                                             (create-default-mixer-path-popup instrument-id)))
                                                     #f))
 
-  (define meter-instrument-id (create-mixer-strip-path mixer-strip-path-gui instrument-id))
+  (define meter-instrument-id (create-mixer-strip-path mixer-strip-path-gui instrument-id instrument-id))
 
   (create-mixer-strip-pan gui system-background-color instrument-id x1 pan_y1 x2 pan_y2)
   (create-mixer-strip-mutesolo gui instrument-id x1 mutesolo_y1 x2 mutesolo_y2)
