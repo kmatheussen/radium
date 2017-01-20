@@ -880,7 +880,7 @@ void MIXER_MIXERSTRIPWIDGET_call_regularly(void){
   static struct Patch *last_patch = NULL;
   static int64_t guinum = -1;
   
-  if (g_currpatch!=NULL && g_currpatch != last_patch){
+  if (g_currpatch!=NULL && g_currpatch != last_patch && g_currpatch->instrument==get_audio_instrument()){
 
     last_patch = NULL;
 
