@@ -117,7 +117,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
         return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
         //}
       } else if (ret==use_different_plugin) {
-        SoundPluginType *plugintype = MW_popup_plugin_type_selector();
+        SoundPluginType *plugintype = MW_popup_plugin_type_selector(false, false);
         if (plugintype==NULL)
           break;
         else

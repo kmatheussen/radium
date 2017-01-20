@@ -871,7 +871,7 @@ static bool mouserelease_replace_patch(MyScene *scene, float mouse_x, float mous
       volatile struct Patch *patch = plugin->patch;
       R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
 
-      replaceInstrument(patch->id, "");
+      replaceInstrument(patch->id, "", CHIP_get_num_in_connections((struct Patch*)patch)>0, CHIP_get_num_out_connections((struct Patch*)patch)>0);
         
       return true;
     }
@@ -900,7 +900,7 @@ static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_
   
   draw_slot(scene,mouse_x,mouse_y);
 
-  const char *instrument_description = instrumentDescriptionPopupMenu();
+  const char *instrument_description = instrumentDescriptionPopupMenu(false, false);
   printf("   instrument_description: %s\n",instrument_description);
   
   if (instrument_description != NULL){
@@ -1640,15 +1640,24 @@ void MW_set_autopos(double *x, double *y){
 
 namespace{
   struct MyQAction : public QAction{
-    MyQAction(QString name, QMenu *menu, const PluginMenuEntry entry)
+    MyQAction(QString name, QMenu *menu, const PluginMenuEntry entry, bool must_have_inputs, bool must_have_outputs)
       : QAction(name,menu)
       , entry(entry)
-    {}
+    {
+      SoundPluginType *type = entry.plugin_type;
+
+      if (entry.plugin_type!=NULL){
+        if (must_have_inputs==true && type->num_inputs==0)
+          setEnabled(false);
+        if (must_have_outputs==true && type->num_outputs==0)
+          setEnabled(false);
+      }
+    }
     const PluginMenuEntry entry;
   };
 }
 
-static int menu_up(QMenu *menu, const QVector<PluginMenuEntry> &entries, int i, bool include_load_preset){
+static int menu_up(QMenu *menu, const QVector<PluginMenuEntry> &entries, int i, bool include_load_preset, bool must_have_inputs, bool must_have_outputs){
   while(i < entries.size()){
     //printf("%d\n",i);
     const PluginMenuEntry &entry = entries[i];
@@ -1661,7 +1670,7 @@ static int menu_up(QMenu *menu, const QVector<PluginMenuEntry> &entries, int i, 
       QString name = entry.level_up_name;
       QMenu *new_menu = new QMenu(name,menu);
       menu->addMenu(new_menu);
-      i = menu_up(new_menu, entries, i, include_load_preset);
+      i = menu_up(new_menu, entries, i, include_load_preset, must_have_inputs, must_have_outputs);
 
     }else if(entry.type==PluginMenuEntry::IS_LEVEL_DOWN){
       return i;
@@ -1672,24 +1681,24 @@ static int menu_up(QMenu *menu, const QVector<PluginMenuEntry> &entries, int i, 
       for(int i=0 ; i < plugin_type_container->num_types ; i++){
         SoundPluginType *type = plugin_type_container->plugin_types[i];
         const char *name = type->name;
-        menu->addAction(new MyQAction(name,menu,PluginMenuEntry::normal(type)));
+        menu->addAction(new MyQAction(name,menu,PluginMenuEntry::normal(type), must_have_inputs, must_have_outputs));
       }
     
     }else if(entry.type==PluginMenuEntry::IS_CONTAINER){
       SoundPluginTypeContainer *plugin_type_container = entry.plugin_type_container;
       const char *name = plugin_type_container->name;
-      menu->addAction(new MyQAction(name,menu,entry));
+      menu->addAction(new MyQAction(name,menu,entry, must_have_inputs, must_have_outputs));
 
     }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
 
-      MyQAction *action = new MyQAction("Load Preset(s)", menu, entry);
+      MyQAction *action = new MyQAction("Load Preset(s)", menu, entry, must_have_inputs, must_have_outputs);
       menu->addAction(action);
       if (include_load_preset==false)
         action->setEnabled(false);
 
     }else if(entry.type==PluginMenuEntry::IS_PASTE_PRESET){
 
-      MyQAction *action = new MyQAction("Paste sound object(s)", menu, entry);
+      MyQAction *action = new MyQAction("Paste sound object(s)", menu, entry, must_have_inputs, must_have_outputs);
       menu->addAction(action);
       menu->addSeparator();
       if (include_load_preset==false || PRESET_has_copy()==false)
@@ -1697,12 +1706,12 @@ static int menu_up(QMenu *menu, const QVector<PluginMenuEntry> &entries, int i, 
 
     }else if(entry.type==PluginMenuEntry::IS_NUM_USED_PLUGIN){
 
-      MyQAction *action = new MyQAction(entry.hepp.menu_text, menu, entry);
+      MyQAction *action = new MyQAction(entry.hepp.menu_text, menu, entry, must_have_inputs, must_have_outputs);
       menu->addAction(action);
 
     }else{
       const char *name = entry.plugin_type->name;
-      menu->addAction(new MyQAction(name,menu,entry));
+      menu->addAction(new MyQAction(name,menu,entry, must_have_inputs, must_have_outputs));
     }
   }
 
@@ -1724,13 +1733,13 @@ void inc_plugin_usage_number(SoundPluginType *type){
   SETTINGS_write_int(settings_name, num_uses+1);
 }
 
-static const char *popup_plugin_selector(SoundPluginType **type){
+static const char *popup_plugin_selector(SoundPluginType **type, bool must_have_inputs, bool must_have_outputs){
   QMenu menu(0);
 
   if (type!=NULL)
     *type = NULL;
 
-  menu_up(&menu, PR_get_menu_entries(), 0, type==NULL);
+  menu_up(&menu, PR_get_menu_entries(), 0, type==NULL, must_have_inputs, must_have_outputs);
   printf("Menu created\n");
   
   MyQAction *action;
@@ -1802,13 +1811,13 @@ static const char *popup_plugin_selector(SoundPluginType **type){
   }
 }
                                   
-const char *MW_popup_plugin_selector2(void){
-  return popup_plugin_selector(NULL);
+const char *MW_popup_plugin_selector2(bool must_have_inputs, bool must_have_outputs){
+  return popup_plugin_selector(NULL, must_have_inputs, must_have_outputs);
 }
 
-SoundPluginType *MW_popup_plugin_type_selector(void){
+SoundPluginType *MW_popup_plugin_type_selector(bool must_have_inputs, bool must_have_outputs){
   SoundPluginType *type;
-  popup_plugin_selector(&type);
+  popup_plugin_selector(&type, must_have_inputs, must_have_outputs);
 
   if (type != NULL)
     inc_plugin_usage_number(type);

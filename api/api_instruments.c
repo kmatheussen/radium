@@ -119,8 +119,8 @@ void selectInstrumentForTrack(int tracknum){
   s7extra_callFunc2_void_int("select-track-instrument", tracknum);
 }
 
-void replaceInstrument(int64_t instrument_id, const_char* instrument_description){
-  s7extra_callFunc2_void_int_charpointer("replace-instrument", instrument_id, instrument_description);
+void replaceInstrument(int64_t instrument_id, const_char* instrument_description, bool must_have_inputs, bool must_have_outputs){
+  s7extra_callFunc2_void_int_charpointer_bool_bool("replace-instrument", instrument_id, instrument_description, must_have_inputs, must_have_outputs);
 }
 
 void loadInstrumentPreset(int64_t instrument_id, const_char* instrument_description){
@@ -312,8 +312,8 @@ void connectAudioInstrumentToMainPipe(int64_t instrument_id){
   MW_autoconnect_plugin(plugin);
 }
 
-const_char* instrumentDescriptionPopupMenu(void){
-  return MW_popup_plugin_selector2();
+const_char* instrumentDescriptionPopupMenu(bool must_have_inputs, bool must_have_outputs){
+  return MW_popup_plugin_selector2(must_have_inputs, must_have_outputs);
 }
 
 const_char* requestLoadPresetInstrumentDescription(void){

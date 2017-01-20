@@ -329,7 +329,7 @@
 
 
   (define (das-replace-instrument)
-    (replace-instrument instrument-id ""))
+    (replace-instrument instrument-id "" #t #t))
 
   (define (reset)
     (<ra> :set-instrument-effect instrument-id "System Dry/Wet" 1))

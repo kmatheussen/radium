@@ -878,7 +878,7 @@ public slots:
     }
 
     void on_replace_button_clicked(){
-      replaceInstrument(_patch->id, "");
+      replaceInstrument(_patch->id, "", CHIP_get_num_in_connections(_patch)>0, CHIP_get_num_out_connections(_patch)>0);
       // Warning. 'this' might not be here anymore when returning.
     }
     

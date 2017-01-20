@@ -215,12 +215,12 @@
   )
 
 ;; Called from the outside. 'instrument-description' can be false or empty string.
-(define (replace-instrument id-old-instrument instrument-description)
+(define (replace-instrument id-old-instrument instrument-description must-have-inputs? must-have-outputs?)
   (if (<ra> :instrument-is-permanent id-old-instrument)
       (<ra> :show-message "Can not be replaced")
       (let ((instrument-description (if (or (not instrument-description)
                                             (string=? instrument-description ""))
-                                        (<ra> :instrument-description-popup-menu)
+                                        (<ra> :instrument-description-popup-menu must-have-inputs? must-have-outputs?)
                                         instrument-description)))
         (when (not (string=? "" instrument-description))
           (undo-block
@@ -311,7 +311,7 @@
 
   (define has-instrument2 (not (null? out-list)))
 
-  (define instrument-description (<ra> :instrument-description-popup-menu))
+  (define instrument-description (<ra> :instrument-description-popup-menu instrument-id1 has-instrument2))
   (if (not (string=? "" instrument-description))
       (begin
         (define position-instrument (or (if position-at-instrument-1?

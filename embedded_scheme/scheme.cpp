@@ -264,6 +264,25 @@ void s7extra_callFunc2_void_int_charpointer(const char *funcname, int64_t arg1, 
   s7extra_callFunc_void_int_charpointer((func_t*)s7_name_to_value(s7, funcname), arg1, arg2);
 }
 
+void s7extra_callFunc_void_int_charpointer_bool_bool(func_t *func, int64_t arg1, const char* arg2, bool arg3, bool arg4){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_call(s7,
+          (s7_pointer)func,
+          s7_list(s7,
+                  4,
+                  s7_make_integer(s7, arg1),
+                  s7_make_string(s7, arg2),
+                  s7_make_boolean(s7, arg3),
+                  s7_make_boolean(s7, arg4)
+                  )
+          );
+}
+
+void s7extra_callFunc2_void_int_charpointer_bool_bool(const char *funcname, int64_t arg1, const char* arg2, bool arg3, bool arg4){
+  s7extra_callFunc_void_int_charpointer_bool_bool((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
+}
+
 void s7extra_callFunc_void_int_int(func_t *func, int64_t arg1, int64_t arg2){
   ScopedEvalTracker eval_tracker;
   

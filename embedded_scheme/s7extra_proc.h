@@ -30,7 +30,11 @@ extern "C" {
   void s7extra_callFunc2_void_double(const char *funcname, double arg1);
   void s7extra_callFunc_void_bool(func_t *func, bool arg1);
 
+  void s7extra_callFunc_void_int_charpointer(func_t *func, int64_t arg1, const char* arg2);
   void s7extra_callFunc2_void_int_charpointer(const char *funcname, int64_t arg1, const char* arg2);
+
+  void s7extra_callFunc_void_int_charpointer_bool_bool(func_t *func, int64_t arg1, const char* arg2, bool arg3, bool arg4);
+  void s7extra_callFunc2_void_int_charpointer_bool_bool(const char *funcname, int64_t arg1, const char* arg2, bool arg3, bool arg4);
 
   void s7extra_callFunc_void_int_int(func_t *func, int64_t arg1, int64_t arg2);
   void s7extra_callFunc2_void_int_int(const char *funcname, int64_t arg1, int64_t arg2);

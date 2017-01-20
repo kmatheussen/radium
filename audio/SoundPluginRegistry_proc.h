@@ -40,8 +40,8 @@ struct NumUsedPluginEntry{
 
 // This struct is used a lot of places, so easiest thing is to do a "make clean" after changing it.
 struct PluginMenuEntry{
-  SoundPluginType *plugin_type;
-  SoundPluginTypeContainer *plugin_type_container;
+  SoundPluginType *plugin_type = NULL;
+  SoundPluginTypeContainer *plugin_type_container = NULL;
   QString level_up_name;
 
   NumUsedPluginEntry hepp;

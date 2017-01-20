@@ -179,8 +179,8 @@ extern LANGSPEC void inc_plugin_usage_number(SoundPluginType *type);
 extern LANGSPEC void MW_set_rotate(float rotate);
 
 extern LANGSPEC char *MW_request_load_preset_instrument_description(void);
-extern LANGSPEC const char *MW_popup_plugin_selector2(void);
-extern LANGSPEC SoundPluginType *MW_popup_plugin_type_selector(void);
+extern LANGSPEC const char *MW_popup_plugin_selector2(bool must_have_inputs, bool must_have_outputs);
+extern LANGSPEC SoundPluginType *MW_popup_plugin_type_selector(bool must_have_inputs, bool must_have_outputs);
 
 extern LANGSPEC void MW_copy(void);
 extern LANGSPEC void MW_delete(void);
