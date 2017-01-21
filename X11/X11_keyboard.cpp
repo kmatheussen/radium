@@ -54,6 +54,15 @@ void OS_SYSTEM_init_keyboard(void) {
   OS_SYSTEM_ResetKeysUpDowns();
 }
 
+#if 0
+bool OS_WINDOWS_is_key_window(void *maybewin){
+  //XQueryPointer(Display *display, Window w, Window *root_return, Window *child_return, int *root_x_return, int *root_y_return, int *win_x_return, int *win_y_return, unsigned int *mask_return);
+  XQueryPointer(display, Window w, Window *root_return, Window *child_return, int *root_x_return, int *root_y_return, int *win_x_return, int *win_y_return, unsigned int *mask_return);
+
+  return maybewin == GetForegroundWindow();
+}
+#endif
+
 
 static int keysym_to_keynum(KeySym keysym) {
 

@@ -146,6 +146,13 @@ extern EditorWidget *g_editor;
 #include "Qt_Main_proc.h"
 
 
+  //QApplication *qapplication;
+class MyApplication;
+MyApplication *qapplication = NULL;
+QApplication *g_qapplication = NULL;
+QSplashScreen *g_splashscreen = NULL;
+
+
 extern bool doquit;
 
 extern bool g_show_key_codes;
@@ -243,19 +250,24 @@ static bool g_up_downs[EVENT_DASMAX];
 extern "C" uint32_t add_mouse_keyswitches(uint32_t keyswitch);
 uint32_t add_mouse_keyswitches(uint32_t keyswitch){
 
-  QWidget *mixerstrips_widget = MIXERSTRIPS_get_curr_widget();
+  bool mixer_strips_has_focus = false;
+  
+  QVector<QWidget*> all_windows = MIXERSTRIPS_get_all_widgets();
+  for(auto *window : all_windows)
+    if (window==QApplication::topLevelAt(QCursor::pos())){
+      //if (maybe_got_key_window(window)){
+      mixer_strips_has_focus = true;
+      break;
+    }
 
-  if (mixerstrips_widget != NULL && mixerstrips_widget->isActiveWindow())
+  if (mixer_strips_has_focus)
     keyswitch |= EVENT_MOUSE_MIXERSTRIPS2;
-    
+  
   else if (SEQUENCER_has_mouse_pointer())
     keyswitch |= EVENT_MOUSE_SEQUENCER2;
 
   else if (MW_has_mouse_pointer())
     keyswitch |= EVENT_MOUSE_MIXER2;
-
-  //else if (MIXERSTRIPS_has_mouse_pointer()){
-  //  keyswitch |= EVENT_MOUSE_MIXERSTRIPS2;
 
   else
     keyswitch |= EVENT_MOUSE_EDITOR2;
@@ -1090,11 +1102,6 @@ MyApplication::MyApplication(int &argc,char **argv)
 }
 
 
-  //QApplication *qapplication;
-MyApplication *qapplication = NULL;
-QApplication *g_qapplication = NULL;
-QSplashScreen *g_splashscreen = NULL;
-
 void *OS_GFX_get_native_main_window(void){
   R_ASSERT_RETURN_IF_FALSE2(ATOMIC_GET(is_starting_up)==false, NULL);
       
@@ -1107,6 +1114,10 @@ static bool maybe_got_key_window(QWidget *window){
   return OS_OSX_is_key_window((void*)window->winId());
 #elif FOR_WINDOWS
   return OS_WINDOWS_is_key_window((void*)window->winId());
+#elif FOR_LINUX
+  //return g_qapplication->focusWidget()!=NULL && window==g_qapplication->focusWidget()->window(); //activeWindow();
+  return window==QApplication::topLevelAt(QCursor::pos());
+                            //->isActiveWindow();
 #else
   RError("Unknown platform");
   return true;

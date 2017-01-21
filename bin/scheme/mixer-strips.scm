@@ -1419,13 +1419,30 @@
               ((mixer-strips :remake)))
             *mixer-strips*))
 
-(define (toggle-mixer-strips-fullscreen)
+(define (toggle-all-mixer-strips-fullscreen)
   (define set-to 0)
   (for-each (lambda (mixer-strips)
               (if (number? set-to)
                   (set! set-to (not (<gui> :is-full-screen (mixer-strips :gui)))))
               (<gui> :set-full-screen (mixer-strips :gui) set-to))
             *mixer-strips*))
+
+(define (toggle-current-mixer-strips-fullscreen)
+  (define (toggle mixer-strips)
+    (<gui> :set-full-screen (mixer-strips :gui) (not (<gui> :is-full-screen (mixer-strips :gui)))))
+  
+  (let loop ((mixer-strips *mixer-strips*))
+    (let ((first-mixer-strips (and (not (null? mixer-strips))
+                                   (car mixer-strips))))
+      (cond ((and (null? mixer-strips)
+                  (not (null? *mixer-strips*)))
+             (toggle (car *mixer-strips*)))
+            ((null? mixer-strips)
+             #f)
+            ((<gui> :mouse-points-mainly-at (first-mixer-strips :gui))
+             (toggle first-mixer-strips))
+            (else
+             (loop (cdr mixer-strips)))))))
 
 
 ;; main

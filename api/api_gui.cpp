@@ -1946,6 +1946,14 @@ void gui_setSize(int64_t guinum, int width, int height){
   gui->_widget->resize(width, height);
 }
 
+bool gui_mousePointsMainlyAt(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return false;
+
+  return gui->_widget->window()==QApplication::topLevelAt(QCursor::pos());
+}
+
 void gui_setFullScreen(int64_t guinum, bool enable){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
