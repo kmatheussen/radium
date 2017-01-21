@@ -1,3 +1,51 @@
+Changes 4.4.0 -> 4.4.1:
+* Mixerstrip: Implement ctrl-clicking mute and solo buttons
+* Mixerstrips: Fix F11 for mixer strips window, and only show full screen
+  of the currently pointed at mixer strips window
+* Windows/OSX: Fix keyboard input for mixer strips windows
+* Sequencer: Don't crash when deleting instrument that has automation
+* Sequencer: Replace sequencer automation intelligently when an instrument
+  is replaced.
+  I.e. transfer system volume automation to new instrument, and so forth.
+* Made most popup menues async so that they don't block audio meters and so
+  forth. Instrument selector is still synchronized though.
+* Added a little space to the left of the checkboxes in the popup menues.
+* Mixerstrips: Only show legal alternatives when replacing a send or a sink
+* Mixerstrips: Don't delete the old sink instrument when replacing, just
+  disconnect it.
+* Plugin selector: Only enable plugins that fits. For example, if
+  replacing an instrument that has both input and output connections, we
+  can only replace it with a plugin that has input and output connections
+* Mixerstrips: Fix heigth so that it fits the window when horizontal slider
+  is visible.
+* Mixer: Keep old position when replacing an instrument (bug introduced
+  in 4.4.0)
+* API: Make sure cursor is always placed at the beginning when showing
+  text input widgets (i.e. gui_line).
+* Never lose keyboard focus for the text input requester in the upper left
+  of the main window.
+* Show single mixer strip for current instrument in the right part of the
+  main window.
+* Mixerstrips: Add "Show GUI" and "Set current instrument" to the path
+  popup menu
+* Mixerstrips: Use all available space for audio meters
+* Mixerstrips: Popup menu option to show instrument info
+* Mixer: Popup menu option to show instrument info
+* Mixerstrips: Fix replace plugin sink. Forgot to implement it in 4.4.0.
+* Mixerstrips: Include all instruments that you can send to when creating
+  a new send. Bug fix.
+* Mixerstrips: Delete instrument when right-shift-clicking header name or
+  anywhere inside the path
+* Mixerstrips: Option to configure instrument color in the popup menues
+* Don't enable reverb bus and chorus bus on new instruments
+* Mixerstrips: Sort mixer strip buses by connections so that the flow
+  always goes from left to right
+* New API functions:
+  gui_mousePointsMainlyAt, hasNativeInstrumentGui, getCurrentInstrument,
+  setCurrentInstrument, instrumentActive, gui_is_open, gui_createString,
+  showInstrumentInfo
+  
+
 Changes 4.3.8 -> 4.4.0:
 * Fix velocity pitch gradient colors when notes text is off.
 * Let chance 0 mean using previous chance for that instrument.
