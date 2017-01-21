@@ -55,7 +55,7 @@ static radium::SyncQueue<T2_data*> t2_to_t3_queue;
 static radium::Queue<T2_data*, 8>  t3_to_t2_queue;
 
 
-enum class Use_T2_Thread{
+enum Use_T2_Thread{ // doesn't work with clang to use enum class here (enum class doesn't work with atomic operations).
   UNINITIALIZED,
   YES,
   NO

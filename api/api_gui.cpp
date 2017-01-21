@@ -2109,6 +2109,27 @@ void showMixerStrips(int num_rows){
   evalScheme("(create-mixer-strips-gui 1)");
 }
 
+QVector<QWidget*> MIXERSTRIPS_get_all_widgets(void){ 
+  QVector<QWidget*> ret;
+  QVector<int64_t> to_remove;
+
+  for(int64_t guinum : g_mixerstrip_guinums){
+
+    Gui *gui = g_guis[(int)guinum];
+    
+    if (gui==NULL)     
+      to_remove.push_back(guinum);
+    else
+      ret.push_back(gui->_widget);
+  }
+
+  for(int64_t guinum : to_remove)
+    g_mixerstrip_guinums.removeOne(guinum);
+
+  return ret;
+}
+
+
 QWidget *MIXERSTRIPS_get_curr_widget(void){
   QVector<int64_t> to_remove;
 

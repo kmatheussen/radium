@@ -1102,19 +1102,37 @@ void *OS_GFX_get_native_main_window(void){
   return (void*)main_window->winId();
 }
 
+static bool maybe_got_key_window(QWidget *window){
+#if FOR_MACOSX
+  return OS_OSX_is_key_window((void*)window->winId());
+#elif FOR_WINDOWS
+  return OS_WINDOWS_is_key_window((void*)window->winId());
+#else
+  RError("Unknown platform");
+  return true;
+#endif
+}
+
 bool main_window_has_focus(void){
   if(ATOMIC_GET(is_starting_up)==true)
     return false;
+
+#if FOR_LINUX
+  
+  return g_qapplication->activeWindow() != NULL;
+  
+#else
   
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  if (maybe_got_key_window(main_window))
+    return true;
   
-#if FOR_MACOSX
-  return OS_OSX_is_key_window((void*)main_window->winId());
-#elif FOR_WINDOWS
-  return OS_WINDOWS_is_key_window((void*)main_window->winId());
-#else
-  (void)main_window;
-  return g_qapplication->activeWindow() != NULL;
+  QVector<QWidget*> all_windows = MIXERSTRIPS_get_all_widgets();
+  for(auto *window : all_windows)
+    if (maybe_got_key_window(window))
+      return true;
+
+  return false;
 #endif
 }
 
