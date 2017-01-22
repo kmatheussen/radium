@@ -239,3 +239,7 @@
 (begin
   #xf)
 
+(define widget (<gui> :widget 100 100))
+
+(<gui> :show widget)
+(<gui> :close widget)

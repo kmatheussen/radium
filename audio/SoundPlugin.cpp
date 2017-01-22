@@ -973,7 +973,8 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
 
     case EFFNUM_VOLUME:
       store_value = get_gain_store_value(value,value_type);
-      plugin->volume = store_value;
+      if (ATOMIC_GET(plugin->volume_is_on))
+        plugin->volume = store_value;
       break;
     case EFFNUM_VOLUME_ONOFF:
       if(value>0.5f) {

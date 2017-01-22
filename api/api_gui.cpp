@@ -710,7 +710,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }
     }
 
-    ~Widget(){
+    ~Widget() {
     }
 
     OVERRIDERS(QWidget);
