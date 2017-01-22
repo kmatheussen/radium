@@ -363,7 +363,8 @@ public:
   float _slider_start_value;
   float _slider_start_pos;
   int _slider_being_edited;
-
+  bool _has_made_volume_effect_undo = false;
+  
   QPointF _moving_start_pos;
   float _moving_x_offset;
   float _moving_y_offset;

@@ -1529,7 +1529,8 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         else
           effect_num = num_effects+EFFNUM_VOLUME;
 
-        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
+        _has_made_volume_effect_undo=false;
+        //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
 
         _slider_start_value = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_PLUGIN);
         _slider_start_pos = pos.x();
@@ -1619,12 +1620,18 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
     _slider_start_value = value;
     _slider_start_pos = pos.x();
+
+    volatile struct Patch *patch = plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
+    if (_has_made_volume_effect_undo==false){
+      _has_made_volume_effect_undo=true;
+      ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
+    }
     
     PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 
     CHIP_update(plugin);
-    volatile struct Patch *patch = plugin->patch;
-    R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
     GFX_update_instrument_widget((struct Patch*)patch);
   }
