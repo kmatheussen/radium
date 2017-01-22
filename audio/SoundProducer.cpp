@@ -252,29 +252,7 @@ struct SoundProducerLink {
   }
 
   bool turn_off_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(void) const {
-    if (MIXER_someone_has_solo()){
-      
-      SoundPlugin *plugin = SP_get_plugin(source);
-
-      if (ATOMIC_GET(plugin->solo_is_on) == false) {
-
-        if (MIXER_at_least_two_soundproducers_are_selected()){
-
-          if (ATOMIC_GET(plugin->is_selected))
-            return true;
-
-        } else {
-
-          if (SP_has_audio_input_link(source)==false)
-            if (SP_get_bus_num(source) == -1)            
-              return true;
-
-        }
-        
-      }      
-    }
-
-    return false;
+    return SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(source);
   }
   
   float get_total_link_volume(void) const {
@@ -1752,6 +1730,32 @@ double SP_get_running_time(const SoundProducer *sp){
 
 bool SP_has_input_links(const SoundProducer *sp){
   return sp->_input_links.size() > 0;
+}
+
+bool SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(SoundProducer *sp) {
+  if (MIXER_someone_has_solo()){
+    
+    SoundPlugin *plugin = SP_get_plugin(sp);
+    
+    if (ATOMIC_GET(plugin->solo_is_on) == false) {
+      
+      if (MIXER_at_least_two_soundproducers_are_selected()){
+        
+        if (ATOMIC_GET(plugin->is_selected))
+          return true;
+        
+      } else {
+        
+        if (SP_has_audio_input_link(sp)==false)
+          if (SP_get_bus_num(sp) == -1)            
+            return true;
+        
+      }
+      
+    }      
+  }
+  
+  return false;
 }
 
 bool SP_has_audio_input_link(const SoundProducer *sp){

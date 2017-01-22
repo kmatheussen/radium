@@ -333,7 +333,7 @@ protected:
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
 
-  QVariant itemChange(GraphicsItemChange change, const QVariant &value);
+    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
 #if 0
   void hoverMoveEvent ( QGraphicsSceneHoverEvent * event ){
@@ -397,8 +397,10 @@ public:
     QGraphicsItem::setSelected(selected);
 
     SoundPlugin *plugin = SP_get_plugin(_sound_producer);
-    if (plugin!=NULL)
+    if (plugin!=NULL){
       ATOMIC_SET(plugin->is_selected, selected);
+      remakeMixerStrips();
+    }
   }
 };
 

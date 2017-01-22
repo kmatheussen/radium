@@ -1579,6 +1579,10 @@ QVariant Chip::itemChange(GraphicsItemChange change, const QVariant &value) {
     //printf("item pos changed\n");
   }
 
+  if (QGraphicsItem::ItemSelectedHasChanged==change){
+    remakeMixerStrips();
+  }
+
   return QGraphicsItem::itemChange(change, value);
 }
 

@@ -802,7 +802,7 @@
 
   (define middle (floor (average x1 x2)))
   
-  (define (draw-mutesolo checkbox is-selected text color width height)
+  (define (draw-mutesolo checkbox is-selected is-implicitly-selected text color width height)
     (<gui> :filled-box
            checkbox
            background-color
@@ -820,12 +820,17 @@
            text
            0 0 width height
            #f)
+    
     (<gui> :draw-box
            checkbox
-           "#404040"
+           (if is-implicitly-selected
+               color
+               "#404040")
            2 2 (- width 2) (- height 2)
-           1.0
-           0 0)
+           (if is-implicitly-selected
+               2.0
+               1.0)
+           5 5)
     )
 
   (define (get-muted)
@@ -852,7 +857,8 @@
               (get-all-audio-instruments)))
   
   (define mute (create-custom-checkbox (lambda (mute is-muted width height)
-                                         (draw-mutesolo mute is-muted "Mute" "green" width height))
+                                         (define implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
+                                         (draw-mutesolo mute is-muted implicitly-muted "Mute" "green" width height))
                                        (lambda (is-muted)
                                          (undo-block
                                           (lambda ()
@@ -865,7 +871,7 @@
                                        (get-muted)))
 
   (define solo (create-custom-checkbox (lambda (solo is-soloed width height)
-                                         (draw-mutesolo solo is-soloed "Solo" "yellow" width height))
+                                         (draw-mutesolo solo is-soloed #f "Solo" "yellow" width height))
                                        (lambda (is-selected)
                                          (undo-block
                                           (lambda ()
@@ -950,6 +956,7 @@
                              (define db (slider-to-db val))
                              (when (and doit (not (= last-vol-slider db)))
                                (set! last-vol-slider db)
+                               ;;(c-display "             hepp hepp")
                                (<ra> :set-instrument-effect instrument-id effect-name (scale db *min-db* *max-db* 0 1))
                                (if paint-voltext
                                    (paint-voltext))

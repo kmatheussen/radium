@@ -112,6 +112,8 @@ extern LANGSPEC bool SP_is_autosuspending(const struct SoundProducer *sp);
 extern LANGSPEC bool SP_is_plugin_running(const struct SoundPlugin *plugin);
 extern LANGSPEC void SP_print_tree(void);
 
+extern LANGSPEC bool SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(struct SoundProducer *sp);
+
 extern LANGSPEC bool SP_has_input_links(const struct SoundProducer *sp);
 extern LANGSPEC bool SP_has_audio_input_link(const struct SoundProducer *sp);
 

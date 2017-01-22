@@ -472,6 +472,23 @@ const char *getInstrumentColor(int64_t instrument_id){
   return GFX_get_colorname_from_color(patch->color);
 }
 
+bool instrumentIsImplicitlyMuted(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+  
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return false;
+  }
+
+  struct SoundProducer *sp = SP_get_sound_producer(plugin);
+  R_ASSERT_RETURN_IF_FALSE2(sp!=NULL, false);
+  
+  return SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(sp);
+}
+
 float getInstrumentEffect(int64_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
