@@ -248,7 +248,7 @@
                                         (<ra> :request-load-preset-instrument-description)
                                         instrument-description)))
         (if (not (string=? instrument-description ""))
-            (replace-instrument id-instrument instrument-description)))))
+            (replace-instrument id-instrument instrument-description #f #f)))))
         
 
 #!!

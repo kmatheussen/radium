@@ -219,7 +219,7 @@
   (define (delete)
     (<ra> :delete-instrument instrument-id))
   (define (replace)
-    (replace-instrument instrument-id ""))
+    (replace-instrument instrument-id "" #f #f))
   (define reset #f)
 
   (show-mixer-path-popup instrument-id
