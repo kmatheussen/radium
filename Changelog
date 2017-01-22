@@ -1,3 +1,10 @@
+Changes 4.4.1 -> 4.4.2:
+* Don't un-mute an instrument when changing volume
+* Mixer: Don't create volume slider undo before actually moving the slider
+* Fix "Load" in the instrument widget and "Replace" for mixer strip plugins
+* Upgrade the S7 scheme interpreter
+
+
 Changes 4.4.0 -> 4.4.1:
 * Mixerstrip: Implement ctrl-clicking mute and solo buttons
 * Mixerstrips: Fix F11 for mixer strips window, and only show full screen
