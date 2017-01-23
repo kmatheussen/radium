@@ -152,7 +152,7 @@ static bool schedule_event(struct SeqTrack *seqtrack, event_t *event, int64_t se
   int i = scheduler->queue_size;
   int new_i = i >> 1;
 
-  while(time <= queue[new_i]->time){ // Doesn't matter much whether we use '<' or '<='.
+  while(time < queue[new_i]->time){
     queue[i] = queue[new_i];
     i = new_i;
     new_i = new_i >> 1;

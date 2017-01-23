@@ -415,14 +415,14 @@ def putCode(keyhandles,parser,codestring,added_qualifiers):
     else:
         print "%s compiled." % codestring
 
-    return true
+    return True
 
 
-def printsak(file,keyhandles,parser,codestring):
+def printsak(file,keyhandles,parser,codestring,ccommand):
     if 1:
         keys=parser.getKeys()+parser.getQualifiers()
         firstkey=keys.pop(0)
-        print "Putting code for '"+codestring+"', with key "+keysub[firstkey]
+        print "Putting code for '"+codestring+"', with key "+keysub[firstkey]+", is it c command?",ccommand
         if len(keys)>0:
             print " And qualifiers: "+keysub[keys[0]]
     print codestring
@@ -434,8 +434,8 @@ def printsak(file,keyhandles,parser,codestring):
 def addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, added_qualifiers):
 
     if ccommand==False:
+        radium.ER_keyAdd(firstkey,"",keys+added_qualifiers,[]) # First remove old c command for the same key binding, if previously added.
         if putCode(keyhandles,parser,command, added_qualifiers)==False:
-            print "false"
             return False
     else:
          # Optimization. It always works to call putCode instead. (that's what originally happened).
@@ -534,7 +534,7 @@ def start(keyhandles,filehandle,filehandle2,outfilehandle):
                         break
 
             keybindingsdict[command]=[map(lambda x:keysub[x],parser.getKeys()),map(lambda x:keysub[x],parser.getQualifiers())]
-            #printsak(0,keyhandles,parser,command)
+            #printsak(0,keyhandles,parser,command,ccommand)
             
             if not parser.mouseInQualifiers():
                 addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, [parser.mouseEditorKey])

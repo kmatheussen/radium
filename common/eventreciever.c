@@ -84,36 +84,64 @@ extern struct WrapFuncList wrapfunclist[];
 struct KeyConfigs{
 	struct KeyConfigs *next;
 	void *func;
-	uint32_t a;
+	uint32_t qualifiers;
 	int num_args;
 	int *args;
         const char *funcname; // for the event log
 };
 
-struct KeyConfigs *keyconfigs[EVENT_DASMAX+1]={0};
+struct KeyConfigs *g_keyconfigs[EVENT_DASMAX+1]={0};
 
+static char *removeKey(int key, uint32_t qualifiers){
+  struct KeyConfigs *prev = NULL;
+  struct KeyConfigs *kc = g_keyconfigs[key];
+
+  while(kc != NULL){
+
+    if (kc->qualifiers == qualifiers){
+
+      if (prev == NULL)
+        g_keyconfigs[key] = kc->next;
+      else
+        prev->next = kc->next;
+
+      V_free(kc);
+
+      break;
+    }
+
+    kc = kc->next;
+  }
+
+  return "OK";
+}
 
 /* This is a function that is quite equialent to the addKey function
    in start.py. It is used to speed up keybindings that does not need
    any python parsing. The functions must just have integer arguments.
+
+   If 'funcname' is NULL or empty string, it means that we need to remove already added keybinding, if there is one.
 */
 const char *ER_keyAdd(int key,char *funcname,PyObject *pykeys,PyObject *pyargs){
-//	char *thechar;
-	struct KeyConfigs *kc;
 	int keyslen;
 	int argslen;
-	int lokke;
-	struct WrapFuncList *wfl;
-	void *func;
-
 	int *keys=PYR_getIntArray(&keyslen,pykeys);
 	int *args=PYR_getIntArray(&argslen,pyargs);
 
 	if(keyslen==-1) return "Illegal keybinding";
 	if(argslen==-1) return "Illegal arguments";
 
-	for(lokke=0;;lokke++){
-		wfl=&wrapfunclist[lokke];
+        uint32_t qualifiers = 0;
+	for(int lokke=0;lokke<keyslen;lokke++)
+          qualifiers |= 1<<keys[lokke];
+
+        if (funcname==NULL || !strcmp(funcname, "")){
+          return removeKey(key, qualifiers);
+        }
+
+	void *func;
+	for(int lokke=0;;lokke++){
+		struct WrapFuncList *wfl=&wrapfunclist[lokke];
 		if(wfl->funcname==NULL){
 		  return "function does not exist.";
 		}
@@ -123,7 +151,7 @@ const char *ER_keyAdd(int key,char *funcname,PyObject *pykeys,PyObject *pyargs){
 		}
 	}
 
-	kc=V_calloc(1,sizeof(struct KeyConfigs));
+	struct KeyConfigs *kc=V_calloc(1,sizeof(struct KeyConfigs));
 	if(kc==NULL) return "Out of memory";
 
 	kc->func=func;
@@ -132,29 +160,27 @@ const char *ER_keyAdd(int key,char *funcname,PyObject *pykeys,PyObject *pyargs){
 	kc->args=V_malloc(sizeof(int)*argslen);
 	if(kc==NULL) return "Out of memory";
 
-	for(lokke=0;lokke<argslen;lokke++){
+	for(int lokke=0;lokke<argslen;lokke++){
 		kc->args[lokke]=args[lokke];
 	}
 
-	for(lokke=0;lokke<keyslen;lokke++){
-		kc->a |= 1<<keys[lokke];
-	}
+        kc->qualifiers = qualifiers;
 
-	kc->next=keyconfigs[key];
-	keyconfigs[key]=kc;
+	kc->next=g_keyconfigs[key];
+	g_keyconfigs[key]=kc;
 
 	return "OK";
 }
 
-bool ER_gotKey(int key,uint32_t a,bool down){
-	struct KeyConfigs *kc=keyconfigs[key];
+bool ER_gotKey(int key,uint32_t qualifiers,bool down){
+	struct KeyConfigs *kc=g_keyconfigs[key];
 
 	if(down==false){
-		a |= EVENT_UP2;
+		qualifiers |= EVENT_UP2;
 	}
 
 	while(kc!=NULL){
-		if(kc->a==a){
+		if(kc->qualifiers==qualifiers){
                         EVENTLOG_add_event(kc->funcname);
 			switch(kc->num_args){
 				case 0:
