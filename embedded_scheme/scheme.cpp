@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/placement_proc.h"
+#include "../common/visual_proc.h"
 
 #include "scheme_proc.h"
 #include "s7extra_proc.h"
@@ -151,7 +152,7 @@ dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s){
   if (s7_is_boolean(s))
     return DYN_create_bool(s7_boolean(s7, s));
 
-  RError("s7extra_dyn: Unsupported s7 type");
+  GFX_Message(NULL, "s7extra_dyn: Unsupported s7 type");
   return DYN_create_bool(false);
 }
 
@@ -189,6 +190,42 @@ void s7extra_callFunc_void_void(func_t *func){
 
 void s7extra_callFunc2_void_void(const char *funcname){
   s7extra_callFunc_void_void((func_t*)s7_name_to_value(s7, funcname));
+}
+
+double s7extra_callFunc_double_void(func_t *func){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = s7_call(s7,
+                           (s7_pointer)func,
+                           s7_list(s7, 0)
+                           );
+
+  if (!s7_is_number(ret)){
+    handleError("Callback did not return a double");
+    return -1.0;
+  }else{
+    return s7_number_to_real(s7, ret);
+  }
+}
+
+double s7extra_callFunc2_double_void(const char *funcname){
+  return s7extra_callFunc_double_void((func_t*)s7_name_to_value(s7, funcname));
+}
+
+
+dyn_t s7extra_callFunc_dyn_void(func_t *func){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = s7_call(s7,
+                           (s7_pointer)func,
+                           s7_list(s7, 0)
+                           );
+
+  return s7extra_dyn(s7, ret);
+}
+
+dyn_t s7extra_callFunc2_dyn_void(const char *funcname){
+  return s7extra_callFunc_dyn_void((func_t*)s7_name_to_value(s7, funcname));
 }
 
 

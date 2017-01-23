@@ -17,6 +17,12 @@ extern "C" {
   void s7extra_callFunc_void_void(func_t *func);
   void s7extra_callFunc2_void_void(const char *funcname);
 
+  double s7extra_callFunc_double_void(func_t *func);
+  double s7extra_callFunc2_double_void(const char *funcname);
+
+  dyn_t s7extra_callFunc_dyn_void(func_t *func);
+  dyn_t s7extra_callFunc2_dyn_void(const char *funcname);
+
   void s7extra_callFunc_void_int_bool(func_t *func, int64_t arg1, bool arg2);
   void s7extra_callFunc2_void_int_bool(const char *funcname, int64_t arg1, bool arg2);
   

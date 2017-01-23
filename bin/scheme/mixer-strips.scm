@@ -855,10 +855,13 @@
                   (<ra> :set-instrument-effect instrument-id "System Solo On/Off" 0)
                   ))
               (get-all-audio-instruments)))
+
   
-  (define mute (create-custom-checkbox (lambda (mute is-muted width height)
-                                         (define implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
-                                         (draw-mutesolo mute is-muted implicitly-muted "Mute" "green" width height))
+  (define implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
+  (define (draw-mute mute is-muted width height)
+    (draw-mutesolo mute is-muted implicitly-muted "Mute" "green" width height))
+
+  (define mute (create-custom-checkbox draw-mute
                                        (lambda (is-muted)
                                          (undo-block
                                           (lambda ()
@@ -870,6 +873,16 @@
                                             )))
                                        (get-muted)))
 
+  (<ra> :schedule (random 1000) (lambda ()
+                                  (let ((mute (cadr mute)))
+                                    (if (<gui> :is_open mute)
+                                        (let ((last-implicitly-muted implicitly-muted))
+                                          (set! implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
+                                          (if (not (eq? implicitly-muted last-implicitly-muted))
+                                              (draw-mute mute (get-muted) (<gui> :width mute) (<gui> :height mute)))
+                                          100)
+                                        #f))))
+  
   (define solo (create-custom-checkbox (lambda (solo is-soloed width height)
                                          (draw-mutesolo solo is-soloed #f "Solo" "yellow" width height))
                                        (lambda (is-selected)

@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 #include <QVector> // Shortening warning in the QVector header. Temporarily turned off by the surrounding pragmas.
 #pragma clang diagnostic pop
+#include <QLinkedList>
 
 
 #include "../common/nsmtracker.h"
@@ -66,13 +67,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 #include "../audio/Faust_plugins_proc.h"
 #include "../mixergui/QM_MixerWidget.h"
+#include "../embedded_scheme/s7extra_proc.h"
+
+#include "../common/PriorityQueue.hpp"
 
 #ifdef _AMIGA
 #include "Amiga_colors_proc.h"
 #endif
 
-#include "radium_proc.h"
 #include "api_common_proc.h"
+
+#include "api_various_proc.h"
+#include "radium_proc.h"
 
 
 
@@ -1884,5 +1890,92 @@ char *fromBase64(const char *s){
 
 void msleep(int ms){
   usleep(1000*ms);
+}
+
+
+
+// Scheduler
+////////////////////////////
+
+#define MAX_SCHEDULED_CALLBACKS 1024
+
+namespace{
+  struct ScheduledEvent{
+
+    double priority = 0.0;
+    func_t *_callback = NULL;
+
+    ScheduledEvent()
+    {
+    }
+
+    void call_before_usage(double daspriority, func_t *callback){
+      R_ASSERT(_callback==NULL);
+      priority = daspriority;
+      _callback = callback;
+      s7extra_protect(_callback);
+    }
+
+    void call_after_usage(void){
+      s7extra_unprotect(_callback);
+      _callback = NULL;
+    }
+  };
+}
+
+static QLinkedList<ScheduledEvent*> g_unused_events;
+static radium::PriorityQueue<ScheduledEvent> g_scheduled_events(MAX_SCHEDULED_CALLBACKS);
+
+static void release_event(ScheduledEvent *event){
+  event->call_after_usage();
+  g_unused_events.push_front(event);
+}
+
+static void schedule(ScheduledEvent *event){
+  if (g_scheduled_events.add(event)==false){
+    handleError("Can not schedule event. Queue is full.");
+    release_event(event);
+  }
+}
+
+void schedule(double ms, func_t *callback){
+  ScheduledEvent *event = g_unused_events.isEmpty() ? new ScheduledEvent() : g_unused_events.takeFirst();
+
+  double priority = TIME_get_ms() + ms;
+
+  event->call_before_usage(priority, callback);
+
+  schedule(event);
+}
+
+void API_call_very_often(void){
+  double time = TIME_get_ms();
+
+  while(true){
+    ScheduledEvent *event = g_scheduled_events.get_first_event();
+    if (event==NULL)
+      break;
+
+    if (event->priority > time)
+      break;
+
+    g_scheduled_events.remove_first_event();
+
+    dyn_t ret = s7extra_callFunc_dyn_void(event->_callback);
+    double new_ms = 0;
+    
+    if (ret.type==INT_TYPE)
+      new_ms = ret.int_number;
+    
+    else if (ret.type==FLOAT_TYPE)
+      new_ms = ret.float_number;
+
+    if (new_ms > 0){
+      event->priority = time + new_ms;
+      schedule(event);
+    } else {
+      release_event(event);
+    }
+  }
 }
 

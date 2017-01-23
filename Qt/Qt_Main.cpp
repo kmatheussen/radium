@@ -76,6 +76,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_proc.h"
 #include "../api/api_gui_proc.h"
+#include "../api/api_various_proc.h"
 #include "../api/api_instruments_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
@@ -1287,6 +1288,7 @@ protected:
 
     if (is_called_every_ms(15)){
       AUDIOMETERPEAKS_call_very_often(15);
+      API_call_very_often();
       API_gui_call_regularly();
     }
 

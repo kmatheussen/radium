@@ -969,7 +969,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
         ATOMIC_SET(plugin->solo_is_on, false);
       }
       update_instrument_gui(plugin);
-      RT_schedule_mixer_strips_redraw();
+      //RT_schedule_mixer_strips_redraw();
       break;
 
     case EFFNUM_VOLUME:
