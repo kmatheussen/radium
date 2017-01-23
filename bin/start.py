@@ -120,8 +120,18 @@ except:
 
 print "Parsing keybindings.conf..."
 #profile.run("KeyConfer(infilehandle,outfilehandle)","fooprof")
-if keybindingsparser.start(keyhandles,infilehandle,infilehandle2,outfilehandle,)==false:
-    sys.exit(5)
+
+try:
+    if keybindingsparser.start(keyhandles,infilehandle,infilehandle2,outfilehandle,)==False:
+        sys.exit(5)
+except:
+    print sys.exc_info()
+    #radium.showMessage("Couldn't create keybindings dict. ("+str(sys.exc_info())+")")
+    message = traceback.format_exc()
+    #radium.showMessage("Loading "+filename+" failed.") # If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
+    #        for m in message.split("\n"):
+    radium.showMessage("Couldn't parse keybindings file.\n\nBacktrace:"+message)
+    sys.exit(6)
 
 try:
     outfilehandle.close()
