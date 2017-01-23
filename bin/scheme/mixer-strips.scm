@@ -70,7 +70,8 @@
 
 (define (create-mixer-strip-name gui instrument-id x1 y1 x2 y2)
   (define name (<gui> :line (<ra> :get-instrument-name instrument-id) (lambda (edited)
-                                                                        (<ra> :set-instrument-name edited instrument-id))))
+                                                                        (if (<ra> :instrument-active instrument-id)
+                                                                            (<ra> :set-instrument-name edited instrument-id)))))
   (<gui> :set-background-color name (<ra> :get-instrument-color instrument-id))
 
   (<gui> :add-mouse-callback name (lambda (button state x y)
