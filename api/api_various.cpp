@@ -1901,6 +1901,7 @@ void msleep(int ms){
 
 namespace{
   struct ScheduledEvent{
+    ScheduledEvent *next = NULL;
 
     double priority = 0.0;
     func_t *_callback = NULL;
@@ -1923,12 +1924,15 @@ namespace{
   };
 }
 
-static QLinkedList<ScheduledEvent*> g_unused_events;
+static ScheduledEvent *g_unused_events = NULL;
 static radium::PriorityQueue<ScheduledEvent> g_scheduled_events(MAX_SCHEDULED_CALLBACKS);
 
 static void release_event(ScheduledEvent *event){
+  R_ASSERT(event->next==NULL);
+
   event->call_after_usage();
-  g_unused_events.push_front(event);
+  event->next = g_unused_events;
+  g_unused_events = event;
 }
 
 static void schedule(ScheduledEvent *event){
@@ -1939,7 +1943,14 @@ static void schedule(ScheduledEvent *event){
 }
 
 void schedule(double ms, func_t *callback){
-  ScheduledEvent *event = g_unused_events.isEmpty() ? new ScheduledEvent() : g_unused_events.takeFirst();
+  ScheduledEvent *event;
+
+  if (g_unused_events!=NULL){
+    event = g_unused_events;
+    g_unused_events = event->next;
+    event->next = NULL;
+  } else
+    event = new ScheduledEvent();
 
   double priority = TIME_get_ms() + ms;
 
