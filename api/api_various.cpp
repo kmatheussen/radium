@@ -14,11 +14,15 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include "../common/includepython.h"
+
 #include <unistd.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
+#include <QVector> // Shortening warning in the QVector header. Temporarily turned off by the surrounding pragmas.
+#pragma clang diagnostic pop
 
-#include "Python.h"
-#include "radium_proc.h"
 
 #include "../common/nsmtracker.h"
 #include "../common/list_proc.h"
@@ -67,9 +71,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Amiga_colors_proc.h"
 #endif
 
+#include "radium_proc.h"
 #include "api_common_proc.h"
 
-extern struct Root *root;
 
 
 void editorWindowToFront(int windownum){
@@ -484,12 +488,12 @@ void quit(void){
   if(doquit==true) printf("doquit is really true.\n");
 }
 
-extern void SOUNDFILESAVERGUI_open(void);
+extern LANGSPEC void SOUNDFILESAVERGUI_open(void);
 void saveSoundfile(void){
   SOUNDFILESAVERGUI_open();
 }
 
-extern void COMMENTDIALOG_open(void);
+extern LANGSPEC void COMMENTDIALOG_open(void);
 void openCommentDialog(void){
   COMMENTDIALOG_open();
 }
@@ -710,7 +714,7 @@ int getNumLines(int blocknum){
   return wblock->block->num_lines;
 }
 
-char *getBlockName(int blocknum){
+const char *getBlockName(int blocknum){
   struct WBlocks *wblock = getWBlockFromNum(-1, blocknum);
   if(wblock==NULL) return "";
 

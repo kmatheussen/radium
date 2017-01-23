@@ -16,27 +16,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#ifndef _RADIUM_COMMON_BLOCK_PROPERTIES_PROC_H
+#define _RADIUM_COMMON_BLOCK_PROPERTIES_PROC_H
 
-
-#ifndef TRACKER_INCLUDE
-
-extern void Block_Set_num_lines(
+extern LANGSPEC void Block_Set_num_lines(
 	struct Blocks *block,
 	int num_lines
 );
 
-extern void Block_Set_num_tracks(
+extern LANGSPEC void Block_Set_num_tracks(
 	struct Blocks *block,
 	NInt num_tracks
 );
 
-extern void Block_Properties(
+extern LANGSPEC void Block_Properties(
 	struct Blocks *block,
 	NInt num_tracks,
 	int num_lines
 );
 
-extern void Block_Properties_CurrPos(
+extern LANGSPEC void Block_Properties_CurrPos(
 	struct Tracker_Windows *window
 );
 

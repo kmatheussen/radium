@@ -13,6 +13,7 @@ enum FAUST_calledRegularlyByParentReply{
   Faust_Success
 };
 
+class QDialog;
 QDialog *FAUST_create_qdialog(void);
 //void FAUST_set_qtguistyle(QDialog *gui);
 

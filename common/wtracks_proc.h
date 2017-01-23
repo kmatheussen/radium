@@ -14,6 +14,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef _RADIUM_COMMON_WTRACKS_PROC_H
+#define _RADIUM_COMMON_WTRACKS_PROC_H
+
 static inline int WTRACK_fxtrack_width(const int fontwidth){
   return (3 * fontwidth) + 2;
 }
@@ -29,26 +32,26 @@ static inline int NOTE_subtrack(const struct WTracks *wtrack, const struct Notes
 }
 
 
-int WTRACK_getWidth(
+extern LANGSPEC int WTRACK_getWidth(
                     struct Tracker_Windows *window,
                     struct WTracks *wtrack
                     );
 
-extern struct WTracks *WTRACK_new(void);
+extern LANGSPEC struct WTracks *WTRACK_new(void);
 
-extern void CloseWTrack(struct WBlocks *wblock, NInt wtracknum);
+extern LANGSPEC void CloseWTrack(struct WBlocks *wblock, NInt wtracknum);
 
-extern void CloseAllWTracks(struct WBlocks *wblock);
+extern LANGSPEC void CloseAllWTracks(struct WBlocks *wblock);
 
-extern void UpdateWTracks(struct Tracker_Windows *window, struct WBlocks *wblock);
+extern LANGSPEC void UpdateWTracks(struct Tracker_Windows *window, struct WBlocks *wblock);
 
-extern void UpdateWTracksCoordinates(
+extern LANGSPEC void UpdateWTracksCoordinates(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );
 
 /*
-extern struct WTracks *UpdateWTrackCoordinates(
+extern LANGSPEC struct WTracks *UpdateWTrackCoordinates(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -62,7 +65,7 @@ extern LANGSPEC void UpdateAllWTracksCoordinates(
 );
 
 
-extern void UpdateAndClearSomeTrackReallinesAndGfxWTracks(
+extern LANGSPEC void UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	NInt starttrack,
@@ -70,46 +73,48 @@ extern void UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 );
 
 
-extern void ChangeNoteLength_CurrPos(
+extern LANGSPEC void ChangeNoteLength_CurrPos(
 	struct Tracker_Windows *window
 );
 
-void ChangeNoteLength_Block_CurrPos(
+extern LANGSPEC void ChangeNoteLength_Block_CurrPos(
 	struct Tracker_Windows *window
 );
 
-void ChangeNoteAreaWidth_CurrPos(
+extern LANGSPEC void ChangeNoteAreaWidth_CurrPos(
                                  struct Tracker_Windows *window
                                  );
 
-void ChangeNoteAreaWidth_Block_CurrPos(
+extern LANGSPEC void ChangeNoteAreaWidth_Block_CurrPos(
                                        struct Tracker_Windows *window
                                        );
   
-void MinimizeTrack_CurrPos(
+extern LANGSPEC void MinimizeTrack_CurrPos(
 	struct Tracker_Windows *window
 );
 
-void MinimizeBlock_CurrPos(
+extern LANGSPEC void MinimizeBlock_CurrPos(
 	struct Tracker_Windows *window
 );
 
-void SwapTrack_CurrPos(
+extern LANGSPEC void SwapTrack_CurrPos(
 	struct Tracker_Windows *window
 );
 
-void AppendWTrack_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock);
+extern LANGSPEC void AppendWTrack_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock);
 
-int WTRACK_getx1(
+extern LANGSPEC int WTRACK_getx1(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	NInt track
 );
 
-int WTRACK_getx2(
+extern LANGSPEC int WTRACK_getx2(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	NInt track
 );
 
-struct WTracks *WTRACK_get(struct WBlocks *wblock, int x);
+extern LANGSPEC struct WTracks *WTRACK_get(struct WBlocks *wblock, int x);
+
+#endif

@@ -1,11 +1,12 @@
 
-#ifndef TRACKER_INCLUDE
+#ifndef _RADIUM_COMMON_BLOCK_DELETE_PROC_H
+#define _RADIUM_COMMON_BLOCK_DELETE_PROC_H
 
-extern void DeleteBlock(
+extern LANGSPEC void DeleteBlock(
 	NInt blockpos
 );
 
-extern void DeleteBlock_CurrPos(
+extern LANGSPEC void DeleteBlock_CurrPos(
 	struct Tracker_Windows *window
 );
 

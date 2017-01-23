@@ -14,25 +14,29 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef _RADIUM_COMMON_TEMPONODES_PROC_H
+#define _RADIUM_COMMON_TEMPONODES_PROC_H
 
-extern void UpdateWTempoNodes(
+extern LANGSPEC void UpdateWTempoNodes(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );
 
-extern struct TempoNodes *AddTempoNode(
+extern LANGSPEC struct TempoNodes *AddTempoNode(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	Place *p,
 	float reltempo
 );
 
-extern void AddTempoNodeCurrPos(struct Tracker_Windows *window,float reltempo);
+extern LANGSPEC void AddTempoNodeCurrPos(struct Tracker_Windows *window,float reltempo);
 
-extern void RemoveAllTempoNodesOnReallineCurrPos(struct Tracker_Windows *window);
+extern LANGSPEC void RemoveAllTempoNodesOnReallineCurrPos(struct Tracker_Windows *window);
 
-extern void FreeAllWTempoNodes(
+extern LANGSPEC void FreeAllWTempoNodes(
 	struct WBlocks *wblock
 );
 
 extern LANGSPEC float FindHighestTempoNodeVal(struct Blocks *block);
+
+#endif

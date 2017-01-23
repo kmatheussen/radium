@@ -15,18 +15,22 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#ifndef RADIUM_COMMON_LINES_PROC_H
+#define RADIUM_COMMON_LINES_PROC_H
 
 
-void InsertLines(
+
+extern LANGSPEC void InsertLines(
 	struct Blocks *block,
 	int line,
 	int toinsert
 );
 
-extern void InsertLines_CurrPos(
+extern LANGSPEC void InsertLines_CurrPos(
                                 struct Tracker_Windows *window,
                                 int toinsert
 );
 
+#endif
 
 

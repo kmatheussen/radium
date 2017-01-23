@@ -15,23 +15,23 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
+#ifndef _RADIUM_COMMON_TEMPOS_PROC_H
+#define _RADIUM_COMMON_TEMPOS_PROC_H
 
-#include "nsmtracker.h"
 
 extern LANGSPEC struct WBPMs *WBPMs_get(
                                         const struct Tracker_Windows *window,
                                         const struct WBlocks *wblock
                                         );
 
-extern struct Tempos *SetTempo(
+extern LANGSPEC struct Tempos *SetTempo(
 	struct Blocks *block,
 	Place *place,
 	int newtempo
 );
 
-extern void SetTempoCurrPos(struct Tracker_Windows *window);
+extern LANGSPEC void SetTempoCurrPos(struct Tracker_Windows *window);
 
-extern void RemoveTemposCurrPos(struct Tracker_Windows *window);
+extern LANGSPEC void RemoveTemposCurrPos(struct Tracker_Windows *window);
 
 #endif

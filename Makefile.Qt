@@ -1434,8 +1434,8 @@ api_clipboard.o:  $(BUILD_DEPENDENCIES)  $(API)api_clipboard.c $(API)radium_proc
 api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.c $(API)radium_proc.h
 	$(CC)  $(API)api_undo.c $(OPT)
 
-api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.c $(API)radium_proc.h
-	$(CC)  $(API)api_various.c $(OPT) -DVERSION=\"$(VERSION)\"
+api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp $(API)radium_proc.h
+	$(CCC)  $(API)api_various.cpp $(QTOPT) -DVERSION=\"$(VERSION)\"
 
 api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.c $(API)radium_proc.h
 	$(CC)  $(API)api_instruments.c $(OPT)
