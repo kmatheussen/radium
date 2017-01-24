@@ -1288,7 +1288,6 @@ protected:
 
     if (is_called_every_ms(15)){
       AUDIOMETERPEAKS_call_very_often(15);
-      API_call_very_often();
       API_gui_call_regularly();
     }
 
@@ -1462,7 +1461,10 @@ protected:
 
     if (is_called_every_ms(100))
       MIXERSTRIP_call_regularly();
-    
+
+    if (is_called_every_ms(15))
+      API_call_very_often();
+
 #if 0
     // Update graphics when playing
     {
