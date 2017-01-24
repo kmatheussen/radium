@@ -3923,6 +3923,13 @@ CPU usage caused by mixing sound for all the buses.
         </widget>
        </item>
        <item>
+        <widget class="QCheckBox" name="show_mixer_strip_during_startup">
+         <property name="text">
+          <string>Show current mixer strip during startup</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="Line" name="line_22">
          <property name="palette">
           <palette>
@@ -6783,8 +6790,8 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>100</width>
-               <height>30</height>
+               <width>983</width>
+               <height>339</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">

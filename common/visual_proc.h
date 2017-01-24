@@ -139,6 +139,7 @@ extern LANGSPEC void GFX_HelpWindowToFront(void);
 extern LANGSPEC void GFX_toggleFullScreen(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_showHideInstrumentWidget(struct Tracker_Windows *window);
 extern LANGSPEC void GFX_showHidePlaylist(struct Tracker_Windows *window);
+extern LANGSPEC void GFX_showHideMixerStrip(struct Tracker_Windows *window);
 extern LANGSPEC void GFX_showHideEditor(void);
 extern LANGSPEC void GFX_showHideMixerWidget(void);
 

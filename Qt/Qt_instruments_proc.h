@@ -44,7 +44,10 @@ extern LANGSPEC void InstrumentWidget_prepare_for_deletion(struct Patch *patch);
 extern LANGSPEC void GFX_update_instrument_widget(struct Patch *patch);
 extern LANGSPEC void GFX_update_current_instrument_widget(void);
 
-extern LANGSPEC void MIXER_MIXERSTRIPWIDGET_call_regularly(void);
+extern LANGSPEC bool MIXERSTRIP_is_visible(void);
+extern LANGSPEC void MIXERSTRIP_show(void);
+extern LANGSPEC void MIXERSTRIP_hide(void);
+extern LANGSPEC void MIXERSTRIP_call_regularly(void);
 
 #ifdef USE_QT4
 //static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch);

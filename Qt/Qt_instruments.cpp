@@ -71,7 +71,7 @@ extern QApplication *qapplication;
 #include "../GTK/GTK_visual_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
-extern QHBoxLayout *g_mixerwidgetlayout;
+extern QHBoxLayout *g_mixerstriplayout;
 
 void set_editor_focus(void){
   if(root==NULL)
@@ -889,14 +889,55 @@ static bool patch_can_be_used_for_mixer_strip(struct Patch *patch){
 
   if (plugin->type->num_inputs==0 && plugin->type->num_outputs==0)
     return false;
-
+  
   return true;
 }
 
-void MIXER_MIXERSTRIPWIDGET_call_regularly(void){
+static bool g_mixerstrip_is_visible = true;
+
+bool MIXERSTRIP_is_visible(void){
+  return g_mixerstrip_is_visible;
+}
+
+void MIXERSTRIP_show(void){
+  g_mixerstrip_is_visible = true;
+}
+
+void MIXERSTRIP_hide(void){
+  g_mixerstrip_is_visible = false;
+}
+
+void GFX_showHideMixerStrip(struct Tracker_Windows *window){
+  if (MIXERSTRIP_is_visible())
+    MIXERSTRIP_hide();
+  else
+    MIXERSTRIP_show();
+}
+
+void MIXERSTRIP_call_regularly(void){
   static struct Patch *last_patch = NULL;
   static int64_t guinum = -1;
-  
+
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    has_inited = true;
+    g_mixerstrip_is_visible = showMixerStripDuringStartup();
+  }
+
+  QWidget *old_mixerstrip_widget = guinum==-1 ? NULL : API_gui_get_widget(guinum);
+  R_ASSERT(guinum==-1 || old_mixerstrip_widget!=NULL);
+
+  if (g_mixerstrip_is_visible==false){
+    if (old_mixerstrip_widget!=NULL){
+      g_mixerstriplayout->removeWidget(old_mixerstrip_widget);
+      gui_close(guinum);
+      guinum = -1;
+      last_patch = NULL;
+    }
+    return;
+  }
+
   if (g_currpatch != last_patch && patch_can_be_used_for_mixer_strip(g_currpatch)){
 
     last_patch = NULL;
@@ -907,9 +948,6 @@ void MIXER_MIXERSTRIPWIDGET_call_regularly(void){
     
     if(new_guinum != -1){
 
-      QWidget *old_mixerstrip_widget = old_guinum==-1 ? NULL : API_gui_get_widget(old_guinum);
-      R_ASSERT(old_guinum==-1 || old_mixerstrip_widget!=NULL);
-      
       QWidget *new_mixerstrip_widget = API_gui_get_widget(new_guinum);
       R_ASSERT(new_mixerstrip_widget!=NULL);
       
@@ -921,12 +959,12 @@ void MIXER_MIXERSTRIPWIDGET_call_regularly(void){
          
         if (old_mixerstrip_widget==NULL){
           
-          g_mixerwidgetlayout->addWidget(new_mixerstrip_widget);
+          g_mixerstriplayout->addWidget(new_mixerstrip_widget);
           last_patch = g_currpatch;
           
         } else {
           
-          QLayoutItem *old_item = g_mixerwidgetlayout->replaceWidget(old_mixerstrip_widget, new_mixerstrip_widget, Qt::FindDirectChildrenOnly);
+          QLayoutItem *old_item = g_mixerstriplayout->replaceWidget(old_mixerstrip_widget, new_mixerstrip_widget, Qt::FindDirectChildrenOnly);
           R_ASSERT(old_item!=NULL);
           
           if (old_item != NULL) {
@@ -940,7 +978,7 @@ void MIXER_MIXERSTRIPWIDGET_call_regularly(void){
         guinum = new_guinum;
         
         if(old_mixerstrip_widget!=NULL)
-          g_mixerwidgetlayout->removeWidget(old_mixerstrip_widget);
+          g_mixerstriplayout->removeWidget(old_mixerstrip_widget);
 
         printf("Closing old gui %d\n", (int)old_guinum);
         

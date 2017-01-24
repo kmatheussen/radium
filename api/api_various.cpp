@@ -138,6 +138,25 @@ void setShowPlaylistDuringStartup(bool val){
 }
 
 
+static bool g_showMixerStripDuringStartup = true;
+
+bool showMixerStripDuringStartup(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_showMixerStripDuringStartup = SETTINGS_read_bool("show_mixer_strip_during_startup", true);
+    has_inited = true;
+  }
+
+  return g_showMixerStripDuringStartup;
+}
+
+void setShowMixerStripDuringStartup(bool val){
+  g_showMixerStripDuringStartup = val;
+  SETTINGS_write_bool("show_mixer_strip_during_startup", val);
+}
+
+
 void maximizeEditorWindow(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_MaximizeEditorWindow(window);
@@ -222,6 +241,11 @@ void toggleInstrumentWidgetOnly(void){
 void showHidePlaylist(int windownum){  
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_showHidePlaylist(window);
+}
+
+void showHideMixerStrip(int windownum){  
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  GFX_showHideMixerStrip(window);
 }
 
 void showHideMenuBar(int windownum){
