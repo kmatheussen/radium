@@ -157,6 +157,25 @@ void setShowMixerStripDuringStartup(bool val){
 }
 
 
+static bool g_showMixerStripOnLeftSide = false;
+
+bool showMixerStripOnLeftSide(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_showMixerStripOnLeftSide = SETTINGS_read_bool("show_mixer_strip_on_left_side", false);
+    has_inited = true;
+  }
+
+  return g_showMixerStripOnLeftSide;
+}
+
+void setShowMixerStripOnLeftSide(bool val){
+  g_showMixerStripOnLeftSide = val;
+  SETTINGS_write_bool("show_mixer_strip_on_left_side", val);
+}
+
+
 void maximizeEditorWindow(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_MaximizeEditorWindow(window);

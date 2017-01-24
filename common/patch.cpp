@@ -539,6 +539,7 @@ static void make_inactive(struct Patch *patch, bool force_removal){
   hash_t *audio_patch_state = AUDIO_get_audio_patch_state(patch); // The state is unavailable after calling remove_patch().
 
   patch->instrument->remove_patchdata(patch);
+  R_ASSERT(patch->patchdata==NULL);
   
   ADD_UNDO(Audio_Patch_Remove_CurrPos(patch, audio_patch_state)); // Must be called last, if not the undo/redo order will be wrong.
 

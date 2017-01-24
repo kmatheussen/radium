@@ -1704,6 +1704,16 @@ void Qt_EventHandler(void){
 }
 
 
+static void add_mixer_strip(QSplitter *xsplitter){
+  //MixerWidget *mixer_widget =
+  QWidget *mixerstripparent = new QWidget(xsplitter);
+  //mixerwidgetandmixerstrip->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  g_mixerstriplayout = new QHBoxLayout;
+  g_mixerstriplayout->setSpacing(0);
+  g_mixerstriplayout->setContentsMargins(0,0,0,0);
+  mixerstripparent->setLayout(g_mixerstriplayout);
+}
+  
 //extern void updateAllFonts(QWidget *widget);
 
 static bool load_new_song=true;
@@ -1845,6 +1855,10 @@ int radium_main(char *arg){
 
       xsplitter->setOpaqueResize(true);
 
+      if(showMixerStripOnLeftSide())
+        add_mixer_strip(xsplitter);
+      
+
 #if USE_QT3
       // Fix. Why does this crash QT4?
       editor->reparent(xsplitter, QPoint(0,0), true);
@@ -1920,15 +1934,10 @@ int radium_main(char *arg){
       }
 
       new MixerWidget(xsplitter);
-      
-      //MixerWidget *mixer_widget =
-      QWidget *mixerstripparent = new QWidget(xsplitter);
-      //mixerwidgetandmixerstrip->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-      g_mixerstriplayout = new QHBoxLayout;
-      g_mixerstriplayout->setSpacing(0);
-      g_mixerstriplayout->setContentsMargins(0,0,0,0);
-      mixerstripparent->setLayout(g_mixerstriplayout);
-      
+
+      if(!showMixerStripOnLeftSide())
+        add_mixer_strip(xsplitter);
+
       //QWidget *gakk = new MixerWidget(mixerwidgetandmixerstrip);
       //g_mixerstriplayout->addWidget(gakk);
       

@@ -410,11 +410,6 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     // Various
     {
 
-      show_instrument_widget_when_double_clicking->setChecked(showInstrumentWidgetWhenDoubleClickingSoundObject());
-
-      show_playlist_during_startup->setChecked(showPlaylistDuringStartup());
-      show_mixer_strip_during_startup->setChecked(showMixerStripDuringStartup());
-        
       gcOnOff->setChecked(true);
 
       bool incremental_gc = SETTINGS_read_bool("incremental_gc",false);
@@ -519,6 +514,13 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
     // Windows
     {
+      show_instrument_widget_when_double_clicking->setChecked(showInstrumentWidgetWhenDoubleClickingSoundObject());
+
+      show_playlist_during_startup->setChecked(showPlaylistDuringStartup());
+      show_mixer_strip_during_startup->setChecked(showMixerStripDuringStartup());
+      show_mixer_strip_on_the_left->setChecked(showMixerStripOnLeftSide());
+        
+
       modal_windows->setChecked(doModalWindows());
 #if FOR_WINDOWS
       native_file_requesters->hide();
@@ -666,6 +668,11 @@ public slots:
   void on_show_mixer_strip_during_startup_toggled(bool val){
     if (_initing==false)
       setShowMixerStripDuringStartup(val);
+  }
+
+  void on_show_mixer_strip_on_the_left_toggled(bool val){
+    if (_initing==false)
+      setShowMixerStripOnLeftSide(val);
   }
 
   void on_gcOnOff_toggled(bool val){
