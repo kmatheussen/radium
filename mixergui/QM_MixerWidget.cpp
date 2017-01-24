@@ -1617,18 +1617,18 @@ void MW_autoconnect_plugin(SoundPlugin *plugin){
 
 
 static float find_next_autopos_y(Chip *system_chip){
-  int x = system_chip->x()-grid_width;
-  int y = system_chip->y();
+  int x = system_chip->x()-(grid_width*3/2);
+  int y = system_chip->y()+2;
   while(MW_get_chip_at(x,y,NULL)!=NULL)
     y+=grid_height;
-  return y;
+  return y-2;
 }
 
 void MW_set_autopos(double *x, double *y){
   SoundPlugin *main_pipe    = get_main_pipe();
   if (main_pipe != NULL){
     Chip        *system_chip  = find_chip_for_plugin(&g_mixer_widget->scene, main_pipe);
-    *x                         = system_chip->x()-grid_width;
+    *x                         = system_chip->x()-(grid_width*3/2);
     *y                         = find_next_autopos_y(system_chip);
     printf("Adding at pos %f %f\n",*x,*y);
   } else {
