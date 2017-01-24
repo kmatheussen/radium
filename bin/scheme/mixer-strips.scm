@@ -876,7 +876,7 @@
 
   (<ra> :schedule (random 1000) (let ((mute (cadr mute)))
                                   (lambda ()
-                                    (if (and (<gui> :is_open mute) (<ra> :instrument-active instrument-id))
+                                    (if (and (<gui> :is-open mute) (<ra> :instrument-active instrument-id))
                                         (let ((last-implicitly-muted implicitly-muted))
                                           (set! implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
                                           (if (not (eq? implicitly-muted last-implicitly-muted))

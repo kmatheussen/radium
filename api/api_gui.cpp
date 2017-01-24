@@ -367,7 +367,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       event->accept();
 
-      if(gui_is_open(_gui_num))
+      if(gui_isOpen(_gui_num))
         s7extra_callFunc_void_int_int(_resize_callback, event->size().width(), event->size().height());
     }
 
@@ -1882,7 +1882,7 @@ void gui_close(int64_t guinum){
   gui->_widget->close();
 }
 
-bool gui_is_open(int64_t guinum){
+bool gui_isOpen(int64_t guinum){
   return get_gui_maybeclosed(guinum)!=NULL;
 }
 
