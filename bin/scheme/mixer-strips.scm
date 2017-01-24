@@ -70,7 +70,7 @@
 
 (define (create-mixer-strip-name gui instrument-id x1 y1 x2 y2)
   (define name (<gui> :line (<ra> :get-instrument-name instrument-id) (lambda (edited)
-                                                                        (if (<ra> :instrument-active instrument-id)
+                                                                        (if (<ra> :instrument-is-open instrument-id)
                                                                             (<ra> :set-instrument-name edited instrument-id)))))
   (<gui> :set-background-color name (<ra> :get-instrument-color instrument-id))
 
@@ -876,7 +876,7 @@
 
   (<ra> :schedule (random 1000) (let ((mute (cadr mute)))
                                   (lambda ()
-                                    (if (and (<gui> :is-open mute) (<ra> :instrument-active instrument-id))
+                                    (if (and (<gui> :is-open mute) (<ra> :instrument-is-open instrument-id))
                                         (let ((last-implicitly-muted implicitly-muted))
                                           (set! implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
                                           (if (not (eq? implicitly-muted last-implicitly-muted))
@@ -1197,20 +1197,20 @@
   (define das-mixer-strip-gui #f)
 
   (define (remake width height)
-    (define instrument-is-active (<ra> :instrument-active instrument-id))
+    (define instrument-is-open (<ra> :instrument-is-open instrument-id))
     
     (c-display "    remaking mixer-strip" instrument-id parent width height)
     (catch #t
            (lambda ()
              (<gui> :disable-updates parent)
              
-             (define new-mixer-strip (and instrument-is-active (create-mixer-strip instrument-id width height)))
+             (define new-mixer-strip (and instrument-is-open (create-mixer-strip instrument-id width height)))
              
              (when das-mixer-strip-gui
                (<gui> :close das-mixer-strip-gui)
                (set! das-mixer-strip-gui #f))
 
-             (when instrument-is-active
+             (when instrument-is-open
                (<gui> :add parent new-mixer-strip 0 0 width height)
                (<gui> :show new-mixer-strip)             
                (set! das-mixer-strip-gui new-mixer-strip))
