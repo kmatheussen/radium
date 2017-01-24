@@ -452,3 +452,9 @@
 ||#
 
 
+(define (show/hide-instrument-gui)
+  (let ((id (ra:get-current-instrument)))
+    (when (and (not (= -1 id)) (ra:has-native-instrument-gui id))
+      (if (ra:instrument-gui-is-visible id)
+          (ra:hide-instrument-gui id)
+          (ra:show-instrument-gui id)))))

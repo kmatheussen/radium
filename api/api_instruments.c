@@ -1175,6 +1175,57 @@ bool showInstrumentGui(int64_t instrument_id, bool show_instrument_window_if_not
   return false;
 }
 
+bool hideInstrumentGui(int64_t instrument_id){
+
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  //if(show_instrument_window_if_not_visible)
+  //  GFX_InstrumentWindowToFront();
+
+  //struct Instruments *instrument = get_audio_instrument();
+  //instrument->PP_Update(instrument,patch);
+  
+  struct SoundPlugin *plugin = patch->patchdata;
+  if (plugin != NULL){
+    
+    if(plugin->type->hide_gui != NULL) {
+    
+      plugin->type->hide_gui(plugin);
+      return true;
+      
+    }
+  }
+
+  return false;
+}
+
+bool instrumentGuiIsVisible(int64_t instrument_id){
+
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  //if(show_instrument_window_if_not_visible)
+  //  GFX_InstrumentWindowToFront();
+
+  //struct Instruments *instrument = get_audio_instrument();
+  //instrument->PP_Update(instrument,patch);
+  
+  struct SoundPlugin *plugin = patch->patchdata;
+  if (plugin != NULL){
+    
+    if(plugin->type->gui_is_visible != NULL) {
+    
+      return plugin->type->gui_is_visible(plugin);
+      
+    }
+  }
+
+  return false;
+}
+
 int64_t getCurrentInstrument(void){
   if (g_currpatch==NULL)
     return -1;
