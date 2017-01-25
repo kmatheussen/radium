@@ -41,6 +41,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "seqtrack_automation_proc.h"
 
+static double get_seqtrack_song_length(struct SeqTrack *seqtrack){
+  return get_seqtime_from_abstime(seqtrack, NULL, SONG_get_gfx_length()*MIXER_get_sample_rate());
+}
 
 namespace{
 
@@ -507,7 +510,9 @@ int SEQTRACK_AUTOMATION_get_curr_automation(struct SeqtrackAutomation *seqtracka
   return -1;
 }
 
-void SEQTRACK_AUTOMATION_set(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum, double seqtime, double value, int logtype){
+void SEQTRACK_AUTOMATION_set(struct SeqTrack *seqtrack, int automationnum, int nodenum, double seqtime, double value, int logtype){
+  struct SeqtrackAutomation *seqtrackautomation = seqtrack->seqtrackautomation;
+
   R_ASSERT_RETURN_IF_FALSE(seqtrackautomation->islegalautomation(automationnum));
 
   struct Automation *automation = seqtrackautomation->_automations[automationnum];
@@ -520,9 +525,9 @@ void SEQTRACK_AUTOMATION_set(struct SeqtrackAutomation *seqtrackautomation, int 
   const AutomationNode *next = nodenum==size-1 ? NULL : &automation->automation.at(nodenum+1);
 
   double mintime = prev==NULL ? 0 : prev->time; //next==NULL ? R_MAX(R_MAX(node.time, seqtime), SONG_get_length()) : prev->time;
-  double maxtime = next==NULL ? SONG_get_gfx_length()*MIXER_get_sample_rate() : next->time;
+  double maxtime = next==NULL ? get_seqtrack_song_length(seqtrack)  : next->time;
 
-  //printf("mintime: %f, seqtime: %f, maxtime: %f\n",mintime,seqtime,maxtime);
+  //printf("       mintime: %f, seqtime: %f, maxtime: %f\n",mintime,seqtime,maxtime);
   seqtime = R_BOUNDARIES(mintime, seqtime, maxtime);
 
   value = R_BOUNDARIES(0.0, value, 1.0);
@@ -622,6 +627,7 @@ hash_t *SEQTRACK_AUTOMATION_get_state(struct SeqtrackAutomation *seqtrackautomat
 static float get_node_x2(const struct SeqTrack *seqtrack, const AutomationNode &node, double start_time, double end_time, float x1, float x2){
   int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, node.time);
 
+  //printf("      GET_NODE_X2 returned %f - %f. start_time: %f, end_time: %f\n",abstime/48000.0, scale(abstime, start_time, end_time, x1, x2), start_time/48000.0, end_time/48000.0);
   return scale(abstime, start_time, end_time, x1, x2);
 }
 
@@ -663,7 +669,7 @@ float SEQTRACK_AUTOMATION_get_node_y(struct SeqtrackAutomation *seqtrackautomati
 }
 
 void SEQTRACK_AUTOMATION_paint(QPainter *p, struct SeqTrack *seqtrack, float x1, float y1, float x2, float y2, double start_time, double end_time){
-  
+
   for(auto *automation : seqtrack->seqtrackautomation->_automations)
     automation->automation.paint(p, x1, y1, x2, y2, start_time, end_time, automation->color, get_node_y, get_node_x, seqtrack);
 }

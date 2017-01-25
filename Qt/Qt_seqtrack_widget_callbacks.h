@@ -41,6 +41,9 @@ static bool smooth_scrolling(void){
 
 static bool g_draw_colored_seqblock_tracks = true;
 
+
+/* Custom font drawing code */
+
 namespace{
   struct GlyphpathAndWidth{
     QPainterPath path;
@@ -87,7 +90,7 @@ static GlyphpathAndWidth getGlyphpathAndWidth(const QFont &font, const QChar c){
 // QPainter::drawText doesn't have floating point precision.
 //
 static void myDrawText(QPainter &painter, QRectF rect, QString text, QTextOption option = QTextOption(Qt::AlignLeft | Qt::AlignTop)){
-  if (is_playing() && pc->playtype==PLAYSONG && smooth_scrolling() && smooth_scrolling()){
+  if (is_playing() && pc->playtype==PLAYSONG && smooth_scrolling()){
     int len=text.length();
 
     float x = rect.x();

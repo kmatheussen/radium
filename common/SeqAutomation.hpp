@@ -395,15 +395,9 @@ public:
       const T &node1 = _automation.at(i);
       double time1 = node1.time;
 
-      if (time1 >= end_time)
-        break;
-      
       const T &node2 = _automation.at(i+1);
       double time2 = node2.time;
 
-      if (time2 < start_time)
-        continue;
-      
       float x_a;
       float x_b;
       
@@ -414,6 +408,13 @@ public:
         x_a = scale(time1, start_time, end_time, x1, x2);
         x_b = scale(time2, start_time, end_time, x1, x2);
       }
+
+      if (x_a >= x2)
+        break;
+
+      if (x_b < x1)
+        continue;
+
 
       float y_a = get_y(node1, y1, y2);
       float y_b = get_y(node2, y1, y2);

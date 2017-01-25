@@ -437,7 +437,7 @@ void setSeqAutomationNode(int64_t time, float value, int logtype, int nodenum, i
   VALIDATE_NODENUM();
 
   int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, time);
-  SEQTRACK_AUTOMATION_set(seqtrack->seqtrackautomation, automationnum, nodenum, seqtime, R_BOUNDARIES(0, value, 1), logtype);
+  SEQTRACK_AUTOMATION_set(seqtrack, automationnum, nodenum, seqtime, R_BOUNDARIES(0, value, 1), logtype);
 }
 
 float getSeqAutomationNodeX(int nodenum, int automationnum, int seqtracknum){

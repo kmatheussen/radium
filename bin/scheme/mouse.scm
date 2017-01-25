@@ -3850,7 +3850,7 @@
                                        (if (not (<ra> :ctrl-pressed))
                                            (set! Time (<ra> :get-seq-gridded-time Time 0 (<ra> :get-seq-automation-grid-type))))
                                        (<ra> :set-seq-automation-node Time Value logtype Num automationnum seqtracknum)
-                                       ;;(c-display "NUM:" Num ", Time:" Time ", Value:" Value)
+                                       ;;(c-display "NUM:" Num ", Time:" (/ Time 48000.0) ", Value:" Value)
                                        Num))
                         :Publicize (lambda (Num)
                                      (set-seqnode-statusbar-text Num)
@@ -3861,7 +3861,6 @@
                         :Mouse-pointer-func ra:set-normal-mouse-pointer
                         :Get-pixels-per-value-unit #f
                         )         
-
 
 
 ;; delete seqautomation / popupmenu
