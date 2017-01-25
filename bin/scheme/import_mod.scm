@@ -907,9 +907,9 @@
             (find-c00s-at (cdr c00s) patternnum channel)))))
 
 (define (find-all-c00-stops events current-c00s)
-  (define length (length events))
-  (if (= 0 (modulo length 128))
-      (c-display "left:" length (length current-c00s)))
+  (define length-events (length events))
+  (if (= 0 (modulo length-events 128))
+      (c-display "left:" length-events (length current-c00s)))
   ;;(c-display "events" events)
   ;;(c-display "find-all-c00-stops" current-c00s)
   (if (null? events)

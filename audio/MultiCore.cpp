@@ -31,14 +31,44 @@ static volatile bool something_is_wrong = false;
 
 static const char *settings_key = "num_cpus";
 
+#define USE_BUZY_GET 1
 
+#if USE_BUZY_GET
+static cpp11onmulticore::SpinlockSemaphore all_sp_finished;
+static DEFINE_ATOMIC(int, g_start_block_time) = 0;
+const int g_num_blocks_to_pause_buzylooping = 400;
+static DEFINE_ATOMIC(int, g_num_blocks_pausing_buzylooping) = 0;
+#else
 static radium::Semaphore all_sp_finished;
+#endif
 
 static DEFINE_ATOMIC(int, num_sp_left) = 0;
 
 #define MAX_NUM_SP 8192
 
 static radium::Queue< SoundProducer* , MAX_NUM_SP > soundproducer_queue;
+
+#if USE_BUZY_GET
+static void avoid_lockup(int counter){
+  if ((counter % (1024*64)) == 0){
+    int time_now = (int)(1000*monotonic_seconds());
+    int duration = time_now - ATOMIC_GET(g_start_block_time);
+    //printf("  Duration: %d\n", duration);
+    if (duration >= 1000){
+      ATOMIC_SET(g_num_blocks_pausing_buzylooping, g_num_blocks_to_pause_buzylooping);
+      RT_message("We have used more than 1 seconds to process an audio block. Something is wrong.\n"
+                 "\n"
+                 "It is likely that the number of CPUs used for audio processing is set too high.\n"
+                 "\n"
+                 "You can fix this by reducing the number of CPUs under Edit -> Preferences -> Audio -> Multi Core\n" 
+                 "\n"
+                 "To avoid locking up the computer, we're going to lighten up the strain on the CPU for a few seconds. "
+                 "Note that the audio performance will suffer because of this."
+                 );
+    }
+  }
+}
+#endif
 
 static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp, SoundProducer **next){
   if (ATOMIC_ADD_RETURN_NEW(sp->num_dependencies_left, -1) == 0) {
@@ -161,10 +191,46 @@ public:
 #endif
 
     while(true){
+
+      SoundProducer *sp;
+
+#if USE_BUZY_GET
+
+      for(;;){
+        int counter = 0;
+
+        if (ATOMIC_GET(g_num_blocks_pausing_buzylooping) <= 0) {
+
+          if (soundproducer_queue.buzyGetEnabled()) {
+            
+            bool gotit;
+            sp = soundproducer_queue.tryGet(gotit);
+            if (!gotit)
+              avoid_lockup(counter++);
+            else
+              break;
+            
+          } else {
+
+            soundproducer_queue.waitUntilBuzyGetIsEnabled();
+
+          }
+
+        } else {
+
+          sp = soundproducer_queue.get();
+          break;
+
+        }
+
+      }
+
+#else
+
+      sp = soundproducer_queue.get();
+
+#endif // !USE_BUZY_GET
       
-      //printf("  > mc: getting %d (%d)\n",ATOMIC_GET(num_sp_left),soundproducer_queue.size());
-      SoundProducer *sp = soundproducer_queue.get();
-      //printf("  < mc: got %d (%d)\n",ATOMIC_GET(num_sp_left),soundproducer_queue.size());
 
 #ifdef FOR_MACOSX
       if (started==false){
@@ -203,8 +269,8 @@ static void process_single_core(int64_t time, int num_frames, bool process_plugi
     process_soundproducer(sp, time, num_frames, process_plugins);
   }
 
-  R_ASSERT(all_sp_finished.numSignallers()==1);
-  
+  R_ASSERT_RETURN_IF_FALSE(all_sp_finished.numSignallers()==1);
+
   all_sp_finished.wait();
 }
 
@@ -213,6 +279,23 @@ static void process_single_core(int64_t time, int num_frames, bool process_plugi
 static int g_num_runners = 0;
 static Runner **g_runners = NULL;
 
+
+void MULTICORE_start_block(void){
+#if USE_BUZY_GET
+  ATOMIC_SET(g_start_block_time, (int) (1000*monotonic_seconds()));
+  soundproducer_queue.enableBuzyGet();
+#endif
+}
+
+void MULTICORE_end_block(void){
+#if USE_BUZY_GET
+  soundproducer_queue.disableBuzyGet();
+
+  int num_blocks_left = ATOMIC_GET(g_num_blocks_pausing_buzylooping);
+  if (num_blocks_left > 0)
+    ATOMIC_SET(g_num_blocks_pausing_buzylooping, num_blocks_left-1);
+#endif
+}
 
 void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t time, int num_frames, bool process_plugins){
 
@@ -263,6 +346,7 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
 #define START_ALL_RUNNERS_SIMULTANEOUSLY 1
 
   SoundProducer *sp_in_main_thread = NULL;
+    
       
   // 3. start threads;
 
@@ -298,7 +382,28 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
 
     R_ASSERT(sp_in_main_thread!=NULL);
 
+#if USE_BUZY_GET
+
+    // 4. Use main thread as another runner.
+
+    process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
+
+    int counter = 0;
+
+    while(all_sp_finished.tryWaitLightly()==false){
+
+      avoid_lockup(counter++);
+
+      bool gotit;
+      sp_in_main_thread = soundproducer_queue.tryGet(gotit);
+      if (gotit)
+        process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
+    }
+
+#else
+
     // 4. process as much as we can in the main thread
+
     while(sp_in_main_thread != NULL){
       process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
 
@@ -310,6 +415,8 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
     
     // 5. wait.
     all_sp_finished.wait();
+
+#endif // !USE_BUZY_GET
 
   }
   
@@ -342,33 +449,29 @@ void MULTICORE_stop(void){
 
 
 int MULTICORE_get_num_threads(void){
-  if (g_num_runners==0)
-    return 1;
-  else
-    return g_num_runners;
+  return g_num_runners+1;
 }
 
 
-static int get_num_runners_from_config(void){
-  static int default_num_runners = -1;
+static int get_num_cpus_from_config(void){
+  static int default_num_cpus = -1;
 
-  if (default_num_runners==-1)
-    default_num_runners = QThread::idealThreadCount();
+  if (default_num_cpus==-1)
+    default_num_cpus = QThread::idealThreadCount();
 
-  if (default_num_runners<1 || default_num_runners>64) // ensure sane value
-    default_num_runners = 4;
+  if (default_num_cpus<1 || default_num_cpus>64) // ensure sane value
+    default_num_cpus = 1;
 
-  return SETTINGS_read_int32(settings_key, default_num_runners);
+  return SETTINGS_read_int32(settings_key, default_num_cpus);
 }
 
-void MULTICORE_set_num_threads(int num_new_runners){  
-  R_ASSERT(num_new_runners >= 1);
+void MULTICORE_set_num_threads(int num_new_cpus){
+  R_ASSERT(num_new_cpus >= 1);
 
-  if (get_num_runners_from_config() != num_new_runners)
-    SETTINGS_write_int(settings_key, num_new_runners);
+  if (get_num_cpus_from_config() != num_new_cpus)
+    SETTINGS_write_int(settings_key, num_new_cpus);
 
-  if (num_new_runners==1)
-    num_new_runners=0;
+  int num_new_runners = num_new_cpus - 1;
   
   if (num_new_runners==g_num_runners)
     return;
@@ -413,7 +516,7 @@ void MULTICORE_init(void){
 
   R_ASSERT(g_num_runners==0);
   
-  int num_new_runners = get_num_runners_from_config();
+  int num_new_cpus = get_num_cpus_from_config();
 
-  MULTICORE_set_num_threads(num_new_runners);
+  MULTICORE_set_num_threads(num_new_cpus);
 }

@@ -769,36 +769,40 @@ struct Mixer{
       for (SoundProducer *sp : _sound_producers)
         SP_RT_called_for_each_soundcard_block2(sp, _time);
 
-      ATOMIC_SET(g_currently_processing_dsp, true);
+      ATOMIC_SET(g_currently_processing_dsp, true); {
         
-      jackblock_delta_time = 0;
-      while(jackblock_delta_time < num_frames){
+        MULTICORE_start_block(); {
 
-        double curr_song_tempo_automation_tempo = pc->playtype==PLAYSONG ? RT_TEMPOAUTOMATION_get_value(ATOMIC_DOUBLE_GET(pc->song_abstime)) : 1.0;
-        ATOMIC_DOUBLE_SET(g_curr_song_tempo_automation_tempo, curr_song_tempo_automation_tempo);
+          jackblock_delta_time = 0;
+          while(jackblock_delta_time < num_frames){
+            
+            double curr_song_tempo_automation_tempo = pc->playtype==PLAYSONG ? RT_TEMPOAUTOMATION_get_value(ATOMIC_DOUBLE_GET(pc->song_abstime)) : 1.0;
+            ATOMIC_DOUBLE_SET(g_curr_song_tempo_automation_tempo, curr_song_tempo_automation_tempo);
+            
+            PlayerTask((double)RADIUM_BLOCKSIZE * curr_song_tempo_automation_tempo);
+            
+            if (is_playing()) {
+              if (pc->playtype==PLAYBLOCK)
+                RT_LPB_set_beat_position(root->song->block_seqtrack, RADIUM_BLOCKSIZE);
+              else
+                VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+                  RT_LPB_set_beat_position(seqtrack, RADIUM_BLOCKSIZE);
+                }END_VECTOR_FOR_EACH;
+            }
+            
+            RT_MIDI_handle_play_buffer();
+            
+            MULTICORE_run_all(_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
+            
+            _time += RADIUM_BLOCKSIZE;
+            jackblock_delta_time += RADIUM_BLOCKSIZE;
+          }
+
+        } MULTICORE_end_block();
         
-        PlayerTask((double)RADIUM_BLOCKSIZE * curr_song_tempo_automation_tempo);
+        ATOMIC_SET(g_last_mixer_time, _time);
 
-        if (is_playing()) {
-          if (pc->playtype==PLAYBLOCK)
-            RT_LPB_set_beat_position(root->song->block_seqtrack, RADIUM_BLOCKSIZE);
-          else
-            VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
-              RT_LPB_set_beat_position(seqtrack, RADIUM_BLOCKSIZE);
-            }END_VECTOR_FOR_EACH;
-        }
-              
-        RT_MIDI_handle_play_buffer();
-        
-        MULTICORE_run_all(_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
-
-        _time += RADIUM_BLOCKSIZE;
-        jackblock_delta_time += RADIUM_BLOCKSIZE;
-      }
-
-      ATOMIC_SET(g_last_mixer_time, _time);
-      
-      ATOMIC_SET(g_currently_processing_dsp, false);
+      } ATOMIC_SET(g_currently_processing_dsp, false);
       
       jack_time_t end_time = jack_get_time();
 
