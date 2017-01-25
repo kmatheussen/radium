@@ -80,7 +80,7 @@ void OS_set_saving_path(const wchar_t *filename){
   filepath      saving_path   result
   ========================================
   /a/b/c.wav    /a/b          c.wav          (returns a relative path)
-  /d/e/f.wav    /a/b          /d/e/f.wav     (returns a full path
+  /d/e/f.wav    /a/b          /d/e/f.wav     (returns a full path)
   /a/b/c.wav    /a            b/c.wav        (returns a relative path)
 
 */

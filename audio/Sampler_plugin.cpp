@@ -2372,23 +2372,27 @@ void SAMPLER_start_recording(struct SoundPlugin *plugin, const wchar_t *pathdir,
 #endif
   
   R_ASSERT_RETURN_IF_FALSE(num_channels > 0);
-  
+
   Data *data = (Data*)plugin->data;
 
   if (ATOMIC_GET(data->recording_status) != NOT_RECORDING)
     return;
 
+  wchar_t *recording_path = STRING_append(pathdir,
+                                          STRING_append(STRING_create(OS_get_directory_separator()),
+                                                        STRING_replace(STRING_replace(STRING_create(plugin->patch->name),
+                                                                                      "/",
+                                                                                      "_slash_"),
+                                                                       "\\",
+                                                                       "_backslash_")));
+  QDir dir = QFileInfo(STRING_get_qstring(recording_path)).dir();
+  if (dir.exists()==false){
+    GFX_Message(NULL, "Error. Could not find the directory \"%s\".\n", dir.absolutePath().toUtf8().constData());
+    return;
+  }
+  
   free(ATOMIC_GET(data->recording_path));
-
-  ATOMIC_SET(data->recording_path,
-             wcsdup(STRING_append(pathdir,
-                                  STRING_append(STRING_create(OS_get_directory_separator()),
-                                                STRING_replace(STRING_replace(STRING_create(plugin->patch->name),
-                                                                              "/",
-                                                                              "_slash_"),
-                                                               "\\",
-                                                               "_backslash_"))))
-             );
+  ATOMIC_SET(data->recording_path, wcsdup(recording_path));
   
   ATOMIC_SET(data->num_recording_channels, num_channels);
   ATOMIC_SET(data->recording_from_main_input, recording_from_main_input);

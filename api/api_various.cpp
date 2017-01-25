@@ -1562,6 +1562,29 @@ void setStopPlayingWhenSavingSong(bool val){
   SETTINGS_write_bool("stop_playing_when_saving_song", val);
 }
 
+
+// audio file save folder
+
+static bool g_save_recorded_audio_files_in_browser_path = false;
+
+bool saveRecordedAudioFilesInBrowserPath(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_save_recorded_audio_files_in_browser_path = SETTINGS_read_bool("save_recorded_audio_files_in_browser_path", false);
+    has_inited = true;
+  }
+
+  return g_save_recorded_audio_files_in_browser_path;
+}
+
+void setSaveRecordedAudioFilesInBrowserPath(bool val){
+  if (val != g_save_recorded_audio_files_in_browser_path){
+    g_save_recorded_audio_files_in_browser_path = val;
+    SETTINGS_write_bool("save_recorded_audio_files_in_browser_path", val);
+  }
+}
+
   
 // autobackup
 

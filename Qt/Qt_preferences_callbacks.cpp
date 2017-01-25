@@ -441,7 +441,10 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     // Disk
     {
       stop_playing_when_saving->setChecked(doStopPlayingWhenSavingSong());
-      
+
+      save_audio_in_song_folder->setChecked(!saveRecordedAudioFilesInBrowserPath());
+      save_audio_in_browser_folder->setChecked(saveRecordedAudioFilesInBrowserPath());
+
       autobackup_onoff->setChecked(doAutoBackups());
       save_backup_while_playing->setChecked(doSaveBackupWhilePlaying());
       autobackup_interval->setValue(autobackupIntervalInMinutes());
@@ -792,9 +795,21 @@ public slots:
   // Disk
   //
   void on_stop_playing_when_saving_toggled(bool val){
-    printf("val: %d\n",val);
+    //printf("val: %d\n",val);
     if (_initing==false)
       setStopPlayingWhenSavingSong(val);
+  }
+  
+  void on_save_audio_in_song_folder_toggled(bool val){
+    //printf("val: %d\n",val);
+    if (_initing==false)
+      setSaveRecordedAudioFilesInBrowserPath(!val);
+  }
+  
+  void on_save_audio_in_browser_folder_toggled(bool val){
+    //printf("val: %d\n",val);
+    if (_initing==false)
+      setSaveRecordedAudioFilesInBrowserPath(val);
   }
   
   void on_autobackup_onoff_toggled(bool val){

@@ -17,6 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QFileDialog>
 
+#include "../common/disk.h"
+
 #include "Qt_PluginWidget.h"
 #include "helpers.h"
 
@@ -850,10 +852,35 @@ public slots:
     int mono   = VECTOR_push_back(&v, "Mono from input connection");
     int stereo = VECTOR_push_back(&v, "Stereo from input connections");
 
-    auto *sample_requester_widget = AUDIOWIDGET_get_sample_requester_widget(_patch);
-    //printf("dir: %p\n", sample_requester_widget->_dir);
-    wchar_t *pathdir = STRING_create(sample_requester_widget->_dir.absolutePath());
-  
+    wchar_t *pathdir;
+
+    if (saveRecordedAudioFilesInBrowserPath() || dc.filename == NULL){
+
+      auto *sample_requester_widget = AUDIOWIDGET_get_sample_requester_widget(_patch);
+      //printf("dir: %p\n", sample_requester_widget->_dir);
+      pathdir = STRING_create(sample_requester_widget->_dir.absolutePath());
+
+    } else {
+
+      QString filename = STRING_get_qstring(dc.filename).replace(QRegExp(".rad$"), "_rad");      
+
+      QDir dir(QFileInfo(filename).absoluteFilePath() + "_audio");
+
+      if (!dir.exists()){
+
+        // Qt has a really confusing api to make a directory.
+        QDir base(QDir::root());
+        if (!base.mkdir(dir.absolutePath())){
+          GFX_Message(NULL, "Unable to create directory %s.", dir.absolutePath().toUtf8().constData());
+          return;
+        }
+
+      }
+      
+      pathdir = STRING_create(dir.absolutePath());
+
+    }
+
     int sel = GFX_Menu(root->song->tracker_windows, NULL, "", &v);
     
     if (sel==mono_main)
@@ -866,81 +893,81 @@ public slots:
       SAMPLER_start_recording(plugin, pathdir, 2, false);
   }
   
-    void on_save_button_clicked(){
-      vector_t patches = {};
-      VECTOR_push_back(&patches, _patch);
-      PRESET_save(&patches, true);
-    }
+  void on_save_button_clicked(){
+    vector_t patches = {};
+    VECTOR_push_back(&patches, _patch);
+    PRESET_save(&patches, true);
+  }
 
-    void on_load_button_clicked(){      
-      loadInstrumentPreset(_patch->id, "");
-      // Warning. 'this' might not be here anymore when returning.
-    }
+  void on_load_button_clicked(){      
+    loadInstrumentPreset(_patch->id, "");
+    // Warning. 'this' might not be here anymore when returning.
+  }
 
-    void on_replace_button_clicked(){
-      replaceInstrument(_patch->id, "", CHIP_get_num_in_connections(_patch)>0, CHIP_get_num_out_connections(_patch)>0);
-      // Warning. 'this' might not be here anymore when returning.
-    }
+  void on_replace_button_clicked(){
+    replaceInstrument(_patch->id, "", CHIP_get_num_in_connections(_patch)>0, CHIP_get_num_out_connections(_patch)>0);
+    // Warning. 'this' might not be here anymore when returning.
+  }
     
-    void on_reset_button_clicked(){
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      PLUGIN_reset(plugin);
-      GFX_update_instrument_widget(_patch);
-    }
+  void on_reset_button_clicked(){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    PLUGIN_reset(plugin);
+    GFX_update_instrument_widget(_patch);
+  }
 
-    void on_random_button_clicked(){
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      PLUGIN_random(plugin);
+  void on_random_button_clicked(){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    PLUGIN_random(plugin);
 
-      GFX_update_instrument_widget(_patch);
-    }
+    GFX_update_instrument_widget(_patch);
+  }
 
-    void on_info_button_clicked(){
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      if (plugin!=NULL)
-        PLUGIN_show_info_window(plugin);
-    }
+  void on_info_button_clicked(){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin!=NULL)
+      PLUGIN_show_info_window(plugin);
+  }
 
-    void on_preset_button_clicked(){
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      const SoundPluginType *type = plugin->type;
+  void on_preset_button_clicked(){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    const SoundPluginType *type = plugin->type;
 
-      int num_presets = type->get_num_presets(plugin);
+    int num_presets = type->get_num_presets(plugin);
       
-      vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
+    vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
-      for(int i=0;i<num_presets;i++){
-        VECTOR_push_back(&v, talloc_format("%d: %s", i+1, type->get_preset_name(plugin, i)));
-      }
+    for(int i=0;i<num_presets;i++){
+      VECTOR_push_back(&v, talloc_format("%d: %s", i+1, type->get_preset_name(plugin, i)));
+    }
 
-      VECTOR_push_back(&v, "--------------");
-      VECTOR_push_back(&v, "<set new name>");
+    VECTOR_push_back(&v, "--------------");
+    VECTOR_push_back(&v, "<set new name>");
       
-      int num = GFX_Menu(root->song->tracker_windows, NULL, "", &v);
-      if (num == num_presets+1) {
-        char *new_name = GFX_GetString(NULL, NULL, "new name: ");
-        if (new_name != NULL){
-          type->set_preset_name(plugin, type->get_current_preset(plugin), new_name);
-          update_widget();
-        }
-      } else if (num >= 0 && num<num_presets) {
-        type->set_current_preset(plugin, num);
+    int num = GFX_Menu(root->song->tracker_windows, NULL, "", &v);
+    if (num == num_presets+1) {
+      char *new_name = GFX_GetString(NULL, NULL, "new name: ");
+      if (new_name != NULL){
+        type->set_preset_name(plugin, type->get_current_preset(plugin), new_name);
         update_widget();
       }
-    }
-    
-    void on_preset_selector_editingFinished(){
-      int num = preset_selector->value() - 1;
-      printf("num: %d\n",num);
-      
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      const SoundPluginType *type = plugin->type;
-
+    } else if (num >= 0 && num<num_presets) {
       type->set_current_preset(plugin, num);
       update_widget();
-      
-      set_editor_focus();
     }
+  }
+    
+  void on_preset_selector_editingFinished(){
+    int num = preset_selector->value() - 1;
+    printf("num: %d\n",num);
+      
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    const SoundPluginType *type = plugin->type;
+
+    type->set_current_preset(plugin, num);
+    update_widget();
+      
+    set_editor_focus();
+  }
 
   void on_solo_checkbox_toggled(bool val){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
