@@ -252,7 +252,7 @@ struct Data{
   struct Data *new_data;
   RSemaphore *signal_from_RT;
 
-  DEFINE_ATOMIC(wchar_t*, recording_path);
+  DEFINE_ATOMIC(wchar_t*, recording_path) = NULL;
   DEFINE_ATOMIC(int, num_recording_channels);
   DEFINE_ATOMIC(int, recording_status);
   int recording_start_frame;
@@ -2377,6 +2377,8 @@ void SAMPLER_start_recording(struct SoundPlugin *plugin, const wchar_t *pathdir,
 
   if (ATOMIC_GET(data->recording_status) != NOT_RECORDING)
     return;
+
+  free(ATOMIC_GET(data->recording_path));
 
   ATOMIC_SET(data->recording_path,
              wcsdup(STRING_append(pathdir,
