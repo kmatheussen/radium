@@ -77,7 +77,7 @@ priority_t THREADING_get_priority(void){
   }
   
 #elif defined(__linux__) || defined(FOR_MACOSX)
-    
+
   int success = pthread_getschedparam(pthread_self(), &priority.policy, &priority.param);
   if (success!=0) {
     GFX_Message(NULL, "pthread_getschedparam returned %d (really strange))",success);
@@ -100,6 +100,9 @@ void THREADING_set_priority(priority_t priority){
   }
   
 #elif defined(__linux__) || defined(FOR_MACOSX)
+
+  // Maybe try to use native thread api on osx. This actually fails (!) on osx 10.12 .
+  // Example: https://github.com/SchwartzNU/DataAcquisition/blob/47d728c34bd9db1787bbb3f7805aff60484104d0/Stage/Externals/matlab-priority/setNormalPriority.c
 
   int success = pthread_setschedparam(pthread_self(), priority.policy, &priority.param);
 

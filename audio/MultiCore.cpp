@@ -34,13 +34,18 @@ static const char *settings_key = "num_cpus";
 #define USE_BUZY_GET 1
 
 #if USE_BUZY_GET
-static cpp11onmulticore::SpinlockSemaphore all_sp_finished;
+
+static radium::SpinlockSemaphore all_sp_finished;
 static DEFINE_ATOMIC(int, g_start_block_time) = 0;
-const int g_num_blocks_to_pause_buzylooping = 400;
+const int g_num_blocks_to_pause_buzylooping = 400; // Should be some seconds
 static DEFINE_ATOMIC(int, g_num_blocks_pausing_buzylooping) = 0;
+
 #else
+
 static radium::Semaphore all_sp_finished;
-#endif
+
+#endif // !USE_BUZY_GET
+
 
 static DEFINE_ATOMIC(int, num_sp_left) = 0;
 
@@ -52,11 +57,11 @@ static radium::Queue< SoundProducer* , MAX_NUM_SP > soundproducer_queue;
 static void avoid_lockup(int counter){
   if ((counter % (1024*64)) == 0){
     int time_now = (int)(1000*monotonic_seconds());
-    int duration = time_now - ATOMIC_GET(g_start_block_time);
+    int duration = time_now - ATOMIC_GET_RELAXED(g_start_block_time);
     //printf("  Duration: %d\n", duration);
     if (duration >= 1000){
       ATOMIC_SET(g_num_blocks_pausing_buzylooping, g_num_blocks_to_pause_buzylooping);
-      RT_message("We have used more than 1 seconds to process an audio block. Something is wrong.\n"
+      RT_message("We have used more than 1 second to process an audio block. Something is wrong.\n"
                  "\n"
                  "It is likely that the number of CPUs used for audio processing is set too high.\n"
                  "\n"
@@ -104,13 +109,13 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
   ATOMIC_SET_RELAXED(sp->_is_autosuspending, sp->_autosuspending_this_cycle);
   
   if ( ! sp->_autosuspending_this_cycle){
-    double start_time = monotonic_seconds();
+    //double start_time = monotonic_seconds();
     {
       SP_RT_process(sp, time, num_frames, process_plugins);
     }
-    double duration = monotonic_seconds() - start_time;
-    if (duration > sp->running_time)
-      sp->running_time = duration;
+    //    double duration = monotonic_seconds() - start_time;
+    //if (duration > sp->running_time)
+    //  sp->running_time = duration;
   }
   
   //int num_left = num_sp_left;
@@ -199,16 +204,16 @@ public:
       for(;;){
         int counter = 0;
 
-        if (ATOMIC_GET(g_num_blocks_pausing_buzylooping) <= 0) {
+        if (ATOMIC_GET_RELAXED(g_num_blocks_pausing_buzylooping) <= 0) {
 
           if (soundproducer_queue.buzyGetEnabled()) {
             
             bool gotit;
             sp = soundproducer_queue.tryGet(gotit);
-            if (!gotit)
-              avoid_lockup(counter++);
-            else
+            if (gotit)
               break;
+            else
+              avoid_lockup(counter++);
             
           } else {
 
@@ -392,12 +397,12 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
 
     while(all_sp_finished.tryWaitLightly()==false){
 
-      avoid_lockup(counter++);
-
       bool gotit;
       sp_in_main_thread = soundproducer_queue.tryGet(gotit);
       if (gotit)
         process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
+      else
+        avoid_lockup(counter++);      
     }
 
 #else
