@@ -393,27 +393,35 @@ public:
     
     for(int i = 0 ; i < _automation.size()-1 ; i++){
       const T &node1 = _automation.at(i);
-      double time1 = node1.time;
-
       const T &node2 = _automation.at(i+1);
-      double time2 = node2.time;
 
       float x_a;
       float x_b;
       
       if (get_x != NULL){
-        x_a = get_x(node1, start_time, end_time, x1, x2, data);
+
         x_b = get_x(node2, start_time, end_time, x1, x2, data);
+        if (x_b < x1)
+          continue;
+
+        x_a = get_x(node1, start_time, end_time, x1, x2, data);
+        if (x_a >= x2)
+          break;
+
       } else {
+
+        double time2 = node2.time;
+        if (time2 < start_time)
+          continue;
+
+        double time1 = node1.time;
+        if (time1 >= end_time)
+          break;
+
         x_a = scale(time1, start_time, end_time, x1, x2);
         x_b = scale(time2, start_time, end_time, x1, x2);
+
       }
-
-      if (x_a >= x2)
-        break;
-
-      if (x_b < x1)
-        continue;
 
 
       float y_a = get_y(node1, y1, y2);
