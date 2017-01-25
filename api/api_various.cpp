@@ -157,13 +157,13 @@ void setShowMixerStripDuringStartup(bool val){
 }
 
 
-static bool g_showMixerStripOnLeftSide = false;
+static bool g_showMixerStripOnLeftSide = true;
 
 bool showMixerStripOnLeftSide(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_showMixerStripOnLeftSide = SETTINGS_read_bool("show_mixer_strip_on_left_side", false);
+    g_showMixerStripOnLeftSide = SETTINGS_read_bool("show_mixer_strip_on_left_side", true);
     has_inited = true;
   }
 
