@@ -1462,7 +1462,7 @@ protected:
     if (is_called_every_ms(100))
       MIXERSTRIP_call_regularly();
 
-    if (is_called_every_ms(15))
+    if (is_called_every_ms(90))
       API_call_very_often();
 
 #if 0
