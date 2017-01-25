@@ -108,6 +108,10 @@ class Semaphore{
         signal();
     }
 
+    void signalAll(void){
+      while(numWaiters() > 0)
+        signal();
+    }
 };
 
 

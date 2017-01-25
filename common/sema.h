@@ -168,7 +168,7 @@ public:
 #endif
 
 // atomic not found when compiling with clang.
-#if 0 //FOR_LINUX
+#if 1 //FOR_LINUX
 
 
 #include <atomic>
@@ -242,6 +242,63 @@ public:
 typedef LightweightSemaphore DefaultSemaphoreType;
 }
 #endif
+
+
+//---------------------------------------------------------
+// SpinlockSemaphore
+//---------------------------------------------------------
+
+namespace cpp11onmulticore{
+class SpinlockSemaphore
+{
+
+private:
+
+  DEFINE_ATOMIC(int, m_count);
+  //std::atomic<int> m_count;
+
+
+public:
+
+    SpinlockSemaphore(int initialCount = 0)
+    {
+      R_ASSERT(initialCount >= 0);
+      ATOMIC_SET(m_count, initialCount);
+    }
+
+    int numSignallers(void){
+      return ATOMIC_GET(m_count);
+    }
+
+    // "lightly" means that we don't buzy-loop until ATOMIC_COMPARE_AND_SET_INT returns true.
+    bool tryWaitLightly(void)
+    {
+      //int oldCount = m_count.load(std::memory_order_relaxed);
+      //return (oldCount > 0 && m_count.compare_exchange_strong(oldCount, oldCount - 1, std::memory_order_acquire));
+      
+      int oldCount = ATOMIC_GET(m_count);
+      if (oldCount == 0)
+        return false;
+      
+      return ATOMIC_COMPARE_AND_SET_INT(m_count, oldCount, oldCount-1);
+    }
+
+    void wait(void)
+    {
+      while(!tryWaitLightly());
+      //{
+      //std::atomic_signal_fence(std::memory_order_acquire);     // Prevent the compiler from collapsing the loop. (really?)
+      //}
+    }
+
+    void signal(int count = 1)
+    {
+      ATOMIC_ADD(m_count, count);
+      //m_count.fetch_add(count, std::memory_order_release);
+    }
+};
+}
+
 
 
 #endif // __CPP11OM_SEMAPHORE_H__

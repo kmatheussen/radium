@@ -35,7 +35,11 @@ namespace radium {
 template <typename T, int SIZE> struct Queue{
 
 private:
-  
+
+  DEFINE_ATOMIC(bool, buzy_get_is_enabled) = false;
+
+  Semaphore buzyget_ready;
+
   Semaphore ready;
   typedef boost::lockfree::queue< T , boost::lockfree::capacity<SIZE> > queuetype;
   queuetype queue;
@@ -94,13 +98,36 @@ public:
     return get_withoutWaiting();
   }
 
-  // Same as get, but instead of calling semaphore.wait, we as seamphore.tryWait again and again until it's there. (i.e. we are spinning)
-  T buzyGet(void){
+  void waitUntilBuzyGetIsEnabled(void){
+    buzyget_ready.wait();
+  }
+
+  bool buzyGetEnabled(void){
+    return ATOMIC_GET(buzy_get_is_enabled);
+  }
+
+  void enableBuzyGet(void){
+    R_ASSERT_NON_RELEASE(!buzyGetEnabled());
+    ATOMIC_SET(buzy_get_is_enabled, true);
+    buzyget_ready.signalAll();
+  }
+
+  // Can be called while other threads are buzy-getting. If that happens, the other threads will call get() instead.
+  void disableBuzyGet(void){
+    R_ASSERT_NON_RELEASE(buzyGetEnabled());
+    ATOMIC_SET(buzy_get_is_enabled, false);
+  }
+
+  // Same as get, but instead of calling semaphore.wait, we call seamphore.tryWait again and again until it's there. (i.e. we are spinning)
+  // Note that enableBuzyGet() must be called first. buzyGet is disabled initially.
+  T buzyGetIfEnabled(void){
     for(;;){
       bool gotit;
       T ret = tryGet(gotit);
       if (gotit)
         return ret;
+      else if (!buzyGetEnabled())
+        return get();
     }
   }
                  
