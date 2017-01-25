@@ -340,7 +340,13 @@ public:
     return NULL;
   }
   
-  void start_recording(struct Patch *patch, wchar_t *path, int num_channels, float middle_note){    
+  void start_recording(struct Patch *patch, wchar_t *path, int num_channels, float middle_note){
+    QDir dir = QFileInfo(STRING_get_qstring(path)).dir();
+    if (dir.exists()==false){
+      RT_message("Error. Could not find the directory \"%s\".\n", dir.absolutePath().toUtf8().constData());
+      return;
+    }
+
     recording_files.push_back(new RecordingFile(patch, path, num_channels, middle_note));
   }
   
@@ -450,14 +456,7 @@ void SampleRecorder_called_regularly(void){
 void RT_SampleRecorder_start_recording(struct Patch *patch, wchar_t *path, int num_channels, float middle_note){
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
   R_ASSERT_RETURN_IF_FALSE(path!=NULL);
-  R_ASSERT_RETURN_IF_FALSE(num_channels>0);
-
-  QDir dir = QFileInfo(STRING_get_qstring(path)).dir();
-  if (dir.exists()==false){
-    RT_message("Error. Could not find the directory \"%s\".\n", dir.absolutePath().toUtf8().constData());
-    return;
-  }
-    
+  R_ASSERT_RETURN_IF_FALSE(num_channels>0);    
 
   RecordingSlice *slice = RT_get_free_slice();
 

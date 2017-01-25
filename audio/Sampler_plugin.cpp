@@ -851,7 +851,6 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   }
 }
 
-
 static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
   Data *data = (Data*)plugin->data;
 
