@@ -6,6 +6,9 @@
 
 #ifndef TEST_THREADING
 
+#if defined(FOR_MACOSX)
+#include "../weakjack/weak_libjack.h"
+#endif
 
   #include "nsmtracker.h"
   #include "visual_proc.h"
@@ -104,6 +107,25 @@ void THREADING_set_priority(priority_t priority){
   // Maybe try to use native thread api on osx. This actually fails (!) on osx 10.12 .
   // Example: https://github.com/SchwartzNU/DataAcquisition/blob/47d728c34bd9db1787bbb3f7805aff60484104d0/Stage/Externals/matlab-priority/setNormalPriority.c
 
+#if defined(FOR_MACOSX)
+  // Workaround for 10.12
+  if (priority.policy==SCHED_OTHER){
+    int success = jack_drop_real_time_scheduling(GET_CURRENT_THREAD());
+    if (success!=0) {
+      GFX_Message(NULL, "jack_drop_real_time_scheduling(GET_CURRENT_THREAD()) returned %d (policy: %d, priority: %d, message: \"%s\")",
+                  success,
+                  priority.policy,
+                  priority.param.sched_priority,
+                  success==EINVAL ? "policy is not a recognized policy, or param does not make sense for the policy."
+                  : success==EPERM ? "The caller does not have appropriate privileges to set the specified scheduling policy and parameters."
+                  : success==ENOTSUP ? "attempt was made to set the policy or scheduling parameters to an unsupported value"
+                  : "Unknown error type"
+                  );
+    }
+    return;
+  }
+#endif
+  
   int success = pthread_setschedparam(pthread_self(), priority.policy, &priority.param);
 
   if (success!=0) {
