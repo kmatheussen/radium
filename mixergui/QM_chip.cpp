@@ -346,7 +346,7 @@ bool CHIP_is_at_output_eport(Chip *chip, int x, int y){
 // stuff 
 
 
-static void paint_checkbutton(QPainter *painter, const QString &name, const QColor &text_color, const QColor &background_color, int x1, int y1, int x2, int y2, bool is_on){
+static void paint_checkbutton(QPainter *painter, const QString &name, const QColor &text_color, const QColor &background_color, int x1, int y1, int x2, int y2, bool is_on, bool is_implicitly_on){
 
   {
     QColor c = get_qcolor(MIXER_BORDER_COLOR_NUM);
@@ -364,8 +364,9 @@ static void paint_checkbutton(QPainter *painter, const QString &name, const QCol
     }
   }
 
+  QRectF rect(x1+0.25, y1+0.75, x2-x1-1, y2-y1-1.25);
   
-  if(!is_on){
+  if(is_on || is_implicitly_on){
 
     QColor c = background_color;
 
@@ -378,10 +379,24 @@ static void paint_checkbutton(QPainter *painter, const QString &name, const QCol
     //QColor c(10,12,30,65);
     //painter->setPen(QPen(c, 2));
     c.setAlpha(200);
-    QRectF rect(x1+0.25, y1+0.75, x2-x1-1, y2-y1-1.25);
-    painter->fillRect(rect, c);
+
+    if (is_on){
+      painter->setPen(Qt::NoPen);
+      painter->setBrush(c);
+      painter->drawRoundedRect(rect,4,4);
+    }else{
+      rect.adjust(1,1,-1,-1);
+      painter->setPen(QPen(c, 2));
+      painter->drawRoundedRect(rect,3,3);
+    }
+    //    if (is_on)
+    //  painter->fillRect(rect, c);
+    //else
     //#endif
 
+    if (is_on)
+      painter->setBrush(Qt::NoBrush);
+    
     /*
     c.setAlpha(255);
     painter->drawLine(x1, y1, x2, y2);
@@ -392,7 +407,7 @@ static void paint_checkbutton(QPainter *painter, const QString &name, const QCol
   {
     painter->setPen(QPen(text_color, 2));
 
-    painter->drawText(x1+1, y1+1, x2-x1-1, y2-y1-1, Qt::AlignCenter, name);
+    painter->drawText(rect.adjusted(0.5,0,0,0), Qt::AlignCenter, name); // Why do we have to move the rectange 0.5 pixels to the right?
   }
 }
 
@@ -1130,7 +1145,8 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       QColor c = get_qcolor(MIXER_BORDER_COLOR_NUM);
       c.setAlpha(10);
       painter->setBrush(QBrush(c,Qt::SolidPattern));
-      painter->fillRect(x1,y1,x2-x1,y2-y1, c);
+      painter->setPen(Qt::NoPen);
+      painter->drawRoundedRect(x1,y1,x2-x1,y2-y1, 2,2);
     }
 
     // input slider
@@ -1172,7 +1188,10 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     if (ATOMIC_GET(patch->is_recording))
       c = mix_colors(c, QColor(255,0,0), 0.1);
 
-    painter->fillRect(x1, y1, x2-x1, y2-y1, c);
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(c);
+    painter->drawRoundedRect(x1, y1, x2-x1, y2-y1, 2,2);
+    painter->setBrush(Qt::NoBrush);
     
     x1 += 2;    
     x2 -= 1;
@@ -1218,13 +1237,13 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
       int x1,y1,x2,y2;
       get_volume_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, "M", text_color, Qt::green, x1,y1,x2,y2, ATOMIC_GET(plugin->volume_is_on));
+      paint_checkbutton(painter, "M", text_color, Qt::green, x1,y1,x2,y2, !ATOMIC_GET(plugin->volume_is_on), SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(_sound_producer));
 
       get_solo_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, "S", text_color, Qt::yellow, x1,y1,x2,y2, !ATOMIC_GET(plugin->solo_is_on));
+      paint_checkbutton(painter, "S", text_color, Qt::yellow, x1,y1,x2,y2, ATOMIC_GET(plugin->solo_is_on), false);
 
       get_effects_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, "B", text_color, get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), x1,y1,x2,y2, ATOMIC_GET(plugin->effects_are_on));
+      paint_checkbutton(painter, "B", text_color, get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), x1,y1,x2,y2, !ATOMIC_GET(plugin->effects_are_on), false);
     }
   }
 
@@ -1240,16 +1259,18 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       //QColor c = mix_colors(background_color,g_editor->colors[12],::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
       QColor c = get_qcolor(NOTE_EVENT_INDICATOR_COLOR_NUM);
       c.setAlphaF(::scale(intencity, 0, MAX_NOTE_INTENCITY, 0.0, 1.0));
-      painter->setPen(c);
+      //painter->setPen(c);
       painter->setBrush(QBrush(c,Qt::SolidPattern));
-      painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,0.05,0.05);
+      painter->setPen(Qt::NoPen);
+      painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,0.5,0.5);
     }
 
     // border
     QColor border_color = get_qcolor(NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM);
-    painter->setBrush(QBrush());
+    //painter->setBrush(QBrush());
     painter->setPen(border_color);
-    painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,0.05,0.05);
+    //painter->setPen(Qt::NoPen);
+    painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,0.5,0.5);
   }
 
 
@@ -1267,7 +1288,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       painter->drawRoundedRect(x1-1,y1-1,x2-x1+1,y2-y1+1,7,7);
     } else {
       painter->setPen(QPen(border_color, 1));
-      painter->drawRect(x1,y1,x2-x1,y2-y1);
+      painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,1,1);
     }
     //painter->fillRect(x1,y1,x2-x1,y2-y1);
 
@@ -1281,7 +1302,10 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     // Greying if selected
     if (is_selected){// && !is_current_patch){
       QColor c = get_qcolor(MIXER_SELECTED_OBJECT_COLOR_NUM); //(40,40,40,100);
-      painter->fillRect(x1,y1,x2-x1,y2-y1,c);
+      painter->setPen(Qt::NoPen);
+      painter->setBrush(c);      
+      painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,1,1);
+      painter->setBrush(Qt::NoBrush);
     }
     
     // Bluing if autosuspending
@@ -1289,7 +1313,10 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       //QColor c(0,0,60,80);
       QColor c = get_qcolor(MIXER_AUTOSUSPENSION_COLOR_NUM);
       //c.setAlpha(35);
-      painter->fillRect(x1,y1,x2-x1,y2-y1,c);
+      painter->setPen(Qt::NoPen);
+      painter->setBrush(c);
+      painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,1,1);
+      painter->setBrush(Qt::NoBrush);
     }
   }
 
@@ -1305,7 +1332,8 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     //painter->setPen(QPen(Qt::gray, 2));
     //QColor color(59,155,68,40);
     QColor color(80,90,80,20);
-    painter->setPen(color);
+    //painter->setPen(color);
+    painter->setPen(Qt::NoPen);
     painter->setBrush(QBrush(color,Qt::SolidPattern));
 
     const int xborder = 5;

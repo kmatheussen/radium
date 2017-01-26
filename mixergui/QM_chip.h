@@ -354,6 +354,7 @@ public:
   SliderPainter *_output_slider;
 
   bool _last_updated_mute;
+  bool _last_updated_implicitly_mute;
   bool _last_updated_solo;
   bool _last_updated_bypass;
   bool _last_updated_recording;
