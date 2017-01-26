@@ -208,8 +208,11 @@ static void T2_thread_func(){
   while(true){
 
     T1_data *t1_data = t1_to_t2_queue.get();
-    if (t1_data->stop_me)
+    if (t1_data->stop_me){
+      delete offscreen_context;
+      delete qsurface;
       return;
+    }
   
     T2_data *t2_data;
 
