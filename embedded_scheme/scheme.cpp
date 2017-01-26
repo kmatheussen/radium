@@ -54,6 +54,7 @@ namespace{
   
   struct ScopedEvalTracker{
     ScopedEvalTracker(){
+      R_ASSERT(THREADING_is_main_thread());
       g_evals++;
     }
     ~ScopedEvalTracker(){
@@ -735,7 +736,7 @@ bool SCHEME_mouserelease(int button, float x, float y){
 
 void SCHEME_eval(const char *code){
   ScopedEvalTracker eval_tracker;
-  
+           
   s7_eval_c_string(s7, code);
 }
 
