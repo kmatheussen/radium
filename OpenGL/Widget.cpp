@@ -1874,6 +1874,8 @@ QWidget *GL_create_widget(QWidget *parent){
 void GL_stop_widget(QWidget *widget){
   MyQtThreadedWidget *mywidget = static_cast<MyQtThreadedWidget*>(widget);
 
+  T1_stop_t2();
+  
   mywidget->stop();
   //delete mywidget;
 }

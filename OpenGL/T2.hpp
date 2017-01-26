@@ -46,5 +46,6 @@ void T3_send_back_old_t2_data(T2_data *t2_data);
 void T1_ensure_t2_is_initialized(void);
 void T1_send_data_to_t2(PaintingData *painting_data, GE_Rgb background_color);
 void T1_wait_until_t2_got_t1_data(void);
+void T1_stop_t2(void);
 
 #endif
