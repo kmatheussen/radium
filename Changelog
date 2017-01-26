@@ -1,3 +1,41 @@
+Changes 4.4.2 -> 4.4.3:
+* Windows: Include test version of jack 1.9.11. (I've been using
+  it for almost a year, and it includes a newer version of qjackctl.)
+* OSX: Workaround for the OS failing to set normal threading priority
+  on 10.12
+* Mixer strips: Make sure the windows are always on top of the
+  main window
+* Fix a crash during shutdown
+* Draw green rectangle around mute buttons when the instrument is
+  implicitly muted (i.e. muted because some other instrument is soloed)
+* Change audio multi core scheduler to buzy loop when waiting for new
+  tasks. This increases audio performance, but also increases the
+  overall CPU usage.
+* Audio recording: By default, save new audio files in a subdirectory
+  of the song file.
+* Audio recording: Plug tiny memory leak.
+* Audio recording: Don't check in the realtime thread if the file
+  path exists.
+* Mixer strip: By default, show the current mixer strip on the left
+  side of the main window.
+* Sequencer: Fix sequencer automation when block tempo is not 1.0.
+* Preferences: Move some window related options from the "Various" tab
+  to the "Windows" tab.
+* Mixer: Fix autoposition new mixer objects.
+* Add option to the Windows menu to show/hide current instrument GUI
+* Menu entry to show/hide current mixer strip
+* Preferences Option to show/hide current mixer strip during startup
+* Reorganize "Windows" menu a little bit
+* Build: Fix VST include path in the makefile
+* Show error message window if failing to parse keybindings file
+* Fix overriding keybinding, where the original keybinding only has
+  integer arguments, while the new keybinding have at least one
+  argument which is not integer
+* API: Rename instrumentActive to instrumentIsOpen,
+* API: Rename gui_is_open to gui_isOpen
+* API: New functions: schedule, hideInstrumentGui, instrumentGuiIsVisible
+
+
 Changes 4.4.1 -> 4.4.2:
 * Don't un-mute an instrument when changing volume
 * Mixer: Don't create volume slider undo before actually moving the slider
