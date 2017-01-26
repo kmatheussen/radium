@@ -2734,7 +2734,7 @@ int main(int argc, char **argv){
 
   // Linux/debug usually hangs when exiting.
 #if defined(FOR_LINUX) && !defined(RELEASE)
-  //kill(getpid(), SIGKILL);
+  kill(getpid(), SIGKILL);
 #endif
   
   //RError("hepp");
