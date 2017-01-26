@@ -1410,7 +1410,8 @@
   (<gui> :set-pos parent 600 50)
   ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
 
-  (<gui> :show parent)
+  (<gui> :set-always-on-top parent)
+  (<gui> :show parent)  
   ;;(<gui> :set-full-screen parent)
 
   (define das-mixer-strips #f)

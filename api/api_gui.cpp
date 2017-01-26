@@ -1886,6 +1886,15 @@ bool gui_isOpen(int64_t guinum){
   return get_gui_maybeclosed(guinum)!=NULL;
 }
 
+void gui_setAlwaysOnTop(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+  
+  gui->_widget->setParent(g_main_window);
+  gui->_widget->setWindowFlags(Qt::Window | Qt::Tool);
+}
+
 void gui_disableUpdates(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
