@@ -1106,6 +1106,8 @@ inline static void CHECKBOX_paint_arc(QPainter *painter, bool is_checked, bool i
       //painter->setBrush(QBrush());
 
     }
+
+    painter->setBrush(Qt::NoBrush);
 }
 
 extern QHash<int, QColor> custom_colors;
@@ -1147,6 +1149,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       painter->setBrush(QBrush(c,Qt::SolidPattern));
       painter->setPen(Qt::NoPen);
       painter->drawRoundedRect(x1,y1,x2-x1,y2-y1, 2,2);
+      painter->setBrush(Qt::NoBrush);
     }
 
     // input slider
@@ -1249,7 +1252,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
 
   // Draw note indicator
-  {
+  if(1){
     int x1,y1,x2,y2;
     get_note_indicator_coordinates(x1,y1,x2,y2);
 
@@ -1263,6 +1266,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       painter->setBrush(QBrush(c,Qt::SolidPattern));
       painter->setPen(Qt::NoPen);
       painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,0.5,0.5);
+      painter->setBrush(Qt::NoBrush);
     }
 
     // border
@@ -1349,7 +1353,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
                                port_width-2-xborder, y2-y1-yborder*2,
                                10,10);
 
-    painter->setBrush(QBrush());
+    painter->setBrush(Qt::NoBrush);
   }
 }
 
