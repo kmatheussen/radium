@@ -2106,7 +2106,7 @@ int addPitchnum(float value, Place place, int tracknum, int blocknum, int window
 
   struct Notes *note = getNoteAtPlace(wtrack->track, &place);
 
-  value = R_BOUNDARIES(0,value,127);
+  value = R_BOUNDARIES(1,value,127);
 
   ADD_UNDO(Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline));
 
