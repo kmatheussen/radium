@@ -23,7 +23,6 @@ typedef struct{
 } priority_t;
 
 
-
 #else
 
 #include <pthread.h>
@@ -38,12 +37,26 @@ typedef struct{
   #define GET_CURRENT_THREAD() pthread_self()
 
 
+#if defined(FOR_MACOSX)
+
+// osx
+typedef struct{
+  int policy;  
+  struct sched_param param;
+} priority_t;
+
+#else
+
+// linux
 typedef struct{
   int policy;  
   struct sched_param param;
 } priority_t;
 
 #endif
+
+
+#endif // linux||osx
 
 
 extern LANGSPEC priority_t THREADING_get_priority(void);

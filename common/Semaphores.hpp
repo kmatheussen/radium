@@ -115,6 +115,55 @@ class Semaphore{
 };
 
 
+
+//---------------------------------------------------------
+// SpinlockSemaphore
+//---------------------------------------------------------
+
+class SpinlockSemaphore {
+
+private:
+
+  DEFINE_ATOMIC(int, m_count);
+
+
+public:
+
+    SpinlockSemaphore(int initialCount = 0)
+    {
+      R_ASSERT(initialCount >= 0);
+      ATOMIC_SET(m_count, initialCount);
+    }
+
+    int numSignallers(void){
+      return ATOMIC_GET(m_count);
+    }
+
+    // "lightly" means that we don't buzy-loop until ATOMIC_COMPARE_AND_SET_INT returns true.
+    bool tryWaitLightly(void)
+    {
+      
+      int oldCount = ATOMIC_GET_RELAXED(m_count);
+      if (oldCount == 0)
+        return false;
+      
+      return ATOMIC_COMPARE_AND_SET_INT(m_count, oldCount, oldCount-1);
+    }
+
+    void wait(void)
+    {
+      while(!tryWaitLightly());
+    }
+
+    void signal(int count = 1)
+    {
+      ATOMIC_ADD(m_count, count);
+    }
+};
+
+
+
+
 #if 0
 struct RequestAcknowledge {
   DEFINE_ATOMIC(bool, request);  // t1 -> t2

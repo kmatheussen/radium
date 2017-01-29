@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 4.4.2
+VERSION = 4.4.3
 
 
 #----------------USER SETTINGS-------------------------------
@@ -1035,7 +1035,7 @@ error.o:  $(BUILD_DEPENDENCIES) $(CD)error.c
 	$(CC) $(CD)error.c $(OPT)
 
 threading.o:  $(BUILD_DEPENDENCIES)  $(CD)threading.cpp
-	$(CCC)  $(CD)threading.cpp $(CPPOPT)
+	$(CCC)  $(CD)threading.cpp $(JACKOPT) $(CPPOPT)
 
 Semaphores.o: $(BUILD_DEPENDENCIES) $(CD)/Semaphores.cpp $(CD)/sema.h common/Semaphores.hpp common/OS_Semaphores.h
 	$(CCC) $(CD)Semaphores.cpp $(QTOPT)

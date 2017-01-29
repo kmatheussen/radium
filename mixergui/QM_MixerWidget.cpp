@@ -1390,6 +1390,7 @@ namespace{
                 }
 
                 bool is_muted = !ATOMIC_GET(plugin->volume_is_on);
+                bool is_implicitly_muted = SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(chip->_sound_producer);
                 bool is_solo = ATOMIC_GET(plugin->solo_is_on);
                 bool is_bypass = !ATOMIC_GET(plugin->effects_are_on);
                 bool is_recording = ATOMIC_GET(patch->is_recording);
@@ -1398,6 +1399,11 @@ namespace{
                 if (chip->_last_updated_mute != is_muted){
                   chip->update();
                   chip->_last_updated_mute = is_muted;
+                }
+                
+                if (chip->_last_updated_implicitly_mute != is_implicitly_muted){
+                  chip->update();
+                  chip->_last_updated_implicitly_mute = is_implicitly_muted;
                 }
                 
                 if (chip->_last_updated_solo != is_solo){
