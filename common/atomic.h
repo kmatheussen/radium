@@ -463,7 +463,40 @@ public:
     }
   }
 };
- 
+
+
+  // TODO: Optimize the spinlock. We only need to acquire when obtaining and release when releasing.
+
+class Spinlock {
+  
+  DEFINE_SPINLOCK(_lock);
+
+public:
+
+  void lock(void){
+    SPINLOCK_OBTAIN(_lock);
+  }
+  void unlock(){
+    SPINLOCK_RELEASE(_lock);
+  }
+};
+
+class ScopedSpinlock {
+
+  Spinlock &_lock;
+
+ public:
+
+  ScopedSpinlock(Spinlock &lock)
+    :_lock(lock)
+  {
+    lock.lock();
+  }
+  ~ScopedSpinlock(){
+    _lock.unlock();
+  }
+
+};
 
 }
 
