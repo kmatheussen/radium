@@ -952,7 +952,7 @@
            0 1
            *min-db* *max-db*))
 
-  (define doit #t)
+  (define doit #f)
 
   (define paint-voltext #f)
   (define paint-peaktext #f)
@@ -1091,6 +1091,9 @@
   
   (<gui> :add gui volslider volslider_x1 volslider_y1 volslider_x2 volslider_y2)
   (<gui> :add gui volmeter peak_x1 peak_y1 peak_x2 peak_y2)
+
+  (set! doit #t)
+
   )
 
 
