@@ -1,3 +1,10 @@
+Changes 4.4.3 -> 4.4.4:
+* Mixer strips: Don't set volume to 6Db if it's above +6 Db when showing
+  mixer strip.
+* Fix bug causing assertion window to pop up when adding note with
+  value 0 in the note text area.
+
+
 Changes 4.4.2 -> 4.4.3:
 * Windows: Include test version of jack 1.9.11. (I've been using
   it for almost a year, and it includes a newer version of qjackctl.)
