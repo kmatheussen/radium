@@ -180,6 +180,29 @@ class ScopedSpinlock {
 
 };
 
+class ScopedTrySpinlock {
+
+  Spinlock &_lock;
+  bool _gotit;
+
+ public:
+
+  ScopedTrySpinlock(Spinlock &lock)
+    :_lock(lock)
+  {
+    _gotit = lock.trylock();
+  }
+
+  ~ScopedTrySpinlock(){
+    if (_gotit)
+      _lock.unlock();
+  }
+
+  bool gotit(void) const {
+    return _gotit;
+  }
+};
+
 } // namespace radium
 
 
