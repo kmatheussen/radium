@@ -625,6 +625,7 @@ struct Mixer{
     return true;
   }
 
+  /*
   static int compare_sound_producers(const void *vsp1, const void *vsp2) {
     const SoundProducer **sp1 = (const SoundProducer**)(vsp1);
     const SoundProducer **sp2 = (const SoundProducer**)(vsp2);
@@ -638,7 +639,8 @@ struct Mixer{
     else
       return 0;
   }
-  
+  */
+
   // Start the most cpu intensive soundproducers first
   void RT_sort_sound_producers_by_running_time(void){
 #if 0    

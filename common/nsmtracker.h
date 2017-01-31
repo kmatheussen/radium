@@ -189,10 +189,13 @@ enum{
       GFX_Message(NULL, "Warning: \"" # a "\" is not true");            \
   }while(0)
 
+#define R_ASSERT_INNER(a)                                               \
+  if(!(a))                                                              \
+    CRASHREPORTER_send_assert_message(CT_ERROR, "Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__)
+
 #define R_ASSERT(a)                                                     \
   do{                                                                   \
-    if(!(a))                                                            \
-      CRASHREPORTER_send_assert_message(CT_ERROR, "Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); \
+    R_ASSERT_INNER(a);                                                  \
   }while(0)
 
 #define R_ASSERT_RETURN_IF_FALSE2(a,b)                                  \

@@ -13,7 +13,7 @@
 #include <QDir>
 
 #include "../common/nsmtracker.h"
-#include "../common/Mutex.hpp"
+#include "../common/spinlock.h"
 #include "../common/OS_error_proc.h"
 #include "../Qt/Qt_colors_proc.h"
 
@@ -26,24 +26,23 @@
 namespace{
 
 struct SpinlockIMutex : public vl::IMutex{
-  DEFINE_SPINLOCK_NOINIT(spinlock);
-  
-  SpinlockIMutex() 
-  {
-    INIT_SPINLOCK(spinlock);
-  }
-  
+  radium::Spinlock spinlock;
+
+  bool is_obtained = false;
+
   virtual void 	lock () {
-    SPINLOCK_OBTAIN(spinlock);
+    spinlock.lock();
+    is_obtained = true;
   }
   
   virtual void 	unlock () {
-    SPINLOCK_RELEASE(spinlock);
+    is_obtained = false;
+    spinlock.unlock();
   }
   
   virtual int isLocked () const {
     //Returns 1 if locked, 0 if non locked, -1 if unknown. 
-    return SPINLOCK_IS_OBTAINED(spinlock);
+    return is_obtained ? 1 : 0;
   }
   
 };

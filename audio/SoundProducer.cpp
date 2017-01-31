@@ -297,11 +297,12 @@ struct SoundProducerLink {
       
     } else {
 
-      if (is_bus_link)
+      if (is_bus_link) {
         if (SP_get_bus_descendant_type(source)==IS_BUS_DESCENDANT) { // need comment here what this is about
           is_active = false;
           return false;
         }
+      }
 
       SMOOTH_set_target_value(&volume, get_total_link_volume());        
       SMOOTH_update_target_audio_will_be_modified_value(&volume);

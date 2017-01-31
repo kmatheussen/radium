@@ -149,24 +149,6 @@ static inline bool atomic_compare_and_set_float(float *variable, float old_value
 #define ATOMIC_ADD_RETURN_NEW(name, how_much)                           \
   (__atomic_fetch_add (&ATOMIC_NAME(name), how_much, __ATOMIC_SEQ_CST) + how_much)
 
-#define DEFINE_SPINLOCK_NOINIT(name) \
-  DEFINE_ATOMIC(bool, name)
-
-#define INIT_SPINLOCK(name) \
-  ATOMIC_SET(name, false)
-
-#define DEFINE_SPINLOCK(name) \
-  DEFINE_SPINLOCK_NOINIT(name) = false
-
-#define SPINLOCK_OBTAIN(name)                                           \
-  while(atomic_compare_and_set_bool(&ATOMIC_NAME(name), false, true)==false)
-
-#define SPINLOCK_RELEASE(name) \
-  ATOMIC_SET(name, false)
-
-
-#define SPINLOCK_IS_OBTAINED(name) \
-  ATOMIC_GET(spinlock)==true
 
 
 /************** float ******************/
@@ -464,44 +446,9 @@ public:
   }
 };
 
+} // namespace radium
 
-  // TODO: Optimize the spinlock. We only need to acquire when obtaining and release when releasing.
-
-class Spinlock {
-  
-  DEFINE_SPINLOCK(_lock);
-
-public:
-
-  void lock(void){
-    SPINLOCK_OBTAIN(_lock);
-  }
-  void unlock(){
-    SPINLOCK_RELEASE(_lock);
-  }
-};
-
-class ScopedSpinlock {
-
-  Spinlock &_lock;
-
- public:
-
-  ScopedSpinlock(Spinlock &lock)
-    :_lock(lock)
-  {
-    lock.lock();
-  }
-  ~ScopedSpinlock(){
-    _lock.unlock();
-  }
-
-};
-
-}
-
-    
-#endif
+#endif // __cplusplus
 
 
 #endif
