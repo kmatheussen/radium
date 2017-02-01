@@ -404,6 +404,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       draw_in_separate_process_onoff->setChecked(draw_in_separate_process);
       
       safeModeOnoff->setChecked(GL_get_safe_mode());
+      safeModeOnoff->setEnabled(false);
     }
 
     
