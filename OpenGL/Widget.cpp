@@ -1181,8 +1181,8 @@ public:
             //usleep(20); // Don't want to buzy-loop
             usleep(1000 * time_estimator.get_vblank());
           
-          if (g_safe_mode)
-            GL_unlock();
+          //if (g_safe_mode)
+          //  GL_unlock();
         }
       
     }
