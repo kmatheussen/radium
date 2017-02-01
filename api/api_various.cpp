@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #pragma clang diagnostic pop
 #include <QLinkedList>
 
+#include "../bin/packages/s7/s7.h"
 
 #include "../common/nsmtracker.h"
 #include "../common/list_proc.h"
@@ -578,7 +579,9 @@ void openAboutWindow(void){
               "OpenGL renderer: \"%s\"<br>"
               "OpenGL version: \"%s\"<br>"
               "OpenGL flags: %x<br>"
-              "Qt version: \"%s\""
+              "Qt version: \"%s\"<br>"
+              "C/C++ compiler version: " __VERSION__ "<br>"
+              "S7 version: " S7_VERSION " / " S7_DATE
               "<p>"
               "<A href=\"http://users.notam02.no/~kjetism/radium/development.php\">Credits</A>"
               "<p>"
