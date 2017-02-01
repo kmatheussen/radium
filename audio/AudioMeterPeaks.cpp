@@ -50,20 +50,7 @@ static void call_very_often(AudioMeterPeaks &peaks, bool reset_falloff, float ms
   }
 }
 
-static const int g_falloff_reset = 5; // 5 seconds between each falloff reset.
-
-static void call_very_often(SoundPlugin *plugin, int ms){
-  static int counter = 0;
-
-  counter+=ms;
-
-  bool reset_falloff = false;
-
-  if (counter>=1000*g_falloff_reset){
-    counter = 0;
-    reset_falloff = true;
-  }
-
+static void call_very_often(SoundPlugin *plugin, bool reset_falloff, int ms){
   call_very_often(plugin->volume_peaks, reset_falloff, ms);
 
   call_very_often(plugin->output_volume_peaks, reset_falloff, ms);
@@ -78,12 +65,25 @@ static void call_very_often(SoundPlugin *plugin, int ms){
 
 }
 
+static const int g_falloff_reset = 5; // 5 seconds between each falloff reset.
+
 void AUDIOMETERPEAKS_call_very_often(int ms){
+  static int counter = 0;
+
+  counter+=ms;
+
+  bool reset_falloff = false;
+
+  if (counter>=1000*g_falloff_reset){
+    counter = 0;
+    reset_falloff = true;
+  }
+
   
   VECTOR_FOR_EACH(struct Patch *, patch, &(get_audio_instrument()->patches)){
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
     if(plugin != NULL){
-      call_very_often(plugin, ms);
+      call_very_often(plugin, reset_falloff, ms);
     }
   }END_VECTOR_FOR_EACH;
 }
