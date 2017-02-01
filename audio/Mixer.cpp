@@ -365,8 +365,8 @@ static void init_player_lock(void){
 }
 
 
-static void MIXER_check_if_someone_has_solo(void);
-static void MIXER_check_if_at_least_two_soundproducers_are_selected(void);
+static void RT_MIXER_check_if_someone_has_solo(void);
+static void RT_MIXER_check_if_at_least_two_soundproducers_are_selected(void);
 
 jack_time_t jackblock_delta_time = 0;
 
@@ -722,8 +722,8 @@ struct Mixer{
       
       RT_lock_player();
       
-      MIXER_check_if_someone_has_solo();
-      MIXER_check_if_at_least_two_soundproducers_are_selected();
+      RT_MIXER_check_if_someone_has_solo();
+      RT_MIXER_check_if_at_least_two_soundproducers_are_selected();
 
       jackblock_variables_protector.write_start();{
 
@@ -1259,41 +1259,41 @@ struct Patch *MIXER_get_bus(int bus_num){
   return (struct Patch*)plugin->patch;
 }
 
-static bool g_someone_has_solo = false;
-static bool g_someone_is_selected = false;
+static DEFINE_ATOMIC(bool, g_someone_has_solo) = false;
+static DEFINE_ATOMIC(bool, g_someone_is_selected) = false;
 
 // May be called from a realtime thread
 bool MIXER_someone_has_solo(void){
-  return g_someone_has_solo;
+  return ATOMIC_GET_RELAXED(g_someone_has_solo);
 }
 
-static void MIXER_check_if_someone_has_solo(void){
+static void RT_MIXER_check_if_someone_has_solo(void){
   for (SoundProducer *sp : g_mixer->_sound_producers)
     if (ATOMIC_GET(SP_get_plugin(sp)->solo_is_on)){
-      g_someone_has_solo = true;
+      ATOMIC_SET_RELAXED(g_someone_has_solo, true);
       return;
     }
 
-  g_someone_has_solo = false;
+  ATOMIC_SET_RELAXED(g_someone_has_solo, false);
 }
 
 // May be called from a realtime thread.
 bool MIXER_at_least_two_soundproducers_are_selected(void){
-  return g_someone_is_selected;
+  return ATOMIC_GET_RELAXED(g_someone_is_selected);
 }
 
-static void MIXER_check_if_at_least_two_soundproducers_are_selected(void){
+static void RT_MIXER_check_if_at_least_two_soundproducers_are_selected(void){
   int num = 0;
   for (SoundProducer *sp : g_mixer->_sound_producers)
     if (ATOMIC_GET(SP_get_plugin(sp)->is_selected)){
       num++;
       if (num==2){
-        g_someone_is_selected = true;
+        ATOMIC_SET_RELAXED(g_someone_is_selected, true);
         return;
       }
     }
 
-  g_someone_is_selected = false;
+  ATOMIC_SET_RELAXED(g_someone_is_selected, false);
 }
 
 void MIXER_called_regularly_by_main_thread(void){
