@@ -1,4 +1,4 @@
-Changes 4.4.3 -> 4.4.5:
+Changes 4.4.4 -> 4.4.5:
 * Fix crash when loading song that has a sequencer track with no
   sequencer blocks.
 * Improve multi core scheduler somewhat. The improvement might not be
