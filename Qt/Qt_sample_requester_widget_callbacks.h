@@ -410,7 +410,7 @@ class Sample_requester_widget : public QWidget
 
     file_list->addItem("../");
 
-    for(int i=0;i<HASH_get_array_size(name_list);i++){
+    for(int i=0;i<HASH_get_array_size(name_list, "key");i++){
       QString name = STRING_get_qstring(HASH_get_string_at(name_list,"key",i));
       if(_file_chooser_state == IN_SF2)
         name = name + "/";

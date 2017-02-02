@@ -456,7 +456,7 @@ public:
 
 
   void create_from_state(const hash_t *state, T (*create_node_from_state)(hash_t *state)){
-    int size = HASH_get_array_size(state);
+    int size = HASH_get_array_size(state, "node");
     
     _automation.clear();
     

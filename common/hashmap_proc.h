@@ -70,7 +70,7 @@ static inline int HASH_get_int32(const hash_t *hash, const char *key){
 
 // Array interface
 
-extern LANGSPEC int HASH_get_array_size(const hash_t *hash); // This function probably only makes sense if there is only ONE array type in the hash map. (it returns the highest of all array types)
+extern LANGSPEC int HASH_get_array_size(const hash_t *hash, const char *key);
 
 extern LANGSPEC bool HASH_remove_at(hash_t *hash, const char *raw_key, int i);
 extern LANGSPEC bool HASH_remove(hash_t *hash, const char *raw_key);

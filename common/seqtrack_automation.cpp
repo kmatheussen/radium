@@ -159,7 +159,7 @@ public:
   //:_seqtrack(seqtrack)
   {
     if (state != NULL) {
-      int size = HASH_get_array_size(state);
+      int size = HASH_get_array_size(state, "automation");
       
       for(int i = 0 ; i < size ; i++){
         Automation *automation = new Automation(HASH_get_hash_at(state, "automation", i));

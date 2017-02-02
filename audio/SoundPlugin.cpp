@@ -1747,7 +1747,7 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
     hash_t *keys = HASH_get_keys(copy);
     int num_added=0;
     
-    for(int i = 0 ; i < HASH_get_array_size(keys); i++){
+    for(int i = 0 ; i < HASH_get_array_size(keys, "key"); i++){
       const char *effect_name = HASH_get_chars_at(keys, "key", i);
       if (strncmp(effect_name, NOTUSED_EFFECT_NAME, strlen(NOTUSED_EFFECT_NAME)))
         effect_names = talloc_format("%s\n* %s", effect_names, effect_name);
@@ -1834,7 +1834,7 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   
   // midi learns state
   {
-    for(int i = 0 ; i < HASH_get_array_size(state) ; i++){
+    for(int i = 0 ; i < HASH_get_array_size(state, "midi_learns") ; i++){
       if (HASH_has_key_at(state, "midi_learns", i)){ // In case array is used for something else as well. TODO: Create a HASH_get_array_size function that takes key as argument.
         auto *midi_learn = new SoundPluginEffectMidiLearn(plugin, HASH_get_hash_at(state, "midi_learns", i));
         add_midi_learn(midi_learn);

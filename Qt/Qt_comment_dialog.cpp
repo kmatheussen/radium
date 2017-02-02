@@ -65,7 +65,7 @@ extern "C"{
   static QString get_comment_from_state(hash_t *state){
     ensure_widget_is_created();
 
-    int num_elements = HASH_get_array_size(state);
+    int num_elements = HASH_get_array_size(state, "comment");
     QString ret = "";
     for(int i=0;i<num_elements;i++)
       ret += STRING_get_qstring(HASH_get_string_at(state, "comment", i)) + QString("\n");

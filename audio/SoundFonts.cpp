@@ -373,7 +373,7 @@ hash_t *SF2_get_info(const wchar_t *filename){
 hash_t *SF2_get_displayable_preset_names(hash_t *info){
   hash_t *presets = HASH_get_hash(info,"presets");
   
-  int num_presets = HASH_get_array_size(presets);
+  int num_presets = HASH_get_array_size(presets, "");
   hash_t *displayable_names = HASH_create(num_presets);
 
   for(int i=0;i<num_presets;i++){

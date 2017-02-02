@@ -30,7 +30,7 @@ static bool load_sf2_instrument(Data *data, const wchar_t *filename, int preset_
     hash_t *regions = HASH_get_hash(preset,"regions");
 
     int i;
-    for(i=0;i<HASH_get_array_size(regions);i++){
+    for(i=0;i<HASH_get_array_size(regions, "");i++){
       hash_t *region = HASH_get_hash_at(regions,"",i);
 
       if(HASH_has_key(region,"instrument")==true){
@@ -52,7 +52,7 @@ static bool load_sf2_instrument(Data *data, const wchar_t *filename, int preset_
   int num_samples=0;
 
   int i;
-  for(i=0;i<HASH_get_array_size(regions);i++){
+  for(i=0;i<HASH_get_array_size(regions, "");i++){
     hash_t *region = HASH_get_hash_at(regions,"",i);
     
     const char *sample_name = HASH_get_chars(region, "sample_name");

@@ -179,7 +179,7 @@ static int64_t PRESET_load_multipreset(hash_t *state, char *name, bool inc_usage
   vector_t patches = {0};
   
   hash_t *patches_state = HASH_get_hash(state, "patches");
-  int num_presets = HASH_get_array_size(patches_state);
+  int num_presets = HASH_get_array_size(patches_state, "patch");
   
   for(int i = 0 ; i < num_presets ; i++) {
     hash_t *patch_state = HASH_get_hash_at(patches_state, "patch", i);

@@ -543,7 +543,7 @@ struct SeqTrack *SEQTRACK_create_from_state(const hash_t *state){
 
   struct SeqTrack *seqtrack = SEQTRACK_create(automation_state);
 
-  int num_seqblocks = HASH_get_array_size(state);
+  int num_seqblocks = HASH_get_array_size(state, "seqblock");
 
   for(int i=0;i<num_seqblocks;i++)
     VECTOR_push_back(&seqtrack->seqblocks, SEQBLOCK_create_from_state(HASH_get_hash_at(state, "seqblock", i)));
@@ -1055,7 +1055,7 @@ void SEQUENCER_create_from_state(hash_t *state){
     
     vector_t seqtracks = {0};
   
-    int num_seqtracks = HASH_get_array_size(state);
+    int num_seqtracks = HASH_get_array_size(state, "seqtracks");
     R_ASSERT_RETURN_IF_FALSE(num_seqtracks > 0);
     
     for(int i = 0 ; i < num_seqtracks ; i++){

@@ -175,8 +175,15 @@ hash_t *HASH_copy(const hash_t *hash){
   return ret;
 }
 
-int HASH_get_array_size(const hash_t *hash){
-  return hash->num_array_elements;
+int HASH_get_array_size(const hash_t *hash, const char *key){
+  int size = hash->num_array_elements;
+  while(size > 0){
+    if (HASH_has_key_at(hash, key, size-1))
+      return size;
+    else
+      size--;
+  }
+  return 0;
 }
 
 int HASH_get_num_elements(const hash_t *hash){
@@ -630,17 +637,21 @@ hash_t *HASH_load(disk_t *file){
     int i = 0;
 
     if(new_format==true){
+
       line = read_line(file);
       if (line==NULL) return NULL;
       
       i = STRING_get_int(line);
       int new_size = i+1;
-      if(new_size>hash->num_array_elements)
+      if(new_size > hash->num_array_elements)
         hash->num_array_elements = new_size;
+
     } else if(!strncmp(key,"<int hash>",strlen("<int hash>"))) {
+
       sscanf(key, "<int hash> %d", &i);
       key = "";
       hash->num_array_elements++;
+
     }
 
     line = read_line(file);
