@@ -1,3 +1,17 @@
+Changes 4.4.3 -> 4.4.5:
+* Fix crash when loading song that has a sequencer track with no
+  sequencer blocks.
+* Improve multi core scheduler somewhat. The improvement might not be
+  measurable, but it shouldn't be worse than before. Still room for
+  improvement.
+* Several thread sanitizer fixes. Could fix some subtle bugs.
+* Make it impossible to enable safe mode (it is not safe to enable
+  safe mode).
+* Add c/c++ version and s7 version to about window.
+* Audio meters: Fix falloff speed. Don't falloff faster when there are
+  more instruments.
+
+
 Changes 4.4.3 -> 4.4.4:
 * Mixer strips: Don't set volume to 6Db if it's above +6 Db when showing
   mixer strip.
