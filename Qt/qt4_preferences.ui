@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -568,7 +568,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                <number>1</number>
               </property>
               <property name="maximum">
-               <number>99</number>
+               <number>16</number>
               </property>
               <property name="value">
                <number>1</number>
@@ -594,12 +594,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             <item>
              <widget class="QLabel" name="label_4">
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
-Note that a higher number of CPUs causes a higher CPU usage overall.&lt;br&gt;
-If you have slow graphical performance, or low interactivity, it might help&lt;br&gt;
-to reduce this number. If not, it should be set to the number of CPU&lt;br&gt;
-cores on your computer for best audio performance.&lt;/span&gt;&lt;/body&gt;
-</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note that a higher number of CPUs causes a higher CPU usage overall.&lt;br/&gt;If you have slow graphical performance, or low interactivity, it might help&lt;br/&gt;to reduce this number. If not, it should be set to the number of CPU&lt;br/&gt;cores on your computer for best audio performance.&lt;/span&gt;  (No need for restart)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
@@ -4780,8 +4775,8 @@ This option should be considered as a lightweight version of  &quot;Only show mo
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>398</width>
-            <height>28</height>
+            <width>829</width>
+            <height>573</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -6888,8 +6883,8 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>100</width>
-               <height>30</height>
+               <width>983</width>
+               <height>342</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -7106,8 +7101,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
  </buttongroups>
 </ui>

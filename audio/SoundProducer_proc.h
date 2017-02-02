@@ -28,39 +28,6 @@ struct SoundProducer;
 
 #include "../common/Vector.hpp"
 
-#if 0
-namespace radium{
-
-struct DoublyLinkedList{
-  DoublyLinkedList *next;
-  DoublyLinkedList *prev;
-
-  DoublyLinkedList()
-  : next(NULL)
-  , prev(NULL)
-  {    
-  }
-
-  void add(DoublyLinkedList *l){
-    l->next = this->next;
-    if(this->next!=NULL)
-      this->next->prev = l;
-    this->next = l;
-    l->prev = NULL;
-  }
-
-  void remove(DoublyLinkedList *l){
-    if(l->prev!=NULL)
-      l->prev->next = l->next;
-    else
-      this->next = l->next;
-    if(l->next!=NULL)
-      l->next->prev = l->prev;
-  }
-};
-}
-#endif
-
 
 enum SoundProducerRunningState {HASNT_RUN_YET, IS_RUNNING, FINISHED_RUNNING};
 

@@ -97,7 +97,11 @@ public:
     wait();
     return get_withoutWaiting();
   }
-
+  
+  int getNumBuzyGetWaiters(void){
+    return buzyget_ready.numWaiters();
+  }
+  
   void waitUntilBuzyGetIsEnabled(void){
     buzyget_ready.wait();
   }

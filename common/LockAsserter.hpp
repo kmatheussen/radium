@@ -26,8 +26,13 @@ public:
     Exclusive(LockAsserter *lockAsserter)
       : lockAsserter(lockAsserter)
     {
-      R_ASSERT(ATOMIC_GET(lockAsserter->number_of_readers)==0);
-      R_ASSERT(ATOMIC_GET(lockAsserter->number_of_writers)==0);
+      int num_writers = ATOMIC_GET(lockAsserter->number_of_writers);
+      int num_readers = ATOMIC_GET(lockAsserter->number_of_readers);
+
+      if(num_writers > 0)
+        RError("Exclusive: NUM_WRITERS>0. writers: %d. readers: %d", num_writers, num_readers);
+      if(num_readers > 0)
+        RError("Exclusive: NUM_REASDERS>0: writers: %d. readers: %d", num_writers, num_readers);
       
       ATOMIC_ADD(lockAsserter->number_of_writers, 1);
     }
@@ -43,7 +48,9 @@ public:
     Shared(LockAsserter *lockAsserter)
       : lockAsserter(lockAsserter)
     {
-      R_ASSERT(ATOMIC_GET(lockAsserter->number_of_writers)==0);
+      int num_writers = ATOMIC_GET(lockAsserter->number_of_writers);
+      if(num_writers > 0)
+        RError("Shared: NUM_WRITERS>0: %d", num_writers);
       
       ATOMIC_ADD(lockAsserter->number_of_readers, 1);
     }
@@ -56,8 +63,8 @@ public:
  
 
 
-#define LOCKASSERTER_EXCLUSIVE(a) radium::LockAsserter::Exclusive _exclusive___(  const_cast<LockAsserter*>(a)  )
-#define LOCKASSERTER_SHARED(a)    radium::LockAsserter::Shared    _shared___(     const_cast<LockAsserter*>(a)  )
+#define LOCKASSERTER_EXCLUSIVE(a) radium::LockAsserter::Exclusive _exclusive___(  const_cast<radium::LockAsserter*>(a)  )
+#define LOCKASSERTER_SHARED(a)    radium::LockAsserter::Shared    _shared___(     const_cast<radium::LockAsserter*>(a)  )
 
 }
 #endif

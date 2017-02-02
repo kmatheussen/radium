@@ -575,6 +575,11 @@ static int get_bus_num(const SoundPlugin *plugin){
 
 static int id_counter = 0;
 
+namespace{
+  struct Owner;
+}
+
+//struct Owner *owner;
 
 struct SoundProducer {
   int64_t _id;
@@ -583,7 +588,9 @@ struct SoundProducer {
   int _latency;
   int _highest_input_link_latency;
   
-  DEFINE_ATOMIC(bool, is_processed);
+#if !defined(RELEASE)
+  DEFINE_ATOMIC(bool, is_processed) = false;
+#endif
 
   int _num_inputs;
   int _num_outputs;
@@ -608,10 +615,21 @@ struct SoundProducer {
   float *_input_peaks;
   float *_volume_peaks;
 
+  // Scheduling, start
+  //
   DEFINE_ATOMIC(int, num_dependencies_left);  // = num_dependencies + (is_bus ? num_not_bus_descendants : 0). Decreased during processing. When the number is zero, it is scheduled for processing.
-
+  
   int num_dependencies;              // number of active input links
 
+  int downcounter = 1; // When zero, the soundproducer can change order. We do this to avoid too much fluctation, which is likely to be bad for the cache.
+
+  //Owner *owner = NULL;
+  SoundProducer *dll_prev;
+  SoundProducer *dll_next;
+  //
+  // Scheduling, end
+  
+  
   radium::Vector<SoundProducerLink*> _input_links;
   radium::Vector<SoundProducerLink*> _output_links; // Used by MultiCore.
 
@@ -637,7 +655,6 @@ public:
 
     plugin->sp = this;
     
-    ATOMIC_SET(is_processed, false);
     ATOMIC_SET(num_dependencies_left, 0);
     
     R_ASSERT(THREADING_is_main_thread());
