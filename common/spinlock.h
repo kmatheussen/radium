@@ -4,7 +4,7 @@
 
 
 
-#if 0 // Fallback spinlock implementation
+#if 1 // defined(FOR_WINDOWS) || defined(FOR_MACOSX) // Fallback spinlock implementation
 
 #define DEFINE_SPINLOCK_NOINIT(name) \
   DEFINE_ATOMIC(bool, name)
@@ -16,10 +16,10 @@
 //  DEFINE_SPINLOCK_NOINIT(name) = false
 
 #define SPINLOCK_TRYLOCK(name)                                          \
-  (                                                                     \
-   bool old_value = false,                                              \
-   __atomic_compare_exchange_n(&ATOMIC_NAME(name), &old_value, true, true,  __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE) \
-  )
+  ({                                                                    \
+    bool old_value = false;                                             \
+    __atomic_compare_exchange_n(&ATOMIC_NAME(name), &old_value, true, true,  __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE); \
+  })
   
 
 #define SPINLOCK_OBTAIN(name)                                           \
@@ -31,7 +31,7 @@
   }while(0);
 
 #define SPINLOCK_RELEASE(name) \
-  __atomic_store_n (&(ATOMIC_NAME(name)), false, __ATOMIC_RELEASE); // Not entirely sure __ATOMIC_RELEASE is correct here...
+  __atomic_store_n (&(ATOMIC_NAME(name)), false, __ATOMIC_SEQ_CST); // Not entirely sure __ATOMIC_RELEASE is correct here...
 
 
 #define SPINLOCK_DESTROY(name)
