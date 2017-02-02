@@ -21,6 +21,10 @@
 #define ATOMIC_GET(name) \
   __atomic_load_n (&(ATOMIC_NAME(name)), __ATOMIC_SEQ_CST)
 
+#define ATOMIC_GET_RELAXED(name) \
+  __atomic_load_n (&(ATOMIC_NAME(name)), __ATOMIC_RELAXED)
+
+
 /*
 #define ATOMIC_GET2(name) \
   __atomic_load_n (&(name), __ATOMIC_SEQ_CST)
@@ -29,8 +33,8 @@
 #define ATOMIC_GET_ARRAY(name,pos)                         \
   __atomic_load_n (&(ATOMIC_NAME(name)[pos]), __ATOMIC_SEQ_CST)
 
-#define ATOMIC_GET_RELAXED(name) \
-  __atomic_load_n (&(ATOMIC_NAME(name)), __ATOMIC_RELAXED)
+#define ATOMIC_GET_ARRAY_RELAXED(name,pos)                         \
+  __atomic_load_n (&(ATOMIC_NAME(name)[pos]), __ATOMIC_RELAXED)
 
 
 #define ATOMIC_SET_ARRAY(name, pos, val)                            \
@@ -94,6 +98,17 @@ static inline bool atomic_compare_and_set_pointer(void **variable, void *old_val
 // Were doing type punning of float below.
 static_assert (sizeof(float) == 4, "Size of float is not correct");
 
+static inline float atomic_get_float_relaxed(float *variable){
+  union{
+    float new_float;
+    uint32_t new_uint32;
+  };
+  
+  new_uint32 = __atomic_load_n ((uint32_t*)variable, __ATOMIC_RELAXED);
+
+  return new_float;
+}
+                                             
 // Why doesn't gcc allow float when using __atomic_compare_exchange_n ?
 static inline bool atomic_compare_and_set_float(float *variable, float old_value, float new_value){
   union{
@@ -196,6 +211,10 @@ static inline void *safe_pointer_read(void **p){
 
 static inline void *atomic_pointer_read(void **p){
   return __atomic_load_n(p, __ATOMIC_SEQ_CST);
+}
+
+static inline void *atomic_pointer_read_relaxed(void **p){
+  return __atomic_load_n(p, __ATOMIC_RELAXED);
 }
 
 static inline void atomic_pointer_write(void **p, void *v){

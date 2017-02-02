@@ -781,7 +781,7 @@ private:
     const struct SeqTrack *seqtrack = is_playing && pc->playtype==PLAYBLOCK ? root->song->block_seqtrack : SEQUENCER_get_curr_seqtrack();
     R_ASSERT_RETURN_IF_FALSE2(seqtrack!=NULL, false);
     
-    const struct SeqBlock *seqblock = seqtrack->curr_seqblock;
+    const struct SeqBlock *seqblock = (struct SeqBlock *)atomic_pointer_read_relaxed((void**)&seqtrack->curr_seqblock);
     const struct Blocks *visible_block = seqblock==NULL ? NULL : seqblock->block;
     
     double blocktime = 0.0;
@@ -1365,13 +1365,13 @@ static double get_refresh_rate(void){
   return -1;
 }
 
-static bool g_has_found_refresh_rate = false;
-static double g_vblank = 1000 / 60.0;
+static DEFINE_ATOMIC(bool, g_has_found_refresh_rate) = false;
+static DEFINE_ATOMIC(double, g_vblank) = 1000 / 60.0;
 double GL_get_vblank(void){
-  if (g_has_found_refresh_rate==false)
+  if (ATOMIC_GET(g_has_found_refresh_rate)==false)
     return -1;
   else
-    return g_vblank;
+    return ATOMIC_DOUBLE_GET(g_vblank);
 }
 
 bool GL_maybe_notify_that_main_window_is_exposed(int interval){
@@ -1393,8 +1393,8 @@ bool GL_maybe_notify_that_main_window_is_exposed(int interval){
       double refresh_rate = get_refresh_rate();
       if (refresh_rate >= 0.5) {
         widget->set_vblank(1000.0 / refresh_rate);
-        g_vblank = 1000.0 / refresh_rate;
-        g_has_found_refresh_rate = true;
+        ATOMIC_DOUBLE_SET(g_vblank, 1000.0 / refresh_rate);
+        ATOMIC_SET(g_has_found_refresh_rate, true);
       }else
         printf("Warning: Unable to find screen refresh rate\n");
       downcounter = 2 * 1000 / interval; // Check refresh rate every 2 seconds.

@@ -328,7 +328,7 @@ struct SoundProducer;
 
 typedef struct {
   int num_channels;
-  float *RT_max_gains;   // Gain format. Written to by the realtime thread. Only read from the AudioMeterPeakTreater.  
+  DEFINE_ATOMIC(float *, RT_max_gains);   // Gain format. Written to by the realtime thread. Only read from the AudioMeterPeakTreater.  
   float *max_dbs;        // Transfer variable between audio thread and main thread. Contains last max peaks. Read by the gui. Written by the AudioMeterPeakTreater. Db format.
   float *decaying_dbs;    // Db format. Contains decaying peaks. Read by the gui. Written by the AudioMeterPeakTreater.
   float *falloff_dbs;    // Db format. Contains maximum peak values the last x seconds. Read by the gui. Written by the AudioMeterPeakTreater.

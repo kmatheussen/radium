@@ -278,7 +278,7 @@ void PLAYER_lock(void){
   */
 #endif
   
-#ifdef FOR_LINUX // we use mutex with the PTHREAD_PRIO_INHERIT on linux
+#ifdef FOR_LINUX // we use mutex with the PTHREAD_PRIO_INHERIT on linux. (From the source code of OSX, it seems like OSX ignores this flag)
   
   lock_player();
   //print_backtrace();
@@ -486,7 +486,8 @@ struct Mixer{
 
       //MULTICORE_ensure_capacity(_sound_producers.num_elements);
       _sound_producers.push_back(sound_producer);
-      
+      //MULTICORE_add_sp(sound_producer);
+
     }PLAYER_unlock();
 
     _sound_producers.post_add();
@@ -505,7 +506,8 @@ struct Mixer{
     PLAYER_lock();{
       //_sound_producers.remove(_sound_producers.indexOf(sound_producer));
       _sound_producers.remove(sound_producer);
-      
+      //MULTICORE_remove_sp(sound_producer);
+
       if (is_click_patch) {
         int i;
         for(i=0; i<g_num_allocated_click_plugins ; i++){
@@ -663,12 +665,12 @@ struct Mixer{
 
     touch_stack();
 
-    RT_lock_player();  // This is an RT-safe lock. Priority inversion can (or at least should) not happen.
-
     pause_time.start();
     
     QTime excessive_time;
     excessive_time.start();
+
+    RT_lock_player();  // This is an RT-safe lock. Priority inversion can (or at least should) not happen.
 
     while(true){
 

@@ -23,8 +23,8 @@ static void call_very_often(AudioMeterPeaks &peaks, bool reset_falloff, float ms
     // Atomically read and write RT_max_gains[ch]
     //
     for(int i = 0; i < 64; i++){ // Give up after 64 tries. If the RT thread is very busy, I guess it could happen that we stall here. (also note that RT_max_gains[ch] is not resetted when we fail, so we don't destroy max peak detection, which is most important)
-      max_gain = peaks.RT_max_gains[ch];
-      if(atomic_compare_and_set_float(&peaks.RT_max_gains[ch], max_gain, 0.0f)==true)
+      max_gain = atomic_get_float_relaxed(&ATOMIC_NAME(peaks.RT_max_gains)[ch]);
+      if(atomic_compare_and_set_float(&ATOMIC_NAME(peaks.RT_max_gains)[ch], max_gain, 0.0f)==true)
         break;
     }
 
@@ -93,7 +93,7 @@ AudioMeterPeaks AUDIOMETERPEAKS_create(int num_channels){
 
   peaks.num_channels = num_channels;
 
-  peaks.RT_max_gains = (float*)V_calloc(num_channels, sizeof(float));
+  ATOMIC_NAME(peaks.RT_max_gains) = (float*)V_calloc(num_channels, sizeof(float));
   peaks.max_dbs = (float*)V_calloc(num_channels, sizeof(float));
   peaks.decaying_dbs = (float*)V_calloc(num_channels, sizeof(float));
   peaks.falloff_dbs = (float*)V_calloc(num_channels, sizeof(float));  
@@ -110,7 +110,7 @@ AudioMeterPeaks AUDIOMETERPEAKS_create(int num_channels){
 }
 
 void AUDIOMETERPEAKS_delete(AudioMeterPeaks peaks){
-  V_free(peaks.RT_max_gains);
+  V_free(ATOMIC_NAME(peaks.RT_max_gains));
   V_free(peaks.max_dbs);
   V_free(peaks.decaying_dbs);
   V_free(peaks.falloff_dbs);

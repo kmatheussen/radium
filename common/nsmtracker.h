@@ -2095,11 +2095,12 @@ extern bool g_embed_samples;
 
 static inline struct SeqTrack *SEQUENCER_get_curr_seqtrack(void){
   int curr_seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);
-  
+
+  R_ASSERT_NON_RELEASE(curr_seqtracknum >= 0);
   R_ASSERT_NON_RELEASE(curr_seqtracknum < root->song->seqtracks.num_elements);
   
   vector_t *seqtracks = &root->song->seqtracks;
-  if (seqtracks->num_elements==0)
+  if (curr_seqtracknum >= seqtracks->num_elements)
     return NULL;
   else
     return (struct SeqTrack*)seqtracks->elements[curr_seqtracknum];

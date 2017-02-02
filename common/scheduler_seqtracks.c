@@ -15,7 +15,7 @@
 static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t time, union SuperType *args);
 
 static int64_t RT_scheduled_end_of_seqblock(struct SeqTrack *seqtrack, int64_t seqtime, union SuperType *args){
-  seqtrack->curr_seqblock = NULL;
+  atomic_pointer_write_relaxed(&seqtrack->curr_seqblock, NULL);
 
   return DONT_RESCHEDULE;
 }
@@ -37,7 +37,7 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
   bool new_block = seqtrack->curr_seqblock != seqblock;
 
   if (new_block) {
-    seqtrack->curr_seqblock = seqblock; // bang!
+    atomic_pointer_write_relaxed(&seqtrack->curr_seqblock, seqblock); // bang!
 
     // Any value less than -10 will delay rendering the new block. Instead we wait until player.c is called and a proper player_time value is calculated.
     // To avoid jumpy graphics.
@@ -219,7 +219,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
 
     VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
 
-      seqtrack->curr_seqblock = NULL;
+      atomic_pointer_write_relaxed(&seqtrack->curr_seqblock, NULL);
 
       int64_t seq_start_time = seq_start_times[iterator666];
 
@@ -286,7 +286,7 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place){
 
     R_ASSERT(SCHEDULER_num_events(seqtrack->scheduler)==0);
 
-    seqtrack->curr_seqblock = NULL;
+    atomic_pointer_write_relaxed(&seqtrack->curr_seqblock, NULL);
     
     static struct SeqBlock seqblock = {0};
     seqblock.block = block;

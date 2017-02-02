@@ -154,7 +154,7 @@ static void PlayStopReally(bool doit){
         // Clean all seqtrack->curr_seqblock values
         PLAYER_lock();{
           ALL_SEQTRACKS_FOR_EACH(){
-            seqtrack->curr_seqblock = NULL;
+            atomic_pointer_write((void**)&seqtrack->curr_seqblock, NULL);
           }END_ALL_SEQTRACKS_FOR_EACH;
         }PLAYER_unlock();
 
