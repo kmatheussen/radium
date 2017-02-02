@@ -221,6 +221,10 @@ static inline void atomic_pointer_write(void **p, void *v){
   __atomic_store_n(p, v, __ATOMIC_SEQ_CST);
 }
 
+static inline void atomic_pointer_write_relaxed(void **p, void *v){
+  __atomic_store_n(p, v, __ATOMIC_RELAXED);
+}
+
 
 
 /************** doubles ******************/
@@ -307,7 +311,9 @@ get_das_double:
 
  */
 
-typedef double atomic_double_t;
+#ifdef __cplusplus
+static_assert (sizeof(double) == sizeof(int64_t), "Size of double is not correct");
+#endif
 
 #define ATOMIC_DOUBLE_GET(name) ({                                      \
       double result;                                                    \
@@ -322,6 +328,9 @@ typedef double atomic_double_t;
 
 
 /*
+
+typedef double atomic_double_t;
+
 // redhat gcc 5.3.1: "warning: parameter ‘atomic_double’ set but not used [-Wunused-but-set-parameter]"
 static inline double atomic_double_read(const atomic_double_t *atomic_double){
   double result;
