@@ -2,36 +2,44 @@
 #ifndef RADIUM_COMMON_SPINLOCK_H
 #define RADIUM_COMMON_SPINLOCK_H
 
+#include "atomic.h"
+
 
 
 #if 1 // defined(FOR_WINDOWS) || defined(FOR_MACOSX) // Fallback spinlock implementation
 
+// The arguments for "weak" and the various memorders are taken from https://github.com/seL4/seL4_libs/blob/master/libsel4sync/include/sync/spinlock.h
+
+#define SPINLOCK_TYPE int // Integers are faster than booleans
+#define SPINLOCK_FALSE 0
+#define SPINLOCK_TRUE 1
+
 #define DEFINE_SPINLOCK_NOINIT(name) \
-  DEFINE_ATOMIC(bool, name)
+  DEFINE_ATOMIC(SPINLOCK_TYPE, name)
 
 #define SPINLOCK_INIT(name) \
-  ATOMIC_SET(name, false)
+  ATOMIC_SET(name, SPINLOCK_FALSE)
 
 //#define DEFINE_SPINLOCK(name)                 
 //  DEFINE_SPINLOCK_NOINIT(name) = false
 
 #define SPINLOCK_TRYLOCK(name)                                          \
   ({                                                                    \
-    bool old_value = false;                                             \
-    __atomic_compare_exchange_n(&ATOMIC_NAME(name), &old_value, true, true,  __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE); \
+    SPINLOCK_TYPE old_value = SPINLOCK_FALSE;                           \
+    __atomic_compare_exchange_n(&ATOMIC_NAME(name), &old_value, SPINLOCK_TRUE, false,  __ATOMIC_ACQUIRE, __ATOMIC_RELAXED); \
   })
   
 
 #define SPINLOCK_OBTAIN(name)                                           \
   do{                                                                   \
-    bool old_value;                                                     \
+    SPINLOCK_TYPE old_value;                                            \
     do{                                                                 \
-      old_value = false;                                                \
-    }while(__atomic_compare_exchange_n(&ATOMIC_NAME(name), &old_value, true, true,  __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE)==false); \
+      old_value = SPINLOCK_FALSE;                                       \
+    }while(__atomic_compare_exchange_n(&ATOMIC_NAME(name), &old_value, SPINLOCK_TRUE, true,  __ATOMIC_ACQUIRE, __ATOMIC_RELAXED)==false); \
   }while(0);
 
 #define SPINLOCK_RELEASE(name) \
-  __atomic_store_n (&(ATOMIC_NAME(name)), false, __ATOMIC_SEQ_CST); // Not entirely sure __ATOMIC_RELEASE is correct here...
+  __atomic_store_n (&(ATOMIC_NAME(name)), SPINLOCK_FALSE, __ATOMIC_RELEASE);
 
 
 #define SPINLOCK_DESTROY(name)
