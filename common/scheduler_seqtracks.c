@@ -170,7 +170,7 @@ static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t seqtime,
 }
 
 
-void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
+void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int playtype){
   static Place static_place;
 
   static_place = startdata->place;
@@ -210,6 +210,8 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
   
   PLAYER_lock();{
 
+    pc->playtype = playtype;
+        
     R_ASSERT(SCHEDULER_num_events(RT_get_curr_seqtrack()->scheduler)==0);
 
     SCHEDULER_set_seqtrack_timing(root->song->block_seqtrack, 0, 0);
@@ -259,7 +261,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata){
 }
 
 
-void start_seqtrack_block_scheduling(struct Blocks *block, const Place place){
+void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, int playtype){
   static Place static_place;
 
   static_place = place;
@@ -275,6 +277,8 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place){
               
   PLAYER_lock();{
 
+    pc->playtype = playtype;
+      
     struct SeqTrack *seqtrack = root->song->block_seqtrack;
 
     SCHEDULER_set_seqtrack_timing(seqtrack, seq_start_time, seq_start_time);

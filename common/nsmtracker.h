@@ -2123,7 +2123,7 @@ static inline struct SeqBlock *RT_get_curr_seqblock(void){
   if (curr_seqtrack==NULL)
     return NULL;
   else
-    return curr_seqtrack->curr_seqblock;
+    return (struct SeqBlock*)atomic_pointer_read_relaxed((void**)&curr_seqtrack->curr_seqblock);
 }
 
 static inline struct Blocks *RT_get_curr_visible_block(void){

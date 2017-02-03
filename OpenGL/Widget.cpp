@@ -774,19 +774,13 @@ private:
 
     SharedVariables *sv = GE_get_shared_variables(t2_data->painting_data);
 
-    const struct SeqTrack *seqtrack = is_playing && pc->playtype==PLAYBLOCK ? sv->root->song->block_seqtrack : SEQUENCER_get_curr_seqtrack();
-    R_ASSERT_RETURN_IF_FALSE2(seqtrack!=NULL, false);
-    
-    const struct SeqBlock *seqblock = (struct SeqBlock *)atomic_pointer_read_relaxed((void**)&seqtrack->curr_seqblock);
-    const struct Blocks *visible_block = seqblock==NULL ? NULL : seqblock->block;
-    
     double blocktime = 0.0;
 
     int playing_blocknum = -1;
 
     if (is_playing){
 
-      if ((visible_block==NULL || sv->block!=visible_block)) { // Check that our blocktime belongs to the block that is rendered.
+      if ((sv->curr_playing_block==NULL || sv->block!=sv->curr_playing_block)) { // Check that our blocktime belongs to the block that is rendered.
         
         if (new_t2_data!=NULL && use_t2_thread)
           T3_t2_data_picked_up_but_old_data_will_be_sent_back_later();
@@ -796,13 +790,13 @@ private:
           _rendering->render();
           return true;
         }else{
-          return false; // Returning false uses 100% CPU on Intel gfx / Linux, and possibley may cause jumpy graphics, but here we are just waiting for the block to be rendered.
+          return false; // Returning false uses 100% CPU on Intel gfx / Linux, and could possibly cause jumpy graphics, but here we are just waiting for the block to be rendered.
         }
       }
 
-      playing_blocknum = visible_block->l.num;
+      playing_blocknum = sv->curr_playing_block->l.num;
         
-      blocktime = ATOMIC_DOUBLE_GET(visible_block->player_time);
+      blocktime = ATOMIC_DOUBLE_GET(sv->curr_playing_block->player_time);
       //if (blocktime < -50)
       //  printf("blocktime: %f\n",blocktime);
       

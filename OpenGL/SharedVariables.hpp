@@ -26,6 +26,8 @@ struct SharedVariables{
   const struct Root *root;
   
   const struct Blocks *block; // We store it in g_shared_variables_gc_storage, so it can not be garbage collected while it is here.
+
+  const struct Blocks *curr_playing_block; // We store it in g_shared_variables_gc_storage, so it can not be garbage collected while it is here.
   
   const struct STimes *times; // Also stored in g_shread_variables_gc_storage.
 
@@ -72,6 +74,7 @@ SharedVariables::~SharedVariables(){
       VECTOR_remove(&g_shared_variables_gc_storage, this->root);
       VECTOR_remove(&g_shared_variables_gc_storage, this->times);
       VECTOR_remove(&g_shared_variables_gc_storage, this->block);
+      VECTOR_remove(&g_shared_variables_gc_storage, this->curr_playing_block);
       
     }if(!is_main_thread)Threadsafe_GC_enable();
   }
@@ -101,10 +104,22 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
   sv->times          = block->times;
 
   {
+    bool is_playing = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
+    
+    const struct SeqTrack *seqtrack = is_playing && pc->playtype==PLAYBLOCK ? sv->root->song->block_seqtrack : SEQUENCER_get_curr_seqtrack();
+    R_ASSERT(seqtrack!=NULL);
+    
+    const struct SeqBlock *seqblock = seqtrack==NULL ? NULL : (struct SeqBlock*)atomic_pointer_read_relaxed((void**)&seqtrack->curr_seqblock);
+    sv->curr_playing_block = seqblock==NULL ? NULL : seqblock->block;
+  }
+
+  
+  {
     radium::ScopedMutex locker(&vector_mutex);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->root);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->times);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->block);
+    VECTOR_push_back(&g_shared_variables_gc_storage, sv->curr_playing_block);
   }
   
   sv->realline_places = (Place*)V_malloc(sv->num_reallines * sizeof(Place));

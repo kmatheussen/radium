@@ -67,11 +67,13 @@ int GE_get_height(void){
   return g_height;
 }
 
+/*
 int GE_get_tracker_height(){
   return root->song->tracker_windows->wblock->t.y2 - root->song->tracker_windows->wblock->t.y1;
 }
 
 extern struct Root *root;
+*/
 
 GE_Rgb GE_get_rgb(enum ColorNums colornum){
   const QColor c = get_qcolor(colornum);
