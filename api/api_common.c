@@ -257,10 +257,6 @@ struct Pitches *getPitchFromNumA(int windownum,struct Tracker_Windows **window, 
   }
 
   return pitch;
-  
-  (*wtrack) = getWTrackFromNumA(windownum, window, blocknum, wblock, tracknum);
-  if ((*wtrack)==NULL)
-    return NULL;
 }
 
 struct Pitches *getPitchFromNum(int windownum,int blocknum,int tracknum,int notenum,int pitchnum){
@@ -291,10 +287,6 @@ struct Velocities *getVelocityFromNumA(int windownum,struct Tracker_Windows **wi
   }
 
   return velocity;
-  
-  (*wtrack) = getWTrackFromNumA(windownum, window, blocknum, wblock, tracknum);
-  if ((*wtrack)==NULL)
-    return NULL;
 }
 
 struct Velocities *getVelocityFromNum(int windownum,int blocknum,int tracknum,int notenum,int velocitynum){
