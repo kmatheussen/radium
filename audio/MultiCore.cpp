@@ -113,10 +113,10 @@ struct Owner{
     R_ASSERT_NON_RELEASE(_now_sp._first==NULL);
     R_ASSERT_NON_RELEASE(_now_sp._last==NULL);
 
-    radium::ScopedSpinlock lock1(_sp_lock);
+    //radium::ScopedSpinlock lock1(_sp_lock);
     //radium::ScopedSpinlock lock2(_sp_next_lock);
 
-    _now_sp = _next_sp;
+    _now_sp.set(_next_sp);
     _next_sp.clear();
   }
 

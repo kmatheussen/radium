@@ -2,6 +2,8 @@
 #ifndef RADIUM_COMMON_DOUBLYLINKEDLIST_HPP
 #define RADIUM_COMMON_DOUBLYLINKEDLIST_HPP
 
+#include "LockAsserter.hpp"
+
 namespace radium{
 
 template <typename T> struct DoublyLinkedList{
@@ -9,16 +11,32 @@ template <typename T> struct DoublyLinkedList{
   T *_first = NULL;
   T *_last = NULL;
 
+#if !defined(RELEASE)
+  LockAsserter _lockAsserter;
+#endif
+
+public:
+  
   DoublyLinkedList()
-  {    
+  {
+#if !defined(RELEASE)
+    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+#endif
   }
 
-  void clear(void){
+private:
+  
+  void clear_p(void){
     _first = NULL;
     _last = NULL;
   }
 
-  void validate_list(void) const {
+  void set_p(const DoublyLinkedList<T> &l){    
+    _first = l._first;
+    _last = l._last;
+  }
+  
+  void validate_list_p(void) const {
     if (_first==NULL)
       R_ASSERT(_last==NULL);
     if (_last==NULL)
@@ -46,7 +64,7 @@ template <typename T> struct DoublyLinkedList{
     }
   }
 
-  int size(void) const {
+  int size_p(void) const {
     int i = 0;
     T *l = _first;
     while(l!=NULL){
@@ -56,10 +74,7 @@ template <typename T> struct DoublyLinkedList{
     return i;
   }
       
-  bool in_list(T *element) const {
-#if !defined(RELEASE)
-    validate_list();
-#endif
+  bool in_list_p(T *element) const {
     T *l = _first;
     while(l!=NULL){
       if (l==element)
@@ -70,9 +85,9 @@ template <typename T> struct DoublyLinkedList{
     return false;
   }
 
-  void insert_before(T *existing_element, T *new_element){
+  void insert_before_p(T *existing_element, T *new_element){
 #if !defined(RELEASE)
-    validate_list();
+    validate_list_p();
 #endif
 
     new_element->dll_next = existing_element;
@@ -86,13 +101,13 @@ template <typename T> struct DoublyLinkedList{
     existing_element->dll_prev = new_element;
 
 #if !defined(RELEASE)
-    validate_list();
+    validate_list_p();
 #endif         
   }
 
-  void push_front(T *element){
+  void push_front_p(T *element){
 #if !defined(RELEASE)
-    validate_list();
+    validate_list_p();
 #endif
 
     if (_first == NULL) {
@@ -101,18 +116,18 @@ template <typename T> struct DoublyLinkedList{
       element->dll_prev = NULL;
       element->dll_next = NULL;
     } else {
-      insert_before(_first, element);
+      insert_before_p(_first, element);
     }
 
 #if !defined(RELEASE)
-    validate_list();
+    validate_list_p();
 #endif
 
   }
 
-  void insert_after(T *existing_element, T *new_element){
+  void insert_after_p(T *existing_element, T *new_element){
 #if !defined(RELEASE)
-    validate_list();
+    validate_list_p();
 #endif
 
     new_element->dll_prev = existing_element;
@@ -126,31 +141,31 @@ template <typename T> struct DoublyLinkedList{
     existing_element->dll_next = new_element;
 
 #if !defined(RELEASE)
-    validate_list();
+    validate_list_p();
 #endif
   }
 
-  void push_back(T *element){
+  void push_back_p(T *element){
 #if !defined(RELEASE)
-    validate_list();
+    validate_list_p();
 #endif
 
     if (_last == NULL)
-      push_front(element);
+      push_front_p(element);
     else
-      insert_after(_last, element);
+      insert_after_p(_last, element);
 
 #if !defined(RELEASE)
-    validate_list();
+    validate_list_p();
 #endif
   }
 
 
-  void remove(T *element){
+  void remove_p(T *element){
 #if !defined(RELEASE)
-    validate_list();
-    int orgsize = size();
-    R_ASSERT(in_list(element));
+    validate_list_p();
+    int orgsize = size_p();
+    R_ASSERT(in_list_p(element));
 #endif
 
     if (element->dll_prev == NULL)
@@ -164,12 +179,85 @@ template <typename T> struct DoublyLinkedList{
       element->dll_next->dll_prev = element->dll_prev;
 
 #if !defined(RELEASE)
-    validate_list();
-    int newsize = size();
+    validate_list_p();
+    int newsize = size_p();
     R_ASSERT(orgsize-newsize == 1);
-    R_ASSERT(!in_list(element));
+    R_ASSERT(!in_list_p(element));
 #endif
   }
+
+public:
+
+  void clear(void){
+#if !defined(RELEASE)
+    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+#endif
+    clear_p();
+  }
+
+  void set(const DoublyLinkedList<T> &l){    
+#if !defined(RELEASE)
+    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+#endif
+    set_p(l);
+  }
+  
+  void validate_list(void) const {
+#if !defined(RELEASE)
+    LOCKASSERTER_SHARED(&_lockAsserter);
+#endif
+    validate_list_p();
+  }
+    
+  int size(void) const {
+#if !defined(RELEASE)
+    LOCKASSERTER_SHARED(&_lockAsserter);
+#endif
+    return size_p();
+  }
+    
+  bool in_list(T *element) const {
+#if !defined(RELEASE)
+    LOCKASSERTER_SHARED(&_lockAsserter);
+#endif
+    return in_list_p(element);
+  }
+    
+  void insert_before(T *existing_element, T *new_element){
+#if !defined(RELEASE)
+    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+#endif
+    insert_before_p(existing_element, new_element);
+  }
+
+  void push_front(T *element){
+#if !defined(RELEASE)
+    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+#endif
+    push_front_p(element);
+  }
+
+  void insert_after(T *existing_element, T *new_element){
+#if !defined(RELEASE)
+    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+#endif
+    insert_after_p(existing_element, new_element);
+  }
+
+  void push_back(T *element){
+#if !defined(RELEASE)
+    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+#endif
+    push_back_p(element);
+  }
+
+  void remove(T *element){
+#if !defined(RELEASE)
+    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+#endif
+    remove_p(element);
+  }
+
 };
 
 
