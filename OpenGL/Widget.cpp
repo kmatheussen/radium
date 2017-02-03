@@ -308,10 +308,6 @@ static float GE_scroll_pos(SharedVariables *sv, double realline){
 }
 
 
-
-extern PlayerClass *pc;
-extern struct Root *root;
-
 extern int scrolls_per_second;
 extern int default_scrolls_per_second;
 
@@ -778,7 +774,7 @@ private:
 
     SharedVariables *sv = GE_get_shared_variables(t2_data->painting_data);
 
-    const struct SeqTrack *seqtrack = is_playing && pc->playtype==PLAYBLOCK ? root->song->block_seqtrack : SEQUENCER_get_curr_seqtrack();
+    const struct SeqTrack *seqtrack = is_playing && pc->playtype==PLAYBLOCK ? sv->root->song->block_seqtrack : SEQUENCER_get_curr_seqtrack();
     R_ASSERT_RETURN_IF_FALSE2(seqtrack!=NULL, false);
     
     const struct SeqBlock *seqblock = (struct SeqBlock *)atomic_pointer_read_relaxed((void**)&seqtrack->curr_seqblock);
@@ -822,23 +818,20 @@ private:
 
       //printf("blocktime: %f\n",blocktime);
       
-      if (is_playing){
+      if (blocktime < 0.0) {  // Either the block hasn't started playing yet (sequencer cursor is inside a pause), or we just switched block and waiting for a proper blocktime to be calculated.
+          
+        if (new_t2_data!=NULL && use_t2_thread)
+          T3_t2_data_picked_up_but_old_data_will_be_sent_back_later();
         
-        if (blocktime < 0.0) {  // Either the block hasn't started playing yet (sequencer cursor is inside a pause), or we just switched block and waiting for a proper blocktime to be calculated.
-          
-          if (new_t2_data!=NULL && use_t2_thread)
-            T3_t2_data_picked_up_but_old_data_will_be_sent_back_later();
-          
-          if (t2_data_can_be_used  || blocktime != -100.0){
-            _rendering->render();
-            return true;
-          } else {
-            return false;
-          }
+        if (t2_data_can_be_used  || blocktime != -100.0){
+          _rendering->render();
+          return true;
+        } else {
+          return false;
         }
       }
 
-    }
+    } // is_playing
 
     double current_realline_while_playing =
       is_playing
@@ -850,7 +843,7 @@ private:
     int current_realline_while_not_playing = ATOMIC_GET(g_curr_realline);
     
     double till_realline =
-      ATOMIC_GET_RELAXED(root->play_cursor_onoff)
+      ATOMIC_GET_RELAXED(sv->root->play_cursor_onoff)
       ? current_realline_while_not_playing
       : is_playing
         ? current_realline_while_playing

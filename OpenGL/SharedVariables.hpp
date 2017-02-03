@@ -23,6 +23,8 @@ struct SharedVariables{
   float scrollbar_height;
   float scrollbar_scroller_height;
 
+  const struct Root *root;
+  
   const struct Blocks *block; // We store it in g_shared_variables_gc_storage, so it can not be garbage collected while it is here.
   
   const struct STimes *times; // Also stored in g_shread_variables_gc_storage.
@@ -66,7 +68,8 @@ SharedVariables::~SharedVariables(){
     bool is_main_thread = THREADING_is_main_thread();
     
     if(!is_main_thread)Threadsafe_GC_disable();{ // Disable garbage collector since we modify gc memory from another thread. (I wouldn't be surprised if turning off the GC here would only be useful once in a million years, or never.)
-      
+
+      VECTOR_remove(&g_shared_variables_gc_storage, this->root);
       VECTOR_remove(&g_shared_variables_gc_storage, this->times);
       VECTOR_remove(&g_shared_variables_gc_storage, this->block);
       
@@ -81,6 +84,7 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
   struct WBlocks *wblock = window->wblock;
   struct Blocks *block = wblock->block;
 
+  sv->root          = root;
   sv->top_realline  = wblock->top_realline;
   sv->num_reallines = wblock->num_reallines;
   sv->curr_realline = wblock->curr_realline;
@@ -98,6 +102,7 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
 
   {
     radium::ScopedMutex locker(&vector_mutex);
+    VECTOR_push_back(&g_shared_variables_gc_storage, sv->root);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->times);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->block);
   }
