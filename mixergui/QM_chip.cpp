@@ -1440,18 +1440,18 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
               SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
               if (thispatch != patch && plugin!=NULL && ATOMIC_GET(plugin->solo_is_on)) {
                 int num_effects = plugin->type->num_effects;
-                ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_SOLO_ONOFF));
+                //ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_SOLO_ONOFF));
                 PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, 0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-                CHIP_update(plugin);
+                //CHIP_update(plugin);
               }
             }
           }
           
-          ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
+          //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
           
           PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-          CHIP_update(plugin);
-          GFX_update_instrument_widget((struct Patch*)patch);
+          //CHIP_update(plugin);
+          //GFX_update_instrument_widget((struct Patch*)patch);
           
         }Undo_Close();        
 
@@ -1481,7 +1481,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
                 int num_effects = plugin->type->num_effects;
                 ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_VOLUME_ONOFF));
                 PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, 1, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-                CHIP_update(plugin);
+                //CHIP_update(plugin);
               }
             }
           }
@@ -1489,8 +1489,8 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
           ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_VOLUME_ONOFF));
           
           PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-          CHIP_update(plugin);
-          GFX_update_instrument_widget((struct Patch*)patch);
+          //CHIP_update(plugin);
+          //GFX_update_instrument_widget((struct Patch*)patch);
 
         }Undo_Close();
         

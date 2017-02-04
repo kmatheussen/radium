@@ -852,7 +852,7 @@
     (for-each (lambda (instrument-id)
                 (when (and (not (= instrument-id except))
                            (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
-                  (<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
+                  ;;(<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
                   (<ra> :set-instrument-effect instrument-id "System Solo On/Off" 0)
                   ))
               (get-all-audio-instruments)))
@@ -889,7 +889,7 @@
                                        (lambda (is-selected)
                                          (undo-block
                                           (lambda ()
-                                            (<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
+                                            ;;(<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
                                             (<ra> :set-instrument-effect instrument-id "System Solo On/Off" (if is-selected 1.0 0.0))
                                             (if (<ra> :ctrl-pressed)
                                                 (turn-off-all-solo instrument-id)))))
@@ -901,6 +901,7 @@
   
   (add-gui-effect-monitor (cadr solo) instrument-id "System Solo On/Off"
                           (lambda ()
+                            ;;(c-display "Solo changed for" instrument-id)
                             ((car solo) (get-soloed))))
 
   (<gui> :add gui (cadr mute) x1 y1 middle y2)

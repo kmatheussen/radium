@@ -972,8 +972,12 @@ public slots:
   void on_solo_checkbox_toggled(bool val){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin != NULL){
-      ATOMIC_SET(plugin->solo_is_on, val);
-      CHIP_update(plugin);
+      int num_effects = plugin->type->num_effects;
+      //ADD_UNDO(AudioEffect_CurrPos(_patch, num_effects+EFFNUM_SOLO_ONOFF));
+      PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, val ? 1 : 0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      //}
+      //ATOMIC_SET(plugin->solo_is_on, val);
+      //CHIP_update(plugin);
     }
   }
 };
