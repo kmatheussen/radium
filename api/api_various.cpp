@@ -439,7 +439,8 @@ void splitTrackIntoMonophonicTracks(int tracknum, int blocknum, int windownum){
 
   if(wtrack==NULL) return;
 
-  TRACK_split_into_monophonic_tracks(window, wblock, wtrack);
+  if (TRACK_split_into_monophonic_tracks(window, wblock, wtrack)==false)
+    GFX_Message(NULL, "Track #%d is already monophonic", tracknum);
 }
   
 void splitBlock(int windownum){

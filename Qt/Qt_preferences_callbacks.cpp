@@ -549,6 +549,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       else
         record_velocity_off->setChecked(true);
 
+      split_into_monophonic_tracks_after_recording->setChecked(doSplitIntoMonophonicTracksAfterRecordingFromMidi());
+
       use_current_track_midi_channel->setChecked(doUseTrackChannelForMidiInput());
         
       while(midi_input_layout->count() > 0)
@@ -1050,6 +1052,11 @@ public slots:
       MIDI_set_record_velocity(val);
   }
 
+  void on_split_into_monophonic_tracks_after_recording_toggled(bool val){
+    if (_initing==false)
+      setSplitIntoMonophonicTracksAfterRecordingFromMidi(val);
+  }
+  
   void on_use_current_track_midi_channel_toggled(bool val){
     if (_initing==false)
       setUseTrackChannelForMidiInput(val);

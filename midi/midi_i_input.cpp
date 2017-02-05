@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Ptask2Mtask_proc.h"
 #include "../common/player_proc.h"
 #include "../common/patch_proc.h"
+#include "../common/tracks_proc.h"
 #include "../common/instruments_proc.h"
 #include "../common/placement_proc.h"
 #include "../common/time_proc.h"
@@ -517,10 +518,14 @@ void MIDI_insert_recorded_midi_events(void){
   
   usleep(1000*20); // Wait a little bit more for the last event to be transfered into g_recorded_midi_events. (no big deal if we lose it though, CPU is probably so buzy if that happens that the user should expect not everything working as it should. It's also only in theory that we could lose the last event since the transfer only takes some nanoseconds, while here we wait 20 milliseconds.)
 
-
   {
     radium::ScopedMutex lock(g_midi_event_mutex);
     radium::ScopedUndo scoped_undo;
+
+    bool do_split = doSplitIntoMonophonicTracksAfterRecordingFromMidi();
+    
+    QVector<struct WBlocks*> blocks_for_tracks_to_split;
+    QVector<struct WTracks*> tracks_to_split;
 
     struct Tracker_Windows *window = root->song->tracker_windows;
     
@@ -557,11 +562,15 @@ void MIDI_insert_recorded_midi_events(void){
         //
         ATOMIC_SET(track->is_recording, false);
 
-
         // UNDO
         //
-        char *key = (char*)talloc_format("%x",track);
+        char *key = (char*)talloc_format("%x",track); // store pointer
         if (HASH_has_key(track_set, key)==false){
+
+          if (do_split){
+            blocks_for_tracks_to_split.push_back(wblock);
+            tracks_to_split.push_back(wtrack);
+          }
 
           ADD_UNDO(Notes(window,
                          block,
@@ -588,8 +597,16 @@ void MIDI_insert_recorded_midi_events(void){
         else if (msg_is_fx(msg))
           add_recorded_fx(window, wblock, block, wtrack, i, midi_event);
       }
-      
+
     }
+
+    if (do_split)
+      for(int i = 0 ; i < tracks_to_split.size() ; i++){
+        struct WBlocks *wblock = blocks_for_tracks_to_split[i];
+        struct WTracks *wtrack = tracks_to_split[i];
+        
+        TRACK_split_into_monophonic_tracks(window, wblock, wtrack);
+      }
 
     g_recorded_midi_events.clear();
 

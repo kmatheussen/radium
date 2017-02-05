@@ -191,6 +191,29 @@ void setInstrumentForTrack(int64_t instrument_id, int tracknum, int blocknum, in
 }
 
 
+// 
+
+static bool g_split_into_monophonic_tracks_after_recording = false;
+
+bool doSplitIntoMonophonicTracksAfterRecordingFromMidi(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_split_into_monophonic_tracks_after_recording = SETTINGS_read_bool("split_into_monophonic_tracks_after_recording", false);
+    has_inited = true;
+  }
+
+  return g_split_into_monophonic_tracks_after_recording;
+}
+
+void setSplitIntoMonophonicTracksAfterRecordingFromMidi(bool doit){
+  g_split_into_monophonic_tracks_after_recording = doit;
+  SETTINGS_write_bool("split_into_monophonic_tracks_after_recording", doit);
+}
+
+
+//
+
 DEFINE_ATOMIC(bool, g_use_track_channel_for_midi_input) = true;
 
 bool doUseTrackChannelForMidiInput(void){

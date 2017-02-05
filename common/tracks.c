@@ -259,7 +259,7 @@ void TRACK_make_monophonic_destructively_CurrPos(struct Tracker_Windows *window)
 
 
 
-void TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
+bool TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
   
   PlayStop(); // This function is too chaotic. Don't bother pausing player.
 
@@ -291,7 +291,8 @@ void TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct W
       if (PlaceGreaterThan(&notes->end, &next->l.p)){
 
         if (have_made_undo==false) {
-            have_made_undo=true;
+          ADD_UNDO(Block_CurrPos(window));    
+          have_made_undo=true;
         }
         
         ListRemoveElement3(&notes, &next->l);                           
@@ -307,10 +308,8 @@ void TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct W
     notes_nexttrack = NULL;
   }
 
-  if (have_made_undo==false){
-    GFX_Message(NULL, "Track is already monophonic");
-    return;
-  }
+  if (have_made_undo==false)
+    return false;
 
   int num_tracks = notesvector.num_elements;
 
@@ -340,6 +339,8 @@ void TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct W
   }
 
   window->must_redraw = true;
+
+  return true;
 }
 
 /*
