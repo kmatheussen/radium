@@ -437,7 +437,7 @@ const wchar_t *DISK_base64_to_file(const wchar_t *wfilename, const char *chars){
   file->close();
 
   if (wfilename==NULL){
-    radium::ScopedMutex lock(&g_mutex);
+    radium::ScopedMutex lock(g_mutex);
     g_temporary_files[temporary_write_file->fileName()] = temporary_write_file;
   }
   
@@ -445,7 +445,7 @@ const wchar_t *DISK_base64_to_file(const wchar_t *wfilename, const char *chars){
 }
 
 void DISK_delete_base64_file(const wchar_t *wfilename){
-  radium::ScopedMutex lock(&g_mutex);
+  radium::ScopedMutex lock(g_mutex);
   
   QString key = STRING_get_qstring(wfilename);
   QTemporaryFile *file = g_temporary_files[key];
@@ -458,7 +458,7 @@ void DISK_delete_base64_file(const wchar_t *wfilename){
 }
 
 void DISK_cleanup(void){
-  radium::ScopedMutex lock(&g_mutex);
+  radium::ScopedMutex lock(g_mutex);
   
   for(auto *file : g_temporary_files.values())
     delete file;

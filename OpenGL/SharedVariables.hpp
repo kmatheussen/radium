@@ -65,7 +65,7 @@ static vector_t g_shared_variables_gc_storage = {}; // Here we store stuff used 
 SharedVariables::~SharedVariables(){
   V_free(realline_places);
   {
-    radium::ScopedMutex locker(&vector_mutex);
+    radium::ScopedMutex locker(vector_mutex);
 
     bool is_main_thread = THREADING_is_main_thread();
     
@@ -115,7 +115,7 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
 
   
   {
-    radium::ScopedMutex locker(&vector_mutex);
+    radium::ScopedMutex locker(vector_mutex);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->root);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->times);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->block);

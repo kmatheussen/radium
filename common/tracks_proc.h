@@ -28,6 +28,6 @@ extern LANGSPEC void CloseAllTracks(struct Blocks *block);
 extern LANGSPEC void InitTrack(struct Tracks *track);
 extern LANGSPEC void AppendTrack(struct Blocks *block);
 extern LANGSPEC void TRACK_make_monophonic_destructively(struct Tracks *track);
-extern LANGSPEC void TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
+extern LANGSPEC bool TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
 
 #endif

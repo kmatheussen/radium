@@ -314,7 +314,7 @@ namespace{
         dsps[0] = dsp_;
         
         {
-          //radium::ScopedMutex lock(&fff_mutex);
+          //radium::ScopedMutex lock(fff_mutex);
           for(int i=1;i<MAX_POLYPHONY;i++)
             dsps[i] = createDSPInstance(reply.factory);
         }
@@ -424,7 +424,7 @@ namespace{
           create_reply(code, options, optlevel, reply);
           
           {
-            radium::ScopedMutex lock(&g_reply_mutex);
+            radium::ScopedMutex lock(g_reply_mutex);
             g_ready[id] = reply;
           }
         }
@@ -471,7 +471,7 @@ FFF_Reply FFF_get_reply_now(QString code, QString options){
 
 /*
 llvm_dsp *FFF_get_dsp(const FFF_Reply &reply){
-  //radium::ScopedMutex lock(&fff_mutex);
+  //radium::ScopedMutex lock(fff_mutex);
   return createDSPInstance(reply.factory);
 }
 */
@@ -492,7 +492,7 @@ FFF_Reply fff_empty_reply;
 // Lightweight function made to be called very often from a timer.
 // .reply->data==NULL and .reply->error_message=="" if there was nothing to get.
 FFF_Reply FFF_get_reply(int64_t id){
-  radium::ScopedMutex lock(&g_reply_mutex);
+  radium::ScopedMutex lock(g_reply_mutex);
   
   if (g_ready.contains(id)==false)
     return fff_empty_reply;
