@@ -1017,6 +1017,9 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
         ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 0, true);
       else
         ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 0, false);
+#if !defined(RELEASE)
+      printf("       Remake: BUS1_ONOFF\n");
+#endif
       RT_schedule_mixer_strips_redraw();
       break;
     case EFFNUM_BUS2_ONOFF:
@@ -1024,6 +1027,9 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
         ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 1, true);
       else
         ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 1, false);
+#if !defined(RELEASE)
+      printf("       Remake: BUS2_ONOFF\n");
+#endif
       RT_schedule_mixer_strips_redraw();
       break;
     case EFFNUM_BUS3_ONOFF:
@@ -1031,6 +1037,9 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
         ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 2, true);
       else
         ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 2, false);
+#if !defined(RELEASE)
+      printf("       Remake: BUS3_ONOFF\n");
+#endif
       RT_schedule_mixer_strips_redraw();
       break;
     case EFFNUM_BUS4_ONOFF:
@@ -1038,6 +1047,9 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
         ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 3, true);
       else
         ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 3, false);
+#if !defined(RELEASE)
+      printf("       Remake: BUS4_ONOFF\n");
+#endif
       RT_schedule_mixer_strips_redraw();
       break;
     case EFFNUM_BUS5_ONOFF:
@@ -1045,6 +1057,9 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
         ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 4, true);
       else
         ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 4, false);
+#if !defined(RELEASE)
+      printf("       Remake: BUS5_ONOFF\n");
+#endif
       RT_schedule_mixer_strips_redraw();
       break;
 
