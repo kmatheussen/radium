@@ -1283,7 +1283,7 @@
   ;;(define mixer-strips (<gui> :widget 800 800))
   ;;(define mixer-strips (<gui> :horizontal-scroll)) ;;widget 800 800))
   (define mixer-strips (<gui> :scroll-area #t #t))
-  
+
   ;;(<gui> :set-layout-spacing mixer-strips strip-separator-width 0 0 0 0)
   
   ;;(define x1 0)
@@ -1359,7 +1359,7 @@
                   (begin
                     (set! x1 0)
                     (set! y1 y2)
-                    (set! y2 (+ y2 (floor (/ (- heigth 5) num-rows))))
+                    (set! y2 (+ y2 (floor (/ (- height 5) num-rows))))
                     (set! mixer-strip-num 0))
                   (set! x1 (+ x2 strip-separator-width))))
             (sort-instruments-by-mixer-position

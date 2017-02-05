@@ -24,7 +24,7 @@ And I know this because I get an email with backtrace every time a user presses 
 After including libxcb with the program, all crash reports caused by libxcb suddenly disappeared.
 But if you know that the system version of libxcb is at least 1.12, the package can probably be safely removed.
 
-In addition, it's generally better that the users of a program uses the same versions of 3rd party libraries as the developer(s).
+In addition, it's generally better that the users of a program use the same versions of 3rd party libraries as the developer(s).
 This increases stability, but it is currently not the reason for any of the packages in this directory. However, if Qt, for instance, were less stable,
 I wouldn't hesitate to include Qt in this directory to make sure everyone used the same version of Qt. Luckily, though, Qt is very stable.
 Same goes for libsamplerate, libsndfile, libjack, etc. etc. But in the future, other packages might be included here just as a general precaution.

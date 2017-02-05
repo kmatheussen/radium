@@ -762,6 +762,32 @@ void autopositionInstrument(int64_t instrument_id){
   CHIP_autopos(patch);
 }
 
+int numSelectedInstruments(void){
+  int ret;
+  
+  VECTOR_FOR_EACH(struct Patch *patch, &get_audio_instrument()->patches){
+    struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+    if (plugin!=NULL && ATOMIC_GET(plugin->is_selected))
+      ret++;
+  }END_VECTOR_FOR_EACH;
+
+  return ret;
+}
+
+bool instrumentIsSelected(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return false;
+  }  
+
+  return ATOMIC_GET(plugin->is_selected);
+}
+
 int getNumInAudioConnections(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
