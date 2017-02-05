@@ -49,20 +49,20 @@
 ||#
 
 (define (sort-instruments-by-mixer-position instruments)
-  (sort! (copy instruments)
-         (lambda (i1 i2)
-           (define x1 (<ra> :get-instrument-x i1))
-           (define x2 (<ra> :get-instrument-x i2))
-           (define y1 (<ra> :get-instrument-y i1))
-           (define y2 (<ra> :get-instrument-y i2))
-           (cond ((< y1 y2)
-                  #t)
-                 ((> y1 y2)
-                  #f)
-                 ((< x1 x2)
-                  #t)
-                 (else
-                  #f)))))
+  (sort instruments
+        (lambda (i1 i2)
+          (define x1 (<ra> :get-instrument-x i1))
+          (define x2 (<ra> :get-instrument-x i2))
+          (define y1 (<ra> :get-instrument-y i1))
+          (define y2 (<ra> :get-instrument-y i2))
+          (cond ((< y1 y2)
+                 #t)
+                ((> y1 y2)
+                 #f)
+                ((< x1 x2)
+                 #t)
+                (else
+                 #f)))))
 
 (define (instrument-eventually-connects-to i1 i2)
   ;;(c-display "  instrument-eventually" (<ra> :get-instrument-name i1) "->" (<ra> :get-instrument-name i2))

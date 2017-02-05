@@ -400,6 +400,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       eraseEstimatedVBlankInterval->setText(vblankbuttontext);
 #endif
       
+      high_cpu_protection->setChecked(doHighCpuOpenGlProtection());
+      
       bool draw_in_separate_process = SETTINGS_read_bool("opengl_draw_in_separate_process",false);//GL_using_nvidia_card());
       draw_in_separate_process_onoff->setChecked(draw_in_separate_process);
       
@@ -626,6 +628,11 @@ public slots:
     }
   }
 
+  void on_high_cpu_protection_toggled(bool val){
+    if (_initing==false)
+      setHighCpuOpenGlProtection(val);
+  }
+  
   void on_draw_in_separate_process_onoff_toggled(bool val){
     if (_initing==false)
       SETTINGS_write_bool("opengl_draw_in_separate_process",val);

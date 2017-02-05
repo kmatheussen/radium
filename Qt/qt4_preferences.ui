@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -362,7 +362,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
           <property name="sizeConstraint">
            <enum>QLayout::SetDefaultConstraint</enum>
           </property>
-          <item row="2" column="0">
+          <item row="3" column="0">
            <widget class="QCheckBox" name="safeModeOnoff">
             <property name="enabled">
              <bool>true</bool>
@@ -396,7 +396,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
+          <item row="3" column="1">
            <spacer name="horizontalSpacer_6">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -412,21 +412,21 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </spacer>
           </item>
-          <item row="0" column="3">
+          <item row="1" column="3">
            <widget class="QLabel" name="label_10">
             <property name="text">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;This feature improves graphical performance by drawing in a separate process.&lt;br&gt;Beware that on Windows, this option very often destroys text rendering in the&lt;br&gt;editor (you notice this immediately after restarting). Also note that unless you&lt;br&gt; have at least two CPU cores, enabling &amp;quot;Draw in separate process&amp;quot; could lower&lt;br&gt; graphical performance instead of improving it. If you have more than one CPU&lt;br&gt;core, and text rendering is not destroyed, you should enable this option.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="3">
+          <item row="3" column="3">
            <widget class="QLabel" name="label_2">
             <property name="text">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Warning: Do not enable this option. However, if the graphics behaves strange,&lt;br&gt;it might help to enable Safe mode, although it is very unlikely.&lt;/span&gt;&lt;br&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note that this mode should only be used to debug Radium.&lt;/span&gt;&lt;br&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Safe mode is likely to lower graphical performance and make the program crash.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
-          <item row="0" column="1">
+          <item row="1" column="1">
            <spacer name="horizontalSpacer_8">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -442,7 +442,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </spacer>
           </item>
-          <item row="0" column="0">
+          <item row="1" column="0">
            <widget class="QCheckBox" name="draw_in_separate_process_onoff">
             <property name="enabled">
              <bool>true</bool>
@@ -476,7 +476,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="4">
+          <item row="3" column="4">
            <spacer name="horizontalSpacer_3">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -491,6 +491,48 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </size>
             </property>
            </spacer>
+          </item>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="high_cpu_protection">
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>300</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Protect against high CPU usage</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <spacer name="horizontalSpacer_16">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>60</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Protects against high CPU usage by pausing the OpenGL process if it draws&lt;br&gt;faster than vertical blank refresh rate. (restart not required)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -7101,8 +7143,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
+  <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
-  <buttongroup name="buttonGroup_3"/>
  </buttongroups>
 </ui>

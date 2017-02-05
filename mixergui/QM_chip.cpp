@@ -476,6 +476,7 @@ float CHIP_get_pos_y(const struct Patch *patch){
 
 void CHIP_set_pos(Chip *chip, float x, float y){
   chip->setPos(x,y);
+  printf("       Remake: CHIP_set_pos\n");
   remakeMixerStrips();
 }
 
@@ -525,6 +526,7 @@ void CHIP_kick_left(Chip *chip){
     (*chip)->setPos(pos.x()-grid_width, pos.y());
   }
 
+  printf("       Remake: CHIP_kick_left\n");
   remakeMixerStrips();
 }
 
@@ -568,7 +570,8 @@ void CHIP_kick_right(Chip *chip){
     ADD_UNDO(ChipPos_CurrPos((struct Patch*)patch));
     (*chip)->setPos(pos.x()+grid_width, pos.y());
   }
-  
+
+  printf("       Remake: CHIP_kick_right\n");
   remakeMixerStrips();
 }
 
@@ -654,6 +657,7 @@ void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   connection->update_position();
   scene->addItem(connection);
 
+  printf("       Remake: CHIP_connect_chips\n");
   remakeMixerStrips();
 }
 

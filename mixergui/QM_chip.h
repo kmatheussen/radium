@@ -159,6 +159,7 @@ public:
   }
 
   ~SuperConnection(){
+    printf("       Remake: ~SuperConnectin\n");
     remakeMixerStrips();
   }
       

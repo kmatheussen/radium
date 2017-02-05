@@ -459,6 +459,7 @@ void setInstrumentColor(const_char *colorname, int64_t instrument_id){
     CHIP_update(plugin);
   }
 
+  printf("       Remake: setInstrumentColor\n");
   remakeMixerStrips();
 
   GFX_ScheduleRedraw();
@@ -964,8 +965,10 @@ void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool
   if (error!=NULL)
     handleError("Could not find audio connection between instrument %d and instrument %d", source_id, dest_id);
   else
-    if (remake_mixer_strips)
+    if (remake_mixer_strips){
+      printf("       Remake: setAudioConnectionGain\n");
       remakeMixerStrips();
+    }
 }
 
 

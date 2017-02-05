@@ -25,7 +25,7 @@ static char *get_current_wav_chunk_id(disk_t *file){
   
   DISK_spool(file,-4);
   
-  printf("current_wav_chunk_id: \"%s\"\n",val);
+  //printf("current_wav_chunk_id: \"%s\"\n",val);
   
   return val;
 }
@@ -77,7 +77,7 @@ static bool spool_to_wav_chunk(disk_t *file, const char *chunk_id, int num){ // 
     }
 
     if(spool_to_next_wav_chunk(file,filesize)==false){
-      printf("wav chunk \"%s\" not found\n",chunk_id);
+      //printf("wav chunk \"%s\" not found\n",chunk_id);
       return false;
     }
   }
@@ -122,11 +122,11 @@ static int find_cue_id_for_label2(disk_t *file, const char *label){
   int64_t end_pos=startpos+list_size;
 
   while(true){
-    printf("ftell(file): %d. end_pos: %d. startpos: %d, list_size: %d\n",(int)DISK_pos(file), (int)end_pos, (int)startpos, list_size);
+    //printf("ftell(file): %d. end_pos: %d. startpos: %d, list_size: %d\n",(int)DISK_pos(file), (int)end_pos, (int)startpos, list_size);
     if(DISK_pos(file)>=end_pos)
       return -1;
 
-    printf("  LIST:  \"%s\"\n",get_current_wav_chunk_id(file));
+    //printf("  LIST:  \"%s\"\n",get_current_wav_chunk_id(file));
 
     if(!strcmp("labl",get_current_wav_chunk_id(file))){
       DISK_spool(file,4);
@@ -138,10 +138,10 @@ static int find_cue_id_for_label2(disk_t *file, const char *label){
 
       char *name=(char*)talloc(size);
       if(DISK_read_binary(file, name, size-4) != (size-4)){
-        fprintf(stderr,"Reading file failed\n");
+        //fprintf(stderr,"Reading file failed\n");
         return -1;
       }
-      printf("******** labl %d: \"%s\". size: %d\n",id,name,size);
+      //printf("******** labl %d: \"%s\". size: %d\n",id,name,size);
 
       if(!strcmp(name,label))
         return id;
@@ -149,7 +149,7 @@ static int find_cue_id_for_label2(disk_t *file, const char *label){
     }else{
 
       if(spool_to_next_wav_chunk(file,end_pos)==false){
-        printf("label \"%s\" not found.\n",label);
+        //printf("label \"%s\" not found.\n",label);
         return -1;
       }
     }
@@ -192,7 +192,7 @@ static bool set_wav_loop_points_using_cues(Sample *sample, disk_t *file, bool se
 
   set_legal_loop_points(sample, loop_start, loop_end, set_loop_on_off);
 
-  printf("*************** num_cues: %d. loop_start: %d, loop_end: %d\n",num_cues,(int)loop_start,(int)loop_end);
+  //printf("*************** num_cues: %d. loop_start: %d, loop_end: %d\n",num_cues,(int)loop_start,(int)loop_end);
   return true;
 }
 
@@ -235,11 +235,13 @@ static bool set_wav_loop_points_using_smpl_chunk(Sample *sample, disk_t *file, b
   if(bytes_per_frame<=0)
     return false;
 
+  /*
   printf("HEPP: loop_start: %d (%d), loop_end: %d(%d), bytes_per_frame: %d\n",
          loop_start,loop_start/bytes_per_frame,
          loop_end,loop_end/bytes_per_frame,
          bytes_per_frame);
-
+  */
+  
   set_legal_loop_points(sample, loop_start/bytes_per_frame, loop_end/bytes_per_frame, set_loop_on_off);
 #endif
 
@@ -286,8 +288,8 @@ static double get_wav_middle_note_from_sampl_chunk(disk_t *file){
   
   // ody-ld1.wav
   
-  printf("       UNITY: %u (%x)\n", midi_unity_note, midi_unity_note);
-  printf("       FRACT: %u (%x) (%f)\n", midi_pitch_fraction, midi_pitch_fraction, fraction);
+  //printf("       UNITY: %u (%x)\n", midi_unity_note, midi_unity_note);
+  //printf("       FRACT: %u (%x) (%f)\n", midi_pitch_fraction, midi_pitch_fraction, fraction);
   //getchar();
 
   return middle_note;

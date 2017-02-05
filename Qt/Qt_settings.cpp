@@ -308,7 +308,7 @@ QString OS_get_config_filename(const char *key){
 
   QFileInfo config_info(dir, is_color_config ? "colors" : "config");
 
-  printf("dir: \"%s\"\n",config_info.absoluteFilePath().toUtf8().constData());
+  //printf("dir: \"%s\"\n",config_info.absoluteFilePath().toUtf8().constData());
 
 #if 0
   if(is_playing())

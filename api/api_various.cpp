@@ -1754,22 +1754,43 @@ void setModalWindows(bool doit){
   SETTINGS_write_bool("modal_windows", doit);
 }
 
+//
 
-static DEFINE_ATOMIC(bool, g_lock_juce_when_swapping_opengl) = false;
+static DEFINE_ATOMIC(int, g_high_cpu_protection_opengl_protection) = -1;
 
-bool doLockJuceWhenSwappingOpenGL(void){
-  static DEFINE_ATOMIC(bool, has_inited) = false;
-
-  if (ATOMIC_GET(has_inited)==false){
-    ATOMIC_SET(g_lock_juce_when_swapping_opengl, SETTINGS_read_bool("lock_juce_when_swapping_opengl", false));
-    ATOMIC_SET(has_inited, true);
+bool doHighCpuOpenGlProtection(void){  
+  int g = ATOMIC_GET(g_high_cpu_protection_opengl_protection);
+  
+  if (g == -1){
+    g = SETTINGS_read_bool("high_cpu_protection_opengl_protection", true) ? 1 : 0;
+    ATOMIC_SET(g_high_cpu_protection_opengl_protection, g);
   }
 
-  return ATOMIC_GET(g_lock_juce_when_swapping_opengl);
+  return g==1 ? true : false;
+}
+
+void setHighCpuOpenGlProtection(bool doit){
+  ATOMIC_SET(g_high_cpu_protection_opengl_protection, doit ? 1 : 0);
+  SETTINGS_write_bool("high_cpu_protection_opengl_protection", doit);
+}
+
+//
+
+static DEFINE_ATOMIC(bool, g_lock_juce_when_swapping_opengl) = -1;
+
+bool doLockJuceWhenSwappingOpenGL(void){
+  int g = ATOMIC_GET(g_lock_juce_when_swapping_opengl);
+  
+  if (g == -1){
+    g = SETTINGS_read_bool("lock_juce_when_swapping_opengl", false) ? 1 : 0;
+    ATOMIC_SET(g_lock_juce_when_swapping_opengl, g);
+  }
+
+  return g==1 ? true : false;
 }
 
 void setLockJuceWhenSwappingOpenGL(bool doit){
-  ATOMIC_SET(g_lock_juce_when_swapping_opengl, doit);
+  ATOMIC_SET(g_lock_juce_when_swapping_opengl, doit ? 1 : 0);
   SETTINGS_write_bool("lock_juce_when_swapping_opengl", doit);
 }
 

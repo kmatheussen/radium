@@ -1455,8 +1455,10 @@ protected:
     }
 
     if (is_called_every_ms(50)){
-      if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false))
+      if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false)){
+        printf("          (remake called from qt main)\n");
         evalScheme("(remake-mixer-strips)");
+      }
     }
 
     if (is_called_every_ms(100))

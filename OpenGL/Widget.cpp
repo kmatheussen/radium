@@ -1051,7 +1051,7 @@ private:
 
     _swap_timer.restart();    
   }
-
+  
   // OpenGL thread
   void swap(void){
     if (USE_GL_LOCK)
@@ -1066,7 +1066,8 @@ private:
     if ( openglContext()->hasDoubleBuffer()) {
       openglContext()->swapBuffers();
 
-      prevent_high_cpu_in_swap();
+      if (doHighCpuOpenGlProtection())
+        prevent_high_cpu_in_swap();
     }
 
     if (juce_lock != NULL)
