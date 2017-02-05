@@ -148,7 +148,7 @@ void OS_PutMidi(MidiPortOs port,
   //printf("current time: %f\n",(float)RtMidiOut::getCurrentTime(myport->midiout->getCurrentApi()));
 
   {
-    radium::ScopedMutex lock(&g_midi_out_mutex); // Sometimes, the GUI wants to send midi signals, and that's why we need a lock here.
+    radium::ScopedMutex lock(g_midi_out_mutex); // Sometimes, the GUI wants to send midi signals, and that's why we need a lock here.
     //                                              Don't think priority inheritance should be a big issue when the user drags sliders, etc. (why not use the player lock?)
 
 

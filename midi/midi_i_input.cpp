@@ -212,7 +212,7 @@ static void record_midi_event(const symbol_t *port_name, const uint32_t msg){
 
     if (is_fx){
       
-      radium::ScopedMutex lock(&g_midi_learns_mutex); // <- Fix. Timing can be slightly inaccurate if adding/removing midi learn while recording, since MIDI_add/remove_midi_learn obtains the player lock while holding the g_midi_learns_mutex.
+      radium::ScopedMutex lock(g_midi_learns_mutex); // <- Fix. Timing can be slightly inaccurate if adding/removing midi learn while recording, since MIDI_add/remove_midi_learn obtains the player lock while holding the g_midi_learns_mutex.
     
       for (auto midi_learn : g_midi_learns) {
         
@@ -317,7 +317,7 @@ public:
         return;
             
       {
-        radium::ScopedMutex lock(&g_midi_event_mutex);
+        radium::ScopedMutex lock(g_midi_event_mutex);
         
       // Schedule "Seq" painting
       if (ATOMIC_GET(root->song_state_is_locked) == true){ // not totally tsan proof, but we use the _r0 versions of ListFindElement below, so it's pretty safe.
@@ -508,7 +508,7 @@ void MIDI_insert_recorded_midi_events(void){
   ATOMIC_SET(root->song_state_is_locked, false);
          
   {
-    radium::ScopedMutex lock(&g_midi_event_mutex);
+    radium::ScopedMutex lock(g_midi_event_mutex);
     printf("MIDI_insert_recorded_midi_events called %d\n", g_recorded_midi_events.size());
     if (g_recorded_midi_events.size() == 0)
       goto exit;
@@ -519,7 +519,7 @@ void MIDI_insert_recorded_midi_events(void){
 
 
   {
-    radium::ScopedMutex lock(&g_midi_event_mutex);
+    radium::ScopedMutex lock(g_midi_event_mutex);
     radium::ScopedUndo scoped_undo;
 
     struct Tracker_Windows *window = root->song->tracker_windows;
@@ -610,7 +610,7 @@ void MIDI_add_midi_learn(MidiLearn *midi_learn){
   g_midi_learns.ensure_there_is_room_for_one_more_without_having_to_allocate_memory();
 
   {
-    radium::ScopedMutex lock(&g_midi_learns_mutex); // obtain this lock first to avoid priority inversion
+    radium::ScopedMutex lock(g_midi_learns_mutex); // obtain this lock first to avoid priority inversion
     PLAYER_lock();{
       g_midi_learns.push_back(midi_learn);
     }PLAYER_unlock();
@@ -628,7 +628,7 @@ void MIDI_remove_midi_learn(MidiLearn *midi_learn, bool show_error_if_not_here){
   
   for(auto midi_learn2 : g_midi_learns)
     if (midi_learn == midi_learn2) {
-      radium::ScopedMutex lock(&g_midi_learns_mutex); // obtain this lock first to avoid priority inversion
+      radium::ScopedMutex lock(g_midi_learns_mutex); // obtain this lock first to avoid priority inversion
       PLAYER_lock();{
         g_midi_learns.remove(midi_learn2);
       }PLAYER_unlock();
@@ -890,7 +890,7 @@ void MIDI_HandleInputMessage(void){
  *************************************************************/
 
 void MIDI_input_init(void){
-  radium::ScopedMutex lock(&g_midi_event_mutex);
+  radium::ScopedMutex lock(g_midi_event_mutex);
     
   MIDI_set_record_accurately(SETTINGS_read_bool("record_midi_accurately", true));
   MIDI_set_record_velocity(SETTINGS_read_bool("always_record_midi_velocity", false));

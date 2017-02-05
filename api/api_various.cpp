@@ -1776,21 +1776,34 @@ void setHighCpuOpenGlProtection(bool doit){
 
 //
 
-static DEFINE_ATOMIC(bool, g_lock_juce_when_swapping_opengl) = -1;
+static DEFINE_ATOMIC(int, g_lock_juce_when_swapping_opengl) = -1;
 
 bool doLockJuceWhenSwappingOpenGL(void){
   int g = ATOMIC_GET(g_lock_juce_when_swapping_opengl);
   
   if (g == -1){
-    g = SETTINGS_read_bool("lock_juce_when_swapping_opengl", false) ? 1 : 0;
+    g = bool_to_int(SETTINGS_read_bool("lock_juce_when_swapping_opengl", false));
+
     ATOMIC_SET(g_lock_juce_when_swapping_opengl, g);
+    if (g==1){
+      if (SETTINGS_read_bool("show_lock_juce_when_swapping_opengl_warning", true)) {
+        vector_t v = {};
+        VECTOR_push_back(&v,"OK");
+        int dont_show = VECTOR_push_back(&v,"Don't show this message again.");
+
+        int result = GFX_Message(&v, "Warning: the \"Don't run plugin GUI code when swapping OpenGL\" option is probably not necessary anymore.\n\nIt might also reduce graphical performance.");
+
+        if (result==dont_show)
+          SETTINGS_write_bool("show_lock_juce_when_swapping_opengl_warning", false);
+      }
+    }
   }
 
-  return g==1 ? true : false;
+  return int_to_bool(g);
 }
 
 void setLockJuceWhenSwappingOpenGL(bool doit){
-  ATOMIC_SET(g_lock_juce_when_swapping_opengl, doit ? 1 : 0);
+  ATOMIC_SET(g_lock_juce_when_swapping_opengl, bool_to_int(doit));
   SETTINGS_write_bool("lock_juce_when_swapping_opengl", doit);
 }
 
