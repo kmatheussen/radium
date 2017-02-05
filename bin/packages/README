@@ -1,0 +1,26 @@
+
+!!! PLEASE DON'T ATTEMPT NOT TO USE ANY OF THE PACKAGES IN THIS DIRECTORY !!!
+
+Replacing anything in here will MOST LIKELY make Radium UNSTABLE in (more or less) subtle ways. 
+There are VERY good reasons for all of the packages included here.
+
+Here are the reasons:
+
+1. They are modified versions of upstream. (faust2, fluidsynth, gc/libatomic, libgig, libpd, qhttpserver, QScintilla, and Visualization-Library)
+   (Yes, patches have been provided upstream.)
+2. Almost no, or no, distribution provide the package (faust2, libpd, qhttpserver, qtstyleplugins, s7, and Visualization-Library).
+   (Most of these overlap with the packages in point 1)
+3. Needs to be compiled with custom options. (s7, Visualization-Library)
+4. It is a newer version that not all distributions use, but must be used. (libxcb/xcb-proto).
+
+In the case of libxcb, linking to older versions of libxcb.so WILL CRASH Radium
+for many users. Using an older version of libxcb is probably the most
+common reason Radium has crashed. And I know this because I get an email
+with backtrace every time a user presses the "Send" button in the crash reporter window, which pops up when Radium crashes.
+After including libxcb with the program, all crash reports caused by libxcb suddenly disappeared.
+But if you know that the system version of libxcb is at least 1.12, this package can be safely removed. (Although, what's the point?)
+
+In addition, there are several packages included with Radium in other directories than this one. (with good reasons for those as well)
+For some reason, though, people are hung up on the packages included here, specifically. Could it be because of the name of the directory and the visibility of it?
+Perhaps I should hid this directory a little bit so that these angry people wouldn't see it? This type of irrational angryness is probably not good for health.
+

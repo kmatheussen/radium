@@ -2284,7 +2284,7 @@ static char g_static_char2 = 5;
 char g_char;
 char g_char2 = 6;
 
-static bool char_inside(char *a, char *b, char*c){
+static bool char_inside(const char *a, const char *b, const char *c) {
   if (b >= a && b < c)
     return true;
   else
