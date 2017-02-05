@@ -202,9 +202,6 @@ static void start_player(int playtype, int64_t abstime, Place *place, struct Blo
   ATOMIC_ADD(pc->play_id, 1);
 
   
-  pc->playtype = playtype;
-
-  
   if (playtype==PLAYSONG) {
 
     R_ASSERT(block==NULL);
@@ -217,7 +214,7 @@ static void start_player(int playtype, int64_t abstime, Place *place, struct Blo
     startdata.seqtrack = seqtrack;
     startdata.seqblock = seqblock;
     
-    start_seqtrack_song_scheduling(&startdata);
+    start_seqtrack_song_scheduling(&startdata, playtype);
     
   } else {
 
@@ -229,10 +226,12 @@ static void start_player(int playtype, int64_t abstime, Place *place, struct Blo
     R_ASSERT_RETURN_IF_FALSE(block!=NULL);
     R_ASSERT_RETURN_IF_FALSE(place!=NULL);
     
-    start_seqtrack_block_scheduling(block, *place);
+    start_seqtrack_block_scheduling(block, *place, playtype);
     
   }
 
+  root->song->tracker_windows->must_redraw_editor = true; // Because we have set new curr_seqblock values.
+  
   // We can set pc->absabstime here without getting a tsan hit since pc->absabstime is neither read nor written to in a player thread while the player is stopped.
   if (playtype==PLAYBLOCK)
     pc->absabstime = abstime;
