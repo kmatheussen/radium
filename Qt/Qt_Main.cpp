@@ -1455,8 +1455,10 @@ protected:
     }
 
     if (is_called_every_ms(50)){
-      if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false))
+      if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false)){
+        printf("          (remake called from qt main)\n");
         evalScheme("(remake-mixer-strips)");
+      }
     }
 
     if (is_called_every_ms(100))
@@ -2282,7 +2284,7 @@ static char g_static_char2 = 5;
 char g_char;
 char g_char2 = 6;
 
-static bool char_inside(char *a, char *b, char*c){
+static bool char_inside(const char *a, const char *b, const char *c) {
   if (b >= a && b < c)
     return true;
   else

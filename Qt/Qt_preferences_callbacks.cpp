@@ -400,6 +400,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       eraseEstimatedVBlankInterval->setText(vblankbuttontext);
 #endif
       
+      high_cpu_protection->setChecked(doHighCpuOpenGlProtection());
+      
       bool draw_in_separate_process = SETTINGS_read_bool("opengl_draw_in_separate_process",false);//GL_using_nvidia_card());
       draw_in_separate_process_onoff->setChecked(draw_in_separate_process);
       
@@ -547,6 +549,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       else
         record_velocity_off->setChecked(true);
 
+      split_into_monophonic_tracks_after_recording->setChecked(doSplitIntoMonophonicTracksAfterRecordingFromMidi());
+
       use_current_track_midi_channel->setChecked(doUseTrackChannelForMidiInput());
         
       while(midi_input_layout->count() > 0)
@@ -626,6 +630,11 @@ public slots:
     }
   }
 
+  void on_high_cpu_protection_toggled(bool val){
+    if (_initing==false)
+      setHighCpuOpenGlProtection(val);
+  }
+  
   void on_draw_in_separate_process_onoff_toggled(bool val){
     if (_initing==false)
       SETTINGS_write_bool("opengl_draw_in_separate_process",val);
@@ -1043,6 +1052,11 @@ public slots:
       MIDI_set_record_velocity(val);
   }
 
+  void on_split_into_monophonic_tracks_after_recording_toggled(bool val){
+    if (_initing==false)
+      setSplitIntoMonophonicTracksAfterRecordingFromMidi(val);
+  }
+  
   void on_use_current_track_midi_channel_toggled(bool val){
     if (_initing==false)
       setUseTrackChannelForMidiInput(val);

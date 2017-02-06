@@ -1,3 +1,25 @@
+Changes 4.4.5 -> 4.4.6:
+* Don't scroll editor when using the mouse wheel on various text fields,
+  such as changing various ratios or a piano roll interval.
+* Fix tooltip for the piano roll header.
+* Fix a quite rare bug in mixer strip that prevented it from showing
+* Fix undo/redo when splitting a track into monophonic tracks
+* Add option to automatically split recorded tracks into monophonic
+  tracks after recording.
+* Never swap OpenGL while creating or deleting a plugin or a plugin
+  window. Could fix some rare crashes if using a semi-buggy GFX driver
+  with plugins using OpenGL.
+* Option to turn off the high CPU usage check in the OpenGL thread.
+* Make sure the solo button in the mixer strips is updated when pressing
+  the solo button in the instrument widget
+* Don't create undo when changing solo
+* Improved spinlock implementation
+* Many thread sanitizer fixes. Might fix subtle bugs.
+* Compile using boost 1.63 by default
+* API: numSelectedInstruments/instrumentIsSelected
+
+
+
 Changes 4.4.4 -> 4.4.5:
 * Fix crash when loading song that has a sequencer track with no
   sequencer blocks.

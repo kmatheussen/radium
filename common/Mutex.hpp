@@ -111,16 +111,16 @@ public:
 };
 
 struct ScopedMutex{
-  Mutex *mutex;
+  Mutex &mutex;
   
-  ScopedMutex(Mutex *mutex)
+  ScopedMutex(Mutex &mutex)
     : mutex(mutex)
   {
-    mutex->lock();
+    mutex.lock();
   }
 
   ~ScopedMutex(){
-    mutex->unlock();
+    mutex.unlock();
   }
 };
 

@@ -219,6 +219,17 @@ enum{
 
 #include "validatemem_proc.h"
 
+static inline int bool_to_int(bool val){
+  return val==true ? 1 : 0;
+}
+
+static inline bool int_to_bool(int value){
+  if (value == 0)
+    return false;
+
+  R_ASSERT(value==1);
+  return true;
+}
 
 static inline int64_t scale_int64(int64_t x, int64_t x1, int64_t x2, int64_t y1, int64_t y2){
   int64_t diff = x2-x1;

@@ -191,6 +191,29 @@ void setInstrumentForTrack(int64_t instrument_id, int tracknum, int blocknum, in
 }
 
 
+// 
+
+static bool g_split_into_monophonic_tracks_after_recording = false;
+
+bool doSplitIntoMonophonicTracksAfterRecordingFromMidi(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_split_into_monophonic_tracks_after_recording = SETTINGS_read_bool("split_into_monophonic_tracks_after_recording", false);
+    has_inited = true;
+  }
+
+  return g_split_into_monophonic_tracks_after_recording;
+}
+
+void setSplitIntoMonophonicTracksAfterRecordingFromMidi(bool doit){
+  g_split_into_monophonic_tracks_after_recording = doit;
+  SETTINGS_write_bool("split_into_monophonic_tracks_after_recording", doit);
+}
+
+
+//
+
 DEFINE_ATOMIC(bool, g_use_track_channel_for_midi_input) = true;
 
 bool doUseTrackChannelForMidiInput(void){
@@ -459,6 +482,7 @@ void setInstrumentColor(const_char *colorname, int64_t instrument_id){
     CHIP_update(plugin);
   }
 
+  printf("       Remake: setInstrumentColor\n");
   remakeMixerStrips();
 
   GFX_ScheduleRedraw();
@@ -738,6 +762,32 @@ void autopositionInstrument(int64_t instrument_id){
   CHIP_autopos(patch);
 }
 
+int numSelectedInstruments(void){
+  int ret;
+  
+  VECTOR_FOR_EACH(struct Patch *patch, &get_audio_instrument()->patches){
+    struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+    if (plugin!=NULL && ATOMIC_GET(plugin->is_selected))
+      ret++;
+  }END_VECTOR_FOR_EACH;
+
+  return ret;
+}
+
+bool instrumentIsSelected(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return false;
+  }  
+
+  return ATOMIC_GET(plugin->is_selected);
+}
+
 int getNumInAudioConnections(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -964,8 +1014,10 @@ void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool
   if (error!=NULL)
     handleError("Could not find audio connection between instrument %d and instrument %d", source_id, dest_id);
   else
-    if (remake_mixer_strips)
+    if (remake_mixer_strips){
+      printf("       Remake: setAudioConnectionGain\n");
       remakeMixerStrips();
+    }
 }
 
 

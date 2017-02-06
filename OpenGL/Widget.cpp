@@ -1026,10 +1026,8 @@ private:
 
     if (time < vblank/2){
       if (_swap_timer_counter > 4){
-        usleep(40*1000 * vblank);
-#if !defined(RELEASE)
         printf("OpenGL quickswapsleeping. Counter: %d. Time: %d. Vblank: %f\n",(int)_swap_timer_counter, time, vblank);
-#endif
+        usleep(40*1000 * vblank);
         _swap_timer_counter = 0;
       }
     }else{
@@ -1038,7 +1036,7 @@ private:
 
     _swap_timer.restart();    
   }
-
+  
   // OpenGL thread
   void swap(void){
     if (USE_GL_LOCK)
@@ -1051,9 +1049,15 @@ private:
     
     // Swap to the newly rendered buffer
     if ( openglContext()->hasDoubleBuffer()) {
-      openglContext()->swapBuffers();
 
-      prevent_high_cpu_in_swap();
+      if (juce_lock!=NULL){
+        radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
+        openglContext()->swapBuffers();
+      }else
+        openglContext()->swapBuffers();
+
+      if (doHighCpuOpenGlProtection())
+        prevent_high_cpu_in_swap();
     }
 
     if (juce_lock != NULL)
@@ -1149,7 +1153,7 @@ public:
           bool must_swap;
           
           {
-            radium::ScopedMutex lock(&draw_mutex);
+            radium::ScopedMutex lock(draw_mutex);
             
             if (canDraw()) {
               must_swap = draw();
@@ -1560,7 +1564,8 @@ static void setup_widget(QWidget *parent){
 
 QWidget *GL_create_widget(QWidget *parent){
 
-  doLockJuceWhenSwappingOpenGL(); // Load value from disk so the function can be called from the opengl thread later.
+  doHighCpuOpenGlProtection(); // Load value from disk so the function can be called from the opengl thread later.
+  doLockJuceWhenSwappingOpenGL(); // same here
     
 #if defined(FOR_MACOSX)
   // doesn't work.
@@ -1658,7 +1663,7 @@ QWidget *GL_create_widget(QWidget *parent){
       if (SETTINGS_read_bool("show_catalyst_gfx_message_during_startup", true)) {
         vector_t v = {};
         VECTOR_push_back(&v,"Ok");
-        VECTOR_push_back(&v,"Don't show this message again");
+        int dont_show = VECTOR_push_back(&v,"Don't show this message again");
         
         int result = GFX_Message(&v,
                                  "AMD Catalyst OpenGL driver on Linux detected."
@@ -1669,7 +1674,7 @@ QWidget *GL_create_widget(QWidget *parent){
                                  "<p>"
                                  "If you notice choppy graphics, it might help to overclock the graphics card: <A href=\"http://www.overclock.net/t/517861/how-to-overclocking-ati-cards-in-linux\">Instructions for overclocking can be found here</A>. If Radium crashes when you show or hide windows, it might help to upgrade driver to the latest version, or (better) use the Gallium AMD OpenGL driver instead, or (even better) get an Nvidia card."
                                  );
-        if (result==1)
+        if (result==dont_show)
           SETTINGS_write_bool("show_catalyst_gfx_message_during_startup", false);
 
         GL_set_pause_rendering_on_off(true);

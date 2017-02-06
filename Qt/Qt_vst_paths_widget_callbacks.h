@@ -129,7 +129,7 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
     }
   }
 
-  void lock_juce_when_swapping_onoff_toggled(bool val){
+  void on_lock_juce_when_swapping_onoff_toggled(bool val){
     if (_is_updating_widgets == false)
       setLockJuceWhenSwappingOpenGL(val);
   }

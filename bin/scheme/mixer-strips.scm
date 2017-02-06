@@ -852,7 +852,7 @@
     (for-each (lambda (instrument-id)
                 (when (and (not (= instrument-id except))
                            (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
-                  (<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
+                  ;;(<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
                   (<ra> :set-instrument-effect instrument-id "System Solo On/Off" 0)
                   ))
               (get-all-audio-instruments)))
@@ -889,7 +889,7 @@
                                        (lambda (is-selected)
                                          (undo-block
                                           (lambda ()
-                                            (<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
+                                            ;;(<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
                                             (<ra> :set-instrument-effect instrument-id "System Solo On/Off" (if is-selected 1.0 0.0))
                                             (if (<ra> :ctrl-pressed)
                                                 (turn-off-all-solo instrument-id)))))
@@ -901,6 +901,7 @@
   
   (add-gui-effect-monitor (cadr solo) instrument-id "System Solo On/Off"
                           (lambda ()
+                            ;;(c-display "Solo changed for" instrument-id)
                             ((car solo) (get-soloed))))
 
   (<gui> :add gui (cadr mute) x1 y1 middle y2)
@@ -1282,7 +1283,7 @@
   ;;(define mixer-strips (<gui> :widget 800 800))
   ;;(define mixer-strips (<gui> :horizontal-scroll)) ;;widget 800 800))
   (define mixer-strips (<gui> :scroll-area #t #t))
-  
+
   ;;(<gui> :set-layout-spacing mixer-strips strip-separator-width 0 0 0 0)
   
   ;;(define x1 0)
@@ -1358,7 +1359,7 @@
                   (begin
                     (set! x1 0)
                     (set! y1 y2)
-                    (set! y2 (+ y2 (floor (/ (- heigth 5) num-rows))))
+                    (set! y2 (+ y2 (floor (/ (- height 5) num-rows))))
                     (set! mixer-strip-num 0))
                   (set! x1 (+ x2 strip-separator-width))))
             (sort-instruments-by-mixer-position

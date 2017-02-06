@@ -476,6 +476,7 @@ float CHIP_get_pos_y(const struct Patch *patch){
 
 void CHIP_set_pos(Chip *chip, float x, float y){
   chip->setPos(x,y);
+  printf("       Remake: CHIP_set_pos\n");
   remakeMixerStrips();
 }
 
@@ -525,6 +526,7 @@ void CHIP_kick_left(Chip *chip){
     (*chip)->setPos(pos.x()-grid_width, pos.y());
   }
 
+  printf("       Remake: CHIP_kick_left\n");
   remakeMixerStrips();
 }
 
@@ -568,7 +570,8 @@ void CHIP_kick_right(Chip *chip){
     ADD_UNDO(ChipPos_CurrPos((struct Patch*)patch));
     (*chip)->setPos(pos.x()+grid_width, pos.y());
   }
-  
+
+  printf("       Remake: CHIP_kick_right\n");
   remakeMixerStrips();
 }
 
@@ -654,6 +657,7 @@ void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   connection->update_position();
   scene->addItem(connection);
 
+  printf("       Remake: CHIP_connect_chips\n");
   remakeMixerStrips();
 }
 
@@ -1440,18 +1444,18 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
               SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
               if (thispatch != patch && plugin!=NULL && ATOMIC_GET(plugin->solo_is_on)) {
                 int num_effects = plugin->type->num_effects;
-                ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_SOLO_ONOFF));
+                //ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_SOLO_ONOFF));
                 PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, 0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-                CHIP_update(plugin);
+                //CHIP_update(plugin);
               }
             }
           }
           
-          ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
+          //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
           
           PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-          CHIP_update(plugin);
-          GFX_update_instrument_widget((struct Patch*)patch);
+          //CHIP_update(plugin);
+          //GFX_update_instrument_widget((struct Patch*)patch);
           
         }Undo_Close();        
 
@@ -1481,7 +1485,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
                 int num_effects = plugin->type->num_effects;
                 ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_VOLUME_ONOFF));
                 PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, 1, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-                CHIP_update(plugin);
+                //CHIP_update(plugin);
               }
             }
           }
@@ -1489,8 +1493,8 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
           ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_VOLUME_ONOFF));
           
           PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-          CHIP_update(plugin);
-          GFX_update_instrument_widget((struct Patch*)patch);
+          //CHIP_update(plugin);
+          //GFX_update_instrument_widget((struct Patch*)patch);
 
         }Undo_Close();
         

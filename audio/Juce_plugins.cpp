@@ -572,12 +572,18 @@ namespace{
     }
 
     ~PluginWindow(){
-      delete editor;
-      data->window = NULL;
-      V_free((void*)title);
+      GL_lock();{
 
-      struct SoundPlugin *plugin = data->listener.plugin;
-      ATOMIC_SET(plugin->auto_suspend_suspended, false);
+        radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
+    
+        delete editor;
+        data->window = NULL;
+        V_free((void*)title);
+        
+        struct SoundPlugin *plugin = data->listener.plugin;
+        ATOMIC_SET(plugin->auto_suspend_suspended, false);
+
+      }GL_unlock();
     }
 
     /*
@@ -1040,6 +1046,8 @@ static bool gui_is_visible(struct SoundPlugin *plugin){
     return data->window->isVisible();
 }
 
+radium::Mutex JUCE_show_hide_gui_lock;
+
 static void show_gui(struct SoundPlugin *plugin){
 #if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
@@ -1047,10 +1055,12 @@ static void show_gui(struct SoundPlugin *plugin){
 
   Data *data = (Data*)plugin->data;
 
-  GL_lock();{
+  if (data->window==NULL) {
 
-    if (data->window==NULL) {
+    GL_lock();{
 
+      radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
+      
       AudioProcessorEditor *editor = data->audio_instance->createEditor(); //IfNeeded();
       
       if (editor != NULL) {
@@ -1059,10 +1069,10 @@ static void show_gui(struct SoundPlugin *plugin){
         data->window = new PluginWindow(title, data, editor);
       }
 
-    }
-    
-  }GL_unlock();
+    }GL_unlock();
 
+  }
+  
 }
 
 
@@ -1073,12 +1083,8 @@ static void hide_gui(struct SoundPlugin *plugin){
   
   Data *data = (Data*)plugin->data;
 
-  GL_lock();{
-
-    //data->window->setVisible(false);
-    delete data->window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
-
-  }GL_unlock();
+  //data->window->setVisible(false);
+  delete data->window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
 }
 
 
@@ -1104,21 +1110,25 @@ static AudioPluginInstance *create_audio_instance(const TypeData *type_data, flo
   printf("  Trying to load -%s-. Exists? %d. Identifier: -%s-\n", STRING_get_chars(type_data->file_or_identifier),exists?1:0,description.createIdentifierString().toRawUTF8());
   //getchar();
 
-  AudioPluginInstance *instance = formatManager.createPluginInstance(description, sample_rate, block_size, errorMessage);
-  
-  if (instance==NULL){
-    GFX_Message(NULL, "Unable to open %s plugin %s: %s\n",description.pluginFormatName.toRawUTF8(), description.fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
-    return NULL;
-  }
-
   {
-  #if CUSTOM_MM_THREAD
-    const MessageManagerLock mmLock;
+    radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
+    
+    AudioPluginInstance *instance = formatManager.createPluginInstance(description, sample_rate, block_size, errorMessage);
+    
+    if (instance==NULL){
+      GFX_Message(NULL, "Unable to open %s plugin %s: %s\n",description.pluginFormatName.toRawUTF8(), description.fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
+      return NULL;
+    }
+    
+    {
+#if CUSTOM_MM_THREAD
+      const MessageManagerLock mmLock;
 #endif
-    instance->prepareToPlay(sample_rate, block_size);
-  }
+      instance->prepareToPlay(sample_rate, block_size);
+    }
   
-  return instance;
+    return instance;
+  }
 }
 
 
@@ -1328,6 +1338,8 @@ namespace{
     }
 
     void timerCallback() override {
+      radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
+
       fprintf(stderr, "    DelayDeleteData: Deleting.\n");
       delete data->audio_instance;
       delete data;

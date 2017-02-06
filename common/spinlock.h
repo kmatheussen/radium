@@ -53,8 +53,6 @@
 #else // if 0 -> !0
 
 
-
-
 #ifdef __cplusplus
 #  define DEFINE_SPINLOCK_NOINIT(name) \
   pthread_spinlock_t name = {}

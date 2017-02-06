@@ -23,4 +23,9 @@ void PLUGINHOST_save_fxp(struct SoundPlugin *plugin, wchar_t *filename);
 
 void PLUGINHOST_init(void);
 
+#ifdef __cplusplus
+#include "../common/Mutex.hpp"
+extern radium::Mutex JUCE_show_hide_gui_lock;
+#endif
+
 #endif  // JUCE_PLUGIN_H_INCLUDED

@@ -59,6 +59,8 @@ public:
     window->must_redraw = true;
     
     setText(ratio.toString());
+    
+    qwheelevent->accept();
   }
   
 };
@@ -92,6 +94,8 @@ public:
 
     pushValuesToRoot(ratio);
     setText(ratio.toString());
+    
+    qwheelevent->accept();
   }
   
 };
@@ -107,7 +111,7 @@ public:
   }
 
   virtual void wheelEvent(QWheelEvent *qwheelevent) {
-    printf("Got note name wheel event\n");
+    //printf("Got note name wheel event\n");
 
     int keynum = getNoteNameValue((char*)text().toUtf8().constData());
     if (keynum!=-1) {
@@ -119,6 +123,8 @@ public:
 
     setText(getNoteName3(keynum));
     editingFinished();
+
+    qwheelevent->accept();
   }
   
 };
@@ -152,6 +158,8 @@ public:
 
     pushValuesToRoot(ratio);
     setText(ratio.toString());
+
+    qwheelevent->accept();
   }
   
 };
@@ -189,6 +197,8 @@ public:
         
     pushValuesToRoot(ratio);
     setText(ratio.toString());
+
+    qwheelevent->accept();
   }
   
 };
