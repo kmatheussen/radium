@@ -4417,9 +4417,9 @@
                         :Get-x2 (lambda (_)
                                   (get-seqnav-width))
                         :Get-min-value (lambda (_)
-                                         0)
+                                         (<ra> :get-seqnav-x1))
                         :Get-max-value (lambda (_)
-                                         (get-seqnav-width))
+                                         (+ (<ra> :get-seqnav-x1) (get-seqnav-width)))
                         ;;:Get-x (lambda (_)
                         ;;         (+ org-x (- (<ra> :get-seqnav-left-size-handle-x1)
                         ;;                     org-seqnav-left)))
@@ -4443,7 +4443,7 @@
                                 (define diff (- new-start-time2 old-start-time))
                                 (define new-end-time (+ end-time diff))
                                 (define new-end-time2 (min song-length (max (1+ new-start-time2) new-end-time)))
-                        
+
                                 (<ra> :set-sequencer-visible-start-time new-start-time2)
                                 (<ra> :set-sequencer-visible-end-time new-end-time2))
                                 
