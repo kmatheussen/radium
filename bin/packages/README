@@ -38,21 +38,25 @@ Even packages included in Radium have themselves other packages included (Visual
 Regarding negative feedback I have gotten about the content of this directory from package distributors
 --------------------------------------------------------------------------------------------------------
 First of all, there are several packages included with Radium in other directories than this one (with good reasons for those as well).
-But for some reason, people are hung up on the specific packages included in this directory. Could it be because of the
-name of the directory and the visibility of it? Perhaps I should hide this directory a little bit so that these angry
-people wouldn't see it? Anyway, if you are making a Radium package for a Linux distribution, it shouldn't be too hard
-without getting angry. Just do the following:
+But for some reason, people are hung up on the specific packages included in this directory. Could it be because
+the explicit step called "make packages" in the build process would make it seem like the author of Radium
+tries to step on the toes of package managers? Well, that's not my intention. I guess the problem would be solved if there wasn't
+an explicit "make packages" step, and instead "make packages" was baked into the "./build_linux.sh" script?
+Because that's how most builds handle included packages, although it has several disadvantages. But I guess
+keeping piece is more important. Anyway, if you are making a Radium package for Linux distribution,
+it shouldn't be too hard without getting angry. Just do the following:
 
 BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 make packages
 BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 ./build_linux.sh -j8
-rm -fr /opt/radium
 cp -a bin /opt/radium
-ln -s /opt/radium/radium /usr/bin/radium
+echo '#!/bin/sh' >/usr/bin/radium
+echo QT_QPA_PLATFORM_PLUGIN_PATH=`$(RADIUM_QT_VERSION=5 ./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS` /opt/radium/radium >/usr/bin/radium
+chmod a+rx /usr/bin/radium
 
 And if "make packages" or "./build_linux.sh" fail, please send me a bug report instead of complaining publicly about the build system of Radium.
 
 There's no rational reason to do anything else (except that I would prefer that you distribute the official binary demo packages instead,
-that would really save you a lot of work). There's no reason to try using system versions of things you find deep into the Radium source code
+which would also save you a lot of work). There's no reason to try using system versions of things you find deep into the Radium source code
 that might resemble something your Linux distribution already provides. It will probably make Radium (more) unstable if you attempt to do so.
 And there's no need to try to minimize the size of the package by removing apparently unused files. Computers have big harddrives these
 days, and the same goes for the web servers. If your distribution has a rule against including modified versions of already existing

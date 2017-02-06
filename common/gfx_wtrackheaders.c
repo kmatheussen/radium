@@ -62,7 +62,31 @@ void DrawWTrackNames(
                   PAINT_BUFFER);
 
   GFX_CancelMixColor(window); // in case track is not visible and the above filledbox call is not executed, the mixcolor will be set for the next paint operation instead. Bad stuff, caused by radium originally being written for amigaos, where painting outside the visible area would cause memory corruption (instead of being ignored). Unfortunately, the cliprect system was wrongly put into common/ instead of amiga/.
-  
+
+  // Track border
+  if (endtrack > starttrack){    
+    struct WTracks *wtrack = NextWTrack(wtrack1);
+
+    while(wtrack != NULL){
+      //for(int i=0;i<num_tracks;i++){
+      //printf("%d: %d\n", i, draw_border[i]);
+
+      //struct WTracks *next = NextWTrack(wtrack2);
+
+      printf("    Drawing track header border for track %d\n", wtrack->l.num);
+      
+      GFX_Line(window,TRACK_SEPARATOR2B_COLOR_NUM,
+               wtrack->x, wtrack->y,
+               wtrack->x, wtrack->panonoff.y1 - 1,
+               PAINT_BUFFER);
+
+      if (wtrack==wtrack2)
+        break;
+      
+      wtrack = NextWTrack(wtrack);
+    }
+  }
+
   // Text
   GFX_SetClipRect(window,x1, 0, x2, wblock->t.y1, PAINT_BUFFER);
   {
@@ -104,35 +128,46 @@ static void DrawAllWTrackNames(
                                struct WBlocks *wblock
                                )
 {  
-  struct WTracks *wtrack1 = (struct WTracks *)ListFindElement1(&wblock->wtracks->l,wblock->left_track);
-  if (wtrack1==NULL)
-    return;
+  //int num_tracks = ListFindNumElements1(&wblock->wtracks->l);
+  //bool *draw_border = alloca(sizeof(bool) * num_tracks);
+  //memset(draw_border, 0, sizeof(bool) * num_tracks);
 
-  int tracknum1 = wtrack1->l.num;
+  {
+    const struct WTracks *wtrack1 = (struct WTracks *)ListFindElement1(&wblock->wtracks->l,wblock->left_track);
+    if (wtrack1==NULL)
+      return;
+    
+    int tracknum1 = wtrack1->l.num;
+    
+    int channelnum1 = ATOMIC_GET(wtrack1->track->midi_channel);
+    struct Patch   *patch1   = wtrack1->track->patch;
+    struct WTracks *wtrack2  = NextWTrack(wtrack1);
+    int tracknum2            = tracknum1;
 
-  int channelnum1 = ATOMIC_GET(wtrack1->track->midi_channel);
-  struct Patch   *patch1   = wtrack1->track->patch;
-  struct WTracks *wtrack2  = NextWTrack(wtrack1);
-  int tracknum2            = tracknum1;
-  
-  for(;;){
-    int channelnum2 = wtrack2==NULL ? 0 : ATOMIC_GET(wtrack2->track->midi_channel);
-    if (wtrack2==NULL || wtrack2->track->patch==NULL || patch1==NULL || wtrack2->track->patch != patch1 || channelnum2 != channelnum1){
+    for(;;){
+      int channelnum2 = wtrack2==NULL ? 0 : ATOMIC_GET(wtrack2->track->midi_channel);
+    
+      if (wtrack2==NULL || wtrack2->track->patch==NULL || patch1==NULL || wtrack2->track->patch != patch1 || channelnum2 != channelnum1){
       
-      DrawWTrackNames(window, wblock, tracknum1, tracknum2);
-      tracknum1 = tracknum2 = tracknum2+1;
-      channelnum1 = channelnum2;
-      patch1 = wtrack2==NULL ? NULL : wtrack2->track->patch;
+        DrawWTrackNames(window, wblock, tracknum1, tracknum2);
+        tracknum1 = tracknum2 = tracknum2+1;
+        channelnum1 = channelnum2;
+        patch1 = wtrack2==NULL ? NULL : wtrack2->track->patch;
       
-    } else {
-      tracknum2++;
-    }
+      } else {
+        tracknum2++;
+      }
 
-    if (wtrack2==NULL)
-      break;
-    else
+      if (wtrack2==NULL)
+        break;
+
+      //if (tracknum2 - tracknum1 >= 1)
+      //  draw_border[wtrack2->l.num] = true;
+    
       wtrack2 = NextWTrack(wtrack2);
+    }
   }
+  
 
 }
 
