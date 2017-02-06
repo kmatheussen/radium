@@ -73,7 +73,7 @@ void DrawWTrackNames(
 
       //struct WTracks *next = NextWTrack(wtrack2);
 
-      printf("    Drawing track header border for track %d\n", wtrack->l.num);
+      //printf("    Drawing track header border for track %d\n", wtrack->l.num);
       
       GFX_Line(window,TRACK_SEPARATOR2B_COLOR_NUM,
                wtrack->x, wtrack->y,
