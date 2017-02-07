@@ -193,7 +193,9 @@ static bool Load(const wchar_t *filename){
         GFX_ShowProgressMessage("Preparing");
         
         Undo_start_ignoring_undo_operations();{
-          DLoadRoot(newroot);
+          GFX_DisablePainting();{
+            DLoadRoot(newroot);
+          }GFX_EnablePainting();
         }Undo_stop_ignoring_undo_operations();
 
         GFX_ShowProgressMessage("Loading all graphical data into memory");

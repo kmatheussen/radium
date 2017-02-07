@@ -1617,7 +1617,6 @@ void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
   OS_SYSTEM_ResetKeysUpDowns();
 }
 
-
 void assertRadiumInHomeDirectory(void){
   QString program_path = QCoreApplication::applicationDirPath();
 
