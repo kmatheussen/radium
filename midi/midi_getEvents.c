@@ -74,7 +74,7 @@ void MIDIGetEvents(
 	window->wblock->wtrack->track->patch=patch;
 	DrawWTrackHeader(window,window->wblock,window->wblock->wtrack);
       }
-      instrument->PP_Update(instrument,patch);
+      instrument->PP_Update(instrument,patch,false);
     }
     break;
   case MIDIEVENT_CHANGECURRENTPORT:

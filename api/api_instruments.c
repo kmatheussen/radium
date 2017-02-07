@@ -187,7 +187,7 @@ void setInstrumentForTrack(int64_t instrument_id, int tracknum, int blocknum, in
   
   wblock->block->is_dirty = true;
 
-  (*new_patch->instrument->PP_Update)(new_patch->instrument,new_patch);
+  (*new_patch->instrument->PP_Update)(new_patch->instrument,new_patch,false);
 }
 
 
@@ -235,7 +235,7 @@ void setUseTrackChannelForMidiInput(bool doit){
 
 int64_t createMIDIInstrument(char *name) {
   struct Patch *patch = PATCH_create_midi(name);
-  GFX_PP_Update(patch);
+  GFX_PP_Update(patch,false);
   return patch->id;
 }
 
@@ -434,7 +434,7 @@ void setInstrumentName(char *name, int64_t instrument_id) {
     PATCH_set_name(patch, name);
     patch->name_is_edited = true;
     
-    (*patch->instrument->PP_Update)(patch->instrument,patch);
+    (*patch->instrument->PP_Update)(patch->instrument,patch,false);
   }
 }
 
@@ -585,7 +585,7 @@ void setInstrumentVolume(int64_t instrument_id, float volume) {
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL) return NULL;
 
-  (*patch->instrument->PP_Update)(instrument,patch);
+  (*patch->instrument->PP_Update)(instrument,patch,false);
 }
 
 float getInstrumentVolume(int64_t instrument_id) {
@@ -616,7 +616,7 @@ void setInstrumentData(int64_t instrument_id, char *key, char *value) {
 
   patch->instrument->setPatchData(patch, key, value);
 
-  (*patch->instrument->PP_Update)(patch->instrument,patch);
+  (*patch->instrument->PP_Update)(patch->instrument,patch,false);
 }
 
 char *getInstrumentData(int64_t instrument_id, char *key) {
@@ -1211,7 +1211,7 @@ bool showInstrumentGui(int64_t instrument_id, bool show_instrument_window_if_not
     GFX_InstrumentWindowToFront();
 
   struct Instruments *instrument = get_audio_instrument();
-  instrument->PP_Update(instrument,patch);
+  instrument->PP_Update(instrument,patch,false);
   
   struct SoundPlugin *plugin = patch->patchdata;
   if (plugin != NULL){
@@ -1237,7 +1237,7 @@ bool hideInstrumentGui(int64_t instrument_id){
   //  GFX_InstrumentWindowToFront();
 
   //struct Instruments *instrument = get_audio_instrument();
-  //instrument->PP_Update(instrument,patch);
+  //instrument->PP_Update(instrument,patch,false);
   
   struct SoundPlugin *plugin = patch->patchdata;
   if (plugin != NULL){
@@ -1263,7 +1263,7 @@ bool instrumentGuiIsVisible(int64_t instrument_id){
   //  GFX_InstrumentWindowToFront();
 
   //struct Instruments *instrument = get_audio_instrument();
-  //instrument->PP_Update(instrument,patch);
+  //instrument->PP_Update(instrument,patch,false);
   
   struct SoundPlugin *plugin = patch->patchdata;
   if (plugin != NULL){
@@ -1293,7 +1293,7 @@ void setCurrentInstrument(int64_t instrument_id, bool show_instrument_window_if_
   if(show_instrument_window_if_not_visible)
     GFX_InstrumentWindowToFront();
 
-  patch->instrument->PP_Update(patch->instrument, patch);
+  patch->instrument->PP_Update(patch->instrument, patch,false);
 }
 
 void showInstrumentInfo(int64_t instrument_id){

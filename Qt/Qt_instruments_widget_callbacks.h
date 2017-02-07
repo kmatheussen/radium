@@ -53,6 +53,17 @@ public:
   }
 
 public slots:
+
+  /*
+  void on_tabs_currentChanged(int index){
+    Audio_instrument_widget *instrument = dynamic_cast<Audio_instrument_widget*>(tabs->widget(index));
+    if (instrument!=NULL){
+      if (instrument->_sample_requester_widget != NULL)
+        instrument->_sample_requester_widget->update_file_list(false, true);
+    }
+  }
+  */
+  
 #if 0
   void on_tabs_selected( const QString &tabname)
   {

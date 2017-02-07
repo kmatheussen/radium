@@ -23,5 +23,5 @@ extern LANGSPEC void MIDIGFX_SetMSB(int msb);
 extern LANGSPEC void MIDIGFX_SetChannel(int ch);
 extern LANGSPEC void MIDIGFX_SetCCSlider(int slidernum,bool on,int value);
 
-extern LANGSPEC void MIDIGFX_PP_Update(struct Instruments *instrument,struct Patch *patch);
+extern LANGSPEC void MIDIGFX_PP_Update(struct Instruments *instrument,struct Patch *patch,bool is_loading);
 

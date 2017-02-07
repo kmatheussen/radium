@@ -106,7 +106,7 @@ static MIDI_instrument_widget *get_midi_instrument_widget(struct Patch *patch);
 static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch);
 static void updateMidiPortsWidget(MIDI_instrument_widget *instrument);
 static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch);
-static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch);
+static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch, bool is_loading);
 
 class Faust_Plugin_widget;
 static Faust_Plugin_widget *AUDIOWIDGET_get_faust_plugin_widget(Audio_instrument_widget *audio_instrument_widget);
@@ -395,7 +395,7 @@ static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, s
 }
 
 
-static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch){
+static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch, bool is_loading){
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   Audio_instrument_widget *instrument = new Audio_instrument_widget(editor->main_window,patch);
   R_ASSERT_RETURN_IF_FALSE2(instrument!=NULL, NULL);
@@ -406,17 +406,20 @@ static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *pat
   instruments_widget->tabs->insertWidget(instruments_widget->tabs->count(),instrument);
 
   // (forgot to take copy)
-  instruments_widget->tabs->setCurrentWidget(instrument);
-  MW_update_all_chips();
+  if (!is_loading){
+    instruments_widget->tabs->setCurrentWidget(instrument);  
+    MW_update_all_chips();
+  }
 
   instrument->updateWidgets();
   
   return instrument;
 }
 
-void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch){
-  create_audio_instrument_widget(patch);
-  GFX_PP_Update(patch);  
+void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch, bool is_loading){
+  create_audio_instrument_widget(patch, is_loading);
+  if (!is_loading)
+    GFX_PP_Update(patch,false);  
 }
 
 static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch){
@@ -687,7 +690,7 @@ void GFX_update_all_instrument_widgets(void){
 
 static bool called_from_pp_update = false;
 
-void GFX_PP_Update(struct Patch *patch){
+void GFX_PP_Update(struct Patch *patch, bool is_loading){
   printf("GFX_PP_Update %s\n", patch==NULL?"(null)":patch->name);
   
   called_from_pp_update = true;{
@@ -718,12 +721,15 @@ void GFX_PP_Update(struct Patch *patch){
       Audio_instrument_widget *instrument = get_audio_instrument_widget(patch);
       if(instrument==NULL){
         fprintf(stderr,"                 WARNING: patch %s didn't have an instrument widget. Creating one now. (Might happen when loading song or starting up. Nothing is wrong if that is the case)\n",patch->name);
-        instrument = create_audio_instrument_widget(patch);
+        instrument = create_audio_instrument_widget(patch, false);
         //instrument = get_audio_instrument_widget(patch);
       }
       
       update_audio_instrument_widget(instrument,patch);
       instruments_widget->tabs->setCurrentWidget(instrument);
+      //if (instrument->_sample_requester_widget != NULL && !is_loading)
+      //  instrument->_sample_requester_widget->update_file_list_if_needed();
+
       MW_update_all_chips();
       root->song->tracker_windows->must_redraw = true;
 
@@ -777,7 +783,8 @@ void GFX_update_instrument_patch_gui(struct Patch *patch){
   //printf("Called GFX_update_instrument_patch_gui for patch \"%s\"\n",patch==NULL?"<>":patch->name);
   if(patch!=NULL && patch->patchdata!=NULL && patch->instrument->PP_Update!=NULL)
     patch->instrument->PP_Update(patch->instrument,
-                                 patch);
+                                 patch,
+                                 false);
 #if 0
   if(wblock->wtrack->track->patch!=NULL && wblock->wtrack->track->patch->instrument->PP_Update!=NULL)
     wblock->wtrack->track->patch->instrument->PP_Update(wblock->wtrack->track->patch->instrument,

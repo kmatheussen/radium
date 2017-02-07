@@ -1043,7 +1043,7 @@ struct Instruments{
 	//void (*treatSpecialCommand)(char *command,struct Tracks *track);
 	void (*CloseInstrument)(struct Instruments *instrument);
 	void (*StopPlaying)(struct Instruments *instrument);
-	void (*PP_Update)(struct Instruments *instrument,struct Patch *patch);
+        void (*PP_Update)(struct Instruments *instrument,struct Patch *patch, bool is_loading);
 	void *(*CopyInstrumentData)(const struct Tracks *track);		//Necesarry for undo.
 
 	void (*PlayFromStartHook)(struct Instruments *instrument);

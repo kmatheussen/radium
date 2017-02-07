@@ -1423,7 +1423,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
     //printf("Pressed. %f / %f\n",pos.x(),pos.y());
     struct Instruments *instrument = get_audio_instrument();
-    instrument->PP_Update(instrument,(struct Patch*)patch);
+    instrument->PP_Update(instrument,(struct Patch*)patch,false);
 
     // solo onoff
     {
