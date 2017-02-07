@@ -481,6 +481,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
       smooth_sequencer_scrolling->setChecked(smoothSequencerScrollingEnabled());
 
+      if (showBarsInTimeline())
+        show_bars_in_timeline->setChecked(true);
+      else
+        show_time_in_timeline->setChecked(true);
+      
       if (!strcmp(getSeqBlockGridType(), "no"))
         block_no_grid->setChecked(true);
       else if (!strcmp(getSeqBlockGridType(), "line"))
@@ -643,11 +648,6 @@ public slots:
   void on_safeModeOnoff_toggled(bool val){
     if (_initing==false)
       GL_set_safe_mode(val);
-  }
-
-  void on_smooth_sequencer_scrolling_toggled(bool val){
-    if (_initing==false)
-      setSmoothSequencerScrollingEnabled(val);
   }
 
   void on_pauseRenderingOnoff_toggled(bool val){
@@ -879,6 +879,16 @@ public slots:
 
   // sequencer
   //
+  void on_smooth_sequencer_scrolling_toggled(bool val){
+    if (_initing==false)
+      setSmoothSequencerScrollingEnabled(val);
+  }
+
+  void on_show_bars_in_timeline_toggled(bool val){
+    if (_initing==false)
+      setShowBarsInTimeline(val);
+  }
+    
   void on_block_no_grid_toggled(bool val){
     if (_initing==false)
       if (val)

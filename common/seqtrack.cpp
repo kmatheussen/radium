@@ -259,7 +259,7 @@ static struct SeqTrack *find_closest_seqtrack_with_barorbeat_start(int seqtrackn
   seqtracknum--;
   
   while(seqtracknum > 0){
-    struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
+    const struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
     if (seqtrack->seqblocks.num_elements > 0)
       return seqtrack;
 
@@ -301,8 +301,8 @@ namespace{
   };
 }
 
-static int64_t find_barorbeat_start_inside(struct SeqBlock *seqblock, int64_t seqtime, WhatToFind what){
-  struct Blocks *block = seqblock->block;
+static int64_t find_barorbeat_start_inside(const struct SeqBlock *seqblock, int64_t seqtime, WhatToFind what){
+  const struct Blocks *block = seqblock->block;
 
   int64_t ret = seqblock->time;
   int64_t mindist = INT64_MAX;
@@ -325,7 +325,7 @@ static int64_t find_barorbeat_start_inside(struct SeqBlock *seqblock, int64_t se
     return ret;
   }
 
-  struct Beats *beat = block->beats;
+  const struct Beats *beat = block->beats;
 
   while (beat != NULL){
     if (beat->beat_num==1 || what==WhatToFind::BEAT){
@@ -346,8 +346,8 @@ static int64_t find_barorbeat_start_inside(struct SeqBlock *seqblock, int64_t se
   return ret;
 }
 
-static int64_t find_barorbeat_start_after(struct SeqBlock *seqblock, int64_t seqtime, int64_t maxtime, WhatToFind what){
-  struct Blocks *block = seqblock->block;
+static int64_t find_barorbeat_start_after(const struct SeqBlock *seqblock, int64_t seqtime, int64_t maxtime, WhatToFind what){
+  const struct Blocks *block = seqblock->block;
   int64_t blocklen = getBlockSTimeLength(block);
   int64_t interval_length;
 
@@ -361,9 +361,9 @@ static int64_t find_barorbeat_start_after(struct SeqBlock *seqblock, int64_t seq
 
   } else {
 
-    struct Beats *last_barorbeat = NULL;
+    const struct Beats *last_barorbeat = NULL;
     
-    struct Beats *beat = NextBeat(block->beats);
+    const struct Beats *beat = NextBeat(block->beats);
     while (beat != NULL){
       if (beat->beat_num==1 || what==WhatToFind::BEAT)
         last_barorbeat = beat;

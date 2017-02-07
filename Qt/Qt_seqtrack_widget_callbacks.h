@@ -1105,8 +1105,12 @@ struct Timeline_widget : public MouseTrackerQWidget {
     p.setPen(text_color);
         
     const QFontMetrics fn = QFontMetrics(QApplication::font());
-    const double min_pixels_between_text = fn.width("00:00:00") + t1*2 + 10;
-
+    double min_pixels_between_text;
+    if (showBarsInTimeline())
+      min_pixels_between_text = fn.width("125") + 10;
+    else
+      min_pixels_between_text = fn.width("00:00:00") + t1*2 + 10;
+    
       //double  = 40; //width() / 4;
 
     const double loop_start_x = scale_double(SEQUENCER_get_loop_start(), _start_time, _end_time, 0, width());
@@ -1119,10 +1123,60 @@ struct Timeline_widget : public MouseTrackerQWidget {
     //  return;
     R_ASSERT_RETURN_IF_FALSE(end_time > start_time);
     
-    int inc_time = R_MAX(1, ceil(scale(min_pixels_between_text, 0, width(), 0, end_time-start_time)));
+    bool did_draw_alpha = false;
 
-    // Ensure inc_time is aligned in seconds, 5 seconds, or 30 seconds.
-    {
+    if (showBarsInTimeline()){
+
+      //float x1 = _seqtracks_widget.t_x1;
+      //float x2 = _seqtracks_widget.t_x2;
+      float width_ = width(); //x2-x1;
+
+      int barnum = 1;
+
+      const struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[0];
+      if (seqtrack->seqblocks.num_elements > 0) {
+        
+        const struct SeqBlock *first_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[0];
+      
+        float last_x = -2000;
+        int64_t last_bar_time = -50000;
+        int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, first_seqblock->time);
+
+        // TODO: If bars are placed too close, we will skip a bar, and then the 'barnum' will be incorrect.
+        
+        int inc = (_end_time-_start_time) / width_;
+        while(abstime < _end_time){
+          int64_t maybe = SEQUENCER_find_closest_bar_start(0, abstime);
+          if (maybe > last_bar_time && maybe!=abstime){
+            float x = scale(maybe, _start_time, _end_time, 0, width_);
+            //printf("x: %f, abstime: %f\n",x,(float)maybe/44100.0);
+            //QLineF line(x, 0, x, height());
+            //p.drawLine(line);
+            
+            if (x >= 0 && x > last_x + min_pixels_between_text) {
+              
+              QRectF rect(x + 2, 2, width(), height());
+              myDrawText(p, rect, QString::number(barnum));
+              
+              last_x = x;
+            }
+            
+            last_bar_time = maybe;
+            abstime = maybe;
+            barnum++;
+          }
+          abstime += inc;
+        }
+        
+      }
+
+
+    } else {
+
+      int inc_time = R_MAX(1, ceil(scale(min_pixels_between_text, 0, width(), 0, end_time-start_time)));
+      
+      // Ensure inc_time is aligned in seconds, 5 seconds, or 30 seconds.
+      {
       if (inc_time%2 != 0)
         inc_time++;
       
@@ -1137,48 +1191,47 @@ struct Timeline_widget : public MouseTrackerQWidget {
       if ((end_time-start_time) > 110)
         if (inc_time%30 != 0)
           inc_time += 30-(inc_time%30);
-    }
-    //inc_time = 1;
-
-    bool did_draw_alpha = false;
-    
-    int64_t time = inc_time * int((double)start_time/(double)inc_time);
-    
-    for(;;){
-      const double x = scale_double(time, start_time, end_time, 0, width());
-      if (x >= width())
-        break;
-
-      bool draw_alpha = false;
-
-      if (loop_start_x >= x-t1 && loop_start_x <= x+t1+min_pixels_between_text)
-        draw_alpha = true;
-      if (loop_end_x >= x-t1 && loop_end_x <= x+t1+min_pixels_between_text)
-        draw_alpha = true;
-
-      if (draw_alpha==true && did_draw_alpha==false){
-        p.setPen(text_color_alpha);
-        p.setBrush(timeline_arrow_color_alpha);
       }
+      //inc_time = 1;
 
-      if (draw_alpha==false && did_draw_alpha==true){
-        p.setPen(text_color);
-        p.setBrush(timeline_arrow_color);
-      }
+      int64_t time = inc_time * int((double)start_time/(double)inc_time);
+    
+      for(;;){
+        const double x = scale_double(time, start_time, end_time, 0, width());
+        if (x >= width())
+          break;
 
-      did_draw_alpha = draw_alpha;
+        bool draw_alpha = false;
+
+        if (loop_start_x >= x-t1 && loop_start_x <= x+t1+min_pixels_between_text)
+          draw_alpha = true;
+        if (loop_end_x >= x-t1 && loop_end_x <= x+t1+min_pixels_between_text)
+          draw_alpha = true;
+
+        if (draw_alpha==true && did_draw_alpha==false){
+          p.setPen(text_color_alpha);
+          p.setBrush(timeline_arrow_color_alpha);
+        }
+
+        if (draw_alpha==false && did_draw_alpha==true){
+          p.setPen(text_color);
+          p.setBrush(timeline_arrow_color);
+        }
+
+        did_draw_alpha = draw_alpha;
       
-      if (x > 20) {
+        if (x > 20) {
         
-        draw_filled_triangle(p, x-t1, y1, x+t1, y1, x, y2);
+          draw_filled_triangle(p, x-t1, y1, x+t1, y1, x, y2);
         
-        QRectF rect(x + t1 + 4, 2, width(), height());
-        myDrawText(p, rect, seconds_to_timestring(time));
+          QRectF rect(x + t1 + 4, 2, width(), height());
+          myDrawText(p, rect, seconds_to_timestring(time));
+        }
+
+        time += inc_time;
       }
-
-      time += inc_time;
     }
-
+    
     p.setPen(Qt::black);
     p.setBrush(QColor(0,0,255,150));
 
