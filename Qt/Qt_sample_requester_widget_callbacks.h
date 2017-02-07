@@ -331,8 +331,10 @@ class Sample_requester_widget : public QWidget
     
     file_list->clear();
     file_list->setSortingEnabled(false);
-    
-    printf("directory_path: \"%s\"\n",_dir.absolutePath().toUtf8().constData());
+
+    const char *pathtext = talloc_strdup(_dir.absolutePath().toUtf8().constData());
+
+    printf("directory_path: \"%s\"\n",pathtext);
     path_edit->setText(_dir.absolutePath());
 
     _dir.setSorting(QDir::Name);
@@ -342,8 +344,13 @@ class Sample_requester_widget : public QWidget
 
       if (time.elapsed() > 500 || (window->message!=NULL && time.elapsed() >= 16)){
         time.restart();
-        window->message = talloc_format("Please wait, loading sample directory (%d / %d)", i, list.size());
-        GL_create(window, window->wblock);
+        const char *message = talloc_format("Loading sample directory \"%s\" into memory. (%d / %d)", pathtext, i, list.size());
+        if (GFX_ProgressIsOpen())
+          GFX_ShowProgressMessage(message);
+        else {
+          window->message = message;
+          GL_create(window, window->wblock);
+        }
       }
       
       QFileInfo file_info = list.at(i);

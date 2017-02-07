@@ -46,6 +46,7 @@ extern LANGSPEC void GFX_showKeybindingsHelpWindow(void);
 
 extern LANGSPEC void GFX_OpenProgress(const char *message);
 extern LANGSPEC void GFX_ShowProgressMessage(const char *message);
+extern LANGSPEC bool GFX_ProgressIsOpen(void);
 extern LANGSPEC void GFX_HideProgress(void);
 extern LANGSPEC void GFX_ShowProgress(void);
 extern LANGSPEC void GFX_CloseProgress(void);

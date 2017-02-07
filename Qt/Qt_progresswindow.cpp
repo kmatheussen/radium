@@ -255,6 +255,10 @@ void GFX_ShowProgressMessage(const char *message){
   }
 }
 
+bool GFX_ProgressIsOpen(void){
+  return g_process != NULL;
+}
+
 void GFX_CloseProgress(void){
   if (g_process != NULL){
     send_string(message_exit);
