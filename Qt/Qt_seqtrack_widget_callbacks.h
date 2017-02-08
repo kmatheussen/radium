@@ -1122,7 +1122,9 @@ struct Timeline_widget : public MouseTrackerQWidget {
     //if (end_time >= start_time)
     //  return;
     R_ASSERT_RETURN_IF_FALSE(end_time > start_time);
-    
+
+    int inc_time = R_MAX(1, ceil(scale(min_pixels_between_text, 0, width(), 0, end_time-start_time)));
+
     bool did_draw_alpha = false;
 
     if (showBarsInTimeline()){
@@ -1130,51 +1132,96 @@ struct Timeline_widget : public MouseTrackerQWidget {
       //float x1 = _seqtracks_widget.t_x1;
       //float x2 = _seqtracks_widget.t_x2;
       float width_ = width(); //x2-x1;
-
+      float last_x = -10000;
       int barnum = 1;
 
       const struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[0];
       if (seqtrack->seqblocks.num_elements > 0) {
-        
-        const struct SeqBlock *first_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[0];
-      
-        float last_x = -2000;
-        int64_t last_bar_time = -50000;
-        int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, first_seqblock->time);
 
-        // TODO: If bars are placed too close, we will skip a bar, and then the 'barnum' will be incorrect.
+        int64_t start_seqtime = get_seqtime_from_abstime(seqtrack, NULL, _start_time);
+        int64_t end_seqtime = get_seqtime_from_abstime(seqtrack, NULL, _end_time);
         
-        int inc = (_end_time-_start_time) / width_;
-        while(abstime < _end_time){
-          int64_t maybe = SEQUENCER_find_closest_bar_start(0, abstime);
-          if (maybe > last_bar_time && maybe!=abstime){
-            float x = scale(maybe, _start_time, _end_time, 0, width_);
-            //printf("x: %f, abstime: %f\n",x,(float)maybe/44100.0);
-            //QLineF line(x, 0, x, height());
-            //p.drawLine(line);
+        //const struct SeqBlock *first_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[0];
+
+        for(int i = 0 ; i < seqtrack->seqblocks.num_elements ; i++){
+
+          const struct SeqBlock *seqblock = (struct SeqBlock *)seqtrack->seqblocks.elements[i];
+          const struct SeqBlock *next_seqblock = (struct SeqBlock *)(i==seqtrack->seqblocks.num_elements-1 ? NULL : seqtrack->seqblocks.elements[i+1]);
+          
+          int64_t start_blockseqtime = seqblock->time;
+          int64_t end_blockseqtime = seqblock->time + getBlockSTimeLength(seqblock->block);
+
+          int64_t start_nextblockseqtime = next_seqblock==NULL ? -1 : next_seqblock->time;
+          
+          if (next_seqblock!=NULL) {
+            if (start_nextblockseqtime <= start_seqtime)
+              continue;
+          } else {
+            if (end_blockseqtime <= start_seqtime)
+              continue;
+          }
+
+          if (start_blockseqtime >= end_seqtime)
+            break;
+
+          const struct Blocks *block = seqblock->block;
+          const struct Beats *beat = block->beats;
+
+#define paintbarnum() {                                                 \
+            float x = scale(abstime, _start_time, _end_time, 0, width_); \
+                                                                        \
+            if (x >= 0 && x > last_x + min_pixels_between_text) {       \
+                                                                        \
+              QRectF rect(x + 2, 2, width(), height());                 \
+              myDrawText(p, rect, QString::number(barnum));             \
+                                                                        \
+              last_x = x;                                               \
+            }                                                           \
+                                                                        \
+            barnum++;                                                   \
+          }
+          
+          int64_t last_bartime = -1;
+          
+          while(beat!=NULL){
             
-            if (x >= 0 && x > last_x + min_pixels_between_text) {
-              
-              QRectF rect(x + 2, 2, width(), height());
-              myDrawText(p, rect, QString::number(barnum));
-              
-              last_x = x;
+            if (beat->beat_num==1){
+              int64_t seqtime = start_blockseqtime + Place2STime(block, &beat->l.p);
+              int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, seqtime);
+              last_bartime = abstime;
+
+              paintbarnum();
             }
             
-            last_bar_time = maybe;
-            abstime = maybe;
-            barnum++;
+            beat = NextBeat(beat);
           }
-          abstime += inc;
+
+          if (last_x >= width())
+            break;
+
+          int64_t bar_length = end_blockseqtime - last_bartime;
+          
+          //printf("last_x: %d, width: %d. bar_length: %d. next: %f, end_seqtime: %f\n", (int)last_x, width(),(int)bar_length,((float)end_blockseqtime + bar_length)/44100.0, (float)end_seqtime/44100.0);
+          
+          for(int64_t seqtime = end_blockseqtime ; seqtime < end_seqtime ; seqtime += bar_length){
+            if (next_seqblock!=NULL) {
+              if (seqtime >= start_nextblockseqtime)
+                break;
+            }
+
+            int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, seqtime);
+            //printf("  after. abstime: %f\n",(float)abstime/44100.0);
+            paintbarnum();
+          }
+#undef paintbarnum
         }
+        
         
       }
 
-
+      
     } else {
 
-      int inc_time = R_MAX(1, ceil(scale(min_pixels_between_text, 0, width(), 0, end_time-start_time)));
-      
       // Ensure inc_time is aligned in seconds, 5 seconds, or 30 seconds.
       {
       if (inc_time%2 != 0)
