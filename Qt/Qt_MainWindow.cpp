@@ -652,6 +652,16 @@ void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title){
   editor->status_label->setText(title);
 }
 
+void GFX_DisablePainting(void){
+  g_main_window->setUpdatesEnabled(false);
+}
+
+void GFX_EnablePainting(void){
+  g_main_window->setUpdatesEnabled(true);
+}
+
+
+
 static QString get_postfixes_filter(const char *postfixes){
   QString postfixes2 = postfixes==NULL ? "*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3" : QString(postfixes);
   

@@ -639,8 +639,8 @@ static void MIDI_remove_patchdata(struct Patch *patch){
   // nothing to do.
 }
 
-static void MIDI_PP_Update(struct Instruments *instrument,struct Patch *patch){
-  GFX_PP_Update(patch);
+static void MIDI_PP_Update(struct Instruments *instrument,struct Patch *patch, bool is_loading){
+  GFX_PP_Update(patch,is_loading);
 }
 
 int MIDI_initInstrumentPlugIn(struct Instruments *instrument){

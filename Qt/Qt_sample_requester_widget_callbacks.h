@@ -181,6 +181,16 @@ static QString get_display_name(QString filename, int bank=-1, int preset=-1){
   return str;
 }
 
+namespace{
+  struct DirectoryContentEntry{
+    bool is_dir = false;
+    bool is_sf2 = false;
+    QString display;
+  };
+}
+
+static QHash<QString, QVector<DirectoryContentEntry> > g_directory_content;
+
 class Sample_requester_widget : public QWidget
                               , public Ui::Sample_requester_widget 
 {
@@ -273,7 +283,7 @@ class Sample_requester_widget : public QWidget
     up->setToolTip("Shift preview sound one octave up.");
     down->setToolTip("Shift preview sound one octave down");
 
-    update_file_list();
+    update_file_list(false);
 
     updateWidgets();
 
@@ -323,7 +333,10 @@ class Sample_requester_widget : public QWidget
     horizontalWidget->setMaximumHeight(header_height);
   }
 
-  void update_file_list(){
+  // This function can take lot of time when loading. However, we don't want this function to use a lot of time when moving the cursor to a new track in the editor.
+  // (qt is really slow to create widgets...)
+  void update_file_list(bool reread){
+    
     struct Tracker_Windows *window = root->song->tracker_windows;
     QTime time;
 
@@ -331,73 +344,124 @@ class Sample_requester_widget : public QWidget
     
     file_list->clear();
     file_list->setSortingEnabled(false);
-    
-    printf("directory_path: \"%s\"\n",_dir.absolutePath().toUtf8().constData());
+
+    const char *pathtext = talloc_strdup(_dir.absolutePath().toUtf8().constData());
+
+    printf("directory_path: \"%s\"\n",pathtext);
     path_edit->setText(_dir.absolutePath());
 
-    _dir.setSorting(QDir::Name);
-    
-    QFileInfoList list = _dir.entryInfoList();
-    for (int i = 0; i < list.size(); ++i) {
-
-      if (time.elapsed() > 500 || (window->message!=NULL && time.elapsed() >= 16)){
-        time.restart();
-        window->message = talloc_format("Please wait, loading sample directory (%d / %d)", i, list.size());
-        GL_create(window, window->wblock);
-      }
+    QFont soundfile_font;
+    {
+      //QFont font("Bitstream Vera Sans Mono",8);
+      soundfile_font.setFamily("Bitstream Vera Sans Mono");
+      soundfile_font.setBold(true);
+      soundfile_font.setStyleName("Bold");
       
-      QFileInfo file_info = list.at(i);
-      //QListWidgetItem *item = new QListWidgetItem(file_info.fileName(),file_list);
-      //item->
-      QString filename = file_info.fileName();
+      if(soundfile_font.pixelSize()>0)
+        soundfile_font.setPixelSize(8);//font.pixelSize()*4/3);
+      else
+        soundfile_font.setPointSize(8);//font.pointSize()*4/3);
+    }
 
-      if(file_info.isDir()){
-        file_list->addItem(filename+"/");
-      }else if(filename.endsWith(".sf2",Qt::CaseInsensitive)){
-        QListWidgetItem *item = new QListWidgetItem(filename+"/");
-        item->setForeground(QBrush(get_qcolor(SOUNDFONT_COLOR_NUM)));
-        QFont font;
 
-        font.setBold(true);
-        if(font.pixelSize()>0)
-          font.setPixelSize(font.pixelSize()*3/2);
-        else
-          font.setPointSize(font.pointSize()*3/2);
-        item->setFont(font);
-        file_list->addItem(item);
-      }else{
-        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-        if(QString("Sample Player") == plugin->type->type_name){
-          if(file_could_be_a_sample(filename)){
-            QString display_name = get_sample_filename_display_string(file_info);
-            if(display_name != QString("")){
+    QColor soundfile_color = get_qcolor(SOUNDFILE_COLOR_NUM);              
+    soundfile_color.setAlpha(150);
+    QBrush soundfile_brush(soundfile_color);
 
-              QListWidgetItem *item = new QListWidgetItem(display_name);
-              QColor color = get_qcolor(SOUNDFILE_COLOR_NUM);
-              color.setAlpha(150);
-              item->setForeground(QBrush(color));
-              QFont font;
-              //QFont font("Bitstream Vera Sans Mono",8);
-              font.setFamily("Bitstream Vera Sans Mono");
-              font.setBold(true);
-              font.setStyleName("Bold");
+    QFont sf2_font;
+    {
+      sf2_font.setBold(true);
+      if(sf2_font.pixelSize()>0)
+        sf2_font.setPixelSize(sf2_font.pixelSize()*3/2);
+      else
+        sf2_font.setPointSize(sf2_font.pointSize()*3/2);
+    }
 
-              if(font.pixelSize()>0)
-                font.setPixelSize(8);//font.pixelSize()*4/3);
-              else
-                font.setPointSize(8);//font.pointSize()*4/3);
-              item->setFont(font);
-              file_list->addItem(item);
-              //file_list->repaint();
-              //g_qapplication->processEvents(); // WARNING! Removed. Got crash bug caused by this when loading and pressing key. Probably a billion other situations as well.
-            }
+    QBrush sf2_brush(get_qcolor(SOUNDFONT_COLOR_NUM));
+
+    _dir.setSorting(QDir::Name);    
+
+    int size;
+
+    QVector<DirectoryContentEntry> content;
+
+    if (!reread)
+      content = g_directory_content[_dir.absolutePath()];
+
+    QFileInfoList list;
+
+    bool use_content = !reread && content.size()>0;
+    
+    if (use_content){
+      size = content.size();
+    }else{
+      list =  _dir.entryInfoList();
+      size = list.size();
+    }
+    
+    for (int i = 0; i < size; ++i) {
+
+      if (time.elapsed() > 500 || (window->message!=NULL && time.elapsed() >= 50)){
+        time.restart();
+        if (GFX_ProgressIsOpen()){
+          const char *message = talloc_format("Loading sample directory \"%s\" into memory. (%d / %d)", pathtext, i, list.size());
+          GFX_ShowProgressMessage(message);
+        } else {
+          const char *message = talloc_format("Loading sample directory into memory. (%d / %d)", i, list.size());       
+          window->message = message;
+          GL_create(window, window->wblock);
+        }
+      }
+
+      DirectoryContentEntry entry;
+
+      if (use_content){
+        entry = content[i];
+      } else {
+        QFileInfo file_info = list.at(i);
+        //QListWidgetItem *item = new QListWidgetItem(file_info.fileName(),file_list);
+        //item->
+        QString filename = file_info.fileName();
+
+        if(file_info.isDir()){
+          entry.is_dir = true;
+          entry.display = filename+"/";
+        }else if(filename.endsWith(".sf2",Qt::CaseInsensitive)){
+          entry.is_sf2 = true;
+          entry.display = filename+"/";
+        }else{
+          SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+          if(QString("Sample Player") == plugin->type->type_name){
+            if(file_could_be_a_sample(filename))
+              entry.display = get_sample_filename_display_string(file_info);
           }
         }
+        
+        content.push_back(entry);
+        
+      }
+      
+
+      if(entry.is_dir){
+        file_list->addItem(entry.display);
+      }else if(entry.is_sf2){
+        QListWidgetItem *item = new QListWidgetItem(entry.display);
+        item->setForeground(sf2_brush);
+        item->setFont(sf2_font);
+        file_list->addItem(item);
+      }else if(entry.display != ""){
+        QListWidgetItem *item = new QListWidgetItem(entry.display);
+        item->setForeground(soundfile_brush);
+        item->setFont(soundfile_font);
+        file_list->addItem(item);
       }
     }
 
     file_list->setCurrentRow(1);
-    
+
+    if (!use_content)
+      g_directory_content[_dir.absolutePath()] = content;
+            
     if (window->message!=NULL){      
       window->message=NULL;
       GL_create(window, window->wblock);
@@ -487,7 +551,7 @@ class Sample_requester_widget : public QWidget
 
     if(item_text == "../"){
       _file_chooser_state = IN_DIRECTORY;
-      update_file_list();
+      update_file_list(true);
       return;
     }
 
@@ -516,7 +580,7 @@ class Sample_requester_widget : public QWidget
     QString org_directory_name = _dir.dirName();
 
     _dir.cd(item_text);
-    update_file_list();
+    update_file_list(true);
 
     write_bookmark();
     
@@ -622,7 +686,7 @@ class Sample_requester_widget : public QWidget
     _bookmark = num;
     _file_chooser_state = IN_DIRECTORY;
     read_bookmark_and_set_dir();
-    update_file_list();
+    update_file_list(false);
   }
   
 public slots:
@@ -696,7 +760,7 @@ public slots:
 
     if(_dir.exists(new_path)){
       _dir.setPath(new_path);
-      update_file_list();
+      update_file_list(false);
       SETTINGS_write_string("samples_dir",_dir.absolutePath());
     }else{
       path_edit->setText(_dir.absolutePath());

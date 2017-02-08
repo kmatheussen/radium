@@ -123,7 +123,7 @@ extern LANGSPEC bool GFX_OS_patch_is_system_out(struct Patch *patch);
 
 extern LANGSPEC void GFX_update_all_instrument_widgets(void);
 
-extern LANGSPEC void GFX_PP_Update(struct Patch *patch);
+extern LANGSPEC void GFX_PP_Update(struct Patch *patch, bool is_loading);
 
 extern LANGSPEC void *OS_GFX_get_native_main_window(void);
   

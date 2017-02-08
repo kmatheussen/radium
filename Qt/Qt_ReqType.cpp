@@ -80,7 +80,7 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
   GL_lock(); {
     GL_pause_gl_thread_a_short_while();
 
-    if(tvisual==NULL){
+    if(tvisual==NULL || g_main_window==NULL || g_main_window->updatesEnabled()==false){
 
       reqtype->frame = new QFrame();
       reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);

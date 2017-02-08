@@ -464,7 +464,7 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
   MW_cleanup_chip_positions();
   
   // Create instrument widget
-  InstrumentWidget_create_audio_instrument_widget(patch);
+  InstrumentWidget_create_audio_instrument_widget(patch,is_loading_song);
   
   patch->is_usable = true;
   
@@ -862,13 +862,13 @@ static void AUDIO_StopPlaying(struct Instruments *instrument){
   }END_VECTOR_FOR_EACH;
 }
 
-static void AUDIO_PP_Update(struct Instruments *instrument,struct Patch *patch){
+static void AUDIO_PP_Update(struct Instruments *instrument,struct Patch *patch, bool is_loading){
   if(patch->patchdata==NULL){
     RError("plugin==NULL for %s\n",patch->name);
     return;
   }
 
-  GFX_PP_Update(patch);
+  GFX_PP_Update(patch, is_loading);
 }
 
 static void *AUDIO_CopyInstrumentData(const struct Tracks *track){

@@ -658,6 +658,48 @@ int getSeqtrackFromY(int y){
   return -1;
 }
 
+
+static bool g_smooth_sequencer_scrolling_enabled = false;
+
+bool smoothSequencerScrollingEnabled(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_smooth_sequencer_scrolling_enabled = SETTINGS_read_bool("smooth_sequencer_scrolling_enabled", g_smooth_sequencer_scrolling_enabled);
+    has_inited = true;
+  }
+
+  return g_smooth_sequencer_scrolling_enabled;
+}
+
+void setSmoothSequencerScrollingEnabled(bool doit){
+  if (doit != g_smooth_sequencer_scrolling_enabled){
+    g_smooth_sequencer_scrolling_enabled = doit;
+    SETTINGS_write_bool("smooth_sequencer_scrolling_enabled", doit);
+    PREFERENCES_update(); // ??
+  }
+}
+
+static bool g_show_bars_in_timeline = false;
+
+bool showBarsInTimeline(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_show_bars_in_timeline = SETTINGS_read_bool("show_bars_in_timeline", g_show_bars_in_timeline);
+    has_inited = true;
+  }
+
+  return g_show_bars_in_timeline;
+}
+
+void setShowBarsInTimeline(bool doit){
+  g_show_bars_in_timeline = doit;
+  SETTINGS_write_bool("show_bars_in_timeline", doit);
+  SEQUENCER_update();
+}
+
+
 int64_t getSeqGriddedTime(int64_t pos, int seqtracknum, const_char* type){
   if (!strcmp(type, "no"))
     return pos;

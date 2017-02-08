@@ -1516,7 +1516,7 @@ void RT_request_to_stop_playing(void){
 int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y){return 0;}
 
 bool CtrlPressed(void){
-#if FOR_MACOSX
+#if 0 //FOR_MACOSX
   return QApplication::keyboardModifiers() & Qt::MetaModifier;
 #else
   return QApplication::keyboardModifiers() & Qt::ControlModifier;
@@ -1616,7 +1616,6 @@ void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
 
   OS_SYSTEM_ResetKeysUpDowns();
 }
-
 
 void assertRadiumInHomeDirectory(void){
   QString program_path = QCoreApplication::applicationDirPath();

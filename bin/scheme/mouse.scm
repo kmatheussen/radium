@@ -855,7 +855,7 @@
     :handler-data
     :y)
 
-  (add-node-mouse-handler :Get-area-box (lambda () (make-box2 0 0 100000 100000))
+  (add-node-mouse-handler :Get-area-box (lambda () (make-box2 -1000000 -100000 100000 100000))
                           :Get-existing-node-info (lambda (X Y callback)
                                                     ;;(c-display "  horiz: " X Y)
                                                     (define handler-data (Get-handler-data X Y))
@@ -3077,6 +3077,8 @@
   (scale (<ra> :get-seqlooping-end)
          (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)
          (<ra> :get-seqtimeline-area-x1) (<ra> :get-seqtimeline-area-x2)))
+
+
 
 
 (define (create-seqloop-handler Type)
