@@ -683,7 +683,7 @@ bool instrumentIsBusDescendant(int64_t instrument_id){
     R_ASSERT_RETURN_IF_FALSE2(sp!=NULL, false);
     return SP_get_bus_descendant_type(sp)==IS_BUS_DESCENDANT;
   }else
-    return false; // Can not delete midi instruments.
+    return false;
 }
 
 bool instrumentIsPermanent(int64_t instrument_id){  

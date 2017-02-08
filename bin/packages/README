@@ -24,7 +24,7 @@ And I know this because I get an email with backtrace every time a user presses 
 After including libxcb with the program, all crash reports caused by libxcb suddenly disappeared.
 But if you know that the system version of libxcb is at least 1.12, the package can probably be safely removed.
 
-In addition, it's generally better that the users of a program use the same versions of 3rd party libraries as the developer(s).
+In addition, it's generally better that the users of a program uses the same versions of 3rd party libraries as the developer(s).
 This increases stability, but it is currently not the reason for any of the packages in this directory. However, if Qt, for instance, were less stable,
 I wouldn't hesitate to include Qt in this directory to make sure everyone used the same version of Qt. Luckily, though, Qt is very stable.
 Same goes for libsamplerate, libsndfile, libjack, etc. etc. But in the future, other packages might be included here just as a general precaution.
@@ -35,15 +35,15 @@ Even packages included in Radium have themselves other packages included (Visual
 
 
 
-Regarding negative feedback I have gotten about the content of this directory from package distributors
---------------------------------------------------------------------------------------------------------
+Regarding negative feedback I have gotten about the content of this directory from package distributors and others
+------------------------------------------------------------------------------------------------------------------
 First of all, there are several packages included with Radium in other directories than this one (with good reasons for those as well).
 But for some reason, people are hung up on the specific packages included in this directory. Could it be because
 the explicit step called "make packages" in the build process would make it seem like the author of Radium
 tries to step on the toes of package managers? Well, that's not my intention. I guess the problem would be solved if there wasn't
 an explicit "make packages" step, and instead "make packages" was baked into the "./build_linux.sh" script?
-Because that's how most builds handle included packages, although it has several disadvantages. But I guess
-keeping piece is more important. Anyway, if you are making a Radium package for Linux distribution,
+Because that's how most builds handle included packages, although one step has several disadvantages (more magic).
+But I guess keeping piece is more important. Anyway, if you are making a Radium package for Linux distribution,
 it shouldn't be too hard without getting angry. Just do the following:
 
 BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 make packages
