@@ -6,13 +6,12 @@
 //QAtomicInt g_num_waits(0);
 
 #include "../common/nsmtracker.h"
-#include "../common/spinlock.h"
 #include "../common/visual_proc.h"
 #include "../common/threading.h"
 #include "../common/stacktoucher_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/Semaphores.hpp"
-#include "../common/DoublyLinkedList.hpp"
+#include "../common/Queue.hpp"
 
 #include "../common/OS_Player_proc.h"
 
@@ -23,38 +22,38 @@
 
 #include "MultiCore_proc.h"
 
+//#undef R_ASSERT
+//#define R_ASSERT(a) do{ if(!(a)){ fflush(stderr);fprintf(stderr,">>>>>>>>>>>>>>>>>>> Assert failed: \"" # a "\". %s: " __FILE__":%d\n", __FUNCTION__, __LINE__);something_is_wrong=true;}}while(0)
+
+
+
+static volatile bool something_is_wrong = false;
+
 static const char *settings_key = "num_cpus";
 
-//static radium::SpinlockSemaphore all_sp_finished;
+#define USE_BUZY_GET 1
+
+#if USE_BUZY_GET
+
+static radium::SpinlockSemaphore all_sp_finished;
 static DEFINE_ATOMIC(int, g_start_block_time) = 0;
 const int g_num_blocks_to_pause_buzylooping = 400; // Should be some seconds
 static DEFINE_ATOMIC(int, g_num_blocks_pausing_buzylooping) = 0;
 
-
-static DEFINE_ATOMIC(int, g_num_sp_left) = 0;
-
-DEFINE_ATOMIC(bool, g_buzy_get_is_enabled) = false;
-
-#if !defined(RELEASE)
-#  include "../common/LockAsserter.hpp"
-   static radium::LockAsserter g_lockAsserter;
-#  define ASSERT_SHARED LOCKASSERTER_SHARED(&g_lockAsserter)
-#  define ASSERT_EXCLUSIVE LOCKASSERTER_EXCLUSIVE(&g_lockAsserter)
 #else
-#  define ASSERT_SHARED
-#  define ASSERT_EXCLUSIVE
-#endif
+
+static radium::Semaphore all_sp_finished;
+
+#endif // !USE_BUZY_GET
 
 
-namespace{
+static DEFINE_ATOMIC(int, num_sp_left) = 0;
 
+#define MAX_NUM_SP 8192
 
-static int g_num_runners = 0;
+static radium::Queue< SoundProducer* , MAX_NUM_SP > soundproducer_queue;
 
-struct Runner;
-static Runner **g_runners = NULL;
-
-
+#if USE_BUZY_GET
 static void avoid_lockup(int counter){
   if ((counter % (1024*64)) == 0){
     int time_now = (int)(1000*monotonic_seconds());
@@ -74,251 +73,79 @@ static void avoid_lockup(int counter){
     }
   }
 }
+#endif
 
-
-#define MAX_OWNERS 16
-
-struct Owner;
-static Owner *g_owners;
-
-
-struct Owner{
-
-  radium::Spinlock _sp_lock;
-  //radium::Spinlock _sp_next_lock; // tsan claims that this lock is necessary, but I have my doubts. It shouldn't make any difference on the performance though.
-
-  // In the beginning, the sp order might be pretty bad, but this should self-adjust immediately. At least to a certain degree.
-  //
-  radium::DoublyLinkedList<SoundProducer> _now_sp;  // must hold _sp_lock.
-  radium::DoublyLinkedList<SoundProducer> _next_sp; // must hold _sp_next_lock. _next_sp is transfered into _now_sp, and _next_sp cleared after block ends. Only accessed by one thread at a time, so no need for locking.
-
-  enum{
-    OWNER_LOOKING,
-    OWNER_PROCESSING,
-    OWNER_WAITING_BIG_BLOCK,
-    OWNER_WAITING_SMALL_BLOCK,
-    OWNER_PAUSING_TO_AVOID_LOCKING_CPU,
-    OWNER_NOT_RUNNING
-  };
-
-  DEFINE_ATOMIC(int, _status) = OWNER_NOT_RUNNING;
-
-  int _owner_num; // Set in MULTICORE_init
-
-  Owner()
-  {    
-  }
-
-  void flip(void){
-    R_ASSERT_NON_RELEASE(_now_sp._first==NULL);
-    R_ASSERT_NON_RELEASE(_now_sp._last==NULL);
-
-    //radium::ScopedSpinlock lock1(_sp_lock);
-    //radium::ScopedSpinlock lock2(_sp_next_lock);
-
-    _now_sp.set(_next_sp);
-    _next_sp.clear();
-  }
-
-  SoundProducer *RT_get_next_my_own_soundproducer(void){
-    radium::ScopedSpinlock lock(_sp_lock);
-
-    SoundProducer *sp = _now_sp._first;
-    
-    while (sp != NULL){
-      
-      if (ATOMIC_GET(sp->num_dependencies_left)==0) {
-        
-        _now_sp.remove(sp);
-        
-        return sp;
-        
-      }
-      
-      sp = sp->dll_next;
-    }
-
-    return NULL;
-  }
-
-  bool RT_can_steal(void) const {
-    int owner_status = ATOMIC_GET(_status);
-    if (owner_status==OWNER_PROCESSING || owner_status==OWNER_PAUSING_TO_AVOID_LOCKING_CPU || owner_status==OWNER_NOT_RUNNING)
-      return true;
+static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp, SoundProducer **next){
+  if (ATOMIC_ADD_RETURN_NEW(sp->num_dependencies_left, -1) == 0) {
+    if (*next == NULL)
+      *next = sp;
     else
-      return false;
+      soundproducer_queue.put(sp);
   }
-
-  SoundProducer *RT_steal_soundproducer_from_me(void){
-    radium::ScopedTrySpinlock lock(_sp_lock);
-
-    if (lock.gotit()==false)
-      return NULL;
-
-    SoundProducer *sp = _now_sp._last; // Search from the end as an attempt to try fixing bad order
-    //SoundProducer *sp = _now_sp._first;
-
-    while (sp != NULL){
-
-      if (ATOMIC_GET(sp->num_dependencies_left)==0) {
-
-#if 1
-          _now_sp.remove(sp);
-
-          sp->downcounter = 1024;
-
-          return sp;
-#else
-        // Seems to reduce performance.
-
-        sp->downcounter--;
-        if (sp->downcounter==0){//|| not the last one){
-
-          _now_sp.remove(sp);
-
-          sp->downcounter = 1024;
-
-          return sp;
-
-        } else {
-
-          return NULL;
-
-        }
-#endif
-
-      }
-
-      if (!RT_can_steal())
-        return NULL;
-
-      sp = sp->dll_prev;
-      //sp = sp->dll_next;
-    }
-
-    return NULL;
-  }
-
-  SoundProducer *RT_get_next_soundproducer(void){
-
-    SoundProducer *sp = RT_get_next_my_own_soundproducer();
-    if (sp!=NULL){
-      R_ASSERT_NON_RELEASE(ATOMIC_GET(sp->is_processed)==false);
-      R_ASSERT_NON_RELEASE(ATOMIC_GET(g_num_sp_left)>0);
-      return sp;
-    }
-
-    int num_left_top = ATOMIC_GET_RELAXED(g_num_sp_left);
-      
-    // We have no free soundproducers ourself. Try to steal from another owner instead.
-    for(int i = 0 ; i < MAX_OWNERS ; i++) {
-      if ( i != _owner_num){
-        Owner &owner = g_owners[i];
-        if (owner.RT_can_steal()){
-          // This owner is not currently looking for new soundproducers to process, so lets try to steal a soundproducer from it.
-          SoundProducer *sp = owner.RT_steal_soundproducer_from_me();
-          if (sp!=NULL){
-            R_ASSERT_NON_RELEASE(ATOMIC_GET(sp->is_processed)==false);
-            R_ASSERT_NON_RELEASE(ATOMIC_GET(g_num_sp_left)>0);
-            //sp->owner = this;
-
-            //printf("     Owner %d stole \"%s\" from %d\n", _owner_num, sp->_plugin->patch->name, i);
-
-            return sp;
-          }
-
-          if (ATOMIC_GET_RELAXED(g_num_sp_left) != num_left_top){ // Something has happened. Try to get my own again.
-            SoundProducer *sp = RT_get_next_my_own_soundproducer();
-            if (sp!=NULL){
-              R_ASSERT_NON_RELEASE(ATOMIC_GET(sp->is_processed)==false);
-              R_ASSERT_NON_RELEASE(ATOMIC_GET(g_num_sp_left)>0);
-              return sp;
-            }
-            num_left_top = ATOMIC_GET_RELAXED(g_num_sp_left);
-          }
-        }
-      }
-    }
-
-    return NULL;
-  }
-
-  void dec_sp_dependency(SoundProducer *target){
-#if defined(RELEASE)
-    ATOMIC_ADD(target->num_dependencies_left, -1);
-#else
-    int num_left = ATOMIC_ADD_RETURN_NEW(target->num_dependencies_left, -1);
-    R_ASSERT(num_left >= 0);
-#endif
-  }
-
-  void RT_process_soundproducer(SoundProducer *sp, int64_t time, int num_frames, bool process_plugins){
-  
-    R_ASSERT_NON_RELEASE(sp!=NULL);
-
-    //fprintf(stderr,"   Processing %p: %s %d. Owner: %d\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,ATOMIC_GET(sp->is_processed),_owner_num);
-    //fflush(stderr);
-
-#if !defined(RELEASE)  
-    bool old = ATOMIC_SET_RETURN_OLD(sp->is_processed, true);
-    R_ASSERT(old==false);
-#endif
-
-    bool autosuspend = RT_PLUGIN_can_autosuspend(sp->_plugin, time);
-
-    // We don't autosuspend current patch when not playing.
-    if (autosuspend && !is_playing()){
-      struct Patch *current_patch = ATOMIC_GET(g_through_patch);
-      if (sp->_plugin->patch == current_patch)
-        autosuspend = false;
-    }
-      
-    sp->_autosuspending_this_cycle = autosuspend;
-    ATOMIC_SET_RELAXED(sp->_is_autosuspending, sp->_autosuspending_this_cycle);
-  
-    if ( ! sp->_autosuspending_this_cycle) {
-      ATOMIC_SET(_status, OWNER_PROCESSING);
-      SP_RT_process(sp, time, num_frames, process_plugins);
-      ATOMIC_SET(_status, OWNER_LOOKING);
-    }
-
-    for(SoundProducerLink *link : sp->_output_links)
-      if (link->is_active)
-        dec_sp_dependency(link->target);
-
-    R_ASSERT_NON_RELEASE(ATOMIC_GET(g_num_sp_left)>0); // This one sometimes fails!
-    
-    {
-      //radium::ScopedSpinlock lock(_sp_next_lock);
-      _next_sp.push_back(sp);
-    }
-
-    {
-      ASSERT_SHARED;
-    }
-
-#if defined(RELEASE)
-    ATOMIC_ADD(g_num_sp_left, -1);
-#else
-    R_ASSERT(ATOMIC_ADD_RETURN_OLD(g_num_sp_left, -1) >= 0);
-#endif
-
-  }
-
-};
-  
-static Owner g_owners2[MAX_OWNERS];
-
-
-#if 0
-static void bound_thread_to_cpu(int cpu){
-  cpu_set_t set;
-  CPU_ZERO(&set);
-  CPU_SET(cpu,&set);
-  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &set);
-  //fprintf(stderr,"pthread_setaffinity_np returned: %d\n",sched_setaffinity(0, sizeof(cpu_set_t), &set));
 }
+
+static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frames, bool process_plugins){
+
+ again:
+  
+  R_ASSERT(sp!=NULL);
+
+#if !defined(RELEASE)
+  //  fprintf(stderr,"   Processing %p: %s %d\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,int(sp->is_processed));
+  //fflush(stderr);
+
+  bool old = ATOMIC_SET_RETURN_OLD(sp->is_processed, true);
+  R_ASSERT(old==false);
 #endif
+  
+  bool autosuspend = RT_PLUGIN_can_autosuspend(sp->_plugin, time);
+
+  // We don't autosuspend current patch when not playing.
+  if (autosuspend && !is_playing()){
+    struct Patch *current_patch = ATOMIC_GET(g_through_patch);
+    if (sp->_plugin->patch == current_patch)
+      autosuspend = false;
+  }
+      
+  sp->_autosuspending_this_cycle = autosuspend;
+  ATOMIC_SET_RELAXED(sp->_is_autosuspending, sp->_autosuspending_this_cycle);
+  
+  if ( ! sp->_autosuspending_this_cycle){
+    //double start_time = monotonic_seconds();
+    {
+      SP_RT_process(sp, time, num_frames, process_plugins);
+    }
+    //    double duration = monotonic_seconds() - start_time;
+    //if (duration > sp->running_time)
+    //  sp->running_time = duration;
+  }
+  
+  //int num_left = num_sp_left;
+  //printf("num_left2: %d\n",num_left);
+
+  SoundProducer *next = NULL;
+  
+  for(SoundProducerLink *link : sp->_output_links)
+    if (link->is_active)
+      dec_sp_dependency(link->source, link->target, &next);
+
+  // Important that we decrease 'num_sp_left' AFTER scheduling other soundproducers for processing. (i.e. calling when 'dec_sp_dependency')
+  if (ATOMIC_ADD_RETURN_NEW(num_sp_left, -1) == 0) {
+    R_ASSERT(next==NULL);
+    all_sp_finished.signal();
+    return;
+  }
+  
+  if (next != NULL){
+    sp = next;
+    next = NULL;
+    goto again;
+  }
+}
+
+
+
+namespace{
 
   
 struct Runner : public QThread {
@@ -330,115 +157,103 @@ struct Runner : public QThread {
 
 
 public:
+  radium::Semaphore can_start_main_loop;
   DEFINE_ATOMIC(bool, must_exit);
 
   int64_t time;
-  int num_frames = 0;
+  int num_frames;
   bool process_plugins;
-  Owner *_owner;
 
-  radium::Semaphore _runner_wakeup;
-  
-  Runner(Owner *owner)
-    : _owner(owner)
+  Runner()
   {
     ATOMIC_SET(must_exit, false);
     QObject::connect(this, SIGNAL(finished()), this, SLOT(onFinished()));
     start(QThread::NormalPriority); //QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
   }
-
-  int _curr_status = Owner::OWNER_NOT_RUNNING;
-  void set_owner_status(int new_status){
-    if (new_status != _curr_status){
-      ATOMIC_SET(_owner->_status, new_status);
-      _curr_status = new_status;
-    }
-  }
-
   //#define FOR_MACOSX
   void run() override {
     AVOIDDENORMALS;
 
     touch_stack();
 
-#if 0
-    if (g_num_runners==1)
-      bound_thread_to_cpu(2);
-    else
-      bound_thread_to_cpu(_owner->_owner_num);
+#ifdef FOR_MACOSX
+    printf("  Trying to call setPriority(QThread::TimeCriticalPriority);\n");
 #endif
-
+    
     setPriority(QThread::TimeCriticalPriority); // shouldn't matter, but just in case the call below is not working, for some reason.
   
+#ifdef FOR_MACOSX
+    printf("  Trying to call THREADING_acquire_player_thread_priority();\n");
+#endif
     THREADING_acquire_player_thread_priority();
 
-    while(true){
-      int counter = 0;
+#ifdef FOR_MACOSX
+    printf("  Trying to call can_start_main_loop.wait();\n");
+#endif
+    can_start_main_loop.wait();
 
-      SoundProducer *sp = NULL;
+#ifdef FOR_MACOSX
+    bool started = false;
+    printf("  Trying to call soundproducer_queue.get();\n");
+#endif
+
+    while(true){
+
+      SoundProducer *sp;
+
+#if USE_BUZY_GET
 
       for(;;){
+        int counter = 0;
 
-        if (_curr_status == Owner::OWNER_NOT_RUNNING) {
-          _runner_wakeup.wait();
+        if (ATOMIC_GET_RELAXED(g_num_blocks_pausing_buzylooping) <= 0) {
+
+          if (soundproducer_queue.buzyGetEnabled()) {
             
-          if (ATOMIC_GET(must_exit))
-            goto exit_thread;
-
-          continue;
-        }
-
-        bool is_pausing = ATOMIC_GET_RELAXED(g_num_blocks_pausing_buzylooping) > 0;
-
-        if (!is_pausing && ATOMIC_GET(g_buzy_get_is_enabled)){
-
-          if (ATOMIC_GET(g_num_sp_left) > 0){
-
-            set_owner_status(Owner::OWNER_LOOKING);
-
-            ASSERT_SHARED;
-
-            sp = _owner->RT_get_next_soundproducer();
-            R_ASSERT_NON_RELEASE(sp==NULL || ATOMIC_GET(g_num_sp_left)>0);
-
+            bool gotit;
+            sp = soundproducer_queue.tryGet(gotit);
+            if (gotit)
+              break;
+            else
+              avoid_lockup(counter++);
+            
           } else {
 
-            set_owner_status(Owner::OWNER_WAITING_SMALL_BLOCK);
-            
+            soundproducer_queue.waitUntilBuzyGetIsEnabled();
+
           }
 
-          if (sp!=NULL)
-            break;
-
-          avoid_lockup(counter++);
-          __asm__ __volatile__("nop");
-          
         } else {
 
-          if (is_pausing)
-            set_owner_status(Owner::OWNER_PAUSING_TO_AVOID_LOCKING_CPU);
-          else
-            set_owner_status(Owner::OWNER_WAITING_BIG_BLOCK);
+          sp = soundproducer_queue.get();
+          break;
 
-          _runner_wakeup.wait();
+        }
+
+      }
+
+#else
+
+      sp = soundproducer_queue.get();
+
+#endif // !USE_BUZY_GET
+      
+
+#ifdef FOR_MACOSX
+      if (started==false){
+        printf("  Success. Running Runner thread main loop started.\n");
+        started = true;
+      }
+#endif
+
+      if (ATOMIC_GET(must_exit)) {
+        soundproducer_queue.put(sp);
+        break;
+      }
             
-          if (ATOMIC_GET(must_exit))
-            goto exit_thread;
-        }
-
-      }
-
-
-      {
-        R_ASSERT_NON_RELEASE(ATOMIC_GET(g_num_sp_left)>0);
-        {
-          ASSERT_SHARED;
-        }
-        _owner->RT_process_soundproducer(sp, time, num_frames, process_plugins);
-      }
+      process_soundproducer(sp, time, num_frames, process_plugins);
     }
 
-  exit_thread:
 
     THREADING_drop_player_thread_priority();    
   }
@@ -454,40 +269,58 @@ private slots:
 }
 
 
-void MULTICORE_start_block(void){
-  ATOMIC_SET(g_start_block_time, (int) (1000*monotonic_seconds()));
-  ATOMIC_SET(g_buzy_get_is_enabled, true);
+static void process_single_core(int64_t time, int num_frames, bool process_plugins){
+  while( ATOMIC_GET_RELAXED(num_sp_left) > 0 ) {
+    // R_ASSERT(sp_ready.numSignallers()>0); // This assert can sometimes fail if there are still running runners with must_exit==true.
+    SoundProducer *sp = soundproducer_queue.get();    
+    process_soundproducer(sp, time, num_frames, process_plugins);
+  }
 
-  for(int i=0;i<g_num_runners;i++)
-    g_runners[i]->_runner_wakeup.signal();
+  R_ASSERT_RETURN_IF_FALSE(all_sp_finished.numSignallers()==1);
+
+  all_sp_finished.wait();
+}
+
+
+
+static int g_num_runners = 0;
+static Runner **g_runners = NULL;
+
+
+void MULTICORE_start_block(void){
+#if USE_BUZY_GET
+  ATOMIC_SET(g_start_block_time, (int) (1000*monotonic_seconds()));
+  soundproducer_queue.enableBuzyGet();
+#endif
 }
 
 void MULTICORE_end_block(void){
-  ATOMIC_SET(g_buzy_get_is_enabled, false);
+#if USE_BUZY_GET
+  soundproducer_queue.disableBuzyGet();
 
   int num_blocks_left = ATOMIC_GET(g_num_blocks_pausing_buzylooping);
   if (num_blocks_left > 0)
     ATOMIC_SET(g_num_blocks_pausing_buzylooping, num_blocks_left-1);
+#endif
 }
 
-
 void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t time, int num_frames, bool process_plugins){
-#if 0
-  static bool has_inited = false;
-  if (has_inited==false){
-    bound_thread_to_cpu(0);
-    has_inited = true;
-  }
-#endif
 
   if (sp_all.size()==0)
     return;
 
-  //printf("                      Starting new block. size: %d\n", sp_all.size());
+  if (sp_all.size() >= MAX_NUM_SP){
+    // Not doing anything in the audio thread might cause a deadlock, so the message window might now show if using RT_Message here.
+    RT_message("Maximum number of sound objects reached. Tried to play %d sound objects, but only %d sound objects are supported. Radium must be recompiled to increase this number.",
+               sp_all.size(),
+               MAX_NUM_SP);
+    return;
+  }
 
-  // 1. Initialize threads (runners)
+  int num_ready_sp = 0;
 
-  R_ASSERT_NON_RELEASE(num_frames>0);
+
+  // 1. Initialize threads
 
   for(int i=0;i<g_num_runners;i++){
     g_runners[i]->time = time;
@@ -496,85 +329,139 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
   }
 
 
+  
   // 2. initialize soundproducers
 
   //printf(" mc: SET: %d\n",sp_all.size());
+  ATOMIC_SET(num_sp_left, sp_all.size());
   
   //  fprintf(stderr,"**************** STARTING %d\n",sp_all.size());
   //fflush(stderr);
 
   for (SoundProducer *sp : sp_all) {
-    ATOMIC_SET_RELAXED(sp->num_dependencies_left, sp->num_dependencies);
+    ATOMIC_SET(sp->num_dependencies_left, sp->num_dependencies);
 #if !defined(RELEASE)
-    ATOMIC_SET(sp->is_processed, false);
+    ATOMIC_SET(sp->is_processed, false); // is this really necessary? When could it be true?
 #endif
   }
 
-  R_ASSERT_NON_RELEASE(ATOMIC_GET(g_num_sp_left)==0);
+  
+#if 0
+  SP_print_tree();
+#endif
 
-  for(int i=1;i<MAX_OWNERS;i++){
-    for(;;){
-      int status = ATOMIC_GET(g_owners2[i]._status);
-      if (status==Owner::OWNER_WAITING_BIG_BLOCK || status==Owner::OWNER_WAITING_SMALL_BLOCK || status==Owner::OWNER_NOT_RUNNING || status==Owner::OWNER_PAUSING_TO_AVOID_LOCKING_CPU)
-        break;
+  //int num_waits_start = int(g_num_waits);
 
-      __asm__ __volatile__("nop");
-    }
-  }
+#define START_ALL_RUNNERS_SIMULTANEOUSLY 1
 
-  {
-    ASSERT_EXCLUSIVE;
-
-    // prepare more
-    for(int i=0;i<MAX_OWNERS;i++){
-      g_owners2[i].flip();
-    }
-  }
+  SoundProducer *sp_in_main_thread = NULL;
     
-  // start runners
-  ATOMIC_SET(g_num_sp_left, sp_all.size());
+      
+  // 3. start threads;
 
-  Owner &owner = g_owners[0];
-
-  // Process owners 0
-  int counter = 0;
-  while( ATOMIC_GET(g_num_sp_left) > 0 ) {
-    SoundProducer *sp = owner.RT_get_next_soundproducer();
-    if (sp != NULL)
-      owner.RT_process_soundproducer(sp, time, num_frames, process_plugins);
-    else{
-      avoid_lockup(counter++);      
-      __asm__ __volatile__("nop");
+  for (SoundProducer *sp : sp_all)
+    if (sp->num_dependencies==0){
+      if (sp_in_main_thread == NULL && g_num_runners>0){
+        sp_in_main_thread = sp;
+      } else {
+        num_ready_sp++;
+        //fprintf(stderr,"Scheduling %p: %s\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name);
+        //fflush(stderr);
+#if START_ALL_RUNNERS_SIMULTANEOUSLY
+        soundproducer_queue.putWithoutSignal(sp);
+#else
+        soundproducer_queue.put(sp);
+#endif
+      }
     }
+
+#if START_ALL_RUNNERS_SIMULTANEOUSLY
+  if(num_ready_sp > 0)
+    soundproducer_queue.signal(num_ready_sp); // signal everyone at once to try to lower number of semaphore waits. Doesn't seem to make a difference on my machine though.
+#endif
+
+  if (g_num_runners==0) {
+
+    R_ASSERT(num_ready_sp > 0);
+
+    process_single_core(time, num_frames, process_plugins);
+    
+  } else {
+
+
+    R_ASSERT(sp_in_main_thread!=NULL);
+
+#if USE_BUZY_GET
+
+    // 4. Use main thread as another runner.
+
+    process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
+
+    int counter = 0;
+
+    while(all_sp_finished.tryWaitLightly()==false){
+
+      bool gotit;
+      sp_in_main_thread = soundproducer_queue.tryGet(gotit);
+      if (gotit)
+        process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
+      else
+        avoid_lockup(counter++);      
+    }
+
+#else
+
+    // 4. process as much as we can in the main thread
+
+    while(sp_in_main_thread != NULL){
+      process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
+
+      bool gotit;
+      sp_in_main_thread = soundproducer_queue.tryGet(gotit); // This is not perfect. It's likely that we fail to get a soundproducer before everything is done.
+      if (!gotit)
+        sp_in_main_thread = NULL;
+    }
+    
+    // 5. wait.
+    all_sp_finished.wait();
+
+#endif // !USE_BUZY_GET
+
   }
+  
+  //int num_waits_end = int(g_num_waits);
 
   //printf("num_waits: %d, %d\n",int(g_num_waits),num_waits_end-num_waits_start);
+  
+  if(something_is_wrong){
+    fflush(stderr);
+    abort();
+  }
+
 }
 
-void MULTICORE_add_sp(SoundProducer *sp){
-  ASSERT_EXCLUSIVE;
 
-  R_ASSERT(PLAYER_current_thread_has_lock());
-  //radium::ScopedSpinlock lock(g_owners2[0]._sp_next_lock);
-  g_owners2[0]._next_sp.push_back(sp);
+
+#if 0
+void MULTICORE_stop(void){
+  R_ASSERT(running_runners==NULL);
+
+  while(free_runners != NULL){
+    Runner *next = free_runners->next;
+    delete free_runners;
+    free_runners = next;
+  }
+
+  free_runners = NULL;
+}
+#endif
+
+
+void MULTICORE_add_sp(SoundProducer *sp){
 }
 
 void MULTICORE_remove_sp(SoundProducer *sp){
-  ASSERT_EXCLUSIVE;
-
-  R_ASSERT(PLAYER_current_thread_has_lock());
-
-  for(int i=0;i<MAX_OWNERS;i++){
-    //radium::ScopedSpinlock lock(g_owners2[i]._sp_next_lock);
-    if (g_owners2[i]._next_sp.in_list(sp)){
-      g_owners2[i]._next_sp.remove(sp);
-      return;
-    }
-  }
-
-  RError("MULTICORE_remove_sp. Unable to find sp %p\n", sp);
 }
-
 
 int MULTICORE_get_num_threads(void){
   return g_num_runners+1;
@@ -593,25 +480,8 @@ static int get_num_cpus_from_config(void){
   return SETTINGS_read_int32(settings_key, default_num_cpus);
 }
 
-
-static void RT_set_runner_owner_statuses(void){
-  for(int i=1;i<MAX_OWNERS;i++){
-    //radium::ScopedSpinlock lock(g_owners2[i]._sp_next_lock);
-    Runner *runner = g_runners[i-1];
-    
-    if (i <= g_num_runners)
-      runner->set_owner_status(Owner::OWNER_WAITING_BIG_BLOCK);
-    else
-      runner->set_owner_status(Owner::OWNER_NOT_RUNNING);
-  }
-}
-
 void MULTICORE_set_num_threads(int num_new_cpus){
-  R_ASSERT_RETURN_IF_FALSE(num_new_cpus >= 1);
-
-  //GFX_Message(NULL, "Setting to %d", num_new_cpus);
-  if (num_new_cpus > MAX_OWNERS)
-    num_new_cpus = MAX_OWNERS;
+  R_ASSERT(num_new_cpus >= 1);
 
   if (get_num_cpus_from_config() != num_new_cpus)
     SETTINGS_write_int(settings_key, num_new_cpus);
@@ -621,56 +491,47 @@ void MULTICORE_set_num_threads(int num_new_cpus){
   if (num_new_runners==g_num_runners)
     return;
 
-  PLAYER_lock(); {
-
-    g_num_runners = num_new_runners;
-
-    RT_set_runner_owner_statuses();
-    
-  } PLAYER_unlock();
-}
-
-
-static void MULTICORE_start_threads(void){
-
-  Runner **new_runners = (Runner**)V_calloc(MAX_OWNERS-1,sizeof(Runner*));
+  int num_old_runners = g_num_runners;
+  Runner **old_runners = g_runners;
+  
+  Runner **new_runners = (Runner**)V_calloc(num_new_runners,sizeof(Runner*));
 
   // start them
-  for(int i=0 ; i < MAX_OWNERS-1 ; i++)
-    new_runners[i]=new Runner(&g_owners2[i+1]);
+  for(int i=0 ; i < num_new_runners ; i++)
+    new_runners[i]=new Runner;
 
-  int num_new_cpus = get_num_cpus_from_config();
-
+  // wait until they are ready (takes some time, but if we don't wait here, there will be a moment where there are no active runners, and no sound)
+  for(int i=0 ; i < num_new_runners ; i++)
+    while(new_runners[i]->can_start_main_loop.numWaiters()==0)
+      usleep(1000);
 
   PLAYER_lock(); {
 
-    g_runners = new_runners;
-    g_num_runners = num_new_cpus - 1;
+    for(int i=0 ; i < num_new_runners ; i++)
+      new_runners[i]->can_start_main_loop.signal();
 
-    RT_set_runner_owner_statuses();
+    g_num_runners = num_new_runners;
+    g_runners = new_runners;
+
+    for(int i=0 ; i < num_old_runners ; i++)
+      ATOMIC_SET(old_runners[i]->must_exit, true);
 
   } PLAYER_unlock();
+
+
+  V_free(old_runners);
 }
 
 void MULTICORE_shut_down(void){
-  for(int i=0 ; i < g_num_runners ; i++){
+  for(int i=0 ; i < g_num_runners ; i++)
     ATOMIC_SET(g_runners[i]->must_exit, true);
-    g_runners[i]->_runner_wakeup.signal();
-  }
-  g_num_runners = 0;
-  for(int i=0 ; i < g_num_runners ; i++){
-    g_runners[i]->wait(2000);
-  }
 }
 
 void MULTICORE_init(void){
 
   R_ASSERT(g_num_runners==0);
-
-  for(int i=0;i<MAX_OWNERS;i++)
-    g_owners2[i]._owner_num = i;
-
-  g_owners = g_owners2;
   
-  MULTICORE_start_threads();
+  int num_new_cpus = get_num_cpus_from_config();
+
+  MULTICORE_set_num_threads(num_new_cpus);
 }
