@@ -39,6 +39,7 @@ int GFX_Message(vector_t *buttons, QString message);
 #endif
 
 extern LANGSPEC void GFX_showMixerHelpWindow(void);
+extern LANGSPEC void GFX_showMixerStripsHelpWindow(void);
 extern LANGSPEC void GFX_showFXHelpWindow(void);
 extern LANGSPEC void GFX_showVelocityHelpWindow(void);
 extern LANGSPEC void GFX_showChanceHelpWindow(void);

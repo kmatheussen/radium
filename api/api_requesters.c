@@ -214,6 +214,10 @@ void showMixerHelpWindow(void){
   GFX_showMixerHelpWindow();
 }
 
+void showMixerStripsHelpWindow(void){
+  GFX_showMixerStripsHelpWindow();
+}
+
 void showChanceHelpWindow(void){
   GFX_showChanceHelpWindow();
 }
