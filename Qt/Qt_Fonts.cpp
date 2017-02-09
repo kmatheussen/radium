@@ -35,6 +35,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 static bool can_fit(const QFont &font, const QString &text, int width, int height){
   QFontMetrics fm(font);
 
+  // Not an optimization. Seems like this test sometimes returns true even if the code below returns false.
+  if (fm.width(text) < width && fm.height() < height)
+    return true;
+
   QRect rect = fm.boundingRect(0, 0, width, height, Qt::TextWordWrap | Qt::AlignCenter, text);
 
   // subtract 10 to get some borders.
@@ -61,12 +65,15 @@ QFont GFX_getFittingFont(QString text, int width, int height){
   }
 
   if (fonts.contains(key))
-    return fonts[key];
+    return fonts.value(key);
 
-  QFont the_font;
+  int pointSize = font.pointSize();
 
-  for(int size = font.pointSize(); size > 3; size--){
-    the_font.setPointSize(size);
+  QFont the_font(font);
+
+  for(int size = pointSize; size > 3; size--){
+    if(size!=pointSize)
+      the_font.setPointSize(size);
 
     if (can_fit(the_font, text, width, height))
       break;
