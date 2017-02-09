@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMainWindow>
 #include <QGLFormat>
 #include <QDebug>
+#include <QElapsedTimer>
 
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
@@ -1013,20 +1014,19 @@ private:
     }
   }
   
-  QTime _swap_timer;
+  QElapsedTimer _swap_timer;
   int64_t _swap_timer_counter = 0;
 
   void prevent_high_cpu_in_swap(void){
-    int time = _swap_timer.elapsed();
     _swap_timer_counter++;
 
     double vblank = GL_get_vblank();
     if (vblank==-1)
       vblank = time_estimator.get_vblank();
 
-    if (time < vblank/2){
+    if (!_swap_timer.hasExpired(vblank/2)){
       if (_swap_timer_counter > 4){
-        printf("OpenGL quickswapsleeping. Counter: %d. Time: %d. Vblank: %f\n",(int)_swap_timer_counter, time, vblank);
+        printf("OpenGL quickswapsleeping. Counter: %d. Time: %d. Vblank: %f\n",(int)_swap_timer_counter, (int)_swap_timer.elapsed(), vblank);
         usleep(40*1000 * vblank);
         _swap_timer_counter = 0;
       }

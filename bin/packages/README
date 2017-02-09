@@ -50,7 +50,7 @@ BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 make packages
 BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 ./build_linux.sh -j8
 cp -a bin /opt/radium
 echo '#!/bin/sh' >/usr/bin/radium
-echo QT_QPA_PLATFORM_PLUGIN_PATH=`$(RADIUM_QT_VERSION=5 ./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS` /opt/radium/radium >/usr/bin/radium
+echo QT_QPA_PLATFORM_PLUGIN_PATH=`$(RADIUM_QT_VERSION=5 ./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS` /opt/radium/radium >>/usr/bin/radium
 chmod a+rx /usr/bin/radium
 
 And if "make packages" or "./build_linux.sh" fail, please send me a bug report instead of complaining publicly about the build system of Radium.

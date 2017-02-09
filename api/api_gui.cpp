@@ -1815,7 +1815,7 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1, int y1, int x2, int y2
     
     ScrollArea *scroll_area = dynamic_cast<ScrollArea*>(parent);
     if (scroll_area != NULL){
-      printf("      Adding to scroll child\n");
+      //printf("      Adding to scroll child\n");
       child->_widget->setParent(scroll_area->contents);
       child->_widget->move(x1,y1);
       child->_widget->show();

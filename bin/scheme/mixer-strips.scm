@@ -1375,7 +1375,7 @@
   (for-each (lambda (instrument-id)
               (define x2 (+ x1 mixer-strip-width))
               (<gui> :add mixer-strips (create-mixer-strip instrument-id mixer-strip-width (- y2 y1)) x1 y1 x2 y2)
-              (c-display "x1/x2" x1 x2 ",   (= num-strips-per-row mixer-strip-num)" num-strips-per-row mixer-strip-num num-rows num-strips)
+              ;;(c-display "x1/x2" x1 x2 ",   (= num-strips-per-row mixer-strip-num)" num-strips-per-row mixer-strip-num num-rows num-strips)
               (set! mixer-strip-num (1+ mixer-strip-num))
               (if (= num-strips-per-row mixer-strip-num)
                   (begin
