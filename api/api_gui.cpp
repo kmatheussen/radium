@@ -48,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../Qt/Qt_MyQSlider.h"
 #include "../Qt/Qt_mix_colors.h"
+#include "../Qt/Qt_Fonts_proc.h"
 
 #include "api_common_proc.h"
 
@@ -484,11 +485,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       QRectF rect(x1, y1, x2-x1, y2-y1);
 
       setPen(color);
+      
+      _image_painter->setFont(GFX_getFittingFont(text, x2-x1, y2-y1));
 
       if (align_top_left)
         _image_painter->drawText(rect, text);
       else
-        _image_painter->drawText(rect, text, QTextOption(Qt::AlignCenter));
+        _image_painter->drawText(rect, Qt::TextWordWrap | Qt::AlignCenter, text);
 
       myupdate(x1, y1, x2, y2);
     }

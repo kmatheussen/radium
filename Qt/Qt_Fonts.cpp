@@ -32,6 +32,51 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_Fonts_proc.h"
 
+static bool can_fit(const QFont &font, const QString &text, int width, int height){
+  QFontMetrics fm(font);
+
+  QRect rect = fm.boundingRect(0, 0, width, height, Qt::TextWordWrap | Qt::AlignCenter, text);
+
+  // subtract 10 to get some borders.
+  if (rect.width() >= width-10)
+    return false;
+  
+  // "height-fm.height()" seems to work perfectly. Could be coincidental though. Must subtract a little bit, if not the text is just cut off. (the boundingRect function doesn't seem to work perfectly)
+  if (rect.height() >= height-fm.height())
+    return false;
+
+  return true;
+}
+
+QFont GFX_getFittingFont(QString text, int width, int height){
+  static QFont font;
+
+  QPair<QString,QPair<int,int>> key = QPair<QString,QPair<int,int>>(text,QPair<int,int>(width,height));
+
+  static QHash<QPair<QString,QPair<int,int>>,QFont> fonts;
+
+  if (font != qApp->font()){
+    font = qApp->font();
+    fonts.clear();
+  }
+
+  if (fonts.contains(key))
+    return fonts[key];
+
+  QFont the_font;
+
+  for(int size = font.pointSize(); size > 3; size--){
+    the_font.setPointSize(size);
+
+    if (can_fit(the_font, text, width, height))
+      break;
+  }
+
+  fonts[key] = the_font;
+
+  return the_font;
+}
+
 
 void setFontValues(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;

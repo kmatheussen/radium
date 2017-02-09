@@ -26,7 +26,7 @@
 
 (define (db-to-text db add-dB-string)
   (cond ((<= db *min-db*)
-         "-inf")
+         "~inf")
         (add-dB-string
          (<-> (one-decimal-string db) "dB"))
         (else
