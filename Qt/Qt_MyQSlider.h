@@ -32,6 +32,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/vector_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/placement_proc.h"
+#include "../common/seqtrack_proc.h"
+#include "../common/seqtrack_automation_proc.h"
 
 #include "../audio/undo_audio_effect_proc.h"
 #include "../audio/SoundPlugin.h"
@@ -239,7 +241,8 @@ struct MyQSlider : public QSlider {
       int midi_relearn=-10;
       int midi_learn=-10;
       int record=-10;
-      int add_automation_to_current_track=-10;
+      int add_automation_to_current_editor_track=-10;
+      int add_automation_to_current_sequencer_track=-10;
       int add_random = -10;
       int remove_random = -10;
       
@@ -268,7 +271,8 @@ struct MyQSlider : public QSlider {
       if (!is_recording_automation)
         record = VECTOR_push_back(&options, "Record");
 
-      add_automation_to_current_track = VECTOR_push_back(&options, "Add automation to current track");
+      add_automation_to_current_editor_track = VECTOR_push_back(&options, "Add automation to current editor track");
+      add_automation_to_current_sequencer_track = VECTOR_push_back(&options, "Add automation to current sequencer track");
 
       if (_effect_num < plugin->type->num_effects){
         if (doing_random_change)
@@ -312,7 +316,7 @@ struct MyQSlider : public QSlider {
       else if (command==add_random)
         PLUGIN_set_random_behavior(plugin, _effect_num, true);
       
-      else if (command==add_automation_to_current_track) {
+      else if (command==add_automation_to_current_editor_track) {
 
         int blocknum = currentBlock(-1);
         int tracknum = R_MAX(0, currentTrack(blocknum, -1));
@@ -354,6 +358,26 @@ struct MyQSlider : public QSlider {
                   -1);
           }
         }
+
+      } else if (command==add_automation_to_current_sequencer_track) {
+
+        struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+
+        if (seqtrack != NULL) {
+
+          undoSequencer();
+
+          float value = PLUGIN_get_effect_value(plugin, _effect_num, VALUE_FROM_STORAGE);
+
+          int64_t pos1 = ATOMIC_DOUBLE_GET(pc->song_abstime); //is_playing() && pc->playtype==PLAYSONG ? ATOMIC_DOUBLE_GET(pc->song_abstime) : 0;
+
+          int64_t visible_duration = R_MAX(100, SEQUENCER_get_visible_end_time() - SEQUENCER_get_visible_start_time());
+          
+          int64_t pos2 = pos1 + visible_duration / 10;
+
+          SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, _patch, _effect_num, pos1, value, LOGTYPE_LINEAR, pos2, value);
+        }
+
       }
         
         
