@@ -1,3 +1,21 @@
+Changes 4.4.7 -> 4.4.8:
+* Audio: Make it optional whether to use buzy looping as synchronization
+  primitive in the multicore scheduler. Buzy looping may cause CPU spikes
+  if a plugin uses more than one thread to process audio.
+* More intelligent way to check if OpenGL uses too much CPU. On OSX the
+  old way didn't work quite well since it seemed like the OS used a lot
+  of time right after re-rendering the editor, which it also did, but
+  not for so long that we needed to pause the rendering.
+* Removed the "Experimental feature" text from the auto-suspend and
+  recalculate options in the preferences window. Those seems to work fine.
+* Mixer strips: Automatically scale font size, if necessary, so that we
+  always see all text.
+* Added mixer strips help to the Help menu.
+* Add "Add automation to current sequencer track" option to effect slider
+  popup menu
+
+
+
 Changes 4.4.6 -> 4.4.7:
 * OSX: Let the Cmd key behave as Ctrl key again. This is an emergency fix
   since Ctrl+mouse click turned out to be interpreted as a right click
