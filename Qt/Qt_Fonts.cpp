@@ -55,7 +55,7 @@ static bool can_fit(const QFont &font, const QString &text, int width, int heigh
 QFont GFX_getFittingFont(QString text, int width, int height){
   static QFont font;
 
-  QPair<QString,QPair<int,int>> key = QPair<QString,QPair<int,int>>(text,QPair<int,int>(width,height));
+  auto key = QPair<QString,QPair<int,int>>(text,QPair<int,int>(width,height));
 
   static QHash<QPair<QString,QPair<int,int>>,QFont> fonts;
 

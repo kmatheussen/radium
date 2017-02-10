@@ -60,6 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/Semaphores.hpp"
 #include "../common/Mutex.hpp"
 #include "../common/Vector.hpp"
+#include "../common/MovingAverage.hpp"
 #include "../common/player_proc.h"
 
 #include "../audio/Juce_plugins_proc.h"
@@ -278,6 +279,46 @@ void GL_draw_unlock(void){
   draw_mutex.unlock();
 }
 
+
+namespace{
+  struct PreventHighCpuInSwap{
+
+  private:
+    QElapsedTimer _swap_timer;
+
+    #define _num_swap_times 40
+
+    radium::MovingAverage _moving_average;
+
+  public:
+
+    const int _num_checks_before_sleeping = 20;
+
+    PreventHighCpuInSwap()
+      :_moving_average(_num_swap_times, 200)
+    {
+    }
+    
+    void check(double vblank){
+
+      double duration = _swap_timer.restart();
+      double average_swap_time = _moving_average.get(duration);
+
+      if (average_swap_time < vblank/2){
+        printf("OpenGL quickswapsleeping. Time: %d. Vblank: %f. average: %f\n", (int)_swap_timer.elapsed(), vblank, average_swap_time);
+        usleep(40*1000 * vblank);
+        _moving_average.reset(vblank);
+        //_swap_timer.restart();
+      }
+
+      //printf("Average: %f. duration: %f\n", average_swap_time, duration);
+    }
+    
+#undef _num_swap_times
+  };
+
+  PreventHighCpuInSwap prevent_high_cpu_in_swap;
+}
 
 bool g_gl_widget_started = false;
 
@@ -544,7 +585,7 @@ public:
   double last_current_realline_while_playing;
   int last_curr_realline;
   
-  bool sleep_when_not_painting;
+  bool sleep_when_not_painting = true;  //SETTINGS_read_bool("opengl_sleep_when_not_painting", false))
 
   DEFINE_ATOMIC(bool, _main_window_is_exposed);
 
@@ -566,7 +607,6 @@ public:
     , last_scroll_pos(-1.0f)
     , last_current_realline_while_playing(-1.0f)
     , last_curr_realline(-1)
-    , sleep_when_not_painting(true) //SETTINGS_read_bool("opengl_sleep_when_not_painting", false))
   {
     ATOMIC_SET(_main_window_is_exposed, false);
     
@@ -719,6 +759,8 @@ private:
     draw_counter++;
     
     if (new_t2_data != NULL){
+
+      //prevent_high_cpu_in_swap.reset(); // On OSX, swap doesn't take very much time for a while after redrawing.
 
       t2_data_can_be_used = false;
       
@@ -1014,29 +1056,7 @@ private:
     }
   }
   
-  QElapsedTimer _swap_timer;
-  int64_t _swap_timer_counter = 0;
 
-  void prevent_high_cpu_in_swap(void){
-    _swap_timer_counter++;
-
-    double vblank = GL_get_vblank();
-    if (vblank==-1)
-      vblank = time_estimator.get_vblank();
-
-    if (!_swap_timer.hasExpired(vblank/2)){
-      if (_swap_timer_counter > 4){
-        printf("OpenGL quickswapsleeping. Counter: %d. Time: %d. Vblank: %f\n",(int)_swap_timer_counter, (int)_swap_timer.elapsed(), vblank);
-        usleep(40*1000 * vblank);
-        _swap_timer_counter = 0;
-      }
-    }else{
-      _swap_timer_counter = 0;
-    }
-
-    _swap_timer.restart();    
-  }
-  
   // OpenGL thread
   void swap(void){
     if (USE_GL_LOCK)
@@ -1056,8 +1076,12 @@ private:
       }else
         openglContext()->swapBuffers();
 
-      if (doHighCpuOpenGlProtection())
-        prevent_high_cpu_in_swap();
+      if (doHighCpuOpenGlProtection()) {
+        double vblank = GL_get_vblank();
+        if (vblank==-1)
+          vblank = time_estimator.get_vblank();
+        prevent_high_cpu_in_swap.check(vblank);
+      }
     }
 
     if (juce_lock != NULL)

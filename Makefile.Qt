@@ -2023,7 +2023,7 @@ T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/Queue.hpp Op
 Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h
 	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT)
 
-Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
+Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp
 	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT) #-Wno-error=unused-variable
 
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
