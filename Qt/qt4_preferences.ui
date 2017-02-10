@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1133</width>
-    <height>667</height>
+    <height>658</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -555,105 +555,141 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
          <property name="title">
           <string>Multi Core</string>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_3">
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout">
-            <item>
-             <widget class="QLabel" name="label_3">
-              <property name="font">
-               <font>
-                <weight>50</weight>
-                <bold>false</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>Number of CPUs:</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QSpinBox" name="numCPUs">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>50</width>
-                <height>0</height>
-               </size>
-              </property>
-              <property name="font">
-               <font>
-                <weight>50</weight>
-                <bold>false</bold>
-               </font>
-              </property>
-              <property name="toolTip">
-               <string>Number of CPUs used for audio processing</string>
-              </property>
-              <property name="wrapping">
-               <bool>false</bool>
-              </property>
-              <property name="frame">
-               <bool>false</bool>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-              <property name="buttonSymbols">
-               <enum>QAbstractSpinBox::PlusMinus</enum>
-              </property>
-              <property name="minimum">
-               <number>1</number>
-              </property>
-              <property name="maximum">
-               <number>16</number>
-              </property>
-              <property name="value">
-               <number>1</number>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeType">
-               <enum>QSizePolicy::Fixed</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QLabel" name="label_4">
-              <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note that a higher number of CPUs causes a higher CPU usage overall.&lt;br/&gt;If you have slow graphical performance, or low interactivity, it might help&lt;br/&gt;to reduce this number. If not, it should be set to the number of CPU&lt;br/&gt;cores on your computer for best audio performance.&lt;/span&gt;  (No need for restart)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer_15">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-           </layout>
+         <layout class="QGridLayout" name="gridLayout_8">
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_3">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Number of CPUs:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <spacer name="horizontalSpacer_15">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="2" column="1">
+           <widget class="QCheckBox" name="buzy_looping">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="1">
+           <widget class="QSpinBox" name="numCPUs">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>50</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string>Number of CPUs used for audio processing</string>
+            </property>
+            <property name="wrapping">
+             <bool>false</bool>
+            </property>
+            <property name="frame">
+             <bool>false</bool>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="buttonSymbols">
+             <enum>QAbstractSpinBox::PlusMinus</enum>
+            </property>
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>16</number>
+            </property>
+            <property name="value">
+             <number>1</number>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_15">
+            <property name="text">
+             <string>Use buzy-looping:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="QLabel" name="label_4">
+            <property name="font">
+             <font>
+              <pointsize>8</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note that a higher number of CPUs causes a higher CPU usage overall.&lt;br/&gt;If you have slow graphical performance, or low interactivity, it might help&lt;br/&gt;to reduce this number. If not, it should be set to the number of CPU&lt;br/&gt;cores on your computer for best audio performance.&lt;/span&gt;  (No need for restart)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3">
+           <widget class="QLabel" name="label_16">
+            <property name="font">
+             <font>
+              <pointsize>8</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;May make audio performance scale better if using several CPUs. But it can also&lt;br&gt;cause CPU spikes if using plugins that uses several threads for audio processing.&lt;/span&gt;&lt;br&gt;Restart required&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -672,23 +708,16 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
          <layout class="QVBoxLayout" name="verticalLayout_8">
           <item>
            <widget class="QLabel" name="label_13">
+            <property name="font">
+             <font>
+              <pointsize>8</pointsize>
+             </font>
+            </property>
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Auto-suspend automatically turns off processsing when an instrument has been inactive for a while.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Auto-suspend automatically turns off processsing when an instrument has been inactive for a while.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;
+</string>
             </property>
            </widget>
-          </item>
-          <item>
-           <spacer name="verticalSpacer_11">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>10</height>
-             </size>
-            </property>
-           </spacer>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_10">
@@ -784,26 +813,23 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
            <widget class="QLabel" name="label_14">
             <property name="font">
              <font>
-              <weight>50</weight>
-              <bold>false</bold>
+              <pointsize>8</pointsize>
              </font>
             </property>
             <property name="text">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
-Can significantly reduce CPU usage if there are many sound objects in a song.&lt;br/&gt;
-CPU usage is reduced since we can now avoid mixing in all bus connections on all the sound objects all the time.&lt;br/&gt;
+Can significantly reduce CPU usage if there are many sound objects in a song. CPU usage is reduced since we can now avoid&lt;br&gt;
+mixing in all bus connections on all the sound objects all the time.&lt;br/&gt;
 &lt;br/&gt;
-Latency will be recalculated while playing when turning the send volume to a bus on or off&lt;br/&gt;
-or change the bus volume in a sound object between 0 and another value. Although latency recalulation&lt;br/&gt;
-is interpolated in Radium (so you shouldn't hear any pops or clicks in the sound), at least one beat will&lt;br/&gt;
-have slightly different length than others when latency is recalculated.&lt;br/&gt;
+Latency will be recalculated while playing when turning the send volume to a bus on or off or change the bus volume in a sound&lt;br&gt;
+object between 0 and another value. Although latency recalulation is interpolated in Radium (so you shouldn't hear any pops or&lt;br&gt;
+clicks in the sound), at least one beat will have slightly different length than others when latency is recalculated.&lt;br/&gt;
 &lt;br/&gt;
-Currently you may also experience left-over sounds due to latency buffers not being cleared, so for now &lt;br/&gt;
-it is not recommended to automate a bus on/off check box, or automate the bus level so that it sends&lt;br/&gt;
-out the value 0, while this option is enabled.&lt;br/&gt;
+Currently you may also experience left-over sounds due to latency buffers not being cleared, so for now it is not recommended to&lt;br&gt;
+automate a bus on/off check box, or automate the bus level so that it sends out the value 0, while this option is enabled.&lt;br/&gt;
 &lt;br/&gt;
-Note that this feature is likely to be unnecessary in the future. For now, it's here as a workaround to avoid high&lt;br/&gt;
-CPU usage caused by mixing sound for all the buses.
+Note that this feature is likely to be unnecessary in the future. For now, it's here as a workaround to avoid high CPU usage caused&lt;br&gt;
+by mixing sound for all the buses.
 &lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
@@ -5326,7 +5352,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
             <x>0</x>
             <y>0</y>
             <width>829</width>
-            <height>573</height>
+            <height>564</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -7926,7 +7952,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
                <x>0</x>
                <y>0</y>
                <width>983</width>
-               <height>307</height>
+               <height>298</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -8143,8 +8169,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
-  <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>

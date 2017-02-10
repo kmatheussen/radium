@@ -431,6 +431,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     // Audio
     {
       numCPUs->setValue(MULTICORE_get_num_threads());
+      buzy_looping->setChecked(doAudioBuzyLoop());
       enable_autobypass->setChecked(autobypassEnabled());
       autobypass_delay->setValue(getAutoBypassDelay());
       recalculate_bus_latency_onoff->setChecked(doAlwaysRunBuses());
@@ -765,6 +766,11 @@ public slots:
     }GL_unlock();
 
     //numCPUs->setFocusPolicy(Qt::NoFocus);
+  }
+
+  void on_buzy_looping_toggled(bool val){
+    if (_initing==false)
+      setAudioBuzyLoop(val);
   }
 
   // auto-bypass

@@ -588,10 +588,6 @@ struct SoundProducer {
   int _latency;
   int _highest_input_link_latency;
   
-#if !defined(RELEASE)
-  DEFINE_ATOMIC(bool, is_processed) = false;
-#endif
-
   int _num_inputs;
   int _num_outputs;
   int _num_dry_sounds;
@@ -617,10 +613,15 @@ struct SoundProducer {
 
   // Scheduling, start
   //
+#if !defined(RELEASE)
+  DEFINE_ATOMIC(bool, is_processed) = false;
+#endif
+
   DEFINE_ATOMIC(int, num_dependencies_left);  // = num_dependencies + (is_bus ? num_not_bus_descendants : 0). Decreased during processing. When the number is zero, it is scheduled for processing.
   
   int num_dependencies;              // number of active input links
 
+#if 0
   int downcounter = 1; // When zero, the soundproducer can change order. We do this to avoid too much fluctation, which is likely to be bad for the cache.
 
   //Owner *owner = NULL;
@@ -628,6 +629,7 @@ struct SoundProducer {
   SoundProducer *dll_next;
   //
   // Scheduling, end
+#endif
   
   
   radium::Vector<SoundProducerLink*> _input_links;

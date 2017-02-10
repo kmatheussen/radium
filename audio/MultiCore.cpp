@@ -31,21 +31,49 @@ static volatile bool something_is_wrong = false;
 
 static const char *settings_key = "num_cpus";
 
-#define USE_BUZY_GET 1
+static bool g_use_buzy_get = false;
 
-#if USE_BUZY_GET
 
-static radium::SpinlockSemaphore all_sp_finished;
 static DEFINE_ATOMIC(int, g_start_block_time) = 0;
 const int g_num_blocks_to_pause_buzylooping = 400; // Should be some seconds
 static DEFINE_ATOMIC(int, g_num_blocks_pausing_buzylooping) = 0;
 
-#else
+namespace{
+  struct All_Sp_Finished{
+    radium::SpinlockSemaphore all_sp_finished_spin;
+    radium::Semaphore all_sp_finished;
 
-static radium::Semaphore all_sp_finished;
+    void signal(void){
+      if (g_use_buzy_get)
+	all_sp_finished_spin.signal();
+      else
+	all_sp_finished.signal();
+    }
 
-#endif // !USE_BUZY_GET
+    void wait(void){
+      if (g_use_buzy_get)
+	all_sp_finished_spin.wait();
+      else
+	all_sp_finished.wait();
+    }
 
+    bool tryWaitLightly(void){
+#if !defined(RELEASE)
+      R_ASSERT(g_use_buzy_get);
+#endif
+      return all_sp_finished_spin.tryWaitLightly();
+    }
+
+    int numSignallers(void){
+      if (g_use_buzy_get)
+	return all_sp_finished_spin.numSignallers();
+      else
+	return all_sp_finished.numSignallers();
+    }
+  };
+
+  All_Sp_Finished all_sp_finished;
+}
 
 static DEFINE_ATOMIC(int, num_sp_left) = 0;
 
@@ -53,7 +81,6 @@ static DEFINE_ATOMIC(int, num_sp_left) = 0;
 
 static radium::Queue< SoundProducer* , MAX_NUM_SP > soundproducer_queue;
 
-#if USE_BUZY_GET
 static void avoid_lockup(int counter){
   if ((counter % (1024*64)) == 0){
     int time_now = (int)(1000*monotonic_seconds());
@@ -73,7 +100,6 @@ static void avoid_lockup(int counter){
     }
   }
 }
-#endif
 
 static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp, SoundProducer **next){
   if (ATOMIC_ADD_RETURN_NEW(sp->num_dependencies_left, -1) == 0) {
@@ -201,42 +227,44 @@ public:
 
       SoundProducer *sp;
 
-#if USE_BUZY_GET
+      if(g_use_buzy_get) {
 
-      for(;;){
-        int counter = 0;
-
-        if (ATOMIC_GET_RELAXED(g_num_blocks_pausing_buzylooping) <= 0) {
-
-          if (soundproducer_queue.buzyGetEnabled()) {
+	for(;;){
+	  int counter = 0;
+	  
+	  if (ATOMIC_GET_RELAXED(g_num_blocks_pausing_buzylooping) <= 0) {
+	    
+	    if (soundproducer_queue.buzyGetEnabled()) {
+	      
+	      bool gotit;
+	      sp = soundproducer_queue.tryGet(gotit);
+	      if (gotit)
+		break;
+	      else
+		avoid_lockup(counter++);
             
-            bool gotit;
-            sp = soundproducer_queue.tryGet(gotit);
-            if (gotit)
-              break;
-            else
-              avoid_lockup(counter++);
-            
-          } else {
+	    } else {
+	      
+	      soundproducer_queue.waitUntilBuzyGetIsEnabled();
+	      
+	    }
+	    
+	  } else {
+	    
+	    sp = soundproducer_queue.get();
+	    break;
+	    
+	  }
+	  
+	}
 
-            soundproducer_queue.waitUntilBuzyGetIsEnabled();
 
-          }
+      } else {
 
-        } else {
-
-          sp = soundproducer_queue.get();
-          break;
-
-        }
+	// not buzy-getting
+	sp = soundproducer_queue.get();
 
       }
-
-#else
-
-      sp = soundproducer_queue.get();
-
-#endif // !USE_BUZY_GET
       
 
 #ifdef FOR_MACOSX
@@ -288,20 +316,20 @@ static Runner **g_runners = NULL;
 
 
 void MULTICORE_start_block(void){
-#if USE_BUZY_GET
-  ATOMIC_SET(g_start_block_time, (int) (1000*monotonic_seconds()));
-  soundproducer_queue.enableBuzyGet();
-#endif
+  if (g_use_buzy_get){
+    ATOMIC_SET(g_start_block_time, (int) (1000*monotonic_seconds()));
+    soundproducer_queue.enableBuzyGet();
+  }
 }
 
 void MULTICORE_end_block(void){
-#if USE_BUZY_GET
-  soundproducer_queue.disableBuzyGet();
+  if (g_use_buzy_get){
+    soundproducer_queue.disableBuzyGet();
 
-  int num_blocks_left = ATOMIC_GET(g_num_blocks_pausing_buzylooping);
-  if (num_blocks_left > 0)
-    ATOMIC_SET(g_num_blocks_pausing_buzylooping, num_blocks_left-1);
-#endif
+    int num_blocks_left = ATOMIC_GET(g_num_blocks_pausing_buzylooping);
+    if (num_blocks_left > 0)
+      ATOMIC_SET(g_num_blocks_pausing_buzylooping, num_blocks_left-1);
+  }
 }
 
 void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t time, int num_frames, bool process_plugins){
@@ -391,41 +419,42 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
 
     R_ASSERT(sp_in_main_thread!=NULL);
 
-#if USE_BUZY_GET
+    if (g_use_buzy_get){
 
-    // 4. Use main thread as another runner.
-
-    process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
-
-    int counter = 0;
-
-    while(all_sp_finished.tryWaitLightly()==false){
-
-      bool gotit;
-      sp_in_main_thread = soundproducer_queue.tryGet(gotit);
-      if (gotit)
-        process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
-      else
-        avoid_lockup(counter++);      
-    }
-
-#else
-
-    // 4. process as much as we can in the main thread
-
-    while(sp_in_main_thread != NULL){
+      // 4. Use main thread as another runner.
+      
       process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
+      
+      int counter = 0;
+      
+      while(all_sp_finished.tryWaitLightly()==false){
+	
+	bool gotit;
+	sp_in_main_thread = soundproducer_queue.tryGet(gotit);
+	if (gotit)
+	  process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
+	else
+	  avoid_lockup(counter++);      
+      }
 
-      bool gotit;
-      sp_in_main_thread = soundproducer_queue.tryGet(gotit); // This is not perfect. It's likely that we fail to get a soundproducer before everything is done.
-      if (!gotit)
-        sp_in_main_thread = NULL;
+    } else {
+
+      // 4. process as much as we can in the main thread
+      
+      while(sp_in_main_thread != NULL){
+	process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
+	
+	bool gotit;
+	sp_in_main_thread = soundproducer_queue.tryGet(gotit); // This is not perfect. It's likely that we fail to get a soundproducer before everything is done.
+	if (!gotit)
+	  sp_in_main_thread = NULL;
+      }
+      
+      // 5. wait.
+      all_sp_finished.wait();
+
     }
-    
-    // 5. wait.
-    all_sp_finished.wait();
 
-#endif // !USE_BUZY_GET
 
   }
   
@@ -530,7 +559,9 @@ void MULTICORE_shut_down(void){
 void MULTICORE_init(void){
 
   R_ASSERT(g_num_runners==0);
-  
+
+  g_use_buzy_get = doAudioBuzyLoop();
+
   int num_new_cpus = get_num_cpus_from_config();
 
   MULTICORE_set_num_threads(num_new_cpus);
