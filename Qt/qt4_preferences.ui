@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>4</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -673,7 +673,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
           <item>
            <widget class="QLabel" name="label_13">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Auto-suspend is an experimental feature.&lt;/p&gt;&lt;p&gt;Auto-suspend automatically turns off processsing when an instrument has been inactive for a while.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Auto-suspend automatically turns off processsing when an instrument has been inactive for a while.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -790,7 +790,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
-Experimental feature. May significantly reduce CPU usage if there are many sound objects in a song.&lt;br/&gt;
+Can significantly reduce CPU usage if there are many sound objects in a song.&lt;br/&gt;
 CPU usage is reduced since we can now avoid mixing in all bus connections on all the sound objects all the time.&lt;br/&gt;
 &lt;br/&gt;
 Latency will be recalculated while playing when turning the send volume to a bus on or off&lt;br/&gt;
