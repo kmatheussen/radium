@@ -220,6 +220,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     int _gui_num;
     QWidget *_widget;
 
+    QRect _orgRect;
+    QWidget *_full_screen_parent = NULL;
+    
     QVector<Gui*> _children;
     QVector<func_t*> _close_callbacks;
     
@@ -1877,11 +1880,17 @@ void gui_hide(int64_t guinum){
   gui->_widget->hide();
 }
 
+static void deleteFullscreenParent(Gui *gui);
+
+
 void gui_close(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
 
+  if(gui->_full_screen_parent!=NULL)
+    deleteFullscreenParent(gui);
+  
   gui->_widget->close();
 }
 
@@ -1893,9 +1902,8 @@ void gui_setAlwaysOnTop(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
-  
-  gui->_widget->setParent(g_main_window);
-  gui->_widget->setWindowFlags(Qt::Window | Qt::Tool);
+
+  gui->_widget->setParent(g_main_window, Qt::Window);
 }
 
 void gui_disableUpdates(int64_t guinum){
@@ -1980,7 +1988,29 @@ bool gui_mousePointsMainlyAt(int64_t guinum){
   if (gui==NULL)
     return false;
 
+  if (gui->_full_screen_parent!=NULL){
+    if (gui->_full_screen_parent->window()==QApplication::topLevelAt(QCursor::pos()))
+      return true;
+    /*
+    if (gui->_full_screen_parent->hasFocus())
+      return true;
+    if (gui->_widget->hasFocus())
+      return true;
+    */
+  }
+
   return gui->_widget->window()==QApplication::topLevelAt(QCursor::pos());
+}
+
+static void deleteFullscreenParent(Gui *gui){
+  gui->_full_screen_parent->layout()->removeWidget(gui->_widget);
+
+  gui->_widget->setParent(g_main_window, Qt::Window);
+  
+  gui->_widget->setGeometry(gui->_orgRect);
+  
+  delete gui->_full_screen_parent;
+  gui->_full_screen_parent = NULL;
 }
 
 void gui_setFullScreen(int64_t guinum, bool enable){
@@ -1988,10 +2018,32 @@ void gui_setFullScreen(int64_t guinum, bool enable){
   if (gui==NULL)
     return;
 
-  if(enable)
-    gui->_widget->showFullScreen();
-  else
-    gui->_widget->showNormal();
+  if(enable){
+    
+    if(gui->_full_screen_parent!=NULL)
+      return;
+    
+    gui->_orgRect = gui->_widget->geometry();
+      
+    gui->_full_screen_parent = new QWidget();
+
+    gui->_full_screen_parent->showFullScreen();
+    
+    QVBoxLayout *mainLayout = new QVBoxLayout(gui->_full_screen_parent);
+    gui->_full_screen_parent->setLayout(mainLayout);
+
+    mainLayout->addWidget(gui->_widget);
+    
+  }else{
+
+    if(gui->_full_screen_parent==NULL)
+      return;
+
+    deleteFullscreenParent(gui);
+    
+    gui->_widget->show();
+  }
+  
 }
   
 bool gui_isFullScreen(int64_t guinum){
@@ -1999,7 +2051,8 @@ bool gui_isFullScreen(int64_t guinum){
   if (gui==NULL)
     return false;
 
-  return gui->_widget->isFullScreen();
+  //return gui->_widget->isFullScreen();
+  return gui->_full_screen_parent!=NULL;
 }
   
 void gui_setBackgroundColor(int64_t guinum, const_char* color){
@@ -2156,6 +2209,8 @@ QVector<QWidget*> MIXERSTRIPS_get_all_widgets(void){
     
     if (gui==NULL)     
       to_remove.push_back(guinum);
+    else if (gui->_full_screen_parent != NULL)
+      ret.push_back(gui->_full_screen_parent);
     else
       ret.push_back(gui->_widget);
   }
@@ -2183,11 +2238,15 @@ QWidget *MIXERSTRIPS_get_curr_widget(void){
     } else {
 
       QWidget *widget = gui->_widget;
+      if (gui->_full_screen_parent != NULL)
+        widget = gui->_full_screen_parent;
       
       QPoint p = widget->mapFromGlobal(QCursor::pos());
       int x = p.x();
       int y = p.y();
 
+      //printf("                  MIXERSTRIPS_get_curr_widget. x: %d, y: %d, width: %d, height: %d\n", x,y,widget->width(),widget->height());
+      
       if (true
           && x >= 0
           && x <  widget->width()

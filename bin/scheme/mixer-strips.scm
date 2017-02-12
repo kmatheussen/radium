@@ -537,7 +537,7 @@
                                ;; set-value
                                (lambda (new-slider-value)
                                  (define db (slider-to-db new-slider-value))
-                                 (c-display "new-db:" db ", old-db:" last-value)
+                                 ;;(c-display "new-db:" db ", old-db:" last-value)
                                  (when (and doit (not (= last-value db)))
                                    (set! last-value db)
                                    (set-db-value db)))
@@ -1231,9 +1231,7 @@
   
   (define mixer-strips (make-mixer-strips :gui parent
                                           :remake (lambda()
-                                                    (remake (<gui> :width parent) (<gui> :height parent)))
-                                          :width width
-                                          :height height))
+                                                    (remake (<gui> :width parent) (<gui> :height parent)))))
   
   ;;(<ra> :inform-about-gui-being-a-mixer-strips parent) // Must only be called for standalone windows.
 
@@ -1397,25 +1395,34 @@
 (define-struct mixer-strips
   :gui
   :remake
-  :width
-  :height)
+  :is-full-screen #f
+  :pos #f)
 
 (define *mixer-strips* '())
 
-(define (create-mixer-strips-gui num-rows)
+(delafina (create-mixer-strips-gui :num-rows 1
+                                   :is-full-screen #f
+                                   :pos #f)
   ;;(define parent (<gui> :horizontal-layout))
   ;;(define parent (<gui> :scroll-area #t #t))
   (define parent (<gui> :widget))
 
-  (define width 1000)
-  (define height 800)
+  (define width (if pos (caddr pos) 1000))
+  (define height (if pos (cadddr pos) 800))
 
   (<gui> :set-size parent width height)
-  (<gui> :set-pos parent 600 50)
+  (<gui> :set-pos
+         parent
+         (if pos (car pos) 600)
+         (if pos (cadr pos) 50))
   ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
 
-  (<gui> :set-always-on-top parent)
-  (<gui> :show parent)  
+  (if (not is-full-screen)
+      (<gui> :set-always-on-top parent)
+      (<gui> :set-full-screen parent))
+  
+  (<gui> :show parent)
+      
   ;;(<gui> :set-full-screen parent)
 
   (define das-mixer-strips #f)
@@ -1441,10 +1448,10 @@
     (<gui> :enable-updates parent))
 
   (define mixer-strips (make-mixer-strips :gui parent
+                                          :is-full-screen is-full-screen
                                           :remake (lambda ()
                                                     (remake (<gui> :width parent) (<gui> :height parent)))
-                                          :width width
-                                          :height height))
+                                          :pos pos))
   
   (remake width height)
 
@@ -1478,7 +1485,25 @@
             *mixer-strips*))
 
 (define (toggle-current-mixer-strips-fullscreen)
+
+  ;; fallback solution if qt fights back too much.
+  (define (toggle-by-recreating mixer-strips)
+    (define gui (mixer-strips :gui))
+    (<gui> :close gui)
+    (if (mixer-strips :is-full-screen)
+        (begin
+          (define pos (mixer-strips :pos))
+          (create-mixer-strips-gui 1 #f pos))
+        (begin
+          (define x (<gui> :get-x gui))
+          (define y (<gui> :get-y gui))
+          (define width (<gui> :width gui))
+          (define height (<gui> :height gui))
+          (define pos (list x y width height))
+          (create-mixer-strips-gui 1 #t pos))))
+
   (define (toggle mixer-strips)
+    ;;(c-display "         About to toggle" (mixer-strips :gui) ". is fullscreen?" (<gui> :is-full-screen (mixer-strips :gui)))
     (<gui> :set-full-screen (mixer-strips :gui) (not (<gui> :is-full-screen (mixer-strips :gui)))))
   
   (let loop ((mixer-strips *mixer-strips*))
@@ -1490,9 +1515,12 @@
             ((null? mixer-strips)
              #f)
             ((<gui> :mouse-points-mainly-at (first-mixer-strips :gui))
-             (toggle first-mixer-strips))
+             (toggle-by-recreating first-mixer-strips) ;; This one is just as fast the 'toggle' function, plus that gui is closed immediately, so it's actually better.
+             ;;(toggle first-mixer-strips)
+             )
             (else
              (loop (cdr mixer-strips)))))))
+
 
 
 ;; main
