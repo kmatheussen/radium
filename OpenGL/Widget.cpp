@@ -285,33 +285,76 @@ namespace{
 
   private:
     QElapsedTimer _swap_timer;
+    QElapsedTimer _first_sleep_timer;
+    bool is_sleeping = false;
+    bool is_waiting_before_sleeping = false;
+    bool is_waiting_before_turning_off_waiting_before_sleeping = false;
 
-    #define _num_swap_times 40
+#define _num_swap_times 40
 
     radium::MovingAverage _moving_average;
 
   public:
 
     const int _num_checks_before_sleeping = 20;
-
+    const int _time_before_first_sleep = 1000;
+    
     PreventHighCpuInSwap()
       :_moving_average(_num_swap_times, 200)
     {
+      _swap_timer.start();
     }
-    
-    void check(double vblank){
 
+    void check(double vblank, double swap_duration){
+      
       double duration = _swap_timer.restart();
       double average_swap_time = _moving_average.get(duration);
 
-      if (average_swap_time < vblank/2){
-        printf("OpenGL quickswapsleeping. Time: %d. Vblank: %f. average: %f\n", (int)_swap_timer.elapsed(), vblank, average_swap_time);
-        usleep(40*1000 * vblank);
-        _moving_average.reset(vblank);
-        //_swap_timer.restart();
-      }
+      if (average_swap_time >= vblank*0.8){
+        if (is_sleeping){
+          printf("Turning off sleeping. dur: %f, avg: %f\n", duration, average_swap_time);
+          is_sleeping=false;
+        }
 
-      //printf("Average: %f. duration: %f\n", average_swap_time, duration);
+        if (is_waiting_before_sleeping){
+
+          if (!is_waiting_before_turning_off_waiting_before_sleeping){
+            is_waiting_before_turning_off_waiting_before_sleeping = true;
+            _first_sleep_timer.restart();
+          }
+          
+          if (_first_sleep_timer.elapsed() >= 20000){
+            printf("  Turning off wating before sleeping. dur: %f, avg: %f\n", duration, average_swap_time);
+            is_waiting_before_turning_off_waiting_before_sleeping = false;
+            is_waiting_before_sleeping = false;
+          }
+        }
+
+      } else {
+
+        if (is_sleeping){
+
+          printf("OpenGL quickswapsleeping. Duration: %f. Vblank: %f. average: %f\n", duration, vblank, average_swap_time);
+          usleep(40*1000 * vblank);
+          _moving_average.reset(vblank/2);
+          //_swap_timer.restart();
+
+        } else if (!is_waiting_before_sleeping){
+
+          printf(" Starting to wait 1 second. Duration: %f\n", duration);
+          _first_sleep_timer.restart();
+          is_waiting_before_sleeping = true;
+
+        } else {
+
+          if (_first_sleep_timer.elapsed() >= _time_before_first_sleep){
+            is_sleeping = true;
+          }
+
+        }
+
+      }
+      
     }
     
 #undef _num_swap_times
@@ -1070,17 +1113,21 @@ private:
     // Swap to the newly rendered buffer
     if ( openglContext()->hasDoubleBuffer()) {
 
+      //double start_time = TIME_get_ms();
+
       if (juce_lock!=NULL){
         radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
         openglContext()->swapBuffers();
       }else
         openglContext()->swapBuffers();
 
+      double swap_duration = 0.0;//TIME_get_ms() - start_time;
+
       if (doHighCpuOpenGlProtection()) {
         double vblank = GL_get_vblank();
         if (vblank==-1)
           vblank = time_estimator.get_vblank();
-        prevent_high_cpu_in_swap.check(vblank);
+        prevent_high_cpu_in_swap.check(vblank, swap_duration);
       }
     }
 
