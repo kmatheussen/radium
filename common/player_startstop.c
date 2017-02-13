@@ -78,8 +78,11 @@ static void clear_scheduler_and_stop_player(void){
     is_clear = SCHEDULER_all_is_clear();
   }PLAYER_unlock();
 
-  if (is_clear)
+  if (is_clear){
+    R_ASSERT(is_playing()==false);
+    //printf("          IS_CLEAR\n");
     return;
+  }
       
   ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
   while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED)
@@ -407,7 +410,7 @@ static void PlayHandleRangeLoop(void){
         GL_draw_lock();
         got_lock=true;
       }
-
+      //printf(" here\n");
       StopAllInstruments();
       
       if (MIXER_is_saving())

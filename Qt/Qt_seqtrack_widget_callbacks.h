@@ -1181,14 +1181,14 @@ struct Timeline_widget : public MouseTrackerQWidget {
             barnum++;                                                   \
           }
           
-          int64_t last_bartime = -1;
+          int64_t last_barseqtime = -1;
           
           while(beat!=NULL){
             
             if (beat->beat_num==1){
               int64_t seqtime = start_blockseqtime + Place2STime(block, &beat->l.p);
               int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, seqtime);
-              last_bartime = abstime;
+              last_barseqtime = seqtime;
 
               paintbarnum();
             }
@@ -1199,11 +1199,11 @@ struct Timeline_widget : public MouseTrackerQWidget {
           if (last_x >= width())
             break;
 
-          int64_t bar_length = end_blockseqtime - last_bartime;
+          int64_t bar_seqlength = end_blockseqtime - last_barseqtime;
           
           //printf("last_x: %d, width: %d. bar_length: %d. next: %f, end_seqtime: %f\n", (int)last_x, width(),(int)bar_length,((float)end_blockseqtime + bar_length)/44100.0, (float)end_seqtime/44100.0);
           
-          for(int64_t seqtime = end_blockseqtime ; seqtime < end_seqtime ; seqtime += bar_length){
+          for(int64_t seqtime = end_blockseqtime ; seqtime < end_seqtime ; seqtime += bar_seqlength){
             if (next_seqblock!=NULL) {
               if (seqtime >= start_nextblockseqtime)
                 break;
