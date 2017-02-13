@@ -383,33 +383,46 @@ static void EditorFollowsPlayCursorLoop(void){
 
 }
 
+// Lock editor graphics while stopping and playing to avoid some jumpiness.
+// However, I can't see the jumpiness anymore, plus that I can provoke deadlock if playing a range very fast, so set it to 0.
+#define DO_LOCK_DRAW_LOCK 0
+
+static void maybe_draw_lock(bool *got_lock){
+  if(*got_lock==false){
+#if DO_USE_DRAW_LOCK
+    GL_draw_lock();
+#endif
+    *got_lock=true;
+  }
+}
+
+static void maybe_draw_unlock(bool *got_lock){
+  if (*got_lock==true){
+#if DO_USE_DRAW_LOCK
+    GL_draw_unlock();
+#endif
+    *got_lock=false;
+  }
+}
+
 // called very often
 static void PlayHandleRangeLoop(void){
   //printf("is_range: %d, is_playing: %d, stopped_manually: %d\n",pc->is_playing_range, is_playing(), g_player_was_stopped_manually);
 
-  static bool got_lock = false; // Lock editor graphics while stopping and playing to avoid some jumpiness.
+  static bool got_lock = false;
   
   if (pc->is_playing_range == false){
-    if (got_lock==true){
-      GL_draw_unlock();
-      got_lock=false;
-    }
+    maybe_draw_unlock(&got_lock);
     return;
   }
 
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPING && g_player_was_stopped_manually==false) {
-    if(got_lock==false){
-      GL_draw_lock();
-      got_lock=true;
-    }
+    maybe_draw_lock(&got_lock);
   }
   
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED) {
     if (g_player_was_stopped_manually==false) {
-      if(got_lock==false){
-        GL_draw_lock();
-        got_lock=true;
-      }
+      maybe_draw_lock(&got_lock);
       //printf(" here\n");
       StopAllInstruments();
       
@@ -419,10 +432,7 @@ static void PlayHandleRangeLoop(void){
         PlayRangeFromStart(root->song->tracker_windows);
     }
 
-    if (got_lock==true){
-      GL_draw_unlock();    
-      got_lock=false;
-    }
+    maybe_draw_unlock(&got_lock);
   }
 }
 
@@ -432,26 +442,17 @@ static void PlayHandleSequencerLoop(void){
   static bool got_lock = false; // Lock editor graphics while stopping and playing to avoid some jumpiness.
   
   if (!SEQUENCER_is_looping() || pc->is_playing_range==true) {
-    if (got_lock==true){
-      GL_draw_unlock();
-      got_lock=false;
-    }
+    maybe_draw_unlock(&got_lock);
     return;
   }
 
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPING && g_player_was_stopped_manually==false) {
-    if(got_lock==false){
-      GL_draw_lock();
-      got_lock=true;
-    }
+    maybe_draw_lock(&got_lock);
   }
   
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED) {
     if (g_player_was_stopped_manually==false) {
-      if(got_lock==false){
-        GL_draw_lock();
-        got_lock=true;
-      }
+      maybe_draw_lock(&got_lock);
 
       StopAllInstruments();
       
@@ -461,10 +462,7 @@ static void PlayHandleSequencerLoop(void){
         PlaySong(SEQUENCER_get_loop_start());
     }
 
-    if (got_lock==true){
-      GL_draw_unlock();
-      got_lock=false;
-    }
+    maybe_draw_unlock(&got_lock);
   }
 }
 
