@@ -144,7 +144,15 @@ int main(int argc, char **argv){
   in.open(stdin, QIODevice::ReadOnly);
 
   while(true){
-    QString line = QByteArray::fromBase64(in.readLine().trimmed().constData());
+    char data[1024];
+    int64_t num_bytes = in.readLine(data, 1024-10);
+
+    if (num_bytes==-1){
+      fprintf(stderr,"   Unable to read data. Exiting progress window process.\n");
+      break;
+    }
+
+    QString line = QByteArray::fromBase64(data);
     printf(" *********** Got line -%s- ************* \n",line.toUtf8().constData());
     //getchar();
     
@@ -180,7 +188,10 @@ extern QMainWindow *g_main_window;
 static QProcess *g_process = NULL;
 
 static QRect get_rect(int fontsize){
-    
+
+#ifdef TEST_MAIN
+  return QRect(50,50,400,400);
+#else
   QRect rect = g_main_window->rect();
   QPoint pos = g_main_window->mapToGlobal(QPoint(0,0));
 
@@ -194,6 +205,7 @@ static QRect get_rect(int fontsize){
   int y = middle_y - height/2;
 
   return QRect(x,y,width,height);
+#endif
 }
 
 void GFX_OpenProgress(const char *message){
