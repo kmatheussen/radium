@@ -66,6 +66,8 @@ void process_OpenProgress(QString message, QRect rect){
   progressBox->setInformativeText("             \n            \n              \n                \n               \n");
 
 
+  progressBox->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
   positionWindow(rect, progressBox);
   
   progressBox->show();
