@@ -91,6 +91,14 @@ extern bool g_qt_is_running;
 extern "C" {
 int SYSTEM_show_message(const char *message){
 
+  static bool ignore_forever = false;
+  static double ignore_until = -1;
+  static double last_time = -1;
+  double time_now = TIME_get_ms();
+
+  if (time_now <= ignore_until || ignore_forever)
+    return 0;
+
   if (g_qt_is_running==false){
     fprintf(stderr,"\n\n\n   === %s ===\n\n\n", message);
     return 0;
@@ -127,8 +135,17 @@ int SYSTEM_show_message(const char *message){
   }
 
   GL_unlock();
+
+  last_time = TIME_get_ms();
   
-  return myProcess.exitCode();
+  int status = myProcess.exitCode();
+
+  if (status==2)
+    ignore_until = last_time + 2000;
+  else if (status==3)
+    ignore_forever = true;
+
+  return status;
 }
 }
 
