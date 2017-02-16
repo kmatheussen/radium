@@ -2030,6 +2030,9 @@ void gui_setFullScreen(int64_t guinum, bool enable){
     gui->_full_screen_parent->showFullScreen();
     
     QVBoxLayout *mainLayout = new QVBoxLayout(gui->_full_screen_parent);
+    mainLayout->setSpacing(0);
+    mainLayout->setContentsMargins(0,0,0,0);
+
     gui->_full_screen_parent->setLayout(mainLayout);
 
     mainLayout->addWidget(gui->_widget);
