@@ -47,6 +47,8 @@ namespace{
 
     ~CheckableAction(){
       printf("I was deleted: %s\n",text.toUtf8().constData());
+      if(callback!=NULL)
+        s7extra_unprotect(callback);
     }
     
     CheckableAction(const QString & text, bool is_on, QMenu *qmenu, int num, func_t *callback)
@@ -56,6 +58,9 @@ namespace{
       , num(num)
       , callback(callback)
     {
+      if(callback!=NULL)
+        s7extra_protect(callback);
+
       QWidget *widget = new QWidget;
       QHBoxLayout *layout = new QHBoxLayout;
       layout->setSpacing(0);
@@ -98,6 +103,8 @@ namespace{
 
     ~ClickableAction(){
       printf("I was deleted: %s\n",text.toUtf8().constData());
+      if(callback!=NULL)
+        s7extra_unprotect(callback);
     }
     
     ClickableAction(const QString & text, QMenu *qmenu, int num, func_t *callback)
@@ -107,6 +114,8 @@ namespace{
       , num(num)
       , callback(callback)
     {
+      if(callback!=NULL)
+        s7extra_protect(callback);
       connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
     }
 
