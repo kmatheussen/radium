@@ -14,6 +14,9 @@
 (define *text-color* "#cccccc")
 (define *arrow-text* "↳")
 
+(define *current-mixer-strip-is-wide* #f)
+
+
 (define (db-to-slider db)
   (if (<= db *min-db*)
       0
@@ -104,7 +107,7 @@
 
   name)
 
-(define (create-mixer-strip-name instrument-id is-minimized)
+(define (create-mixer-strip-name instrument-id is-minimized is-current-mixer-strip)
   (define name (<ra> :get-instrument-name instrument-id))
   (define color (<ra> :get-instrument-color instrument-id))
 
@@ -124,7 +127,9 @@
                                               (<ra> :delete-instrument instrument-id)
                                               (create-default-mixer-path-popup instrument-id))
                                           (when (= button *left-button*)
-                                            (<ra> :set-wide-instrument-strip instrument-id is-minimized)
+                                            (if is-current-mixer-strip
+                                                (set! *current-mixer-strip-is-wide* is-minimized)
+                                                (<ra> :set-wide-instrument-strip instrument-id is-minimized))
                                             (remake-mixer-strips instrument-id))))
                                     #f))
 
@@ -1263,7 +1268,7 @@
 (define (draw-mixer-strips-border gui width height)
   (<gui> :draw-box gui "#bb222222" 0 0 width height 2 3 3))
 
-(define (create-mixer-strip-minimized instrument-id)
+(define (create-mixer-strip-minimized instrument-id is-current-mixer-strip)
   (define color (<ra> :get-instrument-color instrument-id))
 
   ;;(define gui (<gui> :vertical-layout)) ;; min-width height))
@@ -1281,9 +1286,9 @@
   (<gui> :set-background-color gui color)
   
   ;;(define gui (<gui> :widget))
-  (set-fixed-width gui (floor (* 1.2 (get-fontheight))))
-  
-  (define label (create-mixer-strip-name instrument-id #t))
+  (set-fixed-width gui (max 30 (floor (* 1.2 (get-fontheight)))))
+
+  (define label (create-mixer-strip-name instrument-id #t is-current-mixer-strip))
 
   (define meter-instrument-id (find-meter-instrument-id instrument-id))
 
@@ -1305,7 +1310,7 @@
   gui)
 
 
-(define (create-mixer-strip-wide instrument-id min-width)
+(define (create-mixer-strip-wide instrument-id min-width is-current-mixer-strip)
   (define gui (<gui> :vertical-layout)) ;; min-width height))
   (<gui> :set-min-width gui min-width)
   ;;(<gui> :set-max-width gui width)
@@ -1367,7 +1372,7 @@
   (define comment_y2 (+ comment_y1 comment-height))
 ||#
 
-  (define name (create-mixer-strip-name instrument-id #f))
+  (define name (create-mixer-strip-name instrument-id #f is-current-mixer-strip))
   (set-fixed-height name name-height)
 
   (<gui> :add gui name)
@@ -1413,10 +1418,13 @@
            (draw-mixer-strips-border gui width height)))
   gui)
 
-(define (create-mixer-strip instrument-id min-width)
-  (if (<ra> :has-wide-instrument-strip instrument-id)
-      (create-mixer-strip-wide instrument-id min-width)
-      (create-mixer-strip-minimized instrument-id)))
+(define (create-mixer-strip instrument-id min-width is-current-mixer-strip)
+  (define is-wide (if is-current-mixer-strip
+                      *current-mixer-strip-is-wide*
+                      (<ra> :has-wide-instrument-strip instrument-id)))
+  (if is-wide
+      (create-mixer-strip-wide instrument-id min-width is-current-mixer-strip)
+      (create-mixer-strip-minimized instrument-id is-current-mixer-strip)))
 
 
 ;; Stored mixer strips.
@@ -1445,7 +1453,6 @@
                        (get-all-instruments-used-in-mixer-strip instrument-id)))))))
 
 
-
 (define (create-standalone-mixer-strip instrument-id width height)
   ;;(define parent (<gui> :horizontal-layout))
   ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
@@ -1471,16 +1478,16 @@
            (lambda ()
              (<gui> :disable-updates parent)
              
-             (define new-mixer-strip (and instrument-is-open (create-mixer-strip instrument-id width)))
+             (define new-mixer-strip (and instrument-is-open (create-mixer-strip instrument-id width #t)))
              
              (when das-mixer-strip-gui
                (<gui> :close das-mixer-strip-gui)
                (set! das-mixer-strip-gui #f))
 
              (when instrument-is-open
-               (if (not (<ra> :has-wide-instrument-strip instrument-id))
-                 (set! width (<gui> :width new-mixer-strip))
-                 (set! width org-width))
+               (if *current-mixer-strip-is-wide*
+                   (set! width org-width)
+                   (set! width (<gui> :width new-mixer-strip)))
                (set-fixed-width parent width)
                (<gui> :add parent new-mixer-strip 0 0 width height)
                (<gui> :show new-mixer-strip)             
@@ -1612,7 +1619,7 @@
            (define stored-mixer-strip (get-stored-mixer-strip stored-mixer-strips instrument-id))
            (define mixer-strip (if (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
                                    (get-mixer-strip-from-stored-mixer-strip stored-mixer-strip)
-                                   (create-mixer-strip instrument-id min-mixer-strip-width)))
+                                   (create-mixer-strip instrument-id min-mixer-strip-width #f)))
            '(c-display "   Creating" instrument-id ". Stored is valid?" (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
                       "stored-mixer-strip:" stored-mixer-strip
                       "list-of-modified:" list-of-modified-instrument-ids)

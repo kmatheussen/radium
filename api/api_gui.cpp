@@ -149,6 +149,7 @@ static QPen getPen(const_char* color){
 }
 
 static bool g_run_paint_callbacks = true;
+static bool g_currently_painting = false;
 
 namespace radium_gui{
 
@@ -415,6 +416,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (g_run_paint_callbacks==false)
         return;
 
+      R_ASSERT_RETURN_IF_FALSE(g_currently_painting==false);
+
+      g_currently_painting = true;
+
       QPainter p(_widget);
       p.setRenderHints(QPainter::Antialiasing,true);
 
@@ -423,6 +428,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       s7extra_callFunc_void_int_int(_paint_callback, _widget->width(), _widget->height());
 
       _current_painter = NULL;
+
+      g_currently_painting = false;
     }
 
     void addPaintCallback(func_t* func){
@@ -1809,10 +1816,13 @@ void gui_addPaintCallback(int64_t guinum, func_t* func){
 }
 
 void gui_update(int64_t guinum, int x1, int y1, int x2, int y2){
+
   Gui *gui = get_gui(guinum);
 
   if (gui==NULL)
     return;
+
+  R_ASSERT_RETURN_IF_FALSE(g_currently_painting==false);
 
   if (x1==-1)
     gui->_widget->update();
@@ -2523,6 +2533,10 @@ QWidget *API_gui_get_widget(int64_t guinum){
     return NULL;
 
   return gui->_widget;
+}
+
+bool API_gui_is_painting(void){
+  return g_currently_painting;
 }
   
 void API_gui_pause_all_paint_callbacks(void){
