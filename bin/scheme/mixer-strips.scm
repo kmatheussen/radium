@@ -379,9 +379,8 @@
                                         (get-instruments-connecting-from-instrument instrument-id)))))
     (if (null? out-instruments)
         #f
-        (let* ((out-instrument (car out-instruments))
-               (inputs (get-instruments-connecting-to-instrument out-instrument)))
-          (if (= 1 (length inputs))
+        (let ((out-instrument (car out-instruments)))
+          (if (= 1 (<ra> :get-num-in-audio-connections out-instrument))
               out-instrument
               (loop (cdr out-instruments)))))))
 
@@ -719,7 +718,7 @@
   (define next-plugin-instrument (find-next-plugin-instrument-in-path instrument-id))
 
   (define ret (keep (lambda (out-instrument)
-                      (if (= 1 (length (get-instruments-connecting-to-instrument out-instrument)))
+                      (if (= 1 (<ra> :get-num-in-audio-connections out-instrument))
                           (if (not next-plugin-instrument)
                               #t
                               (if (= next-plugin-instrument out-instrument)
