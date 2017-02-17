@@ -3,9 +3,9 @@
 ;; TOPIC: Should the pan slider work for the last instrument in the path?
 ;; In case, we need to copy pan values when deleting / removing plulgins.
 ;;
-;; TOPIC: Perhaps add an option to make a plugin always be a standalone strip. (probably a good idea)
-;;
 ;; When adding a new mixer strip, we could slice the various mixer strips windows.
+
+
 
 
 (define (get-fontheight)
@@ -32,12 +32,27 @@
         (else
          (one-decimal-string db))))
 
-(define (create-custom-checkbox paint-func value-changed is-selected)
+(define (set-fixed-height gui height)
+  (<gui> :set-size gui (<gui> :width gui) height)
+  (<gui> :set-min-height gui height)
+  (<gui> :set-max-height gui height)
+  (<gui> :set-size-policy gui #t #f))
+
+(define (set-fixed-width gui width)
+  (<gui> :set-size gui width (<gui> :height gui))
+  (<gui> :set-min-width gui width)
+  (<gui> :set-max-width gui width)
+  (<gui> :set-size-policy gui #f #t))
+
+(define (create-custom-checkbox paint-func value-changed is-selected min-height)
   (define checkbox (<gui> :widget))
-  (define width (<gui> :width checkbox))
-  (define height (<gui> :height checkbox))
+  (<gui> :set-min-height checkbox min-height)
+
   (define (repaint)
-    (paint-func checkbox is-selected width height))
+    (paint-func checkbox is-selected 
+                (<gui> :width checkbox)
+                (<gui> :height checkbox)))
+
   (<gui> :add-mouse-callback checkbox (lambda (button state x y)
                                         ;;(c-display "state" state)
                                         (when (and (= button *left-button*)
@@ -48,8 +63,11 @@
                                         #t))
   (<gui> :add-resize-callback checkbox
          (lambda (newwidth newheight)
-           (set! width newwidth)
-           (set! height newheight)
+           ;;(c-display "             RESIZE callback" newwidth newheight)
+           ;;(assert (> newwidth 0))
+           ;;(assert (> newheight 0))
+           ;;(set! width 100);;newwidth)
+           ;;(set! height 100);;newheight)
            (repaint)))
 
   ;;(repaint)
@@ -68,7 +86,7 @@
 
 
 
-(define (create-mixer-strip-name gui instrument-id x1 y1 x2 y2)
+(define (create-mixer-strip-name-line instrument-id height)
   (define name (<gui> :line (<ra> :get-instrument-name instrument-id) (lambda (edited)
                                                                         (if (<ra> :instrument-is-open instrument-id)
                                                                             (<ra> :set-instrument-name edited instrument-id)))))
@@ -81,7 +99,36 @@
                                             (<ra> :delete-instrument instrument-id)
                                             (create-default-mixer-path-popup instrument-id)))
                                     #f))
-  (<gui> :add gui name x1 y1 x2 y2))
+
+  (set-fixed-height name height)
+
+  name)
+
+(define (create-mixer-strip-name instrument-id is-minimized)
+  (define name (<ra> :get-instrument-name instrument-id))
+  (define color (<ra> :get-instrument-color instrument-id))
+
+  (define label (<gui> :widget))
+  (<gui> :add-resize-callback label
+         (lambda (width height)
+           (<gui> :filled-box label color 0 0 width height)
+           (if is-minimized
+               (<gui> :draw-vertical-text label *text-color* name 2 5 (+ width 0) height #f #t)
+               (<gui> :draw-text label *text-color* name 5 0 width height #f #t #f))
+           (<gui> :draw-box label "#202020" 0 0 width height 1.0 2 2)))
+
+  (<gui> :add-mouse-callback label (lambda (button state x y)
+                                    (when (= state *is-pressing*)
+                                      (if (= button *right-button*)
+                                          (if (<ra> :shift-pressed)
+                                              (<ra> :delete-instrument instrument-id)
+                                              (create-default-mixer-path-popup instrument-id))
+                                          (when (= button *left-button*)
+                                            (<ra> :set-wide-instrument-strip instrument-id is-minimized)
+                                            (remake-mixer-strips))))
+                                    #f))
+
+  label)
 
 
 (define (request-send-instrument instrument-id callback)
@@ -196,6 +243,12 @@
               ;;                                #t)
 
                 "----------"
+                "Rename instrument" (lambda ()
+                                      (define old-name (<ra> :get-instrument-name instrument-id))
+                                      (define new-name (<ra> :request-string "New name:" #t))
+                                      (if (and (not (string=? new-name ""))
+                                               (not (string=? new-name old-name)))
+                                          (<ra> :set-instrument-name new-name instrument-id)))
                 "Configure instrument color" (lambda ()
                                                (show-instrument-color-dialog instrument-id))
                 "Instrument information" (lambda ()
@@ -245,10 +298,12 @@
                       delete-func
                       replace-func
                       reset-func)
+
   (define instrument-name (<ra> :get-instrument-name instrument-id))
   ;;(define widget (<gui> :widget 100 (get-fontheight)))
   (define widget #f)
-  
+  (define is-changing-value #f)
+
   (define (paintit width height)
     (define color (<ra> :get-instrument-color instrument-id))
     (define value (get-scaled-value))
@@ -258,7 +313,11 @@
     (<gui> :filled-box widget "black" 1 1 (1- width) (1- height) 5 5)
     (<gui> :filled-box widget color 0 0 pos height 5 5)
     (<gui> :draw-box widget "gray" 0 0 width height 0.8)
-    (<gui> :draw-text widget *text-color* (<-> instrument-name ": " (get-value-text value))
+    (define text (<-> instrument-name ": " (get-value-text value)))
+    (when is-changing-value
+      (<ra> :set-statusbar-text text)
+      (<gui> :tool-tip text))
+    (<gui> :draw-text widget *text-color* text
            4 2 width height))
 
   (set! widget (<gui> :horizontal-slider "" 0 (get-scaled-value) 1.0
@@ -276,7 +335,13 @@
   (<gui> :add-mouse-callback widget (lambda (button state x y)
                                       (when (and (= button *left-button*)
                                                  (= state *is-pressing*))
+                                        (set! is-changing-value #t)
                                         (make-undo))
+                                      (when (= state *is-releasing*)
+                                        (set! is-changing-value #f)
+                                        (<gui> :tool-tip "")
+                                        ;;(c-display "finished")
+                                        )
                                       (when (and (= button *right-button*)
                                                  (= state *is-pressing*))
                                         (if (<ra> :shift-pressed)
@@ -669,6 +734,14 @@
               (get-returned-plugin-buses next-plugin-instrument))
       ret))
 
+
+;; Returns the last plugin.
+(define (find-meter-instrument-id instrument-id)
+  (define next-plugin-instrument (find-next-plugin-instrument-in-path instrument-id))
+  (if next-plugin-instrument
+      (find-meter-instrument-id next-plugin-instrument)
+      instrument-id))
+
 ;; Returns the last plugin.
 (define (create-mixer-strip-path gui first-instrument-id instrument-id)
   (define fontheight (get-fontheight))
@@ -708,7 +781,7 @@
       instrument-id))
 
 
-(define (create-mixer-strip-pan gui system-background-color instrument-id x1 y1 x2 y2)
+(define (create-mixer-strip-pan instrument-id system-background-color background-color height)
   (define (pan-enabled?)
     (>= (<ra> :get-instrument-effect instrument-id "System Pan On/Off") 0.5))
   
@@ -732,16 +805,17 @@
                             (if paint
                                 (paint))))))
 
+  (set-fixed-height slider height)
+
   (set! paint
         (lambda ()
           (define width (<gui> :width slider))
-          (define height (<gui> :height slider))
           (define value (get-pan))
           (define is-on (pan-enabled?))
           (<gui> :filled-box slider system-background-color 0 0 width height)
           (define background (if is-on
-                                 (<gui> :mix-colors (<gui> :get-background-color gui) "black" 0.39)
-                                 (<gui> :mix-colors (<gui> :get-background-color gui) "white" 0.95)))
+                                 (<gui> :mix-colors background-color "black" 0.39)
+                                 (<gui> :mix-colors background-color "white" 0.95)))
           (<gui> :filled-box slider background 0 0 width height 5 5)
           (define col1 (<gui> :mix-colors "white" background 0.4))
           (define col2 (<gui> :mix-colors "#010101" background 0.5))
@@ -793,15 +867,12 @@
                                       (<ra> :set-instrument-effect instrument-id "System Pan On/Off" (if onoff 1.0 0.0)))))))
            #f))
 
-  (<gui> :add gui slider x1 y1 x2 y2))
+  slider)
 
 ;;(define (create-mixer-strip-checkbox text sel-color unsel-color width height callback)
 ;;  (define button (<gui> :widget width height))
 
-(define (create-mixer-strip-mutesolo gui instrument-id x1 y1 x2 y2)
-  (define background-color (<gui> :get-background-color gui));(<ra> :get-instrument-color instrument-id))
-
-  (define middle (floor (average x1 x2)))
+(define (create-mixer-strip-mutesolo instrument-id background-color height is-minimized)
   
   (define (draw-mutesolo checkbox is-selected is-implicitly-selected text color width height)
     (<gui> :filled-box
@@ -819,8 +890,8 @@
            checkbox
            "black"
            text
-           0 0 width height
-           #f)
+           3 2 (- width 3) (- height 2)
+           )
     
     (<gui> :draw-box
            checkbox
@@ -858,7 +929,7 @@
               (get-all-audio-instruments)))
 
   
-  (define implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
+  (define implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id)) ;; Mutable variable
   (define (draw-mute mute is-muted width height)
     (draw-mutesolo mute is-muted implicitly-muted "Mute" "green" width height))
 
@@ -872,15 +943,17 @@
                                             (if (<ra> :ctrl-pressed)
                                                 (turn-off-all-mute instrument-id))
                                             )))
-                                       (get-muted)))
+                                       (get-muted)
+                                       height))
 
   (<ra> :schedule (random 1000) (let ((mute (cadr mute)))
                                   (lambda ()
                                     (if (and (<gui> :is-open mute) (<ra> :instrument-is-open instrument-id))
                                         (let ((last-implicitly-muted implicitly-muted))
                                           (set! implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
-                                          (if (not (eq? implicitly-muted last-implicitly-muted))
-                                              (draw-mute mute (get-muted) (<gui> :width mute) (<gui> :height mute)))
+                                          (when (not (eq? implicitly-muted last-implicitly-muted))
+                                            (draw-mute mute (get-muted) (<gui> :width mute) (<gui> :height mute))
+                                            )
                                           100)
                                         #f))))
   
@@ -893,7 +966,8 @@
                                             (<ra> :set-instrument-effect instrument-id "System Solo On/Off" (if is-selected 1.0 0.0))
                                             (if (<ra> :ctrl-pressed)
                                                 (turn-off-all-solo instrument-id)))))
-                                       (get-soloed)))
+                                       (get-soloed)
+                                       height))
   
   (add-gui-effect-monitor (cadr mute) instrument-id "System Volume On/Off"
                           (lambda ()
@@ -901,23 +975,41 @@
   
   (add-gui-effect-monitor (cadr solo) instrument-id "System Solo On/Off"
                           (lambda ()
-                            ;;(c-display "Solo changed for" instrument-id)
+                            (c-display "Solo changed for" instrument-id)
                             ((car solo) (get-soloed))))
+  
+  (define gui (if is-minimized
+                  (<gui> :vertical-layout)
+                  (<gui> :horizontal-layout)))
+  (<gui> :set-layout-spacing gui 0 0 0 0 0)
 
-  (<gui> :add gui (cadr mute) x1 y1 middle y2)
-  (<gui> :add gui (cadr solo) middle y1 x2 y2)
+  (if is-minimized
+      (begin
+        (set-fixed-height (cadr mute) height)
+        (set-fixed-height (cadr solo) height))
+      (set-fixed-height gui height))
+
+  (<gui> :add gui (cadr mute) 1)
+  (<gui> :add gui (cadr solo) 1)
+  gui
   )
 
-(define (create-mixer-strip-volume gui instrument-id meter-instrument-id x1 y1 x2 y2)
+(define (create-mixer-strip-volume instrument-id meter-instrument-id background-color is-minimized)
   (define fontheight (get-fontheight))
-  (define middle (floor (average x1 x2)))
+  (define voltext-height fontheight)
 
-  (define border-size (scale 0.05 0 1 0 (- x2 x1)))
-  (define border-size/2 (round (/ border-size 2)))
+  (define (get-border-size width)
+    (scale 0.05 0 1 0 width))
+
+  (define show-voltext #t)
+  (define show-peaktext (not is-minimized))
+
+#||
+  (define middle (floor (average x1 x2)))
 
   (define voltext_x2 (+ x1 middle))
   (define voltext_y1 (round (+ y1 border-size/2)))
-  (define voltext_y2 (+ voltext_y1 fontheight))
+  (define voltext_y2 (+ voltext_y1 voltext-height))
 
   (define peaktext_y1 voltext_y1)
   (define peaktext_x1 middle)
@@ -933,6 +1025,7 @@
   (define peak_y1 volslider_y1)
   (define peak_x2 peaktext_x2)
   (define peak_y2 volslider_y2)
+||#
 
   (define peaktexttext "-inf")
 
@@ -979,16 +1072,16 @@
                                (if paint-slider
                                    (paint-slider))))))
     
-  (define background (<gui> :get-background-color gui))
-
   (define (paint-text gui text)
     (define width (<gui> :width gui))
     (define height (<gui> :height gui))
     
-    (define col1 (<gui> :mix-colors "#010101" background 0.7))
+    (define border-size (get-border-size width))
+
+    (define col1 (<gui> :mix-colors "#010101" background-color 0.7))
     
     ;; background
-    (<gui> :filled-box gui background 0 0 width height)
+    (<gui> :filled-box gui background-color 0 0 width height)
     
     ;; rounded
     (<gui> :filled-box gui col1 border-size 0 (- width border-size) height 5 5)
@@ -997,35 +1090,41 @@
     (<gui> :draw-text gui *text-color* text 0 0 width height))
 
     
-  (set! paint-voltext
-        (lambda ()
-          (paint-text voltext (db-to-text (get-volume) #f))))
+  (when show-voltext
 
-  (<gui> :add-resize-callback voltext (lambda x (paint-voltext)))
-  ;;(paint-voltext)
+    (set! paint-voltext
+          (lambda ()
+            (paint-text voltext (db-to-text (get-volume) #f))))
+    
+    (<gui> :add-resize-callback voltext (lambda x (paint-voltext)))
+    ;;(paint-voltext)
+    )
 
-  (set! paint-peaktext
-        (lambda ()
-          (paint-text peaktext peaktexttext)))
-
-  (<gui> :add-resize-callback peaktext (lambda x (paint-peaktext)))
-  ;;(paint-peaktext)
+  (when show-peaktext
+    (set! paint-peaktext
+          (lambda ()
+            (paint-text peaktext peaktexttext)))
+    
+    (<gui> :add-resize-callback peaktext (lambda x (paint-peaktext)))
+    ;;(paint-peaktext)
+    )
 
   (set! paint-slider
         (lambda ()
           (define width (<gui> :width volslider))
           (define height (<gui> :height volslider))
+          (define border-size (get-border-size width))
           (define x1 border-size) ;;(scale 0.1 0 1 0 width))
           (define x2 (- width border-size)) ;;(scale 0.9 0 1 0 width))
           (define middle_y (scale (db-to-slider (get-volume)) 0 1 height 0))
           
           ;; background
-          (<gui> :filled-box volslider background 0 0 width height)
+          (<gui> :filled-box volslider background-color 0 0 width height)
           
           (define col1 (<gui> :mix-colors
                               (if is-sink? "#f0f0f0" "#010101")
-                              background 0.2)) ;; down
-          (define col2 (<gui> :mix-colors "#010101" background 0.9)) ;; up
+                              background-color 0.2)) ;; down
+          (define col2 (<gui> :mix-colors "#010101" background-color 0.9)) ;; up
 
           ;; slider
           (<gui> :filled-box volslider col2 x1 0 x2 height 5 5) ;; up (fill everything)
@@ -1044,15 +1143,13 @@
 
   (define volmeter (<gui> :vertical-audio-meter meter-instrument-id))
   
-  (<gui> :add gui voltext x1 voltext_y1 middle voltext_y2)
-  (<gui> :add gui peaktext peaktext_x1 peaktext_y1 peaktext_x2 peaktext_y2)
-
   (add-gui-effect-monitor volslider instrument-id effect-name
                           (lambda ()
                             (set! doit #f)
                             (<gui> :set-value volslider (db-to-slider (get-volume)))
                             ;;(<gui> :set-value voltext (get-volume))
-                            (paint-voltext)
+                            (if paint-voltext
+                                (paint-voltext))
                             (paint-slider)
                             (set! doit #t)))
 
@@ -1068,33 +1165,66 @@
                                         (<ra> :set-instrument-effect instrument-id effect-name (scale 0 *min-db* *max-db* 0 1))))))
            #f))
 
-  (<gui> :add-mouse-callback voltext (lambda (button state x y)
-                                        (when (and (= button *left-button*)
-                                                   (= state *is-pressing*))
-                                          (let ((maybe (<ra> :request-float "" *min-db* *max-db* #t)))
-                                            (when (>= maybe *min-db*)
-                                              (<ra> :undo-instrument-effect instrument-id effect-name)
-                                              (<ra> :set-instrument-effect instrument-id effect-name (scale maybe *min-db* *max-db* 0 1)))))
-                                        #t))
-                                                
+  (when show-voltext
+    (<gui> :add-mouse-callback voltext (lambda (button state x y)
+                                         (when (and (= button *left-button*)
+                                                    (= state *is-pressing*))
+                                           (let ((maybe (<ra> :request-float "" *min-db* *max-db* #t)))
+                                             (when (>= maybe *min-db*)
+                                               (<ra> :undo-instrument-effect instrument-id effect-name)
+                                               (<ra> :set-instrument-effect instrument-id effect-name (scale maybe *min-db* *max-db* 0 1)))))
+                                         #t))
+    )
 
-  (<gui> :add-audio-meter-peak-callback volmeter (lambda (text)
-                                                   (set! peaktexttext text)
-                                                   (paint-peaktext)))
+  (when show-peaktext
 
-  (<gui> :add-mouse-callback peaktext (lambda (button state x y)
-                                        (when (and (= button *left-button*)
-                                                   (= state *is-pressing*))
-                                          (set! peaktexttext "-inf")
-                                          (<gui> :reset-audio-meter-peak volmeter)
-                                          (paint-peaktext))
-                                        #t))
-  
-  (<gui> :add gui volslider volslider_x1 volslider_y1 volslider_x2 volslider_y2)
-  (<gui> :add gui volmeter peak_x1 peak_y1 peak_x2 peak_y2)
+    (<gui> :add-audio-meter-peak-callback volmeter (lambda (text)
+                                                     (set! peaktexttext text)
+                                                     (paint-peaktext)))
+
+    (<gui> :add-mouse-callback peaktext (lambda (button state x y)
+                                          (when (and (= button *left-button*)
+                                                     (= state *is-pressing*))
+                                            (set! peaktexttext "-inf")
+                                            (<gui> :reset-audio-meter-peak volmeter)
+                                            (paint-peaktext))
+                                          #t)))
+
+  ;; horiz 1 (voltext and peaktext)
+  ;;
+  (define horizontal1 (<gui> :horizontal-layout))
+  (<gui> :set-layout-spacing horizontal1 0 0 0 0 0)
+
+  (if (or show-voltext show-peaktext)
+      (set-fixed-height horizontal1 voltext-height))
+
+  (if show-voltext
+      (<gui> :add horizontal1 voltext 1))
+
+  (if show-peaktext
+    (<gui> :add horizontal1 peaktext 1))
+
+
+  ;; horiz 2 (volume slider and audio meter)
+  ;;
+  (define horizontal2 (<gui> :horizontal-layout))
+  (<gui> :set-layout-spacing horizontal2 0 0 0 0 0)
+  (<gui> :set-size-policy horizontal2 #t #t)
+  (<gui> :set-size-policy volslider #t #t)
+  (<gui> :set-size-policy volmeter #t #t)
+  (<gui> :add horizontal2 volslider 1)
+  (<gui> :add horizontal2 volmeter 1)
+
+  ;; vertical
+  (define vertical (<gui> :vertical-layout))
+  (<gui> :set-layout-spacing vertical 5 0 0 0 0)
+
+  (<gui> :add vertical horizontal1)
+  (<gui> :add vertical horizontal2)
 
   (set! doit #t)
 
+  vertical
   )
 
 
@@ -1105,37 +1235,89 @@
          0.3))
 
 
-(define (create-mixer-strip-comment gui instrument-id x1 y1 x2 y2)
+(define (create-mixer-strip-comment instrument-id height)
   (define comment-edit (<gui> :line (<ra> :get-instrument-comment instrument-id)
                               (lambda (new-name)
                                 (<ra> :set-instrument-comment new-name instrument-id))))    
   (<gui> :set-background-color comment-edit (<ra> :get-instrument-color instrument-id))
-  (<gui> :add gui comment-edit x1 y1 x2 y2))
+  (set-fixed-height comment-edit height)
+  comment-edit)
+
+(define (draw-mixer-strips-border gui width height)
+  (<gui> :draw-box gui "#bb222222" 0 0 width height 2 3 3))
+
+(define (create-mixer-strip-minimized instrument-id)
+  (define color (<ra> :get-instrument-color instrument-id))
+
+  ;;(define gui (<gui> :vertical-layout)) ;; min-width height))
+  ;;(<gui> :add gui (<gui> :checkbox "" #f))
+  ;;(<gui> :add gui (<gui> :text (<ra> :get-instrument-name instrument-id)))
+  
+  ;(define gui (<gui> :checkbox (<ra> :get-instrument-name instrument-id) #f #t))
+  ;(<gui> :set-background-color gui (<ra> :get-instrument-color instrument-id))
+  ;;(set-fixed-width gui (get-fontheight))
+
+  (define gui (<gui> :vertical-layout)) ;; min-width height))
+  (<gui> :set-layout-spacing gui 5 5 5 5 5);;2 2 2 2)
+
+  (define background-color (get-mixer-strip-background-color gui instrument-id))
+  (<gui> :set-background-color gui color)
+  
+  ;;(define gui (<gui> :widget))
+  (set-fixed-width gui (floor (* 1.2 (get-fontheight))))
+  
+  (define label (create-mixer-strip-name instrument-id #t))
+
+  (define meter-instrument-id (find-meter-instrument-id instrument-id))
+
+  (<gui> :add gui label 1)
+  (<gui> :add gui (create-mixer-strip-mutesolo instrument-id background-color (get-fontheight) #t))
+
+  (define volume-gui (create-mixer-strip-volume instrument-id meter-instrument-id background-color #t))
+  (<gui> :add gui volume-gui 1)
+  
+  (<gui> :add-resize-callback gui
+         (lambda (width height)
+           ;;(set-fixed-height volume-gui (floor (/ height 2)))
+           (<gui> :filled-box gui background-color 0 0 width height 0 0)
+           (draw-mixer-strips-border gui width height)
+           #t
+           )
+         )
+
+  gui)
 
 
-(define (create-mixer-strip instrument-id width height)
-  (define gui (<gui> :widget width height))
-  (<gui> :set-min-width gui width)
-  (<gui> :set-max-width gui width)
-  (<gui> :set-size-policy gui #f #t)
+(define (create-mixer-strip-wide instrument-id min-width)
+  (define gui (<gui> :vertical-layout)) ;; min-width height))
+  (<gui> :set-min-width gui min-width)
+  ;;(<gui> :set-max-width gui width)
+  ;;(<gui> :set-size-policy gui #f #t)
+  (<gui> :set-layout-spacing gui 2 4 4 4 4)
+
+  (define background-color (get-mixer-strip-background-color gui instrument-id))
+
   (define system-background-color (<gui> :get-background-color gui))
   ;;(c-display "               backgroudn: " (<gui> :get-background-color gui))
-  (<gui> :set-background-color gui (get-mixer-strip-background-color gui instrument-id)) ;;(<ra> :get-instrument-color instrument-id))
+  (<gui> :set-background-color gui background-color) ;;(<ra> :get-instrument-color instrument-id))
   
+#||
   (define y1 0)
   (define x1 0)
-  (define x2 width)
+  (define x2 min-width)
   (define y2 height)
   (define top-y y1)
-  
+  ||#
+
   (define fontheight (get-fontheight))
   (define fontheight-and-borders (+ 4 fontheight))
 
-  (define name-height (floor (* 1.5 fontheight-and-borders)))
+  (define name-height fontheight-and-borders)
   (define pan-height fontheight-and-borders)
   (define mutesolo-height fontheight-and-borders)
   (define comment-height fontheight-and-borders)
 
+#||
   (define min-send-height (* 2 fontheight-and-borders))
   (define min-volume-height (* 3 fontheight-and-borders))
 
@@ -1146,8 +1328,9 @@
                             (floor (/ height-left 2))))
   (define volume-height (max min-volume-height
                              (1+ (floor (/ height-left 2)))))
+||#
 
-
+#||
   (define name_y1 y1)
   (define name_y2 (+ y1 name-height))
 
@@ -1165,12 +1348,32 @@
 
   (define comment_y1 volume_y2)
   (define comment_y2 (+ comment_y1 comment-height))
+||#
 
-  (create-mixer-strip-name gui instrument-id x1 name_y1 x2 name_y2)
+  (define name (create-mixer-strip-name instrument-id #f))
+  (set-fixed-height name name-height)
+
+  (<gui> :add gui name)
 
   (define mixer-strip-path-gui (<gui> :vertical-scroll))
   (<gui> :set-layout-spacing mixer-strip-path-gui 5 5 5 5 5)
-  (<gui> :add gui mixer-strip-path-gui x1 sends_y1 x2 sends_y2)
+
+
+  (define hepp (<gui> :horizontal-layout))
+  (<gui> :set-layout-spacing hepp 0 5 2 5 2)
+
+  ;;(<gui> :add-layout-space hepp 2 2 #f #f)
+  (<gui> :add hepp mixer-strip-path-gui)
+  ;;(<gui> :add-layout-space hepp 2 2 #f #f)
+
+  (<gui> :add gui hepp 1)
+
+  ;(set-fixed-width mixer-strip-path-gui (- (<gui> :width gui) 26))
+
+  '(<gui> :add-resize-callback gui
+         (lambda (width height)
+           (set-fixed-width mixer-strip-path-gui (- width 26))))
+
   
   (<gui> :add-mouse-callback mixer-strip-path-gui (lambda (button state x y)
                                                     (if (and (= button *right-button*)
@@ -1182,21 +1385,34 @@
 
   (define meter-instrument-id (create-mixer-strip-path mixer-strip-path-gui instrument-id instrument-id))
 
-  (create-mixer-strip-pan gui system-background-color instrument-id x1 pan_y1 x2 pan_y2)
-  (create-mixer-strip-mutesolo gui instrument-id x1 mutesolo_y1 x2 mutesolo_y2)
-  (create-mixer-strip-volume gui instrument-id meter-instrument-id x1 volume_y1 x2 volume_y2)
-  (create-mixer-strip-comment gui instrument-id x1 comment_y1 x2 comment_y2)
-    
+  (<gui> :add gui (create-mixer-strip-pan instrument-id system-background-color background-color pan-height))
+  (<gui> :add gui (create-mixer-strip-mutesolo instrument-id background-color mutesolo-height #f))
+  (<gui> :add gui (create-mixer-strip-volume instrument-id meter-instrument-id background-color #f) 1)
+  (<gui> :add gui (create-mixer-strip-comment instrument-id comment-height))
+
+  (<gui> :add-resize-callback gui
+         (lambda (width height)
+           (<gui> :filled-box gui background-color 0 0 width height 0 0)
+           (draw-mixer-strips-border gui width height)))
   gui)
 
+(define (create-mixer-strip instrument-id min-width)
+  (if (<ra> :has-wide-instrument-strip instrument-id)
+      (create-mixer-strip-wide instrument-id min-width)
+      (create-mixer-strip-minimized instrument-id)))
 
 (define (create-standalone-mixer-strip instrument-id width height)
-  (define parent (<gui> :widget width height))
+  ;;(define parent (<gui> :horizontal-layout))
+  ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
 
-  (define width (floor (* 2 (<gui> :text-width "MUTE SOLO"))))
+  (define parent (<gui> :widget))
 
-  (<gui> :set-min-width parent 100)
-  (<gui> :set-max-width parent 100)
+  ;;(define width (floor (* 1 (<gui> :text-width "MUTE SOLO"))))
+
+  (set-fixed-width parent width)
+  ;;(set-fixed-height parent height)
+  ;;(<gui> :set-min-width parent 100)
+  ;;(<gui> :set-max-width parent 100)
   
   (define das-mixer-strip-gui #f)
 
@@ -1208,7 +1424,7 @@
            (lambda ()
              (<gui> :disable-updates parent)
              
-             (define new-mixer-strip (and instrument-is-open (create-mixer-strip instrument-id width height)))
+             (define new-mixer-strip (and instrument-is-open (create-mixer-strip instrument-id width)))
              
              (when das-mixer-strip-gui
                (<gui> :close das-mixer-strip-gui)
@@ -1225,25 +1441,29 @@
   
     (<gui> :enable-updates parent))
 
-  ;;(remake width height)
+  (remake width height)
 
-  (<gui> :add-resize-callback parent remake)
+  ;;(<gui> :add-resize-callback parent remake)
+  (<gui> :add-resize-callback parent
+         (lambda (width height)
+           (when das-mixer-strip-gui
+             (set-fixed-height das-mixer-strip-gui height))))
   
-  (define mixer-strips (make-mixer-strips :gui parent
-                                          :remake (lambda()
-                                                    (remake (<gui> :width parent) (<gui> :height parent)))))
+  (define mixer-strips-object (make-mixer-strips-object :gui parent
+                                                        :remake (lambda()
+                                                                  (remake (<gui> :width parent) (<gui> :height parent)))))
   
   ;;(<ra> :inform-about-gui-being-a-mixer-strips parent) // Must only be called for standalone windows.
 
-  (push-back! *mixer-strips* mixer-strips)
+  (push-back! *mixer-strips-objects* mixer-strips-object)
   
   (<gui> :add-close-callback parent
          (lambda ()
-           (set! *mixer-strips*
-                 (remove (lambda (a-mixer-strip)
-                           (= (a-mixer-strip :gui)
+           (set! *mixer-strips-objects*
+                 (remove (lambda (a-mixer-strip-object)
+                           (= (a-mixer-strip-object :gui)
                               parent))
-                         *mixer-strips*))))
+                         *mixer-strips-objects*))))
 
   parent)
 
@@ -1260,7 +1480,7 @@
   (define mixer-strips (<gui> :widget 300 800))
   ;;(<gui> :draw-box mixer-strips "black" (- 20 1) (- 20 1) (1+ 220) (1+ 700) 1.0)
   ;;(<gui> :filled-box mixer-strips "black" (- 20 1) (- 20 1) (1+ 220) (1+ 700))
-  (create-mixer-strip mixer-strips (get-instrument-from-name "Sample Player 1") 20 20 220 700)
+  (create-mixer-strip mixer-strips (get-instrument-from-name "Sample Player 1") 220)
   (<gui> :show mixer-strips)
 
   (<gui> :set-pos mixer-strips pos-x pos-y)
@@ -1273,14 +1493,25 @@
 
 ;;!#
 
-(define (create-mixer-strips width height num-rows)
-
+(define (create-mixer-strips num-rows)
+  ;;(set! num-rows 3)
   (define strip-separator-width 5)
   (define instruments-buses-separator-width (* (get-fontheight) 2))
 
   ;;(define mixer-strips (<gui> :widget 800 800))
   ;;(define mixer-strips (<gui> :horizontal-scroll)) ;;widget 800 800))
   (define mixer-strips (<gui> :scroll-area #t #t))
+  (<gui> :set-layout-spacing mixer-strips 0 0 0 0 0)
+
+  (define vertical-layout (<gui> :vertical-layout))
+  (<gui> :set-layout-spacing vertical-layout strip-separator-width 0 0 0 0)
+
+  (define layout (<gui> :horizontal-layout))
+  (<gui> :set-layout-spacing layout strip-separator-width 0 0 0 0)
+
+  (<gui> :add vertical-layout layout)
+  (<gui> :add mixer-strips vertical-layout)
+
 
   ;;(<gui> :set-layout-spacing mixer-strips strip-separator-width 0 0 0 0)
   
@@ -1314,76 +1545,30 @@
 
   (define min-mixer-strip-width (1+ (floor (max (<gui> :text-width " -14.2 -23.5 ")
                                                 (<gui> :text-width " Mute Solo ")))))
-  ;;(define mixer-strip-width (1+ (floor (<gui> :text-width "-14.2 -23.5 ----"))))
-  (define mixer-strip-width (- (max min-mixer-strip-width
-                                    (floor (/ (- width
-                                                 instruments-buses-separator-width)
-                                              num-strips)))
-                               strip-separator-width
-                               0))
-
-  (define fit-vertically? (<= (+ 0
-                                 (* (+ (length instruments)
-                                       (length all-buses))
-                                    strip-separator-width)
-                                 (* mixer-strip-width num-strips)
-                                 instruments-buses-separator-width)
-                              width))
-
-  ;; Sometimes I uncomment this block. Next time: Remember to comment why.
-  (when (not fit-vertically?)
-    (define scroll-bar-height (<gui> :height
-                                     (<gui> :child mixer-strips "horizontalScrollBar")))
-    (set! height (- height
-                    (1+ (floor (/ scroll-bar-height 2))))))
-
-  '(c-display "       buses-plugin-buses:"
-             (map (lambda (i)
-                    (<ra> :get-instrument-name i))
-                  buses-plugin-buses))
 
   (define mixer-strip-num 0)
-  (define num-strips-per-row (floor (/ num-strips num-rows)))
-  (define x1 0)
-  (define y1 0)
-  (define y2 (floor (/ (- height 5) num-rows)))
-  
-  ;; no-input instruments
-  (for-each (lambda (instrument-id)              
-              (define x2 (+ x1 mixer-strip-width))
-              (<gui> :add mixer-strips (create-mixer-strip instrument-id mixer-strip-width (- y2 y1)) x1 y1 x2 y2)
-              (set! mixer-strip-num (1+ mixer-strip-num))
-              (if (= num-strips-per-row mixer-strip-num)
-                  (begin
-                    (set! x1 0)
-                    (set! y1 y2)
-                    (set! y2 (+ y2 (floor (/ (- height 5) num-rows))))
-                    (set! mixer-strip-num 0))
-                  (set! x1 (+ x2 strip-separator-width))))
-            (sort-instruments-by-mixer-position
-             instruments))
+  (define num-strips-per-row (ceiling (/ num-strips num-rows)))
 
-  ;;(set! x1 (+ x1 40))
+  (define (add-strips id-instruments)
+    (for-each (lambda (instrument-id)              
+                (<gui> :add layout (create-mixer-strip instrument-id min-mixer-strip-width))
+                (set! mixer-strip-num (1+ mixer-strip-num))
+                (if (= num-strips-per-row mixer-strip-num)
+                    (begin
+                      (set! layout (<gui> :horizontal-layout))
+                      (<gui> :set-layout-spacing layout strip-separator-width 0 0 0 0)
+                      (<gui> :add vertical-layout layout)
+                      (set! mixer-strip-num 0))))
+              id-instruments))
 
-  ;;(<gui> :add-layout-space mixer-strips instruments-buses-separator-width 10)
-  (if (> x1 0)
-      (set! x1 (+ x1 instruments-buses-separator-width)))
-  
-  ;; buses
-  (for-each (lambda (instrument-id)
-              (define x2 (+ x1 mixer-strip-width))
-              (<gui> :add mixer-strips (create-mixer-strip instrument-id mixer-strip-width (- y2 y1)) x1 y1 x2 y2)
-              ;;(c-display "x1/x2" x1 x2 ",   (= num-strips-per-row mixer-strip-num)" num-strips-per-row mixer-strip-num num-rows num-strips)
-              (set! mixer-strip-num (1+ mixer-strip-num))
-              (if (= num-strips-per-row mixer-strip-num)
-                  (begin
-                    (set! x1 0)
-                    (set! y1 y2)
-                    (set! y2 (+ y2 (floor (/ (- height 5) num-rows))))
-                    (set! mixer-strip-num 0))
-                  (set! x1 (+ x2 strip-separator-width))))              
-            (sort-instruments-by-mixer-position-and-connections
-             all-buses))
+  (add-strips (sort-instruments-by-mixer-position
+               instruments))
+
+  (if (> mixer-strip-num 0)
+      (<gui> :add-layout-space layout instruments-buses-separator-width 10 #f #f))
+
+  (add-strips (sort-instruments-by-mixer-position-and-connections
+               all-buses))
 
   mixer-strips
   )
@@ -1392,20 +1577,22 @@
 (<gui> :show (create-mixer-strips 1000 800))
 !#
 
-(define-struct mixer-strips
+(define-struct mixer-strips-object
   :gui
   :remake
   :is-full-screen #f
   :pos #f)
 
-(define *mixer-strips* '())
+(define *mixer-strips-objects* '())
 
 (delafina (create-mixer-strips-gui :num-rows 1
                                    :is-full-screen #f
                                    :pos #f)
   ;;(define parent (<gui> :horizontal-layout))
   ;;(define parent (<gui> :scroll-area #t #t))
-  (define parent (<gui> :widget))
+  ;;(define parent (<gui> :widget))
+  (define parent (<gui> :horizontal-layout))
+  (<gui> :set-layout-spacing parent 0 0 0 0 0)
 
   (define width (if pos (caddr pos) 1000))
   (define height (if pos (cadddr pos) 800))
@@ -1427,17 +1614,17 @@
 
   (define das-mixer-strips #f)
   
-  (define (remake width height)
+  (define (remake)
     (catch #t
            (lambda ()
              (<gui> :disable-updates parent)
              
-             (define new-mixer-strips (create-mixer-strips width height num-rows))
+             (define new-mixer-strips (create-mixer-strips num-rows))
              
              (if das-mixer-strips
                  (<gui> :close das-mixer-strips))
 
-             (<gui> :add parent new-mixer-strips 0 0 width height)
+             (<gui> :add parent new-mixer-strips) ;; 0 0 width height)
              
              (<gui> :show new-mixer-strips)
              (set! das-mixer-strips new-mixer-strips)
@@ -1445,44 +1632,45 @@
 
            (lambda args
              (display (ow!))))
-    (<gui> :enable-updates parent))
+    (<gui> :enable-updates parent)
+    )
 
-  (define mixer-strips (make-mixer-strips :gui parent
-                                          :is-full-screen is-full-screen
-                                          :remake (lambda ()
-                                                    (remake (<gui> :width parent) (<gui> :height parent)))
-                                          :pos pos))
+  (define mixer-strips-object (make-mixer-strips-object :gui parent
+                                                        :is-full-screen is-full-screen
+                                                        :remake remake
+                                                        :pos pos))
   
-  (remake width height)
+  (remake)
 
-  (<gui> :add-resize-callback parent remake)
+  ;;(<gui> :add-resize-callback parent remake)
 
   (<ra> :inform-about-gui-being-a-mixer-strips parent)
-  (push-back! *mixer-strips* mixer-strips)
+  (push-back! *mixer-strips-objects* mixer-strips-object)
 
   (<gui> :add-close-callback parent
          (lambda ()
-           (set! *mixer-strips*
-                 (remove (lambda (a-mixer-strips)
-                           (= (a-mixer-strips :gui)
+           (set! *mixer-strips-objects*
+                 (remove (lambda (a-mixer-strips-object)
+                           (= (a-mixer-strips-object :gui)
                               parent))
-                         *mixer-strips*))))
+                         *mixer-strips-objects*))))
 
-  mixer-strips
+  mixer-strips-object
   )
 
 (define (remake-mixer-strips)
-  (for-each (lambda (mixer-strips)
-              ((mixer-strips :remake)))
-            *mixer-strips*))
+  (c-display "\n\n\n             REMAKE MIXER STRIPS\n\n\n")
+  (for-each (lambda (a-mixer-strips-object)
+              ((a-mixer-strips-object :remake)))
+            *mixer-strips-objects*))
 
 (define (toggle-all-mixer-strips-fullscreen)
   (define set-to 0)
-  (for-each (lambda (mixer-strips)
+  (for-each (lambda (a-mixer-strips-object)
               (if (number? set-to)
-                  (set! set-to (not (<gui> :is-full-screen (mixer-strips :gui)))))
-              (<gui> :set-full-screen (mixer-strips :gui) set-to))
-            *mixer-strips*))
+                  (set! set-to (not (<gui> :is-full-screen (a-mixer-strips-object :gui)))))
+              (<gui> :set-full-screen (a-mixer-strips-object :gui) set-to))
+            *mixer-strips-objects*))
 
 (define (toggle-current-mixer-strips-fullscreen)
 
@@ -1506,17 +1694,17 @@
     ;;(c-display "         About to toggle" (mixer-strips :gui) ". is fullscreen?" (<gui> :is-full-screen (mixer-strips :gui)))
     (<gui> :set-full-screen (mixer-strips :gui) (not (<gui> :is-full-screen (mixer-strips :gui)))))
   
-  (let loop ((mixer-strips *mixer-strips*))
+  (let loop ((mixer-strips *mixer-strips-objects*))
     (let ((first-mixer-strips (and (not (null? mixer-strips))
                                    (car mixer-strips))))
       (cond ((and (null? mixer-strips)
-                  (not (null? *mixer-strips*)))
-             (toggle (car *mixer-strips*)))
+                  (not (null? *mixer-strips-objects*)))
+             (toggle (car *mixer-strips-objects*)))
             ((null? mixer-strips)
              #f)
             ((<gui> :mouse-points-mainly-at (first-mixer-strips :gui))
-             (toggle-by-recreating first-mixer-strips) ;; This one is just as fast the 'toggle' function, plus that gui is closed immediately, so it's actually better.
-             ;;(toggle first-mixer-strips)
+             ;;(toggle-by-recreating first-mixer-strips) ;; This one is just as fast the 'toggle' function, plus that gui is closed immediately, so it's actually better.
+             (toggle first-mixer-strips)
              )
             (else
              (loop (cdr mixer-strips)))))))
@@ -1526,8 +1714,8 @@
 ;; main
 (when (not *is-initializing*)
   (let ((start (time)))
-    (set! *mixer-strips* '())
-    (create-mixer-strips-gui 1)
+    (set! *mixer-strips-objects* '())
+    (create-mixer-strips-gui 2)
     (c-display "   Time used to open mixer:" (- (time) start))))
 
 
@@ -1553,3 +1741,41 @@
 
 ;; Background color should probably be a mix between system background color and instrument color.
 ;; Color type should probably be int64_t, not string. Don't see any advantages using string.
+
+
+#||
+(let ()
+  (define start (time))
+  (define instruments (keep (lambda (id)
+                              (or (> (<ra> :get-num-input-channels id)
+                                     0)
+                                  (> (<ra> :get-num-output-channels id)
+                                     0)))
+                            (get-all-instruments-with-no-input-connections)))
+
+  (define instrument-plugin-buses (apply append (map (lambda (instrument-id)
+                                                       (get-returned-plugin-buses instrument-id))
+                                                     instruments)))
+
+  (define buses (append (get-all-instruments-with-at-least-two-input-connections)
+                        (get-buses)))
+
+  (define buses-plugin-buses (apply append (map (lambda (instrument-id)
+                                                  (get-returned-plugin-buses instrument-id))
+                                                (append buses
+                                                        instrument-plugin-buses))))
+
+  (define all-buses (append instrument-plugin-buses
+                            buses
+                            buses-plugin-buses))
+
+  (define num-strips (+ (length instruments)
+                        (length all-buses)))
+
+  (c-display "time" (- (time) start))
+  (c-display "instruments" instruments)
+  (c-display "all-buses" all-buses)
+  )
+
+
+||#

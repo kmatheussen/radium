@@ -925,6 +925,7 @@ struct Patch{
 
   int permanent_id;             // Free use by the instrument plug-in.
   void *patchdata;		// Free use by the instrument plug-in.
+  bool wide_mixer_strip;        // Only used by the audio instrument.
 
   void (*changeTrackPan)(int newpan,const struct Tracks *track);
 

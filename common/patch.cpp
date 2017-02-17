@@ -196,6 +196,7 @@ struct Patch *PATCH_alloc(void){
   patch->voices = (struct PatchVoice*)talloc_atomic_clean(sizeof(struct PatchVoice) * NUM_PATCH_VOICES);
   
   patch->comment = "Comment";
+  patch->wide_mixer_strip = true;
 
   return patch;
 }

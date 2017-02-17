@@ -1273,7 +1273,7 @@ public:
     msgBox.open();
     msgBox.hide();
 
-    R_ASSERT( (50 % interval) == 0);
+    //R_ASSERT( (50 % interval) == 0);
     
     setInterval(interval);
     start();

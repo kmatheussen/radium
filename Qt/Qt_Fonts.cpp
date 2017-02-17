@@ -32,14 +32,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_Fonts_proc.h"
 
-static bool can_fit(const QFont &font, const QString &text, int width, int height){
+static bool can_fit(const QFont &font, const QString &text, int flags, int width, int height){
   QFontMetrics fm(font);
 
   // Not an optimization. Seems like this test sometimes returns true even if the code below returns false.
   if (fm.width(text) < width && fm.height() < height)
     return true;
 
-  QRect rect = fm.boundingRect(0, 0, width, height, Qt::TextWordWrap | Qt::AlignCenter, text);
+  QRect rect = fm.boundingRect(0, 0, width, height, flags, text);
 
   // subtract 10 to get some borders.
   if (rect.width() >= width-10)
@@ -52,12 +52,12 @@ static bool can_fit(const QFont &font, const QString &text, int width, int heigh
   return true;
 }
 
-QFont GFX_getFittingFont(QString text, int width, int height){
+QFont GFX_getFittingFont(QString text, int flags, int width, int height){
   static QFont font;
 
-  auto key = QPair<QString,QPair<int,int>>(text,QPair<int,int>(width,height));
+  auto key = QPair<QString,QPair<int, QPair<int,int>>>(text,QPair<int,QPair<int,int>>(flags, QPair<int,int>(width,height))); // good code
 
-  static QHash<QPair<QString,QPair<int,int>>,QFont> fonts;
+  static QHash< QPair< QString , QPair< int, QPair<int,int> > > , QFont> fonts;
 
   if (font != qApp->font()){
     font = qApp->font();
@@ -75,7 +75,7 @@ QFont GFX_getFittingFont(QString text, int width, int height){
     if(size!=pointSize)
       the_font.setPointSize(size);
 
-    if (can_fit(the_font, text, width, height))
+    if (can_fit(the_font, text, flags, width, height))
       break;
   }
 

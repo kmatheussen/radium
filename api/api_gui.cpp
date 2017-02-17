@@ -31,10 +31,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QRadioButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QFormLayout>
 #include <QGroupBox>
 #include <QPlainTextEdit>
 #include <QScrollArea>
 #include <QUiLoader>
+#include <QToolTip>
 
 #include "../common/nsmtracker.h"
 
@@ -42,6 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/AudioMeterPeaks_proc.h"
 
 #include "../Qt/FocusSniffers.h"
+#include "../Qt/ScrollArea.hpp"
+#include "../Qt/Qt_MyQCheckBox.h"
 
 #include "../common/visual_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
@@ -371,7 +375,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       event->accept();
 
-      if(gui_isOpen(_gui_num))
+      if(gui_isOpen(_gui_num)) // && _widget->isVisible() && _widget->width()>0 && _widget->height()>0)
         s7extra_callFunc_void_int_int(_resize_callback, event->size().width(), event->size().height());
     }
 
@@ -393,6 +397,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     QPainter *_image_painter = NULL;
 
     void setNewImage(int width, int height){
+      width = R_MAX(1,width);
+      height = R_MAX(1, height);
+
+      if (_image!=NULL && _image->width() >= width && _image->height() > height)
+        return;
+
       auto *new_image = new QImage(width, height, QImage::Format_ARGB32);
       auto *new_image_painter = new QPainter(new_image);
 
@@ -481,7 +491,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       myupdate(x1, y1, x2, y2);
     }
 
-    void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool align_top_left) {
+    void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, bool draw_vertical) {
       if (_image==NULL)
         setNewImage(_widget->width(), _widget->height());
       
@@ -489,12 +499,40 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       setPen(color);
       
-      _image_painter->setFont(GFX_getFittingFont(text, x2-x1, y2-y1));
+      int flags = Qt::TextWordWrap;
 
-      if (align_top_left)
-        _image_painter->drawText(rect, text);
+      if(align_top)
+        flags |= Qt::AlignTop;
       else
-        _image_painter->drawText(rect, Qt::TextWordWrap | Qt::AlignCenter, text);
+        flags |= Qt::AlignHCenter;
+
+      if(align_left)
+        flags |= Qt::AlignLeft;
+      else
+        flags |= Qt::AlignVCenter;
+
+
+      if (draw_vertical){
+
+        _image_painter->setFont(GFX_getFittingFont(text, flags, y2-y1, x2-x1));
+
+        _image_painter->save();
+        _image_painter->rotate(90);
+        _image_painter->translate(y1,-x1-rect.width());
+
+        QRect rect2(0,0,rect.height(),rect.width());
+        _image_painter->drawText(rect2, flags, text);
+
+        _image_painter->restore();
+
+      } else {
+
+        _image_painter->setFont(GFX_getFittingFont(text, flags, x2-x1, y2-y1));
+
+        _image_painter->drawText(rect, flags, text);
+      
+      }
+
 
       myupdate(x1, y1, x2, y2);
     }
@@ -726,9 +764,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     {
       if (width>=0 || height>=0){
         if(width<=0)
-          width=QWidget::width();
+          width=R_MAX(1, QWidget::width());
         if(height<=0)
-          height=QWidget::height();
+          height=R_MAX(1, QWidget::height());
         resize(width,height);
       }
     }
@@ -1093,6 +1131,21 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     OVERRIDERS(QCheckBox);
   };
   
+  struct RadiumCheckBox : MyQCheckBox, Gui{
+    Q_OBJECT;
+    
+  public:
+    
+    RadiumCheckBox(const char *text, bool is_checked)
+      : MyQCheckBox(text)
+      , Gui(this)
+    {
+      setChecked(is_checked);
+    }
+
+    OVERRIDERS(MyQCheckBox);
+  };
+  
   struct RadioButton : QRadioButton, Gui{
     Q_OBJECT;
     
@@ -1124,6 +1177,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       : Gui(this)
     {
       QHBoxLayout *mainLayout = new QHBoxLayout;      
+
       setLayout(mainLayout);
     }
 
@@ -1171,7 +1225,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     OVERRIDERS(QGroupBox);
   };
 
-  struct ScrollArea : QScrollArea, Gui{
+  struct ScrollArea : radium::ScrollArea, Gui{
     QWidget *contents;
     const char *magic = "magic";
 
@@ -1193,18 +1247,27 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       //setWidgetResizable(true);
 
-      contents = new QWidget;//(this);
+      contents = getWidget(); //new QWidget;//(this);
       //contents->resize(500,500);
       //contents->show();
-      //contents->setLayout(new QVBoxLayout);
 
-      setWidget(contents);
+      QLayout *layout = new QVBoxLayout;
+      layout->setSpacing(0);
+      layout->setContentsMargins(0,0,0,0);
+
+      contents->setLayout(layout);
+
+      //setWidget(contents);
     }
 
-    OVERRIDERS(QScrollArea);
+    QLayout *getLayout(void) override {
+      return contents->layout();
+    }
+
+    OVERRIDERS(radium::ScrollArea);
   };
 
-  struct VerticalScroll : QScrollArea, Gui{
+  struct VerticalScroll : radium::ScrollArea, Gui{
     QWidget *contents;
     const char *magic = "magic2";
     QLayout *mylayout;
@@ -1215,10 +1278,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       horizontalScrollBar()->setObjectName("horizontalScrollBar");
       verticalScrollBar()->setObjectName("verticalScrollBar");
 
+      setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
       //setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-      setWidgetResizable(true);
+      //setWidgetResizable(true);
       
-      QWidget *contents = new QWidget(this);
+      contents = getWidget(); //new QWidget;//(this);
+      //contents = new QWidget(this);
 
       mylayout = new QVBoxLayout(contents);
       mylayout->setSpacing(1);
@@ -1226,14 +1292,14 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       contents->setLayout(mylayout);
       
-      setWidget(contents);    
+      //setWidget(contents);    
     }
 
     QLayout *getLayout(void) override {
       return mylayout;
     }
 
-    OVERRIDERS(QScrollArea);
+    OVERRIDERS(radium::ScrollArea);
   };
 
   struct HorizontalScroll : QScrollArea, Gui{
@@ -1541,6 +1607,10 @@ int gui_getSystemFontheight(void){
   return root->song->tracker_windows->systemfontheight;
 }
 
+void gui_toolTip(const_char* text){
+  QToolTip::showText(QCursor::pos(),text,NULL,QRect());
+}
+
 const_char* gui_mixColors(const_char* color1, const_char* color2, float how_much_color1){
   QColor col1 = getQColor(color1);
   QColor col2 = getQColor(color2);
@@ -1679,9 +1749,12 @@ int64_t gui_button(const_char *text){
   return (new PushButton(text))->get_gui_num();
 }
 
-int64_t gui_checkbox(const_char *text, bool is_checked){
+int64_t gui_checkbox(const_char *text, bool is_checked, bool radium_style){
   //return -1;
-  return (new CheckBox(text, is_checked))->get_gui_num();
+  if (radium_style)
+    return (new RadiumCheckBox(text, is_checked))->get_gui_num();
+  else
+    return (new CheckBox(text, is_checked))->get_gui_num();
 }
 
 int64_t gui_radiobutton(const_char *text, bool is_checked){
@@ -1795,7 +1868,7 @@ dyn_t gui_getValue(int64_t guinum){
   return gui->getGuiValue();
 }
 
-void gui_add(int64_t parentnum, int64_t childnum, int x1, int y1, int x2, int y2){
+void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int x2, int y2){
   Gui *parent = get_gui(parentnum);
   if (parent==NULL)
     return;
@@ -1806,13 +1879,15 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1, int y1, int x2, int y2
 
   QLayout *layout = parent->getLayout();
 
-  if(layout==NULL || x1!=-1) {
+  if(layout==NULL || y1!=-1) {
 
-    if (layout==NULL && x1==-1){
+    if (layout==NULL && (y1==-1 || x2==-1 || y2==-1)){
       handleError("Warning: Parent gui #%d does not have a layout", parentnum);
-      x1 = 0;
+      x1_or_stretch = 0;
       y1 = 0;
     }
+    
+    int x1 = x1_or_stretch;
 
     if (x1<0)
       x1 = 0;
@@ -1849,8 +1924,23 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1, int y1, int x2, int y2
     */
 
   } else {
+
+    QBoxLayout *box_layout = dynamic_cast<QBoxLayout*>(layout);
     
-    layout->addWidget(child->_widget);
+    if (box_layout!=NULL){
+
+      int stretch = x1_or_stretch == -1 ? 0 : x1_or_stretch;
+
+      box_layout->addWidget(child->_widget, stretch);
+
+    } else {
+
+      if (x1_or_stretch != -1)
+        handleError("Warning: Parent gui #%d does not have a box layout", parentnum);
+
+      layout->addWidget(child->_widget);
+
+    }
     
   }
   
@@ -2093,7 +2183,11 @@ void gui_setLayoutSpacing(int64_t guinum, int spacing, int left, int top, int ri
   layout->setContentsMargins(left, top, right, bottom);
 }
 
-void gui_addLayoutSpace(int64_t guinum, int width, int height){
+static inline QSizePolicy::Policy get_grow_policy_from_bool(bool grow){
+  return grow ? QSizePolicy::MinimumExpanding : QSizePolicy::Fixed;
+}
+
+void gui_addLayoutSpace(int64_t guinum, int width, int height, bool grow_horizontally, bool grow_vertically){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
@@ -2104,7 +2198,10 @@ void gui_addLayoutSpace(int64_t guinum, int width, int height){
     return;
   }
 
-  layout->addItem(new QSpacerItem(width,height,QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding));
+  layout->addItem(new QSpacerItem(width,height,
+                                  get_grow_policy_from_bool(grow_horizontally),get_grow_policy_from_bool(grow_vertically)
+                                  )
+                  );
 }
 
 void gui_setSizePolicy(int64_t guinum, bool grow_horizontally, bool grow_vertically){
@@ -2112,8 +2209,13 @@ void gui_setSizePolicy(int64_t guinum, bool grow_horizontally, bool grow_vertica
   if (gui==NULL)
     return;
 
-  gui->_widget->setSizePolicy(grow_horizontally ? QSizePolicy::Expanding : QSizePolicy::Fixed,
-                              grow_vertically ? QSizePolicy::Expanding : QSizePolicy::Fixed);
+  auto *scroll = dynamic_cast<VerticalScroll*>(gui->_widget);
+  if (scroll!=NULL)
+    scroll->contents->setSizePolicy(get_grow_policy_from_bool(grow_horizontally),
+                                    get_grow_policy_from_bool(grow_vertically));
+  else
+    gui->_widget->setSizePolicy(get_grow_policy_from_bool(grow_horizontally),
+                                get_grow_policy_from_bool(grow_vertically));
                               
 }
 
@@ -2122,7 +2224,11 @@ void gui_setMinWidth(int64_t guinum, int minwidth){
   if (gui==NULL)
     return;
 
-  gui->_widget->setMinimumWidth(minwidth);
+  auto *scroll = dynamic_cast<VerticalScroll*>(gui->_widget);
+  if (scroll!=NULL)
+    scroll->contents->setMinimumWidth(minwidth);
+  else
+    gui->_widget->setMinimumWidth(minwidth);
 }
 
 void gui_setMinHeight(int64_t guinum, int minheight){
@@ -2138,7 +2244,11 @@ void gui_setMaxWidth(int64_t guinum, int minwidth){
   if (gui==NULL)
     return;
 
-  gui->_widget->setMaximumWidth(minwidth);
+  auto *scroll = dynamic_cast<VerticalScroll*>(gui->_widget);
+  if (scroll!=NULL)
+    scroll->contents->setMaximumWidth(minwidth);
+  else
+    gui->_widget->setMaximumWidth(minwidth);
 }
 
 void gui_setMaxHeight(int64_t guinum, int minheight){
@@ -2199,7 +2309,7 @@ void informAboutGuiBeingAMixerStrips(int64_t guinum){
 }
 
 void showMixerStrips(int num_rows){
-  evalScheme("(create-mixer-strips-gui 1)");
+  evalScheme(talloc_format("(create-mixer-strips-gui %d)", num_rows));
 }
 
 QVector<QWidget*> MIXERSTRIPS_get_all_widgets(void){ 
@@ -2300,13 +2410,23 @@ void gui_filledBox(int64_t guinum, const_char* color, float x1, float y1, float 
   gui->filledBox(color, x1, y1, x2, y2, round_x, round_y);
 }
 
-void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool align_top_left) {
+void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left) {
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
 
-  gui->drawText(color, text, x1, y1, x2, y2, align_top_left);
+  gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, false);
 }
+
+void gui_drawVerticalText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left) {
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, true);
+}
+
+////////////
 
 void API_gui_call_regularly(void){
   for(auto *meter : g_active_vertical_audio_meters)
