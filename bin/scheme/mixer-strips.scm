@@ -59,9 +59,9 @@
                                                    (= state *is-pressing*))
                                           (set! is-selected (not is-selected))
                                           (value-changed is-selected)
-                                          (repaint))
+                                          (<gui> :update checkbox))
                                         #t))
-  (<gui> :add-resize-callback checkbox
+  (<gui> :add-paint-callback checkbox
          (lambda (newwidth newheight)
            ;;(c-display "             RESIZE callback" newwidth newheight)
            ;;(assert (> newwidth 0))
@@ -74,7 +74,7 @@
 
   (list (lambda (new-value)
           (set! is-selected new-value)
-          (repaint))
+          (<gui> :update checkbox))
         checkbox))
 
 
@@ -109,7 +109,7 @@
   (define color (<ra> :get-instrument-color instrument-id))
 
   (define label (<gui> :widget))
-  (<gui> :add-resize-callback label
+  (<gui> :add-paint-callback label
          (lambda (width height)
            (<gui> :filled-box label color 0 0 width height)
            (if is-minimized
@@ -125,7 +125,7 @@
                                               (create-default-mixer-path-popup instrument-id))
                                           (when (= button *left-button*)
                                             (<ra> :set-wide-instrument-strip instrument-id is-minimized)
-                                            (remake-mixer-strips))))
+                                            (remake-mixer-strips instrument-id))))
                                     #f))
 
   label)
@@ -325,12 +325,11 @@
                         ;;(<ra> :set-instrument-effect instrument-id effect-name val)
                         (when widget
                           (set-value val)
-                          (paintit (<gui> :width widget)
-                                   (<gui> :height widget))))))
+                          (<gui> :update widget)))))
 
   (<gui> :set-min-height widget (get-fontheight))
 
-  (<gui> :add-resize-callback widget paintit)
+  (<gui> :add-paint-callback widget paintit)
   
   (<gui> :add-mouse-callback widget (lambda (button state x y)
                                       (when (and (= button *left-button*)
@@ -741,44 +740,60 @@
       (find-meter-instrument-id next-plugin-instrument)
       instrument-id))
 
-;; Returns the last plugin.
-(define (create-mixer-strip-path gui first-instrument-id instrument-id)
-  (define fontheight (get-fontheight))
-  (define send-height fontheight)
-
-  (define (add-bus-sends instrument-id)
-    (if (not (<ra> :instrument-is-bus-descendant instrument-id))
-        (for-each (lambda (bus-num)
-                    (create-mixer-strip-bus-send gui
-                                                 instrument-id
-                                                 instrument-id
-                                                 bus-num))              
-                  (get-buses-connecting-from-instrument instrument-id #t))))
+(define (get-mixer-strip-path-instruments instrument-id kont)
+  (define bus-nums (if (<ra> :instrument-is-bus-descendant instrument-id)
+                       '()
+                       (get-buses-connecting-from-instrument instrument-id #t)))
   
-  (add-bus-sends instrument-id)
-    
   (define out-instruments (sort-instruments-by-mixer-position
                            (get-instruments-connecting-from-instrument instrument-id)))
   (define next-plugin-instrument (find-next-plugin-instrument-in-path instrument-id))
 
-  ;; create plugin sends (i.e. non-bus sends)
-  (for-each (lambda (out-instrument)
-              (if (or (not next-plugin-instrument)
-                      (not (= next-plugin-instrument out-instrument)))
-                  (create-mixer-strip-audio-connection-send gui
-                                                            first-instrument-id
-                                                            instrument-id
-                                                            out-instrument)))
-            out-instruments)
+  (define instrument-sends (keep (lambda (out-instrument)
+                                   (or (not next-plugin-instrument)
+                                       (not (= next-plugin-instrument out-instrument))))
+                                 out-instruments))
   
-  (if next-plugin-instrument
-      (begin
-        (if (= 0 (<ra> :get-num-output-channels next-plugin-instrument))
-            (create-mixer-strip-sink-plugin gui instrument-id instrument-id next-plugin-instrument)
-            (create-mixer-strip-plugin gui first-instrument-id instrument-id next-plugin-instrument))
-        (create-mixer-strip-path gui first-instrument-id next-plugin-instrument))
-      instrument-id))
+  (kont bus-nums
+        instrument-sends
+        next-plugin-instrument))
 
+;; Returns the last plugin.
+(define (create-mixer-strip-path gui first-instrument-id instrument-id)
+  (get-mixer-strip-path-instruments instrument-id
+                                    (lambda (bus-sends instrument-sends next-plugin-instrument)
+                                      (for-each (lambda (bus-num)
+                                                  (create-mixer-strip-bus-send gui
+                                                                               instrument-id
+                                                                               instrument-id
+                                                                               bus-num))
+                                                bus-sends)
+                                      
+                                      (for-each (lambda (out-instrument)
+                                                  (create-mixer-strip-audio-connection-send gui
+                                                                                            first-instrument-id
+                                                                                            instrument-id
+                                                                                            out-instrument))
+                                                instrument-sends)
+
+                                      (if next-plugin-instrument
+                                          (begin
+                                            (if (= 0 (<ra> :get-num-output-channels next-plugin-instrument))
+                                                (create-mixer-strip-sink-plugin gui instrument-id instrument-id next-plugin-instrument)
+                                                (create-mixer-strip-plugin gui first-instrument-id instrument-id next-plugin-instrument))
+                                            (create-mixer-strip-path gui first-instrument-id next-plugin-instrument))
+                                          instrument-id))))
+
+(define (get-all-instruments-used-in-mixer-strip instrument-id)
+  (get-mixer-strip-path-instruments instrument-id
+                                    (lambda (bus-sends instrument-sends next-plugin-instrument)
+                                      (append (list instrument-id)
+                                              bus-sends
+                                              instrument-sends
+                                              (if next-plugin-instrument
+                                                  (get-all-instruments-used-in-mixer-strip next-plugin-instrument)
+                                                  '())))))
+                                              
 
 (define (create-mixer-strip-pan instrument-id system-background-color background-color height)
   (define (pan-enabled?)
@@ -793,16 +808,18 @@
   (define paint #f)
 
   (define last-slider-val (get-pan))
-  (define slider (<gui> :horizontal-int-slider
-                        "pan: "
-                        -90 (get-pan) 90
-                        (lambda (degree)
-                          (when (and doit (not (= last-slider-val degree))) ;; (pan-enabled?))
-                            (set! last-slider-val degree)
-                            (<ra> :set-instrument-effect instrument-id "System Pan On/Off" 1.0)
-                            (<ra> :set-instrument-effect instrument-id "System Pan" (scale degree -90 90 0 1))
-                            (if paint
-                                (paint))))))
+
+  (define slider #f)
+  (set! slider (<gui> :horizontal-int-slider
+                      "pan: "
+                      -90 (get-pan) 90
+                      (lambda (degree)
+                        (when (and doit (not (= last-slider-val degree))) ;; (pan-enabled?))
+                          (set! last-slider-val degree)
+                          (<ra> :set-instrument-effect instrument-id "System Pan On/Off" 1.0)
+                          (<ra> :set-instrument-effect instrument-id "System Pan" (scale degree -90 90 0 1))
+                          (if slider
+                              (<gui> :update slider))))))
 
   (set-fixed-height slider height)
 
@@ -831,7 +848,7 @@
           (<gui> :draw-box slider "#404040" 0 0 width height 2)
           ))
 
-  (<gui> :add-resize-callback slider (lambda x (paint)))
+  (<gui> :add-paint-callback slider (lambda x (paint)))
 
   ;;(paint)
 
@@ -839,10 +856,11 @@
                           (lambda ()
                             (set! doit #f)
                             (<gui> :set-value slider (get-pan))
-                            (paint)
+                            (<gui> :update slider)
                             (set! doit #t)))
   
-  (add-gui-effect-monitor slider instrument-id "System Pan On/Off" paint)
+  (add-gui-effect-monitor slider instrument-id "System Pan On/Off" (lambda ()
+                                                                     (<gui> :update slider)))
 
   (<gui> :add-mouse-callback slider
          (lambda (button state x y)
@@ -951,7 +969,8 @@
                                         (let ((last-implicitly-muted implicitly-muted))
                                           (set! implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
                                           (when (not (eq? implicitly-muted last-implicitly-muted))
-                                            (draw-mute mute (get-muted) (<gui> :width mute) (<gui> :height mute))
+                                            ;;(draw-mute mute (get-muted) (<gui> :width mute) (<gui> :height mute))
+                                            (<gui> :update mute)
                                             )
                                           100)
                                         #f))))
@@ -1056,20 +1075,20 @@
   (define paint-slider #f)
 
   (define last-vol-slider (get-volume))
-  (define volslider (<gui> :vertical-slider
-                           ""
-                           0 (db-to-slider (get-volume)) 1
-                           (lambda (val)
-                             (define db (slider-to-db val))
-                             (when (and doit (not (= last-vol-slider db)))
-                               (set! last-vol-slider db)
-                               ;;(c-display "             hepp hepp")
-                               (<ra> :set-instrument-effect instrument-id effect-name (scale db *min-db* *max-db* 0 1))
-                               (if paint-voltext
-                                   (paint-voltext))
-                               ;;(<gui> :set-value voltext val)
-                               (if paint-slider
-                                   (paint-slider))))))
+  (define volslider #f)
+  (set! volslider (<gui> :vertical-slider
+                         ""
+                         0 (db-to-slider (get-volume)) 1
+                         (lambda (val)
+                           (define db (slider-to-db val))
+                           (when (and doit (not (= last-vol-slider db)))
+                             (set! last-vol-slider db)
+                             ;;(c-display "             hepp hepp")
+                             (<ra> :set-instrument-effect instrument-id effect-name (scale db *min-db* *max-db* 0 1))
+                             (if paint-voltext
+                                 (<gui> :update voltext)))
+                           (if volslider
+                               (<gui> :update volslider)))))
     
   (define (paint-text gui text)
     (define width (<gui> :width gui))
@@ -1090,12 +1109,11 @@
 
     
   (when show-voltext
-
     (set! paint-voltext
           (lambda ()
             (paint-text voltext (db-to-text (get-volume) #f))))
     
-    (<gui> :add-resize-callback voltext (lambda x (paint-voltext)))
+    (<gui> :add-paint-callback voltext (lambda x (paint-voltext)))
     ;;(paint-voltext)
     )
 
@@ -1104,7 +1122,7 @@
           (lambda ()
             (paint-text peaktext peaktexttext)))
     
-    (<gui> :add-resize-callback peaktext (lambda x (paint-peaktext)))
+    (<gui> :add-paint-callback peaktext (lambda x (paint-peaktext)))
     ;;(paint-peaktext)
     )
 
@@ -1137,7 +1155,7 @@
           (<gui> :draw-line volslider "#eeeeee" (1+ x1) middle_0db (1- x2) middle_0db 0.3)
           ))
 
-  (<gui> :add-resize-callback volslider (lambda x (paint-slider)))
+  (<gui> :add-paint-callback volslider (lambda x (paint-slider)))
 
 
   (define volmeter (<gui> :vertical-audio-meter meter-instrument-id))
@@ -1148,8 +1166,8 @@
                             (<gui> :set-value volslider (db-to-slider (get-volume)))
                             ;;(<gui> :set-value voltext (get-volume))
                             (if paint-voltext
-                                (paint-voltext))
-                            (paint-slider)
+                                (<gui> :update voltext))
+                            (<gui> :update volslider)
                             (set! doit #t)))
 
   (<gui> :add-mouse-callback volslider
@@ -1179,14 +1197,14 @@
 
     (<gui> :add-audio-meter-peak-callback volmeter (lambda (text)
                                                      (set! peaktexttext text)
-                                                     (paint-peaktext)))
+                                                     (<gui> :update peaktext)))
 
     (<gui> :add-mouse-callback peaktext (lambda (button state x y)
                                           (when (and (= button *left-button*)
                                                      (= state *is-pressing*))
                                             (set! peaktexttext "-inf")
                                             (<gui> :reset-audio-meter-peak volmeter)
-                                            (paint-peaktext))
+                                            (<gui> :update peaktext))
                                           #t)))
 
   ;; horiz 1 (voltext and peaktext)
@@ -1275,7 +1293,7 @@
   (define volume-gui (create-mixer-strip-volume instrument-id meter-instrument-id background-color #t))
   (<gui> :add gui volume-gui 1)
   
-  (<gui> :add-resize-callback gui
+  (<gui> :add-paint-callback gui
          (lambda (width height)
            ;;(set-fixed-height volume-gui (floor (/ height 2)))
            (<gui> :filled-box gui background-color 0 0 width height 0 0)
@@ -1369,7 +1387,7 @@
 
   ;(set-fixed-width mixer-strip-path-gui (- (<gui> :width gui) 26))
 
-  '(<gui> :add-resize-callback gui
+  '(<gui> :add-paint-callback gui
          (lambda (width height)
            (set-fixed-width mixer-strip-path-gui (- width 26))))
 
@@ -1389,7 +1407,7 @@
   (<gui> :add gui (create-mixer-strip-volume instrument-id meter-instrument-id background-color #f) 1)
   (<gui> :add gui (create-mixer-strip-comment instrument-id comment-height))
 
-  (<gui> :add-resize-callback gui
+  (<gui> :add-paint-callback gui
          (lambda (width height)
            (<gui> :filled-box gui background-color 0 0 width height 0 0)
            (draw-mixer-strips-border gui width height)))
@@ -1399,6 +1417,34 @@
   (if (<ra> :has-wide-instrument-strip instrument-id)
       (create-mixer-strip-wide instrument-id min-width)
       (create-mixer-strip-minimized instrument-id)))
+
+
+;; Stored mixer strips.
+;;
+;; These are used for caching so that we don't have to recreate all strips when recreating a mixer strips window
+(define (create-stored-mixer-strip instrument-id mixer-strip)
+  (list instrument-id mixer-strip))
+
+(define (get-instrument-id-from-stored-mixer-strip stored-mixer-strip)
+  (car stored-mixer-strip))
+
+(define (get-mixer-strip-from-stored-mixer-strip stored-mixer-strip)
+  (cadr stored-mixer-strip))
+
+(define (get-stored-mixer-strip stored-mixer-strips instrument-id)
+  (assv instrument-id stored-mixer-strips))
+
+(define (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
+  (if (or (not stored-mixer-strip)
+          (null? list-of-modified-instrument-ids))
+      #f
+      (let ((instrument-id (get-instrument-id-from-stored-mixer-strip stored-mixer-strip)))
+        (not (or (memv instrument-id list-of-modified-instrument-ids)
+                 (any? (lambda (instrument-id)
+                         (memv instrument-id list-of-modified-instrument-ids))
+                       (get-all-instruments-used-in-mixer-strip instrument-id)))))))
+
+
 
 (define (create-standalone-mixer-strip instrument-id width height)
   ;;(define parent (<gui> :horizontal-layout))
@@ -1438,18 +1484,19 @@
            (lambda args
              (display (ow!))))
   
-    (<gui> :enable-updates parent))
+    (<gui> :enable-updates parent)
+    )
 
   (remake width height)
 
-  ;;(<gui> :add-resize-callback parent remake)
-  (<gui> :add-resize-callback parent
+  ;;(<gui> :add-paint-callback parent remake)
+  (<gui> :add-paint-callback parent
          (lambda (width height)
            (when das-mixer-strip-gui
              (set-fixed-height das-mixer-strip-gui height))))
   
   (define mixer-strips-object (make-mixer-strips-object :gui parent
-                                                        :remake (lambda()
+                                                        :remake (lambda (list-of-modified-instrument-ids)
                                                                   (remake (<gui> :width parent) (<gui> :height parent)))))
   
   ;;(<ra> :inform-about-gui-being-a-mixer-strips parent) // Must only be called for standalone windows.
@@ -1492,29 +1539,7 @@
 
 ;;!#
 
-(define (create-mixer-strips num-rows)
-  ;;(set! num-rows 3)
-  (define strip-separator-width 5)
-  (define instruments-buses-separator-width (* (get-fontheight) 2))
-
-  ;;(define mixer-strips (<gui> :widget 800 800))
-  ;;(define mixer-strips (<gui> :horizontal-scroll)) ;;widget 800 800))
-  (define mixer-strips (<gui> :scroll-area #t #t))
-  (<gui> :set-layout-spacing mixer-strips 0 0 0 0 0)
-
-  (define vertical-layout (<gui> :vertical-layout))
-  (<gui> :set-layout-spacing vertical-layout strip-separator-width 0 0 0 0)
-
-  (define layout (<gui> :horizontal-layout))
-  (<gui> :set-layout-spacing layout strip-separator-width 0 0 0 0)
-
-  (<gui> :add vertical-layout layout)
-  (<gui> :add mixer-strips vertical-layout)
-
-
-  ;;(<gui> :set-layout-spacing mixer-strips strip-separator-width 0 0 0 0)
-  
-  ;;(define x1 0)
+(define (get-mixer-strip-instrument-ids)
   (define instruments (keep (lambda (id)
                               (or (> (<ra> :get-num-input-channels id)
                                      0)
@@ -1533,10 +1558,38 @@
                                                   (get-returned-plugin-buses instrument-id))
                                                 (append buses
                                                         instrument-plugin-buses))))
-
   (define all-buses (append instrument-plugin-buses
                             buses
                             buses-plugin-buses))
+
+
+  (list instruments
+        all-buses))
+
+
+(define (create-mixer-strips num-rows stored-mixer-strips list-of-modified-instrument-ids kont)
+  ;;(set! num-rows 3)
+  (define strip-separator-width 5)
+  (define instruments-buses-separator-width (* (get-fontheight) 2))
+
+  ;;(define mixer-strips (<gui> :widget 800 800))
+  ;;(define mixer-strips (<gui> :horizontal-scroll)) ;;widget 800 800))
+  (define mixer-strips-gui (<gui> :scroll-area #t #t))
+  (<gui> :set-layout-spacing mixer-strips-gui 0 0 0 0 0)
+
+  (define vertical-layout (<gui> :vertical-layout))
+  (<gui> :set-layout-spacing vertical-layout strip-separator-width 0 0 0 0)
+
+  (define layout (<gui> :horizontal-layout))
+  (<gui> :set-layout-spacing layout strip-separator-width 0 0 0 0)
+
+  (<gui> :add vertical-layout layout)
+  (<gui> :add mixer-strips-gui vertical-layout)
+
+
+  (define mixer-strip-instrument-ids (get-mixer-strip-instrument-ids))
+  (define instruments (car mixer-strip-instrument-ids))
+  (define all-buses (cadr mixer-strip-instrument-ids))
 
   (define num-strips (+ (length instruments)
                         (length all-buses)))
@@ -1549,27 +1602,38 @@
   (define num-strips-per-row (ceiling (/ num-strips num-rows)))
 
   (define (add-strips id-instruments)
-    (for-each (lambda (instrument-id)              
-                (<gui> :add layout (create-mixer-strip instrument-id min-mixer-strip-width))
-                (set! mixer-strip-num (1+ mixer-strip-num))
-                (if (= num-strips-per-row mixer-strip-num)
-                    (begin
-                      (set! layout (<gui> :horizontal-layout))
-                      (<gui> :set-layout-spacing layout strip-separator-width 0 0 0 0)
-                      (<gui> :add vertical-layout layout)
-                      (set! mixer-strip-num 0))))
-              id-instruments))
+    (map (lambda (instrument-id)
+           (define stored-mixer-strip (get-stored-mixer-strip stored-mixer-strips instrument-id))
+           (define mixer-strip (if (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
+                                   (get-mixer-strip-from-stored-mixer-strip stored-mixer-strip)
+                                   (create-mixer-strip instrument-id min-mixer-strip-width)))
+           '(c-display "   Creating" instrument-id ". Stored is valid?" (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
+                      "stored-mixer-strip:" stored-mixer-strip
+                      "list-of-modified:" list-of-modified-instrument-ids)
+           (<gui> :add layout mixer-strip)
+           (set! mixer-strip-num (1+ mixer-strip-num))
+           (if (= num-strips-per-row mixer-strip-num)
+               (begin
+                 (set! layout (<gui> :horizontal-layout))
+                 (<gui> :set-layout-spacing layout strip-separator-width 0 0 0 0)
+                 (<gui> :add vertical-layout layout)
+                 (set! mixer-strip-num 0)))
+           (create-stored-mixer-strip instrument-id
+                                      mixer-strip))
+         id-instruments))
 
-  (add-strips (sort-instruments-by-mixer-position
-               instruments))
+  (define instrument-mixer-strips (add-strips (sort-instruments-by-mixer-position
+                                               instruments)))
 
   (if (> mixer-strip-num 0)
       (<gui> :add-layout-space layout instruments-buses-separator-width 10 #f #f))
 
-  (add-strips (sort-instruments-by-mixer-position-and-connections
-               all-buses))
+  (define bus-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections
+                                        all-buses)))
 
-  mixer-strips
+  (kont (append instrument-mixer-strips
+                bus-mixer-strips)
+        mixer-strips-gui)
   )
 
 #!
@@ -1611,23 +1675,27 @@
       
   ;;(<gui> :set-full-screen parent)
 
-  (define das-mixer-strips #f)
+  (define das-stored-mixer-strips '())
+  (define das-mixer-strips-gui #f)
   
-  (define (remake)
+  (define (remake list-of-modified-instrument-ids)
     (catch #t
            (lambda ()
              (<gui> :disable-updates parent)
              
-             (define new-mixer-strips (create-mixer-strips num-rows))
+             (create-mixer-strips num-rows das-stored-mixer-strips list-of-modified-instrument-ids
+                                  (lambda (mixer-strips mixer-strips-gui)
              
-             (if das-mixer-strips
-                 (<gui> :close das-mixer-strips))
+                                    (if das-mixer-strips-gui
+                                        (<gui> :close das-mixer-strips-gui))
+                                    
+                                    (<gui> :add parent mixer-strips-gui)
+                                    
+                                    (<gui> :show mixer-strips-gui)
 
-             (<gui> :add parent new-mixer-strips) ;; 0 0 width height)
-             
-             (<gui> :show new-mixer-strips)
-             (set! das-mixer-strips new-mixer-strips)
-             )
+                                    (set! das-stored-mixer-strips mixer-strips)
+                                    (set! das-mixer-strips-gui mixer-strips-gui)
+                                    )))
 
            (lambda args
              (display (ow!))))
@@ -1639,9 +1707,7 @@
                                                         :remake remake
                                                         :pos pos))
   
-  (remake)
-
-  ;;(<gui> :add-resize-callback parent remake)
+  (remake '())
 
   (<ra> :inform-about-gui-being-a-mixer-strips parent)
   (push-back! *mixer-strips-objects* mixer-strips-object)
@@ -1657,10 +1723,10 @@
   mixer-strips-object
   )
 
-(define (remake-mixer-strips)
-  (c-display "\n\n\n             REMAKE MIXER STRIPS\n\n\n")
+(define (remake-mixer-strips . list-of-modified-instrument-ids)
+  ;;(c-display "\n\n\n             REMAKE MIXER STRIPS " list-of-modified-instrument-ids "\n\n\n")
   (for-each (lambda (a-mixer-strips-object)
-              ((a-mixer-strips-object :remake)))
+              ((a-mixer-strips-object :remake) list-of-modified-instrument-ids))
             *mixer-strips-objects*))
 
 (define (toggle-all-mixer-strips-fullscreen)
@@ -1745,28 +1811,10 @@
 #||
 (let ()
   (define start (time))
-  (define instruments (keep (lambda (id)
-                              (or (> (<ra> :get-num-input-channels id)
-                                     0)
-                                  (> (<ra> :get-num-output-channels id)
-                                     0)))
-                            (get-all-instruments-with-no-input-connections)))
 
-  (define instrument-plugin-buses (apply append (map (lambda (instrument-id)
-                                                       (get-returned-plugin-buses instrument-id))
-                                                     instruments)))
-
-  (define buses (append (get-all-instruments-with-at-least-two-input-connections)
-                        (get-buses)))
-
-  (define buses-plugin-buses (apply append (map (lambda (instrument-id)
-                                                  (get-returned-plugin-buses instrument-id))
-                                                (append buses
-                                                        instrument-plugin-buses))))
-
-  (define all-buses (append instrument-plugin-buses
-                            buses
-                            buses-plugin-buses))
+  (define mixer-strip-instrument-ids (get-mixer-strip-instrument-ids))
+  (define instruments (car mixer-strip-instrument-ids))
+  (define all-buses (cadr mixer-strip-instrument-ids))
 
   (define num-strips (+ (length instruments)
                         (length all-buses)))

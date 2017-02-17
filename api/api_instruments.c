@@ -783,7 +783,7 @@ void autopositionInstrument(int64_t instrument_id){
 }
 
 int numSelectedInstruments(void){
-  int ret;
+  int ret = 0;
   
   VECTOR_FOR_EACH(struct Patch *patch, &get_audio_instrument()->patches){
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;

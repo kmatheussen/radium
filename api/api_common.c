@@ -386,7 +386,7 @@ struct Patch *getPatchFromNum(int64_t instrument_id){
   return patch;
 }
 
-struct Patch *getAudioPatchFromNum(int64_t instrument_id){
+struct Patch *getAudioPatchFromNum(int64_t instrument_id){ // TODO: Rename to getAudioPatchFromId
   struct Patch *patch = PATCH_get_from_id(instrument_id);
   if(patch==NULL) {
     handleError("instrument %d not found", instrument_id);

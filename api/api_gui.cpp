@@ -101,8 +101,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     if(_image!=NULL){                                                   \
       QPainter p(this);                                                 \
       p.drawImage(ev->rect().topLeft(), *_image, ev->rect());           \
-    }else                                                               \
-      classname::paintEvent(ev);                                        \
+    }else{                                                              \
+      if (_paint_callback==NULL)                                        \
+        classname::paintEvent(ev);                                      \
+      else                                                              \
+        Gui::paintEvent(ev);                                            \
+    }                                                                   \
   }                                                                     
 
 #define OVERRIDERS(classname)                                           \
@@ -144,6 +148,7 @@ static QPen getPen(const_char* color){
   return pen;
 }
 
+static bool g_run_paint_callbacks = true;
 
 namespace radium_gui{
 
@@ -274,6 +279,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (_resize_callback!=NULL)
         s7extra_unprotect(_resize_callback);
 
+      if (_paint_callback!=NULL)
+        s7extra_unprotect(_paint_callback);
+
       g_guis[_gui_num] = NULL;
     }
 
@@ -375,7 +383,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       event->accept();
 
-      if(gui_isOpen(_gui_num)) // && _widget->isVisible() && _widget->width()>0 && _widget->height()>0)
+      if(gui_isOpen(_gui_num) && _widget->isVisible()) //  && _widget->width()>0 && _widget->height()>0)
         s7extra_callFunc_void_int_int(_resize_callback, event->size().width(), event->size().height());
     }
 
@@ -393,20 +401,62 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     
     /************ DRAWING *******************/
 
+    func_t *_paint_callback = NULL;
+
     QImage *_image = NULL;
     QPainter *_image_painter = NULL;
+    QPainter *_current_painter = NULL;
+
+    void paintEvent(QPaintEvent *event) {
+      R_ASSERT_RETURN_IF_FALSE(_paint_callback!=NULL);
+      
+      event->accept();
+
+      if (g_run_paint_callbacks==false)
+        return;
+
+      QPainter p(_widget);
+      p.setRenderHints(QPainter::Antialiasing,true);
+
+      _current_painter = &p;
+
+      s7extra_callFunc_void_int_int(_paint_callback, _widget->width(), _widget->height());
+
+      _current_painter = NULL;
+    }
+
+    void addPaintCallback(func_t* func){
+      if (_paint_callback!=NULL){
+        handleError("Gui %d already has a paint callback.", _gui_num);
+        return;
+      }
+
+      _paint_callback = func;
+      s7extra_protect(_paint_callback);
+    }
+
 
     void setNewImage(int width, int height){
       width = R_MAX(1,width);
       height = R_MAX(1, height);
 
-      if (_image!=NULL && _image->width() >= width && _image->height() > height)
+      if (_image!=NULL && _image->width() >= width && _image->height() >= height)
         return;
+
+      if (_image!=NULL){
+        width = R_MAX(_image->width(), width);
+        height = R_MAX(_image->height(), height);
+      }
+
+      //width*=2;
+      //height*=2;
+
+      //printf("   %d: num_calls to setNewImage: %d. %d >= %d, %d >= %d\n", _gui_num, num_calls++, _image==NULL ? -1 : _image->width(), width, _image==NULL ? -1 : _image->height(), height);
 
       auto *new_image = new QImage(width, height, QImage::Format_ARGB32);
       auto *new_image_painter = new QPainter(new_image);
 
-      new_image_painter->fillRect(QRect(0,0,width,height), get_qcolor(LOW_BACKGROUND_COLOR_NUM));
+      //new_image_painter->fillRect(QRect(0,0,width,height), get_qcolor(LOW_BACKGROUND_COLOR_NUM));
       
       if (_image!=NULL)
         new_image_painter->drawImage(QPoint(0,0), *_image);
@@ -419,82 +469,95 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       _image = new_image;
 
       _widget->setAttribute(Qt::WA_OpaquePaintEvent);
+      //_widget->setAttribute(Qt::WA_PaintOnScreen);
     }
     
     
+    QPainter *get_painter(void) {
+      QPainter *painter = _current_painter;
+
+      if (painter==NULL){
+
+        if (_image==NULL)
+          setNewImage(_widget->width(), _widget->height());
+
+        painter=_image_painter;
+      }
+
+      return painter;
+    }
+
     void setPen(const_char* color){
-      _image_painter->setPen(getQColor(color));
+      get_painter()->setPen(getQColor(color));
     }
 
     void myupdate(float x1, float y1, float x2, float y2, float extra=0.0f){
-      float min_x = R_MIN(x1, x2) - extra;
-      float max_x = R_MAX(x1, x2) + extra;
-      float min_y = R_MIN(y1, y2) - extra;
-      float max_y = R_MAX(y1, y2) + extra;
-      _widget->update(min_x-1, min_y-1, max_x-min_x+2, max_y-min_y+2);
+      if (_current_painter == NULL){
+        float min_x = R_MIN(x1, x2) - extra;
+        float max_x = R_MAX(x1, x2) + extra;
+        float min_y = R_MIN(y1, y2) - extra;
+        float max_y = R_MAX(y1, y2) + extra;
+        _widget->update(min_x-1, min_y-1, max_x-min_x+2, max_y-min_y+2);
+      }
     }
 
     void drawLine(const_char* color, float x1, float y1, float x2, float y2, float width) {
-      if (_image==NULL)
-        setNewImage(_widget->width(), _widget->height());
+      QPainter *painter = get_painter();
       
       QLineF line(x1, y1, x2, y2);
 
       QPen pen = getPen(color);
       pen.setWidthF(width);
-      _image_painter->setPen(pen);
+      painter->setPen(pen);
       
       //printf("Color: %x, %s\n", (unsigned int)color, pen.color().name(QColor::HexArgb).toUtf8().constData());
 
-      _image_painter->drawLine(line);
+      painter->drawLine(line);
 
       myupdate(x1, y1, x2, y2, width);
     }
 
     void drawBox(const_char* color, float x1, float y1, float x2, float y2, float width, float round_x, float round_y) {
-      if (_image==NULL)
-        setNewImage(_widget->width(), _widget->height());
-      
+      QPainter *painter = get_painter();
+
       QRectF rect(x1, y1, x2-x1, y2-y1);
 
       QPen pen = getPen(color);
       pen.setWidthF(width);
-      _image_painter->setPen(pen);
+      painter->setPen(pen);
 
       if (round_x>0 && round_y>0)
-        _image_painter->drawRoundedRect(rect, round_x, round_y);
+        painter->drawRoundedRect(rect, round_x, round_y);
       else
-        _image_painter->drawRect(rect);
+        painter->drawRect(rect);
 
       myupdate(x1, y1, x2, y2);
     }
 
     void filledBox(const_char* color, float x1, float y1, float x2, float y2, float round_x, float round_y) {
-      if (_image==NULL)
-        setNewImage(_widget->width(), _widget->height());
-      
+      QPainter *painter = get_painter();
+
       QRectF rect(x1, y1, x2-x1, y2-y1);
 
       QColor qcolor = getQColor(color);
 
       //QPen pen = _image_rect.pen();
 
-      _image_painter->setPen(Qt::NoPen);
-      _image_painter->setBrush(qcolor);
+      painter->setPen(Qt::NoPen);
+      painter->setBrush(qcolor);
       if (round_x>0 && round_y>0)
-        _image_painter->drawRoundedRect(rect, round_x, round_y);
+        painter->drawRoundedRect(rect, round_x, round_y);
       else
-        _image_painter->drawRect(rect);
-      _image_painter->setBrush(Qt::NoBrush);
+        painter->drawRect(rect);
+      painter->setBrush(Qt::NoBrush);
       //_image_painter->setPen(pen);
 
       myupdate(x1, y1, x2, y2);
     }
 
     void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, bool draw_vertical) {
-      if (_image==NULL)
-        setNewImage(_widget->width(), _widget->height());
-      
+      QPainter *painter = get_painter();
+
       QRectF rect(x1, y1, x2-x1, y2-y1);
 
       setPen(color);
@@ -514,22 +577,22 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       if (draw_vertical){
 
-        _image_painter->setFont(GFX_getFittingFont(text, flags, y2-y1, x2-x1));
+        painter->setFont(GFX_getFittingFont(text, flags, y2-y1, x2-x1));
 
-        _image_painter->save();
-        _image_painter->rotate(90);
-        _image_painter->translate(y1,-x1-rect.width());
+        painter->save();
+        painter->rotate(90);
+        painter->translate(y1,-x1-rect.width());
 
         QRect rect2(0,0,rect.height(),rect.width());
-        _image_painter->drawText(rect2, flags, text);
+        painter->drawText(rect2, flags, text);
 
-        _image_painter->restore();
+        painter->restore();
 
       } else {
 
-        _image_painter->setFont(GFX_getFittingFont(text, flags, x2-x1, y2-y1));
+        painter->setFont(GFX_getFittingFont(text, flags, x2-x1, y2-y1));
 
-        _image_painter->drawText(rect, flags, text);
+        painter->drawText(rect, flags, text);
       
       }
 
@@ -1736,6 +1799,27 @@ void gui_addResizeCallback(int64_t guinum, func_t* func){
   gui->addResizeCallback(func);
 }
 
+void gui_addPaintCallback(int64_t guinum, func_t* func){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  gui->addPaintCallback(func);
+}
+
+void gui_update(int64_t guinum, int x1, int y1, int x2, int y2){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  if (x1==-1)
+    gui->_widget->update();
+  else
+    gui->_widget->update(x1, x2, x2-x1, y2-y1);
+}
+
 
 
 /////// Widgets
@@ -2441,7 +2525,13 @@ QWidget *API_gui_get_widget(int64_t guinum){
   return gui->_widget;
 }
   
-                         
+void API_gui_pause_all_paint_callbacks(void){
+  g_run_paint_callbacks = false;
+}                         
+
+void API_gui_continue_all_paint_callbacks(void){
+  g_run_paint_callbacks = true;
+}                         
 
 
 ///////////////// Mixer strips
