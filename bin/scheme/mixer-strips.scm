@@ -1450,7 +1450,7 @@
   ;;(define parent (<gui> :horizontal-layout))
   ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
 
-  (define parent (<gui> :widget))
+  (define parent (<gui> :widget width height))
 
   ;;(define width (floor (* 1 (<gui> :text-width "MUTE SOLO"))))
 
@@ -1461,13 +1461,15 @@
   
   (define das-mixer-strip-gui #f)
 
+  (define org-width width)
+
   (define (remake width height)
     (define instrument-is-open (<ra> :instrument-is-open instrument-id))
-    
+
     (c-display "    remaking mixer-strip" instrument-id parent width height)
     (catch #t
            (lambda ()
-             ;;(<gui> :disable-updates parent)
+             (<gui> :disable-updates parent)
              
              (define new-mixer-strip (and instrument-is-open (create-mixer-strip instrument-id width)))
              
@@ -1476,6 +1478,10 @@
                (set! das-mixer-strip-gui #f))
 
              (when instrument-is-open
+               (if (not (<ra> :has-wide-instrument-strip instrument-id))
+                 (set! width (<gui> :width new-mixer-strip))
+                 (set! width org-width))
+               (set-fixed-width parent width)
                (<gui> :add parent new-mixer-strip 0 0 width height)
                (<gui> :show new-mixer-strip)             
                (set! das-mixer-strip-gui new-mixer-strip))
@@ -1484,16 +1490,16 @@
            (lambda args
              (display (ow!))))
   
-    ;;(<gui> :enable-updates parent)
+    (<gui> :enable-updates parent)
     )
 
   (remake width height)
 
   ;;(<gui> :add-paint-callback parent remake)
-  (<gui> :add-paint-callback parent
-         (lambda (width height)
-           (when das-mixer-strip-gui
-             (set-fixed-height das-mixer-strip-gui height))))
+  (<gui> :add-resize-callback parent remake)
+;         (lambda (width height)
+;           (when das-mixer-strip-gui
+;             (set-fixed-height das-mixer-strip-gui height))))
   
   (define mixer-strips-object (make-mixer-strips-object :gui parent
                                                         :remake (lambda (list-of-modified-instrument-ids)
