@@ -948,7 +948,7 @@
   
   (define implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id)) ;; Mutable variable
   (define (draw-mute mute is-muted width height)
-    (draw-mutesolo mute is-muted implicitly-muted "Mute" "green" width height))
+    (draw-mutesolo mute is-muted implicitly-muted (if is-minimized "M" "Mute") "green" width height))
 
   (define mute (create-custom-checkbox draw-mute
                                        (lambda (is-muted)
@@ -976,7 +976,7 @@
                                         #f))))
   
   (define solo (create-custom-checkbox (lambda (solo is-soloed width height)
-                                         (draw-mutesolo solo is-soloed #f "Solo" "yellow" width height))
+                                         (draw-mutesolo solo is-soloed #f (if is-minimized "S" "Solo") "yellow" width height))
                                        (lambda (is-selected)
                                          (undo-block
                                           (lambda ()
@@ -1467,7 +1467,7 @@
     (c-display "    remaking mixer-strip" instrument-id parent width height)
     (catch #t
            (lambda ()
-             (<gui> :disable-updates parent)
+             ;;(<gui> :disable-updates parent)
              
              (define new-mixer-strip (and instrument-is-open (create-mixer-strip instrument-id width)))
              
@@ -1484,7 +1484,7 @@
            (lambda args
              (display (ow!))))
   
-    (<gui> :enable-updates parent)
+    ;;(<gui> :enable-updates parent)
     )
 
   (remake width height)
@@ -1681,7 +1681,7 @@
   (define (remake list-of-modified-instrument-ids)
     (catch #t
            (lambda ()
-             (<gui> :disable-updates parent)
+;;             (<gui> :disable-updates parent)
              
              (create-mixer-strips num-rows das-stored-mixer-strips list-of-modified-instrument-ids
                                   (lambda (mixer-strips mixer-strips-gui)
@@ -1699,7 +1699,7 @@
 
            (lambda args
              (display (ow!))))
-    (<gui> :enable-updates parent)
+  ;;  (<gui> :enable-updates parent)
     )
 
   (define mixer-strips-object (make-mixer-strips-object :gui parent
