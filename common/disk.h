@@ -156,7 +156,7 @@ static inline void SaveLogType(int logtype){
 #define DC_alloc(a) DC_doalloc(a); if( !dc.success) goto error
 #define DC_alloc_atomic(a) DC_doalloc_atomic(a); if( !dc.success) goto error
 
-
+#define DC_UNKNOWN_VARIABLE -1000
 
 #define GENERAL_LOAD(num_objs,num_vars)				\
 start:															\
@@ -164,6 +164,8 @@ start:															\
 		switch(DC_Next()){									\
 			case LS_VARIABLE:									\
 				switch(DC_whatString(vars,num_vars)){	\
+                                        case DC_UNKNOWN_VARIABLE:               \
+                                                goto start;                   \
 					case 0:										\
 						goto var0;								\
 					case 1:										\

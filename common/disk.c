@@ -326,14 +326,25 @@ int DC_whatString(char **variables,int num){
 	  //printf("num: %d, name: -%s-\n",ret,variables[ret]);
 		ret++;
 		if(ret>=num){
-			RError(
-			       "Error. Unknown identifier '%s', dc.type=%s., line: %d\n",
-			       string,
-			       dc.type==LS_VARIABLE?"LS_VARIABLE":dc.type==LS_OBJECT?"LS_OBJECT":"UNKNOWN",
-                               curr_disk_line
-                               );
-			dc.success=false;
-			return LS_ERROR;
+                  if (dc.type==LS_VARIABLE){
+                    GFX_Message(NULL,
+                                "Warning: Found an unkown %s '%s'.\n"
+                                "The song was probably saved with a newer version of Radium.\n"
+                                "If you save this song, you will lose this variable.",
+                                dc.type==LS_VARIABLE?"variable":"object",
+                                string);
+                    DC_fgets();
+                    return DC_UNKNOWN_VARIABLE;
+                  } else {
+                    RError(
+                           "Error. Unknown identifier '%s', dc.type=%s., line: %d\n",
+                           string,
+                           dc.type==LS_VARIABLE?"LS_VARIABLE":dc.type==LS_OBJECT?"LS_OBJECT":"UNKNOWN",
+                           curr_disk_line
+                           );
+                    dc.success=false;
+                    return LS_ERROR;
+                  }
 		}
 	}
 
