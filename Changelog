@@ -1,3 +1,40 @@
+Changes 4.4.8 -> 4.5.0:
+* OSX: Enable draw in separate process by default. Quick temporary
+  workaround for OpenGL freeze problem.
+* Fix using left meta to force horizontal movement when pressing keyboard
+  before mouse.
+* OSX: Use left alt instead of left meta to force horizontal movement.
+  Left meta is already used to slow down mouse movement on OSX.
+* Updated keyboard modifiers in the Help -> Mouse menu so that they are
+  correct for all three platforms.
+* Don't crash when selecting "Quit" after getting message that OpenGL is
+  too old during startup.
+* Mixer strips: Various gfx improvements.
+* Mixer strips: Speed up rendering a lot.
+* Mixer strips: Menu options to show window with 1, 2, or 3 rows
+  of mixer strips.
+* Mixer strips: Click name to switch between a narrow and a wide strip.
+* Mixerstrips: Fix full screen.
+* A general fix for popup menues not always working, especially
+  in mixer strips.
+* Make the "ignore warnings and errors for two seconds" and
+  "ignore warnings and errors for the rest of the program" buttons
+  work again.
+* Preferences: Fix some usage of wrong font types.
+* Progress window: Should quit by itself now if Radium crashes
+  (or is killed) while progress window is open.
+* Progress window: Remove flickering when printing new message.
+  Works perfectly on Linux/Windows, but not on OSX, as usual.
+* Avoid rare deadlock when playing looped range.
+* Sequencer: Fix painting correct bar numbers when block tempo != 0.
+* Sequencer: Fix program freeze when painting bar numbers.
+* API: Renamed ctrlPressed to controlPressed. 'controlPressed' returns
+  true if Ctrl is pressed on Linux/Windows, and if Cmd is pressed on OSX.
+* API: New functions: control2Pressed, gui_addPaintCallback, gui_update,
+  hasWideInstrumentStrip, setWideInstrumentStrip,
+  gui_toolTip, gui_drawVerticalText.
+
+
 Changes 4.4.7 -> 4.4.8:
 * Audio: Make it optional whether to use buzy looping as synchronization
   primitive in the multicore scheduler. Buzy looping may cause CPU spikes
