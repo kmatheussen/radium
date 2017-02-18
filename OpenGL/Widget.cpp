@@ -1660,8 +1660,6 @@ QWidget *GL_create_widget(QWidget *parent){
     GFX_Message(NULL,
                 "Your version of OpenGL is too old. Radium can not run.\n"
                 "\n"
-                "This is usually caused by lacking a specific graphics card driver, so that the fallback software OpenGL driver is used instead.\n"
-                "\n"
                 "To solve this problem, you might want to try updating your graphics card driver."
                 );
     exit(-1);
@@ -1676,12 +1674,12 @@ QWidget *GL_create_widget(QWidget *parent){
     int ret = GFX_Message(&v,
                           "Your version of OpenGL is too old.\n"
                           "\n"
-                          "This is usually caused by lacking a specific graphics card driver, so that the fallback software OpenGL driver is used instead.\n"
-                          "\n"
                           "To solve this problem, you might want to try updating your graphics card driver."
                           );
-    if (ret==1)
+    if (ret==1){
+      exit(-1);
       return NULL;
+    }
 
     usleep(10*1000);
     //QThread::currentThread()->wait(1000*10);
