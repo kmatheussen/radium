@@ -6,8 +6,6 @@ extern LANGSPEC void API_gui_call_regularly(void);
 
 extern LANGSPEC bool MIXERSTRIPS_has_mouse_pointer(void);
 
-extern LANGSPEC void API_gui_pause_all_paint_callbacks(void);
-extern LANGSPEC void API_gui_continue_all_paint_callbacks(void);
 extern LANGSPEC bool API_gui_is_painting(void);
 
 #ifdef __cplusplus

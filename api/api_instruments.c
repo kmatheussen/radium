@@ -1327,6 +1327,26 @@ void showInstrumentInfo(int64_t instrument_id){
 }
 
 
+/********** Instrument deletion generation ***************/
+
+static int64_t g_deletion_generation = 0;
+static int64_t g_audio_deletion_generation = 0;
+
+void API_instrument_call_me_when_instrument_is_deleted(struct Patch *patch){
+  g_deletion_generation++;
+  if (patch->instrument==get_audio_instrument())
+    g_audio_deletion_generation++;
+}
+
+int64_t getInstrumentDeletionGeneration(void){
+  return g_deletion_generation;
+}
+
+int64_t getAudioInstrumentDeletionGeneration(void){
+  return g_audio_deletion_generation;
+}
+
+
 /******** Effect monitors ************/
 
 struct EffectMonitor{

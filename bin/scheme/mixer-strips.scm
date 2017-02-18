@@ -47,14 +47,25 @@
   (<gui> :set-max-width gui width)
   (<gui> :set-size-policy gui #f #t))
 
+
+;; callback is not called after an instrument (any instrument) has been deleted.
+(define (add-safe-callback gui add-func callback)
+  (define deletion-generation (<ra> :get-audio-instrument-deletion-generation))
+  (add-func gui
+            (lambda (width height)
+              (if (= deletion-generation (<ra> :get-audio-instrument-deletion-generation))
+                  (callback width height)))))
+           
+(define (add-safe-paint-callback gui callback)
+  (add-safe-callback gui ra:gui_add-paint-callback callback))
+           
+(define (add-safe-resize-callback gui callback)
+  (add-safe-callback gui ra:gui_add-resize-callback callback))
+
+
 (define (create-custom-checkbox paint-func value-changed is-selected min-height)
   (define checkbox (<gui> :widget))
   (<gui> :set-min-height checkbox min-height)
-
-  (define (repaint)
-    (paint-func checkbox is-selected 
-                (<gui> :width checkbox)
-                (<gui> :height checkbox)))
 
   (<gui> :add-mouse-callback checkbox (lambda (button state x y)
                                         ;;(c-display "state" state)
@@ -64,16 +75,10 @@
                                           (value-changed is-selected)
                                           (<gui> :update checkbox))
                                         #t))
-  (<gui> :add-paint-callback checkbox
-         (lambda (newwidth newheight)
-           ;;(c-display "             RESIZE callback" newwidth newheight)
-           ;;(assert (> newwidth 0))
-           ;;(assert (> newheight 0))
-           ;;(set! width 100);;newwidth)
-           ;;(set! height 100);;newheight)
-           (repaint)))
-
-  ;;(repaint)
+  
+  (add-safe-paint-callback checkbox
+                           (lambda (width height)
+                             (paint-func checkbox is-selected width height)))
 
   (list (lambda (new-value)
           (set! is-selected new-value)
@@ -112,11 +117,11 @@
   (define color (<ra> :get-instrument-color instrument-id))
 
   (define label (<gui> :widget))
-  (<gui> :add-paint-callback label
+  (add-safe-paint-callback label
          (lambda (width height)
            (<gui> :filled-box label color 0 0 width height)
            (if is-minimized
-               (<gui> :draw-vertical-text label *text-color* name 2 5 (+ width 0) height #f #t)
+               (<gui> :draw-vertical-text label *text-color* name 2 7 (+ width 0) height #f #t)
                (<gui> :draw-text label *text-color* name 5 0 width height #f #t #f))
            (<gui> :draw-box label "#202020" 0 0 width height 1.0 2 2)))
 
@@ -334,7 +339,7 @@
 
   (<gui> :set-min-height widget (get-fontheight))
 
-  (<gui> :add-paint-callback widget paintit)
+  (add-safe-paint-callback widget paintit)
   
   (<gui> :add-mouse-callback widget (lambda (button state x y)
                                       (when (and (= button *left-button*)
@@ -853,7 +858,7 @@
           (<gui> :draw-box slider "#404040" 0 0 width height 2)
           ))
 
-  (<gui> :add-paint-callback slider (lambda x (paint)))
+  (add-safe-paint-callback slider (lambda x (paint)))
 
   ;;(paint)
 
@@ -901,13 +906,14 @@
            checkbox
            background-color
            0 0 width height)
+    (define b (if is-minimized 2 5))
     (<gui> :filled-box
            checkbox
            (if is-selected
                color
                background-color)
            2 2 (- width 2) (- height 2)
-           5 5)
+           b b)
     (<gui> :draw-text
            checkbox
            "black"
@@ -924,7 +930,7 @@
            (if is-implicitly-selected
                2.0
                1.0)
-           5 5)
+           b b)
     )
 
   (define (get-muted)
@@ -1024,8 +1030,8 @@
   (define (get-border-size width)
     (scale 0.05 0 1 0 width))
 
-  (define show-voltext #t)
-  (define show-peaktext (not is-minimized))
+  (define show-voltext (not is-minimized))
+  (define show-peaktext #t)
 
 #||
   (define middle (floor (average x1 x2)))
@@ -1094,7 +1100,9 @@
                                  (<gui> :update voltext)))
                            (if volslider
                                (<gui> :update volslider)))))
-    
+
+  (<gui> :set-min-width volslider 1) ;; ?? Why is this necessary?
+  
   (define (paint-text gui text)
     (define width (<gui> :width gui))
     (define height (<gui> :height gui))
@@ -1107,10 +1115,12 @@
     (<gui> :filled-box gui background-color 0 0 width height)
     
     ;; rounded
-    (<gui> :filled-box gui col1 border-size 0 (- width border-size) height 5 5)
+    (if is-minimized
+        (<gui> :filled-box gui col1 border-size 0 (- width border-size) height 2 2)
+        (<gui> :filled-box gui col1 border-size 0 (- width border-size) height 5 5))
     
     ;; text
-    (<gui> :draw-text gui *text-color* text 0 0 width height))
+    (<gui> :draw-text gui *text-color* text 2 2 (- width 2) (- height 2)))
 
     
   (when show-voltext
@@ -1118,7 +1128,7 @@
           (lambda ()
             (paint-text voltext (db-to-text (get-volume) #f))))
     
-    (<gui> :add-paint-callback voltext (lambda x (paint-voltext)))
+    (add-safe-paint-callback voltext (lambda x (paint-voltext)))
     ;;(paint-voltext)
     )
 
@@ -1127,7 +1137,7 @@
           (lambda ()
             (paint-text peaktext peaktexttext)))
     
-    (<gui> :add-paint-callback peaktext (lambda x (paint-peaktext)))
+    (add-safe-paint-callback peaktext (lambda x (paint-peaktext)))
     ;;(paint-peaktext)
     )
 
@@ -1160,7 +1170,7 @@
           (<gui> :draw-line volslider "#eeeeee" (1+ x1) middle_0db (1- x2) middle_0db 0.3)
           ))
 
-  (<gui> :add-paint-callback volslider (lambda x (paint-slider)))
+  (add-safe-paint-callback volslider (lambda x (paint-slider)))
 
 
   (define volmeter (<gui> :vertical-audio-meter meter-instrument-id))
@@ -1286,7 +1296,8 @@
   (<gui> :set-background-color gui color)
   
   ;;(define gui (<gui> :widget))
-  (set-fixed-width gui (max 30 (floor (* 1.2 (get-fontheight)))))
+  (set-fixed-width gui (+ 10 (max (floor (<gui> :text-width "-14.2"))
+                                  (get-fontheight))))
 
   (define label (create-mixer-strip-name instrument-id #t is-current-mixer-strip))
 
@@ -1298,7 +1309,7 @@
   (define volume-gui (create-mixer-strip-volume instrument-id meter-instrument-id background-color #t))
   (<gui> :add gui volume-gui 1)
   
-  (<gui> :add-paint-callback gui
+  (add-safe-paint-callback gui
          (lambda (width height)
            ;;(set-fixed-height volume-gui (floor (/ height 2)))
            (<gui> :filled-box gui background-color 0 0 width height 0 0)
@@ -1392,7 +1403,7 @@
 
   ;(set-fixed-width mixer-strip-path-gui (- (<gui> :width gui) 26))
 
-  '(<gui> :add-paint-callback gui
+  '(add-safe-paint-callback gui
          (lambda (width height)
            (set-fixed-width mixer-strip-path-gui (- width 26))))
 
@@ -1412,7 +1423,7 @@
   (<gui> :add gui (create-mixer-strip-volume instrument-id meter-instrument-id background-color #f) 1)
   (<gui> :add gui (create-mixer-strip-comment instrument-id comment-height))
 
-  (<gui> :add-paint-callback gui
+  (add-safe-paint-callback gui
          (lambda (width height)
            (<gui> :filled-box gui background-color 0 0 width height 0 0)
            (draw-mixer-strips-border gui width height)))
@@ -1457,7 +1468,7 @@
   ;;(define parent (<gui> :horizontal-layout))
   ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
 
-  (define parent (<gui> :widget width height))
+  (define parent (<gui> :widget width height)) ;; Lots of trouble using a widget as parent instead of a layout. However, it's an easy way to avoid flickering when changing current instrument.
 
   ;;(define width (floor (* 1 (<gui> :text-width "MUTE SOLO"))))
 
@@ -1502,11 +1513,7 @@
 
   (remake width height)
 
-  ;;(<gui> :add-paint-callback parent remake)
-  (<gui> :add-resize-callback parent remake)
-;         (lambda (width height)
-;           (when das-mixer-strip-gui
-;             (set-fixed-height das-mixer-strip-gui height))))
+  (<gui> :add-resize-callback parent remake) ;; Dont need to use safe callback here. 'remake' checks that the instrument is open.
   
   (define mixer-strips-object (make-mixer-strips-object :gui parent
                                                         :remake (lambda (list-of-modified-instrument-ids)

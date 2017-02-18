@@ -148,7 +148,6 @@ static QPen getPen(const_char* color){
   return pen;
 }
 
-static bool g_run_paint_callbacks = true;
 static bool g_currently_painting = false;
 
 namespace radium_gui{
@@ -412,9 +411,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       R_ASSERT_RETURN_IF_FALSE(_paint_callback!=NULL);
       
       event->accept();
-
-      if (g_run_paint_callbacks==false)
-        return;
 
       R_ASSERT_RETURN_IF_FALSE(g_currently_painting==false);
 
@@ -2539,13 +2535,6 @@ bool API_gui_is_painting(void){
   return g_currently_painting;
 }
   
-void API_gui_pause_all_paint_callbacks(void){
-  g_run_paint_callbacks = false;
-}                         
-
-void API_gui_continue_all_paint_callbacks(void){
-  g_run_paint_callbacks = true;
-}                         
 
 
 ///////////////// Mixer strips
