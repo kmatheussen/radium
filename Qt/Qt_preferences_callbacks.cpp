@@ -401,8 +401,12 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 #endif
       
       high_cpu_protection->setChecked(doHighCpuOpenGlProtection());
-      
+
+#if FOR_MACOSX
       bool draw_in_separate_process = SETTINGS_read_bool("opengl_draw_in_separate_process",false);//GL_using_nvidia_card());
+#else
+      bool draw_in_separate_process = SETTINGS_read_bool("opengl_draw_in_separate_process",true);//GL_using_nvidia_card());
+#endif
       draw_in_separate_process_onoff->setChecked(draw_in_separate_process);
       
       safeModeOnoff->setChecked(GL_get_safe_mode());

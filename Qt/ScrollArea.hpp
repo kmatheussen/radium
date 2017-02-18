@@ -35,8 +35,6 @@ class ScrollArea : public QWidget {
   MyQScrollBar *_vertical_scroll_bar;
   MyQScrollBar *_horizontal_scroll_bar;
 
-  QScrollArea *_scroll_area;
-
   struct InnerScrollArea : public QScrollArea {
 
     ScrollArea *_scroll_area;

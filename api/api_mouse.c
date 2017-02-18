@@ -3041,7 +3041,7 @@ bool controlPressed(void){
 
 bool control2Pressed(void){
 #if FOR_MACOSX
-  return AltPresed();
+  return AltPressed();
 #else
   return MetaPressed();
 #endif
