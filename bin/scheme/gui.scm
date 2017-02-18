@@ -63,6 +63,9 @@
         ((eq? command :add-resize-callback)
          (<ra> :gui_add-resize-callback (car args) (cadr args)))
         
+        ((eq? command :add-paint-callback)
+         (<ra> :gui_add-paint-callback (car args) (cadr args)))
+        
         ((eq? command :add-close-callback)
          (<ra> :gui_add-close-callback (car args) (cadr args)))
         

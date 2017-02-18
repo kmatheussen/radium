@@ -783,7 +783,7 @@ void autopositionInstrument(int64_t instrument_id){
 }
 
 int numSelectedInstruments(void){
-  int ret;
+  int ret = 0;
   
   VECTOR_FOR_EACH(struct Patch *patch, &get_audio_instrument()->patches){
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
@@ -1447,3 +1447,20 @@ void API_instruments_call_regularly(void){
 void remakeMixerStrips(void){
   RT_schedule_mixer_strips_redraw(); // We don't want to redraw immediately in case we remake when a connection is being deleted or created, and we don't want to remake several times in a row either, or too often.
 }
+
+bool hasWideInstrumentStrip(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id); // calling getAudioPatchFromNum instead of getPatchFromNum works as an assertion
+  if(patch==NULL)
+    return true;
+
+  return patch->wide_mixer_strip;
+}
+
+void setWideInstrumentStrip(int64_t instrument_id, bool is_wide){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id); // calling getAudioPatchFromNum instead of getPatchFromNum works as an assertion
+  if(patch==NULL)
+    return;
+
+  patch->wide_mixer_strip=is_wide;
+}
+

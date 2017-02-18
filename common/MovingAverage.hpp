@@ -8,7 +8,7 @@ namespace radium{
 
 struct MovingAverage{
   int _pos = 0;
-  int _array_size;
+  const int _array_size;
   double *_array;
   double _sum;
 

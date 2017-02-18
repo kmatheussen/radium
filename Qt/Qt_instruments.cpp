@@ -949,8 +949,11 @@ void MIXERSTRIP_call_regularly(void){
 
     last_patch = NULL;
 
+    EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+    int height = editor->height();
+
     int64_t old_guinum = guinum;
-    int64_t new_guinum = gui_createSingleMixerStrip(g_currpatch->id, 100,600);
+    int64_t new_guinum = gui_createSingleMixerStrip(g_currpatch->id, 100, height);
     //R_ASSERT(new_guinum != -1);
     
     if(new_guinum != -1){

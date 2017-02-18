@@ -8,7 +8,7 @@
         #t ;; whether the entire output should be displayed as a comment
         ))
 
-(set! (*s7* 'history-size) 40)
+(set! (*s7* 'history-size) 80)
 
 (define *is-initializing* #t)
 

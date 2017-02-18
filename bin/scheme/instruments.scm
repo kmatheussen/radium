@@ -144,14 +144,14 @@
   (define buses (get-buses))
   (keep (lambda (id-instrument)
           (and (not (member id-instrument buses))
-               (null? (get-instruments-connecting-to-instrument id-instrument))))
+               (= 0 (<ra> :get-num-in-audio-connections id-instrument))))
         (get-all-audio-instruments)))
 
 (define (get-all-instruments-with-at-least-two-input-connections)
   (define buses (get-buses))
   (keep (lambda (id-instrument)
           (and (not (member id-instrument buses))
-               (>= (length (get-instruments-connecting-to-instrument id-instrument))
+               (>= (<ra> :get-num-in-audio-connections id-instrument)
                    2)))
         (get-all-audio-instruments)))
 

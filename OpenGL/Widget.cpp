@@ -312,7 +312,7 @@ namespace{
 
       if (average_swap_time >= vblank*0.8){
         if (is_sleeping){
-          printf("Turning off sleeping. dur: %f, avg: %f\n", duration, average_swap_time);
+          //printf("Turning off sleeping. dur: %f, avg: %f\n", duration, average_swap_time);
           is_sleeping=false;
         }
 
@@ -324,7 +324,7 @@ namespace{
           }
           
           if (_first_sleep_timer.elapsed() >= 20000){
-            printf("  Turning off wating before sleeping. dur: %f, avg: %f\n", duration, average_swap_time);
+            //printf("  Turning off wating before sleeping. dur: %f, avg: %f\n", duration, average_swap_time);
             is_waiting_before_turning_off_waiting_before_sleeping = false;
             is_waiting_before_sleeping = false;
           }
@@ -334,14 +334,14 @@ namespace{
 
         if (is_sleeping){
 
-          printf("OpenGL quickswapsleeping. Duration: %f. Vblank: %f. average: %f\n", duration, vblank, average_swap_time);
+          //printf("OpenGL quickswapsleeping. Duration: %f. Vblank: %f. average: %f\n", duration, vblank, average_swap_time);
           usleep(40*1000 * vblank);
           _moving_average.reset(vblank/2);
           //_swap_timer.restart();
 
         } else if (!is_waiting_before_sleeping){
 
-          printf(" Starting to wait 1 second. Duration: %f\n", duration);
+          //printf(" Starting to wait 1 second. Duration: %f\n", duration);
           _first_sleep_timer.restart();
           is_waiting_before_sleeping = true;
 
@@ -1660,8 +1660,6 @@ QWidget *GL_create_widget(QWidget *parent){
     GFX_Message(NULL,
                 "Your version of OpenGL is too old. Radium can not run.\n"
                 "\n"
-                "This is usually caused by lacking a specific graphics card driver, so that the fallback software OpenGL driver is used instead.\n"
-                "\n"
                 "To solve this problem, you might want to try updating your graphics card driver."
                 );
     exit(-1);
@@ -1676,12 +1674,12 @@ QWidget *GL_create_widget(QWidget *parent){
     int ret = GFX_Message(&v,
                           "Your version of OpenGL is too old.\n"
                           "\n"
-                          "This is usually caused by lacking a specific graphics card driver, so that the fallback software OpenGL driver is used instead.\n"
-                          "\n"
                           "To solve this problem, you might want to try updating your graphics card driver."
                           );
-    if (ret==1)
+    if (ret==1){
+      exit(-1);
       return NULL;
+    }
 
     usleep(10*1000);
     //QThread::currentThread()->wait(1000*10);

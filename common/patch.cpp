@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "notes_proc.h"
 
 #include "../api/api_common_proc.h"
+#include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
 #include "../midi/midi_i_plugin_proc.h"
 #include "../midi/midi_i_input_proc.h"
@@ -196,6 +197,7 @@ struct Patch *PATCH_alloc(void){
   patch->voices = (struct PatchVoice*)talloc_atomic_clean(sizeof(struct PatchVoice) * NUM_PATCH_VOICES);
   
   patch->comment = "Comment";
+  patch->wide_mixer_strip = true;
 
   return patch;
 }
@@ -546,6 +548,8 @@ static void make_inactive(struct Patch *patch, bool force_removal){
   ADD_UNDO(Audio_Patch_Remove_CurrPos(patch, audio_patch_state)); // Must be called last, if not the undo/redo order will be wrong.
 
   PATCH_stop_all_notes(patch);
+
+  API_gui_pause_all_paint_callbacks();
 
   PATCH_remove_from_instrument(patch);
 

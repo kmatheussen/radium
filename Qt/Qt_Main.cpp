@@ -1273,7 +1273,7 @@ public:
     msgBox.open();
     msgBox.hide();
 
-    R_ASSERT( (50 % interval) == 0);
+    //R_ASSERT( (50 % interval) == 0);
     
     setInterval(interval);
     start();
@@ -1458,6 +1458,7 @@ protected:
       if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false)){
         printf("          (remake called from qt main)\n");
         evalScheme("(remake-mixer-strips)");
+        API_gui_continue_all_paint_callbacks();
       }
     }
 

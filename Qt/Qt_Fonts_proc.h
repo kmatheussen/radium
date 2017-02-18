@@ -15,7 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if USE_QT4
-QFont GFX_getFittingFont(QString text, int width, int height);
+QFont GFX_getFittingFont(QString text, int flags, int width, int height);
 #endif
 
 void setFontValues(struct Tracker_Windows *tvisual);
