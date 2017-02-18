@@ -189,12 +189,12 @@
 ||#
 
 (define (get-place-from-y Button Y)
-  (if (<ra> :ctrl-pressed)
+  (if (<ra> :control-pressed)
       (<ra> :get-place-from-y Y)
       (<ra> :get-place-in-grid-from-y Y)))
 
 (define (get-next-place-from-y Button Y)
-  (if (<ra> :ctrl-pressed)
+  (if (<ra> :control-pressed)
       (<ra> :get-place-from-y (+ Y 1))
       (<ra> :get-next-place-in-grid-from-y Y)))
 
@@ -237,7 +237,7 @@
   (<ra> :shift-pressed))
 
 (define (only-x-direction)
-  (<ra> :left-extra-pressed))
+  (<ra> :control2-pressed))
 
 (delafina (add-delta-mouse-handler :press :move-and-release :release #f :mouse-pointer-is-hidden-func #f)
   (define prev-x #f)
@@ -268,14 +268,14 @@
         (begin
           (define dx (cond ((only-y-direction)
                             0)
-                           ((<ra> :ctrl-pressed)
+                           ((<ra> :control-pressed)
                             (/ (- $x prev-x)
                                10))
                            (else
                             (- $x prev-x))))
           (define dy (cond ((only-x-direction)
                             0)
-                           ((<ra> :ctrl-pressed)
+                           ((<ra> :control-pressed)
                             (/ (- $y prev-y)
                                10))
                            (else
@@ -470,7 +470,7 @@
 
   (handling-nodes
    (lambda()
-     ;;(c-display "mouse move2" $button $x $y (<ra> :ctrl-pressed) (<ra> :shift-pressed))
+     ;;(c-display "mouse move2" $button $x $y (<ra> :control-pressed) (<ra> :shift-pressed))
      ;;(cancel-current-stuff)
      (if *current-mouse-cycle*
          (begin 
@@ -1518,7 +1518,7 @@
                                                  (define Value (scale X
                                                                       (<ra> :get-track-notes-x1 *current-track-num*) (<ra> :get-track-notes-x2 *current-track-num*) 
                                                                       (get-min-pitch-in-current-track) (get-max-pitch-in-current-track)))
-                                                 (if (not (<ra> :ctrl-pressed))
+                                                 (if (not (<ra> :control-pressed))
                                                      (set! Value (round Value)))
                                                  (define Num (<ra> :add-pitchnum Value Place *current-track-num*))
                                                  (if (= -1 Num)
@@ -1526,7 +1526,7 @@
                                                      (callback Num (<ra> :get-pitchnum-value Num *current-track-num*))))))
                         :Move-node (lambda (Num Value Place)                                     
                                      (<ra> :set-pitchnum Num
-                                                        (if (<ra> :ctrl-pressed)
+                                                        (if (<ra> :control-pressed)
                                                             Value
                                                             (round Value))
                                                         (or Place -1)
@@ -1814,13 +1814,13 @@
                                              (else
                                               (c-display "UNKNOWN pianonote-info type: " (pianonote-info :move-type))
                                               #f)))
-                                     ;(c-display "value:" (<ra> :ctrl-pressed) (if (<ra> :ctrl-pressed)
+                                     ;(c-display "value:" (<ra> :control-pressed) (if (<ra> :control-pressed)
                                      ;                                             Value
                                      ;                                             (round Value))
                                      ;           Value)
                                      (define new-notenum
                                        (func (pianonote-info :pianonotenum)
-                                             (if (<ra> :ctrl-pressed)
+                                             (if (<ra> :control-pressed)
                                                  Value
                                                  (round Value))
                                              (or Place -1)
@@ -2954,7 +2954,7 @@
                                            (define Time (scale X
                                                                (<ra> :get-seqtempo-area-x1) (<ra> :get-seqtempo-area-x2)
                                                                (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
-                                           (define PositionTime (if (<ra> :ctrl-pressed)
+                                           (define PositionTime (if (<ra> :control-pressed)
                                                                     Time
                                                                     (<ra> :get-seq-gridded-time (floor Time) 0 (<ra> :get-seq-tempo-grid-type))))
                                            (define TempoMul (get-seqtempo-value Y))
@@ -2969,7 +2969,7 @@
                         :Move-node (lambda (Num Time Y)
                                      (define TempoMul (get-seqtempo-value Y))
                                      (define logtype (<ra> :get-seqtempo-logtype Num))
-                                     (if (not (<ra> :ctrl-pressed))
+                                     (if (not (<ra> :control-pressed))
                                          (set! Time (<ra> :get-seq-gridded-time (floor Time) 0 (<ra> :get-seq-tempo-grid-type))))
                                      (<ra> :set-seqtemponode Time TempoMul logtype Num)
                                      ;;(c-display "NUM:" Num ", Time:" Time ", TempoMul:" TempoMul)
@@ -3109,7 +3109,7 @@
                                        50)
                           :Move (lambda (_ Value)
                                   (set! Value (floor Value))
-                                  (if (not (<ra> :ctrl-pressed))
+                                  (if (not (<ra> :control-pressed))
                                       (set! Value (<ra> :get-seq-gridded-time Value 0 (<ra> :get-seq-loop-grid-type))))
                                   (if (eq? Type 'start)
                                       (<ra> :set-seqlooping-start Value)
@@ -3263,7 +3263,7 @@
                 
                 (when (not skew)
                   (define new-pos2 (if (or (= 1 (num-seqblocks-in-sequencer))
-                                           (<ra> :ctrl-pressed))
+                                           (<ra> :control-pressed))
                                        new-pos
                                        (<ra> :get-seq-gridded-time new-pos 0 (<ra> :get-seq-block-grid-type))))
                   (if (< new-pos2 0)
@@ -3339,7 +3339,7 @@
                                                                            (if (not (<ra> :is-playing-song))
                                                                                (<ra> :select-block (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
                                                                            (cond ((and (not is-selected)
-                                                                                       (not (<ra> :ctrl-pressed)))
+                                                                                       (not (<ra> :control-pressed)))
                                                                                   (only-select-one-seqblock seqblocknum seqtracknum))
                                                                                  (else
                                                                                   (<ra> :select-seqblock #t seqblocknum seqtracknum)))
@@ -3406,7 +3406,7 @@
                                               (<ra> :move-seqblock-gfx seqblocknum old-pos seqtracknum)
                                               (c-display "moving 2")))
                                         (set-grid-type #f)
-                                        (if (and (<ra> :ctrl-pressed)
+                                        (if (and (<ra> :control-pressed)
                                                  (not has-moved))
                                             (<ra> :select-seqblock (not gakkgakk-was-selected) seqblocknum seqtracknum)
                                             (<ra> :select-seqblock #f seqblocknum seqtracknum))
@@ -3421,7 +3421,7 @@
                                      ;;(c-display "  Y" Y new-seqtracknum)
 
                                      (define new-pos (if (or (= 1 (num-seqblocks-in-sequencer))
-                                                             (<ra> :ctrl-pressed))
+                                                             (<ra> :control-pressed))
                                                          (floor Value)
                                                          (<ra> :get-seq-gridded-time (floor Value) 0 (<ra> :get-seq-block-grid-type))))
 
@@ -3543,7 +3543,7 @@
                                                                         (<ra> :select-block (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
                                                                     
                                                                     (cond ((and (not is-selected)
-                                                                                (not (<ra> :ctrl-pressed)))
+                                                                                (not (<ra> :control-pressed)))
                                                                            (only-select-one-seqblock seqblocknum seqtracknum))
                                                                           (else
                                                                            (<ra> :select-seqblock #t seqblocknum seqtracknum)))
@@ -3618,7 +3618,7 @@
                                             (apply-gfx-gfx-seqblocks seqblock-infos))
 
                                         (if (and (not has-moved)
-                                                 (<ra> :ctrl-pressed))
+                                                 (<ra> :control-pressed))
                                             (<ra> :select-seqblock (not gakkgakk-was-selected) gakkgakk-startseqblocknum gakkgakk-startseqtracknum))
                                         
                                         (set-grid-type #f)
@@ -3831,7 +3831,7 @@
                                              (define Time (scale X
                                                                  (<ra> :get-seqtrack-x1 seqtracknum) (<ra> :get-seqtrack-x2 seqtracknum)
                                                                  (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
-                                             (define PositionTime (if (<ra> :ctrl-pressed)
+                                             (define PositionTime (if (<ra> :control-pressed)
                                                                       Time
                                                                       (<ra> :get-seq-gridded-time (floor Time) 0 (<ra> :get-seq-automation-grid-type))))
                                              (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
@@ -3849,7 +3849,7 @@
                                        (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
                                        (define logtype (<ra> :get-seq-automation-logtype Num automationnum seqtracknum))
                                        (set! Time (floor Time))
-                                       (if (not (<ra> :ctrl-pressed))
+                                       (if (not (<ra> :control-pressed))
                                            (set! Time (<ra> :get-seq-gridded-time Time 0 (<ra> :get-seq-automation-grid-type))))
                                        (<ra> :set-seq-automation-node Time Value logtype Num automationnum seqtracknum)
                                        ;;(c-display "NUM:" Num ", Time:" (/ Time 48000.0) ", Value:" Value)
@@ -4478,7 +4478,7 @@
 (<ra> :set-temponode 1 0.01 8.0)
 (<ra> :set-temponode 3 100.01 8.0)
 
-(<ra> :ctrl-pressed)
+(<ra> :control-pressed)
 
 (define (mouse-press button x* y*)
   (if (not curr-mouse-cycle)

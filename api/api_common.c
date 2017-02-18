@@ -487,7 +487,7 @@ static Place *getNextLegalNotePlace(struct Notes *note){
 void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool last_legal_may_be_next_note){
   Place firstLegal, lastLegal;
 
-  if (last_legal_may_be_next_note && !CtrlPressed()){
+  if (last_legal_may_be_next_note && !ControlPressed()){
     
     struct Notes *next = FindNextNoteOnSameSubtrack(note);
   
@@ -545,7 +545,7 @@ int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Pla
       ListRemoveElement3(&track->notes, &note->l);
       note->l.p = *place;
       ListAddElement3_a(&track->notes, &note->l);
-      if (replace_note_ends && !CtrlPressed())
+      if (replace_note_ends && !ControlPressed())
         ReplaceNoteEnds(block, track, &old_place, place, note->polyphony_num);
       NOTE_validate(block, track, note);
     }PLAYER_unlock();

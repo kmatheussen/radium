@@ -1515,7 +1515,7 @@ void RT_request_to_stop_playing(void){
 
 int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y){return 0;}
 
-bool CtrlPressed(void){
+bool ControlPressed(void){
 #if 0 //FOR_MACOSX
   return QApplication::keyboardModifiers() & Qt::MetaModifier;
 #else
@@ -1532,6 +1532,10 @@ bool ShiftPressed(void){
 
 bool AltPressed(void){
   return QApplication::keyboardModifiers() & Qt::AltModifier;
+}
+
+bool MetaPressed(void){
+  return QApplication::keyboardModifiers() & Qt::MetaModifier;
 }
 
 void SetNormalPointer(struct Tracker_Windows *tvisual){

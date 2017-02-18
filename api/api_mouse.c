@@ -3035,8 +3035,16 @@ void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){
 
 extern struct TEvent tevent;
 
-bool ctrlPressed(void){
-  return CtrlPressed(); //AnyCtrl(tevent.keyswitch);
+bool controlPressed(void){
+  return ControlPressed(); //AnyCtrl(tevent.keyswitch);
+}
+
+bool control2Pressed(void){
+#if FOR_MACOSX
+  return AltPresed();
+#else
+  return MetaPressed();
+#endif
 }
 
 bool shiftPressed(void){
@@ -3050,8 +3058,9 @@ bool extraPressed(void){
 }
 */
 
-bool leftExtraPressed(void){
-  return LeftExtra(tevent.keyswitch);
+bool metaPressed(void){
+  //return LeftExtra(tevent.keyswitch);
+  return MetaPressed();
 }
 
 bool altPressed(void){
