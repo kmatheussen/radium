@@ -422,7 +422,9 @@ run-valgrind:
 # --tool=memcheck --read-var-info=yes --track-origins=yes
 
 profile:
-	cd bin && operf ./radium && opreport -ca |more
+	perf top -p `pidof radium_linux.bin` -K
+#	operf bin/radium && opreport -ca |more
+
 
 check: test
 test: dotesting
