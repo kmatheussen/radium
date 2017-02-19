@@ -2036,6 +2036,35 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
   
 }
 
+void gui_replace(int64_t parentnum, int64_t oldchildnum, int64_t newchildnum){
+  Gui *parent = get_gui(parentnum);
+  if (parent==NULL)
+    return;
+
+  Gui *oldchild = get_gui(oldchildnum);
+  if (oldchild==NULL)
+    return;
+
+  Gui *newchild = get_gui(newchildnum);  
+  if (newchild==NULL)
+    return;
+
+  QLayout *layout = parent->getLayout();
+  if(layout==NULL){
+    handleError("Gui #%d does not have a layout", parentnum);
+    return;
+  }
+  
+  QLayoutItem *old_item = layout->replaceWidget(oldchild->_widget, newchild->_widget);
+
+  if(old_item==NULL){
+    handleError("Gui #%d not found in #%d", oldchildnum, parentnum);
+    return;
+  }
+
+  delete old_item;
+}
+
 bool gui_isVisible(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)

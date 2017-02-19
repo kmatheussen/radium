@@ -968,7 +968,7 @@
                                             (<ra> :undo-instrument-effect instrument-id "System Volume On/Off")
                                             (<ra> :set-instrument-effect instrument-id "System Volume On/Off" (if is-muted 0.0 1.0))
                                             ;;(c-display "mute: " is-muted)
-                                            (if (<ra> :ctrl-pressed)
+                                            (if (<ra> :control-pressed)
                                                 (turn-off-all-mute instrument-id))
                                             )))
                                        (get-muted)
@@ -993,7 +993,7 @@
                                           (lambda ()
                                             ;;(<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
                                             (<ra> :set-instrument-effect instrument-id "System Solo On/Off" (if is-selected 1.0 0.0))
-                                            (if (<ra> :ctrl-pressed)
+                                            (if (<ra> :control-pressed)
                                                 (turn-off-all-solo instrument-id)))))
                                        (get-soloed)
                                        height))
@@ -1597,6 +1597,10 @@
   (define mixer-strips-gui (<gui> :scroll-area #t #t))
   (<gui> :set-layout-spacing mixer-strips-gui 0 0 0 0 0)
 
+  '(add-safe-paint-callback mixer-strips-gui
+                            (lambda (width height)
+                              (c-display "                              Repainting mixer-strips-gui")))
+
   (define vertical-layout (<gui> :vertical-layout))
   (<gui> :set-layout-spacing vertical-layout strip-separator-width 0 0 0 0)
 
@@ -1699,27 +1703,31 @@
   (define das-mixer-strips-gui #f)
   
   (define (remake list-of-modified-instrument-ids)
+    (define start-time (time))
     (catch #t
            (lambda ()
 ;;             (<gui> :disable-updates parent)
              
              (create-mixer-strips num-rows das-stored-mixer-strips list-of-modified-instrument-ids
-                                  (lambda (mixer-strips mixer-strips-gui)
-             
-                                    (if das-mixer-strips-gui
-                                        (<gui> :close das-mixer-strips-gui))
-                                    
-                                    (<gui> :add parent mixer-strips-gui)
-                                    
-                                    (<gui> :show mixer-strips-gui)
+                                  (lambda (new-mixer-strips new-mixer-strips-gui)
 
-                                    (set! das-stored-mixer-strips mixer-strips)
-                                    (set! das-mixer-strips-gui mixer-strips-gui)
+                                    (if das-mixer-strips-gui
+                                        (begin
+                                          (<gui> :replace parent das-mixer-strips-gui new-mixer-strips-gui)
+                                          (<gui> :close das-mixer-strips-gui))
+                                        (begin
+                                          (<gui> :add parent new-mixer-strips-gui)
+                                          ;;(<gui> :show mixer-strips-gui)
+                                          ))
+
+                                    (set! das-stored-mixer-strips new-mixer-strips)
+                                    (set! das-mixer-strips-gui new-mixer-strips-gui)
                                     )))
 
            (lambda args
              (display (ow!))))
-  ;;  (<gui> :enable-updates parent)
+    ;;  (<gui> :enable-updates parent)
+    (c-display "   remake-gui duration: " (- (time) start-time))
     )
 
   (define mixer-strips-object (make-mixer-strips-object :gui parent
@@ -1844,5 +1852,7 @@
   (c-display "all-buses" all-buses)
   )
 
+(fill! (*s7* 'profile-info) #f)
+(show-profile 100)
 
 ||#

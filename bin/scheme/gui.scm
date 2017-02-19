@@ -4,7 +4,7 @@
 (define *max-db* (<ra> :get-max-db))
 (define *max-mixer-db* 6)
 
-(define (gui-create-layout create-layout-func layout-args guis)
+(define (gui-create-layout create-layout-func layout-args . guis)
   (define layout (apply create-layout-func layout-args))
   (for-each (lambda (gui)
               (<ra> :gui_add layout gui))
@@ -18,9 +18,9 @@
             args)
   group)
 
-(define (my-gui_tablelayout args)
+(define (my-gui_tablelayout . args)
   (if (= 1 (length args))
-      (<ra> :gui_table-layout (car args))
+      (apply ra:gui_table-layout (car args))
       (let* ((rows args)
              (max-num-columns (apply max (map length rows)))
              (table (<ra> :gui_table-layout max-num-columns)))
@@ -34,7 +34,7 @@
                   rows)
         table)))
 
-(define (<gui> command . args)
+(define (<gui-helper> command . args)
   ;;(c-display "****" command args)
   (cond ((eq? command :group)
          (gui-create-layout ra:gui_group (list (car args)) (cdr args)))
@@ -81,8 +81,96 @@
            (when (and last-arg (procedure? last-arg))
              (<ra> :gui_add-callback gui last-arg))
            gui))))
-               
-                           
+
+#||
+        ((eq? command :add-callback)
+         `(<ra> :gui_add-callback ,(car args) ,(cadr args)))
+        
+        ((eq? command :add-mouse-callback)
+         `(<ra> :gui_add-mouse-callback ,(car args) ,(cadr args)))
+        
+        ((eq? command :add-double-click-callback)
+         `(<ra> :gui_add-double-click-callback ,(car args) ,(cadr args)))
+        
+        ((eq? command :add-resize-callback)
+         `(<ra> :gui_add-resize-callback ,(car args) ,(cadr args)))
+        
+        ((eq? command :add-paint-callback)
+         `(<ra> :gui_add-paint-callback ,(car args) ,(cadr args)))
+        
+        ((eq? command :add-close-callback)
+         `(<ra> :gui_add-close-callback ,(car args) ,(cadr args)))
+        
+        ((eq? command :add-audio-meter-peak-callback)
+         `(<ra> :gui_add-audio-meter-peak-callback ,(car args) ,(cadr args)))
+||#
+
+
+(define-expansion (<gui> command . args)
+  (define (get-funcname) (<_> 'ra:gui_ (keyword->symbol command)))
+
+  (cond ((eq? command :group)
+         `(gui-create-layout ra:gui_group (list ,(car args)) ,@(cdr args)))
+        
+        ((eq? command :vertical-layout)
+         `(gui-create-layout ra:gui_vertical-layout '() ,@args))
+        
+        ((eq? command :horizontal-layout)
+         `(gui-create-layout ra:gui_horizontal-layout '() ,@args))
+        
+        ((eq? command :empty)
+         `(<ra> :gui_vertical-layout))
+        
+        ((eq? command :table-layout)
+         `(my-gui_tablelayout ,@args))
+
+        ((eq? command :add-callback)
+         `(<ra> :gui_add-callback ,(car args) ,(cadr args)))
+        
+        ((let ((stringcommand (symbol->string (keyword->symbol command))))
+           (and (string-starts-with? stringcommand "add-")
+                (string-ends-with? stringcommand "-callback")))
+         `(,(get-funcname) ,@args))
+        
+        (else
+         (define funcname (get-funcname))
+         (define gui (gensym "gui"))
+         (define last-arg (gensym "last-arg"))
+         
+         (define (last-arg-is-lambda)
+           (let ((last (last args)))
+             (and (pair? args)
+                  (symbol? (car args))
+                  (eq? 'lambda (car args)))))
+
+         (cond ((null? args)
+                `(,funcname))
+               ((last-arg-is-lambda)
+                `(let ((,gui (,funcname ,@(butlast args))))
+                   (<ra> :gui_add-callback ,gui ,(last args))
+                   ,gui))
+               (else
+                `(let ((,last-arg ,(last args)))
+                   (if (procedure? ,last-arg)
+                       (let ((,gui (,funcname ,@(butlast args))))
+                         (<ra> :gui_add-callback ,gui ,last-arg)
+                         ,gui)                        
+                       (,funcname ,@(butlast args) ,last-arg))))))))
+
+#||
+         (let ((last-arg (and (not (null? args)) (last args))))
+           `(let ((gui (if (and ,last-arg (procedure
+                   
+         (let* ((func (eval (<_> 'ra:gui_ (keyword->symbol command))))
+                (last-arg (and (not (null? args)) (last args)))
+                (gui (if (and last-arg (procedure? last-arg))
+                         (apply func (butlast args))
+                         (apply func args))))
+           (when (and last-arg (procedure? last-arg))
+             (<ra> :gui_add-callback gui last-arg))
+           gui))))
+||#
+
 (delafina (<gui-number-input> :text text
                               :input-type 'float ;; float or int
                               :direction 'horizontal ;; horizontal or vertical

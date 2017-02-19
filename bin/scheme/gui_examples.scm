@@ -1,13 +1,26 @@
 
-(<gui> :group "stuff"
-       (<gui> :vertical-layout
-              slider1
-              slider2
-              (<gui> :horizontal-layout
-                     checkbox1
-                     checkbox2)
-              (<gui> :vertical-slider "aiai" 0 5 10 1 (lambda (i) (c-display "aiai" i)))))
+(define slider1 (<gui> :horizontal-int-slider "helloslider1: " -5 10 100 (lambda (asdf) (c-display "moved" asdf)) ))
+(define slider2 (<gui> :horizontal-int-slider "helloslider2: " -5 10 100 (lambda (asdf) (c-display "moved" asdf)) ))
+(define checkbox1 (<gui> :checkbox "hello1" #f (lambda (val) (c-display "checkbox" val))))
+(define checkbox2 (<gui> :checkbox "hello1" #f (lambda (val) (c-display "checkbox" val))))
 
+(define group (<gui> :group "stuff"
+                     (<gui> :vertical-layout
+                            slider1
+                            slider2
+                            (<gui> :horizontal-layout
+                                   checkbox1
+                                   checkbox2)
+                            (<gui> :vertical-slider "aiai" 0 5 10 (lambda (i) (c-display "aiai" i))))))
+
+(<gui> :show group)
+
+(macroexpand (<gui> :show group))
+ 
+(<gui> :vertical-slider "aiai" 0 5 10 (lambda (i) (c-display "aiai" i)))
+(macroexpand (<gui> :vertical-slider "aiai" 0 5 10 (lambda (i) (c-display "aiai" i))))
+
+(aritable? ra:gui_vertical-layout 0)
 
 (<gui> :group "stuff"
        (<gui> :table-layout
@@ -16,7 +29,12 @@
                (list slider2        (<gui> :text "and that slider does that"))
                (list (<gui> :empty) (<gui> :text "Some extra text here in the bottom right corner")))))
 
+(define tablelayout (<gui> :table-layout
+                           (list slider1        (<gui> :text "this slider does that"))
+                           (list slider2        (<gui> :text "and that slider does that"))
+                           (list (<gui> :empty) (<gui> :text "Some extra text here in the bottom right corner"))))
 
+(<gui> :show tablelayout)
 
 
 (define checkbox (<gui> :checkbox "hello" #f (lambda (val) (c-display "checkbox" val))))

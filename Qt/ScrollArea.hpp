@@ -188,7 +188,7 @@ class ScrollArea : public QWidget {
       : _scroll_area(scroll_area)
       {
         setSingleShot(true);
-        setInterval(50);
+        setInterval(15);
       }
 
     void timerEvent(QTimerEvent *e) override{

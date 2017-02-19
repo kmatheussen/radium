@@ -50,9 +50,11 @@ void SMOOTH_update_target_audio_will_be_modified_value(Smooth *smooth){
                                           smooth->target_value != safe_volatile_float_read(&smooth->next_target_value);
 }
 
+
 // Must be called before processing a new block. (a Radium block, NOT a soundcard block)
+//
 void SMOOTH_called_per_block(Smooth *smooth){
-  R_ASSERT(smooth->target_audio_will_be_modified==true);
+  R_ASSERT_NON_RELEASE(smooth->target_audio_will_be_modified==true);
     
   int num_values = smooth->num_values;
 

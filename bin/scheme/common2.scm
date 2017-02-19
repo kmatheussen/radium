@@ -854,12 +854,34 @@ for .emacs:
   (loop (string->list string)
         (string->list startswith)))
 
+(***assert*** (string-starts-with? "" "") #t)
 (***assert*** (string-starts-with? "asdf" "as") #t)
 (***assert*** (string-starts-with? "asdf" "") #t)
 (***assert*** (string-starts-with? "" "a") #f)
 (***assert*** (string-starts-with? "a" "a") #t)
 (***assert*** (string-starts-with? "a" "b") #f)
 (***assert*** (string-starts-with? "ab" "a") #t)
+
+(define (string-ends-with? string endswith)
+  (define (loop string startswith)
+    (cond ((null? startswith)
+           #t)
+          ((null? string)
+           #f)
+          ((char=? (car string) (car startswith))
+           (loop (cdr string) (cdr startswith)))
+          (else
+           #f)))
+  (loop (reverse (string->list string))
+        (reverse (string->list endswith))))
+
+(***assert*** (string-ends-with? "" "") #t)
+(***assert*** (string-ends-with? "asdf" "df") #t)
+(***assert*** (string-ends-with? "asdf" "") #t)
+(***assert*** (string-ends-with? "" "a") #f)
+(***assert*** (string-ends-with? "a" "a") #t)
+(***assert*** (string-ends-with? "a" "b") #f)
+(***assert*** (string-ends-with? "ab" "b") #t)
 
 
 (define (parse-popup-menu-options args)
