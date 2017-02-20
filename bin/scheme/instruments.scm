@@ -97,17 +97,19 @@
 (define (get-buses-connecting-from-instrument id-instrument include-0db-buses?)
   (if (= 0 (<ra> :get-num-output-channels id-instrument))
       '()
-      (keep identity
-            (map (lambda (bus-num effect-on-off-name effect-name)
-                   (if (and (>= (<ra> :get-instrument-effect id-instrument effect-on-off-name) 0.5)
-                            (if include-0db-buses?
-                                #t
-                                (> (<ra> :get-instrument-effect id-instrument effect-name) 0)))
-                       bus-num ;;(<ra> :get-audio-bus-id bus-num)
-                       #f))
-                 (iota (length *bus-effect-onoff-names*))
-                 *bus-effect-onoff-names*
-                 *bus-effect-names*))))
+      (let loop ((bus-num 0)
+                 (bus-onoff-names *bus-effect-onoff-names*)
+                 (bus-effect-names *bus-effect-names*))
+        (if (null? bus-onoff-names)
+            '()
+            (let ((rest (loop (1+ bus-num)
+                              (cdr bus-onoff-names)
+                              (cdr bus-effect-names))))
+              (if (and (>= (<ra> :get-instrument-effect id-instrument (car bus-onoff-names)) 0.5)
+                       (or include-0db-buses?
+                           (> (<ra> :get-instrument-effect id-instrument (car bus-effect-names)) 0)))
+                  (cons bus-num rest)
+                  rest))))))
 
 (define (get-buses)
   (map (lambda (bus-num)
