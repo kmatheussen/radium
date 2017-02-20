@@ -39,7 +39,7 @@ const char *OS_get_directory_separator(void){
   static bool is_inited = false;
 
   if(is_inited==false){
-    ret[0] = QString(QDir::separator()).toUtf8()[0];
+    ret[0] = QString(QDir::separator()).toLocal8Bit()[0];
     is_inited=true;
   }
 
@@ -52,12 +52,12 @@ void OS_set_argv0(char *argv0){
 
   QString path =  ; //info.canonicalPath();
   g_program_path = (const char*)malloc(path.size() + 10);
-  sprintf((char*)g_program_path,"%s",path.toUtf8().constData());
+  sprintf((char*)g_program_path,"%s",path.toLocal8Bit().constData());
   
   printf("current path: -%s-\n",g_program_path);
   */
 
-  //chdir(QCoreApplication::applicationDirPath().toUtf8().constData());
+  //chdir(QCoreApplication::applicationDirPath().toLocal8Bit().constData());
   QDir::setCurrent(QCoreApplication::applicationDirPath());
 }
 
@@ -94,7 +94,7 @@ wchar_t *OS_get_full_program_file_path(const wchar_t *filename){
 
 // TODO: Remove.
 const char *OS_get_program_path(void){
-  return talloc_strdup(QDir::toNativeSeparators(QCoreApplication::applicationDirPath()).toUtf8().constData());
+  return talloc_strdup(QDir::toNativeSeparators(QCoreApplication::applicationDirPath()).toLocal8Bit().constData());
 }
 
 wchar_t *STRING_create(const QString s){
@@ -116,12 +116,12 @@ wchar_t *STRING_copy(const wchar_t *string){
 
 char* STRING_get_chars(const wchar_t *string){
   QString s = STRING_get_qstring(string);
-  return talloc_strdup(s.toUtf8().constData());
+  return talloc_strdup(s.toLocal8Bit().constData());
 }
 
 char* STRING_get_utf8_chars(const char* s){
   QString qstring = QString::fromUtf8(s);
-  return talloc_strdup(qstring.toUtf8().constData());
+  return talloc_strdup(qstring.toLocal8Bit().constData());
 }
 
 bool STRING_ends_with(const wchar_t *string, const char *endswith){
@@ -254,12 +254,12 @@ QString OS_get_conf_filename(QString filename){
   if(info.exists()==false)
     info = QFileInfo(OS_get_full_program_file_path(filename));
 
-  printf("************* conf filename: -%s\n",info.absoluteFilePath().toUtf8().constData());
+  printf("************* conf filename: -%s\n",info.absoluteFilePath().toLocal8Bit().constData());
   return info.absoluteFilePath();
 }
 
 char *OS_get_conf_filename2(const char *filename){
-  return talloc_strdup(OS_get_conf_filename(filename).toUtf8().constData());
+  return talloc_strdup(OS_get_conf_filename(filename).toLocal8Bit().constData());
 }
 
 bool OS_has_conf_filename2(const char *filename){
@@ -272,7 +272,7 @@ QString OS_get_keybindings_conf_filename(void){
 }
 
 char *OS_get_keybindings_conf_filename2(void){
-  return talloc_strdup(OS_get_keybindings_conf_filename().toUtf8().constData());
+  return talloc_strdup(OS_get_keybindings_conf_filename().toLocal8Bit().constData());
 }
 
 QString OS_get_custom_keybindings_conf_filename(void){
@@ -287,7 +287,7 @@ QString OS_get_custom_keybindings_conf_filename(void){
 }
 
 char *OS_get_custom_keybindings_conf_filename2(void){
-  return talloc_strdup(OS_get_custom_keybindings_conf_filename().toUtf8().constData());
+  return talloc_strdup(OS_get_custom_keybindings_conf_filename().toLocal8Bit().constData());
 }
 
 QString OS_get_menues_conf_filename(void){
@@ -295,7 +295,7 @@ QString OS_get_menues_conf_filename(void){
 }
 
 char *OS_get_menues_conf_filename2(void){
-  return talloc_strdup(OS_get_menues_conf_filename().toUtf8().constData());
+  return talloc_strdup(OS_get_menues_conf_filename().toLocal8Bit().constData());
 }
 
 QString OS_get_config_filename(const char *key){
@@ -308,7 +308,7 @@ QString OS_get_config_filename(const char *key){
 
   QFileInfo config_info(dir, is_color_config ? "colors" : "config");
 
-  //printf("dir: \"%s\"\n",config_info.absoluteFilePath().toUtf8().constData());
+  //printf("dir: \"%s\"\n",config_info.absoluteFilePath().toLocal8Bit().constData());
 
 #if 0
   if(is_playing())
@@ -326,7 +326,7 @@ double OS_get_double_from_string(const char *s){
 
 char *OS_get_string_from_double(double d){
   QString string = QString::number(d,'g',16);
-  return talloc_strdup(string.toUtf8().constData());
+  return talloc_strdup(string.toLocal8Bit().constData());
 }
 
 QString OS_get_qstring_from_double(double d){

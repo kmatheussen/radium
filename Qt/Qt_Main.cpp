@@ -2591,25 +2591,26 @@ int main(int argc, char **argv){
   setenv("PYTHONPATH","temp/dist",1);
 #else
   QString pythonlibpath = OS_get_full_program_file_path(QString("python2.7/lib"));
-  setenv("PYTHONHOME",V_strdup(pythonlibpath.toUtf8().constData()),1);
-  setenv("PYTHONPATH",V_strdup(pythonlibpath.toUtf8().constData()),1);
+  setenv("PYTHONHOME",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
+  setenv("PYTHONPATH",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
 #endif
 #endif
 
 #if defined(FOR_MACOSX)
   QString pythonlibpath = OS_get_full_program_file_path(QString("python2.7/lib"));
-  setenv("PYTHONHOME",V_strdup(pythonlibpath.toUtf8().constData()),1);
-  setenv("PYTHONPATH",V_strdup(pythonlibpath.toUtf8().constData()),1);
+  setenv("PYTHONHOME",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
+  setenv("PYTHONPATH",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
 #endif
   
 #if defined(FOR_WINDOWS)
-#if __WIN64
+#if 1 //__WIN64
   //QString pythonlibpath = QCoreApplication::applicationDirPath() + QDir::separator() + "python2.7" + QDir::separator() + "lib"; // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
   QString pythonlibpath = OS_get_full_program_file_path("python2.7"); // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
-  //putenv(strdup(QString("PYTHONHOME="+pythonlibpath).toUtf8().constData()));
-  //putenv(strdup(QString("PYTHONPATH="+pythonlibpath).toUtf8().constData()));
-  printf("pythonlibpath: -%s-\n",pythonlibpath.toUtf8().constData());
-  Py_SetPythonHome(V_strdup(pythonlibpath.toUtf8().constData()));
+  //putenv(strdup(QString("PYTHONHOME="+pythonlibpath).toLocal8Bit().constData()));
+  //putenv(strdup(QString("PYTHONPATH="+pythonlibpath).toLocal8Bit().constData()));
+  printf("pythonlibpath: -%s-\n",pythonlibpath.toLocal8Bit().constData());
+  //Py_SetPythonHome(V_strdup(pythonlibpath.toLocal8Bit().constData()));
+  Py_SetPythonHome(V_strdup("python2.7")); //V_strdup(pythonlibpath.toLocal8Bit().constData()));
 #endif
 #endif
   //Py_SetProgramName(QString(python
@@ -2637,12 +2638,17 @@ int main(int argc, char **argv){
     
     PyRun_SimpleString("sys.path = [sys.g_program_path] + sys.path");
     //PyRun_SimpleString("sys.path = [sys.g_program_path]");
+
     
     // Set sys.argv[0]
     sprintf(temp,"sys.argv=[\"%s\",\"%s\", \"%s\"]",
             argv[0],
-            OS_get_keybindings_conf_filename().replace("\\","\\\\").toUtf8().constData(),
-            OS_get_custom_keybindings_conf_filename().replace("\\","\\\\").toUtf8().constData()
+#if defined(FOR_WINDOWS)
+            "keybindings.conf",
+#else
+            OS_get_keybindings_conf_filename().replace("\\","\\\\").toLocal8Bit().constData(),
+#endif
+            OS_get_custom_keybindings_conf_filename().replace("\\","\\\\").toLocal8Bit().constData()
             );
     PyRun_SimpleString(temp);
     
@@ -2664,7 +2670,7 @@ int main(int argc, char **argv){
         
         QString file_path = file_info.filePath();
         if(file_info.suffix()=="ttf"){
-          //printf("file_path: %s\n",file_path.toUtf8().constData());
+          //printf("file_path: %s\n",file_path.toLocal8Bit().constData());
           QFontDatabase::addApplicationFont(file_path);
         }
       }
@@ -2719,10 +2725,14 @@ int main(int argc, char **argv){
   initradium();
 
 
-  OS_get_full_program_file_path("start.py"); // ensure file is there
-  
-  PyRun_SimpleString("execfile(os.path.join(sys.g_program_path,\"start.py\"))");
+  OS_get_full_program_file_path("start.py"); // just ensure file is there
 
+#if defined(FOR_WINDOWS)
+  PyRun_SimpleString("execfile(\"start.py\")");
+#else
+  PyRun_SimpleString("execfile(os.path.join(sys.g_program_path,\"start.py\"))");
+#endif
+  
   fprintf(stderr,"          ENDING B 1\n");
     
   Py_Finalize();
