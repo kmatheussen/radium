@@ -801,7 +801,8 @@ int GFX_Message(vector_t *buttons, const char *fmt,...){
   vsprintf(message,fmt,argp);
   va_end(argp);
 
-  if (g_qtgui_has_started==false || g_qtgui_has_stopped==true || !THREADING_is_main_thread() || g_radium_runs_custom_exec || API_gui_is_painting()) {
+  //g_qtgui_has_started==false || 
+  if (g_qtgui_has_stopped==true || !THREADING_is_main_thread() || g_radium_runs_custom_exec || API_gui_is_painting()) {
     
     SYSTEM_show_message(message);
     return -1;

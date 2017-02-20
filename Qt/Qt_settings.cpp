@@ -159,6 +159,22 @@ wchar_t *STRING_fromBase64(const wchar_t *encoded){
   return STRING_create(decoded);
 }
 
+bool STRING_is_local8Bit_compatible(QString s){
+  if (s.toLocal8Bit() == s)
+    return true;
+
+  s = s.replace("ø","_").replace("æ","_").replace("å","_"); // Seems like these three characters works.
+  
+  return s.toLocal8Bit() == s;
+  /*  
+  for(int i=0;i<s.size();i++)
+    if(s[i].toLatin1()<=0)
+      return false;
+  return true;
+  */
+}
+    
+
 // TODO: Rename to OS_get_program_path
 const wchar_t *OS_get_program_path2(void){
   static wchar_t *array=NULL;
@@ -332,3 +348,4 @@ char *OS_get_string_from_double(double d){
 QString OS_get_qstring_from_double(double d){
   return QString::number(d,'g',16);
 }
+

@@ -43,6 +43,8 @@ static inline QString STRING_get_qstring(const wchar_t *string){
   return QString::fromWCharArray(string);
 }
 
+bool STRING_is_local8Bit_compatible(QString s);
+
 #endif
 
 
