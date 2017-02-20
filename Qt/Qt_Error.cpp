@@ -140,6 +140,11 @@ int SYSTEM_show_message(const char *message){
   
   int status = myProcess.exitCode();
 
+  if (status==1){
+    exit(-1);
+    abort();
+  }
+    
   if (status==2)
     ignore_until = last_time + 2000;
   else if (status==3)
