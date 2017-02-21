@@ -24,4 +24,4 @@ enum SOUNDFILESAVER_what{
 extern LANGSPEC bool SOUNDFILESAVER_write(float **outputs, int num_frames);
 extern LANGSPEC void SOUNDFILESAVER_request_stop(void);
 extern LANGSPEC void SOUNDFILESAVER_start(void);
-extern LANGSPEC bool SOUNDFILESAVER_save(const char *filename, enum SOUNDFILESAVER_what what_to_save, float samplerate, int libsndfile_format, float post_recording_length, const char **error_string);
+extern LANGSPEC bool SOUNDFILESAVER_save(const wchar_t *filename, enum SOUNDFILESAVER_what what_to_save, float samplerate, int libsndfile_format, float post_recording_length, const char **error_string);

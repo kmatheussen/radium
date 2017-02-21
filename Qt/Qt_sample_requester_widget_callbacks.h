@@ -122,7 +122,8 @@ static QString get_sample_filename_display_string(QFileInfo file_info){
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
 
     //printf("Trying to open %s\n",file_info.absoluteFilePath().toUtf8().constData());
-    SNDFILE *sndfile = sf_open(full_filename.toUtf8().constData(), SFM_READ, &sf_info);
+    SNDFILE *sndfile = radium_sf_open(full_filename, SFM_READ, &sf_info);
+    
     if(sndfile==NULL)
       return QString();
 
@@ -301,7 +302,7 @@ class Sample_requester_widget : public QWidget
     _dir = QDir(path);
     
     if(_dir.exists()==false) {
-      GFX_Message(NULL, "Directory %s doesn't exist",_dir.absolutePath().toUtf8().constData());
+      GFX_Message(NULL, "Bookmarked sample directory \"%s\" doesn't exist anymore",_dir.absolutePath().toUtf8().constData());
       _dir = QDir(QDir::currentPath());
     }
   }

@@ -344,6 +344,40 @@ static inline bool is_called_every_ms(int ms){
 
 
 /*********************************************************************
+	sndfile.h
+*********************************************************************/
+
+#if defined(INCLUDE_SNDFILE_OPEN_FUNCTIONS)
+
+#include "OS_string_proc.h"
+
+static inline SNDFILE *radium_sf_open(const wchar_t *filename, int mode, SF_INFO *sfinfo){
+#if defined(FOR_WINDOWS)
+  return sf_wchar_open(filename,mode,sfinfo);
+#else
+  const char *osfilename = QFile::encodeName(STRING_get_qstring(filename)).constData();
+  return sf_open(osfilename,mode,sfinfo);
+#endif
+}
+
+#ifdef __cplusplus
+static inline SNDFILE *radium_sf_open(QString filename, int mode, SF_INFO *sfinfo){
+#if defined(FOR_WINDOWS)
+  wchar_t *wfilename = STRING_create(filename, false);
+  SNDFILE *ret = radium_sf_open(wfilename, mode, sfinfo);
+  V_free(wfilename);
+  return ret;
+#else
+  const char *osfilename = QFile::encodeName(filename).constData();
+  return sf_open(osfilename,mode,sfinfo);
+#endif
+}
+#endif
+
+#endif
+
+
+/*********************************************************************
 	colors.h
 *********************************************************************/
 

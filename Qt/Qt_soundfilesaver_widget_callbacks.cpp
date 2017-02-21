@@ -89,7 +89,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
       : save_block_button->isChecked()==true ? SAVE_BLOCK
       : SAVE_SONG;
     
-    if(SOUNDFILESAVER_save(filename.toUtf8().constData(), what_to_save, MIXER_get_sample_rate(), format, post_silence_spin->value(), &error_string)==false){
+    if(SOUNDFILESAVER_save(STRING_create(filename), what_to_save, MIXER_get_sample_rate(), format, post_silence_spin->value(), &error_string)==false){
 
       //QMessageBox msgBox;
       

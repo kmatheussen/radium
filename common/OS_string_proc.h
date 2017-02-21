@@ -38,7 +38,7 @@ extern LANGSPEC wchar_t *STRING_fromBase64(const wchar_t *encoded);
 #ifdef USE_QT4
 
 #include <QString>
-wchar_t *STRING_create(const QString s);
+wchar_t *STRING_create(const QString s, bool use_gc_alloc = true);
 static inline QString STRING_get_qstring(const wchar_t *string){
   return QString::fromWCharArray(string);
 }

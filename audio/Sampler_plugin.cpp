@@ -20,10 +20,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+
+#if defined(FOR_WINDOWS)
+#include <windows.h>
+#define ENABLE_SNDFILE_WINDOWS_PROTOTYPES 1
+#endif
 #include <sndfile.h>
 
 #include <QFileInfo>
 #include <QDir>
+
+#define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
@@ -252,7 +259,7 @@ struct Data{
   struct Data *new_data;
   RSemaphore *signal_from_RT;
 
-  DEFINE_ATOMIC(wchar_t*, recording_path) = NULL;
+  DEFINE_ATOMIC(wchar_t*, recording_path) = NULL; // allocated using malloc
   DEFINE_ATOMIC(int, num_recording_channels);
   DEFINE_ATOMIC(int, recording_status);
   int recording_start_frame;
@@ -1818,9 +1825,9 @@ static void set_legal_loop_points(Sample *sample, int64_t start, int64_t end, bo
 #include "Sampler_plugin_xi_load.c"
 #include "Sampler_plugin_sf2_load.c"
 
-
 static float *load_interleaved_samples(const wchar_t *filename, SF_INFO *sf_info){
-  SNDFILE *sndfile          = sf_open(STRING_get_chars(filename),SFM_READ,sf_info);
+  SNDFILE *sndfile = radium_sf_open(filename,SFM_READ,sf_info);
+  
   if(sndfile==NULL)
     return NULL;
 
@@ -1837,8 +1844,10 @@ static float *load_interleaved_samples(const wchar_t *filename, SF_INFO *sf_info
 
   int64_t total_read_frames = sf_readf_float(sndfile, ret, sf_info->frames);
 
-  if(total_read_frames==0)
+  if(total_read_frames==0){
+    fprintf(stderr, "   libsndfile could open the file, but couldn't read data from it\n");
     return NULL;
+  }
 
   while(true){
     float samples[1024*sf_info->channels];
@@ -1872,7 +1881,7 @@ static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename, boo
   float *samples = load_interleaved_samples(filename, &sf_info);
 
   if(samples==NULL){
-    fprintf(stderr,"could not open file\n");
+    fprintf(stderr,"  Libsndfile could not open file \"%s\"\n", STRING_get_chars(filename));
     return false;
   }
 
@@ -1981,8 +1990,10 @@ static void generate_peaks(Data *data){
 static bool load_sample(Data *data, const wchar_t *filename, int instrument_number, bool set_loop_on_off){
   if(load_xi_instrument(data,filename, set_loop_on_off)==false)
     if(load_sample_with_libsndfile(data,filename, set_loop_on_off)==false)
-      if(load_sf2_instrument(data,filename,instrument_number, set_loop_on_off)==false)
+      if(load_sf2_instrument(data,filename,instrument_number, set_loop_on_off)==false){
+        GFX_Message(NULL,"Unable to load %s as soundfile.", STRING_get_chars(filename));
         return false;
+      }
   
   //data->num_channels = data->samples[0].num_channels; // All samples must contain the same number of channels.
 
@@ -2298,6 +2309,7 @@ bool SAMPLER_set_random_sample(struct SoundPlugin *plugin, const wchar_t *path){
   
   
   if (dir.exists()==false){
+    fprintf(stderr, "SAMPLER_set_random_sample: Directory %s does not exist", dir.absolutePath().toUtf8().constData());
     GFX_Message(NULL, "Directory %s does not exist", dir.absolutePath().toUtf8().constData());
     return false;
   }
@@ -2354,7 +2366,7 @@ void SAMPLER_save_sample(struct SoundPlugin *plugin, const wchar_t *filename, in
     return;
   }
 
-  SNDFILE *sndfile = sf_open(STRING_get_chars(filename),SFM_WRITE,&sf_info);
+  SNDFILE *sndfile = radium_sf_open(filename,SFM_WRITE,&sf_info);
 
   if(sndfile==NULL){
     fprintf(stderr,"could not open file\n");

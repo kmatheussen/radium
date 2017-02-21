@@ -21,6 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string>
 #include <sstream>
 
+#include <QFile>
+
+
 #include "../bin/packages/libgig/src/SF.h"
 
 #define DEBUG_ALLOWED 1 // <- SF.h sets DEBUG to 0
@@ -349,9 +352,15 @@ static hash_t *get_menu(hash_t *info){
 //
 hash_t *SF2_get_info(const wchar_t *filename){
   try {
-    RIFF::File riff(STRING_get_chars(filename));
-    sf2::File file(&riff);
 
+    const char *osfilename = QFile::encodeName(STRING_get_qstring(filename)).constData();
+#if defined(FOR_WINDOWS)
+    RIFF::File riff(filename, std::string(osfilename));
+#else
+    RIFF::File riff(osfilename);
+#endif
+    
+    sf2::File file(&riff);
     hash_t *hash = HASH_create(5);
     HASH_put_hash(hash,"samples",get_samples_info(&file));
     HASH_put_hash(hash,"instruments",get_instruments_info(&file));
@@ -360,7 +369,8 @@ hash_t *SF2_get_info(const wchar_t *filename){
     return hash;
 
   }catch (RIFF::Exception e) {
-    GFX_Message(NULL,"Unable to parse soundfont file %s: %s", STRING_get_chars(filename), e.Message.c_str());
+    //GFX_Message(NULL,"Unable to parse soundfont file %s: %s", STRING_get_chars(filename), e.Message.c_str());
+    fprintf(stderr, "SoundFonts.cpp: Caught RIFF::Exception exception:\n");
     e.PrintMessage();
   }catch (...) {
     GFX_Message(NULL,"Unknown exception while trying to parse file: %s", STRING_get_chars(filename));
@@ -390,7 +400,13 @@ hash_t *SF2_get_displayable_preset_names(hash_t *info){
 
 
 float *SF2_load_sample(const wchar_t *filename, int sample_num){
-  RIFF::File riff(STRING_get_chars(filename));
+  const char *osfilename = QFile::encodeName(STRING_get_qstring(filename)).constData();
+#if defined(FOR_WINDOWS)
+  RIFF::File riff(filename, std::string(osfilename));
+#else
+  RIFF::File riff(osfilename);
+#endif
+
   sf2::File file(&riff);
   
   sf2::Sample *sample = file.GetSample(sample_num);

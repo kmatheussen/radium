@@ -478,15 +478,15 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
 
 #if defined(FOR_WINDOWS)
 
-  char *p = strdup(program.toUtf8().constData());
-  char *a1 = strdup(arg1.toUtf8().constData());
-  char *a2 = strdup(arg2.toUtf8().constData());
-  char *a3 = strdup(arg3.toUtf8().constData());
-  char *a4 = strdup(arg4.toUtf8().constData());
+  wchar_t *p = STRING_create(program, false);
+  wchar_t *a1 = STRING_create(arg1, false);
+  wchar_t *a2 = STRING_create(arg2, false);
+  wchar_t *a3 = STRING_create(arg3, false);
+  wchar_t *a4 = STRING_create(arg4, false);
 
-  if(_spawnl(wait_until_finished ? _P_WAIT :  _P_DETACH, p, p, a1, a2, a3, a4, NULL)==-1){
-    fprintf(stderr,"Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1);
-    SYSTEM_show_message(strdup(talloc_format("Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1)));
+  if(_wspawnl(wait_until_finished ? _P_WAIT :  _P_DETACH, p, p, a1, a2, a3, a4, NULL)==-1){
+    fprintf(stderr,"Couldn't launch crashreporter: \"%s\" \"%s\"\n",STRING_get_chars(p),STRING_get_chars(a1));
+    SYSTEM_show_message(strdup(talloc_format("Couldn't launch crashreporter: \"%s\" \"%s\"\n",STRING_get_chars(p),STRING_get_chars(a1))));
     Sleep(3000);
   }
 

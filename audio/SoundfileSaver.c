@@ -16,9 +16,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include <string.h>
+
+#if defined(FOR_WINDOWS)
+#include <windows.h>
+#define ENABLE_SNDFILE_WINDOWS_PROTOTYPES 1
+#endif
+
 #include <sndfile.h>
 
 #include "pa_memorybarrier.h"
+
+#define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
@@ -139,7 +147,7 @@ bool SOUNDFILESAVER_write(float **outputs, int num_frames){
   return ret;
 }
 
-bool SOUNDFILESAVER_save(const char *filename, enum SOUNDFILESAVER_what what_to_save, float samplerate, int libsndfile_format, float post_recording_length, const char **error_string){
+bool SOUNDFILESAVER_save(const wchar_t *filename, enum SOUNDFILESAVER_what what_to_save, float samplerate, int libsndfile_format, float post_recording_length, const char **error_string){
 
   PlayStop();
 
@@ -151,7 +159,7 @@ bool SOUNDFILESAVER_save(const char *filename, enum SOUNDFILESAVER_what what_to_
     sf_info.format = libsndfile_format;
     
     {
-      g_sndfile = sf_open(filename,SFM_WRITE,&sf_info);
+      g_sndfile = radium_sf_open(filename,SFM_WRITE,&sf_info);
       if(g_sndfile==NULL){
         printf("Why: \"%s\"\n",sf_strerror(NULL));
         if(error_string!=NULL)
@@ -162,7 +170,7 @@ bool SOUNDFILESAVER_save(const char *filename, enum SOUNDFILESAVER_what what_to_
   }
 
   g_saving_was_successful = true;
-  g_filename = talloc_strdup(filename);
+  g_filename = STRING_get_chars(filename);
   g_post_writing_left = post_recording_length;
 
   

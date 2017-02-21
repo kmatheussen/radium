@@ -334,6 +334,8 @@ namespace{
 
         if (is_sleeping){
 
+          // todo: Print message to editor window.
+          
           //printf("OpenGL quickswapsleeping. Duration: %f. Vblank: %f. average: %f\n", duration, vblank, average_swap_time);
           usleep(40*1000 * vblank);
           _moving_average.reset(vblank/2);

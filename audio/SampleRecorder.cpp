@@ -24,12 +24,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 #include <boost/lockfree/queue.hpp>
 
-#include <sndfile.h>
-
 #include <QThread>
 #include <QString>
 #include <QDir>
 #include <QFile>
+
+#if defined(FOR_WINDOWS)
+#include <windows.h>
+#define ENABLE_SNDFILE_WINDOWS_PROTOTYPES 1
+#endif
+#include <sndfile.h>
+
+#define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 
 #include "../common/nsmtracker.h"
 #include "../common/Queue.hpp"
@@ -149,7 +155,9 @@ struct RecordingFile{
     success=false;
     return filename;
   }
-  
+
+  // Remember that this is not the main thread.
+  //
   RecordingFile(struct Patch *patch, const wchar_t *path, int num_channels, float middle_note)
     : patch(patch)
     , num_channels(num_channels)
@@ -170,7 +178,7 @@ struct RecordingFile{
       return;
     }
 
-    sndfile = sf_open(filename.toUtf8().constData(), SFM_WRITE, &sf_info);
+    sndfile = radium_sf_open(filename, SFM_WRITE, &sf_info);
 
     if(sndfile==NULL)
       RT_message("Unable to create file \"%s\": %s",filename.toUtf8().constData(), sf_strerror(NULL));

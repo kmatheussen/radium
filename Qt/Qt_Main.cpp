@@ -2607,13 +2607,17 @@ int main(int argc, char **argv){
 #if 1 //__WIN64
 
   //QString pythonlibpath = QCoreApplication::applicationDirPath() + QDir::separator() + "python2.7" + QDir::separator() + "lib"; // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
+#if __WIN64
   QString pythonlibpath = OS_get_full_program_file_path("python2.7"); // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
+#else
+  QString pythonlibpath = OS_get_full_program_file_path("colors"); // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
+#endif
   //putenv(strdup(QString("PYTHONHOME="+pythonlibpath).toLocal8Bit().constData()));
   //putenv(strdup(QString("PYTHONPATH="+pythonlibpath).toLocal8Bit().constData()));
   printf("pythonlibpath: -%s-\n",pythonlibpath.toLocal8Bit().constData());
   //Py_SetPythonHome(V_strdup(pythonlibpath.toLocal8Bit().constData()));
 
-  if (!STRING_is_local8Bit_compatible(pythonlibpath)==false){
+  if (STRING_is_local8Bit_compatible(pythonlibpath)==false){
     printf("   String is not compatible %d %d %d\n", STRING_is_local8Bit_compatible(pythonlibpath), STRING_is_local8Bit_compatible("hello"), STRING_is_local8Bit_compatible("helloø"));
     vector_t v={};
     VECTOR_push_back(&v,"Try to run anywyay"); // (but please don't send a bug report if Radium crashes)");
@@ -2633,8 +2637,10 @@ int main(int argc, char **argv){
       abort();
     }
   }
-  
+
+#if __WIN64
   Py_SetPythonHome(V_strdup("python2.7")); //V_strdup(pythonlibpath.toLocal8Bit().constData()));
+#endif
 #endif
 #endif
   //Py_SetProgramName(QString(python

@@ -97,9 +97,21 @@ const char *OS_get_program_path(void){
   return talloc_strdup(QDir::toNativeSeparators(QCoreApplication::applicationDirPath()).toLocal8Bit().constData());
 }
 
-wchar_t *STRING_create(const QString s){
+wchar_t *STRING_create(const QString s, bool use_gc_alloc){
   int size = (int)sizeof(wchar_t)*(s.length()+1);
-  wchar_t *array = (wchar_t*)talloc_atomic(size);
+  
+  wchar_t *array;
+
+  bool is_main_thread = THREADING_is_main_thread();
+  if (is_main_thread==false)
+    R_ASSERT(use_gc_alloc==false);
+  
+  if (is_main_thread==false || use_gc_alloc==false){  
+    array = (wchar_t*)V_malloc(size);
+  }else{
+    array = (wchar_t*)talloc_atomic(size);
+  }
+
   memset(array, 0, size);
   s.toWCharArray(array);
   return array;
@@ -307,7 +319,11 @@ char *OS_get_custom_keybindings_conf_filename2(void){
 }
 
 QString OS_get_menues_conf_filename(void){
+#if defined(FOR_WINDOWS)
+  return "menues.conf";
+#else
   return OS_get_conf_filename("menues.conf");
+#endif
 }
 
 char *OS_get_menues_conf_filename2(void){
