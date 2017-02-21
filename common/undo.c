@@ -223,6 +223,8 @@ bool Undo_Is_Open(void){
 void Undo_Open_rec(void){
   //printf("        UNDO OPEN\n");
 
+  R_ASSERT_RETURN_IF_FALSE(THREADING_is_main_thread());
+
 
   if (ignore()) return;
 
@@ -270,6 +272,8 @@ void Undo_Open(void){
 
 // Returns true if we created another undo entry.
 bool Undo_Close(void){
+
+  R_ASSERT_RETURN_IF_FALSE2(THREADING_is_main_thread(), false);
 
   if (ignore()) return false;
 
