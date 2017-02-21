@@ -17,13 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <string.h>
 
-#if defined(FOR_WINDOWS)
-#include <windows.h>
-#define ENABLE_SNDFILE_WINDOWS_PROTOTYPES 1
-#endif
-
-#include <sndfile.h>
-
 #include "pa_memorybarrier.h"
 
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1

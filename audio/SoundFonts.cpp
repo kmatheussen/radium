@@ -353,7 +353,7 @@ static hash_t *get_menu(hash_t *info){
 hash_t *SF2_get_info(const wchar_t *filename){
   try {
 
-    const char *osfilename = QFile::encodeName(STRING_get_qstring(filename)).constData();
+    const char *osfilename = talloc_strdup(QFile::encodeName(STRING_get_qstring(filename)).constData());
 #if defined(FOR_WINDOWS)
     RIFF::File riff(filename, std::string(osfilename));
 #else
@@ -400,7 +400,7 @@ hash_t *SF2_get_displayable_preset_names(hash_t *info){
 
 
 float *SF2_load_sample(const wchar_t *filename, int sample_num){
-  const char *osfilename = QFile::encodeName(STRING_get_qstring(filename)).constData();
+  const char *osfilename = talloc_strdup(QFile::encodeName(STRING_get_qstring(filename)).constData());
 #if defined(FOR_WINDOWS)
   RIFF::File riff(filename, std::string(osfilename));
 #else

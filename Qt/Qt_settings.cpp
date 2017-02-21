@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLocale>
 #include <QCoreApplication>
 
-
+#define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
 
 #include "helpers.h"
@@ -365,3 +365,25 @@ QString OS_get_qstring_from_double(double d){
   return QString::number(d,'g',16);
 }
 
+
+SNDFILE *radium_sf_open(const wchar_t *filename, int mode, SF_INFO *sfinfo){
+#if defined(FOR_WINDOWS)
+  return sf_wchar_open(filename,mode,sfinfo);
+#else
+  return radium_sf_open(STRING_get_qstring(filename), mode, sfinfo);
+#endif
+}
+
+SNDFILE *radium_sf_open(QString filename, int mode, SF_INFO *sfinfo){
+#if defined(FOR_WINDOWS)
+  wchar_t *wfilename = STRING_create(filename, false);
+  SNDFILE *ret = radium_sf_open(wfilename, mode, sfinfo);
+  V_free(wfilename);
+  return ret;
+#else
+  char *osfilename = V_strdup(QFile::encodeName(filename).constData());
+  SNDFILE *ret = sf_open(osfilename,mode,sfinfo);
+  V_free(osfilename);
+  return ret;
+#endif
+}

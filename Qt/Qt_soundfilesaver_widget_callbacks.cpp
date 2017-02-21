@@ -18,11 +18,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdio.h>
 #include <unistd.h>
 
-#include <sndfile.h>
-
 #include <QTimer>
 #include <QFileDialog>
 
+#define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
 
 #include <FocusSniffers.h>
