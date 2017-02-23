@@ -2604,10 +2604,10 @@ int main(int argc, char **argv){
 #endif
   
 #if defined(FOR_WINDOWS)
-#if 1 //__WIN64
+#if 0 //__WIN64
 
   //QString pythonlibpath = QCoreApplication::applicationDirPath() + QDir::separator() + "python2.7" + QDir::separator() + "lib"; // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
-#if __WIN64
+#if 1 //__WIN64
   QString pythonlibpath = OS_get_full_program_file_path("python2.7"); // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
 #else
   QString pythonlibpath = OS_get_full_program_file_path("colors"); // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
@@ -2644,9 +2644,14 @@ int main(int argc, char **argv){
 #endif
 #endif
   //Py_SetProgramName(QString(python
+  //Py_SetPythonHome(V_strdup(OS_get_full_program_file_path("").toLocal8Bit().constData()));
 
+#if __WIN64
+  // Py_SetPath(".;Lib") // Py_SetPath doesn't seem available. Perhaps it's Python 3.0 only. As a workaround we call sys.path.append in python2.7/Lib/site.py
+#endif
+    
   Py_Initialize();
-  
+
   {
     char temp[500];
 
@@ -2654,7 +2659,7 @@ int main(int argc, char **argv){
     PyRun_SimpleString("import sys");
 
     PyRun_SimpleString("import os");
-        
+
 #if 1
     //#if defined(FOR_WINDOWS)
     sprintf(temp,"sys.g_program_path = \"\"");
