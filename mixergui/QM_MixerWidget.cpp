@@ -383,6 +383,7 @@ static void handle_chip_selection(MyScene *myscene, QGraphicsSceneMouseEvent * e
 }
 
 static void start_moving_chips(MyScene *myscene, QGraphicsSceneMouseEvent * event, Chip *main_chip, float mouse_x, float mouse_y){
+  //EVENTLOG_add_event("start_moving_chips (open undo)");
   Undo_Open();
 
   handle_chip_selection(myscene, event, main_chip);
@@ -557,6 +558,8 @@ static bool stop_moving_chips(MyScene *myscene, const QPointF &mouse_pos){
   if (has_updated==true)
     cleanup_chip_positions(myscene);
 
+  //printf("                                  <<<<<       99999999999999999999 close undo\n");
+  EVENTLOG_add_event("sstop_moving_chips (close undo)");
   bool created_undo = Undo_Close();
 
   // TODO: has_updated returns true if the chip was just moved around a bit. Need to store original position for has_updated to get correct value.
@@ -855,6 +858,8 @@ static bool mousepress_select_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
     //printf("Calling pp_update\n");
     instrument->PP_Update(instrument,(struct Patch*)patch,false);
 
+    //printf("                                                         ^^^^^^^^   mousepress_select_chip\n");
+    EVENTLOG_add_event("start_moving_chips called from mousepress_select_chip");
     start_moving_chips(scene,event,chip,mouse_x,mouse_y);
     event->accept();
     return true;
@@ -1222,6 +1227,8 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
     Chip *chip = dynamic_cast<Chip*>(item);
       
     if(chip!=NULL){
+      //printf("                                                    ^^^^^^^^^^^^ 222 mousepress_select_chip\n");
+      EVENTLOG_add_event("start_moving_chips called from MyScene::mousePressEvent");
       start_moving_chips(this,event,chip,mouse_x,mouse_y);
       event->accept();
       return;
