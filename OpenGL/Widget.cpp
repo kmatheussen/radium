@@ -1391,6 +1391,14 @@ QSurfaceFormat GL_get_qsurface_format(void){
 
 static DEFINE_ATOMIC(QWindow *, g_qwindow) = NULL; // Can only be set after g_qwindow->screen() != NULL
 static DEFINE_ATOMIC(QGLContext *, g_context) = NULL;
+static DEFINE_ATOMIC(QOffscreenSurface *, g_offscreen_surface) = NULL;
+static DEFINE_ATOMIC(QOpenGLContext *, g_offscreen_context) = NULL;
+static DEFINE_ATOMIC(QThread *, g_t2_thread) = NULL;
+
+
+void GL_set_t2_thread(QThread *t2_thread){
+  return ATOMIC_SET(g_t2_thread, t2_thread);
+}
 
 QWindow *GL_get_editor_qwindow(void){
   //R_ASSERT_NON_RELEASE(ATOMIC_GET(g_qwindow)->screen() != NULL);
@@ -1399,6 +1407,14 @@ QWindow *GL_get_editor_qwindow(void){
 
 QGLContext *GL_get_context(void){
   return ATOMIC_GET(g_context);
+}
+
+QOffscreenSurface *GL_get_offscreen_surface(void){
+  return ATOMIC_GET(g_offscreen_surface);
+}
+
+QOpenGLContext *GL_get_offscreen_context(void){
+  return ATOMIC_GET(g_offscreen_context);
 }
 
 #if !USE_QT5
@@ -1420,9 +1436,26 @@ static double get_refresh_rate(void){
   if (qwindow!=NULL){
     QScreen *qscreen = qwindow->screen();
     if (qscreen!=NULL) {
-      ATOMIC_SET(g_qwindow, qwindow);
-      ATOMIC_SET(g_context, widget->context());
-      return qscreen->refreshRate();
+
+      if (ATOMIC_GET(g_t2_thread) != NULL) {
+        
+        ATOMIC_SET(g_qwindow, qwindow);
+        ATOMIC_SET(g_context, widget->context());
+        
+        QOffscreenSurface *offscreen = new QOffscreenSurface(qwindow->screen());
+        offscreen->setFormat(widget->context()->contextHandle()->format());
+        offscreen->create();
+        ATOMIC_SET(g_offscreen_surface, offscreen);
+        
+        QOpenGLContext *offscreen_context = new QOpenGLContext;
+        offscreen_context->setFormat(widget->context()->contextHandle()->format());//GL_get_qsurface()->format());
+        offscreen_context->setShareContext(widget->context()->contextHandle());
+        offscreen_context->create();
+        offscreen_context->moveToThread(ATOMIC_GET(g_t2_thread));      
+        ATOMIC_SET(g_offscreen_context, offscreen_context); 
+        
+        return qscreen->refreshRate();
+      }
     }
   }
 

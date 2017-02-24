@@ -159,27 +159,34 @@ static void T2_thread_func(){
 
   QWindow *editor_qwindow = NULL;
   QGLContext *editor_context = NULL;
+  QOffscreenSurface *offscreen = NULL;
 
+  GL_set_t2_thread(QThread::currentThread());
+    
   // wait until opengl widget has started
   do{
     usleep(1000*1000);
     editor_qwindow = GL_get_editor_qwindow();
-    editor_context = GL_get_context();    
-  }while(editor_qwindow==NULL || editor_context==NULL || editor_qwindow->isVisible()==false || editor_context->isValid()==false);
+    editor_context = GL_get_context();
+    offscreen = GL_get_offscreen_surface();
+    offscreen_context = GL_get_offscreen_context();
+  }while(editor_qwindow==NULL || editor_context==NULL || offscreen == NULL || offscreen_context == NULL || editor_qwindow->isVisible()==false || editor_context->isValid()==false);
 
 #if !CREATE_OFFSCREEN_SURFACE
   QSurface *qsurface = editor_qwindow;
 #else
-  QOffscreenSurface *offscreen = new QOffscreenSurface(editor_qwindow->screen());
-  offscreen->setFormat(editor_context->contextHandle()->format());
-  offscreen->create();
+  //QOffscreenSurface *offscreen = new QOffscreenSurface(editor_qwindow->screen());
+  //offscreen->setFormat(editor_context->contextHandle()->format());
+  //offscreen->create();
   if (offscreen->isValid()==false){
     GFX_Message(NULL, "Invalid offscreen surface. Unable to paint.\n");
     return;
   }
   QSurface *qsurface = offscreen;
 #endif
-  
+
+#if 0
+  fprintf(stderr, "    T2: new QOpenGLContext;\n");
   offscreen_context = new QOpenGLContext;
 
 #if 0 //FOR_WINDOWS
@@ -195,15 +202,21 @@ static void T2_thread_func(){
 #else
   offscreen_context->setFormat(editor_context->contextHandle()->format());//GL_get_qsurface()->format());
 #endif
-  
+
+  fprintf(stderr, "    T2: offscreen_context->setShareContext(editor_context->contextHandle());\n");
   offscreen_context->setShareContext(editor_context->contextHandle());
 
+  fprintf(stderr, "    T2: offscreen_context->create();\n");
   offscreen_context->create();
-
+  fprintf(stderr, "    T2: Gotit. (offscreen_context->create();)\n");
+#endif
+  
   if (offscreen_context->isValid()==false){
     GFX_Message(NULL, "Invalid offscreen OpenGL Context. Unable to paint.\n");
     return;
   }
+
+  //offscreen_context->moveToThread(QThread::currentThread());
   
   while(true){
 

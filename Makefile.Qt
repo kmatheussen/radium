@@ -1320,7 +1320,7 @@ Qt_path_resolver.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_path_resolve
 	$(CCC) $(P)Qt_path_resolver.cpp $(QTOPT)
 
 Qt_settings.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_settings.cpp
-	$(CCC) $(P)Qt_settings.cpp $(QTOPT)
+	$(CCC) $(P)Qt_settings.cpp $(QTOPT) $(SNDFILEOPT)
 
 Qt_disk.o: $(BUILD_DEPENDENCIES) $(P)Qt_disk.cpp
 	$(CCC) $(P)Qt_disk.cpp $(QTOPT)
