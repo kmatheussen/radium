@@ -224,6 +224,7 @@ static const bool USE_GL_LOCK = true;
 #endif
 
 static radium::Mutex mutex;
+static radium::Mutex make_current_mutex;
 static radium::Mutex draw_mutex(true); // recursive mutex
 
 static __thread int g_gl_lock_visits = 0; // simulate a recursive mutex this way instead of using the QThread::Recursive option since QWaitCondition doesn't work with recursive mutexes. We need recursive mutexes since calls to qsometing->exec() (which are often executed inside the gl lock) can process qt events, which again can call some function which calls gl_lock. I don't know why qt processes qt events inside exec() though. That definitely seems like the wrong desing, or maybe it's even a bug in qt. If there is some way of turning this peculiar behavior off, I would like to know about it. I don't feel that this behaviro is safe.
@@ -1152,6 +1153,8 @@ public:
   // OpenGL thread
   virtual void updateEvent() {
 
+    radium::ScopedMutex lock(make_current_mutex);
+
     bool handle_current = true; // I don't know if there's any point setting this to true.
 
     if (handle_current)
@@ -1438,24 +1441,29 @@ static double get_refresh_rate(void){
     if (qscreen!=NULL) {
 
       if (ATOMIC_GET(g_t2_thread) != NULL) {
+
+        if (ATOMIC_GET(g_qwindow) == NULL) {
+          radium::ScopedMutex lock(make_current_mutex);
+
+          ATOMIC_SET(g_qwindow, qwindow);
+          ATOMIC_SET(g_context, widget->context());
+          
+          QOffscreenSurface *offscreen = new QOffscreenSurface(qwindow->screen());
+          offscreen->setFormat(widget->context()->contextHandle()->format());
+          offscreen->create();
+          ATOMIC_SET(g_offscreen_surface, offscreen);
+          
+          QOpenGLContext *offscreen_context = new QOpenGLContext;
+          offscreen_context->setFormat(widget->context()->contextHandle()->format());//GL_get_qsurface()->format());
+          offscreen_context->setShareContext(widget->context()->contextHandle());
+          offscreen_context->create();
+          offscreen_context->moveToThread(ATOMIC_GET(g_t2_thread));      
+          ATOMIC_SET(g_offscreen_context, offscreen_context); 
         
-        ATOMIC_SET(g_qwindow, qwindow);
-        ATOMIC_SET(g_context, widget->context());
-        
-        QOffscreenSurface *offscreen = new QOffscreenSurface(qwindow->screen());
-        offscreen->setFormat(widget->context()->contextHandle()->format());
-        offscreen->create();
-        ATOMIC_SET(g_offscreen_surface, offscreen);
-        
-        QOpenGLContext *offscreen_context = new QOpenGLContext;
-        offscreen_context->setFormat(widget->context()->contextHandle()->format());//GL_get_qsurface()->format());
-        offscreen_context->setShareContext(widget->context()->contextHandle());
-        offscreen_context->create();
-        offscreen_context->moveToThread(ATOMIC_GET(g_t2_thread));      
-        ATOMIC_SET(g_offscreen_context, offscreen_context); 
-        
-        return qscreen->refreshRate();
+        }
       }
+
+      return qscreen->refreshRate();
     }
   }
 
