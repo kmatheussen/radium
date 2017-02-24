@@ -168,6 +168,11 @@ extern LANGSPEC void GFX_MaximizeEditorWindow(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_MinimizeEditorWindow(struct Tracker_Windows *tvisual);
 
 //extern LANGSPEC void GFX_ConfigColors(struct Tracker_Windows *tvisual);
+#if USE_QT4
+#ifdef QFONT_H
+extern void GFX_SetSystemFont(QFont font);
+#endif
+#endif
 extern LANGSPEC void GFX_ConfigFonts(struct Tracker_Windows *tvisual);
 
 extern LANGSPEC void GFX_SetDefaultColors1(struct Tracker_Windows *tvisual);

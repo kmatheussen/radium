@@ -105,19 +105,19 @@ void setFontValues(struct Tracker_Windows *tvisual){
   tvisual->fontheight     = tvisual->org_fontheight;
 }
 
-void updateAllFonts(QWidget *widget){
+void updateAllFonts(QWidget *widget, QFont font){
   if(widget!=NULL){
-    widget->setFont(QApplication::font());
+    widget->setFont(font);//QApplication::font());
 
     const QList<QObject*> list = widget->children();
     for (int i = 0; i < list.size(); ++i) {
       QWidget *widget = dynamic_cast<QWidget*>(list.at(i));
-      updateAllFonts(widget);
+      updateAllFonts(widget, font);
     }
   }
 }
 
-static void set_system_font(QFont font){
+void GFX_SetSystemFont(QFont font){
   QApplication::setFont(font);
   qApp->setFont(font);
 
@@ -141,7 +141,7 @@ static void set_system_font(QFont font){
   }
 
   foreach (QWidget *widget, QApplication::allWidgets()) {
-    updateAllFonts(widget);
+    updateAllFonts(widget, font);
     widget->update();
   }
 }
@@ -151,7 +151,7 @@ void GFX_ConfigSystemFont(void){
   QFont font = QFontDialog::getFont( 0, QApplication::font());
   release_keyboard_focus();
 
-  set_system_font(font);
+  GFX_SetSystemFont(font);
 }
 
 static char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
@@ -280,7 +280,7 @@ void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual){
   }
   SETTINGS_unset_custom_configfile();
 
-  set_system_font(font);
+  GFX_SetSystemFont(font);
 }
 
 int GFX_get_text_width(struct Tracker_Windows *tvisual, const char *text){

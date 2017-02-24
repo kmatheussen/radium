@@ -2079,7 +2079,11 @@ int radium_main(char *arg){
     
   
   g_qtgui_exec_has_started = true;
- 
+
+#if defined(FOR_MACOSX) // Only needed on 10.12 though.
+  GFX_SetSystemFont(QApplication::font());
+#endif
+  
 #if USE_QT_VISUAL
   qapplication->exec();
 #else
@@ -2726,7 +2730,8 @@ int main(int argc, char **argv){
     {
       QFont font;
       font.fromString(fontstring);
-
+      //font.fromString("Cousine,11,-1,5,75,0,0,0,0,0");
+ 
 #if 0 //FOR_MACOSX
       if(custom_config_set)
         font.setPointSizeF(font.pointSizeF()*96.0/72.0); // macs have dpi of 72, while linux and windows have 96.
