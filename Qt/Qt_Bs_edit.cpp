@@ -450,16 +450,18 @@ public:
     sansFont.setStyleName("Bold");
     sansFont.setPointSize(QApplication::font().pointSize());
         
-    blocklist.setFont(sansFont);
-    playlist.setFont(sansFont);
-
-    add_button.setFont(sansFont);
-    remove_button.setFont(sansFont);
+    //blocklist.setFont(sansFont);
+    //playlist.setFont(sansFont);
+    
+    //add_button.setFont(sansFont);
+    //remove_button.setFont(sansFont);
     move_down_button.setFont(sansFont);
     move_up_button.setFont(sansFont);
 
     add_button.setMaximumHeight(sansFont.pointSize()+5);
     remove_button.setMaximumHeight(sansFont.pointSize()+5);
+    move_down_button.setMaximumHeight(sansFont.pointSize()+5);
+    move_up_button.setMaximumHeight(sansFont.pointSize()+5);
 
     button_width = add_button.width();
     button_height = add_button.height();
@@ -501,7 +503,7 @@ public:
     setWidgetColors(this);
 
     {
-      QFontMetrics fm(sansFont); //QApplication::font());
+      QFontMetrics fm(QApplication::font());
       int width = fm.width("0: 0/Pretty long name");
       setFixedWidth(width);
 
