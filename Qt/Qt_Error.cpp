@@ -72,9 +72,28 @@ bool MIXERSTRIPS_has_mouse_pointer(void){  // used by helpers.h
 }
 
 int main(int argc, char **argv){
+#if FOR_LINUX
+  bool faulty_installation = false;
+  if(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")==NULL){
+    faulty_installation = true;
+  }else
+    QCoreApplication::setLibraryPaths(QStringList());    
+#else
   QCoreApplication::setLibraryPaths(QStringList());
-  
+#endif
+
   QApplication app(argc,argv);
+
+#if FOR_LINUX
+  if(faulty_installation){
+    QMessageBox msgBox;
+    msgBox.setIcon(QMessageBox::Critical);
+    msgBox.setText("Error!\nRadium has not been installed properly.\nRadium is likely to be unstable because of this.\n");
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.exec();
+  }
+#endif
+
   int ret = show_message(argv[1]);
   printf("ret: %d\n",ret);
   return ret;

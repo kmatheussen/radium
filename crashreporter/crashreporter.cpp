@@ -159,7 +159,6 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
   bool is_crash = crash_type==CT_CRASH;
 
-
 #if FULL_VERSION==0
   message = "DEMO VERSION " + message;
 #else
@@ -402,11 +401,29 @@ bool MIXERSTRIPS_has_mouse_pointer(void){  // used by helpers.h
 }
 
 int main(int argc, char **argv){
-  
+
+#if FOR_LINUX
+  bool faulty_installation = false;
+  if(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")==NULL){
+    faulty_installation = true;
+  }else
+    QCoreApplication::setLibraryPaths(QStringList());    
+#else
   QCoreApplication::setLibraryPaths(QStringList());
+#endif
   
   QApplication app(argc,argv);
 
+#if FOR_LINUX
+  if(faulty_installation){
+    QMessageBox msgBox;
+    msgBox.setIcon(QMessageBox::Critical);
+    msgBox.setText("Error!\nRadium has not been installed properly.\nRadium is likely to be unstable because of this.\n");
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.exec();
+  }
+#endif
+  
   QString filename = local::fromBase64(argv[1]);
 
   QString running_plugin_names = local::fromBase64(argv[2]);
@@ -415,7 +432,7 @@ int main(int argc, char **argv){
     
   Crash_Type crash_type = QString(argv[4])=="is_crash" ? CT_CRASH : QString(argv[4])=="is_error" ? CT_ERROR : CT_WARNING;
 
-  send_crash_message_to_server(file_to_string(filename), running_plugin_names, emergency_save_filename, crash_type);
+  send_crash_message_to_server("-"+QString(argv[4])+"-"+file_to_string(filename), running_plugin_names, emergency_save_filename, crash_type);
 
   if (crash_type==CT_CRASH)
     delete_file(filename);
@@ -612,7 +629,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   
   tosend += "\n\n";
 
-  if (crash_type!=CT_CRASH){
+  if (crash_type!=CT_CRASH && THREADING_is_main_thread()){
     tosend += QString(SCHEME_get_backtrace()) + "\n\n";
   }
   

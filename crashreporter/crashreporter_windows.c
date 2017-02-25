@@ -761,7 +761,7 @@ exception_filter(LPEXCEPTION_POINTERS info)
         //c->ContextFlags = CONTEXT_FULL;
 
         Sleep(5);
-        send_message_with_backtrace(c, "", true, time);
+        send_message_with_backtrace(c, "", CT_CRASH, time);
         fprintf(stderr, "E 5\n");fflush(stderr);
 	//exit(1);
 
@@ -784,7 +784,7 @@ static LONG WINAPI VectoredExceptionHandler(PEXCEPTION_POINTERS info)
         //c->ContextFlags = CONTEXT_FULL;
 
         //Sleep(5);
-        send_message_with_backtrace(c, "", true);
+        send_message_with_backtrace(c, "", CT_CRASH);
         
 	//exit(1);
 
