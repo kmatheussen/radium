@@ -154,70 +154,20 @@ T2_data::~T2_data(){
 #endif
 
 
-static void T2_thread_func(){
-  QOpenGLContext *offscreen_context = NULL;
-
-  QWindow *editor_qwindow = NULL;
-  QGLContext *editor_context = NULL;
-  QOffscreenSurface *offscreen = NULL;
-
-  GL_set_t2_thread(QThread::currentThread());
-    
-  // wait until opengl widget has started
-  do{
-    usleep(1000*1000);
-    editor_qwindow = GL_get_editor_qwindow();
-    editor_context = GL_get_context();
-    offscreen = GL_get_offscreen_surface();
-    offscreen_context = GL_get_offscreen_context();
-  }while(editor_qwindow==NULL || editor_context==NULL || offscreen == NULL || offscreen_context == NULL || editor_qwindow->isVisible()==false || editor_context->isValid()==false);
-
-#if !CREATE_OFFSCREEN_SURFACE
-  QSurface *qsurface = editor_qwindow;
-#else
-  //QOffscreenSurface *offscreen = new QOffscreenSurface(editor_qwindow->screen());
-  //offscreen->setFormat(editor_context->contextHandle()->format());
-  //offscreen->create();
+static void T2_thread_func(QOffscreenSurface *offscreen, QOpenGLContext *offscreen_context){
+  
   if (offscreen->isValid()==false){
     GFX_Message(NULL, "Invalid offscreen surface. Unable to paint.\n");
     return;
   }
+
   QSurface *qsurface = offscreen;
-#endif
 
-#if 0
-  fprintf(stderr, "    T2: new QOpenGLContext;\n");
-  offscreen_context = new QOpenGLContext;
-
-#if 0 //FOR_WINDOWS
-  QVariant nativeHandle = editor_context->contextHandle()->nativeHandle();
-  if (!nativeHandle.isNull() && nativeHandle.canConvert<QWGLNativeContext>()) {
-    //QWGLNativeContext nativeContext = nativeHandle.value<QWGLNativeContext>();
-    //    HGLRC hglrc = nativeContext.context();
-    offscreen_context->setNativeHandle(nativeHandle);
-    offscreen_context->setFormat(editor_context->contextHandle()->format());//GL_get_qsurface()->format());
-  } else {
-    GFX_Message(NULL, "nativeHandlie is null");
-  }
-#else
-  offscreen_context->setFormat(editor_context->contextHandle()->format());//GL_get_qsurface()->format());
-#endif
-
-  fprintf(stderr, "    T2: offscreen_context->setShareContext(editor_context->contextHandle());\n");
-  offscreen_context->setShareContext(editor_context->contextHandle());
-
-  fprintf(stderr, "    T2: offscreen_context->create();\n");
-  offscreen_context->create();
-  fprintf(stderr, "    T2: Gotit. (offscreen_context->create();)\n");
-#endif
-  
   if (offscreen_context->isValid()==false){
     GFX_Message(NULL, "Invalid offscreen OpenGL Context. Unable to paint.\n");
     return;
   }
 
-  //offscreen_context->moveToThread(QThread::currentThread());
-  
   while(true){
 
     T1_data *t1_data = t1_to_t2_queue.get();
@@ -241,7 +191,7 @@ static void T2_thread_func(){
 #if TEST_TIME
       double start = TIME_get_ms();
 #endif
-      
+
       GE_draw_vl(t2_data);
       
 #if TEST_TIME
@@ -270,28 +220,50 @@ static void T2_thread_func(){
 }
 
 
-// Using some qt stuff in this thread, so we use a QThread isntead.
-//static std::thread t1(T2_thread_func);
 
 namespace{
   struct T2_Thread : public QThread{
-    T2_Thread(){
+
+    QOffscreenSurface *_offscreen = NULL;
+    QOpenGLContext *_offscreen_context = NULL;
+    
+    T2_Thread(QOpenGLContext *widget_context){
+
+      _offscreen_context = new QOpenGLContext;
+      
+      _offscreen_context->setFormat(widget_context->format());//GL_get_qsurface()->format());
+      _offscreen_context->setShareContext(widget_context);
+      _offscreen_context->create();
+      _offscreen_context->moveToThread(this);
+      
+      
+      _offscreen = new QOffscreenSurface; //(qwindow->screen());
+      _offscreen->setFormat(_offscreen_context->format());
+      _offscreen->create();
+      
       start();
+    }
+
+    ~T2_Thread(){
+      delete _offscreen_context;
+      delete _offscreen;
     }
     
     void run() override {
-      while(ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::UNINITIALIZED)
-        usleep(1000*500);
-      
-      if (ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::NO)
-        return;
-
-      T2_thread_func();
+      R_ASSERT_RETURN_IF_FALSE(ATOMIC_GET(g_use_t2_thread)== Use_T2_Thread::YES);
+      T2_thread_func(_offscreen, _offscreen_context);
     }
   };
 }
 
-static T2_Thread t2_thread;
+static T2_Thread *t2_thread = NULL;
+
+void T1_start_t2_thread(QOpenGLContext *widget_context){
+  T1_ensure_t2_is_initialized();
+  if (ATOMIC_GET(g_use_t2_thread)== Use_T2_Thread::YES){
+    t2_thread = new T2_Thread(widget_context);
+  }
+}
 
 void T1_ensure_t2_is_initialized(void){
   if (ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::UNINITIALIZED){
@@ -327,7 +299,8 @@ void T1_stop_t2(void){
   T1_data *t1_data = new T1_data;
   t1_data->stop_me = true;
   t1_to_t2_queue.put(t1_data);
-  t2_thread.wait();
+  if(t2_thread!=NULL)
+    t2_thread->wait();
 }
 
 

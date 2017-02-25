@@ -43,6 +43,9 @@ bool T3_use_t2_thread(void);
 void T3_t2_data_picked_up_but_old_data_will_be_sent_back_later();
 void T3_send_back_old_t2_data(T2_data *t2_data);
 
+class QOpenGLContext;
+void T1_start_t2_thread(QOpenGLContext *widget_context);
+
 void T1_ensure_t2_is_initialized(void);
 void T1_send_data_to_t2(PaintingData *painting_data, GE_Rgb background_color);
 void T1_wait_until_t2_got_t1_data(void);

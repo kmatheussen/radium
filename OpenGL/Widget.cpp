@@ -1389,37 +1389,6 @@ QSurfaceFormat GL_get_qsurface_format(void){
   return QGLFormat::toSurfaceFormat(widget->format());
 }
 
-#include <QOffscreenSurface>
-#include <QOpenGLContext>
-
-static DEFINE_ATOMIC(QWindow *, g_qwindow) = NULL; // Can only be set after g_qwindow->screen() != NULL
-static DEFINE_ATOMIC(QGLContext *, g_context) = NULL;
-static DEFINE_ATOMIC(QOffscreenSurface *, g_offscreen_surface) = NULL;
-static DEFINE_ATOMIC(QOpenGLContext *, g_offscreen_context) = NULL;
-static DEFINE_ATOMIC(QThread *, g_t2_thread) = NULL;
-
-
-void GL_set_t2_thread(QThread *t2_thread){
-  return ATOMIC_SET(g_t2_thread, t2_thread);
-}
-
-QWindow *GL_get_editor_qwindow(void){
-  //R_ASSERT_NON_RELEASE(ATOMIC_GET(g_qwindow)->screen() != NULL);
-  return ATOMIC_GET(g_qwindow);
-}
-
-QGLContext *GL_get_context(void){
-  return ATOMIC_GET(g_context);
-}
-
-QOffscreenSurface *GL_get_offscreen_surface(void){
-  return ATOMIC_GET(g_offscreen_surface);
-}
-
-QOpenGLContext *GL_get_offscreen_context(void){
-  return ATOMIC_GET(g_offscreen_context);
-}
-
 #if !USE_QT5
 static bool use_estimated_vblank_questionmark(){
   return SETTINGS_read_bool("use_estimated_vblank", false);
@@ -1435,36 +1404,26 @@ return SETTINGS_read_double("vblank", -1.0) > 0.0;
 #endif
 
 static double get_refresh_rate(void){
+  static bool has_started_t2_thread = false;
+  
   QWindow *qwindow = widget->windowHandle();
   if (qwindow!=NULL){
     QScreen *qscreen = qwindow->screen();
     if (qscreen!=NULL) {
 
-      if (ATOMIC_GET(g_t2_thread) != NULL) {
-
-        if (ATOMIC_GET(g_qwindow) == NULL) {
-          radium::ScopedMutex lock(make_current_mutex);
-
-          ATOMIC_SET(g_qwindow, qwindow);
-          ATOMIC_SET(g_context, widget->context());
-          
-          QOffscreenSurface *offscreen = new QOffscreenSurface(qwindow->screen());
-          offscreen->setFormat(widget->context()->contextHandle()->format());
-          offscreen->create();
-          ATOMIC_SET(g_offscreen_surface, offscreen);
-          
-          QOpenGLContext *offscreen_context = new QOpenGLContext;
-          offscreen_context->setFormat(widget->context()->contextHandle()->format());//GL_get_qsurface()->format());
-          offscreen_context->setShareContext(widget->context()->contextHandle());
-          offscreen_context->create();
-          offscreen_context->moveToThread(ATOMIC_GET(g_t2_thread));      
-          ATOMIC_SET(g_offscreen_context, offscreen_context); 
+      if (has_started_t2_thread==false){
         
-        }
+        radium::ScopedMutex lock(make_current_mutex);
+        
+        T1_start_t2_thread(widget->context()->contextHandle());
+        has_started_t2_thread = true;
+        
       }
 
       return qscreen->refreshRate();
+
     }
+
   }
 
   return -1;

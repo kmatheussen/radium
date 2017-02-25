@@ -88,7 +88,7 @@ int main(int argc, char **argv){
   if(faulty_installation){
     QMessageBox msgBox;
     msgBox.setIcon(QMessageBox::Critical);
-    msgBox.setText("Error!\nRadium has not been installed properly.\nRadium is likely to be unstable because of this.\n");
+    msgBox.setText("Error!\nRadium has not been installed properly.\nRadium is likely to be unstable because of this.\n(See bin/packages/README for instructions on how to properly install Radium)");
     msgBox.setStandardButtons(QMessageBox::Ok);
     msgBox.exec();
   }

@@ -209,7 +209,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
                                    "Linux users: Please don't report bugs caused by a non-properly compiled version of Radium. "
                                    "If you have compiled Radium yourself, or are using a version of Radium "
                                    "distributed by a third party, please try the official binaries first. "
-                                   "At least execute a \"make very_clean\" command to see if the bug disappears. Thank you.\n"
+                                   "At least execute a \"make very_clean\" command to see if the bug disappears. Thank you!\n"
                                    "\n"
                                    #endif
                                    "This %0 will be automatically reported when you press \"SEND\".\n"
@@ -418,7 +418,7 @@ int main(int argc, char **argv){
   if(faulty_installation){
     QMessageBox msgBox;
     msgBox.setIcon(QMessageBox::Critical);
-    msgBox.setText("Error!\nRadium has not been installed properly.\nRadium is likely to be unstable because of this.\n");
+    msgBox.setText("Error!\nRadium has not been installed properly.\nRadium is likely to be unstable because of this.\n(See bin/packages/README for instructions on how to properly install Radium)\n");
     msgBox.setStandardButtons(QMessageBox::Ok);
     msgBox.exec();
   }

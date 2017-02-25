@@ -10,17 +10,6 @@ class QWidget;
   extern void GL_stop_widget(QWidget *widget);
   extern void GL_maybe_estimate_vblank(QWidget *widget);
 
-class QThread;
-class QWindow;
-class QGLContext;
-class QOffscreenSurface;
-class QOpenGLContext;
-extern void GL_set_t2_thread(QThread *t2_thread);
-extern QWindow *GL_get_editor_qwindow(void);
-extern QGLContext *GL_get_context(void);
-extern QOffscreenSurface *GL_get_offscreen_surface(void);
-extern QOpenGLContext *GL_get_offscreen_context(void);
-    
   extern "C" {
 #endif
 
