@@ -172,8 +172,6 @@ static void T2_thread_func(QOffscreenSurface *offscreen, QOpenGLContext *offscre
 
     T1_data *t1_data = t1_to_t2_queue.get();
     if (t1_data->stop_me){
-      delete offscreen_context;
-      delete qsurface;
       return;
     }
   
@@ -245,13 +243,15 @@ namespace{
     }
 
     ~T2_Thread(){
-      delete _offscreen_context;
-      delete _offscreen;
     }
     
     void run() override {
       R_ASSERT_RETURN_IF_FALSE(ATOMIC_GET(g_use_t2_thread)== Use_T2_Thread::YES);
+      
       T2_thread_func(_offscreen, _offscreen_context);
+      
+      delete _offscreen;
+      delete _offscreen_context;
     }
   };
 }
