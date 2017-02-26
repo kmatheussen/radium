@@ -70,7 +70,11 @@ static enum ColorNums g_current_colornum = LOW_EDITOR_BACKGROUND_COLOR_NUM;
 struct MyColorDialog : public QColorDialog {
 
 public: 
-    
+
+  MyColorDialog(){
+    setOption(QColorDialog::NoButtons); // Avoid crash on macos sierra. (https://bugreports.qt.io/browse/QTBUG-56448)
+  }
+
 #if FOR_MACOSX && !USE_QT5
   void closeEvent(QCloseEvent *event) {
     hide();
