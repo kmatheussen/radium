@@ -1408,7 +1408,7 @@ protected:
       GL_create(window, window->wblock);
       
     }
-    
+
     if (is_called_every_ms(5000)){  // Ask for gl.make_current each 5 seconds.
       GL_lock();{
         GL_EnsureMakeCurrentIsCalled();
@@ -1418,9 +1418,9 @@ protected:
     // Ensure editor is redrawn after resizing. For some reason, it doesn't always work to set must_redraw=true in the resize event virtual method.
     {
       static int last_height = -1;
-      QMainWindow *main_window = (QMainWindow *)window->os_visual.main_window;
-      int new_height = main_window->height();
-      if (main_window!=NULL && new_height != last_height){
+      EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+      int new_height = editor->gl_widget->height();
+      if (new_height != last_height){
         window->must_redraw = true;
         last_height = new_height;
       }

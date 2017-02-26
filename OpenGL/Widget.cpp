@@ -1454,14 +1454,19 @@ bool GL_maybe_notify_that_main_window_is_exposed(int interval){
   }else{
     static int downcounter = 0;
     if (downcounter==0) {
+#if !defined(RELEASE)
+      printf("Checking refresh rate\n");
+#endif
       double refresh_rate = get_refresh_rate();
       if (refresh_rate >= 0.5) {
         widget->set_vblank(1000.0 / refresh_rate);
         ATOMIC_DOUBLE_SET(g_vblank, 1000.0 / refresh_rate);
         ATOMIC_SET(g_has_found_refresh_rate, true);
-      }else
+        downcounter = 200 * 1000 / interval; // Check refresh rate every 200 seconds.
+      }else{
         printf("Warning: Unable to find screen refresh rate\n");
-      downcounter = 2 * 1000 / interval; // Check refresh rate every 2 seconds.
+        downcounter = 500 / interval; // Check again in 0.5 seconds
+      }
     }else
       downcounter--;
   }

@@ -877,7 +877,7 @@ void GFX_CloseProgress(void){
 */
 
 const char *GFX_qVersion(void){
-  return qVersion();
+  return talloc_format("%s: %s", qVersion(), QSysInfo::buildAbi().toUtf8().constData());
 }
 
 
