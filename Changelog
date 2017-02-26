@@ -1,3 +1,27 @@
+Changes 4.5.0 -> 4.5.2:
+* OSX: Fix the 0,1,2,3,4,5,6,7,8,9 keys when using a french keyboard
+* Osx/sierra: Workaround for crash in qt when exiting program
+* Upgrade Visualization-Library. Fix for rare startup crash,
+  especially on OSX.
+* Enable draw in separate process by default, and also force-enable
+  it if it earlier had been excplicitly disabled.
+* Windows: Fix draw in separate process.
+* Crashreporter: On windows, report crashes as crashes, not errors.
+* Don't crash crashreporter when showing assertion from a different
+  thread than the main thread.
+* OSX: Fix system font on 10.12.
+* Use system font in the playlist.
+* Some debug code to try to track down an undo bug in the mixer
+* Windows: Fix use of non-ascii paths for sndfile, libgig,
+  and the crashreporter.
+* Make the "Quit" button in the system message window actually quit
+  the program
+* Windows: Fix starting program if the current path contains
+  non-asci characters.
+* Mixer strips: General speed up, plus fix ctrl to slow down mouse
+
+
+
 Changes 4.4.8 -> 4.5.0:
 * OSX: Enable draw in separate process by default. Quick temporary
   workaround for OpenGL freeze problem.
