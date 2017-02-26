@@ -594,7 +594,7 @@ protected:
       return false;
 
     int keynum = OS_SYSTEM_get_keynum(event);
-
+    
     last_pressed_key = keynum;
             
     //printf("keynum1: %d. switch: %d\n",keynum,tevent.keyswitch);
@@ -621,12 +621,22 @@ protected:
       tevent.ID=TR_KEYBOARDUP;
     
     tevent.SubID=keynum;  
-        
     
     bool ret;
 
-    bool dat_used_key = DAT_keypress(window, tevent.SubID, is_key_press);
+    bool dat_used_key;
 
+    {
+      dat_used_key = DAT_keypress(window, tevent.SubID, is_key_press);
+      /*
+        // This code should perhaps not be commented out.
+      if (dat_used_key==false){
+        int scancode_keynum = OS_SYSTEM_get_qwerty_keynum(event); // e.g. using scancode.
+        dat_used_key = DAT_keypress(window, scancode_keynum, is_key_press);
+      }
+      */
+    }
+    
     if (dat_used_key) {
       
       ret = true;
@@ -649,7 +659,6 @@ protected:
         }
         
         tevent.SubID=keynum;
-        
         ret = EventReciever(&tevent,window);
       }
     }

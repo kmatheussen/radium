@@ -275,7 +275,7 @@ static void init_keymaps(void){
 }
 
 // copied some code from here: http://stackoverflow.com/questions/8263618/convert-virtual-key-code-to-unicode-string
-static char get_char_from_keycode(int keyCode){
+static UniChar get_char_from_keycode(int keyCode){
   static TISInputSourceRef currentKeyboard;
   static CFDataRef uchr;
   static const UCKeyboardLayout *keyboardLayout = NULL;
@@ -287,6 +287,7 @@ static char get_char_from_keycode(int keyCode){
     uchr = (CFDataRef)TISGetInputSourceProperty(currentKeyboard, kTISPropertyUnicodeKeyLayoutData);
     keyboardLayout = (const UCKeyboardLayout*)CFDataGetBytePtr(uchr);
   }
+
   
   if(keyboardLayout) {
     UInt32 deadKeyState = 0;
@@ -314,7 +315,7 @@ static char get_char_from_keycode(int keyCode){
     
     if(actualStringLength > 0 && status == noErr) {
       //NSString *hepp = [[NSString stringWithCharacters:unicodeString length:(NSUInteger)actualStringLength] uppercaseString];
-      //printf("      ______________ some code: %s. %c\n",[hepp cStringUsingEncoding:NSUTF8StringEncoding],unicodeString[0]);
+      //printf("      ______________ some code: %s. %c %d,%d,%d\n",[hepp cStringUsingEncoding:NSUTF8StringEncoding],unicodeString[0],unicodeString[0],unicodeString[1],unicodeString[2]);
       return unicodeString[0];
     }
   }
@@ -330,7 +331,33 @@ int OS_SYSTEM_get_keynum2(uint32_t keycode, bool keypad_pressed){
   if (ret != EVENT_NO)
     return ret;
 
-  char c = toupper(get_char_from_keycode(keycode));
+  UniChar uc = get_char_from_keycode(keycode);
+  
+  // French keyboard, keys 0 -> 9
+  switch(uc){
+    case 224:
+      return EVENT_0;
+    case 38:
+      return EVENT_1;
+    case 233:
+      return EVENT_2;
+    case 34:
+      return EVENT_3;
+    case 39:
+      return EVENT_4;
+    case 40:
+      return EVENT_5;
+    case 167:
+      return EVENT_6;
+    case 232:
+      return EVENT_7;
+    case 33:
+      return EVENT_8;
+    case 231:
+      return EVENT_9;
+  }
+
+  unsigned char c = toupper(uc);
 
   switch(c){
     case 'A':
@@ -422,11 +449,40 @@ int OS_SYSTEM_get_keynum(void *void_event){
     return EVENT_NO;
 
   int ret = keymap[keycode];
-  if (ret != EVENT_NO)
+  if (ret != EVENT_NO){
+    //printf("OS_SYSTEM ret: %d %x\n",ret,ret);
     return ret;
+  }
 
-  char c = toupper(get_char_from_keycode(keycode));
+  UniChar uc = get_char_from_keycode(keycode);
+  //printf("OS_SYSTEM c: %c (%d %x). keycode: %d %x\n", uc, uc, uc, keycode, keycode);
+  
+  // French keyboard, keys 0 -> 9
+  switch(uc){
+    case 224:
+      return EVENT_0;
+    case 38:
+      return EVENT_1;
+    case 233:
+      return EVENT_2;
+    case 34:
+      return EVENT_3;
+    case 39:
+      return EVENT_4;
+    case 40:
+      return EVENT_5;
+    case 167:
+      return EVENT_6;
+    case 232:
+      return EVENT_7;
+    case 33:
+      return EVENT_8;
+    case 231:
+      return EVENT_9;
+  }
 
+  unsigned char c = toupper(uc);
+      
   switch(c){
     case 'A':
       return EVENT_A;
