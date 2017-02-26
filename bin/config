@@ -1,4 +1,4 @@
-settings_version = 0.72 # dont change this one
+settings_version = 0.73 # dont change this one
 
 font = Cousine,11,-1,5,75,0,0,0,0,0
 font_style = Regular

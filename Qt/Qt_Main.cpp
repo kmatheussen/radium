@@ -2479,7 +2479,7 @@ int main(int argc, char **argv){
 #if defined(FOR_WINDOWS)
   add_windows_gc_roots();
 #endif
-  
+
 
 #ifdef FOR_MACOSX
   OS_OSX_show_icon_in_dock();
@@ -2550,6 +2550,8 @@ int main(int argc, char **argv){
     
   CRASHREPORTER_init();
 
+  SETTINGS_init();
+
   bool try_incremental_gc = SETTINGS_read_bool("try_incremental_gc",false);
   if (try_incremental_gc || SETTINGS_read_bool("incremental_gc",false)) {
     if (try_incremental_gc)
@@ -2561,8 +2563,7 @@ int main(int argc, char **argv){
     
     g_gc_is_incremental = true;
   }
-  
-  
+
   //GC_disable();
   
   QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));

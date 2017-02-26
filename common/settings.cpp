@@ -78,6 +78,10 @@ static int find_linenum(QString key, QVector<QString> lines){
   return -1;
 }
 
+static QString get_settings_version_line(void){
+  return QString("settings_version = ") + OS_get_qstring_from_double(SETTINGSVERSION) + " # dont change this one";
+}
+
 // Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
 static QVector<QString> get_lines(const char* key){
   R_ASSERT(THREADING_is_main_thread());
@@ -134,15 +138,17 @@ static QVector<QString> get_lines(const char* key){
   }
 
   file.close();
-  
-  QString version_line = QString("settings_version = ") + OS_get_qstring_from_double(SETTINGSVERSION) + " # dont change this one";
+
+  /*
+  QString version_line = get_settings_version_line(); //QString("settings_version = ") + OS_get_qstring_from_double(SETTINGSVERSION) + " # dont change this one";
 
   int version_linenum = find_linenum("settings_version",ret);
   if(version_linenum==-1)
     ret.push_back(version_line);
   else
     ret[version_linenum] = version_line;
-
+  */
+  
 #if 0
   {
     int i=0;
@@ -196,9 +202,16 @@ static void write_lines(const char* key, QVector<QString> lines){
   QTextStream out(&temporary_write_file);
   out.setCodec("UTF-8"); 
 
+  int version_linenum = find_linenum("settings_version",lines);
+  if (version_linenum == -1)
+    out << get_settings_version_line() << "\n";
+  
   for (int i=0 ; i<lines.size(); i++){
     //printf("writing -%s-\n",lines[i].toUtf8().constData());
-    out << lines[i] << "\n";
+    if (i==version_linenum)
+      out << get_settings_version_line() << "\n";
+    else
+      out << lines[i] << "\n";
   }
 
   temporary_write_file.close();
@@ -369,3 +382,21 @@ void SETTINGS_write_string(QString key, const char* val){
 void SETTINGS_write_string(QString key, QString val){
   SETTINGS_put(key.toUtf8().constData(),val);
 }
+
+
+void SETTINGS_init(void){
+  double settings_version = SETTINGS_read_double("settings_version", 0.0);
+
+  // Enable draw_in_separate_process if it had been excplicitly disabled in a version where it didn't always work very well.
+  if (settings_version <= 0.725){
+
+    const char *draw_in_separate = "opengl_draw_in_separate_process";
+
+    if (SETTINGS_has_key(draw_in_separate)){
+      bool val = SETTINGS_read_bool(draw_in_separate,true);
+      if (val==false)
+        SETTINGS_write_bool(draw_in_separate,true);
+    }
+  }
+}
+

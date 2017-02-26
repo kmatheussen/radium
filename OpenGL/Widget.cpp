@@ -1681,7 +1681,9 @@ QWidget *GL_create_widget(QWidget *parent){
     int ret = GFX_Message(&v,
                           "Your version of OpenGL is too old.\n"
                           "\n"
-                          "To solve this problem, you might want to try updating your graphics card driver."
+                          "To solve this problem, you might want to try updating your graphics card driver.\n"
+                          "\n"
+                          "You might also have to disable \"Draw in separate process\" under Edit -> Preferences -> OpenGL if you choose to run anyway."
                           );
     if (ret==1){
       exit(-1);

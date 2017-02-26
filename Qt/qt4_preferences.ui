@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -415,7 +415,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
           <item row="1" column="3">
            <widget class="QLabel" name="label_10">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;This feature improves graphical performance by drawing in a separate process.&lt;br&gt;Beware that on Windows, this option very often destroys text rendering in the&lt;br&gt;editor (you notice this immediately after restarting). Also note that unless you&lt;br&gt; have at least two CPU cores, enabling &amp;quot;Draw in separate process&amp;quot; could lower&lt;br&gt; graphical performance instead of improving it. If you have more than one CPU&lt;br&gt;core, and text rendering is not destroyed, you should enable this option.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;This feature improves graphical performance by drawing in a separate process.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -8149,8 +8149,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>
