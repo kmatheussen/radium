@@ -1631,10 +1631,10 @@ static void setup_widget(QWidget *parent){
 
   widget = new MyQtThreadedWidget(vlFormat, parent);
   
-  usleep(1000); // desperate attempt to avoid crash
+  //usleep(1000); // desperate attempt to avoid crash
   widget->resize(1000,1000);
   
-  usleep(1000); // desperate attempt to avoid crash
+  //usleep(1000); // desperate attempt to avoid crash
   widget->show();
 
   widget->setAutomaticDelete(false);  // dont want auto-desctruction at program exit.
