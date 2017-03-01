@@ -1434,7 +1434,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
         float new_value = ATOMIC_GET(plugin->solo_is_on)?0.0f:1.0f;
 
-        Undo_Open();{
+        //Undo_Open();{
           
           // Turn off all other solos if ctrl is pressed.
           if (ctrl_pressed){
@@ -1457,7 +1457,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
           //CHIP_update(plugin);
           //GFX_update_instrument_widget((struct Patch*)patch);
           
-        }Undo_Close();        
+          //}Undo_Close();        
 
         event->accept();
         return;

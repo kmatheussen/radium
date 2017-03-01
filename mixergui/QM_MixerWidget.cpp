@@ -953,6 +953,45 @@ static vector_t get_selected_patches(void){
 }
 
 
+static void MW_solo(bool set_on){
+  vector_t patches = get_selected_patches();
+
+  if (patches.num_elements==0){
+    GFX_Message(NULL, "No sound object selected");
+    return;
+  }
+
+  //Undo_Open();{
+    VECTOR_FOR_EACH(struct Patch *,patch,&patches){
+      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      int num_effects = plugin->type->num_effects;     
+      //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
+      PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, set_on ? 1.0 : 0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    }END_VECTOR_FOR_EACH;
+    //}Undo_Close();
+}
+
+static void MW_mute(bool do_mute){
+  vector_t patches = get_selected_patches();
+
+  if (patches.num_elements==0){
+    GFX_Message(NULL, "No sound object selected");
+    return;
+  }
+
+  Undo_Open();{
+    VECTOR_FOR_EACH(struct Patch *,patch,&patches){
+      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      int num_effects = plugin->type->num_effects;
+      if (do_mute == ATOMIC_GET(plugin->volume_is_on)){
+        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_VOLUME_ONOFF));
+        float new_val = do_mute ? 0.0 : 1.0;
+        PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      }
+    }END_VECTOR_FOR_EACH;
+  }Undo_Close();
+}
+
 void MW_copy(void){
   vector_t patches = get_selected_patches();
 
@@ -1048,6 +1087,10 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int config_color = -1;
   int instrument_info = -1;
   int random = -1;
+  int solo = -1;
+  int unsolo = -1;
+  int mute = -1;
+  int unmute = -1;
   
   if (chips.size() > 1) {
     
@@ -1056,9 +1099,18 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     delete_ = VECTOR_push_back(&v, "Delete sound objects");
     VECTOR_push_back(&v, "--------");
     save = VECTOR_push_back(&v, "Save multi preset file (.mrec)");
-    
+    VECTOR_push_back(&v, "--------");
+    solo = VECTOR_push_back(&v, "Solo all selected");
+    unsolo = VECTOR_push_back(&v, "Un-solo all selected");
+    mute = VECTOR_push_back(&v, "Mute all selected");
+    unmute = VECTOR_push_back(&v, "Un-mute all selected");
+
+      
   } else if (chips.size() == 1){
 
+    struct Patch *patch = CHIP_get_patch(chip_under);
+    struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    
     if (QString("Sample Player") == SP_get_plugin(chip_under->_sound_producer)->type->type_name){
       random = VECTOR_push_back(&v, "Load random sample from folder");
       VECTOR_push_back(&v, "--------");
@@ -1072,6 +1124,24 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     copy = VECTOR_push_back(&v, "Copy sound object");
     cut = VECTOR_push_back(&v, "Cut sound object");
     delete_ = VECTOR_push_back(&v, "Delete sound object");
+
+    VECTOR_push_back(&v, "--------");
+
+    if (ATOMIC_GET(plugin->solo_is_on)){
+      solo = VECTOR_push_back(&v, "[disabled]Solo");    
+      unsolo = VECTOR_push_back(&v, "Un-solo");
+    }else{
+      solo = VECTOR_push_back(&v, "Solo");    
+      unsolo = VECTOR_push_back(&v, "[disabled]Un-solo");
+    }
+
+    if (!ATOMIC_GET(plugin->volume_is_on)){
+      mute = VECTOR_push_back(&v, "[disabled]Mute");
+      unmute = VECTOR_push_back(&v, "Un-mute");
+    }else{
+      mute = VECTOR_push_back(&v, "Mute");
+      unmute = VECTOR_push_back(&v, "[disabled]Un-mute");
+    }
     
     VECTOR_push_back(&v, "--------");
     
@@ -1092,6 +1162,22 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   } else if (sel==replace) {
 
     mouserelease_replace_patch(scene, mouse_x, mouse_y);
+    
+  } else if (sel==solo) {
+
+    MW_solo(true);
+    
+  } else if (sel==unsolo) {
+
+    MW_solo(false);
+    
+  } else if (sel==mute) {
+
+    MW_mute(true);
+    
+  } else if (sel==unmute) {
+
+    MW_mute(false);
     
   } else if (sel==copy) {
 
