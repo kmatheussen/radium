@@ -767,6 +767,16 @@ for .emacs:
             (iota (length vector)))
   out)
 
+(define (cl-car a)
+  (if (null? a)
+      #f
+      (car a)))
+
+(define (cl-cdr a)
+  (if (null? a)
+      #f
+      (cdr a)))
+
 (define (butlast elements)
   (let ((rest (cdr elements)))
     (if (null? rest)

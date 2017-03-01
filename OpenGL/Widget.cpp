@@ -1133,7 +1133,8 @@ private:
         now = monotonic_seconds() * 1000.0;
         openglContext()->swapBuffers();
       }
-      
+
+#if !defined(FOR_MACOSX)      
       if (doHighCpuOpenGlProtection()) {
         double vblank = GL_get_vblank();
         if (vblank==-1)
@@ -1153,8 +1154,9 @@ private:
         const bool maybe = false; //scale(rand(), 0, RAND_MAX, 0, 10) < 3;
           
         if (maybe || (swapTime < 0.5 && frameTime < minSwapTimeMs - 3)) {
-          if (underrunCounter > 3)
-            {
+
+          if (underrunCounter > 3) {
+
               double how_long = 2 * (minSwapTimeMs - frameTime);
               //Thread::sleep (2 * (minSwapTimeMs - frameTime));
 #if !defined(RELEASE)
@@ -1170,10 +1172,13 @@ private:
                 usleep(1000 * how_long);
               
               now = monotonic_seconds() * 1000.0; //Time::getMillisecondCounterHiRes();
-              }
-          else
+
+          } else {
+
             ++underrunCounter;
-          
+
+          }
+
         } else {
           
           if (underrunCounter > 0)
@@ -1184,6 +1189,7 @@ private:
         lastSwapTime = now;
 #endif
       }
+#endif // !defined(FOR_MACOSX)
     }
 
     if (juce_lock != NULL)
