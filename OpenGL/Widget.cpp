@@ -173,6 +173,10 @@ SUMMARY: AddressSanitizer: new-delete-type-mismatch ../../.././libsanitizer/asan
 
 */
 
+
+extern double monotonic_seconds();
+
+
 #if FOR_LINUX
 static int set_pthread_priority(pthread_t pthread,int policy,int priority,const char *message,const char *name){
   struct sched_param par={};
@@ -1103,6 +1107,9 @@ private:
   }
   
 
+  double lastSwapTime = 0;
+  int underrunCounter = 0;
+  
   // OpenGL thread
   void swap(void){
     if (USE_GL_LOCK)
@@ -1112,25 +1119,70 @@ private:
 
     if (doLockJuceWhenSwappingOpenGL())
       juce_lock = JUCE_lock();
-    
+
     // Swap to the newly rendered buffer
     if ( openglContext()->hasDoubleBuffer()) {
 
-      //double start_time = TIME_get_ms();
+      double now;
 
       if (juce_lock!=NULL){
         radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
+        now = monotonic_seconds() * 1000.0;
         openglContext()->swapBuffers();
-      }else
+      }else{
+        now = monotonic_seconds() * 1000.0;
         openglContext()->swapBuffers();
-
-      double swap_duration = 0.0;//TIME_get_ms() - start_time;
-
+      }
+      
       if (doHighCpuOpenGlProtection()) {
         double vblank = GL_get_vblank();
         if (vblank==-1)
           vblank = time_estimator.get_vblank();
-        prevent_high_cpu_in_swap.check(vblank, swap_duration);
+
+#if 0
+        (void)now;
+        prevent_high_cpu_in_swap.check(vblank, 0);
+#else
+        // This code is copied from JUCE.
+        
+        const double swapTime = (monotonic_seconds() * 1000.0) - now;
+        const int frameTime = (int) (now - lastSwapTime);
+        const int minSwapTimeMs = (int)vblank;
+        //printf("minSwapTimeMs: %d\n", minSwapTimeMs);
+        
+        const bool maybe = false; //scale(rand(), 0, RAND_MAX, 0, 10) < 3;
+          
+        if (maybe || (swapTime < 0.5 && frameTime < minSwapTimeMs - 3)) {
+          if (underrunCounter > 3)
+            {
+              double how_long = 2 * (minSwapTimeMs - frameTime);
+              //Thread::sleep (2 * (minSwapTimeMs - frameTime));
+#if !defined(RELEASE)
+              printf("Sleeping to avoid CPU lock. How_long: %f, underrunCounter: %d, swapTime: %f, frameTime: %d, minSwapTimeMs: %d. now: %f\n",
+                     how_long,
+                     underrunCounter,
+                     swapTime,
+                     frameTime,
+                     minSwapTimeMs,
+                     monotonic_seconds());
+#endif
+              if (how_long > 0)
+                usleep(1000 * how_long);
+              
+              now = monotonic_seconds() * 1000.0; //Time::getMillisecondCounterHiRes();
+              }
+          else
+            ++underrunCounter;
+          
+        } else {
+          
+          if (underrunCounter > 0)
+            --underrunCounter;
+          
+        }
+
+        lastSwapTime = now;
+#endif
       }
     }
 
