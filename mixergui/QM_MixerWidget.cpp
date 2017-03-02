@@ -953,8 +953,7 @@ static vector_t get_selected_patches(void){
 }
 
 
-static void MW_solo(bool set_on){
-  vector_t patches = get_selected_patches();
+static void MW_solo(const vector_t patches, bool set_on){
 
   if (patches.num_elements==0){
     GFX_Message(NULL, "No sound object selected");
@@ -971,8 +970,7 @@ static void MW_solo(bool set_on){
     //}Undo_Close();
 }
 
-static void MW_mute(bool do_mute){
-  vector_t patches = get_selected_patches();
+static void MW_mute(const vector_t patches, bool do_mute){
 
   if (patches.num_elements==0){
     GFX_Message(NULL, "No sound object selected");
@@ -1091,6 +1089,9 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int unsolo = -1;
   int mute = -1;
   int unmute = -1;
+  int unsolo_all = -1;
+  int mute_all = -1;
+  int unmute_all = -1;
   
   if (chips.size() > 1) {
     
@@ -1104,7 +1105,10 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     unsolo = VECTOR_push_back(&v, "Un-solo all selected");
     mute = VECTOR_push_back(&v, "Mute all selected");
     unmute = VECTOR_push_back(&v, "Un-mute all selected");
-
+    VECTOR_push_back(&v, "--------");
+    unsolo_all = VECTOR_push_back(&v, "Un-solo all");
+    mute_all = VECTOR_push_back(&v, "Mute all");
+    unmute_all = VECTOR_push_back(&v, "Un-mute all");
       
   } else if (chips.size() == 1){
 
@@ -1142,6 +1146,11 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
       mute = VECTOR_push_back(&v, "Mute");
       unmute = VECTOR_push_back(&v, "[disabled]Un-mute");
     }
+
+    VECTOR_push_back(&v, "--------");
+    unsolo_all = VECTOR_push_back(&v, "Un-solo all");
+    mute_all = VECTOR_push_back(&v, "Mute all");
+    unmute_all = VECTOR_push_back(&v, "Un-mute all");
     
     VECTOR_push_back(&v, "--------");
     
@@ -1165,19 +1174,31 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
   } else if (sel==solo) {
 
-    MW_solo(true);
+    MW_solo(get_selected_patches(), true);
     
   } else if (sel==unsolo) {
 
-    MW_solo(false);
+    MW_solo(get_selected_patches(), false);
     
   } else if (sel==mute) {
 
-    MW_mute(true);
+    MW_mute(get_selected_patches(), true);
     
   } else if (sel==unmute) {
 
-    MW_mute(false);
+    MW_mute(get_selected_patches(), false);
+    
+  } else if (sel==unsolo_all) {
+
+    MW_solo(get_audio_instrument()->patches, false);
+    
+  } else if (sel==mute_all) {
+
+    MW_mute(get_audio_instrument()->patches, true);
+    
+  } else if (sel==unmute_all) {
+
+    MW_mute(get_audio_instrument()->patches, false);
     
   } else if (sel==copy) {
 
