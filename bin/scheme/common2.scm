@@ -768,14 +768,17 @@ for .emacs:
   out)
 
 (define (cl-car a)
-  (if (null? a)
-      #f
-      (car a)))
+  (if (pair? a)
+      (car a)
+      #f))
 
 (define (cl-cdr a)
-  (if (null? a)
-      #f
-      (cdr a)))
+  (if (pair? a)
+      (cdr a)
+      #f))
+
+(define (cl-cadr a)
+  (cl-car (cl-cdr a)))
 
 (define (butlast elements)
   (let ((rest (cdr elements)))

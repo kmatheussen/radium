@@ -600,7 +600,8 @@
                                ;; get-scaled-value
                                (lambda ()
                                  (db-to-slider (if add-monitor ;; minor optimization.
-                                                   (get-db-value)
+                                                   (or (get-db-value)
+                                                       last-value)
                                                    last-value)))
 
                                ;; get-value-text
@@ -677,6 +678,8 @@
                            replace))
 
 
+(define *send-callbacks* '())
+
 (define (create-mixer-strip-audio-connection-send gui first-instrument-id source-id target-id)
   (define (make-undo)
     (<ra> :undo-audio-connection-gain source-id target-id))
@@ -695,15 +698,48 @@
                                   (create-send-func gain))))))
   
   (define (get-db-value)
-    (define db (<ra> :gain-to-db (<ra> :get-audio-connection-gain source-id target-id)))
-    ;;(c-display "getting " db)
-    db)
+    (and (<ra> :has-audio-connection source-id target-id)
+         (<ra> :gain-to-db (<ra> :get-audio-connection-gain source-id target-id))))
 
   (define (set-db-value db)
     ;;(c-display "setting db to" db)
-    (<ra> :set-audio-connection-gain source-id target-id (<ra> :db-to-gain db) #f))
+    (<ra> :set-audio-connection-gain source-id target-id (<ra> :db-to-gain db) #f)
+    (for-each (lambda (send-callback)
+                (send-callback gui source-id target-id))
+              *send-callbacks*))
+  
+  (define (add-monitor slider callback)
+    (define send-callback
+      (lambda (maybe-gui maybe-source-id maybe-target-id)
+        (if (and (not (= gui maybe-gui))
+                 (= maybe-source-id source-id)
+                 (= maybe-target-id target-id)
+                 (<ra> :instrument-is-open source-id)
+                 (<ra> :instrument-is-open target-id)
+                 (<ra> :has-audio-connection source-id target-id))
+            (callback))))
+  
+    (push-back! *send-callbacks* send-callback)
+    
+    (<gui> :add-close-callback gui
+           (lambda ()
+             (set! *send-callbacks*
+                   (remove (lambda (callback)
+                             (equal? callback send-callback))
+                           *send-callbacks*)))))
+    
+  ;; Also works fine, but is less efficient. (cleaner code though)
+  ;(define (add-monitor slider callback)
+  ;  (<ra> :schedule (random 1000) (lambda ()
+  ;                                  (if (and (<gui> :is-open gui)
+  ;                                           (<ra> :instrument-is-open source-id)
+  ;                                           (<ra> :instrument-is-open target-id))                                             
+  ;                                      (begin
+  ;                                        (callback)
+  ;                                        100)
+  ;                                      #f))))
 
-  (define add-monitor #f)
+  ;;(set! add-monitor #f)
 
   (create-mixer-strip-send gui
                            first-instrument-id
