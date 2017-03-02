@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundPlugin_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"
+#include "../mixergui/QM_chip.h"
 
 #include "undo_audio_effect_proc.h"
 
@@ -123,6 +124,12 @@ static void *Undo_Do_AudioEffect(
 
     undo_ae->value = new_value;
 
+    if (undo_ae->effect_num==plugin->type->num_effects+EFFNUM_INPUT_VOLUME)
+      CHIP_update(plugin);
+
+    if (undo_ae->effect_num==plugin->type->num_effects+EFFNUM_VOLUME)
+      CHIP_update(plugin);
+
   } else {
 
     R_ASSERT_RETURN_IF_FALSE2(undo_ae->effect_num==-1, undo_ae);
@@ -141,6 +148,8 @@ static void *Undo_Do_AudioEffect(
     }PLAYER_unlock();
 
     undo_ae->values = new_values;
+
+    CHIP_update(plugin);
   }
     
 
