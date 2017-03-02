@@ -1140,7 +1140,7 @@ private:
         if (vblank==-1)
           vblank = time_estimator.get_vblank();
 
-#if 0
+#if 1
         (void)now;
         prevent_high_cpu_in_swap.check(vblank, 0);
 #else
