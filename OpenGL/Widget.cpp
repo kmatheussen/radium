@@ -1123,14 +1123,22 @@ private:
     // Swap to the newly rendered buffer
     if ( openglContext()->hasDoubleBuffer()) {
 
+#define USE_JUCE_CPU_PROTECTION_LOGIC 0 // The JUCE logic causes stuttering in the graphics for a few seconds after returning to the program.
+
+#if USE_JUCE_CPU_PROTECTION_LOGIC
       double now;
+#endif
 
       if (juce_lock!=NULL){
         radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
+#if USE_JUCE_CPU_PROTECTION_LOGIC
         now = monotonic_seconds() * 1000.0;
+#endif
         openglContext()->swapBuffers();
       }else{
+#if USE_JUCE_CPU_PROTECTION_LOGIC
         now = monotonic_seconds() * 1000.0;
+#endif
         openglContext()->swapBuffers();
       }
 
@@ -1140,8 +1148,7 @@ private:
         if (vblank==-1)
           vblank = time_estimator.get_vblank();
 
-#if 1
-        (void)now;
+#if !USE_JUCE_CPU_PROTECTION_LOGIC
         prevent_high_cpu_in_swap.check(vblank, 0);
 #else
         // This code is copied from JUCE.
