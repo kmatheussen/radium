@@ -1414,9 +1414,9 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
   if(event->button()==Qt::LeftButton){
 
     SoundPlugin *plugin = SP_get_plugin(_sound_producer);
-    int num_effects = plugin->type->num_effects;
+    //int num_effects = plugin->type->num_effects;
 
-    volatile struct Patch *patch = plugin->patch;
+    struct Patch *patch = (struct Patch*)plugin->patch;
     R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
     QPointF pos = event->pos();
@@ -1431,8 +1431,10 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       get_solo_onoff_coordinates(x1,y1,x2,y2);
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
 
+        bool solo_is_on = ATOMIC_GET(plugin->solo_is_on);
+
         //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
-        float new_value = ATOMIC_GET(plugin->solo_is_on)?0.0f:1.0f;
+        //float new_value = solo_is_on?0.0f:1.0f;
 
         //Undo_Open();{
           
@@ -1450,7 +1452,16 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
               }
             }
           }
+
+          vector_t patches = MW_get_selected_patches();
+          if (VECTOR_is_in_vector(&patches, patch)==false){
+            VECTOR_clean(&patches);
+            VECTOR_push_back(&patches,patch);
+          }
+
+          MW_solo(patches, !solo_is_on);
           
+          /*
           //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
           
           PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
@@ -1458,6 +1469,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
           //GFX_update_instrument_widget((struct Patch*)patch);
           
           //}Undo_Close();        
+          */
 
         event->accept();
         return;
@@ -1470,8 +1482,10 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       get_volume_onoff_coordinates(x1,y1,x2,y2);
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
 
+        bool is_on = ATOMIC_GET(plugin->volume_is_on);
+
         //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
-        float new_value = ATOMIC_GET(plugin->volume_is_on)?0.0f:1.0f;
+        //float new_value = is_on?0.0f:1.0f;
 
         Undo_Open();{
           
@@ -1489,10 +1503,19 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
               }
             }
           }
-          
-          ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_VOLUME_ONOFF));
+
+          vector_t patches = MW_get_selected_patches();
+          if (VECTOR_is_in_vector(&patches, patch)==false){
+            VECTOR_clean(&patches);
+            VECTOR_push_back(&patches,patch);
+          }
+
+          MW_mute(patches, is_on);
+          /*
+          ADD_UNDO(AudioEffect_CurrPos(patch, num_effects+EFFNUM_VOLUME_ONOFF));
           
           PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+          */
           //CHIP_update(plugin);
           //GFX_update_instrument_widget((struct Patch*)patch);
 
@@ -1509,7 +1532,8 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       get_effects_onoff_coordinates(x1,y1,x2,y2);
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
         
-        float new_value = ATOMIC_GET(plugin->effects_are_on)?0.0f:1.0f;
+        bool effects_are_on = ATOMIC_GET(plugin->effects_are_on);
+        //float new_value = effects_are_on?0.0f:1.0f;
 
         Undo_Open();{
           
@@ -1527,12 +1551,22 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
               }
             }
           }
-          
+
+          vector_t patches = MW_get_selected_patches();
+          if (VECTOR_is_in_vector(&patches, patch)==false){
+            VECTOR_clean(&patches);
+            VECTOR_push_back(&patches,patch);
+          }
+
+          MW_bypass(patches, effects_are_on);
+
+          /*
           ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF));
           
           PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
           CHIP_update(plugin);
           GFX_update_instrument_widget((struct Patch*)patch);
+          */
 
         }Undo_Close();
         
@@ -1558,17 +1592,28 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       //printf("Got it %d/%d - %d/%d. %d/%d/%d/%d\n",x1,y1,x2,y2,pos.x()>x1, pos.x()<x2, pos.y()>y1, pos.y()<y2);
 
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
-        int effect_num;
-
-        if(i==0)
-          effect_num = num_effects+EFFNUM_INPUT_VOLUME;
-        else
-          effect_num = num_effects+EFFNUM_VOLUME;
 
         _has_made_volume_effect_undo=false;
         //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
 
-        _slider_start_value = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_PLUGIN);
+        vector_t chips = MW_get_selected_chips();
+        if (VECTOR_is_in_vector(&chips, this)==false){
+          VECTOR_clean(&chips);
+          VECTOR_push_back(&chips, this);
+        }
+
+        VECTOR_FOR_EACH(Chip*,chip, &chips){
+          struct Patch *patch = CHIP_get_patch(chip);
+          SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+          int num_effects = plugin->type->num_effects;
+          int effect_num;
+          if(chip->has_input_slider())
+            effect_num = num_effects+EFFNUM_INPUT_VOLUME;
+          else
+            effect_num = num_effects+EFFNUM_VOLUME;
+          chip->_slider_start_value = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_PLUGIN);
+        }END_VECTOR_FOR_EACH;
+
         _slider_start_pos = pos.x();
         /*
         float value = ::scale(pos.x(),x1,x2,0,1.0);
@@ -1630,9 +1675,6 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     return;
 
   if(_slider_being_edited>0){
-    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
-    int num_effects = plugin->type->num_effects;
-
     QPointF pos = event->pos();
 
     int x1,y1,x2,y2;
@@ -1641,39 +1683,64 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     else
       get_slider2_coordinates(x1,y1,x2,y2);      
 
-    int effect_num;
-
-    if(_slider_being_edited==1)
-      effect_num = num_effects+EFFNUM_INPUT_VOLUME;
-    else
-      effect_num = num_effects+EFFNUM_VOLUME;
-
     bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
     
     float delta = pos.x() - _slider_start_pos;
     if (ctrl_pressed)
       delta /= 10.0;
     
-    float value = _slider_start_value + ::scale(delta,0,x2-x1,0,1.0);
-    if(value>1.0)
-      value=1.0;
-    if(value<0.0)
-      value=0.0;
-
-    _slider_start_value = value;
     _slider_start_pos = pos.x();
 
-    volatile struct Patch *patch = plugin->patch;
+    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+    struct Patch *patch = (struct Patch*)plugin->patch;
     R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
-    if (_has_made_volume_effect_undo==false){
-      _has_made_volume_effect_undo=true;
-      ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
+    vector_t chips = MW_get_selected_chips();
+    if (VECTOR_is_in_vector(&chips, this)==false){
+      VECTOR_clean(&chips);
+      VECTOR_push_back(&chips, this);
     }
-    
-    PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 
-    CHIP_update(plugin);
+    if (_has_made_volume_effect_undo==false)
+      Undo_Open();
+
+    VECTOR_FOR_EACH(Chip*,chip, &chips){
+      
+      struct Patch *patch = CHIP_get_patch(chip);
+
+      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      int num_effects = plugin->type->num_effects;
+      
+      int effect_num;
+
+      float value = chip->_slider_start_value + ::scale(delta,0,x2-x1,0,1.0);
+      if(value>1.0)
+        value=1.0;
+      if(value<0.0)
+        value=0.0;
+      
+      chip->_slider_start_value = value;
+
+      if(chip->has_input_slider())
+        effect_num = num_effects+EFFNUM_INPUT_VOLUME;
+      else
+        effect_num = num_effects+EFFNUM_VOLUME;
+      
+      if (_has_made_volume_effect_undo==false)
+        ADD_UNDO(AudioEffect_CurrPos(patch, effect_num));
+      
+      PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      
+      CHIP_update(plugin);
+      
+    }END_VECTOR_FOR_EACH;
+
+    if (_has_made_volume_effect_undo==false)
+      Undo_Close();
+
+    if (_has_made_volume_effect_undo==false)
+      _has_made_volume_effect_undo=true;
+      
 
     GFX_update_instrument_widget((struct Patch*)patch);
   }

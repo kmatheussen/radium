@@ -900,6 +900,18 @@ static QVector<Chip*> get_selected_chips(void){
   return ret;
 }
 
+vector_t MW_get_selected_chips(void){
+  QVector<Chip*> chips = get_selected_chips();
+  
+  vector_t ret = {};
+
+  for(auto *chip : chips){
+    VECTOR_push_back(&ret, chip);
+  }
+
+  return ret;
+}
+
 //static bool mousepress_create_chip(MyScene *scene, float mouse_x, float mouse_y){
 static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_y){
   printf("mouserelease_create_chip called\n");
@@ -952,8 +964,12 @@ static vector_t get_selected_patches(void){
   return patches;
 }
 
+vector_t MW_get_selected_patches(void){
+  return get_selected_patches();
+}
 
-static void MW_solo(const vector_t patches, bool set_on){
+
+void MW_solo(const vector_t patches, bool set_on){
 
   if (patches.num_elements==0){
     GFX_Message(NULL, "No sound object selected");
@@ -970,22 +986,40 @@ static void MW_solo(const vector_t patches, bool set_on){
     //}Undo_Close();
 }
 
-static void MW_mute(const vector_t patches, bool do_mute){
+void MW_mute(const vector_t patches, bool do_mute){
 
   if (patches.num_elements==0){
     GFX_Message(NULL, "No sound object selected");
     return;
   }
 
-  Undo_Open();{
+  Undo_Open_rec();{
     VECTOR_FOR_EACH(struct Patch *,patch,&patches){
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
       int num_effects = plugin->type->num_effects;
-      if (do_mute == ATOMIC_GET(plugin->volume_is_on)){
+      if (do_mute != !ATOMIC_GET(plugin->volume_is_on)){
         ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_VOLUME_ONOFF));
         float new_val = do_mute ? 0.0 : 1.0;
         PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
       }
+    }END_VECTOR_FOR_EACH;
+  }Undo_Close();
+}
+
+void MW_bypass(const vector_t patches, bool do_bypass){
+
+  if (patches.num_elements==0){
+    GFX_Message(NULL, "No sound object selected");
+    return;
+  }
+
+  Undo_Open_rec();{
+    VECTOR_FOR_EACH(struct Patch *,patch,&patches){
+      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      int num_effects = plugin->type->num_effects;
+      ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF));
+      float new_val = do_bypass ? 0.0 : 1.0;
+      PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
     }END_VECTOR_FOR_EACH;
   }Undo_Close();
 }
