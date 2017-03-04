@@ -654,6 +654,8 @@ void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   from->audio_connections.push_back(connection);
   to->audio_connections.push_back(connection);
   
+  connection->setVisibility(MW_get_connections_visibility());
+  
   connection->update_position();
   scene->addItem(connection);
 
@@ -680,6 +682,8 @@ void CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   
   from->event_connections.push_back(econnection);
   to->event_connections.push_back(econnection);
+
+  econnection->setVisibility(MW_get_connections_visibility());
   
   econnection->update_position();
   scene->addItem(econnection);

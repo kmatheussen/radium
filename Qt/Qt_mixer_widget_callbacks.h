@@ -123,6 +123,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     
     update_ab_buttons();
 
+    connections_visibility->setChecked(MW_get_connections_visibility());
+      
     //connect(ab_a, SIGNAL(rightClicked()), this, SLOT(on_ab_a_rightClicked()));
       
     g_mixer_widget2 = this;
@@ -244,6 +246,11 @@ public slots:
   void on_show_cpu_usage_toggled(bool val){
     ATOMIC_SET(g_show_cpu_usage_in_mixer, val);
     MW_update_all_chips();
+  }
+
+  void on_connections_visibility_toggled(bool val){
+    if (initing==false)
+      MW_set_connections_visibility(val);
   }
 
   void on_mixer_direction_menu_button_released() {

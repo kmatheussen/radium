@@ -197,6 +197,9 @@ extern LANGSPEC int64_t MW_paste(float x, float y);
 
 extern LANGSPEC bool MW_has_mouse_pointer(void);
 
+extern LANGSPEC bool MW_get_connections_visibility(void);
+extern LANGSPEC void MW_set_connections_visibility(bool show);
+
 extern LANGSPEC void MW_autoconnect_plugin(SoundPlugin *plugin);
 
 extern LANGSPEC void MW_connect(struct Patch *source, struct Patch *dest);

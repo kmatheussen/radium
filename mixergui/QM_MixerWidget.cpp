@@ -1096,6 +1096,21 @@ bool MW_has_mouse_pointer(void){
     return false;
 }
 
+static bool g_connections_are_visible = true;
+bool MW_get_connections_visibility(void){
+  return g_connections_are_visible;
+}
+
+void MW_set_connections_visibility(bool show){
+  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  for(auto *item : das_items){
+    SuperConnection *connection = dynamic_cast<SuperConnection*>(item);
+    if (connection != NULL){
+      connection->setVisibility(show);
+    }
+  }
+  g_connections_are_visible=show;
+}
 
 static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent * event, float mouse_x, float mouse_y){
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1052</width>
-    <height>358</height>
+    <width>1039</width>
+    <height>318</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -156,6 +156,16 @@
       <widget class="QCheckBox" name="show_cpu_usage">
        <property name="text">
         <string>CPU</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="connections_visibility">
+       <property name="toolTip">
+        <string>Show connections</string>
+       </property>
+       <property name="text">
+        <string>C</string>
        </property>
       </widget>
      </item>

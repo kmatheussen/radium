@@ -80,6 +80,7 @@ struct SoundPlugin;
 #include "../api/api_proc.h"
 
 
+extern LANGSPEC bool MW_get_connections_visibility(void);
 
 class Chip;
 
@@ -126,7 +127,7 @@ public:
     , from(NULL)
     , to(NULL)
     , visible_line(this)
-    , arrow_line1(this)
+      //, arrow_line1(this)
   {
     QPen pen(Qt::red, 50);
     pen.setJoinStyle(Qt::RoundJoin);
@@ -148,6 +149,7 @@ public:
     visible_line.setPen(getPen());
     parent->addItem(&visible_line);
 
+    //setVisibility(MW_get_connections_visibility());
     //setVisible(false);
     
     /*
@@ -175,7 +177,7 @@ public:
   Chip *to;
 
   QGraphicsLineItem visible_line;
-  QGraphicsLineItem arrow_line1;
+  //QGraphicsLineItem arrow_line1;
 
   void setLine ( qreal x1, qreal y1, qreal x2, qreal y2 ){
     visible_line.setLine(x1,y1,x2,y2);
@@ -217,6 +219,10 @@ public:
   }
 #endif
 
+  void setVisibility(bool show){
+    visible_line.setVisible(show);
+  }
+  
   void hoverEnterEvent ( QGraphicsSceneHoverEvent * event ) override {
     printf("hover enter\n");
 
