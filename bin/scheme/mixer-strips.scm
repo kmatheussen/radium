@@ -1731,7 +1731,7 @@
       (<gui> :set-always-on-top parent)
       (<gui> :set-full-screen parent))
   
-  (<gui> :show parent)
+  ;;(<gui> :show parent)
       
   ;;(<gui> :set-full-screen parent)
 
@@ -1784,7 +1784,9 @@
                               parent))
                          *mixer-strips-objects*))))
 
-  mixer-strips-object
+  ;;mixer-strips-object
+
+  parent
   )
 
 (define (remake-mixer-strips . list-of-modified-instrument-ids)

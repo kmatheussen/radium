@@ -2255,19 +2255,19 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
     case QtWarningMsg:
       fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
 #ifndef RELEASE
-      GFX_Message(NULL, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      SYSTEM_show_message(talloc_format("Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function));
 #endif
       break;
     case QtCriticalMsg:
       fprintf(stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
 #ifndef RELEASE
-      GFX_Message(NULL, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      SYSTEM_show_message(talloc_format("Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function));
 #endif
       break;
     case QtFatalMsg:
       fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
 #ifndef RELEASE
-      GFX_Message(NULL, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      SYSTEM_show_message(talloc_format("Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function));
 #endif        
       break;
       //abort();

@@ -2433,8 +2433,15 @@ void informAboutGuiBeingAMixerStrips(int64_t guinum){
   g_mixerstrip_guinums.push_back(guinum);
 }
 
-void showMixerStrips(int num_rows){
-  evalScheme(talloc_format("(create-mixer-strips-gui %d)", num_rows));
+int64_t createMixerStripsWindow(int num_rows){
+  return s7extra_callFunc2_int_int("create-mixer-strips-gui", num_rows);
+}
+
+int64_t showMixerStrips(int num_rows){
+  int64_t gui = createMixerStripsWindow(num_rows);
+  if (gui!=-1)
+    gui_show(gui);
+  return gui;
 }
 
 QVector<QWidget*> MIXERSTRIPS_get_all_widgets(void){ 
