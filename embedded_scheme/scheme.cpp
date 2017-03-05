@@ -412,7 +412,7 @@ int64_t s7extra_callFunc_int_int(func_t *func, int64_t arg1){
                                    )
                            );
   if(!s7_is_integer(ret)){
-    handleError("Callback did not return a boolean");
+    handleError("Callback did not return an integer");
     return -1;
   }else{
     return s7_integer(ret);
@@ -436,7 +436,7 @@ int64_t s7extra_callFunc_int_int_int_int(func_t *func, int64_t arg1, int64_t arg
                                    )
                            );
   if(!s7_is_integer(ret)){
-    handleError("Callback did not return a boolean");
+    handleError("Callback did not return an integer");
     return -1;
   }else{
     return s7_integer(ret);
@@ -461,7 +461,7 @@ int64_t s7extra_callFunc_int_int_int_int_bool(func_t *func, int64_t arg1, int64_
                                    )
                            );
   if(!s7_is_integer(ret)){
-    handleError("Callback did not return a boolean");
+    handleError("Callback did not return an integer");
     return -1;
   }else{
     return s7_integer(ret);
