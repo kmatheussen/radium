@@ -599,6 +599,10 @@ static DWORD WINAPI hookThreadProc(LPVOID lParam)
     return 0;
 }
 
+void OS_WINDOWS_set_key_window(void *win){
+  SetForegroundWindow(win);
+}
+  
 bool OS_WINDOWS_is_key_window(void *maybewin){
   //printf("a: %p, b: %p. %d\n",maybewin, GetForegroundWindow(), maybewin == GetForegroundWindow());
   return maybewin == GetForegroundWindow();

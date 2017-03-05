@@ -8,14 +8,17 @@ namespace radium{
 
 struct MovingAverage{
   int _pos = 0;
-  const int _array_size;
+  const int _i_array_size;
+  const double _d_array_size;
+  
   double *_array;
   double _sum;
 
   MovingAverage(int array_size, double value = 0)
-    : _array_size(array_size)
+    : _i_array_size(array_size)
+    , _d_array_size(array_size)
   {
-    _array = new double[_array_size];
+    _array = new double[array_size];
     reset(value);
   }
 
@@ -24,14 +27,14 @@ struct MovingAverage{
   }
 
   void reset(double value){
-    _sum = value * _array_size;
-    for(int i=0;i<_array_size;i++)
+    _sum = value * _d_array_size;
+    for(int i=0;i<_i_array_size;i++)
       _array[i] = value;
   }
 
   double get(double new_value){
     int last_pos = _pos+1;
-    if(last_pos==_array_size)
+    if(last_pos==_i_array_size)
       last_pos = 0;
 
     _sum -= _array[last_pos];
@@ -41,7 +44,7 @@ struct MovingAverage{
 
     _pos = last_pos;
 
-    return _sum / (double)_array_size;
+    return _sum / _d_array_size;
   }
 
 };

@@ -50,6 +50,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
 
+#include "../common/OS_system_proc.h"
+
 #include "../Qt/Qt_MyQSlider.h"
 #include "../Qt/Qt_mix_colors.h"
 #include "../Qt/Qt_Fonts_proc.h"
@@ -2228,10 +2230,10 @@ void gui_setFullScreen(int64_t guinum, bool enable){
     return;
 
   if(enable){
-    
+
     if(gui->_full_screen_parent!=NULL)
       return;
-    
+
     gui->_orgRect = gui->_widget->geometry();
       
     gui->_full_screen_parent = new QWidget();
@@ -2245,6 +2247,10 @@ void gui_setFullScreen(int64_t guinum, bool enable){
     gui->_full_screen_parent->setLayout(mainLayout);
 
     mainLayout->addWidget(gui->_widget);
+
+#if defined(FOR_WINDOWS)
+    OS_WINDOWS_set_key_window((void*)gui->_full_screen_parent->winId()); // To avoid losing keyboard focus
+#endif
     
   }else{
 

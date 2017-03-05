@@ -1105,10 +1105,14 @@ private:
       _update_event_counter_timer.restart();
     }
   }
-  
 
+  
+#define USE_JUCE_CPU_PROTECTION_LOGIC 0 // The JUCE logic causes stuttering in the graphics for a few seconds after returning to the program.
+
+#if USE_JUCE_CPU_PROTECTION_LOGIC
   double lastSwapTime = 0;
   int underrunCounter = 0;
+#endif
   
   // OpenGL thread
   void swap(void){
@@ -1122,8 +1126,6 @@ private:
 
     // Swap to the newly rendered buffer
     if ( openglContext()->hasDoubleBuffer()) {
-
-#define USE_JUCE_CPU_PROTECTION_LOGIC 0 // The JUCE logic causes stuttering in the graphics for a few seconds after returning to the program.
 
 #if USE_JUCE_CPU_PROTECTION_LOGIC
       double now;
