@@ -111,6 +111,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     , _rotate(0)
     , _middle_zoom(1.0)
     , _mixer_direction_menu(this)
+    , _mytimer(this)
   {
     initing = true;
     setupUi(this);
@@ -218,6 +219,38 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
   }
     
 
+  struct MyTimer : public QTimer{
+    Mixer_widget *_parent;
+
+    MyTimer(Mixer_widget *parent)
+      : _parent(parent)
+    {
+      setSingleShot(true);
+      setInterval(300);
+    }
+
+    void timerEvent(QTimerEvent *e) override{
+      printf("TEIMERERINE EVENT\n");
+      _parent->adjustSize();
+      _parent->setUpdatesEnabled(true);
+      _parent->mixer_layout->update();
+      stop();
+    }
+  };
+
+  MyTimer _mytimer;
+
+  void pauseUpdatesALittleBit(void){
+    mixer_layout->update();
+    /*
+    if (!_mytimer.isActive()){
+      setUpdatesEnabled(false);    
+      _mytimer.start();
+      printf("                 Started timer\n");
+    }
+    */
+  }
+
 public slots:
 
   void on_ab_a_clicked(){ab_rightclicked(0);}
@@ -286,7 +319,8 @@ public slots:
     if (initing)
       return;
 
-    setUpdatesEnabled(false);
+    //pauseUpdatesALittleBit();
+    //setUpdatesEnabled(false);
 
     if (val){
       
@@ -302,12 +336,17 @@ public slots:
       _mixer_strips_gui = createMixerStripsWindow(_num_rows);
       if (_mixer_strips_gui != -1){
         show_modular_mixer_widgets(false);
-        mixer_layout->addWidget(API_gui_get_widget(_mixer_strips_gui));
+        QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+        //w->setFixedSize(width(), height()-50);
+        mixer_layout->addWidget(w);
+        mixer_layout->update();
+        verticalLayout->update();
+        updateGeometry();
       }
       
     }
     
-    setUpdatesEnabled(true); // It's a flaw in Qt that we need to call this function. And it doesn't even work very well.
+    //setUpdatesEnabled(true); // It's a flaw in Qt that we need to call this function. And it doesn't even work very well.
   }
 
   void on_rows1_toggled(bool val){
