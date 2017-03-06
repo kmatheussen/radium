@@ -1106,8 +1106,11 @@ private:
     }
   }
 
-  
+#if defined(RELEASE)
 #define USE_JUCE_CPU_PROTECTION_LOGIC 0 // The JUCE logic causes stuttering in the graphics for a few seconds after returning to the program.
+#else  
+#define USE_JUCE_CPU_PROTECTION_LOGIC 1 // Uses less CPU
+#endif
 
 #if USE_JUCE_CPU_PROTECTION_LOGIC
   double lastSwapTime = 0;
@@ -1168,7 +1171,7 @@ private:
 
               double how_long = 2 * (minSwapTimeMs - frameTime);
               //Thread::sleep (2 * (minSwapTimeMs - frameTime));
-#if !defined(RELEASE)
+#if 0 //!defined(RELEASE)
               printf("Sleeping to avoid CPU lock. How_long: %f, underrunCounter: %d, swapTime: %f, frameTime: %d, minSwapTimeMs: %d. now: %f\n",
                      how_long,
                      underrunCounter,

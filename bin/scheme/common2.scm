@@ -232,6 +232,8 @@
 
 
 (define (copy-struct-helper original struct-name keys arguments mapper)
+  (if (keyword? original)
+      (throw (<-> "Copy " struct-name " struct: First argument is not a struct, but a keyword")))
 
   ;; check that new data is valid
   (let loop ((arguments arguments))
@@ -242,16 +244,7 @@
               (throw (<-displayable-> "key '" key (<-> "' not found in struct '" struct-name "'") ". keys: " (map symbol->keyword keys))))
           (loop (cddr arguments)))))
 
-  (define old-table original)
-  (define new-table (make-hash-table 32 mapper))
-
-  ;; copy old
-  (for-each (lambda (key)
-              (let ((key (symbol->keyword key)))
-                (hash-table-set! new-table
-                                 key
-                                 (old-table key))))
-            keys)
+  (define new-table (copy original))
 
   ;; add new data
   (let loop ((arguments arguments))

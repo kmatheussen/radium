@@ -116,6 +116,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdint.h>
 #include <stdbool.h>
 
+#if USE_QT4
+#include <QList>
+#include <QMap>
+#endif
+
+
 #include "debug_proc.h"
 #include "atomic.h"
 #include "OS_Player_proc.h"
@@ -1260,10 +1266,8 @@ typedef struct{
 } FXText;
 
 
-#if USE_QT4
-#include <QList>
-#include <QMap>
 
+#if USE_QT4
 typedef QList<TrackRealline2> Trs;
 typedef QMap<int, Trs> Trss;
 

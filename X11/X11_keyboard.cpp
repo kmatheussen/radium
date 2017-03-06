@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/includepython.h"
 
+#include "../common/nsmtracker.h"
+
 #include <QX11Info>
 
 #include "X11.h"
@@ -33,7 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <xcb/xcb_keysyms.h>
 #endif
 
-#include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
 #include "../common/eventreciever_proc.h"
 #include "../common/player_proc.h"
