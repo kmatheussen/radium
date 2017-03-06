@@ -1847,7 +1847,7 @@ void CONNECTION_create_from_state2(QGraphicsScene *scene, hash_t *state, int64_t
     return;
   }
 
-  if(HASH_has_key(state, "is_event_connection") && HASH_get_bool(state, "is_event_connection")) // .rad files before 1.9.31 did not have even connections.
+  if(HASH_has_key(state, "is_event_connection") && HASH_get_bool(state, "is_event_connection")) // .rad files before 1.9.31 did not have event connections.
     CHIP_econnect_chips(scene, from_chip, to_chip);
   else {
     CHIP_connect_chips(scene, from_chip, to_chip);

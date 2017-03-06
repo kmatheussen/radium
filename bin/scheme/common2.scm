@@ -754,11 +754,7 @@ for .emacs:
               #f)
 
 (define (vector-copy vector)
-  (define out (make-vector (length vector)))
-  (for-each (lambda (n)
-              (vector-set! out n (vector n)))
-            (iota (length vector)))
-  out)
+  (copy vector))
 
 (define (cl-car a)
   (if (pair? a)
@@ -772,6 +768,9 @@ for .emacs:
 
 (define (cl-cadr a)
   (cl-car (cl-cdr a)))
+
+(define (cl-caddr a)
+  (cl-car (cl-cdr (cl-cdr a))))
 
 (define (butlast elements)
   (let ((rest (cdr elements)))

@@ -2715,6 +2715,13 @@ static void apply_ab_connections_state(hash_t *connections){
                                      -1, -1);
         connection = get_connection(id_from, id_to, is_event_connection);
         R_ASSERT_RETURN_IF_FALSE(connection!=NULL);
+      } else {
+
+        if (HASH_has_key(connection_state, "gain")){
+          float gain = HASH_get_float(connection_state, "gain");
+          setAudioConnectionGain(id_from, id_to, gain, true);
+        }
+
       }
     
       connection->is_ab_touched = true;
