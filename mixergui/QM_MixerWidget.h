@@ -178,6 +178,7 @@ extern LANGSPEC DEFINE_ATOMIC(bool, g_show_cpu_usage_in_mixer);
 extern LANGSPEC void inc_plugin_usage_number(SoundPluginType *type);
 
 extern LANGSPEC void MW_set_rotate(float rotate);
+extern LANGSPEC void MW_update_mixer_widget(void);
 
 extern LANGSPEC char *MW_request_load_preset_instrument_description(void);
 extern LANGSPEC const char *MW_popup_plugin_selector2(bool must_have_inputs, bool must_have_outputs);

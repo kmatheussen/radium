@@ -177,6 +177,9 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
         buttons[i]->setText(selnames[i]);
       else
         buttons[i]->setText(names[i]);
+
+      if (curr==i)
+        buttons[i]->setChecked(true);
     }
   }
 
@@ -466,6 +469,10 @@ void MW_set_rotate(float rotate){
   g_mixer_widget2->set_rotate(rotate);
 }
 
+void MW_update_mixer_widget(void){
+  g_mixer_widget2->update_ab_buttons();
+  g_mixer_widget2->update();
+}
 
 #if 0
 extern "C"{ void GFX_showHideMixerWidget(void);}

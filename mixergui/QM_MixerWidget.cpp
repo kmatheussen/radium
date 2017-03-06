@@ -2158,10 +2158,14 @@ static bool delete_a_chip(bool is_loading){
   return ret;
 }
 
-void MW_cleanup(bool is_loading){
-  
+void MW_cleanup(bool is_loading){  
+  MW_reset_ab(-1);
+
   MW_cleanup_connections(is_loading); // Calling this function is not necessary since all connecting connections are deleted when deleting a chip (which happens in the next line), but it's a lot faster to delete all connections in one go than deleting them one by one since we only have to wait for the audio thread one time.
+
   while(delete_a_chip(is_loading)); // remove all chips. All connections are removed as well when removing all chips.
+
+  MW_update_mixer_widget();
 }
 
 static void get_patches_min_x_y(const vector_t *patches, float &min_x, float &min_y){
@@ -2773,10 +2777,11 @@ void MW_change_ab(int ab_num){
 }
 
 void MW_reset_ab(int num){
-  if (num==-1)
+  if (num==-1) {
     for(int i=0;i<MW_NUM_AB;i++)
       g_ab_is_valid[i]=false;
-  else
+    g_curr_ab = 0;
+  } else
     g_ab_is_valid[num]=false;
 }
 
