@@ -226,14 +226,20 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
       : _parent(parent)
     {
       setSingleShot(true);
-      setInterval(300);
+      setInterval(50);
     }
 
     void timerEvent(QTimerEvent *e) override{
       printf("TEIMERERINE EVENT\n");
-      _parent->adjustSize();
+      // _parent->adjustSize();
       _parent->setUpdatesEnabled(true);
-      _parent->mixer_layout->update();
+      //mixer_layout->setUpdatesEnabled(true);
+      // _parent->mixer_layout->update();
+      if(_parent->_mixer_strips_gui!=-1){
+        QWidget *w = API_gui_get_widget(_parent->_mixer_strips_gui);
+        w->setUpdatesEnabled(true);
+      }
+
       stop();
     }
   };
@@ -241,16 +247,23 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
   MyTimer _mytimer;
 
   void pauseUpdatesALittleBit(void){
-    mixer_layout->update();
-    /*
+    //mixer_layout->update();
     if (!_mytimer.isActive()){
-      setUpdatesEnabled(false);    
+      setUpdatesEnabled(false);
+      //mixer_layout->setUpdatesEnabled(false);
+      if(_mixer_strips_gui!=-1){
+        QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+        w->setUpdatesEnabled(false);
+      }
       _mytimer.start();
       printf("                 Started timer\n");
     }
-    */
   }
 
+  void resizeEvent( QResizeEvent *qresizeevent) override{
+    pauseUpdatesALittleBit();
+  }
+  
 public slots:
 
   void on_ab_a_clicked(){ab_rightclicked(0);}
@@ -319,7 +332,7 @@ public slots:
     if (initing)
       return;
 
-    //pauseUpdatesALittleBit();
+    pauseUpdatesALittleBit();
     //setUpdatesEnabled(false);
 
     if (val){
