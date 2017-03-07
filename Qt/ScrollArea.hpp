@@ -180,30 +180,41 @@ class ScrollArea : public QWidget {
       QScrollBar::sliderChange(change);
     }
   };
-  
+
+#if 0  
   struct MyTimer : public QTimer{
     ScrollArea *_scroll_area;
+    QTime time;
 
     MyTimer(ScrollArea *scroll_area)
       : _scroll_area(scroll_area)
       {
-        setSingleShot(true);
         setInterval(15);
       }
 
     void timerEvent(QTimerEvent *e) override{
-      _scroll_area->setUpdatesEnabled(true);
+      if (time.elapsed() > 150){ // singleshot is messy since we might get deleted at any time.
+        _scroll_area->setUpdatesEnabled(true);
+        printf("TimerEvent ____ gakkgakk\n");
+        stop();
+      }
+    }
+
+    void startit(void){
+      time.restart();
+      if (!isActive()){
+        start();
+      }
     }
   };
 
   MyTimer _mytimer;
+#endif
 
 
   void pauseUpdatesALittleBit(void){
-    if (!_mytimer.isActive()){
-      setUpdatesEnabled(false);    
-      _mytimer.start();
-    }
+    //setUpdatesEnabled(false);    
+    //_mytimer.startit();
   }
 
 public:
@@ -215,7 +226,7 @@ public:
 
   ScrollArea(QWidget *parent = NULL)
     : QWidget(parent)
-    , _mytimer(this)
+      //, _mytimer(this)
   {
     _inner_scroll_area = new InnerScrollArea(this);
     _vertical_scroll_bar = new MyQScrollBar(Qt::Vertical, this);

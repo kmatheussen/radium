@@ -16,6 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include <qmath.h>
+#include <assert.h>
 
 #include "../api/api_proc.h"
 
@@ -190,9 +191,9 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     }
   }
 
+  
   void show_modular_mixer_widgets(bool is_modular){
     zoomreset_button->setVisible(is_modular);
-    view->setVisible(is_modular);
     zoom_slider->setVisible(is_modular);
     mixer_direction_menu_button->setVisible(is_modular);
     show_cpu_usage->setVisible(is_modular);
@@ -224,26 +225,30 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
 
   struct MyTimer : public QTimer{
     Mixer_widget *_parent;
+    QTime time;
 
     MyTimer(Mixer_widget *parent)
       : _parent(parent)
     {
-      setSingleShot(true);
+      //setSingleShot(true);
       setInterval(50);
     }
 
     void timerEvent(QTimerEvent *e) override{
-      printf("TEIMERERINE EVENT\n");
-      // _parent->adjustSize();
-      _parent->setUpdatesEnabled(true);
-      //mixer_layout->setUpdatesEnabled(true);
-      // _parent->mixer_layout->update();
-      if(_parent->_mixer_strips_gui!=-1){
-        QWidget *w = API_gui_get_widget(_parent->_mixer_strips_gui);
-        w->setUpdatesEnabled(true);
+      if (time.elapsed() > 40){ // singleshot is messy since we might get deleted at any time.
+        printf("TEIMERERINE EVENT\n");
+        // _parent->adjustSize();
+        _parent->setUpdatesEnabled(true);
+        //mixer_layout->setUpdatesEnabled(true);
+        // _parent->mixer_layout->update();
+        /*
+        if(_parent->_mixer_strips_gui!=-1){
+          QWidget *w = API_gui_get_widget(_parent->_mixer_strips_gui);
+          w->setUpdatesEnabled(true);
+        }
+        */
+        stop();
       }
-
-      stop();
     }
   };
 
@@ -254,17 +259,20 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     if (!_mytimer.isActive()){
       setUpdatesEnabled(false);
       //mixer_layout->setUpdatesEnabled(false);
+      /*
       if(_mixer_strips_gui!=-1){
         QWidget *w = API_gui_get_widget(_mixer_strips_gui);
         w->setUpdatesEnabled(false);
       }
+      */
+      _mytimer.time.restart();
       _mytimer.start();
       printf("                 Started timer\n");
     }
   }
 
   void resizeEvent( QResizeEvent *qresizeevent) override{
-    pauseUpdatesALittleBit();
+    //pauseUpdatesALittleBit();
   }
   
 public slots:
@@ -331,17 +339,19 @@ public slots:
     update_ab_buttons();
   }
 
-  void on_show_modular_toggled(bool val){
+  void on_show_modular_toggled(bool show_modular){
     if (initing)
       return;
 
-    pauseUpdatesALittleBit();
-    //setUpdatesEnabled(false);
+    //pauseUpdatesALittleBit();
+    setUpdatesEnabled(false);
 
-    if (val){
-      
+    if (show_modular){
+
+      view->setVisible(true);
+
       if(_mixer_strips_gui != -1){
-        mixer_layout->removeWidget(API_gui_get_widget(_mixer_strips_gui));
+        mixer_layout->removeWidget(API_gui_get_widget(_mixer_strips_gui)); // I've tried very hard to use replaceWidget instead of showing/hiding the 'view' widget, but Qt refuses to behave as I want.
         gui_close(_mixer_strips_gui);
         _mixer_strips_gui = -1;
       }
@@ -355,6 +365,7 @@ public slots:
         QWidget *w = API_gui_get_widget(_mixer_strips_gui);
         //w->setFixedSize(width(), height()-50);
         mixer_layout->addWidget(w);
+        view->setVisible(false);
         mixer_layout->update();
         verticalLayout->update();
         updateGeometry();
@@ -362,7 +373,7 @@ public slots:
       
     }
     
-    //setUpdatesEnabled(true); // It's a flaw in Qt that we need to call this function. And it doesn't even work very well.
+    setUpdatesEnabled(true); // It's a flaw in Qt that we need to call this function. And it doesn't even work very well.
   }
 
   void on_rows1_toggled(bool val){

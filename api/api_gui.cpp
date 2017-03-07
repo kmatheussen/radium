@@ -249,7 +249,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       _gui_num = g_guis.size();
       g_guis.push_back(this);
       _widget->setAttribute(Qt::WA_DeleteOnClose);
-      //_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+      //_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);      
     }
 
     virtual ~Gui(){
@@ -2281,7 +2281,7 @@ void gui_setBackgroundColor(int64_t guinum, const_char* color){
   QPalette pal = gui->_widget->palette();
   pal.setColor(QPalette::Background, QColor(color));
   pal.setColor(QPalette::Base, QColor(color));
-  gui->_widget->setAutoFillBackground(true);
+  //gui->_widget->setAutoFillBackground(true);
   gui->_widget->setPalette(pal);
 }
 
