@@ -1629,7 +1629,7 @@
   (define instruments-buses-separator-width (* (get-fontheight) 2))
 
   ;;(define mixer-strips (<gui> :widget 800 800))
-  ;;(define mixer-strips (<gui> :horizontal-scroll)) ;;widget 800 800))
+  ;;(define mixer-strips-gui (<gui> :horizontal-scroll)) ;;widget 800 800))
   (define mixer-strips-gui (<gui> :scroll-area #t #t))
   (<gui> :set-layout-spacing mixer-strips-gui 0 0 0 0 0)
 
@@ -1721,10 +1721,11 @@
   (define height (if pos (cadddr pos) 800))
 
   (<gui> :set-size parent width height)
-  (<gui> :set-pos
-         parent
-         (if pos (car pos) 600)
-         (if pos (cadr pos) 50))
+  (if pos
+      (<gui> :set-pos
+             parent
+             (if pos (car pos) 600)
+             (if pos (cadr pos) 50)))
   ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
 
   (if (not is-full-screen)

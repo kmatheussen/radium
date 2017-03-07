@@ -238,7 +238,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
       if (time.elapsed() > 40){ // singleshot is messy since we might get deleted at any time.
         printf("TEIMERERINE EVENT\n");
         // _parent->adjustSize();
-        _parent->setUpdatesEnabled(true);
+        //_parent->setUpdatesEnabled(true);
         //mixer_layout->setUpdatesEnabled(true);
         // _parent->mixer_layout->update();
         /*
@@ -247,6 +247,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
           w->setUpdatesEnabled(true);
         }
         */
+        _parent->verticalLayout->update();
         stop();
       }
     }
@@ -257,7 +258,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
   void pauseUpdatesALittleBit(void){
     //mixer_layout->update();
     if (!_mytimer.isActive()){
-      setUpdatesEnabled(false);
+      //setUpdatesEnabled(false);
       //mixer_layout->setUpdatesEnabled(false);
       /*
       if(_mixer_strips_gui!=-1){
@@ -273,6 +274,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
 
   void resizeEvent( QResizeEvent *qresizeevent) override{
     //pauseUpdatesALittleBit();
+    //Mixer_widget->update();
   }
   
 public slots:
@@ -363,12 +365,15 @@ public slots:
       if (_mixer_strips_gui != -1){
         show_modular_mixer_widgets(false);
         QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+        //w->setParent(bottom_widget);
         //w->setFixedSize(width(), height()-50);
         mixer_layout->addWidget(w);
         view->setVisible(false);
+        /*
         mixer_layout->update();
         verticalLayout->update();
         updateGeometry();
+        */
       }
       
     }
