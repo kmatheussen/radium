@@ -350,30 +350,40 @@ public slots:
 
     if (show_modular){
 
-      view->setVisible(true);
+      view->show();
 
       if(_mixer_strips_gui != -1){
-        mixer_layout->removeWidget(API_gui_get_widget(_mixer_strips_gui)); // I've tried very hard to use replaceWidget instead of showing/hiding the 'view' widget, but Qt refuses to behave as I want.
-        gui_close(_mixer_strips_gui);
-        _mixer_strips_gui = -1;
+        QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+        //mixer_layout->removeWidget(w); // I've tried very hard to use replaceWidget instead of showing/hiding the 'view' widget, but Qt refuses to behave as I want.
+        w->hide();
+        //gui_close(_mixer_strips_gui);
+        //_mixer_strips_gui = -1;
+        
       }
       show_modular_mixer_widgets(true);
       
     } else {
-      
-      _mixer_strips_gui = createMixerStripsWindow(_num_rows);
-      if (_mixer_strips_gui != -1){
+
+      if (_mixer_strips_gui == -1){
+        _mixer_strips_gui = createMixerStripsWindow(_num_rows);
+        if (_mixer_strips_gui != -1){
+          show_modular_mixer_widgets(false);
+          QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+          //w->setParent(bottom_widget);
+          //w->setFixedSize(width(), height()-50);
+          mixer_layout->addWidget(w);
+          view->setVisible(false);
+          /*
+            mixer_layout->update();
+            verticalLayout->update();
+            updateGeometry();
+          */
+        }
+      } else {
         show_modular_mixer_widgets(false);
+        view->hide();
         QWidget *w = API_gui_get_widget(_mixer_strips_gui);
-        //w->setParent(bottom_widget);
-        //w->setFixedSize(width(), height()-50);
-        mixer_layout->addWidget(w);
-        view->setVisible(false);
-        /*
-        mixer_layout->update();
-        verticalLayout->update();
-        updateGeometry();
-        */
+        w->show();
       }
       
     }
