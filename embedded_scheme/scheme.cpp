@@ -201,7 +201,10 @@ static dynvec_t s7extra_array(s7_scheme *s7, s7_pointer vector){
 dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s){
   if (s7_is_integer(s))
     return DYN_create_int(s7_integer(s));
-  
+
+  if (s7_is_ratio(s))
+    return DYN_create_ratio(make_ratio(s7_numerator(s), s7_denominator(s)));
+
   if (s7_is_number(s))
     return DYN_create_float(s7_number_to_real(s7, s));
 
@@ -262,6 +265,8 @@ s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn){
       return hash_to_s7(radiums7_sc, dyn.hash);
     case ARRAY_TYPE:
       return dynvec_to_s7(radiums7_sc, *dyn.array);
+    case RATIO_TYPE:
+      return s7_make_ratio(radiums7_sc, dyn.ratio->numerator, dyn.ratio->denominator);
     case BOOL_TYPE:
       return s7_make_boolean(radiums7_sc, dyn.bool_number);
   }

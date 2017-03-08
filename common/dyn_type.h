@@ -3,6 +3,8 @@
 
 #include <wchar.h>
 
+#include "ratio_type.h"
+
 struct _hash_t;
 typedef struct _hash_t hash_t;
 
@@ -16,6 +18,7 @@ enum DynType{
   FLOAT_TYPE,
   HASH_TYPE,
   ARRAY_TYPE,
+  RATIO_TYPE,
   BOOL_TYPE // must be placed last
 };
 
@@ -29,6 +32,7 @@ typedef struct{
     double float_number;
     hash_t *hash;
     dynvec_t *array;
+    Ratio *ratio;
     bool bool_number;
   };
 } dyn_t;

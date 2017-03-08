@@ -310,6 +310,10 @@ static void put_float(hash_t *hash, const char *key, int i, double val){
   put_dyn(hash, key, i, DYN_create_float(val));
 }
 
+static void put_ratio(hash_t *hash, const char *key, int i, Ratio val){
+  put_dyn(hash, key, i, DYN_create_ratio(val));
+}
+
 static void put_hash(hash_t *hash, const char *key, int i, hash_t *val){
   if (val==NULL){
     RError("put_hash: val==NULL. key: %d, i: %d\n", key, i);
@@ -341,6 +345,10 @@ void HASH_put_int(hash_t *hash, const char *key, int64_t val){
 
 void HASH_put_float(hash_t *hash, const char *key, double val){
   put_float(hash, key, 0, val);
+}
+
+void HASH_put_ratio(hash_t *hash, const char *key, Ratio val){
+  put_ratio(hash, key, 0, val);
 }
 
 void HASH_put_hash(hash_t *hash, const char *key, hash_t *val){
@@ -380,6 +388,12 @@ void HASH_put_int_at(hash_t *hash, const char *key, int i, int64_t val){
 }
 void HASH_put_float_at(hash_t *hash, const char *key, int i, double val){
   put_float(hash, key, i, val);
+  int new_size = i+1;
+  if(new_size>hash->num_array_elements)
+    hash->num_array_elements = new_size;
+}
+void HASH_put_ratio_at(hash_t *hash, const char *key, int i, Ratio val){
+  put_ratio(hash, key, i, val);
   int new_size = i+1;
   if(new_size>hash->num_array_elements)
     hash->num_array_elements = new_size;
@@ -615,6 +629,9 @@ void HASH_save(hash_t *hash, disk_t *file){
           break;
         case ARRAY_TYPE:
           RError("Array type not supported when saving hash to disk");
+          break;
+        case RATIO_TYPE:
+          RError("Ratio type not supported when saving hash to disk");
           break;
         case BOOL_TYPE:
           RError("Bool type not supported when saving hash to disk");

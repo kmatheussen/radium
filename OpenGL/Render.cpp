@@ -777,7 +777,7 @@ static void create_signature(const struct Tracker_Windows *window, const struct 
     const Ratio &signature = wsignature.signature;
     
     char temp[50];
-    sprintf(temp, "%d/%d", signature.numerator, signature.denominator);
+    sprintf(temp, "%d/%d", (int)signature.numerator, (int)signature.denominator);
     
     GE_text(GE_textcolor_z(TEXT_COLOR_NUM, Z_ZERO, y),
             temp,

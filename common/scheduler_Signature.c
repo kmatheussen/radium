@@ -14,7 +14,7 @@ Ratio RT_Signature_get_current_Signature(const struct SeqTrack *seqtrack){
     return seqtrack->signature_iterator.signature_value;
   else {
     if (root==NULL) // When does this happen?
-      return ratio(4,4);
+      return make_ratio(4,4);
     else
       return root->signature;
   }

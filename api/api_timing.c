@@ -53,7 +53,7 @@ void setMainSignature(int numerator, int denominator){
   ADD_UNDO(MainTempo(window,wblock));
 
   PC_Pause();{
-    root->signature = ratio(numerator, denominator);
+    root->signature = make_ratio(numerator, denominator);
     UpdateAllBeats();
   }PC_StopPause(window);
   
@@ -90,7 +90,7 @@ int addSignature(int numerator, int denominator,
 
   ADD_UNDO(Signatures_CurrPos(window));
         
-  struct Signatures *signature = SetSignature(wblock->block,&place,ratio(numerator, denominator));
+  struct Signatures *signature = SetSignature(wblock->block,&place,make_ratio(numerator, denominator));
 
   window->must_redraw=true;
 
@@ -274,6 +274,31 @@ Place getBPMPlace(int num, int blocknum, int windownum){
     return bpm->l.p;
 }
 
+dyn_t getAllBPM(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return DYN_create_bool(false);
+
+  struct Blocks *block = wblock->block;
+
+  dynvec_t ret = {0};
+  struct Tempos *tempo = block->tempos;
+
+  while(tempo != NULL){
+    hash_t *bpm = HASH_create(3);
+
+    HASH_put_dyn(bpm, "place", DYN_create_place(tempo->l.p));
+    HASH_put_int(bpm, "bpm", tempo->tempo);
+    //HASH_put_int(bpm, "logtype", tempo->logtype);
+
+    DYNVEC_push_back(&ret, DYN_create_hash(bpm));
+
+    tempo = NextTempo(tempo);
+  }
+
+  return DYN_create_array(ret);
+}
 
 /************* Block tempo automation ************************/
 

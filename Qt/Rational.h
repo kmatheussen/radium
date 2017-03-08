@@ -24,7 +24,7 @@ struct Rational {
   {}
 
   Ratio get_ratio(void){
-    return ratio(numerator, denominator);
+    return make_ratio(numerator, denominator);
   }
 
   bool is_valid(void){
