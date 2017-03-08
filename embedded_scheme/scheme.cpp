@@ -137,7 +137,7 @@ s7_pointer s7extra_make_place(s7_scheme *radiums7_sc, const Place place){
 }
 
 bool s7extra_is_dyn(s7_pointer dyn){
-  return s7_is_number(dyn) || s7_is_string(dyn) || s7_is_boolean(dyn) || s7_is_hash_table(dyn);
+  return s7_is_number(dyn) || s7_is_string(dyn) || s7_is_boolean(dyn) || s7_is_hash_table(dyn) || s7_is_vector(dyn) || s7_is_pair(dyn);
 }
 
 static hash_t *s7extra_hash(s7_scheme *s7, s7_pointer s_hash){
