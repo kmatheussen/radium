@@ -288,8 +288,8 @@ dyn_t getAllBPM(int blocknum, int windownum){
   while(tempo != NULL){
     hash_t *bpm = HASH_create(3);
 
-    HASH_put_dyn(bpm, "place", DYN_create_place(tempo->l.p));
-    HASH_put_int(bpm, "bpm", tempo->tempo);
+    HASH_put_dyn(bpm, ":place", DYN_create_place(tempo->l.p));
+    HASH_put_int(bpm, ":bpm", tempo->tempo);
     //HASH_put_int(bpm, "logtype", tempo->logtype);
 
     DYNVEC_push_back(&ret, DYN_create_hash(bpm));
