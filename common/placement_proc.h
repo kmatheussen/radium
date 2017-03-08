@@ -96,6 +96,11 @@ static inline Place place_from_64b(int64_t num, int64_t den){
   return place_from_64(lines, num - (lines*den), den);
 }
 
+static inline Place DYN_get_place(const dyn_t dyn){
+  Ratio ratio = DYN_get_ratio(dyn);
+  return place_from_64b(ratio.numerator, ratio.denominator);
+}
+
 static inline Place *PlaceCreate(int line, int counter, int dividor) {  
   Place *place=(Place*)talloc(sizeof(Place));  
   place->line = line;

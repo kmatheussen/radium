@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_pause_proc.h"
 #include "../common/time_proc.h"
 #include "../common/nodelines_proc.h"
+#include "../common/reltempo_proc.h"
 
 #include "api_common_proc.h"
 #include "api_support_proc.h"
@@ -192,6 +193,34 @@ int getLPB(int num, int blocknum, int windownum){
 }
 
 
+dyn_t getAllLPB(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return DYN_create_bool(false);
+
+  struct Blocks *block = wblock->block;
+
+  dynvec_t ret = {0};
+  struct LPBs *lpb = block->lpbs;
+
+  while(lpb != NULL){
+    hash_t *bpm = HASH_create(3);
+
+    HASH_put_dyn(bpm, ":place", DYN_create_place(lpb->l.p));
+    HASH_put_int(bpm, ":lpb", lpb->lpb);
+    HASH_put_int(bpm, ":logtype", LOGTYPE_HOLD);
+    //HASH_put_int(bpm, ":logtype", tempo->logtype);
+
+    DYNVEC_push_back(&ret, DYN_create_hash(bpm));
+
+    lpb = NextLPB(lpb);
+  }
+
+  return DYN_create_array(ret);
+}
+
+
 /***************** BPMs *************************/
 
 void setMainBPM(int bpm_value){
@@ -290,6 +319,7 @@ dyn_t getAllBPM(int blocknum, int windownum){
 
     HASH_put_dyn(bpm, ":place", DYN_create_place(tempo->l.p));
     HASH_put_int(bpm, ":bpm", tempo->tempo);
+    HASH_put_int(bpm, ":logtype", LOGTYPE_HOLD);
     //HASH_put_int(bpm, "logtype", tempo->logtype);
 
     DYNVEC_push_back(&ret, DYN_create_hash(bpm));
@@ -469,3 +499,50 @@ int addTemponode(float value, Place place, int blocknum, int windownum){
 }
 
 
+dyn_t getAllTemponodes(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return DYN_create_bool(false);
+
+  struct Blocks *block = wblock->block;
+
+  dynvec_t ret = {0};
+  struct TempoNodes *temponode = block->temponodes;
+
+  while(temponode != NULL){
+    hash_t *hash = HASH_create(3);
+
+    HASH_put_dyn(hash, ":place", DYN_create_place(temponode->l.p));
+    HASH_put_float(hash, ":tempo-multiplier", RelTempo2RealRelTempo(temponode->reltempo));
+    HASH_put_int(hash, ":logtype", LOGTYPE_LINEAR);
+    //HASH_put_int(bpm, "logtype", tempo->logtype);
+
+    DYNVEC_push_back(&ret, DYN_create_hash(hash));
+
+    temponode = NextTempoNode(temponode);
+  }
+
+  return DYN_create_array(ret);
+}
+
+dyn_t testsomething(dyn_t arg){
+  hash_t *hash = HASH_create(5);
+  HASH_put_int(hash,":a", 1);
+  HASH_put_int(hash,":b", 2);
+
+  hash_t *hash2 = HASH_create(2);
+  HASH_put_int(hash2, ":d", 3);
+
+  HASH_put_hash(hash, ":c", hash2);
+
+  dynvec_t dynvec = {0};
+  DYNVEC_push_back(&dynvec, DYN_create_int(8));
+  DYNVEC_push_back(&dynvec, DYN_create_int(9));
+
+  HASH_put_array(hash, ":e", dynvec);
+
+  HASH_put_dyn(hash, ":dyn", arg);
+
+  return DYN_create_hash(hash);
+}
