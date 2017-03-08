@@ -303,7 +303,7 @@ OBJ_WIN ?= X11_disk.o X11_Qtstuff.o W_Keyboard.o
 OBJ_MACOSX ?= X11_disk.o X11_Qtstuff.o cocoa_Keyboard.o do.o
 
 #Python
-OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_velocities.o api_pitches.o api_support.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_requesters.o api_mouse.o api_seqtracks.o api_gui.o
+OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_velocities.o api_pitches.o api_timing.o api_support.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_requesters.o api_mouse.o api_seqtracks.o api_gui.o
 
 #Midi
 OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o midi_i_input.o midi_menues.o
@@ -1417,6 +1417,9 @@ api_velocities.o:  $(BUILD_DEPENDENCIES)  $(API)api_velocities.c $(API)radium_pr
 
 api_pitches.o:  $(BUILD_DEPENDENCIES)  $(API)api_pitches.c $(API)radium_proc.h
 	$(CC)  $(API)api_pitches.c $(OPT)
+
+api_timing.o:  $(BUILD_DEPENDENCIES)  $(API)api_timing.c $(API)radium_proc.h
+	$(CC)  $(API)api_timing.c $(OPT)
 
 api_trackonoff.o:  $(BUILD_DEPENDENCIES)  $(API)api_trackonoff.c $(API)radium_proc.h
 	$(CC)  $(API)api_trackonoff.c $(OPT)

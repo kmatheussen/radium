@@ -193,9 +193,9 @@ class ScrollArea : public QWidget {
       }
 
     void timerEvent(QTimerEvent *e) override {
-      if (time.elapsed() > 15){ // Singleshot is more messy since we might get deleted at any time.
+      if (time.elapsed() > 15){ // Singleshot is more messy since 1. we don't 'moc' this file, and 2. we might get deleted at any time so using lambda/etc. leads to memory corruption unless we are careful.
         _scroll_area->setUpdatesEnabled(true);
-        printf("TimerEvent ____ gakkgakk\n");
+        //printf("TimerEvent ____ gakkgakk %p\n",_scroll_area);
         
         _scroll_area->updateScrollbars();
         _scroll_area->getWidget()->adjustSize();
