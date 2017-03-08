@@ -194,7 +194,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
   
   void show_modular_mixer_widgets(bool is_modular){
     zoomreset_button->setVisible(is_modular);
-    zoom_slider->setVisible(is_modular);
+    //zoom_slider->setVisible(is_modular);
     mixer_direction_menu_button->setVisible(is_modular);
     show_cpu_usage->setVisible(is_modular);
     connections_visibility->setVisible(is_modular);
@@ -215,7 +215,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
       int64_t old_gui = _mixer_strips_gui;
       if (old_gui != -1){
         _mixer_strips_gui = createMixerStripsWindow(num_rows);
-        auto *old_item = mixer_layout->replaceWidget(API_gui_get_widget(old_gui), API_gui_get_widget(_mixer_strips_gui));
+        auto *old_item = verticalLayout->replaceWidget(API_gui_get_widget(old_gui), API_gui_get_widget(_mixer_strips_gui));
         delete old_item;
         gui_close(old_gui);
       }
@@ -350,7 +350,7 @@ public slots:
 
     if (show_modular){
 
-      view->show();
+      modular_widget->show();
 
       if(_mixer_strips_gui != -1){
         QWidget *w = API_gui_get_widget(_mixer_strips_gui);
@@ -371,8 +371,8 @@ public slots:
           QWidget *w = API_gui_get_widget(_mixer_strips_gui);
           //w->setParent(bottom_widget);
           //w->setFixedSize(width(), height()-50);
-          mixer_layout->addWidget(w);
-          view->setVisible(false);
+          verticalLayout->addWidget(w);
+          modular_widget->hide();
           /*
             mixer_layout->update();
             verticalLayout->update();
@@ -380,10 +380,12 @@ public slots:
           */
         }
       } else {
-        show_modular_mixer_widgets(false);
-        view->hide();
         QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+        w->setUpdatesEnabled(false);
+        show_modular_mixer_widgets(false);        
+        modular_widget->hide();
         w->show();
+        w->setUpdatesEnabled(true);
       }
       
     }

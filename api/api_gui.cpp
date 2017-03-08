@@ -383,8 +383,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     void resizeEvent(QResizeEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_resize_callback!=NULL);
 
-      event->accept();
-
       if(gui_isOpen(_gui_num) && _widget->isVisible()) //  && _widget->width()>0 && _widget->height()>0)
         s7extra_callFunc_void_int_int(_resize_callback, event->size().width(), event->size().height());
     }

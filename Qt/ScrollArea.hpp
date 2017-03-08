@@ -181,7 +181,7 @@ class ScrollArea : public QWidget {
     }
   };
 
-#if 0  
+#if 1  
   struct MyTimer : public QTimer{
     ScrollArea *_scroll_area;
     QTime time;
@@ -192,10 +192,16 @@ class ScrollArea : public QWidget {
         setInterval(15);
       }
 
-    void timerEvent(QTimerEvent *e) override{
-      if (time.elapsed() > 150){ // singleshot is messy since we might get deleted at any time.
+    void timerEvent(QTimerEvent *e) override {
+      if (time.elapsed() > 15){ // Singleshot is more messy since we might get deleted at any time.
         _scroll_area->setUpdatesEnabled(true);
         printf("TimerEvent ____ gakkgakk\n");
+        
+        _scroll_area->updateScrollbars();
+        _scroll_area->getWidget()->adjustSize();
+        if (_scroll_area->getWidget()->layout() != NULL)
+          _scroll_area->getWidget()->layout()->update(); // If not, content don't always update.
+
         stop();
       }
     }
@@ -213,8 +219,8 @@ class ScrollArea : public QWidget {
 
 
   void pauseUpdatesALittleBit(void){
-    //setUpdatesEnabled(false);    
-    //_mytimer.startit();
+    setUpdatesEnabled(false);    
+    _mytimer.startit();
   }
 
 public:
@@ -226,7 +232,7 @@ public:
 
   ScrollArea(QWidget *parent = NULL)
     : QWidget(parent)
-      //, _mytimer(this)
+    , _mytimer(this)
   {
     _inner_scroll_area = new InnerScrollArea(this);
     _vertical_scroll_bar = new MyQScrollBar(Qt::Vertical, this);
