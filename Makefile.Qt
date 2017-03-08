@@ -259,7 +259,7 @@ VL_LDFLAGS=$(VL_LIBS)
 
 #-------------------OBJECT DEFINITIONS-------------------------------
 
-OBJ1= windows.o window_config.o list.o vector.o hashmap.o song.o blocks.o block_insert.o block_split.o block_delete.o block_properties.o tracks.o localzooms.o control.o lines.o font.o track_insert.o track_onoff.o settings.o mmd2load.o
+OBJ1= windows.o window_config.o list.o vector.o hashmap.o Dynvec.o song.o blocks.o block_insert.o block_split.o block_delete.o block_properties.o tracks.o localzooms.o control.o lines.o font.o track_insert.o track_onoff.o settings.o mmd2load.o
 
 OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o common.o gfx_wtext.o gfx_text.o gfx_lines.o gfx_point.o gfx_op_queue.o
 
@@ -548,6 +548,9 @@ vector.o:  $(BUILD_DEPENDENCIES) $(CD)vector.c
 
 hashmap.o:  $(BUILD_DEPENDENCIES) $(CD)hashmap.c 
 	$(CC) $(CD)hashmap.c $(OPT) #-fno-sanitize=undefined
+
+Dynvec.o:  $(BUILD_DEPENDENCIES) $(CD)Dynvec.cpp $(CD)dyn_type.h $(CD)nsmtracker.h
+	$(CCC) $(CD)Dynvec.cpp $(QTOPT)
 
 song.o:  $(BUILD_DEPENDENCIES) $(CD)song.c 
 	$(CC) $(CD)song.c $(OPT)

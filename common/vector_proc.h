@@ -49,23 +49,6 @@ static inline int VECTOR_push_back(vector_t *v, const void *element){
   
   const int num_elements = v->num_elements;
 
-  
-  if(num_elements==v->num_elements_allocated){
-    if(num_elements==0){
-#ifdef TEST_VECTOR
-      const int num_init = 2;
-#else
-      const int num_init = 8;
-#endif
-      v->num_elements_allocated = num_init;
-      v->elements = (void**)talloc(num_init*(int)sizeof(void*));
-    }else{
-      const int num_elements_allocated = num_elements * 2;
-      v->num_elements_allocated = num_elements_allocated;
-      v->elements = (void**)talloc_realloc(v->elements,num_elements_allocated*(int)sizeof(void*));
-    }
-  }
-
   v->elements[num_elements] = (void*)element;
   v->num_elements = num_elements+1;
   

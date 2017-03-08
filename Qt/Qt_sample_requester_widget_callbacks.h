@@ -492,7 +492,7 @@ class Sample_requester_widget : public QWidget
 
   hash_t *get_bank_names(const wchar_t *filename){
     hash_t *info = SF2_get_info(filename);
-    hash_t *bank_names = HASH_get_keys(HASH_get_hash(info,"menu"));
+    hash_t *bank_names = HASH_get_keys_in_hash(HASH_get_hash(info,"menu"));
     return bank_names;
   }
 
@@ -559,7 +559,7 @@ class Sample_requester_widget : public QWidget
 
     hash_t *bank = get_bank(STRING_create(_sf2_file),_sf2_bank);
     if (bank != NULL){
-      hash_t *preset_names = HASH_get_keys(bank);
+      hash_t *preset_names = HASH_get_keys_in_hash(bank);
       update_sf2_file_list(preset_names);
     }
   }

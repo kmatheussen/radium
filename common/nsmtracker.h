@@ -573,6 +573,8 @@ typedef struct{
 	dyn.h
 *********************************************************************/
 
+#include "Dynvec_proc.h"
+
 static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
   if (a1.type!=a2.type)
     return false;
@@ -591,6 +593,8 @@ static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
       return a1.float_number==a2.float_number;
     case HASH_TYPE:
       return HASH_equal(a1.hash, a2.hash);
+    case ARRAY_TYPE:
+      return DYNVEC_equal(a1.array, a2.array);
     case BOOL_TYPE:
       return a1.bool_number==a2.bool_number;
   }
@@ -649,18 +653,27 @@ static inline dyn_t DYN_create_hash(hash_t *hash){
   return a;
 }
 
+static inline dyn_t DYN_create_array(const dynvec_t dynvec){
+  dyn_t a;
+  a.type = ARRAY_TYPE;
+  a.array = (dynvec_t*)tcopy(&dynvec, sizeof(dynvec_t));
+  return a;
+}
+
 static inline const char *DYN_type_name(enum DynType type){
   switch(type){
-  case STRING_TYPE:
-    return "STRING_TYPE";
-  case INT_TYPE:
-    return "INT_TYPE";
-  case FLOAT_TYPE:
-    return "FLOAT_TYPE";
-  case HASH_TYPE:
-    return "HASH_TYPE";
-  case BOOL_TYPE:
-    return "BOOL_TYPE";
+    case STRING_TYPE:
+      return "STRING_TYPE";
+    case INT_TYPE:
+      return "INT_TYPE";
+    case FLOAT_TYPE:
+      return "FLOAT_TYPE";
+    case HASH_TYPE:
+      return "HASH_TYPE";
+    case ARRAY_TYPE:
+      return "ARRAY_TYPE";
+    case BOOL_TYPE:
+      return "BOOL_TYPE";
   }
   RError("Unknown dyn type: %d", type);
   return "";

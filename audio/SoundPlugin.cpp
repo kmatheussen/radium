@@ -1759,7 +1759,7 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
 
   if (HASH_get_num_elements(copy) > 0){
     char *effect_names = talloc_strdup("");
-    hash_t *keys = HASH_get_keys(copy);
+    hash_t *keys = HASH_get_keys_in_hash(copy);
     int num_added=0;
     
     for(int i = 0 ; i < HASH_get_array_size(keys, "key"); i++){

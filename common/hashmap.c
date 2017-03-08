@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "visual_proc.h"
 #include "vector_proc.h"
+#include "Dynvec_proc.h"
 #include "OS_settings_proc.h"
 #include "OS_disk_proc.h"
 
@@ -157,8 +158,9 @@ hash_t *HASH_create(int approx_size){
 
 static void put2(hash_t *hash, const char *key, int i, hash_element_t *element);
 
+// Can also be used to rehash
 hash_t *HASH_copy(const hash_t *hash){
-  hash_t *ret = HASH_create(hash->elements_size / 2);
+  hash_t *ret = HASH_create(hash->num_elements);
 
   int i;
   for(i=0;i<hash->elements_size;i++){
@@ -190,7 +192,7 @@ int HASH_get_num_elements(const hash_t *hash){
   return hash->num_elements;
 }
 
-hash_t *HASH_get_keys(const hash_t *hash){
+hash_t *HASH_get_keys_in_hash(const hash_t *hash){
   hash_t *keys = HASH_create(hash->num_elements);
   int pos=0;
   int i;
@@ -204,14 +206,27 @@ hash_t *HASH_get_keys(const hash_t *hash){
   return keys;
 }
 
-vector_t *HASH_get_values(const hash_t *hash){
-  vector_t *vector = talloc(sizeof(vector_t));
+vector_t HASH_get_keys(const hash_t *hash){
+  vector_t vector = {0};
   int i;
   for(i=0;i<hash->elements_size;i++){
     hash_element_t *element = hash->elements[i];
     while(element!=NULL){
-      R_ASSERT_RETURN_IF_FALSE2(element->a.type==HASH_TYPE, vector);
-      VECTOR_push_back(vector, element->a.hash);
+      VECTOR_push_back(&vector, element->key);
+      element=element->next;
+    }
+  }
+  return vector; 
+}
+
+dynvec_t HASH_get_values(const hash_t *hash){
+  dynvec_t vector = {0};
+  int i;
+  for(i=0;i<hash->elements_size;i++){
+    hash_element_t *element = hash->elements[i];
+    while(element!=NULL){
+      //R_ASSERT_RETURN_IF_FALSE2(element->a.type==HASH_TYPE, vector);
+      DYNVEC_push_back(&vector, element->a);
       element=element->next;
     }
   }
@@ -272,32 +287,27 @@ static void put(hash_t *hash, const char *raw_key, int i, hash_element_t *elemen
   put2(hash, key, i, element);
 }
 
-static void put_string(hash_t *hash, const char *key, int i, const wchar_t *val){
+static void put_dyn(hash_t *hash, const char *key, int i, const dyn_t dyn){
   hash_element_t *element = talloc(sizeof(hash_element_t));
-  element->a = DYN_create_string(val);
+  element->a = dyn;
 
   put(hash,key,i,element);
+}
+
+static void put_string(hash_t *hash, const char *key, int i, const wchar_t *val){
+  put_dyn(hash, key, i, DYN_create_string(val));
 }
 
 static void put_chars(hash_t *hash, const char *key, int i, const char *val){
-  hash_element_t *element = talloc(sizeof(hash_element_t));
-  element->a = DYN_create_string_from_chars(val);
-
-  put(hash,key,i,element);
+  put_dyn(hash, key, i, DYN_create_string_from_chars(val));
 }
 
 static void put_int(hash_t *hash, const char *key, int i, int64_t val){
-  hash_element_t *element = talloc(sizeof(hash_element_t));
-  element->a = DYN_create_int(val);
-
-  put(hash,key,i,element);
+  put_dyn(hash, key, i, DYN_create_int(val));
 }
 
 static void put_float(hash_t *hash, const char *key, int i, double val){
-  hash_element_t *element = talloc(sizeof(hash_element_t));
-  element->a = DYN_create_float(val);
-
-  put(hash,key,i,element);
+  put_dyn(hash, key, i, DYN_create_float(val));
 }
 
 static void put_hash(hash_t *hash, const char *key, int i, hash_t *val){
@@ -305,11 +315,16 @@ static void put_hash(hash_t *hash, const char *key, int i, hash_t *val){
     RError("put_hash: val==NULL. key: %d, i: %d\n", key, i);
     return;
   }
-  
-  hash_element_t *element = talloc(sizeof(hash_element_t));
-  element->a = DYN_create_hash(val);
 
-  put(hash,key,i,element);
+  put_dyn(hash, key, i, DYN_create_hash(val));
+}
+
+static void put_array(hash_t *hash, const char *key, int i, const dynvec_t val){
+  put_dyn(hash, key, i, DYN_create_array(val));
+}
+
+void HASH_put_dyn(hash_t *hash, const char *key, const dyn_t val){
+  put_dyn(hash, key, 0, val);
 }
 
 void HASH_put_string(hash_t *hash, const char *key, const wchar_t *val){
@@ -330,6 +345,17 @@ void HASH_put_float(hash_t *hash, const char *key, double val){
 
 void HASH_put_hash(hash_t *hash, const char *key, hash_t *val){
   put_hash(hash, key, 0, val);
+}
+
+void HASH_put_array(hash_t *hash, const char *key, dynvec_t dynvec){
+  put_array(hash, key, 0, dynvec);
+}
+
+void HASH_put_dyn_at(hash_t *hash, const char *key, int i, const dyn_t val){
+  put_dyn(hash, key, i, val);
+  int new_size = i+1;
+  if(new_size>hash->num_array_elements)
+    hash->num_array_elements = new_size;
 }
 
 void HASH_put_string_at(hash_t *hash, const char *key, int i, const wchar_t *val){
@@ -360,6 +386,12 @@ void HASH_put_float_at(hash_t *hash, const char *key, int i, double val){
 }
 void HASH_put_hash_at(hash_t *hash, const char *key, int i, hash_t *val){
   put_hash(hash, key, i, val);
+  int new_size = i+1;
+  if(new_size>hash->num_array_elements)
+    hash->num_array_elements = new_size;
+}
+void HASH_put_array_at(hash_t *hash, const char *key, int i, dynvec_t val){
+  put_array(hash, key, i, val);
   int new_size = i+1;
   if(new_size>hash->num_array_elements)
     hash->num_array_elements = new_size;
@@ -581,8 +613,12 @@ void HASH_save(hash_t *hash, disk_t *file){
           else
             HASH_save(element->a.hash, file);
           break;
+        case ARRAY_TYPE:
+          RError("Array type not supported when saving hash to disk");
+          break;
         case BOOL_TYPE:
-          RError("Not using bool type in hash");
+          RError("Bool type not supported when saving hash to disk");
+          break;
       }
     }
   }
