@@ -380,6 +380,9 @@ public slots:
       splitter->addWidget(g_mixer_widget);
       //g_mixer_widget->setParent(xsplitter);
     }
+
+    if(include_instrument_widget->isChecked())
+      GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
   }
   
   void on_show_modular_toggled(bool show_modular){
@@ -435,6 +438,9 @@ public slots:
     }
     
     //setUpdatesEnabled(true); // It's a flaw in Qt that we need to call this function. And it doesn't even work very well.
+
+    if(include_instrument_widget->isChecked())
+      GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
   }
 
   void on_include_instrument_widget_toggled(bool include_instrument_widget){
@@ -444,7 +450,7 @@ public slots:
     }else
       g_parent_for_instrument_widget_ysplitter->layout()->addWidget(getInstrumentsWidget());
 
-    setWidgetColors(getInstrumentsWidget());
+    GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
   }
 
   void on_rows1_toggled(bool val){
