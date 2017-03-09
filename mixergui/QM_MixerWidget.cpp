@@ -1634,19 +1634,20 @@ MixerWidget::MixerWidget(QWidget *parent)
 
     populateScene();
 
-    QGridLayout *gridLayout = new QGridLayout(this);  
-    gridLayout->setContentsMargins(0, 0, 0, 0);
+    auto *layout = new QVBoxLayout(this);  
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
 
 #if 0
     View *view = new View("Das mixer",this);
     view->view()->setScene(&scene);
-    gridLayout->addWidget(view, 0, 0, 1, 1);
+    layout->addWidget(view, 0, 0, 1, 1);
 
 #else
 
     Mixer_widget *mixer_widget = new Mixer_widget(this);
     mixer_widget->view->setScene(&scene);
-    gridLayout->addWidget(mixer_widget, 0, 0, 1, 1);
+    layout->addWidget(mixer_widget);
     this->view = mixer_widget->view;
 
 #endif

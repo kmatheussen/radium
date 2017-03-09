@@ -92,7 +92,7 @@ void set_editor_focus(void){
 
 
 class Instruments_widget;
-static Instruments_widget *instruments_widget;
+static Instruments_widget *g_instruments_widget;
 
 //class No_instrument_widget;
 //static No_instrument_widget *no_instrument_widget;
@@ -404,11 +404,11 @@ static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *pat
   instrument->_patch_widget->name_widget->setText(patch->name);
 
   //instruments_widget->tabs->insertTab(instrument, QString::fromLatin1(patch->name), instruments_widget->tabs->count());
-  instruments_widget->tabs->insertWidget(instruments_widget->tabs->count(),instrument);
+  g_instruments_widget->tabs->insertWidget(g_instruments_widget->tabs->count(),instrument);
 
   // (forgot to take copy)
   if (!is_loading){
-    instruments_widget->tabs->setCurrentWidget(instrument);  
+    g_instruments_widget->tabs->setCurrentWidget(instrument);  
     MW_update_all_chips();
   }
 
@@ -460,30 +460,34 @@ static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch){
   //instrument->control_change_group->setEnabled(true);
 #endif
 
-  //instruments_widget->tabs->insertTab(instrument, QString::fromLatin1(patch->name), instruments_widget->tabs->count());
-  instruments_widget->tabs->insertWidget(instruments_widget->tabs->count(),instrument);
-  //instruments_widget->tabs->showPage(instrument);
+  //g_instruments_widget->tabs->insertTab(instrument, QString::fromLatin1(patch->name), g_instruments_widget->tabs->count());
+  g_instruments_widget->tabs->insertWidget(g_instruments_widget->tabs->count(),instrument);
+  //g_instruments_widget->tabs->showPage(instrument);
 
   return instrument;
 }
 
 
 QWidget *createInstrumentsWidget(void){
-  instruments_widget = new Instruments_widget();
+  g_instruments_widget = new Instruments_widget();
 
   {
     //const char *name = "<No Instrument>";
 
     //no_instrument_widget = new No_instrument_widget();
 
-    delete instruments_widget->tabs->widget(0); // Delete default tab
-    //instruments_widget->tabs->insertTab(no_instrument_widget, QString::fromLatin1(name), 0);
-    //instruments_widget->tabs->showPage(no_instrument_widget);
+    delete g_instruments_widget->tabs->widget(0); // Delete default tab
+    //g_instruments_widget->tabs->insertTab(no_instrument_widget, QString::fromLatin1(name), 0);
+    //g_instruments_widget->tabs->showPage(no_instrument_widget);
   }
 
-  setWidgetColors(instruments_widget);
+  setWidgetColors(g_instruments_widget);
 
-  return instruments_widget;
+  return g_instruments_widget;
+}
+
+QWidget *getInstrumentsWidget(void){
+  return g_instruments_widget;
 }
 
 #if 1
@@ -507,26 +511,26 @@ static void set_widget_height(int height){
 #endif
 
 bool GFX_InstrumentWindowIsVisible(void){
-  return instruments_widget->isVisible();
+  return g_instruments_widget->isVisible();
 }
 
 void GFX_SetMinimalInstrumentWindow(void){
   set_widget_height(30);
 
-  instruments_widget->adjustSize();
+  g_instruments_widget->adjustSize();
 }
 
 void GFX_InstrumentWindowToFront(void){
   //set_widget_height(30);
   GL_lock(); {
-    instruments_widget->show();
+    g_instruments_widget->show();
   }GL_unlock();
 
   set_editor_focus();
 }
 
 void GFX_InstrumentWindowToBack(void){
-  instruments_widget->hide();
+  g_instruments_widget->hide();
   //set_widget_height(0);
 
   set_editor_focus();
@@ -534,7 +538,7 @@ void GFX_InstrumentWindowToBack(void){
 
 
 void GFX_showHideInstrumentWidget(struct Tracker_Windows *window){
-  if(instruments_widget->height() < 10)
+  if(g_instruments_widget->height() < 10)
     GFX_InstrumentWindowToFront();
   else
     GFX_InstrumentWindowToBack();
@@ -556,7 +560,7 @@ void MIDIGFX_SetCCSlider(int slidernum,bool on,int value){}
 
 // Warning, tabs are not updated immediately after they are created.
 static MIDI_instrument_widget *get_midi_instrument_widget(struct Patch *patch){
-  QStackedWidget* tabs = instruments_widget->tabs;
+  QStackedWidget* tabs = g_instruments_widget->tabs;
 
   for(int i=0;i<tabs->count();i++){
     MIDI_instrument_widget *instrument = dynamic_cast<MIDI_instrument_widget*>(tabs->widget(i));
@@ -569,7 +573,7 @@ static MIDI_instrument_widget *get_midi_instrument_widget(struct Patch *patch){
 /*
 // Warning, tabs is not updated immediately after a tab has been inserted into it. (or deleted from it)
 static Audio_instrument_widget *get_audio_instrument_widget_from_patchdata(void *patchdata){
-  QStackedWidget* tabs = instruments_widget->tabs;
+  QStackedWidget* tabs = g_instruments_widget->tabs;
 
   for(int i=0;i<tabs->count();i++){
     Audio_instrument_widget *instrument = dynamic_cast<Audio_instrument_widget*>(tabs->widget(i));
@@ -582,7 +586,7 @@ static Audio_instrument_widget *get_audio_instrument_widget_from_patchdata(void 
 */
 
 Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch){
-  QStackedWidget* tabs = instruments_widget->tabs;
+  QStackedWidget* tabs = g_instruments_widget->tabs;
 
   for(int i=0;i<tabs->count();i++){
     Audio_instrument_widget *instrument = dynamic_cast<Audio_instrument_widget*>(tabs->widget(i));
@@ -667,7 +671,7 @@ void GFX_update_current_instrument_widget(void){
 }
 
 void GFX_update_all_instrument_widgets(void){
-  QStackedWidget* tabs = instruments_widget->tabs;
+  QStackedWidget* tabs = g_instruments_widget->tabs;
 
   //printf("*(((((((((( Calling. Update all %d:\n",tabs->count());
   for(int i=0;i<tabs->count();i++){
@@ -699,7 +703,7 @@ void GFX_PP_Update(struct Patch *patch, bool is_loading){
     //  goto exit;
     if(patch==NULL){
 
-      //instruments_widget->tabs->showPage(no_instrument_widget);
+      //g_instruments_widget->tabs->showPage(no_instrument_widget);
 
     }else if(patch->instrument==get_MIDI_instrument()){
       printf("PP update. Instrument name: \"%s\". port name: \"%s\"\n",patch==NULL?"(null)":patch->name,patch==NULL?"(null)":((struct PatchData*)patch->patchdata)->midi_port->name);
@@ -712,7 +716,7 @@ void GFX_PP_Update(struct Patch *patch, bool is_loading){
 
       update_midi_instrument_widget(instrument,patch);
       
-      instruments_widget->tabs->setCurrentWidget(instrument);
+      g_instruments_widget->tabs->setCurrentWidget(instrument);
       MW_update_all_chips();
       root->song->tracker_windows->must_redraw = true;
 
@@ -727,7 +731,7 @@ void GFX_PP_Update(struct Patch *patch, bool is_loading){
       }
       
       update_audio_instrument_widget(instrument,patch);
-      instruments_widget->tabs->setCurrentWidget(instrument);
+      g_instruments_widget->tabs->setCurrentWidget(instrument);
       //if (instrument->_sample_requester_widget != NULL && !is_loading)
       //  instrument->_sample_requester_widget->update_file_list_if_needed();
 
@@ -756,7 +760,7 @@ void InstrumentWidget_prepare_for_deletion(struct Patch *patch){
 }
 
 void InstrumentWidget_delete(struct Patch *patch){
-  //QStackedWidget* tabs = instruments_widget->tabs;
+  //QStackedWidget* tabs = g_instruments_widget->tabs;
 
   //ADD_UNDO(InstrumentsWidget_CurrPos());
 
@@ -818,10 +822,10 @@ static void tab_selected(){
   if(called_from_pp_update==true)
     return;
 
-  MIDI_instrument_widget *midi_instrument = dynamic_cast<MIDI_instrument_widget*>(instruments_widget->tabs->currentWidget());
+  MIDI_instrument_widget *midi_instrument = dynamic_cast<MIDI_instrument_widget*>(g_instruments_widget->tabs->currentWidget());
 
   // We don't want to current track patch when selecting a different widget instrument.
-  Audio_instrument_widget *audio_instrument = dynamic_cast<Audio_instrument_widget*>(instruments_widget->tabs->currentWidget());
+  Audio_instrument_widget *audio_instrument = dynamic_cast<Audio_instrument_widget*>(g_instruments_widget->tabs->currentWidget());
 
   if(midi_instrument==NULL && audio_instrument==NULL)
     return;
@@ -861,10 +865,10 @@ static void tab_selected(){
 #endif
 
 struct Patch *get_current_instruments_gui_patch(void){
-  if(instruments_widget==NULL || instruments_widget->tabs==NULL)
+  if(g_instruments_widget==NULL || g_instruments_widget->tabs==NULL)
     return NULL;
 
-  QStackedWidget* tabs = instruments_widget->tabs;
+  QStackedWidget* tabs = g_instruments_widget->tabs;
 
   {
     MIDI_instrument_widget *instrument = dynamic_cast<MIDI_instrument_widget*>(tabs->currentWidget());
@@ -1006,7 +1010,7 @@ void MIXERSTRIP_call_regularly(void){
 
 #if 0
 hash_t *create_instrument_widget_order_state(void){
-  QTabWidget* tabs = instruments_widget->tabs;
+  QTabWidget* tabs = g_instruments_widget->tabs;
 
   hash_t *state = HASH_create(tabs->count());
 
@@ -1020,7 +1024,7 @@ hash_t *create_instrument_widget_order_state(void){
 }
 
 void recreate_instrument_widget_order_from_state(hash_t *state){
-  QTabWidget* tabs = instruments_widget->tabs;
+  QTabWidget* tabs = g_instruments_widget->tabs;
 
   int num_tabs = tabs->count();
 

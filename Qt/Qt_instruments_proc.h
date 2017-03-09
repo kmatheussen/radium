@@ -81,6 +81,7 @@ Ui::Audio_instrument_widget *InstrumentWidget_get_audio_instrument_widget(struct
 
 class QWidget;
 QWidget *createInstrumentsWidget(void);
+QWidget *getInstrumentsWidget(void);
 #endif // __cplusplus
 
 #endif

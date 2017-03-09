@@ -27,6 +27,8 @@ static QSlider *g_zoom_slider = NULL;
 //static QWidget *g_view = NULL;
 
 extern bool g_pause_scroll_area_updates_when_resizing;
+extern QWidget *g_parent_for_instrument_widget_ysplitter;
+
 
 class MyQGraphicsView : public QGraphicsView{
 public:
@@ -219,7 +221,9 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
       int64_t old_gui = _mixer_strips_gui;
       if (old_gui != -1){
         _mixer_strips_gui = createMixerStripsWindow(num_rows);
-        auto *old_item = verticalLayout->replaceWidget(API_gui_get_widget(old_gui), API_gui_get_widget(_mixer_strips_gui));
+        QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+        auto *old_item = verticalLayout->replaceWidget(API_gui_get_widget(old_gui), w);
+        verticalLayout->setStretchFactor(w,1);
         delete old_item;
         gui_close(old_gui);
       }
@@ -411,7 +415,7 @@ public slots:
           QWidget *w = API_gui_get_widget(_mixer_strips_gui);
           //w->setParent(bottom_widget);
           //w->setFixedSize(width(), height()-50);
-          verticalLayout->addWidget(w);
+          verticalLayout->insertWidget(1, w, 1);
           modular_widget->hide();
           /*
             mixer_layout->update();
@@ -431,6 +435,16 @@ public slots:
     }
     
     //setUpdatesEnabled(true); // It's a flaw in Qt that we need to call this function. And it doesn't even work very well.
+  }
+
+  void on_include_instrument_widget_toggled(bool include_instrument_widget){
+    if(include_instrument_widget){
+      verticalLayout->addWidget(getInstrumentsWidget(), 0);
+      getInstrumentsWidget()->show();
+    }else
+      g_parent_for_instrument_widget_ysplitter->layout()->addWidget(getInstrumentsWidget());
+
+    setWidgetColors(getInstrumentsWidget());
   }
 
   void on_rows1_toggled(bool val){

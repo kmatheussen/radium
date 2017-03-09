@@ -46,7 +46,7 @@ public:
   }
 
   void calledRegularlyByParent(void){
-    Audio_instrument_widget *audio_widget = dynamic_cast<Audio_instrument_widget*>(instruments_widget->tabs->currentWidget());
+    Audio_instrument_widget *audio_widget = dynamic_cast<Audio_instrument_widget*>(g_instruments_widget->tabs->currentWidget());
     if (audio_widget != NULL){
       audio_widget->calledRegularlyByParent();
     }

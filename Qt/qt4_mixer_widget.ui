@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1">
    <property name="spacing">
     <number>0</number>
    </property>
@@ -168,10 +168,17 @@
      <item>
       <widget class="QCheckBox" name="show_modular">
        <property name="text">
-        <string>Modular</string>
+        <string>M</string>
        </property>
        <property name="checked">
         <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="include_instrument_widget">
+       <property name="text">
+        <string>I</string>
        </property>
       </widget>
      </item>

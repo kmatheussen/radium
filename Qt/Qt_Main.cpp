@@ -166,6 +166,8 @@ bool g_radium_runs_custom_exec = false;
 bool g_gc_is_incremental = false;
 
 QHBoxLayout *g_mixerstriplayout = NULL;
+QWidget *g_parent_for_instrument_widget_ysplitter = NULL;
+
 
 DEFINE_ATOMIC(bool, g_mixer_strips_needs_redraw) = false;
 void RT_schedule_mixer_strips_redraw(void){
@@ -1904,9 +1906,20 @@ int radium_main(char *arg){
           g_sequencer_widget->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
           g_sequencer_widget->move(0, main_window->height()-220);        
 #endif     
-          QWidget *instruments = createInstrumentsWidget();
-          instruments->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
-          instruments->move(0, main_window->height()-220);
+          g_parent_for_instrument_widget_ysplitter = new QWidget(ysplitter);
+
+          {
+            auto *layout = new QHBoxLayout;
+            layout->setSpacing(0);
+            layout->setContentsMargins(0,0,0,0);
+            g_parent_for_instrument_widget_ysplitter->setLayout(layout);
+
+            QWidget *instruments = createInstrumentsWidget();
+            layout->addWidget(instruments);
+          }
+
+          //instruments->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
+          g_parent_for_instrument_widget_ysplitter->move(0, main_window->height()-220);
         }
         
         main_window->setCentralWidget(ysplitter);
