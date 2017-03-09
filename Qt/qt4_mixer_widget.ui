@@ -160,6 +160,9 @@
      </item>
      <item>
       <widget class="QCheckBox" name="window_mode">
+       <property name="toolTip">
+        <string>Show mixer in separate window</string>
+       </property>
        <property name="text">
         <string>W</string>
        </property>
@@ -167,6 +170,9 @@
      </item>
      <item>
       <widget class="QCheckBox" name="show_modular">
+       <property name="toolTip">
+        <string>Show modular mixer</string>
+       </property>
        <property name="text">
         <string>M</string>
        </property>
@@ -177,6 +183,9 @@
      </item>
      <item>
       <widget class="QCheckBox" name="include_instrument_widget">
+       <property name="toolTip">
+        <string>Show instrument widget inside the mixer</string>
+       </property>
        <property name="text">
         <string>I</string>
        </property>
