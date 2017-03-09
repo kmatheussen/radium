@@ -1681,7 +1681,7 @@ MixerWidget::MixerWidget(QWidget *parent)
     setLayout(layout);
 #endif
 
-    setWindowTitle(tr("Chip Demo"));
+    setWindowTitle(tr("Radium Mixer"));
 
     {
       MixerWidgetTimer *timer = new MixerWidgetTimer;
