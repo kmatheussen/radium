@@ -1029,12 +1029,12 @@ void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool
 
   char *error = NULL;
 
-  SP_set_link_gain(dest_sp, source_sp, gain, &error);
+  bool changed = SP_set_link_gain(dest_sp, source_sp, gain, &error);
 
   if (error!=NULL)
     handleError("Could not find audio connection between instrument %d and instrument %d", source_id, dest_id);
   else
-    if (remake_mixer_strips){
+    if (changed && remake_mixer_strips){
       printf("       Remake: setAudioConnectionGain\n");
       remakeMixerStrips();
     }

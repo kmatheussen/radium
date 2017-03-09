@@ -15,6 +15,10 @@ extern LANGSPEC int OS_SYSTEM_get_qwerty_keynum(void *void_event); // e.g. using
 extern LANGSPEC int OS_SYSTEM_get_keynum2(uint32_t ulong_keysum, bool keypad_pressed);
 extern LANGSPEC int OS_SYSTEM_get_qwerty_keynum2(uint32_t scancode);
 
+//extern LANGSPEC bool OS_SYSTEM_window_is_actually_visible(void *win); // Returns true if actually possibly to view by a human when looking at a screen.
+
+extern LANGSPEC void OS_WINDOWS_set_key_window(void *win);
+
 extern LANGSPEC bool OS_OSX_is_key_window(void *void_nsview);
 extern LANGSPEC bool OS_WINDOWS_is_key_window(void *maybewin);
 

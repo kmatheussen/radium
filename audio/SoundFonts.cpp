@@ -311,15 +311,19 @@ static hash_t *get_samples_info(sf2::File *file){
 }
 
 static hash_t *get_menu(hash_t *info){
-  vector_t *presets     = HASH_get_values(HASH_get_hash(info,"presets"));
   hash_t   *menu        = HASH_create(50);
-  int       num_presets = presets->num_elements;
+
+  dynvec_t  presets     = HASH_get_values(HASH_get_hash(info,"presets"));
+  int       num_presets = presets.num_elements;
 
   for(int i=0;i<num_presets;i++){
-    hash_t     *preset         = (hash_t*)presets->elements[i];
-    int         preset_num     = HASH_get_int32(preset,"num");
-    int         bank_num       = HASH_get_int32(preset,"bank");
-    const char *preset_name    = HASH_get_chars(preset,"name");
+    const dyn_t dyn             = presets.elements[i];
+    R_ASSERT_RETURN_IF_FALSE2(dyn.type==HASH_TYPE, menu);
+
+    hash_t      *preset         = dyn.hash;
+    int          preset_num     = HASH_get_int32(preset,"num");
+    int          bank_num       = HASH_get_int32(preset,"bank");
+    const char  *preset_name    = HASH_get_chars(preset,"name");
 
     char bank_display[512];
     {

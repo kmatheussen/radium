@@ -600,7 +600,8 @@
                                ;; get-scaled-value
                                (lambda ()
                                  (db-to-slider (if add-monitor ;; minor optimization.
-                                                   (get-db-value)
+                                                   (or (get-db-value)
+                                                       last-value)
                                                    last-value)))
 
                                ;; get-value-text
@@ -677,6 +678,8 @@
                            replace))
 
 
+(define *send-callbacks* '())
+
 (define (create-mixer-strip-audio-connection-send gui first-instrument-id source-id target-id)
   (define (make-undo)
     (<ra> :undo-audio-connection-gain source-id target-id))
@@ -695,15 +698,48 @@
                                   (create-send-func gain))))))
   
   (define (get-db-value)
-    (define db (<ra> :gain-to-db (<ra> :get-audio-connection-gain source-id target-id)))
-    ;;(c-display "getting " db)
-    db)
+    (and (<ra> :has-audio-connection source-id target-id)
+         (<ra> :gain-to-db (<ra> :get-audio-connection-gain source-id target-id))))
 
   (define (set-db-value db)
     ;;(c-display "setting db to" db)
-    (<ra> :set-audio-connection-gain source-id target-id (<ra> :db-to-gain db) #f))
+    (<ra> :set-audio-connection-gain source-id target-id (<ra> :db-to-gain db) #f)
+    (for-each (lambda (send-callback)
+                (send-callback gui source-id target-id))
+              *send-callbacks*))
+  
+  (define (add-monitor slider callback)
+    (define send-callback
+      (lambda (maybe-gui maybe-source-id maybe-target-id)
+        (if (and (not (= gui maybe-gui))
+                 (= maybe-source-id source-id)
+                 (= maybe-target-id target-id)
+                 (<ra> :instrument-is-open source-id)
+                 (<ra> :instrument-is-open target-id)
+                 (<ra> :has-audio-connection source-id target-id))
+            (callback))))
+  
+    (push-back! *send-callbacks* send-callback)
+    
+    (<gui> :add-close-callback gui
+           (lambda ()
+             (set! *send-callbacks*
+                   (remove (lambda (callback)
+                             (equal? callback send-callback))
+                           *send-callbacks*)))))
+    
+  ;; Also works fine, but is less efficient. (cleaner code though)
+  ;(define (add-monitor slider callback)
+  ;  (<ra> :schedule (random 1000) (lambda ()
+  ;                                  (if (and (<gui> :is-open gui)
+  ;                                           (<ra> :instrument-is-open source-id)
+  ;                                           (<ra> :instrument-is-open target-id))                                             
+  ;                                      (begin
+  ;                                        (callback)
+  ;                                        100)
+  ;                                      #f))))
 
-  (define add-monitor #f)
+  ;;(set! add-monitor #f)
 
   (create-mixer-strip-send gui
                            first-instrument-id
@@ -1593,7 +1629,7 @@
   (define instruments-buses-separator-width (* (get-fontheight) 2))
 
   ;;(define mixer-strips (<gui> :widget 800 800))
-  ;;(define mixer-strips (<gui> :horizontal-scroll)) ;;widget 800 800))
+  ;;(define mixer-strips-gui (<gui> :horizontal-scroll)) ;;widget 800 800))
   (define mixer-strips-gui (<gui> :scroll-area #t #t))
   (<gui> :set-layout-spacing mixer-strips-gui 0 0 0 0 0)
 
@@ -1685,17 +1721,18 @@
   (define height (if pos (cadddr pos) 800))
 
   (<gui> :set-size parent width height)
-  (<gui> :set-pos
-         parent
-         (if pos (car pos) 600)
-         (if pos (cadr pos) 50))
+  (if pos
+      (<gui> :set-pos
+             parent
+             (if pos (car pos) 600)
+             (if pos (cadr pos) 50)))
   ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
 
   (if (not is-full-screen)
       (<gui> :set-always-on-top parent)
       (<gui> :set-full-screen parent))
   
-  (<gui> :show parent)
+  ;;(<gui> :show parent)
       
   ;;(<gui> :set-full-screen parent)
 
@@ -1706,7 +1743,7 @@
     (define start-time (time))
     (catch #t
            (lambda ()
-;;             (<gui> :disable-updates parent)
+             ;; (<gui> :disable-updates parent)
              
              (create-mixer-strips num-rows das-stored-mixer-strips list-of-modified-instrument-ids
                                   (lambda (new-mixer-strips new-mixer-strips-gui)
@@ -1748,7 +1785,9 @@
                               parent))
                          *mixer-strips-objects*))))
 
-  mixer-strips-object
+  ;;mixer-strips-object
+
+  parent
   )
 
 (define (remake-mixer-strips . list-of-modified-instrument-ids)

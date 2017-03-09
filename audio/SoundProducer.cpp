@@ -1547,19 +1547,25 @@ float SP_get_link_gain(SoundProducer *target, SoundProducer *source, char **erro
   return 0.0;
 }
 
-void SP_set_link_gain(SoundProducer *target, SoundProducer *source, float volume, char **error){
+bool SP_set_link_gain(SoundProducer *target, SoundProducer *source, float volume, char **error){
+  bool ret = false;
   bool found = false;
 
   for (SoundProducerLink *link : target->_input_links) {
     if(link->is_bus_link==false && link->is_event_link==false && link->source==source){
       found=true;
       //printf("   Setting to %f (%p)\n", volume, link);
-      safe_float_write(&link->link_volume, volume);
+      if (safe_float_read(&link->link_volume) != volume){
+        safe_float_write(&link->link_volume, volume);
+        ret = true;
+      }
     }
   }
 
   if (!found)
     *error = talloc_strdup("Could not find link");
+
+  return ret;
 }
 
 // Called by main mixer thread before starting multicore.

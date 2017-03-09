@@ -217,16 +217,16 @@ void release_keyboard_focus_counting(void){
 }
 
 
-static bool another_window_has_focus = false;
+static bool g_another_window_has_focus = false;
 
 // OSX needs to call this function since sub windows (created by for instance VST plugins) use our key events, and then we can not eat them.
 void call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_events(void){
   R_ASSERT(THREADING_is_main_thread());
     
   if (main_window_has_focus())
-    another_window_has_focus = false;
+    g_another_window_has_focus = false;
   else
-    another_window_has_focus = true;
+    g_another_window_has_focus = true;
 
   //printf("main_window_has_focus(): %d\n", main_window_has_focus());
 }
@@ -248,19 +248,25 @@ bool tevent_autorepeat = false;
 
 static bool g_up_downs[EVENT_DASMAX];
 
+static bool maybe_got_key_window(QWidget *window);
+  
 extern "C" uint32_t add_mouse_keyswitches(uint32_t keyswitch);
 uint32_t add_mouse_keyswitches(uint32_t keyswitch){
 
   bool mixer_strips_has_focus = false;
   
   QVector<QWidget*> all_windows = MIXERSTRIPS_get_all_widgets();
-  for(auto *window : all_windows)
+  for(auto *window : all_windows){
     if (window==QApplication::topLevelAt(QCursor::pos())){
       //if (maybe_got_key_window(window)){
       mixer_strips_has_focus = true;
+      //printf("        MIXER STRIP HAS FOCUS\n");
       break;
     }
-
+    //if (maybe_got_key_window(window))
+    //  printf("        KEY. MIXER STRIP HAS KEY WINDOW.\n");
+  }
+  
   if (mixer_strips_has_focus)
     keyswitch |= EVENT_MOUSE_MIXERSTRIPS2;
   
@@ -455,8 +461,6 @@ protected:
 
     OS_SYSTEM_EventPreHandler(event);
 
-    //printf("Got event\n");
-    
     /*
     QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
     printf("   focus: %d,   active: %d.  key: %d\n",
@@ -466,9 +470,9 @@ protected:
            );
     */
 
-    //printf("Got key. Another window has focus? %d\n",(int)another_window_has_focus);
+    //printf("Got key. Another window has focus? %d\n",(int)g_another_window_has_focus);
     //return false;    
-    if (another_window_has_focus && JUCE_native_gui_grabs_keyboard())
+    if (g_another_window_has_focus && JUCE_native_gui_grabs_keyboard())
       return false;
 
     if (MIXER_is_saving())
@@ -499,7 +503,7 @@ protected:
 #if 0 //FOR_LINUX
     return true;
 #endif
-    
+
     bool is_key_press = type==TR_KEYBOARD;
     
     int modifier = OS_SYSTEM_get_modifier(event); // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event on windows. Not too sure about EVENT_EXTRA_R either (VK_APPS key) (doesn't matter, EVENT_EXTRA_R is abandoned, and the key is just used to configure block). In addition, the release value order might be wrong if pressing several modifier keys, still windows only.
@@ -642,7 +646,7 @@ protected:
       ret = true;
 
     } else {
-      
+
       if (keynum==EVENT_NO)
         ret = false;
       else
@@ -682,7 +686,7 @@ protected:
     if(ATOMIC_GET(is_starting_up)==true)
       return false;
 
-    if (another_window_has_focus)
+    if (g_another_window_has_focus)
       return false;
 
     if (MIXER_is_saving())
@@ -828,7 +832,7 @@ protected:
            );
 #endif
     
-    if (another_window_has_focus)
+    if (g_another_window_has_focus)
       return false;
 
     if (MIXER_is_saving())
@@ -2042,6 +2046,7 @@ int radium_main(char *arg){
   GL_create(window, window->wblock);
 #endif
 
+#if 0
   // Hack to make Qt text input widgets not crash the program when using intel gfx driver and running opengl in separate thread (crash caused by opening two opengl contexts simultaneously from two threads). (strange stuff)
   GL_lock();
   //GL_draw_lock(); // <-- This prevents some crashes in buggy gfx drivers, but it could also cause a deadlock (not sure).
@@ -2053,7 +2058,8 @@ int radium_main(char *arg){
   }
   //GL_draw_unlock();
   GL_unlock();
-
+#endif
+  
 #if 0
   while(1){
     qApp->processEvents();
@@ -2249,19 +2255,19 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
     case QtWarningMsg:
       fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
 #ifndef RELEASE
-      GFX_Message(NULL, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      SYSTEM_show_message(talloc_format("Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function));
 #endif
       break;
     case QtCriticalMsg:
       fprintf(stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
 #ifndef RELEASE
-      GFX_Message(NULL, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      SYSTEM_show_message(talloc_format("Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function));
 #endif
       break;
     case QtFatalMsg:
       fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
 #ifndef RELEASE
-      GFX_Message(NULL, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      SYSTEM_show_message(talloc_format("Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function));
 #endif        
       break;
       //abort();

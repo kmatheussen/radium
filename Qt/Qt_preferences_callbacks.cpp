@@ -403,14 +403,16 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       QString vblankbuttontext = QString("Erase Estimated Vertical Blank (")+QString::number(1000.0/GL_get_estimated_vblank())+" Hz)";
       eraseEstimatedVBlankInterval->setText(vblankbuttontext);
 #endif
-      
-      high_cpu_protection->setChecked(doHighCpuOpenGlProtection());
 
-#if FOR_MACOSX
-      bool draw_in_separate_process = SETTINGS_read_bool("opengl_draw_in_separate_process",false);//GL_using_nvidia_card());
-#else
-      bool draw_in_separate_process = SETTINGS_read_bool("opengl_draw_in_separate_process",true);//GL_using_nvidia_card());
+#if defined(FOR_MACOSX)
+      // Seems like Apple goes to great lengths to make it impossible to avoid high CPU in OpenGL applications when a window is not visible, unless we accept some stuttering in the graphics.      
+      high_cpu_protection->setChecked(false);
+      high_cpu_protection->setEnabled(false);
+#else      
+      high_cpu_protection->setChecked(doHighCpuOpenGlProtection());
 #endif
+
+      bool draw_in_separate_process = SETTINGS_read_bool("opengl_draw_in_separate_process",true);//GL_using_nvidia_card());
       draw_in_separate_process_onoff->setChecked(draw_in_separate_process);
       
       safeModeOnoff->setChecked(GL_get_safe_mode());

@@ -137,13 +137,74 @@ s7_pointer s7extra_make_place(s7_scheme *radiums7_sc, const Place place){
 }
 
 bool s7extra_is_dyn(s7_pointer dyn){
-  return s7_is_number(dyn) || s7_is_string(dyn) || s7_is_boolean(dyn);
+  return s7_is_number(dyn) || s7_is_string(dyn) || s7_is_boolean(dyn) || s7_is_hash_table(dyn) || s7_is_vector(dyn) || s7_is_pair(dyn);
+}
+
+static hash_t *s7extra_hash(s7_scheme *s7, s7_pointer s_hash){
+  int hash_size = 16;
+
+  hash_t *r_hash = HASH_create(hash_size); // would be nice to know size of s_hash so we didn't have to rehash
+
+  R_ASSERT_RETURN_IF_FALSE2(s7_is_hash_table(s_hash), r_hash);
+
+  s7_pointer iterator = s7_make_iterator(s7, s_hash);
+
+  int num_elements = 0;
+  while(true){
+    s7_pointer val = s7_iterate(s7, iterator);
+
+    if (s7_iterator_is_at_end(iterator))
+      break;
+
+    s7_pointer key = s7_car(val);
+
+    const char *key_name;
+
+    if (s7_is_symbol(key))
+      key_name = s7_symbol_name(key);
+    else{
+      handleError("Only symbols are supported as hash table keys");
+      key_name = "___radium__illegal_key type";
+    }
+
+    HASH_put_dyn(r_hash,
+                 key_name,
+                 s7extra_dyn(s7, s7_cdr(val)));
+
+    num_elements++;
+    if (num_elements > hash_size*2){
+      r_hash = HASH_copy(r_hash); // rehash
+      hash_size = num_elements;
+    }
+  }
+
+  return r_hash;
+}
+
+static dynvec_t s7extra_array(s7_scheme *s7, s7_pointer vector){
+  dynvec_t dynvec = {0};
+
+  s7_pointer iterator = s7_make_iterator(s7, vector);
+
+  while(true){
+    s7_pointer val = s7_iterate(s7, iterator);
+
+    if (s7_iterator_is_at_end(iterator))
+      break;
+
+    DYNVEC_push_back(&dynvec, s7extra_dyn(s7, val));
+  }
+
+  return dynvec;
 }
 
 dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s){
   if (s7_is_integer(s))
     return DYN_create_int(s7_integer(s));
-  
+
+  if (s7_is_ratio(s))
+    return DYN_create_ratio(make_ratio(s7_numerator(s), s7_denominator(s)));
+
   if (s7_is_number(s))
     return DYN_create_float(s7_number_to_real(s7, s));
 
@@ -153,23 +214,61 @@ dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s){
   if (s7_is_boolean(s))
     return DYN_create_bool(s7_boolean(s7, s));
 
+  if (s7_is_hash_table(s))
+    return DYN_create_hash(s7extra_hash(s7, s));
+
+  if (s7_is_vector(s) || s7_is_pair(s))
+    return DYN_create_array(s7extra_array(s7, s));
+
   GFX_Message(NULL, "s7extra_dyn: Unsupported s7 type");
   return DYN_create_bool(false);
 }
 
+static s7_pointer hash_to_s7(s7_scheme *sc, const hash_t *r_hash){
+  s7_pointer s_hash = s7_make_hash_table(sc, HASH_get_num_elements(r_hash));
+
+  dynvec_t dynvec = HASH_get_values(r_hash);
+  vector_t keys = HASH_get_keys(r_hash);
+
+  for(int i = 0 ; i < dynvec.num_elements ; i++){
+    s7_hash_table_set(sc,
+                      s_hash,
+                      s7_make_symbol(sc, (char*)keys.elements[i]),
+                      s7extra_make_dyn(sc, dynvec.elements[i]));
+  }
+
+  return s_hash;
+}
+
+static s7_pointer dynvec_to_s7(s7_scheme *sc, const dynvec_t &dynvec){
+  s7_pointer s_vec = s7_make_vector(sc, dynvec.num_elements);
+
+  for(int i = 0 ; i < dynvec.num_elements ; i++){
+    s7_vector_set(sc,
+                  s_vec,
+                  i,
+                  s7extra_make_dyn(sc, dynvec.elements[i]));
+  }
+
+  return s_vec;
+}
+
 s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn){
   switch(dyn.type){
-  case STRING_TYPE:
-    return s7_make_string(radiums7_sc, STRING_get_chars(dyn.string));
-  case INT_TYPE:
-    return s7_make_integer(radiums7_sc, dyn.int_number);
-  case FLOAT_TYPE:
-    return s7_make_real(radiums7_sc, dyn.float_number);
-  case HASH_TYPE:
-    RError("s7extra_make_dyn: HASH_TYPE not supported (yet)");
-    break;
-  case BOOL_TYPE:
-    return s7_make_boolean(radiums7_sc, dyn.bool_number);
+    case STRING_TYPE:
+      return s7_make_string(radiums7_sc, STRING_get_chars(dyn.string));
+    case INT_TYPE:
+      return s7_make_integer(radiums7_sc, dyn.int_number);
+    case FLOAT_TYPE:
+      return s7_make_real(radiums7_sc, dyn.float_number);
+    case HASH_TYPE:
+      return hash_to_s7(radiums7_sc, dyn.hash);
+    case ARRAY_TYPE:
+      return dynvec_to_s7(radiums7_sc, *dyn.array);
+    case RATIO_TYPE:
+      return s7_make_ratio(radiums7_sc, dyn.ratio->numerator, dyn.ratio->denominator);
+    case BOOL_TYPE:
+      return s7_make_boolean(radiums7_sc, dyn.bool_number);
   }
 
   return s7_make_boolean(radiums7_sc, false);
@@ -401,6 +500,28 @@ bool s7extra_callFunc2_bool_int_int_float_float(const char *funcname, int64_t ar
   return s7extra_callFunc_bool_int_int_float_float((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
 }
 
+int64_t s7extra_callFunc_int_int(func_t *func, int64_t arg1){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = s7_call(s7,
+                           (s7_pointer)func,
+                           s7_list(s7,
+                                   1,
+                                   s7_make_integer(s7, arg1)
+                                   )
+                           );
+  if(!s7_is_integer(ret)){
+    handleError("Callback did not return an integer");
+    return -1;
+  }else{
+    return s7_integer(ret);
+  }
+}
+
+int64_t s7extra_callFunc2_int_int(const char *funcname, int64_t arg1){
+  return s7extra_callFunc_int_int((func_t*)s7_name_to_value(s7, funcname), arg1);
+}
+
 int64_t s7extra_callFunc_int_int_int_int(func_t *func, int64_t arg1, int64_t arg2, int64_t arg3){
   ScopedEvalTracker eval_tracker;
   
@@ -414,7 +535,7 @@ int64_t s7extra_callFunc_int_int_int_int(func_t *func, int64_t arg1, int64_t arg
                                    )
                            );
   if(!s7_is_integer(ret)){
-    handleError("Callback did not return a boolean");
+    handleError("Callback did not return an integer");
     return -1;
   }else{
     return s7_integer(ret);
@@ -439,7 +560,7 @@ int64_t s7extra_callFunc_int_int_int_int_bool(func_t *func, int64_t arg1, int64_
                                    )
                            );
   if(!s7_is_integer(ret)){
-    handleError("Callback did not return a boolean");
+    handleError("Callback did not return an integer");
     return -1;
   }else{
     return s7_integer(ret);

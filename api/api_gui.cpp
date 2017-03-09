@@ -50,6 +50,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
 
+#include "../common/OS_system_proc.h"
+
 #include "../Qt/Qt_MyQSlider.h"
 #include "../Qt/Qt_mix_colors.h"
 #include "../Qt/Qt_Fonts_proc.h"
@@ -247,7 +249,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       _gui_num = g_guis.size();
       g_guis.push_back(this);
       _widget->setAttribute(Qt::WA_DeleteOnClose);
-      //_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+      //_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);      
     }
 
     virtual ~Gui(){
@@ -380,8 +382,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     
     void resizeEvent(QResizeEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_resize_callback!=NULL);
-
-      event->accept();
 
       if(gui_isOpen(_gui_num) && _widget->isVisible()) //  && _widget->width()>0 && _widget->height()>0)
         s7extra_callFunc_void_int_int(_resize_callback, event->size().width(), event->size().height());
@@ -2228,10 +2228,10 @@ void gui_setFullScreen(int64_t guinum, bool enable){
     return;
 
   if(enable){
-    
+
     if(gui->_full_screen_parent!=NULL)
       return;
-    
+
     gui->_orgRect = gui->_widget->geometry();
       
     gui->_full_screen_parent = new QWidget();
@@ -2245,6 +2245,10 @@ void gui_setFullScreen(int64_t guinum, bool enable){
     gui->_full_screen_parent->setLayout(mainLayout);
 
     mainLayout->addWidget(gui->_widget);
+
+#if defined(FOR_WINDOWS)
+    OS_WINDOWS_set_key_window((void*)gui->_full_screen_parent->winId()); // To avoid losing keyboard focus
+#endif
     
   }else{
 
@@ -2275,7 +2279,7 @@ void gui_setBackgroundColor(int64_t guinum, const_char* color){
   QPalette pal = gui->_widget->palette();
   pal.setColor(QPalette::Background, QColor(color));
   pal.setColor(QPalette::Base, QColor(color));
-  gui->_widget->setAutoFillBackground(true);
+  //gui->_widget->setAutoFillBackground(true);
   gui->_widget->setPalette(pal);
 }
 
@@ -2427,8 +2431,15 @@ void informAboutGuiBeingAMixerStrips(int64_t guinum){
   g_mixerstrip_guinums.push_back(guinum);
 }
 
-void showMixerStrips(int num_rows){
-  evalScheme(talloc_format("(create-mixer-strips-gui %d)", num_rows));
+int64_t createMixerStripsWindow(int num_rows){
+  return s7extra_callFunc2_int_int("create-mixer-strips-gui", num_rows);
+}
+
+int64_t showMixerStrips(int num_rows){
+  int64_t gui = createMixerStripsWindow(num_rows);
+  if (gui!=-1)
+    gui_show(gui);
+  return gui;
 }
 
 QVector<QWidget*> MIXERSTRIPS_get_all_widgets(void){ 

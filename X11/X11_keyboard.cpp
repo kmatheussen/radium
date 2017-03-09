@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/includepython.h"
 
+#include "../common/nsmtracker.h"
+
 #include <QX11Info>
 
 #include "X11.h"
@@ -33,7 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <xcb/xcb_keysyms.h>
 #endif
 
-#include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
 #include "../common/eventreciever_proc.h"
 #include "../common/player_proc.h"
@@ -65,6 +66,8 @@ bool OS_WINDOWS_is_key_window(void *maybewin){
 
 
 static int keysym_to_keynum(KeySym keysym) {
+
+  //printf("          keysym: 0x%x\n", (unsigned int)keysym);
 
   // Handle some special keys first.
   switch(keysym){
@@ -108,6 +111,18 @@ static int keysym_to_keynum(KeySym keysym) {
   //S(minus, 0R1);S(equal, 0R2); // Missing 0R3!
   S(BackSpace, BACKSPACE);
 
+  // french keyboard workaround (1->0: &é"'(-è_çà)
+  S(ampersand, 1);
+  S(eacute, 2);
+  S(quotedbl, 3);
+  S(quoteright,4);
+  S(parenleft,5);
+  S(minus,6);
+  S(egrave,7);
+  S(underscore,8);
+  S(ccedilla,9);
+  S(agrave,0);
+  
 
 
   // row 3

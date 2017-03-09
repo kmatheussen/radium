@@ -900,6 +900,18 @@ static QVector<Chip*> get_selected_chips(void){
   return ret;
 }
 
+vector_t MW_get_selected_chips(void){
+  QVector<Chip*> chips = get_selected_chips();
+  
+  vector_t ret = {};
+
+  for(auto *chip : chips){
+    VECTOR_push_back(&ret, chip);
+  }
+
+  return ret;
+}
+
 //static bool mousepress_create_chip(MyScene *scene, float mouse_x, float mouse_y){
 static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_y){
   printf("mouserelease_create_chip called\n");
@@ -952,6 +964,65 @@ static vector_t get_selected_patches(void){
   return patches;
 }
 
+vector_t MW_get_selected_patches(void){
+  return get_selected_patches();
+}
+
+
+void MW_solo(const vector_t patches, bool set_on){
+
+  if (patches.num_elements==0){
+    GFX_Message(NULL, "No sound object selected");
+    return;
+  }
+
+  //Undo_Open();{
+    VECTOR_FOR_EACH(struct Patch *,patch,&patches){
+      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      int num_effects = plugin->type->num_effects;     
+      //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
+      PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, set_on ? 1.0 : 0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    }END_VECTOR_FOR_EACH;
+    //}Undo_Close();
+}
+
+void MW_mute(const vector_t patches, bool do_mute){
+
+  if (patches.num_elements==0){
+    GFX_Message(NULL, "No sound object selected");
+    return;
+  }
+
+  Undo_Open_rec();{
+    VECTOR_FOR_EACH(struct Patch *,patch,&patches){
+      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      int num_effects = plugin->type->num_effects;
+      if (do_mute != !ATOMIC_GET(plugin->volume_is_on)){
+        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_VOLUME_ONOFF));
+        float new_val = do_mute ? 0.0 : 1.0;
+        PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      }
+    }END_VECTOR_FOR_EACH;
+  }Undo_Close();
+}
+
+void MW_bypass(const vector_t patches, bool do_bypass){
+
+  if (patches.num_elements==0){
+    GFX_Message(NULL, "No sound object selected");
+    return;
+  }
+
+  Undo_Open_rec();{
+    VECTOR_FOR_EACH(struct Patch *,patch,&patches){
+      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      int num_effects = plugin->type->num_effects;
+      ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF));
+      float new_val = do_bypass ? 0.0 : 1.0;
+      PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    }END_VECTOR_FOR_EACH;
+  }Undo_Close();
+}
 
 void MW_copy(void){
   vector_t patches = get_selected_patches();
@@ -1025,6 +1096,21 @@ bool MW_has_mouse_pointer(void){
     return false;
 }
 
+static bool g_connections_are_visible = true;
+bool MW_get_connections_visibility(void){
+  return g_connections_are_visible;
+}
+
+void MW_set_connections_visibility(bool show){
+  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  for(auto *item : das_items){
+    SuperConnection *connection = dynamic_cast<SuperConnection*>(item);
+    if (connection != NULL){
+      connection->setVisibility(show);
+    }
+  }
+  g_connections_are_visible=show;
+}
 
 static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent * event, float mouse_x, float mouse_y){
 
@@ -1048,6 +1134,13 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int config_color = -1;
   int instrument_info = -1;
   int random = -1;
+  int solo = -1;
+  int unsolo = -1;
+  int mute = -1;
+  int unmute = -1;
+  int unsolo_all = -1;
+  int mute_all = -1;
+  int unmute_all = -1;
   
   if (chips.size() > 1) {
     
@@ -1056,9 +1149,21 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     delete_ = VECTOR_push_back(&v, "Delete sound objects");
     VECTOR_push_back(&v, "--------");
     save = VECTOR_push_back(&v, "Save multi preset file (.mrec)");
-    
+    VECTOR_push_back(&v, "--------");
+    solo = VECTOR_push_back(&v, "Solo all selected");
+    unsolo = VECTOR_push_back(&v, "Un-solo all selected");
+    mute = VECTOR_push_back(&v, "Mute all selected");
+    unmute = VECTOR_push_back(&v, "Un-mute all selected");
+    VECTOR_push_back(&v, "--------");
+    unsolo_all = VECTOR_push_back(&v, "Un-solo all");
+    mute_all = VECTOR_push_back(&v, "Mute all");
+    unmute_all = VECTOR_push_back(&v, "Un-mute all");
+      
   } else if (chips.size() == 1){
 
+    struct Patch *patch = CHIP_get_patch(chip_under);
+    struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    
     if (QString("Sample Player") == SP_get_plugin(chip_under->_sound_producer)->type->type_name){
       random = VECTOR_push_back(&v, "Load random sample from folder");
       VECTOR_push_back(&v, "--------");
@@ -1072,6 +1177,29 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     copy = VECTOR_push_back(&v, "Copy sound object");
     cut = VECTOR_push_back(&v, "Cut sound object");
     delete_ = VECTOR_push_back(&v, "Delete sound object");
+
+    VECTOR_push_back(&v, "--------");
+
+    if (ATOMIC_GET(plugin->solo_is_on)){
+      solo = VECTOR_push_back(&v, "[disabled]Solo");    
+      unsolo = VECTOR_push_back(&v, "Un-solo");
+    }else{
+      solo = VECTOR_push_back(&v, "Solo");    
+      unsolo = VECTOR_push_back(&v, "[disabled]Un-solo");
+    }
+
+    if (!ATOMIC_GET(plugin->volume_is_on)){
+      mute = VECTOR_push_back(&v, "[disabled]Mute");
+      unmute = VECTOR_push_back(&v, "Un-mute");
+    }else{
+      mute = VECTOR_push_back(&v, "Mute");
+      unmute = VECTOR_push_back(&v, "[disabled]Un-mute");
+    }
+
+    VECTOR_push_back(&v, "--------");
+    unsolo_all = VECTOR_push_back(&v, "Un-solo all");
+    mute_all = VECTOR_push_back(&v, "Mute all");
+    unmute_all = VECTOR_push_back(&v, "Un-mute all");
     
     VECTOR_push_back(&v, "--------");
     
@@ -1092,6 +1220,34 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   } else if (sel==replace) {
 
     mouserelease_replace_patch(scene, mouse_x, mouse_y);
+    
+  } else if (sel==solo) {
+
+    MW_solo(get_selected_patches(), true);
+    
+  } else if (sel==unsolo) {
+
+    MW_solo(get_selected_patches(), false);
+    
+  } else if (sel==mute) {
+
+    MW_mute(get_selected_patches(), true);
+    
+  } else if (sel==unmute) {
+
+    MW_mute(get_selected_patches(), false);
+    
+  } else if (sel==unsolo_all) {
+
+    MW_solo(get_audio_instrument()->patches, false);
+    
+  } else if (sel==mute_all) {
+
+    MW_mute(get_audio_instrument()->patches, true);
+    
+  } else if (sel==unmute_all) {
+
+    MW_mute(get_audio_instrument()->patches, false);
     
   } else if (sel==copy) {
 
@@ -2002,10 +2158,14 @@ static bool delete_a_chip(bool is_loading){
   return ret;
 }
 
-void MW_cleanup(bool is_loading){
-  
+void MW_cleanup(bool is_loading){  
+  MW_reset_ab(-1);
+
   MW_cleanup_connections(is_loading); // Calling this function is not necessary since all connecting connections are deleted when deleting a chip (which happens in the next line), but it's a lot faster to delete all connections in one go than deleting them one by one since we only have to wait for the audio thread one time.
+
   while(delete_a_chip(is_loading)); // remove all chips. All connections are removed as well when removing all chips.
+
+  MW_update_mixer_widget();
 }
 
 static void get_patches_min_x_y(const vector_t *patches, float &min_x, float &min_y){
@@ -2559,6 +2719,13 @@ static void apply_ab_connections_state(hash_t *connections){
                                      -1, -1);
         connection = get_connection(id_from, id_to, is_event_connection);
         R_ASSERT_RETURN_IF_FALSE(connection!=NULL);
+      } else {
+
+        if (HASH_has_key(connection_state, "gain")){
+          float gain = HASH_get_float(connection_state, "gain");
+          setAudioConnectionGain(id_from, id_to, gain, true);
+        }
+
       }
     
       connection->is_ab_touched = true;
@@ -2610,10 +2777,11 @@ void MW_change_ab(int ab_num){
 }
 
 void MW_reset_ab(int num){
-  if (num==-1)
+  if (num==-1) {
     for(int i=0;i<MW_NUM_AB;i++)
       g_ab_is_valid[i]=false;
-  else
+    g_curr_ab = 0;
+  } else
     g_ab_is_valid[num]=false;
 }
 

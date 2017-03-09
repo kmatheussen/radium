@@ -516,6 +516,9 @@ char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype, bool 
 
 // This function must never return NULL.
 struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char *name){
+  //printf("    Calling MIDIgetPort -%s-\n", name);
+  bool created_new_port = false;
+
   while(name==NULL){
     name = MIDIrequestPortName(window,reqtype,false);
   }
@@ -525,17 +528,45 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char
   while (midi_port != NULL) {
     if(!strcmp(midi_port->name,name)) {
       printf("Found existing midi_port for %s\n",name);
-      return midi_port;
+      break;
     }
     midi_port = midi_port->next;
   }
 
-  midi_port = talloc(sizeof(struct MidiPort));
-  midi_port->name = talloc_strdup(name);
-  midi_port->port = MIDI_getMidiPortOs(window,reqtype,name);
+  if (midi_port == NULL){
+    midi_port = talloc(sizeof(struct MidiPort));
+    midi_port->name = talloc_strdup(name);
+    midi_port->port = MIDI_getMidiPortOs(window,reqtype,name);
+    created_new_port = true;
+  }
 
-  midi_port->next = g_midi_ports;
-  g_midi_ports = midi_port;
+  int num_input_ports;
+  char **input_port_names = MIDI_OS_get_connected_input_ports(&num_input_ports);
+  for(int i=0;i<num_input_ports;i++){
+    printf("   Testing -%s- vs. -%s-\n", input_port_names[i], midi_port->name);
+    char *portname = midi_port->name;
+    if (!strncmp(portname,"Radium: ",8))
+      portname += 8;
+
+    if (!strcmp(input_port_names[i], portname)){
+      vector_t v = {0};
+
+      int yes = VECTOR_push_back(&v, "Yes");
+      int no = VECTOR_push_back(&v, "No");
+
+      int result = GFX_Message(&v, "Are you sure? Port \"%s\" is an input port. If you send MIDI data to this port, you risk starting a recursive connection that's impossible to stop.", midi_port->name);
+
+      if (result!=yes)
+        return MIDIgetPort(window, reqtype, NULL);
+
+      (void)no;
+    }
+  }
+
+  if (created_new_port==true){
+    midi_port->next = g_midi_ports;
+    g_midi_ports = midi_port;
+  }
 
   return midi_port;
 }

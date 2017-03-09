@@ -230,13 +230,18 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
   
   String name(name_c);
 
+#if defined(FOR_LINUX)
+  if (name.startsWith("Radium: "))
+    name = name.substring(String("Radium: ").length());
+#endif
+
   StringArray devices = MidiOutput::getDevices();
 
   int device_id = devices.indexOf(name);
 
   /*
   for(int i=0;i<devices.size();i++){
-    printf("%d: %s (%d: %s)\n", i, talloc_strdup(devices[i].toUTF8()), device_id,name);
+    printf("AIAIAIAI. %d: %s (%d: %s)\n", i, talloc_strdup(devices[i].toUTF8()), device_id, name_c);
   }
   */
 
@@ -251,6 +256,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
       ret->midiout = MidiOutput::openDevice(device_id);
     }
 #else
+
     ret->midiout = MidiOutput::createNewDevice(name);
 #endif
 
@@ -286,8 +292,15 @@ static bool is_connected_to_input_port(String name){
 
 static void add_input_port(String name, bool do_update_settings, bool should_be_there){
   
+#if defined(FOR_LINUX)
+  if (name.startsWith("Radium: "))
+    name = name.substring(String("Radium: ").length());
+#endif
+
+
   if (is_connected_to_input_port(name))
     return;
+
 
   StringArray devices = MidiInput::getDevices();
 

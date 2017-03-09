@@ -586,6 +586,15 @@ void OS_SYSTEM_init_keyboard(void){
   }
 }
 
+#if 0
+bool OS_SYSTEM_window_is_actually_visible(void *void_nsview){
+  return false;
+  /*
+  NSView *view = (NSView*)void_nsview;
+  return [[view window] isVisible]; // Must use occlusion function which is only available from 10.9.
+  */
+}
+#endif
 
 bool OS_OSX_is_key_window(void *void_nsview){
   NSView *view = (NSView*)void_nsview;

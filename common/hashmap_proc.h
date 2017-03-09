@@ -32,6 +32,7 @@ extern LANGSPEC hash_t *HASH_create(int approx_size);
 
 extern LANGSPEC bool HASH_equal(const hash_t *h1, const hash_t *h2);
 
+// Can also be used to rehash
 extern LANGSPEC hash_t *HASH_copy(const hash_t *hash);
 
 extern LANGSPEC const char *HASH_get_key(const hash_t *hash, const char *key); // Returns the stored pointed, if it needs to be reused.
@@ -40,17 +41,22 @@ extern LANGSPEC bool HASH_has_key_at(const hash_t *hash, const char *key, int i)
 
 extern LANGSPEC int HASH_get_num_elements(const hash_t *hash);
 
-extern LANGSPEC hash_t *HASH_get_keys(const hash_t *hash); // Returns all keys in a new hash array.
-extern LANGSPEC vector_t *HASH_get_values(const hash_t *hash);
+extern LANGSPEC hash_t *HASH_get_keys_in_hash(const hash_t *hash); // Returns all keys in a new hash array.
+extern LANGSPEC vector_t HASH_get_keys(const hash_t *hash);
+extern LANGSPEC dynvec_t HASH_get_values(const hash_t *hash);
 
 // HASH_put_*: char *key is not copied. I.e. the key is used directly, not a copy of it.
 // HASH_put_string: A copy of char *val is used, not val itself.
 
+extern LANGSPEC void HASH_put_dyn(hash_t *hash, const char *key, const dyn_t val);
 extern LANGSPEC void HASH_put_string(hash_t *hash, const char *key, const wchar_t *val);
 extern LANGSPEC void HASH_put_chars(hash_t *hash, const char *key, const char *val);
 extern LANGSPEC void HASH_put_int(hash_t *hash, const char *key, int64_t val);
 extern LANGSPEC void HASH_put_float(hash_t *hash, const char *key, double val);
+extern LANGSPEC void HASH_put_ratio(hash_t *hash, const char *key, Ratio val);
 extern LANGSPEC void HASH_put_hash(hash_t *hash, const char *key, hash_t *val);
+extern LANGSPEC void HASH_put_array(hash_t *hash, const char *key, dynvec_t dynvec);
+
 static inline void HASH_put_bool(hash_t *hash, const char *key, bool val){
   HASH_put_int(hash, key, val ? 1 : 0);
 }
@@ -75,6 +81,7 @@ extern LANGSPEC int HASH_get_array_size(const hash_t *hash, const char *key);
 extern LANGSPEC bool HASH_remove_at(hash_t *hash, const char *raw_key, int i);
 extern LANGSPEC bool HASH_remove(hash_t *hash, const char *raw_key);
 
+extern LANGSPEC void HASH_put_dyn_at(hash_t *hash, const char *key, int i, const dyn_t val);
 extern LANGSPEC void HASH_put_string_at(hash_t *hash, const char *key, int i, const wchar_t *val);
 extern LANGSPEC void HASH_put_chars_at(hash_t *hash, const char *key, int i, const char *val);
 extern LANGSPEC void HASH_put_int_at(hash_t *hash, const char *key, int i, int64_t val);
@@ -82,7 +89,9 @@ static inline void HASH_put_bool_at(hash_t *hash, const char *key, int i, bool v
   HASH_put_int_at(hash, key, i, val ? 1 : 0);
 }
 extern LANGSPEC void HASH_put_float_at(hash_t *hash, const char *key, int i, double val);
+extern LANGSPEC void HASH_put_ratio_at(hash_t *hash, const char *key, int i, Ratio val);
 extern LANGSPEC void HASH_put_hash_at(hash_t *hash, const char *key, int i, hash_t *val);
+extern LANGSPEC void HASH_put_array_at(hash_t *hash, const char *key, int i, dynvec_t val);
 
 extern LANGSPEC const wchar_t *HASH_get_string_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC const char *HASH_get_chars_at(const hash_t *hash, const char *key, int i);

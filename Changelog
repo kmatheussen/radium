@@ -1,3 +1,32 @@
+Changes 4.5.2 -> 4.5.4:
+* Mixer: Checkbox to show/hide connections.
+* Mixer: Apply volume/muting/soloing/bypassing changes to all
+  selected objects.
+* Mixer: Update mixer object volume sliders when undoing.
+* Show arrow letter, not "=>", above the rightmost arrow in the
+  instrument window.
+* Mixer: Popup menu options to unsolo/mute/unmute all objects,
+  and options to solo/mute/unsolo/unmute all selected objects.
+* Mixerstrips: Update send sliders when a value is changed from
+  another mixer strip.
+* OSX: Give up, and disable high CPU protection on this platform.
+  It really seems like Apple goes to great lengths to make programs
+  use 100% CPU in OpenGL applications when the window is not visible
+  (i.e. they are not just transforming 'OpenGL Swap' into a dummy
+  function, which would be stupid enough by itself, albeit managable).
+  To illustrate how hard this problem is, the code in the JUCE library
+  to work around the same problem doesn't work properly either, so in
+  all JUCE OpenGL applications and plugins running on OSX, you are
+  likely to see a little bit of graphics stuttering now and then
+  caused by JUCE's high CPU protection logic. On most OpenGL
+  applications, this is not a big deal, but in Radium, where there
+  are very big movements and close interactions between user and
+  OpenGL graphics, it's very noticable and annoying. A workaround
+  may exist in OSX 10.9 and later, but I'm not sure I want to
+  prevent Radium from running on OSX 10.8 yet.
+
+
+
 Changes 4.5.0 -> 4.5.2:
 * OSX: Fix the 0,1,2,3,4,5,6,7,8,9 keys when using a french keyboard
 * Osx/sierra: Workaround for crash in qt when exiting program

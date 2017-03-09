@@ -109,7 +109,7 @@ static int GetMaxSignatureWidth(struct Blocks *block){
   struct Signatures *signature = block->signatures;
   while(signature != NULL){
     char temp[128];
-    sprintf(temp,"%d/%d",signature->signature.numerator,signature->signature.denominator);
+    sprintf(temp,"%d/%d",(int)signature->signature.numerator,(int)signature->signature.denominator);
     ret = R_MAX(ret, (int)strlen(temp));
     signature = NextSignature(signature);
   }

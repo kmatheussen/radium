@@ -170,6 +170,7 @@ Chip *MW_get_chip_at(float x, float y, Chip *except);
 
 void MW_set_selected_chip(Chip *chip);
 
+
 #endif // __cplusplus
 
 extern LANGSPEC DEFINE_ATOMIC(bool, g_show_cpu_usage_in_mixer);
@@ -177,10 +178,18 @@ extern LANGSPEC DEFINE_ATOMIC(bool, g_show_cpu_usage_in_mixer);
 extern LANGSPEC void inc_plugin_usage_number(SoundPluginType *type);
 
 extern LANGSPEC void MW_set_rotate(float rotate);
+extern LANGSPEC void MW_update_mixer_widget(void);
 
 extern LANGSPEC char *MW_request_load_preset_instrument_description(void);
 extern LANGSPEC const char *MW_popup_plugin_selector2(bool must_have_inputs, bool must_have_outputs);
 extern LANGSPEC SoundPluginType *MW_popup_plugin_type_selector(bool must_have_inputs, bool must_have_outputs);
+
+extern LANGSPEC vector_t MW_get_selected_chips(void);
+extern LANGSPEC vector_t MW_get_selected_patches(void);
+
+extern LANGSPEC void MW_solo(const vector_t patches, bool set_on);
+extern LANGSPEC void MW_mute(const vector_t patches, bool do_mute);
+extern LANGSPEC void MW_bypass(const vector_t patches, bool do_bypass);
 
 extern LANGSPEC void MW_copy(void);
 extern LANGSPEC void MW_delete(void);
@@ -188,6 +197,9 @@ extern LANGSPEC void MW_cut(void);
 extern LANGSPEC int64_t MW_paste(float x, float y);
 
 extern LANGSPEC bool MW_has_mouse_pointer(void);
+
+extern LANGSPEC bool MW_get_connections_visibility(void);
+extern LANGSPEC void MW_set_connections_visibility(bool show);
 
 extern LANGSPEC void MW_autoconnect_plugin(SoundPlugin *plugin);
 

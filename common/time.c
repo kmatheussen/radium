@@ -434,8 +434,8 @@ static void STP_fillinSTimes2(
 	Place *p1,
 	Place *p2
 ){
-	bool tchange=false;
-	bool rchange=false;
+	bool create_timechange_node=false;
+	bool reltempo_changed=false;
 
 	double tfp1,tfp2;
 	double reltempo1=stp->reltempo1;
@@ -446,10 +446,10 @@ static void STP_fillinSTimes2(
 	if(PlaceEqual(p1,p2)){
 		return;
 	}
-	if(reltempo1!=reltempo2) rchange=true;
-	if(rchange || p1->counter>0) tchange=true;
+	if(reltempo1!=reltempo2) reltempo_changed=true;
+	if(reltempo_changed || p1->counter>0) create_timechange_node=true;
 
-	if(tchange){
+	if(create_timechange_node){
 		timechange=talloc(sizeof(struct STimeChanges));
 		timechange->time=stp->nexttime;
 		timechange->tempo1=0.0f;
@@ -462,7 +462,7 @@ static void STP_fillinSTimes2(
 	tfp1=GetDoubleFromPlace(p1);
 	tfp2=GetDoubleFromPlace(p2);
 
-	if(rchange){
+	if(reltempo_changed){
 
 		timechange->rel=
 			reltempo1 + (
@@ -496,7 +496,7 @@ static void STP_fillinSTimes2(
 		);
 	}
 
-	if(tchange){
+	if(create_timechange_node){
 		PlaceCopy(&timechange->l.p,p1);
 		ListAddElement3(&stp->times[p1->line].timechanges,&timechange->l); // Should this be ListAddElement3_a ?
 	}

@@ -16,6 +16,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include <qmath.h>
+#include <assert.h>
+
+#include "../api/api_proc.h"
+
 
 static QSlider *g_zoom_slider = NULL;
 //static QWidget *g_view = NULL;
@@ -99,12 +103,16 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
   qreal _middle_zoom;
 
   Mixer_Direction_Menu _mixer_direction_menu;
+
+  int64_t _mixer_strips_gui = -1;
+  int _num_rows = 2;
   
  Mixer_widget(QWidget *parent=NULL)
     : QWidget(parent)
     , _rotate(0)
     , _middle_zoom(1.0)
     , _mixer_direction_menu(this)
+    , _mytimer(this)
   {
     initing = true;
     setupUi(this);
@@ -122,7 +130,10 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     zoomout_button->hide();
     
     update_ab_buttons();
-
+    show_modular_mixer_widgets(true);
+    
+    connections_visibility->setChecked(MW_get_connections_visibility());
+      
     //connect(ab_a, SIGNAL(rightClicked()), this, SLOT(on_ab_a_rightClicked()));
       
     g_mixer_widget2 = this;
@@ -167,6 +178,9 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
         buttons[i]->setText(selnames[i]);
       else
         buttons[i]->setText(names[i]);
+
+      if (curr==i)
+        buttons[i]->setChecked(true);
     }
   }
 
@@ -177,6 +191,92 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     }
   }
 
+  
+  void show_modular_mixer_widgets(bool is_modular){
+    zoomreset_button->setVisible(is_modular);
+    //zoom_slider->setVisible(is_modular);
+    mixer_direction_menu_button->setVisible(is_modular);
+    show_cpu_usage->setVisible(is_modular);
+    connections_visibility->setVisible(is_modular);
+
+    help_button->setVisible(is_modular);
+
+    rows1->setVisible(!is_modular);
+    rows2->setVisible(!is_modular);
+    rows3->setVisible(!is_modular);
+    rows4->setVisible(!is_modular);
+    
+    mixerstrips_help->setVisible(!is_modular);
+  }
+
+  void change_num_mixerstrips_rows(int num_rows){
+    if(!initing && _mixer_strips_gui!=-1 && num_rows!=_num_rows){
+      _num_rows = num_rows;
+      int64_t old_gui = _mixer_strips_gui;
+      if (old_gui != -1){
+        _mixer_strips_gui = createMixerStripsWindow(num_rows);
+        auto *old_item = verticalLayout->replaceWidget(API_gui_get_widget(old_gui), API_gui_get_widget(_mixer_strips_gui));
+        delete old_item;
+        gui_close(old_gui);
+      }
+    }
+  }
+    
+
+  struct MyTimer : public QTimer{
+    Mixer_widget *_parent;
+    QTime time;
+
+    MyTimer(Mixer_widget *parent)
+      : _parent(parent)
+    {
+      //setSingleShot(true);
+      setInterval(50);
+    }
+
+    void timerEvent(QTimerEvent *e) override{
+      if (time.elapsed() > 40){ // singleshot is messy since we might get deleted at any time.
+        printf("TEIMERERINE EVENT\n");
+        // _parent->adjustSize();
+        //_parent->setUpdatesEnabled(true);
+        //mixer_layout->setUpdatesEnabled(true);
+        // _parent->mixer_layout->update();
+        /*
+        if(_parent->_mixer_strips_gui!=-1){
+          QWidget *w = API_gui_get_widget(_parent->_mixer_strips_gui);
+          w->setUpdatesEnabled(true);
+        }
+        */
+        _parent->verticalLayout->update();
+        stop();
+      }
+    }
+  };
+
+  MyTimer _mytimer;
+
+  void pauseUpdatesALittleBit(void){
+    //mixer_layout->update();
+    if (!_mytimer.isActive()){
+      //setUpdatesEnabled(false);
+      //mixer_layout->setUpdatesEnabled(false);
+      /*
+      if(_mixer_strips_gui!=-1){
+        QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+        w->setUpdatesEnabled(false);
+      }
+      */
+      _mytimer.time.restart();
+      _mytimer.start();
+      printf("                 Started timer\n");
+    }
+  }
+
+  void resizeEvent( QResizeEvent *qresizeevent) override{
+    //pauseUpdatesALittleBit();
+    //Mixer_widget->update();
+  }
+  
 public slots:
 
   void on_ab_a_clicked(){ab_rightclicked(0);}
@@ -240,10 +340,87 @@ public slots:
     MW_reset_ab(-1);
     update_ab_buttons();
   }
+
+  void on_show_modular_toggled(bool show_modular){
+    if (initing)
+      return;
+
+    //pauseUpdatesALittleBit();
+    setUpdatesEnabled(false);
+
+    if (show_modular){
+
+      modular_widget->show();
+
+      if(_mixer_strips_gui != -1){
+        QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+        //mixer_layout->removeWidget(w); // I've tried very hard to use replaceWidget instead of showing/hiding the 'view' widget, but Qt refuses to behave as I want.
+        w->hide();
+        //gui_close(_mixer_strips_gui);
+        //_mixer_strips_gui = -1;
+        
+      }
+      show_modular_mixer_widgets(true);
+      
+    } else {
+
+      if (_mixer_strips_gui == -1){
+        _mixer_strips_gui = createMixerStripsWindow(_num_rows);
+        if (_mixer_strips_gui != -1){
+          show_modular_mixer_widgets(false);
+          QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+          //w->setParent(bottom_widget);
+          //w->setFixedSize(width(), height()-50);
+          verticalLayout->addWidget(w);
+          modular_widget->hide();
+          /*
+            mixer_layout->update();
+            verticalLayout->update();
+            updateGeometry();
+          */
+        }
+      } else {
+        QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+        w->setUpdatesEnabled(false);
+        show_modular_mixer_widgets(false);        
+        modular_widget->hide();
+        w->show();
+        w->setUpdatesEnabled(true);
+      }
+      
+    }
+    
+    setUpdatesEnabled(true); // It's a flaw in Qt that we need to call this function. And it doesn't even work very well.
+  }
+
+  void on_rows1_toggled(bool val){
+    if(val)
+      change_num_mixerstrips_rows(1);
+  }
+  
+  void on_rows2_toggled(bool val){
+    if(val)
+      change_num_mixerstrips_rows(2);
+  }
+  
+  void on_rows3_toggled(bool val){
+    if(val)
+      change_num_mixerstrips_rows(3);
+  }
+  
+  void on_rows4_toggled(bool val){
+    if(val)
+      change_num_mixerstrips_rows(4);
+  }
   
   void on_show_cpu_usage_toggled(bool val){
     ATOMIC_SET(g_show_cpu_usage_in_mixer, val);
     MW_update_all_chips();
+  }
+
+  void on_connections_visibility_toggled(bool val){
+    if (initing==false)
+      MW_set_connections_visibility(val);
   }
 
   void on_mixer_direction_menu_button_released() {
@@ -309,6 +486,10 @@ public slots:
     GFX_showMixerHelpWindow();
   }
 
+  void on_mixerstrips_help_clicked(){
+    GFX_showMixerStripsHelpWindow();
+  }
+
 };
 
 
@@ -316,6 +497,10 @@ void MW_set_rotate(float rotate){
   g_mixer_widget2->set_rotate(rotate);
 }
 
+void MW_update_mixer_widget(void){
+  g_mixer_widget2->update_ab_buttons();
+  g_mixer_widget2->update();
+}
 
 #if 0
 extern "C"{ void GFX_showHideMixerWidget(void);}
