@@ -243,7 +243,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
         printf("TEIMERERINE EVENT\n");
         // _parent->adjustSize();
         _parent->setUpdatesEnabled(true);
-        g_mixer_widget->setUpdatesEnabled(true);
+        //g_mixer_widget->setUpdatesEnabled(true);
         g_pause_scroll_area_updates_when_resizing = false;
         //mixer_layout->setUpdatesEnabled(true);
         // _parent->mixer_layout->update();
@@ -383,7 +383,7 @@ public slots:
       return;
 
     g_pause_scroll_area_updates_when_resizing = true;
-    g_mixer_widget->setUpdatesEnabled(false);
+    //g_mixer_widget->setUpdatesEnabled(false); // <- This causes graphics not to be updated after switching when running in separate window. Need to resize a little bit first.
     setUpdatesEnabled(false);
     
     pauseUpdatesALittleBit(); // Prevent some flickering.
