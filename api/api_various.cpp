@@ -1937,7 +1937,7 @@ int64_t getSongLengthInFrames(void){
   return SONG_get_length() * MIXER_get_sample_rate();
 }
 
-float getSampleRate(void){
+int getSampleRate(void){
   return MIXER_get_sample_rate();
 }
 
