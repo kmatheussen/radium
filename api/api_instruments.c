@@ -1309,6 +1309,9 @@ void setCurrentInstrument(int64_t instrument_id, bool show_instrument_window_if_
   if(patch==NULL)
     return;
 
+  if (patch==g_currpatch)
+    return;
+
   //if(showInstrumentWidgetWhenDoubleClickingSoundObject())
   if(show_instrument_window_if_not_visible)
     GFX_InstrumentWindowToFront();

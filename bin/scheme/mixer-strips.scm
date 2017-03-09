@@ -133,9 +133,12 @@
                                               (create-default-mixer-path-popup instrument-id))
                                           (when (= button *left-button*)
                                             (if is-current-mixer-strip
-                                                (set! *current-mixer-strip-is-wide* is-minimized)
-                                                (<ra> :set-wide-instrument-strip instrument-id is-minimized))
-                                            (remake-mixer-strips instrument-id))))
+                                                (begin
+                                                  (set! *current-mixer-strip-is-wide* is-minimized)
+                                                  (remake-mixer-strips instrument-id))
+                                                (<ra> :set-current-instrument instrument-id)))))
+                                            ;;    (<ra> :set-wide-instrument-strip instrument-id is-minimized))
+                                            ;;(remake-mixer-strips instrument-id))))
                                     #f))
 
   label)
@@ -259,10 +262,16 @@
                                       (if (and (not (string=? new-name ""))
                                                (not (string=? new-name old-name)))
                                           (<ra> :set-instrument-name new-name instrument-id)))
-                "Configure instrument color" (lambda ()
-                                               (show-instrument-color-dialog instrument-id))
                 "Instrument information" (lambda ()
                                            (<ra> :show-instrument-info instrument-id))
+                "----------"
+                "Configure instrument color" (lambda ()
+                                               (show-instrument-color-dialog instrument-id))
+                (list "Wide"
+                      :check (<ra> :has-wide-instrument-strip instrument-id)
+                      (lambda (enabled)
+                        (<ra> :set-wide-instrument-strip instrument-id enabled)
+                        (remake-mixer-strips instrument-id)))
                 "Show GUI" :enabled (<ra> :has-native-instrument-gui instrument-id)
                 (lambda ()
                   (<ra> :show-instrument-gui instrument-id #f))
@@ -274,8 +283,8 @@
                                                                       (<ra> :set-current-instrument instrument-id #f)
                                                                       )))
                                                             (sort-instruments-by-mixer-position-and-connections 
-                                                             (get-all-audio-instruments)))))
-              ))
+                                                             (get-all-audio-instruments)))))                
+                ))
 
 (define (create-default-mixer-path-popup instrument-id)
   (define is-permanent? (<ra> :instrument-is-permanent instrument-id))
@@ -335,7 +344,9 @@
                         ;;(<ra> :set-instrument-effect instrument-id effect-name val)
                         (when widget
                           (set-value val)
-                          (<gui> :update widget)))))
+                          (<gui> :update widget)
+                          ;;(<ra> :set-current-instrument first-instrument-id)
+                          ))))
 
   (<gui> :set-min-height widget (get-fontheight))
 
