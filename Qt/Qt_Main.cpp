@@ -1629,7 +1629,7 @@ void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
 }
 
 void GFX_toggleCurrWindowFullScreen(void){
-  QWidget *toplevel = QApplication::topLevelAt(QCursor::pos());
+  QWidget *toplevel = QApplication::topLevelAt(QCursor::pos()); // Note, QApplication::topLevelAt does not return a toplevel window, but instead a top level widget, which may, or may not, be a top level window.
   printf("       toplevel: %p\n",toplevel);
   if(toplevel==NULL)
     return;
@@ -1642,16 +1642,16 @@ void GFX_toggleCurrWindowFullScreen(void){
     }
   }
   
-  //  for(auto *window : QGuiApplication::allWindows()){
-  //   if (window==toplevel->windowHandle()){
+  for(auto *window : QGuiApplication::allWindows()){
+    if (window==toplevel->windowHandle()){
       if(toplevel->isFullScreen()){
         toplevel->showNormal();
       }else{
         toplevel->showFullScreen();
       }
-      //  return;
-      // }
-      //  }
+      return;
+    }
+  }
 }
 
 
