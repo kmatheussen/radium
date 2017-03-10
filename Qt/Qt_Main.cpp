@@ -169,6 +169,11 @@ QHBoxLayout *g_mixerstriplayout = NULL;
 QWidget *g_parent_for_instrument_widget_ysplitter = NULL;
 
 
+DEFINE_ATOMIC(bool, g_mixer_strips_needs_remake) = false;
+void RT_schedule_mixer_strips_remake(void){
+  ATOMIC_SET(g_mixer_strips_needs_remake, true);
+}
+
 DEFINE_ATOMIC(bool, g_mixer_strips_needs_redraw) = false;
 void RT_schedule_mixer_strips_redraw(void){
   ATOMIC_SET(g_mixer_strips_needs_redraw, true);
@@ -1470,9 +1475,13 @@ protected:
     }
 
     if (is_called_every_ms(50)){
-      if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false)){
-        printf("          (remake called from qt main)\n");
+      if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_remake, true, false)){ // 
+        //printf("          (remake called from qt main)\n");
         evalScheme("(remake-mixer-strips)");
+      }
+      if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false)){ // 
+        //printf("          (redraw called from qt main)\n");
+        evalScheme("(redraw-mixer-strips)");
       }
     }
 

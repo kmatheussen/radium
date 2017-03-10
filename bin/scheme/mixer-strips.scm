@@ -1322,8 +1322,11 @@
   (set-fixed-height comment-edit height)
   comment-edit)
 
-(define (draw-mixer-strips-border gui width height)
-  (<gui> :draw-box gui "#bb222222" 0 0 width height 2 3 3))
+(define (draw-mixer-strips-border gui width height instrument-id)
+  ;;(c-display "    Draw mixer strips border called for " instrument-id)
+  (if (= (<ra> :get-current-instrument) instrument-id)
+      (<gui> :draw-box gui "#bb111144" 0 0 width height 10 3 3)
+      (<gui> :draw-box gui "#bb222222" 0 0 width height 2 3 3)))
 
 (define (create-mixer-strip-minimized instrument-id is-current-mixer-strip)
   (define color (<ra> :get-instrument-color instrument-id))
@@ -1360,7 +1363,7 @@
          (lambda (width height)
            ;;(set-fixed-height volume-gui (floor (/ height 2)))
            (<gui> :filled-box gui background-color 0 0 width height 0 0)
-           (draw-mixer-strips-border gui width height)
+           (draw-mixer-strips-border gui width height (if is-current-mixer-strip -2 instrument-id))
            #t
            )
          )
@@ -1473,7 +1476,7 @@
   (add-safe-paint-callback gui
          (lambda (width height)
            (<gui> :filled-box gui background-color 0 0 width height 0 0)
-           (draw-mixer-strips-border gui width height)))
+           (draw-mixer-strips-border gui width height (if is-current-mixer-strip -2 instrument-id))))
   gui)
 
 (define (create-mixer-strip instrument-id min-width is-current-mixer-strip)
@@ -1810,6 +1813,13 @@
   ;;(c-display "\n\n\n             REMAKE MIXER STRIPS " list-of-modified-instrument-ids "\n\n\n")
   (for-each (lambda (a-mixer-strips-object)
               ((a-mixer-strips-object :remake) list-of-modified-instrument-ids))
+            *mixer-strips-objects*))
+
+(define (redraw-mixer-strips . list-of-modified-instrument-ids)
+  ;;(c-display "\n\n\n             REDRAW MIXER STRIPS " list-of-modified-instrument-ids "\n\n\n")
+  (for-each (lambda (a-mixer-strips-object)
+              ;;(c-display "       updating " (a-mixer-strips-object :gui))
+              (<gui> :update-recursively (a-mixer-strips-object :gui)))
             *mixer-strips-objects*))
 
 (define (toggle-all-mixer-strips-fullscreen)

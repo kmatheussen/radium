@@ -1811,6 +1811,27 @@ void gui_addPaintCallback(int64_t guinum, func_t* func){
   gui->addPaintCallback(func);
 }
 
+
+static void updateWidgetRecursively(QWidget *widget){
+  if (widget != NULL){
+    widget->update();
+    
+    for(auto *c : widget->children())
+      updateWidgetRecursively(dynamic_cast<QWidget*>(c));
+  }
+}
+
+void gui_updateRecursively(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  R_ASSERT_RETURN_IF_FALSE(g_currently_painting==false);
+
+  updateWidgetRecursively(gui->_widget);
+}
+
 void gui_update(int64_t guinum, int x1, int y1, int x2, int y2){
 
   Gui *gui = get_gui(guinum);

@@ -1316,7 +1316,7 @@ void setCurrentInstrument(int64_t instrument_id, bool show_instrument_window_if_
   if(show_instrument_window_if_not_visible)
     GFX_InstrumentWindowToFront();
 
-  patch->instrument->PP_Update(patch->instrument, patch,false);
+  patch->instrument->PP_Update(patch->instrument, patch, false);
 }
 
 void showInstrumentInfo(int64_t instrument_id){
@@ -1467,8 +1467,12 @@ void API_instruments_call_regularly(void){
 
 // Mixer strips
 
-void remakeMixerStrips(void){
+void redrawMixerStrips(void){
   RT_schedule_mixer_strips_redraw(); // We don't want to redraw immediately in case we remake when a connection is being deleted or created, and we don't want to remake several times in a row either, or too often.
+}
+
+void remakeMixerStrips(void){
+  RT_schedule_mixer_strips_remake(); // We don't want to redraw immediately in case we remake when a connection is being deleted or created, and we don't want to remake several times in a row either, or too often.
 }
 
 bool hasWideInstrumentStrip(int64_t instrument_id){
