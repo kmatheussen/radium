@@ -1642,7 +1642,7 @@ void GFX_toggleCurrWindowFullScreen(void){
     }
   }
   
-  for(auto *window : QGuiApplication::allWindows()){
+  for(auto *window : QGuiApplication::topLevelWindows()){
     if (window==toplevel->windowHandle()){
       if(toplevel->isFullScreen()){
         toplevel->showNormal();
