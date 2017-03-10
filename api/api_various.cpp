@@ -186,6 +186,10 @@ void minimizeEditorWindow(int windownum){
   GFX_MinimizeEditorWindow(window);
 }
 
+void toggleCurrWindowFullScreen(void){
+  GFX_toggleCurrWindowFullScreen();
+}
+
 void toggleFullScreen(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
 

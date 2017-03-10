@@ -1628,6 +1628,31 @@ void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
 #endif
 }
 
+void GFX_toggleCurrWindowFullScreen(void){
+  QWidget *toplevel = QApplication::topLevelAt(QCursor::pos());
+  printf("       toplevel: %p\n",toplevel);
+  if(toplevel==NULL)
+    return;
+  
+  QVector<QWidget*> all_windows = MIXERSTRIPS_get_all_widgets();
+  for(auto *window : all_windows){
+    if (window==toplevel){
+      evalScheme("(toggle-current-mixer-strips-fullscreen)");
+      return;
+    }
+  }
+  
+  //  for(auto *window : QGuiApplication::allWindows()){
+  //   if (window==toplevel->windowHandle()){
+      if(toplevel->isFullScreen()){
+        toplevel->showNormal();
+      }else{
+        toplevel->showFullScreen();
+      }
+      //  return;
+      // }
+      //  }
+}
 
 
 void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
