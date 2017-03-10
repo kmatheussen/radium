@@ -1754,7 +1754,7 @@
     (define start-time (time))
     (catch #t
            (lambda ()
-             ;; (<gui> :disable-updates parent)
+             (<gui> :disable-updates parent)
              
              (create-mixer-strips num-rows das-stored-mixer-strips list-of-modified-instrument-ids
                                   (lambda (new-mixer-strips new-mixer-strips-gui)
@@ -1774,7 +1774,12 @@
 
            (lambda args
              (display (ow!))))
-    ;;  (<gui> :enable-updates parent)
+
+    ;; prevent some flickering
+    (<ra> :schedule 15 (lambda ()
+                         (<gui> :enable-updates parent)
+                         #f))
+
     (c-display "   remake-gui duration: " (- (time) start-time))
     )
 
