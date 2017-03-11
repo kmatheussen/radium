@@ -158,6 +158,26 @@ void setShowMixerStripDuringStartup(bool val){
 }
 
 
+static bool g_positionInstrumentWidgetInMixer = false;
+
+bool positionInstrumentWidgetInMixer(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_positionInstrumentWidgetInMixer = SETTINGS_read_bool("position_instrument_widget_in_mixer", false);
+    has_inited = true;
+  }
+
+  return g_positionInstrumentWidgetInMixer;
+}
+
+void setPositionInstrumentWidgetInMixer(bool val){
+  g_positionInstrumentWidgetInMixer = val;
+  SETTINGS_write_bool("position_instrument_widget_in_mixer", val);
+}
+
+
+
 static bool g_showMixerStripOnLeftSide = true;
 
 bool showMixerStripOnLeftSide(void){

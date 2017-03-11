@@ -121,9 +121,9 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     , _mytimer(this)
   {
     initing = true;
+    
     setupUi(this);
     g_zoom_slider = zoom_slider;
-    initing = false;
 
     // Tro to find default zoom level based on system font
     QFont font = g_editor->main_window->font();
@@ -139,10 +139,18 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     show_modular_mixer_widgets(true);
     
     connections_visibility->setChecked(MW_get_connections_visibility());
+
+    if (positionInstrumentWidgetInMixer()){
+      verticalLayout->addWidget(getInstrumentsWidget(), 0);
+      include_instrument_widget->setChecked(positionInstrumentWidgetInMixer());
+      //getInstrumentsWidget()->show();
+    }
       
     //connect(ab_a, SIGNAL(rightClicked()), this, SLOT(on_ab_a_rightClicked()));
       
     g_mixer_widget2 = this;
+
+    initing = false;
   }
 
   void enterEvent(QEvent *event) override{
@@ -444,12 +452,17 @@ public slots:
   }
 
   void on_include_instrument_widget_toggled(bool include_instrument_widget){
+    if (initing)
+      return;
+    
     if(include_instrument_widget){
       verticalLayout->addWidget(getInstrumentsWidget(), 0);
       getInstrumentsWidget()->show();
     }else
       g_parent_for_instrument_widget_ysplitter->layout()->addWidget(getInstrumentsWidget());
 
+    setPositionInstrumentWidgetInMixer(include_instrument_widget);
+      
     GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
   }
 
