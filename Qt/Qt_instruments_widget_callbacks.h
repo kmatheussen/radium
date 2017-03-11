@@ -52,6 +52,10 @@ public:
     }
   }
 
+  void showEvent(QShowEvent *event) override {
+    GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
+  }
+
 public slots:
 
   /*

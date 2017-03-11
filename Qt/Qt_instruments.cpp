@@ -526,6 +526,8 @@ void GFX_InstrumentWindowToFront(void){
     g_instruments_widget->show();
   }GL_unlock();
 
+  GFX_update_current_instrument_widget();
+  
   set_editor_focus();
 }
 
@@ -642,7 +644,6 @@ void update_audio_instrument_widget(Audio_instrument_widget *instrument, struct 
 }
 
 void GFX_update_instrument_widget(struct Patch *patch){
-
   if(patch->instrument==get_MIDI_instrument()){
     printf("PP update. Instrument name: \"%s\". port name: \"%s\"\n",patch==NULL?"(null)":patch->name,patch==NULL?"(null)":((struct PatchData*)patch->patchdata)->midi_port->name);
 
@@ -669,6 +670,10 @@ void GFX_update_instrument_widget(struct Patch *patch){
 void GFX_update_current_instrument_widget(void){
   GFX_update_instrument_widget(g_currpatch);
 }
+/*
+void GFX_force_update_current_instrument_widget(bool force_update){
+}
+*/
 
 void GFX_update_all_instrument_widgets(void){
   QStackedWidget* tabs = g_instruments_widget->tabs;

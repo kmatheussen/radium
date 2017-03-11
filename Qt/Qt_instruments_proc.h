@@ -43,6 +43,7 @@ extern LANGSPEC void InstrumentWidget_delete(struct Patch *patch);
 extern LANGSPEC void InstrumentWidget_prepare_for_deletion(struct Patch *patch);
 extern LANGSPEC void GFX_update_instrument_widget(struct Patch *patch);
 extern LANGSPEC void GFX_update_current_instrument_widget(void);
+//extern LANGSPEC void GFX_force_update_current_instrument_widget();
 
 extern LANGSPEC bool MIXERSTRIP_is_visible(void);
 extern LANGSPEC void MIXERSTRIP_show(void);
