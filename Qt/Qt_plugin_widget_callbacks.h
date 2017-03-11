@@ -551,7 +551,7 @@ private:
     _size_type=type;
     
     AUDIOWIDGET_change_height(_patch, type);
-    
+
 #ifdef WITH_FAUST_DEV
     if (_faust_plugin_widget != NULL)
       _faust_plugin_widget->change_height(type, header->height());

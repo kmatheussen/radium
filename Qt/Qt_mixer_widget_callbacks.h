@@ -575,6 +575,34 @@ void MW_update_mixer_widget(void){
   g_mixer_widget2->update();
 }
 
+void MW_disable_include_instrument_checkbox(void){
+  g_mixer_widget2->include_instrument_widget->setEnabled(false);
+}
+void MW_enable_include_instrument_checkbox(void){
+  g_mixer_widget2->include_instrument_widget->setEnabled(true);
+}
+ 
+
+void MW_hide_non_instrument_widgets(void){
+  if (g_mixer_widget2->_mixer_strips_gui != -1){
+    QWidget *w = API_gui_get_widget(g_mixer_widget2->_mixer_strips_gui);
+    w->hide();
+  }else
+    g_mixer_widget2->modular_widget->hide();
+  
+  g_mixer_widget2->bar_widget->hide();
+}
+
+void MW_show_non_instrument_widgets(void){
+  if (g_mixer_widget2->_mixer_strips_gui != -1){
+    QWidget *w = API_gui_get_widget(g_mixer_widget2->_mixer_strips_gui);
+    w->show();
+  }else
+    g_mixer_widget2->modular_widget->show();
+  
+  g_mixer_widget2->bar_widget->show();
+}
+
 #if 0
 extern "C"{ void GFX_showHideMixerWidget(void);}
 

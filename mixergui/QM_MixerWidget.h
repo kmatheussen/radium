@@ -179,6 +179,10 @@ extern LANGSPEC void inc_plugin_usage_number(SoundPluginType *type);
 
 extern LANGSPEC void MW_set_rotate(float rotate);
 extern LANGSPEC void MW_update_mixer_widget(void);
+extern LANGSPEC void MW_disable_include_instrument_checkbox(void);
+extern LANGSPEC void MW_enable_include_instrument_checkbox(void);
+extern LANGSPEC void MW_hide_non_instrument_widgets(void);
+extern LANGSPEC void MW_show_non_instrument_widgets(void);
 
 extern LANGSPEC char *MW_request_load_preset_instrument_description(void);
 extern LANGSPEC const char *MW_popup_plugin_selector2(bool must_have_inputs, bool must_have_outputs);
