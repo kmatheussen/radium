@@ -19,7 +19,7 @@ void touch_stack(void){
 
   int i;
   
-  for(i=0;i<stack_size;i++) {
+  for(i=stack_size-1;i>=0;i--) {
     hepp[i] = rand() % 128;
     //usleep(2);
   }
@@ -27,8 +27,8 @@ void touch_stack(void){
   // TODO: I guess some compilers still might optimize away touching the stack. To be safe, we should have another source file with a function that takes an array as argument. Then this function can't ignore 'hepp'.
   
   int ret = 0;
-  
-  for(i=0;i<stack_size;i++){
+
+  for(i=stack_size-1;i>=0;i--) {
     ret += hepp[i];
     //usleep(2);
   }
