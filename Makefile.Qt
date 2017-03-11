@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 4.5.4
+VERSION = 4.5.6
 
 
 #----------------USER SETTINGS-------------------------------

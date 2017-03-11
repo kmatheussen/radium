@@ -1,3 +1,31 @@
+Changes 4.5.4 -> 4.5.6:
+* VST: Fix saving FXB/FXP
+* Fix tool tip for the "half"/"full" buttons in the instrument widget.
+* Mixer strips: Draw a blue and thick border around the mixer strip for
+  the current instrument.
+* Mixer strips: Change current instrument when clicking name. To switch
+  between narrow and wide mode, right click and select/unselect "Wide".
+  Clicking the name of the mixer strip of the current instrument
+  changes wide/narrow mode, as before.
+* Mixer: Add an "I" checkbox to switch between putting the
+  instrument widget in the bottom of the mixer, or putting the
+  instrument widget in the bottom of the main window.
+* Mixer: Add a "W" button to show the mixer in a separate window
+* Mixer / Mixer strips: Various tweaks to reduce flickering.
+* Linux: Fix 1,2,3,4,5,6,7,8,9,0 keys when using french keyboard
+* MIDI: Ask "are you sure?" question if trying to make a
+  recursive connection
+* Mixer: Clean up a/b states when loading song
+* Mixer strips: Update "send" values when changing a/b state
+* Mixer: Add an "M" button that switches between modular mixer
+  and mixer strips.
+* Windows: Mixer strips: Keep keyboard focus after switching to
+  full screen. (no need to click the window first anymore)
+* API: getAllTemponodes/getAllLPB/getAllBPM
+* API: Changed "getSampleRate" to return integer instead of float
+
+
+
 Changes 4.5.2 -> 4.5.4:
 * Mixer: Checkbox to show/hide connections.
 * Mixer: Apply volume/muting/soloing/bypassing changes to all
