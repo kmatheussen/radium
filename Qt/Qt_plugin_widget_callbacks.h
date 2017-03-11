@@ -480,18 +480,18 @@ private:
       radium::ScopedExec scopedExec;
 
       
-      QString filename = QFileDialog::getSaveFileName(
-                                                      g_mixer_widget,
-                                                      is_fxb ? "Save VST FXB file" : "Save VST FXP file",
-                                                      last_fxb_preset_path,
+      filename = QFileDialog::getSaveFileName(
+                                              g_mixer_widget,
+                                              is_fxb ? "Save VST FXB file" : "Save VST FXP file",
+                                              last_fxb_preset_path,
 #if FOR_WINDOWS
-                                                      is_fxb ? "*.fxb ;; All files (*)" : "*.fxp ;; All files (*)",
+                                              is_fxb ? "*.fxb ;; All files (*)" : "*.fxp ;; All files (*)",
 #else
-                                                      is_fxb ? "VST FXB (*.fxb) ;; All files (*)" : "VST FXP (*.fxp) ;; All files (*)",
+                                              is_fxb ? "VST FXB (*.fxb) ;; All files (*)" : "VST FXP (*.fxp) ;; All files (*)",
 #endif
-                                                      0,
-                                                      QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
-                                                      );
+                                              0,
+                                              QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
+                                              );
       
       if(filename=="")
         return;
