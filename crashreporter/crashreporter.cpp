@@ -343,7 +343,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
       QByteArray data;
       QUrl params;
-      
+
 #if USE_QT5
       QUrlQuery query;
       query.addQueryItem("data", details.toPlainText().replace("&", "_amp_")); // replace all '&' with _amp_ since we don't receive anything after '&'.

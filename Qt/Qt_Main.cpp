@@ -1422,6 +1422,15 @@ protected:
       
     }
 
+    /*
+    if (is_called_every_ms(1000)){
+      QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+      //bool is_visible = OS_SYSTEM_window_is_actually_visible((void*)main_window->winId());
+      auto rect = main_window->visibleRegion().boundingRect();
+      printf("    Window visible: %d,%d -> %d,%d\n", rect.x(),rect.y(),rect.width(),rect.height());//is_visible);
+    }
+    */
+        
     if (is_called_every_ms(5000)){  // Ask for gl.make_current each 5 seconds.
       GL_lock();{
         GL_EnsureMakeCurrentIsCalled();
@@ -1872,6 +1881,7 @@ int radium_main(char *arg){
       editor->xsplitter = xsplitter;
 
       xsplitter->setOpaqueResize(true);
+      //xsplitter->setOpaqueResize(false);
 
       if(showMixerStripOnLeftSide())
         add_mixer_strip(xsplitter);
