@@ -527,6 +527,10 @@ void GFX_InstrumentWindowToFront(void){
   }GL_unlock();
 
   GFX_update_current_instrument_widget();
+
+  if(positionInstrumentWidgetInMixer() && GFX_MixerIsVisible()==false){
+    GFX_ShowMixer();
+  }
   
   set_editor_focus();
 }

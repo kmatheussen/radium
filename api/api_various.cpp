@@ -271,8 +271,9 @@ void showHideInstrumentWidget(int windownum){
   //GFX_showHideInstrumentWidget(window);
   if(GFX_InstrumentWindowIsVisible())
     GFX_InstrumentWindowToBack();
-  else
+  else{
     GFX_InstrumentWindowToFront();
+  }
 }
 
 
