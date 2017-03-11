@@ -1103,7 +1103,7 @@ X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.cpp
 $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
 Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h $(P)Qt_seqtrack_widget.h $(P)Qt_seqtrack_widget_callbacks.h 
-	$(GPLUSPLUS) $(P)Qt_Main.cpp $(QTOPT) $(IS_LINUX_BINARY) -Wno-deprecated-declarations
+	$(GPLUSPLUS) $(P)Qt_Main.cpp $(QTOPT) $(IS_LINUX_BINARY) -Wno-deprecated-declarations -Wno-shadow
 
 Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h
 	$(CCC) $(P)Qt_visual.cpp $(QTOPT)
@@ -1137,7 +1137,7 @@ $(P)mQt_colors.cpp: $(P)Qt_colors.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_colors.cpp >$(P)mQt_colors.cpp
 
 Qt_Menues.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Menues.cpp $(P)mQt_Menues.cpp
-	$(CCC) $(P)Qt_Menues.cpp $(QTOPT)
+	$(CCC) $(P)Qt_Menues.cpp $(QTOPT)  -Wno-shadow
 
 $(P)mQt_Menues.cpp: $(P)Qt_Menues.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_Menues.cpp >$(P)mQt_Menues.cpp

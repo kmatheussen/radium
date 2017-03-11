@@ -51,12 +51,12 @@ namespace{
         s7extra_unprotect(callback);
     }
     
-    CheckableAction(const QString & text, bool is_on, QMenu *qmenu, int num, func_t *callback)
-      : QWidgetAction(qmenu)
-      , text(text)
-      , qmenu(qmenu)
-      , num(num)
-      , callback(callback)
+    CheckableAction(const QString & text_b, bool is_on, QMenu *qmenu_b, int num_b, func_t *callback_b)
+      : QWidgetAction(qmenu_b)
+      , text(text_b)
+      , qmenu(qmenu_b)
+      , num(num_b)
+      , callback(callback_b)
     {
       if(callback!=NULL)
         s7extra_protect(callback);

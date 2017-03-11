@@ -252,8 +252,8 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
   if (MIXER_is_saving())
     return;
 
-      
-    struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
+       
+    //struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
 
     int num_lines = R_ABS(qwheelevent->delta()/120);
 
