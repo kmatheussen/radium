@@ -17,6 +17,7 @@
 #include <QPushButton>
 #endif
 
+bool g_pause_scroll_area_updates_when_resizing = false;
 
 namespace radium{
 
@@ -219,7 +220,8 @@ class ScrollArea : public QWidget {
 
 
   void pauseUpdatesALittleBit(void){
-    setUpdatesEnabled(false);    
+    if(g_pause_scroll_area_updates_when_resizing)
+      setUpdatesEnabled(false);     // <--- This causes flickering when resizing.
     _mytimer.startit();
   }
 

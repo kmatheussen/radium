@@ -867,16 +867,28 @@ private:
     GFX_HideMixer();
     GFX_PlayListWindowToBack();
     */
-    struct Tracker_Windows *window = root->song->tracker_windows;
-    EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
-    editor->xsplitter->hide();
+    if (positionInstrumentWidgetInMixer()){
+      MW_hide_non_instrument_widgets();
+    } else {
+      struct Tracker_Windows *window = root->song->tracker_windows;
+      EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+      editor->xsplitter->hide();
+    }
 
+    MW_disable_include_instrument_checkbox();
   }
 
   void show_non_instrument_widgets(void){
-    struct Tracker_Windows *window = root->song->tracker_windows;
-    EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
-    editor->xsplitter->show();
+
+    if (positionInstrumentWidgetInMixer()){
+      MW_show_non_instrument_widgets();
+    } else {
+      struct Tracker_Windows *window = root->song->tracker_windows;
+      EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+      editor->xsplitter->show();
+    }
+
+    MW_enable_include_instrument_checkbox();
     
     /*
     GFX_ShowEditor();
@@ -891,7 +903,7 @@ public:
   void change_height(SizeType new_size_type){
     if (new_size_type==_size_type)
       return;
-    
+
     if (new_size_type==SIZETYPE_FULL)
       hide_non_instrument_widgets();    
     else if (_size_type == SIZETYPE_FULL)

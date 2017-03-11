@@ -133,9 +133,12 @@
                                               (create-default-mixer-path-popup instrument-id))
                                           (when (= button *left-button*)
                                             (if is-current-mixer-strip
-                                                (set! *current-mixer-strip-is-wide* is-minimized)
-                                                (<ra> :set-wide-instrument-strip instrument-id is-minimized))
-                                            (remake-mixer-strips instrument-id))))
+                                                (begin
+                                                  (set! *current-mixer-strip-is-wide* is-minimized)
+                                                  (remake-mixer-strips instrument-id))
+                                                (<ra> :set-current-instrument instrument-id)))))
+                                            ;;    (<ra> :set-wide-instrument-strip instrument-id is-minimized))
+                                            ;;(remake-mixer-strips instrument-id))))
                                     #f))
 
   label)
@@ -259,10 +262,16 @@
                                       (if (and (not (string=? new-name ""))
                                                (not (string=? new-name old-name)))
                                           (<ra> :set-instrument-name new-name instrument-id)))
-                "Configure instrument color" (lambda ()
-                                               (show-instrument-color-dialog instrument-id))
                 "Instrument information" (lambda ()
                                            (<ra> :show-instrument-info instrument-id))
+                "----------"
+                "Configure instrument color" (lambda ()
+                                               (show-instrument-color-dialog instrument-id))
+                (list "Wide"
+                      :check (<ra> :has-wide-instrument-strip instrument-id)
+                      (lambda (enabled)
+                        (<ra> :set-wide-instrument-strip instrument-id enabled)
+                        (remake-mixer-strips instrument-id)))
                 "Show GUI" :enabled (<ra> :has-native-instrument-gui instrument-id)
                 (lambda ()
                   (<ra> :show-instrument-gui instrument-id #f))
@@ -274,8 +283,8 @@
                                                                       (<ra> :set-current-instrument instrument-id #f)
                                                                       )))
                                                             (sort-instruments-by-mixer-position-and-connections 
-                                                             (get-all-audio-instruments)))))
-              ))
+                                                             (get-all-audio-instruments)))))                
+                ))
 
 (define (create-default-mixer-path-popup instrument-id)
   (define is-permanent? (<ra> :instrument-is-permanent instrument-id))
@@ -335,7 +344,9 @@
                         ;;(<ra> :set-instrument-effect instrument-id effect-name val)
                         (when widget
                           (set-value val)
-                          (<gui> :update widget)))))
+                          (<gui> :update widget)
+                          ;;(<ra> :set-current-instrument first-instrument-id)
+                          ))))
 
   (<gui> :set-min-height widget (get-fontheight))
 
@@ -1311,8 +1322,11 @@
   (set-fixed-height comment-edit height)
   comment-edit)
 
-(define (draw-mixer-strips-border gui width height)
-  (<gui> :draw-box gui "#bb222222" 0 0 width height 2 3 3))
+(define (draw-mixer-strips-border gui width height instrument-id)
+  ;;(c-display "    Draw mixer strips border called for " instrument-id)
+  (if (= (<ra> :get-current-instrument) instrument-id)
+      (<gui> :draw-box gui "#bb111144" 0 0 width height 10 3 3)
+      (<gui> :draw-box gui "#bb222222" 0 0 width height 2 3 3)))
 
 (define (create-mixer-strip-minimized instrument-id is-current-mixer-strip)
   (define color (<ra> :get-instrument-color instrument-id))
@@ -1349,7 +1363,7 @@
          (lambda (width height)
            ;;(set-fixed-height volume-gui (floor (/ height 2)))
            (<gui> :filled-box gui background-color 0 0 width height 0 0)
-           (draw-mixer-strips-border gui width height)
+           (draw-mixer-strips-border gui width height (if is-current-mixer-strip -2 instrument-id))
            #t
            )
          )
@@ -1462,7 +1476,7 @@
   (add-safe-paint-callback gui
          (lambda (width height)
            (<gui> :filled-box gui background-color 0 0 width height 0 0)
-           (draw-mixer-strips-border gui width height)))
+           (draw-mixer-strips-border gui width height (if is-current-mixer-strip -2 instrument-id))))
   gui)
 
 (define (create-mixer-strip instrument-id min-width is-current-mixer-strip)
@@ -1743,7 +1757,7 @@
     (define start-time (time))
     (catch #t
            (lambda ()
-             ;; (<gui> :disable-updates parent)
+             (<gui> :disable-updates parent)
              
              (create-mixer-strips num-rows das-stored-mixer-strips list-of-modified-instrument-ids
                                   (lambda (new-mixer-strips new-mixer-strips-gui)
@@ -1763,7 +1777,12 @@
 
            (lambda args
              (display (ow!))))
-    ;;  (<gui> :enable-updates parent)
+
+    ;; prevent some flickering
+    (<ra> :schedule 15 (lambda ()
+                         (<gui> :enable-updates parent)
+                         #f))
+
     (c-display "   remake-gui duration: " (- (time) start-time))
     )
 
@@ -1794,6 +1813,13 @@
   ;;(c-display "\n\n\n             REMAKE MIXER STRIPS " list-of-modified-instrument-ids "\n\n\n")
   (for-each (lambda (a-mixer-strips-object)
               ((a-mixer-strips-object :remake) list-of-modified-instrument-ids))
+            *mixer-strips-objects*))
+
+(define (redraw-mixer-strips . list-of-modified-instrument-ids)
+  ;;(c-display "\n\n\n             REDRAW MIXER STRIPS " list-of-modified-instrument-ids "\n\n\n")
+  (for-each (lambda (a-mixer-strips-object)
+              ;;(c-display "       updating " (a-mixer-strips-object :gui))
+              (<gui> :update-recursively (a-mixer-strips-object :gui)))
             *mixer-strips-objects*))
 
 (define (toggle-all-mixer-strips-fullscreen)

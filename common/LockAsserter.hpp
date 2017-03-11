@@ -23,8 +23,8 @@ public:
   struct Exclusive {
     LockAsserter *lockAsserter;
 
-    Exclusive(LockAsserter *lockAsserter)
-      : lockAsserter(lockAsserter)
+    Exclusive(LockAsserter *lockAsserter_b)
+      : lockAsserter(lockAsserter_b)
     {
       int num_writers = ATOMIC_GET(lockAsserter->number_of_writers);
       int num_readers = ATOMIC_GET(lockAsserter->number_of_readers);
@@ -45,8 +45,8 @@ public:
   struct Shared {
     LockAsserter *lockAsserter;
 
-    Shared(LockAsserter *lockAsserter)
-      : lockAsserter(lockAsserter)
+    Shared(LockAsserter *lockAsserter_b)
+      : lockAsserter(lockAsserter_b)
     {
       int num_writers = ATOMIC_GET(lockAsserter->number_of_writers);
       if(num_writers > 0)

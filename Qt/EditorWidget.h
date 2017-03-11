@@ -193,19 +193,19 @@ public:
 #endif
     
 #if USE_OPENGL
-    void position_gl_widget(struct Tracker_Windows *window){
-      if (gl_widget != NULL && window!=NULL && window->wblock!=NULL) {
+    void position_gl_widget(struct Tracker_Windows *window2){
+      if (gl_widget != NULL && window2!=NULL && window2->wblock!=NULL) {
         int height;
 
         GL_lock();{
-          gl_widget->move(0,window->wblock->t.y1);
-          height = 1 + window->wblock->t.y2 - window->wblock->t.y1 -1;
+          gl_widget->move(0,window2->wblock->t.y1);
+          height = 1 + window2->wblock->t.y2 - window2->wblock->t.y1 -1;
           //fprintf(stderr,"height: %d, width: %d\n",height,width());
           gl_widget->resize(width(), height);
         }GL_unlock();
         GE_set_height(height);
         //printf("a2\n");
-        GL_create(window, window->wblock);
+        GL_create(window2, window2->wblock);
       }
     }
 #endif

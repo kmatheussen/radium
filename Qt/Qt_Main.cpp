@@ -166,6 +166,13 @@ bool g_radium_runs_custom_exec = false;
 bool g_gc_is_incremental = false;
 
 QHBoxLayout *g_mixerstriplayout = NULL;
+QWidget *g_parent_for_instrument_widget_ysplitter = NULL;
+
+
+DEFINE_ATOMIC(bool, g_mixer_strips_needs_remake) = false;
+void RT_schedule_mixer_strips_remake(void){
+  ATOMIC_SET(g_mixer_strips_needs_remake, true);
+}
 
 DEFINE_ATOMIC(bool, g_mixer_strips_needs_redraw) = false;
 void RT_schedule_mixer_strips_redraw(void){
@@ -1477,9 +1484,13 @@ protected:
     }
 
     if (is_called_every_ms(50)){
-      if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false)){
-        printf("          (remake called from qt main)\n");
+      if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_remake, true, false)){ // 
+        //printf("          (remake called from qt main)\n");
         evalScheme("(remake-mixer-strips)");
+      }
+      if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false)){ // 
+        //printf("          (redraw called from qt main)\n");
+        evalScheme("(redraw-mixer-strips)");
       }
     }
 
@@ -1626,6 +1637,31 @@ void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
 #endif
 }
 
+void GFX_toggleCurrWindowFullScreen(void){
+  QWidget *toplevel = QApplication::topLevelAt(QCursor::pos()); // Note, QApplication::topLevelAt does not return a toplevel window, but instead a top level widget, which may, or may not, be a top level window.
+  printf("       toplevel: %p\n",toplevel);
+  if(toplevel==NULL)
+    return;
+  
+  QVector<QWidget*> all_windows = MIXERSTRIPS_get_all_widgets();
+  for(auto *window : all_windows){
+    if (window==toplevel){
+      evalScheme("(toggle-current-mixer-strips-fullscreen)");
+      return;
+    }
+  }
+  
+  for(auto *window : QGuiApplication::topLevelWindows()){
+    if (window==toplevel->windowHandle()){
+      if(toplevel->isFullScreen()){
+        toplevel->showNormal();
+      }else{
+        toplevel->showFullScreen();
+      }
+      return;
+    }
+  }
+}
 
 
 void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
@@ -1914,9 +1950,20 @@ int radium_main(char *arg){
           g_sequencer_widget->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
           g_sequencer_widget->move(0, main_window->height()-220);        
 #endif     
-          QWidget *instruments = createInstrumentsWidget();
-          instruments->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
-          instruments->move(0, main_window->height()-220);
+          g_parent_for_instrument_widget_ysplitter = new QWidget(ysplitter);
+
+          {
+            auto *layout = new QHBoxLayout;
+            layout->setSpacing(0);
+            layout->setContentsMargins(0,0,0,0);
+            g_parent_for_instrument_widget_ysplitter->setLayout(layout);
+
+            QWidget *instruments = createInstrumentsWidget();
+            layout->addWidget(instruments);
+          }
+
+          //instruments->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
+          g_parent_for_instrument_widget_ysplitter->move(0, main_window->height()-220);
         }
         
         main_window->setCentralWidget(ysplitter);

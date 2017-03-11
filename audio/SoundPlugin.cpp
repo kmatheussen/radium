@@ -969,7 +969,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
         ATOMIC_SET(plugin->solo_is_on, false);
       }
       update_instrument_gui(plugin);
-      //RT_schedule_mixer_strips_redraw();
+      //RT_schedule_mixer_strips_remake();
       break;
 
     case EFFNUM_VOLUME:
@@ -1020,7 +1020,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
 #if !defined(RELEASE)
       printf("       Remake: BUS1_ONOFF\n");
 #endif
-      RT_schedule_mixer_strips_redraw();
+      RT_schedule_mixer_strips_remake();
       break;
     case EFFNUM_BUS2_ONOFF:
       if (value > 0.5f)
@@ -1030,7 +1030,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
 #if !defined(RELEASE)
       printf("       Remake: BUS2_ONOFF\n");
 #endif
-      RT_schedule_mixer_strips_redraw();
+      RT_schedule_mixer_strips_remake();
       break;
     case EFFNUM_BUS3_ONOFF:
       if (value > 0.5f)
@@ -1040,7 +1040,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
 #if !defined(RELEASE)
       printf("       Remake: BUS3_ONOFF\n");
 #endif
-      RT_schedule_mixer_strips_redraw();
+      RT_schedule_mixer_strips_remake();
       break;
     case EFFNUM_BUS4_ONOFF:
       if (value > 0.5f)
@@ -1050,7 +1050,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
 #if !defined(RELEASE)
       printf("       Remake: BUS4_ONOFF\n");
 #endif
-      RT_schedule_mixer_strips_redraw();
+      RT_schedule_mixer_strips_remake();
       break;
     case EFFNUM_BUS5_ONOFF:
       if (value > 0.5f)
@@ -1060,7 +1060,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
 #if !defined(RELEASE)
       printf("       Remake: BUS5_ONOFF\n");
 #endif
-      RT_schedule_mixer_strips_redraw();
+      RT_schedule_mixer_strips_remake();
       break;
 
     case EFFNUM_PAN:

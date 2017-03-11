@@ -158,6 +158,26 @@ void setShowMixerStripDuringStartup(bool val){
 }
 
 
+static bool g_positionInstrumentWidgetInMixer = false;
+
+bool positionInstrumentWidgetInMixer(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_positionInstrumentWidgetInMixer = SETTINGS_read_bool("position_instrument_widget_in_mixer", false);
+    has_inited = true;
+  }
+
+  return g_positionInstrumentWidgetInMixer;
+}
+
+void setPositionInstrumentWidgetInMixer(bool val){
+  g_positionInstrumentWidgetInMixer = val;
+  SETTINGS_write_bool("position_instrument_widget_in_mixer", val);
+}
+
+
+
 static bool g_showMixerStripOnLeftSide = true;
 
 bool showMixerStripOnLeftSide(void){
@@ -184,6 +204,10 @@ void maximizeEditorWindow(int windownum){
 void minimizeEditorWindow(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_MinimizeEditorWindow(window);
+}
+
+void toggleCurrWindowFullScreen(void){
+  GFX_toggleCurrWindowFullScreen();
 }
 
 void toggleFullScreen(int windownum){
@@ -1937,7 +1961,7 @@ int64_t getSongLengthInFrames(void){
   return SONG_get_length() * MIXER_get_sample_rate();
 }
 
-float getSampleRate(void){
+int getSampleRate(void){
   return MIXER_get_sample_rate();
 }
 

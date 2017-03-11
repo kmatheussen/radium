@@ -20,9 +20,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_proc.h"
 
+#include <QSplitter>
+
 
 static QSlider *g_zoom_slider = NULL;
 //static QWidget *g_view = NULL;
+
+extern bool g_pause_scroll_area_updates_when_resizing;
+extern QWidget *g_parent_for_instrument_widget_ysplitter;
+
 
 class MyQGraphicsView : public QGraphicsView{
 public:
@@ -115,9 +121,9 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     , _mytimer(this)
   {
     initing = true;
+    
     setupUi(this);
     g_zoom_slider = zoom_slider;
-    initing = false;
 
     // Tro to find default zoom level based on system font
     QFont font = g_editor->main_window->font();
@@ -133,10 +139,18 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     show_modular_mixer_widgets(true);
     
     connections_visibility->setChecked(MW_get_connections_visibility());
+
+    if (positionInstrumentWidgetInMixer()){
+      verticalLayout->addWidget(getInstrumentsWidget(), 0);
+      include_instrument_widget->setChecked(positionInstrumentWidgetInMixer());
+      //getInstrumentsWidget()->show();
+    }
       
     //connect(ab_a, SIGNAL(rightClicked()), this, SLOT(on_ab_a_rightClicked()));
       
     g_mixer_widget2 = this;
+
+    initing = false;
   }
 
   void enterEvent(QEvent *event) override{
@@ -215,7 +229,9 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
       int64_t old_gui = _mixer_strips_gui;
       if (old_gui != -1){
         _mixer_strips_gui = createMixerStripsWindow(num_rows);
-        auto *old_item = verticalLayout->replaceWidget(API_gui_get_widget(old_gui), API_gui_get_widget(_mixer_strips_gui));
+        QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+        auto *old_item = verticalLayout->replaceWidget(API_gui_get_widget(old_gui), w);
+        verticalLayout->setStretchFactor(w,1);
         delete old_item;
         gui_close(old_gui);
       }
@@ -235,10 +251,12 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     }
 
     void timerEvent(QTimerEvent *e) override{
-      if (time.elapsed() > 40){ // singleshot is messy since we might get deleted at any time.
+      if (time.elapsed() > 30){ // singleshot is messy since we might get deleted at any time.
         printf("TEIMERERINE EVENT\n");
         // _parent->adjustSize();
-        //_parent->setUpdatesEnabled(true);
+        _parent->setUpdatesEnabled(true);
+        //g_mixer_widget->setUpdatesEnabled(true);
+        g_pause_scroll_area_updates_when_resizing = false;
         //mixer_layout->setUpdatesEnabled(true);
         // _parent->mixer_layout->update();
         /*
@@ -247,15 +265,27 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
           w->setUpdatesEnabled(true);
         }
         */
-        _parent->verticalLayout->update();
+        //_parent->verticalLayout->update();
         stop();
       }
     }
+
+    void startit(void){
+      time.restart();
+      if (!isActive()){
+        //_parent->setUpdatesEnabled(false);
+        start();
+      }
+    }
+
   };
 
   MyTimer _mytimer;
 
+  
   void pauseUpdatesALittleBit(void){
+    _mytimer.startit();
+#if 0
     //mixer_layout->update();
     if (!_mytimer.isActive()){
       //setUpdatesEnabled(false);
@@ -270,6 +300,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
       _mytimer.start();
       printf("                 Started timer\n");
     }
+#endif
   }
 
   void resizeEvent( QResizeEvent *qresizeevent) override{
@@ -341,12 +372,36 @@ public slots:
     update_ab_buttons();
   }
 
+  void on_window_mode_toggled(bool show_window){
+    if(initing)
+      return;
+
+    //static QWidget *xsplitter = NULL;
+    if(show_window){
+      //if(xsplitter!=NULL)
+      //  xsplitter = (QWidget*)g_mixer_widget->parent();
+      g_mixer_widget->setParent(NULL);
+      g_mixer_widget->show();      
+    } else {
+      EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+      QSplitter *splitter = editor->xsplitter;
+      splitter->addWidget(g_mixer_widget);
+      //g_mixer_widget->setParent(xsplitter);
+    }
+
+    if(include_instrument_widget->isChecked())
+      GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
+  }
+  
   void on_show_modular_toggled(bool show_modular){
     if (initing)
       return;
 
-    //pauseUpdatesALittleBit();
+    g_pause_scroll_area_updates_when_resizing = true;
+    //g_mixer_widget->setUpdatesEnabled(false); // <- This causes graphics not to be updated after switching when running in separate window. Need to resize a little bit first.
     setUpdatesEnabled(false);
+    
+    pauseUpdatesALittleBit(); // Prevent some flickering.
 
     if (show_modular){
 
@@ -371,7 +426,7 @@ public slots:
           QWidget *w = API_gui_get_widget(_mixer_strips_gui);
           //w->setParent(bottom_widget);
           //w->setFixedSize(width(), height()-50);
-          verticalLayout->addWidget(w);
+          verticalLayout->insertWidget(1, w, 1);
           modular_widget->hide();
           /*
             mixer_layout->update();
@@ -390,7 +445,25 @@ public slots:
       
     }
     
-    setUpdatesEnabled(true); // It's a flaw in Qt that we need to call this function. And it doesn't even work very well.
+    //setUpdatesEnabled(true); // It's a flaw in Qt that we need to call this function. And it doesn't even work very well.
+
+    if(include_instrument_widget->isChecked())
+      GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
+  }
+
+  void on_include_instrument_widget_toggled(bool include_instrument_widget){
+    if (initing)
+      return;
+    
+    if(include_instrument_widget){
+      verticalLayout->addWidget(getInstrumentsWidget(), 0);
+      getInstrumentsWidget()->show();
+    }else
+      g_parent_for_instrument_widget_ysplitter->layout()->addWidget(getInstrumentsWidget());
+
+    setPositionInstrumentWidgetInMixer(include_instrument_widget);
+      
+    GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
   }
 
   void on_rows1_toggled(bool val){
@@ -500,6 +573,34 @@ void MW_set_rotate(float rotate){
 void MW_update_mixer_widget(void){
   g_mixer_widget2->update_ab_buttons();
   g_mixer_widget2->update();
+}
+
+void MW_disable_include_instrument_checkbox(void){
+  g_mixer_widget2->include_instrument_widget->setEnabled(false);
+}
+void MW_enable_include_instrument_checkbox(void){
+  g_mixer_widget2->include_instrument_widget->setEnabled(true);
+}
+ 
+
+void MW_hide_non_instrument_widgets(void){
+  if (g_mixer_widget2->_mixer_strips_gui != -1){
+    QWidget *w = API_gui_get_widget(g_mixer_widget2->_mixer_strips_gui);
+    w->hide();
+  }else
+    g_mixer_widget2->modular_widget->hide();
+  
+  g_mixer_widget2->bar_widget->hide();
+}
+
+void MW_show_non_instrument_widgets(void){
+  if (g_mixer_widget2->_mixer_strips_gui != -1){
+    QWidget *w = API_gui_get_widget(g_mixer_widget2->_mixer_strips_gui);
+    w->show();
+  }else
+    g_mixer_widget2->modular_widget->show();
+  
+  g_mixer_widget2->bar_widget->show();
 }
 
 #if 0

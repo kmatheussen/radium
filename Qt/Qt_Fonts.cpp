@@ -111,8 +111,8 @@ void updateAllFonts(QWidget *widget, QFont font){
 
     const QList<QObject*> list = widget->children();
     for (int i = 0; i < list.size(); ++i) {
-      QWidget *widget = dynamic_cast<QWidget*>(list.at(i));
-      updateAllFonts(widget, font);
+      QWidget *child = dynamic_cast<QWidget*>(list.at(i));
+      updateAllFonts(child, font);
     }
   }
 }
@@ -135,8 +135,8 @@ void GFX_SetSystemFont(QFont font){
 
   {
     struct Tracker_Windows *tvisual = root->song->tracker_windows;
-    const QFont &font=QApplication::font();
-    QFontMetrics fm(font);
+    const QFont &font2=QApplication::font();
+    QFontMetrics fm(font2);
     tvisual->systemfontheight=fm.height();
   }
 

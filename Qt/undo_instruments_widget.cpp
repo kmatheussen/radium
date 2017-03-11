@@ -45,7 +45,7 @@ static vector_t *create_instruments_widget_state(void){
   //VECTOR_push_back(state, names);
   VECTOR_push_back(state, pages);
 
-  QStackedWidget* tabs = instruments_widget->tabs;
+  QStackedWidget* tabs = g_instruments_widget->tabs;
 
   for(int i=0;i<tabs->count();i++){
     //VECTOR_push_back(names, talloc_strdup(tabs->tabText(i).toUtf8().constData()));
@@ -59,7 +59,7 @@ static vector_t *create_instruments_widget_state(void){
 
 
 static void recreate_instruments_widget_from_state(vector_t *state){
-  QStackedWidget* tabs = instruments_widget->tabs;
+  QStackedWidget* tabs = g_instruments_widget->tabs;
 
   while(tabs->count()>0)
     tabs->removeWidget(tabs->currentWidget());

@@ -131,7 +131,7 @@
       <item>
        <widget class="QToolButton" name="auto_bypass_menu_button">
         <property name="toolTip">
-         <string>Configure Auto-bypass</string>
+         <string>Configure Auto-suspend</string>
         </property>
         <property name="text">
          <string>D</string>
@@ -1327,7 +1327,7 @@ Example:
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>Load Faust source code</string>
+         <string>Use half of the available vertical space</string>
         </property>
         <property name="text">
          <string>Half</string>
@@ -1343,7 +1343,7 @@ Example:
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>Load Faust source code</string>
+         <string>Use all of the available vertical space</string>
         </property>
         <property name="text">
          <string>Full</string>

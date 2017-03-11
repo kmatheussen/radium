@@ -116,6 +116,7 @@ extern LANGSPEC void PLUGIN_random(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_show_info_window(SoundPlugin *plugin);  
 
 // Defined in Qt/Qt_Main.cpp
+extern LANGSPEC void RT_schedule_mixer_strips_remake(void);
 extern LANGSPEC void RT_schedule_mixer_strips_redraw(void);
 
 #endif // AUDIO_SOUNDPLUGIN_PROC_H
