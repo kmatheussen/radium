@@ -347,6 +347,9 @@ Place getTemponodePlace(int num, int blocknum, int windownum){
     return place(0,0,1);
   }
 
+  if (temponode->l.next==NULL)  // don't expose weirdness to the scripting interface.
+    return place(block->num_lines,0,1);
+  
   return temponode->l.p;
 }
 
@@ -513,7 +516,9 @@ dyn_t getAllTemponodes(int blocknum, int windownum){
   while(temponode != NULL){
     hash_t *hash = HASH_create(3);
 
-    HASH_put_dyn(hash, ":place", DYN_create_place(temponode->l.p));
+    const Place p = temponode->l.next==NULL ? place(block->num_lines,0,1) : temponode->l.p; // don't expose weirdness to the scripting interface.
+    
+    HASH_put_dyn(hash, ":place", DYN_create_place(p));
     HASH_put_float(hash, ":tempo-multiplier", RelTempo2RealRelTempo(temponode->reltempo));
     HASH_put_int(hash, ":logtype", LOGTYPE_LINEAR);
     //HASH_put_int(bpm, "logtype", tempo->logtype);
