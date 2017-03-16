@@ -490,6 +490,9 @@ static QString get_plugin_names(void){
 
 static void run_program(QString program, QString arg1, QString arg2, QString arg3, QString arg4, bool wait_until_finished){
 
+  // NOTE: We might not be in the main thread here.
+
+  
   if (ATOMIC_GET(g_dont_report_more))
     return;
 
@@ -502,8 +505,10 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
   wchar_t *a4 = STRING_create(arg4, false);
 
   if(_wspawnl(wait_until_finished ? _P_WAIT :  _P_DETACH, p, p, a1, a2, a3, a4, NULL)==-1){
-    fprintf(stderr,"Couldn't launch crashreporter: \"%s\" \"%s\"\n",STRING_get_chars(p),STRING_get_chars(a1));
-    SYSTEM_show_message(strdup(talloc_format("Couldn't launch crashreporter: \"%s\" \"%s\"\n",STRING_get_chars(p),STRING_get_chars(a1))));
+    char *temp = (char*)malloc(program.size()+arg1.size()+1024);
+    sprintf(temp, "Couldn't launch crashreporter: \"%s\" \"%s\"\n",program.toUtf8().constData(), arg1.toUtf8().constData());
+    fprintf(stderr,temp);
+    SYSTEM_show_message(strdup(temp));
     Sleep(3000);
   }
 
@@ -519,15 +524,17 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
   fprintf(stderr, "Executing -%s-\n",full_command.toUtf8().constData());
   const char *command = strdup(full_command.toUtf8().constData());
   if(system(command)==-1) {
-    SYSTEM_show_message(strdup(talloc_format("Couldn't start crashreporter. command: -%s-\n",command)));
+    char *temp = (char*)malloc(strlen(command)+10);
+    sprintf(temp, "Couldn't start crashreporter. command: -%s-\n",command);
+    SYSTEM_show_message(strdup(temp));
   }
 
 #else
   #error "unknown system"
 #endif
 
-#if !defined(RELEASE)
-    abort();
+#if !defined(RELEASE) && defined(FOR_LINUX)
+  abort();
 #endif
     
 
