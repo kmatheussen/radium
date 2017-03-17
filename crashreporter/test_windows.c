@@ -6,7 +6,11 @@
 
 // i686-w64-mingw32.static-gcc -O2 -Wall test2.c -lbfd -liberty -limagehlp -lz -g
 
-void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, enum Crash_Type crash_type){
+double TIME_get_ms(void){
+  return 0;
+}
+
+void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, enum Crash_Type crash_type, double time){
   printf("CR_send_message_called with %d lines of info about -%s-\n",num_messages,additional_information);
   int i;
   for(i=0;i<num_messages;i++)
@@ -23,7 +27,7 @@ static void
 foo()
 {
   int *f=NULL;
-        *f = 0;
+  *f = 0;
 }
 
 static void
@@ -38,9 +42,11 @@ main()
 #if 1
   printf("STASRTUP PU\n");
   //LoadLibraryA("backtrace.dll");
-  backtrace_register();
+  CRASHREPORTER_windows_init();
+  
   bar();
-  backtrace_unregister();
+  
+  CRASHREPORTER_windows_close();
 #else
   printf("gakkgakk\n");
 #endif
