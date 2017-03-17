@@ -458,8 +458,11 @@ public slots:
     if(include_instrument_widget){
       verticalLayout->addWidget(getInstrumentsWidget(), 0);
       getInstrumentsWidget()->show();
-    }else
+      g_parent_for_instrument_widget_ysplitter->hide();
+    }else{
       g_parent_for_instrument_widget_ysplitter->layout()->addWidget(getInstrumentsWidget());
+      g_parent_for_instrument_widget_ysplitter->show();
+    }
 
     setPositionInstrumentWidgetInMixer(include_instrument_widget);
       
