@@ -34,8 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   class FocusSniffer##Class : public GL_PauseCaller, public Class {      \
   public:                                                               \
   bool dontsniff;                                                       \
-  FocusSniffer##Class(QWidget *parent = NULL, const char *name = "gakk")       \
-  : Class(parent),dontsniff(false)                                     \
+  FocusSniffer##Class(QWidget *parent_ = NULL, const char *name = "gakk")       \
+  : Class(parent_),dontsniff(false)                                     \
     {                                                                   \
     }                                                                   \
   void focusInEvent ( QFocusEvent *e ){                                 \
@@ -54,19 +54,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     Class::focusOutEvent(e);                                            \
     GL_unlock();                                                        \
   }                                                                     \
-  void hideEvent (QHideEvent * event){                                  \
+  void hideEvent (QHideEvent * event_){                                  \
     if(dontsniff==false) {                                              \
       release_keyboard_focus();                                         \
     }                                                                   \
-    Class::hideEvent(event);                                            \
+    Class::hideEvent(event_);                                            \
   }                                                                     \
-  void keyPressEvent ( QKeyEvent * event ){                             \
-    if(event->key()==Qt::Key_Escape){                                   \
+  void keyPressEvent ( QKeyEvent * event_ ){                             \
+    if(event_->key()==Qt::Key_Escape){                                   \
       GL_lock();                                                        \
       clearFocus();                                                     \
       GL_unlock();                                                      \
     }                                                                   \
-    Class::keyPressEvent(event);                                        \
+    Class::keyPressEvent(event_);                                        \
   }                                                                     \
   }                                                    
 
@@ -84,8 +84,8 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
   public:                                                               
   bool dontsniff;
   int zoomguess;
-  FocusSnifferQsciScintilla(QWidget *parent, const char *name = "gakk")  
-    : QsciScintilla(parent),dontsniff(false)
+  FocusSnifferQsciScintilla(QWidget *parent_, const char *name = "gakk")  
+    : QsciScintilla(parent_),dontsniff(false)
     , zoomguess(0)
     {                                                                   
     }
@@ -111,9 +111,9 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
     setMarginWidth(1, ceil(width));
   }
       
-  void wheelEvent(QWheelEvent *event){                  
-    if (event->modifiers() & Qt::ControlModifier){                
-      if (event->delta() > 0){                                     
+  void wheelEvent(QWheelEvent *event_){                  
+    if (event_->modifiers() & Qt::ControlModifier){                
+      if (event_->delta() > 0){                                     
         zoomIn(1);
         zoomguess++;
       }else{
@@ -127,15 +127,15 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
       
       calculateMarginWidth();
     } else {
-      QsciScintilla::wheelEvent(event);
+      QsciScintilla::wheelEvent(event_);
       //set_editor_focus();
     }
   }
-  void keyPressEvent ( QKeyEvent * event ){
-    if(event->key()==Qt::Key_Escape)
+  void keyPressEvent ( QKeyEvent * event_ ){
+    if(event_->key()==Qt::Key_Escape)
       set_editor_focus();
     else
-      QsciScintilla::keyPressEvent(event);
+      QsciScintilla::keyPressEvent(event_);
   }
   void focusInEvent ( QFocusEvent *e ){                                 
     printf("Got focusInEvent\n");
@@ -154,37 +154,37 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
     QsciScintilla::focusOutEvent(e);                                            
     GL_unlock();
   }                                                                     
-  void hideEvent (QHideEvent * event){
+  void hideEvent (QHideEvent * event_){
     if(dontsniff==false) {
       release_keyboard_focus();
     }                                 
-    QsciScintilla::hideEvent(event);          
+    QsciScintilla::hideEvent(event_);          
   }
 };
 
 class FocusSnifferQTextEdit : public GL_PauseCaller, public QTextEdit{
   public:                                                               
   bool dontsniff;                                                       
-  FocusSnifferQTextEdit(QWidget *parent = NULL, const char *name = "gakk")  
-   : QTextEdit(parent),dontsniff(false)                                     
+  FocusSnifferQTextEdit(QWidget *parent_ = NULL, const char *name = "gakk")  
+   : QTextEdit(parent_),dontsniff(false)                                     
     {                                                                   
     }
-  void wheelEvent(QWheelEvent *event) override {                  
-    if (event->modifiers() & Qt::ControlModifier){                
-      if (event->delta() > 0)                                     
+  void wheelEvent(QWheelEvent *event_) override {                  
+    if (event_->modifiers() & Qt::ControlModifier){                
+      if (event_->delta() > 0)                                     
         zoomIn(1);                                                      
       else                                                              
         zoomOut(1);                                                     
     } else {
-      QTextEdit::wheelEvent(event);
+      QTextEdit::wheelEvent(event_);
       //set_editor_focus();
     }
   }
-  void keyPressEvent ( QKeyEvent * event ) override {
-    if(event->key()==Qt::Key_Escape)
+  void keyPressEvent ( QKeyEvent * event_ ) override {
+    if(event_->key()==Qt::Key_Escape)
       set_editor_focus();
     else
-      QTextEdit::keyPressEvent(event);
+      QTextEdit::keyPressEvent(event_);
   }
   void focusInEvent ( QFocusEvent *e ) override {                                 
     printf("Got focusInEvent\n");
@@ -203,19 +203,19 @@ class FocusSnifferQTextEdit : public GL_PauseCaller, public QTextEdit{
     QTextEdit::focusOutEvent(e);                                            
     GL_unlock();
   }                                                                     
-  void hideEvent (QHideEvent * event) override {
+  void hideEvent (QHideEvent * event_) override {
     if(dontsniff==false) {
       release_keyboard_focus();
     }                                 
-    QTextEdit::hideEvent(event);          
+    QTextEdit::hideEvent(event_);          
   }                                   
 };
 
 class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
   public:                                                               
   bool dontsniff;                                                       
- FocusSnifferQSpinBox(QWidget *parent = NULL, const char *name = "gakk")  
-   : QSpinBox(parent),dontsniff(false)                                     
+ FocusSnifferQSpinBox(QWidget *parent_ = NULL, const char *name = "gakk")  
+   : QSpinBox(parent_),dontsniff(false)                                     
     {                                                                   
     }                                                                   
   void focusInEvent ( QFocusEvent *e ){                                 
@@ -235,23 +235,23 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
     QSpinBox::focusOutEvent(e);                                            
     GL_unlock();
   }                                                                     
-  void hideEvent (QHideEvent * event){
+  void hideEvent (QHideEvent * event_){
     if(dontsniff==false) {
       release_keyboard_focus();
     }                                 
-    QSpinBox::hideEvent(event);          
+    QSpinBox::hideEvent(event_);          
   }                                   
-  void keyPressEvent ( QKeyEvent * event ){                             
-    if(event->key()==Qt::Key_Escape){                                   
+  void keyPressEvent ( QKeyEvent * event_ ){                             
+    if(event_->key()==Qt::Key_Escape){                                   
       GL_lock();                                                        
       clearFocus();                                                     
       GL_unlock();                                                      
     }                                                                   
-    QSpinBox::keyPressEvent(event);                                        
+    QSpinBox::keyPressEvent(event_);                                        
   }                                                                     
-  void 	wheelEvent ( QWheelEvent * event ){
+  void 	wheelEvent ( QWheelEvent * event_ ){
     printf("Got wheel event\n");
-    QSpinBox::wheelEvent(event);
+    QSpinBox::wheelEvent(event_);
     set_editor_focus(); 
   }
 };
@@ -259,8 +259,8 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
 class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
   public:                                                               
   bool dontsniff;                                                       
-  FocusSnifferQDoubleSpinBox(QWidget *parent = NULL, const char *name = "gakk")  
-   : QDoubleSpinBox(parent),dontsniff(false)                                     
+  FocusSnifferQDoubleSpinBox(QWidget *parent_ = NULL, const char *name = "gakk")  
+   : QDoubleSpinBox(parent_),dontsniff(false)                                     
   {                                                                   
   }                                                                   
   void focusInEvent ( QFocusEvent *e ){                                 
@@ -287,17 +287,17 @@ class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
     }                                                                   
     QDoubleSpinBox::hideEvent(e);                                            
   }                                                                     
-  void keyPressEvent ( QKeyEvent * event ){                             
-    if(event->key()==Qt::Key_Escape){                                   
+  void keyPressEvent ( QKeyEvent * event_ ){                             
+    if(event_->key()==Qt::Key_Escape){                                   
       GL_lock();                                                        
       clearFocus();                                                     
       GL_unlock();                                                      
     }                                                                   
-    QDoubleSpinBox::keyPressEvent(event);                                        
+    QDoubleSpinBox::keyPressEvent(event_);                                        
   }                                                                     
-  void 	wheelEvent ( QWheelEvent * event ){
+  void 	wheelEvent ( QWheelEvent * event_ ){
     printf("Got wheel event\n");
-    QDoubleSpinBox::wheelEvent(event);
+    QDoubleSpinBox::wheelEvent(event_);
     set_editor_focus(); 
   }
 };
@@ -305,8 +305,8 @@ class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
 class FocusSnifferQListWidget : public GL_PauseCaller, public QListWidget{
  public:                                                               
   bool dontsniff;                                                       
- FocusSnifferQListWidget(QWidget *parent, const char *name = "gakk")  
-   : QListWidget(parent),dontsniff(false)                                     
+ FocusSnifferQListWidget(QWidget *parent_, const char *name = "gakk")  
+   : QListWidget(parent_),dontsniff(false)                                     
     {                                                                   
     }                                                                   
   void focusInEvent ( QFocusEvent *e ){                                 
@@ -333,13 +333,13 @@ class FocusSnifferQListWidget : public GL_PauseCaller, public QListWidget{
     }                                                                   
     QListWidget::hideEvent(e);                                            
   }                                                                     
-  void keyPressEvent ( QKeyEvent * event ){                             
-    if(event->key()==Qt::Key_Escape){                                   
+  void keyPressEvent ( QKeyEvent * event_ ){                             
+    if(event_->key()==Qt::Key_Escape){                                   
       GL_lock();                                                        
       clearFocus();                                                     
       GL_unlock();                                                      
     }                                                                   
-    QListWidget::keyPressEvent(event);                                        
+    QListWidget::keyPressEvent(event_);                                        
   }                                                                     
 };
 
@@ -348,8 +348,8 @@ class FocusSnifferQListWidget : public GL_PauseCaller, public QListWidget{
 class FocusSnifferQTableWidget : public QTableWidget{
   public:                                                               
   bool dontsniff;                                                       
- FocusSnifferQTableWidget(QWidget *parent, const char *name = "gakk")  
-   : QTableWidget(parent),dontsniff(false)                                     
+ FocusSnifferQTableWidget(QWidget *parent_, const char *name = "gakk")  
+   : QTableWidget(parent_),dontsniff(false)                                     
     {                                                                   
     }                                                                   
   void focusInEvent ( QFocusEvent *e ){                                 

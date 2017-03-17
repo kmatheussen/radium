@@ -523,7 +523,7 @@ void GFX_SetMinimalInstrumentWindow(void){
 }
 
 void GFX_InstrumentWindowToFront(void){
-  g_instruments_widget->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum);
+  g_instruments_widget->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum); // might not be needed
   set_widget_height(120);
 
   if (!positionInstrumentWidgetInMixer()){
@@ -548,7 +548,7 @@ void GFX_InstrumentWindowToFront(void){
 }
 
 void GFX_InstrumentWindowToBack(void){
-  g_instruments_widget->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
+  g_instruments_widget->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored); // might not be needed.
   g_instruments_widget->hide();
   if (!positionInstrumentWidgetInMixer())
     g_parent_for_instrument_widget_ysplitter->hide();
