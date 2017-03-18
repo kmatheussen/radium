@@ -1975,6 +1975,7 @@ int radium_main(char *arg){
         ysplitter->setStretchFactor(2,0);
         ysplitter->handle(1)->setEnabled(true);//false);
         ysplitter->handle(2)->setEnabled(false);
+        ysplitter->handle(2)->hide();
 
         ysplitter->setChildrenCollapsible(false);
 
