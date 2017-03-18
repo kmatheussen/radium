@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/seqtrack_proc.h"
 
+
 static bool g_need_update = false;
 
 static bool smooth_scrolling(void){
@@ -873,7 +874,7 @@ public:
     setContentsMargins(0,0,0,0);
     layout->setContentsMargins(0,0,0,0);
     layout->setSpacing(0);
-    
+
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   }
 
@@ -1467,9 +1468,12 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     _main_reltempo.show();
     */
 
+    setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+    
+
     int height = root->song->tracker_windows->systemfontheight*1.3 * 13;
     setMinimumHeight(height);
-    setMaximumHeight(height);
+    //setMaximumHeight(height);
   }
 
   void my_update(void){

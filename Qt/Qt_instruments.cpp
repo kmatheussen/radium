@@ -64,6 +64,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern QApplication *qapplication;
+extern QWidget *g_parent_for_instrument_widget_ysplitter;
+
 
 
 #include "FocusSniffers.h"
@@ -521,7 +523,17 @@ void GFX_SetMinimalInstrumentWindow(void){
 }
 
 void GFX_InstrumentWindowToFront(void){
-  //set_widget_height(30);
+  g_instruments_widget->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum); // might not be needed
+  set_widget_height(120);
+
+  if (!positionInstrumentWidgetInMixer()){
+    //EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+    //g_instruments_widget->setParent(editor->ysplitter);
+    g_parent_for_instrument_widget_ysplitter->show();
+    //editor->ysplitter->handle(2)->setEnabled(false);
+    //editor->ysplitter->setStretchFactor(2,0);
+  }
+
   GL_lock(); {
     g_instruments_widget->show();
   }GL_unlock();
@@ -536,9 +548,13 @@ void GFX_InstrumentWindowToFront(void){
 }
 
 void GFX_InstrumentWindowToBack(void){
+  g_instruments_widget->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored); // might not be needed.
   g_instruments_widget->hide();
-  //set_widget_height(0);
-
+  if (!positionInstrumentWidgetInMixer())
+    g_parent_for_instrument_widget_ysplitter->hide();
+  //g_parent_for_instrument_widget_ysplitter->setParent(NULL);
+  set_widget_height(0);
+  g_instruments_widget->adjustSize();
   set_editor_focus();
 }
 

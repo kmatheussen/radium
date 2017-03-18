@@ -98,8 +98,8 @@ struct MyQSlider : public QSlider {
     //g_all_myqsliders.push_back(this);
   }
 
-  MyQSlider ( QWidget * parent = 0 ) : QSlider(parent) {init();}
-  MyQSlider ( Qt::Orientation orientation, QWidget * parent = 0 ) : QSlider(orientation,parent) { init();}
+  MyQSlider ( QWidget * parent_ = 0 ) : QSlider(parent_) {init();}
+  MyQSlider ( Qt::Orientation orientation_, QWidget * parent_ = 0 ) : QSlider(orientation_,parent_) { init();}
 
   void prepare_for_deletion(void){
     SLIDERPAINTER_prepare_for_deletion(_painter);
@@ -133,11 +133,11 @@ struct MyQSlider : public QSlider {
     SLIDERPAINTER_call_regularly(_painter);
   }
   
-  void hideEvent ( QHideEvent * event ) {
+  void hideEvent ( QHideEvent * event_ ) {
     SLIDERPAINTER_became_invisible(_painter);
   }
 
-  void showEvent ( QShowEvent * event ) {
+  void showEvent ( QShowEvent * event_ ) {
     SLIDERPAINTER_became_visible(_painter);
   }
 
@@ -159,17 +159,17 @@ struct MyQSlider : public QSlider {
   float last_pos;
   bool _has_mouse;
 
-  void handle_mouse_event ( QMouseEvent * event ){
-    //printf("Got mouse press event %d / %d\n",(int)event->x(),(int)event->y());
+  void handle_mouse_event ( QMouseEvent * event_ ){
+    //printf("Got mouse press event_ %d / %d\n",(int)event_->x(),(int)event_->y());
 
     float slider_length;
     float new_pos;
 
     if (orientation() == Qt::Vertical) {
-      new_pos = event->y();
+      new_pos = event_->y();
       slider_length = height();
     } else {
-      new_pos = event->x();
+      new_pos = event_->x();
       slider_length = width();
     }
 
@@ -178,7 +178,7 @@ struct MyQSlider : public QSlider {
 
     //printf("***** last_pos: %d, new_pos: %d, dx: %d\n",(int)last_pos,(int)new_pos,(int)dx);
     
-    if ((event->modifiers() & Qt::ControlModifier))
+    if ((event_->modifiers() & Qt::ControlModifier))
       per_pixel /= 10.0f;
 
     last_pos = new_pos;
@@ -193,17 +193,17 @@ struct MyQSlider : public QSlider {
 
     //printf("dx: %f, per_pixel: %f, min/max: %f / %f, value: %f\n",dx,per_pixel,(float)minimum(),(float)maximum(),(float)value());
 
-    event->accept();
+    event_->accept();
   }
 
   // mousePressEvent 
-  void mousePressEvent ( QMouseEvent * event ) override
+  void mousePressEvent ( QMouseEvent * event_ ) override
   {
     if(_patch!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
       return;
     
-    //printf("Got mouse pres event %d / %d\n",(int)event->x(),(int)event->y());
-    if (event->button() == Qt::LeftButton){
+    //printf("Got mouse pres event_ %d / %d\n",(int)event_->x(),(int)event_->y());
+    if (event_->button() == Qt::LeftButton){
 
 #ifdef COMPILING_RADIUM
       if(_patch!=NULL && _patch->instrument==get_audio_instrument()){
@@ -214,10 +214,10 @@ struct MyQSlider : public QSlider {
 
       last_value = value();
       if (orientation() == Qt::Vertical)
-        last_pos = event->y();
+        last_pos = event_->y();
       else
-        last_pos = event->x();
-      //handle_mouse_event(event);
+        last_pos = event_->x();
+      //handle_mouse_event_(event_);
       _has_mouse = true;
 
     }else{
@@ -333,13 +333,13 @@ struct MyQSlider : public QSlider {
         } else {
 
           const char *fxname = PLUGIN_get_effect_name(plugin, _effect_num);
-          float value = PLUGIN_get_effect_value(plugin, _effect_num, VALUE_FROM_STORAGE);
+          float value_ = PLUGIN_get_effect_value(plugin, _effect_num, VALUE_FROM_STORAGE);
 
           int fxnum = getFx(fxname, tracknum, _patch->id, blocknum, -1);
 
           if (fxnum >= 0){
 
-            addFxnode(value,
+            addFxnode(value_,
                       p_Create(currentLine(blocknum, -1), 0, 1),
                       fxnum,
                       tracknum,
@@ -349,7 +349,7 @@ struct MyQSlider : public QSlider {
             
           } else {
                             
-            addFx(value,
+            addFx(value_,
                   p_Create(currentLine(blocknum, -1), 0, 1),
                   fxname,
                   tracknum,
@@ -367,7 +367,7 @@ struct MyQSlider : public QSlider {
 
           undoSequencer();
 
-          float value = PLUGIN_get_effect_value(plugin, _effect_num, VALUE_FROM_STORAGE);
+          float value_ = PLUGIN_get_effect_value(plugin, _effect_num, VALUE_FROM_STORAGE);
 
           int64_t pos1 = ATOMIC_DOUBLE_GET(pc->song_abstime); //is_playing() && pc->playtype==PLAYSONG ? ATOMIC_DOUBLE_GET(pc->song_abstime) : 0;
 
@@ -375,7 +375,7 @@ struct MyQSlider : public QSlider {
           
           int64_t pos2 = pos1 + visible_duration / 10;
 
-          SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, _patch, _effect_num, pos1, value, LOGTYPE_LINEAR, pos2, value);
+          SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, _patch, _effect_num, pos1, value_, LOGTYPE_LINEAR, pos2, value_);
         }
 
       }
@@ -409,31 +409,31 @@ struct MyQSlider : public QSlider {
 #endif
 #endif // COMPILING_RADIUM
 
-      event->accept();
+      event_->accept();
     }
   }
 
-  void mouseMoveEvent ( QMouseEvent * event ) override
+  void mouseMoveEvent ( QMouseEvent * event_ ) override
   {
     if (_has_mouse){
-      handle_mouse_event(event);
+      handle_mouse_event(event_);
     }else
-      QSlider::mouseMoveEvent(event);
+      QSlider::mouseMoveEvent(event_);
   }
 
-  void mouseReleaseEvent ( QMouseEvent * event ) override
+  void mouseReleaseEvent ( QMouseEvent * event_ ) override
   {
-    //printf("Got mouse release event %d / %d\n",(int)event->x(),(int)event->y());
+    //printf("Got mouse release event %d / %d\n",(int)event_->x(),(int)event_->y());
     if (_has_mouse){
 #if 0
       if(_patch!=NULL && _patch->instrument==get_audio_instrument()){
         handle_system_delay(false);
       }
 #endif
-      handle_mouse_event(event);
+      handle_mouse_event(event_);
       _has_mouse=false;
     }else
-      QSlider::mouseReleaseEvent(event);
+      QSlider::mouseReleaseEvent(event_);
   }
 
   void paintEvent ( QPaintEvent * ev ) override {

@@ -42,8 +42,8 @@ namespace radium{
     QTime time;
     bool left_mouse_is_down = false;
     
-    ASMTimer(QWidget *parent)
-      :QTimer(parent)
+    ASMTimer(QWidget *parent_)
+      :QTimer(parent_)
     {
       time.start();
       setInterval(10);
@@ -76,8 +76,8 @@ namespace radium{
 
     QVBoxLayout *layout;    
     
-    VerticalScroll(QWidget *parent)
-      :QScrollArea(parent)
+    VerticalScroll(QWidget *parent_)
+      :QScrollArea(parent_)
     {
       setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
       setWidgetResizable(true);
@@ -92,12 +92,12 @@ namespace radium{
       setWidget(contents);    
     }
     
-    void addWidget(QWidget *widget){
-      layout->addWidget(widget);
+    void addWidget(QWidget *widget_){
+      layout->addWidget(widget_);
     }
     
-    void removeWidget(QWidget *widget){
-      layout->removeWidget(widget);
+    void removeWidget(QWidget *widget_){
+      layout->removeWidget(widget_);
     }
   };
 
@@ -107,8 +107,8 @@ namespace radium{
 struct MyQMessageBox : public QMessageBox {
   bool _splashscreen_visible;
   
-  MyQMessageBox(QWidget *parent = NULL)
-    : QMessageBox(parent!=NULL ? parent : get_current_parent())
+  MyQMessageBox(QWidget *parent_ = NULL)
+    : QMessageBox(parent_!=NULL ? parent_ : get_current_parent())
   {
     setWindowModality(Qt::ApplicationModal);
     //setWindowModality(Qt::NonModal);
@@ -118,20 +118,20 @@ struct MyQMessageBox : public QMessageBox {
   ~MyQMessageBox(){
   }
   
-  void showEvent(QShowEvent *event){
+  void showEvent(QShowEvent *event_){
     _splashscreen_visible = g_splashscreen!=NULL && g_splashscreen->isVisible();
 
     if (_splashscreen_visible)
       g_splashscreen->hide();
 
-    QMessageBox::showEvent(event);
+    QMessageBox::showEvent(event_);
   }
   
-  void hideEvent(QHideEvent *event) {
+  void hideEvent(QHideEvent *event_) {
     if (_splashscreen_visible && g_splashscreen!=NULL)
       g_splashscreen->show();
 
-    QMessageBox::hideEvent(event);
+    QMessageBox::hideEvent(event_);
   }
   
 };
@@ -186,8 +186,8 @@ struct RememberGeometryQDialog : public QDialog {
 #endif
   
 public:
-  RememberGeometryQDialog(QWidget *parent)
-    : QDialog(parent!=NULL ? parent : get_current_parent(), Qt::Window | Qt::Tool)
+  RememberGeometryQDialog(QWidget *parent_)
+    : QDialog(parent_!=NULL ? parent_ : get_current_parent(), Qt::Window | Qt::Tool)
     , has_stored_geometry(false)
 #if PUT_ON_TOP
     , timer(this)
