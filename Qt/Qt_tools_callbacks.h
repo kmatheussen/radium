@@ -210,7 +210,7 @@ class Tools : public RememberGeometryQDialog, public Ui::Tools {
     if (root->quantitize_options.keep_note_length)
       keep_length->setChecked(true);
 
-    Rational ratio(root->quantitize_options.quant.numerator, root->quantitize_options.quant.denominator);
+    Rational ratio((int)root->quantitize_options.quant.numerator, (int)root->quantitize_options.quant.denominator);
 
     quantization_value->setText(ratio.toString());
   }

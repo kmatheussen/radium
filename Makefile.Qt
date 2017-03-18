@@ -177,7 +177,7 @@ ifneq (,$(findstring clang,$(CC)))
 	DEBUG_BUILD_OPTS += -Wshorten-64-to-32
 	S7OPTS += -Wno-shorten-64-to-32
 #	COMMONOPT += -Wshadow
-	DEBUG_BUILD_OPTS += -Wshadow
+#	DEBUG_BUILD_OPTS += -Wshadow
 else
 #	ifeq ($(GCC_MAJOR),5)
 #		DEBUG_BUILD_OPTS += -Wshadow # gcc 4 has too many unnecessary positives

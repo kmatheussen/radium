@@ -1112,7 +1112,7 @@ private:
 #define USE_JUCE_CPU_PROTECTION_LOGIC 1 // Uses less CPU
 #endif
 
-#if USE_JUCE_CPU_PROTECTION_LOGIC
+#if USE_JUCE_CPU_PROTECTION_LOGIC && !defined(FOR_MACOSX)
   double lastSwapTime = 0;
   int underrunCounter = 0;
 #endif

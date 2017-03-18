@@ -62,7 +62,7 @@ void setMainSignature(int numerator, int denominator){
 }
 
 Place getMainSignature(void){
-  return place(0,root->signature.numerator,root->signature.denominator);
+  return place(0,(int)root->signature.numerator,(int)root->signature.denominator);
 }
 
 int numSignatures(int blocknum, int windownum){
@@ -107,12 +107,13 @@ int addSignature3(int numerator, int denominator,
 }
 
 // Return a place, for convenience. The line part of the returned value is always 0 (even if numerator > denominator). Returns -1 on error.
+// TODO: Return ratio
 Place getSignature(int signaturenum, int blocknum, int windownum){
   struct Signatures *signature = getSignatureFromNum(windownum, blocknum, signaturenum);
   if (signature==NULL)
     return place(0,-1,1);
   else
-    return place(0, signature->signature.numerator, signature->signature.denominator);
+    return place(0, (int)signature->signature.numerator, (int)signature->signature.denominator);
 }
 
 /******************* LPBs *************************/

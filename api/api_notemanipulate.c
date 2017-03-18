@@ -183,12 +183,14 @@ void quantitizeRange(int windownum){
   window->must_redraw = true;
 }
 
+// TODO. Should return ratio
 Place getQuantitize(void){
-  return place(0, root->quantitize_options.quant.numerator, root->quantitize_options.quant.denominator);
+  return place(0, (int)root->quantitize_options.quant.numerator, (int)root->quantitize_options.quant.denominator);
 }
 
+// TODO. Should return ratio
 Place getGrid(void){
-  return place(0, root->grid_numerator, root->grid_denominator);
+  return place(0, (int)root->grid_numerator, (int)root->grid_denominator);
 }
 
 void configQuantitize(int windownum){

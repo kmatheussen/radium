@@ -34,8 +34,8 @@ DC_start("SIGNATURES");
 
 	do{
 		SavePlace(&signature->l.p);
-		DC_SaveI(signature->signature.numerator);
-                DC_SaveI(signature->signature.denominator);
+		DC_SaveL(signature->signature.numerator);
+                DC_SaveL(signature->signature.denominator);
 		signature=NextSignature(signature);
 	}while(signature!=NULL);
 

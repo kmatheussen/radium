@@ -50,7 +50,7 @@ namespace{
 }
 
 static Place get_measure_length_in_quarters(Ratio signature, int lpb){
-  Place ratio = place(0,signature.numerator,signature.denominator);
+  Place ratio = place(0,(int)signature.numerator,(int)signature.denominator);
   Place four_lpb = place(4*lpb, 0, 1);
 
   return p_Mul(ratio,
@@ -60,7 +60,7 @@ static Place get_measure_length_in_quarters(Ratio signature, int lpb){
 
 static Place get_beat_length_in_measurement(Ratio signature, int lpb){
   return p_Div(get_measure_length_in_quarters(signature, lpb),
-               place(signature.numerator,0,1)
+               place((int)signature.numerator,0,1)
                );
 }
 

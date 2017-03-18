@@ -149,7 +149,7 @@ public:
   virtual void wheelEvent(QWheelEvent *qwheelevent) {
     printf("Got quantization wheel event\n");
     
-    Rational ratio(root->quantitize_options.quant.numerator, root->quantitize_options.quant.denominator);
+    Rational ratio((int)root->quantitize_options.quant.numerator, (int)root->quantitize_options.quant.denominator);
   
     if (qwheelevent->delta()<0)
       ratio = ratio.down();
@@ -183,7 +183,7 @@ public:
   virtual void wheelEvent(QWheelEvent *qwheelevent) {
     printf("Got signature wheel event\n");
     
-    Rational ratio(root->signature.numerator, root->signature.denominator);
+    Rational ratio((int)root->signature.numerator, (int)root->signature.denominator);
 
     //printf("      bef2: %s.",ratio.toString().toUtf8().constData());
     

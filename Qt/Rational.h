@@ -12,15 +12,15 @@ namespace{
 struct Rational {
   int numerator;
   int denominator;
-    
+
   Rational(int numerator_, int denominator_)
     : numerator(numerator_)
     , denominator(denominator_)
   {}
 
   Rational(Ratio ratio)
-    : numerator(ratio.numerator)
-    , denominator(ratio.denominator)
+    : numerator((int)ratio.numerator)
+    , denominator((int)ratio.denominator)
   {}
 
   Ratio get_ratio(void){

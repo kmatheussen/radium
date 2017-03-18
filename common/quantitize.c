@@ -263,7 +263,7 @@ void SetQuantitize_CurrPos(
                            struct Tracker_Windows *window
 ){
     
-        Place before = {0, root->quantitize_options.quant.numerator, root->quantitize_options.quant.denominator};
+        Place before = {0, (uint32_t)root->quantitize_options.quant.numerator, (uint32_t)root->quantitize_options.quant.denominator};
         Place after;
                   
         ReqType reqtype = GFX_OpenReq(window, 100, 100, "Quantitize");
