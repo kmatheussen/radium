@@ -209,14 +209,14 @@ static int UpdateRealLinesRec(
                   lz->level       = 1;
                   reallines[realline++]=lz;
                   {
-                    struct LocalZooms *lz2 = talloc(sizeof(struct LocalZooms));
-                    lz2->l.p.line    = localzoom->l.p.line;
-                    lz2->l.p.counter = 1;
-                    lz2->l.p.dividor = 2;
-                    lz2->realline    = realline;
-                    lz2->zoomline    = 1;
-                    lz2->level       = 1;
-                    reallines[realline++]=lz2;
+                    struct LocalZooms *lz = talloc(sizeof(struct LocalZooms));
+                    lz->l.p.line    = localzoom->l.p.line;
+                    lz->l.p.counter = 1;
+                    lz->l.p.dividor = 2;
+                    lz->realline    = realline;
+                    lz->zoomline    = 1;
+                    lz->level       = 1;
+                    reallines[realline++]=lz;
                   }
                 }else if(false && localzoom->Tline%2) {
 		}else{
@@ -630,9 +630,9 @@ void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int n
     UpdateRealLines(window,wblock);
     
     for(realline = wblock->num_reallines - 1; realline>=0 ; realline--){
-      struct LocalZooms *localzoom2=wblock->reallines[realline];
+      struct LocalZooms *localzoom=wblock->reallines[realline];
       
-      if(localzoom2->Tcounter==0 && localzoom2->level==0){
+      if(localzoom->Tcounter==0 && localzoom->level==0){
         if(num_lines>1)
           ExpandLineInternal(window,wblock,realline,num_lines,true);
       }

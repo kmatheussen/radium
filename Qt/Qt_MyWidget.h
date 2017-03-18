@@ -38,12 +38,12 @@ namespace cvs{
 
   struct MyColor{
     QColor col;
-    MyColor(int r_,int g_,int b_)
-      : col(r_,g_,b_)
+    MyColor(int r,int g,int b)
+      : col(r,g,b)
     {}
 
-    MyColor(QColor col_)
-      : col(col_)
+    MyColor(QColor col)
+      : col(col)
     {}
 
     MyColor(enum ColorNums colnum)
@@ -97,8 +97,8 @@ namespace cvs{
     bool use_gradient;
     int _thickness;
 
-    MyPainter(QPainter *p_) 
-      : p(p_) 
+    MyPainter(QPainter *p) 
+      : p(p) 
       , use_gradient(false)
       , _thickness(1)
     {
@@ -322,7 +322,7 @@ namespace cvs{
     struct MyQTimer : public QTimer{
       MyTimer *mytimer;
 
-      MyQTimer(MyTimer *mytimer_) : mytimer(mytimer_) {}
+      MyQTimer(MyTimer *mytimer) : mytimer(mytimer) {}
 
       void timerEvent(QTimerEvent * e){ // virtual method from QTimer
         mytimer->timer();

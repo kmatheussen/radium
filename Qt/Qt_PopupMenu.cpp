@@ -107,12 +107,12 @@ namespace{
         s7extra_unprotect(callback);
     }
     
-    ClickableAction(const QString & text_, QMenu *qmenu_, int num_, func_t *callback_)
-      : QAction(text_, qmenu_)
-      , text(text_)
-      , qmenu(qmenu_)
-      , num(num_)
-      , callback(callback_)
+    ClickableAction(const QString & text, QMenu *qmenu, int num, func_t *callback)
+      : QAction(text, qmenu)
+      , text(text)
+      , qmenu(qmenu)
+      , num(num)
+      , callback(callback)
     {
       if(callback!=NULL)
         s7extra_protect(callback);

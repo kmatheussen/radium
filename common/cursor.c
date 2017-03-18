@@ -76,9 +76,9 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 			 )
 		){
 			leftwtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
-                        int num_subtrack2 = GetNumSubtracks(leftwtrack);
+                        int num_subtracks = GetNumSubtracks(leftwtrack);
 			wblock->left_subtrack++;
-			if(wblock->left_subtrack>=num_subtrack2){
+			if(wblock->left_subtrack>=num_subtracks){
                           if (wblock->left_track < wblock->block->num_tracks-1) {
                             wblock->left_subtrack= -1;
                             wblock->left_track++;
@@ -92,7 +92,7 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 			leftwtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
 			if(
 				wblock->left_track==wblock->block->num_tracks-1 &&
-				wblock->left_subtrack==num_subtrack2-1
+				wblock->left_subtrack==num_subtracks-1
 			){
                                 UpdateAllWTracksCoordinates(window,wblock);
 				return 2;
@@ -102,12 +102,12 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 		}
 		for(;;){
 		  rightwtrack=ListFindElement1(&wblock->wtracks->l,window->curr_track);
-                  int num_subtrack2 = GetNumSubtracks(rightwtrack);
+                  int num_subtracks = GetNumSubtracks(rightwtrack);
 		  x2=GetXSubTrack2(rightwtrack,window->curr_track_sub);
 		  if(x2>wblock->a.x2){
 			leftwtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
 			wblock->left_subtrack++;
-			if(wblock->left_subtrack>=num_subtrack2){
+			if(wblock->left_subtrack>=num_subtracks){
                           if (wblock->left_track < wblock->block->num_tracks-1) {
 				wblock->left_subtrack= -1;
 				wblock->left_track++;

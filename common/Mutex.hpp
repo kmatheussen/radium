@@ -69,8 +69,8 @@ private:
 
 public:
   
-  Mutex(bool is_recursive_ = false)
-    :is_recursive(is_recursive_)
+  Mutex(bool is_recursive = false)
+    :is_recursive(is_recursive)
     ,num_locks(0)
   {
     if (is_recursive){
@@ -113,8 +113,8 @@ public:
 struct ScopedMutex{
   Mutex &mutex;
   
-  ScopedMutex(Mutex &mutex_)
-    : mutex(mutex_)
+  ScopedMutex(Mutex &mutex)
+    : mutex(mutex)
   {
     mutex.lock();
   }

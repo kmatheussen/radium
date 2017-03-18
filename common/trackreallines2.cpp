@@ -76,11 +76,11 @@ static void add_note(const struct WBlocks *wblock, Trss &trss, struct Notes *not
   }
 
   if (note->pitch_end > 0) {
-    TrackRealline2 tr2 = {};
-    tr2.p = note->end;
-    tr2.note = note;
-    tr2.is_end_pitch = true;
-    add_tr(wblock, trss, tr2);
+    TrackRealline2 tr = {};
+    tr.p = note->end;
+    tr.note = note;
+    tr.is_end_pitch = true;
+    add_tr(wblock, trss, tr);
   }
 }
 

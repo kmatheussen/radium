@@ -17,8 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <math.h>
 
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic push
 
 #include <QSpinBox>
 #include <QLineEdit>
@@ -26,9 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QListWidget>
 #include <QTableWidgetItem>
 #include <QKeyEvent>
-
-#pragma GCC diagnostic pop
-
 
 #include "helpers.h"
 

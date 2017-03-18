@@ -229,7 +229,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
       RT_LPB_call_when_start_playing(seqtrack);
       
       // Schedule the first seqblock in each seqtrack.
-      VECTOR_FOR_EACH2(struct SeqBlock *seqblock, &seqtrack->seqblocks){
+      VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
         
         int64_t seqblock_start_time = seqblock->time;
         int64_t seqblock_end_time   = seqblock_start_time + getBlockSTimeLength(seqblock->block);

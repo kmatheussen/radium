@@ -64,12 +64,12 @@ namespace{
   
 }
 
-static s7_scheme *g_s7;
-static s7webserver_t *g_s7webserver;
+static s7_scheme *s7;
+static s7webserver_t *s7webserver;
 
 static s7_pointer find_and_protect_scheme_func(const char *funcname){
-  s7_pointer scheme_func = s7_name_to_value(g_s7, funcname);
-  s7_gc_protect(g_s7, scheme_func);
+  s7_pointer scheme_func = s7_name_to_value(s7, funcname);
+  s7_gc_protect(s7, scheme_func);
   return scheme_func;
 }
 
@@ -79,7 +79,7 @@ static s7_pointer place_to_ratio(const Place *p){
   s7_Int temp = p->line*p->dividor; // use temp variable (of type s7_Int, which is at least 64 bit) to make sure it doesn't overflow.
   s7_Int a = temp + p->counter;
   s7_Int b = p->dividor;
-  s7_pointer ratio = s7_make_ratio(g_s7, a, b);
+  s7_pointer ratio = s7_make_ratio(s7, a, b);
   
   //fprintf(stderr,"\n\n          a: %d, b: %d. is_number: %d, is_integer: %d, is_ratio: %d, is_real: %d\n\n\n", (int)a, (int)b, s7_is_number(ratio),s7_is_integer(ratio),s7_is_ratio(ratio),s7_is_real(ratio));  
   return ratio;
@@ -112,14 +112,14 @@ static Place number_to_place(s7_pointer number){
     Double2Placement(s7_real(number), &place);
     
 #if !defined(RELEASE)
-    RError("scheme.cpp/number_to_place: input parameter was a real. is_number: %d, is_integer: %d, is_ratio: %d, is_real: %d, value: %f, is_complex: %d, is_ulong: %d\n\n\n",s7_is_number(number),s7_is_integer(number),s7_is_ratio(number),s7_is_real(number),s7_number_to_real(g_s7,number),s7_is_complex(number),s7_is_ulong(number));
+    RError("scheme.cpp/number_to_place: input parameter was a real. is_number: %d, is_integer: %d, is_ratio: %d, is_real: %d, value: %f, is_complex: %d, is_ulong: %d\n\n\n",s7_is_number(number),s7_is_integer(number),s7_is_ratio(number),s7_is_real(number),s7_number_to_real(s7,number),s7_is_complex(number),s7_is_ulong(number));
 #endif
 
     return place;
   }
 
   
-  RError("scheme.cpp/number_to_place: input parameter was not a number. returning 0. is_number: %d, is_integer: %d, is_ratio: %d, is_real: %d, value: %f, is_complex: %d, is_ulong: %d\n\n\n",s7_is_number(number),s7_is_integer(number),s7_is_ratio(number),s7_is_real(number),s7_number_to_real(g_s7,number),s7_is_complex(number),s7_is_ulong(number));
+  RError("scheme.cpp/number_to_place: input parameter was not a number. returning 0. is_number: %d, is_integer: %d, is_ratio: %d, is_real: %d, value: %f, is_complex: %d, is_ulong: %d\n\n\n",s7_is_number(number),s7_is_integer(number),s7_is_ratio(number),s7_is_real(number),s7_number_to_real(s7,number),s7_is_complex(number),s7_is_ulong(number));
     
   return place(0,0,1);
 }
@@ -128,7 +128,7 @@ bool s7extra_is_place(s7_pointer place){
   return s7_is_rational(place);
 }
 
-Place s7extra_place(s7_scheme *, s7_pointer place){
+Place s7extra_place(s7_scheme *s7, s7_pointer place){
   return number_to_place(place); // Should we allow floating numbers? (i.e. not give error message for it) Yes, definitely.
 }
 
@@ -282,232 +282,232 @@ func_t *s7extra_func(s7_scheme *s7, s7_pointer func){
 void s7extra_callFunc_void_void(func_t *func){
   ScopedEvalTracker eval_tracker;
   
-  s7_call(g_s7,
+  s7_call(s7,
           (s7_pointer)func,
-          s7_list(g_s7, 0)
+          s7_list(s7, 0)
           );
 }
 
 void s7extra_callFunc2_void_void(const char *funcname){
-  s7extra_callFunc_void_void((func_t*)s7_name_to_value(g_s7, funcname));
+  s7extra_callFunc_void_void((func_t*)s7_name_to_value(s7, funcname));
 }
 
 double s7extra_callFunc_double_void(func_t *func){
   ScopedEvalTracker eval_tracker;
   
-  s7_pointer ret = s7_call(g_s7,
+  s7_pointer ret = s7_call(s7,
                            (s7_pointer)func,
-                           s7_list(g_s7, 0)
+                           s7_list(s7, 0)
                            );
 
   if (!s7_is_number(ret)){
     handleError("Callback did not return a double");
     return -1.0;
   }else{
-    return s7_number_to_real(g_s7, ret);
+    return s7_number_to_real(s7, ret);
   }
 }
 
 double s7extra_callFunc2_double_void(const char *funcname){
-  return s7extra_callFunc_double_void((func_t*)s7_name_to_value(g_s7, funcname));
+  return s7extra_callFunc_double_void((func_t*)s7_name_to_value(s7, funcname));
 }
 
 
 dyn_t s7extra_callFunc_dyn_void(func_t *func){
   ScopedEvalTracker eval_tracker;
   
-  s7_pointer ret = s7_call(g_s7,
+  s7_pointer ret = s7_call(s7,
                            (s7_pointer)func,
-                           s7_list(g_s7, 0)
+                           s7_list(s7, 0)
                            );
 
-  return s7extra_dyn(g_s7, ret);
+  return s7extra_dyn(s7, ret);
 }
 
 dyn_t s7extra_callFunc2_dyn_void(const char *funcname){
-  return s7extra_callFunc_dyn_void((func_t*)s7_name_to_value(g_s7, funcname));
+  return s7extra_callFunc_dyn_void((func_t*)s7_name_to_value(s7, funcname));
 }
 
 
 void s7extra_callFunc_void_int_bool(func_t *func, int64_t arg1, bool arg2){
   ScopedEvalTracker eval_tracker;
     
-  s7_call(g_s7,
+  s7_call(s7,
           (s7_pointer)func,
-          s7_list(g_s7,
+          s7_list(s7,
                   2,
-                  s7_make_integer(g_s7, arg1),
-                  s7_make_boolean(g_s7, arg2)
+                  s7_make_integer(s7, arg1),
+                  s7_make_boolean(s7, arg2)
                   )
           );
 }
 
 void s7extra_callFunc2_void_int_bool(const char *funcname, int64_t arg1, bool arg2){
-  s7extra_callFunc_void_int_bool((func_t*)s7_name_to_value(g_s7, funcname), arg1, arg2);
+  s7extra_callFunc_void_int_bool((func_t*)s7_name_to_value(s7, funcname), arg1, arg2);
 }
 
 void s7extra_callFunc_void_int(func_t *func, int64_t arg1){
   ScopedEvalTracker eval_tracker;
   
-  s7_call(g_s7,
+  s7_call(s7,
           (s7_pointer)func,
-          s7_list(g_s7, 1, s7_make_integer(g_s7, arg1))
+          s7_list(s7, 1, s7_make_integer(s7, arg1))
           );
 }
 
 void s7extra_callFunc2_void_int(const char *funcname, int64_t arg1){
-  s7extra_callFunc_void_int((func_t*)s7_name_to_value(g_s7, funcname), arg1);
+  s7extra_callFunc_void_int((func_t*)s7_name_to_value(s7, funcname), arg1);
 }
 
 void s7extra_callFunc_void_double(func_t *func, double arg1){
   ScopedEvalTracker eval_tracker;
   
-  s7_call(g_s7,
+  s7_call(s7,
           (s7_pointer)func,
-          s7_list(g_s7, 1, s7_make_real(g_s7, arg1))
+          s7_list(s7, 1, s7_make_real(s7, arg1))
           );
 }
 
 void s7extra_callFunc2_void_double(const char *funcname, double arg1){
-  s7extra_callFunc_void_double((func_t*)s7_name_to_value(g_s7, funcname), arg1);
+  s7extra_callFunc_void_double((func_t*)s7_name_to_value(s7, funcname), arg1);
 }
 
 void s7extra_callFunc_void_bool(func_t *func, bool arg1){
   ScopedEvalTracker eval_tracker;
   
-  s7_call(g_s7,
+  s7_call(s7,
           (s7_pointer)func,
-          s7_list(g_s7, 1, s7_make_boolean(g_s7, arg1))
+          s7_list(s7, 1, s7_make_boolean(s7, arg1))
           );
 }
 
 void s7extra_callFunc2_void_bool(const char *funcname, bool arg1){
-  s7extra_callFunc_void_double((func_t*)s7_name_to_value(g_s7, funcname), arg1);
+  s7extra_callFunc_void_double((func_t*)s7_name_to_value(s7, funcname), arg1);
 }
 
 void s7extra_callFunc_void_int_charpointer(func_t *func, int64_t arg1, const char* arg2){
   ScopedEvalTracker eval_tracker;
   
-  s7_call(g_s7,
+  s7_call(s7,
           (s7_pointer)func,
-          s7_list(g_s7,
+          s7_list(s7,
                   2,
-                  s7_make_integer(g_s7, arg1),
-                  s7_make_string(g_s7, arg2)
+                  s7_make_integer(s7, arg1),
+                  s7_make_string(s7, arg2)
                   )
           );
 }
 
 void s7extra_callFunc2_void_int_charpointer(const char *funcname, int64_t arg1, const char* arg2){
-  s7extra_callFunc_void_int_charpointer((func_t*)s7_name_to_value(g_s7, funcname), arg1, arg2);
+  s7extra_callFunc_void_int_charpointer((func_t*)s7_name_to_value(s7, funcname), arg1, arg2);
 }
 
 void s7extra_callFunc_void_int_charpointer_bool_bool(func_t *func, int64_t arg1, const char* arg2, bool arg3, bool arg4){
   ScopedEvalTracker eval_tracker;
   
-  s7_call(g_s7,
+  s7_call(s7,
           (s7_pointer)func,
-          s7_list(g_s7,
+          s7_list(s7,
                   4,
-                  s7_make_integer(g_s7, arg1),
-                  s7_make_string(g_s7, arg2),
-                  s7_make_boolean(g_s7, arg3),
-                  s7_make_boolean(g_s7, arg4)
+                  s7_make_integer(s7, arg1),
+                  s7_make_string(s7, arg2),
+                  s7_make_boolean(s7, arg3),
+                  s7_make_boolean(s7, arg4)
                   )
           );
 }
 
 void s7extra_callFunc2_void_int_charpointer_bool_bool(const char *funcname, int64_t arg1, const char* arg2, bool arg3, bool arg4){
-  s7extra_callFunc_void_int_charpointer_bool_bool((func_t*)s7_name_to_value(g_s7, funcname), arg1, arg2, arg3, arg4);
+  s7extra_callFunc_void_int_charpointer_bool_bool((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
 }
 
 void s7extra_callFunc_void_int_int(func_t *func, int64_t arg1, int64_t arg2){
   ScopedEvalTracker eval_tracker;
   
-  s7_call(g_s7,
+  s7_call(s7,
           (s7_pointer)func,
-          s7_list(g_s7,
+          s7_list(s7,
                   2,
-                  s7_make_integer(g_s7, arg1),
-                  s7_make_integer(g_s7, arg2)
+                  s7_make_integer(s7, arg1),
+                  s7_make_integer(s7, arg2)
                   )
           );
 }
 
 void s7extra_callFunc2_void_int_int(const char *funcname, int64_t arg1, int64_t arg2){
-  s7extra_callFunc_void_int_int((func_t*)s7_name_to_value(g_s7, funcname), arg1, arg2);
+  s7extra_callFunc_void_int_int((func_t*)s7_name_to_value(s7, funcname), arg1, arg2);
 }
 
 void s7extra_callFunc_void_int_float_float(func_t *func, int64_t arg1, float arg2, float arg3){
   ScopedEvalTracker eval_tracker;
   
-  s7_call(g_s7,
+  s7_call(s7,
           (s7_pointer)func,
-          s7_list(g_s7,
+          s7_list(s7,
                   3,
-                  s7_make_integer(g_s7, arg1),
-                  s7_make_real(g_s7, arg2),
-                  s7_make_real(g_s7, arg3)
+                  s7_make_integer(s7, arg1),
+                  s7_make_real(s7, arg2),
+                  s7_make_real(s7, arg3)
                   )
           );
 }
 
 void s7extra_callFunc2_void_int_float_float(const char *funcname, int64_t arg1, float arg2, float arg3){
-  s7extra_callFunc_void_int_float_float((func_t*)s7_name_to_value(g_s7, funcname), arg1, arg2, arg3);
+  s7extra_callFunc_void_int_float_float((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3);
 }
 
 void s7extra_callFunc_void_int_int_float_float(func_t *func, int64_t arg1, int64_t arg2, float arg3, float arg4){
   ScopedEvalTracker eval_tracker;
   
-  s7_call(g_s7,
+  s7_call(s7,
           (s7_pointer)func,
-          s7_list(g_s7,
+          s7_list(s7,
                   4,
-                  s7_make_integer(g_s7, arg1),
-                  s7_make_integer(g_s7, arg2),
-                  s7_make_real(g_s7, arg3),
-                  s7_make_real(g_s7, arg4)
+                  s7_make_integer(s7, arg1),
+                  s7_make_integer(s7, arg2),
+                  s7_make_real(s7, arg3),
+                  s7_make_real(s7, arg4)
                   )
           );
 }
 
 void s7extra_callFunc2_void_int_int_float_float(const char *funcname, int64_t arg1, int64_t arg2, float arg3, float arg4){
-  s7extra_callFunc_void_int_int_float_float((func_t*)s7_name_to_value(g_s7, funcname), arg1, arg2, arg3, arg4);
+  s7extra_callFunc_void_int_int_float_float((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
 }
 
 bool s7extra_callFunc_bool_int_int_float_float(func_t *func, int64_t arg1, int64_t arg2, float arg3, float arg4){
   ScopedEvalTracker eval_tracker;
   
-  s7_pointer ret = s7_call(g_s7,
+  s7_pointer ret = s7_call(s7,
                            (s7_pointer)func,
-                           s7_list(g_s7,
+                           s7_list(s7,
                                    4,
-                                   s7_make_integer(g_s7, arg1),
-                                   s7_make_integer(g_s7, arg2),
-                                   s7_make_real(g_s7, arg3),
-                                   s7_make_real(g_s7, arg4)
+                                   s7_make_integer(s7, arg1),
+                                   s7_make_integer(s7, arg2),
+                                   s7_make_real(s7, arg3),
+                                   s7_make_real(s7, arg4)
                                    )
                            );
   if(!s7_is_boolean(ret)){
     handleError("Callback did not return a boolean");
     return false;
   }else{
-    return s7_boolean(g_s7, ret);
+    return s7_boolean(s7, ret);
   }
 }
 
 bool s7extra_callFunc2_bool_int_int_float_float(const char *funcname, int64_t arg1, int64_t arg2, float arg3, float arg4){
-  return s7extra_callFunc_bool_int_int_float_float((func_t*)s7_name_to_value(g_s7, funcname), arg1, arg2, arg3, arg4);
+  return s7extra_callFunc_bool_int_int_float_float((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
 }
 
 int64_t s7extra_callFunc_int_int(func_t *func, int64_t arg1){
   ScopedEvalTracker eval_tracker;
   
-  s7_pointer ret = s7_call(g_s7,
+  s7_pointer ret = s7_call(s7,
                            (s7_pointer)func,
-                           s7_list(g_s7,
+                           s7_list(s7,
                                    1,
-                                   s7_make_integer(g_s7, arg1)
+                                   s7_make_integer(s7, arg1)
                                    )
                            );
   if(!s7_is_integer(ret)){
@@ -519,19 +519,19 @@ int64_t s7extra_callFunc_int_int(func_t *func, int64_t arg1){
 }
 
 int64_t s7extra_callFunc2_int_int(const char *funcname, int64_t arg1){
-  return s7extra_callFunc_int_int((func_t*)s7_name_to_value(g_s7, funcname), arg1);
+  return s7extra_callFunc_int_int((func_t*)s7_name_to_value(s7, funcname), arg1);
 }
 
 int64_t s7extra_callFunc_int_int_int_int(func_t *func, int64_t arg1, int64_t arg2, int64_t arg3){
   ScopedEvalTracker eval_tracker;
   
-  s7_pointer ret = s7_call(g_s7,
+  s7_pointer ret = s7_call(s7,
                            (s7_pointer)func,
-                           s7_list(g_s7,
+                           s7_list(s7,
                                    3,
-                                   s7_make_integer(g_s7, arg1),
-                                   s7_make_integer(g_s7, arg2),
-                                   s7_make_integer(g_s7, arg3)
+                                   s7_make_integer(s7, arg1),
+                                   s7_make_integer(s7, arg2),
+                                   s7_make_integer(s7, arg3)
                                    )
                            );
   if(!s7_is_integer(ret)){
@@ -543,20 +543,20 @@ int64_t s7extra_callFunc_int_int_int_int(func_t *func, int64_t arg1, int64_t arg
 }
 
 int64_t s7extra_callFunc2_int_int_int_int(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3){
-  return s7extra_callFunc_int_int_int_int((func_t*)s7_name_to_value(g_s7, funcname), arg1, arg2, arg3);
+  return s7extra_callFunc_int_int_int_int((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3);
 }
 
 int64_t s7extra_callFunc_int_int_int_int_bool(func_t *func, int64_t arg1, int64_t arg2, int64_t arg3, bool arg4){
   ScopedEvalTracker eval_tracker;
   
-  s7_pointer ret = s7_call(g_s7,
+  s7_pointer ret = s7_call(s7,
                            (s7_pointer)func,
-                           s7_list(g_s7,
+                           s7_list(s7,
                                    4,
-                                   s7_make_integer(g_s7, arg1),
-                                   s7_make_integer(g_s7, arg2),
-                                   s7_make_integer(g_s7, arg3),
-                                   s7_make_boolean(g_s7, arg4)
+                                   s7_make_integer(s7, arg1),
+                                   s7_make_integer(s7, arg2),
+                                   s7_make_integer(s7, arg3),
+                                   s7_make_boolean(s7, arg4)
                                    )
                            );
   if(!s7_is_integer(ret)){
@@ -568,27 +568,27 @@ int64_t s7extra_callFunc_int_int_int_int_bool(func_t *func, int64_t arg1, int64_
 }
 
 int64_t s7extra_callFunc2_int_int_int_int_bool(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3, bool arg4){
-  return s7extra_callFunc_int_int_int_int_bool((func_t*)s7_name_to_value(g_s7, funcname), arg1, arg2, arg3, arg4);
+  return s7extra_callFunc_int_int_int_int_bool((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
 }
 
 void s7extra_callFunc_void_charpointer(func_t *func, const char* arg1){
   ScopedEvalTracker eval_tracker;
   
-  s7_call(g_s7,
+  s7_call(s7,
           (s7_pointer)func,
-          s7_list(g_s7,
+          s7_list(s7,
                   1,
-                  s7_make_string(g_s7, arg1)
+                  s7_make_string(s7, arg1)
                   )
           );
 }
 
 void s7extra_protect(void *v){
-  s7_gc_protect(g_s7, (s7_pointer)v);  
+  s7_gc_protect(s7, (s7_pointer)v);  
 }
 
 void s7extra_unprotect(void *v){
-  s7_gc_unprotect(g_s7, (s7_pointer)v);  
+  s7_gc_unprotect(s7, (s7_pointer)v);  
 }
 
 int placetest(Place dasplacevar,int windownum){
@@ -606,9 +606,9 @@ Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place 
   
   static s7_pointer scheme_func = find_and_protect_scheme_func("scale");
 
-  s7_pointer result = s7_call(g_s7,
+  s7_pointer result = s7_call(s7,
                               scheme_func,
-                              s7_list(g_s7,
+                              s7_list(s7,
                                       5,
                                       place_to_ratio(x),
                                       place_to_ratio(x1),
@@ -637,22 +637,22 @@ Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place 
 bool quantitize_note(const struct Blocks *block, struct Notes *note) {
   ScopedEvalTracker eval_tracker;
   
-  s7_pointer scheme_func = s7_name_to_value(g_s7, "quantitize-note");
+  s7_pointer scheme_func = s7_name_to_value(s7, "quantitize-note");
   
   Place last_place = p_Last_Pos(block);
   
-  s7_pointer result = s7_call(g_s7,
+  s7_pointer result = s7_call(s7,
                               scheme_func,
-                              s7_list(g_s7,
+                              s7_list(s7,
                                       8,
                                       place_to_ratio(&note->l.p),
                                       place_to_ratio(&note->end),
-                                      s7_make_ratio(g_s7, root->quantitize_options.quant.numerator, root->quantitize_options.quant.denominator),
+                                      s7_make_ratio(s7, root->quantitize_options.quant.numerator, root->quantitize_options.quant.denominator),
                                       place_to_ratio(&last_place),
-                                      s7_make_boolean(g_s7, root->quantitize_options.quantitize_start),
-                                      s7_make_boolean(g_s7, root->quantitize_options.quantitize_end),
-                                      s7_make_boolean(g_s7, root->quantitize_options.keep_note_length),
-                                      s7_make_integer(g_s7, root->quantitize_options.type)
+                                      s7_make_boolean(s7, root->quantitize_options.quantitize_start),
+                                      s7_make_boolean(s7, root->quantitize_options.quantitize_end),
+                                      s7_make_boolean(s7, root->quantitize_options.keep_note_length),
+                                      s7_make_integer(s7, root->quantitize_options.type)
                                       )
                               );
 
@@ -680,9 +680,9 @@ static void place_operation_void_p1_p2(s7_pointer scheme_func, Place *p1,  const
   R_ASSERT(p1->dividor > 0);
   R_ASSERT(p2->dividor > 0);
   
-  s7_pointer result = s7_call(g_s7,
+  s7_pointer result = s7_call(s7,
                               scheme_func,
-                              s7_list(g_s7,
+                              s7_list(s7,
                                       2,
                                       place_to_ratio(p1),
                                       place_to_ratio(p2)
@@ -726,9 +726,9 @@ void PlaceDiv(Place *p1,  const Place *p2){
 static Place place_operation_place_p1_p2(s7_pointer scheme_func, const Place p1,  const Place p2){
   ScopedEvalTracker eval_tracker;
   
-  s7_pointer result = s7_call(g_s7,
+  s7_pointer result = s7_call(s7,
                               scheme_func,
-                              s7_list(g_s7,
+                              s7_list(s7,
                                       2,
                                       place_to_ratio(&p1),
                                       place_to_ratio(&p2)
@@ -768,11 +768,11 @@ Place p_Quantitize(const Place p, const Place q){
 void SCHEME_throw(const char *symbol, const char *message){
   //printf("SCHEME_THROW %d\n", g_evals);
   //if(g_evals>0){
-    s7_error(g_s7,
-             s7_make_symbol(g_s7, symbol),
-             s7_list(g_s7,
+    s7_error(s7,
+             s7_make_symbol(s7, symbol),
+             s7_list(s7,
                      1,
-                     s7_make_string(g_s7, message))
+                     s7_make_string(s7, message))
              );
     //}
 }
@@ -784,9 +784,9 @@ const char *SCHEME_get_backtrace(void){
   SCHEME_eval("(throw \'get-backtrace)"); // Fill in error-lines and so forth into s7.
   
   const char *ret = s7_string(
-                              s7_call(g_s7,
-                                      s7_name_to_value(g_s7, "ow!"),
-                                      s7_list(g_s7, 0)
+                              s7_call(s7,
+                                      s7_name_to_value(s7, "ow!"),
+                                      s7_list(s7, 0)
                                       )
                               );
 
@@ -801,14 +801,14 @@ bool SCHEME_mousepress(int button, float x, float y){
   tevent.x  = x;
   tevent.y  = y;
 
-  return s7_boolean(g_s7,
-                    s7_call(g_s7, 
-                            s7_name_to_value(g_s7, "radium-mouse-press"), // [1]
-                            s7_list(g_s7,
+  return s7_boolean(s7,
+                    s7_call(s7, 
+                            s7_name_to_value(s7, "radium-mouse-press"), // [1]
+                            s7_list(s7,
                                     3,
-                                    s7_make_integer(g_s7, button),
-                                    s7_make_real(g_s7, x),
-                                    s7_make_real(g_s7, y)
+                                    s7_make_integer(s7, button),
+                                    s7_make_real(s7, x),
+                                    s7_make_real(s7, y)
                                     )
                             )
                     );
@@ -821,14 +821,14 @@ bool SCHEME_mousemove(int button, float x, float y){
   tevent.x  = x;
   tevent.y  = y;
 
-  return s7_boolean(g_s7,
-                    s7_call(g_s7, 
-                            s7_name_to_value(g_s7, "radium-mouse-move"), // [1]
-                            s7_list(g_s7,
+  return s7_boolean(s7,
+                    s7_call(s7, 
+                            s7_name_to_value(s7, "radium-mouse-move"), // [1]
+                            s7_list(s7,
                                     3,
-                                    s7_make_integer(g_s7, button),
-                                    s7_make_real(g_s7, x),
-                                    s7_make_real(g_s7, y)
+                                    s7_make_integer(s7, button),
+                                    s7_make_real(s7, x),
+                                    s7_make_real(s7, y)
                                     )
                             )
                     );
@@ -841,14 +841,14 @@ bool SCHEME_mouserelease(int button, float x, float y){
   tevent.x  = x;
   tevent.y  = y;
 
-  return s7_boolean(g_s7,
-                    s7_call(g_s7, 
-                            s7_name_to_value(g_s7, "radium-mouse-release"), // [1]
-                            s7_list(g_s7,
+  return s7_boolean(s7,
+                    s7_call(s7, 
+                            s7_name_to_value(s7, "radium-mouse-release"), // [1]
+                            s7_list(s7,
                                     3,
-                                    s7_make_integer(g_s7, button),
-                                    s7_make_real(g_s7, x),
-                                    s7_make_real(g_s7, y)
+                                    s7_make_integer(s7, button),
+                                    s7_make_real(s7, x),
+                                    s7_make_real(s7, y)
                                     )
                             )
                     );
@@ -858,18 +858,18 @@ bool SCHEME_mouserelease(int button, float x, float y){
 void SCHEME_eval(const char *code){
   ScopedEvalTracker eval_tracker;
            
-  s7_eval_c_string(g_s7, code);
+  s7_eval_c_string(s7, code);
 }
 
 int SCHEME_get_webserver_port(void){
-  return s7webserver_get_portnumber(g_s7webserver);
+  return s7webserver_get_portnumber(s7webserver);
 }
 
 void SCHEME_init1(void){
   ScopedEvalTracker eval_tracker;
   
-  g_s7 = s7_init();
-  if (g_s7==NULL) {
+  s7 = s7_init();
+  if (s7==NULL) {
     RError("Can't start s7 scheme");
     return;
   }
@@ -877,15 +877,15 @@ void SCHEME_init1(void){
   std::string os_path = ""; //OS_get_program_path() + OS_get_directory_separator();
   //printf("%s\n",os_path);
 
-  s7_add_to_load_path(g_s7,(os_path+"packages"+OS_get_directory_separator()+"s7").c_str()); // bin/packages/s7 . No solution to utf-8 here. s7_add_to_load_path takes char* only.
-  s7_add_to_load_path(g_s7,(os_path+"scheme").c_str()); // bin/scheme
+  s7_add_to_load_path(s7,(os_path+"packages"+OS_get_directory_separator()+"s7").c_str()); // bin/packages/s7 . No solution to utf-8 here. s7_add_to_load_path takes char* only.
+  s7_add_to_load_path(s7,(os_path+"scheme").c_str()); // bin/scheme
 
-  init_radium_s7(g_s7);
+  init_radium_s7(s7);
 
-  s7_load(g_s7,"init.scm");
+  s7_load(s7,"init.scm");
 
-  g_s7webserver = s7webserver_create(g_s7, 5080, true);
-  s7webserver_set_verbose(g_s7webserver, true);
+  s7webserver = s7webserver_create(s7, 5080, true);
+  s7webserver_set_verbose(s7webserver, true);
 }
 
 void SCHEME_init2(void){

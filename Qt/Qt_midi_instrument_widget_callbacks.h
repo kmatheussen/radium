@@ -28,9 +28,9 @@ public:
   struct PatchData *patchdata;
   struct Patch *patch;
 
-  MIDI_instrument_widget(QWidget *parent, struct Patch *patch_)
+  MIDI_instrument_widget(QWidget *parent, struct Patch *patch)
     : QWidget(parent)
-    , patch(patch_)
+    , patch(patch)
   {
     setupUi(this);
 

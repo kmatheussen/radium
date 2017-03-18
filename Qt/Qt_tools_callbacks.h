@@ -3,16 +3,10 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic push
-
 #include <QScrollArea>
 #include <QCheckBox>
 #include <QTimer>
 #include <QDialogButtonBox>
-
-#pragma GCC diagnostic pop
-
 
 #include "../common/nsmtracker.h"
 

@@ -119,11 +119,11 @@ public:
     return pen;
   }
 
-  SuperConnection(QGraphicsScene *parent, bool is_event_connection_, enum ColorNums color_num_)
+  SuperConnection(QGraphicsScene *parent, bool is_event_connection, enum ColorNums color_num)
     : QGraphicsLineItem()
     , is_selected(false)
-    , is_event_connection(is_event_connection_)
-    , color_num(color_num_)
+    , is_event_connection(is_event_connection)
+    , color_num(color_num)
     , from(NULL)
     , to(NULL)
     , visible_line(this)

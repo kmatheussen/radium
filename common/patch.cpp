@@ -700,17 +700,17 @@ static void reset_unused_linked_notes(void){
     add_linked_note(&g_unused_linked_notes, &notes[i]);
 }
 
-static int num_linked_notes(linked_note_t *rootnote){
+static int num_linked_notes(linked_note_t *root){
   int ret = 0;
-  for(linked_note_t *note = rootnote ; note!=NULL ; note=note->next)
+  for(linked_note_t *note = root ; note!=NULL ; note=note->next)
     ret++;
   return ret;
 }
 
 static void add_linked_note(linked_note_t **rootp, linked_note_t *note){
-  linked_note_t *rootnote = *rootp;
+  linked_note_t *root = *rootp;
   
-  if (rootnote==NULL) {
+  if (root==NULL) {
     
     note->prev = NULL;
     note->next = NULL;
@@ -718,8 +718,8 @@ static void add_linked_note(linked_note_t **rootp, linked_note_t *note){
   } else {
 
     note->prev = NULL;
-    note->next = rootnote;
-    rootnote->prev = rootnote;
+    note->next = root;
+    root->prev = note;
     
   }
 

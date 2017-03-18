@@ -96,10 +96,10 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
 
           seqblock = seqblock2;
                 
-          struct Tracks *maybe = ListFindElement1_r0(&seqblock->block->tracks->l, tracknum);
-          if (maybe != NULL){
-            if (maybe->notes!=NULL || maybe->stops!=NULL){
-              next_track = maybe;
+          struct Tracks *track = ListFindElement1_r0(&seqblock->block->tracks->l, tracknum);
+          if (track != NULL){
+            if (track->notes!=NULL || track->stops!=NULL){
+              next_track = track;
               break;
             }
           }

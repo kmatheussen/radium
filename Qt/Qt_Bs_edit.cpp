@@ -63,9 +63,9 @@ class QListBox : public QListWidget{
 public:
   bool is_blocklist;
   
-  QListBox(QWidget *parent, bool is_blocklist_)
+  QListBox(QWidget *parent, bool is_blocklist)
     : QListWidget(parent)
-    , is_blocklist(is_blocklist_)
+    , is_blocklist(is_blocklist)
   {
   }
   void insertItem(QString text){

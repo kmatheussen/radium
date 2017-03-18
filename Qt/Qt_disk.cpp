@@ -56,12 +56,12 @@ public:
   bool is_binary;
   QTextStream *stream;  
 
-  _radium_os_disk(QString filename_, enum Type type_, bool is_binary_=false)
-    : filename(filename_)
+  _radium_os_disk(QString filename, enum Type type, bool is_binary=false)
+    : filename(filename)
     , read_file(NULL)
     , temporary_write_file(NULL)
-    , type(type_)
-    , is_binary(is_binary_)
+    , type(type)
+    , is_binary(is_binary)
     , stream(NULL)
   {
   }
