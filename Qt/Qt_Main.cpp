@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPluginLoader>
 #endif
 
+#define TEST_CRASHREPORTER 0
 
 #include <qapplication.h>
 #include <qsplashscreen.h>
@@ -2535,8 +2536,32 @@ void processEventsALittleBit(void){
 
 //extern LANGSPEC void testme(void);
 
+#if TEST_CRASHREPORTER
+static void
+foo()
+{
+  int *f=NULL;
+  *f = 0;
+}
+
+static void
+bar()
+{
+  foo();
+}
+#endif
+
 int main(int argc, char **argv){  
   //  testme();
+
+#if TEST_CRASHREPORTER
+  QApplication dasqapp(argc,argv);
+  CRASHREPORTER_init();
+
+  bar();
+  printf("gakkgakk\n");
+  return 0;
+#endif
   
 #if defined(FOR_WINDOWS)
   GC_set_no_dls(1);
@@ -2606,6 +2631,8 @@ int main(int argc, char **argv){
   qapplication=new MyApplication(argc,argv);
   qapplication->setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, true);
 
+
+
 #if 0
  #if defined(IS_LINUX_BINARY) || defined(FOR_WINDOWS) || defined(FOR_MACOSX)
     QApplication::addLibraryPath(QCoreApplication::applicationDirPath() + QDir::separator() + "qt5_plugins");
@@ -2619,9 +2646,9 @@ int main(int argc, char **argv){
   R_ASSERT(THREADING_is_main_thread());
   
   g_qt_is_running = true;
-    
-  CRASHREPORTER_init();
 
+  CRASHREPORTER_init();
+  
   SETTINGS_init();
 
   bool try_incremental_gc = SETTINGS_read_bool("try_incremental_gc",false);

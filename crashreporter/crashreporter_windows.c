@@ -436,8 +436,8 @@ init_bfd_ctx(struct bfd_ctx *bc, const char * procname, struct output_buffer *ob
 
 	bfd *b = bfd_openr(procname, 0);
 	if (!b) {
-		output_print(ob,"Failed to open bfd from (%s)\n" , procname);
-		return 1;
+          output_print(ob,"Failed to open bfd from (%s) (%s)\n" , procname, strerror(errno));
+          return 1;
 	}
 
 	int r1 = bfd_check_format(b, bfd_object);
@@ -446,7 +446,7 @@ init_bfd_ctx(struct bfd_ctx *bc, const char * procname, struct output_buffer *ob
 
 	if (!(r1 && r2 && r3)) {
 		bfd_close(b);
-		output_print(ob,"Failed to init bfd from (%s) %d,%d,%d\n", procname,r1,r2,r3);
+		output_print(ob,"Failed to init bfd from (%s) %d,%d,%d.\n", procname,r1,r2,r3);
 		return 1;
 	}
 

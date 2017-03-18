@@ -4,7 +4,7 @@
 
 #include "crashreporter_proc.h"
 
-// i686-w64-mingw32.static-gcc -O2 -Wall test2.c -lbfd -liberty -limagehlp -lz -g
+// i686-w64-mingw32.static-gcc -O2 -Wall test_windows.c -lbfd -liberty -limagehlp -lz -g
 
 double TIME_get_ms(void){
   return 0;
