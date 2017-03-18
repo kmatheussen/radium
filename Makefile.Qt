@@ -179,12 +179,12 @@ ifneq (,$(findstring clang,$(CC)))
 #	COMMONOPT += -Wshadow
 #	DEBUG_BUILD_OPTS += -Wshadow
 else
-	ifeq ($(GCC_MAJOR),5)
-		DEBUG_BUILD_OPTS += -Wshadow # gcc 4 has too many unnecessary positives
-	endif	
-	ifeq ($(GCC_MAJOR),6)
-		DEBUG_BUILD_OPTS += -Wshadow # gcc 4 has too many unnecessary positives
-	endif	
+#	ifeq ($(GCC_MAJOR),5)
+#		DEBUG_BUILD_OPTS += -Wshadow # gcc 4 has too many unnecessary positives
+#	endif	
+#	ifeq ($(GCC_MAJOR),6)
+#		DEBUG_BUILD_OPTS += -Wshadow # gcc 4 has too many unnecessary positives
+#	endif	
 
 	CPUOPT += -Og	
 endif
