@@ -91,7 +91,7 @@ static HWND gtk_hwnd = NULL;
 
 
 class Bottom_bar_widget;
-static Bottom_bar_widget *g_bottom_bar = NULL; // need to be defined here since it's used by the upperleft widget.
+static QVector<Bottom_bar_widget*> g_bottom_bars; // need to be defined here since it's used by the upperleft widget.
 
 #include "mQt_bottom_bar_widget_callbacks.h"
 #include "mQt_upperleft_widget_callbacks.h"
@@ -525,12 +525,25 @@ void SetupMainWindow(void){
 #if 1
   {
     QStatusBar *status_bar = main_window->statusBar();
-    g_bottom_bar = new Bottom_bar_widget(main_window);
-    status_bar->addWidget(g_bottom_bar, 1);//, true);
-    g_bottom_bar->show();
-    //main_window->statusBar()->addWidget(g_bottom_bar, 1, true);
-    editor->status_label = g_bottom_bar->status_label;
+    auto *bottom_bar = new Bottom_bar_widget(main_window);
+    status_bar->addWidget(bottom_bar, 1);//, true);
+    bottom_bar->show();
+    //main_window->statusBar()->addWidget(bottom_bar, 1, true);
+    //editor->status_labels.push_back(bottom_bar->status_label);
     //main_window->statusBar()->setFrameStyle(QFrame::NoFrame);
+
+    {
+      QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
+      QPalette pal(bottom_bar->palette());
+      pal.setColor( QPalette::Active, QPalette::Dark, system_color);
+      pal.setColor( QPalette::Active, QPalette::Light, system_color);
+      pal.setColor( QPalette::Inactive, QPalette::Dark, system_color);
+      pal.setColor( QPalette::Inactive, QPalette::Light, system_color);
+      pal.setColor( QPalette::Disabled, QPalette::Dark, system_color);
+      pal.setColor( QPalette::Disabled, QPalette::Light, system_color);
+      bottom_bar->setPalette(pal);
+    }
+
     {
       QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
       QPalette pal(status_bar->palette());
@@ -542,17 +555,7 @@ void SetupMainWindow(void){
       pal.setColor( QPalette::Disabled, QPalette::Light, system_color);
       status_bar->setPalette(pal);
     }
-    {
-      QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
-      QPalette pal(g_bottom_bar->palette());
-      pal.setColor( QPalette::Active, QPalette::Dark, system_color);
-      pal.setColor( QPalette::Active, QPalette::Light, system_color);
-      pal.setColor( QPalette::Inactive, QPalette::Dark, system_color);
-      pal.setColor( QPalette::Inactive, QPalette::Light, system_color);
-      pal.setColor( QPalette::Disabled, QPalette::Dark, system_color);
-      pal.setColor( QPalette::Disabled, QPalette::Light, system_color);
-      g_bottom_bar->setPalette(pal);
-    }
+
     main_window->setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
     status_bar->setSizeGripEnabled(false);
 
@@ -648,8 +651,9 @@ void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title){
   //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   //main_window->statusBar()->message(title);
 
-  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  editor->status_label->setText(title);
+  //EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  for(auto *bottom_bar : g_bottom_bars)
+    bottom_bar->status_label->setText(title);
 }
 
 void GFX_DisablePainting(void){

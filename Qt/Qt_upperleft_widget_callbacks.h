@@ -106,10 +106,13 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     bpm->setValue(root->tempo);
 
     // The bottom bar mirrors the lpb and bpm widgets.
-    g_bottom_bar->signature->setText(signature->text());
-    g_bottom_bar->lpb->setValue(root->lpb);
-    g_bottom_bar->bpm->setValue(root->tempo);
 
+    for(auto *bottom_bar : g_bottom_bars){
+      bottom_bar->signature->setText(signature->text());
+      bottom_bar->lpb->setValue(root->lpb);
+      bottom_bar->bpm->setValue(root->tempo);
+    }
+    
     reltempomax->setValue(wblock->reltempomax);
   }
 
@@ -145,24 +148,26 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
         ReltempoWidget->hide();
       
       // bottombar signature/lpb/bpm show/hide
-      if (window->show_signature_track)
-        g_bottom_bar->SignatureWidget->hide();
-      else
-        g_bottom_bar->SignatureWidget->show();
+      for(auto *bottom_bar : g_bottom_bars){
+        if (window->show_signature_track)
+          bottom_bar->SignatureWidget->hide();
+        else
+          bottom_bar->SignatureWidget->show();
+        
+        if (window->show_lpb_track)
+          bottom_bar->LPBWidget->hide();
+        else
+          bottom_bar->LPBWidget->show();
+        
+        if (window->show_bpm_track)
+          bottom_bar->BPMWidget->hide();
+        else
+          bottom_bar->BPMWidget->show();
+        
+        if (window->show_lpb_track && window->show_bpm_track)
+          bottom_bar->tempo_line->hide();
+      }
       
-      if (window->show_lpb_track)
-        g_bottom_bar->LPBWidget->hide();
-      else
-        g_bottom_bar->LPBWidget->show();
-      
-      if (window->show_bpm_track)
-        g_bottom_bar->BPMWidget->hide();
-      else
-        g_bottom_bar->BPMWidget->show();
-      
-      if (window->show_lpb_track && window->show_bpm_track)
-        g_bottom_bar->tempo_line->hide();
-
     } GL_unlock();
     
     int width = wblock->t.x1;

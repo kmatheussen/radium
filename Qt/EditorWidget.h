@@ -130,7 +130,7 @@ public:
 #endif
 
     //QFrame *status_frame;
-    QLabel *status_label;
+    //QVector<QLabel*> status_labels;
 
     QSplitter *xsplitter;
     QSplitter *ysplitter;

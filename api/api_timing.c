@@ -240,6 +240,8 @@ void setMainBPM(int bpm_value){
     UpdateAllSTimes();
     R_ASSERT(wblock->block->beats != NULL);
   }PC_StopPause(window);
+
+  window->must_redraw = true;
 }
 
 int getMainBPM(void){

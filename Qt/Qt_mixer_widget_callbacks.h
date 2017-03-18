@@ -115,6 +115,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
 
   int64_t _mixer_strips_gui = -1;
   int _num_rows = 2;
+
+  QWidget *_bottom_bar;
   
  Mixer_widget(QWidget *parent=NULL)
     : QWidget(parent)
@@ -153,6 +155,10 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
       
     g_mixer_widget2 = this;
 
+    _bottom_bar = BottomBar_create(this);
+    verticalLayout->insertWidget(-1, _bottom_bar, 0);
+    _bottom_bar->hide();
+    
     initing = false;
   }
 
@@ -384,14 +390,14 @@ public slots:
       //if(xsplitter!=NULL)
       //  xsplitter = (QWidget*)g_mixer_widget->parent();
       g_mixer_widget->setParent(NULL);
-      g_mixer_widget->show();      
-      QWidget *bottom_bar = BottomBar_create(this);
-      verticalLayout->addWidget(bottom_bar, 0);
+      g_mixer_widget->show();
+      _bottom_bar->show();
     } else {
       EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
       QSplitter *splitter = editor->xsplitter;
       splitter->addWidget(g_mixer_widget);
       //g_mixer_widget->setParent(xsplitter);
+      _bottom_bar->hide();
     }
 
     if(include_instrument_widget->isChecked())
@@ -461,8 +467,7 @@ public slots:
       return;
     
     if(include_instrument_widget){
-      verticalLayout->addWidget(getInstrumentsWidget(), 0);
-      getInstrumentsWidget()->show();
+      verticalLayout->insertWidget(2, getInstrumentsWidget(), 0);
       g_parent_for_instrument_widget_ysplitter->hide();
     }else{
       g_parent_for_instrument_widget_ysplitter->layout()->addWidget(getInstrumentsWidget());
@@ -472,6 +477,10 @@ public slots:
     setPositionInstrumentWidgetInMixer(include_instrument_widget);
       
     GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
+
+    
+    if (include_instrument_widget && getInstrumentsWidget()->isVisible()==false)
+      GFX_InstrumentWindowToFront();
   }
 
   void on_rows1_toggled(bool val){

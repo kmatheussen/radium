@@ -47,7 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 class Bottom_bar_widget;
 
-static Bottom_bar_widget *g_bottom_bar_widget = NULL;
+//static QVector<Bottom_bar_widget*> g_bottom_bars;
 static Ui::Audio_instrument_widget *g_system_audio_instrument_widget = NULL;
 static struct Patch *g_system_out_patch = NULL;
 static struct SoundPlugin *g_system_out_plugin = NULL;
@@ -62,7 +62,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   Q_OBJECT
 
   struct Timer : public QTimer{
-    Bottom_bar_widget *bottom_bar_widget;
+    
     void timerEvent(QTimerEvent * e){
       QString usage;
 
@@ -78,68 +78,73 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
       g_cpu_usage.reset();
 
-      bottom_bar_widget->cpu_label->setText(usage);
+      for(auto *bottom_bar_widget : g_bottom_bars)
+        bottom_bar_widget->cpu_label->setText(usage);
     }
   };
 
-  struct Timer2 : public QTimer{
-    bool has_midi_learn;
+  bool has_midi_learn = false;
+
+  void frequent_timer_callback(void){
+    if (this->edit_onoff->isChecked() != ATOMIC_GET(root->editonoff))
+      this->edit_onoff->setChecked(ATOMIC_GET(root->editonoff));
     
-    Bottom_bar_widget *bottom_bar_widget;
+    if (this->click_onoff->isChecked() != ATOMIC_GET(root->clickonoff))
+      this->click_onoff->setChecked(ATOMIC_GET(root->clickonoff));
+    
+    if (this->play_cursor_onoff->isChecked() != ATOMIC_GET(root->play_cursor_onoff))
+      this->play_cursor_onoff->setChecked(ATOMIC_GET(root->play_cursor_onoff));
+    
+    if (this->editor_follows_play_cursor_onoff->isChecked() != ATOMIC_GET(root->editor_follows_play_cursor_onoff))
+      this->editor_follows_play_cursor_onoff->setChecked(ATOMIC_GET(root->editor_follows_play_cursor_onoff));
+
+    if (g_system_out_plugin != NULL){
+      const SoundPluginType *type = g_system_out_plugin->type;
+      int effect_num = type->num_effects+EFFNUM_INPUT_VOLUME;
+      float val = PLUGIN_get_effect_value(g_system_out_plugin, effect_num, VALUE_FROM_STORAGE);
+      this->_triggered_by_user = false;
+      this->system_volume_slider->setValue(val * 10000);
+      this->_triggered_by_user = true;
+        
+      bool has_midi_learn_now = PLUGIN_has_midi_learn(g_system_out_plugin, effect_num);
+      if (has_midi_learn_now != has_midi_learn){
+        //printf("hepp %d\n",has_midi_learn_now);
+        has_midi_learn = has_midi_learn_now;
+        this->set_volume_slider_string();
+        this->system_volume_slider->update();
+      }
+      
+      //SLIDERPAINTER_set_recording_color(this->system_volume_slider->_painter, PLUGIN_is_recording_automation(g_system_out_plugin, effect_num));
+    }
+    
+    this->system_volume_slider->_patch = g_system_out_patch;
+    if (this->system_volume_slider->_patch != NULL)
+      this->system_volume_slider->calledRegularlyByParent();
+    
+    //SLIDERPAINTER_call_regularly(this->system_volume_slider->_painter);
+  }
+  
+  struct Timer2 : public QTimer{
     
     void timerEvent(QTimerEvent * e){
 
       if (g_radium_runs_custom_exec==true)
         return;
-      
-      if (bottom_bar_widget->edit_onoff->isChecked() != ATOMIC_GET(root->editonoff))
-        bottom_bar_widget->edit_onoff->setChecked(ATOMIC_GET(root->editonoff));
-      
-      if (bottom_bar_widget->click_onoff->isChecked() != ATOMIC_GET(root->clickonoff))
-        bottom_bar_widget->click_onoff->setChecked(ATOMIC_GET(root->clickonoff));
-      
-      if (bottom_bar_widget->play_cursor_onoff->isChecked() != ATOMIC_GET(root->play_cursor_onoff))
-        bottom_bar_widget->play_cursor_onoff->setChecked(ATOMIC_GET(root->play_cursor_onoff));
-      
-      if (bottom_bar_widget->editor_follows_play_cursor_onoff->isChecked() != ATOMIC_GET(root->editor_follows_play_cursor_onoff))
-        bottom_bar_widget->editor_follows_play_cursor_onoff->setChecked(ATOMIC_GET(root->editor_follows_play_cursor_onoff));
 
       if (g_system_out_patch==NULL && g_system_out_plugin != NULL)
         g_system_out_patch = (struct Patch*)g_system_out_plugin->patch;
-        
+      
       if (g_system_audio_instrument_widget == NULL && g_system_out_patch != NULL) {
-        bottom_bar_widget->system_volume_slider->_patch = g_system_out_patch;
-                
+        
         g_system_audio_instrument_widget = InstrumentWidget_get_audio_instrument_widget(g_system_out_patch);
-
+        
         // Commented out. We poll the plugin instead. (see below)
         //if (g_system_audio_instrument_widget != NULL)
-        //  bottom_bar_widget->system_volume_slider->setValue(g_system_audio_instrument_widget->input_volume_slider->value());
+        //  this->system_volume_slider->setValue(g_system_audio_instrument_widget->input_volume_slider->value());
       }
-
-      if (g_system_out_plugin != NULL){
-        const SoundPluginType *type = g_system_out_plugin->type;
-        int effect_num = type->num_effects+EFFNUM_INPUT_VOLUME;
-        float val = PLUGIN_get_effect_value(g_system_out_plugin, effect_num, VALUE_FROM_STORAGE);
-        bottom_bar_widget->_triggered_by_user = false;
-        bottom_bar_widget->system_volume_slider->setValue(val * 10000);
-        bottom_bar_widget->_triggered_by_user = true;
-
-        bool has_midi_learn_now = PLUGIN_has_midi_learn(g_system_out_plugin, effect_num);
-        if (has_midi_learn_now != has_midi_learn){
-          //printf("hepp %d\n",has_midi_learn_now);
-          has_midi_learn = has_midi_learn_now;
-          bottom_bar_widget->set_volume_slider_string();
-          bottom_bar_widget->system_volume_slider->update();
-        }
-
-        //SLIDERPAINTER_set_recording_color(bottom_bar_widget->system_volume_slider->_painter, PLUGIN_is_recording_automation(g_system_out_plugin, effect_num));
-      }
-
-      if (bottom_bar_widget->system_volume_slider->_patch != NULL)
-        bottom_bar_widget->system_volume_slider->calledRegularlyByParent();
     
-      //SLIDERPAINTER_call_regularly(bottom_bar_widget->system_volume_slider->_painter);
+      for(auto *bottom_bar_widget : g_bottom_bars)
+        bottom_bar_widget->frequent_timer_callback();
     }
   };
 
@@ -201,19 +206,19 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     _initing = false;
 
     // set up timers, but only in the first created bottom bar.
-    if (g_bottom_bar_widget == NULL){
-      g_bottom_bar_widget = this;
+    if (g_bottom_bars.size() == 0){
 
-      _timer.bottom_bar_widget = this;
       _timer.setInterval(1000);
       _timer.start();
       
-      _timer2.bottom_bar_widget = this;
-      _timer2.has_midi_learn = false;
       _timer2.setInterval(50);
       _timer2.start();
     }
 
+    g_bottom_bars.push_back(this);
+
+    if (g_bottom_bars.size() > 1 && g_system_out_plugin!=NULL)
+      GFX_OS_set_system_volume_plugin(g_system_out_plugin);
 
     // Set up custom popup menues for the time widgets
     {
@@ -241,6 +246,21 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
       connect(signature_label, SIGNAL(customContextMenuRequested(const QPoint&)),
               this, SLOT(ShowSignaturePopup(const QPoint&)));
     }
+
+
+
+    {
+      QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
+      QPalette pal(palette());
+      pal.setColor( QPalette::Active, QPalette::Dark, system_color);
+      pal.setColor( QPalette::Active, QPalette::Light, system_color);
+      pal.setColor( QPalette::Inactive, QPalette::Dark, system_color);
+      pal.setColor( QPalette::Inactive, QPalette::Light, system_color);
+      pal.setColor( QPalette::Disabled, QPalette::Dark, system_color);
+      pal.setColor( QPalette::Disabled, QPalette::Light, system_color);
+      setPalette(pal);
+    }
+
   }
 
   void enterEvent(QEvent *event) override{
@@ -328,12 +348,14 @@ public slots:
   void on_lpb_editingFinished(){
     printf("lpb bottombar\n");
     setMainLPB(lpb->value());
+    lpb->clearFocus();
     set_editor_focus();
   }
 
   void on_bpm_editingFinished(){
     printf("bpm bottombar\n");
     setMainBPM(bpm->value());
+    bpm->clearFocus();
     set_editor_focus();
   }
   
@@ -432,55 +454,69 @@ extern "C"{
     g_system_out_patch = NULL;
     g_system_audio_instrument_widget = NULL;
 
-    g_bottom_bar_widget->system_volume_slider->_patch = NULL;
-    g_bottom_bar_widget->system_volume_slider->_effect_num = EFFNUM_INPUT_VOLUME;
-
-    if (plugin == NULL){
+    for(auto *bottom_bar_widget : g_bottom_bars){
       
-      static float nullfloats[2] = {0.0f, 0.0f};
-      SLIDERPAINTER_set_peak_value_pointers(g_bottom_bar_widget->system_volume_slider->_painter, 2, nullfloats, true);
+      auto *system_volume_slider = bottom_bar_widget->system_volume_slider;
       
-    } else {
-
-      const SoundPluginType *type = plugin->type;
-
-      SLIDERPAINTER_set_peak_value_pointers(g_bottom_bar_widget->system_volume_slider->_painter, type->num_inputs, plugin->input_volume_peaks.decaying_dbs, true);
+      system_volume_slider->_patch = NULL;
+      system_volume_slider->_effect_num = EFFNUM_INPUT_VOLUME;
       
-    }    
+      if (plugin == NULL){
+        
+        static float nullfloats[2] = {0.0f, 0.0f};
+        SLIDERPAINTER_set_peak_value_pointers(system_volume_slider->_painter, 2, nullfloats, true);
+        
+      } else {
+        
+        const SoundPluginType *type = plugin->type;
+        
+        SLIDERPAINTER_set_peak_value_pointers(system_volume_slider->_painter, type->num_inputs, plugin->input_volume_peaks.decaying_dbs, true);
+        
+      }
+    }
+      
   }
 
   void GFX_OS_UpdateKeyOctave(void){
     if(ATOMIC_GET(is_starting_up)==false)
-      g_bottom_bar_widget->octave_label->setText(QString("Oct.: ")+QString::number(root->keyoct/12,16));
+      for(auto *bottom_bar_widget : g_bottom_bars)
+        bottom_bar_widget->octave_label->setText(QString("Oct.: ")+QString::number(root->keyoct/12,16));
   }
 
   void GFX_OS_update_bottombar(void){
     if(ATOMIC_GET(is_starting_up)==false)
-      g_bottom_bar_widget->updateWidgets();
+      for(auto *bottom_bar_widget : g_bottom_bars)
+        bottom_bar_widget->updateWidgets();
   } 
  
   void OS_GFX_NumUndosHaveChanged(int num_undos, bool redos_are_available, bool has_unsaved_undos){
-    g_bottom_bar_widget->num_undos_label->setText(QString::number(num_undos));
-    g_bottom_bar_widget->unsaved_undos->setText(has_unsaved_undos?"*":" ");
-    g_bottom_bar_widget->undo_button->setEnabled(num_undos>0);
-    g_bottom_bar_widget->redo_button->setEnabled(redos_are_available);
+    for(auto *bottom_bar_widget : g_bottom_bars){
+      bottom_bar_widget->num_undos_label->setText(QString::number(num_undos));
+      bottom_bar_widget->unsaved_undos->setText(has_unsaved_undos?"*":" ");
+      bottom_bar_widget->undo_button->setEnabled(num_undos>0);
+      bottom_bar_widget->redo_button->setEnabled(redos_are_available);
+    }
   }
 
   // This function could be deleted since the timer polls the system out plugin now. But it's a little bit smoother to call this function directly, and it probably doesn't hurt to keep it.
   void OS_GFX_SetVolume(int value){
-    g_bottom_bar_widget->_triggered_by_user=false;
-    g_bottom_bar_widget->system_volume_slider->setValue(value);
-    g_bottom_bar_widget->_triggered_by_user=true;
+    for(auto *bottom_bar_widget : g_bottom_bars){
+      bottom_bar_widget->_triggered_by_user=false;
+      bottom_bar_widget->system_volume_slider->setValue(value);
+      bottom_bar_widget->_triggered_by_user=true;
+    }
   }
 
   void OS_GFX_IncVolume(int how_much){
-    int new_value = how_much + g_bottom_bar_widget->system_volume_slider->value();
-    if(new_value<0)
-      new_value=0;
-    if(new_value>10000)
-      new_value=10000;
-
-    g_bottom_bar_widget->system_volume_slider->setValue(new_value);
+    for(auto *bottom_bar_widget : g_bottom_bars){
+      int new_value = how_much + bottom_bar_widget->system_volume_slider->value();
+      if(new_value<0)
+        new_value=0;
+      if(new_value>10000)
+        new_value=10000;
+      
+      bottom_bar_widget->system_volume_slider->setValue(new_value);
+    }
   }
 }
 
@@ -491,6 +527,7 @@ bool GFX_OS_patch_is_system_out(struct Patch *patch){
 QWidget *BottomBar_create(QWidget *parent){
   return new Bottom_bar_widget(parent);
 }
+
 
 /*
 void BottomBar_set_system_audio_instrument_widget_and_patch(Ui::Audio_instrument_widget *system_audio_instrument_widget, struct Patch *system_out_patch){
