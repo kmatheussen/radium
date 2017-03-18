@@ -54,9 +54,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 #endif
 #endif
       
-      QWidget *widget = dynamic_cast<QWidget*>(element);
-      if(widget!=NULL)
-        setStyleRec(widget, style);
+      QWidget *child = dynamic_cast<QWidget*>(element);
+      if(child!=NULL)
+        setStyleRec(child, style);
     }
   }
   

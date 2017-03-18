@@ -323,11 +323,11 @@ bool TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct W
   printf("Vector length: %d\n",num_tracks);
   int i;
   for(i=0;i<num_tracks;i++){
-    struct Notes *notes = notesvector.elements[i];
-    printf("  %d: %d\n", i, ListFindNumElements3(&notes->l));
-    while(notes != NULL){
-      printf("    %s\n",NotesTexts3[(int)notes->note]);
-      notes = NextNote(notes);
+    struct Notes *notes2 = notesvector.elements[i];
+    printf("  %d: %d\n", i, ListFindNumElements3(&notes2->l));
+    while(notes2 != NULL){
+      printf("    %s\n",NotesTexts3[(int)notes2->note]);
+      notes2 = NextNote(notes2);
     }
     
     struct WTracks *towtrack = ListFindElement1(&wblock->wtracks->l, wtrack->l.num+i);

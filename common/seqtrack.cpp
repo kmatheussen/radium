@@ -570,8 +570,8 @@ struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len){
   return seqtrack;
 }
 
-void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
-  int pos = VECTOR_find_pos(&seqtrack->seqblocks, seqblock);
+void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_to_delete){
+  int pos = VECTOR_find_pos(&seqtrack->seqblocks, seqblock_to_delete);
   R_ASSERT_RETURN_IF_FALSE(pos>=0);
 
   int64_t abstimes[seqtrack->seqblocks.num_elements];
@@ -768,10 +768,10 @@ static int get_seqblock_pos(vector_t *seqblocks, int64_t seqtime){
   return seqblocks->num_elements;
 }
 
-int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime){
+int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock_to_insert, int64_t seqtime){
   // Assert that the seqblock is not in a seqtrack already.
   VECTOR_FOR_EACH(struct SeqTrack *, seqtrack_here, &root->song->seqtracks){
-    R_ASSERT_RETURN_IF_FALSE2(!VECTOR_is_in_vector(&seqtrack_here->seqblocks, seqblock), 0);
+    R_ASSERT_RETURN_IF_FALSE2(!VECTOR_is_in_vector(&seqtrack_here->seqblocks, seqblock_to_insert), 0);
   }END_VECTOR_FOR_EACH;
 
   int64_t abstimes[seqtrack->seqblocks.num_elements];
@@ -789,10 +789,10 @@ int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqbloc
     radium::PlayerPause pause;
     radium::PlayerLock lock;
 
-    seqblock->time = seqtime;
-    seqblock->gfx_time = seqblock->time;
+    seqblock_to_insert->time = seqtime;
+    seqblock_to_insert->gfx_time = seqblock_to_insert->time;
     
-    VECTOR_insert(&seqtrack->seqblocks, seqblock, pos);
+    VECTOR_insert(&seqtrack->seqblocks, seqblock_to_insert, pos);
 
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
       if (iterator666 > pos){
@@ -860,7 +860,7 @@ void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block){
   QVector<QPair<struct SeqTrack*, struct SeqBlock* > > to_remove;
   
   VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
-    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+    VECTOR_FOR_EACH2(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
       if (seqblock->block==block)
         to_remove.push_back(QPair<struct SeqTrack*, struct SeqBlock* >(seqtrack, seqblock));
     }END_VECTOR_FOR_EACH;

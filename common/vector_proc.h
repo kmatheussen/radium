@@ -152,12 +152,22 @@ static inline void VECTOR_delete_last(vector_t *v){
   const vector_t *vector666 = vector;                                         \
   for(iterator666=0;iterator666<(vector666)->num_elements;iterator666++){ \
   type varname = (type)((vector666)->elements[iterator666]);
+#define VECTOR_FOR_EACH2(type,varname,vector) {                          \
+  int iterator6662;                                                      \
+  const vector_t *vector6662 = vector;                                         \
+  for(iterator6662=0;iterator6662<(vector6662)->num_elements;iterator6662++){ \
+  type varname = (type)((vector6662)->elements[iterator6662]);
 #else
 #define VECTOR_FOR_EACH(var,vector) {                                   \
   int iterator666;                                                      \
   const vector_t *vector666 = vector;                                         \
   for(iterator666=0;iterator666<(vector666)->num_elements;iterator666++){  \
   var = (vector666)->elements[iterator666];
+#define VECTOR_FOR_EACH2(var,vector) {                                   \
+  int iterator6662;                                                      \
+  const vector_t *vector6662 = vector;                                         \
+  for(iterator6662=0;iterator6662<(vector6662)->num_elements;iterator6662++){  \
+  var = (vector6662)->elements[iterator6662];
 #endif
 #define END_VECTOR_FOR_EACH }}
 
@@ -174,13 +184,13 @@ extern vector_t g_global_roots;
 #ifdef __cplusplus
 
 template<typename T> 
-static inline T add_gc_root(T root){
-  VECTOR_push_back(&g_global_roots, root);
-  return root;
+static inline T add_gc_root(T root_){
+  VECTOR_push_back(&g_global_roots, root_);
+  return root_;
 }
 
-static inline void remove_gc_root(void *root){
-  VECTOR_remove(&g_global_roots, root);
+static inline void remove_gc_root(void *root_){
+  VECTOR_remove(&g_global_roots, root_);
 }
 
 template<typename T>
@@ -192,13 +202,13 @@ static inline T replace_gc_root(T old_root, T new_root){
 
 #else
 
-static inline void *add_gc_root(void *root){
-  VECTOR_push_back(&g_global_roots, root);
-  return root;
+static inline void *add_gc_root(void *root_){
+  VECTOR_push_back(&g_global_roots, root_);
+  return root_;
 }
 
-static inline void remove_gc_root(void *root){
-  VECTOR_remove(&g_global_roots, root);
+static inline void remove_gc_root(void *root_){
+  VECTOR_remove(&g_global_roots, root_);
 }
 
 static inline void *replace_gc_root(void *old_root, void *new_root){

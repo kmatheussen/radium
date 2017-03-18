@@ -729,15 +729,15 @@ void *ListPrevElement3(
     'placement'.
 ******************************************************************************/
 void CutListAt(void *listroot,Place *place){
-	struct ListHeaderPointer3 *root=(struct ListHeaderPointer3 *)listroot;
-	struct ListHeader3 *element=root->root;
+	struct ListHeaderPointer3 *root_=(struct ListHeaderPointer3 *)listroot;
+	struct ListHeader3 *element=root_->root;
 
         ValidatePlace(place);
           
 	if(element==NULL) return;
 
 	if(PlaceGreaterOrEqual(&element->p,place)){
-		root->root=NULL;
+		root_->root=NULL;
 		return;
 	}
 
@@ -758,13 +758,13 @@ void CutListAt(void *listroot,Place *place){
 void CutListAt_a(void *listroot,Place *place){
   ValidatePlace(place);
           
-	struct ListHeaderPointer3 *root=(struct ListHeaderPointer3 *)listroot;
-	struct ListHeader3 *element=root->root;
+	struct ListHeaderPointer3 *root_=(struct ListHeaderPointer3 *)listroot;
+	struct ListHeader3 *element=root_->root;
 
 	if(element==NULL) return;
 
 	if(PlaceGreaterThan(&element->p,place)){
-		root->root=NULL;
+		root_->root=NULL;
 		return;
 	}
 
@@ -781,13 +781,13 @@ void CutListAt_a(void *listroot,Place *place){
 }
 
 void CutListAt1(void *listroot,NInt num){
-	struct ListHeaderPointer1 *root=(struct ListHeaderPointer1 *)listroot;
-	struct ListHeader1 *element=root->root;
+	struct ListHeaderPointer1 *root_=(struct ListHeaderPointer1 *)listroot;
+	struct ListHeader1 *element=root_->root;
 
 	if(element==NULL) return;
 
 	if(element->num>num){
-		root->root=NULL;
+		root_->root=NULL;
 		return;
 	}
 

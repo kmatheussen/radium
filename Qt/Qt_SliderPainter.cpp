@@ -416,12 +416,12 @@ struct SliderPainter{
     p->fillRect(f, get_qcolor(PEAKS_COLOR_NUM));
     
     if (x > x2) {
-      QRectF f(x2, y1, R_MIN(x, x3) - x2, peak_height);
-      p->fillRect(f, get_qcolor(PEAKS_0DB_COLOR_NUM));
+      QRectF f2(x2, y1, R_MIN(x, x3) - x2, peak_height);
+      p->fillRect(f2, get_qcolor(PEAKS_0DB_COLOR_NUM));
 
       if (x > x3) {
-        QRectF f(x3, y1, x - x3, peak_height);
-        p->fillRect(f, get_qcolor(PEAKS_4DB_COLOR_NUM));
+        QRectF f3(x3, y1, x - x3, peak_height);
+        p->fillRect(f3, get_qcolor(PEAKS_4DB_COLOR_NUM));
       }
     }
     

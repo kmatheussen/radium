@@ -125,13 +125,13 @@ static int64_t RT_scheduled_Beat(struct SeqTrack *seqtrack, int64_t time, union 
   {
     const int num_args = 1;
         
-    union SuperType args[num_args];
-    args[0].pointer = iterator;
+    union SuperType args2[num_args];
+    args2[0].pointer = iterator;
 
     if (beat->beat_num==1)
-      SCHEDULER_add_event(seqtrack, time, RT_scheduled_play_bar_note, &args[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
+      SCHEDULER_add_event(seqtrack, time, RT_scheduled_play_bar_note, &args2[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
     else
-      SCHEDULER_add_event(seqtrack, time, RT_scheduled_play_beat_note, &args[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
+      SCHEDULER_add_event(seqtrack, time, RT_scheduled_play_beat_note, &args2[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
   }
 
   iterator->next_beat = NextBeat(beat);

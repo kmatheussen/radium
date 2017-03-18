@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <unistd.h> // Must be placed after includepyton/api_proc to avoid compilation error.
 
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic push
+
 #include <QApplication>
 #include <QMainWindow>
 #include <QSplitter>
@@ -28,6 +31,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QUrl>
 #include <QMimeData>
 #include <QFileDialog>
+
+#pragma GCC diagnostic pop
+
 
 extern bool g_qtgui_has_started,g_qtgui_has_stopped;
 

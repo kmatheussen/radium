@@ -13,9 +13,9 @@ struct Rational {
   int numerator;
   int denominator;
     
-  Rational(int numerator, int denominator)
-    : numerator(numerator)
-    , denominator(denominator)
+  Rational(int numerator_, int denominator_)
+    : numerator(numerator_)
+    , denominator(denominator_)
   {}
 
   Rational(Ratio ratio)

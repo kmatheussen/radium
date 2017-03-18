@@ -23,15 +23,15 @@ namespace cvs{
 
 struct MyLine{
   int x1,y1,x2,y2;
-  MyLine(int x1,int y1, int x2, int y2)
-    : x1(x1),y1(y1),x2(x2),y2(y2)
+  MyLine(int x1_,int y1_, int x2_, int y2_)
+    : x1(x1_),y1(y1_),x2(x2_),y2(y2_)
   {}
 };
 
 struct MyRect{
   int x1,y1,x2,y2;
-  MyRect(int x1,int y1, int x2, int y2)
-    : x1(x1),y1(y1),x2(x2),y2(y2)
+  MyRect(int x1_,int y1_, int x2_, int y2_)
+    : x1(x1_),y1(y1_),x2(x2_),y2(y2_)
   {}
   int width() const {return x2-x1;}
   int height() const {return y2-y1;}
