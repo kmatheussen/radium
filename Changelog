@@ -1,3 +1,15 @@
+Changes 4.5.6 -> 4.5.8:
+* OSX: Upgrade Qt from 4.6.2 to 4.7.1. Might fix some GUI issues.
+* Windows: Compile with gcc 5.4. Should be a little bit faster.
+* Add a bottom bar to mixer when it's running in a separate window.
+* Make it possible to move the vertical handle between editor and
+  sequencer. I.e. make it possible to resize the height of the
+  sequencer widget.
+* Windows/crashreporter: Don't show two crash reporter windows
+  when crashing.
+* Minor GUI and audio optimizations.
+
+
 Changes 4.5.4 -> 4.5.6:
 * VST: Fix saving FXB/FXP
 * Fix tool tip for the "half"/"full" buttons in the instrument widget.
