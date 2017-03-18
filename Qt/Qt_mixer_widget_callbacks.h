@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QSplitter>
 
+#include "Qt_bottom_bar_widget_proc.h"
+
+
 
 static QSlider *g_zoom_slider = NULL;
 //static QWidget *g_view = NULL;
@@ -382,6 +385,8 @@ public slots:
       //  xsplitter = (QWidget*)g_mixer_widget->parent();
       g_mixer_widget->setParent(NULL);
       g_mixer_widget->show();      
+      QWidget *bottom_bar = BottomBar_create(this);
+      verticalLayout->addWidget(bottom_bar, 0);
     } else {
       EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
       QSplitter *splitter = editor->xsplitter;

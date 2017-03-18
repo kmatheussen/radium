@@ -42,13 +42,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_bottom_bar_widget.h"
 
+#include "Qt_bottom_bar_widget_proc.h"
+
 
 class Bottom_bar_widget;
 
-Bottom_bar_widget *g_bottom_bar_widget = NULL;
-Ui::Audio_instrument_widget *g_system_audio_instrument_widget = NULL;
-struct Patch *g_system_out_patch = NULL;
-struct SoundPlugin *g_system_out_plugin = NULL;
+static Bottom_bar_widget *g_bottom_bar_widget = NULL;
+static Ui::Audio_instrument_widget *g_system_audio_instrument_widget = NULL;
+static struct Patch *g_system_out_patch = NULL;
+static struct SoundPlugin *g_system_out_plugin = NULL;
 
 extern bool drunk_velocity;
 extern CpuUsage g_cpu_usage;
@@ -106,7 +108,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
         g_system_out_patch = (struct Patch*)g_system_out_plugin->patch;
         
       if (g_system_audio_instrument_widget == NULL && g_system_out_patch != NULL) {
-        g_bottom_bar_widget->system_volume_slider->_patch = g_system_out_patch;
+        bottom_bar_widget->system_volume_slider->_patch = g_system_out_patch;
                 
         g_system_audio_instrument_widget = InstrumentWidget_get_audio_instrument_widget(g_system_out_patch);
 
@@ -161,11 +163,6 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
     QFontMetrics fm(QApplication::font());
         
-    if(g_bottom_bar_widget != NULL)
-      RError("g_bottom_bar_widget!=NULL");
-
-    g_bottom_bar_widget = this;
-
     setMinimumHeight(fm.height()*3/2);
     setMaximumHeight(fm.height()*3/2);
     frame->setMinimumHeight(fm.height()*3/2);
@@ -203,8 +200,10 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
     _initing = false;
 
-    // set up timers
-    {
+    // set up timers, but only in the first created bottom bar.
+    if (g_bottom_bar_widget == NULL){
+      g_bottom_bar_widget = this;
+
       _timer.bottom_bar_widget = this;
       _timer.setInterval(1000);
       _timer.start();
@@ -214,6 +213,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
       _timer2.setInterval(50);
       _timer2.start();
     }
+
 
     // Set up custom popup menues for the time widgets
     {
@@ -486,6 +486,10 @@ extern "C"{
 
 bool GFX_OS_patch_is_system_out(struct Patch *patch){
   return patch==g_system_out_patch;
+}
+
+QWidget *BottomBar_create(QWidget *parent){
+  return new Bottom_bar_widget(parent);
 }
 
 /*
