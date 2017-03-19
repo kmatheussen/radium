@@ -1161,7 +1161,7 @@ bool a_radium_window_has_focus(void){
     return true;
 
   if (g_mixer_widget->parent()==NULL)
-    if (maybe_got_window(g_mixer_widget))
+    if (maybe_got_key_window(g_mixer_widget))
       return true;
 
   QVector<QWidget*> all_windows = MIXERSTRIPS_get_all_widgets();

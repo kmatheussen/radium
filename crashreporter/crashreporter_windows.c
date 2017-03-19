@@ -31,7 +31,7 @@ Blog post from another guy doing backtraces and catching exceptions in lin/mingw
 
 #include "crashreporter_proc.h"
 #include "../common/nsmtracker_time.h"
-
+#include "../common/OS_disk2_proc.h"
 
 #define NUM_BACKTRACE 62 // More than 63, and capturestackbacktrace won't work on xp and 2003.
 
@@ -440,6 +440,9 @@ init_bfd_ctx(struct bfd_ctx *bc, const char * procname, struct output_buffer *ob
           return 1;
 	}
 
+        // from addr2line. Don't know what it does. Didn't fix the problem.
+        b->flags |= BFD_DECOMPRESS;
+        
 	int r1 = bfd_check_format(b, bfd_object);
 	int r2 = bfd_check_format_matches(b, bfd_object, NULL);
 	int r3 = bfd_get_file_flags(b) & HAS_SYMS;
@@ -449,7 +452,7 @@ init_bfd_ctx(struct bfd_ctx *bc, const char * procname, struct output_buffer *ob
 		output_print(ob,"Failed to init bfd from (%s) %d,%d,%d.\n", procname,r1,r2,r3);
 		return 1;
 	}
-
+        
 	void *symbol_table;
 
 	unsigned dummy = 0;
@@ -601,7 +604,8 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
                     ) 
                   {
                     module_name = module_name_raw;
-                    bc = get_bc(ob, set, module_name);
+                    if(false) // Using addr2line instead. Don't know exactly why addr2line works, but this file doesn't, but there's some indication that bfd doesn't work if the executable is too big.
+                      bc = get_bc(ob, set, module_name);
                   }
 
 		const char * file = NULL;
@@ -632,6 +636,21 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 				file = "[unknown file]";
 			}
 		}
+                
+                {
+                  char temp[1024];
+                  /*
+                    sprintf(temp,"addr2line.exe -e %s 0x%x\n",module_name,(unsigned int)offset);
+                    fprintf(stderr,"Running -%s-\n",temp);
+                    system(temp);
+                  */
+                  sprintf(temp,"0x%x", (unsigned int)offset);
+                  
+                  char *stuff = DISK_run_program_that_writes_to_temp_file("radium_addr2line.exe", "-e", module_name, temp);
+                  output_print(ob, "%d: %s. 0x%x : %s\n", i, stuff, (unsigned int)offset, module_name);
+                  printf("   stuff: -%s-\n", stuff);
+                }
+/*
 		if (func == NULL) {
 			output_print(ob,"%d: 0x%x : %s : %s\n", 
                                      i,
@@ -648,7 +667,7 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
                                      line,
                                      func);
 		}
-
+*/
                 i++;
 	}
 }

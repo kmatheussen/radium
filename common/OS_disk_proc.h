@@ -48,9 +48,12 @@ extern LANGSPEC const char *DISK_file_to_base64(const wchar_t *wfilename); // Re
 extern LANGSPEC const wchar_t *DISK_base64_to_file(const wchar_t *wfilename, const char *chars); // If wfilename==NULL, the name of a temporary file is returned. Returns NULL if error.
 extern LANGSPEC void DISK_delete_base64_file(const wchar_t *wfilename); // Deletes temporary file created by a successfull call to DISK_base64_to_file(NULL,...).
 extern LANGSPEC void DISK_cleanup(void);
-    
-#ifdef USE_QT4
 
+#include "OS_disk2_proc.h"
+
+
+
+#ifdef USE_QT4
 #include <QString>
 
 extern disk_t *DISK_open_for_writing(QString filename);

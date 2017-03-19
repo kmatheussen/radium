@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFile>
 #include <QTextStream>
 #include <QTemporaryFile>
+#include <QDir>
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
@@ -465,3 +466,65 @@ void DISK_cleanup(void){
 
   g_temporary_files.clear();
 }
+
+static QString file_to_string(QString filename){
+  QFile file(filename);
+  bool ret = file.open(QIODevice::ReadOnly | QIODevice::Text);
+  if( ret )
+    {
+      QTextStream stream(&file);
+      QString content = stream.readAll();
+      return content;
+    }
+  return "(unable to open file -"+filename+"-)";
+}
+
+// 'program' must be placed in the program bin path.
+// The returned value must be manually freed.
+// Can be called from any thread.
+// Leaks memory.
+char *DISK_run_program_that_writes_to_temp_file(const char *program, const char *arg1, const char *arg2, const char *arg3){
+  QString filename;
+
+  {
+    QTemporaryFile file(QDir::tempPath() + QDir::separator() + "radium_addr2line");
+    bool succ = file.open();
+    if (succ==false)
+      return strdup("(Unable to open temporary file)");
+    
+    filename = file.fileName();
+  }
+  
+#if defined(FOR_WINDOWS)
+  wchar_t *p = STRING_create(OS_get_full_program_file_path(program), false);
+  wchar_t *a1 = STRING_create(QString("\"") + arg1 + "\"", false); // _wspawnl is really stupid. (https://blogs.msdn.microsoft.com/twistylittlepassagesallalike/2011/04/23/everyone-quotes-command-line-arguments-the-wrong-way/)
+  wchar_t *a2 = STRING_create(arg2, false);
+  wchar_t *a3 = STRING_create(arg3, false);
+  wchar_t *a4 = STRING_create("\""+filename+"\"", false);
+  printf("   file.fileName(): -%s-\n",filename.toUtf8().constData());
+
+
+  if(_wspawnl(_P_WAIT, p, p, a1, a2, a3, a4, NULL)==-1){
+    char *temp = (char*)malloc(strlen(program)+strlen(arg1)+1024);    
+    sprintf(temp, "Couldn't launch %s: \"%s\"\n",program,arg1);
+    fprintf(stderr,temp);
+    //SYSTEM_show_message(strdup(temp));
+    //Sleep(3000);
+    return temp;
+  }
+  
+  QString ret = file_to_string(filename).trimmed();
+
+  QFile file(filename);
+  file.remove();
+  
+  return strdup(ret.toUtf8().constData());
+  
+#else
+  
+  RError("Not implemented\n");
+  return strdup("not implemented");
+  
+#endif
+}
+

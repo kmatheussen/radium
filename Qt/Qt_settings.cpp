@@ -107,7 +107,7 @@ wchar_t *STRING_create(const QString s, bool use_gc_alloc){
     R_ASSERT(use_gc_alloc==false);
   
   if (is_main_thread==false || use_gc_alloc==false){  
-    array = (wchar_t*)V_malloc(size);
+    array = (wchar_t*)malloc(size);
   }else{
     array = (wchar_t*)talloc_atomic(size);
   }
@@ -192,7 +192,7 @@ const wchar_t *OS_get_program_path2(void){
   static wchar_t *array=NULL;
   if (array==NULL){
     QString s = QDir::toNativeSeparators(QCoreApplication::applicationDirPath());
-    array = (wchar_t*)V_calloc(1, sizeof(wchar_t)*(s.length()+1));
+    array = (wchar_t*)calloc(1, sizeof(wchar_t)*(s.length()+1));
     s.toWCharArray(array);
   }
 

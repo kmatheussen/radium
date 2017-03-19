@@ -2025,6 +2025,9 @@ bin/crashreporter: crashreporter/crashreporter.cpp $(API)radium_proc.h
 	$(LINKER) `cat buildtype.opt` crashbin.o -o bin/crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
 	rm crashbin.o
 
+bin/radium_addr2line: crashreporter/radium_addr2line.c
+	$(CC_STATIC) crashreporter/radium_addr2line.c -Wall $(ADDR2LINEOPTS) -DPACKAGE -o bin/radium_addr2line
+
 crashreporter.o: crashreporter/crashreporter.cpp
 	$(CCC) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DVERSION=\"$(VERSION)\"
 
