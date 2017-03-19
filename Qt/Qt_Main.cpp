@@ -2309,6 +2309,8 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
   bool old_g_qtgui_has_started = g_qtgui_has_started;
   
   g_qtgui_has_started=false;
+
+  char temp[1024];
     
   switch (type) {
     case QtDebugMsg:
@@ -2320,21 +2322,24 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
       break;
 #endif
     case QtWarningMsg:
-      fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      snprintf(temp, 1000, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      fprintf(stderr, temp);
 #ifndef RELEASE
-      SYSTEM_show_message(talloc_format("Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function));
+      SYSTEM_show_message(temp);
 #endif
       break;
     case QtCriticalMsg:
-      fprintf(stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      snprintf(temp, 1000, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      fprintf(stderr, temp);
 #ifndef RELEASE
-      SYSTEM_show_message(talloc_format("Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function));
+      SYSTEM_show_message(temp);
 #endif
       break;
     case QtFatalMsg:
-      fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      snprintf(temp, 1000, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+      fprintf(stderr, temp);
 #ifndef RELEASE
-      SYSTEM_show_message(talloc_format("Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function));
+      SYSTEM_show_message(temp);
 #endif        
       break;
       //abort();
