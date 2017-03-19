@@ -331,7 +331,12 @@
     (<gui> :filled-box widget (<gui> :get-background-color widget) 0 0 width height)
     (<gui> :filled-box widget "black" 1 1 (1- width) (1- height) 5 5)
     (<gui> :filled-box widget color 0 0 pos height 5 5)
-    (<gui> :draw-box widget "gray" 0 0 width height 0.8)
+
+    (if (= (<ra> :get-current-instrument) instrument-id)
+        (<gui> :filled-box widget "#aa111144" 1 1 (1- width) (1- height) 5 5))
+
+    (<gui> :draw-box widget "gray" 0 0 width height 0.8 5 5)
+  
     (define text (<-> instrument-name ": " (get-value-text value)))
     (when is-changing-value
       (<ra> :set-statusbar-text text)
