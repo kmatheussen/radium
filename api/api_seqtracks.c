@@ -615,6 +615,7 @@ int64_t getSeqloopingEnd(void){
 //
 
 float getSeqtrackX1(int seqtracknum){
+  //printf("getSeqtrackX1. num_elements: %d. seqtracknum: %d\n",root->song->seqtracks.num_elements,seqtracknum);
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
     handleError("Sequencer track #%d does not exist", seqtracknum);
     return 0;

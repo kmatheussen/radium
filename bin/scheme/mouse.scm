@@ -3176,6 +3176,7 @@
  :move (lambda (Button X Y)
          (let ((old *current-seqtrack-num*)
                (new (get-seqtracknum X Y)))
+           ;;(c-display "old/new" old new)
            (cond ((and old (not new))
                   (set! *current-seqtrack-num* new))
                  ((or (and new (not old))
@@ -3323,6 +3324,7 @@
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (reset-gakkgakk-values)
                                                   (let ((seqtracknum *current-seqtrack-num*))
+                                                    ;;(c-display "seqtracknum" seqtracknum)
                                                     (and (not *current-seqautomation/distance*)
                                                          seqtracknum
                                                          (begin
