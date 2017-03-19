@@ -225,16 +225,16 @@ void release_keyboard_focus_counting(void){
 }
 
 
-static bool g_another_window_has_focus = false;
+static bool g_a_non_radium_window_has_focus = false;
 
 // OSX needs to call this function since sub windows (created by for instance VST plugins) use our key events, and then we can not eat them.
 void call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_events(void){
   R_ASSERT(THREADING_is_main_thread());
     
-  if (main_window_has_focus())
-    g_another_window_has_focus = false;
+  if (a_radium_window_has_focus())
+    g_a_non_radium_window_has_focus = false;
   else
-    g_another_window_has_focus = true;
+    g_a_non_radium_window_has_focus = true;
 
   //printf("main_window_has_focus(): %d\n", main_window_has_focus());
 }
@@ -478,9 +478,9 @@ protected:
            );
     */
 
-    //printf("Got key. Another window has focus? %d\n",(int)g_another_window_has_focus);
+    //printf("Got key. Another window has focus? %d\n",(int)g_a_non_radium_window_has_focus);
     //return false;    
-    if (g_another_window_has_focus && JUCE_native_gui_grabs_keyboard())
+    if (g_a_non_radium_window_has_focus && JUCE_native_gui_grabs_keyboard())
       return false;
 
     if (MIXER_is_saving())
@@ -694,7 +694,7 @@ protected:
     if(ATOMIC_GET(is_starting_up)==true)
       return false;
 
-    if (g_another_window_has_focus)
+    if (g_a_non_radium_window_has_focus)
       return false;
 
     if (MIXER_is_saving())
@@ -840,7 +840,7 @@ protected:
            );
 #endif
     
-    if (g_another_window_has_focus)
+    if (g_a_non_radium_window_has_focus)
       return false;
 
     if (MIXER_is_saving())
@@ -1146,7 +1146,7 @@ static bool maybe_got_key_window(QWidget *window){
 #endif
 }
 
-bool main_window_has_focus(void){
+bool a_radium_window_has_focus(void){
   if(ATOMIC_GET(is_starting_up)==true)
     return false;
 
@@ -1159,7 +1159,11 @@ bool main_window_has_focus(void){
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
   if (maybe_got_key_window(main_window))
     return true;
-  
+
+  if (g_mixer_widget->parent()==NULL)
+    if (maybe_got_window(g_mixer_widget))
+      return true;
+
   QVector<QWidget*> all_windows = MIXERSTRIPS_get_all_widgets();
   for(auto *window : all_windows)
     if (maybe_got_key_window(window))

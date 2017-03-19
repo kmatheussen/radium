@@ -16,7 +16,7 @@ extern void obtain_keyboard_focus_counting(void); // careful...
 extern void release_keyboard_focus_counting(void);
   
 extern void call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_events(void);
-extern bool main_window_has_focus(void);
+extern bool a_radium_window_has_focus(void);
   
 #  ifdef __cplusplus
 }

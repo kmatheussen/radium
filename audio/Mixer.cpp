@@ -836,6 +836,11 @@ struct Mixer{
       int *p=NULL;
       p[5] = 2;
     */
+#if 0
+    fprintf(stderr,"gakk gakk\n");
+    malloc(500);
+    getchar();
+#endif
 
 #if USE_WORKAROUND
     // workaround for non-working UnhandledExceptionFilter in the jack thread. (strange)
