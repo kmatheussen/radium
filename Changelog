@@ -1,3 +1,12 @@
+Changes 4.5.8 -> 4.5.9:
+* Windows: Fix crashreporter backtrace.
+* Mixer strips: Draw blue color on top of sliders for
+  the current instrument
+* Windows: Fix keyboard input when the Mixer is running
+  in a separate window.
+* Sequencer: Fix mouse handling when editor is not visible
+
+
 Changes 4.5.6 -> 4.5.8:
 * OSX: Upgrade Qt from 4.6.2 to 4.7.1. Might fix some GUI issues.
 * Windows: Compile with gcc 5.4. Should be a little bit faster.
