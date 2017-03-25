@@ -222,6 +222,16 @@ enum{
   #define R_ASSERT_NON_RELEASE2(a, returnvalue) R_ASSERT_RETURN_IF_FALSE2(a, returnvalue)
 #endif
 
+#if 1 //defined(USE_CUSTOM_NUM_FRAMES)
+#  define R_NUM_FRAMES_DECL int radium_num_frames___,
+#  define R_NUM_FRAMES radium_num_frames___
+#  define R_NUM_FRAMES_ARG radium_num_frames___,
+#else
+#  define R_NUM_FRAMES_DECL
+#  define R_NUM_FRAMES radium_num_frames___ RADIUM_BLOCKSIZE
+#  define R_NUM_FRAMES_ARG
+#endif
+
 
 #include "validatemem_proc.h"
 

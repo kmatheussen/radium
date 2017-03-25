@@ -789,12 +789,12 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
 }
 
 
-static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
+static void RT_process(SoundPlugin *plugin, int64_t time, R_NUM_FRAMES_DECL float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
 
-  memset(outputs[0],0,num_frames*sizeof(float));
-  memset(outputs[1],0,num_frames*sizeof(float));
+  memset(outputs[0],0,R_NUM_FRAMES*sizeof(float));
+  memset(outputs[1],0,R_NUM_FRAMES*sizeof(float));
 
   if (ATOMIC_GET(data->recording_status)==IS_RECORDING){
     float *audio_[2];
@@ -822,7 +822,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   
   if (data->p.vibrato_phase_add > 0.0) {
     data->p.vibrato_value = data->p.vibrato_depth * sin(data->p.vibrato_phase);
-    data->p.vibrato_phase += data->p.vibrato_phase_add*(double)num_frames;
+    data->p.vibrato_phase += data->p.vibrato_phase_add*(double)R_NUM_FRAMES;
   }
   
   bool was_playing_something = data->voices_playing != NULL;
@@ -830,7 +830,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   while(voice!=NULL){
     Voice *next = voice->next;
 
-    if(RT_play_voice(data, voice, num_frames, outputs)==true){
+    if(RT_play_voice(data, voice, R_NUM_FRAMES, outputs)==true){
       RT_remove_voice(&data->voices_playing, voice);
       RT_add_voice(&data->voices_not_playing, voice);
     }
@@ -839,11 +839,11 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   }
 
   if (was_playing_something)
-    data->tremolo->type->RT_process(data->tremolo, time, num_frames, outputs, outputs);
+    data->tremolo->type->RT_process(data->tremolo, time, R_NUM_FRAMES, outputs, outputs);
           
   if(data->new_data != NULL){
-    RT_fade_out(outputs[0],num_frames);
-    RT_fade_out(outputs[1],num_frames);
+    RT_fade_out(outputs[0],R_NUM_FRAMES);
+    RT_fade_out(outputs[1],R_NUM_FRAMES);
 
     plugin->data = data->new_data; // Bang! (hmm.)
     data->new_data = NULL;

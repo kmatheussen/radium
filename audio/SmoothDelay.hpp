@@ -79,9 +79,10 @@ struct SmoothDelay {
     return safe_int_read(&iHslider0);
   }
 
+#define R_COUNT RADIUM_BLOCKSIZE
 #define INTERP (1.0/4096.0)
 #define PROCESS(ANDING)                                                 \
-  for (int i = 0; (i < count); i = (i + 1)) {                           \
+  for (int i = 0; (i < R_COUNT); i = (i + 1)) {                           \
     float fSel1;                                                        \
     if ((fRec0[1] != 0.0f) != 0) {                                      \
       fSel1 = (((fRec1[1] > 0.0f) & (fRec1[1] < 1.0f))?fRec0[1]:0.0f);  \
@@ -114,6 +115,10 @@ struct SmoothDelay {
   
   
   bool RT_process(int count, const FAUSTFLOAT* input0, FAUSTFLOAT* output0) {
+#if !defined(RELEASE)
+    R_ASSERT_RETURN_IF_FALSE2(count==R_COUNT, false);
+#endif
+    
     const int iSlow0 = iHslider0;
 
     const int anding = buffer_size-1;
@@ -121,13 +126,13 @@ struct SmoothDelay {
     if (can_pipe_instead){
 
       // Must do this, even if there has been no delay earlier. If we don't do this, there will be clicks when turning on the delay.
-      for(int i = 0 ; i < count ; i++){
+      for(int i = 0 ; i < R_COUNT ; i++){
         fVec0[(IOTA & anding)] = input0[i];
         IOTA++;
       }
 
       //   if (input0 != output0)
-      //  memcpy(output0, input0, sizeof(float)*count);
+      //  memcpy(output0, input0, sizeof(float)*R_COUNT);
       
       return false;
     }

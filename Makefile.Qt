@@ -1656,7 +1656,7 @@ zita_rev.o: audio/zita_rev.cpp
 	$(CCC) audio/zita_rev.cpp $(FAUST_OPTS) -DCLASSNAME=Zita_dsp  -DDSP_NAME=\"Zita\ Reverb\" -DCREATE_NAME=create_zita_rev_plugin
 
 audio/zita_rev.cpp: audio/zita_rev.dsp $(FAUST_DEPENDENCIES)
-	cd audio && $(FAUST) -cn Zita_dsp -a Faust_plugins_template.cpp zita_rev.dsp -o zita_rev.cpp
+	cd audio && $(FAUST) -vec -cn Zita_dsp -a Faust_plugins_template.cpp zita_rev.dsp -o zita_rev.cpp
 	sed -i s/^float\ faustpower/static\ float\ faustpower/ $@
 
 
@@ -2018,7 +2018,7 @@ system_compressor_wrapper.o: audio/system_compressor_wrapper.cpp audio/system_co
 	$(CCC) $(FAUST_OPTS) audio/system_compressor_wrapper.cpp
 
 audio/system_compressor.cpp: audio/system_compressor.dsp
-	$(FAUST) -vec -cn Faust_system_compressor audio/system_compressor.dsp -o audio/system_compressor.cpp
+	$(FAUST) -I `pwd`/audio -vec -cn Faust_system_compressor audio/system_compressor.dsp -o audio/system_compressor.cpp
 
 bin/crashreporter: crashreporter/crashreporter.cpp $(API)radium_proc.h
 	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) -o crashbin.o
