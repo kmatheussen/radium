@@ -132,13 +132,14 @@
                                               (<ra> :delete-instrument instrument-id)
                                               (create-default-mixer-path-popup instrument-id))
                                           (when (= button *left-button*)
-                                            (if is-current-mixer-strip
-                                                (begin
-                                                  (set! *current-mixer-strip-is-wide* is-minimized)
-                                                  (remake-mixer-strips instrument-id))
-                                                (<ra> :set-current-instrument instrument-id)))))
-                                            ;;    (<ra> :set-wide-instrument-strip instrument-id is-minimized))
-                                            ;;(remake-mixer-strips instrument-id))))
+                                            (cond (is-current-mixer-strip
+                                                   (set! *current-mixer-strip-is-wide* is-minimized)
+                                                   (remake-mixer-strips instrument-id))
+                                                  ((= instrument-id (<ra> :get-current-instrument))
+                                                   (<ra> :set-wide-instrument-strip instrument-id is-minimized)
+                                                   (remake-mixer-strips instrument-id))
+                                                  (else
+                                                   (<ra> :set-current-instrument instrument-id))))))
                                     #f))
 
   label)
