@@ -9,6 +9,7 @@
 #include <QTimer>
 #include <QDesktopWidget>
 #include <QMainWindow>
+#include <QLayout>
 
 static const QString message_hide = "_MESSAGE_HIDE";
 static const QString message_show = "_MESSAGE_SHOW";
@@ -56,7 +57,7 @@ void process_OpenProgress(QString message, QRect rect){
 
   progressBox = new QMessageBox;
 #if 1 // defined(FOR_LINUX) // popup locks up X on my computer if radium crashes while the progress window is open.
-  progressBox->setWindowFlags(progressBox->windowFlags() | Qt::FramelessWindowHint);
+  progressBox->setWindowFlags(progressBox->windowFlags() | Qt::FramelessWindowHint | Qt::MSWindowsFixedSizeDialogHint);
 #else
   progressBox->setWindowFlags(progressBox->windowFlags() | Qt::Popup);//Qt::WindowStaysOnTopHint|Qt::SplashScreen|Qt::Window | Qt::FramelessWindowHint|Qt::Popup);
 #endif
@@ -67,12 +68,13 @@ void process_OpenProgress(QString message, QRect rect){
 
 
   progressBox->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
+  progressBox->layout()->setSizeConstraint( QLayout::SetFixedSize );
+  
   positionWindow(rect, progressBox);
   
   progressBox->show();
 
-  positionWindow(rect, progressBox);
+  //positionWindow(rect, progressBox);
   
   for(int i=0; i < 10 ; i++){
     progressBox->repaint();
