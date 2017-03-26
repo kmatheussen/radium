@@ -95,7 +95,7 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
 
       if (pitch!=NULL)
         safe_int_write(&pitch->chance, 0x100);
-      else if (pitch!=NULL)
+      else if (dasnote!=NULL)
         safe_int_write(&dasnote->chance, 0x100);
       else
         return false;
