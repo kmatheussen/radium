@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "chancetext_proc.h"
 #include "bpmtext_proc.h"
 #include "lpbtext_proc.h"
+#include "signaturetext_proc.h"
 #include "cursor_updown_proc.h"
 #include "wtracks_proc.h"
 
@@ -219,7 +220,7 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
     if (subtrack < 0 || subtrack >= WTRACK_num_non_polyphonic_subtracks(wtrack)) // subtrack -1 = note text
       return false;
   } else {
-    if (window->curr_track != TEMPOTRACK && window->curr_track != LPBTRACK)
+    if (window->curr_track != TEMPOTRACK && window->curr_track != LPBTRACK && window->curr_track != SIGNATURETRACK)
       return false;
   }
       
@@ -239,7 +240,9 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
         if (CENTTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
           if (BPMTEXT_keypress(window, wblock, realline, place, key) == false) {
             if (LPBTEXT_keypress(window, wblock, realline, place, key) == false) {
-              return false;
+              if (SIGNATURETEXT_keypress(window, wblock, realline, place, key) == false) {
+                return false;
+              }
             }
           }
         }
