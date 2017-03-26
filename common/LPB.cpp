@@ -47,7 +47,7 @@ struct WLPBs *WLPBs_get(
                         const struct WBlocks *wblock
                         )
 {
-	struct WLPBs *wlpbs=talloc_atomic_clean(sizeof(struct WLPBs)*wblock->num_reallines);
+        struct WLPBs *wlpbs=(struct WLPBs *)talloc_atomic_clean(sizeof(struct WLPBs)*wblock->num_reallines);
 
 	int realline=0;
 
@@ -73,6 +73,24 @@ struct WLPBs *WLPBs_get(
         return wlpbs;
 }
 
+QVector<LPBs*> LPBs_get(const struct WBlocks *wblock, int realline){
+  QVector<LPBs*> ret;
+  
+  struct LPBs *lpb=wblock->block->lpbs;
+  int realline2 = 0;
+  
+  while(lpb!=NULL){
+    realline2=FindRealLineFor(wblock,realline2,&lpb->l.p);
+    if(realline2>realline)
+      break;
+    if(realline2==realline)
+      ret.push_back(lpb);
+    lpb = NextLPB(lpb);
+  }
+  
+  return ret;
+}
+
 struct LPBs *SetLPB(
 	struct Blocks *block,
 	Place *place,
@@ -82,15 +100,14 @@ struct LPBs *SetLPB(
     RError("Illegal lpb %d at position %s\n",newlpb,PlaceToString(place));
     newlpb = 1;
   }
-	struct LPBs *lpb;
-	lpb=ListFindElement3(&block->lpbs->l,place);
+        struct LPBs *lpb=(struct LPBs*)ListFindElement3(&block->lpbs->l,place);
 
         PC_Pause();{
           
           if(lpb!=NULL && PlaceEqual(&lpb->l.p,place)){
             lpb->lpb=newlpb;
           }else{
-            lpb=talloc(sizeof(struct LPBs));
+            lpb=(struct LPBs*)talloc(sizeof(struct LPBs));
             PlaceCopy(&lpb->l.p,place);
             lpb->lpb=newlpb;
             ListAddElement3(&block->lpbs,&lpb->l);

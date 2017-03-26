@@ -220,12 +220,16 @@ int GetXSubTrack_B1(
 		case SIGNATURETRACK:
 			return wblock->signaturearea.x;
 			break;
-		case LPBTRACK:
-			return wblock->lpbarea.x;
+                case LPBTRACK:{
+                        struct Tracker_Windows *window=root->song->tracker_windows;
+                        return scale(window->curr_othertrack_sub, 0, 2, wblock->lpbarea.x, wblock->lpbarea.x2);
 			break;
-		case TEMPOTRACK:
-			return wblock->tempoarea.x;
+                }
+                case TEMPOTRACK:{
+                        struct Tracker_Windows *window=root->song->tracker_windows;
+                        return scale(window->curr_othertrack_sub, 0, 3, wblock->tempoarea.x, wblock->tempoarea.x2);
 			break;
+                }
 		case TEMPONODETRACK:
 			return wblock->temponodearea.x;
 			break;
@@ -251,12 +255,17 @@ int GetXSubTrack_B2(
 		case SIGNATURETRACK:
 			return wblock->signaturearea.x2;
 			break;
-		case LPBTRACK:
-			return wblock->lpbarea.x2;
+                case LPBTRACK:{
+                        struct Tracker_Windows *window=root->song->tracker_windows;
+                        return scale(window->curr_othertrack_sub+1, 0, 2, wblock->lpbarea.x, wblock->lpbarea.x2);
 			break;
-		case TEMPOTRACK:
-			return wblock->tempoarea.x2;
+                }
+                case TEMPOTRACK:{
+                        struct Tracker_Windows *window=root->song->tracker_windows;
+                        return scale(window->curr_othertrack_sub+1, 0, 3, wblock->tempoarea.x, wblock->tempoarea.x2);
+			//return wblock->tempoarea.x2;
 			break;
+                }
 		case TEMPONODETRACK:
 			return wblock->temponodearea.x2;
 			break;

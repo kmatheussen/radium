@@ -40,7 +40,7 @@ struct WBPMs *WBPMs_get(
 	int realline=0;
 	struct BPMs *bpm=wblock->block->tempos;
 
-	struct WBPMs *wbpms=talloc_atomic_clean(sizeof(struct WBPMs)*wblock->num_reallines);
+	struct WBPMs *wbpms=(struct WBPMs*)talloc_atomic_clean(sizeof(struct WBPMs)*wblock->num_reallines);
 
 	while(bpm!=NULL){
 		realline=FindRealLineFor(wblock,realline,&bpm->l.p);
@@ -60,9 +60,27 @@ struct WBPMs *WBPMs_get(
         return wbpms;
 }
 
+QVector<Tempos*> BPMs_get(const struct WBlocks *wblock, int realline){
+  QVector<Tempos*> ret;
+  
+  struct Tempos *bpm=wblock->block->tempos;
+  int realline2 = 0;
+  
+  while(bpm!=NULL){
+    realline2=FindRealLineFor(wblock,realline2,&bpm->l.p);
+    if(realline2>realline)
+      break;
+    if(realline2==realline)
+      ret.push_back(bpm);
+    bpm = NextBPM(bpm);
+  }
+  
+  return ret;
+}
+
 struct Tempos *SetTempo(
 	struct Blocks *block,
-	Place *place,
+	const Place *place,
 	int newtempo
 ){
   if (newtempo<=0){
@@ -70,15 +88,14 @@ struct Tempos *SetTempo(
     newtempo = 1;
   }
 
-	struct Tempos *tempo;
-	tempo=ListFindElement3(&block->tempos->l,place);
+	struct Tempos *tempo = (struct Tempos*)ListFindElement3(&block->tempos->l,place);
 
         PC_Pause();{
           
           if(tempo!=NULL && PlaceEqual(&tempo->l.p,place)){
             tempo->tempo=newtempo;
           }else{
-            tempo=talloc(sizeof(struct Tempos));
+            tempo=(struct Tempos*)talloc(sizeof(struct Tempos));
             PlaceCopy(&tempo->l.p,place);
             tempo->tempo=newtempo;
             ListAddElement3(&block->tempos,&tempo->l);

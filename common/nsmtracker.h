@@ -1945,7 +1945,8 @@ struct Tracker_Windows{
 	NInt curr_track;
 	int curr_track_sub;				/* -1=note, 0,1,2,...,n=vel */
         NInt curr_block;
-
+        int curr_othertrack_sub; // subtrack for bpm track, and so forth.
+        
 	int maxwtracksize;					/* The size of the widest wtrack for all wblocks. */
 
 	struct Slider bottomslider;

@@ -1993,6 +1993,7 @@ static bool load_sample(Data *data, const wchar_t *filename, int instrument_numb
 
   generate_peaks(data);
 
+  // Instead of calling RESAMPLER_reset/ADSR_reset every time we load a new sample, we recreate resampler and adsr instead. I.e. 'data' is recreated every time.
   int i=0;
   for(i=0;i<POLYPHONY;i++){
     Voice *voice = &data->voices[i];

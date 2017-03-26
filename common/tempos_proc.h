@@ -24,9 +24,13 @@ extern LANGSPEC struct WBPMs *WBPMs_get(
                                         const struct WBlocks *wblock
                                         );
 
+#if USE_QT4
+QVector<Tempos*> BPMs_get(const struct WBlocks *wblock, int realline);
+#endif
+
 extern LANGSPEC struct Tempos *SetTempo(
 	struct Blocks *block,
-	Place *place,
+	const Place *place,
 	int newtempo
 );
 

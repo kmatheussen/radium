@@ -203,6 +203,8 @@ const Trss TRSS_get(const struct WBlocks *wblock, const struct WTracks *wtrack){
 }
 
 const Trs TRS_get(const struct WBlocks *wblock, const struct WTracks *wtrack, int realline){
+  R_ASSERT(realline<wblock->num_reallines);
+  R_ASSERT(realline>=0);
   Trss trss = TRSS_get(wblock, wtrack);
   return trss[realline];
 }

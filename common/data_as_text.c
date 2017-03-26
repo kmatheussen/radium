@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "fxtext_proc.h"
 #include "centtext_proc.h"
 #include "chancetext_proc.h"
+#include "bpmtext_proc.h"
+#include "lpbtext_proc.h"
 #include "cursor_updown_proc.h"
 #include "wtracks_proc.h"
 
@@ -60,7 +62,7 @@ static int get_val_from_key(int key){
   return val;
 }
 
-data_as_text_t DAT_get_newvalue(int subsubtrack, int key, int default_value, int min_value, int max_value, bool highest_value_is_one_more){
+data_as_text_t DAT_get_newvalue(int subsubtrack, int key, int default_value, int min_value, int max_value, int min_return_value, int max_return_value, bool is_hex, bool has_logtype, bool highest_value_is_one_more){
   data_as_text_t dat;
   dat.is_valid = false;
   
@@ -70,26 +72,36 @@ data_as_text_t DAT_get_newvalue(int subsubtrack, int key, int default_value, int
   if (val==-1)
     return dat;
 
-  int highest_value = 0xff;
+  int base = 10;
+  if (is_hex)
+    base = 0x10;
+
+  int num_subtracks = 1 + log(max_value) / log(base);
+
+  int highest_value = pow(base, num_subtracks) - 1;  
+  //int highest_value = 0xff;
   if (highest_value_is_one_more)
     highest_value++;
-  
+
   int value = 0;
   
   if (key==EVENT_G){
-    value = max_value;
+    value = max_return_value;
 
   } else if (key==EVENT_T){
     value = default_value;
     logtype = LOGTYPE_HOLD;
   
   }else if (subsubtrack == 0) {
-    value = round(scale_double(val * 0x10, 0, highest_value, min_value, max_value));
+    value = round(scale_double(val * pow(base, num_subtracks-1), min_return_value, highest_value, min_return_value, max_return_value));
     
-  } else if (subsubtrack == 1) {
-    value = round(scale_double(val, 0, highest_value, min_value, max_value));
+  } else if (subsubtrack == 1 && num_subtracks > 1) {
+    value = round(scale_double(val * pow(base, num_subtracks-2), min_return_value, highest_value, min_return_value, max_return_value));
     
-  } else if (subsubtrack == 2) {
+  } else if (subsubtrack == 2 && num_subtracks > 2) {
+    value = round(scale_double(val * pow(base, num_subtracks-3), min_return_value, highest_value, min_return_value, max_return_value));
+    
+  } else if (subsubtrack == num_subtracks) {
     value = default_value;
     logtype=LOGTYPE_HOLD;
     
@@ -98,8 +110,10 @@ data_as_text_t DAT_get_newvalue(int subsubtrack, int key, int default_value, int
     return dat;
   }
 
-  if (value > max_value)
-    value = max_value;
+  if (value > max_return_value)
+    value = max_return_value;
+  if (value < min_return_value)
+    value = min_return_value;
   
   dat.value = value;
   dat.logtype = logtype;
@@ -108,7 +122,7 @@ data_as_text_t DAT_get_newvalue(int subsubtrack, int key, int default_value, int
   return dat;
 }
 
-data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, int key, int min_value, int max_value, bool is_hex, bool highest_value_is_one_more){
+data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, int key, int min_value, int max_value, int min_return_value, int max_return_value, bool is_hex, bool highest_value_is_one_more){
 
   data_as_text_t dat;
   dat.is_valid = false;
@@ -121,47 +135,61 @@ data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, in
   if (is_hex)
     base = 0x10;
 
+  int num_subtracks = 1 + log(max_value) / log(base);
+
+  int vs[num_subtracks];
+  for(int i=0;i<num_subtracks;i++){
+    int div = pow(base, num_subtracks-i-1);
+    vs[i] = old_value / div;
+    old_value -= vs[i] * div;
+  }
+  
+  /*
   int v1 = old_value / base;  
   //int v1 = (old_value & 0xf0) / 0x10;
   int v2 = old_value - (v1 * base); //& 0x0f;
-    
+  */
+  
   if (key==EVENT_G){
-    v1 = base-1;
-    v2 = base-1;
+    for(int i=0;i<num_subtracks;i++)
+      vs[i] = base-1;
     
   } else if (key==EVENT_T){
     if (logtype==LOGTYPE_LINEAR)
       logtype = LOGTYPE_HOLD;
     else
       logtype = LOGTYPE_LINEAR;
+
+  } else if (subsubtrack < num_subtracks) {
+    vs[subsubtrack] = val;
     
-  }else if (subsubtrack == 0) {
-    v1 = val;
-  } else if (subsubtrack == 1) {
-    v2 = val;
-  } else if (subsubtrack == 2) {
-    //printf("todo\n");
+  } else if (subsubtrack==num_subtracks) {
     if (val == 0)
       logtype=LOGTYPE_LINEAR;
     else
       logtype=LOGTYPE_HOLD;
+  
   } else
     RError("Unknown subsubtrack: %d",subsubtrack);
 
-  int highest_value = base*base - 1;
+  int highest_value = pow(base, num_subtracks) - 1;  
+  //int highest_value = base*base - 1;
   if (highest_value_is_one_more)
     highest_value++;
     
-  int v = v1 * base + v2;
+  int v = 0;
+  for(int i =0;i<num_subtracks;i++)
+    v += vs[i] * pow(base, num_subtracks-i-1);
 
-  int scaled = round(scale_double(v, 0, highest_value, min_value, max_value));
-  if (scaled > max_value)
-    scaled = max_value;
+  int scaled = round(scale_double(v, min_value, highest_value, min_return_value, max_return_value));
+  if (scaled > max_return_value)
+    scaled = max_return_value;
   
-  if (v1==0 && v2==0)
-    scaled = min_value;
-  if (v1==base-1 && v2==base-1)
-    scaled = max_value;
+  if (v<min_value)
+    scaled = min_return_value;
+  
+  //if (v==base-1 && v2==base-1)
+  //  scaled = max_value;
       
   //printf("old_value: %d, v1: %x, v2: %x, val: %x, v: %x, scaled: %d\n",old_value,v1,v2,val,v,scaled);
   
@@ -178,16 +206,23 @@ extern struct TEvent tevent;
 
 // We circumvent the normal keyboard configuration system here.
 bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
+
+  if (tevent.keyswitch != 0 && tevent.keyswitch!=EVENT_MOUSE_SEQUENCER2 && tevent.keyswitch!=EVENT_MOUSE_MIXER2 && tevent.keyswitch!=EVENT_MOUSE_EDITOR2 && tevent.keyswitch!=EVENT_MOUSE_MIXERSTRIPS2)
+    return false;
+  
   struct WBlocks *wblock = window->wblock;
   struct WTracks *wtrack = wblock->wtrack;
 
   int subtrack = window->curr_track_sub;
 
-  if (subtrack < 0 || subtrack >= WTRACK_num_non_polyphonic_subtracks(wtrack)) // subtrack -1 = note text
-    return false;
-  
-  if (tevent.keyswitch != 0 && tevent.keyswitch!=EVENT_MOUSE_SEQUENCER2 && tevent.keyswitch!=EVENT_MOUSE_MIXER2 && tevent.keyswitch!=EVENT_MOUSE_EDITOR2 && tevent.keyswitch!=EVENT_MOUSE_MIXERSTRIPS2)
-    return false;
+  if (window->curr_track >= 0){
+    if (subtrack < 0 || subtrack >= WTRACK_num_non_polyphonic_subtracks(wtrack)) // subtrack -1 = note text
+      return false;
+  } else {
+    if (window->curr_track != TEMPOTRACK && window->curr_track != LPBTRACK)
+      return false;
+  }
+      
   
   if (get_val_from_key(key)==-1)
     return false;
@@ -202,7 +237,11 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
     if (FXTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
       if (CHANCETEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
         if (CENTTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
-          return false;
+          if (BPMTEXT_keypress(window, wblock, realline, place, key) == false) {
+            if (LPBTEXT_keypress(window, wblock, realline, place, key) == false) {
+              return false;
+            }
+          }
         }
       }
     }

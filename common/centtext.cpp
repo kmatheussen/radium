@@ -94,8 +94,10 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
         safe_float_write(&pitch->note, floorf(pitch->note));
       else if (dasnote!=NULL)
         safe_float_write(&dasnote->note, floorf(dasnote->note));
-      else
+      else{
+        Undo_CancelLastUndo();
         return false;
+      }
       
     } else {
 
@@ -105,15 +107,19 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
         note = pitch->note;
       else if (dasnote!=NULL)
         note = dasnote->note;
-      else
+      else{
+        Undo_CancelLastUndo();
         return false;
+      }
       
       int cents = round((note - floor(note)) * 100);
         
-      data_as_text_t dat = DAT_get_overwrite(cents, 0, subsubtrack, key, 0, 99, false, false);
+      data_as_text_t dat = DAT_get_overwrite(cents, 0, subsubtrack, key, 0, 99, 0, 99, false, false);
 
-      if (dat.is_valid==false)
+      if (dat.is_valid==false){
+        Undo_CancelLastUndo();
         return false;
+      }
 
       double new_note = floor(note) + ((double)dat.value / 100.0);
       printf("new_note: %f, dat.value: %d / %f\n",new_note,dat.value,((float)dat.value / 100.0f));

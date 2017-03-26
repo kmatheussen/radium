@@ -278,7 +278,7 @@ OBJ1= windows.o window_config.o list.o vector.o hashmap.o Dynvec.o song.o blocks
 
 OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o common.o gfx_wtext.o gfx_text.o gfx_lines.o gfx_point.o gfx_op_queue.o
 
-OBJ3= eventreciever.o scancodes.o reallines.o notestext.o trackreallines2.o centtext.o chancetext.o veltext.o fxtext.o data_as_text.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o expand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
+OBJ3= eventreciever.o scancodes.o reallines.o notestext.o trackreallines2.o lpbtext.o bpmtext.o centtext.o chancetext.o veltext.o fxtext.o data_as_text.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o expand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
 
 OBJ4 = tbox.o area.o range.o nodelines.o
 
@@ -637,6 +637,12 @@ notestext.o:  $(BUILD_DEPENDENCIES) $(CD)notestext.c
 trackreallines2.o:  $(BUILD_DEPENDENCIES) $(CD)trackreallines2.cpp
 	$(CCC) $(CD)trackreallines2.cpp  $(QTOPT) #$(OPT)
 
+lpbtext.o:  $(BUILD_DEPENDENCIES) $(CD)lpbtext.cpp
+	$(CCC) $(CD)lpbtext.cpp $(QTOPT)
+
+bpmtext.o:  $(BUILD_DEPENDENCIES) $(CD)bpmtext.cpp
+	$(CCC) $(CD)bpmtext.cpp $(QTOPT)
+
 centtext.o:  $(BUILD_DEPENDENCIES) $(CD)centtext.cpp
 	$(CCC) $(CD)centtext.cpp $(QTOPT)
 
@@ -682,11 +688,11 @@ realline_calc.o:  $(BUILD_DEPENDENCIES) $(CD)realline_calc.c
 gfx_subtrack.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_subtrack.c common/nsmtracker.h
 	$(CC) $(CD)gfx_subtrack.c $(OPT)
 
-tempos.o:  $(BUILD_DEPENDENCIES) $(CD)tempos.c
-	$(CC) $(CD)tempos.c $(OPT)
+tempos.o:  $(BUILD_DEPENDENCIES) $(CD)tempos.cpp
+	$(CCC) $(CD)tempos.cpp $(QTOPT)
 
-LPB.o:  $(BUILD_DEPENDENCIES) $(CD)LPB.c
-	$(CC) $(CD)LPB.c $(OPT)
+LPB.o:  $(BUILD_DEPENDENCIES) $(CD)LPB.cpp
+	$(CCC) $(CD)LPB.cpp $(QTOPT)
 
 Signature.o:  $(BUILD_DEPENDENCIES) $(CD)Signature.cpp
 	$(CCC) $(CD)Signature.cpp $(QTOPT)
