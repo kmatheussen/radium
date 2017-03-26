@@ -1,16 +1,47 @@
 <html>
 <body bgcolor="#ffffff">
-<h1>Mixer</h1>
+<h1>Modular Mixer</h1>
+
 
 <UL>
 <LI>Move objects with right mouse button.
   <LI>Double-click the name of an object to open GUI.
   <LI>Delete objects or connections by pressing SHIFT and click left (or right).
   <LI>Select more than one object by holding CTRL when clicking. (Use Cmd key instead of CTRL if using Mac)
-  <LI>To move and connect an object in one operation, place one object on 
+  <LI>Move and connect object in one operation: Place one object on 
     top of another object.
   <LI>Zoom in and out by pressing CTRL and using the scroll wheel.
 </UL>
+
+
+<h1>Mixer Strips</h1>
+
+<h2>Order</h2>
+The order of the strips is not random or chronological. The sorting logic has four stages:
+<OL>
+  <LI> Sort by whether the strip is a bus or not. Non-buses are displayed first.
+  <LI> Sort by connections. This ensures that the audio flow always goes from left to right.
+  <LI> Sort by vertical position in the modular mixer.
+  <LI> Sort by horizontal position in the modular mixer.
+</OL>  
+
+<p>
+
+<h2>How to...</h2>
+Q: Set accurate volum by writing a number?<br>
+A: Click the number box right above the volume slider
+<p>
+Q: Reset highest peak value in the box above the audio meter?<br>
+A: Just click the box.
+<p>
+Q: Add a new mixer strip?<br>
+A: You can not do that directly in a mixer strips window. You either have to create a new instrument in the modular mixer, or add a new instrument to a track in the editor.
+<p>
+Q: Switch between a narrow and a wide strip?<br>
+A: Left-click the name of the mixer strip.
+<p>
+Q: Delete a mixer strip?<br>
+A: Right-click the name of the mixer strip, and select "Delete". Or shift+right click the name.
 
   
 </body>

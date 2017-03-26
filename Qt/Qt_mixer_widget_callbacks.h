@@ -222,14 +222,10 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     show_cpu_usage->setVisible(is_modular);
     connections_visibility->setVisible(is_modular);
 
-    help_button->setVisible(is_modular);
-
     rows1->setVisible(!is_modular);
     rows2->setVisible(!is_modular);
     rows3->setVisible(!is_modular);
     rows4->setVisible(!is_modular);
-    
-    mixerstrips_help->setVisible(!is_modular);
   }
 
   void change_num_mixerstrips_rows(int num_rows){
@@ -574,10 +570,6 @@ public slots:
 
   void on_help_button_clicked(){
     GFX_showMixerHelpWindow();
-  }
-
-  void on_mixerstrips_help_clicked(){
-    GFX_showMixerStripsHelpWindow();
   }
 
 };

@@ -954,13 +954,6 @@ void GFX_showMixerHelpWindow(void){
   safeShow(view);
 }
  
-void GFX_showMixerStripsHelpWindow(void){
-  static QWebView *view = new QWebView; //(g_editor->main_window);
-  view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path("help/mixerstrips.html"))));
-  //view->load(QUrl(QString("file://") + OS_get_full_program_file_path("help/keybindings.html")));
-  safeShow(view);
-}
- 
 void GFX_showKeybindingsHelpWindow(void){
   static QWebView *view = new QWebView; //(g_editor->main_window);
   view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path("help/keybindings.html"))));
