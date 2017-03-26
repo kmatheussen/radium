@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 4.5.9
+VERSION = 4.6.0
 
 
 #----------------USER SETTINGS-------------------------------
@@ -2035,7 +2035,7 @@ bin/crashreporter: crashreporter/crashreporter.cpp $(API)radium_proc.h
 	rm crashbin.o
 
 bin/radium_addr2line: crashreporter/radium_addr2line.c
-	$(CC_STATIC) crashreporter/radium_addr2line.c -Wall $(ADDR2LINEOPTS) -DPACKAGE -o bin/radium_addr2line
+	$(CC_STATIC) crashreporter/radium_addr2line.c -Wall $(ADDR2LINEOPTS) -DPACKAGE -o bin/radium_addr2line -mwindows
 
 crashreporter.o: crashreporter/crashreporter.cpp
 	$(CCC) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DVERSION=\"$(VERSION)\"

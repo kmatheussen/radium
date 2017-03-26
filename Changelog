@@ -1,3 +1,22 @@
+Changes 4.5.9 -> 4.6.0:
+* Windows: Don't show lots of console windows when opening the crash
+  reporter.
+* Menus: remove "(under development)" from the mixer strips window
+  entries.
+* Doc: Merge mixer and mixerstrips documentation into one page.
+* Menus: Add "Show Quantization and Track Monoization Window" entry
+  to the windows menu.
+* Possible to press any key (not just return) to add signature when
+  the cursor is placed in the signature track.
+* Fix pressing the DEL key to delete chance text.
+* No need to press return to add/edit numbers in the LPB and BPM
+  tracks anymore. Instead, just write the numbers directly.
+* More attempts to avoid progress window flickering.
+* Minor performance improvement to Zita Reverb.
+* Mixer strip: Switch between wide/narrow mode when clicking the
+  name of the current instrument.
+
+
 Changes 4.5.8 -> 4.5.9:
 * Windows: Fix crashreporter backtrace.
 * Mixer strips: Draw blue color on top of sliders for
