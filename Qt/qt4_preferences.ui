@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -677,7 +677,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
           <item row="2" column="3">
            <widget class="QLabel" name="label_16">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;May make audio performance scale better if using several CPUs. But it can also&lt;br&gt;cause CPU spikes if using plugins that uses several threads for audio processing.&lt;/span&gt;&lt;br&gt;Restart required&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;May make audio performance scale better if using several CPUs. But it can also&lt;br&gt;cause CPU spikes if there are plugins doing multi-threaded audio processing.&lt;/span&gt;&lt;br&gt;Restart required&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -8149,8 +8149,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
-  <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>

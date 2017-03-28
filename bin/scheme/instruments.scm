@@ -392,63 +392,65 @@
    (lambda ()
      (define midi-instruments (get-all-midi-instruments))
      (define instruments-before (get-all-audio-instruments))
-     (define id-instrument
-       (popup-menu-sync
-        "<New MIDI Instrument>" (lambda ()
-                                  (<ra> :create-midi-instrument "Unnamed"))
-        "<New Sample Player>" (lambda ()
-                                (<ra> :create-audio-instrument "Sample Player" "Sample Player"))
-        "<New FluidSynth>" (lambda ()
-                             (<ra> :create-audio-instrument "FluidSynth" "FluidSynth"))
-        (if (<ra> :has-pure-data)
-            (list "<New Pd Instrument>" (lambda ()
-                                          (<ra> :create-audio-instrument "Pd" "Simple Midi Synth")))
-            #f)
-        "<New Audio Instrument>" (lambda ()
-                                   (<ra> :create-audio-instrument-from-description 
-                                         (<ra> :instrument-description-popup-menu)))
-        "<Load New Preset>" (lambda ()
-                              (<ra> :create-audio-instrument-from-description
-                                    (<ra> :request-load-preset-instrument-description)))
-        "----------"
-        "Clone Audio Instrument" (map (lambda (num instrument-id)
-                                        (if (<ra> :instrument-is-permanent instrument-id)
-                                            #f
-                                            (list (<-> num ". " (<ra> :get-instrument-name instrument-id))
-                                                  (lambda ()
-                                                    (<ra> :clone-audio-instrument instrument-id)))))
-                                      (iota (length instruments-before))
-                                      instruments-before)
-        (and (> (length midi-instruments) 0)
-             (list "----------"
-                   (map (lambda (num instrument-id)
-                          (list (<-> num ". " (<ra> :get-instrument-name instrument-id))                     
-                                (lambda ()
-                                  instrument-id)))
-                        (iota (length midi-instruments))
-                        midi-instruments)))
-        "----------"
-        (map (lambda (num instrument-id)
-               (list (<-> num ". " (<ra> :get-instrument-name instrument-id))                     
-                     (lambda ()
-                       instrument-id)))
-             (iota (length instruments-before))
-             instruments-before)))
-     
+
      (define (is-new-instrument? id-instrument)
        (and (not (member id-instrument instruments-before))
             (member id-instrument (get-all-audio-instruments))))
-
+     
      (define (num-new-instruments)
        (- (length (get-all-audio-instruments))
           (length instruments-before)))
      
-     (when (and (integer? id-instrument) (not (= -1 id-instrument)))
-       (<ra> :set-instrument-for-track id-instrument tracknum)
-       (when (and (is-new-instrument? id-instrument)
-                  (= 1 (num-new-instruments)))
-         (<ra> :autoposition-instrument id-instrument)
-         (<ra> :connect-audio-instrument-to-main-pipe id-instrument))))))
+     (define (load id-instrument)       
+       (when (and (integer? id-instrument) (not (= -1 id-instrument)))
+         (<ra> :set-instrument-for-track id-instrument tracknum)
+         (when (and (is-new-instrument? id-instrument)
+                    (= 1 (num-new-instruments)))
+           (<ra> :autoposition-instrument id-instrument)
+           (<ra> :connect-audio-instrument-to-main-pipe id-instrument))))
+       
+     (popup-menu
+      "<New MIDI Instrument>" (lambda ()
+                                (load (<ra> :create-midi-instrument "Unnamed")))
+      "<New Sample Player>" (lambda ()
+                              (load (<ra> :create-audio-instrument "Sample Player" "Sample Player")))
+      "<New FluidSynth>" (lambda ()
+                           (load (<ra> :create-audio-instrument "FluidSynth" "FluidSynth")))
+      (if (<ra> :has-pure-data)
+          (list "<New Pd Instrument>" (lambda ()
+                                        (load (<ra> :create-audio-instrument "Pd" "Simple Midi Synth"))))
+          #f)
+      "<New Audio Instrument>" (lambda ()
+                                 (load (<ra> :create-audio-instrument-from-description 
+                                             (<ra> :instrument-description-popup-menu))))
+      "<Load New Preset>" (lambda ()
+                            (load (<ra> :create-audio-instrument-from-description
+                                        (<ra> :request-load-preset-instrument-description))))
+      "----------"
+      "Clone Audio Instrument" (map (lambda (num instrument-id)
+                                      (if (<ra> :instrument-is-permanent instrument-id)
+                                          #f
+                                          (list (<-> num ". " (<ra> :get-instrument-name instrument-id))
+                                                (lambda ()
+                                                  (load (<ra> :clone-audio-instrument instrument-id))))))
+                                    (iota (length instruments-before))
+                                    instruments-before)
+      (and (> (length midi-instruments) 0)
+           (list "----------"
+                 (map (lambda (num instrument-id)
+                        (list (<-> num ". " (<ra> :get-instrument-name instrument-id))                     
+                              (lambda ()
+                                (load instrument-id))))
+                      (iota (length midi-instruments))
+                      midi-instruments)))
+      "----------"
+      (map (lambda (num instrument-id)
+             (list (<-> num ". " (<ra> :get-instrument-name instrument-id))                     
+                   (lambda ()
+                     (load instrument-id))))
+           (iota (length instruments-before))
+           instruments-before)))))
+     
 #||
 (select-track-instrument 0)
 ||#
