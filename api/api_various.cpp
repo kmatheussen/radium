@@ -792,6 +792,13 @@ int getNumLines(int blocknum){
   return wblock->block->num_lines;
 }
 
+int getNumReallines(int blocknum, int windownum){
+  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  if(wblock==NULL) return 0;
+
+  return wblock->num_reallines;
+}
+
 const char *getBlockName(int blocknum){
   struct WBlocks *wblock = getWBlockFromNum(-1, blocknum);
   if(wblock==NULL) return "";

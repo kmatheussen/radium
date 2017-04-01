@@ -214,6 +214,24 @@ static int get_realline_from_line(struct WBlocks *wblock, int line){
   return realline;
 }
 
+int getCurrRealline(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return wblock->curr_realline;
+}
+
+void setCurrRealline(int realline, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return;
+
+  ScrollEditorToRealLine(window, wblock, realline);
+}
+
 void cursorUserInputLine(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);
   struct WBlocks *wblock = window->wblock;

@@ -1101,6 +1101,41 @@
                                      60)
                         )
 
+
+;; Editor scrollbar
+;;
+(add-node-mouse-handler :Get-area-box (lambda ()
+                                        (<ra> :get-box editor-scrollbar))
+                        :Get-existing-node-info (lambda (X Y callback)
+                                                  ;;(c-display "hep" X Y (box-to-string (<ra> :get-box editor-scrollbar-scroller)) (inside-box (<ra> :get-box editor-scrollbar-scroller) X Y))
+                                                  (and (inside-box (<ra> :get-box editor-scrollbar) X Y)
+                                                       (callback (<ra> :get-curr-realline)
+                                                                 (<ra> :get-curr-realline)
+                                                                 0)))
+                        :Get-min-value (lambda (_) 0)
+                        :Get-max-value (lambda (_) 1)
+                        :Get-x (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-x1) (<ra> :get-editor-scrollbar-scroller-x2)))
+                        :Get-y (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-y1) (<ra> :get-editor-scrollbar-scroller-y2)))
+                        :Make-undo (lambda (_) 50)
+                        :Create-new-node (lambda (X Place callback)
+                                           #f)
+                        :Move-node (lambda (Num Value Y)
+                                     (define new-realline (between 0
+                                                                   (+ Num
+                                                                      (to-integer (/ Y 11)))
+                                                                   (1- (<ra> :get-num-reallines))))
+                                     (<ra> :set-curr-realline new-realline)
+                                     Num
+                                     )
+                        :Publicize (lambda (Num)
+                                     #f)
+                        :Use-Place #f
+                        ;;:Mouse-pointer-func ra:set-normal-mouse-pointer
+                        :Get-pixels-per-value-unit #f;(lambda (_)
+                                                     ;12)
+                        )                        
+
+
 (define (show-instrument-color-dialog instrument-id)
   (<ra> :color-dialog (<ra> :get-instrument-color instrument-id)
         (lambda (color)

@@ -345,13 +345,25 @@ float getEditorScrollbarX1(void){
   return get_scrollbar_x1(root->song->tracker_windows);
 }
 float getEditorScrollbarY1(void){
-  return get_scrollbar_y1(root->song->tracker_windows, root->song->tracker_windows->wblock);
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(-1, &window, -1);
+  if(wblock==NULL)
+    return 0.0;
+  return wblock->t.y1 + get_scrollbar_y1(window, wblock);
 }
 float getEditorScrollbarX2(void){
   return get_scrollbar_x2(root->song->tracker_windows);
 }
 float getEditorScrollbarY2(void){
-  return get_scrollbar_y2(root->song->tracker_windows, root->song->tracker_windows->wblock);
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(-1, &window, -1);
+  if(wblock==NULL)
+    return 0.0;
+  return wblock->t.y1 + get_scrollbar_y2(window, wblock);
+}
+
+float getEditorScrollbarScrollerX1(void){
+  return getEditorScrollbarX1();
 }
 
 float getEditorScrollbarScrollerY1(int blocknum, int windownum){
@@ -362,7 +374,11 @@ float getEditorScrollbarScrollerY1(int blocknum, int windownum){
 
   float scrollbar_height = get_scrollbar_y2(window, wblock) - get_scrollbar_y1(window, wblock);
   
-  return get_scrollbar_scroller_y1(wblock->curr_realline, wblock->num_reallines, scrollbar_height, get_scrollbar_scroller_height(window, wblock));
+  return window->wblock->t.y1 + get_scrollbar_scroller_y1(wblock->curr_realline, wblock->num_reallines, scrollbar_height, get_scrollbar_scroller_height(window, wblock));
+}
+
+float getEditorScrollbarScrollerX2(void){
+  return getEditorScrollbarX2();
 }
 
 float getEditorScrollbarScrollerY2(int blocknum, int windownum){

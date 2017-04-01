@@ -137,7 +137,10 @@
 
 (define (one-decimal-percentage-string number)
   (format #f "~,1F" (* 100.0 number)))
-   
+
+(define (to-integer A)
+  (inexact->exact (floor A)))
+
 (define (min-notfalse . Args)
   (match (list Args)
          ()          :> #f
