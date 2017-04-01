@@ -463,7 +463,7 @@ public slots:
       return;
     
     if(include_instrument_widget){
-      verticalLayout->insertWidget(2, getInstrumentsWidget(), 0);
+      verticalLayout->insertWidget(verticalLayout->count()-1, getInstrumentsWidget(), 0);
       g_parent_for_instrument_widget_ysplitter->hide();
     }else{
       g_parent_for_instrument_widget_ysplitter->layout()->addWidget(getInstrumentsWidget());
