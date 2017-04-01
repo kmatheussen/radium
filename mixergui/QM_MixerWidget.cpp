@@ -1400,7 +1400,7 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
 void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
   printf("mouse release: %p\n",_current_connection);
 
-  EVENTLOG_add_event("MyScene::mouseReleaseEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, _moving_chips.size());
+  EVENTLOG_add_event(talloc_format("MyScene::mouseReleaseEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, _moving_chips.size()));
   
   GFX_ScheduleRedraw();
 
@@ -1410,8 +1410,13 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
 
   Chip *chip = MW_get_chip_at(mouse_x, mouse_y, NULL);
 
+  bool must_accept = false;
+  
   if(_current_connection!=NULL){
 
+    R_ASSERT(_current_econnection==NULL);
+    R_ASSERT(_moving_chips.size()==0);
+    
     if(chip!=NULL){ // TODO: Must check if the connection is already made.
 
       if(_current_from_chip != NULL && chip != _current_from_chip){
@@ -1432,11 +1437,14 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
     _current_connection = NULL;
     _current_from_chip = NULL;
     _current_to_chip = NULL;
-    event->accept();
-    
 
-  }else if(_current_econnection!=NULL){
+    must_accept = true;
+  }
 
+  if(_current_econnection!=NULL){
+
+    R_ASSERT(_moving_chips.size()==0);
+        
     if(chip!=NULL){ // TODO: Must check if the connection is already made.
 
       if(_ecurrent_from_chip != NULL && chip != _ecurrent_from_chip){
@@ -1457,53 +1465,65 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
     _current_econnection = NULL;
     _ecurrent_from_chip = NULL;
     _ecurrent_to_chip = NULL;
-    event->accept();
+
+    must_accept = true;
+  }
     
-  }else if(_moving_chips.size()>0 && stop_moving_chips(this, pos)) {
+  if(_moving_chips.size()>0) {
 
-    printf("       Remake: mousereleaseevent\n");
-    remakeMixerStrips();
-    event->accept();    
+    if (stop_moving_chips(this, pos)) {
 
-  }else{
+      printf("       Remake: mousereleaseevent\n");
+      remakeMixerStrips();
 
-    if (g_radium_runs_custom_exec==true)
+    }      
+
+    must_accept = true;
+  }
+
+  if (must_accept){
+    event->accept();
+    return;
+  }
+
+  
+  if (g_radium_runs_custom_exec==true)
+    return;
+
+  
+  bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
+  bool shift_pressed = (event->modifiers() & Qt::ShiftModifier);
+  
+  if (event->button()==Qt::RightButton && shift_pressed==false && ctrl_pressed==false){
+    
+    bool chip_is_under = false;
+    
+    Chip *chip_under = MW_get_chip_at(mouse_x,mouse_y,NULL);
+    if(chip_under!=NULL){
+      //        if(chip_body_is_placed_at(chip_under, mouse_x, mouse_y)==true)
+      chip_is_under = true;
+    }
+    
+    if(chip_is_under==false){
+      mouserelease_create_chip(this,mouse_x,mouse_y);
+      event->accept();
       return;
-
-    bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
-    bool shift_pressed = (event->modifiers() & Qt::ShiftModifier);
-        
-    if (event->button()==Qt::RightButton && shift_pressed==false && ctrl_pressed==false){
-
-      bool chip_is_under = false;
-      
-      Chip *chip_under = MW_get_chip_at(mouse_x,mouse_y,NULL);
-      if(chip_under!=NULL){
-        //        if(chip_body_is_placed_at(chip_under, mouse_x, mouse_y)==true)
-          chip_is_under = true;
-      }
-      
-      if(chip_is_under==false){
-        mouserelease_create_chip(this,mouse_x,mouse_y);
-        event->accept();
-        return;
-      }
-
-      if(mousepress_save_presets_etc(this,event,mouse_x,mouse_y)==true){
-        event->accept();
-        return;
-      }
-      /*
+    }
+    
+    if(mousepress_save_presets_etc(this,event,mouse_x,mouse_y)==true){
+      event->accept();
+      return;
+    }
+    /*
       && mouserelease_replace_patch(this,mouse_x,mouse_y)==true) {
       event->accept();
       return;
-      */
-    }
-
-    QGraphicsScene::mouseReleaseEvent(event);
-
+    */
   }
+  
+  QGraphicsScene::mouseReleaseEvent(event);
 }
+
 
 DEFINE_ATOMIC(bool, g_show_cpu_usage_in_mixer) = false;
 
