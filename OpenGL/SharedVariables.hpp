@@ -4,6 +4,7 @@
 #include "../common/time_proc.h"
 #include "../common/vector_proc.h"
 #include "../common/threading.h"
+#include "../common/wblocks_proc.h"
 #include "../audio/Mixer_proc.h"
 
 
@@ -39,21 +40,6 @@ struct SharedVariables{
 
   ~SharedVariables();
 };
-
-
-static inline float get_scrollbar_y1(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  return 1.0;
-}
-
-static inline float get_scrollbar_y2(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  return wblock->t.y2 - wblock->t.y1;
-}
-
-static inline float get_scrollbar_scroller_height(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  return  (wblock->t.y2 - wblock->t.y1 - 4)
-    * wblock->num_visiblelines
-    / (wblock->num_reallines + wblock->num_visiblelines - 2);
-}
 
 
 #ifdef OPENGL_GFXELEMENTS_CPP

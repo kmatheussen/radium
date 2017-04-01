@@ -14,6 +14,40 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef _RADIUM_COMMON_WBLOCKS_PROC_H
+#define _RADIUM_COMMON_WBLOCKS_PROC_H
+
+static inline float get_scrollbar_x1(const struct Tracker_Windows *window){
+  return 0.0;
+}
+
+static inline float get_scrollbar_y1(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+  return 1.0;
+}
+
+static inline float get_scrollbar_x2(const struct Tracker_Windows *window){
+  return window->leftslider.width;
+}
+
+static inline float get_scrollbar_y2(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+  return wblock->t.y2 - wblock->t.y1;
+}
+
+// Is also called from the OpenGL thread, where we don't have access to a Tracker_Windows instance.
+static inline float get_scrollbar_scroller_y1(float realline, float num_reallines, float scrollbar_height, float scrollbar_scroller_height){
+  return scale(realline,
+               0, num_reallines,
+               2, (scrollbar_height - scrollbar_scroller_height - 1)
+               );
+}
+
+static inline float get_scrollbar_scroller_height(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+  return  (wblock->t.y2 - wblock->t.y1 - 4)
+    * wblock->num_visiblelines
+    / (wblock->num_reallines + wblock->num_visiblelines - 2);
+}
+
+
 
 extern LANGSPEC void CloseWBlock(struct Tracker_Windows *window, NInt blocknum);
 extern LANGSPEC void CloseAllWBlocks(struct Tracker_Windows *window);
@@ -57,3 +91,5 @@ extern LANGSPEC void UpdateWBlocks(struct Tracker_Windows *window);
 extern LANGSPEC struct Blocks *AppendWBlock(struct Tracker_Windows *window);
 
 extern LANGSPEC void AppendWBlock_spes(struct Tracker_Windows *window,int num_lines,NInt num_tracks);
+
+#endif

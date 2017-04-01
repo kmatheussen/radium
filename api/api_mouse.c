@@ -339,6 +339,41 @@ float getTrackSliderY2(void){
 }
 
 
+// The editor scrollbar
+///////////////////////////////////////////////////
+float getEditorScrollbarX1(void){
+  return get_scrollbar_x1(root->song->tracker_windows);
+}
+float getEditorScrollbarY1(void){
+  return get_scrollbar_y1(root->song->tracker_windows, root->song->tracker_windows->wblock);
+}
+float getEditorScrollbarX2(void){
+  return get_scrollbar_x2(root->song->tracker_windows);
+}
+float getEditorScrollbarY2(void){
+  return get_scrollbar_y2(root->song->tracker_windows, root->song->tracker_windows->wblock);
+}
+
+float getEditorScrollbarScrollerY1(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(blocknum, &window, windownum);
+  if(wblock==NULL)
+    return 0.0;
+
+  float scrollbar_height = get_scrollbar_y2(window, wblock) - get_scrollbar_y1(window, wblock);
+  
+  return get_scrollbar_scroller_y1(wblock->curr_realline, wblock->num_reallines, scrollbar_height, get_scrollbar_scroller_height(window, wblock));
+}
+
+float getEditorScrollbarScrollerY2(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(blocknum, &window, windownum);
+  if(wblock==NULL)
+    return 0.0;
+
+  return getEditorScrollbarScrollerY1(blocknum, windownum) + get_scrollbar_scroller_height(window, wblock);
+}
+
 
 
 // track panning on/off

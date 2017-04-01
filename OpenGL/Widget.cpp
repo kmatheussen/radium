@@ -1006,10 +1006,16 @@ private:
     // scrollbar
     {
       vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
+      float y1 = get_scrollbar_scroller_y1(till_realline, sv->num_reallines - (is_playing?0:1), sv->scrollbar_height, sv->scrollbar_scroller_height);
+      float scrollbarpos = scale(y1,
+                                 0, sv->scrollbar_height,
+                                 0, -sv->scrollbar_height);
+      /*
       float scrollbarpos = scale(till_realline,
                                  0, sv->num_reallines - (is_playing?0:1),
                                  -2, -(sv->scrollbar_height - sv->scrollbar_scroller_height - 1)
                                  );
+      */
       //printf("bar_length: %f, till_realline: %f. scrollpos: %f, pos: %f, max: %d\n",bar_length,till_realline, scrollpos, pos, window->leftslider.x2);
       mat.translate(0,scrollbarpos,0);
       t2_data->scrollbar_transform->setLocalAndWorldMatrix(mat);

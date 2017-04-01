@@ -388,18 +388,22 @@ static GE_Context *drawNodeLines(const struct Tracker_Windows *window, const str
 static void create_left_slider(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   GE_Context *border = GE_color_z(LINE_SLIDER_COLOR_NUM, Z_STATIC, NOMASK_Y);
 
+  float x1 = get_scrollbar_x1(window);
+  float y1 = get_scrollbar_y1(window, wblock);
+  float x2 = get_scrollbar_x2(window);
+  float y2 = get_scrollbar_y2(window, wblock);
+  
   GE_box(border,
-         0,                        get_scrollbar_y1(window, wblock),
-         window->leftslider.width, get_scrollbar_y2(window, wblock),
+         x1, y1,
+         x2, y2,
          1.0f);
-
 
   //GE_Context *scrollbar = GE_mix_color_z(Black_rgb(), GE_get_rgb(0), 900, Z_SCROLLBAR);
   GE_Context *scrollbar = GE_color_z(LINE_SLIDER_COLOR_NUM, Z_SCROLLBAR, NOMASK_Y);
 
   GE_filledBox(scrollbar,
-               2,                            0,
-               window->leftslider.width - 2, get_scrollbar_scroller_height(window,wblock)
+               x1+2, 0, // (does not paint at editor.y1=0, but at scrollbar_slider.y1=0)
+               x2-2, get_scrollbar_scroller_height(window,wblock)
                );
 }
 
