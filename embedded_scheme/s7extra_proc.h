@@ -23,6 +23,15 @@ extern "C" {
   dyn_t s7extra_callFunc_dyn_void(func_t *func);
   dyn_t s7extra_callFunc2_dyn_void(const char *funcname);
 
+  dyn_t s7extra_callFunc_dyn_int(func_t *func, int64_t arg1);
+  dyn_t s7extra_callFunc2_dyn_int(const char *funcname, int64_t arg1);
+
+  dyn_t s7extra_callFunc_dyn_int_int_int(func_t *func, int64_t arg1, int64_t arg2, int64_t arg3);
+  dyn_t s7extra_callFunc2_dyn_int_int_int(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3);
+
+  dyn_t s7extra_callFunc_dyn_int_int_int_dyn_dyn_dyn(func_t *func, int64_t arg1, int64_t arg2, int64_t arg3, dyn_t arg4, dyn_t arg5, dyn_t arg6);
+  dyn_t s7extra_callFunc2_dyn_int_int_int_dyn_dyn_dyn(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3, dyn_t arg4, dyn_t arg5, dyn_t arg6);
+
   void s7extra_callFunc_void_int_bool(func_t *func, int64_t arg1, bool arg2);
   void s7extra_callFunc2_void_int_bool(const char *funcname, int64_t arg1, bool arg2);
   

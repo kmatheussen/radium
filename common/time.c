@@ -34,14 +34,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_pause_proc.h"
 #include "placement_proc.h"
 #include "list_proc.h"
+#include "hashmap_proc.h"
 #include "reltempo_proc.h"
 #include "seqtrack_proc.h"
 #include "OS_Bs_edit_proc.h"
+#include "../embedded_scheme/s7extra_proc.h"
+#include "../api/api_timing_proc.h"
 
 #include "time_proc.h"
 
 
 
+#if !USE_NEW_TIMING
 
 extern PlayerClass *pc;
 
@@ -61,6 +65,34 @@ extern PlayerClass *pc;
     and get rid of floats). Hmm, well, it probably doesn't use
     much time now, so its allso probably no use at all optimizing.
 ********************************************************/
+
+#if 0
+static double Place2STime_from_times2(
+                                     const struct STimes *times,
+                                     double fp
+                                     )
+{
+  int line1 = (int)fp;
+  int line2 = line1+1;
+
+  double fp1 = line1;
+
+  if (fabs(fp1 - fp) < 0.0000001)
+    return time1;
+
+  double fp2 = fp1+1.0;
+
+  const struct STimes *stime = &times[line1];
+
+  const struct STimeChanges *stc = stime->timechanges;
+
+  while(stc!=NULL){
+
+    double maybe_fp = GetDoubleFromPlace(stc->l.p);
+    
+  }
+}
+#endif
 
 static double Place2STime_from_times2(
                                      const struct STimes *times,
@@ -153,179 +185,6 @@ STime Place2STime(
 ){
   return Place2STime_from_times(block->times, p);
 }
-
-#define NUM_STIME2PLACE2_TRIES 40
-
-static double STime2Place2(
-                          const struct STimes *times,
-                          double correct_time,
-                          int num_tries_left,
-                          
-                          double low_result,
-                          double high_result,
-                          
-                          STime low_time,
-                          STime high_time
-                          )
-{
-  double maybe_result;
-
-  if (low_time==high_time)  // Happens at extreme high tempo.
-    return low_time;
-
-  if (num_tries_left==NUM_STIME2PLACE2_TRIES)
-    maybe_result = scale_double(correct_time, low_time, high_time, low_result, high_result); // usually correct
-  else
-    maybe_result = (high_result+low_result) / 2.0f;
-
-  /*
-  printf("%d: %d %d (delta: %d) (%f, %f, %f)\n",
-         num_tries_left, 
-         (int)low_time,
-         (int)high_time,
-         (int)(high_time-low_time),
-         low_result,
-         maybe_result,
-         high_result
-         );
-  */     
-         
-
-  if (num_tries_left==0)
-    return maybe_result;
-
-  double maybe_time = Place2STime_from_times2(times, maybe_result);
-
-  if ( fabs(maybe_time-correct_time) < 1.0)
-    return maybe_result;
-
-  else if (maybe_time > correct_time)
-    return STime2Place2(times,
-                        correct_time,
-                        num_tries_left-1,
-                        
-                        low_result,
-                        maybe_result,
-                        
-                        low_time,
-                        maybe_time
-                        );
-
-  else
-    return STime2Place2(times,
-                        correct_time,
-                        num_tries_left-1,
-                        
-                        maybe_result,
-                        high_result,
-                        
-                        maybe_time,
-                        high_time
-                        );
-}
-
-
-double STime2Place_f(
-                  const struct Blocks *block,
-                  double time
-                  )
-{
-
-  if (time < 0)
-    return 0.0;
-
-  if (time >= getBlockSTimeLength(block))
-    return block->num_lines;
-
-  
-#if 0
-  int line1=0;
-  int line2=1;
-  for(;;){
-    if (time >= block->times[line1].time && time < block->times[line2].time)
-      break;
-
-    line1++;
-    line2++;    
-  }
-#else
-  int line1,line2;
-  int line=1;
-  while(block->times[line].time < time) // could be optimized by binary search, but binary search is a horror to get right, and it's not that important here.
-    line++;
-
-  line2 = line;
-  line1 = line-1;
-#endif
-
-  
-  return STime2Place2(block->times,
-                      time,
-                      NUM_STIME2PLACE2_TRIES,
-                      line1,
-                      line2,
-                      block->times[line1].time,
-                      block->times[line2].time
-                      );
-}
-
-Place STime2Place(
-                  const struct Blocks *block,
-                  STime time
-                  )
-{
-  Place place;
-  Place *firstplace = PlaceGetFirstPos();
-  Place lastplace;
-  PlaceSetLastPos(block, &lastplace);
-
-  if (time < 0) {
-    return *firstplace;
-  }
-
-  if (time >= getBlockSTimeLength(block)){
-    PlaceTilLimit(&place,&lastplace);
-    return place;
-  }
-
-  double place_f = STime2Place_f(block,time);
-
-  Double2Placement(place_f, &place);
-    
-  if (PlaceGreaterOrEqual(&place, &lastplace))
-    PlaceTilLimit(&place,&lastplace);
-
-  else if (PlaceLessThan(&place,firstplace))
-    place = *firstplace;
-  
-  //if (place.line==64)
-  //  abort();
-
-  return place;
-}
-
-STime getBlockSTimeLength(const struct Blocks *block){
-  if (block==NULL){
-#if !defined(RELEASE)
-    abort();
-#else
-    return 48000; // This should never happened, and it has never happened.
-#endif
-  }
-  if (block->num_lines != block->num_time_lines)
-    RWarning("block->num_lines != block->num_time_lines: %d != %d",block->num_lines, block->num_time_lines);
-    
-  return block->times[block->num_time_lines].time;
-}
-
-bool isSTimeInBlock(const struct Blocks *block,STime time){
-  STime block_length = getBlockSTimeLength(block);
-  if(time > block_length)
-    return false;
-  else
-    return true;
-}
-
 
 
 
@@ -889,10 +748,386 @@ void UpdateAllSTimes(void){
 
 
 
+#else // USE_NEW_TIMING
+
+/*
+speed = distance / time
+distance = time*speed
+time = distance/speed
+*/
+
+static STime get_stime_from_stimechange(const struct STimeChange *c, double y, const bool has_t){
+  if (c->x1==c->x2){
+    //    if (has_t)
+    //   return scale_double(y, c->y1, c->y2, c->t1, c->t2) - c->t1;
+
+    double distance = y - c->y1;
+    double speed = c->x1;
+    return pc->pfreq * 60 * distance / speed;
+  }
+    
+  const double k = (c->x2-c->x1) / (c->y2-c->y1);
+  const double Tbp = scale_double(y, c->y1, c->y2, c->x1, c->x2);
+
+  return pc->pfreq * 60 * (1.0/k) * log(Tbp/c->x1);
+}
+
+static double Place2STime_from_times2(
+                                      const struct STimes *stimes,
+                                      double y
+                                      )
+{
+  // Find the right time_change to use.
+  const struct STimeChange *time_change=stimes[(int)y].tchanges;
+  while(time_change->y2 < y){
+    time_change = time_change + 1; // All changes in a block are allocated sequentially.
+    R_ASSERT_RETURN_IF_FALSE2(time_change->t1 > 0, (time_change-1)->t2);
+  }
+
+  return time_change->t1 + get_stime_from_stimechange(time_change, y, true);
+}
+
+STime Place2STime_from_times(const struct STimes *times, const Place *p){
+  if(0==p->counter)
+    return times[p->line].time; // Most common situation. Should probably inline this function.
+
+  double y = GetDoubleFromPlace(p);
+  return Place2STime_from_times2(times, y);
+}
+
+STime Place2STime(
+	const struct Blocks *block,
+	const Place *p
+){
+  return Place2STime_from_times(block->times, p);
+}
+
+// Returns an array of STimeChange elements
+static struct STimeChange *create_time_changes_from_scheme_data(const dynvec_t *timings){
+  struct STimeChange *time_changes = talloc(sizeof(struct STimeChange)*(timings->num_elements+1)); // Allocate one more element so that the last element is nulled out (used for assertion).
+  
+  double t1 = 0;
+  
+  for(int i=0;i<timings->num_elements;i++){
+    hash_t *h = timings->elements[i].hash;
+    time_changes[i].y1 = DYN_get_double_from_number(HASH_get_dyn(h, ":y1"));
+    time_changes[i].x1 = DYN_get_double_from_number(HASH_get_dyn(h, ":x1"));
+    time_changes[i].y2 = DYN_get_double_from_number(HASH_get_dyn(h, ":y2"));
+    time_changes[i].x2 = DYN_get_double_from_number(HASH_get_dyn(h, ":x2"));
+
+    time_changes[i].t1 = t1;
+
+    time_changes[i].t2 = t1 + get_stime_from_stimechange(&time_changes[i], time_changes[i].y2, false);
+
+    t1 = time_changes[i].t2;
+
+    printf("   TIMING. %d: %f,%f - %f,%f. t1: %f, t2: %f\n", i, time_changes[i].y1, time_changes[i].x1, time_changes[i].y2, time_changes[i].x2, time_changes[i].t1 / pc->pfreq, time_changes[i].t2 / pc->pfreq);
+  }
+
+  /*
+  for(int i=0;i<timings->num_elements;i++){
+    hash_t *h = timings->elements[i].hash;
+    time_changes[i].y1 = HASH_get_float(h, "y1");
+    time_changes[i].x1 = HASH_get_float(h, "x1");
+    time_changes[i].t1 = HASH_get_float(h, "t1");
+    time_changes[i].y2 = HASH_get_float(h, "y2");
+    time_changes[i].x2 = HASH_get_float(h, "x2");
+    time_changes[i].t2 = HASH_get_float(h, "t2");
+  }
+  */
+  
+  return time_changes;
+}
+
+/*
+static const struct STimeChange **create_tchanges_from_time_changes(const struct STimeChange *time_changes, int num_lines, int num_elements){ // num_elements is only used to check if something is very wrong.
+  int i=0;
+  const struct STimeChange **tchanges = talloc(sizeof(struct STimeChange*)*num_lines+1);
+
+  for(int line=0;line<=num_lines;line++){
+    while(time_changes[i].y2 < line)
+      i++;
+    if (i>=num_elements){
+      RError("i>=num_elements: %d >= %d. line: %d, num_lines: %d",i,num_elements,line,num_lines);
+      i=0;
+    }
+    tchanges[line] = &time_changes[i];
+  }
+
+  return tchanges;
+}
+*/
+
+// Precalculate timing for all line starts. (optimization)
+const struct STimes *create_stimes_from_tchanges(int num_lines, const struct STimeChange *time_changes, int num_elements){//const struct STimeChange **tchanges){
+
+  struct STimes *stimes = talloc(sizeof(struct STimes)*(1+num_lines));
+
+  int i=0;
+
+  for(int line=0;line<=num_lines;line++){
+    while(time_changes[i].y2 < line)
+      i++;
+    if (i>=num_elements){
+      RError("i>=num_elements: %d >= %d. line: %d, num_lines: %d",i,num_elements,line,num_lines);
+      i=0;
+    }
+    const struct STimeChange *tchange = &time_changes[i];
+
+    double dur = get_stime_from_stimechange(tchange, line, true);
+
+    stimes[line].time = tchange->t1 + dur;
+    stimes[line].tchanges = tchange;
+
+    printf("   STIME %d: %f. t1: %f, Dur: %f\n", line, (double)stimes[line].time / pc->pfreq, tchange->t1/pc->pfreq, dur/pc->pfreq);
+  }
+  /*
+  stimes[num_lines].time = tchanges[num_lines-1]->t2;
+  stimes[num_lines].tchanges = tchanges[num_lines-1];
+  printf("   STIME %d: %f\n", num_lines, (double)stimes[num_lines].time / pc->pfreq);
+  //  getchar();
+  */
+
+  return stimes;
+}
+
+static dyn_t get_timings_from_scheme(const struct Blocks *block, int bpm, int lpb){
+  return s7extra_callFunc2_dyn_int_int_int_dyn_dyn_dyn("create-block-timings",
+                                                       block->num_lines,
+                                                       bpm,
+                                                       lpb,
+                                                       API_getAllBPM(block),
+                                                       API_getAllLPB(block),
+                                                       API_getAllTemponodes(block)
+                                                       );
+}
+
+void UpdateSTimes2(struct Blocks *block, int default_bpm, int default_lpb){
+
+  dyn_t timings = get_timings_from_scheme(block, default_bpm, default_lpb);
+  R_ASSERT_RETURN_IF_FALSE(timings.type==ARRAY_TYPE);
+
+  const struct STimeChange *time_changes = create_time_changes_from_scheme_data(timings.array);
+  //const struct STimeChange **tchanges = create_tchanges_from_time_changes(time_changes, block->num_lines, timings.array->num_elements);
+  const struct STimes *times = create_stimes_from_tchanges(block->num_lines, time_changes, timings.array->num_elements);
+
+  PC_Pause();{
+    block->times = times;
+    block->num_time_lines = block->num_lines;
+    //block->tchanges = tchanges;
+
+    PLAYER_lock();{
+      ALL_SEQTRACKS_FOR_EACH(){
+        RT_legalize_seqtrack_timing(seqtrack);
+      }END_ALL_SEQTRACKS_FOR_EACH;
+    }PLAYER_unlock();
+    
+    SEQUENCER_update();
+    BS_UpdatePlayList();
+
+  }PC_StopPause(NULL);
+}
+
+void UpdateSTimes(struct Blocks *block){
+  UpdateSTimes2(block, root->tempo, root->lpb);
+}
+
+void UpdateAllSTimes(void){
+  struct Blocks *block=root->song->blocks;
+
+  while(block!=NULL){
+    UpdateSTimes(block);
+    block=NextBlock(block);
+  }
+}
+
+
+
+#endif // USE_NEW_TIMING
+
+
+
+/******************
+ *  Time -> Place *
+ ******************/
+
+#define NUM_STIME2PLACE2_TRIES 40
+
+static double STime2Place2(
+                          const struct STimes *times,
+                          double correct_time,
+                          int num_tries_left,
+                          
+                          double low_result,
+                          double high_result,
+                          
+                          STime low_time,
+                          STime high_time
+                          )
+{
+  double maybe_result;
+
+  if (low_time==high_time)  // Happens at extreme high tempo.
+    return low_time;
+
+  if (num_tries_left==NUM_STIME2PLACE2_TRIES)
+    maybe_result = scale_double(correct_time, low_time, high_time, low_result, high_result); // usually correct
+  else
+    maybe_result = (high_result+low_result) / 2.0f;
+
+  /*
+  printf("%d: %d %d (delta: %d) (%f, %f, %f)\n",
+         num_tries_left, 
+         (int)low_time,
+         (int)high_time,
+         (int)(high_time-low_time),
+         low_result,
+         maybe_result,
+         high_result
+         );
+  */     
+         
+
+  if (num_tries_left==0)
+    return maybe_result;
+
+  double maybe_time = Place2STime_from_times2(times, maybe_result);
+  
+  if ( fabs(maybe_time-correct_time) < 1.0)
+    return maybe_result;
+
+  else if (maybe_time > correct_time)
+    return STime2Place2(times,
+                        correct_time,
+                        num_tries_left-1,
+                        
+                        low_result,
+                        maybe_result,
+                        
+                        low_time,
+                        maybe_time
+                        );
+
+  else
+    return STime2Place2(times,
+                        correct_time,
+                        num_tries_left-1,
+                        
+                        maybe_result,
+                        high_result,
+                        
+                        maybe_time,
+                        high_time
+                        );
+}
+
+
+double STime2Place_f(
+                  const struct Blocks *block,
+                  double time
+                  )
+{
+
+  if (time < 0)
+    return 0.0;
+
+  if (time >= getBlockSTimeLength(block))
+    return block->num_lines;
+
+  
+#if 0
+  int line1=0;
+  int line2=1;
+  for(;;){
+    if (time >= block->times[line1].time && time < block->times[line2].time)
+      break;
+
+    line1++;
+    line2++;    
+  }
+#else
+  int line1,line2;
+  int line=1;
+  while(block->times[line].time < time) // could be optimized by binary search, but binary search is a horror to get right, and it's not that important here.
+    line++;
+
+  line2 = line;
+  line1 = line-1;
+#endif
+
+  
+  return STime2Place2(block->times,
+                      time,
+                      NUM_STIME2PLACE2_TRIES,
+                      line1,
+                      line2,
+                      block->times[line1].time,
+                      block->times[line2].time
+                      );
+}
+
+Place STime2Place(
+                  const struct Blocks *block,
+                  STime time
+                  )
+{
+  Place place;
+  Place *firstplace = PlaceGetFirstPos();
+  Place lastplace;
+  PlaceSetLastPos(block, &lastplace);
+
+  if (time < 0) {
+    return *firstplace;
+  }
+
+  if (time >= getBlockSTimeLength(block)){
+    PlaceTilLimit(&place,&lastplace);
+    return place;
+  }
+
+  double place_f = STime2Place_f(block,time);
+
+  Double2Placement(place_f, &place);
+    
+  if (PlaceGreaterOrEqual(&place, &lastplace))
+    PlaceTilLimit(&place,&lastplace);
+
+  else if (PlaceLessThan(&place,firstplace))
+    place = *firstplace;
+  
+  //if (place.line==64)
+  //  abort();
+
+  return place;
+}
 
 
 
 
+/******************
+ *  Various       *
+ ******************/
 
+STime getBlockSTimeLength(const struct Blocks *block){
+  if (block==NULL){
+#if !defined(RELEASE)
+    abort();
+#else
+    return 48000; // This should never happen, and it has never happened.
+#endif
+  }
+  if (block->num_lines != block->num_time_lines)
+    RWarning("block->num_lines != block->num_time_lines: %d != %d",block->num_lines, block->num_time_lines);
+    
+  return block->times[block->num_time_lines].time;
+}
+
+bool isSTimeInBlock(const struct Blocks *block,STime time){
+  STime block_length = getBlockSTimeLength(block);
+  if(time > block_length)
+    return false;
+  else
+    return true;
+}
 
 

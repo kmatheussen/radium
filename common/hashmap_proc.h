@@ -61,6 +61,7 @@ static inline void HASH_put_bool(hash_t *hash, const char *key, bool val){
   HASH_put_int(hash, key, val ? 1 : 0);
 }
 
+extern LANGSPEC dyn_t HASH_get_dyn(hash_t *hash, const char *key);
 extern LANGSPEC const wchar_t *HASH_get_string(const hash_t *hash, const char *key);
 extern LANGSPEC const char *HASH_get_chars(const hash_t *hash, const char *key);
 extern LANGSPEC int64_t HASH_get_int(const hash_t *hash, const char *key);
@@ -93,6 +94,7 @@ extern LANGSPEC void HASH_put_ratio_at(hash_t *hash, const char *key, int i, Rat
 extern LANGSPEC void HASH_put_hash_at(hash_t *hash, const char *key, int i, hash_t *val);
 extern LANGSPEC void HASH_put_array_at(hash_t *hash, const char *key, int i, dynvec_t val);
 
+extern LANGSPEC dyn_t HASH_get_dyn_at(hash_t *hash, const char *key, int i);
 extern LANGSPEC const wchar_t *HASH_get_string_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC const char *HASH_get_chars_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC int64_t HASH_get_int_at(const hash_t *hash, const char *key, int i);

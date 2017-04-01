@@ -1082,3 +1082,13 @@ for .emacs:
     ret))
 
 
+(define (draw-plot xs func)
+  (define ys (map func xs))
+  (define args "")
+  (for-each (lambda (x y)
+              (set! args (<-> args " " (* 1.0 x) " " (* 1.0 y) )))
+            xs ys)
+  (system (<-> "plot" args "&"))
+  ;;(read-char)
+  (c-display "args" args)
+  ys)

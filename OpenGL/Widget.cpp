@@ -77,6 +77,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <unistd.h>
 #include <errno.h>
 
+
+/*
+Example on how to use threaded QOpenGLWidget instead of QGLWidget:
+https://gitlab.com/pteam/korvins-qtbase/blob/6f7bc2a7074b7f8c9dacd997d4af597396bbc8d0/examples/opengl/threadedqopenglwidget/glwidget.cpp
+*/
+
+
 /*
 =================================================================
 ==9461==ERROR: AddressSanitizer: new-delete-type-mismatch on 0x614001109440 in thread T0 (radium):

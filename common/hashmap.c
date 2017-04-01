@@ -460,6 +460,17 @@ static hash_element_t *HASH_get(const hash_t *hash, const char *key, int i, enum
   return element;
 }
 
+static dyn_t get_dyn(const hash_t *hash, const char *key, int i){
+  hash_element_t *element=HASH_get_no_complaining(hash, key, i);
+
+  if(element==NULL){
+    RWarning("HASH_get_dyn. Element not found. key: \"%s\"/%d. hash: %p",key,i,hash);
+    return DYN_create_bool(false);
+  }
+
+  return element->a;
+}
+
 static const wchar_t *get_string(const hash_t *hash, const char *key, int i){
   hash_element_t *element = HASH_get(hash,key,i,STRING_TYPE);
   if(element==NULL)
@@ -506,6 +517,10 @@ static hash_t *get_hash(const hash_t *hash, const char *key, int i){
   return element->a.hash;
 }
 
+dyn_t HASH_get_dyn(hash_t *hash, const char *key){
+  return get_dyn(hash, key, 0);
+}
+
 const wchar_t *HASH_get_string(const hash_t *hash, const char *key){
   return get_string(hash, key, 0);
 }
@@ -524,6 +539,10 @@ double HASH_get_float(const hash_t *hash, const char *key){
 
 hash_t *HASH_get_hash(const hash_t *hash, const char *key){
   return get_hash(hash, key, 0);
+}
+
+dyn_t HASH_get_dyn_at(hash_t *hash, const char *key, int i){
+  return get_dyn(hash, key, i);
 }
 
 const wchar_t *HASH_get_string_at(const hash_t *hash, const char *key, int i){

@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef RADIUM_COMMON_TIME_PROC_H
 #define RADIUM_COMMON_TIME_PROC_H
 
+
+
 extern LANGSPEC STime Place2STime_from_times(
                                              const struct STimes *times,
                                              const Place *p

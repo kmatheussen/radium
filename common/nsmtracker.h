@@ -644,6 +644,37 @@ static inline char *ratio_to_string(const Ratio ratio){
 
 #include "Dynvec_proc.h"
 
+static inline const char *DYN_type_name(enum DynType type){
+  switch(type){
+    case STRING_TYPE:
+      return "STRING_TYPE";
+    case INT_TYPE:
+      return "INT_TYPE";
+    case FLOAT_TYPE:
+      return "FLOAT_TYPE";
+    case HASH_TYPE:
+      return "HASH_TYPE";
+    case ARRAY_TYPE:
+      return "ARRAY_TYPE";
+    case RATIO_TYPE:
+      return "RATIO_TYPE";
+    case BOOL_TYPE:
+      return "BOOL_TYPE";
+  }
+  RError("Unknown dyn type: %d", type);
+  return "";
+}
+
+static inline enum DynType DYN_get_type_from_name(const char* type_name){
+  for(int i=0;i<NUM_DYNTYPE_TYPES;i++)
+    if(!strcmp(type_name, DYN_type_name((enum DynType)i)))
+      return (enum DynType)i;
+
+  RError("Unknown dyn type name: \"\%s\"",type_name);
+  return INT_TYPE;
+}
+
+
 static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
   if (a1.type!=a2.type)
     return false;
@@ -740,6 +771,30 @@ static inline dyn_t DYN_create_place(const Place place){
   return DYN_create_ratio(ratio_minimize(make_ratio(place.counter + place.line*place.dividor, place.dividor)));
 }
 
+static inline double DYN_get_double_from_number(const dyn_t a){
+  if (a.type==INT_TYPE)
+    return a.int_number;
+  if (a.type==FLOAT_TYPE)
+    return a.float_number;
+  if (a.type==RATIO_TYPE)
+    return (double)a.ratio->numerator / (double)a.ratio->denominator;
+
+  RError("DYN_get_double_from_number: 'a' is not a number, but a %s", DYN_type_name(a.type));
+  return 0;
+}
+
+static inline int64_t DYN_get_int64_from_number(const dyn_t a){
+  if (a.type==INT_TYPE)
+    return a.int_number;
+  if (a.type==FLOAT_TYPE)
+    return a.float_number;
+  if (a.type==RATIO_TYPE)
+    return (double)a.ratio->numerator / (double)a.ratio->denominator;
+
+  RError("DYN_get_double_from_number: 'a' is not a number, but a %s", DYN_type_name(a.type));
+  return 0;
+}
+
 /*
 Must include placement_proc.h to get this function.
 static inline Place DYN_get_place(const dyn_t dyn){
@@ -760,36 +815,6 @@ static inline dyn_t DYN_create_array(const dynvec_t dynvec){
   a.type = ARRAY_TYPE;
   a.array = (dynvec_t*)tcopy(&dynvec, sizeof(dynvec_t));
   return a;
-}
-
-static inline const char *DYN_type_name(enum DynType type){
-  switch(type){
-    case STRING_TYPE:
-      return "STRING_TYPE";
-    case INT_TYPE:
-      return "INT_TYPE";
-    case FLOAT_TYPE:
-      return "FLOAT_TYPE";
-    case HASH_TYPE:
-      return "HASH_TYPE";
-    case ARRAY_TYPE:
-      return "ARRAY_TYPE";
-    case RATIO_TYPE:
-      return "RATIO_TYPE";
-    case BOOL_TYPE:
-      return "BOOL_TYPE";
-  }
-  RError("Unknown dyn type: %d", type);
-  return "";
-}
-
-static inline enum DynType DYN_get_type_from_name(const char* type_name){
-  for(int i=0;i<NUM_DYNTYPE_TYPES;i++)
-    if(!strcmp(type_name, DYN_type_name((enum DynType)i)))
-      return (enum DynType)i;
-
-  RError("Unknown dyn type name: \"\%s\"",type_name);
-  return INT_TYPE;
 }
 
 
@@ -1702,6 +1727,10 @@ struct Swing {
 	time.h
 *********************************************************************/
 
+#define USE_NEW_TIMING 0
+
+
+#if !USE_NEW_TIMING
 struct STimeChanges{
 	struct ListHeader3 l;
 	STime time;
@@ -1712,14 +1741,24 @@ struct STimeChanges{
 };
 #define NextSTimeChange(a) (struct STimeChanges *)((a)->l.next)
 
+#else
+
+struct STimeChange{
+  double y1,x1,t1; // y=line (place as double), x = tempo at y, t = time at y
+  double y2,x2,t2; //
+};
+
+#endif
+
 
 struct STimes{									/* One element for each line. */
 	STime time;							/* Start-time for the line. */
-   SDB
+#if !USE_NEW_TIMING
 	const struct STimeChanges *timechanges;
-        //bool is_beat; // true if this line starts a new beat
+#else
+        const struct STimeChange *tchanges;
+#endif
 };
-
 
 /*********************************************************************
 	blocks.h
@@ -1744,7 +1783,7 @@ struct Blocks{
 
         int num_time_lines; // Contains number of lines in 'times' minus one (same as num_lines, normally). Only for validation.
         const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. */
-
+  
         DEFINE_ATOMIC(double, reltempo);					/* factor that the tempo is multiplied with when playing this block. */
 
         DEFINE_ATOMIC(double, player_time);	/* = pc->end_time - RT_curr_seqblock()->time */

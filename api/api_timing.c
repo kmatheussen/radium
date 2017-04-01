@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "api_support_proc.h"
 #include "radium_proc.h"
 
+#include "api_timing_proc.h"
 
 
 /********** Signatures  **********/
@@ -193,15 +194,7 @@ int getLPB(int num, int blocknum, int windownum){
     return lpb->lpb;
 }
 
-
-dyn_t getAllLPB(int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
-  if (wblock==NULL)
-    return DYN_create_bool(false);
-
-  struct Blocks *block = wblock->block;
-
+dyn_t API_getAllLPB(const struct Blocks *block){
   dynvec_t ret = {0};
   struct LPBs *lpb = block->lpbs;
 
@@ -219,6 +212,15 @@ dyn_t getAllLPB(int blocknum, int windownum){
   }
 
   return DYN_create_array(ret);
+}
+
+dyn_t getAllLPB(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return DYN_create_bool(false);
+
+  return API_getAllLPB(wblock->block);
 }
 
 
@@ -306,14 +308,7 @@ Place getBPMPlace(int num, int blocknum, int windownum){
     return bpm->l.p;
 }
 
-dyn_t getAllBPM(int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
-  if (wblock==NULL)
-    return DYN_create_bool(false);
-
-  struct Blocks *block = wblock->block;
-
+dyn_t API_getAllBPM(const struct Blocks *block){
   dynvec_t ret = {0};
   struct Tempos *tempo = block->tempos;
 
@@ -330,7 +325,17 @@ dyn_t getAllBPM(int blocknum, int windownum){
     tempo = NextTempo(tempo);
   }
 
-  return DYN_create_array(ret);
+  return DYN_create_array(ret);  
+}
+  
+dyn_t getAllBPM(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL){
+    return DYN_create_bool(false);
+  }
+
+  return API_getAllBPM(wblock->block);
 }
 
 /************* Block tempo automation ************************/
@@ -504,15 +509,7 @@ int addTemponode(float value, Place place, int blocknum, int windownum){
   return ListFindElementPos3(&block->temponodes->l, &temponode->l);
 }
 
-
-dyn_t getAllTemponodes(int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
-  if (wblock==NULL)
-    return DYN_create_bool(false);
-
-  struct Blocks *block = wblock->block;
-
+dyn_t API_getAllTemponodes(const struct Blocks *block){
   dynvec_t ret = {0};
   struct TempoNodes *temponode = block->temponodes;
 
@@ -532,6 +529,15 @@ dyn_t getAllTemponodes(int blocknum, int windownum){
   }
 
   return DYN_create_array(ret);
+}
+  
+dyn_t getAllTemponodes(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return DYN_create_bool(false);
+
+  return API_getAllTemponodes(wblock->block);
 }
 
 dyn_t testsomething(dyn_t arg){
