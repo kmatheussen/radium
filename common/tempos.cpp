@@ -46,13 +46,14 @@ struct WBPMs *WBPMs_get(
 		realline=FindRealLineFor(wblock,realline,&bpm->l.p);
 
 		if(wbpms[realline].tempo!=0){
-			wbpms[realline].type=TEMPO_MUL;
+			wbpms[realline].type=TEMPO_MUL;                        
 		}else{
 			if(PlaceNotEqual(&wblock->reallines[realline]->l.p,&bpm->l.p))
 				wbpms[realline].type=TEMPO_BELOW;
 		}
 
 		wbpms[realline].tempo=bpm->tempo;
+                wbpms[realline].logtype = bpm->logtype;
 		//wbpms[realline].Tempo=tempo;
 		bpm=NextBPM(bpm);
 	}
@@ -81,7 +82,8 @@ QVector<Tempos*> BPMs_get(const struct WBlocks *wblock, int realline){
 struct Tempos *SetTempo(
 	struct Blocks *block,
 	const Place *place,
-	int newtempo
+	int newtempo,
+        int logtype
 ){
   if (newtempo<=0){
     RError("Illegal tempo %d at position %s\n",newtempo,PlaceToString(place));
@@ -94,10 +96,12 @@ struct Tempos *SetTempo(
           
           if(tempo!=NULL && PlaceEqual(&tempo->l.p,place)){
             tempo->tempo=newtempo;
+            tempo->logtype = logtype;
           }else{
             tempo=(struct Tempos*)talloc(sizeof(struct Tempos));
             PlaceCopy(&tempo->l.p,place);
             tempo->tempo=newtempo;
+            tempo->logtype = logtype;
             ListAddElement3(&block->tempos,&tempo->l);
           }
           
@@ -119,7 +123,7 @@ void SetTempoCurrPos(struct Tracker_Windows *window){
 
 	ADD_UNDO(Tempos_CurrPos(window));
 
-	SetTempo(wblock->block,place,newtempo);
+	SetTempo(wblock->block,place,newtempo,LOGTYPE_HOLD);
 
 	//UpdateWTempos(window,wblock);
 

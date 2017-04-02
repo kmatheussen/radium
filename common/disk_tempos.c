@@ -56,6 +56,7 @@ void LoadTempos(struct Tempos **to){
 		tempo->Tcounter=DC_LoadU32();
 		tempo->Tdividor=DC_LoadU32();
 		tempo->tempo=DC_LoadI();
+                tempo->logtype=LOGTYPE_HOLD;
 		ListAddElement3_a(to,&tempo->l);
 	}
 

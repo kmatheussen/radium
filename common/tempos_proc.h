@@ -31,7 +31,8 @@ QVector<Tempos*> BPMs_get(const struct WBlocks *wblock, int realline);
 extern LANGSPEC struct Tempos *SetTempo(
 	struct Blocks *block,
 	const Place *place,
-	int newtempo
+	int newtempo,
+        int logtype
 );
 
 extern LANGSPEC void SetTempoCurrPos(struct Tracker_Windows *window);
