@@ -812,7 +812,7 @@ list<pos,tempo_multiplication,hold>
                       (lambda (y)
                         (place->stime-0 y
                                         0 10
-                                        0.1 5.2))))
+                                        5.0 5.2))))
 (define g1 (draw-plot (map (lambda (y) (/ y 10))
                            (iota 100))
                       (lambda (y)
