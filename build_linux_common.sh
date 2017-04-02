@@ -38,7 +38,7 @@ export INCLUDE_PDDEV="jadda"
 
 
 #if ! env |grep OPTIMIZE ; then
-export OPTIMIZE="-O3 -mfpmath=sse -msse2 $RADIUM_RELEASE_CFLAGS"
+export OPTIMIZE="-O2 -mfpmath=sse -msse2 $RADIUM_RELEASE_CFLAGS"
 #fi
 
 export CPUOPT=

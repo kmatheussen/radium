@@ -37,7 +37,7 @@ PYTHONEXE ?= `which python2`
 
 
 # 6. Opimization options. Only enabled in RELEASE build
-OPTIMIZE ?= -O3
+OPTIMIZE ?= -O2
 
 
 #----------------END USER SETTINGS---------------------------
@@ -225,6 +225,10 @@ OPT=$(COMMONOPT) -Wstrict-prototypes -std=gnu99
 
 CPUOPT ?=
 
+
+ifeq ($(BUILDTYPE), RELEASE)
+	CPUOPT += -O3
+endif
 
 # -pg
 
