@@ -98,7 +98,7 @@ bool isPlayingSong(void){
   return isPlaying() && pc->playtype==PLAYSONG;
 }
 
-float lineDuration(int line, int tracknum, int blocknum, int windownum){
+double lineDuration(int line, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
