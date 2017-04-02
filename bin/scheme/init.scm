@@ -120,6 +120,8 @@
 
 (my-require 'quantitize.scm)
 
+(my-require 'timing.scm)
+
 (my-require 'gui.scm)
 
 
