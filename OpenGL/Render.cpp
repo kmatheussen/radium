@@ -399,8 +399,13 @@ static void create_left_slider(const struct Tracker_Windows *window, const struc
          1.0f);
 
   //GE_Context *scrollbar = GE_mix_color_z(Black_rgb(), GE_get_rgb(0), 900, Z_SCROLLBAR);
-  GE_Context *scrollbar = GE_color_z(LINE_SLIDER_COLOR_NUM, Z_SCROLLBAR, NOMASK_Y);
+  GE_Context *scrollbar;
 
+  if (window->scrollbar_is_moving)
+    scrollbar = GE_mix_color_z(White_rgb(), GE_get_rgb(LINE_SLIDER_COLOR_NUM), 200, Z_SCROLLBAR, NOMASK_Y);
+  else
+    scrollbar = GE_color_z(LINE_SLIDER_COLOR_NUM, Z_SCROLLBAR, NOMASK_Y);
+  
   GE_filledBox(scrollbar,
                x1+2, 0, // (does not paint at editor.y1=0, but at scrollbar_slider.y1=0)
                x2-2, get_scrollbar_scroller_height(window,wblock)

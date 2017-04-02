@@ -1992,6 +1992,8 @@ struct Tracker_Windows{
 	struct Slider leftslider;
 	struct Slider rightslider;
 
+        bool scrollbar_is_moving; // If true, draw leftslider in a different color.
+  
 	bool playalong;					/* If true, this window allso shows whats being played
 											   if any other window is playing. default=true. */
   

@@ -1109,30 +1109,39 @@
                         :Get-existing-node-info (lambda (X Y callback)
                                                   ;;(c-display "hep" X Y (box-to-string (<ra> :get-box editor-scrollbar-scroller)) (inside-box (<ra> :get-box editor-scrollbar-scroller) X Y))
                                                   (and (inside-box (<ra> :get-box editor-scrollbar) X Y)
-                                                       (callback (<ra> :get-curr-realline)
-                                                                 (<ra> :get-curr-realline)
-                                                                 0)))
+                                                       (begin
+                                                         (<ra> :set-scrollbar-is-moving #t)
+                                                         (callback (<ra> :get-curr-realline)
+                                                                   (<ra> :get-curr-realline)
+                                                                   0))))
                         :Get-min-value (lambda (_) 0)
                         :Get-max-value (lambda (_) 1)
-                        :Get-x (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-x1) (<ra> :get-editor-scrollbar-scroller-x2)))
-                        :Get-y (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-y1) (<ra> :get-editor-scrollbar-scroller-y2)))
+                        ;:Get-x (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-x1) (<ra> :get-editor-scrollbar-scroller-x2)))
+                                        ;:Get-y (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-y1) (<ra> :get-editor-scrollbar-scroller-y2)))
                         :Make-undo (lambda (_) 50)
                         :Create-new-node (lambda (X Place callback)
                                            #f)
                         :Move-node (lambda (Num Value Y)
+                                     (define scroller-height (- (<ra> :get-editor-scrollbar-scroller-y2) (<ra> :get-editor-scrollbar-scroller-y1)))
+                                     (define scrollbar-height (- (<ra> :get-editor-scrollbar-y2) (<ra> :get-editor-scrollbar-y1)))
+                                     (define num-reallines (<ra> :get-num-reallines))
+                                     (define drealline (scale Y 0 (- scrollbar-height scroller-height) 0 num-reallines))
                                      (define new-realline (between 0
                                                                    (+ Num
-                                                                      (to-integer (/ Y 11)))
+                                                                      (to-integer drealline))
+                                                                   ;;(to-integer (/ Y 5)))
                                                                    (1- (<ra> :get-num-reallines))))
                                      (<ra> :set-curr-realline new-realline)
                                      Num
                                      )
+                        :Release-node (lambda (Num)
+                                        (<ra> :set-scrollbar-is-moving #f))
                         :Publicize (lambda (Num)
                                      #f)
                         :Use-Place #f
-                        ;;:Mouse-pointer-func ra:set-normal-mouse-pointer
-                        :Get-pixels-per-value-unit #f;(lambda (_)
-                                                     ;12)
+                        :Mouse-pointer-func ra:set-normal-mouse-pointer
+                        :Get-pixels-per-value-unit #f ;;(lambda (_)
+                                                     ;;1)
                         )                        
 
 

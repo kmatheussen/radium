@@ -390,6 +390,14 @@ float getEditorScrollbarScrollerY2(int blocknum, int windownum){
   return getEditorScrollbarScrollerY1(blocknum, windownum) + get_scrollbar_scroller_height(window, wblock);
 }
 
+void setScrollbarIsMoving(bool is_moving, int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if(window==NULL)
+    return;
+
+  window->scrollbar_is_moving = is_moving;
+  window->must_redraw=true;
+}
 
 
 // track panning on/off
