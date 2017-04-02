@@ -1,3 +1,26 @@
+Changes 4.6.0 -> 4.6.2:
+* Build: Compile with -O2 instead of -O3 for non-CPU intensive files
+  to improve backtrace.
+* Mixer: Fix bug that could cause the Instrument widget to be
+  positioned above the Modular Mixer widget.
+* Mouse: Make it possible to move the the editor scrollbar with the
+  mouse.
+* Mixer: More work to avoid, and to track down why, the assertion
+  reporter sometimes pops up (and undo/redo stops working) when
+  releasing the mouse button. (It's a quite rare problem though.)
+* Fix tooltips for the BPM and LPB text input widgets.
+* Don't show assertion reporter when loading a new instrument preset
+  and there are no preset files in the current directory.
+* API: Let getBlockLength, getSongLength, and lineDuration return
+  double instead of float.
+* API: New functions: getCurrRealline, setCurrRealline,
+  getNumReallines, getEditorScrollbarScrollerX1,
+  getEditorScrollbarScrollerX2, getEditorScrollbarX1,
+  getEditorScrollbarY1, getEditorScrollbarX2, getEditorScrollbarY2,
+  getEditorScrollbarScrollerY1, getEditorScrollbarScrollerY2
+
+
+
 Changes 4.5.9 -> 4.6.0:
 * Windows: Don't show lots of console windows when opening the crash
   reporter.
