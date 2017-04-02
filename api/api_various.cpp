@@ -1954,14 +1954,14 @@ static double get_block_length(struct Blocks *block){
   return time / (double)MIXER_get_sample_rate();
 }
 
-float getBlockLength(int blocknum, int windownum){
+double getBlockLength(int blocknum, int windownum){
   struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
   if(wblock==NULL) return 1.0; // return 1.0 instead of 0.0 to avoid divide by zero errors.
 
   return get_block_length(wblock->block);
 }
 
-float getSongLength(void){
+double getSongLength(void){
   return SONG_get_length();
 }
 
