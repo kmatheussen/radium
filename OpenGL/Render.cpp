@@ -871,19 +871,15 @@ static void create_bpm(const struct Tracker_Windows *window, const struct WBlock
   int y     = get_realline_y1(window, realline);
   int tempo = wbpms[realline].tempo;
   int type  = wbpms[realline].type;
-  int logtype = wbpms[realline].logtype;
-
-  GE_Context *c = GE_textcolor_z(TEXT_COLOR_NUM, Z_ZERO, y);
 
   if(tempo!=0){
     draw_text_num(
                   window,
-                  c,
+                  GE_textcolor_z(TEXT_COLOR_NUM, Z_ZERO, y),
                   tempo,
-                  3, //wblock->tempoarea.width/window->fontwidth,
+                  wblock->tempoarea.width/window->fontwidth,
                   wblock->tempoarea.x,
-                  y
-                  );
+                  y);
   }
 
   if(type!=TEMPO_NORMAL){
@@ -900,10 +896,6 @@ static void create_bpm(const struct Tracker_Windows *window, const struct WBlock
     };
 
     GE_text(GE_color_alpha_z(TEXT_COLOR_NUM, 0.3, Z_ZERO, y), typetext, wblock->tempoTypearea.x, y);
-  }
-
-  if (logtype==LOGTYPE_HOLD){
-    GE_text(c, "|", wblock->tempoarea.x + window->fontwidth*3, y);
   }
 }
 

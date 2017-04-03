@@ -1675,7 +1675,6 @@ struct WLPBs{
 struct Tempos{
 	struct ListHeader3 l;
 	int tempo;
-        int logtype;
 };
 #define NextTempo(a) (struct Tempos *)((a)->l.next)
 #define NextBPM(a) NextTempo(a)
@@ -1683,7 +1682,6 @@ struct Tempos{
 struct WTempos{
 	int tempo;
 	int type;							/* 0=normal, 1=below positioned, 2=mul. */
-        int logtype;
 };
 /* Types */
 #define TEMPO_NORMAL 0

@@ -275,7 +275,7 @@ int addBPM(int bpm,
 
   ADD_UNDO(Tempos_CurrPos(window));
 
-  struct Tempos *tempo = SetTempo(wblock->block,&place,bpm,LOGTYPE_HOLD);
+  struct Tempos *tempo = SetTempo(wblock->block,&place,bpm);
 
   window->must_redraw=true;
 
@@ -317,7 +317,7 @@ dyn_t API_getAllBPM(const struct Blocks *block){
 
     HASH_put_dyn(bpm, ":place", DYN_create_place(tempo->l.p));
     HASH_put_int(bpm, ":bpm", tempo->tempo);
-    HASH_put_int(bpm, ":logtype", tempo->logtype);
+    HASH_put_int(bpm, ":logtype", LOGTYPE_HOLD);
     //HASH_put_int(bpm, "logtype", tempo->logtype);
 
     DYNVEC_push_back(&ret, DYN_create_hash(bpm));

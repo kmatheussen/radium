@@ -125,7 +125,7 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 		  }
 		}
 
-        } else if (window->curr_track==TEMPOTRACK && window->curr_othertrack_sub<3) {
+        } else if (window->curr_track==TEMPOTRACK && window->curr_othertrack_sub<2) {
 
                 window->curr_othertrack_sub++;
                    
@@ -254,7 +254,7 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
                   window->curr_othertrack_sub = 1;
 
                 if (window->curr_track==TEMPOTRACK)
-                  window->curr_othertrack_sub = 3;
+                  window->curr_othertrack_sub = 2;
                 
 		return 1;
 	}

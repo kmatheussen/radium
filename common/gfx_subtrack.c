@@ -227,7 +227,7 @@ int GetXSubTrack_B1(
                 }
                 case TEMPOTRACK:{
                         struct Tracker_Windows *window=root->song->tracker_windows;
-                        return scale(window->curr_othertrack_sub, 0, 4, wblock->tempoarea.x, wblock->tempoarea.x2);
+                        return scale(window->curr_othertrack_sub, 0, 3, wblock->tempoarea.x, wblock->tempoarea.x2);
 			break;
                 }
 		case TEMPONODETRACK:
@@ -262,7 +262,7 @@ int GetXSubTrack_B2(
                 }
                 case TEMPOTRACK:{
                         struct Tracker_Windows *window=root->song->tracker_windows;
-                        return scale(window->curr_othertrack_sub+1, 0, 4, wblock->tempoarea.x, wblock->tempoarea.x2);
+                        return scale(window->curr_othertrack_sub+1, 0, 3, wblock->tempoarea.x, wblock->tempoarea.x2);
 			//return wblock->tempoarea.x2;
 			break;
                 }
