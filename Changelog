@@ -1,3 +1,7 @@
+Changes 4.6.2 -> 4.6.3:
+* Fix removing BPM and LPB entries from the BPM track and LPB track.
+
+
 Changes 4.6.0 -> 4.6.2:
 * Build: Compile with -O2 instead of -O3 for non-CPU intensive files
   to improve backtrace.
