@@ -129,6 +129,13 @@ void SetTempoCurrPos(struct Tracker_Windows *window){
 #endif
 }
 
+void RemoveTempo(struct Blocks *block,struct Tempos *tempo){
+  PC_Pause();{
+    ListRemoveElement3(&block->tempos,&tempo->l);
+    UpdateSTimes(block);
+  }PC_StopPause(NULL);
+}
+
 void RemoveTempos(struct Blocks *block,Place *p1,Place *p2){
   PC_Pause();{
     ListRemoveElements3(&block->tempos,p1,p2);

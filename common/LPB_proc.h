@@ -31,5 +31,6 @@ extern LANGSPEC struct LPBs *SetLPB(
                            );
 extern LANGSPEC void SetLPBCurrPos(struct Tracker_Windows *window);
 
+extern LANGSPEC void RemoveLPB(struct Blocks *block,struct LPBs *lpb);
 extern LANGSPEC void RemoveLPBsCurrPos(struct Tracker_Windows *window);
 

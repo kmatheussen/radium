@@ -141,6 +141,14 @@ void SetLPBCurrPos(struct Tracker_Windows *window){
 	//WBLOCK_DrawTempoColor(window,wblock,curr_realline,wblock->num_reallines);
 }
 
+void RemoveLPB(struct Blocks *block,struct LPBs *lpb){
+  PC_Pause();{
+    ListRemoveElement3(&block->lpbs,&lpb->l);
+    UpdateSTimes(block);
+    UpdateBeats(block);
+  }PC_StopPause(NULL);
+}
+
 void RemoveLPBs(struct Blocks *block,Place *p1,Place *p2){
   PC_Pause();{
     ListRemoveElements3(&block->lpbs,p1,p2);

@@ -54,23 +54,7 @@ bool LPBTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, in
   QVector<LPBs*> lpbs = LPBs_get(wblock, realline);
 
     
-
-  if (false && lpbs.size()  > 1) {
-
-    // MORE THAN ONE ELEMENT (treat last element instead)
-    
-    if (key == EVENT_DEL){
-
-      ListRemoveElement3(&wblock->block->lpbs, &(lpbs.last()->l));
-
-      //const struct LocalZooms lz2 = realline==wblock->num_reallines-1 ? p_Create(wblock->block->num_lines, 0, 1) : *wblock->reallines[realline+1];
-      //RemoveLPBs(wblock->block, place, &lz2->l.p);
-                   
-    }else
-      return false;
-    
-    
-  } else if (lpbs.size() == 0) {
+  if (lpbs.size() == 0) {
 
     // NO ELEMENTS
 
@@ -94,7 +78,7 @@ bool LPBTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, in
     if (key == EVENT_DEL) {
 
       ADD_UNDO(LPBs_CurrPos(window));  
-      ListRemoveElement3(&wblock->block->lpbs, &lpb->l);
+      RemoveLPB(wblock->block, lpb);
  
     } else {
 

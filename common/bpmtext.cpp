@@ -94,7 +94,7 @@ bool BPMTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, in
     if (key == EVENT_DEL) {
 
       ADD_UNDO(Tempos_CurrPos(window));  
-      ListRemoveElement3(&wblock->block->tempos, &bpm->l);
+      RemoveTempo(wblock->block, bpm);
  
     } else {
 
