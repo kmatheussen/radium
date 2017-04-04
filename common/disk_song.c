@@ -56,6 +56,9 @@ DC_start("SONG");
 	DC_SSS("songname",song->songname);
 	//DC_SSN("maxtracks",song->maxtracks);
 
+        DC_SSB("linear_accelerando", ATOMIC_GET(song->linear_accelerando));
+        DC_SSB("linear_ritardando", ATOMIC_GET(song->linear_ritardando));
+        
         DC_start("COMMENT");{
           HASH_save(COMMENT_get_state(), dc.file);
         }DC_end();
@@ -81,6 +84,8 @@ DC_start("SONG");
 DC_end();
 }
 
+void SONGPROPERTIES_set_linear_accelerando_and_ritardando(bool linear_accelerando, bool linear_ritardando);
+
 struct Song *LoadSong(void){
 	static char *objs[7]={
 		"TRACKER_WINDOW",
@@ -91,11 +96,13 @@ struct Song *LoadSong(void){
                 "SEQUENCER",
                 "COMMENT"
 	};
-	static char *vars[4]={
+	static char *vars[6]={
 		"num_blocks",
 		"length",
 		"songname",
-		"maxtracks",
+		"maxtracks", // Not used anymore
+                "linear_accelerando",
+                "linear_ritardando"
 	};
 	struct Song *song=SONG_create();
         
@@ -120,7 +127,7 @@ struct Song *LoadSong(void){
 
         COMMENT_reset();
         
-        GENERAL_LOAD(7,4)
+        GENERAL_LOAD(7,6)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());
@@ -172,7 +179,14 @@ var3:
 	goto start;
 
 var4:
+        ATOMIC_SET(song->linear_accelerando, DC_LoadB());
+        goto start;
+        
 var5:
+        ATOMIC_SET(song->linear_ritardando, DC_LoadB());
+        goto start;
+
+
 var6:
 var7:
 var8:
@@ -196,6 +210,8 @@ end:
 }
 
 void DLoadSong(struct Root *newroot,struct Song *song){
+
+        SONGPROPERTIES_set_linear_accelerando_and_ritardando(ATOMIC_GET(song->linear_accelerando), ATOMIC_GET(song->linear_ritardando));
 
         DLoadInstrument(get_MIDI_instrument());
         DLoadInstrument(get_audio_instrument());

@@ -2234,6 +2234,9 @@ struct Song{
 	NInt num_blocks;
 	char *songname;
 
+        DEFINE_ATOMIC(bool, linear_accelerando);
+        DEFINE_ATOMIC(bool, linear_ritardando);
+                
 	hash_t *mixerwidget_state; // Only used during loading.
 	hash_t *instrument_widget_order_state; // Only used during loading.
 };

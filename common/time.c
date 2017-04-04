@@ -826,14 +826,23 @@ static STime get_stime_from_stimechange(const struct STimeChange *c, double y, c
     double distance = y - c->y1;
     double speed = c->x1;
     return pc->pfreq * 60 * distance / speed;
-  }
 
-  if (c->x2>c->x1)
-    return get_stime_from_stimechange_equal_ratio_accelerando(c, y);
-  else
-    return get_stime_from_stimechange_equal_ratio_deaccelerando(c, y);
+  } else if (c->x2>c->x1) {
+    
+    if (ATOMIC_GET(root->song->linear_accelerando))
+      return get_stime_from_stimechange_linear(c, y);
+    else
+      return get_stime_from_stimechange_equal_ratio_accelerando(c, y);
+    
+  } else {
+
+    if (ATOMIC_GET(root->song->linear_ritardando))
+      return get_stime_from_stimechange_linear(c, y);
+    else
+      return get_stime_from_stimechange_equal_ratio_deaccelerando(c, y);
+    
+  }
   
-  return get_stime_from_stimechange_linear(c, y);
 }
 
 static double Place2STime_from_times2(

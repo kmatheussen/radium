@@ -574,6 +574,11 @@ void openCommentDialog(void){
   COMMENTDIALOG_open();
 }
 
+extern LANGSPEC void SONGPROPERTIES_open(void);
+void openSongPropertiesDialog(void){
+  SONGPROPERTIES_open();
+}
+
 void openPreferencesDialog(void){
   PREFERENCES_open();
 }
