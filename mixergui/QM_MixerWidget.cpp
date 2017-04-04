@@ -1469,15 +1469,11 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
     must_accept = true;
   }
     
-  if(_moving_chips.size()>0) {
+  if(_moving_chips.size()>0 && stop_moving_chips(this, pos)) {
 
-    if (stop_moving_chips(this, pos)) {
-
-      printf("       Remake: mousereleaseevent\n");
-      remakeMixerStrips();
-
-    }      
-
+    printf("       Remake: mousereleaseevent\n");
+    remakeMixerStrips();
+    
     must_accept = true;
   }
 
