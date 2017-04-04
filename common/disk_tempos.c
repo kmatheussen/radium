@@ -36,6 +36,7 @@ DC_start("TEMPOS");
 	do{
 		SavePlace(&tempo->l.p);
 		DC_SaveI(tempo->tempo);
+                DC_SaveI(tempo->logtype);
 		tempo=NextTempo(tempo);
 	}while(tempo!=NULL);
 
@@ -56,7 +57,11 @@ void LoadTempos(struct Tempos **to){
 		tempo->Tcounter=DC_LoadU32();
 		tempo->Tdividor=DC_LoadU32();
 		tempo->tempo=DC_LoadI();
-                tempo->logtype=LOGTYPE_HOLD;
+                if (disk_load_version < 0.905)
+                  tempo->logtype=LOGTYPE_HOLD;
+                else
+                  tempo->logtype=DC_LoadI();
+                
 		ListAddElement3_a(to,&tempo->l);
 	}
 
