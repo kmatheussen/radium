@@ -750,26 +750,90 @@ void UpdateAllSTimes(void){
 
 #else // USE_NEW_TIMING
 
+
 /*
-speed = distance / time
-distance = time*speed
-time = distance/speed
+  ;; For x2 >= x1:
+  ;; integrate 1/(t1*((t2/t1)^(x/b))), x from 0 to c
+  ;; https://www.wolframalpha.com/input/?i=integrate+1%2F(t1*((t2%2Ft1)%5E(x%2Fb))),+x+from+0+to+c
 */
+static STime get_stime_from_stimechange_equal_ratio_accelerando(const struct STimeChange *tc, double y){
+  double t1 = tc->x1;
+  double t2 = tc->x2;
+  double b = tc->y2 - tc->y1;
+  double c = y - tc->y1;
+
+  //(b - b (t2/t1)^(-c/b))/(t1 log(t2/t1))
+  double numerator = b - b * pow(t2/t1,-c/b);
+  double denominator = t1 * log(t2/t1);
+
+  return pc->pfreq * 60 * numerator/denominator;
+}
+
+
+
+/*
+  For x1 <= x2:
+  integrate 1/(t1 + (t2 - (t1 * (t2/t1)^((b-x)/b)))), t1>0, t2>0, x from 0 to c
+  (-b Log[t1]+c Log[t2/t1]+b Log[t1+t2-t2 ((t2/t1))^(-c/b)])/((t1+t2) Log[t2/t1])
+*/
+static STime get_stime_from_stimechange_equal_ratio_deaccelerando(const struct STimeChange *tc, double y){
+  double t1 = tc->x1;
+  double t2 = tc->x2;
+  double b = tc->y2 -tc->y1;
+  double c = y - tc->y1;
+
+  double logt2t1 = log(t2/t1);
+
+  /*
+      (/ (+ (- (* b (log t1)))
+            (* c (log (/ t2 t1)))
+            (* b (log (+ t1 t2 (- (* t2 (expt (/ t2 t1) (- (/ c b)))))))))
+         (* (+ t1 t2)
+            (log (/ t2 t1))))))
+  */
+
+  double n1 = -b * log(t1);
+  double n2 = c * logt2t1;
+  double n3 = b * log(t1 + t2 - t2 * pow(t2/t1, -c/b));
+  double numerator   = n1+n2+n3;
+
+  double denominator = (t1+t2) * logt2t1;
+
+  return pc->pfreq * 60 * numerator/denominator;
+  
+}
+
+
+static STime get_stime_from_stimechange_linear(const struct STimeChange *c, double y){
+  const double k = (c->x2-c->x1) / (c->y2-c->y1);
+  const double Tbp = scale_double(y, c->y1, c->y2, c->x1, c->x2);
+
+  return pc->pfreq * 60 * (1.0/k) * log(Tbp/c->x1);
+}
+
 
 static STime get_stime_from_stimechange(const struct STimeChange *c, double y, const bool has_t){
   if (c->x1==c->x2){
     //    if (has_t)
     //   return scale_double(y, c->y1, c->y2, c->t1, c->t2) - c->t1;
 
+    /*
+      speed = distance / time
+      distance = time*speed
+      time = distance/speed
+    */
+
     double distance = y - c->y1;
     double speed = c->x1;
     return pc->pfreq * 60 * distance / speed;
   }
-    
-  const double k = (c->x2-c->x1) / (c->y2-c->y1);
-  const double Tbp = scale_double(y, c->y1, c->y2, c->x1, c->x2);
 
-  return pc->pfreq * 60 * (1.0/k) * log(Tbp/c->x1);
+  if (c->x2>c->x1)
+    return get_stime_from_stimechange_equal_ratio_accelerando(c, y);
+  else
+    return get_stime_from_stimechange_equal_ratio_deaccelerando(c, y);
+  
+  return get_stime_from_stimechange_linear(c, y);
 }
 
 static double Place2STime_from_times2(

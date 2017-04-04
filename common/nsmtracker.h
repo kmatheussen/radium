@@ -1729,7 +1729,7 @@ struct Swing {
 	time.h
 *********************************************************************/
 
-#define USE_NEW_TIMING 0
+#define USE_NEW_TIMING 1
 
 
 #if !USE_NEW_TIMING
