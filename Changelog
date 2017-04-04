@@ -1,3 +1,9 @@
+Changes 4.6.3 -> 4.6.4:
+* Fix popup menu for instrument objects in the modular mixer
+* Song comment window: Change title from "Dialog" to "Song Comment"
+  and don't open the window modally.
+
+
 Changes 4.6.2 -> 4.6.3:
 * Fix removing BPM and LPB entries from the BPM track and LPB track.
 
