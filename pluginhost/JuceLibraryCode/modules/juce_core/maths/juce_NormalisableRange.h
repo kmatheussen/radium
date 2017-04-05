@@ -127,10 +127,10 @@ public:
     {
         if (! symmetricSkew)
         {
-            if (skew != static_cast<ValueType> (1) && proportion > ValueType())
+			if (skew != static_cast<ValueType> (1) && proportion > ValueType())
                 proportion = std::exp (std::log (proportion) / skew);
 
-		return start + (end - start) * proportion;
+			return start + (end - start) * proportion;
         }
 
         ValueType distanceFromMiddle = static_cast<ValueType> (2) * proportion - static_cast<ValueType> (1);
