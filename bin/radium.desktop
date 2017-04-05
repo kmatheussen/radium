@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Application
+Name=Radium
+GenericName=Music editor
+Comment=A graphical music editor. A next generation tracker.
+Exec=radium
+Icon=radium
+Terminal=false
+StartupNotify=false
+Categories=Audio;AudioVideo;AudioEditing;Qt;
