@@ -1158,6 +1158,8 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     unsolo_all = VECTOR_push_back(&v, "Un-solo all");
     mute_all = VECTOR_push_back(&v, "Mute all");
     unmute_all = VECTOR_push_back(&v, "Un-mute all");
+    VECTOR_push_back(&v, "--------");
+    config_color = VECTOR_push_back(&v, "Configure instruments color");
       
   } else if (chips.size() == 1){
 
@@ -1269,7 +1271,17 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
 
   } else if (sel==config_color) {
 
-    QString command = QString("(show-instrument-color-dialog ") + QString::number(CHIP_get_patch(chip_under)->id) + ")";
+    QString command = QString("(show-instrument-color-dialog ") + QString::number(CHIP_get_patch(chip_under)->id);
+
+    vector_t patches = get_selected_patches();
+    VECTOR_FOR_EACH(struct Patch *,patch,&patches){
+      if (patch!=CHIP_get_patch(chip_under))
+        command += " " + QString::number(patch->id);
+    }END_VECTOR_FOR_EACH;
+
+    command += ")";
+    //}Undo_Close();
+
     evalScheme(talloc_strdup(command.toUtf8().constData()));
 
   } else if (sel==instrument_info) {

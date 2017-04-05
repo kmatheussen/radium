@@ -1145,10 +1145,12 @@
                         )                        
 
 
-(define (show-instrument-color-dialog instrument-id)
-  (<ra> :color-dialog (<ra> :get-instrument-color instrument-id)
+(define (show-instrument-color-dialog . instrument-ids)
+  (<ra> :color-dialog (<ra> :get-instrument-color (car instrument-ids))
         (lambda (color)
-          (<ra> :set-instrument-color color instrument-id))))
+          (for-each (lambda (instrument-id)
+                      (<ra> :set-instrument-color color instrument-id))
+                    instrument-ids))))
 
 (define (track-configuration-popup-async X Y)
   (c-display "TRACK " *current-track-num*)
