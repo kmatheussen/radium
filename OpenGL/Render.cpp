@@ -687,21 +687,30 @@ static void create_linenumbers(const struct Tracker_Windows *window, const struc
 struct TempoGraph{
   float line_period;
   int num_points;
-  STime *times;
+  STime *times; // delta values
   float min;
   float max;  
 };
 
-struct TempoGraph *create_TempoGraph(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  struct TempoGraph *tg = (struct TempoGraph*)talloc(sizeof(struct TempoGraph));
-
+struct TempoGraph create_TempoGraph(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+  TempoGraph tg = {}; //(struct TempoGraph*)talloc(sizeof(struct TempoGraph));
+  
+  static int times_size = 0;
+  static STime *times = NULL;
+  
   int TEMPOGRAPH_POINTS_PER_REALLINE = window->fontheight / 2;
-  tg->line_period = window->fontheight / (float)TEMPOGRAPH_POINTS_PER_REALLINE;
-  tg->num_points  = (wblock->num_reallines * TEMPOGRAPH_POINTS_PER_REALLINE) + 1;
-  tg->times       = (STime*)talloc_atomic(tg->num_points*sizeof(STime));
+  tg.line_period = window->fontheight / (float)TEMPOGRAPH_POINTS_PER_REALLINE;
+  tg.num_points  = (wblock->num_reallines * TEMPOGRAPH_POINTS_PER_REALLINE) + 1;
+
+  if (tg.num_points>times_size){
+    times = (STime*)V_realloc(times, tg.num_points*sizeof(STime));
+    times_size = tg.num_points;
+  }
+  tg.times       = times;
 
   STime last_time = -1;
-
+  int pos=0;
+  
   for(int realline = 0 ; realline < wblock->num_reallines ; realline++){
     float fp1=GetfloatFromPlace(&wblock->reallines[realline]->l.p);
     float fp2;
@@ -716,31 +725,49 @@ struct TempoGraph *create_TempoGraph(const struct Tracker_Windows *window, const
       Float2Placement(scale(n,0,TEMPOGRAPH_POINTS_PER_REALLINE,fp1,fp2), &p);
       STime time = Place2STime(wblock->block,&p);
       if(realline>0 || n>0){
-        tg->times[realline*TEMPOGRAPH_POINTS_PER_REALLINE + n - 1] = time-last_time;
-        //printf("Setting %d (of %d)\n",realline*TEMPOGRAPH_POINTS_PER_REALLINE + n - 1, tg->num_points);
+        STime val = time-last_time;
+        if(tg.min<val || pos==0)
+          tg.min = val;
+        if(tg.max>val || pos==0)
+          tg.max = val;
+        
+        tg.times[pos++] = val; //realline*TEMPOGRAPH_POINTS_PER_REALLINE + n - 1] = time-last_time;
+        //printf("Setting %d (of %d)\n",realline*TEMPOGRAPH_POINTS_PER_REALLINE + n - 1, tg.num_points);
       }
       last_time = time;
     }
   }
-  tg->times[tg->num_points-2] = getBlockSTimeLength(wblock->block) - last_time;
-  tg->times[tg->num_points-1] = tg->times[tg->num_points-2];
-  
-
-  tg->min=tg->times[0];
-  tg->max=tg->times[0];
-  for(int n=1;n<tg->num_points;n++){
-    STime time = tg->times[n];
-    if(tg->min<time)
-      tg->min = time;
-    if(tg->max>time)
-      tg->max = time;
+  {
+    STime val = getBlockSTimeLength(wblock->block) - last_time;
+    tg.times[pos++] = val;
+    tg.times[pos++] = val;
+    if(tg.min<val)
+      tg.min = val;
+    if(tg.max>val)
+      tg.max = val;
   }
 
+  R_ASSERT_NON_RELEASE(tg.num_points==pos);
+  
+  tg.num_points = pos;
+  
+  /*
+  tg.min=tg.times[0];
+  tg.max=tg.times[0];
+  for(int n=1;n<tg.num_points;n++){
+    STime time = tg.times[n];
+    if(tg.min<time)
+      tg.min = time;
+    if(tg.max>time)
+      tg.max = time;
+  }
+  */
+  
   return tg;
 }
 
 static void create_tempograph(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  struct TempoGraph *tg = create_TempoGraph(window,wblock);
+  const TempoGraph tg = create_TempoGraph(window,wblock);
 
   float width = 1.3;
 
@@ -748,7 +775,7 @@ static void create_tempograph(const struct Tracker_Windows *window, const struct
 
   GE_Context *c = NULL;
     
-  if(fabs(tg->min - tg->max)<20) {
+  if(fabs(tg.min - tg.max)<20) {
     float middle = (wblock->tempocolorarea.x+wblock->tempocolorarea.x2) / 2.0f;
     float y1 = get_realline_y1(window, 0);
     c = c!=NULL ? GE_y(c, y1) : GE_color(TEMPOGRAPH_COLOR_NUM, y1);
@@ -757,13 +784,13 @@ static void create_tempograph(const struct Tracker_Windows *window, const struct
             middle, get_realline_y2(window, wblock->num_reallines-1),
             width);
   }else{
-    for(int n=0;n<tg->num_points-1;n++){
-      float y1 = n * tg->line_period;
-      float y2 = (n+1) * tg->line_period;
+    for(int n=0;n<tg.num_points-1;n++){
+      float y1 = n * tg.line_period;
+      float y2 = (n+1) * tg.line_period;
       c = c!=NULL ? GE_y(c, y1) : GE_color(TEMPOGRAPH_COLOR_NUM, y1);
       GE_line(c, 
-              scale(tg->times[n],tg->min,tg->max,wblock->tempocolorarea.x,wblock->tempocolorarea.x2), y1,
-              scale(tg->times[n+1],tg->min,tg->max,wblock->tempocolorarea.x,wblock->tempocolorarea.x2), y2,
+              scale(tg.times[n],   tg.min, tg.max, wblock->tempocolorarea.x, wblock->tempocolorarea.x2), y1,
+              scale(tg.times[n+1], tg.min, tg.max, wblock->tempocolorarea.x, wblock->tempocolorarea.x2), y2,
               width);
     }
   }

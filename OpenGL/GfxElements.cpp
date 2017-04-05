@@ -340,7 +340,7 @@ static GradientTriangles *get_gradient_triangles(GradientType::Type type){
     
 
 struct _GE_Context : public vl::Object{
-  std::map< int, std::vector<vl::dvec2> > lines; // lines, boxes and polylines
+  //std::map< int, std::vector<vl::dvec2> > lines; // lines, boxes and polylines
   std::vector< vl::dvec2 > boxes; // filled boxes
 
 #if USE_TRIANGLE_STRIPS
@@ -666,6 +666,7 @@ void GE_draw_vl(T2_data *t2_data){
         // 3. Polylines
         // 4. Boxes
         // 5. Lines
+        /*
         for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
         
           const GE_Context *c = iterator.value().get();
@@ -686,7 +687,8 @@ void GE_draw_vl(T2_data *t2_data){
           if(has_set_color==true)
             setColorEnd(vg, c);
         }
-
+        */
+        
         // 6. Text
         for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
         
@@ -1046,6 +1048,7 @@ void GE_filledBox(GE_Context *c, float x1, float y1, float x2, float y2){
   c->boxes.push_back(vl::dvec2(x2,c->y(y1)));
 }
 
+/*
 void GE_polyline(GE_Context *c, int num_points, const APoint *points, float pen_width){
   if(num_points>0) {
     int key = get_key_from_pen_width(pen_width);
@@ -1059,6 +1062,7 @@ void GE_polyline(GE_Context *c, int num_points, const APoint *points, float pen_
     c->lines[key].push_back(vl::dvec2(points[0].x, c->y(points[0].y)));
   }
 }
+*/
 
 void GE_trianglestrip(GE_Context *c, int num_points, const APoint *points){
   if(num_points>0){
