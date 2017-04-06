@@ -265,7 +265,7 @@ static inline int64_t scale_int64(int64_t x, int64_t x1, int64_t x2, int64_t y1,
 
 static inline double scale_double(double x, double x1, double x2, double y1, double y2){
 #if !defined(RELEASE)
-  R_ASSERT(x2!=x1);
+  R_ASSERT_RETURN_IF_FALSE2(x2!=x1,(y1+y2)/2);
 #endif
   return y1 + ( ((x-x1)*(y2-y1))
                 /
@@ -275,7 +275,7 @@ static inline double scale_double(double x, double x1, double x2, double y1, dou
 
 static inline float scale(float x, float x1, float x2, float y1, float y2){
 #if !defined(RELEASE)
-  R_ASSERT(x2!=x1);
+  R_ASSERT_RETURN_IF_FALSE2(x2!=x1,(y1+y2)/2);
 #endif
   return y1 + ( ((x-x1)*(y2-y1))
                 /

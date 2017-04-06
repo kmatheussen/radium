@@ -1477,14 +1477,20 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     //setMaximumHeight(height);
   }
 
+  void legalize_start_end_times(void){
+    if (_start_time < 0)
+      _start_time = 0;
+    if (_end_time < _start_time+10)
+      _end_time = _start_time+10;
+  }
+  
   void my_update(void){
     int64_t visible_song_length = MIXER_get_sample_rate() * SONG_get_gfx_length();
     if (_end_time > visible_song_length) {
       _end_time = visible_song_length;
       if (_start_time >= _end_time)
         _start_time = 0;
-      if (_start_time >= _end_time)
-        _end_time = 10;
+      legalize_start_end_times();
     }
     
     _timeline_widget.update();
@@ -1689,6 +1695,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
         if (_start_time < 0){
           _end_time -= _start_time;
           _start_time = 0;
+          legalize_start_end_times();
         }
         update();
         _was_playing_smooth_song = false;
@@ -1871,9 +1878,8 @@ void SEQUENCER_set_visible_start_and_end_time(int64_t start_time, int64_t end_ti
   g_sequencer_widget->_start_time = R_MAX(start_time, 0);
   g_sequencer_widget->_end_time = R_MIN(end_time, SONG_get_gfx_length() * MIXER_get_sample_rate());
 
-  if (g_sequencer_widget->_start_time >= g_sequencer_widget->_end_time - 10)
-    g_sequencer_widget->_start_time = R_MAX(g_sequencer_widget->_end_time - 10, 0);
-    
+  g_sequencer_widget->legalize_start_end_times();
+          
   g_sequencer_widget->my_update();
 }
 
@@ -1881,6 +1887,9 @@ void SEQUENCER_set_visible_start_time(int64_t val){
   R_ASSERT_RETURN_IF_FALSE(val < g_sequencer_widget->_end_time);
 
   g_sequencer_widget->_start_time = R_MAX(val, 0);
+
+  g_sequencer_widget->legalize_start_end_times();
+
   g_sequencer_widget->my_update();
 }
 
@@ -1888,6 +1897,9 @@ void SEQUENCER_set_visible_end_time(int64_t val){
   R_ASSERT_RETURN_IF_FALSE(val > g_sequencer_widget->_start_time);
   
   g_sequencer_widget->_end_time = R_MIN(val, SONG_get_gfx_length() * MIXER_get_sample_rate());
+
+  g_sequencer_widget->legalize_start_end_times();
+    
   g_sequencer_widget->my_update();
 }
 
