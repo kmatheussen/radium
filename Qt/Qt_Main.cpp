@@ -1784,7 +1784,9 @@ static void add_mixer_strip(QSplitter *xsplitter){
   
 //extern void updateAllFonts(QWidget *widget);
 
-static bool load_new_song=true;
+static bool g_load_new_song=true;
+static char *g_songfile_from_commandline = NULL;
+static QString g_startup_path;
 
 extern void TIME_init(void);
 extern void UPDATECHECKER_doit(void);
@@ -2046,8 +2048,20 @@ int radium_main(char *arg){
   //QFontDatabase::addApplicationFont("/gammelhd/usr/share/fonts/liberation/LiberationMono-Regular.ttf");
 
   ResetUndo();
-  if(load_new_song==true)
-    NewSong_CurrPos(window);
+  if(g_load_new_song==true){
+    if (g_songfile_from_commandline != NULL) {
+      
+      QFileInfo info(g_songfile_from_commandline);
+      QString filename = g_songfile_from_commandline;
+      if (!info.isAbsolute())
+        filename = g_startup_path + OS_get_directory_separator() + filename;
+      
+      if (LoadSong_CurrPos(window, STRING_create(filename))==false)
+        NewSong_CurrPos(window);
+      
+    }else
+      NewSong_CurrPos(window);
+  }
 
   //updateAllFonts(QApplication::mainWidget());
 
@@ -2654,7 +2668,8 @@ int main(int argc, char **argv){
 #endif
   
   g_qapplication = qapplication;
-
+  g_startup_path = QDir::currentPath();
+  
   OS_set_argv0(argv[0]);
 
   R_ASSERT(THREADING_is_main_thread());
@@ -2700,8 +2715,12 @@ int main(int argc, char **argv){
   }
 #endif
 
-  if(argc>1 && !strcmp(argv[1],"--dont-load-new-song"))
-    load_new_song=false;
+  if(argc>1){
+    if (!strcmp(argv[1],"--dont-load-new-song"))
+      g_load_new_song=false;
+    else
+      g_songfile_from_commandline = strdup(argv[1]);
+  }
 
 #if defined(IS_LINUX_BINARY)
 #if 0  
