@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "disk.h"
 #include "disk_placement_proc.h"
 #include "placement_proc.h"
+#include "visual_proc.h"
 
 #include "disk_temponodes_proc.h"
 
@@ -53,6 +54,27 @@ DC_start("RELTEMPO");
 DC_end();
 }
 
+static void checkTempoNodeCompatibility(struct TempoNodes *temponodes){
+  double prev = temponodes->reltempo;
+
+  temponodes = NextTempoNode(temponodes);
+
+  while(temponodes != NULL){
+    if(temponodes->reltempo != prev){
+      GFX_Message(NULL,
+                  "Detected loading an older song that uses accelerando or ritardando.\n\n"
+                  "Earlier versions of Radium calculated accelerando and ritardando differently.\n\n"
+                  "You might need to adjust tempos manually here and there to ensure sample loops align properly, and so forth.\n"
+                  );
+      return;
+    }
+
+    prev = temponodes->reltempo;
+    
+    temponodes = NextTempoNode(temponodes);
+  }
+  
+}
 
 void LoadTempoNodes(struct TempoNodes **to){
 
@@ -83,6 +105,9 @@ void LoadTempoNodes(struct TempoNodes **to){
 		}
 	}
 
+        if (disk_load_version < 0.915)
+          checkTempoNodeCompatibility(*to);
+        
 error:
 	return;
 }
