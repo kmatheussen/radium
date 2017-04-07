@@ -2,10 +2,13 @@
 Encoding=UTF-8
 Type=Application
 Name=Radium
-GenericName=Music editor
+GenericName=Music tracker
 Comment=A graphical music editor. A next generation tracker.
-Exec=radium
+Exec=radium %f
 Icon=radium
 Terminal=false
 StartupNotify=false
-Categories=Audio;AudioVideo;AudioEditing;Qt;
+Categories=Audio;AudioVideo;AudioVideoEditing;Qt;Midi;Sequencer;Music;
+MimeType=application/x-radium-rad;
+# Only .rad file(s) via argument supported
+#MimeType=application/x-radium-rad;application/x-radium-mmd;application/x-radium-mmd2;application/x-radium-mmd3;application/x-radium-mod;application/x-radium-xm;audio/x-midi;

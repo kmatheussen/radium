@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+	<mime-type type="application/x-radium-rad">
+		<comment>Radium song file</comment>
+		<glob pattern="*.rad"/>
+	</mime-type>
+	<!-- Only .rad supported via xdg-open
+	<mime-type type="application/x-radium-mmd">
+		<comment>Med MoDule v2.1</comment>
+		<glob pattern="*.mmd"/>
+	</mime-type>
+	<mime-type type="application/x-radium-mmd2">
+		<comment>Med MoDule Pro</comment>
+		<glob pattern="*.mmd2"/>
+	</mime-type>
+	<mime-type type="application/x-radium-mmd3">
+		<comment>Med MoDule Pro v5</comment>
+		<glob pattern="*.mmd3"/>
+	</mime-type>
+	<mime-type type="application/x-radium-mod">
+		<comment>Amiga Module</comment>
+		<glob pattern="*.mod"/>
+	</mime-type>
+	<mime-type type="application/x-radium-xm">
+		<comment>Extended Module</comment>
+		<glob pattern="*.xm"/>
+	</mime-type>
+	-->
+</mime-info>
+
