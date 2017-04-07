@@ -119,10 +119,12 @@ static void stop_pause(struct Tracker_Windows *window, bool force_play_block){
   Place *place = &wblock->reallines[realline]->l.p;
     
   if (g_was_playing) {
-    if (force_play_block || g_playtype==PLAYBLOCK)
+    if (force_play_block)
       PlayBlockCurrPos2(window, place);
     else if (g_was_playing_range)
       PlayRangeCurrPos2(window, place);
+    else if (g_playtype==PLAYBLOCK)
+      PlayBlockCurrPos2(window, place);
     else if (g_playtype==PLAYSONG)
       PlaySong(g_pause_song_abstime);
   }
