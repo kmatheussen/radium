@@ -975,30 +975,46 @@ static dyn_t get_timings_from_scheme(const struct Blocks *block, int bpm, int lp
                                                        );
 }
 
-void UpdateSTimes2(struct Blocks *block, int default_bpm, int default_lpb){
 
-  dyn_t timings = get_timings_from_scheme(block, default_bpm, default_lpb);
-  R_ASSERT_RETURN_IF_FALSE(timings.type==ARRAY_TYPE);
-
-  const struct STimeChange *time_changes = create_time_changes_from_scheme_data(timings.array);
-  //const struct STimeChange **tchanges = create_tchanges_from_time_changes(time_changes, block->num_lines, timings.array->num_elements);
-  const struct STimes *times = create_stimes_from_tchanges(block->num_lines, time_changes, timings.array->num_elements);
-
+static void ApplySTimes(struct Blocks **blocks, const struct STimes **stimess, int num_blocks){
   PC_Pause();{
-    block->times = times;
-    block->num_time_lines = block->num_lines;
-    //block->tchanges = tchanges;
+    for(int i=0;i<num_blocks;i++){
+      if (stimess[i] != NULL){
+        struct Blocks *block = blocks[i];
+        block->times = stimess[i];
+        block->num_time_lines = block->num_lines;
+      }
+    }
 
     PLAYER_lock();{
       ALL_SEQTRACKS_FOR_EACH(){
         RT_legalize_seqtrack_timing(seqtrack);
       }END_ALL_SEQTRACKS_FOR_EACH;
     }PLAYER_unlock();
-    
+
     SEQUENCER_update();
     BS_UpdatePlayList();
-
+    
   }PC_StopPause(NULL);
+}
+
+static const struct STimes *create_stimes_from_block(struct Blocks *block, int default_bpm, int default_lpb){
+  dyn_t timings = get_timings_from_scheme(block, default_bpm, default_lpb);
+  R_ASSERT_RETURN_IF_FALSE2(timings.type==ARRAY_TYPE, NULL);
+
+  const struct STimeChange *time_changes = create_time_changes_from_scheme_data(timings.array);
+  //const struct STimeChange **tchanges = create_tchanges_from_time_changes(time_changes, block->num_lines, timings.array->num_elements);
+  const struct STimes *times = create_stimes_from_tchanges(block->num_lines, time_changes, timings.array->num_elements);
+
+  return times;
+}
+
+void UpdateSTimes2(struct Blocks *block, int default_bpm, int default_lpb){
+  const struct STimes *stimes = create_stimes_from_block(block, default_bpm, default_lpb);
+  struct Blocks *blocks[1] = {block};
+  const struct STimes *stimess[1] = {stimes};
+
+  ApplySTimes(blocks, stimess, 1);
 }
 
 void UpdateSTimes(struct Blocks *block){
@@ -1006,12 +1022,22 @@ void UpdateSTimes(struct Blocks *block){
 }
 
 void UpdateAllSTimes(void){
+  int num_blocks = ListFindNumElements1(&root->song->blocks->l);
+
+  struct Blocks *blocks[num_blocks];
+  const struct STimes *stimess[num_blocks];
+
+  int i = 0;
   struct Blocks *block=root->song->blocks;
 
   while(block!=NULL){
-    UpdateSTimes(block);
+    blocks[i] = block;
+    stimess[i] = create_stimes_from_block(block, root->tempo, root->lpb);
     block=NextBlock(block);
+    i++;
   }
+
+  ApplySTimes(blocks, stimess, num_blocks);
 }
 
 
