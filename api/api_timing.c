@@ -131,7 +131,7 @@ void setMainLPB(int lpb_value){
   printf("Undo MainTempo lpb: %d\n",lpb_value);
   ADD_UNDO(MainTempo(window,wblock));
 
-  PC_Pause();{
+  PC_Pause();{ // Pause player so that beats and stimes are not out of sync while playing.
     root->lpb=lpb_value;
     UpdateAllSTimes();
     UpdateAllBeats();
@@ -237,11 +237,9 @@ void setMainBPM(int bpm_value){
   
   ADD_UNDO(MainTempo(window,wblock));
 
-  PC_Pause();{
-    root->tempo=bpm_value;
-    UpdateAllSTimes();
-    R_ASSERT(wblock->block->beats != NULL);
-  }PC_StopPause(window);
+  root->tempo=bpm_value;
+  UpdateAllSTimes();
+  R_ASSERT(wblock->block->beats != NULL);
 
   window->must_redraw = true;
 }
