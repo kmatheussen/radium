@@ -326,6 +326,7 @@ public slots:
   }
 
   void on_post_silence_spin_editingFinished(){
+    post_silence_spin->clearFocus();
     set_editor_focus();
   }
 
