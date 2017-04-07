@@ -9,7 +9,7 @@ unset CPPFLAGS
 unset LDFLAGS
 unset CXXFLAGS
 
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC"
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -Wno-misleading-indentation -fPIC"
 export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC"
 export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC"
 
@@ -148,7 +148,7 @@ cd ..
 
 
 # faust, debug
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC"
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -Wno-misleading-indentation -fPIC"
 export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC"
 export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC"
 export LDFLAGS="-fsanitize=address"
@@ -159,7 +159,7 @@ make clean
 cd ..
 
 #faust, release
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC"
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -Wno-misleading-indentation -fPIC"
 export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC"
 export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC"
 export LDFLAGS=""
