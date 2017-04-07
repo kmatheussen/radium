@@ -1118,9 +1118,8 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   if(chip_under==NULL)
     return false;
 
-  QVector<Chip*> chips = get_selected_chips();
-
-  if (chips.size()==0)
+  const vector_t patches = get_selected_patches();
+  if (patches.num_elements==0)
     return false;
   
   vector_t v = {};
@@ -1141,8 +1140,23 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int unsolo_all = -1;
   int mute_all = -1;
   int unmute_all = -1;
+
+  bool has_sampler_instrument = false;
+  VECTOR_FOR_EACH(struct Patch *,patch,&patches){
+    struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    if (QString("Sample Player") == plugin->type->type_name){
+      has_sampler_instrument = true;
+      break;
+    }
+  }END_VECTOR_FOR_EACH;
   
-  if (chips.size() > 1) {
+  if (patches.num_elements > 1) {
+
+    if (has_sampler_instrument)
+      random = VECTOR_push_back(&v, "Load random samples from folders (Left Shift + R)");
+    else
+      random = VECTOR_push_back(&v, "[disabled]Load random sample from folders (Left Shift + R)");
+    VECTOR_push_back(&v, "--------");
     
     copy = VECTOR_push_back(&v, "Copy sound objects");
     cut = VECTOR_push_back(&v, "Cut sound objects");
@@ -1161,13 +1175,13 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     VECTOR_push_back(&v, "--------");
     config_color = VECTOR_push_back(&v, "Configure instruments color");
       
-  } else if (chips.size() == 1){
+  } else { // i.e. if (patches.num_elements == 1){
 
     struct Patch *patch = CHIP_get_patch(chip_under);
     struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
     
     if (QString("Sample Player") == SP_get_plugin(chip_under->_sound_producer)->type->type_name){
-      random = VECTOR_push_back(&v, "Load random sample from folder");
+      random = VECTOR_push_back(&v, "Load random sample from folder (Left Shift + R)");
       VECTOR_push_back(&v, "--------");
     }
 
@@ -1225,19 +1239,19 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
   } else if (sel==solo) {
 
-    MW_solo(get_selected_patches(), true);
+    MW_solo(patches, true);
     
   } else if (sel==unsolo) {
 
-    MW_solo(get_selected_patches(), false);
+    MW_solo(patches, false);
     
   } else if (sel==mute) {
 
-    MW_mute(get_selected_patches(), true);
+    MW_mute(patches, true);
     
   } else if (sel==unmute) {
 
-    MW_mute(get_selected_patches(), false);
+    MW_mute(patches, false);
     
   } else if (sel==unsolo_all) {
 
@@ -1265,15 +1279,12 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
   } else if (sel==save) {
     
-    vector_t patches = get_selected_patches();
-
     PRESET_save(&patches, false);
 
   } else if (sel==config_color) {
 
     QString command = QString("(show-instrument-color-dialog ") + QString::number(CHIP_get_patch(chip_under)->id);
 
-    vector_t patches = get_selected_patches();
     VECTOR_FOR_EACH(struct Patch *,patch,&patches){
       if (patch!=CHIP_get_patch(chip_under))
         command += " " + QString::number(patch->id);
@@ -1290,8 +1301,8 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
 
   } else if (sel==random) {
 
-    SAMPLER_set_random_sample(SP_get_plugin(chip_under->_sound_producer), NULL);
-    
+    setRandomSampleForAllSelectedInstruments();
+  
   } else {
     
     R_ASSERT(false);

@@ -256,7 +256,7 @@ static void apply_patchvoice_state(struct PatchVoice *voice, hash_t *state){
   voice->time_format = (TimeFormat)HASH_get_int(state, "time_format");
 }
                                                 
-hash_t *PATCH_get_state(struct Patch *patch){
+hash_t *PATCH_get_state(const struct Patch *patch){
   hash_t *state = HASH_create(5);
 
   HASH_put_int(state, "___radium_patch_state_v3", 1);
@@ -285,7 +285,7 @@ hash_t *PATCH_get_state(struct Patch *patch){
   return state;
 }
 
-hash_t *PATCHES_get_state(vector_t *patches, bool put_in_array){
+hash_t *PATCHES_get_state(const vector_t *patches, bool put_in_array){
   if (patches==NULL)
     patches = &get_audio_instrument()->patches;
 

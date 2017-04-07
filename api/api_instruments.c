@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo.h"
 #include "../common/undo_tracks_proc.h"
 #include "../common/gfx_wtrackheaders_proc.h"
+#include "../audio/undo_plugin_state_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
 
@@ -405,15 +406,44 @@ void setInstrumentSample(int64_t instrument_id, char *filename){
     return;
   }
 
-  if (strcmp(plugin->type->name, "Sample Player")) {
+  if (strcmp(plugin->type->type_name, "Sample Player")) {
     handleError("instrument %d is not a Sample Player", instrument_id);
     return;
   }
 
-
+  ADD_UNDO(PluginState_CurrPos(patch));
+  
   SAMPLER_set_new_sample(plugin, STRING_create(filename), -1);
 }
 
+void setRandomInstrumentSample(int64_t instrument_id, char *path){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return;
+  }
+
+  if (strcmp(plugin->type->type_name, "Sample Player")) {
+    handleError("instrument %d is not a Sample Player", instrument_id);
+    return;
+  }
+
+  if (path==NULL || path[0]==0)
+    path = NULL;
+
+  ADD_UNDO(PluginState_CurrPos(patch));
+  
+  SAMPLER_set_random_sample(plugin, path==NULL ? NULL : STRING_create(path));
+}
+
+void setRandomSampleForAllSelectedInstruments(void){
+  evalScheme("(set-random-sample-for-all-selected-sampler-instruments)");
+}
+  
 void setInstrumentLoopData(int64_t instrument_id, int start, int length){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -425,7 +455,7 @@ void setInstrumentLoopData(int64_t instrument_id, int start, int length){
     return;
   }
 
-  if (strcmp(plugin->type->name, "Sample Player")) {
+  if (strcmp(plugin->type->type_name, "Sample Player")) {
     handleError("instrument %d is not a Sample Player", instrument_id);
     return;
   }
@@ -560,7 +590,7 @@ void setInstrumentEffect(int64_t instrument_id, const char *effect_name, float v
   }
 
   /*
-  if (strcmp(plugin->type->name, "Sample Player")) {
+  if (strcmp(plugin->type->type_name, "Sample Player")) {
     handleError("instrument %d is not a Sample Player plugin", instrument_id);
     return;
   }
@@ -780,6 +810,56 @@ void autopositionInstrument(int64_t instrument_id){
     return;
   
   CHIP_autopos(patch);
+}
+
+const_char* getInstrumentTypeName(int64_t instrument_id){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return "";
+
+  if (patch->instrument==get_MIDI_instrument())
+    return "MIDI";
+
+  struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  return plugin->type->type_name;
+}
+
+const_char* getInstrumentPluginName(int64_t instrument_id){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return "";
+
+  if (patch->instrument==get_MIDI_instrument())
+    return "MIDI";
+
+  struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  return plugin->type->name;
+}
+
+const_char* getInstrumentInfo(int64_t instrument_id){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return "";
+
+  if (patch->instrument==get_MIDI_instrument())
+    return "A MIDI instrument";
+
+  struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  if (plugin->type->info)
+    return plugin->type->info;
+
+  return "";
+}
+
+dyn_t getSelectedInstruments(void){
+  dynvec_t ret = {0};
+  vector_t patches = MW_get_selected_patches();
+
+  VECTOR_FOR_EACH(struct Patch *patch,&patches){
+    DYNVEC_push_back(&ret, DYN_create_int(patch->id));
+  }END_VECTOR_FOR_EACH;
+
+  return DYN_create_array(ret);
 }
 
 int numSelectedInstruments(void){

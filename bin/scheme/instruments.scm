@@ -379,6 +379,13 @@
 
 
 
+(define (set-random-sample-for-all-selected-sampler-instruments)
+  (undo-block (lambda ()
+                (for-each (lambda (id-instrument)
+                            (if (string=? "Sample Player" (<ra> :get-instrument-type-name id-instrument))
+                                (<ra> :set-random-instrument-sample id-instrument)))
+                          (<ra> :get-selected-instruments)))))
+
 
 
 

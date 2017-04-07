@@ -25,17 +25,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../Qt/Qt_instruments_proc.h"
 
-#include "undo_audio_effect_proc.h"
+#include "undo_plugin_state_proc.h"
 
 
 extern struct Root *root;
 
-struct Undo_Sample{
+struct Undo_PluginState{
   struct Patch *patch;
   hash_t *state;
 };
 
-static void *Undo_Do_Sample(
+static void *Undo_Do_PluginState(
                                  struct Tracker_Windows *window,
                                  struct WBlocks *wblock,
                                  struct WTracks *wtrack,
@@ -43,13 +43,13 @@ static void *Undo_Do_Sample(
                                  void *pointer
                                  );
 
-static void Undo_Sample(
+static void Undo_PluginState(
                              struct Tracker_Windows *window,
                              struct WBlocks *wblock,
                              struct Patch *patch
                              )
 {
-  struct Undo_Sample *undo_ae=talloc(sizeof(struct Undo_Sample));
+  struct Undo_PluginState *undo_ae=talloc(sizeof(struct Undo_PluginState));
   SoundPlugin *plugin = patch->patchdata;
   
   undo_ae->patch = patch;
@@ -63,18 +63,18 @@ static void Undo_Sample(
                              wblock->wtrack->l.num,
                              wblock->curr_realline,
                              undo_ae,
-                             Undo_Do_Sample,
-                             talloc_format("Sample %s",patch->name)
+                             Undo_Do_PluginState,
+                             talloc_format("PluginState %s",patch->name)
                              );
 }
 
-void ADD_UNDO_FUNC(Sample_CurrPos(struct Patch *patch)){
+void ADD_UNDO_FUNC(PluginState_CurrPos(struct Patch *patch)){
   struct Tracker_Windows *window = root->song->tracker_windows;
 
-  Undo_Sample(window,window->wblock, patch);
+  Undo_PluginState(window,window->wblock, patch);
 }
 
-static void *Undo_Do_Sample(
+static void *Undo_Do_PluginState(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -82,7 +82,7 @@ static void *Undo_Do_Sample(
 	void *pointer
 ){
 
-  struct Undo_Sample *undo_ae=pointer;
+  struct Undo_PluginState *undo_ae=pointer;
   SoundPlugin *plugin = undo_ae->patch->patchdata;
 
   hash_t *new_state = HASH_create(3);

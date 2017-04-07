@@ -267,7 +267,7 @@ bool PRESET_has_copy(void){
 /************** SAVE ********************/
 /****************************************/
 
-hash_t *get_preset_state(vector_t *patches){
+hash_t *get_preset_state(const vector_t *patches){
   bool is_multipreset = patches->num_elements > 1;
 
   hash_t *state;
@@ -296,7 +296,7 @@ hash_t *get_preset_state(vector_t *patches){
   return state;
 }
 
-static bool valid_patches(vector_t *patches){
+static bool valid_patches(const vector_t *patches){
   VECTOR_FOR_EACH(struct Patch*, patch, patches){
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
     if (!strcmp(plugin->type->type_name,"Bus")){
@@ -322,7 +322,7 @@ void PRESET_copy(vector_t *patches){
   g_preset_clipboard = get_preset_state(patches);
 }
   
-void PRESET_save(vector_t *patches, bool save_button_pressed){  // "save_button_pressed is the "Save" button in the instrument window.
+void PRESET_save(const vector_t *patches, bool save_button_pressed){  // "save_button_pressed is the "Save" button in the instrument window.
 
   if(patches->num_elements==0){
     GFX_Message(NULL, "No instruments selected");
