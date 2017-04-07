@@ -1146,6 +1146,11 @@ static bool maybe_got_key_window(QWidget *window){
 #endif
 }
 
+bool OS_GFX_main_window_has_focus(void){
+  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  return maybe_got_key_window(main_window);
+}
+  
 bool a_radium_window_has_focus(void){
   if(ATOMIC_GET(is_starting_up)==true)
     return false;

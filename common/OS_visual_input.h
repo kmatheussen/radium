@@ -127,7 +127,8 @@ extern LANGSPEC void GFX_update_all_instrument_widgets(void);
 extern LANGSPEC void GFX_PP_Update(struct Patch *patch, bool is_loading);
 
 extern LANGSPEC void *OS_GFX_get_native_main_window(void);
-  
+extern LANGSPEC bool OS_GFX_main_window_has_focus(void);
+
 extern LANGSPEC void OS_VST_config(struct Tracker_Windows *window);
 
 extern LANGSPEC void MIDILEARN_PREFS_open(void);
