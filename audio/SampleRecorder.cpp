@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Sampler_plugin_proc.h"
 #include "Mixer_proc.h"
-#include "undo_sample_proc.h"
+#include "undo_plugin_state_proc.h"
 #include "Juce_plugins_proc.h"
 
 #include "SampleRecorder_proc.h"
@@ -442,7 +442,7 @@ void SampleRecorder_called_regularly(void){
       SAMPLER_erase_recorded_peaks(plugin);
       
       if (recorded_file->sndfile != NULL) {
-        ADD_UNDO(Sample_CurrPos(recorded_file->patch));
+        ADD_UNDO(PluginState_CurrPos(recorded_file->patch));
     
         SAMPLER_set_new_sample(plugin,
                                STRING_create(recorded_file->filename),

@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Sampler_plugin_proc.h"
 #include "../audio/FluidSynth_plugin_proc.h"
 #include "../audio/SoundFonts_proc.h"
-#include "../audio/undo_sample_proc.h"
+#include "../audio/undo_plugin_state_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/playerclass.h"
 
@@ -526,7 +526,7 @@ class Sample_requester_widget : public QWidget
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
-    ADD_UNDO(Sample_CurrPos(_patch));
+    ADD_UNDO(PluginState_CurrPos(_patch));
 
     bool successfully_selected;
 
@@ -601,7 +601,7 @@ class Sample_requester_widget : public QWidget
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
-    ADD_UNDO(Sample_CurrPos(_patch));
+    ADD_UNDO(PluginState_CurrPos(_patch));
 
     if(SAMPLER_set_new_sample(plugin,STRING_create(filename),file_list->currentRow()-1)==true){
       if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED){
