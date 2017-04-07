@@ -692,6 +692,7 @@ public slots:
 
   void on_random_button_clicked(bool){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    ADD_UNDO(PluginState_CurrPos(_patch));
     SAMPLER_set_random_sample(plugin, STRING_create(_dir.absolutePath()));
   }
   
