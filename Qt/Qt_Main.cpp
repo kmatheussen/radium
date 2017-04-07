@@ -531,7 +531,7 @@ protected:
 
       bool must_return_true = false;
       
-      if (modifier==EVENT_ALT_L){
+      if (modifier==EVENT_ALT_L && OS_GFX_main_window_has_focus()){
         if (is_key_press){
           last_key_was_lalt = true;
         }else {
