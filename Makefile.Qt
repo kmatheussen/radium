@@ -81,7 +81,7 @@ S7OPTS ?=
 
 WHICHFAUST = $(shell pwd)/bin/packages/faust2/compiler/faust
 # The include files in audio/faudiostream are copied from Faust 0.9.55.
-FAUST = $(WHICHFAUST) -Wno-misleading-indentation -I $(shell pwd)/bin/packages/faust2/architecture  #`which faust` #/usr/bin/faust #~/site/bin/faust
+FAUST = $(WHICHFAUST) -Wno-error=misleading-indentation -I $(shell pwd)/bin/packages/faust2/architecture  #`which faust` #/usr/bin/faust #~/site/bin/faust
 
 LLVM_OPTS ?=
 
@@ -220,7 +220,7 @@ endif
 # -Wunused-parameter
 
 # OPT is C flags
-OPT=$(COMMONOPT) -Wstrict-prototypes -Wno-misleading-indentation -std=gnu99
+OPT=$(COMMONOPT) -Wstrict-prototypes -Wno-error=misleading-indentation -std=gnu99
 # -D_FORTIFY_SOURCE=2 -O2
 
 CPUOPT ?=
@@ -233,7 +233,7 @@ endif
 # -pg
 
 # CPPOPT is CPP flags
-CPPOPT = $(COMMONOPT) -Wno-unused-function -Wno-misleading-indentation -std=gnu++11 -DNDEBUG # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
+CPPOPT = $(COMMONOPT) -Wno-unused-function -Wno-error=misleading-indentation -std=gnu++11 -DNDEBUG # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
 
 # Can't be enabled because of 3rd party header files:
 #-Wsuggest-override
