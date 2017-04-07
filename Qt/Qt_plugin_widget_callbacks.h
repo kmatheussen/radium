@@ -822,7 +822,7 @@ public slots:
     void on_interpolation_type_currentIndexChanged( int val){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       printf("Setting resampler type to %d\n",val);
-      SAMPLER_set_resampler_type(plugin, val);
+      SAMPLER_set_resampler_type(plugin, (enum ResamplerType)val);
     }
 
   void on_fxbp_button_clicked(){

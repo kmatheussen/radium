@@ -144,6 +144,8 @@ bool SOUNDFILESAVER_save(const wchar_t *filename, enum SOUNDFILESAVER_what what_
 
   PlayStop();
 
+  //SAMPLER_set_resampler_type
+    
   {
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
     

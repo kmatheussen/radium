@@ -1168,6 +1168,14 @@ struct FX{
 extern DEFINE_ATOMIC(bool, g_enable_autobypass);
 extern DEFINE_ATOMIC(int, g_autobypass_delay);
 
+// These numbers are saved to disk, so they can not be changed later.
+enum ResamplerType {
+  RESAMPLER_NON=0,
+  RESAMPLER_LINEAR=1,
+  RESAMPLER_CUBIC=2,
+  RESAMPLER_SINC1=3,
+  RESAMPLER_SINC2=4
+};
 
 // These constants are not only used internally, but they are also saved to disk.
 enum{

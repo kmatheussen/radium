@@ -27,13 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   #include <stdio.h>
   #include <samplerate.h>
 
-  enum{
-    RESAMPLER_NON=0,
-    RESAMPLER_LINEAR=1,
-    RESAMPLER_CUBIC=2,
-    RESAMPLER_SINC1=3,
-    RESAMPLER_SINC2=4
-  };
 
   struct Root{
     bool editonoff;
@@ -159,10 +152,24 @@ struct SincResampler : public Resampler{
   SRC_STATE *_src_state;
   double _last_ratio;
 
-  SincResampler(src_callback_t callback, int num_channels, void *arg, int type){
-    //_src_state = src_callback_new(callback, SRC_SINC_FASTEST, num_channels, NULL, arg);
-    const static int typemap[]={SRC_ZERO_ORDER_HOLD,SRC_LINEAR,-1,SRC_SINC_FASTEST,SRC_SINC_BEST_QUALITY};
-    _src_state = src_callback_new(callback, typemap[type], num_channels, NULL, arg);
+  SincResampler(src_callback_t callback, int num_channels, void *arg, enum ResamplerType type){
+    //_src_state = src_callback_new(callback, SRC_SINC_FASTEST, num_channels, NULL, arg);    
+    //const static int typemap[]={,SRC_LINEAR,-1,SRC_SINC_FASTEST,SRC_SINC_BEST_QUALITY};
+    
+    int t = SRC_SINC_FASTEST;
+    
+    if (type==RESAMPLER_NON)
+      t = SRC_ZERO_ORDER_HOLD;
+    else if (type==RESAMPLER_LINEAR)
+      t = SRC_LINEAR;
+    else if (type==RESAMPLER_SINC1)
+      t = SRC_SINC_FASTEST;
+    else if (type==RESAMPLER_SINC2)
+      t = SRC_SINC_BEST_QUALITY;
+    else
+      R_ASSERT(false);
+             
+    _src_state = src_callback_new(callback, t, num_channels, NULL, arg);
     _last_ratio = -1.0;
   }
   ~SincResampler(){
@@ -199,7 +206,7 @@ struct SincResampler : public Resampler{
 
 
 
-void *RESAMPLER_create(src_callback_t callback, int num_channels, void *arg, int type){
+void *RESAMPLER_create(src_callback_t callback, int num_channels, void *arg, enum ResamplerType type){
   Resampler *resampler;
 
   R_ASSERT(num_channels = 1);

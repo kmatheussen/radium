@@ -231,7 +231,7 @@ struct Data{
   
   float samplerate; // The system samplerate. I.e. the jack samplerate, not soundfile samplerate.
 
-  int resampler_type;
+  enum ResamplerType resampler_type;
   const wchar_t *filename;
   int instrument_number;
   bool using_default_sound;
@@ -2021,7 +2021,7 @@ static void free_tremolo(SoundPlugin *tremolo){
   V_free(tremolo);
 }
 
-static Data *create_data(float samplerate, Data *old_data, const wchar_t *filename, int instrument_number, int resampler_type, bool use_sample_file_middle_note, bool is_loading){
+static Data *create_data(float samplerate, Data *old_data, const wchar_t *filename, int instrument_number, enum ResamplerType resampler_type, bool use_sample_file_middle_note, bool is_loading){
   Data *data = new Data;
 
   data->signal_from_RT = RSEMAPHORE_create(0);
@@ -2209,7 +2209,7 @@ void SAMPLER_erase_recorded_peaks(SoundPlugin *plugin){
 static bool set_new_sample(struct SoundPlugin *plugin,
                            const wchar_t *filename,
                            int instrument_number,
-                           int resampler_type,
+                           enum ResamplerType resampler_type,
                            int64_t loop_start,
                            int64_t loop_end,
                            bool use_sample_file_middle_note,
@@ -2329,15 +2329,15 @@ bool SAMPLER_set_random_sample(struct SoundPlugin *plugin, const wchar_t *path){
 }
 
 
-bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, int resampler_type){
+bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, enum ResamplerType resampler_type){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), false);
   
   Data *data=(Data*)plugin->data;
   return set_new_sample(plugin,data->filename,data->instrument_number,resampler_type,data->loop_start,data->loop_length, data->use_sample_file_middle_note, false);
 }
 
-int SAMPLER_get_resampler_type(struct SoundPlugin *plugin){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), false);
+enum ResamplerType SAMPLER_get_resampler_type(struct SoundPlugin *plugin){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), RESAMPLER_NON);
   
   Data *data=(Data*)plugin->data;
   return data->resampler_type;
@@ -2495,7 +2495,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
   const wchar_t *filename;
   bool           use_sample_file_middle_note = true ; if (HASH_has_key(state, "use_sample_file_middle_note")) use_sample_file_middle_note = HASH_get_bool(state, "use_sample_file_middle_note");
   int            instrument_number = HASH_get_int32(state, "instrument_number");
-  int            resampler_type    = HASH_get_int32(state, "resampler_type");
+  enum ResamplerType resampler_type    = (enum ResamplerType)HASH_get_int(state, "resampler_type");
   int64_t        loop_start        = 0; if (HASH_has_key(state, "loop_start"))  loop_start  = HASH_get_int(state, "loop_start");
   int64_t        loop_length       = 0; if (HASH_has_key(state, "loop_length")) loop_length = HASH_get_int(state, "loop_length");
 
