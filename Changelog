@@ -1,3 +1,37 @@
+Changes 4.6.4 -> 4.6.6:
+* Soundfile rendering: Fix rendering block.
+* Soundfile rendering: Option to set minimum resampler quality.
+* Soundfile rendering: Fix keyboard focus when finished editing the
+  "post recording" value.
+* Less pause time when changing global BPM.
+* Continue playing range if changing global tempo.
+* Add mimetype support for .rad files. (Teteros)
+* Only let the left alt key operate main window menues if the main
+  window has keyboard focus.
+* Ask "are you sure?"-questions, and so forth, in a new window, if the
+  main window doesn't have keyboard focus.
+* Prevent stuttering when changing global bpm or global lpb.
+* Option to select random sample for all selected instruments.
+  Keyboard shortcut: Left shift + R.
+* Sampler: Create undo point when selecting random sample.
+* Option to load song from command line.
+* Sequencer: Fix rare crash when zooming in too much while playing
+  song.
+* Configure the color of all selected instruments simultaneously.
+* Add LLVM 3.8.1+ compat to bundled faust. (Teteros)
+* Add a .desktop file and more icons. (Teteros)
+* Fix misleading indentations in Juce. (Teteros)
+* A new song properties window in the project menu. Currently only has
+  options to change accelerando and ritardando types.
+* New methods to calculate accelerando / ritardando
+* Add glide/hold options to the BPM track. I.e. not necessary to use
+  the tempo automation track to gradually change tempo.
+* API: setRandomInstrumentSample,
+  setRandomSampleForAllSelectedInstruments, getInstrumentTypeName,
+  getInstrumentPluginName, getSelectedInstruments
+    
+
+
 Changes 4.6.3 -> 4.6.4:
 * Fix popup menu for instrument objects in the modular mixer
 * Song comment window: Change title from "Dialog" to "Song Comment"
