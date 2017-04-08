@@ -819,7 +819,8 @@ static STime get_stime_from_stimechange_linear(const struct STimeChange *c, doub
 
 
 static STime get_stime_from_stimechange(const struct STimeChange *c, double y, const bool has_t){
-  if (abs(c->x2-c->x1) < 0.003){
+  //printf("  Diff: %f\n", fabs(c->x2-c->x1));
+  if (fabs(c->x2-c->x1) < 0.003){
     
     //    if (has_t)
     //   return scale_double(y, c->y1, c->y2, c->t1, c->t2) - c->t1;

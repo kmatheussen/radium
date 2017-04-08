@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
+#include <math.h>
 
 #include "nsmtracker.h"
 #include "disk.h"
@@ -60,7 +60,7 @@ static void checkTempoNodeCompatibility(struct TempoNodes *temponodes){
   temponodes = NextTempoNode(temponodes);
 
   while(temponodes != NULL){
-    if(abs(temponodes->reltempo - prev) > 0.003){
+    if(fabs(temponodes->reltempo - prev) > 0.003){
       GFX_Message(NULL,
                   "Detected loading an older song that uses accelerando or ritardando.\n\n"
                   "Earlier versions of Radium calculated accelerando and ritardando differently.\n\n"
