@@ -819,7 +819,8 @@ static STime get_stime_from_stimechange_linear(const struct STimeChange *c, doub
 
 
 static STime get_stime_from_stimechange(const struct STimeChange *c, double y, const bool has_t){
-  if (c->x1==c->x2){
+  if (abs(c->x2-c->x1) < 0.003){
+    
     //    if (has_t)
     //   return scale_double(y, c->y1, c->y2, c->t1, c->t2) - c->t1;
 
@@ -830,7 +831,7 @@ static STime get_stime_from_stimechange(const struct STimeChange *c, double y, c
     */
 
     double distance = y - c->y1;
-    double speed = c->x1;
+    double speed = (c->x1 + c->x2) / 2.0;
     return pc->pfreq * 60 * distance / speed;
 
   } else if (c->x2>c->x1) {
@@ -890,12 +891,16 @@ static struct STimeChange *create_time_changes_from_scheme_data(const dynvec_t *
   for(int i=0;i<timings->num_elements;i++){
     hash_t *h = timings->elements[i].hash;
     time_changes[i].y1 = DYN_get_double_from_number(HASH_get_dyn(h, ":y1"));
-    time_changes[i].x1 = DYN_get_double_from_number(HASH_get_dyn(h, ":x1"));
     time_changes[i].y2 = DYN_get_double_from_number(HASH_get_dyn(h, ":y2"));
-    time_changes[i].x2 = DYN_get_double_from_number(HASH_get_dyn(h, ":x2"));
 
-    time_changes[i].logt1 = log(time_changes[i].x1);
-    time_changes[i].logt2t1 = log(time_changes[i].x2 / time_changes[i].x1);
+    double x1 = DYN_get_double_from_number(HASH_get_dyn(h, ":x1"));
+    double x2 = DYN_get_double_from_number(HASH_get_dyn(h, ":x2"));
+
+    time_changes[i].x1 = x1;
+    time_changes[i].x2 = x2;
+
+    time_changes[i].logt1 = log(x1);
+    time_changes[i].logt2t1 = log(x2/x1);
 
     time_changes[i].t1 = t1;
 

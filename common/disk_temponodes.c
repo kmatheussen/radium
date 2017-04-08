@@ -60,7 +60,7 @@ static void checkTempoNodeCompatibility(struct TempoNodes *temponodes){
   temponodes = NextTempoNode(temponodes);
 
   while(temponodes != NULL){
-    if(temponodes->reltempo != prev){
+    if(abs(temponodes->reltempo - prev) > 0.003){
       GFX_Message(NULL,
                   "Detected loading an older song that uses accelerando or ritardando.\n\n"
                   "Earlier versions of Radium calculated accelerando and ritardando differently.\n\n"
