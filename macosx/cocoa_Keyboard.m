@@ -29,12 +29,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_system_proc.h"
 
 void OS_OSX_show_icon_in_dock(void){
+  
   ProcessSerialNumber psn;
   if (GetCurrentProcess(&psn) == noErr)
     {
       TransformProcessType(&psn, 
                            kProcessTransformToForegroundApplication);
     }
+
+  // didn't work.
+  //[NSApp setPresentationOptions: [NSApp presentationOptions] | NSApplicationPresentationHideMenuBar];
 }
 
 /*

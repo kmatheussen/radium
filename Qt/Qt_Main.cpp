@@ -2342,21 +2342,21 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
 #endif
     case QtWarningMsg:
       snprintf(temp, 1000, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
-      fprintf(stderr, temp);
+      fprintf(stderr, "%s", temp);
 #ifndef RELEASE
       SYSTEM_show_message(temp);
 #endif
       break;
     case QtCriticalMsg:
       snprintf(temp, 1000, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
-      fprintf(stderr, temp);
+      fprintf(stderr, "%s", temp);
 #ifndef RELEASE
       SYSTEM_show_message(temp);
 #endif
       break;
     case QtFatalMsg:
       snprintf(temp, 1000, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
-      fprintf(stderr, temp);
+      fprintf(stderr, "%s", temp);
 #ifndef RELEASE
       SYSTEM_show_message(temp);
 #endif        
