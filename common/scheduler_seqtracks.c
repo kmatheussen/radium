@@ -105,16 +105,21 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
 
   // Schedule next block, and set various data
   {
-    int64_t seqblock_duration = getBlockSTimeLength(block);
     
     int64_t next_time;
     struct SeqBlock *next_seqblock;
 
     if (playtype==PLAYBLOCK) {
+
+      if (MIXER_is_saving()){
+        next_seqblock = NULL;
+        next_time = 0;
+      } else {
+        int64_t seqblock_duration = getBlockSTimeLength(block);
+        next_seqblock = seqblock;
+        next_time = seqblock->time + seqblock_duration;
+      }
       
-      next_seqblock = seqblock;
-      next_time = seqblock->time + seqblock_duration;
-            
     } else {
       
       next_seqblock = get_next_seqblock(seqtrack, seqblock->time);
