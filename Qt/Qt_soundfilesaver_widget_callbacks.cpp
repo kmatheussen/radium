@@ -88,7 +88,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
       : save_block_button->isChecked()==true ? SAVE_BLOCK
       : SAVE_SONG;
     
-    if(SOUNDFILESAVER_save(STRING_create(filename), what_to_save, MIXER_get_sample_rate(), format, post_silence_spin->value(), &error_string)==false){
+    if(SOUNDFILESAVER_save(STRING_create(filename), what_to_save, MIXER_get_sample_rate(), format, post_silence_spin->value(), (enum ResamplerType)interpolation_type->currentIndex(), &error_string)==false){
 
       //QMessageBox msgBox;
       
@@ -166,6 +166,8 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
 
         MIXER_request_stop_saving_soundfile(); // This is very messy. The code would be far simpler if jack_set_freewheel could be called from any thread.
 
+        SOUNDFILESAVER_writer_has_been_stopped();
+        
         //usleep(1000*100); // Wait a bit for saving to stop;
 
         ScrollEditorToRealLine_CurrPos(root->song->tracker_windows, root->song->tracker_windows->wblock->bot_realline);

@@ -24,6 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
 #include "../common/player_proc.h"
+#include "../common/instruments_proc.h"
+#include "../audio/SoundPlugin.h"
+#include "../audio/Sampler_plugin_proc.h"
 
 #include "Mixer_proc.h"
 
@@ -55,6 +58,28 @@ static volatile enum SaveState g_save_state;
 
 static DEFINE_ATOMIC(bool, stop_requested) = false;
 
+static void set_resamplers(bool set_min_type, enum ResamplerType min_type){
+  vector_t patches = get_audio_instrument()->patches;
+  
+  VECTOR_FOR_EACH(struct Patch *patch, &patches){
+    SoundPlugin *plugin=(SoundPlugin*)patch->patchdata;
+    if(!strcmp("Sample Player", plugin->type->type_name)){
+      if (set_min_type){
+        enum ResamplerType type  = SAMPLER_get_resampler_type(plugin);
+        SAMPLER_set_temp_resampler_type(plugin, R_MAX(min_type, type));
+      } else {
+        SAMPLER_set_org_resampler_type(plugin);
+      }
+    }
+  }END_VECTOR_FOR_EACH;
+}
+
+// main thread
+void SOUNDFILESAVER_writer_has_been_stopped(void){
+  set_resamplers(false, 0);
+}
+
+// audio thread
 static bool stop_writing(bool is_cancelled){
   char temp[1024];
   bool ret;
@@ -140,12 +165,12 @@ bool SOUNDFILESAVER_write(float **outputs, int num_frames){
   return ret;
 }
 
-bool SOUNDFILESAVER_save(const wchar_t *filename, enum SOUNDFILESAVER_what what_to_save, float samplerate, int libsndfile_format, float post_recording_length, const char **error_string){
+bool SOUNDFILESAVER_save(const wchar_t *filename, enum SOUNDFILESAVER_what what_to_save, float samplerate, int libsndfile_format, float post_recording_length, enum ResamplerType min_resampler_type, const char **error_string){
 
   PlayStop();
 
-  //SAMPLER_set_resampler_type
-    
+  set_resamplers(true, min_resampler_type);
+  
   {
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
     

@@ -1168,7 +1168,7 @@ struct FX{
 extern DEFINE_ATOMIC(bool, g_enable_autobypass);
 extern DEFINE_ATOMIC(int, g_autobypass_delay);
 
-// These numbers are saved to disk, so they can not be changed later.
+// These numbers are saved to disk, so they can not be changed later. Currently, the quality must also be increasing (see SOUNDFILESAVER_save).
 enum ResamplerType {
   RESAMPLER_NON=0,
   RESAMPLER_LINEAR=1,

@@ -231,6 +231,7 @@ struct Data{
   
   float samplerate; // The system samplerate. I.e. the jack samplerate, not soundfile samplerate.
 
+  enum ResamplerType org_resampler_type; // Used to remember the original resampler type when rendering soundfile.
   enum ResamplerType resampler_type;
   const wchar_t *filename;
   int instrument_number;
@@ -2329,11 +2330,29 @@ bool SAMPLER_set_random_sample(struct SoundPlugin *plugin, const wchar_t *path){
 }
 
 
+bool SAMPLER_set_temp_resampler_type(struct SoundPlugin *plugin, enum ResamplerType resampler_type){
+  Data *data=(Data*)plugin->data;
+  data->org_resampler_type = resampler_type;
+  if (resampler_type != data->resampler_type)
+    return set_new_sample(plugin,data->filename,data->instrument_number,resampler_type,data->loop_start,data->loop_length, data->use_sample_file_middle_note, false);
+  else
+    return true;
+}
+
+void SAMPLER_set_org_resampler_type(struct SoundPlugin *plugin){
+  Data *data=(Data*)plugin->data;
+  if (data->org_resampler_type != data->resampler_type)
+    set_new_sample(plugin,data->filename,data->instrument_number,data->org_resampler_type,data->loop_start,data->loop_length, data->use_sample_file_middle_note, false);
+}
+
 bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, enum ResamplerType resampler_type){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), false);
   
   Data *data=(Data*)plugin->data;
-  return set_new_sample(plugin,data->filename,data->instrument_number,resampler_type,data->loop_start,data->loop_length, data->use_sample_file_middle_note, false);
+  if (resampler_type != data->resampler_type)
+    return set_new_sample(plugin,data->filename,data->instrument_number,resampler_type,data->loop_start,data->loop_length, data->use_sample_file_middle_note, false);
+  else
+    return true;
 }
 
 enum ResamplerType SAMPLER_get_resampler_type(struct SoundPlugin *plugin){
