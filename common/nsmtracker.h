@@ -1753,10 +1753,7 @@ struct STimeChanges{
 
 #else
 
-struct STimeChange{
-  double y1,x1,t1; // y=line (place as double), x = tempo at y, t = time at y
-  double y2,x2,t2; //
-};
+struct STimeChange;
 
 #endif
 

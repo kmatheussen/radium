@@ -751,6 +751,15 @@ void UpdateAllSTimes(void){
 #else // USE_NEW_TIMING
 
 
+struct STimeChange{
+  double y1,x1,t1; // y=line (place as double), x = tempo at y, t = time at y
+  double y2,x2,t2; //
+
+  double logt1;   // Precalculated log(x1)     [ not log(t1)    ! ]
+  double logt2t1; // Precalculated log(x2/x1)  [ not log(t2/t2) ! ]
+};
+
+
 /*
   ;; For x2 >= x1:
   ;; integrate 1/(t1*((t2/t1)^(x/b))), x from 0 to c
@@ -764,7 +773,7 @@ static STime get_stime_from_stimechange_equal_ratio_accelerando(const struct STi
 
   //(b - b (t2/t1)^(-c/b))/(t1 log(t2/t1))
   double numerator = b - b * pow(t2/t1,-c/b);
-  double denominator = t1 * log(t2/t1);
+  double denominator = t1 * tc->logt2t1;
 
   return pc->pfreq * 60 * numerator/denominator;
 }
@@ -782,8 +791,6 @@ static STime get_stime_from_stimechange_equal_ratio_deaccelerando(const struct S
   double b = tc->y2 -tc->y1;
   double c = y - tc->y1;
 
-  double logt2t1 = log(t2/t1);
-
   /*
       (/ (+ (- (* b (log t1)))
             (* c (log (/ t2 t1)))
@@ -792,15 +799,14 @@ static STime get_stime_from_stimechange_equal_ratio_deaccelerando(const struct S
             (log (/ t2 t1))))))
   */
 
-  double n1 = -b * log(t1);
-  double n2 = c * logt2t1;
+  double n1 = -b * tc->logt1;
+  double n2 = c * tc->logt2t1;
   double n3 = b * log(t1 + t2 - t2 * pow(t2/t1, -c/b));
   double numerator   = n1+n2+n3;
 
-  double denominator = (t1+t2) * logt2t1;
+  double denominator = (t1+t2) * tc->logt2t1;
 
   return pc->pfreq * 60 * numerator/denominator;
-  
 }
 
 
@@ -888,13 +894,17 @@ static struct STimeChange *create_time_changes_from_scheme_data(const dynvec_t *
     time_changes[i].y2 = DYN_get_double_from_number(HASH_get_dyn(h, ":y2"));
     time_changes[i].x2 = DYN_get_double_from_number(HASH_get_dyn(h, ":x2"));
 
+    time_changes[i].logt1 = log(time_changes[i].x1);
+    time_changes[i].logt2t1 = log(time_changes[i].x2 / time_changes[i].x1);
+
     time_changes[i].t1 = t1;
 
-    time_changes[i].t2 = t1 + get_stime_from_stimechange(&time_changes[i], time_changes[i].y2, false);
+    double t2 = t1 + get_stime_from_stimechange(&time_changes[i], time_changes[i].y2, false);
+    time_changes[i].t2 = t2;
+    
+    t1 = t2;
 
-    t1 = time_changes[i].t2;
-
-    printf("   TIMING. %d: %f,%f - %f,%f. t1: %f, t2: %f\n", i, time_changes[i].y1, time_changes[i].x1, time_changes[i].y2, time_changes[i].x2, time_changes[i].t1 / pc->pfreq, time_changes[i].t2 / pc->pfreq);
+    //printf("   TIMING. %d: %f,%f - %f,%f. t1: %f, t2: %f\n", i, time_changes[i].y1, time_changes[i].x1, time_changes[i].y2, time_changes[i].x2, time_changes[i].t1 / pc->pfreq, time_changes[i].t2 / pc->pfreq);
   }
 
   /*
@@ -952,7 +962,7 @@ const struct STimes *create_stimes_from_tchanges(int num_lines, const struct STi
     stimes[line].time = tchange->t1 + dur;
     stimes[line].tchanges = tchange;
 
-    printf("   STIME %d: %f. t1: %f, Dur: %f\n", line, (double)stimes[line].time / pc->pfreq, tchange->t1/pc->pfreq, dur/pc->pfreq);
+    //printf("   STIME %d: %f. t1: %f, Dur: %f\n", line, (double)stimes[line].time / pc->pfreq, tchange->t1/pc->pfreq, dur/pc->pfreq);
   }
   /*
   stimes[num_lines].time = tchanges[num_lines-1]->t2;
