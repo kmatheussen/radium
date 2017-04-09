@@ -574,14 +574,11 @@ static void setColorEnd(vl::VectorGraphics *vg, const GE_Context *c){
 // This function can probably be avoided somehow. The absolute y position of the vertexes should be available for the shader GLSL code, but I haven't
 // figured out how to get it yet.
 void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset){
-  for (Contexts::Iterator it = painting_data->contexts.begin(); it != painting_data->contexts.end(); ++it) {
-    const auto hepp = it.value();
+  for (const auto hepp : painting_data->contexts) {
       
-    for (auto it = hepp.begin(); it != hepp.end(); ++it) {
-      const auto contexts = it.value();
+    for (const auto contexts : hepp) {
       
-      for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {      
-        const vl::ref<GE_Context> c = iterator.value();
+      for(const auto c : contexts) {
         
         for (vl::ref<GradientTriangles> gradient_triangles : c->gradient_triangles)
           gradient_triangles->set_y_offset(y_offset);
@@ -609,19 +606,16 @@ void GE_draw_vl(T2_data *t2_data){
     vg->setPointSmoothing(false); // images are drawn using drawPoint.
     //vg->setTextureMode(vl::TextureMode_Repeat 	); // Note: MAY FIX gradient triangle non-overlaps.
 
-    for (Contexts::Iterator it = painting_data->contexts.begin(); it != painting_data->contexts.end(); ++it) {
-      const auto hepp = it.value();
+    for (const auto hepp : painting_data->contexts) {
 
-      for (auto it = hepp.begin(); it != hepp.end(); ++it) {
+      for (const auto contexts : hepp) {
 
         //int z = it.key();
-        const auto contexts = it.value();
-      
 
         // 1. Filled boxes
-        for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
+        for(const auto c2 : contexts){
         
-          const GE_Context *c = iterator.value().get();
+          const GE_Context *c = c2.get();
         
           if(c->boxes.size() > 0) {
             setColorBegin(vg, c);
@@ -633,9 +627,9 @@ void GE_draw_vl(T2_data *t2_data){
         }
       
         // 2. triangle strips
-        for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
+        for(const auto c2 : contexts){
 
-          const GE_Context *c = iterator.value().get();
+          const GE_Context *c = c2.get();
         
 #if USE_TRIANGLE_STRIPS
           if(c->trianglestrips.size() > 0) {
@@ -690,9 +684,9 @@ void GE_draw_vl(T2_data *t2_data){
         */
         
         // 6. Text
-        for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
+        for(auto c2 : contexts) {
         
-          const GE_Context *c = iterator.value().get();
+          const GE_Context *c = c2.get();
 
           if(c->textbitmaps.points.size() != 0 || c->textbitmaps_halfsize.points.size() != 0) {
            
