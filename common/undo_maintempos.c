@@ -3,6 +3,7 @@
 #include "undo.h"
 #include "time_proc.h"
 #include "Beats_proc.h"
+#include "player_pause_proc.h"
 #include "OS_visual_input.h"
 
 #include "undo_maintempos_proc.h"
@@ -69,7 +70,7 @@ static void *Undo_Do_MainTempo(
 
         GFX_OS_update_bottombar();
 
-        PC_Pause();{ // Pause player so that beats and stimes are not out of sync while playing.
+        PC_Pause();{ // Pause player so that beats and stimes are not out of sync while playing. (and avoid stuttering)
           UpdateAllSTimes();
           UpdateAllBeats();
         }PC_StopPause(window);
