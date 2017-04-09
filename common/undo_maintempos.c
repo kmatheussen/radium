@@ -68,10 +68,12 @@ static void *Undo_Do_MainTempo(
         root->quantitize_options = u_rt->quantitize_options;
 
         GFX_OS_update_bottombar();
-        
-	UpdateAllSTimes();
-        UpdateAllBeats();
 
+        PC_Pause();{ // Pause player so that beats and stimes are not out of sync while playing.
+          UpdateAllSTimes();
+          UpdateAllBeats();
+        }PC_StopPause(window);
+        
 	u_rt->signature=signature;
         u_rt->lpb=lpb;
 	u_rt->tempo=tempo;
