@@ -2731,13 +2731,15 @@ static void apply_ab_plugin_ab_states(hash_t *plugin_ab_state, hash_t *curr_plug
         SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
         PLUGIN_apply_ab_state(plugin, ab_state);
 
+        CHIP_update(plugin);
         updated = true;
       }
     }
   }
 
-  if (updated)
+  if (updated){
     GFX_update_current_instrument_widget();
+  }
 }
 
 static bool in_patches(const vector_t *patches, int64_t id){
