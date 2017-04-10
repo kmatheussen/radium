@@ -372,7 +372,7 @@ public slots:
     update_ab_buttons();
   }
   
-  void on_ab_reset_clicked(){
+  void on_ab_reset_clicked(){    
     MW_reset_ab(-1);
     update_ab_buttons();
   }

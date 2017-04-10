@@ -444,7 +444,7 @@ list<pos,tempo_multiplication,hold>
   (if (not bar-swing)      
       (if bar
           (list (make-tempo-multiplier :y1 line :x1 1
-                                       :y2 num-lines :x1 1))
+                                       :y2 num-lines :x2 1))
           '())
       (append (create-tempo-multipliers-from-swing line bar-swing)
               (create-tempo-multipliers-from-swings (cdr bars)

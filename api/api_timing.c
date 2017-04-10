@@ -131,7 +131,7 @@ void setMainLPB(int lpb_value){
   printf("Undo MainTempo lpb: %d\n",lpb_value);
   ADD_UNDO(MainTempo(window,wblock));
 
-  PC_Pause();{ // Pause player so that beats and stimes are not out of sync while playing.
+  PC_Pause();{ // Pause player so that beats and stimes are not out of sync while playing. (and avoid stuttering)
     root->lpb=lpb_value;
     UpdateAllSTimes();
     UpdateAllBeats();
@@ -335,6 +335,8 @@ dyn_t getAllBPM(int blocknum, int windownum){
 
   return API_getAllBPM(wblock->block);
 }
+
+
 
 /************* Block tempo automation ************************/
 

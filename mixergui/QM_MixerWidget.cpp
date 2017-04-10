@@ -2498,7 +2498,7 @@ void MW_create_from_state(const hash_t *state, const vector_t *patches, float x,
 
 // FIXME/TODO!
 
-static hash_t *convert_state_to_new_type(const hash_t *state){
+static hash_t *get_chips_and_bus_chips(const hash_t *state){
   hash_t *old_chips = HASH_get_hash(state, "chips");
   int num_old_chips = HASH_get_int32(old_chips, "num_chips");
   
@@ -2531,7 +2531,6 @@ static hash_t *convert_state_to_new_type(const hash_t *state){
 
   HASH_put_hash(ret, "bus_chips", buses);
   HASH_put_hash(ret, "chips", new_chips);
-  HASH_put_hash(ret, "connections", HASH_get_hash(state, "connections"));
                 
   return ret;
 }
@@ -2567,11 +2566,18 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
 
   //MW_cleanup();
 
-  if (!HASH_has_key(state, "bus_chips"))
-    state = convert_state_to_new_type(state);
-
-  hash_t *bus_chips_state = HASH_get_hash(state, "bus_chips");
-    
+  hash_t *bus_chips_state;
+  hash_t *chips_state;
+  
+  if (!HASH_has_key(state, "bus_chips")){
+    hash_t *state2 = get_chips_and_bus_chips(state);
+    bus_chips_state = HASH_get_hash(state2, "bus_chips");
+    chips_state = HASH_get_hash(state2, "chips");
+  }else{
+    bus_chips_state = HASH_get_hash(state, "bus_chips");
+    chips_state = HASH_get_hash(state, "chips");
+  }
+  
   Buses old_buses = MIXER_get_buses();
 
   Buses no_buses = {};
@@ -2599,7 +2605,7 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
   if (is_loading)
     GFX_ShowProgressMessage("Creating instruments");
   
-  MW_create_chips_from_full_state(HASH_get_hash(state, "chips"), new_buses, is_loading);
+  MW_create_chips_from_full_state(chips_state, new_buses, is_loading);
 
   if (is_loading)
     GFX_ShowProgressMessage("Creating connections between sound objects");
@@ -2612,7 +2618,8 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
   AUDIO_update_all_permanent_ids();
   
   GFX_update_all_instrument_widgets();
-
+  MW_update_mixer_widget();
+  
   autoposition_missing_bus_chips(bus_chips_state);
 }
 
