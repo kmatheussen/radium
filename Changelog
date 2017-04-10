@@ -1,3 +1,10 @@
+Changes 4.6.6 -> 4.6.7:
+* Mixer: Update volume slider in modular mixer when changing a/b.
+* Mixer: Fix a/b state after loading.
+* Don't stutter when undoing main bpm or main lpb.
+
+
+
 Changes 4.6.4 -> 4.6.6:
 * Soundfile rendering: Fix rendering block.
 * Soundfile rendering: Option to set minimum resampler quality.
