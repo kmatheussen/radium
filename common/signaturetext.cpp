@@ -38,7 +38,10 @@ bool SIGNATURETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblo
   if (subsubtrack==-1)
     return false;
 
-  SetSignatureCurrPos(window);
+  if (key == EVENT_DEL)
+    RemoveSignaturesCurrPos(window);
+  else
+    SetSignatureCurrPos(window);
 
   return true;
 }
