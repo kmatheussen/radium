@@ -121,14 +121,14 @@ typedef struct{
   int64_t loop_end;
 
   int ch;        // -1 means both channels.
-  float *sound;
+  float *sound = NULL;
 
-  float *min_peaks;
-  float *max_peaks;
+  float *min_peaks = NULL;
+  float *max_peaks = NULL;
 
   double frequency_table[128];
 
-  Data *data;
+  Data *data = NULL;
 } Sample;
 
 // A voice object points to only one sample. Stereo-files uses two voice objects. Soundfonts using x sounds to play a note, need x voice objects to play that note.
@@ -2116,22 +2116,40 @@ static void delete_data(Data *data){
   int i;
 
   float *prev=NULL;
+  R_ASSERT_RETURN_IF_FALSE(data!=NULL);
 
+  EVENTLOG_add_event("sampler_plugin: delete_data 1");
+    
   for(i=0;i<MAX_NUM_SAMPLES;i++){
     Sample *sample=(Sample*)&data->samples[i];
-
+        
     if(sample->sound!=NULL && sample->sound != prev){
       prev = sample->sound;
       V_free(sample->sound);
+      
       V_free(sample->min_peaks);
       V_free(sample->max_peaks);
     }
   }
 
+  // null out, trying to track down a crash.
+  for(i=0;i<MAX_NUM_SAMPLES;i++){
+    Sample *sample=(Sample*)&data->samples[i];
+    sample->sound = NULL;
+  }
+
+  EVENTLOG_add_event("sampler_plugin: delete_data 2");
+  
   for(i=0;i<POLYPHONY;i++) {
     RESAMPLER_delete(data->voices[i].resampler);
     ADSR_delete(data->voices[i].adsr);
+
+    // more debugging, trying to track down a crash.
+    data->voices[i].resampler = NULL;
+    data->voices[i].adsr = NULL;
   }
+
+  EVENTLOG_add_event("sampler_plugin: delete_data 3");
   
   free((char*)data->filename);
 
