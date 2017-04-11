@@ -1319,6 +1319,31 @@ Example:
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="enable_sample_seek">
+        <property name="toolTip">
+         <string>Enable poor man's sample-seek.
+
+When starting to play in the middle of a block, after a note has
+started, the player will ask the instrument to seek forward and
+play from the correct position.
+
+Note that the sampler instrument is the only instrument that will
+try to seek forward. All the other instruments will play the
+from the beginning.
+
+Also note that looping, reversed sample, pitch glides, portamento,
+etc. will cause the seeking to fail in more or less audible ways.
+There is no plan to support any of these things.
+
+In addition, there is no guarantee that the sample player will
+seek sample-accurately forward.</string>
+        </property>
+        <property name="text">
+         <string>S</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QCheckBox" name="half_checkbox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Minimum">

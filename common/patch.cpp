@@ -913,7 +913,7 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
 
   float sample_rate = MIXER_get_sample_rate();
 
-  union SuperType args[7];      
+  union SuperType args[8];
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
     
@@ -939,7 +939,7 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
       //printf("___RT_PATCH_play_note. time: %d (%d)\n", (int)time, (int)(time + voice->start*sample_rate/1000));
 
       //printf("  add %d at %d\n", (int)voice_id, (int)((int64_t)time + voice->start*sample_rate/1000));
-      SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_play_voice, &args[0], 7, SCHEDULER_NOTE_ON_PRIORITY);
+      SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_play_voice, &args[0], 8, SCHEDULER_NOTE_ON_PRIORITY);
 
       // voice OFF
       if(voice->length>0.001) // The voice decides when to stop by itself.
@@ -1023,7 +1023,7 @@ void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch *patch, const no
 
   float sample_rate = MIXER_get_sample_rate();
 
-  union SuperType args[7];
+  union SuperType args[8];
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
 
@@ -1049,7 +1049,7 @@ void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch *patch, const no
         
 
         //printf("    remove %d at %d\n", (int)voice_id, (int)((int64_t)time + voice->start*sample_rate/1000));
-        SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 7, SCHEDULER_NOTE_OFF_PRIORITY);
+        SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 8, SCHEDULER_NOTE_OFF_PRIORITY);
       }
     }
   }
@@ -1117,7 +1117,7 @@ void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, co
 
   float sample_rate = MIXER_get_sample_rate();
 
-  union SuperType args[7];
+  union SuperType args[8];
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
 
@@ -1140,7 +1140,7 @@ void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, co
       args[5].int_num |= i;
       
 
-      SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 7, SCHEDULER_VELOCITY_PRIORITY);
+      SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 8, SCHEDULER_VELOCITY_PRIORITY);
     }
   }
 }
@@ -1195,7 +1195,7 @@ void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch, const
 
   float sample_rate = MIXER_get_sample_rate();
 
-  union SuperType args[7];
+  union SuperType args[8];
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
      
@@ -1216,7 +1216,7 @@ void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch, const
       args[5].int_num &= ~(0xff);
       args[5].int_num |= i;
 
-      SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 7, SCHEDULER_PITCH_PRIORITY);
+      SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 8, SCHEDULER_PITCH_PRIORITY);
     }
   }
 }
@@ -1349,7 +1349,8 @@ static void RT_PATCH_turn_voice_on(struct SeqTrack *seqtrack, struct Patch *patc
                                   voice_velocity,
                                   note.pan,
                                   note.midi_channel,
-                                  note.voicenum
+                                  note.voicenum,
+                                  0
                                   ),
                     seqtrack->start_time
                     );
@@ -1389,7 +1390,8 @@ static void RT_PATCH_turn_voice_off(struct SeqTrack *seqtrack, struct Patch *pat
                                   note.velocity,
                                   note.pan,
                                   note.midi_channel,
-                                  note.voicenum
+                                  note.voicenum,
+                                  0
                                   ),
                     seqtrack->start_time
                     );
@@ -1495,6 +1497,7 @@ void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_
                                       TRACK_get_volume(track),
                                       TRACK_get_pan(track),
                                       ATOMIC_GET(track->midi_channel),
+                                      0,
                                       0
                                       )
                         );
@@ -1514,6 +1517,7 @@ void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,float notenum, int64_t
                                       TRACK_get_volume(track),
                                       TRACK_get_pan(track),
                                       ATOMIC_GET(track->midi_channel),
+                                      0,
                                       0
                                       )
                         );

@@ -477,6 +477,8 @@ typedef struct SoundPlugin{
   hash_t *ab_states[NUM_AB];
   bool ab_is_valid[NUM_AB];
 
+  DEFINE_ATOMIC(bool, enable_sample_seek);
+  
   DEFINE_ATOMIC(bool, is_selected);
 
 } SoundPlugin;

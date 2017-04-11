@@ -71,6 +71,7 @@ static void RT_play_note(struct SeqTrack *seqtrack, Beat_Iterator *iterator, int
                                      1.0,
                                      0.0,
                                      0,
+                                     0,
                                      0
                                      ),
                        time);
