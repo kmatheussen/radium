@@ -124,7 +124,7 @@ void CB_CopyTrack_CurrPos(
 
 	switch(window->curr_track){
 		case SIGNATURETRACK:
-			cb_signature=CB_CopySignatures(block->lpbs);
+			cb_signature=CB_CopySignatures(block->signatures);
 			break;
 		case LPBTRACK:
 			cb_lpb=CB_CopyLPBs(block->lpbs);
