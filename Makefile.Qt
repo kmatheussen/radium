@@ -299,7 +299,7 @@ OBJ8= reltempo.o temponodes.o tempos.o time.o temponodes_legalize.o swing.o
 OBJ9= Ptask2Mtask.o player.o scheduler.o scheduler_seqtracks.o scheduler_notes.o scheduler_pitches.o scheduler_velocities.o scheduler_fxs.o scheduler_reallines.o scheduler_LPB.o scheduler_Beats.o scheduler_Signature.o playerclass.o player_startstop.o player_pause.o 
 
 #Disk
-OBJ10= disk.o disk_fxs.o disk_wblock.o disk_localzooms.o disk_track.o disk_fx.o disk_fxnodelines.o disk_wtrack.o disk_temponodes.o disk_tempos.o disk_song.o disk_velocities.o disk_block.o disk_placement.o disk_stops.o disk_playlist.o disk_root.o disk_notes.o disk_lpbs.o disk_signatures.o disk_windows.o disk_warea.o disk_save.o disk_load.o disk_instrument.o disk_patches.o disk_slider.o
+OBJ10= disk.o disk_fxs.o disk_wblock.o disk_localzooms.o disk_track.o disk_fx.o disk_fxnodelines.o disk_wtrack.o disk_temponodes.o disk_tempos.o disk_song.o disk_velocities.o disk_block.o disk_placement.o disk_stops.o disk_playlist.o disk_root.o disk_notes.o disk_lpbs.o disk_signatures.o disk_swing.o disk_windows.o disk_warea.o disk_save.o disk_load.o disk_instrument.o disk_patches.o disk_slider.o
 
 #Undo
 OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_swings.o undo_lpbs.o undo_signatures.o undo_notesandfxs.o undo_reallines.o undo_tracks.o undo_range.o undo_blocks.o undo_trackheader.o undo_reltempomax.o undo_maintempos.o undo_block_insertdelete.o undo_block_mergesplit.o undo_reltemposlider.o undo_sequencer.o undo_song_tempo_automation.o undo_patchvoice.o undo_patchname.o undo_chip_position.o
@@ -887,6 +887,9 @@ disk_lpbs.o:  $(BUILD_DEPENDENCIES) $(CD)disk_lpbs.c $(CD)disk.h
 
 disk_signatures.o:  $(BUILD_DEPENDENCIES) $(CD)disk_signatures.c $(CD)disk.h
 	$(CC) $(CD)disk_signatures.c $(OPT)
+
+disk_swing.o:  $(BUILD_DEPENDENCIES) $(CD)disk_swing.c $(CD)disk.h
+	$(CC) $(CD)disk_swing.c $(OPT)
 
 disk_windows.o:  $(BUILD_DEPENDENCIES) $(CD)disk_windows.c $(CD)disk.h
 	$(CC) $(CD)disk_windows.c $(OPT)

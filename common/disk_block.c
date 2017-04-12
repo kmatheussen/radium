@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "disk_lpbs_proc.h"
 #include "disk_tempos_proc.h"
 #include "disk_temponodes_proc.h"
+#include "disk_swing_proc.h"
+
 #include "time_proc.h"
 #include "Beats_proc.h"
 #include "visual_proc.h"
@@ -57,7 +59,7 @@ DC_start("BLOCK");
         SaveLPBs(block->lpbs);
 	SaveTempos(block->tempos);
 	SaveTempoNodes(block->temponodes);
-
+        SaveSwings(block->swings);
 
 DC_end();
 SaveBlock(NextBlock(block));
@@ -66,12 +68,13 @@ SaveBlock(NextBlock(block));
 
 
 struct Blocks *LoadBlock(void){
-	static char *objs[5]={
+	static char *objs[6]={
 		"TRACK",
 		"SIGNATURES",
                 "LPBs",
 		"TEMPOS",
-		"RELTEMPO"
+		"RELTEMPO",
+                "SWING"
 	};
 	static char *vars[5]={
 		"name",
@@ -86,7 +89,7 @@ struct Blocks *LoadBlock(void){
 	block->l.num=DC_LoadN();
         block->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.82f);
         
-	GENERAL_LOAD(5,5)
+	GENERAL_LOAD(6,5)
 
 var0:
 	block->name=DC_LoadS();
@@ -119,7 +122,9 @@ obj3:
 obj4:
 	LoadTempoNodes(&block->temponodes);
 	goto start;
-
+obj5:
+        DC_ListAdd3_a(&block->swings, LoadSwing());
+        goto start;
 
 var5:
 var6:
@@ -137,7 +142,6 @@ var17:
 var18:
 var19:
  var20:
-obj5:
 obj6:
 
 error:
