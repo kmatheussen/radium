@@ -121,14 +121,14 @@ typedef struct{
   int64_t loop_end;
 
   int ch;        // -1 means both channels.
-  float *sound;
+  float *sound = NULL;
 
-  float *min_peaks;
-  float *max_peaks;
+  float *min_peaks = NULL;
+  float *max_peaks = NULL;
 
   double frequency_table[128];
 
-  Data *data;
+  Data *data = NULL;
 } Sample;
 
 // A voice object points to only one sample. Stereo-files uses two voice objects. Soundfonts using x sounds to play a note, need x voice objects to play that note.
@@ -864,7 +864,7 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
   
   //fprintf(stderr,"playing note %d. Pitch: %d, time: %d\n",(int)note_id,(int)note_num,(int)time);
 
-  if (ATOMIC_GET(data->recording_status)==BEFORE_RECORDING){
+  if (ATOMIC_GET(data->recording_status)==BEFORE_RECORDING && note2.sample_pos==0){
 
     struct Patch *patch = (struct Patch*)plugin->patch;
     RT_SampleRecorder_start_recording(patch,
@@ -943,6 +943,16 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
       voice->pos=scale(data->p.startpos,  // set startpos between 0 and sound length
                        0,1,
                        0,sample->num_frames);
+
+    //printf("Sample_pos: %d\n",(int)note2.sample_pos);
+    if (note2.sample_pos > 0){
+      voice->pos += note2.sample_pos / RT_get_src_ratio(data, voice);
+      if (voice->pos >= sample->num_frames){
+        RT_remove_voice(&data->voices_playing, voice);
+        RT_add_voice(&data->voices_not_playing, voice);
+        return;
+      }
+    }
 
     voice->reverse = ATOMIC_GET(sample->data->p.reverse);
     
@@ -2106,22 +2116,40 @@ static void delete_data(Data *data){
   int i;
 
   float *prev=NULL;
+  R_ASSERT_RETURN_IF_FALSE(data!=NULL);
 
+  EVENTLOG_add_event("sampler_plugin: delete_data 1");
+    
   for(i=0;i<MAX_NUM_SAMPLES;i++){
     Sample *sample=(Sample*)&data->samples[i];
-
+        
     if(sample->sound!=NULL && sample->sound != prev){
       prev = sample->sound;
       V_free(sample->sound);
+      
       V_free(sample->min_peaks);
       V_free(sample->max_peaks);
     }
   }
 
+  // null out, trying to track down a crash.
+  for(i=0;i<MAX_NUM_SAMPLES;i++){
+    Sample *sample=(Sample*)&data->samples[i];
+    sample->sound = NULL;
+  }
+
+  EVENTLOG_add_event("sampler_plugin: delete_data 2");
+  
   for(i=0;i<POLYPHONY;i++) {
     RESAMPLER_delete(data->voices[i].resampler);
     ADSR_delete(data->voices[i].adsr);
+
+    // more debugging, trying to track down a crash.
+    data->voices[i].resampler = NULL;
+    data->voices[i].adsr = NULL;
   }
+
+  EVENTLOG_add_event("sampler_plugin: delete_data 3");
   
   free((char*)data->filename);
 

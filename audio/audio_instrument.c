@@ -75,8 +75,9 @@ static int64_t RT_scheduled_send_play_note_to_plugin(struct SeqTrack *seqtrack, 
 
   if (!Patch_addPlayingVoice(&plugin->playing_voices, note, seqtrack))
     return DONT_RESCHEDULE;
-  
-  plugin->type->play_note(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
+
+  if (note.sample_pos==0 || ATOMIC_GET(plugin->enable_sample_seek))
+    plugin->type->play_note(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
 
   return DONT_RESCHEDULE;
 }
@@ -94,18 +95,21 @@ static void AUDIO_playnote(struct SeqTrack *seqtrack, struct Patch *patch,note_t
   if (latency == 0) {
     if (!Patch_addPlayingVoice(&plugin->playing_voices, note, seqtrack))
       return;
-    plugin->type->play_note(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
+
+    if (note.sample_pos==0 || ATOMIC_GET(plugin->enable_sample_seek))
+      plugin->type->play_note(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
+    
     return;
   }
 
   time += (double)latency * get_note_reltempo(note);
 
-  union SuperType args[7];
+  union SuperType args[8];
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
 
   //printf("   Scheduling %d (latency: %d). block_reltempo: %f\n", (int)time, latency, note.block_reltempo);
-  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_play_note_to_plugin, &args[0], 7, SCHEDULER_NOTE_ON_PRIORITY);
+  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_play_note_to_plugin, &args[0], 8, SCHEDULER_NOTE_ON_PRIORITY);
 }
 
 static int64_t RT_scheduled_send_note_volume_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
@@ -138,11 +142,11 @@ static void AUDIO_changevelocity(struct SeqTrack *seqtrack, struct Patch *patch,
 
   time += ((double)latency * get_note_reltempo(note));
 
-  union SuperType args[7];
+  union SuperType args[8];
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
   
-  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_note_volume_to_plugin, &args[0], 7, SCHEDULER_VELOCITY_PRIORITY);
+  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_note_volume_to_plugin, &args[0], 8, SCHEDULER_VELOCITY_PRIORITY);
 }
 
 static int64_t RT_scheduled_send_note_pitch_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
@@ -177,11 +181,11 @@ static void AUDIO_changepitch(struct SeqTrack *seqtrack, struct Patch *patch,not
 
   time += ((double)latency * get_note_reltempo(note));
 
-  union SuperType args[7];
+  union SuperType args[8];
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
   
-  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_note_pitch_to_plugin, &args[0], 7, SCHEDULER_PITCH_PRIORITY);
+  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_note_pitch_to_plugin, &args[0], 8, SCHEDULER_PITCH_PRIORITY);
 }
 
 static int64_t RT_scheduled_send_raw_midi_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
@@ -258,11 +262,11 @@ static void AUDIO_stopnote(struct SeqTrack *seqtrack, struct Patch *patch,note_t
 
   time += ((double)latency * get_note_reltempo(note));
 
-  union SuperType args[7];
+  union SuperType args[8];
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
   
-  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_stop_note_to_plugin, &args[0], 7, SCHEDULER_NOTE_OFF_PRIORITY);
+  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_stop_note_to_plugin, &args[0], 8, SCHEDULER_NOTE_OFF_PRIORITY);
 }
 
 void AUDIO_stop_all_notes(struct Patch *patch){

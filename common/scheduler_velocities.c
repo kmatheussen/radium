@@ -48,6 +48,7 @@ static void RT_scheduled_hold_velocity_do(struct SeqTrack *seqtrack,
                                            TRACK_get_velocity(track,val),
                                            0,
                                            ATOMIC_GET(track->midi_channel),
+                                           0,
                                            0
                                            ),
                              time
@@ -115,6 +116,7 @@ static int64_t RT_scheduled_glide_velocity(struct SeqTrack *seqtrack, int64_t ti
                                            TRACK_get_velocity(track,val),
                                            0,
                                            ATOMIC_GET(track->midi_channel),
+                                           0,
                                            0
                                            ),
                              time

@@ -1025,6 +1025,7 @@ typedef struct {
   float pan;
   char midi_channel;
   char voicenum;
+  int64_t sample_pos; // for sample seek
 } note_t;
 
 static inline bool is_note(note_t note, int64_t id, const struct SeqBlock *seqblock){
@@ -2330,7 +2331,8 @@ static inline note_t create_note_t_plain(const struct SeqBlock *seqblock,
                                          float velocity,
                                          float pan,
                                          char midi_channel,
-                                         char voicenum
+                                         char voicenum,
+                                         int64_t sample_pos
                                          )
 {
 #if !defined(RELEASE)
@@ -2354,7 +2356,8 @@ static inline note_t create_note_t_plain(const struct SeqBlock *seqblock,
     .velocity =velocity,
     .pan = pan,
     .midi_channel = midi_channel,
-    .voicenum = voicenum
+    .voicenum = voicenum,
+    .sample_pos = sample_pos
   };
   
   return note;  
@@ -2366,10 +2369,11 @@ static inline note_t create_note_t(const struct SeqBlock *seqblock,
                                    float velocity,
                                    float pan,
                                    char midi_channel,
-                                   char voicenum
+                                   char voicenum,
+                                   int64_t sample_pos
                                    )
 {
-  return create_note_t_plain(seqblock, note_id, pitch, velocity, pan, midi_channel, voicenum);
+  return create_note_t_plain(seqblock, note_id, pitch, velocity, pan, midi_channel, voicenum, sample_pos);
 }
 
 static inline note_t create_note_t2(const struct SeqBlock *seqblock,
@@ -2377,7 +2381,7 @@ static inline note_t create_note_t2(const struct SeqBlock *seqblock,
                                     float pitch
                                     )
 {
-  return create_note_t(seqblock, note_id, pitch, 0, 0, 0, 0);
+  return create_note_t(seqblock, note_id, pitch, 0, 0, 0, 0, 0);
 }
 
 static inline note_t create_note_t3(const struct SeqBlock *seqblock,
@@ -2386,7 +2390,7 @@ static inline note_t create_note_t3(const struct SeqBlock *seqblock,
                                     char midi_channel
                                     )
 {
-  return create_note_t(seqblock, note_id, pitch, 0, 0, midi_channel, 0);
+  return create_note_t(seqblock, note_id, pitch, 0, 0, midi_channel, 0, 0);
 }
 
 

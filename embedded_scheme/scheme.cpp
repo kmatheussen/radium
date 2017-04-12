@@ -220,6 +220,11 @@ dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s){
   if (s7_is_vector(s) || s7_is_pair(s))
     return DYN_create_array(s7extra_array(s7, s));
 
+  if (s7_is_null(s7, s)){
+    dynvec_t vec = {0};
+    return DYN_create_array(vec);
+  }    
+   
   GFX_Message(NULL, "s7extra_dyn: Unsupported s7 type");
   return DYN_create_bool(false);
 }

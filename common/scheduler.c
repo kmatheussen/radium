@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #define QUEUE_SIZE 2048
-#define MAX_ARGS 7
+#define MAX_ARGS 8
 
 
 typedef struct _event_t{

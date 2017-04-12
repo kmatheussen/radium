@@ -1233,7 +1233,7 @@ int playNote(float pitch, float velocity, float pan, int midi_channel, int64_t i
 
   int ret = note_ids_pos;
 
-  note_ids[ret] = PATCH_play_note(patch, create_note_t(NULL, -1, pitch, velocity, pan, midi_channel, 0));
+  note_ids[ret] = PATCH_play_note(patch, create_note_t(NULL, -1, pitch, velocity, pan, midi_channel, 0, 0));
   initial_pitches[ret] = pitch;
     
   note_ids_pos++;
@@ -1260,6 +1260,7 @@ void changeNotePitch(float pitch, int note_id, int midi_channel, int64_t instrum
                                           0,
                                           pitch,
                                           midi_channel,
+                                          0,
                                           0
                                           ));
 }
@@ -1281,6 +1282,7 @@ void stopNote(int note_id, int midi_channel, int64_t instrument_id){
                                        0,
                                        0,
                                        midi_channel,
+                                       0,
                                        0
                                        ));
 }

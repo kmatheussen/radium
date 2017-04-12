@@ -494,7 +494,7 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
     for(int i=0;i<plugin_type->num_effects;i++)
       plugin->do_random_change[i] = true;
   }
-  
+
   if (plugin_type->called_after_plugin_has_been_created != NULL)    
     plugin_type->called_after_plugin_has_been_created(plugin_type, plugin);
 
@@ -1668,6 +1668,9 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
     
     HASH_put_hash(state,"ab",ab_state);
   }
+
+  // sample seek
+  HASH_put_bool(state, "enable_sample_seek", ATOMIC_GET(plugin->enable_sample_seek));
   
   HASH_put_int(state, "___radium_plugin_state_v3", 1);
       
@@ -1885,7 +1888,12 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
       
     }
   }
+
   
+  if (HASH_has_key(state, "enable_sample_seek"))
+    ATOMIC_SET(plugin->enable_sample_seek, HASH_get_bool(state, "enable_sample_seek"));
+  
+
   return plugin;
 }
 

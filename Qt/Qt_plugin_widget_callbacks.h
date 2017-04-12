@@ -445,6 +445,11 @@ public:
         #endif
 
         update_ab_buttons();
+
+        if (plugin->type->play_note==NULL)
+          enable_sample_seek->hide();
+        else
+          enable_sample_seek->setChecked(ATOMIC_GET(plugin->enable_sample_seek));
       }
 
     }
@@ -641,6 +646,13 @@ public slots:
   void on_auto_bypass_menu_button_released() {
     _auto_suspend_menu.myExec();
     update_widget();
+  }
+
+  // sample-seek
+
+  void on_enable_sample_seek_toggled(bool val){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    ATOMIC_SET(plugin->enable_sample_seek, val);
   }
   
   // faust

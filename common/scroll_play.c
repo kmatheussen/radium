@@ -74,6 +74,7 @@ static void Scroll_play_down3(
                                           VELOCITY_get(note->velocity),
                                           TRACK_get_pan(track),
                                           ATOMIC_GET(track->midi_channel),
+                                          0,
                                           0)
                             );
           
@@ -85,6 +86,7 @@ static void Scroll_play_down3(
                                           0,
                                           TRACK_get_pan(track),
                                           ATOMIC_GET(track->midi_channel),
+                                          0,
                                           0
                                           )
                             );
@@ -114,6 +116,7 @@ static void stop_all_notes_in_track(struct Tracks *track){
                                             0,
                                             0,
                                             ATOMIC_GET(track->midi_channel),
+                                            0,
                                             0
                                             ));
       }END_VECTOR_FOR_EACH;
@@ -160,6 +163,7 @@ static void Scroll_play_up3(
                                           VELOCITY_get(note->velocity),
                                           TRACK_get_pan(track),
                                           ATOMIC_GET(track->midi_channel),
+                                          0,
                                           0
                                           )
                             );

@@ -142,13 +142,15 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
 static void RT_schedule_note(struct SeqTrack *seqtrack,
                              const struct SeqBlock *seqblock,
                              const struct Tracks *track,
-                             const struct Notes *note
+                             const struct Notes *note,
+                             int64_t curr_time
                              );
 
 static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   const struct SeqBlock *seqblock = args[0].const_pointer;
   const struct Tracks *track = args[1].const_pointer;
   const struct Notes *note = args[2].const_pointer;
+  int64_t note_time = args[3].int_num;
   
   struct Patch *patch = track->patch;
 
@@ -177,14 +179,15 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
   }
     
   if(doit && track->onoff==1 && patch!=NULL){
-    
+
     note_t note2 = create_note_t(seqblock,
                                  note->id,
                                  note->note,
                                  TRACK_get_velocity(track,note->velocity),
                                  TRACK_get_pan(track),
                                  ATOMIC_GET(track->midi_channel),
-                                 0
+                                 0,
+                                 R_MAX(0, time - note_time)
                                  );
 
     //printf("  scheduler_notes.c. Playing note at %d\n",(int)time);
@@ -198,7 +201,7 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
 
   struct Notes *next_note = NextNote(note);
   if (next_note != NULL)
-      RT_schedule_note(seqtrack, seqblock, track, next_note);
+    RT_schedule_note(seqtrack, seqblock, track, next_note, -1);
   
   return DONT_RESCHEDULE;
 }
@@ -206,20 +209,34 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
 static void RT_schedule_note(struct SeqTrack *seqtrack,
                              const struct SeqBlock *seqblock,
                              const struct Tracks *track,
-                             const struct Notes *note
+                             const struct Notes *note,
+                             int64_t curr_time
                              )
 {
-  const int num_args = 3;
+  const int num_args = 4;
   
   union SuperType args[num_args];
   args[0].const_pointer = seqblock;
   args[1].const_pointer = track;
   args[2].const_pointer = note;
+
+  int64_t note_time = get_seqblock_place_time(seqblock, note->l.p);
+  args[3].int_num = note_time;
   
-  int64_t time = get_seqblock_place_time(seqblock, note->l.p);
+  int64_t time;
+  
+  if (curr_time==-1)
+    time = note_time;
+  else if (curr_time < note_time)
+    time = note_time;
+  else
+    time = curr_time;
+
   
   if (note->chance==0)
     time++;
+
+  
 
   //printf(" Scheduling note at %d. seqblock->time: %d, track %d\n",(int)time, (int)seqblock->time, track->l.num);
   SCHEDULER_add_event(seqtrack, time, RT_scheduled_note, &args[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
@@ -237,11 +254,11 @@ void RT_schedule_notes_newblock(struct SeqTrack *seqtrack,
     
     struct Notes *note=track->notes;
     
-    while(note != NULL && PlaceLessThan(&note->l.p,&start_place))
+    while(note != NULL && PlaceLessThan(&note->end,&start_place))
       note=NextNote(note);
     
     if(note!=NULL)
-      RT_schedule_note(seqtrack,seqblock,track,note);
+      RT_schedule_note(seqtrack,seqblock,track,note,start_time);
     
     track=NextTrack(track);   
   }
