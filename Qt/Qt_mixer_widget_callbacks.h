@@ -117,7 +117,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
   int _num_rows = 2;
 
   QWidget *_bottom_bar;
-  
+
  Mixer_widget(QWidget *parent=NULL)
     : QWidget(parent)
     , _rotate(0)
@@ -162,7 +162,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     initing = false;
   }
 
-  void enterEvent(QEvent *event) override{
+  void enterEvent(QEvent *event) override {
     setCursor(Qt::ArrowCursor);
   }
 

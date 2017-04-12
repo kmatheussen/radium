@@ -74,6 +74,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QGraphicsScene>
 //#include <QtGui/QGraphicsItem>
 
+#include "../Qt/helpers.h"
 #include "QM_chip.h"
 
 
@@ -158,6 +159,15 @@ public:
     
     MyScene scene;
     MyQGraphicsView *view;
+
+    radium::RememberGeometry remember_geometry;
+
+    void setVisible(bool visible) override {
+      if (parent()==NULL)
+        remember_geometry.remember_geometry_setVisible_override_func(this, visible);
+      
+      QWidget::setVisible(visible);    
+    }
 };
 
 extern MixerWidget *g_mixer_widget;

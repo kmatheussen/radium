@@ -135,11 +135,43 @@ struct MyQMessageBox : public QMessageBox {
   }
   
 };
+
+namespace radium{
+  struct RememberGeometry{
+    QByteArray geometry;
+    bool has_stored_geometry = false;
+
+    void save(QWidget *widget){
+      geometry = widget->saveGeometry();
+      has_stored_geometry = true;
+    }
+
+    void restore(QWidget *widget){
+      if (has_stored_geometry)
+        widget->restoreGeometry(geometry);
+    }
+
+    void remember_geometry_setVisible_override_func(QWidget *widget, bool visible) {
+      //printf("   Set visible %d\n",visible);
+      
+      if (!visible){
+
+        save(widget);
+        
+      } else {
+        
+        restore(widget);        
+      }
+      
+      //QDialog::setVisible(visible);    
+    }
+  };
+}
+
   
 struct RememberGeometryQDialog : public QDialog {
 
-  QByteArray geometry;
-  bool has_stored_geometry;
+  radium::RememberGeometry remember_geometry;
 
   static int num_open_dialogs;
 
@@ -188,7 +220,6 @@ struct RememberGeometryQDialog : public QDialog {
 public:
   RememberGeometryQDialog(QWidget *parent_)
     : QDialog(parent_!=NULL ? parent_ : get_current_parent(), Qt::Window | Qt::Tool)
-    , has_stored_geometry(false)
 #if PUT_ON_TOP
     , timer(this)
 #endif
@@ -197,19 +228,7 @@ public:
     //setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
   }
   void setVisible(bool visible) override {      
-    //printf("   Set visible %d\n",visible);
-
-    if (!visible){
-      
-      geometry = saveGeometry();
-      has_stored_geometry = true;
-      
-    } else {
-      
-      if (has_stored_geometry)
-        restoreGeometry(geometry);
-
-    }
+    remember_geometry.remember_geometry_setVisible_override_func(this, visible);
 
     QDialog::setVisible(visible);    
   }
