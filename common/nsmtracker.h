@@ -755,6 +755,7 @@ static inline dyn_t DYN_create_ratio(const Ratio ratio){
   return a;
 }
 
+// (There is also a DYN_get_place function in placement_proc.h)
 static inline Ratio DYN_get_ratio(const dyn_t dyn){
   if (dyn.type==INT_TYPE)
     return make_ratio(dyn.int_number, 1);
@@ -766,6 +767,8 @@ static inline Ratio DYN_get_ratio(const dyn_t dyn){
 
   return make_ratio(0,1);      
 }
+
+
 
 static inline dyn_t DYN_create_place(const Place place){
   return DYN_create_ratio(ratio_minimize(make_ratio(place.counter + place.line*place.dividor, place.dividor)));
@@ -1647,8 +1650,8 @@ static inline bool WSIGNATURE_is_first_beat(const WSignature &signature){
 struct Beats{
   struct ListHeader3 l;
   Ratio signature; // Current signature for this beat.
-  int bar_num;
-  int beat_num;  // For instance, in a 4/4 measure, this value is either 1, 2 or 3, or 4.
+  int bar_num;   // Starts counting from 1.
+  int beat_num;  // For instance, in a 4/4 measure, this value is either 1, 2 or 3, or 4. Starts counting from 1.
 
   Ratio valid_signature; // signature is 0/0 if there isn't a signature change at this beat.
 };
@@ -1727,11 +1730,18 @@ struct TempoNodes{
 // Swings can be placed at beats.
 struct Swing {
   struct ListHeader3 l;
-  Ratio ratio; // Example: 5/4 means that this beat is 1.25 times longer than the other beats.
-
-  //int value; // If 0, then ignore.
-  //bool is_inherited; // I.e. not set explicitly by the user.
+  int weight;
+  int logtype;
 };
+#define NextSwing(a) ((struct Swing *)((a)->l.next))
+
+
+enum WSwingType {
+  WSWING_NORMAL,
+  WSWING_BELOW,
+  WSWING_MUL,
+};
+  
 
 
 /*********************************************************************
@@ -1782,6 +1792,7 @@ struct Blocks{
 
 	struct Tracks *tracks;
 	struct Beats        *beats;
+        dyn_t  filledout_swings; // Used both to calculate timing, and for rendering.
 	struct Signatures   *signatures;
   	struct LPBs   *lpbs;
 	struct Tempos *tempos;
@@ -1869,6 +1880,8 @@ struct WBlocks{
 	WArea lpbarea;
 	WArea tempoTypearea; // When one character signals whether the tempo is down "d", or multi "m"
 	WArea tempoarea;
+        WArea swingarea;
+        WArea swingTypearea;
 	WArea temponodearea;
 
 	YArea linearea;
@@ -2028,6 +2041,7 @@ struct Tracker_Windows{
 #endif
 
   bool show_signature_track;
+  bool show_swing_track;
   bool show_lpb_track;
   bool show_bpm_track;
   bool show_reltempo_track;
@@ -2053,10 +2067,11 @@ struct Tracker_Windows{
 /* curr_track types */
 #define TEMPONODETRACK -1
 #define LINENUMBTRACK -2
-#define SIGNATURETRACK -3
-#define LPBTRACK -4
-#define TEMPOTRACK -5
-#define TEMPOCOLORTRACK -6
+#define SWINGTRACK -3
+#define SIGNATURETRACK -4
+#define LPBTRACK -5
+#define TEMPOTRACK -6
+#define TEMPOCOLORTRACK -7
 #define LEFTMOSTTRACK TEMPOCOLORTRACK
 #define NOTRACK -10000
 

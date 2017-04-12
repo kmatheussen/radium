@@ -38,7 +38,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "reltempo_proc.h"
 #include "seqtrack_proc.h"
 #include "OS_Bs_edit_proc.h"
+#include "Beats_proc.h"
+#include "visual_proc.h"
+
 #include "../embedded_scheme/s7extra_proc.h"
+
 #include "../api/api_timing_proc.h"
 
 #include "time_proc.h"
@@ -981,14 +985,54 @@ const struct STimes *create_stimes_from_tchanges(int num_lines, const struct STi
 }
 
 static dyn_t get_timings_from_scheme(const struct Blocks *block, int bpm, int lpb){
-  return s7extra_callFunc2_dyn_int_int_int_dyn_dyn_dyn("create-block-timings",
-                                                       block->num_lines,
-                                                       bpm,
-                                                       lpb,
-                                                       API_getAllBPM(block),
-                                                       API_getAllLPB(block),
-                                                       API_getAllTemponodes(block)
-                                                       );
+  return s7extra_callFunc2_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn("create-block-timings",
+                                                               block->num_lines,
+                                                               bpm,
+                                                               lpb,
+                                                               API_getAllBPM(block),
+                                                               API_getAllLPB(block),
+                                                               API_getAllTemponodes(block),
+                                                               API_getAllBeats(block),
+                                                               block->filledout_swings //API_getAllBlockSwings(block)
+                                                               );
+}
+
+// Fallback in case create-block-timings failed.
+static dyn_t get_fallback_timings(const struct Blocks *block, int bpm, int lpb){
+
+  // First try scheme again, but now without swing.
+  {
+    dynvec_t empty = {0};
+    
+    dyn_t ret = s7extra_callFunc2_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn("create-block-timings",
+                                                                      block->num_lines,
+                                                                      bpm,
+                                                                      lpb,
+                                                                      API_getAllBPM(block),
+                                                                      API_getAllLPB(block),
+                                                                      API_getAllTemponodes(block),
+                                                                      API_getAllBeats(block),
+                                                                      DYN_create_array(empty)
+                                                                      );
+    
+    if (ret.type==ARRAY_TYPE)
+      return ret;
+  }
+
+
+  // Didn't work. Just return plain timing.
+  {
+    dynvec_t ret = {0};
+    
+    hash_t *hash = HASH_create(3);
+    HASH_put_float(hash, ":x1", bpm*lpb);
+    HASH_put_int(hash, ":y1", 0);
+    HASH_put_float(hash, ":x2", bpm*lpb);
+    HASH_put_int(hash, ":y2", block->num_lines);
+    
+    DYNVEC_push_back(&ret, DYN_create_hash(hash));
+    return DYN_create_array(ret);
+  }
 }
 
 
@@ -1015,8 +1059,15 @@ static void ApplySTimes(struct Blocks **blocks, const struct STimes **stimess, i
 }
 
 static const struct STimes *create_stimes_from_block(struct Blocks *block, int default_bpm, int default_lpb){
+  if(block->beats==NULL)
+    UpdateBeats(block);
+
   dyn_t timings = get_timings_from_scheme(block, default_bpm, default_lpb);
-  R_ASSERT_RETURN_IF_FALSE2(timings.type==ARRAY_TYPE, NULL);
+  if (timings.type!=ARRAY_TYPE){
+    GFX_Message(NULL, "Error. timings function returned faulty data. Expected an array, got %s\n", DYN_type_name(timings.type));
+    timings = get_fallback_timings(block, default_bpm, default_lpb);
+    R_ASSERT(timings.type==ARRAY_TYPE);      
+  }
 
   const struct STimeChange *time_changes = create_time_changes_from_scheme_data(timings.array);
   //const struct STimeChange **tchanges = create_tchanges_from_time_changes(time_changes, block->num_lines, timings.array->num_elements);

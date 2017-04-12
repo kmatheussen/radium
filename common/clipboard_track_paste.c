@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "vector_proc.h"
 #include "time_proc.h"
+#include "swing_proc.h"
 #include "Signature_proc.h"
 #include "LPB_proc.h"
 #include "temponodes_proc.h"
@@ -37,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "tempos_proc.h"
 #include "gfx_wblocks_proc.h"
 #include "undo_tracks_proc.h"
+#include "undo_swings_proc.h"
 #include "undo_signatures_proc.h"
 #include "undo_lpbs_proc.h"
 #include "undo_tempos_proc.h"
@@ -59,6 +61,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_track_paste_proc.h"
 
 
+extern struct Swing *cb_swing;
 extern struct Signatures *cb_signature;
 extern struct LPBs *cb_lpb;
 extern struct Tempos *cb_tempo;
@@ -251,6 +254,15 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
         PC_Pause();
                   
 	switch(window->curr_track){
+		case SWINGTRACK:
+                  if(cb_swing==NULL) goto exit;
+			ADD_UNDO(Swings_CurrPos(window));
+			block->swings=CB_CopySwings(cb_swing);
+			CutListAt_a(&block->swings,&lastplace);
+                        //updatewhat?();
+			//UpdateSTimes(block);
+			//UpdateWLPBs(window,wblock);
+			break;
 		case SIGNATURETRACK:
                   if(cb_signature==NULL) goto exit;
 			ADD_UNDO(Signatures_CurrPos(window));

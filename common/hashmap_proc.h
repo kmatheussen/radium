@@ -61,13 +61,13 @@ static inline void HASH_put_bool(hash_t *hash, const char *key, bool val){
   HASH_put_int(hash, key, val ? 1 : 0);
 }
 
-extern LANGSPEC dyn_t HASH_get_dyn(hash_t *hash, const char *key);
+extern LANGSPEC dyn_t HASH_get_dyn(const hash_t *hash, const char *key);
 extern LANGSPEC const wchar_t *HASH_get_string(const hash_t *hash, const char *key);
 extern LANGSPEC const char *HASH_get_chars(const hash_t *hash, const char *key);
 extern LANGSPEC int64_t HASH_get_int(const hash_t *hash, const char *key);
 extern LANGSPEC double HASH_get_float(const hash_t *hash, const char *key);
 extern LANGSPEC hash_t *HASH_get_hash(const hash_t *hash, const char *key);
-static inline bool HASH_get_bool(hash_t *hash, const char *key){
+static inline bool HASH_get_bool(const hash_t *hash, const char *key){
   return HASH_get_int(hash, key)==1 ? true : false;
 }
 static inline int HASH_get_int32(const hash_t *hash, const char *key){

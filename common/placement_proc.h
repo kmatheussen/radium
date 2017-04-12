@@ -413,6 +413,10 @@ static inline Place p_Last_Pos(const struct Blocks *block){
     p->dividor = 1;                                   \
   }while(0)
 
+static inline Place p_Absolute_Last_Pos(const struct Blocks *block){
+  return place(block->num_lines, 0, 1);
+}
+
 static inline const char* PlaceToString(const Place *a){
   return talloc_format("%d + %d/%d",(a)->line,(a)->counter,(a)->dividor);
 }

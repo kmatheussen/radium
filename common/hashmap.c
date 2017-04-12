@@ -517,7 +517,7 @@ static hash_t *get_hash(const hash_t *hash, const char *key, int i){
   return element->a.hash;
 }
 
-dyn_t HASH_get_dyn(hash_t *hash, const char *key){
+dyn_t HASH_get_dyn(const hash_t *hash, const char *key){
   return get_dyn(hash, key, 0);
 }
 

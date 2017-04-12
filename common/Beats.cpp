@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "list_proc.h"
 #include "player_pause_proc.h"
+#include "../api/api_timing_proc.h"
 
 #include "Beats_proc.h"
 
@@ -136,16 +137,20 @@ static struct Beats *Beats_get(struct Blocks *block, Ratio default_signature, in
   return beats;
 }
 
+// Rename to UpdateBeatsAndSwings2
 void UpdateBeats2(struct Blocks *block, Ratio default_signature, int default_lpb){
   PC_Pause();{
     block->beats = Beats_get(block, default_signature, default_lpb);
+    block->filledout_swings = API_createFilledoutSwings(block); //evalScheme(talloc_format("(create-filledout-swings %d)", block->l.num));
   }PC_StopPause(NULL);
 }
 
+// Rename to UpdateBeatsAndSwings
 void UpdateBeats(struct Blocks *block){
   UpdateBeats2(block, root->signature, root->lpb);
 }
 
+// Rename to UpdateAllBeatsAndSwings
 void UpdateAllBeats(void){
 	struct Blocks *block=root->song->blocks;
 

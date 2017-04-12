@@ -56,8 +56,8 @@ bool BPMTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, in
   QVector<Tempos*> bpms = BPMs_get(wblock, realline);
 
     
-
-  if (false && bpms.size()  > 1) {
+  /*
+  if (bpms.size()  > 1) {
 
     // MORE THAN ONE ELEMENT (treat last element instead)
     
@@ -75,7 +75,10 @@ bool BPMTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, in
       return false;
     
     
-  } else if (bpms.size() == 0) {
+  } else
+  */
+  
+  if (bpms.size() == 0) {
 
     // NO ELEMENTS
 
@@ -107,10 +110,9 @@ bool BPMTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, in
 
       if (dat.is_valid==false)
         return false;
-      printf("   LOg bef: %d, aft: %d, ", bpm->logtype, dat.logtype);
+      //printf("   LOg bef: %d, aft: %d, ", bpm->logtype, dat.logtype);
       SetTempo(wblock->block, &bpm->l.p, dat.value, dat.logtype);
-      printf("   aft2: %d\n", bpm->logtype);
-
+      //printf("   aft2: %d\n", bpm->logtype);
     }    
   }
 

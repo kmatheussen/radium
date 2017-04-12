@@ -217,6 +217,11 @@ int GetXSubTrack_B1(
     return GetXSubTrack1(wtrack,subtrack);
   }
 	switch(track){
+                case SWINGTRACK:{
+                        struct Tracker_Windows *window=root->song->tracker_windows;
+                        return scale(window->curr_othertrack_sub, 0, 3, wblock->swingarea.x, wblock->swingarea.x2);
+			break;
+                }
 		case SIGNATURETRACK:
 			return wblock->signaturearea.x;
 			break;
@@ -252,6 +257,11 @@ int GetXSubTrack_B2(
   }
 
 	switch(track){
+                case SWINGTRACK:{
+                        struct Tracker_Windows *window=root->song->tracker_windows;
+                        return scale(window->curr_othertrack_sub+1, 0, 3, wblock->swingarea.x, wblock->swingarea.x2);
+			break;
+                }
 		case SIGNATURETRACK:
 			return wblock->signaturearea.x2;
 			break;

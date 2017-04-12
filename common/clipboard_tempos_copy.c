@@ -30,6 +30,21 @@ struct Signatures *cb_signature=NULL;
 struct LPBs *cb_lpb=NULL;
 struct Tempos *cb_tempo=NULL;
 struct TempoNodes *cb_temponode=NULL;
+struct Swing *cb_swing=NULL;
+
+
+struct Swing *CB_CopySwings(
+	struct Swing *swing
+){
+	struct Swing *to=NULL;
+
+	while(swing!=NULL){
+          struct Swing *new=tcopy(swing, sizeof(struct Swing));
+          ListAddElement3_a(&to,&new->l);
+          swing=NextSwing(swing);
+	}
+	return to;
+}
 
 
 struct Signatures *CB_CopySignatures(

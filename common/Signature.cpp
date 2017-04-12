@@ -195,5 +195,5 @@ void RemoveSignaturesCurrPos(struct Tracker_Windows *window){
 	//UpdateWSignatures(window,wblock);
 	//UpdateSTimes(wblock->block);
 
-        wblock->block->is_dirty = true;
+        window->must_redraw_editor = true;
 }

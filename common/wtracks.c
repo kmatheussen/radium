@@ -703,6 +703,9 @@ int WTRACK_getx1(
 	case TEMPOCOLORTRACK:
 		return wblock->tempocolorarea.x;
 		break;
+	case SWINGTRACK:
+		return wblock->swingarea.x;
+		break;
 	case SIGNATURETRACK:
 		return wblock->signaturearea.x;
 		break;
@@ -743,6 +746,9 @@ int WTRACK_getx2(
 	case TEMPOCOLORTRACK:
 		return wblock->tempocolorarea.x2;
 		break;
+        case SWINGTRACK:
+                return wblock->swingarea.x2;
+                break;
 	case SIGNATURETRACK:
 		return wblock->signaturearea.x2;
 		break;

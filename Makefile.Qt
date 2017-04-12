@@ -282,7 +282,7 @@ OBJ1= windows.o window_config.o list.o vector.o hashmap.o Dynvec.o song.o blocks
 
 OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o common.o gfx_wtext.o gfx_text.o gfx_lines.o gfx_point.o gfx_op_queue.o
 
-OBJ3= eventreciever.o scancodes.o reallines.o notestext.o trackreallines2.o signaturetext.o lpbtext.o bpmtext.o centtext.o chancetext.o veltext.o fxtext.o data_as_text.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o expand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
+OBJ3= eventreciever.o scancodes.o reallines.o notestext.o trackreallines2.o signaturetext.o lpbtext.o bpmtext.o swingtext.o centtext.o chancetext.o veltext.o fxtext.o data_as_text.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o expand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
 
 OBJ4 = tbox.o area.o range.o nodelines.o
 
@@ -293,7 +293,7 @@ OBJ6= realline_calc.o gfx_subtrack.o LPB.o Signature.o Beats.o gfx_wtrackheaders
 OBJ7= instruments.o patch.o undo_audio_patch_addremove.o fxlines.o fxlines_legalize.o seqtrack.o seqtrack_automation.o song_tempo_automation.o scroll_play.o crashreporter.o crashreporter_posix.o crashreporter_windows.o error.o  threading.o Semaphores.o stacktoucher.o
 
 #Tempos and time
-OBJ8= reltempo.o temponodes.o tempos.o time.o temponodes_legalize.o
+OBJ8= reltempo.o temponodes.o tempos.o time.o temponodes_legalize.o swing.o
 
 #Playing
 OBJ9= Ptask2Mtask.o player.o scheduler.o scheduler_seqtracks.o scheduler_notes.o scheduler_pitches.o scheduler_velocities.o scheduler_fxs.o scheduler_reallines.o scheduler_LPB.o scheduler_Beats.o scheduler_Signature.o playerclass.o player_startstop.o player_pause.o 
@@ -302,7 +302,7 @@ OBJ9= Ptask2Mtask.o player.o scheduler.o scheduler_seqtracks.o scheduler_notes.o
 OBJ10= disk.o disk_fxs.o disk_wblock.o disk_localzooms.o disk_track.o disk_fx.o disk_fxnodelines.o disk_wtrack.o disk_temponodes.o disk_tempos.o disk_song.o disk_velocities.o disk_block.o disk_placement.o disk_stops.o disk_playlist.o disk_root.o disk_notes.o disk_lpbs.o disk_signatures.o disk_windows.o disk_warea.o disk_save.o disk_load.o disk_instrument.o disk_patches.o disk_slider.o
 
 #Undo
-OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.o undo_signatures.o undo_notesandfxs.o undo_reallines.o undo_tracks.o undo_range.o undo_blocks.o undo_trackheader.o undo_reltempomax.o undo_maintempos.o undo_block_insertdelete.o undo_block_mergesplit.o undo_reltemposlider.o undo_sequencer.o undo_song_tempo_automation.o undo_patchvoice.o undo_patchname.o undo_chip_position.o
+OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_swings.o undo_lpbs.o undo_signatures.o undo_notesandfxs.o undo_reallines.o undo_tracks.o undo_range.o undo_blocks.o undo_trackheader.o undo_reltempomax.o undo_maintempos.o undo_block_insertdelete.o undo_block_mergesplit.o undo_reltemposlider.o undo_sequencer.o undo_song_tempo_automation.o undo_patchvoice.o undo_patchname.o undo_chip_position.o
 
 #X11 Spesific
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
@@ -650,6 +650,9 @@ lpbtext.o:  $(BUILD_DEPENDENCIES) $(CD)lpbtext.cpp
 bpmtext.o:  $(BUILD_DEPENDENCIES) $(CD)bpmtext.cpp
 	$(CCC) $(CD)bpmtext.cpp $(QTOPT)
 
+swingtext.o:  $(BUILD_DEPENDENCIES) $(CD)swingtext.cpp
+	$(CCC) $(CD)swingtext.cpp $(QTOPT)
+
 centtext.o:  $(BUILD_DEPENDENCIES) $(CD)centtext.cpp
 	$(CCC) $(CD)centtext.cpp $(QTOPT)
 
@@ -697,6 +700,9 @@ gfx_subtrack.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_subtrack.c common/nsmtracker.h
 
 tempos.o:  $(BUILD_DEPENDENCIES) $(CD)tempos.cpp
 	$(CCC) $(CD)tempos.cpp $(QTOPT)
+
+swing.o:  $(BUILD_DEPENDENCIES) $(CD)swing.cpp
+	$(CCC) $(CD)swing.cpp $(QTOPT)
 
 LPB.o:  $(BUILD_DEPENDENCIES) $(CD)LPB.cpp
 	$(CCC) $(CD)LPB.cpp $(QTOPT)
@@ -968,6 +974,9 @@ undo_temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)undo_temponodes.c $(CD)undo.h
 
 undo_tempos.o:  $(BUILD_DEPENDENCIES) $(CD)undo_tempos.c $(CD)undo.h
 	$(CC) $(CD)undo_tempos.c $(OPT)
+
+undo_swings.o:  $(BUILD_DEPENDENCIES) $(CD)undo_swings.c $(CD)undo.h
+	$(CC) $(CD)undo_swings.c $(OPT)
 
 undo_lpbs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_lpbs.c $(CD)undo.h
 	$(CC) $(CD)undo_lpbs.c $(OPT)

@@ -116,6 +116,7 @@ struct Tracker_Windows *LoadWindow(void){
 	window->l.num=DC_LoadN();
 
         window->show_signature_track=true;
+        window->show_swing_track=true;
         window->show_lpb_track=true;
         window->show_bpm_track=true;
         window->show_reltempo_track=true;

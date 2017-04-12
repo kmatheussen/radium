@@ -34,6 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nodelines_proc.h"
 #include "../common/reltempo_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "api_common_proc.h"
 #include "api_support_proc.h"
 #include "radium_proc.h"
@@ -540,6 +542,84 @@ dyn_t getAllTemponodes(int blocknum, int windownum){
   return API_getAllTemponodes(wblock->block);
 }
 
+
+
+/************* Beats ************************/
+
+dyn_t API_getAllBeats(const struct Blocks *block){
+  dynvec_t ret = {0};
+  struct Beats *beat = block->beats;
+
+  while(beat != NULL){
+    hash_t *hash = HASH_create(3);
+
+    HASH_put_dyn(hash, ":place", DYN_create_place(beat->l.p));
+    HASH_put_int(hash, ":barnum", beat->bar_num);
+    HASH_put_int(hash, ":beatnum", beat->beat_num);
+
+    DYNVEC_push_back(&ret, DYN_create_hash(hash));
+
+    beat = NextBeat(beat);
+  }
+
+  return DYN_create_array(ret);
+}
+  
+dyn_t getAllBeats(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return DYN_create_bool(false);
+
+  return API_getAllBeats(wblock->block);
+}
+
+
+
+/************* Swing ************************/
+
+static dyn_t create_swing(const Place place, int weight, int logtype){
+  dynvec_t swing = {0};
+  DYNVEC_push_back(&swing, DYN_create_place(place));
+  DYNVEC_push_back(&swing, DYN_create_int(weight));
+  DYNVEC_push_back(&swing, DYN_create_int(logtype));
+  return DYN_create_array(swing);
+}
+
+dyn_t API_getAllBlockSwings(const struct Blocks *block){
+  dynvec_t ret = {0};
+
+  struct Swing *swing = block->swings;
+
+  while(swing != NULL){
+    DYNVEC_push_back(&ret, create_swing(swing->l.p, swing->weight, swing->logtype));
+    swing = NextSwing(swing);
+  }
+  
+  return DYN_create_array(ret);
+}
+  
+dyn_t getAllBlockSwings(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return DYN_create_bool(false);
+
+  return API_getAllBlockSwings(wblock->block);
+}
+
+dyn_t API_createFilledoutSwings(const struct Blocks *block){
+  dynvec_t empty = {0};
+
+  return s7extra_callFunc2_dyn_dyn_dyn_dyn_int("create-filledout-swings2",
+                                               API_getAllBeats(block),
+                                               API_getAllBlockSwings(block),
+                                               DYN_create_array(empty),
+                                               block->num_lines
+                                               );
+}
+
+/*
 dyn_t testsomething(dyn_t arg){
   hash_t *hash = HASH_create(5);
   HASH_put_int(hash,":a", 1);
@@ -560,3 +640,5 @@ dyn_t testsomething(dyn_t arg){
 
   return DYN_create_hash(hash);
 }
+*/
+

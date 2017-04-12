@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/placement_proc.h"
 #include "../common/velocities_proc.h"
 #include "../common/tempos_proc.h"
+#include "../common/swing_proc.h"
 #include "../common/Signature_proc.h"
 #include "../common/LPB_proc.h"
 #include "../common/temponodes_proc.h"
@@ -374,6 +375,9 @@ void insertReallines(int toinsert,int windownum){
 void generalDelete(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   switch(window->curr_track){
+  case SWINGTRACK:
+    RemoveSwingCurrPos(window);
+    break;
   case SIGNATURETRACK:
     RemoveSignaturesCurrPos(window);
     break;
@@ -1482,6 +1486,18 @@ void showHideSignatureTrack(int windownum){
   window->must_redraw = true;
 }
 
+void showHideSwingTrack(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+
+  window->show_swing_track = !window->show_swing_track;
+
+  if (!window->show_swing_track && window->curr_track==SWINGTRACK)
+    ATOMIC_WRITE(window->curr_track, 0);
+
+  UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
+}
+
 void showHideLPBTrack(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
 
@@ -1516,6 +1532,11 @@ void showHideReltempoTrack(int windownum){
 
   UpdateAllWBlockCoordinates(window);
   window->must_redraw = true;
+}
+
+bool swingTrackVisible(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
+  return window->show_swing_track;
 }
 
 bool signatureTrackVisible(int windownum){

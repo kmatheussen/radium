@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "temponodes_legalize_proc.h"
 #include "gfx_wblocks_proc.h"
 #include "temponodes_proc.h"
+#include "swing_proc.h"
 #include "Signature_proc.h"
 #include "LPB_proc.h"
 #include "tempos_proc.h"
@@ -36,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_tempos_proc.h"
 #include "undo_temponodes_proc.h"
 #include "undo_lpbs_proc.h"
+#include "undo_swings_proc.h"
 #include "undo_signatures_proc.h"
 #include "undo_notes_proc.h"
 #include "undo_notesandfxs_proc.h"
@@ -131,6 +133,14 @@ void InsertPlace_lpbs(
 	List_InsertPlaceLen3(block,&block->lpbs,&block->lpbs->l,place,toplace,NULL);
 }
 
+void InsertPlace_swings(
+	struct Blocks *block,
+	float place,
+	float toplace
+){
+	List_InsertPlaceLen3(block,&block->swings,&block->swings->l,place,toplace,NULL);
+}
+
 void InsertPlace_signatures(
 	struct Blocks *block,
 	float place,
@@ -181,6 +191,11 @@ void InsertRealLines_CurrPos(
         PC_Pause();
           
 	switch(window->curr_track){
+		case SWINGTRACK:
+                  ADD_UNDO(Swings_CurrPos(window));
+			InsertPlace_swings(block,place,toplace);
+                        //updatewhat?();
+			break;
 		case SIGNATURETRACK:
                   ADD_UNDO(Signatures_CurrPos(window));
 			InsertPlace_signatures(block,place,toplace);

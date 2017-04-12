@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 bool cb_wtrack_only_contains_one_fxs = false;
 struct WTracks *cb_wtrack=NULL;
 
+extern struct Swing *cb_swing;
 extern struct Signatures *cb_signature;
 extern struct LPBs *cb_lpb;
 extern struct Tempos *cb_tempo;
@@ -123,6 +124,9 @@ void CB_CopyTrack_CurrPos(
 	struct WTracks *wtrack=wblock->wtrack;
 
 	switch(window->curr_track){
+		case SWINGTRACK:
+			cb_swing=CB_CopySwings(block->swings);
+			break;
 		case SIGNATURETRACK:
 			cb_signature=CB_CopySignatures(block->signatures);
 			break;

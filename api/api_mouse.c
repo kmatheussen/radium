@@ -819,6 +819,9 @@ int getLPBTrackNum(void){
 int getSignatureTrackNum(void){
   return SIGNATURETRACK;
 }
+int getSwingTrackNum(void){
+  return SWINGTRACK;
+}
 int getTempoColorTrackNum(void){
   return TEMPOCOLORTRACK;
 }

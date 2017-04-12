@@ -141,6 +141,11 @@
 (define (to-integer A)
   (inexact->exact (floor A)))
 
+(define (to-list A)
+  (if (vector? A)
+      (vector->list A)
+      A))
+
 (define (min-notfalse . Args)
   (match (list Args)
          ()          :> #f

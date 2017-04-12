@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "tempos_proc.h"
 #include "gfx_wblocks_proc.h"
 #include "undo_tracks_proc.h"
+#include "undo_swings_proc.h"
 #include "undo_signatures_proc.h"
 #include "undo_lpbs_proc.h"
 #include "undo_tempos_proc.h"
@@ -44,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_track_cut_proc.h"
 
 
+extern struct Swing *cb_swing;
 extern struct Signatures *cb_signature;
 extern struct LPBs *cb_lpb;
 extern struct Tempos *cb_tempo;
@@ -134,6 +136,16 @@ void CB_CutTrack_CurrPos(
         PC_Pause();{
           
 	switch(window->curr_track){
+		case SWINGTRACK:
+                  ADD_UNDO(Swings_CurrPos(window));
+			cb_swing=CB_CopySwings(block->swings);
+			block->swings=NULL;
+                        //updatewhat?();
+                        //UpdateBeats(block);
+                        //UpdateWBlockWidths(window, wblock);
+			//UpdateSTimes(block);
+			//UpdateWLPBs(window,wblock);
+			break;
 		case SIGNATURETRACK:
                   ADD_UNDO(Signatures_CurrPos(window));
 			cb_signature=CB_CopySignatures(block->signatures);

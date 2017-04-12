@@ -50,10 +50,62 @@ void UpdateSwings(struct Blocks *block){
   UpdateSTimes(block);
 }
 
+
+// If a bar has any swing value, make sure the bar start also have a swing value.
+static void add_missing_swing_in_bar(const struct Blocks *block, const struct Beats *bar, const struct Swing *swing, QVector<Swing*> &new_swings){
+  const Place bar_start = bar->l.p;
+
+  const struct Beats *next_bar = bar;
+  while(next_bar!=NULL && next_bar->bar_num==bar->bar_num)
+    next_bar=NextBeat(next_bar);
+
+  const Place bar_end = next_bar==NULL ? p_Absolute_Last_Pos(block) : next_bar->l.p;
+
+  bool has_swing_start = false;
+
+  while(swing!=NULL){
+    if (p_Equal(swing->l.p, bar_start)){
+
+      R_ASSERT(has_swing_start==false);
+      has_swing_start = true;
+      
+    } else if (p_Greater_Or_Equal(swing->l.p, bar_end)){
+
+      R_ASSERT_RETURN_IF_FALSE(next_bar!=NULL);
+      add_missing_swing_in_bar(block, next_bar, swing, new_swings);
+      return;
+      
+    } else if (has_swing_start==false) {
+      struct Swing *new_swing = (struct Swing*)talloc(sizeof(struct Swing));
+      new_swing->l.p = bar_start;
+      new_swing->weight = 4;
+      new_swing->logtype = LOGTYPE_HOLD;
+      new_swings.push_back(new_swing);
+
+      has_swing_start = true;
+    }
+
+    swing = NextSwing(swing);
+  }
+
+}
+
+static void legalize_swings(struct Blocks *block){
+  QVector<Swing*> new_swings;
+
+  add_missing_swing_in_bar(block, block->beats, block->swings, new_swings);
+
+  for(auto *swing : new_swings)
+    ListAddElement3(&block->swings, &swing->l);
+}
+
+// TODO: Automatically add swing to first beat in bar, if it doesn't exist.
 void AddSwing(struct Blocks *block, const Place place, int weight, int logtype){
   struct Swing *swing = (struct Swing*)ListFindElement3(&block->swings->l,&place);
 
   bool already_there = swing!=NULL && p_Equal(swing->l.p, place);
+
+  printf("Adding place %s. Old: %s. Already_there: %d\n", PlaceToString(&place), swing==NULL ? "NULL" : PlaceToString(&swing->l.p), already_there);
 
   if (!already_there){
     swing = (struct Swing*)talloc(sizeof(struct Swing));
@@ -63,8 +115,10 @@ void AddSwing(struct Blocks *block, const Place place, int weight, int logtype){
   swing->weight = weight;
   swing->logtype = logtype;
 
-  if (!already_there)
+  if (!already_there) {
     ListAddElement3(&block->swings, &swing->l);
+    legalize_swings(block);
+  }
 
   UpdateSwings(block);
   //updatewhat?();
@@ -72,6 +126,7 @@ void AddSwing(struct Blocks *block, const Place place, int weight, int logtype){
 
 void RemoveSwing(struct Blocks *block,struct Swing *swing){
   ListRemoveElement3(&block->swings,&swing->l);
+  legalize_swings(block);
 
   UpdateSwings(block);
   //updatewhat?();
@@ -79,6 +134,7 @@ void RemoveSwing(struct Blocks *block,struct Swing *swing){
 
 static void RemoveSwings(struct Blocks *block,Place *p1,Place *p2){
   ListRemoveElements3(&block->swings,p1,p2);
+  legalize_swings(block);
 
   UpdateSwings(block);
   //updatewhat?();

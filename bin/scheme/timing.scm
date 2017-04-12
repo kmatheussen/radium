@@ -78,20 +78,24 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
 ;;;;;;;;;;;; SWING :::::::::::::::::::
 ::::::::::::::::::::::::::::::::::::::
 
-(define (create-swing line weight)
-  (list line weight))
+(define (create-swing line weight logtype)
+  (vector line weight logtype))
 
 (define (get-swing-line swing)
-  (car swing))
+  (swing 0))
 
 (define (get-swing-weight swing)
-  (cadr swing))
+  (swing 1))
+
+(define (get-swing-logtype swing)
+  (swing 2))
 
 
 (define-struct bar-swing
   :barnum
   :swings
-  :num-lines)
+  :num-lines
+  :auto-generated #f)
 
 
 ;;(define (bars-have-same-signatures? prev-bar prev-bar-length bar curr-bar-length)
@@ -171,7 +175,8 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
                                       :swings (map (lambda (swing)
                                                      (create-swing (- (get-swing-line swing)
                                                                       first-line)
-                                                                   (get-swing-weight swing)))
+                                                                   (get-swing-weight swing)
+                                                                   (get-swing-logtype swing)))
                                                    (reverse result))
                                       :num-lines (- next-line first-line))
                       (group-swing-by-bar (cdr bars) swings num-lines))))
@@ -185,46 +190,51 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
                     (gotit)
                     (loop (cdr swings)
                           (cons (if (and is-first-bar
-                                         (> swing-line first-line))
+                                         (> swing-line first-line)) ;; Move first swing to first beat, if it isn't at first beat already.
                                     (create-swing first-line
-                                                  (get-swing-weight swing))
+                                                  (get-swing-weight swing)
+                                                  (get-swing-logtype swing))
                                     swing)
                                 result)
                           #f))))))))
         
+(pretty-print (group-swing-by-bar (list (make-bar :barnum 0 :beats (list (create-beat 0 0))))
+                                  (list (create-swing 1 2 0))
+                                  4))
+        
 (pretty-print (group-swing-by-bar (list (make-bar :barnum 0 :beats (list (create-beat 0 0)))
                                         (make-bar :barnum 1 :beats (list (create-beat 2 0))))
-                                  (list (create-swing 0 1)
-                                        (create-swing 1 2)
-                                        (create-swing 3 5))
+                                  (list (create-swing 0 1 0)
+                                        (create-swing 1 2 0)
+                                        (create-swing 3 5 0))
                                   4))
         
 
 (***assert*** (group-swing-by-bar (list (make-bar :barnum 0 :beats (list (create-beat 0 0)))
                                         (make-bar :barnum 1 :beats (list (create-beat 2 0))))
-                                  (list (create-swing 0 1)
-                                        (create-swing 1 2)
-                                        (create-swing 2 4)
-                                        (create-swing 3 5))
+                                  (list (create-swing 0 1 0)
+                                        (create-swing 1 2 0)
+                                        (create-swing 2 4 0)
+                                        (create-swing 3 5 0))
                                   4)
-              (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1)
-                                                            (create-swing 1 2))
+              (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1 0)
+                                                            (create-swing 1 2 0))
                                     :num-lines 2)
-                    (make-bar-swing :barnum 1 :swings (list (create-swing 0 4)
-                                                            (create-swing 1 5))
+                    (make-bar-swing :barnum 1 :swings (list (create-swing 0 4 0)
+                                                            (create-swing 1 5 0))
                                     :num-lines 2)))
 
 
 (***assert*** (group-swing-by-bar (list (make-bar :barnum 0 :beats (list (create-beat 0 0)))
                                         (make-bar :barnum 1 :beats (list (create-beat 2 0))))
-                                  (list (create-swing 0 1)
-                                        (create-swing 1 2)
-                                        (create-swing 3 5))
+                                  (list (create-swing 0 1 0)
+                                        (create-swing 1 2 0)
+                                        (create-swing 3 5 0))
                                   4)
-              (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1)
-                                                            (create-swing 1 2))
+              (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1 0)
+                                                            (create-swing 1 2 0))
                                     :num-lines 2)
-                    (make-bar-swing :barnum 1 :swings (list (create-swing 0 5))
+                    (make-bar-swing :barnum 1 :swings (list (create-swing 0 5 0))
                                     :num-lines 2)))
 
 
@@ -294,7 +304,9 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
                          (= (curr-swing :num-lines)
                             curr-bar-length)))
 
-                  (cons (copy-bar-swing curr-swing :barnum barnum)
+                  (cons (copy-bar-swing curr-swing
+                                        :barnum barnum
+                                        :auto-generated #t)
                         (loop (cdr bars)
                               bar
                               curr-swing
@@ -308,45 +320,75 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
                         global-swings
                         track-swings)))))))
 
-
-
 (***assert*** (create-filledout-swings (list (make-bar :barnum 0 :beats (list (create-beat 0 0)))
                                              (make-bar :barnum 1 :beats (list (create-beat 2 0)))
                                              (make-bar :barnum 2 :beats (list (create-beat 4 0))))
-                                       (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1)
-                                                                                     (create-swing 1 2))
+                                       (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1 0)
+                                                                                     (create-swing 1 2 0))
                                                              :num-lines 2))
-                                       (list (make-bar-swing :barnum 2 :swings (list (create-swing 0 2)
-                                                                                     (create-swing 1 1))
+                                       (list (make-bar-swing :barnum 2 :swings (list (create-swing 0 2 0)
+                                                                                     (create-swing 1 1 0))
                                                              :num-lines 2))
                                        6)
-              (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1)
-                                                            (create-swing 1 2))
+              (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1 0)
+                                                            (create-swing 1 2 0))
                                     :num-lines 2)
-                    (make-bar-swing :barnum 1 :swings (list (create-swing 0 1)
-                                                            (create-swing 1 2))
-                                    :num-lines 2)
-                    (make-bar-swing :barnum 2 :swings (list (create-swing 0 2)
-                                                            (create-swing 1 1))
+                    (make-bar-swing :barnum 1 :swings (list (create-swing 0 1 0)
+                                                            (create-swing 1 2 0))
+                                    :num-lines 2
+                                    :auto-generated #t)
+                    (make-bar-swing :barnum 2 :swings (list (create-swing 0 2 0)
+                                                            (create-swing 1 1 0))
                                     :num-lines 2)))
 
 ;; Test that we don't repeat swing when there is a signature change. (actually, when the bar changes number of lines)
 (***assert*** (create-filledout-swings (list (make-bar :barnum 0 :beats (list (create-beat 0 0)))
                                              (make-bar :barnum 1 :beats (list (create-beat 2 0)))
                                              (make-bar :barnum 2 :beats (list (create-beat 4 0))))
-                                       (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1)
-                                                                                     (create-swing 1 2))
+                                       (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1 0)
+                                                                                     (create-swing 1 2 0))
                                                              :num-lines 2))
-                                       (list (make-bar-swing :barnum 1 :swings (list (create-swing 0 2)
-                                                                                     (create-swing 1 1))
+                                       (list (make-bar-swing :barnum 1 :swings (list (create-swing 0 2 0)
+                                                                                     (create-swing 1 1 0))
                                                              :num-lines 2))
                                        5)
-              (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1)
-                                                            (create-swing 1 2))
+              (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1 0)
+                                                            (create-swing 1 2 0))
                                     :num-lines 2)
-                    (make-bar-swing :barnum 1 :swings (list (create-swing 0 2)
-                                                            (create-swing 1 1))
+                    (make-bar-swing :barnum 1 :swings (list (create-swing 0 2 0)
+                                                            (create-swing 1 1 0))
                                     :num-lines 2)))
+
+
+#||
+(***assert*** (get-barswings-from-swings (list (make-bar :barnum 0 :beats (list (create-beat 0 0)))
+                                               (make-bar :barnum 1 :beats (list (create-beat 2 0)))
+                                               (make-bar :barnum 2 :beats (list (create-beat 4 0))))
+                                         (vector (create-swing 0 1 0)
+                                                 (create-swing 1 2 0)
+                                                 (create-swing 2 3 0)
+                                                 (create-swing 3 4 0)))
+              (list (make-bar-swing :barnum 0
+                                    :swings (list (create-swing 0 1 0)
+                                                  (create-swing 1 2 0))
+                                    :num-lines 2)
+                    (make-bar-swing :barnum 1
+                                    :swings (list (create-swing 0 3 0)
+                                                  (create-swing 1 4 0))
+                                    :num-lines 2)))
+||#
+
+(define (create-filledout-swings2 beats global-swings track-swings num-lines)  
+  (define bars (get-bars-from-beats beats))
+  (define RET (create-filledout-swings bars
+                                       (group-swing-by-bar bars (to-list global-swings) num-lines)
+                                       (group-swing-by-bar bars (to-list track-swings) num-lines)
+                                       num-lines))
+  (c-display "  global-swings" global-swings)
+  (c-display "  grouped" (pp (group-swing-by-bar bars (to-list global-swings) num-lines)))
+  RET)
+
+
 
 
 #||
@@ -370,9 +412,10 @@ list<pos,tempo_multiplication,hold>
   :y1 :x1
   :y2 :x2)
 
-
+#||
+Old version. Not correct.
 (define (create-tempo-multipliers-from-swing start-line bar-swing)
-  (define swings (bar-swing :swings))
+  (define swings (to-list (bar-swing :swings)))
   (define num-lines (bar-swing :num-lines))
   (define end-line (+ start-line num-lines))
   (define weight-sum (let loop ((swings swings))
@@ -398,47 +441,211 @@ list<pos,tempo_multiplication,hold>
                           (get-swing-line next-swing)
                           num-lines))
                (duration (- line2 line1)))
-          (define multiplier (/ (* duration
+          (define multiplier (/ (* ;;duration
                                    (/ 1 (get-swing-weight swing))
                                    num-lines)
                                 weight-sum))
           (cons (make-tempo-multiplier :y1 (+ start-line line1) :x1 multiplier
                                        :y2 (+ start-line line2) :x2 multiplier)
                 (loop (cdr swings)))))))
+||#
 
-(***assert*** (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 1)
-                                                                                              (create-swing 1 2))
+;; https://www.wolframalpha.com/input/?i=1%2F(x*a1)+%2B+1%2F(x*a2)+%2B+1%2F(x*a3)+%2B+1%2F(x*a4)+%3D+4
+(define (swing-find-x all-swings min-weight max-weight num-lines)
+  (define weights (let loop ((swings all-swings))
+                    (c-display "swings" swings)
+                    (if (null? swings)
+                        '()
+                        (let* ((swing (car swings))
+                               (line1 (get-swing-line swing))
+                               (next-swing (cl-cadr swings))
+                               (line2 (if next-swing
+                                          (get-swing-line next-swing)
+                                          num-lines))
+                               (duration (- line2 line1))
+                               (weight (/ (scale (get-swing-weight swing) min-weight max-weight max-weight min-weight)
+                                          duration)))
+                          (cons weight
+                                (loop (cdr swings)))))))
+                         
+  (define total-weight (apply * weights))
+  (define denominator (* num-lines total-weight))
+
+  (define numerator (let loop ((swings all-swings)
+                               (weights weights))
+                      (if (null? swings)
+                          0
+                          (+ (/ total-weight (car weights))
+                             (loop (cdr swings)
+                                   (cdr weights))))))
+  
+  (c-display "num" numerator "den" denominator)
+  (/ numerator
+     denominator)
+  )
+
+;; todo: invert weights.
+          
+(define (create-tempo-multipliers-from-swing start-line bar-swing)
+  (define swings (to-list (bar-swing :swings)))
+  (define num-lines (bar-swing :num-lines))
+  (define end-line (+ start-line num-lines))
+
+  (define (no-swing)
+    (list (make-tempo-multiplier :y1 start-line :x1 1
+                                 :y2 end-line :x2 1)))
+
+  (if (or (null? swings)
+          (null? (cdr swings)))
+      (no-swing)
+      (let* ((swing-weights (map get-swing-weight swings))
+             (min-weight (apply min swing-weights))
+             (max-weight (apply max swing-weights)))
+        (if (= min-weight max-weight)
+            (no-swing)
+            (let ((x (swing-find-x swings min-weight max-weight num-lines)))
+              (c-display "num-lines" num-lines "x" x)
+              (let loop ((swings swings)
+                         (first-x1 #f))
+                (if (null? swings)
+                    '()
+                    (let* ((swing (car swings))
+                           (line1 (get-swing-line swing))
+                           (next-swing (cl-cadr swings))
+                           (line2 (if next-swing
+                                      (get-swing-line next-swing)
+                                      num-lines))
+                           (duration (- line2 line1)))
+                      (c-display "x" x "dur" duration "weight" (get-swing-weight swing))
+                      (define tempo-multiplier (/ (* x (scale (get-swing-weight swing) min-weight max-weight max-weight min-weight))
+                                                  1));duration))
+                      (let* ((x1 tempo-multiplier)
+                             (rest (loop (cdr swings)
+                                         (or first-x1 x1)))
+                             (x2 (cond ((= (get-swing-logtype swing) *logtype-hold*)
+                                        x1)
+                                       ((null? rest)
+                                        first-x1)
+                                       (else
+                                        ((car rest) :x1)))))
+                        
+                      (cons (make-tempo-multiplier :y1 (+ start-line line1) :x1 x1
+                                                   :y2 (+ start-line line2) :x2 x2)
+                            rest))))))))))
+
+(pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 4 0)   ;; sakte
+                                                                                    (create-swing 1 1 0))  ;; rask
+                                                            :num-lines 2)))
+
+(pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 4 0)   ;; sakte
+                                                                                    (create-swing 2 1 0))  ;; rask
+                                                            :num-lines 4)))
+
+(pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 4 0)   ;; sakte
+                                                                                    (create-swing 4 1 0))  ;; rask
+                                                            :num-lines 8)))
+
+(pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 4 0)   ;; sakte
+                                                                                    (create-swing 3 1 0))  ;; rask
+                                                            :num-lines 4)))
+(pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 4 0)   ;; sakte
+                                                                                    (create-swing 1 1 0))  ;; rask
+                                                            :num-lines 4)))
+
+(+ (* 3 (/ 1 13/16))
+   (* 1 (/ 1 13/4)))
+
+(+ (* 1 (/ 1 7/16))
+   (* 3 (/ 1 7/4)))
+
+(+ (* 2 (/ 1 5/8))
+   (* 2 (/ 1 5/2)))
+
+(+ (* 4 (/ 1 5/8))
+   (* 4 (/ 1 5/2)))
+
+(+ (/ 1 5/8)
+   (/ 1 5/2))
+
+(+ (/ 1 2/5)
+   (/ 1 8/5))
+
+(/ (* 2 4)
+   5)
+(/ 8/5 4)
+(/ 8/5 1)
+
+(+ (/ 1 2/5)
+   (/ 1 8/5))
+
+(+ (/ 1
+      (/ 20 8))
+   (/ 1
+      (/ 5 8)))
+      
+
+(+ (/ 1 (* 2/5
+           4))
+   (/ 1 (* 2/5
+           1)))
+
+(+ (/ 1 2/5)
+   (/ 1 8/5))
+
+(list (* 8/5 1 (/ 1 4))
+      (* 8/5 1 (/ 1 1)))
+
+(+ (* 8/5 1 (/ 1 4))
+   (* 8/5 1 (/ 1 1)))
+
+(pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 4 0)
+                                                                                    (create-swing 2 1 0))
+                                                            :num-lines 4)))
+
+(pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 4 0)
+                                                                                    (create-swing 1 1 0))
+                                                            :num-lines 2)))
+(pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 4 0)
+                                                                                    (create-swing 1 1 0))
+                                                            :num-lines 3)))
+
+#||
+(***assert*** (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 1 0)
+                                                                                              (create-swing 1 2 0))
                                                                       :num-lines 2))
               (list (make-tempo-multiplier :y1 10 :x1 4/3
                                            :y2 11 :x2 4/3)
                     (make-tempo-multiplier :y1 11 :x1 2/3
                                            :y2 12 :x2 2/3)))
               
-(***assert*** (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 1)
-                                                                                              (create-swing 1 2))
+(***assert*** (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 1 0)
+                                                                                              (create-swing 1 2 0))
                                                                       :num-lines 3))
               (list (make-tempo-multiplier :y1 10 :x1 3/2
                                            :y2 11 :x2 3/2)
                     (make-tempo-multiplier :y1 11 :x1 6/4
                                            :y2 13 :x2 6/4)))
               
+||#
 
 #!!
-(pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 1)
-                                                                                    (create-swing 1 2))
+(pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 1 0)
+                                                                                    (create-swing 1 2 0))
                                                             :num-lines 3)))
-(pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 1)
-                                                                                    (create-swing 1 2)
-                                                                                    (create-swing 2 2))
+(pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 1 0)
+                                                                                      (create-swing 1 2 0))
+                                                            :num-lines 3)))
+(pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 1 0)
+                                                                                    (create-swing 1 2 0)
+                                                                                    (create-swing 2 2 0))
                                                             :num-lines 3)))
 !!#
 
-;; TODO:
-;; * Call create-filled-out-bar-swings
-;; * Add (:x1 1 :x1 1) for bars that has no defined bar-swing
 (define (create-tempo-multipliers-from-swings bars bar-swings num-lines)
   (define bar (cl-car bars))
   (define bar-swing (cl-car bar-swings))
+  ;;(c-display "   BAR:" bar)
+  ;;(c-display "   bars:" bars)
   (define line (and bar (get-first-line-in-bar bar)))
 
   (if (not bar-swing)      
@@ -455,14 +662,14 @@ list<pos,tempo_multiplication,hold>
 (pp (create-tempo-multipliers-from-swings (list (make-bar :barnum 0 :beats (list (create-beat 0 0)))
                                                 (make-bar :barnum 1 :beats (list (create-beat 2 0)))
                                                 (make-bar :barnum 2 :beats (list (create-beat 4 0))))
-                                          (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1)
-                                                                                        (create-swing 1 2))
+                                          (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1 0)
+                                                                                        (create-swing 1 2 0))
                                                                 :num-lines 2)
-                                                (make-bar-swing :barnum 1 :swings (list (create-swing 0 1)
-                                                                                        (create-swing 1 2))
+                                                (make-bar-swing :barnum 1 :swings (list (create-swing 0 1 0)
+                                                                                        (create-swing 1 2 0))
                                                                 :num-lines 2)
-                                                (make-bar-swing :barnum 2 :swings (list (create-swing 0 2)
-                                                                                        (create-swing 1 1))
+                                                (make-bar-swing :barnum 2 :swings (list (create-swing 0 2 0)
+                                                                                        (create-swing 1 1 0))
                                                                 :num-lines 2))
                                           64))
 !!#
@@ -471,14 +678,14 @@ list<pos,tempo_multiplication,hold>
 (***assert*** (create-tempo-multipliers-from-swings (list (make-bar :barnum 0 :beats (list (create-beat 0 0)))
                                                           (make-bar :barnum 1 :beats (list (create-beat 2 0)))
                                                           (make-bar :barnum 2 :beats (list (create-beat 4 0))))
-                                                    (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1)
-                                                                                                  (create-swing 1 2))
+                                                    (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1 0)
+                                                                                                  (create-swing 1 2 0))
                                                                           :num-lines 2)
-                                                          (make-bar-swing :barnum 1 :swings (list (create-swing 0 1)
-                                                                                                  (create-swing 1 2))
+                                                          (make-bar-swing :barnum 1 :swings (list (create-swing 0 1 0)
+                                                                                                  (create-swing 1 2 0))
                                                                           :num-lines 2)
-                                                          (make-bar-swing :barnum 2 :swings (list (create-swing 0 2)
-                                                                                                  (create-swing 1 1))
+                                                          (make-bar-swing :barnum 2 :swings (list (create-swing 0 2 0)
+                                                                                                  (create-swing 1 1 0))
                                                                           :num-lines 2)))
               (list (make-tempo-multiplier :y1 0 :multiplier 4/3 :multiplier-end 4/3)
                     (make-tempo-multiplier :y1 1 :multiplier 2/3 :multiplier-end 2/3)
@@ -488,6 +695,85 @@ list<pos,tempo_multiplication,hold>
                     (make-tempo-multiplier :y1 5 :multiplier 4/3 :multiplier-end 4/3)))
 !!#
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;; Bars (scheme, this file) and Beats (C, nsmtracker.h) contains the same info, but in a different format.
+(define (get-bars-from-beats beats)
+  (define iterator (make-iterator beats))
+  (let loop ((beat (iterator))
+             (curr-barnum 0)
+             (curr-beats '()))
+    ;;(c-display "beats" curr-barnum beats)
+    (define (get-curr-bar)
+      (make-bar :barnum curr-barnum
+                :beats (reverse curr-beats)))
+    (if (eof-object? beat)
+        (list (get-curr-bar))
+        (let* ((place (beat :place))
+               (barnum (1- (beat :barnum))))
+          ;;(c-display "barnum" barnum)
+          (if (= curr-barnum barnum)
+              (loop (iterator)
+                    curr-barnum
+                    (cons (create-beat place
+                                       (1- (beat :beatnum)))
+                          curr-beats))
+              (cons (get-curr-bar)
+                    (loop (iterator)
+                          barnum
+                          (list (create-beat place
+                                             0)))))))))
+
+
+#!!
+(let ((bars (get-bars-from-beats (<ra> :get-all-beats))))
+  (pp (create-tempo-multipliers-from-swings bars
+                                            (create-filledout-swings bars
+                                                                     (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1 0)
+                                                                                                                   (create-swing 1 2 0))
+                                                                                           :num-lines 16))
+                                                                     '()
+                                                                     64)
+                                            64)))
+
+(pp (get-bars-from-beats (<ra> :get-all-beats)))
+(pp (get-bars-from-beats (vector (hash-table* :place 0
+                                              :barnum 1
+                                              :beatnum 1)
+                                 (hash-table* :place 2
+                                              :barnum 1
+                                              :beatnum 2)
+                                 (hash-table* :place 4
+                                              :barnum 2
+                                              :beatnum 1)
+                                 (hash-table* :place 6
+                                              :barnum 2
+                                              :beatnum 2))))
+!!#
+
+
+(***assert*** (get-bars-from-beats (vector (hash-table* :place 0
+                                                        :barnum 1
+                                                        :beatnum 1)
+                                           (hash-table* :place 2
+                                                        :barnum 1
+                                                        :beatnum 2)
+                                           (hash-table* :place 4
+                                                        :barnum 2
+                                                        :beatnum 1)
+                                           (hash-table* :place 6
+                                                        :barnum 2
+                                                        :beatnum 2)))
+              (list (make-bar :barnum 0
+                              :beats (list (create-beat 0 0)
+                                           (create-beat 2 1)))
+                    (make-bar :barnum 1
+                              :beats (list (create-beat 4 0)
+                                           (create-beat 6 1)))))
+                                    
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;
@@ -505,7 +791,9 @@ list<pos,tempo_multiplication,hold>
                       as))))
         (let* ((l (last as))
                (y2 (l :y2)))
-          (assert (<= y2 max-y))
+          (when (> y2 max-y)
+            (<ra> :show-message (<-> "Error in make-tempo-multipliers-cover-all-lines: y2>max-y: " y2 " > " max-y))
+            (set! y2 max-y))
           (if (= y2 max-y)
               as
               (append as (list (make-tempo-multiplier :y1 y2    :x1 1
@@ -845,7 +1133,7 @@ list<pos,tempo_multiplication,hold>
   (define x (* global-bpm global-lpb))
   (define g-tempos (list (make-tempo-multiplier :y1 0 :x1 x
                                                 :y2 num-lines :x2 x)))
-  (c-display "__MERGED" (merge-tempo-multipliers g-tempos tempo-multipliers num-lines))
+  ;;(c-display "__MERGED" (merge-tempo-multipliers g-tempos tempo-multipliers num-lines))
   (merge-tempo-multipliers g-tempos tempo-multipliers num-lines))
                  
 
@@ -900,12 +1188,25 @@ list<pos,tempo_multiplication,hold>
 ||#
 
 
-(define (create-block-timings num-lines main-bpm main-lpb bpms lpbs temponodes)
-  (define tempo-multipliers (merge-tempo-multipliers (merge-tempo-multipliers (bpms-to-tempo-multipliers main-bpm (vector->list bpms) num-lines)
-                                                                              (lpbs-to-tempo-multipliers main-lpb (vector->list lpbs) num-lines)
-                                                                              num-lines)
-                                                     (temponodes-to-tempo-multipliers (vector->list temponodes))
+(define (create-block-timings num-lines main-bpm main-lpb bpms lpbs temponodes beats swings)
+  (define tempo-multipliers (merge-tempo-multipliers (bpms-to-tempo-multipliers main-bpm (vector->list bpms) num-lines)
+                                                     (lpbs-to-tempo-multipliers main-lpb (vector->list lpbs) num-lines)
                                                      num-lines))
+
+  (set! tempo-multipliers (merge-tempo-multipliers tempo-multipliers
+                                                   (temponodes-to-tempo-multipliers (vector->list temponodes))
+                                                   num-lines))
+
+  (define swing-multipliers (create-tempo-multipliers-from-swings (get-bars-from-beats beats)
+                                                                  (to-list swings)
+                                                                  num-lines))
+
+  ;;(c-display "SWINGS:" (pp (get-bars-from-beats beats)) "\n" swings "\n" (pp swing-multipliers))
+  ;;(c-display "SWINGS:" (pp swings) "\n" (pp swing-multipliers))
+
+  (set! tempo-multipliers (merge-tempo-multipliers tempo-multipliers
+                                                   swing-multipliers
+                                                   num-lines))
 
   (create-block-timings2 main-bpm main-lpb tempo-multipliers num-lines))
 
@@ -916,7 +1217,10 @@ list<pos,tempo_multiplication,hold>
                         (<ra> :get-main-lpb)
                         (<ra> :get-all-bpm blocknum)
                         (<ra> :get-all-lpb blocknum)
-                        (<ra> :get-all-temponodes blocknum)))
+                        (<ra> :get-all-temponodes blocknum)
+                        (<ra> :get-all-beats blocknum)
+                        (<ra> :get-all-block-swings blocknum)
+                        ))
 
 
 #||

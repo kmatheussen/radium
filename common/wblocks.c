@@ -245,7 +245,6 @@ void UpdateWBlockCoordinates(
         if (window->show_lpb_track)
           next_x2 = wblock->lpbarea.x2 + 3;
 
-        
         // Signature
         /////////////////////
 	wblock->signaturearea.x        = next_x2;
@@ -258,6 +257,16 @@ void UpdateWBlockCoordinates(
         /////////////////////
         SetLineNumAreaCoordinates(window, wblock, next_x2);
         next_x2 = wblock->linenumarea.x2 + 1;
+
+        
+        // SWING
+        /////////////////////
+        wblock->swingTypearea.x  = next_x2;
+	wblock->swingTypearea.x2 = wblock->swingTypearea.x     + wblock->swingTypearea.width;
+	wblock->swingarea.x      = wblock->swingTypearea.x2    + 3;
+	wblock->swingarea.x2     = wblock->swingarea.x         + wblock->swingarea.width;
+        if (window->show_swing_track)
+          next_x2 = wblock->swingarea.x2 + 3;
 
         
         // Temponode
@@ -321,6 +330,8 @@ void UpdateWBlockWidths(struct Tracker_Windows *window,struct WBlocks *wblock){
 	wblock->lpbarea.width        = window->fontwidth*2;
 	wblock->tempoTypearea.width  = window->fontwidth;
 	wblock->tempoarea.width      = window->fontwidth*4;
+        wblock->swingTypearea.width  = window->fontwidth;
+        wblock->swingarea.width      = window->fontwidth*3;
         if(wblock->temponodearea.width==0)
           wblock->temponodearea.width  = window->fontwidth*7;
 }

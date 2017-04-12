@@ -399,6 +399,54 @@ dyn_t s7extra_callFunc2_dyn_int_int_int_dyn_dyn_dyn(const char *funcname, int64_
   return s7extra_callFunc_dyn_int_int_int_dyn_dyn_dyn((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
+dyn_t s7extra_callFunc_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn(func_t *func, int64_t arg1, int64_t arg2, int64_t arg3, dyn_t arg4, dyn_t arg5, dyn_t arg6, dyn_t arg7, dyn_t arg8){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = s7_call(s7,
+                           (s7_pointer)func,
+                           s7_list(s7,
+                                   8,
+                                   s7_make_integer(s7, arg1),
+                                   s7_make_integer(s7, arg2),
+                                   s7_make_integer(s7, arg3),
+                                   s7extra_make_dyn(s7, arg4),
+                                   s7extra_make_dyn(s7, arg5),
+                                   s7extra_make_dyn(s7, arg6),
+                                   s7extra_make_dyn(s7, arg7),
+                                   s7extra_make_dyn(s7, arg8)
+                                   )
+                           );
+  
+  return s7extra_dyn(s7, ret);
+}
+
+dyn_t s7extra_callFunc2_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3, dyn_t arg4, dyn_t arg5, dyn_t arg6, dyn_t arg7, dyn_t arg8){
+  return s7extra_callFunc_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+}
+
+
+dyn_t s7extra_callFunc_dyn_dyn_dyn_dyn_int(func_t *func, dyn_t arg1, dyn_t arg2, dyn_t arg3, int64_t arg4){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = s7_call(s7,
+                           (s7_pointer)func,
+                           s7_list(s7,
+                                   4,
+                                   s7extra_make_dyn(s7, arg1),
+                                   s7extra_make_dyn(s7, arg2),
+                                   s7extra_make_dyn(s7, arg3),
+                                   s7_make_integer(s7, arg4)
+                                   )
+                           );
+  
+
+  return s7extra_dyn(s7, ret);
+}
+
+dyn_t s7extra_callFunc2_dyn_dyn_dyn_dyn_int(const char *funcname, dyn_t arg1, dyn_t arg2, dyn_t arg3, int64_t arg4){
+  return s7extra_callFunc_dyn_dyn_dyn_dyn_int((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
+}
+
 
 void s7extra_callFunc_void_int_bool(func_t *func, int64_t arg1, bool arg2){
   ScopedEvalTracker eval_tracker;
