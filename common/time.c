@@ -759,8 +759,8 @@ struct STimeChange{
   double y1,x1,t1; // y=line (place as double), x = tempo at y, t = time at y
   double y2,x2,t2; //
 
-  double logt1;   // Precalculated log(x1)     [ not log(t1)    ! ]
-  double logt2t1; // Precalculated log(x2/x1)  [ not log(t2/t2) ! ]
+  double logt1;   // Precalculated log(x1)     [ !!!!! not log(t1)    !!!!! ]
+  double logt2t1; // Precalculated log(x2/x1)  [ !!!!! not log(t2/t2) !!!!! ]
 };
 
 
@@ -866,7 +866,7 @@ static double Place2STime_from_times2(
   const struct STimeChange *time_change=stimes[(int)y].tchanges;
   while(time_change->y2 < y){
     time_change = time_change + 1; // All changes in a block are allocated sequentially.
-    R_ASSERT_RETURN_IF_FALSE2(time_change->t1 > 0, (time_change-1)->t2);
+    //R_ASSERT_RETURN_IF_FALSE2(time_change->t1 > 0, (time_change-1)->t2); // Can happen, for instance if the second tempo node is crammed to the top of the block.
   }
 
   return time_change->t1 + get_stime_from_stimechange(time_change, y, true);
