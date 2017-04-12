@@ -33,7 +33,8 @@
 (set! (hook-functions *rootlet-redefinition-hook*)
       (list (lambda (hook)
               (let ((message (string-append "Warning: Redefining "
-                                            (symbol->string (hook 'symbol))
+                                            (format #t "~A ~A~%" (hook 'name) (hook 'value))
+                                            ;;(symbol->string (hook 'symbol))
                                             (if *currently-loading-file*
                                                 (string-append " while loading " *currently-loading-file*)
                                                 "."))))
