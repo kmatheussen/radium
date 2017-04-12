@@ -47,6 +47,8 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
 #else
       setStyle(new QCleanlooksStyle);
 #endif
+
+      swing_onoff->setText("✔");
     
     // Set up custom popup menues for the time widgets
     {
@@ -73,6 +75,10 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
       signature_label->setContextMenuPolicy(Qt::CustomContextMenu);
       connect(signature_label, SIGNAL(customContextMenuRequested(const QPoint&)),
               this, SLOT(ShowSignaturePopup(const QPoint&)));
+
+      SwingWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(SwingWidget, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowSwingPopup(const QPoint&)));
 
       reltempomax->setContextMenuPolicy(Qt::CustomContextMenu);
       connect(reltempomax, SIGNAL(customContextMenuRequested(const QPoint&)),
@@ -142,6 +148,11 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
       else
         BPMWidget->hide();
       
+      if (window->show_swing_track)
+        SwingWidget->show();
+      else
+        SwingWidget->hide();
+      
       if (window->show_reltempo_track)
         ReltempoWidget->show();
       else
@@ -207,8 +218,14 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     // LZ / linenumber(bars/beats)
     ///////////////////////////////
     x1 = x2;
-    x2 = wblock->temponodearea.x;
+    x2 = wblock->swingTypearea.x;
     updateLayout(lineZoomWidget, x1, x2, height);
+
+    // Swing
+    ///////////////////////////////
+    x1 = x2;
+    x2 = wblock->temponodearea.x;
+    updateLayout(SwingWidget, x1, x2, height);
 
     // Reltempo (temponode)
     ///////////////////////////////
@@ -249,6 +266,13 @@ public slots:
     printf("GOTIT signature\n");
     if (popupMenu((char*)"hide time signature track")==0)
       showHideSignatureTrack(-1);
+  }
+
+  void ShowSwingPopup(const QPoint& pos)
+  {
+    printf("GOTIT swing\n");
+    if (popupMenu((char*)"hide swing track")==0)
+      showHideSwingTrack(-1);
   }
 
   void on_lz_editingFinished(){
