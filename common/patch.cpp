@@ -1092,8 +1092,12 @@ static void RT_change_voice_velocity(struct SeqTrack *seqtrack, struct Patch *pa
     velocity = PATCH_radiumvelocity_to_patchvelocity(patch,velocity);
 #endif
 
-  if (Patch_is_voice_playing_questionmark(patch, note.id, note.seqblock))
+  //printf("222. vel: %f\n",note.velocity);
+    
+  if (Patch_is_voice_playing_questionmark(patch, note.id, note.seqblock)){
+    //printf("333. vel: %f\n",note.velocity);
     patch->changevelocity(seqtrack,patch,note,time);
+  }
 
   if(patch->forward_events)
     RT_PATCH_send_change_velocity_to_receivers(seqtrack, patch, note, time);
@@ -1113,7 +1117,7 @@ static int64_t RT_scheduled_change_voice_velocity(struct SeqTrack *seqtrack, int
 }
 
 void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
-  //printf("vel: %d\n",velocity);
+  //printf("111. vel: %f\n",note.velocity);
 
   float sample_rate = MIXER_get_sample_rate();
 

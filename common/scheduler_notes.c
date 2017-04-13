@@ -7,6 +7,8 @@
 #include "playerclass.h"
 #include "list_proc.h"
 #include "placement_proc.h"
+#include "instruments_proc.h"
+#include "../audio/SoundPlugin.h"
 
 #include "scheduler_proc.h"
 
@@ -151,7 +153,7 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
   const struct Tracks *track = args[1].const_pointer;
   const struct Notes *note = args[2].const_pointer;
   int64_t note_time = args[3].int_num;
-  
+
   struct Patch *patch = track->patch;
 
   bool doit;  // Set this here, and not in RT_schedule_note, since note->chance might change between RT_schedule_note and RT_scheduled_note.
@@ -180,6 +182,8 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
     
   if(doit && track->onoff==1 && patch!=NULL){
 
+    int64_t sample_pos = R_MAX(0, time - note_time);
+    
     note_t note2 = create_note_t(seqblock,
                                  note->id,
                                  note->note,
@@ -187,14 +191,20 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
                                  TRACK_get_pan(track),
                                  ATOMIC_GET(track->midi_channel),
                                  0,
-                                 R_MAX(0, time - note_time)
+                                 sample_pos
                                  );
 
     //printf("  scheduler_notes.c. Playing note at %d\n",(int)time);
     RT_PATCH_play_note(seqtrack, patch,note2,time);
 
-    RT_schedule_pitches_newnote(time, seqtrack, seqblock, track, note);
-    RT_schedule_velocities_newnote(time, seqtrack, seqblock, track, note);
+    bool schedule_pitches_and_velocities = true;
+    if (sample_pos>0 && (patch->instrument==get_audio_instrument() && ATOMIC_GET(((SoundPlugin*)patch->patchdata)->enable_sample_seek)==false))
+      schedule_pitches_and_velocities = false; // Temporary hack to prevent CPU spike while starting to play in the middle of a block. Proper solution should be applied in the next release.
+        
+    if (schedule_pitches_and_velocities){
+      RT_schedule_pitches_newnote(time, seqtrack, seqblock, track, note);
+      RT_schedule_velocities_newnote(time, seqtrack, seqblock, track, note);
+    }
     
     RT_schedule_end_note(seqtrack, seqblock, track, note, time);
   }
