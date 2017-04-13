@@ -1,5 +1,25 @@
+Changes 4.6.8 -> 4.6.9:
+* Let new bpmtext/lpbtext/swingtext entries be non-gliding by
+  default.
+* Temporary hack to prevent a CPU spike when starting to play in the
+  middle of a block. If sample seek is enabled for an instrument,
+  there will still be a small CPU spike, but only for that
+  instrument. A proper fix should be included in the next release.
+  (bug introduced in 4.6.7)
+* Mixer: Fix error about creating recursive connection when
+  changing a/b.
+* Don't show assertion reporter, and don't calculate wrong time,
+  if moving a tempo automation node to the top of a block.
+* Mixer: Remember window geometry.
+* Swing track. (Just the block track for now, swing sub-tracks will
+  be added later)
+* Fix delete signature.
+* Fix copying signature track.
+
+
+
 Changes 4.6.7 -> 4.6.8:
-* Some debug code to track down a bug in the sampler player
+* Some debug code to track down a bug in the sampler player.
 * Upgrade s7. The previous version had a memory corruption.
 * Poor man's sample seek. Should work work fine for playing long
   samples without any type of loops or pitch changes.
