@@ -64,11 +64,18 @@ static int get_val_from_key(int key){
   return val;
 }
 
-data_as_text_t DAT_get_newvalue(int subsubtrack, int key, int default_value, int min_value, int max_value, int min_return_value, int max_return_value, bool is_hex, bool has_logtype, bool highest_value_is_one_more){
+data_as_text_t DAT_get_newvalue(int subsubtrack,
+                                int key,
+                                int default_value,
+                                int default_logtype,
+                                int min_value, int max_value,
+                                int min_return_value, int max_return_value,
+                                bool is_hex, bool has_logtype, bool highest_value_is_one_more)
+{
   data_as_text_t dat;
   dat.is_valid = false;
   
-  int logtype = LOGTYPE_LINEAR;
+  int logtype = default_logtype; //LOGTYPE_LINEAR;
 
   int val = get_val_from_key(key);
   if (val==-1)

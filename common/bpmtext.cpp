@@ -85,7 +85,7 @@ bool BPMTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, in
     if (key == EVENT_DEL)
       return false;
     
-    data_as_text_t dat = DAT_get_newvalue(subsubtrack, key, root->tempo, 1, 999, 1, 999, false, true, false);
+    data_as_text_t dat = DAT_get_newvalue(subsubtrack, key, root->tempo, LOGTYPE_HOLD, 1, 999, 1, 999, false, true, false);
 
     if (dat.is_valid==false)
       return false;

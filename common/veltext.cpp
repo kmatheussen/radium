@@ -169,7 +169,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
       
     } else {
 
-      data_as_text_t dat = DAT_get_newvalue(subsubtrack, key, NOTE_get_velocity(wtrack->track), 0, 0xff, 0, MAX_VELOCITY, true, true, true);
+      data_as_text_t dat = DAT_get_newvalue(subsubtrack, key, NOTE_get_velocity(wtrack->track), LOGTYPE_LINEAR, 0, 0xff, 0, MAX_VELOCITY, true, true, true);
 
       if (dat.is_valid==false)
         return false;
