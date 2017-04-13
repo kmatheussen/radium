@@ -2753,7 +2753,9 @@ static bool in_patches(const vector_t *patches, int64_t id){
 
 static void apply_ab_connections_state(hash_t *connections){
   const vector_t &patches = get_audio_instrument()->patches;
-    
+
+  vector_t connections_to_create = {0}; // Using vector_t instead of QVector so that the GC won't delete it.
+  
   for(int i=0;i<HASH_get_int(connections, "num_connections");i++) {
     hash_t *connection_state = HASH_get_hash_at(connections, "", i);
     
@@ -2765,11 +2767,17 @@ static void apply_ab_connections_state(hash_t *connections){
       SuperConnection *connection = get_connection(id_from, id_to, is_event_connection);
 
       if (connection==NULL) {
+
+        // We must delete old connections before creating new connections. If not, we risk creating recursive connections.
+        VECTOR_push_back(&connections_to_create, connection_state);
+        
+        /*
         CONNECTION_create_from_state(&g_mixer_widget->scene,
                                      connection_state,
                                      -1, -1);
         connection = get_connection(id_from, id_to, is_event_connection);
         R_ASSERT_RETURN_IF_FALSE(connection!=NULL);
+        */
       } else {
 
         if (HASH_has_key(connection_state, "gain")){
@@ -2777,9 +2785,10 @@ static void apply_ab_connections_state(hash_t *connections){
           setAudioConnectionGain(id_from, id_to, gain, true);
         }
 
+        connection->is_ab_touched = true;
+        
       }
     
-      connection->is_ab_touched = true;
     }
   }
 
@@ -2793,6 +2802,16 @@ static void apply_ab_connections_state(hash_t *connections){
       connection->is_ab_touched=false;
     
   }
+
+  VECTOR_FOR_EACH(hash_t *, connection_state, &connections_to_create){
+    int64_t id_from = HASH_get_int(connection_state, "from_patch");
+    int64_t id_to = HASH_get_int(connection_state, "to_patch");
+    bool is_event_connection = HASH_get_bool(connection_state, "is_event_connection");
+    CONNECTION_create_from_state(&g_mixer_widget->scene,
+                                 connection_state,
+                                 -1, -1);
+    R_ASSERT_RETURN_IF_FALSE(get_connection(id_from, id_to, is_event_connection) != NULL);
+  }END_VECTOR_FOR_EACH;
 }
 
 static void apply_ab_state(hash_t *state, hash_t *curr_state){
