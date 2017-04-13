@@ -58,7 +58,7 @@ void setMainSignature(int numerator, int denominator){
 
   PC_Pause();{
     root->signature = make_ratio(numerator, denominator);
-    UpdateAllBeats();
+    TIME_global_signature_has_changed();
   }PC_StopPause(window);
   
   window->must_redraw = true;
@@ -133,10 +133,9 @@ void setMainLPB(int lpb_value){
   printf("Undo MainTempo lpb: %d\n",lpb_value);
   ADD_UNDO(MainTempo(window,wblock));
 
-  PC_Pause();{ // Pause player so that beats and stimes are not out of sync while playing. (and avoid stuttering)
+  PC_Pause();{
     root->lpb=lpb_value;
-    UpdateAllSTimes();
-    UpdateAllBeats();
+    TIME_global_LPB_has_changed();
   }PC_StopPause(window);
   
   //UpdateAllWLPBs(window);
@@ -239,8 +238,12 @@ void setMainBPM(int bpm_value){
   
   ADD_UNDO(MainTempo(window,wblock));
 
-  root->tempo=bpm_value;
-  UpdateAllSTimes();
+  PLAYER_lock();{
+    root->tempo=bpm_value;
+  }PLAYER_unlock();
+
+  TIME_global_LPB_has_changed();
+      
   R_ASSERT(wblock->block->beats != NULL);
 
   window->must_redraw = true;
@@ -425,11 +428,9 @@ void setTemponode(int num, float value, Place place, int blocknum, int windownum
   } else if ( (value-1) < -wblock->reltempomax) {
     wblock->reltempomax = -1*(value -1);
   }
-
-  PC_Pause();{
-    temponode->reltempo = value;
-    UpdateSTimes(wblock->block);    
-  }PC_StopPause(window);
+  
+  temponode->reltempo = value;
+  TIME_block_tempos_have_changed(wblock->block);
   
   //printf("before: %f, now: %f\n",floatplace, GetfloatFromPlace(&temponode->l.p));
 
@@ -459,19 +460,17 @@ void deleteTemponode(int num, int blocknum){
     return;
   }
 
-  PC_Pause();{
-    if (num==0){
-      wblock->block->temponodes->reltempo = 0.0f;
-    } else if (num==tempo_nodes->num_elements-1) {
-      struct TempoNodes *last = ListLast3(&wblock->block->temponodes->l);
-      last->reltempo = 0.0f;
-    } else {
-      ListRemoveElement3_fromNum(&wblock->block->temponodes,num);
-    }
+  if (num==0){
+    wblock->block->temponodes->reltempo = 0.0f;
+  } else if (num==tempo_nodes->num_elements-1) {
+    struct TempoNodes *last = ListLast3(&wblock->block->temponodes->l);
+    last->reltempo = 0.0f;
+  } else {
+    ListRemoveElement3_fromNum(&wblock->block->temponodes,num);
+  }
 
-    UpdateSTimes(wblock->block);    
-  }PC_StopPause(window);
-  
+  TIME_block_tempos_have_changed(wblock->block);
+    
   window->must_redraw_editor = true;
 }
 
@@ -546,9 +545,9 @@ dyn_t getAllTemponodes(int blocknum, int windownum){
 
 /************* Beats ************************/
 
-dyn_t API_getAllBeats(const struct Blocks *block){
+dyn_t API_getAllBeats(const struct Beats *beats){
   dynvec_t ret = {0};
-  struct Beats *beat = block->beats;
+  const struct Beats *beat = beats;
 
   while(beat != NULL){
     hash_t *hash = HASH_create(3);
@@ -571,7 +570,7 @@ dyn_t getAllBeats(int blocknum, int windownum){
   if (wblock==NULL)
     return DYN_create_bool(false);
 
-  return API_getAllBeats(wblock->block);
+  return API_getAllBeats(wblock->block->beats);
 }
 
 
@@ -606,17 +605,6 @@ dyn_t getAllBlockSwings(int blocknum, int windownum){
     return DYN_create_bool(false);
 
   return API_getAllBlockSwings(wblock->block);
-}
-
-dyn_t API_createFilledoutSwings(const struct Blocks *block){
-  dynvec_t empty = {0};
-
-  return s7extra_callFunc2_dyn_dyn_dyn_dyn_int("create-filledout-swings2",
-                                               API_getAllBeats(block),
-                                               API_getAllBlockSwings(block),
-                                               DYN_create_array(empty),
-                                               block->num_lines
-                                               );
 }
 
 /*

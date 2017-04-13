@@ -72,10 +72,10 @@ void NewBlock(
 	for(lokke=0;lokke<block->num_tracks;lokke++){
 		AppendTrack(block);
 	}
-	
-        UpdateBeats(block); // Always update beats first. (beats are used by stimes)
-        UpdateSTimes(block);
 
+
+        TIME_everything_in_block_has_changed(block, root->tempo, root->lpb, root->signature);
+          
 	ListAddElement1(&root->song->blocks,&block->l);
 }
 

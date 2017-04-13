@@ -984,7 +984,7 @@ const struct STimes *create_stimes_from_tchanges(int num_lines, const struct STi
   return stimes;
 }
 
-static dyn_t get_timings_from_scheme(const struct Blocks *block, int bpm, int lpb){
+static dyn_t get_timings_from_scheme(const struct Blocks *block, const dyn_t dynbeats, const dyn_t filledout_swings, int bpm, int lpb){
   return s7extra_callFunc2_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn("create-block-timings",
                                                                block->num_lines,
                                                                bpm,
@@ -992,13 +992,13 @@ static dyn_t get_timings_from_scheme(const struct Blocks *block, int bpm, int lp
                                                                API_getAllBPM(block),
                                                                API_getAllLPB(block),
                                                                API_getAllTemponodes(block),
-                                                               API_getAllBeats(block),
-                                                               block->filledout_swings //API_getAllBlockSwings(block)
+                                                               dynbeats,
+                                                               filledout_swings
                                                                );
 }
 
 // Fallback in case create-block-timings failed.
-static dyn_t get_fallback_timings(const struct Blocks *block, int bpm, int lpb){
+static dyn_t get_fallback_timings(const struct Blocks *block, const dyn_t dynbeats, int bpm, int lpb){
 
   // First try scheme again, but now without swing.
   {
@@ -1011,7 +1011,7 @@ static dyn_t get_fallback_timings(const struct Blocks *block, int bpm, int lpb){
                                                                       API_getAllBPM(block),
                                                                       API_getAllLPB(block),
                                                                       API_getAllTemponodes(block),
-                                                                      API_getAllBeats(block),
+                                                                      dynbeats,
                                                                       DYN_create_array(empty)
                                                                       );
     
@@ -1036,36 +1036,11 @@ static dyn_t get_fallback_timings(const struct Blocks *block, int bpm, int lpb){
 }
 
 
-static void ApplySTimes(struct Blocks **blocks, const struct STimes **stimess, int num_blocks){
-  PC_Pause();{
-    for(int i=0;i<num_blocks;i++){
-      if (stimess[i] != NULL){
-        struct Blocks *block = blocks[i];
-        block->times = stimess[i];
-        block->num_time_lines = block->num_lines;
-      }
-    }
-
-    PLAYER_lock();{
-      ALL_SEQTRACKS_FOR_EACH(){
-        RT_legalize_seqtrack_timing(seqtrack);
-      }END_ALL_SEQTRACKS_FOR_EACH;
-    }PLAYER_unlock();
-
-    SEQUENCER_update();
-    BS_UpdatePlayList();
-    
-  }PC_StopPause(NULL);
-}
-
-static const struct STimes *create_stimes_from_block(struct Blocks *block, int default_bpm, int default_lpb){
-  if(block->beats==NULL)
-    UpdateBeats(block);
-
-  dyn_t timings = get_timings_from_scheme(block, default_bpm, default_lpb);
+static const struct STimes *create_stimes(const struct Blocks *block, const dyn_t dynbeats, const dyn_t filledout_swings, int default_bpm, int default_lpb){
+  dyn_t timings = get_timings_from_scheme(block, dynbeats, filledout_swings, default_bpm, default_lpb);
   if (timings.type!=ARRAY_TYPE){
     GFX_Message(NULL, "Error. timings function returned faulty data. Expected an array, got %s\n", DYN_type_name(timings.type));
-    timings = get_fallback_timings(block, default_bpm, default_lpb);
+    timings = get_fallback_timings(block, dynbeats, default_bpm, default_lpb);
     R_ASSERT(timings.type==ARRAY_TYPE);      
   }
 
@@ -1076,35 +1051,163 @@ static const struct STimes *create_stimes_from_block(struct Blocks *block, int d
   return times;
 }
 
-void UpdateSTimes2(struct Blocks *block, int default_bpm, int default_lpb){
-  const struct STimes *stimes = create_stimes_from_block(block, default_bpm, default_lpb);
-  struct Blocks *blocks[1] = {block};
-  const struct STimes *stimess[1] = {stimes};
-
-  ApplySTimes(blocks, stimess, 1);
+static dyn_t create_filledout_swings(const struct Blocks *block, dyn_t beats){
+  dynvec_t empty = {0};
+  
+  return s7extra_callFunc2_dyn_dyn_dyn_dyn_int("create-filledout-swings2",
+                                               beats,                                               
+                                               API_getAllBlockSwings(block),
+                                               DYN_create_array(empty),
+                                               block->num_lines
+                                               );
 }
 
-void UpdateSTimes(struct Blocks *block){
-  UpdateSTimes2(block, root->tempo, root->lpb);
-}
 
-void UpdateAllSTimes(void){
-  int num_blocks = ListFindNumElements1(&root->song->blocks->l);
-
-  struct Blocks *blocks[num_blocks];
+static void update_stuff2(struct Blocks *blocks[], int num_blocks,
+                          int default_bpm, int default_lpb, Ratio default_signature,
+                          bool only_signature_has_changed, bool update_beats, bool update_swings)
+{
   const struct STimes *stimess[num_blocks];
+  const struct Beats *beats[num_blocks];
+  dyn_t dynbeats[num_blocks];
+  dyn_t filledout_swingss[num_blocks];
 
-  int i = 0;
-  struct Blocks *block=root->song->blocks;
-
-  while(block!=NULL){
-    blocks[i] = block;
-    stimess[i] = create_stimes_from_block(block, root->tempo, root->lpb);
-    block=NextBlock(block);
-    i++;
+  bool only_update_beats[num_blocks];
+  bool only_update_beats_for_all_blocks = true;
+  
+  for(int i=0;i<num_blocks;i++){
+    only_update_beats[i] = blocks[i]->swings==NULL && only_signature_has_changed;
+    if (only_update_beats[i]==false)
+      only_update_beats_for_all_blocks = false;
+  }
+  
+  // beats
+  {
+    for(int i=0;i<num_blocks;i++){
+      beats[i] = update_beats ? Beats_get(blocks[i], default_signature, default_lpb) : blocks[i]->beats;
+      if (!only_update_beats[i])
+        dynbeats[i] = API_getAllBeats(beats[i]);
+    }
   }
 
-  ApplySTimes(blocks, stimess, num_blocks);
+  // swings
+  {
+    for(int i = 0 ; i < num_blocks ; i++){
+      if (!only_update_beats[i])
+        filledout_swingss[i] = update_swings ? create_filledout_swings(blocks[i], dynbeats[i]) : blocks[i]->filledout_swings;
+    }
+  }
+
+  // times
+  {
+    for(int i = 0 ; i < num_blocks;i++){
+      if (!only_update_beats[i])
+        stimess[i] = create_stimes(blocks[i], dynbeats[i], filledout_swingss[i], default_bpm, default_lpb);
+    }
+  }
+
+  // apply
+  PC_Pause();{
+    for(int i=0;i<num_blocks;i++){
+      struct Blocks *block = blocks[i];
+      
+      block->beats = beats[i];
+
+      if (only_update_beats[i]==false) {
+        
+        if (filledout_swingss[i].type==ARRAY_TYPE)
+          block->filledout_swings = filledout_swingss[i];
+        
+        if (stimess[i] != NULL){
+          block->times = stimess[i];
+          block->num_time_lines = block->num_lines;
+        }
+      }
+    }
+
+    if (only_update_beats_for_all_blocks==false){
+      PLAYER_lock();{
+        ALL_SEQTRACKS_FOR_EACH(){
+          RT_legalize_seqtrack_timing(seqtrack);
+        }END_ALL_SEQTRACKS_FOR_EACH;
+      }PLAYER_unlock();
+    }
+    
+    SEQUENCER_update();
+    BS_UpdatePlayList();
+    
+  }PC_StopPause(NULL);
+}
+
+static void update_all(int default_bpm, int default_lpb, Ratio default_signature,
+                       bool only_signature_has_changed, bool update_beats, bool update_swings)
+{
+  int num_blocks = ListFindNumElements1(&root->song->blocks->l);
+  
+  struct Blocks *blocks[num_blocks];
+
+  {
+    int i = 0;
+    struct Blocks *block=root->song->blocks;
+    while(block!=NULL){
+      blocks[i] = block;      
+      block=NextBlock(block);
+    }
+  }
+
+  update_stuff2(blocks, num_blocks, default_bpm, default_lpb, default_signature, only_signature_has_changed, update_beats, update_swings);
+}
+
+static void update_block(struct Blocks *block,
+                         int default_bpm, int default_lpb, Ratio default_signature,
+                         bool only_signature_has_changed, bool update_beats, bool update_swings)
+{
+  struct Blocks *blocks[1] = {block};
+
+  update_stuff2(blocks, 1, default_bpm, default_lpb, default_signature, only_signature_has_changed, update_beats, update_swings);
+}
+
+
+
+void TIME_block_tempos_have_changed(struct Blocks *block){
+  update_block(block, root->tempo, root->lpb, root->signature, false, false, false);
+}
+
+void TIME_block_LPBs_have_changed(struct Blocks *block){
+  update_block(block, root->tempo, root->lpb, root->signature, false, true, true);
+}
+
+void TIME_block_signatures_have_changed(struct Blocks *block){
+  update_block(block, root->tempo, root->lpb, root->signature, true, true, true);
+}
+
+void TIME_block_num_lines_have_changed(struct Blocks *block){
+  update_block(block, root->tempo, root->lpb, root->signature, false, true, true);
+}
+
+void TIME_block_swings_have_changed(struct Blocks *block){
+  update_block(block, root->tempo, root->lpb, root->signature, false, false, true);
+}
+
+void TIME_global_tempos_have_changed(void){
+  update_all(root->tempo, root->lpb, root->signature, false, false, false);
+}
+
+void TIME_global_LPB_has_changed(void){
+  update_all(root->tempo, root->lpb, root->signature, false, true, true);
+}
+
+void TIME_global_signature_has_changed(void){
+  update_all(root->tempo, root->lpb, root->signature, true, true, true);
+}
+
+void TIME_everything_has_changed(void){
+  update_all(root->tempo, root->lpb, root->signature, false, true, true);
+}
+
+void TIME_everything_in_block_has_changed(struct Blocks *block, int default_bpm, int default_lpb, Ratio default_signature){
+  struct Blocks *blocks[1] = {block};
+  update_stuff2(blocks, 1, default_bpm, default_lpb, default_signature, false, true, true);
 }
 
 

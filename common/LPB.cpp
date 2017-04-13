@@ -112,9 +112,8 @@ struct LPBs *SetLPB(
             lpb->lpb=newlpb;
             ListAddElement3(&block->lpbs,&lpb->l);
           }
-          
-          UpdateSTimes(block);
-          UpdateBeats(block);
+
+          TIME_block_LPBs_have_changed(block);
           
         }PC_StopPause(NULL);
         
@@ -144,16 +143,14 @@ void SetLPBCurrPos(struct Tracker_Windows *window){
 void RemoveLPB(struct Blocks *block,struct LPBs *lpb){
   PC_Pause();{
     ListRemoveElement3(&block->lpbs,&lpb->l);
-    UpdateSTimes(block);
-    UpdateBeats(block);
+    TIME_block_LPBs_have_changed(block);
   }PC_StopPause(NULL);
 }
 
 void RemoveLPBs(struct Blocks *block,Place *p1,Place *p2){
   PC_Pause();{
     ListRemoveElements3(&block->lpbs,p1,p2);
-    UpdateSTimes(block);
-    UpdateBeats(block);
+    TIME_block_LPBs_have_changed(block);
   }PC_StopPause(NULL);
 }
 

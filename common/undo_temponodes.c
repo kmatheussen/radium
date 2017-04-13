@@ -81,7 +81,8 @@ static void *Undo_Do_TempoNodes(
 #if !USE_OPENGL
 	UpdateWTempoNodes(window,wblock);
 #endif
-	UpdateSTimes(wblock->block);
+
+        TIME_block_tempos_have_changed(wblock->block);
 
 	return temp;
 }

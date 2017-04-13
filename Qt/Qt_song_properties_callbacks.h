@@ -70,7 +70,8 @@ public slots:
       return;
     
     ATOMIC_SET(root->song->linear_accelerando, val);
-    UpdateAllSTimes();
+    TIME_global_tempos_have_changed();
+
     root->song->tracker_windows->must_redraw_editor = true;
   }
   
@@ -79,7 +80,8 @@ public slots:
       return;
     
     ATOMIC_SET(root->song->linear_ritardando, val);
-    UpdateAllSTimes();
+    TIME_global_tempos_have_changed();
+    
     root->song->tracker_windows->must_redraw_editor = true;
   }
   

@@ -45,10 +45,6 @@ QVector<Swing*> Swings_get(const struct WBlocks *wblock, int realline){
   return ret;
 }
 
-void UpdateSwings(struct Blocks *block){
-  block->filledout_swings = API_createFilledoutSwings(block);
-  UpdateSTimes(block);
-}
 
 
 // If a bar has any swing value, make sure the bar start also have a swing value.
@@ -120,24 +116,21 @@ void AddSwing(struct Blocks *block, const Place place, int weight, int logtype){
     legalize_swings(block);
   }
 
-  UpdateSwings(block);
-  //updatewhat?();
+  TIME_block_swings_have_changed(block);
 }
 
 void RemoveSwing(struct Blocks *block,struct Swing *swing){
   ListRemoveElement3(&block->swings,&swing->l);
   legalize_swings(block);
 
-  UpdateSwings(block);
-  //updatewhat?();
+  TIME_block_swings_have_changed(block);
 }
 
 static void RemoveSwings(struct Blocks *block,Place *p1,Place *p2){
   ListRemoveElements3(&block->swings,p1,p2);
   legalize_swings(block);
 
-  UpdateSwings(block);
-  //updatewhat?();
+  TIME_block_swings_have_changed(block);
 }
 
 

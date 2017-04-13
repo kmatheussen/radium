@@ -78,11 +78,7 @@ static void *Undo_Do_Swings(
 
 	wblock->block->swings=undo_swings;
 
-	//UpdateWSwings(window,wblock);
-
-        //updatewhat?();
-          
-	UpdateSTimes(wblock->block);
+        TIME_block_swings_have_changed(wblock->block);
 
 	return temp;
 }

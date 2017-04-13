@@ -259,9 +259,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			ADD_UNDO(Swings_CurrPos(window));
 			block->swings=CB_CopySwings(cb_swing);
 			CutListAt_a(&block->swings,&lastplace);
-                        //updatewhat?();
-			//UpdateSTimes(block);
-			//UpdateWLPBs(window,wblock);
+                        TIME_block_swings_have_changed(block);
 			break;
 		case SIGNATURETRACK:
                   if(cb_signature==NULL) goto exit;
@@ -269,18 +267,14 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			block->signatures=CB_CopySignatures(cb_signature);
 			CutListAt_a(&block->signatures,&lastplace);
                         UpdateWBlockWidths(window, wblock);
-                        UpdateBeats(block);
-			//UpdateSTimes(block);
-			//UpdateWLPBs(window,wblock);
+                        TIME_block_signatures_have_changed(block);
 			break;
 		case LPBTRACK:
 			if(cb_lpb==NULL) goto exit;
 			ADD_UNDO(LPBs_CurrPos(window));
 			block->lpbs=CB_CopyLPBs(cb_lpb);
 			CutListAt_a(&block->lpbs,&lastplace);
-			UpdateSTimes(block);
-			//UpdateWLPBs(window,wblock);
-                        UpdateBeats(block);
+                        TIME_block_LPBs_have_changed(block);
 #if !USE_OPENGL
 			DrawUpLPBs(window,wblock);
 #endif
@@ -294,7 +288,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 #if !USE_OPENGL
 			DrawUpTempos(window,wblock);
 #endif
-			UpdateSTimes(block);
+                        TIME_block_tempos_have_changed(block);
 			break;
 		case TEMPONODETRACK:
 			if(cb_temponode==NULL) goto exit;
@@ -306,7 +300,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			///UpdateWTempoNodes(window,wblock);
 			DrawUpWTempoNodes(window,wblock);
 #endif
-			UpdateSTimes(block);
+                        TIME_block_tempos_have_changed(block);
 			break;
 		default:
 			if(cb_wtrack==NULL) goto exit;

@@ -89,7 +89,7 @@ bool WBlock_legalizeStartEndReallines(const struct WBlocks *wblock,int *start_re
      works now, though.
 *********************************************************************/
 void SetWBlock_Top_And_Bot_Realline(
-	struct Tracker_Windows *window,
+	const struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
 	wblock->bot_realline=
@@ -104,7 +104,7 @@ void SetWBlock_Top_And_Bot_Realline(
 }
 
 
-static int GetMaxSignatureWidth(struct Blocks *block){
+static int GetMaxSignatureWidth(const struct Blocks *block){
   int ret = 3;
   struct Signatures *signature = block->signatures;
   while(signature != NULL){
@@ -127,8 +127,8 @@ static int num_characters_in_num(int num){
     return ((int)log10(num)) + 1;
 }
 
-static void get_highest_bars_and_beats(struct Blocks *block, int *highest_bar, int *highest_beat){
-  struct Beats *beat = block->beats;
+static void get_highest_bars_and_beats(const struct Blocks *block, int *highest_bar, int *highest_beat){
+  const struct Beats *beat = block->beats;
   
   int bar_num=0,beat_num=0;
   
@@ -146,7 +146,7 @@ static void get_highest_bars_and_beats(struct Blocks *block, int *highest_bar, i
 }
 
 static void SetLineNumAreaCoordinates(
-                                      struct Tracker_Windows *window,
+                                      const struct Tracker_Windows *window,
                                       struct WBlocks *wblock,
                                       int linenumarea_x1
                                       )

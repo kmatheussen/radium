@@ -647,7 +647,7 @@ public:
 
     // Bar and beats
     if(1){
-      struct Beats *beat = block->beats;
+      const struct Beats *beat = block->beats;
       QColor bar_color = get_block_qcolor(SEQUENCER_BLOCK_BAR_COLOR_NUM, is_gfx);
       QColor beat_color = get_block_qcolor(SEQUENCER_BLOCK_BEAT_COLOR_NUM, is_gfx);
       QPen bar_pen(bar_color);

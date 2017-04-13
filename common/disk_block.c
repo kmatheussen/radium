@@ -157,8 +157,7 @@ if(block==NULL) return;
 
 	DLoadTracks(newroot,block->tracks);
 
-        UpdateSTimes2(block, newroot->tempo, newroot->lpb);
-        UpdateBeats2(block, newroot->signature, newroot->lpb);
+        TIME_everything_in_block_has_changed(block, newroot->tempo, newroot->lpb, newroot->signature);
         
 DLoadBlocks(newroot,NextBlock(block));
 }

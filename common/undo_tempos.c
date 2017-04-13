@@ -78,9 +78,7 @@ static void *Undo_Do_Tempos(
 
 	wblock->block->tempos=undo_tempos;
 
-	//UpdateWTempos(window,wblock);
-
-	UpdateSTimes(wblock->block);
+        TIME_block_tempos_have_changed(wblock->block);
 
 	return temp;
 }

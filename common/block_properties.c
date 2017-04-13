@@ -133,9 +133,7 @@ void Block_Set_num_lines(
 
           }
 
-
-          UpdateSTimes(block);
-          UpdateBeats(block);
+          TIME_block_num_lines_have_changed(block);
 
         }PC_StopPause(NULL);
         

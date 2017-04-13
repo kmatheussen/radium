@@ -156,7 +156,7 @@ void RT_schedule_Beats_newblock(struct SeqTrack *seqtrack,
 
   const struct Blocks *block = seqblock->block;
     
-  struct Beats *next_beat = block->beats;
+  const struct Beats *next_beat = block->beats;
 
   R_ASSERT_RETURN_IF_FALSE(next_beat!=NULL);  
 

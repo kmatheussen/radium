@@ -92,22 +92,18 @@ struct Tempos *SetTempo(
 
 	struct Tempos *tempo = (struct Tempos*)ListFindElement3(&block->tempos->l,place);
 
-        PC_Pause();{
-          
-          if(tempo!=NULL && PlaceEqual(&tempo->l.p,place)){
-            tempo->tempo=newtempo;
-            tempo->logtype = logtype;
-          }else{
-            tempo=(struct Tempos*)talloc(sizeof(struct Tempos));
-            PlaceCopy(&tempo->l.p,place);
-            tempo->tempo=newtempo;
-            tempo->logtype = logtype;
-            ListAddElement3(&block->tempos,&tempo->l);
-          }
-          
-          UpdateSTimes(block);
-          
-        }PC_StopPause(NULL);
+        if(tempo!=NULL && PlaceEqual(&tempo->l.p,place)){
+          tempo->tempo=newtempo;
+          tempo->logtype = logtype;
+        }else{
+          tempo=(struct Tempos*)talloc(sizeof(struct Tempos));
+          PlaceCopy(&tempo->l.p,place);
+          tempo->tempo=newtempo;
+          tempo->logtype = logtype;
+          ListAddElement3(&block->tempos,&tempo->l);
+        }
+
+        TIME_block_tempos_have_changed(block);
         
         return tempo;
 }
@@ -134,17 +130,13 @@ void SetTempoCurrPos(struct Tracker_Windows *window){
 }
 
 void RemoveTempo(struct Blocks *block,struct Tempos *tempo){
-  PC_Pause();{
-    ListRemoveElement3(&block->tempos,&tempo->l);
-    UpdateSTimes(block);
-  }PC_StopPause(NULL);
+  ListRemoveElement3(&block->tempos,&tempo->l);
+  TIME_block_tempos_have_changed(block);
 }
 
 void RemoveTempos(struct Blocks *block,Place *p1,Place *p2){
-  PC_Pause();{
-    ListRemoveElements3(&block->tempos,p1,p2);
-    UpdateSTimes(block);
-  }PC_StopPause(NULL);
+  ListRemoveElements3(&block->tempos,p1,p2);
+  TIME_block_tempos_have_changed(block);
 }
 
 void RemoveTemposCurrPos(struct Tracker_Windows *window){

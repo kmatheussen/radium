@@ -47,7 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "reallines_insert_proc.h"
 
-void InsertPlace_notes_extra(
+static void InsertPlace_notes_extra(
 	struct Blocks *block,
 	void *tonote,
 	struct ListHeader3 *l,
@@ -67,7 +67,7 @@ void InsertPlace_notes_extra(
 }
 
 
-void InsertPlace_notes(
+static void InsertPlace_notes(
 	struct Blocks *block,
 	struct Tracks *track,
 	float place,
@@ -84,7 +84,7 @@ void InsertPlace_notes(
 	LegalizeNotes(block,track);
 }
 
-void InsertPlace_fxs(
+static void InsertPlace_fxs(
 	struct Blocks *block,
 	struct Tracks *track,
 	float place,
@@ -105,7 +105,7 @@ void InsertPlace_fxs(
   LegalizeFXlines(block,track);
 }
 
-void InsertPlace_temponodes(
+static void InsertPlace_temponodes(
 	struct Blocks *block,
 	float place,
 	float toplace
@@ -117,7 +117,7 @@ void InsertPlace_temponodes(
 	LegalizeTempoNodes(block);
 }
 
-void InsertPlace_tempos(
+static void InsertPlace_tempos(
 	struct Blocks *block,
 	float place,
 	float toplace
@@ -125,7 +125,7 @@ void InsertPlace_tempos(
 	List_InsertPlaceLen3(block,&block->tempos,&block->tempos->l,place,toplace,NULL);
 }
 
-void InsertPlace_lpbs(
+static void InsertPlace_lpbs(
 	struct Blocks *block,
 	float place,
 	float toplace
@@ -133,7 +133,7 @@ void InsertPlace_lpbs(
 	List_InsertPlaceLen3(block,&block->lpbs,&block->lpbs->l,place,toplace,NULL);
 }
 
-void InsertPlace_swings(
+static void InsertPlace_swings(
 	struct Blocks *block,
 	float place,
 	float toplace
@@ -141,15 +141,15 @@ void InsertPlace_swings(
 	List_InsertPlaceLen3(block,&block->swings,&block->swings->l,place,toplace,NULL);
 }
 
-void InsertPlace_signatures(
+static void InsertPlace_signatures(
 	struct Blocks *block,
 	float place,
 	float toplace
 ){
-	List_InsertPlaceLen3(block,&block->signatures,&block->signatures->l,place,toplace,NULL);
+  List_InsertPlaceLen3(block,&block->signatures,&block->signatures->l,place,toplace,NULL);
 }
 
-void InsertPlace_stops(
+static void InsertPlace_stops(
 	struct Blocks *block,
 	struct Tracks *track,
 	float place,
@@ -194,12 +194,12 @@ void InsertRealLines_CurrPos(
 		case SWINGTRACK:
                   ADD_UNDO(Swings_CurrPos(window));
 			InsertPlace_swings(block,place,toplace);
-                        //updatewhat?();
+                        TIME_block_swings_have_changed(block);
 			break;
 		case SIGNATURETRACK:
                   ADD_UNDO(Signatures_CurrPos(window));
 			InsertPlace_signatures(block,place,toplace);
-                        UpdateBeats(block);
+                        TIME_block_signatures_have_changed(block);
 			break;
 		case LPBTRACK:
                   ADD_UNDO(LPBs_CurrPos(window));
@@ -208,8 +208,7 @@ void InsertRealLines_CurrPos(
 #if !USE_OPENGL
 			DrawUpLPBs(window,wblock);
 #endif
-			UpdateSTimes(wblock->block);
-                        UpdateBeats(block);
+                        TIME_block_LPBs_have_changed(block);
 			break;
 		case TEMPOTRACK:
                   ADD_UNDO(Tempos_CurrPos(window));
@@ -218,7 +217,7 @@ void InsertRealLines_CurrPos(
 #if !USE_OPENGL
 			DrawUpTempos(window,wblock);
 #endif
-			UpdateSTimes(wblock->block);
+                        TIME_block_tempos_have_changed(block);
 			break;
 		case TEMPONODETRACK:
                   ADD_UNDO(TempoNodes_CurrPos(window));
@@ -227,7 +226,7 @@ void InsertRealLines_CurrPos(
 			UpdateWTempoNodes(window,wblock);
 			DrawUpWTempoNodes(window,wblock);
 #endif
-			UpdateSTimes(wblock->block);
+                        TIME_block_tempos_have_changed(block);
 			break;
 		default:
 			if(window->curr_track_sub>=0){

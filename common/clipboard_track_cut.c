@@ -140,17 +140,13 @@ void CB_CutTrack_CurrPos(
                   ADD_UNDO(Swings_CurrPos(window));
 			cb_swing=CB_CopySwings(block->swings);
 			block->swings=NULL;
-                        //updatewhat?();
-                        //UpdateBeats(block);
-                        //UpdateWBlockWidths(window, wblock);
-			//UpdateSTimes(block);
-			//UpdateWLPBs(window,wblock);
+                        TIME_block_swings_have_changed(block);
 			break;
 		case SIGNATURETRACK:
                   ADD_UNDO(Signatures_CurrPos(window));
 			cb_signature=CB_CopySignatures(block->signatures);
 			block->signatures=NULL;
-                        UpdateBeats(block);
+                        TIME_block_signatures_have_changed(block);
                         UpdateWBlockWidths(window, wblock);
 			//UpdateSTimes(block);
 			//UpdateWLPBs(window,wblock);
@@ -159,22 +155,21 @@ void CB_CutTrack_CurrPos(
                   ADD_UNDO(LPBs_CurrPos(window));
 			cb_lpb=CB_CopyLPBs(block->lpbs);
 			block->lpbs=NULL;
-			UpdateSTimes(block);
-                        UpdateBeats(block);
+                        TIME_block_LPBs_have_changed(block);
 			//UpdateWLPBs(window,wblock);
 			break;
 		case TEMPOTRACK:
                   ADD_UNDO(Tempos_CurrPos(window));
 			cb_tempo=CB_CopyTempos(block->tempos);
 			block->tempos=NULL;
-			UpdateSTimes(block);
+                        TIME_block_tempos_have_changed(block);
 			break;
 		case TEMPONODETRACK:
                   ADD_UNDO(TempoNodes_CurrPos(window));
 			cb_temponode=CB_CopyTempoNodes(block->temponodes);
 			block->temponodes=NULL;
 			LegalizeTempoNodes(block);
-			UpdateSTimes(block);
+                        TIME_block_tempos_have_changed(block);
 			break;
 		default:
                   ADD_UNDO(Track_CurrPos(window));

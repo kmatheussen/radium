@@ -5,8 +5,7 @@
 extern LANGSPEC dyn_t API_getAllBPM(const struct Blocks *block);
 extern LANGSPEC dyn_t API_getAllLPB(const struct Blocks *block);
 extern LANGSPEC dyn_t API_getAllTemponodes(const struct Blocks *blocks);
-extern LANGSPEC dyn_t API_getAllBeats(const struct Blocks *block);
+extern LANGSPEC dyn_t API_getAllBeats(const struct Beats *beats);
 extern LANGSPEC dyn_t API_getAllBlockSwings(const struct Blocks *block);
-extern LANGSPEC dyn_t API_createFilledoutSwings(const struct Blocks *block);
 
 #endif

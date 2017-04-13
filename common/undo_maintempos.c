@@ -62,19 +62,21 @@ static void *Undo_Do_MainTempo(
         int lpb=root->lpb;
 	int tempo=root->tempo;
         quantitize_options_t quantitize_options = root->quantitize_options;
+        
+        PC_Pause();{
 
-	root->signature=u_rt->signature;
-        root->lpb=u_rt->lpb;
-	root->tempo=u_rt->tempo;
-        root->quantitize_options = u_rt->quantitize_options;
+          root->signature=u_rt->signature;
+          root->lpb=u_rt->lpb;
+          root->tempo=u_rt->tempo;
+          root->quantitize_options = u_rt->quantitize_options;
 
-        GFX_OS_update_bottombar();
-
-        PC_Pause();{ // Pause player so that beats and stimes are not out of sync while playing. (and avoid stuttering)
-          UpdateAllSTimes();
-          UpdateAllBeats();
+          TIME_everything_has_changed();
+          
         }PC_StopPause(window);
         
+          
+        GFX_OS_update_bottombar();
+
 	u_rt->signature=signature;
         u_rt->lpb=lpb;
 	u_rt->tempo=tempo;

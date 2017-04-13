@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "LPB_proc.h"
 #include "list_proc.h"
 #include "time_proc.h"
-#include "Beats_proc.h"
+#include "player_pause_proc.h"
 
 #include "undo_lpbs_proc.h"
 
@@ -77,13 +77,14 @@ static void *Undo_Do_LPBs(
 	struct LPBs *undo_lpbs=(struct LPBs *)pointer;
 	struct LPBs *temp=wblock->block->lpbs;
 
-	wblock->block->lpbs=undo_lpbs;
+        PC_Pause();{
+          
+          wblock->block->lpbs=undo_lpbs;
 
-	//UpdateWLPBs(window,wblock);
+          TIME_block_LPBs_have_changed(wblock->block);
 
-	UpdateSTimes(wblock->block);
-        UpdateBeats(wblock->block);
-
+        }PC_StopPause(NULL);
+        
 	return temp;
 }
 

@@ -56,7 +56,7 @@ const WSignature_trss WSignatures_get(
         int last_written_realline = -1;
         int last_written_new_bar_realline = -1;
         
-        struct Beats *beat = wblock->block->beats;
+        const struct Beats *beat = wblock->block->beats;
 
 	while(beat!=NULL){
 
@@ -121,6 +121,9 @@ struct Signatures *SetSignature(
 	const Place *place,
         Ratio ratio
 ){
+  
+  R_ASSERT(is_playing()==false);
+  
         struct Signatures *signature=(struct Signatures *)ListFindElement3(&block->signatures->l,place);
 
 	if(signature!=NULL && PlaceEqual(&signature->l.p,place)){
@@ -131,9 +134,8 @@ struct Signatures *SetSignature(
 		signature->signature=ratio;
 		ListAddElement3(&block->signatures,&signature->l);
 	}
-        
-	//UpdateSTimes(block);
-        UpdateBeats(block);
+
+        TIME_block_signatures_have_changed(block);
 
         return signature;
 }
@@ -171,7 +173,7 @@ void SetSignatureCurrPos(struct Tracker_Windows *window){
 static void RemoveSignatures(struct Blocks *block,Place *p1,Place *p2){
   PC_Pause();{
     ListRemoveElements3(&block->signatures,p1,p2);
-    UpdateBeats(block);
+    TIME_block_signatures_have_changed(block);
   }PC_StopPause(NULL);
 }
 

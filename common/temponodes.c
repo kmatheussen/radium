@@ -136,16 +136,13 @@ struct TempoNodes *AddTempoNode(
 
         struct TempoNodes *ret = NULL;
         
-        PC_Pause();{
-          if(ListAddElement3_ns(&block->temponodes,&temponode->l)==-1) {
-            Undo_CancelLastUndo();
-          } else {
-            ret = temponode;
-            UpdateSTimes(block);
-          }  
+        if(ListAddElement3_ns(&block->temponodes,&temponode->l)==-1) {
+          Undo_CancelLastUndo();
+        } else {
+          ret = temponode;
+          TIME_block_tempos_have_changed(block);
+        }  
           
-        }PC_StopPause(window);
-
         return ret;
 }
 
@@ -163,7 +160,6 @@ void AddTempoNodeCurrPos(struct Tracker_Windows *window,float reltempo){
 	UpdateWTempoNodes(window,wblock);
 
 	DrawUpWTempoNodes(window,wblock);
-	UpdateSTimes(wblock->block);
 #endif
 }
 
@@ -194,7 +190,8 @@ void RemoveAllTempoNodesOnReallineCurrPos(struct Tracker_Windows *window){
 	UpdateWTempoNodes(window,wblock);
 
 	DrawUpWTempoNodes(window,wblock);
-	UpdateSTimes(wblock->block);
+
+        TIME_block_tempos_have_changed(block);
 #endif
 }
 

@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Signature_proc.h"
 #include "list_proc.h"
 #include "time_proc.h"
-#include "Beats_proc.h"
+#include "player_pause_proc.h"
 
 #include "undo_signatures_proc.h"
 
@@ -76,13 +76,10 @@ static void *Undo_Do_Signatures(
 	struct Signatures *undo_signatures=(struct Signatures *)pointer;
 	struct Signatures *temp=wblock->block->signatures;
 
-	wblock->block->signatures=undo_signatures;
-
-	//UpdateWSignatures(window,wblock);
-
-	UpdateSTimes(wblock->block); // is this necessary?
-        UpdateBeats(wblock->block);
-
+        PC_Pause();{
+          wblock->block->signatures=undo_signatures;
+          TIME_block_signatures_have_changed(wblock->block);
+        }PC_StopPause(NULL);
 
 	return temp;
 }

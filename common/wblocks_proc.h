@@ -63,8 +63,8 @@ extern LANGSPEC void UpdateWBlockCoordinates(
 );
 
 extern LANGSPEC void SetWBlock_Top_And_Bot_Realline(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
+                                                    const struct Tracker_Windows *window,
+                                                    struct WBlocks *wblock
 );
 
 extern LANGSPEC void UpdateAllWBlockCoordinates(

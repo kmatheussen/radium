@@ -66,7 +66,7 @@ static Place get_beat_length_in_measurement(Ratio signature, int lpb){
 }
 
 
-static struct Beats *Beats_get(struct Blocks *block, Ratio default_signature, int default_lpb){
+struct Beats *Beats_get(struct Blocks *block, Ratio default_signature, int default_lpb){
   Beats *beats = NULL;
 
   int bar_num = 1;
@@ -137,25 +137,3 @@ static struct Beats *Beats_get(struct Blocks *block, Ratio default_signature, in
   return beats;
 }
 
-// Rename to UpdateBeatsAndSwings2
-void UpdateBeats2(struct Blocks *block, Ratio default_signature, int default_lpb){
-  PC_Pause();{
-    block->beats = Beats_get(block, default_signature, default_lpb);
-    block->filledout_swings = API_createFilledoutSwings(block); //evalScheme(talloc_format("(create-filledout-swings %d)", block->l.num));
-  }PC_StopPause(NULL);
-}
-
-// Rename to UpdateBeatsAndSwings
-void UpdateBeats(struct Blocks *block){
-  UpdateBeats2(block, root->signature, root->lpb);
-}
-
-// Rename to UpdateAllBeatsAndSwings
-void UpdateAllBeats(void){
-	struct Blocks *block=root->song->blocks;
-
-	while(block!=NULL){
-		UpdateBeats(block);
-		block=NextBlock(block);
-	}
-}

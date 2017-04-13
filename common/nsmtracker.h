@@ -1791,17 +1791,19 @@ struct Blocks{
 	int num_lines;
 
 	struct Tracks *tracks;
-	struct Beats        *beats;
-        dyn_t  filledout_swings; // Used both to calculate timing, and for rendering.
-	struct Signatures   *signatures;
-  	struct LPBs   *lpbs;
+
+        const struct Beats        *beats; // Calculated from signatures and lpbs.
+        dyn_t  filledout_swings; // Used both to calculate timing, and for rendering. Calculated from beats and swings.
+  
+	struct Signatures   *signatures;  // Used by player. Player must be stopped when modifying.
+        struct LPBs   *lpbs; // Used by player. Player must be stopped when modifying.
 	struct Tempos *tempos;
 	struct TempoNodes *temponodes;
 	struct TempoNodes *lasttemponode;
         struct Swing *swings; // Array of swings. num_lines elements.
 
         int num_time_lines; // Contains number of lines in 'times' minus one (same as num_lines, normally). Only for validation.
-        const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. */
+        const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. Calculated from lpbs/tempos/temponodes/global lpb/global bpm/filledout_swings*/
   
         DEFINE_ATOMIC(double, reltempo);					/* factor that the tempo is multiplied with when playing this block. */
 
@@ -2271,9 +2273,9 @@ struct Root{
 
        //DEFINE_ATOMIC(NInt, curr_blocknum); // Currently playing blocknum
 
-	int tempo;			/* Standard tempo. */
-	int lpb;			/* Standard lpb. */
-	Ratio signature;		/* Standard signature. */
+	int tempo;			/* Standard tempo. Player must be stopped when modifying. */
+	int lpb;			/* Standard lpb. Player must be stopped when modifying. */
+	Ratio signature;		/* Standard signature. Player must be stopped when modifying. */
 
         quantitize_options_t quantitize_options;
   

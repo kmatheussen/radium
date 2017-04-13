@@ -678,8 +678,7 @@ bool LoadMMP2(struct Tracker_Windows *window,const wchar_t *filename){
 	if (DISK_close_and_delete(file)==false)
           exit(0);
 
-	UpdateAllSTimes();
-        UpdateAllBeats();
+        TIME_everything_has_changed();
 
 //	DrawUpTrackerWindow(window);
 	SelectWBlock(window,window->wblocks);

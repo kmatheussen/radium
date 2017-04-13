@@ -112,9 +112,9 @@ void CB_PasteBlock(
 	toblock->temponodes=CB_CopyTempoNodes(block->temponodes);
 	toblock->lasttemponode=(struct TempoNodes *)ListLast3(&toblock->temponodes->l);
 
-        UpdateSTimes(towblock->block);
+        TIME_everything_in_block_has_changed(towblock->block, root->tempo, root->lpb, root->signature);
+        
 	UpdateReallinesDependens(window,towblock);
-        UpdateBeats(block);
 
 	wtrack=wblock->wtracks;
 	towtrack=towblock->wtracks;

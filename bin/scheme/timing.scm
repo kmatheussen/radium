@@ -181,7 +181,7 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
                                       :num-lines (- next-line first-line))
                       (group-swing-by-bar (cdr bars) swings num-lines))))
           ;;(c-display "swing" swing)
-          (c-display ":bar" bar (cl-cadr next-bar) ":first-line" first-line ":swings" swings ":result" result ":next-line" next-line)
+          ;;(c-display ":bar" bar (cl-cadr next-bar) ":first-line" first-line ":swings" swings ":result" result ":next-line" next-line)
           (if (null? swings)
               (gotit)
               (let* ((swing (car swings))
@@ -453,7 +453,7 @@ Old version. Not correct.
 ;; https://www.wolframalpha.com/input/?i=1%2F(x*a1)+%2B+1%2F(x*a2)+%2B+1%2F(x*a3)+%2B+1%2F(x*a4)+%3D+4
 (define (swing-find-x all-swings min-weight max-weight num-lines)
   (define weights (let loop ((swings all-swings))
-                    (c-display "swings" swings)
+                    ;;(c-display "swings" swings)
                     (if (null? swings)
                         '()
                         (let* ((swing (car swings))
@@ -463,7 +463,7 @@ Old version. Not correct.
                                           (get-swing-line next-swing)
                                           num-lines))
                                (duration (- line2 line1))
-                               (weight (/ (scale (get-swing-weight swing) min-weight max-weight max-weight min-weight)
+                               (weight (/ (+ min-weight max-weight (- (get-swing-weight swing))) ;; same as (scale (get-swing-weight swing) min-weight max-weight max-weight min-weight)
                                           duration)))
                           (cons weight
                                 (loop (cdr swings)))))))
@@ -479,7 +479,7 @@ Old version. Not correct.
                              (loop (cdr swings)
                                    (cdr weights))))))
   
-  (c-display "num" numerator "den" denominator)
+  ;;(c-display "num" numerator "den" denominator)
   (/ numerator
      denominator)
   )
@@ -504,7 +504,7 @@ Old version. Not correct.
         (if (= min-weight max-weight)
             (no-swing)
             (let ((x (swing-find-x swings min-weight max-weight num-lines)))
-              (c-display "num-lines" num-lines "x" x)
+              ;;(c-display "num-lines" num-lines "x" x)
               (let loop ((swings swings)
                          (first-x1 #f))
                 (if (null? swings)
@@ -516,7 +516,7 @@ Old version. Not correct.
                                       (get-swing-line next-swing)
                                       num-lines))
                            (duration (- line2 line1)))
-                      (c-display "x" x "dur" duration "weight" (get-swing-weight swing))
+                      ;;(c-display "x" x "dur" duration "weight" (get-swing-weight swing))
                       (define tempo-multiplier (/ (* x (scale (get-swing-weight swing) min-weight max-weight max-weight min-weight))
                                                   1));duration))
                       (let* ((x1 tempo-multiplier)

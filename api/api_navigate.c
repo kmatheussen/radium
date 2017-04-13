@@ -245,7 +245,7 @@ void cursorUserInputLine(void){
 }
 
 static int get_realline_from_beat(struct WBlocks *wblock, int barnum, int beatnum){
-  struct Beats *beat = wblock->block->beats;
+  const struct Beats *beat = wblock->block->beats;
 
   while (beat != NULL) {
     if (beat->bar_num == barnum && beat->beat_num==beatnum)
