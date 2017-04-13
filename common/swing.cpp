@@ -101,7 +101,7 @@ void AddSwing(struct Blocks *block, const Place place, int weight, int logtype){
 
   bool already_there = swing!=NULL && p_Equal(swing->l.p, place);
 
-  printf("Adding place %s. Old: %s. Already_there: %d\n", PlaceToString(&place), swing==NULL ? "NULL" : PlaceToString(&swing->l.p), already_there);
+  //printf("Adding place %s. Old: %s. Already_there: %d\n", PlaceToString(&place), swing==NULL ? "NULL" : PlaceToString(&swing->l.p), already_there);
 
   if (!already_there){
     swing = (struct Swing*)talloc(sizeof(struct Swing));

@@ -73,6 +73,7 @@ void NewBlock(
 		AppendTrack(block);
 	}
 
+        block->swing_enabled = true;
 
         TIME_everything_in_block_has_changed(block, root->tempo, root->lpb, root->signature);
           

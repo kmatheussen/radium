@@ -76,20 +76,22 @@ struct Blocks *LoadBlock(void){
 		"RELTEMPO",
                 "SWING"
 	};
-	static char *vars[5]={
+	static char *vars[6]={
 		"name",
 		"num_tracks",
 		"num_lines",
 		"reltempo",
-                "color"
+                "color",
+                "swing_enabled"
 	};
 	struct Blocks *block=DC_alloc(sizeof(struct Blocks));
 	ATOMIC_DOUBLE_SET(block->reltempo, 1.0);
 
 	block->l.num=DC_LoadN();
         block->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.82f);
+        block->swing_enabled = true;
         
-	GENERAL_LOAD(6,5)
+	GENERAL_LOAD(6,6)
 
 var0:
 	block->name=DC_LoadS();
@@ -105,6 +107,9 @@ var3:
 	goto start;
 var4:
         block->color = GFX_get_color_from_colorname(DC_LoadS());
+        goto start;
+var5:
+        block->swing_enabled = DC_LoadB();
         goto start;
         
 obj0:
@@ -126,7 +131,6 @@ obj5:
         DC_ListAdd3_a(&block->swings, LoadSwing());
         goto start;
 
-var5:
 var6:
 var7:
 var8:

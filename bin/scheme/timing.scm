@@ -158,7 +158,7 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
   (if (null? bars)
       '()
       (let* ((bar (car bars))
-             (next-bar (begin (c-display ":bar" bar ":bars" bars) (cl-cadr bars)))
+             (next-bar (cl-cadr bars))
              (barnum (bar :barnum))
              (first-line (get-first-line-in-bar bar))
              (next-line (if next-bar
@@ -384,8 +384,8 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
                                        (group-swing-by-bar bars (to-list global-swings) num-lines)
                                        (group-swing-by-bar bars (to-list track-swings) num-lines)
                                        num-lines))
-  (c-display "  global-swings" global-swings)
-  (c-display "  grouped" (pp (group-swing-by-bar bars (to-list global-swings) num-lines)))
+  ;;(c-display "  global-swings" global-swings)
+  ;;(c-display "  grouped" (pp (group-swing-by-bar bars (to-list global-swings) num-lines)))
   RET)
 
 

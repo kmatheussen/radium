@@ -1801,7 +1801,8 @@ struct Blocks{
 	struct TempoNodes *temponodes;
 	struct TempoNodes *lasttemponode;
         struct Swing *swings; // Array of swings. num_lines elements.
-
+        bool swing_enabled;
+  
         int num_time_lines; // Contains number of lines in 'times' minus one (same as num_lines, normally). Only for validation.
         const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. Calculated from lpbs/tempos/temponodes/global lpb/global bpm/filledout_swings*/
   

@@ -1053,7 +1053,7 @@ static const struct STimes *create_stimes(const struct Blocks *block, const dyn_
 
 static dyn_t create_filledout_swings(const struct Blocks *block, dyn_t beats){
   dynvec_t empty = {0};
-  
+
   return s7extra_callFunc2_dyn_dyn_dyn_dyn_int("create-filledout-swings2",
                                                beats,                                               
                                                API_getAllBlockSwings(block),
@@ -1076,7 +1076,8 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
   bool only_update_beats_for_all_blocks = true;
   
   for(int i=0;i<num_blocks;i++){
-    only_update_beats[i] = blocks[i]->swings==NULL && only_signature_has_changed;
+    bool has_swings = blocks[i]->swing_enabled==true && blocks[i]->swings!=NULL;
+    only_update_beats[i] = has_swings==false && only_signature_has_changed;
     if (only_update_beats[i]==false)
       only_update_beats_for_all_blocks = false;
   }
@@ -1101,8 +1102,18 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
   // times
   {
     for(int i = 0 ; i < num_blocks;i++){
-      if (!only_update_beats[i])
-        stimess[i] = create_stimes(blocks[i], dynbeats[i], filledout_swingss[i], default_bpm, default_lpb);
+      if (!only_update_beats[i]){
+        
+        dynvec_t empty = {0};       
+        dyn_t filledout_swings;
+        
+        if (blocks[i]->swing_enabled==false)
+          filledout_swings = DYN_create_array(empty);
+        else
+          filledout_swings = filledout_swingss[i];
+
+        stimess[i] = create_stimes(blocks[i], dynbeats[i], filledout_swings, default_bpm, default_lpb);
+      }
     }
   }
 

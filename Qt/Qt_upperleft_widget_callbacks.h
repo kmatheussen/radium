@@ -38,9 +38,13 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
 
  public:
 
+  bool _is_initing;
+  
  Upperleft_widget(QWidget *parent=NULL)
     : QWidget(parent)
   {
+    _is_initing = true;
+    
     setupUi(this);
     
 #ifdef USE_QT5
@@ -49,7 +53,7 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
 #endif
 
       swing_onoff->setText("✔");
-    
+                            
     // Set up custom popup menues for the time widgets
     {
       bpm->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -88,6 +92,8 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
       connect(reltempomax_label, SIGNAL(customContextMenuRequested(const QPoint&)),
               this, SLOT(ShowReltempoPopup(const QPoint&)));
     }
+
+    _is_initing = false;
   }
 
 
@@ -101,6 +107,9 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
   
   // called from the outside as well
   void updateWidgets(struct WBlocks *wblock){
+
+    _is_initing = true;
+        
     lz->setText(lz->getRational(wblock).toString());
     
     //printf("%d/%d (%s)\n",root->grid_numerator, root->grid_denominator, Rational(root->grid_numerator, root->grid_denominator).toString().toUtf8().constData());
@@ -110,6 +119,7 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     signature->setText(Rational(root->signature).toString());
     lpb->setValue(root->lpb);
     bpm->setValue(root->tempo);
+    swing_onoff->setChecked(wblock->block->swing_enabled);
 
     // The bottom bar mirrors the lpb and bpm widgets.
 
@@ -120,6 +130,8 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     }
     
     reltempomax->setValue(wblock->reltempomax);
+
+    _is_initing = false;
   }
 
   void updateLayout(QWidget *w, int x1, int x2, int height){
@@ -275,7 +287,19 @@ public slots:
       showHideSwingTrack(-1);
   }
 
+  void on_swing_onoff_toggled(bool val){
+    if (_is_initing==true)
+      return;
+    
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    struct WBlocks *wblock = window->wblock;
+    wblock->block->swing_enabled = val;
+    TIME_block_swings_have_changed(wblock->block);
+  }
+    
   void on_lz_editingFinished(){
+    if (_is_initing==true)
+      return;
 
     // Also see lzqlineedit.h, where the 'wheelEvent' handler is implemented.
 
@@ -302,6 +326,9 @@ public slots:
   }
 
   void on_grid_editingFinished(){
+    if (_is_initing==true)
+      return;
+    
     printf("grid\n");
 
     struct Tracker_Windows *window = root->song->tracker_windows;
@@ -315,6 +342,9 @@ public slots:
   }
 
   void on_signature_editingFinished(){
+    if (_is_initing==true)
+      return;
+
     printf("signature\n");
 
     struct Tracker_Windows *window = root->song->tracker_windows;
@@ -331,18 +361,26 @@ public slots:
   }
 
   void on_lpb_editingFinished(){
+    if (_is_initing==true)
+      return;
+
     printf("lpb upperleft\n");
     setMainLPB(lpb->value());
     set_editor_focus();
   }
 
   void on_bpm_editingFinished(){
+    if (_is_initing==true)
+      return;
+
     printf("bpm upperleft\n");
     setMainBPM(bpm->value());
     set_editor_focus();
   }
 
   void on_reltempomax_editingFinished(){
+    if (_is_initing==true)
+      return;
 
     struct Tracker_Windows *window = root->song->tracker_windows;
     struct WBlocks *wblock = window->wblock;
