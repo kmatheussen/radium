@@ -212,6 +212,12 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
     
     setupUi(this);
 
+    interpolation_type->setToolTip("None   = No interpolation. Gives a metallic sound.\n"
+                                   "Linear = Quick interpolation. Has a much less metallic sound than no interpolation.\n"
+                                   "Cubic  = Also quick, but has a slightly less metallic sound than linear interpolation.\n"
+                                   "Sinc1  = Excellent sound: \"The fastest bandlimited interpolator, providing a Signal-to-Noise Ratio (SNR) of 97dB and a bandwidth of 80%.\" (libsamplerate)\n"
+                                   "Sinc2  = Excellent sound: \"The highest quality sinc based converter, providing a worst case SNR of 97dB at a bandwidth of 97%.\" (libsamplerate)");
+    
     _initing = false;
 
     _timer.parent = this;
