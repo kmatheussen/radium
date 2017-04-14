@@ -44,6 +44,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct TEvent tevent;
 
+static s7_scheme *s7;
+static s7webserver_t *s7webserver;
+
+
 
 extern "C" {
   void init_radium_s7(s7_scheme *s7);
@@ -61,11 +65,24 @@ namespace{
       g_evals--;
     }
   };
-  
-}
 
-static s7_scheme *s7;
-static s7webserver_t *s7webserver;
+  static int g_gc_is_off = 0;
+  
+  struct ScopedGcDisabler{
+    ScopedGcDisabler(){
+      g_gc_is_off++;
+      if (g_gc_is_off==1)
+        s7_gc_on(s7, false);
+    }
+
+    ~ScopedGcDisabler(){
+      R_ASSERT_RETURN_IF_FALSE(g_gc_is_off >= 0);
+      g_gc_is_off--;
+      if (g_gc_is_off==0)
+        s7_gc_on(s7, true);
+    }
+  };
+}
 
 static s7_pointer find_and_protect_scheme_func(const char *funcname){
   s7_pointer scheme_func = s7_name_to_value(s7, funcname);
@@ -141,6 +158,8 @@ bool s7extra_is_dyn(s7_pointer dyn){
 }
 
 static hash_t *s7extra_hash(s7_scheme *s7, s7_pointer s_hash){
+  ScopedGcDisabler gc_disabler;
+  
   int hash_size = 16;
 
   hash_t *r_hash = HASH_create(hash_size); // would be nice to know size of s_hash so we didn't have to rehash
@@ -182,6 +201,8 @@ static hash_t *s7extra_hash(s7_scheme *s7, s7_pointer s_hash){
 }
 
 static dynvec_t s7extra_array(s7_scheme *s7, s7_pointer vector){
+  ScopedGcDisabler gc_disabler;
+  
   dynvec_t dynvec = {0};
 
   s7_pointer iterator = s7_make_iterator(s7, vector);
@@ -230,6 +251,8 @@ dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s){
 }
 
 static s7_pointer hash_to_s7(s7_scheme *sc, const hash_t *r_hash){
+  ScopedGcDisabler gc_disabler;
+  
   s7_pointer s_hash = s7_make_hash_table(sc, HASH_get_num_elements(r_hash));
 
   dynvec_t dynvec = HASH_get_values(r_hash);
@@ -246,6 +269,8 @@ static s7_pointer hash_to_s7(s7_scheme *sc, const hash_t *r_hash){
 }
 
 static s7_pointer dynvec_to_s7(s7_scheme *sc, const dynvec_t &dynvec){
+  ScopedGcDisabler gc_disabler;
+  
   s7_pointer s_vec = s7_make_vector(sc, dynvec.num_elements);
 
   for(int i = 0 ; i < dynvec.num_elements ; i++){
@@ -259,6 +284,8 @@ static s7_pointer dynvec_to_s7(s7_scheme *sc, const dynvec_t &dynvec){
 }
 
 s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn){
+  ScopedGcDisabler gc_disabler;
+  
   switch(dyn.type){
     case STRING_TYPE:
       return s7_make_string(radiums7_sc, STRING_get_chars(dyn.string));
