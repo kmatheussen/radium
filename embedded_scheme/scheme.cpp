@@ -179,6 +179,7 @@ bool s7extra_is_dyn(s7_pointer dyn){
   return s7_is_number(dyn) || s7_is_string(dyn) || s7_is_boolean(dyn) || s7_is_hash_table(dyn) || s7_is_vector(dyn) || s7_is_pair(dyn);
 }
 
+// 's_hash' has been gc-protected before calling
 static hash_t *s7extra_hash(s7_scheme *s7, s7_pointer s_hash){
   int hash_size = 16;
 
@@ -186,6 +187,8 @@ static hash_t *s7extra_hash(s7_scheme *s7, s7_pointer s_hash){
 
   R_ASSERT_RETURN_IF_FALSE2(s7_is_hash_table(s_hash), r_hash);
 
+  ProtectedS7Pointer protect(s_hash); // Not sure if this is necessary. (doesn't the iterator below hold a pointer to the vector?)
+    
   ProtectedS7Pointer iterator(s7_make_iterator(s7, s_hash));
 
   int num_elements = 0;
@@ -221,6 +224,7 @@ static hash_t *s7extra_hash(s7_scheme *s7, s7_pointer s_hash){
 }
 
 static dynvec_t s7extra_array(s7_scheme *s7, s7_pointer vector){
+  ProtectedS7Pointer protect(vector); // Not sure if this is necessary. (doesn't the iterator below hold a pointer to the vector?)
   
   dynvec_t dynvec = {0};
 
@@ -239,6 +243,7 @@ static dynvec_t s7extra_array(s7_scheme *s7, s7_pointer vector){
 }
 
 dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s){
+  
   if (s7_is_integer(s))
     return DYN_create_int(s7_integer(s));
 
