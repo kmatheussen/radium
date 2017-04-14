@@ -2072,14 +2072,14 @@ struct Tracker_Windows{
 };
 #define NextWindow(a) (struct Tracker_Windows *)((a)->l.next)
 
-/* curr_track types */
-#define TEMPONODETRACK -1
-#define LINENUMBTRACK -2
-#define SWINGTRACK -3
-#define SIGNATURETRACK -4
-#define LPBTRACK -5
-#define TEMPOTRACK -6
+/* curr_track types. Order must be correct. */
 #define TEMPOCOLORTRACK -7
+#define TEMPOTRACK -6
+#define LPBTRACK -5
+#define SIGNATURETRACK -4
+#define LINENUMBTRACK -3
+#define SWINGTRACK -2
+#define TEMPONODETRACK -1
 #define LEFTMOSTTRACK TEMPOCOLORTRACK
 #define NOTRACK -10000
 
