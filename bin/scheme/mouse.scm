@@ -2921,7 +2921,10 @@
                             (popup-menu "hide LPB track" ra:show-hide-lpb-track))
                            ((= *current-track-num-all-tracks* (<ra> :get-signature-track-num))
                             (c-display "signature")
-                            (popup-menu "hide time signature track" ra:show-hide-signature-track)))
+                            (popup-menu "hide time signature track" ra:show-hide-signature-track))
+                           ((= *current-track-num-all-tracks* (<ra> :get-swing-track-num))
+                            (c-display "swing")
+                            (popup-menu "hide swing track" ra:show-hide-swing-track)))
                      #t))))
 
 
