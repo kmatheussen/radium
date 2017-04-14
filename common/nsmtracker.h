@@ -30,7 +30,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  endif
 
 
+#if  ((defined(__clang__) && ((__clang_major__ > 3) || (__clang_major__ == 3 && __clang_minor__ >= 4))) || (defined(__GNUC__) && __GNUC__ >= 5))
+#else
+#  error "Need at least clang 3.4 or gcc 5 (you can uncomment this line to make the program run, but swing, and perhaps other things as well, might be unstable.)"
+#endif
 
+  
 #ifndef __SSE2__
 #error "SSE2 is missing (i.e. -msse2 is lacking)"
 #endif
