@@ -85,15 +85,17 @@ namespace{
 
   struct ProtectedS7Pointer{
     s7_pointer v;
+    int pos;
     
     ProtectedS7Pointer(s7_pointer val)
       :v(val)
-    {
-      s7_gc_protect(s7, v);
+      ,pos(s7_gc_protect(s7, v))
+    {      
     }
     
     ~ProtectedS7Pointer(){
-      s7_gc_unprotect(s7, v);
+      R_ASSERT_NON_RELEASE(s7_gc_protected_at(s7, pos)==v);
+      s7_gc_unprotect_at(s7, pos);
     }
     
     // Or just juse ".v".
