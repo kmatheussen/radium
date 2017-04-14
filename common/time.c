@@ -1147,7 +1147,7 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
         if (update_swings) {
           struct Tracks *track = blocks[i]->tracks;
           while(track!=NULL){
-            if (blocks[i]->swing_enabled==false)
+            if (blocks[i]->swing_enabled==false || track->swings==NULL)
               VECTOR_push_back(&trackstimess[i], stimess[i]);
             else{
               const struct STimes *trackstimes = create_stimes(blocks[i], dynbeats[i], filledout_trackswingss[i].elements[track->l.num], default_bpm, default_lpb);
