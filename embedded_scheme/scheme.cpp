@@ -82,7 +82,28 @@ namespace{
         s7_gc_on(s7, true);
     }
   };
+
+  struct ProtectedS7Pointer{
+    s7_pointer v;
+    
+    ProtectedS7Pointer(s7_pointer val)
+      :v(val)
+    {
+      s7_gc_protect(s7, v);
+    }
+    
+    ~ProtectedS7Pointer(){
+      s7_gc_unprotect(s7, v);
+    }
+    
+    // Or just juse ".v".
+    s7_pointer get(void){
+      return v;
+    }
+  };
+    
 }
+
 
 static s7_pointer find_and_protect_scheme_func(const char *funcname){
   s7_pointer scheme_func = s7_name_to_value(s7, funcname);
@@ -158,21 +179,19 @@ bool s7extra_is_dyn(s7_pointer dyn){
 }
 
 static hash_t *s7extra_hash(s7_scheme *s7, s7_pointer s_hash){
-  ScopedGcDisabler gc_disabler;
-  
   int hash_size = 16;
 
   hash_t *r_hash = HASH_create(hash_size); // would be nice to know size of s_hash so we didn't have to rehash
 
   R_ASSERT_RETURN_IF_FALSE2(s7_is_hash_table(s_hash), r_hash);
 
-  s7_pointer iterator = s7_make_iterator(s7, s_hash);
+  ProtectedS7Pointer iterator(s7_make_iterator(s7, s_hash));
 
   int num_elements = 0;
   while(true){
-    s7_pointer val = s7_iterate(s7, iterator);
+    s7_pointer val = s7_iterate(s7, iterator.v);
 
-    if (s7_iterator_is_at_end(iterator))
+    if (s7_iterator_is_at_end(iterator.v))
       break;
 
     s7_pointer key = s7_car(val);
@@ -201,16 +220,15 @@ static hash_t *s7extra_hash(s7_scheme *s7, s7_pointer s_hash){
 }
 
 static dynvec_t s7extra_array(s7_scheme *s7, s7_pointer vector){
-  ScopedGcDisabler gc_disabler;
   
   dynvec_t dynvec = {0};
 
-  s7_pointer iterator = s7_make_iterator(s7, vector);
+  ProtectedS7Pointer iterator(s7_make_iterator(s7, vector));
 
   while(true){
-    s7_pointer val = s7_iterate(s7, iterator);
+    s7_pointer val = s7_iterate(s7, iterator.v);
 
-    if (s7_iterator_is_at_end(iterator))
+    if (s7_iterator_is_at_end(iterator.v))
       break;
 
     DYNVEC_push_back(&dynvec, s7extra_dyn(s7, val));
@@ -251,40 +269,37 @@ dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s){
 }
 
 static s7_pointer hash_to_s7(s7_scheme *sc, const hash_t *r_hash){
-  ScopedGcDisabler gc_disabler;
   
-  s7_pointer s_hash = s7_make_hash_table(sc, HASH_get_num_elements(r_hash));
+  ProtectedS7Pointer s_hash(s7_make_hash_table(sc, HASH_get_num_elements(r_hash)));
 
   dynvec_t dynvec = HASH_get_values(r_hash);
   vector_t keys = HASH_get_keys(r_hash);
 
   for(int i = 0 ; i < dynvec.num_elements ; i++){
     s7_hash_table_set(sc,
-                      s_hash,
+                      s_hash.v,
                       s7_make_symbol(sc, (char*)keys.elements[i]),
                       s7extra_make_dyn(sc, dynvec.elements[i]));
   }
 
-  return s_hash;
+  return s_hash.v;
 }
 
 static s7_pointer dynvec_to_s7(s7_scheme *sc, const dynvec_t &dynvec){
-  ScopedGcDisabler gc_disabler;
   
-  s7_pointer s_vec = s7_make_vector(sc, dynvec.num_elements);
+  ProtectedS7Pointer s_vec(s7_make_vector(sc, dynvec.num_elements));
 
   for(int i = 0 ; i < dynvec.num_elements ; i++){
     s7_vector_set(sc,
-                  s_vec,
+                  s_vec.v,
                   i,
                   s7extra_make_dyn(sc, dynvec.elements[i]));
   }
 
-  return s_vec;
+  return s_vec.v;
 }
 
 s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn){
-  ScopedGcDisabler gc_disabler;
   
   switch(dyn.type){
     case STRING_TYPE:
