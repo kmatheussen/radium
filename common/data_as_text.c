@@ -249,7 +249,7 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
           if (BPMTEXT_keypress(window, wblock, realline, place, key) == false) {
             if (LPBTEXT_keypress(window, wblock, realline, place, key) == false) {
               if (SIGNATURETEXT_keypress(window, wblock, realline, place, key) == false) {
-                if (SWINGTEXT_keypress(window, wblock, realline, place, key) == false) {
+                if (SWINGTEXT_keypress(window, wblock, window->curr_track < 0 ? NULL : wtrack, realline, place, key) == false) {
                   return false;
                 }
               }

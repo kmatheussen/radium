@@ -92,8 +92,12 @@ static inline note_t create_note_from_args(const union SuperType *args){
 }
 
 
-static inline int64_t get_seqblock_place_time(const struct SeqBlock *seqblock, Place p){
+static inline int64_t get_seqblock_place_time(const struct SeqBlock *seqblock, const Place p){
   return seqblock->time + Place2STime(seqblock->block, &p);
+}
+                                 
+static inline int64_t get_seqblock_place_time2(const struct SeqBlock *seqblock, const struct Tracks *track, const Place p){
+  return seqblock->time + Place2STime_from_times(track->times, &p);
 }
                                  
 

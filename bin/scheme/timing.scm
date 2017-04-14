@@ -286,7 +286,8 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
 
                  ((and global-swing
                        (= barnum (global-swing :barnum)))
-                  (cons global-swing
+                  (cons (copy-bar-swing global-swing
+                                        :auto-generated #t)
                         (loop (cdr bars)
                               bar
                               global-swing
@@ -332,7 +333,8 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
                                        6)
               (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1 0)
                                                             (create-swing 1 2 0))
-                                    :num-lines 2)
+                                    :num-lines 2
+                                    :auto-generated #t)
                     (make-bar-swing :barnum 1 :swings (list (create-swing 0 1 0)
                                                             (create-swing 1 2 0))
                                     :num-lines 2
@@ -354,7 +356,8 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
                                        5)
               (list (make-bar-swing :barnum 0 :swings (list (create-swing 0 1 0)
                                                             (create-swing 1 2 0))
-                                    :num-lines 2)
+                                    :num-lines 2
+                                    :auto-generated #t)
                     (make-bar-swing :barnum 1 :swings (list (create-swing 0 2 0)
                                                             (create-swing 1 1 0))
                                     :num-lines 2)))

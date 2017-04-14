@@ -1046,6 +1046,70 @@ void setTrackMidiChannel(int channelnum, int tracknum, int blocknum, int windown
 }
 
 
+// swingtext (subtrack)
+
+void showSwingtext(bool showit, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+                           windownum,
+                           &window,
+                           blocknum,
+                           &wblock,
+                           tracknum
+                           );
+
+  if(wtrack==NULL) return;
+
+  wtrack->swingtext_on = showit;
+
+  UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
+}
+
+bool swingtextVisible(int tracknum,int blocknum,int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
+
+  if (wtrack==NULL)
+    return false;
+
+  return wtrack->swingtext_on;
+}
+
+void showHideSwingtext(int tracknum,int blocknum,int windownum){
+  showSwingtext(!swingtextVisible(tracknum, blocknum, windownum),
+              tracknum, blocknum, windownum);
+}
+
+void showHideSwingtextInBlock(int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	-1
+	);
+
+  if(wtrack==NULL) return;
+
+  bool on = !wtrack->swingtext_on;
+
+  wtrack = wblock->wtracks;
+  while(wtrack!=NULL){
+    wtrack->swingtext_on = on;
+    wtrack = NextWTrack(wtrack);
+  }
+  
+  UpdateAllWBlockCoordinates(window);
+  window->must_redraw = true;
+}
+
 // centtext
 
 bool centtextCanBeTurnedOff(int tracknum, int blocknum, int windownum){
@@ -1486,6 +1550,7 @@ void showHideSignatureTrack(int windownum){
   window->must_redraw = true;
 }
 
+// swingtext (global)
 void showHideSwingTrack(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
 

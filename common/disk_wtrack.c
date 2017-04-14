@@ -51,6 +51,7 @@ DC_start("WTRACK");
         DC_SSB("show_chancetext",wtrack->chancetext_on);
         DC_SSB("show_veltext",wtrack->veltext_on);
         DC_SSB("show_fxtext",wtrack->fxtext_on);
+        DC_SSB("show_swingtext",wtrack->swingtext_on);
 
 DC_end();
 SaveWTrack(NextWTrack(wtrack));
@@ -60,7 +61,7 @@ SaveWTrack(NextWTrack(wtrack));
 
 struct WTracks *LoadWTrack(void){
 	static char **objs=NULL;
-	static char *vars[12]={
+	static char *vars[13]={
 		"notesonoff",
 		"notelength",
 		"fxwidth",
@@ -72,12 +73,13 @@ struct WTracks *LoadWTrack(void){
                 "show_centtext",
                 "show_chancetext",
                 "show_veltext",
-                "show_fxtext"
+                "show_fxtext",
+                "show_swingtext"
 	};
 	struct WTracks *wtrack = WTRACK_new();
 	wtrack->l.num=DC_LoadN();
 
-	GENERAL_LOAD(0,12);
+	GENERAL_LOAD(0,13);
 
 
 var0:
@@ -118,6 +120,9 @@ var11:
         wtrack->fxtext_on = DC_LoadB();
         goto start;
 var12:
+        wtrack->swingtext_on = DC_LoadB();
+        goto start;
+
 var13:
 var14:
 var15:

@@ -263,7 +263,7 @@ void UpdateWBlockCoordinates(
         /////////////////////
         wblock->swingTypearea.x  = next_x2;
 	wblock->swingTypearea.x2 = wblock->swingTypearea.x     + wblock->swingTypearea.width;
-	wblock->swingarea.x      = wblock->swingTypearea.x2    + 3;
+	wblock->swingarea.x      = wblock->swingTypearea.x2    ; // + 3;
 	wblock->swingarea.x2     = wblock->swingarea.x         + wblock->swingarea.width;
         if (window->show_swing_track)
           next_x2 = wblock->swingarea.x2 + 3;

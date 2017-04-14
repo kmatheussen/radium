@@ -32,28 +32,42 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "swingtext_proc.h"
 
 
-int SWINGTEXT_subsubtrack(struct Tracker_Windows *window){
-  if (window->curr_track != SWINGTRACK)
-    return -1;
-  
-  int curr_track_sub = window->curr_othertrack_sub;
+int SWINGTEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrack){
 
+  int curr_track_sub;
+      
+  if (wtrack==NULL) {
+    
+    if (window->curr_track != SWINGTRACK)
+      return -1;
+    
+    curr_track_sub = window->curr_othertrack_sub;
+    
+  } else {
+    
+    curr_track_sub = window->curr_track_sub;
+  }
+  
   if (curr_track_sub < 0)
     return -1;
-
+  
   if (curr_track_sub > 2)
     return -1;
-
+  
   return curr_track_sub;
 }
 
-bool SWINGTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, int realline, Place *place, int key){
-  int subsubtrack = SWINGTEXT_subsubtrack(window);
+bool SWINGTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, Place *place, int key){
+    
+  int subsubtrack = SWINGTEXT_subsubtrack(window, wtrack);
 
   if (subsubtrack==-1)
     return false;
 
-  QVector<Swing*> swings = Swings_get(wblock, realline);
+  struct Blocks *block = wblock->block;
+  struct Tracks *track = wtrack==NULL ? NULL : wtrack->track;
+
+  QVector<Swing*> swings = Swings_get(wblock, track, realline);
 
     
   if (swings.size() == 0) {
@@ -69,7 +83,7 @@ bool SWINGTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, 
       return false;
 
     ADD_UNDO(Swings_CurrPos(window));
-    AddSwing(wblock->block, *place, dat.value, dat.logtype);
+    AddSwing(block, track, *place, dat.value, dat.logtype);
 
   } else {
 
@@ -80,7 +94,7 @@ bool SWINGTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, 
     if (key == EVENT_DEL) {
 
       ADD_UNDO(Swings_CurrPos(window));  
-      RemoveSwing(wblock->block, swing);
+      RemoveSwing(block, track, swing);
  
     } else {
 
@@ -89,7 +103,7 @@ bool SWINGTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, 
       if (dat.is_valid==false)
         return false;
       
-      AddSwing(wblock->block, swing->l.p, dat.value, dat.logtype);
+      AddSwing(block, track, swing->l.p, dat.value, dat.logtype);
     }
   }
 

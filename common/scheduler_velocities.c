@@ -157,8 +157,8 @@ static void RT_schedule_velocity(struct SeqTrack *seqtrack,
   Place p1 = velocity1==NULL ? note->l.p : velocity1->l.p;
   Place p2 = velocity2==NULL ? note->end : velocity2->l.p;
   
-  int64_t time1 = get_seqblock_place_time(seqblock, p1);
-  int64_t time2 = get_seqblock_place_time(seqblock, p2);
+  int64_t time1 = get_seqblock_place_time2(seqblock, track, p1);
+  int64_t time2 = get_seqblock_place_time2(seqblock, track, p2);
 
   if (velocity2==NULL)
     time2--; // Can not send out velocity at the same time as note_end, since note_end events has higher priority than velocity events.

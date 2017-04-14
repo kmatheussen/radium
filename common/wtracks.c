@@ -42,6 +42,9 @@ extern PlayerClass *pc;
 int WTRACK_num_non_polyphonic_subtracks(const struct WTracks *wtrack){
   int ret = 0;
 
+  if (wtrack->swingtext_on)
+    ret+=3;
+      
   if (wtrack->centtext_on)
     ret+=2;
       
@@ -72,6 +75,7 @@ struct WTracks *WTRACK_new(void){
   wtrack->pianoroll_highkey = 60;
   wtrack->pianoroll_width = 240;
 
+  //wtrack->swingtext_on = true;  
   //wtrack->centtext_on = true;
   //wtrack->veltext_on = true;
   //wtrack->fxtext_on = true;
@@ -139,6 +143,9 @@ static int get_fxtextarea_width(const struct Tracker_Windows *window, const stru
 static int WTRACKS_get_non_polyphonic_subtracks_width(const struct Tracker_Windows *window, const struct WTracks *wtrack){
   int ret = 0;
 
+  if (wtrack->swingtext_on)
+    ret += (4 * window->fontwidth) + 2;
+  
   if (wtrack->centtext_on)
     ret += (2 * window->fontwidth) + 2;
   
@@ -209,6 +216,13 @@ void UpdateWTrackCoordinates(
 
         x = wtrack->notearea.x2 + 2;
 
+        // swing
+        wtrack->swingtextarea.x = x;
+        wtrack->swingtextarea.x2 = wtrack->swingtextarea.x + (window->fontwidth * 4);
+
+        if (wtrack->swingtext_on==true)
+          x = wtrack->swingtextarea.x2 + 2;
+        
         // centtext
         wtrack->centtextarea.x = x;
         wtrack->centtextarea.x2 = wtrack->centtextarea.x + (window->fontwidth * 2);

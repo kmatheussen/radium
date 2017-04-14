@@ -27,10 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "swing_proc.h"
 
 
-QVector<Swing*> Swings_get(const struct WBlocks *wblock, int realline){
+QVector<Swing*> Swings_get(const struct WBlocks *wblock, const struct Tracks *track, int realline){
   QVector<Swing*> ret;
   
-  struct Swing *swing=wblock->block->swings;
+  struct Swing *swing=track==NULL ? wblock->block->swings : track->swings;
   int realline2 = 0;
   
   while(swing!=NULL){
@@ -86,18 +86,20 @@ static void add_missing_swing_in_bar(const struct Blocks *block, const struct Be
 
 }
 
-static void legalize_swings(struct Blocks *block){
+static void legalize_swings(struct Blocks *block, struct Swing **swings){
   QVector<Swing*> new_swings;
 
-  add_missing_swing_in_bar(block, block->beats, block->swings, new_swings);
+  add_missing_swing_in_bar(block, block->beats, *swings, new_swings);
 
   for(auto *swing : new_swings)
-    ListAddElement3(&block->swings, &swing->l);
+    ListAddElement3(swings, &swing->l);
 }
 
 // TODO: Automatically add swing to first beat in bar, if it doesn't exist.
-void AddSwing(struct Blocks *block, const Place place, int weight, int logtype){
-  struct Swing *swing = (struct Swing*)ListFindElement3(&block->swings->l,&place);
+void AddSwing(struct Blocks *block, struct Tracks *track, const Place place, int weight, int logtype){
+  struct Swing **swings = track==NULL ? &block->swings : &track->swings;
+  
+  struct Swing *swing = (struct Swing*)ListFindElement3(&(*swings)->l,&place);
 
   bool already_there = swing!=NULL && p_Equal(swing->l.p, place);
 
@@ -112,29 +114,34 @@ void AddSwing(struct Blocks *block, const Place place, int weight, int logtype){
   swing->logtype = logtype;
 
   if (!already_there) {
-    ListAddElement3(&block->swings, &swing->l);
-    legalize_swings(block);
+    ListAddElement3(swings, &swing->l);
+    legalize_swings(block, swings);
   }
 
   TIME_block_swings_have_changed(block);
 }
 
-void RemoveSwing(struct Blocks *block,struct Swing *swing){
-  ListRemoveElement3(&block->swings,&swing->l);
-  legalize_swings(block);
+void RemoveSwing(struct Blocks *block,struct Tracks *track, struct Swing *swing){
+  struct Swing **swings = track==NULL ? &block->swings : &track->swings;
+  
+  ListRemoveElement3(swings,&swing->l);
+  legalize_swings(block, swings);
 
   TIME_block_swings_have_changed(block);
 }
 
-static void RemoveSwings(struct Blocks *block,Place *p1,Place *p2){
-  ListRemoveElements3(&block->swings,p1,p2);
-  legalize_swings(block);
+static void RemoveSwings(struct Blocks *block,struct Tracks *track,Place *p1,Place *p2){
+  struct Swing **swings = track==NULL ? &block->swings : &track->swings;
+  
+  ListRemoveElements3(swings,p1,p2);
+  legalize_swings(block, swings);
 
   TIME_block_swings_have_changed(block);
 }
 
 
 void RemoveSwingCurrPos(struct Tracker_Windows *window){
+  
 	struct WBlocks *wblock=window->wblock;
 	int curr_realline=wblock->curr_realline;
 
@@ -145,7 +152,7 @@ void RemoveSwingCurrPos(struct Tracker_Windows *window){
 	PlaceSetReallinePlace(wblock,curr_realline,&p1);
 	PlaceSetReallinePlace(wblock,curr_realline+1,&p2);
 
-	RemoveSwings(wblock->block,&p1,&p2);
+	RemoveSwings(wblock->block,NULL,&p1,&p2);
 
         window->must_redraw_editor = true;
 }

@@ -607,6 +607,27 @@ dyn_t getAllBlockSwings(int blocknum, int windownum){
   return API_getAllBlockSwings(wblock->block);
 }
 
+dyn_t API_getAllTrackSwings(const struct Tracks *track){
+  dynvec_t ret = {0};
+
+  struct Swing *swing = track->swings;
+
+  while(swing != NULL){
+    DYNVEC_push_back(&ret, create_swing(swing->l.p, swing->weight, swing->logtype));
+    swing = NextSwing(swing);
+  }
+  
+  return DYN_create_array(ret);
+}
+  
+dyn_t getAllTrackSwings(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  if (wtrack==NULL)
+    return DYN_create_bool(false);
+
+  return API_getAllTrackSwings(wtrack->track);
+}
+
 /*
 dyn_t testsomething(dyn_t arg){
   hash_t *hash = HASH_create(5);

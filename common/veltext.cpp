@@ -105,6 +105,9 @@ int VELTEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrack){
   if (wtrack->veltext_on == false)
     return -1;
 
+  if (wtrack->swingtext_on == true)
+    curr_track_sub -= 3;
+  
   if (wtrack->centtext_on)
     curr_track_sub -= 2;
   

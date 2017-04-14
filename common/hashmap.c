@@ -630,6 +630,9 @@ void HASH_save(hash_t *hash, disk_t *file){
       DISK_printf(file,"%d\n",element->i);
       DISK_printf(file,"%s\n",type_to_typename(element->a.type));
       switch(element->a.type){
+        case UNINITIALIZED_TYPE:
+          RError("Uninitialized type not supported when saving hash to disk");
+          break;
         case STRING_TYPE:
           DISK_write_wchar(file, element->a.string);
           DISK_write(file, "\n");
@@ -733,22 +736,24 @@ hash_t *HASH_load(disk_t *file){
 
     //printf("           Putting %d / %s\n",i, key);
     switch(type){
-
-    case STRING_TYPE:
-      line = read_line(file);
-      put_string(hash, key, i, line);
-      break;
-    case INT_TYPE:
-      line = read_line(file);
-      put_int(hash, key, i, STRING_get_int64(line));
-      break;
-    case FLOAT_TYPE:
-      line = read_line(file);
-      put_float(hash, key, i, STRING_get_double(line));
-      break;
-    case HASH_TYPE:
-      put_hash(hash, key, i, HASH_load(file));
-      break;
+      case UNINITIALIZED_TYPE:
+        RError("UNINITIALIZED_TYPE?");
+        break;
+      case STRING_TYPE:
+        line = read_line(file);
+        put_string(hash, key, i, line);
+        break;
+      case INT_TYPE:
+        line = read_line(file);
+        put_int(hash, key, i, STRING_get_int64(line));
+        break;
+      case FLOAT_TYPE:
+        line = read_line(file);
+        put_float(hash, key, i, STRING_get_double(line));
+        break;
+      case HASH_TYPE:
+        put_hash(hash, key, i, HASH_load(file));
+        break;
     }
 
     line = read_line(file);

@@ -13,6 +13,7 @@ typedef struct _dynvec_t dynvec_t;
 
 
 enum DynType{
+  UNINITIALIZED_TYPE,
   STRING_TYPE,
   INT_TYPE,
   FLOAT_TYPE,

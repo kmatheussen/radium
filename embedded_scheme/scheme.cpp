@@ -197,7 +197,7 @@ static hash_t *s7extra_hash(s7_scheme *s7, s7_pointer s_hash){
   while(true){
     s7_pointer val = s7_iterate(s7, iterator.v);
 
-    if (s7_iterator_is_at_end(iterator.v))
+    if (s7_iterator_is_at_end(s7, iterator.v))
       break;
 
     s7_pointer key = s7_car(val);
@@ -235,7 +235,7 @@ static dynvec_t s7extra_array(s7_scheme *s7, s7_pointer vector){
   while(true){
     s7_pointer val = s7_iterate(s7, iterator.v);
 
-    if (s7_iterator_is_at_end(iterator.v))
+    if (s7_iterator_is_at_end(s7, iterator.v))
       break;
 
     DYNVEC_push_back(&dynvec, s7extra_dyn(s7, val));
@@ -310,6 +310,8 @@ static s7_pointer dynvec_to_s7(s7_scheme *sc, const dynvec_t &dynvec){
 s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn){
   
   switch(dyn.type){
+    case UNINITIALIZED_TYPE:
+      return s7_unspecified(radiums7_sc);
     case STRING_TYPE:
       return s7_make_string(radiums7_sc, STRING_get_chars(dyn.string));
     case INT_TYPE:

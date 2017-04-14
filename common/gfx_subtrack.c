@@ -60,6 +60,17 @@ int GetXSubTrack1(
   
   int sn = 0;
 
+  if (wtrack->swingtext_on){
+    if (subtrack == sn)
+      return wtrack->swingtextarea.x + fontwidth;
+    if (subtrack == sn+1)
+      return wtrack->swingtextarea.x + fontwidth*2;
+    if (subtrack == sn+2)
+      return wtrack->swingtextarea.x + fontwidth*3;
+
+    sn += 3;
+  }
+  
   if (wtrack->centtext_on){
     if (subtrack == sn)
       return wtrack->centtextarea.x;
@@ -147,6 +158,17 @@ int GetXSubTrack2(
   
     int sn = 0;
 
+    if (wtrack->swingtext_on){
+      if (subtrack == sn)
+        return wtrack->swingtextarea.x + fontwidth*2;
+      if (subtrack == sn+1)
+        return wtrack->swingtextarea.x + (fontwidth*3);
+      if (subtrack == sn+2)
+        return wtrack->swingtextarea.x + (fontwidth*4);
+      
+      sn += 3;
+    }
+    
     if (wtrack->centtext_on){
       if (subtrack == sn)
         return wtrack->centtextarea.x + fontwidth;

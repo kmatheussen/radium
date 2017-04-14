@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "disk_notes_proc.h"
 #include "disk_stops_proc.h"
 #include "disk_fxs_proc.h"
+#include "disk_swing_proc.h"
 
 #include "disk_track_proc.h"
 
@@ -66,7 +67,7 @@ DC_start("TRACK");
 	SaveNotes(track->notes);
 	SaveStops(track->stops);
 	SaveFXs(&track->fxs,track);
-
+        SaveSwings(track->swings);
 
 DC_end();
 SaveTrack(NextTrack(track));
@@ -75,11 +76,12 @@ SaveTrack(NextTrack(track));
 extern struct Root *root;
 
 struct Tracks *LoadTrack(void){
-	static char *objs[3]={
-		"NOTE",
-		"STOPS",
-		"FXS"
-	};
+        static char *objs[4]={
+          "NOTE",
+          "STOPS",
+          "FXS",
+          "SWING"
+        };
 	static char *vars[10]={
 		"onoff",
 		"trackname",
@@ -96,7 +98,7 @@ struct Tracks *LoadTrack(void){
 	track->l.num=DC_LoadN();
         InitTrack(track);
 
-	GENERAL_LOAD(3,10)
+	GENERAL_LOAD(4,10)
 
 var0:
 	track->onoff=DC_LoadI();
@@ -147,6 +149,9 @@ obj1:
 obj2:
         VECTOR_push_back(&track->fxs, LoadFXs(track));
 	goto start;
+obj3:
+        DC_ListAdd3_a(&track->swings, LoadSwing());
+        goto start;
 
 var10:
 var11:
@@ -160,7 +165,6 @@ var18:
 var19:
  var20:
         
-obj3:
 obj4:
 obj5:
 obj6:

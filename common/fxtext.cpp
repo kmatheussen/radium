@@ -69,6 +69,9 @@ int FXTEXT_subsubtrack(const struct Tracker_Windows *window, struct WTracks *wtr
 
   int subsubtrack = window->curr_track_sub;
 
+  if (wtrack->swingtext_on == true)
+    subsubtrack -= 3;
+  
   if (wtrack->centtext_on == true)
     subsubtrack -= 2;
   

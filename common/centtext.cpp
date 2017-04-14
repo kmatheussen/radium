@@ -34,6 +34,9 @@ int CENTTEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrack)
   if (wtrack->centtext_on == false)
     return -1;
 
+  if (wtrack->swingtext_on == true)
+    curr_track_sub -= 3;
+  
   if (curr_track_sub < 0)
     return -1;
 

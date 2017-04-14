@@ -1158,7 +1158,9 @@
                                                                                                     (<ra> :show-pianoroll onoff *current-track-num*))
               "Note text     (left alt + n)" :check (<ra> :note-track-visible *current-track-num*) (lambda (onoff)
                                                                                                      (<ra> :show-note-track onoff *current-track-num*))
-              (list "Cents"
+              "Swing text" :check (<ra> :swingtext-visible *current-track-num*) (lambda (onoff)
+                                                                                  (<ra> :show-swingtext onoff *current-track-num*))
+              (list "Cents text"
                     :check (<ra> :centtext-visible *current-track-num*)
                     :enabled (<ra> :centtext-can-be-turned-off *current-track-num*)
                     (lambda (onoff)

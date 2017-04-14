@@ -651,6 +651,8 @@ static inline char *ratio_to_string(const Ratio ratio){
 
 static inline const char *DYN_type_name(enum DynType type){
   switch(type){
+    case UNINITIALIZED_TYPE:
+      return "UNINITIALIZED_TYPE";
     case STRING_TYPE:
       return "STRING_TYPE";
     case INT_TYPE:
@@ -685,6 +687,9 @@ static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
     return false;
   
   switch(a1.type){
+    case UNINITIALIZED_TYPE:
+      R_ASSERT(false);
+      return false;      
     case STRING_TYPE:
       if (a1.string==a2.string)
         return true;
@@ -1261,6 +1266,28 @@ struct FXs{
 };
 
 
+
+/*********************************************************************
+	swing.h
+*********************************************************************/
+
+struct Swing {
+  struct ListHeader3 l;
+  int weight;
+  int logtype;
+};
+#define NextSwing(a) ((struct Swing *)((a)->l.next))
+
+
+enum WSwingType {
+  WSWING_NORMAL,
+  WSWING_BELOW,
+  WSWING_MUL,
+};
+  
+
+
+
 /*********************************************************************
 	tracks.h
 *********************************************************************/
@@ -1277,6 +1304,10 @@ struct Tracks{
 	struct Patch *patch;
         vector_t fxs; // Contains struct FXs* elements
 
+        struct Swing *swings; // Array of swings. num_lines elements.
+        dyn_t  filledout_swings; // Used both to calculate timing, and for rendering. Calculated from block->beats and swings.
+        const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. Calculated from lpbs/tempos/temponodes/global lpb/global bpm/filledout_swings*/
+  
         void *midi_instrumentdata;			/* Used by the midi instrument. */
 
 	int pan;
@@ -1509,6 +1540,9 @@ struct WTracks{
         int notewidth;
 	Area notearea;						/* These are all parts of the GFX area. */
 
+        bool swingtext_on;
+        Area swingtextarea;
+  
         bool centtext_on;
         Area centtextarea;
   
@@ -1728,28 +1762,6 @@ struct TempoNodes{
 
 
 /*********************************************************************
-	swing.h
-*********************************************************************/
-
-// // There's one Swing element for each line.
-// Swings can be placed at beats.
-struct Swing {
-  struct ListHeader3 l;
-  int weight;
-  int logtype;
-};
-#define NextSwing(a) ((struct Swing *)((a)->l.next))
-
-
-enum WSwingType {
-  WSWING_NORMAL,
-  WSWING_BELOW,
-  WSWING_MUL,
-};
-  
-
-
-/*********************************************************************
 	time.h
 *********************************************************************/
 
@@ -1888,8 +1900,8 @@ struct WBlocks{
 	WArea lpbarea;
 	WArea tempoTypearea; // When one character signals whether the tempo is down "d", or multi "m"
 	WArea tempoarea;
-        WArea swingarea;
         WArea swingTypearea;
+        WArea swingarea;
 	WArea temponodearea;
 
 	YArea linearea;

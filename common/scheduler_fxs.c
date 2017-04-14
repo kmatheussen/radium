@@ -110,14 +110,14 @@ static void RT_schedule_fxnodeline(
   if (fxnodeline2==NULL)
     return;
   
-  int64_t time1 = get_seqblock_place_time(seqblock, fxnodeline1->l.p);
-  int64_t time2 = get_seqblock_place_time(seqblock, fxnodeline2->l.p);
+  int64_t time1 = get_seqblock_place_time2(seqblock, track, fxnodeline1->l.p);
+  int64_t time2 = get_seqblock_place_time2(seqblock, track, fxnodeline2->l.p);
 
   int64_t time;
   if (PlaceEqual(&start_place, &fxnodeline1->l.p)) // This test is not really necessary, get_seqblock_place_time should always return the same value for the same place. But with this check there is no need to think about the possibility of it to fail.
     time = time1;
   else
-    time = get_seqblock_place_time(seqblock, start_place);
+    time = get_seqblock_place_time2(seqblock, track, start_place);
   
   union SuperType args[g_num_fx_args];
   args[0].const_pointer = seqblock;

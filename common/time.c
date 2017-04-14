@@ -1051,14 +1051,18 @@ static const struct STimes *create_stimes(const struct Blocks *block, const dyn_
   return times;
 }
 
-static dyn_t create_filledout_swings(const struct Blocks *block, dyn_t beats){
-  dynvec_t empty = {0};
+static dyn_t create_filledout_swings(dyn_t block_swings, int num_lines, const struct Tracks *track, dyn_t beats){
+  static dynvec_t empty = {0};
+  static dyn_t empty_array = {0};
 
+  if (empty_array.type==UNINITIALIZED_TYPE)
+    empty_array = DYN_create_array(empty);
+  
   return s7extra_callFunc2_dyn_dyn_dyn_dyn_int("create-filledout-swings2",
                                                beats,                                               
-                                               API_getAllBlockSwings(block),
-                                               DYN_create_array(empty),
-                                               block->num_lines
+                                               track==NULL ? empty_array : block_swings,
+                                               track==NULL ? block_swings : API_getAllTrackSwings(track),
+                                               num_lines
                                                );
 }
 
@@ -1071,7 +1075,12 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
   const struct Beats *beats[num_blocks];
   dyn_t dynbeats[num_blocks];
   dyn_t filledout_swingss[num_blocks];
+  dynvec_t filledout_trackswingss[num_blocks];
+  vector_t trackstimess[num_blocks];
 
+  memset(filledout_trackswingss, 0, sizeof(dynvec_t)*num_blocks);
+  memset(trackstimess, 0, sizeof(vector_t)*num_blocks);
+  
   bool only_update_beats[num_blocks];
   bool only_update_beats_for_all_blocks = true;
   
@@ -1094,8 +1103,29 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
   // swings
   {
     for(int i = 0 ; i < num_blocks ; i++){
-      if (!only_update_beats[i])
-        filledout_swingss[i] = update_swings ? create_filledout_swings(blocks[i], dynbeats[i]) : blocks[i]->filledout_swings;
+      if (!only_update_beats[i]){
+        
+        if (update_swings){
+          dyn_t block_swings = API_getAllBlockSwings(blocks[i]);
+          filledout_swingss[i] = create_filledout_swings(block_swings, blocks[i]->num_lines, NULL, dynbeats[i]);
+          dyn_t empty_track_swing = {0};
+          struct Tracks *track = blocks[i]->tracks;
+          
+          while(track!=NULL){
+            if (track->swings==NULL){
+              if (empty_track_swing.type==UNINITIALIZED_TYPE)
+                empty_track_swing = create_filledout_swings(block_swings, blocks[i]->num_lines, track, dynbeats[i]);
+              DYNVEC_push_back(&filledout_trackswingss[i], empty_track_swing);
+            }else{
+              dyn_t filledout_trackswing = create_filledout_swings(block_swings, blocks[i]->num_lines, track, dynbeats[i]);
+              DYNVEC_push_back(&filledout_trackswingss[i], filledout_trackswing);
+            }
+            track = NextTrack(track);
+          }
+        } else {
+          filledout_swingss[i] = blocks[i]->filledout_swings;
+        }
+      }
     }
   }
 
@@ -1113,6 +1143,20 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
           filledout_swings = filledout_swingss[i];
 
         stimess[i] = create_stimes(blocks[i], dynbeats[i], filledout_swings, default_bpm, default_lpb);
+
+        if (update_swings) {
+          struct Tracks *track = blocks[i]->tracks;
+          while(track!=NULL){
+            if (blocks[i]->swing_enabled==false)
+              VECTOR_push_back(&trackstimess[i], stimess[i]);
+            else{
+              const struct STimes *trackstimes = create_stimes(blocks[i], dynbeats[i], filledout_trackswingss[i].elements[track->l.num], default_bpm, default_lpb);
+              VECTOR_push_back(&trackstimess[i], trackstimes);
+            }
+            track = NextTrack(track);
+          }
+        }
+
       }
     }
   }
@@ -1133,6 +1177,16 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
           block->times = stimess[i];
           block->num_time_lines = block->num_lines;
         }
+
+        if (update_swings){
+          struct Tracks *track = block->tracks;
+          while(track!=NULL){
+            track->filledout_swings = filledout_trackswingss[i].elements[track->l.num];
+            track->times = trackstimess[i].elements[track->l.num];
+            track = NextTrack(track);
+          }
+        }
+
       }
     }
 
