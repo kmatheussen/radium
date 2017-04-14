@@ -1,3 +1,14 @@
+Changes 4.6.9 -> 4.7.0:
+* Various fixes to prevent the s7 garbage collector from collecting
+  non-garbage.
+* Refuse to compile if using clang<3.4, or gcc<5. Swing won't
+  always work if using a compiler without sufficent support for
+  integer overflow checks.
+* Show "hide swing track" popup menu to the editor.
+* Soundfilesaver: Add tooltip to the resampler type combo box.
+
+
+
 Changes 4.6.8 -> 4.6.9:
 * Let new bpmtext/lpbtext/swingtext entries be non-gliding by
   default.
