@@ -101,7 +101,8 @@ namespace{
       return v;
     }
   };
-    
+
+  typedef ProtectedS7Pointer Protect;
 }
 
 
@@ -424,12 +425,12 @@ dyn_t s7extra_callFunc_dyn_int_int_int_dyn_dyn_dyn(func_t *func, int64_t arg1, i
                            (s7_pointer)func,
                            s7_list(s7,
                                    6,
-                                   s7_make_integer(s7, arg1),
-                                   s7_make_integer(s7, arg2),
-                                   s7_make_integer(s7, arg3),
-                                   s7extra_make_dyn(s7, arg4),
-                                   s7extra_make_dyn(s7, arg5),
-                                   s7extra_make_dyn(s7, arg6)
+                                   Protect(s7_make_integer(s7, arg1)).v, // Need to protect everything, even integers, since s7extra_make_dyn may allocate over 256 objects.
+                                   Protect(s7_make_integer(s7, arg2)).v,
+                                   Protect(s7_make_integer(s7, arg3)).v,
+                                   Protect(s7extra_make_dyn(s7, arg4)).v,
+                                   Protect(s7extra_make_dyn(s7, arg5)).v,
+                                   Protect(s7extra_make_dyn(s7, arg6)).v
                                    )
                            );
   
@@ -448,14 +449,14 @@ dyn_t s7extra_callFunc_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn(func_t *func, int64_t
                            (s7_pointer)func,
                            s7_list(s7,
                                    8,
-                                   s7_make_integer(s7, arg1),
-                                   s7_make_integer(s7, arg2),
-                                   s7_make_integer(s7, arg3),
-                                   s7extra_make_dyn(s7, arg4),
-                                   s7extra_make_dyn(s7, arg5),
-                                   s7extra_make_dyn(s7, arg6),
-                                   s7extra_make_dyn(s7, arg7),
-                                   s7extra_make_dyn(s7, arg8)
+                                   Protect(s7_make_integer(s7, arg1)).v,
+                                   Protect(s7_make_integer(s7, arg2)).v,
+                                   Protect(s7_make_integer(s7, arg3)).v,
+                                   Protect(s7extra_make_dyn(s7, arg4)).v,
+                                   Protect(s7extra_make_dyn(s7, arg5)).v,
+                                   Protect(s7extra_make_dyn(s7, arg6)).v,
+                                   Protect(s7extra_make_dyn(s7, arg7)).v,
+                                   Protect(s7extra_make_dyn(s7, arg8)).v
                                    )
                            );
   
@@ -474,10 +475,10 @@ dyn_t s7extra_callFunc_dyn_dyn_dyn_dyn_int(func_t *func, dyn_t arg1, dyn_t arg2,
                            (s7_pointer)func,
                            s7_list(s7,
                                    4,
-                                   s7extra_make_dyn(s7, arg1),
-                                   s7extra_make_dyn(s7, arg2),
-                                   s7extra_make_dyn(s7, arg3),
-                                   s7_make_integer(s7, arg4)
+                                   Protect(s7extra_make_dyn(s7, arg1)).v,
+                                   Protect(s7extra_make_dyn(s7, arg2)).v,
+                                   Protect(s7extra_make_dyn(s7, arg3)).v,
+                                   Protect(s7_make_integer(s7, arg4)).v
                                    )
                            );
   
