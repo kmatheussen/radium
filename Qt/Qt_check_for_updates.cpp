@@ -105,10 +105,10 @@ static void maybeInformAboutNewVersion(QString newestversion = "3.5.1"){
 
 namespace{
   struct MyThread : public QThread , public QTimer {
-    DEFINE_ATOMIC(char *, gakk);
+    DEFINE_ATOMIC(char *, gakk) = NULL;
+    DEFINE_ATOMIC(char *, gakk2) = NULL;
 
     MyThread(){
-      ATOMIC_SET(gakk, NULL);
       QTimer::setInterval(1000);
       QTimer::start();
       QThread::start();
@@ -116,14 +116,18 @@ namespace{
 
     void run() override {
       ATOMIC_SET(gakk, JUCE_download("http://users.notam02.no/~kjetism/radium/demos/windows64/?C=M&O=D"));
+      ATOMIC_SET(gakk2, JUCE_download("http://users.notam02.no/~kjetism/radium/demos/unstable/"));
     }
+
+    bool got_gakk1 = false;
+    bool got_gakk2 = false;
 
     void timerEvent(QTimerEvent * e) override {
       //printf("Timerthread called %s\n", ATOMIC_GET(gakk));
 
       const char* text = ATOMIC_GET(gakk);
 
-      if(text != NULL){
+      if(text != NULL && got_gakk1==false){
 
         QString all(text);
         
@@ -141,12 +145,47 @@ namespace{
           }
         }
         
+        got_gakk1 = true;
+      }
+
+
+      const char* text2 = ATOMIC_GET(gakk2);
+
+      if(text2 != NULL && got_gakk2==false){
+
+        QString all(text2);
+
+        QString searchString = "radium_64bit_windows-" VERSION "-demo";
+ 
+        int startPos = all.indexOf(searchString);
+
+        //printf("   TEXT2: -%s-\n\nsearchString: -%s-\nstartPos: %d\n",text2,searchString.toUtf8().constData(), startPos);
+        
+        if (startPos > 0) {
+
+          MyQMessageBox *msgBox = new MyQMessageBox;
+
+          msgBox->setIcon(QMessageBox::Warning);
+          msgBox->setText("You are running Radium V" VERSION ".<p>"
+                          "This version is known to be unstable.");
+          msgBox->setStandardButtons(QMessageBox::Ok);
+          
+          safeShow(msgBox);
+        }
+
+        got_gakk2 = true;
+
+      }
+
+
+      if (got_gakk1 && got_gakk2){
         QThread::wait();
 
         free((void*)text);
-        
+
         delete this;
       }
+
     }
   };
 }
