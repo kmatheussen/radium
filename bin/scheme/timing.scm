@@ -248,13 +248,17 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
 
 ;; Add autoinserted swings.
 (define (create-filledout-swings bars global-swings track-swings num-lines)  
+  ;;(define orgbars bars)
   (let loop ((bars bars)
              (prev-bar #f)
              (curr-swing #f)
              (global-swings global-swings) ;;(group-swing-by-bar bars global-swing num-lines))
              (track-swings track-swings)) ;;(group-swing-by-bar bars track-swing num-lines)))
     (cond ((null? bars)
-           (assert (null? global-swings))
+           ;;(c-display "orgbars" (pp orgbars))
+           ;;(c-display "global-swings" global-swings)
+           ;;(c-display "track-swings" track-swings)
+           ;;(assert (null? global-swings))
            (assert (null? track-swings))
            '())
 
