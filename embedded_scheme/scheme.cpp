@@ -98,7 +98,7 @@ namespace{
       s7_gc_unprotect_at(s7, pos);
     }
     
-    // Or just juse ".v".
+    // Or just use ".v".
     s7_pointer get(void){
       return v;
     }
