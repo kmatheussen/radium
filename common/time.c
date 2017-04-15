@@ -1002,8 +1002,6 @@ static dyn_t get_fallback_timings(const struct Blocks *block, const dyn_t dynbea
 
   // First try scheme again, but now without swing.
   {
-    dynvec_t empty = {0};
-    
     dyn_t ret = s7extra_callFunc2_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn("create-block-timings",
                                                                       block->num_lines,
                                                                       bpm,
@@ -1012,7 +1010,7 @@ static dyn_t get_fallback_timings(const struct Blocks *block, const dyn_t dynbea
                                                                       API_getAllLPB(block),
                                                                       API_getAllTemponodes(block),
                                                                       dynbeats,
-                                                                      DYN_create_array(empty)
+                                                                      g_empty_dynvec
                                                                       );
     
     if (ret.type==ARRAY_TYPE)
@@ -1051,17 +1049,11 @@ static const struct STimes *create_stimes(const struct Blocks *block, const dyn_
   return times;
 }
 
-static dyn_t create_filledout_swings(dyn_t block_swings, int num_lines, const struct Tracks *track, dyn_t beats){
-  static dynvec_t empty = {0};
-  static dyn_t empty_array = {0};
-
-  if (empty_array.type==UNINITIALIZED_TYPE)
-    empty_array = DYN_create_array(empty);
-  
+static dyn_t create_filledout_swings(const dyn_t global_swings, const dyn_t track_swings, int num_lines, dyn_t beats){
   return s7extra_callFunc2_dyn_dyn_dyn_dyn_int("create-filledout-swings2",
-                                               beats,                                               
-                                               track==NULL ? empty_array : block_swings,
-                                               track==NULL ? block_swings : API_getAllTrackSwings(track),
+                                               beats,
+                                               global_swings,
+                                               track_swings,
                                                num_lines
                                                );
 }
@@ -1106,18 +1098,25 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
       if (!only_update_beats[i]){
         
         if (update_swings){
+          
           dyn_t block_swings = API_getAllBlockSwings(blocks[i]);
-          filledout_swingss[i] = create_filledout_swings(block_swings, blocks[i]->num_lines, NULL, dynbeats[i]);
+          filledout_swingss[i] = create_filledout_swings(g_empty_dynvec, block_swings, blocks[i]->num_lines, dynbeats[i]);
+          
           dyn_t empty_track_swing = {0};
+          
           struct Tracks *track = blocks[i]->tracks;
           
           while(track!=NULL){
             if (track->swings==NULL){
-              if (empty_track_swing.type==UNINITIALIZED_TYPE)
-                empty_track_swing = create_filledout_swings(block_swings, blocks[i]->num_lines, track, dynbeats[i]);
+              if (empty_track_swing.type==UNINITIALIZED_TYPE){
+                if (blocks[i]->swings==NULL)
+                  empty_track_swing = filledout_swingss[i];
+                else
+                  empty_track_swing = create_filledout_swings(block_swings, g_empty_dynvec, blocks[i]->num_lines, dynbeats[i]);
+              }
               DYNVEC_push_back(&filledout_trackswingss[i], empty_track_swing);
             }else{
-              dyn_t filledout_trackswing = create_filledout_swings(block_swings, blocks[i]->num_lines, track, dynbeats[i]);
+              dyn_t filledout_trackswing = create_filledout_swings(block_swings, API_getAllTrackSwings(track), blocks[i]->num_lines, dynbeats[i]);
               DYNVEC_push_back(&filledout_trackswingss[i], filledout_trackswing);
             }
             track = NextTrack(track);
@@ -1134,23 +1133,23 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
     for(int i = 0 ; i < num_blocks;i++){
       if (!only_update_beats[i]){
         
-        dynvec_t empty = {0};       
         dyn_t filledout_swings;
         
         if (blocks[i]->swing_enabled==false)
-          filledout_swings = DYN_create_array(empty);
+          filledout_swings = g_empty_dynvec;
         else
           filledout_swings = filledout_swingss[i];
 
         stimess[i] = create_stimes(blocks[i], dynbeats[i], filledout_swings, default_bpm, default_lpb);
 
         if (update_swings) {
-          struct Tracks *track = blocks[i]->tracks;
+          const struct Tracks *track = blocks[i]->tracks;
           while(track!=NULL){
             if (blocks[i]->swing_enabled==false || track->swings==NULL)
               VECTOR_push_back(&trackstimess[i], stimess[i]);
             else{
-              const struct STimes *trackstimes = create_stimes(blocks[i], dynbeats[i], filledout_trackswingss[i].elements[track->l.num], default_bpm, default_lpb);
+              const dyn_t filledout_trackswing = filledout_trackswingss[i].elements[track->l.num];
+              const struct STimes *trackstimes = create_stimes(blocks[i], dynbeats[i], filledout_trackswing, default_bpm, default_lpb);
               VECTOR_push_back(&trackstimess[i], trackstimes);
             }
             track = NextTrack(track);

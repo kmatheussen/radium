@@ -4,6 +4,11 @@
 
 #include "Dynvec_proc.h"
 
+static const dynvec_t g_empty_dynvec_dynvec = {0};
+const dyn_t g_empty_dynvec = {
+ .type = ARRAY_TYPE,
+ .array = (dynvec_t*)&g_empty_dynvec_dynvec
+};
 
 
 bool DYNVEC_equal(dynvec_t *v1, dynvec_t *v2){

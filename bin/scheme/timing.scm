@@ -385,7 +385,9 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
                                     :num-lines 2)))
 ||#
 
-(define (create-filledout-swings2 beats global-swings track-swings num-lines)  
+;;(define das-num-calls 0)
+(define (create-filledout-swings2 beats global-swings track-swings num-lines)
+  ;;(set! das-num-calls (1+ das-num-calls))
   (define bars (get-bars-from-beats beats))
   (define RET (create-filledout-swings bars
                                        (group-swing-by-bar bars (to-list global-swings) num-lines)
@@ -831,10 +833,10 @@ Old version. Not correct.
                 (else
                  (define (get-x y)
                    (* (scale y
-                             (a :y1) (a :y2)
+                             (a :y1) a_y2
                              (a :x1) (a :x2))
                       (scale y
-                             (b :y1) (b :y2)
+                             (b :y1) b_y2
                              (b :x1) (b :x2))))
                  (define y2 (min a_y2 b_y2))
                  (cons (make-tempo-multiplier :y1 y1 :x1 (get-x y1)

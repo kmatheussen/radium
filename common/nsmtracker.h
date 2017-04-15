@@ -649,6 +649,8 @@ static inline char *ratio_to_string(const Ratio ratio){
 
 #include "Dynvec_proc.h"
 
+extern const dyn_t g_empty_dynvec;
+
 static inline const char *DYN_type_name(enum DynType type){
   switch(type){
     case UNINITIALIZED_TYPE:
