@@ -223,6 +223,9 @@ void showVelocityHelpWindow(void){
 void showFXHelpWindow(void){
   GFX_showFXHelpWindow();
 }
+void showSwingHelpWindow(void){
+  GFX_showSwingHelpWindow();
+}
 void showKeybindingsHelpWindow(void){
   GFX_showKeybindingsHelpWindow();
 }
