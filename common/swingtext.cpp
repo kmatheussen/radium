@@ -75,7 +75,7 @@ bool SWINGTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, 
     // NO ELEMENTS
 
     if (key == EVENT_DEL)
-      return false;
+      return true;
     
     data_as_text_t dat = DAT_get_newvalue(subsubtrack, key, 1, LOGTYPE_HOLD, 1, 99, 1, 99, false, true, false);
 
