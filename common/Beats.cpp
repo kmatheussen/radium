@@ -98,13 +98,11 @@ struct Beats *Beats_get(struct Blocks *block, Ratio default_signature, int defau
     {
       int beat_num = 1;
       Place beat_pos = signature->l.p;
-      Place last_beat_pos = {-1,0,0};
       
       while (p_Less_Than(beat_pos, nextplace)) {
         
         Beats *beat = (Beats*)talloc(sizeof(Beats));        
         beat->l.p = beat_pos;
-        last_beat_pos = beat_pos;
 
         if (signature != last_drawn_signature) {
           beat->signature = signature->signature;
@@ -131,8 +129,8 @@ struct Beats *Beats_get(struct Blocks *block, Ratio default_signature, int defau
         beat_pos = p_Add(beat_pos, beat_length);
       }
 
-      // If there aren't enough beats to fill the time signature, we must manually start a new bar.
-      if (!p_Equal(last_beat_pos, nextplace)){
+      // If there aren't enough beats to fill the time signature, we must manually start a new bar. (we don't change time signature in the middle of a bar)
+      if (beat_num!=1){
         beat_num=1;
         bar_num++;
       }
