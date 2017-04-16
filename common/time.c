@@ -1099,7 +1099,7 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
         
         if (update_swings){
           
-          dyn_t block_swings = API_getAllBlockSwings(blocks[i]);
+          const dyn_t block_swings = API_getAllBlockSwings(blocks[i]);
           filledout_swingss[i] = create_filledout_swings(g_empty_dynvec, block_swings, blocks[i]->num_lines, dynbeats[i]);
           
           dyn_t empty_track_swing = {0};
@@ -1116,7 +1116,7 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
               }
               DYNVEC_push_back(&filledout_trackswingss[i], empty_track_swing);
             }else{
-              dyn_t filledout_trackswing = create_filledout_swings(block_swings, API_getAllTrackSwings(track), blocks[i]->num_lines, dynbeats[i]);
+              const dyn_t filledout_trackswing = create_filledout_swings(block_swings, API_getAllTrackSwings(track), blocks[i]->num_lines, dynbeats[i]);
               DYNVEC_push_back(&filledout_trackswingss[i], filledout_trackswing);
             }
             track = NextTrack(track);
