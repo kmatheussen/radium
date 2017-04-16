@@ -1,3 +1,19 @@
+Changes 4.7.0 -> 4.7.1:
+* Swing help text.
+* Make sure standalone line requesters don't fall off the
+  right part of the screen.
+* Scroll down when pressing DEL on an empty lpb/bpm/swing
+  text entry.
+* Always start new bar at signature changes.
+* Swing: First-beat swing values are of the grayed-out type
+  if not created manually by the user.
+* Upgrade s7.
+* Swing: Support swing for individual editor tracks.
+* Report during startup if the current version has been marked
+  unstable.
+
+
+
 Changes 4.6.9 -> 4.7.0:
 * Various fixes to prevent the s7 garbage collector from collecting
   non-garbage.
