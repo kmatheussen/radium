@@ -104,7 +104,7 @@ void CB_PasteBlock(
 	//towblock->wtempos=NULL;
 	//towblock->wlpbs=NULL;
 
-        toblock->swings=CB_CopySwings(block->swings);
+        toblock->swings=CB_CopySwings(block->swings, NULL);
         toblock->signatures=CB_CopySignatures(block->signatures);
 	toblock->lpbs=CB_CopyLPBs(block->lpbs);
 

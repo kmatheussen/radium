@@ -34,11 +34,15 @@ struct Swing *cb_swing=NULL;
 
 
 struct Swing *CB_CopySwings(
-	struct Swing *swing
-){
+                            const struct Swing *swing,
+                            const Place *cut
+                            )
+{
 	struct Swing *to=NULL;
 
 	while(swing!=NULL){
+          if(cut!=NULL && PlaceGreaterOrEqual(&swing->l.p, cut))
+            return to;
           struct Swing *new=tcopy(swing, sizeof(struct Swing));
           ListAddElement3_a(&to,&new->l);
           swing=NextSwing(swing);
@@ -48,7 +52,7 @@ struct Swing *CB_CopySwings(
 
 
 struct Signatures *CB_CopySignatures(
-	struct Signatures *signature
+                                     const struct Signatures *signature
 ){
 	struct Signatures *to=NULL;
 	struct Signatures *new;
@@ -65,7 +69,7 @@ struct Signatures *CB_CopySignatures(
 
 
 struct LPBs *CB_CopyLPBs(
-	struct LPBs *lpb
+                         const struct LPBs *lpb
 ){
 	struct LPBs *to=NULL;
 	struct LPBs *new;
@@ -81,8 +85,9 @@ struct LPBs *CB_CopyLPBs(
 }
 
 struct Tempos *CB_CopyTempos(
-	struct Tempos *tempo
-){
+                             const struct Tempos *tempo
+                             )
+{
 	struct Tempos *to=NULL;
 	struct Tempos *new;
 
@@ -98,7 +103,7 @@ struct Tempos *CB_CopyTempos(
 
 
 struct TempoNodes *CB_CopyTempoNodes(
-	struct TempoNodes *temponode
+                                     const struct TempoNodes *temponode
 ){
 	struct TempoNodes *to=NULL;
 	struct TempoNodes *new;

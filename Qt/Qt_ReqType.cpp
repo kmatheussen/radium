@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLineEdit>
 #include <QKeyEvent>
 #include <QSplitter>
+#include <QDesktopWidget>
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
@@ -84,9 +85,10 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
 
       reqtype->frame = new QFrame();
       reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
-      reqtype->frame->move(QCursor::pos());
+      auto pos = QCursor::pos();
+      reqtype->frame->move(pos);
       reqtype->frame->show();
-    
+
     }else {
       
       EditorWidget *editor = g_editor;
@@ -179,6 +181,23 @@ void gotchar(char c){
     g_edit->insert(QString(c));
 }
 
+static void legalize_pos(MyReqType *reqtype){
+  QWidget *w = reqtype->frame;
+  
+  if (w->parent()!=NULL)
+    return;
+
+  int width = QApplication::desktop()->screenGeometry().width();
+  int legal_pos = width - w->width();
+  printf("legal_pos: %d. width: %d, x: %d\n",legal_pos, width, w->x());
+
+  if (w->x() > legal_pos){
+    w->move(legal_pos, w->y());
+  }
+}
+      
+      
+
 void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
 
   MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
@@ -193,6 +212,7 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
       QLabel *label = new QLabel(line,reqtype->frame);
       label->move(x_margin,reqtype->y + 3);    
       label->show();
+      legalize_pos(reqtype);
       x = x_margin + label->width();
       last_height = label->height();
     }GL_unlock();
@@ -209,7 +229,8 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   
     reqtype->frame->adjustSize();
     reqtype->frame->setMinimumHeight(reqtype->y+R_MAX(20,edit->height()+10));
-
+    legalize_pos(reqtype);
+    
     // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
     edit->setFocus();
   }GL_unlock();

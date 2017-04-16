@@ -947,6 +947,13 @@ void GFX_showFXHelpWindow(void){
   safeShow(view);
 }
  
+void GFX_showSwingHelpWindow(void){
+  static QWebView *view = new QWebView; //(g_editor->main_window);
+  view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path("help/swingtext.html"))));
+  //view->load(QUrl(QString("file://") + OS_get_full_program_file_path("help/keybindings.html")));
+  safeShow(view);
+}
+ 
 void GFX_showMixerHelpWindow(void){
   static QWebView *view = new QWebView; //(g_editor->main_window);
   view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path("help/mixer.html"))));

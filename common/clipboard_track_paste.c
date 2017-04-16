@@ -57,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "instruments_proc.h"
 #include "../api/api_proc.h"
 #include "../audio/audio_instrument_proc.h"
+#include "swingtext_proc.h"
 
 #include "clipboard_track_paste_proc.h"
 
@@ -173,6 +174,7 @@ static bool paste_track(
 
 	totrack->notes=NULL;
 	totrack->stops=NULL;
+        totrack->swings=NULL;
 	VECTOR_clean(&totrack->fxs);
 
 	p1=PlaceGetFirstPos();
@@ -180,6 +182,7 @@ static bool paste_track(
 
 	CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
 	CopyRange_stops(&totrack->stops,track->stops,p1,&p2);
+	totrack->swings = CB_CopySwings(track->swings,&p2);
 
         if (totrack->patch != NULL)
           CopyRange_fxs(&totrack->fxs,&track->fxs,p1,&p2);
@@ -208,7 +211,9 @@ bool mo_CB_PasteTrack(
 
         totrack->patch = track->patch;
 
-        return paste_track(wblock, wtrack, towtrack);
+        bool ret = paste_track(wblock, wtrack, towtrack);
+        TIME_block_swings_have_changed(wblock->block);
+        return ret;
 }
 
 
@@ -231,7 +236,9 @@ bool co_CB_PasteTrack(
         
         totrack->patch = track->patch;
 
-        return paste_track(wblock, wtrack, towtrack);
+        bool ret = paste_track(wblock, wtrack, towtrack);
+        TIME_block_swings_have_changed(wblock->block);
+        return ret;
 }
 
 static void remove_fxs_from_fxss(vector_t *fxss, struct FXs *fxs){
@@ -257,8 +264,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 		case SWINGTRACK:
                   if(cb_swing==NULL) goto exit;
 			ADD_UNDO(Swings_CurrPos(window));
-			block->swings=CB_CopySwings(cb_swing);
-			CutListAt_a(&block->swings,&lastplace);
+			block->swings=CB_CopySwings(cb_swing, &lastplace);
                         TIME_block_swings_have_changed(block);
 			break;
 		case SIGNATURETRACK:
@@ -303,6 +309,18 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
                         TIME_block_tempos_have_changed(block);
 			break;
 		default:
+                  if (SWINGTEXT_subsubtrack(window, wtrack) != -1){
+                    if (cb_swing==NULL)
+                      goto exit;
+
+                    Place p2;
+                    PlaceSetLastPos(wblock->block,&p2);
+
+                    ADD_UNDO(Track_CurrPos(window));
+                    wtrack->track->swings = CB_CopySwings(cb_swing,&p2);
+                    TIME_block_swings_have_changed(block);
+
+                  } else {
 			if(cb_wtrack==NULL) goto exit;
 
                         Undo_Open_rec();{
@@ -371,8 +389,8 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
                           }
 
                         }Undo_Close();
-                        
-			break;
+                  }                        
+                  break;
 	}
 
         SetNotePolyphonyAttributes(wtrack->track);

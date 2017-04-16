@@ -46,7 +46,7 @@ QVector<Swing*> Swings_get(const struct WBlocks *wblock, const struct Tracks *tr
 }
 
 
-
+#if 0 // Add auto-swings in scheme instead.
 // If a bar has any swing value, make sure the bar start also have a swing value.
 static void add_missing_swing_in_bar(const struct Blocks *block, const struct Beats *bar, const struct Swing *swing, QVector<Swing*> &new_swings){
   const Place bar_start = bar->l.p;
@@ -85,14 +85,17 @@ static void add_missing_swing_in_bar(const struct Blocks *block, const struct Be
   }
 
 }
+#endif
 
 static void legalize_swings(struct Blocks *block, struct Swing **swings){
+  /*
   QVector<Swing*> new_swings;
 
   add_missing_swing_in_bar(block, block->beats, *swings, new_swings);
 
   for(auto *swing : new_swings)
     ListAddElement3(swings, &swing->l);
+  */
 }
 
 // TODO: Automatically add swing to first beat in bar, if it doesn't exist.

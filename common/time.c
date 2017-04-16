@@ -952,7 +952,7 @@ static const struct STimeChange **create_tchanges_from_time_changes(const struct
 */
 
 // Precalculate timing for all line starts. (optimization)
-const struct STimes *create_stimes_from_tchanges(int num_lines, const struct STimeChange *time_changes, int num_elements){//const struct STimeChange **tchanges){
+struct STimes *create_stimes_from_tchanges(int num_lines, const struct STimeChange *time_changes, int num_elements){//const struct STimeChange **tchanges){
 
   struct STimes *stimes = talloc(sizeof(struct STimes)*(1+num_lines));
 
@@ -1034,7 +1034,7 @@ static dyn_t get_fallback_timings(const struct Blocks *block, const dyn_t dynbea
 }
 
 
-static const struct STimes *create_stimes(const struct Blocks *block, const dyn_t dynbeats, const dyn_t filledout_swings, int default_bpm, int default_lpb){
+static struct STimes *create_stimes(const struct Blocks *block, const dyn_t dynbeats, const dyn_t filledout_swings, int default_bpm, int default_lpb){
   dyn_t timings = get_timings_from_scheme(block, dynbeats, filledout_swings, default_bpm, default_lpb);
   if (timings.type!=ARRAY_TYPE){
     GFX_Message(NULL, "Error. timings function returned faulty data. Expected an array, got %s\n", DYN_type_name(timings.type));
@@ -1044,7 +1044,7 @@ static const struct STimes *create_stimes(const struct Blocks *block, const dyn_
 
   const struct STimeChange *time_changes = create_time_changes_from_scheme_data(timings.array);
   //const struct STimeChange **tchanges = create_tchanges_from_time_changes(time_changes, block->num_lines, timings.array->num_elements);
-  const struct STimes *times = create_stimes_from_tchanges(block->num_lines, time_changes, timings.array->num_elements);
+  struct STimes *times = create_stimes_from_tchanges(block->num_lines, time_changes, timings.array->num_elements);
 
   return times;
 }
@@ -1063,7 +1063,7 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
                           int default_bpm, int default_lpb, Ratio default_signature,
                           bool only_signature_has_changed, bool update_beats, bool update_swings)
 {
-  const struct STimes *stimess[num_blocks];
+  struct STimes *stimess[num_blocks];
   const struct Beats *beats[num_blocks];
   dyn_t dynbeats[num_blocks];
   dyn_t filledout_swingss[num_blocks];
@@ -1075,7 +1075,7 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
   
   bool only_update_beats[num_blocks];
   bool only_update_beats_for_all_blocks = true;
-  
+
   for(int i=0;i<num_blocks;i++){
     bool has_swings = blocks[i]->swing_enabled==true && blocks[i]->swings!=NULL;
     only_update_beats[i] = has_swings==false && only_signature_has_changed;
@@ -1132,6 +1132,8 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
   {
     for(int i = 0 ; i < num_blocks;i++){
       if (!only_update_beats[i]){
+
+        int num_lines = blocks[i]->num_lines;
         
         dyn_t filledout_swings;
         
@@ -1141,7 +1143,8 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
           filledout_swings = filledout_swingss[i];
 
         stimess[i] = create_stimes(blocks[i], dynbeats[i], filledout_swings, default_bpm, default_lpb);
-
+        STime max_blocklen = stimess[i][num_lines].time;
+ 
         if (update_swings) {
           const struct Tracks *track = blocks[i]->tracks;
           while(track!=NULL){
@@ -1149,11 +1152,19 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
               VECTOR_push_back(&trackstimess[i], stimess[i]);
             else{
               const dyn_t filledout_trackswing = filledout_trackswingss[i].elements[track->l.num];
-              const struct STimes *trackstimes = create_stimes(blocks[i], dynbeats[i], filledout_trackswing, default_bpm, default_lpb);
+              struct STimes *trackstimes = create_stimes(blocks[i], dynbeats[i], filledout_trackswing, default_bpm, default_lpb);
               VECTOR_push_back(&trackstimess[i], trackstimes);
+              max_blocklen = R_MAX(max_blocklen, trackstimes[num_lines].time);
             }
             track = NextTrack(track);
           }
+
+          // apply max_blocklen to all stime arrays. (all tracks should have the same duration, but due to rounding errors, that is not always the case.)
+          stimess[i][num_lines].time = max_blocklen;
+          VECTOR_FOR_EACH(struct STimes *trackstimes, &trackstimess[i]){
+            trackstimes[num_lines].time = max_blocklen;
+          }END_VECTOR_FOR_EACH;
+          
         }
 
       }

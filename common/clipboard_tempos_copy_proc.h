@@ -20,23 +20,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern LANGSPEC struct Swing *CB_CopySwings(
-                                           struct Swing *swing
+                                            const struct Swing *swing,
+                                            const Place *cut // can be NULL
                                            );
 
 extern struct Signatures *CB_CopySignatures(
-	struct Signatures *signature
+                                            const struct Signatures *signature
 );
 
 extern struct LPBs *CB_CopyLPBs(
-	struct LPBs *lpb
+                                const struct LPBs *lpb
 );
 
 extern struct Tempos *CB_CopyTempos(
-	struct Tempos *tempo
+                                    const struct Tempos *tempo
 );
 
 extern struct TempoNodes *CB_CopyTempoNodes(
-	struct TempoNodes *temponode
+                                            const struct TempoNodes *temponode
 );
 
 
