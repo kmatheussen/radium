@@ -1159,7 +1159,7 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
             track = NextTrack(track);
           }
 
-          // apply max_bloclen to all stime arrays. (all tracks should have the same duration, but due to rounding errors, that is not always the case.)
+          // apply max_blocklen to all stime arrays. (all tracks should have the same duration, but due to rounding errors, that is not always the case.)
           stimess[i][num_lines].time = max_blocklen;
           VECTOR_FOR_EACH(struct STimes *trackstimes, &trackstimess[i]){
             trackstimes[num_lines].time = max_blocklen;
