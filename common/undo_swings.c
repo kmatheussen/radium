@@ -52,7 +52,7 @@ void ADD_UNDO_FUNC(Swings(
                  block->l.num,
                  tracknum,
                  realline,
-                 CB_CopySwings(block->swings),
+                 CB_CopySwings(block->swings, NULL),
                  Undo_Do_Swings,
                  "Block BPMs"
 	);

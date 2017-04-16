@@ -87,7 +87,7 @@ struct WBlocks *CB_CopyBlock(
           }
         }
 
-        toblock->swings=CB_CopySwings(block->swings);
+        toblock->swings=CB_CopySwings(block->swings, NULL);
         toblock->signatures=CB_CopySignatures(block->signatures);
 	toblock->lpbs=CB_CopyLPBs(block->lpbs);
 	toblock->tempos=CB_CopyTempos(block->tempos);

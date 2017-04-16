@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wblocks_proc.h"
 #include "Beats_proc.h"
 #include "clipboard_track_cut_proc.h"
+#include "swingtext_proc.h"
 
 
 extern struct Swing *cb_swing;
@@ -63,6 +64,7 @@ void CB_CutTrack_Force(
         cb_wtrack=CB_CopyTrack(wblock,wtrack);
 	wtrack->track->notes=NULL;
 	wtrack->track->stops=NULL;
+        wtrack->track->swings=NULL;
 
         VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
           (*fxs->fx->closeFX)(fxs->fx,wtrack->track);
@@ -92,7 +94,8 @@ static struct WTracks *cut_track(
 
       wtrack->track->notes=NULL;
       wtrack->track->stops=NULL;
-
+      wtrack->track->swings = NULL;
+      
       VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
         (*fxs->fx->closeFX)(fxs->fx,wtrack->track);
       }END_VECTOR_FOR_EACH;
@@ -123,7 +126,9 @@ struct WTracks *CB_CutTrack(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
-  return cut_track(window, wblock, wtrack, true, NULL);
+  struct WTracks *ret = cut_track(window, wblock, wtrack, true, NULL);
+  TIME_block_swings_have_changed(wblock->block);
+  return ret;
 }
 
 void CB_CutTrack_CurrPos(
@@ -138,7 +143,7 @@ void CB_CutTrack_CurrPos(
 	switch(window->curr_track){
 		case SWINGTRACK:
                   ADD_UNDO(Swings_CurrPos(window));
-			cb_swing=CB_CopySwings(block->swings);
+                        cb_swing=CB_CopySwings(block->swings, NULL);
 			block->swings=NULL;
                         TIME_block_swings_have_changed(block);
 			break;
@@ -173,6 +178,11 @@ void CB_CutTrack_CurrPos(
 			break;
 		default:
                   ADD_UNDO(Track_CurrPos(window));
+                  if (SWINGTEXT_subsubtrack(window, wtrack) != -1){
+                    cb_swing = wtrack->track->swings;
+                    wtrack->track->swings = NULL;
+                    TIME_block_swings_have_changed(block);
+                  } else {
 			cb_wtrack = cut_track(window, wblock, wtrack, false, &cb_wtrack_only_contains_one_fxs);
                         //#if !USE_OPENGL
 			UpdateAndClearSomeTrackReallinesAndGfxWTracks(
@@ -183,8 +193,10 @@ void CB_CutTrack_CurrPos(
 			);
                         SetNotePolyphonyAttributes(wtrack->track);
                         ValidateCursorPos(window);
+                        TIME_block_swings_have_changed(block);
                         //#endif
 			break;
+                  }
 	}
 
         }PC_StopPause(window);

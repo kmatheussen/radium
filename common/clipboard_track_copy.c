@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_tempos_copy_proc.h"
 #include "wtracks_proc.h"
 #include "fxtext_proc.h"
+#include "time_proc.h"
+#include "swingtext_proc.h"
 
 #include "clipboard_track_copy_proc.h"
 
@@ -85,6 +87,7 @@ struct WTracks *internal_copy_track(
 
 	totrack->notes=NULL;
 	totrack->stops=NULL;
+        totrack->swings=NULL;
         memset(&totrack->fxs, 0, sizeof(vector_t));
 
         struct FXs *fxs;
@@ -94,6 +97,7 @@ struct WTracks *internal_copy_track(
           
           CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
           CopyRange_stops(&totrack->stops,track->stops,p1,&p2);
+          totrack->swings = CB_CopySwings(track->swings, &p2);
           CopyRange_fxs(&totrack->fxs,&track->fxs,p1,&p2);
           if (only_one_fxs_was_copied != NULL)
             *only_one_fxs_was_copied = false;
@@ -113,7 +117,9 @@ struct WTracks *CB_CopyTrack(
                              struct WTracks *wtrack
                              )
 {
-  return internal_copy_track(wblock, wtrack, true, NULL);
+  struct WTracks *ret = internal_copy_track(wblock, wtrack, true, NULL);
+  TIME_block_swings_have_changed(wblock->block);
+  return ret;
 }
 
 void CB_CopyTrack_CurrPos(
@@ -125,7 +131,7 @@ void CB_CopyTrack_CurrPos(
 
 	switch(window->curr_track){
 		case SWINGTRACK:
-			cb_swing=CB_CopySwings(block->swings);
+                        cb_swing=CB_CopySwings(block->swings, NULL);
 			break;
 		case SIGNATURETRACK:
 			cb_signature=CB_CopySignatures(block->signatures);
@@ -140,8 +146,12 @@ void CB_CopyTrack_CurrPos(
 			cb_temponode=CB_CopyTempoNodes(block->temponodes);
 			break;
 		default:
-                        cb_wtrack=internal_copy_track(wblock, wtrack, false, &cb_wtrack_only_contains_one_fxs);
-			break;
+                  if (SWINGTEXT_subsubtrack(window, wtrack) != -1){
+                    cb_swing = CB_CopySwings(wtrack->track->swings,NULL);
+                  } else {
+                    cb_wtrack=internal_copy_track(wblock, wtrack, false, &cb_wtrack_only_contains_one_fxs);
+                  }
+                  break;
 	}
 }
 
