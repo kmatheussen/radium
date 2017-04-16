@@ -158,6 +158,10 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
 ||#           
 
 (define (group-swing-by-bar bars swings num-lines)
+  ;;(c-display "bars" (pp bars))
+  ;;(c-display)
+  ;;(c-display "swings" (pp swings))
+  ;;(c-display)
   (if (null? bars)
       '()
       (let* ((bar (car bars))
@@ -757,6 +761,7 @@ Old version. Not correct.
 
 
 #!!
+(pp (<ra> :get-all-beats))
 (let ((bars (get-bars-from-beats (<ra> :get-all-beats))))
   (pp (create-tempo-multipliers-from-swings bars
                                             (create-filledout-swings bars

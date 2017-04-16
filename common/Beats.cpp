@@ -80,7 +80,7 @@ struct Beats *Beats_get(struct Blocks *block, Ratio default_signature, int defau
   Signatures *signature = &first;
   
   Signatures *last_drawn_signature = signature; // The root signature is already drawn in the signature track header.
-    
+
   while(signature!=NULL){
 
     Signatures *next;
@@ -98,11 +98,14 @@ struct Beats *Beats_get(struct Blocks *block, Ratio default_signature, int defau
     {
       int beat_num = 1;
       Place beat_pos = signature->l.p;
-                                                         
+      Place last_beat_pos = {-1,0,0};
+      
       while (p_Less_Than(beat_pos, nextplace)) {
         
         Beats *beat = (Beats*)talloc(sizeof(Beats));        
         beat->l.p = beat_pos;
+        last_beat_pos = beat_pos;
+
         if (signature != last_drawn_signature) {
           beat->signature = signature->signature;
           last_drawn_signature = signature;
@@ -126,6 +129,12 @@ struct Beats *Beats_get(struct Blocks *block, Ratio default_signature, int defau
         Place beat_length = get_beat_length_in_measurement(signature->signature, lpb); // This walue will be incorrect if there are lpb changes betwen beat_pos and beat_pos+beat_length. TODO.
 
         beat_pos = p_Add(beat_pos, beat_length);
+      }
+
+      // If there aren't enough beats to fill the time signature, we must manually start a new bar.
+      if (!p_Equal(last_beat_pos, nextplace)){
+        beat_num=1;
+        bar_num++;
       }
     }
 
