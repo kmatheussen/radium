@@ -59,6 +59,7 @@ SharedVariables::~SharedVariables(){
 
       VECTOR_remove(&g_shared_variables_gc_storage, this->root);
       VECTOR_remove(&g_shared_variables_gc_storage, this->times);
+      //VECTOR_remove(&g_shared_variables_gc_storage, this->times_with_global_swings);
       VECTOR_remove(&g_shared_variables_gc_storage, this->block);
       VECTOR_remove(&g_shared_variables_gc_storage, this->curr_playing_block);
       
@@ -87,7 +88,10 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
 
   sv->block          = block;
 
-  sv->times          = block->times;
+  if (root->song->editor_should_swing_along)
+    sv->times = block->times_with_global_swings;
+  else
+    sv->times = block->times_without_global_swings;
 
   {
     bool is_playing = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
@@ -104,6 +108,7 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
     radium::ScopedMutex locker(vector_mutex);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->root);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->times);
+    //VECTOR_push_back(&g_shared_variables_gc_storage, sv->times_with_global_swings);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->block);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->curr_playing_block);
   }

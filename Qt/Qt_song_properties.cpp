@@ -25,13 +25,13 @@ extern "C"{
     safeShowOrExec(widget);
   }
 
-  void SONGPROPERTIES_set_linear_accelerando_and_ritardando(bool linear_accelerando, bool linear_ritardando){
+  void SONGPROPERTIES_update(struct Song *song){
     if (widget==NULL)
       return;
 
     widget->_initing = true;
     
-    widget->set_linear_accelerando_and_ritardando(linear_accelerando, linear_ritardando);
+    widget->update_widgets(song);
       
     widget->_initing = false;
   }

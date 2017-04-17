@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>287</width>
-    <height>228</height>
+    <width>479</width>
+    <height>330</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,10 +19,36 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_3" rowstretch="0,0,0">
+  <layout class="QGridLayout" name="gridLayout_3" rowstretch="0,0,0,0">
    <property name="bottomMargin">
     <number>2</number>
    </property>
+   <item row="1" column="0">
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="title">
+      <string>Ritardando behavior</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="0" column="0">
+       <widget class="QRadioButton" name="rit_linear">
+        <property name="text">
+         <string>Linear</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QRadioButton" name="rit_slower_and_slower">
+        <property name="text">
+         <string>Slower and slower</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
@@ -49,8 +75,8 @@
      </layout>
     </widget>
    </item>
-   <item row="2" column="0">
-    <widget class="QWidget" name="" native="true">
+   <item row="3" column="0">
+    <widget class="QWidget" name="widget" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -77,26 +103,23 @@
      </layout>
     </widget>
    </item>
-   <item row="1" column="0">
-    <widget class="QGroupBox" name="groupBox_3">
+   <item row="2" column="0">
+    <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>Ritardando behavior</string>
+      <string>Swing</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_5">
+     <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="0">
-       <widget class="QRadioButton" name="rit_linear">
+       <widget class="QCheckBox" name="send_swing_to_plugins">
         <property name="text">
-         <string>Linear</string>
+         <string>Send global swing tempo to plugins</string>
         </property>
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QRadioButton" name="rit_slower_and_slower">
+       <widget class="QCheckBox" name="swing_along">
         <property name="text">
-         <string>Slower and slower</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
+         <string>Let the editor swing along when playing</string>
         </property>
        </widget>
       </item>

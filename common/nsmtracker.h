@@ -1823,8 +1823,10 @@ struct Blocks{
         bool swing_enabled;
   
         int num_time_lines; // Contains number of lines in 'times' minus one (same as num_lines, normally). Only for validation.
-        const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. Calculated from lpbs/tempos/temponodes/global lpb/global bpm/filledout_swings*/
-  
+        const struct STimes *times_with_global_swings; // Pointer to array. Last element (times[num_lines]) is the playtime of the block. Calculated from lpbs/tempos/temponodes/global lpb/global bpm/filledout_swings.
+        const struct STimes *times_without_global_swings;
+        const struct STimes *times;  //  Either points to 'times' or 'times_with_global_swings', depending on whether plugins should receive swing tempo or not.
+        
         DEFINE_ATOMIC(double, reltempo);					/* factor that the tempo is multiplied with when playing this block. */
 
         DEFINE_ATOMIC(double, player_time);	/* = pc->end_time - RT_curr_seqblock()->time */
@@ -2279,7 +2281,9 @@ struct Song{
 
         DEFINE_ATOMIC(bool, linear_accelerando);
         DEFINE_ATOMIC(bool, linear_ritardando);
-                
+        bool plugins_should_receive_swing_tempo;
+        bool editor_should_swing_along;
+  
 	hash_t *mixerwidget_state; // Only used during loading.
 	hash_t *instrument_widget_order_state; // Only used during loading.
 };
