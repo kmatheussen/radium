@@ -1238,7 +1238,8 @@ static void update_all(int default_bpm, int default_lpb, Ratio default_signature
     int i = 0;
     struct Blocks *block=root->song->blocks;
     while(block!=NULL){
-      blocks[i] = block;      
+      blocks[i] = block;
+      i++;
       block=NextBlock(block);
     }
   }
