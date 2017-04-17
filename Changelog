@@ -1,3 +1,12 @@
+Changes 4.7.1 -> 4.7.2:
+* Don't crash when changing global tempo and there is more than
+  one block.
+* Option to enable sending swinging tempo to plugins. Default
+  is off.
+* Option enable editor to swing along when playing. Default
+  is on.
+
+
 Changes 4.7.0 -> 4.7.1:
 * Swing help text.
 * Make sure standalone line requesters don't fall off the
