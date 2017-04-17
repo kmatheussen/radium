@@ -189,7 +189,7 @@ static void legalize_pos(MyReqType *reqtype){
 
   int width = QApplication::desktop()->screenGeometry().width();
   int legal_pos = width - w->width();
-  printf("legal_pos: %d. width: %d, x: %d\n",legal_pos, width, w->x());
+  //printf("legal_pos: %d. width: %d, x: %d\n",legal_pos, width, w->x());
 
   if (w->x() > legal_pos){
     w->move(legal_pos, w->y());
