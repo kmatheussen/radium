@@ -1063,7 +1063,8 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
                           int default_bpm, int default_lpb, Ratio default_signature,
                           bool only_signature_has_changed, bool update_beats, bool update_swings)
 {
-  struct STimes *stimess[num_blocks];
+  struct STimes *stimes_without_global_swings[num_blocks];
+  struct STimes *stimes_with_global_swings[num_blocks];
   const struct Beats *beats[num_blocks];
   dyn_t dynbeats[num_blocks];
   dyn_t filledout_swingss[num_blocks];
@@ -1098,7 +1099,9 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
       if (!only_update_beats[i]){
         
         if (update_swings){
-          
+
+          bool has_block_swings = blocks[i]->swing_enabled==true && blocks[i]->swings!=NULL;
+            
           dyn_t block_swings = API_getAllBlockSwings(blocks[i]);
           filledout_swingss[i] = create_filledout_swings(g_empty_dynvec, block_swings, blocks[i]->num_lines, dynbeats[i]);
           
@@ -1109,10 +1112,10 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
           while(track!=NULL){
             if (track->swings==NULL){
               if (empty_track_swing.type==UNINITIALIZED_TYPE){
-                if (blocks[i]->swings==NULL)
+                if (has_block_swings==false)
                   empty_track_swing = filledout_swingss[i];
                 else
-                  empty_track_swing = create_filledout_swings(block_swings, g_empty_dynvec, blocks[i]->num_lines, dynbeats[i]);
+                  empty_track_swing = create_filledout_swings(block_swings, g_empty_dynvec, blocks[i]->num_lines, dynbeats[i]); // Same as block_swings, except that everything is auto-filled out.
               }
               DYNVEC_push_back(&filledout_trackswingss[i], empty_track_swing);
             }else{
@@ -1133,23 +1136,24 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
     for(int i = 0 ; i < num_blocks;i++){
       if (!only_update_beats[i]){
 
+        bool has_block_swings = blocks[i]->swing_enabled==true && blocks[i]->swings!=NULL;
+        
         int num_lines = blocks[i]->num_lines;
         
-        dyn_t filledout_swings;
+        stimes_without_global_swings[i] = create_stimes(blocks[i], dynbeats[i], g_empty_dynvec, default_bpm, default_lpb);
         
-        if (blocks[i]->swing_enabled==false)
-          filledout_swings = g_empty_dynvec;
+        if (!has_block_swings)
+          stimes_with_global_swings[i] = stimes_without_global_swings[i];
         else
-          filledout_swings = filledout_swingss[i];
-
-        stimess[i] = create_stimes(blocks[i], dynbeats[i], filledout_swings, default_bpm, default_lpb);
-        STime max_blocklen = stimess[i][num_lines].time;
+          stimes_with_global_swings[i] = create_stimes(blocks[i], dynbeats[i], filledout_swingss[i], default_bpm, default_lpb);
+        
+        STime max_blocklen = R_MAX(stimes_without_global_swings[i][num_lines].time, stimes_with_global_swings[i][num_lines].time);
  
         if (update_swings) {
           const struct Tracks *track = blocks[i]->tracks;
           while(track!=NULL){
-            if (blocks[i]->swing_enabled==false || track->swings==NULL)
-              VECTOR_push_back(&trackstimess[i], stimess[i]);
+            if (track->swings==NULL)
+              VECTOR_push_back(&trackstimess[i], stimes_with_global_swings[i]);
             else{
               const dyn_t filledout_trackswing = filledout_trackswingss[i].elements[track->l.num];
               struct STimes *trackstimes = create_stimes(blocks[i], dynbeats[i], filledout_trackswing, default_bpm, default_lpb);
@@ -1159,8 +1163,9 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
             track = NextTrack(track);
           }
 
-          // apply max_blocklen to all stime arrays. (all tracks should have the same duration, but due to rounding errors, that is not always the case.)
-          stimess[i][num_lines].time = max_blocklen;
+          // apply max_blocklen to all stime arrays. (all tracks should have the same duration, but due to rounding errors, some tracks can be a few frames longer than others)
+          stimes_without_global_swings[i][num_lines].time = max_blocklen;
+          stimes_with_global_swings[i][num_lines].time = max_blocklen;
           VECTOR_FOR_EACH(struct STimes *trackstimes, &trackstimess[i]){
             trackstimes[num_lines].time = max_blocklen;
           }END_VECTOR_FOR_EACH;
@@ -1183,11 +1188,19 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
         if (filledout_swingss[i].type==ARRAY_TYPE)
           block->filledout_swings = filledout_swingss[i];
         
-        if (stimess[i] != NULL){
-          block->times = stimess[i];
+        if (stimes_without_global_swings[i] != NULL){ // Shouldn't happen, but if it does, we keep the old timing.
+          block->times_without_global_swings = stimes_without_global_swings[i];
           block->num_time_lines = block->num_lines;
         }
 
+        if (stimes_with_global_swings[i] != NULL) // Shouldn't happen, but if it does, we keep the old timing.
+          block->times_with_global_swings = stimes_with_global_swings[i];
+
+        if (root->song->plugins_should_receive_swing_tempo)
+          block->times = block->times_with_global_swings;
+        else
+          block->times = block->times_without_global_swings;
+        
         if (update_swings){
           struct Tracks *track = block->tracks;
           while(track!=NULL){

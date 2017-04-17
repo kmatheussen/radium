@@ -723,7 +723,7 @@ struct TempoGraph create_TempoGraph(const struct Tracker_Windows *window, const 
     for(int n = 0 ; n<TEMPOGRAPH_POINTS_PER_REALLINE ; n++){
       Place p;
       Float2Placement(scale(n,0,TEMPOGRAPH_POINTS_PER_REALLINE,fp1,fp2), &p);
-      STime time = Place2STime(wblock->block,&p);
+      STime time = Place2STime_from_times(wblock->block->times_with_global_swings,&p);
       if(realline>0 || n>0){
         STime val = time-last_time;
         if(tg.min<val || pos==0)

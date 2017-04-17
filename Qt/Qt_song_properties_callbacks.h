@@ -46,11 +46,20 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     _initing = true;
 
     setupUi(this);
-    set_linear_accelerando_and_ritardando(ATOMIC_GET(root->song->linear_accelerando), ATOMIC_GET(root->song->linear_ritardando));
+
+    update_widgets(root->song);
     
     _initing = false;
   }
 
+  void update_widgets(struct Song *song){
+    R_ASSERT(_initing==true);
+    
+    set_linear_accelerando_and_ritardando(ATOMIC_GET(song->linear_accelerando), ATOMIC_GET(song->linear_ritardando));
+    send_swing_to_plugins->setChecked(song->plugins_should_receive_swing_tempo);
+    swing_along->setChecked(song->editor_should_swing_along);
+  }
+  
   void set_linear_accelerando_and_ritardando(bool linear_accelerando, bool linear_ritardando){
     if (linear_accelerando)
       acc_linear->setChecked(true);
@@ -82,6 +91,22 @@ public slots:
     ATOMIC_SET(root->song->linear_ritardando, val);
     TIME_global_tempos_have_changed();
     
+    root->song->tracker_windows->must_redraw_editor = true;
+  }
+
+  void on_send_swing_to_plugins_toggled(bool val){
+    if (_initing==true)
+      return;
+    
+    root->song->plugins_should_receive_swing_tempo = val;
+    TIME_global_tempos_have_changed();
+  }
+
+  void on_swing_along_toggled(bool val){
+    if (_initing==true)
+      return;
+
+    root->song->editor_should_swing_along = val;
     root->song->tracker_windows->must_redraw_editor = true;
   }
   

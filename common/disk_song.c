@@ -59,6 +59,9 @@ DC_start("SONG");
         DC_SSB("linear_accelerando", ATOMIC_GET(song->linear_accelerando));
         DC_SSB("linear_ritardando", ATOMIC_GET(song->linear_ritardando));
         
+        DC_SSB("plugins_should_receive_swing_tempo", song->plugins_should_receive_swing_tempo);
+        DC_SSB("editor_should_swing_along", song->editor_should_swing_along);
+        
         DC_start("COMMENT");{
           HASH_save(COMMENT_get_state(), dc.file);
         }DC_end();
@@ -84,7 +87,7 @@ DC_start("SONG");
 DC_end();
 }
 
-void SONGPROPERTIES_set_linear_accelerando_and_ritardando(bool linear_accelerando, bool linear_ritardando);
+void SONGPROPERTIES_update(struct Song *song);
 
 struct Song *LoadSong(void){
 	static char *objs[7]={
@@ -96,13 +99,15 @@ struct Song *LoadSong(void){
                 "SEQUENCER",
                 "COMMENT"
 	};
-	static char *vars[6]={
+	static char *vars[8]={
 		"num_blocks",
 		"length",
 		"songname",
 		"maxtracks", // Not used anymore
                 "linear_accelerando",
-                "linear_ritardando"
+                "linear_ritardando",
+                "plugins_should_receive_swing_tempo",
+                "editor_should_swing_along"
 	};
 	struct Song *song=SONG_create();
         
@@ -127,7 +132,7 @@ struct Song *LoadSong(void){
 
         COMMENT_reset();
         
-        GENERAL_LOAD(7,6)
+        GENERAL_LOAD(7,8)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());
@@ -185,10 +190,17 @@ var4:
 var5:
         ATOMIC_SET(song->linear_ritardando, DC_LoadB());
         goto start;
-
-
+        
 var6:
+        song->plugins_should_receive_swing_tempo = DC_LoadB();
+        goto start;
+        
 var7:
+        song->editor_should_swing_along = DC_LoadB();
+        goto start;
+
+
+
 var8:
 var9:
 var10:
@@ -211,7 +223,7 @@ end:
 
 void DLoadSong(struct Root *newroot,struct Song *song){
 
-        SONGPROPERTIES_set_linear_accelerando_and_ritardando(ATOMIC_GET(song->linear_accelerando), ATOMIC_GET(song->linear_ritardando));
+        SONGPROPERTIES_update(song);
 
         DLoadInstrument(get_MIDI_instrument());
         DLoadInstrument(get_audio_instrument());
