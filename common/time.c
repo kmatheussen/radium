@@ -1289,6 +1289,10 @@ void TIME_global_signature_has_changed(void){
   update_all(root->tempo, root->lpb, root->signature, true, true, true);
 }
 
+void TIME_everything_has_changed2(int default_bpm, int default_lpb, Ratio default_signature){
+  update_all(default_bpm, default_lpb, default_signature, false, true, true);
+}
+
 void TIME_everything_has_changed(void){
   update_all(root->tempo, root->lpb, root->signature, false, true, true);
 }

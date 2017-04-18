@@ -93,6 +93,8 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
   else
     sv->times = block->times_without_global_swings;
 
+  //printf("    CHANGE. %d. sv->times: %p (%p %p)\n", block->l.num, sv->times, block->times_with_global_swings, block->times_without_global_swings);
+
   {
     bool is_playing = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
     
@@ -112,7 +114,8 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->block);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->curr_playing_block);
   }
-  
+
+  // TODO: Just tcopy wblock->reallines.
   sv->realline_places = (Place*)V_malloc(sv->num_reallines * sizeof(Place));
   for(int i=0;i<sv->num_reallines;i++){
     sv->realline_places[i] = wblock->reallines[i]->l.p;

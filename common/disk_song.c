@@ -264,5 +264,7 @@ void DLoadSong(struct Root *newroot,struct Song *song){
         // Audio plugins are created after creating trackreallines.
         //TRACKREALLINES_update_peak_tracks(song->tracker_windows);
 
+        TIME_everything_has_changed2(newroot->tempo, newroot->lpb, newroot->signature);
+        
         song->tracker_windows->must_redraw = true;
 }

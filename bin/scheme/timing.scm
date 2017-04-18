@@ -565,6 +565,10 @@ Old version. Not correct.
                                                    :y2 (+ start-line line2) :x2 x2)
                             rest))))))))))
 
+(pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 3 0)
+                                                                                    (create-swing 1 2 0))
+                                                            :num-lines 2)))
+
 (pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 4 0)   ;; sakte
                                                                                     (create-swing 1 1 0))  ;; rask
                                                             :num-lines 2)))
