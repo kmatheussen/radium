@@ -56,7 +56,7 @@ struct LocalZooms *CB_CopyLocalZooms(
 	struct LocalZooms *tolocalzoom=NULL;
 	struct LocalZooms *localzoom=wblock->localzooms;
 
-	if(localzoom->level>0){			//Might be that we are trying to pack an allready packed localzoom-tree.
+	if(localzoom->level>0){			//Might be that we are trying to pack an already packed localzoom-tree.
 		CB_CopyLocalZoomsRec(&tolocalzoom,localzoom);
 		return tolocalzoom;
 	}

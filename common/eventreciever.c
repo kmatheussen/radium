@@ -53,7 +53,7 @@ bool Quit(struct Tracker_Windows *window){
 
 	printf("Going to quit\n");
 
-        return Undo_are_you_shure_questionmark();
+        return Undo_are_you_sure_questionmark();
 }
 
 

@@ -166,7 +166,7 @@ void ResetUndo(void){
   update_gfx();
 }
 
-bool Undo_are_you_shure_questionmark(void){
+bool Undo_are_you_sure_questionmark(void){
   int num_undos = Undo_num_undos_since_last_save();
 
   if(num_undos>0){
@@ -175,7 +175,7 @@ bool Undo_are_you_shure_questionmark(void){
 
     sprintf(
             temp,
-            "%d change%s been made to file since song was saved.\nAre you shure? (yes/no) >",
+            "%d change%s been made to file since song was saved.\nAre you sure? (yes/no) >",
             num_undos,
             num_undos>1 ? "s have" : " has"
             );

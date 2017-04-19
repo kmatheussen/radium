@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 /****************************************************
   FUNCTION
-    Make shure that:
+    Make sure that:
 
     -No fxnodeline is placed on the same position
      as the start (or before) of the end of the note

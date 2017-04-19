@@ -322,7 +322,7 @@ int GetNoteX2(const struct WTracks *wtrack, const struct Notes *note){
 
 /************************************************************************
   FUNCTION
-    Make shure that x is placed within the boundaries of the subtrack.
+    Make sure that x is placed within the boundaries of the subtrack.
 ************************************************************************/
 /*
 int SubtrackBoundaries(const struct WTracks *wtrack,int subtrack,int x){

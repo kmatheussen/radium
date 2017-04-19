@@ -84,7 +84,7 @@ void UpdateReallinesDependens(
   FUNCTION
     Returns the localzoom element that has its 'uplevel' attribute
     pointing to the first element in a localzoom list that the 'realline'
-    belongs to. Returns NULL if it is allready placed at level 0.
+    belongs to. Returns NULL if it is already placed at level 0.
 
   NOTES
     'realline' allso gets the realline value for the new position
