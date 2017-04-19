@@ -1060,7 +1060,7 @@ static dyn_t create_filledout_swings(const dyn_t global_swings, const dyn_t trac
 
 
 static void update_stuff2(struct Blocks *blocks[], int num_blocks,
-                          int default_bpm, int default_lpb, Ratio default_signature,
+                          int default_bpm, int default_lpb, Ratio default_signature, bool plugins_should_receive_swing_tempo,
                           bool only_signature_has_changed, bool update_beats, bool update_swings)
 {
   struct STimes *stimes_without_global_swings[num_blocks];
@@ -1195,7 +1195,7 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
         if (stimes_with_global_swings[i] != NULL) // Shouldn't happen, but if it does, we keep the old timing.
           block->times_with_global_swings = stimes_with_global_swings[i];
 
-        if (root->song->plugins_should_receive_swing_tempo)
+        if (plugins_should_receive_swing_tempo)
           block->times = block->times_with_global_swings;
         else
           block->times = block->times_without_global_swings;
@@ -1226,16 +1226,17 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
   }PC_StopPause(NULL);
 }
 
-static void update_all(int default_bpm, int default_lpb, Ratio default_signature,
+static void update_all(struct Song *song,
+                       int default_bpm, int default_lpb, Ratio default_signature, bool plugins_should_receive_swing_tempo,
                        bool only_signature_has_changed, bool update_beats, bool update_swings)
 {
-  int num_blocks = ListFindNumElements1(&root->song->blocks->l);
+  int num_blocks = ListFindNumElements1(&song->blocks->l);
   
   struct Blocks *blocks[num_blocks];
 
   {
     int i = 0;
-    struct Blocks *block=root->song->blocks;
+    struct Blocks *block=song->blocks;
     while(block!=NULL){
       blocks[i] = block;
       i++;
@@ -1243,63 +1244,70 @@ static void update_all(int default_bpm, int default_lpb, Ratio default_signature
     }
   }
 
-  update_stuff2(blocks, num_blocks, default_bpm, default_lpb, default_signature, only_signature_has_changed, update_beats, update_swings);
+  update_stuff2(blocks, num_blocks,
+                default_bpm, default_lpb, default_signature, plugins_should_receive_swing_tempo,
+                only_signature_has_changed, update_beats, update_swings);
 }
 
 static void update_block(struct Blocks *block,
-                         int default_bpm, int default_lpb, Ratio default_signature,
+                         int default_bpm, int default_lpb, Ratio default_signature, bool plugins_should_receive_swing_tempo,
                          bool only_signature_has_changed, bool update_beats, bool update_swings)
 {
   struct Blocks *blocks[1] = {block};
 
-  update_stuff2(blocks, 1, default_bpm, default_lpb, default_signature, only_signature_has_changed, update_beats, update_swings);
+  update_stuff2(blocks, 1,
+                default_bpm, default_lpb, default_signature, plugins_should_receive_swing_tempo,
+                only_signature_has_changed, update_beats, update_swings);
 }
 
 
 
 void TIME_block_tempos_have_changed(struct Blocks *block){
-  update_block(block, root->tempo, root->lpb, root->signature, false, false, false);
+  update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, false, false);
 }
 
 void TIME_block_LPBs_have_changed(struct Blocks *block){
-  update_block(block, root->tempo, root->lpb, root->signature, false, true, true);
+  update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, true, true);
 }
 
 void TIME_block_signatures_have_changed(struct Blocks *block){
-  update_block(block, root->tempo, root->lpb, root->signature, true, true, true);
+  update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, true, true, true);
 }
 
 void TIME_block_num_lines_have_changed(struct Blocks *block){
-  update_block(block, root->tempo, root->lpb, root->signature, false, true, true);
+  update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, true, true);
 }
 
 void TIME_block_swings_have_changed(struct Blocks *block){
-  update_block(block, root->tempo, root->lpb, root->signature, false, false, true);
+  update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, false, true);
+}
+
+void TIME_everything_in_block_has_changed2(struct Blocks *block, const struct Root *root, const struct Song *song){
+  update_block(block, root->tempo, root->lpb, root->signature, song->plugins_should_receive_swing_tempo, false, true, true);
+}
+
+void TIME_everything_in_block_has_changed(struct Blocks *block){
+  TIME_everything_in_block_has_changed2(block, root, root->song);
 }
 
 void TIME_global_tempos_have_changed(void){
-  update_all(root->tempo, root->lpb, root->signature, false, false, false);
+  update_all(root->song, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, false, false);
 }
 
 void TIME_global_LPB_has_changed(void){
-  update_all(root->tempo, root->lpb, root->signature, false, true, true);
+  update_all(root->song, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, true, true);
 }
 
 void TIME_global_signature_has_changed(void){
-  update_all(root->tempo, root->lpb, root->signature, true, true, true);
+  update_all(root->song, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, true, true, true);
 }
 
-void TIME_everything_has_changed2(int default_bpm, int default_lpb, Ratio default_signature){
-  update_all(default_bpm, default_lpb, default_signature, false, true, true);
+void TIME_everything_has_changed2(const struct Root *root, struct Song *song){
+  update_all(song, root->tempo, root->lpb, root->signature, song->plugins_should_receive_swing_tempo, false, true, true);
 }
 
 void TIME_everything_has_changed(void){
-  update_all(root->tempo, root->lpb, root->signature, false, true, true);
-}
-
-void TIME_everything_in_block_has_changed(struct Blocks *block, int default_bpm, int default_lpb, Ratio default_signature){
-  struct Blocks *blocks[1] = {block};
-  update_stuff2(blocks, 1, default_bpm, default_lpb, default_signature, false, true, true);
+  TIME_everything_has_changed2(root, root->song);
 }
 
 

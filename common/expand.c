@@ -97,7 +97,7 @@ static void expand_block(struct Blocks *block, int start, int end, int num_lines
 
   LegalizeTempoNodes(block);
 
-  TIME_everything_in_block_has_changed(block, root->tempo, root->lpb, root->signature);
+  TIME_everything_in_block_has_changed(block);
 }
 
 static void incLocalZoomLine(struct LocalZooms *localzoom, int num_lines){

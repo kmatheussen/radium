@@ -161,7 +161,7 @@ if(block==NULL) return;
 
 	DLoadTracks(newroot,block->tracks);
 
-        TIME_everything_in_block_has_changed(block, newroot->tempo, newroot->lpb, newroot->signature);
+        TIME_everything_in_block_has_changed2(block, newroot, newroot->song);
         
 DLoadBlocks(newroot,NextBlock(block));
 }

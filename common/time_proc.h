@@ -51,10 +51,10 @@ extern LANGSPEC void TIME_block_swings_have_changed(struct Blocks *block);
 extern LANGSPEC void TIME_global_tempos_have_changed(void);
 extern LANGSPEC void TIME_global_LPB_has_changed(void);
 extern LANGSPEC void TIME_global_signature_has_changed(void);
-extern LANGSPEC void TIME_everything_has_changed2(int default_bpm, int default_lpb, Ratio default_signature);
+extern LANGSPEC void TIME_everything_has_changed2(const struct Root *root, struct Song *song);
 extern LANGSPEC void TIME_everything_has_changed(void);
-extern LANGSPEC void TIME_everything_in_block_has_changed(struct Blocks *block, int default_bpm, int default_lpb, Ratio default_signature);
-
+extern LANGSPEC void TIME_everything_in_block_has_changed2(struct Blocks *block, const struct Root *root, const struct Song *song);
+extern LANGSPEC void TIME_everything_in_block_has_changed(struct Blocks *block);
   
 #endif
 

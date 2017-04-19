@@ -75,7 +75,7 @@ void NewBlock(
 
         block->swing_enabled = true;
 
-        TIME_everything_in_block_has_changed(block, root->tempo, root->lpb, root->signature);
+        TIME_everything_in_block_has_changed(block);
           
 	ListAddElement1(&root->song->blocks,&block->l);
 }
