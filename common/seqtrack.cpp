@@ -548,6 +548,10 @@ struct SeqTrack *SEQTRACK_create_from_state(const hash_t *state){
   for(int i=0;i<num_seqblocks;i++)
     VECTOR_push_back(&seqtrack->seqblocks, SEQBLOCK_create_from_state(HASH_get_hash_at(state, "seqblock", i)));
 
+  PLAYER_lock();{
+    RT_legalize_seqtrack_timing(seqtrack); // Block length may change slightly between versions due to different ways to calculate timings.
+  }PLAYER_unlock();
+
   return seqtrack;
 }
 

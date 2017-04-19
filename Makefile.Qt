@@ -167,6 +167,10 @@ DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-optimize-sibling-calls $(OS_DEBUG_BUILD
 #  -fsanitize=thread 
 # -Og -fsanitize=address 
 
+# -fsanitize-thread sometimes require:
+#export __GL_THREADED_OPTIMIZATIONS=0
+
+
 GCC_VERSION:=$(shell gcc -dumpversion)
 GCC_MAJOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f1)
 GCC_MINOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f2)
