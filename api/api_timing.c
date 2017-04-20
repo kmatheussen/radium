@@ -630,6 +630,13 @@ dyn_t getAllTrackSwings(int tracknum, int blocknum, int windownum){
 
 /*
 dyn_t testsomething(dyn_t arg){
+  R_ASSERT(false);
+  return DYN_create_int(0);
+}
+*/
+
+/*
+dyn_t testsomething(dyn_t arg){
   hash_t *hash = HASH_create(5);
   HASH_put_int(hash,":a", 1);
   HASH_put_int(hash,":b", 2);

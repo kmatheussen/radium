@@ -924,6 +924,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if(plugin==NULL)
         return _fallback_peaks;
 
+      // Testing backtrace.
+      //if (ATOMIC_GET(root->editonoff)==false) // If removing this line, there is no s7 backtrace in the crashreport when the program stops during startup. Really strange.
+      //  R_ASSERT(false);
+            
       if (_is_output)
         return plugin->volume_peaks;
 

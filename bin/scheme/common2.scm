@@ -1100,3 +1100,14 @@ for .emacs:
   ;;(read-char)
   (c-display "args" args)
   ys)
+
+
+#||
+(define (fibgakk arg)
+  (if (= arg 0)
+      (<ra> :testsomething arg)
+      (fibgakk (1- arg))))
+
+(define (test-crash)
+  (fibgakk 50))
+||#

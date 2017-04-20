@@ -1302,13 +1302,13 @@ struct Tracks{
 
         int polyphony;
   
-	const char *trackname;
+        const char *trackname; // TODO: Remove. Don't think this one has ever been used.
 	struct Patch *patch;
         vector_t fxs; // Contains struct FXs* elements
 
-        struct Swing *swings; // Array of swings. num_lines elements.
-        dyn_t  filledout_swings; // Used both to calculate timing, and for rendering. Calculated from block->beats and swings.
-        const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. Calculated from lpbs/tempos/temponodes/global lpb/global bpm/filledout_swings*/
+        struct Swing *swings;
+        dyn_t  filledout_swings; // Used both to calculate timing, and for rendering. Calculated from block->beats, block->swings, and swings.
+        const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. Calculated from block->lpbs/block->tempos/block->temponodes/root->lpb/root->bpm/filledout_swings. */
   
         void *midi_instrumentdata;			/* Used by the midi instrument. */
 
