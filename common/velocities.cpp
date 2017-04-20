@@ -117,7 +117,7 @@ static struct Velocities *add_velocity(
   velocity->velocity=R_BOUNDARIES(0,velocityvelocity,MAX_VELOCITY);
   
   /* ListAddElement3_ns returns -1 (and doesnt do anything else)
-     if there allready is an element with the same placement. */
+     if there already is an element with the same placement. */
 
   PLAYER_lock();{
     *pos = ListAddElement3_ns(&note->velocities,&velocity->l);

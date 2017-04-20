@@ -238,7 +238,7 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
 
 	PlayStop();
 
-        if(Undo_are_you_shure_questionmark()==false)
+        if(Undo_are_you_sure_questionmark()==false)
           goto exit;
 
         if(filename==NULL)

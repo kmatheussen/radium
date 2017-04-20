@@ -134,7 +134,7 @@ STime PEQ_CalcNextEvent_old(
 	}
 
 	// Adding one in here is a quick way to avoid problems with rounding errors.
-	// The solution might be /to/ quick... I'm not shure. Seems to work well for now:
+	// The solution might be /to/ quick... I'm not sure. Seems to work well for now:
 	// (Doesn't allways work very well (no that was an overflow problem))
 
 	timesubtime1=time-time1;

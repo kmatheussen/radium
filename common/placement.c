@@ -73,7 +73,7 @@ void PlaceCopy(Place *p1,  Place *p2){
 */
 /************************************************************
   FUNCTION
-    Make shure that countor is not bigger or equal to dividor
+    Make sure that countor is not bigger or equal to dividor
     and that dividor is not bigger than MAX_UINT32.
 ************************************************************/
 void PlaceHandleOverflow(Place *p){
@@ -168,7 +168,7 @@ void PlaceSub(Place *p1,  const Place *p2){
 
 
 
-/* I'm not too shure if the next two routines ever should be used.
+/* I'm not too sure if the next two routines ever should be used.
    Handling overflow in these cases are maybe impossible. 
    They have never been tested either, and they have never been
    used anywhere. I guess the best solution for this

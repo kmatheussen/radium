@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 /****************************************************
   FUNCTION
-    Make shure that:
+    Make sure that:
 
     -No end-note is placed before or on the start of the
      note or below the last legal position.

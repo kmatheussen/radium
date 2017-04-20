@@ -106,7 +106,7 @@ void SaveAs(struct Root *theroot){
 			ret=GFX_GetString(
 				theroot->song->tracker_windows,
 				NULL,
-				"File allready exists, are you shure? (yes/no)"
+				"File already exists, are you sure? (yes/no)"
 			);
 		}
 		if(!strcmp("no",ret)) return;

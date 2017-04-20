@@ -413,7 +413,7 @@ newprogram:
 
 #ifndef NOPLAYER
 		if( ! pc->isplaying){	// Don't want to do this while playing.
-			if(lastStuffTime + 1200 < conductor->cdt_ClockTime){		// Make shure it is at least one second since last time.
+			if(lastStuffTime + 1200 < conductor->cdt_ClockTime){		// Make sure it is at least one second since last time.
 //				debug("alloc and unalloc\n");
 /*
 				while( ((SetSignal(0L,0L)) & waitsig) == 0L){
