@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <inttypes.h>
 
 #include <QHash>
-
+#include <QUuid>
 
 #include "nsmtracker.h"
 #include "visual_proc.h"
@@ -195,6 +195,7 @@ void PATCH_init_voices(struct Patch *patch){
 
 struct Patch *PATCH_alloc(void){
   struct Patch *patch = (struct Patch*)talloc(sizeof(struct Patch));
+  patch->uuid = talloc_strdup(QUuid::createUuid().toString().toUtf8().constData()); // May be overridden later.
 
   // lots of atomic data
   patch->voices = (struct PatchVoice*)talloc_atomic_clean(sizeof(struct PatchVoice) * NUM_PATCH_VOICES);

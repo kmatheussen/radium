@@ -81,18 +81,22 @@ void configVST(int windownum){
   OS_VST_config(window);
 }
 
-const char *getLoadFilename(char *text, char *filetypes, char *dir){
+const char *getLoadFilename(const_char *text, const_char *filetypes, const_char *dir, const_char *type){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-  const wchar_t *ret = GFX_GetLoadFileName(window, NULL, text, STRING_create(dir), filetypes);
+  if (!strcmp(type,""))
+    type = NULL;
+  const wchar_t *ret = GFX_GetLoadFileName(window, NULL, text, STRING_create(dir), filetypes, type);
   if(ret==NULL)
     return "";
   else
     return STRING_get_chars(ret);
 }
 
-const char *getSaveFilename(char *text, char *filetypes, char *dir){
+const char *getSaveFilename(const_char *text, const_char *filetypes, const_char *dir, const_char *type){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-  const wchar_t *ret = GFX_GetSaveFileName(window, NULL, text, STRING_create(dir), filetypes);
+  if (!strcmp(type,""))
+    type = NULL;
+  const wchar_t *ret = GFX_GetSaveFileName(window, NULL, text, STRING_create(dir), filetypes, type);
   if(ret==NULL)
     return "";
   else

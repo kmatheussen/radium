@@ -75,7 +75,7 @@ DC_start("TRACKER_WINDOW");
         DC_SSB("show_bpm_track",window->show_bpm_track);
         DC_SSB("show_reltempo_track",window->show_reltempo_track);
 
-	SaveWBlock(window->wblocks);
+	SaveWBlock(window->wblocks, true);
 
 
 DC_end();
@@ -249,7 +249,7 @@ if(window==NULL) return;
 
 	UpdateTrackerWindowCoordinates(window);
 
-	DLoadWBlocks(newroot,window,window->wblocks);
+	DLoadWBlocks(newroot,window,window->wblocks, true);
 
 	window->wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,window->curr_block);
         ATOMIC_SET(g_curr_block, window->wblock->block);

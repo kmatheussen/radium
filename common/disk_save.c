@@ -90,7 +90,7 @@ void SaveAs(struct Root *theroot){
         if (doStopPlayingWhenSavingSong())
           PlayStop();
         
-	filename=GFX_GetSaveFileName(theroot->song->tracker_windows, NULL," Select file to save", NULL, "*.rad");
+	filename=GFX_GetSaveFileName(theroot->song->tracker_windows, NULL," Select file to save", NULL, "*.rad", NULL);
 
 	if(filename==NULL) return;
 

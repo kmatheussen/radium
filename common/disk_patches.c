@@ -175,6 +175,8 @@ end:
 // Audio patchdata is loaded/saved later. (don't know where yet when writing this comment)
 
 
+// TODO: Save patch as hash_t. Now there are two different ways to serialize struct Patch.
+
 void SavePatches(vector_t *v){
   int i;
 
@@ -197,6 +199,8 @@ void SavePatches(vector_t *v){
       DC_SSS("comment", patch->comment==NULL ? "" : patch->comment);
 
       DC_SSB("wide_mixer_strip", patch->wide_mixer_strip);
+
+      DC_SSS("uuid", patch->uuid);
       
       if(patch->instrument==get_MIDI_instrument())
         SaveMIDIPatchData(patch->patchdata);
@@ -216,7 +220,7 @@ struct Patch *LoadPatch(void){
           "PATCHDATA",
           "VOICES"
 	};
-	static char *vars[9]={
+	static char *vars[10]={
 		"name",
 		"minvel",
 		"maxvel",
@@ -225,7 +229,8 @@ struct Patch *LoadPatch(void){
                 "name_is_edited",
                 "color",
                 "comment",
-                "wide_mixer_strip"
+                "wide_mixer_strip",
+                "uuid"
 	};
 
 	struct Patch *patch=PATCH_alloc();
@@ -237,7 +242,7 @@ struct Patch *LoadPatch(void){
 
         PATCH_init_voices(patch);
 
-	GENERAL_LOAD(2,9)
+	GENERAL_LOAD(2,10)
 
 
 var0:
@@ -276,6 +281,10 @@ var8:
         patch->wide_mixer_strip = DC_LoadB();
         goto start;
         
+var9:
+        patch->uuid = DC_LoadS();
+        goto start;
+        
 obj0:
         is_MIDI_instrument = true;
         MIDI_InitPatch(patch);
@@ -290,7 +299,6 @@ obj1:
         //printf("---Finihsed Load Patch Voices\n");
         goto start;
 
-var9:
 var10:
 var11:
 var12:

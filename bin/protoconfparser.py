@@ -88,12 +88,12 @@ class Argument:
         elif self.type_string=="Place":
             return "s7extra_make_place"
         elif self.type_string=="func_t*":
-            raise "Returning func is not supported"
+            raise Exception("Returning func is not supported")
         elif self.type_string=="dyn_t":
             return "s7extra_make_dyn"
         else:
             sys.stderr.write("Unknown type '"+self.type_string+"'")
-            raise "Unknown type '"+self.type_string+"'"
+            raise Exception("Unknown type '"+self.type_string+"'")
 
     def get_s7_get_type_function(self):
         if self.type_string=="int":
@@ -118,7 +118,7 @@ class Argument:
             return "s7extra_dyn(radiums7_sc, "
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
-            raise "Unknown type '"+type_string+"'"
+            raise Exception("Unknown type '"+type_string+"'")
 
     def get_s7_variable_check_function(self):
         if self.type_string=="int":
@@ -144,7 +144,7 @@ class Argument:
         else:
             sys.stderr.write("Unknown type '"+self.type_string+"'\n")
             sys.stderr.write("varname:"+self.varname+"\n")
-            raise "Unknown type '"+self.type_string+"'"
+            raise Exception("Unknown type '"+self.type_string+"'")
 
     # keyDownPlay -> r-key-down-play
     # keyDownBPM -> r-key-down-bpm
@@ -326,7 +326,7 @@ class Proto:
                 t="b"
             else:
                 sys.stderr.write("Unknown type '"+qualifier+"'")
-                raise "Unknown type '"+qualifier+"'"
+                raise Exception("Unknown type '"+qualifier+"'")
             
             oh.write(t)
 

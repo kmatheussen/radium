@@ -242,7 +242,7 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
           goto exit;
 
         if(filename==NULL)
-          filename=GFX_GetLoadFileName(window,NULL,"Select file to load", NULL, NULL);
+          filename=GFX_GetLoadFileName(window,NULL,"Select file to load", NULL, NULL, NULL);
 
 	if(filename==NULL) goto exit;
 

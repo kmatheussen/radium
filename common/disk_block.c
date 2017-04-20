@@ -41,7 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void SaveBlock(struct Blocks *block){
+void SaveBlock(struct Blocks *block, bool save_all){
 if(block==NULL) return;
 DC_start("BLOCK");
 
@@ -62,7 +62,8 @@ DC_start("BLOCK");
         SaveSwings(block->swings);
 
 DC_end();
-SaveBlock(NextBlock(block));
+if(save_all)
+  SaveBlock(NextBlock(block), true);
 }
 
 
@@ -154,7 +155,7 @@ end:
 
 }
 
-void DLoadBlocks(const struct Root *newroot,struct Blocks *block){
+void DLoadBlocks(const struct Root *newroot,struct Blocks *block, bool dload_all){
 if(block==NULL) return;
 
 	block->lasttemponode=(struct TempoNodes *)ListLast3(&block->temponodes->l);
@@ -163,7 +164,8 @@ if(block==NULL) return;
 
         TIME_everything_in_block_has_changed2(block, newroot, newroot->song);
         
-DLoadBlocks(newroot,NextBlock(block));
+if(dload_all)        
+  DLoadBlocks(newroot,NextBlock(block), true);
 }
 
 

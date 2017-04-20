@@ -67,7 +67,7 @@ DC_start("SONG");
         }DC_end();
 
 	SaveWindow(song->tracker_windows);
-	SaveBlock(song->blocks);
+	SaveBlock(song->blocks, true);
         
 	//SavePlayList(song->playlist,song->length);
 
@@ -229,7 +229,7 @@ void DLoadSong(struct Root *newroot,struct Song *song){
         DLoadInstrument(get_MIDI_instrument());
         DLoadInstrument(get_audio_instrument());
 
-	DLoadBlocks(newroot,song->blocks);
+	DLoadBlocks(newroot,song->blocks,true);
 
         if (disk_load_version<0.875)
           DLoadPlayList(newroot,song);

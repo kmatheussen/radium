@@ -97,7 +97,8 @@ extern LANGSPEC const wchar_t *GFX_GetLoadFileName(
                                                    ReqType reqtype,
                                                    const char *seltext,
                                                    wchar_t *dir,
-                                                   const char *postfixes
+                                                   const char *postfixes,
+                                                   const char *type
                                                    );
 
 extern LANGSPEC const wchar_t *GFX_GetSaveFileName(
@@ -105,7 +106,8 @@ extern LANGSPEC const wchar_t *GFX_GetSaveFileName(
                                                    ReqType reqtype,
                                                    const char *seltext,
                                                    wchar_t *dir,
-                                                   const char *postfixes
+                                                   const char *postfixes,
+                                                   const char *type
                                                    );
 
 extern LANGSPEC void GFX_OS_update_bottombar(void);

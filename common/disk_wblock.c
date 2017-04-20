@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void SaveWBlock(struct WBlocks *wblock){
+void SaveWBlock(struct WBlocks *wblock, bool save_all){
 if(wblock==NULL) return;
 DC_start("WBLOCK");
 
@@ -71,7 +71,8 @@ DC_start("WBLOCK");
 	SaveWTrack(wblock->wtracks);
 
 DC_end();
-SaveWBlock(NextWBlock(wblock));
+if(save_all)
+  SaveWBlock(NextWBlock(wblock), true);
 }
 
 
@@ -201,7 +202,8 @@ end:
 void DLoadWBlocks(
 	const struct Root *newroot,
 	struct Tracker_Windows *window,
-	struct WBlocks *wblock
+	struct WBlocks *wblock,
+        bool dload_all
 ){
 if(wblock==NULL) return;
 
@@ -218,9 +220,10 @@ if(wblock==NULL) return;
         UpdateWBlockWidths(window,wblock);
 
 
-        UpdateWBlockCoordinates(window,wblock);	//Does allso update wtrack	
+        UpdateWBlockCoordinates(window,wblock);	//Also updates wtrack coordinates
 
 	DLoadLocalZooms(newroot,window,wblock);
 
-DLoadWBlocks(newroot,window,NextWBlock(wblock));
+if(dload_all)        
+  DLoadWBlocks(newroot,window,NextWBlock(wblock), true);
 }

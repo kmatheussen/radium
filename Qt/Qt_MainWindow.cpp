@@ -666,13 +666,14 @@ void GFX_EnablePainting(void){
 
 
 
-static QString get_postfixes_filter(const char *postfixes){
+static QString get_postfixes_filter(const char *type, const char *postfixes){
   QString postfixes2 = postfixes==NULL ? "*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3" : QString(postfixes);
   
 #if FOR_WINDOWS
   return postfixes2 + " ;; All files (*)";
 #else
-  return QString("Song files (") + postfixes2 + ") ;; All files (*)";
+  type = type==NULL ? "Song files" : type;
+  return QString(type) + " (" + postfixes2 + ") ;; All files (*)";
 #endif
 }
 
@@ -681,7 +682,8 @@ const wchar_t *GFX_GetLoadFileName(
                                    ReqType reqtype,
                                    const char *seltext,
                                    wchar_t *wdir,
-                                   const char *postfixes
+                                   const char *postfixes,
+                                   const char *type
 ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
@@ -693,7 +695,7 @@ const wchar_t *GFX_GetLoadFileName(
   QString filename = QFileDialog::getOpenFileName(editor,
                                                   seltext,
                                                   dir,
-                                                  get_postfixes_filter(postfixes),
+                                                  get_postfixes_filter(type, postfixes),
                                                   0,
                                                   QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                                   );
@@ -708,7 +710,8 @@ const wchar_t *GFX_GetSaveFileName(
                                    ReqType reqtype,
                                    const char *seltext,
                                    wchar_t *wdir,
-                                   const char *postfixes
+                                   const char *postfixes,
+                                   const char *type
                                    ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
@@ -720,7 +723,7 @@ const wchar_t *GFX_GetSaveFileName(
   QString filename = QFileDialog::getSaveFileName(editor,
                                                   seltext,
                                                   "",
-                                                  get_postfixes_filter(postfixes),
+                                                  get_postfixes_filter(type, postfixes),
                                                   0,
                                                   QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                                   );
