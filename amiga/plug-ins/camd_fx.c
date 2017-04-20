@@ -368,7 +368,7 @@ int CAMDgetFX(struct Tracker_Windows *window,struct Tracks *track,struct FX *fx)
 		}
 		camd_fx=&CAMD_fxs[selection];
 
-		menutitle="FX allready used";
+		menutitle="FX already used";
 
 		if(camd_fx->cc==-1) continue;
 

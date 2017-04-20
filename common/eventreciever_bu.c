@@ -89,7 +89,7 @@ bool Quit(struct Tracker_Windows *window){
 	if(num_undos>0){
 		sprintf(
 			temp,
-			"%s%d change%s has been made to file.\nAre you shure? (yes/no) >"
+			"%s%d change%s has been made to file.\nAre you sure? (yes/no) >"
 			,num_undos>=max_num_undos-1?"At least":"",
 			num_undos,
 			num_undos>1?"s":""

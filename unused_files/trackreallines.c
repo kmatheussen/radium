@@ -600,7 +600,7 @@ static void AddTrackReallineNote(
 
 /*** NOTES ****************************************************************
     About the following two procedures: There might be bugs here! I'm not
-    at all too shure if they allways function correct.
+    at all too sure if they allways function correct.
 ***************************************************************************/
 int FindNumberOfNotesOnTrackRealline(struct TrackReallineElements *element){
 	int ret=0;

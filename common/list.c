@@ -453,7 +453,7 @@ struct ListHeader3 *ListMoveElement3_FromNum_ns(
 
 /*****************************************************************************
   FUNCTION
-    Adds an element only if the list doesn't allready contain an element
+    Adds an element only if the list doesn't already contain an element
     with the same placement attributes.
 ******************************************************************************/
 int ListAddElement3_ns(

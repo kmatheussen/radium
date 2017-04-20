@@ -128,7 +128,7 @@ void CancelRange_CurrPos(struct Tracker_Windows *window){
 
 /********************************************************
   FUNCTION
-    Makes shure that the range is legal. Must be
+    Makes sure that the range is legal. Must be
     called after shrinking the number of reallines
     in a wblock, or the number of tracks.
 ********************************************************/

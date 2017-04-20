@@ -1741,9 +1741,22 @@ QWidget *GL_create_widget(QWidget *parent){
   }
 
   if (GL_get_vsync()==false){
-    GFX_Message(NULL, "Warning: VSync disabled. You probably don't want to do that. You can enable vsync under\nEdit -> Preferences -> OpenGL -> Vertical Blank");
+	if (SETTINGS_read_bool("show_vsync_warning_during_startup", true)) {
+	  vector_t v = {};
+	  VECTOR_push_back(&v,"Ok");
+	  int vsync_hide = VECTOR_push_back(&v,"Don't show this message again");
+
+	  int vsyncret = GFX_Message(&v,
+			  "Warning: VSync is disabled. You probably don't want to do that. You can enable vsync under"
+			  "<p>"
+			  "Edit -> Preferences -> OpenGL -> Vertical Blank -> VSync"
+			  "<p>"
+			  "Please only consider turning vsync in radium off if your drivers are misbehaving. There is little performance gain compared to eg. Video Games and so disabling vsync option is provided for compability reasons.");
+	  if (vsyncret==vsync_hide)
+		  SETTINGS_write_bool("show_vsync_warning_during_startup", false);
+    }
   }
-  
+
   if (is_opengl_certainly_too_old_questionmark()){
     GFX_Message(NULL,
                 "Your version of OpenGL is too old. Radium can not run.\n"

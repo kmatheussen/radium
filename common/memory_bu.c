@@ -118,7 +118,7 @@ void tfree(void *element){
 
 /*******************************************************************
   This function is called from gc.lib to allocate memory.
-  It uses amigaOS's own AllocMem to allocate to be shure
+  It uses amigaOS's own AllocMem to allocate to be sure
   to get the right type. (checking the result of calloc
   could allso have been done, but size is often near 1MB
   in size, and sas/c doesn't free memory before the next
