@@ -1302,7 +1302,7 @@ struct Tracks{
 
         int polyphony;
   
-        const char *trackname; // TODO: Remove. Don't think this one has ever been used.
+        const char *trackname; // Contains the value "(click me)" when patch==NULL
 	struct Patch *patch;
         vector_t fxs; // Contains struct FXs* elements
 
