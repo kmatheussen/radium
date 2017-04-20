@@ -560,8 +560,10 @@ void MULTICORE_init(void){
 
   R_ASSERT(g_num_runners==0);
 
-  g_use_buzy_get = doAudioBuzyLoop();
-
+  PLAYER_lock(); { // Lock to avoid tsan hit.
+    g_use_buzy_get = doAudioBuzyLoop();
+  } PLAYER_unlock();
+  
   int num_new_cpus = get_num_cpus_from_config();
 
   MULTICORE_set_num_threads(num_new_cpus);
