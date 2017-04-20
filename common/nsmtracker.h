@@ -2100,6 +2100,27 @@ struct Tracker_Windows{
 #define LEFTMOSTTRACK TEMPOCOLORTRACK
 #define NOTRACK -10000
 
+static inline const char *get_track_name(int tracknum){
+  if (tracknum >= 0)
+    return "Normal";
+  
+  switch(tracknum){
+  case TEMPOTRACK:
+    return "BPM";
+  case LPBTRACK:
+    return "LPB";
+  case SIGNATURETRACK:
+    return "Time signature";
+  case SWINGTRACK:
+    return "Swing";
+  case TEMPONODETRACK:
+    return "Tempo automation";
+  default:
+    RError("Unkown track num %d", tracknum);
+    return "(unknown)";
+  }
+}
+
 
 /*********************************************************************
 	song.h

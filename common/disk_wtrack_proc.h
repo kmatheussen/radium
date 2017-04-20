@@ -21,13 +21,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_INCLUDE
 
 
-extern void SaveWTrack(struct WTracks *wtrack);
+extern void SaveWTrack(const struct WTracks *wtrack, bool save_all);
 extern struct WTracks *LoadWTrack(void);
 extern void DLoadWTracks(
                          const struct Root *newroot,
                          const struct Tracker_Windows *window,
                          const struct WBlocks *wblock,
-                         struct WTracks *wtrack
+                         struct WTracks *wtrack,
+                         bool dload_all
 );
 
 

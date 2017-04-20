@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_INCLUDE
 
 
-extern void SaveWBlock(struct WBlocks *wblock, bool save_all);
+extern void SaveWBlock(const struct WBlocks *wblock, bool save_all);
 extern struct WBlocks *LoadWBlock(void);
 extern void DLoadWBlocks(
                          const struct Root *newroot,

@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void SaveWTrack(struct WTracks *wtrack){
+void SaveWTrack(const struct WTracks *wtrack, bool save_all){
 if(wtrack==NULL) return;
 DC_start("WTRACK");
 
@@ -54,7 +54,8 @@ DC_start("WTRACK");
         DC_SSB("show_swingtext",wtrack->swingtext_on);
 
 DC_end();
-SaveWTrack(NextWTrack(wtrack));
+if (save_all)
+  SaveWTrack(NextWTrack(wtrack), true);
 }
 
 
@@ -151,7 +152,8 @@ void DLoadWTracks(
                   const struct Root *newroot,
                   const struct Tracker_Windows *window,
                   const struct WBlocks *wblock,
-                  struct WTracks *wtrack
+                  struct WTracks *wtrack,
+                  bool dload_all
                   )
 {
 if(wtrack==NULL) return;
@@ -159,8 +161,8 @@ if(wtrack==NULL) return;
 	wtrack->fxonoff=1;
 	wtrack->track=(struct Tracks *)ListFindElement1(&wblock->block->tracks->l,wtrack->l.num);
 
-
-DLoadWTracks(newroot,window,wblock,NextWTrack(wtrack));
+if (dload_all)
+  DLoadWTracks(newroot,window,wblock,NextWTrack(wtrack), true);
 }
 
 

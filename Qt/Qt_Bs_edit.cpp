@@ -104,7 +104,7 @@ public:
     
       //printf("mouse pressed %d %d %p\n",(int)event->buttons(),is_blocklist,item);
       
-      int result = popupMenu(talloc_format("Insert new block%%Append new block%%%sDelete block",item==NULL?"[disabled]":""));
+      int result = popupMenu(talloc_format("Insert new block%%Append new block%%%sDelete block%%Load Block (BETA!)%%Save Block",item==NULL?"[disabled]":""));
       //printf("result: %d\n",result);
 
       if (result != -1){
@@ -116,7 +116,11 @@ public:
           appendBlock();
         } else if (result==2){
           deleteBlock(-1);
-        }
+        } else if (result==3){
+          loadBlock("");
+        } else if (result==4){
+          saveBlock("",-1,-1);
+        } 
         gotit = true;
       }
     }

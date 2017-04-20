@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void SaveTrack(struct Tracks *track){
+void SaveTrack(struct Tracks *track, bool save_all){
 if(track==NULL) return;
 DC_start("TRACK");
 
@@ -70,7 +70,8 @@ DC_start("TRACK");
         SaveSwings(track->swings);
 
 DC_end();
-SaveTrack(NextTrack(track));
+if (save_all)
+  SaveTrack(NextTrack(track), true);
 }
 
 extern struct Root *root;
@@ -177,7 +178,7 @@ end:
 
 extern void DLoadInstrumentData(struct Root *newroot,struct Tracks *track);
 
-void DLoadTracks(const struct Root *newroot,struct Tracks *track){
+void DLoadTracks(const struct Root *newroot,struct Tracks *track, bool dload_all){
 if(track==NULL) return;
 
          if(track->patch->id==-1){
@@ -189,8 +190,9 @@ if(track==NULL) return;
         DLoadNotes(newroot, track, track->notes);
         
         DLoadFXs(newroot, track, &track->fxs);
-        
-DLoadTracks(newroot,NextTrack(track));
+
+if (dload_all)
+  DLoadTracks(newroot,NextTrack(track), true);
 }
 
 

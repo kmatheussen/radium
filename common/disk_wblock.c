@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void SaveWBlock(struct WBlocks *wblock, bool save_all){
+void SaveWBlock(const struct WBlocks *wblock, bool save_all){
 if(wblock==NULL) return;
 DC_start("WBLOCK");
 
@@ -68,7 +68,7 @@ DC_start("WBLOCK");
 	DC_SSL("rangey2",wblock->rangey2);
 
 	SaveLocalZooms(wblock->localzooms,wblock->block->num_lines);
-	SaveWTrack(wblock->wtracks);
+	SaveWTrack(wblock->wtracks, true);
 
 DC_end();
 if(save_all)
@@ -215,7 +215,7 @@ if(wblock==NULL) return;
 
 	wblock->left_subtrack=-1;
 
-	DLoadWTracks(newroot,window,wblock,wblock->wtrack);
+	DLoadWTracks(newroot,window,wblock,wblock->wtrack, true);
 
         UpdateWBlockWidths(window,wblock);
 

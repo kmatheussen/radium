@@ -54,7 +54,7 @@ DC_start("BLOCK");
 	DC_SSF("reltempo",ATOMIC_DOUBLE_GET(block->reltempo));
         DC_SSS("color", GFX_get_colorname_from_color(block->color));
         
-	SaveTrack(block->tracks);
+	SaveTrack(block->tracks, true);
 	SaveSignatures(block->signatures);
         SaveLPBs(block->lpbs);
 	SaveTempos(block->tempos);
@@ -160,7 +160,7 @@ if(block==NULL) return;
 
 	block->lasttemponode=(struct TempoNodes *)ListLast3(&block->temponodes->l);
 
-	DLoadTracks(newroot,block->tracks);
+	DLoadTracks(newroot,block->tracks, true);
 
         TIME_everything_in_block_has_changed2(block, newroot, newroot->song);
         

@@ -1185,6 +1185,11 @@
               "Delete Track     (left alt + r)" (lambda ()
                                                   (<ra> :delete-track *current-track-num*)
                                                   (set-current-track-num! X Y))
+              "----------"
+              "Load Track (BETA!)" (lambda ()
+                                     (<ra> :load-track "" *current-track-num*))
+              "Save Track" (lambda ()
+                             (<ra> :save-track "" *current-track-num*))       
               "-------"
               "Set Instrument     (F12)" (lambda ()
                                            (select-track-instrument *current-track-num*))
@@ -4184,7 +4189,12 @@
                                                                (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
                                                                       (blocknum (<ra> :append-block)))
                                                                  (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
-
+                                          "Insert new block from disk (BETA)" (lambda ()
+                                                                                (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
+                                                                                       (num-blocks (<ra> :get-num-blocks)))
+                                                                                  (<ra> :load-block "")
+                                                                                  (if (not (= num-blocks (<ra> :get-num-blocks)))
+                                                                                      (<ra> :add-block-to-seqtrack seqtracknum num-blocks pos))))
                                           "--------------------"
                                           
                                           (list (if (> (<ra> :get-num-selected-seqblocks) 1)

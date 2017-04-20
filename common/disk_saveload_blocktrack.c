@@ -5,12 +5,19 @@
 #include "disk_load_proc.h"
 #include "disk_wblock_proc.h"
 #include "disk_block_proc.h"
+#include "disk_wtrack_proc.h"
+#include "disk_track_proc.h"
 #include "patch_proc.h"
 #include "block_insert_proc.h"
 #include "undo.h"
 #include "undo_block_insertdelete_proc.h"
+#include "undo_tracks_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "visual_proc.h"
+#include "player_pause_proc.h"
+#include "wblocks_proc.h"
+#include "track_insert_proc.h"
+#include "clipboard_track_paste_proc.h"
 
 #include "../config/config.h"
 
@@ -19,33 +26,51 @@
 #include "disk_saveload_blocktrack_proc.h"
 
 
+static void add_track_patches(vector_t *v, const struct Tracks *track){
+  if (track->patch != NULL && !VECTOR_is_in_vector(v, track->patch))
+    VECTOR_push_back(v, track->patch);
+  
+  VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+    struct FX *fx = fxs->fx;
+    if (fx->patch != NULL && !VECTOR_is_in_vector(v, fx->patch))
+      VECTOR_push_back(v, fx->patch);
+  }END_VECTOR_FOR_EACH;
+}
 
 static void save_block_patches(const struct Blocks *block){
   vector_t v = {0};
 
   const struct Tracks *track = block->tracks;
   while(track!=NULL){
-
-    if (track->patch != NULL && !VECTOR_is_in_vector(&v, track->patch))
-      VECTOR_push_back(&v, track->patch);
-
-    VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
-      struct FX *fx = fxs->fx;
-      if (fx->patch != NULL && !VECTOR_is_in_vector(&v, fx->patch))
-        VECTOR_push_back(&v, fx->patch);
-    }END_VECTOR_FOR_EACH;
-
+    add_track_patches(&v, track);
     track = NextTrack(track);
   }
-
-  // Must convert patch->id to uuid.
 
   hash_t *state = PATCHES_get_state(&v, true);
   HASH_save(state, dc.file);
 }
 
+static void save_track_patches(const struct Tracks *track){
+  vector_t v = {0};
 
-void SaveBlockToDisk(const char *filename_c, struct WBlocks *wblock){
+  add_track_patches(&v, track);
+  
+  hash_t *state = PATCHES_get_state(&v, true);
+  HASH_save(state, dc.file);
+}
+
+static void remove_all_patches_and_fxs_from_track(struct Tracks *track){
+  if (track->patch != NULL)
+    track->patch->id = -1;
+  
+  vector_t fxs = {0};
+  track->fxs = fxs;
+}
+  
+
+/******** Block **********************/
+
+void SaveBlockToDisk(const char *filename_c, const struct WBlocks *wblock){
   struct Tracker_Windows *window=root->song->tracker_windows;
   
   R_ASSERT_RETURN_IF_FALSE(wblock!=NULL);
@@ -80,11 +105,7 @@ static void remove_all_patches_and_fxs_from_loaded_block(struct Blocks *block){
   struct Tracks *track = block->tracks;
   while(track != NULL){
     
-    if (track->patch != NULL)
-      track->patch->id = -1;
-
-    vector_t fxs = {0};
-    track->fxs = fxs;
+    remove_all_patches_and_fxs_from_track(track);
       
     track = NextTrack(track);
   }
@@ -173,21 +194,25 @@ void LoadBlockFromDisk(const char *filename_c){
   ADD_UNDO(Block_Insert(blockpos));
   have_made_undo = true;
 
-  wblock->block = block;
-  window->curr_track = 0;
+  PC_Pause();{
+    wblock->block = block;
+    window->curr_track = 0;
+    
+    InsertBlock_IncBlockNums(blockpos);
+    ListAddElement1(&root->song->blocks,&block->l);
+    ListAddElement1(&window->wblocks, &wblock->l);
+    
+    DLoadBlocks(root, block, false);
+    DLoadWBlocks(root, window, wblock, false);  
 
-  InsertBlock_IncBlockNums(blockpos);
-  ListAddElement1(&root->song->blocks,&block->l);
-  ListAddElement1(&window->wblocks, &wblock->l);
+    SelectWBlock(window,wblock);
+              
+    BS_UpdateBlockList();
+    BS_UpdatePlayList();
 
-  DLoadBlocks(root, block, false);
-  DLoadWBlocks(root, window, wblock, false);  
-
-  BS_UpdateBlockList();
-  BS_UpdatePlayList();
-
-  GE_set_curr_realline(window->wblock->curr_realline);
-
+    GE_set_curr_realline(window->wblock->curr_realline);
+  }PC_StopPause(NULL);
+  
   window->must_redraw = true;
 
   success = true;
@@ -197,3 +222,137 @@ void LoadBlockFromDisk(const char *filename_c){
     if (have_made_undo)
       Undo_CancelLastUndo();
 }
+
+
+
+/******** Track **********************/
+
+
+void SaveTrackToDisk(const char *filename_c, const struct WTracks *wtrack){
+  struct Tracker_Windows *window=root->song->tracker_windows;
+  
+  R_ASSERT_RETURN_IF_FALSE(wtrack!=NULL);
+
+  const wchar_t *filename = NULL;
+  
+  if (filename_c==NULL || !strcmp(filename_c, ""))
+    filename=GFX_GetSaveFileName(window,NULL,"Select filename for track to save", NULL, "*.rad_track", "Track files");
+  else
+    filename = STRING_create(filename_c);
+  
+  if (filename==NULL)
+    return;
+
+  if (Save_Initialize(filename, "RADIUM TRACK")==false)
+    return;
+  
+  DC_SSF("trackdiskversion",TRACKDISKVERSION);
+  
+  save_track_patches(wtrack->track);
+  SaveWTrack(wtrack, false);
+  SaveTrack(wtrack->track, false);
+
+  if( ! dc.success){
+    GFX_Message(NULL, "Problems writing to file.\n");
+  }
+  
+  DISK_close_and_delete(dc.file);
+}
+
+void LoadTrackFromDisk(const char *filename_c, struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *old_wtrack){
+  
+  bool success = false;
+  bool have_made_undo = false;
+
+  const wchar_t *filename = NULL;
+  
+  if (filename_c==NULL || !strcmp(filename_c, ""))
+    filename=GFX_GetLoadFileName(window,NULL,"Select track to load", NULL, "*.rad_track", "Track files");
+  else
+    filename = STRING_create(filename_c);
+  
+  if (filename==NULL){
+    goto exit;
+    return;
+  }
+    
+
+  if (Load_Initialize(filename, "RADIUM TRACK")==false) {
+    goto exit;
+    return;
+  }
+
+  if(dc.type!=LS_VARIABLE){
+    R_ASSERT(false);
+    goto exit;
+    return;
+  }
+
+  float track_version = DC_LoadF();
+  if (track_version>TRACKDISKVERSION+0.05){
+    GFX_Message(NULL,"Need a newer version of Radium to load this file. The file version is %f, while this program only supports %f.\n",track_version,TRACKDISKVERSION);
+    goto exit;
+    return;
+  }
+    
+  HASH_load(dc.file); // We don't use saved instruments yet. But they are saved to disk.
+
+  DC_Next();  
+  if (dc.success==false){
+    GFX_Message(NULL,"Loading failed. File too short. (3)\n");
+    goto exit;
+    return;
+  }
+
+  if(strcmp(dc.ls,"WTRACK")){
+    GFX_Message(NULL, "Loading failed.\nExpected \"WTRACK\", but found instead: '%s'.\nFile: '%s'\n",dc.ls,STRING_get_chars(filename));
+    DISK_close_and_delete(dc.file);
+    goto exit;
+    return;
+  }
+
+  struct WTracks *wtrack = LoadWTrack();
+  wtrack->l.num = old_wtrack->l.num;
+
+  DC_Next();
+  if(strcmp(dc.ls,"TRACK")){
+    GFX_Message(NULL, "Loading failed.\nExpected \"TRACK\", but found instead: '%s'.\nFile: '%s'\n",dc.ls,STRING_get_chars(filename));
+    DISK_close_and_delete(dc.file);
+    goto exit;
+  }
+
+  struct Tracks *track = LoadTrack();
+  track->l.num = old_wtrack->l.num;
+
+  DISK_close_and_delete(dc.file);
+
+  remove_all_patches_and_fxs_from_track(track);
+  DLoadTracks(root, track, false);
+  DLoadWTracks(root, window, wblock, wtrack, false);  
+  wtrack->track = track; // DLoadWTracks overrides wtrack->track.
+
+  if(!dc.success){
+    GFX_Message(NULL, "Loading failed.\n");
+    goto exit;
+  }
+  
+  printf("Got it: %p / %p\n",wtrack,track);
+
+  ADD_UNDO(Track(window, wblock, old_wtrack, wblock->curr_realline));
+  have_made_undo = true;
+
+  PC_Pause();{
+    co_CB_PasteTrack(wblock, wtrack, old_wtrack);
+  }PC_StopPause(NULL);
+  
+  window->must_redraw = true;
+
+  success = true;
+  
+ exit:
+  if (success==false)
+    if (have_made_undo)
+      Undo_CancelLastUndo();
+}
+
+
