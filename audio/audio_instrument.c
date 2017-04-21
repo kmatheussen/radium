@@ -397,6 +397,7 @@ static bool state_only_contains_plugin(hash_t *state){
 }
 
 // x and y are ignored if audio_state!=NULL (since audio state has its own "x" and "y")
+// The function can not return false if is_loading_song==true.
 bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *audio_state, bool is_loading_song, float x, float y) {
   printf("AUDIO_InitPatch2 called\n");
 
@@ -420,7 +421,9 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
       plugin_state = HASH_get_hash(audio_state, "plugin");
   
     plugin = PLUGIN_create_from_state(plugin_state, is_loading_song);
-    type = plugin->type;
+
+    if (plugin!=NULL)
+      type = plugin->type;
     
   } else {
 
@@ -429,8 +432,13 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
     
     type = PR_get_plugin_type_by_name(NULL, type_name, plugin_name);
     if (type==NULL){
-      GFX_Message(NULL, "Audio plugin %s / %s not found", type_name, plugin_name);
-      return false;
+      if (is_loading_song==false){
+        GFX_Message(NULL, "Audio plugin %s / %s not found", type_name, plugin_name);
+        return false;
+      } else {
+        GFX_Message(NULL, "Audio plugin %s / %s not found. Replacing \"%s\" with a pipe.", type_name, plugin_name,  patch->name);
+        return AUDIO_InitPatch2(patch, "Pipe", "Pipe", NULL, true, x, y);
+      }
     }
 
     plugin = PLUGIN_create(type, NULL, is_loading_song);
@@ -440,10 +448,19 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
     const char *name = PLUGIN_generate_new_patchname(type);
     PATCH_set_name(patch, name);
   }
-  
-  if(plugin==NULL) {
-    GFX_Message(NULL, "Failed to create plugin %s: %s",type_name,plugin_name);
-    return false;
+
+  if (plugin==NULL){
+    if (is_loading_song==false)
+      return false;
+    else{
+      
+      if (type_name==NULL || plugin_name==NULL)
+        GFX_Message(NULL, "Unable to load \"%s\". Replacing with a pipe.", patch->name);
+      else
+        GFX_Message(NULL, "Unable to load Audio plugin %s / %s. Replacing \"%s\" with a pipe.", type_name, plugin_name,  patch->name);
+      
+      return AUDIO_InitPatch2(patch, "Pipe", "Pipe", NULL, true, x, y);
+    }
   }
 
   plugin->patch = patch;

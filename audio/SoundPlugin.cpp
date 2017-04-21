@@ -1807,11 +1807,7 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   const char *name = HASH_get_chars(state, "name");
 
   SoundPluginType *type = PR_get_plugin_type_by_name(container_name, type_name, name);
-                          
-  if(type==NULL){
-    GFX_Message(NULL, "The \"%s\" plugin called \"%s\" was not found",type_name,name);
-    return NULL;
-  }
+  R_ASSERT(type!=NULL); // PR_get_plugin_type_by_name can not return NULL;
 
   hash_t *plugin_state;
 
@@ -1825,6 +1821,10 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   
   else
     plugin_state=NULL;
+
+  // Debugging. Program should never crash if PLUGIN_create_from_state returns NULL;
+  //if (!strcmp(type_name,"VST"))
+  //  return NULL;
   
   SoundPlugin *plugin = PLUGIN_create(type, plugin_state, is_loading);
 

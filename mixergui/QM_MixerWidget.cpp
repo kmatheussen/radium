@@ -2407,7 +2407,11 @@ static void MW_create_chips_from_full_state(hash_t *chips, Buses buses, bool is_
     hash_t *state = HASH_get_hash_at(chips, "", i);
 
     struct Patch *patch = PATCH_get_from_id(HASH_get_int(state, "patch"));
-      
+    if(patch==NULL){
+      R_ASSERT(false);
+      continue;
+    }
+    
     if (is_loading)
       GFX_ShowProgressMessage(talloc_format("Creating instrument %d / %d: %s", i, num_chips, patch->name));
 

@@ -356,7 +356,7 @@ bool PATCH_make_active_audio(struct Patch *patch, const char *type_name, const c
 }
 
 void PATCH_init_audio_when_loading_song(struct Patch *patch, hash_t *state) {
-  AUDIO_InitPatch2(patch, NULL, NULL, state, true, 0, 0);
+  R_ASSERT(AUDIO_InitPatch2(patch, NULL, NULL, state, true, 0, 0)==true);
 }
 
 // Either type_name and plugin_name is NULL, or state==NULL
