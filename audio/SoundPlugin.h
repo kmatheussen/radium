@@ -186,7 +186,7 @@ struct SoundPluginTypeContainer;
 typedef struct SoundPluginType{
   const char *type_name; // I.e. Ladspa / Vst / FluidSynth / etc. Must be unique.
   const char *name;      // i.e. zita-reverb / low-pass filter / etc. Must be unique within plugins with the same type_name.
-
+  
   struct SoundPluginTypeContainer *container; // In case it is loaded from a container. (for instance a vst shell plugin)
 
   int version; // Must be increased if either: name of a parameter changes, parameter is added, parameter is removed, parameters changes order, or scaling between native and 0-1 changes (change in max/min native range).
@@ -208,6 +208,9 @@ typedef struct SoundPluginType{
 
   bool will_always_autosuspend; // obviously, it doesn't make sense
   bool will_never_autosuspend;  // if both of these are true
+
+  const char *category;
+  const char *creator;
   
   const char *(*get_effect_description)(struct SoundPlugin *plugin, int effect_num);
 

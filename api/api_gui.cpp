@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QUiLoader>
 #include <QToolTip>
 #include <QHeaderView>
+#include <QStack>
 
 #include "../common/nsmtracker.h"
 
@@ -1644,8 +1645,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
   struct Table : QTableWidget, Gui{
     Q_OBJECT;
-    
+
   public:
+
+    int _sorting_disabled = 1; // sorting is disabled if _sorting_disabled > 0
     
     Table(QStringList headers)
       : Gui(this)
@@ -1653,9 +1656,18 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       setColumnCount(headers.size());
       setHorizontalHeaderLabels(headers);
 
-      horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+      setSelectionBehavior(QAbstractItemView::SelectRows);
+      setSelectionMode(QAbstractItemView::SingleSelection);
+
+      for(int y=0;y<headers.size();y++)
+        horizontalHeader()->setSectionResizeMode(y, QHeaderView::Interactive);
+      //horizontalHeader()->setSectionResizeMode(y, QHeaderView::ResizeToContents);
+      //      horizontalHeader()->setSectionResizeMode(y, QHeaderView::Stretch);
+      
+      //horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+      //horizontalHeader()->setSectionResizeMode(0, QHeaderView::Interactive);
                           
-      horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
+      //horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
     }
   };
 
@@ -2057,7 +2069,7 @@ int64_t gui_addTableCell(int64_t table_guinum, dyn_t cell, int x, int y){
 
   }else{
 
-    handleError("gui_addTableCell: 'cell' is not a gui number or a string");
+    handleError("gui_addTableCell: Expected a gui number or a string as cell argument, found a %s", DYN_type_name(cell.type));
     return -1;
 
   }
@@ -2065,6 +2077,73 @@ int64_t gui_addTableCell(int64_t table_guinum, dyn_t cell, int x, int y){
   table->setCellWidget(y, x, cell_gui->_widget);
 
   return cell_gui->get_gui_num();
+}
+
+int gui_getTableRowNum(int64_t table_guinum, int cell_guinum){
+  Gui *table_gui = get_gui(table_guinum);
+  if (table_gui==NULL)
+    return -1;
+
+  Gui *cell_gui = get_gui(cell_guinum);
+  if (cell_gui==NULL)
+    return -1;
+
+  Table *table = dynamic_cast<Table*>(table_gui->_widget);
+  if (table==NULL){
+    handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
+    return -1;
+  }
+
+  for(int x=0;x<table->columnCount();x++){
+    for(int y=0;y<table->rowCount();y++){
+      if(table->cellWidget(y,x)==cell_gui->_widget)
+        return y;
+    }
+  }
+
+  return -1;
+}
+
+void gui_addTableRows(int64_t table_guinum, int pos, int how_many){
+  Gui *table_gui = get_gui(table_guinum);
+  if (table_gui==NULL)
+    return;
+
+  Table *table = dynamic_cast<Table*>(table_gui->_widget);
+  if (table==NULL){
+    handleError("gui_addTableCell: First argument (%d) is not a Table", (int)table_guinum);
+    return;
+  }
+
+  if (pos < -table->rowCount()){
+    handleError("gui_addTableRows: pos (%d) too large. There's only %d rows in this table", pos, table->rowCount());
+    pos = table->rowCount();
+  }
+
+  if (how_many > 0)
+    for(int i=0;i<how_many;i++)
+      table->insertRow(pos);
+  else if (pos==0 && how_many==-table->rowCount()){
+    printf("   CLEARNGING\n");
+    table->clearContents();
+    table->setRowCount(0);
+  }else
+    for(int i=0;i<-how_many;i++)
+      table->removeRow(pos);
+}
+
+int gui_getNumTableRows(int64_t table_guinum){
+  Gui *table_gui = get_gui(table_guinum);
+  if (table_gui==NULL)
+    return 0;
+
+  Table *table = dynamic_cast<Table*>(table_gui->_widget);
+  if (table==NULL){
+    handleError("gui_getNumTableRows: The argument (%d) is not a Table", (int)table_guinum);
+    return 0;
+  }
+
+  return table->rowCount();
 }
 
 void gui_enableTableSorting(int64_t table_guinum, bool do_sort){
@@ -2079,7 +2158,82 @@ void gui_enableTableSorting(int64_t table_guinum, bool do_sort){
   }
 
   table->setSortingEnabled(do_sort);
+  
+  /*
+  if (do_sort)
+    table->_sorting_disabled--;
+  else
+    table->_sorting_disabled++;
+
+  if (table->_sorting_disabled==0)
+    table->setSortingEnabled(true);
+  if (table->_sorting_disabled==1)
+    table->setSortingEnabled(false);
+  */
 }
+
+void gui_sortTableBy(int64_t table_guinum, int x, bool sort_ascending){
+  Gui *table_gui = get_gui(table_guinum);
+  if (table_gui==NULL)
+    return;
+
+  Table *table = dynamic_cast<Table*>(table_gui->_widget);
+  if (table==NULL){
+    handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
+    return;
+  }
+
+  if (table->columnCount()==0){
+    handleError("gui_addTableRows: There are no columns in this table");
+    return;
+  }
+
+  if (x < 0){
+    handleError("gui_addTableRows: x is negative");
+    return;
+  }
+  
+  if (x>table->columnCount()){
+    handleError("gui_addTableRows: x (%d) too large. There's only %d columns in this table", x, table->columnCount());
+    return;
+  }
+
+  table->sortItems(x, sort_ascending ? Qt::AscendingOrder : Qt::DescendingOrder);
+}
+
+void gui_stretchTable(int64_t table_guinum, int x, bool do_stretch, int size){
+  Gui *table_gui = get_gui(table_guinum);
+  if (table_gui==NULL)
+    return;
+
+  Table *table = dynamic_cast<Table*>(table_gui->_widget);
+  if (table==NULL){
+    handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
+    return;
+  }
+
+  if (table->columnCount()==0){
+    handleError("gui_addTableRows: There are no columns in this table");
+    return;
+  }
+
+  if (x < 0){
+    handleError("gui_addTableRows: x is negative");
+    return;
+  }
+  
+  if (x>table->columnCount()){
+    handleError("gui_addTableRows: x (%d) too large. There's only %d columns in this table", x, table->columnCount());
+    return;
+  }
+
+  if (do_stretch)
+    table->horizontalHeader()->setSectionResizeMode(x, QHeaderView::Stretch);
+  
+  table->horizontalHeader()->resizeSection(x, size);
+}
+
+////////////////////////////
 
 void gui_setValue(int64_t guinum, dyn_t value){
   Gui *gui = get_gui(guinum);
@@ -2521,6 +2675,14 @@ void gui_setMaxHeight(int64_t guinum, int minheight){
   gui->_widget->setMaximumHeight(minheight);
 }
 
+void gui_setEnabled(int64_t guinum, bool is_enabled){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->setEnabled(is_enabled);
+}
+
 
 // audio meter
 ////////////////
@@ -2730,3 +2892,159 @@ int64_t gui_createSingleMixerStrip(int64_t instrument_id, int width, int height)
 
 #include "mapi_gui.cpp"
 
+
+///////////////// SoundPluginRegistry
+/////////////////////////////////////
+
+#include "../audio/SoundPluginRegistry_proc.h"
+
+static QString extend_path(const QString a, const QString b){
+  if (a=="")
+    return b;
+  else
+    return a + " / " + b;
+}
+
+static QString get_path(const QStack<QString> &dir){
+  QString ret;
+  for(QString s : dir)
+    ret = extend_path(ret, s);
+  return ret;
+}
+
+static void push_type(hash_t *hash, const SoundPluginType *type, const QString path){
+  if (!HASH_has_key(hash, ":type"))
+    HASH_put_string(hash, ":type", PluginMenuEntry::type_to_string(PluginMenuEntry::IS_NORMAL));
+  HASH_put_string(hash, ":path", path);
+  HASH_put_string(hash, ":type-name", type->type_name);
+  HASH_put_string(hash, ":name", type->name);
+  HASH_put_int(hash, ":num-inputs", type->num_inputs);
+  HASH_put_int(hash, ":num-outputs", type->num_outputs);
+  HASH_put_chars(hash, ":category", type->category==NULL ? "" : type->category);
+  HASH_put_chars(hash, ":creator", type->creator==NULL ? "" : type->creator);
+}
+
+
+static void add_container_entries(dynvec_t &ret, const SoundPluginTypeContainer *plugin_type_container, const QString path){
+  for(int i=0 ; i < plugin_type_container->num_types ; i++){
+    const SoundPluginType *type = plugin_type_container->plugin_types[i];
+    hash_t *new_hash = HASH_create(5);
+    push_type(new_hash, type, extend_path(path, type->name));
+    DYNVEC_push_back(&ret, DYN_create_hash(new_hash));
+    //printf("Pushing back %s\n", type->name);
+  }
+}
+                                  
+static void add_entries(dynvec_t &ret, const PluginMenuEntry &entry, const QString path){
+
+  hash_t *hash = HASH_create(5);
+  HASH_put_string(hash, ":type", PluginMenuEntry::type_to_string(entry));
+      
+  if (entry.type==PluginMenuEntry::IS_CONTAINER && entry.plugin_type_container->is_populated){
+
+    add_container_entries(ret, entry.plugin_type_container, path);
+    hash=NULL;
+        
+  } else if (entry.type==PluginMenuEntry::IS_CONTAINER){
+        
+    HASH_put_string(hash, ":type-name", entry.plugin_type_container->type_name);
+    HASH_put_string(hash, ":name", entry.plugin_type_container->name);
+    HASH_put_string(hash, ":path",  extend_path(path, entry.plugin_type_container->name));
+    
+  } else {
+        
+    if (entry.plugin_type!=NULL){
+      push_type(hash, entry.plugin_type, extend_path(path, entry.plugin_type->name));
+    }else{
+      R_ASSERT(false);
+      hash = NULL;
+    }
+        
+  }
+
+  if (hash!=NULL){
+    DYNVEC_push_back(&ret, DYN_create_hash(hash));
+    //printf("Pushing back %p\n", hash);
+  }
+}
+
+dyn_t getSoundPluginRegistry(void){
+  const QVector<PluginMenuEntry> entries = PR_get_menu_entries();
+
+  dynvec_t ret = {};
+
+  QStack<QString> dir;
+  
+  for(const PluginMenuEntry &entry : entries){
+    switch(entry.type){
+    case PluginMenuEntry::IS_NORMAL:
+      add_entries(ret, entry, get_path(dir));
+      break;
+    case PluginMenuEntry::IS_CONTAINER:
+      add_entries(ret, entry, get_path(dir));
+      break;
+    case PluginMenuEntry::IS_LEVEL_UP:
+      dir.push(entry.level_up_name);
+      break;
+    case PluginMenuEntry::IS_LEVEL_DOWN:
+      dir.pop();
+      break;
+    default:
+      break;
+    }
+  }
+
+  return DYN_create_array(ret);
+}
+
+dyn_t populatePluginContainer(dyn_t entry){
+  dynvec_t ret = {};
+
+  if (entry.type!=HASH_TYPE){
+    handleError("openPluginContainer: argument is not a hash table");
+    goto exit;
+  }
+
+  {
+    const hash_t *hash=entry.hash;
+    const char *name = HASH_get_chars(hash, ":name");
+    QString type = HASH_get_chars(hash, ":type");
+    const char *type_name = HASH_get_chars(hash, ":type-name");
+    const char *path = HASH_get_chars(hash, ":path");
+  
+    if (PluginMenuEntry::type_to_string(PluginMenuEntry::IS_CONTAINER) != type){
+      handleError("openPluginContainer: Excpected %s, found %s", PluginMenuEntry::type_to_string(PluginMenuEntry::IS_CONTAINER).toUtf8().constData(), HASH_get_chars(hash, ":type"));
+      goto exit;
+    }
+  
+    if(name==NULL){
+      handleError("Missing :name");
+      goto exit;
+    }
+  
+    if(type_name==NULL){
+      handleError("Missing :type-name");
+      goto exit;
+    }
+  
+    if(path==NULL){
+      handleError("Missing :path");
+      goto exit;
+    }
+
+    {
+      SoundPluginTypeContainer *container = PR_get_container_by_name(name, type_name);
+      if (container==NULL){
+        handleError("Could not find container %s / %s", name, type_name);
+        goto exit;
+      }
+    
+      PR_populate(container);
+
+      add_container_entries(ret, container, path);
+    }
+  }
+  
+ exit:
+  return DYN_create_array(ret);
+}

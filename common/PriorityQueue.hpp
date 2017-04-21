@@ -107,6 +107,11 @@ public:
     return _queue[1];
   }
 
+  Event *get_event_n(int n){
+    R_ASSERT_RETURN_IF_FALSE2(n<_queue_size,NULL);
+    return _queue[1+n];
+  }
+  
   int size(void) const {
     return _queue_size;
   }

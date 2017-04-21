@@ -48,6 +48,26 @@ int PR_get_num_plugin_types(void){
   return g_plugin_types.size();
 }
 
+SoundPluginTypeContainer *PR_get_container_by_name(const char *container_name, const char *type_name){
+  for(auto container : g_plugin_type_containers)
+    if(!strcmp(container->type_name,type_name))
+      if(!strcmp(container->name,container_name))
+        return container;
+  
+  return NULL;
+}
+                                                   
+bool PR_populate(SoundPluginTypeContainer *container){
+  R_ASSERT_RETURN_IF_FALSE2(container!=NULL, false);
+  
+  if (!container->is_populated){
+    container->populate(container);
+    return true;
+  }
+
+  return false;
+}
+
 static SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const char *plugin_name){
   return PR_get_plugin_type_by_name(NULL, type_name, plugin_name);
 }
@@ -62,16 +82,11 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
     if(!strcmp(plugin_type->type_name,type_name))
       if(!strcmp(plugin_type->name,plugin_name))
         return plugin_type;
-
+  
   // check if the container needs to be populated.
   if (container_name != NULL)
-    for(auto container : g_plugin_type_containers)
-      if (!container->is_populated)
-        if(!strcmp(container->type_name,type_name))
-          if(!strcmp(container->name,container_name)){
-            container->populate(container);
-            return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
-          }
+    if (PR_populate(PR_get_container_by_name(container_name, type_name))==true)
+      return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
 
   // Older songs didn't store vst container names (because there were no containers). Try to set container_name to plugin_name and try again.
   if(!strcmp(type_name,"VST") && container_name==NULL){

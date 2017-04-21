@@ -639,6 +639,10 @@ char *getProgramPath(void){
   return (char*)OS_get_program_path();
 }
 
+const_char *appendPaths(const_char* path1, const_char* path2){
+  return talloc_format("%s%s%s", path1, OS_get_directory_separator(), path2);
+}
+
 char *getConfPath(char *filename){
   return (char*)OS_get_conf_filename2(filename);
 }
@@ -2109,7 +2113,8 @@ namespace{
 
     double priority = 0.0;
     func_t *_callback = NULL;
-
+    bool stop_me = false;
+    
     ScheduledEvent()
     {
     }
@@ -2163,6 +2168,18 @@ void schedule(double ms, func_t *callback){
   schedule(event);
 }
 
+void removeSchedule(func_t *callback){
+  for(int i = 0 ; i<g_scheduled_events.size(); i++){
+    auto *event = g_scheduled_events.get_event_n(i);
+    if (event->_callback==callback){
+      event->stop_me = true;
+      return;
+    }
+  }
+  handleError("removeSchedule: Callback not found");
+}
+
+
 void API_call_very_often(void){
   double time = TIME_get_ms();
 
@@ -2176,15 +2193,18 @@ void API_call_very_often(void){
 
     g_scheduled_events.remove_first_event();
 
+    if (event->stop_me==true){
+      event->stop_me = false;
+      release_event(event);
+      break;
+    }
+    
     dyn_t ret = s7extra_callFunc_dyn_void(event->_callback);
     double new_ms = 0;
     
-    if (ret.type==INT_TYPE)
-      new_ms = ret.int_number;
+    if (DYN_is_number(ret))
+      new_ms = DYN_get_double_from_number(ret);
     
-    else if (ret.type==FLOAT_TYPE)
-      new_ms = ret.float_number;
-
     if (new_ms > 0){
       event->priority = time + new_ms;
       schedule(event);

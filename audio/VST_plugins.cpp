@@ -1362,21 +1362,21 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
     } else
 #endif
       
-    if (file_info.isDir()) {
-      PR_add_menu_entry(PluginMenuEntry::level_up(file_info.baseName()));
-      bool continuing = create_vst_plugins_recursively(file_path, time, is_juce_plugin, container_type_name);
-      PR_add_menu_entry(PluginMenuEntry::level_down());
-
-      if (!continuing)
-        return false;
-    }
+      if (file_info.isDir() && file_info.dir().dirName()!="unstable") {
+        PR_add_menu_entry(PluginMenuEntry::level_up(file_info.baseName()));
+        bool continuing = create_vst_plugins_recursively(file_path, time, is_juce_plugin, container_type_name);
+        PR_add_menu_entry(PluginMenuEntry::level_down());
+        
+        if (!continuing)
+          return false;
+      }
     
 #if !defined(FOR_MACOSX)       
-    else if(file_info.suffix().toLower()==VST_SUFFIX){
-      add_vst_plugin_type(file_info, file_path, is_juce_plugin, "VST");
-    }else if(file_info.suffix().toLower()==VST3_SUFFIX){
-      add_vst_plugin_type(file_info, file_path, is_juce_plugin, "VST3");
-    }
+      else if(file_info.suffix().toLower()==VST_SUFFIX){
+        add_vst_plugin_type(file_info, file_path, is_juce_plugin, "VST");
+      }else if(file_info.suffix().toLower()==VST3_SUFFIX){
+        add_vst_plugin_type(file_info, file_path, is_juce_plugin, "VST3");
+      }
 #endif
   }
 

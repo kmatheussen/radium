@@ -1963,7 +1963,7 @@ static const char *popup_plugin_selector(SoundPluginType **type, bool must_have_
   if (action==NULL)
     return NULL;
 
-  struct PluginMenuEntry entry = action->entry;
+  const PluginMenuEntry entry = action->entry;
 
   if (entry.type==PluginMenuEntry::IS_CONTAINER) {
     vector_t names={};

@@ -1145,7 +1145,8 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
     plugin_type->show_gui = NULL;
     plugin_type->hide_gui = NULL;
   }
-  
+
+  // The info in PluginDescription is probably fine, but override here just in case.
   plugin_type->num_inputs = audio_instance->getTotalNumInputChannels();
   plugin_type->num_outputs = audio_instance->getTotalNumOutputChannels();
     
@@ -1477,10 +1478,15 @@ static SoundPluginType *create_plugin_type(const PluginDescription description, 
     : description.pluginFormatName=="VST3" ? "VST3"
     : description.pluginFormatName=="AudioUnit" ? "AU"
     : (RError("Unknown type %s", description.pluginFormatName.toRawUTF8()), "Unknown");
-  
+
   plugin_type->name      = V_strdup(description.name.toRawUTF8());
 
   plugin_type->container = container;
+
+  plugin_type->num_inputs = description.numInputChannels;
+  plugin_type->num_outputs = description.numOutputChannels;
+  plugin_type->category = V_strdup(description.category.toRawUTF8());
+  plugin_type->creator = V_strdup(description.manufacturerName.toRawUTF8());
 
   plugin_type->is_instrument = true; // we don't know yet, so we set it to true.
   

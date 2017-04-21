@@ -516,6 +516,21 @@ static char *create_info_string(const LADSPA_Descriptor *descriptor){
   return V_strdup(temp);
 }
 
+static char *create_creator_string(const LADSPA_Descriptor *descriptor){
+  char *creator = V_strdup(descriptor->Maker);
+  int len = strlen(creator);
+  for(int i = 0 ; i < len ; i++){
+    if (creator[i]=='<' || creator[i]=='('){
+      if (i>0 && creator[i-1]==' ')
+        creator[i-1]=0;
+      else
+        creator[i]=0;
+      break;
+    }
+  }
+  return creator;
+}
+
 // This function is suppressed from tsan. (not working though, can't get full backtrace)
 static const LADSPA_Descriptor *call_ladspa_get_descriptor_func(LADSPA_Descriptor_Function get_descriptor_func, int i){
   return get_descriptor_func(i);
@@ -612,6 +627,7 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
     plugin_type->type_name = "Ladspa";
     plugin_type->name      = V_strdup(descriptor->Name);
     plugin_type->info      = create_info_string(descriptor);
+    plugin_type->creator   = create_creator_string(descriptor);
 
     plugin_type->is_instrument = false;
 
@@ -1033,7 +1049,7 @@ static void init_menues(){
 }
 
 void create_ladspa_plugins(void){
-#if !defined(RELEASE)
+#if 0 //!defined(RELEASE)
   return; // takes long time to load ladspa plugins in gdb.
 #endif
   

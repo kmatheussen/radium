@@ -786,7 +786,18 @@ static inline dyn_t DYN_create_place(const Place place){
   return DYN_create_ratio(ratio_minimize(make_ratio(place.counter + place.line*place.dividor, place.dividor)));
 }
 
+static inline bool DYN_is_number(const dyn_t a){
+  if (a.type==INT_TYPE)
+    return true;
+  if (a.type==FLOAT_TYPE)
+    return true;
+  if (a.type==RATIO_TYPE)
+    return true;
+  return false;
+}
+
 static inline double DYN_get_double_from_number(const dyn_t a){
+  R_ASSERT_NON_RELEASE(DYN_is_number(a));
   if (a.type==INT_TYPE)
     return a.int_number;
   if (a.type==FLOAT_TYPE)
@@ -799,6 +810,7 @@ static inline double DYN_get_double_from_number(const dyn_t a){
 }
 
 static inline int64_t DYN_get_int64_from_number(const dyn_t a){
+  R_ASSERT_NON_RELEASE(DYN_is_number(a));
   if (a.type==INT_TYPE)
     return a.int_number;
   if (a.type==FLOAT_TYPE)

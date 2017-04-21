@@ -2,6 +2,7 @@
 
 
 ;; redefine 'ow!'
+#||
 (set! ow! (lambda ()      
   (call-with-output-string
    (lambda (p)
@@ -61,10 +62,11 @@
 	       (format p "~%~{~A~| ~}~%" e))
 	   (set! elist (cons e elist))))))))
       )
+||#
 
 (define (assert something)
   (if (not something)
-      (throw "assert-failed")))
+      (throw 'assert-failed)))
 
 #||
 (define (c-display . rest)
@@ -269,6 +271,12 @@
 
 (define (delete-from das-list element)
   (if (eqv? (car das-list) element)
+      (cdr das-list)
+      (cons (car das-list)
+            (delete-from (cdr das-list) element))))
+
+(define (delete-from2 das-list element)
+  (if (equal? (car das-list) element)
       (cdr das-list)
       (cons (car das-list)
             (delete-from (cdr das-list) element))))

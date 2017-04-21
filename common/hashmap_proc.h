@@ -57,6 +57,12 @@ extern LANGSPEC void HASH_put_ratio(hash_t *hash, const char *key, Ratio val);
 extern LANGSPEC void HASH_put_hash(hash_t *hash, const char *key, hash_t *val);
 extern LANGSPEC void HASH_put_array(hash_t *hash, const char *key, dynvec_t dynvec);
 
+#if USE_QT4
+static inline void HASH_put_string(hash_t *hash, const char *key, const QString &val){
+  HASH_put_string(hash, key, STRING_create(val));
+}
+#endif
+
 static inline void HASH_put_bool(hash_t *hash, const char *key, bool val){
   HASH_put_int(hash, key, val ? 1 : 0);
 }
@@ -73,6 +79,11 @@ static inline bool HASH_get_bool(const hash_t *hash, const char *key){
 static inline int HASH_get_int32(const hash_t *hash, const char *key){
   return (int)HASH_get_int(hash, key);
 }
+#if USE_QT4
+static inline QString HASH_get_qstring(const hash_t *hash, const char *key){
+  return STRING_get_qstring(HASH_get_string(hash, key));
+}
+#endif
 
 
 // Array interface

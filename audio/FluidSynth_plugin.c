@@ -606,6 +606,7 @@ static SoundPluginType plugin_type = {
  type_name                : "FluidSynth",
  name                     : "FluidSynth",
  info                     : "FluidSynth is a real-time software synthesizer based on the SoundFont 2 specifications.\n\nhttp://sourceforge.net/apps/trac/fluidsynth/.\n\n Note that the Sample Player also supports Soundfonts.",
+ category                 : "Synth",
  num_inputs               : 0,
  num_outputs              : 2,
  is_instrument            : true,

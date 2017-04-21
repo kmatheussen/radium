@@ -896,6 +896,40 @@ for .emacs:
 (***assert*** (string-ends-with? "a" "b") #f)
 (***assert*** (string-ends-with? "ab" "b") #t)
 
+;; Returns true if bb is placed inside aa.
+(define (string-contains? aa bb)
+  (if (or (string=? bb "")
+          (string-position bb aa))
+      #t
+      #f))
+#||
+  (if (string=? bb "")
+      #t
+      (begin
+        (define b (bb 0))
+        (let loop ((aa (string->list aa)))
+          (cond ((null? aa)
+                 #f)
+                ((and (char=? b (car aa))
+                      (string-starts-with? (list->string aa) bb))
+                 #t)
+                (else
+                 (loop (cdr aa))))))))
+  ||#
+  
+(***assert*** (string-contains? "" "") #t)
+(***assert*** (string-contains? "asdf" "df") #t)
+(***assert*** (string-contains? "asdf" "") #t)
+(***assert*** (string-contains? "" "a") #f)
+(***assert*** (string-contains? "a" "a") #t)
+(***assert*** (string-contains? "a" "b") #f)
+(***assert*** (string-contains? "ab" "b") #t)
+(***assert*** (string-contains? "abcd" "bc") #t)
+(***assert*** (string-contains? "abccb" "bcd") #f)
+(***assert*** (string-contains? "abbcd" "bcd") #t)
+
+(define (string-case-insensitive-contains? aa bb)
+  (string-contains? (string-upcase aa) (string-upcase bb)))
 
 (define (parse-popup-menu-options args)
   (if (null? args)

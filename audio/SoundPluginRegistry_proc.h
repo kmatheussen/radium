@@ -56,6 +56,33 @@ struct PluginMenuEntry{
     IS_PASTE_PRESET,
     IS_NUM_USED_PLUGIN
   } type;
+  
+  static const QString type_to_string(int type) {
+    switch(type){
+    case PluginMenuEntry::IS_NORMAL:
+      return "NORMAL";
+    case PluginMenuEntry::IS_CONTAINER:
+      return "CONTAINER";
+    case PluginMenuEntry::IS_LEVEL_UP:
+      return "LEVEL_UP";
+    case PluginMenuEntry::IS_LEVEL_DOWN:
+      return "LEVEL_DOWN";
+    case PluginMenuEntry::IS_LOAD_PRESET:
+      return "LOAD_PRESET";
+    case PluginMenuEntry::IS_PASTE_PRESET:
+      return "PASTE_PRESET";
+    case PluginMenuEntry::IS_NUM_USED_PLUGIN:
+      return "NUM_USED_PLUGIN";
+    default:
+      R_ASSERT(false);
+      return "UNKNOWN_TYPE";
+    }
+  }
+  
+  static const QString type_to_string(const PluginMenuEntry &entry){
+    return type_to_string(entry.type);
+  }
+    
   static PluginMenuEntry separator(){
     PluginMenuEntry entry;
     entry.type=IS_SEPARATOR;
@@ -117,8 +144,10 @@ extern LANGSPEC void PR_add_plugin_type_no_menu(SoundPluginType *plugin_type);
 extern LANGSPEC void PR_add_plugin_type(SoundPluginType *plugin_type);
 extern LANGSPEC void PR_add_plugin_container(SoundPluginTypeContainer *container);
 extern LANGSPEC int PR_get_num_plugin_types(void);
-extern LANGSPEC SoundPluginType *PR_get_plugin_type(int num);
+extern LANGSPEC SoundPluginTypeContainer *PR_get_container_by_name(const char *container_name, const char *type_name);
+extern LANGSPEC bool PR_populate(SoundPluginTypeContainer *container);
 extern LANGSPEC SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const char *type_name, const char *plugin_name);
+extern LANGSPEC SoundPluginType *PR_get_plugin_type(int num);
 extern LANGSPEC void PR_init_plugin_types(void);
 
 #endif
