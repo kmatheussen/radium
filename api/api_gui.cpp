@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QScrollArea>
 #include <QUiLoader>
 #include <QToolTip>
+#include <QHeaderView>
 
 #include "../common/nsmtracker.h"
 
@@ -1641,6 +1642,24 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
   };
 
 
+  struct Table : QTableWidget, Gui{
+    Q_OBJECT;
+    
+  public:
+    
+    Table(QStringList headers)
+      : Gui(this)
+    {
+      setColumnCount(headers.size());
+      setHorizontalHeaderLabels(headers);
+
+      horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+                          
+      horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
+    }
+  };
+
+
   struct MyUiLoader : public QUiLoader{
     MyUiLoader(){
       clearPluginPaths();
@@ -1965,6 +1984,101 @@ int64_t gui_intText(int min, int curr, int max){
 int64_t gui_floatText(double min, double curr, double max, int num_decimals, double step_interval){
   //return -1;
   return (new FloatText(min, curr, max, num_decimals, step_interval))->get_gui_num();
+}
+
+int64_t gui_table(dyn_t header_names){
+  if (header_names.type != ARRAY_TYPE){
+    handleError("gui_table: Argument must be a list or vector of strings");
+    return -1;
+  }
+
+  QStringList headers;
+
+  for(int i=0;i<header_names.array->num_elements;i++){
+    dyn_t el = header_names.array->elements[i];
+    if(el.type != STRING_TYPE){
+      handleError(talloc_format("gui_table: Element %d in header_names is not a string", i));
+      return -1;
+    }
+    
+    headers << STRING_get_qstring(el.string);
+  }
+
+  return (new Table(headers))->get_gui_num();
+}
+
+namespace{
+  struct MyItem : public QTableWidgetItem{
+    QString _name;
+    MyItem(QString name)
+      :_name(name)
+    {}
+    bool operator<(const QTableWidgetItem &other) const override{
+      const MyItem *myother = dynamic_cast<const MyItem*>(&other);
+      if (myother==NULL)
+        return _name < other.text(); //QTableWidgetItem::operator<(other);
+      else
+        return _name < myother->_name;
+    }
+  };
+}
+
+int64_t gui_addTableCell(int64_t table_guinum, dyn_t cell, int x, int y){
+  Gui *table_gui = get_gui(table_guinum);
+  if (table_gui==NULL)
+    return -1;
+
+  Table *table = dynamic_cast<Table*>(table_gui->_widget);
+  if (table==NULL){
+    handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
+    return -1;
+  }
+
+  if (table->rowCount() <= y)
+    table->setRowCount(y+1);
+
+  Gui *cell_gui;
+
+  if (cell.type==INT_TYPE){
+
+    cell_gui = get_gui(cell.int_number);
+    if (cell_gui==NULL)
+      return -1;
+
+  } else if (cell.type==STRING_TYPE){
+
+    QString name = STRING_get_qstring(cell.string);
+    auto *item = new MyItem(name);
+    item->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
+    table->setItem(y, x, item);
+    
+    cell_gui = new Text(name, "");
+    //Gui *gui = new Gui(item->tableWidget()->
+
+  }else{
+
+    handleError("gui_addTableCell: 'cell' is not a gui number or a string");
+    return -1;
+
+  }
+
+  table->setCellWidget(y, x, cell_gui->_widget);
+
+  return cell_gui->get_gui_num();
+}
+
+void gui_enableTableSorting(int64_t table_guinum, bool do_sort){
+  Gui *table_gui = get_gui(table_guinum);
+  if (table_gui==NULL)
+    return;
+
+  Table *table = dynamic_cast<Table*>(table_gui->_widget);
+  if (table==NULL){
+    handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
+    return;
+  }
+
+  table->setSortingEnabled(do_sort);
 }
 
 void gui_setValue(int64_t guinum, dyn_t value){
