@@ -816,7 +816,8 @@
     (define node-info (Node :node-info))
     (if Release-node
         (Release-node node-info))
-    (if (and Get-x Get-y)
+    (if (and Mouse-pointer-func
+             Get-x Get-y)
         (let ((x (Get-x node-info))
               (y (Get-y node-info)))
           (and x y
