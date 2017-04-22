@@ -111,19 +111,19 @@
   (inc! g-total-num-calls 1)
   (define start (time))
   (define ret
-        (begin
-          (define visited (make-hash-table 16 =))        
-          (let loop ((i1 i1))
-            (if (visited i1)
-                #f
-                (begin
-                  (hash-table-set! visited i1 #t)
-                  ;;(c-display "  instrument-eventually" (<ra> :get-instrument-name i1) "->" (<ra> :get-instrument-name i2))
-                  (any? (lambda (to)
-                          (if (= to i2)
-                              #t
-                              (loop to)))
-                        (get-instruments-and-buses-connecting-from-instrument i1)))))))
+    (begin
+      (define visited (make-hash-table 16 =))        
+      (let loop ((i1 i1))
+        (if (visited i1)
+            #f
+            (begin
+              (hash-table-set! visited i1 #t)
+              ;;(c-display "  instrument-eventually" (<ra> :get-instrument-name i1) "->" (<ra> :get-instrument-name i2))
+              (any? (lambda (to)
+                      (if (= to i2)
+                          #t
+                          (loop to)))
+                    (get-instruments-and-buses-connecting-from-instrument i1)))))))
   (set! g-total-time (+ g-total-time (- (time) start)))
   ret)
 
@@ -229,11 +229,28 @@
 
 
 (define-instrument-memoized (would-this-create-a-recursive-connection? goal-id id)
-  (if (= goal-id id)
-      #t
-      (any? (lambda (id)
-              (would-this-create-a-recursive-connection? goal-id id))
-            (get-instruments-and-buses-connecting-from-instrument id))))
+  (or (begin
+        (define visited (make-hash-table 16 =))
+        (let loop ((id id))
+          (cond ((visited id)
+                 #f)
+                ((= goal-id id)
+                 #t)
+                (else
+                 (hash-table-set! visited id #t)
+                 (any? loop
+                       (get-instruments-and-buses-connecting-from-instrument id))))))
+      (begin
+        (define visited (make-hash-table 16 =))
+        (let loop ((id id))
+          (cond ((visited id)
+                 #f)
+                ((= goal-id id)
+                 #t)
+                (else
+                 (hash-table-set! visited id #t)
+                 (any? loop
+                       (get-instruments-econnecting-from-instrument id))))))))
         
 
 (define-instrument-memoized (get-all-instruments-that-we-can-send-to from-id)

@@ -13,9 +13,9 @@
   (define progress-label #f)
   
   (define (remove-all-rows)
-    (<gui> :add-table-rows table 0 (- (<gui> :get-num-table-rows table)))
+    (<gui> :add-table-rows table 0 (- (<gui> :get-num-table-rows table))) ;; TODO: Check if this one also closes the cell GUIs.
     (set! populate-funcs '())
-    (set! popuplate-buttons '()))
+    (set! populate-buttons '()))
 
   (define curr-search-string "")
 

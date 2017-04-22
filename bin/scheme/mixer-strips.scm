@@ -148,49 +148,62 @@
 (define (request-send-instrument instrument-id callback)
   (define is-bus-descendant (<ra> :instrument-is-bus-descendant instrument-id))
   (define buses (get-buses))
-
   (define (create-entry-text instrument-id)
     (<-> *arrow-text* " " (<ra> :get-instrument-name instrument-id)))
-    
-  (popup-menu
+  
+  (start-instrument-memoization)
+  
+  (define args
+    (catch #t
+           (lambda ()
 
-   ;; buses
-   (map (lambda (bus-effect-name bus-onoff-effect-name bus-id)
-          (list (create-entry-text bus-id)
-                :enabled (and (not is-bus-descendant)
-                              (< (<ra> :get-instrument-effect instrument-id bus-onoff-effect-name) 0.5))
-                (lambda ()
-                  (callback (lambda (gain)
-                              (undo-block (lambda ()
-                                            (<ra> :undo-instrument-effect instrument-id bus-onoff-effect-name)
-                                            (if gain
-                                                (<ra> :undo-instrument-effect instrument-id bus-effect-name))
-                                            (<ra> :set-instrument-effect instrument-id bus-onoff-effect-name 1.0)
-                                            (if gain
-                                                (<ra> :set-instrument-effect instrument-id bus-effect-name (scale (<ra> :gain-to-db gain)
-                                                                                                                  *min-db* *max-db*
-                                                                                                                  0 1))))))))))
-        *bus-effect-names*
-        *bus-effect-onoff-names*
-        buses)
+             (list
+     
+              ;; buses
+              (map (lambda (bus-effect-name bus-onoff-effect-name bus-id)
+                     (list (create-entry-text bus-id)
+                           :enabled (and (not is-bus-descendant)
+                                         (< (<ra> :get-instrument-effect instrument-id bus-onoff-effect-name) 0.5))
+                           (lambda ()
+                             (callback (lambda (gain)
+                                         (undo-block (lambda ()
+                                                       (<ra> :undo-instrument-effect instrument-id bus-onoff-effect-name)
+                                                       (if gain
+                                                           (<ra> :undo-instrument-effect instrument-id bus-effect-name))
+                                                       (<ra> :set-instrument-effect instrument-id bus-onoff-effect-name 1.0)
+                                                       (if gain
+                                                           (<ra> :set-instrument-effect instrument-id bus-effect-name (scale (<ra> :gain-to-db gain)
+                                                                                                                             *min-db* *max-db*
+                                                                                                                             0 1))))))))))
+                   *bus-effect-names*
+                   *bus-effect-onoff-names*
+                   buses)
+              
+              "------------"
 
-   "------------"
+              ;; audio connections
+              (map (lambda (send-id)
+                     (list (create-entry-text send-id)
+                           :enabled (and (not (= send-id instrument-id))
+                                         (not (<ra> :has-audio-connection instrument-id send-id))
+                                         (> (<ra> :get-num-input-channels send-id) 0))
+                           (lambda ()
+                             (callback (lambda (gain)
+                                         (<ra> :undo-mixer-connections)
+                                         (<ra> :create-audio-connection instrument-id send-id gain))))))
+                   (sort-instruments-by-mixer-position-and-connections
+                    (keep (lambda (id)
+                            (not (member id buses)))
+                          (begin
+                            (define ret (get-all-instruments-that-we-can-send-to instrument-id))
+                            ret))))))
+           (lambda args
+             (display (ow!)))))
 
-   ;; audio connections
-   (map (lambda (send-id)
-          (list (create-entry-text send-id)
-                :enabled (and (not (= send-id instrument-id))
-                              (not (<ra> :has-audio-connection instrument-id send-id))
-                              (> (<ra> :get-num-input-channels send-id) 0))
-                (lambda ()
-                  (callback (lambda (gain)
-                              (<ra> :undo-mixer-connections)
-                              (<ra> :create-audio-connection instrument-id send-id gain))))))
-        (sort-instruments-by-mixer-position
-         (keep (lambda (id)
-                 (not (member id buses)))
-               (get-all-instruments-that-we-can-send-to instrument-id))))))
-          
+  (end-instrument-memoization)
+
+  (apply popup-menu args))
+
 
 (define (show-mixer-path-popup first-instrument-id
                                parent-instrument-id
