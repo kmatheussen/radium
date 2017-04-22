@@ -62,6 +62,9 @@
           (cons (car list)
                 (remove func (cdr list))))))
 
+(define-expansion (inc! var how-much)
+  `(set! ,var (+ ,var ,how-much)))
+
 (define-expansion (push! list el)
   `(set! ,list (cons ,el ,list)))
 
@@ -760,6 +763,18 @@ for .emacs:
 
 (***assert*** (true-for-at-least-one? even? '(1 9 3))
               #f)
+
+;; Precompute all iota results up to, and including, 1024.
+(let* ((org-iota iota)
+       (iota-results (list->vector (map (lambda (n)
+                                          (org-iota n))
+                                        (org-iota 1026)))))
+  ;;(c-display "res" iota-results)
+  (set! iota
+        (lambda (n)
+          (if (< n 1025)
+              (iota-results n)
+              (org-iota n)))))
 
 (define (vector-copy vector)
   (copy vector))

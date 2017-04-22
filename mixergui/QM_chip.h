@@ -450,9 +450,9 @@ bool CHIP_is_at_input_eport(Chip *chip, int x, int y);
 bool CHIP_is_at_output_eport(Chip *chip, int x, int y);
 
 void CHIP_autopos(Chip *chip);
-Chip *CHIP_get(QGraphicsScene *scene, const Patch *patch);
+Chip *CHIP_get(const QGraphicsScene *scene, const Patch *patch);
 
-struct Patch *CHIP_get_patch(Chip *chip);
+struct Patch *CHIP_get_patch(const Chip *chip);
 
 hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *patches);
 void CONNECTION_create_from_state2(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new, int64_t patch_id_old2, int64_t patch_id_new2);

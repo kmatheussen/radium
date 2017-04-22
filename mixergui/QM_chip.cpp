@@ -1766,17 +1766,17 @@ void Chip::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
   event->accept();
 }
 
-struct Patch *CHIP_get_patch(Chip *chip){
-  SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+struct Patch *CHIP_get_patch(const Chip *chip){
+  const SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
   volatile struct Patch *patch = plugin->patch;
   R_ASSERT(patch!=NULL);
   return (struct Patch*)patch;
 }
 
-Chip *CHIP_get(QGraphicsScene *scene, const Patch *patch){
-  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+Chip *CHIP_get(const QGraphicsScene *scene, const Patch *patch){
+  const SoundPlugin *plugin = (const SoundPlugin*)patch->patchdata;
 
-  QList<QGraphicsItem *> das_items = scene->items();
+  const QList<QGraphicsItem *> &das_items = scene->items();
   for (int i = 0; i < das_items.size(); ++i){
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
     if(chip!=NULL){

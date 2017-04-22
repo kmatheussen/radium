@@ -400,7 +400,7 @@
 
 
 ;; Finds the next plugin in a plugin path. 'instrument-id' is the plugin to start searching from.
-(define (find-next-plugin-instrument-in-path instrument-id)
+(define-instrument-memoized (find-next-plugin-instrument-in-path instrument-id)
   (let loop ((out-instruments (reverse (sort-instruments-by-mixer-position
                                         (get-instruments-connecting-from-instrument instrument-id)))))
     (if (null? out-instruments)
@@ -771,7 +771,7 @@
 
 
 ;; Returns a list of parallel plugins that needs their own mixer strip.
-(define (get-returned-plugin-buses instrument-id)
+(define-instrument-memoized (get-returned-plugin-buses instrument-id)
   (define returned-plugin-buses '())
 
   (define out-instruments (sort-instruments-by-mixer-position ;; Needs to be sorted.
@@ -1539,7 +1539,9 @@
 
   (define (remake width height)
     (define instrument-is-open (<ra> :instrument-is-open instrument-id))
-
+    
+    (start-instrument-memoization)
+    
     (c-display "    remaking mixer-strip" instrument-id parent width height)
     (catch #t
            (lambda ()
@@ -1563,8 +1565,11 @@
            
            (lambda args
              (display (ow!))))
-  
+
+    (end-instrument-memoization)
+    
     (<gui> :enable-updates parent)
+
     )
 
   (remake width height)
@@ -1683,6 +1688,7 @@
 
   (define (add-strips id-instruments)
     (map (lambda (instrument-id)
+           ;;(c-display "adding strips for" instrument-id)
            (define stored-mixer-strip (get-stored-mixer-strip stored-mixer-strips instrument-id))
            (define mixer-strip (if (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
                                    (get-mixer-strip-from-stored-mixer-strip stored-mixer-strip)
@@ -1704,13 +1710,11 @@
 
   (define instrument-mixer-strips (add-strips (sort-instruments-by-mixer-position
                                                instruments)))
-
   (if (> mixer-strip-num 0)
       (<gui> :add-layout-space layout instruments-buses-separator-width 10 #f #f))
 
   (define bus-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections
                                         all-buses)))
-
   (kont (append instrument-mixer-strips
                 bus-mixer-strips)
         mixer-strips-gui)
@@ -1761,13 +1765,17 @@
   
   (define (remake list-of-modified-instrument-ids)
     (define start-time (time))
+    (set! g-total-time 0)
+    (set! g-total-time2 0)
+    (set! g-total-num-calls 0)
+    (set! g-total-sort-time 0)
+    (start-instrument-memoization)
     (catch #t
            (lambda ()
              (<gui> :disable-updates parent)
              
              (create-mixer-strips num-rows das-stored-mixer-strips list-of-modified-instrument-ids
                                   (lambda (new-mixer-strips new-mixer-strips-gui)
-
                                     (if das-mixer-strips-gui
                                         (begin
                                           (<gui> :replace parent das-mixer-strips-gui new-mixer-strips-gui)
@@ -1784,12 +1792,14 @@
            (lambda args
              (display (ow!))))
 
+    (end-instrument-memoization)
+    
     ;; prevent some flickering
     (<ra> :schedule 15 (lambda ()
                          (<gui> :enable-updates parent)
                          #f))
 
-    (c-display "   remake-gui duration: " (- (time) start-time))
+    (c-display "   remake-gui duration: " (- (time) start-time) g-total-time "("g-total-num-calls ")" g-total-time2 g-total-sort-time)
     )
 
   (define mixer-strips-object (make-mixer-strips-object :gui parent
