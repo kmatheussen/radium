@@ -64,22 +64,39 @@
                 (else
                  #f)))))
 
-(define (instrument-eventually-connects-to i1 i2)
-  ;;(c-display "  instrument-eventually" (<ra> :get-instrument-name i1) "->" (<ra> :get-instrument-name i2))
-  (any? (lambda (to)
-          (if (= to i2)
-              #t
-              (instrument-eventually-connects-to to i2)))
-        (get-instruments-and-buses-connecting-from-instrument i1)))
+#||
+(fill! (*s7* 'profile-info) #f)
+(show-profile)
+||#
 
-(define (sort-instruments-by-mixer-position-and-connections instruments)
-  (sort instruments
+(define-instrument-memoized (instrument-eventually-connects-to i1 i2)
+  (define visited (make-hash-table 16 =))
+  (let loop ((i1 i1))
+    (if (visited i1)
+        #f
+        (begin
+          (hash-table-set! visited i1 #t)
+          ;;(c-display "  instrument-eventually" (<ra> :get-instrument-name i1) "->" (<ra> :get-instrument-name i2))
+          (any? (lambda (to)
+                  (if (= to i2)
+                      #t
+                      (loop to)))
+                (get-instruments-and-buses-connecting-from-instrument i1))))))
+
+
+(define g-total-time 0)
+(define-instrument-memoized (sort-instruments-by-mixer-position-and-connections instruments)
+  (define start (time))
+
+  (define ret (sort instruments
         (lambda (i1 i2)
+          ;;(c-display "comparing" i1 i2)
           (cond ((instrument-eventually-connects-to i1 i2)
                  #t)
                 ((instrument-eventually-connects-to i2 i1)
                  #f)
                 (else
+                 ;;(c-display "else")
                  (define x1 (<ra> :get-instrument-x i1))
                  (define x2 (<ra> :get-instrument-x i2))
                  (define y1 (<ra> :get-instrument-y i1))
