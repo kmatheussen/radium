@@ -1,3 +1,23 @@
+Changes 4.7.3 -> 4.7.4:
+* Mixer strips: 4X faster to create/recreate.
+* mixer strips: Fix freeze if several bus paths have common
+  targets.
+* Fix mouse pointer position when editor is not visible. This
+  fixes mouse pointer moving to lower right corner when
+  editing sequencer automation.
+* Don't crash if failing to load a plugin when loading song.
+* Options to load and save single blocks and tracks.
+  Instruments and automations are not loaded yet though.
+* Save instrument comments into .rec and .mrec files
+* shure -> sure (Teteros)
+* Make the vsync startup warning hidable (Teteros)
+* API: appendPaths, removeSchedule, getSoundPluginRegistry,
+  populatePluginContainer, gui_addTableRows,
+  gui_getNumTableRows, gui_getTableRowNum, gui_sortTableBy,
+  gui_stretchTable, gui_setEnabled, gui_table,
+  gui_addTableCell, gui_enableTableSorting.
+
+
 Changes 4.7.2 -> 4.7.3:
 * Make sure all timing data is updated after loading song.
   Fix for weird behaviors after loading song.
