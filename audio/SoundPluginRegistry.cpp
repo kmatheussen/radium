@@ -84,10 +84,13 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
         return plugin_type;
   
   // check if the container needs to be populated.
-  if (container_name != NULL)
-    if (PR_populate(PR_get_container_by_name(container_name, type_name))==true)
-      return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
-
+  if (container_name != NULL){
+    auto *container = PR_get_container_by_name(container_name, type_name);
+    if (container != NULL)
+      if (PR_populate(container)==true)
+        return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
+  }
+  
   // Older songs didn't store vst container names (because there were no containers). Try to set container_name to plugin_name and try again.
   if(!strcmp(type_name,"VST") && container_name==NULL){
     return PR_get_plugin_type_by_name(plugin_name,type_name,plugin_name);
