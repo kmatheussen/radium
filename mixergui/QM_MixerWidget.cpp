@@ -912,7 +912,6 @@ vector_t MW_get_selected_chips(void){
   return ret;
 }
 
-//static bool mousepress_create_chip(MyScene *scene, float mouse_x, float mouse_y){
 static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_y){
   printf("mouserelease_create_chip called\n");
   

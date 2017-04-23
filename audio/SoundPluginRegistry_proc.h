@@ -63,6 +63,8 @@ struct PluginMenuEntry{
       return "NORMAL";
     case PluginMenuEntry::IS_CONTAINER:
       return "CONTAINER";
+    case PluginMenuEntry::IS_SEPARATOR:
+      return "SEPARATOR";
     case PluginMenuEntry::IS_LEVEL_UP:
       return "LEVEL_UP";
     case PluginMenuEntry::IS_LEVEL_DOWN:

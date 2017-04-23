@@ -2950,8 +2950,11 @@ static void add_entries(dynvec_t &ret, const PluginMenuEntry &entry, const QStri
     HASH_put_string(hash, ":type-name", entry.plugin_type_container->type_name);
     HASH_put_string(hash, ":name", entry.plugin_type_container->name);
     HASH_put_string(hash, ":path",  extend_path(path, entry.plugin_type_container->name));
-    
-  } else {
+
+  } else if (entry.type==PluginMenuEntry::IS_LEVEL_UP){
+    HASH_put_string(hash, ":name", entry.level_up_name);
+  
+  } else if (entry.type==PluginMenuEntry::IS_NORMAL){
         
     if (entry.plugin_type!=NULL){
       push_type(hash, entry.plugin_type, extend_path(path, entry.plugin_type->name));
@@ -2977,12 +2980,6 @@ dyn_t getSoundPluginRegistry(void){
   
   for(const PluginMenuEntry &entry : entries){
     switch(entry.type){
-    case PluginMenuEntry::IS_NORMAL:
-      add_entries(ret, entry, get_path(dir));
-      break;
-    case PluginMenuEntry::IS_CONTAINER:
-      add_entries(ret, entry, get_path(dir));
-      break;
     case PluginMenuEntry::IS_LEVEL_UP:
       dir.push(entry.level_up_name);
       break;
@@ -2992,6 +2989,8 @@ dyn_t getSoundPluginRegistry(void){
     default:
       break;
     }
+
+    add_entries(ret, entry, get_path(dir));
   }
 
   return DYN_create_array(ret);
