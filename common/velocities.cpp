@@ -241,7 +241,7 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
             if (note != NULL)
               increase_note_velocity(note, inc);
             else
-              Undo_CancelLastUndo();
+              UNDO_CANCEL_LAST_UNDO();
           }
         }
 

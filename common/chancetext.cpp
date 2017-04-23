@@ -76,15 +76,15 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
       
     } else {
       
-      Undo_CancelLastUndo();
+      UNDO_CANCEL_LAST_UNDO();
       
     }
     
   } else if (trs.size() == 0) {
 
     // NO ELEMENTS
-    
-    Undo_CancelLastUndo();
+
+    UNDO_CANCEL_LAST_UNDO();
 
   } else {
 

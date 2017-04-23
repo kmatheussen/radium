@@ -220,7 +220,7 @@ void LoadBlockFromDisk(const char *filename_c){
  exit:
   if (success==false)
     if (have_made_undo)
-      Undo_CancelLastUndo();
+      UNDO_CANCEL_LAST_UNDO();
 }
 
 
@@ -352,7 +352,7 @@ void LoadTrackFromDisk(const char *filename_c, struct Tracker_Windows *window, s
  exit:
   if (success==false)
     if (have_made_undo)
-      Undo_CancelLastUndo();
+      UNDO_CANCEL_LAST_UNDO();
 }
 
 

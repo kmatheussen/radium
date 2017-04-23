@@ -48,14 +48,46 @@ extern LANGSPEC int Undo_num_undos_since_last_save(void);
 extern LANGSPEC void Undo_saved_song(void);
 extern LANGSPEC int Undo_num_undos(void);
 
-extern LANGSPEC void Undo_Open_rec(void); // Allow creating new level, even when level already is > 0.
-extern LANGSPEC void Undo_Open(void);
-extern LANGSPEC bool Undo_Close(void);
+extern LANGSPEC void Das_Undo_Open_rec(void); // Allow creating new level, even when level already is > 0.
+extern LANGSPEC void Das_Undo_Open(void); // Don't call directly
+extern LANGSPEC bool Das_Undo_Close(void); // Don't call directly
+
+#define UNDO_OPEN()                                                     \
+  do{                                                                   \
+    EVENTLOG_add_event(CR_FORMATEVENT("Undo: Open"));                          \
+    Das_Undo_Open();                                                    \
+  }while(0)
+
+#define UNDO_OPEN_REC()                                                     \
+  do{                                                                   \
+    EVENTLOG_add_event(CR_FORMATEVENT("Undo: Open Rec"));                          \
+    Das_Undo_Open_rec();                                                \
+  }while(0)
+
+#define UNDO_CLOSE()                                                     \
+  (EVENTLOG_add_event(CR_FORMATEVENT("Undo: Close")),                          \
+   Das_Undo_Close())                                                        \
+
+#undef TOSTRING
+#undef STRINGIFY
+
 extern LANGSPEC bool Undo_Is_Currently_Undoing(void);
 extern LANGSPEC bool Undo_Is_Open(void);
-extern LANGSPEC void Undo_CancelLastUndo(void);
-extern LANGSPEC void Undo_ReopenLast(void);
+extern LANGSPEC void Das_Undo_CancelLastUndo(void); // don't call directly
+extern LANGSPEC void Das_Undo_ReopenLast(void); // don't call directly
 extern LANGSPEC UndoFunction Undo_get_last_function(void);
+
+#define UNDO_CANCEL_LAST_UNDO()                                                     \
+  do{                                                                   \
+    EVENTLOG_add_event(CR_FORMATEVENT("Undo: Cancel last"));                          \
+    Das_Undo_CancelLastUndo();                                                    \
+  }while(0)
+
+#define UNDO_REOPEN_LAST()                                                     \
+  do{                                                                   \
+    EVENTLOG_add_event(CR_FORMATEVENT("Undo: Reopen last"));                          \
+    Das_Undo_ReopenLast();                                                \
+  }while(0)
 
 extern LANGSPEC bool Undo_Currently_Adding_Undo(void);
 extern LANGSPEC void Undo_Start_Adding_Undo(source_pos_t source_pos);
@@ -116,11 +148,11 @@ namespace radium{
   struct ScopedUndo{
   
     ScopedUndo(){
-      Undo_Open_rec();
+      UNDO_OPEN_REC();
     }
     
     ~ScopedUndo(){
-      Undo_Close();
+      UNDO_CLOSE();
     }
   };
 

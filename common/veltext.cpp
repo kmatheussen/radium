@@ -156,7 +156,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
       
     } else {
       
-      Undo_CancelLastUndo();
+      UNDO_CANCEL_LAST_UNDO();
       
     }
     
@@ -168,7 +168,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
 
     if (note == NULL){
       
-      Undo_CancelLastUndo();
+      UNDO_CANCEL_LAST_UNDO();
       
     } else {
 

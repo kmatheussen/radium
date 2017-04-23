@@ -364,7 +364,7 @@ void handleDropEvent(QString filename, float x){
   int tracknum = get_track_from_x(x);
   int64_t instrument_id = -1;
 
-  Undo_Open();{
+  UNDO_OPEN();{
     
     if (filename.endsWith(".rad"))
       LoadSong_CurrPos(window, STRING_create(filename));
@@ -389,7 +389,7 @@ void handleDropEvent(QString filename, float x){
       GFX_update_instrument_patch_gui(PATCH_get_from_id(instrument_id));
     }
 
-  }Undo_Close();
+  }UNDO_CLOSE();
 }
 
 

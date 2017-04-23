@@ -145,10 +145,10 @@ void pasteTrack(int tracknum, int blocknum, int windownum){
   if(wtrack==NULL) return;
 
   if (cb_wtrack != NULL) {
-    Undo_Open_rec();{
+    UNDO_OPEN_REC();{
       ADD_UNDO(Track(window, wblock, wtrack, wblock->curr_realline));
       co_CB_PasteTrack(wblock, cb_wtrack, wtrack);
-    }Undo_Close();
+    }UNDO_CLOSE();
   }
     
   window->must_redraw = true;
@@ -300,9 +300,9 @@ int64_t pasteMixerObjects(float x, float y){
   int64_t ret;
 
   //printf("   X: %f,    Y: %f\n", x,  y);
-  Undo_Open();{
+  UNDO_OPEN();{
     ret = MW_paste(x, y);
-  }Undo_Close();
+  }UNDO_CLOSE();
 
   return ret;
 }

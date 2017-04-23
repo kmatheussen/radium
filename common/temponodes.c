@@ -137,7 +137,7 @@ struct TempoNodes *AddTempoNode(
         struct TempoNodes *ret = NULL;
         
         if(ListAddElement3_ns(&block->temponodes,&temponode->l)==-1) {
-          Undo_CancelLastUndo();
+          UNDO_CANCEL_LAST_UNDO();
         } else {
           ret = temponode;
           TIME_block_tempos_have_changed(block);

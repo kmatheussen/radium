@@ -220,11 +220,10 @@ bool Undo_Is_Open(void){
   return undo_is_open > 0;
 }
 
-void Undo_Open_rec(void){
+void Das_Undo_Open_rec(void){
   //printf("        UNDO OPEN\n");
 
   R_ASSERT_RETURN_IF_FALSE(THREADING_is_main_thread());
-
 
   if (ignore()) return;
 
@@ -261,22 +260,24 @@ void Undo_Open_rec(void){
   undo_is_open++;
 }
 
-void Undo_Open(void){
+void Das_Undo_Open(void){
   if (ignore()) return;
-  
+
   if(Undo_Is_Open())
     RError("Undo_Open: Undo_is_open==true: %d", undo_is_open);
 
-  Undo_Open_rec();
+  Das_Undo_Open_rec();
 }
 
 // Returns true if we created another undo entry.
-bool Undo_Close(void){
+bool Das_Undo_Close(void){
 
   R_ASSERT_RETURN_IF_FALSE2(THREADING_is_main_thread(), false);
 
   if (ignore()) return false;
 
+  //EVENTLOG_add_event(talloc_format("Undo_Close. currently_undoing: %d. undo_is_open: %d", currently_undoing, Undo_Is_Open()));
+  
   //printf("        UNDO CLOSE\n");
 
 
@@ -321,7 +322,7 @@ bool Undo_Close(void){
     return false;
 }
 
-void Undo_ReopenLast(void){
+void Das_Undo_ReopenLast(void){
   if (ignore())
     return;
   
@@ -339,7 +340,7 @@ void Undo_ReopenLast(void){
   //printf("        UNDO Reopenlast. num_undos--: %d\n", num_undos);
 }
 
-void Undo_CancelLastUndo(void){
+void Das_Undo_CancelLastUndo(void){
   if (ignore()) return;
 
   R_ASSERT_RETURN_IF_FALSE(currently_undoing==false);
@@ -366,7 +367,7 @@ UndoFunction Undo_get_last_function(void){
 }
 
 static char *get_entry_string(struct UndoEntry *entry){
-  return talloc_format("%s. %s:%d. Function: %s.%s",
+  return talloc_format("  Add Undo. %s. %s:%d. Function: %s.%s",
                        entry->info,
                        entry->source_pos.filename,
                        entry->source_pos.linenum,
@@ -419,7 +420,7 @@ static void Undo_Add_internal(
     return;
   }
 
-  Undo_Open_rec();{
+  Das_Undo_Open_rec();{
 
     struct UndoEntry *entry=talloc(sizeof(struct UndoEntry));
     entry->windownum=windownum;
@@ -437,7 +438,7 @@ static void Undo_Add_internal(
 
     EVENTLOG_add_event(get_entry_string(entry));
 
-  }Undo_Close();
+  }Das_Undo_Close();
 
   g_curr_undo_generation++;
 }

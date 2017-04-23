@@ -1440,7 +1440,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
         //float new_value = solo_is_on?0.0f:1.0f;
 
-        //Undo_Open();{
+        //UNDO_OPEN();{
           
           // Turn off all other solos if ctrl is pressed.
           if (ctrl_pressed){
@@ -1472,7 +1472,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
           //CHIP_update(plugin);
           //GFX_update_instrument_widget((struct Patch*)patch);
           
-          //}Undo_Close();        
+          //}UNDO_CLOSE();        
           */
 
         event->accept();
@@ -1491,7 +1491,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
         //float new_value = is_on?0.0f:1.0f;
 
-        Undo_Open();{
+        UNDO_OPEN();{
           
           // Turn off all other mutes if ctrl is pressed.
           if (ctrl_pressed){
@@ -1523,7 +1523,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
           //CHIP_update(plugin);
           //GFX_update_instrument_widget((struct Patch*)patch);
 
-        }Undo_Close();
+        }UNDO_CLOSE();
         
         event->accept();
         return;
@@ -1539,7 +1539,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         bool effects_are_on = ATOMIC_GET(plugin->effects_are_on);
         //float new_value = effects_are_on?0.0f:1.0f;
 
-        Undo_Open();{
+        UNDO_OPEN();{
           
           // Turn off all other bypasses if ctrl is pressed.
           if (ctrl_pressed){
@@ -1572,7 +1572,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
           GFX_update_instrument_widget((struct Patch*)patch);
           */
 
-        }Undo_Close();
+        }UNDO_CLOSE();
         
         event->accept();
         return;
@@ -1706,7 +1706,7 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     }
 
     if (_has_made_volume_effect_undo==false)
-      Undo_Open();
+      UNDO_OPEN();
 
     VECTOR_FOR_EACH(Chip*,chip, &chips){
       
@@ -1740,7 +1740,7 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     }END_VECTOR_FOR_EACH;
 
     if (_has_made_volume_effect_undo==false)
-      Undo_Close();
+      UNDO_CLOSE();
 
     if (_has_made_volume_effect_undo==false)
       _has_made_volume_effect_undo=true;

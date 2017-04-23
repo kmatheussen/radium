@@ -73,7 +73,7 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
       
     } else {
       
-      Undo_CancelLastUndo();
+      UNDO_CANCEL_LAST_UNDO();
       
     }
     
@@ -81,7 +81,7 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
 
     // NO ELEMENTS
     
-    Undo_CancelLastUndo();
+    UNDO_CANCEL_LAST_UNDO();
 
   } else {
 
@@ -98,7 +98,7 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
       else if (dasnote!=NULL)
         safe_float_write(&dasnote->note, floorf(dasnote->note));
       else{
-        Undo_CancelLastUndo();
+        UNDO_CANCEL_LAST_UNDO();
         return false;
       }
       
@@ -111,7 +111,7 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
       else if (dasnote!=NULL)
         note = dasnote->note;
       else{
-        Undo_CancelLastUndo();
+        UNDO_CANCEL_LAST_UNDO();
         return false;
       }
       
@@ -120,7 +120,7 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
       data_as_text_t dat = DAT_get_overwrite(cents, 0, subsubtrack, key, 0, 99, 0, 99, false, false);
 
       if (dat.is_valid==false){
-        Undo_CancelLastUndo();
+        UNDO_CANCEL_LAST_UNDO();
         return false;
       }
 

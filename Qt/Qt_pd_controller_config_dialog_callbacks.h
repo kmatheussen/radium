@@ -174,7 +174,7 @@ public:
       return;
     }
 
-    Undo_Open();{
+    UNDO_OPEN();{
 
       ADD_UNDO(PdControllers_CurrPos(_patch));
 
@@ -186,7 +186,7 @@ public:
 
       FX_min_max_have_changed_for_patch(_patch, controller->num, old_min, old_max, new_min, new_max);
 
-    }Undo_Close();
+    }UNDO_CLOSE();
   }
 
 

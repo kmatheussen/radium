@@ -24,6 +24,11 @@ enum Crash_Type{
   CT_WARNING
 };
 
+#define CR_STRINGIZE_DETAIL(x) #x
+#define CR_STRINGIZE(x) CR_STRINGIZE_DETAIL(x)
+#define CR_FORMATEVENT(msg) (msg ":" __FILE__ " line " CR_STRINGIZE(__LINE__) "." CR_STRINGIZE(__FUNCTION__))
+
+
 #ifdef __cplusplus
 extern "C"{
 #endif

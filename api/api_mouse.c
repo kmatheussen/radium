@@ -2013,7 +2013,7 @@ int addPitchnum(float value, Place place, int tracknum, int blocknum, int window
     ret = addPitch2(window, wblock, wtrack, note, &place, value);
 
   if (ret==-1)
-    Undo_CancelLastUndo();
+    UNDO_CANCEL_LAST_UNDO();
 
   //printf("\n\n\n\n ***** NUM: %d\n",ret);
   return ret;
@@ -2522,7 +2522,7 @@ int addFxnode(float value, Place place, int fxnum, int tracknum, int blocknum, i
 
   if (ret==-1){
     //handleError("addFxnode: Can not create new fx with the same position as another fx");
-    Undo_CancelLastUndo();
+    UNDO_CANCEL_LAST_UNDO();
     return -1;
   }
 

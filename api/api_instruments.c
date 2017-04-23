@@ -1167,11 +1167,11 @@ void deleteInstrument(int64_t instrument_id){
   if(patch==NULL)
     return;
 
-  Undo_Open_rec();{
+  UNDO_OPEN_REC();{
 
     PATCH_make_inactive(patch);
 
-  }Undo_Close();
+  }UNDO_CLOSE();
 
   root->song->tracker_windows->must_redraw=true;
 }

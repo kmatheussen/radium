@@ -63,7 +63,7 @@ void stopIgnoringUndo(void){
 }
 
 void cancelLastUndo(void){
-  Undo_CancelLastUndo();
+  UNDO_CANCEL_LAST_UNDO();
 }
 
 void addUndoBlock(void){
@@ -77,9 +77,9 @@ void addUndoTrack(void){
 }
 
 void openUndo(void){
-  Undo_Open_rec();
+  UNDO_OPEN_REC();
 }
 
 void closeUndo(void){
-  Undo_Close();
+  UNDO_CLOSE();
 }

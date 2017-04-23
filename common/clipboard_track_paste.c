@@ -323,7 +323,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
                   } else {
 			if(cb_wtrack==NULL) goto exit;
 
-                        Undo_Open_rec();{
+                        UNDO_OPEN_REC();{
                           printf("curr_track_sub: %d\n",window->curr_track_sub);
                           ADD_UNDO(Track_CurrPos(window));
                           
@@ -388,7 +388,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
                             }
                           }
 
-                        }Undo_Close();
+                        }UNDO_CLOSE();
                   }                        
                   break;
 	}

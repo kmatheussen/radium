@@ -532,7 +532,7 @@ int addSeqtemponode(double abstime, double value, int logtype){
   undoSeqtempo();
   int ret = TEMPOAUTOMATION_add_node(abstime, value, logtype);
   if (ret==-1)
-    Undo_CancelLastUndo();
+    UNDO_CANCEL_LAST_UNDO();
   return ret;
 }
 void deleteSeqtemponode(int nodenum){

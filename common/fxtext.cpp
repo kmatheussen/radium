@@ -129,7 +129,7 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
       
     } else {
       
-      Undo_CancelLastUndo();
+      UNDO_CANCEL_LAST_UNDO();
       
     }
     
@@ -140,7 +140,7 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
     if (fx == NULL){
 
       fprintf(stderr, "Can this happen?\n");
-      Undo_CancelLastUndo();
+      UNDO_CANCEL_LAST_UNDO();
       
     } else {
 

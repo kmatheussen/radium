@@ -384,7 +384,7 @@ static void handle_chip_selection(MyScene *myscene, QGraphicsSceneMouseEvent * e
 
 static void start_moving_chips(MyScene *myscene, QGraphicsSceneMouseEvent * event, Chip *main_chip, float mouse_x, float mouse_y){
   //EVENTLOG_add_event("start_moving_chips (open undo)");
-  Undo_Open();
+  UNDO_OPEN();
 
   handle_chip_selection(myscene, event, main_chip);
 
@@ -560,11 +560,11 @@ static bool stop_moving_chips(MyScene *myscene, const QPointF &mouse_pos){
 
   //printf("                                  <<<<<       99999999999999999999 close undo\n");
   EVENTLOG_add_event("sstop_moving_chips (close undo)");
-  bool created_undo = Undo_Close();
+  bool created_undo = UNDO_CLOSE();
 
   // TODO: has_updated returns true if the chip was just moved around a bit. Need to store original position for has_updated to get correct value.
   if (has_updated==false && created_undo==true)
-    Undo_CancelLastUndo();
+    UNDO_CANCEL_LAST_UNDO();
 
   myscene->_moving_chips.clear();
 
@@ -727,7 +727,7 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsItem *item, float mo
     Chip *after=NULL;
     get_before_and_after_chip(chip, &before, &after);
 
-    Undo_Open_rec();{
+    UNDO_OPEN_REC();{
       
       struct Instruments *instrument = get_audio_instrument();
       VECTOR_FOR_EACH(struct Patch *,patch,&instrument->patches){
@@ -741,7 +741,7 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsItem *item, float mo
       if(before!=NULL)
         CHIP_connect_chips(scene, before, after);
       
-    }Undo_Close();
+    }UNDO_CLOSE();
     
     return true;
   }
@@ -750,11 +750,11 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsItem *item, float mo
 }
 
 static void delete_several_chips(const vector_t &patches){
-  Undo_Open_rec();{
+  UNDO_OPEN_REC();{
     VECTOR_FOR_EACH(struct Patch *,patch,&patches){
       deleteInstrument(patch->id);
     }END_VECTOR_FOR_EACH;
-  }Undo_Close();
+  }UNDO_CLOSE();
 }
 
 static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent * event, QGraphicsItem *item, float mouse_x, float mouse_y){
@@ -926,7 +926,7 @@ static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_
     float x, y;
     get_slotted_x_y(mouse_x, mouse_y, x, y);
     
-    Undo_Open();{
+    UNDO_OPEN();{
 
       int num_patches_before = get_audio_instrument()->patches.num_elements;
       
@@ -943,7 +943,7 @@ static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_
         autoconnect_chip(scene, chip, mouse_x, mouse_y); // If we place a new chip on top of another chip, or on top of a connection, we autoconnect.
       }
         
-    }Undo_Close();
+    }UNDO_CLOSE();
 
   }
 
@@ -983,7 +983,7 @@ void MW_solo(const vector_t patches, bool set_on){
       //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
       PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, set_on ? 1.0 : 0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
     }END_VECTOR_FOR_EACH;
-    //}Undo_Close();
+    //}UNDO_CLOSE();
 }
 
 void MW_mute(const vector_t patches, bool do_mute){
@@ -993,7 +993,7 @@ void MW_mute(const vector_t patches, bool do_mute){
     return;
   }
 
-  Undo_Open_rec();{
+  UNDO_OPEN_REC();{
     VECTOR_FOR_EACH(struct Patch *,patch,&patches){
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
       int num_effects = plugin->type->num_effects;
@@ -1003,7 +1003,7 @@ void MW_mute(const vector_t patches, bool do_mute){
         PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
       }
     }END_VECTOR_FOR_EACH;
-  }Undo_Close();
+  }UNDO_CLOSE();
 }
 
 void MW_bypass(const vector_t patches, bool do_bypass){
@@ -1013,7 +1013,7 @@ void MW_bypass(const vector_t patches, bool do_bypass){
     return;
   }
 
-  Undo_Open_rec();{
+  UNDO_OPEN_REC();{
     VECTOR_FOR_EACH(struct Patch *,patch,&patches){
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
       int num_effects = plugin->type->num_effects;
@@ -1021,7 +1021,7 @@ void MW_bypass(const vector_t patches, bool do_bypass){
       float new_val = do_bypass ? 0.0 : 1.0;
       PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
     }END_VECTOR_FOR_EACH;
-  }Undo_Close();
+  }UNDO_CLOSE();
 }
 
 void MW_copy(void){
@@ -1291,7 +1291,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     }END_VECTOR_FOR_EACH;
 
     command += ")";
-    //}Undo_Close();
+    //}UNDO_CLOSE();
 
     evalScheme(talloc_strdup(command.toUtf8().constData()));
 
@@ -2178,7 +2178,7 @@ static bool delete_a_chip(bool is_loading){
   
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
 
-  Undo_Open_rec();{
+  UNDO_OPEN_REC();{
     
     for (int i = 0; i < das_items.size(); ++i) {
       Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
@@ -2195,7 +2195,7 @@ static bool delete_a_chip(bool is_loading){
       }
     }
 
-  } Undo_Close();
+  } UNDO_CLOSE();
 
   return ret;
 }
@@ -2820,13 +2820,13 @@ static void apply_ab_connections_state(hash_t *connections){
 
 static void apply_ab_state(hash_t *state, hash_t *curr_state){
 
-  Undo_Open();{
+  UNDO_OPEN();{
     apply_ab_plugin_ab_states(HASH_get_hash(state, "plugin_ab_states"),
                               HASH_get_hash(curr_state, "plugin_ab_states")
                               );
     
     apply_ab_connections_state(HASH_get_hash(state, "connections"));
-  }Undo_Close();
+  }UNDO_CLOSE();
 }
 
 void MW_change_ab(int ab_num){
