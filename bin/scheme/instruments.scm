@@ -476,11 +476,135 @@
 
 
 
-;; Called from the outside. if 'do-autoconnect' is true, instruments sending sound to id-instrument and instruments getting sound from id-instrument will be connected.
-;;(define (delete-instrument id-instrument do-autoconnect)
+;; Called from the outside. if 'connect-to-main-pipe' is true, instruments sending sound to id-instrument and instruments getting sound from id-instrument will be connected.
+;;(define (delete-instrument id-instrument connect-to-main-pipe)
 ;;  ...)
 
 
+;; async
+(define (start-instrument-popup-menu include-load-preset must-have-inputs must-have-outputs callback)
+  (define (get-description type-name name)
+    (<-> "1"
+         (<ra> :to-base64 type-name)
+         ":"
+         (<ra> :to-base64 name)))
+  
+  (define (load-normal-entry entry)
+    (callback (get-description (entry :type-name) (entry :name))))
+
+  (define (normal-entry-menu-entry entry)
+    (list (entry :name)
+          :enabled (and (or (not must-have-inputs)
+                            (> (entry :num-inputs) 0))
+                        (or (not must-have-outputs)
+                            (> (entry :num-outputs) 0)))
+          (lambda ()
+            (load-normal-entry entry))))
+  
+  (define (entries-to-menu entries level-down-func)
+    (let loop ((entries entries))
+      (if (null? entries)
+          '()
+          (begin
+            (define entry (car entries))
+            (define type (entry :type))
+            ;;(c-display entry)
+            (cond ((string=? type "NORMAL")
+                   (cons (normal-entry-menu-entry entry)
+                         (loop (cdr entries))))
+                  ((string=? type "CONTAINER")
+                   (cons (list (entry :name)
+                               (lambda ()
+                                 (define new-entries (to-list (<ra> :populate-plugin-container entry)))
+                                 ;;(c-display "new-entries:" (pp new-entries))
+                                 (cond ((= 1 (length new-entries))
+                                        (load-normal-entry (car new-entries)))
+                                       ((> (length new-entries) 1)
+                                        (popup-menu (map normal-entry-menu-entry new-entries)))
+                                       (else
+                                        (<ra> :show-message (<-> "The \"" (entry :name) "\" plugin container didn't contain any plugins"))))))
+                         (loop (cdr entries))))
+                  ((string=? type "SEPARATOR")
+                   (cons "-------"
+                         (loop (cdr entries))))
+                  ((string=? type "LEVEL_UP")
+                   (define rest #f)
+                   (cons (list (entry :name)
+                               (entries-to-menu (cdr entries)
+                                                (lambda (dasrest)
+                                                  (set! rest dasrest))))
+                         (loop rest)))
+                  ((string=? type "LEVEL_DOWN")
+                   (assert level-down-func)
+                   (level-down-func (cdr entries))
+                   '())
+                  ((string=? type "LOAD_PRESET")
+                   (cons (list "Load Preset(s)"
+                               :enabled include-load-preset
+                               (lambda ()
+                                 (define (use-file-requester)
+                                   (<ra> :request-load-preset-instrument-description load))
+                                 (define all-presets (to-list (<ra> :get-all-presets-in-path)))
+                                 ;;(c-display "all-presets" all-presets)
+                                 (if (null? all-presets)
+                                     (use-file-requester)
+                                     (popup-menu (list "Select preset from a different directory"
+                                                       use-file-requester)
+                                                 "------------"
+                                                 (map (lambda (base64-name)
+                                                        (list (<ra> :from-base64 base64-name)
+                                                              (lambda ()
+                                                                (callback (<-> "2" base64-name)))))
+                                                      all-presets)))))
+                         (loop (cdr entries))))
+                  ((string=? type "PASTE_PRESET")
+                   (cons (list "Paste sound objects(s)"
+                               :enabled (and include-load-preset (<ra> :instrument-preset-in-clipboard))
+                               (lambda ()
+                                 (callback "3")))
+                         (loop (cdr entries))))
+                  ((string=? type "NUM_USED_PLUGIN")
+                   (cons (list (entry :menu-text)
+                               (lambda ()
+                                 (callback (<-> "4"
+                                            (<ra> :to-base64 (entry :container-name))
+                                            ":"
+                                            (<ra> :to-base64 (entry :type-name))
+                                            ":"
+                                            (<ra> :to-base64 (entry :name))))))
+                         (loop (cdr entries))))
+                  (else
+                   (<ra> :show-warning (<-> "UNHANDLED sound plugin registry entry: " entry))
+                   (loop (cdr entries))))))))
+
+  ;;(c-display (pp (entries-to-menu (to-list (<ra> :get-sound-plugin-registry)) #f)))
+  (popup-menu (entries-to-menu (to-list (<ra> :get-sound-plugin-registry)) #f)))
+
+(define (create-instrument-popup-menu x y connect-to-main-pipe do-autoconnect include-load-preset must-have-inputs must-have-outputs)
+  (start-instrument-popup-menu include-load-preset must-have-inputs must-have-outputs
+                               (lambda (description)
+                                 ;;(c-display "LOADING" description)
+                                 (undo-block
+                                  (lambda ()
+                                    (let ((instrument-id (<ra> :create-audio-instrument-from-description description "" x y)))
+                                      (when (and (integer? instrument-id)
+                                                 (not (= -1 instrument-id)))  
+                                        (if (and connect-to-main-pipe
+                                                 (> (<ra> :get-num-output-channels instrument-id) 0))
+                                            (<ra> :connect-audio-instrument-to-main-pipe instrument-id))
+                                        (if (and do-autoconnect
+                                                 (> (<ra> :get-num-output-channels instrument-id) 0)
+                                                 (> (<ra> :get-num-input-channels instrument-id) 0))
+                                            (<ra> :autoconnect-instrument instrument-id x y)))))))))
+                               
+                                 
+#!!
+(create-instrument-popup-menu 5 5 #t #f #t #t #t)
+!!#
+
+                                  
+
+;; async
 (define (select-track-instrument tracknum)
   (undo-block
    (lambda ()
@@ -515,8 +639,9 @@
                                         (load (<ra> :create-audio-instrument "Pd" "Simple Midi Synth"))))
           #f)
       "<New Audio Instrument>" (lambda ()
-                                 (load (<ra> :create-audio-instrument-from-description 
-                                             (<ra> :instrument-description-popup-menu))))
+                                 (start-instrument-popup-menu #t #f #f
+                                                              (lambda (descr)
+                                                                (load (<ra> :create-audio-instrument-from-description descr)))))
       "<Load New Preset>" (lambda ()
                             (load (<ra> :create-audio-instrument-from-description
                                         (<ra> :request-load-preset-instrument-description))))

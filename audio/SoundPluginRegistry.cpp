@@ -101,7 +101,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
       vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
       int select_plugin_file = VECTOR_push_back(&v, "Select plugin file");
-      int use_different_plugin = VECTOR_push_back(&v, "Use different plugin");
+      //int use_different_plugin = VECTOR_push_back(&v, "Use different plugin");
       int replace_with_pipe = VECTOR_push_back(&v, "Replace with pipe");
       (void)replace_with_pipe; // default
       
@@ -134,12 +134,14 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
         PR_init_plugin_types();
         return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
         //}
+        /*
       } else if (ret==use_different_plugin) {
         SoundPluginType *plugintype = MW_popup_plugin_type_selector(false, false);
         if (plugintype==NULL)
           break;
         else
           return plugintype;
+        */
       } else
         break;
     }

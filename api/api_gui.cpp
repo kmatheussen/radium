@@ -2954,6 +2954,12 @@ static void add_entries(dynvec_t &ret, const PluginMenuEntry &entry, const QStri
   } else if (entry.type==PluginMenuEntry::IS_LEVEL_UP){
     HASH_put_string(hash, ":name", entry.level_up_name);
   
+  } else if (entry.type==PluginMenuEntry::IS_NUM_USED_PLUGIN){
+    HASH_put_string(hash, ":menu-text", entry.hepp.menu_text);
+    HASH_put_string(hash, ":container-name", entry.hepp.container_name);
+    HASH_put_string(hash, ":type-name", entry.hepp.type_name);
+    HASH_put_string(hash, ":name", entry.hepp.name);
+  
   } else if (entry.type==PluginMenuEntry::IS_NORMAL){
         
     if (entry.plugin_type!=NULL){

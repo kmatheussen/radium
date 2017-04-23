@@ -46,7 +46,7 @@ namespace{
   public:
 
     ~CheckableAction(){
-      printf("I was deleted: %s\n",text.toUtf8().constData());
+      //printf("I was deleted: %s\n",text.toUtf8().constData());
       if(callback!=NULL)
         s7extra_unprotect(callback);
     }
@@ -102,7 +102,7 @@ namespace{
   public:
 
     ~ClickableAction(){
-      printf("I was deleted: %s\n",text.toUtf8().constData());
+      //printf("I was deleted: %s\n",text.toUtf8().constData());
       if(callback!=NULL)
         s7extra_unprotect(callback);
     }

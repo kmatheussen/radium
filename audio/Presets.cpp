@@ -11,6 +11,8 @@
 #include "../common/hashmap_proc.h"
 #include "../common/patch_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "../Qt/helpers.h"
 #include "../Qt/EditorWidget.h"
 
@@ -31,11 +33,14 @@ static QString g_last_filename;
 static QString g_last_preset_path = "";
 
 
-void PRESET_set_last_used_filename(const wchar_t *wfilename){
-  QString filename = STRING_get_qstring(wfilename);
-  
+static void PRESET_set_last_used_filename(QString filename){  
   g_last_preset_path = QFileInfo(filename).absoluteDir().path();
   g_last_filename = QFileInfo(filename).baseName();
+}
+
+void PRESET_set_last_used_filename(const wchar_t *wfilename){
+  QString filename = STRING_get_qstring(wfilename);
+  PRESET_set_last_used_filename(filename);
 }
 
 
@@ -45,8 +50,13 @@ void PRESET_set_last_used_filename(const wchar_t *wfilename){
 /****************************************/
 
 
-static QVector<QString> get_all_presets_in_path(QString path){
-  QVector<QString> ret;
+vector_t PRESET_get_all_presets_in_path(const wchar_t *wpath){
+  vector_t ret = {0};
+
+  if (g_last_preset_path=="")
+    g_last_preset_path = QCoreApplication::applicationDirPath();
+
+  QString path = wpath==NULL ? g_last_preset_path : STRING_get_qstring(wpath);
   
   QDir dir(path);
   dir.setSorting(QDir::Name);
@@ -55,10 +65,10 @@ static QVector<QString> get_all_presets_in_path(QString path){
     QFileInfo file_info = list.at(i);
     QString filename = file_info.fileName();
     if (filename.endsWith(".rec"))
-      ret.push_back(filename);
+      VECTOR_push_back(&ret, STRING_create(filename));
   }
 
-  bool need_separator = ret.size() > 0;
+  bool need_separator = ret.num_elements > 0;
   bool pushed_separator=false;
       
   for (int i = 0; i < list.size(); ++i) {
@@ -66,10 +76,10 @@ static QVector<QString> get_all_presets_in_path(QString path){
     QString filename = file_info.fileName();
     if (filename.endsWith(".mrec")) {
       if (need_separator && pushed_separator==false) {
-        ret.push_back("-----");
+        VECTOR_push_back(&ret, STRING_create("-------"));
         pushed_separator = true;
       }
-      ret.push_back(filename);
+      VECTOR_push_back(&ret, STRING_create(filename));
     }
   }
 
@@ -77,12 +87,16 @@ static QVector<QString> get_all_presets_in_path(QString path){
 }
 
 
-static QString request_load_preset_filename_from_requester(void){
-  R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, "");
-  
-  radium::ScopedExec scopedExec;
 
-  return QFileDialog::getOpenFileName(
+static void request_load_preset_filename_from_requester(func_t *callback){
+  R_ASSERT_RETURN_IF_FALSE(g_radium_runs_custom_exec==false);
+
+  QString filename;
+
+  {
+    radium::ScopedExec scopedExec;
+
+    filename = QFileDialog::getOpenFileName(
                                       g_main_window,
                                       "Load Effect configuration",
                                       g_last_preset_path,
@@ -94,9 +108,14 @@ static QString request_load_preset_filename_from_requester(void){
                                       0,
                                       QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                       );
+  }
+
+  if (!filename.isNull())
+    s7extra_callFunc_void_charpointer(callback, talloc_format("2%s",STRING_get_chars(STRING_toBase64(STRING_create(filename)))));
 }
 
-static QString request_load_preset_filename(void){
+/*
+void request_load_preset_filename(func_t *callback){
   QString filename;
 
   if (g_last_preset_path=="")
@@ -125,21 +144,28 @@ static QString request_load_preset_filename(void){
   else
     return g_last_preset_path + QDir::separator() + existing_presets[sel-start];
 }
+*/
 
-static const char *request_load_preset_encoded_filename(void){
+/*
+static const char *request_load_preset_encoded_filename(func_t *callback){
   QString filename = request_load_preset_filename();
   if (filename=="")
     return NULL;
 
   return STRING_get_chars(STRING_toBase64(STRING_create(filename)));
 }
+*/
 
-char *PRESET_request_load_instrument_description(void){
+void PRESET_request_load_instrument_description(func_t *callback){
+  request_load_preset_filename_from_requester(callback);
+  //request_load_preset_encoded_filename(callback);
+  /*
   const char *encoded_filename = request_load_preset_encoded_filename();  // Converting to base64 to avoid having to worry about utf8 conversion problems in filenames.
   if (encoded_filename==NULL)
     return talloc_strdup("");
 
   return talloc_format("2%s",encoded_filename);
+  */
 }
 
 static hash_t *get_preset_state_from_filename(QString filename){
@@ -238,17 +264,23 @@ static int64_t insert_preset_into_program(hash_t *state, char *name, bool inc_us
 //
 // A less confusing name could perhaps be PRESET_add_instrument
 //
-int64_t PRESET_load(const wchar_t *filename, char *name, bool inc_usage_number, float x, float y) {
-  if (name!=NULL && strlen(name)==0)
-    name = NULL;
+int64_t PRESET_load(const wchar_t *wfilename, char *patchname, bool inc_usage_number, float x, float y) {
+  if (patchname!=NULL && strlen(patchname)==0)
+    patchname = NULL;
 
-  hash_t *state = get_preset_state_from_filename(STRING_get_qstring(filename));
+  QString filename = STRING_get_qstring(wfilename);
+  QFileInfo info(filename);
+
+  if (info.isAbsolute()==false && g_last_preset_path!="")
+    filename = g_last_preset_path + QDir::separator() + filename;
+  
+  hash_t *state = get_preset_state_from_filename(filename);
   if (state==NULL)
     return -1;
   
   PRESET_set_last_used_filename(filename);
 
-  return insert_preset_into_program(state, name, inc_usage_number, x, y);
+  return insert_preset_into_program(state, patchname, inc_usage_number, x, y);
 }
 
 int64_t PRESET_paste(float x, float y){

@@ -319,6 +319,40 @@ int64_t createAudioInstrumentFromDescription(const char *instrument_description,
 
     return MW_paste(x, y);
         
+  } else if (instrument_description[0]=='4'){
+
+    char *descr = talloc_strdup(instrument_description);
+    int sep_pos = 1;
+    int sep_poss[2] = {0};
+    int sep_n = 0;
+    while(sep_n < 2){
+      char c = descr[sep_pos];
+      if(c==0){
+        handleError("Illegal instrument_description: %s (missing colon separator)",instrument_description);
+        return -1;
+      }
+      if (c==':'){
+        sep_poss[sep_n] = sep_pos;
+        sep_n++;
+      }
+      sep_pos++;
+    }
+    descr[sep_poss[0]] = 0;
+    descr[sep_poss[1]] = 0;
+    char *container_name = STRING_get_chars(STRING_fromBase64(STRING_create(&descr[1])));
+    char *type_name = STRING_get_chars(STRING_fromBase64(STRING_create(&descr[sep_poss[0]+1])));
+    char *plugin_name = STRING_get_chars(STRING_fromBase64(STRING_create(&descr[sep_poss[1]+1])));
+
+    printf("  ---------- Container: -%s-, type: -%s-, plugin: -%s-\n", container_name, type_name, plugin_name);
+    
+    if (strlen(container_name) > 0){
+      SoundPluginTypeContainer *container = PR_get_container_by_name(container_name, type_name);
+      if (container!=NULL)
+        PR_populate(container);
+    }
+
+    return createAudioInstrument(type_name, plugin_name, name, x, y);
+            
   } else {
 
     handleError("Illegal instrument_description: %s (string doesn't start with '1', '2' or '3')",instrument_description);
@@ -353,15 +387,58 @@ void connectAudioInstrumentToMainPipe(int64_t instrument_id){
   }
 
   ADD_UNDO(MixerConnections_CurrPos());
-  MW_autoconnect_plugin(plugin);
+  MW_connect_plugin_to_main_pipe(plugin);
 }
 
-const_char* instrumentDescriptionPopupMenu(bool must_have_inputs, bool must_have_outputs){
-  return MW_popup_plugin_selector2(must_have_inputs, must_have_outputs);
+bool autoconnectInstrument(int64_t instrument_id, float x, float y){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return false;
+  }
+
+  ADD_UNDO(MixerConnections_CurrPos());
+  return MW_autoconnect(patch, x, y);
 }
 
-const_char* requestLoadPresetInstrumentDescription(void){
-  return PRESET_request_load_instrument_description();
+void createInstrumentDescriptionPopupMenu(float x, float y, bool connect_to_main_pipe, bool do_autoconnect, bool include_load_preset, bool must_have_inputs, bool must_have_outputs){
+  evalScheme(talloc_format("(create-instrument-popup-menu %f %f #%s #%s #%s #%s #%s)",
+                           x,
+                           y,
+                           connect_to_main_pipe ? "t" : "f",
+                           do_autoconnect ? "t" : "f",
+                           include_load_preset ? "t" : "f",
+                           must_have_inputs ? "t" : "f",
+                           must_have_outputs ? "t" : "f"
+                           )
+             );
+}
+
+dyn_t getAllPresetsInPath(const_char* path){
+
+  wchar_t *wpath = (path==NULL || strlen(path)==0) ? NULL : STRING_fromBase64(STRING_create(path));
+    
+  vector_t presets = PRESET_get_all_presets_in_path(wpath);
+
+  dynvec_t ret = {0};
+
+  VECTOR_FOR_EACH(wchar_t *path, &presets){
+    DYNVEC_push_back(&ret, DYN_create_string(STRING_toBase64(path)));
+  }END_VECTOR_FOR_EACH;
+
+  return DYN_create_array(ret);
+}
+
+void requestLoadPresetInstrumentDescription(func_t* callback){
+  PRESET_request_load_instrument_description(callback);
+}
+
+bool instrumentPresetInClipboard(void){
+  return PRESET_has_copy();
 }
 
 int getNumInstrumentEffects(int64_t instrument_id){

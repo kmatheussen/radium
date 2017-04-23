@@ -954,7 +954,12 @@ for .emacs:
                                                (cdr args))))
             ((not (car args))
              (parse-popup-menu-options (cdr args)))
+            ((string-starts-with? (car args) "---")
+             (cons (car args)
+                   (cons (lambda _ #t)
+                         (parse-popup-menu-options (cdr args)))))
             (else
+             (assert (not (null? (cdr args))))
              (let ((text (car args))
                    (arg2 (cadr args)))
                (cond ((eq? :check arg2)
@@ -968,10 +973,6 @@ for .emacs:
                                                             (cdddr args)))
                             (parse-popup-menu-options (cons (<-> "[disabled]" text)
                                                             (cdddr args))))))
-                     ((string-starts-with? text "--")
-                      (cons text
-                            (cons (lambda _ #t)
-                                  (parse-popup-menu-options (cdr args)))))
                      ((procedure? arg2)
                       (cons text
                             (cons arg2
@@ -985,6 +986,10 @@ for .emacs:
                               (parse-popup-menu-options (cddr args))))))))))
 
 #||
+(parse-popup-menu-options (list (list "bbb" (lambda ()
+                                              6))
+                                "------"))
+
 (parse-popup-menu-options (list "hello1" :enabled #t (lambda ()
                                                        (c-display "hepp1"))
                                 "hello2" :enabled #f (lambda ()
@@ -1057,6 +1062,13 @@ for .emacs:
 
 
 #||
+(popup-menu (list (list "aaa" (lambda ()
+                                5))
+                  "----"
+                  (list "bbb" (lambda ()
+                                6))
+                  "----------"))
+
 (popup-menu "aaa" (lambda ()
                     (c-display "main menu"))
             "bbb" (list "aaa"

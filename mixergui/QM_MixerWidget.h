@@ -215,7 +215,7 @@ extern LANGSPEC bool MW_has_mouse_pointer(void);
 extern LANGSPEC bool MW_get_connections_visibility(void);
 extern LANGSPEC void MW_set_connections_visibility(bool show);
 
-extern LANGSPEC void MW_autoconnect_plugin(SoundPlugin *plugin);
+extern LANGSPEC void MW_connect_plugin_to_main_pipe(SoundPlugin *plugin);
 
 extern LANGSPEC void MW_connect(struct Patch *source, struct Patch *dest);
 extern LANGSPEC void MW_econnect(struct Patch *source, struct Patch *dest);
@@ -227,6 +227,7 @@ extern LANGSPEC bool MW_are_connected(struct Patch *source, struct Patch *dest);
 extern LANGSPEC bool MW_are_econnected(struct Patch *source, struct Patch *dest);
 
 extern LANGSPEC bool MW_move_chip_to_slot(struct Patch *patch, float x, float y);
+extern LANGSPEC bool MW_autoconnect(struct Patch *patch, float x, float y);
 
 extern LANGSPEC void MW_update_all_chips(void);
 

@@ -2,7 +2,9 @@
 #ifndef _RADIUM_AUDIO_PRESETS_PROC_H
 #define _RADIUM_AUDIO_PRESETS_PROC_H
 
-extern LANGSPEC char *PRESET_request_load_instrument_description(void);
+extern LANGSPEC vector_t PRESET_get_all_presets_in_path(const wchar_t *path);
+
+extern LANGSPEC void PRESET_request_load_instrument_description(func_t *callback);
 
 extern LANGSPEC int64_t PRESET_load(const wchar_t *filename, char *name, bool inc_usage_number, float x, float y);
 

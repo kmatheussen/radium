@@ -500,6 +500,10 @@ static bool autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
   return false;
 }
 
+bool MW_autoconnect(struct Patch *patch, float x, float y){
+  return autoconnect_chip(&g_mixer_widget->scene, CHIP_get(&g_mixer_widget->scene, patch), x, y);
+}
+  
 static bool cleanup_a_chip_position(MyScene *myscene){
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
 
@@ -917,6 +921,12 @@ static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_
   
   draw_slot(scene,mouse_x,mouse_y);
 
+  float x, y;
+  get_slotted_x_y(mouse_x, mouse_y, x, y);
+
+  createInstrumentDescriptionPopupMenu(x, y, false, true, true, false, false);
+
+  /*                                       
   const char *instrument_description = instrumentDescriptionPopupMenu(false, false);
   printf("   instrument_description: %s\n",instrument_description);
   
@@ -945,7 +955,8 @@ static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_
     }UNDO_CLOSE();
 
   }
-
+  */
+  
   return true;
 }
 
@@ -1820,7 +1831,7 @@ void MixerWidget::populateScene()
   */
 }
 
-void MW_autoconnect_plugin(SoundPlugin *plugin){
+void MW_connect_plugin_to_main_pipe(SoundPlugin *plugin){
   SoundPlugin *main_pipe = get_main_pipe();
 
   if(plugin->type->num_outputs>0)
@@ -1850,6 +1861,7 @@ void MW_set_autopos(double *x, double *y){
 }
 
 
+/*
 namespace{
   struct MyQAction : public QAction{
     MyQAction(QString name, QMenu *menu, const PluginMenuEntry entry, bool must_have_inputs, bool must_have_outputs)
@@ -1930,7 +1942,6 @@ static int menu_up(QMenu *menu, const QVector<PluginMenuEntry> &entries, int i, 
   return i;
 }
 
-
 static char *create_selector_text(SoundPluginType *type){
   return talloc_format(
                        "1%s:%s",
@@ -1938,6 +1949,8 @@ static char *create_selector_text(SoundPluginType *type){
                        STRING_get_chars(STRING_toBase64(STRING_create(type->name)))
                        );
 }
+*/
+
 
 void inc_plugin_usage_number(SoundPluginType *type){
   char *settings_name = talloc_format("plugin_usage_%s_-_%s_-_%s", type->type_name, type->container==NULL ? "" : type->container->name, type->name);
@@ -1945,6 +1958,8 @@ void inc_plugin_usage_number(SoundPluginType *type){
   SETTINGS_write_int(settings_name, num_uses+1);
 }
 
+
+/*
 static const char *popup_plugin_selector(SoundPluginType **type, bool must_have_inputs, bool must_have_outputs){
   QMenu menu(0);
 
@@ -1998,8 +2013,9 @@ static const char *popup_plugin_selector(SoundPluginType **type, bool must_have_
     }
     
   }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
-    return PRESET_request_load_instrument_description();
- 
+    //return PRESET_request_load_instrument_description();
+    return "";
+    
   }else if(entry.type==PluginMenuEntry::IS_PASTE_PRESET){
     return "3";
  
@@ -2036,6 +2052,7 @@ SoundPluginType *MW_popup_plugin_type_selector(bool must_have_inputs, bool must_
 
   return type;
 }
+*/
 
 void MW_connect(Patch *source, Patch *dest){
   Chip *chip_source = CHIP_get(&g_mixer_widget->scene, source);
