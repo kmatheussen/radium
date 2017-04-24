@@ -175,6 +175,18 @@ struct Favourites{
 };
 }
 
+static Favourites *g_favourites = NULL;
+
+static void recreate_favourites(void){
+  delete g_favourites;
+  g_favourites = new Favourites;
+}
+
+static Favourites *get_favourites(void){
+  if (g_favourites == NULL)
+    recreate_favourites();
+  return g_favourites;
+}
 
 SoundPluginTypeContainer *PR_get_container_by_name(const char *container_name, const char *type_name){
   for(auto container : g_plugin_type_containers)
@@ -190,7 +202,8 @@ bool PR_populate(SoundPluginTypeContainer *container){
   
   if (!container->is_populated){
     container->populate(container);
-    Favourites().set_num_uses(container);
+    recreate_favourites();
+    g_favourites->set_num_uses(container);
     return true;
   }
 
@@ -304,23 +317,23 @@ static QVector<PluginMenuEntry> g_plugin_menu_entries;
 const QVector<PluginMenuEntry> PR_get_menu_entries(void){
 
   // Find favourites
-  Favourites favourites;
+  Favourites *favourites = get_favourites();
   
   QVector<PluginMenuEntry> ret(g_plugin_menu_entries);
 
   // set type->num_uses and container->num_uses fields
   for(PluginMenuEntry &entry : g_plugin_menu_entries)
-    favourites.set_num_uses(entry);
+    favourites->set_num_uses(entry);
 
   // Add favourites
-  if (favourites.hepps.size() > 0) {
+  if (favourites->hepps.size() > 0) {
     ret.push_back(PluginMenuEntry::separator());
     
     bool has_next = false;
     
     int num_added = 0;
     
-    for (const auto &hepp : favourites.hepps){
+    for (const auto &hepp : favourites->hepps){
       
       if (hepp.type_name == "VST" ||
           hepp.type_name == "Ladspa" ||
