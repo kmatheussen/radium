@@ -286,6 +286,8 @@ typedef struct SoundPluginType{
 
   void (*set_non_realtime)(struct SoundPlugin *plugin, bool is_non_realtime);
 
+  int num_uses; // Filled in when asking for soundpluginregistry entries
+  
   // Free use by the plugin
   void *data;
 
@@ -305,6 +307,7 @@ typedef struct SoundPluginTypeContainer{
   bool is_populated;
   void (*populate)(struct SoundPluginTypeContainer *container); // Note: populate might be called even if 'is_populated' is true. (If that happens, just do nothing.)
 
+  int num_uses; // Filled in when asking for soundpluginregistry entries
 } SoundPluginTypeContainer;
 
 typedef struct SystemFilter{

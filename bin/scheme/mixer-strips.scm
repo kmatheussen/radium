@@ -151,56 +151,49 @@
   (define (create-entry-text instrument-id)
     (<-> *arrow-text* " " (<ra> :get-instrument-name instrument-id)))
   
-  (start-instrument-memoization)
-  
   (define args
-    (catch #t
-           (lambda ()
-
-             (list
+    (run-instrument-data-memoized
+     (lambda()
+       (list
      
-              ;; buses
-              (map (lambda (bus-effect-name bus-onoff-effect-name bus-id)
-                     (list (create-entry-text bus-id)
-                           :enabled (and (not is-bus-descendant)
-                                         (< (<ra> :get-instrument-effect instrument-id bus-onoff-effect-name) 0.5))
-                           (lambda ()
-                             (callback (lambda (gain)
-                                         (undo-block (lambda ()
-                                                       (<ra> :undo-instrument-effect instrument-id bus-onoff-effect-name)
-                                                       (if gain
-                                                           (<ra> :undo-instrument-effect instrument-id bus-effect-name))
-                                                       (<ra> :set-instrument-effect instrument-id bus-onoff-effect-name 1.0)
-                                                       (if gain
-                                                           (<ra> :set-instrument-effect instrument-id bus-effect-name (scale (<ra> :gain-to-db gain)
-                                                                                                                             *min-db* *max-db*
-                                                                                                                             0 1))))))))))
-                   *bus-effect-names*
-                   *bus-effect-onoff-names*
-                   buses)
-              
-              "------------"
-
-              ;; audio connections
-              (map (lambda (send-id)
-                     (list (create-entry-text send-id)
-                           :enabled (and (not (= send-id instrument-id))
-                                         (not (<ra> :has-audio-connection instrument-id send-id))
-                                         (> (<ra> :get-num-input-channels send-id) 0))
-                           (lambda ()
-                             (callback (lambda (gain)
-                                         (<ra> :undo-mixer-connections)
-                                         (<ra> :create-audio-connection instrument-id send-id gain))))))
-                   (sort-instruments-by-mixer-position-and-connections
-                    (keep (lambda (id)
-                            (not (member id buses)))
-                          (begin
-                            (define ret (get-all-instruments-that-we-can-send-to instrument-id))
-                            ret))))))
-           (lambda args
-             (display (ow!)))))
-
-  (end-instrument-memoization)
+        ;; buses
+        (map (lambda (bus-effect-name bus-onoff-effect-name bus-id)
+               (list (create-entry-text bus-id)
+                     :enabled (and (not is-bus-descendant)
+                                   (< (<ra> :get-instrument-effect instrument-id bus-onoff-effect-name) 0.5))
+                     (lambda ()
+                       (callback (lambda (gain)
+                                   (undo-block (lambda ()
+                                                 (<ra> :undo-instrument-effect instrument-id bus-onoff-effect-name)
+                                                 (if gain
+                                                     (<ra> :undo-instrument-effect instrument-id bus-effect-name))
+                                                 (<ra> :set-instrument-effect instrument-id bus-onoff-effect-name 1.0)
+                                                 (if gain
+                                                     (<ra> :set-instrument-effect instrument-id bus-effect-name (scale (<ra> :gain-to-db gain)
+                                                                                                                       *min-db* *max-db*
+                                                                                                                       0 1))))))))))
+             *bus-effect-names*
+             *bus-effect-onoff-names*
+             buses)
+        
+        "------------"
+        
+        ;; audio connections
+        (map (lambda (send-id)
+               (list (create-entry-text send-id)
+                     :enabled (and (not (= send-id instrument-id))
+                                   (not (<ra> :has-audio-connection instrument-id send-id))
+                                   (> (<ra> :get-num-input-channels send-id) 0))
+                     (lambda ()
+                       (callback (lambda (gain)
+                                   (<ra> :undo-mixer-connections)
+                                   (<ra> :create-audio-connection instrument-id send-id gain))))))
+             (sort-instruments-by-mixer-position-and-connections
+              (keep (lambda (id)
+                      (not (member id buses)))
+                    (begin
+                      (define ret (get-all-instruments-that-we-can-send-to instrument-id))
+                      ret))))))))
 
   (apply popup-menu args))
 
@@ -1553,34 +1546,33 @@
   (define (remake width height)
     (define instrument-is-open (<ra> :instrument-is-open instrument-id))
     
-    (start-instrument-memoization)
-    
     (c-display "    remaking mixer-strip" instrument-id parent width height)
     (catch #t
            (lambda ()
-             (<gui> :disable-updates parent)
-             
-             (define new-mixer-strip (and instrument-is-open (create-mixer-strip instrument-id width #t)))
-             
-             (when das-mixer-strip-gui
-               (<gui> :close das-mixer-strip-gui)
-               (set! das-mixer-strip-gui #f))
+             (run-instrument-data-memoized
+              (lambda()
 
-             (when instrument-is-open
-               (if *current-mixer-strip-is-wide*
-                   (set! width org-width)
-                   (set! width (<gui> :width new-mixer-strip)))
-               (set-fixed-width parent width)
-               (<gui> :add parent new-mixer-strip 0 0 width height)
-               (<gui> :show new-mixer-strip)             
-               (set! das-mixer-strip-gui new-mixer-strip))
-             )
+                (<gui> :disable-updates parent)
+                
+                (define new-mixer-strip (and instrument-is-open (create-mixer-strip instrument-id width #t)))
+                
+                (when das-mixer-strip-gui
+                  (<gui> :close das-mixer-strip-gui)
+                  (set! das-mixer-strip-gui #f))
+                
+                (when instrument-is-open
+                  (if *current-mixer-strip-is-wide*
+                      (set! width org-width)
+                      (set! width (<gui> :width new-mixer-strip)))
+                  (set-fixed-width parent width)
+                  (<gui> :add parent new-mixer-strip 0 0 width height)
+                  (<gui> :show new-mixer-strip)             
+                  (set! das-mixer-strip-gui new-mixer-strip))
+                )))
            
            (lambda args
              (display (ow!))))
 
-    (end-instrument-memoization)
-    
     (<gui> :enable-updates parent)
 
     )
@@ -1782,30 +1774,29 @@
     (set! g-total-time2 0)
     (set! g-total-num-calls 0)
     (set! g-total-sort-time 0)
-    (start-instrument-memoization)
+
     (catch #t
            (lambda ()
-             (<gui> :disable-updates parent)
-             
-             (create-mixer-strips num-rows das-stored-mixer-strips list-of-modified-instrument-ids
-                                  (lambda (new-mixer-strips new-mixer-strips-gui)
-                                    (if das-mixer-strips-gui
-                                        (begin
-                                          (<gui> :replace parent das-mixer-strips-gui new-mixer-strips-gui)
-                                          (<gui> :close das-mixer-strips-gui))
-                                        (begin
-                                          (<gui> :add parent new-mixer-strips-gui)
-                                          ;;(<gui> :show mixer-strips-gui)
-                                          ))
-
-                                    (set! das-stored-mixer-strips new-mixer-strips)
-                                    (set! das-mixer-strips-gui new-mixer-strips-gui)
-                                    )))
-
+             (run-instrument-data-memoized
+              (lambda()
+                (<gui> :disable-updates parent)
+                
+                (create-mixer-strips num-rows das-stored-mixer-strips list-of-modified-instrument-ids
+                                     (lambda (new-mixer-strips new-mixer-strips-gui)
+                                       (if das-mixer-strips-gui
+                                           (begin
+                                             (<gui> :replace parent das-mixer-strips-gui new-mixer-strips-gui)
+                                             (<gui> :close das-mixer-strips-gui))
+                                           (begin
+                                             (<gui> :add parent new-mixer-strips-gui)
+                                             ;;(<gui> :show mixer-strips-gui)
+                                             ))
+                                       
+                                       (set! das-stored-mixer-strips new-mixer-strips)
+                                       (set! das-mixer-strips-gui new-mixer-strips-gui)
+                                       )))))
            (lambda args
              (display (ow!))))
-
-    (end-instrument-memoization)
     
     ;; prevent some flickering
     (<ra> :schedule 15 (lambda ()

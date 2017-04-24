@@ -2020,22 +2020,62 @@ int64_t gui_table(dyn_t header_names){
 }
 
 namespace{
-  struct MyItem : public QTableWidgetItem{
-    QString _name;
-    MyItem(QString name)
-      :_name(name)
+
+  // these classes are used to make sorting table rows work.
+  
+  struct Pri{
+    double _pri;
+    Pri(double pri)
+      :_pri(pri)
+    {}
+  };
+  
+  struct MyNumItem : public QTableWidgetItem, public Pri{
+    MyNumItem(double num)
+      : Pri(num)
     {}
     bool operator<(const QTableWidgetItem &other) const override{
-      const MyItem *myother = dynamic_cast<const MyItem*>(&other);
+      const Pri *myother = dynamic_cast<const Pri*>(&other);
       if (myother==NULL)
-        return _name < other.text(); //QTableWidgetItem::operator<(other);
+        return false;
       else
+        return _pri < myother->_pri;
+    }
+  };
+  struct MyStringItem : public QTableWidgetItem, public Pri{
+    QString _name;
+    MyStringItem(QString name)
+      : Pri(DBL_MIN)
+      , _name(name)
+    {}
+    bool operator<(const QTableWidgetItem &other) const override{
+      const MyStringItem *myother = dynamic_cast<const MyStringItem*>(&other);
+      if (myother==NULL){
+        const Pri *mypriother = dynamic_cast<const Pri*>(&other);
+        if (mypriother!=NULL)
+          return _pri < mypriother->_pri; //false; //_name < other.text(); //QTableWidgetItem::operator<(other);
+        else
+          return true;
+      }else
         return _name < myother->_name;
+    }
+  };
+
+  struct MyGuiItem : public QTableWidgetItem, public Pri{
+    MyGuiItem()
+      : Pri(DBL_MAX)
+    {}
+    bool operator<(const QTableWidgetItem &other) const override{
+      const Pri *myother = dynamic_cast<const Pri*>(&other);
+      if (myother!=NULL)
+        return _pri < myother->_pri; //false; //_name < other.text(); //QTableWidgetItem::operator<(other);
+      else
+        return true;
     }
   };
 }
 
-int64_t gui_addTableCell(int64_t table_guinum, dyn_t cell, int x, int y){
+static int64_t add_table_cell(int64_t table_guinum, Gui *cell_gui, QTableWidgetItem *item, int x, int y){
   Gui *table_gui = get_gui(table_guinum);
   if (table_gui==NULL)
     return -1;
@@ -2046,37 +2086,54 @@ int64_t gui_addTableCell(int64_t table_guinum, dyn_t cell, int x, int y){
     return -1;
   }
 
-  if (table->rowCount() <= y)
+  if (y >= table->rowCount())
     table->setRowCount(y+1);
 
-  Gui *cell_gui;
-
-  if (cell.type==INT_TYPE){
-
-    cell_gui = get_gui(cell.int_number);
-    if (cell_gui==NULL)
-      return -1;
-
-  } else if (cell.type==STRING_TYPE){
-
-    QString name = STRING_get_qstring(cell.string);
-    auto *item = new MyItem(name);
-    item->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
-    table->setItem(y, x, item);
-    
-    cell_gui = new Text(name, "");
-    //Gui *gui = new Gui(item->tableWidget()->
-
-  }else{
-
-    handleError("gui_addTableCell: Expected a gui number or a string as cell argument, found a %s", DYN_type_name(cell.type));
-    return -1;
-
-  }
-
+  table->setItem(y, x, item);
+  
   table->setCellWidget(y, x, cell_gui->_widget);
 
   return cell_gui->get_gui_num();
+}
+                              
+int64_t gui_addTableGuiCell(int64_t table_guinum, int64_t cell_gui_num, int x, int y){
+  Gui *cell_gui = get_gui(cell_gui_num);
+  if (cell_gui==NULL)
+    return -1;
+
+  auto *item = new MyGuiItem();
+  
+  return add_table_cell(table_guinum, cell_gui, item, x, y);
+}
+
+int64_t gui_addTableStringCell(int64_t table_guinum, const_char* string, int x, int y){
+  QString name(string);
+  auto *item = new MyStringItem(name);
+  item->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
+    
+  Gui *cell_gui = new Text(name, "");
+
+  return add_table_cell(table_guinum, cell_gui, item, x, y);
+}
+
+int64_t gui_addTableIntCell(int64_t table_guinum, int64_t num, int x, int y){
+  QString name = QString::number(num);
+  auto *item = new MyNumItem(num);
+  item->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
+    
+  Gui *cell_gui = new Text(name, "");
+
+  return add_table_cell(table_guinum, cell_gui, item, x, y);
+}
+
+int64_t gui_addTableFloatCell(int64_t table_guinum, double num, int x, int y){
+  QString name = QString::number(num);
+  auto *item = new MyNumItem(num);
+  item->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
+    
+  Gui *cell_gui = new Text(name, "");
+
+  return add_table_cell(table_guinum, cell_gui, item, x, y);
 }
 
 int gui_getTableRowNum(int64_t table_guinum, int cell_guinum){
@@ -2922,6 +2979,7 @@ static void push_type(hash_t *hash, const SoundPluginType *type, const QString p
   HASH_put_int(hash, ":num-outputs", type->num_outputs);
   HASH_put_chars(hash, ":category", type->category==NULL ? "" : type->category);
   HASH_put_chars(hash, ":creator", type->creator==NULL ? "" : type->creator);
+  HASH_put_int(hash, ":num-uses", type->num_uses);
 }
 
 
@@ -2935,7 +2993,7 @@ static void add_container_entries(dynvec_t &ret, const SoundPluginTypeContainer 
   }
 }
                                   
-static void add_entries(dynvec_t &ret, const PluginMenuEntry &entry, const QString path){
+static void add_entry(dynvec_t &ret, const PluginMenuEntry &entry, const QString path){
 
   hash_t *hash = HASH_create(5);
   HASH_put_string(hash, ":type", PluginMenuEntry::type_to_string(entry));
@@ -2950,7 +3008,8 @@ static void add_entries(dynvec_t &ret, const PluginMenuEntry &entry, const QStri
     HASH_put_string(hash, ":type-name", entry.plugin_type_container->type_name);
     HASH_put_string(hash, ":name", entry.plugin_type_container->name);
     HASH_put_string(hash, ":path",  extend_path(path, entry.plugin_type_container->name));
-
+    HASH_put_int(hash, ":num-uses", entry.plugin_type_container->num_uses);
+    
   } else if (entry.type==PluginMenuEntry::IS_LEVEL_UP){
     HASH_put_string(hash, ":name", entry.level_up_name);
   
@@ -2977,7 +3036,7 @@ static void add_entries(dynvec_t &ret, const PluginMenuEntry &entry, const QStri
   }
 }
 
-dyn_t getSoundPluginRegistry(void){
+dyn_t getSoundPluginRegistry(bool only_normal_and_containers){
   const QVector<PluginMenuEntry> entries = PR_get_menu_entries();
 
   dynvec_t ret = {};
@@ -2985,18 +3044,20 @@ dyn_t getSoundPluginRegistry(void){
   QStack<QString> dir;
   
   for(const PluginMenuEntry &entry : entries){
+    
     switch(entry.type){
-    case PluginMenuEntry::IS_LEVEL_UP:
-      dir.push(entry.level_up_name);
-      break;
-    case PluginMenuEntry::IS_LEVEL_DOWN:
-      dir.pop();
-      break;
-    default:
-      break;
+      case PluginMenuEntry::IS_LEVEL_UP:
+        dir.push(entry.level_up_name);
+        break;
+      case PluginMenuEntry::IS_LEVEL_DOWN:
+        dir.pop();
+        break;
+      default:
+        break;
     }
 
-    add_entries(ret, entry, get_path(dir));
+    if (!only_normal_and_containers || entry.type==PluginMenuEntry::IS_NORMAL || entry.type==PluginMenuEntry::IS_CONTAINER)
+      add_entry(ret, entry, get_path(dir));
   }
 
   return DYN_create_array(ret);

@@ -48,6 +48,134 @@ int PR_get_num_plugin_types(void){
   return g_plugin_types.size();
 }
 
+static bool get_hepp_from_config_line(const char *line_c, NumUsedPluginEntry &hepp){
+
+  // Example input: "plugin_usage_Sample Player_-_Click = 0"
+
+  QString line = line_c;
+  
+  line = line.trimmed();
+  
+  line = line.right(line.size() - QString("plugin_usage_(").size() + 1);
+
+
+
+  //////////
+  
+  int pos = line.lastIndexOf("=");
+  if (pos==-1)
+    return false;
+  
+  QString numstring = line.right(line.size() - pos - 1);
+  hepp.num_uses = (int)atoll(numstring.trimmed().toUtf8().constData());
+  if (hepp.num_uses == 0)
+    return false;
+  
+  line = line.left(pos-1);
+  
+
+
+  
+  ///////////
+  
+  pos = line.indexOf("_-_");
+  if (pos==-1)
+    return false;
+  
+  hepp.type_name = line.left(pos);
+  line = line.right(line.size() - pos - 3);
+  
+  
+  ///////////
+  
+  pos = line.indexOf("_-_");
+  if (pos==-1)
+    return false;
+  
+  hepp.container_name = line.left(pos);
+  line = line.right(line.size() - pos - 3);
+
+  
+  //////////
+  
+  hepp.name = QString(line);
+
+  if (hepp.name.startsWith("STK "))
+    hepp.menu_text = "STK:" + hepp.name.right(hepp.name.size()-3);
+  else
+    hepp.menu_text = hepp.type_name + ": " + hepp.name;
+  
+  hepp.menu_text += " (" + QString::number(hepp.num_uses) + ")";
+
+  //printf("hepp. %d: -%s- / -%s- / -%s- (%s)\n",hepp.num_uses, hepp.container_name.toUtf8().constData(), hepp.type_name.toUtf8().constData(), hepp.name.toUtf8().constData(),hepp.menu_text.toUtf8().constData());
+  
+  return true;
+}
+
+static bool compare_hepps(const NumUsedPluginEntry &h1, const NumUsedPluginEntry &h2){
+  if (h1.num_uses > h2.num_uses)
+    return true;
+  else
+    return false;
+}
+    
+
+namespace{
+struct Favourites{
+  
+  QVector<NumUsedPluginEntry> hepps;
+  QHash<QString, QHash<QString, int> > num_uses_normal;
+  QHash<QString, QHash<QString, int> > num_uses_container;
+  
+  Favourites(){
+
+    vector_t *lines = SETTINGS_get_all_lines_starting_with("plugin_usage_");
+
+    VECTOR_FOR_EACH(const char *, line_c, lines){
+      NumUsedPluginEntry hepp;
+      if (get_hepp_from_config_line(line_c, hepp)){
+        
+        hepps.push_back(hepp);
+        
+        if (hepp.container_name!=""){
+          int old = num_uses_container[hepp.container_name][hepp.type_name];
+          num_uses_container[hepp.container_name][hepp.type_name] = old+hepp.num_uses;
+          //if (hepp.num_uses > 0)
+          //  printf("    CONT ADDING %d to %s\n", hepp.num_uses, hepp.container_name.toUtf8().constData());
+        }
+        
+        num_uses_normal[hepp.type_name][hepp.name] = hepp.num_uses;
+        //if (hepp.num_uses > 0)
+        //  printf("    NORM ADDING %d to %s / %s\n", hepp.num_uses, hepp.type_name.toUtf8().constData(), hepp.name.toUtf8().constData());
+      }
+    }END_VECTOR_FOR_EACH;
+
+    qSort(hepps.begin(), hepps.end(), compare_hepps);
+  }
+
+  void set_num_uses(SoundPluginType *type){
+    type->num_uses = num_uses_normal[type->type_name][type->name];
+  }
+
+  void set_num_uses(SoundPluginTypeContainer *container){
+    container->num_uses = num_uses_container[container->name][container->type_name];
+      
+    if (container->is_populated){
+      for(int i=0 ; i < container->num_types ; i++)
+        set_num_uses(container->plugin_types[i]);
+    }
+  }
+
+  void set_num_uses(const PluginMenuEntry &entry){
+    if (entry.type==PluginMenuEntry::IS_NORMAL)
+      set_num_uses(entry.plugin_type);
+    else if (entry.type==PluginMenuEntry::IS_CONTAINER)
+      set_num_uses(entry.plugin_type_container);
+  }
+};
+}
+
+
 SoundPluginTypeContainer *PR_get_container_by_name(const char *container_name, const char *type_name){
   for(auto container : g_plugin_type_containers)
     if(!strcmp(container->type_name,type_name))
@@ -62,6 +190,7 @@ bool PR_populate(SoundPluginTypeContainer *container){
   
   if (!container->is_populated){
     container->populate(container);
+    Favourites().set_num_uses(container);
     return true;
   }
 
@@ -172,104 +301,26 @@ SoundPluginType *PR_get_plugin_type(int num){
 static QVector<PluginMenuEntry> g_plugin_menu_entries;
 
 
-static bool get_hepp_from_config_line(const char *line_c, NumUsedPluginEntry &hepp){
-
-  // Example input: "plugin_usage_Sample Player_-_Click = 0"
-
-  QString line = line_c;
-  
-  line = line.trimmed();
-  
-  line = line.right(line.size() - QString("plugin_usage_(").size() + 1);
-
-
-
-  //////////
-  
-  int pos = line.lastIndexOf("=");
-  if (pos==-1)
-    return false;
-  
-  QString numstring = line.right(line.size() - pos - 1);
-  hepp.num_uses = (int)atoll(numstring.trimmed().toUtf8().constData());
-  if (hepp.num_uses == 0)
-    return false;
-  
-  line = line.left(pos-1);
-  
-
-
-  
-  ///////////
-  
-  pos = line.indexOf("_-_");
-  if (pos==-1)
-    return false;
-  
-  hepp.type_name = line.left(pos);
-  line = line.right(line.size() - pos - 3);
-  
-  
-  ///////////
-  
-  pos = line.indexOf("_-_");
-  if (pos==-1)
-    return false;
-  
-  hepp.container_name = line.left(pos);
-  line = line.right(line.size() - pos - 3);
-
-  
-  //////////
-  
-  hepp.name = QString(line);
-
-  if (hepp.name.startsWith("STK "))
-    hepp.menu_text = "STK:" + hepp.name.right(hepp.name.size()-3);
-  else
-    hepp.menu_text = hepp.type_name + ": " + hepp.name;
-  
-  hepp.menu_text += " (" + QString::number(hepp.num_uses) + ")";
-
-  printf("hepp. %d: -%s- / -%s- / -%s- (%s)\n",hepp.num_uses, hepp.container_name.toUtf8().constData(), hepp.type_name.toUtf8().constData(), hepp.name.toUtf8().constData(),hepp.menu_text.toUtf8().constData());
-  
-
-  
-  return true;
-}
-
-static bool compare_hepps(const NumUsedPluginEntry &h1, const NumUsedPluginEntry &h2){
-  if (h1.num_uses > h2.num_uses)
-    return true;
-  else
-    return false;
-}
-    
 const QVector<PluginMenuEntry> PR_get_menu_entries(void){
-  printf("start. PR_get_menu_entries called\n");
-  QVector<PluginMenuEntry> ret(g_plugin_menu_entries);
-  printf("end. PR_get_menu_entries called\n");
-  
-  vector_t *lines = SETTINGS_get_all_lines_starting_with("plugin_usage_");
 
-  QList<NumUsedPluginEntry> hepps;
+  // Find favourites
+  Favourites favourites;
   
-  VECTOR_FOR_EACH(const char *, line_c, lines){
-    NumUsedPluginEntry hepp;
-    if (get_hepp_from_config_line(line_c, hepp))
-      hepps.push_back(hepp);
-  }END_VECTOR_FOR_EACH;
-  
-  if (hepps.size() > 0) {
+  QVector<PluginMenuEntry> ret(g_plugin_menu_entries);
+
+  // set type->num_uses and container->num_uses fields
+  for(PluginMenuEntry &entry : g_plugin_menu_entries)
+    favourites.set_num_uses(entry);
+
+  // Add favourites
+  if (favourites.hepps.size() > 0) {
     ret.push_back(PluginMenuEntry::separator());
-    
-    qSort(hepps.begin(), hepps.end(), compare_hepps);
     
     bool has_next = false;
     
     int num_added = 0;
     
-    for (auto hepp : hepps){
+    for (const auto &hepp : favourites.hepps){
       
       if (hepp.type_name == "VST" ||
           hepp.type_name == "Ladspa" ||

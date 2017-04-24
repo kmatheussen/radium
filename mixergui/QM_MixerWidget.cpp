@@ -1954,8 +1954,9 @@ static char *create_selector_text(SoundPluginType *type){
 
 void inc_plugin_usage_number(SoundPluginType *type){
   char *settings_name = talloc_format("plugin_usage_%s_-_%s_-_%s", type->type_name, type->container==NULL ? "" : type->container->name, type->name);
-  int num_uses = SETTINGS_read_int32(settings_name, 0);
-  SETTINGS_write_int(settings_name, num_uses+1);
+  int new_num_uses = SETTINGS_read_int32(settings_name, 0) + 1;
+  SETTINGS_write_int(settings_name, new_num_uses);
+  type->num_uses = new_num_uses;
 }
 
 

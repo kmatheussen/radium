@@ -35,7 +35,7 @@ struct NumUsedPluginEntry{
   QString container_name;
   QString type_name;
   QString name;
-  int num_uses;    
+  int num_uses = 0;
 };
 
 // This struct is used a lot of places, so easiest thing is to do a "make clean" after changing it.
@@ -43,7 +43,7 @@ struct PluginMenuEntry{
   SoundPluginType *plugin_type = NULL;
   SoundPluginTypeContainer *plugin_type_container = NULL;
   QString level_up_name;
-
+  
   NumUsedPluginEntry hepp;
 
   enum{

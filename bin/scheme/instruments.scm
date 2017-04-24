@@ -20,11 +20,17 @@
 
 (define *instrument-memoized-generation* 0)
 (define *use-instrument-memoization* #f)
-(define (start-instrument-memoization)
-  (set! *use-instrument-memoization* #t)
-  (inc! *instrument-memoized-generation* 1))
 
-(define (end-instrument-memoization)
+(define (run-instrument-data-memoized func)
+  (set! *use-instrument-memoization* #t)
+  (inc! *instrument-memoized-generation* 1)
+  (catch #t
+         func
+         (lambda args
+           (set! *use-instrument-memoization* #f)
+           (display (ow!))
+           (throw (car args)) ;; rethrowing
+           #f))
   (set! *use-instrument-memoization* #f))
 
 
