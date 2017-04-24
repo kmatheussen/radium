@@ -275,7 +275,7 @@ int64_t createAudioInstrument(char *type_name, char *plugin_name, char *name, fl
   
   {
     struct SoundPlugin *plugin = patch->patchdata;
-    inc_plugin_usage_number(plugin->type);
+    PR_inc_plugin_usage_number(plugin->type);
   }
 
   return patch->id;

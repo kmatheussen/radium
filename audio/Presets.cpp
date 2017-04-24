@@ -21,6 +21,7 @@
 #include "../OpenGL/Widget_proc.h"
 
 #include "SoundPlugin.h"
+#include "SoundPluginRegistry_proc.h"
 #include "audio_instrument_proc.h"
 
 #include "Presets_proc.h"
@@ -221,7 +222,7 @@ static int64_t PRESET_load_multipreset(hash_t *state, char *name, bool inc_usage
       
       if (inc_usage_number){
         SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-        inc_plugin_usage_number(plugin->type);
+        PR_inc_plugin_usage_number(plugin->type);
       }
     }
   }
@@ -245,7 +246,7 @@ static int64_t PRESET_load_singlepreset(hash_t *state, char *name, bool inc_usag
 
   if (inc_usage_number){
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-    inc_plugin_usage_number(plugin->type);
+    PR_inc_plugin_usage_number(plugin->type);
   }
 
   return patch->id;

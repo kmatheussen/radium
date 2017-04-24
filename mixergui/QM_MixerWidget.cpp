@@ -1952,13 +1952,6 @@ static char *create_selector_text(SoundPluginType *type){
 */
 
 
-void inc_plugin_usage_number(SoundPluginType *type){
-  char *settings_name = talloc_format("plugin_usage_%s_-_%s_-_%s", type->type_name, type->container==NULL ? "" : type->container->name, type->name);
-  int new_num_uses = SETTINGS_read_int32(settings_name, 0) + 1;
-  SETTINGS_write_int(settings_name, new_num_uses);
-  type->num_uses = new_num_uses;
-}
-
 
 /*
 static const char *popup_plugin_selector(SoundPluginType **type, bool must_have_inputs, bool must_have_outputs){
@@ -2049,7 +2042,7 @@ SoundPluginType *MW_popup_plugin_type_selector(bool must_have_inputs, bool must_
   popup_plugin_selector(&type, must_have_inputs, must_have_outputs);
 
   if (type != NULL)
-    inc_plugin_usage_number(type);
+    PR_inc_plugin_usage_number(type);
 
   return type;
 }

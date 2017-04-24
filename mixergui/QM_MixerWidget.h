@@ -185,8 +185,6 @@ void MW_set_selected_chip(Chip *chip);
 
 extern LANGSPEC DEFINE_ATOMIC(bool, g_show_cpu_usage_in_mixer);
 
-extern LANGSPEC void inc_plugin_usage_number(SoundPluginType *type);
-
 extern LANGSPEC void MW_set_rotate(float rotate);
 extern LANGSPEC void MW_update_mixer_widget(void);
 extern LANGSPEC void MW_disable_include_instrument_checkbox(void);

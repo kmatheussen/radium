@@ -570,7 +570,11 @@
                                  (callback "3")))
                          (loop (cdr entries))))
                   ((string=? type "NUM_USED_PLUGIN")
-                   (cons (list (entry :menu-text)
+                   (cons (list (<-> (if (string-starts-with? (entry :name) "STK")
+                                        (<-> "STK:"
+                                             (substring (entry :name) 3))
+                                        (<-> (entry :type-name) ": " (entry :name)))
+                                    " (" (entry :num-uses) ")")
                                (lambda ()
                                  (callback (<-> "4"
                                             (<ra> :to-base64 (entry :container-name))

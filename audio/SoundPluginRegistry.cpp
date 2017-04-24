@@ -44,6 +44,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 static radium::Vector<SoundPluginType*> g_plugin_types;
 static radium::Vector<SoundPluginTypeContainer*> g_plugin_type_containers;
 
+static QVector<PluginMenuEntry> g_plugin_menu_entries;
+
+
 int PR_get_num_plugin_types(void){
   return g_plugin_types.size();
 }
@@ -100,13 +103,15 @@ static bool get_hepp_from_config_line(const char *line_c, NumUsedPluginEntry &he
   
   hepp.name = QString(line);
 
+  /*
   if (hepp.name.startsWith("STK "))
     hepp.menu_text = "STK:" + hepp.name.right(hepp.name.size()-3);
   else
     hepp.menu_text = hepp.type_name + ": " + hepp.name;
   
   hepp.menu_text += " (" + QString::number(hepp.num_uses) + ")";
-
+  */
+  
   //printf("hepp. %d: -%s- / -%s- / -%s- (%s)\n",hepp.num_uses, hepp.container_name.toUtf8().constData(), hepp.type_name.toUtf8().constData(), hepp.name.toUtf8().constData(),hepp.menu_text.toUtf8().constData());
   
   return true;
@@ -177,16 +182,30 @@ struct Favourites{
 
 static Favourites *g_favourites = NULL;
 
-static void recreate_favourites(void){
+static void recreate_favourites(bool set_num_uses_questionmark){
   delete g_favourites;
   g_favourites = new Favourites;
+
+  if (set_num_uses_questionmark)
+    for(const PluginMenuEntry &entry : g_plugin_menu_entries)
+      g_favourites->set_num_uses(entry);
 }
 
 static Favourites *get_favourites(void){
   if (g_favourites == NULL)
-    recreate_favourites();
+    recreate_favourites(true);
+
   return g_favourites;
 }
+
+void PR_inc_plugin_usage_number(SoundPluginType *type){
+  char *settings_name = talloc_format("plugin_usage_%s_-_%s_-_%s", type->type_name, type->container==NULL ? "" : type->container->name, type->name);
+  int new_num_uses = SETTINGS_read_int32(settings_name, 0) + 1;
+  SETTINGS_write_int(settings_name, new_num_uses);
+  type->num_uses = new_num_uses;
+  recreate_favourites(false);
+}
+
 
 SoundPluginTypeContainer *PR_get_container_by_name(const char *container_name, const char *type_name){
   for(auto container : g_plugin_type_containers)
@@ -202,7 +221,7 @@ bool PR_populate(SoundPluginTypeContainer *container){
   
   if (!container->is_populated){
     container->populate(container);
-    recreate_favourites();
+    recreate_favourites(false);
     g_favourites->set_num_uses(container);
     return true;
   }
@@ -311,21 +330,13 @@ SoundPluginType *PR_get_plugin_type(int num){
   return g_plugin_types[num];
 }
 
-static QVector<PluginMenuEntry> g_plugin_menu_entries;
-
-
 const QVector<PluginMenuEntry> PR_get_menu_entries(void){
 
-  // Find favourites
   Favourites *favourites = get_favourites();
   
   QVector<PluginMenuEntry> ret(g_plugin_menu_entries);
 
-  // set type->num_uses and container->num_uses fields
-  for(PluginMenuEntry &entry : g_plugin_menu_entries)
-    favourites->set_num_uses(entry);
-
-  // Add favourites
+  // Add favourite menu entries. (i.e. most used plugins)
   if (favourites->hepps.size() > 0) {
     ret.push_back(PluginMenuEntry::separator());
     
