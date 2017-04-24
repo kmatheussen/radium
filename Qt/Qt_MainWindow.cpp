@@ -402,7 +402,7 @@ public:
     setAcceptDrops(true);
   }
 
-  void closeEvent(QCloseEvent *ce){
+  void closeEvent(QCloseEvent *ce) override{
     ce->ignore();
     if(widgets_are_disabled==false){
       struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
@@ -416,7 +416,7 @@ public:
 
 #if 0
   // Want the wheel to work from everywhere. (actually we don't want that)
-  void wheelEvent(QWheelEvent *qwheelevent) {
+  void wheelEvent(QWheelEvent *qwheelevent) override {
     if(ATOMIC_GET(is_starting_up)==true)
       return;
     printf("Got wheel event\n");
@@ -424,7 +424,7 @@ public:
   }
 #endif
 
-  void dragEnterEvent(QDragEnterEvent *e){
+  void dragEnterEvent(QDragEnterEvent *e) override {
     e->acceptProposedAction();
   }
 
@@ -438,7 +438,7 @@ public:
   }
   */
   
-  void dropEvent(QDropEvent *event){
+  void dropEvent(QDropEvent *event) override {
       printf("Got drop event\n");
   if (event->mimeData()->hasUrls())
     {

@@ -88,7 +88,7 @@
 
 (define (add-gui-effect-monitor gui instrument-id effect-name callback)
   (define effect-monitor (<ra> :add-effect-monitor effect-name instrument-id callback))
-  (<gui> :add-close-callback gui
+  (<gui> :add-deleted-callback gui
          (lambda ()
            (<ra> :remove-effect-monitor effect-monitor))))
 
@@ -744,7 +744,7 @@
   
     (push-back! *send-callbacks* send-callback)
     
-    (<gui> :add-close-callback gui
+    (<gui> :add-deleted-callback gui
            (lambda ()
              (set! *send-callbacks*
                    (remove (lambda (callback)
@@ -1589,7 +1589,7 @@
 
   (push-back! *mixer-strips-objects* mixer-strips-object)
   
-  (<gui> :add-close-callback parent
+  (<gui> :add-deleted-callback parent
          (lambda ()
            (set! *mixer-strips-objects*
                  (remove (lambda (a-mixer-strip-object)
@@ -1816,7 +1816,7 @@
   (<ra> :inform-about-gui-being-a-mixer-strips parent)
   (push-back! *mixer-strips-objects* mixer-strips-object)
 
-  (<gui> :add-close-callback parent
+  (<gui> :add-deleted-callback parent
          (lambda ()
            (set! *mixer-strips-objects*
                  (remove (lambda (a-mixer-strips-object)

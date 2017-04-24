@@ -237,7 +237,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     QWidget *_full_screen_parent = NULL;
     
     QVector<Gui*> _children;
-    QVector<func_t*> _close_callbacks;
+    QVector<func_t*> _deleted_callbacks;
     
     int get_gui_num(void){
       return _gui_num;
@@ -260,7 +260,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       
       //printf("Deleting Gui %p\n",this);
 
-      for(func_t *func : _close_callbacks){
+      for(func_t *func : _deleted_callbacks){
         s7extra_callFunc_void_void(func);
         s7extra_unprotect(func);
       }
@@ -1791,14 +1791,14 @@ int64_t gui_child(int64_t guinum, const_char* childname){
 //////////////////////////
 
 
-void gui_addCloseCallback(int64_t guinum, func_t* func){
+void gui_addDeletedCallback(int64_t guinum, func_t* func){
   Gui *gui = get_gui(guinum);
 
   if (gui==NULL)
     return;
 
   s7extra_protect(func);
-  gui->_close_callbacks.push_back(func);
+  gui->_deleted_callbacks.push_back(func);
 }
                       
 void gui_addCallback(int64_t guinum, func_t* func){

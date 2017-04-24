@@ -66,8 +66,8 @@
         ((eq? command :add-paint-callback)
          (<ra> :gui_add-paint-callback (car args) (cadr args)))
         
-        ((eq? command :add-close-callback)
-         (<ra> :gui_add-close-callback (car args) (cadr args)))
+        ((eq? command :add-deleted-callback)
+         (<ra> :gui_add-deleted-callback (car args) (cadr args)))
         
         ((eq? command :add-audio-meter-peak-callback)
          (<ra> :gui_add-audio-meter-peak-callback (car args) (cadr args)))
@@ -98,8 +98,8 @@
         ((eq? command :add-paint-callback)
          `(<ra> :gui_add-paint-callback ,(car args) ,(cadr args)))
         
-        ((eq? command :add-close-callback)
-         `(<ra> :gui_add-close-callback ,(car args) ,(cadr args)))
+        ((eq? command :add-deleted-callback)
+         `(<ra> :gui_add-deleted-callback ,(car args) ,(cadr args)))
         
         ((eq? command :add-audio-meter-peak-callback)
          `(<ra> :gui_add-audio-meter-peak-callback ,(car args) ,(cadr args)))
