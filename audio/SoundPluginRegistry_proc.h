@@ -31,7 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/Vector.hpp"
 
 struct NumUsedPluginEntry{
-  QString menu_text;
   QString container_name;
   QString type_name;
   QString name;

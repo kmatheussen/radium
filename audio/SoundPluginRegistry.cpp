@@ -618,5 +618,7 @@ void PR_init_plugin_types(void){
   create_faust_system_lowshelf_plugin();
   create_faust_system_highshelf_plugin();
   //create_faust_system_delay_plugin();
+
+  recreate_favourites(true);
 }
 
