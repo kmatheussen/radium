@@ -68,6 +68,10 @@
   (if (not something)
       (throw 'assert-failed)))
 
+;; It is assumed various places that eqv? can be used to compare functions.
+(assert (eqv? assert ((lambda () assert))))
+
+ 
 #||
 (define (c-display . rest)
   (for-each (lambda (d)
@@ -268,24 +272,6 @@
 
 (define (yppla l c)
   (apply c l))
-
-(define (delete-from das-list element)
-  (if (eqv? (car das-list) element)
-      (cdr das-list)
-      (cons (car das-list)
-            (delete-from (cdr das-list) element))))
-
-(define (delete-from2 das-list element)
-  (if (equal? (car das-list) element)
-      (cdr das-list)
-      (cons (car das-list)
-            (delete-from (cdr das-list) element))))
-
-(define (delete-list-from das-list elements)
-  (if (null? elements)
-      das-list
-      (delete-list-from (delete-from das-list (car elements))
-                        (cdr elements))))
 
 
 (define (last das-list) ;; Wouldn't be surprised if this version is slower than '(car (reverse das-list))' though... (but no, this one is much faster with the test below)

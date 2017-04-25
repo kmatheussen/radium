@@ -86,12 +86,80 @@
 (require stuff.scm)
 (require write.scm)
 
+(define-constant go-wrong-finished-called-because-something-went-wrong 0)
+(define-constant go-wrong-finished-called-because-it-was-excplicitly-called 1)
+
+(define go-wrong-hooks '())
 
 (set! (hook-functions *error-hook*) 
       (list (lambda (hook)
               (display (ow!))
+              (let ((gwhs go-wrong-hooks))
+                (set! go-wrong-hooks '())
+                (for-each (lambda (go-wrong-hook)
+                            (go-wrong-hook))
+                          gwhs))
               (if *is-initializing*
                   (exit)))))
+
+
+(define-expansion (inc! var how-much)
+  `(set! ,var (+ ,var ,how-much)))
+
+(define-expansion (push! list el)
+  `(set! ,list (cons ,el ,list)))
+
+(define-expansion (push-back! list el)
+  `(set! ,list (append ,list (list ,el))))
+
+
+(define (delete-from das-list element)
+  (if (eqv? (car das-list) element)
+      (cdr das-list)
+      (cons (car das-list)
+            (delete-from (cdr das-list) element))))
+
+(define (delete-from2 das-list element)
+  (if (equal? (car das-list) element)
+      (cdr das-list)
+      (cons (car das-list)
+            (delete-from (cdr das-list) element))))
+
+(define (delete-list-from das-list elements)
+  (if (null? elements)
+      das-list
+      (delete-list-from (delete-from das-list (car elements))
+                        (cdr elements))))
+
+;; This cleanup function will either be called when 'finished' is explicitly called,
+;; or an exception happens. 'reason' will be the value of go-wrong-finished-called-because-something-went-wrong
+;; or the value of go-wrong-finished-called-because-it-was-excplicitly-called.
+;; See examples below.
+(define (call-me-if-something-goes-wrong cleanup block)
+  (define (go-wrong-hook)
+    (cleanup go-wrong-finished-called-because-something-went-wrong))
+  (define (finished)
+    (set! go-wrong-hooks (delete-from go-wrong-hooks go-wrong-hook))
+    (cleanup go-wrong-finished-called-because-it-was-excplicitly-called))
+  (push! go-wrong-hooks go-wrong-hook)
+  (block finished))
+
+#!!
+(call-me-if-something-goes-wrong
+ (lambda (reason)
+   (assert (eqv? reason go-wrong-finished-called-because-it-was-excplicitly-called))
+   (c-display "finished normally " reason))
+ (lambda (finished)
+   (finished)))
+
+(call-me-if-something-goes-wrong
+ (lambda (reason)
+   (assert (eqv? reason go-wrong-finished-called-because-something-went-wrong))
+   (c-display "finished because something went wrong " reason))
+ (lambda (finished)
+   (aasdeqrtpoiujqerotiuqpert)
+   (finished)))
+!!#
 
 
 (define *logtype-hold* (ra:get-logtype-hold))
@@ -130,6 +198,7 @@
   (set! *is-initializing* #t)
   (my-require 'mouse.scm)
   (my-require 'mixer-strips.scm)
+  (my-require 'pluginmanager.scm)
   (set! *is-initializing* #f))
 
 

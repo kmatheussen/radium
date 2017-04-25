@@ -161,7 +161,7 @@ public:
     MyQGraphicsView *view;
 
     radium::RememberGeometry remember_geometry;
-
+  
     void setVisible(bool visible) override {
       if (parent()==NULL)
         remember_geometry.remember_geometry_setVisible_override_func(this, visible);

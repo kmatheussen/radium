@@ -609,11 +609,15 @@
 
 ;; async
 (define (start-instrument-popup-menu instrconf callback)
-  (popup-menu (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
-                                         instrconf
-                                         (lambda (entry)
-                                           (spr-entry->instrument-description entry instrconf callback))
-                                         #f)))
+  (popup-menu (append (list "Plugin Manager"
+                            (lambda ()
+                              (pmg-start instrconf callback))
+                            "--------------")
+                      (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
+                                                 instrconf
+                                                 (lambda (entry)
+                                                   (spr-entry->instrument-description entry instrconf callback))
+                                                 #f))))
 
 (define (create-instrument instrconf description)
   (undo-block

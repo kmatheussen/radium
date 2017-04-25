@@ -370,6 +370,27 @@ double s7extra_callFunc2_double_void(const char *funcname){
 }
 
 
+bool s7extra_callFunc_bool_void(func_t *func){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = s7_call(s7,
+                           (s7_pointer)func,
+                           s7_list(s7, 0)
+                           );
+
+  if (!s7_is_boolean(ret)){
+    handleError("Callback did not return a boolean");
+    return false;
+  }else{
+    return s7_boolean(s7, ret);
+  }
+}
+
+bool s7extra_callFunc2_bool_void(const char *funcname){
+  return s7extra_callFunc_bool_void((func_t*)s7_name_to_value(s7, funcname));
+}
+
+
 dyn_t s7extra_callFunc_dyn_void(func_t *func){
   ScopedEvalTracker eval_tracker;
   

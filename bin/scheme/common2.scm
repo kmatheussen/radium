@@ -62,15 +62,6 @@
           (cons (car list)
                 (remove func (cdr list))))))
 
-(define-expansion (inc! var how-much)
-  `(set! ,var (+ ,var ,how-much)))
-
-(define-expansion (push! list el)
-  `(set! ,list (cons ,el ,list)))
-
-(define-expansion (push-back! list el)
-  `(set! ,list (append ,list (list ,el))))
-
 (define (sort sequence less?)
   (sort! (copy sequence) less?))
 
@@ -1149,7 +1140,6 @@ for .emacs:
                       (display (ow!))))))
     (<ra> :stop-ignoring-undo)
     ret))
-
 
 (define (draw-plot xs func)
   (define ys (map func xs))
