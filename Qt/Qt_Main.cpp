@@ -218,7 +218,10 @@ void obtain_keyboard_focus_counting(void){
 
 void release_keyboard_focus_counting(void){
   if (g_radium_runs_custom_exec==false){
-    someone_else_has_keyboard_counting--;
+    if (someone_else_has_keyboard_counting==0)
+      RError("release_keyboard_focus_counting called without first calling obtain_keyboard_focus_counting");
+    else
+      someone_else_has_keyboard_counting--;
     g_do_grey_editor = !editor_has_keyboard_focus();
   }
   GFX_ScheduleEditorRedraw();

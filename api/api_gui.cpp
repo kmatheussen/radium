@@ -123,7 +123,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define SETVISIBLE_OVERRIDER(classname)                                 \
   void setVisible(bool visible) override {                              \
-    if (parent()==NULL)                                                 \
+    if (parentWidget()==NULL) \
       remember_geometry.remember_geometry_setVisible_override_func(this, visible); \
     classname::setVisible(visible);                                     \
   }
@@ -242,7 +242,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       s7extra_callFunc_void_charpointer(_func, text_edit->toPlainText().toUtf8().constData());
     }
     
-
+    void cellDoubleClicked(int row, int column){
+      s7extra_callFunc_void_int_int(_func, column, row);
+    }
   };
 
   
@@ -393,7 +395,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       s7extra_callFunc_void_int_float_float(_doubleclick_callback, getMouseButtonEventID(event), point.x(), point.y());
     }
 
-    void addDoubleClickCallback(func_t* func){      
+    virtual void addDoubleClickCallback(func_t* func){      
       if (_doubleclick_callback!=NULL){
         handleError("Gui %d already has a doubleclick callback.", _gui_num);
         return;
@@ -1349,9 +1351,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       : Gui(this)
     {
       setLayout(new MyGridLayout(num_columns));
-    }    
-
-
+    }
+    
     OVERRIDERS(QWidget);
   };
   
@@ -1740,7 +1741,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       //horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
     }
 
-
+    virtual void addDoubleClickCallback(func_t* func) override {
+      Callback *callback = new Callback(func, _widget);
+      connect(this, SIGNAL(cellDoubleClicked(int,int)), callback, SLOT(cellDoubleClicked(int,int)));
+      _callbacks.push_back(callback);
+    }
+    
     virtual dyn_t getGuiValue(void) override {
       dynvec_t ret = {};
       for(const auto *item : selectedItems())
@@ -2577,6 +2583,14 @@ void gui_setAlwaysOnTop(int64_t guinum){
   gui->_widget->setParent(g_main_window, Qt::Window);
 }
 
+void gui_setModal(int64_t guinum, bool set_modal){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->setWindowModality(set_modal ? Qt::WindowModal : Qt::NonModal);
+}
+
 void gui_disableUpdates(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -3025,6 +3039,18 @@ void gui_drawVerticalText(int64_t guinum, const_char* color, const_char *text, f
 
   gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, true);
 }
+
+
+/////////////
+
+void obtainKeyboardFocus(void){
+  obtain_keyboard_focus_counting();
+}
+
+void releaseKeyboardFocus(void){
+  release_keyboard_focus_counting();
+}
+
 
 ////////////
 
