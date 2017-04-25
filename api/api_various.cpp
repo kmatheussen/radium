@@ -102,13 +102,13 @@ void setMixerRotate(float rotate){
   MW_set_rotate(rotate);
 }
 
-static bool g_showInstrumentWidgetWhenDoubleClickingSoundObject = true;
+static bool g_showInstrumentWidgetWhenDoubleClickingSoundObject = false;
 
 bool showInstrumentWidgetWhenDoubleClickingSoundObject(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_showInstrumentWidgetWhenDoubleClickingSoundObject = SETTINGS_read_bool("show_instrument_widget_when_double_clicking_sound_object", true);
+    g_showInstrumentWidgetWhenDoubleClickingSoundObject = SETTINGS_read_bool("show_instrument_widget_when_double_clicking_sound_object", false);
     has_inited = true;
   }
 
