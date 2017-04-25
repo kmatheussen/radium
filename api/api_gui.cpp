@@ -1880,6 +1880,15 @@ void gui_addDeletedCallback(int64_t guinum, func_t* func){
   gui->_deleted_callbacks.push_back(func);
 }
                       
+void gui_addRealtimeCallback(int64_t guinum, func_t* func){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  gui->addGuiRealtimeCallback(func);
+}
+
 void gui_addCallback(int64_t guinum, func_t* func){
   Gui *gui = get_gui(guinum);
 
@@ -1905,6 +1914,15 @@ void gui_addDoubleClickCallback(int64_t guinum, func_t* func){
     return;
 
   gui->addDoubleClickCallback(func);
+}
+
+void gui_addCloseCallback(int64_t guinum, func_t* func){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  gui->addCloseCallback(func);
 }
 
 void gui_addResizeCallback(int64_t guinum, func_t* func){
