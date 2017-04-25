@@ -2121,6 +2121,7 @@ namespace{
   // these classes are used to make sorting table rows work.
   
   struct Pri{
+    QString text;
     double _pri;
     Pri(double pri)
       :_pri(pri)
@@ -2128,8 +2129,9 @@ namespace{
   };
   
   struct MyNumItem : public QTableWidgetItem, public Pri{
-    MyNumItem(double num)
-      : Pri(num)
+    MyNumItem(double num, bool is_int)
+      : QTableWidgetItem(is_int ? QString::number(int(num)) : QString::number(num))
+      , Pri(num)
     {}
     bool operator<(const QTableWidgetItem &other) const override{
       const Pri *myother = dynamic_cast<const Pri*>(&other);
@@ -2142,7 +2144,8 @@ namespace{
   struct MyStringItem : public QTableWidgetItem, public Pri{
     QString _name;
     MyStringItem(QString name)
-      : Pri(DBL_MIN)
+      : QTableWidgetItem(name)
+      , Pri(DBL_MIN)
       , _name(name)
     {}
     bool operator<(const QTableWidgetItem &other) const override{
@@ -2153,7 +2156,11 @@ namespace{
           return _pri < mypriother->_pri; //false; //_name < other.text(); //QTableWidgetItem::operator<(other);
         else
           return true;
-      }else
+      }else if (myother->_name=="")
+        return true;
+      else if (_name=="")
+        return false;
+      else
         return _name < myother->_name;
     }
   };
@@ -2187,6 +2194,14 @@ static int64_t add_table_cell(int64_t table_guinum, Gui *cell_gui, QTableWidgetI
     table->setRowCount(y+1);
 
   table->setItem(y, x, item);
+
+  if (cell_gui==NULL){
+    
+    if (table->cellWidget(y,x) != NULL)
+      table->removeCellWidget(y,x); // is the cell widget deleted now?
+    
+    return -1;
+  }
   
   table->setCellWidget(y, x, cell_gui->_widget);
 
@@ -2208,29 +2223,29 @@ int64_t gui_addTableStringCell(int64_t table_guinum, const_char* string, int x, 
   auto *item = new MyStringItem(name);
   item->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
     
-  Gui *cell_gui = new Text(name, "");
+  //Gui *cell_gui = new Text(name, "");
 
-  return add_table_cell(table_guinum, cell_gui, item, x, y);
+  return add_table_cell(table_guinum, NULL, item, x, y);
 }
 
 int64_t gui_addTableIntCell(int64_t table_guinum, int64_t num, int x, int y){
   QString name = QString::number(num);
-  auto *item = new MyNumItem(num);
+  auto *item = new MyNumItem(num, true);
   item->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
     
-  Gui *cell_gui = new Text(name, "");
+  //Gui *cell_gui = new Text(name, "");
 
-  return add_table_cell(table_guinum, cell_gui, item, x, y);
+  return add_table_cell(table_guinum, NULL, item, x, y);
 }
 
 int64_t gui_addTableFloatCell(int64_t table_guinum, double num, int x, int y){
   QString name = QString::number(num);
-  auto *item = new MyNumItem(num);
+  auto *item = new MyNumItem(num, false);
   item->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
     
-  Gui *cell_gui = new Text(name, "");
+  //Gui *cell_gui = new Text(name, "");
 
-  return add_table_cell(table_guinum, cell_gui, item, x, y);
+  return add_table_cell(table_guinum, NULL, item, x, y);
 }
 
 int gui_getTableRowNum(int64_t table_guinum, int cell_guinum){
