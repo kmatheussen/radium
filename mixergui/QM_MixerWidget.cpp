@@ -924,7 +924,7 @@ static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_
   float x, y;
   get_slotted_x_y(mouse_x, mouse_y, x, y);
 
-  createInstrumentDescriptionPopupMenu(x, y, false, true, true, false, false);
+  createInstrumentDescriptionPopupMenu(createNewInstrumentConf(x, y, false, true, true, false, false));
 
   /*                                       
   const char *instrument_description = instrumentDescriptionPopupMenu(false, false);
@@ -1168,11 +1168,11 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
       random = VECTOR_push_back(&v, "[disabled]Load random sample from folders (Left Shift + R)");
     VECTOR_push_back(&v, "--------");
     
-    copy = VECTOR_push_back(&v, "Copy sound objects");
-    cut = VECTOR_push_back(&v, "Cut sound objects");
-    delete_ = VECTOR_push_back(&v, "Delete sound objects");
+    copy = VECTOR_push_back(&v, "Copy"); // sound objects");
+    cut = VECTOR_push_back(&v, "Cut"); // sound objects");
+    delete_ = VECTOR_push_back(&v, "Delete"); // sound objects");
     VECTOR_push_back(&v, "--------");
-    save = VECTOR_push_back(&v, "Save multi preset file (.mrec)");
+    save = VECTOR_push_back(&v, "Save multi preset (.mrec)");
     VECTOR_push_back(&v, "--------");
     solo = VECTOR_push_back(&v, "Solo all selected");
     unsolo = VECTOR_push_back(&v, "Un-solo all selected");
@@ -1183,7 +1183,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     mute_all = VECTOR_push_back(&v, "Mute all");
     unmute_all = VECTOR_push_back(&v, "Un-mute all");
     VECTOR_push_back(&v, "--------");
-    config_color = VECTOR_push_back(&v, "Configure instruments color");
+    config_color = VECTOR_push_back(&v, "Configure color");
       
   } else { // i.e. if (patches.num_elements == 1){
 
@@ -1195,14 +1195,14 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
       VECTOR_push_back(&v, "--------");
     }
 
-    insert = VECTOR_push_back(&v, "Insert sound object");
-    replace = VECTOR_push_back(&v, "Replace sound object");
+    insert = VECTOR_push_back(&v, "Insert"); // sound object");
+    replace = VECTOR_push_back(&v, "Replace"); // sound object");
     
     VECTOR_push_back(&v, "--------");
     
-    copy = VECTOR_push_back(&v, "Copy sound object");
-    cut = VECTOR_push_back(&v, "Cut sound object");
-    delete_ = VECTOR_push_back(&v, "Delete sound object");
+    copy = VECTOR_push_back(&v, "Copy"); // sound object");
+    cut = VECTOR_push_back(&v, "Cut"); // sound object");
+    delete_ = VECTOR_push_back(&v, "Delete"); // sound object");
 
     VECTOR_push_back(&v, "--------");
 
@@ -1229,9 +1229,9 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
     VECTOR_push_back(&v, "--------");
     
-    save = VECTOR_push_back(&v, "Save preset file (.rec)");
-    config_color = VECTOR_push_back(&v, "Configure instrument color");
-    instrument_info = VECTOR_push_back(&v, "Show instrument info");
+    save = VECTOR_push_back(&v, "Save preset (.rec)");
+    config_color = VECTOR_push_back(&v, "Configure color");
+    instrument_info = VECTOR_push_back(&v, "Show info");
   }
 
       

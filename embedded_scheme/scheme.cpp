@@ -556,6 +556,22 @@ void s7extra_callFunc2_void_bool(const char *funcname, bool arg1){
   s7extra_callFunc_void_double((func_t*)s7_name_to_value(s7, funcname), arg1);
 }
 
+void s7extra_callFunc_void_dyn(func_t *func, dyn_t arg1){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_call(s7,
+          (s7_pointer)func,
+          s7_list(s7,
+                  1,
+                  Protect(s7extra_make_dyn(s7, arg1)).v
+                  )
+          );
+}
+
+void s7extra_callFunc2_void_dyn(const char *funcname, dyn_t arg1){
+  s7extra_callFunc_void_dyn((func_t*)s7_name_to_value(s7, funcname), arg1);
+}
+
 void s7extra_callFunc_void_int_charpointer(func_t *func, int64_t arg1, const char* arg2){
   ScopedEvalTracker eval_tracker;
   

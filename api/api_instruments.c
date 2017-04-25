@@ -405,17 +405,20 @@ bool autoconnectInstrument(int64_t instrument_id, float x, float y){
   return MW_autoconnect(patch, x, y);
 }
 
-void createInstrumentDescriptionPopupMenu(float x, float y, bool connect_to_main_pipe, bool do_autoconnect, bool include_load_preset, bool must_have_inputs, bool must_have_outputs){
-  evalScheme(talloc_format("(create-instrument-popup-menu %f %f #%s #%s #%s #%s #%s)",
-                           x,
-                           y,
-                           connect_to_main_pipe ? "t" : "f",
-                           do_autoconnect ? "t" : "f",
-                           include_load_preset ? "t" : "f",
-                           must_have_inputs ? "t" : "f",
-                           must_have_outputs ? "t" : "f"
-                           )
-             );
+dyn_t createNewInstrumentConf(float x, float y, bool connect_to_main_pipe, bool do_autoconnect, bool include_load_preset, bool must_have_inputs, bool must_have_outputs){
+  hash_t *conf = HASH_create(7);
+  HASH_put_float(conf, ":x", x);
+  HASH_put_float(conf, ":y", y);
+  HASH_put_bool(conf, ":connect-to-main-pipe", connect_to_main_pipe);
+  HASH_put_bool(conf, ":do-autoconnect", do_autoconnect);
+  HASH_put_bool(conf, ":include-load-preset", include_load_preset);
+  HASH_put_bool(conf, ":must_have_inputs", must_have_inputs);
+  HASH_put_bool(conf, ":must_have_outputs", must_have_outputs);
+  return DYN_create_hash(conf);
+}
+
+void createInstrumentDescriptionPopupMenu(dyn_t instrconf){
+  s7extra_callFunc2_void_dyn("create-instrument-popup-menu", instrconf);
 }
 
 dyn_t getAllPresetsInPath(const_char* path){

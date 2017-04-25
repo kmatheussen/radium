@@ -110,6 +110,8 @@ struct _hash_t{
   int num_array_elements;
   int num_elements;
 
+  int version;
+
   int elements_size;
   hash_element_t *elements[];
 }; // hash_t;
@@ -153,6 +155,8 @@ hash_t *HASH_create(int approx_size){
 
   hash->elements_size = elements_size;
 
+  hash->version = 3;
+
   return hash;
 }
 
@@ -161,6 +165,7 @@ static void put2(hash_t *hash, const char *key, int i, hash_element_t *element);
 // Can also be used to rehash
 hash_t *HASH_copy(const hash_t *hash){
   hash_t *ret = HASH_create(hash->num_elements);
+  ret->version = hash->version;
 
   int i;
   for(i=0;i<hash->elements_size;i++){
@@ -306,6 +311,10 @@ static void put_int(hash_t *hash, const char *key, int i, int64_t val){
   put_dyn(hash, key, i, DYN_create_int(val));
 }
 
+static void put_bool(hash_t *hash, const char *key, int i, bool val){
+  put_dyn(hash, key, i, DYN_create_bool(val));
+}
+
 static void put_float(hash_t *hash, const char *key, int i, double val){
   put_dyn(hash, key, i, DYN_create_float(val));
 }
@@ -341,6 +350,10 @@ void HASH_put_chars(hash_t *hash, const char *key, const char *val){
 
 void HASH_put_int(hash_t *hash, const char *key, int64_t val){
   put_int(hash, key, 0, val);
+}
+
+void HASH_put_bool(hash_t *hash, const char *key, bool val){
+  put_bool(hash, key, 0, val);
 }
 
 void HASH_put_float(hash_t *hash, const char *key, double val){
@@ -386,6 +399,14 @@ void HASH_put_int_at(hash_t *hash, const char *key, int i, int64_t val){
   if(new_size>hash->num_array_elements)
     hash->num_array_elements = new_size;
 }
+
+void HASH_put_bool_at(hash_t *hash, const char *key, int i, bool val){
+  put_bool(hash, key, i, val);
+  int new_size = i+1;
+  if(new_size>hash->num_array_elements)
+    hash->num_array_elements = new_size;
+}
+
 void HASH_put_float_at(hash_t *hash, const char *key, int i, double val){
   put_float(hash, key, i, val);
   int new_size = i+1;
@@ -495,6 +516,26 @@ static int64_t get_int(const hash_t *hash, const char *key, int i){
   return element->a.int_number;
 }
 
+static bool get_bool(const hash_t *hash, const char *key, int i){
+  hash_element_t *element=HASH_get_no_complaining(hash, key, i);
+
+  if(element==NULL){
+    RWarning("HASH_get_bool. Element not found. key: \"%s\"/%d. hash: %p",key,i,hash);
+    return false;
+  }
+  
+  if(element->a.type==BOOL_TYPE)
+    return element->a.bool_number;
+
+  // Before, bool was saved to disk as integers.
+  if(hash->version<3 && element->a.type==INT_TYPE)
+    return element->a.int_number==1 ? true : false;
+
+  RWarning("HASH_get. Element \"%s\"/%d is found, but is wrong type. Requested BOOL_TYPE, found %d.",key,i,element->a.type);
+
+  return false;
+}
+
 static double get_float(const hash_t *hash, const char *key, int i){
   hash_element_t *element = HASH_get(hash,key,i,FLOAT_TYPE);
   if(element==NULL)
@@ -533,6 +574,10 @@ int64_t HASH_get_int(const hash_t *hash, const char *key){
   return get_int(hash, key, 0);
 }
 
+bool HASH_get_bool(const hash_t *hash, const char *key){
+  return get_bool(hash, key, 0);
+}
+
 double HASH_get_float(const hash_t *hash, const char *key){
   return get_float(hash, key, 0);
 }
@@ -555,6 +600,10 @@ const char *HASH_get_chars_at(const hash_t *hash, const char *key, int i){
 
 int64_t HASH_get_int_at(const hash_t *hash, const char *key, int i){
   return get_int(hash, key, i);
+}
+
+bool HASH_get_bool_at(const hash_t *hash, const char *key, int i){
+  return get_bool(hash, key, i);
 }
 
 double HASH_get_float_at(const hash_t *hash, const char *key, int i){
@@ -613,7 +662,7 @@ wchar_t *HASH_to_string(hash_t *hash){
 #endif
 
 void HASH_save(hash_t *hash, disk_t *file){
-  DISK_write(file, ">> HASH MAP V2 BEGIN\n");
+  DISK_write(file, ">> HASH MAP V3 BEGIN\n");
 
   R_ASSERT(hash != NULL);
   
@@ -640,6 +689,9 @@ void HASH_save(hash_t *hash, disk_t *file){
         case INT_TYPE:
           DISK_printf(file,"%" PRId64 "\n",element->a.int_number);
           break;
+        case BOOL_TYPE:
+          DISK_printf(file,"%d\n",element->a.bool_number ? 1 : 0);
+          break;
         case FLOAT_TYPE:
           DISK_printf(file,"%s\n",OS_get_string_from_double(element->a.float_number));
           break;
@@ -655,14 +707,11 @@ void HASH_save(hash_t *hash, disk_t *file){
         case RATIO_TYPE:
           RError("Ratio type not supported when saving hash to disk");
           break;
-        case BOOL_TYPE:
-          RError("Bool type not supported when saving hash to disk");
-          break;
       }
     }
   }
   
-  DISK_write(file,"<< HASH MAP V2 END\n");
+  DISK_write(file,"<< HASH MAP V3 END\n");
 }
 
 extern int curr_disk_line;
@@ -684,34 +733,46 @@ static wchar_t *read_line(disk_t *file){
 }
 
 hash_t *HASH_load(disk_t *file){
-  bool new_format = false;
 
   wchar_t *line = read_line(file);
   if (line==NULL) return NULL;
   
-  if(!STRING_equals(line,">> HASH MAP BEGIN")){
-    if(!STRING_equals(line,">> HASH MAP V2 BEGIN")){
-      GFX_Message(NULL, "Trying to load something which is not a hash map. First line: \"%s\"",line);
+  int version;
+  if(STRING_equals(line,">> HASH MAP BEGIN")){
+    version = 1;
+  } else if (STRING_equals(line,">> HASH MAP V2 BEGIN")){
+    version = 2;
+  } else if (STRING_equals(line,">> HASH MAP V3 BEGIN")){
+    version = 3;
+  } else  if (STRING_starts_with(line, ">> HASH MAP V")){
+    version = 3;
+    vector_t v = {0};
+    int try_anyway = VECTOR_push_back(&v, "Try anyway (on your own risk)");
+    (void)try_anyway;
+    int ok = VECTOR_push_back(&v, "Ok");
+    int res = GFX_Message(&v, "Need a newer version or Radium to load this file");
+    if (res==ok)
       return NULL;
-    }else {
-      new_format = true;
-    }
+  } else {
+    GFX_Message(NULL, "Trying to load something which is not a hash map. First line: \"%s\"",line);
+    return NULL;
   }
 
   line = read_line(file);
   int elements_size = STRING_get_int(line);
 
   hash_t *hash=HASH_create(elements_size);
+  hash->version = version;
 
   line = read_line(file);
   if (line==NULL)
     return NULL;
   
-  while(!STRING_equals(line,"<< HASH MAP END") && !STRING_equals(line,"<< HASH MAP V2 END")){
+  while(!STRING_equals(line,"<< HASH MAP END") && !STRING_equals(line,"<< HASH MAP V2 END") && !STRING_equals(line,"<< HASH MAP V3 END")){
     const char *key = STRING_get_chars(line);
     int i = 0;
 
-    if(new_format==true){
+    if(version > 1){
 
       line = read_line(file);
       if (line==NULL) return NULL;
@@ -746,6 +807,10 @@ hash_t *HASH_load(disk_t *file){
       case INT_TYPE:
         line = read_line(file);
         put_int(hash, key, i, STRING_get_int64(line));
+        break;
+      case BOOL_TYPE:
+        line = read_line(file);
+        put_bool(hash, key, i, STRING_get_int(line)==1 ? true : false);
         break;
       case FLOAT_TYPE:
         line = read_line(file);
