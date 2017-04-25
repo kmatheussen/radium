@@ -192,8 +192,32 @@ char* requestMidiPort(void){
   return ret;
 }
 
-void showMessage(char *text){
-  GFX_Message(NULL, text);
+const_char* showMessage(char *text, dyn_t buttons){
+  if (buttons.type==UNINITIALIZED_TYPE){
+    GFX_Message(NULL, text);
+    return "Ok";
+  }
+
+  if (buttons.type!=ARRAY_TYPE){
+    handleError("showMessage: Argument 1: Expected ARRAY_TYPE, found %s", DYN_type_name(buttons.type));
+    return "";
+  }
+  
+  vector_t v={0};
+  for(int i=0;i<buttons.array->num_elements;i++){
+    dyn_t button = buttons.array->elements[i];
+    if (button.type!=STRING_TYPE){
+      handleError("showMessage: Button #%d: Expected STRING_TYPE, found %s", DYN_type_name(button.type));
+      return "";
+    }
+    VECTOR_push_back(&v, STRING_get_chars(button.string));
+  }
+
+  int ret = GFX_Message(&v, text);
+  if (ret<0 || ret>= buttons.array->num_elements) // don't this can happen though.
+    return "";
+
+  return STRING_get_chars(buttons.array->elements[ret].string);
 }
 
 void showWarning(char *text){

@@ -10,6 +10,7 @@ const dyn_t g_empty_dynvec = {
  .array = (dynvec_t*)&g_empty_dynvec_dynvec
 };
 
+const dyn_t g_uninitialized_dyn = {0};
 
 bool DYNVEC_equal(dynvec_t *v1, dynvec_t *v2){
 

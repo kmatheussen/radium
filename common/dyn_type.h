@@ -13,7 +13,7 @@ typedef struct _dynvec_t dynvec_t;
 
 
 enum DynType{
-  UNINITIALIZED_TYPE,
+  UNINITIALIZED_TYPE = 0, // Must be 0
   STRING_TYPE,
   INT_TYPE,
   FLOAT_TYPE,
@@ -43,6 +43,9 @@ struct _dynvec_t{
   int num_elements_allocated;
   dyn_t *elements;
 };
+
+extern const dyn_t g_empty_dynvec;
+extern const dyn_t g_uninitialized_dyn;
 
 
 #endif
