@@ -122,7 +122,6 @@
       (when entry
         (c-display (pp (<gui> :get-value *pmg-table*)))
         (c-display (pp entry))
-        (define instrconf (<ra> :create-new-instrument-conf))
         (spr-entry->instrument-description entry
                                            instrconf
                                            callback)
@@ -164,7 +163,7 @@
   (set! *pmg-curr-entries* '()))
   
 
-(define (pmg-add-to-table! table entries y finished-callback)
+(define (pmg-add-to-table! table entries instrconf y finished-callback)
   (set! *pmg-curr-entries* (append *pmg-curr-entries* entries))
   
   (define total-num-entries (length entries))
@@ -195,21 +194,24 @@
           (define is-container (string=? (entry :type) "CONTAINER"))
           ;;(define is-favourite (string=? (entry :type) "NUM_USED_PLUGIN"))
           ;;(c-display "entry:" entry)
-          
+
+          (define enabled (or (not is-normal)
+                              (can-spr-entry-be-used? entry instrconf)))
+
           (when (or is-normal is-container)
             (let ((n (entry :num-uses)))
               (if (> n 0)
-                  (<gui> :add-table-int-cell table n *pmg-use-x* y)
-                  (<gui> :add-table-string-cell table "" *pmg-use-x* y)))
-            (define name-gui (<gui> :add-table-string-cell table (entry :name) *pmg-name-x* y))
-            (<gui> :add-table-string-cell table (entry :type-name) *pmg-type-x* y)
-            (<gui> :add-table-string-cell table (entry :path) *pmg-path-x* y)
+                  (<gui> :add-table-int-cell table n *pmg-use-x* y enabled)
+                  (<gui> :add-table-string-cell table "" *pmg-use-x* y enabled)))
+            (define name-gui (<gui> :add-table-string-cell table (entry :name) *pmg-name-x* y enabled))
+            (<gui> :add-table-string-cell table (entry :type-name) *pmg-type-x* y enabled)
+            (<gui> :add-table-string-cell table (entry :path) *pmg-path-x* y enabled)
             (cond (is-normal
-                   
-                   (<gui> :add-table-string-cell table (<-> (entry :category)) *pmg-category-x* y)
-                   (<gui> :add-table-string-cell table (<-> (entry :creator)) *pmg-creator-x* y)
-                   (<gui> :add-table-int-cell table (entry :num-inputs) *pmg-inputs-x* y)
-                   (<gui> :add-table-int-cell table (entry :num-outputs) *pmg-outputs-x* y))
+
+                   (<gui> :add-table-string-cell table (<-> (entry :category)) *pmg-category-x* y enabled)
+                   (<gui> :add-table-string-cell table (<-> (entry :creator)) *pmg-creator-x* y enabled)
+                   (<gui> :add-table-int-cell table (entry :num-inputs) *pmg-inputs-x* y enabled)
+                   (<gui> :add-table-int-cell table (entry :num-outputs) *pmg-outputs-x* y) enabled)
                   
                   (is-container
                    
@@ -224,7 +226,7 @@
                        (assert (>= y 0))
                        (<gui> :add-table-rows table y (1- (length new-entries)))
                        (c-display (pp new-entries))
-                       (pmg-add-to-table! table (to-list new-entries) y #f))
+                       (pmg-add-to-table! table (to-list new-entries) instrconf y #f))
                      ;;(<gui> :enable-table-sorting table #t)
                      (set! *pmg-populate-funcs* (delete-from2 *pmg-populate-funcs* populate))
                      (set! *pmg-populate-buttons* (delete-from2 *pmg-populate-buttons* pop1))
@@ -311,7 +313,7 @@
                                     search-string))
     (<gui> :add-table-rows table 0 (length entries))
     ;;(c-display "  ADDING2..." (length entries))
-    (pmg-add-to-table! *pmg-table* entries 0 #f)))
+    (pmg-add-to-table! *pmg-table* entries *pmg-instrconf* 0 #f)))
 
 
 

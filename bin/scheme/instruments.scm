@@ -545,6 +545,12 @@
          ;;(assert #f)
          )))
 
+(define (can-spr-entry-be-used? entry instrconf)
+  (assert (string=? (entry :type) "NORMAL"))
+  (and (or (not (instrconf :must-have-inputs))
+           (> (entry :num-inputs) 0))
+       (or (not (instrconf :must-have-outputs))
+           (> (entry :num-outputs) 0))))
 
 ;; The callback is a function that takes an spr entry as argument
 (define (spr-entries->menu-entries entries instrconf callback level-down-func)
@@ -560,10 +566,7 @@
           ;;(c-display entry)
           (cond ((string=? type "NORMAL")
                  (cons (list (entry :name)
-                             :enabled (and (or (not (instrconf :must-have-inputs))
-                                               (> (entry :num-inputs) 0))
-                                           (or (not (instrconf :must-have-outputs))
-                                               (> (entry :num-outputs) 0)))
+                             :enabled (can-spr-entry-be-used? entry instrconf)
                              mcallback)
                        (loop (cdr entries))))
                 ((string=? type "CONTAINER")

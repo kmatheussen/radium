@@ -2185,7 +2185,7 @@ namespace{
   };
 }
 
-static int64_t add_table_cell(int64_t table_guinum, Gui *cell_gui, QTableWidgetItem *item, int x, int y){
+static int64_t add_table_cell(int64_t table_guinum, Gui *cell_gui, QTableWidgetItem *item, int x, int y, bool enabled){
   Gui *table_gui = get_gui(table_guinum);
   if (table_gui==NULL)
     return -1;
@@ -2195,7 +2195,12 @@ static int64_t add_table_cell(int64_t table_guinum, Gui *cell_gui, QTableWidgetI
     handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
     return -1;
   }
-
+  
+  if (enabled)
+    item->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
+  else
+    item->setFlags(Qt::NoItemFlags);
+  
   if (y >= table->rowCount())
     table->setRowCount(y+1);
 
@@ -2214,44 +2219,43 @@ static int64_t add_table_cell(int64_t table_guinum, Gui *cell_gui, QTableWidgetI
   return cell_gui->get_gui_num();
 }
                               
-int64_t gui_addTableGuiCell(int64_t table_guinum, int64_t cell_gui_num, int x, int y){
+int64_t gui_addTableGuiCell(int64_t table_guinum, int64_t cell_gui_num, int x, int y, bool enabled){
   Gui *cell_gui = get_gui(cell_gui_num);
   if (cell_gui==NULL)
     return -1;
 
   auto *item = new MyGuiItem();
   
-  return add_table_cell(table_guinum, cell_gui, item, x, y);
+  return add_table_cell(table_guinum, cell_gui, item, x, y, enabled);
 }
 
-int64_t gui_addTableStringCell(int64_t table_guinum, const_char* string, int x, int y){
+int64_t gui_addTableStringCell(int64_t table_guinum, const_char* string, int x, int y, bool enabled){
   QString name(string);
   auto *item = new MyStringItem(name);
-  item->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
     
   //Gui *cell_gui = new Text(name, "");
 
-  return add_table_cell(table_guinum, NULL, item, x, y);
+  return add_table_cell(table_guinum, NULL, item, x, y, enabled);
 }
 
-int64_t gui_addTableIntCell(int64_t table_guinum, int64_t num, int x, int y){
+int64_t gui_addTableIntCell(int64_t table_guinum, int64_t num, int x, int y, bool enabled){
   QString name = QString::number(num);
   auto *item = new MyNumItem(num, true);
   item->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
     
   //Gui *cell_gui = new Text(name, "");
 
-  return add_table_cell(table_guinum, NULL, item, x, y);
+  return add_table_cell(table_guinum, NULL, item, x, y, enabled);
 }
 
-int64_t gui_addTableFloatCell(int64_t table_guinum, double num, int x, int y){
+int64_t gui_addTableFloatCell(int64_t table_guinum, double num, int x, int y, bool enabled){
   QString name = QString::number(num);
   auto *item = new MyNumItem(num, false);
   item->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
     
   //Gui *cell_gui = new Text(name, "");
 
-  return add_table_cell(table_guinum, NULL, item, x, y);
+  return add_table_cell(table_guinum, NULL, item, x, y, enabled);
 }
 
 int gui_getTableRowNum(int64_t table_guinum, int cell_guinum){
