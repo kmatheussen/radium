@@ -767,6 +767,7 @@ for .emacs:
               (iota-results n)
               (org-iota n)))))
 
+
 (define (vector-copy vector)
   (copy vector))
 

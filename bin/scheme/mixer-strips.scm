@@ -194,7 +194,6 @@
                     (begin
                       (define ret (get-all-instruments-that-we-can-send-to instrument-id))
                       ret))))))))
-
   (apply popup-menu args))
 
 
@@ -224,18 +223,26 @@
                     :enabled (or upper-half?
                                  (not is-sink?))
                     (lambda ()
-                      (cond (is-send? 
+                      (define (finished new-instrument)
+                        (c-display "             first: " (<ra> :get-instrument-name first-instrument-id) ", new:" (and new-instrument (<ra> :get-instrument-name new-instrument)))
+                        (<ra> :set-current-instrument first-instrument-id))
+                      (cond (is-send?
                              (insert-new-instrument-between parent-instrument-id
                                                             (get-instruments-connecting-from-instrument parent-instrument-id)
-                                                            #t))
+                                                            #t
+                                                            finished))
                             (upper-half?
-                             (insert-new-instrument-between parent-instrument-id instrument-id #t)) ;; before
+                             ;; before
+                             (insert-new-instrument-between parent-instrument-id
+                                                            instrument-id
+                                                            #t
+                                                            finished))
                             (else
+                             ;; after
                              (insert-new-instrument-between instrument-id
                                                             (get-instruments-connecting-from-instrument instrument-id)
-                                                            #t))) ;; after
-                      (c-display "             first: " (<ra> :get-instrument-name first-instrument-id))                      
-                      (<ra> :set-current-instrument first-instrument-id)
+                                                            #t
+                                                            finished)))
                       ))
                     
               (list "Insert Send"

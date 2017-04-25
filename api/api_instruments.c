@@ -412,8 +412,8 @@ dyn_t createNewInstrumentConf(float x, float y, bool connect_to_main_pipe, bool 
   HASH_put_bool(conf, ":connect-to-main-pipe", connect_to_main_pipe);
   HASH_put_bool(conf, ":do-autoconnect", do_autoconnect);
   HASH_put_bool(conf, ":include-load-preset", include_load_preset);
-  HASH_put_bool(conf, ":must_have_inputs", must_have_inputs);
-  HASH_put_bool(conf, ":must_have_outputs", must_have_outputs);
+  HASH_put_bool(conf, ":must-have-inputs", must_have_inputs);
+  HASH_put_bool(conf, ":must-have-outputs", must_have_outputs);
   return DYN_create_hash(conf);
 }
 

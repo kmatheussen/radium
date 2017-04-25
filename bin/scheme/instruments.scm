@@ -24,14 +24,15 @@
 (define (run-instrument-data-memoized func)
   (set! *use-instrument-memoization* #t)
   (inc! *instrument-memoized-generation* 1)
-  (catch #t
-         func
-         (lambda args
-           (set! *use-instrument-memoization* #f)
-           (display (ow!))
-           (throw (car args)) ;; rethrowing
-           #f))
-  (set! *use-instrument-memoization* #f))
+  (define ret (catch #t
+                     func
+                     (lambda args
+                       (set! *use-instrument-memoization* #f)
+                       (display (ow!))
+                       ;;(throw (car args)) ;; rethrowing
+                       #f)))
+  (set! *use-instrument-memoization* #f)
+  ret)
 
 
 (define-macro (define-instrument-memoized name&arg . body)
@@ -387,7 +388,7 @@
 !!#
 
 ;; instrument-id2 can also be list of instrument-ids.
-(define (insert-new-instrument-between instrument-id1 instrument-id2 position-at-instrument-1?)
+(define (insert-new-instrument-between instrument-id1 instrument-id2 position-at-instrument-1? callback)
   (assert (or instrument-id1 instrument-id2))
   (if (not instrument-id2)
       (assert position-at-instrument-1?))
@@ -409,68 +410,68 @@
 
   (define has-instrument2 (not (null? out-list)))
 
-  (define instrument-description (<ra> :instrument-description-popup-menu (get-bool instrument-id1) has-instrument2))
-  (if (not (string=? "" instrument-description))
-      (begin
-        (define position-instrument (or (if position-at-instrument-1?
-                                            instrument-id1
-                                            instrument-id2)
-                                        instrument-id2
-                                        instrument-id1))
-        (define x (+ (<ra> :get-instrument-x position-instrument) 0))
-        (define y (+ (<ra> :get-instrument-y position-instrument) 0))
+  (start-instrument-popup-menu
+   (<ra> :create-new-instrument-conf 0 0 #f #f #t (get-bool instrument-id1) has-instrument2)
+   (lambda (instrument-description)     
+     (define position-instrument (or (if position-at-instrument-1?
+                                         instrument-id1
+                                         instrument-id2)
+                                     instrument-id2
+                                     instrument-id1))
+     (define x (+ (<ra> :get-instrument-x position-instrument) 0))
+     (define y (+ (<ra> :get-instrument-y position-instrument) 0))
         
-        (define do-undo #f)
+     (define do-undo #f)
 
-        (define result
-          (undo-block
-           (lambda ()
-             (define new-instrument (<ra> :create-audio-instrument-from-description instrument-description "" x y))
-             (if (not (= -1 new-instrument))
-                 (begin
-                   
-                   (define num-inputs (<ra> :get-num-input-channels new-instrument))
-                   (define num-outputs (<ra> :get-num-output-channels new-instrument))
-                   
-                   (cond ((and instrument-id1
-                               (= 0 num-inputs))
-                          (<ra> :show-message (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no input channels"))
-                          (set! do-undo #t)
-                          #f)
+     ;; Quite clumsy. The reason we don't call the callback directly is that we don't want to call the callback inside the undo block.
+     (define result
+       (undo-block
+        (lambda ()
+          (define new-instrument (<ra> :create-audio-instrument-from-description instrument-description "" x y))
+          (if (not (= -1 new-instrument))
+              (begin
+                (define num-inputs (<ra> :get-num-input-channels new-instrument))
+                (define num-outputs (<ra> :get-num-output-channels new-instrument))
+                
+                (cond ((and instrument-id1
+                            (= 0 num-inputs))
+                       (<ra> :show-message (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no input channels"))
+                       (set! do-undo #t)
+                       #f)
+                      
+                      ((and (= 0 num-outputs)
+                            has-instrument2)
+                       (<ra> :show-message (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no output channels"))
+                       (set! do-undo #t)
+                       #f)
+                      
+                      (else
+                       
+                       (<ra> :set-instrument-position x y new-instrument #t)
+                       
+                       (<ra> :undo-mixer-connections)
+                       
+                       (when instrument-id1
+                         (for-each (lambda (to)
+                                     (<ra> :delete-audio-connection instrument-id1 to))
+                                   out-list)
+                         (<ra> :create-audio-connection instrument-id1 new-instrument))
+                       
+                       (for-each (lambda (out-id gain)
+                                   (<ra> :create-audio-connection new-instrument out-id gain))
+                                 out-list
+                                 gain-list)
+                       
+                       new-instrument)))
+              #f))))
 
-                         ((and (= 0 num-outputs)
-                               has-instrument2)
-                          (<ra> :show-message (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no output channels"))
-                          (set! do-undo #t)
-                          #f)
+     (if do-undo
+         (<ra> :undo))
 
-                         (else
-                          
-                          (<ra> :set-instrument-position x y new-instrument #t)
-                          
-                          (<ra> :undo-mixer-connections)
-                          
-                          (when instrument-id1
-                            (for-each (lambda (to)
-                                        (<ra> :delete-audio-connection instrument-id1 to))
-                                      out-list)
-                            (<ra> :create-audio-connection instrument-id1 new-instrument))
-                          
-                          (for-each (lambda (out-id gain)
-                                      (<ra> :create-audio-connection new-instrument out-id gain))
-                                    out-list
-                                    gain-list)
-                          
-                          new-instrument)))
-                 
-                 #f))))
+     (if result
+         (callback result)))))
 
-        (if do-undo
-            (<ra> :undo))
-
-        result)
-      
-      #f))
+     
 
 
 
