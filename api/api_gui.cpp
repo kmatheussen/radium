@@ -89,6 +89,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
       Gui::mouseDoubleClickEvent(event);                                \
   }                                                                     
 
+#define CLOSE_OVERRIDER(classname)                                      \
+  void closeEvent(QCloseEvent *ev) override {                           \
+    if (_close_callback==NULL)                                          \
+      classname::closeEvent(ev);                                        \
+    else                                                                \
+      Gui::closeEvent(ev);                                              \
+  }                                                                     
+
 
 #define RESIZE_OVERRIDER(classname)                                     \
   void resizeEvent( QResizeEvent *event) override {                     \
@@ -113,11 +121,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     }                                                                   \
   }                                                                     
 
+#define SETVISIBLE_OVERRIDER(classname)                                 \
+  void setVisible(bool visible) override {                              \
+    if (parent()==NULL)                                                 \
+      remember_geometry.remember_geometry_setVisible_override_func(this, visible); \
+    classname::setVisible(visible);                                     \
+  }
+
 #define OVERRIDERS(classname)                                           \
   MOUSE_OVERRIDERS(classname)                                           \
   DOUBLECLICK_OVERRIDER(classname)                                      \
+  CLOSE_OVERRIDER(classname)                                            \
   RESIZE_OVERRIDER(classname)                                           \
-  PAINT_OVERRIDER(classname)
+  PAINT_OVERRIDER(classname)                                            \
+  SETVISIBLE_OVERRIDER(classname)
 
 /*
 static float gain2db(float val){
@@ -238,7 +255,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     
     QVector<Gui*> _children;
     QVector<func_t*> _deleted_callbacks;
-    
+
+    radium::RememberGeometry remember_geometry;
+
     int get_gui_num(void){
       return _gui_num;
     }
