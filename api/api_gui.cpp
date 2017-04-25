@@ -220,6 +220,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       s7extra_callFunc_void_charpointer(_func, line_edit->text().toUtf8().constData());
     }
 
+    void textChanged(QString text){
+      s7extra_callFunc_void_charpointer(_func, text.toUtf8().constData());
+    }
+
     void intValueChanged(int val){
       s7extra_callFunc_void_int(_func, val);
     }
@@ -298,6 +302,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       if (_doubleclick_callback!=NULL)
         s7extra_unprotect(_doubleclick_callback);
+
+      if (_close_callback!=NULL)
+        s7extra_unprotect(_close_callback);
 
       if (_resize_callback!=NULL)
         s7extra_unprotect(_resize_callback);
@@ -394,6 +401,30 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       _doubleclick_callback = func;
       s7extra_protect(_doubleclick_callback);
+    }
+
+    
+    /************ CLOSE *******************/
+
+    func_t *_close_callback = NULL;
+
+    void closeEvent(QCloseEvent *event){
+      R_ASSERT_RETURN_IF_FALSE(_close_callback!=NULL);
+
+      if (false==s7extra_callFunc_bool_void(_close_callback))
+        event->ignore();
+      else
+        event->accept();
+    }
+
+    void addCloseCallback(func_t* func){      
+      if (_close_callback!=NULL){
+        handleError("Gui %d already has a close callback.", _gui_num);
+        return;
+      }
+
+      _close_callback = func;
+      s7extra_protect(_close_callback);
     }
 
     
@@ -747,6 +778,26 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return DYN_create_bool(false);
     }
 
+    virtual void addGuiRealtimeCallback(func_t* func){
+      Callback *callback = new Callback(func, _widget);
+
+      {
+        QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget);
+        if (line_edit!=NULL){
+          line_edit->connect(line_edit, SIGNAL(textChanged(QString)), callback, SLOT(textChanged(QString)));
+          goto gotit;
+        }
+      }
+      
+      handleError("Gui #%d does not have a addRealtimeCallback method", _gui_num);
+      delete callback;
+      return;
+      
+    gotit:
+      _callbacks.push_back(callback);
+      return;      
+    }
+    
     virtual void addGuiCallback(func_t* func){
       Callback *callback = new Callback(func, _widget);
 
@@ -789,7 +840,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget);
         if (line_edit!=NULL){
           line_edit->connect(line_edit, SIGNAL(editingFinished()), callback, SLOT(editingFinished()));
-          s7extra_callFunc_void_charpointer(func, line_edit->text().toUtf8().constData());
+          s7extra_callFunc_void_charpointer(func, line_edit->text().toUtf8().constData()); // Calling the callbacks here was a really bad idea. TODO: Fix that.
           goto gotit;
         }
       }
@@ -1688,6 +1739,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
                           
       //horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
     }
+
+
+    virtual dyn_t getGuiValue(void) override {
+      dynvec_t ret = {};
+      for(const auto *item : selectedItems())
+        DYNVEC_push_back(&ret, DYN_create_string(item->text().toUtf8().constData()));
+      return DYN_create_array(ret);
+    }
+
   };
 
 
