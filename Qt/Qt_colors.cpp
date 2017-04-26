@@ -403,7 +403,7 @@ public:
 
 
 void GFX_color_dialog(const char *initial_color, func_t *callback){
-  MyColorDialog *color_dialog = new MyColorDialog(get_current_parent(), callback, initial_color);
+  MyColorDialog *color_dialog = new MyColorDialog(g_main_window, callback, initial_color);
 
   safeShow(color_dialog);
   

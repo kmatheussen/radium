@@ -31,6 +31,7 @@ extern QVector<QWidget*> g_static_toplevel_widgets;
 extern QMainWindow *g_main_window;
 extern QSplashScreen *g_splashscreen;
 
+// Warning, might return any type of widget. (popup, etc.)
 static QWidget *get_current_parent(void){
 
   if (QApplication::activeModalWidget()!=NULL)
@@ -308,7 +309,7 @@ struct RememberGeometryQDialog : public QDialog {
   
 public:
   RememberGeometryQDialog(QWidget *parent_)
-    : QDialog(parent_!=NULL ? parent_ : get_current_parent(), Qt::Window | Qt::Tool)
+    : QDialog(parent_!=NULL ? parent_ : g_main_window, Qt::Window | Qt::Tool)
 #if PUT_ON_TOP
     , timer(this)
 #endif
