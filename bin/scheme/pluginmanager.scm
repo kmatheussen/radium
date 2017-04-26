@@ -71,7 +71,7 @@
   (<gui> :stretch-table table *pmg-type-x* #f (floor (* 1.5 (<gui> :text-width "Sample Player"))))
   (<gui> :stretch-table table *pmg-category-x* #f (floor (* 1.5 (<gui> :text-width "Category"))))
   (<gui> :stretch-table table *pmg-creator-x* #f (floor (* 1.5 (<gui> :text-width "Joern Nettingsmeier"))))
-  (<gui> :stretch-table table *pmg-path-x* #t 2)
+  (<gui> :stretch-table table *pmg-path-x* #t (floor (* 1.5 (<gui> :text-width "VST / plugin type / plugin name"))))
   (<gui> :stretch-table table *pmg-inputs-x* #f  (floor (* 1.5 (<gui> :text-width "Outputs")))) ;; same width for input and output
   (<gui> :stretch-table table *pmg-outputs-x* #f (floor (* 1.5 (<gui> :text-width "Outputs"))))
 
@@ -84,16 +84,18 @@
 (define *pmg-scan-all-button* (<gui> :child *pluginmanager-gui* "scan_all_button"))
 (<gui> :add-callback *pmg-scan-all-button*
        (lambda ()
-         (if (string=? "Yes" (<ra> :show-message "Are you sure? The program could crash if you have unstable plugins." (list "Yes" "No")))
-             (<ra> :schedule 0
-                   (lambda ()
-                     (if (null? *pmg-populate-funcs*)
-                         (begin
-                           #f)
-                         (begin
-                           ((car *pmg-populate-funcs*))
-                           ;;(<gui> :update table-parent)
-                           50)))))))
+         (<ra> :show-async-message "Are you sure? The program could crash if you have unstable plugins." (list "Yes" "No")
+               (lambda (res)
+                 (if (string=? "Yes" res)
+                     (<ra> :schedule 0
+                           (lambda ()
+                             (if (null? *pmg-populate-funcs*)
+                                 (begin
+                                   #f)
+                                 (begin
+                                   ((car *pmg-populate-funcs*))
+                                   ;;(<gui> :update table-parent)
+                                   50)))))))))
 
 (define *pmg-search-text-button* (<gui> :child *pluginmanager-gui* "search_text"))
 (<gui> :set-value *pmg-search-text-button* "")

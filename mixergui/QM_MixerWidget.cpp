@@ -881,7 +881,7 @@ static bool mouserelease_replace_patch(MyScene *scene, float mouse_x, float mous
       volatile struct Patch *patch = plugin->patch;
       R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
 
-      replaceInstrument(patch->id, "", CHIP_get_num_in_connections((struct Patch*)patch)>0, CHIP_get_num_out_connections((struct Patch*)patch)>0);
+      requestReplaceInstrument(patch->id, "", CHIP_get_num_in_connections((struct Patch*)patch)>0, CHIP_get_num_out_connections((struct Patch*)patch)>0);
         
       return true;
     }

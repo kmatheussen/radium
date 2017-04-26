@@ -134,12 +134,17 @@
 ;; This cleanup function will either be called when 'finished' is explicitly called,
 ;; or an exception happens. 'reason' will be the value of go-wrong-finished-called-because-something-went-wrong
 ;; or the value of go-wrong-finished-called-because-it-was-excplicitly-called.
+;; Note that the argument for 'cleanup' can only be go-wrong-finished-called-because-something-went-wrong once.
 ;; See examples below.
 (define (call-me-if-something-goes-wrong cleanup block)
+  (define (remove-hook)
+    (if (member? go-wrong-hook go-wrong-hooks)
+        (set! go-wrong-hooks (delete-from go-wrong-hooks go-wrong-hook))))
   (define (go-wrong-hook)
+    (remove-hook)
     (cleanup go-wrong-finished-called-because-something-went-wrong))
   (define (finished)
-    (set! go-wrong-hooks (delete-from go-wrong-hooks go-wrong-hook))
+    (remove-hook)
     (cleanup go-wrong-finished-called-because-it-was-excplicitly-called))
   (push! go-wrong-hooks go-wrong-hook)
   (block finished))

@@ -306,7 +306,7 @@
   (define (delete)
     (<ra> :delete-instrument instrument-id))
   (define (replace)
-    (replace-instrument instrument-id "" #f #f))
+    (async-replace-instrument instrument-id "" #f #f))
   (define reset #f)
 
   (show-mixer-path-popup instrument-id
@@ -445,7 +445,7 @@
 
 
   (define (das-replace-instrument)
-    (replace-instrument instrument-id "" #t #t))
+    (async-replace-instrument instrument-id "" #t #t))
 
   (define (reset)
     (<ra> :set-instrument-effect instrument-id "System Dry/Wet" 1))

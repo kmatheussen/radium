@@ -912,13 +912,11 @@ public slots:
   }
 
   void on_load_button_clicked(){      
-    loadInstrumentPreset(_patch->id, "");
-    // Warning. 'this' might not be here anymore when returning.
+    requestLoadInstrumentPreset(_patch->id, "");
   }
 
   void on_replace_button_clicked(){
-    replaceInstrument(_patch->id, "", CHIP_get_num_in_connections(_patch)>0, CHIP_get_num_out_connections(_patch)>0);
-    // Warning. 'this' might not be here anymore when returning.
+    requestReplaceInstrument(_patch->id, "", CHIP_get_num_in_connections(_patch)>0, CHIP_get_num_out_connections(_patch)>0);
   }
     
   void on_reset_button_clicked(){

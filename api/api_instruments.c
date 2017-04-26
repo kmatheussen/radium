@@ -140,12 +140,12 @@ void selectInstrumentForTrack(int tracknum){
   s7extra_callFunc2_void_int("select-track-instrument", tracknum);
 }
 
-void replaceInstrument(int64_t instrument_id, const_char* instrument_description, bool must_have_inputs, bool must_have_outputs){
-  s7extra_callFunc2_void_int_charpointer_bool_bool("replace-instrument", instrument_id, instrument_description, must_have_inputs, must_have_outputs);
+void requestReplaceInstrument(int64_t instrument_id, const_char* instrument_description, bool must_have_inputs, bool must_have_outputs){
+  s7extra_callFunc2_void_int_charpointer_bool_bool("async-replace-instrument", instrument_id, instrument_description, must_have_inputs, must_have_outputs);
 }
 
-void loadInstrumentPreset(int64_t instrument_id, const_char* instrument_description){
-  s7extra_callFunc2_void_int_charpointer("load-instrument-preset", instrument_id, instrument_description);
+void requestLoadInstrumentPreset(int64_t instrument_id, const_char* instrument_description){
+  s7extra_callFunc2_void_int_charpointer("async-load-instrument-preset", instrument_id, instrument_description);
 }
 
 int64_t getInstrumentForTrack(int tracknum, int blocknum, int windownum){

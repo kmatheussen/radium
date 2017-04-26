@@ -224,4 +224,42 @@
           (callback curr)
           
           layout)
-                                 
+
+(delafina (ra:show-async-message :text ""
+                                 :buttons '("OK")
+                                 :callback #f)
+  (define can-be-closed (null? buttons))
+  (define buttonlayout (<gui> :horizontal-layout))
+  (<gui> :add-layout-space buttonlayout 0 0 #t #f)
+  
+  (define textlayout (<gui> :horizontal-layout))
+  (<gui> :add-layout-space textlayout 0 0 #t #f)
+  (<gui> :add textlayout (<gui> :text text))
+  (<gui> :add-layout-space textlayout 0 0 #t #f)
+  
+  (define gui (<gui> :vertical-layout textlayout buttonlayout))
+  (for-each (lambda (button-text)
+              (define button (<gui> :button button-text))
+              (<gui> :add-callback button (lambda ()
+                                            (set! can-be-closed #t)
+                                            (<gui> :close gui)
+                                            (if callback 
+                                                (callback button-text))))
+              (<gui> :add buttonlayout button))
+            buttons)
+  (<gui> :set-always-on-top gui)
+  (<gui> :add-close-callback gui (lambda ()
+                                   can-be-closed))
+
+  ;;(<gui> :set-pos gui (floor (<ra> :get-mouse-pointer-x)) (floor (<ra> :get-mouse-pointer-y)))
+  (<gui> :show gui))
+
+#!!
+(<ra> :show-async-message)
+(<ra> :show-async-message :buttons '())
+(<ra> :show-async-message "hello2")
+(<ra> :show-async-message "hello2" :callback c-display)
+(<ra> :show-async-message "hello1" (list "BBBb1" "AAAb2") c-display)
+!!#
+
+                                   

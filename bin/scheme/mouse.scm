@@ -1067,7 +1067,7 @@
                   :press-func (lambda (Button X Y)                                
                                 (if (inside-box (<ra> :get-box track-slider) X Y)
                                     (begin
-                                      (<ra> :show-message "The track slider can not be moved.\nOnly keyboard is supported to navigate to other tracks.")
+                                      (<ra> :show-async-message "The track slider can not be moved.\nOnly keyboard is supported to navigate to other tracks.")
                                       #t)
                                     #f))))
 ||#
