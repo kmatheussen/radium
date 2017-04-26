@@ -43,7 +43,7 @@
   (set! *pmg-callback* callback)
   (<gui> :set-always-on-top *pluginmanager-gui* -2)
   (<gui> :show *pluginmanager-gui*)
-  (<ra> :obtain-keyboard-focus))
+  (<ra> :obtain-keyboard-focus *pmg-search-text-button*))
 
 
 
@@ -51,6 +51,7 @@
   (<gui> :is-open *pluginmanager-gui*))
 
 #||
+(begin *pluginmanager-gui*)
 (pmg-open?)
 (pmg-visible?)
 ||#
@@ -61,7 +62,10 @@
 ;; Just hide window when closing it.
 (<gui> :add-close-callback *pluginmanager-gui*
        (lambda ()
-         (pmg-hide)
+         (catch #t ;; We don't want to risk not returning #f (if that happens, the plugin manager can't be opened again)
+                pmg-hide
+                (lambda args
+                  (c-display (ow!))))
          #f))
 
 ;; init table stuff

@@ -3092,8 +3092,15 @@ void gui_drawVerticalText(int64_t guinum, const_char* color, const_char *text, f
 
 /////////////
 
-void obtainKeyboardFocus(void){
+void obtainKeyboardFocus(int64_t guinum){
   obtain_keyboard_focus_counting();
+
+  if (guinum >= 0){
+    Gui *gui = get_gui(guinum);
+    if (gui==NULL)
+      return;
+    gui->_widget->setFocus();
+  }
 }
 
 void releaseKeyboardFocus(void){
