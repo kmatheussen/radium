@@ -141,14 +141,14 @@ namespace{
   };
 }
 
+QPointer<QMenu> g_curr_popup_qmenu;
+
 static QMenu *create_qmenu(
                            vector_t *v,
                            func_t *callback2,
                            std::function<void(int,bool)> callback3
                            )
 {
-  R_ASSERT(callback2!=NULL || callback3);
-  
   QMenu *menu = new QMenu(NULL);
   menu->setAttribute(Qt::WA_DeleteOnClose);
   
@@ -234,10 +234,13 @@ static int GFX_QtMenu(
                 )
 {
 
+  closePopup();
+
   if(is_async)
     R_ASSERT(callback2!=NULL || callback3);
 
   QMenu *menu = create_qmenu(v, callback2, callback3);
+  g_curr_popup_qmenu = menu;
   
   if (is_async){
     

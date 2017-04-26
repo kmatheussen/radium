@@ -30,6 +30,7 @@ extern QVector<QWidget*> g_static_toplevel_widgets;
 
 extern QMainWindow *g_main_window;
 extern QSplashScreen *g_splashscreen;
+extern QPointer<QMenu> g_curr_popup_qmenu;
 
 // Warning, might return any type of widget. (popup, etc.)
 static QWidget *get_current_parent(void){
@@ -366,18 +367,26 @@ struct ScopedExec{
 }
 
 
-
-
+// Happens sometimes that popup menues don't close.
+static inline void closePopup(void){
+  if (g_curr_popup_qmenu != NULL)
+    delete g_curr_popup_qmenu.data();
+}
 
 static inline int safeExec(QMessageBox *widget){
+  closePopup();
+
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
-      
+
+
   radium::ScopedExec scopedExec;
 
   return widget->exec();
 }
 
 static inline int safeExec(QMessageBox &widget){
+  closePopup();
+
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
 
   radium::ScopedExec scopedExec;
@@ -386,6 +395,8 @@ static inline int safeExec(QMessageBox &widget){
 }
 
 static inline int safeExec(QDialog *widget){
+  closePopup();
+
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
 
   radium::ScopedExec scopedExec;
@@ -416,6 +427,8 @@ static inline QAction *safeExec(QMenu *widget){
 }
 
 static inline void safeShow(QWidget *widget){  
+  closePopup();
+
   GL_lock(); {
     GL_pause_gl_thread_a_short_while();
     widget->show();
