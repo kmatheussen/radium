@@ -61,6 +61,9 @@ extern NInt currpatch;
 
 float disk_load_version;
 
+bool g_is_loading = false;
+
+
 bool Load_Initialize(const wchar_t *filename, const char *type){
   
         dc.success=true;
@@ -137,15 +140,17 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
   
 static bool Load(const wchar_t *filename){
 	struct Root *newroot;
-
+        
         if (Load_Initialize(filename, "RADIUM SONG")==false)
           return false;
         
 	if(strcmp(dc.ls,"OSSTUFF")){
           GFX_Message(NULL, "OSSTUFF not found, but: '%s'. File: '%s'\n",dc.ls,STRING_get_chars(filename));
           DISK_close_and_delete(dc.file);
-          EndProgram();
-          exit(4);
+          //EndProgram();
+          //exit(4);
+          //goto exit;
+          return false;
 	}
 
 	LoadOsStuff();
@@ -154,8 +159,9 @@ static bool Load(const wchar_t *filename){
 	if(strcmp(dc.ls,"ROOT")){
           GFX_Message(NULL, "ROOT not found. Found '%s' instead.\n", dc.ls);
           DISK_close_and_delete(dc.file);
-          EndProgram();
-          exit(5);
+          //EndProgram();
+          //exit(5);
+          return false;
 	}
 
         GFX_OpenProgress("Loading song");
@@ -166,8 +172,9 @@ static bool Load(const wchar_t *filename){
 
 	if(!dc.success){
           GFX_Message(NULL, "Loading failed.\n");
-          EndProgram();
-          exit(6);
+          //EndProgram();
+          //exit(6);
+          return false;
 	}
         
 	ResetUndo();
@@ -246,6 +253,9 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
 
 	if(filename==NULL) goto exit;
 
+        g_is_loading = true;
+
+        
         if (STRING_ends_with(filename,".MMD2") ||
             STRING_ends_with(filename,".MMD3") ||
             STRING_ends_with(filename,".MMD") ||
@@ -291,6 +301,8 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
 
         if (ret)
           ResetUndo();
+
+        g_is_loading = false;
         
         return ret;
 }

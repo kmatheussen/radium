@@ -97,6 +97,8 @@ class MidiLearnPrefs : public RememberGeometryQDialog {
     }
 
     void timerEvent(QTimerEvent * e){
+      if(g_radium_runs_custom_exec) return;
+
       if (parent->isVisible()){
         for(auto *item : parent->items)
           item->update_gui();

@@ -1565,7 +1565,9 @@ namespace{
     
     void 	timerEvent ( QTimerEvent * e ){
       counter++;
-      
+
+      if(g_radium_runs_custom_exec) return;
+
       if (g_mixer_widget->isVisible()){
 
         //printf("UPDATING mixer\n");

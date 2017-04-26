@@ -262,6 +262,8 @@ namespace cvs{
           event->accept();
       }
       void paintEvent ( QPaintEvent * ev ){
+        if(g_radium_runs_custom_exec) return;
+        
         QPainter qp(this);
         MyPainter p(&qp);
 
@@ -270,6 +272,7 @@ namespace cvs{
         mywidget->repaint(&p);
       }
       virtual void resizeEvent ( QResizeEvent * event ){
+        if(g_radium_runs_custom_exec) return;
         mywidget->resized();
       }
     };
@@ -325,6 +328,7 @@ namespace cvs{
       MyQTimer(MyTimer *mytimer) : mytimer(mytimer) {}
 
       void timerEvent(QTimerEvent * e){ // virtual method from QTimer
+        if(g_radium_runs_custom_exec) return;
         mytimer->timer();
       }
     };

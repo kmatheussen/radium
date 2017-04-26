@@ -694,7 +694,8 @@ public:
   }
   
   void paint(const QRect &update_rect, QPainter &p){ // QPaintEvent * ev ) override {
-
+    if(g_radium_runs_custom_exec) return;
+    
     //printf("  PAINTING %d %d -> %d %d\n",t_x1,t_y1,t_x2,t_y2);
 
     myFillRect(p, _rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
@@ -1072,6 +1073,8 @@ struct Timeline_widget : public MouseTrackerQWidget {
   }
 
   void paintEvent ( QPaintEvent * ev ) override {
+    if(g_radium_runs_custom_exec) return;
+    
     QPainter p(this);
 
     const double y1 = 4;
@@ -1331,6 +1334,8 @@ public:
   }
   
   void paintEvent ( QPaintEvent * ev ) override {
+    if(g_radium_runs_custom_exec) return;
+    
     QPainter p(this);
 
     double total_seconds = SONG_get_gfx_length();
@@ -1511,6 +1516,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   void resizeEvent( QResizeEvent *qresizeevent) override {
+    if(g_radium_runs_custom_exec) return;
+    
     //  set_end_time();
     // _samples_per_pixel = (_end_time-_start_time) / width();
     position_widgets();
@@ -1785,6 +1792,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   void paintEvent (QPaintEvent *ev) override {
+    if(g_radium_runs_custom_exec) return;
+    
     QPainter p(this);
 
     p.setRenderHints(QPainter::Antialiasing,true);    

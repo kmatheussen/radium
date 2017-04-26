@@ -151,6 +151,8 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
     void timerEvent(QTimerEvent * e){
       printf("clicked: %p\n", parent->msgBox->clickedButton());
 
+      if(g_radium_runs_custom_exec) return;
+
       if (parent->msgBox->clickedButton()!=NULL){
         SOUNDFILESAVER_request_stop();
 

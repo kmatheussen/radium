@@ -246,6 +246,7 @@ class ParamWidget : public QWidget {
   }
 
   void resizeEvent(QResizeEvent * event) override{
+    if(g_radium_runs_custom_exec) return;
     adjustFontSize();
     QWidget::resizeEvent(event);
   }

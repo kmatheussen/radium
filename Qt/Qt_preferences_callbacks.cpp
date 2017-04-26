@@ -327,10 +327,12 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     //adjustSize();
   }
 
-  void showEvent(QShowEvent *event){
+  void showEvent(QShowEvent *event){    
     if (tabWidget->currentWidget() == colors)
       obtain_keyboard_focus_without_greying();
-    
+
+    if(g_radium_runs_custom_exec) return;
+
     if (_needs_to_update)
       updateWidgets();
   }

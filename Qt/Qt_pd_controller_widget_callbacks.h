@@ -50,6 +50,8 @@ public:
     QString _name;
 
     void timerEvent(QTimerEvent * e){
+      if(g_radium_runs_custom_exec) return;
+      
       if(_pd_controller_widget->isVisible()==false)
         return;
 

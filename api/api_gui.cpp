@@ -66,16 +66,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define MOUSE_OVERRIDERS(classname)                                     \
   void mousePressEvent(QMouseEvent *event) override{                    \
+    if(g_radium_runs_custom_exec) return;                               \
     if (_mouse_callback==NULL || !Gui::mousePressEvent(event))          \
       classname::mousePressEvent(event);                                \
   }                                                                     \
                                                                         \
   void mouseReleaseEvent(QMouseEvent *event) override {                 \
+    if(g_radium_runs_custom_exec) return;                               \
     if (_mouse_callback==NULL || !Gui::mouseReleaseEvent(event))        \
       classname::mouseReleaseEvent(event);                              \
   }                                                                     \
                                                                         \
   void mouseMoveEvent(QMouseEvent *event) override{                     \
+    if(g_radium_runs_custom_exec) return;                               \
     if (_mouse_callback==NULL || !Gui::mouseMoveEvent(event))           \
       classname::mouseMoveEvent(event);                                 \
   }
@@ -83,6 +86,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define DOUBLECLICK_OVERRIDER(classname)                                \
   void mouseDoubleClickEvent(QMouseEvent *event) override{              \
+    if(g_radium_runs_custom_exec) return;                               \
     if (_doubleclick_callback==NULL)                                    \
       classname::mouseDoubleClickEvent(event);                          \
     else                                                                \
@@ -91,6 +95,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define CLOSE_OVERRIDER(classname)                                      \
   void closeEvent(QCloseEvent *ev) override {                           \
+    if(g_radium_runs_custom_exec) return;                               \
     if (_close_callback==NULL)                                          \
       classname::closeEvent(ev);                                        \
     else                                                                \
@@ -100,6 +105,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define RESIZE_OVERRIDER(classname)                                     \
   void resizeEvent( QResizeEvent *event) override {                     \
+    if(g_radium_runs_custom_exec) return;                               \
     if (_image!=NULL)                                                   \
       setNewImage(event->size().width(), event->size().height());       \
     if (_resize_callback==NULL)                                         \
@@ -110,6 +116,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define PAINT_OVERRIDER(classname)                                      \
   void paintEvent(QPaintEvent *ev) override {                           \
+    if(g_radium_runs_custom_exec) return;                               \
     if(_image!=NULL){                                                   \
       QPainter p(this);                                                 \
       p.drawImage(ev->rect().topLeft(), *_image, ev->rect());           \

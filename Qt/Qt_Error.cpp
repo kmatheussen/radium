@@ -32,7 +32,7 @@
 static int show_message(const char *message){
 
   MyQMessageBox msgBox;
-
+  
   msgBox.setText(QString(message));
 
   QPushButton *continue_button = msgBox.addButton("continue", QMessageBox::AcceptRole);
@@ -122,7 +122,10 @@ int SYSTEM_show_message(const char *message){
     fprintf(stderr,"\n\n\n   === %s ===\n\n\n", message);
     return 0;
   }
+
+  radium::ScopedExec scopedExec;
     
+
 #if FOR_WINDOWS
   QString program = OS_get_full_program_file_path("radium_error_message.exe");
 #else

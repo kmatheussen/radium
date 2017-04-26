@@ -308,10 +308,12 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
 #endif
   }
 
+  /*
   void resizeEvent( QResizeEvent *qresizeevent) override{
     //pauseUpdatesALittleBit();
     //Mixer_widget->update();
   }
+  */
   
 public slots:
 

@@ -1318,7 +1318,10 @@ protected:
     printf("triggering full collect\n");
     GC_gcollect();
 #endif
-
+    
+    if (g_is_loading==true)
+      return;
+    
     if (is_called_every_ms(15)){
       AUDIOMETERPEAKS_call_very_often(15);
       API_gui_call_regularly();

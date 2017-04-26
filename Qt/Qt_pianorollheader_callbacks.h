@@ -42,6 +42,7 @@ class Pianorollheader : public QWidget, public Ui::Pianorollheader {
     adjustSize();
   }
 
+  // TODO: Why is this necessary?
   void paintEvent ( QPaintEvent * ev ){
     QPainter p(this);
     p.eraseRect(rect());

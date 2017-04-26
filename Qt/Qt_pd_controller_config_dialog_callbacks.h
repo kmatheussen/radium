@@ -43,6 +43,7 @@ public:
   struct Timer : QTimer{
     Pd_Controller_Config_dialog *my;
     void timerEvent(QTimerEvent * e){
+      if(g_radium_runs_custom_exec) return;
       my->timerCallback();
     }
   };

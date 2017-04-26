@@ -911,6 +911,8 @@ public:
   }
 
   void hideEvent(QHideEvent * event) override {
+    if(g_radium_runs_custom_exec) return;
+    
     _size_type_before_hidden = _size_type;
     
     if(_size_type!=SIZETYPE_NORMAL)
@@ -918,6 +920,8 @@ public:
   }
 
   void showEvent(QShowEvent * event) override {
+    if(g_radium_runs_custom_exec) return;
+    
     if (_size_type_before_hidden != SIZETYPE_NORMAL)
       set_large(_size_type_before_hidden);
   }
@@ -960,7 +964,8 @@ public:
   
   void resizeEvent( QResizeEvent *qresizeevent) override{
     printf("Resizeevent called\n");
-
+    if(g_radium_runs_custom_exec) return;
+    
     setUpdatesEnabled(false);
     calculate_widths();
     setUpdatesEnabled(true);

@@ -2,7 +2,6 @@
 #include <unistd.h>
 
 #include <QTime>
-#include <QTimer>
 #include <QMainWindow>
 #include <QApplication>
 

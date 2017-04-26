@@ -191,6 +191,9 @@ void LoadBlockFromDisk(const char *filename_c){
   printf("Got it: %p / %p\n",wblock,block);
 
 
+  g_is_loading = true;
+
+    
   ADD_UNDO(Block_Insert(blockpos));
   have_made_undo = true;
 
@@ -221,6 +224,8 @@ void LoadBlockFromDisk(const char *filename_c){
   if (success==false)
     if (have_made_undo)
       UNDO_CANCEL_LAST_UNDO();
+
+  g_is_loading = false;
 }
 
 
@@ -326,6 +331,8 @@ void LoadTrackFromDisk(const char *filename_c, struct Tracker_Windows *window, s
 
   DISK_close_and_delete(dc.file);
 
+  g_is_loading = true;
+    
   remove_all_patches_and_fxs_from_track(track);
   DLoadTracks(root, track, false);
   DLoadWTracks(root, window, wblock, wtrack, false);  
@@ -353,6 +360,8 @@ void LoadTrackFromDisk(const char *filename_c, struct Tracker_Windows *window, s
   if (success==false)
     if (have_made_undo)
       UNDO_CANCEL_LAST_UNDO();
+  
+  g_is_loading = false;
 }
 
 
