@@ -74,6 +74,14 @@ extern LANGSPEC float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqty
 
 extern LANGSPEC char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text);
 
+#ifdef __cplusplus
+#include <functional>
+void GFX_Menu3(
+               vector_t *v,
+               std::function<void(int,bool)> callback
+               );
+#endif
+
 extern LANGSPEC int GFX_Menu2(
                               struct Tracker_Windows *tvisual,
                               ReqType reqtype,

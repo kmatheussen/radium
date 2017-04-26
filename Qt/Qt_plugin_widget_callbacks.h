@@ -952,18 +952,30 @@ public slots:
 
     VECTOR_push_back(&v, "--------------");
     VECTOR_push_back(&v, "<set new name>");
-      
-    int num = GFX_Menu(root->song->tracker_windows, NULL, "", &v);
-    if (num == num_presets+1) {
-      char *new_name = GFX_GetString(NULL, NULL, "new name: ");
-      if (new_name != NULL){
-        type->set_preset_name(plugin, type->get_current_preset(plugin), new_name);
-        update_widget();
-      }
-    } else if (num >= 0 && num<num_presets) {
-      type->set_current_preset(plugin, num);
-      update_widget();
-    }
+
+    QPointer<QWidget> alive(this);
+
+    GFX_Menu3(&v,
+
+              [alive,num_presets,type,plugin,this](int num, bool onoff){
+                
+                if (alive.isNull())
+                  return;
+                
+                printf("I'm here, actually\n");
+                
+                if (num == num_presets+1) {
+                  char *new_name = GFX_GetString(NULL, NULL, "new name: ");
+                  if (new_name != NULL){
+                    type->set_preset_name(plugin, type->get_current_preset(plugin), new_name);
+                    update_widget();
+                  }
+                } else if (num >= 0 && num<num_presets) {
+                  type->set_current_preset(plugin, num);
+                  update_widget();
+                }
+                
+              });
   }
     
   void on_preset_selector_editingFinished(){

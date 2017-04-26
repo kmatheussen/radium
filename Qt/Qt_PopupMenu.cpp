@@ -42,7 +42,8 @@ namespace{
     QMenu *qmenu;
     int num;
     func_t *callback;
-
+    std::function<void(int,bool)> callback3;
+    
   public:
 
     ~CheckableAction(){
@@ -51,12 +52,13 @@ namespace{
         s7extra_unprotect(callback);
     }
     
-    CheckableAction(const QString & text_b, bool is_on, QMenu *qmenu_b, int num_b, func_t *callback_b)
+    CheckableAction(const QString & text_b, bool is_on, QMenu *qmenu_b, int num_b, func_t *callback_b, std::function<void(int,bool)> callback3_b)
       : QWidgetAction(qmenu_b)
       , text(text_b)
       , qmenu(qmenu_b)
       , num(num_b)
       , callback(callback_b)
+      , callback3(callback3_b)
     {
       if(callback!=NULL)
         s7extra_protect(callback);
@@ -85,6 +87,8 @@ namespace{
       printf("CLICKED %d\n",checked);
       if (callback!=NULL)
         callFunc_void_int_bool(callback, num, checked);
+      if (callback3)
+        callback3(num, checked);
       qmenu->close();
       //delete parent;
     }
@@ -98,6 +102,7 @@ namespace{
     QMenu *qmenu;
     int num;
     func_t *callback;
+    std::function<void(int,bool)> callback3;
 
   public:
 
@@ -107,12 +112,13 @@ namespace{
         s7extra_unprotect(callback);
     }
     
-    ClickableAction(const QString & text, QMenu *qmenu, int num, func_t *callback)
+    ClickableAction(const QString & text, QMenu *qmenu, int num, func_t *callback, std::function<void(int,bool)> callback3)
       : QAction(text, qmenu)
       , text(text)
       , qmenu(qmenu)
       , num(num)
       , callback(callback)
+      , callback3(callback3)
     {
       if(callback!=NULL)
         s7extra_protect(callback);
@@ -123,12 +129,148 @@ namespace{
     void triggered(){
     //void clicked(bool checked){
       printf("CLICKED clickable\n");
+
       if (callback!=NULL)
         s7extra_callFunc_void_int(callback, num);
+      if (callback3)
+        callback3(num, true);
+
       qmenu->close();
       //delete parent;
     }
   };
+}
+
+static QMenu *create_qmenu(
+                           vector_t *v,
+                           func_t *callback2,
+                           std::function<void(int,bool)> callback3
+                           )
+{
+  R_ASSERT(callback2!=NULL || callback3);
+  
+  QMenu *menu = new QMenu(NULL);
+  menu->setAttribute(Qt::WA_DeleteOnClose);
+  
+  QMenu *curr_menu = menu;
+  
+  QStack<QMenu*> parents;
+  QStack<int> n_submenuess;
+  int n_submenues=0;
+  
+  for(int i=0;i<v->num_elements;i++) {
+    QString text = (const char*)v->elements[i];
+    if (text.startsWith("----"))
+      menu->addSeparator();
+    else {
+      
+      if (n_submenues==max_submenues){
+        curr_menu = curr_menu->addMenu("Next");
+        //curr_menu->setStyleSheet("QMenu { menu-scrollable: 1; }");
+        n_submenues=0;
+      }
+      
+      QAction *action = NULL;
+      
+      
+      bool disabled = false;
+      
+      if (text.startsWith("[disabled]")){
+        text = text.right(text.size() - 10);
+        disabled = true;
+      }
+      
+      if (text.startsWith("[check ")){
+        
+        if (text.startsWith("[check on]"))
+          action = new CheckableAction(text.right(text.size() - 10), true, curr_menu, i, callback2, callback3);
+        else
+          action = new CheckableAction(text.right(text.size() - 11), false, curr_menu, i, callback2, callback3);
+        
+      } else if (text.startsWith("[submenu start]")){
+        
+        n_submenuess.push(n_submenues);
+        n_submenues = 0;
+        parents.push(curr_menu);
+        curr_menu = curr_menu->addMenu(text.right(text.size() - 15));
+        //curr_menu->setStyleSheet("QMenu { menu-scrollable: 1; }");
+        
+      } else if (text.startsWith("[submenu end]")){
+        
+        QMenu *parent = parents.pop();
+        if (parent==NULL)
+          RError("parent of [submenu end] is not a QMenu");
+        else
+          curr_menu = parent;
+        n_submenues = n_submenuess.pop();
+        
+      } else {
+        
+        action = new ClickableAction(text, curr_menu, i, callback2, callback3);
+        
+      }
+      
+      if (action != NULL){
+        action->setData(i);
+        curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu? (yes, seems so)
+      }
+      
+      if (disabled)
+        action->setDisabled(true);
+      
+      n_submenues++;
+    }
+  }
+  
+  return menu;
+}
+
+
+static int GFX_QtMenu(
+                vector_t *v,
+                func_t *callback2,
+                std::function<void(int,bool)> callback3,
+                bool is_async
+                )
+{
+
+  if(is_async)
+    R_ASSERT(callback2!=NULL || callback3);
+
+  QMenu *menu = create_qmenu(v, callback2, callback3);
+  
+  if (is_async){
+    
+    menu->popup(QCursor::pos());
+    return -1;
+    
+  } else {
+    
+    QAction *action = safeExec(menu);
+    
+    if(action==NULL)
+      return -1;
+    
+    if (dynamic_cast<CheckableAction*>(action) != NULL)
+      return -1;
+    
+    bool ok;
+    int i=action->data().toInt(&ok);
+    
+    if (ok)      
+      return i;
+    
+    //RWarning("Got unknown action %p %s\n",action,action->text().toAscii().constData());
+    
+    return -1;
+  }
+}
+void GFX_Menu3(
+              vector_t *v,
+              std::function<void(int,bool)> callback3
+              )
+{
+  GFX_QtMenu(v, NULL, callback3, true);
 }
 
 int GFX_Menu2(
@@ -144,112 +286,10 @@ int GFX_Menu2(
     R_ASSERT(callback!=NULL);
 
   if(reqtype==NULL || v->num_elements>20 || is_async || callback!=NULL){
-   
-    QMenu *menu = new QMenu(NULL);
-    menu->setAttribute(Qt::WA_DeleteOnClose);
-
-    QMenu *curr_menu = menu;
-
-    QStack<QMenu*> parents;
-    QStack<int> n_submenuess;
-    int n_submenues=0;
-
-    for(int i=0;i<v->num_elements;i++) {
-      QString text = (const char*)v->elements[i];
-      if (text.startsWith("----"))
-        menu->addSeparator();
-      else {
-        
-        if (n_submenues==max_submenues){
-          curr_menu = curr_menu->addMenu("Next");
-          //curr_menu->setStyleSheet("QMenu { menu-scrollable: 1; }");
-          n_submenues=0;
-        }
-
-        QAction *action = NULL;
-
-
-        bool disabled = false;
-        
-        if (text.startsWith("[disabled]")){
-          text = text.right(text.size() - 10);
-          disabled = true;
-        }
-        
-        if (text.startsWith("[check ")){
-          
-          if (text.startsWith("[check on]"))
-            action = new CheckableAction(text.right(text.size() - 10), true, curr_menu, i, callback);
-          else
-            action = new CheckableAction(text.right(text.size() - 11), false, curr_menu, i, callback);
-          
-        } else if (text.startsWith("[submenu start]")){
-          
-          n_submenuess.push(n_submenues);
-          n_submenues = 0;
-          parents.push(curr_menu);
-          curr_menu = curr_menu->addMenu(text.right(text.size() - 15));
-          //curr_menu->setStyleSheet("QMenu { menu-scrollable: 1; }");
-                    
-        } else if (text.startsWith("[submenu end]")){
-          
-          QMenu *parent = parents.pop();
-          if (parent==NULL)
-            RError("parent of [submenu end] is not a QMenu");
-          else
-            curr_menu = parent;
-          n_submenues = n_submenuess.pop();
-          
-        } else {
-          
-          action = new ClickableAction(text, curr_menu, i, callback);
-
-        }
-        
-        if (action != NULL){
-          action->setData(i);
-          curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu? (yes, seems so)
-        }
-        
-        if (disabled)
-          action->setDisabled(true);
-
-        n_submenues++;
-      }
-    }
-
-
-    if (is_async) {
-      //QMenu *dasmenu = new QMenu(menu);
-      //dasmenu->setAttribute(Qt::WA_DeleteOnClose);
-      //safeShow(menu);
-      menu->popup(QCursor::pos());
-      return -1;
-    }
-
-    QAction *action = safeExec(menu);
-
-    if(action==NULL)
-      return -1;
-
-    if (dynamic_cast<CheckableAction*>(action) != NULL)
-      return -1;
-    
-    bool ok;
-    int i=action->data().toInt(&ok);
-
-    if (ok)      
-      return i;
-    
-    //RWarning("Got unknown action %p %s\n",action,action->text().toAscii().constData());
-
-    return -1;
-
-  }else{
-
+    std::function<void(int,bool)> empty_callback3;
+    return GFX_QtMenu(v, callback, empty_callback3, is_async);
+  }else
     return GFX_ReqTypeMenu(tvisual,reqtype,seltext,v);
-
-  }
 }
 
 
