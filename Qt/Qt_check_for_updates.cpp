@@ -83,7 +83,9 @@ static void maybeInformAboutNewVersion(QString newestversion = "3.5.1"){
   //abort();
   if (false || (hasNewer(newestversion, VERSION) && last_informed_version()!=newestversion)) {
     printf("Version %s of Radium is available for download at http://users.notam02.no/~kjetism/radium (%s)\n", newestversion.toUtf8().constData(), VERSION);
-    MyQMessageBox *msgBox = new MyQMessageBox;
+    //MyQMessageBox *msgBox = new MyQMessageBox;
+    MyQMessageBox *msgBox = MyQMessageBox::create(g_main_window);
+    msgBox->setAttribute(Qt::WA_DeleteOnClose);
 
     msgBox->setIcon(QMessageBox::Information);
     msgBox->setText("You are running Radium V" VERSION ".<p>"
@@ -163,8 +165,9 @@ namespace{
         
         if (startPos > 0) {
 
-          MyQMessageBox *msgBox = new MyQMessageBox;
-
+          MyQMessageBox *msgBox = MyQMessageBox::create(g_main_window);
+          msgBox->setAttribute(Qt::WA_DeleteOnClose);
+          
           msgBox->setIcon(QMessageBox::Warning);
           msgBox->setText("You are running Radium V" VERSION ".<p>"
                           "This version is known to be unstable.");

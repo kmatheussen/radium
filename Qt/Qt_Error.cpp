@@ -29,24 +29,29 @@
 
 #ifdef COMPILE_EXECUTABLE
 
+
 static int show_message(const char *message){
 
-  MyQMessageBox msgBox;
+  //QPointer<MyQMessageBox> msgBox = MyQMessageBox::create();
+  ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
   
-  msgBox.setText(QString(message));
+  msgBox->setText(QString(message));
 
-  QPushButton *continue_button = msgBox.addButton("continue", QMessageBox::AcceptRole);
-  QPushButton *quit_button     = msgBox.addButton("quit", QMessageBox::AcceptRole);
-  QPushButton *ignore1_button  = msgBox.addButton("ignore warnings and errors for two seconds", QMessageBox::AcceptRole);
-  QPushButton *ignore2_button  = msgBox.addButton("ignore warnings and errors for the rest of the program", QMessageBox::AcceptRole);
+  QPushButton *continue_button = msgBox->addButton("continue", QMessageBox::AcceptRole);
+  QPushButton *quit_button     = msgBox->addButton("quit", QMessageBox::AcceptRole);
+  QPushButton *ignore1_button  = msgBox->addButton("ignore warnings and errors for two seconds", QMessageBox::AcceptRole);
+  QPushButton *ignore2_button  = msgBox->addButton("ignore warnings and errors for the rest of the program", QMessageBox::AcceptRole);
 
-  msgBox.show();
-  msgBox.raise();
-  msgBox.activateWindow();
+  msgBox->show();
+  msgBox->raise();
+  msgBox->activateWindow();
   
-  printf("hepp: %d\n",msgBox.exec()); // safeExec(&msgBox)); <-- We are not inside the radium executable here.
+  printf("hepp: %d\n",msgBox->exec()); // safeExec(&msgBox)); <-- We are not inside the radium executable here.
 
-  QAbstractButton *clicked_button = msgBox.clickedButton();
+  if (msgBox==NULL)
+    return -1;
+      
+  QAbstractButton *clicked_button = msgBox->clickedButton();
 
   if(clicked_button->text()==continue_button->text())
     return 0;
@@ -64,6 +69,7 @@ static int show_message(const char *message){
 QMainWindow *g_main_window = NULL; // referenced by helpers.h
 QSplashScreen *g_splashscreen = NULL; // referenced by helpers.h
 bool g_radium_runs_custom_exec = false; // used by helpers.h
+QVector<QWidget*> g_static_toplevel_widgets; // same here
 QWidget *MIXERSTRIPS_get_curr_widget(void){
   return NULL;
 }

@@ -125,7 +125,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
       //msgBox->setInformativeText(message);
       msgBox->setStandardButtons(QMessageBox::Ok);
 
-      safeExec(msgBox); 
+      safeShow(msgBox); 
       return;
     }
 
@@ -158,7 +158,8 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
 
         // Reset clickedButton().
         delete parent->msgBox;
-        parent->msgBox = new MyQMessageBox;
+        parent->msgBox = MyQMessageBox::create(g_main_window);
+        //parent->msgBox->setAttribute(Qt::WA_DeleteOnClose); Not sure if that is safe.
       }
       
       const char *message = ATOMIC_GET(async_message);
@@ -210,7 +211,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
   {
     _initing = true;
 
-    msgBox = new MyQMessageBox;
+    msgBox = MyQMessageBox::create(g_main_window);
     
     setupUi(this);
 
@@ -269,7 +270,7 @@ public slots:
       }
 
       delete msgBox;
-      msgBox = new MyQMessageBox;  // ensure clickedButton()==NULL.
+      msgBox = MyQMessageBox::create(g_main_window);  // ensure clickedButton()==NULL.
 
 
       msgBox->setStandardButtons(QMessageBox::Cancel);

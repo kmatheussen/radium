@@ -14,6 +14,7 @@ static void ensure_widget_is_created(void){
     widget = new song_properties(NULL);
     //widget->setWindowFlags(widget->windowFlags() | Qt::WindowStaysOnTopHint);
     //widget->setWindowModality(Qt::ApplicationModal);
+    g_static_toplevel_widgets.push_back(widget);
   }
 }
 

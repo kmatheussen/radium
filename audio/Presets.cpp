@@ -174,10 +174,10 @@ static hash_t *get_preset_state_from_filename(QString filename){
   
   disk_t *file = DISK_open_for_reading(filename);
   if(file==NULL){
-    MyQMessageBox msgBox;
-    msgBox.setText("Could not open file.");
-    msgBox.setStandardButtons(QMessageBox::Ok);
-    msgBox.setDefaultButton(QMessageBox::Ok);
+    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
+    msgBox->setText("Could not open file.");
+    msgBox->setStandardButtons(QMessageBox::Ok);
+    msgBox->setDefaultButton(QMessageBox::Ok);
     safeExec(msgBox);
     return NULL;
   }
@@ -187,10 +187,10 @@ static hash_t *get_preset_state_from_filename(QString filename){
     return NULL;
 
   if(state==NULL){
-    MyQMessageBox msgBox;
-    msgBox.setText("File does not appear to be a valid effects settings file");
-    msgBox.setStandardButtons(QMessageBox::Ok);
-    msgBox.setDefaultButton(QMessageBox::Ok);
+    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
+    msgBox->setText("File does not appear to be a valid effects settings file");
+    msgBox->setStandardButtons(QMessageBox::Ok);
+    msgBox->setDefaultButton(QMessageBox::Ok);
     safeExec(msgBox);
     return NULL;
   }
@@ -398,10 +398,10 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed){  // "save_b
   disk_t *file = DISK_open_for_writing(filename);
   
   if(file==NULL){
-    MyQMessageBox msgBox;
-    msgBox.setText("Could not save file.");
-    msgBox.setStandardButtons(QMessageBox::Ok);
-    msgBox.setDefaultButton(QMessageBox::Ok);
+    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
+    msgBox->setText("Could not save file.");
+    msgBox->setStandardButtons(QMessageBox::Ok);
+    msgBox->setDefaultButton(QMessageBox::Ok);
     safeExec(msgBox);
     return;
   }

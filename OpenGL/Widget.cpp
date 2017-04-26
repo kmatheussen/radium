@@ -2098,7 +2098,7 @@ void GL_maybe_estimate_vblank(QWidget *qwidget){
   }
   
 
-  MyQMessageBox box;
+  ScopedQPointer<MyQMessageBox> box(MyQMessageBox::create());
 
   bool have_earlier = have_earlier_estimated_value();
 
@@ -2107,7 +2107,7 @@ void GL_maybe_estimate_vblank(QWidget *qwidget){
   ATOMIC_SET(widget->is_training_vblank_estimator, true);
       
   while(ATOMIC_GET(widget->is_training_vblank_estimator)==true) {
-    if(box.clickedButton()!=NULL){
+    if(box->clickedButton()!=NULL){
       widget->set_vblank(GL_get_estimated_vblank());
       store_use_estimated_vblank(true);
       break;
@@ -2118,16 +2118,20 @@ void GL_maybe_estimate_vblank(QWidget *qwidget){
       qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
     
     qApp->flush();
+
+    if (box==NULL)
+      break;
     
     usleep(5*1000);
   }
   
-  if (box.clickedButton()==NULL)
+  if (box!=NULL && box->clickedButton()==NULL)
     store_estimated_value(time_estimator.get_vblank());
   
 
   printf("\n\n\n Closing box\n\n\n");
-  box.close();
+  if(box!=NULL)
+    box->close();
 #endif
 }
 

@@ -2586,12 +2586,25 @@ bool gui_isOpen(int64_t guinum){
   return get_gui_maybeclosed(guinum)!=NULL;
 }
 
-void gui_setAlwaysOnTop(int64_t guinum){
+void gui_setAlwaysOnTop(int64_t guinum, int64_t parentnum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
 
-  gui->_widget->setParent(g_main_window, Qt::Window);
+  QWidget *parent;
+  
+  if (parentnum==-1)
+    parent = g_main_window;
+  else if (parentnum==-2)
+    parent = get_current_parent();
+  else {
+    Gui *gui = get_gui(parentnum);
+    if (gui==NULL)
+      return;
+    parent = gui->_widget;
+  }
+  
+  gui->_widget->setParent(parent, Qt::Window); // get_current_parent() can return anything, but I think the worst thing that could happen if the parent is deleted in this case, is that some warning messages would be displayed. The base case (and I hope only case) is just that the window closes, and that closing the window was the natural thing to happen, since the parent closed.
 }
 
 void gui_setModal(int64_t guinum, bool set_modal){
@@ -2599,7 +2612,7 @@ void gui_setModal(int64_t guinum, bool set_modal){
   if (gui==NULL)
     return;
 
-  gui->_widget->setWindowModality(set_modal ? Qt::WindowModal : Qt::NonModal);
+  gui->_widget->setWindowModality(set_modal ? Qt::ApplicationModal : Qt::NonModal);
 }
 
 void gui_disableUpdates(int64_t guinum){
@@ -2661,6 +2674,31 @@ int gui_getY(int64_t guinum){
     return 0;
 
   return gui->_widget->y();
+}
+
+void gui_moveToParentCentre(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  QObject *oparent = gui->_widget->parent();
+  if (oparent==NULL){
+    handleError("gui_moveToParentCentre: Gui #%d has no parent", guinum);
+    return;
+  }
+
+  QWidget *parent = dynamic_cast<QWidget*>(oparent);
+  if (parent==NULL){
+    handleError("gui_moveToParentCentre: Parent of gui #%d is not a widget", guinum);
+    return;
+  }
+
+  gui->_widget->updateGeometry();
+  
+  int w = gui->_widget->width();
+  int h = gui->_widget->height();
+  //printf("w: %d, h: %d\n",w,h);
+  gui->_widget->move(parent->x()+parent->width()/2-w/2, parent->y()+parent->height()/2-h/2);
 }
 
 void gui_setPos(int64_t guinum, int x, int y){

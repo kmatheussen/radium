@@ -3043,3 +3043,11 @@ float getMousePointerY(int windownum){
   WPoint ret = GetPointerPos(window);
   return ret.y;
 }
+float getGlobalMousePointerX(void){
+  WPoint ret = GetPointerPos(NULL);
+  return ret.x;
+}
+float getGlobalMousePointerY(void){
+  WPoint ret = GetPointerPos(NULL);
+  return ret.y;
+}

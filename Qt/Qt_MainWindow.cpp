@@ -100,11 +100,15 @@ static QVector<Bottom_bar_widget*> g_bottom_bars; // need to be defined here sin
 #include "Qt_MainWindow_proc.h"
 
 
+QVector<QWidget*> g_static_toplevel_widgets;
+
+
 #if USE_GTK_VISUAL
 
 #if FOR_WINDOWS
 static bool sat=false;
 #endif
+
 
 
 class MyEditorWidgetParent : public EditorWidgetParent{
@@ -462,7 +466,8 @@ void SetupMainWindow(void){
   //QMainWindow *main_window = new QMainWindow(NULL, "Radium", Qt::WStyle_Customize | Qt::WStyle_NoBorder);// | Qt::WStyle_Dialog);
   QMainWindow *main_window = new MyQMainWindow();//NULL, "Radium");
   g_main_window = main_window;
-
+  g_static_toplevel_widgets.push_back(main_window);
+  
   //main_window->installEventFilter(main_window);
   
 #ifdef USE_QT4
@@ -743,33 +748,37 @@ static int GFX_Message(vector_t *buttons, QString message){
 
   if (buttons==NULL && time_now <= ignore_until)
     return 0;
+
+  ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
   
-  MyQMessageBox msgBox(g_editor);
-  
-  msgBox.setText(message);
+  msgBox->setText(message);
 
   QString wait_message = "Ignore messages for two seconds";
 
   if(buttons==NULL){
 
-    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox->setStandardButtons(QMessageBox::Ok);
 
     if ( (time_now - last_time) < 2000)
-      msgBox.addButton(wait_message, QMessageBox::AcceptRole);  
+      msgBox->addButton(wait_message, QMessageBox::AcceptRole);  
 
   } else {
 
     VECTOR_FOR_EACH(const char *,button_text,buttons){
-      msgBox.addButton(button_text, QMessageBox::AcceptRole);
+      msgBox->addButton(button_text, QMessageBox::AcceptRole);
     }END_VECTOR_FOR_EACH;
 
   }
 
+  //msgBox->move(QCursor::pos());
   RememberGeometryQDialog::num_open_dialogs++;
   safeExec(msgBox);
   RememberGeometryQDialog::num_open_dialogs--;
 
-  QAbstractButton *clicked_button = msgBox.clickedButton();
+  if (msgBox==NULL) // Theoretically, msgBox could have been deleted while calling exec(). (It is deleted if the parent is deleted, and the parent could basically be any widget)
+    return -1;
+  
+  QAbstractButton *clicked_button = msgBox->clickedButton();
 
   if (buttons != NULL) {
     for(int i=0;i<buttons->num_elements;i++)

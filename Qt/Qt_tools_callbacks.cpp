@@ -51,6 +51,7 @@ void TOOLS_open(void){
   if(widget==NULL){
     widget = new Tools(NULL);
     //widget->setWindowModality(Qt::ApplicationModal);
+    g_static_toplevel_widgets.push_back(widget);
   }
 
   safeShowOrExec(widget);

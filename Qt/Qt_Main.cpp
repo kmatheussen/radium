@@ -1287,7 +1287,7 @@ int g_main_timer_num_calls = 0;
 
 class CalledPeriodically : public QTimer {
 
-  MyQMessageBox msgBox;
+  QMessageBox *msgBox;
   QAbstractButton *msgBox_ok;
   QAbstractButton *msgBox_stop_playing;
   QAbstractButton *msgBox_dontshowagain;
@@ -1299,12 +1299,14 @@ public:
   CalledPeriodically()
     : interval(MAIN_TIMER_INTERVAL) // is set to either 1, 2, 5, 10, 25, or 50.
   {
-    msgBox.setModal(false);
-    msgBox_dontshowagain = (QAbstractButton*)msgBox.addButton("Dont show this message again",QMessageBox::ApplyRole);
-    msgBox_stop_playing = (QAbstractButton*)msgBox.addButton("Stop playing!",QMessageBox::ApplyRole);
-    msgBox_ok = (QAbstractButton*)msgBox.addButton("Ok",QMessageBox::AcceptRole);
-    msgBox.open();
-    msgBox.hide();
+    msgBox = new QMessageBox(g_main_window);
+    msgBox->setModal(false);
+    msgBox->setWindowFlags(Qt::Window | Qt::Tool);
+    msgBox_dontshowagain = (QAbstractButton*)msgBox->addButton("Dont show this message again",QMessageBox::ApplyRole);
+    msgBox_stop_playing = (QAbstractButton*)msgBox->addButton("Stop playing!",QMessageBox::ApplyRole);
+    msgBox_ok = (QAbstractButton*)msgBox->addButton("Ok",QMessageBox::AcceptRole);
+    msgBox->open();
+    msgBox->hide();
 
     //R_ASSERT( (50 % interval) == 0);
     
@@ -1337,18 +1339,18 @@ protected:
       QString message(rt_message);
 
       if (dontshow.contains(message)==false){
-        msgBox.setText(message);
-        safeShow(&msgBox);
+        msgBox->setText(message);
+        safeShow(msgBox);
       }
 
       ATOMIC_SET(rt_message_status, RT_MESSAGE_SHOWING);
       
-    } else if (ATOMIC_GET(rt_message_status) == RT_MESSAGE_SHOWING && msgBox.isHidden()) {
+    } else if (ATOMIC_GET(rt_message_status) == RT_MESSAGE_SHOWING && msgBox->isHidden()) {
 
-      if (msgBox.clickedButton() == msgBox_dontshowagain){
+      if (msgBox->clickedButton() == msgBox_dontshowagain){
         //printf("Dontshowagain\n");
         dontshow.insert(rt_message);
-      } else if (msgBox.clickedButton() == msgBox_stop_playing){
+      } else if (msgBox->clickedButton() == msgBox_stop_playing){
         PlayStop();
       }
       
@@ -1635,12 +1637,17 @@ void MovePointer(struct Tracker_Windows *tvisual, float x, float y){
 
 WPoint GetPointerPos(struct Tracker_Windows *tvisual){
   WPoint ret;
-  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPoint pos;
-  if (!g_editor->isVisible())
-    pos = QPoint(QCursor::pos().x() - 10000, QCursor::pos().y() - 10000);
-  else
-    pos = editor->mapFromGlobal(QCursor::pos());
+  
+  if (tvisual==NULL)
+    pos = QCursor::pos();
+  else{
+    EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+    if (!g_editor->isVisible())
+      pos = QPoint(QCursor::pos().x() - 10000, QCursor::pos().y() - 10000);
+    else
+      pos = editor->mapFromGlobal(QCursor::pos());
+  }
   ret.x = pos.x();
   ret.y = pos.y();
   return ret;

@@ -7,7 +7,6 @@
 (define *pluginmanager-gui* (<gui> :ui "pluginmanager.ui")) ;; Must use relative path. Haven't gotten absolute paths to work in windows when using char* instead of wchar_t*. And s7 uses char*.
 ;;(<gui> :ui (<ra> :append-paths (<ra> :get-program-path) "pluginmanager.ui"))
 
-(<gui> :set-always-on-top *pluginmanager-gui*)
 (<gui> :set-modal *pluginmanager-gui* #t)
 (let ((width (floor (* 3 (<gui> :text-width "Usage  Name  Type    Category    Creator        Path              Inputs Outputs")))))
   (<gui> :set-size *pluginmanager-gui* width (floor (/ width 1.5))))
@@ -42,6 +41,7 @@
 (define (pmg-show instrconf callback)
   (set! *pmg-instrconf* instrconf)
   (set! *pmg-callback* callback)
+  (<gui> :set-always-on-top *pluginmanager-gui* -2)
   (<gui> :show *pluginmanager-gui*)
   (<ra> :obtain-keyboard-focus))
 
@@ -84,7 +84,7 @@
 (define *pmg-scan-all-button* (<gui> :child *pluginmanager-gui* "scan_all_button"))
 (<gui> :add-callback *pmg-scan-all-button*
        (lambda ()
-         (<ra> :show-async-message "Are you sure? The program could crash if you have unstable plugins." (list "Yes" "No")
+         (<ra> :show-async-message "Are you sure? The program could crash if you have unstable plugins." (list "Yes" "No") #t
                (lambda (res)
                  (if (string=? "Yes" res)
                      (<ra> :schedule 0

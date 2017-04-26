@@ -11,6 +11,7 @@
 #include <QScrollArea>
 #include <QVBoxLayout>
 #include <QGuiApplication>
+#include <QPointer>
 
 #include "../OpenGL/Widget_proc.h"
 #include "../common/keyboard_focus_proc.h"
@@ -25,16 +26,40 @@ extern bool g_radium_runs_custom_exec;
 
 extern void set_editor_focus(void);
 
+extern QVector<QWidget*> g_static_toplevel_widgets;
+
 extern QMainWindow *g_main_window;
 extern QSplashScreen *g_splashscreen;
 
 static QWidget *get_current_parent(void){
-  QWidget *mixer_strips_widget = MIXERSTRIPS_get_curr_widget();
 
+  if (QApplication::activeModalWidget()!=NULL)
+    return QApplication::activeModalWidget();
+
+  if (QApplication::activePopupWidget()!=NULL)
+    return QApplication::activePopupWidget();
+    
+  if (QApplication::activeWindow()!=NULL)
+    return QApplication::activeWindow();
+  
+  QWidget *mixer_strips_widget = MIXERSTRIPS_get_curr_widget();
   if (mixer_strips_widget!=NULL)
     return mixer_strips_widget;
-  else
-    return g_main_window;
+  
+  QWidget *curr_under = QApplication::widgetAt(QCursor::pos());
+  if (g_static_toplevel_widgets.contains(curr_under))
+    return curr_under;
+
+  return g_main_window;
+    
+    /*
+    if (curr_under != NULL)
+      return curr_under;
+    else if (QApplication::activeWindow()!=NULL)
+      return QApplication::activeWindow();
+    else
+      return g_main_window;
+    */
 }
 
 namespace radium{
@@ -104,9 +129,70 @@ namespace radium{
 
 }
 
+
+// Why doesn't Qt provide this one?
+namespace{
+template <typename T>
+struct ScopedQPointer : public QPointer<T>{
+  T *_widget;
+  ScopedQPointer(T *widget)
+    : QPointer<T>(widget)
+    , _widget(widget)
+  {}
+  ~ScopedQPointer(){
+    printf("Deleting scoped pointer widget %p\n",_widget);
+    delete _widget;
+  }
+};
+/*
+template <typename T>
+struct ScopedQPointer {
+
+  QPointer<T> _box;
+  
+  MyQPointer(T *t){
+    _box = t;
+    //printf("MyQPointer created %p for %p %p %p\n", this, _box, _box.data(), t);
+  }
+
+  ~MyQPointer(){    
+    //printf("MyQPointer %p deleted (_box: %p %p)\n", this, _box, _box.data());
+    delete data();
+  }
+
+  inline T* data() const
+  {
+    return _box.data();
+  }
+  inline T* operator->() const
+  { return data(); }
+  inline T& operator*() const
+  { return *data(); }
+  inline operator T*() const
+  { return data(); }
+};
+*/
+}
+
+
 struct MyQMessageBox : public QMessageBox {
   bool _splashscreen_visible;
+
+  // Prevent stack allocation. Not sure, but I think get_current_parent() could return something that could be deleted while calling exec.
+  MyQMessageBox(const MyQMessageBox &) = delete;
+  MyQMessageBox & operator=(const MyQMessageBox &) = delete;
+  MyQMessageBox(MyQMessageBox &&) = delete;
+  MyQMessageBox & operator=(MyQMessageBox &&) = delete;
+
+  //
+  // !!! parent must/should be g_main_window unless we use ScopedQPointer !!!
+  //
+  static MyQMessageBox *create(QWidget *parent = NULL){
+    return new MyQMessageBox(parent);
+  }
   
+ private:  
+    
   MyQMessageBox(QWidget *parent_ = NULL)
     : QMessageBox(parent_!=NULL ? parent_ : get_current_parent())
   {
@@ -114,8 +200,11 @@ struct MyQMessageBox : public QMessageBox {
     //setWindowModality(Qt::NonModal);
     setWindowFlags(Qt::Window | Qt::Tool);
   }
+
+ public:
   
   ~MyQMessageBox(){
+    printf("MyQMessageBox %p deleted\n", this);
   }
   
   void showEvent(QShowEvent *event_){

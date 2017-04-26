@@ -227,6 +227,7 @@
 
 (delafina (ra:show-async-message :text ""
                                  :buttons '("OK")
+                                 :is-modal #t
                                  :callback #f)
   (define can-be-closed (null? buttons))
   (define buttonlayout (<gui> :horizontal-layout))
@@ -247,19 +248,25 @@
                                                 (callback button-text))))
               (<gui> :add buttonlayout button))
             buttons)
-  (<gui> :set-always-on-top gui)
+  (if is-modal
+      (<gui> :set-modal gui #t))
+  (<gui> :set-always-on-top gui -2)
   (<gui> :add-close-callback gui (lambda ()
                                    can-be-closed))
 
-  ;;(<gui> :set-pos gui (floor (<ra> :get-mouse-pointer-x)) (floor (<ra> :get-mouse-pointer-y)))
-  (<gui> :show gui))
+  ;;(<gui> :set-pos gui (floor (<ra> :get-global-mouse-pointer-x)) (floor (<ra> :get-global-mouse-pointer-y)))
+  (<gui> :show gui)
+  (<gui> :move-to-parent-centre gui)
+  gui)
 
+  
 #!!
 (<ra> :show-async-message)
 (<ra> :show-async-message :buttons '())
 (<ra> :show-async-message "hello2")
 (<ra> :show-async-message "hello2" :callback c-display)
-(<ra> :show-async-message "hello1" (list "BBBb1" "AAAb2") c-display)
+(<ra> :show-async-message "hello1" (list "BBBb1" "AAAb2") #f c-display)
+(<ra> :show-message "gakk")
 !!#
 
                                    

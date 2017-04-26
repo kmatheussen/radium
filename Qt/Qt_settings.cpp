@@ -77,9 +77,9 @@ QString OS_get_full_program_file_path(QString filename){
   QFileInfo info(dir, filename);
 
   if (!info.exists()){
-    MyQMessageBox msgBox;
-    msgBox.setText("The file " + info.absoluteFilePath() + " does not exist. Make sure all files in the zip file are unpacked before starting the program. Exiting program.");
-    safeExec(&msgBox);
+    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
+    msgBox->setText("The file " + info.absoluteFilePath() + " does not exist. Make sure all files in the zip file are unpacked before starting the program. Exiting program.");
+    safeExec(msgBox);
     exit(-1);
     abort();
   }

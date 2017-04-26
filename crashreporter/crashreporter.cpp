@@ -372,11 +372,11 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       
 #if 1
       {
-        MyQMessageBox box;
-        box.setText("Thanks for reporting the bug!");
+        ScopedQPointer<MyQMessageBox> box(MyQMessageBox::create());
+        box->setText("Thanks for reporting the bug!");
         
-        box.setInformativeText("The bug will hopefully be fixed in the next version of Radium.");
-        box.exec();
+        box->setInformativeText("The bug will hopefully be fixed in the next version of Radium.");
+        box->exec();
       }
 #endif
 
@@ -393,6 +393,8 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 QMainWindow *g_main_window = NULL; // referenced by helpers.h
 QSplashScreen *g_splashscreen = NULL; // referenced by helpers.h
 bool g_radium_runs_custom_exec = false; // used by helpers.h
+QVector<QWidget*> g_static_toplevel_widgets; // same here
+
 QWidget *MIXERSTRIPS_get_curr_widget(void){
   return NULL;
 }

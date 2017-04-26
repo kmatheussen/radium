@@ -312,14 +312,14 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
 
   }else{
 
-    MyQMessageBox msgBox;
-    msgBox.setText("Plugin " + QString(type_name) + " / " + QString(plugin_name) + " not found. Replacing with a Pipe.");
+    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
+    msgBox->setText("Plugin " + QString(type_name) + " / " + QString(plugin_name) + " not found. Replacing with a Pipe.");
     if(!strcmp(type_name,"Ladspa") && getenv("LADSPA_PATH")==NULL)
-      msgBox.setInformativeText("(LADSPA_PATH is not set)");
+      msgBox->setInformativeText("(LADSPA_PATH is not set)");
 
-    EVENTLOG_add_event(strdup(msgBox.text().toUtf8().constData()));
+    EVENTLOG_add_event(strdup(msgBox->text().toUtf8().constData()));
                        
-    msgBox.setDefaultButton(QMessageBox::Ok);
+    msgBox->setDefaultButton(QMessageBox::Ok);
     safeExec(msgBox);
   }
 

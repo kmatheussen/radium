@@ -1136,6 +1136,7 @@ void PREFERENCES_open(void){
   if(g_preferences_widget==NULL){
     g_preferences_widget = new Preferences(g_main_window);
     //widget->setWindowModality(Qt::ApplicationModal);
+    g_static_toplevel_widgets.push_back(g_preferences_widget);
   }
 
   safeShowOrExec(g_preferences_widget);

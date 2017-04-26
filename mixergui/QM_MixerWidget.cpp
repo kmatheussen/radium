@@ -1684,7 +1684,8 @@ MixerWidget::MixerWidget(QWidget *parent)
   }
 
   g_mixer_widget = this;
-
+  g_static_toplevel_widgets.push_back(this);
+  
     populateScene();
 
     auto *layout = new QVBoxLayout(this);  

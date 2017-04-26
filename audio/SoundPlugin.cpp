@@ -2228,11 +2228,11 @@ void PLUGIN_show_info_window(SoundPlugin *plugin){
   info += "Audio tail: " + (tail < 0 ? "undefined" : QString::number(tail*1000.0/MIXER_get_sample_rate()) + "ms") + "\n";
   info += "Last activity: " + QString::number(time_since_last_activity*1000.0/MIXER_get_sample_rate()) + "ms ago\n";
 
-  MyQMessageBox *infoBox = new MyQMessageBox;
+  MyQMessageBox *infoBox = MyQMessageBox::create(g_main_window);
   infoBox->setAttribute(Qt::WA_DeleteOnClose);
   
   infoBox->setText(info);
 
   infoBox->setWindowModality(Qt::NonModal);
-  safeShowOrExec(infoBox);
+  safeShow(infoBox);
 }
