@@ -1337,20 +1337,30 @@ namespace{
   // Some plugins require that it takes some time between deleting the window and deleting the instance. If we don't do this, some plugins will crash. Only seen it on OSX though, but it doesn't hurt to do it on all platforms.
   struct DelayDeleteData : public Timer {
     Data *data;
+    int downcount;
     
-    DelayDeleteData(Data *data)
-      :data(data)
+    DelayDeleteData(Data *data, int downcount = 10)
+      : data(data)
+      , downcount(downcount)
     {
-      startTimer(5000); // wait at least 5 seconds (jules recommends 1-2 seconds (https://forum.juce.com/t/crashes-when-close-app-mac-once-in-a-while/12902))
+      startTimer(500); // wait at least 0.5 seconds 10 times. (jules recommends a total of 1-2 seconds (https://forum.juce.com/t/crashes-when-close-app-mac-once-in-a-while/12902))
     }
 
     void timerCallback() override {
-      radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
-
-      fprintf(stderr, "    DelayDeleteData: Deleting.\n");
-      delete data->audio_instance;
-      delete data;
-      delete this;
+      if (downcount > 0) {
+        
+        fprintf(stderr, "    DelayDeleteData: Downcounting %d\n", downcount);
+        downcount--;
+        startTimer(500);
+        
+      } else {
+        radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
+        
+        fprintf(stderr, "    DelayDeleteData: Deleting.\n");
+        delete data->audio_instance;
+        delete data;
+        delete this;
+      }
     }
   };
 }
@@ -1371,9 +1381,14 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   if (data->window != NULL)
     delete data->window;
 
+  // Wait a little bit first. (if CPU is VERY buzy, perhaps this waiting could prevent a crash)
+#if 0
+  // No, too much waiting when deleting several plugins at once. The 10*0.5s waiting scheme is probably good enough anyway.
+  MessageManager::getInstance()->runDispatchLoopUntil(100);
+#endif
+  
+  // Then schedule deletion in 5 seconds.
   new DelayDeleteData(data);
-  //  delete data->audio_instance;
-  //  delete data;
 }
 
 static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
