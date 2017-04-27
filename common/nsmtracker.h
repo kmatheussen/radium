@@ -221,8 +221,8 @@ extern bool g_is_loading;
 #define R_ASSERT_RETURN_IF_FALSE(a) R_ASSERT_RETURN_IF_FALSE2(a,)
 
 #if defined(RELEASE)
-  #define R_ASSERT_NON_RELEASE(a)
-  #define R_ASSERT_NON_RELEASE2(a, returnvalue)
+  #define R_ASSERT_NON_RELEASE(a) do{}while(0)
+  #define R_ASSERT_NON_RELEASE2(a, returnvalue) do{}while(0)
 #else
   #define R_ASSERT_NON_RELEASE(a) R_ASSERT(a)
   #define R_ASSERT_NON_RELEASE2(a, returnvalue) R_ASSERT_RETURN_IF_FALSE2(a, returnvalue)

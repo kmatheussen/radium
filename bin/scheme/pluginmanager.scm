@@ -1,8 +1,13 @@
 (provide 'pluginmanager.scm)
 
-(if (and (defined? '*pluginmanager-gui*)
-         (<gui> :is-open *pluginmanager-gui*))
-    (<gui> :close *pluginmanager-gui*))
+(when (and (defined? '*pluginmanager-gui*)
+           (<gui> :is-open *pluginmanager-gui*))
+  (when (not *pmg-has-keyboard-focus*)
+    (<ra> :obtain-keyboard-focus *pmg-search-text-button*) ;; hack. (all of this is just fallback code in case something goes wrong)
+    (set! *pmg-has-keyboard-focus* #f))
+  (<gui> :close *pluginmanager-gui*))
+
+(define *pmg-has-keyboard-focus* #f)
 
 (define *pluginmanager-gui* (<gui> :ui "pluginmanager.ui")) ;; Must use relative path. Haven't gotten absolute paths to work in windows when using char* instead of wchar_t*. And s7 uses char*.
 ;;(<gui> :ui (<ra> :append-paths (<ra> :get-program-path) "pluginmanager.ui"))
@@ -33,17 +38,23 @@
 (define *pmg-callback* #f)
 
 (define (pmg-hide)
-  (<ra> :release-keyboard-focus)
-  (<gui> :hide *pluginmanager-gui*)
-  (set! *pmg-callback* #f)
-  (set! *pmg-instrconf* #f))
+  (when (pmg-open?)
+    (<ra> :release-keyboard-focus)
+    (set! *pmg-has-keyboard-focus* #f)
+    (<gui> :hide *pluginmanager-gui*)
+    (<gui> :set-parent *pluginmanager-gui* -3) ;; Set parent to NULL. If not, the plugin manager window is deleted when the parent is deleted.
+    (set! *pmg-callback* #f)
+    (set! *pmg-instrconf* #f)))
 
 (define (pmg-show instrconf callback)
+  (if (not (pmg-open?)) ;; Not supposed to happen, but if it for some reason should happen, this might make the plugin manager work.
+      (load "scheme/pluginmanager.scm"))
   (set! *pmg-instrconf* instrconf)
   (set! *pmg-callback* callback)
-  (<gui> :set-always-on-top *pluginmanager-gui* -2)
+  (<gui> :set-parent *pluginmanager-gui* -2)
   (<gui> :show *pluginmanager-gui*)
-  (<ra> :obtain-keyboard-focus *pmg-search-text-button*))
+  (<ra> :obtain-keyboard-focus *pmg-search-text-button*)
+  (set! *pmg-has-keyboard-focus* #t))
 
 
 

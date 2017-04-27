@@ -952,14 +952,14 @@ public slots:
 
     VECTOR_push_back(&v, "--------------");
     VECTOR_push_back(&v, "<set new name>");
-
-    QPointer<QWidget> alive(this);
+    
+    IsAlive is_alive(this);
 
     GFX_Menu3(&v,
 
-              [alive,num_presets,type,plugin,this](int num, bool onoff){
+              [is_alive,num_presets,type,plugin,this](int num, bool onoff){
                 
-                if (alive.isNull())
+                if (!is_alive)
                   return;
                 
                 printf("I'm here, actually\n");

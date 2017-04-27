@@ -70,6 +70,7 @@ QMainWindow *g_main_window = NULL; // referenced by helpers.h
 QSplashScreen *g_splashscreen = NULL; // referenced by helpers.h
 bool g_radium_runs_custom_exec = false; // used by helpers.h
 QVector<QWidget*> g_static_toplevel_widgets; // same here
+QPointer<QMenu> g_curr_popup_qmenu; // and here
 QWidget *MIXERSTRIPS_get_curr_widget(void){
   return NULL;
 }

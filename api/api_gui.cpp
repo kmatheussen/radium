@@ -182,7 +182,7 @@ namespace radium_gui{
 
 struct Gui;
 
-static QVector<Gui*> g_guis;
+static QVector<Gui*> g_guis; // Might use a lot of memory. Could even overflow... Should probably use QHash<int64_t,Gui*> instead of QVector
 
 struct VerticalAudioMeter;
 static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
@@ -263,14 +263,21 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     int _gui_num;
     QWidget *_widget;
 
-    QRect _orgRect;
+    // full screen stuff
     QWidget *_full_screen_parent = NULL;
+    QPointer<QWidget> _non_full_screen_parent; // Only has a valid value if is_full_screen(). (A QPointer sets the value to NULL automatically when parent is deleted)
+    Qt::WindowFlags _non_full_screen_flags; // Only has a valid value if is_full_screen() 
+    QRect _non_full_screen_rect;  // Only has a valid value if is_full_screen()
     
-    QVector<Gui*> _children;
+    QVector<Gui*> _children; // These are Gui instances created when calling gui_child.
     QVector<func_t*> _deleted_callbacks;
 
     radium::RememberGeometry remember_geometry;
 
+    bool is_full_screen(void){
+      return _full_screen_parent!=NULL;
+    }
+    
     int get_gui_num(void){
       return _gui_num;
     }
@@ -281,6 +288,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       R_ASSERT_RETURN_IF_FALSE(!g_guis.contains(this));
       
       _gui_num = g_guis.size();
+      if(_gui_num==250000) // ~2MB
+        RWarning("Using 250000 GUIs. Time to change g_guis into a hash table.");
+      
       g_guis.push_back(this);
       _widget->setAttribute(Qt::WA_DeleteOnClose);
       //_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);      
@@ -2576,7 +2586,7 @@ void gui_close(int64_t guinum){
   if (gui==NULL)
     return;
 
-  if(gui->_full_screen_parent!=NULL)
+  if(gui->is_full_screen())
     deleteFullscreenParent(gui);
   
   gui->_widget->close();
@@ -2586,7 +2596,7 @@ bool gui_isOpen(int64_t guinum){
   return get_gui_maybeclosed(guinum)!=NULL;
 }
 
-void gui_setAlwaysOnTop(int64_t guinum, int64_t parentnum){
+void gui_setParent(int64_t guinum, int64_t parentnum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
@@ -2596,15 +2606,20 @@ void gui_setAlwaysOnTop(int64_t guinum, int64_t parentnum){
   if (parentnum==-1)
     parent = g_main_window;
   else if (parentnum==-2)
-    parent = get_current_parent();
+    parent = get_current_parent(); // get_current_parent() can return anything, but I think the worst thing that could happen if the parent is deleted, at least in this case, is that some warning messages would be displayed. The base case (and I hope only case) is just that the window closes, and that closing the window was the natural thing to happen, since the parent closed.
+  else if (parentnum==-3)
+    parent = NULL;
   else {
     Gui *gui = get_gui(parentnum);
     if (gui==NULL)
       return;
     parent = gui->_widget;
   }
-  
-  gui->_widget->setParent(parent, Qt::Window); // get_current_parent() can return anything, but I think the worst thing that could happen if the parent is deleted in this case, is that some warning messages would be displayed. The base case (and I hope only case) is just that the window closes, and that closing the window was the natural thing to happen, since the parent closed.
+
+  if (gui->is_full_screen())
+    gui->_non_full_screen_parent = parent;
+  else
+    gui->_widget->setParent(parent, Qt::Window);
 }
 
 void gui_setModal(int64_t guinum, bool set_modal){
@@ -2722,7 +2737,7 @@ bool gui_mousePointsMainlyAt(int64_t guinum){
   if (gui==NULL)
     return false;
 
-  if (gui->_full_screen_parent!=NULL){
+  if (gui->is_full_screen()){
     if (gui->_full_screen_parent->window()==QApplication::topLevelAt(QCursor::pos()))
       return true;
     /*
@@ -2737,11 +2752,12 @@ bool gui_mousePointsMainlyAt(int64_t guinum){
 }
 
 static void deleteFullscreenParent(Gui *gui){
+  R_ASSERT_RETURN_IF_FALSE(gui->is_full_screen());
+  
   gui->_full_screen_parent->layout()->removeWidget(gui->_widget);
 
-  gui->_widget->setParent(g_main_window, Qt::Window);
-  
-  gui->_widget->setGeometry(gui->_orgRect);
+  gui->_widget->setParent(gui->_non_full_screen_parent, gui->_non_full_screen_flags);
+  gui->_widget->setGeometry(gui->_non_full_screen_rect);
   
   delete gui->_full_screen_parent;
   gui->_full_screen_parent = NULL;
@@ -2754,10 +2770,12 @@ void gui_setFullScreen(int64_t guinum, bool enable){
 
   if(enable){
 
-    if(gui->_full_screen_parent!=NULL)
+    if(gui->is_full_screen())
       return;
 
-    gui->_orgRect = gui->_widget->geometry();
+    gui->_non_full_screen_parent = gui->_widget->parentWidget();
+    gui->_non_full_screen_flags  = gui->_widget->windowFlags();
+    gui->_non_full_screen_rect   = gui->_widget->geometry();
       
     gui->_full_screen_parent = new QWidget();
 
@@ -2777,7 +2795,7 @@ void gui_setFullScreen(int64_t guinum, bool enable){
     
   }else{
 
-    if(gui->_full_screen_parent==NULL)
+    if(!gui->is_full_screen())
       return;
 
     deleteFullscreenParent(gui);
@@ -2793,7 +2811,7 @@ bool gui_isFullScreen(int64_t guinum){
     return false;
 
   //return gui->_widget->isFullScreen();
-  return gui->_full_screen_parent!=NULL;
+  return gui->is_full_screen();
 }
   
 void gui_setBackgroundColor(int64_t guinum, const_char* color){

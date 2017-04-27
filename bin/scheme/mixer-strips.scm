@@ -1765,7 +1765,7 @@
   ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
 
   (if (not is-full-screen)
-      (<gui> :set-always-on-top parent)
+      (<gui> :set-parent parent -1)
       (<gui> :set-full-screen parent))
   
   ;;(<gui> :show parent)

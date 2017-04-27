@@ -32,18 +32,39 @@ extern QMainWindow *g_main_window;
 extern QSplashScreen *g_splashscreen;
 extern QPointer<QMenu> g_curr_popup_qmenu;
 
-// Warning, might return any type of widget. (popup, etc.)
-static QWidget *get_current_parent(void){
+typedef QPointer<QObject> IsAlive;
 
-  if (QApplication::activeModalWidget()!=NULL)
-    return QApplication::activeModalWidget();
+static bool can_widget_be_parent_questionmark(QWidget *w){
+  if (w==NULL)
+    return false;
+  if (w==g_curr_popup_qmenu)
+    return false;
+  if (w->windowFlags() & Qt::Popup)
+    return false;
+  if (w->windowFlags() & Qt::ToolTip)
+    return false;
+  
+  return true;
+}
 
+// Warning, might return any type of widget, except a popup or the current qmenu.
+static inline QWidget *get_current_parent(void){
+
+  QWidget *ret = QApplication::activeModalWidget();
+  
+  if (can_widget_be_parent_questionmark(ret))
+    return ret;
+
+  /*
+    We definitely don't want a menu as parent.
   if (QApplication::activePopupWidget()!=NULL)
     return QApplication::activePopupWidget();
-    
-  if (QApplication::activeWindow()!=NULL)
-    return QApplication::activeWindow();
-  
+  */
+
+  ret = QApplication::activeWindow();
+  if (can_widget_be_parent_questionmark(ret))
+    return ret;
+
   QWidget *mixer_strips_widget = MIXERSTRIPS_get_curr_widget();
   if (mixer_strips_widget!=NULL)
     return mixer_strips_widget;
@@ -367,10 +388,11 @@ struct ScopedExec{
 }
 
 
-// Happens sometimes that popup menues don't close.
+// Happens sometimes that there are more than two menues visible at the same time. (probably got something to do with non-async menues)
 static inline void closePopup(void){
-  if (g_curr_popup_qmenu != NULL)
-    delete g_curr_popup_qmenu.data();
+  if (!g_curr_popup_qmenu.isNull())
+    g_curr_popup_qmenu->hide(); // safer.
+  //g_curr_popup_qmenu->deleteLater(); // We might be called from the "triggered" callback of the menu.
 }
 
 static inline int safeExec(QMessageBox *widget){

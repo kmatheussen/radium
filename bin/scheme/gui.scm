@@ -250,7 +250,7 @@
             buttons)
   (if is-modal
       (<gui> :set-modal gui #t))
-  (<gui> :set-always-on-top gui -2)
+  (<gui> :set-parent gui -2)
   (<gui> :add-close-callback gui (lambda ()
                                    can-be-closed))
 
