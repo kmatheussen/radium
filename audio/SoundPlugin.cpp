@@ -2191,7 +2191,7 @@ void PLUGIN_random(SoundPlugin *plugin){
   };PLAYER_unlock();
 }
 
-void PLUGIN_show_info_window(SoundPlugin *plugin){
+void PLUGIN_show_info_window(SoundPlugin *plugin, int64_t parentgui){
   const SoundPluginType *type = plugin->type;
 
   QString info;
@@ -2228,7 +2228,7 @@ void PLUGIN_show_info_window(SoundPlugin *plugin){
   info += "Audio tail: " + (tail < 0 ? "undefined" : QString::number(tail*1000.0/MIXER_get_sample_rate()) + "ms") + "\n";
   info += "Last activity: " + QString::number(time_since_last_activity*1000.0/MIXER_get_sample_rate()) + "ms ago\n";
 
-  MyQMessageBox *infoBox = MyQMessageBox::create(g_main_window);
+  MyQMessageBox *infoBox = MyQMessageBox::create(API_gui_get_parentwidget(parentgui));
   infoBox->setAttribute(Qt::WA_DeleteOnClose);
   
   infoBox->setText(info);

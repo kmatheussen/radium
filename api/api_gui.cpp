@@ -183,7 +183,8 @@ namespace radium_gui{
 struct Gui;
 
 static QVector<Gui*> g_guis; // Might use a lot of memory. Could even overflow... Should probably use QHash<int64_t,Gui*> instead of QVector
-
+static QHash<QWidget*, Gui*> g_gui_from_existing_widgets;
+  
 struct VerticalAudioMeter;
 static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
@@ -274,6 +275,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     radium::RememberGeometry remember_geometry;
 
+    bool _created_from_existing_widget;
+    QPointer<QWidget> _existing_widget; // Need to know if a GUI created from existing widget still exists
+    
     bool is_full_screen(void){
       return _full_screen_parent!=NULL;
     }
@@ -282,11 +286,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return _gui_num;
     }
     
-    Gui(QWidget *widget)
+    Gui(QWidget *widget, bool created_from_existing_widget = false)
       : _widget(widget)
+      , _created_from_existing_widget(created_from_existing_widget)
+      , _existing_widget(created_from_existing_widget ? widget : NULL)
     {
-      R_ASSERT_RETURN_IF_FALSE(!g_guis.contains(this));
-      
+
+      if (_created_from_existing_widget)
+        g_gui_from_existing_widgets[_widget] = this;
+
       _gui_num = g_guis.size();
       if(_gui_num==250000) // ~2MB
         RWarning("Using 250000 GUIs. Time to change g_guis into a hash table.");
@@ -297,7 +305,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
 
     virtual ~Gui(){
+#if !defined(RELEASE)
       R_ASSERT_RETURN_IF_FALSE(g_guis.contains(this));
+#endif
       R_ASSERT_RETURN_IF_FALSE(g_guis[_gui_num] != NULL);
       
       //printf("Deleting Gui %p\n",this);
@@ -331,9 +341,21 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (_paint_callback!=NULL)
         s7extra_unprotect(_paint_callback);
 
+      if (_created_from_existing_widget)
+        g_gui_from_existing_widgets.remove(_widget);
+        
       g_guis[_gui_num] = NULL;
     }
 
+    bool widget_still_exists(void){
+      if (!_created_from_existing_widget)
+        return true;
+      
+      if (!_existing_widget.isNull())
+        return true;
+      
+      return false;
+    }
     
     /************ MOUSE *******************/
     
@@ -1836,9 +1858,17 @@ static Gui *get_gui_maybeclosed(int64_t guinum){
 static Gui *get_gui(int64_t guinum){
   Gui *gui = get_gui_maybeclosed(guinum);
 
-  if (gui==NULL)
+  if (gui==NULL){
     handleError("Gui #%d has been closed and can not be used.", guinum);
-
+    return NULL;
+  }
+  
+  if (!gui->widget_still_exists()){
+    handleError("Gui #%d, created from an existing widget, has been closed and can not be used.", gui->get_gui_num());
+    delete gui;
+    return NULL;
+  }
+  
   return gui;
 }
 
@@ -1887,6 +1917,23 @@ int64_t gui_child(int64_t guinum, const_char* childname){
   return child_gui->get_gui_num();
 }
 
+int64_t API_get_gui_from_existing_widget(QWidget *widget){
+  R_ASSERT_RETURN_IF_FALSE2(widget!=NULL, -1);
+  
+  {
+    Gui *gui = g_gui_from_existing_widgets[widget];
+  
+    if (gui != NULL){
+      if (!gui->widget_still_exists()){
+        //handleError("Gui #%d, created from existing widget, has been closed and can not be used.", gui->get_gui_num()); // It probably doesn't happen very often, but it's not an error.
+        delete gui;
+      }else
+        return gui->get_gui_num();
+    }
+  }
+
+  return (new Gui(widget, true))->get_gui_num();
+}
 
 
 /////// Callbacks
@@ -2596,26 +2643,19 @@ bool gui_isOpen(int64_t guinum){
   return get_gui_maybeclosed(guinum)!=NULL;
 }
 
-void gui_setParent(int64_t guinum, int64_t parentnum){
+void gui_setParent(int64_t guinum, int64_t parentgui){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
 
-  QWidget *parent;
-  
-  if (parentnum==-1)
-    parent = g_main_window;
-  else if (parentnum==-2)
-    parent = get_current_parent(); // get_current_parent() can return anything, but I think the worst thing that could happen if the parent is deleted, at least in this case, is that some warning messages would be displayed. The base case (and I hope only case) is just that the window closes, and that closing the window was the natural thing to happen, since the parent closed.
-  else if (parentnum==-3)
-    parent = NULL;
-  else {
-    Gui *gui = get_gui(parentnum);
-    if (gui==NULL)
-      return;
-    parent = gui->_widget;
+  bool is_window = gui->_widget->isWindow() || gui->_widget->parent()==NULL;
+  if(!is_window){
+    handleError("gui_setParent: Gui #%d is not a window", guinum);
+    return;
   }
-
+  
+  QWidget *parent = API_gui_get_parentwidget(parentgui);
+  
   if (gui->is_full_screen())
     gui->_non_full_screen_parent = parent;
   else
@@ -3139,6 +3179,40 @@ QWidget *API_gui_get_widget(int64_t guinum){
     return NULL;
 
   return gui->_widget;
+}
+
+QWidget *API_gui_get_parentwidget(int64_t parentnum){
+  QWidget *parent;
+  
+  if (parentnum==-1)
+    parent = g_main_window;
+
+  else if (parentnum==-2)
+    // get_current_parent() can return anything, but I think the worst thing that could happen if the parent is deleted,
+    // at least in this case, is that some warning messages would be displayed. The base case (and I hope only case) is
+    // just that the window closes, and that closing the window was the natural thing to happen, since the parent was closed.
+    parent = get_current_parent();
+  
+  else if (parentnum==-3)
+    parent = NULL;
+  
+  else {    
+    Gui *parentgui = get_gui(parentnum);
+    if (parentgui==NULL)
+      return g_main_window;
+    
+    parent = parentgui->_widget;
+  }
+
+  if (parent != NULL) {
+    QWidget *window = parent->window();
+    if (parent != window){
+      printf("gui_setParent: #%d is not a window gui. (automatically fixed)\n", (int)parentnum);
+      parent = window;
+    }
+  }
+
+  return parent;
 }
 
 bool API_gui_is_painting(void){

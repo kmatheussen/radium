@@ -128,10 +128,13 @@ namespace{
   public slots:
     void triggered(){
     //void clicked(bool checked){
-      printf("CLICKED clickable\n");
+      //fprintf(stderr,"CLICKED clickable\n");
 
       if (callback!=NULL)
         s7extra_callFunc_void_int(callback, num);
+
+      //fprintf(stderr,"CLICKED 222222 clickable\n");
+            
       if (callback3)
         callback3(num, true);
 
@@ -141,6 +144,7 @@ namespace{
   };
 }
 
+QPointer<QWidget> g_current_parent_before_qmenu_opened; // Only valid if g_curr_popup_qmenu != NULL
 QPointer<QMenu> g_curr_popup_qmenu;
 
 static QMenu *create_qmenu(
@@ -234,22 +238,20 @@ static int GFX_QtMenu(
                 )
 {
 
-  closePopup();
-
   if(is_async)
     R_ASSERT(callback2!=NULL || callback3);
 
   QMenu *menu = create_qmenu(v, callback2, callback3);
-  g_curr_popup_qmenu = menu;
+  //printf("                CREATED menu %p", menu);
   
   if (is_async){
     
-    menu->popup(QCursor::pos());
+    safeMenuPopup(menu);
     return -1;
     
   } else {
     
-    QAction *action = safeExec(menu);
+    QAction *action = safeMenuExec(menu);
     
     if(action==NULL)
       return -1;

@@ -521,6 +521,42 @@ dyn_t s7extra_callFunc2_dyn_dyn_dyn_dyn_int(const char *funcname, dyn_t arg1, dy
 }
 
 
+void s7extra_callFunc_void_int_charpointer_dyn(func_t *func, int64_t arg1, const char* arg2, dyn_t arg3){
+  ScopedEvalTracker eval_tracker;
+    
+  s7_call(s7,
+          (s7_pointer)func,
+          s7_list(s7,
+                  3,
+                  Protect(s7_make_integer(s7, arg1)),
+                  Protect(s7_make_string(s7, arg2)),
+                  Protect(s7extra_make_dyn(s7, arg3))
+                  )
+          );
+}
+
+void s7extra_callFunc2_void_int_charpointer_dyn(const char *funcname, int64_t arg1, const char* arg2, dyn_t arg3){
+  s7extra_callFunc_void_int_charpointer_dyn((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3);
+}
+
+void s7extra_callFunc_void_int_charpointer_int(func_t *func, int64_t arg1, const char* arg2, int64_t arg3){
+  ScopedEvalTracker eval_tracker;
+    
+  s7_call(s7,
+          (s7_pointer)func,
+          s7_list(s7,
+                  3,
+                  s7_make_integer(s7, arg1),
+                  s7_make_string(s7, arg2),
+                  s7_make_integer(s7, arg3)
+                  )
+          );
+}
+
+void s7extra_callFunc2_void_int_charpointer_int(const char *funcname, int64_t arg1, const char* arg2, int64_t arg3){
+  s7extra_callFunc_void_int_charpointer_int((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3);
+}
+
 void s7extra_callFunc_void_int_bool(func_t *func, int64_t arg1, bool arg2){
   ScopedEvalTracker eval_tracker;
     

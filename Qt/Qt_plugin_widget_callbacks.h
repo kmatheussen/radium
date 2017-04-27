@@ -908,15 +908,23 @@ public slots:
   void on_save_button_clicked(){
     vector_t patches = {};
     VECTOR_push_back(&patches, _patch);
-    PRESET_save(&patches, true);
+    PRESET_save(&patches, true, API_get_gui_from_existing_widget(this->window()));
   }
 
   void on_load_button_clicked(){      
-    requestLoadInstrumentPreset(_patch->id, "");
+    requestLoadInstrumentPreset(_patch->id, "", API_get_gui_from_existing_widget(this->window()));
   }
 
   void on_replace_button_clicked(){
-    requestReplaceInstrument(_patch->id, "", CHIP_get_num_in_connections(_patch)>0, CHIP_get_num_out_connections(_patch)>0);
+    requestReplaceInstrument(_patch->id,
+                             "",
+                             createNewInstrumentConf(0,0,false,false,
+                                                     true,
+                                                     CHIP_get_num_in_connections(_patch)>0,
+                                                     CHIP_get_num_out_connections(_patch)>0,
+                                                     API_get_gui_from_existing_widget(this->window())
+                                                     )
+                             );
   }
     
   void on_reset_button_clicked(){
@@ -935,7 +943,7 @@ public slots:
   void on_info_button_clicked(){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin!=NULL)
-      PLUGIN_show_info_window(plugin);
+      PLUGIN_show_info_window(plugin, API_get_gui_from_existing_widget(this->window()));
   }
 
   void on_preset_button_clicked(){

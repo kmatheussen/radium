@@ -183,7 +183,7 @@ extern LANGSPEC unsigned int GFX_mix_colors(unsigned int c1, unsigned int c2, fl
 extern LANGSPEC unsigned int GFX_get_color(enum ColorNums colornum);
 extern LANGSPEC unsigned int GFX_get_color_from_colorname(const char *colorname);
 extern LANGSPEC const char *GFX_get_colorname_from_color(unsigned int colornum);
-extern LANGSPEC void GFX_color_dialog(const char *initial_color, func_t *callback);
+extern LANGSPEC void GFX_color_dialog(const char *initial_color, int64_t parentguinum, func_t *callback);
 
 extern LANGSPEC void GFX_SetCustomColor(struct Tracker_Windows *tvisual, void *color);
 extern LANGSPEC unsigned int GFX_MakeRandomColor(void);//int blendcolornum, float blendfactor);

@@ -105,7 +105,7 @@
                                              (= state *is-pressing*))
                                         (if (<ra> :shift-pressed)
                                             (<ra> :delete-instrument instrument-id)
-                                            (create-default-mixer-path-popup instrument-id)))
+                                            (create-default-mixer-path-popup instrument-id name)))
                                     #f))
 
   (set-fixed-height name height)
@@ -130,7 +130,7 @@
                                       (if (= button *right-button*)
                                           (if (<ra> :shift-pressed)
                                               (<ra> :delete-instrument instrument-id)
-                                              (create-default-mixer-path-popup instrument-id))
+                                              (create-default-mixer-path-popup instrument-id label))
                                           (when (= button *left-button*)
                                             (cond (is-current-mixer-strip
                                                    (set! *current-mixer-strip-is-wide* is-minimized)
@@ -208,6 +208,8 @@
                                delete-func
                                replace-func
                                reset-func
+
+                               parentgui
                                )
 
   (popup-menu (list "Delete"
@@ -230,18 +232,21 @@
                              (insert-new-instrument-between parent-instrument-id
                                                             (get-instruments-connecting-from-instrument parent-instrument-id)
                                                             #t
+                                                            parentgui
                                                             finished))
                             (upper-half?
                              ;; before
                              (insert-new-instrument-between parent-instrument-id
                                                             instrument-id
                                                             #t
+                                                            parentgui
                                                             finished))
                             (else
                              ;; after
                              (insert-new-instrument-between instrument-id
                                                             (get-instruments-connecting-from-instrument instrument-id)
                                                             #t
+                                                            parentgui
                                                             finished)))
                       ))
                     
@@ -277,10 +282,10 @@
                                                (not (string=? new-name old-name)))
                                           (<ra> :set-instrument-name new-name instrument-id)))
                 "Instrument information" (lambda ()
-                                           (<ra> :show-instrument-info instrument-id))
+                                           (<ra> :show-instrument-info instrument-id parentgui))
                 "----------"
                 "Configure instrument color" (lambda ()
-                                               (show-instrument-color-dialog instrument-id))
+                                               (show-instrument-color-dialog parentgui instrument-id))
                 (list "Wide"
                       :check (<ra> :has-wide-instrument-strip instrument-id)
                       (lambda (enabled)
@@ -300,13 +305,14 @@
                                                              (get-all-audio-instruments)))))                
                 ))
 
-(define (create-default-mixer-path-popup instrument-id)
+(define (create-default-mixer-path-popup instrument-id gui)
   (define is-permanent? (<ra> :instrument-is-permanent instrument-id))
 
   (define (delete)
     (<ra> :delete-instrument instrument-id))
   (define (replace)
-    (async-replace-instrument instrument-id "" #f #f))
+    (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs #f :must-have-outputs #f :parent gui)))
+  
   (define reset #f)
 
   (show-mixer-path-popup instrument-id
@@ -317,7 +323,8 @@
                          #f
                          (if is-permanent? #f delete)
                          (if is-permanent? #f replace)
-                         reset))
+                         reset
+                         gui))
   
 (define (strip-slider first-instrument-id
                       parent-instrument-id
@@ -393,7 +400,8 @@
                                                                    (< y (/ (<gui> :height widget) 2))
                                                                    delete-func
                                                                    replace-func
-                                                                   reset-func)))
+                                                                   reset-func
+                                                                   widget)))
                                       #f))
 
   (<gui> :add-double-click-callback widget (lambda (button x y)
@@ -445,7 +453,7 @@
 
 
   (define (das-replace-instrument)
-    (async-replace-instrument instrument-id "" #t #t))
+    (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs #t :must-have-outputs #t :parent slider)))
 
   (define (reset)
     (<ra> :set-instrument-effect instrument-id "System Dry/Wet" 1))
@@ -1482,7 +1490,7 @@
                                                              (= state *is-pressing*))
                                                         (if (<ra> :shift-pressed)
                                                             (<ra> :delete-instrument instrument-id)
-                                                            (create-default-mixer-path-popup instrument-id)))
+                                                            (create-default-mixer-path-popup instrument-id mixer-strip-path-gui)))
                                                     #f))
 
   (define meter-instrument-id (create-mixer-strip-path mixer-strip-path-gui instrument-id instrument-id))

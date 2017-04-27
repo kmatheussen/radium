@@ -140,12 +140,12 @@ void selectInstrumentForTrack(int tracknum){
   s7extra_callFunc2_void_int("select-track-instrument", tracknum);
 }
 
-void requestReplaceInstrument(int64_t instrument_id, const_char* instrument_description, bool must_have_inputs, bool must_have_outputs){
-  s7extra_callFunc2_void_int_charpointer_bool_bool("async-replace-instrument", instrument_id, instrument_description, must_have_inputs, must_have_outputs);
+void requestReplaceInstrument(int64_t instrument_id, const_char* instrument_description, dyn_t instrconf){
+  s7extra_callFunc2_void_int_charpointer_dyn("async-replace-instrument", instrument_id, instrument_description, instrconf);
 }
 
-void requestLoadInstrumentPreset(int64_t instrument_id, const_char* instrument_description){
-  s7extra_callFunc2_void_int_charpointer("async-load-instrument-preset", instrument_id, instrument_description);
+void requestLoadInstrumentPreset(int64_t instrument_id, const_char* instrument_description, int64_t parentgui){
+  s7extra_callFunc2_void_int_charpointer_int("async-load-instrument-preset", instrument_id, instrument_description, parentgui);
 }
 
 int64_t getInstrumentForTrack(int tracknum, int blocknum, int windownum){
@@ -405,7 +405,12 @@ bool autoconnectInstrument(int64_t instrument_id, float x, float y){
   return MW_autoconnect(patch, x, y);
 }
 
-dyn_t createNewInstrumentConf(float x, float y, bool connect_to_main_pipe, bool do_autoconnect, bool include_load_preset, bool must_have_inputs, bool must_have_outputs){
+dyn_t createNewInstrumentConf(float x, float y,
+                              bool connect_to_main_pipe,
+                              bool do_autoconnect, bool include_load_preset,
+                              bool must_have_inputs, bool must_have_outputs,
+                              int64_t parentgui)
+{
   hash_t *conf = HASH_create(7);
   HASH_put_float(conf, ":x", x);
   HASH_put_float(conf, ":y", y);
@@ -414,6 +419,7 @@ dyn_t createNewInstrumentConf(float x, float y, bool connect_to_main_pipe, bool 
   HASH_put_bool(conf, ":include-load-preset", include_load_preset);
   HASH_put_bool(conf, ":must-have-inputs", must_have_inputs);
   HASH_put_bool(conf, ":must-have-outputs", must_have_outputs);
+  HASH_put_int(conf, ":parentgui", parentgui);
   return DYN_create_hash(conf);
 }
 
@@ -436,8 +442,8 @@ dyn_t getAllPresetsInPath(const_char* path){
   return DYN_create_array(ret);
 }
 
-void requestLoadPresetInstrumentDescription(func_t* callback){
-  PRESET_request_load_instrument_description(callback);
+void requestLoadPresetInstrumentDescription(int64_t parentgui, func_t* callback){
+  PRESET_request_load_instrument_description(parentgui, callback);
 }
 
 bool instrumentPresetInClipboard(void){
@@ -1481,14 +1487,14 @@ void setCurrentInstrument(int64_t instrument_id, bool show_instrument_window_if_
   patch->instrument->PP_Update(patch->instrument, patch, false);
 }
 
-void showInstrumentInfo(int64_t instrument_id){
+void showInstrumentInfo(int64_t instrument_id, int64_t parentgui){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
   
   struct SoundPlugin *plugin = patch->patchdata;
   if (plugin != NULL)
-    PLUGIN_show_info_window(plugin);
+    PLUGIN_show_info_window(plugin, parentgui);
 }
 
 

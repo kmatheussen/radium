@@ -225,7 +225,8 @@
           
           layout)
 
-(delafina (ra:show-async-message :text ""
+(delafina (ra:show-async-message :parentgui -2
+                                 :text ""
                                  :buttons '("OK")
                                  :is-modal #t
                                  :callback #f)
@@ -250,7 +251,7 @@
             buttons)
   (if is-modal
       (<gui> :set-modal gui #t))
-  (<gui> :set-parent gui -2)
+  (<gui> :set-parent gui parentgui)
   (<gui> :add-close-callback gui (lambda ()
                                    can-be-closed))
 

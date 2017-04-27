@@ -89,7 +89,7 @@ vector_t PRESET_get_all_presets_in_path(const wchar_t *wpath){
 
 
 
-static void request_load_preset_filename_from_requester(func_t *callback){
+static void request_load_preset_filename_from_requester(int64_t parentgui, func_t *callback){
   R_ASSERT_RETURN_IF_FALSE(g_radium_runs_custom_exec==false);
 
   QString filename;
@@ -98,17 +98,17 @@ static void request_load_preset_filename_from_requester(func_t *callback){
     radium::ScopedExec scopedExec;
 
     filename = QFileDialog::getOpenFileName(
-                                      g_main_window,
-                                      "Load Effect configuration",
-                                      g_last_preset_path,
+                                            API_gui_get_parentwidget(parentgui),
+                                            "Load Effect configuration",
+                                            g_last_preset_path,
 #if FOR_WINDOWS
-                                      "*.rec *.mrec ;; *.rec ;; *.mrec ;; All files (*)",
+                                            "*.rec *.mrec ;; *.rec ;; *.mrec ;; All files (*)",
 #else
-                                      "Radium Effect Configuration (*.rec *.mrec) ;; Radium Single Effect Configuration (*.rec) ;; Radium Multi Effect Configuration (*.mrec) ;; All files (*)",
+                                            "Radium Effect Configuration (*.rec *.mrec) ;; Radium Single Effect Configuration (*.rec) ;; Radium Multi Effect Configuration (*.mrec) ;; All files (*)",
 #endif
-                                      0,
-                                      QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
-                                      );
+                                            0,
+                                            QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
+                                            );
   }
 
   if (!filename.isNull())
@@ -157,8 +157,8 @@ static const char *request_load_preset_encoded_filename(func_t *callback){
 }
 */
 
-void PRESET_request_load_instrument_description(func_t *callback){
-  request_load_preset_filename_from_requester(callback);
+void PRESET_request_load_instrument_description(int64_t parentgui, func_t *callback){
+  request_load_preset_filename_from_requester(parentgui, callback);
   //request_load_preset_encoded_filename(callback);
   /*
   const char *encoded_filename = request_load_preset_encoded_filename();  // Converting to base64 to avoid having to worry about utf8 conversion problems in filenames.
@@ -355,7 +355,7 @@ void PRESET_copy(vector_t *patches){
   g_preset_clipboard = get_preset_state(patches);
 }
   
-void PRESET_save(const vector_t *patches, bool save_button_pressed){  // "save_button_pressed is the "Save" button in the instrument window.
+void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t parentgui){  // "save_button_pressed is the "Save" button in the instrument window.
 
   if(patches->num_elements==0){
     GFX_Message(NULL, "No instruments selected");
@@ -373,7 +373,7 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed){  // "save_b
   
   GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
     filename = QFileDialog::getSaveFileName(
-                                            g_main_window,
+                                            API_gui_get_parentwidget(parentgui),
                                             "Save Effect configuration",
                                             g_last_preset_path,
 #if FOR_WINDOWS
@@ -398,7 +398,7 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed){  // "save_b
   disk_t *file = DISK_open_for_writing(filename);
   
   if(file==NULL){
-    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
+    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(API_gui_get_parentwidget(parentgui)));
     msgBox->setText("Could not save file.");
     msgBox->setStandardButtons(QMessageBox::Ok);
     msgBox->setDefaultButton(QMessageBox::Ok);

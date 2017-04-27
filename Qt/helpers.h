@@ -30,6 +30,7 @@ extern QVector<QWidget*> g_static_toplevel_widgets;
 
 extern QMainWindow *g_main_window;
 extern QSplashScreen *g_splashscreen;
+extern QPointer<QWidget> g_current_parent_before_qmenu_opened; // Only valid if !g_curr_popup_qmenu.isNull()
 extern QPointer<QMenu> g_curr_popup_qmenu;
 
 typedef QPointer<QObject> IsAlive;
@@ -48,10 +49,16 @@ static bool can_widget_be_parent_questionmark(QWidget *w){
 }
 
 // Warning, might return any type of widget, except a popup or the current qmenu.
-static inline QWidget *get_current_parent(void){
+static inline QWidget *get_current_parent(bool may_return_current_parent_before_qmenu_opened = true){
 
-  QWidget *ret = QApplication::activeModalWidget();
-  
+  if (may_return_current_parent_before_qmenu_opened && !g_curr_popup_qmenu.isNull() && !g_current_parent_before_qmenu_opened.isNull())
+    return g_current_parent_before_qmenu_opened;
+
+  QWidget *ret = QApplication::focusWidget();
+  if (can_widget_be_parent_questionmark(ret))
+    return ret;
+    
+  ret = QApplication::activeModalWidget();
   if (can_widget_be_parent_questionmark(ret))
     return ret;
 
@@ -65,10 +72,11 @@ static inline QWidget *get_current_parent(void){
   if (can_widget_be_parent_questionmark(ret))
     return ret;
 
+  
   QWidget *mixer_strips_widget = MIXERSTRIPS_get_curr_widget();
   if (mixer_strips_widget!=NULL)
     return mixer_strips_widget;
-  
+
   QWidget *curr_under = QApplication::widgetAt(QCursor::pos());
   if (g_static_toplevel_widgets.contains(curr_under))
     return curr_under;
@@ -395,6 +403,13 @@ static inline void closePopup(void){
   //g_curr_popup_qmenu->deleteLater(); // We might be called from the "triggered" callback of the menu.
 }
 
+static inline void set_those_menu_variables_when_starting_a_popup_menu(QMenu *menu_to_be_started){
+  if (!g_curr_popup_qmenu.isNull()) // Don't set it if there's a menu open already.
+    g_current_parent_before_qmenu_opened = get_current_parent(false);
+
+  g_curr_popup_qmenu = menu_to_be_started;
+}
+
 static inline int safeExec(QMessageBox *widget){
   closePopup();
 
@@ -426,7 +441,7 @@ static inline int safeExec(QDialog *widget){
   return widget->exec();
 }
 
-static inline QAction *safeExec(QMenu *widget){
+static inline QAction *safeMenuExec(QMenu *widget){
   QAction *ret;
 
   // safeExec might be called recursively if you double click right mouse button to open a pop up menu. Seems like a bug or design flaw in Qt.
@@ -434,7 +449,10 @@ static inline QAction *safeExec(QMenu *widget){
   if (g_radium_runs_custom_exec==true)
     GFX_Message(NULL, "Already runs custom exec");
 #endif
-  
+
+  closePopup();
+  set_those_menu_variables_when_starting_a_popup_menu(widget);
+      
   if (doModalWindows()) {
     radium::ScopedExec scopedExec;
     return widget->exec(QCursor::pos());
@@ -446,6 +464,13 @@ static inline QAction *safeExec(QMenu *widget){
     return widget->exec(QCursor::pos());
   }
   return ret;
+}
+
+static inline void safeMenuPopup(QMenu *menu){
+  closePopup();
+  set_those_menu_variables_when_starting_a_popup_menu(menu);
+
+  menu->popup(QCursor::pos());
 }
 
 static inline void safeShow(QWidget *widget){  

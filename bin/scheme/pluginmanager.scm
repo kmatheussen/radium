@@ -47,11 +47,11 @@
     (set! *pmg-instrconf* #f)))
 
 (define (pmg-show instrconf callback)
-  (if (not (pmg-open?)) ;; Not supposed to happen, but if it for some reason should happen, this might make the plugin manager work.
+  (if (not (pmg-open?)) ;; Not supposed to happen, but if it for some reason should happen, it might make the plugin manager work again.
       (load "scheme/pluginmanager.scm"))
   (set! *pmg-instrconf* instrconf)
   (set! *pmg-callback* callback)
-  (<gui> :set-parent *pluginmanager-gui* -2)
+  (<gui> :set-parent *pluginmanager-gui* (instrconf :parentgui))
   (<gui> :show *pluginmanager-gui*)
   (<ra> :obtain-keyboard-focus *pmg-search-text-button*)
   (set! *pmg-has-keyboard-focus* #t))
@@ -73,6 +73,7 @@
 ;; Just hide window when closing it.
 (<gui> :add-close-callback *pluginmanager-gui*
        (lambda ()
+         (c-display "              GAKK GAKK GAKK")
          (catch #t ;; We don't want to risk not returning #f (if that happens, the plugin manager can't be opened again)
                 pmg-hide
                 (lambda args
@@ -99,7 +100,7 @@
 (define *pmg-scan-all-button* (<gui> :child *pluginmanager-gui* "scan_all_button"))
 (<gui> :add-callback *pmg-scan-all-button*
        (lambda ()
-         (<ra> :show-async-message "Are you sure? The program could crash if you have unstable plugins." (list "Yes" "No") #t
+         (<ra> :show-async-message *pluginmanager-gui* "Are you sure? The program could crash if you have unstable plugins." (list "Yes" "No") #t
                (lambda (res)
                  (if (string=? "Yes" res)
                      (<ra> :schedule 0
@@ -236,6 +237,7 @@
                    (define pop2 #f)
                    
                    (define (populate)
+                     (c-display "       POPULATE" entry)
                      ;;(<gui> :enable-table-sorting table #f)
                      (let ((new-entries (<ra> :populate-plugin-container entry))
                            (y (<gui> :get-table-row-num table pop1)))

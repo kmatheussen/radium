@@ -176,8 +176,8 @@ void asyncPopupMenu(const char *texts, func_t* callback){
 }
 
 
-void colorDialog(const char *initial_color, func_t* callback){
-  GFX_color_dialog(initial_color, callback);
+void colorDialog(const char *initial_color, int64_t parentguinum, func_t* callback){
+  GFX_color_dialog(initial_color, parentguinum, callback);
 }
 
 void callFunc_void_int_bool(func_t* callback, int arg1, bool arg2){

@@ -878,10 +878,18 @@ static bool mouserelease_replace_patch(MyScene *scene, float mouse_x, float mous
     if(chip_body_is_placed_at(chip_under, mouse_x, mouse_y)==true) {
 
       SoundPlugin *plugin = SP_get_plugin(chip_under->_sound_producer);
-      volatile struct Patch *patch = plugin->patch;
+      Patch *patch = (struct Patch*)plugin->patch;
       R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
 
-      requestReplaceInstrument(patch->id, "", CHIP_get_num_in_connections((struct Patch*)patch)>0, CHIP_get_num_out_connections((struct Patch*)patch)>0);
+      requestReplaceInstrument(patch->id,
+                               "",
+                               createNewInstrumentConf(0,0,false,false,
+                                                       true,
+                                                       CHIP_get_num_in_connections(patch)>0,
+                                                       CHIP_get_num_out_connections(patch)>0,
+                                                       API_get_gui_from_existing_widget(g_mixer_widget->window())
+                                                       )
+                               );
         
       return true;
     }
@@ -924,7 +932,12 @@ static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_
   float x, y;
   get_slotted_x_y(mouse_x, mouse_y, x, y);
 
-  createInstrumentDescriptionPopupMenu(createNewInstrumentConf(x, y, false, true, true, false, false));
+  createInstrumentDescriptionPopupMenu(createNewInstrumentConf(x, y, false, true,
+                                                               true,
+                                                               false, false,
+                                                               API_get_gui_from_existing_widget(g_mixer_widget->window())
+                                                               )
+                                       );
 
   /*                                       
   const char *instrument_description = instrumentDescriptionPopupMenu(false, false);
@@ -1234,6 +1247,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     instrument_info = VECTOR_push_back(&v, "Show info");
   }
 
+  int64_t parentguinum = API_get_gui_from_existing_widget(g_mixer_widget->window());
       
   int sel = GFX_Menu(NULL, NULL, NULL, &v);
 
@@ -1289,11 +1303,11 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
   } else if (sel==save) {
     
-    PRESET_save(&patches, false);
+    PRESET_save(&patches, false, parentguinum);
 
   } else if (sel==config_color) {
 
-    QString command = QString("(show-instrument-color-dialog ") + QString::number(CHIP_get_patch(chip_under)->id);
+    QString command = QString("(show-instrument-color-dialog ") + QString::number(parentguinum) + " " + QString::number(CHIP_get_patch(chip_under)->id);
 
     VECTOR_FOR_EACH(struct Patch *,patch,&patches){
       if (patch!=CHIP_get_patch(chip_under))
@@ -1307,7 +1321,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
 
   } else if (sel==instrument_info) {
 
-    showInstrumentInfo(CHIP_get_patch(chip_under)->id);
+    showInstrumentInfo(CHIP_get_patch(chip_under)->id, parentguinum);
 
   } else if (sel==random) {
 

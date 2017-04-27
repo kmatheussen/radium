@@ -312,8 +312,8 @@
 
 ;; Called from the outside. 'instrument-description' can be false or empty string.
 ;; Async. Returns immediately.
-(define (async-replace-instrument id-old-instrument description must-have-inputs? must-have-outputs?)
-  
+(define (async-replace-instrument id-old-instrument description instrconf)
+
   (define (replace description)
     (if (not (string=? "" description))
         (undo-block
@@ -333,7 +333,7 @@
              )))))
     
   (if (<ra> :instrument-is-permanent id-old-instrument)
-      (<ra> :show-async-message "Can not be replaced")
+      (<ra> :show-async-message (instconf :parentgui) "Can not be replaced")
       (if (or (not description)
               (string=? description ""))
           (start-instrument-popup-menu (<ra> :create-new-instrument-conf 0 0 #f #f #t must-have-inputs? must-have-outputs?)
@@ -345,15 +345,15 @@
 
 ;; Called from the outside. 'instrument-description' can be false or empty string.
 ;; Async. Returns immediately.
-(define (async-load-instrument-preset id-instrument instrument-description)
+(define (async-load-instrument-preset id-instrument instrument-description parentgui)
   (if (<ra> :instrument-is-permanent id-instrument)
-      (<ra> :show-async-message "Can not load preset for this instrument")
+      (<ra> :show-async-message parentgui "Can not load preset for this instrument")
       (let ((gotit (lambda (instrument-description)
                      (if (not (string=? instrument-description ""))
-                         (async-replace-instrument id-instrument instrument-description #f #f)))))
+                         (async-replace-instrument id-instrument instrument-description (make-instrument-conf :must-have-inputs #f :must-have-outputs #f :parentgui parentgui))))))
         (if (or (not instrument-description)
                 (string=? instrument-description ""))
-            (<ra> :request-load-preset-instrument-description gotit)
+            (<ra> :request-load-preset-instrument-description parentgui gotit)
             (gotit instrument-description)))))
         
 
@@ -396,7 +396,7 @@
 !!#
 
 ;; instrument-id2 can also be list of instrument-ids.
-(define (insert-new-instrument-between instrument-id1 instrument-id2 position-at-instrument-1? callback)
+(define (insert-new-instrument-between instrument-id1 instrument-id2 position-at-instrument-1? parentgui callback)
   (assert (or instrument-id1 instrument-id2))
   (if (not instrument-id2)
       (assert position-at-instrument-1?))
@@ -419,8 +419,8 @@
   (define has-instrument2 (not (null? out-list)))
 
   (start-instrument-popup-menu
-   (<ra> :create-new-instrument-conf 0 0 #f #f #t (get-bool instrument-id1) has-instrument2)
-   (lambda (instrument-description)     
+   (make-instrument-conf :must-have-inputs (get-bool instrument-id1) :must-have-outputs has-instrument2 :parentgui parentgui)
+   (lambda (instrument-description)
      (define position-instrument (or (if position-at-instrument-1?
                                          instrument-id1
                                          instrument-id2)
@@ -443,13 +443,13 @@
                 
                 (cond ((and instrument-id1
                             (= 0 num-inputs))
-                       (<ra> :show-async-message (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no input channels"))
+                       (<ra> :show-async-message parentgui (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no input channels"))
                        (set! do-undo #t)
                        #f)
                       
                       ((and (= 0 num-outputs)
                             has-instrument2)
-                       (<ra> :show-async-message (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no output channels"))
+                       (<ra> :show-async-message parentgui (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no output channels"))
                        (set! do-undo #t)
                        #f)
                       
@@ -503,6 +503,16 @@
   :must-have-outputs #f)
 ||#
 
+(delafina (make-instrument-conf :x 0
+                                :y 0
+                                :connect-to-main-pipe #f
+                                :do-autoconnect #f
+                                :include-load-preset #t
+                                :must-have-inputs #f
+                                :must-have-outputs #f
+                                :parentgui -2)
+ (<ra> :create-new-instrument-conf x y connect-to-main-pipe do-autoconnect include-load-preset must-have-inputs must-have-outputs parentgui))
+
 
 ;; The callback takes an instrument description as argument
 (define (spr-entry->instrument-description entry instrconf callback)
@@ -526,7 +536,7 @@
             ;;; (<ra> :show-message (<-> "The \"" (entry :name) "\" plugin container didn't contain any plugins"))))) ;; The populate function shows error message for this.
         ((string=? type "LOAD_PRESET")
          (define (use-file-requester)
-           (<ra> :request-load-preset-instrument-description callback))
+           (<ra> :request-load-preset-instrument-description (instrconf :parentgui) callback))
          (define all-presets (to-list (<ra> :get-all-presets-in-path)))
          ;;(c-display "all-presets" all-presets)
          (if (null? all-presets)
@@ -698,8 +708,10 @@
                                                               (lambda (descr)
                                                                 (load (<ra> :create-audio-instrument-from-description descr)))))
       "<Load New Preset>" (lambda ()
-                            (load (<ra> :create-audio-instrument-from-description
-                                        (<ra> :request-load-preset-instrument-description))))
+                            (<ra> :request-load-preset-instrument-description -1
+                                  (lambda (instrument-description)
+                                    (load (<ra> :create-audio-instrument-from-description instrument-description)))))
+                                        
       "----------"
       "Clone Audio Instrument" (map (lambda (num instrument-id)
                                       (if (<ra> :instrument-is-permanent instrument-id)

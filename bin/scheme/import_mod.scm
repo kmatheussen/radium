@@ -5795,7 +5795,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
            (<ra> :stop-ignoring-undo)
   
            (<ra> :close-progress-window)
-           (<ra> :show-async-message (<-> "Something went wrong: " args))
+           (<ra> :show-async-message -1 (<-> "Something went wrong: " args))
            
            (display (ow!))
            

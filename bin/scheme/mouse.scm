@@ -1067,7 +1067,7 @@
                   :press-func (lambda (Button X Y)                                
                                 (if (inside-box (<ra> :get-box track-slider) X Y)
                                     (begin
-                                      (<ra> :show-async-message "The track slider can not be moved.\nOnly keyboard is supported to navigate to other tracks.")
+                                      (<ra> :show-async-message -1 "The track slider can not be moved.\nOnly keyboard is supported to navigate to other tracks.")
                                       #t)
                                     #f))))
 ||#
@@ -1146,8 +1146,8 @@
                         )                        
 
 
-(define (show-instrument-color-dialog . instrument-ids)
-  (<ra> :color-dialog (<ra> :get-instrument-color (car instrument-ids))
+(define (show-instrument-color-dialog parentgui . instrument-ids)
+  (<ra> :color-dialog (<ra> :get-instrument-color (car instrument-ids)) parentgui
         (lambda (color)
           (for-each (lambda (instrument-id)
                       (<ra> :set-instrument-color color instrument-id))
@@ -1204,7 +1204,7 @@
                 (list "Configure instrument color"
                       :enabled (>= instrument-id 0)
                       (lambda ()
-                        (show-instrument-color-dialog instrument-id))))
+                        (show-instrument-color-dialog -1 instrument-id))))
               "-------"
               "Help Chance text" (lambda ()
                                    (<ra> :show-chance-help-window))
@@ -4331,9 +4331,9 @@
                                           (list "Configure block color"
                                                 :enabled seqblock-info
                                                 (lambda ()
-                                                  (<ra> :color-dialog (<ra> :get-block-color blocknum)
-                                                                      (lambda (color)
-                                                                        (<ra> :set-block-color color blocknum)))))
+                                                  (<ra> :color-dialog -1 (<ra> :get-block-color blocknum)
+                                                        (lambda (color)
+                                                          (<ra> :set-block-color color blocknum)))))
                                           ;;
                                           ;;(list "Remove pause"
                                           ;;      :enabled #f
