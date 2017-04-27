@@ -528,9 +528,9 @@ void s7extra_callFunc_void_int_charpointer_dyn(func_t *func, int64_t arg1, const
           (s7_pointer)func,
           s7_list(s7,
                   3,
-                  Protect(s7_make_integer(s7, arg1)),
-                  Protect(s7_make_string(s7, arg2)),
-                  Protect(s7extra_make_dyn(s7, arg3))
+                  Protect(s7_make_integer(s7, arg1)).v,
+                  Protect(s7_make_string(s7, arg2)).v,
+                  Protect(s7extra_make_dyn(s7, arg3)).v
                   )
           );
 }

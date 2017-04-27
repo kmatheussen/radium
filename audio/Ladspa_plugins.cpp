@@ -518,7 +518,7 @@ static char *create_info_string(const LADSPA_Descriptor *descriptor){
 
 static char *create_creator_string(const LADSPA_Descriptor *descriptor){
   char *creator = V_strdup(descriptor->Maker);
-  int len = strlen(creator);
+  int len = (int)strlen(creator);
   for(int i = 0 ; i < len ; i++){
     if (creator[i]=='<' || creator[i]=='('){
       if (i>0 && creator[i-1]==' ')

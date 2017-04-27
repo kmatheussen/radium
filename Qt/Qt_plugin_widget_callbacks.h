@@ -960,7 +960,11 @@ public slots:
 
     VECTOR_push_back(&v, "--------------");
     VECTOR_push_back(&v, "<set new name>");
-    
+
+#if FOR_MACOSX
+    // clang didn't like the lambda stuff below.
+    int num = GFX_Menu(root->song->tracker_windows, NULL, "", &v);
+#else
     IsAlive is_alive(this);
 
     GFX_Menu3(&v,
@@ -971,6 +975,7 @@ public slots:
                   return;
                 
                 printf("I'm here, actually\n");
+#endif
                 
                 if (num == num_presets+1) {
                   char *new_name = GFX_GetString(NULL, NULL, "new name: ");
@@ -982,8 +987,9 @@ public slots:
                   type->set_current_preset(plugin, num);
                   update_widget();
                 }
-                
+#if !defined(FOR_MACOSX)
               });
+#endif
   }
     
   void on_preset_selector_editingFinished(){

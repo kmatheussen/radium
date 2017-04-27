@@ -586,9 +586,9 @@ public:
 
       FAUST_calledRegularlyByParentReply status;
       
-      Undo_ReopenLast();{ // Simply add any undos create here into the last undo point. Adding a new undo point here would be confusing for the user since this function is triggered by a timer and not a user interaction. (and we need to add undo to avoid inconsitencies, i.e. we can't just call Undo_StartIgnoringUndo()/Undo_StopIgnoringUndo().)
+      UNDO_REOPEN_LAST();{ // Simply add any undos create here into the last undo point. Adding a new undo point here would be confusing for the user since this function is triggered by a timer and not a user interaction. (and we need to add undo to avoid inconsitencies, i.e. we can't just call Undo_StartIgnoringUndo()/Undo_StopIgnoringUndo().)
         status = FAUST_calledRegularlyByParent(plugin);
-      }Undo_Close();
+      }UNDO_CLOSE();
       
       if (status==Faust_No_New_Reply){
 
