@@ -403,8 +403,8 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
 
   R_ASSERT_RETURN_IF_FALSE2(patch->instrument==get_audio_instrument(), false);
       
-  SoundPluginType *type;
-  struct SoundPlugin *plugin;
+  SoundPluginType *type = NULL;
+  struct SoundPlugin *plugin = NULL;
 
   bool state_only_has_plugin = audio_state!=NULL && state_only_contains_plugin(audio_state);
 
@@ -444,10 +444,7 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
     plugin = PLUGIN_create(type, NULL, is_loading_song);
   }
 
-  if (patch->name==NULL || strlen(patch->name)==0) {
-    const char *name = PLUGIN_generate_new_patchname(type);
-    PATCH_set_name(patch, name);
-  }
+  bool needs_name = patch->name==NULL || strlen(patch->name);
 
   if (plugin==NULL){
     if (is_loading_song==false)
@@ -458,9 +455,17 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
         GFX_Message(NULL, "Unable to load \"%s\". Replacing with a pipe.", patch->name);
       else
         GFX_Message(NULL, "Unable to load Audio plugin %s / %s. Replacing \"%s\" with a pipe.", type_name, plugin_name,  patch->name);
-      
+
+      if (needs_name)
+        PATCH_set_name(patch, "Replacement");
+
       return AUDIO_InitPatch2(patch, "Pipe", "Pipe", NULL, true, x, y);
     }
+  }
+
+  if (needs_name){
+    const char *name = PLUGIN_generate_new_patchname(type);
+    PATCH_set_name(patch, name);
   }
 
   plugin->patch = patch;
