@@ -147,13 +147,47 @@ namespace{
 QPointer<QWidget> g_current_parent_before_qmenu_opened; // Only valid if g_curr_popup_qmenu != NULL
 QPointer<QMenu> g_curr_popup_qmenu;
 
+namespace{
+  struct MyQMenu : public QMenu{
+    MyQMenu(QWidget *parent)
+      : QMenu(parent)
+    {}
+    ~MyQMenu(){
+    }
+
+    bool _has_keyboard_focus = false;
+
+    void showEvent(QShowEvent *event) override {
+      if (_has_keyboard_focus==false){
+        obtain_keyboard_focus();
+        _has_keyboard_focus = true;
+      }
+    }
+
+    void hideEvent(QHideEvent *event) override {
+      if (_has_keyboard_focus==true){
+        release_keyboard_focus();
+        _has_keyboard_focus = false;
+      }
+    }
+
+    void closeEvent(QCloseEvent *event) override{
+      if (_has_keyboard_focus==true){
+        release_keyboard_focus();
+        _has_keyboard_focus = false;
+      }
+    }
+  };
+}
+
+
 static QMenu *create_qmenu(
                            const vector_t &v,
                            func_t *callback2,
                            std::function<void(int,bool)> callback3
                            )
 {
-  QMenu *menu = new QMenu(NULL);
+  QMenu *menu = new MyQMenu(NULL);
   menu->setAttribute(Qt::WA_DeleteOnClose);
   
   QMenu *curr_menu = menu;
