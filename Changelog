@@ -1,6 +1,52 @@
+Changes 4.7.4 -> 4.7.6:
+* Show popup menu with the presests from the last used directory,
+  also when selecting "<Load New Preset>" from the track header,
+  and "Load" from the instrument widget header.
+* Don't show assertion reporter when loading multi preset
+  from track header menu.
+* Make sure only ONE undo entry is added when creating a new
+  instrument from the track header menu.
+* Mixer: Always place it on top of main window.
+* Try to fix plugin deletion crash on OSX when CPU is buzy for
+  at least 5 seconds after closing.
+* Turned off "draw in separate process" on OSX for now since
+  it's been reported to be unstable.
+* Various stuff to make sure windows are placed on top of the
+  correct parent window
+* Made both replace and load instrument interfaces async. 
+* Fix recent load song crashes plus many other potentially
+  crashy situations.
+* Plugin manager: Enabled.
+* "Show instrument window when double-clicking" is now off
+  by default.
+* Plugin manager.
+* Made instrument popup menu async.
+* Fix vsync warning message during startup
+* Log more undo info
+* API:
+  * Added: obtainKeyboardFocus, releaseKeyboardFocus,
+    gui_setModal, getGlobalMousePointerX,
+    getGlobalMousePointerY, gui_moveToParentCentre,
+    showAsyncMessage, createInstrumentDescriptionPopupMenu,
+    getAllPresetsInPath,
+    requestLoadPresetInstrumentDescription,
+    instrumentPresetInClipboard, autoconnectInstrument,
+    gui_addDeletedCallback, gui_addRealtimeCallback
+  * Removed: instrumentDescriptionPopupMenu,
+    requestLoadPresetInstrumentDescription.
+  * Renamed: gui_setAlwaysOnTop -> gui_setParent,
+    replaceInstrument -> requestReplaceInstrument,
+    loadInstrumentPreset -> requestLoadInstrumentPreset,
+  * Made doubleClickCallback work with tables
+  * showMessage: Add button options
+  * GUI: Large table speed up.
+  * GUI: All toplevel windows remember geometry
+  * GUI: Implement :get-value for table
+
+
 Changes 4.7.3 -> 4.7.4:
 * Mixer strips: 4X faster to create/recreate.
-* mixer strips: Fix freeze if several bus paths have common
+* Mixer strips: Fix freeze if several bus paths have common
   targets.
 * Fix mouse pointer position when editor is not visible. This
   fixes mouse pointer moving to lower right corner when
