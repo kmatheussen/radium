@@ -342,6 +342,32 @@
                   (replace description)
                   #f)))))
 
+(define (request-select-instrument-preset parentgui callback)
+  (define (use-file-requester)
+    (<ra> :request-load-preset-instrument-description parentgui callback))
+  (define single-presets (to-list (<ra> :get-all-single-presets-in-path)))
+  (define multi-presets (to-list (<ra> :get-all-multi-presets-in-path)))
+  ;;(c-display "all-presets" all-presets)
+  (if (and (null? single-presets)
+           (null? multi-presets))
+      (use-file-requester)
+      (popup-menu (list "Select preset from a different directory"
+                        use-file-requester)
+                  "------------"
+                  (let* ((create-entries (lambda (presets)
+                                           (map (lambda (base64-name)
+                                                  (list (<ra> :from-base64 base64-name)
+                                                        (lambda ()
+                                                          (callback (<-> "2" base64-name)))))
+                                                presets)))
+                         (single-entries (create-entries single-presets))
+                         (multi-entries (create-entries multi-presets)))
+                    (if (or (null? single-entries)
+                            (null? multi-entries))                               
+                        (append single-entries multi-entries)
+                        (append single-entries (list "--------") multi-entries))))))
+
+
 ;; Called from the outside. 'instrument-description' can be false or empty string.
 ;; Async. Returns immediately.
 (define (async-load-instrument-preset id-instrument instrument-description parentgui)
@@ -352,9 +378,9 @@
                          (async-replace-instrument id-instrument instrument-description (make-instrument-conf :must-have-inputs #f :must-have-outputs #f :parentgui parentgui))))))
         (if (or (not instrument-description)
                 (string=? instrument-description ""))
-            (<ra> :request-load-preset-instrument-description parentgui gotit)
+            (request-select-instrument-preset parentgui gotit)
             (gotit instrument-description)))))
-        
+
 
 #!!
 (<ra> :get-num-audio-instruments)
@@ -553,29 +579,7 @@
             ;;;(else
             ;;; (<ra> :show-message (<-> "The \"" (entry :name) "\" plugin container didn't contain any plugins"))))) ;; The populate function shows error message for this.
         ((string=? type "LOAD_PRESET")
-         (define (use-file-requester)
-           (<ra> :request-load-preset-instrument-description (instrconf :parentgui) callback))
-         (define single-presets (to-list (<ra> :get-all-single-presets-in-path)))
-         (define multi-presets (to-list (<ra> :get-all-multi-presets-in-path)))
-         ;;(c-display "all-presets" all-presets)
-         (if (and (null? single-presets)
-                  (null? multi-presets))
-             (use-file-requester)
-             (popup-menu (list "Select preset from a different directory"
-                               use-file-requester)
-                         "------------"
-                         (let* ((create-entries (lambda (presets)
-                                                  (map (lambda (base64-name)
-                                                         (list (<ra> :from-base64 base64-name)
-                                                               (lambda ()
-                                                                 (callback (<-> "2" base64-name)))))
-                                                       presets)))
-                                (single-entries (create-entries single-presets))
-                                (multi-entries (create-entries multi-presets)))
-                           (if (or (null? single-entries)
-                                   (null? multi-entries))                               
-                               (append single-entries multi-entries)
-                               (append single-entries (list "--------") multi-entries))))))
+         (request-select-instrument-preset (instrconf :parentgui) callback))
         ((string=? type "PASTE_PRESET")         
          (callback "3"))
         ((string=? type "NUM_USED_PLUGIN")
@@ -764,9 +768,9 @@
                                                            (lambda (descr)
                                                              (load (<ra> :create-audio-instrument-from-description descr)))))
    "<Load New Preset>" (lambda ()
-                         (<ra> :request-load-preset-instrument-description -1
-                               (lambda (instrument-description)
-                                 (load (<ra> :create-audio-instrument-from-description instrument-description)))))
+                         (request-select-instrument-preset -1
+                                                           (lambda (instrument-description)
+                                                             (load (<ra> :create-audio-instrument-from-description instrument-description)))))
    
    "----------"
    "Clone Audio Instrument" (map (lambda (num instrument-id)
