@@ -249,15 +249,17 @@
                                                 (callback button-text))))
               (<gui> :add buttonlayout button))
             buttons)
+  
   (if is-modal
       (<gui> :set-modal gui #t))
+  
   (<gui> :set-parent gui parentgui)
   (<gui> :add-close-callback gui (lambda ()
                                    can-be-closed))
 
   ;;(<gui> :set-pos gui (floor (<ra> :get-global-mouse-pointer-x)) (floor (<ra> :get-global-mouse-pointer-y)))
-  (<gui> :show gui)
   (<gui> :move-to-parent-centre gui)
+  (<gui> :show gui)
   gui)
 
   

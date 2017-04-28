@@ -704,7 +704,8 @@
                                         (load (<ra> :create-audio-instrument "Pd" "Simple Midi Synth"))))
           #f)
       "<New Audio Instrument>" (lambda ()
-                                 (start-instrument-popup-menu #t #f #f
+                                 (start-instrument-popup-menu (make-instrument-conf :connect-to-main-pipe #t
+                                                                                    :parentgui -1)
                                                               (lambda (descr)
                                                                 (load (<ra> :create-audio-instrument-from-description descr)))))
       "<Load New Preset>" (lambda ()
