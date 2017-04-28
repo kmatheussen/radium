@@ -413,14 +413,26 @@ static inline void set_those_menu_variables_when_starting_a_popup_menu(QMenu *me
 static inline int safeExec(QMessageBox *widget){
   closePopup();
 
-  R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
+#if defined(RELEASE)
+  // QMessageBox is usually used to show error and warning messages.
+  R_ASSERT(g_radium_runs_custom_exec==false);
+#endif
 
+  if (g_radium_runs_custom_exec==true){
+    GFX_HideProgress();
+    GL_lock();
+    int ret = widget->exec();
+    GFX_ShowProgress();
+    GL_unlock();
+    return ret;
+  }
 
   radium::ScopedExec scopedExec;
 
   return widget->exec();
 }
 
+/*
 static inline int safeExec(QMessageBox &widget){
   closePopup();
 
@@ -430,6 +442,7 @@ static inline int safeExec(QMessageBox &widget){
 
   return widget.exec();
 }
+*/
 
 static inline int safeExec(QDialog *widget){
   closePopup();
