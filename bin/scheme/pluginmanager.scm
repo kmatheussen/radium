@@ -298,8 +298,17 @@
 
 (define (pmg-finished-searching?)
   (not *pmg-curr-fill-table-coroutine*)) ;; yepp. If searching, either the PC can not be here (there's just one thread), or *pmg-curr-fill-table-coroutine* has a value.
-  
 
+
+(define *pmg-cached-entries* #f)
+(define *pmg-cached-entries-generation* -1)
+(define (pmg-get-entries)
+  (let ((curr-generation (<ra> :get-sound-plugin-registry-generation)))
+    (when (not (= curr-generation *pmg-cached-entries-generation*))
+      (set! *pmg-cached-entries* (to-list (<ra> :get-sound-plugin-registry #t)))
+      (set! *pmg-cached-entries-generation* curr-generation))
+    *pmg-cached-entries*))
+          
 
 (define (pmg-search search-string check-same-search)
 
@@ -336,14 +345,13 @@
             ;;      (<gui> :enable-table-sorting table #f)
             (pmg-clear-table!)
             ;;(c-display "  REQUESTING" (get-time))
-            (define raw-entries (<ra> :get-sound-plugin-registry #t))
+            (define raw-entries (pmg-get-entries))
             ;;(c-display "  FILTERING" (get-time))
-            (define entries (filter-entries (to-list raw-entries)
-                                            search-string))
+            (define filtered-entries (filter-entries raw-entries search-string))
             ;;(c-display "  ADDING TABLE ROWS..." (get-time))
-            (<gui> :add-table-rows table 0 (length entries))
+            (<gui> :add-table-rows table 0 (length filtered-entries))
             ;;(c-display "  ADDING ENTRIES..." (length entries) (get-time))
-            (pmg-add-to-table! *pmg-table* entries *pmg-instrconf* 0 #f))
+            (pmg-add-to-table! *pmg-table* filtered-entries *pmg-instrconf* 0 #f))
           #f)))
 
 

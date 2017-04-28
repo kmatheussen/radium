@@ -1010,8 +1010,7 @@ for .emacs:
                                            (c-display "hepp4"))))
 ||#
 
-;; Async only. Use ra:simple-popup-menu for sync.
-(define (popup-menu . args)
+(define (get-popup-menu-args args)
   ;;(c-display "aaa")
   (define options (parse-popup-menu-options args))
   ;;(c-display "bbb")
@@ -1038,13 +1037,20 @@ for .emacs:
     ;;(cadr (assoc result-string relations))
     (cadr (relations n))
     )
-  
-  (ra:popup-menu strings
-                 (lambda (n . checkboxval)
-                   (define result-string (strings n))
-                   (if (null? checkboxval)
-                       ((get-func n))
-                       ((get-func n) (car checkboxval))))))
+
+  (list strings
+        (lambda (n . checkboxval)
+          (define result-string (strings n))
+          (if (null? checkboxval)
+              ((get-func n))
+              ((get-func n) (car checkboxval))))))
+
+(define (popup-menu-from-args popup-menu-args)
+  (apply ra:popup-menu popup-menu-args))
+        
+;; Async only. Use ra:simple-popup-menu for sync.
+(define (popup-menu . args)
+  (popup-menu-from-args (get-popup-menu-args args)))
 
 
 #||

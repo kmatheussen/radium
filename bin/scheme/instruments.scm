@@ -513,6 +513,16 @@
                                 :parentgui -2)
  (<ra> :create-new-instrument-conf x y connect-to-main-pipe do-autoconnect include-load-preset must-have-inputs must-have-outputs parentgui))
 
+(define (same-instrconf-with-regards-to-filtering? instrconf1 instrconf2)
+  (and (eq? (instrconf1 :include-load-preset)
+            (instrconf2 :include-load-preset))
+       (eq? (instrconf1 :must-have-outputs)
+            (instrconf2 :must-have-outputs))
+       (eq? (instrconf1 :must-have-inputs)
+            (instrconf2 :must-have-inputs))))
+       
+            
+
 
 ;; The callback takes an instrument description as argument
 (define (spr-entry->instrument-description entry instrconf callback)
@@ -629,17 +639,40 @@
                  (loop (cdr entries))))))))
 
 
+(define *popup-menu-args-cache-instrconf* #f)
+(define *popup-menu-args-cache-generation* -1)
+(define *popup-menu-args-cache-args* #f)
+(define *popup-menu-curr-callback* #f)
+
+(define (get-instrument-popup-menu-args instrconf callback)
+  (define (my-callback entry)
+    (*popup-menu-curr-callback* entry))
+  
+  (set! *popup-menu-curr-callback* callback) ;; Since there should never be more than one popup open at the same time, this should work, hopefully.
+  
+  (let ((curr-generation (<ra> :get-sound-plugin-registry-generation)))
+    (when (or (not (= curr-generation *popup-menu-args-cache-generation*))
+              (not (same-instrconf-with-regards-to-filtering? *popup-menu-args-cache-instrconf*
+                                                              instrconf)))
+      ;;(c-display "REGENERATING CACHE")
+      (set! *popup-menu-args-cache-instrconf* instrconf)
+      (set! *popup-menu-args-cache-generation* curr-generation)
+      (set! *popup-menu-args-cache-args*
+            (get-popup-menu-args (append (list "Plugin Manager"
+                                               (lambda ()
+                                                 (pmg-start instrconf my-callback))
+                                               "--------------")
+                                         (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
+                                                                    instrconf
+                                                                    (lambda (entry)
+                                                                      (spr-entry->instrument-description entry instrconf my-callback))
+                                                                    #f)))))
+    *popup-menu-args-cache-args*))
+
+
 ;; async
 (define (start-instrument-popup-menu instrconf callback)
-  (popup-menu (append (list "Plugin Manager"
-                            (lambda ()
-                              (pmg-start instrconf callback))
-                            "--------------")
-                      (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
-                                                 instrconf
-                                                 (lambda (entry)
-                                                   (spr-entry->instrument-description entry instrconf callback))
-                                                 #f))))
+  (popup-menu-from-args (get-instrument-popup-menu-args instrconf callback)))
 
 (define (create-instrument instrconf description)
   (undo-block

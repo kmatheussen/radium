@@ -61,6 +61,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "api_common_proc.h"
 
 #include "radium_proc.h"
+#include "api_instruments_proc.h"
 #include "api_gui_proc.h"
 
 
@@ -3322,30 +3323,39 @@ static void add_entry(dynvec_t &ret, const PluginMenuEntry &entry, const QString
   }
 }
 
+static int g_spr_generation = 0;
+void API_incSoundPluginRegistryGeneration(void){
+  g_spr_generation++;
+}
+
+int getSoundPluginRegistryGeneration(void){
+  return g_spr_generation;
+}
+  
 dyn_t getSoundPluginRegistry(bool only_normal_and_containers){
   const QVector<PluginMenuEntry> entries = PR_get_menu_entries();
-
+  
   dynvec_t ret = {};
-
+  
   QStack<QString> dir;
   
   for(const PluginMenuEntry &entry : entries){
     
     switch(entry.type){
-      case PluginMenuEntry::IS_LEVEL_UP:
-        dir.push(entry.level_up_name);
-        break;
-      case PluginMenuEntry::IS_LEVEL_DOWN:
-        dir.pop();
-        break;
-      default:
-        break;
+    case PluginMenuEntry::IS_LEVEL_UP:
+      dir.push(entry.level_up_name);
+      break;
+    case PluginMenuEntry::IS_LEVEL_DOWN:
+      dir.pop();
+      break;
+    default:
+      break;
     }
-
+    
     if (!only_normal_and_containers || entry.type==PluginMenuEntry::IS_NORMAL || entry.type==PluginMenuEntry::IS_CONTAINER)
       add_entry(ret, entry, get_path(dir));
-  }
-
+    }
+  
   return DYN_create_array(ret);
 }
 

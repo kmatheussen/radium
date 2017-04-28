@@ -38,6 +38,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../mixergui/QM_MixerWidget.h"
 
+#include "../api/api_instruments_proc.h"
+
 #include "SoundPluginRegistry_proc.h"
 
 
@@ -220,9 +222,15 @@ bool PR_populate(SoundPluginTypeContainer *container){
   R_ASSERT_RETURN_IF_FALSE2(container!=NULL, false);
   
   if (!container->is_populated){
+    
     container->populate(container);
+    
     recreate_favourites(false);
+    
     g_favourites->set_num_uses(container);
+    
+    API_incSoundPluginRegistryGeneration();
+    
     return true;
   }
 
@@ -528,6 +536,8 @@ bool PR_is_initing_vst_first(void){
 
 
 void PR_init_plugin_types(void){
+  API_incSoundPluginRegistryGeneration();
+  
   g_plugin_types.clear();
   g_plugin_menu_entries.clear();
 
