@@ -427,18 +427,31 @@ void createInstrumentDescriptionPopupMenu(dyn_t instrconf){
   s7extra_callFunc2_void_dyn("create-instrument-popup-menu", instrconf);
 }
 
-dyn_t getAllPresetsInPath(const_char* path){
-
+dyn_t getAllSinglePresetsInPath(const_char* path){
   wchar_t *wpath = (path==NULL || strlen(path)==0) ? NULL : STRING_fromBase64(STRING_create(path));
     
-  vector_t presets = PRESET_get_all_presets_in_path(wpath);
+  vector_t rec_presets = PRESET_get_all_rec_files_in_path(wpath);
+  
+  dynvec_t ret = {0};
+
+  VECTOR_FOR_EACH(wchar_t *path, &rec_presets){
+    DYNVEC_push_back(&ret, DYN_create_string(STRING_toBase64(path)));
+  }END_VECTOR_FOR_EACH;
+  
+  return DYN_create_array(ret);
+}
+
+dyn_t getAllMultiPresetsInPath(const_char* path){
+  wchar_t *wpath = (path==NULL || strlen(path)==0) ? NULL : STRING_fromBase64(STRING_create(path));
+    
+  vector_t rec_presets = PRESET_get_all_mrec_files_in_path(wpath);
 
   dynvec_t ret = {0};
 
-  VECTOR_FOR_EACH(wchar_t *path, &presets){
+  VECTOR_FOR_EACH(wchar_t *path, &rec_presets){
     DYNVEC_push_back(&ret, DYN_create_string(STRING_toBase64(path)));
   }END_VECTOR_FOR_EACH;
-
+  
   return DYN_create_array(ret);
 }
 

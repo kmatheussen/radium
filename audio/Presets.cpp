@@ -50,8 +50,7 @@ void PRESET_set_last_used_filename(const wchar_t *wfilename){
 /************** LOAD ********************/
 /****************************************/
 
-
-vector_t PRESET_get_all_presets_in_path(const wchar_t *wpath){
+static vector_t get_all_files_in_path(const wchar_t *wpath, QString ends_with){
   vector_t ret = {0};
 
   if (g_last_preset_path=="")
@@ -65,26 +64,20 @@ vector_t PRESET_get_all_presets_in_path(const wchar_t *wpath){
   for (int i = 0; i < list.size(); ++i) {
     QFileInfo file_info = list.at(i);
     QString filename = file_info.fileName();
-    if (filename.endsWith(".rec"))
+    if (filename.endsWith(ends_with))
       VECTOR_push_back(&ret, STRING_create(filename));
-  }
-
-  bool need_separator = ret.num_elements > 0;
-  bool pushed_separator=false;
-      
-  for (int i = 0; i < list.size(); ++i) {
-    QFileInfo file_info = list.at(i);
-    QString filename = file_info.fileName();
-    if (filename.endsWith(".mrec")) {
-      if (need_separator && pushed_separator==false) {
-        VECTOR_push_back(&ret, STRING_create("-------"));
-        pushed_separator = true;
-      }
-      VECTOR_push_back(&ret, STRING_create(filename));
-    }
   }
 
   return ret;
+}
+
+vector_t PRESET_get_all_rec_files_in_path(const wchar_t *wpath){
+  return get_all_files_in_path(wpath, ".rec");
+}
+
+
+vector_t PRESET_get_all_mrec_files_in_path(const wchar_t *wpath){
+  return get_all_files_in_path(wpath, ".mrec");
 }
 
 

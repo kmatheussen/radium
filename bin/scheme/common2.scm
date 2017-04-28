@@ -1054,6 +1054,16 @@ for .emacs:
 
 
 #||
+(popup-menu (list "Select preset from a different directory"
+                  (lambda x
+                    x))
+            "------------"
+            (map (lambda (base64-name)
+                   (list (<ra> :from-base64 base64-name)
+                         (lambda ()
+                           (callback (<-> "2" base64-name)))))
+                 (list "asdf" "bzcv")))
+
 (popup-menu (list (list "aaa" (lambda ()
                                 5))
                   "----"
