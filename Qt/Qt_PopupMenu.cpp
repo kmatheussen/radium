@@ -148,7 +148,7 @@ QPointer<QWidget> g_current_parent_before_qmenu_opened; // Only valid if g_curr_
 QPointer<QMenu> g_curr_popup_qmenu;
 
 static QMenu *create_qmenu(
-                           vector_t *v,
+                           const vector_t &v,
                            func_t *callback2,
                            std::function<void(int,bool)> callback3
                            )
@@ -162,8 +162,8 @@ static QMenu *create_qmenu(
   QStack<int> n_submenuess;
   int n_submenues=0;
   
-  for(int i=0;i<v->num_elements;i++) {
-    QString text = (const char*)v->elements[i];
+  for(int i=0;i<v.num_elements;i++) {
+    QString text = (const char*)v.elements[i];
     if (text.startsWith("----"))
       menu->addSeparator();
     else {
@@ -231,7 +231,7 @@ static QMenu *create_qmenu(
 
 
 static int GFX_QtMenu(
-                vector_t *v,
+                const vector_t &v,
                 func_t *callback2,
                 std::function<void(int,bool)> callback3,
                 bool is_async
@@ -271,7 +271,7 @@ static int GFX_QtMenu(
   }
 }
 void GFX_Menu3(
-              vector_t *v,
+              const vector_t &v,
               std::function<void(int,bool)> callback3
               )
 {
@@ -282,7 +282,7 @@ int GFX_Menu2(
               struct Tracker_Windows *tvisual,
               ReqType reqtype,
               const char *seltext,
-              vector_t *v,
+              const vector_t v,
               func_t *callback,
               bool is_async
               )
@@ -290,7 +290,7 @@ int GFX_Menu2(
   if(is_async)
     R_ASSERT(callback!=NULL);
 
-  if(reqtype==NULL || v->num_elements>20 || is_async || callback!=NULL){
+  if(reqtype==NULL || v.num_elements>20 || is_async || callback!=NULL){
     std::function<void(int,bool)> empty_callback3;
     return GFX_QtMenu(v, callback, empty_callback3, is_async);
   }else
@@ -302,22 +302,22 @@ int GFX_Menu(
              struct Tracker_Windows *tvisual,
              ReqType reqtype,
              const char *seltext,
-             vector_t *v
+             const vector_t v
              )
 {
   return GFX_Menu2(tvisual, reqtype, seltext, v, NULL, false);
 }
 
 // The returned vector can be used as argument for GFX_Menu.
-vector_t *GFX_MenuParser(const char *texts, const char *separator){
-  vector_t *ret = (vector_t*)talloc(sizeof(vector_t));
+vector_t GFX_MenuParser(const char *texts, const char *separator){
+  vector_t ret = {};
   
   QStringList splitted = QString(texts).split(separator);
   
   for(int i=0 ; i<splitted.size() ; i++){
     QString trimmed = splitted[i].trimmed();
     if (trimmed != "")
-      VECTOR_push_back(ret, talloc_strdup(trimmed.toUtf8().constData()));
+      VECTOR_push_back(&ret, talloc_strdup(trimmed.toUtf8().constData()));
   }
 
   return ret;

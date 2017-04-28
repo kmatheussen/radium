@@ -745,7 +745,7 @@ static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track
       
     if(num_effects==0){
       VECTOR_push_back(&v,"No effects available");
-      GFX_Menu(window,NULL,"No FX available",&v);
+      GFX_Menu(window,NULL,"No FX available",v);
       return FX_FAILED;
     }
   }
@@ -754,7 +754,7 @@ static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track
   
   add_patch_effects_to_menu(&v, &patch_effects, track->patch);
   
-  int selection=GFX_Menu(window,NULL,menutitle,&v);
+  int selection=GFX_Menu(window,NULL,menutitle,v);
   if(-1==selection)
     return FX_FAILED;
 

@@ -1010,47 +1010,41 @@ for .emacs:
                                            (c-display "hepp4"))))
 ||#
 
-(define (___popup-menu is-async? . args)
+;; Async only. Use ra:simple-popup-menu for sync.
+(define (popup-menu . args)
+  ;;(c-display "aaa")
   (define options (parse-popup-menu-options args))
+  ;;(c-display "bbb")
   ;;(c-display "optinos:" options)
   (define relations (make-assoc-from-flat-list options))
-  (define strings (list->vector (map car relations)))
+  ;;(c-display "ccc")
+  (define strings (map car relations))
+  ;;(define strings (list->vector (map car relations)))
+  ;;
+  ;;(define popup-arg (let loop ((strings (vector->list strings)))
+  ;;                    ;;(c-display "strings" strings)
+  ;;                    (if (null? strings)
+  ;;                        ""
+  ;;                        (<-> (car strings) " % " (loop (cdr strings))))))
   
-  (define popup-arg (let loop ((strings (vector->list strings)))
-                      ;;(c-display "strings" strings)
-                      (if (null? strings)
-                          ""
-                          (<-> (car strings) " % " (loop (cdr strings))))))
-
   ;;(c-display "   relations: " relations)
   ;;(for-each c-display relations (iota (length relations)))
   ;;(c-display "strings: " strings)
   ;;(c-display "popup-arg: " popup-arg)
-
+  
   (define (get-func n)
     ;;(c-display "N: " n)
     ;;(define result-string (vector-ref strings n))
     ;;(cadr (assoc result-string relations))
-    (cadr (list-ref relations n))
+    (cadr (relations n))
     )
-
-  (define popup-menu-func (if is-async? ra:async-popup-menu ra:popup-menu2))
-
-  (define ret #f)
-
-  (popup-menu-func popup-arg (lambda (n . checkboxval)
-                               (define result-string (vector-ref strings n))
-                               (if (null? checkboxval)
-                                   (set! ret ((get-func n)))
-                                   (set! ret ((get-func n) (car checkboxval))))))
-
-  ret)
-
-(define (popup-menu-sync . args)
-  (apply ___popup-menu (cons #f args)))
-
-(define (popup-menu . args)
-  (apply ___popup-menu (cons #t args)))
+  
+  (ra:popup-menu strings
+                 (lambda (n . checkboxval)
+                   (define result-string (strings n))
+                   (if (null? checkboxval)
+                       ((get-func n))
+                       ((get-func n) (car checkboxval))))))
 
 
 #||

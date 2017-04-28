@@ -40,6 +40,15 @@ static inline void VECTOR_ensure_space_for_one_more_element(vector_t *v){
   
 }
 
+// Might save some cpu cycles if creating a large vector with known size (firstmost in the memory allocator). It probably makes no practicaly difference though.
+static inline vector_t VECTOR_create(int size){
+  vector_t v = {0};
+  v.num_elements = v.num_elements_allocated = size;
+  v.elements = (void**)talloc(size*(int)sizeof(void*));
+  return v;
+}
+
+
 static inline int VECTOR_push_back(vector_t *v, const void *element){
 #if 0 //ifndef RELEASE
   R_ASSERT(element!=NULL);
@@ -112,7 +121,7 @@ static inline void *VECTOR_get(const vector_t *v, int num, const char *type){
   
   return v->elements[num];
 }
-                         
+
 extern LANGSPEC void VECTOR_reverse(vector_t *v);
 extern LANGSPEC vector_t *VECTOR_move(vector_t *from);
 extern LANGSPEC vector_t *VECTOR_copy(vector_t *from);

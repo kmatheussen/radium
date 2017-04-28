@@ -1891,7 +1891,7 @@ QWidget *GL_create_widget(QWidget *parent){
                                  "<p>"
                                  "If you notice choppy graphics, it might help to install the binary driver instead. However for newer versions of MESA, the performance of this driver seems just as good. It could be worth trying though, but the binary driver might be less stable.</A>."
                                  "<p>"
-                                 "However, although the Gallium driver seems less unstable than the Catalyst driver, Radium still crashes sometimes using this driver (tested with the Gallium 0.4). The best option on Linux is to get an Nvidia card, and use the binary driver for that card. Newest Intel GFX drivers also seems stable."
+                                 "However, although the Gallium driver seems less unstable than the Catalyst driver, Radium still crashes sometimes using this driver (tested with the Gallium 0.4). The best option on Linux is to get an Nvidia card and use the closed-source binary driver. Newest Intel GFX drivers also seem stable."
                                  );
         if (result==1)
           SETTINGS_write_bool("show_gallium_gfx_message_during_startup", false);

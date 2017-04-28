@@ -255,35 +255,35 @@ public slots:
   void ShowReltempoPopup(const QPoint& pos)
   {
     printf("GOTIT reltempo\n");
-    if (popupMenu((char*)"hide tempo multiplier track")==0)
+    if (simplePopupMenu("hide tempo multiplier track")==0)
       showHideReltempoTrack(-1);
   }
 
   void ShowBPMPopup(const QPoint& pos)
   {
     printf("GOTIT bpm\n");
-    if (popupMenu((char*)"hide BPM track")==0)
+    if (simplePopupMenu("hide BPM track")==0)
       showHideBPMTrack(-1);
   }
 
   void ShowLPBPopup(const QPoint& pos)
   {
     printf("GOTIT lpb\n");
-    if (popupMenu((char*)"hide LPB track")==0)
+    if (simplePopupMenu("hide LPB track")==0)
       showHideLPBTrack(-1);
   }
 
   void ShowSignaturePopup(const QPoint& pos)
   {
     printf("GOTIT signature\n");
-    if (popupMenu((char*)"hide time signature track")==0)
+    if (simplePopupMenu("hide time signature track")==0)
       showHideSignatureTrack(-1);
   }
 
   void ShowSwingPopup(const QPoint& pos)
   {
     printf("GOTIT swing\n");
-    if (popupMenu((char*)"hide swing track")==0)
+    if (simplePopupMenu("hide swing track")==0)
       showHideSwingTrack(-1);
   }
 

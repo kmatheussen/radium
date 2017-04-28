@@ -317,21 +317,21 @@ public slots:
   void ShowBPMPopup(const QPoint& pos)
   {
     printf("GOTIT bpm\n");
-    if (popupMenu((char*)"show BPM track")==0)
+    if (simplePopupMenu("show BPM track")==0)
       showHideBPMTrack(-1);
   }
 
   void ShowLPBPopup(const QPoint& pos)
   {
     printf("GOTIT lpb\n");
-    if (popupMenu((char*)"show LPB track")==0)
+    if (simplePopupMenu("show LPB track")==0)
       showHideLPBTrack(-1);
   }
 
   void ShowSignaturePopup(const QPoint& pos)
   {
     printf("GOTIT signature\n");
-    if (popupMenu((char*)"show time signature track")==0)
+    if (simplePopupMenu("show time signature track")==0)
       showHideSignatureTrack(-1);
   }
 

@@ -600,7 +600,7 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     int curr=plugin->curr_ab_num;
     
-    if (popupMenu(talloc_format("%sReset",curr==num?"[disabled]":""))==0){
+    if (simplePopupMenu(talloc_format("%sReset",curr==num?"[disabled]":""))==0){
       PLUGIN_reset_ab(plugin, num);
       update_ab_buttons();
       AUDIOWIDGET_redraw_ab(_patch);
@@ -843,7 +843,7 @@ public slots:
     VECTOR_push_back(&v, "Save FXB (standard VST bank format)");
     VECTOR_push_back(&v, "Save FXP (standard VST preset format)");
     
-    switch(GFX_Menu(root->song->tracker_windows, NULL, "", &v)){
+    switch(GFX_Menu(root->song->tracker_windows, NULL, "", v)){
     case 0: LoadFXBP(); break;
     case 1: SaveFXBP(true); break;
     case 2: SaveFXBP(false); break;
@@ -893,7 +893,7 @@ public slots:
 
     }
 
-    int sel = GFX_Menu(root->song->tracker_windows, NULL, "", &v);
+    int sel = GFX_Menu(root->song->tracker_windows, NULL, "", v);
     
     if (sel==mono_main)
       SAMPLER_start_recording(plugin, pathdir, 1, true);
@@ -963,11 +963,11 @@ public slots:
 
 #if FOR_MACOSX
     // clang didn't like the lambda stuff below.
-    int num = GFX_Menu(root->song->tracker_windows, NULL, "", &v);
+    int num = GFX_Menu(root->song->tracker_windows, NULL, "", v);
 #else
     IsAlive is_alive(this);
 
-    GFX_Menu3(&v,
+    GFX_Menu3(v,
 
               [is_alive,num_presets,type,plugin,this](int num, bool onoff){
                 

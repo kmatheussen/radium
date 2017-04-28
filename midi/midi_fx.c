@@ -474,7 +474,7 @@ int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct F
           VECTOR_push_back(&v,midi_fxs_fullnames[lokke]);
 
 	for(;;){
-                selection=GFX_Menu(window,NULL,menutitle,&v);
+                selection=GFX_Menu(window,NULL,menutitle,v);
 		if(-1==selection){
 			return FX_FAILED;
 		}
@@ -503,7 +503,7 @@ int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct F
                                   vector_t v={0};
                                   VECTOR_push_back(&v,"7");
                                   VECTOR_push_back(&v,"14");
-                                  onlymsb=GFX_Menu(window,reqtype,"Resolution?",&v);
+                                  onlymsb=GFX_Menu(window,reqtype,"Resolution?",v);
 				}
 				if(onlymsb==1){
 					midi_fx->effect_num+=128;

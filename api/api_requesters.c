@@ -157,21 +157,33 @@ int requestMenu(char *text, PyObject* arguments){
   return 0;
 }
 
-int popupMenu(const char *texts){
+int simplePopupMenu(const char *texts){
   struct Tracker_Windows *window=getWindowFromNum(-1);
-  vector_t *vec = GFX_MenuParser(texts, "%");
+  const vector_t vec = GFX_MenuParser(texts, "%");
   return GFX_Menu(window, NULL,"",vec);
 }
 
-int popupMenu2(const char *texts, func_t* callback){
+void popupMenu(dyn_t strings, func_t* callback){
   struct Tracker_Windows *window=getWindowFromNum(-1);
-  vector_t *vec = GFX_MenuParser(texts, "%");
-  return GFX_Menu2(window, NULL, "", vec, callback, false);
-}
+  
+  if (strings.type != ARRAY_TYPE){
+    handleError("popupMenu: Excpected array as first argument, found %s", DYN_type_name(strings.type));
+    return;
+  }
+  dynvec_t *dynvec = strings.array;
 
-void asyncPopupMenu(const char *texts, func_t* callback){
-  struct Tracker_Windows *window=getWindowFromNum(-1);
-  vector_t *vec = GFX_MenuParser(texts, "%");
+  vector_t vec = VECTOR_create(dynvec->num_elements);
+
+  for(int i=0;i<dynvec->num_elements;i++){
+    if (dynvec->elements[i].type != STRING_TYPE){
+      handleError("popupMenu: Element #%d is not a string. Found: %s", DYN_type_name(dynvec->elements[i].type));
+      return;
+    }
+    vec.elements[i] = STRING_get_chars(dynvec->elements[i].string);
+  }
+
+  printf("   NUM_elements: %d", vec.num_elements);
+  
   GFX_Menu2(window, NULL, "", vec, callback, true);
 }
 

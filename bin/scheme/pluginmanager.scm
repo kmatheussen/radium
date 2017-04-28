@@ -317,23 +317,34 @@
 
   (set! search-string (string-upcase search-string))
 
-  (when (or (not check-same-search)
-            (not (string=? *pmg-curr-search-string* search-string)))
+  (<ra> :schedule 10 ;; Feels somewhat better for interactivity to schedule it.
+        (lambda ()
+          (when (or (not check-same-search)
+                    (not (string=? *pmg-curr-search-string* search-string)))
 
-    (c-display "    SEARCHING FOR" search-string)
-
-    (set! *pmg-curr-search-string* search-string)
-    (pmg-stop-search)
-    ;;(c-display " REMOVING...")
-    ;;      (<gui> :enable-table-sorting table #f)
-    (pmg-clear-table!)
-    ;;(c-display "  ADDING...")
-    (define entries (filter-entries (to-list (<ra> :get-sound-plugin-registry #t))
-                                    search-string))
-    (<gui> :add-table-rows table 0 (length entries))
-    ;;(c-display "  ADDING2..." (length entries))
-    (pmg-add-to-table! *pmg-table* entries *pmg-instrconf* 0 #f)))
-
+            (define t (time))
+            (define (get-time)
+              (let* ((now (time))
+                     (ret (- now t)))                
+                (set! t (time))
+                ret))
+            
+            ;;(c-display "    SEARCHING FOR" search-string (get-time))
+            (set! *pmg-curr-search-string* search-string)
+            (pmg-stop-search)
+            ;;(c-display " REMOVING..." (get-time))
+            ;;      (<gui> :enable-table-sorting table #f)
+            (pmg-clear-table!)
+            ;;(c-display "  REQUESTING" (get-time))
+            (define raw-entries (<ra> :get-sound-plugin-registry #t))
+            ;;(c-display "  FILTERING" (get-time))
+            (define entries (filter-entries (to-list raw-entries)
+                                            search-string))
+            ;;(c-display "  ADDING TABLE ROWS..." (get-time))
+            (<gui> :add-table-rows table 0 (length entries))
+            ;;(c-display "  ADDING ENTRIES..." (length entries) (get-time))
+            (pmg-add-to-table! *pmg-table* entries *pmg-instrconf* 0 #f))
+          #f)))
 
 
 ;; Start search and show gui

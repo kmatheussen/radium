@@ -62,11 +62,11 @@ extern LANGSPEC void GFX_WriteString(ReqType reqtype,const char *text);
 extern LANGSPEC void GFX_SetString(ReqType das_reqtype,const char *text);
 extern LANGSPEC void GFX_ReadString(ReqType reqtype,char *buffer,int bufferlength);
 extern LANGSPEC int GFX_ReqTypeMenu(
-	struct Tracker_Windows *tvisual,
-	ReqType reqtype,
-	const char *seltext,
-        vector_t *v
-	);
+                                    struct Tracker_Windows *tvisual,
+                                    ReqType reqtype,
+                                    const char *seltext,
+                                    const vector_t v
+                                    );
 
 extern LANGSPEC int GFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,int min,int max);
 
@@ -77,7 +77,7 @@ extern LANGSPEC char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqt
 #ifdef __cplusplus
 #include <functional>
 void GFX_Menu3(
-               vector_t *v,
+               const vector_t &v,
                std::function<void(int,bool)> callback
                );
 #endif
@@ -86,19 +86,19 @@ extern LANGSPEC int GFX_Menu2(
                               struct Tracker_Windows *tvisual,
                               ReqType reqtype,
                               const char *seltext,
-                              vector_t *v,
+                              const vector_t v,
                               func_t *callback,
                               bool is_async
                               );
 
 extern LANGSPEC int GFX_Menu(
-	struct Tracker_Windows *tvisual,
-	ReqType reqtype,
-	const char *seltext,
-        vector_t *v
-);
+                             struct Tracker_Windows *tvisual,
+                             ReqType reqtype,
+                             const char *seltext,
+                             const vector_t v
+                             );
 
-extern LANGSPEC vector_t *GFX_MenuParser(const char *texts, const char *separator);
+extern LANGSPEC vector_t GFX_MenuParser(const char *texts, const char *separator);
 
 extern LANGSPEC const wchar_t *GFX_GetLoadFileName(
                                                    struct Tracker_Windows *tvisual,

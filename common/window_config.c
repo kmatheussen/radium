@@ -243,7 +243,7 @@ void Window_config(
         VECTOR_push_back(&v, "Line separate color opacity");
         //VECTOR_push_back(&v,"Minimum node-size");
 
-	int sel=GFX_Menu(window,reqtype,"Select operation",&v);
+	int sel=GFX_Menu(window,reqtype,"Select operation",v);
 
 	switch(sel){
 		case -1: break;

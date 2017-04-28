@@ -504,7 +504,7 @@ char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype, bool 
   VECTOR_push_back(&v,"Create new port");
 #endif
 
-  int sel=GFX_Menu(window,reqtype,"Select port",&v);
+  int sel=GFX_Menu(window,reqtype,"Select port",v);
   if(sel==-1)
     return NULL;
 
