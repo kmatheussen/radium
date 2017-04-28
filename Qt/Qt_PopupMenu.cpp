@@ -159,21 +159,21 @@ namespace{
 
     void showEvent(QShowEvent *event) override {
       if (_has_keyboard_focus==false){
-        obtain_keyboard_focus();
+        obtain_keyboard_focus_counting();
         _has_keyboard_focus = true;
       }
     }
 
     void hideEvent(QHideEvent *event) override {
       if (_has_keyboard_focus==true){
-        release_keyboard_focus();
+        release_keyboard_focus_counting();
         _has_keyboard_focus = false;
       }
     }
 
     void closeEvent(QCloseEvent *event) override{
       if (_has_keyboard_focus==true){
-        release_keyboard_focus();
+        release_keyboard_focus_counting();
         _has_keyboard_focus = false;
       }
     }
