@@ -212,6 +212,8 @@
                                parentgui
                                )
 
+  (set! parentgui (<gui> :get-parent-window parentgui))
+
   (popup-menu (list "Delete"
                      :enabled delete-func
                     (lambda ()
@@ -453,7 +455,7 @@
 
 
   (define (das-replace-instrument)
-    (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs #t :must-have-outputs #t :parent slider)))
+    (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs #t :must-have-outputs #t :parent gui)))
 
   (define (reset)
     (<ra> :set-instrument-effect instrument-id "System Dry/Wet" 1))

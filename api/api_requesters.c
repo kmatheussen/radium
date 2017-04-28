@@ -182,7 +182,7 @@ void popupMenu(dyn_t strings, func_t* callback){
     vec.elements[i] = STRING_get_chars(dynvec->elements[i].string);
   }
 
-  printf("   NUM_elements: %d", vec.num_elements);
+  //printf("   NUM_elements: %d\n", vec.num_elements);
   
   GFX_Menu2(window, NULL, "", vec, callback, true);
 }

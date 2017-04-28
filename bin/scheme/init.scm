@@ -182,6 +182,8 @@
 
 (my-require 'common2.scm)
 
+(my-require 'gui.scm) ;; Must be loaded early since it creates the <gui> expansion macro.
+
 (my-require 'nodes.scm)
 
 ;;(my-require 'mouse.scm)
@@ -196,7 +198,6 @@
 
 (my-require 'timing.scm)
 
-(my-require 'gui.scm)
 
 
 (define (init-step-2)

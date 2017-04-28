@@ -163,19 +163,6 @@
                          ,gui)                        
                        (,funcname ,@(butlast args) ,last-arg))))))))
 
-#||
-         (let ((last-arg (and (not (null? args)) (last args))))
-           `(let ((gui (if (and ,last-arg (procedure
-                   
-         (let* ((func (eval (<_> 'ra:gui_ (keyword->symbol command))))
-                (last-arg (and (not (null? args)) (last args)))
-                (gui (if (and last-arg (procedure? last-arg))
-                         (apply func (butlast args))
-                         (apply func args))))
-           (when (and last-arg (procedure? last-arg))
-             (<ra> :gui_add-callback gui last-arg))
-           gui))))
-||#
 
 (delafina (<gui-number-input> :text text
                               :input-type 'float ;; float or int

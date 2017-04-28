@@ -336,8 +336,7 @@
       (<ra> :show-async-message (instconf :parentgui) "Can not be replaced")
       (if (or (not description)
               (string=? description ""))
-          (start-instrument-popup-menu (<ra> :create-new-instrument-conf 0 0 #f #f #t must-have-inputs? must-have-outputs?)
-                                       replace)
+          (start-instrument-popup-menu instrconf replace)
           (<ra> :schedule 0 ;; We do this since the function is specified to return immediately. I.e. the caller expects the instrument configuration to be the same when we return.
                 (lambda ()
                   (replace description)
@@ -411,7 +410,7 @@
                           instrument-id2)
                          (else
                           (list instrument-id2))))                       
-  
+
   (define gain-list (map (lambda (out-id)
                            (<ra> :get-audio-connection-gain instrument-id1 out-id))
                          out-list))
@@ -419,7 +418,9 @@
   (define has-instrument2 (not (null? out-list)))
 
   (start-instrument-popup-menu
-   (make-instrument-conf :must-have-inputs (get-bool instrument-id1) :must-have-outputs has-instrument2 :parentgui parentgui)
+   (make-instrument-conf :must-have-inputs (get-bool instrument-id1)
+                         :must-have-outputs has-instrument2
+                         :parentgui parentgui)
    (lambda (instrument-description)
      (define position-instrument (or (if position-at-instrument-1?
                                          instrument-id1
@@ -503,6 +504,7 @@
   :must-have-outputs #f)
 ||#
 
+;; Always use this one, and not ra:create-new-instrument-conf, to improve caching, and avoid too many places to fix code if changing the arguments for ra:create-new-instrument-conf.
 (delafina (make-instrument-conf :x 0
                                 :y 0
                                 :connect-to-main-pipe #f
@@ -511,7 +513,13 @@
                                 :must-have-inputs #f
                                 :must-have-outputs #f
                                 :parentgui -2)
- (<ra> :create-new-instrument-conf x y connect-to-main-pipe do-autoconnect include-load-preset must-have-inputs must-have-outputs parentgui))
+          (<ra> :create-new-instrument-conf
+                x y
+                connect-to-main-pipe
+                do-autoconnect include-load-preset must-have-inputs must-have-outputs
+                (<gui> :get-parent-window parentgui) ;; Improves plugin menu caching performance.
+                ))
+
 
 (define (same-instrconf-with-regards-to-filtering? instrconf1 instrconf2)
   (and (eq? (instrconf1 :include-load-preset)
@@ -645,6 +653,7 @@
 (define *popup-menu-curr-callback* #f)
 
 (define (get-instrument-popup-menu-args instrconf callback)
+  
   (define (my-callback entry)
     (*popup-menu-curr-callback* entry))
   
@@ -653,7 +662,10 @@
   (let ((curr-generation (<ra> :get-sound-plugin-registry-generation)))
     (when (or (not (= curr-generation *popup-menu-args-cache-generation*))
               (not (same-instrconf-with-regards-to-filtering? *popup-menu-args-cache-instrconf*
-                                                              instrconf)))
+                                                              instrconf))
+              (not (eq? (*popup-menu-args-cache-instrconf* :parentgui) ;; parentgui is used when openening new popup menues, plugin manager, file selector, etc.
+                        (instrconf :parentgui))))
+      
       ;;(c-display "REGENERATING CACHE")
       (set! *popup-menu-args-cache-instrconf* instrconf)
       (set! *popup-menu-args-cache-generation* curr-generation)
@@ -680,7 +692,7 @@
      (let ((instrument-id (<ra> :create-audio-instrument-from-description description "" (instrconf :x) (instrconf :y))))
        (when (and (integer? instrument-id)
                   (not (= -1 instrument-id)))  
-         (c-display (pp instrconf))
+         ;;(c-display (pp instrconf))
          (if (and (instrconf :connect-to-main-pipe)
                   (> (<ra> :get-num-output-channels instrument-id) 0))
              (<ra> :connect-audio-instrument-to-main-pipe instrument-id))
@@ -697,7 +709,7 @@
 
                                  
 #!!
-(create-instrument-popup-menu (<ra> :create-new-instrument-conf))
+(create-instrument-popup-menu (make-instrument-conf))
 !!#
 
                                   

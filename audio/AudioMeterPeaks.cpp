@@ -11,8 +11,9 @@
 #include "AudioMeterPeaks_proc.h"
 
 
-
-
+// NOTE. All the 'call_very_often' functions can be called from a custom exec().
+// This means that _patch->plugin might be gone, and the same goes for soundproducer.
+// (_patch is never gone, never deleted)
 
 static void call_very_often(AudioMeterPeaks &peaks, bool reset_falloff, float ms){
 
@@ -67,6 +68,7 @@ static void call_very_often(SoundPlugin *plugin, bool reset_falloff, int ms){
 
 static const int g_falloff_reset = 5; // 5 seconds between each falloff reset.
 
+// NOTE. This function can be called from a custom exec().
 void AUDIOMETERPEAKS_call_very_often(int ms){
   static int counter = 0;
 

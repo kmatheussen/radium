@@ -1101,6 +1101,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     const float falloff_height = 1.5;
 
+    // NOTE. This function can be called from a custom exec().
+    // This means that _patch->plugin might be gone, and the same goes for soundproducer.
+    // (_patch is never gone, never deleted)
     void call_regularly(void){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       if(plugin==NULL)
@@ -1920,6 +1923,13 @@ int64_t gui_child(int64_t guinum, const_char* childname){
 
 int64_t API_get_gui_from_existing_widget(QWidget *widget){
   R_ASSERT_RETURN_IF_FALSE2(widget!=NULL, -1);
+
+#if !defined(RELEASE)
+  for(const auto *gui : g_guis)
+    if (gui!=NULL)
+      if(!gui->_created_from_existing_widget)
+        R_ASSERT(gui->_widget!=widget);
+#endif
   
   {
     Gui *gui = g_gui_from_existing_widgets[widget];
@@ -2644,6 +2654,22 @@ bool gui_isOpen(int64_t guinum){
   return get_gui_maybeclosed(guinum)!=NULL;
 }
 
+int64_t gui_getParentWindow(int64_t guinum){
+  if (guinum < 0)
+    return guinum;
+  
+  QWidget *w = API_gui_get_parentwidget(guinum);
+
+  if (w==NULL)
+    return -3;
+
+  Gui *gui = get_gui(guinum);
+  if (gui!=NULL && gui->_widget==w)
+    return guinum; // Don't want to create an unneeded "existing widget" gui instance.
+  
+  return API_get_gui_from_existing_widget(w);
+}
+
 void gui_setParent(int64_t guinum, int64_t parentgui){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -3169,6 +3195,9 @@ void releaseKeyboardFocus(void){
 
 ////////////
 
+// NOTE. This function can be called from a custom exec().
+// This means that _patch->plugin might be gone, and the same goes for soundproducer.
+// (_patch is never gone, never deleted)
 void API_gui_call_regularly(void){
   for(auto *meter : g_active_vertical_audio_meters)
     meter->call_regularly();
@@ -3208,7 +3237,7 @@ QWidget *API_gui_get_parentwidget(int64_t parentnum){
   if (parent != NULL) {
     QWidget *window = parent->window();
     if (parent != window){
-      printf("gui_setParent: #%d is not a window gui. (automatically fixed)\n", (int)parentnum);
+      printf("API_gui_get_parentwidget: #%d is not a window gui. (automatically fixed)\n", (int)parentnum);
       parent = window;
     }
   }
