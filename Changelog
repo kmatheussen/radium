@@ -1,3 +1,12 @@
+Changes 4.7.6 -> 4.7.7:
+* Store on disk the result of scanning a plugin, plus store a
+  blacklist of plugins that crashed during scanning.
+* Fix problems changing A/B state that was loaded with the song.
+* Mouse: Fix mouse pointer position after editing in the editor
+* Fix keyboard focus in async popup menues
+* API: getMaxSubmenuEntries / setMaxSubmenuEntries
+
+
 Changes 4.7.4 -> 4.7.6:
 * Show popup menu with the presests from the last used directory,
   also when selecting "<Load New Preset>" from the track header,
