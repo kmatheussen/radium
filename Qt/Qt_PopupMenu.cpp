@@ -34,12 +34,54 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 static const int max_submenues = 200;
 
 namespace{
+
+  struct MyQMenu : public QMenu{
+    
+    func_t *_callback;
+    
+    MyQMenu(QWidget *parent, func_t *callback)
+      : QMenu(parent)
+      , _callback(callback)
+    {
+      if(_callback!=NULL)
+        s7extra_protect(_callback);
+    }
+    
+    ~MyQMenu(){
+      if(_callback!=NULL)
+        s7extra_unprotect(_callback);      
+    }
+
+    bool _has_keyboard_focus = false;
+
+    void showEvent(QShowEvent *event) override {
+      if (_has_keyboard_focus==false){
+        obtain_keyboard_focus_counting();
+        _has_keyboard_focus = true;
+      }
+    }
+
+    void hideEvent(QHideEvent *event) override {
+      if (_has_keyboard_focus==true){
+        release_keyboard_focus_counting();
+        _has_keyboard_focus = false;
+      }
+    }
+
+    void closeEvent(QCloseEvent *event) override{
+      if (_has_keyboard_focus==true){
+        release_keyboard_focus_counting();
+        _has_keyboard_focus = false;
+      }
+    }
+  };
+
   class CheckableAction : public QWidgetAction
   {
     Q_OBJECT
 
     QString text;
-    QMenu *qmenu;
+    MyQMenu *qmenu;
     int num;
     func_t *callback;
     std::function<void(int,bool)> callback3;
@@ -48,11 +90,9 @@ namespace{
 
     ~CheckableAction(){
       //printf("I was deleted: %s\n",text.toUtf8().constData());
-      if(callback!=NULL)
-        s7extra_unprotect(callback);
     }
     
-    CheckableAction(const QString & text_b, bool is_on, QMenu *qmenu_b, int num_b, func_t *callback_b, std::function<void(int,bool)> callback3_b)
+    CheckableAction(const QString & text_b, bool is_on, MyQMenu *qmenu_b, int num_b, func_t *callback_b, std::function<void(int,bool)> callback3_b)
       : QWidgetAction(qmenu_b)
       , text(text_b)
       , qmenu(qmenu_b)
@@ -60,9 +100,6 @@ namespace{
       , callback(callback_b)
       , callback3(callback3_b)
     {
-      if(callback!=NULL)
-        s7extra_protect(callback);
-
       QWidget *widget = new QWidget;
       QHBoxLayout *layout = new QHBoxLayout;
       layout->setSpacing(0);
@@ -99,7 +136,7 @@ namespace{
     Q_OBJECT
 
     QString text;
-    QMenu *qmenu;
+    MyQMenu *qmenu;
     int num;
     func_t *callback;
     std::function<void(int,bool)> callback3;
@@ -108,11 +145,9 @@ namespace{
 
     ~ClickableAction(){
       //printf("I was deleted: %s\n",text.toUtf8().constData());
-      if(callback!=NULL)
-        s7extra_unprotect(callback);
     }
     
-    ClickableAction(const QString & text, QMenu *qmenu, int num, func_t *callback, std::function<void(int,bool)> callback3)
+    ClickableAction(const QString & text, MyQMenu *qmenu, int num, func_t *callback, std::function<void(int,bool)> callback3)
       : QAction(text, qmenu)
       , text(text)
       , qmenu(qmenu)
@@ -120,8 +155,6 @@ namespace{
       , callback(callback)
       , callback3(callback3)
     {
-      if(callback!=NULL)
-        s7extra_protect(callback);
       connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
     }
 
@@ -147,38 +180,6 @@ namespace{
 QPointer<QWidget> g_current_parent_before_qmenu_opened; // Only valid if g_curr_popup_qmenu != NULL
 QPointer<QMenu> g_curr_popup_qmenu;
 
-namespace{
-  struct MyQMenu : public QMenu{
-    MyQMenu(QWidget *parent)
-      : QMenu(parent)
-    {}
-    ~MyQMenu(){
-    }
-
-    bool _has_keyboard_focus = false;
-
-    void showEvent(QShowEvent *event) override {
-      if (_has_keyboard_focus==false){
-        obtain_keyboard_focus_counting();
-        _has_keyboard_focus = true;
-      }
-    }
-
-    void hideEvent(QHideEvent *event) override {
-      if (_has_keyboard_focus==true){
-        release_keyboard_focus_counting();
-        _has_keyboard_focus = false;
-      }
-    }
-
-    void closeEvent(QCloseEvent *event) override{
-      if (_has_keyboard_focus==true){
-        release_keyboard_focus_counting();
-        _has_keyboard_focus = false;
-      }
-    }
-  };
-}
 
 
 static QMenu *create_qmenu(
@@ -187,7 +188,7 @@ static QMenu *create_qmenu(
                            std::function<void(int,bool)> callback3
                            )
 {
-  QMenu *menu = new MyQMenu(NULL);
+  MyQMenu *menu = new MyQMenu(NULL, callback2);
   menu->setAttribute(Qt::WA_DeleteOnClose);
   
   QMenu *curr_menu = menu;
@@ -221,9 +222,9 @@ static QMenu *create_qmenu(
       if (text.startsWith("[check ")){
         
         if (text.startsWith("[check on]"))
-          action = new CheckableAction(text.right(text.size() - 10), true, curr_menu, i, callback2, callback3);
+          action = new CheckableAction(text.right(text.size() - 10), true, menu, i, callback2, callback3);
         else
-          action = new CheckableAction(text.right(text.size() - 11), false, curr_menu, i, callback2, callback3);
+          action = new CheckableAction(text.right(text.size() - 11), false, menu, i, callback2, callback3);
         
       } else if (text.startsWith("[submenu start]")){
         
@@ -244,13 +245,13 @@ static QMenu *create_qmenu(
         
       } else {
         
-        action = new ClickableAction(text, curr_menu, i, callback2, callback3);
+        action = new ClickableAction(text, menu, i, callback2, callback3);
         
       }
       
       if (action != NULL){
         action->setData(i);
-        curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu? (yes, seems so)
+        curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu? (yes, seems so) (they are probably freed because they are children of the qmenu)
       }
       
       if (disabled)
